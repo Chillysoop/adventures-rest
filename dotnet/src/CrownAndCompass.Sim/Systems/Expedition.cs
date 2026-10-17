@@ -84,6 +84,7 @@ public static class Expedition
         public readonly List<Combatant> Party;
         public readonly OrderedMap<int, int> Kills = new();
         public int Gold;
+        public int Swell;
         public int Xp;
         private bool _skipNextCombat;
         private readonly Rng _rng;
@@ -257,7 +258,7 @@ public static class Expedition
             var rng = _rng;
             var def = _content.Monster(e.Monster);
             var foes = new List<Foe>();
-            int n = rng.Range(e.Count[0], e.Count[1] + 1);
+            int n = rng.Range(e.Count[0], e.Count[1] + 1) + (def.Boss ? 0 : Swell);
             for (int i = 0; i < n; i++) foes.Add(new Foe(def));
             if (!string.IsNullOrEmpty(e.Escort) && e.EscortCount != null)
             {
@@ -307,6 +308,15 @@ public static class Expedition
                 if (living.Count == 0) return;
                 var s = c.Sheet;
                 string name = c.Agent.GivenName;
+
+                // A badly hurt hero downs a potion (a bonus action) and fights on.
+                if (s.Potions > 0 && s.Hp < s.MaxHp * 0.35)
+                {
+                    s.Potions--;
+                    int drunk = Potion();
+                    s.Hp = Math.Min(s.MaxHp, s.Hp + drunk);
+                    Log($"{name} gulps a {PotionName()} (+{drunk} hp).");
+                }
 
                 // Clerics keep the party alive before they swing.
                 if (s.Cls.Healer && c.Heals > 0)
@@ -363,6 +373,10 @@ public static class Expedition
             }
         }
 
+        private int Potion() => Math.Max(1, (Sim.Dice.Parse(_content.Shrines.Potion.Dice) ?? new Dice(2, 4, 2)).Roll(_rng));
+
+        private string PotionName() => Library.Prose(_content.Library.Item(_content.Shrines.Potion.Item)?.Name ?? "potion of healing");
+
         private void Credit(Combatant c, int n)
         {
             if (n > 0) Kills[c.Agent.Id] = Kills.Get(c.Agent.Id, 0) + n;
@@ -411,6 +425,16 @@ public static class Expedition
                     c.Dead = true;
                     continue;
                 }
+                // No cleric to hand: a friend pours a potion down their throat.
+                var donor = Standing.FirstOrDefault(h => h.Sheet.Potions > 0);
+                if (donor != null)
+                {
+                    donor.Sheet.Potions--;
+                    c.Down = false;
+                    c.Sheet.Hp = Potion();
+                    Log($"{donor.Agent.GivenName} pours a {PotionName()} down {c.Agent.GivenName}'s throat.");
+                    continue;
+                }
                 int ok = 0;
                 int fail = 0;
                 var rolls = new List<int>();
@@ -443,9 +467,10 @@ public static class Expedition
     private static string Cap(string s) => char.ToUpperInvariant(s[0]) + s[1..];
 
     /// <param name="slotsSpent">Spell slots the party spent on sending-stone messages; they come out of the healers' heals.</param>
-    public static ExpeditionResult Run(Rng rng, Content content, SiteDef site, IReadOnlyList<Agent> heroes, int slotsSpent = 0)
+    /// <param name="swell">Extra creatures in every fight but the boss's, from how strong the lair has grown.</param>
+    public static ExpeditionResult Run(Rng rng, Content content, SiteDef site, IReadOnlyList<Agent> heroes, int slotsSpent = 0, int swell = 0)
     {
-        var run = new Delve(rng, content, heroes, site);
+        var run = new Delve(rng, content, heroes, site) { Swell = swell };
         foreach (var c in run.Party)
         {
             int spent = Math.Min(slotsSpent, c.Heals);

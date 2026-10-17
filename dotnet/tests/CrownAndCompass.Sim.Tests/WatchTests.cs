@@ -68,8 +68,9 @@ public class WatchTests
             Assert.NotNull(errand);
             Assert.Null(sim.PlantMirror(site.Def.Id));
             while (!errand!.Arrived && !errand.Lost) sim.RunDays(1);
-            var mirror = Watch.MirrorAt(t, site.Def.Id);
-            Assert.NotNull(mirror);
+            Assert.Contains(t.Mirrors, m => m.SiteId == site.Def.Id);
+            // The lair may find it the very first night; try another town if so.
+            if (Watch.MirrorAt(t, site.Def.Id) == null) continue;
             Assert.Equal(LiveSource.Mirror, Watch.LiveOf(t, site));
             return;
         }

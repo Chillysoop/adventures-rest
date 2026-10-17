@@ -33,6 +33,7 @@ public static class Social
         foreach (var tavern in town.Taverns)
         {
             var patrons = town.Agents.Where(a => !a.Departed && a.Activity == Activity.Drinking && a.LocationId == tavern.Id).ToList();
+            tavern.Talk += patrons.Count;
             if (patrons.Count < 2) continue;
 
             foreach (var p in patrons)

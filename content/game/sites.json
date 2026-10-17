@@ -1,5 +1,5 @@
 [
-  { "id": "goblin_warrens", "name": "the Goblin Warrens", "tier": 1, "distance": 1, "habitats": ["caves", "hills", "underworld"],
+  { "id": "goblin_warrens", "kind": "tribe", "known": true, "name": "the Goblin Warrens", "tier": 1, "distance": 1, "habitats": ["caves", "hills", "underworld"],
     "encounters": [
       { "kind": "wander", "cr": [0.125, 0.5], "budget": 200, "text": "something stirs in the dark below the warrens" },
       { "kind": "combat", "monster": "goblin", "count": [2, 4], "text": "goblins spill out of a side tunnel" },
@@ -9,7 +9,7 @@
     ],
     "boss": { "kind": "combat", "monster": "goblin_boss", "count": [1, 1], "escort": "goblin", "escortCount": [1, 3], "text": "the goblin boss on a throne of stolen pots" },
     "loot": [40, 90] },
-  { "id": "wolfwood", "name": "Wolfwood", "tier": 1, "distance": 1, "habitats": ["forest"],
+  { "id": "wolfwood", "kind": "beasts", "known": true, "name": "Wolfwood", "tier": 1, "distance": 1, "habitats": ["forest"],
     "encounters": [
       { "kind": "wander", "cr": [0.125, 0.5], "budget": 200, "text": "something else is hunting in the wood" },
       { "kind": "hazard", "dc": 12, "damageDie": 6, "text": "the trail vanishes into briar and bog" },
@@ -19,7 +19,7 @@
     ],
     "boss": { "kind": "combat", "monster": "dire_wolf", "count": [1, 1], "escort": "wolf", "escortCount": [1, 2], "text": "a dire wolf the size of a pony" },
     "loot": [30, 70] },
-  { "id": "old_watchtower", "name": "the Old Watchtower", "tier": 2, "distance": 2, "habitats": ["ruins", "hills"],
+  { "id": "old_watchtower", "kind": "rivals", "name": "the Old Watchtower", "tier": 2, "distance": 2, "habitats": ["ruins", "hills"],
     "encounters": [
       { "kind": "wander", "cr": [0.25, 1], "budget": 400, "text": "squatters in the ruined outbuildings" },
       { "kind": "combat", "monster": "bandit", "count": [3, 6], "text": "bandit lookouts on the broken wall" },
@@ -30,7 +30,7 @@
     ],
     "boss": { "kind": "combat", "monster": "bandit_captain", "count": [1, 1], "escort": "bandit", "escortCount": [2, 4], "text": "the bandit captain at the top of the tower" },
     "loot": [90, 180] },
-  { "id": "spider_hollow", "name": "Spider Hollow", "tier": 2, "distance": 2, "habitats": ["forest", "swamp"],
+  { "id": "spider_hollow", "kind": "beasts", "name": "Spider Hollow", "tier": 2, "distance": 2, "habitats": ["forest", "swamp"],
     "encounters": [
       { "kind": "wander", "cr": [0.25, 1], "budget": 400, "text": "a hollow tree with something nesting in it" },
       { "kind": "hazard", "dc": 13, "damageDie": 8, "text": "webs thick enough to drown in" },
@@ -40,7 +40,7 @@
     ],
     "boss": { "kind": "combat", "monster": "giant_spider", "count": [3, 4], "text": "the brood-mother's nest" },
     "loot": [80, 160] },
-  { "id": "ogres_ford", "name": "Ogre's Ford", "tier": 2, "distance": 1, "habitats": ["grassland", "hills", "coast"],
+  { "id": "ogres_ford", "kind": "tribe", "name": "Ogre's Ford", "tier": 2, "distance": 1, "habitats": ["grassland", "hills", "coast"],
     "encounters": [
       { "kind": "wander", "cr": [0.25, 1], "budget": 400, "text": "travellers of an unfriendly sort at the ford" },
       { "kind": "hazard", "dc": 13, "damageDie": 8, "text": "the river runs high and cold" },
@@ -49,7 +49,7 @@
     ],
     "boss": { "kind": "combat", "monster": "ogre", "count": [1, 1], "text": "the ogre, picking its teeth with a femur" },
     "loot": [100, 200] },
-  { "id": "drowned_temple", "name": "the Drowned Temple", "tier": 3, "distance": 3, "habitats": ["swamp", "temple", "tomb"],
+  { "id": "drowned_temple", "kind": "undead", "name": "the Drowned Temple", "tier": 3, "distance": 3, "habitats": ["swamp", "temple", "tomb"],
     "encounters": [
       { "kind": "wander", "cr": [0.5, 2], "budget": 700, "text": "the marsh outside the temple is not empty" },
       { "kind": "hazard", "dc": 14, "damageDie": 10, "text": "flooded halls where the air runs out" },
@@ -60,5 +60,16 @@
       { "kind": "treasure", "gold": [60, 140], "mimicChance": 0.2, "text": "an altar heaped with offerings" }
     ],
     "boss": { "kind": "combat", "monster": "cult_fanatic", "count": [1, 1], "escort": "ghoul", "escortCount": [1, 2], "text": "the drowned priest beneath the bell" },
-    "loot": [200, 400] }
+    "loot": [200, 400] },
+  { "id": "hollowmere", "kind": "schemers", "name": "the Hollowmere", "tier": 2, "distance": 2, "habitats": ["swamp", "forest"],
+    "encounters": [
+      { "kind": "wander", "cr": [0.25, 1], "budget": 400, "text": "something follows the party through the reeds" },
+      { "kind": "hazard", "dc": 13, "damageDie": 8, "text": "the mere sucks at their boots and will not let go" },
+      { "kind": "combat", "monster": "giant-frog", "count": [3, 5], "text": "the hag's pets rise from the black water" },
+      { "kind": "parley", "dc": 14, "gold": [10, 40], "text": "a sweet voice in the fog offers a bargain" },
+      { "kind": "combat", "monster": "cultist", "count": [2, 4], "text": "villagers in her thrall, eyes blank, knives out" },
+      { "kind": "treasure", "gold": [30, 80], "mimicChance": 0.1, "text": "a heap of trinkets traded for years of someone's life" }
+    ],
+    "boss": { "kind": "combat", "monster": "green_hag", "count": [1, 1], "escort": "giant-toad", "escortCount": [1, 2], "text": "the hag in her hut of bones and wet thatch" },
+    "loot": [90, 180] }
 ]

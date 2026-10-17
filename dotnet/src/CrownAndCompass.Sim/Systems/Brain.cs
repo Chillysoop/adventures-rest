@@ -18,7 +18,7 @@ public static class Brain
             if (a.Departed || a.IsAway) continue;
             UpdateNeeds(a);
             Execute(town, a, Choose(town, a));
-            SampleMood(a, Council.FestivalMood(town));
+            SampleMood(a, Council.FestivalMood(town) + (a.Activity == Activity.Praying ? town.Content.Shrines.PrayMood : 0));
         }
     }
 
@@ -63,16 +63,28 @@ public static class Brain
 
         const double relax = 0.3;
         double wander = night ? 0 : 0.15;
+        double pray = Shrines.PrayScore(town, a, hour);
 
-        (Activity, double)[] options =
-        [
-            (Activity.Sleeping, sleep),
-            (Activity.Eating, eat),
-            (Activity.Working, work),
-            (Activity.Drinking, drink),
-            (Activity.Relaxing, relax),
-            (Activity.Wandering, wander),
-        ];
+        (Activity, double)[] options = pray > 0
+            ?
+            [
+                (Activity.Sleeping, sleep),
+                (Activity.Eating, eat),
+                (Activity.Working, work),
+                (Activity.Drinking, drink),
+                (Activity.Relaxing, relax),
+                (Activity.Wandering, wander),
+                (Activity.Praying, pray),
+            ]
+            :
+            [
+                (Activity.Sleeping, sleep),
+                (Activity.Eating, eat),
+                (Activity.Working, work),
+                (Activity.Drinking, drink),
+                (Activity.Relaxing, relax),
+                (Activity.Wandering, wander),
+            ];
         var best = Activity.Relaxing;
         double bestScore = double.NegativeInfinity;
         foreach (var (act, score) in options)
@@ -117,6 +129,9 @@ public static class Brain
             case Activity.Wandering:
                 a.LocationId = null;
                 a.Loneliness = Math.Max(0, a.Loneliness - 1);
+                break;
+            case Activity.Praying:
+                Shrines.Pray(town, a);
                 break;
         }
     }

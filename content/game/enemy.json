@@ -43,6 +43,7 @@
   },
   "outpost": {
     "id": "bloodtusk_camp",
+    "kind": "tribe",
     "name": "the Bloodtusk war camp",
     "tier": 2,
     "distance": 2,

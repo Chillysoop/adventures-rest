@@ -11,7 +11,7 @@ public sealed record NewAgentOptions
 /// <summary>Who comes to town, who settles, and who gives up and leaves.</summary>
 public static class Population
 {
-    private static readonly string[] Professions = ["farmer", "farmer", "woodcutter", "laborer", "laborer", "smith", "brewer", "barkeep", "merchant"];
+    private static readonly string[] Professions = ["farmer", "farmer", "woodcutter", "laborer", "laborer", "smith", "brewer", "barkeep", "merchant", "shopkeeper"];
 
     private static readonly Dictionary<string, string> DreamFor = new()
     {
@@ -20,6 +20,7 @@ public static class Population
         ["smith"] = "forge",
         ["brewer"] = "brewery",
         ["barkeep"] = "tavern",
+        ["shopkeeper"] = "general_store",
     };
 
     private static readonly (Trait, Trait)[] Opposites =

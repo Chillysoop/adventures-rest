@@ -1,10 +1,57 @@
 namespace CrownAndCompass.Sim.Systems;
 
+/// <summary>What the town knows of a site: nothing, tavern talk, or a first-hand report or sight.</summary>
+public enum SiteKnowledge
+{
+    Unheard,
+    Rumoured,
+    Confirmed,
+}
+
+/// <summary>
+/// A site as it really is (Def, Cleared) and as the town believes it to be (Known, Believed,
+/// BelievedTier, ThoughtCleared). Only a party's report or live sight brings belief back to the truth.
+/// </summary>
 public sealed class SiteState(SiteDef def)
 {
-    public SiteDef Def { get; } = def;
+    public SiteDef Def { get; set; } = def;
     public bool Cleared { get; set; }
     public int Attempts { get; set; }
+
+    public SiteKnowledge Known { get; set; }
+
+    /// <summary>Who the town thinks lives there ("goblins", "an ogre"), from the last rumour or report.</summary>
+    public string Believed { get; set; } = "";
+    public int BelievedTier { get; set; }
+
+    /// <summary>The town thinks the site is cleared (it may have been resettled since).</summary>
+    public bool ThoughtCleared { get; set; }
+
+    /// <summary>How far the town trusts what it believes, 0 to 100: the teller's reliability, 100 once confirmed.</summary>
+    public int Trust { get; set; }
+
+    /// <summary>When it was last cleared.</summary>
+    public int? ClearedTick { get; set; }
+
+    // The lair, off-screen (see Lairs) ------------------------------------------------------------
+
+    /// <summary>How many live there and how bold they are; swells the fights and drives what they do.</summary>
+    public double Strength { get; set; }
+
+    /// <summary>When the lair next acts on the world; null until it has woken.</summary>
+    public int? NextActTick { get; set; }
+
+    /// <summary>Raids put off while the heroes were home.</summary>
+    public int Waited { get; set; }
+
+    /// <summary>Paid tribute buys quiet until this tick.</summary>
+    public int? QuietUntil { get; set; }
+
+    /// <summary>When something new moves into the cleared site, unless the town holds it.</summary>
+    public int? ResettleTick { get; set; }
+
+    /// <summary>The town keeps an outpost here: nothing resettles it, and the town sees it live.</summary>
+    public bool Held { get; set; }
 }
 
 public enum BountyStatus
@@ -25,6 +72,9 @@ public sealed class Bounty
     public int ExpiresTick { get; init; }
     public BountyStatus Status { get; set; } = BountyStatus.Open;
     public int? PartyId { get; set; }
+
+    /// <summary>The building whose coffers hold the escrow (the temple), or null for the treasury.</summary>
+    public int? FunderId { get; init; }
 }
 
 public sealed class Party
@@ -79,20 +129,31 @@ public static class Quests
 
     public static void InitSites(Town town)
     {
-        foreach (var def in town.Content.Sites) town.Sites.Add(new SiteState(def));
+        foreach (var def in town.Content.Sites)
+        {
+            var s = new SiteState(def);
+            town.Sites.Add(s);
+            // The settlers know the local menace; everything else waits for tavern talk.
+            if (def.Known) Rumors.Hear(town, s, Rumors.Occupants(town.Content, def), def.Tier);
+        }
     }
 
     public static SiteState? Site(Town town, string id) => town.Sites.FirstOrDefault(s => s.Def.Id == id);
 
     private static bool IsActive(Bounty b) => b.Status is BountyStatus.Open or BountyStatus.Taken;
 
-    /// <summary>Post a bounty, holding the reward in escrow from the treasury. Returns null if the town can't pay.</summary>
-    public static Bounty? PostBounty(Town town, string siteId, double reward)
+    /// <summary>
+    /// Post a bounty, holding the reward in escrow from the treasury, or from a funder's coffers (the
+    /// temple). Returns null if the payer can't cover it or the town knows of no such danger.
+    /// </summary>
+    public static Bounty? PostBounty(Town town, string siteId, double reward, Building? funder = null)
     {
         var s = Site(town, siteId);
-        if (s == null || s.Cleared || reward <= 0 || town.Treasury < reward) return null;
+        double purse = funder?.Cash ?? town.Treasury;
+        if (s == null || s.Known == SiteKnowledge.Unheard || s.ThoughtCleared || reward <= 0 || purse < reward) return null;
         if (town.Bounties.Any(b => b.SiteId == siteId && IsActive(b))) return null;
-        town.Book(TreasuryAccount.Bounties, -reward);
+        if (funder != null) funder.Cash -= reward;
+        else town.Book(TreasuryAccount.Bounties, -reward);
         var b = new Bounty
         {
             Id = town.Bounties.Count + 1,
@@ -100,10 +161,18 @@ public static class Quests
             Reward = reward,
             PostedTick = town.Tick,
             ExpiresTick = town.Tick + BountyDays * SimTime.HoursPerDay,
+            FunderId = funder?.Id,
         };
         town.Bounties.Add(b);
-        town.Log(LedgerCategory.Town, Importance.Notable, $"The council posts a bounty of {Js.Str(reward)} gold on {s.Def.Name}.");
+        if (funder == null) town.Log(LedgerCategory.Town, Importance.Notable, $"The council posts a bounty of {Js.Str(reward)} gold on {s.Def.Name}.");
         return b;
+    }
+
+    /// <summary>Hand an unearned reward back to whoever put it up.</summary>
+    private static void Refund(Town town, Bounty b)
+    {
+        if (b.FunderId != null) town.Building(b.FunderId.Value).Cash += b.Reward;
+        else town.Book(TreasuryAccount.Bounties, b.Reward);
     }
 
     public static int SuggestedReward(int tier) => 50 * tier + 30 * tier * tier;
@@ -163,7 +232,9 @@ public static class Quests
         double chance = Math.Min(0.9, 0.12 + 0.25 * open + (heroes < 4 ? 0.2 : 0));
         if (!town.Rng.Chance(chance)) return;
 
-        int level = town.Rng.Chance(0.7) ? 1 : town.Rng.Chance(0.8) ? 2 : 3;
+        // More taverns, more talk on the roads: seasoned heroes hear of the town and come.
+        double green = Math.Max(0.4, 0.7 - town.Content.Rumors.BetterHeroesPerTavern * (taverns.Count - 1));
+        int level = town.Rng.Chance(green) ? 1 : town.Rng.Chance(0.8) ? 2 : 3;
         var a = CreateHero(town, PickClass(town), level);
         string where = taverns[town.Rng.Range(0, taverns.Count)].Name;
         town.Log(LedgerCategory.Arrival, Importance.Notable, $"{a.Describe()}, walks into {where} looking for paid work. ({a.TraitList()})", [a.Id]);
@@ -184,8 +255,10 @@ public static class Quests
                 a.Gold -= Lodging;
                 t.Cash += Lodging;
             }
-            // A long rest heals; a bed heals faster.
-            s.Hp = Math.Min(s.MaxHp, s.Hp + (int)Math.Ceiling(s.MaxHp * (s.Lodging ? 0.5 : 0.25)));
+            // A long rest heals; a bed heals faster, and the shrine or temple more.
+            int healed = (int)Math.Ceiling(s.MaxHp * (s.Lodging ? 0.5 : 0.25));
+            if (s.Hp < s.MaxHp) healed = Shrines.Rest(town, a, healed);
+            s.Hp = Math.Min(s.MaxHp, s.Hp + healed);
         }
     }
 
@@ -195,7 +268,7 @@ public static class Quests
         {
             if (b.Status != BountyStatus.Open || town.Tick < b.ExpiresTick) continue;
             b.Status = BountyStatus.Expired;
-            town.Book(TreasuryAccount.Bounties, b.Reward);
+            Refund(town, b);
             town.Log(LedgerCategory.Town, Importance.Routine, $"No one takes the bounty on {Site(town, b.SiteId)!.Def.Name}; the council withdraws it.");
         }
     }
@@ -205,16 +278,21 @@ public static class Quests
     {
         if (town.Bounties.Any(IsActive)) return;
         if (town.Heroes.Count == 0 && town.Taverns.Count == 0) return;
-        var target = town.Sites.Where(s => !s.Cleared).OrderBy(s => s.Def.Tier).ThenBy(s => s.Attempts).FirstOrDefault();
+        var target = town.Sites
+            .Where(s => s.Known != SiteKnowledge.Unheard && !s.ThoughtCleared && s.Trust >= 50)
+            .OrderBy(s => s.BelievedTier)
+            .ThenBy(s => s.Attempts)
+            .FirstOrDefault();
         if (target == null) return;
-        double reward = SuggestedReward(target.Def.Tier) + 20 * target.Attempts;
+        double reward = SuggestedReward(target.BelievedTier) + 20 * target.Attempts;
         if (town.Treasury < reward + 100) return;
         PostBounty(town, target.Def.Id, reward);
     }
 
     private static double Interest(Town town, Agent a, Bounty bounty, int partySize)
     {
-        int tier = Site(town, bounty.SiteId)!.Def.Tier;
+        // Heroes judge a site by what the town believes of it, so a rumour that undersells it is deadly.
+        int tier = Math.Max(1, Site(town, bounty.SiteId)!.BelievedTier);
         double share = bounty.Reward / Math.Max(1, partySize);
         return
             share / (tier * 40) +
@@ -237,7 +315,7 @@ public static class Quests
         {
             if (bounty.Status != BountyStatus.Open) continue;
             var s = Site(town, bounty.SiteId)!;
-            int tier = s.Def.Tier;
+            int tier = Math.Max(1, s.BelievedTier);
             var pool = town.Heroes.Where(Available).OrderByDescending(h => h.Hero!.Level).ThenBy(h => h.Id).ToList();
             if (pool.Count == 0) continue;
 
@@ -279,6 +357,7 @@ public static class Quests
             bounty.Status = BountyStatus.Taken;
             bounty.PartyId = party.Id;
             s.Attempts++;
+            Shrines.Outfit(town, members);
             foreach (var m in members)
             {
                 m.Hero!.PartyName = name;
@@ -318,7 +397,22 @@ public static class Quests
                 Knowledge.ComeHome(town, party, s, bounty, members);
                 continue;
             }
-            var result = Expedition.Run(town.Rng, town.Content, s.Def, members, party.Sendings);
+            if (s.Cleared)
+            {
+                // The rumour that sent them was false: the place stands empty.
+                foreach (var m in members) m.Hero!.AwayUntil = null;
+                bounty.Status = BountyStatus.Failed;
+                Refund(town, bounty);
+                s.ClearedTick = town.Tick;
+                Rumors.Confirm(town, s, $"the {party.Name}");
+                town.Log(
+                    LedgerCategory.Quest,
+                    Importance.Notable,
+                    $"The {party.Name} find {s.Def.Name} empty, as cold as the day it was cleared. The tavern was wrong; the bounty goes back to the treasury.",
+                    members.Select(m => m.Id).ToList());
+                continue;
+            }
+            var result = Expedition.Run(town.Rng, town.Content, s.Def, members, party.Sendings, Lairs.Swell(town, s));
 
             var chronicle = new Chronicle(
                 town.Chronicles.Count + 1,
@@ -331,7 +425,12 @@ public static class Quests
                 result.Lines);
             town.Chronicles.Add(chronicle);
 
-            var survivors = members.Where(m => !result.Dead.Contains(m.Id)).ToList();
+            // Bodies carried home can be raised at the temple; a wiped party leaves nobody to carry them.
+            double pay = result.Gold + (result.Outcome == ExpeditionOutcome.Cleared ? bounty.Reward : 0);
+            var rites = new List<(string Text, int Id)>();
+            var raised = result.Outcome == ExpeditionOutcome.Wiped ? [] : Shrines.Raise(town, result.Dead, party.Name, ref pay, rites);
+            var dead = result.Dead.Where(id => !raised.Contains(id)).ToList();
+            var survivors = members.Where(m => !dead.Contains(m.Id)).ToList();
             foreach (var m in members)
             {
                 var sheet = m.Hero!;
@@ -341,7 +440,7 @@ public static class Quests
             }
 
             // The dead are mourned; the living split the take.
-            foreach (int id in result.Dead)
+            foreach (int id in dead)
             {
                 var d = town.Agent(id);
                 d.Dead = true;
@@ -349,17 +448,18 @@ public static class Quests
                 foreach (var other in town.Residents) if (other.OpinionOf(id) >= 40) other.Loneliness = Math.Min(100, other.Loneliness + 30);
             }
 
-            double pay = result.Gold;
+            if (result.Outcome != ExpeditionOutcome.Wiped) Rumors.Confirm(town, s, $"the {party.Name}");
             if (result.Outcome == ExpeditionOutcome.Cleared)
             {
                 s.Cleared = true;
+                s.ThoughtCleared = true;
+                s.ClearedTick = town.Tick;
                 bounty.Status = BountyStatus.Completed;
-                pay += bounty.Reward;
             }
             else
             {
                 bounty.Status = BountyStatus.Failed;
-                town.Book(TreasuryAccount.Bounties, bounty.Reward);
+                Refund(town, bounty);
             }
             if (survivors.Count > 0)
             {
@@ -392,6 +492,8 @@ public static class Quests
                        (result.Dead.Count > 0 ? $", carrying {(result.Dead.Count == 1 ? $"{deadNames}'s body" : $"the bodies of {deadNames}")}." : ".");
             }
             town.Log(LedgerCategory.Quest, Importance.Major, $"{text} (Chronicle {chronicle.Id})", members.Select(m => m.Id).ToList());
+            foreach (var (rite, id) in rites) town.Log(LedgerCategory.Faith, Importance.Major, rite, [id]);
+            Lairs.AfterDelve(town, s, result);
             foreach (var it in result.Items)
                 if (it.HeroId == null) Watch.ReceiveRelic(town, it.Item, party.Name);
         }

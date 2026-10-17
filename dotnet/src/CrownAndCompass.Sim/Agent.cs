@@ -31,6 +31,7 @@ public enum Activity
     Drinking,
     Relaxing,
     Wandering,
+    Praying,
 }
 
 public static class TraitOrder
@@ -114,6 +115,9 @@ public sealed class HeroSheet
     public int? AwayUntil { get; set; }
 
     public bool Lodging { get; set; }
+
+    /// <summary>Healing potions from the general store, carried into the next delve.</summary>
+    public int Potions { get; set; }
 }
 
 /// <summary>
@@ -134,6 +138,14 @@ public sealed class Agent
     public string? DreamBusiness { get; set; }
     public HeroSheet? Hero { get; set; }
     public bool Dead { get; set; }
+
+    /// <summary>Has taken the town god's vows: prays, tithes, and may be raised at the temple's cost.</summary>
+    public bool Devout { get; set; }
+
+    public bool PrayedToday { get; set; }
+
+    /// <summary>The site whose schemers have this resident in their thrall; they steal for it until it falls.</summary>
+    public string? ThrallOf { get; set; }
 
     public double Gold { get; set; }
 

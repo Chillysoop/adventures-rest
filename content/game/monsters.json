@@ -12,6 +12,7 @@
   { "id": "cultist", "ref": "cultist" },
   { "id": "cult_fanatic", "ref": "cultist-fanatic", "name": "drowned priest", "boss": true },
   { "id": "mimic", "ref": "mimic" },
+  { "id": "green_hag", "ref": "green-hag", "boss": true },
   { "id": "orc", "ref": "orc" },
   { "id": "orc_war_chief", "ref": "bloodtusk-boar-rider", "name": "Bloodtusk war chief", "plural": "Bloodtusk war chiefs", "boss": true },
   { "id": "orc_warlord", "ref": "grukk-the-bloodtusk", "name": "Grukk Bloodtusk", "plural": "warlords", "hp": 75, "attack": 6, "damage": "1d10+4", "attacks": 1, "xp": 1800, "boss": true, "named": true }

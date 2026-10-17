@@ -181,6 +181,9 @@ public partial class TownView(MapView map) : Node3D
             case "brewery": Brewery(kit, v); break;
             case "scrying_pool": Pool(kit); break;
             case "sleepless_spire": Spire(kit); break;
+            case "shrine": Shrine(kit); break;
+            case "temple": Temple(kit, v); break;
+            case "general_store": Store(kit, v); break;
             default: House(kit, v); break;
         }
         return _meshes[key] = kit.Build();
@@ -240,6 +243,48 @@ public partial class TownView(MapView map) : Node3D
         k.Gable(0, w, d, d * 0.62f + 0.25f, RoofOf(v), Palette.Plaster, 0.12f);
         k.Pop();
         if (v != 2) Chimney(k, w / 2f - 0.45f, 1, -0.2f, v == 0);
+        k.Pop();
+    }
+
+    /// <summary>A wayside shrine: a stone plinth under a little pyramid roof on four pillars, a gold sun inside.</summary>
+    private static void Shrine(MeshKit k)
+    {
+        k.Push(MeshKit.At(0, 0, 0, 0, 0.62f));
+        k.Box(Vector3.Zero, new Vector3(1.1f, 0.18f, 1.1f), new Color("8f8a80"), new Color("a8a296"));
+        foreach (var (x, z) in new[] { (-0.4f, -0.4f), (0.4f, -0.4f), (-0.4f, 0.4f), (0.4f, 0.4f) })
+            k.Frustum(new Vector3(x, 0.18f, z), 0.07f, 0.06f, 0.9f, 6, new Color("b8b2a4"));
+        k.Box(new Vector3(0, 0.18f, 0), new Vector3(0.36f, 0.3f, 0.36f), new Color("9a9488"));
+        k.Blob(new Vector3(0, 0.62f, 0), new Vector3(0.14f, 0.14f, 0.14f), new Color(Palette.Gold, MeshKit.Flag.Magic));
+        k.Pyramid(1.08f, 1.0f, 1.0f, 0.55f, new Color("7e4430"), 0.08f);
+        k.Pop();
+    }
+
+    /// <summary>A stone temple: two storeys of stone, a colonnade on the street side and a gilded finial.</summary>
+    private static void Temple(MeshKit k, int v)
+    {
+        k.Push(MeshKit.At(0, 0, -0.1f, 0, Fit(3, 2, 0.95f)));
+        Walls(k, 3, 2, 0, true, v + 41, true);
+        Walls(k, 3, 2, 1, true, v + 43, false);
+        k.Push(MeshKit.At(0, 2, 0));
+        k.Gable(0, 3, 2, 1.1f, new Color("6c7480"), new Color("c8c0b0"), 0.14f);
+        k.Pop();
+        k.Box(new Vector3(0, 0, 1.3f), new Vector3(3.2f, 0.12f, 0.7f), new Color("a8a296"));
+        foreach (float x in new[] { -1.3f, -0.45f, 0.45f, 1.3f })
+            k.Add("town/pillar-stone", MeshKit.At(x, 0.12f, 1.45f, 0, 1), Palette.Kenney(Palette.Stone));
+        k.Frustum(new Vector3(0, 3.1f, 0), 0.12f, 0, 0.5f, 6, new Color(Palette.Gold, MeshKit.Flag.Magic));
+        k.Pop();
+    }
+
+    /// <summary>The general store: a timber house with a striped market stall and a cart at the door.</summary>
+    private static void Store(MeshKit k, int v)
+    {
+        k.Push(MeshKit.At(0, 0, -0.25f, 0, Fit(2, 2, 0.72f)));
+        Walls(k, 2, 2, 0, false, v + 51, true);
+        k.Push(MeshKit.At(0, 1, 0));
+        k.Gable(0, 2, 2, 1.05f, new Color("5f6a34"), Palette.Plaster, 0.12f);
+        k.Pop();
+        k.Add("town/stall-green", MeshKit.At(-0.5f, 0, 1.7f, 0, 0.8f));
+        k.Add("town/cart", MeshKit.At(0.75f, 0, 1.6f, 0.4f, 0.7f));
         k.Pop();
     }
 
@@ -491,7 +536,7 @@ public partial class TownView(MapView map) : Node3D
             if (!_landmarks.TryGetValue(id, out var mi) || (string)mi.GetMeta("kind") != kind)
             {
                 mi?.QueueFree();
-                mi = new MeshInstance3D { Mesh = Landmark(kind, Geo.Hash(id.GetHashCode())), MaterialOverride = Mats.Props };
+                mi = new MeshInstance3D { Mesh = Landmark(kind, Geo.Hash(StableHash(id))), MaterialOverride = Mats.Props };
                 mi.SetMeta("kind", kind);
                 AddChild(mi);
                 _landmarks[id] = mi;
@@ -500,6 +545,14 @@ public partial class TownView(MapView map) : Node3D
             mi.Visible = sight != Sight.Rumoured;
             mi.Position = map.Gen.At(pin, -0.05f);
         }
+    }
+
+    /// <summary>A hash of a site id that is the same on every run (string.GetHashCode is not).</summary>
+    private static int StableHash(string s)
+    {
+        uint h = 2166136261;
+        foreach (char c in s) h = (h ^ c) * 16777619;
+        return (int)(h & 0x7fffffff);
     }
 
     private static ArrayMesh Landmark(string kind, float r)

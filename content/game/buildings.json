@@ -11,6 +11,11 @@
     "consumes": { "Food": 0.4 }, "produces": { "Ale": 1.2 }, "profession": "brewer" },
   { "id": "tavern", "name": "Tavern", "zone": "Commercial", "cost": 85, "timber": 15, "buildHours": 80, "jobs": 1, "wage": 0.6,
     "venue": true, "capacity": 24, "profession": "barkeep" },
+  { "id": "general_store", "name": "General Store", "zone": "Commercial", "cost": 70, "timber": 10, "buildHours": 60, "jobs": 1, "wage": 0.6,
+    "profession": "shopkeeper" },
+  { "id": "shrine", "name": "Shrine", "zone": "Civic", "buildable": false, "cost": 40, "timber": 4, "buildHours": 30, "holy": true },
+  { "id": "temple", "name": "Temple", "zone": "Civic", "buildable": false, "cost": 360, "timber": 30, "buildHours": 160, "jobs": 2, "wage": 0.6,
+    "profession": "priest", "holy": true },
   { "id": "scrying_pool", "name": "Scrying Pool", "zone": "Civic", "buildable": false, "cost": 450, "timber": 20, "buildHours": 120 },
   { "id": "sleepless_spire", "name": "Sleepless Spire", "zone": "Civic", "buildable": false, "cost": 1400, "timber": 60, "buildHours": 260 }
 ]

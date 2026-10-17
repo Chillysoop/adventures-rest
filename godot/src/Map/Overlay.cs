@@ -48,6 +48,8 @@ public partial class Overlay(MapView map) : Control
         bool far = map.Distance > 260;
         foreach (var site in town.Sites)
         {
+            // Nobody has so much as heard of it: nothing on the map.
+            if (site.Known == SiteKnowledge.Unheard) continue;
             if (!map.Geo.Pins.TryGetValue(site.Def.Id, out var pin)) continue;
             if (!map.OnScreen(map.Gen.At(pin, 3.5f), out var at)) continue;
             var sight = fog.SightOf(site.Def.Id, pin);
@@ -88,6 +90,11 @@ public partial class Overlay(MapView map) : Control
                     case LiveSource.Scout:
                         DrawArc(at, r + 7, 0, Mathf.Tau, 40, new Color("8cc084", 0.8f), 2, true);
                         break;
+                    case LiveSource.Outpost:
+                        // The town's banner over a held site.
+                        DrawArc(at, r + 7, 0, Mathf.Tau, 40, new Color(Palette.Gold, 0.85f), 2.5f, true);
+                        DrawColoredPolygon([at + new Vector2(r - 2, -r - 12), at + new Vector2(r + 10, -r - 8), at + new Vector2(r - 2, -r - 4)], Palette.Gold);
+                        break;
                 }
                 if (Watch.MirrorAt(town, site.Def.Id) != null)
                 {
@@ -105,10 +112,11 @@ public partial class Overlay(MapView map) : Control
                     LiveSource.Scout => "Scout watching",
                     LiveSource.Mirror => "Mirror",
                     LiveSource.Spire => "Spire sight",
+                    LiveSource.Outpost => "Held",
                     _ => "In sight",
                 },
                 Sight.Scouted when fog.LastReport(site.Def.Id) is Report rep => town.Day - rep.Day > Fog.StaleDays ? $"Last seen day {rep.Day}" : $"Scouted day {rep.Day}",
-                _ => "Rumoured",
+                _ => site.Believed != "" ? $"Rumoured: {site.Believed}" : "Rumoured",
             };
             if (!far || sight != Sight.Rumoured) Text(at + new Vector2(0, r + size * 2 + 7), sub, Ui.Medium, size - 3, new Color(Cream, 0.68f), 3);
             if (bounty != null) Text(at - new Vector2(0, r + 7), $"{Math.Round(bounty.Reward)}g", Ui.Bold, 14, Ui.Gold);

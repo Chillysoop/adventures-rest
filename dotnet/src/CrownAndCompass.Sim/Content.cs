@@ -42,6 +42,9 @@ public sealed record BuildingDef
     public int Capacity { get; init; }
     public string? Profession { get; init; }
 
+    /// <summary>A house of the gods: offerings and tithes fill its coffers, which the treasury never sweeps.</summary>
+    public bool Holy { get; init; }
+
     /// <summary>Goods made per worker-hour, in the order the content lists them.</summary>
     [JsonConverter(typeof(GoodsListConverter))]
     public IReadOnlyList<KeyValuePair<Good, double>> Produces { get; init; } = [];
@@ -192,6 +195,12 @@ public sealed record SiteDef
 
     /// <summary>Library habitats whose creatures wander here (forest, caves, ruins...).</summary>
     public IReadOnlyList<string> Habitats { get; init; } = [];
+
+    /// <summary>What lives there, from the GDD's enemy table: beasts, tribe, undead, schemers or rivals.</summary>
+    public string Kind { get; init; } = "";
+
+    /// <summary>Known to the town from the charter (the local menace); every other site starts as tavern talk at best.</summary>
+    public bool Known { get; init; }
 }
 
 /// <summary>Town-wide economic rules.</summary>
@@ -383,6 +392,151 @@ public sealed record KnowledgeRules
     public IReadOnlyList<SightWorkDef> Works { get; init; } = [];
 }
 
+/// <summary>Where a rumour comes from and how far to trust it.</summary>
+public sealed record RumorSource
+{
+    public string Text { get; init; } = "";
+    public int[] Reliability { get; init; } = [30, 70];
+}
+
+/// <summary>How taverns trade in rumours (content/game/rumors.json).</summary>
+public sealed record RumorRules
+{
+    /// <summary>Daily chance a tavern turns up a rumour, plus a little per patron-hour of evening talk.</summary>
+    public double BaseChance { get; init; } = 0.12;
+    public double ChancePerPatron { get; init; } = 0.012;
+    public double MaxChance { get; init; } = 0.8;
+
+    /// <summary>How much likelier a rumour is about a place the town has never heard of.</summary>
+    public double UnheardWeight { get; init; } = 3;
+
+    /// <summary>Days after a clearing before anyone talks of the place being taken again.</summary>
+    public int QuietDays { get; init; } = 20;
+    public IReadOnlyList<RumorSource> Travellers { get; init; } = [];
+    public int[] ResidentReliability { get; init; } = [25, 65];
+    public int[] HeroReliability { get; init; } = [55, 90];
+    public double HeroShare { get; init; } = 0.3;
+    public double ResidentShare { get; init; } = 0.3;
+    public IReadOnlyList<string> TierWords { get; init; } = [];
+    public IReadOnlyList<string> Place { get; init; } = [];
+    public IReadOnlyList<string> Strength { get; init; } = [];
+    public IReadOnlyList<string> Occupant { get; init; } = [];
+    public IReadOnlyList<string> Resettled { get; init; } = [];
+
+    /// <summary>Each tavern past the first makes a seasoned hero likelier to walk in.</summary>
+    public double BetterHeroesPerTavern { get; init; } = 0.08;
+}
+
+/// <summary>A healing potion as the general store sells it.</summary>
+public sealed record PotionRules
+{
+    public string Item { get; init; } = "potion-of-healing";
+    public double Price { get; init; } = 12;
+    public double Wholesale { get; init; } = 5;
+
+    /// <summary>Most potions a hero carries into a delve.</summary>
+    public int Carry { get; init; } = 2;
+    public string Dice { get; init; } = "2d4+2";
+}
+
+/// <summary>The shrine, the temple and the town's god (content/game/faith.json).</summary>
+public sealed record ShrineRules
+{
+    public string Deity { get; init; } = "the Lantern Mother";
+
+    /// <summary>What the faithful call themselves.</summary>
+    public string Devout { get; init; } = "the faithful";
+    public string Shrine { get; init; } = "shrine";
+    public string Temple { get; init; } = "temple";
+    public int TemplePopulation { get; init; } = 40;
+    public int[] PrayHours { get; init; } = [6, 7, 18];
+    public double Offering { get; init; } = 0.2;
+    public double PrayMood { get; init; } = 10;
+    public double FollowerChance { get; init; } = 0.05;
+    public double Tithe { get; init; } = 0.03;
+    public int TitheEveryDays { get; init; } = 7;
+
+    /// <summary>Extra share of a hero's hit points a night's rest restores once the town has a shrine.</summary>
+    public double ShrineRest { get; init; } = 0.25;
+    public double TempleHealFee { get; init; } = 2;
+    public double RaiseCost { get; init; } = 250;
+    public int HolyDayEveryDays { get; init; } = 15;
+    public double HolyDayCost { get; init; } = 30;
+    public string HolyDayName { get; init; } = "the Feast of Lamps";
+
+    /// <summary>Site kinds the temple pays to see destroyed.</summary>
+    public IReadOnlyList<string> CrusadeKinds { get; init; } = [];
+    public double CrusadeReward { get; init; } = 140;
+    public double CrusadeReserve { get; init; } = 40;
+    public PotionRules Potion { get; init; } = new();
+}
+
+/// <summary>How one kind of enemy lives off-screen (GDD enemy table).</summary>
+public sealed record LairKind
+{
+    public double Growth { get; init; } = 0.5;
+    public string Verb { get; init; } = "";
+}
+
+public sealed record TributeRules
+{
+    /// <summary>Gold a tribe demands per point of strength.</summary>
+    public double PerStrength { get; init; } = 0.8;
+
+    /// <summary>Days a paid tribe stays quiet and stops growing.</summary>
+    public int QuietDays { get; init; } = 12;
+
+    /// <summary>The stand-in mayor pays when the treasury holds this many times the demand.</summary>
+    public double PayIfTreasuryOver { get; init; } = 4;
+}
+
+public sealed record OutpostRules
+{
+    public double Cost { get; init; } = 150;
+    public double Upkeep { get; init; } = 2;
+    public int Max { get; init; } = 3;
+}
+
+/// <summary>Lairs: how sites grow, act by their kind, and are resettled (content/game/lairs.json).</summary>
+public sealed record LairRules
+{
+    public double StartStrength { get; init; } = 20;
+    public double MaxStrength { get; init; } = 100;
+
+    /// <summary>Each this much strength puts one more creature in every fight there.</summary>
+    public double StrengthPerSwell { get; init; } = 35;
+    public int MaxSwell { get; init; } = 2;
+
+    /// <summary>Strength at which a lair starts acting on the world.</summary>
+    public double ActAt { get; init; } = 25;
+    public int[] ActEveryDays { get; init; } = [5, 10];
+    public IReadOnlyDictionary<string, LairKind> Kinds { get; init; } = new Dictionary<string, LairKind>();
+    public double RetreatLossPerKill { get; init; } = 3;
+
+    /// <summary>Strength a scattered tribe's survivors bring to the nearest tribe that takes them in.</summary>
+    public double ScatterJoin { get; init; } = 15;
+    public TributeRules Tribute { get; init; } = new();
+    public double UndeadKillAt { get; init; } = 60;
+
+    /// <summary>Chance the shrine's or temple's wards turn the walking dead from the fields.</summary>
+    public double WardShrine { get; init; } = 0.5;
+    public double WardTemple { get; init; } = 0.8;
+    public int ThrallStealDays { get; init; } = 7;
+    public int[] ThrallSteal { get; init; } = [8, 25];
+    public int[] ResettleDays { get; init; } = [25, 45];
+
+    /// <summary>Chance the new occupant of a cleared site is a tier worse.</summary>
+    public double WorseChance { get; init; } = 0.4;
+
+    /// <summary>Challenge-rating range of a new occupant's leader, by tier.</summary>
+    public double[][] BossCr { get; init; } = [];
+    public OutpostRules Outpost { get; init; } = new();
+
+    /// <summary>Raiders wait for a day when at least this share of the heroes' levels is away.</summary>
+    public double SoftShare { get; init; } = 0.5;
+    public int MaxWaitDays { get; init; } = 3;
+}
+
 /// <summary>A magic item as loot: which library slots a delve's hoard can hold, and what each grants.</summary>
 public sealed record LootRules
 {
@@ -419,6 +573,15 @@ public sealed class Content
 
     /// <summary>What a cleared hoard can hold.</summary>
     public LootRules Loot { get; init; } = new();
+
+    /// <summary>How lairs grow, act and are resettled.</summary>
+    public LairRules Lairs { get; init; } = new();
+
+    /// <summary>How taverns trade in rumours.</summary>
+    public RumorRules Rumors { get; init; } = new();
+
+    /// <summary>The shrine, the temple and the general store's potions.</summary>
+    public ShrineRules Shrines { get; init; } = new();
 
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
@@ -493,8 +656,15 @@ public sealed class Content
         };
     }
 
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, MonsterDef> _bosses = new();
+
+    /// <summary>A library creature leading a band: the same stats, fought as the boss ("id@boss").</summary>
+    public MonsterDef BossOf(string id) => _bosses.GetOrAdd($"{id}@boss", key => Monster(id) with { Id = key, Boss = true });
+
     public MonsterDef Monster(string id) =>
-        _monsters.TryGetValue(id, out var m) ? m : throw new KeyNotFoundException($"Unknown monster {id}");
+        _monsters.TryGetValue(id, out var m) ? m
+        : id.EndsWith("@boss", StringComparison.Ordinal) ? BossOf(id[..^5])
+        : throw new KeyNotFoundException($"Unknown monster {id}");
 
     /// <summary>Library creatures that can wander into a site: any of its habitats, inside the challenge range, with an attack to fight with.</summary>
     public List<MonsterDef> Wanderers(SiteDef site, double[] cr) =>
@@ -535,6 +705,9 @@ public sealed class Content
         {
             Knowledge = Parse<KnowledgeRules>("knowledge.json"),
             Loot = Parse<LootRules>("loot.json"),
+            Rumors = Parse<RumorRules>("rumors.json"),
+            Lairs = Parse<LairRules>("lairs.json"),
+            Shrines = Parse<ShrineRules>("shrines.json"),
         };
     }
 

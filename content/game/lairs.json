@@ -1,0 +1,29 @@
+{
+  "startStrength": 15,
+  "maxStrength": 100,
+  "strengthPerSwell": 35,
+  "maxSwell": 2,
+  "actAt": 35,
+  "actEveryDays": [6, 12],
+  "kinds": {
+    "beasts": { "growth": 0.6, "verb": "hunt" },
+    "tribe": { "growth": 0.5, "verb": "raid" },
+    "undead": { "growth": 0.6, "verb": "walk" },
+    "schemers": { "growth": 0.4, "verb": "whisper" },
+    "rivals": { "growth": 0.4, "verb": "toll" }
+  },
+  "retreatLossPerKill": 3,
+  "scatterJoin": 15,
+  "tribute": { "perStrength": 0.8, "quietDays": 12, "payIfTreasuryOver": 4 },
+  "undeadKillAt": 70,
+  "wardShrine": 0.5,
+  "wardTemple": 0.8,
+  "thrallStealDays": 7,
+  "thrallSteal": [8, 25],
+  "resettleDays": [25, 45],
+  "worseChance": 0.4,
+  "bossCr": [[1, 2], [1, 2], [2, 3], [3, 4]],
+  "outpost": { "cost": 150, "upkeep": 2, "max": 3 },
+  "softShare": 0.5,
+  "maxWaitDays": 3
+}
