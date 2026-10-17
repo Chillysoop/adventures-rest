@@ -12,7 +12,7 @@
 
   <!-- The content library (SRD, open books, originals): only the kinds the sim reads. -->
   <ItemGroup>
-    <LibraryFile Include="..\..\..\content\**\monsters.json;..\..\..\content\**\classes.json;..\..\..\content\**\spells.json;..\..\..\content\**\magic-items.json" Exclude="..\..\..\content\game\**" />
+    <LibraryFile Include="..\..\..\content\**\monsters.json;..\..\..\content\**\classes.json;..\..\..\content\**\spells.json;..\..\..\content\**\magic-items.json;..\..\..\content\**\deities.json;..\..\..\content\**\factions.json" Exclude="..\..\..\content\game\**" />
     <EmbeddedResource Include="@(LibraryFile)" LogicalName="library/%(RecursiveDir)%(Filename)%(Extension)" Link="library\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 

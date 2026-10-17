@@ -1,0 +1,321 @@
+{
+  "maxPerAgent": 2,
+  "dues": 1,
+  "recruitChance": 0.12,
+  "actionChance": 0.55,
+  "heatDecay": 1.5,
+  "exposeAt": 60,
+  "crackdownCost": 40,
+  "crackdownMandate": 2,
+  "supportPerStanding": 4,
+  "theftDc": 8,
+  "theftDcPerWatch": 8,
+  "theftShare": [
+    0.1,
+    0.25
+  ],
+  "theftCap": 40,
+  "fine": 20,
+  "caughtToExile": 3,
+  "racket": [
+    3,
+    8
+  ],
+  "smuggle": {
+    "Ale": 8,
+    "Tools": 3
+  },
+  "caravanCost": 30,
+  "caravan": {
+    "Food": 50,
+    "Tools": 6
+  },
+  "vigilanceDays": 8,
+  "vigilanceDc": 3,
+  "contractMin": 60,
+  "heroCap": 12,
+  "recruitHeroCost": 40,
+  "defensePerWarden": 6,
+  "blessFood": 25,
+  "protestCamps": 4,
+  "riteFavor": 8,
+  "riteHeat": 6,
+  "graveHeat": 10,
+  "cryptSite": {
+    "id": "choir_crypt",
+    "name": "the Hollow Choir's crypt",
+    "kind": "undead",
+    "tier": 2,
+    "distance": 1,
+    "habitats": [
+      "tomb",
+      "temple",
+      "sewer"
+    ],
+    "encounters": [
+      {
+        "kind": "combat",
+        "text": "Cultists in grave-dust robes break off their chant and draw knives.",
+        "monster": "cultist",
+        "count": [
+          2,
+          4
+        ]
+      },
+      {
+        "kind": "combat",
+        "text": "The dead the Choir woke climb out of their niches.",
+        "monster": "zombie",
+        "count": [
+          2,
+          3
+        ]
+      },
+      {
+        "kind": "trap",
+        "text": "A bone-wire tripline strung across the stairs.",
+        "dc": 12,
+        "damageDie": 6
+      }
+    ],
+    "boss": {
+      "kind": "combat",
+      "text": "The Choir's cantor raises a staff of knotted finger bones.",
+      "monster": "cultist-fanatic",
+      "count": [
+        1,
+        1
+      ],
+      "escort": "skeleton",
+      "escortCount": [
+        2,
+        3
+      ]
+    },
+    "loot": [
+      40,
+      120
+    ]
+  },
+  "factions": [
+    {
+      "ref": "quiet-hand",
+      "population": 40,
+      "founders": 3,
+      "minScore": 4,
+      "recruit": {
+        "traits": {
+          "Greedy": 2,
+          "Lazy": 1,
+          "Gregarious": 1
+        },
+        "abilities": {
+          "dex": 1
+        },
+        "classes": {
+          "rogue": 4,
+          "bard": 2,
+          "warlock": 1
+        },
+        "faiths": {
+          "veiled-coin": 3
+        },
+        "poor": 2,
+        "miserable": 1
+      },
+      "actions": {
+        "racket": 2,
+        "smuggle": 2,
+        "theft": 4,
+        "whisper": 1
+      },
+      "founded": "Hooded figures are seen slipping into the cellar of {den} long after closing. Whatever meets down there swears by {patron}, and it is called {name}."
+    },
+    {
+      "ref": "gilded-scale",
+      "population": 35,
+      "founders": 3,
+      "minScore": 3,
+      "recruit": {
+        "traits": {
+          "Ambitious": 1,
+          "Greedy": 1
+        },
+        "professions": {
+          "merchant": 3,
+          "smith": 1,
+          "brewer": 1,
+          "barkeep": 1
+        },
+        "faiths": {
+          "aurel": 2
+        },
+        "owners": 3
+      },
+      "actions": {
+        "caravan": 2,
+        "vigilance": 2
+      },
+      "hall": "the Gilded Scale guildhall",
+      "founded": "{names} found a chapter of {name} in {town}: fair weight, fair price, and a louder voice at the council."
+    },
+    {
+      "ref": "compass-lodge",
+      "population": 30,
+      "founders": 3,
+      "minScore": 3,
+      "recruit": {
+        "traits": {
+          "Ambitious": 1,
+          "Gregarious": 1
+        },
+        "heroes": 3,
+        "faiths": {
+          "red-banner": 1
+        }
+      },
+      "actions": {
+        "contract": 3,
+        "recruitHero": 1
+      },
+      "hall": "the Compass Lodge hall",
+      "founded": "{names} hang a compass over the door of {den} and declare a chapter of {name}: maps shared, healing split, contracts of their own."
+    },
+    {
+      "ref": "unshut-book",
+      "population": 55,
+      "founders": 2,
+      "minScore": 4,
+      "recruit": {
+        "abilities": {
+          "int": 2
+        },
+        "classes": {
+          "wizard": 4,
+          "reliquarian": 4,
+          "cartographer": 2,
+          "sorcerer": 2,
+          "warlock": 2,
+          "bard": 1
+        },
+        "faiths": {
+          "ysolde": 3
+        },
+        "traits": {
+          "Shy": 1
+        }
+      },
+      "actions": {
+        "scry": 2,
+        "contract": 1,
+        "study": 1
+      },
+      "hall": "the Athenaeum of the Unshut Book",
+      "founded": "{names} open a chapter of {name} in {town}, and start buying every old map and relic the town has."
+    },
+    {
+      "ref": "dawn-wardens",
+      "population": 50,
+      "founders": 2,
+      "minScore": 4,
+      "recruit": {
+        "classes": {
+          "paladin": 5,
+          "fighter": 2,
+          "cleric": 2,
+          "warden": 1
+        },
+        "faiths": {
+          "even-scale": 3,
+          "lantern-mother": 2,
+          "ferryman": 2
+        },
+        "traits": {
+          "Generous": 1
+        },
+        "abilities": {
+          "wis": 1
+        }
+      },
+      "actions": {
+        "patrol": 2,
+        "hunt": 3
+      },
+      "hall": "the Wardens' chapter house",
+      "founded": "{names} kneel before {patron}'s altar and swear {town} to the protection of {name}. Their banner goes up over the gate."
+    },
+    {
+      "ref": "thornward-circle",
+      "population": 40,
+      "founders": 2,
+      "minScore": 4,
+      "recruit": {
+        "classes": {
+          "druid": 5,
+          "ranger": 3,
+          "warden": 3,
+          "hedge-witch": 3
+        },
+        "faiths": {
+          "greenhush": 3
+        },
+        "professions": {
+          "farmer": 1
+        },
+        "traits": {
+          "Shy": 1
+        }
+      },
+      "actions": {
+        "bless": 3,
+        "protest": 1
+      },
+      "hall": "the Thornward grove-house",
+      "founded": "{names} plant a ring of thorn at the edge of {town} and call it a grove: {name} keeps watch over the land here now."
+    },
+    {
+      "ref": "hollow-choir",
+      "population": 45,
+      "founders": 2,
+      "minScore": 4,
+      "recruit": {
+        "miserable": 3,
+        "bereaved": 3,
+        "poor": 1,
+        "classes": {
+          "warlock": 3
+        },
+        "traits": {
+          "Greedy": 1,
+          "Shy": 1
+        }
+      },
+      "actions": {
+        "rite": 3,
+        "graves": 2
+      },
+      "founded": "Someone has scratched a sewn-shut mouth into the door of the burying ground. Old women make signs against it and will not say why."
+    }
+  ],
+  "smuggleTake": 8,
+  "vigilanceCost": 15,
+  "dormantDays": 30,
+  "hallBuilding": "guildhall",
+  "hallReserve": 20,
+  "wardenWatch": 0.15,
+  "corruptWatch": 0.6,
+  "wakenHeat": 30,
+  "whisperReliability": 70,
+  "quietDays": 20,
+  "founderGift": 0.05,
+  "cooldowns": {
+    "graves": 12,
+    "protest": 20,
+    "racket": 4,
+    "vigilance": 10,
+    "whisper": 6,
+    "theft": 3
+  },
+  "theftMinCash": 30,
+  "maxDues": 2
+}

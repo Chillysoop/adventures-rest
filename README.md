@@ -88,6 +88,32 @@ Shrines, the store and the temple (`Systems/Shrines.cs`, `content/game/shrines.j
 - At 40 residents the council can endow a temple: it tithes the devout, keeps a holy day, posts bounties from its own
   coffers on undead and schemer dens, heals heroes fully for a fee, and raises a fallen hero for 250 gold.
 
+The pantheon (`Systems/Faith.cs`, `content/original/deities.json`, `content/game/faith.json`), GDD rule W8:
+
+- Thirteen original gods on the D&D domain archetypes (light, forge, nature, war, law, death, trickery, trade, storm,
+  knowledge, and three evil gods only cults serve). Newcomers lean to a god by race, trade, class and temperament;
+  clerics and paladins arrive sworn. The charter shrine is the Lantern Mother's, the temple goes to the largest
+  congregation, and any other god with six followers pools coin for a shrine of its own (up to four).
+- Each god keeps its holy day at its own house: the faithful gather, offer, take vows and quarrel with rival faiths; a
+  lawful or good temple preaches against the secret faction its god hates; temples crusade against the site kinds their
+  god hates. Heroes kneel at their god's altar before they march (+1 to hit for the expedition).
+- Devotion builds divine favour, and a god acts when it brims over (rarer each time): healing light, a ripened harvest,
+  ringing forges, a war banner that steadies the walls, a law god's scales that expose the guilty, the Ferryman's
+  lanterns that put the dead back to sleep, a free scrying, a lucky purse, a masterless caravan, a storm on the warband.
+
+Factions (`Systems/Factions.cs`, `content/original/factions.json`, `content/game/factions.json`), GDD rules C10, C11:
+
+- Seven factions take root as the town grows and enough townsfolk fit them: the Quiet Hand (thieves' guild), the Gilded
+  Scale (merchants), the Compass Lodge (adventurers), the Order of the Unshut Book (arcane), the Wardens of the Dawn
+  Gate (knights), the Thornward Circle (druids) and the Hollow Choir (death cult). Five more are written for later.
+- Members pay dues and recruit; open factions build a hall and fund contracts from it. Each day a faction may act on
+  its agenda: burgle, run a racket, smuggle in what the market is short of, sell a true tip about a site, send a
+  caravan, post a reward for thieves, fund a bounty, send for a hero, sponsor a scrying, patrol, hunt cults, bless the
+  fields, block the lumber road, hold a rite or rob graves. Left alone, the Hollow Choir wakes a crypt of the dead.
+- Secret factions gather heat from their crimes, sermons and the knights' hunting until the watch exposes them. The
+  mayor's levers: `CrackDown` an exposed faction (leader run out, members fined, coffers seized) or `SupportFaction`
+  with treasury gold. A thieves' guild member in the captain's seat weakens the watch; knights strengthen it and the walls.
+
 Lairs (`Systems/Lairs.cs`, `content/game/lairs.json`), GDD rules E4, E8, E9:
 
 - Every site grows off-screen at its kind's pace; a strong lair puts more creatures in every fight but the boss's, and

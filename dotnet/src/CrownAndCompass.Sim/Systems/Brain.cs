@@ -18,7 +18,7 @@ public static class Brain
             if (a.Departed || a.IsAway) continue;
             UpdateNeeds(a);
             Execute(town, a, Choose(town, a));
-            SampleMood(a, Council.FestivalMood(town) + (a.Activity == Activity.Praying ? town.Content.Shrines.PrayMood : 0));
+            SampleMood(a, Council.FestivalMood(town) + (a.Activity == Activity.Praying ? town.Content.Shrines.PrayMood : 0) + Faith.Mood(town, a));
         }
     }
 
