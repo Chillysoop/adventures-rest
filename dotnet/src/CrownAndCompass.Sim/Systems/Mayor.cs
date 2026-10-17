@@ -1,34 +1,58 @@
 namespace CrownAndCompass.Sim.Systems;
 
 /// <summary>
-/// Stand-in for the player while the sim runs headless: zones land as it fills and commissions
-/// charter houses when the homeless pile up. The real game replaces this with player input.
+/// Stand-in for the player while the sim runs headless: zones land as it fills, raises a granary
+/// and a watch house as the town grows, and commissions charter houses when the homeless pile up.
+/// The real game replaces the planning with player input (<see cref="Planning"/>).
 /// </summary>
 public static class Mayor
 {
-    public static void Daily(Town town)
+    /// <param name="plan">Zone land and raise government buildings; off when a player plans the town.</param>
+    /// <param name="defend">Raise the watch house too; off when a player sees to the defenses.</param>
+    public static void Daily(Town town, bool plan = true, bool defend = true)
     {
-        KeepZoned(town, Zone.Residential, 3, 7.5, true);
-        KeepZoned(town, Zone.Commercial, 2, 6.5, true);
-        KeepZoned(town, Zone.Farmland, 2, 99, false);
+        if (plan)
+        {
+            KeepZoned(town, Zone.Residential, 3, 7.5, 0);
+            KeepZoned(town, Zone.Commercial, 2, 6.5, 0);
+            KeepZoned(town, Zone.Industry, 2, 9.5, 5);
+            KeepZoned(town, Zone.Farmland, 2, 99, 5.5);
+            RaiseWorks(town, defend);
+        }
         CommissionHousing(town);
     }
 
-    private static void KeepZoned(Town town, Zone zone, int minVacant, double maxDist, bool preferNear)
+    /// <param name="ring">Distance from the hall the zone prefers; 0 keeps it as near the hall as it can.</param>
+    private static void KeepZoned(Town town, Zone zone, int minVacant, double maxDist, double ring)
     {
-        int vacant = town.Lots.Count(l => l.Zone == zone && l.IsVacant && l.OwnerId == null);
-        double Key(double d) => preferNear ? d : Math.Abs(d - 5.5);
+        int vacant = Planning.VacantZoned(town, zone);
+        double Key(double d) => ring == 0 ? d : Math.Abs(d - ring);
         var picked = town.Lots
             .Where(l =>
             {
                 double d = Town.DistanceFromCenter(l);
-                return l.Zone == Zone.None && d <= maxDist && (preferNear || d >= 5);
+                return l.Zone == Zone.None && d <= maxDist && (ring == 0 || d >= ring - 0.5);
             })
             .OrderBy(l => Key(Town.DistanceFromCenter(l)))
             .ThenBy(l => l.Id)
             .Take(Math.Max(0, minVacant - vacant))
             .ToList();
         foreach (var l in picked) l.Zone = zone;
+    }
+
+    /// <summary>A granary once the town is a village, and a watch house once it keeps a watch.</summary>
+    private static void RaiseWorks(Town town, bool defend)
+    {
+        if (town.Buildings.Any(b => b.IsSite && Planning.IsGovernment(town, b.Def))) return;
+        foreach (var (id, pop, watch, spare) in new[] { ("granary", 25, 0, 150.0), ("watch_house", 30, 2, 200.0) })
+        {
+            var d = town.Content.Building(id);
+            if ((id == "watch_house" && !defend) || town.Buildings.Any(b => b.Def.Id == id) || town.Population < pop || town.Watch < watch) continue;
+            if (Planning.Blocked(town, d) != null || town.Treasury < Planning.Cost(town, d) + spare) continue;
+            var lot = Planning.CivicLot(town);
+            if (lot != null) Planning.Place(town, id, lot.Id);
+            return;
+        }
     }
 
     /// <summary>Build a charter house for the homeless, paid by the treasury. Returns whether one was started.</summary>

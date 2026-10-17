@@ -94,7 +94,7 @@ public static class Threat
     {
         var d = town.Content.Enemy.Defense;
         int heroLevels = town.Heroes.Where(a => !a.IsAway).Sum(a => a.Hero!.Level);
-        double baseDefense = town.Watch * d.Watchman + heroLevels * d.HeroLevel + town.Workers.Count * d.MilitiaPerWorker + Faith.Defense(town) + Factions.Defense(town) + (allies ? World.AllyTroops(town) : 0);
+        double baseDefense = town.Watch * d.Watchman * Planning.WatchFactor(town) + heroLevels * d.HeroLevel + town.Workers.Count * d.MilitiaPerWorker + Faith.Defense(town) + Factions.Defense(town) + (allies ? World.AllyTroops(town) : 0);
         return baseDefense * Fortification(town);
     }
 
@@ -265,7 +265,7 @@ public static class Threat
     {
         var d = town.Content.Enemy.Defense;
         var home = town.Heroes.Where(a => !a.IsAway);
-        return (town.Watch * d.Watchman + home.Sum(a => a.Hero!.Level) * d.HeroLevel) * Fortification(town) * (0.7 + town.Rng.Next() * 0.6);
+        return (town.Watch * d.Watchman * Planning.WatchFactor(town) + home.Sum(a => a.Hero!.Level) * d.HeroLevel) * Fortification(town) * (0.7 + town.Rng.Next() * 0.6);
     }
 
     /// <summary>

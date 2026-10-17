@@ -231,7 +231,7 @@ public static class Lairs
     private static bool Toll(Town town, SiteState s)
     {
         var mark = town.Buildings
-            .Where(b => b.Complete && b.Def.Zone == Zone.Commercial && b.OwnerId != null && b.Cash > 20)
+            .Where(b => b.Complete && b.Def.Zone is Zone.Commercial or Zone.Industry && b.OwnerId != null && b.Cash > 20)
             .OrderByDescending(b => b.Cash)
             .ThenBy(b => b.Id)
             .FirstOrDefault();
