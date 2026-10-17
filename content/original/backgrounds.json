@@ -1,0 +1,14 @@
+[
+  { "id": "caravan-guard", "name": "Caravan Guard", "source": "crown-and-compass",
+    "text": "You rode the trade roads for coin. You know which merchants pay and which roads get people killed.",
+    "benefits": [{ "name": "Road Sense", "type": "town", "text": "Joins caravan escort bounties first and haggles a better reward." }] },
+  { "id": "disgraced-councillor", "name": "Disgraced Councillor", "source": "crown-and-compass",
+    "text": "You held a seat in another town until a scandal took it. You still know how a vote is bought.",
+    "benefits": [{ "name": "Old Friends", "type": "town", "text": "Can stand for a council seat sooner than other heroes, and is a likely target for bribes." }] },
+  { "id": "frontier-settler", "name": "Frontier Settler", "source": "crown-and-compass",
+    "text": "You came with the first wagons and cleared the first fields. This town is yours as much as the mayor's.",
+    "benefits": [{ "name": "Rooted", "type": "town", "text": "Never leaves town over low pay, and fights hardest when the town is attacked." }] },
+  { "id": "guild-apprentice", "name": "Guild Apprentice", "source": "crown-and-compass",
+    "text": "You learned a trade under a master before the road called. The guild still counts you as one of its own.",
+    "benefits": [{ "name": "Guild Ties", "type": "town", "text": "Buys gear at guild prices and brings the guild's news to the tavern." }] }
+]

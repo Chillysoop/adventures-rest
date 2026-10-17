@@ -1,0 +1,69 @@
+{
+  "_about": "Knobs the importer (scripts/import-content.ts) uses to turn tabletop entries into real-time hints (the `rt` block on every entry). Change a number here and re-run the importer; nothing in src/ reads this file.",
+  "secondsPerRound": 2,
+  "castSeconds": {
+    "reaction": 0, "turn": 0, "bonus-action": 0.75, "action": 1.5, "round": 2,
+    "1minute": 6, "5minutes": 12, "10minutes": 20, "1hour": 60, "8hours": 240, "12hours": 300, "24hours": 480
+  },
+  "downtimeCastTimes": ["1hour", "8hours", "12hours", "24hours"],
+  "spellCooldown": { "perLevel": 4, "perLevelSquared": 1 },
+  "duration": { "_about": "Tabletop minutes become sqrt(minutes) * secondsPerSqrtMinute of real time, capped; rounds use secondsPerRound.", "secondsPerSqrtMinute": 20, "maxSeconds": 900 },
+  "rangeBands": { "touch": 5, "short": 30, "medium": 120 },
+  "monsterTiers": [
+    { "tier": 0, "label": "minion", "maxCr": 0.5 },
+    { "tier": 1, "label": "local", "maxCr": 4 },
+    { "tier": 2, "label": "regional", "maxCr": 10 },
+    { "tier": 3, "label": "realm", "maxCr": 16 },
+    { "tier": 4, "label": "legend", "maxCr": 99 }
+  ],
+  "bruteHpOverMedian": 1.3,
+  "rarityTiers": { "common": 1, "uncommon": 2, "rare": 3, "very-rare": 4, "legendary": 5, "artifact": 6 },
+  "rarityValueGp": { "common": 75, "uncommon": 300, "rare": 2500, "very-rare": 20000, "legendary": 100000, "artifact": 500000 },
+  "classRoles": {
+    "barbarian": "frontline", "fighter": "frontline", "paladin": "frontline", "vanguard": "frontline",
+    "monk": "skirmisher", "rogue": "skirmisher", "ranger": "skirmisher",
+    "wizard": "caster", "sorcerer": "caster", "warlock": "caster", "witch": "caster",
+    "cleric": "support", "druid": "support", "bard": "support", "theurge": "support",
+    "mechanist": "specialist", "marshal": "support"
+  },
+  "classPrimary": {
+    "_about": "The SRD 5.2 data has no primary abilities; these come from its class tables.",
+    "barbarian": ["str"], "bard": ["cha"], "cleric": ["wis"], "druid": ["wis"], "fighter": ["str", "dex"], "monk": ["dex", "wis"],
+    "paladin": ["str", "cha"], "ranger": ["dex", "wis"], "rogue": ["dex"], "sorcerer": ["cha"], "warlock": ["cha"], "wizard": ["int"]
+  },
+  "aliases": {
+    "_about": "Names that mean the same thing across editions or books. Key = an older or third-party name, value = the name it folds into.",
+    "subclasses": {
+      "draconic-bloodline": "draconic-sorcery", "school-of-evocation": "evoker", "the-fiend": "fiend-patron",
+      "way-of-the-open-hand": "warrior-of-the-open-hand", "open-hand": "warrior-of-the-open-hand",
+      "berserker": "path-of-the-berserker", "draconic": "draconic-sorcery", "fiend": "fiend-patron"
+    },
+    "species": {},
+    "spells": { "feeblemind": "befuddlement" },
+    "monsters": {
+      "acolyte": "priest-acolyte", "androsphinx": "sphinx-of-valor", "gynosphinx": "sphinx-of-lore", "azer": "azer-sentinel",
+      "bugbear": "bugbear-warrior", "centaur": "centaur-trooper", "cult-fanatic": "cultist-fanatic", "flying-sword": "animated-flying-sword",
+      "giant-poisonous-snake": "giant-venomous-snake", "gnoll": "gnoll-warrior", "goblin": "goblin-warrior", "half-red-dragon-veteran": "half-dragon",
+      "hobgoblin": "hobgoblin-warrior", "kobold": "kobold-warrior", "merfolk": "merfolk-skirmisher", "minotaur": "minotaur-of-baphomet",
+      "poisonous-snake": "venomous-snake", "quipper": "piranha", "rug-of-smothering": "animated-rug-of-smothering", "sahuagin": "sahuagin-warrior",
+      "sea-horse": "seahorse", "giant-sea-horse": "giant-seahorse", "shrieker": "shrieker-fungus", "succubus-incubus": "succubus",
+      "swarm-of-poisonous-snakes": "swarm-of-venomous-snakes", "swarm-of-quippers": "swarm-of-piranhas", "thug": "tough",
+      "tribal-warrior": "warrior-infantry", "veteran": "warrior-veteran", "elf-drow": "drow", "gnome-deep-svirfneblin": "deep-gnome-svirfneblin",
+      "swarm-of-beetles": "swarm-of-insects", "swarm-of-centipedes": "swarm-of-insects", "swarm-of-spiders": "swarm-of-insects", "swarm-of-wasps": "swarm-of-insects"
+    },
+    "equipment": {
+      "arrow-bow": "arrows-20", "blowgun-needles": "needles-50", "crossbow-bolt": "bolts-20", "sling-bullets": "bullets-sling-20",
+      "clothes-costume": "costume", "flask-or-tankard": "flask", "jug-or-pitcher": "jug", "lamp-oil-flask": "oil", "mirror-steel": "mirror",
+      "playing-card-set": "playing-cards", "robes": "robe", "rope-hempen-50-feet": "rope", "spike-iron": "spikes-iron",
+      "acid-vial": "acid", "half-plate": "half-plate-armor"
+    },
+    "magic-items": {
+      "dwarven-plate": "dwarven-armor", "plate-armor-of-etherealness": "armor-of-etherealness",
+      "belt-of-frost-giant-strength": "belt-of-giant-strength-frost-or-stone", "belt-of-stone-giant-strength": "belt-of-giant-strength-frost-or-stone",
+      "belt-of-hill-giant-strength": "belt-of-giant-strength-hill", "belt-of-fire-giant-strength": "belt-of-giant-strength-fire",
+      "belt-of-cloud-giant-strength": "belt-of-giant-strength-cloud", "belt-of-storm-giant-strength": "belt-of-giant-strength-storm",
+      "orb-of-dragonkind": "dragon-orb", "figurine-of-wondrous-power-obsidian-steed": "figurine-of-wondrous-power-obsidian-stead"
+    }
+  },
+  "thirdPartyOrder": ["bfrd", "a5e-ag", "a5e-ddg", "a5e-gpg", "spells-that-dont-suck", "toh", "tob-2023", "tob2", "tob3", "ccdx", "deepm", "deepmx", "kp", "wz", "vom", "a5e-mm"]
+}

@@ -1,0 +1,108 @@
+{
+  "classes": {
+    "srd2024": 12,
+    "srd2014Only": 0,
+    "srd2014Merged": 12,
+    "open": {
+      "bfrd": 4,
+      "a5e-ag": 1
+    },
+    "openDuplicatesDropped": 12
+  },
+  "subclasses": {
+    "srd2024": 12,
+    "srd2014Only": 0,
+    "srd2014Merged": 12,
+    "open": {
+      "bfrd": 8,
+      "a5e-ag": 3,
+      "toh": 76
+    },
+    "openDuplicatesDropped": 9
+  },
+  "species": {
+    "srd2024": 9,
+    "srd2014Only": 6,
+    "srd2014Merged": 7,
+    "open": {
+      "toh": 40
+    },
+    "openDuplicatesDropped": 0
+  },
+  "backgrounds": {
+    "srd2024": 4,
+    "srd2014Only": 0,
+    "srd2014Merged": 1,
+    "open": {
+      "a5e-ag": 17,
+      "a5e-ddg": 4,
+      "a5e-gpg": 2,
+      "toh": 19
+    },
+    "openDuplicatesDropped": 4
+  },
+  "feats": {
+    "srd2024": 17,
+    "srd2014Only": 0,
+    "srd2014Merged": 1,
+    "open": {
+      "a5e-ag": 59,
+      "toh": 13
+    },
+    "openDuplicatesDropped": 0
+  },
+  "spells": {
+    "srd2024": 339,
+    "srd2014Only": 1,
+    "srd2014Merged": 318,
+    "open": {
+      "a5e-ag": 57,
+      "spells-that-dont-suck": 180,
+      "toh": 90,
+      "deepm": 511,
+      "deepmx": 64,
+      "kp": 31,
+      "wz": 43
+    },
+    "openDuplicatesDropped": 319
+  },
+  "monsters": {
+    "srd2024": 331,
+    "srd2014Only": 7,
+    "srd2014Merged": 316,
+    "open": {
+      "bfrd": 59,
+      "tob-2023": 408,
+      "tob2": 382,
+      "tob3": 396,
+      "ccdx": 356,
+      "a5e-mm": 273
+    },
+    "openDuplicatesDropped": 616
+  },
+  "conditions": {
+    "srd2024": 15,
+    "srd2014Only": 0,
+    "srd2014Merged": 15,
+    "open": {
+      "a5e-ag": 6
+    },
+    "openDuplicatesDropped": 14
+  },
+  "equipment": {
+    "srd2024": 202,
+    "srd2014Only": 65,
+    "srd2014Merged": 172,
+    "open": {},
+    "openDuplicatesDropped": 0
+  },
+  "magic-items": {
+    "srd2024": 280,
+    "srd2014Only": 43,
+    "srd2014Merged": 245,
+    "open": {
+      "vom": 873
+    },
+    "openDuplicatesDropped": 1
+  }
+}

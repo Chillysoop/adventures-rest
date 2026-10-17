@@ -1,0 +1,11 @@
+[
+  { "id": "bounty-hunter", "name": "Bounty Hunter", "source": "crown-and-compass", "type": "general",
+    "text": "Takes posted bounties over open adventuring and is quicker to finish them.",
+    "benefits": [{ "text": "Bounties claimed by this hero pay a tenth more, and marked targets cannot hide from them under fog." }] },
+  { "id": "tavern-regular", "name": "Tavern Regular", "source": "crown-and-compass", "type": "origin",
+    "text": "Everyone at the bar knows this hero's name.",
+    "benefits": [{ "text": "Hears rumors first and recovers from bad moods in one night at the tavern." }] },
+  { "id": "town-hero", "name": "Town Hero", "source": "crown-and-compass", "type": "epic-boon", "prerequisite": "Saved the town in a siege",
+    "text": "Songs are sung about this hero.",
+    "benefits": [{ "text": "While in town, raises the renown of every hero who adventures with them, and recruits come from further away." }] }
+]
