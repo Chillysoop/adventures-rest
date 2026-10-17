@@ -282,7 +282,7 @@ public static class World
         var bossEnc = new EncounterDef
         {
             Kind = "combat",
-            Monster = boss.Id,
+            Monster = content.BossOf(boss.Id).Id,
             Count = [1, 1],
             Escort = escorts.Count > 0 ? rng.Pick(escorts).Id : null,
             EscortCount = escorts.Count > 0 ? [1, 1 + level / 3] : null,
@@ -294,6 +294,7 @@ public static class World
             Id = id,
             Name = name,
             Tier = level,
+            Kind = Lairs.KindOf(boss.Type, ""),
             Distance = region.Days,
             Encounters = deck,
             Boss = bossEnc,

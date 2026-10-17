@@ -60,5 +60,16 @@
       { "kind": "treasure", "gold": [60, 140], "mimicChance": 0.2, "text": "an altar heaped with offerings" }
     ],
     "boss": { "kind": "combat", "monster": "cult_fanatic", "count": [1, 1], "escort": "ghoul", "escortCount": [1, 2], "text": "the drowned priest beneath the bell" },
-    "loot": [200, 400] }
+    "loot": [200, 400] },
+  { "id": "hollowmere", "kind": "schemers", "name": "the Hollowmere", "tier": 2, "distance": 2, "habitats": ["swamp", "forest"],
+    "encounters": [
+      { "kind": "wander", "cr": [0.25, 1], "budget": 400, "text": "something follows the party through the reeds" },
+      { "kind": "hazard", "dc": 13, "damageDie": 8, "text": "the mere sucks at their boots and will not let go" },
+      { "kind": "combat", "monster": "giant-frog", "count": [3, 5], "text": "the hag's pets rise from the black water" },
+      { "kind": "parley", "dc": 14, "gold": [10, 40], "text": "a sweet voice in the fog offers a bargain" },
+      { "kind": "combat", "monster": "cultist", "count": [2, 4], "text": "villagers in her thrall, eyes blank, knives out" },
+      { "kind": "treasure", "gold": [30, 80], "mimicChance": 0.1, "text": "a heap of trinkets traded for years of someone's life" }
+    ],
+    "boss": { "kind": "combat", "monster": "green_hag", "count": [1, 1], "escort": "giant-toad", "escortCount": [1, 2], "text": "the hag in her hut of bones and wet thatch" },
+    "loot": [90, 180] }
 ]

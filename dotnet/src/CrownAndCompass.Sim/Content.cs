@@ -471,6 +471,72 @@ public sealed record ShrineRules
     public PotionRules Potion { get; init; } = new();
 }
 
+/// <summary>How one kind of enemy lives off-screen (GDD enemy table).</summary>
+public sealed record LairKind
+{
+    public double Growth { get; init; } = 0.5;
+    public string Verb { get; init; } = "";
+}
+
+public sealed record TributeRules
+{
+    /// <summary>Gold a tribe demands per point of strength.</summary>
+    public double PerStrength { get; init; } = 0.8;
+
+    /// <summary>Days a paid tribe stays quiet and stops growing.</summary>
+    public int QuietDays { get; init; } = 12;
+
+    /// <summary>The stand-in mayor pays when the treasury holds this many times the demand.</summary>
+    public double PayIfTreasuryOver { get; init; } = 4;
+}
+
+public sealed record OutpostRules
+{
+    public double Cost { get; init; } = 150;
+    public double Upkeep { get; init; } = 2;
+    public int Max { get; init; } = 3;
+}
+
+/// <summary>Lairs: how sites grow, act by their kind, and are resettled (content/game/lairs.json).</summary>
+public sealed record LairRules
+{
+    public double StartStrength { get; init; } = 20;
+    public double MaxStrength { get; init; } = 100;
+
+    /// <summary>Each this much strength puts one more creature in every fight there.</summary>
+    public double StrengthPerSwell { get; init; } = 35;
+    public int MaxSwell { get; init; } = 2;
+
+    /// <summary>Strength at which a lair starts acting on the world.</summary>
+    public double ActAt { get; init; } = 25;
+    public int[] ActEveryDays { get; init; } = [5, 10];
+    public IReadOnlyDictionary<string, LairKind> Kinds { get; init; } = new Dictionary<string, LairKind>();
+    public double RetreatLossPerKill { get; init; } = 3;
+
+    /// <summary>Strength a scattered tribe's survivors bring to the nearest tribe that takes them in.</summary>
+    public double ScatterJoin { get; init; } = 15;
+    public TributeRules Tribute { get; init; } = new();
+    public double UndeadKillAt { get; init; } = 60;
+
+    /// <summary>Chance the shrine's or temple's wards turn the walking dead from the fields.</summary>
+    public double WardShrine { get; init; } = 0.5;
+    public double WardTemple { get; init; } = 0.8;
+    public int ThrallStealDays { get; init; } = 7;
+    public int[] ThrallSteal { get; init; } = [8, 25];
+    public int[] ResettleDays { get; init; } = [25, 45];
+
+    /// <summary>Chance the new occupant of a cleared site is a tier worse.</summary>
+    public double WorseChance { get; init; } = 0.4;
+
+    /// <summary>Challenge-rating range of a new occupant's leader, by tier.</summary>
+    public double[][] BossCr { get; init; } = [];
+    public OutpostRules Outpost { get; init; } = new();
+
+    /// <summary>Raiders wait for a day when at least this share of the heroes' levels is away.</summary>
+    public double SoftShare { get; init; } = 0.5;
+    public int MaxWaitDays { get; init; } = 3;
+}
+
 /// <summary>A magic item as loot: which library slots a delve's hoard can hold, and what each grants.</summary>
 public sealed record LootRules
 {
@@ -682,6 +748,9 @@ public sealed class Content
     /// <summary>The themed regions, sites and peoples of the wilds.</summary>
     public WorldRules World { get; init; } = new();
 
+    /// <summary>How lairs grow, act and are resettled.</summary>
+    public LairRules Lairs { get; init; } = new();
+
     /// <summary>How taverns trade in rumours.</summary>
     public RumorRules Rumors { get; init; } = new();
 
@@ -761,8 +830,15 @@ public sealed class Content
         };
     }
 
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, MonsterDef> _bosses = new();
+
+    /// <summary>A library creature leading a band: the same stats, fought as the boss ("id@boss").</summary>
+    public MonsterDef BossOf(string id) => _bosses.GetOrAdd($"{id}@boss", key => Monster(id) with { Id = key, Boss = true });
+
     public MonsterDef Monster(string id) =>
-        _monsters.TryGetValue(id, out var m) ? m : throw new KeyNotFoundException($"Unknown monster {id}");
+        _monsters.TryGetValue(id, out var m) ? m
+        : id.EndsWith("@boss", StringComparison.Ordinal) ? BossOf(id[..^5])
+        : throw new KeyNotFoundException($"Unknown monster {id}");
 
     /// <summary>Library creatures that can wander into a site: any of its habitats, inside the challenge range, with an attack to fight with.</summary>
     public List<MonsterDef> Wanderers(SiteDef site, double[] cr) =>
@@ -805,6 +881,7 @@ public sealed class Content
             Loot = Parse<LootRules>("loot.json"),
             World = Parse<WorldRules>("world.json"),
             Rumors = Parse<RumorRules>("rumors.json"),
+            Lairs = Parse<LairRules>("lairs.json"),
             Shrines = Parse<ShrineRules>("shrines.json"),
         };
     }

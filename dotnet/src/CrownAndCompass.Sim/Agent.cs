@@ -144,6 +144,9 @@ public sealed class Agent
 
     public bool PrayedToday { get; set; }
 
+    /// <summary>The site whose schemers have this resident in their thrall; they steal for it until it falls.</summary>
+    public string? ThrallOf { get; set; }
+
     public double Gold { get; set; }
 
     // Needs, 0 = satisfied, 100 = desperate.

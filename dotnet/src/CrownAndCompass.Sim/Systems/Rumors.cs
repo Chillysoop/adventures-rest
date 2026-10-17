@@ -118,6 +118,7 @@ public static class Rumors
     /// <summary>How much a tavern is likely to talk about each site: the unheard of and the near most.</summary>
     private static double Weight(Town town, SiteState s)
     {
+        if (s.Held) return 0;
         // Taverns only talk of places in country someone has heard of (World): the far wilds stay silent.
         if (s.Known == SiteKnowledge.Unheard) return World.RegionKnown(town, s) ? Rules(town).UnheardWeight / Math.Max(1, s.Def.Distance) : 0;
         // Talk of a cleared ruin taken again starts only once it has had time to be.

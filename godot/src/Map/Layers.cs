@@ -504,6 +504,11 @@ public partial class OverlayLayer(MapView map) : Layer(map)
                 case LiveSource.Scout:
                     DrawArc(pin, 2.4f, 0, Mathf.Tau, 48, new Color("8cc084", 0.5f), 0.06f, true);
                     break;
+                case LiveSource.Outpost:
+                    // The town's banner over a held site.
+                    Ring(pin, 2.4f, new Color("e8c36a", 0.5f), 0.07f);
+                    Poly(Palette.Gold, pin + new Vector2(-0.05f, -r - 0.9f), pin + new Vector2(0.4f, -r - 0.75f), pin + new Vector2(-0.05f, -r - 0.6f));
+                    break;
             }
             if (Watch.MirrorAt(town, site.Def.Id) != null)
             {
@@ -652,6 +657,7 @@ public partial class LabelLayer(MapView map) : Control
                     LiveSource.Scout => "Scout watching",
                     LiveSource.Mirror => "Mirror",
                     LiveSource.Spire => "Spire sight",
+                    LiveSource.Outpost => "Held",
                     _ => "In sight",
                 },
                 Sight.Scouted when fog.LastReport(site.Def.Id) is Report rep => town.Day - rep.Day > Fog.StaleDays ? $"Last seen day {rep.Day}" : $"Scouted day {rep.Day}",

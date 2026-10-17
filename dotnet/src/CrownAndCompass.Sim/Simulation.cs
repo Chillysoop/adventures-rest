@@ -87,6 +87,7 @@ public sealed class Simulation
         World.Daily(t, Options.AutoMayor);
         Quests.Daily(t, Options.AutoMayor && Options.AutoBounties, Options.FreeCompanies);
         Watch.Daily(t, Options.AutoMayor && Options.AutoBounties);
+        Lairs.Daily(t, Options.AutoMayor);
         Rumors.Daily(t);
         Shrines.Daily(t, Options.AutoMayor);
         Economy.Daily(t, true);
@@ -123,6 +124,9 @@ public sealed class Simulation
 
     /// <summary>Pay for a mirror pair and have one hidden at a site, for a lasting live view.</summary>
     public Scout? PlantMirror(string siteId) => Watch.PlantMirror(Town, siteId);
+
+    /// <summary>Garrison a cleared site so nothing moves back in, and the town sees it live.</summary>
+    public bool HoldSite(string siteId) => Lairs.Hold(Town, siteId);
 
     /// <summary>Endow a temple to the town's god once the town is big enough.</summary>
     public Building? BuildTemple() => Shrines.BuildTemple(Town);

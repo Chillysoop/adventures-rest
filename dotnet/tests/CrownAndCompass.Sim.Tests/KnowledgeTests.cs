@@ -63,7 +63,8 @@ public class KnowledgeTests
             var sim = new Simulation(new SimulationOptions { Seed = seed });
             var t = sim.Town;
             for (int day = 0; day < 150 && Knowledge.Scryers(t).Count == 0; day++) sim.RunDays(1);
-            if (Knowledge.Scryers(t).Count == 0) continue;
+            // A town with the Scrying Pool scries for free; this checks the paid kind.
+            if (Knowledge.Scryers(t).Count == 0 || Watch.FreeScryingsLeft(t) > 0) continue;
             t.Treasury += 500;
             var caster = Knowledge.Scryers(t)[0];
             double gold = caster.Gold;

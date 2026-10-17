@@ -84,6 +84,7 @@ public static class Expedition
         public readonly List<Combatant> Party;
         public readonly OrderedMap<int, int> Kills = new();
         public int Gold;
+        public int Swell;
         public int Xp;
         private bool _skipNextCombat;
         private readonly Rng _rng;
@@ -262,7 +263,7 @@ public static class Expedition
             var rng = _rng;
             var def = _content.Monster(e.Monster);
             var foes = new List<Foe>();
-            int n = rng.Range(e.Count[0], e.Count[1] + 1);
+            int n = rng.Range(e.Count[0], e.Count[1] + 1) + (def.Boss ? 0 : Swell);
             for (int i = 0; i < n; i++) foes.Add(new Foe(def));
             if (!string.IsNullOrEmpty(e.Escort) && e.EscortCount != null)
             {
@@ -471,9 +472,10 @@ public static class Expedition
     private static string Cap(string s) => char.ToUpperInvariant(s[0]) + s[1..];
 
     /// <param name="slotsSpent">Spell slots the party spent on sending-stone messages; they come out of the healers' heals.</param>
-    public static ExpeditionResult Run(Rng rng, Content content, SiteDef site, IReadOnlyList<Agent> heroes, int slotsSpent = 0)
+    /// <param name="swell">Extra creatures in every fight but the boss's, from how strong the lair has grown.</param>
+    public static ExpeditionResult Run(Rng rng, Content content, SiteDef site, IReadOnlyList<Agent> heroes, int slotsSpent = 0, int swell = 0)
     {
-        var run = new Delve(rng, content, heroes, site);
+        var run = new Delve(rng, content, heroes, site) { Swell = swell };
         foreach (var c in run.Party)
         {
             int spent = Math.Min(slotsSpent, c.Heals);
