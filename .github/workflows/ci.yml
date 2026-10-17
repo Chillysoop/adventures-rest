@@ -10,9 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-node@v4
         with:
-          dotnet-version: 8.0.x
-      - run: dotnet test --configuration Release
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
       - name: Smoke-run the simulation
-        run: dotnet run --project src/CrownAndCompass.Cli --configuration Release -- --days 60 --seed 1 > ledger.txt && tail -40 ledger.txt
+        run: npm run sim -- --days 60 --seed 1 | tail -40
