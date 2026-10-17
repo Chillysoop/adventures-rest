@@ -155,9 +155,9 @@ public static class Ui
             ScrollActive = false,
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            Text = bbcode,
             MetaUnderlined = false,
         };
+        r.Text = Coined(bbcode);
         if (size != 14)
         {
             r.AddThemeFontSizeOverride("normal_font_size", size);
@@ -177,6 +177,46 @@ public static class Ui
     public static string C(Color c, string text) => $"[color={Hex(c)}]{text}[/color]";
 
     public static string Days(int n) => $"{n} {(n == 1 ? "day" : "days")}";
+
+    /// <summary>Which icon goes with a meter's label.</summary>
+    public static string? MeterIcon(string label) => label switch
+    {
+        "Warband" => "warband",
+        "Your defence" => "defence",
+        "Mandate" => "mandate",
+        "Favour" => "favour",
+        "Suspicion" => "suspicion",
+        _ => null,
+    };
+
+    // ---- Icons: one per resource, used wherever it appears (assets/icons/*.svg) ----
+
+    private static readonly Dictionary<string, Texture2D> Icons = [];
+
+    public static Texture2D Icon(string name)
+    {
+        if (!Icons.TryGetValue(name, out var t)) Icons[name] = t = GD.Load<Texture2D>($"res://assets/icons/{name}.svg");
+        return t;
+    }
+
+    /// <summary>An icon inline in rich text.</summary>
+    public static string Img(string name, int size = 15) => $"[img={size}x{size} valign=center]res://assets/icons/{name}.svg[/img]";
+
+    private static readonly System.Text.RegularExpressions.Regex Coins = new(@"(?<![\w#=])(\d[\d,]*(?:\.\d+)?)(g\b| gold\b)", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    /// <summary>Put the gold icon before every sum of money in a piece of rich text: "120g" and "120 gold".</summary>
+    public static string Coined(string bbcode) => Coins.Replace(bbcode, m => $"{Img("gold", 14)}{m.Groups[1].Value}{(m.Groups[2].Value == "g" ? "" : " gold")}");
+
+    /// <summary>A button label with its sum of money shown with the gold icon instead of a "g".</summary>
+    public static void GoldButton(Button b)
+    {
+        var m = System.Text.RegularExpressions.Regex.Match(b.Text, @"(\d[\d,]*)g\b");
+        if (!m.Success) return;
+        b.Text = b.Text.Remove(m.Index + m.Length - 1, 1);
+        b.Icon = Icon("gold");
+        b.ExpandIcon = false;
+        b.AddThemeConstantOverride("icon_max_width", 16);
+    }
 }
 
 /// <summary>
@@ -257,6 +297,7 @@ public sealed class Pane
             foreach (var b in buttons)
             {
                 var btn = new Button { Text = b.Label, Disabled = !b.Enabled, SizeFlagsVertical = Control.SizeFlags.ShrinkCenter, ThemeTypeVariation = b.Primary ? "Post" : "" };
+                Ui.GoldButton(btn);
                 var press = b.Press;
                 btn.Pressed += () => press();
                 h.AddChild(btn);
@@ -278,6 +319,7 @@ public sealed class Pane
             foreach (var b in buttons)
             {
                 var btn = new Button { Text = b.Label, Disabled = !b.Enabled, ThemeTypeVariation = b.Primary ? "Post" : "" };
+                Ui.GoldButton(btn);
                 var press = b.Press;
                 btn.Pressed += () => press();
                 h.AddChild(btn);
@@ -292,8 +334,9 @@ public sealed class Pane
         {
             var h = new HBoxContainer();
             h.AddThemeConstantOverride("separation", 8);
+            if (Ui.MeterIcon(label) is string icon) h.AddChild(new TextureRect { Texture = Ui.Icon(icon), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2(16, 16), SizeFlagsVertical = Control.SizeFlags.ShrinkCenter });
             var l = Ui.Label(label, Ui.Ink2, null, 12);
-            l.CustomMinimumSize = new Vector2(96, 0);
+            l.CustomMinimumSize = new Vector2(80, 0);
             h.AddChild(l);
             var bar = new MeterBar { Value = (float)Math.Clamp(value / 100, 0, 1), Fill = bad ? Ui.Bad : Ui.Gold, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(60, 8), SizeFlagsVertical = Control.SizeFlags.ShrinkCenter };
             h.AddChild(bar);

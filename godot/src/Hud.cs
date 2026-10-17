@@ -130,13 +130,11 @@ public partial class Main
     private void BuildPaused()
     {
         _pausedPill = Ui.Label("PAUSED", new Color("f6eedb"), Ui.Bold, 12);
-        var pill = new PanelContainer { MouseFilter = MouseFilterEnum.Ignore };
+        var pill = new PanelContainer { MouseFilter = MouseFilterEnum.Ignore, SizeFlagsHorizontal = SizeFlags.ShrinkCenter };
         pill.AddThemeStyleboxOverride("panel", Ui.Flat(new Color(0.08f, 0.06f, 0.04f, 0.8f), 12, 4, 99));
         pill.AddChild(_pausedPill);
-        AddChild(pill);
-        pill.SetAnchorsPreset(LayoutPreset.CenterTop);
-        pill.Position = new Vector2(-34, TopBar + 10);
-        pill.GrowHorizontal = GrowDirection.Both;
+        // Under the alert strip, centred.
+        BuildAlerts().AddChild(pill);
     }
 
     // ---------- Management windows ----------
@@ -328,7 +326,7 @@ public partial class Main
         card.SetMeta("until", _clockReal + (e.Importance == Importance.Major ? 30 : 14));
         card.GuiInput += ev =>
         {
-            if (ev is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left }) OpenWindow(Tab.Ledger);
+            if (ev is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left }) GoTo(e);
             if (ev is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Right }) card.QueueFree();
         };
         _feed.AddChild(card);
@@ -350,6 +348,7 @@ public partial class Main
     private void ClearFeed()
     {
         foreach (var c in _feed.GetChildren()) c.Free();
+        ClearAlerts();
     }
 
     // ---------- Corner: minimap, campaign map, markers ----------

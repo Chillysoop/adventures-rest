@@ -29,6 +29,8 @@ public partial class MapView : Control
 
     /// <summary>Fraction of the current hour already elapsed, for smooth marching between steps.</summary>
     public float HourFraction { get; set; }
+    /// <summary>Game hours per real second (0 while paused); sets how briskly figures walk.</summary>
+    public float TimeScale { get; set; } = 1;
 
     /// <summary>Extra trees per forest tile, for stress-testing a denser late-game map (--trees).</summary>
     public float TreeScale { get; set; } = 1;

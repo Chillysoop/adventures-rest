@@ -148,10 +148,16 @@ takes many hours to explore. Art credits are in [`godot/assets/CREDITS.md`](godo
   boundary for the Spire's reach. Scouts are drawn on the road like parties and vanish into the fog the same way.
 - Screen layout after Foundation: the map fills the screen; the resource bar, clock, threat and speeds run along the top;
   the management windows (Ledger, War, Council, Bounties, Faith, Chronicles) open from a dock at the bottom and can be
-  dragged; news slides in on the right (click for the Ledger, right-click to dismiss); the inspector sits bottom left
+  dragged; news slides in on the right (click to go to it, right-click to dismiss); the inspector sits bottom left
   (a site's page offers a scrying, a scout or a mirror; a hero's shows their class, spells and items); the corner map,
   the campaign-map toggle and, on the campaign map, the marker palette sit bottom right. Esc closes the inspector, then
   the window.
+- Alerts: a strip under the top bar shows what needs the mayor now (a motion waiting, raids, a siege on the way,
+  homeless townsfolk, a falling mandate, empty coffers, a hostile faction) and the latest big news. Clicking one opens
+  the window that answers it and, when it happened somewhere, flies the camera there and inspects the place or person.
+- Resource icons: every resource has one icon (`godot/assets/icons/`), used in the top bar, meters, buttons and anywhere
+  text names an amount of gold.
+- Townsfolk walk at a steady pace, a little brisker at higher speeds and still when paused.
 - Faith and factions: each god's followers, houses, holy days and favour towards a miracle; the known factions with
   their members, coffers, suspicion and standing, and the mayor's levers (crack down, or support with treasury gold).
 
@@ -163,7 +169,7 @@ godot --headless --path godot --export-release Windows build/windows/CrownAndCom
 
 Options after `--`: `--seed`, `--day`, `--hour`, `--speed 0-4`, `--tab` (opens that window: ledger, war, council, bounties, faith, chronicles), `--site <id>`, `--autoplay` (the stand-in mayor
 plays), `--bounty <site>`, `--scry <site>`, `--scout <site>`, `--mirror <site>`, `--send`, `--recall`,
-`--build palisade|tower|pool|spire`, `--relic <item-id>`, `--hero` (inspect the most storied hero), `--no-pause` (keep
+`--build palisade|tower|pool|spire`, `--relic <item-id>`, `--hero` (inspect the most storied hero), `--alert N` (click the Nth alert once it shows), `--no-pause` (keep
 time running through war news), `--screenshot <png>`, `--frames N`, `--cam <distance>` (with `--look x,y` or `--site`
 to aim it), `--flyout` (for clips: pull back from the town to the whole map), `--yaw <quarter turns>`, `--strategic`, `--trees <density>` (stress test) and `--bench` (prints frame time,
 map CPU time, draw calls and triangles, then quits). For a clip, add Godot's own `--write-movie clip.avi --fixed-fps 30 --quit-after 900` before the `--`.
