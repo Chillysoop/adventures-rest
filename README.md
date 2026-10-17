@@ -21,12 +21,34 @@ runs in the browser.
     motions the mayor signs or vetoes, decrees, and Mandate
   - `systems/threat.ts`, `systems/director.ts`: the Bloodtusk warband growing off-screen, its
     escalation (omens, war camp, raids, the march), the Last Stand siege, and the Director that paces it
-  - `content/*.json`: buildings, races, names, hero classes, monsters and sites (data, so it can be modded)
+- `content/game/*.json`: buildings, races, names, hero classes, monsters, sites, the council and the enemy
+  (data, so it can be modded; shared by the TypeScript and C# sims)
 - `src/client`: the browser game. A Canvas 2D map (`map.ts`) and the HTML panels (`main.ts`,
   `index.html`): time controls, the Ledger, the bounty board, Chronicles and an inspector
 - `scripts/build-client.ts`: bundles the client into one self-contained HTML file
 - `src/cli.ts`: headless runner that prints the Ledger
 - `tests/`: determinism, growth, invariants, dice and market
+
+## The C# sim (`dotnet/`)
+
+The game is moving to Godot 4 with C#. `dotnet/` holds a .NET 8 port of the simulation with no Godot
+dependency, so a Godot client can reference it directly:
+
+- `dotnet/src/CrownAndCompass.Sim`: the sim, system by system the same shape as `src/sim` (`Systems/Brain.cs`,
+  `Economy.cs`, `Quests.cs`, `Threat.cs`, ...). It embeds `content/game/*.json` at build time.
+- `dotnet/src/CrownAndCompass.Cli`: the headless runner, same flags and output as `npm run sim`
+- `dotnet/tests/CrownAndCompass.Sim.Tests`: xUnit, every TypeScript test ported, plus checks of the JS
+  number semantics the port relies on
+
+The TypeScript sim stays as the reference until the Godot client replaces the web build. For any seed and
+day count both CLIs print a byte-identical Ledger; `scripts/parity.sh` diffs them (seeds 1 to 8, 200 days, in
+default and full `--all --stats --chronicles` output) and runs in CI.
+
+```bash
+dotnet test dotnet/CrownAndCompass.sln
+dotnet run --project dotnet/src/CrownAndCompass.Cli -c Release -- --days 120 --seed 1
+scripts/parity.sh                      # or: scripts/parity.sh 300 9 10 11
+```
 
 ## Time model
 

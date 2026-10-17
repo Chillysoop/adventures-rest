@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>CrownAndCompass.Sim</RootNamespace>
+  </PropertyGroup>
+
+  <!-- The gameplay data lives in content/game/ at the repo root, shared with the TypeScript sim. -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\..\content\game\*.json" LogicalName="content.%(Filename)%(Extension)" Link="content\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>
