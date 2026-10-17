@@ -135,9 +135,13 @@ export class MapView {
     let r = 3;
     for (const l of town.lots) if (l.zone !== 'None') r = Math.max(r, Math.hypot(MARGIN + l.x + 0.5 - c, MARGIN + l.y + 0.5 - c) + 0.7);
     this.townRadius += (r - this.townRadius) * ease;
+    const base = town.content.sites.length;
     town.sites.forEach((s, i) => {
-      const a = -Math.PI / 2 + (i / town.sites.length) * Math.PI * 2 + 0.35;
+      // Content sites keep fixed slots; sites raised later (the war camp) sit between them.
+      const slot = i < base ? i : i - base + 0.5;
+      const a = -Math.PI / 2 + (slot / base) * Math.PI * 2 + 0.35;
       const rr = this.townRadius + 1.3 + s.def.distance * 1.1;
+      if (!this.sitePins[i]) this.sitePins[i] = { id: s.def.id, x: c + Math.cos(a) * rr, y: c + Math.sin(a) * rr };
       const pin = this.sitePins[i];
       pin.x = c + Math.cos(a) * rr;
       pin.y = c + Math.sin(a) * rr;
@@ -222,13 +226,19 @@ export class MapView {
     this.drawRiver();
     this.drawLots(town);
     const night = nightness(town);
+    this.drawPalisade(town);
     this.drawBuildings(town, night);
     this.drawAgents(town, dt);
     this.drawTrees();
     this.drawSites(town);
     this.drawParties(town);
+    this.drawWarband(town);
     this.drawSelection(town);
 
+    if (town.outcome === 'defeat') {
+      ctx.fillStyle = 'rgba(90, 20, 10, 0.28)';
+      ctx.fillRect(-WORLD, -WORLD, WORLD * 3, WORLD * 3);
+    }
     // Day and night: a cool wash after dusk, warm light spilling from windows drawn on top.
     if (night > 0) {
       ctx.fillStyle = `rgba(20, 28, 64, ${0.5 * night})`;
@@ -311,6 +321,114 @@ export class MapView {
       if (b.isSite) this.drawSite(b, x, y);
       else this.drawBuilding(b, x, y, night);
     }
+  }
+
+  /** Bounds of the walled town: every zoned lot except the farms, which lie outside the wall. */
+  private wallBounds(town: Town): { x0: number; y0: number; x1: number; y1: number } | null {
+    let x0 = Infinity;
+    let y0 = Infinity;
+    let x1 = -Infinity;
+    let y1 = -Infinity;
+    for (const l of town.lots) {
+      if (l.zone === 'None' || l.zone === 'Farmland') continue;
+      x0 = Math.min(x0, l.x);
+      y0 = Math.min(y0, l.y);
+      x1 = Math.max(x1, l.x + 1);
+      y1 = Math.max(y1, l.y + 1);
+    }
+    return x0 === Infinity ? null : { x0: MARGIN + x0 - 0.35, y0: MARGIN + y0 - 0.35, x1: MARGIN + x1 + 0.35, y1: MARGIN + y1 + 0.35 };
+  }
+
+  private drawPalisade(town: Town): void {
+    const d = town.defenses;
+    if (d.palisade === 'none') return;
+    const b = this.wallBounds(town);
+    if (!b) return;
+    const { ctx } = this;
+    const building = d.palisade === 'building';
+    const total = town.content.enemy.palisade.days * HOURS_PER_DAY;
+    const done = building && d.palisadeReadyTick !== null ? 1 - (d.palisadeReadyTick - town.tick) / total : 1;
+    // Sharpened stakes along the perimeter, laid clockwise so a rising wall reads as progress.
+    const w = b.x1 - b.x0;
+    const h = b.y1 - b.y0;
+    const perim = 2 * (w + h);
+    const stakes = Math.floor(perim / 0.16);
+    const shown = Math.floor(stakes * Math.max(0, Math.min(1, done)));
+    for (let i = 0; i < shown; i++) {
+      let t = (i / stakes) * perim;
+      let x: number;
+      let y: number;
+      if (t < w) [x, y] = [b.x0 + t, b.y0];
+      else if ((t -= w) < h) [x, y] = [b.x1, b.y0 + t];
+      else if ((t -= h) < w) [x, y] = [b.x1 - t, b.y1];
+      else [x, y] = [b.x0, b.y1 - (t - w)];
+      ctx.fillStyle = 'rgba(40,25,10,0.3)';
+      ctx.fillRect(x - 0.04, y + 0.02, 0.12, 0.08);
+      ctx.fillStyle = i % 2 ? '#8a6239' : '#7a5530';
+      ctx.beginPath();
+      ctx.moveTo(x - 0.06, y + 0.06);
+      ctx.lineTo(x - 0.06, y - 0.14);
+      ctx.lineTo(x, y - 0.24);
+      ctx.lineTo(x + 0.06, y - 0.14);
+      ctx.lineTo(x + 0.06, y + 0.06);
+      ctx.fill();
+    }
+    // Watchtowers at the corners.
+    const corners = [
+      [b.x0, b.y0],
+      [b.x1, b.y0],
+      [b.x1, b.y1],
+      [b.x0, b.y1],
+    ];
+    for (let i = 0; i < Math.min(4, d.towers); i++) {
+      const [x, y] = corners[i];
+      ctx.fillStyle = 'rgba(40,25,10,0.3)';
+      ctx.fillRect(x - 0.18, y - 0.08, 0.42, 0.3);
+      ctx.fillStyle = '#6b4a2a';
+      ctx.fillRect(x - 0.2, y - 0.5, 0.4, 0.55);
+      ctx.fillStyle = '#9b3d2a';
+      ctx.beginPath();
+      ctx.moveTo(x - 0.28, y - 0.48);
+      ctx.lineTo(x, y - 0.8);
+      ctx.lineTo(x + 0.28, y - 0.48);
+      ctx.fill();
+    }
+  }
+
+  /** The warband on the march, closing on the town as the arrival day nears; and the siege itself. */
+  private drawWarband(town: Town): void {
+    const en = town.enemy;
+    if (en.stage !== 'marching' || en.arrivalTick === null) return;
+    const total = town.content.enemy.marchDays * HOURS_PER_DAY;
+    const t = Math.max(0, Math.min(1, 1 - (en.arrivalTick - town.tick) / total));
+    const camp = this.sitePins.find((p) => p.id === town.content.enemy.outpost.id);
+    const from = camp ?? { x: WORLD / 2 + 9, y: WORLD / 2 - 9 };
+    const c = WORLD / 2;
+    const x = from.x + (c - from.x) * t * 0.75;
+    const y = from.y + (c - from.y) * t * 0.75;
+    const { ctx } = this;
+    const n = Math.min(60, Math.round(en.strength / 6));
+    for (let i = 0; i < n; i++) {
+      const ox = (hash(i * 5 + 1) - 0.5) * 1.6;
+      const oy = (hash(i * 5 + 2) - 0.5) * 1.1;
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      ctx.beginPath();
+      ctx.ellipse(x + ox, y + oy + 0.05, 0.08, 0.035, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = i % 7 === 0 ? '#3a1a14' : '#6a2a1f';
+      ctx.beginPath();
+      ctx.arc(x + ox, y + oy - 0.03, 0.065, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // The red banner.
+    ctx.fillStyle = PALETTE.ink;
+    ctx.fillRect(x - 0.02, y - 0.95, 0.045, 0.9);
+    ctx.fillStyle = '#c0392b';
+    ctx.beginPath();
+    ctx.moveTo(x + 0.025, y - 0.95);
+    ctx.lineTo(x + 0.5, y - 0.8);
+    ctx.lineTo(x + 0.025, y - 0.62);
+    ctx.fill();
   }
 
   private drawSite(b: Building, x: number, y: number): void {
@@ -501,7 +619,8 @@ export class MapView {
       ctx.beginPath();
       ctx.ellipse(pin.x + 0.05, pin.y + 0.1, r, r * 0.8, 0, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = site.cleared ? '#6f8f5b' : site.def.tier >= 3 ? '#4a2c3a' : site.def.tier === 2 ? '#5a3d2e' : '#5e5236';
+      const enemy = site.def.id === town.content.enemy.outpost.id;
+      ctx.fillStyle = site.cleared ? '#6f8f5b' : enemy ? '#8e2a1f' : site.def.tier >= 3 ? '#4a2c3a' : site.def.tier === 2 ? '#5a3d2e' : '#5e5236';
       ctx.strokeStyle = site.cleared ? '#e8f0d8' : bounty ? PALETTE.gold : '#1d1712';
       ctx.lineWidth = bounty ? 0.09 : 0.05;
       ctx.beginPath();

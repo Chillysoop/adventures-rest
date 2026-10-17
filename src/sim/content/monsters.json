@@ -11,5 +11,8 @@
   { "id": "ghoul", "name": "ghoul", "plural": "ghouls", "hp": 22, "ac": 12, "attack": 4, "damageDie": 8, "damageBonus": 2, "xp": 200, "undead": true },
   { "id": "cultist", "name": "cultist", "plural": "cultists", "hp": 9, "ac": 12, "attack": 3, "damageDie": 6, "damageBonus": 1, "xp": 25 },
   { "id": "cult_fanatic", "name": "drowned priest", "plural": "drowned priests", "hp": 33, "ac": 13, "attack": 5, "damageDie": 10, "damageBonus": 3, "xp": 450, "boss": true },
-  { "id": "mimic", "name": "mimic", "plural": "mimics", "hp": 58, "ac": 12, "attack": 5, "damageDie": 16, "damageBonus": 3, "xp": 450 }
+  { "id": "mimic", "name": "mimic", "plural": "mimics", "hp": 58, "ac": 12, "attack": 5, "damageDie": 16, "damageBonus": 3, "xp": 450 },
+  { "id": "orc", "name": "orc", "plural": "orcs", "hp": 15, "ac": 13, "attack": 5, "damageDie": 12, "damageBonus": 3, "xp": 100 },
+  { "id": "orc_war_chief", "name": "orc war chief", "plural": "orc war chiefs", "hp": 45, "ac": 16, "attack": 6, "damageDie": 12, "damageBonus": 4, "xp": 450, "boss": true },
+  { "id": "orc_warlord", "name": "Grukk Bloodtusk", "plural": "warlords", "hp": 75, "ac": 16, "attack": 6, "damageDie": 10, "damageBonus": 4, "xp": 1800, "boss": true, "named": true }
 ]

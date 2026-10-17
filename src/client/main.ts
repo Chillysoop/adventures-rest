@@ -1,7 +1,21 @@
 // Browser client: runs the simulation in real time with pause, draws the town, and shows the
 // Ledger, the bounty board, Chronicles and an inspector beside the map.
 
-import { HOURS_PER_DAY, Importance, Simulation, competence, formatAbilities, pendingMotion, type Agent, type LedgerEntry } from '../sim/index.ts';
+import {
+  HOURS_PER_DAY,
+  Importance,
+  Simulation,
+  buildCost,
+  competence,
+  defense,
+  estimatedStrength,
+  formatAbilities,
+  fortification,
+  pendingMotion,
+  type Agent,
+  type LedgerEntry,
+  type ThreatStage,
+} from '../sim/index.ts';
 import { suggestedReward } from '../sim/systems/quests.ts';
 import { MapView, type Selection } from './map.ts';
 
@@ -18,14 +32,15 @@ let speed = 1;
 let lastSpeed = 1;
 let acc = 0;
 let lastFrame = performance.now();
-let tab: 'ledger' | 'council' | 'bounties' | 'chronicles' | 'inspect' = 'ledger';
+let tab: 'ledger' | 'war' | 'council' | 'bounties' | 'chronicles' | 'inspect' = 'ledger';
 let ledgerFilter: Importance = Importance.Notable;
 let dirty = true;
 let shownChronicles = -1;
+let endShown = false;
 const openChronicles = new Set<number>();
 
 function newTown(seed: number): void {
-  sim = new Simulation({ seed, autoBounties: false, autoCouncil: false });
+  sim = new Simulation({ seed, autoBounties: false, autoCouncil: false, autoDefense: false });
   const canvas = $<HTMLCanvasElement>('#map');
   map = new MapView(canvas, sim);
   map.resize();
@@ -34,9 +49,14 @@ function newTown(seed: number): void {
   sim.town.ledger.onWrite((e) => {
     addEntry(e);
     if (e.importance === Importance.Major || (e.category === 'Council' && e.text.includes(' moves that '))) toast(e);
+    // Real time with pause: the war's turning points stop the clock so the player can react.
+    if (e.category === 'War' && e.importance === Importance.Major && speed > 0) setSpeed(0);
+    if (sim.town.outcome && !endShown) showEnd();
   });
   $('#town-name').textContent = sim.town.name;
   $('#seed').textContent = `seed ${seed}`;
+  endShown = false;
+  $('#end').hidden = true;
   openChronicles.clear();
   shownChronicles = -1;
   dirty = true;
@@ -103,6 +123,10 @@ function renderHeader(): void {
   const s = sim.snapshot();
   const hour = t.tick % HOURS_PER_DAY;
   $('#motion-dot').hidden = !pendingMotion(t);
+  const stage = STAGES[t.enemy.stage];
+  const pill = $('#threat');
+  pill.textContent = t.enemy.stage === 'marching' && t.enemy.arrivalTick !== null ? `Siege in ${Math.ceil((t.enemy.arrivalTick - t.tick) / HOURS_PER_DAY)}d` : stage.label;
+  pill.className = `threat ${stage.cls}`;
   $('#clock').textContent = `Day ${t.day} · ${String(hour).padStart(2, '0')}:00`;
   setHTML($('#stats'), [
     stat('Population', String(s.population)),
@@ -152,6 +176,79 @@ function renderBounties(): void {
     t.taverns.length === 0
       ? 'Heroes need a tavern before they will come to town.'
       : `${idle} ${idle === 1 ? 'hero is' : 'heroes are'} in town. Parties need at least three, and tougher sites want higher levels.`;
+}
+
+const STAGES: Record<ThreatStage, { label: string; cls: string; text: string }> = {
+  quiet: { label: 'Quiet', cls: 'calm', text: 'The hills are quiet. For now, the only danger is in the dungeons.' },
+  omens: { label: 'Omens', cls: 'uneasy', text: 'Something is stirring in the hills. The signs are in the Ledger.' },
+  probing: { label: 'Scouts', cls: 'uneasy', text: 'Orc scouts are watching the town, and a war camp has been raised. Burning it slows the warband.' },
+  raids: { label: 'Raids', cls: 'danger', text: 'The warband raids the outlying farms. Every raid it gets away with, it grows bolder.' },
+  marching: { label: 'Siege', cls: 'danger', text: 'The warband is marching on the town. Man the walls.' },
+  defeated: { label: 'Victory', cls: 'calm', text: 'The warlord is dead and the warband broken. The Last Stand is won.' },
+  victorious: { label: 'Fallen', cls: 'danger', text: 'The town has fallen to the warband.' },
+};
+
+function renderWar(): void {
+  const t = sim.town;
+  const d = t.defenses;
+  const stage = STAGES[t.enemy.stage];
+  const est = estimatedStrength(t);
+  const def = defense(t);
+  const scale = Math.max(def, est ?? 0, 1);
+  const camp = t.sites.find((s) => s.def.id === t.content.enemy.outpost.id);
+  const palCost = buildCost(t, 'palisade');
+  const towCost = buildCost(t, 'tower');
+  const maxTowers = t.content.enemy.tower.max;
+  const home = t.heroes.filter((a) => !a.isAway);
+  const arrival =
+    t.enemy.stage === 'marching' && t.enemy.arrivalTick !== null
+      ? `<p class="alarm">They reach the walls in ${days(Math.ceil((t.enemy.arrivalTick - t.tick) / HOURS_PER_DAY))}. Heroes in town will face the warlord.</p>`
+      : '';
+  const palisade =
+    d.palisade === 'built'
+      ? '<span class="tag good">Built</span>'
+      : d.palisade === 'building'
+        ? `<span class="tag gold">Building, ${days(Math.ceil(((d.palisadeReadyTick ?? t.tick) - t.tick) / HOURS_PER_DAY))} left</span>`
+        : `<button class="post" data-build="palisade" ${t.treasury >= palCost ? '' : 'disabled'}>Build ${palCost}g</button>`;
+  const towers =
+    d.palisade !== 'built'
+      ? '<span class="tag">Needs the palisade</span>'
+      : d.towers + d.towersBuilding.length >= maxTowers
+        ? `<span class="tag good">${d.towers} of ${maxTowers}</span>`
+        : `<span class="tag">${d.towers}${d.towersBuilding.length ? ` (+${d.towersBuilding.length} building)` : ''} of ${maxTowers}</span> <button class="post" data-build="tower" ${t.treasury >= towCost ? '' : 'disabled'}>Build ${towCost}g</button>`;
+  setHTML(
+    $('#pane-war'),
+    `<div class="mandate"><h3 class="war-title">${esc(cap(t.content.enemy.name))}</h3><p>${stage.text}</p>${arrival}</div>
+    <h4>Strength</h4>
+    <div class="row"><span class="lbl">Warband</span>${est === null ? '<i class="unknown">Unknown</i>' : meter((100 * est) / scale, 'bad')}<b>${est === null ? '?' : `~${est}`}</b></div>
+    <div class="row"><span class="lbl">Your defence</span>${meter((100 * def) / scale)}<b>${Math.round(def)}</b></div>
+    <p class="note">Defence counts the watch, heroes in town, a militia of townsfolk, and the walls (×${fortification(t).toFixed(2)}). The warband grows while dungeons go uncleared.</p>
+    <h4>Fortifications</h4>
+    <ul class="defs">
+      <li><div><b>Palisade</b><small>Multiplies your defence by ${t.content.enemy.defense.palisade}.</small></div>${palisade}</li>
+      <li><div><b>Watchtowers</b><small>Each adds ${Math.round(t.content.enemy.defense.perTower * 100)}% more.</small></div>${towers}</li>
+      <li><div><b>Watch</b><small>Hired through the Captain's motions in the Council.</small></div><span class="tag">${t.watch} watchmen</span></li>
+      <li><div><b>Heroes in town</b><small>Only heroes can kill the warlord when he comes.</small></div><span class="tag">${home.length}</span></li>
+    </ul>
+    ${camp && !camp.cleared ? `<p class="note">The war camp feeds the warband. Post a bounty on it in the Bounties tab to strike first.</p>` : ''}`,
+  );
+}
+
+const days = (n: number): string => `${n} ${n === 1 ? 'day' : 'days'}`;
+
+function showEnd(): void {
+  const t = sim.town;
+  endShown = true;
+  setSpeed(0);
+  const won = t.outcome === 'victory';
+  $('#end').innerHTML = `<div class="end-card ${won ? 'won' : 'lost'}"><h2>${won ? 'The Last Stand is won' : `${esc(t.name)} has fallen`}</h2>
+    <p>${
+      won
+        ? `${esc(t.content.enemy.leader)} lies dead before your walls on day ${t.day}. The Marchlands will sing of ${esc(t.name)}.`
+        : `${esc(t.content.enemy.leader)}'s banner flies over the town hall on day ${t.day}.`
+    } The full account is in the Chronicles.</p>
+    <div class="actions"><button class="post" data-end="new">New town</button><button class="ghost" data-end="stay">Keep watching</button></div></div>`;
+  $('#end').hidden = false;
 }
 
 function meter(value: number, cls = ''): string {
@@ -346,6 +443,7 @@ function frame(now: number): void {
     renderHeader();
     if (tab === 'bounties') renderBounties();
     else if (tab === 'council') renderCouncil();
+    else if (tab === 'war') renderWar();
     else if (tab === 'inspect') renderInspect();
     else if (tab === 'chronicles' && sim.town.chronicles.length !== shownChronicles) renderChronicles();
     dirty = false;
@@ -357,7 +455,7 @@ function frame(now: number): void {
 
 function wire(): void {
   document.addEventListener('click', (ev) => {
-    const el = (ev.target as HTMLElement).closest<HTMLElement>('[data-agent],[data-tab],[data-speed],[data-filter],[data-site],[data-chron],[data-motion]');
+    const el = (ev.target as HTMLElement).closest<HTMLElement>('[data-agent],[data-tab],[data-speed],[data-filter],[data-site],[data-chron],[data-motion],[data-build],[data-end]');
     if (!el) return;
     ev.preventDefault();
     if (el.dataset.agent) select({ kind: 'agent', id: Number(el.dataset.agent) });
@@ -366,6 +464,12 @@ function wire(): void {
     else if (el.dataset.filter) {
       ledgerFilter = Number(el.dataset.filter) as Importance;
       applyLedgerFilter();
+    } else if (el.dataset.build) {
+      sim.buildDefense(el.dataset.build as 'palisade' | 'tower');
+      dirty = true;
+    } else if (el.dataset.end) {
+      $('#end').hidden = true;
+      if (el.dataset.end === 'new') newTown(1 + Math.floor(Math.random() * 9999));
     } else if (el.dataset.motion) {
       sim.decideMotion(Number(el.dataset.motion), el.dataset.sign === '1');
       dirty = true;

@@ -5,6 +5,7 @@ import monstersJson from './content/monsters.json' with { type: 'json' };
 import sitesJson from './content/sites.json' with { type: 'json' };
 import townJson from './content/town.json' with { type: 'json' };
 import councilJson from './content/council.json' with { type: 'json' };
+import enemyJson from './content/enemy.json' with { type: 'json' };
 
 export const GOODS = ['Food', 'Timber', 'Tools', 'Ale'] as const;
 export type Good = (typeof GOODS)[number];
@@ -67,6 +68,8 @@ export interface MonsterDef {
   xp: number;
   boss?: boolean;
   undead?: boolean;
+  /** A named individual: no article before the name. */
+  named?: boolean;
 }
 
 export type EncounterDef =
@@ -129,6 +132,38 @@ export interface CouncilRules {
   startingMandate: number;
 }
 
+/** The slice's Tier 2 enemy: how it grows, escalates, raids and besieges the town. */
+export interface EnemyDef {
+  name: string;
+  leader: string;
+  leaderMonster: string;
+  startStrength: number;
+  baseGrowth: number;
+  growthPerDay: number;
+  growthPerSite: number;
+  growthPerTier3Site: number;
+  /** A richer town draws a bigger warband. */
+  growthPerResident: number;
+  /** The warlord marches only once the warband is at least this share of the town's defence. */
+  marchConfidence: number;
+  /** Warband strength at which each escalation stage begins. */
+  stages: { omens: number; probing: number; raids: number; march: number };
+  marchDays: number;
+  raidEveryDays: [number, number];
+  raidShare: number;
+  outpostGrowth: number;
+  outpostClearedLoss: number;
+  siegeWaves: number;
+  breachesToFall: number;
+  defense: { watchman: number; heroLevel: number; militiaPerWorker: number; palisade: number; perTower: number };
+  palisade: { cost: number; timber: number; days: number };
+  tower: { cost: number; timber: number; days: number; max: number };
+  outpost: SiteDef;
+  warlordBattle: EncounterDef;
+  omens: string[];
+  probing: string[];
+}
+
 export const isBusiness = (d: BuildingDef): boolean => d.jobs > 0;
 
 /**
@@ -143,6 +178,7 @@ export class Content {
   readonly sites: readonly SiteDef[];
   readonly rules: TownRules;
   readonly council: CouncilRules;
+  readonly enemy: EnemyDef;
 
   constructor(
     buildings: BuildingDef[],
@@ -152,6 +188,7 @@ export class Content {
     sites: SiteDef[],
     rules: TownRules = townJson,
     council: CouncilRules = councilJson as CouncilRules,
+    enemy: EnemyDef = enemyJson as unknown as EnemyDef,
   ) {
     this.buildings = new Map(buildings.map((b) => [b.id, b]));
     this.races = races;
@@ -160,6 +197,7 @@ export class Content {
     this.sites = sites;
     this.rules = rules;
     this.council = council;
+    this.enemy = enemy;
   }
 
   monster(id: string): MonsterDef {

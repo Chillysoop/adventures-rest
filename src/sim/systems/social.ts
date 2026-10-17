@@ -142,10 +142,14 @@ function marry(town: Town, p: Agent, q: Agent): void {
   q.courtingId = null;
 
   // The couple settles in whichever home one of them owns, else wherever has room.
-  let home = ownedHome(town, p) ?? ownedHome(town, q) ?? null;
+  const fits = (b: Building | null | undefined): Building | null =>
+    b && b.openBeds >= (p.homeId === b.id ? 0 : 1) + (q.homeId === b.id ? 0 : 1) ? b : null;
+  const home =
+    fits(ownedHome(town, p)) ??
+    fits(ownedHome(town, q)) ??
+    fits(p.homeId !== null ? town.building(p.homeId) : null) ??
+    fits(q.homeId !== null ? town.building(q.homeId) : null);
   const oldName = q.familyName;
-  if (!home && p.homeId !== null && town.building(p.homeId).openBeds > 0) home = town.building(p.homeId);
-  if (!home && q.homeId !== null && town.building(q.homeId).openBeds > 0) home = town.building(q.homeId);
   if (home) {
     if (p.homeId !== home.id) moveIn(town, p, home);
     if (q.homeId !== home.id) moveIn(town, q, home);

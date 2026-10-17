@@ -17,6 +17,10 @@ runs in the browser.
     stand-in `mayor` that zones land while there is no player
   - `systems/quests.ts`, `systems/expedition.ts`: heroes, the bounty board, adventuring parties, and a
     seeded d20 expedition resolver that writes a Chronicle of every delve
+  - `systems/council.ts`: three council seats (Steward, Speaker, Captain) with loyalty and agendas,
+    motions the mayor signs or vetoes, decrees, and Mandate
+  - `systems/threat.ts`, `systems/director.ts`: the Bloodtusk warband growing off-screen, its
+    escalation (omens, war camp, raids, the march), the Last Stand siege, and the Director that paces it
   - `content/*.json`: buildings, races, names, hero classes, monsters and sites (data, so it can be modded)
 - `src/client`: the browser game. A Canvas 2D map (`map.ts`) and the HTML panels (`main.ts`,
   `index.html`): time controls, the Ledger, the bounty board, Chronicles and an inspector
@@ -44,4 +48,4 @@ npm run build                               # dist/crown-and-compass.html, the p
 The build is one HTML file with no server. Open it directly; `?seed=N` picks a town and `?day=N`
 fast-forwards. Space pauses, 1 to 4 set the speed.
 
-`docs/sample-ledger.txt` is a 120-day run you can read without building anything.
+`docs/sample-ledger.txt` is a 200-day run, through the Last Stand, that you can read without building anything.

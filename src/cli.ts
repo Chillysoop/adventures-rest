@@ -66,6 +66,13 @@ print();
 print(`=== ${town.name} after ${days} days (seed ${seed}) ===`);
 const final = sim.snapshot();
 print(`Population ${final.population} (${town.agents.filter((a) => a.departed).length} have left), treasury ${final.treasury.toFixed(0)} gold.`);
+print(
+  town.outcome === 'victory'
+    ? 'The Last Stand is won: the warlord is dead.'
+    : town.outcome === 'defeat'
+      ? 'The town has fallen to the warband.'
+      : `The warband stands at ${Math.round(town.enemy.strength)} (${town.enemy.stage}); ${town.enemy.raids} raids, ${town.enemy.sieges} sieges so far.`,
+);
 const counts = new Map<string, number>();
 for (const b of town.buildings) if (b.complete) counts.set(b.def.name, (counts.get(b.def.name) ?? 0) + 1);
 for (const [name, n] of [...counts].sort(([a], [b]) => (a < b ? -1 : 1))) print(`  ${name}: ${n}`);
