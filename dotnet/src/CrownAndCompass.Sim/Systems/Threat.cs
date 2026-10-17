@@ -23,6 +23,9 @@ public sealed class EnemyState
     public bool Outpost { get; set; }
     public int Sieges { get; set; }
     public int Raids { get; set; }
+
+    /// <summary>Nights the raiders have hung back because the heroes were home.</summary>
+    public int RaidWaited { get; set; }
     public int LastSignTick { get; set; }
 
     /// <summary>Signs shown lately, so the same rumour doesn't repeat.</summary>
@@ -115,7 +118,7 @@ public static class Threat
         if (en.Stage != ThreatStage.Marching) en.Strength += Growth(town) * director;
         OutpostFalls(town);
         Advance(town);
-        if (en.Stage == ThreatStage.Raids && en.NextRaidTick != null && town.Tick >= en.NextRaidTick) Raid(town);
+        if (en.Stage == ThreatStage.Raids && RaidTonight(town)) Raid(town);
         if (en.Stage == ThreatStage.Marching && en.ArrivalTick != null && town.Tick >= en.ArrivalTick) Siege(town);
         else if (en.Stage != ThreatStage.Marching && town.Tick - en.LastSignTick >= 4 * SimTime.HoursPerDay && town.Rng.Chance(0.35)) Sign(town);
         if (autoMayor) Fortify(town);
@@ -208,14 +211,13 @@ public static class Threat
         var en = town.Enemy;
         var rng = town.Rng;
         en.Raids++;
+        en.RaidWaited = 0;
         en.NextRaidTick = town.Tick + rng.Range(e.RaidEveryDays[0], e.RaidEveryDays[1] + 1) * SimTime.HoursPerDay;
         double raiders = Math.Max(4, Js.Round(en.Strength * e.RaidShare * (0.7 + rng.Next() * 0.6)));
-        var d = e.Defense;
         var home = town.Heroes.Where(a => !a.IsAway).ToList();
-        double local =
-            (town.Watch * d.Watchman + home.Sum(a => a.Hero!.Level) * d.HeroLevel) *
-            Fortification(town) *
-            (0.7 + rng.Next() * 0.6);
+        double local = LocalDefense(town);
+        var party = Lairs.AwayParty(town);
+        string timing = party != null && Lairs.AwayShare(town) >= town.Content.Lairs.SoftShare ? $", while the {party.Name} are away" : "";
 
         // They strike the farm or camp farthest from the town hall.
         var target = town.Buildings
@@ -230,18 +232,18 @@ public static class Threat
             en.Strength = Math.Max(0, en.Strength - raiders * 0.5);
             var champion = home.OrderByDescending(x => x.Hero!.Level).ThenBy(x => x.Id).FirstOrDefault();
             string by = champion != null ? $"{champion.Name} and the watch" : "the watch";
-            town.Log(LedgerCategory.War, Importance.Notable, $"Some {Js.Str(raiders)} raiders fall on {where} in the night, and {by} drive them off.", champion != null ? [champion.Id] : []);
+            town.Log(LedgerCategory.War, Importance.Notable, $"Some {Js.Str(raiders)} raiders fall on {where} in the night{timing}, and {by} drive them off.", champion != null ? [champion.Id] : []);
             town.Tension += 8;
             return;
         }
-        string text = $"Some {Js.Str(raiders)} raiders fall on {where} in the night";
+        string text = $"Some {Js.Str(raiders)} raiders fall on {where} in the night{timing}";
         var victims = new List<int>();
         if (target != null)
         {
             double loot = Math.Floor(target.Cash * 0.6);
             target.Cash -= loot;
             foreach (var (g, q) in target.Stock.ToList()) target.Stock[g] = Math.Floor(q * 0.3);
-            text += $", carrying off the stores and {Js.Str(loot)} gold";
+            text += loot > 0 ? $", carrying off the stores and {Js.Str(loot)} gold" : ", carrying off the stores";
             var workers = target.Workers.Select(town.Agent).Where(a => !a.Departed).ToList();
             if (workers.Count > 0 && rng.Chance(0.45))
             {
@@ -254,6 +256,34 @@ public static class Threat
         town.Log(LedgerCategory.War, Importance.Major, $"{text}. The watch arrives too late.", victims);
         town.Tension += 25 + victims.Count * 10;
         town.Mandate = Math.Max(0, town.Mandate - 4);
+    }
+
+    /// <summary>The watch and the heroes at home against raiders tonight, behind whatever walls there are.</summary>
+    public static double LocalDefense(Town town)
+    {
+        var d = town.Content.Enemy.Defense;
+        var home = town.Heroes.Where(a => !a.IsAway);
+        return (town.Watch * d.Watchman + home.Sum(a => a.Hero!.Level) * d.HeroLevel) * Fortification(town) * (0.7 + town.Rng.Next() * 0.6);
+    }
+
+    /// <summary>
+    /// Raiders pick their night (GDD rule E8): with the heroes home they hang back a day or three; once
+    /// most of the heroes' strength has marched out, they come early.
+    /// </summary>
+    public static bool RaidTonight(Town town)
+    {
+        var en = town.Enemy;
+        var l = town.Content.Lairs;
+        if (en.NextRaidTick == null) return false;
+        bool away = Lairs.AwayShare(town) >= l.SoftShare;
+        if (town.Tick >= en.NextRaidTick)
+        {
+            if (away || en.RaidWaited >= l.MaxWaitDays) return true;
+            en.RaidWaited++;
+            if (en.RaidWaited == 1) town.Log(LedgerCategory.War, Importance.Notable, $"Riders of {town.Content.Enemy.Name} watch the gate from the treeline, counting the heroes at home. They do not come tonight.");
+            return false;
+        }
+        return away && town.Tick >= en.NextRaidTick - 2 * SimTime.HoursPerDay;
     }
 
     private static string Wall(int w) => w == 1 ? "gate" : w == 2 ? "east wall" : "river side";
@@ -461,7 +491,7 @@ public static class Threat
         else if (stage >= StageIndex(ThreatStage.Raids) && town.Treasury > BuildCost(town, DefenseWork.Tower) + 200) Build(town, DefenseWork.Tower);
     }
 
-    private static void Kill(Town town, Agent a)
+    public static void Kill(Town town, Agent a)
     {
         a.Dead = true;
         Population.Depart(town, a);
@@ -470,7 +500,7 @@ public static class Threat
         if (s != null) s.HolderId = null;
     }
 
-    private static double Distance(Town town, int lotId)
+    public static double Distance(Town town, int lotId)
     {
         var l = town.Lots[lotId];
         const double c = 7.5;

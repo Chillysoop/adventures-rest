@@ -32,6 +32,26 @@ public sealed class SiteState(SiteDef def)
 
     /// <summary>When it was last cleared.</summary>
     public int? ClearedTick { get; set; }
+
+    // The lair, off-screen (see Lairs) ------------------------------------------------------------
+
+    /// <summary>How many live there and how bold they are; swells the fights and drives what they do.</summary>
+    public double Strength { get; set; }
+
+    /// <summary>When the lair next acts on the world; null until it has woken.</summary>
+    public int? NextActTick { get; set; }
+
+    /// <summary>Raids put off while the heroes were home.</summary>
+    public int Waited { get; set; }
+
+    /// <summary>Paid tribute buys quiet until this tick.</summary>
+    public int? QuietUntil { get; set; }
+
+    /// <summary>When something new moves into the cleared site, unless the town holds it.</summary>
+    public int? ResettleTick { get; set; }
+
+    /// <summary>The town keeps an outpost here: nothing resettles it, and the town sees it live.</summary>
+    public bool Held { get; set; }
 }
 
 public enum BountyStatus
@@ -392,7 +412,7 @@ public static class Quests
                     members.Select(m => m.Id).ToList());
                 continue;
             }
-            var result = Expedition.Run(town.Rng, town.Content, s.Def, members, party.Sendings);
+            var result = Expedition.Run(town.Rng, town.Content, s.Def, members, party.Sendings, Lairs.Swell(town, s));
 
             var chronicle = new Chronicle(
                 town.Chronicles.Count + 1,
@@ -473,6 +493,7 @@ public static class Quests
             }
             town.Log(LedgerCategory.Quest, Importance.Major, $"{text} (Chronicle {chronicle.Id})", members.Select(m => m.Id).ToList());
             foreach (var (rite, id) in rites) town.Log(LedgerCategory.Faith, Importance.Major, rite, [id]);
+            Lairs.AfterDelve(town, s, result);
             foreach (var it in result.Items)
                 if (it.HeroId == null) Watch.ReceiveRelic(town, it.Item, party.Name);
         }

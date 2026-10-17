@@ -88,6 +88,18 @@ Shrines, the store and the temple (`Systems/Shrines.cs`, `content/game/shrines.j
 - At 40 residents the council can endow a temple: it tithes the devout, keeps a holy day, posts bounties from its own
   coffers on undead and schemer dens, heals heroes fully for a fee, and raises a fallen hero for 250 gold.
 
+Lairs (`Systems/Lairs.cs`, `content/game/lairs.json`), GDD rules E4, E8, E9:
+
+- Every site grows off-screen at its kind's pace; a strong lair puts more creatures in every fight but the boss's, and
+  what a party kills thins it. Once bold, it acts by its kind: beasts hunt the farms, a tribe raids or demands tribute,
+  the dead walk into the fields (and kill, unless the shrine or temple turns them), schemers take a resident in thrall
+  who quietly steals from the treasury, rivals toll the merchants' carts. Anything that comes out of an unheard-of place
+  puts it on the map.
+- Raiders, the warband's and the tribes', pick their night: they hang back a few days while the heroes are home and
+  come early once most of them have marched out.
+- A cleared site is resettled after 25 to 45 days by a library creature of its country, sometimes a tier worse. The
+  town only learns of it from rumour or sight, unless it holds the site with an outpost (150 gold, 2 a day).
+
 ## The Godot client (`godot/`)
 
 Godot 4.3 (.NET) with the C# sim as a project reference. Everything is built in code (`src/Main.cs`, `src/Panels.cs`)
