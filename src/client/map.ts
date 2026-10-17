@@ -632,6 +632,7 @@ export class MapView {
     }
     // Draw in y order so nearer figures overlap farther ones.
     const order = town.agents.filter((a) => this.sprites.get(a.id)?.visible).sort((a, b) => this.sprites.get(a.id)!.y - this.sprites.get(b.id)!.y);
+    const councillors = new Set(town.seats.map((x) => x.holderId));
     for (const a of order) {
       const s = this.sprites.get(a.id)!;
       ctx.fillStyle = 'rgba(0,0,0,0.25)';
@@ -651,6 +652,19 @@ export class MapView {
       ctx.arc(s.x, s.y - 0.04, a.hero ? 0.085 : 0.07, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
+      if (councillors.has(a.id)) {
+        // A little gold crown marks a councillor.
+        ctx.fillStyle = PALETTE.gold;
+        ctx.beginPath();
+        ctx.moveTo(s.x - 0.07, s.y - 0.13);
+        ctx.lineTo(s.x - 0.07, s.y - 0.22);
+        ctx.lineTo(s.x - 0.035, s.y - 0.17);
+        ctx.lineTo(s.x, s.y - 0.24);
+        ctx.lineTo(s.x + 0.035, s.y - 0.17);
+        ctx.lineTo(s.x + 0.07, s.y - 0.22);
+        ctx.lineTo(s.x + 0.07, s.y - 0.13);
+        ctx.fill();
+      }
     }
   }
 

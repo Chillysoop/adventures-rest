@@ -1,7 +1,7 @@
 // Browser client: runs the simulation in real time with pause, draws the town, and shows the
 // Ledger, the bounty board, Chronicles and an inspector beside the map.
 
-import { HOURS_PER_DAY, Importance, Simulation, formatAbilities, type Agent, type LedgerEntry } from '../sim/index.ts';
+import { HOURS_PER_DAY, Importance, Simulation, competence, formatAbilities, pendingMotion, type Agent, type LedgerEntry } from '../sim/index.ts';
 import { suggestedReward } from '../sim/systems/quests.ts';
 import { MapView, type Selection } from './map.ts';
 
@@ -18,14 +18,14 @@ let speed = 1;
 let lastSpeed = 1;
 let acc = 0;
 let lastFrame = performance.now();
-let tab: 'ledger' | 'bounties' | 'chronicles' | 'inspect' = 'ledger';
+let tab: 'ledger' | 'council' | 'bounties' | 'chronicles' | 'inspect' = 'ledger';
 let ledgerFilter: Importance = Importance.Notable;
 let dirty = true;
 let shownChronicles = -1;
 const openChronicles = new Set<number>();
 
 function newTown(seed: number): void {
-  sim = new Simulation({ seed, autoBounties: false });
+  sim = new Simulation({ seed, autoBounties: false, autoCouncil: false });
   const canvas = $<HTMLCanvasElement>('#map');
   map = new MapView(canvas, sim);
   map.resize();
@@ -33,7 +33,7 @@ function newTown(seed: number): void {
   for (const e of sim.town.ledger.entries) addEntry(e);
   sim.town.ledger.onWrite((e) => {
     addEntry(e);
-    if (e.importance === Importance.Major) toast(e);
+    if (e.importance === Importance.Major || (e.category === 'Council' && e.text.includes(' moves that '))) toast(e);
   });
   $('#town-name').textContent = sim.town.name;
   $('#seed').textContent = `seed ${seed}`;
@@ -102,13 +102,14 @@ function renderHeader(): void {
   const t = sim.town;
   const s = sim.snapshot();
   const hour = t.tick % HOURS_PER_DAY;
+  $('#motion-dot').hidden = !pendingMotion(t);
   $('#clock').textContent = `Day ${t.day} · ${String(hour).padStart(2, '0')}:00`;
   setHTML($('#stats'), [
     stat('Population', String(s.population)),
     stat('Heroes', String(t.heroes.length)),
     stat('Treasury', `${Math.floor(t.treasury)}g`),
     stat('Bread', `${s.foodPrice.toFixed(2)}g`),
-    stat('Mood', `${Math.round(s.averageMood)}`),
+    stat('Mandate', `${Math.round(t.mandate)}`),
     stat('Homeless', String(s.homeless)),
   ].join(''));
 }
@@ -153,6 +154,72 @@ function renderBounties(): void {
       : `${idle} ${idle === 1 ? 'hero is' : 'heroes are'} in town. Parties need at least three, and tougher sites want higher levels.`;
 }
 
+function meter(value: number, cls = ''): string {
+  return `<span class="meter ${cls}"><i style="width:${Math.round(Math.max(0, Math.min(100, value)))}%"></i></span>`;
+}
+
+function renderCouncil(): void {
+  const t = sim.town;
+  const pending = pendingMotion(t);
+  const sign = (n: number): string => (n >= 0 ? `+${n}` : `${n}`);
+  const seats = t.seats
+    .map((s) => {
+      if (s.holderId === null)
+        return `<li class="seat vacant"><b>${esc(s.def.title)}</b><small>${
+          t.population < s.def.unlockPopulation ? `Opens when ${s.def.unlockPopulation} people live here` : 'Vacant, to be filled tomorrow'
+        }</small></li>`;
+      const a = t.agent(s.holderId);
+      const mood = s.loyalty >= 60 ? 'Loyal' : s.loyalty >= 25 ? 'Wary' : 'Disloyal';
+      return `<li class="seat"><div class="seat-top"><b>${esc(s.def.title)}</b><span class="tag ${s.loyalty < 25 ? 'bad' : s.loyalty >= 60 ? 'good' : ''}">${mood}</span></div>
+        ${agentLink(a)} <small>· ${esc(a.race)} ${esc(a.profession)} · skill ${sign(competence(t, s))}</small>
+        <div class="row"><span>Loyalty</span>${meter(s.loyalty, s.loyalty < 25 ? 'bad' : '')}</div>
+        <small>Minds ${esc(s.def.portfolio)}. Wants ${esc(s.def.agenda)}.</small></li>`;
+    })
+    .join('');
+  let motion = '<p class="empty">No motion before the council. Councillors bring one when their portfolio needs it.</p>';
+  if (pending) {
+    const yes = pending.votes.filter((v) => v.yes).length;
+    const no = pending.votes.length - yes;
+    const majority = yes === no ? null : yes > no;
+    const hoursLeft = pending.deadlineTick - t.tick;
+    const votes = pending.votes
+      .map((v) => {
+        const s = t.seats.find((x) => x.def.id === v.seat)!;
+        return `<li><span>${esc(s.def.title)}</span><b class="${v.yes ? 'good' : 'bad'}">${v.yes ? 'Aye' : 'Nay'}</b></li>`;
+      })
+      .join('');
+    const decree = (signIt: boolean): string => (majority !== null && majority !== signIt ? ' (decree)' : '');
+    motion = `<div class="motion"><p><b>${esc(cap(pending.text))}.</b></p>
+      <p class="sub">Moved by ${agentLink(t.agent(pending.proposerId))}. ${
+        pending.cost ? `Costs ${pending.cost}g.` : ''
+      } If you say nothing in ${Math.ceil(hoursLeft / HOURS_PER_DAY)} ${hoursLeft > HOURS_PER_DAY ? 'days' : 'day'}, the council's vote stands.</p>
+      <ul class="votes">${votes}</ul>
+      <div class="actions"><button class="post" data-motion="${pending.id}" data-sign="1">Sign${decree(true)}</button>
+      <button class="ghost" data-motion="${pending.id}" data-sign="0">Veto${decree(false)}</button></div>
+      <p class="note">Going against the council's majority is a decree: it costs Mandate and angers the councillors you overrule.</p></div>`;
+  }
+  const history = t.motions
+    .filter((m) => m.status !== 'pending')
+    .slice(-8)
+    .reverse()
+    .map(
+      (m) =>
+        `<li><span class="when">Day ${Math.floor(m.proposedTick / HOURS_PER_DAY) + 1}</span> ${esc(cap(m.text))} <span class="tag ${
+          m.status === 'passed' ? 'good' : 'bad'
+        }">${m.status === 'passed' ? 'passed' : 'failed'}${m.decree ? ' by decree' : ''}</span></li>`,
+    )
+    .join('');
+  setHTML(
+    $('#pane-council'),
+    `<div class="mandate"><div class="row"><span>Mandate</span>${meter(t.mandate, t.mandate < 30 ? 'bad' : '')}<b>${Math.round(t.mandate)}</b></div>
+      <small>The townsfolk's approval of you. It follows their mood and falls when you rule by decree. A popular mayor draws settlers.</small>
+      <div class="facts"><span>Tax ${Math.round(t.taxRate * 100)}%</span><span>Watch ${t.watch}</span>${t.festivalDays ? '<span>Festival!</span>' : ''}</div></div>
+    <h4>Before the council</h4>${motion}
+    <h4>Seats</h4><ul class="seats">${seats}</ul>
+    ${history ? `<h4>Past motions</h4><ul class="history">${history}</ul>` : ''}`,
+  );
+}
+
 function renderChronicles(): void {
   shownChronicles = sim.town.chronicles.length;
   const list = [...sim.town.chronicles].reverse();
@@ -167,6 +234,11 @@ function renderChronicles(): void {
         })
         .join('')
     : '<li class="empty">No expeditions yet. Post a bounty and wait for a party to form at the tavern.</li>';
+}
+
+function councilSeat(a: Agent): string {
+  const s = sim.town.seats.find((x) => x.holderId === a.id);
+  return s ? `<p><span class="tag gold">${esc(s.def.title)}</span> loyalty ${Math.round(s.loyalty)}</p>` : '';
 }
 
 function agentLink(a: Agent): string {
@@ -200,7 +272,7 @@ function renderInspect(): void {
       .map((e) => `<li><span class="when">Day ${Math.floor(e.tick / HOURS_PER_DAY) + 1}</span> ${linkNames(e)}</li>`)
       .join('');
     html = `<h3>${esc(a.name)}</h3><p class="sub">${esc(cap(a.describe().slice(a.name.length + 2)))} · ${esc(a.traitList())}</p>
-      ${heroInfo}<p>${esc(status)} · ${Math.floor(a.gold)} gold · mood ${Math.round(a.lastDayMood)}</p>
+      ${councilSeat(a)}${heroInfo}<p>${esc(status)} · ${Math.floor(a.gold)} gold · mood ${Math.round(a.lastDayMood)}</p>
       <p>Lives at ${esc(home)}; ${a.hero ? 'lives by bounties' : `works at ${esc(job)}`}.</p>${spouse}
       <p class="abil">${esc(formatAbilities(a.abilities))}</p>
       ${friends.length ? `<p>Friends: ${friends.join(', ')}</p>` : ''}${foes.length ? `<p>Grudges: ${foes.join(', ')}</p>` : ''}
@@ -273,6 +345,7 @@ function frame(now: number): void {
   if (dirty) {
     renderHeader();
     if (tab === 'bounties') renderBounties();
+    else if (tab === 'council') renderCouncil();
     else if (tab === 'inspect') renderInspect();
     else if (tab === 'chronicles' && sim.town.chronicles.length !== shownChronicles) renderChronicles();
     dirty = false;
@@ -284,7 +357,7 @@ function frame(now: number): void {
 
 function wire(): void {
   document.addEventListener('click', (ev) => {
-    const el = (ev.target as HTMLElement).closest<HTMLElement>('[data-agent],[data-tab],[data-speed],[data-filter],[data-site],[data-chron]');
+    const el = (ev.target as HTMLElement).closest<HTMLElement>('[data-agent],[data-tab],[data-speed],[data-filter],[data-site],[data-chron],[data-motion]');
     if (!el) return;
     ev.preventDefault();
     if (el.dataset.agent) select({ kind: 'agent', id: Number(el.dataset.agent) });
@@ -293,6 +366,9 @@ function wire(): void {
     else if (el.dataset.filter) {
       ledgerFilter = Number(el.dataset.filter) as Importance;
       applyLedgerFilter();
+    } else if (el.dataset.motion) {
+      sim.decideMotion(Number(el.dataset.motion), el.dataset.sign === '1');
+      dirty = true;
     } else if (el.dataset.site) {
       sim.postBounty(el.dataset.site, Number(el.dataset.reward));
       dirty = true;

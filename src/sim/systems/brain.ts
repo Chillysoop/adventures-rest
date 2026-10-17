@@ -2,6 +2,7 @@ import type { Activity, Agent } from '../agent.ts';
 import { modifier } from '../rng.ts';
 import { isEvening, isNight, isWorkHours } from '../time.ts';
 import type { Building, Town } from '../town.ts';
+import { festivalMood } from './council.ts';
 
 /**
  * Hourly utility AI: every agent scores what it could do this hour from its needs, traits,
@@ -16,7 +17,7 @@ export function hourly(town: Town): void {
     if (a.departed || a.isAway) continue;
     updateNeeds(a);
     execute(town, a, choose(town, a));
-    sampleMood(a);
+    sampleMood(a, festivalMood(town));
   }
 }
 
@@ -170,9 +171,10 @@ export function patronsAt(town: Town, b: Building): number {
   return n;
 }
 
-function sampleMood(a: Agent): void {
+function sampleMood(a: Agent, bonus: number): void {
   const mood =
-    100 -
+    100 +
+    bonus -
     0.45 * a.hunger -
     0.25 * a.fatigue -
     0.25 * a.loneliness -

@@ -96,6 +96,8 @@ export function dailyArrivals(town: Town): void {
   const idle = res.filter((x) => x.jobId === null).length;
 
   let attraction = 0.3 + 0.06 * openJobs + 0.04 * openBeds + 0.05 * sites - (foodPrice > 1.8 ? 0.4 : 0) - 0.04 * homeless - 0.06 * idle;
+  // Word travels: a popular mayor draws settlers, high taxes turn them away.
+  attraction += (town.mandate - 50) / 200 - (town.taxRate - town.content.rules.taxRate) * 5;
   attraction = Math.max(0.05, Math.min(2.5, attraction));
 
   let groups = 0;

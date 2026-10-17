@@ -30,20 +30,22 @@ function keepZoned(town: Town, zone: Zone, minVacant: number, maxDist: number, p
     });
 }
 
-function commissionHousing(town: Town): void {
+/** Build a charter house for the homeless, paid by the treasury. Returns whether one was started. */
+export function commissionHousing(town: Town, minHomeless = 5): boolean {
   const homeless = town.workers.filter((a) => a.homeId === null).length;
   const building = town.buildings.some((b) => b.isSite && b.ownerId === null && b.def.housing > 0);
-  if (homeless < 5 || building) return;
+  if (homeless < minHomeless || building) return false;
 
   const house = town.content.building('house');
   const lot = findLot(town, 'Residential');
-  if (!lot) return;
+  if (!lot) return false;
   const cost = house.cost + town.market.quote('Timber', house.timber);
-  if (town.treasury < cost + 50) return;
+  if (town.treasury < cost + 50) return false;
 
   town.book('Charter houses', -cost);
   town.market.buy('Timber', house.timber);
   const site = town.addBuilding(house, lot, null, nameFor(town, house, null), false);
   site.laborBudget = house.buildHours * CONSTRUCTION_WAGE;
   town.log('Town', Importance.Routine, `With ${homeless} people sleeping rough, the council commissions ${site.name}.`);
+  return true;
 }

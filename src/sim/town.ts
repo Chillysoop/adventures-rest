@@ -1,5 +1,6 @@
 import type { Agent } from './agent.ts';
 import type { Bounty, Chronicle, Party, SiteState } from './systems/quests.ts';
+import type { Motion, Seat } from './systems/council.ts';
 import { type BuildingDef, type Content, GOODS, type Good, type Zone, isBusiness } from './content.ts';
 import { type Importance, Ledger, type LedgerCategory, type LedgerEntry } from './ledger.ts';
 import { Rng } from './rng.ts';
@@ -140,7 +141,7 @@ export class Market {
   }
 }
 
-export type TreasuryAccount = 'Sales tax' | 'Ale tax' | 'Rent' | 'Land sales' | 'Town businesses' | 'Bailouts' | 'Charter houses' | 'Bounties' | 'Upkeep';
+export type TreasuryAccount = 'Sales tax' | 'Ale tax' | 'Rent' | 'Land sales' | 'Town businesses' | 'Bailouts' | 'Charter houses' | 'Bounties' | 'Upkeep' | 'Watch' | 'Council motions' | 'Discrepancies';
 
 export class Town {
   static readonly GRID = 16;
@@ -157,6 +158,8 @@ export class Town {
   accountsToday: Record<string, number> = {};
   /** The last full day's books, for the player to read. */
   accountsYesterday: Record<string, number> = {};
+  /** Net change of the treasury on each recent day, oldest first. */
+  readonly recentNet: number[] = [];
   /** Consecutive days the treasury could not cover upkeep. */
   unpaidDays = 0;
 
@@ -167,6 +170,14 @@ export class Town {
   readonly bounties: Bounty[] = [];
   readonly parties: Party[] = [];
   readonly chronicles: Chronicle[] = [];
+  readonly seats: Seat[] = [];
+  readonly motions: Motion[] = [];
+  /** The townsfolk's approval of the mayor, 0 to 100. */
+  mandate = 60;
+  /** Paid watchmen keeping the peace. */
+  watch = 0;
+  /** Days of festival left. */
+  festivalDays = 0;
   private nextAgentId = 1;
 
   readonly content: Content;

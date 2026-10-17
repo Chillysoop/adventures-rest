@@ -14,6 +14,7 @@ export type LedgerCategory =
   | 'Romance'
   | 'Hardship'
   | 'Quest'
+  | 'Council'
   | 'Town';
 
 export interface LedgerEntry {

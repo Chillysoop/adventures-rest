@@ -4,6 +4,7 @@ import { HOURS_PER_DAY } from './time.ts';
 import { type Lot, Town } from './town.ts';
 import type { Zone } from './content.ts';
 import * as brain from './systems/brain.ts';
+import * as council from './systems/council.ts';
 import * as economy from './systems/economy.ts';
 import * as mayor from './systems/mayor.ts';
 import * as population from './systems/population.ts';
@@ -31,6 +32,8 @@ export interface SimulationOptions {
   autoMayor?: boolean;
   /** Let the stand-in mayor post bounties; off when a player runs the bounty board. */
   autoBounties?: boolean;
+  /** Settle council motions by majority at once; off when a player signs or vetoes them. */
+  autoCouncil?: boolean;
 }
 
 /**
@@ -43,7 +46,7 @@ export class Simulation {
   readonly history: DayStats[] = [];
 
   constructor(options: SimulationOptions = {}, content: Content = Content.default()) {
-    this.options = { seed: 1, settlers: 14, startingTreasury: 250, autoMayor: true, autoBounties: true, ...options };
+    this.options = { seed: 1, settlers: 14, startingTreasury: 250, autoMayor: true, autoBounties: true, autoCouncil: true, ...options };
     this.town = new Town(content, this.options.seed);
     this.charter();
   }
@@ -72,16 +75,24 @@ export class Simulation {
     population.dailyArrivals(t);
     if (this.options.autoMayor) mayor.daily(t);
     social.daily(t);
+    council.daily(t, this.options.autoCouncil);
     quests.daily(t, this.options.autoMayor && this.options.autoBounties);
     economy.daily(t, true);
     this.history.push(this.snapshot());
     t.accountsYesterday = t.accountsToday;
+    t.recentNet.push(Object.values(t.accountsToday).reduce((s, v) => s + v, 0));
+    if (t.recentNet.length > 7) t.recentNet.shift();
     t.accountsToday = {};
   }
 
   /** The player's lever: post a bounty on a site, paid from the treasury into escrow. */
   postBounty(siteId: string, reward: number): quests.Bounty | null {
     return quests.postBounty(this.town, siteId, reward);
+  }
+
+  /** The player's other lever: sign or veto the motion before the council. */
+  decideMotion(motionId: number, sign: boolean): boolean {
+    return council.decide(this.town, motionId, sign);
   }
 
   snapshot(): DayStats {
@@ -112,6 +123,7 @@ export class Simulation {
     center.zone = 'Civic';
     t.addBuilding(c.building('town_hall'), center, null, 'the Town Hall', true);
     quests.initSites(t);
+    council.initCouncil(t);
 
     if (this.options.autoMayor) mayor.daily(t);
     else {
