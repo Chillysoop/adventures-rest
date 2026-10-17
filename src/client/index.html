@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Crown &amp; Compass</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #efe6d2;
+  --panel: #faf5ea;
+  --panel-2: #f1e8d6;
+  --ink: #2c2620;
+  --ink-2: #6b5f50;
+  --line: #ddd0b6;
+  --accent: #8e3b2e;
+  --gold: #b9861a;
+  --good: #3f7a3a;
+  --bad: #a8352a;
+  --shadow: 0 1px 2px rgba(60, 40, 20, 0.08), 0 6px 24px rgba(60, 40, 20, 0.08);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #17140f; --panel: #211d17; --panel-2: #2a251d; --ink: #efe6d2; --ink-2: #b3a68f;
+    --line: #3a3328; --accent: #e07a5f; --gold: #e8b93a; --good: #8cc084; --bad: #ef7f6f;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 6px 24px rgba(0,0,0,0.3);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #17140f; --panel: #211d17; --panel-2: #2a251d; --ink: #efe6d2; --ink-2: #b3a68f;
+  --line: #3a3328; --accent: #e07a5f; --gold: #e8b93a; --good: #8cc084; --bad: #ef7f6f;
+  --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 6px 24px rgba(0,0,0,0.3);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 14px/1.45 Inter, system-ui, sans-serif;
+  padding: 12px max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left));
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+a { color: var(--accent); text-decoration: none; font-weight: 500; }
+a:hover { text-decoration: underline; }
+.app { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 12px; height: calc(100vh - 24px); max-width: 1500px; margin: 0 auto; }
+.stage { position: relative; display: flex; flex-direction: column; min-height: 0; gap: 10px; }
+header.bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+h1 { font: 700 22px/1 Cinzel, Georgia, serif; margin: 0; letter-spacing: 0.02em; }
+h1 small { font: 500 12px Inter, sans-serif; color: var(--ink-2); margin-left: 6px; letter-spacing: 0; }
+#clock { font: 600 15px Cinzel, Georgia, serif; min-width: 120px; }
+.speeds { display: inline-flex; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 3px; box-shadow: var(--shadow); }
+.speeds button { border: 0; background: none; padding: 5px 10px; border-radius: 7px; min-width: 38px; font-weight: 600; }
+.speeds button.on { background: var(--accent); color: #fff; }
+.spacer { flex: 1; }
+.ghost { border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 5px 10px; }
+#seed { color: var(--ink-2); font-size: 12px; }
+.mapwrap { position: relative; flex: 1; min-height: 0; border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); background: #3c5c34; }
+#map { width: 100%; height: 100%; display: block; cursor: pointer; }
+.paused .mapwrap::after { content: "Paused"; position: absolute; top: 12px; left: 50%; transform: translateX(-50%); background: rgba(20,16,10,0.7); color: #f6eedb; padding: 4px 12px; border-radius: 99px; font: 600 12px Inter, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; pointer-events: none; }
+#toast { position: absolute; left: 12px; right: 12px; bottom: 12px; background: rgba(28, 22, 14, 0.88); color: #f6eedb; padding: 10px 14px; border-radius: 10px; transform: translateY(140%); transition: transform 0.35s ease; font-size: 13px; }
+#toast.show { transform: none; }
+#toast a { color: #f0c560; }
+#stats { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.stat { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; }
+.stat span { display: block; font-size: 11px; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em; }
+.stat b { font-size: 16px; font-variant-numeric: tabular-nums; }
+aside { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.tabs { display: flex; border-bottom: 1px solid var(--line); background: var(--panel-2); }
+.tabs button { flex: 1; border: 0; background: none; padding: 11px 4px; font-weight: 600; color: var(--ink-2); border-bottom: 2px solid transparent; }
+.tabs button.on { color: var(--ink); border-bottom-color: var(--accent); }
+.pane { flex: 1; overflow: auto; padding: 12px 14px; min-height: 0; }
+.filters { display: flex; gap: 6px; margin-bottom: 8px; }
+.filters button { border: 1px solid var(--line); background: none; border-radius: 99px; padding: 2px 10px; font-size: 12px; }
+.filters button.on { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+ul, ol { margin: 0; padding: 0; list-style: none; }
+.entry { padding: 8px 0 8px 10px; border-bottom: 1px solid var(--line); border-left: 3px solid transparent; }
+.entry.imp-3 { border-left-color: var(--gold); }
+.entry p { margin: 2px 0 0; }
+.entry.imp-3 p { font-weight: 600; }
+.when { color: var(--ink-2); font-size: 11px; font-variant-numeric: tabular-nums; margin-right: 6px; }
+.cat { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; color: var(--ink-2); background: var(--panel-2); border-radius: 4px; padding: 1px 5px; }
+.cat-quest .cat { color: var(--gold); }
+.cat-brawl .cat, .cat-hardship .cat { color: var(--bad); }
+.cat-romance .cat { color: #c0567a; }
+.cat-construction .cat, .cat-property .cat { color: var(--good); }
+.site { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.tier { color: var(--gold); font-size: 11px; letter-spacing: 1px; }
+.tag { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 99px; background: var(--panel-2); color: var(--ink-2); margin-top: 3px; }
+.tag.good { color: var(--good); } .tag.bad { color: var(--bad); } .tag.gold { color: var(--gold); }
+.post { border: 0; background: var(--accent); color: #fff; border-radius: 8px; padding: 6px 12px; font-weight: 600; white-space: nowrap; }
+.post:disabled { opacity: 0.4; cursor: not-allowed; }
+.note { color: var(--ink-2); font-size: 12px; margin: 0 0 6px; }
+.chron { border-bottom: 1px solid var(--line); }
+.chron-head { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 10px 0; }
+.chron-head .tag { margin-left: 6px; }
+.chron-head small { display: block; color: var(--ink-2); }
+.chron ol { padding: 0 0 12px 0; counter-reset: l; }
+.chron ol li { padding: 3px 0 3px 12px; border-left: 2px solid var(--line); font-size: 13px; }
+.chron.cleared ol li { border-left-color: var(--good); } .chron.wiped ol li { border-left-color: var(--bad); }
+#pane-inspect h3 { font: 700 18px Cinzel, Georgia, serif; margin: 0 0 2px; }
+#pane-inspect h4 { margin: 14px 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-2); }
+#pane-inspect p { margin: 4px 0; }
+.sub { color: var(--ink-2); }
+.abil { font-variant-numeric: tabular-nums; font-size: 12px; color: var(--ink-2); }
+.history li { padding: 4px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.empty { color: var(--ink-2); }
+.help { color: var(--ink-2); font-size: 12px; }
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; height: auto; }
+  .mapwrap { flex: none; aspect-ratio: 1; }
+  aside { height: 70vh; }
+  #stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  h1 { font-size: 18px; }
+  header.bar { gap: 8px; }
+  .spacer { display: none; }
+  #seed { margin-left: auto; }
+  .speeds button { padding: 5px 8px; min-width: 34px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="stage">
+    <header class="bar">
+      <h1><span id="town-name">Briarford</span><small>Crown &amp; Compass</small></h1>
+      <span id="clock">Day 1 · 00:00</span>
+      <div class="speeds" role="group" aria-label="Game speed">
+        <button data-speed="0" title="Pause (space)" aria-label="Pause">❚❚</button>
+        <button data-speed="1" title="Normal (1)">1×</button>
+        <button data-speed="2" title="Fast (2)">4×</button>
+        <button data-speed="3" title="Faster (3)">12×</button>
+        <button data-speed="4" title="Fastest (4)">36×</button>
+      </div>
+      <span class="spacer"></span>
+      <span id="seed"></span>
+      <button class="ghost" id="new-town" title="Start a fresh town with a random seed">New town</button>
+    </header>
+    <div id="stats"></div>
+    <div class="mapwrap"><canvas id="map"></canvas><div id="toast"></div></div>
+  </div>
+  <aside>
+    <nav class="tabs">
+      <button data-tab="ledger">Ledger</button>
+      <button data-tab="bounties">Bounties</button>
+      <button data-tab="chronicles">Chronicles</button>
+      <button data-tab="inspect">Inspect</button>
+    </nav>
+    <section class="pane" id="pane-ledger">
+      <div class="filters">
+        <button data-filter="1">All</button>
+        <button data-filter="2">Notable</button>
+        <button data-filter="3">Major</button>
+      </div>
+      <ul id="ledger-list"></ul>
+    </section>
+    <section class="pane" id="pane-bounties" hidden>
+      <p class="note">You are the mayor. Post bounties from the treasury; heroes at the tavern form parties and take them on. Their stories come back as Chronicles.</p>
+      <p class="note" id="bounty-note"></p>
+      <ul id="bounty-list"></ul>
+    </section>
+    <section class="pane" id="pane-chronicles" hidden><ul id="chronicle-list"></ul></section>
+    <section class="pane" id="pane-inspect" hidden></section>
+  </aside>
+</div>
+<script>/*__APP__*/</script>
+</body>
+</html>
