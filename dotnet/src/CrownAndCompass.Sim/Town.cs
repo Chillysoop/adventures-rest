@@ -148,6 +148,7 @@ public static class TreasuryAccount
     public const string Discrepancies = "Discrepancies";
     public const string Defenses = "Defenses";
     public const string Patron = "Patron";
+    public const string Scrying = "Scrying";
 }
 
 /// <summary>How the campaign ended.</summary>
@@ -192,6 +193,9 @@ public sealed class Town
     public List<Chronicle> Chronicles { get; } = [];
     public List<Seat> Seats { get; } = [];
     public List<Motion> Motions { get; } = [];
+
+    /// <summary>Scryings the mayor has commissioned, oldest first.</summary>
+    public List<Scrying> Scryings { get; } = [];
 
     /// <summary>The townsfolk's approval of the mayor, 0 to 100.</summary>
     public double Mandate { get; set; } = 60;

@@ -277,6 +277,20 @@ public sealed record EnemyDef
     public IReadOnlyList<string> Probing { get; init; } = [];
 }
 
+/// <summary>Numbers for scrying and sending stones (content/game/knowledge.json).</summary>
+public sealed record KnowledgeRules
+{
+    /// <summary>Classes that can cast scrying and sending.</summary>
+    public IReadOnlyList<string> Casters { get; init; } = ["wizard", "cleric"];
+
+    public int ScryMinLevel { get; init; } = 2;
+    public double ScryBaseCost { get; init; } = 30;
+    public double ScryCostPerDay { get; init; } = 15;
+    public int ScryHours { get; init; } = 12;
+    public int SlotsPerCaster { get; init; } = 1;
+    public int SlotsPerTwoLevels { get; init; } = 1;
+}
+
 /// <summary>
 /// Data-driven content (buildings, races, names, classes, monsters, sites, the council, the
 /// enemy). Embedded from the repo's content/game/*.json by default so the simulation runs anywhere; a
@@ -296,6 +310,9 @@ public sealed class Content
     public TownRules Rules { get; }
     public CouncilRules Council { get; }
     public EnemyDef Enemy { get; }
+
+    /// <summary>What the town can learn of the wilds: scrying and sending stones.</summary>
+    public KnowledgeRules Knowledge { get; init; } = new();
 
     public Content(
         IReadOnlyList<BuildingDef> buildings,
@@ -350,7 +367,10 @@ public sealed class Content
             Parse<List<SiteDef>>("sites.json"),
             Parse<TownRules>("town.json"),
             Parse<CouncilRules>("council.json"),
-            Parse<EnemyDef>("enemy.json"));
+            Parse<EnemyDef>("enemy.json"))
+        {
+            Knowledge = Parse<KnowledgeRules>("knowledge.json"),
+        };
     }
 
     private static string ReadEmbedded(string name)

@@ -1,0 +1,18 @@
+<Project Sdk="Godot.NET.Sdk/4.3.0">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <RootNamespace>CrownAndCompass.Client</RootNamespace>
+    <LangVersion>12</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <!-- The simulation is the same library the CLI and the tests use; the client only reads it and calls its levers. -->
+  <ItemGroup>
+    <ProjectReference Include="..\dotnet\src\CrownAndCompass.Sim\CrownAndCompass.Sim.csproj" />
+  </ItemGroup>
+
+</Project>

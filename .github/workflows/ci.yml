@@ -34,5 +34,7 @@ jobs:
           node-version: 22
       - run: dotnet build dotnet/CrownAndCompass.sln -c Release
       - run: dotnet test dotnet/CrownAndCompass.sln -c Release --no-build
+      # The Godot client compiles against Godot.NET.Sdk from NuGet; the engine itself is not needed.
+      - run: dotnet build godot/CrownAndCompass.csproj -c ExportRelease
       - name: Parity with the TypeScript sim (seeds 1 to 8, 200 days)
         run: scripts/parity.sh 200

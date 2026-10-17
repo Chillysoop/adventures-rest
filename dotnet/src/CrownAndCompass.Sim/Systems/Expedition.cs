@@ -438,9 +438,16 @@ public static class Expedition
 
     private static string Cap(string s) => char.ToUpperInvariant(s[0]) + s[1..];
 
-    public static ExpeditionResult Run(Rng rng, Content content, SiteDef site, IReadOnlyList<Agent> heroes)
+    /// <param name="slotsSpent">Spell slots the party spent on sending-stone messages; they come out of the healers' heals.</param>
+    public static ExpeditionResult Run(Rng rng, Content content, SiteDef site, IReadOnlyList<Agent> heroes, int slotsSpent = 0)
     {
         var run = new Delve(rng, content, heroes);
+        foreach (var c in run.Party)
+        {
+            int spent = Math.Min(slotsSpent, c.Heals);
+            c.Heals -= spent;
+            slotsSpent -= spent;
+        }
         var names = heroes.Select(h => h.GivenName).ToList();
         run.Log($"{ListNames(names)} set out for {site.Name}.");
 

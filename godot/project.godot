@@ -1,0 +1,37 @@
+; Engine configuration file.
+
+config_version=5
+
+[application]
+
+config/name="Crown & Compass"
+config/description="A D&D town builder: you are the mayor, heroes decide for themselves."
+run/main_scene="res://Main.tscn"
+config/features=PackedStringArray("4.3", "C#", "GL Compatibility")
+boot_splash/bg_color=Color(0.0902, 0.0784, 0.0588, 1)
+boot_splash/show_image=false
+config/icon="res://assets/icon.svg"
+
+[display]
+
+window/size/viewport_width=1440
+window/size/viewport_height=900
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/energy_saving/keep_screen_on=false
+
+[dotnet]
+
+project/assembly_name="CrownAndCompass"
+
+[gui]
+
+common/snap_controls_to_pixels=true
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/canvas_textures/default_texture_filter=1
+textures/vram_compression/import_etc2_astc=true
+environment/defaults/default_clear_color=Color(0.0902, 0.0784, 0.0588, 1)
