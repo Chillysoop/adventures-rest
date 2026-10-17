@@ -15,7 +15,9 @@ runs in the browser.
   - `systems/`: hourly utility AI (`brain`), production and wages (`economy`), buying land and
     building (`property`), tavern life (`social`), arrivals and departures (`population`), and a
     stand-in `mayor` that zones land while there is no player
-  - `content/*.json`: buildings, races and names (data, so it can be modded)
+  - `systems/quests.ts`, `systems/expedition.ts`: heroes, the bounty board, adventuring parties, and a
+    seeded d20 expedition resolver that writes a Chronicle of every delve
+  - `content/*.json`: buildings, races, names, hero classes, monsters and sites (data, so it can be modded)
 - `src/cli.ts`: headless runner that prints the Ledger
 - `tests/`: determinism, growth, invariants, dice and market
 
@@ -32,6 +34,7 @@ npm ci
 npm test
 npm run sim -- --days 120 --seed 1          # notable events
 npm run sim -- --days 30 --all --stats      # everything, with daily stats
+npm run sim -- --days 120 --chronicles      # plus every expedition's Chronicle
 ```
 
 `docs/sample-ledger.txt` is a 120-day run you can read without building anything.

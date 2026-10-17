@@ -1,13 +1,14 @@
 // Headless runner: simulate a town and print its Ledger, so we can judge whether the city feels alive.
-// Usage: npm run sim -- [--seed N] [--days N] [--all] [--stats] [--people N]
+// Usage: npm run sim -- [--seed N] [--days N] [--all] [--stats] [--people N] [--chronicles]
 
-import { Importance, Simulation, formatAbilities, formatEntry } from './sim/index.ts';
+import { Importance, Simulation, formatAbilities, formatChronicle, formatEntry } from './sim/index.ts';
 
 let seed = 1;
 let days = 60;
 let all = false;
 let stats = false;
 let people = 3;
+let chronicles = false;
 
 const args = process.argv.slice(2);
 for (let i = 0; i < args.length; i++) {
@@ -23,6 +24,9 @@ for (let i = 0; i < args.length; i++) {
       break;
     case '--stats':
       stats = true;
+      break;
+    case '--chronicles':
+      chronicles = true;
       break;
     case '--people':
       people = Number(args[++i]);
@@ -87,6 +91,14 @@ for (const a of notable) {
   if (enemies.length) print(`  Grudges: ${enemies.join(', ')}`);
   for (const e of town.ledger.about(a.id).filter((e) => e.id > 1)) print(`    ${formatEntry(e)}`);
   print();
+}
+
+if (chronicles) {
+  print('=== Chronicles ===');
+  for (const c of town.chronicles) {
+    print(formatChronicle(c));
+    print();
+  }
 }
 
 process.stdout.write(out.join('\n') + '\n');

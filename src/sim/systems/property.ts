@@ -14,7 +14,7 @@ const TAVERN_ADJECTIVES = ['Prancing', 'Drunken', 'Gilded', 'Rusty', 'Sleeping',
 const TAVERN_NOUNS = ['Griffon', 'Mimic', 'Owlbear', 'Flagon', 'Dragon', 'Lantern', 'Kobold', 'Boar', 'Wyvern', 'Compass'];
 
 export function daily(town: Town): void {
-  for (const a of town.residents) {
+  for (const a of town.workers) {
     switch (a.ambition) {
       case 'OpenBusiness':
         tryOpenBusiness(town, a);
@@ -39,7 +39,7 @@ export function demand(town: Town, buildingId: string): number {
   // Sites already rising will add supply soon; each one dampens the signal.
   const pending = 1 - 0.15 * town.buildings.filter((b) => b.isSite && b.def.id === buildingId).length;
   // Idle hands are cheap labor: a pool of unemployed makes any workshop look attractive.
-  const idle = town.residents.filter((a) => a.jobId === null).length;
+  const idle = town.workers.filter((a) => a.jobId === null).length;
   const labor = Math.min(0.4, idle * 0.025);
   const signal = (() => {
     switch (buildingId) {
@@ -119,7 +119,7 @@ function tryBuildHome(town: Town, a: Agent): void {
 }
 
 function tryBuildRental(town: Town, a: Agent): void {
-  const homeless = town.residents.filter((x) => x.homeId === null).length;
+  const homeless = town.workers.filter((x) => x.homeId === null).length;
   let openBeds = 0;
   for (const b of town.buildings) openBeds += b.isSite ? b.def.housing : b.openBeds;
   if (homeless <= openBeds) return;

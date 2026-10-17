@@ -1,0 +1,14 @@
+[
+  { "id": "fighter", "name": "fighter", "primary": "str", "hitDie": 10, "armor": 6, "damageDie": 8,
+    "skills": { "trap": 0, "hazard": 1, "puzzle": 0, "parley": 0, "perception": 0 }, "weight": 22 },
+  { "id": "barbarian", "name": "barbarian", "primary": "str", "hitDie": 12, "armor": 3, "damageDie": 12,
+    "skills": { "trap": 0, "hazard": 2, "puzzle": -1, "parley": -1, "perception": 1 }, "weight": 14 },
+  { "id": "rogue", "name": "rogue", "primary": "dex", "hitDie": 8, "armor": 2, "damageDie": 6, "sneak": true,
+    "skills": { "trap": 4, "hazard": 1, "puzzle": 1, "parley": 2, "perception": 3 }, "weight": 18 },
+  { "id": "ranger", "name": "ranger", "primary": "dex", "hitDie": 10, "armor": 3, "damageDie": 8,
+    "skills": { "trap": 1, "hazard": 4, "puzzle": 0, "parley": 0, "perception": 3 }, "weight": 16 },
+  { "id": "wizard", "name": "wizard", "primary": "int", "hitDie": 6, "armor": 0, "damageDie": 10, "area": true,
+    "skills": { "trap": 1, "hazard": 0, "puzzle": 4, "parley": 1, "perception": 1 }, "weight": 14 },
+  { "id": "cleric", "name": "cleric", "primary": "wis", "hitDie": 8, "armor": 5, "damageDie": 6, "healer": true,
+    "skills": { "trap": 0, "hazard": 1, "puzzle": 2, "parley": 3, "perception": 2 }, "weight": 16 }
+]

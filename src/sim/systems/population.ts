@@ -91,7 +91,7 @@ export function dailyArrivals(town: Town): void {
     if (b.isSite) sites++;
   }
   const foodPrice = town.market.price('Food');
-  const res = town.residents;
+  const res = town.workers;
   const homeless = res.filter((x) => x.homeId === null).length;
   const idle = res.filter((x) => x.jobId === null).length;
 

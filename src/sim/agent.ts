@@ -1,3 +1,4 @@
+import type { ClassDef } from './content.ts';
 import { Rng } from './rng.ts';
 
 export const TRAITS = ['Ambitious', 'Lazy', 'Gregarious', 'Shy', 'HotTempered', 'Greedy', 'Generous', 'Romantic'] as const;
@@ -31,6 +32,27 @@ export function formatAbilities(a: Abilities): string {
   return `STR ${a.str} DEX ${a.dex} CON ${a.con} INT ${a.int} WIS ${a.wis} CHA ${a.cha}`;
 }
 
+/** The adventuring half of a hero: class, level, hit points and gear. */
+export interface HeroSheet {
+  cls: ClassDef;
+  level: number;
+  xp: number;
+  maxHp: number;
+  hp: number;
+  /** Magic weapon bonus (attack and damage). */
+  weaponBonus: number;
+  /** Magic armor or ward bonus (AC). */
+  armorBonus: number;
+  items: string[];
+  renown: number;
+  kills: number;
+  expeditions: number;
+  partyName: string | null;
+  /** Tick the hero is due back from an expedition, or null when in town. */
+  awayUntil: number | null;
+  lodging: boolean;
+}
+
 export const article = (word: string): string => ('aeiouAEIOU'.includes(word[0]) ? 'an' : 'a');
 
 /**
@@ -48,6 +70,8 @@ export class Agent {
   profession = '';
   ambition: Ambition = 'None';
   dreamBusiness: string | null = null;
+  hero: HeroSheet | null = null;
+  dead = false;
 
   gold = 0;
 
@@ -97,7 +121,16 @@ export class Agent {
     return v;
   }
 
+  get isHero(): boolean {
+    return this.hero !== null;
+  }
+
+  get isAway(): boolean {
+    return this.hero?.awayUntil != null;
+  }
+
   describe(): string {
+    if (this.hero) return `${this.name}, ${article(this.race)} ${this.race} ${this.hero.cls.name} (level ${this.hero.level})`;
     return `${this.name}, ${article(this.race)} ${this.race} ${this.profession}`;
   }
 

@@ -8,6 +8,7 @@ import * as economy from './systems/economy.ts';
 import * as mayor from './systems/mayor.ts';
 import * as population from './systems/population.ts';
 import * as property from './systems/property.ts';
+import * as quests from './systems/quests.ts';
 import * as social from './systems/social.ts';
 
 export interface DayStats {
@@ -69,19 +70,26 @@ export class Simulation {
     population.dailyArrivals(t);
     if (this.options.autoMayor) mayor.daily(t);
     social.daily(t);
+    quests.daily(t, this.options.autoMayor);
     economy.daily(t, true);
     this.history.push(this.snapshot());
+  }
+
+  /** The player's lever: post a bounty on a site, paid from the treasury into escrow. */
+  postBounty(siteId: string, reward: number): quests.Bounty | null {
+    return quests.postBounty(this.town, siteId, reward);
   }
 
   snapshot(): DayStats {
     const t = this.town;
     const res = t.residents;
+    const workers = t.workers;
     const avg = (f: (a: (typeof res)[number]) => number): number => (res.length ? res.reduce((s, a) => s + f(a), 0) / res.length : 0);
     return {
       day: t.day - 1,
       population: res.length,
-      homeless: res.filter((a) => a.homeId === null).length,
-      unemployed: res.filter((a) => a.jobId === null).length,
+      homeless: workers.filter((a) => a.homeId === null).length,
+      unemployed: workers.filter((a) => a.jobId === null).length,
       buildings: t.buildings.filter((b) => b.complete).length,
       sites: t.buildings.filter((b) => b.isSite).length,
       treasury: t.treasury,
@@ -99,6 +107,7 @@ export class Simulation {
     const center = t.lotAt(Town.GRID / 2 - 1, Town.GRID / 2 - 1);
     center.zone = 'Civic';
     t.addBuilding(c.building('town_hall'), center, null, 'the Town Hall', true);
+    quests.initSites(t);
 
     if (this.options.autoMayor) mayor.daily(t);
     else {
