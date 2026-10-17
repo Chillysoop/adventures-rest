@@ -6,4 +6,5 @@ export { Ledger, Importance, formatEntry, type LedgerEntry, type LedgerCategory 
 export { Rng, modifier } from './rng.ts';
 export * from './time.ts';
 export { type Motion, type Seat, competence, pendingMotion, watchStrength } from './systems/council.ts';
+export { buildCost, defense, estimatedStrength, fortification, growth, type ThreatStage } from './systems/threat.ts';
 export { formatChronicle, type Bounty, type Chronicle, type Party, type SiteState } from './systems/quests.ts';

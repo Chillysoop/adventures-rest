@@ -5,6 +5,8 @@ import { type Lot, Town } from './town.ts';
 import type { Zone } from './content.ts';
 import * as brain from './systems/brain.ts';
 import * as council from './systems/council.ts';
+import * as director from './systems/director.ts';
+import * as threat from './systems/threat.ts';
 import * as economy from './systems/economy.ts';
 import * as mayor from './systems/mayor.ts';
 import * as population from './systems/population.ts';
@@ -34,6 +36,10 @@ export interface SimulationOptions {
   autoBounties?: boolean;
   /** Settle council motions by majority at once; off when a player signs or vetoes them. */
   autoCouncil?: boolean;
+  /** Let the stand-in mayor build the palisade and towers; off when a player does. */
+  autoDefense?: boolean;
+  /** Whether the warband exists at all (sandbox and some tests turn it off). */
+  enemy?: boolean;
 }
 
 /**
@@ -46,7 +52,7 @@ export class Simulation {
   readonly history: DayStats[] = [];
 
   constructor(options: SimulationOptions = {}, content: Content = Content.default()) {
-    this.options = { seed: 1, settlers: 14, startingTreasury: 250, autoMayor: true, autoBounties: true, autoCouncil: true, ...options };
+    this.options = { seed: 1, settlers: 14, startingTreasury: 250, autoMayor: true, autoBounties: true, autoCouncil: true, autoDefense: true, enemy: true, ...options };
     this.town = new Town(content, this.options.seed);
     this.charter();
   }
@@ -76,6 +82,8 @@ export class Simulation {
     if (this.options.autoMayor) mayor.daily(t);
     social.daily(t);
     council.daily(t, this.options.autoCouncil);
+    const pace = director.daily(t);
+    threat.daily(t, pace, this.options.autoMayor && this.options.autoDefense, this.options.enemy);
     quests.daily(t, this.options.autoMayor && this.options.autoBounties);
     economy.daily(t, true);
     this.history.push(this.snapshot());
@@ -93,6 +101,11 @@ export class Simulation {
   /** The player's other lever: sign or veto the motion before the council. */
   decideMotion(motionId: number, sign: boolean): boolean {
     return council.decide(this.town, motionId, sign);
+  }
+
+  /** Order a palisade or a watchtower. */
+  buildDefense(what: 'palisade' | 'tower'): boolean {
+    return threat.build(this.town, what);
   }
 
   snapshot(): DayStats {
@@ -124,6 +137,7 @@ export class Simulation {
     t.addBuilding(c.building('town_hall'), center, null, 'the Town Hall', true);
     quests.initSites(t);
     council.initCouncil(t);
+    threat.initThreat(t);
 
     if (this.options.autoMayor) mayor.daily(t);
     else {

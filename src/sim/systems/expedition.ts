@@ -2,6 +2,9 @@ import type { Agent, HeroSheet } from '../agent.ts';
 import type { Ability, Content, EncounterDef, MonsterDef, SiteDef, SkillKind } from '../content.ts';
 import { type Rng, modifier } from '../rng.ts';
 
+/** 'the goblin', but just 'Grukk Bloodtusk' for a named foe. */
+const the = (d: MonsterDef): string => (d.named ? d.name : `the ${d.name}`);
+
 /**
  * The expedition resolver: a deterministic, seedable dice simulation of a party going into a
  * site, encounter by encounter. It never touches the town; it returns what happened and a
@@ -228,7 +231,7 @@ class Run {
       const en = rng.range(e.escortCount[0], e.escortCount[1] + 1);
       for (let i = 0; i < en; i++) foes.push({ def: ed, hp: ed.hp });
     }
-    const label = n === 1 ? `${article(def.name)} ${def.name}` : `${n} ${def.plural}`;
+    const label = n === 1 ? (def.named ? def.name : `${article(def.name)} ${def.name}`) : `${n} ${def.plural}`;
     if (def.id !== 'mimic') this.log(`${cap(e.text)}: ${label}${foes.length > n ? `, with ${foes.length - n} more at its side` : ''}.`);
 
     const totalXp = foes.reduce((s, f) => s + f.def.xp, 0);
@@ -307,8 +310,8 @@ class Run {
         dmg = Math.max(1, dmg);
         target.hp -= dmg;
         if (target.hp <= 0) this.credit(c, 1);
-        if (roll === 20) this.log(`Natural 20! ${name} hits the ${target.def.name} for ${dmg}${target.hp <= 0 ? ' and it goes down' : ''}.`);
-        else if (target.hp <= 0 && target.def.boss) this.log(`${name} lands the killing blow on the ${target.def.name} (d20 ${roll}${sign(atk)}, ${dmg} damage).`);
+        if (roll === 20) this.log(`Natural 20! ${name} hits ${the(target.def)} for ${dmg}${target.hp <= 0 ? ' and it goes down' : ''}.`);
+        else if (target.hp <= 0 && target.def.boss) this.log(`${name} lands the killing blow on ${the(target.def)} (d20 ${roll}${sign(atk)}, ${dmg} damage).`);
       }
     }
   }
@@ -329,7 +332,7 @@ class Run {
       if (roll === 20 || roll + f.def.attack >= heroAc(t.agent)) {
         const dmg = rng.roll(roll === 20 ? 2 : 1, f.def.damageDie) + f.def.damageBonus;
         this.hurt(t, dmg);
-        if (t.down) this.log(`The ${f.def.name} ${roll === 20 ? 'crits' : 'hits'} ${t.agent.givenName} for ${dmg}. ${t.agent.givenName} goes down.`);
+        if (t.down) this.log(`${cap(the(f.def))} ${roll === 20 ? 'crits' : 'hits'} ${t.agent.givenName} for ${dmg}. ${t.agent.givenName} goes down.`);
       }
     }
   }

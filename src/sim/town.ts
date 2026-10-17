@@ -1,6 +1,7 @@
 import type { Agent } from './agent.ts';
 import type { Bounty, Chronicle, Party, SiteState } from './systems/quests.ts';
 import type { Motion, Seat } from './systems/council.ts';
+import type { Defenses, EnemyState, Outcome } from './systems/threat.ts';
 import { type BuildingDef, type Content, GOODS, type Good, type Zone, isBusiness } from './content.ts';
 import { type Importance, Ledger, type LedgerCategory, type LedgerEntry } from './ledger.ts';
 import { Rng } from './rng.ts';
@@ -141,7 +142,7 @@ export class Market {
   }
 }
 
-export type TreasuryAccount = 'Sales tax' | 'Ale tax' | 'Rent' | 'Land sales' | 'Town businesses' | 'Bailouts' | 'Charter houses' | 'Bounties' | 'Upkeep' | 'Watch' | 'Council motions' | 'Discrepancies';
+export type TreasuryAccount = 'Sales tax' | 'Ale tax' | 'Rent' | 'Land sales' | 'Town businesses' | 'Bailouts' | 'Charter houses' | 'Bounties' | 'Upkeep' | 'Watch' | 'Council motions' | 'Discrepancies' | 'Defenses' | 'Patron';
 
 export class Town {
   static readonly GRID = 16;
@@ -178,6 +179,13 @@ export class Town {
   watch = 0;
   /** Days of festival left. */
   festivalDays = 0;
+  readonly enemy: EnemyState = { strength: 0, stage: 'quiet', arrivalTick: null, nextRaidTick: null, outpost: false, sieges: 0, raids: 0, lastSignTick: 0, recentSigns: [] };
+  readonly defenses: Defenses = { palisade: 'none', palisadeReadyTick: null, towers: 0, towersBuilding: [] };
+  /** How the campaign ended: the Last Stand won, or the town fallen. */
+  outcome: Outcome = null;
+  /** The Director's read of recent drama; it decays each day. */
+  tension = 0;
+  quietDays = 0;
   private nextAgentId = 1;
 
   readonly content: Content;
