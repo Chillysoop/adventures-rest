@@ -100,6 +100,18 @@ public static class Economy
                 b.RevenueToday = 0;
                 continue;
             }
+            if (b.Def.Holy)
+            {
+                // A house of the gods keeps its coffers; when they run dry the town pays its priests.
+                if (b.Cash < 0)
+                {
+                    double cover = Math.Min(Math.Max(0, town.Treasury), -b.Cash);
+                    town.Book(TreasuryAccount.Temple, -cover);
+                    b.Cash += cover;
+                }
+                b.RevenueToday = 0;
+                continue;
+            }
 
             // Keep a working stock of tools.
             if (b.Def.Produces.Count > 0 && b.StockOf(Good.Tools) < 0.5 && b.Cash > 30)

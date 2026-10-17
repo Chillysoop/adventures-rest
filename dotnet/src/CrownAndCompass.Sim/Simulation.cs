@@ -83,6 +83,8 @@ public sealed class Simulation
         Threat.Daily(t, pace, Options.AutoMayor && Options.AutoDefense, Options.Enemy);
         Quests.Daily(t, Options.AutoMayor && Options.AutoBounties);
         Watch.Daily(t, Options.AutoMayor && Options.AutoBounties);
+        Rumors.Daily(t);
+        Shrines.Daily(t, Options.AutoMayor);
         Economy.Daily(t, true);
         History.Add(Snapshot());
         t.AccountsYesterday = t.AccountsToday;
@@ -115,6 +117,9 @@ public sealed class Simulation
     /// <summary>Pay for a mirror pair and have one hidden at a site, for a lasting live view.</summary>
     public Scout? PlantMirror(string siteId) => Watch.PlantMirror(Town, siteId);
 
+    /// <summary>Endow a temple to the town's god once the town is big enough.</summary>
+    public Building? BuildTemple() => Shrines.BuildTemple(Town);
+
     /// <summary>Commission the Scrying Pool or the Sleepless Spire.</summary>
     public Building? BuildSightWork(string buildingId) => Watch.BuildWork(Town, buildingId);
 
@@ -137,7 +142,10 @@ public sealed class Simulation
             AverageGold: Avg(a => a.Gold));
     }
 
-    /// <summary>Day one: the charter, a wagon of settlers, two charter houses, a farm and a lumber camp.</summary>
+    /// <summary>
+    /// Day one, in the shape of Phandalin (GDD rule C2): the charter, a wagon of settlers, two charter
+    /// houses, a shrine, a farm, a lumber camp and a general store; the inn follows within days. The settlers know the local menace.
+    /// </summary>
     private void Charter()
     {
         var t = Town;
@@ -168,9 +176,12 @@ public sealed class Simulation
         var house = c.Building("house");
         for (int i = 0; i < 2; i++) t.AddBuilding(house, FreeLot(Zone.Residential), null, Property.NameFor(t, house, null), true);
 
+        Shrines.RaiseShrine(t);
+
         var farmer = Population.CreateAgent(t, new NewAgentOptions { Profession = "farmer", Gold = t.Rng.Range(10, 30) });
         var woodcutter = Population.CreateAgent(t, new NewAgentOptions { Profession = "woodcutter", Gold = t.Rng.Range(10, 30) });
-        foreach (var owner in new[] { farmer, woodcutter })
+        var shopkeeper = Population.CreateAgent(t, new NewAgentOptions { Profession = "shopkeeper", Gold = t.Rng.Range(10, 30) });
+        foreach (var owner in new[] { farmer, woodcutter, shopkeeper })
         {
             owner.Ambition = Ambition.OwnHome;
             owner.DreamBusiness = null;
@@ -180,9 +191,14 @@ public sealed class Simulation
         var campDef = c.Building("lumber_camp");
         var farm = t.AddBuilding(farmDef, FreeLot(Zone.Farmland), farmer.Id, Property.NameFor(t, farmDef, farmer), true);
         var camp = t.AddBuilding(campDef, FreeLot(Zone.Farmland), woodcutter.Id, Property.NameFor(t, campDef, woodcutter), true);
+        var storeDef = c.Building("general_store");
+        var store = t.AddBuilding(storeDef, FreeLot(Zone.Commercial), shopkeeper.Id, Property.NameFor(t, storeDef, shopkeeper), true);
         farm.Cash = 40;
         camp.Cash = 40;
+        store.Cash = 40;
 
+        // The shopkeeper comes on top of the wagon's settlers. The inn is left to the first entrepreneur
+        // (an inn on day one drained the settlers' purses into ale before they had homes).
         for (int i = 2; i < Options.Settlers; i++) Population.CreateAgent(t);
 
         t.Market.Seed(Good.Food, 150);
@@ -196,7 +212,7 @@ public sealed class Simulation
         t.Log(
             LedgerCategory.Town,
             Importance.Major,
-            $"The charter is signed. {Options.Settlers} settlers and a wagon arrive at the river ford that will become {t.Name}.",
+            $"The charter is signed. {t.Population} settlers and a wagon arrive at the river ford that will become {t.Name}.",
             t.Residents.Select(a => a.Id).ToList());
     }
 
