@@ -50,6 +50,32 @@ dotnet run --project dotnet/src/CrownAndCompass.Cli -c Release -- --days 120 --s
 scripts/parity.sh                      # or: scripts/parity.sh 300 9 10 11
 ```
 
+Scrying and sending stones (`Systems/Knowledge.cs`, numbers in `content/game/knowledge.json`) exist only in the C#
+sim so far; the CLIs never call them, so parity holds.
+
+## The Godot client (`godot/`)
+
+Godot 4.3 (.NET) with the C# sim as a project reference. Everything is built in code (`src/Main.cs`, `src/Panels.cs`)
+and drawn procedurally (`src/Map/`), so there are no art assets beyond two OFL fonts.
+
+- The map: the town, the wilds and the sites, with day and night. Scroll to zoom, drag to pan, double right-click to recenter.
+- Fog of war (`src/Map/Fog.cs`), derived from the sim each frame: the town's own light (wider with watchtowers) is live;
+  roads and sites that a party came home to describe are *scouted* as of that day and go stale after 30 days; everything
+  else is *rumoured*. Parties vanish into the fog when they leave the light. A scrying shows a site live for a few hours.
+  While a party is away the only lever is a sending stone (ask for word, or call them home), which costs a spell slot.
+- Time: pause and 1×, 4×, 12×, 36× (space and 1 to 4), one sim step per in-game hour.
+- Panes: Ledger, War, Council, Bounties (with parties on the road and scrying), Chronicles, Inspect.
+
+```bash
+godot --path godot                         # play (Godot 4.3 .NET, .NET 8 SDK)
+godot --path godot -- --seed 5 --day 40 --autoplay --tab bounties --screenshot shot.png
+godot --headless --path godot --export-release Windows build/windows/CrownAndCompass.exe
+```
+
+Options after `--`: `--seed`, `--day`, `--hour`, `--speed 0-4`, `--tab`, `--site <id>`, `--autoplay` (the stand-in mayor
+plays), `--bounty <site>`, `--scry <site>`, `--send`, `--recall`, `--build palisade|tower`, `--screenshot <png>`,
+`--frames N`. For a clip, add Godot's own `--write-movie clip.avi --fixed-fps 30 --quit-after 900` before the `--`.
+
 ## Time model
 
 Real time with pause. A client calls `Simulation.step()` once per in-game hour at whatever speed

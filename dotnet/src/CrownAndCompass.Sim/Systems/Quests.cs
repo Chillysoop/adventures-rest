@@ -35,8 +35,14 @@ public sealed class Party
     public int BountyId { get; init; }
     public required string SiteId { get; init; }
     public int DepartTick { get; init; }
-    public int ReturnTick { get; init; }
+    public int ReturnTick { get; set; }
     public bool Returned { get; set; }
+
+    /// <summary>Sending-stone messages exchanged on the road; each costs one of the party's spell slots.</summary>
+    public int Sendings { get; set; }
+
+    /// <summary>Set when a sending called the party home before it reached the site.</summary>
+    public int? RecalledTick { get; set; }
 }
 
 public sealed record Chronicle(
@@ -307,7 +313,12 @@ public static class Quests
             var s = Site(town, party.SiteId)!;
             var bounty = town.Bounties[party.BountyId - 1];
             var members = party.Members.Select(town.Agent).ToList();
-            var result = Expedition.Run(town.Rng, town.Content, s.Def, members);
+            if (party.RecalledTick != null)
+            {
+                Knowledge.ComeHome(town, party, s, bounty, members);
+                continue;
+            }
+            var result = Expedition.Run(town.Rng, town.Content, s.Def, members, party.Sendings);
 
             var chronicle = new Chronicle(
                 town.Chronicles.Count + 1,

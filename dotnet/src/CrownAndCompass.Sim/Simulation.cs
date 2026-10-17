@@ -99,6 +99,12 @@ public sealed class Simulation
     /// <summary>Order a palisade or a watchtower.</summary>
     public bool BuildDefense(DefenseWork what) => Threat.Build(Town, what);
 
+    /// <summary>Pay a caster in town to scry a site, showing it live for a few hours.</summary>
+    public Scrying? CommissionScrying(string siteId) => Knowledge.CommissionScrying(Town, siteId);
+
+    /// <summary>Reach a party on the road by sending stone: ask for word, or call it home.</summary>
+    public string? SendWord(int partyId, bool recall = false) => Knowledge.Send(Town, partyId, recall);
+
     public DayStats Snapshot()
     {
         var t = Town;

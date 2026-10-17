@@ -1,0 +1,9 @@
+{
+  "casters": ["wizard", "cleric"],
+  "scryMinLevel": 2,
+  "scryBaseCost": 30,
+  "scryCostPerDay": 15,
+  "scryHours": 12,
+  "slotsPerCaster": 1,
+  "slotsPerTwoLevels": 1
+}
