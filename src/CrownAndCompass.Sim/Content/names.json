@@ -1,0 +1,22 @@
+{
+  "races": [
+    { "id": "human", "name": "human", "weight": 40,
+      "given": ["Aldric","Bryn","Cedric","Delia","Edmund","Fiona","Garrett","Helena","Isolde","Jory","Kestrel","Lysa","Marten","Nell","Osric","Perrin","Rowena","Tamsin","Ulric","Wren"],
+      "family": ["Ashford","Blackwood","Carver","Dunmore","Fletcher","Greaves","Hollow","Marsh","Thatcher","Underhill","Vane","Whitlock"] },
+    { "id": "dwarf", "name": "dwarf", "weight": 15,
+      "given": ["Brannoc","Dagna","Eberk","Gimra","Harbek","Ilde","Korrin","Morga","Rurik","Thora","Vondal","Werra"],
+      "family": ["Ironhand","Stonebeard","Coppervein","Deepdelver","Hammerfall","Granitejaw"] },
+    { "id": "elf", "name": "elf", "weight": 12,
+      "given": ["Aelar","Caelynn","Erevan","Galinndan","Ielenia","Lia","Mialee","Naivara","Quarion","Sariel","Thamior","Valanthe"],
+      "family": ["Amakiir","Galanodel","Holimion","Liadon","Meliamne","Nailo","Siannodel"] },
+    { "id": "halfling", "name": "halfling", "weight": 15,
+      "given": ["Alton","Bree","Cade","Daisy","Eldon","Lavinia","Merric","Nedda","Osborn","Pip","Rosie","Wellby"],
+      "family": ["Brushgather","Goodbarrel","Greenbottle","Tealeaf","Thorngage","Underbough"] },
+    { "id": "half-orc", "name": "half-orc", "weight": 10,
+      "given": ["Dench","Feng","Gell","Holg","Imsh","Krusk","Ovak","Ront","Shump","Sutha","Vola","Yevelda"],
+      "family": ["Bonebreaker","Ashtusk","Redmane","Skullsplitter"] },
+    { "id": "gnome", "name": "gnome", "weight": 8,
+      "given": ["Alston","Bimpnottin","Carlin","Ellyjobell","Fonkin","Lilli","Nissa","Orryn","Roywyn","Zook"],
+      "family": ["Beren","Daergel","Folkor","Garrick","Nackle","Murnig","Timbers"] }
+  ]
+}
