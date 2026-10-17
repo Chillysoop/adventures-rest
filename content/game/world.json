@@ -25,7 +25,7 @@
     "pleaTrust": 80,
     "visitTrust": 60,
     "mapTrust": 70,
-    "drift": 0.5
+    "drift": 0.2
   },
   "companies": {
     "minMembers": 3,
