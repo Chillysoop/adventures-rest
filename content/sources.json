@@ -58,6 +58,32 @@
     "license": "CC-BY-4.0",
     "entries": 180
   },
+  "khyberia-srd": {
+    "title": "Khyberia SRD",
+    "publisher": "Nick Stefanski",
+    "year": "2023",
+    "url": "https://tzarfenix.itch.io/khyberia-srd",
+    "license": "CC-BY-4.0",
+    "entries": 21
+  },
+  "midnight-spells": {
+    "title": "The Midnight Spell Compendium",
+    "publisher": "Nocturnal Designs",
+    "author": "Eve Parker",
+    "year": "2024",
+    "url": "https://nocturnal-designs.itch.io/spell-compendium",
+    "license": "CC-BY-4.0",
+    "entries": 99
+  },
+  "little-book-of-beasts": {
+    "title": "Kristin Saint-Clair's Little Book of Beasts [critter stats]",
+    "publisher": "Fanged Moon Games",
+    "author": "E. A. \"taichara\" Bisson",
+    "year": "2023",
+    "url": "https://taichara.itch.io/kristin-saint-clairs-little-book-of-beasts",
+    "license": "CC-BY-4.0",
+    "entries": 49
+  },
   "ironsworn": {
     "title": "Ironsworn Rulebook",
     "publisher": "Tomkin Press",

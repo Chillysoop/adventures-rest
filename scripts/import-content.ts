@@ -8,6 +8,9 @@
 // SRD 5.2 (2024) wins over SRD 5.1 (2014) when both have the same thing; 2014-only entries are kept.
 // Third-party entries that duplicate anything earlier in the order are dropped. Every entry carries
 // its `source`, and an `rt` block of real-time hints derived with the knobs in content/conversion.json.
+//
+// content/vendor holds more books in the same Open5e shape, converted from CC-BY packs that Open5e does not
+// carry (see scripts/convert-itch.ts); they are read alongside --from.
 
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -32,10 +35,12 @@ const ORDER: string[] = [...SRD, ...conv.thirdPartyOrder];
 // ---- reading Open5e fixtures ----
 
 const docDirs = new Map<string, string>();
-for (const pub of readdirSync(from, { withFileTypes: true })) {
-  if (!pub.isDirectory()) continue;
-  for (const doc of readdirSync(join(from, pub.name), { withFileTypes: true })) {
-    if (doc.isDirectory()) docDirs.set(doc.name, join(from, pub.name, doc.name));
+for (const root of [from, join(OUT, 'vendor')]) {
+  for (const pub of readdirSync(root, { withFileTypes: true })) {
+    if (!pub.isDirectory()) continue;
+    for (const doc of readdirSync(join(root, pub.name), { withFileTypes: true })) {
+      if (doc.isDirectory()) docDirs.set(doc.name, join(root, pub.name, doc.name));
+    }
   }
 }
 
@@ -664,6 +669,7 @@ for (const [doc, kinds] of Object.entries(openOut)) {
 const PUBLISHER_NAMES: Record<string, string> = {
   'wizards-of-the-coast': 'Wizards of the Coast LLC', 'kobold-press': 'Open Design LLC d/b/a Kobold Press',
   'en-publishing': 'EN Publishing', somanyrobots: 'somanyrobots',
+  'nick-stefanski': 'Nick Stefanski', 'nocturnal-designs': 'Nocturnal Designs', 'fanged-moon-games': 'Fanged Moon Games',
 };
 const sources: Record<string, any> = {};
 for (const doc of ORDER) {
@@ -700,6 +706,12 @@ const DS_ATTRIB: Record<string, string> = {
   ironsworn: 'This work is based on Ironsworn (found at www.ironswornrpg.com), created by Shawn Tomkin, and licensed for our use under the Creative Commons Attribution 4.0 International license (creativecommons.org/licenses/by/4.0/). Data converted from Datasworn by rsek.',
   'ironsworn-delve': 'This work is based on Ironsworn: Delve (found at www.ironswornrpg.com), created by Shawn Tomkin, and licensed for our use under the Creative Commons Attribution 4.0 International license (creativecommons.org/licenses/by/4.0/). Data converted from Datasworn by rsek.',
 };
+// Notices worded the way their authors asked for.
+const OWN_ATTRIB: Record<string, string> = {
+  'khyberia-srd': 'This work includes material taken from the Khyberia SRD by Nick Stefanski, available at www.khyberia.com. The Khyberia SRD is licensed under the Creative Commons Attribution 4.0 International License available at https://creativecommons.org/licenses/by/4.0/legalcode. The Khyberia SRD in turn includes material from the A5E System Reference Document (A5ESRD) by EN Publishing, available at A5ESRD.com, based on Level Up: Advanced 5th Edition (www.levelup5e.com), licensed under CC-BY 4.0. (Stat blocks only; https://tzarfenix.itch.io/khyberia-srd.)',
+  'midnight-spells': 'This work includes content from The Midnight Spell Compendium by Eve Parker (Nocturnal Designs), which is licensed CC-BY 4.0 (https://creativecommons.org/licenses/by/4.0/legalcode) and available at https://nocturnal-designs.itch.io/spell-compendium. Spell text only; Artificer references, which the book includes under the Fan Content Policy, are not used.',
+  'little-book-of-beasts': 'Kristin Saint-Clair\'s Little Book Of Beasts [critter stats] by E. A. "taichara" Bisson (Fanged Moon Games, 2023) is licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/), https://taichara.itch.io/kristin-saint-clairs-little-book-of-beasts. Only the critter stats are used, converted from rules-light stats to 5e-style numbers; the zine\'s art and the letter from "Kristin Saint-Clair" are not CC-BY and are not included.',
+};
 const ccby = Object.entries(sources).filter(([k, s]) => s.license === 'CC-BY-4.0' && !SRD.includes(k) && !DS_ATTRIB[k]);
 const md = [
   '# Attribution',
@@ -711,7 +723,7 @@ const md = [
   '',
   ...SRD.map((k) => `- **${k}** (${sources[k].title}). ${SRD_ATTRIB[k]}`),
   ...Object.keys(dsMeta).map((k) => `- **${k}** (${sources[k].title}). ${DS_ATTRIB[k]}`),
-  ...ccby.map(([k, s]) => `- **${k}**: This work includes material from *${s.title}*${s.year ? ` (${s.year})` : ''} by ${s.author ? `${s.author}, ` : ''}${s.publisher}${s.url ? `, ${s.url}` : ''}, licensed under the Creative Commons Attribution 4.0 International License, https://creativecommons.org/licenses/by/4.0/legalcode. Converted and adapted for real-time play.`),
+  ...ccby.map(([k, s]) => OWN_ATTRIB[k] ? `- **${k}**: ${OWN_ATTRIB[k]}` : `- **${k}**: This work includes material from *${s.title}*${s.year ? ` (${s.year})` : ''} by ${s.author ? `${s.author}, ` : ''}${s.publisher}${s.url ? `, ${s.url}` : ''}, licensed under the Creative Commons Attribution 4.0 International License, https://creativecommons.org/licenses/by/4.0/legalcode. Converted and adapted for real-time play.`),
   '',
   '## Data',
   '',

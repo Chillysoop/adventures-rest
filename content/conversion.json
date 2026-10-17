@@ -2,7 +2,7 @@
   "_about": "Knobs the importer (scripts/import-content.ts) uses to turn tabletop entries into real-time hints (the `rt` block on every entry). Change a number here and re-run the importer; nothing in src/ reads this file.",
   "secondsPerRound": 2,
   "castSeconds": {
-    "reaction": 0, "turn": 0, "bonus-action": 0.75, "action": 1.5, "round": 2,
+    "reaction": 0, "turn": 0, "bonus-action": 0.75, "attack": 0.75, "action": 1.5, "round": 2,
     "1minute": 6, "5minutes": 12, "10minutes": 20, "1hour": 60, "8hours": 240, "12hours": 300, "24hours": 480
   },
   "downtimeCastTimes": ["1hour", "8hours", "12hours", "24hours"],
@@ -65,6 +65,6 @@
       "orb-of-dragonkind": "dragon-orb", "figurine-of-wondrous-power-obsidian-steed": "figurine-of-wondrous-power-obsidian-stead"
     }
   },
-  "_thirdPartyOrder": "Only books offered under CC-BY-4.0. OGL-1.0a books were dropped on 2026-10-17 (Conner's call) and replaced with originals; the importer refuses any book not under CC-BY.",
-  "thirdPartyOrder": ["bfrd", "a5e-ag", "a5e-ddg", "a5e-gpg", "spells-that-dont-suck"]
+  "_thirdPartyOrder": "Only books offered under CC-BY-4.0. OGL-1.0a books were dropped on 2026-10-17 (Conner's call) and replaced with originals; the importer refuses any book not under CC-BY. The last three are itch.io packs converted into content/vendor.",
+  "thirdPartyOrder": ["bfrd", "a5e-ag", "a5e-ddg", "a5e-gpg", "spells-that-dont-suck", "khyberia-srd", "midnight-spells", "little-book-of-beasts"]
 }
