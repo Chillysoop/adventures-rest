@@ -764,6 +764,9 @@ public sealed class Content
     /// <summary>The factions that can take root in town and how they behave.</summary>
     public FactionRules Factions { get; init; } = new();
 
+    /// <summary>The campaign arc: acts, festering menaces, dread and the finale (content/game/saga.json).</summary>
+    public SagaRules Saga { get; init; } = new();
+
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
 
@@ -892,6 +895,7 @@ public sealed class Content
             Shrines = Parse<ShrineRules>("shrines.json"),
             Faith = Parse<FaithRules>("faith.json"),
             Factions = Parse<FactionRules>("factions.json"),
+            Saga = Parse<SagaRules>("saga.json"),
         };
     }
 

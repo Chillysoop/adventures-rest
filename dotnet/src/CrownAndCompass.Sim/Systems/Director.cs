@@ -26,8 +26,8 @@ public static class Director
         double pace = 1;
         if (town.Tension > 40) pace = 0.5;
         else if (town.QuietDays > 10) pace = 1.5;
-        // Every campaign reaches its climax: past day 120 the warband gathers in earnest.
-        if (town.Day > 120) pace = Math.Max(pace, 1 + (town.Day - 120) / 30.0);
+        // Every campaign reaches its climax: past Act I's climax day the warband gathers in earnest.
+        pace = Math.Max(pace, Saga.WarbandPressure(town));
 
         if (town.Tension > 45 && town.Rng.Chance(0.25)) SendHelp(town);
         else if (town.QuietDays > 12 && town.Rng.Chance(0.2)) SendStranger(town);
@@ -38,7 +38,7 @@ public static class Director
     {
         if (town.Taverns.Count == 0) return;
         var cls = town.Content.Classes[town.Rng.Range(0, town.Content.Classes.Count)];
-        var a = Quests.CreateHero(town, cls, town.Rng.Chance(0.5) ? 3 : 2);
+        var a = Quests.CreateHero(town, cls, (town.Rng.Chance(0.5) ? 3 : 2) + Saga.ArrivalBonus(town));
         town.Tension -= 15;
         town.Log(
             LedgerCategory.Arrival,

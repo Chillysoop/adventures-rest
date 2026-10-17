@@ -117,7 +117,8 @@ public static class Threat
         var en = town.Enemy;
         if (!enemy || !IsActive(town)) return;
 
-        if (en.Stage != ThreatStage.Marching) en.Strength += Growth(town) * director;
+        // Living off a sacked town's tribute, the warband grows slowly.
+        if (en.Stage != ThreatStage.Marching) en.Strength += Growth(town) * director * (Saga.Restrained(town) ? 0.25 : 1);
         OutpostFalls(town);
         Advance(town);
         if (en.Stage == ThreatStage.Raids && RaidTonight(town)) Raid(town);
@@ -153,7 +154,7 @@ public static class Threat
             en.NextRaidTick = town.Tick + town.Rng.Range(2, 4) * SimTime.HoursPerDay;
             town.Log(LedgerCategory.War, Importance.Major, $"{Cap(e.Name)} has grown bold. Its raiders will come for the outlying farms next.");
         }
-        else if (en.Stage == ThreatStage.Raids && en.Strength >= e.Stages.March && en.Strength >= Defense(town, allies: false) * e.MarchConfidence)
+        else if (en.Stage == ThreatStage.Raids && !Saga.Restrained(town) && en.Strength >= e.Stages.March && en.Strength >= Defense(town, allies: false) * e.MarchConfidence)
         {
             Next(ThreatStage.Marching);
             en.ArrivalTick = town.Tick + e.MarchDays * SimTime.HoursPerDay;
@@ -276,7 +277,8 @@ public static class Threat
     {
         var en = town.Enemy;
         var l = town.Content.Lairs;
-        if (en.NextRaidTick == null) return false;
+        // A town paying the warlord's tribute is left alone.
+        if (en.NextRaidTick == null || Saga.Restrained(town)) return false;
         bool away = Lairs.AwayShare(town) >= l.SoftShare;
         if (town.Tick >= en.NextRaidTick)
         {
@@ -342,9 +344,17 @@ public static class Threat
 
         if (breaches >= e.BreachesToFall)
         {
+            if (Saga.Sack(town, Menaces.Warband(town), lines))
+            {
+                WarlordInCamp(town);
+                Chronicle(town, lines, ExpeditionOutcome.Wiped, []);
+                town.Log(LedgerCategory.War, Importance.Major, $"{town.Name} is sacked. {e.Leader}'s warband carries off the treasury and leaves the town under its yoke. (Chronicle {town.Chronicles.Count})", dead.Select(a => a.Id).ToList());
+                town.Tension += 80;
+                return;
+            }
             lines.Add($"The defence collapses. {e.Leader} raises the red banner over the town hall.");
             en.Stage = ThreatStage.Victorious;
-            town.Outcome = Outcome.Defeat;
+            Saga.Fall(town, $"{e.Leader}'s banner flies over the town hall on day {town.Day}.");
             town.Mandate = 0;
             town.Book(TreasuryAccount.Discrepancies, -town.Treasury);
             Chronicle(town, lines, ExpeditionOutcome.Wiped, []);
@@ -395,7 +405,6 @@ public static class Threat
             lines.Add($"{e.Leader} is dead. The warband breaks and scatters into the hills.");
             en.Stage = ThreatStage.Defeated;
             en.Strength = 0;
-            town.Outcome = Outcome.Victory;
             town.Mandate = Math.Min(100, town.Mandate + 25);
             Chronicle(town, lines, ExpeditionOutcome.Cleared, champions);
             town.Log(
@@ -403,6 +412,7 @@ public static class Threat
                 Importance.Major,
                 $"The Last Stand is won! {e.Leader} falls before the walls of {town.Name}, and the warband is broken. (Chronicle {town.Chronicles.Count})",
                 champions.Select(a => a.Id).ToList());
+            Saga.WarlordSlain(town);
         }
         else
         {
@@ -419,6 +429,46 @@ public static class Threat
                 champions.Select(a => a.Id).ToList());
         }
         town.Tension += 60 + dead.Count * 5;
+    }
+
+    /// <summary>
+    /// The warband has sacked the town and holds it under the yoke. It goes home with its plunder; the
+    /// warlord waits in his war camp, raised again if it was burned, where heroes can go for him.
+    /// </summary>
+    public static void WarlordInCamp(Town town)
+    {
+        var e = town.Content.Enemy;
+        var en = town.Enemy;
+        en.Stage = ThreatStage.Raids;
+        en.ArrivalTick = null;
+        en.NextRaidTick = town.Tick + 10 * SimTime.HoursPerDay;
+        en.Strength *= 0.6;
+        var camp = town.Sites.FirstOrDefault(s => s.Def.Id == e.Outpost.Id);
+        if (camp == null)
+        {
+            camp = new SiteState(e.Outpost);
+            town.Sites.Add(camp);
+        }
+        camp.Cleared = false;
+        camp.ThoughtCleared = false;
+        camp.Def = camp.Def with { Boss = e.WarlordBattle with { Text = $"{e.Leader} in his great tent, his honour guard around him" }, Tier = Math.Max(camp.Def.Tier, 3) };
+        en.Outpost = true;
+        Rumors.Hear(town, camp, Rumors.Occupants(town.Content, camp.Def), camp.Def.Tier);
+    }
+
+    /// <summary>Heroes burned the war camp with the warlord in it: the warband is broken.</summary>
+    public static void WarlordFalls(Town town, SiteState camp)
+    {
+        var e = town.Content.Enemy;
+        var en = town.Enemy;
+        if (!IsActive(town)) return;
+        en.Stage = ThreatStage.Defeated;
+        en.Strength = 0;
+        en.Outpost = false;
+        camp.Def = camp.Def with { Boss = e.Outpost.Boss };
+        town.Mandate = Math.Min(100, town.Mandate + 25);
+        town.Log(LedgerCategory.War, Importance.Major, $"{e.Leader} is dead, cut down in his own war camp. The warband breaks and scatters into the hills.");
+        Saga.WarlordSlain(town);
     }
 
     private static void Chronicle(Town town, List<string> lines, ExpeditionOutcome outcome, List<Agent> champions)
