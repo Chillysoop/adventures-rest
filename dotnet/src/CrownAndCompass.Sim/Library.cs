@@ -87,6 +87,62 @@ public sealed record LibItem
     public string Text { get; init; } = "";
 }
 
+/// <summary>A god of the pantheon (content/original/deities.json), boiled down to what the faith system needs.</summary>
+public sealed record LibDeity
+{
+    public required string Id { get; init; }
+    public required string Name { get; init; }
+    public required string Source { get; init; }
+    public string Alignment { get; init; } = "";
+    public IReadOnlyList<string> Domains { get; init; } = [];
+    public string Portfolio { get; init; } = "";
+    public string Symbol { get; init; } = "";
+    public string HolyDay { get; init; } = "";
+
+    /// <summary>Peoples of the wider world (content/game/world.json) who favour this god.</summary>
+    public IReadOnlyList<string> FavouredBy { get; init; } = [];
+
+    /// <summary>Race ids, professions and class ids whose folk lean to this god.</summary>
+    public IReadOnlyList<string> Races { get; init; } = [];
+    public IReadOnlyList<string> Professions { get; init; } = [];
+    public IReadOnlyList<string> Classes { get; init; } = [];
+
+    /// <summary>Trait names the god favours and frowns on.</summary>
+    public IReadOnlyList<string> Virtues { get; init; } = [];
+    public IReadOnlyList<string> Vices { get; init; } = [];
+
+    /// <summary>What a miracle of this god does: heal, forge, harvest, valor, justice, ward, lore, luck, trade, storm, ...</summary>
+    public string Boon { get; init; } = "";
+    public IReadOnlyList<string> Rivals { get; init; } = [];
+
+    /// <summary>Site kinds (undead, schemers, tribe...) whose dens the god's temple pays to see cleansed.</summary>
+    public IReadOnlyList<string> Hates { get; init; } = [];
+
+    /// <summary>Evil gods are never worshipped openly; only cults convert to them.</summary>
+    public bool Evil { get; init; }
+}
+
+/// <summary>A faction's lore (content/original/factions.json); how it behaves lives in content/game/factions.json.</summary>
+public sealed record LibFaction
+{
+    public required string Id { get; init; }
+    public required string Name { get; init; }
+    public required string Source { get; init; }
+    public string Kind { get; init; } = "";
+    public string Alignment { get; init; } = "";
+
+    /// <summary>The deity id the faction holds as its patron.</summary>
+    public string Patron { get; init; } = "";
+    public string Motto { get; init; } = "";
+    public string Symbol { get; init; } = "";
+    public bool Secret { get; init; }
+    public IReadOnlyList<string> Rivals { get; init; } = [];
+    public IReadOnlyList<string> Allies { get; init; } = [];
+
+    /// <summary>Peoples of the wider world (content/game/world.json) the faction has ties with.</summary>
+    public IReadOnlyList<string> Peoples { get; init; } = [];
+}
+
 /// <summary>
 /// The content library (content/srd, content/open/*, content/original): every monster, class, spell
 /// and magic item the game can draw on. Ids are unique per kind across folders, so lookups are by id.
@@ -98,13 +154,23 @@ public sealed class Library
     public IReadOnlyList<LibClass> Classes { get; }
     public IReadOnlyList<LibSpell> Spells { get; }
     public IReadOnlyList<LibItem> Items { get; }
+    public IReadOnlyList<LibDeity> Deities { get; }
+    public IReadOnlyList<LibFaction> Factions { get; }
 
     private readonly Dictionary<string, LibMonster> _monsters;
     private readonly Dictionary<string, LibClass> _classes;
     private readonly Dictionary<string, LibSpell> _spells;
     private readonly Dictionary<string, LibItem> _items;
+    private readonly Dictionary<string, LibDeity> _deities;
+    private readonly Dictionary<string, LibFaction> _factions;
 
-    public Library(IEnumerable<LibMonster> monsters, IEnumerable<LibClass> classes, IEnumerable<LibSpell> spells, IEnumerable<LibItem> items)
+    public Library(
+        IEnumerable<LibMonster> monsters,
+        IEnumerable<LibClass> classes,
+        IEnumerable<LibSpell> spells,
+        IEnumerable<LibItem> items,
+        IEnumerable<LibDeity>? deities = null,
+        IEnumerable<LibFaction>? factions = null)
     {
         Monsters = monsters.OrderBy(m => m.Id, StringComparer.Ordinal).ToList();
         Classes = classes.OrderBy(c => c.Id, StringComparer.Ordinal).ToList();
@@ -114,12 +180,18 @@ public sealed class Library
         _classes = Classes.ToDictionary(c => c.Id);
         _spells = Spells.ToDictionary(s => s.Id);
         _items = Items.ToDictionary(i => i.Id);
+        Deities = (deities ?? []).OrderBy(d => d.Id, StringComparer.Ordinal).ToList();
+        Factions = (factions ?? []).OrderBy(f => f.Id, StringComparer.Ordinal).ToList();
+        _deities = Deities.ToDictionary(d => d.Id);
+        _factions = Factions.ToDictionary(f => f.Id);
     }
 
     public LibMonster? Monster(string id) => _monsters.GetValueOrDefault(id);
     public LibClass? Class(string id) => _classes.GetValueOrDefault(id);
     public LibSpell? Spell(string id) => _spells.GetValueOrDefault(id);
     public LibItem? Item(string id) => _items.GetValueOrDefault(id);
+    public LibDeity? Deity(string id) => _deities.GetValueOrDefault(id);
+    public LibFaction? Faction(string id) => _factions.GetValueOrDefault(id);
 
     /// <summary>Spells a class can cast, lowest level first, then by id.</summary>
     public IEnumerable<LibSpell> SpellsOf(string classId) =>
@@ -157,11 +229,13 @@ public sealed class Library
         var classes = new Dictionary<string, LibClass>();
         var spells = new Dictionary<string, LibSpell>();
         var items = new Dictionary<string, LibItem>();
+        var deities = new Dictionary<string, LibDeity>();
+        var factions = new Dictionary<string, LibFaction>();
         // Folder order only matters if an id repeats; the README promises it doesn't, and the first wins.
         foreach (var (path, read) in files.OrderBy(f => f.Path, StringComparer.Ordinal))
         {
             string kind = System.IO.Path.GetFileNameWithoutExtension(path);
-            if (kind is not ("monsters" or "classes" or "spells" or "magic-items")) continue;
+            if (kind is not ("monsters" or "classes" or "spells" or "magic-items" or "deities" or "factions")) continue;
             using var doc = JsonDocument.Parse(read());
             foreach (var e in doc.RootElement.EnumerateArray())
             {
@@ -172,10 +246,12 @@ public sealed class Library
                     case "classes": classes.TryAdd(id, ParseClass(e)); break;
                     case "spells": spells.TryAdd(id, ParseSpell(e)); break;
                     case "magic-items": items.TryAdd(id, ParseItem(e)); break;
+                    case "deities": deities.TryAdd(id, ParseDeity(e)); break;
+                    case "factions": factions.TryAdd(id, ParseFaction(e)); break;
                 }
             }
         }
-        return new Library(monsters.Values, classes.Values, spells.Values, items.Values);
+        return new Library(monsters.Values, classes.Values, spells.Values, items.Values, deities.Values, factions.Values);
     }
 
     private static string Str(JsonElement e, string key) =>
@@ -313,6 +389,54 @@ public sealed class Library
             ValueGp = hasRt ? Num(rt, "valueGp") : 0,
             Fog = Fog(e),
             Text = Str(e, "text"),
+        };
+    }
+
+    private static LibDeity ParseDeity(JsonElement e)
+    {
+        var rt = Rt(e);
+        bool hasRt = rt.ValueKind == JsonValueKind.Object;
+        return new LibDeity
+        {
+            Id = Str(e, "id"),
+            Name = Str(e, "name"),
+            Source = Str(e, "source"),
+            Alignment = Str(e, "alignment"),
+            Domains = Strings(e, "domains"),
+            Portfolio = Str(e, "portfolio"),
+            Symbol = Str(e, "symbol"),
+            HolyDay = Str(e, "holyDay"),
+            FavouredBy = Strings(e, "favouredBy"),
+            Races = hasRt ? Strings(rt, "races") : [],
+            Professions = hasRt ? Strings(rt, "professions") : [],
+            Classes = hasRt ? Strings(rt, "classes") : [],
+            Virtues = hasRt ? Strings(rt, "virtues") : [],
+            Vices = hasRt ? Strings(rt, "vices") : [],
+            Boon = hasRt ? Str(rt, "boon") : "",
+            Rivals = hasRt ? Strings(rt, "rivals") : [],
+            Hates = hasRt ? Strings(rt, "hates") : [],
+            Evil = hasRt && Flag(rt, "evil"),
+        };
+    }
+
+    private static LibFaction ParseFaction(JsonElement e)
+    {
+        var rt = Rt(e);
+        bool hasRt = rt.ValueKind == JsonValueKind.Object;
+        return new LibFaction
+        {
+            Id = Str(e, "id"),
+            Name = Str(e, "name"),
+            Source = Str(e, "source"),
+            Kind = Str(e, "kind"),
+            Alignment = Str(e, "alignment"),
+            Patron = Str(e, "patron"),
+            Motto = Str(e, "motto"),
+            Symbol = Str(e, "symbol"),
+            Secret = hasRt && Flag(rt, "secret"),
+            Rivals = hasRt ? Strings(rt, "rivals") : [],
+            Allies = hasRt ? Strings(rt, "allies") : [],
+            Peoples = hasRt ? Strings(rt, "peoples") : [],
         };
     }
 

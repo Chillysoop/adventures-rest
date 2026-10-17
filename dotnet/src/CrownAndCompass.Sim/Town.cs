@@ -158,6 +158,8 @@ public static class TreasuryAccount
     public const string Temple = "Temple";
     public const string Outposts = "Outposts";
     public const string Tribute = "Tribute";
+    public const string Fines = "Fines";
+    public const string Factions = "Factions";
 }
 
 /// <summary>How the campaign ended.</summary>
@@ -226,6 +228,12 @@ public sealed class Town
 
     /// <summary>Everything the taverns have said about the wilds, oldest first.</summary>
     public List<Rumor> Rumors { get; } = [];
+
+    /// <summary>The pantheon in town: dedications, divine favour, blessings and miracles.</summary>
+    public FaithState Faiths { get; } = new();
+
+    /// <summary>Every faction that can take root, active or not, in content order.</summary>
+    public List<FactionState> Factions { get; } = [];
 
     /// <summary>Library items parties brought home for the town (ids), in the order they came.</summary>
     public List<string> Relics { get; } = [];

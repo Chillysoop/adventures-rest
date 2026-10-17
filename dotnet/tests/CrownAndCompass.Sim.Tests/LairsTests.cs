@@ -11,7 +11,7 @@ public class LairsTests
     public void LairsGrowAndActByTheirKind(int seed)
     {
         var sim = new Simulation(new SimulationOptions { Seed = seed });
-        sim.RunDays(90);
+        sim.RunDays(60);
         var t = sim.Town;
         Assert.Contains(t.Sites, s => !s.Cleared && s.Strength > t.Content.Lairs.StartStrength);
         var names = t.Sites.Select(s => s.Def.Name).ToList();

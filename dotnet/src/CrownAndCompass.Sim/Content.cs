@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using CrownAndCompass.Sim.Systems;
 
 namespace CrownAndCompass.Sim;
 
@@ -757,6 +758,12 @@ public sealed class Content
     /// <summary>The shrine, the temple and the general store's potions.</summary>
     public ShrineRules Shrines { get; init; } = new();
 
+    /// <summary>Numbers for the pantheon in town (the gods themselves are in the library).</summary>
+    public FaithRules Faith { get; init; } = new();
+
+    /// <summary>The factions that can take root in town and how they behave.</summary>
+    public FactionRules Factions { get; init; } = new();
+
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
 
@@ -883,6 +890,8 @@ public sealed class Content
             Rumors = Parse<RumorRules>("rumors.json"),
             Lairs = Parse<LairRules>("lairs.json"),
             Shrines = Parse<ShrineRules>("shrines.json"),
+            Faith = Parse<FaithRules>("faith.json"),
+            Factions = Parse<FactionRules>("factions.json"),
         };
     }
 
