@@ -69,7 +69,8 @@ public class KnowledgeTests
             var caster = Knowledge.Scryers(t)[0];
             double gold = caster.Gold;
             double treasury = t.Treasury;
-            var site = t.Sites[0];
+            // A site the town has heard of and is not already watching.
+            var site = t.Sites.First(s => s.Known != SiteKnowledge.Unheard && Knowledge.ActiveScrying(t, s.Def.Id) == null);
             double cost = Knowledge.ScryCost(t, site.Def);
             var scry = sim.CommissionScrying(site.Def.Id);
             Assert.NotNull(scry);

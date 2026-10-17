@@ -72,10 +72,23 @@ public sealed class Geo
         for (int i = 0; i < town.Sites.Count; i++)
         {
             var s = town.Sites[i];
-            // Content sites keep fixed slots; sites raised later (the war camp) sit between them.
-            float slot = i < baseCount ? i : i - baseCount + 0.5f;
-            float a = -Mathf.Pi / 2 + slot / baseCount * Mathf.Tau + 0.35f;
+            float a;
             float rr = TownRadius + 1.3f + s.Def.Distance * 1.1f;
+            if (Sim.Systems.World.RegionOf(town, s) is { } region)
+            {
+                // Spread a region's sites across its arc of the compass (bearing 0 is north, clockwise).
+                int k = region.SiteIds.IndexOf(s.Def.Id);
+                int n = region.SiteIds.Count;
+                float bearing = (float)(region.Bearing + (k - (n - 1) / 2f) * region.Arc * 0.6f / Math.Max(1, n));
+                a = -Mathf.Pi / 2 + Mathf.DegToRad(bearing);
+                rr += (k % 2) * 0.5f;
+            }
+            else
+            {
+                // Content sites keep fixed slots; sites raised later (the war camp) sit between them.
+                float slot = i < baseCount ? i : i - baseCount + 0.5f;
+                a = -Mathf.Pi / 2 + slot / baseCount * Mathf.Tau + 0.35f;
+            }
             var p = Center + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * rr;
             if (!Pins.TryGetValue(s.Def.Id, out var old) || old.DistanceTo(p) > 0.05f) moved = true;
             Pins[s.Def.Id] = p;

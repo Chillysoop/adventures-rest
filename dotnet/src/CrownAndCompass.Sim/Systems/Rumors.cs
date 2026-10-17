@@ -119,7 +119,8 @@ public static class Rumors
     private static double Weight(Town town, SiteState s)
     {
         if (s.Held) return 0;
-        if (s.Known == SiteKnowledge.Unheard) return Rules(town).UnheardWeight / Math.Max(1, s.Def.Distance);
+        // Taverns only talk of places in country someone has heard of (World): the far wilds stay silent.
+        if (s.Known == SiteKnowledge.Unheard) return World.RegionKnown(town, s) ? Rules(town).UnheardWeight / Math.Max(1, s.Def.Distance) : 0;
         // Talk of a cleared ruin taken again starts only once it has had time to be.
         if (s.ThoughtCleared) return town.Tick - (s.ClearedTick ?? 0) < Rules(town).QuietDays * SimTime.HoursPerDay ? 0 : s.Cleared ? 0.03 : 2;
         return s.Known == SiteKnowledge.Rumoured ? 0.4 : 0;
@@ -176,8 +177,8 @@ public static class Rumors
             if (!truth)
             {
                 who = Mistaken(town, site, occupants);
+                // A false tale is off by one step either way, out in the far wilds too.
                 tier = Math.Max(1, tier + (rng.Chance(0.5) ? -1 : 1));
-                tier = Math.Min(3, tier);
             }
             text = Fill(rng.Pick(r.Place), source, site, who, tier, r);
             Hear(town, site, who, tier, reliability);
@@ -185,7 +186,7 @@ public static class Rumors
         }
         else if (rng.Chance(0.5))
         {
-            if (!truth) tier = Math.Clamp(tier + (rng.Chance(0.5) ? -1 : 1), 1, 3);
+            if (!truth) tier = Math.Max(1, tier + (rng.Chance(0.5) ? -1 : 1));
             text = Fill(rng.Pick(r.Strength), source, site, site.Believed, tier, r);
             who = "";
             Hear(town, site, site.Believed, tier, reliability);
@@ -248,7 +249,7 @@ public static class Rumors
             .Replace("{site}", site.Def.Name, StringComparison.Ordinal)
             .Replace("{who}", who, StringComparison.Ordinal)
             .Replace("{days}", Days(site.Def.Distance), StringComparison.Ordinal)
-            .Replace("{tier}", r.TierWords.Count > tier ? r.TierWords[tier] : $"tier {tier}", StringComparison.Ordinal);
+            .Replace("{tier}", r.TierWords.Count > tier ? r.TierWords[tier] : $"no place for anyone under level {tier}", StringComparison.Ordinal);
         return char.ToUpperInvariant(text[0]) + text[1..];
     }
 
