@@ -13,7 +13,7 @@ Day   8 17:00  [Brawl] A brawl breaks out at The Sleeping Dragon: Aelar Liadon s
 Day   9 00:00  [Arrival] Imsh Skullsplitter, a half-orc barbarian (level 1), walks into The Sleeping Dragon looking for paid work. (romantic)
 Day   9 00:00  [Quest] The Ashen Compasses (Vola the cleric, Pip the fighter, Imsh the barbarian) take the bounty on the Goblin Warrens and march out at dawn.
 Day  10 00:00  [Departure] Ulric Underhill and Edmund pack up and leave Briarford, tired of sleeping in the mud behind the stables.
-  -- end of day 10: pop 17, homeless 0, idle 4, buildings 10 (+0 rising), treasury 574, food 0.91g, mood 74, avg purse 31g
+  -- end of day 10: pop 17, homeless 0, idle 4, buildings 10 (+0 rising), treasury 320, food 0.91g, mood 74, avg purse 31g
 Day  12 00:00  [Hardship] Tamsin Hollow cannot pay rent and is turned out of Charter House 3 by the town.
 Day  12 00:00  [Quest] The Ashen Compasses limp back from the Goblin Warrens empty-handed, carrying the bodies of Vola and Imsh. (Chronicle 1)
 Day  12 00:00  [Arrival] Osric Hollow, a human barbarian (level 1), walks into The Sleeping Dragon looking for paid work. (ambitious, gregarious, greedy)
@@ -33,7 +33,7 @@ Day  18 08:00  [Construction] Osric's Brewery is finished for Osric Whitlock.
 Day  20 00:00  [Quest] The Ashen Compasses return from the Goblin Warrens victorious with 155 gold to split. (Chronicle 3)
 Day  20 00:00  [Town] The council posts a bounty of 100 gold on Wolfwood.
 Day  20 00:00  [Quest] The Ashen Compasses (Pip the fighter, Osric the barbarian, Eldon the rogue, Rowena the wizard) take the bounty on Wolfwood and march out at dawn.
-  -- end of day 20: pop 23, homeless 0, idle 4, buildings 12 (+0 rising), treasury 998, food 0.91g, mood 67, avg purse 56g
+  -- end of day 20: pop 23, homeless 0, idle 4, buildings 12 (+0 rising), treasury 485, food 0.91g, mood 67, avg purse 56g
 Day  22 00:00  [Property] Rowena Carver buys a farmland lot for 29 gold and breaks ground on Carver Farm.
 Day  23 00:00  [Quest] Pip Greenbottle reaches level 2.
 Day  23 00:00  [Quest] Osric Hollow reaches level 2.
@@ -50,7 +50,7 @@ Day  28 00:00  [Town] The council posts a bounty of 220 gold on Spider Hollow.
 Day  28 00:00  [Quest] The Ashen Compasses (Pip the fighter, Eldon the rogue, Osric the barbarian, Rowena the wizard) take the bounty on Spider Hollow and march out at dawn.
 Day  29 00:00  [Property] Isolde Vane buys a commercial lot for 38 gold and breaks ground on Vane's Forge.
 Day  30 00:00  [Arrival] Brannoc Coppervein, a dwarf merchant, rides in with 130 gold, looking for a business to buy into.
-  -- end of day 30: pop 28, homeless 0, idle 0, buildings 14 (+2 rising), treasury 1187, food 0.91g, mood 68, avg purse 82g
+  -- end of day 30: pop 28, homeless 0, idle 0, buildings 14 (+2 rising), treasury 367, food 0.91g, mood 68, avg purse 82g
 Day  33 00:00  [Quest] Pip Greenbottle reaches level 3.
 Day  33 00:00  [Quest] Eldon Thorngage reaches level 3.
 Day  33 00:00  [Quest] Rowena Ashford reaches level 3.
@@ -67,7 +67,7 @@ Day  37 00:00  [Arrival] Merric Thorngage, a halfling fighter (level 1), walks i
 Day  38 00:00  [Arrival] Thora Deepdelver, a dwarf ranger (level 1), walks into The Sleeping Dragon looking for paid work. (hottempered, generous)
 Day  39 15:00  [Construction] Vane's Forge No. 2 is finished for Isolde Vane.
 Day  41 00:00  [Property] Isolde Vane buys a commercial lot for 38 gold and breaks ground on Isolde's Brewery.
-  -- end of day 40: pop 29, homeless 0, idle 0, buildings 17 (+2 rising), treasury 1636, food 0.91g, mood 70, avg purse 85g
+  -- end of day 40: pop 29, homeless 0, idle 0, buildings 17 (+2 rising), treasury 441, food 0.91g, mood 70, avg purse 85g
 Day  44 09:00  [Construction] Isolde's Brewery is finished for Isolde Vane.
 Day  45 00:00  [Arrival] Korrin Stonebeard, a dwarf fighter (level 1), walks into The Sleeping Dragon looking for paid work. (shy, generous)
 Day  46 00:00  [Hardship] Aldric Ashford cannot pay rent and is turned out of the Murnig house by Fonkin Murnig.
@@ -84,7 +84,7 @@ Day  50 00:00  [Departure] Merric Thorngage packs up and leaves Briarford, unabl
 Day  50 00:00  [Departure] Thora Deepdelver packs up and leaves Briarford, unable to afford a decent meal.
 Day  50 14:00  [Construction] Nailo Farm is finished for Aelar Nailo.
 Day  51 00:00  [Arrival] Cade Brushgather, a halfling rogue (level 1), walks into The Sleeping Dragon looking for paid work. (ambitious, shy, romantic)
-  -- end of day 50: pop 36, homeless 0, idle 2, buildings 21 (+0 rising), treasury 2370, food 0.91g, mood 68, avg purse 109g
+  -- end of day 50: pop 36, homeless 0, idle 2, buildings 21 (+0 rising), treasury 731, food 0.91g, mood 68, avg purse 109g
 Day  52 18:00  [Social] Thamior Meliamne says something about a game of dice that Osric Whitlock will not forgive. A grudge begins at The Sleeping Dragon.
 Day  53 00:00  [Arrival] Marten Carver, a human rogue (level 1), walks into The Sleeping Dragon looking for paid work. (lazy)
 Day  54 00:00  [Property] Isolde Vane buys a commercial lot for 41 gold and breaks ground on Vane's Forge No. 3.
@@ -96,7 +96,7 @@ Day  56 00:00  [Town] The council posts a bounty of 240 gold on Ogre's Ford.
 Day  56 16:00  [Construction] Vane's Forge No. 3 is finished for Isolde Vane.
 Day  57 00:00  [Arrival] Marten Hollow, a human barbarian (level 2), walks into The Sleeping Dragon looking for paid work. (generous)
 Day  57 17:00  [Brawl] A brawl breaks out at The Sleeping Dragon: Osric Whitlock swings at Thamior Meliamne. Thamior (d20 17+3) lays Osric (d20 2+1) out cold. Osric pays 7 gold for the broken chairs.
-  -- end of day 60: pop 40, homeless 0, idle 0, buildings 23 (+2 rising), treasury 3233, food 0.91g, mood 67, avg purse 131g
+  -- end of day 60: pop 40, homeless 0, idle 0, buildings 23 (+2 rising), treasury 1089, food 0.91g, mood 67, avg purse 131g
 Day  64 00:00  [Property] Isolde Vane buys a commercial lot for 42 gold and breaks ground on Vane's Forge No. 4.
 Day  64 00:00  [Arrival] Garrett Underhill, a human barbarian (level 1), walks into The Sleeping Dragon looking for paid work. (gregarious, greedy, romantic)
 Day  64 22:00  [Social] Perrin Fletcher says something about their cooking that Shump Redmane will not forgive. A grudge begins at The Sleeping Dragon.
@@ -110,7 +110,7 @@ Day  69 00:00  [Arrival] Lilli Murnig, a gnome farmer, rides in with 146 gold, d
 Day  70 00:00  [Property] Lilli Murnig buys a farmland lot for 38 gold and breaks ground on Murnig Farm.
 Day  71 00:00  [Quest] The Gallows Hounds return from Ogre's Ford victorious with 441 gold to split. (Chronicle 8)
 Day  71 00:00  [Town] The council posts a bounty of 420 gold on the Drowned Temple.
-  -- end of day 70: pop 50, homeless 0, idle 3, buildings 26 (+3 rising), treasury 3722, food 0.91g, mood 69, avg purse 149g
+  -- end of day 70: pop 50, homeless 0, idle 3, buildings 26 (+3 rising), treasury 1029, food 0.91g, mood 69, avg purse 149g
 Day  71 13:00  [Construction] The Gilded Mimic is finished for Isolde Vane.
 Day  71 15:00  [Construction] Murnig Farm is finished for Lilli Murnig.
 Day  72 00:00  [Property] Isolde Vane buys a commercial lot for 46 gold and breaks ground on Vane's Forge No. 5.
@@ -127,7 +127,7 @@ Day  79 00:00  [Property] Rowena Carver buys a commercial lot for 48 gold and br
 Day  79 10:00  [Construction] Aelar's Brewery is finished for Aelar Nailo.
 Day  79 17:00  [Romance] Shump Redmane and Dagna (once Deepdelver) are wed at the town hall. Half the town turns out to cheer.
 Day  81 00:00  [Town] The council posts a bounty of 420 gold on the Drowned Temple.
-  -- end of day 80: pop 60, homeless 4, idle 0, buildings 33 (+4 rising), treasury 4974, food 0.91g, mood 70, avg purse 148g
+  -- end of day 80: pop 60, homeless 4, idle 0, buildings 33 (+4 rising), treasury 1564, food 0.91g, mood 70, avg purse 148g
 Day  81 16:00  [Construction] Rowena's Brewery is finished for Rowena Carver.
 Day  82 00:00  [Arrival] Vondal Hammerfall, a dwarf merchant, rides in with 131 gold, looking for a business to buy into.
 Day  82 00:00  [Arrival] Feng Skullsplitter, a half-orc fighter (level 1), walks into The Gilded Mimic looking for paid work. (ambitious, generous)
@@ -147,7 +147,7 @@ Day  89 15:00  [Construction] Vane's Forge No. 6 is finished for Isolde Vane.
 Day  91 00:00  [Property] Isolde Vane buys a commercial lot for 54 gold and breaks ground on Vane's Forge No. 7.
 Day  91 00:00  [Departure] Daisy Greenbottle packs up and leaves Briarford, unable to afford a decent meal.
 Day  91 00:00  [Town] The council posts a bounty of 420 gold on the Drowned Temple.
-  -- end of day 90: pop 72, homeless 0, idle 2, buildings 42 (+2 rising), treasury 6169, food 0.91g, mood 71, avg purse 160g
+  -- end of day 90: pop 72, homeless 0, idle 2, buildings 42 (+2 rising), treasury 1882, food 0.91g, mood 71, avg purse 160g
 Day  92 00:00  [Departure] Sutha Bonebreaker packs up and leaves Briarford, unable to afford a decent meal.
 Day  92 00:00  [Arrival] Thora Deepdelver, a dwarf fighter (level 3), walks into The Gilded Mimic looking for paid work. (ambitious, generous)
 Day  93 09:00  [Construction] Vane's Forge No. 7 is finished for Isolde Vane.
@@ -163,7 +163,7 @@ Day  98 00:00  [Departure] Merric Greenbottle packs up and leaves Briarford, una
 Day  98 00:00  [Arrival] Garrett Whitlock, a human merchant, rides in with 97 gold, looking for a business to buy into.
 Day  98 00:00  [Arrival] Pip Goodbarrel, a halfling wizard (level 1), walks into The Gilded Mimic looking for paid work. (ambitious, gregarious)
 Day 101 00:00  [Town] The council posts a bounty of 420 gold on the Drowned Temple.
-  -- end of day 100: pop 76, homeless 0, idle 4, buildings 45 (+2 rising), treasury 7460, food 0.91g, mood 71, avg purse 192g
+  -- end of day 100: pop 76, homeless 0, idle 4, buildings 45 (+2 rising), treasury 2148, food 0.91g, mood 71, avg purse 192g
 Day 101 07:00  [Construction] Vane's Forge No. 8 is finished for Isolde Vane.
 Day 102 00:00  [Property] Rowena Carver buys a commercial lot for 54 gold and breaks ground on Carver's Forge No. 3.
 Day 102 00:00  [Arrival] Werra Stonebeard, a dwarf rogue (level 3), walks into The Gilded Mimic looking for paid work. (ambitious, greedy)
@@ -183,7 +183,7 @@ Day 108 18:00  [Social] Carlin Garrick says something about the mayor's taxes th
 Day 109 00:00  [Quest] The Iron Pilgrims return from the Drowned Temple victorious with 842 gold to split, but Rowena and Rosie did not come home. (Chronicle 9)
 Day 110 11:00  [Construction] The Laughing Owlbear is finished for Rowena Carver.
 Day 110 20:00  [Social] Zook Daergel says something about their mother that Carlin Folkor will not forgive. A grudge begins at The Laughing Owlbear.
-  -- end of day 110: pop 84, homeless 0, idle 0, buildings 53 (+6 rising), treasury 9363, food 0.91g, mood 72, avg purse 219g
+  -- end of day 110: pop 84, homeless 0, idle 0, buildings 53 (+6 rising), treasury 2862, food 0.91g, mood 72, avg purse 219g
 Day 111 20:00  [Romance] Ulric Thatcher and Aelar (once Liadon) are wed at the town hall. Half the town turns out to cheer.
 Day 114 00:00  [Arrival] Ilde Deepdelver, a dwarf wizard (level 1), walks into The Laughing Owlbear looking for paid work. (ambitious, shy, hottempered)
 Day 115 00:00  [Arrival] Ilde Ironhand, a dwarf woodcutter, rides in with 83 gold, dreaming of opening a lumber camp.
@@ -203,10 +203,10 @@ Day 120 18:00  [Social] Ovak Bonebreaker says something about the proper way to 
 Day 120 18:00  [Brawl] A brawl breaks out at The Gilded Mimic: Aelar Meliamne swings at Ovak Bonebreaker. Aelar (d20 19+0) lays Ovak (d20 9-1) out cold. Ovak pays 3 gold for the broken chairs.
 Day 121 00:00  [Property] Daisy Tealeaf buys a farmland lot for 60 gold and breaks ground on Tealeaf Farm.
 Day 121 00:00  [Arrival] Thamior Meliamne, an elf farmer, rides in with 92 gold, dreaming of opening a farm.
-  -- end of day 120: pop 101, homeless 0, idle 3, buildings 64 (+3 rising), treasury 11112, food 0.91g, mood 74, avg purse 224g
+  -- end of day 120: pop 101, homeless 0, idle 3, buildings 64 (+3 rising), treasury 3236, food 0.91g, mood 74, avg purse 224g
 
 === Briarford after 120 days (seed 1) ===
-Population 101 (23 have left), treasury 11112 gold.
+Population 101 (23 have left), treasury 3236 gold.
   Brewery: 7
   Farm: 9
   Forge: 12

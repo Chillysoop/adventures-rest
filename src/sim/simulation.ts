@@ -75,6 +75,8 @@ export class Simulation {
     quests.daily(t, this.options.autoMayor && this.options.autoBounties);
     economy.daily(t, true);
     this.history.push(this.snapshot());
+    t.accountsYesterday = t.accountsToday;
+    t.accountsToday = {};
   }
 
   /** The player's lever: post a bounty on a site, paid from the treasury into escrow. */

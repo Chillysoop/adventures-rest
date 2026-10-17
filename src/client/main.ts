@@ -133,6 +133,18 @@ function renderBounties(): void {
     const tier = '◆'.repeat(s.def.tier) + '◇'.repeat(3 - s.def.tier);
     return `<li class="site"><div><b>${esc(cap(s.def.name))}</b> <span class="tier" title="Tier ${s.def.tier}">${tier}</span><div>${status}</div></div>${action}</li>`;
   });
+  const books = Object.entries(t.accountsYesterday)
+    .filter(([, v]) => Math.abs(v) >= 0.5)
+    .sort((x, y) => y[1] - x[1] || (x[0] < y[0] ? -1 : 1));
+  const net = books.reduce((s, [, v]) => s + v, 0);
+  setHTML(
+    $('#books'),
+    books.length
+      ? `<h4>Yesterday's books <b class="${net >= 0 ? 'good' : 'bad'}">${net >= 0 ? '+' : '−'}${Math.abs(Math.round(net))}g</b></h4><ul>${books
+          .map(([k, v]) => `<li><span>${esc(k)}</span><b class="${v >= 0 ? 'good' : 'bad'}">${v >= 0 ? '+' : '−'}${Math.abs(Math.round(v))}g</b></li>`)
+          .join('')}</ul>`
+      : '',
+  );
   const idle = t.heroes.filter((a) => !a.isAway).length;
   setHTML($('#bounty-list'), rows.join(''));
   $('#bounty-note').textContent =

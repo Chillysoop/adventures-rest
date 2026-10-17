@@ -3,6 +3,7 @@ import namesJson from './content/names.json' with { type: 'json' };
 import classesJson from './content/classes.json' with { type: 'json' };
 import monstersJson from './content/monsters.json' with { type: 'json' };
 import sitesJson from './content/sites.json' with { type: 'json' };
+import townJson from './content/town.json' with { type: 'json' };
 
 export const GOODS = ['Food', 'Timber', 'Tools', 'Ale'] as const;
 export type Good = (typeof GOODS)[number];
@@ -83,6 +84,18 @@ export interface SiteDef {
   loot: [number, number];
 }
 
+/** Town-wide economic rules. */
+export interface TownRules {
+  /** Share of every sale and every drink that goes to the treasury. */
+  taxRate: number;
+  /** Daily cost per resident of the watch, roads and wells. */
+  upkeepPerResident: number;
+  /** Per-resident upkeep doubles at this many residents: bigger towns cost more per head. */
+  upkeepGrowth: number;
+  /** Daily cost of keeping the town hall and council running. */
+  civicUpkeep: number;
+}
+
 export const isBusiness = (d: BuildingDef): boolean => d.jobs > 0;
 
 /**
@@ -95,13 +108,22 @@ export class Content {
   readonly classes: readonly ClassDef[];
   readonly monsters: ReadonlyMap<string, MonsterDef>;
   readonly sites: readonly SiteDef[];
+  readonly rules: TownRules;
 
-  constructor(buildings: BuildingDef[], races: RaceDef[], classes: ClassDef[], monsters: MonsterDef[], sites: SiteDef[]) {
+  constructor(
+    buildings: BuildingDef[],
+    races: RaceDef[],
+    classes: ClassDef[],
+    monsters: MonsterDef[],
+    sites: SiteDef[],
+    rules: TownRules = townJson,
+  ) {
     this.buildings = new Map(buildings.map((b) => [b.id, b]));
     this.races = races;
     this.classes = classes;
     this.monsters = new Map(monsters.map((m) => [m.id, m]));
     this.sites = sites;
+    this.rules = rules;
   }
 
   monster(id: string): MonsterDef {

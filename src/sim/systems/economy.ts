@@ -41,7 +41,7 @@ function produce(town: Town, b: Building): void {
   for (const [good, qty] of entries(b.def.produces)) {
     const revenue = town.market.sell(good, qty * rate);
     const tax = revenue * town.taxRate;
-    town.treasury += tax;
+    town.book('Sales tax', tax);
     b.cash += revenue - tax;
     b.revenueToday += revenue;
   }
@@ -57,9 +57,22 @@ export function daily(town: Town, jobsAndHousingOnly = false): void {
     updateMarket(town);
     accounts(town);
     rent(town);
+    upkeep(town);
   }
   housingMarket(town);
   jobMarket(town);
+}
+
+/** The cost of running a town: the watch, roads and wells grow with it, so growth isn't free money. */
+function upkeep(town: Town): void {
+  const { upkeepPerResident, upkeepGrowth, civicUpkeep } = town.content.rules;
+  const n = town.workers.length;
+  const bill = civicUpkeep + upkeepPerResident * n * (1 + n / upkeepGrowth);
+  const paid = Math.min(bill, Math.max(0, town.treasury));
+  town.book('Upkeep', -paid);
+  if (paid < bill && town.unpaidDays++ === 0)
+    town.log('Hardship', Importance.Notable, `The treasury runs dry. The watch and the road crews go unpaid.`);
+  else if (paid >= bill) town.unpaidDays = 0;
 }
 
 function updateMarket(town: Town): void {
@@ -96,7 +109,7 @@ function accounts(town: Town): void {
       b.cash += cover;
     } else if (b.cash < 0 && b.ownerId === null) {
       const cover = Math.min(town.treasury, -b.cash);
-      town.treasury -= cover;
+      town.book('Bailouts', -cover);
       b.cash += cover;
     }
 
@@ -116,7 +129,7 @@ function accounts(town: Town): void {
         const profit = b.cash - CASH_RESERVE;
         b.cash = CASH_RESERVE;
         if (b.ownerId !== null) town.agent(b.ownerId).gold += profit;
-        else town.treasury += profit;
+        else town.book('Town businesses', profit);
       }
     }
     b.revenueToday = 0;
@@ -157,7 +170,7 @@ function rent(town: Town): void {
         r.rentArrears = 0;
         r.gold -= house.def.rent;
         if (landlord) landlord.gold += house.def.rent;
-        else town.treasury += house.def.rent;
+        else town.book('Rent', house.def.rent);
       } else if (landlord?.has('Generous')) {
         r.changeOpinion(landlord.id, 3);
       } else if (++r.rentArrears < 3) {

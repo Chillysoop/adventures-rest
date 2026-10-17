@@ -41,7 +41,7 @@ function commissionHousing(town: Town): void {
   const cost = house.cost + town.market.quote('Timber', house.timber);
   if (town.treasury < cost + 50) return;
 
-  town.treasury -= cost;
+  town.book('Charter houses', -cost);
   town.market.buy('Timber', house.timber);
   const site = town.addBuilding(house, lot, null, nameFor(town, house, null), false);
   site.laborBudget = house.buildHours * CONSTRUCTION_WAGE;
