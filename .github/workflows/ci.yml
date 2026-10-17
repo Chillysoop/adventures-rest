@@ -20,3 +20,19 @@ jobs:
       - run: npm run build
       - name: Smoke-run the simulation
         run: npm run sim -- --days 60 --seed 1 | tail -40
+
+  dotnet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      # The parity script runs the TypeScript CLI too; it needs Node 22.18+ but no packages.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: dotnet build dotnet/CrownAndCompass.sln -c Release
+      - run: dotnet test dotnet/CrownAndCompass.sln -c Release --no-build
+      - name: Parity with the TypeScript sim (seeds 1 to 8, 200 days)
+        run: scripts/parity.sh 200
