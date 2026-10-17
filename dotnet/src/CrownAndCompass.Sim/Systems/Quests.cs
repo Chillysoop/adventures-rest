@@ -5,6 +5,12 @@ public sealed class SiteState(SiteDef def)
     public SiteDef Def { get; } = def;
     public bool Cleared { get; set; }
     public int Attempts { get; set; }
+
+    /// <summary>The region of the wilds it lies in (<see cref="World"/>), or null for sites raised later.</summary>
+    public int? RegionId { get; set; }
+
+    /// <summary>Built by world generation rather than written by hand in sites.json.</summary>
+    public bool Generated { get; init; }
 }
 
 public enum BountyStatus
@@ -32,7 +38,11 @@ public sealed class Party
     public int Id { get; init; }
     public required string Name { get; init; }
     public required IReadOnlyList<int> Members { get; init; }
-    public int BountyId { get; init; }
+    /// <summary>The bounty it took, or null for a company out on its own account.</summary>
+    public int? BountyId { get; init; }
+
+    /// <summary>The settlement's plea it is answering, if any.</summary>
+    public int? PleaId { get; set; }
     public required string SiteId { get; init; }
     public int DepartTick { get; init; }
     public int ReturnTick { get; set; }
@@ -69,10 +79,11 @@ public sealed record Chronicle(
 /// </summary>
 public static class Quests
 {
-    private const int MaxHeroes = 12;
+    public const int MaxHeroes = 12;
     private const int BountyDays = 10;
     private const double Lodging = 1;
-    private static readonly int[] XpLevels = [0, 300, 900, 2700, 6500, 14000];
+    private static readonly int[] XpLevels =
+        [0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000, 85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000];
 
     private static readonly string[] PartyAdjectives = ["Ashen", "Iron", "Crimson", "Silver", "Gallows", "Lucky", "Broken", "Midnight", "Copper", "Wandering"];
     private static readonly string[] PartyNouns = ["Blades", "Lanterns", "Owls", "Shields", "Hounds", "Crows", "Compasses", "Wolves", "Pilgrims", "Daggers"];
@@ -108,9 +119,9 @@ public static class Quests
 
     public static int SuggestedReward(int tier) => 50 * tier + 30 * tier * tier;
 
-    public static Agent CreateHero(Town town, ClassDef cls, int level)
+    public static Agent CreateHero(Town town, ClassDef cls, int level, string? race = null)
     {
-        var a = Population.CreateAgent(town, new NewAgentOptions { Profession = cls.Name, Gold = town.Rng.Range(10, 40) });
+        var a = Population.CreateAgent(town, new NewAgentOptions { Profession = cls.Name, Gold = town.Rng.Range(10, 40), Race = race });
         a.Ambition = Ambition.None;
         a.DreamBusiness = null;
         // Heroes favor their class's key ability: reroll it once and keep the better.
@@ -143,7 +154,7 @@ public static class Quests
         return classes[0];
     }
 
-    public static void Daily(Town town, bool autoMayor)
+    public static void Daily(Town town, bool autoMayor, bool companies = true)
     {
         ReturnParties(town);
         HeroArrivals(town);
@@ -151,6 +162,7 @@ public static class Quests
         ExpireBounties(town);
         if (autoMayor) AutoPost(town);
         FormParties(town);
+        if (companies) Campaigns.Daily(town);
     }
 
     private static void HeroArrivals(Town town)
@@ -205,7 +217,8 @@ public static class Quests
     {
         if (town.Bounties.Any(IsActive)) return;
         if (town.Heroes.Count == 0 && town.Taverns.Count == 0) return;
-        var target = town.Sites.Where(s => !s.Cleared).OrderBy(s => s.Def.Tier).ThenBy(s => s.Attempts).FirstOrDefault();
+        // The trouble near town, which feeds the warband, comes before the far wilds.
+        var target = town.Sites.Where(s => !s.Cleared && World.IsKnown(town, s)).OrderBy(s => s.Generated).ThenBy(s => s.Def.Tier).ThenBy(s => s.Attempts).FirstOrDefault();
         if (target == null) return;
         double reward = SuggestedReward(target.Def.Tier) + 20 * target.Attempts;
         if (town.Treasury < reward + 100) return;
@@ -225,7 +238,7 @@ public static class Quests
             town.Rng.Next() * 0.3;
     }
 
-    private static bool Available(Agent a)
+    public static bool Available(Agent a)
     {
         var s = a.Hero!;
         return s.AwayUntil == null && s.Hp >= s.MaxHp * 0.7 && !a.Departed;
@@ -263,35 +276,55 @@ public static class Quests
             // Heroes won't walk into a site they can't handle; the bounty waits for a stronger company.
             if (levels < 3 * tier || members.Count < 3) continue;
 
-            string name = leader.Hero.PartyName ?? PartyName(town);
-            int travel = s.Def.Distance * 2 + 1;
-            var party = new Party
-            {
-                Id = town.Parties.Count + 1,
-                Name = name,
-                Members = members.Select(m => m.Id).ToList(),
-                BountyId = bounty.Id,
-                SiteId = s.Def.Id,
-                DepartTick = town.Tick,
-                ReturnTick = town.Tick + travel * SimTime.HoursPerDay,
-            };
-            town.Parties.Add(party);
-            bounty.Status = BountyStatus.Taken;
-            bounty.PartyId = party.Id;
-            s.Attempts++;
-            foreach (var m in members)
-            {
-                m.Hero!.PartyName = name;
-                m.Hero.AwayUntil = party.ReturnTick;
-                m.Activity = Activity.Idle;
-                m.LocationId = null;
-            }
+            var party = Launch(town, members, s, bounty);
             town.Log(
                 LedgerCategory.Quest,
                 Importance.Notable,
-                $"The {name} ({string.Join(", ", members.Select(m => $"{m.GivenName} the {m.Hero!.Cls.Name}"))}) take the bounty on {s.Def.Name} and march out at dawn.",
+                $"The {party.Name} ({string.Join(", ", members.Select(m => $"{m.GivenName} the {m.Hero!.Cls.Name}"))}) take the bounty on {s.Def.Name} and march out at dawn.",
                 members.Select(m => m.Id).ToList());
         }
+    }
+
+    /// <summary>Send a party out to a site, taking its bounty (if given) and any settlement's open plea for it.</summary>
+    internal static Party Launch(Town town, List<Agent> members, SiteState s, Bounty? bounty)
+    {
+        var leader = members[0];
+        // A company keeps its name, unless another band under that name is already on the road.
+        string? name = leader.Hero!.PartyName;
+        if (name == null || town.Parties.Any(p => !p.Returned && p.Name == name)) name = PartyName(town);
+        int travel = s.Def.Distance * 2 + 1;
+        var party = new Party
+        {
+            Id = town.Parties.Count + 1,
+            Name = name,
+            Members = members.Select(m => m.Id).ToList(),
+            BountyId = bounty?.Id,
+            SiteId = s.Def.Id,
+            DepartTick = town.Tick,
+            ReturnTick = town.Tick + travel * SimTime.HoursPerDay,
+        };
+        town.Parties.Add(party);
+        if (bounty != null)
+        {
+            bounty.Status = BountyStatus.Taken;
+            bounty.PartyId = party.Id;
+        }
+        var plea = town.Pleas.FirstOrDefault(p => p.SiteId == s.Def.Id && p.Status == PleaStatus.Open);
+        if (plea != null)
+        {
+            plea.Status = PleaStatus.Taken;
+            plea.PartyId = party.Id;
+            party.PleaId = plea.Id;
+        }
+        s.Attempts++;
+        foreach (var m in members)
+        {
+            m.Hero!.PartyName = name;
+            m.Hero.AwayUntil = party.ReturnTick;
+            m.Activity = Activity.Idle;
+            m.LocationId = null;
+        }
+        return party;
     }
 
     private static string PartyName(Town town)
@@ -311,7 +344,7 @@ public static class Quests
             if (party.Returned || town.Tick < party.ReturnTick) continue;
             party.Returned = true;
             var s = Site(town, party.SiteId)!;
-            var bounty = town.Bounties[party.BountyId - 1];
+            var bounty = party.BountyId is int bid ? town.Bounties[bid - 1] : null;
             var members = party.Members.Select(town.Agent).ToList();
             if (party.RecalledTick != null)
             {
@@ -353,18 +386,24 @@ public static class Quests
             if (result.Outcome == ExpeditionOutcome.Cleared)
             {
                 s.Cleared = true;
-                bounty.Status = BountyStatus.Completed;
-                pay += bounty.Reward;
+                if (bounty != null)
+                {
+                    bounty.Status = BountyStatus.Completed;
+                    pay += bounty.Reward;
+                }
             }
-            else
+            else if (bounty != null)
             {
                 bounty.Status = BountyStatus.Failed;
                 town.Book(TreasuryAccount.Bounties, bounty.Reward);
             }
+            pay += World.AfterDelve(town, party, s, result.Outcome);
             if (survivors.Count > 0)
             {
                 double share = pay / survivors.Count;
-                int xpShare = (int)Math.Floor((double)result.Xp / survivors.Count);
+                // Clearing a site is a milestone worth as much again as a hard fight there.
+                int xp = result.Xp + (result.Outcome == ExpeditionOutcome.Cleared ? World.Milestone(town, s) : 0);
+                int xpShare = (int)Math.Floor((double)xp / survivors.Count);
                 foreach (var m in survivors)
                 {
                     m.Gold += share;
@@ -407,7 +446,15 @@ public static class Quests
             int before = s.MaxHp;
             s.MaxHp = Expedition.HeroMaxHp(s, a.Abilities.Con);
             s.Hp += s.MaxHp - before;
-            town.Log(LedgerCategory.Quest, Importance.Notable, $"{a.Name} reaches level {s.Level}.", [a.Id]);
+            // Crossing into a new tier of play: the realm, then the world, start to know the name.
+            string fame = s.Level switch
+            {
+                5 => " Bards in other towns have started singing about them.",
+                11 => " Kings send letters to them by name.",
+                17 => " The whole world knows the name.",
+                _ => "",
+            };
+            town.Log(LedgerCategory.Quest, fame != "" ? Importance.Major : Importance.Notable, $"{a.Name} reaches level {s.Level}.{fame}", [a.Id]);
         }
     }
 }

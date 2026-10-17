@@ -31,6 +31,7 @@ public sealed record LibMonster
     public required string Name { get; init; }
     public required string Source { get; init; }
     public string Type { get; init; } = "";
+    public string Alignment { get; init; } = "";
     public double Cr { get; init; }
     public int Ac { get; init; }
     public int Hp { get; init; }
@@ -248,6 +249,7 @@ public sealed class Library
             Name = Str(e, "name"),
             Source = Str(e, "source"),
             Type = Str(e, "type"),
+            Alignment = Str(e, "alignment"),
             Cr = Num(e, "cr"),
             Ac = (int)Num(e, "ac"),
             Hp = (int)Num(e, "hp"),

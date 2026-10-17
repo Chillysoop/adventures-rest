@@ -394,6 +394,172 @@ public sealed record LootRules
     public double ItemChancePerTier { get; init; } = 0.15;
 }
 
+/// <summary>One ring of country around the town: how far out it lies and what level of party it suits.</summary>
+public sealed record RingDef
+{
+    /// <summary>Days on the road from town.</summary>
+    public int Days { get; init; } = 1;
+
+    /// <summary>Lowest and highest party level its sites are built for.</summary>
+    public int[] Levels { get; init; } = [1, 1];
+    public int Regions { get; init; }
+}
+
+/// <summary>A kind of adventure site a region theme can hold: how it is named and what its deck is made of.</summary>
+public sealed record SiteKindDef
+{
+    /// <summary>Name patterns; {A} takes one of the theme's words and {B} one of its names.</summary>
+    public IReadOnlyList<string> Names { get; init; } = [];
+    public IReadOnlyList<string> Habitats { get; init; } = [];
+
+    /// <summary>Encounter kinds in the site's deck, before the boss.</summary>
+    public IReadOnlyList<string> Deck { get; init; } = [];
+}
+
+/// <summary>A region archetype: mountains, deep forest, caverns, castle ruins...</summary>
+public sealed record ThemeDef
+{
+    public required string Id { get; init; }
+
+    /// <summary>What the region is, in a word or two ("mountains").</summary>
+    public string Name { get; init; } = "";
+
+    /// <summary>Region name patterns, with {A} and {B} as for sites.</summary>
+    public IReadOnlyList<string> Regions { get; init; } = [];
+    public IReadOnlyList<string> Words { get; init; } = [];
+    public IReadOnlyList<string> Names { get; init; } = [];
+    public IReadOnlyList<string> Habitats { get; init; } = [];
+    public int Weight { get; init; } = 1;
+    public int MinRing { get; init; }
+    public int MaxRing { get; init; } = 99;
+
+    /// <summary>Peoples who may have a settlement in the region; the first is the likeliest.</summary>
+    public IReadOnlyList<string> Peoples { get; init; } = [];
+
+    /// <summary>Chance the region holds a settlement; null uses the world's default.</summary>
+    public double? SettlementChance { get; init; }
+
+    /// <summary>The terrain as a returning party describes it.</summary>
+    public string Text { get; init; } = "";
+    public IReadOnlyList<SiteKindDef> Sites { get; init; } = [];
+
+    /// <summary>Scene lines by encounter kind (wander, trap, hazard, puzzle, parley, treasure, boss).</summary>
+    public IReadOnlyDictionary<string, List<string>> Texts { get; init; } = new Dictionary<string, List<string>>();
+}
+
+/// <summary>What an allied people sends the town.</summary>
+public sealed record BoonDef
+{
+    public Good? Good { get; init; }
+
+    /// <summary>Goods a day into the market.</summary>
+    public double Qty { get; init; }
+
+    /// <summary>Daily chance one of their heroes comes to the town's taverns.</summary>
+    public double HeroChance { get; init; }
+    public IReadOnlyList<string> Classes { get; init; } = [];
+
+    /// <summary>Warriors pledged to the town's walls, counted in its defence like watchmen are.</summary>
+    public double Troops { get; init; }
+
+    /// <summary>They share their maps: every region next to theirs becomes known.</summary>
+    public bool Maps { get; init; }
+    public string Text { get; init; } = "";
+}
+
+/// <summary>A people with settlements out in the wilds: dwarves, elves, villagers...</summary>
+public sealed record PeopleDef
+{
+    public required string Id { get; init; }
+
+    /// <summary>"the dwarves of {S}", {S} being the settlement.</summary>
+    public string Name { get; init; } = "";
+    public string People { get; init; } = "";
+
+    /// <summary>What their settlements are: hold, enclave, village...</summary>
+    public string Kind { get; init; } = "";
+
+    /// <summary>The race (names.json) of heroes they send; empty sends none.</summary>
+    public string Race { get; init; } = "";
+
+    /// <summary>Starting standing with the town, -100 to 100.</summary>
+    public double Start { get; init; }
+    public IReadOnlyList<string> Settlements { get; init; } = [];
+    public BoonDef Boon { get; init; } = new();
+}
+
+public sealed record StandingRules
+{
+    /// <summary>Standing at which a people allies with the town.</summary>
+    public double Ally { get; init; } = 60;
+    public double EnvoyCost { get; init; } = 60;
+    public double Envoy { get; init; } = 10;
+    public int EnvoyEveryDays { get; init; } = 8;
+
+    /// <summary>Standing for clearing a site in a people's region.</summary>
+    public double Cleared { get; init; } = 8;
+
+    /// <summary>Extra standing when the site was one they pleaded for help with.</summary>
+    public double Plea { get; init; } = 14;
+    public double PleaIgnored { get; init; } = -4;
+    public int[] PleaEveryDays { get; init; } = [5, 10];
+    public int PleaDays { get; init; } = 14;
+    public double PleaRewardPerLevel { get; init; } = 30;
+
+    /// <summary>Pleas open across all settlements at once.</summary>
+    public int MaxOpen { get; init; } = 3;
+
+    /// <summary>Daily drift of standing back toward where the people started.</summary>
+    public double Drift { get; init; } = 0.5;
+}
+
+/// <summary>How free companies of heroes choose where to go.</summary>
+public sealed record CompanyRules
+{
+    public int MinMembers { get; init; } = 3;
+    public int MaxMembers { get; init; } = 4;
+
+    /// <summary>Heroes only band together within this many levels of their leader.</summary>
+    public int LevelSpread { get; init; } = 2;
+
+    /// <summary>Daily chance a ready company sets out rather than drinking another day away.</summary>
+    public double SetOutChance { get; init; } = 0.6;
+
+    /// <summary>Appeal lost per level a site is below the company: they have outgrown it.</summary>
+    public double Outleveled { get; init; } = 0.35;
+
+    /// <summary>Appeal lost per day of travel.</summary>
+    public double Travel { get; init; } = 0.08;
+    public double MinScore { get; init; } = 0.3;
+
+    /// <summary>Levels above their own that bold heroes will try.</summary>
+    public int BoldStep { get; init; } = 1;
+
+    /// <summary>Once the warband raids, companies go no farther than this many days from town.</summary>
+    public int WarDays { get; init; } = 2;
+
+    /// <summary>Extra appeal of burning the warband's camp.</summary>
+    public double CampGlory { get; init; } = 0.4;
+}
+
+/// <summary>The wilds: rings of themed regions around the town, their sites and the peoples living there (content/game/world.json).</summary>
+public sealed record WorldRules
+{
+    public IReadOnlyList<RingDef> Rings { get; init; } = [];
+    public int[] SitesPerRegion { get; init; } = [2, 3];
+
+    /// <summary>Experience a wandering band is worth, by party level (index = level - 1).</summary>
+    public int[] Budget { get; init; } = [];
+
+    /// <summary>A hoard holds about this much gold times level^1.5.</summary>
+    public double HoardPerLevel { get; init; } = 60;
+    public double SettlementChance { get; init; } = 0.75;
+    public StandingRules Standing { get; init; } = new();
+    public CompanyRules Companies { get; init; } = new();
+    public IReadOnlyList<PeopleDef> Peoples { get; init; } = [];
+    public IReadOnlyList<ThemeDef> Themes { get; init; } = [];
+}
+
 /// <summary>
 /// Data-driven content (buildings, races, names, classes, monsters, sites, the council, the
 /// enemy). Embedded from the repo's content/game/*.json by default so the simulation runs anywhere; a
@@ -419,6 +585,9 @@ public sealed class Content
 
     /// <summary>What a cleared hoard can hold.</summary>
     public LootRules Loot { get; init; } = new();
+
+    /// <summary>The themed regions, sites and peoples of the wilds.</summary>
+    public WorldRules World { get; init; } = new();
 
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
@@ -535,6 +704,7 @@ public sealed class Content
         {
             Knowledge = Parse<KnowledgeRules>("knowledge.json"),
             Loot = Parse<LootRules>("loot.json"),
+            World = Parse<WorldRules>("world.json"),
         };
     }
 

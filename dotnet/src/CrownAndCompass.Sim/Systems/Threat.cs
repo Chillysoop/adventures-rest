@@ -77,7 +77,8 @@ public static class Threat
         double g = e.BaseGrowth + e.GrowthPerDay * town.Day + e.GrowthPerResident * town.Population;
         foreach (var s in town.Sites)
         {
-            if (s.Cleared) continue;
+            // Only the country near town feeds the warband; the far wilds keep their own troubles.
+            if (s.Cleared || s.Generated) continue;
             if (s.Def.Id == e.Outpost.Id) g += e.OutpostGrowth;
             else g += s.Def.Tier >= 3 ? e.GrowthPerTier3Site : e.GrowthPerSite;
         }
@@ -89,7 +90,7 @@ public static class Threat
     {
         var d = town.Content.Enemy.Defense;
         int heroLevels = town.Heroes.Where(a => !a.IsAway).Sum(a => a.Hero!.Level);
-        double baseDefense = town.Watch * d.Watchman + heroLevels * d.HeroLevel + town.Workers.Count * d.MilitiaPerWorker;
+        double baseDefense = town.Watch * d.Watchman + heroLevels * d.HeroLevel + town.Workers.Count * d.MilitiaPerWorker + World.AllyTroops(town);
         return baseDefense * Fortification(town);
     }
 

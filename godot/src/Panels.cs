@@ -163,6 +163,7 @@ public partial class Main
         bool canScout = Watch.Watchers(t).Count > 0;
         foreach (var s in t.Sites)
         {
+            if (!World.IsKnown(t, s)) continue;
             var live = t.Bounties.FirstOrDefault(b => b.SiteId == s.Def.Id && b.Status is BountyStatus.Open or BountyStatus.Taken);
             var party = live?.PartyId is int pid ? t.Parties.FirstOrDefault(x => x.Id == pid) : null;
             int reward = Quests.SuggestedReward(s.Def.Tier);
@@ -184,7 +185,7 @@ public partial class Main
                 buttons.Add((freeScry ? "Scry free" : $"Scry {Math.Round(cost)}g", freeScry || scryer != null && t.Treasury >= cost, false, () => Act(() => _sim.CommissionScrying(sid))));
                 if (Watch.ScoutAt(t, sid) == null) buttons.Add(("Scout", canScout, false, () => Act(() => _sim.PostScout(sid))));
             }
-            string tier = new string('◆', s.Def.Tier) + new string('◇', 3 - s.Def.Tier);
+            string tier = s.Def.Tier <= 3 ? new string('◆', s.Def.Tier) + new string('◇', 3 - s.Def.Tier) : $"level {s.Def.Tier}";
             p.Row($"{SiteLink(s.Def)} {Ui.C(Ui.Gold, $"[font_size=11]{tier}[/font_size]")}\n{status}", buttons.ToArray());
         }
         p.Note(freeScry

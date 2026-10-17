@@ -443,7 +443,7 @@ public partial class OverlayLayer(MapView map) : Layer(map)
             if (!Map.Geo.Pins.TryGetValue(site.Def.Id, out var pin)) continue;
             var sight = fog.SightOf(site.Def.Id, pin);
             var bounty = town.Bounties.FirstOrDefault(b => b.SiteId == site.Def.Id && b.Status is BountyStatus.Open or BountyStatus.Taken);
-            float r = 0.42f + site.Def.Tier * 0.06f;
+            float r = 0.42f + Math.Min(site.Def.Tier, 5) * 0.06f;
             if (sight == Sight.Rumoured)
             {
                 // A name from tavern gossip: a dashed ring and a question mark, nothing more.
@@ -472,8 +472,8 @@ public partial class OverlayLayer(MapView map) : Layer(map)
                 Circle(new(pin.X - 0.065f, pin.Y - 0.04f), 0.045f, new Color("1d1712"));
                 Circle(new(pin.X + 0.065f, pin.Y - 0.04f), 0.045f, new Color("1d1712"));
             }
-            for (int i = 0; i < site.Def.Tier; i++)
-                Circle(new(pin.X - (site.Def.Tier - 1) * 0.08f + i * 0.16f, pin.Y + r + 0.12f), 0.055f, Palette.Gold);
+            for (int i = 0; i < Math.Min(site.Def.Tier, 5); i++)
+                Circle(new(pin.X - (Math.Min(site.Def.Tier, 5) - 1) * 0.08f + i * 0.16f, pin.Y + r + 0.12f), 0.055f, Palette.Gold);
             float now = (float)Time.GetTicksMsec() / 1000f;
             switch (Watch.LiveOf(town, site))
             {
@@ -549,7 +549,7 @@ public partial class OverlayLayer(MapView map) : Layer(map)
             if (!s.Out || !Map.Geo.Pins.TryGetValue(s.SiteId, out var pin)) continue;
             float leg = (float)Watch.ScoutLeg(town, s, Map.HourFraction);
             var site = Quests.Site(town, s.SiteId)!;
-            float r = 0.42f + site.Def.Tier * 0.06f;
+            float r = 0.42f + Math.Min(site.Def.Tier, 5) * 0.06f;
             var dir = (pin - Geo.Center).Normalized();
             var pos = leg >= 1 ? pin - dir * (r + 0.45f) + new Vector2(dir.Y, -dir.X) * 0.3f : Geo.Center + (pin - Geo.Center) * leg;
             float fogA = Map.Fog.AlphaAt(pos);
@@ -622,7 +622,7 @@ public partial class LabelLayer(MapView map) : Control
         {
             if (!_map.Geo.Pins.TryGetValue(site.Def.Id, out var pin)) continue;
             var sight = fog.SightOf(site.Def.Id, pin);
-            float r = 0.42f + site.Def.Tier * 0.06f;
+            float r = 0.42f + Math.Min(site.Def.Tier, 5) * 0.06f;
             var at = _map.ToScreen(pin + new Vector2(0, r + 0.25f));
             string name = Ui.Cap(site.Def.Name.StartsWith("the ") ? site.Def.Name[4..] : site.Def.Name);
             Text(at + new Vector2(0, size), name, Ui.Display, size, sight == Sight.Rumoured ? new Color("efe6d2", 0.7f) : new Color("f6eedb"));

@@ -30,6 +30,9 @@ public sealed record SimulationOptions
     /// <summary>Let the stand-in mayor build the palisade and towers; off when a player does.</summary>
     public bool AutoDefense { get; init; } = true;
 
+    /// <summary>Let heroes form free companies and choose sites themselves, beyond the bounty board.</summary>
+    public bool FreeCompanies { get; init; } = true;
+
     /// <summary>Whether the warband exists at all (sandbox and some tests turn it off).</summary>
     public bool Enemy { get; init; } = true;
 }
@@ -81,7 +84,8 @@ public sealed class Simulation
         Council.Daily(t, Options.AutoCouncil);
         double pace = Director.Daily(t);
         Threat.Daily(t, pace, Options.AutoMayor && Options.AutoDefense, Options.Enemy);
-        Quests.Daily(t, Options.AutoMayor && Options.AutoBounties);
+        World.Daily(t, Options.AutoMayor);
+        Quests.Daily(t, Options.AutoMayor && Options.AutoBounties, Options.FreeCompanies);
         Watch.Daily(t, Options.AutoMayor && Options.AutoBounties);
         Economy.Daily(t, true);
         History.Add(Snapshot());
@@ -93,6 +97,9 @@ public sealed class Simulation
 
     /// <summary>The player's lever: post a bounty on a site, paid from the treasury into escrow.</summary>
     public Bounty? PostBounty(string siteId, double reward) => Quests.PostBounty(Town, siteId, reward);
+
+    /// <summary>Send an envoy with gifts to a settlement out in the wilds, to win its people over.</summary>
+    public bool SendEnvoy(int settlementId) => World.SendEnvoy(Town, settlementId);
 
     /// <summary>The player's other lever: sign or veto the motion before the council.</summary>
     public bool DecideMotion(int motionId, bool sign) => Council.Decide(Town, motionId, sign);
@@ -147,6 +154,7 @@ public sealed class Simulation
         center.Zone = Zone.Civic;
         t.AddBuilding(c.Building("town_hall"), center, null, "the Town Hall", true);
         Quests.InitSites(t);
+        World.Generate(t);
         Council.InitCouncil(t);
         Threat.InitThreat(t);
 
