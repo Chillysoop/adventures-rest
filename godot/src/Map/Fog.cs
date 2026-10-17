@@ -196,6 +196,7 @@ public sealed class Fog
             }
         _image.SetData(N, N, false, Image.Format.Rgba8, _rgba);
         Texture.Update(_image);
+        Version++;
     }
 
     /// <summary>Fog opacity at a world point: 0 is live, UnknownAlpha is unknown.</summary>
@@ -207,6 +208,17 @@ public sealed class Fog
     }
 
     public bool IsLive(Vector2 w) => AlphaAt(w) < 0.3f;
+
+    /// <summary>How well reports describe a world point, 0 (never described) to 1.</summary>
+    public float KnownAt(Vector2 w)
+    {
+        int x = Px(w.X), y = Px(w.Y);
+        if (x < 0 || y < 0 || x >= N || y >= N) return 0;
+        return _known[y * N + x];
+    }
+
+    /// <summary>Bumped every time the fog is repainted, so views built from it know to rebuild.</summary>
+    public int Version { get; private set; }
 
     /// <summary>Half-width of the strip of road a report describes, and the radius it describes around a site.</summary>
     public const float ReportRoad = 5, ReportSite = 16;

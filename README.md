@@ -146,8 +146,14 @@ takes many hours to explore. Art credits are in [`godot/assets/CREDITS.md`](godo
 - Time: pause and 1×, 4×, 12×, 36× (space and 1 to 4), one sim step per in-game hour.
 - Live sight on the map: violet rings for scryings, green for a watching scout, silver for a hidden mirror, and a golden
   boundary for the Spire's reach. Scouts are drawn on the road like parties and vanish into the fog the same way.
-- Panes: Ledger, War, Council, Bounties (parties on the road, eyes in the wilds, scrying and scouting), Chronicles,
-  Inspect (a site's page offers a scrying, a scout or a mirror; a hero's shows their class, spells and items).
+- Screen layout after Foundation: the map fills the screen; the resource bar, clock, threat and speeds run along the top;
+  the management windows (Ledger, War, Council, Bounties, Faith, Chronicles) open from a dock at the bottom and can be
+  dragged; news slides in on the right (click for the Ledger, right-click to dismiss); the inspector sits bottom left
+  (a site's page offers a scrying, a scout or a mirror; a hero's shows their class, spells and items); the corner map,
+  the campaign-map toggle and, on the campaign map, the marker palette sit bottom right. Esc closes the inspector, then
+  the window.
+- Faith and factions: each god's followers, houses, holy days and favour towards a miracle; the known factions with
+  their members, coffers, suspicion and standing, and the mayor's levers (crack down, or support with treasury gold).
 
 ```bash
 godot --path godot                         # play (Godot 4.3 .NET, .NET 8 SDK)
@@ -155,7 +161,7 @@ godot --path godot -- --seed 5 --day 40 --autoplay --tab bounties --screenshot s
 godot --headless --path godot --export-release Windows build/windows/CrownAndCompass.exe
 ```
 
-Options after `--`: `--seed`, `--day`, `--hour`, `--speed 0-4`, `--tab`, `--site <id>`, `--autoplay` (the stand-in mayor
+Options after `--`: `--seed`, `--day`, `--hour`, `--speed 0-4`, `--tab` (opens that window: ledger, war, council, bounties, faith, chronicles), `--site <id>`, `--autoplay` (the stand-in mayor
 plays), `--bounty <site>`, `--scry <site>`, `--scout <site>`, `--mirror <site>`, `--send`, `--recall`,
 `--build palisade|tower|pool|spire`, `--relic <item-id>`, `--hero` (inspect the most storied hero), `--no-pause` (keep
 time running through war news), `--screenshot <png>`, `--frames N`, `--cam <distance>` (with `--look x,y` or `--site`

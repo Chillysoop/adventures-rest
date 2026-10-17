@@ -264,7 +264,7 @@ public partial class Main
         }
         // The town's first institution: a temple to its god, once there are people enough to fill it.
         var temple = t.Buildings.FirstOrDefault(b => b.Def.Id == t.Content.Shrines.Temple);
-        string thead = $"[b]Temple of {Ui.Esc(t.Content.Shrines.Deity)}[/b]\n{Ui.C(Ui.Ink2, $"[font_size=12]Heals heroes, raises the fallen, keeps holy days and pays its own bounties. {Shrines.Followers(t).Count} {Ui.Esc(t.Content.Shrines.Devout)} in town.[/font_size]")}";
+        string thead = $"[b]Temple of {Ui.Esc(Faith.TempleGod(t) is { } tg ? Faith.Prose(tg) : t.Content.Shrines.Deity)}[/b]\n{Ui.C(Ui.Ink2, $"[font_size=12]Heals heroes, raises the fallen, keeps holy days and pays its own bounties. {Shrines.Followers(t).Count} {Ui.Esc(t.Content.Shrines.Devout)} in town.[/font_size]")}";
         if (temple?.Complete == true) p.Row($"{thead}  {Tag($"Built · coffers {Math.Round(temple.Cash)}g", Ui.Good)}");
         else if (temple != null) p.Row($"{thead}  {Tag($"Building, {Math.Floor(100 * temple.BuildProgress / temple.Def.BuildHours)}%", Ui.Gold)}");
         else if (t.Population < t.Content.Shrines.TemplePopulation) p.Row($"{thead}  {Tag($"Needs {t.Content.Shrines.TemplePopulation} residents")}");
@@ -275,6 +275,74 @@ public partial class Main
         }
         if (scouts.Count == 0 && mirrors.Count == 0)
             p.Note("Post a scout to watch a site from cover, or hide a mirror there (from the site's page) for a view that lasts.");
+    }
+
+    // ---------- Faith and factions ----------
+
+    private static string BuildingLink(Building b) => $"[url=building:{b.Id}]{Ui.C(Ui.Accent, Ui.Esc(b.Name))}[/url]";
+
+    private void RenderFaith()
+    {
+        var p = _panes[Tab.Faith];
+        var t = _sim.Town;
+        var fs = t.Faiths;
+        p.Begin();
+        var boons = new List<string>();
+        if (t.Day < fs.ValorUntil) boons.Add($"Valour on the walls for {Ui.Days(fs.ValorUntil - t.Day)}");
+        if (t.Day < fs.JusticeUntil) boons.Add($"Justice with the watch for {Ui.Days(fs.JusticeUntil - t.Day)}");
+        if (boons.Count > 0) p.Card(string.Join("\n", boons.Select(b => $"[b]{b}.[/b]")), Ui.Gold);
+
+        p.Heading("The gods in town");
+        var gods = Faith.Gods(t)
+            .Select(g => (God: g, Followers: Faith.Followers(t, g.Id).Count, Places: Faith.Places(t, g.Id)))
+            .Where(x => x.Followers > 0 || x.Places.Count > 0)
+            .OrderByDescending(x => x.Followers)
+            .ThenBy(x => x.God.Id, StringComparer.Ordinal)
+            .ToList();
+        if (gods.Count == 0) p.Note("Nobody in town keeps a god yet.");
+        foreach (var (god, followers, places) in gods)
+        {
+            double favor = fs.Favor.Get(god.Id, 0), need = Faith.Threshold(t, god);
+            string holy = Faith.IsHolyDay(t, god) ? "  " + Tag("Holy day", Ui.Gold) : "";
+            string where = places.Count > 0 ? $"Kept at {string.Join(", ", places.Select(BuildingLink))}." : god.Evil ? "No house: only a cult would feed it." : "No house of its own yet.";
+            double funds = fs.Funds.Get(god.Id, 0);
+            string saving = places.Count == 0 && funds >= 1 ? $" The faithful have saved {Math.Round(funds)}g towards a shrine." : "";
+            p.Row($"[b]{Ui.Esc(Faith.Short(god))}[/b]  {Tag($"{followers} {(followers == 1 ? "follower" : "followers")}", god.Evil ? Ui.Bad : Ui.Ink)}{holy}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Ui.Cap(god.Portfolio))}{(god.Portfolio != "" ? ". " : "")}{where}{saving}[/font_size]")}");
+            if (!god.Evil) p.Meter("Favour", 100 * Math.Min(1, favor / Math.Max(1, need)), favor >= need ? "ready" : $"{Math.Round(100 * favor / Math.Max(1, need))}%");
+        }
+        p.Note("Devotion builds a god's favour; when it brims over, the god acts in town.");
+        var miracles = fs.Miracles.TakeLast(5).Reverse().ToList();
+        if (miracles.Count > 0)
+        {
+            p.Heading("Miracles");
+            foreach (var m in miracles)
+                p.Text($"{Ui.C(Ui.Ink2, $"[font_size=11]Day {m.Tick / SimTime.HoursPerDay + 1}[/font_size]")}  {Ui.Esc(Faith.God(t, m.Deity) is { } g ? Faith.Short(g) : m.Deity)}: {Ui.Esc(m.Boon)}", 13);
+        }
+
+        p.Heading("Factions");
+        var rules = t.Content.Factions;
+        var known = t.Factions.Where(f => f.Active && f.Known).ToList();
+        if (known.Count == 0) p.Note("No faction has a chapter in town that the town knows of. They take root as the town grows.");
+        foreach (var f in known)
+        {
+            string leader = f.LeaderId is int lid ? $"Led by {AgentLink(t.Agent(lid))}. " : "";
+            string stand = f.Standing >= 30 ? "Friendly" : f.Standing <= -30 ? "Hostile" : "Neutral";
+            var standColor = f.Standing >= 30 ? Ui.Good : f.Standing <= -30 ? Ui.Bad : Ui.Ink2;
+            string kind = f.Secret ? Tag("Exposed", Ui.Bad) : Tag(Ui.Cap(f.Lore.Kind == "" ? "open" : f.Lore.Kind));
+            string motto = f.Lore.Motto != "" ? $"\n[i]{Ui.Esc(f.Lore.Motto)}[/i]" : "";
+            string id = f.Id;
+            double grant = rules.SupportPerStanding * 10;
+            var actions = new List<(string, bool, bool, Action)>();
+            // Crack down when it is turning on the town (a cult, a gang); support it when it serves.
+            actions.Add(($"Crack down {Math.Round(rules.CrackdownCost)}g", t.Treasury >= rules.CrackdownCost, true, () => Act(() => _sim.CrackDown(id))));
+            if (f.Lore.Kind != "cult")
+                actions.Add(($"Support {Math.Round(grant)}g", t.Treasury >= grant, false, () => Act(() => _sim.SupportFaction(id, grant))));
+            p.Row($"[b]{Ui.Esc(Ui.Cap(f.Name))}[/b]  {kind}  {Tag(stand, standColor)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{leader}{f.Members.Count} {(f.Members.Count == 1 ? "member" : "members")} · coffers {Math.Round(Factions.Coffers(t, f))}g · standing {Math.Round(f.Standing)}{motto}[/font_size]")}", actions.ToArray());
+            p.Meter("Suspicion", f.Heat, $"{Math.Round(f.Heat)}", f.Heat >= rules.ExposeAt * 0.75);
+        }
+        if (t.Factions.Any(f => f.Active && !f.Known))
+            p.Note("Not every faction shows its face. Secret ones are exposed as the watch's suspicion of them grows.");
+        p.Commit();
     }
 
     // ---------- Chronicles ----------
