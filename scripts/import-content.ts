@@ -26,6 +26,7 @@ const conv = JSON.parse(readFileSync(join(OUT, 'conversion.json'), 'utf8'));
 const SRD = ['srd-2024', 'srd-2014'];
 const ORDER: string[] = [...SRD, ...conv.thirdPartyOrder];
 
+
 // ---- reading Open5e fixtures ----
 
 const docDirs = new Map<string, string>();
@@ -34,6 +35,12 @@ for (const pub of readdirSync(from, { withFileTypes: true })) {
   for (const doc of readdirSync(join(from, pub.name), { withFileTypes: true })) {
     if (doc.isDirectory()) docDirs.set(doc.name, join(from, pub.name, doc.name));
   }
+}
+
+// Only CC-BY-4.0 content is allowed in the library (no OGL), so a book that does not offer it is refused.
+for (const doc of ORDER) {
+  const d = docDirs.has(doc) ? load(doc, 'Document')[0] : null;
+  if (d && !(d.licenses ?? []).includes('cc-by-40')) throw new Error(`${doc} is not offered under CC-BY-4.0; remove it from thirdPartyOrder`);
 }
 
 function load(doc: string, model: string): Row[] {
@@ -595,9 +602,6 @@ for (const [doc, kinds] of Object.entries(openOut)) {
 
 // ---- sources and attribution ----
 
-const licenses: Record<string, string> = Object.fromEntries(
-  JSON.parse(readFileSync(join(from, 'License.json'), 'utf8')).map((l: any) => [l.pk, l.fields.name]),
-);
 const PUBLISHER_NAMES: Record<string, string> = {
   'wizards-of-the-coast': 'Wizards of the Coast LLC', 'kobold-press': 'Open Design LLC d/b/a Kobold Press',
   'en-publishing': 'EN Publishing', somanyrobots: 'somanyrobots',
@@ -608,13 +612,11 @@ for (const doc of ORDER) {
   const d = load(doc, 'Document')[0];
   const year = String(d.publication_date ?? '').slice(0, 4) || null;
   const publisher = PUBLISHER_NAMES[d.publisher] ?? d.publisher;
-  const lic: string[] = d.licenses ?? [];
   sources[doc] = compact({
     // Drop placeholder or repeated author fields from the upstream metadata.
     title: d.name, publisher, author: d.author && d.author !== publisher && !/not sure/i.test(d.author) ? d.author : null, year, url: d.permalink,
-    // Prefer CC-BY-4.0 when a book offers it; OGL only when that is the only open licence.
-    license: lic.includes('cc-by-40') ? 'CC-BY-4.0' : lic.includes('ogl-10a') ? 'OGL-1.0a' : lic[0],
-    alsoOffered: lic.filter((l) => !(lic.includes('cc-by-40') ? l === 'cc-by-40' : l === 'ogl-10a')).map((l) => licenses[l] ?? l),
+    // Every book here offers CC-BY-4.0 (checked above); that is the licence we use it under.
+    license: 'CC-BY-4.0',
     entries: Object.values(report).reduce((n: number, r: any) => n + (r.open[doc] ?? 0), 0) || null,
   });
 }
@@ -628,7 +630,6 @@ const SRD_ATTRIB: Record<string, string> = {
   'srd-2014': 'This work includes material taken from the System Reference Document 5.1 ("SRD 5.1") by Wizards of the Coast LLC and available at https://dnd.wizards.com/resources/systems-reference-document. The SRD 5.1 is licensed under the Creative Commons Attribution 4.0 International License available at https://creativecommons.org/licenses/by/4.0/legalcode.',
 };
 const ccby = Object.entries(sources).filter(([k, s]) => s.license === 'CC-BY-4.0' && !SRD.includes(k));
-const ogl = Object.entries(sources).filter(([, s]) => s.license === 'OGL-1.0a');
 const md = [
   '# Attribution',
   '',
@@ -640,17 +641,6 @@ const md = [
   ...SRD.map((k) => `- **${k}** (${sources[k].title}). ${SRD_ATTRIB[k]}`),
   ...ccby.map(([k, s]) => `- **${k}**: This work includes material from *${s.title}*${s.year ? ` (${s.year})` : ''} by ${s.author ? `${s.author}, ` : ''}${s.publisher}${s.url ? `, ${s.url}` : ''}, licensed under the Creative Commons Attribution 4.0 International License, https://creativecommons.org/licenses/by/4.0/legalcode. Converted and adapted for real-time play.`),
   '',
-  '## Open Game License 1.0a',
-  '',
-  'Entries whose source is listed here are Open Game Content under the Open Game License v1.0a, reproduced in',
-  '`content/licenses/OGL-1.0a.txt`. Only their game mechanics and rules text are used; no Product Identity (logos,',
-  'trade dress, proprietary setting names) is claimed. Section 15 of that license is:',
-  '',
-  '> Open Game License v 1.0a Copyright 2000, Wizards of the Coast, LLC.',
-  '>',
-  '> System Reference Document 5.1 Copyright 2016, Wizards of the Coast, Inc.; Authors Mike Mearls, Jeremy Crawford, Chris Perkins, Rodney Thompson, Peter Lee, James Wyatt, Robert J. Schwalb, Bruce R. Cordell, Chris Sims, and Steve Townshend, based on original material by E. Gary Gygax and Dave Arneson.',
-  ...ogl.flatMap(([k, s]) => ['>', `> ${s.title} (\`${k}\`). Copyright ${s.year ?? ''}, ${s.publisher}${s.author ? `; Authors ${s.author}` : ''}.`]),
-  '',
   '## Data',
   '',
   'Converted from the Open5e data set (https://github.com/open5e/open5e-api), whose code is MIT licensed and whose',
@@ -659,10 +649,7 @@ const md = [
 ];
 writeFileSync(join(OUT, 'ATTRIBUTION.md'), md.join('\n'));
 
-// The OGL must travel with OGL content; copy its text from the data set rather than retyping it.
-mkdirSync(join(OUT, 'licenses'), { recursive: true });
-const oglText = JSON.parse(readFileSync(join(from, 'License.json'), 'utf8')).find((l: any) => l.pk === 'ogl-10a').fields.desc;
-writeFileSync(join(OUT, 'licenses', 'OGL-1.0a.txt'), `${text(oglText)}\n`);
+rmSync(join(OUT, 'licenses'), { recursive: true, force: true });
 
 writeFileSync(join(OUT, 'catalog.json'), `${JSON.stringify(report, null, 2)}\n`);
 for (const [kind, r] of Object.entries(report)) {

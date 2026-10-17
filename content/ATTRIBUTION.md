@@ -13,38 +13,6 @@ the source ids below are the values of that field. Show these notices in the gam
 - **a5e-gpg**: This work includes material from *Gate Pass Gazette* (2022) by EN Publishing, https://a5esrd.com/a5esrd, licensed under the Creative Commons Attribution 4.0 International License, https://creativecommons.org/licenses/by/4.0/legalcode. Converted and adapted for real-time play.
 - **spells-that-dont-suck**: This work includes material from *Spells That Don't Suck* (2025) by Ben Somers / somanyrobots, Omega Ankh, somanyrobots, https://www.somanyrobots.com/s/Spells-That-Dont-Suck-compressed.pdf, licensed under the Creative Commons Attribution 4.0 International License, https://creativecommons.org/licenses/by/4.0/legalcode. Converted and adapted for real-time play.
 
-## Open Game License 1.0a
-
-Entries whose source is listed here are Open Game Content under the Open Game License v1.0a, reproduced in
-`content/licenses/OGL-1.0a.txt`. Only their game mechanics and rules text are used; no Product Identity (logos,
-trade dress, proprietary setting names) is claimed. Section 15 of that license is:
-
-> Open Game License v 1.0a Copyright 2000, Wizards of the Coast, LLC.
->
-> System Reference Document 5.1 Copyright 2016, Wizards of the Coast, Inc.; Authors Mike Mearls, Jeremy Crawford, Chris Perkins, Rodney Thompson, Peter Lee, James Wyatt, Robert J. Schwalb, Bruce R. Cordell, Chris Sims, and Steve Townshend, based on original material by E. Gary Gygax and Dave Arneson.
->
-> Tome of Heroes (`toh`). Copyright 2022, Open Design LLC d/b/a Kobold Press; Authors Kelly Pawlik, Ben Mcfarland, and Briand Suskind.
->
-> Tome of Beasts 1 (2023 Edition) (`tob-2023`). Copyright 2024, Open Design LLC d/b/a Kobold Press; Authors Dan Dillon, Chris Harris, Rodrigo Garcia Carmona, Wolfgang Baur.
->
-> Tome of Beasts 2 (`tob2`). Copyright 2020, Open Design LLC d/b/a Kobold Press; Authors Wolfgang Baur, Celeste Conowitch, Darrin Drader, James Introcaso, Philip Larwood, Jeff Lee, Kelly Pawlik, Brian Suskind, Mike Welham.
->
-> Tome of Beasts 3 (`tob3`). Copyright 2022, Open Design LLC d/b/a Kobold Press; Authors Wolfgang Baur, Celeste Conowitch, Darrin Drader, James Introcaso, Philip Larwood, Jeff Lee, Kelly Pawlik, Brian Suskind, Mike Welham.
->
-> Creature Codex (`ccdx`). Copyright 2018, Open Design LLC d/b/a Kobold Press; Authors Wolfgang Baur, Dan Dillon, Richard Green, James Haeck, Chris Harris, Jeremy Hochhalter, James Introcaso, Chris Lockey, Shawn Merwin, and Jon Sawatsky.
->
-> Deep Magic for 5th Edition (`deepm`). Copyright 2020, Open Design LLC d/b/a Kobold Press; Authors Dan Dillon, Chris Harris, and Jeff Lee.
->
-> Deep Magic Extended (`deepmx`). Copyright 2024, Open Design LLC d/b/a Kobold Press.
->
-> Kobold Press Compilation (`kp`). Copyright 2024, Open Design LLC d/b/a Kobold Press; Authors Various.
->
-> Warlock Zine (`wz`). Copyright 2017, Open Design LLC d/b/a Kobold Press; Authors Woflgang Baur, others..
->
-> Vault of Magic (`vom`). Copyright 2021, Open Design LLC d/b/a Kobold Press; Authors Phillip Larwood, Jeff Lee, and Christopher Lockey.
->
-> Monstrous Menagerie (`a5e-mm`). Copyright 2021, EN Publishing; Authors Paul Hughes.
-
 ## Data
 
 Converted from the Open5e data set (https://github.com/open5e/open5e-api), whose code is MIT licensed and whose

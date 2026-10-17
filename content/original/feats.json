@@ -1,11 +1,15 @@
 [
-  { "id": "bounty-hunter", "name": "Bounty Hunter", "source": "crown-and-compass", "type": "general",
-    "text": "Takes posted bounties over open adventuring and is quicker to finish them.",
-    "benefits": [{ "text": "Bounties claimed by this hero pay a tenth more, and marked targets cannot hide from them under fog." }] },
-  { "id": "tavern-regular", "name": "Tavern Regular", "source": "crown-and-compass", "type": "origin",
-    "text": "Everyone at the bar knows this hero's name.",
-    "benefits": [{ "text": "Hears rumors first and recovers from bad moods in one night at the tavern." }] },
-  { "id": "town-hero", "name": "Town Hero", "source": "crown-and-compass", "type": "epic-boon", "prerequisite": "Saved the town in a siege",
-    "text": "Songs are sung about this hero.",
-    "benefits": [{ "text": "While in town, raises the renown of every hero who adventures with them, and recruits come from further away." }] }
+{"id":"boon-of-the-founders-oath","name":"Boon of the Founder's Oath","source":"crown-and-compass","type":"epic-boon","prerequisite":"Level 19+ and a council seat","text":"The town itself answers this hero's call.","benefits":[{"text":"Once per season, can call every hero and militiaman home to defend the town, and they all arrive at once."}]},
+{"id":"boon-of-the-unfading-map","name":"Boon of the Unfading Map","source":"crown-and-compass","type":"epic-boon","prerequisite":"Level 19+","text":"Wherever this hero has walked stays known.","benefits":[{"text":"Regions this hero has explored never fall back into fog, and the town sees large threats there live."}]},
+{"id":"bounty-hunter","name":"Bounty Hunter","source":"crown-and-compass","type":"general","text":"Takes posted bounties over open adventuring and is quicker to finish them.","benefits":[{"text":"Bounties claimed by this hero pay a tenth more, and marked targets cannot hide from them under fog."}]},
+{"id":"cult-hunter","name":"Cult Hunter","source":"crown-and-compass","type":"general","text":"Knows the smell of incense in the wrong cellar.","benefits":[{"text":"Deals extra damage to cultists and has a chance each week to unmask an agent on the council."}]},
+{"id":"fog-sense","name":"Fog Sense","source":"crown-and-compass","type":"origin","text":"An instinct for what waits in the mist.","benefits":[{"text":"Parties with this hero are never surprised in fogged regions, and their reports of unseen threats are more accurate."}]},
+{"id":"plague-doctor","name":"Plague Doctor","source":"crown-and-compass","type":"general","text":"Beak mask, vinegar sponge and steady hands.","benefits":[{"text":"Treats disease in the field, halving the time villagers stay sick, and resists catching it."}]},
+{"id":"reagent-forager","name":"Reagent Forager","source":"crown-and-compass","type":"origin","text":"Always has an eye on the ground for something the alchemists want.","benefits":[{"text":"Returns from expeditions with a handful of common reagents, and sometimes a rare one."}]},
+{"id":"siege-engineer","name":"Siege Engineer","source":"crown-and-compass","type":"general","prerequisite":"Intelligence 13 or higher","text":"Can build, aim or wreck the engines of war.","benefits":[{"text":"Ballistas and catapults they crew fire faster, and enemy engines they reach burn."}]},
+{"id":"spell-courier","name":"Spell Courier","source":"crown-and-compass","type":"general","prerequisite":"Can cast spells","text":"Has learned to stretch a spell slot into a message home.","benefits":[{"text":"Sends longer, clearer spell-slot messages to town and can send one more per expedition."}]},
+{"id":"tavern-regular","name":"Tavern Regular","source":"crown-and-compass","type":"origin","text":"Everyone at the bar knows this hero's name.","benefits":[{"text":"Hears rumors first and recovers from bad moods in one night at the tavern."}]},
+{"id":"town-hero","name":"Town Hero","source":"crown-and-compass","type":"epic-boon","prerequisite":"Saved the town in a siege","text":"Songs are sung about this hero.","benefits":[{"text":"While in town, raises the renown of every hero who adventures with them, and recruits come from further away."}]},
+{"id":"trade-road-savvy","name":"Trade-Road Savvy","source":"crown-and-compass","type":"origin","text":"Grew up beside the wagons and knows the price of everything.","benefits":[{"text":"Sells loot for more in town and haggles caravan escort bounties upward."}]},
+{"id":"wall-fighter","name":"Wall Fighter","source":"crown-and-compass","type":"general","text":"Trained to fight from battlements and towers.","benefits":[{"text":"Deals more damage to climbers and attackers below, and is hard to knock off a wall."}]}
 ]
