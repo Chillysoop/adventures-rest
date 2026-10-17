@@ -13,7 +13,7 @@ public enum Sight
     /// <summary>Described by a party that came home; the picture is as old as the report.</summary>
     Scouted,
 
-    /// <summary>Seen right now: inside the town's own lamplight and watchtowers, or under a scrying.</summary>
+    /// <summary>Seen right now: inside the town's lamplight and towers, or watched by a scrying, scout, mirror or the Spire.</summary>
     Live,
 }
 
@@ -66,10 +66,13 @@ public sealed class Fog
         // The town's lamplight reaches a little past its edge; each watchtower sees farther.
         LightRadius = geo.TownRadius + 1.4f + town.Defenses.Towers * 0.9f;
         LiveAreas.Add((Geo.Center, LightRadius));
-        foreach (var s in town.Scryings)
-            if (town.Tick >= s.StartTick && town.Tick < s.EndTick && geo.Pins.TryGetValue(s.SiteId, out var pin)) LiveAreas.Add((pin, 2.6f));
+        // The Sleepless Spire lights every site within its reach.
+        int reach = Watch.Reach(town);
+        if (reach > 0) LiveAreas.Add((Geo.Center, geo.TownRadius + 1.3f + reach * 1.1f + 2.2f));
+        foreach (var (site, source) in Watch.LiveSites(town))
+            if (source != LiveSource.Spire && geo.Pins.TryGetValue(site.Def.Id, out var pin)) LiveAreas.Add((pin, 2.6f));
 
-        string key = $"{town.Day}|{LightRadius:F2}|{Reports.Count}|{string.Join(',', LiveAreas.Skip(1).Select(a => a.P.ToString()))}|{string.Join(',', geo.Pins.Values.Select(p => p.ToString("F1")))}";
+        string key = $"{town.Day}|{LightRadius:F2}|{Reports.Count}|{string.Join(',', LiveAreas.Skip(1).Select(a => $"{a.P}:{a.R:F1}"))}|{string.Join(',', geo.Pins.Values.Select(p => p.ToString("F1")))}";
         if (key == _key) return false;
         _key = key;
         Paint(town, geo);
@@ -88,6 +91,13 @@ public sealed class Fog
             var site = Quests.Site(town, p.SiteId)!;
             float reach = p.RecalledTick is int rt ? Mathf.Clamp((rt - p.DepartTick) / (float)(site.Def.Distance * SimTime.HoursPerDay), 0, 1) : 1;
             Reports.Add(new Report(p.SiteId, SimTime.DayOf(p.ReturnTick), p.RecalledTick == null, reach, chron?.Outcome));
+        }
+        // Scouts who come home describe the road and the site they watched.
+        foreach (var s in town.Scouts)
+        {
+            if (!s.Home) continue;
+            float reach = s.Arrived ? 1 : Mathf.Clamp((s.LeaveTick - s.DepartTick) / (float)Math.Max(1, s.ArriveTick - s.DepartTick), 0, 1);
+            Reports.Add(new Report(s.SiteId, SimTime.DayOf(s.ReturnTick), s.Arrived, reach, null));
         }
     }
 

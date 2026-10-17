@@ -297,7 +297,12 @@ public static class Watch
                 }
             }
 
-            if (Watching(town, s) && !site.Cleared && town.Rng.Chance(rules.SpottedPerTier * site.Def.Tier))
+            if (Watching(town, s) && site.Cleared)
+            {
+                RecallScout(town, s.Id);
+                town.Log(LedgerCategory.Quest, Importance.Routine, $"With {site.Def.Name} cleared there is nothing left to watch. {hero.GivenName} heads home.", [hero.Id]);
+            }
+            else if (Watching(town, s) && !site.Cleared && town.Rng.Chance(rules.SpottedPerTier * site.Def.Tier))
             {
                 int dc = rules.EscapeDc + rules.EscapeDcPerTier * site.Def.Tier;
                 int roll = town.Rng.D20();

@@ -68,6 +68,9 @@ public partial class Main : Control
         SetSpeed(_opts.Speed ?? 1);
         if (_opts.Tab is string t && Enum.TryParse<Tab>(t, true, out var tab)) SetTab(tab);
         if (_opts.Site is string site) Select(Selection.Site(site));
+        // --hero picks the town's most storied hero in town, for a look at their sheet.
+        if (_opts.Hero && _sim.Town.Heroes.Where(a => !a.IsAway).OrderByDescending(a => a.Hero!.Items.Count).ThenByDescending(a => a.Hero!.Level).ThenBy(a => a.Id).FirstOrDefault() is Agent hero)
+            Select(Selection.Agent(hero.Id));
         // News from a fast-forward is in the Ledger; don't greet the player with a stale toast.
         _toast.Visible = false;
     }
@@ -287,7 +290,7 @@ public partial class Main : Control
     {
         if (e.Importance == Importance.Major || (e.Category == LedgerCategory.Council && e.Text.Contains(" moves that "))) Toast(e);
         // Real time with pause: the war's turning points stop the clock so the player can react.
-        if (e.Category == LedgerCategory.War && e.Importance == Importance.Major && _speed > 0) SetSpeed(0);
+        if (e.Category == LedgerCategory.War && e.Importance == Importance.Major && _speed > 0 && !_opts.NoPause) SetSpeed(0);
         if (_sim.Town.Outcome != null && !_endShown) CallDeferred(MethodName.ShowEnd);
     }
 
