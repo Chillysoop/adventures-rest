@@ -17,6 +17,8 @@ type Entry = Record<string, any> & { id: string; name: string; source: string };
 
 const args = process.argv.slice(2);
 const from = args[args.indexOf('--from') + 1];
+// Optional: a checkout of https://github.com/rsek/datasworn for the CC-BY parts of Ironsworn (oracles, delve sites, talents).
+const datasworn = args.includes('--datasworn') ? args[args.indexOf('--datasworn') + 1] : null;
 if (!from || !existsSync(join(from, 'License.json'))) {
   console.error('usage: node scripts/import-content.ts --from <open5e-api>/data/v2');
   process.exit(1);
@@ -586,6 +588,63 @@ for (const [kind, build] of Object.entries(KINDS)) {
 const allSubclasses = [...(srdOut.subclasses ?? []), ...Object.values(openOut).flatMap((k) => k.subclasses ?? [])];
 for (const c of [...srdOut.classes, ...Object.values(openOut).flatMap((k) => k.classes ?? [])]) c.subclassIds = allSubclasses.filter((s) => s.classId === c.id).map((s) => s.id).sort();
 
+// ---- Ironsworn (Datasworn): only the CC-BY-4.0 parts ----
+// Ironsworn's foes, atlas and truths are CC-BY-NC-SA, so they are skipped object by object; its oracle tables,
+// delve site themes and domains, and assets are CC-BY-4.0. Oracles become `tables` (names, town troubles, rumors),
+// delve sites become `site-themes`/`site-domains` for expedition sites, assets become hero `talents`.
+
+const DS_DOCS: Record<string, string> = { ironsworn: 'classic/classic.json', 'ironsworn-delve': 'delve/delve.json' };
+const CCBY = 'https://creativecommons.org/licenses/by/4.0';
+const dsText = (t: string | null | undefined) => text(t).replace(/\[([^\]]+)\]\([^)]*\)/g, '$1');
+const TABLE_USE: [RegExp, string][] = [
+  [/name/, 'names'], [/settlement|trouble/, 'town-events'], [/character|role|goal|descriptor|disposition/, 'hero-personality'],
+  [/action|theme|plot|turning/, 'rumors-and-quests'], [/place|location|region|site|feature|trap|threat|monstrosity|combat/, 'expeditions'],
+];
+const dsMeta: Record<string, any> = {};
+
+if (datasworn) {
+  for (const [doc, file] of Object.entries(DS_DOCS)) {
+    const d = JSON.parse(readFileSync(join(datasworn, 'datasworn', file), 'utf8'));
+    dsMeta[doc] = d;
+    const out: Record<string, Entry[]> = {};
+    const add = (kind: string, e: Entry) => (out[kind] ??= []).push(e);
+    const idOf = (dsId: string, root: string) => slug(dsId.split('/').slice(2).join('-').replace(new RegExp(`^${root}-?`), '')) || slug(dsId);
+    const walk = (o: any, lic: string | null, visit: (o: any) => void) => {
+      if (!o || typeof o !== 'object') return;
+      const l = o._source?.license ?? lic;
+      if (o._id && l === CCBY) visit(o);
+      for (const v of Object.values(o)) if (v && typeof v === 'object') walk(v, l, visit);
+    };
+    walk(d.oracles, null, (o) => {
+      // Move tables (pay the price, ask the oracle) are Ironsworn dice rules, not world material.
+      if (o.type !== 'oracle_rollable' || !o.rows?.length || /\/oracles\/moves\//.test(o._id)) return;
+      const id = `${doc === 'ironsworn' ? '' : 'delve-'}${idOf(o._id, 'oracles')}`;
+      add('tables', compact({
+        id, name: o.canonical_name ?? o.name, source: doc, dice: o.dice, summary: dsText(o.summary),
+        rows: o.rows.map((r: any) => compact({ min: r.min, max: r.max, text: dsText(r.text) })),
+        rt: { use: (TABLE_USE.find(([re]) => re.test(o._id)) ?? [null, 'inspiration'])[1] },
+      }));
+    });
+    const rows = (rs: any[] | undefined) => (rs ?? []).map((r) => compact({ min: r.min, max: r.max, text: dsText(r.text) }));
+    walk(d.site_themes, null, (o) => {
+      if (o.type === 'delve_site_theme') add('site-themes', compact({ id: slug(o.name), name: o.name, source: doc, summary: dsText(o.summary), features: rows(o.features), dangers: rows(o.dangers) }));
+    });
+    walk(d.site_domains, null, (o) => {
+      if (o.type === 'delve_site_domain') add('site-domains', compact({ id: slug(o.name), name: o.name, source: doc, summary: dsText(o.summary), features: rows(o.features), dangers: rows(o.dangers) }));
+    });
+    walk(d.assets, null, (o) => {
+      if (o.type !== 'asset') return;
+      add('talents', compact({
+        id: slug(o.name), name: o.name, source: doc, category: slug(o.category ?? ''), requirement: dsText(o.requirement),
+        abilities: (o.abilities ?? []).map((a: any) => compact({ name: a.name, text: dsText(a.text) })),
+        rt: { use: o.category === 'Companion' ? 'hero-companion' : 'hero-perk' },
+      }));
+    });
+    const dedup = (es: Entry[]) => [...new Map(es.map((e) => [e.id, e])).values()];
+    for (const [kind, es] of Object.entries(out)) ((openOut[doc] ??= {})[kind] = dedup(es));
+  }
+}
+
 function writeEntries(path: string, entries: Entry[]) {
   entries.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   writeFileSync(path, `[\n${entries.map((e) => JSON.stringify(e)).join(',\n')}\n]\n`);
@@ -622,6 +681,14 @@ for (const doc of ORDER) {
 }
 sources['srd-2024'].entries = Object.values(report).reduce((n: number, r: any) => n + r.srd2024, 0);
 sources['srd-2014'].entries = Object.values(report).reduce((n: number, r: any) => n + r.srd2014Only, 0);
+for (const [doc, d] of Object.entries(dsMeta)) {
+  sources[doc] = compact({
+    title: d.title, publisher: 'Tomkin Press', author: (d.authors ?? []).map((a: any) => a.name).join(', '), year: String(d.date ?? '').slice(0, 4),
+    url: d.url, license: 'CC-BY-4.0', data: 'Datasworn by rsek (https://github.com/rsek/datasworn, MIT)',
+    entries: Object.values(openOut[doc] ?? {}).reduce((n, es) => n + es.length, 0),
+    note: 'Only the CC-BY-4.0 parts (oracle tables, delve sites, assets). Foes, atlas and truths are CC-BY-NC-SA and are not used.',
+  });
+}
 sources['crown-and-compass'] = { title: 'Crown & Compass originals', publisher: 'Adventures Rest', license: 'proprietary', note: 'Hand-written for this game; lives in content/original.' };
 writeFileSync(join(OUT, 'sources.json'), `${JSON.stringify(sources, null, 2)}\n`);
 
@@ -629,7 +696,11 @@ const SRD_ATTRIB: Record<string, string> = {
   'srd-2024': 'This work includes material from the System Reference Document 5.2 ("SRD 5.2") by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode.',
   'srd-2014': 'This work includes material taken from the System Reference Document 5.1 ("SRD 5.1") by Wizards of the Coast LLC and available at https://dnd.wizards.com/resources/systems-reference-document. The SRD 5.1 is licensed under the Creative Commons Attribution 4.0 International License available at https://creativecommons.org/licenses/by/4.0/legalcode.',
 };
-const ccby = Object.entries(sources).filter(([k, s]) => s.license === 'CC-BY-4.0' && !SRD.includes(k));
+const DS_ATTRIB: Record<string, string> = {
+  ironsworn: 'This work is based on Ironsworn (found at www.ironswornrpg.com), created by Shawn Tomkin, and licensed for our use under the Creative Commons Attribution 4.0 International license (creativecommons.org/licenses/by/4.0/). Data converted from Datasworn by rsek.',
+  'ironsworn-delve': 'This work is based on Ironsworn: Delve (found at www.ironswornrpg.com), created by Shawn Tomkin, and licensed for our use under the Creative Commons Attribution 4.0 International license (creativecommons.org/licenses/by/4.0/). Data converted from Datasworn by rsek.',
+};
+const ccby = Object.entries(sources).filter(([k, s]) => s.license === 'CC-BY-4.0' && !SRD.includes(k) && !DS_ATTRIB[k]);
 const md = [
   '# Attribution',
   '',
@@ -639,6 +710,7 @@ const md = [
   '## Creative Commons Attribution 4.0',
   '',
   ...SRD.map((k) => `- **${k}** (${sources[k].title}). ${SRD_ATTRIB[k]}`),
+  ...Object.keys(dsMeta).map((k) => `- **${k}** (${sources[k].title}). ${DS_ATTRIB[k]}`),
   ...ccby.map(([k, s]) => `- **${k}**: This work includes material from *${s.title}*${s.year ? ` (${s.year})` : ''} by ${s.author ? `${s.author}, ` : ''}${s.publisher}${s.url ? `, ${s.url}` : ''}, licensed under the Creative Commons Attribution 4.0 International License, https://creativecommons.org/licenses/by/4.0/legalcode. Converted and adapted for real-time play.`),
   '',
   '## Data',
