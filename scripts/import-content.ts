@@ -610,7 +610,8 @@ for (const doc of ORDER) {
   const publisher = PUBLISHER_NAMES[d.publisher] ?? d.publisher;
   const lic: string[] = d.licenses ?? [];
   sources[doc] = compact({
-    title: d.name, publisher, author: d.author, year, url: d.permalink,
+    // Drop placeholder or repeated author fields from the upstream metadata.
+    title: d.name, publisher, author: d.author && d.author !== publisher && !/not sure/i.test(d.author) ? d.author : null, year, url: d.permalink,
     // Prefer CC-BY-4.0 when a book offers it; OGL only when that is the only open licence.
     license: lic.includes('cc-by-40') ? 'CC-BY-4.0' : lic.includes('ogl-10a') ? 'OGL-1.0a' : lic[0],
     alsoOffered: lic.filter((l) => !(lic.includes('cc-by-40') ? l === 'cc-by-40' : l === 'ogl-10a')).map((l) => licenses[l] ?? l),

@@ -7,10 +7,10 @@ the source ids below are the values of that field. Show these notices in the gam
 
 - **srd-2024** (System Reference Document 5.2). This work includes material from the System Reference Document 5.2 ("SRD 5.2") by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode.
 - **srd-2014** (System Reference Document 5.1). This work includes material taken from the System Reference Document 5.1 ("SRD 5.1") by Wizards of the Coast LLC and available at https://dnd.wizards.com/resources/systems-reference-document. The SRD 5.1 is licensed under the Creative Commons Attribution 4.0 International License available at https://creativecommons.org/licenses/by/4.0/legalcode.
-- **bfrd**: This work includes material from *Black Flag SRD* (2023) by Open Design LLC d/b/a Kobold Press, Open Design LLC d/b/a Kobold Press, https://koboldpress.com/black-flag-reference-document/, licensed under the Creative Commons Attribution 4.0 International License, https://creativecommons.org/licenses/by/4.0/legalcode. Converted and adapted for real-time play.
-- **a5e-ag**: This work includes material from *Adventurer's Guide* (2021) by EN Publishing, EN Publishing, https://a5esrd.com/a5esrd, licensed under the Creative Commons Attribution 4.0 International License, https://creativecommons.org/licenses/by/4.0/legalcode. Converted and adapted for real-time play.
-- **a5e-ddg**: This work includes material from *Dungeon Delver’s Guide* (2023) by EN Publishing, EN Publishing, https://a5esrd.com/a5esrd, licensed under the Creative Commons Attribution 4.0 International License, https://creativecommons.org/licenses/by/4.0/legalcode. Converted and adapted for real-time play.
-- **a5e-gpg**: This work includes material from *Gate Pass Gazette* (2022) by EN Publishing, EN Publishing, https://a5esrd.com/a5esrd, licensed under the Creative Commons Attribution 4.0 International License, https://creativecommons.org/licenses/by/4.0/legalcode. Converted and adapted for real-time play.
+- **bfrd**: This work includes material from *Black Flag SRD* (2023) by Open Design LLC d/b/a Kobold Press, https://koboldpress.com/black-flag-reference-document/, licensed under the Creative Commons Attribution 4.0 International License, https://creativecommons.org/licenses/by/4.0/legalcode. Converted and adapted for real-time play.
+- **a5e-ag**: This work includes material from *Adventurer's Guide* (2021) by EN Publishing, https://a5esrd.com/a5esrd, licensed under the Creative Commons Attribution 4.0 International License, https://creativecommons.org/licenses/by/4.0/legalcode. Converted and adapted for real-time play.
+- **a5e-ddg**: This work includes material from *Dungeon Delver’s Guide* (2023) by EN Publishing, https://a5esrd.com/a5esrd, licensed under the Creative Commons Attribution 4.0 International License, https://creativecommons.org/licenses/by/4.0/legalcode. Converted and adapted for real-time play.
+- **a5e-gpg**: This work includes material from *Gate Pass Gazette* (2022) by EN Publishing, https://a5esrd.com/a5esrd, licensed under the Creative Commons Attribution 4.0 International License, https://creativecommons.org/licenses/by/4.0/legalcode. Converted and adapted for real-time play.
 - **spells-that-dont-suck**: This work includes material from *Spells That Don't Suck* (2025) by Ben Somers / somanyrobots, Omega Ankh, somanyrobots, https://www.somanyrobots.com/s/Spells-That-Dont-Suck-compressed.pdf, licensed under the Creative Commons Attribution 4.0 International License, https://creativecommons.org/licenses/by/4.0/legalcode. Converted and adapted for real-time play.
 
 ## Open Game License 1.0a
@@ -35,7 +35,7 @@ trade dress, proprietary setting names) is claimed. Section 15 of that license i
 >
 > Deep Magic for 5th Edition (`deepm`). Copyright 2020, Open Design LLC d/b/a Kobold Press; Authors Dan Dillon, Chris Harris, and Jeff Lee.
 >
-> Deep Magic Extended (`deepmx`). Copyright 2024, Open Design LLC d/b/a Kobold Press; Authors Not sure..
+> Deep Magic Extended (`deepmx`). Copyright 2024, Open Design LLC d/b/a Kobold Press.
 >
 > Kobold Press Compilation (`kp`). Copyright 2024, Open Design LLC d/b/a Kobold Press; Authors Various.
 >

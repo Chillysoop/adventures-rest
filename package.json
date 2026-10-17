@@ -6,7 +6,8 @@
     "sim": "node src/cli.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "build": "node scripts/build-client.ts"
+    "build": "node scripts/build-client.ts",
+    "content:import": "node scripts/import-content.ts"
   },
   "engines": {
     "node": ">=22.18"
