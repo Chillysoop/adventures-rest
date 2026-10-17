@@ -69,6 +69,7 @@ public partial class Main : Control
         if (_opts.Cam is float cam)
             _map.LookAt(_opts.Look ?? (_opts.Site is string at && _map.Geo.Pins.TryGetValue(at, out var pin) ? pin : Map.Geo.Center), cam);
         if (_opts.StrategicView) ToggleStrategic();
+        if (_opts.Plan is string plan) OpenPlan(plan, _opts.Tool, _opts.Hover);
         if (_opts.Yaw != 0) _map.Rotate(_opts.Yaw);
         // --hero picks the town's most storied hero in town, for a look at their sheet.
         if (_opts.Hero && _sim.Town.Heroes.Where(a => !a.IsAway).OrderByDescending(a => a.Hero!.Items.Count).ThenByDescending(a => a.Hero!.Level).ThenBy(a => a.Id).FirstOrDefault() is Agent hero)
@@ -106,7 +107,8 @@ public partial class Main : Control
     {
         _seed = seed;
         // With --autoplay the stand-in mayor keeps playing, for demos and screenshots.
-        _sim = new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoCouncil = autoplay, AutoDefense = autoplay });
+        _sim = new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoCouncil = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay });
+        _map.Planner.Pick(null);
         _map.Bind(_sim);
         _sim.Town.Ledger.OnWrite(OnLedger);
         _townName.Text = _sim.Town.Name;
@@ -182,6 +184,8 @@ public partial class Main : Control
         if (k.Keycode == Key.Space) SetSpeed(_speed == 0 ? _lastSpeed : 0);
         else if (k.Keycode is >= Key.Key1 and <= Key.Key4) SetSpeed((int)(k.Keycode - Key.Key0));
         else if (k.Keycode == Key.Home) _map.Recenter();
+        else if (k.Keycode == Key.B) ToggleBuildBar();
+        else if (k.Keycode == Key.Escape && _map.Planner.Active) _map.Planner.Pick(null);
         else if (k.Keycode == Key.M) ToggleStrategic();
         else if (k.Keycode == Key.Escape && _inspector.Visible) Select(null);
         else if (k.Keycode == Key.Escape && _window.Visible) CloseWindow();
@@ -222,6 +226,7 @@ public partial class Main : Control
                     case Tab.Chronicles: RenderChronicles(); break;
                 }
             if (_inspector.Visible) RenderInspect();
+            RenderBuild();
             _dirty = false;
         }
         if (_opts.Bench) Bench(delta);

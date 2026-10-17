@@ -35,6 +35,9 @@ public partial class MapView : Control
 
     public readonly List<Marker> Markers = [];
     public MarkerKind? Placing { get; set; }
+
+    /// <summary>The town plan; while it has a tool, left clicks and drags zone or place instead of panning.</summary>
+    public Planner Planner { get; private set; } = null!;
     public bool Strategic { get; private set; }
     private float _strategic;
 
@@ -117,6 +120,9 @@ public partial class MapView : Control
         _overlay = new Overlay(this) { MouseFilter = MouseFilterEnum.Ignore };
         AddChild(_overlay);
         _overlay.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        Planner = new Planner(this) { MouseFilter = MouseFilterEnum.Ignore };
+        AddChild(Planner);
+        Planner.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
     }
 
     public void Bind(Simulation sim)
@@ -191,6 +197,7 @@ public partial class MapView : Control
         _crowd.Advance(dt);
         UpdateLight(town);
         _overlay.QueueRedraw();
+        if (Planner.Active) Planner.QueueRedraw();
     }
 
     /// <summary>The town holds the territory it stands in; the enemy's camp corrupts its own and seeps into its neighbours.</summary>
@@ -314,6 +321,7 @@ public partial class MapView : Control
 
     public override void _GuiInput(InputEvent e)
     {
+        if (Planner.Active && PlanInput(e)) return;
         if (e is InputEventMouseButton mb)
         {
             if (mb.ButtonIndex is MouseButton.WheelUp or MouseButton.WheelDown && mb.Pressed)
@@ -364,6 +372,27 @@ public partial class MapView : Control
             _target -= b - a;
             AcceptEvent();
         }
+    }
+
+    /// <summary>Left button plans while a tool is picked (a drag paints, the map no longer pans), right-click puts it down.</summary>
+    private bool PlanInput(InputEvent e)
+    {
+        switch (e)
+        {
+            case InputEventMouseButton { ButtonIndex: MouseButton.Left } b:
+                if (b.Pressed) Planner.Press(ToWorld(b.Position));
+                else Planner.Release(ToWorld(b.Position));
+                AcceptEvent();
+                return true;
+            case InputEventMouseButton { ButtonIndex: MouseButton.Right, Pressed: true, DoubleClick: false }:
+                Planner.Pick(null);
+                AcceptEvent();
+                return true;
+            case InputEventMouseMotion mm when (mm.ButtonMask & (MouseButtonMask.Right | MouseButtonMask.Middle)) == 0:
+                Planner.Hover(ToWorld(mm.Position));
+                return true;
+        }
+        return false;
     }
 
     private void RemoveMarkerNear(Vector2 screen)

@@ -184,6 +184,8 @@ public partial class TownView(MapView map) : Node3D
             case "shrine": Shrine(kit); break;
             case "temple": Temple(kit, v); break;
             case "general_store": Store(kit, v); break;
+            case "granary": Granary(kit, v); break;
+            case "watch_house": WatchHouse(kit, v); break;
             default: House(kit, v); break;
         }
         return _meshes[key] = kit.Build();
@@ -286,6 +288,43 @@ public partial class TownView(MapView map) : Node3D
         k.Add("town/stall-green", MeshKit.At(-0.5f, 0, 1.7f, 0, 0.8f));
         k.Add("town/cart", MeshKit.At(0.75f, 0, 1.6f, 0.4f, 0.7f));
         k.Pop();
+    }
+
+    private static void Granary(MeshKit k, int v)
+    {
+        // Two round grain bins on a stone footing beside a long store barn.
+        k.Box(new Vector3(0, 0, 0), new Vector3(0.96f, 0.05f, 0.96f), new Color("8f8a80"), new Color("a8a296"));
+        for (int i = 0; i < 2; i++)
+        {
+            float x = -0.24f + i * 0.46f;
+            k.Frustum(new Vector3(x, 0.05f, -0.22f), 0.19f, 0.19f, 0.5f, 10, new Color("b89a62"), null, i);
+            k.Frustum(new Vector3(x, 0.55f, -0.22f), 0.21f, 0.02f, 0.2f, 10, new Color("8a5232"), null, i);
+        }
+        k.Push(MeshKit.At(0, 0.05f, 0.24f, 0, Fit(2, 1, 0.82f)));
+        Walls(k, 2, 1, 0, false, v + 81, true);
+        k.Push(MeshKit.At(0, 1, 0));
+        k.Gable(0, 2, 1, 0.7f, new Color("8a5232"), Palette.Plaster, 0.1f);
+        k.Pop();
+        k.Pop();
+        k.Add("town/cart", MeshKit.At(0.4f, 0, 0.44f, 0.3f, 0.45f));
+    }
+
+    private static void WatchHouse(MeshKit k, int v)
+    {
+        // A stone guard post with a lookout tower and the watch's red banners.
+        k.Push(MeshKit.At(-0.12f, 0, 0.02f, 0, Fit(2, 2, 0.7f)));
+        Walls(k, 2, 2, 0, true, v + 91, true);
+        k.Push(MeshKit.At(0, 1, 0));
+        k.Gable(0, 2, 2, 0.9f, new Color("58626f"), Palette.Stone, 0.1f);
+        k.Pop();
+        k.Add("town/banner-red", new Transform3D(Basis.FromEuler(new Vector3(0, -Mathf.Pi / 2, 0)), new Vector3(-0.6f, 0.4f, 1.02f)));
+        k.Add("town/lantern", MeshKit.At(0.6f, 0, 1.25f, 0, 0.8f));
+        k.Pop();
+        var castle = Palette.Kenney(new Color("6a6e78"));
+        k.Add("castle/tower-square-base", MeshKit.At(0.33f, 0, -0.3f, 0, 0.3f), castle);
+        k.Add("castle/tower-square-mid", MeshKit.At(0.33f, 0.3f, -0.3f, 0, 0.3f), castle);
+        k.Add("castle/tower-square-top-roof", MeshKit.At(0.33f, 0.6f, -0.3f, 0, 0.3f), castle);
+        k.Add("castle/flag-pennant", MeshKit.At(0.33f, 0.92f, -0.3f, 0, 0.3f), Palette.Kenney(new Color("b8322a")));
     }
 
     private static void Tavern(MeshKit k, int v)
@@ -438,6 +477,7 @@ public partial class TownView(MapView map) : Node3D
                 Zone.Civic => new Color("b4aa94"),
                 Zone.Commercial => new Color("a28c62"),
                 Zone.Farmland => new Color("7a6040"),
+                Zone.Industry => new Color("8a7a66"),
                 _ => new Color("8f8a5c"),
             };
             float s = l.Zone == Zone.Farmland ? 0.98f : 1.02f;
