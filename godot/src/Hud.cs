@@ -55,6 +55,7 @@ public partial class Main
         BuildInspector();
         BuildFeed();
         BuildDock();
+        BuildBuildBar();
         BuildCorner();
 
         _endOverlay = new ColorRect { Color = new Color(0.08f, 0.055f, 0.03f, 0.55f), Visible = false };
@@ -281,6 +282,10 @@ public partial class Main
                 _motionDot.OffsetBottom = 14;
             }
         }
+        row.AddChild(new VSeparator());
+        _buildToggle = new Button { Text = "Build", ThemeTypeVariation = "Tab", ToggleMode = true, FocusMode = FocusModeEnum.None, TooltipText = "Zone land and place government buildings (B)", CustomMinimumSize = new Vector2(92, 0) };
+        _buildToggle.Pressed += ToggleBuildBar;
+        row.AddChild(_buildToggle);
         AddChild(dock);
         dock.SetAnchorsAndOffsetsPreset(LayoutPreset.CenterBottom, LayoutPresetMode.Minsize, Gap);
         dock.GrowHorizontal = GrowDirection.Both;

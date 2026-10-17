@@ -19,6 +19,7 @@ public enum Zone
     Residential,
     Farmland,
     Commercial,
+    Industry,
 }
 
 public static class Goods
@@ -45,6 +46,27 @@ public sealed record BuildingDef
 
     /// <summary>A house of the gods: offerings and tithes fill its coffers, which the treasury never sweeps.</summary>
     public bool Holy { get; init; }
+
+    /// <summary>A government building the player places directly, paid from the treasury (<see cref="Planning"/>).</summary>
+    public bool Civic { get; init; }
+
+    /// <summary>Daily gold the treasury pays to keep a finished government building running.</summary>
+    public double Upkeep { get; init; }
+
+    /// <summary>Residents the town needs before it can raise one.</summary>
+    public int Population { get; init; }
+
+    /// <summary>Most the town can have at once (0 = no limit).</summary>
+    public int Max { get; init; }
+
+    /// <summary>Watch house: each one makes every watchman count this much more.</summary>
+    public double WatchBoost { get; init; }
+
+    /// <summary>Granary: food the caravans leave in town on top of the usual stock.</summary>
+    public double FoodStore { get; init; }
+
+    /// <summary>One line for the build bar.</summary>
+    public string Blurb { get; init; } = "";
 
     /// <summary>Goods made per worker-hour, in the order the content lists them.</summary>
     [JsonConverter(typeof(GoodsListConverter))]

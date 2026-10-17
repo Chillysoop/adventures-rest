@@ -41,6 +41,10 @@ public sealed class Options
     public bool NoPause;
     public readonly List<(string Verb, string Arg)> Script = [];
 
+    /// <summary>--plan opens the build bar on a group; --tool picks a zone or building; --hover x,y,x2,y2 previews a stroke over lots.</summary>
+    public string? Plan, Tool;
+    public int[]? Hover;
+
     public static Options Parse(string[] args)
     {
         var o = new Options();
@@ -71,6 +75,9 @@ public sealed class Options
                 case "--yaw": o.Yaw = int.Parse(Next()); break;
                 case "--trees": o.Trees = float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture); break;
                 case "--bench": o.Bench = true; break;
+                case "--plan": o.Plan = Next(); break;
+                case "--tool": o.Tool = Next(); break;
+                case "--hover": o.Hover = Next().Split(',').Select(int.Parse).ToArray(); break;
                 case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic":
                     o.Script.Add((args[i][2..], Next()));
                     break;

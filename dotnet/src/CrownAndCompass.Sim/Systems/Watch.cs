@@ -205,11 +205,12 @@ public static class Watch
     }
 
     /// <summary>Commission a sight work on a civic lot near the hall; builders put it up like any other site.</summary>
-    public static Building? BuildWork(Town town, string buildingId)
+    /// <param name="at">The lot the player picked, else one near the hall.</param>
+    public static Building? BuildWork(Town town, string buildingId, Lot? at = null)
     {
         var w = Rules(town).Works.FirstOrDefault(x => x.Building == buildingId);
         if (w == null || WorkBlocked(town, w) != null) return null;
-        var lot = Property.FindLot(town, Zone.Civic) ?? Property.FindLot(town, Zone.None);
+        var lot = at ?? Property.FindLot(town, Zone.Civic) ?? Property.FindLot(town, Zone.None);
         if (lot == null) return null;
         lot.Zone = Zone.Civic;
         var def = town.Content.Building(buildingId);
