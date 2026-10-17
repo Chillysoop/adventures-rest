@@ -5,19 +5,24 @@ using Godot;
 namespace CrownAndCompass.Client.Map;
 
 /// <summary>
-/// Where things sit on the map, in world tiles: the 16x16 town grid in the middle of a ring of
-/// wilderness, the river, the forest, and the adventure sites. Decoration is hashed from fixed
-/// numbers so it never touches the simulation's Rng.
+/// Where things sit on the map, in world tiles (one tile is one town lot): a 1024-tile square of
+/// wilderness with the 16x16 town grid at its heart, a river past the ford the town was founded
+/// on, and the adventure sites a few days' march out. Decoration is hashed from fixed numbers so
+/// it never touches the simulation's Rng.
 /// </summary>
 public sealed class Geo
 {
     public const int Grid = Town.Grid;
-    public const int Margin = 6;
-    public const int World = Grid + Margin * 2;
+    public const int World = 1024;
+    public const int Margin = (World - Grid) / 2;
     public static readonly Vector2 Center = new(World / 2f, World / 2f);
 
-    public readonly List<Vector2> River = [];
-    public readonly List<(Vector2 P, float R)> Trees = [];
+    /// <summary>Tiles a party covers in a day on the road; sites sit this far out per day of travel.</summary>
+    public const float TilesPerDay = 44;
+
+    /// <summary>Everything within this radius of the town stays clear of forest and flat enough to build on.</summary>
+    public const float Clearing = 15;
+
     public readonly Dictionary<string, Vector2> Pins = [];
     public float TownRadius { get; private set; } = 3;
 
@@ -29,36 +34,13 @@ public sealed class Geo
         return x / 4294967296f;
     }
 
-    public Geo(Town town)
-    {
-        const float seed = 1.3f;
-        // A river runs down the eastern wilds and bends south, past the ford the town was founded on.
-        for (int i = 0; i <= 40; i++)
-        {
-            float t = i / 40f;
-            River.Add(new Vector2(World - 2.2f + Mathf.Sin(t * 5 + seed) * 0.6f - t * t * 3, -8 + t * (World + 16)));
-        }
-        for (int i = 0; i < 1600; i++)
-        {
-            float x = -8 + Hash(i * 3 + 1) * (World + 16);
-            float y = -8 + Hash(i * 3 + 2) * (World + 16);
-            bool inTown = x > Margin - 0.3f && x < Margin + Grid + 0.3f && y > Margin - 0.3f && y < Margin + Grid + 0.3f;
-            if (inTown) continue;
-            if (River.Any(p => p.DistanceTo(new Vector2(x, y)) < 0.9f)) continue;
-            // Denser forest farther from the ford.
-            float d = new Vector2(x, y).DistanceTo(Center);
-            if (Hash(i * 3 + 3) > (d - 7) / 9) continue;
-            Trees.Add((new Vector2(x, y), 0.28f + Hash(i * 7) * 0.22f));
-        }
-        Trees.Sort((a, b) => a.P.Y.CompareTo(b.P.Y));
-        PlaceSites(town, 1);
-    }
+    public Geo(Town town) => PlaceSites(town, 1);
 
     public static Vector2 LotPos(Lot l) => new(Margin + l.X, Margin + l.Y);
 
     /// <summary>
-    /// The wilds keep their distance from the frontier: sites sit just beyond the edge of the
-    /// settled area, farther for longer journeys, and drift outward as the town grows.
+    /// The wilds keep their distance from the frontier: sites sit beyond the edge of the settled
+    /// area, a day's march out per day of travel, and drift outward as the town grows.
     /// Returns true when a pin moved enough to matter for cached drawing.
     /// </summary>
     public bool PlaceSites(Town town, float ease)
@@ -73,7 +55,7 @@ public sealed class Geo
         {
             var s = town.Sites[i];
             float a;
-            float rr = TownRadius + 1.3f + s.Def.Distance * 1.1f;
+            float rr = TownRadius + 10 + s.Def.Distance * TilesPerDay * (0.82f + Hash(i * 7 + 3) * 0.3f);
             if (Sim.Systems.World.RegionOf(town, s) is { } region)
             {
                 // Spread a region's sites across its arc of the compass (bearing 0 is north, clockwise).
@@ -81,7 +63,7 @@ public sealed class Geo
                 int n = region.SiteIds.Count;
                 float bearing = (float)(region.Bearing + (k - (n - 1) / 2f) * region.Arc * 0.6f / Math.Max(1, n));
                 a = -Mathf.Pi / 2 + Mathf.DegToRad(bearing);
-                rr += (k % 2) * 0.5f;
+                rr += (k % 2) * 6;
             }
             else
             {
@@ -90,7 +72,7 @@ public sealed class Geo
                 a = -Mathf.Pi / 2 + slot / baseCount * Mathf.Tau + 0.35f;
             }
             var p = Center + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * rr;
-            if (!Pins.TryGetValue(s.Def.Id, out var old) || old.DistanceTo(p) > 0.05f) moved = true;
+            if (!Pins.TryGetValue(s.Def.Id, out var old) || old.DistanceTo(p) > 0.25f) moved = true;
             Pins[s.Def.Id] = p;
         }
         return moved;

@@ -21,6 +21,9 @@ public sealed record SimulationOptions
     public double StartingTreasury { get; init; } = 250;
     public bool AutoMayor { get; init; } = true;
 
+    /// <summary>Let the stand-in mayor zone land and raise government buildings; off when a player plans the town.</summary>
+    public bool AutoPlanning { get; init; } = true;
+
     /// <summary>Let the stand-in mayor post bounties; off when a player runs the bounty board.</summary>
     public bool AutoBounties { get; init; } = true;
 
@@ -83,7 +86,7 @@ public sealed class Simulation
         Property.Daily(t);
         Population.DailyDepartures(t);
         Population.DailyArrivals(t);
-        if (Options.AutoMayor) Mayor.Daily(t);
+        if (Options.AutoMayor) Mayor.Daily(t, Options.AutoPlanning, Options.AutoDefense);
         Social.Daily(t);
         Council.Daily(t, Options.AutoCouncil);
         double pace = Director.Daily(t);
@@ -144,6 +147,12 @@ public sealed class Simulation
     /// <summary>Back a faction the town knows with treasury gold.</summary>
     public bool SupportFaction(string factionId, double gold) => Factions.Support(Town, factionId, gold);
 
+    /// <summary>Paint a zone over vacant, unowned lots (Zone.None clears them). Returns how many changed.</summary>
+    public int ZoneLots(IEnumerable<int> lotIds, Zone zone) => Planning.Paint(Town, lotIds, zone);
+
+    /// <summary>Place a government building, charter house or town-owned business on a lot, paid from the treasury.</summary>
+    public Building? Place(string buildingId, int lotId) => Planning.Place(Town, buildingId, lotId);
+
     /// <summary>Commission the Scrying Pool or the Sleepless Spire.</summary>
     public Building? BuildSightWork(string buildingId) => Watch.BuildWork(Town, buildingId);
 
@@ -184,10 +193,11 @@ public sealed class Simulation
         Threat.InitThreat(t);
         Factions.InitFactions(t);
 
-        if (Options.AutoMayor) Mayor.Daily(t);
+        if (Options.AutoMayor && Options.AutoPlanning) Mayor.Daily(t);
         else
         {
-            Zone[] zones = [Zone.Residential, Zone.Residential, Zone.Residential, Zone.Commercial, Zone.Farmland, Zone.Farmland];
+            // The charter's own plan: the player zones everything after it.
+            Zone[] zones = [Zone.Residential, Zone.Residential, Zone.Residential, Zone.Commercial, Zone.Industry, Zone.Farmland];
             foreach (var z in zones)
             {
                 var lot = t.Lots
@@ -216,7 +226,7 @@ public sealed class Simulation
         var farmDef = c.Building("farm");
         var campDef = c.Building("lumber_camp");
         var farm = t.AddBuilding(farmDef, FreeLot(Zone.Farmland), farmer.Id, Property.NameFor(t, farmDef, farmer), true);
-        var camp = t.AddBuilding(campDef, FreeLot(Zone.Farmland), woodcutter.Id, Property.NameFor(t, campDef, woodcutter), true);
+        var camp = t.AddBuilding(campDef, FreeLot(Zone.Industry), woodcutter.Id, Property.NameFor(t, campDef, woodcutter), true);
         var storeDef = c.Building("general_store");
         var store = t.AddBuilding(storeDef, FreeLot(Zone.Commercial), shopkeeper.Id, Property.NameFor(t, storeDef, shopkeeper), true);
         farm.Cash = 40;
@@ -233,7 +243,7 @@ public sealed class Simulation
         t.Market.Seed(Good.Ale, 15);
 
         Economy.Daily(t, true);
-        if (Options.AutoMayor) Mayor.Daily(t);
+        if (Options.AutoMayor) Mayor.Daily(t, Options.AutoPlanning, Options.AutoDefense);
 
         t.Log(
             LedgerCategory.Town,

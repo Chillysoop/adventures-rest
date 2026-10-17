@@ -59,11 +59,13 @@ public static class Shrines
     }
 
     /// <summary>The council endows a temple; builders put it up like any other site.</summary>
-    public static Building? BuildTemple(Town town)
+    /// <param name="at">The lot the player picked, else one near the hall.</param>
+    public static Building? BuildTemple(Town town, Lot? at = null)
     {
         if (TempleBlocked(town) != null) return null;
-        var lot = CivicLot(town);
+        var lot = at ?? CivicLot(town);
         if (lot == null) return null;
+        lot.Zone = Zone.Civic;
         var def = town.Content.Building(Rules(town).Temple);
         town.Book(TreasuryAccount.Temple, -TempleCost(town));
         town.Market.Buy(Good.Timber, def.Timber);

@@ -21,6 +21,7 @@ public partial class Main : Control
         War,
         Council,
         Bounties,
+        Faith,
         Chronicles,
         Inspect,
     }
@@ -32,7 +33,6 @@ public partial class Main : Control
     private int _lastSpeed = 1;
     private double _acc;
     private bool _dirty = true;
-    private Tab _tab = Tab.Ledger;
     private Importance _ledgerFilter = Importance.Notable;
     private bool _endShown;
     private readonly HashSet<int> _openChronicles = [];
@@ -45,9 +45,6 @@ public partial class Main : Control
     private readonly Dictionary<Tab, Pane> _panes = [];
     private HBoxContainer _stats = null!;
     private ColorRect _motionDot = null!;
-    private PanelContainer _toast = null!;
-    private RichTextLabel _toastText = null!;
-    private double _toastLeft;
     private Control _endOverlay = null!;
     private RichTextLabel _ledgerText = null!;
     private int _ledgerShown = -1;
@@ -61,6 +58,7 @@ public partial class Main : Control
         Theme = Ui.BuildTheme();
         Ui.Links = OnLink;
         BuildLayout();
+        _map.TreeScale = _opts.Trees;
         NewTown(_opts.Seed ?? 1, _opts.Autoplay);
         if (_opts.Day > 0) _sim.RunDays(_opts.Day);
         if (_opts.Hour > 0) for (int i = 0; i < _opts.Hour; i++) _sim.Step();
@@ -68,178 +66,16 @@ public partial class Main : Control
         SetSpeed(_opts.Speed ?? 1);
         if (_opts.Tab is string t && Enum.TryParse<Tab>(t, true, out var tab)) SetTab(tab);
         if (_opts.Site is string site) Select(Selection.Site(site));
+        if (_opts.Cam is float cam)
+            _map.LookAt(_opts.Look ?? (_opts.Site is string at && _map.Geo.Pins.TryGetValue(at, out var pin) ? pin : Map.Geo.Center), cam);
+        if (_opts.StrategicView) ToggleStrategic();
+        if (_opts.Plan is string plan) OpenPlan(plan, _opts.Tool, _opts.Hover);
+        if (_opts.Yaw != 0) _map.Rotate(_opts.Yaw);
         // --hero picks the town's most storied hero in town, for a look at their sheet.
         if (_opts.Hero && _sim.Town.Heroes.Where(a => !a.IsAway).OrderByDescending(a => a.Hero!.Items.Count).ThenByDescending(a => a.Hero!.Level).ThenBy(a => a.Id).FirstOrDefault() is Agent hero)
             Select(Selection.Agent(hero.Id));
-        // News from a fast-forward is in the Ledger; don't greet the player with a stale toast.
-        _toast.Visible = false;
-    }
-
-    // ---------- Layout ----------
-
-    private void BuildLayout()
-    {
-        var bg = new Panel();
-        AddChild(bg);
-        bg.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        var margin = new MarginContainer();
-        AddChild(margin);
-        margin.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        foreach (var edge in new[] { "left", "right", "top", "bottom" }) margin.AddThemeConstantOverride($"margin_{edge}", 12);
-        var app = new HBoxContainer();
-        app.AddThemeConstantOverride("separation", 12);
-        margin.AddChild(app);
-
-        var stage = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        stage.AddThemeConstantOverride("separation", 10);
-        app.AddChild(stage);
-        stage.AddChild(BuildHeader());
-        _stats = new HBoxContainer();
-        _stats.AddThemeConstantOverride("separation", 6);
-        stage.AddChild(_stats);
-        stage.AddChild(BuildMap());
-
-        var aside = new PanelContainer { CustomMinimumSize = new Vector2(400, 0) };
-        aside.AddThemeStyleboxOverride("panel", Ui.Box(Ui.Panel, Ui.Line, 14));
-        app.AddChild(aside);
-        var side = new VBoxContainer();
-        side.AddThemeConstantOverride("separation", 0);
-        aside.AddChild(side);
-        var tabsBg = new PanelContainer();
-        var tabsBox = Ui.Flat(Ui.Panel2, 6, 0);
-        tabsBox.CornerRadiusTopLeft = tabsBox.CornerRadiusTopRight = 14;
-        tabsBox.BorderColor = Ui.Line;
-        tabsBox.BorderWidthBottom = 1;
-        tabsBg.AddThemeStyleboxOverride("panel", tabsBox);
-        var tabs = new HBoxContainer();
-        tabs.AddThemeConstantOverride("separation", 0);
-        tabsBg.AddChild(tabs);
-        side.AddChild(tabsBg);
-        foreach (var t in Enum.GetValues<Tab>())
-        {
-            var b = new Button { Text = t.ToString(), ThemeTypeVariation = "Tab", ToggleMode = true, SizeFlagsHorizontal = SizeFlags.ExpandFill };
-            b.Pressed += () => SetTab(t);
-            tabs.AddChild(b);
-            _tabButtons[t] = b;
-            if (t == Tab.Council)
-            {
-                _motionDot = new ColorRect { Color = Ui.Accent, Visible = false, MouseFilter = MouseFilterEnum.Ignore };
-                b.AddChild(_motionDot);
-                _motionDot.SetAnchorsAndOffsetsPreset(LayoutPreset.TopRight);
-                _motionDot.OffsetLeft = -9;
-                _motionDot.OffsetRight = -3;
-                _motionDot.OffsetTop = 9;
-                _motionDot.OffsetBottom = 15;
-            }
-
-            var scroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, Visible = false };
-            var pad = new MarginContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-            foreach (var s in new[] { "left", "right" }) pad.AddThemeConstantOverride($"margin_{s}", 14);
-            pad.AddThemeConstantOverride("margin_top", 10);
-            pad.AddThemeConstantOverride("margin_bottom", 14);
-            var box = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-            box.AddThemeConstantOverride("separation", 8);
-            pad.AddChild(box);
-            scroll.AddChild(pad);
-            side.AddChild(scroll);
-            _scrolls[t] = scroll;
-            _panes[t] = new Pane(box);
-        }
-        BuildLedgerPane();
-    }
-
-    private Control BuildHeader()
-    {
-        var bar = new HBoxContainer();
-        bar.AddThemeConstantOverride("separation", 14);
-        var title = new HBoxContainer();
-        title.AddThemeConstantOverride("separation", 6);
-        _townName = Ui.Label("Briarford", Ui.Ink, Ui.Display, 24);
-        title.AddChild(_townName);
-        var sub = Ui.Label("Crown & Compass", Ui.Ink2, Ui.Medium, 12);
-        sub.SizeFlagsVertical = SizeFlags.ShrinkEnd;
-        title.AddChild(sub);
-        bar.AddChild(title);
-        _clock = Ui.Label("Day 1 · 00:00", Ui.Ink, Ui.Display, 16);
-        _clock.CustomMinimumSize = new Vector2(130, 0);
-        bar.AddChild(_clock);
-        _threatPill = new PanelContainer { SizeFlagsVertical = SizeFlags.ShrinkCenter };
-        _threat = Ui.Label("QUIET", Ui.Ink, Ui.Bold, 11);
-        _threatPill.AddChild(_threat);
-        bar.AddChild(_threatPill);
-
-        var speeds = new PanelContainer { SizeFlagsVertical = SizeFlags.ShrinkCenter };
-        speeds.AddThemeStyleboxOverride("panel", Ui.Box(Ui.Panel, Ui.Line, 10, 1, 3, 3));
-        var sh = new HBoxContainer();
-        sh.AddThemeConstantOverride("separation", 2);
-        speeds.AddChild(sh);
-        string[] labels = ["❚❚", "1×", "4×", "12×", "36×"];
-        string[] tips = ["Pause (space)", "Normal (1)", "Fast (2)", "Faster (3)", "Fastest (4)"];
-        for (int i = 0; i < 5; i++)
-        {
-            int k = i;
-            var b = new Button { Text = labels[i], ThemeTypeVariation = "Speed", ToggleMode = true, TooltipText = tips[i], CustomMinimumSize = new Vector2(40, 0) };
-            b.Pressed += () => SetSpeed(k);
-            sh.AddChild(b);
-            _speedButtons[i] = b;
-        }
-        bar.AddChild(speeds);
-        bar.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
-        _seedLabel = Ui.Label("seed 1", Ui.Ink2, null, 12);
-        _seedLabel.SizeFlagsVertical = SizeFlags.ShrinkCenter;
-        bar.AddChild(_seedLabel);
-        var newTown = new Button { Text = "New town", TooltipText = "Start a fresh town with a random seed" };
-        newTown.Pressed += () => NewTown((int)(GD.Randi() % 9999) + 1);
-        bar.AddChild(newTown);
-        return bar;
-    }
-
-    private Control BuildMap()
-    {
-        var frame = new PanelContainer { SizeFlagsVertical = SizeFlags.ExpandFill, ClipChildren = ClipChildrenMode.AndDraw };
-        frame.AddThemeStyleboxOverride("panel", Ui.Box(new Color("3c5c34"), Ui.Line, 14, 0));
-        _map = new MapView { SizeFlagsVertical = SizeFlags.ExpandFill, SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        _map.Picked += sel => Select(sel);
-        frame.AddChild(_map);
-
-        // Overlays share the map's rectangle.
-        var over = new Control { MouseFilter = MouseFilterEnum.Ignore };
-        frame.AddChild(over);
-        _pausedPill = Ui.Label("PAUSED", new Color("f6eedb"), Ui.Bold, 12);
-        var pill = new PanelContainer { MouseFilter = MouseFilterEnum.Ignore };
-        pill.AddThemeStyleboxOverride("panel", Ui.Flat(new Color(0.08f, 0.06f, 0.04f, 0.7f), 12, 4, 99));
-        pill.AddChild(_pausedPill);
-        over.AddChild(pill);
-        pill.SetAnchorsPreset(LayoutPreset.CenterTop);
-        pill.Position = new Vector2(-34, 12);
-        pill.GrowHorizontal = GrowDirection.Both;
-
-        var help = Ui.Label("Scroll to zoom · drag to pan · double right-click to recenter", new Color("f6eedb", 0.55f), Ui.Medium, 11);
-        over.AddChild(help);
-        help.SetAnchorsPreset(LayoutPreset.TopRight);
-        help.Position = new Vector2(-370, 12);
-
-        _toast = new PanelContainer { Visible = false };
-        _toast.AddThemeStyleboxOverride("panel", Ui.Flat(new Color(0.11f, 0.086f, 0.055f, 0.9f), 14, 10, 10));
-        _toastText = Ui.Rich("");
-        _toastText.AddThemeColorOverride("default_color", new Color("f6eedb"));
-        _toast.AddChild(_toastText);
-        over.AddChild(_toast);
-        _toast.SetAnchorsPreset(LayoutPreset.BottomWide);
-        _toast.OffsetLeft = 12;
-        _toast.OffsetRight = -12;
-        _toast.OffsetBottom = -12;
-        _toast.GrowVertical = GrowDirection.Begin;
-        _toast.GuiInput += e =>
-        {
-            if (e is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left }) _toast.Visible = false;
-        };
-
-        _endOverlay = new ColorRect { Color = new Color(0.08f, 0.055f, 0.03f, 0.55f), Visible = false };
-        over.AddChild(_endOverlay);
-        _endOverlay.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        over.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        return frame;
+        // News from a fast-forward is in the Ledger; don't greet the player with a stale feed.
+        ClearFeed();
     }
 
     private void BuildLedgerPane()
@@ -271,34 +107,29 @@ public partial class Main : Control
     {
         _seed = seed;
         // With --autoplay the stand-in mayor keeps playing, for demos and screenshots.
-        _sim = new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoCouncil = autoplay, AutoDefense = autoplay });
+        _sim = new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoCouncil = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay });
+        _map.Planner.Pick(null);
         _map.Bind(_sim);
         _sim.Town.Ledger.OnWrite(OnLedger);
         _townName.Text = _sim.Town.Name;
         _seedLabel.Text = $"seed {seed}";
         _endShown = false;
         _endOverlay.Visible = false;
-        _toast.Visible = false;
+        ClearFeed();
         _openChronicles.Clear();
         _ledgerShown = -1;
         foreach (var p in _panes.Values) p.Invalidate();
         _dirty = true;
-        SetTab(Tab.Ledger);
+        CloseWindow();
+        Select(null);
     }
 
     private void OnLedger(LedgerEntry e)
     {
-        if (e.Importance == Importance.Major || (e.Category == LedgerCategory.Council && e.Text.Contains(" moves that "))) Toast(e);
+        if (Newsworthy(e)) Feed(e);
         // Real time with pause: the war's turning points stop the clock so the player can react.
         if (e.Category == LedgerCategory.War && e.Importance == Importance.Major && _speed > 0 && !_opts.NoPause) SetSpeed(0);
         if (_sim.Town.Outcome != null && !_endShown) CallDeferred(MethodName.ShowEnd);
-    }
-
-    private void Toast(LedgerEntry e)
-    {
-        _toastText.Text = $"{Ui.C(Ui.Gold, $"[b]{e.Category.ToString().ToUpperInvariant()}[/b]")}  {LinkNames(e)}";
-        _toast.Visible = true;
-        _toastLeft = 6;
     }
 
     private void SetSpeed(int i)
@@ -309,18 +140,19 @@ public partial class Main : Control
         _pausedPill.GetParent<Control>().Visible = i == 0;
     }
 
+    /// <summary>Open a management window, or close it if it is the one already open (the dock's toggle).</summary>
     private void SetTab(Tab t)
     {
-        _tab = t;
-        foreach (var (k, b) in _tabButtons) b.ButtonPressed = k == t;
-        foreach (var (k, s) in _scrolls) s.Visible = k == t;
-        _dirty = true;
+        if (t == Tab.Inspect) return;
+        if (_window.Visible && _windowTab == t) CloseWindow();
+        else OpenWindow(t);
     }
 
     private void Select(Selection? sel)
     {
         _map.Selection = sel;
-        if (sel != null) SetTab(Tab.Inspect);
+        _inspector.Visible = sel != null;
+        PlaceInspector();
         _dirty = true;
     }
 
@@ -352,6 +184,13 @@ public partial class Main : Control
         if (k.Keycode == Key.Space) SetSpeed(_speed == 0 ? _lastSpeed : 0);
         else if (k.Keycode is >= Key.Key1 and <= Key.Key4) SetSpeed((int)(k.Keycode - Key.Key0));
         else if (k.Keycode == Key.Home) _map.Recenter();
+        else if (k.Keycode == Key.B) ToggleBuildBar();
+        else if (k.Keycode == Key.Escape && _map.Planner.Active) _map.Planner.Pick(null);
+        else if (k.Keycode == Key.M) ToggleStrategic();
+        else if (k.Keycode == Key.Escape && _inspector.Visible) Select(null);
+        else if (k.Keycode == Key.Escape && _window.Visible) CloseWindow();
+        else if (k.Keycode == Key.Q) _map.Rotate(-1);
+        else if (k.Keycode == Key.E) _map.Rotate(1);
         else return;
         GetViewport().SetInputAsHandled();
     }
@@ -371,22 +210,51 @@ public partial class Main : Control
         if (steps == 8) _acc = 0;
         _map.HourFraction = (float)_acc;
 
-        if (_toast.Visible && (_toastLeft -= delta) <= 0) _toast.Visible = false;
+        AgeFeed(delta);
+        SyncMarkers();
         if (_dirty)
         {
             RenderHeader();
-            switch (_tab)
-            {
-                case Tab.Ledger: RenderLedger(); break;
-                case Tab.War: RenderWar(); break;
-                case Tab.Council: RenderCouncil(); break;
-                case Tab.Bounties: RenderBounties(); break;
-                case Tab.Chronicles: RenderChronicles(); break;
-                case Tab.Inspect: RenderInspect(); break;
-            }
+            if (_window.Visible)
+                switch (_windowTab)
+                {
+                    case Tab.Ledger: RenderLedger(); break;
+                    case Tab.War: RenderWar(); break;
+                    case Tab.Council: RenderCouncil(); break;
+                    case Tab.Bounties: RenderBounties(); break;
+                    case Tab.Faith: RenderFaith(); break;
+                    case Tab.Chronicles: RenderChronicles(); break;
+                }
+            if (_inspector.Visible) RenderInspect();
+            RenderBuild();
             _dirty = false;
         }
+        if (_opts.Bench) Bench(delta);
+        if (_opts.Flyout) _map.Drift(1 + (float)delta * 0.16f, (float)delta * 0.05f);
         _opts.Capture(this, ref _frames);
+    }
+
+    private int _benchFrames;
+    private double _benchTime, _benchProcess;
+    private (int Draws, int Primitives, int Objects) _benchPeak;
+
+    /// <summary>With --bench: after the map settles, average 120 frames of frame time and render counters, print them and quit.</summary>
+    private void Bench(double delta)
+    {
+        if (++_benchFrames <= 60)
+        {
+            MapView.CpuMs = 0;
+            return;
+        }
+        _benchTime += delta;
+        _benchProcess += MapView.CpuMs / 1000;
+        var st = _map.Stats();
+        _benchPeak = (Math.Max(_benchPeak.Draws, st.Draws), Math.Max(_benchPeak.Primitives, st.Primitives), Math.Max(_benchPeak.Objects, st.Objects));
+        MapView.CpuMs = 0;
+        if (_benchFrames < 180) return;
+        int n = _benchFrames - 60;
+        GD.Print($"BENCH trees={_map.TreeInstances} dist={_map.Distance:F0} frame_ms={_benchTime / n * 1000:F2} map_cpu_ms={_benchProcess / n * 1000:F2} draws={_benchPeak.Draws} primitives={_benchPeak.Primitives} objects={_benchPeak.Objects}");
+        GetTree().Quit();
     }
 
     // ---------- Header ----------
@@ -428,12 +296,12 @@ public partial class Main : Control
         if (_statCards.Count == 0)
             foreach (var _ in stats)
             {
-                var card = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-                card.AddThemeStyleboxOverride("panel", Ui.Box(Ui.Panel, Ui.Line, 10, 1, 10, 6));
+                var card = new PanelContainer();
+                card.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
                 var v = new VBoxContainer();
-                v.AddThemeConstantOverride("separation", 0);
-                var k = Ui.Label("", Ui.Ink2, Ui.Medium, 11);
-                var val = Ui.Label("", Ui.Ink, Ui.Bold, 17);
+                v.AddThemeConstantOverride("separation", -3);
+                var k = Ui.Label("", Ui.Ink2, Ui.Medium, 10);
+                var val = Ui.Label("", Ui.Ink, Ui.Bold, 16);
                 v.AddChild(k);
                 v.AddChild(val);
                 card.AddChild(v);

@@ -50,7 +50,7 @@ public class ThreatTests
         int fallen = 0;
         foreach (int seed in new[] { 1, 3, 4 })
         {
-            var sim = new Simulation(new SimulationOptions { Seed = seed, AutoBounties = false, FreeCompanies = false });
+            var sim = new Simulation(new SimulationOptions { Seed = seed, AutoBounties = false, AutoDefense = false, FreeCompanies = false });
             sim.Town.Defenses.Palisade = PalisadeState.Building;
             sim.Town.Defenses.PalisadeReadyTick = int.MaxValue;
             RunUntilLastStand(sim, 250);

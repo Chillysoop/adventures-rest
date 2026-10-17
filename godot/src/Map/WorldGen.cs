@@ -1,0 +1,301 @@
+using CrownAndCompass.Sim;
+using Godot;
+
+namespace CrownAndCompass.Client.Map;
+
+/// <summary>Ground types; each territory has one, as in Northgard, and the terrain shader colours by it.</summary>
+public enum Biome
+{
+    Meadow,
+    Woodland,
+    Hills,
+    Crags,
+    Marsh,
+    Heath,
+}
+
+public readonly record struct TreeSpot(float X, float Y, float H, float Scale, byte Kind, float Yaw, float Tint);
+
+/// <summary>
+/// The land itself, generated once per town from its seed: a heightmap with hills, mountain
+/// chains, lakes and the river; Northgard-style territories (a warped jittered grid of cells, so
+/// one seed per cell and the same lookup in C# and in the terrain shader); and forests.
+/// Pure presentation: it reads the town and never changes the simulation.
+/// </summary>
+public sealed class WorldGen
+{
+    public const int N = Geo.World;
+    public const int Cell = 40;
+    public const int Cells = (N + Cell - 1) / Cell;
+    public const int ChunkTiles = 64;
+    public const int Chunks = N / ChunkTiles;
+    public const float WaterLevel = 0;
+    public const float TownHeight = 2;
+
+    public readonly int Seed;
+    public readonly float[] Height = new float[(N + 1) * (N + 1)];
+    public readonly float[] Forest = new float[N * N];
+    public readonly Vector2[] Jitter = new Vector2[Cells * Cells];
+    public readonly Biome[] Biomes = new Biome[Cells * Cells];
+    public readonly List<TreeSpot>[] ChunkTrees = new List<TreeSpot>[Chunks * Chunks];
+
+    /// <summary>Ground clutter per chunk: rocks, bushes, grass tufts and flowers (kinds listed in <see cref="Scatter"/>).</summary>
+    public readonly List<TreeSpot>[] ChunkScatter = new List<TreeSpot>[Chunks * Chunks];
+
+    public static class Scatter
+    {
+        public const byte Rock = 0, Boulder = 1, Bush = 2, Tuft = 3, Flowers = 4;
+        public const int Kinds = 5;
+    }
+    public int TownCell { get; private set; }
+    public int TreeCount { get; private set; }
+
+    private readonly Noise _n1, _n2, _n3;
+    private readonly float _riverPhase;
+
+    public WorldGen(int seed, Geo geo, Town town, float treeScale = 1)
+    {
+        Seed = seed;
+        _n1 = new Noise(seed * 31 + 7);
+        _n2 = new Noise(seed * 57 + 11);
+        _n3 = new Noise(seed * 91 + 23);
+        _riverPhase = Geo.Hash(seed * 13 + 5) * 6.28f;
+        BuildTerritories(geo, town);
+        BuildHeight();
+        BuildForest(geo, treeScale);
+    }
+
+    // ---------- Territories ----------
+
+    /// <summary>The same domain warp as the terrain shader's, so borders wander like coastlines.</summary>
+    public static Vector2 Warp(Vector2 p) => p + new Vector2(
+        Mathf.Sin(p.Y * 0.045f + 1.7f) + 0.6f * Mathf.Sin(p.X * 0.11f + p.Y * 0.03f),
+        Mathf.Sin(p.X * 0.05f + 0.4f) + 0.6f * Mathf.Sin(p.Y * 0.09f - p.X * 0.02f)) * 4.5f;
+
+    public Vector2 SeedOf(int cell) => (new Vector2(cell % Cells, cell / Cells) + Jitter[cell]) * Cell;
+
+    /// <summary>The territory (cell index) a world point lies in.</summary>
+    public int TerritoryAt(Vector2 p)
+    {
+        var q = Warp(p);
+        int cx = (int)Mathf.Floor(q.X / Cell), cy = (int)Mathf.Floor(q.Y / Cell);
+        int best = 0;
+        float bestD = float.MaxValue;
+        for (int oy = -1; oy <= 1; oy++)
+            for (int ox = -1; ox <= 1; ox++)
+            {
+                int x = cx + ox, y = cy + oy;
+                if (x < 0 || y < 0 || x >= Cells || y >= Cells) continue;
+                int c = y * Cells + x;
+                float d = SeedOf(c).DistanceSquaredTo(q);
+                if (d < bestD)
+                {
+                    bestD = d;
+                    best = c;
+                }
+            }
+        return best;
+    }
+
+    private void BuildTerritories(Geo geo, Town town)
+    {
+        for (int c = 0; c < Jitter.Length; c++)
+            Jitter[c] = new Vector2(0.2f + Geo.Hash(Seed * 977 + c * 2) * 0.6f, 0.2f + Geo.Hash(Seed * 977 + c * 2 + 1) * 0.6f);
+        // The town sits at the heart of its own territory.
+        var q = Warp(Geo.Center);
+        int tx = (int)(q.X / Cell), ty = (int)(q.Y / Cell);
+        TownCell = ty * Cells + tx;
+        Jitter[TownCell] = q / Cell - new Vector2(tx, ty);
+        for (int c = 0; c < Biomes.Length; c++)
+        {
+            var s = SeedOf(c);
+            float wet = _n2.Fbm(s.X / 260, s.Y / 260, 3);
+            float high = _n3.Fbm(s.X / 320 + 40, s.Y / 320, 3);
+            float pick = Geo.Hash(Seed * 31 + c);
+            Biomes[c] = high > 0.42f ? Biome.Crags
+                : wet > 0.35f && high < 0 ? Biome.Marsh
+                : wet > 0.1f ? (pick < 0.75f ? Biome.Woodland : Biome.Meadow)
+                : high > 0.15f ? Biome.Hills
+                : wet < -0.35f ? Biome.Heath
+                : pick < 0.3f ? Biome.Woodland : Biome.Meadow;
+        }
+        Biomes[TownCell] = Biome.Meadow;
+        // A site's habitat decides its territory's ground.
+        foreach (var site in town.Sites)
+        {
+            if (!geo.Pins.TryGetValue(site.Def.Id, out var pin)) continue;
+            var biome = site.Def.Habitats.Select(HabitatBiome).FirstOrDefault(b => b != null);
+            if (biome is Biome b) Biomes[TerritoryAt(pin)] = b;
+        }
+    }
+
+    public static Biome? HabitatBiome(string habitat) => habitat switch
+    {
+        "forest" => Biome.Woodland,
+        "swamp" or "coast" => Biome.Marsh,
+        "hills" or "caves" => Biome.Hills,
+        "mountain" or "mountains" or "underworld" => Biome.Crags,
+        "grassland" => Biome.Meadow,
+        "ruins" or "temple" or "tomb" => Biome.Heath,
+        _ => null,
+    };
+
+    // ---------- Height ----------
+
+    /// <summary>The river's centre line as x for a given y: straight past the town, meandering further out.</summary>
+    public float RiverX(float y)
+    {
+        float far = Mathf.SmoothStep(30, 260, Mathf.Abs(y - Geo.Center.Y));
+        return Geo.Center.X + 15 + far * (Mathf.Sin(y * 0.011f + _riverPhase) * 46 + Mathf.Sin(y * 0.033f + _riverPhase * 2) * 12);
+    }
+
+    public float RiverDistance(Vector2 p)
+    {
+        float x = RiverX(p.Y);
+        float slope = (RiverX(p.Y + 1) - RiverX(p.Y - 1)) / 2;
+        return Mathf.Abs(p.X - x) / Mathf.Sqrt(1 + slope * slope);
+    }
+
+    private float RawHeight(float x, float y)
+    {
+        float h = 3.2f + _n1.Fbm(x / 170, y / 170, 5) * 5.5f;
+        float chain = Mathf.SmoothStep(0.25f, 0.65f, _n3.Fbm(x / 320 + 40, y / 320, 3));
+        if (chain > 0) h += chain * Mathf.Pow(_n2.Ridge(x / 150, y / 150, 4), 2) * 52;
+        h += _n2.Get(x / 23, y / 23) * 0.8f;
+        // The land falls away near the map's edge so the world ends in sea, not a cliff.
+        float edge = Mathf.Min(Mathf.Min(x, y), Mathf.Min(N - x, N - y));
+        h = Mathf.Lerp(-3, h, Mathf.SmoothStep(0, 40, edge));
+        return h;
+    }
+
+    private void BuildHeight()
+    {
+        for (int y = 0; y <= N; y++)
+            for (int x = 0; x <= N; x++)
+            {
+                var p = new Vector2(x, y);
+                float h = RawHeight(x, y);
+                // The town was founded on flat, dry ground by the ford.
+                float d = p.DistanceTo(Geo.Center);
+                float flat = Mathf.SmoothStep(Geo.Clearing, Geo.Clearing + 30, d);
+                h = Mathf.Lerp(TownHeight, Mathf.Max(h, d < Geo.Clearing + 30 ? 1.2f : h), flat);
+                float dr = RiverDistance(p);
+                h = Mathf.Min(h, Mathf.Lerp(-1.1f, h, Mathf.SmoothStep(0.6f, 5.5f, dr)));
+                Height[y * (N + 1) + x] = h;
+            }
+    }
+
+    public float HeightAt(float x, float y)
+    {
+        x = Mathf.Clamp(x, 0, N - 0.001f);
+        y = Mathf.Clamp(y, 0, N - 0.001f);
+        int ix = (int)x, iy = (int)y;
+        float fx = x - ix, fy = y - iy;
+        int i = iy * (N + 1) + ix;
+        float a = Height[i], b = Height[i + 1], c = Height[i + N + 1], d = Height[i + N + 2];
+        return Mathf.Lerp(Mathf.Lerp(a, b, fx), Mathf.Lerp(c, d, fx), fy);
+    }
+
+    /// <summary>Ground height, never below the water's surface: where things stand or float.</summary>
+    public float SurfaceAt(float x, float y) => Mathf.Max(WaterLevel, HeightAt(x, y));
+
+    public Vector3 At(Vector2 p, float lift = 0) => new(p.X, SurfaceAt(p.X, p.Y) + lift, p.Y);
+
+    public Vector3 NormalAt(int x, int y)
+    {
+        float l = Height[y * (N + 1) + Math.Max(0, x - 1)], r = Height[y * (N + 1) + Math.Min(N, x + 1)];
+        float u = Height[Math.Max(0, y - 1) * (N + 1) + x], d = Height[Math.Min(N, y + 1) * (N + 1) + x];
+        return new Vector3(l - r, 2, u - d).Normalized();
+    }
+
+    // ---------- Forest ----------
+
+    /// <summary>Rocks on the heights and screes, bushes at the forest's edge, grass tufts and flowers in the open.</summary>
+    private void Clutter(Vector2 p, float h, float f, Biome biome, Vector3 nrm, Vector2[] pins)
+    {
+        if (h < 0.5f) return;
+        foreach (var pin in pins)
+            if (p.DistanceSquaredTo(pin) < 36) return;
+        int seed = Seed * 104729 + (int)p.Y * N + (int)p.X;
+        float r = Geo.Hash(seed);
+        // On the town's grid the lots may be built on at any time: only sparse grass, which the buildings hide.
+        if (Mathf.Abs(p.X - Geo.Center.X) < Geo.Grid / 2 + 1 && Mathf.Abs(p.Y - Geo.Center.Y) < Geo.Grid / 2 + 1)
+        {
+            if (r < 0.3f) ChunkAdd(p, seed, Scatter.Tuft);
+            return;
+        }
+        float rocky = biome is Biome.Crags ? 0.12f : biome is Biome.Hills ? 0.03f : 0.008f;
+        if (nrm.Y < 0.85f) rocky += 0.08f;
+        byte kind;
+        if (r < rocky) kind = Geo.Hash(seed + 1) < 0.2f ? Scatter.Boulder : Scatter.Rock;
+        else if (r < rocky + (f > 0.05f && f < 0.6f ? 0.16f : 0.01f)) kind = Scatter.Bush;
+        else if (f < 0.3f && r < rocky + 0.6f && biome is not Biome.Crags) kind = biome == Biome.Meadow && Geo.Hash(seed + 2) < 0.08f ? Scatter.Flowers : Scatter.Tuft;
+        else return;
+        ChunkAdd(p, seed, kind);
+    }
+
+    private void ChunkAdd(Vector2 p, int seed, byte kind)
+    {
+        float x = p.X - 0.35f + Geo.Hash(seed + 3) * 0.7f, y = p.Y - 0.35f + Geo.Hash(seed + 4) * 0.7f;
+        int chunk = Math.Min(Chunks - 1, (int)y / ChunkTiles) * Chunks + Math.Min(Chunks - 1, (int)x / ChunkTiles);
+        ChunkScatter[chunk].Add(new TreeSpot(x, y, HeightAt(x, y), 0.7f + Geo.Hash(seed + 5) * 0.6f, kind, Geo.Hash(seed + 6) * Mathf.Tau, Geo.Hash(seed + 7)));
+    }
+
+    private void BuildForest(Geo geo, float treeScale)
+    {
+        for (int i = 0; i < ChunkTrees.Length; i++)
+        {
+            ChunkTrees[i] = [];
+            ChunkScatter[i] = [];
+        }
+        var pins = geo.Pins.Values.ToArray();
+        int count = 0;
+        for (int y = 0; y < N; y++)
+            for (int x = 0; x < N; x++)
+            {
+                var p = new Vector2(x + 0.5f, y + 0.5f);
+                float h = HeightAt(p.X, p.Y);
+                var biome = Biomes[TerritoryAt(p)];
+                float bias = biome switch
+                {
+                    Biome.Woodland => 0.42f,
+                    Biome.Marsh => 0.05f,
+                    Biome.Crags => 0.0f,
+                    Biome.Hills => -0.12f,
+                    Biome.Heath => -0.32f,
+                    _ => -0.2f,
+                };
+                float f = Mathf.SmoothStep(-0.05f, 0.4f, _n3.Fbm(p.X / 75, p.Y / 75, 4) + bias);
+                // No forest on water, bare peaks, steep scree, or the town's own clearing.
+                if (h < 0.4f || h > 36) f = 0;
+                f *= Mathf.SmoothStep(Geo.Clearing, Geo.Clearing + 22, p.DistanceTo(Geo.Center));
+                foreach (var pin in pins) f *= Mathf.SmoothStep(4, 9, p.DistanceTo(pin));
+                var nrm = NormalAt(x, y);
+                if (nrm.Y < 0.72f) f *= 0.3f;
+                Forest[y * N + x] = f;
+                Clutter(p, h, f, biome, nrm, pins);
+                if (f <= 0.02f) continue;
+                int hseed = Seed * 7919 + y * N + x;
+                int trees = (Geo.Hash(hseed) < f * 0.9f * treeScale ? 1 : 0) + (f > 0.6f && Geo.Hash(hseed + 1) < (f - 0.6f) * 2 * treeScale ? 1 : 0)
+                    + (treeScale > 1 && Geo.Hash(hseed + 9) < f * (treeScale - 1) ? (int)treeScale : 0);
+                for (int t = 0; t < trees; t++)
+                {
+                    float tx = x + 0.15f + Geo.Hash(hseed * 3 + t * 5 + 2) * 0.7f, ty = y + 0.15f + Geo.Hash(hseed * 3 + t * 5 + 3) * 0.7f;
+                    float th = HeightAt(tx, ty);
+                    if (th < 0.3f) continue;
+                    float r = Geo.Hash(hseed * 3 + t * 5 + 4);
+                    // Pines on the heights and in the crags; broadleaf in the lowland woods and the marsh.
+                    float pineOdds = biome switch { Biome.Crags => 0.95f, Biome.Hills => 0.7f, Biome.Woodland => 0.5f, Biome.Marsh => 0.1f, _ => 0.35f } + th / 60;
+                    byte kind = r < pineOdds ? (byte)(Geo.Hash(hseed + t * 11) < 0.5f ? 0 : 1) : (byte)(biome == Biome.Marsh ? 3 : 2);
+                    float scale = 0.75f + Geo.Hash(hseed * 5 + t) * 0.6f;
+                    int chunk = Math.Min(Chunks - 1, (int)ty / ChunkTiles) * Chunks + Math.Min(Chunks - 1, (int)tx / ChunkTiles);
+                    ChunkTrees[chunk].Add(new TreeSpot(tx, ty, th, scale, kind, Geo.Hash(hseed + t * 3 + 7) * Mathf.Tau, Geo.Hash(hseed + t * 3 + 8)));
+                    count++;
+                }
+            }
+        TreeCount = count;
+        foreach (var list in ChunkScatter) list.Sort((a, b) => a.Y != b.Y ? a.Y.CompareTo(b.Y) : a.X.CompareTo(b.X));
+        // Back to front within each chunk, so instances draw in a stable order.
+        foreach (var list in ChunkTrees) list.Sort((a, b) => a.Y != b.Y ? a.Y.CompareTo(b.Y) : a.X.CompareTo(b.X));
+    }
+}
