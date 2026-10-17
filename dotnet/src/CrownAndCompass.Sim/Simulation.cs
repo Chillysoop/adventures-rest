@@ -86,6 +86,8 @@ public sealed class Simulation
         Lairs.Daily(t, Options.AutoMayor);
         Rumors.Daily(t);
         Shrines.Daily(t, Options.AutoMayor);
+        Faith.Daily(t);
+        Factions.Daily(t, Options.AutoMayor);
         Economy.Daily(t, true);
         History.Add(Snapshot());
         t.AccountsYesterday = t.AccountsToday;
@@ -124,6 +126,12 @@ public sealed class Simulation
     /// <summary>Endow a temple to the town's god once the town is big enough.</summary>
     public Building? BuildTemple() => Shrines.BuildTemple(Town);
 
+    /// <summary>Send the watch against a faction the town has exposed.</summary>
+    public bool CrackDown(string factionId) => Factions.CrackDown(Town, factionId);
+
+    /// <summary>Back a faction the town knows with treasury gold.</summary>
+    public bool SupportFaction(string factionId, double gold) => Factions.Support(Town, factionId, gold);
+
     /// <summary>Commission the Scrying Pool or the Sleepless Spire.</summary>
     public Building? BuildSightWork(string buildingId) => Watch.BuildWork(Town, buildingId);
 
@@ -161,6 +169,7 @@ public sealed class Simulation
         Quests.InitSites(t);
         Council.InitCouncil(t);
         Threat.InitThreat(t);
+        Factions.InitFactions(t);
 
         if (Options.AutoMayor) Mayor.Daily(t);
         else

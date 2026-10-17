@@ -11,7 +11,7 @@ each entry also carries an `rt` block of real-time hints that systems can use or
 | `srd/` | SRD 5.2 (2024) merged with SRD 5.1 (2014). 2024 wins; 2014 entries are kept only when 2024 has nothing equivalent, and fill gaps 2024 left blank (monster habitats, saving throws). | CC-BY-4.0 |
 | `open/<book>/` | CC-BY third-party books (Kobold Press's Black Flag, EN Publishing's Level Up, Spells That Don't Suck, the CC-BY parts of Ironsworn and Ironsworn: Delve, and three itch.io packs: the Khyberia SRD's frogoblins and hedron constructs, the Midnight Spell Compendium, and the Little Book of Beasts). Anything that duplicates an SRD entry, or an earlier book, is dropped. | CC-BY-4.0 |
 | `vendor/` | The itch.io packs converted from their PDFs into the Open5e shape by `scripts/convert-itch.ts`, so the importer reads them like any other book. Committed because the downloads sit behind itch.io's download page. | CC-BY-4.0 |
-| `original/` | Crown & Compass originals written for this game (fog of war, town, sieges, alchemy), including `monster-templates` and `item-affixes` that combine with any monster or weapon at runtime. | ours |
+| `original/` | Crown & Compass originals written for this game (fog of war, town, sieges, alchemy), including `monster-templates` and `item-affixes` that combine with any monster or weapon at runtime, and the setting's `deities` (an original pantheon on the D&D domain archetypes) and `factions` (guilds, orders, circles and cults). | ours |
 
 Each folder holds up to one file per kind: `classes`, `subclasses`, `species`, `backgrounds`, `feats`,
 `spells`, `equipment`, `magic-items`, `monsters`, `conditions`, plus `tables` (random tables for names, town

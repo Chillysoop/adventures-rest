@@ -16,6 +16,7 @@
   { "id": "shrine", "name": "Shrine", "zone": "Civic", "buildable": false, "cost": 40, "timber": 4, "buildHours": 30, "holy": true },
   { "id": "temple", "name": "Temple", "zone": "Civic", "buildable": false, "cost": 360, "timber": 30, "buildHours": 160, "jobs": 2, "wage": 0.6,
     "profession": "priest", "holy": true },
+  { "id": "guildhall", "name": "Guildhall", "zone": "Civic", "buildable": false, "cost": 50, "timber": 6, "buildHours": 50 },
   { "id": "scrying_pool", "name": "Scrying Pool", "zone": "Civic", "buildable": false, "cost": 450, "timber": 20, "buildHours": 120 },
   { "id": "sleepless_spire", "name": "Sleepless Spire", "zone": "Civic", "buildable": false, "cost": 1400, "timber": 60, "buildHours": 260 }
 ]

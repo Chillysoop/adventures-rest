@@ -89,7 +89,7 @@ public static class Council
             effect += 0.1 * Competence(town, cap);
             if (cap.Loyalty < LowLoyalty) effect *= 0.5;
         }
-        return Math.Min(0.85, town.Watch * 0.12 * effect);
+        return Math.Min(0.85, town.Watch * 0.12 * effect * Factions.WatchFactor(town));
     }
 
     /// <summary>Bonus mood while a festival runs.</summary>
