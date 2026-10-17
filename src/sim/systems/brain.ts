@@ -152,7 +152,7 @@ function doDrink(town: Town, a: Agent): void {
     tavern.addStock('Ale', -1);
     a.gold -= price;
     const tax = price * town.taxRate;
-    town.treasury += tax;
+    town.book('Ale tax', tax);
     tavern.cash += price - tax;
     tavern.revenueToday += price;
     a.drinks++;

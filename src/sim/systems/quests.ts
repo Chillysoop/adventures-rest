@@ -73,7 +73,7 @@ export function postBounty(town: Town, siteId: string, reward: number): Bounty |
   const s = site(town, siteId);
   if (!s || s.cleared || reward <= 0 || town.treasury < reward) return null;
   if (town.bounties.some((b) => b.siteId === siteId && (b.status === 'open' || b.status === 'taken'))) return null;
-  town.treasury -= reward;
+  town.book('Bounties', -reward);
   const b: Bounty = {
     id: town.bounties.length + 1,
     siteId,
@@ -177,7 +177,7 @@ function expireBounties(town: Town): void {
   for (const b of town.bounties) {
     if (b.status !== 'open' || town.tick < b.expiresTick) continue;
     b.status = 'expired';
-    town.treasury += b.reward;
+    town.book('Bounties', b.reward);
     town.log('Town', Importance.Routine, `No one takes the bounty on ${site(town, b.siteId).def.name}; the council withdraws it.`);
   }
 }
@@ -320,7 +320,7 @@ function returnParties(town: Town): void {
       pay += bounty.reward;
     } else {
       bounty.status = 'failed';
-      town.treasury += bounty.reward;
+      town.book('Bounties', bounty.reward);
     }
     if (survivors.length > 0) {
       const share = pay / survivors.length;

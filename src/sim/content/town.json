@@ -1,0 +1,6 @@
+{
+  "taxRate": 0.1,
+  "upkeepPerResident": 1.2,
+  "civicUpkeep": 6,
+  "upkeepGrowth": 250
+}

@@ -140,6 +140,8 @@ export class Market {
   }
 }
 
+export type TreasuryAccount = 'Sales tax' | 'Ale tax' | 'Rent' | 'Land sales' | 'Town businesses' | 'Bailouts' | 'Charter houses' | 'Bounties' | 'Upkeep';
+
 export class Town {
   static readonly GRID = 16;
 
@@ -149,7 +151,14 @@ export class Town {
   readonly market = new Market();
   tick = 0;
   treasury = 0;
-  taxRate = 0.1;
+  taxRate: number;
+  /** The town's books: gold in (positive) and out (negative) by account, all time and today. */
+  readonly accounts: Record<string, number> = {};
+  accountsToday: Record<string, number> = {};
+  /** The last full day's books, for the player to read. */
+  accountsYesterday: Record<string, number> = {};
+  /** Consecutive days the treasury could not cover upkeep. */
+  unpaidDays = 0;
 
   readonly lots: Lot[] = [];
   readonly buildings: Building[] = [];
@@ -165,7 +174,15 @@ export class Town {
   constructor(content: Content, seed: number) {
     this.content = content;
     this.rng = new Rng(seed);
+    this.taxRate = content.rules.taxRate;
     for (let y = 0; y < Town.GRID; y++) for (let x = 0; x < Town.GRID; x++) this.lots.push(new Lot(this.lots.length, x, y));
+  }
+
+  /** Move gold into (positive) or out of (negative) the treasury, booked under an account. */
+  book(account: TreasuryAccount, amount: number): void {
+    this.treasury += amount;
+    this.accounts[account] = (this.accounts[account] ?? 0) + amount;
+    this.accountsToday[account] = (this.accountsToday[account] ?? 0) + amount;
   }
 
   get day(): number {

@@ -74,7 +74,7 @@ function tryOpenBusiness(town: Town, a: Agent): void {
   if (forSale && a.gold >= salePrice(town, forSale) + 20) {
     const price = salePrice(town, forSale);
     a.gold -= price;
-    town.treasury += price;
+    town.book('Land sales', price);
     const old = forSale.name;
     forSale.ownerId = a.id;
     forSale.forSale = false;
@@ -139,7 +139,7 @@ function tryBuild(town: Town, a: Agent, def: BuildingDef, rental: boolean): bool
   if (a.gold < totalCost(town, def, lot) + 5) return false;
 
   a.gold -= lotPrice;
-  town.treasury += lotPrice;
+  town.book('Land sales', lotPrice);
   a.gold -= town.market.buy('Timber', def.timber);
   a.gold -= def.cost;
 
