@@ -29,6 +29,8 @@ export interface SimulationOptions {
   settlers?: number;
   startingTreasury?: number;
   autoMayor?: boolean;
+  /** Let the stand-in mayor post bounties; off when a player runs the bounty board. */
+  autoBounties?: boolean;
 }
 
 /**
@@ -41,7 +43,7 @@ export class Simulation {
   readonly history: DayStats[] = [];
 
   constructor(options: SimulationOptions = {}, content: Content = Content.default()) {
-    this.options = { seed: 1, settlers: 14, startingTreasury: 250, autoMayor: true, ...options };
+    this.options = { seed: 1, settlers: 14, startingTreasury: 250, autoMayor: true, autoBounties: true, ...options };
     this.town = new Town(content, this.options.seed);
     this.charter();
   }
@@ -70,7 +72,7 @@ export class Simulation {
     population.dailyArrivals(t);
     if (this.options.autoMayor) mayor.daily(t);
     social.daily(t);
-    quests.daily(t, this.options.autoMayor);
+    quests.daily(t, this.options.autoMayor && this.options.autoBounties);
     economy.daily(t, true);
     this.history.push(this.snapshot());
   }

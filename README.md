@@ -18,6 +18,9 @@ runs in the browser.
   - `systems/quests.ts`, `systems/expedition.ts`: heroes, the bounty board, adventuring parties, and a
     seeded d20 expedition resolver that writes a Chronicle of every delve
   - `content/*.json`: buildings, races, names, hero classes, monsters and sites (data, so it can be modded)
+- `src/client`: the browser game. A Canvas 2D map (`map.ts`) and the HTML panels (`main.ts`,
+  `index.html`): time controls, the Ledger, the bounty board, Chronicles and an inspector
+- `scripts/build-client.ts`: bundles the client into one self-contained HTML file
 - `src/cli.ts`: headless runner that prints the Ledger
 - `tests/`: determinism, growth, invariants, dice and market
 
@@ -35,6 +38,10 @@ npm test
 npm run sim -- --days 120 --seed 1          # notable events
 npm run sim -- --days 30 --all --stats      # everything, with daily stats
 npm run sim -- --days 120 --chronicles      # plus every expedition's Chronicle
+npm run build                               # dist/crown-and-compass.html, the playable build
 ```
+
+The build is one HTML file with no server. Open it directly; `?seed=N` picks a town and `?day=N`
+fast-forwards. Space pauses, 1 to 4 set the speed.
 
 `docs/sample-ledger.txt` is a 120-day run you can read without building anything.
