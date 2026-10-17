@@ -183,6 +183,7 @@ public partial class Main
                 if (why == null && def.IsBusiness) line += $" · {DemandWord(Property.Demand(town, def.Id))}";
             }
             b.Text = $"{item.Label}\n{line.Replace("not enough gold", "short of gold")}";
+            Ui.GoldButton(b);
             b.Disabled = why != null && !b.ButtonPressed;
             b.TooltipText = why == null ? tip : $"{tip}\n({Ui.Cap(why)}.)";
         }

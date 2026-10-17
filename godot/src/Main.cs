@@ -127,6 +127,7 @@ public partial class Main : Control
     private void OnLedger(LedgerEntry e)
     {
         if (Newsworthy(e)) Feed(e);
+        AlertFor(e);
         // Real time with pause: the war's turning points stop the clock so the player can react.
         if (e.Category == LedgerCategory.War && e.Importance == Importance.Major && _speed > 0 && !_opts.NoPause) SetSpeed(0);
         if (_sim.Town.Outcome != null && !_endShown) CallDeferred(MethodName.ShowEnd);
@@ -209,8 +210,11 @@ public partial class Main : Control
         }
         if (steps == 8) _acc = 0;
         _map.HourFraction = (float)_acc;
+        _map.TimeScale = Speeds[_speed];
 
         AgeFeed(delta);
+        SyncAlerts();
+        ScriptedAlert();
         SyncMarkers();
         if (_dirty)
         {
@@ -278,26 +282,28 @@ public partial class Main : Control
         var s = _sim.Snapshot();
         _clock.Text = $"Day {t.Day} · {t.Hour:00}:00";
         _motionDot.Visible = Council.PendingMotion(t) != null;
+        _standing = StandingAlerts();
         var stage = Stages[t.Enemy.Stage];
         _threat.Text = (t.Enemy.Stage == ThreatStage.Marching && t.Enemy.ArrivalTick is int at ? $"Siege in {Math.Ceiling((at - t.Tick) / 24.0)}d" : stage.Label).ToUpperInvariant();
         var pillColor = stage.Level == 2 ? Ui.Bad : stage.Level == 1 ? Ui.Gold : Ui.Line;
         _threatPill.AddThemeStyleboxOverride("panel", Ui.Box(stage.Level == 2 ? Ui.Bad : Ui.Panel, pillColor, 99, 1, 10, 3));
         _threat.AddThemeColorOverride("font_color", stage.Level == 2 ? Colors.White : stage.Level == 1 ? Ui.Gold : Ui.Ink);
 
-        (string, string)[] stats =
+        (string, string, string, string)[] stats =
         [
-            ("Population", s.Population.ToString()),
-            ("Heroes", t.Heroes.Count.ToString()),
-            ("Treasury", $"{Math.Floor(t.Treasury)}g"),
-            ("Bread", $"{s.FoodPrice:0.00}g"),
-            ("Mandate", $"{Math.Round(t.Mandate)}"),
-            ("Homeless", s.Homeless.ToString()),
+            ("Population", "population", s.Population.ToString(), "People living in town"),
+            ("Heroes", "heroes", t.Heroes.Count.ToString(), "Adventurers in town or on the road"),
+            ("Treasury", "gold", $"{Math.Floor(t.Treasury)}", "Gold in the town's coffers"),
+            ("Bread", "bread", $"{s.FoodPrice:0.00}", "The price of a loaf, in gold: it climbs when food runs short"),
+            ("Mandate", "mandate", $"{Math.Round(t.Mandate)}", "The townsfolk's approval of you, out of 100"),
+            ("Homeless", "homeless", s.Homeless.ToString(), "Townsfolk with no roof"),
         ];
         if (_statCards.Count == 0)
-            foreach (var _ in stats)
+            foreach (var st in stats)
             {
-                var card = new PanelContainer();
-                card.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
+                var card = new HBoxContainer { TooltipText = st.Item4, MouseFilter = MouseFilterEnum.Pass };
+                card.AddThemeConstantOverride("separation", 6);
+                card.AddChild(new TextureRect { Texture = Ui.Icon(st.Item2), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2(24, 24), SizeFlagsVertical = SizeFlags.ShrinkCenter, MouseFilter = MouseFilterEnum.Ignore });
                 var v = new VBoxContainer();
                 v.AddThemeConstantOverride("separation", -3);
                 var k = Ui.Label("", Ui.Ink2, Ui.Medium, 10);
@@ -311,7 +317,7 @@ public partial class Main : Control
         for (int i = 0; i < stats.Length; i++)
         {
             _statCards[i].K.Text = stats[i].Item1.ToUpperInvariant();
-            _statCards[i].V.Text = stats[i].Item2;
+            _statCards[i].V.Text = stats[i].Item3;
         }
     }
 
@@ -345,7 +351,7 @@ public partial class Main : Control
             string text = LinkNames(e);
             sb.Append(e.Importance == Importance.Major ? $"{Ui.C(Ui.Gold, "◆")} [b]{text}[/b]" : text).Append("\n[font_size=6] [/font_size]\n");
         }
-        _ledgerText.Text = sb.ToString();
+        _ledgerText.Text = Ui.Coined(sb.ToString());
     }
 
     /// <summary>Turn the names of agents an entry mentions into links that open the inspector.</summary>

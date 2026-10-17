@@ -17,4 +17,5 @@ All three are CC0 (licence files in `models/LICENSE-kenney-*.txt`). Credit is no
 - Terrain, water, foliage, fog of war and the strategic map: shaders in `shaders/`, generated from the seed at load.
 - Townsfolk, heroes, orcs, banners, far trees, roofs, grass, flowers and site landmarks: generated in `src/Map/MeshKit.cs`
   and its callers.
+- Resource and alert icons in `icons/`: drawn for this game (SVG).
 - Fonts: see `fonts/` (SIL Open Font License).

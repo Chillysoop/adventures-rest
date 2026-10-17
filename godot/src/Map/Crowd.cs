@@ -7,11 +7,16 @@ namespace CrownAndCompass.Client.Map;
 public sealed class Sprite
 {
     public Vector2 P;
-    public Vector2 Last;
+    public float Yaw;
+    public bool Walking;
     public bool Visible;
 }
 
-/// <summary>Townsfolk and heroes in town, easing toward wherever the simulation says they are.</summary>
+/// <summary>
+/// Townsfolk and heroes in town, walking at a steady pace toward wherever the simulation says they are.
+/// The pace grows with the game speed (gently, so 36x is a brisk walk, not a blur), stops when paused,
+/// and only hurries for someone who has fallen far behind.
+/// </summary>
 public sealed class AgentPositions(MapView map)
 {
     public readonly Dictionary<int, Sprite> Sprites = [];
@@ -29,16 +34,19 @@ public sealed class AgentPositions(MapView map)
             return new Vector2(Geo.Margin + lot.X + 0.12f + j1 * 0.76f, Geo.Margin + lot.Y + 0.9f + (j2 - 0.5f) * 0.12f);
         }
         // Wanderers drift around the square, picking a new spot every few hours.
-        int k = town.Tick / 3;
+        int k = town.Tick / 4;
         float ang = Geo.Hash(a.Id * 31 + k) * Mathf.Tau;
         float r = 1 + Geo.Hash(a.Id * 17 + k) * 4.5f;
         return Geo.Center + new Vector2(Mathf.Cos(ang), Mathf.Sin(ang)) * r;
     }
 
-    public void Advance(float dt)
+    private const float Pace = 1.1f; // tiles per real second at 1x
+    private const float TurnRate = 9f; // radians per second
+
+    public void Advance(float dt, float timeScale)
     {
         var town = map.Sim.Town;
-        float k = 1 - Mathf.Exp(-dt * 3);
+        float pace = timeScale <= 0 ? 0 : Pace * Mathf.Sqrt(timeScale);
         foreach (var a in town.Agents)
         {
             var tgt = Target(town, a);
@@ -48,10 +56,19 @@ public sealed class AgentPositions(MapView map)
                 if (s != null) s.Visible = false;
                 continue;
             }
-            if (s == null) Sprites[a.Id] = s = new Sprite { P = Geo.Center + new Vector2(Geo.Hash(a.Id) - 0.5f, Geo.Hash(a.Id + 1) - 0.5f) * 3 };
+            if (s == null) Sprites[a.Id] = s = new Sprite { P = Geo.Center + new Vector2(Geo.Hash(a.Id) - 0.5f, Geo.Hash(a.Id + 1) - 0.5f) * 3, Yaw = Geo.Hash(a.Id) * Mathf.Tau };
+            // Someone who reappears (back from the road, awake again) starts where they are meant to be.
+            if (!s.Visible) s.P = tgt.Value;
             s.Visible = true;
-            s.Last = s.P;
-            s.P += (tgt.Value - s.P) * k;
+            var to = tgt.Value - s.P;
+            float dist = to.Length();
+            float step = Mathf.Max(pace, pace > 0 ? dist / 2.5f : 0) * dt;
+            s.Walking = dist > 0.02f && step > 0;
+            if (!s.Walking) continue;
+            if (dist > 30 || step >= dist) s.P = tgt.Value;
+            else s.P += to / dist * step;
+            float want = Mathf.Atan2(to.X, to.Y);
+            s.Yaw += Mathf.Clamp(Mathf.Wrap(want - s.Yaw, -Mathf.Pi, Mathf.Pi), -TurnRate * dt, TurnRate * dt);
         }
     }
 }
@@ -157,7 +174,7 @@ public partial class Crowd(MapView map) : Node3D
     public void Advance(float dt)
     {
         var town = map.Sim.Town;
-        People.Advance(dt);
+        People.Advance(dt, map.TimeScale);
         float now = (float)Time.GetTicksMsec() / 1000f;
         var gen = map.Gen;
         bool close = map.Distance < 260;
@@ -170,13 +187,10 @@ public partial class Crowd(MapView map) : Node3D
             foreach (var a in town.Agents)
             {
                 if ((a.Hero != null) != heroes || !People.Sprites.TryGetValue(a.Id, out var s) || !s.Visible) continue;
-                var v = s.P - s.Last;
-                bool walking = v.LengthSquared() > 1e-7f;
-                float yaw = walking ? Mathf.Atan2(v.X, v.Y) : Geo.Hash(a.Id) * Mathf.Tau;
-                float bob = walking ? Mathf.Abs(Mathf.Sin(now * 9 + a.Id)) * 0.025f : 0;
+                float bob = s.Walking ? Mathf.Abs(Mathf.Sin(now * 8 + a.Id)) * 0.02f : 0;
                 var p = gen.At(s.P, bob);
                 var body = a.Hero != null ? Palette.ClassColor(a.Hero.Cls.Id) : Tunics[a.Id % Tunics.Length];
-                Put(p, yaw, body, Palette.RaceColor(a.Race));
+                Put(p, s.Yaw, body, Palette.RaceColor(a.Race));
             }
             // Heroes on the road and scouts join the heroes' batch below.
             if (!heroes) Flush(_folk);
