@@ -22,6 +22,9 @@
     "pleaDays": 14,
     "pleaRewardPerLevel": 30,
     "maxOpen": 3,
+    "pleaTrust": 80,
+    "visitTrust": 60,
+    "mapTrust": 70,
     "drift": 0.5
   },
   "companies": {
@@ -61,11 +64,11 @@
       "start": -5, "settlements": ["{A} Stilts", "the {A} Nest", "{B}'s Rookery"],
       "boon": { "troops": 20, "good": "Food", "qty": 4, "heroChance": 0, "maps": true,
         "text": "lizardfolk guides from {S} trade eels and show safe paths through the fen" } },
-    { "id": "templars", "name": "the order of {S}", "people": "templars", "kind": "monastery", "race": "human",
+    { "id": "templars", "name": "the brothers and sisters of {S}", "people": "templars", "kind": "monastery", "race": "human",
       "start": 15, "settlements": ["{A} Abbey", "the Chapterhouse of {B}", "{A} Priory"],
       "boon": { "troops": 25, "heroChance": 0.16, "classes": ["cleric", "paladin", "monk"],
-        "text": "the order of {S} sends healers and holy water" } },
-    { "id": "freeport", "name": "the free city of {S}", "people": "port folk", "kind": "free city", "race": "human",
+        "text": "{S} sends healers and holy water" } },
+    { "id": "freeport", "name": "the merchant captains of {S}", "people": "port folk", "kind": "free city", "race": "human",
       "start": 10, "settlements": ["{A}haven", "Port {B}", "{A}mouth"],
       "boon": { "troops": 20, "good": "Ale", "qty": 3, "heroChance": 0.1, "classes": ["bard", "rogue", "sorcerer", "warlock"],
         "text": "ships from {S} bring wine, salt fish and sellswords" } },
@@ -73,7 +76,7 @@
       "start": -5, "settlements": ["{A}hall", "the {A} Steading", "{B}'s Mead-hall"],
       "boon": { "troops": 30, "good": "Food", "qty": 2, "heroChance": 0.12, "classes": ["barbarian", "fighter", "druid"],
         "text": "the frost-sworn of {S} send furs, smoked meat and young warriors" } },
-    { "id": "oasis", "name": "the oasis city of {S}", "people": "caravaneers", "kind": "oasis city", "race": "human",
+    { "id": "oasis", "name": "the caravan lords of {S}", "people": "caravaneers", "kind": "oasis city", "race": "human",
       "start": 0, "settlements": ["{A} Wells", "{B}'s Oasis", "the {A} Bazaar"],
       "boon": { "troops": 15, "good": "Ale", "qty": 2, "heroChance": 0.1, "classes": ["monk", "warlock", "sorcerer"],
         "text": "caravans from {S} unload spice, silk and date wine" } }
@@ -139,7 +142,7 @@
         "boss": ["the beast that took the deepest hall", "the warlord in the drowned forge"]
       } },
     { "id": "deeproads", "name": "caverns", "regions": ["the {A} Deeps", "the Caves of {B}", "the {A} Underways", "the {A} Hollows"],
-      "words": ["Glimmer", "Black", "Echo", "Rot", "Hollow", "Crystal", "Dripping", "Lightless", "Fungal", "Worm"],
+      "words": ["Glimmer", "Black", "Echo", "Rot", "Deep", "Crystal", "Dripping", "Lightless", "Fungal", "Worm"],
       "names": ["Zhar", "Ulkhet", "Morrow", "Drakkath", "Ssith", "Oorm"],
       "habitats": ["caves", "underworld"], "weight": 3, "minRing": 0,
       "peoples": ["gnomes", "dwarves"],

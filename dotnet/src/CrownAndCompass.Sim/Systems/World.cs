@@ -81,8 +81,18 @@ public static class World
 
     public static Settlement? SettlementIn(Town town, Region r) => r.SettlementId is int id ? town.Settlements[id] : null;
 
-    /// <summary>Whether heroes (and the mayor) have heard of a site; sites outside any region always are.</summary>
-    public static bool IsKnown(Town town, SiteState site) => RegionOf(town, site)?.Known ?? true;
+    /// <summary>
+    /// Whether the site's region is within the town's reach of talk: taverns only turn up rumours of
+    /// sites in regions someone has heard of. Sites outside any region always are.
+    /// </summary>
+    public static bool RegionKnown(Town town, SiteState site) => RegionOf(town, site)?.Known ?? true;
+
+    /// <summary>The town learns of a site from people who should know; a better source replaces a worse one.</summary>
+    private static void Tell(Town town, SiteState site, int trust)
+    {
+        if (site.Known == SiteKnowledge.Confirmed || (site.Known == SiteKnowledge.Rumoured && site.Trust >= trust)) return;
+        Rumors.Hear(town, site, Rumors.Occupants(town.Content, site.Def), site.Def.Tier, trust);
+    }
 
     /// <summary>Experience for clearing a site: the encounter budget of its level.</summary>
     public static int Milestone(Town town, SiteState site)
@@ -344,6 +354,7 @@ public static class World
                 .FirstOrDefault();
             if (site == null) continue;
             double reward = rules.PleaRewardPerLevel * LevelOf(site) * (s.Allied ? 1.5 : 1);
+            Tell(town, site, rules.PleaTrust);
             var plea = new Plea
             {
                 Id = town.Pleas.Count + 1,
@@ -420,7 +431,7 @@ public static class World
             $"{Cap(s.People)} pledge friendship to {town.Name}." +
             (b.Text != "" ? $" From now on, {b.Text.Replace("{S}", s.Name)}" : "") +
             (b.Troops > 0 ? $"{(b.Text != "" ? ", and" : " They pledge")} their warriors will come if the walls are ever attacked." : "."));
-        if (b.Maps) Reveal(town, town.Regions[s.RegionId], $"{Cap(s.People)} share their maps");
+        if (b.Maps) Reveal(town, town.Regions[s.RegionId], $"{Cap(s.People)} share their maps", town.Content.World.Standing.MapTrust);
     }
 
     /// <summary>Defence the town's allies add at its walls.</summary>
@@ -450,7 +461,9 @@ public static class World
             bool first = !region.Visited;
             region.Visited = true;
             region.Known = true;
-            if (first) Reveal(town, region, $"The {party.Name} bring back word of the lands beyond {region.Name}");
+            // On the way they hear of the region's other sites from whoever lives there.
+            foreach (var id in region.SiteIds) Tell(town, Quests.Site(town, id)!, town.Content.World.Standing.VisitTrust);
+            if (first) Reveal(town, region, $"The {party.Name} bring back word of the lands beyond {region.Name}", 0);
         }
         if (outcome == ExpeditionOutcome.Cleared)
         {
@@ -478,13 +491,18 @@ public static class World
     }
 
     /// <summary>Regions in the next ring out, around this one's bearing, become known by rumor.</summary>
-    private static void Reveal(Town town, Region from, string lead)
+    /// <param name="trust">When above 0, the regions' sites are heard of too, at this trust (an ally's maps).</param>
+    private static void Reveal(Town town, Region from, string lead, int trust)
     {
         var news = town.Regions
             .Where(r => !r.Known && (r.Ring == from.Ring + 1 || r.Ring == from.Ring) && AngleBetween(r.Bearing, from.Bearing) <= from.Arc * 0.75 + r.Arc * 0.5)
             .ToList();
         if (news.Count == 0) return;
-        foreach (var r in news) r.Known = true;
+        foreach (var r in news)
+        {
+            r.Known = true;
+            if (trust > 0) foreach (var id in r.SiteIds) Tell(town, Quests.Site(town, id)!, trust);
+        }
         string lands = Expedition.ListNames(news.Select(r =>
         {
             var s = SettlementIn(town, r);

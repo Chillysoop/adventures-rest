@@ -113,7 +113,7 @@ public static class Watch
     public static Scout? PostScout(Town town, string siteId)
     {
         var site = Quests.Site(town, siteId);
-        if (site == null || site.Cleared || ScoutAt(town, siteId) != null) return null;
+        if (site == null || site.Known == SiteKnowledge.Unheard || site.ThoughtCleared || ScoutAt(town, siteId) != null) return null;
         var hero = Watchers(town).FirstOrDefault();
         if (hero == null) return null;
         var s = Dispatch(town, hero, site, false);
@@ -162,7 +162,7 @@ public static class Watch
     {
         var rules = Rules(town).Mirror;
         var site = Quests.Site(town, siteId);
-        if (site == null || MirrorAt(town, siteId) != null || MirrorUnderway(town, siteId) || town.Treasury < rules.Cost) return null;
+        if (site == null || site.Known == SiteKnowledge.Unheard || MirrorAt(town, siteId) != null || MirrorUnderway(town, siteId) || town.Treasury < rules.Cost) return null;
         var caster = MirrorCasters(town).FirstOrDefault();
         if (caster == null) return null;
         var carrier = Watchers(town).FirstOrDefault() ?? caster;

@@ -1,0 +1,38 @@
+{
+  "baseChance": 0.12,
+  "chancePerPatron": 0.012,
+  "maxChance": 0.8,
+  "unheardWeight": 3,
+  "quietDays": 20,
+  "travellers": [
+    { "text": "a trapper in from the hills", "reliability": [45, 80] },
+    { "text": "a tinker working the east road", "reliability": [30, 65] },
+    { "text": "a pilgrim bound for the coast", "reliability": [35, 70] },
+    { "text": "a drover who lost two oxen on the way", "reliability": [50, 80] },
+    { "text": "a travelling bard", "reliability": [15, 50] },
+    { "text": "a pedlar with a cart of pots", "reliability": [30, 60] }
+  ],
+  "residentReliability": [25, 65],
+  "heroReliability": [55, 90],
+  "heroShare": 0.3,
+  "residentShare": 0.3,
+  "tierWords": ["", "a fair fight for green blades", "no place for beginners", "a death-trap"],
+  "place": [
+    "{source} talks of {site}, {days} out, and says it is home to {who}.",
+    "{source} swears {site}, {days} from town, belongs to {who}.",
+    "According to {source}, {site} lies {days} out, and it belongs to {who}."
+  ],
+  "strength": [
+    "{source} has been near {site} and calls it {tier}.",
+    "{source} says {site} is {tier}, whatever anyone tells you."
+  ],
+  "occupant": [
+    "{source} claims it is {who} at {site} now, not what the town thinks.",
+    "{source} heard {who} on the wind near {site}."
+  ],
+  "resettled": [
+    "{source} saw smoke over {site} again. Something has moved back in.",
+    "{source} says {site} is not empty any more: {who}, by the sound of it."
+  ],
+  "betterHeroesPerTavern": 0.08
+}

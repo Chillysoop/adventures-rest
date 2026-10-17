@@ -48,6 +48,7 @@ public static class Property
             "forge" => m.Price(Good.Tools) / Market.BasePrice(Good.Tools) + labor,
             "brewery" => m.Price(Good.Ale) / Market.BasePrice(Good.Ale) + labor,
             "tavern" => TavernDemand(town),
+            "general_store" => StoreDemand(town),
             _ => 0,
         };
         return pending * signal;
@@ -58,6 +59,15 @@ public static class Property
         int taverns = town.Buildings.Count(b => b.Def.Venue && !b.ForSale);
         if (taverns == 0) return town.Population >= 12 ? 3.0 : 0.5;
         return town.Population / (taverns * 40.0);
+    }
+
+    /// <summary>A general store lives on heroes buying potions before they march.</summary>
+    private static double StoreDemand(Town town)
+    {
+        int stores = town.Buildings.Count(b => b.Def.Id == "general_store" && !b.ForSale);
+        int heroes = town.Heroes.Count;
+        if (stores == 0) return heroes >= 3 ? 2.0 : 0.5;
+        return heroes / (stores * 8.0);
     }
 
     private static void TryOpenBusiness(Town town, Agent a)
@@ -193,6 +203,9 @@ public static class Property
                 break;
             case "tavern":
                 return UniqueTavernName(town);
+            case "general_store":
+                name = $"{family}'s General Store";
+                break;
             default:
                 name = def.Name;
                 break;

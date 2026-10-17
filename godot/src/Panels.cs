@@ -163,13 +163,14 @@ public partial class Main
         bool canScout = Watch.Watchers(t).Count > 0;
         foreach (var s in t.Sites)
         {
-            if (!World.IsKnown(t, s)) continue;
+            // The board only lists what the town has heard of.
+            if (s.Known == SiteKnowledge.Unheard) continue;
             var live = t.Bounties.FirstOrDefault(b => b.SiteId == s.Def.Id && b.Status is BountyStatus.Open or BountyStatus.Taken);
             var party = live?.PartyId is int pid ? t.Parties.FirstOrDefault(x => x.Id == pid) : null;
-            int reward = Quests.SuggestedReward(s.Def.Tier);
+            int reward = Quests.SuggestedReward(Math.Max(1, s.BelievedTier));
             string status;
             var buttons = new List<(string, bool, bool, Action)>();
-            if (s.Cleared) status = Tag("Cleared", Ui.Good);
+            if (s.ThoughtCleared) status = Tag("Cleared", Ui.Good);
             else if (party != null && !party.Returned) status = Tag($"{Ui.Esc(party.Name)} on the road", Ui.Gold);
             else if (live != null) status = Tag($"Bounty posted: {Math.Round(live.Reward)}g", Ui.Gold);
             else
@@ -178,15 +179,19 @@ public partial class Main
                 string sid = s.Def.Id;
                 buttons.Add(($"Post {reward}g", t.Treasury >= reward, true, () => Act(() => _sim.PostBounty(sid, reward))));
             }
-            if (!s.Cleared && Watch.LiveOf(t, s) == null)
+            if (!s.ThoughtCleared && Watch.LiveOf(t, s) == null)
             {
                 double cost = Knowledge.ScryCost(t, s.Def);
                 string sid = s.Def.Id;
                 buttons.Add((freeScry ? "Scry free" : $"Scry {Math.Round(cost)}g", freeScry || scryer != null && t.Treasury >= cost, false, () => Act(() => _sim.CommissionScrying(sid))));
                 if (Watch.ScoutAt(t, sid) == null) buttons.Add(("Scout", canScout, false, () => Act(() => _sim.PostScout(sid))));
             }
-            string tier = s.Def.Tier <= 3 ? new string('◆', s.Def.Tier) + new string('◇', 3 - s.Def.Tier) : $"level {s.Def.Tier}";
-            p.Row($"{SiteLink(s.Def)} {Ui.C(Ui.Gold, $"[font_size=11]{tier}[/font_size]")}\n{status}", buttons.ToArray());
+            int bt = Math.Clamp(s.BelievedTier, 1, 3);
+            string tier = new string('◆', bt) + new string('◇', 3 - bt);
+            string word = s.Known == SiteKnowledge.Rumoured && !s.ThoughtCleared
+                ? Ui.C(Ui.Ink2, $" [font_size=11]rumour: {Ui.Esc(s.Believed)} ({Rumors.Trust(s.Trust)})[/font_size]")
+                : "";
+            p.Row($"{SiteLink(s.Def)} {Ui.C(Ui.Gold, $"[font_size=11]{tier}[/font_size]")}{word}\n{status}", buttons.ToArray());
         }
         p.Note(freeScry
             ? $"Scrying: the Scrying Pool will show one site live for {t.Content.Knowledge.ScryHours} hours today, free."
@@ -256,6 +261,17 @@ public partial class Main
                 string bid = w.Building;
                 p.Row(head, ($"Build {Math.Round(cost)}g", t.Treasury >= cost, true, () => Act(() => _sim.BuildSightWork(bid))));
             }
+        }
+        // The town's first institution: a temple to its god, once there are people enough to fill it.
+        var temple = t.Buildings.FirstOrDefault(b => b.Def.Id == t.Content.Shrines.Temple);
+        string thead = $"[b]Temple of {Ui.Esc(t.Content.Shrines.Deity)}[/b]\n{Ui.C(Ui.Ink2, $"[font_size=12]Heals heroes, raises the fallen, keeps holy days and pays its own bounties. {Shrines.Followers(t).Count} {Ui.Esc(t.Content.Shrines.Devout)} in town.[/font_size]")}";
+        if (temple?.Complete == true) p.Row($"{thead}  {Tag($"Built · coffers {Math.Round(temple.Cash)}g", Ui.Good)}");
+        else if (temple != null) p.Row($"{thead}  {Tag($"Building, {Math.Floor(100 * temple.BuildProgress / temple.Def.BuildHours)}%", Ui.Gold)}");
+        else if (t.Population < t.Content.Shrines.TemplePopulation) p.Row($"{thead}  {Tag($"Needs {t.Content.Shrines.TemplePopulation} residents")}");
+        else
+        {
+            double tcost = Shrines.TempleCost(t);
+            p.Row(thead, ($"Build {Math.Round(tcost)}g", t.Treasury >= tcost, true, () => Act(() => _sim.BuildTemple())));
         }
         if (scouts.Count == 0 && mirrors.Count == 0)
             p.Note("Post a scout to watch a site from cover, or hide a mirror there (from the site's page) for a view that lasts.");
@@ -369,6 +385,17 @@ public partial class Main
             _ => "Only a name in tavern gossip. Nobody who went there has come back to describe it.",
         };
         p.Text(seen);
+        // What the taverns say, newest first: a teller, how far to trust them, and whether it proved true.
+        var talk = Rumors.About(t, s.Def.Id).Take(4).ToList();
+        if (talk.Count > 0)
+        {
+            p.Heading("Tavern talk");
+            foreach (var r in talk)
+            {
+                string verdict = r.Proven == true ? Tag("Proved true", Ui.Good) : r.Proven == false ? Tag("Proved wrong", Ui.Bad) : Tag(Ui.Cap(Rumors.Trust(r.Reliability)));
+                p.Text($"{Ui.C(Ui.Ink2, $"[font_size=11]Day {SimTime.DayOf(r.Tick)}[/font_size]")} {Ui.Esc(r.Text)} {verdict}");
+            }
+        }
         if (sight != Sight.Rumoured)
         {
             bool cleared = sight == Sight.Live ? s.Cleared : report?.Outcome == ExpeditionOutcome.Cleared;

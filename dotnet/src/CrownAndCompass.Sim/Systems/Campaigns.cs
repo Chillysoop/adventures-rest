@@ -78,8 +78,9 @@ public static class Campaigns
         double bestScore = rules.MinScore;
         foreach (var site in town.Sites)
         {
-            if (site.Cleared || busy.Contains(site.Def.Id) || !World.IsKnown(town, site)) continue;
-            int level = World.LevelOf(site);
+            // Companies go on what the town believes: a place it has heard of and thinks still held.
+            if (site.Known == SiteKnowledge.Unheard || site.ThoughtCleared || busy.Contains(site.Def.Id)) continue;
+            int level = Math.Max(1, site.BelievedTier);
             if (level > cap || (war && site.Def.Distance > rules.WarDays)) continue;
             var region = World.RegionOf(town, site);
             double fit = 1 - rules.Outleveled * Math.Max(0, avg - level);

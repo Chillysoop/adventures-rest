@@ -37,6 +37,9 @@ public sealed class Building(int id, BuildingDef def, int lotId)
     public double Cash { get; set; }
 
     public double RevenueToday { get; set; }
+
+    /// <summary>Patron-hours of evening talk since the last rumour roll (taverns only).</summary>
+    public int Talk { get; set; }
     public int DaysInDebt { get; set; }
     public bool ForSale { get; set; }
     public bool Closed { get; set; }
@@ -152,6 +155,7 @@ public static class TreasuryAccount
     public const string Scouts = "Scouts";
     public const string Sight = "Sight works";
     public const string Envoys = "Envoys";
+    public const string Temple = "Temple";
 }
 
 /// <summary>How the campaign ended.</summary>
@@ -217,6 +221,9 @@ public sealed class Town
 
     /// <summary>Mirrors hidden at sites, oldest first; smashed ones stay with SmashedTick set.</summary>
     public List<Mirror> Mirrors { get; } = [];
+
+    /// <summary>Everything the taverns have said about the wilds, oldest first.</summary>
+    public List<Rumor> Rumors { get; } = [];
 
     /// <summary>Library items parties brought home for the town (ids), in the order they came.</summary>
     public List<string> Relics { get; } = [];

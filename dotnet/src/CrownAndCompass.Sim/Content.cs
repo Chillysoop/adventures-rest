@@ -42,6 +42,9 @@ public sealed record BuildingDef
     public int Capacity { get; init; }
     public string? Profession { get; init; }
 
+    /// <summary>A house of the gods: offerings and tithes fill its coffers, which the treasury never sweeps.</summary>
+    public bool Holy { get; init; }
+
     /// <summary>Goods made per worker-hour, in the order the content lists them.</summary>
     [JsonConverter(typeof(GoodsListConverter))]
     public IReadOnlyList<KeyValuePair<Good, double>> Produces { get; init; } = [];
@@ -192,6 +195,12 @@ public sealed record SiteDef
 
     /// <summary>Library habitats whose creatures wander here (forest, caves, ruins...).</summary>
     public IReadOnlyList<string> Habitats { get; init; } = [];
+
+    /// <summary>What lives there, from the GDD's enemy table: beasts, tribe, undead, schemers or rivals.</summary>
+    public string Kind { get; init; } = "";
+
+    /// <summary>Known to the town from the charter (the local menace); every other site starts as tavern talk at best.</summary>
+    public bool Known { get; init; }
 }
 
 /// <summary>Town-wide economic rules.</summary>
@@ -383,6 +392,85 @@ public sealed record KnowledgeRules
     public IReadOnlyList<SightWorkDef> Works { get; init; } = [];
 }
 
+/// <summary>Where a rumour comes from and how far to trust it.</summary>
+public sealed record RumorSource
+{
+    public string Text { get; init; } = "";
+    public int[] Reliability { get; init; } = [30, 70];
+}
+
+/// <summary>How taverns trade in rumours (content/game/rumors.json).</summary>
+public sealed record RumorRules
+{
+    /// <summary>Daily chance a tavern turns up a rumour, plus a little per patron-hour of evening talk.</summary>
+    public double BaseChance { get; init; } = 0.12;
+    public double ChancePerPatron { get; init; } = 0.012;
+    public double MaxChance { get; init; } = 0.8;
+
+    /// <summary>How much likelier a rumour is about a place the town has never heard of.</summary>
+    public double UnheardWeight { get; init; } = 3;
+
+    /// <summary>Days after a clearing before anyone talks of the place being taken again.</summary>
+    public int QuietDays { get; init; } = 20;
+    public IReadOnlyList<RumorSource> Travellers { get; init; } = [];
+    public int[] ResidentReliability { get; init; } = [25, 65];
+    public int[] HeroReliability { get; init; } = [55, 90];
+    public double HeroShare { get; init; } = 0.3;
+    public double ResidentShare { get; init; } = 0.3;
+    public IReadOnlyList<string> TierWords { get; init; } = [];
+    public IReadOnlyList<string> Place { get; init; } = [];
+    public IReadOnlyList<string> Strength { get; init; } = [];
+    public IReadOnlyList<string> Occupant { get; init; } = [];
+    public IReadOnlyList<string> Resettled { get; init; } = [];
+
+    /// <summary>Each tavern past the first makes a seasoned hero likelier to walk in.</summary>
+    public double BetterHeroesPerTavern { get; init; } = 0.08;
+}
+
+/// <summary>A healing potion as the general store sells it.</summary>
+public sealed record PotionRules
+{
+    public string Item { get; init; } = "potion-of-healing";
+    public double Price { get; init; } = 12;
+    public double Wholesale { get; init; } = 5;
+
+    /// <summary>Most potions a hero carries into a delve.</summary>
+    public int Carry { get; init; } = 2;
+    public string Dice { get; init; } = "2d4+2";
+}
+
+/// <summary>The shrine, the temple and the town's god (content/game/faith.json).</summary>
+public sealed record ShrineRules
+{
+    public string Deity { get; init; } = "the Lantern Mother";
+
+    /// <summary>What the faithful call themselves.</summary>
+    public string Devout { get; init; } = "the faithful";
+    public string Shrine { get; init; } = "shrine";
+    public string Temple { get; init; } = "temple";
+    public int TemplePopulation { get; init; } = 40;
+    public int[] PrayHours { get; init; } = [6, 7, 18];
+    public double Offering { get; init; } = 0.2;
+    public double PrayMood { get; init; } = 10;
+    public double FollowerChance { get; init; } = 0.05;
+    public double Tithe { get; init; } = 0.03;
+    public int TitheEveryDays { get; init; } = 7;
+
+    /// <summary>Extra share of a hero's hit points a night's rest restores once the town has a shrine.</summary>
+    public double ShrineRest { get; init; } = 0.25;
+    public double TempleHealFee { get; init; } = 2;
+    public double RaiseCost { get; init; } = 250;
+    public int HolyDayEveryDays { get; init; } = 15;
+    public double HolyDayCost { get; init; } = 30;
+    public string HolyDayName { get; init; } = "the Feast of Lamps";
+
+    /// <summary>Site kinds the temple pays to see destroyed.</summary>
+    public IReadOnlyList<string> CrusadeKinds { get; init; } = [];
+    public double CrusadeReward { get; init; } = 140;
+    public double CrusadeReserve { get; init; } = 40;
+    public PotionRules Potion { get; init; } = new();
+}
+
 /// <summary>A magic item as loot: which library slots a delve's hoard can hold, and what each grants.</summary>
 public sealed record LootRules
 {
@@ -506,6 +594,11 @@ public sealed record StandingRules
     public int PleaDays { get; init; } = 14;
     public double PleaRewardPerLevel { get; init; } = 30;
 
+    /// <summary>How far the town trusts what a plea, a visit or an ally's maps say about a site.</summary>
+    public int PleaTrust { get; init; } = 80;
+    public int VisitTrust { get; init; } = 60;
+    public int MapTrust { get; init; } = 70;
+
     /// <summary>Pleas open across all settlements at once.</summary>
     public int MaxOpen { get; init; } = 3;
 
@@ -588,6 +681,12 @@ public sealed class Content
 
     /// <summary>The themed regions, sites and peoples of the wilds.</summary>
     public WorldRules World { get; init; } = new();
+
+    /// <summary>How taverns trade in rumours.</summary>
+    public RumorRules Rumors { get; init; } = new();
+
+    /// <summary>The shrine, the temple and the general store's potions.</summary>
+    public ShrineRules Shrines { get; init; } = new();
 
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
@@ -705,6 +804,8 @@ public sealed class Content
             Knowledge = Parse<KnowledgeRules>("knowledge.json"),
             Loot = Parse<LootRules>("loot.json"),
             World = Parse<WorldRules>("world.json"),
+            Rumors = Parse<RumorRules>("rumors.json"),
+            Shrines = Parse<ShrineRules>("shrines.json"),
         };
     }
 

@@ -72,8 +72,6 @@ public sealed class Geo
         for (int i = 0; i < town.Sites.Count; i++)
         {
             var s = town.Sites[i];
-            // Sites in regions nobody has heard of yet are not on the map at all.
-            if (!Sim.Systems.World.IsKnown(town, s)) continue;
             float a;
             float rr = TownRadius + 1.3f + s.Def.Distance * 1.1f;
             if (Sim.Systems.World.RegionOf(town, s) is { } region)

@@ -181,7 +181,9 @@ public static class Threat
     {
         var e = town.Content.Enemy;
         town.Enemy.Outpost = true;
-        town.Sites.Add(new SiteState(e.Outpost));
+        var camp = new SiteState(e.Outpost);
+        town.Sites.Add(camp);
+        Rumors.Hear(town, camp, Rumors.Occupants(town.Content, e.Outpost), e.Outpost.Tier);
         town.Log(
             LedgerCategory.War,
             Importance.Major,

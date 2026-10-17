@@ -48,7 +48,8 @@ public static class Knowledge
     public static Scrying? CommissionScrying(Town town, string siteId)
     {
         var site = Quests.Site(town, siteId);
-        if (site == null || ActiveScrying(town, siteId) != null) return null;
+        // A scryer needs a name and a direction to look in; the unheard-of stay hidden.
+        if (site == null || site.Known == SiteKnowledge.Unheard || ActiveScrying(town, siteId) != null) return null;
         int hours = town.Content.Knowledge.ScryHours;
         if (Watch.FreeScryingsLeft(town) > 0)
         {

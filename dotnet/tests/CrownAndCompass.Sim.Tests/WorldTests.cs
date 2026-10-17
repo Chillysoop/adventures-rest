@@ -69,10 +69,10 @@ public class WorldTests
         var pick = Campaigns.Choose(t, members, t.Content.World.Companies with { MinScore = -99 });
         Assert.NotNull(pick);
         Assert.Equal(1, pick.Def.Tier);
-        Assert.True(World.IsKnown(t, pick));
+        Assert.NotEqual(SiteKnowledge.Unheard, pick.Known);
 
         // Seasoned heroes look past the country they have outgrown.
-        foreach (var r in t.Regions) r.Known = true;
+        foreach (var s in t.Sites) Rumors.Hear(t, s, "something", s.Def.Tier);
         var veterans = Enumerable.Range(0, 4).Select(_ => Quests.CreateHero(t, cls, 6)).ToList();
         var far = Campaigns.Choose(t, veterans, t.Content.World.Companies with { MinScore = -99 });
         Assert.NotNull(far);

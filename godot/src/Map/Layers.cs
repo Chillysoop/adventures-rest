@@ -270,6 +270,21 @@ public partial class TownLayer(MapView map) : Layer(map)
                 Circle(new(x + 0.5f, y - 0.66f), 0.11f, new Color("b48cff"));
                 Circle(new(x + 0.5f, y - 0.66f), 0.05f, new Color("fff6d8"));
                 break;
+            // Stand-ins until the art pass draws them properly.
+            case "shrine":
+                Rect(x + 0.3f, y + 0.5f, 0.4f, 0.3f, Palette.Stone);
+                Poly(Palette.RoofHall, new(x + 0.24f, y + 0.52f), new(x + 0.5f, y + 0.3f), new(x + 0.76f, y + 0.52f));
+                Circle(new(x + 0.5f, y + 0.64f), 0.07f, Palette.Gold);
+                break;
+            case "temple":
+                House(x + 0.1f, y + 0.26f, 0.8f, 0.6f, Palette.RoofHall, 0.45f);
+                foreach (float px in new[] { 0.2f, 0.4f, 0.6f, 0.8f }) Rect(x + px - 0.03f, y + 0.56f, 0.06f, 0.28f, Palette.Wall);
+                Circle(new(x + 0.5f, y + 0.12f), 0.1f, Palette.Gold);
+                break;
+            case "general_store":
+                House(x + 0.16f, y + 0.24f, 0.68f, 0.58f, new Color("6a7a3a"), 0.5f);
+                foreach (float px in new[] { 0.22f, 0.4f }) Rect(x + px, y + 0.72f, 0.12f, 0.1f, Palette.Timber);
+                break;
             default:
                 House(x + 0.2f, y + 0.22f, 0.6f, 0.58f, Palette.RoofHouse);
                 break;
@@ -440,6 +455,8 @@ public partial class OverlayLayer(MapView map) : Layer(map)
         var fog = Map.Fog;
         foreach (var site in town.Sites)
         {
+            // Nobody has so much as heard of it: nothing on the map, unless it is in plain sight.
+            if (site.Known == SiteKnowledge.Unheard) continue;
             if (!Map.Geo.Pins.TryGetValue(site.Def.Id, out var pin)) continue;
             var sight = fog.SightOf(site.Def.Id, pin);
             var bounty = town.Bounties.FirstOrDefault(b => b.SiteId == site.Def.Id && b.Status is BountyStatus.Open or BountyStatus.Taken);
@@ -620,6 +637,7 @@ public partial class LabelLayer(MapView map) : Control
         int size = (int)Mathf.Clamp(scale * 0.36f, 11, 16);
         foreach (var site in town.Sites)
         {
+            if (site.Known == SiteKnowledge.Unheard) continue;
             if (!_map.Geo.Pins.TryGetValue(site.Def.Id, out var pin)) continue;
             var sight = fog.SightOf(site.Def.Id, pin);
             float r = 0.42f + Math.Min(site.Def.Tier, 5) * 0.06f;
@@ -637,7 +655,7 @@ public partial class LabelLayer(MapView map) : Control
                     _ => "In sight",
                 },
                 Sight.Scouted when fog.LastReport(site.Def.Id) is Report rep => town.Day - rep.Day > Fog.StaleDays ? $"Last seen day {rep.Day}" : $"Scouted day {rep.Day}",
-                _ => "Rumoured",
+                _ => site.Believed != "" ? $"Rumoured: {site.Believed}" : "Rumoured",
             };
             Text(at + new Vector2(0, size * 2 + 1), sub, Ui.Medium, size - 3, new Color("efe6d2", 0.62f));
             var bounty = town.Bounties.FirstOrDefault(b => b.SiteId == site.Def.Id && b.Status is BountyStatus.Open or BountyStatus.Taken);
