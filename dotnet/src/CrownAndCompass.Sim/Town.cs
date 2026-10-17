@@ -155,6 +155,8 @@ public static class TreasuryAccount
     public const string Scouts = "Scouts";
     public const string Sight = "Sight works";
     public const string Temple = "Temple";
+    public const string Outposts = "Outposts";
+    public const string Tribute = "Tribute";
 }
 
 /// <summary>How the campaign ended.</summary>

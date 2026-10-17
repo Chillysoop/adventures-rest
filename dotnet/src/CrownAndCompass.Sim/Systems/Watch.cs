@@ -41,6 +41,7 @@ public enum LiveSource
     Scout,
     Mirror,
     Spire,
+    Outpost,
 }
 
 /// <summary>
@@ -248,6 +249,7 @@ public static class Watch
     /// <summary>Why a site is in live sight right now, or null under fog.</summary>
     public static LiveSource? LiveOf(Town town, SiteState site)
     {
+        if (site.Held) return LiveSource.Outpost;
         if (Knowledge.ActiveScrying(town, site.Def.Id) != null) return LiveSource.Scrying;
         if (MirrorAt(town, site.Def.Id) != null) return LiveSource.Mirror;
         var s = ScoutAt(town, site.Def.Id);

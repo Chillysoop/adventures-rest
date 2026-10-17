@@ -118,6 +118,7 @@ public static class Rumors
     /// <summary>How much a tavern is likely to talk about each site: the unheard of and the near most.</summary>
     private static double Weight(Town town, SiteState s)
     {
+        if (s.Held) return 0;
         if (s.Known == SiteKnowledge.Unheard) return Rules(town).UnheardWeight / Math.Max(1, s.Def.Distance);
         // Talk of a cleared ruin taken again starts only once it has had time to be.
         if (s.ThoughtCleared) return town.Tick - (s.ClearedTick ?? 0) < Rules(town).QuietDays * SimTime.HoursPerDay ? 0 : s.Cleared ? 0.03 : 2;
