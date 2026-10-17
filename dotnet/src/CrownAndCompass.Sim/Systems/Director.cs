@@ -54,6 +54,10 @@ public static class Director
         var target = camp ?? town.Sites.Where(s => !s.Cleared).OrderBy(s => s.Def.Tier).ThenBy(s => s.Def.Id, StringComparer.Ordinal).FirstOrDefault();
         if (target == null) return;
         if (town.Bounties.Any(b => b.SiteId == target.Def.Id && b.Status is BountyStatus.Open or BountyStatus.Taken)) return;
+        // The stranger knows the place even if the town has only heard whispers, or nothing at all.
+        bool news = target.Known == SiteKnowledge.Unheard;
+        Rumors.Hear(town, target, Rumors.Occupants(town.Content, target.Def), target.Def.Tier);
+        target.ThoughtCleared = false;
         double reward = Quests.SuggestedReward(target.Def.Tier) + 40;
         town.Book(TreasuryAccount.Patron, reward);
         if (Quests.PostBounty(town, target.Def.Id, reward) == null)
@@ -62,6 +66,6 @@ public static class Director
             return;
         }
         town.QuietDays = 0;
-        town.Log(LedgerCategory.Town, Importance.Major, $"A hooded stranger leaves a purse of {Js.Str(reward)} gold at the town hall, for whoever clears {target.Def.Name}. No name is given.");
+        town.Log(LedgerCategory.Town, Importance.Major, $"A hooded stranger leaves a purse of {Js.Str(reward)} gold at the town hall, for whoever clears {target.Def.Name}{(news ? $", {Rumors.Days(target.Def.Distance)} out, the den of {target.Believed}" : "")}. No name is given.");
     }
 }

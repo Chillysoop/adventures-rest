@@ -1,0 +1,23 @@
+{
+  "deity": "the Lantern Mother",
+  "devout": "lampbearers",
+  "shrine": "shrine",
+  "temple": "temple",
+  "templePopulation": 40,
+  "prayHours": [6, 7, 18],
+  "offering": 0.2,
+  "prayMood": 4,
+  "followerChance": 0.03,
+  "tithe": 0.03,
+  "titheEveryDays": 7,
+  "shrineRest": 0.25,
+  "templeHealFee": 2,
+  "raiseCost": 250,
+  "holyDayEveryDays": 15,
+  "holyDayCost": 30,
+  "holyDayName": "the Feast of Lamps",
+  "crusadeKinds": ["undead", "schemers"],
+  "crusadeReward": 140,
+  "crusadeReserve": 40,
+  "potion": { "item": "potion-of-healing", "price": 12, "wholesale": 5, "carry": 2, "dice": "2d4+2" }
+}

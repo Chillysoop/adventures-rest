@@ -73,6 +73,21 @@ Live sight (`Systems/Knowledge.cs`, `Systems/Watch.cs`, numbers in `content/game
 - Works: the Scrying Pool (a free scrying a day, houses a Far-Seeing Basin) and the Sleepless Spire (every site within
   two days shows live, always, houses an Eye of the Sleepless Spire). Either relic carried home by a party does the same.
 
+Rumours (`Systems/Rumors.cs`, `content/game/rumors.json`), GDD rules W3 and C9:
+
+- The town starts knowing only the local menace. Each evening's talk at each tavern can turn up a rumour: a new place,
+  who holds it, how dangerous it is, or that a cleared ruin has been taken again. Every rumour names its teller (a
+  traveller, a townsperson or a hero) and how far they can be trusted, and some are false.
+- The town acts on what it believes (bounties, heroes sizing up a job) until a party reports or the site is seen live;
+  then the Ledger says which tale was wrong. `Rumors.Plant` lets other systems (factions) plant rumours of their own.
+
+Shrines, the store and the temple (`Systems/Shrines.cs`, `content/game/shrines.json`), GDD rules W8, C1, C2, W9:
+
+- The charter brings a shrine and a general store. Townsfolk pray at the bells, leave offerings and take vows; heroes
+  rest better near the shrine and buy healing potions at the store, which they drink in the delve.
+- At 40 residents the council can endow a temple: it tithes the devout, keeps a holy day, posts bounties from its own
+  coffers on undead and schemer dens, heals heroes fully for a fee, and raises a fallen hero for 250 gold.
+
 ## The Godot client (`godot/`)
 
 Godot 4.3 (.NET) with the C# sim as a project reference. Everything is built in code (`src/Main.cs`, `src/Panels.cs`)

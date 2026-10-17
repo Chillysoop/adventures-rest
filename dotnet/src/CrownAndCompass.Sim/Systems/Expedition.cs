@@ -308,6 +308,15 @@ public static class Expedition
                 var s = c.Sheet;
                 string name = c.Agent.GivenName;
 
+                // A badly hurt hero downs a potion (a bonus action) and fights on.
+                if (s.Potions > 0 && s.Hp < s.MaxHp * 0.35)
+                {
+                    s.Potions--;
+                    int drunk = Potion();
+                    s.Hp = Math.Min(s.MaxHp, s.Hp + drunk);
+                    Log($"{name} gulps a {PotionName()} (+{drunk} hp).");
+                }
+
                 // Clerics keep the party alive before they swing.
                 if (s.Cls.Healer && c.Heals > 0)
                 {
@@ -363,6 +372,10 @@ public static class Expedition
             }
         }
 
+        private int Potion() => Math.Max(1, (Sim.Dice.Parse(_content.Shrines.Potion.Dice) ?? new Dice(2, 4, 2)).Roll(_rng));
+
+        private string PotionName() => Library.Prose(_content.Library.Item(_content.Shrines.Potion.Item)?.Name ?? "potion of healing");
+
         private void Credit(Combatant c, int n)
         {
             if (n > 0) Kills[c.Agent.Id] = Kills.Get(c.Agent.Id, 0) + n;
@@ -409,6 +422,16 @@ public static class Expedition
                 if (Standing.Count == 0)
                 {
                     c.Dead = true;
+                    continue;
+                }
+                // No cleric to hand: a friend pours a potion down their throat.
+                var donor = Standing.FirstOrDefault(h => h.Sheet.Potions > 0);
+                if (donor != null)
+                {
+                    donor.Sheet.Potions--;
+                    c.Down = false;
+                    c.Sheet.Hp = Potion();
+                    Log($"{donor.Agent.GivenName} pours a {PotionName()} down {c.Agent.GivenName}'s throat.");
                     continue;
                 }
                 int ok = 0;
