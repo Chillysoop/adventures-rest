@@ -4,6 +4,7 @@ import { modifier } from '../rng.ts';
 import { isEvening } from '../time.ts';
 import type { Building, Town } from '../town.ts';
 import { moveIn } from './economy.ts';
+import { watchStrength } from './council.ts';
 
 /**
  * Interactions outside the mayor's view: tavern talk, friendships, grudges, brawls, courtship
@@ -76,7 +77,9 @@ function interact(town: Town, tavern: Building, p: Agent, q: Agent): void {
 
   // Brawl.
   if (after <= RIVAL_THRESHOLD && (q.has('HotTempered') || q.drinks >= 3) && rng.chance(0.35)) {
-    brawl(town, tavern, q, p);
+    if (town.watch > 0 && rng.chance(watchStrength(town)))
+      town.log('Brawl', Importance.Routine, `The watch steps in at ${tavern.name} before ${q.name} can swing at ${p.name}.`, [q.id, p.id]);
+    else brawl(town, tavern, q, p);
     return;
   }
 

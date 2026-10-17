@@ -4,6 +4,7 @@ import classesJson from './content/classes.json' with { type: 'json' };
 import monstersJson from './content/monsters.json' with { type: 'json' };
 import sitesJson from './content/sites.json' with { type: 'json' };
 import townJson from './content/town.json' with { type: 'json' };
+import councilJson from './content/council.json' with { type: 'json' };
 
 export const GOODS = ['Food', 'Timber', 'Tools', 'Ale'] as const;
 export type Good = (typeof GOODS)[number];
@@ -96,6 +97,38 @@ export interface TownRules {
   civicUpkeep: number;
 }
 
+export type SeatId = 'steward' | 'speaker' | 'captain';
+export type MotionKind = 'raise_tax' | 'lower_tax' | 'hire_watch' | 'dismiss_watch' | 'festival' | 'build_homes';
+
+export interface SeatDef {
+  id: SeatId;
+  title: string;
+  ability: Ability;
+  unlockPopulation: number;
+  portfolio: string;
+  agenda: string;
+}
+
+/** The council: its seats, how each seat feels about each kind of motion, and the motions' numbers. */
+export interface CouncilRules {
+  seats: SeatDef[];
+  /** -1 (against) to 1 (for), by motion kind and seat. */
+  alignment: Record<MotionKind, Record<SeatId, number>>;
+  taxStep: number;
+  minTax: number;
+  maxTax: number;
+  watchPerMotion: number;
+  watchWage: number;
+  festivalBase: number;
+  festivalPerResident: number;
+  festivalDays: number;
+  festivalMood: number;
+  motionDays: number;
+  motionGapDays: number;
+  decreeMandate: number;
+  startingMandate: number;
+}
+
 export const isBusiness = (d: BuildingDef): boolean => d.jobs > 0;
 
 /**
@@ -109,6 +142,7 @@ export class Content {
   readonly monsters: ReadonlyMap<string, MonsterDef>;
   readonly sites: readonly SiteDef[];
   readonly rules: TownRules;
+  readonly council: CouncilRules;
 
   constructor(
     buildings: BuildingDef[],
@@ -117,6 +151,7 @@ export class Content {
     monsters: MonsterDef[],
     sites: SiteDef[],
     rules: TownRules = townJson,
+    council: CouncilRules = councilJson as CouncilRules,
   ) {
     this.buildings = new Map(buildings.map((b) => [b.id, b]));
     this.races = races;
@@ -124,6 +159,7 @@ export class Content {
     this.monsters = new Map(monsters.map((m) => [m.id, m]));
     this.sites = sites;
     this.rules = rules;
+    this.council = council;
   }
 
   monster(id: string): MonsterDef {

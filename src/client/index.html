@@ -109,6 +109,26 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .abil { font-variant-numeric: tabular-nums; font-size: 12px; color: var(--ink-2); }
 .history li { padding: 4px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
 .empty { color: var(--ink-2); }
+#pane-council h4, #pane-bounties h4 { margin: 16px 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-2); }
+.meter { flex: 1; height: 8px; background: var(--line); border-radius: 99px; overflow: hidden; display: inline-block; min-width: 60px; }
+.meter i { display: block; height: 100%; background: var(--gold); border-radius: 99px; }
+.meter.bad i { background: var(--bad); }
+.row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-2); margin: 4px 0; }
+.row b { color: var(--ink); font-size: 14px; min-width: 24px; text-align: right; }
+.mandate { background: var(--panel-2); border-radius: 10px; padding: 10px 12px; }
+.mandate small, .seat small { color: var(--ink-2); font-size: 12px; }
+.facts { display: flex; gap: 8px; margin-top: 6px; }
+.facts span { font-size: 12px; font-weight: 600; background: var(--panel); border-radius: 99px; padding: 2px 9px; }
+.seat { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.seat small { display: block; }
+.seat.vacant b { color: var(--ink-2); }
+.seat-top { display: flex; justify-content: space-between; align-items: center; }
+.motion { border: 1px solid var(--gold); border-radius: 10px; padding: 10px 12px; background: var(--panel); }
+.motion p { margin: 0 0 6px; }
+.votes li { display: flex; justify-content: space-between; font-size: 13px; padding: 2px 0; }
+.actions { display: flex; gap: 8px; margin: 8px 0; }
+.tabs button { position: relative; }
+#motion-dot { position: absolute; top: 8px; right: 6px; width: 7px; height: 7px; border-radius: 99px; background: var(--accent); }
 #books { margin-top: 16px; background: var(--panel-2); border-radius: 10px; padding: 10px 12px; }
 #books:empty { display: none; }
 #books h4 { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-2); display: flex; justify-content: space-between; }
@@ -151,6 +171,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   <aside>
     <nav class="tabs">
       <button data-tab="ledger">Ledger</button>
+      <button data-tab="council">Council<span id="motion-dot" hidden></span></button>
       <button data-tab="bounties">Bounties</button>
       <button data-tab="chronicles">Chronicles</button>
       <button data-tab="inspect">Inspect</button>
@@ -169,6 +190,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
       <ul id="bounty-list"></ul>
       <div id="books"></div>
     </section>
+    <section class="pane" id="pane-council" hidden></section>
     <section class="pane" id="pane-chronicles" hidden><ul id="chronicle-list"></ul></section>
     <section class="pane" id="pane-inspect" hidden></section>
   </aside>

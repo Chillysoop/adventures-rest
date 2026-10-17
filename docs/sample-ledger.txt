@@ -1,480 +1,725 @@
 Day   1 00:00  [Town] The charter is signed. 14 settlers and a wagon arrive at the river ford that will become Briarford.
 Day   2 00:00  [Property] Isolde Vane buys a farmland lot for 26 gold and breaks ground on Vane Farm.
 Day   3 00:00  [Property] Gimra Coppervein buys a commercial lot for 33 gold and breaks ground on The Sleeping Dragon.
+Day   3 00:00  [Council] Shump Redmane, a half-orc woodcutter, joins the council as Steward, minding treasury and taxes. They want a balanced budget.
 Day   3 14:00  [Construction] Vane Farm is finished for Isolde Vane.
-Day   5 00:00  [Property] Ulric Underhill buys a farmland lot for 26 gold and breaks ground on Underhill Farm.
-Day   5 14:00  [Construction] The Sleeping Dragon is finished for Gimra Coppervein.
-Day   6 00:00  [Arrival] Vola Bonebreaker, a half-orc cleric (level 1), walks into The Sleeping Dragon looking for paid work. (lazy, hottempered, greedy)
-Day   6 00:00  [Town] The council posts a bounty of 80 gold on the Goblin Warrens.
-Day   7 09:00  [Construction] Underhill Farm is finished for Ulric Underhill.
-Day   8 00:00  [Arrival] Pip Greenbottle, a halfling fighter (level 1), walks into The Sleeping Dragon looking for paid work. (shy)
-Day   8 17:00  [Social] Jory Blackwood says something about the price of timber that Aelar Liadon will not forgive. A grudge begins at The Sleeping Dragon.
-Day   8 17:00  [Brawl] A brawl breaks out at The Sleeping Dragon: Aelar Liadon swings at Jory Blackwood. Aelar (d20 8+3) lays Jory (d20 9+1) out cold. Jory pays 5 gold for the broken chairs.
-Day   9 00:00  [Arrival] Imsh Skullsplitter, a half-orc barbarian (level 1), walks into The Sleeping Dragon looking for paid work. (romantic)
-Day   9 00:00  [Quest] The Ashen Compasses (Vola the cleric, Pip the fighter, Imsh the barbarian) take the bounty on the Goblin Warrens and march out at dawn.
-Day  10 00:00  [Departure] Ulric Underhill and Edmund pack up and leave Briarford, tired of sleeping in the mud behind the stables.
-  -- end of day 10: pop 17, homeless 0, idle 4, buildings 10 (+0 rising), treasury 320, food 0.91g, mood 74, avg purse 31g
-Day  12 00:00  [Hardship] Tamsin Hollow cannot pay rent and is turned out of Charter House 3 by the town.
-Day  12 00:00  [Quest] The Ashen Compasses limp back from the Goblin Warrens empty-handed, carrying the bodies of Vola and Imsh. (Chronicle 1)
-Day  12 00:00  [Arrival] Osric Hollow, a human barbarian (level 1), walks into The Sleeping Dragon looking for paid work. (ambitious, gregarious, greedy)
-Day  12 00:00  [Town] The council posts a bounty of 80 gold on Wolfwood.
-Day  13 00:00  [Hardship] Jory Blackwood cannot pay rent and is turned out of the Ironhand house by Korrin Ironhand.
-Day  14 00:00  [Arrival] Pip Greenbottle, a halfling laborer, rides in with 129 gold, looking for a business to buy into.
-Day  14 00:00  [Arrival] Eldon Thorngage, a halfling rogue (level 1), walks into The Sleeping Dragon looking for paid work. (generous)
-Day  14 00:00  [Quest] The Ashen Compasses (Pip the fighter, Osric the barbarian, Eldon the rogue) take the bounty on Wolfwood and march out at dawn.
-Day  15 00:00  [Property] Pip Greenbottle buys the shuttered Underhill Farm for 60 gold and reopens it as Greenbottle Farm.
-Day  16 00:00  [Property] Osric Whitlock buys a commercial lot for 36 gold and breaks ground on Osric's Brewery.
-Day  17 00:00  [Departure] Jory Blackwood packs up and leaves Briarford, tired of sleeping in the mud behind the stables.
-Day  17 00:00  [Quest] The Ashen Compasses limp back from Wolfwood empty-handed. (Chronicle 2)
-Day  17 00:00  [Arrival] Rowena Ashford, a human wizard (level 1), walks into The Sleeping Dragon looking for paid work. (hottempered, generous)
-Day  17 00:00  [Town] The council posts a bounty of 100 gold on the Goblin Warrens.
-Day  17 00:00  [Quest] The Ashen Compasses (Osric the barbarian, Eldon the rogue, Rowena the wizard) take the bounty on the Goblin Warrens and march out at dawn.
-Day  18 08:00  [Construction] Osric's Brewery is finished for Osric Whitlock.
-Day  20 00:00  [Quest] The Ashen Compasses return from the Goblin Warrens victorious with 155 gold to split. (Chronicle 3)
-Day  20 00:00  [Town] The council posts a bounty of 100 gold on Wolfwood.
-Day  20 00:00  [Quest] The Ashen Compasses (Pip the fighter, Osric the barbarian, Eldon the rogue, Rowena the wizard) take the bounty on Wolfwood and march out at dawn.
-  -- end of day 20: pop 23, homeless 0, idle 4, buildings 12 (+0 rising), treasury 485, food 0.91g, mood 67, avg purse 56g
-Day  22 00:00  [Property] Rowena Carver buys a farmland lot for 29 gold and breaks ground on Carver Farm.
-Day  23 00:00  [Quest] Pip Greenbottle reaches level 2.
-Day  23 00:00  [Quest] Osric Hollow reaches level 2.
-Day  23 00:00  [Quest] Eldon Thorngage reaches level 2.
-Day  23 00:00  [Quest] Rowena Ashford reaches level 2.
-Day  23 00:00  [Quest] The Ashen Compasses return from Wolfwood victorious with 177 gold to split. (Chronicle 4)
-Day  23 00:00  [Town] The council posts a bounty of 220 gold on the Old Watchtower.
-Day  23 00:00  [Quest] The Ashen Compasses (Pip the fighter, Eldon the rogue, Osric the barbarian, Rowena the wizard) take the bounty on the Old Watchtower and march out at dawn.
-Day  23 15:00  [Construction] Carver Farm is finished for Rowena Carver.
-Day  26 00:00  [Arrival] Rosie Underbough, a halfling ranger (level 1), walks into The Sleeping Dragon looking for paid work. (gregarious)
-Day  27 00:00  [Arrival] Edmund Ashford, a human cleric (level 1), walks into The Sleeping Dragon looking for paid work. (lazy, shy)
-Day  28 00:00  [Quest] The Ashen Compasses return from the Old Watchtower victorious with 380 gold to split. (Chronicle 5)
-Day  28 00:00  [Town] The council posts a bounty of 220 gold on Spider Hollow.
-Day  28 00:00  [Quest] The Ashen Compasses (Pip the fighter, Eldon the rogue, Osric the barbarian, Rowena the wizard) take the bounty on Spider Hollow and march out at dawn.
-Day  29 00:00  [Property] Isolde Vane buys a commercial lot for 38 gold and breaks ground on Vane's Forge.
-Day  30 00:00  [Arrival] Brannoc Coppervein, a dwarf merchant, rides in with 130 gold, looking for a business to buy into.
-  -- end of day 30: pop 28, homeless 0, idle 0, buildings 14 (+2 rising), treasury 367, food 0.91g, mood 68, avg purse 82g
-Day  33 00:00  [Quest] Pip Greenbottle reaches level 3.
-Day  33 00:00  [Quest] Eldon Thorngage reaches level 3.
-Day  33 00:00  [Quest] Rowena Ashford reaches level 3.
-Day  33 00:00  [Quest] The Ashen Compasses return from Spider Hollow victorious with 342 gold to split, but Osric did not come home. (Chronicle 6)
-Day  33 00:00  [Town] The council posts a bounty of 220 gold on Ogre's Ford.
-Day  33 00:00  [Quest] The Ashen Compasses (Pip the fighter, Eldon the rogue, Rowena the wizard) take the bounty on Ogre's Ford and march out at dawn.
-Day  34 00:00  [Arrival] Carlin Folkor, a gnome merchant, rides in with 67 gold, looking for a business to buy into.
-Day  34 00:00  [Arrival] Perrin Fletcher, a human merchant, rides in with 140 gold, looking for a business to buy into.
-Day  35 14:00  [Construction] Vane's Forge is finished for Isolde Vane.
-Day  36 00:00  [Quest] The Ashen Compasses never return from Ogre's Ford. Pip, Eldon and Rowena are presumed dead. (Chronicle 7)
-Day  36 00:00  [Town] The council posts a bounty of 240 gold on Ogre's Ford.
-Day  37 00:00  [Property] Isolde Vane buys a commercial lot for 38 gold and breaks ground on Vane's Forge No. 2.
-Day  37 00:00  [Arrival] Merric Thorngage, a halfling fighter (level 1), walks into The Sleeping Dragon looking for paid work. (ambitious, greedy, romantic)
-Day  38 00:00  [Arrival] Thora Deepdelver, a dwarf ranger (level 1), walks into The Sleeping Dragon looking for paid work. (hottempered, generous)
-Day  39 15:00  [Construction] Vane's Forge No. 2 is finished for Isolde Vane.
-Day  41 00:00  [Property] Isolde Vane buys a commercial lot for 38 gold and breaks ground on Isolde's Brewery.
-  -- end of day 40: pop 29, homeless 0, idle 0, buildings 17 (+2 rising), treasury 441, food 0.91g, mood 70, avg purse 85g
-Day  44 09:00  [Construction] Isolde's Brewery is finished for Isolde Vane.
-Day  45 00:00  [Arrival] Korrin Stonebeard, a dwarf fighter (level 1), walks into The Sleeping Dragon looking for paid work. (shy, generous)
-Day  46 00:00  [Hardship] Aldric Ashford cannot pay rent and is turned out of the Murnig house by Fonkin Murnig.
-Day  46 00:00  [Property] Isolde Vane buys a commercial lot for 39 gold and breaks ground on Isolde's Brewery No. 2.
-Day  46 00:00  [Town] The council posts a bounty of 240 gold on Ogre's Ford.
-Day  47 00:00  [Hardship] Edmund Carver cannot pay rent and is turned out of Charter House 2 by the town.
-Day  47 00:00  [Arrival] Alton Greenbottle, a halfling cleric (level 1), walks into The Sleeping Dragon looking for paid work. (ambitious, generous)
-Day  48 00:00  [Arrival] Aelar Nailo, an elf farmer, rides in with 126 gold, dreaming of opening a farm.
-Day  48 10:00  [Construction] Isolde's Brewery No. 2 is finished for Isolde Vane.
-Day  49 00:00  [Property] Aelar Nailo buys a farmland lot for 35 gold and breaks ground on Nailo Farm.
-Day  49 00:00  [Arrival] Daisy Greenbottle, a halfling fighter (level 1), walks into The Sleeping Dragon looking for paid work. (gregarious, greedy)
-Day  50 00:00  [Departure] Edmund Ashford packs up and leaves Briarford, unable to afford a decent meal.
-Day  50 00:00  [Departure] Merric Thorngage packs up and leaves Briarford, unable to afford a decent meal.
-Day  50 00:00  [Departure] Thora Deepdelver packs up and leaves Briarford, unable to afford a decent meal.
-Day  50 14:00  [Construction] Nailo Farm is finished for Aelar Nailo.
-Day  51 00:00  [Arrival] Cade Brushgather, a halfling rogue (level 1), walks into The Sleeping Dragon looking for paid work. (ambitious, shy, romantic)
-  -- end of day 50: pop 36, homeless 0, idle 2, buildings 21 (+0 rising), treasury 731, food 0.91g, mood 68, avg purse 109g
-Day  52 18:00  [Social] Thamior Meliamne says something about a game of dice that Osric Whitlock will not forgive. A grudge begins at The Sleeping Dragon.
-Day  53 00:00  [Arrival] Marten Carver, a human rogue (level 1), walks into The Sleeping Dragon looking for paid work. (lazy)
-Day  54 00:00  [Property] Isolde Vane buys a commercial lot for 41 gold and breaks ground on Vane's Forge No. 3.
-Day  54 00:00  [Property] Rowena Whitlock buys a farmland lot for 35 gold and breaks ground on Whitlock Lumber Camp.
-Day  55 00:00  [Arrival] Carlin Garrick, a gnome laborer, rides in with 105 gold, looking for a business to buy into.
-Day  55 20:00  [Social] Aldric Thatcher says something about their mother that Cedric Blackwood will not forgive. A grudge begins at The Sleeping Dragon.
-Day  56 00:00  [Departure] Alton Greenbottle packs up and leaves Briarford, unable to afford a decent meal.
-Day  56 00:00  [Town] The council posts a bounty of 240 gold on Ogre's Ford.
-Day  56 16:00  [Construction] Vane's Forge No. 3 is finished for Isolde Vane.
-Day  57 00:00  [Arrival] Marten Hollow, a human barbarian (level 2), walks into The Sleeping Dragon looking for paid work. (generous)
-Day  57 17:00  [Brawl] A brawl breaks out at The Sleeping Dragon: Osric Whitlock swings at Thamior Meliamne. Thamior (d20 17+3) lays Osric (d20 2+1) out cold. Osric pays 7 gold for the broken chairs.
-  -- end of day 60: pop 40, homeless 0, idle 0, buildings 23 (+2 rising), treasury 1089, food 0.91g, mood 67, avg purse 131g
-Day  64 00:00  [Property] Isolde Vane buys a commercial lot for 42 gold and breaks ground on Vane's Forge No. 4.
-Day  64 00:00  [Arrival] Garrett Underhill, a human barbarian (level 1), walks into The Sleeping Dragon looking for paid work. (gregarious, greedy, romantic)
-Day  64 22:00  [Social] Perrin Fletcher says something about their cooking that Shump Redmane will not forgive. A grudge begins at The Sleeping Dragon.
-Day  65 00:00  [Arrival] Ovak Bonebreaker, a half-orc merchant, rides in with 64 gold, looking for a business to buy into.
-Day  66 00:00  [Town] The council posts a bounty of 240 gold on Ogre's Ford.
-Day  66 16:00  [Construction] Vane's Forge No. 4 is finished for Isolde Vane.
-Day  67 00:00  [Property] Isolde Vane buys a commercial lot for 43 gold and breaks ground on The Gilded Mimic.
-Day  68 00:00  [Arrival] Brannoc Granitejaw, a dwarf rogue (level 3), walks into The Sleeping Dragon looking for paid work. (gregarious, romantic)
-Day  68 00:00  [Quest] The Gallows Hounds (Brannoc the rogue, Marten the barbarian, Rosie the ranger, Korrin the fighter) take the bounty on Ogre's Ford and march out at dawn.
-Day  69 00:00  [Arrival] Lilli Murnig, a gnome farmer, rides in with 146 gold, dreaming of opening a farm.
-Day  70 00:00  [Property] Lilli Murnig buys a farmland lot for 38 gold and breaks ground on Murnig Farm.
-Day  71 00:00  [Quest] The Gallows Hounds return from Ogre's Ford victorious with 441 gold to split. (Chronicle 8)
-Day  71 00:00  [Town] The council posts a bounty of 420 gold on the Drowned Temple.
-  -- end of day 70: pop 50, homeless 0, idle 3, buildings 26 (+3 rising), treasury 1029, food 0.91g, mood 69, avg purse 149g
-Day  71 13:00  [Construction] The Gilded Mimic is finished for Isolde Vane.
-Day  71 15:00  [Construction] Murnig Farm is finished for Lilli Murnig.
-Day  72 00:00  [Property] Isolde Vane buys a commercial lot for 46 gold and breaks ground on Vane's Forge No. 5.
-Day  72 00:00  [Property] Rowena Carver buys a farmland lot for 40 gold and breaks ground on Carver Lumber Camp.
-Day  74 14:00  [Construction] Vane's Forge No. 5 is finished for Isolde Vane.
-Day  75 00:00  [Property] Rowena Carver buys a commercial lot for 47 gold and breaks ground on Carver's Forge.
-Day  75 00:00  [Arrival] Eberk Granitejaw, a dwarf barbarian (level 1), walks into The Gilded Mimic looking for paid work. (generous)
-Day  75 12:00  [Construction] Carver Lumber Camp is finished for Rowena Carver.
-Day  76 21:00  [Romance] Tongues wag at The Sleeping Dragon: Brannoc Granitejaw and Rosie Underbough have been seen walking out together.
-Day  77 00:00  [Property] Aelar Nailo buys a commercial lot for 48 gold and breaks ground on Aelar's Brewery.
-Day  77 12:00  [Construction] Carver's Forge is finished for Rowena Carver.
-Day  78 20:00  [Romance] Tongues wag at The Gilded Mimic: Shump Redmane and Dagna Deepdelver have been seen walking out together.
-Day  79 00:00  [Property] Rowena Carver buys a commercial lot for 48 gold and breaks ground on Rowena's Brewery.
-Day  79 10:00  [Construction] Aelar's Brewery is finished for Aelar Nailo.
-Day  79 17:00  [Romance] Shump Redmane and Dagna (once Deepdelver) are wed at the town hall. Half the town turns out to cheer.
-Day  81 00:00  [Town] The council posts a bounty of 420 gold on the Drowned Temple.
-  -- end of day 80: pop 60, homeless 4, idle 0, buildings 33 (+4 rising), treasury 1564, food 0.91g, mood 70, avg purse 148g
-Day  81 16:00  [Construction] Rowena's Brewery is finished for Rowena Carver.
-Day  82 00:00  [Arrival] Vondal Hammerfall, a dwarf merchant, rides in with 131 gold, looking for a business to buy into.
-Day  82 00:00  [Arrival] Feng Skullsplitter, a half-orc fighter (level 1), walks into The Gilded Mimic looking for paid work. (ambitious, generous)
-Day  84 00:00  [Arrival] Sutha Bonebreaker, a half-orc wizard (level 1), walks into The Sleeping Dragon looking for paid work. (gregarious, hottempered, generous)
-Day  86 00:00  [Arrival] Feng Skullsplitter, a half-orc cleric (level 1), walks into The Sleeping Dragon looking for paid work. (shy, generous, romantic)
-Day  87 00:00  [Property] Isolde Vane buys a commercial lot for 53 gold and breaks ground on Vane's Forge No. 6.
-Day  87 00:00  [Property] Rowena Carver buys a farmland lot for 47 gold and breaks ground on Carver Farm No. 2.
-Day  87 00:00  [Property] Aelar Nailo buys a farmland lot for 47 gold and breaks ground on Nailo Lumber Camp.
-Day  88 00:00  [Departure] Brannoc Granitejaw packs up and leaves Briarford, unable to afford a decent meal.
-Day  88 00:00  [Arrival] Eldon Brushgather, a halfling merchant, rides in with 72 gold, looking for a business to buy into.
-Day  88 00:00  [Arrival] Vondal Ironhand, a dwarf barbarian (level 1), walks into The Sleeping Dragon looking for paid work. (lazy, hottempered, greedy)
-Day  88 14:00  [Construction] Nailo Lumber Camp is finished for Aelar Nailo.
-Day  88 16:00  [Construction] Carver Farm No. 2 is finished for Rowena Carver.
-Day  89 00:00  [Departure] Marten Hollow packs up and leaves Briarford, unable to afford a decent meal.
-Day  89 00:00  [Arrival] Merric Greenbottle, a halfling barbarian (level 1), walks into The Sleeping Dragon looking for paid work. (lazy, hottempered, greedy)
-Day  89 15:00  [Construction] Vane's Forge No. 6 is finished for Isolde Vane.
-Day  91 00:00  [Property] Isolde Vane buys a commercial lot for 54 gold and breaks ground on Vane's Forge No. 7.
-Day  91 00:00  [Departure] Daisy Greenbottle packs up and leaves Briarford, unable to afford a decent meal.
-Day  91 00:00  [Town] The council posts a bounty of 420 gold on the Drowned Temple.
-  -- end of day 90: pop 72, homeless 0, idle 2, buildings 42 (+2 rising), treasury 1882, food 0.91g, mood 71, avg purse 160g
-Day  92 00:00  [Departure] Sutha Bonebreaker packs up and leaves Briarford, unable to afford a decent meal.
-Day  92 00:00  [Arrival] Thora Deepdelver, a dwarf fighter (level 3), walks into The Gilded Mimic looking for paid work. (ambitious, generous)
-Day  93 09:00  [Construction] Vane's Forge No. 7 is finished for Isolde Vane.
-Day  93 20:00  [Social] Carlin Garrick says something about dwarven beards that Brannoc Coppervein will not forgive. A grudge begins at The Sleeping Dragon.
-Day  94 00:00  [Property] Rowena Carver buys a commercial lot for 54 gold and breaks ground on Carver's Forge No. 2.
-Day  94 00:00  [Arrival] Rowena Vane, a human rogue (level 2), walks into The Sleeping Dragon looking for paid work. (romantic)
-Day  96 00:00  [Departure] Vondal Ironhand packs up and leaves Briarford, unable to afford a decent meal.
-Day  96 10:00  [Construction] Carver's Forge No. 2 is finished for Rowena Carver.
-Day  97 00:00  [Departure] Garrett Underhill packs up and leaves Briarford, unable to afford a decent meal.
-Day  98 00:00  [Property] Isolde Vane buys a commercial lot for 54 gold and breaks ground on Vane's Forge No. 8.
-Day  98 00:00  [Departure] Feng Skullsplitter packs up and leaves Briarford, unable to afford a decent meal.
-Day  98 00:00  [Departure] Merric Greenbottle packs up and leaves Briarford, unable to afford a decent meal.
-Day  98 00:00  [Arrival] Garrett Whitlock, a human merchant, rides in with 97 gold, looking for a business to buy into.
-Day  98 00:00  [Arrival] Pip Goodbarrel, a halfling wizard (level 1), walks into The Gilded Mimic looking for paid work. (ambitious, gregarious)
-Day 101 00:00  [Town] The council posts a bounty of 420 gold on the Drowned Temple.
-  -- end of day 100: pop 76, homeless 0, idle 4, buildings 45 (+2 rising), treasury 2148, food 0.91g, mood 71, avg purse 192g
-Day 101 07:00  [Construction] Vane's Forge No. 8 is finished for Isolde Vane.
-Day 102 00:00  [Property] Rowena Carver buys a commercial lot for 54 gold and breaks ground on Carver's Forge No. 3.
-Day 102 00:00  [Arrival] Werra Stonebeard, a dwarf rogue (level 3), walks into The Gilded Mimic looking for paid work. (ambitious, greedy)
-Day 102 00:00  [Quest] The Iron Pilgrims (Thora the fighter, Rowena the rogue, Werra the rogue, Rosie the ranger) take the bounty on the Drowned Temple and march out at dawn.
-Day 103 00:00  [Arrival] Pip Brushgather, a halfling fighter (level 3), walks into The Sleeping Dragon looking for paid work. (shy, greedy)
-Day 105 00:00  [Property] Rowena Carver buys a farmland lot for 53 gold and breaks ground on Carver Farm No. 3.
-Day 105 00:00  [Property] Aelar Nailo buys a commercial lot for 58 gold and breaks ground on Aelar's Brewery No. 2.
-Day 105 00:00  [Property] Lilli Murnig buys a commercial lot for 58 gold and breaks ground on Murnig's Forge.
-Day 105 00:00  [Property] Osric Hollow buys a farmland lot for 53 gold and breaks ground on Hollow Lumber Camp.
-Day 107 08:00  [Construction] Aelar's Brewery No. 2 is finished for Aelar Nailo.
-Day 107 09:00  [Construction] Hollow Lumber Camp is finished for Osric Hollow.
-Day 107 10:00  [Construction] Carver Farm No. 3 is finished for Rowena Carver.
-Day 107 11:00  [Construction] Murnig's Forge is finished for Lilli Murnig.
-Day 107 18:00  [Romance] Tongues wag at The Sleeping Dragon: Aelar Liadon and Ulric Thatcher have been seen walking out together.
-Day 108 00:00  [Property] Rowena Carver buys a commercial lot for 58 gold and breaks ground on The Laughing Owlbear.
-Day 108 18:00  [Social] Carlin Garrick says something about the mayor's taxes that Thamior Meliamne will not forgive. A grudge begins at The Sleeping Dragon.
-Day 109 00:00  [Quest] The Iron Pilgrims return from the Drowned Temple victorious with 842 gold to split, but Rowena and Rosie did not come home. (Chronicle 9)
-Day 110 11:00  [Construction] The Laughing Owlbear is finished for Rowena Carver.
-Day 110 20:00  [Social] Zook Daergel says something about their mother that Carlin Folkor will not forgive. A grudge begins at The Laughing Owlbear.
-  -- end of day 110: pop 84, homeless 0, idle 0, buildings 53 (+6 rising), treasury 2862, food 0.91g, mood 72, avg purse 219g
-Day 111 20:00  [Romance] Ulric Thatcher and Aelar (once Liadon) are wed at the town hall. Half the town turns out to cheer.
-Day 114 00:00  [Arrival] Ilde Deepdelver, a dwarf wizard (level 1), walks into The Laughing Owlbear looking for paid work. (ambitious, shy, hottempered)
-Day 115 00:00  [Arrival] Ilde Ironhand, a dwarf woodcutter, rides in with 83 gold, dreaming of opening a lumber camp.
-Day 115 00:00  [Arrival] Yevelda Redmane, a half-orc fighter (level 1), walks into The Sleeping Dragon looking for paid work. (lazy)
-Day 116 00:00  [Property] Rowena Carver buys a farmland lot for 57 gold and breaks ground on Carver Farm No. 4.
-Day 116 00:00  [Property] Aelar Nailo buys a commercial lot for 61 gold and breaks ground on Aelar's Brewery No. 3.
-Day 116 00:00  [Property] Lilli Murnig buys a farmland lot for 57 gold and breaks ground on Murnig Lumber Camp.
-Day 117 00:00  [Property] Morga Hammerfall buys a commercial lot for 61 gold and breaks ground on Hammerfall's Forge.
-Day 117 15:00  [Construction] Carver Farm No. 4 is finished for Rowena Carver.
-Day 118 00:00  [Arrival] Quarion Holimion, an elf merchant, rides in with 98 gold, looking for a business to buy into.
-Day 118 00:00  [Arrival] Imsh Redmane, a half-orc barkeep, rides in with 74 gold, dreaming of opening a tavern.
-Day 118 13:00  [Construction] Aelar's Brewery No. 3 is finished for Aelar Nailo.
-Day 119 00:00  [Arrival] Aelar Liadon, an elf rogue (level 2), walks into The Laughing Owlbear looking for paid work. (ambitious, shy, generous)
-Day 119 08:00  [Construction] Murnig Lumber Camp is finished for Lilli Murnig.
-Day 120 11:00  [Construction] Hammerfall's Forge is finished for Morga Hammerfall.
-Day 120 18:00  [Social] Ovak Bonebreaker says something about the proper way to pour ale that Aelar Meliamne will not forgive. A grudge begins at The Gilded Mimic.
-Day 120 18:00  [Brawl] A brawl breaks out at The Gilded Mimic: Aelar Meliamne swings at Ovak Bonebreaker. Aelar (d20 19+0) lays Ovak (d20 9-1) out cold. Ovak pays 3 gold for the broken chairs.
-Day 121 00:00  [Property] Daisy Tealeaf buys a farmland lot for 60 gold and breaks ground on Tealeaf Farm.
-Day 121 00:00  [Arrival] Thamior Meliamne, an elf farmer, rides in with 92 gold, dreaming of opening a farm.
-  -- end of day 120: pop 101, homeless 0, idle 3, buildings 64 (+3 rising), treasury 3236, food 0.91g, mood 74, avg purse 224g
+Day   4 00:00  [Council] The council carries the motion: the tax rise from 10% to 12%.
+Day   6 08:00  [Construction] The Sleeping Dragon is finished for Gimra Coppervein.
+Day   7 00:00  [Arrival] Korrin Ironhand, a dwarf fighter (level 2), walks into The Sleeping Dragon looking for paid work. (ambitious, romantic)
+Day   7 00:00  [Town] The council posts a bounty of 80 gold on the Goblin Warrens.
+Day   8 00:00  [Arrival] Isolde Whitlock, a human cleric (level 1), walks into The Sleeping Dragon looking for paid work. (ambitious, greedy, romantic)
+Day   9 00:00  [Council] The council carries the motion: the tax rise from 12% to 14%.
+Day  11 00:00  [Arrival] Ovak Skullsplitter, a half-orc barbarian (level 1), walks into The Sleeping Dragon looking for paid work. (ambitious, generous)
+Day  11 00:00  [Quest] The Copper Hounds (Korrin the fighter, Isolde the cleric, Ovak the barbarian) take the bounty on the Goblin Warrens and march out at dawn.
+  -- end of day 10: pop 17, homeless 0, idle 1, buildings 9 (+1 rising), treasury 326, food 0.91g, mood 73, avg purse 36g
+Day  13 00:00  [Arrival] Dagna Deepdelver, a dwarf cleric (level 1), walks into The Sleeping Dragon looking for paid work. (lazy, gregarious, romantic)
+Day  14 00:00  [Quest] The Copper Hounds limp back from the Goblin Warrens empty-handed, carrying the bodies of Isolde and Ovak. (Chronicle 1)
+Day  14 00:00  [Town] The council posts a bounty of 80 gold on Wolfwood.
+Day  15 00:00  [Arrival] Helena Carver, a human fighter (level 1), walks into The Sleeping Dragon looking for paid work. (greedy)
+Day  15 00:00  [Quest] The Copper Hounds (Korrin the fighter, Dagna the cleric, Helena the fighter) take the bounty on Wolfwood and march out at dawn.
+Day  16 20:00  [Social] Aldric Thatcher says something about a debt from three weeks ago that Aelar Liadon will not forgive. A grudge begins at The Sleeping Dragon.
+Day  17 18:00  [Brawl] A brawl breaks out at The Sleeping Dragon: Aelar Liadon swings at Aldric Thatcher. Aldric (d20 14+1) lays Aelar (d20 5+3) out cold. Aelar pays 6 gold for the broken chairs.
+Day  18 00:00  [Quest] The Copper Hounds never return from Wolfwood. Korrin, Dagna and Helena are presumed dead. (Chronicle 2)
+Day  18 00:00  [Town] The council posts a bounty of 100 gold on the Goblin Warrens.
+Day  18 21:00  [Romance] Tongues wag at The Sleeping Dragon: Ulric Thatcher and Aelar Liadon have been seen walking out together.
+Day  19 00:00  [Arrival] Nedda Tealeaf, a halfling fighter (level 1), walks into The Sleeping Dragon looking for paid work. (lazy, gregarious, greedy)
+Day  19 19:00  [Romance] Aelar Liadon and Ulric (once Thatcher) are wed at the town hall. Half the town turns out to cheer.
+  -- end of day 20: pop 15, homeless 0, idle 0, buildings 11 (+2 rising), treasury 543, food 0.91g, mood 76, avg purse 54g
+Day  22 00:00  [Arrival] Tamsin Ashford, a human wizard (level 1), walks into The Sleeping Dragon looking for paid work. (generous)
+Day  22 20:00  [Brawl] A brawl breaks out at The Sleeping Dragon: Aldric Thatcher swings at Aelar Liadon. Aldric (d20 15+1) lays Aelar (d20 5+3) out cold. Aelar pays 10 gold for the broken chairs.
+Day  24 00:00  [Arrival] Kestrel Vane, a human cleric (level 2), walks into The Sleeping Dragon looking for paid work. (gregarious, hottempered)
+Day  24 00:00  [Quest] The Copper Blades (Kestrel the cleric, Nedda the fighter, Tamsin the wizard) take the bounty on the Goblin Warrens and march out at dawn.
+Day  24 18:00  [Brawl] A brawl breaks out at The Sleeping Dragon: Aelar Liadon swings at Aldric Thatcher. Aldric (d20 10+1) lays Aelar (d20 2+3) out cold. Aelar pays 6 gold for the broken chairs.
+Day  27 00:00  [Hardship] Tamsin Hollow cannot pay rent and is turned out of Charter House 3 by the town.
+Day  27 00:00  [Hardship] Jory Blackwood cannot pay rent and is turned out of the Ironhand house by Korrin Ironhand.
+Day  27 00:00  [Quest] The Copper Blades never return from the Goblin Warrens. Kestrel, Nedda and Tamsin are presumed dead. (Chronicle 3)
+Day  27 00:00  [Arrival] Naivara Meliamne, an elf cleric (level 3), walks into The Sleeping Dragon looking for paid work. (greedy)
+Day  27 00:00  [Town] The council posts a bounty of 100 gold on Wolfwood.
+Day  28 00:00  [Hardship] Mialee Meliamne cannot pay rent and is turned out of Charter House 1 by the town.
+Day  28 00:00  [Hardship] Helena Vane cannot pay rent and is turned out of Charter House 1 by the town.
+Day  28 00:00  [Hardship] Dagna Deepdelver cannot pay rent and is turned out of Charter House 2 by the town.
+Day  28 00:00  [Arrival] Sutha Ashtusk, a half-orc rogue (level 1), walks into The Sleeping Dragon looking for paid work. (ambitious)
+Day  29 00:00  [Arrival] Alton Goodbarrel, a halfling cleric (level 1), walks into The Sleeping Dragon looking for paid work. (lazy, shy)
+Day  29 00:00  [Quest] The Copper Lanterns (Naivara the cleric, Sutha the rogue, Alton the cleric) take the bounty on Wolfwood and march out at dawn.
+Day  30 00:00  [Arrival] Caelynn Galanodel, an elf farmer, rides in with 77 gold, dreaming of opening a farm.
+Day  30 00:00  [Council] Isolde Vane, a human farmer, joins the council as Speaker of the Commons, minding the townsfolk, housing and petitions. They want lower taxes and more homes.
+Day  31 00:00  [Property] Vondal Hammerfall buys a commercial lot for 38 gold and breaks ground on Vondal's Brewery.
+Day  31 00:00  [Council] The council carries the motion: the town build a charter house for the homeless, at a cost of 64 gold.
+  -- end of day 30: pop 25, homeless 4, idle 3, buildings 14 (+3 rising), treasury 654, food 0.91g, mood 65, avg purse 38g
+Day  32 00:00  [Quest] The Copper Lanterns never return from Wolfwood. Naivara, Sutha and Alton are presumed dead. (Chronicle 4)
+Day  32 00:00  [Town] The council posts a bounty of 120 gold on the Goblin Warrens.
+Day  33 00:00  [Hardship] Jory Blackwood cannot pay rent and is turned out of Charter House 3 by the town.
+Day  33 00:00  [Arrival] Wren Marsh, a human ranger (level 1), walks into The Sleeping Dragon looking for paid work. (lazy, gregarious)
+Day  33 10:00  [Construction] Vondal's Brewery is finished for Vondal Hammerfall.
+Day  34 00:00  [Hardship] Shump Bonebreaker cannot pay rent and is turned out of Charter House 1 by the town.
+Day  34 00:00  [Property] Isolde Vane buys a commercial lot for 37 gold and breaks ground on Isolde's Brewery.
+Day  35 00:00  [Council] The council carries the motion: the town build a charter house for the homeless, at a cost of 68 gold.
+Day  36 00:00  [Hardship] Caelynn Galanodel cannot pay rent and is turned out of Charter House 1 by the town.
+Day  36 00:00  [Hardship] Vondal Hammerfall cannot pay rent and is turned out of Charter House 2 by the town.
+Day  36 00:00  [Hardship] Jory Vane cannot pay rent and is turned out of Charter House 2 by the town.
+Day  36 00:00  [Hardship] Jory Blackwood cannot pay rent and is turned out of Charter House 3 by the town.
+Day  36 00:00  [Arrival] Tamsin Carver, a human barbarian (level 1), walks into The Sleeping Dragon looking for paid work. (romantic)
+Day  36 09:00  [Construction] Isolde's Brewery is finished for Isolde Vane.
+Day  37 00:00  [Hardship] Helena Blackwood cannot pay rent and is turned out of Charter House 3 by the town.
+Day  37 00:00  [Arrival] Edmund Dunmore, a human fighter (level 1), walks into The Sleeping Dragon looking for paid work. (generous)
+Day  37 00:00  [Quest] The Wandering Compasses (Wren the ranger, Tamsin the barbarian, Edmund the fighter) take the bounty on the Goblin Warrens and march out at dawn.
+Day  38 00:00  [Council] The council lets the motion fall: the town build a charter house for the homeless, at a cost of 65 gold.
+Day  39 00:00  [Hardship] Vondal Hammerfall cannot pay rent and is turned out of Charter House 2 by the town.
+Day  39 00:00  [Hardship] Jory Blackwood cannot pay rent and is turned out of Charter House 3 by the town.
+Day  39 00:00  [Property] Dench Bonebreaker buys a commercial lot for 38 gold and breaks ground on Bonebreaker's Forge.
+Day  39 00:00  [Departure] Caelynn Galanodel packs up and leaves Briarford, unable to afford a decent meal.
+Day  39 00:00  [Departure] Jory Vane packs up and leaves Briarford, unable to afford a decent meal.
+Day  40 00:00  [Hardship] Helena Blackwood cannot pay rent and is turned out of Charter House 3 by the town.
+Day  40 00:00  [Quest] The Wandering Compasses limp back from the Goblin Warrens empty-handed. (Chronicle 5)
+Day  40 00:00  [Town] The council posts a bounty of 120 gold on Wolfwood.
+Day  40 19:00  [Social] Fonkin Murnig says something about orcs that Aelar Liadon will not forgive. A grudge begins at The Sleeping Dragon.
+Day  40 19:00  [Brawl] A brawl breaks out at The Sleeping Dragon: Aelar Liadon swings at Fonkin Murnig. Fonkin (d20 11+1) lays Aelar (d20 4+3) out cold. Aelar pays 7 gold for the broken chairs.
+Day  41 00:00  [Property] Isolde Vane buys a commercial lot for 38 gold and breaks ground on Vane's Forge.
+Day  41 00:00  [Council] The council lets the motion fall: the tax rise from 14% to 16%.
+Day  41 00:00  [Arrival] Lysa Carver, a human wizard (level 1), walks into The Sleeping Dragon looking for paid work. (ambitious, romantic)
+Day  41 00:00  [Quest] The Wandering Compasses (Tamsin the barbarian, Edmund the fighter, Lysa the wizard) take the bounty on Wolfwood and march out at dawn.
+  -- end of day 40: pop 32, homeless 0, idle 8, buildings 20 (+2 rising), treasury 697, food 0.91g, mood 69, avg purse 49g
+Day  41 11:00  [Construction] Bonebreaker's Forge is finished for Dench Bonebreaker.
+Day  43 00:00  [Arrival] Lavinia Underbough, a halfling farmer, rides in with 74 gold, dreaming of opening a farm.
+Day  44 00:00  [Property] Ilde Coppervein buys a farmland lot for 34 gold and breaks ground on Coppervein Farm.
+Day  44 00:00  [Quest] Tamsin Carver reaches level 2.
+Day  44 00:00  [Quest] The Wandering Compasses return from Wolfwood victorious with 191 gold to split, but Edmund did not come home. (Chronicle 6)
+Day  44 00:00  [Town] The council posts a bounty of 140 gold on the Goblin Warrens.
+Day  44 00:00  [Quest] The Wandering Compasses (Tamsin the barbarian, Wren the ranger, Lysa the wizard) take the bounty on the Goblin Warrens and march out at dawn.
+Day  45 00:00  [Arrival] Vondal Coppervein, a dwarf laborer, rides in with 72 gold, looking for a business to buy into.
+Day  46 00:00  [Hardship] Ront Skullsplitter cannot pay rent and is turned out of the Dunmore house by Kestrel Dunmore.
+Day  46 00:00  [Arrival] Helena Dunmore, a human rogue (level 1), walks into The Sleeping Dragon looking for paid work. (lazy, gregarious, generous)
+Day  46 08:00  [Construction] Coppervein Farm is finished for Ilde Coppervein.
+Day  46 18:00  [Social] Korrin Ironhand says something about orcs that Jory Blackwood will not forgive. A grudge begins at The Sleeping Dragon.
+Day  47 00:00  [Quest] Wren Marsh reaches level 2.
+Day  47 00:00  [Quest] The Wandering Compasses return from the Goblin Warrens victorious with 220 gold to split, but Lysa did not come home. (Chronicle 7)
+Day  47 00:00  [Town] The council posts a bounty of 220 gold on the Old Watchtower.
+Day  48 00:00  [Property] Isolde Vane buys a farmland lot for 35 gold and breaks ground on Vane Farm No. 2.
+Day  48 00:00  [Arrival] Alston Folkor, a gnome barbarian (level 2), walks into The Sleeping Dragon looking for paid work. (ambitious, gregarious, generous)
+Day  48 00:00  [Quest] The Wandering Compasses (Wren the ranger, Tamsin the barbarian, Alston the barbarian) take the bounty on the Old Watchtower and march out at dawn.
+Day  49 14:00  [Construction] Vane Farm No. 2 is finished for Isolde Vane.
+Day  49 18:00  [Brawl] A brawl breaks out at The Sleeping Dragon: Aldric Thatcher swings at Aelar Liadon. Aelar (d20 17+3) lays Aldric (d20 9+1) out cold. Aldric pays 4 gold for the broken chairs.
+Day  50 00:00  [Council] Vondal Hammerfall, a dwarf laborer, joins the council as Captain of the Watch, minding the watch and the peace. They want more watchmen.
+Day  51 00:00  [Property] Dench Skullsplitter buys a farmland lot for 36 gold and breaks ground on Skullsplitter Lumber Camp.
+  -- end of day 50: pop 42, homeless 0, idle 13, buildings 24 (+2 rising), treasury 621, food 0.91g, mood 71, avg purse 66g
+Day  52 00:00  [Property] Isolde Vane buys a commercial lot for 43 gold and breaks ground on Isolde's Brewery No. 2.
+Day  52 00:00  [Council] The council carries the motion: the town hire 2 more watchmen at 3 gold a day each.
+Day  52 13:00  [Construction] Skullsplitter Lumber Camp is finished for Dench Skullsplitter.
+Day  53 00:00  [Quest] The Wandering Compasses limp back from the Old Watchtower empty-handed. (Chronicle 8)
+Day  53 00:00  [Town] The council posts a bounty of 220 gold on Spider Hollow.
+Day  54 00:00  [Hardship] Naivara Nailo cannot pay rent and is turned out of Charter House 9 by the town.
+Day  54 00:00  [Quest] The Wandering Compasses (Wren the ranger, Tamsin the barbarian, Alston the barbarian) take the bounty on Spider Hollow and march out at dawn.
+Day  54 10:00  [Construction] Isolde's Brewery No. 2 is finished for Isolde Vane.
+Day  57 00:00  [Property] Isolde Vane buys a farmland lot for 37 gold and breaks ground on Vane Farm No. 3.
+Day  57 00:00  [Arrival] Quarion Siannodel, an elf cleric (level 1), walks into The Sleeping Dragon looking for paid work. (ambitious, greedy)
+Day  58 14:00  [Construction] Vane Farm No. 3 is finished for Isolde Vane.
+Day  59 00:00  [Quest] The Wandering Compasses limp back from Spider Hollow empty-handed, carrying Tamsin's body. (Chronicle 9)
+Day  59 00:00  [Town] The council posts a bounty of 220 gold on Ogre's Ford.
+Day  60 00:00  [Property] Isolde Vane buys a farmland lot for 38 gold and breaks ground on Vane Farm No. 4.
+Day  60 00:00  [Property] Jory Dunmore buys a farmland lot for 37 gold and breaks ground on Dunmore Lumber Camp.
+Day  60 00:00  [Quest] The Wandering Compasses (Wren the ranger, Alston the barbarian, Helena the rogue, Quarion the cleric) take the bounty on Ogre's Ford and march out at dawn.
+  -- end of day 60: pop 46, homeless 0, idle 6, buildings 27 (+3 rising), treasury 1011, food 0.91g, mood 73, avg purse 78g
+Day  61 14:00  [Construction] Dunmore Lumber Camp is finished for Jory Dunmore.
+Day  61 15:00  [Construction] Vane Farm No. 4 is finished for Isolde Vane.
+Day  63 00:00  [Quest] The Wandering Compasses limp back from Ogre's Ford empty-handed, carrying Wren's body. (Chronicle 10)
+Day  63 00:00  [Town] The council posts a bounty of 240 gold on the Old Watchtower.
+Day  64 00:00  [Property] Isolde Vane buys a commercial lot for 45 gold and breaks ground on Isolde's Brewery No. 3.
+Day  64 00:00  [Arrival] Rowena Marsh, a human fighter (level 1), walks into The Sleeping Dragon looking for paid work. (greedy)
+Day  66 00:00  [Arrival] Helena Whitlock, a human cleric (level 1), walks into The Sleeping Dragon looking for paid work. (gregarious, hottempered)
+Day  66 10:00  [Construction] Isolde's Brewery No. 3 is finished for Isolde Vane.
+Day  68 00:00  [Property] Isolde Vane buys a commercial lot for 45 gold and breaks ground on The Wandering Dragon.
+Day  68 00:00  [Arrival] Rurik Deepdelver, a dwarf laborer, rides in with 118 gold, looking for a business to buy into.
+Day  68 00:00  [Arrival] Cedric Fletcher, a human fighter (level 1), walks into The Sleeping Dragon looking for paid work. (lazy, shy, hottempered)
+Day  69 00:00  [Arrival] Bimpnottin Folkor, a gnome ranger (level 1), walks into The Sleeping Dragon looking for paid work. (romantic)
+Day  70 11:00  [Construction] The Wandering Dragon is finished for Isolde Vane.
+  -- end of day 70: pop 55, homeless 0, idle 9, buildings 32 (+2 rising), treasury 1559, food 0.91g, mood 72, avg purse 89g
+Day  72 00:00  [Property] Isolde Vane buys a farmland lot for 42 gold and breaks ground on Vane Farm No. 5.
+Day  73 00:00  [Hardship] Lysa Carver cannot pay rent and is turned out of Charter House 12 by the town.
+Day  73 00:00  [Council] The council carries the motion: the tax fall from 14% to 12%.
+Day  73 00:00  [Town] The council posts a bounty of 240 gold on the Old Watchtower.
+Day  73 15:00  [Construction] Vane Farm No. 5 is finished for Isolde Vane.
+Day  74 00:00  [Hardship] Isolde Thatcher cannot pay rent and is turned out of Charter House 1 by the town.
+Day  74 17:00  [Social] Jory Blackwood says something about dwarven beards that Shump Skullsplitter will not forgive. A grudge begins at The Sleeping Dragon.
+Day  74 17:00  [Brawl] A brawl breaks out at The Sleeping Dragon: Shump Skullsplitter swings at Jory Blackwood. Jory (d20 20+1) lays Shump (d20 10+1) out cold. A natural 20! Shump pays 9 gold for the broken chairs.
+Day  75 00:00  [Property] Isolde Vane buys a farmland lot for 42 gold and breaks ground on Vane Farm No. 6.
+Day  76 20:00  [Romance] Tongues wag at The Wandering Dragon: Mialee Meliamne and Jory Blackwood have been seen walking out together.
+Day  77 00:00  [Council] The council lets the motion fall: the tax fall from 12% to 10%.
+Day  77 00:00  [Arrival] Cade Thorngage, a halfling rogue (level 1), walks into The Wandering Dragon looking for paid work. (lazy, gregarious, generous)
+Day  77 07:00  [Construction] Vane Farm No. 6 is finished for Isolde Vane.
+Day  78 00:00  [Hardship] Isolde Thatcher cannot pay rent and is turned out of Charter House 1 by the town.
+Day  78 00:00  [Property] Isolde Vane buys a farmland lot for 44 gold and breaks ground on Vane Farm No. 7.
+Day  78 00:00  [Property] Dench Bonebreaker buys a farmland lot for 44 gold and breaks ground on Bonebreaker Lumber Camp.
+Day  79 12:00  [Construction] Bonebreaker Lumber Camp is finished for Dench Bonebreaker.
+Day  79 15:00  [Construction] Vane Farm No. 7 is finished for Isolde Vane.
+Day  80 00:00  [Arrival] Garrett Dunmore, a human barbarian (level 1), walks into The Wandering Dragon looking for paid work. (lazy, greedy)
+Day  80 19:00  [Social] Vondal Coppervein says something about who really killed the wolf last winter that Aelar Liadon will not forgive. A grudge begins at The Wandering Dragon.
+  -- end of day 80: pop 64, homeless 0, idle 4, buildings 36 (+2 rising), treasury 1987, food 0.91g, mood 73, avg purse 106g
+Day  81 17:00  [Romance] Mialee Meliamne and Jory (once Blackwood) are wed at the town hall. Half the town turns out to cheer.
+Day  83 00:00  [Property] Isolde Vane buys a farmland lot for 46 gold and breaks ground on Vane Farm No. 8.
+Day  83 00:00  [Arrival] Aelar Galanodel, an elf ranger (level 1), walks into The Sleeping Dragon looking for paid work. (shy, hottempered)
+Day  83 00:00  [Town] The council posts a bounty of 240 gold on the Old Watchtower.
+Day  84 15:00  [Construction] Vane Farm No. 8 is finished for Isolde Vane.
+Day  85 00:00  [Arrival] Kestrel Fletcher, a human merchant, rides in with 126 gold, looking for a business to buy into.
+Day  86 00:00  [Property] Kestrel Fletcher buys a farmland lot for 47 gold and breaks ground on Fletcher Lumber Camp.
+Day  86 00:00  [Arrival] Lilli Beren, a gnome cleric (level 1), walks into The Wandering Dragon looking for paid work. (ambitious, gregarious, greedy)
+Day  86 18:00  [Social] Fiona Dunmore says something about the smell of the tannery that Imsh Skullsplitter will not forgive. A grudge begins at The Sleeping Dragon.
+Day  87 00:00  [Arrival] Vondal Coppervein, a dwarf barbarian (level 2), walks into The Sleeping Dragon looking for paid work. (shy, greedy, romantic)
+Day  87 00:00  [Quest] The Wandering Compasses (Alston the barbarian, Quarion the cleric, Helena the rogue, Vondal the barbarian) take the bounty on the Old Watchtower and march out at dawn.
+Day  88 14:00  [Construction] Fletcher Lumber Camp is finished for Kestrel Fletcher.
+Day  89 00:00  [Council] The council carries the motion: the tax fall from 12% to 10%.
+Day  91 00:00  [Property] Thamior Liadon buys a commercial lot for 53 gold and breaks ground on Thamior's Brewery.
+Day  91 00:00  [Arrival] Bryn Blackwood, a human brewer, rides in with 114 gold, dreaming of opening a brewery.
+  -- end of day 90: pop 73, homeless 0, idle 0, buildings 39 (+6 rising), treasury 2682, food 0.91g, mood 71, avg purse 125g
+Day  92 00:00  [Council] The council lets the motion fall: the town build a charter house for the homeless, at a cost of 65 gold.
+Day  92 00:00  [Quest] The Wandering Compasses limp back from the Old Watchtower empty-handed. (Chronicle 11)
+Day  92 00:00  [Town] The council posts a bounty of 240 gold on Spider Hollow.
+Day  93 00:00  [Quest] The Wandering Compasses (Alston the barbarian, Quarion the cleric, Helena the rogue, Vondal the barbarian) take the bounty on Spider Hollow and march out at dawn.
+Day  94 00:00  [Arrival] Tamsin Dunmore, a human farmer, rides in with 136 gold, dreaming of opening a farm.
+Day  95 00:00  [Property] Tamsin Dunmore buys a farmland lot for 50 gold and breaks ground on Dunmore Farm.
+Day  95 00:00  [Council] The council carries the motion: the tax fall from 10% to 8%.
+Day  95 17:00  [Social] Jory Dunmore says something about their cooking that Dagna Deepdelver will not forgive. A grudge begins at The Sleeping Dragon.
+Day  95 17:00  [Brawl] A brawl breaks out at The Sleeping Dragon: Dagna Deepdelver swings at Jory Dunmore. Dagna (d20 12+0) lays Jory (d20 8+0) out cold. Jory pays 9 gold for the broken chairs.
+Day  95 19:00  [Social] Bree Thorngage says something about a game of dice that Rurik Deepdelver will not forgive. A grudge begins at The Sleeping Dragon.
+Day  96 11:00  [Construction] Thamior's Brewery is finished for Thamior Liadon.
+Day  96 16:00  [Construction] Dunmore Farm is finished for Tamsin Dunmore.
+Day  97 18:00  [Social] Shump Redmane says something about the price of timber that Dench Bonebreaker will not forgive. A grudge begins at The Wandering Dragon.
+Day  98 00:00  [Quest] The Wandering Compasses limp back from Spider Hollow empty-handed, carrying Helena's body. (Chronicle 12)
+Day  98 00:00  [Town] The council posts a bounty of 240 gold on Ogre's Ford.
+Day  98 17:00  [Social] Bree Thorngage says something about a debt from three weeks ago that Aelar Amakiir will not forgive. A grudge begins at The Sleeping Dragon.
+Day  99 00:00  [Council] The council lets the motion fall: the tax fall from 8% to 6%.
+Day  99 00:00  [Arrival] Nissa Beren, a gnome wizard (level 1), walks into The Sleeping Dragon looking for paid work. (ambitious, hottempered, generous)
+Day  99 00:00  [Quest] The Wandering Compasses (Alston the barbarian, Quarion the cleric, Vondal the barbarian, Rowena the fighter) take the bounty on Ogre's Ford and march out at dawn.
+Day  99 17:00  [Brawl] A brawl breaks out at The Wandering Dragon: Aelar Liadon swings at Aldric Thatcher. Aelar (d20 14+3) lays Aldric (d20 13+1) out cold. Aldric pays 7 gold for the broken chairs.
+Day 100 20:00  [Social] Dench Bonebreaker says something about the price of timber that Shump Redmane will not forgive. A grudge begins at The Wandering Dragon.
+  -- end of day 100: pop 78, homeless 0, idle 4, buildings 44 (+3 rising), treasury 2908, food 0.91g, mood 72, avg purse 162g
+Day 102 00:00  [Council] The council carries the motion: the town hire 2 more watchmen at 3 gold a day each.
+Day 102 00:00  [Quest] Quarion Siannodel reaches level 2.
+Day 102 00:00  [Quest] Rowena Marsh reaches level 2.
+Day 102 00:00  [Quest] The Wandering Compasses limp back from Ogre's Ford empty-handed, carrying the bodies of Alston and Vondal. (Chronicle 13)
+Day 102 00:00  [Town] The council posts a bounty of 260 gold on the Old Watchtower.
+Day 102 00:00  [Quest] The Wandering Compasses (Quarion the cleric, Rowena the fighter, Helena the cleric, Cedric the fighter) take the bounty on the Old Watchtower and march out at dawn.
+Day 103 00:00  [Property] Isolde Vane buys a farmland lot for 51 gold and breaks ground on Vane Farm No. 9.
+Day 103 00:00  [Property] Dench Bonebreaker buys a farmland lot for 51 gold and breaks ground on Bonebreaker Lumber Camp No. 2.
+Day 103 00:00  [Property] Dench Skullsplitter buys a commercial lot for 56 gold and breaks ground on Dench's Brewery.
+Day 104 12:00  [Construction] Bonebreaker Lumber Camp No. 2 is finished for Dench Bonebreaker.
+Day 105 08:00  [Construction] Vane Farm No. 9 is finished for Isolde Vane.
+Day 107 00:00  [Quest] The Wandering Compasses limp back from the Old Watchtower empty-handed. (Chronicle 14)
+Day 107 00:00  [Arrival] Valanthe Holimion, an elf cleric (level 3), walks into The Wandering Dragon looking for paid work. (lazy, shy)
+Day 107 00:00  [Town] The council posts a bounty of 260 gold on Spider Hollow.
+Day 107 00:00  [Quest] The Ashen Pilgrims (Valanthe the cleric, Quarion the cleric, Bimpnottin the ranger, Cade the rogue) take the bounty on Spider Hollow and march out at dawn.
+Day 107 18:00  [Social] Bree Thorngage says something about orcs that Isolde Carver will not forgive. A grudge begins at The Sleeping Dragon.
+Day 108 00:00  [Property] Isolde Vane buys a commercial lot for 58 gold and breaks ground on The Prancing Lantern.
+Day 108 13:00  [Construction] Dench's Brewery is finished for Dench Skullsplitter.
+Day 109 00:00  [Property] Dench Bonebreaker buys a commercial lot for 58 gold and breaks ground on Dench's Brewery No. 2.
+Day 110 22:00  [Romance] Tongues wag at The Wandering Dragon: Korrin Ironhand and Shump Redmane have been seen walking out together.
+Day 111 00:00  [Council] The council lets the motion fall: the tax fall from 8% to 6%.
+  -- end of day 110: pop 88, homeless 0, idle 0, buildings 50 (+6 rising), treasury 3390, food 0.91g, mood 72, avg purse 174g
+Day 112 00:00  [Quest] Quarion Siannodel reaches level 3.
+Day 112 00:00  [Quest] The Ashen Pilgrims limp back from Spider Hollow empty-handed, carrying Bimpnottin's body. (Chronicle 15)
+Day 112 00:00  [Arrival] Feng Skullsplitter, a half-orc rogue (level 3), walks into The Sleeping Dragon looking for paid work. (shy, hottempered)
+Day 112 00:00  [Town] The council posts a bounty of 260 gold on Ogre's Ford.
+Day 112 00:00  [Quest] The Ashen Pilgrims (Quarion the cleric, Rowena the fighter, Valanthe the cleric) take the bounty on Ogre's Ford and march out at dawn.
+Day 112 13:00  [Construction] The Prancing Lantern is finished for Isolde Vane.
+Day 113 00:00  [Arrival] Cedric Marsh, a human farmer, rides in with 140 gold, dreaming of opening a farm.
+Day 113 07:00  [Construction] Dench's Brewery No. 2 is finished for Dench Bonebreaker.
+Day 113 17:00  [Social] Shump Redmane says something about the price of timber that Dench Bonebreaker will not forgive. A grudge begins at The Wandering Dragon.
+Day 114 00:00  [Property] Cedric Marsh buys a farmland lot for 56 gold and breaks ground on Marsh Farm.
+Day 114 21:00  [Romance] Tongues wag at The Sleeping Dragon: Bryn Blackwood and Tamsin Dunmore have been seen walking out together.
+Day 115 00:00  [Council] The council carries the motion: the town hire 2 more watchmen at 3 gold a day each.
+Day 115 00:00  [Quest] The Ashen Pilgrims return from Ogre's Ford victorious with 438 gold to split. (Chronicle 16)
+Day 115 00:00  [Town] The council posts a bounty of 280 gold on the Old Watchtower.
+Day 115 00:00  [Quest] The Ashen Pilgrims (Quarion the cleric, Rowena the fighter, Valanthe the cleric) take the bounty on the Old Watchtower and march out at dawn.
+Day 115 18:00  [Romance] Shump Redmane and Korrin (once Ironhand) are wed at the town hall. Half the town turns out to cheer.
+Day 115 21:00  [Romance] Tamsin Dunmore and Bryn (once Blackwood) are wed at the town hall. Half the town turns out to cheer.
+Day 116 00:00  [Property] Isolde Vane buys a farmland lot for 57 gold and breaks ground on Vane Lumber Camp.
+Day 116 00:00  [Property] Dench Bonebreaker buys a commercial lot for 62 gold and breaks ground on Dench's Brewery No. 3.
+Day 116 15:00  [Construction] Marsh Farm is finished for Cedric Marsh.
+Day 117 10:00  [Construction] Vane Lumber Camp is finished for Isolde Vane.
+Day 118 00:00  [Arrival] Ilde Ironhand, a dwarf barbarian (level 1), walks into The Wandering Dragon looking for paid work. (lazy, generous)
+Day 118 10:00  [Construction] Dench's Brewery No. 3 is finished for Dench Bonebreaker.
+Day 119 00:00  [Property] Isolde Vane buys a farmland lot for 59 gold and breaks ground on Vane Farm No. 10.
+Day 119 00:00  [Property] Dench Bonebreaker buys a farmland lot for 59 gold and breaks ground on Bonebreaker Lumber Camp No. 3.
+Day 119 00:00  [Property] Dench Skullsplitter buys a commercial lot for 64 gold and breaks ground on Dench's Brewery No. 4.
+Day 120 00:00  [Quest] The Ashen Pilgrims never return from the Old Watchtower. Quarion, Rowena and Valanthe are presumed dead. (Chronicle 17)
+Day 120 00:00  [Town] The council posts a bounty of 280 gold on Spider Hollow.
+Day 120 00:00  [Quest] The Gallows Compasses (Feng the rogue, Helena the cleric, Cedric the fighter, Cade the rogue) take the bounty on Spider Hollow and march out at dawn.
+Day 120 11:00  [Construction] Bonebreaker Lumber Camp No. 3 is finished for Dench Bonebreaker.
+  -- end of day 120: pop 101, homeless 0, idle 0, buildings 60 (+6 rising), treasury 3499, food 0.91g, mood 71, avg purse 188g
 
 === Briarford after 120 days (seed 1) ===
-Population 101 (23 have left), treasury 3236 gold.
-  Brewery: 7
-  Farm: 9
-  Forge: 12
-  House: 27
-  Lumber Camp: 5
+Population 101 (24 have left), treasury 3499 gold.
+  Brewery: 8
+  Farm: 13
+  Forge: 1
+  House: 26
+  Lumber Camp: 8
   Tavern: 3
   Town Hall: 1
-Ledger entries: 509 (12 major, 182 notable)
+Ledger entries: 628 (22 major, 213 notable)
 
 === People worth knowing ===
 Isolde Vane, a human farmer (ambitious, shy)
-  STR 13 DEX 12 CON 12 INT 12 WIS 14 CHA 16; 236 gold; lives at the Vane house; works at Vane Farm.
+  STR 13 DEX 12 CON 12 INT 12 WIS 14 CHA 16; 4184 gold; lives at the Vane house; works at Vane Farm.
+  Friends: Ulric
     Day   1 00:00  [Town] The charter is signed. 14 settlers and a wagon arrive at the river ford that will become Briarford.
     Day   2 00:00  [Property] Isolde Vane buys a farmland lot for 26 gold and breaks ground on Vane Farm.
     Day   3 14:00  [Construction] Vane Farm is finished for Isolde Vane.
-    Day  12 00:00  [Property] Isolde Vane buys a residential lot for 35 gold and breaks ground on a home for the family.
-    Day  14 10:00  [Construction] The Vane house is finished for Isolde Vane.
-    Day  29 00:00  [Property] Isolde Vane buys a commercial lot for 38 gold and breaks ground on Vane's Forge.
-    Day  35 14:00  [Construction] Vane's Forge is finished for Isolde Vane.
-    Day  37 00:00  [Property] Isolde Vane buys a commercial lot for 38 gold and breaks ground on Vane's Forge No. 2.
-    Day  39 15:00  [Construction] Vane's Forge No. 2 is finished for Isolde Vane.
-    Day  41 00:00  [Property] Isolde Vane buys a commercial lot for 38 gold and breaks ground on Isolde's Brewery.
-    Day  44 09:00  [Construction] Isolde's Brewery is finished for Isolde Vane.
-    Day  46 00:00  [Property] Isolde Vane buys a commercial lot for 39 gold and breaks ground on Isolde's Brewery No. 2.
-    Day  48 10:00  [Construction] Isolde's Brewery No. 2 is finished for Isolde Vane.
-    Day  54 00:00  [Property] Isolde Vane buys a commercial lot for 41 gold and breaks ground on Vane's Forge No. 3.
-    Day  56 16:00  [Construction] Vane's Forge No. 3 is finished for Isolde Vane.
-    Day  64 00:00  [Property] Isolde Vane buys a commercial lot for 42 gold and breaks ground on Vane's Forge No. 4.
-    Day  66 16:00  [Construction] Vane's Forge No. 4 is finished for Isolde Vane.
-    Day  67 00:00  [Property] Isolde Vane buys a commercial lot for 43 gold and breaks ground on The Gilded Mimic.
-    Day  71 13:00  [Construction] The Gilded Mimic is finished for Isolde Vane.
-    Day  72 00:00  [Property] Isolde Vane buys a commercial lot for 46 gold and breaks ground on Vane's Forge No. 5.
-    Day  74 14:00  [Construction] Vane's Forge No. 5 is finished for Isolde Vane.
-    Day  87 00:00  [Property] Isolde Vane buys a commercial lot for 53 gold and breaks ground on Vane's Forge No. 6.
-    Day  89 15:00  [Construction] Vane's Forge No. 6 is finished for Isolde Vane.
-    Day  91 00:00  [Property] Isolde Vane buys a commercial lot for 54 gold and breaks ground on Vane's Forge No. 7.
-    Day  93 09:00  [Construction] Vane's Forge No. 7 is finished for Isolde Vane.
-    Day  98 00:00  [Property] Isolde Vane buys a commercial lot for 54 gold and breaks ground on Vane's Forge No. 8.
-    Day 101 07:00  [Construction] Vane's Forge No. 8 is finished for Isolde Vane.
+    Day  11 00:00  [Property] Isolde Vane buys a residential lot for 34 gold and breaks ground on a home for the family.
+    Day  13 07:00  [Construction] The Vane house is finished for Isolde Vane.
+    Day  24 20:00  [Social] Isolde Vane and Ulric Liadon have become fast friends over ale at The Sleeping Dragon.
+    Day  30 00:00  [Council] Isolde Vane, a human farmer, joins the council as Speaker of the Commons, minding the townsfolk, housing and petitions. They want lower taxes and more homes.
+    Day  30 00:00  [Council] Isolde Vane the Speaker of the Commons moves that the town build a charter house for the homeless, at a cost of 64 gold (10 people sleep rough). The council votes 2 to 0.
+    Day  31 00:00  [Council] The council carries the motion: the town build a charter house for the homeless, at a cost of 64 gold.
+    Day  34 00:00  [Property] Isolde Vane buys a commercial lot for 37 gold and breaks ground on Isolde's Brewery.
+    Day  34 00:00  [Council] Isolde Vane the Speaker of the Commons moves that the town build a charter house for the homeless, at a cost of 68 gold (5 people sleep rough). The council votes 2 to 0.
+    Day  35 00:00  [Council] The council carries the motion: the town build a charter house for the homeless, at a cost of 68 gold.
+    Day  36 09:00  [Construction] Isolde's Brewery is finished for Isolde Vane.
+    Day  37 00:00  [Council] Isolde Vane the Speaker of the Commons moves that the town build a charter house for the homeless, at a cost of 65 gold (5 people sleep rough). The council votes 1 to 1.
+    Day  38 00:00  [Council] The council lets the motion fall: the town build a charter house for the homeless, at a cost of 65 gold.
+    Day  41 00:00  [Property] Isolde Vane buys a commercial lot for 38 gold and breaks ground on Vane's Forge.
+    Day  48 00:00  [Property] Isolde Vane buys a farmland lot for 35 gold and breaks ground on Vane Farm No. 2.
+    Day  49 14:00  [Construction] Vane Farm No. 2 is finished for Isolde Vane.
+    Day  52 00:00  [Property] Isolde Vane buys a commercial lot for 43 gold and breaks ground on Isolde's Brewery No. 2.
+    Day  54 10:00  [Construction] Isolde's Brewery No. 2 is finished for Isolde Vane.
+    Day  57 00:00  [Property] Isolde Vane buys a farmland lot for 37 gold and breaks ground on Vane Farm No. 3.
+    Day  58 14:00  [Construction] Vane Farm No. 3 is finished for Isolde Vane.
+    Day  60 00:00  [Property] Isolde Vane buys a farmland lot for 38 gold and breaks ground on Vane Farm No. 4.
+    Day  61 15:00  [Construction] Vane Farm No. 4 is finished for Isolde Vane.
+    Day  64 00:00  [Property] Isolde Vane buys a commercial lot for 45 gold and breaks ground on Isolde's Brewery No. 3.
+    Day  66 10:00  [Construction] Isolde's Brewery No. 3 is finished for Isolde Vane.
+    Day  68 00:00  [Property] Isolde Vane buys a commercial lot for 45 gold and breaks ground on The Wandering Dragon.
+    Day  70 11:00  [Construction] The Wandering Dragon is finished for Isolde Vane.
+    Day  72 00:00  [Property] Isolde Vane buys a farmland lot for 42 gold and breaks ground on Vane Farm No. 5.
+    Day  72 00:00  [Council] Isolde Vane the Speaker of the Commons moves that the tax fall from 14% to 12% (the coffers are full while the people pay). The council votes 2 to 1.
+    Day  73 00:00  [Council] The council carries the motion: the tax fall from 14% to 12%.
+    Day  73 15:00  [Construction] Vane Farm No. 5 is finished for Isolde Vane.
+    Day  75 00:00  [Property] Isolde Vane buys a farmland lot for 42 gold and breaks ground on Vane Farm No. 6.
+    Day  76 00:00  [Council] Isolde Vane the Speaker of the Commons moves that the tax fall from 12% to 10% (the coffers are full while the people pay). The council votes 1 to 2.
+    Day  77 00:00  [Council] The council lets the motion fall: the tax fall from 12% to 10%.
+    Day  77 07:00  [Construction] Vane Farm No. 6 is finished for Isolde Vane.
+    Day  78 00:00  [Property] Isolde Vane buys a farmland lot for 44 gold and breaks ground on Vane Farm No. 7.
+    Day  79 15:00  [Construction] Vane Farm No. 7 is finished for Isolde Vane.
+    Day  83 00:00  [Property] Isolde Vane buys a farmland lot for 46 gold and breaks ground on Vane Farm No. 8.
+    Day  84 15:00  [Construction] Vane Farm No. 8 is finished for Isolde Vane.
+    Day  88 00:00  [Council] Isolde Vane the Speaker of the Commons moves that the tax fall from 12% to 10% (the coffers are full while the people pay). The council votes 2 to 1.
+    Day  89 00:00  [Council] The council carries the motion: the tax fall from 12% to 10%.
+    Day  91 00:00  [Council] Isolde Vane the Speaker of the Commons moves that the town build a charter house for the homeless, at a cost of 65 gold (3 people sleep rough). The council votes 1 to 2.
+    Day  92 00:00  [Council] The council lets the motion fall: the town build a charter house for the homeless, at a cost of 65 gold.
+    Day  94 00:00  [Council] Isolde Vane the Speaker of the Commons moves that the tax fall from 10% to 8% (the coffers are full while the people pay). The council votes 2 to 1.
+    Day  95 00:00  [Council] The council carries the motion: the tax fall from 10% to 8%.
+    Day  98 00:00  [Council] Isolde Vane the Speaker of the Commons moves that the tax fall from 8% to 6% (the coffers are full while the people pay). The council votes 1 to 2.
+    Day  99 00:00  [Council] The council lets the motion fall: the tax fall from 8% to 6%.
+    Day 103 00:00  [Property] Isolde Vane buys a farmland lot for 51 gold and breaks ground on Vane Farm No. 9.
+    Day 105 08:00  [Construction] Vane Farm No. 9 is finished for Isolde Vane.
+    Day 108 00:00  [Property] Isolde Vane buys a commercial lot for 58 gold and breaks ground on The Prancing Lantern.
+    Day 110 00:00  [Council] Isolde Vane the Speaker of the Commons moves that the tax fall from 8% to 6% (the coffers are full while the people pay). The council votes 1 to 2.
+    Day 111 00:00  [Council] The council lets the motion fall: the tax fall from 8% to 6%.
+    Day 112 13:00  [Construction] The Prancing Lantern is finished for Isolde Vane.
+    Day 116 00:00  [Property] Isolde Vane buys a farmland lot for 57 gold and breaks ground on Vane Lumber Camp.
+    Day 117 10:00  [Construction] Vane Lumber Camp is finished for Isolde Vane.
+    Day 119 00:00  [Property] Isolde Vane buys a farmland lot for 59 gold and breaks ground on Vane Farm No. 10.
 
-Rowena Carver, a human farmer (ambitious, gregarious), married to Rowena
-  STR 8 DEX 14 CON 10 INT 17 WIS 9 CHA 15; 1114 gold; lives at the Carver house No. 2; works at Carver Farm.
-  Friends: Rowena, Aldric, Tamsin, Korrin, Shump, Aelar, Perrin
-    Day  21 00:00  [Arrival] The Carver family arrives by cart: Rowena the farmer and Rowena the woodcutter, with 156 gold between them.
-    Day  22 00:00  [Property] Rowena Carver buys a farmland lot for 29 gold and breaks ground on Carver Farm.
-    Day  23 15:00  [Construction] Carver Farm is finished for Rowena Carver.
-    Day  33 20:00  [Social] Shump Redmane and Rowena Carver have become fast friends over ale at The Sleeping Dragon.
-    Day  55 00:00  [Property] Rowena Carver buys a residential lot for 42 gold and breaks ground on a home for the family.
-    Day  56 17:00  [Social] Aldric Thatcher and Rowena Carver have become fast friends over ale at The Sleeping Dragon.
-    Day  57 18:00  [Social] Rowena Carver and Aelar Liadon have become fast friends over ale at The Sleeping Dragon.
-    Day  60 09:00  [Construction] The Carver house is finished for Rowena Carver.
-    Day  68 18:00  [Social] Rowena Carver and Aelar Liadon have become fast friends over ale at The Sleeping Dragon.
-    Day  69 17:00  [Social] Tamsin Hollow and Rowena Carver have become fast friends over ale at The Sleeping Dragon.
-    Day  71 20:00  [Social] Rowena Carver and Korrin Ironhand have become fast friends over ale at The Gilded Mimic.
-    Day  72 00:00  [Property] Rowena Carver buys a farmland lot for 40 gold and breaks ground on Carver Lumber Camp.
-    Day  72 17:00  [Social] Rowena Carver and Aldric Thatcher have become fast friends over ale at The Gilded Mimic.
-    Day  75 00:00  [Property] Rowena Carver buys a commercial lot for 47 gold and breaks ground on Carver's Forge.
-    Day  75 12:00  [Construction] Carver Lumber Camp is finished for Rowena Carver.
-    Day  77 12:00  [Construction] Carver's Forge is finished for Rowena Carver.
-    Day  79 00:00  [Property] Rowena Carver buys a commercial lot for 48 gold and breaks ground on Rowena's Brewery.
-    Day  81 16:00  [Construction] Rowena's Brewery is finished for Rowena Carver.
-    Day  87 00:00  [Property] Rowena Carver buys a farmland lot for 47 gold and breaks ground on Carver Farm No. 2.
-    Day  88 16:00  [Construction] Carver Farm No. 2 is finished for Rowena Carver.
-    Day  94 00:00  [Property] Rowena Carver buys a commercial lot for 54 gold and breaks ground on Carver's Forge No. 2.
-    Day  96 10:00  [Construction] Carver's Forge No. 2 is finished for Rowena Carver.
-    Day  99 19:00  [Social] Rowena Carver and Perrin Fletcher have become fast friends over ale at The Gilded Mimic.
-    Day 102 00:00  [Property] Rowena Carver buys a commercial lot for 54 gold and breaks ground on Carver's Forge No. 3.
-    Day 105 00:00  [Property] Rowena Carver buys a farmland lot for 53 gold and breaks ground on Carver Farm No. 3.
-    Day 107 10:00  [Construction] Carver Farm No. 3 is finished for Rowena Carver.
-    Day 108 00:00  [Property] Rowena Carver buys a commercial lot for 58 gold and breaks ground on The Laughing Owlbear.
-    Day 110 11:00  [Construction] The Laughing Owlbear is finished for Rowena Carver.
-    Day 113 18:00  [Social] Rowena Carver and Marten Underhill have become fast friends over ale at The Gilded Mimic.
-    Day 116 00:00  [Property] Rowena Carver buys a farmland lot for 57 gold and breaks ground on Carver Farm No. 4.
-    Day 117 15:00  [Construction] Carver Farm No. 4 is finished for Rowena Carver.
+Dench Bonebreaker, a half-orc laborer (ambitious), married to Krusk
+  STR 12 DEX 12 CON 13 INT 18 WIS 11 CHA 8; 422 gold; lives at the Bonebreaker house; works at Skullsplitter Lumber Camp.
+  Friends: Krusk, Helena
+  Grudges: Shump
+    Day  38 00:00  [Arrival] The Bonebreaker family arrives by cart: Krusk the smith and Dench the laborer, with 193 gold between them.
+    Day  39 00:00  [Property] Dench Bonebreaker buys a commercial lot for 38 gold and breaks ground on Bonebreaker's Forge.
+    Day  41 11:00  [Construction] Bonebreaker's Forge is finished for Dench Bonebreaker.
+    Day  51 00:00  [Business] After 13 days idle, Dench Bonebreaker finds work at Skullsplitter Lumber Camp.
+    Day  64 00:00  [Property] Dench Bonebreaker buys a residential lot for 45 gold and breaks ground on a home for the family.
+    Day  65 15:00  [Construction] The Bonebreaker house is finished for Dench Bonebreaker.
+    Day  78 00:00  [Property] Dench Bonebreaker buys a farmland lot for 44 gold and breaks ground on Bonebreaker Lumber Camp.
+    Day  79 12:00  [Construction] Bonebreaker Lumber Camp is finished for Dench Bonebreaker.
+    Day  97 18:00  [Social] Shump Redmane says something about the price of timber that Dench Bonebreaker will not forgive. A grudge begins at The Wandering Dragon.
+    Day 100 20:00  [Social] Dench Bonebreaker says something about the price of timber that Shump Redmane will not forgive. A grudge begins at The Wandering Dragon.
+    Day 103 00:00  [Property] Dench Bonebreaker buys a farmland lot for 51 gold and breaks ground on Bonebreaker Lumber Camp No. 2.
+    Day 104 12:00  [Construction] Bonebreaker Lumber Camp No. 2 is finished for Dench Bonebreaker.
+    Day 109 00:00  [Property] Dench Bonebreaker buys a commercial lot for 58 gold and breaks ground on Dench's Brewery No. 2.
+    Day 113 07:00  [Construction] Dench's Brewery No. 2 is finished for Dench Bonebreaker.
+    Day 113 17:00  [Social] Shump Redmane says something about the price of timber that Dench Bonebreaker will not forgive. A grudge begins at The Wandering Dragon.
+    Day 116 00:00  [Property] Dench Bonebreaker buys a commercial lot for 62 gold and breaks ground on Dench's Brewery No. 3.
+    Day 118 10:00  [Construction] Dench's Brewery No. 3 is finished for Dench Bonebreaker.
+    Day 119 00:00  [Property] Dench Bonebreaker buys a farmland lot for 59 gold and breaks ground on Bonebreaker Lumber Camp No. 3.
+    Day 120 11:00  [Construction] Bonebreaker Lumber Camp No. 3 is finished for Dench Bonebreaker.
 
-Aelar Nailo, an elf farmer (ambitious, hottempered, romantic)
-  STR 10 DEX 12 CON 14 INT 13 WIS 13 CHA 12; 759 gold; lives at the Nailo house; works at Vane's Forge No. 3.
-    Day  48 00:00  [Arrival] Aelar Nailo, an elf farmer, rides in with 126 gold, dreaming of opening a farm.
-    Day  49 00:00  [Property] Aelar Nailo buys a farmland lot for 35 gold and breaks ground on Nailo Farm.
-    Day  50 14:00  [Construction] Nailo Farm is finished for Aelar Nailo.
-    Day  54 00:00  [Business] After 6 days idle, Aelar Nailo finds work at Vane's Forge No. 3.
-    Day  65 00:00  [Property] Aelar Nailo buys a residential lot for 42 gold and breaks ground on a home for the family.
-    Day  68 15:00  [Construction] The Nailo house is finished for Aelar Nailo.
-    Day  77 00:00  [Property] Aelar Nailo buys a commercial lot for 48 gold and breaks ground on Aelar's Brewery.
-    Day  79 10:00  [Construction] Aelar's Brewery is finished for Aelar Nailo.
-    Day  87 00:00  [Property] Aelar Nailo buys a farmland lot for 47 gold and breaks ground on Nailo Lumber Camp.
-    Day  88 14:00  [Construction] Nailo Lumber Camp is finished for Aelar Nailo.
-    Day 105 00:00  [Property] Aelar Nailo buys a commercial lot for 58 gold and breaks ground on Aelar's Brewery No. 2.
-    Day 107 08:00  [Construction] Aelar's Brewery No. 2 is finished for Aelar Nailo.
-    Day 116 00:00  [Property] Aelar Nailo buys a commercial lot for 61 gold and breaks ground on Aelar's Brewery No. 3.
-    Day 118 13:00  [Construction] Aelar's Brewery No. 3 is finished for Aelar Nailo.
+Aelar Liadon, an elf farmer (gregarious, hottempered, romantic), married to Ulric
+  STR 16 DEX 7 CON 14 INT 9 WIS 11 CHA 13; 75 gold; lives at Charter House 3; works at Redmane Lumber Camp.
+  Friends: Jory, Ulric, Mialee, Dagna, Shump, Tamsin, Korrin, Helena
+  Grudges: Aldric, Fonkin
+    Day   1 00:00  [Town] The charter is signed. 14 settlers and a wagon arrive at the river ford that will become Briarford.
+    Day  14 17:00  [Social] Ulric Thatcher and Aelar Liadon have become fast friends over ale at The Sleeping Dragon.
+    Day  14 20:00  [Social] Mialee Meliamne and Aelar Liadon have become fast friends over ale at The Sleeping Dragon.
+    Day  16 20:00  [Social] Aldric Thatcher says something about a debt from three weeks ago that Aelar Liadon will not forgive. A grudge begins at The Sleeping Dragon.
+    Day  17 18:00  [Brawl] A brawl breaks out at The Sleeping Dragon: Aelar Liadon swings at Aldric Thatcher. Aldric (d20 14+1) lays Aelar (d20 5+3) out cold. Aelar pays 6 gold for the broken chairs.
+    Day  18 21:00  [Romance] Tongues wag at The Sleeping Dragon: Ulric Thatcher and Aelar Liadon have been seen walking out together.
+    Day  19 19:00  [Romance] Aelar Liadon and Ulric (once Thatcher) are wed at the town hall. Half the town turns out to cheer.
+    Day  19 21:00  [Social] Shump Redmane and Aelar Liadon have become fast friends over ale at The Sleeping Dragon.
+    Day  22 20:00  [Brawl] A brawl breaks out at The Sleeping Dragon: Aldric Thatcher swings at Aelar Liadon. Aldric (d20 15+1) lays Aelar (d20 5+3) out cold. Aelar pays 10 gold for the broken chairs.
+    Day  24 18:00  [Brawl] A brawl breaks out at The Sleeping Dragon: Aelar Liadon swings at Aldric Thatcher. Aldric (d20 10+1) lays Aelar (d20 2+3) out cold. Aelar pays 6 gold for the broken chairs.
+    Day  37 17:00  [Social] Korrin Ironhand and Aelar Liadon have become fast friends over ale at The Sleeping Dragon.
+    Day  37 20:00  [Social] Dagna Deepdelver and Aelar Liadon have become fast friends over ale at The Sleeping Dragon.
+    Day  40 19:00  [Social] Fonkin Murnig says something about orcs that Aelar Liadon will not forgive. A grudge begins at The Sleeping Dragon.
+    Day  40 19:00  [Brawl] A brawl breaks out at The Sleeping Dragon: Aelar Liadon swings at Fonkin Murnig. Fonkin (d20 11+1) lays Aelar (d20 4+3) out cold. Aelar pays 7 gold for the broken chairs.
+    Day  41 00:00  [Social] Shump Redmane quietly presses a few coins into the hand of Aelar Liadon, who has not eaten in a day.
+    Day  49 18:00  [Brawl] A brawl breaks out at The Sleeping Dragon: Aldric Thatcher swings at Aelar Liadon. Aelar (d20 17+3) lays Aldric (d20 9+1) out cold. Aldric pays 4 gold for the broken chairs.
+    Day  66 18:00  [Social] Aelar Liadon and Korrin Ironhand have become fast friends over ale at The Sleeping Dragon.
+    Day  73 17:00  [Social] Tamsin Hollow and Aelar Liadon have become fast friends over ale at The Wandering Dragon.
+    Day  80 19:00  [Social] Vondal Coppervein says something about who really killed the wolf last winter that Aelar Liadon will not forgive. A grudge begins at The Wandering Dragon.
+    Day  85 18:00  [Social] Helena Vane and Aelar Liadon have become fast friends over ale at The Wandering Dragon.
+    Day  87 18:00  [Social] Aelar Liadon and Jory Meliamne have become fast friends over ale at The Wandering Dragon.
+    Day  91 20:00  [Social] Helena Vane and Aelar Liadon have become fast friends over ale at The Wandering Dragon.
+    Day  92 19:00  [Brawl] The watch steps in at The Wandering Dragon before Aelar Liadon can swing at Aldric Thatcher.
+    Day  99 17:00  [Brawl] A brawl breaks out at The Wandering Dragon: Aelar Liadon swings at Aldric Thatcher. Aelar (d20 14+3) lays Aldric (d20 13+1) out cold. Aldric pays 7 gold for the broken chairs.
+    Day 113 18:00  [Brawl] The watch steps in at The Wandering Dragon before Aelar Liadon can swing at Aldric Thatcher.
 
 === Chronicles ===
-Chronicle 1: the Ashen Compasses at the Goblin Warrens (days 9 to 12, retreated)
-  Vola Bonebreaker, a half-orc cleric (level 1)
-  Pip Greenbottle, a halfling fighter (level 1)
-  Imsh Skullsplitter, a half-orc barbarian (level 1)
-  - Vola, Pip and Imsh set out for the Goblin Warrens.
-  - Goblins spill out of a side tunnel: 4 goblins.
-  - Natural 20! Pip hits the goblin for 8 and it goes down.
-  - The goblin crits Vola for 12. Vola goes down.
-  - The fight is over in 3 rounds.
-  - Vola pulls through on death saves (4, 6, 20).
+Chronicle 1: the Copper Hounds at the Goblin Warrens (days 11 to 14, retreated)
+  Korrin Ironhand, a dwarf fighter (level 2)
+  Isolde Whitlock, a human cleric (level 1)
+  Ovak Skullsplitter, a half-orc barbarian (level 1)
+  - Korrin, Isolde and Ovak set out for the Goblin Warrens.
+  - A tripwire strung across the passage: Korrin spots it and disarms it (d20 20, 22 vs DC 12).
+  - A chest in the chieftain's nook: 29 gold.
   - A goblin war party sleeping off a feast: 5 goblins.
-  - The goblin hits Vola for 7. Vola goes down.
-  - The goblin crits Imsh for 13. Imsh goes down.
+  - The goblin hits Isolde for 8. Isolde goes down.
+  - The goblin hits Ovak for 5. Ovak goes down.
   - Bloodied and outmatched, the party breaks off and runs.
-  - Vola fails their death saves (4, 3, 2) and dies.
-  - Imsh fails their death saves (7, 19, 14, 1) and dies.
+  - Isolde fails their death saves (5, 3, 13, 8) and dies.
+  - Ovak fails their death saves (1, 1) and dies.
 
-Chronicle 2: the Ashen Compasses at Wolfwood (days 14 to 17, retreated)
-  Pip Greenbottle, a halfling fighter (level 1)
-  Osric Hollow, a human barbarian (level 1)
-  Eldon Thorngage, a halfling rogue (level 1)
-  - Pip, Osric and Eldon set out for Wolfwood.
-  - The pack strikes at dusk: 5 wolves.
-  - The wolf crits Pip for 11. Pip goes down.
-  - The fight is over in 5 rounds. Badly hurt: Eldon (3/10 hp).
-  - Pip pulls through on death saves (20).
-  - Too battered to go on, the party turns back.
-
-Chronicle 3: the Ashen Compasses at the Goblin Warrens (days 17 to 20, cleared)
-  Osric Hollow, a human barbarian (level 1)
-  Eldon Thorngage, a halfling rogue (level 1)
-  Rowena Ashford, a human wizard (level 1)
-  - Osric, Eldon and Rowena set out for the Goblin Warrens.
-  - A tripwire strung across the passage: Eldon spots it and disarms it (d20 13, 22 vs DC 12).
-  - Goblins spill out of a side tunnel: 2 goblins.
-  - The fight is over in 1 round.
-  - A goblin war party sleeping off a feast: 4 goblins.
-  - Rowena looses a burning hands spell into 3 of them for 12 damage, dropping 3.
-  - The fight is over in 1 round.
-  - At last, the heart of the place.
-  - The goblin boss on a throne of stolen pots: a goblin boss, with 2 more at its side.
-  - Rowena looses a burning hands spell into 3 of them for 13 damage, dropping 2.
-  - Osric lands the killing blow on the goblin boss (d20 17+5, 12 damage).
-  - The fight is over in 4 rounds. Badly hurt: Eldon (3/10 hp).
-  - The Goblin Warrens is cleared. The hoard holds 55 gold.
-
-Chronicle 4: the Ashen Compasses at Wolfwood (days 20 to 23, cleared)
-  Pip Greenbottle, a halfling fighter (level 1)
-  Osric Hollow, a human barbarian (level 1)
-  Eldon Thorngage, a halfling rogue (level 1)
-  Rowena Ashford, a human wizard (level 1)
-  - Pip, Osric, Eldon and Rowena set out for Wolfwood.
+Chronicle 2: the Copper Hounds at Wolfwood (days 15 to 18, wiped)
+  Korrin Ironhand, a dwarf fighter (level 2)
+  Dagna Deepdelver, a dwarf cleric (level 1)
+  Helena Carver, a human fighter (level 1)
+  - Korrin, Dagna and Helena set out for Wolfwood.
+  - The trail vanishes into briar and bog, but the party pushes through unscathed.
   - A wolf pack circling in the fog: 3 wolves.
-  - The fight is over in 2 rounds.
-  - A hermit who knows where the den lies. Eldon handles it (d20 8, 15 vs DC 13): 11 gold and a safer path.
-  - The pack strikes at dusk: 4 wolves.
-  - Rowena looses a burning hands spell into 3 of them for 11 damage, dropping 3.
-  - The fight is over in 1 round.
+  - Natural 20! Dagna hits the wolf for 11 and it goes down.
+  - The fight is over in 3 rounds.
+  - A hermit who knows where the den lies. Dagna handles it (d20 16, 23 vs DC 13): 9 gold and a safer path.
   - At last, the heart of the place.
   - A dire wolf the size of a pony: a dire wolf, with 2 more at its side.
-  - Natural 20! Osric hits the dire wolf for 18.
-  - Rowena looses a burning hands spell into 3 of them for 8 damage.
-  - Pip lands the killing blow on the dire wolf (d20 17+4, 4 damage).
-  - Natural 20! Osric hits the wolf for 17 and it goes down.
-  - Natural 20! Eldon hits the wolf for 15 and it goes down.
-  - The fight is over in 2 rounds. Badly hurt: Rowena (1/8 hp).
-  - Wolfwood is cleared. The hoard holds 66 gold.
+  - Natural 20! Dagna hits the dire wolf for 7.
+  - The wolf crits Helena for 5. Helena goes down.
+  - Dagna drags Helena back from the brink with a prayer (+4 hp).
+  - The dire wolf hits Dagna for 9. Dagna goes down.
+  - The wolf hits Helena for 10. Helena goes down.
+  - Natural 20! Korrin hits the dire wolf for 12 and it goes down.
+  - The wolf hits Korrin for 8. Korrin goes down.
+  - No one comes back from Wolfwood.
 
-Chronicle 5: the Ashen Compasses at the Old Watchtower (days 23 to 28, cleared)
-  Pip Greenbottle, a halfling fighter (level 2)
-  Eldon Thorngage, a halfling rogue (level 2)
-  Osric Hollow, a human barbarian (level 2)
-  Rowena Ashford, a human wizard (level 2)
-  - Pip, Eldon, Osric and Rowena set out for the Old Watchtower.
-  - The bandits' barracks: 4 bandits.
-  - Rowena looses a burning hands spell into 3 of them for 9 damage.
-  - The fight is over in 4 rounds.
-  - A rotten stair rigged to collapse: Eldon spots it and disarms it (d20 12, 21 vs DC 13).
-  - A bandit deserter who wants out. Eldon handles it (d20 20, 27 vs DC 14): 31 gold and a safer path.
-  - Bandit lookouts on the broken wall: 3 bandits.
-  - Rowena looses a burning hands spell into 2 of them for 13 damage, dropping 2.
-  - The fight is over in 1 round.
+Chronicle 3: the Copper Blades at the Goblin Warrens (days 24 to 27, wiped)
+  Kestrel Vane, a human cleric (level 2)
+  Nedda Tealeaf, a halfling fighter (level 1)
+  Tamsin Ashford, a human wizard (level 1)
+  - Kestrel, Nedda and Tamsin set out for the Goblin Warrens.
+  - Goblins spill out of a side tunnel: 4 goblins.
+  - Tamsin looses a burning hands spell into 3 of them for 11 damage, dropping 3.
+  - The goblin crits Kestrel for 14. Kestrel goes down.
+  - The goblin hits Tamsin for 6. Tamsin goes down.
+  - Nedda rolls a natural 1 and nearly loses the weapon.
+  - The goblin hits Nedda for 7. Nedda goes down.
+  - No one comes back from the Goblin Warrens.
+
+Chronicle 4: the Copper Lanterns at Wolfwood (days 29 to 32, wiped)
+  Naivara Meliamne, an elf cleric (level 3)
+  Sutha Ashtusk, a half-orc rogue (level 1)
+  Alton Goodbarrel, a halfling cleric (level 1)
+  - Naivara, Sutha and Alton set out for Wolfwood.
+  - The trail vanishes into briar and bog. It costs them: Sutha (4).
+  - A wolf pack circling in the fog: 2 wolves.
+  - Natural 20! Alton hits the wolf for 9 and it goes down.
+  - The fight is over in 2 rounds.
+  - A hermit who knows where the den lies. Alton handles it (d20 12, 18 vs DC 13): 11 gold and a safer path.
   - At last, the heart of the place.
-  - The bandit captain at the top of the tower: a bandit captain, with 2 more at its side.
-  - Rowena looses a burning hands spell into 3 of them for 15 damage, dropping 2.
-  - Osric lands the killing blow on the bandit captain (d20 10+5, 6 damage).
-  - The fight is over in 2 rounds.
-  - The Old Watchtower is cleared. The hoard holds 129 gold.
+  - A dire wolf the size of a pony: a dire wolf, with 2 more at its side.
+  - The wolf crits Alton for 13. Alton goes down.
+  - Naivara drags Alton back from the brink with a prayer (+9 hp).
+  - The dire wolf hits Sutha for 11. Sutha goes down.
+  - The wolf hits Alton for 10. Alton goes down.
+  - Naivara drags Sutha back from the brink with a prayer (+8 hp).
+  - The dire wolf hits Sutha for 8. Sutha goes down.
+  - The wolf hits Naivara for 9. Naivara goes down.
+  - No one comes back from Wolfwood.
 
-Chronicle 6: the Ashen Compasses at Spider Hollow (days 28 to 33, cleared)
-  Pip Greenbottle, a halfling fighter (level 2)
-  Eldon Thorngage, a halfling rogue (level 2)
-  Osric Hollow, a human barbarian (level 2)
-  Rowena Ashford, a human wizard (level 2)
-  - Pip, Eldon, Osric and Rowena set out for Spider Hollow.
-  - A cocooned traveler with a map stitched into his coat. Rowena handles it (d20 7, 15 vs DC 13): 33 gold.
-  - Webs thick enough to drown in. It costs them: Eldon (6), Rowena (2).
-  - Something large drops from the canopy: a giant spider.
-  - Osric rolls a natural 1 and nearly loses the weapon.
+Chronicle 5: the Wandering Compasses at the Goblin Warrens (days 37 to 40, retreated)
+  Wren Marsh, a human ranger (level 1)
+  Tamsin Carver, a human barbarian (level 1)
+  Edmund Dunmore, a human fighter (level 1)
+  - Wren, Tamsin and Edmund set out for the Goblin Warrens.
+  - A goblin war party sleeping off a feast: 4 goblins.
+  - Natural 20! Edmund hits the goblin for 7 and it goes down.
+  - Natural 20! Tamsin hits the goblin for 27 and it goes down.
+  - The fight is over in 4 rounds. Badly hurt: Edmund (2/8 hp).
+  - A tripwire strung across the passage: Wren misses it (d20 1, 4 vs DC 12) and Wren takes 5 damage.
+  - Goblins spill out of a side tunnel: 3 goblins.
+  - The fight is over in 2 rounds. Badly hurt: Wren (2/11 hp).
+  - At last, the heart of the place.
+  - The goblin boss on a throne of stolen pots: a goblin boss, with 1 more at its side.
+  - The goblin boss hits Wren for 3. Wren goes down.
+  - Edmund lands the killing blow on the goblin boss (d20 17+5, 5 damage).
+  - The goblin crits Tamsin for 11. Tamsin goes down.
+  - Bloodied and outmatched, the party breaks off and runs.
+  - Wren pulls through on death saves (13, 5, 4, 10, 18).
+  - Tamsin pulls through on death saves (14, 10, 3, 10).
+
+Chronicle 6: the Wandering Compasses at Wolfwood (days 41 to 44, cleared)
+  Tamsin Carver, a human barbarian (level 1)
+  Edmund Dunmore, a human fighter (level 1)
+  Lysa Carver, a human wizard (level 1)
+  - Tamsin, Edmund and Lysa set out for Wolfwood.
+  - The pack strikes at dusk: 5 wolves.
+  - Lysa looses a burning hands spell into 3 of them for 13 damage, dropping 3.
+  - Natural 20! Edmund hits the wolf for 17 and it goes down.
   - The fight is over in 3 rounds.
+  - The trail vanishes into briar and bog. It costs them: Tamsin (1), Edmund (3).
+  - A hermit who knows where the den lies. Edmund handles it (d20 19, 20 vs DC 13): 20 gold and a safer path.
+  - At last, the heart of the place.
+  - A dire wolf the size of a pony: a dire wolf, with 1 more at its side.
+  - Lysa looses a burning hands spell into 2 of them for 14 damage, dropping 1.
+  - The dire wolf hits Edmund for 14. Edmund goes down.
+  - Tamsin lands the killing blow on the dire wolf (d20 10+5, 8 damage).
+  - The fight is over in 4 rounds.
+  - Edmund fails their death saves (5, 13, 3, 19, 6) and dies.
+  - Wolfwood is cleared. The hoard holds 51 gold.
+
+Chronicle 7: the Wandering Compasses at the Goblin Warrens (days 44 to 47, cleared)
+  Tamsin Carver, a human barbarian (level 2)
+  Wren Marsh, a human ranger (level 1)
+  Lysa Carver, a human wizard (level 1)
+  - Tamsin, Wren and Lysa set out for the Goblin Warrens.
+  - Goblins spill out of a side tunnel: 3 goblins.
+  - Lysa looses a burning hands spell into 2 of them for 12 damage, dropping 2.
+  - The fight is over in 1 round.
+  - A goblin war party sleeping off a feast: 5 goblins.
+  - Lysa looses a burning hands spell into 3 of them for 14 damage, dropping 3.
+  - The fight is over in 1 round.
+  - A chest in the chieftain's nook: 26 gold.
+  - At last, the heart of the place.
+  - The goblin boss on a throne of stolen pots: a goblin boss, with 3 more at its side.
+  - Lysa looses a burning hands spell into 3 of them for 14 damage, dropping 2.
+  - The goblin hits Lysa for 8. Lysa goes down.
+  - Tamsin lands the killing blow on the goblin boss (d20 14+5, 8 damage).
+  - Natural 20! Tamsin hits the goblin for 10 and it goes down.
+  - The fight is over in 4 rounds.
+  - Lysa fails their death saves (4, 10, 19, 3, 8) and dies.
+  - The Goblin Warrens is cleared. The hoard holds 54 gold.
+
+Chronicle 8: the Wandering Compasses at the Old Watchtower (days 48 to 53, retreated)
+  Wren Marsh, a human ranger (level 2)
+  Tamsin Carver, a human barbarian (level 2)
+  Alston Folkor, a gnome barbarian (level 2)
+  - Wren, Tamsin and Alston set out for the Old Watchtower.
+  - A bandit deserter who wants out. Tamsin handles it (d20 17, 17 vs DC 14): 12 gold and a safer path.
+  - Bandit lookouts on the broken wall: 6 bandits.
+  - Natural 20! Wren hits the bandit for 5.
+  - Natural 20! Wren hits the bandit for 8 and it goes down.
+  - The fight is over in 5 rounds.
+  - A rotten stair rigged to collapse: Alston spots it and disarms it (d20 19, 23 vs DC 13).
+  - The toll-chest in the guardroom: 66 gold.
+  - At last, the heart of the place.
+  - The bandit captain at the top of the tower: a bandit captain, with 3 more at its side.
+  - The bandit crits Wren for 7. Wren goes down.
+  - The bandit captain hits Tamsin for 9. Tamsin goes down.
+  - Bloodied and outmatched, the party breaks off and runs.
+  - Wren pulls through on death saves (13, 4, 20).
+  - Tamsin pulls through on death saves (13, 16, 9, 10).
+
+Chronicle 9: the Wandering Compasses at Spider Hollow (days 54 to 59, retreated)
+  Wren Marsh, a human ranger (level 2)
+  Tamsin Carver, a human barbarian (level 2)
+  Alston Folkor, a gnome barbarian (level 2)
+  - Wren, Tamsin and Alston set out for Spider Hollow.
+  - Something large drops from the canopy: 2 giant spiders.
+  - The giant spider hits Tamsin for 10. Tamsin goes down.
+  - The fight is over in 6 rounds.
+  - Tamsin fails their death saves (4, 3, 7) and dies.
+  - A cocooned traveler with a map stitched into his coat. Wren handles it (d20 17, 20 vs DC 13): 45 gold.
   - The brood stirs: 2 giant spiders.
-  - Rowena looses a burning hands spell into 2 of them for 15 damage, dropping 1.
+  - The giant spider hits Wren for 9. Wren goes down.
+  - Bloodied and outmatched, the party breaks off and runs.
+  - Wren pulls through on death saves (6, 4, 13, 14, 14).
+
+Chronicle 10: the Wandering Compasses at Ogre's Ford (days 60 to 63, retreated)
+  Wren Marsh, a human ranger (level 2)
+  Alston Folkor, a gnome barbarian (level 2)
+  Helena Dunmore, a human rogue (level 1)
+  Quarion Siannodel, an elf cleric (level 1)
+  - Wren, Alston, Helena and Quarion set out for Ogre's Ford.
+  - A heap of travelers' packs: 50 gold.
+  - The river runs high and cold. It costs them: Alston (2).
+  - Goblin toll-takers serving the ogre: 3 goblins.
+  - Natural 20! Alston hits the goblin for 14 and it goes down.
   - The fight is over in 2 rounds.
+  - At last, the heart of the place.
+  - The ogre, picking its teeth with a femur: an ogre.
+  - Helena rolls a natural 1 and nearly loses the weapon.
+  - The ogre hits Helena for 17. Helena goes down.
+  - Quarion drags Helena back from the brink with a prayer (+9 hp).
+  - The ogre hits Helena for 11. Helena goes down.
+  - The ogre hits Wren for 20. Wren goes down.
+  - The ogre hits Quarion for 15. Quarion goes down.
+  - Bloodied and outmatched, the party breaks off and runs.
+  - Wren fails their death saves (5, 1) and dies.
+  - Helena pulls through on death saves (20).
+  - Quarion pulls through on death saves (13, 8, 6, 14, 15).
+
+Chronicle 11: the Wandering Compasses at the Old Watchtower (days 87 to 92, retreated)
+  Alston Folkor, a gnome barbarian (level 2)
+  Quarion Siannodel, an elf cleric (level 1)
+  Helena Dunmore, a human rogue (level 1)
+  Vondal Coppervein, a dwarf barbarian (level 2)
+  - Alston, Quarion, Helena and Vondal set out for the Old Watchtower.
+  - A rotten stair rigged to collapse: Helena spots it and disarms it (d20 7, 14 vs DC 13).
+  - A bandit deserter who wants out. Quarion gets nowhere (d20 1, 6 vs DC 14).
+  - The toll-chest in the guardroom: 44 gold.
+  - The bandits' barracks: 5 bandits.
+  - Quarion rolls a natural 1 and nearly loses the holy symbol.
+  - The fight is over in 5 rounds.
+  - At last, the heart of the place.
+  - The bandit captain at the top of the tower: a bandit captain, with 3 more at its side.
+  - The bandit captain hits Helena for 11. Helena goes down.
+  - The bandit captain hits Quarion for 8. Quarion goes down.
+  - The bandit hits Alston for 4. Alston goes down.
+  - Bloodied and outmatched, the party breaks off and runs.
+  - Alston pulls through on death saves (4, 8, 17, 14, 20).
+  - Quarion pulls through on death saves (10, 10, 6, 17).
+  - Helena pulls through on death saves (12, 12, 15).
+
+Chronicle 12: the Wandering Compasses at Spider Hollow (days 93 to 98, retreated)
+  Alston Folkor, a gnome barbarian (level 2)
+  Quarion Siannodel, an elf cleric (level 1)
+  Helena Dunmore, a human rogue (level 1)
+  Vondal Coppervein, a dwarf barbarian (level 2)
+  - Alston, Quarion, Helena and Vondal set out for Spider Hollow.
+  - The brood stirs: 3 giant spiders.
+  - Natural 20! Quarion hits the giant spider for 9.
+  - The giant spider hits Helena for 8. Helena goes down.
+  - Quarion drags Helena back from the brink with a prayer (+6 hp).
+  - The giant spider crits Helena for 11. Helena goes down.
+  - The giant spider hits Quarion for 11. Quarion goes down.
+  - The fight is over in 6 rounds. Badly hurt: Vondal (5/25 hp).
+  - Quarion pulls through on death saves (9, 16, 15, 4, 12).
+  - Helena fails their death saves (6, 1) and dies.
+  - Something large drops from the canopy: a giant spider.
+  - The giant spider hits Vondal for 6. Vondal goes down.
+  - Bloodied and outmatched, the party breaks off and runs.
+  - Vondal pulls through on death saves (19, 14, 18).
+
+Chronicle 13: the Wandering Compasses at Ogre's Ford (days 99 to 102, retreated)
+  Alston Folkor, a gnome barbarian (level 2)
+  Quarion Siannodel, an elf cleric (level 1)
+  Vondal Coppervein, a dwarf barbarian (level 2)
+  Rowena Marsh, a human fighter (level 1)
+  - Alston, Quarion, Vondal and Rowena set out for Ogre's Ford.
+  - Goblin toll-takers serving the ogre: 5 goblins.
+  - The fight is over in 2 rounds.
+  - A heap of travelers' packs. Nobody notices the lid breathing (d20 3, 9 vs DC 13) until it bites. It's a mimic!
+  - The mimic hits Vondal for 19. Vondal goes down.
+  - Quarion drags Vondal back from the brink with a prayer (+2 hp).
+  - Rowena rolls a natural 1 and nearly loses the weapon.
+  - The mimic hits Vondal for 13. Vondal goes down.
+  - Natural 20! Rowena hits the mimic for 13.
+  - The fight is over in 6 rounds.
+  - Vondal fails their death saves (1, 10, 6) and dies.
+  - Inside the mimic's gullet: 36 gold.
+  - The river runs high and cold. It costs them: Quarion (8).
+  - Quarion pulls through on death saves (2, 18, 17, 11).
+  - At last, the heart of the place.
+  - The ogre, picking its teeth with a femur: an ogre.
+  - The ogre hits Alston for 20. Alston goes down.
+  - Bloodied and outmatched, the party breaks off and runs.
+  - Alston fails their death saves (4, 17, 10, 1) and dies.
+
+Chronicle 14: the Wandering Compasses at the Old Watchtower (days 102 to 107, retreated)
+  Quarion Siannodel, an elf cleric (level 2)
+  Rowena Marsh, a human fighter (level 2)
+  Helena Whitlock, a human cleric (level 1)
+  Cedric Fletcher, a human fighter (level 1)
+  - Quarion, Rowena, Helena and Cedric set out for the Old Watchtower.
+  - A rotten stair rigged to collapse: Quarion spots it and disarms it (d20 17, 18 vs DC 13).
+  - The bandits' barracks: 5 bandits.
+  - Natural 20! Rowena hits the bandit for 9.
+  - The fight is over in 4 rounds.
+  - A bandit deserter who wants out. Helena handles it (d20 11, 18 vs DC 14): 11 gold and a safer path.
+  - The toll-chest in the guardroom. Nobody notices the lid breathing (d20 7, 11 vs DC 13) until it bites. It's a mimic!
+  - The mimic hits Helena for 13. Helena goes down.
+  - Quarion drags Helena back from the brink with a prayer (+9 hp).
+  - Rowena rolls a natural 1 and nearly loses the weapon.
+  - The fight is over in 7 rounds.
+  - Inside the mimic's gullet: 36 gold.
+  - At last, the heart of the place.
+  - The bandit captain at the top of the tower: a bandit captain, with 3 more at its side.
+  - The bandit hits Cedric for 7. Cedric goes down.
+  - Quarion drags Cedric back from the brink with a prayer (+9 hp).
+  - The bandit captain hits Cedric for 5. Cedric goes down.
+  - The bandit hits Helena for 5. Helena goes down.
+  - Bloodied and outmatched, the party breaks off and runs.
+  - Helena pulls through on death saves (17, 11, 15).
+  - Cedric pulls through on death saves (19, 15, 1, 15).
+
+Chronicle 15: the Ashen Pilgrims at Spider Hollow (days 107 to 112, retreated)
+  Valanthe Holimion, an elf cleric (level 3)
+  Quarion Siannodel, an elf cleric (level 2)
+  Bimpnottin Folkor, a gnome ranger (level 1)
+  Cade Thorngage, a halfling rogue (level 1)
+  - Valanthe, Quarion, Bimpnottin and Cade set out for Spider Hollow.
+  - Webs thick enough to drown in. It costs them: Cade (1).
+  - A cocooned traveler with a map stitched into his coat. Quarion handles it (d20 15, 22 vs DC 13): 32 gold.
+  - The brood stirs: 2 giant spiders.
+  - The giant spider hits Cade for 9. Cade goes down.
+  - Valanthe drags Cade back from the brink with a prayer (+11 hp).
+  - The giant spider hits Valanthe for 11. Valanthe goes down.
+  - Quarion drags Valanthe back from the brink with a prayer (+8 hp).
+  - The giant spider hits Quarion for 8. Quarion goes down.
+  - Natural 20! Cade hits the giant spider for 11 and it goes down.
+  - The fight is over in 7 rounds.
+  - Quarion pulls through on death saves (2, 20).
+  - Something large drops from the canopy: 2 giant spiders.
+  - The fight is over in 4 rounds. Badly hurt: Cade (1/10 hp).
   - At last, the heart of the place.
   - The brood-mother's nest: 4 giant spiders.
-  - Rowena looses a burning hands spell into 3 of them for 11 damage.
-  - The giant spider hits Pip for 11. Pip goes down.
-  - Natural 20! Osric hits the giant spider for 19 and it goes down.
-  - The giant spider hits Osric for 11. Osric goes down.
-  - The fight is over in 7 rounds.
-  - Pip pulls through on death saves (18, 4, 19, 10).
-  - Osric fails their death saves (1, 12, 17, 9) and dies.
-  - Spider Hollow is cleared. The hoard holds 89 gold.
+  - The giant spider hits Quarion for 8. Quarion goes down.
+  - The giant spider crits Bimpnottin for 15. Bimpnottin goes down.
+  - Bloodied and outmatched, the party breaks off and runs.
+  - Quarion pulls through on death saves (14, 9, 16, 14).
+  - Bimpnottin fails their death saves (4, 12, 6, 13, 4) and dies.
 
-Chronicle 7: the Ashen Compasses at Ogre's Ford (days 33 to 36, wiped)
-  Pip Greenbottle, a halfling fighter (level 3)
-  Eldon Thorngage, a halfling rogue (level 3)
-  Rowena Ashford, a human wizard (level 3)
-  - Pip, Eldon and Rowena set out for Ogre's Ford.
-  - Goblin toll-takers serving the ogre: 5 goblins.
-  - Rowena looses a burning hands spell into 3 of them for 14 damage, dropping 3.
-  - The fight is over in 2 rounds.
-  - A heap of travelers' packs. Nobody notices the lid breathing (d20 1, 7 vs DC 13) until it bites. It's a mimic!
-  - The mimic hits Rowena for 19. Rowena goes down.
-  - The mimic hits Pip for 11. Pip goes down.
-  - The fight is over in 7 rounds.
-  - Pip pulls through on death saves (2, 10, 20).
-  - Rowena fails their death saves (8, 16, 1) and dies.
-  - Inside the mimic's gullet: 26 gold.
-  - The river runs high and cold, but the party pushes through unscathed.
-  - At last, the heart of the place.
-  - The ogre, picking its teeth with a femur: an ogre.
-  - The ogre hits Pip for 18. Pip goes down.
-  - The ogre hits Eldon for 16. Eldon goes down.
-  - No one comes back from Ogre's Ford.
-
-Chronicle 8: the Gallows Hounds at Ogre's Ford (days 68 to 71, cleared)
-  Brannoc Granitejaw, a dwarf rogue (level 3)
-  Marten Hollow, a human barbarian (level 2)
-  Rosie Underbough, a halfling ranger (level 1)
-  Korrin Stonebeard, a dwarf fighter (level 1)
-  - Brannoc, Marten, Rosie and Korrin set out for Ogre's Ford.
-  - The river runs high and cold. It costs them: Brannoc (3).
+Chronicle 16: the Ashen Pilgrims at Ogre's Ford (days 112 to 115, cleared)
+  Quarion Siannodel, an elf cleric (level 3)
+  Rowena Marsh, a human fighter (level 2)
+  Valanthe Holimion, an elf cleric (level 3)
+  - Quarion, Rowena and Valanthe set out for Ogre's Ford.
+  - The river runs high and cold. It costs them: Rowena (6).
   - Goblin toll-takers serving the ogre: 4 goblins.
-  - Natural 20! Brannoc hits the goblin for 13 and it goes down.
-  - The fight is over in 4 rounds.
-  - A heap of travelers' packs: 25 gold.
+  - Natural 20! Rowena hits the goblin for 13 and it goes down.
+  - Natural 20! Quarion hits the goblin for 10 and it goes down.
+  - The fight is over in 3 rounds.
+  - A heap of travelers' packs: 30 gold.
   - At last, the heart of the place.
   - The ogre, picking its teeth with a femur: an ogre.
-  - Natural 20! Brannoc hits the ogre for 16.
-  - Marten lands the killing blow on the ogre (d20 10+5, 14 damage).
-  - The fight is over in 3 rounds. Badly hurt: Rosie (2/11 hp).
-  - Ogre's Ford is cleared. The hoard holds 176 gold.
+  - Natural 20! Quarion hits the ogre for 5 and it goes down.
+  - The fight is over in 7 rounds.
+  - Ogre's Ford is cleared. The hoard holds 148 gold.
 
-Chronicle 9: the Iron Pilgrims at the Drowned Temple (days 102 to 109, cleared)
-  Thora Deepdelver, a dwarf fighter (level 3)
-  Rowena Vane, a human rogue (level 2)
-  Werra Stonebeard, a dwarf rogue (level 3)
-  Rosie Underbough, a halfling ranger (level 1)
-  - Thora, Rowena, Werra and Rosie set out for the Drowned Temple.
-  - Ghouls feeding in the crypt: 3 ghouls.
-  - The fight is over in 5 rounds.
-  - A sealed reliquary that answers in riddles. Rowena handles it (d20 15, 20 vs DC 15): 61 gold.
-  - Flooded halls where the air runs out. It costs them: Thora (7), Rosie (2).
-  - An altar heaped with offerings: 90 gold.
-  - Cultists chanting in the nave: 5 cultists.
-  - Natural 20! Rosie hits the cultist for 16 and it goes down.
-  - The cultist hits Rowena for 7. Rowena goes down.
-  - The fight is over in 4 rounds. Badly hurt: Rosie (3/11 hp).
-  - Rowena fails their death saves (14, 5, 17, 5, 8) and dies.
-  - At last, the heart of the place.
-  - The drowned priest beneath the bell: a drowned priest, with 1 more at its side.
-  - Natural 20! Rosie hits the drowned priest for 16 and it goes down.
-  - The ghoul hits Rosie for 5. Rosie goes down.
-  - The fight is over in 4 rounds.
-  - Rosie fails their death saves (1, 14, 13, 6) and dies.
-  - The Drowned Temple is cleared. The hoard holds 271 gold and a cloak of protection, which Thora claims.
+Chronicle 17: the Ashen Pilgrims at the Old Watchtower (days 115 to 120, wiped)
+  Quarion Siannodel, an elf cleric (level 3)
+  Rowena Marsh, a human fighter (level 2)
+  Valanthe Holimion, an elf cleric (level 3)
+  - Quarion, Rowena and Valanthe set out for the Old Watchtower.
+  - Bandit lookouts on the broken wall: 5 bandits.
+  - Natural 20! Quarion hits the bandit for 10.
+  - Valanthe rolls a natural 1 and nearly loses the holy symbol.
+  - The fight is over in 8 rounds.
+  - A bandit deserter who wants out. Valanthe handles it (d20 9, 15 vs DC 14): 22 gold and a safer path.
+  - The toll-chest in the guardroom: 74 gold.
+  - The bandits' barracks: 5 bandits.
+  - Natural 20! Rowena hits the bandit for 15 and it goes down.
+  - Rowena rolls a natural 1 and nearly loses the weapon.
+  - The bandit hits Valanthe for 7. Valanthe goes down.
+  - Quarion rolls a natural 1 and nearly loses the holy symbol.
+  - The bandit hits Rowena for 6. Rowena goes down.
+  - The bandit hits Quarion for 7. Quarion goes down.
+  - No one comes back from the Old Watchtower.
 

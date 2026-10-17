@@ -191,7 +191,9 @@ function rent(town: Town): void {
   }
 }
 
+/** Heroes lodge at the tavern between expeditions, even when married to a townsperson. */
 export function moveIn(town: Town, a: Agent, home: Building): void {
+  if (a.hero) return;
   if (a.homeId !== null) remove(town.building(a.homeId).residents, a.id);
   a.homeId = home.id;
   home.residents.push(a.id);
