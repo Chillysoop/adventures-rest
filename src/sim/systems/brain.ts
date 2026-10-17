@@ -13,7 +13,7 @@ export const ALE_MARKUP = 2.0;
 
 export function hourly(town: Town): void {
   for (const a of town.agents) {
-    if (a.departed) continue;
+    if (a.departed || a.isAway) continue;
     updateNeeds(a);
     execute(town, a, choose(town, a));
     sampleMood(a);
@@ -176,14 +176,15 @@ function sampleMood(a: Agent): void {
     0.45 * a.hunger -
     0.25 * a.fatigue -
     0.25 * a.loneliness -
-    (a.homeId === null ? 20 : 0) -
-    (a.jobId === null && a.ambition !== 'OpenBusiness' ? 10 : 0);
+    (a.homeId === null && !a.hero?.lodging ? 20 : 0) -
+    (a.jobId === null && a.ambition !== 'OpenBusiness' && !a.hero ? 10 : 0);
   a.moodToday += Math.max(0, Math.min(100, mood));
   a.moodSamples++;
 }
 
 export function daily(town: Town): void {
   for (const a of town.residents) {
+    if (a.isAway) continue;
     a.lastDayMood = a.moodSamples > 0 ? a.moodToday / a.moodSamples : a.lastDayMood;
     a.moodToday = 0;
     a.moodSamples = 0;

@@ -31,7 +31,7 @@ function keepZoned(town: Town, zone: Zone, minVacant: number, maxDist: number, p
 }
 
 function commissionHousing(town: Town): void {
-  const homeless = town.residents.filter((a) => a.homeId === null).length;
+  const homeless = town.workers.filter((a) => a.homeId === null).length;
   const building = town.buildings.some((b) => b.isSite && b.ownerId === null && b.def.housing > 0);
   if (homeless < 5 || building) return;
 

@@ -1,4 +1,5 @@
 import type { Agent } from './agent.ts';
+import type { Bounty, Chronicle, Party, SiteState } from './systems/quests.ts';
 import { type BuildingDef, type Content, GOODS, type Good, type Zone, isBusiness } from './content.ts';
 import { type Importance, Ledger, type LedgerCategory, type LedgerEntry } from './ledger.ts';
 import { Rng } from './rng.ts';
@@ -153,6 +154,10 @@ export class Town {
   readonly lots: Lot[] = [];
   readonly buildings: Building[] = [];
   readonly agents: Agent[] = [];
+  readonly sites: SiteState[] = [];
+  readonly bounties: Bounty[] = [];
+  readonly parties: Party[] = [];
+  readonly chronicles: Chronicle[] = [];
   private nextAgentId = 1;
 
   readonly content: Content;
@@ -173,6 +178,14 @@ export class Town {
   get residents(): Agent[] {
     return this.agents.filter((a) => !a.departed);
   }
+  /** Townsfolk who work and rent (heroes live by bounties instead). */
+  get workers(): Agent[] {
+    return this.agents.filter((a) => !a.departed && a.hero === null);
+  }
+  get heroes(): Agent[] {
+    return this.agents.filter((a) => !a.departed && a.hero !== null);
+  }
+
   get population(): number {
     let n = 0;
     for (const a of this.agents) if (!a.departed) n++;

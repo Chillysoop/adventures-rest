@@ -185,7 +185,7 @@ export function moveIn(town: Town, a: Agent, home: Building): void {
 }
 
 function housingMarket(town: Town): void {
-  for (const a of town.residents) {
+  for (const a of town.workers) {
     if (a.homeId !== null) continue;
     const spouse = a.spouseId !== null ? town.agent(a.spouseId) : null;
     const beds = spouse && spouse.homeId === null ? 2 : 1;
@@ -215,7 +215,7 @@ function jobMarket(town: Town): void {
     }
   }
 
-  for (const a of town.residents) {
+  for (const a of town.workers) {
     if (a.jobId !== null) continue;
     // Owners staff their own businesses first.
     let job = town.buildings.find((b) => b.ownerId === a.id && b.complete && isBusiness(b.def) && b.openJobs > 0);
