@@ -202,6 +202,8 @@ public static class Population
             if (b.Def.Jobs > 0) Economy.PutUpForSale(town, b);
         }
         foreach (var lot in town.Lots) if (lot.OwnerId == a.Id) lot.OwnerId = null;
+        // Whoever leaves, by the road or the grave, leaves their factions too.
+        foreach (var f in town.Factions) Remove(f.Members, a.Id);
     }
 
     public static void Remove(List<int> list, int id)

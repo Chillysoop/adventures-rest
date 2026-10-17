@@ -228,7 +228,7 @@ public static class Economy
     /// <summary>Heroes lodge at the tavern between expeditions, even when married to a townsperson.</summary>
     public static void MoveIn(Town town, Agent a, Building home)
     {
-        if (a.Hero != null) return;
+        if (a.Hero != null || a.Departed) return;
         if (a.HomeId != null) Population.Remove(town.Building(a.HomeId.Value).Residents, a.Id);
         a.HomeId = home.Id;
         home.Residents.Add(a.Id);
@@ -240,6 +240,8 @@ public static class Economy
         {
             if (a.HomeId != null) continue;
             var spouse = a.SpouseId != null ? town.Agent(a.SpouseId.Value) : null;
+            // A spouse who left town does not come back for the new house.
+            if (spouse?.Departed == true) spouse = null;
             int beds = spouse != null && spouse.HomeId == null ? 2 : 1;
             if (spouse?.HomeId != null && town.Building(spouse.HomeId.Value).OpenBeds > 0)
             {
@@ -266,6 +268,18 @@ public static class Economy
         foreach (var site in town.Buildings)
         {
             if (!site.IsSite || site.LaborBudget >= Brain.ConstructionWage) continue;
+            // Weak laborers fall behind the estimate; an owner who can afford it pays for the last hours.
+            if (site.OwnerId is int oid)
+            {
+                var owner = town.Agent(oid);
+                double rest = Math.Ceiling(site.Def.BuildHours - site.BuildProgress) * Brain.ConstructionWage;
+                if (owner.Gold >= rest + 20)
+                {
+                    owner.Gold -= rest;
+                    site.LaborBudget += rest;
+                    continue;
+                }
+            }
             foreach (int wid in site.Workers.Where(w => w != site.OwnerId).ToList())
             {
                 town.Agent(wid).JobId = null;

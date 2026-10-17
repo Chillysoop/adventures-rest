@@ -144,16 +144,20 @@ public static class Knowledge
     }
 
     /// <summary>A recalled party walks home without setting foot in the site; the bounty goes back on the board.</summary>
-    internal static void ComeHome(Town town, Party party, SiteState site, Bounty bounty, List<Agent> members)
+    internal static void ComeHome(Town town, Party party, SiteState site, Bounty? bounty, List<Agent> members)
     {
         foreach (var m in members) m.Hero!.AwayUntil = null;
         site.Attempts = Math.Max(0, site.Attempts - 1);
-        bounty.Status = BountyStatus.Open;
-        bounty.PartyId = null;
+        if (bounty != null)
+        {
+            bounty.Status = BountyStatus.Open;
+            bounty.PartyId = null;
+        }
+        if (party.PleaId is int pid) World.Reopen(town.Pleas[pid - 1]);
         town.Log(
             LedgerCategory.Quest,
             Importance.Notable,
-            $"The {party.Name} walk back into town, called home from the road to {site.Def.Name}. The bounty is posted again.",
+            $"The {party.Name} walk back into town, called home from the road to {site.Def.Name}." + (bounty != null ? " The bounty is posted again." : ""),
             members.Select(m => m.Id).ToList());
     }
 }

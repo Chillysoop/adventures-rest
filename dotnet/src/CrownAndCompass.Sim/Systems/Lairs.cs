@@ -55,6 +55,8 @@ public static class Lairs
             if (s.QuietUntil != null && town.Tick < s.QuietUntil) continue;
             var kind = r.Kinds.GetValueOrDefault(s.Def.Kind);
             s.Strength = Math.Min(r.MaxStrength, s.Strength + (kind?.Growth ?? 0.5));
+            // The far wilds trouble their own country (World's pleas), not the town.
+            if (s.Generated && s.Def.Distance > 1) continue;
             if (s.Strength >= r.ActAt && town.Tick >= s.NextActTick) Act(town, s, autoMayor);
         }
         Thralls(town);
@@ -271,7 +273,7 @@ public static class Lairs
 
     // Resettlement -------------------------------------------------------------------------------
 
-    private static string KindOf(string type, string was) => type switch
+    internal static string KindOf(string type, string was) => type switch
     {
         "undead" => "undead",
         "humanoid" => was == "rivals" ? "rivals" : "tribe",
@@ -286,8 +288,10 @@ public static class Lairs
         var r = Rules(town);
         var rng = town.Rng;
         var c = town.Content;
-        int tier = Math.Min(3, s.Def.Tier + (rng.Chance(r.WorseChance) ? 1 : 0));
-        double[] cr = r.BossCr.Length > tier ? r.BossCr[tier] : [1, 2];
+        int tier = s.Def.Tier + (rng.Chance(r.WorseChance) ? 1 : 0);
+        // Hand-written sites stay within the slice's three tiers; the generated wilds keep their level band.
+        if (!s.Generated) tier = Math.Min(3, tier);
+        double[] cr = r.BossCr.Length > tier ? r.BossCr[tier] : [Math.Max(0.5, tier * 0.75), Math.Max(1, tier)];
         var leaders = c.Library.Monsters
             .Where(lm => lm.Damage != null && lm.Cr >= cr[0] && lm.Cr <= cr[^1] && lm.Habitats.Any(s.Def.Habitats.Contains))
             .OrderBy(lm => lm.Id, StringComparer.Ordinal)

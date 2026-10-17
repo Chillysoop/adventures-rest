@@ -99,6 +99,9 @@ public static class Expedition
             Party = heroes.Select(agent => new Combatant(agent)).ToList();
         }
 
+        /// <summary>Traps and hazards hit harder in sites built for higher levels: one more set of dice every four levels.</summary>
+        private int Scale => _site == null ? 1 : 1 + (Math.Max(1, _site.Tier) - 1) / 4;
+
         public List<Combatant> Standing => Party.Where(c => !c.Down && !c.Dead).ToList();
 
         public void Log(string s) => Lines.Add(s);
@@ -186,7 +189,8 @@ public static class Expedition
                     else
                     {
                         var victim = _rng.Pick(Standing);
-                        int dmg = _rng.Roll(1, e.DamageDie) + _rng.Roll(1, e.DamageDie);
+                        int dmg = 0;
+                        for (int k = 0; k < Scale; k++) dmg += _rng.Roll(1, e.DamageDie) + _rng.Roll(1, e.DamageDie);
                         Hurt(victim, dmg);
                         Log($"{Cap(e.Text)}: {who} misses it (d20 {check.Roll}, {check.Total} vs DC {e.Dc}) and {victim.Agent.GivenName} takes {dmg} damage" +
                             (victim.Down ? " and drops." : "."));
@@ -202,7 +206,8 @@ public static class Expedition
                         int roll = _rng.D20();
                         if (roll + SkillBonus(c, SkillKind.Hazard) < e.Dc)
                         {
-                            int dmg = _rng.Roll(1, e.DamageDie);
+                            int dmg = 0;
+                            for (int k = 0; k < Scale; k++) dmg += _rng.Roll(1, e.DamageDie);
                             Hurt(c, dmg);
                             hurt.Add($"{c.Agent.GivenName} ({dmg})");
                         }
@@ -543,7 +548,9 @@ public static class Expedition
             int loot = rng.Range(site.Loot[0], site.Loot[1] + 1);
             run.Gold += loot;
             string line = $"{Cap(site.Name)} is cleared. The hoard holds {loot} gold";
-            var pool = content.LootItems.Where(it => it.Tier >= site.Tier && it.Tier <= site.Tier + 1).ToList();
+            // Item tiers stop at 5 (legendary); sites for higher levels draw from the top of the list.
+            int itemTier = Math.Min(site.Tier, 5);
+            var pool = content.LootItems.Where(it => it.Tier >= itemTier && it.Tier <= itemTier + 1).ToList();
             if (pool.Count > 0 && rng.Chance(content.Loot.ItemChancePerTier * site.Tier))
             {
                 var item = rng.Pick(pool);

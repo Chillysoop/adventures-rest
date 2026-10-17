@@ -80,7 +80,8 @@ public static class Threat
         double g = e.BaseGrowth + e.GrowthPerDay * town.Day + e.GrowthPerResident * town.Population;
         foreach (var s in town.Sites)
         {
-            if (s.Cleared) continue;
+            // Only the country near town feeds the warband; the far wilds keep their own troubles.
+            if (s.Cleared || s.Generated) continue;
             if (s.Def.Id == e.Outpost.Id) g += e.OutpostGrowth;
             else g += s.Def.Tier >= 3 ? e.GrowthPerTier3Site : e.GrowthPerSite;
         }
@@ -88,11 +89,12 @@ public static class Threat
     }
 
     /// <summary>The town's strength at the walls: watch, heroes at home, a militia of townsfolk, and fortifications.</summary>
-    public static double Defense(Town town)
+    /// <param name="allies">Count warriors the town's allies have pledged; the warlord does not see them coming.</param>
+    public static double Defense(Town town, bool allies = true)
     {
         var d = town.Content.Enemy.Defense;
         int heroLevels = town.Heroes.Where(a => !a.IsAway).Sum(a => a.Hero!.Level);
-        double baseDefense = town.Watch * d.Watchman + heroLevels * d.HeroLevel + town.Workers.Count * d.MilitiaPerWorker + Faith.Defense(town) + Factions.Defense(town);
+        double baseDefense = town.Watch * d.Watchman + heroLevels * d.HeroLevel + town.Workers.Count * d.MilitiaPerWorker + Faith.Defense(town) + Factions.Defense(town) + (allies ? World.AllyTroops(town) : 0);
         return baseDefense * Fortification(town);
     }
 
@@ -151,7 +153,7 @@ public static class Threat
             en.NextRaidTick = town.Tick + town.Rng.Range(2, 4) * SimTime.HoursPerDay;
             town.Log(LedgerCategory.War, Importance.Major, $"{Cap(e.Name)} has grown bold. Its raiders will come for the outlying farms next.");
         }
-        else if (en.Stage == ThreatStage.Raids && en.Strength >= e.Stages.March && en.Strength >= Defense(town) * e.MarchConfidence)
+        else if (en.Stage == ThreatStage.Raids && en.Strength >= e.Stages.March && en.Strength >= Defense(town, allies: false) * e.MarchConfidence)
         {
             Next(ThreatStage.Marching);
             en.ArrivalTick = town.Tick + e.MarchDays * SimTime.HoursPerDay;

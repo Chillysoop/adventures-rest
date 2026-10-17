@@ -44,12 +44,16 @@ public class ShrinesTests
         Assert.Equal(temple.Id, b.FunderId);
         // Nobody takes it in time: the coffers get it back.
         double before = temple.Cash;
+        int posted = t.Bounties.Count;
         while (b.Status == BountyStatus.Open)
         {
             before = temple.Cash;
+            posted = t.Bounties.Count;
             sim.RunDays(1);
         }
-        if (b.Status == BountyStatus.Expired) Assert.True(temple.Cash - before > 100);
+        // The same morning the temple may already put the money on its next crusade.
+        double reposted = t.Bounties.Skip(posted).Where(x => x.FunderId == temple.Id).Sum(x => x.Reward);
+        if (b.Status == BountyStatus.Expired) Assert.True(temple.Cash + reposted - before > 100);
     }
 
     [Fact]

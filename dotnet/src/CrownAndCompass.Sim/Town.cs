@@ -154,6 +154,7 @@ public static class TreasuryAccount
     public const string Scrying = "Scrying";
     public const string Scouts = "Scouts";
     public const string Sight = "Sight works";
+    public const string Envoys = "Envoys";
     public const string Temple = "Temple";
     public const string Outposts = "Outposts";
     public const string Tribute = "Tribute";
@@ -173,6 +174,7 @@ public sealed class Town
     public const int Grid = 16;
 
     public string Name { get; } = "Briarford";
+    public int Seed { get; }
     public Rng Rng { get; }
     public Ledger Ledger { get; } = new();
     public Market Market { get; } = new();
@@ -203,6 +205,17 @@ public sealed class Town
     public List<Chronicle> Chronicles { get; } = [];
     public List<Seat> Seats { get; } = [];
     public List<Motion> Motions { get; } = [];
+
+    /// <summary>The themed regions of the wilds, nearest ring first (<see cref="World"/>).</summary>
+    public List<Region> Regions { get; } = [];
+
+    /// <summary>Villages, holds and enclaves out in the wilds, by id.</summary>
+    public List<Settlement> Settlements { get; } = [];
+
+    /// <summary>Settlements' requests for help, oldest first.</summary>
+    public List<Plea> Pleas { get; } = [];
+
+    public int LastEnvoyDay { get; set; } = -99;
 
     /// <summary>Scryings the mayor has commissioned, oldest first.</summary>
     public List<Scrying> Scryings { get; } = [];
@@ -258,6 +271,7 @@ public sealed class Town
     public Town(Content content, int seed)
     {
         Content = content;
+        Seed = seed;
         Rng = new Rng(seed);
         TaxRate = content.Rules.TaxRate;
         for (int y = 0; y < Grid; y++)

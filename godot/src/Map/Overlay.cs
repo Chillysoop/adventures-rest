@@ -46,15 +46,24 @@ public partial class Overlay(MapView map) : Control
     {
         var fog = map.Fog;
         bool far = map.Distance > 260;
-        foreach (var site in town.Sites)
+        var labels = new List<Rect2>();
+        // Seen places claim their label space first, then those with a bounty, then rumours; a label that
+        // would overlap one already drawn is left off (the disc stays), so crowded regions stay readable.
+        var order = town.Sites
+            .Where(s => s.Known != SiteKnowledge.Unheard && map.Geo.Pins.ContainsKey(s.Def.Id))
+            .Select(s => (Site: s, Sight: fog.SightOf(s.Def.Id, map.Geo.Pins[s.Def.Id])))
+            .OrderBy(x => x.Sight == Sight.Live ? 0 : x.Sight == Sight.Scouted ? 1 : 2)
+            .ThenBy(x => town.Bounties.Any(b => b.SiteId == x.Site.Def.Id && b.Status is BountyStatus.Open or BountyStatus.Taken) ? 0 : 1)
+            .ThenBy(x => x.Site.Def.Id, StringComparer.Ordinal)
+            .Select(x => x.Site)
+            .ToList();
+        foreach (var site in order)
         {
-            // Nobody has so much as heard of it: nothing on the map.
-            if (site.Known == SiteKnowledge.Unheard) continue;
-            if (!map.Geo.Pins.TryGetValue(site.Def.Id, out var pin)) continue;
+            var pin = map.Geo.Pins[site.Def.Id];
             if (!map.OnScreen(map.Gen.At(pin, 3.5f), out var at)) continue;
             var sight = fog.SightOf(site.Def.Id, pin);
             var bounty = town.Bounties.FirstOrDefault(b => b.SiteId == site.Def.Id && b.Status is BountyStatus.Open or BountyStatus.Taken);
-            float r = 13 + site.Def.Tier * 1.5f;
+            float r = 13 + Math.Min(site.Def.Tier, 5) * 1.5f;
             int size = 14;
             if (sight == Sight.Rumoured)
             {
@@ -77,8 +86,9 @@ public partial class Overlay(MapView map) : Control
                     DrawColoredPolygon([at + new Vector2(1, -8), at + new Vector2(9, -5), at + new Vector2(1, -2)], glyph);
                 }
                 else Glyph(at, TownView.LandmarkKind(town, site.Def), glyph);
-                for (int i = 0; i < site.Def.Tier; i++)
-                    DrawCircle(at + new Vector2(-(site.Def.Tier - 1) * 3.5f + i * 7, r + 5), 2.4f, Palette.Gold);
+                int tier = Math.Min(site.Def.Tier, 5);
+                for (int i = 0; i < tier; i++)
+                    DrawCircle(at + new Vector2(-(tier - 1) * 3.5f + i * 7, r + 5), 2.4f, Palette.Gold);
                 switch (Watch.LiveOf(town, site))
                 {
                     case LiveSource.Scrying:
@@ -102,7 +112,12 @@ public partial class Overlay(MapView map) : Control
                     DrawColoredPolygon([m + new Vector2(0, -7), m + new Vector2(5, 0), m + new Vector2(0, 7), m + new Vector2(-5, 0)], new Color("dfe8ee"));
                 }
             }
+            if (bounty != null) Text(at - new Vector2(0, r + 7), $"{Math.Round(bounty.Reward)}g", Ui.Bold, 14, Ui.Gold);
             string name = Ui.Cap(site.Def.Name.StartsWith("the ") ? site.Def.Name[4..] : site.Def.Name);
+            float nw = Ui.Display.GetStringSize(name, HorizontalAlignment.Left, -1, size).X;
+            var box = new Rect2(at.X - nw / 2 - 4, at.Y + r + 4, nw + 8, size * 2 + 8);
+            if (labels.Any(l => l.Intersects(box))) continue;
+            labels.Add(box);
             Text(at + new Vector2(0, r + size + 6), name, Ui.Display, size, sight == Sight.Rumoured ? new Color(Cream, 0.75f) : Cream);
             string sub = sight switch
             {
@@ -119,7 +134,6 @@ public partial class Overlay(MapView map) : Control
                 _ => site.Believed != "" ? $"Rumoured: {site.Believed}" : "Rumoured",
             };
             if (!far || sight != Sight.Rumoured) Text(at + new Vector2(0, r + size * 2 + 7), sub, Ui.Medium, size - 3, new Color(Cream, 0.68f), 3);
-            if (bounty != null) Text(at - new Vector2(0, r + 7), $"{Math.Round(bounty.Reward)}g", Ui.Bold, 14, Ui.Gold);
         }
     }
 

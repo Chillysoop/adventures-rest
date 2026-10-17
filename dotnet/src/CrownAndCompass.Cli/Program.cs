@@ -1,5 +1,5 @@
 // Headless runner: simulate a town and print its Ledger, so we can judge whether the city feels alive.
-// Usage: dotnet run --project dotnet/src/CrownAndCompass.Cli -- [--seed N] [--days N] [--all] [--stats] [--people N] [--chronicles]
+// Usage: dotnet run --project dotnet/src/CrownAndCompass.Cli -- [--seed N] [--days N] [--all] [--stats] [--people N] [--chronicles] [--world]
 // Prints exactly what `npm run sim` prints for the same arguments.
 
 using System.Globalization;
@@ -13,6 +13,7 @@ bool all = false;
 bool stats = false;
 int people = 3;
 bool chronicles = false;
+bool world = false;
 
 static int Number(string[] args, ref int i) => i + 1 < args.Length ? int.Parse(args[++i], CultureInfo.InvariantCulture) : 0;
 
@@ -34,6 +35,9 @@ for (int i = 0; i < args.Length; i++)
             break;
         case "--chronicles":
             chronicles = true;
+            break;
+        case "--world":
+            world = true;
             break;
         case "--people":
             people = Number(args, ref i);
@@ -103,6 +107,28 @@ foreach (var a in notable)
     if (friends.Count > 0) Print($"  Friends: {string.Join(", ", friends)}");
     if (enemies.Count > 0) Print($"  Grudges: {string.Join(", ", enemies)}");
     foreach (var e in town.Ledger.About(a.Id).Where(e => e.Id > 1)) Print($"    {e.Format()}");
+    Print();
+}
+
+if (world)
+{
+    Print("=== The wilds ===");
+    foreach (var r in town.Regions)
+    {
+        string seen = r.Visited ? "visited" : r.Known ? "rumored" : "unknown";
+        Print($"{r.Name} ({r.Theme.Name}, ring {r.Ring + 1}, {r.Days} days out at {Js.Str(r.Bearing)} degrees, levels {r.Levels[0]}-{r.Levels[^1]}, {seen})");
+        if (r.SettlementId is int sid)
+        {
+            var st = town.Settlements[sid];
+            Print($"  {st.Name}, {(st.Kin.Kind[0] is 'a' or 'e' or 'i' or 'o' or 'u' ? "an" : "a")} {st.Kin.Kind} of {st.Kin.People}: standing {Js.Str(Js.Round(st.Standing))}{(st.Allied ? ", allied" : "")}");
+        }
+        foreach (var id in r.SiteIds)
+        {
+            var site = Quests.Site(town, id)!;
+            var boss = town.Content.Monster(site.Def.Boss.Monster);
+            Print($"  {site.Def.Name}: level {site.Def.Tier}, boss {boss.Name}{(site.Cleared ? ", cleared" : "")}");
+        }
+    }
     Print();
 }
 
