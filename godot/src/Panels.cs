@@ -145,7 +145,7 @@ public partial class Main
                 string where = party.RecalledTick != null ? "Called home" : $"Gone {Ui.Days(gone)} to {SiteLink(site.Def)}";
                 string slotNote = slots == 0
                     ? Ui.C(Ui.Ink2, Knowledge.Slots(t, party) == 0 ? "No caster with them: no sending stone." : "No spell slots left for a sending.")
-                    : Ui.C(Ui.Ink2, $"{slots} spell {(slots == 1 ? "slot" : "slots")} for sendings. Each one costs a slot{(party.Members.Any(id => t.Agent(id).Hero!.Cls.Healer) ? ", and a cleric's slot is a heal they won't have in the dungeon" : "")}.");
+                    : Ui.C(Ui.Ink2, $"{slots} spell {(slots == 1 ? "slot" : "slots")} for sendings. Each one costs a slot{(party.Members.Any(id => t.Agent(id).Hero!.Cls.Healer) ? ", and a healer's slot is a heal they won't have in the dungeon" : "")}.");
                 int id = party.Id;
                 p.Card($"[b]The {Ui.Esc(party.Name)}[/b]  {Tag($"due back day {due}", Ui.Gold)}\n{where} · {members}\n[font_size=12]{slotNote}[/font_size]");
                 if (Knowledge.Slots(t, party) > 0)
@@ -155,8 +155,12 @@ public partial class Main
             }
         }
 
+        RenderEyes(p, t);
+
         p.Heading("Bounty board");
         var scryer = Knowledge.Scryers(t).FirstOrDefault();
+        bool freeScry = Watch.FreeScryingsLeft(t) > 0;
+        bool canScout = Watch.Watchers(t).Count > 0;
         foreach (var s in t.Sites)
         {
             var live = t.Bounties.FirstOrDefault(b => b.SiteId == s.Def.Id && b.Status is BountyStatus.Open or BountyStatus.Taken);
@@ -173,18 +177,24 @@ public partial class Main
                 string sid = s.Def.Id;
                 buttons.Add(($"Post {reward}g", t.Treasury >= reward, true, () => Act(() => _sim.PostBounty(sid, reward))));
             }
-            if (!s.Cleared && Knowledge.ActiveScrying(t, s.Def.Id) == null)
+            if (!s.Cleared && Watch.LiveOf(t, s) == null)
             {
                 double cost = Knowledge.ScryCost(t, s.Def);
                 string sid = s.Def.Id;
-                buttons.Add(($"Scry {Math.Round(cost)}g", scryer != null && t.Treasury >= cost, false, () => Act(() => _sim.CommissionScrying(sid))));
+                buttons.Add((freeScry ? "Scry free" : $"Scry {Math.Round(cost)}g", freeScry || scryer != null && t.Treasury >= cost, false, () => Act(() => _sim.CommissionScrying(sid))));
+                if (Watch.ScoutAt(t, sid) == null) buttons.Add(("Scout", canScout, false, () => Act(() => _sim.PostScout(sid))));
             }
             string tier = new string('◆', s.Def.Tier) + new string('◇', 3 - s.Def.Tier);
             p.Row($"{SiteLink(s.Def)} {Ui.C(Ui.Gold, $"[font_size=11]{tier}[/font_size]")}\n{status}", buttons.ToArray());
         }
-        p.Note(scryer != null
-            ? $"Scrying: {scryer.Name} the {scryer.Hero!.Cls.Name} will show you a site live for {t.Content.Knowledge.ScryHours} hours."
-            : $"Scrying needs a wizard or cleric of level {t.Content.Knowledge.ScryMinLevel} or more in town.");
+        p.Note(freeScry
+            ? $"Scrying: the Scrying Pool will show one site live for {t.Content.Knowledge.ScryHours} hours today, free."
+            : scryer != null
+                ? $"Scrying: {scryer.Name} the {scryer.Hero!.Cls.Name} will show you a site live for {t.Content.Knowledge.ScryHours} hours."
+                : $"Scrying needs a {ScryClasses(t)} of level {t.Content.Knowledge.ScryMinLevel} or more in town.");
+        p.Note(canScout
+            ? $"Scouting: {Watch.Watchers(t)[0].Name} the {Watch.Watchers(t)[0].Hero!.Cls.Name} will watch a site from cover for up to {Ui.Days(t.Content.Knowledge.Scouts.WatchDays)}, {t.Content.Knowledge.Scouts.WagePerDay}g a day."
+            : "Scouting needs a ranger, rogue, monk or cartographer in town and rested.");
 
         var books = t.AccountsYesterday.Where(kv => Math.Abs(kv.Value) >= 0.5).OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key, StringComparer.Ordinal).ToList();
         if (books.Count > 0)
@@ -194,6 +204,60 @@ public partial class Main
             p.Card(string.Join("\n", books.Select(kv => $"{Ui.Esc(kv.Key)}   {Ui.C(kv.Value >= 0 ? Ui.Good : Ui.Bad, $"[b]{Sign(kv.Value)}[/b]")}")) + $"\n[b]Net[/b]   {Ui.C(net >= 0 ? Ui.Good : Ui.Bad, $"[b]{Sign(net)}[/b]")}");
         }
         p.Commit();
+    }
+
+    private static string ScryClasses(Town t) =>
+        string.Join(" or ", t.Content.Library.Spell(t.Content.Knowledge.ScrySpell)?.Classes ?? []);
+
+    /// <summary>Scouts in the field, mirrors at sites, and the works that see for the town.</summary>
+    private void RenderEyes(Pane p, Town t)
+    {
+        var scouts = t.Scouts.Where(x => x.Out).ToList();
+        var mirrors = t.Mirrors.Where(m => m.Intact).ToList();
+        p.Heading("Eyes in the wilds");
+        foreach (var sc in scouts)
+        {
+            var hero = t.Agent(sc.HeroId);
+            var site = Quests.Site(t, sc.SiteId)!;
+            string state = sc.Mirror
+                ? (t.Tick < sc.ArriveTick ? $"carrying a mirror to {SiteLink(site.Def)}" : $"back from hiding a mirror at {SiteLink(site.Def)}")
+                : t.Tick < sc.ArriveTick ? $"on the way to {SiteLink(site.Def)}"
+                : t.Tick < sc.LeaveTick ? $"watching {SiteLink(site.Def)}, rations for {Ui.Days((int)Math.Ceiling((sc.LeaveTick - t.Tick) / 24.0))}"
+                : $"coming home from {SiteLink(site.Def)}";
+            int id = sc.Id;
+            bool canRecall = !sc.Mirror && t.Tick < sc.LeaveTick;
+            p.Row($"{AgentLink(hero)} the {Ui.Esc(hero.Hero!.Cls.Name)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{state}[/font_size]")}",
+                canRecall ? [("Call home", true, false, () => Act(() => _sim.RecallScout(id)))] : []);
+        }
+        foreach (var m in mirrors)
+        {
+            var site = Quests.Site(t, m.SiteId)!;
+            p.Row($"Mirror at {SiteLink(site.Def)}  {Tag("live", Ui.Good)}\n{Ui.C(Ui.Ink2, $"[font_size=12]Hidden on day {SimTime.DayOf(m.PlacedTick)}. It shows the site until someone there finds it.[/font_size]")}");
+        }
+        foreach (var w in t.Content.Knowledge.Works)
+        {
+            var def = t.Content.Building(w.Building);
+            var relic = t.Content.Library.Item(w.Relic);
+            var b = Watch.WorkBuilding(t, w);
+            string what = w.Reach > 0
+                ? $"Shows every site within {Ui.Days(w.Reach)} of town live, always."
+                : $"{(w.Scryings == 1 ? "One free scrying" : $"{w.Scryings} free scryings")} a day.";
+            string head = $"[b]{Ui.Esc(def.Name)}[/b]{(relic != null ? Ui.C(Ui.Ink2, $" · houses {Ui.Esc(Library.A(relic.Name))}") : "")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{what}[/font_size]")}";
+            if (Watch.HasWork(t, w))
+                p.Row($"{head}  {Tag(t.Relics.Contains(w.Relic) && b?.Complete != true ? "Relic in the hall" : "Built", Ui.Good)}");
+            else if (b != null)
+                p.Row($"{head}  {Tag($"Building, {Math.Floor(100 * b.BuildProgress / b.Def.BuildHours)}%", Ui.Gold)}");
+            else if (t.Population < w.Population)
+                p.Row($"{head}  {Tag($"Needs {w.Population} residents")}");
+            else
+            {
+                double cost = Watch.WorkCost(t, w);
+                string bid = w.Building;
+                p.Row(head, ($"Build {Math.Round(cost)}g", t.Treasury >= cost, true, () => Act(() => _sim.BuildSightWork(bid))));
+            }
+        }
+        if (scouts.Count == 0 && mirrors.Count == 0)
+            p.Note("Post a scout to watch a site from cover, or hide a mirror there (from the site's page) for a view that lasts.");
     }
 
     // ---------- Chronicles ----------
@@ -235,12 +299,24 @@ public partial class Main
         string home = a.HomeId is int h ? t.Building(h).Name : a.Hero?.Lodging == true ? "a room at the tavern" : "nowhere";
         string job = a.JobId is int j ? t.Building(j).Name : "out of work";
         var seat = t.Seats.FirstOrDefault(x => x.HolderId == a.Id);
-        string status = a.Departed ? (a.Dead ? "Dead" : "Left town") : a.IsAway ? "Away on an expedition, somewhere in the fog" : a.Activity.ToString();
+        var scouting = t.Scouts.LastOrDefault(x => x.HeroId == a.Id && x.Out);
+        string status = a.Departed ? (a.Dead ? "Dead" : "Left town")
+            : scouting != null ? $"Out {(scouting.Mirror ? "hiding a mirror at" : "scouting")} {Quests.Site(t, scouting.SiteId)!.Def.Name}"
+            : a.IsAway ? "Away on an expedition, somewhere in the fog" : a.Activity.ToString();
         string describe = a.Describe()[(a.Name.Length + 2)..];
         p.Text($"[font_size=19][b]{Ui.Esc(a.Name)}[/b][/font_size]\n{Ui.C(Ui.Ink2, $"{Ui.Esc(Ui.Cap(describe))} · {Ui.Esc(a.TraitList())}")}");
         if (seat != null) p.Text($"{Tag(seat.Def.Title, Ui.Gold)} loyalty {Math.Round(seat.Loyalty)}");
         if (a.Hero is HeroSheet hs)
-            p.Text($"HP {hs.Hp}/{hs.MaxHp} · {hs.Xp} XP · {hs.Kills} kills · {hs.Expeditions} expeditions{(hs.Items.Count > 0 ? " · " + Ui.Esc(string.Join(", ", hs.Items)) : "")}");
+        {
+            p.Text($"HP {hs.Hp}/{hs.MaxHp} · {hs.Xp} XP · {hs.Kills} kills · {hs.Expeditions} expeditions");
+            var cls = hs.Cls;
+            var spells = new List<string>();
+            if (cls.HealSpell != null) spells.Add($"{cls.HealSpell.Name} ({cls.HealsAt(hs.Level)} a delve)");
+            if (cls.AreaSpell != null) spells.Add(cls.AreaSpell.Name);
+            string role = cls.Role == "" ? "" : $"{Ui.Cap(cls.Role)}{(cls.Magic != "" ? $", {cls.Magic} caster" : "")}";
+            p.Text(Ui.C(Ui.Ink2, $"{Ui.Esc(role)}{(spells.Count > 0 ? $" · casts {Ui.Esc(string.Join(", ", spells))}" : "")}"), 13);
+            if (hs.Items.Count > 0) p.Text($"Carries {Ui.Esc(string.Join(", ", hs.Items))}{(hs.WeaponBonus > 0 ? $" · weapon +{hs.WeaponBonus}" : "")}{(hs.ArmorBonus > 0 ? $" · armour +{hs.ArmorBonus}" : "")}", 13);
+        }
         p.Text($"{Ui.Esc(status)} · {Math.Floor(a.Gold)} gold · mood {Math.Round(a.LastDayMood)}");
         p.Text($"Lives at {Ui.Esc(home)}; {(a.Hero != null ? "lives by bounties" : $"works at {Ui.Esc(job)}")}.");
         if (a.SpouseId is int sp) p.Text($"Married to {AgentLink(t.Agent(sp))}");
@@ -276,10 +352,15 @@ public partial class Main
         var sight = _map.Fog.SightOf(s.Def.Id, pin);
         var report = _map.Fog.LastReport(s.Def.Id);
         var scry = Knowledge.ActiveScrying(t, s.Def.Id);
+        var live = Watch.LiveOf(t, s);
+        var scout = Watch.ScoutAt(t, s.Def.Id);
         p.Text($"[font_size=19][b]{Ui.Esc(Ui.Cap(s.Def.Name))}[/b][/font_size]\n{Ui.C(Ui.Ink2, $"Tier {s.Def.Tier} · {Ui.Days(s.Def.Distance)} away")}");
         string seen = sight switch
         {
-            Sight.Live when scry != null => Ui.C(new Color("b48cff"), $"[b]Scrying[/b] by {Ui.Esc(t.Agent(scry.CasterId).Name)}, {scry.EndTick - t.Tick} hours left. You see it as it is now."),
+            Sight.Live when scry != null => Ui.C(new Color("b48cff"), $"[b]Scrying[/b] {(scry.CasterId == 0 ? "in the Scrying Pool" : $"by {Ui.Esc(t.Agent(scry.CasterId).Name)}")}, {scry.EndTick - t.Tick} hours left. You see it as it is now."),
+            Sight.Live when live == LiveSource.Mirror => Ui.C(new Color("cfe3f0"), "[b]Mirror[/b]: the hidden mirror shows it as it is now, until someone finds it."),
+            Sight.Live when live == LiveSource.Scout && scout != null => Ui.C(Ui.Good, $"[b]Watched[/b] by {Ui.Esc(t.Agent(scout.HeroId).Name)} from cover, rations for {Ui.Days((int)Math.Ceiling((scout.LeaveTick - t.Tick) / 24.0))}."),
+            Sight.Live when live == LiveSource.Spire => Ui.C(Ui.Gold, "[b]In the Spire's sight[/b], day and night."),
             Sight.Live => "In sight of the town.",
             Sight.Scouted when report != null => t.Day - report.Day > Fog.StaleDays
                 ? $"Last seen on day {report.Day}, in a report {t.Day - report.Day} days old. Things may have changed."
@@ -293,20 +374,44 @@ public partial class Main
             p.Text(cleared ? "Cleared. The road is safe." : $"Still dangerous. {s.Attempts} {(s.Attempts == 1 ? "party has" : "parties have")} tried.");
             if (s.Def.Boss.Kind == "combat") p.Text($"Its master: {Ui.Esc(s.Def.Boss.Text)}.");
         }
-        if (sight == Sight.Live && scry != null)
+        if (sight == Sight.Live && live != null)
         {
             var there = t.Parties.Where(x => !x.Returned && x.SiteId == s.Def.Id && Knowledge.LegOf(t, x) == Leg.AtSite).ToList();
-            foreach (var party in there) p.Text($"Under the scrying you watch the {Ui.Esc(party.Name)} at the mouth of the site, readying to go in.");
+            foreach (var party in there) p.Text($"You watch the {Ui.Esc(party.Name)} at the mouth of the site, readying to go in.");
         }
         var chrons = t.Chronicles.Count(c => c.SiteName == s.Def.Name);
         if (chrons > 0) p.Text($"{chrons} {(chrons == 1 ? "chronicle" : "chronicles")} written here. See the Chronicles tab.");
-        if (!s.Cleared && scry == null)
+        if (s.Cleared) return;
+        string sid = s.Def.Id;
+        p.Heading("Eyes on it");
+        if (live == null)
         {
+            bool free = Watch.FreeScryingsLeft(t) > 0;
             double cost = Knowledge.ScryCost(t, s.Def);
             var scryer = Knowledge.Scryers(t).FirstOrDefault();
-            string sid = s.Def.Id;
-            p.Buttons(($"Commission a scrying, {Math.Round(cost)}g", scryer != null && t.Treasury >= cost, true, () => Act(() => _sim.CommissionScrying(sid))));
-            p.Note(scryer != null ? $"{scryer.Name} would cast it." : $"Needs a wizard or cleric of level {t.Content.Knowledge.ScryMinLevel} or more in town.");
+            p.Buttons((free ? "Scry it free, from the pool" : $"Commission a scrying, {Math.Round(cost)}g", free || scryer != null && t.Treasury >= cost, true, () => Act(() => _sim.CommissionScrying(sid))));
+            p.Note(free ? $"The Scrying Pool shows it for {t.Content.Knowledge.ScryHours} hours." : scryer != null ? $"{scryer.Name} would cast it, for {t.Content.Knowledge.ScryHours} hours." : $"Needs a {ScryClasses(t)} of level {t.Content.Knowledge.ScryMinLevel} or more in town.");
+        }
+        if (scout != null && live != LiveSource.Scout)
+            p.Note($"{t.Agent(scout.HeroId).Name} is {(t.Tick < scout.ArriveTick ? "on the way to watch it" : "on the way home")}.");
+        if (scout == null)
+        {
+            var watcher = Watch.Watchers(t).FirstOrDefault();
+            var sr = t.Content.Knowledge.Scouts;
+            p.Buttons(($"Post a scout, {sr.WagePerDay}g a day", watcher != null, false, () => Act(() => _sim.PostScout(sid))));
+            p.Note(watcher != null
+                ? $"{watcher.Name} the {watcher.Hero!.Cls.Name} would walk {Ui.Days(s.Def.Distance)} out and watch for up to {Ui.Days(sr.WatchDays)}. Tier {s.Def.Tier} sites spot watchers more often."
+                : "Needs a ranger, rogue, monk or cartographer in town and rested.");
+        }
+        if (Watch.MirrorAt(t, sid) == null && !Watch.MirrorUnderway(t, sid))
+        {
+            var mr = t.Content.Knowledge.Mirror;
+            var caster = Watch.MirrorCasters(t).FirstOrDefault();
+            var spell = t.Content.Library.Spell(mr.Spell);
+            p.Buttons(($"Hide a mirror here, {Math.Round(mr.Cost)}g", caster != null && t.Treasury >= mr.Cost, false, () => Act(() => _sim.PlantMirror(sid))));
+            p.Note(caster != null
+                ? $"{caster.Name} binds a pair with {spell?.Name ?? "the Mirror Network"}; a scout hides one here. You see the site live until someone finds it."
+                : $"Needs a {string.Join(" or ", spell?.Classes ?? [])} of level {mr.MinLevel} or more in town to bind the mirrors.");
         }
     }
 }

@@ -392,6 +392,8 @@ public static class Quests
                        (result.Dead.Count > 0 ? $", carrying {(result.Dead.Count == 1 ? $"{deadNames}'s body" : $"the bodies of {deadNames}")}." : ".");
             }
             town.Log(LedgerCategory.Quest, Importance.Major, $"{text} (Chronicle {chronicle.Id})", members.Select(m => m.Id).ToList());
+            foreach (var it in result.Items)
+                if (it.HeroId == null) Watch.ReceiveRelic(town, it.Item, party.Name);
         }
     }
 

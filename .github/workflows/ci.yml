@@ -28,13 +28,9 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
-      # The parity script runs the TypeScript CLI too; it needs Node 22.18+ but no packages.
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
       - run: dotnet build dotnet/CrownAndCompass.sln -c Release
       - run: dotnet test dotnet/CrownAndCompass.sln -c Release --no-build
       # The Godot client compiles against Godot.NET.Sdk from NuGet; the engine itself is not needed.
       - run: dotnet build godot/CrownAndCompass.csproj -c ExportRelease
-      - name: Parity with the TypeScript sim (seeds 1 to 8, 200 days)
-        run: scripts/parity.sh 200
+      - name: Smoke-run the C# simulation
+        run: dotnet run --project dotnet/src/CrownAndCompass.Cli -c Release --no-build -- --days 120 --seed 1 | tail -40

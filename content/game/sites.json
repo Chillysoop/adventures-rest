@@ -1,6 +1,7 @@
 [
-  { "id": "goblin_warrens", "name": "the Goblin Warrens", "tier": 1, "distance": 1,
+  { "id": "goblin_warrens", "name": "the Goblin Warrens", "tier": 1, "distance": 1, "habitats": ["caves", "hills", "underworld"],
     "encounters": [
+      { "kind": "wander", "cr": [0.125, 0.5], "budget": 200, "text": "something stirs in the dark below the warrens" },
       { "kind": "combat", "monster": "goblin", "count": [2, 4], "text": "goblins spill out of a side tunnel" },
       { "kind": "trap", "dc": 12, "damageDie": 6, "text": "a tripwire strung across the passage" },
       { "kind": "combat", "monster": "goblin", "count": [3, 5], "text": "a goblin war party sleeping off a feast" },
@@ -8,8 +9,9 @@
     ],
     "boss": { "kind": "combat", "monster": "goblin_boss", "count": [1, 1], "escort": "goblin", "escortCount": [1, 3], "text": "the goblin boss on a throne of stolen pots" },
     "loot": [40, 90] },
-  { "id": "wolfwood", "name": "Wolfwood", "tier": 1, "distance": 1,
+  { "id": "wolfwood", "name": "Wolfwood", "tier": 1, "distance": 1, "habitats": ["forest"],
     "encounters": [
+      { "kind": "wander", "cr": [0.125, 0.5], "budget": 200, "text": "something else is hunting in the wood" },
       { "kind": "hazard", "dc": 12, "damageDie": 6, "text": "the trail vanishes into briar and bog" },
       { "kind": "combat", "monster": "wolf", "count": [2, 4], "text": "a wolf pack circling in the fog" },
       { "kind": "parley", "dc": 13, "gold": [5, 20], "text": "a hermit who knows where the den lies" },
@@ -17,8 +19,9 @@
     ],
     "boss": { "kind": "combat", "monster": "dire_wolf", "count": [1, 1], "escort": "wolf", "escortCount": [1, 2], "text": "a dire wolf the size of a pony" },
     "loot": [30, 70] },
-  { "id": "old_watchtower", "name": "the Old Watchtower", "tier": 2, "distance": 2,
+  { "id": "old_watchtower", "name": "the Old Watchtower", "tier": 2, "distance": 2, "habitats": ["ruins", "hills"],
     "encounters": [
+      { "kind": "wander", "cr": [0.25, 1], "budget": 400, "text": "squatters in the ruined outbuildings" },
       { "kind": "combat", "monster": "bandit", "count": [3, 6], "text": "bandit lookouts on the broken wall" },
       { "kind": "trap", "dc": 13, "damageDie": 10, "text": "a rotten stair rigged to collapse" },
       { "kind": "parley", "dc": 14, "gold": [10, 40], "text": "a bandit deserter who wants out" },
@@ -27,8 +30,9 @@
     ],
     "boss": { "kind": "combat", "monster": "bandit_captain", "count": [1, 1], "escort": "bandit", "escortCount": [2, 4], "text": "the bandit captain at the top of the tower" },
     "loot": [90, 180] },
-  { "id": "spider_hollow", "name": "Spider Hollow", "tier": 2, "distance": 2,
+  { "id": "spider_hollow", "name": "Spider Hollow", "tier": 2, "distance": 2, "habitats": ["forest", "swamp"],
     "encounters": [
+      { "kind": "wander", "cr": [0.25, 1], "budget": 400, "text": "a hollow tree with something nesting in it" },
       { "kind": "hazard", "dc": 13, "damageDie": 8, "text": "webs thick enough to drown in" },
       { "kind": "combat", "monster": "giant_spider", "count": [1, 2], "text": "something large drops from the canopy" },
       { "kind": "puzzle", "dc": 13, "gold": [20, 50], "text": "a cocooned traveler with a map stitched into his coat" },
@@ -36,16 +40,18 @@
     ],
     "boss": { "kind": "combat", "monster": "giant_spider", "count": [3, 4], "text": "the brood-mother's nest" },
     "loot": [80, 160] },
-  { "id": "ogres_ford", "name": "Ogre's Ford", "tier": 2, "distance": 1,
+  { "id": "ogres_ford", "name": "Ogre's Ford", "tier": 2, "distance": 1, "habitats": ["grassland", "hills", "coast"],
     "encounters": [
+      { "kind": "wander", "cr": [0.25, 1], "budget": 400, "text": "travellers of an unfriendly sort at the ford" },
       { "kind": "hazard", "dc": 13, "damageDie": 8, "text": "the river runs high and cold" },
       { "kind": "combat", "monster": "goblin", "count": [3, 5], "text": "goblin toll-takers serving the ogre" },
       { "kind": "treasure", "gold": [20, 60], "mimicChance": 0.15, "text": "a heap of travelers' packs" }
     ],
     "boss": { "kind": "combat", "monster": "ogre", "count": [1, 1], "text": "the ogre, picking its teeth with a femur" },
     "loot": [100, 200] },
-  { "id": "drowned_temple", "name": "the Drowned Temple", "tier": 3, "distance": 3,
+  { "id": "drowned_temple", "name": "the Drowned Temple", "tier": 3, "distance": 3, "habitats": ["swamp", "temple", "tomb"],
     "encounters": [
+      { "kind": "wander", "cr": [0.5, 2], "budget": 700, "text": "the marsh outside the temple is not empty" },
       { "kind": "hazard", "dc": 14, "damageDie": 10, "text": "flooded halls where the air runs out" },
       { "kind": "combat", "monster": "skeleton", "count": [3, 6], "text": "drowned dead rising from the pews" },
       { "kind": "puzzle", "dc": 15, "gold": [40, 90], "text": "a sealed reliquary that answers in riddles" },

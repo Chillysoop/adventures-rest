@@ -42,6 +42,16 @@ public static class Palette
         "ranger" => new("2e7d32"),
         "wizard" => new("3949ab"),
         "cleric" => new("f5f0e1"),
+        "paladin" => new("e6c35c"),
+        "warden" => new("7d6b4f"),
+        "monk" => new("e08a3c"),
+        "cartographer" => new("4fa3a5"),
+        "sorcerer" => new("b03a7a"),
+        "warlock" => new("4a2a5e"),
+        "reliquarian" => new("a8a39a"),
+        "druid" => new("6f9a3a"),
+        "bard" => new("d46a9a"),
+        "hedge-witch" => new("5e7d4a"),
         _ => new("dddddd"),
     };
 
@@ -241,6 +251,25 @@ public partial class TownLayer(MapView map) : Layer(map)
                 House(x + 0.14f, y + 0.2f, 0.62f, 0.62f, Palette.RoofBrewery, 0.5f);
                 foreach (float by in new[] { 0.42f, 0.62f }) Ellipse(new(x + 0.84f, y + by), 0.08f, 0.09f, new Color("8a5a2b"), 12);
                 break;
+            case "scrying_pool":
+                // A round stone basin of still water under a little shrine roof.
+                Ellipse(new(x + 0.52f, y + 0.66f), 0.38f, 0.24f, new Color(0.16f, 0.12f, 0.08f, 0.22f), 20);
+                Ellipse(new(x + 0.5f, y + 0.6f), 0.38f, 0.25f, Palette.Stone, 20);
+                Ellipse(new(x + 0.5f, y + 0.58f), 0.29f, 0.17f, new Color("4b6f9c"), 20);
+                Ellipse(new(x + 0.44f, y + 0.55f), 0.12f, 0.05f, new Color("b48cff", 0.7f), 14);
+                foreach (float px in new[] { 0.16f, 0.84f }) Rect(x + px - 0.03f, y + 0.18f, 0.06f, 0.42f, Palette.Timber);
+                Poly(Palette.RoofHall, new(x + 0.08f, y + 0.22f), new(x + 0.5f, y + 0.02f), new(x + 0.92f, y + 0.22f));
+                break;
+            case "sleepless_spire":
+                // A tall stone tower with a crystal eye that never closes.
+                Rect(x + 0.32f, y + 0.84f, 0.44f, 0.08f, new Color(0.16f, 0.12f, 0.08f, 0.25f));
+                Poly(Palette.Stone, new(x + 0.3f, y + 0.88f), new(x + 0.38f, y - 0.2f), new(x + 0.62f, y - 0.2f), new(x + 0.7f, y + 0.88f));
+                Poly(new Color("837c72"), new(x + 0.5f, y + 0.88f), new(x + 0.5f, y - 0.2f), new(x + 0.62f, y - 0.2f), new(x + 0.7f, y + 0.88f));
+                Rect(x + 0.44f, y + 0.3f, 0.12f, 0.16f, Palette.Window);
+                Poly(Palette.RoofHall, new(x + 0.32f, y - 0.18f), new(x + 0.5f, y - 0.62f), new(x + 0.68f, y - 0.18f));
+                Circle(new(x + 0.5f, y - 0.66f), 0.11f, new Color("b48cff"));
+                Circle(new(x + 0.5f, y - 0.66f), 0.05f, new Color("fff6d8"));
+                break;
             default:
                 House(x + 0.2f, y + 0.22f, 0.6f, 0.58f, Palette.RoofHouse);
                 break;
@@ -387,8 +416,10 @@ public partial class OverlayLayer(MapView map) : Layer(map)
         if (Map.Sim == null) return;
         var town = Town;
         DrawRoads(town);
+        DrawSpire(town);
         DrawSites(town);
         DrawParties(town);
+        DrawScouts(town);
         DrawWarband(town);
         DrawSelection(town);
     }
@@ -443,11 +474,27 @@ public partial class OverlayLayer(MapView map) : Layer(map)
             }
             for (int i = 0; i < site.Def.Tier; i++)
                 Circle(new(pin.X - (site.Def.Tier - 1) * 0.08f + i * 0.16f, pin.Y + r + 0.12f), 0.055f, Palette.Gold);
-            if (Knowledge.ActiveScrying(town, site.Def.Id) != null)
+            float now = (float)Time.GetTicksMsec() / 1000f;
+            switch (Watch.LiveOf(town, site))
             {
-                // The scrying eye: a slow violet shimmer around the site.
-                float t = (float)Time.GetTicksMsec() / 1000f;
-                Ring(pin, 2.4f + Mathf.Sin(t * 2) * 0.06f, new Color("b48cff", 0.55f), 0.08f);
+                case LiveSource.Scrying:
+                    // The scrying eye: a slow violet shimmer around the site.
+                    Ring(pin, 2.4f + Mathf.Sin(now * 2) * 0.06f, new Color("b48cff", 0.55f), 0.08f);
+                    break;
+                case LiveSource.Mirror:
+                    Ring(pin, 2.4f, new Color("cfe3f0", 0.45f), 0.06f);
+                    break;
+                case LiveSource.Scout:
+                    DrawArc(pin, 2.4f, 0, Mathf.Tau, 48, new Color("8cc084", 0.5f), 0.06f, true);
+                    break;
+            }
+            if (Watch.MirrorAt(town, site.Def.Id) != null)
+            {
+                // The hidden mirror: a silver lozenge tucked beside the site.
+                var m = pin + new Vector2(r + 0.18f, -r * 0.4f);
+                Poly(new Color("1d1712"), m + new Vector2(0, -0.2f), m + new Vector2(0.13f, 0), m + new Vector2(0, 0.2f), m + new Vector2(-0.13f, 0));
+                Poly(new Color("dfe8ee"), m + new Vector2(0, -0.15f), m + new Vector2(0.09f, 0), m + new Vector2(0, 0.15f), m + new Vector2(-0.09f, 0));
+                Poly(new Color("9fb8c8"), m + new Vector2(0, -0.15f), m + new Vector2(0.09f, 0), m + new Vector2(0, 0.02f));
             }
         }
     }
@@ -478,6 +525,43 @@ public partial class OverlayLayer(MapView map) : Layer(map)
                 Circle(mp, 0.075f, Palette.Gold with { A = fade });
                 Circle(mp, 0.06f, Palette.ClassColor(a.Hero?.Cls.Id ?? "") with { A = fade });
             }
+            DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+        }
+    }
+
+    /// <summary>The Sleepless Spire's reach: a faint golden boundary around everything it watches.</summary>
+    private void DrawSpire(Town town)
+    {
+        int reach = Watch.Reach(town);
+        if (reach <= 0) return;
+        float r = Map.Geo.TownRadius + 1.3f + reach * 1.1f + 2.2f;
+        DrawArc(Geo.Center, r, 0, Mathf.Tau, 128, new Color("e8b93a", 0.35f), 0.08f, true);
+    }
+
+    /// <summary>
+    /// Scouts slip out alone and are lost to the fog like parties; one watching a site is drawn
+    /// crouched at its edge, since the site is in sight while they stay.
+    /// </summary>
+    private void DrawScouts(Town town)
+    {
+        foreach (var s in town.Scouts)
+        {
+            if (!s.Out || !Map.Geo.Pins.TryGetValue(s.SiteId, out var pin)) continue;
+            float leg = (float)Watch.ScoutLeg(town, s, Map.HourFraction);
+            var site = Quests.Site(town, s.SiteId)!;
+            float r = 0.42f + site.Def.Tier * 0.06f;
+            var dir = (pin - Geo.Center).Normalized();
+            var pos = leg >= 1 ? pin - dir * (r + 0.45f) + new Vector2(dir.Y, -dir.X) * 0.3f : Geo.Center + (pin - Geo.Center) * leg;
+            float fogA = Map.Fog.AlphaAt(pos);
+            if (fogA > 0.45f) continue;
+            float fade = 1 - Mathf.Clamp(fogA / 0.45f, 0, 1);
+            var a = town.Agent(s.HeroId);
+            DrawSetTransform(pos, 0, new Vector2(1.5f, 1.5f));
+            Ellipse(new Vector2(0, 0.1f), 0.16f, 0.06f, Palette.Shadow with { A = 0.25f * fade }, 12);
+            // A hooded figure in a green cloak.
+            Poly(new Color("3f5f3a") with { A = fade }, new(-0.11f, 0.1f), new(0, -0.16f), new(0.11f, 0.1f));
+            Circle(new Vector2(0, -0.12f), 0.065f, Palette.ClassColor(a.Hero?.Cls.Id ?? "") with { A = fade });
+            if (s.Mirror) Poly(new Color("dfe8ee") with { A = fade }, new(0.1f, -0.06f), new(0.17f, 0.02f), new(0.1f, 0.1f), new(0.03f, 0.02f));
             DrawSetTransform(Vector2.Zero, 0, Vector2.One);
         }
     }
@@ -544,7 +628,14 @@ public partial class LabelLayer(MapView map) : Control
             Text(at + new Vector2(0, size), name, Ui.Display, size, sight == Sight.Rumoured ? new Color("efe6d2", 0.7f) : new Color("f6eedb"));
             string sub = sight switch
             {
-                Sight.Live => Knowledge.ActiveScrying(town, site.Def.Id) is Scrying s ? $"Scrying, {s.EndTick - town.Tick}h left" : "In sight",
+                Sight.Live => Watch.LiveOf(town, site) switch
+                {
+                    LiveSource.Scrying when Knowledge.ActiveScrying(town, site.Def.Id) is Scrying s => $"Scrying, {s.EndTick - town.Tick}h left",
+                    LiveSource.Scout => "Scout watching",
+                    LiveSource.Mirror => "Mirror",
+                    LiveSource.Spire => "Spire sight",
+                    _ => "In sight",
+                },
                 Sight.Scouted when fog.LastReport(site.Def.Id) is Report rep => town.Day - rep.Day > Fog.StaleDays ? $"Last seen day {rep.Day}" : $"Scouted day {rep.Day}",
                 _ => "Rumoured",
             };

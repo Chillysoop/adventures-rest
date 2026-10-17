@@ -1,0 +1,31 @@
+{
+  "seats": [
+    { "id": "steward", "title": "Steward", "ability": "int", "unlockPopulation": 0,
+      "portfolio": "treasury and taxes", "agenda": "a balanced budget" },
+    { "id": "speaker", "title": "Speaker of the Commons", "ability": "cha", "unlockPopulation": 25,
+      "portfolio": "the townsfolk, housing and petitions", "agenda": "lower taxes and more homes" },
+    { "id": "captain", "title": "Captain of the Watch", "ability": "str", "unlockPopulation": 40,
+      "portfolio": "the watch and the peace", "agenda": "more watchmen" }
+  ],
+  "alignment": {
+    "raise_tax":     { "steward": 1,    "speaker": -1, "captain": 0 },
+    "lower_tax":     { "steward": -1,   "speaker": 1,  "captain": 0 },
+    "hire_watch":    { "steward": -0.5, "speaker": 0,  "captain": 1 },
+    "dismiss_watch": { "steward": 1,    "speaker": 0,  "captain": -1 },
+    "festival":      { "steward": -1,   "speaker": 1,  "captain": -0.3 },
+    "build_homes":   { "steward": -0.5, "speaker": 1,  "captain": 0 }
+  },
+  "taxStep": 0.02,
+  "minTax": 0.04,
+  "maxTax": 0.2,
+  "watchPerMotion": 2,
+  "watchWage": 3,
+  "festivalBase": 40,
+  "festivalPerResident": 0.8,
+  "festivalDays": 2,
+  "festivalMood": 15,
+  "motionDays": 3,
+  "motionGapDays": 3,
+  "decreeMandate": 8,
+  "startingMandate": 60
+}

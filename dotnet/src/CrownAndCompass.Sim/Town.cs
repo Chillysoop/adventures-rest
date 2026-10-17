@@ -149,6 +149,8 @@ public static class TreasuryAccount
     public const string Defenses = "Defenses";
     public const string Patron = "Patron";
     public const string Scrying = "Scrying";
+    public const string Scouts = "Scouts";
+    public const string Sight = "Sight works";
 }
 
 /// <summary>How the campaign ended.</summary>
@@ -196,6 +198,21 @@ public sealed class Town
 
     /// <summary>Scryings the mayor has commissioned, oldest first.</summary>
     public List<Scrying> Scryings { get; } = [];
+
+    /// <summary>Scouts posted to watch sites, oldest first.</summary>
+    public List<Scout> Scouts { get; } = [];
+
+    /// <summary>Mirrors hidden at sites, oldest first; smashed ones stay with SmashedTick set.</summary>
+    public List<Mirror> Mirrors { get; } = [];
+
+    /// <summary>Library items parties brought home for the town (ids), in the order they came.</summary>
+    public List<string> Relics { get; } = [];
+
+    /// <summary>Free scryings from the Scrying Pool used today.</summary>
+    public int FreeScryingsUsed { get; set; }
+
+    /// <summary>Sight works whose opening has been announced.</summary>
+    public HashSet<int> SightWorksOpened { get; } = [];
 
     /// <summary>The townsfolk's approval of the mayor, 0 to 100.</summary>
     public double Mandate { get; set; } = 60;

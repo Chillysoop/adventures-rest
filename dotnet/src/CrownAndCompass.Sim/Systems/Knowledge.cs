@@ -19,12 +19,18 @@ public enum Leg
 /// </summary>
 public static class Knowledge
 {
-    private static bool IsCaster(Town town, Agent a) => a.Hero != null && town.Content.Knowledge.Casters.Contains(a.Hero.Cls.Id);
+    /// <summary>Whether a hero's class can cast a library spell.</summary>
+    public static bool Casts(Town town, Agent a, string spellId) =>
+        a.Hero != null && (town.Content.Library.Spell(spellId)?.Classes.Contains(a.Hero.Cls.Id) ?? false);
+
+    private static bool IsScryer(Town town, Agent a) => Casts(town, a, town.Content.Knowledge.ScrySpell);
+
+    private static bool IsSender(Town town, Agent a) => Casts(town, a, town.Content.Knowledge.SendSpell);
 
     /// <summary>Casters in town able to scry, strongest first.</summary>
     public static List<Agent> Scryers(Town town) =>
         town.Heroes
-            .Where(a => !a.IsAway && IsCaster(town, a) && a.Hero!.Level >= town.Content.Knowledge.ScryMinLevel)
+            .Where(a => !a.IsAway && IsScryer(town, a) && a.Hero!.Level >= town.Content.Knowledge.ScryMinLevel)
             .OrderByDescending(a => a.Hero!.Level)
             .ThenBy(a => a.Id)
             .ToList();
@@ -35,23 +41,35 @@ public static class Knowledge
     public static Scrying? ActiveScrying(Town town, string siteId) =>
         town.Scryings.LastOrDefault(s => s.SiteId == siteId && town.Tick >= s.StartTick && town.Tick < s.EndTick);
 
-    /// <summary>Pay the strongest caster in town to scry a site; null when nobody can or the treasury is short.</summary>
+    /// <summary>
+    /// Scry a site: free from the Scrying Pool while it has a scrying left today, otherwise paid to the
+    /// strongest caster in town. Null when nobody can or the treasury is short.
+    /// </summary>
     public static Scrying? CommissionScrying(Town town, string siteId)
     {
         var site = Quests.Site(town, siteId);
         if (site == null || ActiveScrying(town, siteId) != null) return null;
+        int hours = town.Content.Knowledge.ScryHours;
+        if (Watch.FreeScryingsLeft(town) > 0)
+        {
+            town.FreeScryingsUsed++;
+            var free = new Scrying(siteId, 0, town.Tick, town.Tick + hours * SimTime.HoursPerDay / 24);
+            town.Scryings.Add(free);
+            town.Log(LedgerCategory.Quest, Importance.Notable, $"The water in the Scrying Pool stills and shows {site.Def.Name}. For {hours} hours the town can watch it.");
+            return free;
+        }
         var caster = Scryers(town).FirstOrDefault();
         double cost = ScryCost(town, site.Def);
         if (caster == null || town.Treasury < cost) return null;
 
         town.Book(TreasuryAccount.Scrying, -cost);
         caster.Gold += cost;
-        var scry = new Scrying(siteId, caster.Id, town.Tick, town.Tick + town.Content.Knowledge.ScryHours * SimTime.HoursPerDay / 24);
+        var scry = new Scrying(siteId, caster.Id, town.Tick, town.Tick + hours * SimTime.HoursPerDay / 24);
         town.Scryings.Add(scry);
         town.Log(
             LedgerCategory.Quest,
             Importance.Notable,
-            $"{caster.Name} the {caster.Hero!.Cls.Name} takes {Js.Str(Js.Round(cost))} gold to scry {site.Def.Name}. For {town.Content.Knowledge.ScryHours} hours the town can watch it.",
+            $"{caster.Name} the {caster.Hero!.Cls.Name} takes {Js.Str(Js.Round(cost))} gold to scry {site.Def.Name}. For {hours} hours the town can watch it.",
             [caster.Id]);
         return scry;
     }
@@ -64,7 +82,7 @@ public static class Knowledge
         foreach (int id in party.Members)
         {
             var a = town.Agent(id);
-            if (IsCaster(town, a)) slots += k.SlotsPerCaster + k.SlotsPerTwoLevels * (a.Hero!.Level / 2);
+            if (IsSender(town, a)) slots += k.SlotsPerCaster + k.SlotsPerTwoLevels * (a.Hero!.Level / 2);
         }
         return slots;
     }

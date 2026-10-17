@@ -7,6 +7,7 @@ namespace CrownAndCompass.Client;
 /// <summary>
 /// Command-line options after "--", for sharing a moment or checking a build headlessly:
 /// <c>--seed 7 --day 40 --autoplay --tab bounties --site wolfwood --scry wolfwood --screenshot shot.png</c>.
+/// Also <c>--scout site</c>, <c>--mirror site</c>, <c>--build pool|spire|tower|palisade</c> and <c>--relic item-id</c>.
 /// </summary>
 public sealed class Options
 {
@@ -19,6 +20,10 @@ public sealed class Options
     public string? Screenshot;
     public int Frames = 45;
     public bool Autoplay;
+    public bool Hero;
+
+    /// <summary>Keep time running through war news, for recording clips.</summary>
+    public bool NoPause;
     public readonly List<(string Verb, string Arg)> Script = [];
 
     public static Options Parse(string[] args)
@@ -38,7 +43,9 @@ public sealed class Options
                 case "--screenshot": o.Screenshot = Next(); break;
                 case "--frames": o.Frames = int.Parse(Next()); break;
                 case "--autoplay": o.Autoplay = true; break;
-                case "--bounty" or "--scry" or "--send" or "--recall" or "--build":
+                case "--hero": o.Hero = true; break;
+                case "--no-pause": o.NoPause = true; break;
+                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic":
                     o.Script.Add((args[i][2..], Next()));
                     break;
             }
@@ -65,8 +72,22 @@ public sealed class Options
                     var party = t.Parties.LastOrDefault(p => !p.Returned);
                     if (party != null) sim.SendWord(party.Id, verb == "recall");
                     break;
+                case "build" when arg is "pool" or "spire":
+                    t.Treasury += 2000;
+                    sim.BuildSightWork(arg == "pool" ? "scrying_pool" : "sleepless_spire");
+                    break;
                 case "build":
                     sim.BuildDefense(arg == "tower" ? DefenseWork.Tower : DefenseWork.Palisade);
+                    break;
+                case "scout":
+                    sim.PostScout(arg);
+                    break;
+                case "mirror":
+                    sim.PlantMirror(arg);
+                    break;
+                case "relic":
+                    // For showing a late-game moment quickly: a party has just brought a relic home.
+                    if (t.Content.Library.Item(arg) is LibItem item) Watch.ReceiveRelic(t, item, "Company of the Compass");
                     break;
             }
         }

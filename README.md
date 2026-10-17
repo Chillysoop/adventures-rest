@@ -21,8 +21,7 @@ runs in the browser.
     motions the mayor signs or vetoes, decrees, and Mandate
   - `systems/threat.ts`, `systems/director.ts`: the Bloodtusk warband growing off-screen, its
     escalation (omens, war camp, raids, the march), the Last Stand siege, and the Director that paces it
-- `content/game/*.json`: buildings, races, names, hero classes, monsters, sites, the council and the enemy
-  (data, so it can be modded; shared by the TypeScript and C# sims)
+- `src/sim/content/*.json`: the TypeScript sim's own frozen copy of the game data (see below)
 - `src/client`: the browser game. A Canvas 2D map (`map.ts`) and the HTML panels (`main.ts`,
   `index.html`): time controls, the Ledger, the bounty board, Chronicles and an inspector
 - `scripts/build-client.ts`: bundles the client into one self-contained HTML file
@@ -35,23 +34,44 @@ The game is moving to Godot 4 with C#. `dotnet/` holds a .NET 8 port of the simu
 dependency, so a Godot client can reference it directly:
 
 - `dotnet/src/CrownAndCompass.Sim`: the sim, system by system the same shape as `src/sim` (`Systems/Brain.cs`,
-  `Economy.cs`, `Quests.cs`, `Threat.cs`, ...). It embeds `content/game/*.json` at build time.
+  `Economy.cs`, `Quests.cs`, `Threat.cs`, ...). It embeds `content/game/*.json` and the content library
+  (`content/srd`, `content/open`, `content/original`: monsters, classes, spells, magic items) at build time.
 - `dotnet/src/CrownAndCompass.Cli`: the headless runner, same flags and output as `npm run sim`
 - `dotnet/tests/CrownAndCompass.Sim.Tests`: xUnit, every TypeScript test ported, plus checks of the JS
   number semantics the port relies on
 
-The TypeScript sim stays as the reference until the Godot client replaces the web build. For any seed and
-day count both CLIs print a byte-identical Ledger; `scripts/parity.sh` diffs them (seeds 1 to 8, 200 days, in
-default and full `--all --stats --chronicles` output) and runs in CI.
+The C# sim is now the game. The TypeScript sim and its web build are frozen as the legacy web build: they read their
+own copy of the old game data (`src/sim/content/`) and no longer track the C# sim, so the two Ledgers differ. (They
+matched byte for byte until the C# sim started drawing on the content library.)
 
 ```bash
 dotnet test dotnet/CrownAndCompass.sln
 dotnet run --project dotnet/src/CrownAndCompass.Cli -c Release -- --days 120 --seed 1
-scripts/parity.sh                      # or: scripts/parity.sh 300 9 10 11
 ```
 
-Scrying and sending stones (`Systems/Knowledge.cs`, numbers in `content/game/knowledge.json`) exist only in the C#
-sim so far; the CLIs never call them, so parity holds.
+What comes from the content library (`Library.cs`, resolved in `Content.cs`):
+
+- Hero classes: all 12 SRD classes plus the four originals (cartographer, hedge witch, reliquarian, warden). Name, hit
+  die, key ability, role and magic come from the library; `content/game/classes.json` adds armour, weapon, skills and
+  how often each turns up. Healers heal with their class's first healing spell (cure wounds, for clerics), area
+  casters open with their first area spell (burning hands, thunderwave, frost snare).
+- Monsters: `content/game/monsters.json` names a library creature with `ref` and overrides only what the game needs
+  (the Last Stand's Grukk is scaled down). AC, HP, best attack, multiattack and XP come from the library.
+- Wanderers: each site lists library habitats, and one encounter in each deck draws any library creature of those
+  habitats within a challenge-rating range, so a delve can meet any of ~470 creatures.
+- Loot: a cleared hoard can hold any library magic item of the site's tier (`content/game/loot.json`). Weapons and
+  armour help in later fights; town-sized relics are carried home for the hall.
+
+Live sight (`Systems/Knowledge.cs`, `Systems/Watch.cs`, numbers in `content/game/knowledge.json`):
+
+- Scrying: pay a caster in town (any class with the library's Commissioned Scrying) to show a site live for 12 hours.
+- Sending stones: a party's casters spend spell slots to report or turn back.
+- Scouts: a ranger, rogue, monk or cartographer walks out and watches a site from cover for up to 8 days, paid daily.
+  Harder sites spot them more often; a spotted scout runs for home or never comes back.
+- Mirrors: a level 3 caster with the library's Mirror Network binds a pair; a scout hides one at a site, which then
+  shows live until the site's monsters find and smash it.
+- Works: the Scrying Pool (a free scrying a day, houses a Far-Seeing Basin) and the Sleepless Spire (every site within
+  two days shows live, always, houses an Eye of the Sleepless Spire). Either relic carried home by a party does the same.
 
 ## The Godot client (`godot/`)
 
@@ -64,7 +84,10 @@ and drawn procedurally (`src/Map/`), so there are no art assets beyond two OFL f
   else is *rumoured*. Parties vanish into the fog when they leave the light. A scrying shows a site live for a few hours.
   While a party is away the only lever is a sending stone (ask for word, or call them home), which costs a spell slot.
 - Time: pause and 1×, 4×, 12×, 36× (space and 1 to 4), one sim step per in-game hour.
-- Panes: Ledger, War, Council, Bounties (with parties on the road and scrying), Chronicles, Inspect.
+- Live sight on the map: violet rings for scryings, green for a watching scout, silver for a hidden mirror, and a golden
+  boundary for the Spire's reach. Scouts are drawn on the road like parties and vanish into the fog the same way.
+- Panes: Ledger, War, Council, Bounties (parties on the road, eyes in the wilds, scrying and scouting), Chronicles,
+  Inspect (a site's page offers a scrying, a scout or a mirror; a hero's shows their class, spells and items).
 
 ```bash
 godot --path godot                         # play (Godot 4.3 .NET, .NET 8 SDK)
@@ -73,8 +96,9 @@ godot --headless --path godot --export-release Windows build/windows/CrownAndCom
 ```
 
 Options after `--`: `--seed`, `--day`, `--hour`, `--speed 0-4`, `--tab`, `--site <id>`, `--autoplay` (the stand-in mayor
-plays), `--bounty <site>`, `--scry <site>`, `--send`, `--recall`, `--build palisade|tower`, `--screenshot <png>`,
-`--frames N`. For a clip, add Godot's own `--write-movie clip.avi --fixed-fps 30 --quit-after 900` before the `--`.
+plays), `--bounty <site>`, `--scry <site>`, `--scout <site>`, `--mirror <site>`, `--send`, `--recall`,
+`--build palisade|tower|pool|spire`, `--relic <item-id>`, `--hero` (inspect the most storied hero), `--no-pause` (keep
+time running through war news), `--screenshot <png>`, `--frames N`. For a clip, add Godot's own `--write-movie clip.avi --fixed-fps 30 --quit-after 900` before the `--`.
 
 ## Time model
 
