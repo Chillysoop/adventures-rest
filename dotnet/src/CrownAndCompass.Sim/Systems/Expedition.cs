@@ -7,7 +7,8 @@ public enum ExpeditionOutcome
     Wiped,
 }
 
-public sealed record ExpeditionItem(int HeroId, string Item);
+/// <summary>A magic item from the hoard: claimed by a hero, or (HeroId null) carried home for the town.</summary>
+public sealed record ExpeditionItem(int? HeroId, LibItem Item);
 
 public sealed record ExpeditionResult(
     ExpeditionOutcome Outcome,
@@ -31,7 +32,7 @@ public static class Expedition
         public HeroSheet Sheet { get; } = agent.Hero!;
         public bool Down { get; set; }
         public bool Dead { get; set; }
-        public int Heals { get; set; } = agent.Hero!.Cls.Healer ? 1 + agent.Hero.Level / 2 : 0;
+        public int Heals { get; set; } = agent.Hero!.Cls.HealsAt(agent.Hero.Level);
     }
 
     private sealed class Foe(MonsterDef def)
@@ -50,18 +51,6 @@ public static class Expedition
         [SkillKind.Parley] = Ability.Cha,
         [SkillKind.Perception] = Ability.Wis,
     };
-
-    private sealed record MagicItem(string Name, int Weapon, int Armor);
-
-    private static readonly MagicItem[] Items =
-    [
-        new("+1 longsword", 1, 0),
-        new("a cloak of protection", 0, 1),
-        new("+1 shield", 0, 1),
-        new("a flame tongue blade", 2, 0),
-        new("+1 chain shirt", 0, 1),
-        new("a wand of magic missiles", 1, 0),
-    ];
 
     /// <summary>'the goblin', but just 'Grukk Bloodtusk' for a named foe.</summary>
     private static string The(MonsterDef d) => d.Named ? d.Name : $"the {d.Name}";
@@ -99,11 +88,13 @@ public static class Expedition
         private bool _skipNextCombat;
         private readonly Rng _rng;
         private readonly Content _content;
+        private readonly SiteDef? _site;
 
-        public Delve(Rng rng, Content content, IReadOnlyList<Agent> heroes)
+        public Delve(Rng rng, Content content, IReadOnlyList<Agent> heroes, SiteDef? site = null)
         {
             _rng = rng;
             _content = content;
+            _site = site;
             Party = heroes.Select(agent => new Combatant(agent)).ToList();
         }
 
@@ -172,6 +163,16 @@ public static class Expedition
                     }
                     Combat(e, false);
                     return;
+                case "wander":
+                {
+                    // Whatever the library says lives in this kind of country, met on the way in.
+                    List<MonsterDef> pool = _site == null ? [] : _content.Wanderers(_site, e.Cr);
+                    if (pool.Count == 0) return;
+                    var def = _rng.Pick(pool);
+                    int n = Math.Clamp(e.Budget / Math.Max(1, def.Xp), 1, 6);
+                    Combat(new EncounterDef { Kind = "combat", Monster = def.Id, Count = [n, n], Text = e.Text }, false);
+                    return;
+                }
                 case "trap":
                 {
                     var check = BestCheck(SkillKind.Trap);
@@ -313,21 +314,23 @@ public static class Expedition
                     var patient = Party.Where(p => !p.Dead && p.Sheet.Hp < p.Sheet.MaxHp * 0.4).OrderBy(p => p.Sheet.Hp).FirstOrDefault();
                     if (patient != null)
                     {
-                        int healed = rng.Roll(1, 8) + Rng.Modifier(c.Agent.Abilities.Wis) + s.Level;
+                        var spell = s.Cls.HealSpell!;
+                        int healed = (spell.Dice ?? new Dice(1, 8, 0)).Roll(rng) + Rng.Modifier(c.Agent.Abilities[s.Cls.Casting]);
                         bool wasDown = patient.Down;
                         patient.Sheet.Hp = Math.Min(patient.Sheet.MaxHp, patient.Sheet.Hp + Math.Max(1, healed));
                         patient.Down = false;
                         c.Heals--;
-                        if (wasDown) Log($"{name} drags {patient.Agent.GivenName} back from the brink with a prayer (+{healed} hp).");
+                        if (wasDown) Log($"{name} drags {patient.Agent.GivenName} back from the brink with {Library.Prose(spell.Name)} (+{Math.Max(1, healed)} hp).");
                         continue;
                     }
                 }
 
-                // Wizards open with an area spell.
+                // Casters with an area spell open with it, cast at a higher slot as they level.
                 if (s.Cls.Area && round == 1 && living.Count >= 2)
                 {
+                    var spell = s.Cls.AreaSpell!;
                     var targets = living.Take(3).ToList();
-                    int dmg = rng.Roll(2, 6) + s.Level + Rng.Modifier(c.Agent.Abilities.Int);
+                    int dmg = spell.Dice!.Value.Roll(rng) + (s.Level - 1) * spell.Dice.Value.Die / 2;
                     int felled = 0;
                     foreach (var f in targets)
                     {
@@ -335,7 +338,7 @@ public static class Expedition
                         if (f.Hp <= 0) felled++;
                     }
                     Credit(c, felled);
-                    Log($"{name} looses a burning hands spell into {targets.Count} of them for {dmg} damage{(felled > 0 ? $", dropping {felled}" : "")}.");
+                    Log($"{name} looses {Library.Prose(spell.Name)} into {targets.Count} of them for {dmg} damage{(felled > 0 ? $", dropping {felled}" : "")}.");
                     continue;
                 }
 
@@ -344,7 +347,7 @@ public static class Expedition
                 int atk = AttackBonus(c.Agent);
                 if (roll == 1)
                 {
-                    if (rng.Chance(0.3)) Log($"{name} rolls a natural 1 and nearly loses {PronounWeapon(s.Cls.Id)}.");
+                    if (rng.Chance(0.3)) Log($"{name} rolls a natural 1 and nearly loses {s.Cls.Fumble}.");
                     continue;
                 }
                 if (roll == 20 || roll + atk >= target.Def.Ac)
@@ -370,17 +373,20 @@ public static class Expedition
             var rng = _rng;
             foreach (var f in foes)
             {
-                if (f.Hp <= 0) continue;
-                var targets = Standing;
-                if (targets.Count == 0) return;
-                var t = rng.Pick(targets);
-                int roll = rng.D20();
-                if (roll == 1) continue;
-                if (roll == 20 || roll + f.Def.Attack >= HeroAc(t.Agent))
+                for (int k = 0; k < Math.Max(1, f.Def.Attacks); k++)
                 {
-                    int dmg = rng.Roll(roll == 20 ? 2 : 1, f.Def.DamageDie) + f.Def.DamageBonus;
-                    Hurt(t, dmg);
-                    if (t.Down) Log($"{Cap(The(f.Def))} {(roll == 20 ? "crits" : "hits")} {t.Agent.GivenName} for {dmg}. {t.Agent.GivenName} goes down.");
+                    if (f.Hp <= 0) break;
+                    var targets = Standing;
+                    if (targets.Count == 0) return;
+                    var t = rng.Pick(targets);
+                    int roll = rng.D20();
+                    if (roll == 1) continue;
+                    if (roll == 20 || roll + f.Def.Attack >= HeroAc(t.Agent))
+                    {
+                        int dmg = Math.Max(1, f.Def.Dice.Roll(rng, roll == 20));
+                        Hurt(t, dmg);
+                        if (t.Down) Log($"{Cap(The(f.Def))} {(roll == 20 ? "crits" : "hits")} {t.Agent.GivenName} for {dmg}. {t.Agent.GivenName} goes down.");
+                    }
                 }
             }
         }
@@ -432,8 +438,6 @@ public static class Expedition
         }
     }
 
-    private static string PronounWeapon(string cls) => cls == "wizard" ? "the spellbook" : cls == "cleric" ? "the holy symbol" : "the weapon";
-
     private static string Article(string w) => "aeiou".Contains(w[0]) ? "an" : "a";
 
     private static string Cap(string s) => char.ToUpperInvariant(s[0]) + s[1..];
@@ -441,7 +445,7 @@ public static class Expedition
     /// <param name="slotsSpent">Spell slots the party spent on sending-stone messages; they come out of the healers' heals.</param>
     public static ExpeditionResult Run(Rng rng, Content content, SiteDef site, IReadOnlyList<Agent> heroes, int slotsSpent = 0)
     {
-        var run = new Delve(rng, content, heroes);
+        var run = new Delve(rng, content, heroes, site);
         foreach (var c in run.Party)
         {
             int spent = Math.Min(slotsSpent, c.Heals);
@@ -514,15 +518,25 @@ public static class Expedition
             int loot = rng.Range(site.Loot[0], site.Loot[1] + 1);
             run.Gold += loot;
             string line = $"{Cap(site.Name)} is cleared. The hoard holds {loot} gold";
-            if (rng.Chance(0.15 * site.Tier))
+            var pool = content.LootItems.Where(it => it.Tier >= site.Tier && it.Tier <= site.Tier + 1).ToList();
+            if (pool.Count > 0 && rng.Chance(content.Loot.ItemChancePerTier * site.Tier))
             {
-                var item = rng.Pick(Items);
-                var who = run.Party.Where(c => !c.Dead).OrderBy(c => c.Sheet.Items.Count).ThenBy(c => c.Agent.Id).First();
-                items.Add(new ExpeditionItem(who.Agent.Id, item.Name));
-                who.Sheet.WeaponBonus += item.Weapon;
-                who.Sheet.ArmorBonus += item.Armor;
-                who.Sheet.Items.Add(item.Name);
-                line += $" and {item.Name}, which {who.Agent.GivenName} claims";
+                var item = rng.Pick(pool);
+                if (item.Slot == "town")
+                {
+                    // Too big or too strange for one hero: it goes to the town.
+                    items.Add(new ExpeditionItem(null, item));
+                    line += $" and the {item.Name}, which they haul home for the town";
+                }
+                else
+                {
+                    var who = run.Party.Where(c => !c.Dead).OrderBy(c => c.Sheet.Items.Count).ThenBy(c => c.Agent.Id).First();
+                    items.Add(new ExpeditionItem(who.Agent.Id, item));
+                    if (item.Slot == "weapon") who.Sheet.WeaponBonus += content.Loot.WeaponBonus[Math.Min(item.Tier, content.Loot.WeaponBonus.Length - 1)];
+                    else if (item.Slot is "armor" or "shield") who.Sheet.ArmorBonus += 1;
+                    who.Sheet.Items.Add(item.Name);
+                    line += $" and the {item.Name}, which {who.Agent.GivenName} claims";
+                }
             }
             run.Log($"{line}.");
         }

@@ -1,0 +1,58 @@
+[
+  { "id": "goblin_warrens", "name": "the Goblin Warrens", "tier": 1, "distance": 1,
+    "encounters": [
+      { "kind": "combat", "monster": "goblin", "count": [2, 4], "text": "goblins spill out of a side tunnel" },
+      { "kind": "trap", "dc": 12, "damageDie": 6, "text": "a tripwire strung across the passage" },
+      { "kind": "combat", "monster": "goblin", "count": [3, 5], "text": "a goblin war party sleeping off a feast" },
+      { "kind": "treasure", "gold": [10, 30], "mimicChance": 0.1, "text": "a chest in the chieftain's nook" }
+    ],
+    "boss": { "kind": "combat", "monster": "goblin_boss", "count": [1, 1], "escort": "goblin", "escortCount": [1, 3], "text": "the goblin boss on a throne of stolen pots" },
+    "loot": [40, 90] },
+  { "id": "wolfwood", "name": "Wolfwood", "tier": 1, "distance": 1,
+    "encounters": [
+      { "kind": "hazard", "dc": 12, "damageDie": 6, "text": "the trail vanishes into briar and bog" },
+      { "kind": "combat", "monster": "wolf", "count": [2, 4], "text": "a wolf pack circling in the fog" },
+      { "kind": "parley", "dc": 13, "gold": [5, 20], "text": "a hermit who knows where the den lies" },
+      { "kind": "combat", "monster": "wolf", "count": [3, 5], "text": "the pack strikes at dusk" }
+    ],
+    "boss": { "kind": "combat", "monster": "dire_wolf", "count": [1, 1], "escort": "wolf", "escortCount": [1, 2], "text": "a dire wolf the size of a pony" },
+    "loot": [30, 70] },
+  { "id": "old_watchtower", "name": "the Old Watchtower", "tier": 2, "distance": 2,
+    "encounters": [
+      { "kind": "combat", "monster": "bandit", "count": [3, 6], "text": "bandit lookouts on the broken wall" },
+      { "kind": "trap", "dc": 13, "damageDie": 10, "text": "a rotten stair rigged to collapse" },
+      { "kind": "parley", "dc": 14, "gold": [10, 40], "text": "a bandit deserter who wants out" },
+      { "kind": "combat", "monster": "bandit", "count": [4, 6], "text": "the bandits' barracks" },
+      { "kind": "treasure", "gold": [30, 80], "mimicChance": 0.15, "text": "the toll-chest in the guardroom" }
+    ],
+    "boss": { "kind": "combat", "monster": "bandit_captain", "count": [1, 1], "escort": "bandit", "escortCount": [2, 4], "text": "the bandit captain at the top of the tower" },
+    "loot": [90, 180] },
+  { "id": "spider_hollow", "name": "Spider Hollow", "tier": 2, "distance": 2,
+    "encounters": [
+      { "kind": "hazard", "dc": 13, "damageDie": 8, "text": "webs thick enough to drown in" },
+      { "kind": "combat", "monster": "giant_spider", "count": [1, 2], "text": "something large drops from the canopy" },
+      { "kind": "puzzle", "dc": 13, "gold": [20, 50], "text": "a cocooned traveler with a map stitched into his coat" },
+      { "kind": "combat", "monster": "giant_spider", "count": [2, 3], "text": "the brood stirs" }
+    ],
+    "boss": { "kind": "combat", "monster": "giant_spider", "count": [3, 4], "text": "the brood-mother's nest" },
+    "loot": [80, 160] },
+  { "id": "ogres_ford", "name": "Ogre's Ford", "tier": 2, "distance": 1,
+    "encounters": [
+      { "kind": "hazard", "dc": 13, "damageDie": 8, "text": "the river runs high and cold" },
+      { "kind": "combat", "monster": "goblin", "count": [3, 5], "text": "goblin toll-takers serving the ogre" },
+      { "kind": "treasure", "gold": [20, 60], "mimicChance": 0.15, "text": "a heap of travelers' packs" }
+    ],
+    "boss": { "kind": "combat", "monster": "ogre", "count": [1, 1], "text": "the ogre, picking its teeth with a femur" },
+    "loot": [100, 200] },
+  { "id": "drowned_temple", "name": "the Drowned Temple", "tier": 3, "distance": 3,
+    "encounters": [
+      { "kind": "hazard", "dc": 14, "damageDie": 10, "text": "flooded halls where the air runs out" },
+      { "kind": "combat", "monster": "skeleton", "count": [3, 6], "text": "drowned dead rising from the pews" },
+      { "kind": "puzzle", "dc": 15, "gold": [40, 90], "text": "a sealed reliquary that answers in riddles" },
+      { "kind": "combat", "monster": "cultist", "count": [4, 6], "text": "cultists chanting in the nave" },
+      { "kind": "combat", "monster": "ghoul", "count": [2, 3], "text": "ghouls feeding in the crypt" },
+      { "kind": "treasure", "gold": [60, 140], "mimicChance": 0.2, "text": "an altar heaped with offerings" }
+    ],
+    "boss": { "kind": "combat", "monster": "cult_fanatic", "count": [1, 1], "escort": "ghoul", "escortCount": [1, 2], "text": "the drowned priest beneath the bell" },
+    "loot": [200, 400] }
+]

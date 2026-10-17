@@ -1,11 +1,11 @@
-import buildingsJson from '../../content/game/buildings.json' with { type: 'json' };
-import namesJson from '../../content/game/names.json' with { type: 'json' };
-import classesJson from '../../content/game/classes.json' with { type: 'json' };
-import monstersJson from '../../content/game/monsters.json' with { type: 'json' };
-import sitesJson from '../../content/game/sites.json' with { type: 'json' };
-import townJson from '../../content/game/town.json' with { type: 'json' };
-import councilJson from '../../content/game/council.json' with { type: 'json' };
-import enemyJson from '../../content/game/enemy.json' with { type: 'json' };
+import buildingsJson from './content/buildings.json' with { type: 'json' };
+import namesJson from './content/names.json' with { type: 'json' };
+import classesJson from './content/classes.json' with { type: 'json' };
+import monstersJson from './content/monsters.json' with { type: 'json' };
+import sitesJson from './content/sites.json' with { type: 'json' };
+import townJson from './content/town.json' with { type: 'json' };
+import councilJson from './content/council.json' with { type: 'json' };
+import enemyJson from './content/enemy.json' with { type: 'json' };
 
 export const GOODS = ['Food', 'Timber', 'Tools', 'Ale'] as const;
 export type Good = (typeof GOODS)[number];

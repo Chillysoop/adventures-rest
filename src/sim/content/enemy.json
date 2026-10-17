@@ -1,0 +1,131 @@
+{
+  "name": "the Bloodtusk Warband",
+  "leader": "Grukk Bloodtusk",
+  "leaderMonster": "orc_warlord",
+  "startStrength": 10,
+  "baseGrowth": 0.3,
+  "growthPerDay": 0.004,
+  "growthPerSite": 0.15,
+  "growthPerTier3Site": 0.3,
+  "stages": {
+    "omens": 50,
+    "probing": 100,
+    "raids": 160,
+    "march": 260
+  },
+  "marchDays": 3,
+  "raidEveryDays": [
+    5,
+    9
+  ],
+  "raidShare": 0.12,
+  "outpostGrowth": 0.8,
+  "outpostClearedLoss": 0.4,
+  "siegeWaves": 3,
+  "breachesToFall": 2,
+  "defense": {
+    "watchman": 3,
+    "heroLevel": 4,
+    "militiaPerWorker": 0.5,
+    "palisade": 1.5,
+    "perTower": 0.15
+  },
+  "palisade": {
+    "cost": 300,
+    "timber": 30,
+    "days": 6
+  },
+  "tower": {
+    "cost": 120,
+    "timber": 10,
+    "days": 3,
+    "max": 4
+  },
+  "outpost": {
+    "id": "bloodtusk_camp",
+    "name": "the Bloodtusk war camp",
+    "tier": 2,
+    "distance": 2,
+    "encounters": [
+      {
+        "kind": "combat",
+        "monster": "orc",
+        "count": [
+          2,
+          3
+        ],
+        "text": "orc sentries around a bonfire"
+      },
+      {
+        "kind": "hazard",
+        "dc": 13,
+        "damageDie": 8,
+        "text": "stake pits hidden in the long grass"
+      },
+      {
+        "kind": "combat",
+        "monster": "wolf",
+        "count": [
+          2,
+          4
+        ],
+        "text": "war wolves straining at their chains"
+      },
+      {
+        "kind": "treasure",
+        "gold": [
+          30,
+          70
+        ],
+        "mimicChance": 0,
+        "text": "a wagon of plunder from the caravan road"
+      }
+    ],
+    "boss": {
+      "kind": "combat",
+      "monster": "orc_war_chief",
+      "count": [
+        1,
+        1
+      ],
+      "escort": "orc",
+      "escortCount": [
+        1,
+        2
+      ],
+      "text": "the war chief in a tent of stitched hides"
+    },
+    "loot": [
+      80,
+      160
+    ]
+  },
+  "warlordBattle": {
+    "kind": "combat",
+    "monster": "orc_warlord",
+    "count": [
+      1,
+      1
+    ],
+    "escort": "orc",
+    "escortCount": [
+      1,
+      2
+    ],
+    "text": "the warlord's charge, axe dripping, his honour guard at his back"
+  },
+  "omens": [
+    "Drums carry from the hills after dark. The farmers bar their doors.",
+    "A shepherd finds three ewes torn open, and tusk marks on the fence posts.",
+    "Travellers on the east road say whole villages have gone quiet.",
+    "Old soldiers at the tavern swear they smell smoke on the wind from the north.",
+    "A child's nightmare spreads through the town: a red banner, and an axe the size of a door."
+  ],
+  "probing": [
+    "Orc scouts are seen watching the town from the treeline at dusk.",
+    "A caravan never arrives. Its oxen wander in alone, arrows in their flanks.",
+    "Someone has painted a red tusk on the town hall door in the night."
+  ],
+  "growthPerResident": 0.012,
+  "marchConfidence": 0.8
+}

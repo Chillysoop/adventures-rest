@@ -82,6 +82,7 @@ public sealed class Simulation
         double pace = Director.Daily(t);
         Threat.Daily(t, pace, Options.AutoMayor && Options.AutoDefense, Options.Enemy);
         Quests.Daily(t, Options.AutoMayor && Options.AutoBounties);
+        Watch.Daily(t, Options.AutoMayor && Options.AutoBounties);
         Economy.Daily(t, true);
         History.Add(Snapshot());
         t.AccountsYesterday = t.AccountsToday;
@@ -104,6 +105,18 @@ public sealed class Simulation
 
     /// <summary>Reach a party on the road by sending stone: ask for word, or call it home.</summary>
     public string? SendWord(int partyId, bool recall = false) => Knowledge.Send(Town, partyId, recall);
+
+    /// <summary>Post the best scout in town to watch a site from cover.</summary>
+    public Scout? PostScout(string siteId) => Watch.PostScout(Town, siteId);
+
+    /// <summary>Call a scout home early.</summary>
+    public bool RecallScout(int scoutId) => Watch.RecallScout(Town, scoutId);
+
+    /// <summary>Pay for a mirror pair and have one hidden at a site, for a lasting live view.</summary>
+    public Scout? PlantMirror(string siteId) => Watch.PlantMirror(Town, siteId);
+
+    /// <summary>Commission the Scrying Pool or the Sleepless Spire.</summary>
+    public Building? BuildSightWork(string buildingId) => Watch.BuildWork(Town, buildingId);
 
     public DayStats Snapshot()
     {

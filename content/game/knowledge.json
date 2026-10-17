@@ -1,9 +1,28 @@
 {
-  "casters": ["wizard", "cleric"],
+  "scrySpell": "scry-commission",
+  "sendSpell": "spell-slot-message",
   "scryMinLevel": 2,
   "scryBaseCost": 30,
   "scryCostPerDay": 15,
   "scryHours": 12,
   "slotsPerCaster": 1,
-  "slotsPerTwoLevels": 1
+  "slotsPerTwoLevels": 1,
+  "scouts": {
+    "roles": ["scout", "skirmisher"],
+    "wagePerDay": 3,
+    "watchDays": 8,
+    "spottedPerTier": 0.04,
+    "escapeDc": 10,
+    "escapeDcPerTier": 2
+  },
+  "mirror": {
+    "spell": "mirror-network",
+    "minLevel": 3,
+    "cost": 400,
+    "smashPerTier": 0.015
+  },
+  "works": [
+    { "building": "scrying_pool", "relic": "far-seeing-basin", "population": 30, "scryings": 1 },
+    { "building": "sleepless_spire", "relic": "eye-of-the-sleepless-spire", "population": 55, "reach": 2 }
+  ]
 }
