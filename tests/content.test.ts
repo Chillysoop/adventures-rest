@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 type Entry = Record<string, any> & { id: string; name: string; source: string };
@@ -86,10 +86,11 @@ describe('content library', () => {
     for (const c of all('classes')) expect(c.rt.role, c.id).toBeTruthy();
   });
 
-  it('credits every source it uses and ships the OGL with OGL content', () => {
+  it('credits every source it uses and holds nothing under the OGL', () => {
     const attribution = readFileSync(join(ROOT, 'ATTRIBUTION.md'), 'utf8');
     const used = new Set([...lib.values()].flat().flatMap((f) => f.entries.map((e) => e.source)));
     for (const s of used) if (s !== 'crown-and-compass') expect(attribution, s).toContain(s);
-    if ([...used].some((s) => sources[s].license === 'OGL-1.0a')) expect(existsSync(join(ROOT, 'licenses', 'OGL-1.0a.txt'))).toBe(true);
+    for (const s of used) expect(['CC-BY-4.0', 'proprietary'], s).toContain(sources[s].license);
+    expect(attribution).not.toMatch(/Open Game License/);
   });
 });

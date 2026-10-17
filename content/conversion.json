@@ -65,5 +65,6 @@
       "orb-of-dragonkind": "dragon-orb", "figurine-of-wondrous-power-obsidian-steed": "figurine-of-wondrous-power-obsidian-stead"
     }
   },
-  "thirdPartyOrder": ["bfrd", "a5e-ag", "a5e-ddg", "a5e-gpg", "spells-that-dont-suck", "toh", "tob-2023", "tob2", "tob3", "ccdx", "deepm", "deepmx", "kp", "wz", "vom", "a5e-mm"]
+  "_thirdPartyOrder": "Only books offered under CC-BY-4.0. OGL-1.0a books were dropped on 2026-10-17 (Conner's call) and replaced with originals; the importer refuses any book not under CC-BY.",
+  "thirdPartyOrder": ["bfrd", "a5e-ag", "a5e-ddg", "a5e-gpg", "spells-that-dont-suck"]
 }
