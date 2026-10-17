@@ -58,6 +58,28 @@
     "license": "CC-BY-4.0",
     "entries": 180
   },
+  "ironsworn": {
+    "title": "Ironsworn Rulebook",
+    "publisher": "Tomkin Press",
+    "author": "Shawn Tomkin",
+    "year": "2019",
+    "url": "https://ironswornrpg.com",
+    "license": "CC-BY-4.0",
+    "data": "Datasworn by rsek (https://github.com/rsek/datasworn, MIT)",
+    "entries": 108,
+    "note": "Only the CC-BY-4.0 parts (oracle tables, delve sites, assets). Foes, atlas and truths are CC-BY-NC-SA and are not used."
+  },
+  "ironsworn-delve": {
+    "title": "Ironsworn: Delve",
+    "publisher": "Tomkin Press",
+    "author": "Shawn Tomkin",
+    "year": "2020",
+    "url": "https://ironswornrpg.com",
+    "license": "CC-BY-4.0",
+    "data": "Datasworn by rsek (https://github.com/rsek/datasworn, MIT)",
+    "entries": 61,
+    "note": "Only the CC-BY-4.0 parts (oracle tables, delve sites, assets). Foes, atlas and truths are CC-BY-NC-SA and are not used."
+  },
   "crown-and-compass": {
     "title": "Crown & Compass originals",
     "publisher": "Adventures Rest",
