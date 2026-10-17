@@ -1,0 +1,61 @@
+[
+  {
+    "id": "cartographer", "name": "Cartographer", "source": "crown-and-compass", "hitDie": 8,
+    "primaryAbilities": ["dex", "int"], "savingThrows": ["dex", "int"],
+    "text": "Surveyors, guides and map-thieves who walk into the fog so the town does not have to. A Cartographer's real loot is the map: every expedition they survive pushes the fog back around the town.",
+    "features": [
+      { "level": 1, "name": "Field Notes", "text": "Expeditions with a Cartographer reveal one extra region of terrain when they report back, and their reports are never wrong about what they saw." },
+      { "level": 1, "name": "Pathfinder", "text": "The party travels a third faster through terrain the town has already mapped and never gets lost in it." },
+      { "level": 3, "name": "Dead Reckoning", "text": "Once per expedition, the Cartographer can lead the party out of a lost fight back to the last safe camp, ending the encounter." },
+      { "level": 5, "name": "Survey Stakes", "text": "Leaves a waystone at a site; the town can post bounties there without sending a scout first." },
+      { "level": 7, "name": "Read the Land", "text": "Before a party commits to a site, the Cartographer names its most dangerous encounter in the report." },
+      { "level": 10, "name": "Master Chart", "text": "While the Cartographer lives in town, mapped regions stay revealed between expeditions for an extra season." }
+    ],
+    "subclassIds": ["road-warden", "smugglers-chart"],
+    "rt": { "role": "scout", "toughness": 8, "townPerk": "Maps fog: each return reveals terrain around visited sites." }
+  },
+  {
+    "id": "hedge-witch", "name": "Hedge Witch", "source": "crown-and-compass", "hitDie": 6,
+    "primaryAbilities": ["wis"], "savingThrows": ["con", "wis"], "caster": "full",
+    "text": "Village herbalists, midwives and curse-breakers. They brew in the alchemist's shop between adventures and can turn a bad harvest or a plague caravan around.",
+    "features": [
+      { "level": 1, "name": "Kitchen Alchemy", "text": "Brews one common potion from the town grimoire each day she spends in town, for free." },
+      { "level": 1, "name": "Hedge Magic", "text": "Casts druid spells from the SRD list, preferring healing and warding." },
+      { "level": 3, "name": "Poultice", "text": "Wounded heroes resting in a house she visits recover twice as fast." },
+      { "level": 5, "name": "Plague Ward", "text": "Halves the spread of disease in the district where she lives." },
+      { "level": 7, "name": "Curse-Breaker", "text": "Can lift curses from relics and heroes; the town may charge for it as a service." },
+      { "level": 10, "name": "The Green Recipe", "text": "Discovers one new grimoire recipe each season without a recipe-map minigame." }
+    ],
+    "subclassIds": ["coven-of-ash"],
+    "rt": { "role": "support", "toughness": 6, "magic": "full", "townPerk": "Free potions, faster healing, disease control." }
+  },
+  {
+    "id": "reliquarian", "name": "Reliquarian", "source": "crown-and-compass", "hitDie": 8,
+    "primaryAbilities": ["int", "wis"], "savingThrows": ["int", "wis"], "caster": "half",
+    "text": "Relic-hunters licensed by temples and collectors. They open the tombs nobody else will and know which relic fragments are worth enchanting and which ones whisper.",
+    "features": [
+      { "level": 1, "name": "Appraise", "text": "Knows the true value of loot; the party never sells a relic for less than it is worth." },
+      { "level": 1, "name": "Warded Hands", "text": "Immune to the first curse or trap each expedition triggers." },
+      { "level": 3, "name": "Fragment Sense", "text": "Expeditions with a Reliquarian bring back one extra relic fragment from ruins and tombs." },
+      { "level": 5, "name": "Seal the Vault", "text": "Can seal a cleared tomb so nothing returns to it for a season." },
+      { "level": 7, "name": "Binding Rite", "text": "Can bind a dangerous artifact so the town can store it without it corrupting a councillor." },
+      { "level": 10, "name": "Living Archive", "text": "Each artifact in the town's vault grants one lore secret about the villain." }
+    ],
+    "rt": { "role": "specialist", "toughness": 8, "magic": "half", "townPerk": "More relic fragments, safer artifacts." }
+  },
+  {
+    "id": "warden", "name": "Warden", "source": "crown-and-compass", "hitDie": 10,
+    "primaryAbilities": ["con", "str"], "savingThrows": ["con", "str"],
+    "text": "Sworn defenders of a town's walls and roads. Wardens rarely go adventuring: they patrol, train the militia and hold the gate when the warband comes.",
+    "features": [
+      { "level": 1, "name": "Sworn to the Walls", "text": "Fights at full strength inside the walls even when outnumbered; the gate does not fall while a Warden stands in it." },
+      { "level": 1, "name": "Patrol", "text": "Walks a patrol route each day, lowering crime and spotting spies in the districts on it." },
+      { "level": 3, "name": "Drillmaster", "text": "Militia trained by a Warden fight one tier above their gear." },
+      { "level": 5, "name": "Hold the Line", "text": "Defenders next to a Warden take less damage from siege engines and brutes." },
+      { "level": 7, "name": "Murder Holes", "text": "Doubles the damage of walls, towers and chokepoints during a siege." },
+      { "level": 10, "name": "Last Stand", "text": "Once per siege, rallies every defender, ending fear and restoring a third of their health." }
+    ],
+    "subclassIds": ["gatekeeper"],
+    "rt": { "role": "frontline", "toughness": 10, "townPerk": "Patrols cut crime and catch spies; key in sieges." }
+  }
+]

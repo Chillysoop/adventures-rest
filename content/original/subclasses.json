@@ -1,0 +1,58 @@
+[
+  { "id": "coven-of-ash", "name": "Coven of Ash", "source": "crown-and-compass", "classId": "hedge-witch",
+    "text": "Witches who learned their craft burning plague houses. Fire is their cure.",
+    "features": [
+      { "level": 3, "name": "Cleansing Fire", "text": "Burning a plague house ends the outbreak in that district at the cost of the building." },
+      { "level": 7, "name": "Ash Mantle", "text": "Immune to fire; foes that strike her in melee are burned." }
+    ],
+    "rt": { "role": "support" } },
+  { "id": "gatekeeper", "name": "Gatekeeper", "source": "crown-and-compass", "classId": "warden",
+    "text": "The Warden who keeps the keys. Nobody enters the town without being seen.",
+    "features": [
+      { "level": 3, "name": "Toll and Tally", "text": "Caravans through her gate pay a little more toll and smuggle a lot less." },
+      { "level": 7, "name": "Shut the Gate", "text": "Can bar the gate instantly when raiders are sighted, buying time for the militia." }
+    ],
+    "rt": { "role": "frontline" } },
+  { "id": "guild-fixer", "name": "Guild Fixer", "source": "crown-and-compass", "classId": "rogue",
+    "text": "A rogue who works for whichever guild pays, and keeps a ledger of everyone's secrets.",
+    "features": [
+      { "level": 3, "name": "Leverage", "text": "Once a season, can sway a council vote by calling in a favour." },
+      { "level": 9, "name": "Two Ledgers", "text": "The thieves' guild treats the town gently while the Fixer is on good terms with the mayor." }
+    ],
+    "rt": { "role": "skirmisher" } },
+  { "id": "hearthkeeper-domain", "name": "Hearthkeeper Domain", "source": "crown-and-compass", "classId": "cleric",
+    "text": "Priests of the home fire and the town square. Their temple is the tavern as often as the chapel.",
+    "features": [
+      { "level": 3, "name": "Common Table", "text": "Feasts held at the temple raise the whole town's mood and settle brawls." },
+      { "level": 6, "name": "Sanctuary Hearth", "text": "Townsfolk sheltering in the temple during a siege cannot be harmed by fire or fear." }
+    ],
+    "rt": { "role": "support" } },
+  { "id": "ley-surveyor", "name": "Ley Surveyor", "source": "crown-and-compass", "classId": "wizard",
+    "text": "Wizards who chart the ley lines under the frontier and tap them for the town's mage tower.",
+    "features": [
+      { "level": 3, "name": "Dowsing Rod", "text": "Expeditions find ley crystals at sites on a ley line." },
+      { "level": 6, "name": "Tap the Line", "text": "While in town, powers one magical surveillance building at no upkeep." }
+    ],
+    "rt": { "role": "caster" } },
+  { "id": "militia-captain", "name": "Militia Captain", "source": "crown-and-compass", "classId": "fighter",
+    "text": "A veteran who turns farmers into soldiers and keeps them alive.",
+    "features": [
+      { "level": 3, "name": "Muster", "text": "Can call up the militia without a council decree once per season." },
+      { "level": 7, "name": "Shield Wall", "text": "Militia next to the Captain cannot be routed." }
+    ],
+    "rt": { "role": "frontline" } },
+  { "id": "road-warden", "name": "Road Warden", "source": "crown-and-compass", "classId": "cartographer",
+    "text": "Cartographers who keep the trade roads open and the caravans moving.",
+    "features": [
+      { "level": 3, "name": "Safe Roads", "text": "Mapped roads the Road Warden patrols see fewer ambushes and more caravans." },
+      { "level": 7, "name": "Milestones", "text": "Builds waystones that let parties rest safely on the road." }
+    ],
+    "rt": { "role": "scout" } },
+  { "id": "smugglers-chart", "name": "Smuggler's Chart", "source": "crown-and-compass", "classId": "cartographer",
+    "text": "Cartographers who know the routes that are not on any map, and sell them.",
+    "features": [
+      { "level": 3, "name": "Hidden Ways", "text": "Parties can reach sites without crossing enemy territory, avoiding warband patrols." },
+      { "level": 7, "name": "Black Market Map", "text": "Can sell a map of enemy territory to the town, revealing it under fog for a season." }
+    ],
+    "rt": { "role": "scout" } }
+]

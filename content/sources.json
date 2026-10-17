@@ -1,0 +1,182 @@
+{
+  "srd-2024": {
+    "title": "System Reference Document 5.2",
+    "publisher": "Wizards of the Coast LLC",
+    "author": "Wizards of the Coast",
+    "year": "2024",
+    "url": "https://dnd.wizards.com/resources/systems-reference-document",
+    "license": "CC-BY-4.0",
+    "entries": 1221
+  },
+  "srd-2014": {
+    "title": "System Reference Document 5.1",
+    "publisher": "Wizards of the Coast LLC",
+    "author": "Mike Mearls, Jeremy Crawford, Chris Perkins, Rodney Thompson, Peter Lee, James Wyatt, Robert J. Schwalb, Bruce R. Cordell, Chris Sims, and Steve Townshend, based on original material by E. Gary Gygax and Dave Arneson.",
+    "year": "2023",
+    "url": "https://dnd.wizards.com/resources/systems-reference-document",
+    "license": "CC-BY-4.0",
+    "alsoOffered": [
+      "OPEN GAME LICENSE Version 1.0a"
+    ],
+    "entries": 122
+  },
+  "bfrd": {
+    "title": "Black Flag SRD",
+    "publisher": "Open Design LLC d/b/a Kobold Press",
+    "author": "Open Design LLC d/b/a Kobold Press",
+    "year": "2023",
+    "url": "https://koboldpress.com/black-flag-reference-document/",
+    "license": "CC-BY-4.0",
+    "entries": 71
+  },
+  "a5e-ag": {
+    "title": "Adventurer's Guide",
+    "publisher": "EN Publishing",
+    "author": "EN Publishing",
+    "year": "2021",
+    "url": "https://a5esrd.com/a5esrd",
+    "license": "CC-BY-4.0",
+    "alsoOffered": [
+      "OPEN GAME LICENSE Version 1.0a"
+    ],
+    "entries": 143
+  },
+  "a5e-ddg": {
+    "title": "Dungeon Delver’s Guide",
+    "publisher": "EN Publishing",
+    "author": "EN Publishing",
+    "year": "2023",
+    "url": "https://a5esrd.com/a5esrd",
+    "license": "CC-BY-4.0",
+    "alsoOffered": [
+      "OPEN GAME LICENSE Version 1.0a"
+    ],
+    "entries": 4
+  },
+  "a5e-gpg": {
+    "title": "Gate Pass Gazette",
+    "publisher": "EN Publishing",
+    "author": "EN Publishing",
+    "year": "2022",
+    "url": "https://a5esrd.com/a5esrd",
+    "license": "CC-BY-4.0",
+    "alsoOffered": [
+      "OPEN GAME LICENSE Version 1.0a"
+    ],
+    "entries": 2
+  },
+  "spells-that-dont-suck": {
+    "title": "Spells That Don't Suck",
+    "publisher": "somanyrobots",
+    "author": "Ben Somers / somanyrobots, Omega Ankh",
+    "year": "2025",
+    "url": "https://www.somanyrobots.com/s/Spells-That-Dont-Suck-compressed.pdf",
+    "license": "CC-BY-4.0",
+    "entries": 180
+  },
+  "toh": {
+    "title": "Tome of Heroes",
+    "publisher": "Open Design LLC d/b/a Kobold Press",
+    "author": "Kelly Pawlik, Ben Mcfarland, and Briand Suskind",
+    "year": "2022",
+    "url": "https://koboldpress.com/kpstore/product/tome-of-heroes-for-5th-edition/",
+    "license": "OGL-1.0a",
+    "entries": 238
+  },
+  "tob-2023": {
+    "title": "Tome of Beasts 1 (2023 Edition)",
+    "publisher": "Open Design LLC d/b/a Kobold Press",
+    "author": "Dan Dillon, Chris Harris, Rodrigo Garcia Carmona, Wolfgang Baur",
+    "year": "2024",
+    "url": "https://koboldpress.com/kpstore/product/tome-of-beasts-1-2023-edition-hardcover/",
+    "license": "OGL-1.0a",
+    "entries": 408
+  },
+  "tob2": {
+    "title": "Tome of Beasts 2",
+    "publisher": "Open Design LLC d/b/a Kobold Press",
+    "author": "Wolfgang Baur, Celeste Conowitch, Darrin Drader, James Introcaso, Philip Larwood, Jeff Lee, Kelly Pawlik, Brian Suskind, Mike Welham",
+    "year": "2020",
+    "url": "https://koboldpress.com/tome-of-beasts-2/",
+    "license": "OGL-1.0a",
+    "entries": 382
+  },
+  "tob3": {
+    "title": "Tome of Beasts 3",
+    "publisher": "Open Design LLC d/b/a Kobold Press",
+    "author": "Wolfgang Baur, Celeste Conowitch, Darrin Drader, James Introcaso, Philip Larwood, Jeff Lee, Kelly Pawlik, Brian Suskind, Mike Welham",
+    "year": "2022",
+    "url": "https://koboldpress.com/tome-of-beasts-3/",
+    "license": "OGL-1.0a",
+    "entries": 396
+  },
+  "ccdx": {
+    "title": "Creature Codex",
+    "publisher": "Open Design LLC d/b/a Kobold Press",
+    "author": "Wolfgang Baur, Dan Dillon, Richard Green, James Haeck, Chris Harris, Jeremy Hochhalter, James Introcaso, Chris Lockey, Shawn Merwin, and Jon Sawatsky",
+    "year": "2018",
+    "url": "https://koboldpress.com/kpstore/product/creature-codex-for-5th-edition-dnd/",
+    "license": "OGL-1.0a",
+    "entries": 356
+  },
+  "deepm": {
+    "title": "Deep Magic for 5th Edition",
+    "publisher": "Open Design LLC d/b/a Kobold Press",
+    "author": "Dan Dillon, Chris Harris, and Jeff Lee",
+    "year": "2020",
+    "url": "https://koboldpress.com/kpstore/product/deep-magic-for-5th-edition-hardcover/",
+    "license": "OGL-1.0a",
+    "entries": 511
+  },
+  "deepmx": {
+    "title": "Deep Magic Extended",
+    "publisher": "Open Design LLC d/b/a Kobold Press",
+    "author": "Not sure.",
+    "year": "2024",
+    "url": "https://koboldpress.com/deepmagic",
+    "license": "OGL-1.0a",
+    "entries": 64
+  },
+  "kp": {
+    "title": "Kobold Press Compilation",
+    "publisher": "Open Design LLC d/b/a Kobold Press",
+    "author": "Various",
+    "year": "2024",
+    "url": "https://koboldpress.com/",
+    "license": "OGL-1.0a",
+    "entries": 31
+  },
+  "wz": {
+    "title": "Warlock Zine",
+    "publisher": "Open Design LLC d/b/a Kobold Press",
+    "author": "Woflgang Baur, others.",
+    "year": "2017",
+    "url": "https://koboldpress.com/kpstore/product-category/all-products/warlock-5th-edition-dnd/",
+    "license": "OGL-1.0a",
+    "entries": 43
+  },
+  "vom": {
+    "title": "Vault of Magic",
+    "publisher": "Open Design LLC d/b/a Kobold Press",
+    "author": "Phillip Larwood, Jeff Lee, and Christopher Lockey",
+    "year": "2021",
+    "url": "https://koboldpress.com/kpstore/product/vault-of-magic-for-5th-edition/",
+    "license": "OGL-1.0a",
+    "entries": 873
+  },
+  "a5e-mm": {
+    "title": "Monstrous Menagerie",
+    "publisher": "EN Publishing",
+    "author": "Paul Hughes",
+    "year": "2021",
+    "url": "https://enpublishingrpg.com/collections/level-up-advanced-5th-edition-a5e/products/level-up-monstrous-menagerie-a5e",
+    "license": "OGL-1.0a",
+    "entries": 273
+  },
+  "crown-and-compass": {
+    "title": "Crown & Compass originals",
+    "publisher": "Adventures Rest",
+    "license": "proprietary",
+    "note": "Hand-written for this game; lives in content/original."
+  }
+}
