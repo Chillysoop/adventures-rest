@@ -211,7 +211,11 @@ public static class Ui
     public static void GoldButton(Button b)
     {
         var m = System.Text.RegularExpressions.Regex.Match(b.Text, @"(\d[\d,]*)g\b");
-        if (!m.Success) return;
+        if (!m.Success)
+        {
+            b.Icon = null; // buttons that are reused may have shown a price before
+            return;
+        }
         b.Text = b.Text.Remove(m.Index + m.Length - 1, 1);
         b.Icon = Icon("gold");
         b.ExpandIcon = false;
