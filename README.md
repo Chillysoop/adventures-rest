@@ -75,10 +75,17 @@ Live sight (`Systems/Knowledge.cs`, `Systems/Watch.cs`, numbers in `content/game
 
 ## The Godot client (`godot/`)
 
-Godot 4.3 (.NET) with the C# sim as a project reference. Everything is built in code (`src/Main.cs`, `src/Panels.cs`)
-and drawn procedurally (`src/Map/`), so there are no art assets beyond two OFL fonts.
+Godot 4.3 (.NET, Compatibility renderer) with the C# sim as a project reference. The UI is built in code
+(`src/Main.cs`, `src/Panels.cs`); the map (`src/Map/`) is a 3D world in the spirit of Northgard, scaled for a map that
+takes many hours to explore. Art credits are in [`godot/assets/CREDITS.md`](godot/assets/CREDITS.md).
 
-- The map: the town, the wilds and the sites, with day and night. Scroll to zoom, drag to pan, double right-click to recenter.
+- The map: one continuous 1024×1024-tile world (1 tile = 1 lot, about 44 tiles per day of march) generated from the
+  seed (`WorldGen.cs`): hills, mountain chains, a river past the town, biomes and forests, cut into Northgard-style
+  territories. Terrain is 16×16 chunks with three levels of detail; trees and ground clutter are instanced per chunk and
+  give way to painted canopy from far off. Buildings mix Kenney's CC0 kits (baked into `assets/models/kenney.bin` by
+  `tools/kenney_bake.py`) with generated parts (`MeshKit.cs`), all in one vertex-coloured batch per kind.
+- Camera: scroll to zoom from street level to the whole map, drag to pan, Q/E to rotate, double right-click to recenter.
+  M switches to the strategic view: the same land as an inked campaign map, where markers can be placed.
 - Fog of war (`src/Map/Fog.cs`), derived from the sim each frame: the town's own light (wider with watchtowers) is live;
   roads and sites that a party came home to describe are *scouted* as of that day and go stale after 30 days; everything
   else is *rumoured*. Parties vanish into the fog when they leave the light. A scrying shows a site live for a few hours.
@@ -98,7 +105,9 @@ godot --headless --path godot --export-release Windows build/windows/CrownAndCom
 Options after `--`: `--seed`, `--day`, `--hour`, `--speed 0-4`, `--tab`, `--site <id>`, `--autoplay` (the stand-in mayor
 plays), `--bounty <site>`, `--scry <site>`, `--scout <site>`, `--mirror <site>`, `--send`, `--recall`,
 `--build palisade|tower|pool|spire`, `--relic <item-id>`, `--hero` (inspect the most storied hero), `--no-pause` (keep
-time running through war news), `--screenshot <png>`, `--frames N`. For a clip, add Godot's own `--write-movie clip.avi --fixed-fps 30 --quit-after 900` before the `--`.
+time running through war news), `--screenshot <png>`, `--frames N`, `--cam <distance>` (with `--look x,y` or `--site`
+to aim it), `--yaw <quarter turns>`, `--strategic`, `--trees <density>` (stress test) and `--bench` (prints frame time,
+map CPU time, draw calls and triangles, then quits). For a clip, add Godot's own `--write-movie clip.avi --fixed-fps 30 --quit-after 900` before the `--`.
 
 ## Time model
 

@@ -22,6 +22,16 @@ public sealed class Options
     public bool Autoplay;
     public bool Hero;
 
+    /// <summary>Camera distance in tiles and an optional point to look at (--cam 40 --look 512,480), and the strategic view.</summary>
+    public float? Cam;
+    public Godot.Vector2? Look;
+    public bool StrategicView;
+    public int Yaw;
+
+    /// <summary>Extra trees per forest tile and a frame-time report, for the late-game performance check.</summary>
+    public float Trees = 1;
+    public bool Bench;
+
     /// <summary>Keep time running through war news, for recording clips.</summary>
     public bool NoPause;
     public readonly List<(string Verb, string Arg)> Script = [];
@@ -45,6 +55,15 @@ public sealed class Options
                 case "--autoplay": o.Autoplay = true; break;
                 case "--hero": o.Hero = true; break;
                 case "--no-pause": o.NoPause = true; break;
+                case "--cam": o.Cam = float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture); break;
+                case "--look":
+                    var xy = Next().Split(',');
+                    o.Look = new Godot.Vector2(float.Parse(xy[0], System.Globalization.CultureInfo.InvariantCulture), float.Parse(xy[1], System.Globalization.CultureInfo.InvariantCulture));
+                    break;
+                case "--strategic": o.StrategicView = true; break;
+                case "--yaw": o.Yaw = int.Parse(Next()); break;
+                case "--trees": o.Trees = float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture); break;
+                case "--bench": o.Bench = true; break;
                 case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic":
                     o.Script.Add((args[i][2..], Next()));
                     break;
