@@ -875,7 +875,8 @@ public static class Menaces
         m.EndedDay = town.Day;
         m.Holdings.Clear();
         Saga.Relief(town);
-        if (m.Named && !m.BigBad && m.Def.Slain != "") town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, m.Def.Slain, m)));
+        // The warlord's own death is told by Threat.
+        if (m.Named && !m.BigBad && m.Origin != FromWarband && m.Def.Slain != "") town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, m.Def.Slain, m)));
         Saga.Unyoke(town, m);
         if (m.BigBad) Saga.Win(town, m);
     }
