@@ -7,8 +7,7 @@ namespace CrownAndCompass.Sim.Systems;
 /// holy days, pays bounties on the undead and the schemers it hates, heals heroes, and raises the
 /// fallen for a price, so death sticks unless someone pays (W9). The general store sells heroes the
 /// healing potions they carry into a delve.
-/// The shrine and temple are generic houses of worship: who they serve (one god today) and what that
-/// god hates come from content/game/faith.json, the hook a pantheon of several faiths can attach to.
+/// Who each house serves, holy days and what each god hates come from the pantheon (see Faith).
 /// </summary>
 public static class Shrines
 {
@@ -30,10 +29,13 @@ public static class Shrines
     {
         var def = town.Content.Building(Rules(town).Shrine);
         var lot = CivicLot(town)!;
-        return town.AddBuilding(def, lot, null, $"the shrine of {Rules(town).Deity}", true);
+        var b = town.AddBuilding(def, lot, null, "", true);
+        Faith.Dedicate(town, b, Faith.CharterGod(town));
+        return b;
     }
 
-    private static Lot? CivicLot(Town town)
+    /// <summary>A civic lot near the hall for a house of worship or a guildhall, zoning one if needed.</summary>
+    public static Lot? CivicLot(Town town)
     {
         var lot = Property.FindLot(town, Zone.Civic) ?? Property.FindLot(town, Zone.None);
         if (lot != null) lot.Zone = Zone.Civic;
@@ -65,7 +67,9 @@ public static class Shrines
         var def = town.Content.Building(Rules(town).Temple);
         town.Book(TreasuryAccount.Temple, -TempleCost(town));
         town.Market.Buy(Good.Timber, def.Timber);
-        var b = town.AddBuilding(def, lot, null, $"the Temple of {Rules(town).Deity}", false);
+        var god = Faith.TempleChoice(town);
+        var b = town.AddBuilding(def, lot, null, "", false);
+        Faith.Dedicate(town, b, god);
         b.LaborBudget = def.BuildHours * Brain.ConstructionWage;
         // The shrine's offerings go to the new house.
         var shrine = Shrine(town);
@@ -74,11 +78,11 @@ public static class Shrines
             b.Cash += shrine.Cash;
             shrine.Cash = 0;
         }
-        int faithful = Followers(town).Count;
+        int faithful = Faith.Followers(town, god.Id).Count;
         town.Log(
             LedgerCategory.Faith,
             Importance.Notable,
-            $"The council endows {b.Name}. {(faithful > 0 ? $"{faithful} {Rules(town).Devout} carry stones for it." : "The town hopes the faithful will follow.")}");
+            $"The council endows {b.Name}, for {Faith.Prose(god)} has the largest congregation in town. {(faithful > 0 ? $"{faithful} of the faithful carry stones for it." : "The town hopes the faithful will follow.")}");
         return b;
     }
 
@@ -93,7 +97,7 @@ public static class Shrines
 
     public static void Pray(Town town, Agent a)
     {
-        var holy = HolyPlace(town);
+        var holy = Faith.PlaceFor(town, a) ?? HolyPlace(town);
         if (holy == null) return;
         a.LocationId = holy.Id;
         a.Loneliness = Math.Max(0, a.Loneliness - 2);
@@ -114,12 +118,9 @@ public static class Shrines
         Vows(town);
         var holy = HolyPlace(town);
         if (holy != null && town.Day % r.TitheEveryDays == 0) Tithe(town, holy);
+        // Holy days are each god's own, kept by Faith.
         var temple = Temple(town);
-        if (temple != null)
-        {
-            if (town.Day % r.HolyDayEveryDays == 0) HolyDay(town, temple);
-            Crusade(town, temple);
-        }
+        if (temple != null) Crusade(town, temple);
         if (auto && TempleBlocked(town) == null && town.Treasury > TempleCost(town) + 250) BuildTemple(town);
     }
 
@@ -131,39 +132,39 @@ public static class Shrines
         {
             if (a.PrayedToday && !a.Devout && town.Rng.Chance(chance))
             {
-                a.Devout = true;
-                town.Log(LedgerCategory.Faith, Importance.Routine, $"{a.Name} takes the vows of {r.Deity}.", [a.Id]);
+                // The faithless take the vows of whichever god's house they have been praying at.
+                if (string.IsNullOrEmpty(a.Faith) && a.LocationId != null) a.Faith = town.Faiths.Dedications.Get(a.LocationId.Value, "");
+                var god = Faith.Of(town, a);
+                if (god != null)
+                {
+                    a.Devout = true;
+                    town.Log(LedgerCategory.Faith, Importance.Routine, $"{a.Name} takes the vows of {Faith.Prose(god)}.", [a.Id]);
+                }
             }
             a.PrayedToday = false;
         }
     }
 
+    /// <summary>The sworn tithe to their own god's house, or to the town's holy place if their god has none here.</summary>
     private static void Tithe(Town town, Building holy)
     {
-        double total = 0;
+        var gifts = new OrderedMap<int, double>();
         foreach (var a in Followers(town))
         {
             double give = Math.Floor(a.Gold * Rules(town).Tithe * 10) / 10;
             if (give <= 0) continue;
             a.Gold -= give;
-            total += give;
+            var to = Faith.PlaceFor(town, a) ?? holy;
+            gifts[to.Id] = gifts.Get(to.Id, 0) + give;
         }
-        holy.Cash += total;
+        double total = 0;
+        foreach (var (id, gift) in gifts)
+        {
+            town.Building(id).Cash += gift;
+            total += gift;
+        }
         if (total >= 1)
-            town.Log(LedgerCategory.Faith, Importance.Routine, $"The {Rules(town).Devout} tithe {Js.ToFixed(total, 0)} gold to {holy.Name}.");
-    }
-
-    private static void HolyDay(Town town, Building temple)
-    {
-        var r = Rules(town);
-        if (temple.Cash < r.HolyDayCost) return;
-        temple.Cash -= r.HolyDayCost;
-        town.FestivalDays = Math.Max(town.FestivalDays, 1);
-        int n = Followers(town).Count;
-        town.Log(
-            LedgerCategory.Faith,
-            Importance.Notable,
-            $"{Cap(temple.Name)} keeps {r.HolyDayName}: {(n > 1 ? $"{n} {r.Devout}" : "the priests")} carry lanterns through the streets, and the whole town eats at the temple's table.");
+            town.Log(LedgerCategory.Faith, Importance.Routine, $"The faithful tithe {Js.ToFixed(total, 0)} gold to {(gifts.Count == 1 ? town.Building(gifts.Keys[0]).Name : $"{gifts.Count} houses of the gods")}.");
     }
 
     /// <summary>The temple's agenda: a bounty from its own coffers on the nearest den of the kinds its god hates.</summary>
@@ -171,9 +172,11 @@ public static class Shrines
     {
         var r = Rules(town);
         if (temple.Cash < r.CrusadeReward + r.CrusadeReserve) return;
+        var god = Faith.Of(town, temple);
+        var kinds = god != null ? god.Hates : r.CrusadeKinds;
         if (town.Bounties.Any(b => b.FunderId == temple.Id && b.Status is BountyStatus.Open or BountyStatus.Taken)) return;
         var target = town.Sites
-            .Where(s => s.Known != SiteKnowledge.Unheard && !s.ThoughtCleared && r.CrusadeKinds.Contains(s.Def.Kind))
+            .Where(s => s.Known != SiteKnowledge.Unheard && !s.ThoughtCleared && kinds.Contains(s.Def.Kind))
             .Where(s => !town.Bounties.Any(b => b.SiteId == s.Def.Id && b.Status is BountyStatus.Open or BountyStatus.Taken))
             .OrderBy(s => s.Def.Distance)
             .ThenBy(s => s.Def.Id, StringComparer.Ordinal)
@@ -184,7 +187,7 @@ public static class Shrines
         town.Log(
             LedgerCategory.Faith,
             Importance.Notable,
-            $"{Cap(temple.Name)} offers {Js.Str(r.CrusadeReward)} gold from its own coffers to whoever cleanses {target.Def.Name}. {Cap(r.Deity)} will not suffer {target.Believed} so near her lamps.");
+            $"{Cap(temple.Name)} offers {Js.Str(r.CrusadeReward)} gold from its own coffers to whoever cleanses {target.Def.Name}. {Cap(god != null ? Faith.Prose(god) : r.Deity)} will not suffer {target.Believed} so near {town.Name}.");
     }
 
     // Heroes --------------------------------------------------------------------------------------
@@ -218,7 +221,7 @@ public static class Shrines
         foreach (int id in dead)
         {
             var h = town.Agent(id);
-            double coffers = h.Devout ? Math.Max(0, temple.Cash - Rules(town).CrusadeReserve) : 0;
+            double coffers = h.Devout && town.Faiths.Dedications.Get(temple.Id, "") == h.Faith ? Math.Max(0, temple.Cash - Rules(town).CrusadeReserve) : 0;
             if (h.Gold + take + coffers < cost) continue;
             double fromOwn = Math.Min(h.Gold, cost);
             double fromTake = Math.Min(take, cost - fromOwn);
@@ -230,7 +233,8 @@ public static class Shrines
             h.Hero!.Hp = 1;
             raised.Add(id);
             string paid = fromTemple > 0 ? "the temple pays what the purse cannot" : fromTake > 0 ? $"the {partyName} pay from their take" : "the hero's own gold pays for it";
-            rites.Add(($"The priests of {Rules(town).Deity} lay {h.Name} on the altar and call them back. {h.GivenName} breathes again ({paid}, {Js.Str(cost)} gold).", id));
+            var god = Faith.Of(town, temple);
+            rites.Add(($"The priests of {(god != null ? Faith.Prose(god) : Rules(town).Deity)} lay {h.Name} on the altar and call them back. {h.GivenName} breathes again ({paid}, {Js.Str(cost)} gold).", id));
         }
         return raised;
     }
