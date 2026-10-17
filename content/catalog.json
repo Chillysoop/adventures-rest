@@ -52,16 +52,19 @@
     "srd2014Merged": 318,
     "open": {
       "a5e-ag": 57,
-      "spells-that-dont-suck": 180
+      "spells-that-dont-suck": 180,
+      "midnight-spells": 99
     },
-    "openDuplicatesDropped": 314
+    "openDuplicatesDropped": 315
   },
   "monsters": {
     "srd2024": 331,
     "srd2014Only": 7,
     "srd2014Merged": 316,
     "open": {
-      "bfrd": 59
+      "bfrd": 59,
+      "khyberia-srd": 21,
+      "little-book-of-beasts": 49
     },
     "openDuplicatesDropped": 301
   },
