@@ -1,38 +1,37 @@
 # Adventures Rest
 
 A D&D-themed city builder where you govern a frontier town as its mayor while a living campaign
-plays out around you. (The design doc's working title is *Crown & Compass*; the code keeps that
-namespace for now.)
+plays out around you. (The design doc's working title is *Crown & Compass*.)
+
+The game is built for the web: every build is a page you can open and play, and the simulation
+runs in the browser.
 
 ## What's here
 
-The **simulation core**: a plain C# library that runs the town headless, with no engine attached.
-The Godot client will sit on top of it and only draw what it does.
-
-- `src/CrownAndCompass.Sim`: the simulation
-  - `Core/`: seeded RNG and dice, time, the Ledger (town chronicle), data-driven content
-  - `Agents/`: townsfolk with D&D ability scores, traits, needs, money, ambitions and opinions of each other
-  - `World/`: lots, buildings and the market
-  - `Systems/`: hourly utility AI (`Brain`), production and wages (`Economy`), buying land and
-    building (`Property`), tavern life (`Social`), arrivals and departures (`Population`), and a
-    stand-in `Mayor` that zones land while there is no player
-  - `Content/*.json`: buildings, races and names (data, so it can be modded)
-- `src/CrownAndCompass.Cli`: headless runner that prints the Ledger
-- `tests/`: xUnit tests (determinism, growth, invariants, dice, market)
+- `src/sim`: the simulation, plain TypeScript with no rendering
+  - `rng.ts`, `time.ts`, `ledger.ts`, `content.ts`: seeded dice, time, the Ledger (town chronicle), data-driven content
+  - `agent.ts`: townsfolk with D&D ability scores, traits, needs, money, ambitions and opinions of each other
+  - `town.ts`: lots, buildings and the market
+  - `systems/`: hourly utility AI (`brain`), production and wages (`economy`), buying land and
+    building (`property`), tavern life (`social`), arrivals and departures (`population`), and a
+    stand-in `mayor` that zones land while there is no player
+  - `content/*.json`: buildings, races and names (data, so it can be modded)
+- `src/cli.ts`: headless runner that prints the Ledger
+- `tests/`: determinism, growth, invariants, dice and market
 
 ## Time model
 
-Real time with pause. A client calls `Simulation.Step()` once per in-game hour at whatever speed
+Real time with pause. A client calls `Simulation.step()` once per in-game hour at whatever speed
 the player picks; strategic systems (accounts, property, arrivals) run on the daily tick.
 The same seed always replays the same town.
 
 ## Run it
 
 ```bash
-./scripts/setup.sh                      # installs the .NET 8 SDK if missing (Ubuntu)
-dotnet test
-dotnet run --project src/CrownAndCompass.Cli -- --days 120 --seed 1          # notable events
-dotnet run --project src/CrownAndCompass.Cli -- --days 30 --all --stats      # everything, daily stats
+npm ci
+npm test
+npm run sim -- --days 120 --seed 1          # notable events
+npm run sim -- --days 30 --all --stats      # everything, with daily stats
 ```
 
 `docs/sample-ledger.txt` is a 120-day run you can read without building anything.
