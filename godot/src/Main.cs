@@ -61,6 +61,7 @@ public partial class Main : Control
         Theme = Ui.BuildTheme();
         Ui.Links = OnLink;
         BuildLayout();
+        _map.TreeScale = _opts.Trees;
         NewTown(_opts.Seed ?? 1, _opts.Autoplay);
         if (_opts.Day > 0) _sim.RunDays(_opts.Day);
         if (_opts.Hour > 0) for (int i = 0; i < _opts.Hour; i++) _sim.Step();
@@ -68,6 +69,10 @@ public partial class Main : Control
         SetSpeed(_opts.Speed ?? 1);
         if (_opts.Tab is string t && Enum.TryParse<Tab>(t, true, out var tab)) SetTab(tab);
         if (_opts.Site is string site) Select(Selection.Site(site));
+        if (_opts.Cam is float cam)
+            _map.LookAt(_opts.Look ?? (_opts.Site is string at && _map.Geo.Pins.TryGetValue(at, out var pin) ? pin : Map.Geo.Center), cam);
+        if (_opts.StrategicView) _map.ToggleStrategic();
+        if (_opts.Yaw != 0) _map.Rotate(_opts.Yaw);
         // --hero picks the town's most storied hero in town, for a look at their sheet.
         if (_opts.Hero && _sim.Town.Heroes.Where(a => !a.IsAway).OrderByDescending(a => a.Hero!.Items.Count).ThenByDescending(a => a.Hero!.Level).ThenBy(a => a.Id).FirstOrDefault() is Agent hero)
             Select(Selection.Agent(hero.Id));
@@ -352,6 +357,9 @@ public partial class Main : Control
         if (k.Keycode == Key.Space) SetSpeed(_speed == 0 ? _lastSpeed : 0);
         else if (k.Keycode is >= Key.Key1 and <= Key.Key4) SetSpeed((int)(k.Keycode - Key.Key0));
         else if (k.Keycode == Key.Home) _map.Recenter();
+        else if (k.Keycode == Key.M) _map.ToggleStrategic();
+        else if (k.Keycode == Key.Q) _map.Rotate(-1);
+        else if (k.Keycode == Key.E) _map.Rotate(1);
         else return;
         GetViewport().SetInputAsHandled();
     }
@@ -386,7 +394,32 @@ public partial class Main : Control
             }
             _dirty = false;
         }
+        if (_opts.Bench) Bench(delta);
+        if (_opts.Flyout) _map.Drift(1 + (float)delta * 0.16f, (float)delta * 0.05f);
         _opts.Capture(this, ref _frames);
+    }
+
+    private int _benchFrames;
+    private double _benchTime, _benchProcess;
+    private (int Draws, int Primitives, int Objects) _benchPeak;
+
+    /// <summary>With --bench: after the map settles, average 120 frames of frame time and render counters, print them and quit.</summary>
+    private void Bench(double delta)
+    {
+        if (++_benchFrames <= 60)
+        {
+            MapView.CpuMs = 0;
+            return;
+        }
+        _benchTime += delta;
+        _benchProcess += MapView.CpuMs / 1000;
+        var st = _map.Stats();
+        _benchPeak = (Math.Max(_benchPeak.Draws, st.Draws), Math.Max(_benchPeak.Primitives, st.Primitives), Math.Max(_benchPeak.Objects, st.Objects));
+        MapView.CpuMs = 0;
+        if (_benchFrames < 180) return;
+        int n = _benchFrames - 60;
+        GD.Print($"BENCH trees={_map.TreeInstances} dist={_map.Distance:F0} frame_ms={_benchTime / n * 1000:F2} map_cpu_ms={_benchProcess / n * 1000:F2} draws={_benchPeak.Draws} primitives={_benchPeak.Primitives} objects={_benchPeak.Objects}");
+        GetTree().Quit();
     }
 
     // ---------- Header ----------

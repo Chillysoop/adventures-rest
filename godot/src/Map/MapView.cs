@@ -12,14 +12,17 @@ public sealed record Selection(string Kind, int Id = 0, string SiteId = "")
 }
 
 /// <summary>
-/// The town map. World layers are Node2Ds under one camera transform, drawn in world tiles, and
-/// each redraws only when its content changes; text is drawn on top in screen space so it stays
-/// crisp at any zoom. Pure presentation: it reads the simulation and never changes it.
+/// The map: one live 3D world under a Northgard-style camera that zooms continuously from street
+/// level to the whole 1024-tile map, with icons and names drawn on top in screen space so they
+/// stay readable at any zoom. M toggles the strategic view, the same live map drawn as an inked
+/// campaign map where markers can be placed. Pure presentation: it reads the simulation and never
+/// changes it.
 /// </summary>
 public partial class MapView : Control
 {
     public Simulation Sim { get; private set; } = null!;
     public Geo Geo { get; private set; } = null!;
+    public WorldGen Gen { get; private set; } = null!;
     public Fog Fog { get; } = new();
     public Selection? Selection { get; set; }
     public event Action<Selection?>? Picked;
@@ -27,104 +30,284 @@ public partial class MapView : Control
     /// <summary>Fraction of the current hour already elapsed, for smooth marching between steps.</summary>
     public float HourFraction { get; set; }
 
-    private readonly Node2D _world = new();
-    private TerrainLayer _terrain = null!;
-    private TownLayer _town = null!;
-    private AgentLayer _agents = null!;
-    private NightLayer _night = null!;
-    private FogLayer _fog = null!;
-    private OverlayLayer _overlay = null!;
-    private LabelLayer _labels = null!;
+    /// <summary>Extra trees per forest tile, for stress-testing a denser late-game map (--trees).</summary>
+    public float TreeScale { get; set; } = 1;
 
-    // Camera in world tiles. It frames the town and its sites on its own until the player zooms or pans.
-    private Vector2 _cam = Geo.Center;
-    private float _span = 14;
+    public readonly List<Marker> Markers = [];
+    public MarkerKind? Placing { get; set; }
+    public bool Strategic { get; private set; }
+    private float _strategic;
+
+    private SubViewportContainer _box = null!;
+    private SubViewport _vp = null!;
+    private Camera3D _camera = null!;
+    private DirectionalLight3D _sun = null!;
+    private Godot.Environment _env = null!;
+    private WorldView _world = null!;
+    private TownView _town = null!;
+    private Crowd _crowd = null!;
+    private Overlay _overlay = null!;
+    private ShaderMaterial _grade = null!;
+
+    // Camera: a target on the ground, a distance along the view ray, and a heading in 90-degree steps.
+    private Vector2 _target = Geo.Center;
+    private float _ground = WorldGen.TownHeight;
+    private float _dist = 60, _goalDist = 60;
+    private float _yaw, _goalYaw;
     private bool _manual;
-    private float _manualSpan = 14;
     private int _lastTick = -1;
     private bool _first = true;
+    private string _stateKey = "";
 
-    public float Zoom => Size.X / _span;
+    public const float MinDist = 7, MaxDist = 1500;
+
+    public Camera3D Camera => _camera;
+    public float Distance => _dist;
+    public AgentPositions Agents => _crowd.People;
+    public Crowd Crowd => _crowd;
 
     public override void _Ready()
     {
         ClipContents = true;
         MouseFilter = MouseFilterEnum.Stop;
-        AddChild(_world);
-        _terrain = new TerrainLayer(this);
-        _town = new TownLayer(this);
-        _agents = new AgentLayer(this);
-        _night = new NightLayer(this);
-        _fog = new FogLayer(this);
-        _overlay = new OverlayLayer(this);
-        foreach (var l in new Node2D[] { _terrain, _town, _agents, _night, _fog, _overlay }) _world.AddChild(l);
-        _labels = new LabelLayer(this) { MouseFilter = MouseFilterEnum.Ignore };
-        AddChild(_labels);
-        _labels.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        _grade = new ShaderMaterial { Shader = GD.Load<Shader>("res://assets/shaders/grade.gdshader") };
+        _box = new SubViewportContainer { Stretch = true, MouseFilter = MouseFilterEnum.Ignore, Material = _grade };
+        AddChild(_box);
+        _box.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        _vp = new SubViewport
+        {
+            OwnWorld3D = true,
+            Msaa3D = Viewport.Msaa.Msaa2X,
+            RenderTargetUpdateMode = SubViewport.UpdateMode.Always,
+            PositionalShadowAtlasSize = 0,
+        };
+        _box.AddChild(_vp);
+
+        _env = new Godot.Environment
+        {
+            BackgroundMode = Godot.Environment.BGMode.Color,
+            BackgroundColor = new Color("c4cfd2"),
+            AmbientLightSource = Godot.Environment.AmbientSource.Color,
+            AmbientLightColor = new Color("aab8c6"),
+            AmbientLightEnergy = 0.45f,
+            TonemapMode = Godot.Environment.ToneMapper.Filmic,
+            TonemapExposure = 1.05f,
+            FogEnabled = true,
+            FogLightColor = new Color("c4cfd2"),
+            FogDensity = 0.002f,
+        };
+        _vp.AddChild(new WorldEnvironment { Environment = _env });
+        _sun = new DirectionalLight3D
+        {
+            ShadowEnabled = true,
+            DirectionalShadowMode = DirectionalLight3D.ShadowMode.Orthogonal,
+            ShadowBlur = 1.5f,
+            LightColor = new Color("fff0d8"),
+            LightEnergy = 1.2f,
+        };
+        _vp.AddChild(_sun);
+        _camera = new Camera3D { Fov = 38, Near = 0.5f, Far = 5000 };
+        _vp.AddChild(_camera);
+        _world = new WorldView();
+        _vp.AddChild(_world);
+        _town = new TownView(this);
+        _vp.AddChild(_town);
+        _crowd = new Crowd(this);
+        _vp.AddChild(_crowd);
+        _overlay = new Overlay(this) { MouseFilter = MouseFilterEnum.Ignore };
+        AddChild(_overlay);
+        _overlay.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
     }
 
     public void Bind(Simulation sim)
     {
         Sim = sim;
         Geo = new Geo(sim.Town);
+        Gen = new WorldGen(sim.Options.Seed, Geo, sim.Town, TreeScale);
+        _world.Build(Gen, TreeScale);
+        _town.Reset();
+        _crowd.Reset();
+        Markers.Clear();
         Selection = null;
         _first = true;
         _manual = false;
         _lastTick = -1;
-        _agents.Reset();
-        _terrain.QueueRedraw();
+        _stateKey = "";
+        _target = Geo.Center;
+        _yaw = _goalYaw = 0;
+        Mats.SetAll("fog_tex", Fog.Texture);
     }
 
     public void Recenter() => _manual = false;
 
-    public override void _Process(double delta)
+    public void ToggleStrategic() => Strategic = !Strategic;
+
+    public void Rotate(int dir) => _goalYaw += dir * Mathf.Pi / 2;
+
+    /// <summary>Fly the camera to a world point, as the Ledger's links and the minimap do.</summary>
+    /// <summary>Pull the camera back (factor above 1) or in, and turn it by yaw radians, keeping its target.</summary>
+    public void Drift(float factor, float yaw)
+    {
+        _goalDist = Mathf.Clamp(_goalDist * factor, MinDist, MaxDist);
+        _yaw += yaw;
+        _goalYaw += yaw;
+    }
+
+    public void LookAt(Vector2 p, float? dist = null)
+    {
+        _manual = true;
+        _target = p;
+        if (dist is float d) _goalDist = d;
+    }
+
+    /// <summary>Client CPU spent on the map this frame (process and overlay drawing), in milliseconds.</summary>
+    public static double CpuMs;
+
+    public static void Time(Action work)
+    {
+        long t = System.Diagnostics.Stopwatch.GetTimestamp();
+        work();
+        CpuMs += System.Diagnostics.Stopwatch.GetElapsedTime(t).TotalMilliseconds;
+    }
+
+    public override void _Process(double delta) => Time(() => Advance(delta));
+
+    private void Advance(double delta)
     {
         if (Sim == null) return;
         var town = Sim.Town;
         float dt = (float)delta;
         float ease = _first ? 1 : 1 - Mathf.Exp(-dt * 1.5f);
-        if (Geo.PlaceSites(town, ease)) _terrain.QueueRedraw();
-        if (Fog.Refresh(town, Geo)) _fog.QueueRedraw();
-        UpdateCamera(ease);
+        Geo.PlaceSites(town, ease);
+        Fog.Refresh(town, Geo);
+        UpdateStates(town);
+        UpdateCamera(dt);
         _first = false;
         if (town.Tick != _lastTick)
         {
             _lastTick = town.Tick;
-            _town.QueueRedraw();
+            _town.Refresh();
         }
-        _agents.Advance(dt);
-        _agents.QueueRedraw();
-        _night.QueueRedraw();
+        _crowd.Advance(dt);
+        UpdateLight(town);
         _overlay.QueueRedraw();
-        _labels.QueueRedraw();
     }
 
-    private void UpdateCamera(float ease)
+    /// <summary>The town holds the territory it stands in; the enemy's camp corrupts its own and seeps into its neighbours.</summary>
+    private void UpdateStates(Town town)
+    {
+        var states = new Dictionary<int, (float, float)> { [Gen.TownCell] = (1, 0) };
+        var en = town.Enemy;
+        var camp = town.Sites.FirstOrDefault(s => s.Def.Id == town.Content.Enemy.Outpost.Id);
+        if (camp != null && !camp.Cleared && Geo.Pins.TryGetValue(camp.Def.Id, out var pin))
+        {
+            int cell = Gen.TerritoryAt(pin);
+            float creep = Mathf.Clamp((float)en.Strength / 180, 0.15f, 0.7f);
+            int cx = cell % WorldGen.Cells, cy = cell / WorldGen.Cells;
+            for (int oy = -1; oy <= 1; oy++)
+                for (int ox = -1; ox <= 1; ox++)
+                {
+                    int x = cx + ox, y = cy + oy;
+                    if (x < 0 || y < 0 || x >= WorldGen.Cells || y >= WorldGen.Cells) continue;
+                    int c = y * WorldGen.Cells + x;
+                    if (c == Gen.TownCell) continue;
+                    states[c] = (0, c == cell ? 1 : creep * 0.5f);
+                }
+        }
+        string key = string.Join(';', states.OrderBy(k => k.Key).Select(k => $"{k.Key}:{k.Value.Item1:F2}:{k.Value.Item2:F2}"));
+        if (key == _stateKey) return;
+        _stateKey = key;
+        _world.SetStates(states);
+    }
+
+    private void UpdateCamera(float dt)
     {
         if (Size.X < 1 || Size.Y < 1) return;
-        float x0 = float.MaxValue, y0 = float.MaxValue, x1 = float.MinValue, y1 = float.MinValue;
-        foreach (var p in Geo.Pins.Values)
-        {
-            x0 = Mathf.Min(x0, p.X - 2.4f);
-            x1 = Mathf.Max(x1, p.X + 2.4f);
-            y0 = Mathf.Min(y0, p.Y - 1.4f);
-            y1 = Mathf.Max(y1, p.Y + 2.8f);
-        }
-        float aspect = Size.X / Size.Y;
         if (!_manual)
         {
-            var target = new Vector2((x0 + x1) / 2, (y0 + y1) / 2);
-            float span = Mathf.Max(x1 - x0, (y1 - y0) * aspect);
-            _cam += (target - _cam) * ease;
-            _span += (span - _span) * ease;
+            // Frame the town and the lamplit ground around it.
+            _target += (Geo.Center - _target) * (_first ? 1 : 1 - Mathf.Exp(-dt * 2));
+            _goalDist = Mathf.Clamp(Fog.LightRadius * 1.1f, 16, 70);
         }
-        else _span += (_manualSpan - _span) * Mathf.Min(1, ease * 6);
-        _world.Scale = new Vector2(Zoom, Zoom);
-        _world.Position = Size / 2 - _cam * Zoom;
+        float k = _first ? 1 : 1 - Mathf.Exp(-dt * 6);
+        _dist += (_goalDist - _dist) * k;
+        _yaw += (_goalYaw - _yaw) * k;
+        _target = _target.Clamp(Vector2.Zero, new Vector2(Geo.World, Geo.World));
+        _ground += (Gen.SurfaceAt(_target.X, _target.Y) - _ground) * (_first ? 1 : k);
+        // Close in, the camera leans in like Northgard's; pulled out, it flattens toward a map.
+        float s = Mathf.InverseLerp(Mathf.Log(MinDist), Mathf.Log(MaxDist), Mathf.Log(_dist));
+        float pitch = Mathf.DegToRad(Mathf.Lerp(50, 72, s));
+        var dir = new Vector3(Mathf.Sin(_yaw) * Mathf.Cos(pitch), Mathf.Sin(pitch), Mathf.Cos(_yaw) * Mathf.Cos(pitch));
+        var focus = new Vector3(_target.X, _ground, _target.Y);
+        _camera.Position = focus + dir * _dist;
+        _camera.LookAt(focus, Vector3.Up);
+        _camera.Far = _dist * 4 + 600;
+        _sun.DirectionalShadowMaxDistance = Mathf.Clamp(_dist * 2.2f, 40, 260);
+        _sun.ShadowEnabled = _dist < 400;
+        _env.FogDensity = 0.35f / (_dist + 120);
+        float far = Mathf.SmoothStep(220, 650, _dist);
+        _strategic += ((Strategic ? 1 : 0) - _strategic) * (1 - Mathf.Exp(-dt * 5));
+        if (Mathf.Abs(_strategic - (Strategic ? 1 : 0)) < 0.002f) _strategic = Strategic ? 1 : 0;
+        Mats.Terrain.SetShaderParameter("far", far);
+        Mats.Terrain.SetShaderParameter("border_width", Mathf.Clamp(_dist * 0.006f, 0.3f, 6f));
+        Mats.SetAll("strategic", _strategic);
+        _grade.SetShaderParameter("strategic", _strategic);
     }
 
-    public Vector2 ToWorld(Vector2 screen) => (screen - _world.Position) / Zoom;
-    public Vector2 ToScreen(Vector2 world) => _world.Position + world * Zoom;
+    private void UpdateLight(Town town)
+    {
+        float night = Geo.Nightness(town, HourFraction);
+        float dusk = Mathf.Clamp(1 - Mathf.Abs(night - 0.45f) * 2.5f, 0, 1);
+        Mats.SetAll("night", night);
+        float hour = (town.Tick % SimTime.HoursPerDay) + HourFraction;
+        // The sun swings from east to west across the day; the moon is a cool, dim light from above.
+        float arc = Mathf.Clamp((hour - 6) / 14f, 0, 1);
+        var dir = new Vector3(Mathf.Lerp(0.9f, -0.9f, arc) * 0.6f + 0.35f, -1.25f + night * 0.3f, 0.75f).Normalized();
+        _sun.Basis = Basis.LookingAt(dir, Vector3.Up);
+        var day = new Color("fff0d8");
+        var evening = new Color("ffb878");
+        var moon = new Color("8fa8e8");
+        _sun.LightColor = day.Lerp(evening, dusk).Lerp(moon, night);
+        _sun.LightEnergy = Mathf.Lerp(1.45f, 0.32f, night);
+        _env.AmbientLightColor = new Color("a4b4c6").Lerp(new Color("4a5a88"), night);
+        _env.AmbientLightEnergy = Mathf.Lerp(0.48f, 0.4f, night);
+        var haze = new Color("c4cfd2").Lerp(new Color("e2b896"), dusk * 0.6f).Lerp(new Color("1c2236"), night);
+        _env.BackgroundColor = haze;
+        _env.FogLightColor = haze;
+        if (town.Outcome == Outcome.Defeat) _env.AmbientLightColor = _env.AmbientLightColor.Lerp(new Color("a03020"), 0.4f);
+    }
+
+    // ---------- Projection and picking ----------
+
+    public bool OnScreen(Vector3 w, out Vector2 screen)
+    {
+        screen = default;
+        if (_camera.IsPositionBehind(w)) return false;
+        screen = _camera.UnprojectPosition(w);
+        return screen.X > -80 && screen.Y > -80 && screen.X < Size.X + 80 && screen.Y < Size.Y + 80;
+    }
+
+    public Vector2 ToScreen(Vector2 tile, float lift = 0) => _camera.UnprojectPosition(Gen.At(tile, lift));
+
+    /// <summary>The ground point under a screen position: march the view ray until it dips below the land.</summary>
+    public Vector2 ToWorld(Vector2 screen)
+    {
+        var o = _camera.ProjectRayOrigin(screen);
+        var d = _camera.ProjectRayNormal(screen);
+        if (d.Y > -0.01f) return _target;
+        float t = (o.Y - _ground) / -d.Y;
+        for (int i = 0; i < 6; i++)
+        {
+            var p = o + d * t;
+            float h = Gen.SurfaceAt(p.X, p.Z);
+            t += (p.Y - h) / -d.Y * 0.8f;
+        }
+        var hit = o + d * t;
+        return new Vector2(hit.X, hit.Z);
+    }
+
+    /// <summary>Tiles per screen pixel at the camera's focus, for sizing things that live in the world.</summary>
+    public float TilesPerPixel => 2 * _dist * Mathf.Tan(Mathf.DegToRad(_camera.Fov / 2)) / Mathf.Max(1, Size.Y);
 
     private Vector2 _pressAt;
     private bool _dragging;
@@ -135,14 +318,11 @@ public partial class MapView : Control
         {
             if (mb.ButtonIndex is MouseButton.WheelUp or MouseButton.WheelDown && mb.Pressed)
             {
-                if (!_manual) _manualSpan = _span;
                 _manual = true;
                 var before = ToWorld(mb.Position);
-                _manualSpan = Mathf.Clamp(_manualSpan * (mb.ButtonIndex == MouseButton.WheelUp ? 0.85f : 1.18f), 5, 60);
-                _span = _manualSpan;
-                // Keep the point under the cursor still.
-                float s = Size.X / _span;
-                _cam = before - (mb.Position - Size / 2) / s;
+                _goalDist = Mathf.Clamp(_goalDist * (mb.ButtonIndex == MouseButton.WheelUp ? 0.82f : 1.22f), MinDist, MaxDist);
+                // Zoom toward the point under the cursor.
+                if (mb.ButtonIndex == MouseButton.WheelUp) _target += (before - _target) * 0.18f;
                 AcceptEvent();
             }
             else if (mb.ButtonIndex == MouseButton.Left)
@@ -154,30 +334,53 @@ public partial class MapView : Control
                 }
                 else if (!_dragging)
                 {
-                    Selection = Pick(ToWorld(mb.Position));
-                    Picked?.Invoke(Selection);
+                    var w = ToWorld(mb.Position);
+                    if (Placing is MarkerKind kind)
+                    {
+                        Markers.Add(new Marker(kind, w, Sim.Town.Day));
+                        Placing = null;
+                    }
+                    else
+                    {
+                        Selection = Pick(w, mb.Position);
+                        Picked?.Invoke(Selection);
+                    }
                 }
                 AcceptEvent();
             }
-            else if (mb.ButtonIndex == MouseButton.Right && mb.Pressed && mb.DoubleClick) Recenter();
+            else if (mb.ButtonIndex == MouseButton.Right && mb.Pressed)
+            {
+                if (mb.DoubleClick) Recenter();
+                else if (Strategic) RemoveMarkerNear(mb.Position);
+            }
         }
         else if (e is InputEventMouseMotion mm && (mm.ButtonMask & (MouseButtonMask.Left | MouseButtonMask.Right | MouseButtonMask.Middle)) != 0)
         {
             if (!_dragging && mm.Position.DistanceTo(_pressAt) < 5 && (mm.ButtonMask & MouseButtonMask.Left) != 0) return;
             _dragging = true;
-            if (!_manual) _manualSpan = _span;
             _manual = true;
-            _cam -= mm.Relative / Zoom;
+            var a = ToWorld(mm.Position - mm.Relative);
+            var b = ToWorld(mm.Position);
+            _target -= b - a;
             AcceptEvent();
         }
     }
 
-    public Selection? Pick(Vector2 w)
+    private void RemoveMarkerNear(Vector2 screen)
+    {
+        var m = Markers.Where(m => ToScreen(m.P).DistanceTo(screen) < 24).OrderBy(m => ToScreen(m.P).DistanceTo(screen)).FirstOrDefault();
+        if (m != null) Markers.Remove(m);
+    }
+
+    public Selection? Pick(Vector2 w, Vector2 screen)
     {
         var town = Sim.Town;
+        // Icons first, in screen space, since they keep their size at any zoom.
+        foreach (var (id, p) in Geo.Pins)
+            if (ToScreen(p, 1).DistanceTo(screen) < 26) return Selection.Site(id);
         int best = -1;
-        float bestD = 0.3f;
-        foreach (var (id, s) in _agents.Sprites)
+        float bestD = 0.35f;
+        foreach (var (id, s) in _crowd.People.Sprites)
         {
             if (!s.Visible) continue;
             float d = s.P.DistanceTo(w);
@@ -188,7 +391,6 @@ public partial class MapView : Control
             }
         }
         if (best >= 0) return Selection.Agent(best);
-        foreach (var (id, p) in Geo.Pins) if (p.DistanceTo(w) < 0.8f) return Selection.Site(id);
         int gx = Mathf.FloorToInt(w.X - Geo.Margin), gy = Mathf.FloorToInt(w.Y - Geo.Margin);
         if (gx >= 0 && gy >= 0 && gx < Geo.Grid && gy < Geo.Grid)
         {
@@ -198,33 +400,26 @@ public partial class MapView : Control
         return null;
     }
 
-    public AgentLayer Agents => _agents;
-}
-
-/// <summary>Shared drawing helpers for the world layers.</summary>
-public abstract partial class Layer : Node2D
-{
-    protected readonly MapView Map;
-    protected Town Town => Map.Sim.Town;
-
-    protected Layer(MapView map) => Map = map;
-
-    protected void Ellipse(Vector2 c, float rx, float ry, Color color, int points = 18)
+    /// <summary>Rendering counters for the frame-time check: draw calls, primitives, objects.</summary>
+    public (int Draws, int Primitives, int Objects) Stats()
     {
-        var pts = new Vector2[points];
-        for (int i = 0; i < points; i++)
-        {
-            float a = i * Mathf.Tau / points;
-            pts[i] = c + new Vector2(Mathf.Cos(a) * rx, Mathf.Sin(a) * ry);
-        }
-        DrawColoredPolygon(pts, color);
+        var rid = _vp.GetViewportRid();
+        return ((int)RenderingServer.ViewportGetRenderInfo(rid, RenderingServer.ViewportRenderInfoType.Visible, RenderingServer.ViewportRenderInfo.DrawCallsInFrame),
+            (int)RenderingServer.ViewportGetRenderInfo(rid, RenderingServer.ViewportRenderInfoType.Visible, RenderingServer.ViewportRenderInfo.PrimitivesInFrame),
+            (int)RenderingServer.ViewportGetRenderInfo(rid, RenderingServer.ViewportRenderInfoType.Visible, RenderingServer.ViewportRenderInfo.ObjectsInFrame));
     }
 
-    protected void Circle(Vector2 c, float r, Color color) => Ellipse(c, r, r, color, r > 0.3f ? 28 : 14);
-
-    protected void Ring(Vector2 c, float r, Color color, float width) => DrawArc(c, r, 0, Mathf.Tau, 40, color, width, true);
-
-    protected void Poly(Color color, params Vector2[] pts) => DrawColoredPolygon(pts, color);
-
-    protected void Rect(float x, float y, float w, float h, Color color) => DrawRect(new Rect2(x, y, w, h), color);
+    public int TreeInstances => _world.TreeInstances;
 }
+
+public enum MarkerKind
+{
+    Attack,
+    Defend,
+    Scout,
+    Danger,
+    Note,
+}
+
+/// <summary>A mark on the map placed by the player (and later by allies), shown in both views.</summary>
+public sealed record Marker(MarkerKind Kind, Vector2 P, int Day);

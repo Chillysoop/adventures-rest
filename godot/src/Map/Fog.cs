@@ -22,22 +22,21 @@ public sealed record Report(string SiteId, int Day, bool ReachedSite, float Reac
 
 /// <summary>
 /// The fog of war. Everything is derived from the simulation (parties that came home, scryings,
-/// the town's size and towers), so it needs no saving and stays deterministic. The fog is a small
-/// texture, one pixel per quarter tile, drawn with linear filtering for soft edges.
+/// the town's size and towers), so it needs no saving and stays deterministic. The fog is one
+/// texture over the whole map, one texel per tile, sampled with linear filtering for soft edges by
+/// every world shader. Only the area that reports and live sight touch is repainted.
 /// </summary>
 public sealed class Fog
 {
-    public const float X0 = -12;
-    public const float Span = Geo.World + 24;
-    private const int PerTile = 4;
+    public const float X0 = 0;
+    public const float Span = Geo.World;
+    private const int PerTile = 1;
     public const int N = (int)Span * PerTile;
 
     /// <summary>A report older than this shows as a "last seen" ghost.</summary>
     public const int StaleDays = 30;
 
-    private static readonly Color Unknown = new("1b1711");
     public const float UnknownAlpha = 0.84f;
-    private static readonly Color Described = new("5d4a30");
 
     private readonly byte[] _rgba = new byte[N * N * 4];
     private readonly float[] _alpha = new float[N * N];
@@ -52,6 +51,11 @@ public sealed class Fog
 
     private string _key = "";
 
+    /// <summary>How far a live view of a site reaches around it, in tiles.</summary>
+    public const float SiteSight = 13;
+
+    public static float SpireRadius(Geo geo, int reach) => geo.TownRadius + 10 + reach * Geo.TilesPerDay + SiteSight;
+
     public Fog()
     {
         _image = Image.CreateEmpty(N, N, false, Image.Format.Rgba8);
@@ -64,15 +68,15 @@ public sealed class Fog
         CollectReports(town);
         LiveAreas.Clear();
         // The town's lamplight reaches a little past its edge; each watchtower sees farther.
-        LightRadius = geo.TownRadius + 1.4f + town.Defenses.Towers * 0.9f;
+        LightRadius = geo.TownRadius + 9 + town.Defenses.Towers * 5;
         LiveAreas.Add((Geo.Center, LightRadius));
         // The Sleepless Spire lights every site within its reach.
         int reach = Watch.Reach(town);
-        if (reach > 0) LiveAreas.Add((Geo.Center, geo.TownRadius + 1.3f + reach * 1.1f + 2.2f));
+        if (reach > 0) LiveAreas.Add((Geo.Center, SpireRadius(geo, reach)));
         foreach (var (site, source) in Watch.LiveSites(town))
-            if (source != LiveSource.Spire && geo.Pins.TryGetValue(site.Def.Id, out var pin)) LiveAreas.Add((pin, 2.6f));
+            if (source != LiveSource.Spire && geo.Pins.TryGetValue(site.Def.Id, out var pin)) LiveAreas.Add((pin, SiteSight));
 
-        string key = $"{town.Day}|{LightRadius:F2}|{Reports.Count}|{string.Join(',', LiveAreas.Skip(1).Select(a => $"{a.P}:{a.R:F1}"))}|{string.Join(',', geo.Pins.Values.Select(p => p.ToString("F1")))}";
+        string key = $"{town.Day}|{LightRadius:F0}|{Reports.Count}|{string.Join(',', LiveAreas.Skip(1).Select(a => $"{a.P.Round()}:{a.R:F0}"))}|{string.Join(',', geo.Pins.Values.Select(p => p.Round().ToString("F0")))}";
         if (key == _key) return false;
         _key = key;
         Paint(town, geo);
@@ -119,7 +123,7 @@ public sealed class Fog
             {
                 var w = new Vector2(X0 + (x + 0.5f) / PerTile, Y0Of(y));
                 // Soft edges: a report describes the middle of the road better than its verges.
-                float k = Mathf.Clamp((radius - SegmentDistance(w, a, b)) / 0.7f, 0, 1);
+                float k = Mathf.Clamp((radius - SegmentDistance(w, a, b)) / 3f, 0, 1);
                 int i = y * N + x;
                 if (k <= 0) continue;
                 if (_day[i] < day) _day[i] = day;
@@ -131,35 +135,64 @@ public sealed class Fog
 
     private void Paint(Town town, Geo geo)
     {
-        Array.Fill(_day, -1);
-        Array.Fill(_known, 0f);
+        // Everything starts unknown; only the box that reports and live sight touch is worked out.
+        Array.Fill(_alpha, UnknownAlpha);
+        for (int i = 0; i < N * N; i++)
+        {
+            _rgba[i * 4] = 255;
+            _rgba[i * 4 + 1] = 0;
+            _rgba[i * 4 + 2] = 0;
+            _rgba[i * 4 + 3] = 255;
+        }
+        float bx0 = float.MaxValue, by0 = float.MaxValue, bx1 = float.MinValue, by1 = float.MinValue;
+        void Grow(Vector2 p, float r)
+        {
+            bx0 = Mathf.Min(bx0, p.X - r);
+            by0 = Mathf.Min(by0, p.Y - r);
+            bx1 = Mathf.Max(bx1, p.X + r);
+            by1 = Mathf.Max(by1, p.Y + r);
+        }
+        foreach (var (p, r) in LiveAreas) Grow(p, r + 2);
         foreach (var r in Reports)
         {
             if (!geo.Pins.TryGetValue(r.SiteId, out var pin)) continue;
             var end = Geo.Center + (pin - Geo.Center) * r.Reach;
-            Stamp(Geo.Center, end, 1.0f, r.Day);
-            if (r.ReachedSite) Stamp(pin, pin, 2.3f, r.Day);
+            Grow(Geo.Center, 0);
+            Grow(end, ReportRoad);
+            if (r.ReachedSite) Grow(pin, ReportSite);
+        }
+        int x0 = Math.Max(0, Px(bx0)), y0 = Math.Max(0, Px(by0)), x1 = Math.Min(N - 1, Px(bx1)), y1 = Math.Min(N - 1, Px(by1));
+        for (int y = y0; y <= y1; y++)
+            for (int x = x0; x <= x1; x++)
+            {
+                int i = y * N + x;
+                _day[i] = -1;
+                _known[i] = 0;
+            }
+        foreach (var r in Reports)
+        {
+            if (!geo.Pins.TryGetValue(r.SiteId, out var pin)) continue;
+            var end = Geo.Center + (pin - Geo.Center) * r.Reach;
+            Stamp(Geo.Center, end, ReportRoad, r.Day);
+            if (r.ReachedSite) Stamp(pin, pin, ReportSite, r.Day);
         }
         int today = town.Day;
-        for (int y = 0; y < N; y++)
-            for (int x = 0; x < N; x++)
+        for (int y = y0; y <= y1; y++)
+            for (int x = x0; x <= x1; x++)
             {
                 int i = y * N + x;
                 var w = new Vector2(X0 + (x + 0.5f) / PerTile, Y0Of(y));
                 float k = _known[i];
                 float described = _day[i] >= 0 && today - _day[i] > StaleDays ? 0.58f : 0.34f;
                 float a = Mathf.Lerp(UnknownAlpha, described, k);
-                var c = Unknown.Lerp(Described, k);
                 foreach (var (p, r) in LiveAreas)
                 {
-                    float soft = r > 4 ? 1.6f : 0.9f;
+                    float soft = r > 20 ? 6f : 3f;
                     a *= Mathf.Clamp((w.DistanceTo(p) - r + soft) / soft, 0, 1);
                 }
                 _alpha[i] = a;
-                _rgba[i * 4] = (byte)(c.R * 255);
-                _rgba[i * 4 + 1] = (byte)(c.G * 255);
-                _rgba[i * 4 + 2] = (byte)(c.B * 255);
-                _rgba[i * 4 + 3] = (byte)(a * 255);
+                _rgba[i * 4] = (byte)(a / UnknownAlpha * 255);
+                _rgba[i * 4 + 1] = (byte)(k * 255);
             }
         _image.SetData(N, N, false, Image.Format.Rgba8, _rgba);
         Texture.Update(_image);
@@ -174,6 +207,9 @@ public sealed class Fog
     }
 
     public bool IsLive(Vector2 w) => AlphaAt(w) < 0.3f;
+
+    /// <summary>Half-width of the strip of road a report describes, and the radius it describes around a site.</summary>
+    public const float ReportRoad = 5, ReportSite = 16;
 
     public Sight SightOf(string siteId, Vector2 pin) =>
         IsLive(pin) ? Sight.Live : Reports.Any(r => r.SiteId == siteId && r.ReachedSite) ? Sight.Scouted : Sight.Rumoured;
