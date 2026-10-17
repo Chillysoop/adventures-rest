@@ -70,7 +70,7 @@ public static class Economy
     {
         var rules = town.Content.Rules;
         int n = town.Workers.Count;
-        double bill = rules.CivicUpkeep + rules.UpkeepPerResident * n * (1 + n / rules.UpkeepGrowth);
+        double bill = rules.CivicUpkeep + rules.UpkeepPerResident * n * (1 + n / rules.UpkeepGrowth) + Planning.Upkeep(town);
         double paid = Math.Min(bill, Math.Max(0, town.Treasury));
         town.Book(TreasuryAccount.Upkeep, -paid);
         if (paid < bill && town.UnpaidDays++ == 0)
@@ -82,7 +82,7 @@ public static class Economy
     {
         int pop = town.Population;
         var m = town.Market;
-        m.SetTarget(Good.Food, pop * 3 + 40);
+        m.SetTarget(Good.Food, pop * 3 + 40 + Planning.FoodStore(town));
         m.SetTarget(Good.Timber, 40 + town.Buildings.Count(b => b.IsSite) * 10);
         m.SetTarget(Good.Tools, 10 + town.BusinessCount());
         m.SetTarget(Good.Ale, pop * 0.6 + 10);

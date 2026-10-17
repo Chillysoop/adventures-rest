@@ -160,6 +160,7 @@ public static class TreasuryAccount
     public const string Tribute = "Tribute";
     public const string Fines = "Fines";
     public const string Factions = "Factions";
+    public const string Works = "Town works";
 }
 
 /// <summary>How the campaign ended.</summary>
@@ -243,6 +244,9 @@ public sealed class Town
 
     /// <summary>Sight works whose opening has been announced.</summary>
     public HashSet<int> SightWorksOpened { get; } = [];
+
+    /// <summary>Day a buyer last found no land of each zone, so the notice comes once a week at most.</summary>
+    public Dictionary<Zone, int> NoLandDay { get; } = [];
 
     /// <summary>The townsfolk's approval of the mayor, 0 to 100.</summary>
     public double Mandate { get; set; } = 60;

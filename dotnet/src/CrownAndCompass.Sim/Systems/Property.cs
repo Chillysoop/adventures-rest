@@ -152,7 +152,11 @@ public static class Property
     private static bool TryBuild(Town town, Agent a, BuildingDef def, bool rental)
     {
         var lot = FindLot(town, def.Zone);
-        if (lot == null) return false;
+        if (lot == null)
+        {
+            if (a.Gold >= def.Cost) Planning.NoLand(town, def.Zone, a);
+            return false;
+        }
         double lotPrice = town.LotPrice(lot);
         if (a.Gold < TotalCost(town, def, lot) + 5) return false;
 
@@ -168,7 +172,7 @@ public static class Property
         town.Log(
             LedgerCategory.Property,
             def.IsBusiness ? Importance.Notable : Importance.Routine,
-            $"{a.Name} buys a {def.Zone.ToString().ToLowerInvariant()} lot for {Js.ToFixed(lotPrice, 0)} gold and breaks ground on {what}.",
+            $"{a.Name} buys {(def.Zone == Zone.Industry ? "an" : "a")} {Planning.ZoneName(def.Zone)} lot for {Js.ToFixed(lotPrice, 0)} gold and breaks ground on {what}.",
             [a.Id]);
         return true;
     }
