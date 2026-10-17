@@ -1,0 +1,242 @@
+Day   1 00:00  [Town] The charter is signed. 14 settlers and a wagon arrive at the river ford that will become Briarford.
+Day   2 00:00  [Property] Wellby Underbough buys a farmland lot for 26 gold and breaks ground on Underbough Lumber Camp.
+Day   3 00:00  [Property] Werra Stonebeard buys a farmland lot for 26 gold and breaks ground on Stonebeard Farm.
+Day   3 13:00  [Construction] Underbough Lumber Camp is finished for Wellby Underbough.
+Day   5 07:00  [Construction] Stonebeard Farm is finished for Werra Stonebeard.
+Day   6 00:00  [Property] Vola Redmane buys a commercial lot for 33 gold and breaks ground on The Sleeping Wyvern.
+Day   9 07:00  [Construction] The Sleeping Wyvern is finished for Vola Redmane.
+  -- end of day 10: pop 16, homeless 4, idle 0, buildings 9 (+1 rising), treasury 632, food 0.91g, mood 60, avg purse 58g
+Day  13 00:00  [Property] Eberk Hammerfall buys a commercial lot for 34 gold and breaks ground on Hammerfall's Forge.
+Day  15 13:00  [Construction] Hammerfall's Forge is finished for Eberk Hammerfall.
+Day  17 00:00  [Property] Rurik Ironhand buys a commercial lot for 35 gold and breaks ground on Rurik's Brewery.
+Day  20 20:00  [Social] Galinndan Nailo says something about the mayor's taxes that Ellyjobell Folkor will not forgive. A grudge begins at The Sleeping Wyvern.
+Day  20 21:00  [Romance] Tongues wag at The Sleeping Wyvern: Eberk Coppervein and Ellyjobell Folkor have been seen walking out together.
+  -- end of day 20: pop 20, homeless 0, idle 0, buildings 12 (+3 rising), treasury 1207, food 0.91g, mood 76, avg purse 73g
+Day  21 10:00  [Construction] Rurik's Brewery is finished for Rurik Ironhand.
+Day  22 17:00  [Social] Wren Underhill says something about orcs that Wellby Underbough will not forgive. A grudge begins at The Sleeping Wyvern.
+Day  24 21:00  [Romance] Eberk Coppervein and Ellyjobell (once Folkor) are wed at the town hall. Half the town turns out to cheer.
+Day  26 00:00  [Hardship] Vola Redmane cannot pay rent and is turned out of Charter House 3 by the town.
+Day  27 00:00  [Business] The Sleeping Wyvern cannot meet its wages; Vola Redmane is borrowing against next week.
+Day  27 00:00  [Arrival] Imsh Ashtusk, a half-orc merchant, rides in with 79 gold, looking for a business to buy into.
+Day  29 00:00  [Business] The Sleeping Wyvern goes bankrupt. Vola Redmane loses it to creditors and the town puts it up for sale.
+Day  29 00:00  [Property] Aelar Nailo buys the shuttered The Sleeping Wyvern for 91 gold and reopens it as The Wandering Dragon.
+Day  29 00:00  [Property] Werra Stonebeard buys a commercial lot for 40 gold and breaks ground on Stonebeard's Forge.
+Day  29 00:00  [Property] Imsh Ashtusk buys a farmland lot for 32 gold and breaks ground on Ashtusk Lumber Camp.
+Day  30 12:00  [Construction] Ashtusk Lumber Camp is finished for Imsh Ashtusk.
+  -- end of day 30: pop 34, homeless 0, idle 11, buildings 23 (+1 rising), treasury 1985, food 0.91g, mood 75, avg purse 61g
+Day  31 10:00  [Construction] Stonebeard's Forge is finished for Werra Stonebeard.
+Day  32 00:00  [Property] Aelar Nailo buys a commercial lot for 40 gold and breaks ground on Aelar's Brewery.
+Day  33 00:00  [Property] Werra Stonebeard buys a commercial lot for 40 gold and breaks ground on Werra's Brewery.
+Day  33 00:00  [Arrival] Perrin Greaves, a human barkeep, rides in with 98 gold, dreaming of opening a tavern.
+Day  33 15:00  [Construction] Aelar's Brewery is finished for Aelar Nailo.
+Day  33 18:00  [Social] Werra Stonebeard says something about a game of dice that Galinndan Nailo will not forgive. A grudge begins at The Wandering Dragon.
+Day  34 00:00  [Hardship] Delia Hollow cannot pay rent and is turned out of Charter House 3 by the town.
+Day  35 00:00  [Property] Aelar Nailo buys a commercial lot for 40 gold and breaks ground on Aelar's Brewery No. 2.
+Day  35 10:00  [Construction] Werra's Brewery is finished for Werra Stonebeard.
+Day  37 00:00  [Hardship] Jory Thatcher cannot pay rent and is turned out of the Fletcher house by Lysa Fletcher.
+Day  37 00:00  [Arrival] Isolde Marsh, a human farmer, rides in with 166 gold, dreaming of opening a farm.
+Day  37 09:00  [Construction] Aelar's Brewery No. 2 is finished for Aelar Nailo.
+Day  38 00:00  [Property] Aelar Nailo buys a commercial lot for 40 gold and breaks ground on Nailo's Forge.
+Day  38 00:00  [Property] Isolde Marsh buys a farmland lot for 35 gold and breaks ground on Marsh Farm.
+Day  40 07:00  [Construction] Marsh Farm is finished for Isolde Marsh.
+Day  40 13:00  [Construction] Nailo's Forge is finished for Aelar Nailo.
+Day  41 00:00  [Property] Aelar Nailo buys a commercial lot for 41 gold and breaks ground on Nailo's Forge No. 2.
+Day  41 00:00  [Property] Werra Stonebeard buys a farmland lot for 36 gold and breaks ground on Stonebeard Lumber Camp.
+Day  41 00:00  [Property] Wellby Underbough buys a farmland lot for 36 gold and breaks ground on Underbough Farm.
+  -- end of day 40: pop 40, homeless 0, idle 0, buildings 29 (+3 rising), treasury 2934, food 0.91g, mood 72, avg purse 63g
+Day  42 13:00  [Construction] Stonebeard Lumber Camp is finished for Werra Stonebeard.
+Day  43 14:00  [Construction] Nailo's Forge No. 2 is finished for Aelar Nailo.
+Day  43 16:00  [Construction] Underbough Farm is finished for Wellby Underbough.
+Day  44 00:00  [Property] Aelar Nailo buys a commercial lot for 43 gold and breaks ground on The Howling Flagon.
+Day  44 00:00  [Property] Werra Stonebeard buys a farmland lot for 38 gold and breaks ground on Stonebeard Lumber Camp No. 2.
+Day  45 18:00  [Brawl] A brawl breaks out at The Wandering Dragon: Galinndan Nailo swings at Werra Stonebeard. Galinndan (d20 12+3) lays Werra (d20 5-2) out cold. Werra pays 6 gold for the broken chairs.
+Day  46 12:00  [Construction] Stonebeard Lumber Camp No. 2 is finished for Werra Stonebeard.
+Day  46 13:00  [Construction] The Howling Flagon is finished for Aelar Nailo.
+Day  47 19:00  [Social] Wren Underhill says something about the mayor's taxes that Wellby Underbough will not forgive. A grudge begins at The Howling Flagon.
+Day  51 00:00  [Arrival] Bimpnottin Daergel, a gnome merchant, rides in with 134 gold, looking for a business to buy into.
+  -- end of day 50: pop 51, homeless 0, idle 3, buildings 34 (+1 rising), treasury 3872, food 0.91g, mood 73, avg purse 88g
+Day  52 00:00  [Property] Aelar Nailo buys a commercial lot for 46 gold and breaks ground on Nailo's Forge No. 3.
+Day  52 00:00  [Property] Eberk Hammerfall buys a farmland lot for 40 gold and breaks ground on Hammerfall Lumber Camp.
+Day  52 00:00  [Property] Werra Stonebeard buys a commercial lot for 46 gold and breaks ground on Werra's Brewery No. 2.
+Day  52 00:00  [Property] Wellby Underbough buys a farmland lot for 40 gold and breaks ground on Underbough Lumber Camp No. 2.
+Day  52 19:00  [Social] Aldric Blackwood says something about the smell of the tannery that Isolde Marsh will not forgive. A grudge begins at The Wandering Dragon.
+Day  52 19:00  [Brawl] A brawl breaks out at The Wandering Dragon: Isolde Marsh swings at Aldric Blackwood. Aldric (d20 13+3) lays Isolde (d20 6+3) out cold. Isolde pays 8 gold for the broken chairs.
+Day  53 13:00  [Construction] Hammerfall Lumber Camp is finished for Eberk Hammerfall.
+Day  54 10:00  [Construction] Nailo's Forge No. 3 is finished for Aelar Nailo.
+Day  55 00:00  [Property] Lysa Greaves buys a farmland lot for 42 gold and breaks ground on Greaves Farm.
+Day  55 15:00  [Construction] Werra's Brewery No. 2 is finished for Werra Stonebeard.
+Day  56 00:00  [Arrival] Alston Beren, a gnome merchant, rides in with 158 gold, looking for a business to buy into.
+Day  56 11:00  [Construction] Underbough Lumber Camp No. 2 is finished for Wellby Underbough.
+Day  57 00:00  [Arrival] Harbek Stonebeard, a dwarf merchant, rides in with 157 gold, looking for a business to buy into.
+Day  57 13:00  [Construction] Greaves Farm is finished for Lysa Greaves.
+Day  59 19:00  [Social] Orryn Murnig says something about a game of dice that Lysa Fletcher will not forgive. A grudge begins at The Howling Flagon.
+  -- end of day 60: pop 60, homeless 0, idle 2, buildings 40 (+0 rising), treasury 5041, food 0.91g, mood 75, avg purse 119g
+Day  63 00:00  [Arrival] Kestrel Ashford, a human laborer, rides in with 68 gold, looking for a business to buy into.
+Day  64 00:00  [Property] Eberk Hammerfall buys a farmland lot for 44 gold and breaks ground on Hammerfall Lumber Camp No. 2.
+Day  67 00:00  [Property] Alton Tealeaf buys a commercial lot for 50 gold and breaks ground on Tealeaf's Forge.
+Day  68 00:00  [Arrival] Jory Marsh, a human woodcutter, rides in with 163 gold, dreaming of opening a lumber camp.
+Day  68 13:00  [Construction] Hammerfall Lumber Camp No. 2 is finished for Eberk Hammerfall.
+Day  68 18:00  [Social] Rowena Dunmore says something about their cooking that Isolde Marsh will not forgive. A grudge begins at The Wandering Dragon.
+Day  69 00:00  [Property] Jory Marsh buys a farmland lot for 45 gold and breaks ground on Marsh Lumber Camp.
+Day  70 00:00  [Arrival] Kestrel Greaves, a human farmer, rides in with 124 gold, dreaming of opening a farm.
+Day  70 12:00  [Construction] Tealeaf's Forge is finished for Alton Tealeaf.
+Day  71 00:00  [Property] Kestrel Greaves buys a farmland lot for 46 gold and breaks ground on Greaves Farm No. 2.
+  -- end of day 70: pop 69, homeless 5, idle 0, buildings 43 (+5 rising), treasury 6380, food 0.91g, mood 74, avg purse 145g
+Day  71 19:00  [Social] Osric Hollow says something about dwarven beards that Ellyjobell Coppervein will not forgive. A grudge begins at The Wandering Dragon.
+Day  71 19:00  [Social] Fiona Vane says something about a game of dice that Delia Hollow will not forgive. A grudge begins at The Wandering Dragon.
+Day  71 19:00  [Brawl] A brawl breaks out at The Wandering Dragon: Delia Hollow swings at Fiona Vane. Fiona (d20 16-1) lays Delia (d20 2-3) out cold. Delia pays 8 gold for the broken chairs.
+Day  72 13:00  [Construction] Marsh Lumber Camp is finished for Jory Marsh.
+Day  73 00:00  [Property] Osric Thatcher buys a farmland lot for 48 gold and breaks ground on Thatcher Lumber Camp.
+Day  73 00:00  [Arrival] Isolde Underhill, a human merchant, rides in with 88 gold, looking for a business to buy into.
+Day  75 07:00  [Construction] Greaves Farm No. 2 is finished for Kestrel Greaves.
+Day  77 15:00  [Construction] Thatcher Lumber Camp is finished for Osric Thatcher.
+Day  80 00:00  [Arrival] Galinndan Liadon, an elf brewer, rides in with 100 gold, dreaming of opening a brewery.
+Day  80 17:00  [Brawl] A brawl breaks out at The Wandering Dragon: Delia Hollow swings at Fiona Vane. Delia (d20 19-3) lays Fiona (d20 2-1) out cold. Fiona pays 7 gold for the broken chairs.
+Day  81 00:00  [Property] Aelar Nailo buys a commercial lot for 55 gold and breaks ground on Nailo's Forge No. 4.
+Day  81 00:00  [Property] Eberk Hammerfall buys a farmland lot for 51 gold and breaks ground on Hammerfall Lumber Camp No. 3.
+Day  81 00:00  [Property] Isolde Marsh buys a farmland lot for 51 gold and breaks ground on Marsh Lumber Camp No. 2.
+  -- end of day 80: pop 78, homeless 0, idle 0, buildings 50 (+5 rising), treasury 7943, food 0.91g, mood 75, avg purse 168g
+Day  82 00:00  [Hardship] Rurik Ironhand cannot pay rent and is turned out of Charter House 3 by the town.
+Day  82 00:00  [Arrival] Wren Vane, a human laborer, rides in with 92 gold, looking for a business to buy into.
+Day  83 09:00  [Construction] Nailo's Forge No. 4 is finished for Aelar Nailo.
+Day  83 11:00  [Construction] Hammerfall Lumber Camp No. 3 is finished for Eberk Hammerfall.
+Day  84 19:00  [Social] Fiona Vane says something about orcs that Isolde Marsh will not forgive. A grudge begins at The Wandering Dragon.
+Day  84 19:00  [Brawl] A brawl breaks out at The Wandering Dragon: Isolde Marsh swings at Fiona Vane. Isolde (d20 11+3) lays Fiona (d20 1-1) out cold. A natural 1. Fiona pays 7 gold for the broken chairs.
+Day  86 09:00  [Construction] Marsh Lumber Camp No. 2 is finished for Isolde Marsh.
+Day  86 18:00  [Social] Eberk Deepdelver says something about who really killed the wolf last winter that Fiona Vane will not forgive. A grudge begins at The Wandering Dragon.
+Day  87 00:00  [Property] Aelar Nailo buys a commercial lot for 58 gold and breaks ground on The Howling Boar.
+Day  87 00:00  [Property] Eberk Hammerfall buys a farmland lot for 53 gold and breaks ground on Hammerfall Lumber Camp No. 4.
+Day  87 00:00  [Arrival] Osborn Greenbottle, a halfling smith, rides in with 99 gold, dreaming of opening a forge.
+Day  87 00:00  [Arrival] Wren Marsh, a human farmer, rides in with 161 gold, dreaming of opening a farm.
+Day  88 00:00  [Property] Wren Marsh buys a farmland lot for 54 gold and breaks ground on Marsh Farm No. 2.
+Day  88 00:00  [Arrival] Ilde Granitejaw, a dwarf smith, rides in with 163 gold, dreaming of opening a forge.
+Day  88 19:00  [Social] Eberk Coppervein says something about the mayor's taxes that Helena Fletcher will not forgive. A grudge begins at The Wandering Dragon.
+Day  88 19:00  [Brawl] A brawl breaks out at The Wandering Dragon: Helena Fletcher swings at Eberk Coppervein. Helena (d20 10+2) lays Eberk (d20 3+2) out cold. Eberk pays 7 gold for the broken chairs.
+Day  88 20:00  [Social] Sariel Meliamne says something about elven manners that Galinndan Nailo will not forgive. A grudge begins at The Wandering Dragon.
+Day  89 00:00  [Arrival] Tamsin Ashford, a human merchant, rides in with 122 gold, looking for a business to buy into.
+Day  89 11:00  [Construction] Hammerfall Lumber Camp No. 4 is finished for Eberk Hammerfall.
+Day  89 13:00  [Construction] The Howling Boar is finished for Aelar Nailo.
+Day  90 16:00  [Construction] Marsh Farm No. 2 is finished for Wren Marsh.
+Day  90 20:00  [Social] Osric Ashford says something about dwarven beards that Naivara Holimion will not forgive. A grudge begins at The Wandering Dragon.
+  -- end of day 90: pop 89, homeless 0, idle 2, buildings 59 (+0 rising), treasury 9510, food 0.91g, mood 75, avg purse 196g
+Day  93 00:00  [Hardship] Imsh Ashtusk cannot pay rent and is turned out of Charter House 2 by the town.
+Day  93 00:00  [Property] Aelar Nailo buys a commercial lot for 60 gold and breaks ground on Nailo's Forge No. 5.
+Day  93 00:00  [Property] Eberk Hammerfall buys a farmland lot for 56 gold and breaks ground on Hammerfall Lumber Camp No. 5.
+Day  94 18:00  [Social] Helena Fletcher says something about elven manners that Galinndan Nailo will not forgive. A grudge begins at The Wandering Dragon.
+Day  94 20:00  [Romance] Tongues wag at The Wandering Dragon: Pip Underbough and Harbek Stonebeard have been seen walking out together.
+Day  95 13:00  [Construction] Nailo's Forge No. 5 is finished for Aelar Nailo.
+Day  95 13:00  [Construction] Hammerfall Lumber Camp No. 5 is finished for Eberk Hammerfall.
+Day  96 00:00  [Property] Ilde Granitejaw buys a commercial lot for 61 gold and breaks ground on Granitejaw's Forge.
+Day  96 00:00  [Property] Tamsin Ashford buys a farmland lot for 56 gold and breaks ground on Ashford Lumber Camp.
+Day  96 20:00  [Romance] Harbek Stonebeard and Pip (once Underbough) are wed at the town hall. Half the town turns out to cheer.
+Day 100 14:00  [Construction] Granitejaw's Forge is finished for Ilde Granitejaw.
+  -- end of day 100: pop 94, homeless 3, idle 0, buildings 62 (+3 rising), treasury 11319, food 0.91g, mood 74, avg purse 225g
+Day 101 19:00  [Social] Wren Underhill says something about a game of dice that Wellby Underbough will not forgive. A grudge begins at The Howling Boar.
+Day 104 08:00  [Construction] Ashford Lumber Camp is finished for Tamsin Ashford.
+Day 104 19:00  [Social] Eberk Coppervein says something about the smell of the tannery that Delia Hollow will not forgive. A grudge begins at The Wandering Dragon.
+Day 108 19:00  [Social] Ellyjobell Beren says something about their mother that Orryn Beren will not forgive. A grudge begins at The Howling Flagon.
+Day 109 00:00  [Property] Galinndan Liadon buys a commercial lot for 63 gold and breaks ground on Galinndan's Brewery.
+Day 110 00:00  [Property] Ulric Ashford buys a farmland lot for 59 gold and breaks ground on Ashford Farm.
+Day 110 00:00  [Arrival] Lilli Garrick, a gnome merchant, rides in with 139 gold, looking for a business to buy into.
+Day 111 00:00  [Property] Osborn Greenbottle buys a commercial lot for 63 gold and breaks ground on Greenbottle's Forge.
+  -- end of day 110: pop 99, homeless 3, idle 0, buildings 64 (+8 rising), treasury 13180, food 0.91g, mood 74, avg purse 258g
+Day 111 18:00  [Romance] Tongues wag at The Wandering Dragon: Ulric Fletcher and Brannoc Stonebeard have been seen walking out together.
+Day 114 18:00  [Romance] Ulric Fletcher and Brannoc (once Stonebeard) are wed at the town hall. Half the town turns out to cheer.
+Day 114 18:00  [Social] Fiona Dunmore says something about dwarven beards that Eberk Hammerfall will not forgive. A grudge begins at The Howling Boar.
+Day 117 00:00  [Arrival] Merric Tealeaf, a halfling merchant, rides in with 88 gold, looking for a business to buy into.
+Day 118 00:00  [Property] Ellyjobell Beren buys a commercial lot for 65 gold and breaks ground on The Drunken Kobold.
+Day 119 00:00  [Arrival] Roywyn Beren, a gnome merchant, rides in with 72 gold, looking for a business to buy into.
+Day 119 08:00  [Construction] Galinndan's Brewery is finished for Galinndan Liadon.
+Day 120 16:00  [Construction] Ashford Farm is finished for Ulric Ashford.
+Day 121 00:00  [Arrival] Tamsin Carver, a human merchant, rides in with 72 gold, looking for a business to buy into.
+  -- end of day 120: pop 110, homeless 0, idle 0, buildings 71 (+12 rising), treasury 15508, food 0.91g, mood 76, avg purse 272g
+
+=== Briarford after 120 days (seed 1) ===
+Population 110 (0 have left), treasury 15508 gold.
+  Brewery: 6
+  Farm: 8
+  Forge: 9
+  House: 29
+  Lumber Camp: 15
+  Tavern: 3
+  Town Hall: 1
+Ledger entries: 427 (5 major, 135 notable)
+
+=== People worth knowing ===
+Aelar Nailo, an elf woodcutter (ambitious, shy, generous)
+  STR 10 DEX 11 CON 7 INT 12 WIS 12 CHA 14; 5614 gold; lives at the Nailo house; works at Nailo Lumber Camp.
+    Day   1 00:00  [Town] The charter is signed. 14 settlers and a wagon arrive at the river ford that will become Briarford.
+    Day  16 00:00  [Property] Aelar Nailo buys a residential lot for 35 gold and breaks ground on a home for the family.
+    Day  18 13:00  [Construction] The Nailo house is finished for Aelar Nailo.
+    Day  29 00:00  [Property] Aelar Nailo buys the shuttered The Sleeping Wyvern for 91 gold and reopens it as The Wandering Dragon.
+    Day  32 00:00  [Property] Aelar Nailo buys a commercial lot for 40 gold and breaks ground on Aelar's Brewery.
+    Day  33 00:00  [Social] Aelar Nailo quietly presses a few coins into the hand of Tamsin Ashford, who has not eaten in a day.
+    Day  33 15:00  [Construction] Aelar's Brewery is finished for Aelar Nailo.
+    Day  35 00:00  [Property] Aelar Nailo buys a commercial lot for 40 gold and breaks ground on Aelar's Brewery No. 2.
+    Day  36 00:00  [Social] Aelar Nailo quietly presses a few coins into the hand of Tamsin Ashford, who has not eaten in a day.
+    Day  37 09:00  [Construction] Aelar's Brewery No. 2 is finished for Aelar Nailo.
+    Day  38 00:00  [Property] Aelar Nailo buys a commercial lot for 40 gold and breaks ground on Nailo's Forge.
+    Day  40 13:00  [Construction] Nailo's Forge is finished for Aelar Nailo.
+    Day  41 00:00  [Property] Aelar Nailo buys a commercial lot for 41 gold and breaks ground on Nailo's Forge No. 2.
+    Day  43 14:00  [Construction] Nailo's Forge No. 2 is finished for Aelar Nailo.
+    Day  44 00:00  [Property] Aelar Nailo buys a commercial lot for 43 gold and breaks ground on The Howling Flagon.
+    Day  46 13:00  [Construction] The Howling Flagon is finished for Aelar Nailo.
+    Day  52 00:00  [Property] Aelar Nailo buys a commercial lot for 46 gold and breaks ground on Nailo's Forge No. 3.
+    Day  54 10:00  [Construction] Nailo's Forge No. 3 is finished for Aelar Nailo.
+    Day  81 00:00  [Property] Aelar Nailo buys a commercial lot for 55 gold and breaks ground on Nailo's Forge No. 4.
+    Day  83 09:00  [Construction] Nailo's Forge No. 4 is finished for Aelar Nailo.
+    Day  87 00:00  [Property] Aelar Nailo buys a commercial lot for 58 gold and breaks ground on The Howling Boar.
+    Day  89 13:00  [Construction] The Howling Boar is finished for Aelar Nailo.
+    Day  93 00:00  [Property] Aelar Nailo buys a commercial lot for 60 gold and breaks ground on Nailo's Forge No. 5.
+    Day  95 13:00  [Construction] Nailo's Forge No. 5 is finished for Aelar Nailo.
+
+Werra Stonebeard, a dwarf farmer (ambitious)
+  STR 7 DEX 12 CON 17 INT 12 WIS 9 CHA 12; 1592 gold; lives at the Stonebeard house; works at Stonebeard Farm.
+  Friends: Brannoc, Jory, Helena
+    Day   1 00:00  [Town] The charter is signed. 14 settlers and a wagon arrive at the river ford that will become Briarford.
+    Day   3 00:00  [Property] Werra Stonebeard buys a farmland lot for 26 gold and breaks ground on Stonebeard Farm.
+    Day   5 07:00  [Construction] Stonebeard Farm is finished for Werra Stonebeard.
+    Day   6 00:00  [Business] After 3 days idle, Werra Stonebeard finds work at Stonebeard Farm.
+    Day  17 00:00  [Property] Werra Stonebeard buys a residential lot for 35 gold and breaks ground on a home for the family.
+    Day  22 10:00  [Construction] The Stonebeard house is finished for Werra Stonebeard.
+    Day  27 20:00  [Social] Werra Stonebeard and Brannoc Stonebeard have become fast friends over ale at The Sleeping Wyvern.
+    Day  29 00:00  [Property] Werra Stonebeard buys a commercial lot for 40 gold and breaks ground on Stonebeard's Forge.
+    Day  31 10:00  [Construction] Stonebeard's Forge is finished for Werra Stonebeard.
+    Day  33 00:00  [Property] Werra Stonebeard buys a commercial lot for 40 gold and breaks ground on Werra's Brewery.
+    Day  33 18:00  [Social] Werra Stonebeard says something about a game of dice that Galinndan Nailo will not forgive. A grudge begins at The Wandering Dragon.
+    Day  35 10:00  [Construction] Werra's Brewery is finished for Werra Stonebeard.
+    Day  41 00:00  [Property] Werra Stonebeard buys a farmland lot for 36 gold and breaks ground on Stonebeard Lumber Camp.
+    Day  42 13:00  [Construction] Stonebeard Lumber Camp is finished for Werra Stonebeard.
+    Day  44 00:00  [Property] Werra Stonebeard buys a farmland lot for 38 gold and breaks ground on Stonebeard Lumber Camp No. 2.
+    Day  45 18:00  [Brawl] A brawl breaks out at The Wandering Dragon: Galinndan Nailo swings at Werra Stonebeard. Galinndan (d20 12+3) lays Werra (d20 5-2) out cold. Werra pays 6 gold for the broken chairs.
+    Day  46 12:00  [Construction] Stonebeard Lumber Camp No. 2 is finished for Werra Stonebeard.
+    Day  52 00:00  [Property] Werra Stonebeard buys a commercial lot for 46 gold and breaks ground on Werra's Brewery No. 2.
+    Day  55 15:00  [Construction] Werra's Brewery No. 2 is finished for Werra Stonebeard.
+    Day  55 18:00  [Social] Jory Thatcher and Werra Stonebeard have become fast friends over ale at The Wandering Dragon.
+    Day  94 19:00  [Social] Brannoc Stonebeard and Werra Stonebeard have become fast friends over ale at The Howling Boar.
+
+Eberk Hammerfall, a dwarf laborer (ambitious, hottempered)
+  STR 12 DEX 10 CON 17 INT 11 WIS 9 CHA 12; 308 gold; lives at the Hammerfall house; works at Nailo Lumber Camp.
+  Friends: Eberk, Werra, Rurik, Brannoc, Helena
+    Day   1 00:00  [Town] The charter is signed. 14 settlers and a wagon arrive at the river ford that will become Briarford.
+    Day  13 00:00  [Property] Eberk Hammerfall buys a commercial lot for 34 gold and breaks ground on Hammerfall's Forge.
+    Day  15 13:00  [Construction] Hammerfall's Forge is finished for Eberk Hammerfall.
+    Day  24 00:00  [Property] Eberk Hammerfall buys a residential lot for 34 gold and breaks ground on a home for the family.
+    Day  28 14:00  [Construction] The Hammerfall house is finished for Eberk Hammerfall.
+    Day  45 21:00  [Social] Eberk Hammerfall and Eberk Coppervein have become fast friends over ale at The Wandering Dragon.
+    Day  52 00:00  [Property] Eberk Hammerfall buys a farmland lot for 40 gold and breaks ground on Hammerfall Lumber Camp.
+    Day  53 13:00  [Construction] Hammerfall Lumber Camp is finished for Eberk Hammerfall.
+    Day  56 20:00  [Social] Rurik Ironhand and Eberk Hammerfall have become fast friends over ale at The Howling Flagon.
+    Day  64 00:00  [Property] Eberk Hammerfall buys a farmland lot for 44 gold and breaks ground on Hammerfall Lumber Camp No. 2.
+    Day  68 13:00  [Construction] Hammerfall Lumber Camp No. 2 is finished for Eberk Hammerfall.
+    Day  77 17:00  [Social] Brannoc Stonebeard and Eberk Hammerfall have become fast friends over ale at The Wandering Dragon.
+    Day  79 17:00  [Social] Eberk Hammerfall and Eberk Coppervein have become fast friends over ale at The Wandering Dragon.
+    Day  81 00:00  [Property] Eberk Hammerfall buys a farmland lot for 51 gold and breaks ground on Hammerfall Lumber Camp No. 3.
+    Day  83 11:00  [Construction] Hammerfall Lumber Camp No. 3 is finished for Eberk Hammerfall.
+    Day  87 00:00  [Property] Eberk Hammerfall buys a farmland lot for 53 gold and breaks ground on Hammerfall Lumber Camp No. 4.
+    Day  89 11:00  [Construction] Hammerfall Lumber Camp No. 4 is finished for Eberk Hammerfall.
+    Day  93 00:00  [Property] Eberk Hammerfall buys a farmland lot for 56 gold and breaks ground on Hammerfall Lumber Camp No. 5.
+    Day  95 13:00  [Construction] Hammerfall Lumber Camp No. 5 is finished for Eberk Hammerfall.
+    Day 113 18:00  [Social] Helena Fletcher and Eberk Hammerfall have become fast friends over ale at The Wandering Dragon.
+    Day 114 18:00  [Social] Fiona Dunmore says something about dwarven beards that Eberk Hammerfall will not forgive. A grudge begins at The Howling Boar.
+
