@@ -19,6 +19,9 @@ public sealed class Options
     public string? Site;
     public string? Screenshot;
     public int Frames = 45;
+
+    /// <summary>For clips: the camera pulls slowly back from the town to the whole map, turning as it goes.</summary>
+    public bool Flyout;
     public bool Autoplay;
     public bool Hero;
 
@@ -52,6 +55,7 @@ public sealed class Options
                 case "--site": o.Site = Next(); break;
                 case "--screenshot": o.Screenshot = Next(); break;
                 case "--frames": o.Frames = int.Parse(Next()); break;
+                case "--flyout": o.Flyout = true; break;
                 case "--autoplay": o.Autoplay = true; break;
                 case "--hero": o.Hero = true; break;
                 case "--no-pause": o.NoPause = true; break;

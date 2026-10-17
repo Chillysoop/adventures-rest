@@ -145,6 +145,14 @@ public partial class MapView : Control
     public void Rotate(int dir) => _goalYaw += dir * Mathf.Pi / 2;
 
     /// <summary>Fly the camera to a world point, as the Ledger's links and the minimap do.</summary>
+    /// <summary>Pull the camera back (factor above 1) or in, and turn it by yaw radians, keeping its target.</summary>
+    public void Drift(float factor, float yaw)
+    {
+        _goalDist = Mathf.Clamp(_goalDist * factor, MinDist, MaxDist);
+        _yaw += yaw;
+        _goalYaw += yaw;
+    }
+
     public void LookAt(Vector2 p, float? dist = null)
     {
         _manual = true;

@@ -395,6 +395,7 @@ public partial class Main : Control
             _dirty = false;
         }
         if (_opts.Bench) Bench(delta);
+        if (_opts.Flyout) _map.Drift(1 + (float)delta * 0.16f, (float)delta * 0.05f);
         _opts.Capture(this, ref _frames);
     }
 

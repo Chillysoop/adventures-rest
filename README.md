@@ -159,7 +159,7 @@ Options after `--`: `--seed`, `--day`, `--hour`, `--speed 0-4`, `--tab`, `--site
 plays), `--bounty <site>`, `--scry <site>`, `--scout <site>`, `--mirror <site>`, `--send`, `--recall`,
 `--build palisade|tower|pool|spire`, `--relic <item-id>`, `--hero` (inspect the most storied hero), `--no-pause` (keep
 time running through war news), `--screenshot <png>`, `--frames N`, `--cam <distance>` (with `--look x,y` or `--site`
-to aim it), `--yaw <quarter turns>`, `--strategic`, `--trees <density>` (stress test) and `--bench` (prints frame time,
+to aim it), `--flyout` (for clips: pull back from the town to the whole map), `--yaw <quarter turns>`, `--strategic`, `--trees <density>` (stress test) and `--bench` (prints frame time,
 map CPU time, draw calls and triangles, then quits). For a clip, add Godot's own `--write-movie clip.avi --fixed-fps 30 --quit-after 900` before the `--`.
 
 ## Time model
