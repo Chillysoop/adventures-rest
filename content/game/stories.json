@@ -4090,6 +4090,70 @@
       "ignored": { "text": "{heroName} goes without a word to anyone.", "effects": { "personal": 1, "heroXp": 0.4, "esteem": -5 } }
     },
     {
+      "id": "hero-brawl", "title": "{hero} in the cells", "stakes": "low", "source": "heroes",
+      "needs": ["lawbreaker", "tavern"], "repeatDays": 40,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The watch hauled {hero} out of {tavern} at midnight with split knuckles and a broken bench. The landlord wants the damage paid, and the watch wants to know what the mayor will do with a hero who thinks the law is for other people.",
+          "options": [
+            {
+              "label": "Let them go with a warning", "tags": ["mercy", "freedom"],
+              "success": { "text": "{heroName} walks out grinning. The watch does not.", "effects": { "esteem": 10, "mandate": -2 } }
+            },
+            {
+              "label": "Fine them for the damage", "tags": ["order", "coin"],
+              "success": { "text": "{heroName} counts out the coin with bad grace, and the landlord gets a new bench.", "effects": { "fine": 40, "esteem": -4, "mandate": 1 } }
+            },
+            {
+              "label": "Jail them for a week", "tags": ["order", "harsh"],
+              "success": { "text": "The cell door shuts on {heroName}. The town sees that its law holds for heroes too.", "effects": { "jail": 7, "esteem": -10, "loyalty": -4, "mandate": 3 } }
+            },
+            {
+              "label": "Talk sense into them", "tags": ["mercy"], "skill": "persuasion", "dc": 13,
+              "success": { "text": "{heroName} pays the landlord out of their own purse and shakes his hand. The watch shrugs.", "effects": { "fine": 20, "esteem": 6, "mandate": 1 } },
+              "failure": { "text": "{heroName} hears none of it, and the landlord stays out of pocket.", "effects": { "esteem": -2, "mandate": -1 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "The watch lets {heroName} go at dawn. The landlord tells everyone the law is only for the poor.", "effects": { "mandate": -2 } }
+    },
+    {
+      "id": "hero-pilfer", "title": "{hero}'s light fingers", "stakes": "medium", "source": "heroes",
+      "needs": ["lawbreaker"], "repeatDays": 60,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A merchant swears {hero} walked off with a silver chalice from the market. The watch found it in {heroName}'s pack, and {heroName} swears it was owed them for a job never paid.",
+          "options": [
+            {
+              "label": "Pardon them", "tags": ["freedom", "guile"],
+              "success": { "text": "The chalice goes back and {heroName} goes free. The merchants mutter about friends in the town hall.", "effects": { "esteem": 12, "mandate": -3 } }
+            },
+            {
+              "label": "Pay the merchant from the treasury", "tags": ["generous"], "cost": 60,
+              "success": { "text": "The merchant is paid twice over and the matter is closed. {heroName} owes you one.", "effects": { "esteem": 8, "loyalty": 4 } }
+            },
+            {
+              "label": "Fine them double", "tags": ["order", "coin"],
+              "success": { "text": "{heroName} pays what they can of double the chalice's worth into the treasury.", "effects": { "fine": 80, "esteem": -6, "mandate": 2 } }
+            },
+            {
+              "label": "Jail them for theft", "tags": ["order", "harsh"],
+              "success": { "text": "Ten days in the cells. The merchants cheer; the adventurers' tables go quiet.", "effects": { "jail": 10, "esteem": -14, "loyalty": -6, "mandate": 4 } }
+            },
+            {
+              "label": "Find out who never paid them", "tags": ["mercy", "guile"], "skill": "investigation", "dc": 14,
+              "success": { "text": "It is true: the merchant hired {heroName} and stiffed them. The merchant pays the fine instead.", "effects": { "esteem": 15, "gold": 40, "mandate": 2 } },
+              "failure": { "text": "Nothing turns up, and {heroName} pays a small fine for the trouble.", "effects": { "fine": 20, "esteem": -2 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "The chalice goes back without a word from the mayor. The merchants take note.", "effects": { "mandate": -2 } }
+    },
+    {
       "id": "grievance", "title": "{hero} has a grievance", "stakes": "medium", "source": "heroes",
       "needs": ["aggrieved"], "repeatDays": 15, "weight": 5,
       "stages": [

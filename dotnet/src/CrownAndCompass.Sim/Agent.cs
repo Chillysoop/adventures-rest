@@ -176,6 +176,9 @@ public sealed class HeroSheet
 
     /// <summary>Their personal quest: "" not yet asked, "done" seen through, "failed" let down.</summary>
     public string Personal { get; set; } = "";
+
+    /// <summary>The tick they walk out of the town cells, while the mayor has them locked up.</summary>
+    public int? JailedUntil { get; set; }
 }
 
 /// <summary>

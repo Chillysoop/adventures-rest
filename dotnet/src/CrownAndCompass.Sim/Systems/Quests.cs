@@ -409,7 +409,7 @@ public static class Quests
     public static bool Available(Agent a)
     {
         var s = a.Hero!;
-        return s.AwayUntil == null && s.Hp >= s.MaxHp * 0.7 && !a.Departed;
+        return s.AwayUntil == null && s.JailedUntil == null && s.Hp >= s.MaxHp * 0.7 && !a.Departed;
     }
 
     private static void FormParties(Town town)

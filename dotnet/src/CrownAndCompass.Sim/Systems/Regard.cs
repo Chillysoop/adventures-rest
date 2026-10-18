@@ -49,6 +49,9 @@ public sealed record RegardRules
 
     /// <summary>How far the stand-in mayor leans toward choices the heroes would like (the share pleased less the share angered, times this).</summary>
     public double StandIn { get; init; } = 0.4;
+
+    /// <summary>Tempers that land heroes on the wrong side of the law.</summary>
+    public List<string> Lawless { get; init; } = [];
     public List<RegardTag> Tags { get; init; } = [];
     public List<TemperDef> Tempers { get; init; } = [];
 
@@ -180,8 +183,19 @@ public static class Regard
         {
             Arrive(town, a);
             a.Hero!.Regard *= r.Decay;
+            if (a.Hero.JailedUntil is int free && town.Tick >= free)
+            {
+                a.Hero.JailedUntil = null;
+                town.Log(LedgerCategory.Town, Importance.Routine, $"{a.Name} walks out of the town cells, squinting at the daylight.", [a.Id]);
+            }
         }
     }
+
+    /// <summary>Whether a hero is the sort to land on the wrong side of the law: their temper or a hot head.</summary>
+    public static bool Lawless(Town town, Agent a) =>
+        a.Hero is { } s && !a.IsAway && s.JailedUntil == null
+        && (Rules(town).Lawless.Contains(s.Temper) || a.Has(Trait.HotTempered))
+        && town.Stories.Open.All(x => x.HeroId != a.Id);
 
     /// <summary>Whether a hero thinks well enough of the mayor to ask for help with their own trouble.</summary>
     public static bool Admirer(Town town, Agent a) =>

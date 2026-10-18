@@ -9,6 +9,7 @@
   "friend": 2,
   "rival": -2,
   "standIn": 0.4,
+  "lawless": ["greedy", "free", "ruthless", "bold"],
   "tags": [
     { "id": "mercy", "name": "mercy" },
     { "id": "harsh", "name": "a hard hand" },
