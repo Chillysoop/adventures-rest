@@ -63,8 +63,8 @@ public class TurningTests
     [Fact]
     public void LegendsOfOneCampaignComeBackInAnother()
     {
-        var first = RunUntilNamed(5, 1);
-        first.RunDays(300);
+        var first = new Simulation(new SimulationOptions { Seed = 5 });
+        for (int d = 0; d < 1000 && first.Town.Outcome == null && !first.Town.Saga.Menaces.Any(m => m.Named && (m.BigBad || m.Peak >= MenaceStage.Power) && m.Origin != Menaces.FromWarband); d++) first.RunDays(1);
         var legends = Legends.Record(first.Town, 5);
         Assert.Contains(legends, l => l.Kind == Legend.Foe);
         Assert.Contains(legends, l => l.Kind == Legend.Hero);
