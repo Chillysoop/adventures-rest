@@ -111,6 +111,13 @@ public partial class Main : Control
         // --hero picks the town's most storied hero in town, for a look at their sheet.
         if (_opts.Hero && _sim.Town.Heroes.Where(a => !a.IsAway).OrderByDescending(a => a.Hero!.Epithet != "").ThenByDescending(a => a.Hero!.Items.Count).ThenByDescending(a => a.Hero!.Level).ThenBy(a => a.Id).FirstOrDefault() is Agent hero)
             Select(Selection.Agent(hero.Id));
+        // --rolls looks at the building with the most recent checks and replays them, for a shot of the dice.
+        if (_opts.Rolls && _sim.Town.Checks.Where(c => c.BuildingId != null).GroupBy(c => c.BuildingId!.Value).OrderByDescending(g => g.Count()).ThenBy(g => g.Key).FirstOrDefault() is { } busiest)
+        {
+            var lot = _sim.Town.Lot(_sim.Town.Building(busiest.Key).LotId);
+            _map.LookAt(new Vector2(Map.Geo.Margin + (float)lot.X, Map.Geo.Margin + (float)lot.Y), _opts.Cam ?? 14);
+            _rollsReplay = 20;
+        }
         if (_opts.Folk && _sim.Town.Workers.Where(a => !a.IsAway).OrderByDescending(a => a.Practice).ThenBy(a => a.Id).FirstOrDefault() is Agent folk)
             Select(Selection.Agent(folk.Id));
         if (_opts.House && _sim.Town.Buildings.Where(b => b.Complete && b.Def.Housing > 0).OrderByDescending(b => Decor.Comfort(_sim.Town, b)).ThenBy(b => b.Id).FirstOrDefault() is Building house)

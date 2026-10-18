@@ -49,6 +49,9 @@ public sealed class Options
     /// <summary>--folk: select the most practised townsperson, for a look at their character sheet.</summary>
     public bool Folk;
 
+    /// <summary>--rolls: look into the busiest tavern and replay its latest skill checks as dice over people's heads.</summary>
+    public bool Rolls;
+
     /// <summary>--wall N: select a section of the outer wall (0 is the gate) in the inspector, for shots of the call to arms.</summary>
     public int? Wall { get; private set; }
 
@@ -131,6 +134,7 @@ public sealed class Options
                 case "--tutorial": o.Tutorial = Next(); break;
                 case "--hero": o.Hero = true; break;
                 case "--folk": o.Folk = true; break;
+                case "--rolls": o.Rolls = true; break;
                 case "--wall": o.Wall = int.Parse(Next()); break;
                 case "--house": o.House = true; break;
                 case "--alert": o.Alert = int.Parse(Next()); break;
