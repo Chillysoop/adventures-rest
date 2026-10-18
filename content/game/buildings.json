@@ -86,6 +86,8 @@
     "upkeep": 8, "max": 1, "defense": 0.5, "mandate": 2, "wards": ["hill"],
     "blurb": "A stone keep on Castle Hill, seat of the city's lord. The last wall in any siege." },
   { "id": "guildhall", "name": "Guildhall", "zone": "Civic", "buildable": false, "cost": 50, "timber": 6, "buildHours": 50 },
+  { "id": "adventurers_hall", "name": "Adventurers' Hall", "zone": "Civic", "buildable": false, "civic": true, "cost": 240, "timber": 18, "stone": 8, "buildHours": 90, "upkeep": 3, "population": 40, "max": 1,
+    "blurb": "Where companies register their contracts and keep a sending stone of their own. Parties on bounties send word more often, and every answer the mayor sends them rolls better: maps, storm-roads, a bestiary, a charter, a wagon to meet them on the road." },
   { "id": "scrying_pool", "name": "Scrying Pool", "size": [4, 4], "zone": "Civic", "buildable": false, "cost": 450, "timber": 20, "buildHours": 120 },
   { "id": "sleepless_spire", "name": "Sleepless Spire", "size": [4, 4], "zone": "Civic", "buildable": false, "cost": 1400, "timber": 60, "buildHours": 260 },
   { "id": "bastion_keep", "name": "Bastion Keep", "size": [6, 6], "zone": "Civic", "buildable": false, "bastion": true, "cost": 400, "timber": 30, "stone": 20, "buildHours": 160,
