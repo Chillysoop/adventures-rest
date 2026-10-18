@@ -418,6 +418,29 @@ public partial class Main
             int id = s.Id;
             p.Row($"[b]{Ui.Esc(Stories.Fill(t, s, d.Title))}[/b]\n{Tag(word, color)} {Ui.C(Ui.Ink2, $"[font_size=12]· runs its course in {Ui.Days(days)}[/font_size]")}", ("Step in", true, true, () => OpenStory(id)));
         }
+        var decrees = Decrees.Active(t).ToList();
+        if (decrees.Count > 0)
+        {
+            p.Heading("Decrees in force");
+            foreach (var d in decrees)
+                p.Text($"[b]{Ui.Esc(d.Name)}[/b]  {Tag(Ui.Days(Decrees.DaysLeft(t, d.Id)) + " left", Ui.Ink2)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(d.Text)}[/font_size]")}", 13);
+        }
+        var called = Callings.Holders(t).ToList();
+        if (called.Count > 0)
+        {
+            p.Heading("Callings");
+            p.Note("Parts heroes have taken up in the town through the stories of their class. Each lasts while its hero stays and stays loyal.");
+            foreach (var (hero, c) in called)
+                p.Text($"[b]{Ui.Esc(c.Name)}[/b]  {AgentLink(hero)} {Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(hero.Hero!.Cls.Name.ToLowerInvariant())}[/font_size]")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(c.Text)}[/font_size]")}", 13);
+        }
+        var remembered = t.Stories.Precedents.Keys.Select(id => r.Precedent(id)).OfType<PrecedentDef>().ToList();
+        if (remembered.Count > 0)
+        {
+            p.Heading("The town remembers");
+            p.Note("Hard choices are not forgotten. Later stories turn on them.");
+            foreach (var pr in remembered)
+                p.Text($"{Ui.C(Ui.Ink2, $"[font_size=11]Day {t.Stories.Precedents[pr.Id]}[/font_size]")}  {Ui.Esc(pr.Text)}", 13);
+        }
         var past = t.Stories.All.Where(s => s.Done).OrderByDescending(s => s.Id).Take(8).ToList();
         if (past.Count > 0)
         {

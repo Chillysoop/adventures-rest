@@ -480,6 +480,7 @@ public partial class Main
         if (hs.Knight) honours.Add(Tag("Knight", Ui.Gold));
         if (hs.FiefId != null && Quests.Site(t, hs.FiefId) is SiteState land) honours.Add(Tag($"Holds {Ui.Esc(land.Def.Name)}", Ui.Gold));
         if (hs.Champion) honours.Add(Tag($"Champion of {t.Name}", Ui.Gold));
+        if (Callings.Of(t, a) is CallingDef calling) honours.Add(Tag(calling.Name, Ui.Good));
         if (honours.Count > 0) p.Text(string.Join("  ", honours));
         var lr = t.Content.Loyalty;
         double loyalty = Math.Round(hs.Loyalty);

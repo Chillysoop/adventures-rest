@@ -240,6 +240,8 @@ public static class TreasuryAccount
     public const string Stories = "Stories";
     public const string GrandWorks = "Grand works";
     public const string Mercenaries = "Mercenaries";
+    public const string Decrees = "Decrees";
+    public const string Callings = "Callings";
 }
 
 /// <summary>How the campaign ended.</summary>
@@ -407,6 +409,9 @@ public sealed class Town
     public List<Agent> Workers => Agents.Where(a => !a.Departed && a.Hero == null).ToList();
 
     public List<Agent> Heroes => Agents.Where(a => !a.Departed && a.Hero != null).ToList();
+
+    /// <summary>The callings heroes hold (<see cref="Systems.Callings"/>); the tutorial watches it.</summary>
+    public IReadOnlyList<int> Callings => Stories.Callings.Keys;
 
     public int Population
     {

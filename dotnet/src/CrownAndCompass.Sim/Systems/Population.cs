@@ -126,8 +126,8 @@ public static class Population
         double attraction = 0.3 + jobs + beds + building - bread - roofless - workless;
         // Word travels: a popular mayor draws settlers, high taxes turn them away.
         double mandate = (town.Mandate - 50) / 200, tax = (town.TaxRate - town.Content.Rules.TaxRate) * 5, decor = Decor.Draw(town), works = GrandWorks.Draw(town);
-        double season = Seasons.Arrivals(town);
-        attraction += mandate - tax + decor + works + season;
+        double season = Seasons.Arrivals(town), decrees = Decrees.Arrivals(town);
+        attraction += mandate - tax + decor + works + season + decrees;
         // A young town is a chance at cheap land: the frontier draws settlers until the town is a proper village.
         double frontier = town.Content.Rules.FrontierDraw * Math.Max(0, 1 - town.Population / town.Content.Rules.FrontierSize);
         attraction += frontier;
@@ -149,6 +149,7 @@ public static class Population
         Add("Decorations", decor);
         Add("Grand works", works);
         Add($"The season ({Seasons.Current(town).Name.ToLowerInvariant()})", season);
+        Add("Decrees in force", decrees);
         Add("Cheap land in a young town", frontier);
         Add("No zoned home lots for sale", -land);
         return new(attraction, parts);
@@ -175,6 +176,28 @@ public static class Population
             if (rng.Chance(0.3)) ArriveCouple(town);
             else ArriveSingle(town);
         }
+    }
+
+    /// <summary>
+    /// Settlers a story sends: n come in (as singles), or, with n below zero, the unhappiest households
+    /// (lowest mood, ties by id) leave. Returns how many people came or went.
+    /// </summary>
+    public static int Settle(Town town, int n)
+    {
+        if (n > 0)
+        {
+            for (int i = 0; i < n; i++) ArriveSingle(town);
+            return n;
+        }
+        int gone = 0;
+        foreach (var a in town.Workers.Where(a => a.Age >= 18).OrderBy(a => a.LastDayMood).ThenBy(a => a.Id).ToList())
+        {
+            if (gone >= -n) break;
+            if (a.Departed) continue;
+            Depart(town, a);
+            gone++;
+        }
+        return -gone;
     }
 
     private static void ArriveSingle(Town town)
