@@ -58,6 +58,19 @@ public class SagaTests(LongCampaign campaign) : IClassFixture<LongCampaign>
     }
 
     [Fact]
+    public void TheBigBadDoesNotRiseToMeetStrongChampions()
+    {
+        var sim = new Simulation(new SimulationOptions { Seed = 3, AutoMayor = false, FreeCompanies = false });
+        var t = sim.Town;
+        sim.RunDays(1);
+        var m = Menaces.Seed(t, [9, 9])!;
+        foreach (var h in t.Heroes) h.Hero!.Level = 12;
+        m.BigBad = true;
+        Menaces.Ascend(t, m);
+        Assert.Equal(t.Content.Saga.Finale.OverlordLevel[0], m.Level);
+    }
+
+    [Fact]
     public void AKnownLairLeftAloneFestersAndRises()
     {
         // Nobody goes out: every lair the town hears of is left alone.
