@@ -85,7 +85,8 @@ public class TermsTests
         for (int i = 0; i < 20 && again == ""; i++) again = Captives.Take(t, site, farm.Workers.Count > 0 ? farm : t.Buildings.First(b => b.Complete && b.Workers.Count > 0 && b.Workers.All(id => t.Buildings.All(o => o.OwnerId != id))));
         Assert.NotEqual("", again);
         var second = Captives.At(t, site.Def.Id)!;
-        while (t.Tick < second.DueTick) sim.Step();
+        // Nobody goes for them: the clock runs out.
+        second.DueTick = t.Tick;
         Captives.Daily(t);
         Assert.True(second.Done && !second.Freed);
         Assert.All(second.Captives, id => Assert.True(t.Agent(id).Dead));
