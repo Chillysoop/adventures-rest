@@ -111,19 +111,31 @@ public static class Land
     {
         town.Plan.Fresh();
         if (town.Plan.Plots.TryGetValue(zone, out int known)) return known;
+        int n = Plots(town, zone, cap).Count;
+        town.Plan.Plots[zone] = n;
+        return n;
+    }
+
+    /// <summary>
+    /// Where the zone's largest buildings would go on its open land, sited in turn as the townsfolk would (up to <paramref name="cap"/>):
+    /// what <see cref="OpenPlots"/> counts, and what the client outlines while a zone brush is held.
+    /// </summary>
+    public static List<Lot> Plots(Town town, Zone zone, int cap = 30)
+    {
+        town.Plan.Fresh();
         // The largest the townsfolk build in the zone, so a count of one means anything of theirs fits.
         var probe = town.Content.Buildings.Where(d => d.Zone == zone && d.Buildable && d.Wards.Count == 0).OrderByDescending(d => Footprint(d).W * Footprint(d).D).ThenBy(d => d.Id, StringComparer.Ordinal).FirstOrDefault()
             ?? new BuildingDef { Id = "", Name = "", Zone = zone };
         var plan = town.Plan;
         var (w, d) = Footprint(probe);
         var marked = new List<int>();
-        int n = 0;
+        var found = new List<Lot>();
         // Each probe takes the first spot down the street list that it fits, as Find would, so one walk down the list counts them all.
         foreach (var (_, x, y, yaw) in Streets.Fronts(town, d, zone))
         {
-            if (n >= cap) break;
+            if (found.Count >= cap) break;
             if (!City.Allows(town, probe, x, y) || !Fits(town, x, y, w, d, yaw, zone)) continue;
-            n++;
+            found.Add(new Lot(-1, x, y) { W = w, D = d, Yaw = yaw, Zone = zone });
             foreach (int i in Cells(x, y, w, d, yaw))
                 if (i >= 0)
                 {
@@ -132,8 +144,7 @@ public static class Land
                 }
         }
         foreach (int i in marked) plan.Taken[i] = 0;
-        plan.Plots[zone] = n;
-        return n;
+        return found;
     }
 
     // Siting ----------------------------------------------------------------------------------
@@ -269,6 +280,31 @@ public static class Land
         if (!City.Allows(town, def, x, y)) return null;
         return Fits(town, x, y, w, d, a, null) ? new Lot(town.Lots.Count, x, y) { W = w, D = d, Yaw = a } : null;
     }
+
+    /// <summary>
+    /// As <see cref="At"/>, but forgiving: when the spot itself won't take the building, the nearest spot that will within
+    /// <see cref="SnapReach"/> tiles, turned a little if no heading was asked for (or nudged off the one that was).
+    /// </summary>
+    public static Lot? Near(Town town, BuildingDef def, double x, double y, double? yaw = null)
+    {
+        if (At(town, def, x, y, yaw) is { } exact) return exact;
+        double[] turns = yaw == null ? Bends : [0, 0.1, -0.1, 0.2, -0.2];
+        for (double r = 0.15; r <= SnapReach + 1e-9; r += 0.15)
+        {
+            int n = Math.Max(8, (int)Math.Ceiling(r * 2 * Math.PI / 0.15));
+            foreach (double turn in turns)
+                for (int i = 0; i < n; i++)
+                {
+                    double a = i * Math.PI * 2 / n, px = x + Math.Cos(a) * r, py = y + Math.Sin(a) * r;
+                    double head = (yaw ?? Streets.Facing(town, px, py)) + turn;
+                    if (At(town, def, px, py, head) is { } lot) return lot;
+                }
+        }
+        return null;
+    }
+
+    /// <summary>How far a hand-placed building may be moved to the nearest spot it fits, in tiles.</summary>
+    public const double SnapReach = 0.9;
 
     /// <summary>Put a lot on the plan: its cells are taken, and painted with its zone.</summary>
     public static void Claim(Town town, Lot lot)

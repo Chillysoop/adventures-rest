@@ -118,6 +118,7 @@ public partial class Main
             _dirty = true;
             SyncBuildButtons();
         };
+        _map.Planner.Said += Toast;
         _map.Decorator.Changed += () =>
         {
             _dirty = true;
@@ -240,8 +241,8 @@ public partial class Main
         _buildHint.Text = _map.Planner.Tool switch
         {
             { Zone: Zone.None } => "Brush over painted land to clear it. [ ] or Shift+wheel sizes the brush. Right-click puts the tool down.",
-            { Zone: Zone z } => $"Paint {Planning.ZoneName(z)} land anywhere. [ ] or Shift+wheel sizes the brush. Right-click puts the tool down.",
-            { Building: string id } => $"Click to place the {town.Content.Building(id).Name.ToLowerInvariant()} facing the square, or drag to turn it any way (Shift+wheel turns it too). Right-click puts the tool down.",
+            { Zone: Zone z } => $"Paint {Planning.ZoneName(z)} land on open ground (other zones stay as they are: clear them first to repaint). Faint outlines show where buildings will fit. [ ] or Shift+wheel sizes the brush. Right-click puts the tool down.",
+            { Building: string id } => $"Click to place the {town.Content.Building(id).Name.ToLowerInvariant()} facing the nearest lane, or drag to turn it any way (Shift+wheel turns it too). Green ground takes it; a click near it settles on the nearest spot that fits. Right-click puts the tool down.",
             _ => GroupHints[_buildGroup],
         };
     }
