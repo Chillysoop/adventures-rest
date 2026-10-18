@@ -82,6 +82,7 @@ public sealed class Simulation
         Property.Hourly(t);
         Social.Hourly(t);
         Roads.Hourly(t);
+        Explore.Hourly(t, Options.AutoMayor && Options.AutoBounties);
         t.Tick++;
         if (t.Hour == 0) DailyTick();
     }
@@ -113,6 +114,7 @@ public sealed class Simulation
         Trade.Daily(t, Options.AutoMayor);
         Mercenaries.Daily(t, Options.AutoMayor && Options.AutoDefense);
         Quests.Daily(t, Options.AutoMayor && Options.AutoBounties, Options.FreeCompanies);
+        Explore.Daily(t, Options.AutoMayor && Options.AutoBounties);
         Intel.Daily(t, Options.AutoMayor && Options.AutoBounties && Options.AutoIntel);
         Bastions.Daily(t, Options.AutoMayor && Options.AutoBastions);
         Watch.Daily(t, Options.AutoMayor && Options.AutoBounties);
@@ -138,6 +140,12 @@ public sealed class Simulation
 
     /// <summary>The player's lever: post a bounty on a site, paid from the treasury into escrow.</summary>
     public Bounty? PostBounty(string siteId, double reward) => Quests.PostBounty(Town, siteId, reward);
+
+    /// <summary>The player's lever: pay a company to go and explore a region, the reward held until they come home.</summary>
+    public Commission? PostSurvey(int regionId, double? reward = null) => Explore.Post(Town, regionId, reward);
+
+    /// <summary>The player's word to explorers about something they found ("dig", "engage", "onward", "home", "parley"...).</summary>
+    public bool OrderExplorers(int findId, string act) => Explore.Order(Town, findId, act);
 
     /// <summary>Send an envoy with gifts to a settlement out in the wilds, to win its people over.</summary>
     public bool SendEnvoy(int settlementId) => World.SendEnvoy(Town, settlementId);
