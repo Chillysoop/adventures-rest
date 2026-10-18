@@ -425,6 +425,14 @@ public partial class Main
             foreach (var d in decrees)
                 p.Text($"[b]{Ui.Esc(d.Name)}[/b]  {Tag(Ui.Days(Decrees.DaysLeft(t, d.Id)) + " left", Ui.Ink2)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(d.Text)}[/font_size]")}", 13);
         }
+        var called = Callings.Held(t).Select(c => (Def: c, Hero: Callings.Holder(t, c.Id))).Where(x => x.Hero != null).ToList();
+        if (called.Count > 0)
+        {
+            p.Heading("Callings");
+            p.Note("Parts heroes have taken up in the town through the stories of their class. Each lasts while its hero stays and stays loyal.");
+            foreach (var (c, hero) in called)
+                p.Text($"[b]{Ui.Esc(c.Name)}[/b]  {AgentLink(hero!)} {Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(hero!.Hero!.Cls.Name.ToLowerInvariant())}[/font_size]")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(c.Text)}[/font_size]")}", 13);
+        }
         var remembered = t.Stories.Precedents.Keys.Select(id => r.Precedent(id)).OfType<PrecedentDef>().ToList();
         if (remembered.Count > 0)
         {
