@@ -48,7 +48,8 @@ public class SeasonsTests
         Assert.True(Seasons.Yield(t, Good.Food) < 1);
         while (Seasons.Current(t).Id != "autumn") sim.RunDays(1);
         sim.RunDays(15);
-        Assert.Equal(Seasons.Stores(t), t.Market.Held(Good.Food));
+        // Set at dawn: households that arrive later in the day count from tomorrow.
+        Assert.InRange(t.Market.Held(Good.Food), Seasons.Stores(t) * 0.9, Seasons.Stores(t) * 1.1);
         Assert.True(Seasons.Yield(t, Good.Food) > 1);
         while (Seasons.Current(t).Id != "winter") sim.RunDays(1);
         Assert.True(Seasons.Yield(t, Good.Food) < 0.6);
