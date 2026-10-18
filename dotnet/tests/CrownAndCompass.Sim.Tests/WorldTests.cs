@@ -80,6 +80,21 @@ public class WorldTests
     }
 
     [Fact]
+    public void GreenhornsWithoutAVeteranStartSomewhereGentler()
+    {
+        var sim = new Simulation(new SimulationOptions { Seed = 7, AutoMayor = false, Enemy = false });
+        var t = sim.Town;
+        foreach (var s in t.Sites) Rumors.Hear(t, s, "something", s.Def.Tier);
+        var rules = t.Content.World.Companies with { MinScore = -99 };
+        var members = Enumerable.Range(0, 3).Select(_ => Quests.CreateHero(t, t.Content.Classes[0], 3)).ToList();
+        for (int i = 0; i < 20; i++) Assert.True(Campaigns.Choose(t, members, rules)!.Def.Tier <= 2);
+        // With an old hand along they will take on a site built for their level.
+        members[0].Hero!.Expeditions = rules.Veteran;
+        var picks = Enumerable.Range(0, 20).Select(_ => Campaigns.Choose(t, members, rules)!.Def.Tier).ToList();
+        Assert.Contains(3, picks);
+    }
+
+    [Fact]
     public void FreeCompaniesGoOutWithoutBountiesAndLevelUp()
     {
         var sim = new Simulation(new SimulationOptions { Seed = 2, AutoBounties = false, Enemy = false });

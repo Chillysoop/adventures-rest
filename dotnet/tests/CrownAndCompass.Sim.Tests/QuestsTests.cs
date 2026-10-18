@@ -48,6 +48,26 @@ public class QuestsTests
     }
 
     [Fact]
+    public void OutmatchedPartiesBreakOffAndCarryTheirFallenHome()
+    {
+        var sim = new Simulation(new SimulationOptions { Seed = 9, AutoMayor = false });
+        var t = sim.Town;
+        var site = t.Content.Sites.First(s => s.Tier == 3);
+        int wiped = 0;
+        var lines = new List<string>();
+        for (int i = 0; i < 40; i++)
+        {
+            var party = t.Content.Classes.Take(3).Select(c => Quests.CreateHero(t, c, 1)).ToList();
+            var result = Expedition.Run(new Rng(100 + i), t.Content, site, party);
+            if (result.Outcome == ExpeditionOutcome.Wiped) wiped++;
+            lines.AddRange(result.Lines);
+        }
+        // Level 1 heroes in a level 3 site get badly beaten, but most of them live to run.
+        Assert.True(wiped < 10, $"{wiped} of 40 parties wiped");
+        Assert.Contains(lines, l => l.Contains("breaks off and runs, dragging"));
+    }
+
+    [Fact]
     public void SendsPartiesOutAndWritesChroniclesOverACampaign()
     {
         var sim = new Simulation(new SimulationOptions { Seed = 1 });
