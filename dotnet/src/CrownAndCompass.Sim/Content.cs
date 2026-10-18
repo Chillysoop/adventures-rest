@@ -835,6 +835,9 @@ public sealed class Content
     /// <summary>Heroes' loyalty, knighthoods, fiefs and the town's champion (content/game/loyalty.json).</summary>
     public LoyaltyRules Loyalty { get; init; } = new();
 
+    /// <summary>Decorations and set dressing the player can place (content/game/decor.json).</summary>
+    public DecorRules Decor { get; init; } = new();
+
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
 
@@ -966,6 +969,7 @@ public sealed class Content
             Saga = Parse<SagaRules>("saga.json"),
             Gear = Parse<GearRules>("gear.json"),
             Loyalty = Parse<LoyaltyRules>("loyalty.json"),
+            Decor = Parse<DecorRules>("decor.json"),
         };
     }
 

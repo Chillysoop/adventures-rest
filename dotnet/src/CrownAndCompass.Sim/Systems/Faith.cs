@@ -427,7 +427,8 @@ public static class Faith
                 followers.Count * r.FavorPerFollower +
                 followers.Count(a => a.Devout) * r.FavorPerDevout +
                 places.Count(b => b.Def.Id == sr.Shrine) * r.FavorShrine +
-                places.Count(b => b.Def.Id == sr.Temple) * r.FavorTemple;
+                places.Count(b => b.Def.Id == sr.Temple) * r.FavorTemple +
+                Decor.Favor(town, god.Id);
             if (places.Count == 0) gain *= 0.25;
             town.Faiths.Favor[god.Id] = town.Faiths.Favor.Get(god.Id, 0) + gain;
         }

@@ -101,6 +101,7 @@ public sealed class Simulation
         Factions.Daily(t, Options.AutoMayor);
         Saga.Daily(t, Options.AutoMayor);
         Loyalty.Daily(t, Options.AutoMayor);
+        Decor.Daily(t);
         Economy.Daily(t, true);
         History.Add(Snapshot());
         t.AccountsYesterday = t.AccountsToday;
@@ -168,6 +169,13 @@ public sealed class Simulation
 
     /// <summary>Commission the Scrying Pool or the Sleepless Spire.</summary>
     public Building? BuildSightWork(string buildingId) => Watch.BuildWork(Town, buildingId);
+
+    /// <summary>Set down a decoration anywhere at any angle; a statue honours the given hero or god.</summary>
+    public Decoration? Decorate(string decorId, double x, double y, double angle, int? heroId = null, string? deity = null) =>
+        Decor.Place(Town, decorId, x, y, angle, heroId, deity);
+
+    /// <summary>Clear a decoration away for half its price back.</summary>
+    public bool ClearDecoration(int decorationId) => Decor.Remove(Town, decorationId);
 
     public DayStats Snapshot()
     {

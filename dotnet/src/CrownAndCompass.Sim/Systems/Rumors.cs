@@ -76,7 +76,7 @@ public static class Rumors
         foreach (var tavern in town.Taverns)
         {
             var r = Rules(town);
-            double chance = Math.Min(r.MaxChance, r.BaseChance + r.ChancePerPatron * tavern.Talk);
+            double chance = Math.Min(r.MaxChance, r.BaseChance + r.ChancePerPatron * tavern.Talk + Decor.Talk(town, tavern));
             tavern.Talk = 0;
             if (town.Rng.Chance(chance)) Spread(town, tavern);
         }
