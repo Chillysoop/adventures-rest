@@ -389,7 +389,7 @@ public partial class Main
             : scouting != null ? $"Out {(scouting.Mirror ? "hiding a mirror at" : "scouting")} {Quests.Site(t, scouting.SiteId)!.Def.Name}"
             : a.IsAway ? "Away on an expedition, somewhere in the fog" : a.Activity.ToString();
         string describe = a.Describe()[(a.Name.Length + 2)..];
-        p.Text($"[font_size=19][b]{Ui.Esc(a.Name)}[/b][/font_size]\n{Ui.C(Ui.Ink2, $"{Ui.Esc(Ui.Cap(describe))} · {Ui.Esc(a.TraitList())}")}");
+        p.Text($"[font_size=19][b]{Ui.Esc(Loyalty.Styled(t, a))}[/b][/font_size]\n{Ui.C(Ui.Ink2, $"{Ui.Esc(Ui.Cap(describe))} · {Ui.Esc(a.TraitList())}")}");
         if (seat != null) p.Text($"{Tag(seat.Def.Title, Ui.Gold)} loyalty {Math.Round(seat.Loyalty)}");
         if (a.Hero is HeroSheet hs)
         {
@@ -400,7 +400,8 @@ public partial class Main
             if (cls.AreaSpell != null) spells.Add(cls.AreaSpell.Name);
             string role = cls.Role == "" ? "" : $"{Ui.Cap(cls.Role)}{(cls.Magic != "" ? $", {cls.Magic} caster" : "")}";
             p.Text(Ui.C(Ui.Ink2, $"{Ui.Esc(role)}{(spells.Count > 0 ? $" · casts {Ui.Esc(string.Join(", ", spells))}" : "")}"), 13);
-            if (hs.Items.Count > 0) p.Text($"Carries {Ui.Esc(string.Join(", ", hs.Items))}{(hs.WeaponBonus > 0 ? $" · weapon +{hs.WeaponBonus}" : "")}{(hs.ArmorBonus > 0 ? $" · armour +{hs.ArmorBonus}" : "")}", 13);
+            p.Text($"Fights with {Ui.Esc(Gear.Describe(hs))} · AC {Gear.Ac(t.Content, a)} · attack +{Gear.Attack(t.Content, a)}", 13);
+            InspectLoyalty(p, t, a, hs);
         }
         p.Text($"{Ui.Esc(status)} · {Math.Floor(a.Gold)} gold · mood {Math.Round(a.LastDayMood)}");
         p.Text($"Lives at {Ui.Esc(home)}; {(a.Hero != null ? "lives by bounties" : $"works at {Ui.Esc(job)}")}.");
@@ -416,6 +417,36 @@ public partial class Main
             p.Heading("Story so far");
             foreach (var e in history) p.Text($"{Ui.C(Ui.Ink2, $"[font_size=11]Day {e.Tick / 24 + 1}[/font_size]")}  {LinkNames(e)}", 13);
         }
+    }
+
+    private void InspectLoyalty(Pane p, Town t, Agent a, HeroSheet hs)
+    {
+        if (a.Departed)
+        {
+            if (hs.TurnedTo is int m) p.Text(Ui.C(Ui.Bad, $"Went over to {Ui.Esc(t.Saga.Menaces[m - 1].Name)}."));
+            else if (hs.DefectedTo != null && Factions.Find(t, hs.DefectedTo) is FactionState f) p.Text(Ui.C(Ui.Bad, $"Ran to {Ui.Esc(f.Known ? f.Name : "someone in the shadows")}."));
+            return;
+        }
+        var honours = new List<string>();
+        if (hs.Knight) honours.Add(Tag("Knight", Ui.Gold));
+        if (hs.FiefId != null && Quests.Site(t, hs.FiefId) is SiteState land) honours.Add(Tag($"Holds {Ui.Esc(land.Def.Name)}", Ui.Gold));
+        if (hs.Champion) honours.Add(Tag($"Champion of {t.Name}", Ui.Gold));
+        if (honours.Count > 0) p.Text(string.Join("  ", honours));
+        var lr = t.Content.Loyalty;
+        double loyalty = Math.Round(hs.Loyalty);
+        var color = hs.Loyalty < lr.Desert ? Ui.Bad : hs.Loyalty < lr.Restless ? Ui.Gold : hs.Loyalty >= 60 ? Ui.Good : Ui.Ink2;
+        string mood = hs.Loyalty < lr.Desert ? "ready to leave" : hs.Loyalty < lr.Restless ? "restless" : hs.Loyalty >= 75 ? "devoted" : hs.Loyalty >= 60 ? "loyal" : "content";
+        var why = Loyalty.Factors(t, a).OrderByDescending(f => Math.Abs(f.Points)).Take(4).Select(f => $"{f.Why} {(f.Points >= 0 ? "+" : "−")}{Math.Round(Math.Abs(f.Points))}");
+        p.Text($"{Tag($"Loyalty {loyalty}", color)} {Ui.C(color, mood)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(string.Join(" · ", why))}[/font_size]")}", 13);
+        string? knight = Loyalty.KnightBlocked(t, a);
+        string? champion = Loyalty.ChampionBlocked(t, a);
+        double purse = Js.Round(lr.Reward.PerLevel * hs.Level);
+        int id = a.Id;
+        p.Buttons(
+            (hs.Knight ? "Knighted" : $"Knight them, {Js.Str(lr.Knight.Cost)}g", knight == null, true, () => Act(() => _sim.Knight(id))),
+            (hs.Champion ? "Champion" : "Name champion", champion == null, false, () => Act(() => _sim.NameChampion(id))),
+            ($"Send a purse, {Js.Str(purse)}g", t.Treasury >= purse, false, () => Act(() => _sim.RewardHero(id, purse))));
+        if (knight != null && !hs.Knight) p.Note($"Knighthood: {knight}.");
     }
 
     private void InspectBuilding(Pane p, Town t, Building b)
@@ -445,6 +476,7 @@ public partial class Main
             Sight.Live when scry != null => Ui.C(new Color("b48cff"), $"[b]Scrying[/b] {(scry.CasterId == 0 ? "in the Scrying Pool" : $"by {Ui.Esc(t.Agent(scry.CasterId).Name)}")}, {scry.EndTick - t.Tick} hours left. You see it as it is now."),
             Sight.Live when live == LiveSource.Mirror => Ui.C(new Color("cfe3f0"), "[b]Mirror[/b]: the hidden mirror shows it as it is now, until someone finds it."),
             Sight.Live when live == LiveSource.Scout && scout != null => Ui.C(Ui.Good, $"[b]Watched[/b] by {Ui.Esc(t.Agent(scout.HeroId).Name)} from cover, rations for {Ui.Days((int)Math.Ceiling((scout.LeaveTick - t.Tick) / 24.0))}."),
+            Sight.Live when live == LiveSource.Outpost && Loyalty.Lord(t, s.Def.Id) is Agent lord => Ui.C(Ui.Good, $"[b]Held[/b] by the retainers of {Ui.Esc(Loyalty.Styled(t, lord))}. Nothing moves back in."),
             Sight.Live when live == LiveSource.Outpost => Ui.C(Ui.Good, $"[b]Held[/b] by a garrison of the watch, {Js.Str(t.Content.Lairs.Outpost.Upkeep)}g a day. Nothing moves back in."),
             Sight.Live when live == LiveSource.Spire => Ui.C(Ui.Gold, "[b]In the Spire's sight[/b], day and night."),
             Sight.Live => "In sight of the town.",
@@ -488,6 +520,21 @@ public partial class Main
         string sid = s.Def.Id;
         if (s.Cleared)
         {
+            if (Loyalty.Lord(t, s.Def.Id) is Agent lord)
+            {
+                p.Text($"The land of {AgentLink(lord, Loyalty.Styled(t, lord))}, held by their own retainers.");
+                return;
+            }
+            // A landless knight can be granted it, whether or not the watch garrisons it now.
+            var knight = t.Heroes.Where(h => h.Hero!.Knight && h.Hero.FiefId == null).OrderByDescending(h => h.Hero!.Loyalty).ThenBy(h => h.Id).FirstOrDefault();
+            if (knight != null)
+            {
+                string? no = Loyalty.FiefBlocked(t, knight, s);
+                int kid = knight.Id;
+                p.Heading("Grant it");
+                p.Buttons(($"Grant it to Ser {knight.GivenName}, {Js.Str(t.Content.Loyalty.Fief.Cost)}g", no == null, true, () => Act(() => _sim.GrantFief(kid, sid))));
+                p.Note(no == null ? $"Their retainers hold it at no cost to the town, and they take {Js.Str(t.Content.Loyalty.Fief.Rent)}g a day from the land." : Ui.Cap(no) + ".");
+            }
             if (s.Held) return;
             // Something will move back in unless the town holds it.
             string? blocked = Lairs.HoldBlocked(t, s);

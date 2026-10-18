@@ -713,6 +713,7 @@ public static class Menaces
         double army = m.Power;
         int breaches = 0;
         lines.Add($"{Saga.Cap(m.Name)}, some {Js.Str(Js.Round(army))} strong, comes against {town.Name}. The defenders muster {Js.Str(Js.Round(startDef))} strong.");
+        def = Math.Max(0, def - Loyalty.Betray(town, m.Name, m, lines));
         for (int w = 1; w <= 3 && breaches < 2; w++)
         {
             double wave = (army / (3 - w + 1)) * (0.8 + rng.Next() * 0.4);

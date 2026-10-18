@@ -75,7 +75,7 @@ public class LibraryTests
         {
             var sim = new Simulation(new SimulationOptions { Seed = seed });
             sim.RunDays(120);
-            foreach (var h in sim.Town.Agents.Where(a => a.Hero != null)) names.UnionWith(h.Hero!.Items);
+            foreach (var h in sim.Town.Agents.Where(a => a.Hero != null)) names.UnionWith(h.Hero!.Magic.Values.Select(i => i.Name));
         }
         Assert.NotEmpty(names);
         Assert.All(names, n => Assert.Contains(C.Library.Items, i => i.Name == n));

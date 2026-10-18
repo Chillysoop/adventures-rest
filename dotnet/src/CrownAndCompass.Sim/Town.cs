@@ -161,6 +161,7 @@ public static class TreasuryAccount
     public const string Fines = "Fines";
     public const string Factions = "Factions";
     public const string Works = "Town works";
+    public const string Honours = "Honours";
 }
 
 /// <summary>How the campaign ended.</summary>

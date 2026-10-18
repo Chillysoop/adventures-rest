@@ -100,6 +100,7 @@ public sealed class Simulation
         Faith.Daily(t);
         Factions.Daily(t, Options.AutoMayor);
         Saga.Daily(t, Options.AutoMayor);
+        Loyalty.Daily(t, Options.AutoMayor);
         Economy.Daily(t, true);
         History.Add(Snapshot());
         t.AccountsYesterday = t.AccountsToday;
@@ -152,6 +153,18 @@ public sealed class Simulation
 
     /// <summary>Place a government building, charter house or town-owned business on a lot, paid from the treasury.</summary>
     public Building? Place(string buildingId, int lotId) => Planning.Place(Town, buildingId, lotId);
+
+    /// <summary>Knight a hero of renown: Ser, a stipend and an oath to the town.</summary>
+    public bool Knight(int heroId) => Loyalty.Knight(Town, Town.Agent(heroId));
+
+    /// <summary>Grant a knight a cleared site as their land; their retainers hold it in place of a garrison.</summary>
+    public bool GrantFief(int heroId, string siteId) => Loyalty.Grant(Town, Town.Agent(heroId), siteId);
+
+    /// <summary>Name the town's champion, who stands first on the walls.</summary>
+    public bool NameChampion(int heroId) => Loyalty.NameChampion(Town, Town.Agent(heroId));
+
+    /// <summary>Send a hero a purse from the treasury, to win them back or thank them.</summary>
+    public bool RewardHero(int heroId, double gold) => Loyalty.Reward(Town, Town.Agent(heroId), gold);
 
     /// <summary>Commission the Scrying Pool or the Sleepless Spire.</summary>
     public Building? BuildSightWork(string buildingId) => Watch.BuildWork(Town, buildingId);

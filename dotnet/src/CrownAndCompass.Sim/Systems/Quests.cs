@@ -206,7 +206,9 @@ public static class Quests
         };
         sheet.MaxHp = Expedition.HeroMaxHp(sheet, a.Abilities.Con);
         sheet.Hp = sheet.MaxHp;
+        Gear.Equip(town.Content.Library, sheet);
         a.Hero = sheet;
+        Loyalty.Arrive(town, a);
         return a;
     }
 
@@ -228,6 +230,7 @@ public static class Quests
         ReturnParties(town);
         HeroArrivals(town);
         LodgingAndRest(town);
+        Gear.Shop(town);
         ExpireBounties(town);
         if (autoMayor) AutoPost(town);
         FormParties(town);
@@ -468,6 +471,7 @@ public static class Quests
             var rites = new List<(string Text, int Id)>();
             var raised = result.Outcome == ExpeditionOutcome.Wiped ? [] : Shrines.Raise(town, result.Dead, party.Name, ref pay, rites);
             var dead = result.Dead.Where(id => !raised.Contains(id)).ToList();
+            foreach (int id in raised) Loyalty.Sway(town.Agent(id), town.Content.Loyalty.Raised);
             var survivors = members.Where(m => !dead.Contains(m.Id)).ToList();
             foreach (var m in members)
             {
@@ -503,12 +507,14 @@ public static class Quests
             if (survivors.Count > 0)
             {
                 double share = pay / survivors.Count;
+                double townShare = result.Outcome == ExpeditionOutcome.Cleared && bounty != null ? bounty.Reward / survivors.Count : 0;
                 // Clearing a site is a milestone worth as much again as a hard fight there.
                 int xp = result.Xp + (result.Outcome == ExpeditionOutcome.Cleared ? World.Milestone(town, s) : 0);
                 int xpShare = (int)Math.Floor((double)xp / survivors.Count);
                 foreach (var m in survivors)
                 {
                     m.Gold += share;
+                    m.Hero!.Pay += townShare;
                     GainXp(town, m, xpShare);
                     m.Hero!.Renown += result.Outcome == ExpeditionOutcome.Cleared ? 2 * s.Def.Tier : 0;
                     foreach (var o in survivors) if (o.Id != m.Id) m.ChangeOpinion(o.Id, 15);
@@ -536,7 +542,10 @@ public static class Quests
             foreach (var (rite, id) in rites) town.Log(LedgerCategory.Faith, Importance.Major, rite, [id]);
             Lairs.AfterDelve(town, s, result);
             foreach (var it in result.Items)
+            {
                 if (it.HeroId == null) Watch.ReceiveRelic(town, it.Item, party.Name);
+                else if (survivors.Any(m => m.Id == it.HeroId)) Gear.Claim(town, town.Agent(it.HeroId.Value), it.Item);
+            }
         }
     }
 

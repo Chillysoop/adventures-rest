@@ -64,7 +64,8 @@ public static class Campaigns
     public static SiteState? Choose(Town town, IReadOnlyList<Agent> members, CompanyRules rules)
     {
         var leader = members[0];
-        double avg = members.Average(m => m.Hero!.Level);
+        // Well-armed companies reckon themselves a little stronger than their levels.
+        double avg = members.Average(m => m.Hero!.Level) + Gear.Levels(town.Content, members);
         // Bold leaders reach a step higher, but only with a full company behind them.
         bool bold = (leader.Has(Trait.Ambitious) || leader.Has(Trait.HotTempered)) && members.Count >= rules.MaxMembers;
         int cap = (int)Math.Floor(avg) + (bold ? rules.BoldStep : 0);
