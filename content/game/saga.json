@@ -609,8 +609,8 @@
     "march": "{name} is on the march! {leader} leads some {army} toward {town}. They will reach the walls in {days} days.",
     "repelled": "{town} holds. {leader} draws off with what is left of the host, but {name} is not finished.",
     "overlordLevel": [
-      8,
-      10
+      9,
+      11
     ],
     "marchGrowth": 0.1,
     "rideEveryDays": 20,
