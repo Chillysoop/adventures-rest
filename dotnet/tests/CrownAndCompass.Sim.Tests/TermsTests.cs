@@ -91,4 +91,22 @@ public class TermsTests
         Assert.All(second.Captives, id => Assert.True(t.Agent(id).Dead));
         Assert.True(t.Stories.Precedents.ContainsKey("captives-lost"));
     }
+
+    [Fact]
+    public void AMagesErrandPaysTheTownInASpell()
+    {
+        var sim = Player();
+        var t = sim.Town;
+        sim.RunDays(30);
+        var site = Quests.Site(t, "goblin_warrens")!;
+        site.Known = SiteKnowledge.Rumoured;
+        t.Treasury += 1000;
+        var b = sim.PostBounty("goblin_warrens", 100, "fetch")!;
+        b.Errand = "ward";
+        t.Saga.Dread = 50;
+        Errands.Keep(t, b);
+        Assert.True(t.Saga.Dread < 50);
+        Assert.Equal("", b.Errand);
+        Assert.Contains(t.Ledger.Entries, e => e.Text.Contains("keeps its word"));
+    }
 }

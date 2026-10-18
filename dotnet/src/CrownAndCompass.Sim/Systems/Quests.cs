@@ -93,6 +93,9 @@ public sealed class Bounty
 
     /// <summary>How the job is to be done: slay, drive, parley, rescue or fetch (<see cref="Systems.Terms"/>).</summary>
     public string Terms { get; init; } = "slay";
+
+    /// <summary>A wizard's errand: the spell the funder casts for the town when the job is done (<see cref="Systems.Errands"/>).</summary>
+    public string Errand { get; set; } = "";
 }
 
 public sealed class Party
@@ -252,7 +255,7 @@ public static class Quests
                 ? $"The council posts a bounty of {Js.Str(reward)} gold on {s.Def.Name}."
                 : $"The council posts a bounty of {Js.Str(reward)} gold to {term.Verb} {s.Def.Name}.");
         // The heroes judge the terms as they judge any choice of the mayor's.
-        if (term.Tags.Count > 0) Regard.Judge(town, term.Tags, $"posted a bounty to {term.Verb} {s.Def.Name}", "Bounties");
+        if (funder == null && term.Tags.Count > 0) Regard.Judge(town, term.Tags, $"posted a bounty to {term.Verb} {s.Def.Name}", "Bounties");
         return b;
     }
 
@@ -619,6 +622,7 @@ public static class Quests
                 bounty.Status = BountyStatus.Failed;
                 Refund(town, bounty);
             }
+            if (earned && result.Outcome != ExpeditionOutcome.Wiped && bounty is { Errand: not "" }) Errands.Keep(town, bounty);
             pay += World.AfterDelve(town, party, s, result.Outcome) + party.Bonus;
             if (survivors.Count > 0)
             {

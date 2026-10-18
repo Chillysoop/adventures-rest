@@ -224,6 +224,8 @@ public partial class Main
             var buttons = new List<(string, bool, bool, Action)>();
             if (s.ThoughtCleared) status = Tag("Cleared", Ui.Good);
             else if (party != null && !party.Returned) status = Tag($"{Ui.Esc(party.Name)} on the road", Ui.Gold);
+            else if (live != null && live.Errand != "" && t.Content.Bounties.Errands.FirstOrDefault(x => x.Id == live.Errand) is { } boon)
+                status = Tag($"Mages' errand: {Math.Round(live.Reward)}g and {boon.Name}", Ui.Gold);
             else if (live != null) status = Tag($"{(live.Terms == "slay" ? "Bounty" : Terms.Of(t, live).Name)} posted: {Math.Round(live.Reward)}g", Ui.Gold);
             else
             {

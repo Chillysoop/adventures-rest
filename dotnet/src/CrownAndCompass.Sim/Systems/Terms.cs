@@ -57,8 +57,24 @@ public sealed record CaptiveRules
     public double LostStrength { get; init; } = 6;
 }
 
+/// <summary>A spell a mage casts for the town in return for an errand (content/game/bounties.json).</summary>
+public sealed record ErrandBoon
+{
+    public string Id { get; init; } = "";
+
+    /// <summary>"a warding on the walls".</summary>
+    public string Name { get; init; } = "";
+    public string Text { get; init; } = "";
+    public double Dread { get; init; }
+    public double Food { get; init; }
+    public double Mandate { get; init; }
+    public int Reveal { get; init; }
+}
+
 public sealed record BountyRules
 {
+    public List<ErrandBoon> Errands { get; init; } = [];
+
     /// <summary>A hero's interest in a bounty, more or less, when its terms suit their temper or go against it.</summary>
     public double Temper { get; init; } = 0.25;
     public List<TermDef> Terms { get; init; } = [];
@@ -233,5 +249,38 @@ public static class Captives
             if (town.Treasury < reward + 50) continue;
             Quests.PostBounty(town, s.Def.Id, reward, null, rescue.Id);
         }
+    }
+}
+
+/// <summary>
+/// Wizard's errands. A circle of mages with a hall in town sends heroes to fetch the best of a hoard, paid
+/// from its own coffers, and when the job is done casts a spell for the town in thanks: a warding on the
+/// walls, rain on the fields, a scrying of the wilds.
+/// </summary>
+public static class Errands
+{
+    public static ErrandBoon? Pick(Town town)
+    {
+        var boons = town.Content.Bounties.Errands;
+        if (boons.Count == 0 || town.Content.Bounties.Terms.All(t => t.Id != "fetch")) return null;
+        return boons[town.Rng.Range(0, boons.Count)];
+    }
+
+    public static void Keep(Town town, Bounty b)
+    {
+        var boon = town.Content.Bounties.Errands.FirstOrDefault(x => x.Id == b.Errand);
+        if (boon == null) return;
+        b.Errand = "";
+        if (boon.Dread != 0) town.Saga.Dread = Math.Clamp(town.Saga.Dread + boon.Dread, 0, 100);
+        if (boon.Food > 0) town.Market.Seed(Good.Food, boon.Food);
+        if (boon.Mandate != 0) town.Mandate = Math.Clamp(town.Mandate + boon.Mandate, 0, 100);
+        for (int i = 0; i < boon.Reveal; i++)
+        {
+            var s = town.Sites.Where(x => x.Known == SiteKnowledge.Unheard).OrderBy(x => x.Def.Distance).ThenBy(x => x.Def.Id, StringComparer.Ordinal).FirstOrDefault();
+            if (s == null) break;
+            Rumors.Hear(town, s, Rumors.Occupants(town.Content, s.Def), s.Def.Tier, 70);
+        }
+        string who = b.FunderId is int f ? town.Building(f).Name : "The mages";
+        town.Log(LedgerCategory.Faction, Importance.Notable, $"{Stories.Cap(who)} keeps its word for the errand: {boon.Text}");
     }
 }

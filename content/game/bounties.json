@@ -1,5 +1,11 @@
 {
   "temper": 0.25,
+  "errands": [
+    { "id": "ward", "name": "a warding on the walls", "text": "pale sigils are chalked on every gate, and the townsfolk sleep easier.", "dread": -6 },
+    { "id": "rain", "name": "rain on the fields", "text": "a soft rain falls on the fields for three days, and the granaries fill.", "food": 80 },
+    { "id": "sight", "name": "a scrying of the wilds", "text": "the mages spend a night over their mirrors and send the council word of places nobody had heard of.", "reveal": 2 },
+    { "id": "cure", "name": "a cure for the lanes", "text": "a mage walks the poor lanes with a censer, and the coughing stops.", "mandate": 3 }
+  ],
   "terms": [
     {
       "id": "slay", "name": "Slay", "verb": "clear",
