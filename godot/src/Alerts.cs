@@ -58,6 +58,9 @@ public partial class Main
                 () => OpenWindow(Tab.War)));
         if (Council.PendingMotion(t) is { } m)
             list.Add(new($"motion:{m.Id}", "mandate", "A motion awaits you", Ui.Cap(m.Text), Ui.Gold, () => OpenWindow(Tab.Council)));
+        if (City.NextTier(t) is { } charter && City.Missing(t).Count == 0)
+            list.Add(new($"charter:{charter.Id}", "favour", $"Claim the charter of a {charter.Name.ToLowerInvariant()}", "The town has all the charter asks for. Seal it in the City window to open new wards and buildings.", Ui.Good,
+                () => OpenWindow(Tab.City)));
         if (s.Homeless > 0)
             list.Add(new("homeless", "homeless", $"{s.Homeless} homeless", "Townsfolk with no roof lose heart and leave. More homes are needed.", Ui.Gold,
                 () => { OpenWindow(Tab.Council); Look(Geo.Center, 40); }));

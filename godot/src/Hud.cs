@@ -24,6 +24,7 @@ public partial class Main
 
     private static readonly Dictionary<Tab, string> Titles = new()
     {
+        [Tab.City] = "The city",
         [Tab.Ledger] = "Ledger",
         [Tab.War] = "War",
         [Tab.Council] = "Council",
@@ -85,7 +86,10 @@ public partial class Main
         title.AddThemeConstantOverride("separation", -4);
         _townName = Ui.Label("Briarford", Ui.Ink, Ui.Display, 20);
         title.AddChild(_townName);
-        title.AddChild(Ui.Label("Crown & Compass", Ui.Ink2, Ui.Medium, 10));
+        _tierLabel = Ui.Label("Thorp", Ui.Ink2, Ui.Medium, 10);
+        _tierLabel.TooltipText = "What the town is chartered as, and its people counting every household. Open the City window to grow it.";
+        _tierLabel.MouseFilter = MouseFilterEnum.Pass;
+        title.AddChild(_tierLabel);
         bar.AddChild(title);
         bar.AddChild(new VSeparator());
 
