@@ -30,6 +30,9 @@ public sealed record SimulationOptions
     /// <summary>Let the stand-in mayor buy companies' reports of new ground; off when a player deals with the companies.</summary>
     public bool AutoIntel { get; init; } = true;
 
+    /// <summary>Let the stand-in mayor give companies leave to raise bastions; off when a player answers them.</summary>
+    public bool AutoBastions { get; init; } = true;
+
     /// <summary>Settle council motions by majority at once; off when a player signs or vetoes them.</summary>
     public bool AutoCouncil { get; init; } = true;
 
@@ -108,6 +111,7 @@ public sealed class Simulation
         World.Daily(t, Options.AutoMayor);
         Quests.Daily(t, Options.AutoMayor && Options.AutoBounties, Options.FreeCompanies);
         Intel.Daily(t, Options.AutoMayor && Options.AutoBounties && Options.AutoIntel);
+        Bastions.Daily(t, Options.AutoMayor && Options.AutoBastions);
         Watch.Daily(t, Options.AutoMayor && Options.AutoBounties);
         Lairs.Daily(t, Options.AutoMayor);
         Rumors.Daily(t);
@@ -151,6 +155,9 @@ public sealed class Simulation
 
     /// <summary>Buy a company's report of a trip the council didn't pay for: at their asking price, or haggled down.</summary>
     public IntelDeal? BuyIntel(int partyId, bool haggle = false) => Intel.Buy(Town, partyId, haggle);
+
+    /// <summary>Answer a company asking leave to raise a bastion: grant it (they buy the land), gift them the land, or refuse.</summary>
+    public bool AnswerBastion(int requestId, BastionAnswer answer) => Bastions.Answer(Town, requestId, answer);
 
     /// <summary>Post the best scout in town to watch a site from cover.</summary>
     public Scout? PostScout(string siteId) => Watch.PostScout(Town, siteId);
