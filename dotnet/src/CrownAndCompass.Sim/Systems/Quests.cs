@@ -107,6 +107,16 @@ public sealed class Party
     /// <summary>Set when a sending called the party home before it reached the site.</summary>
     public int? RecalledTick { get; set; }
 
+    /// <summary>Sending-stone quests the party has asked the mayor about on this venture (<see cref="Sendings"/>).</summary>
+    public int Asked { get; set; }
+
+    /// <summary>What the mayor's answers did to the delve to come: a bonus on the party's checks and blows, foes added to each fight.</summary>
+    public int Edge { get; set; }
+    public int Swell { get; set; }
+
+    /// <summary>Gold the answers turned up on the way, split with the take at the homecoming.</summary>
+    public double Bonus { get; set; }
+
     // The road (see Roads) ----------------------------------------------------------------------
 
     /// <summary>The road out to the site, and the one home (chosen when they leave the site).</summary>
@@ -574,7 +584,7 @@ public static class Quests
                 bounty.Status = BountyStatus.Failed;
                 Refund(town, bounty);
             }
-            pay += World.AfterDelve(town, party, s, result.Outcome);
+            pay += World.AfterDelve(town, party, s, result.Outcome) + party.Bonus;
             if (survivors.Count > 0)
             {
                 double share = pay / survivors.Count;
