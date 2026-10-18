@@ -1786,6 +1786,1663 @@
       }
     },
     {
+      "id": "bard-stage",
+      "title": "{hero} plays for their supper",
+      "stakes": "low",
+      "source": "heroes",
+      "needs": [
+        "class:bard",
+        "tavern"
+      ],
+      "weight": 0.8,
+      "repeatDays": 60,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} has been playing {tavern} for their supper, and the room fills whenever they do. They ask whether {town} would keep a bard of its own.",
+          "options": [
+            {
+              "label": "Give them the stage and a purse",
+              "cost": 40,
+              "prefer": 0.3,
+              "success": {
+                "text": "{heroName} plays {tavern} every night now. Folk walk in from the farms to hear them.",
+                "effects": {
+                  "calling:towns-bard": 1,
+                  "loyalty": 6
+                }
+              }
+            },
+            {
+              "label": "Sing the chorus with them",
+              "skill": "performance",
+              "dc": 13,
+              "prefer": 0.2,
+              "success": {
+                "text": "You know the words, more or less. The room roars, and {heroName} is {town}'s own.",
+                "effects": {
+                  "calling:towns-bard": 1,
+                  "mandate": 2,
+                  "loyalty": 6
+                }
+              },
+              "failure": {
+                "text": "The room laughs at you, not with you. {heroName} plays on, but not for the town.",
+                "effects": {
+                  "mandate": -2
+                }
+              },
+              "critical": {
+                "text": "You know every word and hit every note. The room roars, and {town} has a bard of its own.",
+                "effects": {
+                  "calling:towns-bard": 1,
+                  "mandate": 4,
+                  "loyalty": 8,
+                  "inspiration": 1
+                }
+              },
+              "partial": {
+                "text": "Your voice cracks on the high note. The room laughs with you, mostly, and {heroName} stays.",
+                "effects": {
+                  "calling:towns-bard": 1
+                }
+              }
+            },
+            {
+              "label": "Ask them for a ballad of the founding",
+              "skill": "history",
+              "dc": 12,
+              "success": {
+                "text": "You tell them the old stories, and they make a ballad of it. By the week's end every tavern sings it.",
+                "effects": {
+                  "calling:towns-bard": 1,
+                  "mandate": 1,
+                  "renown": 1
+                }
+              },
+              "failure": {
+                "text": "You get the dates wrong. The ballad is about somebody else's town.",
+                "effects": {
+                  "loyalty": 2
+                }
+              }
+            },
+            {
+              "label": "Say the town has no gold for minstrels",
+              "success": {
+                "text": "{heroName} bows, a little too low, and plays on for their supper.",
+                "effects": {
+                  "loyalty": -5
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "{heroName} plays on for their supper, then takes the road for a week.",
+        "effects": {
+          "loyalty": -3
+        }
+      }
+    },
+    {
+      "id": "bard-satire",
+      "title": "A song about the {seat}",
+      "stakes": "medium",
+      "source": "heroes",
+      "needs": [
+        "calling:towns-bard",
+        "seat"
+      ],
+      "weight": 1,
+      "repeatDays": 120,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{heroName}'s new song is about {councillor}, the {seat}, and a goat. All {town} is singing it.",
+          "options": [
+            {
+              "label": "Laugh along with the town",
+              "prefer": 0.1,
+              "success": {
+                "text": "You sing the goat's verse louder than anyone. The town loves it; {councillor} does not.",
+                "effects": {
+                  "mandate": 2,
+                  "seat": -12,
+                  "loyalty": 4
+                }
+              }
+            },
+            {
+              "label": "Ask the bard to drop the verse",
+              "skill": "persuasion",
+              "dc": 13,
+              "success": {
+                "text": "{heroName} grumbles and writes a new verse about the weather.",
+                "effects": {
+                  "seat": 5,
+                  "loyalty": -2
+                }
+              },
+              "failure": {
+                "text": "{heroName} plays it twice as loud the next night.",
+                "effects": {
+                  "seat": -8,
+                  "loyalty": -4
+                }
+              }
+            },
+            {
+              "label": "Answer with a verse of your own",
+              "skill": "performance",
+              "dc": 15,
+              "success": {
+                "text": "Your verse about the bard's own goat goes round the taverns. Honours even.",
+                "effects": {
+                  "mandate": 3,
+                  "seat": 2,
+                  "loyalty": 4
+                }
+              },
+              "failure": {
+                "text": "Your verse scans badly, and now there are two songs about the hall.",
+                "effects": {
+                  "mandate": -2,
+                  "seat": -5
+                }
+              },
+              "critical": {
+                "text": "Your verse is better. The whole hall laughs, even {councillor}.",
+                "effects": {
+                  "mandate": 4,
+                  "seat": 4,
+                  "loyalty": 6
+                }
+              }
+            },
+            {
+              "label": "Forbid the song",
+              "success": {
+                "text": "The song stops. So does {heroName}'s playing for the town.",
+                "effects": {
+                  "calling:towns-bard": -1,
+                  "loyalty": -12,
+                  "seat": 8,
+                  "mandate": -2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The song runs its course. {councillor} doesn't come to the tavern for a month.",
+        "effects": {
+          "seat": -10,
+          "mandate": 1
+        }
+      }
+    },
+    {
+      "id": "paladin-oath",
+      "title": "{hero} would swear an oath",
+      "stakes": "medium",
+      "source": "heroes",
+      "needs": [
+        "class:paladin"
+      ],
+      "weight": 0.8,
+      "repeatDays": 45,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} kneels at the gate at dawn and asks to swear an oath to {town}. A paladin's oath binds both ways, and the words are yours to choose.",
+          "options": [
+            {
+              "label": "Swear the Oath of the Shield: hold the walls",
+              "prefer": 0.3,
+              "success": {
+                "text": "'While I stand, the gate stands.' {heroName} rises sworn to the walls.",
+                "effects": {
+                  "calling:oath-shield": 1,
+                  "loyalty": 8,
+                  "mandate": 1
+                }
+              }
+            },
+            {
+              "label": "Swear the Oath of Mercy: tend the weak",
+              "prefer": 0.25,
+              "success": {
+                "text": "'No one in this town goes hungry while I eat.' {heroName} rises sworn to the poor lanes.",
+                "effects": {
+                  "calling:oath-mercy": 1,
+                  "loyalty": 8,
+                  "mandate": 1
+                }
+              }
+            },
+            {
+              "label": "Swear the Oath of Vengeance: hunt what preys on us",
+              "prefer": 0.25,
+              "success": {
+                "text": "'Whatever comes for {town} will find me first.' The town sleeps a little easier, and {heroName} a little less.",
+                "effects": {
+                  "calling:oath-vengeance": 1,
+                  "loyalty": 8,
+                  "dread": -2
+                }
+              }
+            },
+            {
+              "label": "Swear them to the walls before the altar",
+              "skill": "religion",
+              "dc": 13,
+              "needs": [
+                "temple"
+              ],
+              "success": {
+                "text": "The priests ring every bell, and {god} seems to listen. {heroName} swears to the walls, and the whole town comes out to watch.",
+                "effects": {
+                  "calling:oath-shield": 1,
+                  "favour": 6,
+                  "mandate": 3,
+                  "loyalty": 10
+                }
+              },
+              "failure": {
+                "text": "You stumble over the rite, and the priests exchange looks. The oath is sworn all the same.",
+                "effects": {
+                  "calling:oath-shield": 1,
+                  "loyalty": 5
+                }
+              }
+            },
+            {
+              "label": "Tell them the town needs no oaths",
+              "success": {
+                "text": "{heroName} rises, unsworn, and does not kneel at that gate again.",
+                "effects": {
+                  "loyalty": -6
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "Nobody from the hall comes to the gate. {heroName} rises unsworn.",
+        "effects": {
+          "loyalty": -4
+        }
+      }
+    },
+    {
+      "id": "mercy-tested",
+      "title": "{hero}'s oath is tested",
+      "stakes": "medium",
+      "source": "heroes",
+      "needs": [
+        "calling:oath-mercy",
+        "watch"
+      ],
+      "weight": 1.2,
+      "repeatDays": 120,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The watch has caught a boy stealing bread, and {hero} stands between him and the stocks. 'My oath is to the weak,' they say. 'Put me there instead.'",
+          "options": [
+            {
+              "label": "Let the oath stand",
+              "prefer": 0.15,
+              "success": {
+                "text": "The boy goes free into {heroName}'s keeping. Some say the law has gone soft; more say the oath is real.",
+                "effects": {
+                  "loyalty": 10,
+                  "mandate": -1,
+                  "tension": 1
+                }
+              }
+            },
+            {
+              "label": "Find out why he stole",
+              "skill": "insight",
+              "dc": 13,
+              "success": {
+                "text": "His mother is sick and the family's stores are empty. You send bread to the house, and the boy to {heroName} as a squire.",
+                "effects": {
+                  "loyalty": 8,
+                  "mandate": 2,
+                  "gold": -10
+                }
+              },
+              "failure": {
+                "text": "The boy lies to you, then lies again. You give him to the oath anyway.",
+                "effects": {
+                  "loyalty": 5,
+                  "mandate": -2
+                }
+              }
+            },
+            {
+              "label": "Let the law take its course",
+              "success": {
+                "text": "The boy goes to the stocks. {heroName} watches, then walks out through the gate, and the oath is broken.",
+                "effects": {
+                  "calling:oath-mercy": -1,
+                  "loyalty": -18,
+                  "mandate": 1,
+                  "precedent:oath-broken": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The watch and the paladin stare at each other until the boy slips away.",
+        "effects": {
+          "loyalty": -4,
+          "tension": 1
+        }
+      }
+    },
+    {
+      "id": "rogue-guild",
+      "title": "{faction} courts {hero}",
+      "stakes": "medium",
+      "source": "heroes",
+      "needs": [
+        "class:rogue",
+        "faction:quiet-hand"
+      ],
+      "weight": 1.2,
+      "repeatDays": 60,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{faction} has offered {hero} a seat at its table in the cellar. {heroName} has come to you first, which is more than most rogues would.",
+          "options": [
+            {
+              "label": "Take the seat and keep their knives off the town",
+              "prefer": 0.25,
+              "success": {
+                "text": "{heroName} sits down with {faction}. There are fewer thefts in the market, and a fat envelope reaches the hall every week.",
+                "effects": {
+                  "calling:guild-go-between": 1,
+                  "loyalty": 4,
+                  "standing": 5
+                }
+              }
+            },
+            {
+              "label": "Take the seat and tell me everything",
+              "skill": "deception",
+              "dc": 13,
+              "prefer": 0.2,
+              "success": {
+                "text": "{heroName} smiles the smile of a long career. Within a week you know who sits at that table, and the watch is starting to.",
+                "effects": {
+                  "calling:guild-informer": 1,
+                  "heat": 15,
+                  "loyalty": 4
+                }
+              },
+              "failure": {
+                "text": "{faction} smells it. {heroName} is shown the door with a cut across the cheek.",
+                "effects": {
+                  "wound": 6,
+                  "standing": -8,
+                  "loyalty": -3
+                }
+              },
+              "fumble": {
+                "text": "Someone talked. {heroName} is pulled out of the millrace at dawn, alive, barely.",
+                "effects": {
+                  "wound": 12,
+                  "standing": -12,
+                  "loyalty": -8
+                }
+              }
+            },
+            {
+              "label": "Ask them to name names to the watch",
+              "skill": "persuasion",
+              "dc": 14,
+              "needs": [
+                "watch"
+              ],
+              "success": {
+                "text": "{heroName} sighs and writes a list. The watch has names now.",
+                "effects": {
+                  "expose": 1,
+                  "heat": 30,
+                  "standing": -15,
+                  "loyalty": -6
+                }
+              },
+              "failure": {
+                "text": "'I'm a thief, not a snitch.' {heroName} won't, and resents you for asking.",
+                "effects": {
+                  "loyalty": -6
+                }
+              }
+            },
+            {
+              "label": "Forbid it",
+              "success": {
+                "text": "{heroName} shrugs. The cellar door stays shut to them, for now.",
+                "effects": {
+                  "loyalty": -6,
+                  "standing": -5
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "{heroName} takes the seat without asking you again.",
+        "effects": {
+          "calling:guild-go-between": 1,
+          "standing": 3
+        }
+      }
+    },
+    {
+      "id": "guild-favour",
+      "title": "{faction} calls in a favour",
+      "stakes": "medium",
+      "source": "heroes",
+      "needs": [
+        "calling:guild-go-between",
+        "faction:quiet-hand"
+      ],
+      "weight": 1.2,
+      "repeatDays": 90,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{faction} wants something for the quiet it keeps: {hero} is to see the watch walks the other way while a caravan's strongbox goes missing.",
+          "options": [
+            {
+              "label": "Look the other way",
+              "prefer": 0.1,
+              "success": {
+                "text": "The strongbox goes missing. A share of it turns up at the town hall in a flour sack.",
+                "effects": {
+                  "gold": 60,
+                  "tension": 3,
+                  "mandate": -2,
+                  "standing": 8
+                }
+              }
+            },
+            {
+              "label": "Have {heroName} talk them out of it",
+              "skill": "persuasion",
+              "dc": 14,
+              "aid": "hero",
+              "success": {
+                "text": "{heroName} reminds them who keeps the watch off their backs. They pick another caravan, in another town.",
+                "effects": {
+                  "standing": -2,
+                  "loyalty": 3
+                }
+              },
+              "failure": {
+                "text": "They don't listen. The strongbox goes, and the town gets nothing for it.",
+                "effects": {
+                  "tension": 3,
+                  "standing": -4
+                }
+              }
+            },
+            {
+              "label": "Spring a trap with the watch",
+              "skill": "investigation",
+              "dc": 14,
+              "needs": [
+                "watch"
+              ],
+              "success": {
+                "text": "The watch is waiting by the strongbox. Two of the guild's best are taken, and {heroName}'s seat at the table goes cold.",
+                "effects": {
+                  "calling:guild-go-between": -1,
+                  "expose": 1,
+                  "heat": 25,
+                  "mandate": 4,
+                  "loyalty": -4,
+                  "standing": -15
+                }
+              },
+              "failure": {
+                "text": "The guild smells the trap and stays home. {heroName} is not welcome at the table again.",
+                "effects": {
+                  "calling:guild-go-between": -1,
+                  "standing": -10,
+                  "loyalty": -5
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The strongbox goes missing, and nobody asks the hall.",
+        "effects": {
+          "tension": 3,
+          "standing": 4
+        }
+      }
+    },
+    {
+      "id": "fighter-drill",
+      "title": "{hero} laughs at the militia",
+      "stakes": "low",
+      "source": "heroes",
+      "needs": [
+        "class:fighter"
+      ],
+      "weight": 0.8,
+      "repeatDays": 45,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} watched the militia drill on the green and laughed out loud. Now they offer to teach them properly, for a modest wage.",
+          "options": [
+            {
+              "label": "Hire them as drillmaster",
+              "cost": 30,
+              "prefer": 0.3,
+              "success": {
+                "text": "{heroName} has the militia on the green at dawn, shield to shield. They grumble, and they get better.",
+                "effects": {
+                  "calling:drillmaster": 1,
+                  "loyalty": 6
+                }
+              }
+            },
+            {
+              "label": "Spar with them on the green first",
+              "skill": "athletics",
+              "dc": 14,
+              "success": {
+                "text": "You hold your own for three passes. {heroName} grins and takes the job.",
+                "effects": {
+                  "calling:drillmaster": 1,
+                  "mandate": 2,
+                  "loyalty": 6
+                }
+              },
+              "failure": {
+                "text": "You end up in the mud. {heroName} takes the job out of pity.",
+                "effects": {
+                  "calling:drillmaster": 1,
+                  "mandate": -1,
+                  "loyalty": 3
+                }
+              },
+              "critical": {
+                "text": "You put {heroName} on their back, once. The militia talks of nothing else, and {heroName} takes the job laughing.",
+                "effects": {
+                  "calling:drillmaster": 1,
+                  "mandate": 4,
+                  "loyalty": 8
+                }
+              }
+            },
+            {
+              "label": "Say the militia will do as it is",
+              "success": {
+                "text": "{heroName} shrugs and goes back to their ale.",
+                "effects": {
+                  "loyalty": -4
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "{heroName} stops watching the drills.",
+        "effects": {
+          "loyalty": -2
+        }
+      }
+    },
+    {
+      "id": "barbarian-games",
+      "title": "{hero} and the millstone",
+      "stakes": "low",
+      "source": "heroes",
+      "needs": [
+        "class:barbarian"
+      ],
+      "weight": 0.8,
+      "repeatDays": 45,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} has challenged anyone in {town} to lift the millstone in the square. Nobody can, and {heroName} is getting bored, and loud.",
+          "options": [
+            {
+              "label": "Hold games on the green",
+              "cost": 50,
+              "prefer": 0.25,
+              "success": {
+                "text": "Wrestling, stone-throwing, a tug of war across the millpond. {heroName} wins all of it, then spends the month hauling beams for the builders to show off.",
+                "effects": {
+                  "festival": 2,
+                  "mandate": 2,
+                  "calling:strongarm": 1,
+                  "loyalty": 6
+                }
+              }
+            },
+            {
+              "label": "Lift the stone yourself",
+              "skill": "athletics",
+              "dc": 16,
+              "success": {
+                "text": "You get it to your knees, which is further than anyone else. {heroName} slaps your back and offers to haul for the builders.",
+                "effects": {
+                  "calling:strongarm": 1,
+                  "mandate": 2,
+                  "loyalty": 6
+                }
+              },
+              "failure": {
+                "text": "The stone wins. {heroName} is kind about it, which is worse.",
+                "effects": {
+                  "mandate": -1,
+                  "loyalty": 3
+                }
+              },
+              "critical": {
+                "text": "You lift it. Nobody, least of all you, knows how. {heroName} roars with delight and swears to haul for you.",
+                "effects": {
+                  "calling:strongarm": 1,
+                  "mandate": 5,
+                  "loyalty": 10,
+                  "inspiration": 1
+                }
+              }
+            },
+            {
+              "label": "Put them to work at the building sites",
+              "skill": "persuasion",
+              "dc": 12,
+              "success": {
+                "text": "'Heavier than the millstone?' They are. {heroName} hauls them for fun.",
+                "effects": {
+                  "calling:strongarm": 1,
+                  "loyalty": 2
+                }
+              },
+              "failure": {
+                "text": "'I am not a mule.' {heroName} storms off.",
+                "effects": {
+                  "loyalty": -4
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "{heroName} lifts the stone at last, and drops it through the well cover.",
+        "effects": {
+          "tension": 2,
+          "gold": -15
+        }
+      }
+    },
+    {
+      "id": "cleric-calling",
+      "title": "{hero} asks to serve",
+      "stakes": "low",
+      "source": "heroes",
+      "needs": [
+        "class:cleric",
+        "temple"
+      ],
+      "weight": 0.8,
+      "repeatDays": 45,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} asks leave to serve at {temple}: to preach on rest days or, if the town would rather, to tend the sick in the poorer lanes.",
+          "options": [
+            {
+              "label": "Preach at the temple",
+              "prefer": 0.25,
+              "success": {
+                "text": "{heroName} preaches every rest day, and {temple} is fuller than it has been in years.",
+                "effects": {
+                  "calling:temple-preacher": 1,
+                  "loyalty": 5,
+                  "favour": 3
+                }
+              }
+            },
+            {
+              "label": "Tend the sick in the lanes",
+              "prefer": 0.25,
+              "success": {
+                "text": "{heroName} goes door to door with salves and prayers. The poor lanes bless the mayor's name.",
+                "effects": {
+                  "calling:healer-of-the-poor": 1,
+                  "loyalty": 5,
+                  "mandate": 1
+                }
+              }
+            },
+            {
+              "label": "Lead the first rite with them",
+              "skill": "religion",
+              "dc": 13,
+              "success": {
+                "text": "You know the litany by heart. {god} has two voices in {temple} now.",
+                "effects": {
+                  "calling:temple-preacher": 1,
+                  "favour": 8,
+                  "mandate": 2,
+                  "loyalty": 6
+                }
+              },
+              "failure": {
+                "text": "You lose your place in the litany. {heroName} finishes it for you.",
+                "effects": {
+                  "calling:temple-preacher": 1,
+                  "mandate": -1,
+                  "loyalty": 3
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "{heroName} preaches anyway, to the pigeons.",
+        "effects": {
+          "loyalty": -3
+        }
+      }
+    },
+    {
+      "id": "druid-grove",
+      "title": "{hero} and the old grove",
+      "stakes": "low",
+      "source": "heroes",
+      "needs": [
+        "class:druid"
+      ],
+      "weight": 0.8,
+      "repeatDays": 60,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} has found an old oak grove by the river, where the woodcutters mean to start next. They ask the town to spare it, and say the land will thank it.",
+          "options": [
+            {
+              "label": "Spare the grove",
+              "prefer": 0.25,
+              "success": {
+                "text": "The axes go elsewhere. {heroName} keeps the grove, and the fields downriver come up greener.",
+                "effects": {
+                  "calling:grove-keeper": 1,
+                  "loyalty": 6
+                }
+              }
+            },
+            {
+              "label": "Let them choose which trees fall",
+              "skill": "nature",
+              "dc": 12,
+              "prefer": 0.2,
+              "success": {
+                "text": "You walk the wood together and agree on every tree. {heroName} becomes the town's woodward.",
+                "effects": {
+                  "calling:woodward": 1,
+                  "loyalty": 5
+                }
+              },
+              "failure": {
+                "text": "You can't tell an oak from an ash. {heroName} chooses alone and doesn't think much of you.",
+                "effects": {
+                  "calling:woodward": 1,
+                  "loyalty": -2
+                }
+              }
+            },
+            {
+              "label": "Fell it for timber",
+              "success": {
+                "text": "The grove comes down in a week. {heroName} watches every tree fall.",
+                "effects": {
+                  "timber": 60,
+                  "loyalty": -10,
+                  "favour": -2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The woodcutters reach the grove before anyone decides.",
+        "effects": {
+          "timber": 40,
+          "loyalty": -6
+        }
+      }
+    },
+    {
+      "id": "ranger-roads",
+      "title": "{hero} walks the roads",
+      "stakes": "low",
+      "source": "heroes",
+      "needs": [
+        "class:ranger",
+        "unheard"
+      ],
+      "weight": 0.8,
+      "repeatDays": 60,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} has walked every road out of {town} and says nobody is watching them. They have also found tracks out past the old roads that they don't like.",
+          "options": [
+            {
+              "label": "Make them warden of the roads",
+              "cost": 30,
+              "prefer": 0.3,
+              "success": {
+                "text": "{heroName} walks the roads with a horn at their belt. Carters feel safer, and more of them come.",
+                "effects": {
+                  "calling:road-warden": 1,
+                  "loyalty": 5
+                }
+              }
+            },
+            {
+              "label": "Ask where the tracks lead",
+              "skill": "survival",
+              "dc": 12,
+              "success": {
+                "text": "{heroName} draws you a map in the dust. There is something out at {site}.",
+                "effects": {
+                  "reveal": 1,
+                  "loyalty": 3
+                }
+              },
+              "failure": {
+                "text": "The tracks lead into a bog and out of your understanding.",
+                "effects": {
+                  "loyalty": 1
+                }
+              }
+            },
+            {
+              "label": "Do both, and pay them well",
+              "cost": 60,
+              "success": {
+                "text": "{heroName} takes the horn and the purse, and comes back with a map: something is out at {site}.",
+                "effects": {
+                  "calling:road-warden": 1,
+                  "reveal": 1,
+                  "loyalty": 7
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "{heroName} keeps what they found to themselves.",
+        "effects": {
+          "loyalty": -2
+        }
+      }
+    },
+    {
+      "id": "monk-square",
+      "title": "{hero} at dawn in the square",
+      "stakes": "low",
+      "source": "heroes",
+      "needs": [
+        "class:monk"
+      ],
+      "weight": 0.8,
+      "repeatDays": 45,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Every dawn {hero} moves slow as water through the forms in the square, and a crowd of apprentices has started copying them before work.",
+          "options": [
+            {
+              "label": "Give them the old granary for a school",
+              "cost": 40,
+              "prefer": 0.3,
+              "success": {
+                "text": "The granary fills before sunrise. The apprentices come to work calmer, and fight less in the taverns.",
+                "effects": {
+                  "calling:dawn-teacher": 1,
+                  "loyalty": 6
+                }
+              }
+            },
+            {
+              "label": "Join the forms yourself",
+              "skill": "acrobatics",
+              "dc": 13,
+              "success": {
+                "text": "You keep up, mostly. The town sees its mayor at dawn in the square and likes it.",
+                "effects": {
+                  "calling:dawn-teacher": 1,
+                  "mandate": 2,
+                  "loyalty": 5
+                }
+              },
+              "failure": {
+                "text": "You pull something in your back and limp for a week.",
+                "effects": {
+                  "mandate": -1,
+                  "loyalty": 2
+                }
+              },
+              "partial": {
+                "text": "You fall over twice. The apprentices love it.",
+                "effects": {
+                  "calling:dawn-teacher": 1,
+                  "mandate": 1
+                }
+              }
+            },
+            {
+              "label": "Ask them to train the watch",
+              "needs": [
+                "watch"
+              ],
+              "success": {
+                "text": "{heroName} teaches the watch to take a club from a drunk without breaking either.",
+                "effects": {
+                  "calling:unarmed-instructor": 1,
+                  "loyalty": 4
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "{heroName} keeps to the forms alone. The apprentices drift back to bed.",
+        "effects": {
+          "loyalty": -2
+        }
+      }
+    },
+    {
+      "id": "sorcerer-surge",
+      "title": "Wild magic in the market",
+      "stakes": "low",
+      "source": "heroes",
+      "needs": [
+        "class:sorcerer"
+      ],
+      "weight": 0.8,
+      "repeatDays": 60,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Wild magic got loose from {hero} in the market: the fountain ran with wine for an hour, a cart floated off over the roofs, and somebody's goat is talking.",
+          "options": [
+            {
+              "label": "Calm the crowd",
+              "skill": "persuasion",
+              "dc": 13,
+              "success": {
+                "text": "You make a joke of it, and the market laughs with you. {heroName} is grateful.",
+                "effects": {
+                  "mandate": 2,
+                  "loyalty": 5
+                }
+              },
+              "failure": {
+                "text": "Nobody hears you over the goat.",
+                "effects": {
+                  "tension": 3,
+                  "mandate": -2
+                }
+              }
+            },
+            {
+              "label": "Call it a festival",
+              "cost": 20,
+              "prefer": 0.1,
+              "success": {
+                "text": "Free wine from the fountain! The town drinks to the sorcerer.",
+                "effects": {
+                  "festival": 1,
+                  "mandate": 2,
+                  "loyalty": 4
+                }
+              }
+            },
+            {
+              "label": "Put the spark to work in the forges",
+              "skill": "arcana",
+              "dc": 14,
+              "prefer": 0.2,
+              "success": {
+                "text": "With your notes and {heroName}'s nerve, the smiths' fires burn hotter than coal can make them.",
+                "effects": {
+                  "calling:forge-spark": 1,
+                  "loyalty": 6
+                }
+              },
+              "failure": {
+                "text": "The experiment sets the smithy roof alight. {heroName} singes their eyebrows putting it out.",
+                "effects": {
+                  "wound": 4,
+                  "gold": -20,
+                  "loyalty": -2
+                }
+              },
+              "critical": {
+                "text": "You work out what set it off, and how to set it off on purpose. The smiths have never had such fire.",
+                "effects": {
+                  "calling:forge-spark": 1,
+                  "loyalty": 8,
+                  "inspiration": 1
+                }
+              }
+            },
+            {
+              "label": "Banish them from the market",
+              "success": {
+                "text": "{heroName} goes, red-faced. The market is calmer and the sorcerer is not.",
+                "effects": {
+                  "loyalty": -10,
+                  "tension": -1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The goat talks for a week. Nobody likes what it says.",
+        "effects": {
+          "tension": 2,
+          "mandate": -1
+        }
+      }
+    },
+    {
+      "id": "warlock-patron",
+      "title": "{hero}'s patron speaks",
+      "stakes": "medium",
+      "source": "heroes",
+      "needs": [
+        "class:warlock"
+      ],
+      "weight": 0.8,
+      "repeatDays": 90,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero}'s patron spoke through them in the night, in a voice that was not theirs: it will fill {town}'s coffers, if {town} will remember its name.",
+          "options": [
+            {
+              "label": "Accept the gift",
+              "prefer": 0.05,
+              "success": {
+                "text": "Gold is found in the old well by morning, and more every week after. Nobody likes to draw water there now.",
+                "effects": {
+                  "gold": 150,
+                  "calling:patron-tithe": 1,
+                  "precedent:patron-bargain": 1,
+                  "loyalty": 4
+                }
+              }
+            },
+            {
+              "label": "Bargain for better terms",
+              "skill": "deception",
+              "dc": 15,
+              "success": {
+                "text": "You haggle it down to a smaller name in a smaller place. The gold still comes.",
+                "effects": {
+                  "gold": 100,
+                  "calling:patron-tithe": 1,
+                  "precedent:patron-bargain": 1
+                }
+              },
+              "failure": {
+                "text": "The patron does not haggle. Every candle in town goes out at once.",
+                "effects": {
+                  "dread": 5,
+                  "loyalty": -4
+                }
+              },
+              "critical": {
+                "text": "The patron laughs, a sound like ice cracking, and pays without a price.",
+                "effects": {
+                  "gold": 250,
+                  "loyalty": 5
+                }
+              }
+            },
+            {
+              "label": "Have the priests drive it out",
+              "skill": "religion",
+              "dc": 14,
+              "needs": [
+                "temple"
+              ],
+              "prefer": 0.2,
+              "success": {
+                "text": "The priests sing until dawn, and the voice goes quiet. {heroName} sleeps through the night for the first time in months.",
+                "effects": {
+                  "favour": 8,
+                  "dread": -3,
+                  "loyalty": 6
+                }
+              },
+              "failure": {
+                "text": "The priests' candles burn blue, and the voice laughs at them.",
+                "effects": {
+                  "dread": 4,
+                  "wound": 4,
+                  "loyalty": -2
+                }
+              }
+            },
+            {
+              "label": "Refuse it",
+              "prefer": 0.15,
+              "success": {
+                "text": "'{town} remembers no name but its own.' {heroName} looks relieved, and a little afraid.",
+                "effects": {
+                  "favour": 3,
+                  "loyalty": 2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The voice stops asking. Nobody knows if that is good.",
+        "effects": {
+          "dread": 2
+        }
+      }
+    },
+    {
+      "id": "patron-collects",
+      "title": "The patron wants its due",
+      "stakes": "high",
+      "source": "heroes",
+      "needs": [
+        "calling:patron-tithe"
+      ],
+      "minDay": 30,
+      "weight": 1.5,
+      "repeatDays": 120,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero}'s patron wants its due. Its name is to be carved over the town gate, so that all who walk beneath it know whose town this is.",
+          "options": [
+            {
+              "label": "Carve the name",
+              "success": {
+                "text": "It is carved. Children cross the road rather than walk under it.",
+                "effects": {
+                  "dread": 6,
+                  "gold": 100,
+                  "mandate": -4
+                }
+              }
+            },
+            {
+              "label": "Break the pact",
+              "skill": "arcana",
+              "dc": 15,
+              "prefer": 0.15,
+              "success": {
+                "text": "You find the clause the patron didn't think you'd read. The pact breaks with a sound like a cracked bell. The gold stops, and so do the nightmares.",
+                "effects": {
+                  "calling:patron-tithe": -1,
+                  "dread": -5,
+                  "mandate": 3,
+                  "precedent:patron-bargain": -1
+                }
+              },
+              "failure": {
+                "text": "The pact breaks, but not cleanly. {heroName} screams for an hour, and the old well runs black.",
+                "effects": {
+                  "calling:patron-tithe": -1,
+                  "wound": 8,
+                  "dread": 6,
+                  "loyalty": -8
+                }
+              }
+            },
+            {
+              "label": "Have {heroName} bargain with it",
+              "skill": "persuasion",
+              "dc": 16,
+              "aid": "hero",
+              "success": {
+                "text": "{heroName} speaks into the dark for a whole night. The patron settles for its name scratched under a bridge.",
+                "effects": {
+                  "dread": 1,
+                  "loyalty": 4
+                }
+              },
+              "failure": {
+                "text": "The patron does not like being bargained with by its own servant.",
+                "effects": {
+                  "loyalty": -10,
+                  "dread": 4,
+                  "wound": 6
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The name appears over the gate by itself one morning, carved deep.",
+        "effects": {
+          "dread": 8,
+          "mandate": -5
+        }
+      }
+    },
+    {
+      "id": "wizard-school",
+      "title": "{hero} would open a school",
+      "stakes": "low",
+      "source": "heroes",
+      "needs": [
+        "class:wizard"
+      ],
+      "weight": 0.8,
+      "repeatDays": 60,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} wants to open a school in {town}: letters and numbers for every child, 'and a little arcana, for the bright ones.'",
+          "options": [
+            {
+              "label": "Fund the school",
+              "cost": 60,
+              "prefer": 0.3,
+              "success": {
+                "text": "The school opens in a loft over the market. Within a season the clerks are quicker and the builders read plans.",
+                "effects": {
+                  "calling:town-sage": 1,
+                  "loyalty": 6
+                }
+              }
+            },
+            {
+              "label": "Ask for wards on the walls instead",
+              "prefer": 0,
+              "success": {
+                "text": "{heroName} sighs, and sets wards into the gatehouse stones instead.",
+                "effects": {
+                  "calling:wall-warder": 1,
+                  "loyalty": 2
+                }
+              }
+            },
+            {
+              "label": "Talk magic with them over supper",
+              "skill": "arcana",
+              "dc": 14,
+              "success": {
+                "text": "They like you. The school opens, and you teach one class a week.",
+                "effects": {
+                  "calling:town-sage": 1,
+                  "loyalty": 6,
+                  "mandate": 1
+                }
+              },
+              "failure": {
+                "text": "{heroName} corrects you, then corrects you again.",
+                "effects": {
+                  "loyalty": -2
+                }
+              },
+              "critical": {
+                "text": "You argue about the weave all night and both learn something. The school opens with you on its board.",
+                "effects": {
+                  "calling:town-sage": 1,
+                  "loyalty": 8,
+                  "inspiration": 1
+                }
+              }
+            },
+            {
+              "label": "Turn them down",
+              "success": {
+                "text": "{heroName} closes their book with a snap.",
+                "effects": {
+                  "loyalty": -5
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "{heroName} takes pupils of their own, for coin.",
+        "effects": {
+          "loyalty": -3
+        }
+      }
+    },
+    {
+      "id": "warden-gate",
+      "title": "{hero} asks for the gate keys",
+      "stakes": "low",
+      "source": "heroes",
+      "needs": [
+        "class:warden"
+      ],
+      "weight": 0.8,
+      "repeatDays": 45,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} has stood a watch at the gate every night this month, unpaid and unasked. Now they ask for the keys, and the right to say who comes in after dark.",
+          "options": [
+            {
+              "label": "Give them the keys",
+              "prefer": 0.3,
+              "success": {
+                "text": "{heroName} hangs the keys at their belt and is not seen to sleep. Nobody comes in after dark that {heroName} has not looked at.",
+                "effects": {
+                  "calling:gate-keeper": 1,
+                  "loyalty": 6
+                }
+              }
+            },
+            {
+              "label": "Have them walk the outer wards instead",
+              "prefer": 0.15,
+              "success": {
+                "text": "{heroName} walks the lanes beyond the walls with a lantern every night. The newer wards sleep easier.",
+                "effects": {
+                  "calling:ward-patrol": 1,
+                  "loyalty": 4
+                }
+              }
+            },
+            {
+              "label": "Test them at the gate yourself",
+              "skill": "insight",
+              "dc": 13,
+              "success": {
+                "text": "You ask the questions a gatekeeper should ask, and they know every answer. The keys are theirs.",
+                "effects": {
+                  "calling:gate-keeper": 1,
+                  "mandate": 1,
+                  "loyalty": 7
+                }
+              },
+              "failure": {
+                "text": "You ask the wrong questions, and {heroName} answers them politely. The keys are theirs anyway.",
+                "effects": {
+                  "calling:gate-keeper": 1,
+                  "loyalty": 3
+                }
+              }
+            },
+            {
+              "label": "Leave the gate to the watch",
+              "success": {
+                "text": "{heroName} hands back a key they had copied, and stops coming to the gate.",
+                "effects": {
+                  "loyalty": -5
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "{heroName} keeps the night watch at the gate anyway, unpaid and unthanked.",
+        "effects": {
+          "loyalty": -2
+        }
+      }
+    },
+    {
+      "id": "cartographer-maps",
+      "title": "{hero} would map the country",
+      "stakes": "low",
+      "source": "heroes",
+      "needs": [
+        "class:cartographer",
+        "unheard"
+      ],
+      "weight": 0.8,
+      "repeatDays": 60,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} has spread a half-finished map across a tavern table: every road, ford and ruin within three days of {town}, with a great blank in the middle. They want a room to finish it in.",
+          "options": [
+            {
+              "label": "Give them a map room in the town hall",
+              "cost": 40,
+              "prefer": 0.3,
+              "success": {
+                "text": "The map grows across a whole wall. Settlers come to the hall to find their way, and one blank fills in: {site}.",
+                "effects": {
+                  "calling:map-room": 1,
+                  "reveal": 1,
+                  "loyalty": 6
+                }
+              }
+            },
+            {
+              "label": "Lend them the old charters",
+              "skill": "history",
+              "dc": 13,
+              "success": {
+                "text": "The old charters name a place nobody remembered: {site}. {heroName} draws it in and asks to stay on.",
+                "effects": {
+                  "calling:map-room": 1,
+                  "reveal": 1,
+                  "loyalty": 5
+                }
+              },
+              "failure": {
+                "text": "The charters are mostly about sheep.",
+                "effects": {
+                  "loyalty": 1
+                }
+              }
+            },
+            {
+              "label": "Buy the map as it stands",
+              "cost": 25,
+              "success": {
+                "text": "You pay for the map. {heroName} takes the coin to another town's tavern.",
+                "effects": {
+                  "reveal": 1,
+                  "loyalty": -3
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "{heroName} rolls the map up and takes it on the road.",
+        "effects": {
+          "loyalty": -2
+        }
+      }
+    },
+    {
+      "id": "reliquarian-relic",
+      "title": "A relic that whispers",
+      "stakes": "low",
+      "source": "heroes",
+      "needs": [
+        "class:reliquarian"
+      ],
+      "weight": 0.8,
+      "repeatDays": 60,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} has brought back a fragment of an old reliquary from a tomb. It is warm to the touch and, late at night, it whispers. They want to know if {town} will house it.",
+          "options": [
+            {
+              "label": "Enshrine it at the temple",
+              "needs": [
+                "temple"
+              ],
+              "prefer": 0.3,
+              "success": {
+                "text": "The fragment is set under glass at the temple, and {heroName} keeps it. Pilgrims come to hear it whisper.",
+                "effects": {
+                  "calling:relic-keeper": 1,
+                  "favour": 4,
+                  "loyalty": 5
+                }
+              }
+            },
+            {
+              "label": "Listen to what it says",
+              "skill": "religion",
+              "dc": 15,
+              "success": {
+                "text": "It whispers of old powers and older debts. You come away wiser, and {heroName} stays on to keep it.",
+                "effects": {
+                  "calling:relic-keeper": 1,
+                  "inspiration": 1,
+                  "loyalty": 4
+                }
+              },
+              "failure": {
+                "text": "It whispers your name back to you, and you don't sleep for three nights.",
+                "effects": {
+                  "dread": 3,
+                  "mandate": -1
+                }
+              },
+              "critical": {
+                "text": "It names a prayer the priests had lost, and the town is the better for knowing it. {heroName} stays on to keep it.",
+                "effects": {
+                  "calling:relic-keeper": 1,
+                  "inspiration": 1,
+                  "favour": 6,
+                  "loyalty": 6
+                }
+              }
+            },
+            {
+              "label": "Sell it to a collector",
+              "success": {
+                "text": "A collector from the Free Ports pays well and asks no questions. {heroName} thinks you sold something you shouldn't have.",
+                "effects": {
+                  "gold": 120,
+                  "loyalty": -4
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "{heroName} keeps it under their bed. The whispering spreads to the next room.",
+        "effects": {
+          "dread": 1,
+          "loyalty": -2
+        }
+      }
+    },
+    {
+      "id": "hedge-witch-brews",
+      "title": "{hero} offers to brew",
+      "stakes": "low",
+      "source": "heroes",
+      "needs": [
+        "class:hedge-witch",
+        "!precedent:witch-burned"
+      ],
+      "weight": 0.8,
+      "repeatDays": 60,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} has been brewing in the back of the apothecary between delves, and the midwives swear by their salves. They offer to brew for the whole town, if the town will have a witch.",
+          "options": [
+            {
+              "label": "Make her the town's herbalist",
+              "prefer": 0.3,
+              "success": {
+                "text": "{heroName} brews by the apothecary fire and nobody calls them a witch to their face. Fevers break sooner.",
+                "effects": {
+                  "calling:town-herbalist": 1,
+                  "loyalty": 6
+                }
+              }
+            },
+            {
+              "label": "Ask them to bless the fields",
+              "skill": "nature",
+              "dc": 13,
+              "success": {
+                "text": "You walk the furrows with them at dusk, and they sing to the seed. The harvest comes up strong.",
+                "effects": {
+                  "calling:field-blesser": 1,
+                  "loyalty": 6,
+                  "mandate": 1
+                }
+              },
+              "failure": {
+                "text": "You trample the seedlings they just sang over. They bless the fields anyway, and sigh at you.",
+                "effects": {
+                  "calling:field-blesser": 1,
+                  "loyalty": 2
+                }
+              }
+            },
+            {
+              "label": "Send them away",
+              "success": {
+                "text": "{heroName} packs their jars quietly. The midwives are angry with you.",
+                "effects": {
+                  "loyalty": -8,
+                  "mandate": -1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "{heroName} brews for whoever knocks at the back door.",
+        "effects": {
+          "loyalty": -2
+        }
+      }
+    },
+    {
       "id": "hero-ballad",
       "title": "A ballad of {hero}",
       "stakes": "low",
@@ -2168,5 +3825,35 @@
     {"id": "witch-burned", "text": "A hedge-witch was given to the crowd."},
     {"id": "sheltered-witch", "text": "The mayor stood between a hedge-witch and the crowd."},
     {"id": "seized-grain", "text": "The mayor seized a merchant's hoard in the hungry winter."}
+,
+    {"id": "oath-broken", "text": "The mayor made a paladin break their oath of mercy."},
+    {"id": "patron-bargain", "text": "The town took a dark patron's gold."}
+  ],
+  "callings": [
+    {"id": "towns-bard", "class": "bard", "name": "The town's bard", "mood": 1, "arrivals": 0.03, "gold": -1, "text": "Plays the tavern every night. Spirits rise, and the road hears of it."},
+    {"id": "oath-shield", "class": "paladin", "name": "Oath of the Shield", "defence": 10, "tension": -0.2, "loyalty": 8, "text": "Sworn to the walls. Stronger at the gate, steadier in the lanes."},
+    {"id": "oath-mercy", "class": "paladin", "name": "Oath of Mercy", "mood": 0.7, "arrivals": 0.03, "favour": 0.05, "loyalty": 8, "text": "Sworn to the weak. The poor lanes are kinder, and the gods notice."},
+    {"id": "oath-vengeance", "class": "paladin", "name": "Oath of Vengeance", "dread": -0.06, "defence": 5, "mood": -0.3, "loyalty": 8, "text": "Sworn to hunt what preys on the town. Dread ebbs; the town is a grimmer place."},
+    {"id": "guild-go-between", "class": "rogue", "name": "Go-between to the Quiet Hand", "faction": "quiet-hand", "heat": -1, "standing": 0.1, "gold": 1.5, "tension": 0.05, "text": "Sits at the thieves' table. Their knives stay off the town, and an envelope comes every week."},
+    {"id": "guild-informer", "class": "rogue", "name": "Informer in the Quiet Hand", "faction": "quiet-hand", "heat": 2.5, "standing": -0.1, "loyalty": 2, "text": "Sits at the thieves' table and tells the watch. The guild grows hotter until it is exposed."},
+    {"id": "drillmaster", "class": "fighter", "name": "Drillmaster of the militia", "defence": 10, "gold": -1, "tension": -0.1, "text": "Drills the militia at dawn. The walls are better held."},
+    {"id": "strongarm", "class": "barbarian", "name": "Strongarm of the works", "build": 0.06, "mood": 0.3, "text": "Hauls beams and stone for the builders, for fun. Building goes faster."},
+    {"id": "temple-preacher", "class": "cleric", "name": "Preacher at the temple", "favour": 0.15, "mood": 0.4, "tension": -0.1, "text": "Preaches every rest day. The town's god is honoured and the lanes are calmer."},
+    {"id": "healer-of-the-poor", "class": "cleric", "name": "Healer of the poor", "mood": 0.6, "arrivals": 0.02, "gold": -0.5, "text": "Tends the sick in the poorer lanes, with salves the town pays for."},
+    {"id": "grove-keeper", "class": "druid", "name": "Keeper of the grove", "favour": 0.03, "yields": {"Food": 1.06, "Timber": 0.92}, "text": "Keeps the old grove. Fields come up greener; less timber is cut."},
+    {"id": "woodward", "class": "druid", "name": "Woodward", "gold": -0.5, "yields": {"Food": 1.03, "Timber": 1.05}, "text": "Chooses which trees fall. The woods and the fields both do better."},
+    {"id": "road-warden", "class": "ranger", "name": "Warden of the roads", "arrivals": 0.04, "dread": -0.02, "gold": -0.5, "text": "Walks the roads with a horn. Carters and settlers feel safer coming."},
+    {"id": "dawn-teacher", "class": "monk", "name": "Teacher of the dawn forms", "tension": -0.25, "mood": 0.4, "text": "Teaches the forms at dawn. Apprentices are calmer and fight less."},
+    {"id": "unarmed-instructor", "class": "monk", "name": "Trainer of the watch", "defence": 6, "tension": -0.1, "text": "Trains the watch to fight with open hands. Steadier walls, fewer broken heads."},
+    {"id": "forge-spark", "class": "sorcerer", "name": "Spark of the forges", "tension": 0.05, "yields": {"Tools": 1.08}, "text": "Lights the smiths' fires with wild magic. More tools, and the odd scorched roof."},
+    {"id": "patron-tithe", "class": "warlock", "name": "The patron's tithe", "gold": 2, "dread": 0.04, "favour": -0.1, "loyalty": 2, "text": "Gold from the old well every week. Dread grows, and the gods turn away."},
+    {"id": "town-sage", "class": "wizard", "name": "The town's sage", "build": 0.04, "mood": 0.3, "gold": -0.5, "text": "Runs a school of letters and numbers. Clerks are quicker and builders read plans."},
+    {"id": "wall-warder", "class": "wizard", "name": "Warder of the walls", "defence": 7, "gold": -0.5, "text": "Sets wards in the gatehouse stones. The walls are harder to breach."},
+    {"id": "gate-keeper", "class": "warden", "name": "Keeper of the gate keys", "defence": 8, "tension": -0.15, "text": "Holds the gate keys. Nothing comes in after dark unseen."},
+    {"id": "ward-patrol", "class": "warden", "name": "Lantern of the outer wards", "tension": -0.2, "mood": 0.3, "defence": 3, "text": "Walks the lanes outside the walls at night. The newer wards sleep easier."},
+    {"id": "map-room", "class": "cartographer", "name": "Keeper of the map room", "arrivals": 0.03, "dread": -0.02, "text": "Keeps the great map in the town hall. Settlers find their way here, and the wilds seem smaller."},
+    {"id": "relic-keeper", "class": "reliquarian", "name": "Keeper of the whispering relic", "favour": 0.12, "mood": 0.2, "dread": 0.01, "text": "Keeps a whispering relic at the temple. Pilgrims and the gods come closer; so does something else."},
+    {"id": "town-herbalist", "class": "hedge-witch", "name": "The town's herbalist", "mood": 0.6, "yields": {"Herbs": 1.1, "Potions": 1.1}, "text": "Brews salves and draughts by the apothecary fire. Fevers break sooner."},
+    {"id": "field-blesser", "class": "hedge-witch", "name": "Blesser of the fields", "yields": {"Food": 1.06}, "favour": 0.03, "text": "Sings to the seed at dusk. The harvest comes up strong."}
   ]
 }

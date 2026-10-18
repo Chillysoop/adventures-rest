@@ -167,6 +167,7 @@ public static class Loyalty
         Add("menaces abroad", Menaces.Alive(town).Count(m => m.Stage >= MenaceStage.Power) * r.Menace);
         Add("spirits", (a.LastDayMood - 65) * r.Mood);
         foreach (var (why, pts) in Decor.Loyalty(town, a)) Add(why, pts);
+        if (Callings.Of(town, a) is { } calling) Add(calling.Name.ToLowerInvariant(), calling.Loyalty);
         foreach (var (why, pts) in Notoriety.LoyaltyFactors(town, a)) Add(why, pts);
         if (s.Knight) Add("knighted", r.Rank);
         if (s.FiefId != null) Add("lands of their own", r.Rank);
