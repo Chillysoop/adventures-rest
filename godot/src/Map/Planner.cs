@@ -8,6 +8,7 @@ namespace CrownAndCompass.Client.Map;
 /// The town plan, drawn over the map while a build tool is picked: every lot tinted by its zone,
 /// and a preview of the stroke or the lot under the cursor. Zone tools paint a rectangle you drag
 /// over open land; a building tool places on the lot you click. Right-click puts the tool down.
+/// The wards are outlined and named; land in a ward not yet laid out is shaded and can't be zoned.
 /// </summary>
 public partial class Planner(MapView map) : Control
 {
@@ -97,9 +98,11 @@ public partial class Planner(MapView map) : Control
         var town = map.Sim.Town;
         foreach (var l in town.Lots)
         {
-            if (l.Zone == Zone.None) Outline(l.X, l.Y, new Color(1, 1, 1, 0.12f));
+            if (!City.IsOpen(town, l)) Shade(l.X, l.Y, new Color(0.05f, 0.04f, 0.03f, 0.38f));
+            else if (l.Zone == Zone.None) Outline(l.X, l.Y, new Color(1, 1, 1, 0.12f));
             else Fill(l.X, l.Y, new Color(ZoneColor(l.Zone), l.IsVacant ? 0.32f : 0.16f));
         }
+        Wards(town);
         if (Tool.Zone is Zone z)
         {
             var b = _hover;
@@ -107,7 +110,7 @@ public partial class Planner(MapView map) : Control
             if (a is Vector2I pa && b is Vector2I pb)
                 foreach (var p in Stroke(pa, pb))
                 {
-                    bool ok = Planning.CanZone(town.LotAt(p.X, p.Y), z);
+                    bool ok = Planning.CanZone(town, town.LotAt(p.X, p.Y), z);
                     Fill(p.X, p.Y, ok ? new Color(ZoneColor(z), 0.7f) : new Color(0.9f, 0.3f, 0.25f, 0.35f));
                 }
         }
@@ -124,6 +127,42 @@ public partial class Planner(MapView map) : Control
             DrawString(Ui.Bold, at - new Vector2(w / 2, 0), label, HorizontalAlignment.Left, -1, 13, new Color("f6eedb"));
         }
     }
+
+    /// <summary>Ward borders, and each ward's name at its middle: grey with the charter it waits for until it is laid out.</summary>
+    private void Wards(Town town)
+    {
+        var border = new Color("f6eedb", 0.55f);
+        var sums = new Dictionary<string, (float X, float Y, int N)>();
+        foreach (var l in town.Lots)
+        {
+            var w = City.WardOf(town, l);
+            var (sx, sy, n) = sums.GetValueOrDefault(w.Id);
+            sums[w.Id] = (sx + l.X, sy + l.Y, n + 1);
+            if (l.X + 1 < Geo.Grid && City.WardOf(town, town.LotAt(l.X + 1, l.Y)) != w) Edge(l.X + 1, l.Y, l.X + 1, l.Y + 1, border);
+            if (l.Y + 1 < Geo.Grid && City.WardOf(town, town.LotAt(l.X, l.Y + 1)) != w) Edge(l.X, l.Y + 1, l.X + 1, l.Y + 1, border);
+        }
+        foreach (var w in town.Content.City.Wards)
+        {
+            if (!sums.TryGetValue(w.Id, out var c) || c.N == 0) continue;
+            bool open = town.City.OpenWards.Contains(w.Id);
+            string sub = open ? "" : City.Reached(town, w.Tier) ? $"ready to lay out · {w.Cost:N0}g" : $"needs a {City.TierName(town, w.Tier).ToLowerInvariant()}";
+            var at = map.ToScreen(new Vector2(Geo.Margin + c.X / c.N + 0.5f, Geo.Margin + c.Y / c.N + 0.5f), 0.6f);
+            Label(at, w.Name.ToUpperInvariant(), 13, open ? new Color("f6eedb") : new Color("cfc6b4", 0.8f));
+            if (sub != "") Label(at + new Vector2(0, 16), sub, 11, new Color("cfc6b4", 0.8f));
+        }
+    }
+
+    private void Label(Vector2 at, string text, int size, Color c)
+    {
+        var w = Ui.Bold.GetStringSize(text, HorizontalAlignment.Left, -1, size).X;
+        DrawStringOutline(Ui.Bold, at - new Vector2(w / 2, 0), text, HorizontalAlignment.Left, -1, size, 4, new Color(0.08f, 0.06f, 0.04f, 0.85f));
+        DrawString(Ui.Bold, at - new Vector2(w / 2, 0), text, HorizontalAlignment.Left, -1, size, c);
+    }
+
+    private void Edge(int x0, int y0, int x1, int y1, Color c) =>
+        DrawLine(map.ToScreen(new(Geo.Margin + x0, Geo.Margin + y0), 0.1f), map.ToScreen(new(Geo.Margin + x1, Geo.Margin + y1), 0.1f), c, 2, true);
+
+    private void Shade(int x, int y, Color c) => DrawColoredPolygon(Corners(x, y, 0), c);
 
     private Vector2[] Corners(int x, int y, float inset)
     {

@@ -564,9 +564,17 @@ public static class Decor
         return null;
     }
 
-    /// <summary>Land the town may want to build on: any lot of the town plan. The stand-in keeps to the land around it.</summary>
-    private static bool Zoned(Town town, double x, double y) =>
-        x > -0.3 && y > -0.3 && x < Town.Grid + 0.3 && y < Town.Grid + 0.3;
+    /// <summary>Land the town may want to build on: any lot of a ward laid out. The stand-in keeps to the land around it.</summary>
+    private static bool Zoned(Town town, double x, double y)
+    {
+        foreach (double dx in (double[])[-0.3, 0.3])
+            foreach (double dy in (double[])[-0.3, 0.3])
+            {
+                int lx = (int)Math.Floor(x + dx), ly = (int)Math.Floor(y + dy);
+                if (lx >= 0 && ly >= 0 && lx < Town.Grid && ly < Town.Grid && City.IsOpen(town, town.LotAt(lx, ly))) return true;
+            }
+        return false;
+    }
 
     // The day ----------------------------------------------------------------------------------
 

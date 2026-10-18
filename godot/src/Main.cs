@@ -17,6 +17,7 @@ public partial class Main : Control
 
     private enum Tab
     {
+        City,
         Ledger,
         War,
         Council,
@@ -39,6 +40,7 @@ public partial class Main : Control
     private bool _endShown;
     private readonly HashSet<int> _openChronicles = [];
 
+    private Label _tierLabel = null!;
     private Label _townName = null!, _clock = null!, _seedLabel = null!, _threat = null!;
     private PanelContainer _threatPill = null!;
     private readonly Button[] _speedButtons = new Button[5];
@@ -154,6 +156,7 @@ public partial class Main : Control
         _map.Planner.Pick(null);
         _map.Decorator.Pick(null);
         _map.Bind(_sim);
+        ShowBuildGroup(_buildGroup);
         _sim.Town.Ledger.OnWrite(OnLedger);
         _townName.Text = _sim.Town.Name;
         _seedLabel.Text = $"seed {seed}";
@@ -301,6 +304,7 @@ public partial class Main : Control
             if (_window.Visible)
                 switch (_windowTab)
                 {
+                    case Tab.City: RenderCity(); break;
                     case Tab.Ledger: RenderLedger(); break;
                     case Tab.War: RenderWar(); break;
                     case Tab.Council: RenderCouncil(); break;
@@ -362,6 +366,7 @@ public partial class Main : Control
         var t = _sim.Town;
         var s = _sim.Snapshot();
         _clock.Text = $"Day {t.Day} · {t.Hour:00}:00";
+        _tierLabel.Text = $"{City.Tier(t).Name} · about {City.Souls(t):N0} souls";
         _motionDot.Visible = Council.PendingMotion(t) != null;
         _standing = StandingAlerts();
         var stage = Stages[t.Enemy.Stage];

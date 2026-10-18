@@ -13,15 +13,22 @@ public static class Population
 {
     private static readonly string[] Professions = ["farmer", "farmer", "woodcutter", "laborer", "laborer", "smith", "brewer", "barkeep", "merchant", "shopkeeper"];
 
-    private static readonly Dictionary<string, string> DreamFor = new()
+    /// <summary>The business a newcomer of this trade dreams of opening, if the town has reached it.</summary>
+    private static string? DreamFor(Town town, string profession) =>
+        town.Content.Buildings.FirstOrDefault(d => d.Profession == profession && d.Buildable && d.IsBusiness && City.Unlocked(town, d))?.Id;
+
+    /// <summary>A newcomer's trade: the frontier's usual mix, or one the town's own workshops call for.</summary>
+    private static string PickProfession(Town town)
     {
-        ["farmer"] = "farm",
-        ["woodcutter"] = "lumber_camp",
-        ["smith"] = "forge",
-        ["brewer"] = "brewery",
-        ["barkeep"] = "tavern",
-        ["shopkeeper"] = "general_store",
-    };
+        var rng = town.Rng;
+        if (town.City.Tier == 0 || rng.Chance(0.5)) return rng.Pick(Professions);
+        var trades = town.Content.Buildings
+            .Where(d => d.Buildable && d.IsBusiness && d.Profession != null && City.Unlocked(town, d))
+            .Select(d => d.Profession!)
+            .Distinct()
+            .ToList();
+        return trades.Count > 0 ? rng.Pick(trades) : rng.Pick(Professions);
+    }
 
     private static readonly (Trait, Trait)[] Opposites =
     [
@@ -35,7 +42,7 @@ public static class Population
         opts ??= new NewAgentOptions();
         var rng = town.Rng;
         var raceDef = opts.Race != null ? town.Content.Races.First(r => r.Id == opts.Race) : PickRace(town);
-        string profession = opts.Profession ?? rng.Pick(Professions);
+        string profession = opts.Profession ?? PickProfession(town);
         var traits = RollTraits(rng);
         bool entrepreneur = profession == "merchant" || traits.Contains(Trait.Ambitious);
 
@@ -53,7 +60,7 @@ public static class Population
         a.Loneliness = rng.Range(10, 50);
         a.ArrivedTick = town.Tick;
         a.Ambition = entrepreneur ? Ambition.OpenBusiness : Ambition.OwnHome;
-        if (entrepreneur && DreamFor.TryGetValue(profession, out var dream)) a.DreamBusiness = dream;
+        if (entrepreneur && DreamFor(town, profession) is { } dream) a.DreamBusiness = dream;
         town.Agents.Add(a);
         return a;
     }
@@ -93,7 +100,7 @@ public static class Population
         int sites = 0;
         foreach (var b in town.Buildings)
         {
-            openJobs += b.OpenJobs;
+            if (b.Crew == 0) openJobs += b.OpenJobs;
             openBeds += b.OpenBeds;
             if (b.IsSite) sites++;
         }
@@ -107,10 +114,12 @@ public static class Population
         attraction += (town.Mandate - 50) / 200 - (town.TaxRate - town.Content.Rules.TaxRate) * 5 + Decor.Draw(town);
         // Settlers want land to build on: with no residential lot zoned and for sale, fewer come.
         if (Planning.VacantZoned(town, Zone.Residential) == 0) attraction -= 0.15;
-        attraction = Math.Max(0.05, Math.Min(2.5, attraction));
+        attraction = Math.Max(0.05, Math.Min(1.6, attraction));
 
+        // Word of a bigger town travels further: the roads bring more hopefuls to a city than a thorp.
+        int rolls = 4 + Math.Min(town.Population, 640) / 80;
         int groups = 0;
-        for (int i = 0; i < 4; i++) if (rng.Chance(attraction / 4)) groups++;
+        for (int i = 0; i < rolls; i++) if (rng.Chance(attraction / 4)) groups++;
 
         for (int g = 0; g < groups; g++)
         {

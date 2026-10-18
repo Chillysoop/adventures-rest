@@ -130,13 +130,13 @@ public class DiceAndMarketTests
     [Fact]
     public void RaisesPricesOnScarcityAndImportsShortfallsDearly()
     {
-        var m = new Market();
+        var m = new Market(Content.Default().City.BasePrice);
         m.SetTarget(Good.Food, 100);
         m.Seed(Good.Food, 100);
         double healthy = m.Price(Good.Food);
         m.Buy(Good.Food, 90);
         Assert.True(m.Price(Good.Food) > healthy);
-        Assert.True(m.Quote(Good.Food, 20) > 20 * Market.BasePrice(Good.Food) * 2);
+        Assert.True(m.Quote(Good.Food, 20) > 20 * m.BasePrice(Good.Food) * 2);
     }
 
     [Fact]

@@ -92,6 +92,7 @@ public partial class Main
             AlertWindow.Bounties => Tab.Bounties,
             AlertWindow.Faith => Tab.Faith,
             AlertWindow.Campaign => Tab.Campaign,
+            AlertWindow.City => Tab.City,
             _ => null,
         };
         if (tab is Tab w) OpenWindow(w);

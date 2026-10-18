@@ -6,7 +6,7 @@ namespace CrownAndCompass.Client.Map;
 
 /// <summary>
 /// Where things sit on the map, in world tiles (one tile is one town lot): a 1024-tile square of
-/// wilderness with the 16x16 town grid at its heart, a river past the ford the town was founded
+/// wilderness with the town grid (48 lots a side, in rings of wards) at its heart, a river past the ford the town was founded
 /// on, and the adventure sites a few days' march out. Decoration is hashed from fixed numbers so
 /// it never touches the simulation's Rng.
 /// </summary>
@@ -21,10 +21,10 @@ public sealed class Geo
     public const float TilesPerDay = 44;
 
     /// <summary>World tiles from the town's heart to where the wilds begin: a site or road point zero days out sits here.</summary>
-    public const float Reach0 = 22;
+    public const float Reach0 = Clearing + 7;
 
-    /// <summary>Everything within this radius of the town stays clear of forest and flat enough to build on.</summary>
-    public const float Clearing = 15;
+    /// <summary>Everything within this radius of the town stays clear of forest and flat enough to build on: the whole grid, every ward.</summary>
+    public const float Clearing = Grid * 0.75f;
 
     public readonly Dictionary<string, Vector2> Pins = [];
     public float TownRadius { get; private set; } = 3;
