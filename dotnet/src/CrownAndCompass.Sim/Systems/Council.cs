@@ -143,7 +143,7 @@ public static class Council
     private static void PayWatch(Town town)
     {
         if (town.Watch == 0) return;
-        double wage = town.Watch * town.Content.Council.WatchWage;
+        double wage = Garrison.Wages(town);
         if (town.Treasury >= wage) town.Book(TreasuryAccount.Watch, -wage);
         else
         {
