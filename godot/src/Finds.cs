@@ -20,9 +20,6 @@ public partial class Main
     /// <summary>Each find's report the player has been shown, by find and how many lines its story had then.</summary>
     private readonly Dictionary<int, int> _findSeen = [];
     private StoryBeat? _findBeat;
-    private double _findBeatAt;
-    private Label? _findDie;
-    private Control? _findAfter;
 
     private void BuildFind()
     {
@@ -48,7 +45,6 @@ public partial class Main
         // A fresh report with a roll in it throws the die first.
         _findBeat = roll ?? (f.Beat != null && !_findShownBeat.Contains(f.Beat) ? f.Beat : null);
         if (_findBeat != null) _findShownBeat.Add(_findBeat);
-        _findBeatAt = _clockReal;
         RenderFind(f);
         _find.Visible = true;
         MoveChild(_find, GetChildCount() - 1);
@@ -67,7 +63,6 @@ public partial class Main
     /// <summary>A report waiting on the mayor pops up on its own and stops the clock.</summary>
     private void SyncFinds()
     {
-        if (_find.Visible && _findBeat != null) AnimateFind();
         if (_find.Visible && _findId is int open && Explore.FindOf(_sim.Town, open) is { } shown && (shown.State != FindState.Open || _sim.Town.Tick < shown.ReportTick) && _findBeat == null)
             CloseFind();
         if (_title.Visible || _menu.Visible || _story.Visible || _find.Visible) return;
@@ -82,8 +77,6 @@ public partial class Main
     private void RenderFind(Find f)
     {
         foreach (var c in _findBox.GetChildren()) c.Free();
-        _findDie = null;
-        _findAfter = null;
         var t = _sim.Town;
         var s = Explore.Survey(t, f.SurveyId)!;
         var def = Explore.Def(t, f);
@@ -203,22 +196,12 @@ public partial class Main
     private void RenderFindRoll(Find f, StoryBeat b)
     {
         var t = _sim.Town;
-        var dice = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
-        dice.AddChild(Die(out _findDie, 104));
-        _findBox.AddChild(dice);
         var after = new VBoxContainer { Visible = false };
         after.AddThemeConstantOverride("separation", 8);
-        var (word, color) = b.Result switch
-        {
-            StoryResult.Critical => ("NATURAL 20", Ui.Gold),
-            StoryResult.Success => ("SUCCESS", Ui.Good),
-            StoryResult.Fumble => ("NATURAL 1", Ui.Bad),
-            _ => ("FAILURE", Ui.Bad),
-        };
-        var w = Ui.Label(word, color, Ui.Display, 26);
-        w.HorizontalAlignment = HorizontalAlignment.Center;
-        after.AddChild(w);
-        after.AddChild(Ui.Rich($"[center]{Ui.C(Ui.Ink2, $"{Ui.Esc(b.Advantage)} rolls {Ui.Esc(Explore.SkillName(t, b.Skill))}: {b.Die} {(b.Modifier >= 0 ? "+" : "−")} {Math.Abs(b.Modifier)} = [b]{b.Total}[/b] against DC {b.Dc}")}[/center]", 13));
+        // The rolling hero's own bonus; Advantage carries who rolled on an explorers' check.
+        var roll = new DiceRoll(b, [new DiceRoll.Term(b.Modifier, b.Advantage.Split(' ')[0])], $"{b.Advantage} rolls {Explore.SkillName(t, b.Skill)}", false, InstantRolls, advantage: false) { SizeFlagsHorizontal = SizeFlags.ShrinkCenter };
+        roll.Landed += () => after.Visible = true;
+        _findBox.AddChild(roll);
         after.AddChild(Ui.Rich(Ui.Esc(f.Log.LastOrDefault(l => !l.StartsWith("Mayor ", StringComparison.Ordinal)) ?? ""), 15));
         var foot = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.End };
         var go = new Button { Text = f.State == FindState.Open ? "Continue" : "Close", ThemeTypeVariation = "Post", FocusMode = FocusModeEnum.None };
@@ -232,31 +215,5 @@ public partial class Main
         foot.AddChild(go);
         after.AddChild(foot);
         _findBox.AddChild(after);
-        _findAfter = after;
-    }
-
-    private void AnimateFind()
-    {
-        if (_findBeat == null || _findDie == null || !IsInstanceValid(_findDie)) return;
-        double age = _clockReal - _findBeatAt;
-        bool landed = age >= RollSeconds || _opts.Screenshot != null || _opts.Smoke;
-        if (!landed)
-        {
-            _findDie.Text = ((int)(GD.Randi() % 20) + 1).ToString();
-            _findDie.GetParent<Control>().Rotation = (float)(Math.Sin(age * 30) * 0.25 * (1 - age / RollSeconds));
-            return;
-        }
-        if (_findAfter is { Visible: false })
-        {
-            _findDie.Text = _findBeat.Die.ToString();
-            _findDie.GetParent<Control>().Rotation = 0;
-            _findAfter.Visible = true;
-            _findDie.AddThemeColorOverride("font_color", _findBeat.Result switch
-            {
-                StoryResult.Critical => Ui.Gold,
-                StoryResult.Fumble => new Color("ffb0a4"),
-                _ => Colors.White,
-            });
-        }
     }
 }

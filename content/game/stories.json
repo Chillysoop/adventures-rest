@@ -4090,6 +4090,266 @@
       "ignored": { "text": "{heroName} goes without a word to anyone.", "effects": { "personal": 1, "heroXp": 0.4, "esteem": -5 } }
     },
     {
+      "id": "hero-brawl", "title": "{hero} in the cells", "stakes": "low", "source": "heroes",
+      "needs": ["lawbreaker", "tavern"], "repeatDays": 40,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The watch hauled {hero} out of {tavern} at midnight with split knuckles and a broken bench. The landlord wants the damage paid, and the watch wants to know what the mayor will do with a hero who thinks the law is for other people.",
+          "options": [
+            {
+              "label": "Let them go with a warning", "tags": ["mercy", "freedom"],
+              "success": { "text": "{heroName} walks out grinning. The watch does not.", "effects": { "esteem": 10, "mandate": -2 } }
+            },
+            {
+              "label": "Fine them for the damage", "tags": ["order", "coin"],
+              "success": { "text": "{heroName} counts out the coin with bad grace, and the landlord gets a new bench.", "effects": { "fine": 40, "esteem": -4, "mandate": 1 } }
+            },
+            {
+              "label": "Jail them for a week", "tags": ["order", "harsh"],
+              "success": { "text": "The cell door shuts on {heroName}. The town sees that its law holds for heroes too.", "effects": { "jail": 7, "esteem": -10, "loyalty": -4, "mandate": 3 } }
+            },
+            {
+              "label": "Talk sense into them", "tags": ["mercy"], "skill": "persuasion", "dc": 13,
+              "success": { "text": "{heroName} pays the landlord out of their own purse and shakes his hand. The watch shrugs.", "effects": { "fine": 20, "esteem": 6, "mandate": 1 } },
+              "failure": { "text": "{heroName} hears none of it, and the landlord stays out of pocket.", "effects": { "esteem": -2, "mandate": -1 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "The watch lets {heroName} go at dawn. The landlord tells everyone the law is only for the poor.", "effects": { "mandate": -2 } }
+    },
+    {
+      "id": "hero-pilfer", "title": "{hero}'s light fingers", "stakes": "medium", "source": "heroes",
+      "needs": ["lawbreaker"], "repeatDays": 60,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A merchant swears {hero} walked off with a silver chalice from the market. The watch found it in {heroName}'s pack, and {heroName} swears it was owed them for a job never paid.",
+          "options": [
+            {
+              "label": "Pardon them", "tags": ["freedom", "guile"],
+              "success": { "text": "The chalice goes back and {heroName} goes free. The merchants mutter about friends in the town hall.", "effects": { "esteem": 12, "mandate": -3 } }
+            },
+            {
+              "label": "Pay the merchant from the treasury", "tags": ["generous"], "cost": 60,
+              "success": { "text": "The merchant is paid twice over and the matter is closed. {heroName} owes you one.", "effects": { "esteem": 8, "loyalty": 4 } }
+            },
+            {
+              "label": "Fine them double", "tags": ["order", "coin"],
+              "success": { "text": "{heroName} pays what they can of double the chalice's worth into the treasury.", "effects": { "fine": 80, "esteem": -6, "mandate": 2 } }
+            },
+            {
+              "label": "Jail them for theft", "tags": ["order", "harsh"],
+              "success": { "text": "Ten days in the cells. The merchants cheer; the adventurers' tables go quiet.", "effects": { "jail": 10, "esteem": -14, "loyalty": -6, "mandate": 4 } }
+            },
+            {
+              "label": "Find out who never paid them", "tags": ["mercy", "guile"], "skill": "investigation", "dc": 14,
+              "success": { "text": "It is true: the merchant hired {heroName} and stiffed them. The merchant pays the fine instead.", "effects": { "esteem": 15, "gold": 40, "mandate": 2 } },
+              "failure": { "text": "Nothing turns up, and {heroName} pays a small fine for the trouble.", "effects": { "fine": 20, "esteem": -2 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "The chalice goes back without a word from the mayor. The merchants take note.", "effects": { "mandate": -2 } }
+    },
+    {
+      "id": "gift-wells", "title": "A stranger at the well", "stakes": "medium", "source": "town",
+      "needs": ["!precedent:fey-bargain"], "minDay": 40, "repeatDays": 400,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A tall stranger in a green coat stands at the town well, trailing their fingers in the water. They say they could make every well in {town} run sweet and cold forever, as a gift. They ask nothing now. Nobody saw them come through the gate.",
+          "options": [
+            {
+              "label": "Accept the gift with thanks", "tags": ["coin", "valor"],
+              "success": { "text": "The stranger smiles too widely and is gone. By morning the water tastes like spring rain, and the fields drink deep.", "effects": { "food": 80, "mandate": 3, "precedent:fey-bargain": 1 } }
+            },
+            {
+              "label": "Ask what it will cost", "tags": ["caution"], "skill": "insight", "dc": 14,
+              "success": { "text": "\"Nothing that you would miss,\" they say, and you see they mean it to be a riddle. You turn them away, politely.", "effects": { "mandate": 1 } },
+              "failure": { "text": "They laugh and say it is a gift. You can't read them, and you send them off to be safe. The townsfolk wonder why.", "effects": { "mandate": -1 } }
+            },
+            {
+              "label": "Send for the priests", "tags": ["faith", "caution"],
+              "success": { "text": "The stranger does not wait for the priests. The bucket they touched has sprouted moss.", "effects": { "favour": 2 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "The stranger is gone by dusk. The well water tastes faintly of mint for a week." }
+    },
+    {
+      "id": "gift-wells-due", "title": "The green coat returns", "stakes": "high", "source": "town",
+      "needs": ["precedent:fey-bargain"], "repeatDays": 400,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The stranger in the green coat is back at the well, and the water has gone still. \"A gift is a gift,\" they say, \"and thanks are thanks. I'll take {town}'s summer songs. Every one, for a year and a day.\"",
+          "options": [
+            {
+              "label": "Give them the songs", "tags": ["caution"],
+              "success": { "text": "The taverns fall quiet. Nobody can remember a tune all year, and the festivals are dull, grey things.", "effects": { "mandate": -5, "precedent:fey-bargain": -1 } }
+            },
+            {
+              "label": "Offer gold instead", "tags": ["coin", "generous"], "cost": 250,
+              "success": { "text": "They weigh the purse, sniff it, and accept with a sigh. The wells stay sweet.", "effects": { "precedent:fey-bargain": -1 } }
+            },
+            {
+              "label": "Out-bargain them", "tags": ["guile"], "skill": "deception", "dc": 16,
+              "success": { "text": "You offer them every song the town has yet to write. They laugh until they cry, and go. The wells stay sweet.", "effects": { "mandate": 3, "precedent:fey-bargain": -1 } },
+              "failure": { "text": "They see through it and take the songs and the sweet water both. The wells run brackish.", "effects": { "mandate": -5, "food": -60, "precedent:fey-bargain": -1 } }
+            },
+            {
+              "label": "Refuse and break the bargain", "tags": ["valor", "freedom"],
+              "success": { "text": "The stranger shrugs. By morning every well in {town} is brackish, and the fields wilt.", "effects": { "food": -100, "mandate": -2, "dread": 3, "precedent:fey-bargain": -1 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "Nobody answers the stranger, so they take what they came for. The taverns go quiet for a year.", "effects": { "mandate": -5, "precedent:fey-bargain": -1 } }
+    },
+    {
+      "id": "gift-contract", "title": "A notary with a purse", "stakes": "medium", "source": "town",
+      "needs": ["!precedent:signed-clause"], "minDay": 60, "repeatDays": 400,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A notary in immaculate black lays a heavy purse and a contract on the council table. Three hundred gold, they say, for the town's goodwill, and one small clause the mayor need not trouble with. The ink smells of hot iron.",
+          "options": [
+            {
+              "label": "Sign it", "tags": ["coin"],
+              "success": { "text": "You sign. The notary blots it, bows, and leaves the purse. Nobody saw them leave the hall.", "effects": { "gold": 300, "precedent:signed-clause": 1 } }
+            },
+            {
+              "label": "Read the small print first", "tags": ["caution", "order"], "skill": "investigation", "dc": 15,
+              "success": { "text": "The clause gives the signer's town to the notary's master on demand. You hand the contract back. The notary only smiles.", "effects": { "mandate": 2 } },
+              "failure": { "text": "The letters swim in front of your eyes. You send the notary away with nothing signed, uneasily.", "effects": {} }
+            },
+            {
+              "label": "Throw them out", "tags": ["valor", "harsh"],
+              "success": { "text": "The watch walks the notary to the gate. The scorch marks on the table don't scrub out.", "effects": { "dread": 1 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "The notary waits a day in the hall, then is simply gone, and so is the purse." }
+    },
+    {
+      "id": "gift-contract-due", "title": "The clause falls due", "stakes": "high", "source": "town",
+      "needs": ["precedent:signed-clause"], "repeatDays": 400,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The notary is back, with a copy of the contract. The clause, they explain kindly, gives their master the use of {town}'s hall for one night a month, for ever. The candles in the room burn blue as they talk.",
+          "options": [
+            {
+              "label": "Honour the contract", "tags": ["order"],
+              "success": { "text": "Once a month the hall is locked, and nobody walks past it after dark. The town knows something is wrong.", "effects": { "mandate": -6, "dread": 4, "precedent:signed-clause": -1 } }
+            },
+            {
+              "label": "Buy it back at double", "tags": ["coin", "caution"], "cost": 600,
+              "success": { "text": "The notary counts six hundred gold and tears the contract in two. It burns before it hits the floor.", "effects": { "precedent:signed-clause": -1 } }
+            },
+            {
+              "label": "Find a loophole", "tags": ["guile"], "skill": "investigation", "dc": 17,
+              "success": { "text": "The clause names the hall, and the town has a new hall now, by your quick decree. The notary's smile slips for the first time.", "effects": { "mandate": 4, "precedent:signed-clause": -1 } },
+              "failure": { "text": "There is no loophole. The notary takes the hall, and the town learns why.", "effects": { "mandate": -7, "dread": 5, "precedent:signed-clause": -1 } }
+            },
+            {
+              "label": "Have the priests burn it", "tags": ["faith", "valor"], "skill": "religion", "dc": 15,
+              "success": { "text": "The contract burns on the altar with a sound like a scream. The notary is never seen again.", "effects": { "favour": 3, "mandate": 3, "precedent:signed-clause": -1 } },
+              "failure": { "text": "It will not burn. The notary takes the hall, and the temple is shamed.", "effects": { "favour": -3, "mandate": -6, "dread": 4, "precedent:signed-clause": -1 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "The notary takes the hall without asking twice.", "effects": { "mandate": -7, "dread": 4, "precedent:signed-clause": -1 } }
+    },
+    {
+      "id": "gift-apples", "title": "A basket of red apples", "stakes": "low", "source": "town",
+      "needs": ["!precedent:crone-apples"], "minDay": 30, "repeatDays": 300,
+      "stages": [
+        {
+          "id": "start",
+          "text": "An old woman with a basket of very red apples is going door to door in the poor lanes. Anyone who eats one, she says, will never catch the fever. She'll leave the whole basket for the town, and ask a small favour later.",
+          "options": [
+            {
+              "label": "Take the basket", "tags": ["mercy", "generous"],
+              "success": { "text": "The apples go round the lanes. The coughing stops by the end of the week. She waves from the edge of the woods.", "effects": { "mandate": 3, "people": 2, "precedent:crone-apples": 1 } }
+            },
+            {
+              "label": "Have the healers test one", "tags": ["caution"], "skill": "medicine", "dc": 13,
+              "success": { "text": "The flesh is red right through to the core, and the healer's cat won't go near it. You send her on her way.", "effects": { "favour": 1 } },
+              "failure": { "text": "The healers find nothing. By the time you decide, she has gone, basket and all.", "effects": {} }
+            },
+            {
+              "label": "Run her out of town", "tags": ["harsh", "order"],
+              "success": { "text": "She goes, cackling. The apples she left on the well rot to black overnight.", "effects": { "mandate": -1 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "She leaves an apple on the mayor's doorstep. Nobody eats it." }
+    },
+    {
+      "id": "gift-apples-due", "title": "The crone's favour", "stakes": "medium", "source": "town",
+      "needs": ["precedent:crone-apples"], "repeatDays": 300,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The old woman is back for her favour. She wants the oldest stone of the town's shrine for her garden wall, and she wants it carried to the woods tonight.",
+          "options": [
+            {
+              "label": "Give her the stone", "tags": ["caution"],
+              "success": { "text": "The stone goes to the woods on a cart. The shrine feels colder afterward, and the priests won't say why.", "effects": { "favour": -4, "precedent:crone-apples": -1 } }
+            },
+            {
+              "label": "Offer her a hero's help instead", "tags": ["valor", "generous"], "skill": "persuasion", "dc": 14,
+              "success": { "text": "She accepts a season of heroes' errands in the woods, grudgingly. Nobody asks what they carry.", "effects": { "mandate": 1, "precedent:crone-apples": -1 } },
+              "failure": { "text": "She wants the stone and nothing else, and takes it while the town sleeps.", "effects": { "favour": -5, "precedent:crone-apples": -1 } }
+            },
+            {
+              "label": "Refuse her", "tags": ["valor", "faith"],
+              "success": { "text": "She hisses. That night the fever comes back to the poor lanes, worse than before.", "effects": { "people": -3, "mandate": -3, "precedent:crone-apples": -1 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "The shrine's oldest stone is gone in the morning, and moss grows in the hollow.", "effects": { "favour": -4, "precedent:crone-apples": -1 } }
+    },
+    {
+      "id": "dark-gift", "title": "A gift for {hero}", "stakes": "high", "source": "war",
+      "needs": ["hero", "menace", "!precedent:gifts-forbidden"], "minDay": 80, "repeatDays": 90,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} comes to you pale. Something speaking for {menace} came to them in a dream and offered strength: a hero's year of hard-won skill, tonight, for nothing. {heroName} wants to know what the mayor thinks before they say yes.",
+          "options": [
+            {
+              "label": "Let them take it", "tags": ["valor", "coin"],
+              "success": { "text": "{heroName} wakes stronger than they have ever been. Their shadow seems a little slow to follow them.", "effects": { "heroXp": 1, "taint": 1, "esteem": 6 } }
+            },
+            {
+              "label": "Forbid it, for every hero in town", "tags": ["order", "faith"],
+              "success": { "text": "You forbid any hero of {town} to take a gift from the dark. {heroName} is relieved; a few others grumble about the edge they lose.", "effects": { "esteem": 4, "precedent:gifts-forbidden": 1 } }
+            },
+            {
+              "label": "Leave it to their conscience", "tags": ["freedom"], "skill": "insight", "dc": 13,
+              "success": { "text": "You ask the right questions, and {heroName} answers them for themselves. They refuse it.", "effects": { "esteem": 8, "dread": -1 } },
+              "failure": { "text": "{heroName} hears permission in your silence, and takes it.", "effects": { "heroXp": 1, "taint": 1 } }
+            },
+            {
+              "label": "Have the priests drive the dream off", "tags": ["faith", "caution"], "skill": "religion", "dc": 14,
+              "success": { "text": "Three nights of prayer, and the voice is gone. {menace} has one less way into the town.", "effects": { "favour": 2, "foePower": -0.03 } },
+              "failure": { "text": "The prayers don't hold. {heroName} takes the gift on the fourth night, ashamed.", "effects": { "heroXp": 1, "taint": 1, "esteem": -4 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "Nobody answers {heroName}, so they decide for themselves. They come down to breakfast stronger, and quieter.", "effects": { "heroXp": 1, "taint": 1 } }
+    },
+    {
       "id": "grievance", "title": "{hero} has a grievance", "stakes": "medium", "source": "heroes",
       "needs": ["aggrieved"], "repeatDays": 15, "weight": 5,
       "stages": [
@@ -4121,7 +4381,112 @@
       ],
       "ignored": { "text": "You keep out of the square. {heroName} tells the taverns the mayor would not face them.", "effects": { "esteem": -10, "loyalty": -10, "mandate": -2 } }
     },
-      {
+    {
+      "id": "parley-remembered", "title": "The folk who were talked out", "stakes": "medium", "source": "road",
+      "needs": ["precedent:parleyed"], "minDay": 90, "repeatDays": 200,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The folk your heroes talked out of their hold, rather than put to the sword, are at the gate: thinner than they were, and asking for work. Half the market remembers what they used to take from the farms.",
+          "options": [
+            {
+              "label": "Take them in as labourers", "tags": ["mercy", "generous"],
+              "success": { "text": "They dig ditches and haul stone, and in a season nobody remembers they were raiders.", "effects": { "people": 4, "tension": 3, "mandate": 1, "precedent:parleyed": -1 } }
+            },
+            {
+              "label": "Hire them as scouts for the roads", "tags": ["guile"], "skill": "insight", "dc": 13,
+              "success": { "text": "Who knows the hills better than the folk who used to hide in them? They show the wardens three paths nobody knew.", "effects": { "dread": -3, "gold": -30, "mandate": 2, "precedent:parleyed": -1 } },
+              "failure": { "text": "Two of them vanish with the town's horses on the first night.", "effects": { "gold": -40, "mandate": -2, "precedent:parleyed": -1 } }
+            },
+            {
+              "label": "Turn them away", "tags": ["harsh", "caution"],
+              "success": { "text": "They go back into the hills. Some say they will not be so easily talked down a second time.", "effects": { "dread": 3, "precedent:parleyed": -1 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "They camp outside the walls for a week, then move on.", "effects": { "tension": 2, "precedent:parleyed": -1 } }
+    },
+    {
+      "id": "captives-remembered", "title": "One of the lost comes home", "stakes": "medium", "source": "war",
+      "needs": ["precedent:captives-lost"], "minDay": 60, "repeatDays": 200,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A gaunt figure walks in at the south gate wearing raiders' leathers. It is one of the townsfolk everyone mourned: they say they escaped, and the families they left want to know why nobody came.",
+          "options": [
+            {
+              "label": "Welcome them home in the square", "tags": ["mercy"], "skill": "persuasion", "dc": 13,
+              "success": { "text": "You meet them in front of everyone and say it plainly: the town failed them. The families weep, and so do you.", "effects": { "mandate": 4, "tension": -4, "precedent:captives-lost": -1 } },
+              "failure": { "text": "The words come out like an excuse, and the families hear them that way.", "effects": { "mandate": -2, "tension": 3, "precedent:captives-lost": -1 } }
+            },
+            {
+              "label": "Have the watch question them first", "tags": ["order", "caution"], "needs": ["watch"], "skill": "insight", "dc": 14,
+              "success": { "text": "They were sent: the raiders wanted eyes inside the walls. They tell you everything, gratefully, and it is worth a great deal.", "effects": { "dread": -4, "mandate": 1, "precedent:captives-lost": -1 } },
+              "failure": { "text": "The questioning finds nothing, and the families call it cruelty.", "effects": { "mandate": -3, "tension": 4, "precedent:captives-lost": -1 } }
+            },
+            {
+              "label": "Pay the families what was owed", "tags": ["generous"], "cost": 80,
+              "success": { "text": "Gold does not bring anyone back, but it is something, and they know it.", "effects": { "mandate": 2, "tension": -2, "precedent:captives-lost": -1 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "The families stop speaking to the town hall. The one who came home leaves again before winter.", "effects": { "mandate": -3, "tension": 4, "precedent:captives-lost": -1 } }
+    },
+    {
+      "id": "captives-thanks", "title": "A debt from the rescued", "stakes": "low", "source": "town",
+      "needs": ["precedent:captives-freed"], "minDay": 50, "repeatDays": 200,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The families of the townsfolk your heroes brought home have taken up a collection. They want to give the town something it will remember.",
+          "options": [
+            {
+              "label": "A feast for the heroes who went", "tags": ["generous", "valor"],
+              "success": { "text": "The heroes eat at the head of the table, and are toasted until dawn.", "effects": { "festival": 1, "mandate": 2, "precedent:captives-freed": -1 } }
+            },
+            {
+              "label": "Gold for the watch", "tags": ["order"],
+              "success": { "text": "The purse goes to the watch house, and two more of the rescued's cousins sign on.", "effects": { "gold": 60, "precedent:captives-freed": -1 } }
+            },
+            {
+              "label": "Ask them to keep it", "tags": ["mercy"],
+              "success": { "text": "They insist, and in the end they leave it at the temple door.", "effects": { "favour": 3, "mandate": 1, "precedent:captives-freed": -1 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "The collection goes to the tavern instead.", "effects": { "precedent:captives-freed": -1 } }
+    },
+    {
+      "id": "dismissed-returns", "title": "A hero you sent away", "stakes": "medium", "source": "heroes",
+      "needs": ["precedent:hero-dismissed", "hero"], "minDay": 60, "repeatDays": 200,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Word comes that the hero you sent packing has been telling every company on the road what kind of mayor {town} has. {hero} has heard it twice this week, and wants to know whether it is true.",
+          "options": [
+            {
+              "label": "Tell {heroName} the whole story", "tags": ["order"], "skill": "persuasion", "dc": 12, "aid": "hero",
+              "success": { "text": "{heroName} hears you out and shrugs: they would have done the same. They say so in the tavern, loudly.", "effects": { "esteem": 15, "mandate": 1, "precedent:hero-dismissed": -1 } },
+              "failure": { "text": "{heroName} listens, and says nothing, and keeps their pack by the door.", "effects": { "esteem": -10, "precedent:hero-dismissed": -1 } }
+            },
+            {
+              "label": "Send a letter making peace", "tags": ["mercy"], "skill": "persuasion", "dc": 14,
+              "success": { "text": "The old hero writes back, gruffly. The stories on the road stop.", "effects": { "mandate": 2, "esteem": 5, "precedent:hero-dismissed": -1 } },
+              "failure": { "text": "The letter is read aloud in a tavern two towns away, and laughed at.", "effects": { "mandate": -2, "precedent:hero-dismissed": -1 } }
+            },
+            {
+              "label": "Let them talk", "tags": ["valor"],
+              "success": { "text": "You have work to do. The stories go on.", "effects": { "esteem": -5, "precedent:hero-dismissed": -1 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "The stories go on, and two companies pass {town} by.", "effects": { "mandate": -2, "precedent:hero-dismissed": -1 } }
+    },
+    {
       "id": "hero-ballad",
       "title": "A ballad of {hero}",
       "stakes": "low",
@@ -4188,7 +4553,7 @@
         }
       }
     },
-      {
+    {
       "id": "price-on-head",
       "title": "A price on {hero}'s head",
       "stakes": "medium",
@@ -4269,7 +4634,7 @@
         }
       }
     },
-      {
+    {
       "id": "rival-challenge",
       "title": "A challenge for {hero}",
       "stakes": "low",
@@ -4337,7 +4702,7 @@
         }
       }
     },
-      {
+    {
       "id": "hero-trouble",
       "title": "{hero} makes trouble at {tavern}",
       "stakes": "low",
@@ -4408,7 +4773,7 @@
         }
       }
     },
-      {
+    {
       "id": "old-warrant",
       "title": "{hero}'s past catches up",
       "stakes": "medium",
@@ -4483,6 +4848,213 @@
           "infamy": 3
         }
       }
+    },
+    {
+      "id": "master-smith",
+      "title": "The master smith of {settlement}",
+      "stakes": "medium",
+      "source": "road",
+      "needs": [
+        "forge"
+      ],
+      "minDay": 200,
+      "repeatDays": 240,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The best smith in {settlement} has walked to {town} with a choice for you. The great forge at home is failing. They could bring their hammers here and work for {town}, or, with {town}'s coin, reline the old forge and make {settlement} a stronger friend.",
+          "options": [
+            {
+              "label": "Invite them to settle here",
+              "prefer": 0.1,
+              "success": {
+                "text": "The smith moves into {town} with two apprentices and a cart of tools. {leader} of {settlement} sends a cool note about it.",
+                "effects": {
+                  "people": 3,
+                  "regard": -6,
+                  "prosperity": -6
+                }
+              }
+            },
+            {
+              "label": "Pay to reline their forge",
+              "cost": 180,
+              "prefer": 0.2,
+              "success": {
+                "text": "The smith goes home with {town}'s gold, and within a month the forges of {settlement} roar again.",
+                "effects": {
+                  "project:forge": 1,
+                  "regard": 12
+                }
+              }
+            },
+            {
+              "label": "Ask them to train apprentices here first",
+              "skill": "persuasion",
+              "dc": 14,
+              "success": {
+                "text": "The smith agrees to a season in {town}, teaching, then goes home to a forge {settlement} rebuilds on the strength of it.",
+                "effects": {
+                  "people": 1,
+                  "regard": 6,
+                  "prosperity": 4
+                }
+              },
+              "failure": {
+                "text": "The smith hears a town trying to have it both ways, and goes home with nothing settled.",
+                "effects": {
+                  "regard": -3
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The smith waits three days for an answer, then goes home.",
+        "effects": {
+          "regard": -3
+        }
+      }
+    },
+    {
+      "id": "old-friend",
+      "title": "A letter from {contact}",
+      "stakes": "low",
+      "source": "road",
+      "needs": [
+        "contact"
+      ],
+      "minDay": 160,
+      "repeatDays": 90,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{contact} of {settlement}, who remembers {memory}, writes to ask a favour: a loan to see them through a lean season, and a word from {town} to the merchants who will not deal with them.",
+          "options": [
+            {
+              "label": "Send the loan and the word",
+              "cost": 60,
+              "prefer": 0.2,
+              "success": {
+                "text": "{contact} writes back within the week. {settlement} hears that {town} stands by its friends.",
+                "effects": {
+                  "contact": 15,
+                  "regard": 5
+                }
+              }
+            },
+            {
+              "label": "Put in a word, but no coin",
+              "skill": "persuasion",
+              "dc": 13,
+              "success": {
+                "text": "Your letter to the merchants does the trick on its own. {contact} is grateful.",
+                "effects": {
+                  "contact": 8
+                }
+              },
+              "failure": {
+                "text": "The merchants ignore you, and {contact} is left where they were.",
+                "effects": {
+                  "contact": -5
+                }
+              }
+            },
+            {
+              "label": "Invite them to live in {town}",
+              "skill": "insight",
+              "dc": 12,
+              "success": {
+                "text": "You read {contact} right: they were ready to leave. They come to {town} with their family.",
+                "effects": {
+                  "moves": 1,
+                  "people": 2,
+                  "regard": -2
+                }
+              },
+              "failure": {
+                "text": "{contact} is stung: they asked for help at home, not a way out of it.",
+                "effects": {
+                  "contact": -10
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "No answer goes to {contact}. They do not write again.",
+        "effects": {
+          "contact": -10
+        }
+      }
+    },
+    {
+      "id": "band-arms",
+      "title": "{band} ask for arms",
+      "stakes": "low",
+      "source": "road",
+      "needs": [
+        "band"
+      ],
+      "minDay": 180,
+      "repeatDays": 150,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{band}, the band {settlement} raised to look after its own, send their captain to {town}. They have more courage than steel, and ask for arms.",
+          "options": [
+            {
+              "label": "Arm them",
+              "cost": 90,
+              "prefer": 0.15,
+              "success": {
+                "text": "{band} ride home in new mail. {settlement} feels safer for it.",
+                "effects": {
+                  "band": 1,
+                  "security": 10,
+                  "regard": 6
+                }
+              }
+            },
+            {
+              "label": "Let them train with the town's heroes",
+              "skill": "athletics",
+              "dc": 13,
+              "aid": "hero",
+              "success": {
+                "text": "A fortnight in {town}'s yard, and {band} go home sharper than they came.",
+                "effects": {
+                  "band": 1,
+                  "regard": 4
+                }
+              },
+              "failure": {
+                "text": "The training goes badly: a broken arm and hurt pride.",
+                "effects": {
+                  "regard": -2
+                }
+              }
+            },
+            {
+              "label": "Turn them away",
+              "success": {
+                "text": "{band} go home with nothing but the road under their boots.",
+                "effects": {
+                  "regard": -4
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "{band}'s captain waits at the gate a day and goes home.",
+        "effects": {
+          "regard": -3
+        }
+      }
     }
   ],
   "decrees": [
@@ -4506,7 +5078,15 @@
     {"id": "seized-grain", "text": "The mayor seized a merchant's hoard in the hungry winter."}
 ,
     {"id": "oath-broken", "text": "The mayor made a paladin break their oath of mercy."},
-    {"id": "patron-bargain", "text": "The town took a dark patron's gold."}
+    {"id": "patron-bargain", "text": "The town took a dark patron's gold."},
+    {"id": "parleyed", "text": "The mayor's heroes talked raiders out of their hold instead of killing them."},
+    {"id": "captives-lost", "text": "Townsfolk carried off in a raid were never brought home."},
+    {"id": "captives-freed", "text": "Heroes brought home townsfolk carried off in a raid."},
+    {"id": "hero-dismissed", "text": "The mayor sent a hero packing."},
+    {"id": "gifts-forbidden", "text": "The mayor forbade the town's heroes to take gifts from the dark powers."},
+    {"id": "fey-bargain", "text": "The mayor let a stranger in a green coat sweeten the wells.", "after": 40},
+    {"id": "signed-clause", "text": "The mayor signed a smiling notary's contract without reading the small print.", "after": 60},
+    {"id": "crone-apples", "text": "The mayor took a crone's apples to cure the fever.", "after": 30}
   ],
   "callings": [
     {"id": "towns-bard", "class": "bard", "name": "The town's bard", "mood": 1, "arrivals": 0.03, "gold": -1, "text": "Plays the tavern every night. Spirits rise, and the road hears of it."},

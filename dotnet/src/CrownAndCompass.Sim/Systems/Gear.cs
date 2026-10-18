@@ -191,11 +191,10 @@ public static class Gear
     // Loot ----------------------------------------------------------------------------------------
 
     /// <summary>Gold merchants give for a magic item nobody needs.</summary>
-    public static double SellValue(Town town, LibItem it)
-    {
-        var r = Rules(town);
-        return Math.Floor(Math.Min(it.ValueGp * r.SellShare, r.SellCap[Math.Min(it.Tier, r.SellCap.Length - 1)]));
-    }
+    public static double SellValue(Town town, LibItem it) => Math.Floor(Math.Min(it.ValueGp * Rules(town).SellShare, SellCap(town, it)));
+
+    /// <summary>The most anyone in town pays for an item of its tier.</summary>
+    internal static double SellCap(Town town, LibItem it) => Rules(town).SellCap[Math.Min(it.Tier, Rules(town).SellCap.Length - 1)];
 
     /// <summary>A hero brings home an item from a hoard: they wear it if it beats theirs, and sell whichever they don't wear.</summary>
     public static void Claim(Town town, Agent a, LibItem it)
@@ -229,6 +228,8 @@ public static class Gear
 
     public static void SellOnRoad(Town town, Agent a, LibItem it)
     {
+        // The town's shops and the fence bid next, then a passing merchant.
+        if (Merchants.Sell(town, a, it)) return;
         double gold = SellValue(town, it);
         a.Gold += gold;
         town.Log(LedgerCategory.Quest, Importance.Routine, $"{a.Name} sells the {it.Name} to a passing merchant for {Js.Str(gold)} gold.", [a.Id]);
@@ -236,7 +237,7 @@ public static class Gear
 
     // Shopping ------------------------------------------------------------------------------------
 
-    private sealed record Offer(string Slot, double Price, double Points, Building Shop, LibGear? Piece, LibItem? Magic);
+    private sealed record Offer(string Slot, double Price, double Points, Building Shop, LibGear? Piece, LibItem? Magic, Ware? Ware = null);
 
     private static List<Building> Open(Town town, string id) =>
         town.Buildings.Where(b => b.Def.Id == id && b.Complete && !b.Closed && !b.ForSale).ToList();
@@ -265,7 +266,7 @@ public static class Gear
         var r = Rules(town);
         var forges = Open(town, r.Forge);
         var stores = Open(town, r.Store);
-        if (forges.Count == 0 && stores.Count == 0) return;
+        if (forges.Count == 0 && stores.Count == 0 && town.Wares.Count == 0) return;
         var magic = forges.Count > 0 ? Enchanted(town) : [];
         var lib = town.Content.Library;
         foreach (var a in town.Heroes)
@@ -300,6 +301,13 @@ public static class Gear
                     int gain = Gain(town.Content, a, it);
                     if (gain > 0) offers.Add(new Offer(SlotOf(it), it.ValueGp, gain, forge, null, it));
                 }
+
+            foreach (var (shop, w, it, price) in Merchants.Offers(town, a))
+            {
+                if (SlotOf(it) == "trinket" && !s.Cls.Spell) continue;
+                int gain = Gain(town.Content, a, it);
+                if (gain > 0) offers.Add(new Offer(SlotOf(it), price, gain, shop, null, it, w));
+            }
 
             var buy = offers
                 .Where(o => o.Price <= budget)
@@ -341,11 +349,15 @@ public static class Gear
     private static void Buy(Town town, Agent a, Offer o)
     {
         var s = a.Hero!;
-        double tax = o.Price * town.TaxRate;
         a.Gold -= o.Price;
-        town.Book(TreasuryAccount.SalesTax, tax);
-        o.Shop.Cash += o.Price - tax - o.Price * Rules(town).Wholesale;
-        o.Shop.RevenueToday += o.Price;
+        if (o.Ware != null) Merchants.Bought(town, o.Shop, o.Ware, o.Price);
+        else
+        {
+            double tax = o.Price * town.TaxRate;
+            town.Book(TreasuryAccount.SalesTax, tax);
+            o.Shop.Cash += o.Price - tax - o.Price * Rules(town).Wholesale;
+            o.Shop.RevenueToday += o.Price;
+        }
         string what;
         if (o.Magic != null)
         {
@@ -365,7 +377,7 @@ public static class Gear
         town.Log(
             LedgerCategory.Quest,
             o.Magic != null ? Importance.Notable : Importance.Routine,
-            $"{a.Name} buys {(o.Magic != null ? "a " : "")}{what} at {o.Shop.Name} for {Js.Str(o.Price)} gold.",
+            $"{a.Name} buys {(o.Magic != null ? "a " : "")}{(o.Ware != null ? "second-hand " : "")}{what} at {o.Shop.Name} for {Js.Str(o.Price)} gold.",
             [a.Id]);
     }
 }

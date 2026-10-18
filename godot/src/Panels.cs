@@ -41,6 +41,7 @@ public partial class Main
         p.Row($"[b]Heroes in town[/b]  {Tag(home.ToString())}\n{Ui.C(Ui.Ink2, "[font_size=12]Only heroes can kill the warlord when he comes.[/font_size]")}");
         if (camp != null && !camp.Cleared) p.Note("The war camp feeds the warband. Post a bounty on it in the Bounties tab to strike first.");
         RenderSellswords(p, t);
+        RenderClockwork(p, t);
         p.Commit();
     }
 
@@ -89,6 +90,26 @@ public partial class Main
             ? "Hired companies stand on the walls with the watch. Once the town knows where a named menace sits, you can send them against it."
             : "A campaign costs a war chest of wages. Sellswords can break a menace's hold and its seat, but only heroes can end the greatest foe.");
     }
+
+    /// <summary>Clockwork wardens: build one for the walls, or break one up.</summary>
+    private void RenderClockwork(Pane p, Town t)
+    {
+        var r = Clockwork.Rules(t);
+        var c = t.Clockwork;
+        p.Heading("Clockwork wardens");
+        if (r.Tier != "" && !City.Reached(t, r.Tier) && c.Wardens == 0)
+        {
+            p.Note($"Tireless brass guards that take no bribes. A {City.TierName(t, r.Tier).ToLowerInvariant()} with a mage tower or a guildhall can build them.");
+            return;
+        }
+        string? why = Clockwork.BuildBlocked(t);
+        p.Row($"[b]On the walls[/b]  {Tag($"{c.Wardens} of {r.Max}", c.Wardens > 0 ? Ui.Good : Ui.Ink2)}{(c.Seized > 0 ? "  " + Tag($"{c.Seized} stolen", Ui.Bad) : "")}\n{Ui.C(Ui.Ink2, $"[font_size=12]Each adds {r.Strength:0} strength and helps the watch catch a schemer's agents, however crooked its captain. {r.Upkeep:0}g a day to wind. Townsfolk don't trust them (mood {Clockwork.Mood(t):0.0}), and the Quiet Hand or a scheming foe may steal one; a mage tower keeps the keys safer.{(why != null ? $" Can't build: {Ui.Esc(why)}." : "")}[/font_size]")}",
+            ($"Build · {r.Cost:N0}g", why == null, true, () => Act(() => _sim.BuildWarden())),
+            ("Scrap", c.Wardens > 0, false, () => Act(() => _sim.ScrapWarden())));
+    }
+
+    /// <summary>The terms the bounty board posts on (<see cref="Terms"/>).</summary>
+    private string _terms = "slay";
 
     private void Act(Action a)
     {
@@ -193,6 +214,22 @@ public partial class Main
         RenderEyes(p, t);
 
         p.Heading("Bounty board");
+        // How the job is to be done: the terms every Post button below uses.
+        var chosen = t.Content.Bounties.Term(_terms);
+        p.Buttons(t.Content.Bounties.Terms.Select(term => (term.Name, true, term.Id == chosen.Id, (Action)(() => Act(() => _terms = term.Id)))).ToArray());
+        var (pleased, angered) = Regard.Reactions(t, chosen.Tags);
+        string Who(List<Agent> heroes) => string.Join(", ", heroes.Take(4).Select(h => h.GivenName)) + (heroes.Count > 4 ? $" +{heroes.Count - 4}" : "");
+        var feel = new List<string>();
+        if (pleased.Count > 0) feel.Add(Ui.C(Ui.Good, $"Pleases {Ui.Esc(Who(pleased))}"));
+        if (angered.Count > 0) feel.Add(Ui.C(Ui.Bad, $"Angers {Ui.Esc(Who(angered))}"));
+        p.Note($"[b]{Ui.Esc(chosen.Name)}:[/b] {Ui.Esc(chosen.Text)}{(feel.Count > 0 ? "\n" + string.Join("  ·  ", feel) : "")}");
+        foreach (var c in Captives.Held(t).OrderBy(c => c.Id))
+        {
+            if (Quests.Site(t, c.SiteId) is not SiteState held) continue;
+            int left = Math.Max(1, (int)Math.Ceiling((c.DueTick - t.Tick) / 24.0));
+            string names = string.Join(", ", c.Captives.Select(id => t.Agent(id).Name));
+            p.Card($"[b]Held at {SiteLink(held.Def)}[/b]  {Tag($"{left} {(left == 1 ? "day" : "days")} left", Ui.Bad)}\n[font_size=12]{Ui.Esc(names)}. Post a [b]Rescue[/b] on {Ui.Esc(held.Def.Name)} before the days run out, or clear it.[/font_size]", Ui.Bad);
+        }
         var scryer = Knowledge.Scryers(t).FirstOrDefault();
         bool freeScry = Watch.FreeScryingsLeft(t) > 0;
         bool canScout = Watch.Watchers(t).Count > 0;
@@ -202,19 +239,23 @@ public partial class Main
             if (s.Known == SiteKnowledge.Unheard) continue;
             var live = t.Bounties.FirstOrDefault(b => b.SiteId == s.Def.Id && b.Status is BountyStatus.Open or BountyStatus.Taken);
             var party = live?.PartyId is int pid ? t.Parties.FirstOrDefault(x => x.Id == pid) : null;
-            int reward = Quests.SuggestedReward(Math.Max(1, s.BelievedTier));
+            int reward = (int)Terms.Suggested(t, s, chosen);
             string status;
             var buttons = new List<(string, bool, bool, Action)>();
             if (s.ThoughtCleared) status = Tag("Cleared", Ui.Good);
             else if (party != null && !party.Returned) status = Tag($"{Ui.Esc(party.Name)} on the road", Ui.Gold);
-            else if (live != null) status = Tag($"Bounty posted: {Math.Round(live.Reward)}g{(live.LootToTown ? ", loot to the town" : "")}", Ui.Gold);
+            else if (live != null && live.Errand != "" && t.Content.Bounties.Errands.FirstOrDefault(x => x.Id == live.Errand) is { } boon)
+                status = Tag($"Mages' errand: {Math.Round(live.Reward)}g and {boon.Name}", Ui.Gold);
+            else if (live != null) status = Tag($"{(live.Terms == "slay" ? "Bounty" : Terms.Of(t, live).Name)} posted: {Math.Round(live.Reward)}g{(live.LootToTown ? ", loot to the town" : "")}", Ui.Gold);
             else
             {
                 status = s.Attempts > 0 ? Tag($"{s.Attempts} failed {(s.Attempts == 1 ? "attempt" : "attempts")}", Ui.Bad) : Tag("Unexplored");
                 string sid = s.Def.Id;
-                buttons.Add(($"Post {reward}g", t.Treasury >= reward, true, () => Act(() => _sim.PostBounty(sid, reward))));
-                double terms = Sim.Systems.Armory.TermsReward(t, reward);
-                buttons.Add(($"{Js.Str(terms)}g, loot to us", t.Treasury >= terms, false, () => Act(() => _sim.PostBounty(sid, terms, lootToTown: true))));
+                string terms = chosen.Id;
+                bool fits = Terms.Blocked(t, s, chosen) == null;
+                if (fits) buttons.Add(($"{chosen.Name} · {reward}g", t.Treasury >= reward, true, () => Act(() => _sim.PostBounty(sid, reward, terms))));
+                double withLoot = Sim.Systems.Armory.TermsReward(t, reward);
+                if (fits && !chosen.Item) buttons.Add(($"{Js.Str(withLoot)}g, loot to us", t.Treasury >= withLoot, false, () => Act(() => _sim.PostBounty(sid, withLoot, terms, lootToTown: true))));
             }
             if (!s.ThoughtCleared && Watch.LiveOf(t, s) == null)
             {
@@ -568,6 +609,18 @@ public partial class Main
         string mood = hs.Loyalty < lr.Desert ? "ready to leave" : hs.Loyalty < lr.Restless ? "restless" : hs.Loyalty >= 75 ? "devoted" : hs.Loyalty >= 60 ? "loyal" : "content";
         var why = Loyalty.Factors(t, a).OrderByDescending(f => Math.Abs(f.Points)).Take(4).Select(f => $"{f.Why} {(f.Points >= 0 ? "+" : "−")}{Math.Round(Math.Abs(f.Points))}");
         p.Text($"{Tag($"Loyalty {loyalty}", color)} {Ui.C(color, mood)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(string.Join(" · ", why))}[/font_size]")}", 13);
+        if (hs.JailedUntil is int jail)
+            p.Text(Ui.C(Ui.Bad, $"In the town cells until day {jail / SimTime.HoursPerDay + 1}. They take no bounties until then."), 13);
+        if (hs.Potions + hs.Scrolls + hs.Copied > 0)
+        {
+            var kit = new List<string>();
+            if (hs.Potions > 0) kit.Add(hs.Potions == 1 ? "1 healing potion" : $"{hs.Potions} healing potions");
+            if (hs.Scrolls > 0) kit.Add(hs.Scrolls == 1 ? "1 spell scroll" : $"{hs.Scrolls} spell scrolls");
+            if (hs.Copied > 0) kit.Add($"{hs.Copied} copied into the spellbook");
+            p.Text(Ui.C(Ui.Ink2, "Carries " + string.Join(", ", kit) + "."), 13);
+        }
+        if (hs.Taint > 0)
+            p.Text(Ui.C(Ui.Bad, hs.Taint == 1 ? "Took a gift from the dark. Their shadow is slow to follow them." : $"Took {hs.Taint} gifts from the dark. They are not sleeping well."), 13);
         if (Regard.TemperOf(t, a) is TemperDef temper)
         {
             // What they make of the mayor, and the choice that moved them last.
@@ -603,6 +656,12 @@ public partial class Main
             p.Text(comfort > 0
                 ? Ui.C(Ui.Good, $"A pleasant street: the household is {Math.Round(comfort * 100)}% more content, so the house grows sooner.")
                 : Ui.C(Ui.Bad, $"A grim street: the household is {Math.Round(-comfort * 100)}% less content."));
+        if (t.Content.Merchants.Shops.Contains(b.Def.Id) && !b.IsSite)
+        {
+            var shelf = Merchants.Wares(t, b).Select(w => t.Content.Library.Item(w.ItemId)).OfType<LibItem>().ToList();
+            p.Text($"Buys heroes' loot with up to {Math.Floor(Merchants.Purse(t, b))}g. " +
+                (shelf.Count == 0 ? "Nothing second-hand on the shelf." : $"On the shelf: {string.Join(", ", shelf.Select(i => $"{Ui.Esc(i.Name)} ({Js.Str(Math.Ceiling(i.ValueGp * t.Content.Merchants.Resale))}g)"))}."));
+        }
         if (here.Count > 0) p.Text($"Here now: {string.Join(", ", here.Select(a => AgentLink(a)))}");
     }
 

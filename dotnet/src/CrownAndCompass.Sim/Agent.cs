@@ -181,6 +181,12 @@ public sealed class HeroSheet
     /// <summary>Healing potions from the general store, carried into the next delve.</summary>
     public int Potions { get; set; }
 
+    /// <summary>Spell scrolls from the scriptorium or a hoard, each read once in a fight (<see cref="Systems.Scrolls"/>).</summary>
+    public int Scrolls { get; set; }
+
+    /// <summary>Scrolls a wizard copied into their spellbook; each adds to their area spell.</summary>
+    public int Copied { get; set; }
+
     /// <summary>What the hero cares about in a mayor (a temper in content/game/regard.json); "" until settled.</summary>
     public string Temper { get; set; } = "";
 
@@ -193,6 +199,12 @@ public sealed class HeroSheet
 
     /// <summary>Their personal quest: "" not yet asked, "done" seen through, "failed" let down.</summary>
     public string Personal { get; set; } = "";
+
+    /// <summary>The tick they walk out of the town cells, while the mayor has them locked up.</summary>
+    public int? JailedUntil { get; set; }
+
+    /// <summary>Dark gifts taken: each one makes the hero likelier to fall (<see cref="Systems.Turning"/>).</summary>
+    public int Taint { get; set; }
 }
 
 /// <summary>

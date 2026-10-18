@@ -106,6 +106,7 @@ public sealed class Simulation
         Brain.Daily(t);
         Seasons.Daily(t);
         Economy.Daily(t);
+        Merchants.Daily(t);
         City.Daily(t, Options.AutoMayor && Options.AutoPlanning);
         GrandWorks.Daily(t, Options.AutoMayor && Options.AutoPlanning);
         Streets.Wear(t);
@@ -121,7 +122,9 @@ public sealed class Simulation
         World.Daily(t, Options.AutoMayor);
         Trade.Daily(t, Options.AutoMayor);
         Armory.Daily(t, Options.AutoMayor && Options.AutoArmory);
+        Neighbours.Daily(t, Options.AutoMayor);
         Mercenaries.Daily(t, Options.AutoMayor && Options.AutoDefense);
+        Clockwork.Daily(t, Options.AutoMayor && Options.AutoDefense);
         Quests.Daily(t, Options.AutoMayor && Options.AutoBounties, Options.FreeCompanies);
         Explore.Daily(t, Options.AutoMayor && Options.AutoBounties);
         Intel.Daily(t, Options.AutoMayor && Options.AutoBounties && Options.AutoIntel);
@@ -137,6 +140,8 @@ public sealed class Simulation
         Legacies.Daily(t, Options.AutoMayor);
         Institutions.Daily(t, Options.AutoMayor && Options.AutoPlanning);
         Regard.Daily(t);
+        Wards.Daily(t);
+        Broadsheet.Daily(t, Options.AutoMayor && Options.AutoStories);
         Loyalty.Daily(t, Options.AutoMayor);
         Notoriety.Daily(t);
         Decor.Daily(t);
@@ -150,8 +155,8 @@ public sealed class Simulation
         t.AccountsToday = new();
     }
 
-    /// <summary>The player's lever: post a bounty on a site, paid from the treasury into escrow; with loot terms the hoard's magic comes to the armory.</summary>
-    public Bounty? PostBounty(string siteId, double reward, bool lootToTown = false) => Quests.PostBounty(Town, siteId, reward, lootToTown: lootToTown);
+    /// <summary>The player's lever: post a bounty on a site, paid from the treasury into escrow; terms say how (slay, drive, parley, rescue, fetch); with loot to the town the hoard's magic comes to the armory.</summary>
+    public Bounty? PostBounty(string siteId, double reward, string terms = "slay", bool lootToTown = false) => Quests.PostBounty(Town, siteId, reward, null, terms, lootToTown);
 
     /// <summary>Give a hero in town an item from the armory: magic arms, armour or a charm to wear, or a sending stone to carry.</summary>
     public bool Gift(int stockId, int heroId) => Armory.Gift(Town, stockId, heroId);
@@ -174,8 +179,17 @@ public sealed class Simulation
     /// <summary>The player's word to explorers about something they found ("dig", "engage", "onward", "home", "parley"...).</summary>
     public bool OrderExplorers(int findId, string act) => Explore.Order(Town, findId, act);
 
+    /// <summary>Pay the printer for the broadsheet's next front page ("praise", "hero" with a hero, "expose"). Returns why not, or null when bought.</summary>
+    public string? SlantBroadsheet(string slant, int? heroId = null) => Broadsheet.Buy(Town, slant, heroId);
+
     /// <summary>Send an envoy with gifts to a settlement out in the wilds, to win its people over.</summary>
     public bool SendEnvoy(int settlementId) => World.SendEnvoy(Town, settlementId);
+
+    /// <summary>Send coin and goods to see a settlement through its trouble.</summary>
+    public bool AidSettlement(int settlementId) => Neighbours.Aid(Town, settlementId);
+
+    /// <summary>Pay for a shared improvement (a watchtower, a bridge, a waystation) at a settlement.</summary>
+    public bool FundProject(int settlementId, string projectId) => Neighbours.Fund(Town, settlementId, projectId);
 
     /// <summary>Open a trade route to a settlement: export goes out, import comes back.</summary>
     public bool OpenTradeRoute(int settlementId, Good export, Good import) => Trade.OpenRoute(Town, settlementId, export, import) != null;
@@ -296,6 +310,12 @@ public sealed class Simulation
 
     /// <summary>Pay off a sellsword company that is home.</summary>
     public bool DismissMercenaries(string companyId) => Mercenaries.Dismiss(Town, companyId);
+
+    /// <summary>Build a clockwork warden for the walls (a city with a mage tower or guildhall).</summary>
+    public bool BuildWarden() => Clockwork.Build(Town);
+
+    /// <summary>Break up a clockwork warden.</summary>
+    public bool ScrapWarden() => Clockwork.Scrap(Town);
 
     /// <summary>Fund a campaign: send a hired company against a menace's seat.</summary>
     public bool MarchMercenaries(string companyId, int menaceId) => Mercenaries.March(Town, companyId, menaceId);

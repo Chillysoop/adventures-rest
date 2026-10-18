@@ -238,11 +238,47 @@
         "raze": "{people} have struck a bargain with {name}. {settlement} still stands, but its gates are shut to {town} and its people smile at nothing.",
         "slain": "{leader}'s bargains come undone all at once. In {region}, people wake and do not know how long they slept."
       },
+      "dragon": {
+        "types": [
+          "dragon"
+        ],
+        "leaders": [
+          "Cindermaw",
+          "Vastrel the Gilded",
+          "Ysmerith",
+          "Old Scald",
+          "Korrathax",
+          "Sabrevane",
+          "Thessaly Brightscale",
+          "Morrowfang",
+          "Halcyra",
+          "Gorrith the Grey"
+        ],
+        "titles": [
+          "the wyrm of {seat}",
+          "{leader} of {seat}",
+          "{leader}, Regent of {region}",
+          "{leader}, the Ash Regent",
+          "{leader}, the Last Wyrm"
+        ],
+        "people": "drakes and tithe-takers",
+        "rise": "Herders in {region} have seen wings over {seat}. {leader} has claimed it, and the drakes of the high places come when it calls.",
+        "riseDark": "Herders in {region} have seen wings over {seat}, and smoke where a farm stood. {leader} has claimed the country, and counts every cow in it as tribute.",
+        "strike": [
+          "{leader} comes down out of {region} at dusk and carries off cattle from {where}, and the drakes take what it leaves.",
+          "A shadow crosses {where} at noon. By evening a barn is ash and {leader}'s drakes are picking over the herd."
+        ],
+        "strikeDark": [
+          "{leader} burns {where} to the stone, and takes the herdsman with the herd.",
+          "{leader}'s fire falls on {where}. The family in the loft did not get out."
+        ],
+        "raze": "{people} are no more. {leader} burned {settlement} for refusing its tribute.",
+        "slain": "{leader} is slain, and its hoard is carried down from {seat} by cart. {region} sees no wings in the sky."
+      },
       "beasts": {
         "types": [
           "beast",
-          "monstrosity",
-          "dragon"
+          "monstrosity"
         ],
         "leaders": [
           "Ashfang",
@@ -414,7 +450,8 @@
         "maxCunning": "crafty",
         "weight": 1,
         "kinds": [
-          "beasts"
+          "beasts",
+          "dragon"
         ],
         "marches": false
       },
@@ -439,7 +476,8 @@
           "tribe",
           "rivals",
           "undead",
-          "beasts"
+          "beasts",
+          "dragon"
         ],
         "marches": true
       },
@@ -453,7 +491,8 @@
           "tribe",
           "rivals",
           "schemers",
-          "undead"
+          "undead",
+          "dragon"
         ],
         "marches": true,
         "demand": "Heralds of {name} ride into {town} under a black banner. {leader} offers peace and protection for a third of the treasury every ten days. Refuse, and the host marches.",
@@ -499,6 +538,259 @@
         "caught": "The watch catches an agent of {name} with a satchel of letters. {leader}'s web in {town} loses a strand."
       }
     ],
+    "plots": {
+      "firstDays": [
+        15,
+        30
+      ],
+      "everyDays": [
+        30,
+        55
+      ],
+      "holdingAsset": 0.5,
+      "foilSecurity": 70,
+      "foilProsperity": 50,
+      "setbackDays": 12,
+      "learnChance": 0.04,
+      "learnRegard": 40,
+      "warnDays": 8,
+      "lieutenantChance": 0.4,
+      "lieutenantKinds": [
+        "tribe",
+        "rivals",
+        "schemers",
+        "cult",
+        "undead"
+      ],
+      "tollRaid": 0.25,
+      "assets": [
+        {
+          "id": "war-chest",
+          "name": "war chest",
+          "kinds": [
+            "tribe",
+            "rivals",
+            "schemers"
+          ],
+          "growth": 0.12,
+          "gold": [
+            120,
+            240
+          ]
+        },
+        {
+          "id": "supply-camp",
+          "name": "supply camp",
+          "kinds": [
+            "tribe",
+            "rivals",
+            "undead"
+          ],
+          "growth": 0.1
+        },
+        {
+          "id": "recruiter",
+          "name": "recruiter",
+          "kinds": [
+            "tribe",
+            "rivals",
+            "cult",
+            "schemers"
+          ],
+          "growth": 0.15
+        },
+        {
+          "id": "burial-ground",
+          "name": "burial ground",
+          "kinds": [
+            "undead",
+            "cult"
+          ],
+          "growth": 0.15
+        },
+        {
+          "id": "ritual-reagents",
+          "name": "ritual reagents",
+          "kinds": [
+            "cult",
+            "schemers",
+            "undead"
+          ],
+          "growth": 0.1
+        },
+        {
+          "id": "hoard",
+          "name": "hoard",
+          "kinds": [
+            "dragon"
+          ],
+          "growth": 0.1,
+          "gold": [
+            200,
+            400
+          ]
+        },
+        {
+          "id": "brood",
+          "name": "brood",
+          "kinds": [
+            "beasts",
+            "dragon"
+          ],
+          "growth": 0.15
+        },
+        {
+          "id": "relic",
+          "name": "stolen relic",
+          "kinds": [],
+          "growth": 0.1,
+          "relic": true
+        }
+      ],
+      "seized": "Clearing {site} costs {name} its {asset}.",
+      "seizedGold": "Clearing {site} costs {name} its {asset}: {gold} gold of it comes back to {town}'s treasury.",
+      "seizedRelic": "Clearing {site} costs {name} its {asset}.",
+      "carried": "{leader} gets away to {refuge} with the {assets}.",
+      "lieutenant": "{lieutenant}, {old}'s lieutenant, slips away from {seat} with the {asset} and the hardest of the survivors. Within a month travellers have a new name to fear.",
+      "learned": "Word comes to {town} of {leader}'s plan: {plan}",
+      "warned": "{contact} in {settlement}, who remembers {memory}, sends word of {leader}'s plan: {plan}",
+      "plans": [
+        {
+          "id": "toll-road",
+          "kinds": [
+            "tribe",
+            "rivals"
+          ],
+          "ambitions": [
+            "hunger",
+            "territory",
+            "conquest",
+            "intrigue",
+            "vassal"
+          ],
+          "days": 30,
+          "target": "settlement",
+          "effect": "toll",
+          "foil": "security",
+          "text": "{leader} is buying boats and blades to seize the crossing on the road to {settlement}.",
+          "done": "{name} has seized the road to {settlement} and takes a toll on everything that passes. Caravans there go in fear.",
+          "foiled": "{leader}'s people try for the road to {settlement}, but the watch there is ready for them and they are driven off."
+        },
+        {
+          "id": "tribute",
+          "kinds": [
+            "dragon"
+          ],
+          "ambitions": [],
+          "days": 25,
+          "target": "settlement",
+          "effect": "sway",
+          "foil": "security",
+          "text": "{leader} has sent tithe-takers to {settlement}: gold and cattle, or fire.",
+          "done": "{settlement} pays {leader}'s tribute. Its people have started calling {leader} their protector.",
+          "foiled": "{settlement} turns {leader}'s tithe-takers away, and its tower and its band make the refusal stick."
+        },
+        {
+          "id": "drive-out",
+          "kinds": [
+            "dragon"
+          ],
+          "ambitions": [],
+          "days": 20,
+          "target": "none",
+          "effect": "drive",
+          "text": "{leader} is hunting the other beasts of {region} out of the country it has claimed.",
+          "done": "Driven out of {region} by {leader}, the beasts of the high places come down toward {town}. {near} is suddenly crowded and hungry."
+        },
+        {
+          "id": "supply-camp",
+          "kinds": [
+            "tribe",
+            "rivals",
+            "undead"
+          ],
+          "ambitions": [
+            "conquest"
+          ],
+          "days": 25,
+          "target": "none",
+          "effect": "camp",
+          "text": "{leader} is building supply camps along the way to {town}.",
+          "done": "{name} has finished a supply camp at {holding}, and its host eats well."
+        },
+        {
+          "id": "dark-ritual",
+          "kinds": [
+            "cult",
+            "undead",
+            "schemers"
+          ],
+          "ambitions": [
+            "plague",
+            "intrigue",
+            "vassal"
+          ],
+          "days": 35,
+          "target": "none",
+          "effect": "ritual",
+          "text": "{leader} is gathering ritual components at {seat} for something terrible.",
+          "done": "The ritual at {seat} is finished. {name} is far stronger than it was."
+        },
+        {
+          "id": "raise-dead",
+          "kinds": [
+            "undead"
+          ],
+          "ambitions": [],
+          "days": 30,
+          "target": "settlement",
+          "effect": "sway",
+          "foil": "security",
+          "text": "{leader} is buying funeral relics, and has offered {settlement} cheap labour: the dead, to mend its roads.",
+          "done": "{settlement} has taken {leader}'s dead as workers. Travellers say the living there are no longer allowed to leave.",
+          "foiled": "{settlement} burns {leader}'s offer and the cart it came in. Its watch has seen what such workers become."
+        },
+        {
+          "id": "great-raid",
+          "kinds": [
+            "beasts",
+            "tribe",
+            "rivals",
+            "dragon"
+          ],
+          "ambitions": [
+            "hunger",
+            "conquest"
+          ],
+          "days": 18,
+          "target": "town",
+          "effect": "raid",
+          "text": "{leader} is gathering everything it has for a raid on {town}.",
+          "done": "{name} is ready. Its raiders are on the move toward {town}."
+        },
+        {
+          "id": "recruit",
+          "kinds": [
+            "tribe",
+            "rivals",
+            "schemers",
+            "cult"
+          ],
+          "ambitions": [
+            "conquest",
+            "vassal",
+            "intrigue"
+          ],
+          "days": 25,
+          "target": "poor",
+          "effect": "recruit",
+          "foil": "prosperity",
+          "text": "{leader}'s recruiters are working the taverns of {settlement}, where times are hard.",
+          "done": "Young men and women of {settlement} have gone over to {name}. It is stronger, and {settlement} weaker.",
+          "foiled": "{leader}'s recruiters leave {settlement} empty-handed: times are too good there for their promises."
+        }
+      ]
+    },
     "feud": {
       "everyDays": [
         30,
@@ -590,7 +882,7 @@
     "crown": "{leader} is not satisfied with {region}. {name} sends heralds to every town in the land: kneel, or burn. {town} is the first on the list.",
     "fallback": [
       {
-        "kind": "beasts",
+        "kind": "dragon",
         "leader": "Vermithrax the Old Wyrm", "lineage": "wyrm-blood",
         "text": "The Old Wyrm who burned the Stonekings has slipped the chains the Smith-King forged for him four thousand years ago."
       },

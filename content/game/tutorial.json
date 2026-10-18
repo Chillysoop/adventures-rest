@@ -134,6 +134,9 @@
       "point": "tab:Bounties",
       "teaches": ["command:CommissionScrying", "command:PostScout", "command:RecallScout", "command:PlantMirror", "command:SendWord", "command:BuildSightWork"]
     },
+    {"id": "terms", "title": "Bounty terms", "text": "A bounty says how the job is to be done, not only where. Pick the terms at the top of the [b]Bounty board[/b]: [b]Slay[/b] clears a place for good; [b]Drive off[/b] is quicker and cheaper, but something moves back in sooner; [b]Talk down[/b] sends silver tongues to bargain with foes clever enough to listen; [b]Fetch[/b] steals the best of the hoard for the town. Heroes take jobs that suit their temper, and every hero judges the terms you post.", "point": "tab:Bounties", "when": "day:25", "teaches": []},
+    {"id": "captives", "title": "Townsfolk taken", "text": "Raiders who get through can carry townsfolk off to their camp. They are held for a few days: post a [b]Rescue[/b] on the camp, or clear it, and they come home. If the days run out they are lost, and the town remembers it.", "point": "alerts", "when": "alert:captives", "teaches": []},
+    {"id": "broadsheet", "title": "The town broadsheet", "text": "Once the town is big enough a printer sets up, and every week an issue goes on sale with the week's news. Open the [b]Ledger[/b] and press [b]Broadsheet[/b] to read it. You can pay for the next front page: [b]Praise the mayor[/b] wins approval but can be found out if you lean on it, [b]Cry up a hero[/b] puts the selected hero on the front page, and [b]Name the guilds[/b] puts the town's secret societies under scrutiny. Heroes judge what you pay the paper to say.", "point": "tab:Ledger", "when": "day:35", "teaches": ["command:SlantBroadsheet"]},
     {
       "id": "companies",
       "title": "Buy what others found",
@@ -194,6 +197,14 @@
       "teaches": ["command:HireMercenaries", "command:MarchMercenaries", "command:DismissMercenaries"]
     },
     {
+      "id": "clockwork",
+      "title": "Clockwork wardens",
+      "text": "A city with a mage tower or a guildhall can build [b]clockwork wardens[/b] under the [b]War[/b] tab. They never sleep and can't be bribed, so they help the watch catch a schemer's agents even when its captain is crooked. But townsfolk don't like being watched by brass, and the Quiet Hand or a scheming foe may try to steal one. A mage tower keeps the keys safer.",
+      "point": "tab:War",
+      "when": "day:300",
+      "teaches": ["command:BuildWarden", "command:ScrapWarden"]
+    },
+    {
       "id": "faith",
       "title": "Gods and factions",
       "text": "[b]Faith[/b] shows the town's gods and the factions taking root. Build a temple to win a god's favour; back a faction with gold, or crack down on one that works against you.",
@@ -219,6 +230,7 @@
       "teaches": ["command:ResolveStory"]
     },
     {"id": "regard", "title": "Heroes judge your choices", "text": "Every hero has a temper: merciful, ruthless, pious, mercenary, lawful, free-spirited or bold. When you answer a story, each choice shows which heroes in town it would [b]please[/b] or [b]anger[/b]. What they think of you moves their loyalty, and it is shown when you select a hero. A hero who trusts you will ask for help with a personal quest of their own; one you keep angering will come to you with a grievance.", "point": "inspector", "when": "alert:story", "teaches": []},
+    {"id": "ward-voices", "title": "Every ward has a voice", "text": "The wards judge your choices too. The stallholders of the Market Ward like profit, the temple wardens like mercy and the gods, the wharf crews like free hands. A choice shows which wards it pleases or angers alongside the heroes. A ward that warms to you is more content, so its houses grow sooner; one you sour grumbles. See how each ward feels in the [b]City[/b] window.", "point": "tab:City", "when": "day:60", "teaches": []},
     {
       "id": "mayor-level",
       "title": "Level up",
@@ -245,6 +257,24 @@
       "point": "tab:Diplomacy",
       "until": "tab:Diplomacy",
       "teaches": ["tab:Diplomacy", "command:SendEnvoy", "command:OpenTradeRoute", "command:CloseTradeRoute"]
+    },
+    {
+      "id": "neighbours",
+      "title": "Neighbours with lives of their own",
+      "text": "Every settlement in [b]Diplomacy[/b] has a leader, its own small band of adventurers, and troubles: missing hunters, a broken mill, a fever. Its band goes after what it can and asks your heroes for help when it fails. Send [b]aid[/b] to meet a need, or pay for a [b]project[/b] there that lasts: a watchtower, a bridge, a waystation where your parties rest. The people you help remember it and come back with favours, and friends send relief when a host marches on you.",
+      "when": "alert:neighbour",
+      "point": "tab:Diplomacy",
+      "until": "tab:Diplomacy",
+      "teaches": ["command:AidSettlement", "command:FundProject"]
+    },
+    {
+      "id": "plots",
+      "title": "What villains are planning",
+      "text": "A menace with a name is always working toward something: seizing a road, sending tithe-takers, gathering for a raid. Scrying its seat, or a friend in a nearby settlement, tells you its plan, and the [b]Campaign[/b] window shows it with the war chests, camps and hoards its strength rests on. Clear the holding where one is kept and the town takes it, and the plan is set back. A safe settlement, with a watchtower and a strong band, can turn a plan away on its own.",
+      "when": "alert:plot",
+      "point": "tab:Campaign",
+      "until": "tab:Campaign",
+      "teaches": []
     },
     {
       "id": "callings",

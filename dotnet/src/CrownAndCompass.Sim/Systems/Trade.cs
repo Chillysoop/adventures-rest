@@ -97,7 +97,7 @@ public static class Trade
     public static Settlement SettlementOf(Town town, TradeRoute r) => town.Settlements[r.SettlementId];
 
     /// <summary>Days for a caravan to go there and back, with its turnaround and the season's mud or snow.</summary>
-    public static int TripDays(Town town, Settlement s) => 2 * town.Regions[s.RegionId].Days + Rules(town).TurnaroundDays + 2 * Seasons.MarchDays(town);
+    public static int TripDays(Town town, Settlement s) => Math.Max(2, 2 * town.Regions[s.RegionId].Days + Rules(town).TurnaroundDays + 2 * Seasons.MarchDays(town) - Neighbours.TripDays(town, s));
 
     public static double OpenCost(Town town, Settlement s) => Rules(town).OpenCost + Rules(town).OpenPerDay * town.Regions[s.RegionId].Days;
 
@@ -226,7 +226,8 @@ public static class Trade
         var region = town.Regions[s.RegionId];
         int near = town.Saga.Menaces.Count(m => m.Alive && Quests.Site(town, m.SeatId) is { RegionId: int rid } && rid >= 0 && rid < town.Regions.Count
             && Math.Abs(town.Regions[rid].Ring - region.Ring) <= 1 && Near(town.Regions[rid], region));
-        return Math.Min(0.5, r.Raid + r.RaidPerMenace * near) * (1 - Institutions.Escort(town));
+        // A bridge or patrol makes the road safer, and so do escorts; a menace holding it, far worse.
+        return Math.Min(0.6, (r.Raid + r.RaidPerMenace * near) * Neighbours.RaidShare(town, s) + Plots.TollRaid(town, s)) * (1 - Institutions.Escort(town));
     }
 
     private static bool Near(Region a, Region b)

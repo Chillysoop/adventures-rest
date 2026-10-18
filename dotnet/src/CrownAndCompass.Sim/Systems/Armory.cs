@@ -359,7 +359,8 @@ public static class Armory
     public static bool HandIn(Town town, Party party, Bounty? bounty, Agent finder, LibItem it)
     {
         var r = Rules(town).Pact;
-        if (bounty is { LootToTown: true })
+        // Loot to the town, or a fetching job: the best of the hoard was taken for the town.
+        if (bounty != null && (bounty.LootToTown || (bounty.FunderId == null && Terms.Of(town, bounty).Item)))
         {
             Add(town, it, $"the {Poss(party.Name)} find, under the bounty's terms");
             town.Armory.HandedIn++;

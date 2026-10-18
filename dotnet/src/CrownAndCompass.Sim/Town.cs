@@ -235,6 +235,8 @@ public static class TreasuryAccount
     public const string HearthTax = "Hearth tax";
     public const string Wards = "Wards";
     public const string Decorations = "Decorations";
+    public const string Broadsheet = "Broadsheet";
+    public const string Clockwork = "Clockwork";
     public const string Orchards = "Orchards";
     public const string Stores = "Winter stores";
     public const string Intel = "Intel";
@@ -247,6 +249,7 @@ public static class TreasuryAccount
     public const string Bastions = "Bastions";
     public const string Callings = "Callings";
     public const string Legacies = "Legacies";
+    public const string Region = "The region";
     public const string Institutions = "Institutions";
 }
 
@@ -297,6 +300,15 @@ public sealed class Town
 
     /// <summary>Adventuring companies the town has dealt with, by first dealing (<see cref="Intel"/>).</summary>
     public List<CompanyState> Companies { get; } = [];
+
+    /// <summary>Townsfolk carried off in raids, held until rescued or lost (<see cref="Captives"/>).</summary>
+    public List<Captivity> Captivities { get; } = [];
+
+    /// <summary>The town broadsheet: its issues and the slant paid for in the next (<see cref="Systems.Broadsheet"/>).</summary>
+    public PressState Press { get; } = new();
+
+    /// <summary>Second-hand magic items on the shops' shelves (<see cref="Systems.Merchants"/>).</summary>
+    public List<Ware> Wares { get; } = [];
 
     /// <summary>Companies' own compounds in town, by founding (<see cref="Systems.Bastions"/>).</summary>
     public List<BastionState> Bastions { get; } = [];
@@ -351,6 +363,9 @@ public sealed class Town
     /// <summary>Library items parties brought home for the town (ids), in the order they came.</summary>
     public List<string> Relics { get; } = [];
 
+    /// <summary>Clockwork wardens on the walls (<see cref="Systems.Clockwork"/>).</summary>
+    public ClockworkState Clockwork { get; } = new();
+
     /// <summary>Sellsword companies under contract to the town (<see cref="Systems.Mercenaries"/>).</summary>
     public List<Hire> Hires { get; } = [];
 
@@ -395,6 +410,9 @@ public sealed class Town
 
     /// <summary>The town armory: items to gift heroes, and loot offered to the town (<see cref="Systems.Armory"/>).</summary>
     public ArmoryState Armory { get; } = new();
+
+    /// <summary>The people of the wilds the town has dealt with, who remember it (<see cref="Systems.Neighbours"/>).</summary>
+    public NeighbourState Neighbours { get; } = new();
 
     /// <summary>The hall of heroes: those who fell in the town's service or retired here, in the order they did (<see cref="Systems.Legacies"/>).</summary>
     public List<Systems.Legacy> Legacies { get; } = [];
