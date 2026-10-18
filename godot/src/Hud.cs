@@ -102,7 +102,8 @@ public partial class Main
 
         _clock = Ui.Label("Day 1 · 00:00", Ui.Ink, Ui.Display, 16);
         _clock.SizeFlagsVertical = SizeFlags.ShrinkCenter;
-        _clock.CustomMinimumSize = new Vector2(124, 0);
+        _clock.CustomMinimumSize = new Vector2(190, 0);
+        _clock.MouseFilter = MouseFilterEnum.Pass;
         bar.AddChild(_clock);
         _threatPill = new PanelContainer { SizeFlagsVertical = SizeFlags.ShrinkCenter };
         _threat = Ui.Label("QUIET", Ui.Ink, Ui.Bold, 11);

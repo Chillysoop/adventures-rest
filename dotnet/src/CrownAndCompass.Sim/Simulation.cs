@@ -93,6 +93,7 @@ public sealed class Simulation
     {
         var t = Town;
         Brain.Daily(t);
+        Seasons.Daily(t);
         Economy.Daily(t);
         City.Daily(t, Options.AutoMayor && Options.AutoPlanning);
         Streets.Wear(t);
@@ -202,6 +203,9 @@ public sealed class Simulation
     /// <summary>Set down a decoration anywhere at any angle; a statue honours the given hero or god.</summary>
     public Decoration? Decorate(string decorId, double x, double y, double angle, int? heroId = null, string? deity = null) =>
         Decor.Place(Town, decorId, x, y, angle, heroId, deity);
+
+    /// <summary>Buy grain off the traders for the winter stores (autumn and winter).</summary>
+    public bool LayInStores() => Seasons.LayIn(Town);
 
     /// <summary>Clear a decoration away for half its price back.</summary>
     public bool ClearDecoration(int decorationId) => Decor.Remove(Town, decorationId);

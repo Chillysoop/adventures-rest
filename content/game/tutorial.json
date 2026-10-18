@@ -200,6 +200,15 @@
       "teaches": ["key:Escape", "key:F5", "key:F9"]
     },
     {
+      "id": "seasons",
+      "title": "The turning year",
+      "text": "The clock shows the season. Summer brings visitors and war bands, autumn the harvest, and winter empty fields, snowbound roads and the hungry dead. Autumn's harvest fills the cellars and granaries for the winter: if the [b]Winter stores[/b] in the City window run short, lay in grain from the traders before the snow.",
+      "point": "clock",
+      "when": "day:45",
+      "until": "tab:City",
+      "teaches": ["command:LayInStores"]
+    },
+    {
       "id": "wards",
       "title": "New wards",
       "text": "A new charter lets you lay out a new ward in the [b]City[/b] window. Each ward has its own character: the Market Ward favours shops, the Trades Ward workshops, Castle Hill holds the manors. Land outside the wards you have laid out can't be zoned.",
