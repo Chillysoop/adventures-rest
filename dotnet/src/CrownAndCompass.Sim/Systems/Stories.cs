@@ -297,6 +297,12 @@ public sealed class Story
     /// <summary>The townsperson who brought a petition, and the ward it is about.</summary>
     public int? PetitionerId { get; set; }
     public string? Ward { get; set; }
+
+    /// <summary>The settlement out in the wilds a story is about (its people, a trade route there).</summary>
+    public int? SettlementId { get; set; }
+
+    /// <summary>The fallen hero in the hall of heroes the story is about.</summary>
+    public int? FallenId { get; set; }
     public List<StoryBeat> Beats { get; } = [];
 }
 
@@ -352,7 +358,7 @@ public static class Stories
     /// precedent:id (1 sets it, -1 forgets it) and calling:id (1: the story's hero takes it up, -1: it ends).
     /// </summary>
     public static readonly string[] EffectKeys =
-        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "infamy", "exile"];
+        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "infamy", "exile"];
 
     /// <summary>
     /// Every need a story or option can name; besides these, precedent:id, decree:id, season:id and
@@ -360,7 +366,7 @@ public static class Stories
     /// class in town with no calling yet) and faction:id (binds that faction while it has a chapter).
     /// </summary>
     public static readonly string[] Needs =
-        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "famous", "infamous"];
+        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "settlement", "route", "courted", "veteran", "fallen", "famous", "infamous"];
 
     private static readonly string[] Prefixed = ["precedent:", "decree:", "season:"];
 
@@ -722,6 +728,40 @@ public static class Stories
                 s.Ward = wards.Count == 0 ? null : wards[town.Rng.Range(0, wards.Count)];
                 return s.Ward != null;
             }
+            case "settlement":
+            case "route":
+            case "courted":
+            {
+                bool Fits(Settlement x) => !x.Razed && town.Regions[x.RegionId].Known && need switch
+                {
+                    "route" => Trade.Open(town).Any(r => r.SettlementId == x.Id),
+                    "courted" => !x.Allied && x.Standing >= 25,
+                    _ => x.Standing > -20,
+                };
+                if (s.SettlementId is int sid) return Fits(town.Settlements[sid]);
+                if (!bind) return false;
+                var found = Pick(town.Settlements.Where(Fits).OrderBy(x => x.Id).ToList());
+                s.SettlementId = found?.Id;
+                return found != null;
+            }
+            case "veteran":
+            {
+                if (s.HeroId is int vh) return Hero(town, vh) is { } va && Legacies.Veteran(town, va);
+                if (!bind) return false;
+                var v = Pick(town.Heroes.Where(a => Legacies.Veteran(town, a)).OrderBy(a => a.Id).ToList());
+                s.HeroId = v?.Id;
+                return v != null;
+            }
+            case "fallen":
+            {
+                // A hero fallen lately, with no memorial yet.
+                bool Recent(Legacy l) => !l.Retired && !l.Memorial && town.Day - l.Day <= 30;
+                if (s.FallenId is int fid) return Legacies.Of(town, fid) is { } fl && !fl.Retired && !fl.Memorial;
+                if (!bind) return false;
+                var f = Pick(town.Legacies.Where(Recent).OrderBy(l => l.HeroId).ToList());
+                s.FallenId = f?.HeroId;
+                return f != null;
+            }
             default:
             {
                 if (need.StartsWith("class:", StringComparison.Ordinal))
@@ -976,6 +1016,13 @@ public static class Stories
                     if (n != 0) said.Add($"{(n > 0 ? "+" : "−")}{Math.Abs(n)} {(Math.Abs(n) == 1 ? "settler" : "settlers")}");
                     break;
                 }
+                case "regard":
+                    if (s.SettlementId is int rs && town.Settlements[rs] is { Razed: false } st)
+                    {
+                        World.Shift(town, st, v);
+                        said.Add($"{st.Name}'s regard {(v > 0 ? "+" : "−")}{Js.Str(Math.Abs(v))}");
+                    }
+                    break;
                 case "leaves":
                     // The petitioner, and their household, give up on the town.
                     if (s.PetitionerId is int pid && town.Agent(pid) is { Departed: false } pa)
@@ -983,6 +1030,16 @@ public static class Stories
                         Population.Depart(town, pa);
                         if (pa.SpouseId is int sp && town.Agent(sp) is { Departed: false } spouse) Population.Depart(town, spouse);
                         said.Add($"{pa.GivenName} leaves {town.Name}");
+                    }
+                    break;
+                case "retire":
+                    if (v > 0 && s.HeroId is int th && Hero(town, th) is { } ta) said.Add(Legacies.Retire(town, ta));
+                    break;
+                case "memorial":
+                    if (v > 0 && s.FallenId is int mf && Legacies.Of(town, mf) is { Memorial: false } ml)
+                    {
+                        Legacies.Honor(town, ml);
+                        said.Add($"a memorial to {ml.Name}");
                     }
                     break;
                 case "renown":
@@ -1111,7 +1168,12 @@ public static class Stories
         Put("{petitionerName}", () => s.PetitionerId is int p ? town.Agent(p).GivenName : "the petitioner");
         Put("{trade}", () => s.PetitionerId is int p ? town.Agent(p).Profession.ToLowerInvariant() : "townsman");
         Put("{ward}", () => s.Ward is string w ? City.Ward(town, w).Name : "the old town");
+        Put("{settlement}", () => s.SettlementId is int st ? town.Settlements[st].Name : "a far town");
+        Put("{people}", () => s.SettlementId is int sp ? town.Settlements[sp].People : "the folk of a far town");
         Put("{season}", () => Seasons.Current(town).Name.ToLowerInvariant());
+        Put("{fallen}", () => s.FallenId is int fh ? town.Agent(fh).Name : "a fallen hero");
+        Put("{fallenName}", () => s.FallenId is int fh ? town.Agent(fh).GivenName : "the fallen");
+        Put("{fallenClass}", () => s.FallenId is int fh ? town.Agent(fh).Hero?.Cls.Name.ToLowerInvariant() ?? "hero" : "hero");
         Put("{class}", () => s.HeroId is int h ? town.Agent(h).Hero?.Cls.Name.ToLowerInvariant() ?? "hero" : "hero");
         return Cap(sb.ToString());
     }

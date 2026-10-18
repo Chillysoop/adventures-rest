@@ -3443,6 +3443,546 @@
       }
     },
     {
+      "id": "weighers-dispute",
+      "title": "A quarrel over the scales",
+      "stakes": "low",
+      "source": "road",
+      "needs": [
+        "route"
+      ],
+      "minDay": 30,
+      "perHundred": 0.04,
+      "repeatDays": 90,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The caravan master from {settlement} swears the town's market weighers have been shorting {people} a pound in every ten, and wants it made good before the next caravan loads.",
+          "options": [
+            {
+              "label": "Weigh it out in front of them",
+              "skill": "investigation",
+              "dc": 12,
+              "success": {
+                "text": "You test every weight in the market before both sides. Two are light: you smash them, and the caravan master shakes your hand.",
+                "effects": {
+                  "regard": 5,
+                  "mandate": 1
+                }
+              },
+              "failure": {
+                "text": "The weights look true to you. The caravan master does not believe you.",
+                "effects": {
+                  "regard": -4
+                }
+              }
+            },
+            {
+              "label": "Smooth it over",
+              "skill": "persuasion",
+              "dc": 13,
+              "success": {
+                "text": "A cup of the good wine and a promise of a fair scale. The caravan master leaves mollified.",
+                "effects": {
+                  "regard": 3
+                }
+              },
+              "failure": {
+                "text": "The caravan master takes your charm for an admission.",
+                "effects": {
+                  "regard": -3
+                }
+              }
+            },
+            {
+              "label": "Make it good from the treasury",
+              "cost": 30,
+              "prefer": 0.1,
+              "success": {
+                "text": "Thirty gold for a pound in every ten. The caravan master is satisfied, and the weighers are watched.",
+                "effects": {
+                  "regard": 4
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "Nobody answers the caravan master, who tells {settlement} that {town} cheats.",
+        "effects": {
+          "regard": -6
+        }
+      }
+    },
+    {
+      "id": "smugglers",
+      "title": "Smugglers on the {settlement} road",
+      "stakes": "medium",
+      "source": "road",
+      "needs": [
+        "route"
+      ],
+      "minDay": 60,
+      "minPopulation": 80,
+      "perHundred": 0.03,
+      "repeatDays": 150,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The watch has found barrels on the {settlement} caravan that were never weighed or taxed: smugglers are riding with the town's own drovers.",
+          "options": [
+            {
+              "label": "Catch them in the act",
+              "skill": "investigation",
+              "dc": 14,
+              "success": {
+                "text": "You let the next caravan load, then open every barrel at the gate. Three smugglers, a cart of contraband and a heavy fine.",
+                "effects": {
+                  "gold": 80,
+                  "mandate": 2
+                }
+              },
+              "failure": {
+                "text": "Somebody warns them. The next caravan is spotless, and so is the one after.",
+                "effects": {
+                  "mandate": -1
+                }
+              }
+            },
+            {
+              "label": "Take a cut and say nothing",
+              "skill": "deception",
+              "dc": 12,
+              "success": {
+                "text": "The smugglers pay the town handsomely to look the other way, and nobody asks where the money came from.",
+                "effects": {
+                  "gold": 120,
+                  "mandate": -2
+                }
+              },
+              "failure": {
+                "text": "Word gets out that the mayor takes a cut from smugglers.",
+                "effects": {
+                  "gold": 60,
+                  "mandate": -6
+                }
+              },
+              "fumble": {
+                "text": "{people} find out first, and want nothing to do with a town that runs contraband.",
+                "effects": {
+                  "gold": 60,
+                  "mandate": -4,
+                  "regard": -10
+                }
+              }
+            },
+            {
+              "label": "Warn {people}",
+              "prefer": 0.1,
+              "success": {
+                "text": "You send word down the road, and {people} catch the smugglers at their end. They think the better of {town} for it.",
+                "effects": {
+                  "regard": 6
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The smuggling goes on until {people} catch it themselves, and blame the town.",
+        "effects": {
+          "regard": -5
+        }
+      }
+    },
+    {
+      "id": "embassy",
+      "title": "An envoy house for {people}",
+      "stakes": "medium",
+      "source": "council",
+      "needs": [
+        "settlement"
+      ],
+      "minDay": 50,
+      "minPopulation": 60,
+      "repeatDays": 200,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{people} ask to keep an envoy house in {town}: a roof, a flag over the door and a seat at the market moot. The council fears spies.",
+          "options": [
+            {
+              "label": "Grant it, and furnish it",
+              "cost": 80,
+              "prefer": 0.15,
+              "success": {
+                "text": "The envoy house opens with a feast, and {people} send their best to live in it.",
+                "effects": {
+                  "regard": 12
+                }
+              }
+            },
+            {
+              "label": "Grant it, but watch it",
+              "skill": "insight",
+              "dc": 13,
+              "success": {
+                "text": "You grant the house and keep an eye on its guests. They are what they say, and you make friends of them.",
+                "effects": {
+                  "regard": 8
+                }
+              },
+              "failure": {
+                "text": "Your watchers are clumsy, and the envoy notices.",
+                "effects": {
+                  "regard": 2
+                }
+              }
+            },
+            {
+              "label": "Refuse",
+              "success": {
+                "text": "No envoy house: {people} take the refusal politely, and remember it.",
+                "effects": {
+                  "regard": -5
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The request sits unanswered on the council table until {people} withdraw it.",
+        "effects": {
+          "regard": -4
+        }
+      }
+    },
+    {
+      "id": "marriage-alliance",
+      "title": "A match with {settlement}",
+      "stakes": "high",
+      "source": "council",
+      "needs": [
+        "courted",
+        "seat"
+      ],
+      "minDay": 90,
+      "minPopulation": 100,
+      "weight": 0.8,
+      "repeatDays": 300,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{people} propose a marriage: the heir of their first house and the {seat}'s youngest. It would bind {settlement} to {town} in all but name, and the {seat} is not sure.",
+          "options": [
+            {
+              "label": "Hold a wedding they will sing of",
+              "cost": 250,
+              "prefer": 0.15,
+              "success": {
+                "text": "Three days of feasting, a bridge of flowers and every bell in town, and {settlement} goes home kin.",
+                "effects": {
+                  "regard": 25,
+                  "mandate": 3,
+                  "festival": 2
+                }
+              }
+            },
+            {
+              "label": "Talk the {seat} round to a modest match",
+              "skill": "persuasion",
+              "dc": 15,
+              "success": {
+                "text": "A small wedding and a large dowry: {people} are honoured, and the {seat} is content.",
+                "effects": {
+                  "regard": 15,
+                  "seat": 5,
+                  "gold": -60
+                }
+              },
+              "partial": {
+                "text": "The match goes ahead, but the {seat} sulks through it.",
+                "effects": {
+                  "regard": 12,
+                  "seat": -8,
+                  "gold": -60
+                }
+              },
+              "failure": {
+                "text": "The {seat} refuses outright, and {people} take it as an insult.",
+                "effects": {
+                  "regard": -8,
+                  "seat": -5
+                }
+              }
+            },
+            {
+              "label": "Decline the match",
+              "success": {
+                "text": "You decline with every courtesy, and {people} take it well, outwardly.",
+                "effects": {
+                  "regard": -6
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The proposal is left to gather dust, and {people} find another match.",
+        "effects": {
+          "regard": -8
+        }
+      }
+    },
+    {
+      "id": "summer-fair",
+      "title": "{people} at the summer fair",
+      "stakes": "low",
+      "source": "road",
+      "needs": [
+        "route",
+        "season:summer"
+      ],
+      "repeatDays": 120,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The caravan from {settlement} brings a whole troupe this summer: merchants, players and a dancing bear. They ask for a pitch on the green.",
+          "options": [
+            {
+              "label": "Give them the best pitch",
+              "cost": 40,
+              "prefer": 0.1,
+              "success": {
+                "text": "The green fills with their stalls, and the town spends a happy week buying things it doesn't need.",
+                "effects": {
+                  "regard": 6,
+                  "festival": 1,
+                  "gold": 40
+                }
+              }
+            },
+            {
+              "label": "Charge them a fair pitch fee",
+              "skill": "persuasion",
+              "dc": 11,
+              "success": {
+                "text": "They pay a fair fee and are glad to.",
+                "effects": {
+                  "gold": 50,
+                  "regard": 2
+                }
+              },
+              "failure": {
+                "text": "They think the fee steep and pitch outside the walls instead.",
+                "effects": {
+                  "regard": -2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "Nobody gives them a pitch, so they sell from their carts and leave early.",
+        "effects": {
+          "regard": -2
+        }
+      }
+    },
+    {
+      "id": "old-blade",
+      "title": "{heroName} would hang up the sword",
+      "stakes": "medium",
+      "source": "heroes",
+      "needs": [
+        "veteran"
+      ],
+      "minDay": 120,
+      "repeatDays": 90,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} has come home from more roads than anyone in {town} can count, and asks the mayor for leave to stop. The old {class} would rather teach the young ones at the practice yard than bleed for one more bounty.",
+          "options": [
+            {
+              "label": "Let them retire and teach",
+              "prefer": 0.1,
+              "success": {
+                "text": "{heroName} hangs the sword over the practice yard gate. From now on every new blade in town learns from a master.",
+                "effects": {
+                  "retire": 1,
+                  "mandate": 2
+                }
+              }
+            },
+            {
+              "label": "Ask for one more season",
+              "skill": "persuasion",
+              "dc": 14,
+              "success": {
+                "text": "{heroName} grumbles, laughs and agrees to one more season.",
+                "effects": {
+                  "loyalty": 4
+                }
+              },
+              "failure": {
+                "text": "{heroName} stays, but resents it.",
+                "effects": {
+                  "loyalty": -10
+                }
+              }
+            },
+            {
+              "label": "Pay them to stay on",
+              "cost": 150,
+              "success": {
+                "text": "A fat purse and a new cloak: {heroName} stays, for now.",
+                "effects": {
+                  "loyalty": 8
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "Nobody answers {heroName}, who takes it hard.",
+        "effects": {
+          "loyalty": -8
+        }
+      }
+    },
+    {
+      "id": "hero-funeral",
+      "title": "{fallenName} comes home on a bier",
+      "stakes": "low",
+      "source": "heroes",
+      "needs": [
+        "fallen"
+      ],
+      "repeatDays": 20,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The road brings {fallen} home on a bier, wrapped in a company cloak. The town turns out at the gate, and everyone is watching to see what the mayor will do for the fallen {fallenClass}.",
+          "options": [
+            {
+              "label": "A hero's funeral and a stone",
+              "cost": 120,
+              "prefer": 0.1,
+              "success": {
+                "text": "Drums, torches and a carved stone by the gate. Heroes and townsfolk drink to {fallenName} until dawn.",
+                "effects": {
+                  "memorial": 1,
+                  "mandate": 2
+                }
+              }
+            },
+            {
+              "label": "Speak over the grave yourself",
+              "skill": "performance",
+              "dc": 12,
+              "success": {
+                "text": "The mayor's words carry, and the town remembers {fallenName} well.",
+                "effects": {
+                  "mandate": 3
+                }
+              },
+              "failure": {
+                "text": "The words come out wrong, and the mourners shuffle home.",
+                "effects": {
+                  "mandate": -2
+                }
+              }
+            },
+            {
+              "label": "A plain burial",
+              "success": {
+                "text": "A plain grave in the yard behind the temple. The heroes in the taverns notice how little it took.",
+                "effects": {
+                  "mandate": -2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "{fallenName} is buried without a word from the town hall.",
+        "effects": {
+          "mandate": -3
+        }
+      }
+    },
+    {
+      "id": "fallen-kin",
+      "title": "{fallenName}'s kin at the door",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "fallen"
+      ],
+      "repeatDays": 40,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A widow and two thin children stand at the town hall door: the family {fallen} sent coin home to. With the {fallenClass} dead, the coin has stopped.",
+          "options": [
+            {
+              "label": "Pay them a pension",
+              "cost": 90,
+              "prefer": 0.1,
+              "success": {
+                "text": "A purse each season, in {fallenName}'s name. Word spreads in the taverns that {town} looks after its own.",
+                "effects": {
+                  "mandate": 2,
+                  "tension": -2
+                }
+              }
+            },
+            {
+              "label": "Find them work and a roof",
+              "skill": "persuasion",
+              "dc": 13,
+              "success": {
+                "text": "A guildmaster owes the mayor a favour, and the family settle in town.",
+                "effects": {
+                  "people": 3,
+                  "mandate": 1
+                }
+              },
+              "failure": {
+                "text": "Nobody will take them on, and they go back down the road.",
+                "effects": {
+                  "mandate": -1
+                }
+              }
+            },
+            {
+              "label": "Send them away",
+              "success": {
+                "text": "The family go back down the road, and the heroes in the taverns see them go.",
+                "effects": {
+                  "mandate": -3,
+                  "tension": 2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "Nobody answers, and the family go back down the road.",
+        "effects": {
+          "mandate": -2
+        }
+      }
+    },
+    {
       "id": "hero-ballad",
       "title": "A ballad of {hero}",
       "stakes": "low",

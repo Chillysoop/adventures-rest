@@ -1,0 +1,23 @@
+{
+  "_doc": "Sellswords the town can hire (Systems/Mercenaries.cs). Each company needs the town at its tier, costs a fee to sign and a daily wage, and counts its strength at the walls while it is home (the same units as the War tab's defence). The council can send a company on a campaign against a named menace: it pays a war chest of campaignWages days of wages, marches marchPerDistance days per day of distance (plus one), and fights the menace's power. At stormRatio times its power or better it storms the seat (never the big bad's: only heroes can end that); at better than even it wins in the field, taking hitShare of its strength off the menace's power and clearing a holding; below routBelow it is routed and the menace grows on it. Losses come off its strength, which refills by recover of its full strength a day at home. Below breakAt of full strength it disbands. Every company needs a 'mercenary:<id>' lineage in history.json.",
+  "campaignWages": 12,
+  "marchPerDistance": 1,
+  "hitShare": 0.6,
+  "stormRatio": 2.0,
+  "routBelow": 0.5,
+  "recover": 0.02,
+  "breakAt": 0.25,
+  "routFeeds": 0.2,
+  "companies": [
+    { "id": "wolfsbane", "name": "the Wolfsbane Company", "tier": "hamlet", "strength": 40, "fee": 300, "wage": 8, "people": "sellswords",
+      "blurb": "Veterans of the Red Tide war under a wolf's head on purple flowers. Paid in full or not at all." },
+    { "id": "ashen-banners", "name": "the Ashen Banners", "tier": "village", "strength": 70, "fee": 650, "wage": 14, "people": "pikemen",
+      "blurb": "Old League levies who never went home when the beacons went dark. Grey cloaks, long pikes, and a drillmaster who has outlived three kings." },
+    { "id": "gulls-wake", "name": "the Gull's Wake Free Company", "tier": "town", "strength": 110, "fee": 1300, "wage": 24, "people": "marines",
+      "blurb": "Free Port marines and crossbowmen who sell their swords up the rivers when the sea is slow. Loud, quick, and good at sieges." },
+    { "id": "ironoath", "name": "the Ironoath Hold-Guard", "tier": "large_town", "strength": 170, "fee": 2400, "wage": 40, "people": "dwarves",
+      "blurb": "Dwarven shieldwalls in the Smith-King's old harness. They swear on iron, keep to the letter of the contract, and never break." },
+    { "id": "sunspear", "name": "the Sunspear Riders", "tier": "city", "strength": 260, "fee": 4200, "wage": 66, "people": "riders",
+      "blurb": "Lancers of the oasis cities on desert horses. The dearest swords on the frontier, and the fastest to the fight." }
+  ]
+}

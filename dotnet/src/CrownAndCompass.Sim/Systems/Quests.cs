@@ -176,6 +176,9 @@ public static class Quests
     private static readonly int[] XpLevels =
         [0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000, 85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000];
 
+    /// <summary>XP from the start of a level to the next.</summary>
+    internal static int XpToNext(int level) => level >= XpLevels.Length ? 0 : XpLevels[level] - XpLevels[level - 1];
+
     private static readonly string[] PartyAdjectives = ["Ashen", "Iron", "Crimson", "Silver", "Gallows", "Lucky", "Broken", "Midnight", "Copper", "Wandering"];
     private static readonly string[] PartyNouns = ["Blades", "Lanterns", "Owls", "Shields", "Hounds", "Crows", "Compasses", "Wolves", "Pilgrims", "Daggers"];
 
@@ -221,7 +224,7 @@ public static class Quests
     }
 
     /// <summary>Hand an unearned reward back to whoever put it up.</summary>
-    private static void Refund(Town town, Bounty b)
+    public static void Refund(Town town, Bounty b)
     {
         if (b.FunderId != null) town.Building(b.FunderId.Value).Cash += b.Reward;
         else town.Book(TreasuryAccount.Bounties, b.Reward);
@@ -246,6 +249,8 @@ public static class Quests
             MaxHp = 1,
             Hp = 1,
         };
+        // Masters of arms who retired here train the newcomers.
+        sheet.Xp += Legacies.MentorXp(town, level);
         sheet.MaxHp = Expedition.HeroMaxHp(sheet, a.Abilities.Con);
         sheet.Hp = sheet.MaxHp;
         Gear.Equip(town.Content.Library, sheet);
@@ -255,7 +260,7 @@ public static class Quests
         return a;
     }
 
-    private static ClassDef PickClass(Town town)
+    internal static ClassDef PickClass(Town town)
     {
         var classes = town.Content.Classes;
         int total = classes.Sum(c => c.Weight);
@@ -307,9 +312,10 @@ public static class Quests
         {
             var s = a.Hero!;
             if (s.AwayUntil != null) continue;
-            // A bed above the tavern.
-            s.Lodging = taverns.Count > 0 && a.Gold >= Lodging;
-            if (s.Lodging)
+            // A bed at the company's bastion, or above the tavern.
+            bool home = Bastions.Lodges(town, a);
+            s.Lodging = home || (taverns.Count > 0 && a.Gold >= Lodging);
+            if (s.Lodging && !home)
             {
                 var t = taverns[a.Id % taverns.Count];
                 a.Gold -= Lodging;
@@ -617,7 +623,7 @@ public static class Quests
         }
     }
 
-    private static void GainXp(Town town, Agent a, int xp)
+    internal static void GainXp(Town town, Agent a, int xp)
     {
         var s = a.Hero!;
         s.Xp += xp;

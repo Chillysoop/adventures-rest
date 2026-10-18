@@ -11,8 +11,9 @@ namespace CrownAndCompass.Client;
 /// </summary>
 public partial class Main : Control
 {
-    /// <summary>In-game hours per real second for each speed button; index 0 is paused.</summary>
-    private static readonly int[] Speeds = [0, 1, 4, 12, 36];
+    /// <summary>In-game hours per real second for each speed button; index 0 is paused. At normal speed a day and
+    /// night last a minute (1×, 4×, 12× and 36× of that).</summary>
+    private static readonly double[] Speeds = [0, 0.4, 1.6, 4.8, 14.4];
     private const int LedgerLimit = 250;
 
     private enum Tab
@@ -23,6 +24,7 @@ public partial class Main : Control
         Council,
         Bounties,
         Companies,
+        Diplomacy,
         Faith,
         Campaign,
         Chronicles,
@@ -352,7 +354,8 @@ public partial class Main : Control
         if (steps == 8) _acc = 0;
         if (steps > 0 && _opts.Screenshot == null && !_opts.Bench && !_opts.Smoke) Autosave();
         _map.HourFraction = (float)_acc;
-        _map.TimeScale = Speeds[_speed];
+        // Townsfolk walk at the pace of the speed button, not of the hours: a slower day doesn't slow their stride.
+        _map.TimeScale = (float)(Speeds[_speed] / Speeds[1]);
 
         AgeFeed(delta);
         SyncAlerts(delta);
@@ -378,6 +381,7 @@ public partial class Main : Control
                     case Tab.Campaign: RenderCampaign(); break;
                     case Tab.Chronicles: RenderChronicles(); break;
                     case Tab.Mayor: RenderMayor(); break;
+                    case Tab.Diplomacy: RenderDiplomacy(); break;
                 }
             if (_inspector.Visible) RenderInspect();
             RenderBuild();

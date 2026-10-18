@@ -34,8 +34,8 @@ public sealed record InfamyDeeds
 /// <summary>Heroes who make trouble in town, and the watch that catches them.</summary>
 public sealed record CrimeRules
 {
-    /// <summary>Daily chance any hero in town makes trouble, and what a hot temper and greed add.</summary>
-    public double Chance { get; init; } = 0.0005;
+    /// <summary>Daily chance a hero with a bad name makes trouble, and what a hot temper and greed add (others never do).</summary>
+    public double Chance { get; init; } = 0.002;
     public double HotTempered { get; init; } = 0.004;
     public double Greedy { get; init; } = 0.003;
 
@@ -295,9 +295,10 @@ public static class Notoriety
         {
             var s = a.Hero!;
             if (s.AwayUntil != null) continue;
-            double brawl = c.Chance + (a.Has(Trait.HotTempered) ? c.HotTempered : 0);
+            double brawl = (InfamyTier(town, s) > 0 ? c.Chance : 0) + (a.Has(Trait.HotTempered) ? c.HotTempered : 0);
             double theft = a.Has(Trait.Greedy) ? c.Greedy : 0;
             double scale = (1 + c.PerInfamyTier * InfamyTier(town, s)) * (s.Loyalty < lr.Restless ? c.Restless : 1);
+            if ((theft + brawl) * scale <= 0) continue;
             double roll = town.Rng.Next();
             if (roll < theft * scale) Theft(town, a);
             else if (roll < (theft + brawl) * scale) Brawl(town, a);

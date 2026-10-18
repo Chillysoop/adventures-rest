@@ -45,7 +45,7 @@
   "fall": 0.5,
   "decayDays": 30,
   "crime": {
-    "chance": 0.0005,
+    "chance": 0.002,
     "hotTempered": 0.01,
     "greedy": 0.006,
     "perInfamyTier": 0.5,
