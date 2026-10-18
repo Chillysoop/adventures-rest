@@ -400,6 +400,8 @@ public partial class WorldView : Node3D
             var mine = list.Where(t => t.Kind == kind).ToList();
             if (mine.Count == 0) continue;
             var buf = Instances(mine, kind);
+            // Pines and firs are evergreen: half alpha tells the foliage shader to keep them green through autumn and winter.
+            if (kind < 2) for (int i = 15; i < buf.Length; i += 16) buf[i] = 0.5f;
             TreeInstances += mine.Count;
             for (int lod = 0; lod < 2; lod++)
             {

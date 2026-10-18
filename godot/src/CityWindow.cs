@@ -20,6 +20,7 @@ public partial class Main
         p.Begin();
         p.Card($"[font_size=17][b]{Ui.Esc(tier.Name)}[/b][/font_size]  {Tag($"about {City.Souls(t):N0} souls")}  {Tag($"{t.Population} households")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(tier.Blurb)}[/font_size]")}");
 
+        RenderSeason(p, t);
         RenderSettlers(t, p);
 
         var next = City.NextTier(t);
@@ -104,6 +105,43 @@ public partial class Main
             p.Note("How much of what the houses want to buy the market could sell them yesterday. Workshops open where these run short.");
         }
         p.Commit();
+    }
+
+    /// <summary>The season: what it does to the town, the winter stores, and the visitors it brings.</summary>
+    private void RenderSeason(Pane p, Town t)
+    {
+        var s = Seasons.Current(t);
+        var st = t.Seasons;
+        string festival = Seasons.Festival(t) && s.Festival != null ? "  " + Tag(Ui.Cap(s.Festival.Name), Ui.Good) : "";
+        p.Heading($"{s.Name}, year {Seasons.Year(t)}");
+        p.Text($"{Tag($"day {Seasons.DayOf(t)} of {Seasons.Rules(t).Days}")}{festival}  {Ui.C(Ui.Ink2, $"[font_size=12]{Seasons.Next(t).Name} in {Ui.Days(Seasons.DaysLeft(t))}[/font_size]")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(s.Blurb)}[/font_size]")}", 13);
+        var effects = new List<string>();
+        double food = s.YieldOf(Good.Food);
+        if (Math.Abs(food - 1) > 0.05) effects.Add($"fields yield {Math.Round(food * 100)}%");
+        foreach (var (g, y) in s.Yields)
+            if (g != Good.Food && Math.Abs(y - 1) > 0.15) effects.Add($"{g.ToString().ToLowerInvariant()} {Math.Round(y * 100)}%");
+        if (Math.Abs(s.Build - 1) > 0.05) effects.Add($"building {Math.Round(s.Build * 100)}% as fast");
+        if (s.Mood != 0) effects.Add($"mood {(s.Mood > 0 ? "+" : "")}{s.Mood}");
+        effects.Add($"caravans charge {s.ImportPremium:0.#}× for what the town lacks");
+        if (s.MarchDays > 0) effects.Add($"armies march {Ui.Days(s.MarchDays)} slower");
+        var busy = s.Menace.Where(kv => kv.Value >= 1.25).Select(kv => kv.Key).ToList();
+        var quiet = s.Menace.Where(kv => kv.Value <= 0.7).Select(kv => kv.Key).ToList();
+        if (s.Warband >= 1.25) busy.Insert(0, "the warband");
+        if (s.Warband <= 0.7) quiet.Insert(0, "the warband");
+        if (busy.Count > 0) effects.Add($"{Expedition.ListNames(busy)} on the move");
+        if (quiet.Count > 0) effects.Add($"{Expedition.ListNames(quiet)} lie low");
+        p.Note(Ui.Cap(string.Join(" · ", effects)) + ".");
+
+        double cap = Seasons.Stores(t);
+        double full = Seasons.StoresFull(t);
+        bool holding = s.Hold;
+        p.Meter("Winter stores", Math.Min(1, full) * 100, $"{Math.Round(Math.Min(t.Market.Stock(Good.Food), cap)):N0} / {cap:N0}", holding && full < 0.5);
+        var (more, cost) = Seasons.LayInQuote(t);
+        string why = !holding ? "Stores are laid in from autumn, when the harvest comes in and the cellars hold it back from the barges."
+            : more <= 0 ? "The cellars and granaries are full." : $"Buy {more:N0} loads of grain off the traders for the winter.";
+        if (holding && more > 0) p.Row(Ui.C(Ui.Ink2, $"[font_size=12]{why}[/font_size]"), ($"Lay in stores · {cost:N0}g", t.Treasury >= cost, true, () => { _sim.LayInStores(); _dirty = true; }));
+        else p.Note(why + " Granaries hold more.");
+        p.Text($"{Tag($"{st.Tourists} visitors")}  {Ui.C(Ui.Ink2, $"[font_size=12]spent {st.TouristGold:N0}g yesterday and {st.SeasonGold:N0}g this season at the taverns and shops[/font_size]")}", 13);
     }
 
     /// <summary>Why settlers come or stay away: each reason with its sign, as the arrivals roll counts it.</summary>

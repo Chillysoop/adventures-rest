@@ -1,0 +1,69 @@
+{
+  "_doc": "The turning year: four seasons of 'days' days each. Yields multiply what each good's makers produce; menace multiplies how fast each kind of menace grows and how often it strikes; marchDays adds to every army's march. Tourists come by the soul and spend at taverns and shops; traders set the caravans' import premium (times base price) and the export floor. Stores: in autumn the town's cellars and granaries hold food back from the export barges (holdPerHousehold, plus each granary's foodStore times granaryHold), and the council can lay in more at the traders' price.",
+  "days": 30,
+  "startSeason": 0,
+  "startDay": 10,
+  "turnBlend": 4,
+  "seasons": [
+    {
+      "id": "spring", "name": "Spring",
+      "blurb": "The thaw. Lambs and shearing, fields sown, roads deep in mud. Caravans return with goods the winter ran short of.",
+      "turn": "Spring comes to {town}. The snow melts off the fields, the river runs high and the first caravans of the year rattle in.",
+      "mood": 2, "build": 0.95, "arrivals": 0.15,
+      "yields": { "Food": 0.8, "Wool": 1.5, "Herbs": 1.0, "Wine": 0.7, "Timber": 1.0 },
+      "menace": { "tribe": 1.0, "undead": 0.8, "schemers": 1.0, "beasts": 1.1, "rivals": 1.0, "cult": 1.0 },
+      "warband": 1.0, "marchDays": 1,
+      "tourists": 0.8, "importPremium": 2.6, "exportShare": 1.0, "fair": true,
+      "festival": { "name": "the Greening Fair", "days": 3, "mood": 6, "tourists": 2.0, "text": "{town} holds {festival}: ribbons on the well, a market of a hundred stalls, and dancing on the green." }
+    },
+    {
+      "id": "summer", "name": "Summer",
+      "blurb": "Long days and dry roads. Travellers and pilgrims crowd the inns, and every warlord in the wilds takes to the field.",
+      "turn": "Summer settles over {town}. The roads are dry and busy, and the long days are good for travel and for war.",
+      "mood": 3, "build": 1.1, "arrivals": 0.2,
+      "yields": { "Food": 1.15, "Wool": 1.0, "Herbs": 1.4, "Wine": 1.0, "Timber": 1.1 },
+      "menace": { "tribe": 1.4, "undead": 0.6, "schemers": 1.1, "beasts": 1.0, "rivals": 1.3, "cult": 0.9 },
+      "warband": 1.35, "marchDays": 0,
+      "tourists": 1.6, "importPremium": 2.4, "exportShare": 1.0, "fair": false,
+      "festival": { "name": "Midsummer", "days": 2, "mood": 6, "tourists": 2.0, "text": "{town} keeps {festival}: bonfires on the hill, players in the square and visitors in every inn." }
+    },
+    {
+      "id": "autumn", "name": "Autumn",
+      "blurb": "The harvest and the vintage. Prices fall, cellars and granaries fill for the winter, and the dead stir as the nights draw in.",
+      "turn": "Autumn turns the woods round {town} gold. The harvest comes in, and wise households fill their cellars before the snow.",
+      "mood": 1, "build": 1.0, "arrivals": 0,
+      "yields": { "Food": 1.45, "Wool": 0.9, "Herbs": 1.0, "Wine": 1.8, "Timber": 1.0 },
+      "menace": { "tribe": 1.1, "undead": 1.3, "schemers": 1.0, "beasts": 1.0, "rivals": 1.1, "cult": 1.3 },
+      "warband": 1.1, "marchDays": 0,
+      "tourists": 1.0, "importPremium": 2.8, "exportShare": 1.05, "fair": true, "hold": true,
+      "festival": { "name": "Harvest Home", "days": 3, "mood": 7, "tourists": 1.6, "text": "{town} brings in the last cart of the harvest and keeps {festival}: new ale, long tables and the year's thanks to the gods." }
+    },
+    {
+      "id": "winter", "name": "Winter",
+      "blurb": "Snow on the roads and little in the fields. The town eats what it stored. Hungry beasts and the dead walk, but the warbands keep to their fires.",
+      "turn": "Winter closes on {town}. Snow lies on the roads, the barges stop, and the town lives on what it put by.",
+      "mood": -4, "build": 0.7, "arrivals": -0.2,
+      "yields": { "Food": 0.4, "Wool": 0.6, "Herbs": 0.3, "Wine": 0.5, "Timber": 0.85 },
+      "menace": { "tribe": 0.55, "undead": 1.6, "schemers": 1.0, "beasts": 1.35, "rivals": 0.6, "cult": 1.2 },
+      "warband": 0.55, "marchDays": 3,
+      "tourists": 0.35, "importPremium": 3.6, "exportShare": 0.9, "fair": false, "hold": true,
+      "festival": { "name": "Midwinter", "days": 2, "mood": 8, "tourists": 1.2, "text": "{town} keeps {festival} through the longest night: lanterns in every window and a feast against the dark." }
+    }
+  ],
+  "tourists": {
+    "perSoul": 0.006,
+    "spend": 2.5,
+    "tavernShare": 0.5,
+    "tierBonus": 0.15,
+    "appeal": 0.25
+  },
+  "stores": {
+    "holdPerHousehold": 6,
+    "granaryHold": 1.0,
+    "layInPremium": 1.25,
+    "layInShare": 0.5
+  },
+  "fair": {
+    "fillTo": 0.6
+  }
+}
