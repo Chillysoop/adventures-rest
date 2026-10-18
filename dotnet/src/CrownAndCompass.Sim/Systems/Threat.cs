@@ -421,6 +421,12 @@ public static class Threat
             lines.Add($"The walls hold, but no hero is in town to face {e.Leader}.");
         }
 
+        if (slain && Menaces.WarbandEscapes(town))
+        {
+            // Crowned big bad, the warlord is not finished in one blow: his guard drags him off the field.
+            lines.Add($"{e.Leader} goes down in the breach, but his honour guard drags him off the field alive.");
+            slain = false;
+        }
         if (slain)
         {
             lines.Add($"{e.Leader} is dead. The warband breaks and scatters into the hills.");

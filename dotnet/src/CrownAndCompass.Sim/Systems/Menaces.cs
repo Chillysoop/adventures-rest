@@ -544,7 +544,32 @@ public static class Menaces
         if (!m.BigBad) m.Stage = StageFor(town, m);
         // Under the yoke, the warlord waits in his camp: burning it is how the town gets at him.
         if ((town.Saga.YokeId == m.Id || m.BigBad) && Quests.Site(town, m.SeatId) is SiteState camp && camp.Cleared && camp.Def.Boss.Monster == town.Content.Enemy.WarlordBattle.Monster)
-            Threat.WarlordFalls(town, camp);
+        {
+            if (WarbandEscapes(town))
+                town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, town.Content.Saga.Finale.Regroup, m).Replace("{fled}", camp.Def.Name)));
+            else Threat.WarlordFalls(town, camp);
+        }
+    }
+
+    /// <summary>
+    /// The warband crowned big bad and beaten, its camp burned or its warlord cut down at the walls, gets away
+    /// like any big bad while it has escapes left or the Long Night is young: weaker, regrouping at its camp.
+    /// </summary>
+    public static bool WarbandEscapes(Town town)
+    {
+        var m = Alive(town).FirstOrDefault(x => x.Origin == FromWarband && x.BigBad);
+        if (m == null || !MayEscape(town)) return false;
+        var f = town.Content.Saga.Finale;
+        town.Saga.BigBadEscapes++;
+        town.Enemy.Strength *= f.EscapeLoss;
+        m.Power = town.Enemy.Strength;
+        if (Quests.Site(town, m.SeatId) is SiteState camp && camp.Cleared)
+        {
+            camp.Cleared = false;
+            camp.ThoughtCleared = false;
+            camp.QuietUntil = town.Tick + f.RegroupDays * SimTime.HoursPerDay;
+        }
+        return true;
     }
 
     /// <summary>After the Last Stand, a captain keeps a band of the warband together at a lair near town.</summary>
@@ -661,6 +686,8 @@ public static class Menaces
             m.Level = level;
             Empower(town, m, seat, level);
             if (m.Named) Spread(town, m, seat, 50);
+            // Nobody heard: what the last report said of the place is out of date.
+            else if (seat.Known == SiteKnowledge.Confirmed) seat.Trust = Math.Min(seat.Trust, 60);
         }
         m.Stage = StageFor(town, m);
         Domain(town, m, seat, cu);
@@ -1214,6 +1241,7 @@ public static class Menaces
         m.SeenAttempts = refuge.Attempts;
         m.Power *= f.EscapeLoss;
         Empower(town, m, refuge, m.Level);
+        Spread(town, m, refuge, 50);
         string text = refuge == seat ? f.Regroup : f.Escape;
         town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, text, m).Replace("{fled}", fled).Replace("{refuge}", refuge.Def.Name)));
         return true;
