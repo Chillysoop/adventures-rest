@@ -323,6 +323,15 @@
       "teaches": []
     },
     {
+      "id": "crops",
+      "title": "Sow your fields",
+      "text": "Farmland is sown one crop at a time. The build bar has a brush for each: [b]Wheat[/b] for bread, [b]Root crops[/b] that keep the town fed through winter, [b]Barley & hops[/b] brewed into ale on the farm, [b]Orchards[/b] that bear fruit and cider at harvest, and [b]Pasture[/b], [b]Herb beds[/b] and [b]Vineyards[/b] as the charters open them. Only that crop's farm goes up in a field, and painting over open fields resows them. Each button says whether the town wants more of that farm.",
+      "point": "buildbar",
+      "when": "day:20",
+      "until": "sown",
+      "teaches": []
+    },
+    {
       "id": "grand-works",
       "title": "Grand works",
       "text": "A rich town can raise grand works: a clock tower, an aqueduct, a great gatehouse, a mage tower, royal gardens and in time a colossus, unlocked charter by charter. Begin one under [b]Grand works[/b] in the [b]City[/b] window and set it down like any government building. It rises over seasons, drawing gold and goods for each stage as the last is done, and helps the whole town for good once it stands.",

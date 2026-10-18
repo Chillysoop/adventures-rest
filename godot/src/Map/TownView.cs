@@ -206,6 +206,9 @@ public partial class TownView(MapView map) : Node3D
             case "tavern": Tavern(kit, v); break;
             case "town_hall": Hall(kit, v); break;
             case "farm": Farm(kit, v); break;
+            case "root_farm": RootFarm(kit, v); break;
+            case "hop_yard": HopYard(kit, v); break;
+            case "orchard": Orchard(kit, v); break;
             case "lumber_camp": Lumber(kit, v); break;
             case "forge": Forge(kit, v); break;
             case "brewery": Brewery(kit, v); break;
@@ -458,6 +461,78 @@ public partial class TownView(MapView map) : Node3D
         k.Pop();
         k.Pop();
         for (int i = 0; i < 4; i++) k.Add("nature/fence_simple", MeshKit.At(0, 0, 0, i * Mathf.Pi / 2, 1));
+    }
+
+    private static void RootFarm(MeshKit k, int v)
+    {
+        // Ridged rows of turnips and onions, a pumpkin patch and a low clamp barn.
+        k.Box(new Vector3(0, 0.005f, 0), new Vector3(0.96f, 0.02f, 0.96f), new Color("6a4a2c"));
+        for (int r = 0; r < 4; r++) k.Add("nature/crops_dirtDoubleRow", MeshKit.At(-0.36f + r * 0.2f, 0, -0.08f, 0, 0.5f));
+        var leaf = new Color("5f8a34");
+        for (int r = 0; r < 4; r++)
+            for (int i = 0; i < 5; i++)
+                k.Blob(new Vector3(-0.36f + r * 0.2f + (i % 2 == 0 ? -0.03f : 0.03f), 0.04f, -0.42f + i * 0.17f), new Vector3(0.035f, 0.03f, 0.035f), leaf.Darkened(Geo.Hash(v * 13 + r * 5 + i) * 0.2f), 0.3f, r * 5 + i + v);
+        k.Add("nature/crop_pumpkin", MeshKit.At(0.36f, 0, 0.36f, v, 0.45f));
+        k.Add("nature/crop_pumpkin", MeshKit.At(0.24f, 0, 0.4f, v + 2, 0.38f));
+        k.Push(MeshKit.At(0.32f, 0, -0.2f, Mathf.Pi / 2, K * 0.62f));
+        Walls(k, 2, 1, 0, false, v + 43, true);
+        k.Push(MeshKit.At(0, 1, 0));
+        k.Gable(0, 2, 1, 0.7f, new Color("6a5a3a"), new Color("7a5232"), 0.1f);
+        k.Pop();
+        k.Pop();
+        for (int i = 0; i < 4; i++) k.Add("nature/fence_simple", MeshKit.At(0, 0, 0, i * Mathf.Pi / 2, 1));
+    }
+
+    private static void HopYard(MeshKit k, int v)
+    {
+        // Tall hop poles strung with bines over a strip of barley, and an oast house with its cowled kiln.
+        k.Box(new Vector3(0, 0.005f, 0), new Vector3(0.96f, 0.02f, 0.96f), new Color("8a7040"));
+        for (int r = 0; r < 2; r++)
+            for (int c = 0; c < 2; c++)
+                k.Add("nature/crops_wheatStageB", MeshKit.At(-0.32f + c * 0.26f, 0, 0.18f + r * 0.24f, 0, 0.45f));
+        var bine = new Color("5a8a2e");
+        for (int r = 0; r < 3; r++)
+        {
+            float x = -0.38f + r * 0.18f;
+            k.Box(new Vector3(x, 0.36f, -0.2f), new Vector3(0.006f, 0.006f, 0.42f), new Color("8a8478"));
+            for (int i = 0; i < 3; i++)
+            {
+                float z = -0.4f + i * 0.2f;
+                k.Box(new Vector3(x, 0, z), new Vector3(0.014f, 0.38f, 0.014f), Palette.Timber);
+                k.Blob(new Vector3(x, 0.22f, z), new Vector3(0.035f, 0.13f, 0.035f), bine.Darkened(Geo.Hash(v * 7 + r * 3 + i) * 0.2f), 0.3f, r * 3 + i + v, bine.Darkened(0.3f));
+            }
+        }
+        k.Push(MeshKit.At(0.3f, 0, -0.18f, 0, K * 0.6f));
+        Walls(k, 1, 2, 0, false, v + 47, true);
+        k.Push(MeshKit.At(0, 1, 0));
+        k.Gable(0, 1, 2, 0.7f, new Color("8a4a2e"), Palette.Plaster, 0.1f);
+        k.Pop();
+        k.Pop();
+        // The oast's round kiln with its white cowl.
+        k.Frustum(new Vector3(0.3f, 0, 0.22f), 0.11f, 0.11f, 0.32f, 10, new Color("9a5a3a"), new Color("8a4a2e"));
+        k.Frustum(new Vector3(0.3f, 0.32f, 0.22f), 0.11f, 0.02f, 0.16f, 10, new Color("f2eee2"), new Color("d8d2c2"));
+    }
+
+    private static void Orchard(MeshKit k, int v)
+    {
+        // Rows of fruit trees on grass, a few apples in the boughs, and a cider shed with its barrels.
+        k.Box(new Vector3(0, 0.004f, 0), new Vector3(0.98f, 0.016f, 0.98f), new Color("6f8a42"));
+        var fruit = v % 2 == 0 ? new Color("c83a2a") : new Color("d8c040");
+        for (int r = 0; r < 3; r++)
+            for (int c = 0; c < 3; c++)
+            {
+                if (r == 0 && c == 2) continue;
+                float x = -0.34f + c * 0.3f + (r % 2) * 0.08f, z = -0.34f + r * 0.3f;
+                k.Add(Geo.Hash(v * 11 + r * 3 + c) < 0.5f ? "nature/tree_oak" : "nature/tree_fat", MeshKit.At(x, 0, z, Geo.Hash(v + r * 3 + c) * Mathf.Tau, 0.3f), WorldView.Foliage);
+                k.Blob(new Vector3(x + 0.04f, 0.16f, z + 0.05f), new Vector3(0.02f, 0.02f, 0.02f), fruit);
+            }
+        k.Push(MeshKit.At(0.34f, 0, -0.3f, 0, K * 0.5f));
+        Walls(k, 1, 1, 0, false, v + 49, true);
+        k.Push(MeshKit.At(0, 1, 0));
+        k.Gable(0, 1, 1, 0.6f, new Color("7a5a3a"), Palette.Timber, 0.12f);
+        k.Pop();
+        k.Pop();
+        for (int i = 0; i < 2; i++) k.Frustum(new Vector3(0.2f + i * 0.09f, 0, -0.42f), 0.04f, 0.045f, 0.09f, 8, new Color("8a5a2b"), new Color("6a4422"));
     }
 
     private static void Lumber(MeshKit k, int v)
@@ -1624,7 +1699,7 @@ public partial class TownView(MapView map) : Node3D
     private void Zones(Town town)
     {
         var plan = town.Plan;
-        int version = $"{town.Lots.Count}|{plan.Streets.Count}|{plan.Zones.Aggregate(17, (h, z) => h * 31 + z)}|{plan.Density.Aggregate(17, (h, z) => h * 31 + z)}".GetHashCode();
+        int version = $"{town.Lots.Count}|{plan.Streets.Count}|{plan.Zones.Aggregate(17, (h, z) => h * 31 + z)}|{plan.Density.Aggregate(17, (h, z) => h * 31 + z)}|{plan.Crops.Aggregate(17, (h, z) => h * 31 + z)}".GetHashCode();
         if (version == _zoneVersion) return;
         _zoneVersion = version;
         int n = Land.Size * ZoneUp;
@@ -1635,7 +1710,8 @@ public partial class TownView(MapView map) : Node3D
                 int i = y / ZoneUp * Land.Size + x / ZoneUp, o = (y * n + x) * 4;
                 var z = (Zone)plan.Zones[i];
                 bool show = z is not (Zone.None or Zone.Civic) && plan.Taken[i] == 0 && plan.Paved[i] == 0;
-                var c = show ? Planner.ZoneColor(z, plan.Density[i]) : new Color(0, 0, 0, 0);
+                // Fields show their crop.
+                var c = !show ? new Color(0, 0, 0, 0) : z == Zone.Farmland ? Planner.CropColor(Farming.Crop(town, plan.Crops[i])) : Planner.ZoneColor(z, plan.Density[i]);
                 _zoneBuf[o] = c.R * c.A;
                 _zoneBuf[o + 1] = c.G * c.A;
                 _zoneBuf[o + 2] = c.B * c.A;
