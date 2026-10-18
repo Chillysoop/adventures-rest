@@ -377,7 +377,7 @@ public static class Stories
     /// precedent:id (1 sets it, -1 forgets it) and calling:id (1: the story's hero takes it up, -1: it ends).
     /// </summary>
     public static readonly string[] EffectKeys =
-        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "esteem", "heroXp", "personal", "dismiss", "edge", "swell", "partyHurt", "rest", "slots", "loot", "partyLoyalty", "turnBack", "fine", "jail"];
+        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "esteem", "heroXp", "personal", "dismiss", "edge", "swell", "partyHurt", "rest", "slots", "loot", "partyLoyalty", "turnBack", "fine", "jail", "taint"];
 
     /// <summary>
     /// Every need a story or option can name; besides these, precedent:id, decree:id, season:id and
@@ -1169,6 +1169,13 @@ public static class Stories
                         fa.Gold -= paid;
                         town.Book(TreasuryAccount.Fines, paid);
                         said.Add($"{fa.GivenName} pays a fine of {Js.Str(paid)} gold");
+                    }
+                    break;
+                case "taint":
+                    if (s.HeroId is int tnh && Hero(town, tnh) is { } tna && v > 0)
+                    {
+                        tna.Hero!.Taint += (int)v;
+                        said.Add($"{tna.GivenName} carries a dark gift");
                     }
                     break;
                 case "jail":

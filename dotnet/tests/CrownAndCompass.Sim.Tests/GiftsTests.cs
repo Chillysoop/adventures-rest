@@ -26,4 +26,29 @@ public class GiftsTests
         Stories.Resolve(t, due!.Id, buy);
         Assert.False(t.Stories.Precedents.ContainsKey("signed-clause"));
     }
+
+    [Fact]
+    public void ADarkGiftMakesAHeroStrongerAndLikelierToFall()
+    {
+        var sim = new Simulation(new SimulationOptions { Seed = 2, AutoStories = false });
+        var t = sim.Town;
+        sim.RunDays(80);
+        Story? gift = null;
+        for (int d = 0; d < 400 && (gift = Stories.Open(t, "dark-gift")) == null; d++) sim.RunDays(1);
+        Assert.NotNull(gift);
+        var hero = t.Agent(gift!.HeroId!.Value);
+        int level = hero.Hero!.Level, xp = hero.Hero.Xp;
+        int take = Stories.StageOf(t, gift).Options.FindIndex(o => o.Success.Effects.ContainsKey("taint") && o.Skill == "");
+        Stories.Resolve(t, gift.Id, take);
+        Assert.Equal(1, hero.Hero.Taint);
+        Assert.True(hero.Hero.Level > level || hero.Hero.Xp > xp);
+
+        var again = Stories.Open(t, "dark-gift");
+        if (again != null)
+        {
+            int forbid = Stories.StageOf(t, again).Options.FindIndex(o => o.Success.Effects.ContainsKey("precedent:gifts-forbidden"));
+            Stories.Resolve(t, again.Id, forbid);
+            Assert.Null(Stories.Open(t, "dark-gift"));
+        }
+    }
 }

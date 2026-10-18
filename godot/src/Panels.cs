@@ -575,6 +575,8 @@ public partial class Main
         p.Text($"{Tag($"Loyalty {loyalty}", color)} {Ui.C(color, mood)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(string.Join(" · ", why))}[/font_size]")}", 13);
         if (hs.JailedUntil is int jail)
             p.Text(Ui.C(Ui.Bad, $"In the town cells until day {jail / SimTime.HoursPerDay + 1}. They take no bounties until then."), 13);
+        if (hs.Taint > 0)
+            p.Text(Ui.C(Ui.Bad, hs.Taint == 1 ? "Took a gift from the dark. Their shadow is slow to follow them." : $"Took {hs.Taint} gifts from the dark. They are not sleeping well."), 13);
         if (Regard.TemperOf(t, a) is TemperDef temper)
         {
             // What they make of the mayor, and the choice that moved them last.

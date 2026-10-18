@@ -179,6 +179,9 @@ public sealed class HeroSheet
 
     /// <summary>The tick they walk out of the town cells, while the mayor has them locked up.</summary>
     public int? JailedUntil { get; set; }
+
+    /// <summary>Dark gifts taken: each one makes the hero likelier to fall (<see cref="Systems.Turning"/>).</summary>
+    public int Taint { get; set; }
 }
 
 /// <summary>

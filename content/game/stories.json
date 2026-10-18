@@ -4319,6 +4319,37 @@
       "ignored": { "text": "The shrine's oldest stone is gone in the morning, and moss grows in the hollow.", "effects": { "favour": -4, "precedent:crone-apples": -1 } }
     },
     {
+      "id": "dark-gift", "title": "A gift for {hero}", "stakes": "high", "source": "war",
+      "needs": ["hero", "menace", "!precedent:gifts-forbidden"], "minDay": 80, "repeatDays": 90,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} comes to you pale. Something speaking for {menace} came to them in a dream and offered strength: a hero's year of hard-won skill, tonight, for nothing. {heroName} wants to know what the mayor thinks before they say yes.",
+          "options": [
+            {
+              "label": "Let them take it", "tags": ["valor", "coin"],
+              "success": { "text": "{heroName} wakes stronger than they have ever been. Their shadow seems a little slow to follow them.", "effects": { "heroXp": 1, "taint": 1, "esteem": 6 } }
+            },
+            {
+              "label": "Forbid it, for every hero in town", "tags": ["order", "faith"],
+              "success": { "text": "You forbid any hero of {town} to take a gift from the dark. {heroName} is relieved; a few others grumble about the edge they lose.", "effects": { "esteem": 4, "precedent:gifts-forbidden": 1 } }
+            },
+            {
+              "label": "Leave it to their conscience", "tags": ["freedom"], "skill": "insight", "dc": 13,
+              "success": { "text": "You ask the right questions, and {heroName} answers them for themselves. They refuse it.", "effects": { "esteem": 8, "dread": -1 } },
+              "failure": { "text": "{heroName} hears permission in your silence, and takes it.", "effects": { "heroXp": 1, "taint": 1 } }
+            },
+            {
+              "label": "Have the priests drive the dream off", "tags": ["faith", "caution"], "skill": "religion", "dc": 14,
+              "success": { "text": "Three nights of prayer, and the voice is gone. {menace} has one less way into the town.", "effects": { "favour": 2, "foePower": -0.03 } },
+              "failure": { "text": "The prayers don't hold. {heroName} takes the gift on the fourth night, ashamed.", "effects": { "heroXp": 1, "taint": 1, "esteem": -4 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "Nobody answers {heroName}, so they decide for themselves. They come down to breakfast stronger, and quieter.", "effects": { "heroXp": 1, "taint": 1 } }
+    },
+    {
       "id": "grievance", "title": "{hero} has a grievance", "stakes": "medium", "source": "heroes",
       "needs": ["aggrieved"], "repeatDays": 15, "weight": 5,
       "stages": [
@@ -4482,6 +4513,7 @@
     {"id": "captives-lost", "text": "Townsfolk carried off in a raid were never brought home."},
     {"id": "captives-freed", "text": "Heroes brought home townsfolk carried off in a raid."},
     {"id": "hero-dismissed", "text": "The mayor sent a hero packing."},
+    {"id": "gifts-forbidden", "text": "The mayor forbade the town's heroes to take gifts from the dark powers."},
     {"id": "fey-bargain", "text": "The mayor let a stranger in a green coat sweeten the wells.", "after": 40},
     {"id": "signed-clause", "text": "The mayor signed a smiling notary's contract without reading the small print.", "after": 60},
     {"id": "crone-apples", "text": "The mayor took a crone's apples to cure the fever.", "after": 30}
