@@ -1133,7 +1133,7 @@ public static class Explore
             {
                 double gold = Math.Round(rw.VaultGold * Math.Max(1, town.Regions[f.RegionId].Levels[0]));
                 town.Book(TreasuryAccount.Exploring, gold);
-                foreach (var a in Living(town, s)) a.Hero!.Renown += 2;
+                foreach (var a in Living(town, s)) Notoriety.Deed(town, a, "clear", 2);
                 return $" They send {Js.Str(gold)} gold of old coin home to the treasury.";
             }
         }
