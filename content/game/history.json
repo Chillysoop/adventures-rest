@@ -1,0 +1,62 @@
+{
+  "era": "AL",
+  "before": "BL",
+  "eraName": "After the Lamp",
+  "year": 1190,
+  "founding": "The old songs say this is the very ford where Aldren the Ford-King crossed in {caldor} BL to found the High Kingdom of Caldor. The council dates the charter {year} AL.",
+  "visit": "The {party} hear the old story of {region}. {history}",
+  "ally": "{People} remember the old days: {history}",
+  "lanes": [
+    { "id": "north", "name": "The frozen north", "themes": ["rimefell"] },
+    { "id": "peaks", "name": "The high peaks", "themes": ["highpeaks"] },
+    { "id": "cinders", "name": "The cinder wastes", "themes": ["cinderwastes"] },
+    { "id": "deeps", "name": "The deeps", "themes": ["deeproads"] },
+    { "id": "woods", "name": "The forests", "themes": ["thornwood", "feyfringe"] },
+    { "id": "heart", "name": "The river heartland", "themes": ["greenmarch", "crownruins", "ashenbarrows"] },
+    { "id": "coast", "name": "The coast", "themes": ["saltreach"] },
+    { "id": "fens", "name": "The fens", "themes": ["mirefen"] },
+    { "id": "sands", "name": "The southern sands", "themes": ["duneglass"] }
+  ],
+  "ages": [
+    { "id": "making", "name": "The Age of Making", "from": -8000, "to": -6000, "weight": 1, "text": "Haldor struck the first mountains on his anvil, Sylvaine grew the first forests in the silence after, and the Stormmother poured the seas. Ysolde opened her book and began to write down every true thing. The first peoples woke where their makers had worked: giants on the high places, elves under the trees, dwarves inside the stone." },
+    { "id": "elder", "name": "The Elder Age", "from": -6000, "to": -2900, "weight": 3, "text": "Giants, elves and dwarves built the first realms, and the first great dragon burned them." },
+    { "id": "sands", "name": "The Age of Sands and Serpents", "from": -2900, "to": -1300, "weight": 2.5, "text": "Masked god-kings ruled the green river land that is now desert, and serpent-priests ruled the fens, until the Stormmother took the rain from one and drowned the other." },
+    { "id": "crowns", "name": "The Age of Crowns", "from": -1300, "to": 1, "weight": 3, "text": "The High Kingdom of Caldor rose at a river ford, ruled from the coast to the sands, and died in the first Long Night when its last king would not cross the Ferryman's river." },
+    { "id": "splinters", "name": "The Age of Splinters", "from": 1, "to": 720, "weight": 2.5, "text": "Caldor's lords fought over its crown for seven centuries, the harbours made themselves free cities, and the orc hosts of the Red Tide burned the Marches." },
+    { "id": "lanterns", "name": "The Age of Lanterns", "from": 720, "to": 1190, "weight": 3, "text": "The Crown League swore to answer one another's beacons, and the frontier began to fill in again, town by town: points of light." }
+  ],
+  "powers": [
+    { "id": "stonekings", "name": "The Stonekings", "kind": "elder", "lanes": ["north", "peaks"], "from": -6000, "to": -3600, "text": "Giant kings who ruled the high places from halls cut into whole mountains. Vermithrax burned them out, and their broken steadings are still the largest ruins in the world.", "heirs": "Hill and frost giant clans; the giants in tribe menaces." },
+    { "id": "rime-clans", "name": "The Rime Clans", "kind": "elder", "lanes": ["north"], "from": -3600, "to": -1500, "text": "The Stonekings' last frost giant clans, who held the ice until human jarls drove them into the glaciers.", "heirs": "Frost giants and frostwights in the Rimefell." },
+    { "id": "frost-halls", "name": "The Frost-Sworn Halls", "kind": "frost", "lanes": ["north"], "from": -1500, "to": 1190, "text": "Free jarls in whale-bone halls under the aurora. Caldor sent three armies north, and the jarls sent them home in boxes. They have never knelt to anyone.", "heirs": "The frost-sworn, who respect strength and despise tribute." },
+    { "id": "wyrm-tyranny", "name": "The Wyrm-Tyranny", "kind": "dark", "lanes": ["peaks", "cinders"], "from": -3600, "to": -2900, "text": "Vermithrax, the first great dragon, burned the Stonekings' halls and ruled giant and dwarf alike for seven centuries, until dwarves and elves together bound him in sleep under a mountain.", "heirs": "The dragon broods in the beast menaces; Vermithrax himself, asleep." },
+    { "id": "smith-holds", "name": "The Smith-King's Holds", "kind": "dwarves", "lanes": ["peaks"], "from": -2900, "to": 380, "text": "Surface holds raised by the dwarves who forged Vermithrax's chains. They guarded the high passes for three thousand years, until the Red Tide came over them.", "heirs": "The dwarf holds of today." },
+    { "id": "red-tide", "name": "The Red Tide", "kind": "dark", "lanes": ["peaks"], "from": 380, "to": 440, "text": "Ghorvak's orc hosts came down from the mountains and burned the Crown Marches. Sellswords sworn to Brannoch broke them; the Wolfsbane Company kept its name from that war.", "heirs": "The orc and goblin warbands in the tribe menaces." },
+    { "id": "warrens", "name": "Warrens and Free Holds", "kind": "warrens", "lanes": ["peaks"], "from": 440, "to": 1190, "text": "Orc warrens and dwarf holds share the passes in a long, bloody truce that neither side has ever called peace.", "heirs": "The dwarves and the warbands the town meets today." },
+    { "id": "chained-mountain", "name": "The Chained Mountain", "kind": "sleeping", "lanes": ["cinders"], "from": -2900, "to": 1190, "text": "The mountain where Vermithrax sleeps in the Smith-King's chains has smoked for four thousand years. The Smith-King died at his furnace forging them.", "heirs": "If no other power rises to threaten the land, the Old Wyrm wakes." },
+    { "id": "khaz-varrund", "name": "Khaz Varrund, the Deep Realm", "kind": "dwarves", "lanes": ["deeps"], "from": -5500, "to": -2100, "text": "The dwarves dug a kingdom under the mountains, deeper every century. It fell when its miners broke into something below that breathed. The Vault That Breathes and the Glimmering Rot are its last halls.", "heirs": "The dwarf holds and the deep gnomes." },
+    { "id": "gnome-workings", "name": "The Gnome Workings", "kind": "gnomes", "lanes": ["deeps"], "from": -2100, "to": 1190, "text": "Deep gnomes stayed in the Deep Realm's lower workings when the dwarves fled, and have mapped every tunnel since.", "heirs": "The deep gnomes, who trade clockwork and maps of the deep ways." },
+    { "id": "first-leaves", "name": "The Court of First Leaves", "kind": "elves", "lanes": ["woods"], "from": -5800, "to": 1190, "text": "The elves' court once held every forest in the world. It never fell. It only shrank, a little each age, into the twilight glades where the seasons run out of order, and its hags and lords keep bargains the Court broke long ago.", "heirs": "The elf enclaves; the hags and fey in the schemer menaces." },
+    { "id": "river-tribes", "name": "The River Tribes", "kind": "folk", "lanes": ["heart"], "from": -2600, "to": -1180, "text": "The first human tribes farmed the river valleys, fought each other, and paid the Coil's tithe in eels.", "heirs": "The villagers." },
+    { "id": "caldor", "name": "The High Kingdom of Caldor", "kind": "empire", "lanes": ["heart", "coast"], "from": -1180, "to": 1, "text": "Aldren the Ford-King united the river tribes at a ford on a cold northern river. At its height Caldor ruled from the Salt Reach to the edge of the sands, built the roads and castles whose ruins fill the Crownlands, and made Ostrava of the Even Scale its god. Its last king, Maudren, bought a way past the Ferryman's river, and the dead of every battlefield in Caldor walked: the first Long Night.", "heirs": "The barrow-kings, the usurpers, the templars, and every village in the heartland." },
+    { "id": "crown-marches", "name": "The Crown Marches", "kind": "folk", "lanes": ["heart"], "from": 1, "to": 720, "text": "Caldor's surviving lords each claimed the crown and fought over it for seven centuries. Halflings quietly settled the farmland they emptied.", "heirs": "The robber barons in the rival menaces; the halflings." },
+    { "id": "crown-league", "name": "The Crown League", "kind": "league", "lanes": ["heart"], "from": 720, "to": 1190, "text": "Free cities and tired marcher lords swore to answer one another's beacons. Under the League's peace the Compass Lodge began paying adventurers to clear the old roads, and new towns were founded on the frontier.", "heirs": "Your town." },
+    { "id": "free-ports", "name": "The Free Ports", "kind": "free", "lanes": ["coast"], "from": 1, "to": 1190, "text": "Caldor's harbours shut their gates on the Long Night and opened them as free cities. The Gilded Scale and the Quiet Hand were born on their wharves.", "heirs": "The port folk." },
+    { "id": "coil", "name": "The Coil", "kind": "serpent", "lanes": ["fens"], "from": -2400, "to": -900, "text": "A serpent-priest theocracy of the fens, served by lizardfolk. When the sea rose its temples sank with their saints still in them.", "heirs": "The lizardfolk, who will not go to the Drowned Temple." },
+    { "id": "sunken-fens", "name": "The Sunken Fens", "kind": "fen", "lanes": ["fens"], "from": -900, "to": 1190, "text": "The lizardfolk outlived their masters and keep the fens in stilt villages above the drowned temples.", "heirs": "The lizardfolk." },
+    { "id": "ashkaar", "name": "The Ninefold Throne of Ashkaar", "kind": "serpent", "lanes": ["sands"], "from": -2700, "to": -1350, "text": "Nine masked god-kings ruled a green river land in turn. The ninth tried to bind the Stormmother to bring the floods on command, and she took the rain away for good. The empire dried into dunes; its ninth queen became a lich rather than die with it.", "heirs": "The oasis caravaneers; the Silent Knife; Ashkara the Deathless." },
+    { "id": "dry-centuries", "name": "The Dry Centuries", "kind": "sleeping", "lanes": ["sands"], "from": -1350, "to": 500, "text": "For eighteen centuries the sands belonged to the tombs and whatever walked out of them.", "heirs": "The buried cities of the Duneglass." },
+    { "id": "oasis-cities", "name": "The Oasis Cities", "kind": "caravan", "lanes": ["sands"], "from": 500, "to": 1190, "text": "Ashkaar's grandchildren reopened the old caravan roads, and Aurel's worship travelled with them.", "heirs": "The caravaneers, who know which tombs to leave shut." }
+  ],
+  "events": [
+    { "year": -2900, "text": "Vermithrax is chained" },
+    { "year": -2100, "text": "Khaz Varrund breaks into the deep" },
+    { "year": -1350, "text": "Ashkaar loses the rain" },
+    { "year": -1180, "text": "Aldren crosses the ford" },
+    { "year": -140, "text": "The Field of Spears" },
+    { "year": 1, "text": "The Lamp ends the first Long Night" },
+    { "year": 724, "text": "The Crown League is sworn" },
+    { "year": 1012, "text": "The Compass Lodge is founded" },
+    { "year": 1190, "text": "Your town's charter" }
+  ]
+}

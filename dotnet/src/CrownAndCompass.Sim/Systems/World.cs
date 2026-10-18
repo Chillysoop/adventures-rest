@@ -477,6 +477,7 @@ public static class World
             $"{Cap(s.People)} pledge friendship to {town.Name}." +
             (b.Text != "" ? $" From now on, {b.Text.Replace("{S}", s.Name)}" : "") +
             (b.Troops > 0 ? $"{(b.Text != "" ? ", and" : " They pledge")} their warriors will come if the walls are ever attacked." : "."));
+        Annals.Allied(town, s);
         if (b.Maps) Reveal(town, town.Regions[s.RegionId], $"{Cap(s.People)} share their maps", town.Content.World.Standing.MapTrust);
     }
 
@@ -530,6 +531,7 @@ public static class World
         region.Known = true;
         // On the way they hear of the region's other sites from whoever lives there.
         foreach (var id in region.SiteIds) Tell(town, Quests.Site(town, id)!, town.Content.World.Standing.VisitTrust);
+        if (first) Annals.Visited(town, party, region);
         if (first) Reveal(town, region, $"The {party.Name} bring back word of the lands beyond {region.Name}", 0);
     }
 

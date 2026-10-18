@@ -84,6 +84,8 @@ public class LoyaltyTests
         {
             a.Hero!.Loyalty = 0;
             a.Gold = 0;
+            // Fed, so it is loyalty that sends them away and not an empty stomach.
+            a.Hunger = 0;
             sim.RunDays(1);
         }
         Assert.True(a.Departed);

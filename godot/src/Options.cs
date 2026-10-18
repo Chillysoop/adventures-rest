@@ -36,6 +36,9 @@ public sealed class Options
 
     /// <summary>--title shows the main menu; --tutorial start|step-id runs the tutorial from there (screenshots).</summary>
     public bool Title;
+
+    /// <summary>--history [power-id]: open the world's history timeline, with a power's story picked.</summary>
+    public string? History;
     public string? Tutorial;
     public bool Hero;
     /// <summary>For screenshots: click the alert at this position in the strip (0 is the first) once it shows.</summary>
@@ -93,6 +96,7 @@ public sealed class Options
                 case "--load": o.Load = Next(); break;
                 case "--menu": o.Menu = true; break;
                 case "--title": o.Title = true; break;
+                case "--history": o.History = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
                 case "--tutorial": o.Tutorial = Next(); break;
                 case "--hero": o.Hero = true; break;
                 case "--alert": o.Alert = int.Parse(Next()); break;

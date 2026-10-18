@@ -157,6 +157,13 @@
       "teaches": ["key:Escape", "key:F5", "key:F9"]
     },
     {
+      "id": "history",
+      "title": "The old world",
+      "text": "Every ruin in the wilds is left over from an older age. [b]History[/b] in the game menu (Esc) shows the empires, peoples and wars before your town, and the Ledger tells each region's old story when a party first gets there.",
+      "point": "menu",
+      "teaches": []
+    },
+    {
       "id": "done",
       "title": "The town is yours",
       "text": "That's the basics. New tips will appear here as the town grows and as new features arrive in later builds. Good luck, Mayor.",
