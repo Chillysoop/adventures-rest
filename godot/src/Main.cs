@@ -26,6 +26,7 @@ public partial class Main : Control
         Faith,
         Campaign,
         Chronicles,
+        Mayor,
         Inspect,
     }
 
@@ -66,6 +67,7 @@ public partial class Main : Control
         BuildTitle();
         BuildHistory();
         BuildGuide();
+        BuildStory();
         _map.TreeScale = _opts.Trees;
         Map.Fog.RevealAll = _opts.Reveal;
         // Started plainly, the game opens on the main menu over a town that has been growing a while;
@@ -101,6 +103,12 @@ public partial class Main : Control
         // News from a fast-forward is in the Ledger; don't greet the player with a stale feed.
         ClearFeed();
         if (_opts.Tutorial is string step) StartTutorial(step == "start" ? null : step);
+        if (_opts.Background is string bg) _sim.ChooseBackground(bg);
+        if (_opts.Story is string story && Stories.Open(_sim.Town, story) is { } opened)
+        {
+            OpenStory(opened.Id);
+            if (_opts.StoryPick is int pick) Choose(opened.Id, pick);
+        }
         if (_opts.Menu) OpenMenu();
         if (plain || _opts.Title || _opts.Smoke) ShowTitle();
         if (_opts.History is string power) OpenHistory(power == "" ? null : power);
@@ -145,7 +153,7 @@ public partial class Main : Control
     private void NewTown(int seed, bool autoplay = false)
     {
         // With --autoplay the stand-in mayor keeps playing, for demos and screenshots.
-        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay }));
+        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay, AutoStories = autoplay }));
     }
 
     /// <summary>Show a town: a new one, or one loaded from a save.</summary>
@@ -168,6 +176,8 @@ public partial class Main : Control
         _openChronicles.Clear();
         _ledgerShown = -1;
         _step = null;
+        CloseStory();
+        _storySeen = sim.Town.Stories.All.Count;
         foreach (var p in _panes.Values) p.Invalidate();
         _dirty = true;
         CloseWindow();
@@ -228,6 +238,9 @@ public partial class Main : Control
             case "building":
                 Select(Selection.Building(int.Parse(parts[1])));
                 break;
+            case "mayor":
+                OpenWindow(Tab.Mayor);
+                break;
             case "chron":
                 int id = int.Parse(parts[1]);
                 if (!_openChronicles.Add(id)) _openChronicles.Remove(id);
@@ -239,6 +252,12 @@ public partial class Main : Control
     public override void _UnhandledKeyInput(InputEvent e)
     {
         if (e is not InputEventKey { Pressed: true, Echo: false } k) return;
+        if (_story.Visible && k.Keycode == Key.Escape)
+        {
+            CloseStory();
+            GetViewport().SetInputAsHandled();
+            return;
+        }
         if (_history.Visible)
         {
             if (k.Keycode == Key.Escape) CloseHistory();
@@ -270,6 +289,7 @@ public partial class Main : Control
         else if (k.Keycode == Key.Escape && _map.Decorator.Active) _map.Decorator.Pick(null);
         else if (k.Keycode == Key.R && _map.Decorator.Active) _map.Decorator.Turn(k.ShiftPressed ? -1 : 1);
         else if (k.Keycode == Key.M) ToggleStrategic();
+        else if (k.Keycode == Key.C) SetTab(Tab.Mayor);
         else if (k.Keycode == Key.Escape && _inspector.Visible) Select(null);
         else if (k.Keycode == Key.Escape && _window.Visible) CloseWindow();
         else if (k.Keycode is Key.Q or Key.E)
@@ -306,6 +326,7 @@ public partial class Main : Control
         ScriptedAlert();
         SyncMarkers();
         SyncGuide();
+        SyncStories(delta);
         if (_title.Visible) _map.Drift(1, (float)delta * 0.035f);
         if (_dirty)
         {
@@ -322,6 +343,7 @@ public partial class Main : Control
                     case Tab.Faith: RenderFaith(); break;
                     case Tab.Campaign: RenderCampaign(); break;
                     case Tab.Chronicles: RenderChronicles(); break;
+                    case Tab.Mayor: RenderMayor(); break;
                 }
             if (_inspector.Visible) RenderInspect();
             RenderBuild();

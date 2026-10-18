@@ -95,6 +95,11 @@ public partial class Main
             AlertWindow.City => Tab.City,
             _ => null,
         };
+        if (a.StoryId is int story)
+        {
+            OpenStory(story);
+            return;
+        }
         if (tab is Tab w) OpenWindow(w);
         if (a.SiteId is string site && _map.Geo.Pins.TryGetValue(site, out var pin))
         {

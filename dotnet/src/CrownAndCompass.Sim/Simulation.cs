@@ -42,6 +42,9 @@ public sealed record SimulationOptions
     /// <summary>Whether the warband exists at all (sandbox and some tests turn it off).</summary>
     public bool Enemy { get; init; } = true;
 
+    /// <summary>Let the stand-in mayor answer story events; off when a player steps into them.</summary>
+    public bool AutoStories { get; init; } = true;
+
     /// <summary>Run the campaign arc (acts, festering menaces, dread); off, the Last Stand ends the game.</summary>
     public bool Saga { get; init; } = true;
 }
@@ -109,6 +112,7 @@ public sealed class Simulation
         Saga.Daily(t, Options.AutoMayor);
         Loyalty.Daily(t, Options.AutoMayor);
         Decor.Daily(t);
+        Stories.Daily(t, Options.AutoMayor && Options.AutoStories);
         Economy.Daily(t, true);
         History.Add(Snapshot());
         t.AccountsYesterday = t.AccountsToday;
@@ -195,6 +199,12 @@ public sealed class Simulation
 
     /// <summary>Clear a decoration away for half its price back.</summary>
     public bool ClearDecoration(int decorationId) => Decor.Remove(Town, decorationId);
+
+    /// <summary>Step into a story: take an option of its current stage, rolling the mayor's d20 against its DC (with inspiration, advantage).</summary>
+    public StoryBeat? ResolveStory(int storyId, int option, bool inspired = false) => Stories.Resolve(Town, storyId, option, inspired);
+
+    /// <summary>Say who the mayor was before the charter, which sets their abilities and skills.</summary>
+    public bool ChooseBackground(string backgroundId) => Stories.ChooseBackground(Town, backgroundId);
 
     public DayStats Snapshot()
     {
