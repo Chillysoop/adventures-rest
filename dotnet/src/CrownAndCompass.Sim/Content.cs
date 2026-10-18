@@ -1200,6 +1200,9 @@ public sealed class Content
     /// <summary>Fame and infamy for heroes and companies (content/game/notoriety.json).</summary>
     public NotorietyRules Notoriety { get; init; } = new();
 
+    /// <summary>Townsfolk and heroes' skills and everyday checks (content/game/skills.json).</summary>
+    public SkillRules Skills { get; init; } = new();
+
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
 
@@ -1359,6 +1362,7 @@ public sealed class Content
             Merchants = Parse<MerchantRules>("merchants.json"),
             Wards = Parse<WardRules>("wards.json"),
             Notoriety = Parse<NotorietyRules>("notoriety.json"),
+            Skills = Parse<SkillRules>("skills.json"),
         };
     }
 
