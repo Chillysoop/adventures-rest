@@ -43,6 +43,9 @@ public sealed class Options
     public string? Tutorial;
     public bool Hero;
 
+    /// <summary>--folk: select the most practised townsperson, for a look at their character sheet.</summary>
+    public bool Folk;
+
     /// <summary>--wall N: select a section of the outer wall (0 is the gate) in the inspector, for shots of the call to arms.</summary>
     public int? Wall { get; private set; }
 
@@ -122,6 +125,7 @@ public sealed class Options
                 case "--history": o.History = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
                 case "--tutorial": o.Tutorial = Next(); break;
                 case "--hero": o.Hero = true; break;
+                case "--folk": o.Folk = true; break;
                 case "--wall": o.Wall = int.Parse(Next()); break;
                 case "--house": o.House = true; break;
                 case "--alert": o.Alert = int.Parse(Next()); break;

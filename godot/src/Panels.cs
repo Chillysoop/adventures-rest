@@ -520,7 +520,7 @@ public partial class Main
         p.Text($"{Ui.Esc(status)} · {Math.Floor(a.Gold)} gold · mood {Math.Round(a.LastDayMood)}");
         p.Text($"Lives at {Ui.Esc(home)}; {(a.Hero != null ? "lives by bounties" : $"works at {Ui.Esc(job)}")}.");
         if (a.SpouseId is int sp) p.Text($"Married to {AgentLink(t.Agent(sp))}");
-        p.Text(Ui.C(Ui.Ink2, a.Abilities.ToString()), 12);
+        InspectSheet(p, t, a);
         var friends = a.Opinions.Where(kv => kv.Value >= 40).OrderBy(kv => kv.Key).Select(kv => AgentLink(t.Agent(kv.Key))).ToList();
         var foes = a.Opinions.Where(kv => kv.Value <= -30).OrderBy(kv => kv.Key).Select(kv => AgentLink(t.Agent(kv.Key))).ToList();
         if (friends.Count > 0) p.Text($"Friends: {string.Join(", ", friends)}");

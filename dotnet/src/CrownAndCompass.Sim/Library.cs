@@ -181,6 +181,9 @@ public sealed record LibBackground
     public required string Name { get; init; }
     public required string Source { get; init; }
     public string Text { get; init; } = "";
+
+    /// <summary>The skills it trains (its "Skill Proficiencies" benefit), by skill id.</summary>
+    public IReadOnlyList<string> Skills { get; init; } = [];
 }
 
 /// <summary>
@@ -304,7 +307,7 @@ public sealed class Library
                     case "magic-items": items.TryAdd(id, ParseItem(e)); break;
                     case "deities": deities.TryAdd(id, ParseDeity(e)); break;
                     case "factions": factions.TryAdd(id, ParseFaction(e)); break;
-                    case "backgrounds": backgrounds.TryAdd(id, new LibBackground { Id = id, Name = Str(e, "name"), Source = Str(e, "source"), Text = Str(e, "text") }); break;
+                    case "backgrounds": backgrounds.TryAdd(id, new LibBackground { Id = id, Name = Str(e, "name"), Source = Str(e, "source"), Text = Str(e, "text"), Skills = BackgroundSkills(e) }); break;
                     case "equipment":
                         if (ParseGear(e) is LibGear g) gear.TryAdd(id, g);
                         break;
@@ -312,6 +315,25 @@ public sealed class Library
             }
         }
         return new Library(monsters.Values, classes.Values, spells.Values, items.Values, deities.Values, factions.Values, gear.Values, backgrounds.Values);
+    }
+
+    private static readonly string[] SkillNames =
+    [
+        "Acrobatics", "Animal Handling", "Arcana", "Athletics", "Deception", "History", "Insight", "Intimidation", "Investigation",
+        "Medicine", "Nature", "Perception", "Performance", "Persuasion", "Religion", "Sleight of Hand", "Stealth", "Survival",
+    ];
+
+    /// <summary>The skills named in a background's skill-proficiency benefit, in the order of the skill list.</summary>
+    private static IReadOnlyList<string> BackgroundSkills(JsonElement e)
+    {
+        if (!e.TryGetProperty("benefits", out var bs) || bs.ValueKind != JsonValueKind.Array) return [];
+        foreach (var b in bs.EnumerateArray())
+        {
+            if (Str(b, "type") != "skill_proficiency" && !Str(b, "name").StartsWith("Skill Proficiencies", StringComparison.Ordinal)) continue;
+            string text = Str(b, "text");
+            return SkillNames.Where(n => text.Contains(n, StringComparison.OrdinalIgnoreCase)).Select(n => n.ToLowerInvariant().Replace(' ', '-')).ToList();
+        }
+        return [];
     }
 
     private static string Str(JsonElement e, string key) =>

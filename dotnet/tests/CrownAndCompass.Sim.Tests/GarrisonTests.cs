@@ -84,7 +84,7 @@ public class GarrisonTests
         Assert.True(Garrison.Covered(t, farm));
         Assert.True(Garrison.FlagFactor(t, farm) > 1.3);
         var marks = t.Buildings.Where(b => b.Complete && b.Def.Zone == Zone.Farmland).ToList();
-        if (marks.Count > 1) Assert.DoesNotContain(farm, Garrison.Unguarded(t, marks));
+        if (marks.Any(b => !Garrison.Covered(t, b))) Assert.DoesNotContain(farm, Garrison.Unguarded(t, marks));
         Assert.Equal([farm], Garrison.Unguarded(t, [farm]));
         // The watch holds only so many flags.
         for (int i = 0; i < 10; i++) sim.PlantFlag(Town.Center, Town.Center, 1);

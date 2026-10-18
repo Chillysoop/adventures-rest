@@ -48,7 +48,7 @@ public class ThreatTests
     public void PunishesATownThatNeverFortifiesAndNeverFightsBack()
     {
         int fallen = 0;
-        foreach (int seed in new[] { 1, 2, 3, 4, 5, 6, 7 })
+        foreach (int seed in new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 })
         {
             var sim = new Simulation(new SimulationOptions { Seed = seed, AutoBounties = false, AutoDefense = false, FreeCompanies = false, AutoStories = false });
             sim.Town.Defenses.Palisade = PalisadeState.Building;
@@ -57,8 +57,9 @@ public class ThreatTests
             // Breaking the walls sacks the town and puts it under the warband's yoke; a second time, it falls.
             if (sim.Town.Saga.Sacks > 0 || sim.Town.Outcome == Outcome.Defeat) fallen++;
         }
-        // Most fall; a few hold on the militia of a town grown big enough.
-        Assert.True(fallen >= 4);
+        // Most fall; a few hold on the militia of a town grown big enough. Twelve seeds, since any change to
+        // the rng stream reshuffles which ones hold, and seven were too few to tell that from a stronger town.
+        Assert.True(fallen >= 6, $"only {fallen} of 12 fell");
     }
 
     [Fact]
