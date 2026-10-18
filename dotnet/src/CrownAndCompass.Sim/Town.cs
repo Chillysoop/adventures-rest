@@ -49,6 +49,9 @@ public sealed class Building(int id, BuildingDef def, int lotId)
 
     public double RevenueToday { get; set; }
 
+    /// <summary>How today's work went at its craft check, in percent of yield (<see cref="Systems.Skills.Daily"/>).</summary>
+    public int KnackPct { get; set; }
+
     /// <summary>Walks to or from it since yesterday while it stands off the streets, and the sum of where they came from (tiles).</summary>
     public int Trips { get; set; }
     public double TripX { get; set; }
@@ -384,6 +387,14 @@ public sealed class Town
 
     /// <summary>Paid watchmen keeping the peace.</summary>
     public int Watch { get; set; }
+
+    /// <summary>The skill checks rolled lately, oldest first, for the client's dice (<see cref="Systems.Skills"/>); not saved.</summary>
+    public List<Systems.SkillCheck> Checks => _checks ??= [];
+    [NotSaved]
+    private List<Systems.SkillCheck>? _checks;
+
+    /// <summary>Checks rolled so far; each check's serial, so the client knows which it has shown.</summary>
+    public int CheckSerial { get; set; }
 
     /// <summary>Days of festival left.</summary>
     public int FestivalDays { get; set; }

@@ -249,6 +249,9 @@ public sealed class Agent
     public int? SpouseId { get; set; }
     public int? CourtingId { get; set; }
 
+    /// <summary>Successes at their trade's skills, which slowly make them better at it (<see cref="Systems.Skills"/>).</summary>
+    public int Practice { get; set; }
+
     public Activity Activity { get; set; } = Activity.Idle;
     public int? LocationId { get; set; }
     public int Drinks { get; set; }
