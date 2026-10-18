@@ -1079,6 +1079,7 @@ public sealed class Content
 
     /// <summary>Decorations and set dressing the player can place (content/game/decor.json).</summary>
     public DecorRules Decor { get; init; } = new();
+    public SeasonRules Seasons { get; init; } = new();
 
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
@@ -1214,6 +1215,7 @@ public sealed class Content
             Loyalty = Parse<LoyaltyRules>("loyalty.json"),
             City = Parse<CityRules>("city.json"),
             Decor = Parse<DecorRules>("decor.json"),
+            Seasons = Parse<SeasonRules>("seasons.json"),
         };
     }
 

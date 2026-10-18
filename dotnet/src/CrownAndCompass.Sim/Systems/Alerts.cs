@@ -45,6 +45,7 @@ public static class Alerts
     public static readonly AlertKind Unrest = new("unrest", "Unrest", "mandate", AlertLevel.Urgent, AlertWindow.Council);
     public static readonly AlertKind Hostile = new("hostile", "Hostile factions", "suspicion", AlertLevel.Urgent, AlertWindow.Faith);
     public static readonly AlertKind Motion = new("motion", "Council motions", "mandate", AlertLevel.Decision, AlertWindow.Council);
+    public static readonly AlertKind Stores = new("stores", "Winter stores", "bread", AlertLevel.Decision, AlertWindow.City);
     public static readonly AlertKind Charter = new("charter", "Charters", "favour", AlertLevel.Decision, AlertWindow.City);
     public static readonly AlertKind Heroes = new("heroes", "Restless heroes", "heroes", AlertLevel.Decision, AlertWindow.None);
     public static readonly AlertKind Housing = new("housing", "Housing", "homeless", AlertLevel.Minor, AlertWindow.Council);
@@ -53,10 +54,10 @@ public static class Alerts
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Hunger, Coffers, Unrest, Hostile, Motion, Charter, Heroes, Housing, Work];
+        [Siege, Hunger, Coffers, Unrest, Hostile, Motion, Stores, Charter, Heroes, Housing, Work];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
-    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Food, Money, Council, Hostility, Growth, Loyalty, Homes];
+    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Food, Money, Council, Hostility, Winter, Growth, Loyalty, Homes];
 
     public static List<Alert> Standing(Town town) => Rules.SelectMany(r => r(town)).ToList();
 
@@ -105,6 +106,15 @@ public static class Alerts
     {
         foreach (var f in t.Factions.Where(f => f.Active && f.Known && f.Standing <= -30).OrderBy(f => f.Id, StringComparer.Ordinal))
             yield return new($"faction:{f.Id}", Hostile, $"{Cap(f.Name)} turns hostile", "A faction in town is working against you. Crack down, or win it back.");
+    }
+
+    private static IEnumerable<Alert> Winter(Town t)
+    {
+        var s = Seasons.Current(t);
+        bool late = s.Id == "winter" || (Seasons.Next(t).Id == "winter" && Seasons.DaysLeft(t) <= 10);
+        if (late && Seasons.StoresFull(t) < 0.5 && Seasons.LayInQuote(t).Food > 0)
+            yield return new("stores", Stores, "The winter stores are short",
+                $"The cellars and granaries hold {Math.Round(Seasons.StoresFull(t) * 100)}% of what the town needs to see out the winter. Lay in grain from the traders in the City window, or build a granary.");
     }
 
     private static IEnumerable<Alert> Growth(Town t)

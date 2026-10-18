@@ -467,7 +467,7 @@ public static class Menaces
     private static void Grow(Town town, Menace m, SiteState seat)
     {
         var r = Rules(town);
-        double g = r.Growth * (seat.Known != SiteKnowledge.Unheard ? 1 : r.UnknownGrowth) * (1 + m.Holdings.Count * r.HoldingGrowth) * Saga.Pace(town);
+        double g = r.Growth * (seat.Known != SiteKnowledge.Unheard ? 1 : r.UnknownGrowth) * (1 + m.Holdings.Count * r.HoldingGrowth) * Saga.Pace(town) * Seasons.Activity(town, m.Kind);
         if (m.FactionId != null && Factions.Find(town, m.FactionId) is FactionState f && f.Active) g += f.Members.Count * 0.1;
         // Every party that went for it and came back without finishing it makes it bolder.
         if (seat.Attempts > m.SeenAttempts)
@@ -574,7 +574,8 @@ public static class Menaces
         var r = Rules(town);
         var rng = town.Rng;
         double far = 1 + 0.25 * Math.Max(0, seat.Def.Distance - 1);
-        m.NextStrikeTick = town.Tick + (int)Math.Round(rng.Range(r.StrikeEveryDays[0], r.StrikeEveryDays[1] + 1) * far) * SimTime.HoursPerDay;
+        // A menace in its season strikes more often; one out of it keeps to its lair.
+        m.NextStrikeTick = town.Tick + (int)Math.Round(rng.Range(r.StrikeEveryDays[0], r.StrikeEveryDays[1] + 1) * far / Seasons.Activity(town, m.Kind)) * SimTime.HoursPerDay;
         // Past its first rise it turns on the peoples of the wilds as often as on the town.
         var victim = m.Stage >= MenaceStage.Power ? Neighbour(town, seat) : null;
         if (victim != null && rng.Chance(0.5))
@@ -687,7 +688,8 @@ public static class Menaces
             m.NextAssaultTick = town.Tick + 10 * SimTime.HoursPerDay;
             return;
         }
-        m.ArrivalTick = town.Tick + r.MarchDays * SimTime.HoursPerDay;
+        int march = r.MarchDays + Seasons.MarchDays(town);
+        m.ArrivalTick = town.Tick + march * SimTime.HoursPerDay;
         // The big bad gathers a greater host for every march: the finale's doom clock.
         if (m.BigBad)
         {
@@ -696,7 +698,7 @@ public static class Menaces
         }
         m.Marches++;
         string army = $"{Js.Str(Js.Round(m.Power / 10) * 10)} {m.Def.People}";
-        town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, f.March, m).Replace("{army}", army).Replace("{days}", r.MarchDays.ToString())));
+        town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, f.March, m).Replace("{army}", army).Replace("{days}", march.ToString())));
     }
 
     private static string Wall(int w) => w == 1 ? "gate" : w == 2 ? "east wall" : "river side";
@@ -904,6 +906,23 @@ public static class Menaces
         Empower(town, m, refuge, m.Level);
         string text = refuge == seat ? f.Regroup : f.Escape;
         town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, text, m).Replace("{fled}", fled).Replace("{refuge}", refuge.Def.Name)));
+        return true;
+    }
+
+    /// <summary>
+    /// The warlord crowned big bad gets out of his burning war camp as any big bad would: the warband
+    /// thins, regroups at the camp, and comes again. Returns false when this was the end.
+    /// </summary>
+    public static bool WarlordEscapes(Town town, SiteState camp)
+    {
+        var m = town.Saga.Menaces.FirstOrDefault(x => x.Alive && x.BigBad && x.Origin == FromWarband);
+        if (m == null || !MayEscape(town)) return false;
+        var f = town.Content.Saga.Finale;
+        town.Saga.BigBadEscapes++;
+        camp.Cleared = false;
+        camp.QuietUntil = town.Tick + f.RegroupDays * SimTime.HoursPerDay;
+        town.Enemy.Strength *= f.EscapeLoss;
+        town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, f.Regroup, m).Replace("{fled}", camp.Def.Name).Replace("{refuge}", camp.Def.Name)));
         return true;
     }
 

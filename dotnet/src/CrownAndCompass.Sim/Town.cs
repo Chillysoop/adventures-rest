@@ -79,6 +79,9 @@ public sealed class Market
     private readonly Dictionary<Good, double> _stock = [];
     private readonly Dictionary<Good, double> _target = [];
 
+    // Stock the town keeps back from the export barges: winter stores (see Seasons).
+    private readonly Dictionary<Good, double> _hold = [];
+
     // What makers sold today, and the average price it fetched yesterday.
     private readonly Dictionary<Good, double> _soldQty = [];
     private readonly Dictionary<Good, double> _soldValue = [];
@@ -114,10 +117,18 @@ public sealed class Market
 
     public void SetTarget(Good g, double target) => _target[g] = Math.Max(5, target);
 
+    /// <summary>Stock up to this much stays in town instead of going out with the evening caravan.</summary>
+    public double Held(Good g) => _hold.GetValueOrDefault(g);
+
+    public void Hold(Good g, double qty) => _hold[g] = Math.Max(0, qty);
+
     public void Seed(Good g, double qty) => _stock[g] = Stock(g) + qty;
 
     /// <summary>Share of base price the river barges and caravans pay for any surplus: the floor under every price.</summary>
     public double ExportShare { get; set; } = 0.75;
+
+    /// <summary>What the caravans charge for a shortfall, times base price: dearer when the roads are bad.</summary>
+    public double ImportPremium { get; set; } = 3.0;
 
     public double Price(Good g)
     {
@@ -129,7 +140,7 @@ public sealed class Market
     public double Quote(Good g, double qty)
     {
         double fromStock = Math.Min(qty, Stock(g));
-        return fromStock * Price(g) + (qty - fromStock) * BasePrice(g) * 3.0;
+        return fromStock * Price(g) + (qty - fromStock) * BasePrice(g) * ImportPremium;
     }
 
     public double Buy(Good g, double qty)
@@ -156,7 +167,7 @@ public sealed class Market
     {
         foreach (var g in Goods.All)
         {
-            double cap = _target[g] * 1.2;
+            double cap = Math.Max(_target[g] * 1.2, Held(g));
             if (Stock(g) > cap) _stock[g] = cap;
             _realized[g] = _soldQty[g] > 0 ? _soldValue[g] / _soldQty[g] : 0;
             _soldQty[g] = 0;
@@ -199,6 +210,7 @@ public static class TreasuryAccount
     public const string Wards = "Wards";
     public const string Decorations = "Decorations";
     public const string Orchards = "Orchards";
+    public const string Stores = "Winter stores";
     public const string Intel = "Intel";
 }
 
@@ -314,6 +326,9 @@ public sealed class Town
 
     /// <summary>Trees, benches, lamps, statues: the set dressing the player has placed (<see cref="Systems.Decor"/>).</summary>
     public DecorState Decor { get; } = new();
+
+    /// <summary>The turning year: festival days and the visitors (<see cref="Systems.Seasons"/>).</summary>
+    public SeasonState Seasons { get; } = new();
 
     /// <summary>How the campaign ended: the big bad slain, or the town fallen.</summary>
     public Outcome? Outcome { get; set; }

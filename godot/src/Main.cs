@@ -365,7 +365,9 @@ public partial class Main : Control
     {
         var t = _sim.Town;
         var s = _sim.Snapshot();
-        _clock.Text = $"Day {t.Day} · {t.Hour:00}:00";
+        var season = Seasons.Current(t);
+        _clock.Text = $"Day {t.Day} · {season.Name} · {t.Hour:00}:00";
+        _clock.TooltipText = $"{season.Name} of year {Seasons.Year(t)}, day {Seasons.DayOf(t)} of {Seasons.Rules(t).Days}. {Seasons.Next(t).Name} comes in {Ui.Days(Seasons.DaysLeft(t))}.\n{season.Blurb}";
         _tierLabel.Text = $"{City.Tier(t).Name} · about {City.Souls(t):N0} souls";
         _motionDot.Visible = Council.PendingMotion(t) != null;
         _standing = StandingAlerts();
