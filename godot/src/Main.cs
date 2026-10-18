@@ -98,6 +98,12 @@ public partial class Main : Control
         // --hero picks the town's most storied hero in town, for a look at their sheet.
         if (_opts.Hero && _sim.Town.Heroes.Where(a => !a.IsAway).OrderByDescending(a => a.Hero!.Items.Count).ThenByDescending(a => a.Hero!.Level).ThenBy(a => a.Id).FirstOrDefault() is Agent hero)
             Select(Selection.Agent(hero.Id));
+        if (_opts.House && _sim.Town.Buildings.Where(b => b.Complete && b.Def.Housing > 0).OrderByDescending(b => Decor.Comfort(_sim.Town, b)).ThenBy(b => b.Id).FirstOrDefault() is Building house)
+        {
+            Select(Selection.Building(house.Id));
+            var lot = _sim.Town.Lot(house.LotId);
+            _map.LookAt(new Vector2(Map.Geo.Margin + (float)lot.X, Map.Geo.Margin + (float)lot.Y), 7);
+        }
         // News from a fast-forward is in the Ledger; don't greet the player with a stale feed.
         ClearFeed();
         if (_opts.Tutorial is string step) StartTutorial(step == "start" ? null : step);
