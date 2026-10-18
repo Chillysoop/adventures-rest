@@ -96,6 +96,9 @@ public sealed class Bounty
 
     /// <summary>A wizard's errand: the spell the funder casts for the town when the job is done (<see cref="Systems.Errands"/>).</summary>
     public string Errand { get; set; } = "";
+
+    /// <summary>Loot terms: the company hands the hoard's magic to the town armory (<see cref="Armory"/>).</summary>
+    public bool LootToTown { get; init; }
 }
 
 public sealed class Party
@@ -229,7 +232,7 @@ public static class Quests
     /// Post a bounty, holding the reward in escrow from the treasury, or from a funder's coffers (the
     /// temple). Returns null if the payer can't cover it or the town knows of no such danger.
     /// </summary>
-    public static Bounty? PostBounty(Town town, string siteId, double reward, Building? funder = null, string terms = "slay")
+    public static Bounty? PostBounty(Town town, string siteId, double reward, Building? funder = null, string terms = "slay", bool lootToTown = false)
     {
         var s = Site(town, siteId);
         double purse = funder?.Cash ?? town.Treasury;
@@ -248,12 +251,14 @@ public static class Quests
             ExpiresTick = town.Tick + BountyDays * SimTime.HoursPerDay,
             FunderId = funder?.Id,
             Terms = term.Id,
+            LootToTown = lootToTown,
         };
         town.Bounties.Add(b);
+        string loot = lootToTown ? ", the hoard's magic to come to the town armory" : "";
         if (funder == null)
             town.Log(LedgerCategory.Town, Importance.Notable, term.Id == "slay"
-                ? $"The council posts a bounty of {Js.Str(reward)} gold on {s.Def.Name}."
-                : $"The council posts a bounty of {Js.Str(reward)} gold to {term.Verb} {s.Def.Name}.");
+                ? $"The council posts a bounty of {Js.Str(reward)} gold on {s.Def.Name}{loot}."
+                : $"The council posts a bounty of {Js.Str(reward)} gold to {term.Verb} {s.Def.Name}{loot}.");
         // The heroes judge the terms as they judge any choice of the mayor's.
         if (funder == null && term.Tags.Count > 0) Regard.Judge(town, term.Tags, $"posted a bounty to {term.Verb} {s.Def.Name}", "Bounties");
         return b;
@@ -410,7 +415,8 @@ public static class Quests
             (a.Has(Trait.HotTempered) ? 0.15 : 0) +
             (a.Has(Trait.Ambitious) ? 0.1 : 0) -
             (a.Has(Trait.Lazy) ? 0.3 : 0) +
-            Systems.Terms.Interest(town, a, bounty) +
+            Systems.Terms.Interest(town, a, bounty) -
+            Armory.TermsCut(town, a, bounty) +
             town.Rng.Next() * 0.3;
     }
 
@@ -671,7 +677,8 @@ public static class Quests
             foreach (var it in result.Items)
             {
                 if (it.HeroId == null) Watch.ReceiveRelic(town, it.Item, party.Name);
-                else if (survivors.Any(m => m.Id == it.HeroId)) Gear.Claim(town, town.Agent(it.HeroId.Value), it.Item);
+                else if (survivors.Any(m => m.Id == it.HeroId) && !Armory.HandIn(town, party, bounty, town.Agent(it.HeroId.Value), it.Item))
+                    Gear.Claim(town, town.Agent(it.HeroId.Value), it.Item);
             }
         }
     }

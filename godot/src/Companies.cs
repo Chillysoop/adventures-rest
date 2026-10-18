@@ -60,14 +60,7 @@ public partial class Main
         p.Note($"Haggling saves gold but sours the company, and one that turns an offer down won't talk for {Ui.Days(r.SulkDays)}. Companies below {Js.Str(r.RefuseBelow)} won't sell to the council at all.");
 
         p.Heading("Companies");
-        var names = t.Heroes.Where(h => !h.Departed && !h.Dead && h.Hero!.PartyName != null).Select(h => h.Hero!.PartyName!)
-            .Concat(t.Companies.Select(c => c.Name))
-            .Distinct()
-            .Select(n => (Name: n, Members: Intel.Members(t, n)))
-            .Where(x => x.Members.Count > 0)
-            .OrderByDescending(x => Intel.Relation(t, x.Name, x.Members))
-            .ThenBy(x => x.Name, StringComparer.Ordinal)
-            .ToList();
+        var names = Intel.MembersByCompany(t);
         if (names.Count == 0) p.Note("No company has formed yet. Heroes band together when they first set out.");
         foreach (var (name, members) in names)
         {
