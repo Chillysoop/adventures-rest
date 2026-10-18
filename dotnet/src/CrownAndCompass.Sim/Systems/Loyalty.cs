@@ -435,6 +435,7 @@ public static class Loyalty
         if (s.FiefId != null) return "already holds lands";
         if (!site.Cleared || !site.ThoughtCleared) return "only a cleared site can be granted";
         if (site.Def.Id == town.Content.Enemy.Outpost.Id) return "not the warband's camp";
+        if (Undercity.IsUnder(town, site)) return "not under the town";
         if (Lord(town, site.Def.Id) != null) return "already another knight's";
         if (town.Treasury < Rules(town).Fief.Cost) return $"needs {Js.Str(Rules(town).Fief.Cost)} gold";
         return null;

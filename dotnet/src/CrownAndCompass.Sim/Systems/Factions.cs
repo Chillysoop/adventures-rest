@@ -619,7 +619,7 @@ public static class Factions
             site,
             "a fence",
             null,
-            $"A fence who drinks with the Quiet Hand says {site.Def.Name}, {Rumors.Days(site.Def.Distance)} out, is held by {who}",
+            $"A fence who drinks with the Quiet Hand says {site.Def.Name}, {Rumors.Away(site.Def.Distance)}, is held by {who}",
             Rules(town).WhisperReliability,
             true,
             who,

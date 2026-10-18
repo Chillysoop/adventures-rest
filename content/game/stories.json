@@ -3981,6 +3981,210 @@
           "mandate": -2
         }
       }
+    },
+    {
+      "id": "lost-below",
+      "title": "A child lost below",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "below"
+      ],
+      "minDay": 60,
+      "repeatDays": 120,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A child chased a dog through a grate and has not come back up. Their mother stands at the opening to {site}, calling down into the dark, and half the street has gathered with lanterns.",
+          "options": [
+            {
+              "label": "Send the watch down after them",
+              "skill": "survival",
+              "dc": 13,
+              "success": {
+                "text": "The watch comes up filthy and grinning, the child on a sergeant's shoulders. They saw what lives down there, and drove it back.",
+                "effects": {
+                  "mandate": 3,
+                  "stir": -20
+                }
+              },
+              "failure": {
+                "text": "The watch finds the child, but one of them is bitten badly and things follow the lanterns back toward the grate.",
+                "effects": {
+                  "mandate": 1,
+                  "stir": 10
+                }
+              }
+            },
+            {
+              "label": "Offer a reward to anyone who goes",
+              "cost": 60,
+              "success": {
+                "text": "A rat-catcher goes down for the purse and brings the child up blinking. The street cheers the mayor's coin.",
+                "effects": {
+                  "mandate": 2
+                }
+              }
+            },
+            {
+              "label": "Seal the grate and pray",
+              "prefer": -0.2,
+              "success": {
+                "text": "The grate is chained. Nobody speaks to the mayor in that street for a long while.",
+                "effects": {
+                  "mandate": -4,
+                  "tension": 8
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "No one comes. The street goes down with its own lanterns, and not all of them come back up.",
+        "effects": {
+          "mandate": -5,
+          "stir": 10
+        }
+      }
+    },
+    {
+      "id": "sealed-door",
+      "title": "A sealed door below",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "below"
+      ],
+      "minDay": 120,
+      "repeatDays": 150,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Diggers mending a drain under {town} have broken through into {site} and found a door sealed with old wax and older marks. Something on the far side knocks back when they knock.",
+          "options": [
+            {
+              "label": "Have a scholar read the marks",
+              "skill": "arcana",
+              "dc": 14,
+              "success": {
+                "text": "The marks are a binding, still holding. A little fresh wax and the right words, and the knocking stops.",
+                "effects": {
+                  "stir": -25,
+                  "inspiration": 1
+                }
+              },
+              "failure": {
+                "text": "The scholar reads the marks aloud, and gets one word wrong. The knocking becomes scratching.",
+                "effects": {
+                  "stir": 25
+                }
+              }
+            },
+            {
+              "label": "Brick it up and say nothing",
+              "cost": 40,
+              "success": {
+                "text": "A wall of new brick goes up in front of the old door. The diggers are paid to forget it.",
+                "effects": {
+                  "stir": -10
+                }
+              }
+            },
+            {
+              "label": "Break it open for what lies beyond",
+              "skill": "athletics",
+              "dc": 15,
+              "success": {
+                "text": "Behind the door, an old treasury and an older skeleton. The coin goes to the town.",
+                "effects": {
+                  "gold": 180,
+                  "stir": 15
+                }
+              },
+              "failure": {
+                "text": "The door gives, and whatever was behind it is gone into the dark before anyone sees it.",
+                "effects": {
+                  "stir": 35,
+                  "tension": 10
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The diggers refuse to go back down. The knocking can be heard in the cellars above.",
+        "effects": {
+          "stir": 20
+        }
+      }
+    },
+    {
+      "id": "night-soil-strike",
+      "title": "The night-soil men won't go down",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "below"
+      ],
+      "minDay": 90,
+      "repeatDays": 120,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The night-soil men of {town} have downed their shovels. They say things in {site} have been watching them work, and they will not go back without better pay or a guard.",
+          "options": [
+            {
+              "label": "Pay them danger money",
+              "cost": 50,
+              "success": {
+                "text": "Coin steadies their nerves. The drains run, and they keep an eye on the dark for the town.",
+                "effects": {
+                  "stir": -5,
+                  "mandate": 1
+                }
+              }
+            },
+            {
+              "label": "Talk them round",
+              "skill": "persuasion",
+              "dc": 13,
+              "success": {
+                "text": "The mayor walks the first stretch with them, lantern high. Shamed and cheered, they follow.",
+                "effects": {
+                  "mandate": 2
+                }
+              },
+              "failure": {
+                "text": "They won't hear it. The town reeks for a week before they are paid off.",
+                "effects": {
+                  "mandate": -3,
+                  "gold": -50
+                }
+              }
+            },
+            {
+              "label": "Let the town stink",
+              "prefer": -0.3,
+              "success": {
+                "text": "The drains back up and the streets smell. Down below, something likes the quiet.",
+                "effects": {
+                  "mandate": -3,
+                  "stir": 10
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The drains back up, and the stink drives folk from the low streets.",
+        "effects": {
+          "mandate": -3,
+          "stir": 5
+        }
+      }
     }
   ],
   "decrees": [

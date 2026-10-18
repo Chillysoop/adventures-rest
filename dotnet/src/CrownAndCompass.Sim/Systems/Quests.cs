@@ -411,7 +411,7 @@ public static class Quests
             town.Log(
                 LedgerCategory.Quest,
                 Importance.Notable,
-                $"The {party.Name} ({string.Join(", ", members.Select(m => $"{m.GivenName} the {m.Hero!.Cls.Name}"))}) take the bounty on {s.Def.Name} and march out at dawn{Roads.Summary(party)}.",
+                $"The {party.Name} ({string.Join(", ", members.Select(m => $"{m.GivenName} the {m.Hero!.Cls.Name}"))}) take the bounty on {s.Def.Name} and {(s.Def.Distance == 0 ? "go down with lanterns at dusk" : "march out at dawn")}{Roads.Summary(party)}.",
                 members.Select(m => m.Id).ToList());
         }
     }

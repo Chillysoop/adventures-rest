@@ -245,6 +245,7 @@ public static class TreasuryAccount
     public const string Bastions = "Bastions";
     public const string Callings = "Callings";
     public const string Legacies = "Legacies";
+    public const string Undercity = "Undercity";
 }
 
 /// <summary>How the campaign ended.</summary>
@@ -380,6 +381,9 @@ public sealed class Town
 
     /// <summary>The hall of heroes: those who fell in the town's service or retired here, in the order they did (<see cref="Systems.Legacies"/>).</summary>
     public List<Systems.Legacy> Legacies { get; } = [];
+
+    /// <summary>The open levels of the undercity, shallowest first (<see cref="Systems.Undercity"/>).</summary>
+    public List<Systems.UnderLevel> Undercity { get; } = [];
 
     /// <summary>The mayor's character sheet and the story events open and past (<see cref="Systems.Stories"/>).</summary>
     public Systems.StoryState Stories => _stories ??= new Systems.StoryState { Mayor = Systems.Stories.NewMayor(this) };

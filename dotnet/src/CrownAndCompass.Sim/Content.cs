@@ -1132,6 +1132,7 @@ public sealed class Content
     public SeasonRules Seasons { get; init; } = new();
     public TradeRules Trade { get; init; } = new();
     public LegacyRules Legacies { get; init; } = new();
+    public UndercityRules Undercity { get; init; } = new();
 
     /// <summary>The world's history: its ages, the powers that rose and fell, and the calendar (content/game/history.json).</summary>
     public HistoryRules History { get; init; } = new();
@@ -1283,6 +1284,7 @@ public sealed class Content
             Seasons = Parse<SeasonRules>("seasons.json"),
             Trade = Parse<TradeRules>("trade.json"),
             Legacies = Parse<LegacyRules>("legacies.json"),
+            Undercity = Parse<UndercityRules>("undercity.json"),
             History = Parse<HistoryRules>("history.json"),
             Stories = Parse<StoryRules>("stories.json"),
             Bastions = Parse<BastionRules>("bastions.json"),

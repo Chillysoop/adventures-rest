@@ -16,6 +16,7 @@ public sealed class Options
     public int Hour;
     public int? Speed;
     public string? Tab;
+    public float? Scroll;
 
     /// <summary>With --autoplay, leave companies' reports unbought for the player (screenshots of the companies window).</summary>
     public bool KeepReports;
@@ -103,6 +104,7 @@ public sealed class Options
                 case "--hour": o.Hour = int.Parse(Next()); break;
                 case "--speed": o.Speed = int.Parse(Next()); break;
                 case "--tab": o.Tab = Next(); break;
+                case "--scroll": o.Scroll = float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture); break;
                 case "--site": o.Site = Next(); break;
                 case "--screenshot": o.Screenshot = Next(); break;
                 case "--frames": o.Frames = int.Parse(Next()); break;

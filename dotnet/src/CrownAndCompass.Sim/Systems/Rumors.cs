@@ -50,6 +50,9 @@ public static class Rumors
         return def.Named ? def.Name : $"{Agent.Article(def.Name)} {def.Name}";
     }
 
+    /// <summary>Where a site lies from town: "two days out", or "under the town" for the undercity.</summary>
+    public static string Away(int distance) => distance == 0 ? "under the town" : $"{Days(distance)} out";
+
     public static string Days(int distance) => distance switch
     {
         1 => "a day",

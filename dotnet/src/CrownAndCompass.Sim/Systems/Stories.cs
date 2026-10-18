@@ -358,7 +358,7 @@ public static class Stories
     /// precedent:id (1 sets it, -1 forgets it) and calling:id (1: the story's hero takes it up, -1: it ends).
     /// </summary>
     public static readonly string[] EffectKeys =
-        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial"];
+        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "stir"];
 
     /// <summary>
     /// Every need a story or option can name; besides these, precedent:id, decree:id, season:id and
@@ -366,7 +366,7 @@ public static class Stories
     /// class in town with no calling yet) and faction:id (binds that faction while it has a chapter).
     /// </summary>
     public static readonly string[] Needs =
-        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "settlement", "route", "courted", "veteran", "fallen"];
+        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "settlement", "route", "courted", "veteran", "fallen", "below"];
 
     private static readonly string[] Prefixed = ["precedent:", "decree:", "season:"];
 
@@ -739,6 +739,16 @@ public static class Stories
                 s.HeroId = v?.Id;
                 return v != null;
             }
+            case "below":
+            {
+                // A level of the undercity, open and not cleared: its site is the story's.
+                bool Live(UnderLevel l) => !Undercity.Site(town, l).Cleared;
+                if (s.SiteId is string us) return Undercity.LevelOf(town, us) is { } ul && Live(ul);
+                if (!bind) return false;
+                var lv = Pick(town.Undercity.Where(Live).ToList());
+                s.SiteId = lv == null ? null : Undercity.Def(town, lv).Site.Id;
+                return lv != null;
+            }
             case "fallen":
             {
                 // A hero fallen lately, with no memorial yet.
@@ -1021,6 +1031,13 @@ public static class Stories
                     break;
                 case "retire":
                     if (v > 0 && s.HeroId is int th && Hero(town, th) is { } ta) said.Add(Legacies.Retire(town, ta));
+                    break;
+                case "stir":
+                    if (s.SiteId is string usid && Undercity.LevelOf(town, usid) is { } sl)
+                    {
+                        sl.Stir = Math.Max(0, sl.Stir + v);
+                        said.Add($"{Undercity.Def(town, sl).Name} {(v > 0 ? "stir" : "quiet")} ({(v > 0 ? "+" : "−")}{Js.Str(Math.Abs(v))})");
+                    }
                     break;
                 case "memorial":
                     if (v > 0 && s.FallenId is int mf && Legacies.Of(town, mf) is { Memorial: false } ml)
