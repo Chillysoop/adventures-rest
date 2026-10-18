@@ -169,6 +169,8 @@ public static class Loyalty
         foreach (var (why, pts) in Decor.Loyalty(town, a)) Add(why, pts);
         Add("memorials to the fallen", Legacies.Loyalty(town));
         foreach (var (why, pts) in Bastions.Loyalty(town, a)) Add(why, pts);
+        var (regardWhy, regard) = Regard.Loyalty(town, a);
+        Add(regardWhy, regard);
         if (Callings.Of(town, a) is { } calling) Add(calling.Name.ToLowerInvariant(), calling.Loyalty);
         if (s.Knight) Add("knighted", r.Rank);
         if (s.FiefId != null) Add("lands of their own", r.Rank);
@@ -304,6 +306,15 @@ public static class Loyalty
         {
             town.Log(LedgerCategory.Departure, Importance.Major, $"{name} slips out of {town.Name} before dawn with {Js.Str(Js.Round(a.Gold))} gold and all their gear, saying the town never did right by them.", [a.Id]);
         }
+        Strip(a);
+        Population.Depart(town, a);
+    }
+
+    /// <summary>The mayor sends a hero packing: they leave with their gear and lose any honours.</summary>
+    internal static void Dismiss(Town town, Agent a)
+    {
+        town.Log(LedgerCategory.Departure, Importance.Major, $"{Styled(town, a)} is told to leave {town.Name}, and rides out with their gear and a grudge.", [a.Id]);
+        LoseLands(town, a);
         Strip(a);
         Population.Depart(town, a);
     }
