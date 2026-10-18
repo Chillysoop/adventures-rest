@@ -59,6 +59,8 @@ public class BastionsTests
         var sim = new Simulation(new SimulationOptions { Seed = 2 });
         var t = sim.Town;
         sim.RunDays(320);
+        // Give the first company with a bastion time to raise a facility and staff it.
+        for (int d = 0; d < 300 && !t.Bastions.Any(x => !x.Abandoned && !x.Idle && x.Facilities.Count > 0 && x.Facilities.Any(f => t.Building(f).Complete && t.Building(f).Workers.Count > 0)); d++) sim.RunDays(1);
         var b = t.Bastions.First(x => !x.Abandoned && !x.Idle && x.Facilities.Count > 0);
         var staff = b.Facilities.Select(t.Building).Where(f => f.Complete).SelectMany(f => f.Workers).ToList();
         Assert.NotEmpty(staff);
