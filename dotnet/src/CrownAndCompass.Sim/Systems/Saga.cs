@@ -106,9 +106,8 @@ public sealed record FallbackFoe
 
 public sealed record FinaleRules
 {
-    /// <summary>The big bad's level when crowned: the town's champions' level plus OverChampion, within these bounds.</summary>
+    /// <summary>The big bad's level when crowned: the level it grew to, within these bounds.</summary>
     public int[] OverlordLevel { get; init; } = [9, 13];
-    public int OverChampion { get; init; } = 2;
 
     /// <summary>
     /// The doom clock: the big bad's first host stands between these shares of the town's defence, however
