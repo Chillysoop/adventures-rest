@@ -67,7 +67,7 @@ public class TurningTests
         Simulation first = null!;
         List<Legend> legends = [];
         int seed = 0;
-        foreach (int s in new[] { 3, 5, 7, 8, 9, 10, 11 })
+        foreach (int s in new[] { 1, 3, 5, 7, 8, 9, 10, 11 })
         {
             seed = s;
             first = new Simulation(new SimulationOptions { Seed = seed });
