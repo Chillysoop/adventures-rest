@@ -44,6 +44,9 @@ public sealed record SimulationOptions
 
     /// <summary>Run the campaign arc (acts, festering menaces, dread); off, the Last Stand ends the game.</summary>
     public bool Saga { get; init; } = true;
+
+    /// <summary>Foes and heroes from the player's earlier campaigns, who may come back (<see cref="Systems.Legends"/>).</summary>
+    public IReadOnlyList<Legend> Legends { get; init; } = [];
 }
 
 /// <summary>
@@ -61,6 +64,7 @@ public sealed class Simulation
         Options = options ?? new SimulationOptions();
         Town = new Town(content ?? Content.Default(), Options.Seed);
         Town.Saga.Enabled = Options.Saga && Options.Enemy;
+        Town.Saga.Legends.AddRange(Options.Legends.Where(l => l.Seed != Options.Seed));
         Charter();
     }
 
@@ -108,6 +112,7 @@ public sealed class Simulation
         Faith.Daily(t);
         Factions.Daily(t, Options.AutoMayor);
         Saga.Daily(t, Options.AutoMayor);
+        Turning.Daily(t);
         Loyalty.Daily(t, Options.AutoMayor);
         Decor.Daily(t);
         Economy.Daily(t, true);
