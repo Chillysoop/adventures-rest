@@ -385,6 +385,8 @@ public static class Quests
         if (town.Heroes.Count == 0 && town.Taverns.Count == 0) return;
         var target = town.Sites
             .Where(s => s.Known != SiteKnowledge.Unheard && !s.ThoughtCleared && s.Trust >= 50)
+            // The undercity only once it stirs: the war on the surface comes first.
+            .Where(s => !Undercity.IsUnder(town, s) || Undercity.Stirring(town, s))
             // The trouble near town, which feeds the warband, comes before the far wilds.
             .OrderBy(s => s.Generated)
             .ThenBy(s => s.BelievedTier)
@@ -454,7 +456,7 @@ public static class Quests
             town.Log(
                 LedgerCategory.Quest,
                 Importance.Notable,
-                $"The {party.Name} ({string.Join(", ", members.Select(m => $"{m.GivenName} the {m.Hero!.Cls.Name}"))}) take the bounty on {s.Def.Name} and march out at dawn{Roads.Summary(party)}.",
+                $"The {party.Name} ({string.Join(", ", members.Select(m => $"{m.GivenName} the {m.Hero!.Cls.Name}"))}) take the bounty on {s.Def.Name} and {(s.Def.Distance == 0 ? "go down with lanterns at dusk" : "march out at dawn")}{Roads.Summary(party)}.",
                 members.Select(m => m.Id).ToList());
         }
     }
