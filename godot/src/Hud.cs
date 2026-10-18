@@ -28,6 +28,7 @@ public partial class Main
         [Tab.War] = "War",
         [Tab.Council] = "Council",
         [Tab.Bounties] = "Bounties and the road",
+        [Tab.Companies] = "Adventuring companies",
         [Tab.Faith] = "Faith and factions",
         [Tab.Campaign] = "The campaign",
         [Tab.Chronicles] = "Chronicles",

@@ -7,7 +7,7 @@ namespace CrownAndCompass.Client;
 /// <summary>
 /// Command-line options after "--", for sharing a moment or checking a build headlessly:
 /// <c>--seed 7 --day 40 --autoplay --tab bounties --site wolfwood --scry wolfwood --screenshot shot.png</c>.
-/// Also <c>--scout site</c>, <c>--mirror site</c>, <c>--build pool|spire|tower|palisade</c> and <c>--relic item-id</c>.
+/// Also <c>--scout site</c>, <c>--mirror site</c>, <c>--build pool|spire|tower|palisade</c>, <c>--relic item-id</c> and <c>--buy all|N</c> (companies' reports).
 /// </summary>
 public sealed class Options
 {
@@ -16,6 +16,9 @@ public sealed class Options
     public int Hour;
     public int? Speed;
     public string? Tab;
+
+    /// <summary>With --autoplay, leave companies' reports unbought for the player (screenshots of the companies window).</summary>
+    public bool KeepReports;
     public string? Site;
     public string? Screenshot;
     public int Frames = 45;
@@ -83,6 +86,7 @@ public sealed class Options
                 case "--hero": o.Hero = true; break;
                 case "--alert": o.Alert = int.Parse(Next()); break;
                 case "--no-pause": o.NoPause = true; break;
+                case "--keep-reports": o.KeepReports = true; break;
                 case "--cam": o.Cam = float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture); break;
                 case "--look":
                     var xy = Next().Split(',');
@@ -104,7 +108,7 @@ public sealed class Options
                 case "--beautify": o.Beautify = int.Parse(Next()); break;
                 case "--decor": o.DecorTool = Next(); break;
                 case "--decor-at": o.DecorAt = Next().Split(',').Select(v => double.Parse(v, System.Globalization.CultureInfo.InvariantCulture)).ToArray(); break;
-                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic":
+                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--buy":
                     o.Script.Add((args[i][2..], Next()));
                     break;
             }
@@ -143,6 +147,16 @@ public sealed class Options
                     break;
                 case "mirror":
                     sim.PlantMirror(arg);
+                    break;
+                case "buy":
+                    // Buy companies' reports ("all", or how many, newest first), topping up the treasury to pay.
+                    var sale = Intel.ForSale(t);
+                    int n = arg == "all" ? sale.Count : int.Parse(arg);
+                    foreach (var p in sale.Take(n))
+                    {
+                        t.Treasury += Intel.Ask(t, p);
+                        sim.BuyIntel(p.Id);
+                    }
                     break;
                 case "relic":
                     // For showing a late-game moment quickly: a party has just brought a relic home.
