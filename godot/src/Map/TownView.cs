@@ -135,6 +135,8 @@ public partial class TownView(MapView map) : Node3D
 
     private static string MeshKey(Building b)
     {
+        // A grand work rises in plain sight: its own shape, taller with every stage, in scaffold.
+        if (b.IsSite && b.Def.IsGrand) return $"grand:{Math.Min(7, (int)(b.BuildProgress / b.Def.BuildHours * 8))}:{b.Def.Id}";
         if (b.IsSite) return $"site:{Math.Min(3, (int)(b.BuildProgress / b.Def.BuildHours * 4))}";
         return $"{b.Def.Id}:{b.Id % 4}";
     }
@@ -190,7 +192,14 @@ public partial class TownView(MapView map) : Node3D
         var kit = new MeshKit();
         var parts = key.Split(':');
         int v = parts.Length > 1 ? int.Parse(parts[1]) : 0;
-        switch (parts[0])
+        if (parts[0] == "grand") Rising(kit, parts[2], v);
+        else Draw(kit, parts[0], v);
+        return _meshes[key] = kit.Build();
+    }
+
+    private static void Draw(MeshKit kit, string id, int v)
+    {
+        switch (id)
         {
             case "site": Construction(kit, v); break;
             case "sign": kit.Add("nature/sign", MeshKit.At(0, 0, 0, 0, 0.7f)); break;
@@ -230,9 +239,30 @@ public partial class TownView(MapView map) : Node3D
             case "arena": Arena(kit, v); break;
             case "keep": Keep(kit); break;
             case "guildhall": Guildhall(kit, v); break;
+            // A company's bastion: its own keep under its banner, and facilities after the town's own kinds.
+            case "bastion_keep":
+                // Smaller than the city's keep: a company's hall, not a lord's castle.
+                kit.Push(MeshKit.At(0, 0, 0, 0, 0.72f));
+                Keep(kit, Dyes[v % Dyes.Length]);
+                kit.Pop();
+                break;
+            case "bastion_garden": HerbGarden(kit, v); break;
+            case "bastion_yard": Barracks(kit, v); break;
+            case "bastion_smithy": Forge(kit, v); break;
+            case "bastion_maproom": Library(kit, v); break;
+            case "bastion_sanctum": Temple(kit, v); break;
+            case "bastion_counting": Guildhall(kit, v); break;
+            case "bastion_proving": Arena(kit, v); break;
+            case "bastion_banners": Courthouse(kit, v); break;
+            case "bastion_vault": WatchHouse(kit, v); break;
+            case "clock_tower": ClockTower(kit); break;
+            case "aqueduct": Aqueduct(kit); break;
+            case "great_gatehouse": Gatehouse(kit); break;
+            case "mage_tower": MageTower(kit); break;
+            case "royal_gardens": Gardens(kit); break;
+            case "colossus": Colossus(kit); break;
             default: House(kit, v); break;
         }
-        return _meshes[key] = kit.Build();
     }
 
     /// <summary>
@@ -1138,11 +1168,11 @@ public partial class TownView(MapView map) : Node3D
     }
 
     /// <summary>The keep: a great square tower inside four corner towers and curtain walls, the lord's flag on top.</summary>
-    private static void Keep(MeshKit k)
+    private static void Keep(MeshKit k, Color? flag = null)
     {
         var castle = WallStone(new Color("4f5f8a"), 0.85f);
         TowerStack(k, 0, -0.04f, 0.5f, ["tower-square-base", "tower-square-mid-windows", "tower-square-mid", "tower-square-top"], castle);
-        k.Add("castle/flag-wide", MeshKit.At(0, 1.66f, -0.04f, Mathf.Pi / 2, 0.55f), Palette.Kenney(new Color("b8322a")));
+        k.Add("castle/flag-wide", MeshKit.At(0, 1.66f, -0.04f, Mathf.Pi / 2, 0.55f), Palette.Kenney(flag ?? new Color("b8322a")));
         float c = 0.38f;
         foreach (var (x, z) in new[] { (-c, -c), (c, -c), (-c, c), (c, c) })
             TowerStack(k, x, z, 0.22f, ["tower-square-base", "tower-square-mid", "tower-square-top-roof"], castle);
@@ -1162,6 +1192,208 @@ public partial class TownView(MapView map) : Node3D
             }
             else CurtainRun(k, a, b, 0.1f, 0.34f, 0.3f, castle);
         }
+    }
+
+    // ---------- Grand works ----------
+
+    /// <summary>
+    /// A grand work under way, in eighths: its own shape rising out of the ground stage by stage, wrapped in
+    /// scaffold poles and walkways, with stone and timber stacked by the footings.
+    /// </summary>
+    private static void Rising(MeshKit k, string id, int eighth)
+    {
+        float f = 0.12f + 0.88f * eighth / 8f;
+        k.Box(Vector3.Zero, new Vector3(0.98f, 0.02f, 0.98f), Palette.Dirt.Darkened(0.1f));
+        k.Push(new Transform3D(Basis.FromScale(new Vector3(1, f, 1)), Vector3.Zero));
+        Draw(k, id, 0);
+        k.Pop();
+        float hx = 0.47f, hz = 0.47f, h = 0.15f + 0.9f * f;
+        if (id == "aqueduct") hz = 0.16f;
+        else if (id == "royal_gardens") { hz = 0.36f; h = 0.12f + 0.2f * f; }
+        else if (id == "great_gatehouse") hz = 0.32f;
+        for (int i = 0; i <= 4; i++)
+        {
+            float x = -hx + i * hx / 2;
+            foreach (float z in new[] { -hz, hz })
+                k.Box(new Vector3(x, 0, z), new Vector3(0.018f, h, 0.018f), Palette.Timber);
+        }
+        foreach (float x in new[] { -hx, hx })
+            for (int j = 1; j < 4; j++) k.Box(new Vector3(x, 0, -hz + j * hz / 2), new Vector3(0.018f, h, 0.018f), Palette.Timber);
+        for (float y = 0.16f; y < h; y += 0.22f)
+        {
+            foreach (float z in new[] { -hz, hz }) k.Box(new Vector3(0, y, z), new Vector3(hx * 2, 0.012f, 0.05f), new Color("c8ab7e"));
+            foreach (float x in new[] { -hx, hx }) k.Box(new Vector3(x, y, 0), new Vector3(0.05f, 0.012f, hz * 2), new Color("c8ab7e"));
+        }
+        k.Box(new Vector3(hx - 0.08f, 0, hz + 0.1f), new Vector3(0.14f, 0.06f, 0.08f), Palette.Stone, Palette.Stone.Lightened(0.15f));
+        k.Add("nature/log_stack", MeshKit.At(-hx + 0.1f, 0, hz + 0.12f, Mathf.Pi / 2, 0.5f));
+    }
+
+    /// <summary>The clock tower: a tall square stone tower on a plinth, a clock face on every side, an open belfry and a gilded spire.</summary>
+    private static void ClockTower(MeshKit k)
+    {
+        var castle = WallStone(new Color("6a5a4a"), 0.95f);
+        var roof = new Color("4a5a6a");
+        k.Box(Vector3.Zero, new Vector3(0.62f, 0.05f, 0.62f), new Color("9a9080"), new Color("b0a898"));
+        const float S = 0.32f;
+        TowerStack(k, 0, 0, S, ["tower-square-base", "tower-square-mid", "tower-square-mid-windows", "tower-square-mid", "tower-square-mid"], castle);
+        float top = 5 * 1.01f * S;
+        float fy = top - 0.45f * S;
+        foreach (var n in new[] { Vector3.Back, Vector3.Forward, Vector3.Left, Vector3.Right })
+        {
+            var c = new Vector3(0, fy, 0) + n * (S * 0.53f);
+            Pane(k, c, n, 0.1f, 0.1f, new Color("efe6cc"));
+            Pane(k, c + n * 0.004f + new Vector3(0, 0.035f, 0), n, 0.007f, 0.04f, new Color("2a2420"));
+            Pane(k, c + n * 0.004f + new Vector3(n.Z, 0, -n.X) * 0.025f, n, 0.03f, 0.006f, new Color("2a2420"));
+        }
+        // The belfry: four piers round a gilded bell, under a slate spire.
+        float b = S * 0.42f;
+        foreach (var (x, z) in new[] { (-b, -b), (b, -b), (-b, b), (b, b) })
+            k.Box(new Vector3(x, top, z), new Vector3(0.05f, 0.22f, 0.05f), new Color("b0a898"));
+        k.Frustum(new Vector3(0, top + 0.04f, 0), 0.07f, 0.03f, 0.12f, 8, new Color(Palette.Gold, MeshKit.Flag.Magic));
+        k.Push(MeshKit.At(0, top + 0.22f, 0));
+        k.Pyramid(0, S * 1.05f, S * 1.05f, 0.42f, roof);
+        k.Pop();
+        k.Frustum(new Vector3(0, top + 0.62f, 0), 0.025f, 0, 0.16f, 4, new Color(Palette.Gold, MeshKit.Flag.Magic));
+    }
+
+    /// <summary>The aqueduct: two tiers of stone arches carrying a water channel the length of the lot, a spring house at one end and a fountain at the other.</summary>
+    private static void Aqueduct(MeshKit k)
+    {
+        var stone = new Color("b8ae98");
+        var dark = stone.Darkened(0.12f);
+        const float L = 0.4f;
+        // Lower arcade: piers with lintels between them.
+        for (int i = 0; i <= 8; i++)
+            k.Box(new Vector3(-L + i * L / 4, 0, 0), new Vector3(0.045f, 0.3f, 0.12f), dark, stone);
+        k.Box(new Vector3(0, 0.26f, 0), new Vector3(2 * L + 0.045f, 0.06f, 0.12f), stone);
+        // Upper arcade, twice as many and slimmer.
+        for (int i = 0; i <= 16; i++)
+            k.Box(new Vector3(-L + i * L / 8, 0.32f, 0), new Vector3(0.028f, 0.14f, 0.09f), dark, stone);
+        k.Box(new Vector3(0, 0.44f, 0), new Vector3(2 * L + 0.03f, 0.06f, 0.1f), stone, stone.Lightened(0.1f));
+        k.Box(new Vector3(0, 0.5f, 0.04f), new Vector3(2 * L, 0.02f, 0.015f), stone);
+        k.Box(new Vector3(0, 0.5f, -0.04f), new Vector3(2 * L, 0.02f, 0.015f), stone);
+        k.Box(new Vector3(0, 0.5f, 0), new Vector3(2 * L, 0.01f, 0.065f), new Color("3f6f95"));
+        // The spring house at the hill end, the fountain at the town end.
+        k.Push(MeshKit.At(L + 0.06f, 0, 0, 0, 0.13f));
+        Walls(k, 1, 1, 0, true, 5, true);
+        k.Push(MeshKit.At(0, 1, 0));
+        k.Pyramid(0, 1.1f, 1.1f, 0.6f, new Color("58626f"));
+        k.Pop();
+        k.Pop();
+        k.Add("town/fountain-round", MeshKit.At(-L - 0.04f, 0, 0, 0, 0.17f), Palette.Kenney(new Color("6a8aa8")));
+    }
+
+    /// <summary>The great gatehouse: twin square towers either side of a deep gate passage, a portcullis, battlements and banners.</summary>
+    private static void Gatehouse(MeshKit k)
+    {
+        var castle = WallStone(new Color("5a4f6a"), 0.9f);
+        const float S = 0.3f;
+        foreach (float x in new[] { -0.3f, 0.3f })
+        {
+            TowerStack(k, x, 0, S, ["tower-square-base", "tower-square-mid-windows", "tower-square-mid", "tower-square-top-roof"], castle);
+            k.Add("castle/flag-banner-long", MeshKit.At(x, 3 * 1.01f * S, S * 0.5f, 0, 0.35f), Palette.Kenney(new Color("b8322a")));
+        }
+        // The gate block between them, with the arch and its portcullis on the road side.
+        var wall = new Color("9a9286");
+        k.Box(new Vector3(0, 0, 0), new Vector3(0.32f, 0.62f, 0.3f), wall, wall.Lightened(0.08f));
+        k.Add("castle/gate", new Transform3D(Basis.FromEuler(new Vector3(0, Mathf.Pi / 2, 0)) * Basis.FromScale(new Vector3(1, 0.5f, 0.32f)), new Vector3(0, 0, 0.15f)), castle);
+        Pane(k, new Vector3(0, 0.15f, 0.152f), Vector3.Back, 0.07f, 0.15f, new Color("2a2622"));
+        for (int i = 0; i < 6; i++)
+        {
+            float x = -0.15f + i * 0.06f;
+            k.Box(new Vector3(x, 0.62f, 0.13f), new Vector3(0.035f, 0.05f, 0.04f), wall);
+            k.Box(new Vector3(x, 0.62f, -0.13f), new Vector3(0.035f, 0.05f, 0.04f), wall);
+        }
+        // Wall stubs running off to meet the town wall.
+        k.Box(new Vector3(-0.47f, 0, 0), new Vector3(0.06f, 0.36f, 0.12f), wall);
+        k.Box(new Vector3(0.47f, 0, 0), new Vector3(0.06f, 0.36f, 0.12f), wall);
+    }
+
+    /// <summary>The mage tower: a tall hexagonal tower of warded stone with a little sister tower, crystals turning round its crown.</summary>
+    private static void MageTower(MeshKit k)
+    {
+        var castle = Palette.Kenney(new Color("5a3f8a"));
+        k.Box(Vector3.Zero, new Vector3(0.7f, 0.03f, 0.7f), new Color("6a6478"));
+        k.Push(MeshKit.At(0, 0, 0, 0, 0.5f));
+        k.Add("castle/tower-hexagon-base", MeshKit.At(0, 0, 0), castle);
+        for (int i = 0; i < 6; i++) k.Add("castle/tower-hexagon-mid", MeshKit.At(0, 1.31f + i * 0.46f, 0), castle);
+        k.Add("castle/tower-hexagon-top", MeshKit.At(0, 4.07f, 0), castle);
+        k.Add("castle/tower-hexagon-roof", MeshKit.At(0, 4.2f, 0), castle);
+        k.Frustum(new Vector3(0, 5.0f, 0), 0.08f, 0, 0.6f, 6, new Color(Palette.Gold, MeshKit.Flag.Magic));
+        // Crystals turning round the crown, and a glow in the topmost windows.
+        for (int i = 0; i < 5; i++)
+        {
+            float a = i * Mathf.Tau / 5;
+            k.Blob(new Vector3(Mathf.Cos(a) * 0.75f, 3.9f + (i % 2) * 0.35f, Mathf.Sin(a) * 0.75f), new Vector3(0.08f, 0.16f, 0.08f), new Color("b48cff", MeshKit.Flag.Magic));
+        }
+        k.Pop();
+        k.Push(MeshKit.At(0.3f, 0, 0.22f, 0.4f, 0.24f));
+        k.Add("castle/tower-hexagon-base", MeshKit.At(0, 0, 0), castle);
+        k.Add("castle/tower-hexagon-mid", MeshKit.At(0, 1.31f, 0), castle);
+        k.Add("castle/tower-hexagon-top", MeshKit.At(0, 1.77f, 0), castle);
+        k.Add("castle/tower-hexagon-roof", MeshKit.At(0, 1.9f, 0), castle);
+        k.Pop();
+    }
+
+    /// <summary>The royal gardens: lawns inside clipped hedges, gravel walks, a great fountain, statues, trees and a glass orangery.</summary>
+    private static void Gardens(MeshKit k)
+    {
+        const float X = 0.48f, Z = 0.35f;
+        k.Box(Vector3.Zero, new Vector3(X * 2, 0.02f, Z * 2), Lawn);
+        var gravel = new Color("d8ccae");
+        k.Box(new Vector3(0, 0.02f, 0), new Vector3(X * 2, 0.004f, 0.07f), gravel);
+        k.Box(new Vector3(0, 0.02f, 0), new Vector3(0.07f, 0.004f, Z * 2), gravel);
+        for (int i = 0; i < 8; i++)
+        {
+            float x = -X + 0.06f + i * (2 * X - 0.12f) / 7;
+            if (Math.Abs(x) < 0.08f) continue;
+            k.Box(new Vector3(x, 0.02f, Z - 0.02f), new Vector3(0.1f, 0.05f, 0.04f), Hedge);
+            k.Box(new Vector3(x, 0.02f, -Z + 0.02f), new Vector3(0.1f, 0.05f, 0.04f), Hedge);
+        }
+        foreach (float x in new[] { -X + 0.02f, X - 0.02f }) k.Box(new Vector3(x, 0.02f, 0), new Vector3(0.04f, 0.05f, Z * 2 - 0.04f), Hedge);
+        k.Add("town/fountain-square-detail", MeshKit.At(0, 0.02f, 0, 0, 0.2f), Palette.Kenney(new Color("6a8aa8")));
+        foreach (var (x, z) in new[] { (-0.2f, -0.18f), (0.2f, -0.18f), (-0.2f, 0.18f), (0.2f, 0.18f) })
+            k.Add("nature/statue_column", MeshKit.At(x, 0.02f, z, 0, 0.18f));
+        foreach (var (x, z, tree) in new[] { (-0.38f, -0.24f, "nature/tree_cone"), (-0.38f, 0.24f, "nature/tree_cone"), (-0.3f, 0, "nature/tree_oak"), (0.12f, 0.25f, "nature/tree_cone"), (-0.12f, 0.25f, "nature/tree_cone"), (0.12f, -0.25f, "nature/plant_bush"), (-0.12f, -0.25f, "nature/plant_bush") })
+            k.Add(tree, MeshKit.At(x, 0.02f, z, x * 7, 0.22f));
+        // The orangery: a glasshouse along the east end.
+        var glass = new Color("a8c8d0", MeshKit.Flag.Window);
+        k.Box(new Vector3(0.34f, 0.02f, 0), new Vector3(0.16f, 0.15f, 0.4f), glass, glass);
+        k.Push(MeshKit.At(0.34f, 0.17f, 0, Mathf.Pi / 2));
+        k.Gable(0, 0.4f, 0.16f, 0.08f, new Color("d8e4e8", MeshKit.Flag.Window), new Color("e8e0d0"), 0.01f);
+        k.Pop();
+        k.Box(new Vector3(0.34f, 0.02f, 0.2f), new Vector3(0.17f, 0.17f, 0.01f), new Color("e8e0d0"));
+        k.Box(new Vector3(0.34f, 0.02f, -0.2f), new Vector3(0.17f, 0.17f, 0.01f), new Color("e8e0d0"));
+    }
+
+    /// <summary>The colossus: the town's founder in bronze on a stepped plinth, cloaked, a shield at the side and a lantern raised high, crowned in gold.</summary>
+    private static void Colossus(MeshKit k)
+    {
+        var bronze = new Color("9a7440");
+        var light = new Color("c09a5a");
+        var stone = new Color("b0a898");
+        k.Box(Vector3.Zero, new Vector3(0.8f, 0.06f, 0.8f), stone.Darkened(0.1f), stone);
+        k.Box(new Vector3(0, 0.06f, 0), new Vector3(0.6f, 0.06f, 0.6f), stone.Darkened(0.05f), stone);
+        k.Box(new Vector3(0, 0.12f, 0), new Vector3(0.4f, 0.22f, 0.4f), stone, stone.Lightened(0.1f));
+        float y = 0.34f;
+        // Legs, the cloak behind, the body tapering to the shoulders.
+        k.Box(new Vector3(-0.07f, y, 0), new Vector3(0.08f, 0.5f, 0.1f), bronze, light);
+        k.Box(new Vector3(0.07f, y, 0.02f), new Vector3(0.08f, 0.5f, 0.1f), bronze, light);
+        k.Frustum(new Vector3(0, y + 0.42f, 0), 0.17f, 0.13f, 0.48f, 4, bronze, light, Mathf.Pi / 4);
+        k.Frustum(new Vector3(0, y + 0.1f, -0.06f), 0.16f, 0.12f, 0.75f, 6, new Color("6a4a2a"), null, 0);
+        float sh = y + 0.9f;
+        // The lantern arm, raised.
+        k.Box(new Vector3(0.15f, sh - 0.05f, 0), new Vector3(0.06f, 0.42f, 0.06f), bronze, light);
+        k.Blob(new Vector3(0.15f, sh + 0.42f, 0), new Vector3(0.06f, 0.08f, 0.06f), new Color("ffb84a", MeshKit.Flag.Ember));
+        // The shield arm, lowered.
+        k.Box(new Vector3(-0.16f, sh - 0.35f, 0.02f), new Vector3(0.06f, 0.35f, 0.06f), bronze, light);
+        k.Frustum(new Vector3(-0.21f, sh - 0.42f, 0.04f), 0.02f, 0.02f, 0.01f, 8, bronze);
+        k.Push(new Transform3D(Basis.FromEuler(new Vector3(0, 0, Mathf.Pi / 2)), new Vector3(-0.2f, sh - 0.3f, 0.04f)));
+        k.Frustum(Vector3.Zero, 0.13f, 0.13f, 0.03f, 10, light, new Color(Palette.Gold, MeshKit.Flag.Magic));
+        k.Pop();
+        // The head, and the crown.
+        k.Blob(new Vector3(0, sh + 0.1f, 0), new Vector3(0.08f, 0.1f, 0.08f), bronze);
+        k.Frustum(new Vector3(0, sh + 0.17f, 0), 0.07f, 0.08f, 0.06f, 8, new Color(Palette.Gold, MeshKit.Flag.Magic));
     }
 
     /// <summary>Castle-kit wall sections from a to b (on the ground), thick by high, about seg long each.</summary>

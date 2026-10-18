@@ -95,10 +95,18 @@ public static class Population
         return traits;
     }
 
-    /// <summary>Daily: newcomers arrive if the town looks like a place worth living.</summary>
-    public static void DailyArrivals(Town town)
+    /// <summary>One reason settlers come (positive) or stay away (negative), as it counts toward <see cref="Appeal"/>.</summary>
+    public sealed record Pull(string Label, double Value);
+
+    /// <summary>How strongly the town draws settlers today (0.05 to 1.6), and the reasons that add up to it.</summary>
+    public sealed record Draw(double Total, List<Pull> Parts);
+
+    /// <summary>
+    /// The town's pull on settlers, read off the town with no dice: <see cref="DailyArrivals"/> rolls against its total,
+    /// and the City window and alerts show its parts so the player can see why settlers come or don't.
+    /// </summary>
+    public static Draw Appeal(Town town)
     {
-        var rng = town.Rng;
         int openJobs = 0;
         int openBeds = 0;
         int sites = 0;
@@ -113,17 +121,53 @@ public static class Population
         int homeless = res.Count(x => x.HomeId == null);
         int idle = res.Count(x => x.JobId == null);
 
-        double attraction = 0.3 + 0.06 * openJobs + 0.04 * openBeds + 0.05 * sites - (foodPrice > 1.8 ? 0.4 : 0) - 0.04 * homeless - 0.06 * idle;
+        double jobs = 0.06 * openJobs, beds = 0.04 * openBeds, building = 0.05 * sites, bread = foodPrice > 1.8 ? 0.4 : 0;
+        double roofless = 0.04 * homeless, workless = 0.06 * idle;
+        double attraction = 0.3 + jobs + beds + building - bread - roofless - workless;
         // Word travels: a popular mayor draws settlers, high taxes turn them away.
-        attraction += (town.Mandate - 50) / 200 - (town.TaxRate - town.Content.Rules.TaxRate) * 5 + Decor.Draw(town) + Seasons.Arrivals(town);
+        double mandate = (town.Mandate - 50) / 200, tax = (town.TaxRate - town.Content.Rules.TaxRate) * 5, decor = Decor.Draw(town), works = GrandWorks.Draw(town);
+        double season = Seasons.Arrivals(town), decrees = Decrees.Arrivals(town);
+        attraction += mandate - tax + decor + works + season + decrees;
         // A young town is a chance at cheap land: the frontier draws settlers until the town is a proper village.
-        attraction += town.Content.Rules.FrontierDraw * Math.Max(0, 1 - town.Population / town.Content.Rules.FrontierSize);
+        double frontier = town.Content.Rules.FrontierDraw * Math.Max(0, 1 - town.Population / town.Content.Rules.FrontierSize);
+        attraction += frontier;
         // Settlers want land to build on: with no residential lot zoned and for sale, fewer come.
-        if (Planning.VacantZoned(town, Zone.Residential) == 0) attraction -= 0.15;
+        double land = Planning.VacantZoned(town, Zone.Residential) == 0 ? 0.15 : 0;
+        if (land > 0) attraction -= land;
         attraction = Math.Max(0.05, Math.Min(1.6, attraction));
 
-        // Word of a bigger town travels further: the roads bring more hopefuls to a city than a thorp.
-        int rolls = 4 + Math.Min(town.Population, 640) / 80;
+        var parts = new List<Pull> { new("Word on the road", 0.3) };
+        void Add(string label, double v) { if (v != 0) parts.Add(new(label, v)); }
+        Add(openJobs == 1 ? "1 job going" : $"{openJobs} jobs going", jobs);
+        Add(openBeds == 1 ? "1 empty bed" : $"{openBeds} empty beds", beds);
+        Add(sites == 1 ? "1 building site hiring" : $"{sites} building sites hiring", building);
+        Add($"Dear bread ({foodPrice:0.00}g a loaf)", -bread);
+        Add($"{homeless} homeless", -roofless);
+        Add($"{idle} out of work", -workless);
+        Add($"Your mandate ({Math.Round(town.Mandate)})", mandate);
+        Add($"Taxes at {Math.Round(town.TaxRate * 100)}%", -tax);
+        Add("Decorations", decor);
+        Add("Grand works", works);
+        Add($"The season ({Seasons.Current(town).Name.ToLowerInvariant()})", season);
+        Add("Decrees in force", decrees);
+        Add("Cheap land in a young town", frontier);
+        Add("No zoned home lots for sale", -land);
+        return new(attraction, parts);
+    }
+
+    /// <summary>Settlers a week the town can expect at its current appeal (groups of one or two, about 1.3 each).</summary>
+    public static double WeeklySettlers(Town town, double appeal) => 7 * Rolls(town) * appeal / 4 * 1.3;
+
+    // Word of a bigger town travels further: the roads bring more hopefuls to a city than a thorp.
+    private static int Rolls(Town town) => 4 + Math.Min(town.Population, 640) / 80;
+
+    /// <summary>Daily: newcomers arrive if the town looks like a place worth living.</summary>
+    public static void DailyArrivals(Town town)
+    {
+        var rng = town.Rng;
+        double attraction = Appeal(town).Total;
+
+        int rolls = Rolls(town);
         int groups = 0;
         for (int i = 0; i < rolls; i++) if (rng.Chance(attraction / 4)) groups++;
 
@@ -132,6 +176,28 @@ public static class Population
             if (rng.Chance(0.3)) ArriveCouple(town);
             else ArriveSingle(town);
         }
+    }
+
+    /// <summary>
+    /// Settlers a story sends: n come in (as singles), or, with n below zero, the unhappiest households
+    /// (lowest mood, ties by id) leave. Returns how many people came or went.
+    /// </summary>
+    public static int Settle(Town town, int n)
+    {
+        if (n > 0)
+        {
+            for (int i = 0; i < n; i++) ArriveSingle(town);
+            return n;
+        }
+        int gone = 0;
+        foreach (var a in town.Workers.Where(a => a.Age >= 18).OrderBy(a => a.LastDayMood).ThenBy(a => a.Id).ToList())
+        {
+            if (gone >= -n) break;
+            if (a.Departed) continue;
+            Depart(town, a);
+            gone++;
+        }
+        return -gone;
     }
 
     private static void ArriveSingle(Town town)
@@ -216,7 +282,8 @@ public static class Population
             if (b.OwnerId != a.Id) continue;
             b.OwnerId = null;
             town.Lot(b.LotId).OwnerId = null;
-            if (b.Def.Jobs > 0) Economy.PutUpForSale(town, b);
+            // A bastion passes to the next of its company (Bastions.Daily), or stands empty.
+            if (b.Def.Jobs > 0 && !b.Def.Bastion) Economy.PutUpForSale(town, b);
         }
         foreach (var lot in town.Lots) if (lot.OwnerId == a.Id) lot.OwnerId = null;
         // Whoever leaves, by the road or the grave, leaves their factions too.

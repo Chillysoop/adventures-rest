@@ -162,6 +162,18 @@ public static class Gear
         return s.Magic.TryGetValue("trinket", out var t) ? $"{kit}; {t.Name}" : kit;
     }
 
+    /// <summary>The best magic item of one hero passes to another, who wears it; returns it, or null if there was none.</summary>
+    public static LibItem? Pass(Town town, Agent from, Agent to)
+    {
+        var s = from.Hero!;
+        var best = s.Magic.Keys.Select(k => (Slot: k, Item: s.Magic[k])).OrderByDescending(x => x.Item.Tier).ThenByDescending(x => x.Item.ValueGp).ThenBy(x => x.Item.Name, StringComparer.Ordinal).FirstOrDefault();
+        if (best.Item == null) return null;
+        s.Magic.Remove(best.Slot);
+        Relist(s);
+        Wear(town, to, best.Item);
+        return best.Item;
+    }
+
     private static void Relist(HeroSheet s)
     {
         s.Items.Clear();
@@ -278,6 +290,33 @@ public static class Gear
                 .FirstOrDefault();
             if (buy != null) Buy(town, a, buy);
         }
+    }
+
+    /// <summary>
+    /// A company smithy's week for one hero: the plain weapon or armour of their class that beats theirs most,
+    /// made free. Returns what they were given, or null when nothing the smiths make beats what they carry.
+    /// </summary>
+    public static string? Forge(Town town, Agent a)
+    {
+        var s = a.Hero!;
+        var lib = town.Content.Library;
+        LibGear? best = null;
+        string slot = "";
+        double points = 0;
+        if (!s.Cls.Spell)
+            foreach (var id in s.Cls.Better)
+                if (lib.GearOf(id) is LibGear w && (Avg(w.Damage) - Avg(s.Weapon?.Damage)) / 2 is double p && p > points)
+                    (best, slot, points) = (w, "weapon", p);
+        int dex = Rng.Modifier(a.Abilities.Dex);
+        foreach (var id in s.Cls.Wears)
+            if (lib.GearOf(id) is LibGear arm && a.Abilities.Str >= arm.Strength && s.Armor != null && ArmorAc(arm, dex, a) - ArmorAc(s.Armor, dex, a) is int p && p > points)
+                (best, slot, points) = (arm, "armor", p);
+        if (best == null) return null;
+        if (slot == "weapon") s.Weapon = best;
+        else s.Armor = best;
+        Relist(s);
+        string what = Library.Prose(best.Name);
+        return slot == "armor" ? what : $"{Agent.Article(what)} {what}";
     }
 
     private static void Buy(Town town, Agent a, Offer o)

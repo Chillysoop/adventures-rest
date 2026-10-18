@@ -176,7 +176,7 @@ public static class City
     public static bool Reached(Town town, string tierId) => TierIndex(town, tierId) <= town.City.Tier;
 
     /// <summary>The most heroes who will make their home here at this tier.</summary>
-    public static int HeroCap(Town town) => Tier(town).Heroes;
+    public static int HeroCap(Town town) => Tier(town).Heroes + GrandWorks.Heroes(town);
 
     /// <summary>The size the townsfolk boast of: every resident's household.</summary>
     public static int Souls(Town town) => (int)Js.Round(town.Population * town.Content.City.SoulsPerResident);
@@ -434,6 +434,7 @@ public static class City
         var rules = town.Content.City;
         var wanted = new OrderedMap<Good, double>();
         var supplied = new OrderedMap<Good, double>();
+        double grand = GrandWorks.Comfort(town);
         foreach (var house in town.Buildings)
         {
             if (!house.Complete || house.Def.Housing == 0) continue;
@@ -460,7 +461,7 @@ public static class City
                 sum += CoverageOf(town, s);
                 needs++;
             }
-            house.Contentment = Math.Clamp((needs == 0 ? 1 : sum / needs) + Decor.Comfort(town, house), 0, 1);
+            house.Contentment = Math.Clamp((needs == 0 ? 1 : sum / needs) + Decor.Comfort(town, house) + grand, 0, 1);
         }
         town.City.Wanted = wanted;
         town.City.Supplied = supplied;
@@ -553,7 +554,7 @@ public static class City
             sum += CoverageOf(town, s);
             needs++;
         }
-        return Math.Clamp((needs == 0 ? 1 : sum / needs) + Decor.Comfort(town, house), 0, 1);
+        return Math.Clamp((needs == 0 ? 1 : sum / needs) + Decor.Comfort(town, house) + GrandWorks.Comfort(town), 0, 1);
     }
 
     /// <summary>Why this house can't grow now, or null when it can.</summary>

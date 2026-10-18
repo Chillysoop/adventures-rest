@@ -1,0 +1,20 @@
+{
+  "_doc": "Trade routes to the settlements of the world (Systems/Trade.cs). A people at minStanding or better will take a route; the council pays openCost + openPerDay per day of road to fit out the caravan. Each trip (there and back, plus turnaroundDays, plus the season's march days both ways) sells up to load + loadPerHundred per 100 people of the export, keeping keepShare of its market target at home, at exportPrice times base (wantedPrice if the people want it), and buys back the import at importPrice times base while the market is short of it. Every caravan that gets through raises standing; raid odds rise with each living menace near the road. routes: how many the town may run at each charter tier.",
+  "minStanding": 10,
+  "closeBelow": -20,
+  "openCost": 80,
+  "openPerDay": 15,
+  "routes": { "thorp": 0, "hamlet": 1, "village": 1, "town": 2, "large_town": 3, "city": 4, "great_city": 5 },
+  "turnaroundDays": 2,
+  "load": 10,
+  "loadPerHundred": 3,
+  "allyLoad": 1.3,
+  "keepShare": 0.6,
+  "exportPrice": 1.0,
+  "wantedPrice": 1.25,
+  "importPrice": 0.9,
+  "importBelow": 1.0,
+  "standingPerCaravan": 0.8,
+  "raid": 0.03,
+  "raidPerMenace": 0.06
+}

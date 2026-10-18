@@ -55,7 +55,54 @@ public partial class Main
         p.Row($"[b]Watch[/b]  {Tag($"{t.Watch} watchmen")}\n{Ui.C(Ui.Ink2, "[font_size=12]Hired through the Captain's motions in the Council.[/font_size]")}");
         p.Row($"[b]Heroes in town[/b]  {Tag(home.ToString())}\n{Ui.C(Ui.Ink2, "[font_size=12]Only heroes can kill the warlord when he comes.[/font_size]")}");
         if (camp != null && !camp.Cleared) p.Note("The war camp feeds the warband. Post a bounty on it in the Bounties tab to strike first.");
+        RenderSellswords(p, t);
         p.Commit();
+    }
+
+    /// <summary>Sellsword companies: hire one onto the walls, send it against a menace, or pay it off.</summary>
+    private void RenderSellswords(Pane p, Town t)
+    {
+        p.Heading("Sellswords");
+        var targets = Mercenaries.Targets(t);
+        foreach (var c in Mercenaries.Rules(t).Companies)
+        {
+            var h = Mercenaries.Hired(t, c.Id);
+            string? why = Mercenaries.HireBlocked(t, c.Id);
+            var id = c.Id;
+            string head = $"[b]{Ui.Esc(Ui.Cap(c.Name))}[/b]  {Tag($"strength {c.Strength:0}")}";
+            if (h == null)
+            {
+                if (c.Tier != "" && !City.Reached(t, c.Tier))
+                {
+                    p.Row($"{head}  {Tag($"needs {City.TierName(t, c.Tier).ToLowerInvariant()}")}");
+                    continue;
+                }
+                p.Row($"{head}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(c.Blurb)} {c.Fee:N0}g to sign, then {c.Wage:N0}g a day.[/font_size]")}",
+                    ($"Hire · {c.Fee:N0}g", why == null, true, () => Act(() => _sim.HireMercenaries(id))));
+                continue;
+            }
+            var foe = h.TargetId is int tid ? t.Saga.Menaces.FirstOrDefault(m => m.Id == tid) : null;
+            string where = h.ArriveTick is int at ? Tag($"marching on {foe?.SeatName ?? "the foe"}, {Ui.Days(Math.Max(1, (int)Math.Ceiling((at - t.Tick) / 24.0)))}", Ui.Gold)
+                : h.HomeTick is int home ? Tag($"coming home, {Ui.Days(Math.Max(1, (int)Math.Ceiling((home - t.Tick) / 24.0)))}", Ui.Gold)
+                : Tag("on the walls", Ui.Good);
+            p.Row($"{head}  {where}\n{Ui.C(Ui.Ink2, $"[font_size=12]{c.Wage:N0}g a day. Adds its strength to your defence while it is home.[/font_size]")}",
+                ("Dismiss", !h.Away, false, () => Act(() => _sim.DismissMercenaries(id))));
+            p.Meter("Fit to fight", 100 * h.Strength / c.Strength, $"{Math.Round(h.Strength)}", h.Strength < c.Strength * 0.5);
+            if (h.Away) continue;
+            double cost = Mercenaries.CampaignCost(t, c.Id);
+            foreach (var m in targets.Take(4))
+            {
+                int mid = m.Id;
+                string odds = h.Strength >= m.Power * t.Content.Mercenaries.StormRatio && !m.BigBad ? "they could storm its seat"
+                    : h.Strength >= m.Power ? "they should beat it in the field"
+                    : h.Strength >= m.Power * t.Content.Mercenaries.RoutBelow ? "a bloody, even fight" : "they would likely be routed";
+                p.Row($"{Ui.C(Ui.Ink2, $"[font_size=12]March on [b]{Ui.Esc(Ui.Cap(m.Name))}[/b] at {Ui.Esc(m.SeatName)}, about {Math.Round(m.Power / 10) * 10:0} strong: {odds}.[/font_size]")}",
+                    ($"March · {cost:N0}g", Mercenaries.MarchBlocked(t, c.Id, mid) == null, false, () => Act(() => _sim.MarchMercenaries(id, mid))));
+            }
+        }
+        p.Note(targets.Count == 0
+            ? "Hired companies stand on the walls with the watch. Once the town knows where a named menace sits, you can send them against it."
+            : "A campaign costs a war chest of wages. Sellswords can break a menace's hold and its seat, but only heroes can end the greatest foe.");
     }
 
     private void Act(Action a)
@@ -100,7 +147,7 @@ public partial class Main
         {
             if (s.HolderId is not int holder)
             {
-                p.Row($"{Ui.C(Ui.Ink2, $"[b]{Ui.Esc(s.Def.Title)}[/b]")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{(t.Population < s.Def.UnlockPopulation ? $"Opens when {s.Def.UnlockPopulation} people live here" : "Vacant, to be filled tomorrow")}[/font_size]")}");
+                p.Row($"{Ui.C(Ui.Ink2, $"[b]{Ui.Esc(s.Def.Title)}[/b]")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{(t.Population < s.Def.UnlockPopulation ? $"Opens when {s.Def.UnlockPopulation} households live here" : "Vacant, to be filled tomorrow")}[/font_size]")}");
                 continue;
             }
             var a = t.Agent(holder);
@@ -353,6 +400,8 @@ public partial class Main
         var p = _panes[Tab.Chronicles];
         var t = _sim.Town;
         p.Begin();
+        RenderHall(p, t);
+        if (t.Legacies.Count > 0) p.Heading("Expeditions");
         if (t.Chronicles.Count == 0) p.Note("No expeditions yet. Post a bounty and wait for a party to form at the tavern. Their story comes back with them.");
         foreach (var c in Enumerable.Reverse(t.Chronicles))
         {
@@ -363,6 +412,36 @@ public partial class Main
             p.Row(head);
         }
         p.Commit();
+    }
+
+    /// <summary>The hall of heroes: the fallen and the retired, newest first, with memorials to raise.</summary>
+    private void RenderHall(Pane p, Town t)
+    {
+        if (t.Legacies.Count == 0) return;
+        p.Heading("Hall of heroes");
+        int mentors = Legacies.Mentors(t).Count();
+        double loyalty = Legacies.Loyalty(t);
+        if (mentors > 0 || loyalty > 0)
+            p.Note(string.Join(" ", new[]
+            {
+                mentors > 0 ? $"{mentors} {(mentors == 1 ? "master" : "masters")} of arms train new heroes, who arrive with a head start." : "",
+                loyalty > 0 ? $"The town's memorials add {Js.Str(Math.Round(loyalty, 1))} to every hero's loyalty." : "",
+            }.Where(x => x != "")));
+        foreach (var l in Enumerable.Reverse(t.Legacies))
+        {
+            int id = l.HeroId;
+            string fate = l.Retired ? $"retired on day {l.Day} to teach" : $"fell on day {l.Day}";
+            string heir = l.HeirId is int h ? $"\n{Ui.C(Ui.Good, $"[font_size=12]Their heir {Ui.Esc(t.Agent(h).Name)} took up their arms{(l.Relic != "" ? $" and the {Ui.Esc(l.Relic)}" : "")}.[/font_size]")}"
+                : l.HeirDay != null ? $"\n{Ui.C(Ui.Ink2, "[font_size=12]Word has gone to their kin.[/font_size]")}" : "";
+            string head = $"[b]{Ui.Esc(l.Name)}[/b]  {(l.Memorial ? Tag("memorial", Ui.Gold) : "")}\n" +
+                          Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(l.Class)}, level {l.Level} · {fate} · {l.Expeditions} {(l.Expeditions == 1 ? "expedition" : "expeditions")}, {l.Kills} foes slain, renown {l.Renown}[/font_size]") + heir;
+            if (l.Memorial) p.Row(head);
+            else
+            {
+                double cost = Legacies.MemorialCost(t, l);
+                p.Row(head, ($"Raise a memorial · {Js.Str(Js.Round(cost))}g", t.Treasury >= cost, false, () => Act(() => _sim.RaiseMemorial(id))));
+            }
+        }
     }
 
     // ---------- Inspect ----------
@@ -433,6 +512,7 @@ public partial class Main
         if (hs.Knight) honours.Add(Tag("Knight", Ui.Gold));
         if (hs.FiefId != null && Quests.Site(t, hs.FiefId) is SiteState land) honours.Add(Tag($"Holds {Ui.Esc(land.Def.Name)}", Ui.Gold));
         if (hs.Champion) honours.Add(Tag($"Champion of {t.Name}", Ui.Gold));
+        if (Callings.Of(t, a) is CallingDef calling) honours.Add(Tag(calling.Name, Ui.Good));
         if (honours.Count > 0) p.Text(string.Join("  ", honours));
         var lr = t.Content.Loyalty;
         double loyalty = Math.Round(hs.Loyalty);

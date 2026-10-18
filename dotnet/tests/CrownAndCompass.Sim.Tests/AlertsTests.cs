@@ -31,6 +31,20 @@ public class AlertsTests
     }
 
     [Fact]
+    public void HeavyTaxesRaiseTheSettlersAlertAndNameThemAsTheCause()
+    {
+        var sim = new Simulation(new SimulationOptions { Seed = 2 });
+        sim.RunDays(30);
+        var t = sim.Town;
+        var draw = Population.Appeal(t);
+        Assert.Equal(Math.Max(0.05, Math.Min(1.6, draw.Parts.Sum(p => p.Value))), draw.Total, 9);
+        t.TaxRate = 0.4;
+        var a = Assert.Single(Alerts.Standing(t), a => a.Key == "settlers");
+        Assert.Contains("taxes at 40%", a.Tip);
+        Assert.Equal(AlertWindow.City, a.Kind.Window);
+    }
+
+    [Fact]
     public void ReadingAlertsLeavesTheTownUntouched()
     {
         var quiet = new Simulation(new SimulationOptions { Seed = 4 });

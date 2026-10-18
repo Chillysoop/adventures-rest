@@ -17,6 +17,13 @@ public sealed class OrderedMap<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TV
 
     public bool ContainsKey(TKey key) => _values.ContainsKey(key);
     public bool TryGetValue(TKey key, out TValue value) => _values.TryGetValue(key, out value!);
+    public bool Remove(TKey key)
+    {
+        if (!_values.Remove(key)) return false;
+        _keys.Remove(key);
+        return true;
+    }
+
     public TValue Get(TKey key, TValue fallback) => _values.TryGetValue(key, out var v) ? v : fallback;
 
     public TValue this[TKey key]

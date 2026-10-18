@@ -63,9 +63,9 @@ public class TurningTests
     [Fact]
     public void LegendsOfOneCampaignComeBackInAnother()
     {
-        var first = new Simulation(new SimulationOptions { Seed = 8 });
+        var first = new Simulation(new SimulationOptions { Seed = 5 });
         for (int d = 0; d < 1000 && first.Town.Outcome == null && !first.Town.Saga.Menaces.Any(m => m.Named && (m.BigBad || m.Peak >= MenaceStage.Power) && m.Origin != Menaces.FromWarband); d++) first.RunDays(1);
-        var legends = Legends.Record(first.Town, 8);
+        var legends = Legends.Record(first.Town, 5);
         Assert.Contains(legends, l => l.Kind == Legend.Foe);
         Assert.Contains(legends, l => l.Kind == Legend.Hero);
         var kept = Legends.Read(Legends.Write(Legends.Merge([], legends)));
@@ -82,7 +82,7 @@ public class TurningTests
         Assert.Contains(foe.Name, next.Town.Saga.LegendsUsed);
 
         // A campaign never meets its own legends.
-        var same = new Simulation(new SimulationOptions { Seed = 8, Legends = kept });
+        var same = new Simulation(new SimulationOptions { Seed = 5, Legends = kept });
         Assert.Empty(same.Town.Saga.Legends);
     }
 

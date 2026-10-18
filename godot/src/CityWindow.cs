@@ -21,6 +21,7 @@ public partial class Main
         p.Card($"[font_size=17][b]{Ui.Esc(tier.Name)}[/b][/font_size]  {Tag($"about {City.Souls(t):N0} souls")}  {Tag($"{t.Population} households")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(tier.Blurb)}[/font_size]")}");
 
         RenderSeason(p, t);
+        RenderSettlers(t, p);
 
         var next = City.NextTier(t);
         if (next != null)
@@ -66,6 +67,8 @@ public partial class Main
             if (open) p.Row(text, ("Show", true, false, () => LookAtWard(id)));
             else p.Row(text, ("Show", true, false, () => LookAtWard(id)), ("Lay out", why == null, true, () => { _sim.OpenWard(id); _dirty = true; }));
         }
+
+        RenderGrandWorks(p, t);
 
         p.Heading("Houses");
         foreach (var h in t.Content.City.Housing)
@@ -141,6 +144,53 @@ public partial class Main
         if (holding && more > 0) p.Row(Ui.C(Ui.Ink2, $"[font_size=12]{why}[/font_size]"), ($"Lay in stores · {cost:N0}g", t.Treasury >= cost, true, () => { _sim.LayInStores(); _dirty = true; }));
         else p.Note(why + " Granaries hold more.");
         p.Text($"{Tag($"{st.Tourists} visitors")}  {Ui.C(Ui.Ink2, $"[font_size=12]spent {st.TouristGold:N0}g yesterday and {st.SeasonGold:N0}g this season at the taverns and shops[/font_size]")}", 13);
+    }
+
+    /// <summary>Why settlers come or stay away: each reason with its sign, as the arrivals roll counts it.</summary>
+    private static void RenderSettlers(Town t, Pane p)
+    {
+        var draw = Population.Appeal(t);
+        double week = Population.WeeklySettlers(t, draw.Total);
+        p.Heading("Why settlers come or don't");
+        foreach (var part in draw.Parts)
+            p.Text($"{Ui.C(part.Value >= 0 ? Ui.Good : Ui.Bad, $"{(part.Value >= 0 ? "+" : "−")}{Math.Abs(part.Value):0.00}")}  {Ui.Esc(part.Label)}", 13);
+        p.Note($"Draw {draw.Total:0.00} of at most 1.60: about {Math.Round(week)} newcomers a week. Taxes above {Math.Round(t.Content.Rules.TaxRate * 100)}% and idle hands cost the most; open jobs and empty beds help.");
+    }
+
+    /// <summary>The grand works: what each costs and does, which the charter allows, and how far the rising one has got.</summary>
+    private void RenderGrandWorks(Pane p, Town t)
+    {
+        p.Heading("Grand works");
+        foreach (var d in GrandWorks.All(t).OrderBy(d => City.TierIndex(t, d.Tier)).ThenBy(d => d.Id, StringComparer.Ordinal))
+        {
+            var b = GrandWorks.Of(t, d.Id);
+            string? why = Planning.Blocked(t, d);
+            string status = b is { Complete: true } ? Tag("stands", Ui.Good)
+                : b != null ? Tag($"stage {Math.Min(b.Stage, d.Stages.Count)} of {d.Stages.Count}", Ui.Gold)
+                : City.Reached(t, d.Tier) ? Tag($"about {GrandWorks.TotalCost(t, d):N0}g in all")
+                : Tag($"needs {City.TierName(t, d.Tier).ToLowerInvariant()}");
+            string text = $"[b]{Ui.Esc(d.Name)}[/b]  {status}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(GrandWorks.Bonus(d))}. Upkeep {d.Upkeep:0.#}g a day.[/font_size]")}";
+            var id = d.Id;
+            if (b == null) p.Row(text, ($"Begin · {GrandWorks.StageCost(t, d, 0):N0}g", why == null, true, () => PlaceFromCity(id)));
+            else p.Row(text, ("Show", true, false, () => LookAtBuilding(b)));
+            if (b is { IsSite: true })
+            {
+                p.Meter("Built", b.BuildProgress / d.BuildHours * 100, $"{Math.Round(b.BuildProgress / d.BuildHours * 100)}%");
+                if (GrandWorks.Waiting(b))
+                {
+                    double cost = GrandWorks.StageCost(t, d, b.Stage);
+                    p.Note($"Next: {d.Stages[b.Stage].Name}, {cost:N0}g with its goods and wages. It starts on its own once the treasury holds that and {GrandWorks.Reserve:N0}g to spare.");
+                }
+                else p.Note($"Building {d.Stages[Math.Max(0, b.Stage - 1)].Name}.");
+            }
+        }
+        p.Note("Great projects that take seasons to raise. Each stage draws its gold and goods when the last is done, and the finished work helps the whole town for good.");
+    }
+
+    private void LookAtBuilding(Building b)
+    {
+        var lot = _sim.Town.Lot(b.LotId);
+        Look(new Vector2(Geo.Margin + (float)lot.X, Geo.Margin + (float)lot.Y), 30);
     }
 
     private static string? Previous(Town t, string housingId) => City.Previous(t, housingId)?.Id;

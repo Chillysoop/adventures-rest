@@ -126,12 +126,29 @@
       "teaches": ["tab:Companies", "command:BuyIntel"]
     },
     {
+      "id": "bastions",
+      "title": "A bastion of their own",
+      "text": "A company that has made its name asks the council for land on the edge of town to raise a [b]bastion[/b]: a keep where its heroes live, and facilities like a physic garden, a drill yard or a smithy. It hires townsfolk to staff them, so it brings jobs and pulls workers from poorer pay. Its sentries stand on the walls in a siege, and heroes with a bastion stay loyal. Answer in [b]Companies[/b]: grant the land, give it free, or refuse.",
+      "when": "count:BastionRequests",
+      "point": "tab:Companies",
+      "until": "tab:Companies",
+      "teaches": ["command:AnswerBastion"]
+    },
+    {
       "id": "war",
       "title": "Ready the walls",
       "text": "Something will come for Briarford sooner or later. [b]War[/b] shows the threat and lets you raise towers and palisades. Raiders strike when your heroes are away, so don't send everyone at once.",
       "point": "tab:War",
       "until": "tab:War",
       "teaches": ["tab:War", "command:BuildDefense"]
+    },
+    {
+      "id": "sellswords",
+      "title": "Sellswords",
+      "text": "Gold can buy an army too. Under [b]Sellswords[/b] in the [b]War[/b] tab, hire a mercenary company for a fee and a daily wage, and it stands on the walls with the watch. Once the town knows where a named menace sits, fund a campaign to march them against it. They can break its holds and even storm its seat, but only heroes can end the greatest foe. A company the treasury can't pay walks away.",
+      "point": "tab:War",
+      "when": "day:90",
+      "teaches": ["command:HireMercenaries", "command:MarchMercenaries", "command:DismissMercenaries"]
     },
     {
       "id": "faith",
@@ -166,6 +183,42 @@
       "point": "tab:Mayor",
       "until": "tab:Mayor",
       "teaches": ["command:AdvanceMayor"]
+    },
+    {
+      "id": "petitions",
+      "title": "Petitions and hard choices",
+      "text": "As the town grows, its people bring you [b]petitions[/b]: a moved boundary stone, a road deep in mud, a widow of the watch. Some of your answers put a [b]decree[/b] in force for a while, such as lifted tolls or a curfew, and some choices are hard ones the town remembers. Open [b]Mayor[/b] to see the decrees in force and what the town remembers. Later stories turn on them.",
+      "when": "day:70",
+      "point": "tab:Mayor",
+      "until": "tab:Mayor",
+      "teaches": []
+    },
+    {
+      "id": "diplomacy",
+      "title": "Diplomacy and trade",
+      "text": "Out in the wilds live other peoples: villages, dwarf holds, elf enclaves, free ports and oasis cities. Open [b]Diplomacy[/b] to see what each thinks of the town. Send an [b]envoy[/b] with gifts to win them over, and once they think well enough of you, open a [b]trade route[/b]: a caravan sells your surplus to them and brings back what you are short of. Every caravan that gets through warms them further, and at 60 they ally with the town. A bigger charter lets you run more routes.",
+      "when": "alert:trade",
+      "point": "tab:Diplomacy",
+      "until": "tab:Diplomacy",
+      "teaches": ["tab:Diplomacy", "command:SendEnvoy", "command:OpenTradeRoute", "command:CloseTradeRoute"]
+    },
+    {
+      "id": "callings",
+      "title": "Heroes and their callings",
+      "text": "Every class of hero brings its own stories: a bard asks for the tavern's stage, a paladin offers to swear an oath, a rogue is courted by the thieves' guild, a warlock's patron makes an offer. Some answers give the hero a [b]calling[/b], a lasting part in the town that moves it every day while the hero stays loyal. [b]Mayor[/b] lists the callings held, and a hero's card shows theirs.",
+      "when": "count:Callings",
+      "point": "tab:Mayor",
+      "until": "tab:Mayor",
+      "teaches": []
+    },
+    {
+      "id": "legacies",
+      "title": "The hall of heroes",
+      "text": "A hero has fallen in the town's service. Open [b]Chronicles[/b] to find them in the [b]hall of heroes[/b]. Raise a [b]memorial[/b] and every hero in town stands a little more loyal. A seasoned hero's kin may come to take up their arms, carrying their best magic item. Old heroes a story lets retire stay on as masters of arms, and new heroes arrive better trained.",
+      "when": "count:Legacies",
+      "point": "tab:Chronicles",
+      "until": "tab:Chronicles",
+      "teaches": ["command:RaiseMemorial"]
     },
     {
       "id": "campaign-map",
@@ -217,6 +270,14 @@
       "teaches": ["command:OpenWard"]
     },
     {
+      "id": "grand-works",
+      "title": "Grand works",
+      "text": "A rich town can raise grand works: a clock tower, an aqueduct, a great gatehouse, a mage tower, royal gardens and in time a colossus, unlocked charter by charter. Begin one under [b]Grand works[/b] in the [b]City[/b] window and set it down like any government building. It rises over seasons, drawing gold and goods for each stage as the last is done, and helps the whole town for good once it stands.",
+      "point": "tab:City",
+      "when": "alert:grandwork",
+      "teaches": []
+    },
+    {
       "id": "history",
       "title": "The old world",
       "text": "Every ruin in the wilds is left over from an older age. [b]History[/b] in the game menu (Esc) shows the empires, peoples and wars before your town, and the Ledger tells each region's old story when a party first gets there.",
@@ -230,7 +291,5 @@
       "teaches": []
     }
   ],
-  "untaught": {
-    "command:SendEnvoy": "The client has no button for envoys yet."
-  }
+  "untaught": {}
 }

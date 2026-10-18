@@ -30,6 +30,9 @@ public sealed record SimulationOptions
     /// <summary>Let the stand-in mayor buy companies' reports of new ground; off when a player deals with the companies.</summary>
     public bool AutoIntel { get; init; } = true;
 
+    /// <summary>Let the stand-in mayor give companies leave to raise bastions; off when a player answers them.</summary>
+    public bool AutoBastions { get; init; } = true;
+
     /// <summary>Settle council motions by majority at once; off when a player signs or vetoes them.</summary>
     public bool AutoCouncil { get; init; } = true;
 
@@ -96,6 +99,7 @@ public sealed class Simulation
         Seasons.Daily(t);
         Economy.Daily(t);
         City.Daily(t, Options.AutoMayor && Options.AutoPlanning);
+        GrandWorks.Daily(t, Options.AutoMayor && Options.AutoPlanning);
         Streets.Wear(t);
         Property.Daily(t);
         Population.DailyDepartures(t);
@@ -106,8 +110,11 @@ public sealed class Simulation
         double pace = Director.Daily(t);
         Threat.Daily(t, pace, Options.AutoMayor && Options.AutoDefense, Options.Enemy);
         World.Daily(t, Options.AutoMayor);
+        Trade.Daily(t, Options.AutoMayor);
+        Mercenaries.Daily(t, Options.AutoMayor && Options.AutoDefense);
         Quests.Daily(t, Options.AutoMayor && Options.AutoBounties, Options.FreeCompanies);
         Intel.Daily(t, Options.AutoMayor && Options.AutoBounties && Options.AutoIntel);
+        Bastions.Daily(t, Options.AutoMayor && Options.AutoBastions);
         Watch.Daily(t, Options.AutoMayor && Options.AutoBounties);
         Lairs.Daily(t, Options.AutoMayor);
         Rumors.Daily(t);
@@ -116,6 +123,7 @@ public sealed class Simulation
         Factions.Daily(t, Options.AutoMayor);
         Saga.Daily(t, Options.AutoMayor);
         Turning.Daily(t);
+        Legacies.Daily(t, Options.AutoMayor);
         Loyalty.Daily(t, Options.AutoMayor);
         Decor.Daily(t);
         Stories.Daily(t, Options.AutoMayor && Options.AutoStories);
@@ -134,6 +142,14 @@ public sealed class Simulation
     /// <summary>Send an envoy with gifts to a settlement out in the wilds, to win its people over.</summary>
     public bool SendEnvoy(int settlementId) => World.SendEnvoy(Town, settlementId);
 
+    /// <summary>Open a trade route to a settlement: export goes out, import comes back.</summary>
+    public bool OpenTradeRoute(int settlementId, Good export, Good import) => Trade.OpenRoute(Town, settlementId, export, import) != null;
+
+    public bool CloseTradeRoute(int routeId) => Trade.CloseRoute(Town, routeId);
+
+    /// <summary>Raise a memorial to a hero in the hall of heroes.</summary>
+    public bool RaiseMemorial(int heroId) => Legacies.RaiseMemorial(Town, heroId);
+
     /// <summary>The player's other lever: sign or veto the motion before the council.</summary>
     public bool DecideMotion(int motionId, bool sign) => Council.Decide(Town, motionId, sign);
 
@@ -151,6 +167,9 @@ public sealed class Simulation
 
     /// <summary>Buy a company's report of a trip the council didn't pay for: at their asking price, or haggled down.</summary>
     public IntelDeal? BuyIntel(int partyId, bool haggle = false) => Intel.Buy(Town, partyId, haggle);
+
+    /// <summary>Answer a company asking leave to raise a bastion: grant it (they buy the land), gift them the land, or refuse.</summary>
+    public bool AnswerBastion(int requestId, BastionAnswer answer) => Bastions.Answer(Town, requestId, answer);
 
     /// <summary>Post the best scout in town to watch a site from cover.</summary>
     public Scout? PostScout(string siteId) => Watch.PostScout(Town, siteId);
@@ -218,6 +237,15 @@ public sealed class Simulation
 
     /// <summary>Spend the mayor's next level on an advance: "ability:str,cha", "feat:lucky", "skill:arcana" or "expertise:persuasion".</summary>
     public bool AdvanceMayor(string advance) => Sheet.Advance(Town, advance);
+
+    /// <summary>Sign a sellsword company: a fee now and a wage every day it stays.</summary>
+    public bool HireMercenaries(string companyId) => Mercenaries.Hire(Town, companyId);
+
+    /// <summary>Pay off a sellsword company that is home.</summary>
+    public bool DismissMercenaries(string companyId) => Mercenaries.Dismiss(Town, companyId);
+
+    /// <summary>Fund a campaign: send a hired company against a menace's seat.</summary>
+    public bool MarchMercenaries(string companyId, int menaceId) => Mercenaries.March(Town, companyId, menaceId);
 
     public DayStats Snapshot()
     {

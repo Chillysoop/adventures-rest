@@ -248,11 +248,14 @@ public partial class Main
         }
     }
 
-    /// <summary>Every few in-game days at midnight, into the oldest of the rotating autosaves.</summary>
+    /// <summary>
+    /// Once every few in-game days, into the oldest of the rotating autosaves. It goes on the first frame of a new
+    /// stretch of days, not on midnight exactly: at high speed a frame runs several hours and can step over midnight.
+    /// </summary>
     private void Autosave(bool now = false)
     {
         int day = _sim.Town.Day;
-        if (!now && (day == _lastAutosaveDay || _sim.Town.Hour != 0 || day % AutosaveDays != 0)) return;
+        if (!now && day / AutosaveDays == _lastAutosaveDay / AutosaveDays) return;
         _lastAutosaveDay = day;
         string slot = Enumerable.Range(1, AutoSlots)
             .Select(i => $"auto-{i}")

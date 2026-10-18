@@ -23,6 +23,7 @@ public partial class Main : Control
         Council,
         Bounties,
         Companies,
+        Diplomacy,
         Faith,
         Campaign,
         Chronicles,
@@ -34,6 +35,7 @@ public partial class Main : Control
     private int _seed = 1;
     private MapView _map = null!;
     private int _speed = 1;
+    private int _warnedMotion = -1;
     private int _lastSpeed = 1;
     private double _acc;
     private bool _dirty = true;
@@ -178,6 +180,7 @@ public partial class Main : Control
         _seed = seed;
         _sim = sim;
         _lastAutosaveDay = sim.Town.Day;
+        _warnedMotion = -1;
         _map.Planner.Pick(null);
         _map.Decorator.Pick(null);
         _map.Bind(_sim);
@@ -205,6 +208,21 @@ public partial class Main : Control
         // Real time with pause: the war's turning points stop the clock so the player can react.
         if (e.Category == LedgerCategory.War && e.Importance == Importance.Major && _speed > 0 && !_opts.NoPause) SetSpeed(0);
         if (_sim.Town.Outcome != null && !_endShown) CallDeferred(MethodName.ShowEnd);
+    }
+
+    /// <summary>
+    /// Real time with pause: a council motion the player has not answered stops the clock once, on the hour its days run
+    /// out, and opens the Council, so it is never settled for them in a blink at top speed. Unpausing lets the vote stand.
+    /// </summary>
+    private bool MotionLapses()
+    {
+        if (_opts.NoPause || _opts.Smoke || _opts.Bench || _opts.Screenshot != null || _sim.Options.AutoCouncil) return false;
+        if (Council.Lapsing(_sim.Town) is not { } m || m.Id == _warnedMotion) return false;
+        _warnedMotion = m.Id;
+        SetSpeed(0);
+        _acc = 0;
+        if (!(_window.Visible && _windowTab == Tab.Council)) OpenWindow(Tab.Council);
+        return true;
     }
 
     private void SetSpeed(int i)
@@ -326,6 +344,7 @@ public partial class Main : Control
         int steps = 0;
         while (_acc >= 1 && steps < 8)
         {
+            if (MotionLapses()) break;
             _sim.Step();
             _acc -= 1;
             steps++;
@@ -360,6 +379,7 @@ public partial class Main : Control
                     case Tab.Campaign: RenderCampaign(); break;
                     case Tab.Chronicles: RenderChronicles(); break;
                     case Tab.Mayor: RenderMayor(); break;
+                    case Tab.Diplomacy: RenderDiplomacy(); break;
                 }
             if (_inspector.Visible) RenderInspect();
             RenderBuild();
@@ -427,7 +447,7 @@ public partial class Main : Control
 
         (string, string, string, string)[] stats =
         [
-            ("Population", "population", s.Population.ToString(), "People living in town"),
+            ("Households", "population", s.Population.ToString(), $"Households living in town, about {City.Souls(t):N0} souls"),
             ("Heroes", "heroes", t.Heroes.Count.ToString(), "Adventurers in town or on the road"),
             ("Treasury", "gold", $"{Math.Floor(t.Treasury)}", "Gold in the town's coffers"),
             ("Bread", "bread", $"{s.FoodPrice:0.00}", "The price of a loaf, in gold: it climbs when food runs short"),

@@ -148,6 +148,9 @@ public sealed class HeroSheet
     /// <summary>The menace they went over to, or the faction they ran to.</summary>
     public int? TurnedTo { get; set; }
     public string? DefectedTo { get; set; }
+
+    /// <summary>The bastion the hero lives in and rides for (<see cref="Systems.Bastions"/>), by id.</summary>
+    public int? BastionId { get; set; }
     public int Renown { get; set; }
     public int Kills { get; set; }
     public int Expeditions { get; set; }

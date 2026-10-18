@@ -21,6 +21,8 @@ public enum AlertWindow
     City,
     Story,
     Mayor,
+    Diplomacy,
+    Companies,
 }
 
 /// <summary>A group of alerts: one icon on the strip, with a count and a hover list of what is in it.</summary>
@@ -49,21 +51,25 @@ public static class Alerts
     public static readonly AlertKind Motion = new("motion", "Council motions", "mandate", AlertLevel.Decision, AlertWindow.Council);
     public static readonly AlertKind Stores = new("stores", "Winter stores", "bread", AlertLevel.Decision, AlertWindow.City);
     public static readonly AlertKind Fealty = new("fealty", "Demands for fealty", "warband", AlertLevel.Decision, AlertWindow.Campaign);
+    public static readonly AlertKind Trade = new("trade", "Trade routes", "gold", AlertLevel.Minor, AlertWindow.Diplomacy);
     public static readonly AlertKind Charter = new("charter", "Charters", "favour", AlertLevel.Decision, AlertWindow.City);
+    public static readonly AlertKind GrandWork = new("grandwork", "Grand works", "gold", AlertLevel.Decision, AlertWindow.City);
     public static readonly AlertKind Crisis = new("crisis", "A crisis", "d20", AlertLevel.Urgent, AlertWindow.Story);
     public static readonly AlertKind Story = new("story", "Events", "d20", AlertLevel.Decision, AlertWindow.Story);
     public static readonly AlertKind LevelUp = new("levelup", "Level up", "d20", AlertLevel.Decision, AlertWindow.Mayor);
+    public static readonly AlertKind Bastion = new("bastion", "Bastions", "heroes", AlertLevel.Decision, AlertWindow.Companies);
     public static readonly AlertKind Heroes = new("heroes", "Restless heroes", "heroes", AlertLevel.Decision, AlertWindow.None);
     public static readonly AlertKind Housing = new("housing", "Housing", "homeless", AlertLevel.Minor, AlertWindow.Council);
-    public static readonly AlertKind Work = new("work", "Idle hands", "population", AlertLevel.Minor, AlertWindow.Council);
+    public static readonly AlertKind Work = new("work", "Idle hands", "population", AlertLevel.Decision, AlertWindow.City);
+    public static readonly AlertKind Settlers = new("settlers", "No settlers", "population", AlertLevel.Decision, AlertWindow.City);
 
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Crisis, Hunger, Coffers, Unrest, Hostile, Motion, Fealty, Stores, Story, LevelUp, Charter, Heroes, Housing, Work];
+        [Siege, Crisis, Hunger, Coffers, Unrest, Hostile, Motion, Fealty, Stores, Story, LevelUp, Charter, GrandWork, Bastion, Heroes, Work, Settlers, Trade, Housing];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
-    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Hostility, Winter, Growth, Loyalty, Homes];
+    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Hostility, Winter, Growth, Routes, Loyalty, Homes];
 
     public static List<Alert> Standing(Town town) => Rules.SelectMany(r => r(town)).ToList();
 
@@ -123,7 +129,8 @@ public static class Alerts
     private static IEnumerable<Alert> Council(Town t)
     {
         if (Systems.Council.PendingMotion(t) is { } m)
-            yield return new($"motion:{m.Id}", Motion, "A motion awaits you", Cap(m.Text));
+            yield return new($"motion:{m.Id}", Motion, $"Council votes in {Days(Systems.Council.DaysLeft(t, m))}",
+                $"The council moves that {m.Text}. Sign or veto it in the Council window, or the council's vote settles it.");
         if (t.Mandate < 30)
             yield return new("mandate", Unrest, "The town is turning on you", $"Mandate {Math.Round(t.Mandate)}. Below this the council stops listening.");
     }
@@ -148,10 +155,32 @@ public static class Alerts
         if (City.NextTier(t) is { } charter && City.Missing(t).Count == 0)
             yield return new($"charter:{charter.Id}", Charter, $"Claim the charter of a {charter.Name.ToLowerInvariant()}",
                 "The town has all the charter asks for. Seal it in the City window to open new wards and buildings.");
+        // Gold piling up with a grand work to spend it on: begin one (only while none is rising).
+        if (t.Buildings.Any(b => b.Def.IsGrand && b.IsSite)) yield break;
+        var work = GrandWorks.All(t)
+            .Where(d => Planning.Blocked(t, d) == null && t.Treasury >= 3 * GrandWorks.StageCost(t, d, 0) + 1000)
+            .OrderBy(d => d.Stages.Sum(s => s.Gold))
+            .ThenBy(d => d.Id, StringComparer.Ordinal)
+            .FirstOrDefault();
+        if (work != null)
+            yield return new($"grandwork:{work.Id}", GrandWork, $"Gold to spare: raise the {work.Name.ToLowerInvariant()}",
+                $"The treasury could begin a grand work. {GrandWorks.Bonus(work)} once it stands. Begin it from the City window.");
+    }
+
+    private static IEnumerable<Alert> Routes(Town t)
+    {
+        if (Systems.Trade.Open(t).Count() >= Systems.Trade.Cap(t)) yield break;
+        var s = t.Settlements.Where(x => Systems.Trade.Refuse(t, x) == null).OrderByDescending(x => x.Standing).ThenBy(x => x.Id).FirstOrDefault();
+        if (s != null)
+            yield return new("trade", Trade, $"Open a trade route to {s.Name}",
+                $"{Cap(s.People)} will trade, and the charter allows another route. Open one in the Diplomacy window: a caravan sells the town's surplus there and brings back what the town is short of.");
     }
 
     private static IEnumerable<Alert> Loyalty(Town t)
     {
+        foreach (var r in Bastions.Pending(t))
+            yield return new($"bastion:{r.Id}", Bastion, $"The {r.Company} ask for a bastion",
+                $"They want ground on the edge of town for a compound, and would hire townsfolk to staff it. Grant it, give the land free or refuse in the Companies window; in {Days(Bastions.DaysLeft(t, r))} they take silence as leave.");
         foreach (var a in t.Heroes.Where(a => a.Hero!.Restless && !a.IsAway).OrderBy(a => a.Id))
             yield return new($"restless:{a.Id}", Heroes, $"{a.Name} is restless",
                 $"Loyalty {Math.Round(a.Hero!.Loyalty)}. A purse, a knighthood or a fief may win them back before they leave.", AgentId: a.Id);
@@ -165,8 +194,19 @@ public static class Alerts
             yield return new("homeless", Housing, $"{homeless} homeless", "Townsfolk with no roof lose heart and leave. More homes are needed.", AtTown: true);
         int idle = workers.Count(a => a.JobId == null);
         if (idle >= Math.Max(4, workers.Count / 5))
-            yield return new("idle", Work, $"{idle} out of work", "Idle townsfolk drift away. Zone land for shops, workshops and farms.", AtTown: true);
+            yield return new("idle", Work, $"{idle} out of work", "Idle townsfolk drift away, and every one of them puts settlers off. Zone land for shops, workshops and farms.", AtTown: true);
+        var draw = Population.Appeal(t);
+        if (draw.Total < StalledAppeal)
+        {
+            var worst = draw.Parts.Where(p => p.Value < 0).OrderBy(p => p.Value).ThenBy(p => p.Label, StringComparer.Ordinal).Take(2)
+                .Select(p => p.Label.ToLowerInvariant()).ToList();
+            string why = worst.Count == 0 ? "" : $" Most of all: {string.Join(" and ", worst)}.";
+            yield return new("settlers", Settlers, "Settlers stay away", $"Few newcomers will come while things stand as they are.{why} The City window shows every reason.");
+        }
     }
+
+    /// <summary>Below this appeal a small town gains a settler or two a week at most: a stall the player should hear about.</summary>
+    private const double StalledAppeal = 0.15;
 
     private static string Cap(string s) => s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
 }

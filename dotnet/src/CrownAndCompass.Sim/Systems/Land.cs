@@ -57,6 +57,8 @@ public static class Land
                     if (dx * dx + dy * dy > r2) continue;
                     int i = cy * Size + cx;
                     if (plan.Taken[i] != 0 || plan.Zones[i] == (byte)zone) continue;
+                    // A company's bastion grounds take no paint.
+                    if (zone != Zone.None && plan.Grounds[i] != 0) continue;
                     if (!overwrite && plan.Zones[i] != (byte)Zone.None) continue;
                     // Only ground in a ward the town has laid out takes paint.
                     if (zone != Zone.None && !Open(town, i)) continue;
@@ -181,7 +183,8 @@ public static class Land
 
     /// <summary>Whether a building fits here: every cell on the plan, open, off the streets, and in the zone; a lane of unbuilt ground around it.</summary>
     /// <param name="zone">Null takes any land that isn't built on (the council's own works).</param>
-    public static bool Fits(Town town, double x, double y, int w, int d, double yaw, Zone? zone)
+    /// <param name="ground">The bastion grounds it may stand on (<see cref="LandPlan.Grounds"/>); nothing else builds on a company's grounds.</param>
+    public static bool Fits(Town town, double x, double y, int w, int d, double yaw, Zone? zone, int ground = 0)
     {
         var plan = town.Plan;
         // Decorations are the player's: builders leave them standing.
@@ -192,6 +195,7 @@ public static class Land
         foreach (int i in Cells(x, y, w, d, yaw))
         {
             if (i < 0 || plan.Taken[i] != 0 || plan.Paved[i] != 0 || (decor != null && decor[i])) return false;
+            if (plan.Grounds[i] != 0 && plan.Grounds[i] != ground) return false;
             if (zone is Zone z && plan.Zones[i] != (byte)z) return false;
         }
         foreach (int i in Cells(x, y, w, d, yaw, 1))
@@ -367,7 +371,7 @@ public static class Land
         var gardens = Gardens(town);
         for (int i = 0; i < plan.Zones.Length; i++)
         {
-            if (plan.Zones[i] != (byte)Zone.None || plan.Taken[i] != 0) continue;
+            if (plan.Zones[i] != (byte)Zone.None || plan.Taken[i] != 0 || plan.Grounds[i] != 0) continue;
             double x = (i % Size + 0.5) / Res, y = (i / Size + 0.5) / Res;
             double dist = Math.Sqrt((x - Town.Center) * (x - Town.Center) + (y - Town.Center) * (y - Town.Center));
             if (key(x, y, dist) is not double k) continue;
@@ -391,6 +395,9 @@ public sealed class LandPlan
 {
     public byte[] Zones { get; set; } = new byte[Land.Size * Land.Size];
     public int[] Taken { get; set; } = new int[Land.Size * Land.Size];
+
+    /// <summary>Ground held for a company's bastion (its grounds number), 0 for none: only its own facilities go there (<see cref="Bastions"/>).</summary>
+    public byte[] Grounds { get; set; } = new byte[Land.Size * Land.Size];
 
     /// <summary>The streets, and the cells they cover (1 where paved).</summary>
     public List<Street> Streets { get; set; } = [];
