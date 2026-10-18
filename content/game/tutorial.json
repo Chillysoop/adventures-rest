@@ -134,6 +134,14 @@
       "teaches": ["tab:War", "command:BuildDefense"]
     },
     {
+      "id": "sellswords",
+      "title": "Sellswords",
+      "text": "Gold can buy an army too. Under [b]Sellswords[/b] in the [b]War[/b] tab, hire a mercenary company for a fee and a daily wage, and it stands on the walls with the watch. Once the town knows where a named menace sits, fund a campaign to march them against it. They can break its holds and even storm its seat, but only heroes can end the greatest foe. A company the treasury can't pay walks away.",
+      "point": "tab:War",
+      "when": "day:90",
+      "teaches": ["command:HireMercenaries", "command:MarchMercenaries", "command:DismissMercenaries"]
+    },
+    {
       "id": "faith",
       "title": "Gods and factions",
       "text": "[b]Faith[/b] shows the town's gods and the factions taking root. Build a temple to win a god's favour; back a faction with gold, or crack down on one that works against you.",
@@ -215,6 +223,14 @@
       "point": "tab:City",
       "when": "alert:charter",
       "teaches": ["command:OpenWard"]
+    },
+    {
+      "id": "grand-works",
+      "title": "Grand works",
+      "text": "A rich town can raise grand works: a clock tower, an aqueduct, a great gatehouse, a mage tower, royal gardens and in time a colossus, unlocked charter by charter. Begin one under [b]Grand works[/b] in the [b]City[/b] window and set it down like any government building. It rises over seasons, drawing gold and goods for each stage as the last is done, and helps the whole town for good once it stands.",
+      "point": "tab:City",
+      "when": "alert:grandwork",
+      "teaches": []
     },
     {
       "id": "history",

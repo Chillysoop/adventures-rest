@@ -316,6 +316,7 @@ public static class Property
             if (b.Opened || !b.Complete) continue;
             b.Opened = true;
             Complete(town, b);
+            if (b.Def.IsGrand) GrandWorks.Finished(town, b);
         }
     }
 

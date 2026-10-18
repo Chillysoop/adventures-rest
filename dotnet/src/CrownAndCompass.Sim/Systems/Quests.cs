@@ -221,7 +221,7 @@ public static class Quests
     }
 
     /// <summary>Hand an unearned reward back to whoever put it up.</summary>
-    private static void Refund(Town town, Bounty b)
+    public static void Refund(Town town, Bounty b)
     {
         if (b.FunderId != null) town.Building(b.FunderId.Value).Cash += b.Reward;
         else town.Book(TreasuryAccount.Bounties, b.Reward);
