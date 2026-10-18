@@ -1,0 +1,22 @@
+{
+  "_doc": "Farmland is painted crop by crop: each field grows one crop, and only that crop's building goes up on it (land painted before crops existed takes any). 'building' is the farm that grows it; its goods and their amounts are that building's in buildings.json. 'seasons' replaces the season's yield for the good (seasons.json) for that crop's farms, so a crop keeps its own calendar; a crop without it follows the season's yields. Crops unlock with their building's charter. The order is saved by number: only ever add crops at the end. 'share' is the part of the town's farms the stand-in mayor sows with it; it also sows a field of whatever farm the town wants most when none is open for it.",
+  "crops": [
+    { "id": "wheat", "share": 0.4, "name": "Wheat", "building": "farm", "color": "d8b843",
+      "blurb": "Bread for every table. A big harvest in late summer and autumn, almost nothing in winter." },
+    { "id": "roots", "share": 0.15, "name": "Root crops", "building": "root_farm", "color": "a8743a",
+      "seasons": { "spring": 0.85, "summer": 0.95, "autumn": 1.2, "winter": 0.8 },
+      "blurb": "Less food than wheat, but steady all year: what the town eats when the snow lies on the fields." },
+    { "id": "barley", "share": 0.1, "name": "Barley & hops", "building": "hop_yard", "color": "b8c860",
+      "seasons": { "spring": 0.6, "summer": 1.1, "autumn": 1.5, "winter": 0.35 },
+      "blurb": "Brewed on the farm into ale for the taverns, with some grain to spare." },
+    { "id": "orchard", "share": 0.1, "name": "Orchard", "building": "orchard", "color": "6f9a3a",
+      "seasons": { "spring": 0.3, "summer": 0.85, "autumn": 2.1, "winter": 0.45 },
+      "blurb": "Apples, pears and cider. Bare most of the year, then a great crop at harvest." },
+    { "id": "pasture", "share": 0.12, "name": "Pasture", "building": "sheepfold", "color": "8fb85a",
+      "blurb": "Sheep for wool and mutton. Shearing in spring." },
+    { "id": "herbs", "share": 0.07, "name": "Herb beds", "building": "herb_garden", "color": "7a9a8a",
+      "blurb": "Healing herbs for the apothecaries, best in summer." },
+    { "id": "vines", "share": 0.06, "name": "Vineyard", "building": "vineyard", "color": "8a4a7a",
+      "blurb": "Wine for the manors and high tables. The vintage comes in autumn." }
+  ]
+}

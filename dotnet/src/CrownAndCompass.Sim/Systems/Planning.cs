@@ -16,19 +16,28 @@ public static class Planning
     public const double MaxBrush = 3;
 
     /// <summary>Paint a brush stroke (Zone.None clears land; civic land is made only by placing government buildings). Returns cells changed.</summary>
-    public static int Paint(Town town, IEnumerable<(double X, double Y)> dabs, double radius, Zone zone, int density = 0)
+    /// <param name="crop">Farmland: the crop its fields are sown with (<see cref="Farming"/>); null or unknown sows wheat, the first.</param>
+    public static int Paint(Town town, IEnumerable<(double X, double Y)> dabs, double radius, Zone zone, int density = 0, string? crop = null)
     {
         if (zone != Zone.None && !Paintable.Contains(zone)) return 0;
         if (!Density.Takes(zone)) density = Density.Low;
         if (Density.Blocked(town, density) != null) return 0;
-        int n = Land.Brush(town, dabs, Math.Clamp(radius, 0.25, MaxBrush), zone, density: density);
+        CropDef? sown = null;
+        if (zone == Zone.Farmland)
+        {
+            sown = Farming.Crop(town, crop ?? "") ?? Farming.Crops(town).FirstOrDefault();
+            if (sown != null && Farming.Blocked(town, sown) != null) return 0;
+        }
+        int n = Land.Brush(town, dabs, Math.Clamp(radius, 0.25, MaxBrush), zone, density: density, crop: sown == null ? (byte)0 : Farming.Code(town, sown.Id));
         if (n > 0)
             town.Log(
                 LedgerCategory.Property,
                 Importance.Routine,
                 zone == Zone.None
                     ? $"The council takes {Acres(n)} off the plan."
-                    : $"The council zones {Acres(n)} as {(density > Density.Low ? Density.Name(town, density).ToLowerInvariant() + "-density " : "")}{ZoneName(zone)} land.");
+                    : sown != null
+                        ? $"The council lays out {Acres(n)} of fields for {sown.Name.ToLowerInvariant()}."
+                        : $"The council zones {Acres(n)} as {(density > Density.Low ? Density.Name(town, density).ToLowerInvariant() + "-density " : "")}{ZoneName(zone)} land.");
         return n;
     }
 
@@ -47,6 +56,14 @@ public static class Planning
         if (town.NoLandDay.TryGetValue(zone, out int day) && town.Day - day < 7) return;
         town.NoLandDay[zone] = town.Day;
         town.Log(LedgerCategory.Property, Importance.Notable, $"{a.Name} has gold for {ZoneName(zone)} land, but no open {ZoneName(zone)} land is painted on the plan.", [a.Id]);
+    }
+
+    /// <summary>A would-be farmer found fields, but none sown with their crop: tell the player, at most once a week.</summary>
+    public static void NoField(Town town, CropDef crop, Agent a)
+    {
+        if (town.NoLandDay.TryGetValue(Zone.Farmland, out int day) && town.Day - day < 7) return;
+        town.NoLandDay[Zone.Farmland] = town.Day;
+        town.Log(LedgerCategory.Property, Importance.Notable, $"{a.Name} would farm {crop.Name.ToLowerInvariant()}, but no open field on the plan is sown with it.", [a.Id]);
     }
 
     /// <summary>About how many more buildings the zone's open painted land holds.</summary>

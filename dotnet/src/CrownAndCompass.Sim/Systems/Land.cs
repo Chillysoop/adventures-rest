@@ -40,11 +40,13 @@ public static class Land
     /// </summary>
     /// <param name="overwrite">False leaves zoned land alone and paints only open ground.</param>
     /// <param name="density">How tightly the paint lets the zone be built (<see cref="Density"/>); built-on ground of the same zone takes it too, so an old street can be zoned to grow taller.</param>
-    public static int Brush(Town town, IEnumerable<(double X, double Y)> dabs, double radius, Zone zone, bool overwrite = true, int density = 0)
+    /// <param name="crop">Farmland only: the crop the fields are sown with (<see cref="Farming"/>, 0 for any); open fields of another crop are resown.</param>
+    public static int Brush(Town town, IEnumerable<(double X, double Y)> dabs, double radius, Zone zone, bool overwrite = true, int density = 0, byte crop = 0)
     {
         var plan = town.Plan;
         int n = 0;
         byte dens = (byte)(Density.Takes(zone) ? density : 0);
+        if (zone != Zone.Farmland) crop = 0;
         double r2 = radius * radius * Res * Res;
         var gardens = Gardens(town);
         foreach (var (x, y) in dabs)
@@ -60,9 +62,12 @@ public static class Land
                     int i = cy * Size + cx;
                     if (plan.Taken[i] != 0 || plan.Zones[i] == (byte)zone)
                     {
-                        // Painted or built land of the zone only changes its density.
-                        if (zone == Zone.None || plan.Zones[i] != (byte)zone || plan.Density[i] == dens || !overwrite || !Open(town, i)) continue;
+                        // Painted or built land of the zone only changes its density, and open fields their crop.
+                        if (zone == Zone.None || plan.Zones[i] != (byte)zone || !overwrite || !Open(town, i)) continue;
+                        bool resow = plan.Taken[i] == 0 && plan.Crops[i] != crop;
+                        if (plan.Density[i] == dens && !resow) continue;
                         plan.Density[i] = dens;
+                        if (resow) plan.Crops[i] = crop;
                         n++;
                         continue;
                     }
@@ -75,6 +80,7 @@ public static class Land
                     if (zone != Zone.None && plan.Zones[i] == (byte)Zone.None && gardens != null && gardens[i]) continue;
                     plan.Zones[i] = (byte)zone;
                     plan.Density[i] = dens;
+                    plan.Crops[i] = crop;
                     n++;
                 }
         }
@@ -183,7 +189,8 @@ public static class Land
     /// <summary>Whether a building fits here: every cell on the plan, open, off the streets, and in the zone; a lane of unbuilt ground around it.</summary>
     /// <param name="zone">Null takes any land that isn't built on (the council's own works).</param>
     /// <param name="ground">The bastion grounds it may stand on (<see cref="LandPlan.Grounds"/>); nothing else builds on a company's grounds.</param>
-    public static bool Fits(Town town, double x, double y, int w, int d, double yaw, Zone? zone, int ground = 0)
+    /// <param name="crop">The crop a farm grows (<see cref="Farming.CropOf"/>): it stands only in fields sown with it, or with none.</param>
+    public static bool Fits(Town town, double x, double y, int w, int d, double yaw, Zone? zone, int ground = 0, byte crop = 0)
     {
         var plan = town.Plan;
         // Decorations are the player's: builders leave them standing.
@@ -196,6 +203,7 @@ public static class Land
             if (i < 0 || plan.Taken[i] != 0 || plan.Paved[i] != 0 || (decor != null && decor[i])) return false;
             if (plan.Grounds[i] != 0 && plan.Grounds[i] != ground) return false;
             if (zone is Zone z && plan.Zones[i] != (byte)z) return false;
+            if (crop != 0 && plan.Crops[i] != 0 && plan.Crops[i] != crop) return false;
         }
         // Dense land builds wall to wall.
         int lane = Density.Lane(town, plan.Density[mid]);
@@ -216,8 +224,9 @@ public static class Land
         var plan = town.Plan;
         plan.Fresh();
         // Buildings kept to certain wards search on their own; the rest share a search per zone and size.
-        var key = (zone, w, d, def.Wards.Count == 0 && def.Density == 0 ? "" : def.Id);
-        if (!plan.Found.TryGetValue(key, out var spot)) plan.Found[key] = spot = Search(town, def, w, d, zone);
+        byte crop = Farming.CropOf(town, def);
+        var key = (zone, w, d, def.Wards.Count == 0 && def.Density == 0 && crop == 0 ? "" : def.Id);
+        if (!plan.Found.TryGetValue(key, out var spot)) plan.Found[key] = spot = Search(town, def, w, d, zone, crop);
         // A fresh lot each time: the caller may set its zone, and claims it under the next id.
         return spot == null ? null : new Lot(town.Lots.Count, spot.X, spot.Y) { W = w, D = d, Yaw = spot.Yaw, Zone = zone ?? Zone.Civic };
     }
@@ -237,11 +246,11 @@ public static class Land
         return null;
     }
 
-    private static Lot? Search(Town town, BuildingDef def, int w, int d, Zone? zone)
+    private static Lot? Search(Town town, BuildingDef def, int w, int d, Zone? zone, byte crop)
     {
         // Fronting on a street, the way the townsfolk build.
         foreach (var (_, x, y, yaw) in Streets.Fronts(town, d, zone))
-            if (City.Allows(town, def, x, y) && Fits(town, x, y, w, d, yaw, zone))
+            if (City.Allows(town, def, x, y) && Fits(town, x, y, w, d, yaw, zone, crop: zone == Zone.Farmland ? crop : (byte)0))
                 return new Lot(town.Lots.Count, x, y) { W = w, D = d, Yaw = yaw, Zone = zone ?? Zone.Civic };
         // The council's works take any open ground when no street has room, facing the nearest street.
         return zone == null ? Anywhere(town, def, w, d) : null;
@@ -315,8 +324,8 @@ public static class Land
     /// Zone a round patch of open ground for the zone at about <paramref name="ring"/> tiles from the hall
     /// (0: as near as it gets), no farther than <paramref name="maxDist"/>. Returns false when there's no room.
     /// </summary>
-    public static bool PaintPatch(Town town, Zone zone, double radius, double maxDist, double ring) =>
-        PaintPatch(town, zone, radius, (x, y, dist) => dist > maxDist || (ring > 0 && dist < ring - 0.5) ? null : ring == 0 ? dist : Math.Abs(dist - ring));
+    public static bool PaintPatch(Town town, Zone zone, double radius, double maxDist, double ring, byte crop = 0) =>
+        PaintPatch(town, zone, radius, (x, y, dist) => dist > maxDist || (ring > 0 && dist < ring - 0.5) ? null : ring == 0 ? dist : Math.Abs(dist - ring), crop);
 
     /// <summary>The ward a cell's middle lies in (<see cref="City.WardOf(Town, double, double)"/>), kept for the plan's life.</summary>
     public static WardDef WardAt(Town town, int i)
@@ -340,7 +349,7 @@ public static class Land
     /// Zone a round patch of open ground, centred on the open cell in a laid-out ward with the lowest
     /// <paramref name="key"/> (x, y, distance from the hall; null passes the cell over). Returns false when there's no room.
     /// </summary>
-    public static bool PaintPatch(Town town, Zone zone, double radius, Func<double, double, double, double?> key)
+    public static bool PaintPatch(Town town, Zone zone, double radius, Func<double, double, double, double?> key, byte crop = 0)
     {
         var plan = town.Plan;
         int best = -1;
@@ -364,7 +373,7 @@ public static class Land
         if (best < 0) return false;
         double bx = (best % Size + 0.5) / Res, by = (best / Size + 0.5) / Res;
         // As dense as the stand-in mayor zones that ward by now.
-        return Brush(town, [(bx, by)], radius, zone, overwrite: false, density: Density.Target(town, bx, by)) > 0;
+        return Brush(town, [(bx, by)], radius, zone, overwrite: false, density: Density.Target(town, bx, by), crop: crop) > 0;
     }
 }
 
@@ -376,6 +385,9 @@ public sealed class LandPlan
 
     /// <summary>How tightly each cell may be built (<see cref="Systems.Density"/>: 0 low, 1 medium, 2 high).</summary>
     public byte[] Density { get; set; } = new byte[Land.Size * Land.Size];
+
+    /// <summary>The crop each farmland cell is sown with (<see cref="Farming.Code"/>, 0 for any).</summary>
+    public byte[] Crops { get; set; } = new byte[Land.Size * Land.Size];
 
     /// <summary>Ground held for a company's bastion (its grounds number), 0 for none: only its own facilities go there (<see cref="Bastions"/>).</summary>
     public byte[] Grounds { get; set; } = new byte[Land.Size * Land.Size];
