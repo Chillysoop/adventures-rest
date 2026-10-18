@@ -110,6 +110,23 @@
       "teaches": ["tab:Bounties", "command:PostBounty", "command:HoldSite"]
     },
     {
+      "id": "explore",
+      "title": "Send explorers",
+      "text": "The map only shows what someone has told the town, and hearsay is only a rough ring where the teller said. To find places for certain, open [b]Bounties[/b] and pay a company to [b]Explore[/b] a region. They wander it, and every lair, settlement, caravan, rival company, magical font or old ruin they come on, they report before they do anything about it.",
+      "point": "tab:Bounties",
+      "until": "count:Surveys",
+      "teaches": ["command:PostSurvey"]
+    },
+    {
+      "id": "discoveries",
+      "title": "What the explorers found",
+      "text": "Explorers have sent word and are waiting for yours. [b]Investigate further[/b] works through a find a chapter at a time: hours of work and a d20 check for the company, a risk if it goes wrong and more learned when it goes right, until the last chapter pays off. Or have them go in, deal with it, keep exploring, or come home. If no word comes, their leader decides.",
+      "when": "alert:find",
+      "point": "alerts",
+      "until": "explorers",
+      "teaches": ["command:OrderExplorers"]
+    },
+    {
       "id": "eyes",
       "title": "Eyes on the wilds",
       "text": "Once a party leaves town you lose sight of it in the fog. From [b]Bounties[/b] you can commission a scrying, post scouts, hide mirrors at a site, send word to a party or call it home, and later raise the Scrying Pool or the Sleepless Spire to see further.",

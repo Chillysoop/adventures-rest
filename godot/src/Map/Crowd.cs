@@ -233,6 +233,33 @@ public partial class Crowd(MapView map) : Node3D
             }
             banners.Add((gen.At(stopped ? pos + side * 0.9f : pos), yaw));
         }
+        // Explorers, the same, under their green banner.
+        foreach (var sv in town.Surveys)
+        {
+            if (!Explore.Out(sv)) continue;
+            var (pos, moving) = Geo.SurveyAt(town, sv, map.HourFraction);
+            if (map.Fog.AlphaAt(pos) >= Fog.SightAlpha) continue;
+            var was = Geo.SurveyAt(town, sv, map.HourFraction - 0.5f).Pos;
+            var dir = was.DistanceSquaredTo(pos) > 0.0004f ? (pos - was).Normalized() : (pos - Geo.Center).Normalized();
+            float yaw = Mathf.Atan2(dir.X, dir.Y);
+            var side = new Vector2(dir.Y, -dir.X);
+            var members = sv.Members.Select(town.Agent).Where(a => !a.Dead).ToList();
+            for (int i = 0; i < members.Count; i++)
+            {
+                var a = members[i];
+                if (!moving)
+                {
+                    float ang = i * Mathf.Tau / members.Count + 0.4f;
+                    var ring = new Vector2(Mathf.Cos(ang), Mathf.Sin(ang)) * 0.55f;
+                    Put(gen.At(pos + ring), Mathf.Atan2(-ring.X, -ring.Y), Palette.ClassColor(a.Hero?.Cls.Id ?? ""), Palette.RaceColor(a.Race), 1.1f);
+                    continue;
+                }
+                var off = -dir * (0.35f + i / 2 * 0.32f) + side * ((i % 2) - 0.5f) * 0.3f;
+                float bob = Mathf.Abs(Mathf.Sin(now * 9 + i * 1.7f)) * 0.03f;
+                Put(gen.At(pos + off, bob), yaw, Palette.ClassColor(a.Hero?.Cls.Id ?? ""), Palette.RaceColor(a.Race), 1.1f);
+            }
+            banners.Add((gen.At(moving ? pos : pos + side * 0.9f), yaw));
+        }
         foreach (var s in town.Scouts)
         {
             if (!s.Out || !map.Geo.Pins.TryGetValue(s.SiteId, out var pin)) continue;

@@ -552,8 +552,13 @@ public partial class MapView : Control
     {
         var town = Sim.Town;
         // Icons first, in screen space, since they keep their size at any zoom.
-        foreach (var (id, p) in Geo.Pins)
-            if (ToScreen(p, 1).DistanceTo(screen) < 26) return Selection.Site(id);
+        foreach (var site in town.Sites)
+        {
+            // Only what the town has heard of is on the map, and hearsay only roughly where it is.
+            if (site.Known == SiteKnowledge.Unheard || !Geo.Pins.TryGetValue(site.Def.Id, out var p)) continue;
+            var spot = Fog.SightOf(site.Def.Id, p) == Sight.Rumoured ? Geo.Rough(site) : p;
+            if (ToScreen(spot, 1).DistanceTo(screen) < 26) return Selection.Site(site.Def.Id);
+        }
         int best = -1;
         float bestD = 0.35f;
         foreach (var (id, s) in _crowd.People.Sprites)

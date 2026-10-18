@@ -48,6 +48,9 @@ public sealed record SimulationOptions
     /// <summary>Let the stand-in mayor answer story events; off when a player steps into them.</summary>
     public bool AutoStories { get; init; } = true;
 
+    /// <summary>The stand-in mayor answers exploring companies' reports (with AutoBounties); off, they wait for the player.</summary>
+    public bool AutoExplore { get; init; } = true;
+
     /// <summary>Run the campaign arc (acts, festering menaces, dread); off, the Last Stand ends the game.</summary>
     public bool Saga { get; init; } = true;
 
@@ -82,7 +85,7 @@ public sealed class Simulation
         Property.Hourly(t);
         Social.Hourly(t);
         Roads.Hourly(t);
-        Explore.Hourly(t, Options.AutoMayor && Options.AutoBounties);
+        Explore.Hourly(t, Options.AutoMayor && Options.AutoBounties && Options.AutoExplore);
         t.Tick++;
         if (t.Hour == 0) DailyTick();
     }

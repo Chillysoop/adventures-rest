@@ -102,6 +102,18 @@ public sealed class Fog
             var roads = Roads.Walked(town, p).Select(line => line.Select(Geo.FromDays).ToArray()).ToList();
             Reports.Add(new Report(p.SiteId, SimTime.DayOf(p.ReturnTick), p.RecalledTick == null, 1, chron?.Outcome, roads));
         }
+        // Explorers describe every lair they sent word of, as they found it; the country they walked, once home.
+        foreach (var f in town.Finds)
+        {
+            if (!f.Known || f.SiteId == null || town.Tick < f.ReportTick) continue;
+            Reports.Add(new Report(f.SiteId, SimTime.DayOf(f.ReportTick), true, 1, null, []));
+        }
+        foreach (var s in town.Surveys)
+        {
+            if (s.Phase != SurveyPhase.Home) continue;
+            var roads = Explore.Walked(town, s).Select(line => line.Select(Geo.FromDays).ToArray()).ToList();
+            Reports.Add(new Report("", SimTime.DayOf(s.ReturnTick), false, 1, null, roads));
+        }
         // Scouts who come home describe the road and the site they watched.
         foreach (var s in town.Scouts)
         {
@@ -121,6 +133,14 @@ public sealed class Fog
         }
         foreach (var line in r.Roads)
             for (int i = 1; i < line.Length; i++) yield return (line[i - 1], line[i]);
+    }
+
+    /// <summary>The site a report is about; a report of roads alone (explorers) has none and needs its roads.</summary>
+    private static bool PinOf(Geo geo, Report r, out Vector2 pin)
+    {
+        if (geo.Pins.TryGetValue(r.SiteId, out pin)) return true;
+        pin = Geo.Center;
+        return r.Roads != null && !r.ReachedSite;
     }
 
     private static int Px(float world) => (int)((world - X0) * PerTile);
@@ -173,7 +193,7 @@ public sealed class Fog
         foreach (var (p, r) in LiveAreas) Grow(p, r + 2);
         foreach (var r in Reports)
         {
-            if (!geo.Pins.TryGetValue(r.SiteId, out var pin)) continue;
+            if (!PinOf(geo, r, out var pin)) continue;
             foreach (var (a, b) in Segments(r, pin))
             {
                 Grow(a, ReportRoad);
@@ -191,7 +211,7 @@ public sealed class Fog
             }
         foreach (var r in Reports)
         {
-            if (!geo.Pins.TryGetValue(r.SiteId, out var pin)) continue;
+            if (!PinOf(geo, r, out var pin)) continue;
             foreach (var (a, b) in Segments(r, pin)) Stamp(a, b, ReportRoad, r.Day);
             if (r.ReachedSite) Stamp(pin, pin, ReportSite, r.Day);
         }

@@ -107,6 +107,13 @@ public partial class Main
                     _dirty = true;
                 }
                 return 10;
+            case 24:
+                // An explorers' report card, as one pops up, with the company's latest roll if it has one.
+                if (_sim.Town.Finds.LastOrDefault() is { } find) OpenFind(find.Id, find.Beat);
+                return 70;
+            case 25:
+                CloseFind();
+                return 5;
             default:
                 var t = _sim.Town;
                 GD.Print($"SMOKE OK seed={_sim.Options.Seed} day={t.Day} population={t.Population} buildings={t.Buildings.Count} outcome={t.Outcome?.ToString() ?? "none"}");

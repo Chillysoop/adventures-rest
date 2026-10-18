@@ -103,6 +103,11 @@ public partial class Main
             OpenStory(story);
             return;
         }
+        if (a.FindId is int find)
+        {
+            OpenFind(find);
+            return;
+        }
         if (tab is Tab w) OpenWindow(w);
         if (a.SiteId is string site && _map.Geo.Pins.TryGetValue(site, out var pin))
         {
