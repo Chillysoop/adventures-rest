@@ -685,6 +685,9 @@ public sealed record ThemeDef
 
     /// <summary>The terrain as a returning party describes it.</summary>
     public string Text { get; init; } = "";
+
+    /// <summary>Old stories of the fallen powers that held it (content/game/history.json), one heard on the first visit.</summary>
+    public IReadOnlyList<string> History { get; init; } = [];
     public IReadOnlyList<SiteKindDef> Sites { get; init; } = [];
 
     /// <summary>Scene lines by encounter kind (wander, trap, hazard, puzzle, parley, treasure, boss).</summary>
@@ -728,6 +731,9 @@ public sealed record PeopleDef
 
     /// <summary>Starting standing with the town, -100 to 100.</summary>
     public double Start { get; init; }
+
+    /// <summary>Where they come from in the world's history, told when they ally.</summary>
+    public string History { get; init; } = "";
     public IReadOnlyList<string> Settlements { get; init; } = [];
     public BoonDef Boon { get; init; } = new();
 }
@@ -1083,6 +1089,9 @@ public sealed class Content
     /// <summary>Decorations and set dressing the player can place (content/game/decor.json).</summary>
     public DecorRules Decor { get; init; } = new();
 
+    /// <summary>The world's history: its ages, the powers that rose and fell, and the calendar (content/game/history.json).</summary>
+    public HistoryRules History { get; init; } = new();
+
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
 
@@ -1218,6 +1227,7 @@ public sealed class Content
             Loyalty = Parse<LoyaltyRules>("loyalty.json"),
             City = Parse<CityRules>("city.json"),
             Decor = Parse<DecorRules>("decor.json"),
+            History = Parse<HistoryRules>("history.json"),
         };
     }
 

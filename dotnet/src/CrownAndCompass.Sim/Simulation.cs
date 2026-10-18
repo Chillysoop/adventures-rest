@@ -287,7 +287,7 @@ public sealed class Simulation
         t.Log(
             LedgerCategory.Town,
             Importance.Major,
-            $"The charter is signed. {t.Population} settlers and a wagon arrive at the river ford that will become {t.Name}.",
+            $"The charter is signed. {t.Population} settlers and a wagon arrive at the river ford that will become {t.Name}. {Annals.Founding(t)}",
             t.Residents.Select(a => a.Id).ToList());
     }
 

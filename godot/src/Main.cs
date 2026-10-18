@@ -64,6 +64,7 @@ public partial class Main : Control
         BuildLayout();
         BuildMenu();
         BuildTitle();
+        BuildHistory();
         BuildGuide();
         _map.TreeScale = _opts.Trees;
         Map.Fog.RevealAll = _opts.Reveal;
@@ -102,6 +103,7 @@ public partial class Main : Control
         if (_opts.Tutorial is string step) StartTutorial(step == "start" ? null : step);
         if (_opts.Menu) OpenMenu();
         if (plain || _opts.Title) ShowTitle();
+        if (_opts.History is string power) OpenHistory(power == "" ? null : power);
     }
 
     /// <summary>The town behind the main menu: a random one, a month into the stand-in mayor's care, in the morning light.</summary>
@@ -237,6 +239,12 @@ public partial class Main : Control
     public override void _UnhandledKeyInput(InputEvent e)
     {
         if (e is not InputEventKey { Pressed: true, Echo: false } k) return;
+        if (_history.Visible)
+        {
+            if (k.Keycode == Key.Escape) CloseHistory();
+            GetViewport().SetInputAsHandled();
+            return;
+        }
         if (_menu.Visible)
         {
             if (k.Keycode == Key.Escape) CloseMenu();

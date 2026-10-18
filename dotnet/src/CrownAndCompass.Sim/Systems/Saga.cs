@@ -102,6 +102,9 @@ public sealed record FallbackFoe
 {
     public string Kind { get; init; } = "beasts";
     public string Leader { get; init; } = "";
+
+    /// <summary>Who it is in the world's history (content/game/history.json), told when it wakes.</summary>
+    public string Text { get; init; } = "";
 }
 
 public sealed record FinaleRules
@@ -348,9 +351,10 @@ public static class Saga
         string text;
         if (top == null)
         {
-            top = Menaces.Awaken(town, f.Fallback.Count > 0 ? town.Rng.Pick(f.Fallback) : new FallbackFoe { Leader = "the Old Wyrm" });
+            var foe = f.Fallback.Count > 0 ? town.Rng.Pick(f.Fallback) : new FallbackFoe { Leader = "the Old Wyrm" };
+            top = Menaces.Awaken(town, foe);
             if (top == null) return;
-            text = Fill(town, f.FallbackText, top);
+            text = Fill(town, f.FallbackText, top) + (foe.Text != "" ? " " + Fill(town, foe.Text, top) : "");
         }
         else text = Fill(town, f.Crown, top);
         s.BigBadId = top.Id;

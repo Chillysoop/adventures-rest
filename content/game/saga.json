@@ -169,7 +169,7 @@
           "the Ashen Abbot",
           "Old Corvus",
           "Lady Vessaline",
-          "Thane Haldor",
+          "Thane Harrow",
           "the Pale Bishop",
           "Lord Caddoc Hollowe",
           "Mother Ash",
@@ -591,19 +591,22 @@
     "fallback": [
       {
         "kind": "beasts",
-        "leader": "Vermithrax the Old Wyrm"
+        "leader": "Vermithrax the Old Wyrm",
+        "text": "The Old Wyrm who burned the Stonekings has slipped the chains the Smith-King forged for him four thousand years ago."
       },
       {
         "kind": "undead",
-        "leader": "Queen Ysolde the Deathless"
+        "leader": "Ashkara the Deathless",
+        "text": "The ninth mask-queen of Ashkaar, who became a lich rather than die with her empire, has walked out of the Tomb of the Nine Masks."
       },
       {
         "kind": "schemers",
-        "leader": "the Lord of the Last Door"
+        "leader": "the Lord of the Last Door",
+        "text": "It sold King Maudren his way past the Ferryman and ended Caldor in a decade. Now it has found another buyer."
       }
     ],
     "fallbackText": "Something old wakes in {region}, something that slept through the whole history of {town}. {leader} has risen, and its hunger has a direction.",
-    "victory": "{leader} is dead. {town}'s heroes come home through cheering crowds, and the long night is over. The bards will be singing about {town} for a hundred years.",
+    "victory": "{leader} is dead. {town}'s heroes come home through cheering crowds, and the second Long Night is over. The bards will be singing about {town} for a hundred years.",
     "victoryDark": "{leader} is dead. {town} is half ash and half graves, but it stands, and the morning is clear for the first time in a year.",
     "defeat": "{town} falls to {name}. The bards will sing about it, but not in {town}.",
     "march": "{name} is on the march! {leader} leads some {army} toward {town}. They will reach the walls in {days} days.",
