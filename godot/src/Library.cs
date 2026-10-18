@@ -37,7 +37,9 @@ public partial class Main
             int days = lore > 0 ? (int)Math.Ceiling(Math.Max(0, need - have) / lore) : 0;
             p.Meter($"{d.Name}", have / need, lore > 0 ? $"{Ui.Days(days)} at {Js.Str(Math.Round(lore, 1))} lore a day" : "no lore coming in");
         }
-        else p.Note(Research.Open(t).Count > 0 ? "The scholars are idle. Choose what they study below." : "Nothing the scholars could study yet: discoveries are revealed by who lives in town, who it trades with, what it builds and the books in the library.");
+        else p.Note(Research.Open(t).Count > 0 ? "The scholars are idle. Choose what they study below."
+            : st.Revealed.Count > 0 && st.Known.Count == st.Revealed.Count ? "The scholars have made every discovery this town has found. New trades, peoples, partners, buildings and books may reveal more."
+            : "Nothing the scholars can study yet: discoveries are revealed by who lives in town, who it trades with, what it builds and the books in the library.");
         var sources = Research.Sources(t);
         if (sources.Count > 0)
             p.Text(Ui.C(Ui.Ink2, "[font_size=12]Lore a day: " + string.Join(" · ", sources.Select(s => $"{Ui.Esc(s.Why)} {Js.Str(Math.Round(s.Lore, 1))}")) +
