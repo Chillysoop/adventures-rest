@@ -400,6 +400,8 @@ public partial class Main
         var p = _panes[Tab.Chronicles];
         var t = _sim.Town;
         p.Begin();
+        RenderHall(p, t);
+        if (t.Legacies.Count > 0) p.Heading("Expeditions");
         if (t.Chronicles.Count == 0) p.Note("No expeditions yet. Post a bounty and wait for a party to form at the tavern. Their story comes back with them.");
         foreach (var c in Enumerable.Reverse(t.Chronicles))
         {
@@ -410,6 +412,36 @@ public partial class Main
             p.Row(head);
         }
         p.Commit();
+    }
+
+    /// <summary>The hall of heroes: the fallen and the retired, newest first, with memorials to raise.</summary>
+    private void RenderHall(Pane p, Town t)
+    {
+        if (t.Legacies.Count == 0) return;
+        p.Heading("Hall of heroes");
+        int mentors = Legacies.Mentors(t).Count();
+        double loyalty = Legacies.Loyalty(t);
+        if (mentors > 0 || loyalty > 0)
+            p.Note(string.Join(" ", new[]
+            {
+                mentors > 0 ? $"{mentors} {(mentors == 1 ? "master" : "masters")} of arms train new heroes, who arrive with a head start." : "",
+                loyalty > 0 ? $"The town's memorials add {Js.Str(Math.Round(loyalty, 1))} to every hero's loyalty." : "",
+            }.Where(x => x != "")));
+        foreach (var l in Enumerable.Reverse(t.Legacies))
+        {
+            int id = l.HeroId;
+            string fate = l.Retired ? $"retired on day {l.Day} to teach" : $"fell on day {l.Day}";
+            string heir = l.HeirId is int h ? $"\n{Ui.C(Ui.Good, $"[font_size=12]Their heir {Ui.Esc(t.Agent(h).Name)} took up their arms{(l.Relic != "" ? $" and the {Ui.Esc(l.Relic)}" : "")}.[/font_size]")}"
+                : l.HeirDay != null ? $"\n{Ui.C(Ui.Ink2, "[font_size=12]Word has gone to their kin.[/font_size]")}" : "";
+            string head = $"[b]{Ui.Esc(l.Name)}[/b]  {(l.Memorial ? Tag("memorial", Ui.Gold) : "")}\n" +
+                          Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(l.Class)}, level {l.Level} · {fate} · {l.Expeditions} {(l.Expeditions == 1 ? "expedition" : "expeditions")}, {l.Kills} foes slain, renown {l.Renown}[/font_size]") + heir;
+            if (l.Memorial) p.Row(head);
+            else
+            {
+                double cost = Legacies.MemorialCost(t, l);
+                p.Row(head, ($"Raise a memorial · {Js.Str(Js.Round(cost))}g", t.Treasury >= cost, false, () => Act(() => _sim.RaiseMemorial(id))));
+            }
+        }
     }
 
     // ---------- Inspect ----------

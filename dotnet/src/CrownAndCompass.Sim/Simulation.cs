@@ -123,6 +123,7 @@ public sealed class Simulation
         Factions.Daily(t, Options.AutoMayor);
         Saga.Daily(t, Options.AutoMayor);
         Turning.Daily(t);
+        Legacies.Daily(t, Options.AutoMayor);
         Loyalty.Daily(t, Options.AutoMayor);
         Decor.Daily(t);
         Stories.Daily(t, Options.AutoMayor && Options.AutoStories);
@@ -145,6 +146,9 @@ public sealed class Simulation
     public bool OpenTradeRoute(int settlementId, Good export, Good import) => Trade.OpenRoute(Town, settlementId, export, import) != null;
 
     public bool CloseTradeRoute(int routeId) => Trade.CloseRoute(Town, routeId);
+
+    /// <summary>Raise a memorial to a hero in the hall of heroes.</summary>
+    public bool RaiseMemorial(int heroId) => Legacies.RaiseMemorial(Town, heroId);
 
     /// <summary>The player's other lever: sign or veto the motion before the council.</summary>
     public bool DecideMotion(int motionId, bool sign) => Council.Decide(Town, motionId, sign);

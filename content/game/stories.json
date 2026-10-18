@@ -3792,6 +3792,195 @@
           "regard": -2
         }
       }
+    },
+    {
+      "id": "old-blade",
+      "title": "{heroName} would hang up the sword",
+      "stakes": "medium",
+      "source": "heroes",
+      "needs": [
+        "veteran"
+      ],
+      "minDay": 120,
+      "repeatDays": 90,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} has come home from more roads than anyone in {town} can count, and asks the mayor for leave to stop. The old {class} would rather teach the young ones at the practice yard than bleed for one more bounty.",
+          "options": [
+            {
+              "label": "Let them retire and teach",
+              "prefer": 0.1,
+              "success": {
+                "text": "{heroName} hangs the sword over the practice yard gate. From now on every new blade in town learns from a master.",
+                "effects": {
+                  "retire": 1,
+                  "mandate": 2
+                }
+              }
+            },
+            {
+              "label": "Ask for one more season",
+              "skill": "persuasion",
+              "dc": 14,
+              "success": {
+                "text": "{heroName} grumbles, laughs and agrees to one more season.",
+                "effects": {
+                  "loyalty": 4
+                }
+              },
+              "failure": {
+                "text": "{heroName} stays, but resents it.",
+                "effects": {
+                  "loyalty": -10
+                }
+              }
+            },
+            {
+              "label": "Pay them to stay on",
+              "cost": 150,
+              "success": {
+                "text": "A fat purse and a new cloak: {heroName} stays, for now.",
+                "effects": {
+                  "loyalty": 8
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "Nobody answers {heroName}, who takes it hard.",
+        "effects": {
+          "loyalty": -8
+        }
+      }
+    },
+    {
+      "id": "hero-funeral",
+      "title": "{fallenName} comes home on a bier",
+      "stakes": "low",
+      "source": "heroes",
+      "needs": [
+        "fallen"
+      ],
+      "repeatDays": 20,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The road brings {fallen} home on a bier, wrapped in a company cloak. The town turns out at the gate, and everyone is watching to see what the mayor will do for the fallen {fallenClass}.",
+          "options": [
+            {
+              "label": "A hero's funeral and a stone",
+              "cost": 120,
+              "prefer": 0.1,
+              "success": {
+                "text": "Drums, torches and a carved stone by the gate. Heroes and townsfolk drink to {fallenName} until dawn.",
+                "effects": {
+                  "memorial": 1,
+                  "mandate": 2
+                }
+              }
+            },
+            {
+              "label": "Speak over the grave yourself",
+              "skill": "performance",
+              "dc": 12,
+              "success": {
+                "text": "The mayor's words carry, and the town remembers {fallenName} well.",
+                "effects": {
+                  "mandate": 3
+                }
+              },
+              "failure": {
+                "text": "The words come out wrong, and the mourners shuffle home.",
+                "effects": {
+                  "mandate": -2
+                }
+              }
+            },
+            {
+              "label": "A plain burial",
+              "success": {
+                "text": "A plain grave in the yard behind the temple. The heroes in the taverns notice how little it took.",
+                "effects": {
+                  "mandate": -2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "{fallenName} is buried without a word from the town hall.",
+        "effects": {
+          "mandate": -3
+        }
+      }
+    },
+    {
+      "id": "fallen-kin",
+      "title": "{fallenName}'s kin at the door",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "fallen"
+      ],
+      "repeatDays": 40,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A widow and two thin children stand at the town hall door: the family {fallen} sent coin home to. With the {fallenClass} dead, the coin has stopped.",
+          "options": [
+            {
+              "label": "Pay them a pension",
+              "cost": 90,
+              "prefer": 0.1,
+              "success": {
+                "text": "A purse each season, in {fallenName}'s name. Word spreads in the taverns that {town} looks after its own.",
+                "effects": {
+                  "mandate": 2,
+                  "tension": -2
+                }
+              }
+            },
+            {
+              "label": "Find them work and a roof",
+              "skill": "persuasion",
+              "dc": 13,
+              "success": {
+                "text": "A guildmaster owes the mayor a favour, and the family settle in town.",
+                "effects": {
+                  "people": 3,
+                  "mandate": 1
+                }
+              },
+              "failure": {
+                "text": "Nobody will take them on, and they go back down the road.",
+                "effects": {
+                  "mandate": -1
+                }
+              }
+            },
+            {
+              "label": "Send them away",
+              "success": {
+                "text": "The family go back down the road, and the heroes in the taverns see them go.",
+                "effects": {
+                  "mandate": -3,
+                  "tension": 2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "Nobody answers, and the family go back down the road.",
+        "effects": {
+          "mandate": -2
+        }
+      }
     }
   ],
   "decrees": [

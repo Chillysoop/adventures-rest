@@ -56,7 +56,7 @@ public class BastionsTests
     [Fact]
     public void FacilitiesHireTownsfolkAndStandOnTheWalls()
     {
-        var sim = new Simulation(new SimulationOptions { Seed = 8 });
+        var sim = new Simulation(new SimulationOptions { Seed = 2 });
         var t = sim.Town;
         sim.RunDays(320);
         var b = t.Bastions.First(x => !x.Abandoned && !x.Idle && x.Facilities.Count > 0);

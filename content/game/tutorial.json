@@ -212,6 +212,15 @@
       "teaches": []
     },
     {
+      "id": "legacies",
+      "title": "The hall of heroes",
+      "text": "A hero has fallen in the town's service. Open [b]Chronicles[/b] to find them in the [b]hall of heroes[/b]. Raise a [b]memorial[/b] and every hero in town stands a little more loyal. A seasoned hero's kin may come to take up their arms, carrying their best magic item. Old heroes a story lets retire stay on as masters of arms, and new heroes arrive better trained.",
+      "when": "count:Legacies",
+      "point": "tab:Chronicles",
+      "until": "tab:Chronicles",
+      "teaches": ["command:RaiseMemorial"]
+    },
+    {
       "id": "campaign-map",
       "title": "The campaign map",
       "text": "Press [b]M[/b] or [b]Campaign map[/b] to see the same land as an inked map. Drop markers to plan, drag them to move them, and press [b]Delete[/b] to remove the one under the cursor.",
