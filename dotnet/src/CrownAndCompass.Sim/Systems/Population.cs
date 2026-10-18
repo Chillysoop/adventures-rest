@@ -116,6 +116,8 @@ public static class Population
         double attraction = 0.3 + 0.06 * openJobs + 0.04 * openBeds + 0.05 * sites - (foodPrice > 1.8 ? 0.4 : 0) - 0.04 * homeless - 0.06 * idle;
         // Word travels: a popular mayor draws settlers, high taxes turn them away.
         attraction += (town.Mandate - 50) / 200 - (town.TaxRate - town.Content.Rules.TaxRate) * 5 + Decor.Draw(town) + Seasons.Arrivals(town);
+        // A young town is a chance at cheap land: the frontier draws settlers until the town is a proper village.
+        attraction += town.Content.Rules.FrontierDraw * Math.Max(0, 1 - town.Population / town.Content.Rules.FrontierSize);
         // Settlers want land to build on: with no residential lot zoned and for sale, fewer come.
         if (Planning.VacantZoned(town, Zone.Residential) == 0) attraction -= 0.15;
         attraction = Math.Max(0.05, Math.Min(1.6, attraction));

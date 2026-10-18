@@ -35,11 +35,16 @@ public static class Mayor
         double reach = town.Lots.Count == 0 ? 0 : town.Lots.Max(Town.DistanceFromCenter);
         // A round patch at a time, as a player would paint it, until the zone has the open plots it wants:
         // in the wards that favour it first; fields and workshops out at the edge of the built town, homes and shops close in;
-        // and alongside a street, so it fills from the street.
+        // and alongside a street, so it fills from the street. Homes keep out of the dear wards, where working folk can't pay the rent.
         float[] field = [];
-        double? Key(double x, double y, double d) =>
-            (Land.WardAt(town, (int)(y * Land.Res) * Land.Size + (int)(x * Land.Res)).Favours == zone ? 0 : 100) + (edge ? Math.Abs(d - (reach + 1)) : d)
-            + Math.Abs(field[(int)(y * Land.Res) * Land.Size + (int)(x * Land.Res)] / Land.Res - 2) * 0.7;
+        double? Key(double x, double y, double d)
+        {
+            int i = (int)(y * Land.Res) * Land.Size + (int)(x * Land.Res);
+            var ward = Land.WardAt(town, i);
+            return (ward.Favours == zone ? 0 : 100) + (edge ? Math.Abs(d - (reach + 1)) : d)
+                + (zone == Zone.Residential ? Math.Max(0, ward.Rent - 1) * 20 : 0)
+                + Math.Abs(field[i] / Land.Res - 2) * 0.7;
+        }
         for (int i = 0; i < 12 && Planning.VacantZoned(town, zone) < minVacant; i++)
         {
             field = Streets.Field(town.Plan);
