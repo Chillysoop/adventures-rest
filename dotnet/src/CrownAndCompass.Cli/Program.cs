@@ -105,7 +105,7 @@ Print(
 if (Saga.Summary(town) != "") Print(Saga.Summary(town));
 Print($"A {City.Tier(town).Name.ToLowerInvariant()} of about {City.Souls(town)} souls; wards laid out: {string.Join(", ", town.City.OpenWards.Select(w => City.Ward(town, w).Name))}.");
 Print("Treasury books, all time: " + string.Join(", ", town.Accounts.OrderBy(kv => kv.Value).Select(kv => $"{kv.Key} {Js.ToFixed(kv.Value, 0)}")));
-Print("Vacant zoned lots: " + string.Join(", ", Planning.Paintable.Select(z => $"{z} {Planning.VacantZoned(town, z)}")) + $"; unzoned open {town.Lots.Count(l => l.Zone == Zone.None && City.IsOpen(town, l))}");
+Print("Vacant zoned lots: " + string.Join(", ", Planning.Paintable.Select(z => $"{z} {Planning.VacantZoned(town, z)}")) + $"; unpainted open ground {Land.OpenGround(town) / (Land.Res * Land.Res)} tiles");
 Print("Demand: " + string.Join(", ", town.Content.Buildings.Where(d => d.Buildable && d.IsBusiness).Select(d => $"{d.Id} {Js.ToFixed(Property.Demand(town, d.Id), 2)}")));
 Print("Houses: " + string.Join(", ", town.Buildings.Where(b => b.Complete && b.Def.Housing > 0).GroupBy(b => b.Def.Id).OrderBy(g => g.Key, StringComparer.Ordinal).Select(g => $"{g.Key} {g.Count()} (content {Js.ToFixed(g.Average(b => b.Contentment), 2)})")));
 Print("Coverage: " + string.Join(", ", town.City.Coverage.Select(kv => $"{kv.Key} {Js.ToFixed(kv.Value, 2)}")) + "; next charter needs: " + string.Join("; ", City.Missing(town)));

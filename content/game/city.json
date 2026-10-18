@@ -1,6 +1,7 @@
 {
   "soulsPerResident": 5,
   "exportShare": 0.75,
+  "paths": { "wearPerTrip": 0.008, "mostTrips": 20, "fade": 0.97, "lay": 1.2 },
   "goods": {
     "Food": 1.0, "Timber": 1.5, "Tools": 4.0, "Ale": 1.2, "Stone": 1.8, "Wool": 1.2,
     "Cloth": 4.0, "Furniture": 5.0, "Herbs": 1.4, "Potions": 6.0, "Wine": 3.5, "Books": 12.0

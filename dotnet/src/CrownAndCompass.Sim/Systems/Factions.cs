@@ -460,7 +460,7 @@ public static class Factions
         var def = town.Content.Building(Rules(town).HallBuilding);
         double cost = def.Cost + town.Market.Quote(Good.Timber, def.Timber);
         if (f.Purse < cost + Rules(town).HallReserve) return false;
-        var lot = Shrines.CivicLot(town);
+        var lot = Shrines.CivicLot(town, def);
         if (lot == null) return false;
         town.Market.Buy(Good.Timber, def.Timber);
         f.Purse -= cost;

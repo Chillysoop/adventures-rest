@@ -466,8 +466,7 @@ public partial class Overlay(MapView map) : Control
         if (sel.Kind == "building")
         {
             var lot = town.Lot(town.Building(sel.Id).LotId);
-            var p = Geo.LotPos(lot);
-            Vector2[] corners = [p, p + new Vector2(1, 0), p + new Vector2(1, 1), p + new Vector2(0, 1)];
+            var corners = Geo.LotCorners(lot, 0.08f);
             var pts = corners.Select(q => map.ToScreen(q)).ToList();
             pts.Add(pts[0]);
             DrawPolyline(pts.ToArray(), c, 2.5f, true);

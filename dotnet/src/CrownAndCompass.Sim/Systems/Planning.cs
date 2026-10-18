@@ -12,48 +12,43 @@ public static class Planning
 
     // Zoning ----------------------------------------------------------------------------------
 
-    /// <summary>A lot can be zoned (or cleared, with Zone.None) while nothing stands on it and nobody owns it.</summary>
-    public static bool CanZone(Lot lot, Zone zone) =>
-        lot.IsVacant && lot.OwnerId == null && lot.Zone != zone && (zone == Zone.None || Paintable.Contains(zone));
+    /// <summary>Most a brush reaches, in tiles from the dab.</summary>
+    public const double MaxBrush = 3;
 
-    /// <summary>As <see cref="CanZone(Lot, Zone)"/>, and the lot's ward has been laid out.</summary>
-    public static bool CanZone(Town town, Lot lot, Zone zone) => CanZone(lot, zone) && City.IsOpen(town, lot);
-
-    /// <summary>Zone a stroke of lots. Returns how many changed.</summary>
-    public static int Paint(Town town, IEnumerable<int> lotIds, Zone zone)
+    /// <summary>Paint a brush stroke (Zone.None clears land; civic land is made only by placing government buildings). Returns cells changed.</summary>
+    public static int Paint(Town town, IEnumerable<(double X, double Y)> dabs, double radius, Zone zone)
     {
-        int n = 0;
-        foreach (int id in lotIds.Distinct().Order())
-        {
-            if (id < 0 || id >= town.Lots.Count) continue;
-            var lot = town.Lot(id);
-            if (!CanZone(town, lot, zone) || Decor.Garden(town, lot)) continue;
-            lot.Zone = zone;
-            n++;
-        }
+        if (zone != Zone.None && !Paintable.Contains(zone)) return 0;
+        int n = Land.Brush(town, dabs, Math.Clamp(radius, 0.25, MaxBrush), zone);
         if (n > 0)
             town.Log(
                 LedgerCategory.Property,
                 Importance.Routine,
                 zone == Zone.None
-                    ? $"The council takes {Lots(n)} off the plan."
-                    : $"The council zones {Lots(n)} as {ZoneName(zone)} land.");
+                    ? $"The council takes {Acres(n)} off the plan."
+                    : $"The council zones {Acres(n)} as {ZoneName(zone)} land.");
         return n;
     }
 
     public static string ZoneName(Zone zone) => zone.ToString().ToLowerInvariant();
 
-    private static string Lots(int n) => n == 1 ? "a lot" : $"{n} lots";
+    /// <summary>Painted area in words: a plan cell is a sixteenth of a tile, and a tile is about an acre.</summary>
+    private static string Acres(int cells)
+    {
+        double acres = cells / (double)(Land.Res * Land.Res);
+        return acres < 0.75 ? "a scrap of land" : acres < 1.5 ? "about an acre" : $"about {Js.ToFixed(acres, 0)} acres";
+    }
 
     /// <summary>A buyer found no land of this zone for sale: tell the player, at most once a week per zone.</summary>
     public static void NoLand(Town town, Zone zone, Agent a)
     {
         if (town.NoLandDay.TryGetValue(zone, out int day) && town.Day - day < 7) return;
         town.NoLandDay[zone] = town.Day;
-        town.Log(LedgerCategory.Property, Importance.Notable, $"{a.Name} has gold for {ZoneName(zone)} land, but no {ZoneName(zone)} lot is zoned and for sale.", [a.Id]);
+        town.Log(LedgerCategory.Property, Importance.Notable, $"{a.Name} has gold for {ZoneName(zone)} land, but no open {ZoneName(zone)} land is painted on the plan.", [a.Id]);
     }
 
-    public static int VacantZoned(Town town, Zone zone) => town.Lots.Count(l => l.Zone == zone && l.IsVacant && l.OwnerId == null && City.IsOpen(town, l) && !Decor.Garden(town, l));
+    /// <summary>About how many more buildings the zone's open painted land holds.</summary>
+    public static int VacantZoned(Town town, Zone zone) => Land.OpenPlots(town, zone);
 
     /// <summary>What the timber and stone for a building cost at today's market, caravans covering any shortfall.</summary>
     public static double Materials(Town town, BuildingDef d) => town.Market.Quote(Good.Timber, d.Timber) + town.Market.Quote(Good.Stone, d.Stone);
@@ -99,24 +94,30 @@ public static class Planning
         return null;
     }
 
-    /// <summary>Why this lot can't take the building, or null when it can.</summary>
-    public static string? LotBlocked(Town town, Lot lot, BuildingDef? d = null)
+    /// <summary>Why the building can't stand at this point and heading (null faces the nearest lane), or null when it can.</summary>
+    public static string? SpotBlocked(Town town, BuildingDef d, double x, double y, double? yaw = null)
     {
-        if (!lot.IsVacant) return "the lot is built on";
-        if (lot.OwnerId != null) return "the lot is privately owned";
-        var ward = City.WardOf(town, lot);
-        if (!City.IsOpen(town, lot)) return $"the {ward.Name} has not been laid out";
-        if (d != null && !City.Allows(town, d, lot)) return $"it can't stand in the {ward.Name}";
-        return null;
+        var ward = City.WardOf(town, x, y);
+        if (!City.IsOpen(town, x, y)) return $"the {ward.Name} has not been laid out";
+        if (!City.Allows(town, d, x, y)) return $"it can't stand in the {ward.Name}";
+        if (Land.At(town, d, x, y, yaw) != null) return null;
+        var (w, dd) = Land.Footprint(d);
+        return Hills.Span(town, x, y, w, dd, yaw ?? Streets.Facing(town, x, y)) > Hills.MaxSpan ? "the ground is too steep" : "no room here";
     }
 
-    /// <summary>Place a building on a lot, paid from the treasury; builders put it up like any other site.</summary>
-    public static Building? Place(Town town, string buildingId, int lotId)
+    /// <summary>Place a building by hand at a point and heading (null faces the nearest lane), paid from the treasury.</summary>
+    public static Building? Place(Town town, string buildingId, double x, double y, double? yaw = null)
     {
-        if (lotId < 0 || lotId >= town.Lots.Count) return null;
+        if (!town.Content.Buildings.Any(b => b.Id == buildingId)) return null;
+        var lot = Land.At(town, town.Content.Building(buildingId), x, y, yaw);
+        return lot == null ? null : Place(town, buildingId, lot);
+    }
+
+    /// <summary>Place a building on a lot found for it, paid from the treasury; builders put it up like any other site.</summary>
+    public static Building? Place(Town town, string buildingId, Lot lot)
+    {
         var d = town.Content.Building(buildingId);
-        var lot = town.Lot(lotId);
-        if (Blocked(town, d) != null || LotBlocked(town, lot, d) != null) return null;
+        if (Blocked(town, d) != null || lot.Id != town.Lots.Count) return null;
         if (d.Id == town.Content.Shrines.Temple) return Shrines.BuildTemple(town, lot);
         if (SightWork(town, d.Id) != null) return Watch.BuildWork(town, d.Id, lot);
 
@@ -143,15 +144,10 @@ public static class Planning
         return n == 0 ? $"the {d.Name}" : $"the {d.Name} No. {n + 1}";
     }
 
-    /// <summary>A vacant lot near the hall for a government work: civic land first, then any open lot.</summary>
-    public static Lot? CivicLot(Town town, BuildingDef? d = null)
+    /// <summary>A spot near the hall for a government work: on any unbuilt ground the players haven't zoned for the townsfolk.</summary>
+    public static Lot? CivicLot(Town town, BuildingDef d)
     {
-        Lot? Find(Zone z) => d == null ? Property.FindLot(town, z) : town.Lots
-            .Where(l => l.Zone == z && l.IsVacant && l.OwnerId == null && City.Allows(town, d, l))
-            .OrderBy(Town.DistanceFromCenter)
-            .ThenBy(l => l.Id)
-            .FirstOrDefault();
-        var lot = Find(Zone.Civic) ?? Find(Zone.None);
+        var lot = Land.Find(town, d, null);
         if (lot != null) lot.Zone = Zone.Civic;
         return lot;
     }

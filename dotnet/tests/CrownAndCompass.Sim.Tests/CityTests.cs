@@ -6,8 +6,14 @@ public class CityTests
 {
     private static Simulation Planned(int seed = 1) => new(new SimulationOptions { Seed = seed, AutoPlanning = false });
 
-    private static Lot LotIn(Town t, string ward) =>
-        t.Lots.First(l => l.IsVacant && City.WardOf(t, l).Id == ward);
+    /// <summary>The middle of the first unbuilt tile in the ward.</summary>
+    private static (double X, double Y) PointIn(Town t, string ward)
+    {
+        for (int y = 0; y < Town.Grid; y++)
+            for (int x = 0; x < Town.Grid; x++)
+                if (City.WardOf(t, x + 0.5, y + 0.5).Id == ward && Land.BuildingAt(t, x + 0.5, y + 0.5) == null) return (x + 0.5, y + 0.5);
+        throw new InvalidOperationException(ward);
+    }
 
     [Fact]
     public void ANewTownIsAThorpInsideTheOldTown()
@@ -17,9 +23,9 @@ public class CityTests
         Assert.Equal("thorp", City.Tier(t).Id);
         Assert.Equal(["old_town"], t.City.OpenWards);
         Assert.All(t.Buildings, b => Assert.Equal(0, City.Ring(t.Lot(b.LotId))));
-        var market = LotIn(t, "market");
-        Assert.False(Planning.CanZone(t, market, Zone.Commercial));
-        Assert.Equal(0, sim.ZoneLots([market.Id], Zone.Commercial));
+        var market = PointIn(t, "market");
+        Assert.False(City.IsOpen(t, market.X, market.Y));
+        Assert.Equal(0, sim.PaintZone([market], 1, Zone.Commercial));
     }
 
     [Fact]
@@ -27,11 +33,11 @@ public class CityTests
     {
         var t = Planned().Town;
         int c = Town.Grid / 2;
-        Assert.Equal("old_town", City.WardOf(t, t.Lots.First(l => l.X == c && l.Y == c)).Id);
-        Assert.Equal("market", City.WardOf(t, t.Lots.First(l => l.X == c + City.Band + 2 && l.Y == c)).Id);
-        Assert.Equal("hill", City.WardOf(t, t.Lots.First(l => l.X == c && l.Y == c + City.Band + 2)).Id);
-        Assert.Equal("riverside", City.WardOf(t, t.Lots.First(l => l.X == Town.Grid - 1 && l.Y == c)).Id);
-        Assert.Equal("field", City.WardOf(t, t.Lots.First(l => l.X == c && l.Y == 0)).Id);
+        Assert.Equal("old_town", City.WardOf(t, c + 0.5, c + 0.5).Id);
+        Assert.Equal("market", City.WardOf(t, c + City.Band + 2 + 0.5, c + 0.5).Id);
+        Assert.Equal("hill", City.WardOf(t, c + 0.5, c + City.Band + 2 + 0.5).Id);
+        Assert.Equal("riverside", City.WardOf(t, Town.Grid - 1 + 0.5, c + 0.5).Id);
+        Assert.Equal("field", City.WardOf(t, c + 0.5, 0 + 0.5).Id);
     }
 
     [Fact]
@@ -45,7 +51,7 @@ public class CityTests
         t.City.Tier = City.TierIndex(t, "village");
         Assert.True(sim.OpenWard("market"));
         Assert.Equal("already laid out", City.WardBlocked(t, "market"));
-        Assert.True(Planning.CanZone(t, LotIn(t, "market"), Zone.Commercial));
+        Assert.True(sim.PaintZone([PointIn(t, "market")], 1, Zone.Commercial) > 0);
         Assert.True(t.Accounts.Get(TreasuryAccount.Wards, 0) < 0);
     }
 
@@ -73,8 +79,8 @@ public class CityTests
         var t = Planned().Town;
         var manor = t.Content.Building("manor");
         foreach (var w in t.Content.City.Wards) t.City.OpenWards.Add(w.Id);
-        Assert.False(City.Allows(t, manor, LotIn(t, "market")));
-        Assert.True(City.Allows(t, manor, LotIn(t, "hill")));
+        Assert.False(City.Allows(t, manor, PointIn(t, "market").X, PointIn(t, "market").Y));
+        Assert.True(City.Allows(t, manor, PointIn(t, "hill").X, PointIn(t, "hill").Y));
         Assert.NotNull(City.Locked(t, manor));
         t.City.Tier = City.TierIndex(t, "city");
         Assert.Null(City.Locked(t, manor));

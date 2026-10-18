@@ -632,8 +632,7 @@ public static class Threat
     public static double Distance(Town town, int lotId)
     {
         var l = town.Lots[lotId];
-        const double c = (Town.Grid - 1) / 2.0;
-        return Js.Hypot(l.X - c, l.Y - c);
+        return Js.Hypot(l.X - Town.Center, l.Y - Town.Center);
     }
 
     private static string Cap(string s) => s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];

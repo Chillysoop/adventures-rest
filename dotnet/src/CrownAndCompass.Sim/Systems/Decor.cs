@@ -180,9 +180,6 @@ public sealed class DecorState
         public readonly double[] Harvest = new double[buildings];
         public readonly double[] Talk = new double[buildings];
         public double LitShare;
-
-        /// <summary>Open lots a decoration stands on: kept as gardens, never zoned or built on.</summary>
-        public readonly HashSet<int> Gardens = [];
     }
 }
 
@@ -198,15 +195,15 @@ public static class Decor
 
     public static IReadOnlyList<Decoration> All(Town town) => town.Decor.Pieces;
 
-    /// <summary>Where a building stands, in lots (the centre of its lot).</summary>
+    /// <summary>Where a building stands, in tiles (the middle of its lot).</summary>
     public static (double X, double Y) PosOf(Town town, Building b)
     {
         var lot = town.Lot(b.LotId);
-        return (lot.X + 0.5, lot.Y + 0.5);
+        return (lot.X, lot.Y);
     }
 
-    /// <summary>The heart of town, in lots.</summary>
-    public static (double X, double Y) Heart => (Town.Grid / 2.0, Town.Grid / 2.0);
+    /// <summary>The heart of town, in tiles.</summary>
+    public static (double X, double Y) Heart => (Town.Center, Town.Center);
 
     /// <summary>How far a tree has grown, 0.3 to 1; anything else is full size at once.</summary>
     public static double Growth(Town town, Decoration d) =>
@@ -241,13 +238,15 @@ public static class Decor
         return null;
     }
 
-    /// <summary>A circle against a built lot's footprint (the lot, less a narrow lane all round).</summary>
+    /// <summary>A circle against a building's footprint, turned however the building is.</summary>
     private static bool Overlaps(Lot lot, double x, double y, double r)
     {
-        const double lane = 0.08;
-        double cx = Math.Clamp(x, lot.X + lane, lot.X + 1 - lane);
-        double cy = Math.Clamp(y, lot.Y + lane, lot.Y + 1 - lane);
-        return (cx - x) * (cx - x) + (cy - y) * (cy - y) < r * r;
+        double s = Math.Sin(lot.Yaw), c = Math.Cos(lot.Yaw), dx = x - lot.X, dy = y - lot.Y;
+        // Into the building's own frame: u along its front, v front to back.
+        double u = dx * c + dy * s, v = -dx * s + dy * c;
+        double hw = lot.W / (2.0 * Land.Res), hd = lot.D / (2.0 * Land.Res);
+        double cu = Math.Clamp(u, -hw, hw), cv = Math.Clamp(v, -hd, hd);
+        return (cu - u) * (cu - u) + (cv - v) * (cv - v) < r * r;
     }
 
     /// <summary>Set a piece down, paid from the treasury. A statue honours the given hero or god, or the obvious one.</summary>
@@ -358,27 +357,25 @@ public static class Decor
                 if (f.Light[b.Id] >= 0.3) lit++;
             }
             f.LitShare = n > 0 ? (double)lit / n : 0;
-            foreach (var d in s.Pieces)
-            {
-                int x0 = (int)Math.Floor(d.X - d.Def.Size), x1 = (int)Math.Floor(d.X + d.Def.Size);
-                int y0 = (int)Math.Floor(d.Y - d.Def.Size), y1 = (int)Math.Floor(d.Y + d.Def.Size);
-                for (int y = Math.Max(0, y0); y <= Math.Min(Town.Grid - 1, y1); y++)
-                    for (int x = Math.Max(0, x0); x <= Math.Min(Town.Grid - 1, x1); x++)
-                    {
-                        var lot = town.LotAt(x, y);
-                        if (lot.IsVacant && lot.Zone == Zone.None && Overlaps(lot, d.X, d.Y, d.Def.Size)) f.Gardens.Add(lot.Id);
-                    }
-            }
         }
         s.Cached = f;
         return f;
     }
 
     /// <summary>
-    /// An unzoned lot with a decoration on it is a garden: the council won't zone it or build on it.
-    /// A decoration on land already zoned is cleared (half its price back) when something is built there.
+    /// Unpainted ground with a decoration on it is a garden: the brush passes it by, so nothing is built there.
+    /// A decoration on land already painted is cleared (half its price back) when something is built over it.
     /// </summary>
-    public static bool Garden(Town town, Lot lot) => town.Decor.Pieces.Count > 0 && Fields(town).Gardens.Contains(lot.Id);
+    /// <param name="pad">How far round the piece counts, in tiles (half a plan cell's width takes in any cell it touches).</param>
+    public static bool Garden(Town town, double x, double y, double pad = 0)
+    {
+        foreach (var p in town.Decor.Pieces)
+        {
+            double r = p.Def.Size + pad;
+            if ((p.X - x) * (p.X - x) + (p.Y - y) * (p.Y - y) < r * r) return true;
+        }
+        return false;
+    }
 
     /// <summary>How pleasant it is around a building.</summary>
     public static double AppealOf(Town town, Building b) => Fields(town).Appeal[b.Id];
@@ -417,7 +414,7 @@ public static class Decor
     {
         if (town.Decor.Pieces.Count == 0) return 0;
         var r = Rules(town);
-        return Math.Clamp(AppealAt(town, lot.X + 0.5, lot.Y + 0.5) * r.LandPerAppeal, 0, r.LandCap);
+        return Math.Clamp(AppealAt(town, lot.X, lot.Y) * r.LandPerAppeal, 0, r.LandCap);
     }
 
     /// <summary>Added to how much each watchman counts: lit streets and the stocks.</summary>
@@ -564,15 +561,12 @@ public static class Decor
         return null;
     }
 
-    /// <summary>Land the town may want to build on: any lot of a ward laid out. The stand-in keeps to the land around it.</summary>
+    /// <summary>Land the town may want to build on: any ground of a ward laid out. The stand-in keeps to the land around it.</summary>
     private static bool Zoned(Town town, double x, double y)
     {
         foreach (double dx in (double[])[-0.3, 0.3])
             foreach (double dy in (double[])[-0.3, 0.3])
-            {
-                int lx = (int)Math.Floor(x + dx), ly = (int)Math.Floor(y + dy);
-                if (lx >= 0 && ly >= 0 && lx < Town.Grid && ly < Town.Grid && City.IsOpen(town, town.LotAt(lx, ly))) return true;
-            }
+                if (x + dx >= 0 && y + dy >= 0 && x + dx < Town.Grid && y + dy < Town.Grid && City.IsOpen(town, x + dx, y + dy)) return true;
         return false;
     }
 

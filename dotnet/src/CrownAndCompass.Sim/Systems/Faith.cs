@@ -400,7 +400,7 @@ public static class Faith
                 town.Faiths.Funds[god.Id] = fund;
                 continue;
             }
-            var lot = Shrines.CivicLot(town);
+            var lot = Shrines.CivicLot(town, def);
             if (lot == null)
             {
                 town.Faiths.Funds[god.Id] = fund;

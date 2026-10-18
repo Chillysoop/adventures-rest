@@ -12,44 +12,55 @@ namespace CrownAndCompass.Client;
 /// </summary>
 public static class Showcase
 {
-    /// <summary>Lots set aside on the first pass: the square (2 by 2) and the garden (2 by 1).</summary>
-    private static (Lot[] Square, Lot[] Garden)? Find(Town t)
+    /// <summary>Open ground (unpainted, unbuilt, off the lanes) over the whole w by h tiles from (x, y).</summary>
+    private static bool Open(Town t, int x, int y, int w, int h)
     {
-        bool Open(int x, int y) => x >= 0 && y >= 0 && x < Town.Grid && y < Town.Grid && t.LotAt(x, y) is { IsVacant: true, OwnerId: null };
+        var plan = t.Plan;
+        for (int cy = y * Land.Res; cy < (y + h) * Land.Res; cy++)
+            for (int cx = x * Land.Res; cx < (x + w) * Land.Res; cx++)
+            {
+                if (cx < 0 || cy < 0 || cx >= Land.Size || cy >= Land.Size) return false;
+                int i = cy * Land.Size + cx;
+                if (plan.Zones[i] != (byte)Zone.None || plan.Taken[i] != 0 || plan.Paved[i] != 0) return false;
+            }
+        return City.IsOpen(t, x + w / 2.0, y + h / 2.0);
+    }
+
+    /// <summary>Ground set aside on the first pass: the square (2 by 2 tiles) and the garden (2 by 1), by their corners.</summary>
+    private static ((int X, int Y) Square, (int X, int Y)? Garden)? Find(Town t)
+    {
+        double c = Town.Center;
         var spots = new List<(int X, int Y)>();
         for (int y = 0; y < Town.Grid - 1; y++)
             for (int x = 0; x < Town.Grid - 1; x++)
-                if (Open(x, y) && Open(x + 1, y) && Open(x, y + 1) && Open(x + 1, y + 1)) spots.Add((x, y));
+                if (Open(t, x, y, 2, 2)) spots.Add((x, y));
         if (spots.Count == 0) return null;
-        double c = (Town.Grid - 1) / 2.0;
-        var (sx, sy) = spots.OrderBy(p => Math.Abs(p.X + 0.5 - c) + Math.Abs(p.Y + 0.5 - c)).ThenBy(p => p.Y).ThenBy(p => p.X).First();
-        var square = new[] { t.LotAt(sx, sy), t.LotAt(sx + 1, sy), t.LotAt(sx, sy + 1), t.LotAt(sx + 1, sy + 1) };
+        var (sx, sy) = spots.OrderBy(p => Math.Abs(p.X + 1 - c) + Math.Abs(p.Y + 1 - c)).ThenBy(p => p.Y).ThenBy(p => p.X).First();
         var garden = new List<(int X, int Y)>();
         for (int y = 0; y < Town.Grid; y++)
             for (int x = 0; x < Town.Grid - 1; x++)
-                if (Open(x, y) && Open(x + 1, y) && (x > sx + 2 || x < sx - 2 || y > sy + 2 || y < sy - 1)) garden.Add((x, y));
-        if (garden.Count == 0) return (square, []);
-        var (gx, gy) = garden.OrderBy(p => Math.Abs(p.X + 1 - c) + Math.Abs(p.Y + 0.5 - c)).ThenBy(p => p.Y).ThenBy(p => p.X).First();
-        return (square, [t.LotAt(gx, gy), t.LotAt(gx + 1, gy)]);
+                if (Open(t, x, y, 2, 1) && (x > sx + 2 || x < sx - 2 || y > sy + 2 || y < sy - 1)) garden.Add((x, y));
+        if (garden.Count == 0) return ((sx, sy), null);
+        return ((sx, sy), garden.OrderBy(p => Math.Abs(p.X + 1 - c) + Math.Abs(p.Y + 0.5 - c)).ThenBy(p => p.Y).ThenBy(p => p.X).First());
     }
 
     private static (int X, int Y)? _square, _garden;
 
-    /// <summary>First pass: keep the land open and plant its edges.</summary>
+    /// <summary>First pass: keep the land open (painted for the council's own use, so no one else builds there) and plant its edges.</summary>
     public static void Reserve(Simulation sim)
     {
         var t = sim.Town;
         t.Treasury += 3000;
         if (Find(t) is not var (square, garden)) return;
-        _square = (square[0].X, square[0].Y);
-        _garden = garden.Length == 2 ? (garden[0].X, garden[0].Y) : null;
-        sim.ZoneLots(square.Concat(garden).Select(l => l.Id), Zone.None);
-        double x0 = square[0].X, y0 = square[0].Y;
+        _square = square;
+        _garden = garden;
+        Land.Brush(t, [(square.X + 1, square.Y + 1)], 1.3, Zone.Civic, overwrite: false);
+        if (garden is var (gx0, gy0)) Land.Brush(t, [(gx0 + 0.6, gy0 + 0.5), (gx0 + 1.4, gy0 + 0.5)], 0.7, Zone.Civic, overwrite: false);
+        double x0 = square.X, y0 = square.Y;
         foreach (var (x, y) in new[] { (0.22, 0.22), (1.78, 0.22), (0.22, 1.78), (1.78, 1.78) })
             sim.Decorate("flowers", x0 + x, y0 + y, 0);
-        if (garden.Length == 2)
+        if (garden is var (gx, gy))
         {
-            double gx = garden[0].X, gy = garden[0].Y;
             for (int i = 0; i < 4; i++) sim.Decorate("hedge", gx + 0.25 + i * 0.5, gy + 0.08, 0);
             for (int i = 0; i < 4; i++) sim.Decorate("hedge", gx + 0.25 + i * 0.5, gy + 0.92, 0);
         }
