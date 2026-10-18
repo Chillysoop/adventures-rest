@@ -32,6 +32,7 @@ public partial class Main
         [Tab.Companies] = "Adventuring companies",
         [Tab.Armory] = "The town armory",
         [Tab.Diplomacy] = "Diplomacy and trade",
+        [Tab.Institutions] = "The town's institutions",
         [Tab.Faith] = "Faith and factions",
         [Tab.Campaign] = "The campaign",
         [Tab.Chronicles] = "Chronicles",

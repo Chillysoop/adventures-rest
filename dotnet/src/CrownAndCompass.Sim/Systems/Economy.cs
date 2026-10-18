@@ -17,7 +17,7 @@ public static class Economy
             // The last few hours of a site get finished on credit if its budget has run dry.
             if (workHours && b.IsSite && b.Workers.Count == 0 && (b.LaborBudget >= Brain.ConstructionWage || b.Def.BuildHours - b.BuildProgress <= 4))
             {
-                b.Raise(Seasons.Build(town) * Decrees.Build(town));
+                b.Raise(Seasons.Build(town) * Decrees.Build(town) * Institutions.Build(town));
                 b.LaborBudget = Math.Max(0, b.LaborBudget - Brain.ConstructionWage);
                 continue;
             }
@@ -54,7 +54,7 @@ public static class Economy
         double yield = Decor.Yield(town, b);
         foreach (var (good, qty) in b.Def.Produces)
         {
-            double revenue = town.Market.Sell(good, qty * rate * yield * Seasons.Yield(town, good) * Decrees.Yield(town, good));
+            double revenue = town.Market.Sell(good, qty * rate * yield * Seasons.Yield(town, good) * Decrees.Yield(town, good) * Institutions.Yield(town, good));
             double tax = revenue * salesTax;
             town.Book(TreasuryAccount.SalesTax, tax);
             b.Cash += revenue - tax;
