@@ -1107,6 +1107,9 @@ public sealed class Content
     /// <summary>Story events and the mayor's character sheet (content/game/stories.json).</summary>
     public StoryRules Stories { get; init; } = new();
 
+    /// <summary>Fame and infamy for heroes and companies (content/game/notoriety.json).</summary>
+    public NotorietyRules Notoriety { get; init; } = new();
+
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
 
@@ -1245,6 +1248,7 @@ public sealed class Content
             Seasons = Parse<SeasonRules>("seasons.json"),
             History = Parse<HistoryRules>("history.json"),
             Stories = Parse<StoryRules>("stories.json"),
+            Notoriety = Parse<NotorietyRules>("notoriety.json"),
         };
     }
 

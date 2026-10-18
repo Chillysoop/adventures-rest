@@ -342,11 +342,11 @@ public static class Stories
 
     /// <summary>Every effect an outcome can have, in the order they apply; then decree:id (days, or -1 to repeal) and precedent:id (1 sets it, -1 forgets it).</summary>
     public static readonly string[] EffectKeys =
-        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "delay", "festival", "reveal", "inspiration", "people", "leaves"];
+        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "infamy", "exile"];
 
     /// <summary>Every need a story or option can name; besides these, precedent:id, decree:id and season:id, each negated with a leading !.</summary>
     public static readonly string[] Needs =
-        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward"];
+        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "famous", "infamous"];
 
     private static readonly string[] Prefixed = ["precedent:", "decree:", "season:"];
 
@@ -575,6 +575,19 @@ public static class Stories
                 s.HeroId = a2?.Id;
                 return a2 != null;
             }
+            case "famous":
+            case "infamous":
+            {
+                var nr = town.Content.Notoriety;
+                bool Fits(Agent a) => need == "famous"
+                    ? Notoriety.FameTier(town, a.Hero!) >= nr.StoryFame
+                    : Notoriety.InfamyTier(town, a.Hero!) >= nr.StoryInfamy;
+                if (s.HeroId is int h) return Hero(town, h) is { } a && Fits(a);
+                if (!bind) return false;
+                var a2 = Pick(town.Heroes.Where(a => !a.IsAway && Fits(a)).OrderBy(a => a.Id).ToList());
+                s.HeroId = a2?.Id;
+                return a2 != null;
+            }
             case "party":
             {
                 if (s.PartyId is int pid) return town.Parties.FirstOrDefault(p => p.Id == pid) is { Returned: false };
@@ -781,7 +794,7 @@ public static class Stories
             else m.Failures++;
         }
         beat.Stage = stage.Id;
-        beat.Option = o.Label;
+        beat.Option = Fill(town, s, o.Label);
         Conclude(town, s, beat, outcome);
         return beat;
     }
@@ -922,6 +935,32 @@ public static class Stories
                         Population.Depart(town, pa);
                         if (pa.SpouseId is int sp && town.Agent(sp) is { Departed: false } spouse) Population.Depart(town, spouse);
                         said.Add($"{pa.GivenName} leaves {town.Name}");
+                    }
+                    break;
+                case "renown":
+                case "infamy":
+                    // The bound hero's name, and their company's with it.
+                    if (s.HeroId is int nh && Hero(town, nh) is { } na)
+                    {
+                        var ns = na.Hero!;
+                        if (key == "renown")
+                        {
+                            if (v > 0) Notoriety.Deed(town, na, "story", (int)v);
+                            else ns.Renown = Math.Max(0, ns.Renown + (int)v);
+                            if (ns.PartyName != null) Notoriety.CompanyDeed(town, ns.PartyName, (int)Math.Max(0, v / 2));
+                        }
+                        else if (v > 0) Notoriety.Deed(town, na, "brawl", 0, (int)v);
+                        else ns.Infamy = Math.Max(0, ns.Infamy + (int)v);
+                        said.Add($"{na.GivenName}'s {(key == "renown" ? "renown" : "infamy")} {(v > 0 ? "+" : "−")}{Js.Str(Math.Abs(v))}");
+                    }
+                    break;
+                case "exile":
+                    // The bound hero is handed over or sent away.
+                    if (s.HeroId is int eh && Hero(town, eh) is { } ea)
+                    {
+                        Loyalty.Strip(ea);
+                        Population.Depart(town, ea);
+                        said.Add($"{ea.GivenName} leaves {town.Name}");
                     }
                     break;
             }

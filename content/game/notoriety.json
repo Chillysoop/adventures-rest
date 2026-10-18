@@ -1,0 +1,61 @@
+{
+  "fame": [
+    { "at": 0, "name": "Unknown" },
+    { "at": 6, "name": "Known in town" },
+    { "at": 20, "name": "Famed in the realm" },
+    { "at": 45, "name": "Renowned" },
+    { "at": 90, "name": "Legendary" }
+  ],
+  "infamy": [
+    { "at": 0, "name": "Clean name" },
+    { "at": 5, "name": "Whispered about" },
+    { "at": 15, "name": "Notorious" },
+    { "at": 35, "name": "Infamous" },
+    { "at": 70, "name": "Dreaded" }
+  ],
+  "deeds": {
+    "clear": { "epithets": ["the Delver", "the Ruinbreaker", "the Bold", "the Lanternbearer"], "text": "for the ruins they have cleared" },
+    "slay": { "epithets": ["the Foebane", "the Valiant", "the Unbroken", "the Wallguard"], "text": "for the foe they cut down before the walls" },
+    "plea": { "epithets": ["the Warden", "Friend of the Wilds", "the Faithful"], "text": "for the villages they have answered" },
+    "level": { "epithets": ["the Seasoned", "the Wanderer", "the Storied"], "text": "for the road they have walked" },
+    "honour": { "epithets": ["the Sworn", "the Shield of the Town"], "text": "for the honours the town has given them" },
+    "story": { "epithets": ["the Songworthy", "the Bright"], "text": "for the tales told of them" },
+    "brawl": { "epithets": ["the Brawler", "Ironjaw", "the Quarrelsome"], "text": "for the tavern fights they start" },
+    "theft": { "epithets": ["the Light-Fingered", "the Cutpurse", "Quickhand"], "text": "for the purses that go missing round them" },
+    "desert": { "epithets": ["the Faithless", "the Oathbreaker"], "text": "for walking out on the town" },
+    "betray": { "epithets": ["the Turncloak", "the Gatebreaker", "the Traitor"], "text": "for betraying the town" }
+  },
+  "fameDeeds": { "plea": 3, "honour": 5, "levels": { "5": 4, "11": 10, "17": 20 } },
+  "infamyDeeds": { "brawl": 3, "theft": 5, "desert": 8, "betray": 25 },
+  "companyShare": 0.5,
+  "epithetTier": 2,
+  "storyFame": 2,
+  "storyInfamy": 1,
+  "sung": 2,
+  "courted": -4,
+  "scorned": -4,
+  "fee": 0.1,
+  "arrivals": 0.04,
+  "seasoned": 0.05,
+  "defense": 3,
+  "intelFame": 0.1,
+  "intelInfamy": -0.1,
+  "knightInfamy": 2,
+  "darkInfamy": 2,
+  "fall": 0.5,
+  "decayDays": 15,
+  "crime": {
+    "chance": 0.0005,
+    "hotTempered": 0.004,
+    "greedy": 0.003,
+    "perInfamyTier": 0.5,
+    "restless": 2,
+    "watchCatch": 3,
+    "fine": 10,
+    "finePerLevel": 5,
+    "theft": 5,
+    "theftPerLevel": 3,
+    "caughtLoyalty": -3,
+    "mandate": -1
+  }
+}
