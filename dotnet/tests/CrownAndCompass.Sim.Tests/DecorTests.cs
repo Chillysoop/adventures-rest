@@ -128,12 +128,12 @@ public class DecorTests
         Assert.True(Decor.Favor(t, god) > 0);
         Assert.Equal(0, Decor.Favor(t, god == "x" ? "y" : god + "-other"));
 
-        var hero = t.Agents.First(a => a.Hero != null && !a.Departed);
-        double target = Loyalty.Target(t, hero);
+        var hero = t.Agents.Where(a => a.Hero != null && !a.Departed).OrderBy(a => Loyalty.Target(t, a)).ThenBy(a => a.Id).First();
+        double target = Js.Sum(Loyalty.Factors(t, hero), f => f.Points);
         var statue = Near(sim, "hero_statue", t.Buildings[0], within: 8);
         statue.HeroId = hero.Id;
         Assert.Contains(Decor.Loyalty(t, hero), f => f.Why == "their statue stands in town");
-        Assert.True(Loyalty.Target(t, hero) > target);
+        Assert.True(Js.Sum(Loyalty.Factors(t, hero), f => f.Points) > target);
         Assert.Contains(t.Ledger.Entries, e => e.Text.Contains("The town raises a statue of"));
     }
 
