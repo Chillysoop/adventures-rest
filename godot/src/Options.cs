@@ -30,6 +30,10 @@ public sealed class Options
     /// <summary>--load a save file instead of starting a town; --menu opens the game menu (for screenshots).</summary>
     public string? Load;
     public bool Menu;
+
+    /// <summary>--title shows the main menu; --tutorial start|step-id runs the tutorial from there (screenshots).</summary>
+    public bool Title;
+    public string? Tutorial;
     public bool Hero;
     /// <summary>For screenshots: click the alert at this position in the strip (0 is the first) once it shows.</summary>
     public int? Alert;
@@ -76,6 +80,8 @@ public sealed class Options
                 case "--autoplay": o.Autoplay = true; break;
                 case "--load": o.Load = Next(); break;
                 case "--menu": o.Menu = true; break;
+                case "--title": o.Title = true; break;
+                case "--tutorial": o.Tutorial = Next(); break;
                 case "--hero": o.Hero = true; break;
                 case "--alert": o.Alert = int.Parse(Next()); break;
                 case "--no-pause": o.NoPause = true; break;
