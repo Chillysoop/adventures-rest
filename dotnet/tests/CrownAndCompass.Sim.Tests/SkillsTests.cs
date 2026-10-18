@@ -32,6 +32,7 @@ public class SkillsTests
         Assert.All(named, s => Assert.Contains(s, ids));
         Assert.All(t.Content.Classes, c => Assert.True(r.Classes.ContainsKey(c.Id), $"{c.Id} has no skills"));
         Assert.All(r.Classes, kv => Assert.All(kv.Value.Expertise, s => Assert.Contains(s, kv.Value.Skills)));
+        Assert.All(t.Content.Buildings.Where(b => !string.IsNullOrEmpty(b.Profession)), b => Assert.True(r.Trades.ContainsKey(b.Profession!), $"the {b.Profession} trade has no skills"));
     }
 
     [Fact]
