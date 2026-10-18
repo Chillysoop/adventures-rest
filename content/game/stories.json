@@ -4121,6 +4121,369 @@
       ],
       "ignored": { "text": "You keep out of the square. {heroName} tells the taverns the mayor would not face them.", "effects": { "esteem": -10, "loyalty": -10, "mandate": -2 } }
     },
+      {
+      "id": "hero-ballad",
+      "title": "A ballad of {hero}",
+      "stakes": "low",
+      "source": "tavern",
+      "needs": [
+        "famous",
+        "tavern"
+      ],
+      "repeatDays": 60,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A travelling bard has made a song of {hero}'s deeds, and the whole of {tavern} roars the chorus. The bard wonders aloud whether the town would pay to have it sung on the river roads.",
+          "options": [
+            {
+              "label": "Pay the bard to carry it abroad",
+              "cost": 40,
+              "success": {
+                "text": "By the next market day they are singing it two towns downriver, and {heroName} pretends not to be pleased.",
+                "effects": {
+                  "renown": 6,
+                  "loyalty": 5,
+                  "mandate": 1
+                }
+              }
+            },
+            {
+              "label": "Raise a cup to {heroName} in front of everyone",
+              "skill": "performance",
+              "dc": 12,
+              "aid": "hero",
+              "success": {
+                "text": "The toast lands, the room cheers, and {heroName} buys the next round.",
+                "effects": {
+                  "renown": 3,
+                  "loyalty": 6,
+                  "mandate": 2
+                }
+              },
+              "failure": {
+                "text": "Your toast gets the hero's name wrong. The bard puts that in the song too.",
+                "effects": {
+                  "loyalty": -3,
+                  "mandate": -1
+                }
+              }
+            },
+            {
+              "label": "Let the song find its own way",
+              "success": {
+                "text": "Songs travel on their own, slowly.",
+                "effects": {
+                  "renown": 2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The bard moves on and the song goes with them.",
+        "effects": {
+          "renown": 2
+        }
+      }
+    },
+      {
+      "id": "price-on-head",
+      "title": "A price on {hero}'s head",
+      "stakes": "medium",
+      "source": "war",
+      "needs": [
+        "famous",
+        "menace"
+      ],
+      "repeatDays": 80,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{menace} has put gold on {hero}'s head: a name that famous is worth more to the enemy dead. Strangers have been asking at the gates which inn the hero sleeps at.",
+          "options": [
+            {
+              "label": "Set a trap with {heroName} as the bait",
+              "skill": "investigation",
+              "dc": 14,
+              "aid": "hero",
+              "prefer": 0.05,
+              "success": {
+                "text": "The killers come at midnight and walk straight into the watch. One of them talks before dawn.",
+                "effects": {
+                  "foePower": -0.08,
+                  "renown": 5,
+                  "loyalty": 5,
+                  "dread": -2
+                }
+              },
+              "partial": {
+                "text": "The trap springs, but not before a knife finds {heroName}'s ribs.",
+                "effects": {
+                  "foePower": -0.05,
+                  "renown": 3,
+                  "wound": 8
+                }
+              },
+              "failure": {
+                "text": "The killers smell the trap and strike a night early. {heroName} lives, barely.",
+                "effects": {
+                  "wound": 14,
+                  "loyalty": -4,
+                  "dread": 2
+                }
+              }
+            },
+            {
+              "label": "Put the watch on their door",
+              "needs": [
+                "watch"
+              ],
+              "cost": 20,
+              "success": {
+                "text": "Two watchmen sleep across {heroName}'s threshold until the strangers give up and ride on.",
+                "effects": {
+                  "loyalty": 6
+                }
+              }
+            },
+            {
+              "label": "Tell them to watch their back",
+              "success": {
+                "text": "{heroName} hears you out and sleeps with a blade under the pillow. They expected more from the town.",
+                "effects": {
+                  "loyalty": -3
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "Someone tries for {heroName} in an alley behind the tannery. They live, and they won't forget who did nothing.",
+        "effects": {
+          "wound": 12,
+          "loyalty": -5,
+          "dread": 2
+        }
+      }
+    },
+      {
+      "id": "rival-challenge",
+      "title": "A challenge for {hero}",
+      "stakes": "low",
+      "source": "heroes",
+      "needs": [
+        "famous",
+        "tavern"
+      ],
+      "repeatDays": 70,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A rival company off the river barges has heard of {hero} and wants to see if the songs are true. Their captain slaps a gauntlet down on a table at {tavern} and calls {heroName} out.",
+          "options": [
+            {
+              "label": "Make a tourney of it",
+              "cost": 30,
+              "success": {
+                "text": "The square fills, the stalls do a roaring trade, and {heroName} sends the rival into the horse trough to wild cheering.",
+                "effects": {
+                  "festival": 1,
+                  "renown": 6,
+                  "mandate": 2
+                }
+              }
+            },
+            {
+              "label": "Wager the town's purse on {heroName}",
+              "skill": "insight",
+              "dc": 12,
+              "aid": "hero",
+              "success": {
+                "text": "You read the rival's nerves right. {heroName} wins in three passes and the town wins the purse.",
+                "effects": {
+                  "gold": 50,
+                  "renown": 4
+                }
+              },
+              "failure": {
+                "text": "The rival was better than they looked. {heroName} loses, and so does the treasury.",
+                "effects": {
+                  "gold": -40,
+                  "loyalty": -3
+                }
+              }
+            },
+            {
+              "label": "Forbid brawling in the streets",
+              "success": {
+                "text": "The rivals leave laughing that {town}'s heroes need the mayor's leave to fight. {heroName} is not amused.",
+                "effects": {
+                  "loyalty": -4
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "They settle it in the street outside {tavern}. {heroName} wins, but a market stall doesn't.",
+        "effects": {
+          "renown": 3,
+          "infamy": 2,
+          "mandate": -1
+        }
+      }
+    },
+      {
+      "id": "hero-trouble",
+      "title": "{hero} makes trouble at {tavern}",
+      "stakes": "low",
+      "source": "heroes",
+      "needs": [
+        "infamous",
+        "tavern"
+      ],
+      "repeatDays": 40,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} has been drinking at {tavern} since noon, and the landlord has come to the hall to complain: broken stools, a frightened serving girl, an unpaid slate. People are starting to ask why the town keeps heroes like that.",
+          "options": [
+            {
+              "label": "Have the watch fine them",
+              "needs": [
+                "watch"
+              ],
+              "success": {
+                "text": "The watch walks {heroName} home and the magistrate takes the slate out of their purse.",
+                "effects": {
+                  "gold": 15,
+                  "mandate": 2,
+                  "loyalty": -6
+                }
+              }
+            },
+            {
+              "label": "Have a quiet word",
+              "skill": "persuasion",
+              "dc": 13,
+              "success": {
+                "text": "Away from the crowd {heroName} is ashamed of it. They pay the landlord and apologise to the girl.",
+                "effects": {
+                  "infamy": -4,
+                  "loyalty": 3,
+                  "mandate": 1
+                }
+              },
+              "failure": {
+                "text": "{heroName} laughs in your face and orders another jug.",
+                "effects": {
+                  "mandate": -2,
+                  "infamy": 2
+                }
+              }
+            },
+            {
+              "label": "Pay the landlord off",
+              "cost": 20,
+              "success": {
+                "text": "The slate is cleared. The talk isn't.",
+                "effects": {
+                  "loyalty": 2,
+                  "mandate": -1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "It ends with a window through the street and the landlord barring the door.",
+        "effects": {
+          "mandate": -2,
+          "infamy": 2
+        }
+      }
+    },
+      {
+      "id": "old-warrant",
+      "title": "{hero}'s past catches up",
+      "stakes": "medium",
+      "source": "heroes",
+      "needs": [
+        "infamous"
+      ],
+      "repeatDays": 90,
+      "minDay": 30,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A magistrate's rider from downriver comes to the hall with a warrant for {hero}, for a robbery on the river road the year before last. Hand them over, the rider says, or the barges stop calling at {town}.",
+          "options": [
+            {
+              "label": "Hand {heroName} over",
+              "prefer": -0.2,
+              "success": {
+                "text": "{heroName} goes south in irons. The river towns call {town} a lawful place, and the other heroes go quiet.",
+                "effects": {
+                  "mandate": 3,
+                  "exile": 1
+                }
+              }
+            },
+            {
+              "label": "Vouch for them",
+              "skill": "persuasion",
+              "dc": 15,
+              "aid": "hero",
+              "success": {
+                "text": "You swear {heroName} was here that season, and the rider rides home with a sworn statement instead of a prisoner.",
+                "effects": {
+                  "loyalty": 12,
+                  "infamy": -5
+                }
+              },
+              "partial": {
+                "text": "The rider takes your word, and a 'fee' for taking it.",
+                "effects": {
+                  "loyalty": 10,
+                  "gold": -30
+                }
+              },
+              "failure": {
+                "text": "The rider doesn't believe a word of it. For a month the barges pass {town} by.",
+                "effects": {
+                  "mandate": -3,
+                  "food": -15,
+                  "loyalty": 6
+                }
+              }
+            },
+            {
+              "label": "Pay the robbed merchant back",
+              "cost": 60,
+              "success": {
+                "text": "The merchant is made whole, the warrant is torn up, and {heroName} owes the town.",
+                "effects": {
+                  "loyalty": 8,
+                  "infamy": -8
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The rider leaves cursing {town} for a den of outlaws, and the river towns believe them.",
+        "effects": {
+          "mandate": -2,
+          "infamy": 3
+        }
+      }
+    },
     {
       "id": "master-smith",
       "title": "The master smith of {settlement}",

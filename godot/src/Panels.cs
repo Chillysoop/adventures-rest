@@ -514,6 +514,7 @@ public partial class Main
             string role = cls.Role == "" ? "" : $"{Ui.Cap(cls.Role)}{(cls.Magic != "" ? $", {cls.Magic} caster" : "")}";
             p.Text(Ui.C(Ui.Ink2, $"{Ui.Esc(role)}{(spells.Count > 0 ? $" · casts {Ui.Esc(string.Join(", ", spells))}" : "")}"), 13);
             p.Text($"Fights with {Ui.Esc(Gear.Describe(hs))} · AC {Gear.Ac(t.Content, a)} · attack +{Gear.Attack(t.Content, a)}", 13);
+            InspectNotoriety(p, t, a, hs);
             InspectLoyalty(p, t, a, hs);
         }
         p.Text($"{Ui.Esc(status)} · {Math.Floor(a.Gold)} gold · mood {Math.Round(a.LastDayMood)}");
@@ -530,6 +531,17 @@ public partial class Main
             p.Heading("Story so far");
             foreach (var e in history) p.Text($"{Ui.C(Ui.Ink2, $"[font_size=11]Day {e.Tick / 24 + 1}[/font_size]")}  {LinkNames(e)}", 13);
         }
+    }
+
+    /// <summary>Fame and infamy: what the world calls them, and what their name does for them.</summary>
+    private void InspectNotoriety(Pane p, Town t, Agent a, HeroSheet hs)
+    {
+        if (hs.Renown <= 0 && hs.Infamy <= 0) return;
+        var tags = new List<string>();
+        if (hs.Renown > 0) tags.Add($"{Tag($"Renown {hs.Renown}", Notoriety.FameTier(t, hs) >= 2 ? Ui.Gold : Ui.Ink2)} {Ui.C(Ui.Ink2, Ui.Esc(Notoriety.FameName(t, hs.Renown)))}");
+        if (hs.Infamy > 0) tags.Add($"{Tag($"Infamy {hs.Infamy}", Notoriety.InfamyTier(t, hs) >= 2 ? Ui.Bad : Ui.Ink2)} {Ui.C(Ui.Ink2, Ui.Esc(Notoriety.InfamyName(t, hs.Infamy)))}");
+        var effects = Notoriety.Effects(t, a);
+        p.Text(string.Join("  ", tags) + (effects.Count > 0 ? $"\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Ui.Cap(string.Join(" · ", effects)))}[/font_size]")}" : ""), 13);
     }
 
     private void InspectLoyalty(Pane p, Town t, Agent a, HeroSheet hs)

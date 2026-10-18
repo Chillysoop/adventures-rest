@@ -86,13 +86,16 @@ public partial class Main
                 if (c.ReportsSold > 0) record.Add($"{c.ReportsSold} {(c.ReportsSold == 1 ? "report" : "reports")} sold for {Js.Str(Js.Round(c.GoldPaid))}g");
                 if (c.Refusals > 0) record.Add($"{c.Refusals} {(c.Refusals == 1 ? "offer" : "offers")} turned down");
             }
+            string fame = c == null ? "" : (c.Renown > 0 ? "  " + Tag(Notoriety.FameName(t, c.Renown), Notoriety.FameTier(t, c) >= 2 ? Ui.Gold : Ui.Ink2) : "")
+                + (c.Infamy > 0 && Notoriety.InfamyTier(t, c) > 0 ? "  " + Tag(Notoriety.InfamyName(t, c.Infamy), Ui.Bad) : "");
+            if (c != null && (c.Renown > 0 || c.Infamy > 0)) record.Insert(0, $"renown {c.Renown}{(c.Infamy > 0 ? $", infamy {c.Infamy}" : "")}");
             string sulk = c?.SulkUntil is int until && t.Tick < until ? "  " + Tag("Sore", Ui.Bad) : "";
             string held = t.Parties.Count(x => x.Name == name && worth.Contains(x)) is int n && n > 0 ? "  " + Tag($"{n} {(n == 1 ? "report" : "reports")} to sell", Ui.Gold) : "";
-            p.Row($"[b]The {Ui.Esc(name)}[/b]  {Tag(word, color)}{sulk}{held}\n{Ui.C(Ui.Ink2, $"[font_size=12]{where}[/font_size]")}\n[font_size=13]{roster}[/font_size]" +
+            p.Row($"[b]The {Ui.Esc(name)}[/b]  {Tag(word, color)}{fame}{sulk}{held}\n{Ui.C(Ui.Ink2, $"[font_size=12]{where}[/font_size]")}\n[font_size=13]{roster}[/font_size]" +
                   $"\n{Ui.C(Ui.Ink2, $"[font_size=12]Members' loyalty {Math.Round(loyalty)} · dealings with the council {(c == null || Math.Abs(c.Dealings) < 0.5 ? "none yet" : (c.Dealings > 0 ? "+" : "−") + Math.Round(Math.Abs(c.Dealings)))}{(record.Count > 0 ? " · " + string.Join(" · ", record) : "")}[/font_size]")}");
             p.Meter("Relation", rel, Js.Str(Math.Round(rel)), rel < r.RefuseBelow);
         }
-        p.Note("Relation is the members' loyalty plus how the council has dealt with the company: council bounties and fair prices raise it, haggling and insulting offers lower it. Friends sell their reports cheap.");
+        p.Note("Relation is the members' loyalty plus how the council has dealt with the company: council bounties and fair prices raise it, haggling and insulting offers lower it. Friends sell their reports cheap. A famous company asks more for its reports; an infamous one takes what it can get.");
         p.Commit();
     }
 

@@ -142,7 +142,7 @@ public static class Turning
             var s = a.Hero!;
             if (!r.FallKinds.ContainsKey(s.Cls.Id)) continue;
             // Loyal heroes are harder to turn, but nobody is beyond it.
-            if (!town.Rng.Chance(r.Fall * Math.Max(0.25, 1.5 - s.Loyalty / 100))) continue;
+            if (!town.Rng.Chance(r.Fall * Math.Max(0.25, 1.5 - s.Loyalty / 100) * Notoriety.FallFactor(town, s))) continue;
             FallFrom(town, a);
             return;
         }
@@ -164,6 +164,7 @@ public static class Turning
             .Replace("{hero}", Loyalty.Styled(town, a))
             .Replace("{town}", town.Name)
             .Replace("{past}", past == "" ? "" : " " + past), [a.Id]);
+        Notoriety.Betrayed(town, a);
         Loyalty.Strip(a);
         Population.Depart(town, a);
         Menaces.Announce(town, m, Quests.Site(town, m.SeatId)!);
