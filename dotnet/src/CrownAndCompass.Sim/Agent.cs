@@ -164,6 +164,12 @@ public sealed class HeroSheet
     /// <summary>Healing potions from the general store, carried into the next delve.</summary>
     public int Potions { get; set; }
 
+    /// <summary>Spell scrolls from the scriptorium or a hoard, each read once in a fight (<see cref="Systems.Scrolls"/>).</summary>
+    public int Scrolls { get; set; }
+
+    /// <summary>Scrolls a wizard copied into their spellbook; each adds to their area spell.</summary>
+    public int Copied { get; set; }
+
     /// <summary>What the hero cares about in a mayor (a temper in content/game/regard.json); "" until settled.</summary>
     public string Temper { get; set; } = "";
 

@@ -488,6 +488,7 @@ public static class Quests
         }
         s.Attempts++;
         Shrines.Outfit(town, members);
+        Scrolls.Outfit(town, members);
         foreach (var m in members)
         {
             m.Hero!.PartyName = name;

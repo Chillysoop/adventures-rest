@@ -22,6 +22,8 @@ public sealed record ExpeditionResult(
     /// <summary>Each hero's hit points and potions when it was over; they go onto the sheets when the party gets home.</summary>
     public OrderedMap<int, int> Hp { get; init; } = new();
     public OrderedMap<int, int> Potions { get; init; } = new();
+    public OrderedMap<int, int> Scrolls { get; init; } = new();
+    public OrderedMap<int, int> Copied { get; init; } = new();
 
     /// <summary>The bounty's terms were met short of slaying: the occupants talked down, driven out, the captives cut loose, the hoard robbed.</summary>
     public bool Talked { get; init; }
@@ -41,6 +43,8 @@ public sealed record ExpeditionResult(
         {
             if (Hp.ContainsKey(a.Id)) a.Hero!.Hp = Hp.Get(a.Id, a.Hero.Hp);
             if (Potions.ContainsKey(a.Id)) a.Hero!.Potions = Potions.Get(a.Id, a.Hero.Potions);
+            if (Scrolls.ContainsKey(a.Id)) a.Hero!.Scrolls = Scrolls.Get(a.Id, a.Hero.Scrolls);
+            if (Copied.ContainsKey(a.Id)) a.Hero!.Copied = Copied.Get(a.Id, a.Hero.Copied);
         }
     }
 }
@@ -66,6 +70,8 @@ public static class Expedition
         /// <summary>Kept apart from the sheet until the party is home, so the town learns nothing early.</summary>
         public int Hp { get; set; } = agent.Hero!.Hp;
         public int Potions { get; set; } = agent.Hero!.Potions;
+        public int Scrolls { get; set; } = agent.Hero!.Scrolls;
+        public int Copied { get; set; } = agent.Hero!.Copied;
 
         /// <summary>Hit dice left to spend on short rests.</summary>
         public int HitDice { get; set; } = agent.Hero!.Level;
@@ -472,7 +478,7 @@ public static class Expedition
                 {
                     var spell = s.Cls.AreaSpell!;
                     var targets = living.Take(3).ToList();
-                    int dmg = spell.Dice!.Value.Roll(rng) + (s.Level - 1) * spell.Dice.Value.Die / 2;
+                    int dmg = spell.Dice!.Value.Roll(rng) + (s.Level - 1) * spell.Dice.Value.Die / 2 + c.Copied * _content.Shrines.Scroll.CopyBonus;
                     int felled = 0;
                     foreach (var f in targets)
                     {
@@ -481,6 +487,24 @@ public static class Expedition
                     }
                     Credit(c, felled);
                     Log($"{name} looses {Library.Prose(spell.Name)} into {targets.Count} of them for {dmg} damage{(felled > 0 ? $", dropping {felled}" : "")}.");
+                    continue;
+                }
+
+                // A caster with a scroll reads it when the foes crowd in or the master of the place shows itself.
+                if (c.Scrolls > 0 && Scrolls.Reads(s.Cls) && (living.Count >= 3 || living.Any(f => f.Def.Boss)))
+                {
+                    var sr = _content.Shrines.Scroll;
+                    c.Scrolls--;
+                    var targets = living.OrderByDescending(f => f.Def.Boss).Take(sr.Targets).ToList();
+                    int dmg = Math.Max(1, (Sim.Dice.Parse(sr.Dice) ?? new Dice(3, 6, 0)).Roll(rng));
+                    int felled = 0;
+                    foreach (var f in targets)
+                    {
+                        f.Hp -= dmg;
+                        if (f.Hp <= 0) felled++;
+                    }
+                    Credit(c, felled);
+                    Log($"{name} reads a spell scroll aloud and it burns away, striking {targets.Count} of them for {dmg} damage{(felled > 0 ? $", dropping {felled}" : "")}.");
                     continue;
                 }
 
@@ -943,8 +967,25 @@ public static class Expedition
                     line += $" and the {item.Name}, which {who.Agent.GivenName} claims";
                 }
             }
+            string scroll = FindScroll();
+            if (scroll != "") line += line == "" ? $" and {scroll}" : $", and {scroll}";
             if (sure && line != "") Log($"They bring back{line[4..]}.");
             return line;
+        }
+
+        /// <summary>A hoard may hold a spell scroll: a wizard copies it into the spellbook, another caster carries it.</summary>
+        private string FindScroll()
+        {
+            var sr = _content.Shrines.Scroll;
+            var reader = Party.Where(c => !c.Dead && Scrolls.Reads(c.Sheet.Cls)).OrderBy(c => c.Agent.Id).FirstOrDefault();
+            if (reader == null || !_rng.Chance(sr.Found)) return "";
+            if (reader.Sheet.Cls.Id == sr.Copier && reader.Copied < sr.MaxCopied)
+            {
+                reader.Copied++;
+                return $"a spell scroll {reader.Agent.GivenName} copies into the spellbook by firelight";
+            }
+            reader.Scrolls++;
+            return $"a spell scroll {reader.Agent.GivenName} tucks away";
         }
 
         /// <summary>What happened, for the town to learn when (if) they come home.</summary>
@@ -953,10 +994,14 @@ public static class Expedition
             if (outcome == ExpeditionOutcome.Wiped) Log($"No one comes back from {siteName}.");
             var hp = new OrderedMap<int, int>();
             var potions = new OrderedMap<int, int>();
+            var scrolls = new OrderedMap<int, int>();
+            var copied = new OrderedMap<int, int>();
             foreach (var c in Party)
             {
                 hp[c.Agent.Id] = c.Dead ? 0 : Math.Max(1, c.Hp);
                 potions[c.Agent.Id] = c.Potions;
+                scrolls[c.Agent.Id] = c.Scrolls;
+                copied[c.Agent.Id] = c.Copied;
             }
             return new ExpeditionResult(
                 outcome,
@@ -969,6 +1014,8 @@ public static class Expedition
             {
                 Hp = hp,
                 Potions = potions,
+                Scrolls = scrolls,
+                Copied = copied,
                 SiteCleared = SiteCleared,
                 LostAt = LostAt,
                 Talked = Talked,
