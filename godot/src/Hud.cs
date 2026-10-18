@@ -117,7 +117,7 @@ public partial class Main
         sh.AddThemeConstantOverride("separation", 2);
         speeds.AddChild(sh);
         string[] labels = ["❚❚", "1×", "4×", "12×", "36×"];
-        string[] tips = ["Pause (space)", "Normal (1)", "Fast (2)", "Faster (3)", "Fastest (4)"];
+        string[] tips = ["Pause (space)", "Normal (1): a day lasts a minute", "Fast (2): a day in 15 seconds", "Faster (3): a day in 5 seconds", "Fastest (4): a day in under 2 seconds"];
         for (int i = 0; i < 5; i++)
         {
             int k = i;
