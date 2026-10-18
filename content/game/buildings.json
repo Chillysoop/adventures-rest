@@ -118,6 +118,12 @@
   { "id": "bastion_vault", "name": "Warded Vault", "zone": "Civic", "buildable": false, "bastion": true, "cost": 900, "timber": 8, "stone": 40, "buildHours": 180,
     "jobs": 1, "wage": 1.4, "profession": "warden",
     "blurb": "Where the company keeps what it should not. Now and then something in it wakes and proves useful." },
+  { "id": "adventurers_hall", "name": "Adventurers' Hall", "size": [5, 4], "zone": "Civic", "buildable": false, "civic": true, "tier": "hamlet", "cost": 200, "timber": 26, "stone": 4, "buildHours": 110, "max": 1,
+    "blurb": "Where companies register, read the contract board and gear up. Room for more heroes, and a Hallmaster with requests of their own." },
+  { "id": "druid_grove", "name": "Druid Grove", "size": [5, 5], "zone": "Civic", "buildable": false, "civic": true, "tier": "hamlet", "cost": 150, "timber": 4, "buildHours": 70, "max": 1,
+    "blurb": "A patch of living wilderness: an ancient tree, a sacred pool and its druids. Richer fields, healing herbs, and a Grove Warden with opinions." },
+  { "id": "grand_bazaar", "name": "Grand Bazaar", "size": [6, 5], "zone": "Civic", "buildable": false, "civic": true, "tier": "village", "cost": 320, "timber": 24, "stone": 12, "buildHours": 140, "max": 1,
+    "blurb": "A caravanserai and covered market for far-travelled merchants. One more trade route, exotic goods, and a Bazaar Warden who knows every road." },
   { "id": "clock_tower", "name": "Clock Tower", "size": [4, 4], "zone": "Civic", "buildable": false, "civic": true, "tier": "village", "buildHours": 750,
     "upkeep": 3, "max": 1, "salesBoost": 0.02, "comfort": 0.03, "mandate": 1,
     "stages": [

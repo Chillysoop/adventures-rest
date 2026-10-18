@@ -278,6 +278,18 @@
       "teaches": []
     },
     {
+      "id": "institutions",
+      "title": "The town's institutions",
+      "text": "A town grows around its institutions: the temple district, an adventurers' hall, a druid grove, a grand bazaar, the famous tavern. Each is run by a keeper with a name and a temper, does something for the whole town every day, and asks you for something now and then. In the [b]Institutions[/b] window, make each one's choice (which god the temple district honours, the tavern's style) and set how generously the council funds it: generous patronage buys more of its service and its keeper's goodwill. Raise the hall, the grove and the bazaar from the Government build bar.",
+      "point": "tab:Institutions",
+      "when": "count:Institutions",
+      "teaches": [
+        "tab:Institutions",
+        "command:FundInstitution",
+        "command:ChooseInstitution"
+      ]
+    },
+    {
       "id": "history",
       "title": "The old world",
       "text": "Every ruin in the wilds is left over from an older age. [b]History[/b] in the game menu (Esc) shows the empires, peoples and wars before your town, and the Ledger tells each region's old story when a party first gets there.",

@@ -1,0 +1,2257 @@
+{
+  "patronage": [
+    {
+      "name": "Unfunded",
+      "gold": 0,
+      "scale": 0.35,
+      "regard": -30
+    },
+    {
+      "name": "Modest",
+      "gold": 2,
+      "scale": 1,
+      "regard": 15
+    },
+    {
+      "name": "Generous",
+      "gold": 6,
+      "scale": 1.5,
+      "regard": 50
+    }
+  ],
+  "startRegard": 10,
+  "regardDrift": 0.5,
+  "changeDays": 30,
+  "changeRegard": 15,
+  "ignoredRegard": 6,
+  "fundingPerPeople": 200,
+  "stewardReserve": 600,
+  "institutions": [
+    {
+      "id": "temple-district",
+      "name": "the Temple District",
+      "building": "temple",
+      "adopt": true,
+      "title": "High Priest",
+      "blurb": "The temple and the shrines around it, with their almshouses, pilgrims' hostels and processions. The council decides which god's house gets the best ground and the council's coin, and that god's blessing falls on the town.",
+      "service": {
+        "mood": 0.6,
+        "tension": -0.1,
+        "favour": 0.25
+      },
+      "choice": {
+        "label": "which god the district honours first",
+        "text": "Whichever god gets the best ground and the council's coin blesses the town in its own way.",
+        "options": [
+          {
+            "id": "healing",
+            "name": "the Lantern Mother's healers",
+            "deity": "lantern-mother",
+            "text": "Her infirmary opens beside the temple: heroes come home from the wilds and are on their feet in days.",
+            "service": {
+              "heal": 0.12,
+              "mood": 0.4
+            }
+          },
+          {
+            "id": "harvest",
+            "name": "Sylvaine's harvest rites",
+            "deity": "greenhush",
+            "text": "Her priests walk the furrows each dawn: the fields and herb beds bear more.",
+            "service": {
+              "yields": {
+                "Food": 1.08,
+                "Herbs": 1.12
+              }
+            }
+          },
+          {
+            "id": "craft",
+            "name": "Haldor's forge-chapel",
+            "deity": "anvil-father",
+            "text": "The Anvil-Father's priests bless every hammer in town: tools come truer and buildings go up faster.",
+            "service": {
+              "yields": {
+                "Tools": 1.12
+              },
+              "build": 0.05
+            }
+          },
+          {
+            "id": "protection",
+            "name": "Ostrava's watch-chapel",
+            "deity": "even-scale",
+            "text": "Her priests bless the walls and the watch every dusk: the town is harder to take.",
+            "service": {
+              "defence": 7,
+              "tension": -0.1
+            }
+          },
+          {
+            "id": "fortune",
+            "name": "Nim's counting-house shrine",
+            "deity": "veiled-coin",
+            "text": "Merchants leave coins in Nim's bowl for luck, and the luck seems to stick: trade is good.",
+            "service": {
+              "gold": 1.5,
+              "arrivals": 0.02
+            }
+          }
+        ]
+      },
+      "keepers": [
+        {
+          "name": "Ilse Varrow",
+          "text": "A battlefield surgeon before she took vows, she still keeps a bone saw on the altar and has no patience for sermons."
+        },
+        {
+          "name": "Tobin Ashgrove",
+          "text": "Round, kind and endlessly in debt to the temple's cook, he knows every widow in town by name and every miser by his excuses."
+        },
+        {
+          "name": "Mere Hollin",
+          "text": "Blind since a fever in her girlhood, she hears confessions in the dark and says she can smell a lie."
+        }
+      ]
+    },
+    {
+      "id": "adventurers-hall",
+      "name": "the Adventurers' Hall",
+      "building": "adventurers_hall",
+      "title": "Hallmaster",
+      "blurb": "Where companies register, read the contract board and gear up. More heroes make the town their base, and the hall's specialty shapes what its members are good for.",
+      "service": {
+        "heroes": 1,
+        "arrivals": 0.02,
+        "faction": "compass-lodge",
+        "standing": 0.05
+      },
+      "choice": {
+        "label": "what the hall is known for",
+        "text": "A hall gets a name for one kind of work, and draws the companies who do it.",
+        "options": [
+          {
+            "id": "treasure-seekers",
+            "name": "treasure seekers",
+            "text": "The hall takes a cut of every haul registered at its counter, and the council takes a cut of the hall's.",
+            "service": {
+              "gold": 2
+            }
+          },
+          {
+            "id": "monster-hunters",
+            "name": "monster hunters",
+            "text": "Trophy heads go up over the door. The companies who come hunt what prowls near the walls.",
+            "service": {
+              "defence": 6,
+              "dread": -0.02
+            }
+          },
+          {
+            "id": "road-wardens",
+            "name": "road wardens",
+            "text": "Hall members ride with the caravans: fewer are waylaid on the road.",
+            "service": {
+              "escort": 0.3
+            }
+          },
+          {
+            "id": "rescuers",
+            "name": "rescuers",
+            "text": "Hall members bring back the lost and the wounded. Heroes heal faster between delves.",
+            "service": {
+              "heal": 0.1,
+              "mood": 0.2
+            }
+          }
+        ]
+      },
+      "keepers": [
+        {
+          "name": "Brask Dunmore",
+          "text": "A one-handed former delver who keeps the contract board in a hand so neat no one believes he wrote it, and fines anyone who spits on his floor."
+        },
+        {
+          "name": "Yeva Quell",
+          "text": "A retired scout with a ledger for a memory: she can tell you which company owes which, and who is lying about a ruin."
+        },
+        {
+          "name": "Old Corrin Tarth",
+          "text": "Seventy and still sharpening other people's swords, he sends every new company out with the same advice: come back."
+        }
+      ]
+    },
+    {
+      "id": "grand-bazaar",
+      "name": "the Grand Bazaar",
+      "building": "grand_bazaar",
+      "title": "Bazaar Warden",
+      "blurb": "A caravanserai with stalls for visiting merchants and lodging for their beasts. The town can run one more trade route, and the warden decides which far-off traders get the best pitches.",
+      "service": {
+        "routes": 1,
+        "gold": 1,
+        "arrivals": 0.02,
+        "mood": 0.2
+      },
+      "choice": {
+        "label": "which merchants the bazaar invites",
+        "text": "There are only so many pitches under the awnings, and each kind of trader brings its own crowd.",
+        "options": [
+          {
+            "id": "silks",
+            "name": "weavers of enchanted silks",
+            "text": "Bolts of cloth that never fade: the gentry flock, and the looms in town learn their tricks.",
+            "service": {
+              "yields": {
+                "Cloth": 1.12
+              },
+              "mood": 0.3
+            }
+          },
+          {
+            "id": "metals",
+            "name": "dealers in rare metals",
+            "text": "Ingots from the deep holds: the smiths make better tools.",
+            "service": {
+              "yields": {
+                "Tools": 1.12
+              }
+            }
+          },
+          {
+            "id": "spices",
+            "name": "spice and incense caravans",
+            "text": "The streets smell of far lands, and travellers come to see what the fuss is about.",
+            "service": {
+              "arrivals": 0.03,
+              "gold": 1
+            }
+          },
+          {
+            "id": "curios",
+            "name": "sellers of monster eggs and curios",
+            "text": "Strange cages and stranger buyers. It pays well, and the Quiet Hand takes a keen interest.",
+            "service": {
+              "gold": 2.5,
+              "tension": 0.08,
+              "faction": "quiet-hand",
+              "standing": 0.08
+            }
+          }
+        ]
+      },
+      "keepers": [
+        {
+          "name": "Saffi Delacorte",
+          "text": "A merchant prince's daughter who ran away to the caravan roads, she haggles in six tongues and never pays the first price for anything."
+        },
+        {
+          "name": "Umar Kesh",
+          "text": "A former caravan master with a ruined knee, he still rises before dawn to count the camels in and knows every road by its bandits."
+        },
+        {
+          "name": "Goodwife Pell Ambry",
+          "text": "Once a market-wife in the old town, she rules the bazaar like a kitchen: loud, fair, and with a ladle within reach."
+        }
+      ]
+    },
+    {
+      "id": "druid-grove",
+      "name": "the Druid Grove",
+      "building": "druid_grove",
+      "title": "Grove Warden",
+      "blurb": "A patch of living wilderness inside the town: an ancient tree, a sacred pool and the druids who tend them. The fields bear more, the air is sweeter, and the grove has its own opinions.",
+      "service": {
+        "yields": {
+          "Food": 1.05,
+          "Herbs": 1.1
+        },
+        "mood": 0.4,
+        "tension": -0.05,
+        "faction": "thornward-circle",
+        "standing": 0.05
+      },
+      "choice": {
+        "label": "what the grove's druids tend first",
+        "text": "There are few druids and much to do: the council asks them to put one thing first.",
+        "options": [
+          {
+            "id": "fields",
+            "name": "the fields",
+            "text": "The druids walk the furrows and the orchards: the harvest is richer.",
+            "service": {
+              "yields": {
+                "Food": 1.06
+              }
+            }
+          },
+          {
+            "id": "remedies",
+            "name": "healing plants",
+            "text": "Herb beds spread through the grove: remedies are plentiful and wounds close faster.",
+            "service": {
+              "yields": {
+                "Herbs": 1.15,
+                "Potions": 1.08
+              },
+              "heal": 0.05
+            }
+          },
+          {
+            "id": "spirits",
+            "name": "speaking with the wild",
+            "text": "The druids parley with the spirits of the woods around the town: the wilds are a little less hostile.",
+            "service": {
+              "dread": -0.03,
+              "defence": 3
+            }
+          },
+          {
+            "id": "waters",
+            "name": "the waters",
+            "text": "The streams through town run clean and cold: people are healthier, and settlers notice.",
+            "service": {
+              "mood": 0.4,
+              "arrivals": 0.02
+            }
+          }
+        ]
+      },
+      "keepers": [
+        {
+          "name": "Wren Alderhusk",
+          "text": "A druid who speaks to people as if they were slow-growing trees: kindly, patiently, and with no expectation they will understand."
+        },
+        {
+          "name": "Mossback Tull",
+          "text": "Nobody is sure how old he is. He sleeps in the roots of the great tree and wakes when someone drops litter."
+        },
+        {
+          "name": "Teodora Fernlight",
+          "text": "Young, fierce and newly sworn to the grove, she argues with the council as if every felled tree were a personal insult, which it is."
+        }
+      ]
+    },
+    {
+      "id": "famous-tavern",
+      "name": "the town's famous tavern",
+      "building": "tavern",
+      "adopt": true,
+      "tier": "hamlet",
+      "title": "Proprietor",
+      "blurb": "The oldest tavern in town, grown famous: where rumours land, companies form and odd visitors come asking for help. Its style decides who drinks there.",
+      "service": {
+        "mood": 0.3,
+        "arrivals": 0.01
+      },
+      "choice": {
+        "label": "what kind of house the tavern keeps",
+        "text": "A tavern can be one thing well. The council's licence says which.",
+        "options": [
+          {
+            "id": "inn",
+            "name": "a comfortable inn for travellers",
+            "text": "Feather beds and clean linen: merchants and wealthy travellers stay, and spend.",
+            "service": {
+              "gold": 1.5,
+              "arrivals": 0.03
+            }
+          },
+          {
+            "id": "pub",
+            "name": "a rowdy adventurers' pub",
+            "text": "Arm wrestling, war stories and a wall of notices: more heroes stop in town, and some stay.",
+            "service": {
+              "heroes": 1,
+              "tension": 0.06,
+              "mood": 0.2
+            }
+          },
+          {
+            "id": "den",
+            "name": "a mysterious house for strange folk",
+            "text": "Hooded guests, low lamps and a door that is never quite locked: the Quiet Hand drinks here, and so do stranger things.",
+            "service": {
+              "faction": "quiet-hand",
+              "standing": 0.1,
+              "factionHeat": -0.2,
+              "dread": -0.01
+            }
+          }
+        ]
+      },
+      "keepers": [
+        {
+          "name": "Marta Kettleby",
+          "text": "Three husbands buried, two taverns burned and one standing: she pours with one hand and holds a cudgel with the other."
+        },
+        {
+          "name": "Fenwick Brae",
+          "text": "A failed bard who learned that people pay better to talk than to listen, he remembers every story told at his bar and sells the best ones back."
+        },
+        {
+          "name": "Hobb Underbough",
+          "text": "A halfling with a laugh you can hear from the gate, who has never once been seen to sleep, and keeps a book of debts he never collects."
+        }
+      ]
+    }
+  ],
+  "fixtures": [
+    {
+      "id": "mimic-bouncer",
+      "name": "a mimic for a bouncer",
+      "institution": "famous-tavern",
+      "text": "A young mimic sits by the tavern door as a strongbox. Troublemakers who sit on it once never come back.",
+      "service": {
+        "tension": -0.08,
+        "mood": 0.1
+      }
+    },
+    {
+      "id": "mimic-strongbox",
+      "name": "a mimic strongbox",
+      "institution": "adventurers-hall",
+      "text": "The hall's strongbox has teeth. Nothing has been stolen since.",
+      "service": {
+        "gold": 0.8
+      }
+    },
+    {
+      "id": "mimic-blessed",
+      "name": "a temple's guardian chest",
+      "institution": "temple-district",
+      "text": "A mimic, blessed and fed on offerings, guards the reliquary. The priests say it purrs at hymns.",
+      "service": {
+        "favour": 0.05,
+        "tension": -0.03
+      }
+    },
+    {
+      "id": "living-bridge",
+      "name": "the living bridge",
+      "institution": "druid-grove",
+      "text": "Willow and ash grown into a bridge over the river. Carts cross it, children climb it, and it grows a little every spring.",
+      "service": {
+        "arrivals": 0.03,
+        "build": 0.03,
+        "mood": 0.2
+      }
+    },
+    {
+      "id": "pilgrims-hostel",
+      "name": "the pilgrims' hostel",
+      "institution": "temple-district",
+      "text": "A long hall of cots beside the temple for those who walk to it. Some stay.",
+      "service": {
+        "arrivals": 0.02,
+        "favour": 0.05
+      }
+    },
+    {
+      "id": "walking-oak",
+      "name": "the oak in the square",
+      "institution": "druid-grove",
+      "text": "The awakened oak that walked to the market square, and stayed. It shades the stalls and settles arguments by dropping acorns.",
+      "service": {
+        "mood": 0.3,
+        "tension": -0.04
+      }
+    },
+    {
+      "id": "trophy-wall",
+      "name": "the trophy wall",
+      "institution": "adventurers-hall",
+      "text": "Heads, horns and a manticore's tail over the hall's hearth. Young heroes come to see it.",
+      "service": {
+        "arrivals": 0.02,
+        "heroes": 0.5
+      }
+    },
+    {
+      "id": "spice-garden",
+      "name": "the spice garden",
+      "institution": "grand-bazaar",
+      "text": "Seeds from a far caravan, coaxed into a walled garden behind the bazaar. Its pepper sells for silver.",
+      "service": {
+        "gold": 0.8,
+        "mood": 0.1
+      }
+    }
+  ],
+  "precedents": [
+    {
+      "id": "clean-river",
+      "text": "The town promised the grove the river would run clean"
+    },
+    {
+      "id": "river-fouled",
+      "text": "The town broke its promise to keep the river clean"
+    },
+    {
+      "id": "hand-in-bazaar",
+      "text": "The Quiet Hand was given a stall in the bazaar's back rows"
+    }
+  ],
+  "requests": [
+    {
+      "id": "pilgrims-at-the-gate",
+      "title": "Pilgrims at {institution}",
+      "stakes": "low",
+      "source": "faith",
+      "needs": [
+        "institution:temple-district"
+      ],
+      "minDay": 20,
+      "repeatDays": 120,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Forty pilgrims have walked to {institution} for the holy day, footsore and with nowhere to sleep. {keeper} asks the town to shelter them.",
+          "options": [
+            {
+              "label": "Build them a hostel",
+              "cost": 140,
+              "prefer": 0.1,
+              "success": {
+                "text": "The council pays for a long hall of cots beside the temple. The pilgrims bless the town on their way home, and some never leave.",
+                "effects": {
+                  "fixture:pilgrims-hostel": 1,
+                  "people": 3,
+                  "favour": 10,
+                  "esteem": 10
+                }
+              }
+            },
+            {
+              "label": "Ask the faithful to take them in",
+              "skill": "persuasion",
+              "dc": 13,
+              "success": {
+                "text": "Spare rooms open all over town. The pilgrims go home full of the town's kindness.",
+                "effects": {
+                  "favour": 12,
+                  "esteem": 6,
+                  "mandate": 1
+                }
+              },
+              "failure": {
+                "text": "Doors stay shut. The pilgrims sleep in the temple porch, and {keeperName} sleeps beside them in protest.",
+                "effects": {
+                  "esteem": -4,
+                  "tension": 1
+                }
+              }
+            },
+            {
+              "label": "Turn them away",
+              "success": {
+                "text": "The pilgrims trudge on to another town. {keeperName} does not speak to the council for a week.",
+                "effects": {
+                  "esteem": -10,
+                  "favour": -8
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "No one decides, and the pilgrims sleep in the street.",
+        "effects": {
+          "favour": -5,
+          "tension": 1
+        }
+      }
+    },
+    {
+      "id": "stolen-relic",
+      "title": "A relic stolen from {institution}",
+      "stakes": "medium",
+      "source": "faith",
+      "needs": [
+        "institution:temple-district",
+        "hero"
+      ],
+      "minDay": 40,
+      "repeatDays": 180,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The reliquary of {institution} has been forced in the night and its holiest relic is gone. {keeper} is beside themself, and {hero} has offered to help.",
+          "options": [
+            {
+              "label": "Send {heroName} after the thieves",
+              "skill": "investigation",
+              "dc": 14,
+              "aid": "hero",
+              "success": {
+                "text": "{heroName} tracks the thieves to a barge on the river and brings the relic home in triumph.",
+                "effects": {
+                  "esteem": 10,
+                  "favour": 20,
+                  "renown": 2,
+                  "loyalty": 3
+                }
+              },
+              "failure": {
+                "text": "The trail goes cold at the river. {heroName} comes back empty-handed and embarrassed.",
+                "effects": {
+                  "esteem": -4,
+                  "loyalty": -2
+                }
+              }
+            },
+            {
+              "label": "Quietly buy it back from the Quiet Hand",
+              "cost": 90,
+              "needs": [
+                "faction:quiet-hand"
+              ],
+              "success": {
+                "text": "A knock at midnight, a purse changes hands, and the relic is on the altar by dawn. Nobody asks how.",
+                "effects": {
+                  "esteem": 4,
+                  "favour": 10,
+                  "standing": 6
+                }
+              }
+            },
+            {
+              "label": "Have the priests pray for its return",
+              "skill": "religion",
+              "dc": 16,
+              "success": {
+                "text": "Three days of vigil, and the relic is found on the temple steps, the thief weeping beside it.",
+                "effects": {
+                  "favour": 25,
+                  "esteem": 6,
+                  "mandate": 2
+                }
+              },
+              "failure": {
+                "text": "The vigil ends with nothing but sore knees.",
+                "effects": {
+                  "esteem": -6
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The relic is never found. The faithful say the town did not care.",
+        "effects": {
+          "esteem": -6,
+          "favour": -10,
+          "mandate": -1
+        }
+      }
+    },
+    {
+      "id": "festival-of-the-god",
+      "title": "{keeper} asks for a festival",
+      "stakes": "low",
+      "source": "faith",
+      "needs": [
+        "institution:temple-district"
+      ],
+      "minDay": 30,
+      "repeatDays": 150,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{keeper} wants the town to keep the high holy day of {institution} with a procession, bonfires and a feast in the square.",
+          "options": [
+            {
+              "label": "Sponsor a great festival",
+              "cost": 150,
+              "prefer": 0.05,
+              "success": {
+                "text": "Banners, music and roast oxen. The whole town turns out and the priests are hoarse with blessing.",
+                "effects": {
+                  "festival": 3,
+                  "mandate": 3,
+                  "favour": 15,
+                  "esteem": 10
+                }
+              }
+            },
+            {
+              "label": "A modest feast will do",
+              "cost": 40,
+              "success": {
+                "text": "Bread, ale and a short procession. Everyone enjoys it, briefly.",
+                "effects": {
+                  "festival": 1,
+                  "favour": 5,
+                  "esteem": 3
+                }
+              }
+            },
+            {
+              "label": "Talk them out of it",
+              "skill": "persuasion",
+              "dc": 12,
+              "success": {
+                "text": "{keeperName} agrees the treasury has better uses this year, and almost means it.",
+                "effects": {
+                  "esteem": -2
+                }
+              },
+              "failure": {
+                "text": "{keeperName} leaves the council chamber white with anger.",
+                "effects": {
+                  "esteem": -8,
+                  "favour": -5
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The holy day passes with no feast, and the faithful notice.",
+        "effects": {
+          "esteem": -4,
+          "favour": -6
+        }
+      }
+    },
+    {
+      "id": "sacred-spring",
+      "title": "A holy well in the way",
+      "stakes": "medium",
+      "source": "faith",
+      "needs": [
+        "institution:temple-district"
+      ],
+      "minDay": 60,
+      "repeatDays": 240,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Builders digging new foundations have struck an old holy well, sealed long ago. {keeper} wants work stopped and the well kept.",
+          "options": [
+            {
+              "label": "Keep the well and build around it",
+              "prefer": 0.05,
+              "success": {
+                "text": "The well is cleaned and roofed. Townsfolk drink from it for luck.",
+                "effects": {
+                  "esteem": 8,
+                  "favour": 12,
+                  "timber": -8
+                }
+              }
+            },
+            {
+              "label": "Build over it",
+              "success": {
+                "text": "The well is filled in. The builders finish early, and {keeperName} calls it sacrilege from the pulpit.",
+                "effects": {
+                  "esteem": -15,
+                  "favour": -12,
+                  "gold": 60
+                }
+              }
+            },
+            {
+              "label": "Find the old rite to move its blessing",
+              "skill": "religion",
+              "dc": 14,
+              "success": {
+                "text": "{keeperName} finds the words in an old book, and the blessing moves to the temple font. Everyone is satisfied.",
+                "effects": {
+                  "esteem": 6,
+                  "favour": 8
+                }
+              },
+              "failure": {
+                "text": "The rite goes wrong, the well floods the site and the builders down tools.",
+                "effects": {
+                  "esteem": -3,
+                  "timber": -15
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The argument drags on until the builders fill the well in anyway.",
+        "effects": {
+          "esteem": -10,
+          "favour": -8
+        }
+      }
+    },
+    {
+      "id": "hall-this-week",
+      "title": "Ruin or road?",
+      "stakes": "low",
+      "source": "heroes",
+      "needs": [
+        "institution:adventurers-hall",
+        "hero",
+        "site",
+        "route"
+      ],
+      "minDay": 20,
+      "repeatDays": 60,
+      "weight": 1.5,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{keeper} has {hero} free this week and two jobs on the slate: a look at {site}, or riding guard on the caravan road to {settlement}.",
+          "options": [
+            {
+              "label": "Investigate the ruin",
+              "prefer": 0.05,
+              "success": {
+                "text": "{heroName} comes back with a sketch map and a fistful of old coins. The way into {site} is known now.",
+                "effects": {
+                  "reveal": 1,
+                  "renown": 1,
+                  "esteem": 3,
+                  "gold": 20
+                }
+              }
+            },
+            {
+              "label": "Protect the trade road",
+              "success": {
+                "text": "The caravan gets through without a scratch, and {people} remember who sent the guard.",
+                "effects": {
+                  "regard": 6,
+                  "gold": 30,
+                  "esteem": 3
+                }
+              }
+            },
+            {
+              "label": "Try to do both",
+              "skill": "survival",
+              "dc": 15,
+              "aid": "hero",
+              "success": {
+                "text": "{heroName} scouts {site} by night and rides with the caravan by day, and pulls it off.",
+                "effects": {
+                  "reveal": 1,
+                  "regard": 4,
+                  "renown": 2,
+                  "esteem": 4
+                }
+              },
+              "failure": {
+                "text": "Trying to be in two places at once, {heroName} manages neither well and comes home bloodied.",
+                "effects": {
+                  "wound": 6,
+                  "loyalty": -3
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The week goes by and {heroName} drinks it away at the hall.",
+        "effects": {
+          "esteem": -2
+        }
+      }
+    },
+    {
+      "id": "hall-rivalry",
+      "title": "Bad blood at {institution}",
+      "stakes": "low",
+      "source": "heroes",
+      "needs": [
+        "institution:adventurers-hall",
+        "hero"
+      ],
+      "minDay": 30,
+      "repeatDays": 100,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero}'s company and another have been at each other's throats over who cleared a ruin first. {keeper} wants the mayor to settle it before somebody is stabbed in the hall.",
+          "options": [
+            {
+              "label": "Make them race for the next bounty",
+              "skill": "persuasion",
+              "dc": 13,
+              "prefer": 0.05,
+              "success": {
+                "text": "Both companies sprint for the hills. The rivalry becomes the town's favourite sport.",
+                "effects": {
+                  "renown": 2,
+                  "esteem": 5,
+                  "mandate": 1
+                }
+              },
+              "failure": {
+                "text": "The race turns into a brawl on the north road.",
+                "effects": {
+                  "tension": 2,
+                  "mandate": -2
+                }
+              }
+            },
+            {
+              "label": "Ban brawling in the hall",
+              "skill": "intimidation",
+              "dc": 12,
+              "success": {
+                "text": "A sharp word, a heavy fine, and peace returns.",
+                "effects": {
+                  "tension": -1,
+                  "esteem": 3
+                }
+              },
+              "failure": {
+                "text": "Nobody listens, and {keeperName} has to break up the fight with a chair.",
+                "effects": {
+                  "esteem": -5,
+                  "tension": 1
+                }
+              }
+            },
+            {
+              "label": "Let them settle it in the yard",
+              "success": {
+                "text": "A bout in the hall's yard, cheered by half the town. {heroName} wins, bruised.",
+                "effects": {
+                  "wound": 4,
+                  "renown": 1,
+                  "tension": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The quarrel festers, and both companies drink elsewhere for a while.",
+        "effects": {
+          "esteem": -3,
+          "tension": 1
+        }
+      }
+    },
+    {
+      "id": "hall-complication",
+      "title": "Treasure, and a complication",
+      "stakes": "medium",
+      "source": "heroes",
+      "needs": [
+        "institution:adventurers-hall",
+        "hero",
+        "settlement"
+      ],
+      "minDay": 50,
+      "repeatDays": 150,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero}'s company came home with gold, monster hide and a complication: an envoy of {people} at the hall's door, saying the ruin they looted was a burial ground of their ancestors.",
+          "options": [
+            {
+              "label": "Pay {people} for the grave goods",
+              "cost": 70,
+              "prefer": 0.05,
+              "success": {
+                "text": "Coin and an apology. {people} go home mollified.",
+                "effects": {
+                  "regard": 8,
+                  "esteem": 2
+                }
+              }
+            },
+            {
+              "label": "Stand by the company",
+              "success": {
+                "text": "The council says finders keepers. {heroName} is grateful; {people} are not.",
+                "effects": {
+                  "loyalty": 5,
+                  "regard": -10,
+                  "esteem": 4
+                }
+              }
+            },
+            {
+              "label": "Broker a ceremony to return what matters",
+              "skill": "persuasion",
+              "dc": 14,
+              "success": {
+                "text": "The bones go home with honour, the gold stays. Everyone leaves satisfied.",
+                "effects": {
+                  "regard": 6,
+                  "loyalty": 2,
+                  "esteem": 3
+                }
+              },
+              "failure": {
+                "text": "The talks collapse in shouting.",
+                "effects": {
+                  "regard": -6,
+                  "loyalty": -2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "Nobody answers the envoy, who leaves in a cold fury.",
+        "effects": {
+          "regard": -8
+        }
+      }
+    },
+    {
+      "id": "hall-overdue",
+      "title": "{institution} asks for a rescue",
+      "stakes": "medium",
+      "source": "heroes",
+      "needs": [
+        "institution:adventurers-hall",
+        "party"
+      ],
+      "minDay": 40,
+      "repeatDays": 90,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{party} are a week overdue. {keeper} wants to send a rescue company after them and asks the council to pay for it.",
+          "options": [
+            {
+              "label": "Pay for the rescue",
+              "cost": 100,
+              "prefer": 0.1,
+              "success": {
+                "text": "The rescuers find {party} holed up in a cave, hungry but alive, and bring them home to cheers.",
+                "effects": {
+                  "loyalty": 6,
+                  "esteem": 8,
+                  "mandate": 1
+                }
+              }
+            },
+            {
+              "label": "Send word by stone",
+              "skill": "arcana",
+              "dc": 13,
+              "success": {
+                "text": "A voice crackles back from the wilds: they are pinned down but holding. The hall breathes again.",
+                "effects": {
+                  "esteem": 3,
+                  "loyalty": 2
+                }
+              },
+              "failure": {
+                "text": "The stone stays silent. {keeperName} paces all night.",
+                "effects": {
+                  "esteem": -2
+                }
+              }
+            },
+            {
+              "label": "They knew the risks",
+              "success": {
+                "text": "The council says so. {keeperName} says something worse.",
+                "effects": {
+                  "esteem": -8,
+                  "loyalty": -4
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "No one goes. {party} will make it home or they won't.",
+        "effects": {
+          "esteem": -5
+        }
+      }
+    },
+    {
+      "id": "bazaar-eggs",
+      "title": "Monster eggs at {institution}",
+      "stakes": "low",
+      "source": "road",
+      "needs": [
+        "institution:grand-bazaar"
+      ],
+      "minDay": 30,
+      "repeatDays": 120,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A trader in a fur hood has set up at {institution} with a crate of warm, speckled eggs. {keeper} wants to know whether the town will allow it.",
+          "options": [
+            {
+              "label": "Buy the clutch and sell the hatchlings on",
+              "skill": "animal-handling",
+              "dc": 14,
+              "cost": 100,
+              "success": {
+                "text": "The hatchlings fetch a fortune from a noble's menagerie.",
+                "effects": {
+                  "gold": 200,
+                  "esteem": 3
+                }
+              },
+              "failure": {
+                "text": "The eggs hatch early in the warehouse. It takes the watch two days to catch everything.",
+                "effects": {
+                  "dread": 2,
+                  "mandate": -3,
+                  "esteem": -3
+                }
+              }
+            },
+            {
+              "label": "Let the trader sell, for a licence fee",
+              "prefer": 0.05,
+              "success": {
+                "text": "A brisk trade in eggs, and a fat licence for the treasury.",
+                "effects": {
+                  "gold": 40,
+                  "esteem": 4,
+                  "tension": 1
+                }
+              }
+            },
+            {
+              "label": "Send the trader packing",
+              "success": {
+                "text": "The crate goes back on the cart. {keeperName} sighs at the lost fee.",
+                "effects": {
+                  "esteem": -3
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The trader sells the eggs anyway, to whoever asks.",
+        "effects": {
+          "tension": 1
+        }
+      }
+    },
+    {
+      "id": "bazaar-caravans",
+      "title": "Two caravans, one escort",
+      "stakes": "low",
+      "source": "road",
+      "needs": [
+        "institution:grand-bazaar",
+        "settlement",
+        "route"
+      ],
+      "minDay": 40,
+      "repeatDays": 90,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Two caravans want the town's guard on the same road: a spice train bound for {institution}, and the town's own convoy to {settlement}. There are only enough riders for one.",
+          "options": [
+            {
+              "label": "Guard the spice train",
+              "success": {
+                "text": "The spices arrive safe and the bazaar does a week's trade in a day.",
+                "effects": {
+                  "esteem": 8,
+                  "gold": 40,
+                  "mandate": 1
+                }
+              }
+            },
+            {
+              "label": "Guard the convoy",
+              "prefer": 0.03,
+              "success": {
+                "text": "The convoy gets through. {people} are pleased; {keeperName} is not.",
+                "effects": {
+                  "regard": 8,
+                  "esteem": -4
+                }
+              }
+            },
+            {
+              "label": "Hire sellswords for both",
+              "cost": 110,
+              "success": {
+                "text": "Both get through, and the sellswords drink their pay at the bazaar.",
+                "effects": {
+                  "esteem": 5,
+                  "regard": 5
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "Both caravans set out without guards and hope for the best.",
+        "effects": {
+          "esteem": -2,
+          "regard": -2
+        }
+      }
+    },
+    {
+      "id": "bazaar-smuggling",
+      "title": "The Quiet Hand's offer",
+      "stakes": "medium",
+      "source": "faction",
+      "needs": [
+        "institution:grand-bazaar",
+        "faction:quiet-hand"
+      ],
+      "minDay": 60,
+      "repeatDays": 200,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A soft-spoken woman from {faction} says they know of a smuggling ring working out of {institution}. They will name names, in exchange for a stall in the bazaar's restricted back rows.",
+          "options": [
+            {
+              "label": "Take the deal",
+              "success": {
+                "text": "The smugglers are taken in a night. The Hand gets its stall, and {keeperName} gets a new neighbour {keeperName} did not choose.",
+                "effects": {
+                  "standing": 10,
+                  "heat": -6,
+                  "esteem": -6,
+                  "gold": 60,
+                  "precedent:hand-in-bazaar": 1
+                }
+              }
+            },
+            {
+              "label": "Refuse, and have the watch find the smugglers",
+              "skill": "investigation",
+              "dc": 14,
+              "needs": [
+                "watch"
+              ],
+              "success": {
+                "text": "Two weeks of patient watching, and the ring is broken without the Hand's help.",
+                "effects": {
+                  "esteem": 8,
+                  "heat": 10,
+                  "standing": -4
+                }
+              },
+              "failure": {
+                "text": "The smugglers get wind of the watch and slip away.",
+                "effects": {
+                  "esteem": -3,
+                  "standing": -4
+                }
+              }
+            },
+            {
+              "label": "Tell {keeperName} and let the bazaar deal with it",
+              "skill": "insight",
+              "dc": 12,
+              "prefer": 0.05,
+              "success": {
+                "text": "{keeperName} thanks the mayor, and the bazaar's porters see the smugglers out of town.",
+                "effects": {
+                  "esteem": 10,
+                  "standing": -8
+                }
+              },
+              "failure": {
+                "text": "{keeperName} thinks the mayor is accusing the bazaar, and takes offence.",
+                "effects": {
+                  "esteem": -5
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The offer is withdrawn, and the smuggling goes on.",
+        "effects": {
+          "standing": -3,
+          "tension": 1
+        }
+      }
+    },
+    {
+      "id": "bazaar-books",
+      "title": "A chest of old books",
+      "stakes": "low",
+      "source": "road",
+      "needs": [
+        "institution:grand-bazaar"
+      ],
+      "minDay": 50,
+      "repeatDays": 150,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A caravan from the far oasis cities has brought a chest of old books to {institution}: star charts, bestiaries, a grimoire with a lock on it. {keeper} has kept them back for the town to see first.",
+          "options": [
+            {
+              "label": "Buy them for the town's scholars",
+              "cost": 140,
+              "prefer": 0.05,
+              "success": {
+                "text": "The books go to the town's shelves. The mayor reads late into the night, and learns something.",
+                "effects": {
+                  "inspiration": 1,
+                  "mandate": 1,
+                  "esteem": 4
+                }
+              }
+            },
+            {
+              "label": "Let the Order of the Unshut Book bid",
+              "needs": [
+                "faction:unshut-book"
+              ],
+              "success": {
+                "text": "The Order outbids everyone and is delighted. The bazaar takes its cut.",
+                "effects": {
+                  "standing": 8,
+                  "gold": 50,
+                  "esteem": 3
+                }
+              }
+            },
+            {
+              "label": "Have someone open the grimoire first",
+              "skill": "arcana",
+              "dc": 15,
+              "success": {
+                "text": "The lock gives, and the grimoire holds nothing worse than an alchemist's recipes. It sells for a good price.",
+                "effects": {
+                  "gold": 90,
+                  "esteem": 2
+                }
+              },
+              "failure": {
+                "text": "Something comes out of the grimoire, and it takes the town's priests a day to put it back.",
+                "effects": {
+                  "dread": 3,
+                  "favour": -5
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The books are sold off a cart to whoever asks.",
+        "effects": {
+          "esteem": -1
+        }
+      }
+    },
+    {
+      "id": "grove-stream",
+      "title": "The grove's stream runs foul",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "institution:druid-grove",
+        "!precedent:river-fouled"
+      ],
+      "minDay": 30,
+      "repeatDays": 150,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The tanneries upstream are fouling the stream that feeds the grove's sacred pool. {keeper} wants them moved downstream.",
+          "options": [
+            {
+              "label": "Pay to move the tanneries",
+              "cost": 90,
+              "prefer": 0.05,
+              "success": {
+                "text": "New pits downstream, and the pool runs clear again.",
+                "effects": {
+                  "esteem": 10,
+                  "mandate": -1
+                }
+              }
+            },
+            {
+              "label": "Fine the tanners into cleaning up",
+              "skill": "intimidation",
+              "dc": 13,
+              "success": {
+                "text": "The tanners grumble, pay and dig settling ponds.",
+                "effects": {
+                  "gold": 30,
+                  "esteem": 5
+                }
+              },
+              "failure": {
+                "text": "The tanners laugh at the fine and carry on.",
+                "effects": {
+                  "esteem": -3,
+                  "mandate": -1
+                }
+              }
+            },
+            {
+              "label": "Tell the druids to live with it",
+              "success": {
+                "text": "The pool scums over. The druids say nothing, which is worse.",
+                "effects": {
+                  "esteem": -10,
+                  "food": -15
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The stream stays foul and the pool sickens.",
+        "effects": {
+          "esteem": -8
+        }
+      }
+    },
+    {
+      "id": "grove-walking-tree",
+      "title": "The oak would walk",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "institution:druid-grove"
+      ],
+      "minDay": 60,
+      "repeatDays": 400,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The grove's oldest oak has woken and decided to move. It wants to stand in the market square, and is already halfway down the lane. {keeper} asks the mayor to clear it a way.",
+          "options": [
+            {
+              "label": "Clear it a path to the square",
+              "cost": 70,
+              "prefer": 0.08,
+              "success": {
+                "text": "Stalls are moved and a wall comes down. The oak settles in the square with a long creak of contentment.",
+                "effects": {
+                  "fixture:walking-oak": 1,
+                  "esteem": 10,
+                  "mandate": 2,
+                  "festival": 1
+                }
+              }
+            },
+            {
+              "label": "Persuade it to stay in the grove",
+              "skill": "nature",
+              "dc": 15,
+              "success": {
+                "text": "A long, slow conversation at dawn. The oak agrees to stay, for another hundred years.",
+                "effects": {
+                  "esteem": 5
+                }
+              },
+              "failure": {
+                "text": "The oak does not care for being argued with, and walks through the tanners' yard instead.",
+                "effects": {
+                  "esteem": -5,
+                  "tension": 1,
+                  "timber": -10
+                }
+              }
+            },
+            {
+              "label": "Fence it in",
+              "success": {
+                "text": "Chains and posts. The oak stops, and the grove goes very quiet.",
+                "effects": {
+                  "esteem": -15,
+                  "dread": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The oak walks where it likes, and the town picks up the pieces.",
+        "effects": {
+          "timber": -10,
+          "tension": 1,
+          "esteem": -4
+        }
+      }
+    },
+    {
+      "id": "grove-bridge",
+      "title": "A living bridge",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "institution:druid-grove",
+        "!precedent:clean-river",
+        "!precedent:river-fouled"
+      ],
+      "minDay": 50,
+      "repeatDays": 9999,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{keeper} offers to grow a living bridge of willow and ash across the river, on one condition: the river beneath it must be kept clean forever.",
+          "options": [
+            {
+              "label": "Promise it",
+              "prefer": 0.1,
+              "success": {
+                "text": "The druids sing to the saplings, and in a season a bridge stands where none did.",
+                "effects": {
+                  "fixture:living-bridge": 1,
+                  "precedent:clean-river": 1,
+                  "esteem": 8
+                }
+              }
+            },
+            {
+              "label": "Ask for a bridge without promises",
+              "skill": "persuasion",
+              "dc": 16,
+              "success": {
+                "text": "{keeperName} considers it and agrees, on a smaller bridge.",
+                "effects": {
+                  "fixture:living-bridge": 1,
+                  "esteem": 2
+                }
+              },
+              "failure": {
+                "text": "{keeperName} says a gift with no promise is a purchase, and the grove does not sell.",
+                "effects": {
+                  "esteem": -4
+                }
+              }
+            },
+            {
+              "label": "Thank them, but no",
+              "success": {
+                "text": "The council builds its own bridge of stone, later and dearer.",
+                "effects": {
+                  "esteem": -3
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The offer withers on the bough.",
+        "effects": {
+          "esteem": -2
+        }
+      }
+    },
+    {
+      "id": "grove-river-spill",
+      "title": "Dye in the river",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "institution:druid-grove",
+        "precedent:clean-river"
+      ],
+      "minDay": 90,
+      "repeatDays": 200,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A dyer's vat has burst and the river below the living bridge runs blue. {keeper} reminds the mayor of the town's promise.",
+          "options": [
+            {
+              "label": "Pay for the river to be cleaned",
+              "cost": 80,
+              "prefer": 0.1,
+              "success": {
+                "text": "Men with nets and buckets work for a week, and the river runs clear. The bridge puts out new leaves.",
+                "effects": {
+                  "esteem": 8
+                }
+              }
+            },
+            {
+              "label": "Make the dyer pay",
+              "skill": "intimidation",
+              "dc": 12,
+              "success": {
+                "text": "The dyer pays, and the river is cleaned.",
+                "effects": {
+                  "esteem": 5,
+                  "gold": 20
+                }
+              },
+              "failure": {
+                "text": "The dyer has nothing to pay with, and the river stays blue.",
+                "effects": {
+                  "esteem": -6
+                }
+              }
+            },
+            {
+              "label": "It's only dye",
+              "success": {
+                "text": "The bridge withers on one side. The druids say the town's word is worth nothing.",
+                "effects": {
+                  "esteem": -20,
+                  "precedent:river-fouled": 1,
+                  "precedent:clean-river": -1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "No one cleans it up. The promise is broken.",
+        "effects": {
+          "esteem": -15,
+          "precedent:river-fouled": 1,
+          "precedent:clean-river": -1
+        }
+      }
+    },
+    {
+      "id": "grove-spirits",
+      "title": "Angry spirits of the wood",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "institution:druid-grove"
+      ],
+      "minDay": 70,
+      "repeatDays": 160,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The spirits of the woods beyond the walls are furious with the woodcutters. Wolves follow the timber carts, and trees fall across the roads. {keeper} offers to parley for the town.",
+          "options": [
+            {
+              "label": "Send {keeperName} to parley",
+              "skill": "nature",
+              "dc": 14,
+              "prefer": 0.05,
+              "success": {
+                "text": "The spirits accept a bargain: the woodcutters plant two for every one they fell.",
+                "effects": {
+                  "dread": -3,
+                  "esteem": 6
+                }
+              },
+              "failure": {
+                "text": "The spirits will not listen, and the woods grow darker.",
+                "effects": {
+                  "dread": 2,
+                  "esteem": -2
+                }
+              }
+            },
+            {
+              "label": "Cut back the logging",
+              "success": {
+                "text": "The woodcutters work fewer days and the woods settle.",
+                "effects": {
+                  "timber": -25,
+                  "esteem": 8,
+                  "dread": -2
+                }
+              }
+            },
+            {
+              "label": "Send hunters after the wolves",
+              "success": {
+                "text": "Wolves hang from the gate, and the grove's druids weep.",
+                "effects": {
+                  "esteem": -10,
+                  "dread": 1,
+                  "timber": 10
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The woods stay angry.",
+        "effects": {
+          "dread": 2,
+          "esteem": -3
+        }
+      }
+    },
+    {
+      "id": "tavern-retiring-hero",
+      "title": "A hero wants to buy {institution}",
+      "stakes": "medium",
+      "source": "tavern",
+      "needs": [
+        "institution:famous-tavern",
+        "hero"
+      ],
+      "minDay": 60,
+      "repeatDays": 300,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} would hang up the sword and buy a share of {institution} from {keeper}. There is a catch: old enemies have a way of following a hero to their door.",
+          "options": [
+            {
+              "label": "Bless the sale",
+              "prefer": 0.05,
+              "success": {
+                "text": "{heroName} buys in and pulls pints between delves. Business booms.",
+                "effects": {
+                  "loyalty": 8,
+                  "esteem": 5
+                },
+                "next": "enemies"
+              }
+            },
+            {
+              "label": "Talk {heroName} out of it",
+              "skill": "persuasion",
+              "dc": 12,
+              "success": {
+                "text": "{heroName} agrees the wilds still need them, and stays on the road.",
+                "effects": {
+                  "loyalty": -2,
+                  "esteem": 2
+                }
+              },
+              "failure": {
+                "text": "{heroName} sulks for a week.",
+                "effects": {
+                  "loyalty": -6
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "enemies",
+          "text": "A month later, a band of hard-faced strangers walks into {institution} and asks for {heroName} by an old name.",
+          "options": [
+            {
+              "label": "Let {heroName} settle it",
+              "skill": "athletics",
+              "dc": 14,
+              "aid": "hero",
+              "success": {
+                "text": "{heroName} meets them in the yard, and the strangers leave on stretchers. The tavern's fame doubles.",
+                "effects": {
+                  "renown": 3,
+                  "mandate": 2,
+                  "esteem": 5
+                }
+              },
+              "failure": {
+                "text": "The fight wrecks the taproom, and {heroName} is badly hurt.",
+                "effects": {
+                  "wound": 10,
+                  "esteem": -5,
+                  "tension": 2
+                }
+              }
+            },
+            {
+              "label": "Buy them off",
+              "cost": 80,
+              "success": {
+                "text": "A heavy purse and they ride away, promising nothing.",
+                "effects": {
+                  "esteem": 2
+                }
+              }
+            },
+            {
+              "label": "Call the watch",
+              "skill": "intimidation",
+              "dc": 13,
+              "needs": [
+                "watch"
+              ],
+              "success": {
+                "text": "The watch takes them in before a blow is struck.",
+                "effects": {
+                  "tension": -1,
+                  "esteem": 3
+                }
+              },
+              "failure": {
+                "text": "The watch arrives late, to a broken taproom.",
+                "effects": {
+                  "tension": 2,
+                  "esteem": -4
+                }
+              }
+            }
+          ],
+          "ignored": {
+            "text": "The strangers wait for {heroName} in the street, and it ends in blood.",
+            "effects": {
+              "wound": 8,
+              "tension": 2,
+              "esteem": -4
+            }
+          }
+        }
+      ],
+      "ignored": {
+        "text": "{heroName} takes the silence as a no.",
+        "effects": {
+          "loyalty": -4
+        }
+      }
+    },
+    {
+      "id": "tavern-stranger",
+      "title": "A stranger at {institution}",
+      "stakes": "low",
+      "source": "tavern",
+      "needs": [
+        "institution:famous-tavern",
+        "unheard"
+      ],
+      "minDay": 20,
+      "repeatDays": 80,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A cloaked stranger has sat in the corner of {institution} for three nights, asking anyone who will listen for help with something buried at {site}. {keeper} thinks the mayor should hear it.",
+          "options": [
+            {
+              "label": "Hear the stranger out",
+              "skill": "insight",
+              "dc": 13,
+              "prefer": 0.05,
+              "success": {
+                "text": "The stranger draws a map on the table in spilled ale and is gone by morning. The map is good.",
+                "effects": {
+                  "reveal": 1,
+                  "esteem": 3
+                }
+              },
+              "failure": {
+                "text": "The stranger talks in riddles and leaves without paying.",
+                "effects": {
+                  "esteem": -1
+                }
+              }
+            },
+            {
+              "label": "Buy the stranger's map outright",
+              "cost": 40,
+              "success": {
+                "text": "A purse for a parchment. The map is old, but good.",
+                "effects": {
+                  "reveal": 1
+                }
+              }
+            },
+            {
+              "label": "Have them thrown out",
+              "success": {
+                "text": "{keeperName} does it, unhappily.",
+                "effects": {
+                  "esteem": -3
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The stranger leaves town, and takes the story with them.",
+        "effects": {
+          "esteem": -1
+        }
+      }
+    },
+    {
+      "id": "mimic-chest",
+      "title": "A chest with teeth",
+      "stakes": "medium",
+      "source": "heroes",
+      "needs": [
+        "institution:adventurers-hall",
+        "hero"
+      ],
+      "minDay": 60,
+      "repeatDays": 9999,
+      "weight": 1.5,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero}'s company carried home a magnificent treasure chest. In the hall's strongroom it bit the clerk. It is a young mimic, and everyone in town has an idea what to do with it.",
+          "options": [
+            {
+              "label": "Give it to the tavern as a bouncer",
+              "needs": [
+                "institution:famous-tavern"
+              ],
+              "prefer": 0.08,
+              "success": {
+                "text": "The mimic takes to its new door at once. Brawls at the tavern end very quickly now.",
+                "effects": {
+                  "fixture:mimic-bouncer": 1,
+                  "esteem": 2,
+                  "tension": -1
+                }
+              }
+            },
+            {
+              "label": "Let the temple bless and keep it",
+              "needs": [
+                "institution:temple-district"
+              ],
+              "success": {
+                "text": "Fed on offerings and hymns, the mimic guards the reliquary like a hound.",
+                "effects": {
+                  "fixture:mimic-blessed": 1,
+                  "favour": 8
+                }
+              }
+            },
+            {
+              "label": "Let the Quiet Hand train it",
+              "needs": [
+                "faction:quiet-hand"
+              ],
+              "success": {
+                "text": "The Hand's people take it away in a sack. Strongboxes across town start going missing, but never theirs.",
+                "effects": {
+                  "standing": 10,
+                  "heat": 6,
+                  "gold": 40,
+                  "esteem": -3
+                }
+              }
+            },
+            {
+              "label": "Tame it as the hall's strongbox",
+              "skill": "animal-handling",
+              "dc": 13,
+              "aid": "hero",
+              "success": {
+                "text": "It learns to open only for {keeperName}. The hall has never been safer.",
+                "effects": {
+                  "fixture:mimic-strongbox": 1,
+                  "esteem": 6
+                }
+              },
+              "failure": {
+                "text": "It does not want to be tamed, and {heroName} loses a fingertip finding out.",
+                "effects": {
+                  "wound": 4,
+                  "esteem": -2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "Nobody decides, and one morning the mimic is gone, along with a cartwheel.",
+        "effects": {
+          "tension": 1
+        }
+      }
+    },
+    {
+      "id": "grove-and-temple",
+      "title": "Altar or oak?",
+      "stakes": "medium",
+      "source": "faith",
+      "needs": [
+        "institution:druid-grove",
+        "institution:temple-district"
+      ],
+      "minDay": 80,
+      "repeatDays": 200,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The priests of {institution2} want a bough of the grove's ancient tree for a new altar. {keeper} refuses: you do not cut a living elder to carve a dead one. Both come to the mayor.",
+          "options": [
+            {
+              "label": "Side with the grove",
+              "success": {
+                "text": "The tree keeps its bough. The priests find oak elsewhere, sourly.",
+                "effects": {
+                  "esteem": 8,
+                  "esteem2": -8
+                }
+              }
+            },
+            {
+              "label": "Side with the temple",
+              "success": {
+                "text": "The bough is cut with great ceremony. The druids watch in silence.",
+                "effects": {
+                  "esteem": -10,
+                  "esteem2": 8,
+                  "favour": 10
+                }
+              }
+            },
+            {
+              "label": "Broker a shared rite",
+              "skill": "persuasion",
+              "dc": 15,
+              "prefer": 0.08,
+              "success": {
+                "text": "The tree lets fall a bough of its own accord at a joint dawn rite. Both call it a miracle.",
+                "effects": {
+                  "esteem": 5,
+                  "esteem2": 5,
+                  "festival": 1,
+                  "favour": 6
+                }
+              },
+              "failure": {
+                "text": "The rite turns into a shouting match under the tree.",
+                "effects": {
+                  "esteem": -4,
+                  "esteem2": -4
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The quarrel rumbles on, and both blame the mayor.",
+        "effects": {
+          "esteem": -4,
+          "esteem2": -4
+        }
+      }
+    },
+    {
+      "id": "artifact-auction",
+      "title": "Whose cut?",
+      "stakes": "low",
+      "source": "heroes",
+      "needs": [
+        "institution:adventurers-hall",
+        "institution:grand-bazaar",
+        "hero"
+      ],
+      "minDay": 60,
+      "repeatDays": 120,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} wants to sell a jewelled idol from the wilds at {institution2}. {keeper2} wants the bazaar's cut; {keeper} insists the hall's fee comes first. The idol sits on the council table between them.",
+          "options": [
+            {
+              "label": "The hall's fee comes first",
+              "success": {
+                "text": "The hall takes its fee and the bazaar sulks.",
+                "effects": {
+                  "esteem": 6,
+                  "esteem2": -6,
+                  "gold": 20
+                }
+              }
+            },
+            {
+              "label": "The bazaar sells it, the bazaar's cut",
+              "success": {
+                "text": "The bazaar takes its cut and the hall grumbles.",
+                "effects": {
+                  "esteem": -6,
+                  "esteem2": 6,
+                  "gold": 20
+                }
+              }
+            },
+            {
+              "label": "Auction it in the square",
+              "skill": "performance",
+              "dc": 13,
+              "prefer": 0.05,
+              "success": {
+                "text": "A public auction draws half the region. The idol fetches a fortune, and both keepers are paid.",
+                "effects": {
+                  "gold": 80,
+                  "esteem": 3,
+                  "esteem2": 3,
+                  "loyalty": 3,
+                  "festival": 1
+                }
+              },
+              "failure": {
+                "text": "The auction draws thieves as well as buyers, and the idol vanishes in the crush.",
+                "effects": {
+                  "esteem": -3,
+                  "esteem2": -3,
+                  "loyalty": -4,
+                  "tension": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "{hero} sells it to a passing pedlar for half its worth.",
+        "effects": {
+          "loyalty": -2
+        }
+      }
+    },
+    {
+      "id": "ballad-of-the-hall",
+      "title": "A ballad of {institution}",
+      "stakes": "low",
+      "source": "tavern",
+      "needs": [
+        "calling:towns-bard",
+        "institution:adventurers-hall"
+      ],
+      "minDay": 60,
+      "repeatDays": 200,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero}'s new ballad about the companies of {institution} is sung in every tavern on the road. Recruits are arriving, and so are challengers who want to test the town's heroes.",
+          "options": [
+            {
+              "label": "Embrace the fame",
+              "prefer": 0.05,
+              "success": {
+                "text": "The ballad spreads. New faces fill the hall, and a few bloody noses with them.",
+                "effects": {
+                  "people": 3,
+                  "esteem": 6,
+                  "tension": 1,
+                  "renown": 2
+                }
+              }
+            },
+            {
+              "label": "Ask for a verse about the town",
+              "skill": "performance",
+              "dc": 13,
+              "success": {
+                "text": "{heroName} adds three verses about the town's walls and warm beds. Settlers come, not just swords.",
+                "effects": {
+                  "people": 4,
+                  "mandate": 2,
+                  "esteem": 2
+                }
+              },
+              "failure": {
+                "text": "The new verses rhyme 'town' with 'drown'. Nobody sings them.",
+                "effects": {
+                  "loyalty": -2
+                }
+              }
+            },
+            {
+              "label": "Ask {heroName} to tone it down",
+              "success": {
+                "text": "{heroName} is hurt, but sings something else.",
+                "effects": {
+                  "loyalty": -4,
+                  "esteem": -2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The ballad goes where ballads go.",
+        "effects": {
+          "people": 1
+        }
+      }
+    },
+    {
+      "id": "hand-and-tavern",
+      "title": "A quiet word at {institution}",
+      "stakes": "low",
+      "source": "faction",
+      "needs": [
+        "institution:famous-tavern",
+        "faction:quiet-hand"
+      ],
+      "minDay": 40,
+      "repeatDays": 160,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{keeper} has noticed {faction} meeting in the back room of {institution} every Moonday, and wants to know whether the mayor would rather they did or didn't.",
+          "options": [
+            {
+              "label": "Let them meet there, and listen",
+              "success": {
+                "text": "{keeperName} keeps an ear to the wall. The town learns a great deal.",
+                "effects": {
+                  "heat": 8,
+                  "esteem": 3,
+                  "standing": -2
+                }
+              }
+            },
+            {
+              "label": "Let them meet, and leave them be",
+              "prefer": 0.03,
+              "success": {
+                "text": "The Hand notices the courtesy.",
+                "effects": {
+                  "standing": 8,
+                  "esteem": -2
+                }
+              }
+            },
+            {
+              "label": "Have {keeperName} turn them out",
+              "skill": "intimidation",
+              "dc": 13,
+              "success": {
+                "text": "{keeperName} turns them out with a smile and a cudgel.",
+                "effects": {
+                  "standing": -10,
+                  "esteem": 4,
+                  "tension": -1
+                }
+              },
+              "failure": {
+                "text": "The Hand turns {keeperName}'s cellar out first. Barrels are broken.",
+                "effects": {
+                  "esteem": -5,
+                  "standing": -4
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The Hand keeps meeting, and nobody says anything.",
+        "effects": {
+          "standing": 2
+        }
+      }
+    }
+  ]
+}

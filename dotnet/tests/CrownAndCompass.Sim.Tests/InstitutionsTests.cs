@@ -1,0 +1,205 @@
+using CrownAndCompass.Sim.Systems;
+
+namespace CrownAndCompass.Sim.Tests;
+
+public class InstitutionsTests
+{
+    private static readonly Content C = Content.Default();
+
+    private static Simulation Player(int seed = 2) =>
+        new(new SimulationOptions { Seed = seed, AutoMayor = false, AutoStories = false, FreeCompanies = false });
+
+    /// <summary>A finished building of the kind, standing on a civic lot.</summary>
+    private static Building Raise(Town t, string id)
+    {
+        var d = t.Content.Building(id);
+        var lot = Planning.CivicLot(t, d)!;
+        return t.AddBuilding(d, lot, null, $"the {d.Name}", true);
+    }
+
+    [Fact]
+    public void EveryInstitutionHasABuildingKeepersAndSensibleChoices()
+    {
+        var r = C.Institutions;
+        Assert.True(r.Patronage.Count >= 3);
+        Assert.Equal(r.Institutions.Count, r.Institutions.Select(i => i.Id).Distinct().Count());
+        foreach (var i in r.Institutions)
+        {
+            Assert.True(C.Buildings.Any(b => b.Id == i.Building), $"{i.Id}: no building {i.Building}");
+            Assert.True(i.Keepers.Count >= 2, $"{i.Id}: keepers");
+            Assert.NotEqual("", i.Title);
+            if (i.Choice != null)
+            {
+                Assert.True(i.Choice.Options.Count >= 2, $"{i.Id}: a choice needs options");
+                Assert.Equal(i.Choice.Options.Count, i.Choice.Options.Select(o => o.Id).Distinct().Count());
+                foreach (var o in i.Choice.Options.Where(o => o.Deity != ""))
+                    Assert.True(C.Library.Deity(o.Deity) != null, $"{i.Id}: no god {o.Deity}");
+            }
+            foreach (var p in new[] { i.Service }.Concat(i.Choice?.Options.Select(o => o.Service) ?? []))
+            {
+                if (p.Faction != "") Assert.Contains(C.Factions.Factions, f => f.Ref == p.Faction);
+                foreach (var g in p.Yields.Keys) Assert.True(Enum.TryParse<Good>(g, out _), $"{i.Id}: no good {g}");
+            }
+            // Something must ask for it, or the keeper never speaks.
+            Assert.True(r.Requests.Any(s => s.Needs.Any(n => n == "institution:" + i.Id || n.StartsWith("institution:" + i.Id + ":"))), $"{i.Id} makes no requests");
+        }
+        foreach (var f in r.Fixtures) Assert.True(r.Def(f.Institution) != null, $"{f.Id}: no institution {f.Institution}");
+        foreach (var s in r.Requests) Assert.Contains(C.Stories.Stories, x => x.Id == s.Id);
+    }
+
+    [Fact]
+    public void AHallOpensWithAKeeperAndRoomForMoreHeroes()
+    {
+        var sim = Player();
+        var t = sim.Town;
+        sim.RunDays(1);
+        int cap = City.HeroCap(t);
+        Raise(t, "adventurers_hall");
+        sim.RunDays(1);
+        var s = Assert.Single(t.Institutions);
+        Assert.Equal("adventurers-hall", s.Def);
+        Assert.StartsWith("Hallmaster ", Institutions.KeeperName(t, s));
+        Assert.Equal(cap + 2, City.HeroCap(t));
+        Assert.Contains(t.Ledger.Entries, e => e.Text.Contains("the Adventurers' Hall opens its doors", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(Alerts.Standing(t), a => a.Kind == Alerts.Institution);
+
+        // Unfunded, it gives far less: no extra heroes at all.
+        Assert.True(sim.FundInstitution("adventurers-hall", 0));
+        Assert.Equal(cap, City.HeroCap(t));
+    }
+
+    [Fact]
+    public void PatronageCostsGoldAndWinsTheKeeperOver()
+    {
+        var sim = Player();
+        var t = sim.Town;
+        sim.RunDays(1);
+        Raise(t, "druid_grove");
+        sim.RunDays(1);
+        var s = Institutions.Find(t, "druid-grove")!;
+        t.Treasury += 5000;
+        Assert.True(sim.FundInstitution("druid-grove", 2));
+        Assert.False(sim.FundInstitution("druid-grove", 2));
+        double regard = s.Regard;
+        sim.RunDays(1);
+        Assert.True(t.AccountsYesterday.Get(TreasuryAccount.Institutions, 0) < 0);
+        Assert.True(s.Regard > regard);
+        double food = Institutions.Yield(t, Good.Food);
+        Assert.True(food > 1);
+        Assert.True(sim.FundInstitution("druid-grove", 0));
+        Assert.True(Institutions.Yield(t, Good.Food) < food);
+    }
+
+    [Fact]
+    public void ChoosingIsFreeOnceAndChangingItCostsRegard()
+    {
+        var sim = Player();
+        var t = sim.Town;
+        sim.RunDays(1);
+        Raise(t, "grand_bazaar");
+        sim.RunDays(1);
+        var s = Institutions.Find(t, "grand-bazaar")!;
+        double regard = s.Regard;
+        double tools = Institutions.Yield(t, Good.Tools);
+        Assert.False(sim.ChooseInstitution("grand-bazaar", "nonsense"));
+        Assert.True(sim.ChooseInstitution("grand-bazaar", "metals"));
+        Assert.Equal(regard, s.Regard);
+        Assert.True(Institutions.Yield(t, Good.Tools) > tools);
+        Assert.DoesNotContain(Alerts.Standing(t), a => a.Kind == Alerts.Institution);
+        // Not again so soon.
+        Assert.False(sim.ChooseInstitution("grand-bazaar", "spices"));
+        sim.RunDays(t.Content.Institutions.ChangeDays);
+        Assert.True(sim.ChooseInstitution("grand-bazaar", "spices"));
+        Assert.True(s.Regard < regard + t.Content.Institutions.ChangeDays * t.Content.Institutions.RegardDrift - t.Content.Institutions.ChangeRegard + 0.01);
+        Assert.Equal(1, Trade.Cap(t) - t.Content.Trade.Routes.GetValueOrDefault(City.Tier(t).Id, 0));
+    }
+
+    [Fact]
+    public void TheTempleAndTheOldestTavernBecomeInstitutions()
+    {
+        var sim = new Simulation(new SimulationOptions { Seed = 3 });
+        sim.RunDays(160);
+        var t = sim.Town;
+        Assert.True(City.TierIndex(t, City.Tier(t).Id) >= City.TierIndex(t, "hamlet"));
+        var tavern = Institutions.Find(t, "famous-tavern");
+        Assert.NotNull(tavern);
+        Assert.Equal(t.Taverns.OrderBy(b => b.Id).First().Id, tavern!.BuildingId);
+        // The stand-in makes the choices.
+        Assert.NotEqual("", tavern.Choice);
+        if (Shrines.Temple(t) is { } temple)
+            Assert.Equal(temple.Id, Institutions.Find(t, "temple-district")?.BuildingId);
+    }
+
+    [Fact]
+    public void ARequestMovesItsKeepersRegard()
+    {
+        var sim = Player();
+        var t = sim.Town;
+        sim.RunDays(1);
+        Raise(t, "druid_grove");
+        sim.RunDays(1);
+        var s = Institutions.Find(t, "druid-grove")!;
+        var story = Stories.Open(t, "grove-bridge");
+        Assert.NotNull(story);
+        Assert.Equal(["druid-grove"], story!.Institutions);
+        Assert.Contains("Grove Warden", Stories.Fill(t, story, "{keeper}"));
+        double regard = s.Regard;
+        Assert.NotNull(sim.ResolveStory(story.Id, 0));
+        Assert.True(s.Regard > regard);
+        Assert.Contains("living-bridge", s.Fixtures);
+        Assert.True(t.Stories.Precedents.ContainsKey("clean-river"));
+        Assert.Equal(1, s.Answered);
+        // The bridge does something for the town.
+        Assert.True(Institutions.Arrivals(t) > 0);
+        // And the promise it was given on can now be tested.
+        Assert.NotNull(Stories.Open(t, "grove-river-spill"));
+    }
+
+    [Fact]
+    public void AStoryAcrossTwoInstitutionsBindsBoth()
+    {
+        var sim = Player();
+        var t = sim.Town;
+        sim.RunDays(1);
+        Raise(t, "druid_grove");
+        Raise(t, "temple");
+        sim.RunDays(1);
+        Assert.NotNull(Institutions.Find(t, "temple-district"));
+        var story = Stories.Open(t, "grove-and-temple")!;
+        Assert.Equal(["druid-grove", "temple-district"], story.Institutions);
+        var grove = Institutions.Find(t, "druid-grove")!;
+        var temple = Institutions.Find(t, "temple-district")!;
+        double g = grove.Regard, p = temple.Regard;
+        sim.ResolveStory(story.Id, 1);
+        Assert.True(grove.Regard < g);
+        Assert.True(temple.Regard > p);
+    }
+
+    [Fact]
+    public void AnInstitutionShutsWhenItsBuildingCloses()
+    {
+        var sim = Player();
+        var t = sim.Town;
+        sim.RunDays(1);
+        var b = Raise(t, "druid_grove");
+        sim.RunDays(1);
+        var s = Institutions.Find(t, "druid-grove")!;
+        b.Closed = true;
+        sim.RunDays(1);
+        Assert.True(s.Shut);
+        Assert.Equal(1, Institutions.Yield(t, Good.Food));
+        b.Closed = false;
+        sim.RunDays(1);
+        Assert.False(s.Shut);
+    }
+
+    [Fact]
+    public void TheStandInRaisesAndFundsInstitutions()
+    {
+        var sim = new Simulation(new SimulationOptions { Seed = 1 });
+        sim.RunDays(300);
+        var t = sim.Town;
+        Assert.True(t.Institutions.Count >= 3, $"only {string.Join(", ", t.Institutions.Select(i => i.Def))}");
+        Assert.All(t.Institutions, s => Assert.True(s.Choice != "" || Institutions.DefOf(t, s).Choice == null));
+    }
+}
