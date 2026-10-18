@@ -42,7 +42,7 @@
 - Institutions (`content/game/institutions.json`, `Systems/Institutions.cs`, client `godot/src/Institutions.cs`): a
   civic building with a keeper, a daily service (a `DecreeDef` plus defence, heroes, healing, escorts, routes, faction
   standing), patronage levels, one mayor's choice and fixtures stories leave. Requests are ordinary stories in the same
-  file that need `institution:id[:choice]` and use `esteem`/`esteem2`, `fixture:id` and `{keeper}`/`{institution}`; a
+  file that need `institution:id[:choice]` and use `goodwill`/`goodwill2`, `fixture:id` and `{keeper}`/`{institution}`; a
   story naming two institutions binds both. Services hook in at their call sites (Brain, Economy, Population, Threat,
   City.HeroCap, Trade, Shrines), not through Decrees.
 - Decorations (`content/game/decor.json`, `Systems/Decor.cs`, client `Map/Decorator.cs`, `Map/DecorView.cs`): free positions in

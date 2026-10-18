@@ -518,7 +518,7 @@
                   "fixture:pilgrims-hostel": 1,
                   "people": 3,
                   "favour": 10,
-                  "esteem": 10
+                  "goodwill": 10
                 }
               }
             },
@@ -530,14 +530,14 @@
                 "text": "Spare rooms open all over town. The pilgrims go home full of the town's kindness.",
                 "effects": {
                   "favour": 12,
-                  "esteem": 6,
+                  "goodwill": 6,
                   "mandate": 1
                 }
               },
               "failure": {
                 "text": "Doors stay shut. The pilgrims sleep in the temple porch, and {keeperName} sleeps beside them in protest.",
                 "effects": {
-                  "esteem": -4,
+                  "goodwill": -4,
                   "tension": 1
                 }
               }
@@ -547,7 +547,7 @@
               "success": {
                 "text": "The pilgrims trudge on to another town. {keeperName} does not speak to the council for a week.",
                 "effects": {
-                  "esteem": -10,
+                  "goodwill": -10,
                   "favour": -8
                 }
               }
@@ -587,7 +587,7 @@
               "success": {
                 "text": "{heroName} tracks the thieves to a barge on the river and brings the relic home in triumph.",
                 "effects": {
-                  "esteem": 10,
+                  "goodwill": 10,
                   "favour": 20,
                   "renown": 2,
                   "loyalty": 3
@@ -596,7 +596,7 @@
               "failure": {
                 "text": "The trail goes cold at the river. {heroName} comes back empty-handed and embarrassed.",
                 "effects": {
-                  "esteem": -4,
+                  "goodwill": -4,
                   "loyalty": -2
                 }
               }
@@ -610,7 +610,7 @@
               "success": {
                 "text": "A knock at midnight, a purse changes hands, and the relic is on the altar by dawn. Nobody asks how.",
                 "effects": {
-                  "esteem": 4,
+                  "goodwill": 4,
                   "favour": 10,
                   "standing": 6
                 }
@@ -624,14 +624,14 @@
                 "text": "Three days of vigil, and the relic is found on the temple steps, the thief weeping beside it.",
                 "effects": {
                   "favour": 25,
-                  "esteem": 6,
+                  "goodwill": 6,
                   "mandate": 2
                 }
               },
               "failure": {
                 "text": "The vigil ends with nothing but sore knees.",
                 "effects": {
-                  "esteem": -6
+                  "goodwill": -6
                 }
               }
             }
@@ -641,7 +641,7 @@
       "ignored": {
         "text": "The relic is never found. The faithful say the town did not care.",
         "effects": {
-          "esteem": -6,
+          "goodwill": -6,
           "favour": -10,
           "mandate": -1
         }
@@ -672,7 +672,7 @@
                   "festival": 3,
                   "mandate": 3,
                   "favour": 15,
-                  "esteem": 10
+                  "goodwill": 10
                 }
               }
             },
@@ -684,7 +684,7 @@
                 "effects": {
                   "festival": 1,
                   "favour": 5,
-                  "esteem": 3
+                  "goodwill": 3
                 }
               }
             },
@@ -695,13 +695,13 @@
               "success": {
                 "text": "{keeperName} agrees the treasury has better uses this year, and almost means it.",
                 "effects": {
-                  "esteem": -2
+                  "goodwill": -2
                 }
               },
               "failure": {
                 "text": "{keeperName} leaves the council chamber white with anger.",
                 "effects": {
-                  "esteem": -8,
+                  "goodwill": -8,
                   "favour": -5
                 }
               }
@@ -712,7 +712,7 @@
       "ignored": {
         "text": "The holy day passes with no feast, and the faithful notice.",
         "effects": {
-          "esteem": -4,
+          "goodwill": -4,
           "favour": -6
         }
       }
@@ -738,7 +738,7 @@
               "success": {
                 "text": "The well is cleaned and roofed. Townsfolk drink from it for luck.",
                 "effects": {
-                  "esteem": 8,
+                  "goodwill": 8,
                   "favour": 12,
                   "timber": -8
                 }
@@ -749,7 +749,7 @@
               "success": {
                 "text": "The well is filled in. The builders finish early, and {keeperName} calls it sacrilege from the pulpit.",
                 "effects": {
-                  "esteem": -15,
+                  "goodwill": -15,
                   "favour": -12,
                   "gold": 60
                 }
@@ -762,14 +762,14 @@
               "success": {
                 "text": "{keeperName} finds the words in an old book, and the blessing moves to the temple font. Everyone is satisfied.",
                 "effects": {
-                  "esteem": 6,
+                  "goodwill": 6,
                   "favour": 8
                 }
               },
               "failure": {
                 "text": "The rite goes wrong, the well floods the site and the builders down tools.",
                 "effects": {
-                  "esteem": -3,
+                  "goodwill": -3,
                   "timber": -15
                 }
               }
@@ -780,7 +780,7 @@
       "ignored": {
         "text": "The argument drags on until the builders fill the well in anyway.",
         "effects": {
-          "esteem": -10,
+          "goodwill": -10,
           "favour": -8
         }
       }
@@ -812,7 +812,7 @@
                 "effects": {
                   "reveal": 1,
                   "renown": 1,
-                  "esteem": 3,
+                  "goodwill": 3,
                   "gold": 20
                 }
               }
@@ -824,7 +824,7 @@
                 "effects": {
                   "regard": 6,
                   "gold": 30,
-                  "esteem": 3
+                  "goodwill": 3
                 }
               }
             },
@@ -839,7 +839,7 @@
                   "reveal": 1,
                   "regard": 4,
                   "renown": 2,
-                  "esteem": 4
+                  "goodwill": 4
                 }
               },
               "failure": {
@@ -856,7 +856,7 @@
       "ignored": {
         "text": "The week goes by and {heroName} drinks it away at the hall.",
         "effects": {
-          "esteem": -2
+          "goodwill": -2
         }
       }
     },
@@ -885,7 +885,7 @@
                 "text": "Both companies sprint for the hills. The rivalry becomes the town's favourite sport.",
                 "effects": {
                   "renown": 2,
-                  "esteem": 5,
+                  "goodwill": 5,
                   "mandate": 1
                 }
               },
@@ -905,13 +905,13 @@
                 "text": "A sharp word, a heavy fine, and peace returns.",
                 "effects": {
                   "tension": -1,
-                  "esteem": 3
+                  "goodwill": 3
                 }
               },
               "failure": {
                 "text": "Nobody listens, and {keeperName} has to break up the fight with a chair.",
                 "effects": {
-                  "esteem": -5,
+                  "goodwill": -5,
                   "tension": 1
                 }
               }
@@ -933,7 +933,7 @@
       "ignored": {
         "text": "The quarrel festers, and both companies drink elsewhere for a while.",
         "effects": {
-          "esteem": -3,
+          "goodwill": -3,
           "tension": 1
         }
       }
@@ -963,7 +963,7 @@
                 "text": "Coin and an apology. {people} go home mollified.",
                 "effects": {
                   "regard": 8,
-                  "esteem": 2
+                  "goodwill": 2
                 }
               }
             },
@@ -974,7 +974,7 @@
                 "effects": {
                   "loyalty": 5,
                   "regard": -10,
-                  "esteem": 4
+                  "goodwill": 4
                 }
               }
             },
@@ -987,7 +987,7 @@
                 "effects": {
                   "regard": 6,
                   "loyalty": 2,
-                  "esteem": 3
+                  "goodwill": 3
                 }
               },
               "failure": {
@@ -1032,7 +1032,7 @@
                 "text": "The rescuers find {party} holed up in a cave, hungry but alive, and bring them home to cheers.",
                 "effects": {
                   "loyalty": 6,
-                  "esteem": 8,
+                  "goodwill": 8,
                   "mandate": 1
                 }
               }
@@ -1044,14 +1044,14 @@
               "success": {
                 "text": "A voice crackles back from the wilds: they are pinned down but holding. The hall breathes again.",
                 "effects": {
-                  "esteem": 3,
+                  "goodwill": 3,
                   "loyalty": 2
                 }
               },
               "failure": {
                 "text": "The stone stays silent. {keeperName} paces all night.",
                 "effects": {
-                  "esteem": -2
+                  "goodwill": -2
                 }
               }
             },
@@ -1060,7 +1060,7 @@
               "success": {
                 "text": "The council says so. {keeperName} says something worse.",
                 "effects": {
-                  "esteem": -8,
+                  "goodwill": -8,
                   "loyalty": -4
                 }
               }
@@ -1071,7 +1071,7 @@
       "ignored": {
         "text": "No one goes. {party} will make it home or they won't.",
         "effects": {
-          "esteem": -5
+          "goodwill": -5
         }
       }
     },
@@ -1099,7 +1099,7 @@
                 "text": "The hatchlings fetch a fortune from a noble's menagerie.",
                 "effects": {
                   "gold": 200,
-                  "esteem": 3
+                  "goodwill": 3
                 }
               },
               "failure": {
@@ -1107,7 +1107,7 @@
                 "effects": {
                   "dread": 2,
                   "mandate": -3,
-                  "esteem": -3
+                  "goodwill": -3
                 }
               }
             },
@@ -1118,7 +1118,7 @@
                 "text": "A brisk trade in eggs, and a fat licence for the treasury.",
                 "effects": {
                   "gold": 40,
-                  "esteem": 4,
+                  "goodwill": 4,
                   "tension": 1
                 }
               }
@@ -1128,7 +1128,7 @@
               "success": {
                 "text": "The crate goes back on the cart. {keeperName} sighs at the lost fee.",
                 "effects": {
-                  "esteem": -3
+                  "goodwill": -3
                 }
               }
             }
@@ -1164,7 +1164,7 @@
               "success": {
                 "text": "The spices arrive safe and the bazaar does a week's trade in a day.",
                 "effects": {
-                  "esteem": 8,
+                  "goodwill": 8,
                   "gold": 40,
                   "mandate": 1
                 }
@@ -1177,7 +1177,7 @@
                 "text": "The convoy gets through. {people} are pleased; {keeperName} is not.",
                 "effects": {
                   "regard": 8,
-                  "esteem": -4
+                  "goodwill": -4
                 }
               }
             },
@@ -1187,7 +1187,7 @@
               "success": {
                 "text": "Both get through, and the sellswords drink their pay at the bazaar.",
                 "effects": {
-                  "esteem": 5,
+                  "goodwill": 5,
                   "regard": 5
                 }
               }
@@ -1198,7 +1198,7 @@
       "ignored": {
         "text": "Both caravans set out without guards and hope for the best.",
         "effects": {
-          "esteem": -2,
+          "goodwill": -2,
           "regard": -2
         }
       }
@@ -1226,7 +1226,7 @@
                 "effects": {
                   "standing": 10,
                   "heat": -6,
-                  "esteem": -6,
+                  "goodwill": -6,
                   "gold": 60,
                   "precedent:hand-in-bazaar": 1
                 }
@@ -1242,7 +1242,7 @@
               "success": {
                 "text": "Two weeks of patient watching, and the ring is broken without the Hand's help.",
                 "effects": {
-                  "esteem": 8,
+                  "goodwill": 8,
                   "heat": 10,
                   "standing": -4
                 }
@@ -1250,7 +1250,7 @@
               "failure": {
                 "text": "The smugglers get wind of the watch and slip away.",
                 "effects": {
-                  "esteem": -3,
+                  "goodwill": -3,
                   "standing": -4
                 }
               }
@@ -1263,14 +1263,14 @@
               "success": {
                 "text": "{keeperName} thanks the mayor, and the bazaar's porters see the smugglers out of town.",
                 "effects": {
-                  "esteem": 10,
+                  "goodwill": 10,
                   "standing": -8
                 }
               },
               "failure": {
                 "text": "{keeperName} thinks the mayor is accusing the bazaar, and takes offence.",
                 "effects": {
-                  "esteem": -5
+                  "goodwill": -5
                 }
               }
             }
@@ -1309,7 +1309,7 @@
                 "effects": {
                   "inspiration": 1,
                   "mandate": 1,
-                  "esteem": 4
+                  "goodwill": 4
                 }
               }
             },
@@ -1323,7 +1323,7 @@
                 "effects": {
                   "standing": 8,
                   "gold": 50,
-                  "esteem": 3
+                  "goodwill": 3
                 }
               }
             },
@@ -1335,7 +1335,7 @@
                 "text": "The lock gives, and the grimoire holds nothing worse than an alchemist's recipes. It sells for a good price.",
                 "effects": {
                   "gold": 90,
-                  "esteem": 2
+                  "goodwill": 2
                 }
               },
               "failure": {
@@ -1352,7 +1352,7 @@
       "ignored": {
         "text": "The books are sold off a cart to whoever asks.",
         "effects": {
-          "esteem": -1
+          "goodwill": -1
         }
       }
     },
@@ -1379,7 +1379,7 @@
               "success": {
                 "text": "New pits downstream, and the pool runs clear again.",
                 "effects": {
-                  "esteem": 10,
+                  "goodwill": 10,
                   "mandate": -1
                 }
               }
@@ -1392,13 +1392,13 @@
                 "text": "The tanners grumble, pay and dig settling ponds.",
                 "effects": {
                   "gold": 30,
-                  "esteem": 5
+                  "goodwill": 5
                 }
               },
               "failure": {
                 "text": "The tanners laugh at the fine and carry on.",
                 "effects": {
-                  "esteem": -3,
+                  "goodwill": -3,
                   "mandate": -1
                 }
               }
@@ -1408,7 +1408,7 @@
               "success": {
                 "text": "The pool scums over. The druids say nothing, which is worse.",
                 "effects": {
-                  "esteem": -10,
+                  "goodwill": -10,
                   "food": -15
                 }
               }
@@ -1419,7 +1419,7 @@
       "ignored": {
         "text": "The stream stays foul and the pool sickens.",
         "effects": {
-          "esteem": -8
+          "goodwill": -8
         }
       }
     },
@@ -1446,7 +1446,7 @@
                 "text": "Stalls are moved and a wall comes down. The oak settles in the square with a long creak of contentment.",
                 "effects": {
                   "fixture:walking-oak": 1,
-                  "esteem": 10,
+                  "goodwill": 10,
                   "mandate": 2,
                   "festival": 1
                 }
@@ -1459,13 +1459,13 @@
               "success": {
                 "text": "A long, slow conversation at dawn. The oak agrees to stay, for another hundred years.",
                 "effects": {
-                  "esteem": 5
+                  "goodwill": 5
                 }
               },
               "failure": {
                 "text": "The oak does not care for being argued with, and walks through the tanners' yard instead.",
                 "effects": {
-                  "esteem": -5,
+                  "goodwill": -5,
                   "tension": 1,
                   "timber": -10
                 }
@@ -1476,7 +1476,7 @@
               "success": {
                 "text": "Chains and posts. The oak stops, and the grove goes very quiet.",
                 "effects": {
-                  "esteem": -15,
+                  "goodwill": -15,
                   "dread": 1
                 }
               }
@@ -1489,7 +1489,7 @@
         "effects": {
           "timber": -10,
           "tension": 1,
-          "esteem": -4
+          "goodwill": -4
         }
       }
     },
@@ -1518,7 +1518,7 @@
                 "effects": {
                   "fixture:living-bridge": 1,
                   "precedent:clean-river": 1,
-                  "esteem": 8
+                  "goodwill": 8
                 }
               }
             },
@@ -1530,13 +1530,13 @@
                 "text": "{keeperName} considers it and agrees, on a smaller bridge.",
                 "effects": {
                   "fixture:living-bridge": 1,
-                  "esteem": 2
+                  "goodwill": 2
                 }
               },
               "failure": {
                 "text": "{keeperName} says a gift with no promise is a purchase, and the grove does not sell.",
                 "effects": {
-                  "esteem": -4
+                  "goodwill": -4
                 }
               }
             },
@@ -1545,7 +1545,7 @@
               "success": {
                 "text": "The council builds its own bridge of stone, later and dearer.",
                 "effects": {
-                  "esteem": -3
+                  "goodwill": -3
                 }
               }
             }
@@ -1555,7 +1555,7 @@
       "ignored": {
         "text": "The offer withers on the bough.",
         "effects": {
-          "esteem": -2
+          "goodwill": -2
         }
       }
     },
@@ -1582,7 +1582,7 @@
               "success": {
                 "text": "Men with nets and buckets work for a week, and the river runs clear. The bridge puts out new leaves.",
                 "effects": {
-                  "esteem": 8
+                  "goodwill": 8
                 }
               }
             },
@@ -1593,14 +1593,14 @@
               "success": {
                 "text": "The dyer pays, and the river is cleaned.",
                 "effects": {
-                  "esteem": 5,
+                  "goodwill": 5,
                   "gold": 20
                 }
               },
               "failure": {
                 "text": "The dyer has nothing to pay with, and the river stays blue.",
                 "effects": {
-                  "esteem": -6
+                  "goodwill": -6
                 }
               }
             },
@@ -1609,7 +1609,7 @@
               "success": {
                 "text": "The bridge withers on one side. The druids say the town's word is worth nothing.",
                 "effects": {
-                  "esteem": -20,
+                  "goodwill": -20,
                   "precedent:river-fouled": 1,
                   "precedent:clean-river": -1
                 }
@@ -1621,7 +1621,7 @@
       "ignored": {
         "text": "No one cleans it up. The promise is broken.",
         "effects": {
-          "esteem": -15,
+          "goodwill": -15,
           "precedent:river-fouled": 1,
           "precedent:clean-river": -1
         }
@@ -1651,14 +1651,14 @@
                 "text": "The spirits accept a bargain: the woodcutters plant two for every one they fell.",
                 "effects": {
                   "dread": -3,
-                  "esteem": 6
+                  "goodwill": 6
                 }
               },
               "failure": {
                 "text": "The spirits will not listen, and the woods grow darker.",
                 "effects": {
                   "dread": 2,
-                  "esteem": -2
+                  "goodwill": -2
                 }
               }
             },
@@ -1668,7 +1668,7 @@
                 "text": "The woodcutters work fewer days and the woods settle.",
                 "effects": {
                   "timber": -25,
-                  "esteem": 8,
+                  "goodwill": 8,
                   "dread": -2
                 }
               }
@@ -1678,7 +1678,7 @@
               "success": {
                 "text": "Wolves hang from the gate, and the grove's druids weep.",
                 "effects": {
-                  "esteem": -10,
+                  "goodwill": -10,
                   "dread": 1,
                   "timber": 10
                 }
@@ -1691,7 +1691,7 @@
         "text": "The woods stay angry.",
         "effects": {
           "dread": 2,
-          "esteem": -3
+          "goodwill": -3
         }
       }
     },
@@ -1718,7 +1718,7 @@
                 "text": "{heroName} buys in and pulls pints between delves. Business booms.",
                 "effects": {
                   "loyalty": 8,
-                  "esteem": 5
+                  "goodwill": 5
                 },
                 "next": "enemies"
               }
@@ -1731,7 +1731,7 @@
                 "text": "{heroName} agrees the wilds still need them, and stays on the road.",
                 "effects": {
                   "loyalty": -2,
-                  "esteem": 2
+                  "goodwill": 2
                 }
               },
               "failure": {
@@ -1757,14 +1757,14 @@
                 "effects": {
                   "renown": 3,
                   "mandate": 2,
-                  "esteem": 5
+                  "goodwill": 5
                 }
               },
               "failure": {
                 "text": "The fight wrecks the taproom, and {heroName} is badly hurt.",
                 "effects": {
                   "wound": 10,
-                  "esteem": -5,
+                  "goodwill": -5,
                   "tension": 2
                 }
               }
@@ -1775,7 +1775,7 @@
               "success": {
                 "text": "A heavy purse and they ride away, promising nothing.",
                 "effects": {
-                  "esteem": 2
+                  "goodwill": 2
                 }
               }
             },
@@ -1790,14 +1790,14 @@
                 "text": "The watch takes them in before a blow is struck.",
                 "effects": {
                   "tension": -1,
-                  "esteem": 3
+                  "goodwill": 3
                 }
               },
               "failure": {
                 "text": "The watch arrives late, to a broken taproom.",
                 "effects": {
                   "tension": 2,
-                  "esteem": -4
+                  "goodwill": -4
                 }
               }
             }
@@ -1807,7 +1807,7 @@
             "effects": {
               "wound": 8,
               "tension": 2,
-              "esteem": -4
+              "goodwill": -4
             }
           }
         }
@@ -1844,13 +1844,13 @@
                 "text": "The stranger draws a map on the table in spilled ale and is gone by morning. The map is good.",
                 "effects": {
                   "reveal": 1,
-                  "esteem": 3
+                  "goodwill": 3
                 }
               },
               "failure": {
                 "text": "The stranger talks in riddles and leaves without paying.",
                 "effects": {
-                  "esteem": -1
+                  "goodwill": -1
                 }
               }
             },
@@ -1869,7 +1869,7 @@
               "success": {
                 "text": "{keeperName} does it, unhappily.",
                 "effects": {
-                  "esteem": -3
+                  "goodwill": -3
                 }
               }
             }
@@ -1879,7 +1879,7 @@
       "ignored": {
         "text": "The stranger leaves town, and takes the story with them.",
         "effects": {
-          "esteem": -1
+          "goodwill": -1
         }
       }
     },
@@ -1910,7 +1910,7 @@
                 "text": "The mimic takes to its new door at once. Brawls at the tavern end very quickly now.",
                 "effects": {
                   "fixture:mimic-bouncer": 1,
-                  "esteem": 2,
+                  "goodwill": 2,
                   "tension": -1
                 }
               }
@@ -1939,7 +1939,7 @@
                   "standing": 10,
                   "heat": 6,
                   "gold": 40,
-                  "esteem": -3
+                  "goodwill": -3
                 }
               }
             },
@@ -1952,14 +1952,14 @@
                 "text": "It learns to open only for {keeperName}. The hall has never been safer.",
                 "effects": {
                   "fixture:mimic-strongbox": 1,
-                  "esteem": 6
+                  "goodwill": 6
                 }
               },
               "failure": {
                 "text": "It does not want to be tamed, and {heroName} loses a fingertip finding out.",
                 "effects": {
                   "wound": 4,
-                  "esteem": -2
+                  "goodwill": -2
                 }
               }
             }
@@ -1994,8 +1994,8 @@
               "success": {
                 "text": "The tree keeps its bough. The priests find oak elsewhere, sourly.",
                 "effects": {
-                  "esteem": 8,
-                  "esteem2": -8
+                  "goodwill": 8,
+                  "goodwill2": -8
                 }
               }
             },
@@ -2004,8 +2004,8 @@
               "success": {
                 "text": "The bough is cut with great ceremony. The druids watch in silence.",
                 "effects": {
-                  "esteem": -10,
-                  "esteem2": 8,
+                  "goodwill": -10,
+                  "goodwill2": 8,
                   "favour": 10
                 }
               }
@@ -2018,8 +2018,8 @@
               "success": {
                 "text": "The tree lets fall a bough of its own accord at a joint dawn rite. Both call it a miracle.",
                 "effects": {
-                  "esteem": 5,
-                  "esteem2": 5,
+                  "goodwill": 5,
+                  "goodwill2": 5,
                   "festival": 1,
                   "favour": 6
                 }
@@ -2027,8 +2027,8 @@
               "failure": {
                 "text": "The rite turns into a shouting match under the tree.",
                 "effects": {
-                  "esteem": -4,
-                  "esteem2": -4
+                  "goodwill": -4,
+                  "goodwill2": -4
                 }
               }
             }
@@ -2038,8 +2038,8 @@
       "ignored": {
         "text": "The quarrel rumbles on, and both blame the mayor.",
         "effects": {
-          "esteem": -4,
-          "esteem2": -4
+          "goodwill": -4,
+          "goodwill2": -4
         }
       }
     },
@@ -2065,8 +2065,8 @@
               "success": {
                 "text": "The hall takes its fee and the bazaar sulks.",
                 "effects": {
-                  "esteem": 6,
-                  "esteem2": -6,
+                  "goodwill": 6,
+                  "goodwill2": -6,
                   "gold": 20
                 }
               }
@@ -2076,8 +2076,8 @@
               "success": {
                 "text": "The bazaar takes its cut and the hall grumbles.",
                 "effects": {
-                  "esteem": -6,
-                  "esteem2": 6,
+                  "goodwill": -6,
+                  "goodwill2": 6,
                   "gold": 20
                 }
               }
@@ -2091,8 +2091,8 @@
                 "text": "A public auction draws half the region. The idol fetches a fortune, and both keepers are paid.",
                 "effects": {
                   "gold": 80,
-                  "esteem": 3,
-                  "esteem2": 3,
+                  "goodwill": 3,
+                  "goodwill2": 3,
                   "loyalty": 3,
                   "festival": 1
                 }
@@ -2100,8 +2100,8 @@
               "failure": {
                 "text": "The auction draws thieves as well as buyers, and the idol vanishes in the crush.",
                 "effects": {
-                  "esteem": -3,
-                  "esteem2": -3,
+                  "goodwill": -3,
+                  "goodwill2": -3,
                   "loyalty": -4,
                   "tension": 1
                 }
@@ -2140,7 +2140,7 @@
                 "text": "The ballad spreads. New faces fill the hall, and a few bloody noses with them.",
                 "effects": {
                   "people": 3,
-                  "esteem": 6,
+                  "goodwill": 6,
                   "tension": 1,
                   "renown": 2
                 }
@@ -2155,7 +2155,7 @@
                 "effects": {
                   "people": 4,
                   "mandate": 2,
-                  "esteem": 2
+                  "goodwill": 2
                 }
               },
               "failure": {
@@ -2171,7 +2171,7 @@
                 "text": "{heroName} is hurt, but sings something else.",
                 "effects": {
                   "loyalty": -4,
-                  "esteem": -2
+                  "goodwill": -2
                 }
               }
             }
@@ -2207,7 +2207,7 @@
                 "text": "{keeperName} keeps an ear to the wall. The town learns a great deal.",
                 "effects": {
                   "heat": 8,
-                  "esteem": 3,
+                  "goodwill": 3,
                   "standing": -2
                 }
               }
@@ -2219,7 +2219,7 @@
                 "text": "The Hand notices the courtesy.",
                 "effects": {
                   "standing": 8,
-                  "esteem": -2
+                  "goodwill": -2
                 }
               }
             },
@@ -2231,14 +2231,14 @@
                 "text": "{keeperName} turns them out with a smile and a cudgel.",
                 "effects": {
                   "standing": -10,
-                  "esteem": 4,
+                  "goodwill": 4,
                   "tension": -1
                 }
               },
               "failure": {
                 "text": "The Hand turns {keeperName}'s cellar out first. Barrels are broken.",
                 "effects": {
-                  "esteem": -5,
+                  "goodwill": -5,
                   "standing": -4
                 }
               }

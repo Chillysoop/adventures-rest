@@ -187,6 +187,9 @@ public sealed record StoryOption
     public string Ability { get; init; } = "";
     public int Dc { get; init; }
 
+    /// <summary>What the choice stands for (mercy, a hard hand...), which heroes judge by their temper (<see cref="Regard"/>).</summary>
+    public List<string> Tags { get; init; } = [];
+
     /// <summary>Gold from the treasury to try it at all.</summary>
     public double Cost { get; init; }
 
@@ -373,7 +376,7 @@ public static class Stories
     /// precedent:id (1 sets it, -1 forgets it) and calling:id (1: the story's hero takes it up, -1: it ends).
     /// </summary>
     public static readonly string[] EffectKeys =
-        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "esteem", "esteem2", "edge", "swell", "partyHurt", "rest", "slots", "loot", "partyLoyalty", "turnBack"];
+        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "esteem", "goodwill", "goodwill2", "heroXp", "personal", "dismiss", "edge", "swell", "partyHurt", "rest", "slots", "loot", "partyLoyalty", "turnBack"];
 
     /// <summary>
     /// Every need a story or option can name; besides these, precedent:id, decree:id, season:id and
@@ -382,7 +385,7 @@ public static class Stories
     /// with no calling yet) and faction:id (binds that faction while it has a chapter).
     /// </summary>
     public static readonly string[] Needs =
-        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "settlement", "route", "courted", "veteran", "fallen", "abroad", "homeward", "victorious"];
+        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "settlement", "route", "courted", "veteran", "fallen", "admirer", "aggrieved", "abroad", "homeward", "victorious"];
 
     private static readonly string[] Prefixed = ["precedent:", "decree:", "season:"];
 
@@ -781,6 +784,16 @@ public static class Stories
                 s.HeroId = v?.Id;
                 return v != null;
             }
+            case "admirer":
+            case "aggrieved":
+            {
+                bool Fits(Agent a) => need == "admirer" ? Regard.Admirer(town, a) : Regard.Aggrieved(town, a);
+                if (s.HeroId is int h) return Hero(town, h) is { } a && (need == "admirer" ? !a.IsAway && a.Hero!.Personal == "" : !a.IsAway);
+                if (!bind) return false;
+                var a2 = Pick(town.Heroes.Where(Fits).OrderBy(a => a.Id).ToList());
+                s.HeroId = a2?.Id;
+                return a2 != null;
+            }
             case "abroad":
             case "homeward":
             case "victorious":
@@ -933,6 +946,8 @@ public static class Stories
         beat.Stage = stage.Id;
         beat.Option = Fill(town, s, o.Label);
         Conclude(town, s, beat, outcome);
+        // The heroes hear what the mayor chose, and judge it by their tempers.
+        if (o.Tags.Count > 0) Regard.Judge(town, o.Tags, $"chose to {Lower(beat.Option)}", Fill(town, s, DefOf(town, s).Title));
         return beat;
     }
 
@@ -1103,10 +1118,10 @@ public static class Stories
                         said.Add($"a memorial to {ml.Name}");
                     }
                     break;
-                case "esteem":
-                case "esteem2":
+                case "goodwill":
+                case "goodwill2":
                 {
-                    int i = key == "esteem" ? 0 : 1;
+                    int i = key == "goodwill" ? 0 : 1;
                     if (i < s.Institutions.Count && Institutions.Find(town, s.Institutions[i]) is { } inst)
                     {
                         Institutions.Esteem(town, inst, v);
@@ -1119,6 +1134,31 @@ public static class Stories
                     break;
                 case "heat":
                     if (s.FactionId is string hf && Factions.Find(town, hf) is { } hfs) hfs.Heat = Math.Clamp(hfs.Heat + v, 0, 100);
+                    break;
+                case "esteem":
+                    if (s.HeroId is int eh && Hero(town, eh) is { } ea)
+                    {
+                        Regard.Esteem(ea, v);
+                        said.Add($"{ea.GivenName} thinks {(v > 0 ? "better" : "worse")} of the mayor");
+                    }
+                    break;
+                case "heroXp":
+                    // A share of what the hero needs for their next level.
+                    if (s.HeroId is int xh && Hero(town, xh) is { } xa)
+                    {
+                        int next = Quests.XpToNext(xa.Hero!.Level);
+                        if (next > 0) Quests.GainXp(town, xa, (int)(next * v));
+                    }
+                    break;
+                case "personal":
+                    if (s.HeroId is int ph && Hero(town, ph) is { } pa2) pa2.Hero!.Personal = v > 0 ? "done" : "failed";
+                    break;
+                case "dismiss":
+                    if (v > 0 && s.HeroId is int dh && Hero(town, dh) is { } da)
+                    {
+                        Loyalty.Dismiss(town, da);
+                        said.Add($"{da.GivenName} leaves {town.Name}");
+                    }
                     break;
                 case "edge":
                 case "swell":
@@ -1190,7 +1230,7 @@ public static class Stories
                 var o = stage.Options[i];
                 if (Blocked(town, s, o) != null || (o.Cost > 0 && town.Treasury < o.Cost + 100)) continue;
                 double c = Chance(town, s, o);
-                double score = c - o.Cost / 200 + o.Prefer;
+                double score = c - o.Cost / 200 + o.Prefer + Regard.Sway(town, o.Tags);
                 if (score > bestScore + 1e-9)
                 {
                     best = i;
@@ -1250,6 +1290,7 @@ public static class Stories
         Put("{keeper2}", () => Bound(town, s, 1) is { } i ? Institutions.KeeperName(town, i) : "the other keeper");
         Put("{keeper2Name}", () => Bound(town, s, 1) is { } i ? Institutions.KeeperGiven(town, i) : "the other keeper");
         Put("{choice}", () => Bound(town, s, 0) is { } i && (Institutions.Chosen(town, i) is { } o) ? o.Name : "its calling");
+        Put("{grievance}", () => s.HeroId is int g && town.Agent(g).Hero is { RegardWhy: not "" } gs ? gs.RegardWhy : "made the choices they did");
         Put("{class}", () => s.HeroId is int h ? town.Agent(h).Hero?.Cls.Name.ToLowerInvariant() ?? "hero" : "hero");
         return Cap(sb.ToString());
     }
@@ -1258,7 +1299,7 @@ public static class Stories
 
     private static string InstitutionName(Town town, Story s, int i) => i < s.Institutions.Count && town.Content.Institutions.Def(s.Institutions[i]) is { } d ? d.Name : "the institution";
 
-    private static string Cap(string s) => s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
+    internal static string Cap(string s) => s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
 
     private static string Lower(string s) => s.Length == 0 ? s : char.ToLowerInvariant(s[0]) + s[1..];
 }
