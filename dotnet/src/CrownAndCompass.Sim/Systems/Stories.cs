@@ -40,6 +40,23 @@ public sealed record StoryRules
     /// <summary>What the town remembers the mayor deciding, which later stories turn on.</summary>
     public List<PrecedentDef> Precedents { get; init; } = [];
 
+    /// <summary>Inspiration the mayor can hold at once, before feats.</summary>
+    public int InspirationMax { get; init; } = 3;
+
+    /// <summary>Ways of running the town well that earn the mayor inspiration.</summary>
+    public List<DeedDef> Deeds { get; init; } = [];
+
+    /// <summary>Feats the mayor can take at an improvement level instead of raising abilities.</summary>
+    public List<FeatDef> Feats { get; init; } = [];
+
+    /// <summary>The first level at which a skill-level advance can be expertise.</summary>
+    public int ExpertiseFrom { get; init; } = 3;
+
+    /// <summary>The checks the mayor rolls on everyday decisions (council motions, demands, envoys...), by decision.</summary>
+    public Dictionary<string, DecisionCheck> Decisions { get; init; } = [];
+
+    public FeatDef? Feat(string id) => Feats.FirstOrDefault(f => f.Id == id);
+
     public StakesDef StakesOf(string id) => Stakes.FirstOrDefault(s => s.Id == id) ?? Stakes[0];
     public SkillDef? Skill(string id) => Skills.FirstOrDefault(s => s.Id == id);
     public MayorBackground Background(string id) => Backgrounds.FirstOrDefault(b => b.Ref == id) ?? Backgrounds[0];
@@ -63,6 +80,39 @@ public sealed record StakesDef
     public string Name { get; init; } = "";
     public int DueDays { get; init; } = 3;
     public int Xp { get; init; } = 20;
+}
+
+/// <summary>A way of running the town well that earns inspiration: every <see cref="Every"/> of its kind (charters, bounties, raids thrown back, menaces ended, days at or above <see cref="Threshold"/> Mandate).</summary>
+public sealed record DeedDef
+{
+    public string Id { get; init; } = "";
+    public string Name { get; init; } = "";
+    public string Text { get; init; } = "";
+    public int Every { get; init; } = 1;
+    public double Threshold { get; init; }
+}
+
+/// <summary>A feat: a bonus on some skills, more inspiration or a steady way of regaining it, a floor under the die, a wider margin for a success at a cost.</summary>
+public sealed record FeatDef
+{
+    public string Id { get; init; } = "";
+    public string Name { get; init; } = "";
+    public string Text { get; init; } = "";
+    public Dictionary<string, int> Skills { get; init; } = [];
+    public int Inspiration { get; init; }
+    public int RegainDays { get; init; }
+    public int Floor { get; init; }
+    public int PartialMargin { get; init; }
+}
+
+/// <summary>A d20 check on an everyday decision: its skill and DC, and how much a success adds (what it adds depends on the decision).</summary>
+public sealed record DecisionCheck
+{
+    public string Skill { get; init; } = "";
+    public int Dc { get; init; } = 12;
+    public double Gain { get; init; }
+    public string Success { get; init; } = "";
+    public string Failure { get; init; } = "";
 }
 
 /// <summary>One of the eighteen skills, and the ability it rolls with.</summary>
@@ -177,8 +227,11 @@ public sealed class MayorSheet
     public int Level { get; set; } = 1;
     public int Xp { get; set; }
 
-    /// <summary>D&amp;D inspiration: spend it for advantage on a check. A natural 20 earns it back.</summary>
+    /// <summary>D&amp;D inspiration: spend one to reroll a failed check. Running the town well and natural 20s earn it.</summary>
     public int Inspiration { get; set; }
+
+    /// <summary>What each level after the first was spent on: "ability:str,cha", "skill:arcana", "expertise:persuasion" or "feat:lucky".</summary>
+    public List<string> Advances { get; } = [];
     public int Successes { get; set; }
     public int Failures { get; set; }
 }
@@ -205,6 +258,9 @@ public sealed class StoryBeat
 
     /// <summary>The other d20 when the check had advantage.</summary>
     public int? Other { get; set; }
+
+    /// <summary>The die the mayor spent inspiration to reroll, if they did.</summary>
+    public int? Rerolled { get; set; }
     public int Modifier { get; set; }
     public int Proficiency { get; set; }
     public int Total { get; set; }
@@ -256,6 +312,19 @@ public sealed class StoryState
     public OrderedMap<string, int> Precedents { get; } = new();
 
     public IEnumerable<Story> Open => All.Where(s => !s.Done);
+
+    /// <summary>Each deed's count already rewarded with inspiration.</summary>
+    public OrderedMap<string, int> Deeds { get; } = new();
+
+    /// <summary>Raids and assaults thrown back from the town.</summary>
+    public int Repelled { get; set; }
+
+    /// <summary>Days in a row at or above the contented-town Mandate.</summary>
+    public int ContentDays { get; set; }
+
+    /// <summary>The last check rolled on an everyday decision, and how many have been rolled (so the client shows each once).</summary>
+    public StoryBeat? LastCheck { get; set; }
+    public int Checks { get; set; }
 }
 
 /// <summary>
@@ -313,7 +382,7 @@ public static class Stories
         };
     }
 
-    /// <summary>The mayor's ability scores: the standard array in the background's order, +2 and +1 from it, then each improvement reached.</summary>
+    /// <summary>The mayor's ability scores: the standard array in the background's order, +2 and +1 from it, then each ability advance taken (at most 20).</summary>
     public static Abilities Scores(Town town)
     {
         var r = Rules(town);
@@ -326,33 +395,32 @@ public static class Stories
             a[bg.Abilities[0]] += 2;
             a[bg.Abilities[1]] += 1;
         }
-        foreach (int level in r.Improvements.Where(l => l <= m.Level))
-        {
-            int points = 2;
-            foreach (var ab in bg.Abilities)
-            {
-                while (points > 0 && a[ab] < 20)
-                {
-                    a[ab]++;
-                    points--;
-                }
-            }
-        }
+        foreach (var adv in m.Advances)
+            if (adv.StartsWith("ability:", StringComparison.Ordinal))
+                foreach (var ab in adv[8..].Split(','))
+                    a[ab] = Math.Min(20, a[ab] + 1);
         return a;
     }
 
     public static int ProficiencyBonus(int level) => 2 + (level - 1) / 4;
 
-    public static bool Proficient(Town town, string skill) => Rules(town).Background(town.Stories.Mayor.Background).Skills.Contains(skill);
+    public static bool Proficient(Town town, string skill) =>
+        Rules(town).Background(town.Stories.Mayor.Background).Skills.Contains(skill) || town.Stories.Mayor.Advances.Contains("skill:" + skill);
 
-    /// <summary>The mayor's bonus on a check: the ability's modifier, plus proficiency in the skill.</summary>
+    public static bool Expert(Town town, string skill) => town.Stories.Mayor.Advances.Contains("expertise:" + skill);
+
+    /// <summary>
+    /// The mayor's bonus on a check: the ability's modifier, plus proficiency in the skill (doubled with
+    /// expertise) and any feat's bonus on it.
+    /// </summary>
     public static (int Modifier, int Proficiency, string Ability) Bonus(Town town, string skill, string ability = "")
     {
         var sk = skill == "" ? null : Rules(town).Skill(skill);
         string ab = sk?.Ability ?? ability;
         if (ab == "") return (0, 0, "");
         int mod = Rng.Modifier(Scores(town)[ab]);
-        int prof = sk != null && Proficient(town, skill) ? ProficiencyBonus(town.Stories.Mayor.Level) : 0;
+        int prof = sk != null && Proficient(town, skill) ? ProficiencyBonus(town.Stories.Mayor.Level) * (Expert(town, skill) ? 2 : 1) : 0;
+        if (sk != null) prof += Sheet.Feats(town).Sum(f => f.Skills.GetValueOrDefault(skill));
         return (mod, prof, ab);
     }
 
@@ -388,7 +456,7 @@ public static class Stories
 
     private static string Article(string s) => (s.Length > 0 && "aeiou".Contains(char.ToLowerInvariant(s[0])) ? "an " : "a ") + s.ToLowerInvariant();
 
-    private static void GainXp(Town town, int xp)
+    internal static void GainXp(Town town, int xp)
     {
         var m = town.Stories.Mayor;
         m.Xp += xp;
@@ -398,7 +466,7 @@ public static class Stories
             m.Level++;
             bool improves = Rules(town).Improvements.Contains(m.Level);
             town.Log(LedgerCategory.Story, Importance.Notable,
-                $"Mayor {m.Name} is now a level {m.Level} {Title(town).ToLowerInvariant()}.{(ProficiencyBonus(m.Level) > ProficiencyBonus(m.Level - 1) ? $" Their proficiency bonus rises to +{ProficiencyBonus(m.Level)}." : "")}{(improves ? " Their best abilities improve." : "")}");
+                $"Mayor {m.Name} is now a level {m.Level} {Title(town).ToLowerInvariant()}.{(ProficiencyBonus(m.Level) > ProficiencyBonus(m.Level - 1) ? $" Their proficiency bonus rises to +{ProficiencyBonus(m.Level)}." : "")} They can {(improves ? "raise their abilities or take a feat" : "learn a skill or sharpen one")}.");
         }
     }
 
@@ -665,31 +733,22 @@ public static class Stories
     };
 
     /// <summary>Why a check would have advantage now, or "" if it would not.</summary>
-    public static string Advantage(Town town, Story s, StoryOption o, bool inspired)
+    public static string Advantage(Town town, Story s, StoryOption o)
     {
         if (!o.Rolls) return "";
-        if (inspired && town.Stories.Mayor.Inspiration > 0) return "inspiration";
         if (o.Aid == "hero" && s.HeroId is int h && Hero(town, h) is { IsAway: false } a) return $"{a.GivenName} lends a hand";
         var bg = Rules(town).Background(town.Stories.Mayor.Background);
         if (bg.Favoured != "" && bg.Favoured == DefOf(town, s).Source) return bg.Feature;
         return "";
     }
 
-    /// <summary>The chance the check succeeds (a natural 20 always does, a natural 1 never), with advantage if it has it.</summary>
-    public static double Chance(Town town, Story s, StoryOption o, bool inspired = false)
-    {
-        if (!o.Rolls) return 1;
-        var (mod, prof, _) = Bonus(town, o.Skill, o.Ability);
-        int faces = 0;
-        for (int f = 1; f <= 20; f++)
-            if (f == 20 || (f != 1 && f + mod + prof >= o.Dc)) faces++;
-        double p = faces / 20.0;
-        return Advantage(town, s, o, inspired) != "" ? 1 - (1 - p) * (1 - p) : p;
-    }
+    /// <summary>The chance the check succeeds, with advantage if it has it and an inspired reroll if one is asked for and in hand.</summary>
+    public static double Chance(Town town, Story s, StoryOption o, bool inspired = false) =>
+        !o.Rolls ? 1 : Sheet.Chance(town, o.Skill, o.Ability, o.Dc, Advantage(town, s, o) != "", inspired);
 
     /// <summary>
-    /// The mayor's answer to a story's current stage: option by index, with inspiration spent for
-    /// advantage if asked. Rolls the check, applies the outcome, and moves the story on or ends it.
+    /// The mayor's answer to a story's current stage: option by index, with inspiration spent to reroll
+    /// a failed check if asked. Rolls the check, applies the outcome, and moves the story on or ends it.
     /// </summary>
     public static StoryBeat? Resolve(Town town, int storyId, int option, bool inspired = false)
     {
@@ -700,35 +759,16 @@ public static class Stories
         if (Blocked(town, s, o) != null) return null;
         var m = town.Stories.Mayor;
         if (o.Cost > 0) town.Book(TreasuryAccount.Stories, -o.Cost);
-        var beat = new StoryBeat { Tick = town.Tick, Stage = stage.Id, Option = o.Label, Skill = o.Skill != "" ? o.Skill : o.Ability, Dc = o.Dc };
+        StoryBeat beat;
         StoryOutcome outcome;
         if (!o.Rolls)
         {
-            beat.Result = StoryResult.Certain;
+            beat = new StoryBeat { Tick = town.Tick, Skill = o.Skill != "" ? o.Skill : o.Ability, Dc = o.Dc, Result = StoryResult.Certain };
             outcome = o.Success;
         }
         else
         {
-            string adv = Advantage(town, s, o, inspired);
-            if (adv == "inspiration") m.Inspiration--;
-            var (mod, prof, _) = Bonus(town, o.Skill, o.Ability);
-            int die = town.Rng.D20();
-            if (adv != "")
-            {
-                int other = town.Rng.D20();
-                beat.Other = Math.Min(die, other);
-                die = Math.Max(die, other);
-            }
-            beat.Advantage = adv;
-            beat.Die = die;
-            beat.Modifier = mod;
-            beat.Proficiency = prof;
-            beat.Total = die + mod + prof;
-            beat.Result = die == 20 ? StoryResult.Critical
-                : die == 1 ? StoryResult.Fumble
-                : beat.Total >= o.Dc ? StoryResult.Success
-                : o.Partial != null && o.Dc - beat.Total <= Rules(town).PartialMargin ? StoryResult.Partial
-                : StoryResult.Failure;
+            beat = Sheet.Roll(town, o.Skill, o.Ability, o.Dc, Advantage(town, s, o), inspired, o.Partial != null);
             outcome = beat.Result switch
             {
                 StoryResult.Critical => o.Critical ?? o.Success,
@@ -739,8 +779,9 @@ public static class Stories
             };
             if (beat.Result is StoryResult.Critical or StoryResult.Success) m.Successes++;
             else m.Failures++;
-            if (die == 20 && m.Inspiration == 0) m.Inspiration = 1;
         }
+        beat.Stage = stage.Id;
+        beat.Option = o.Label;
         Conclude(town, s, beat, outcome);
         return beat;
     }
@@ -866,7 +907,7 @@ public static class Stories
                         Rumors.Hear(town, ss, Rumors.Occupants(town.Content, ss.Def), ss.Def.Tier, 70);
                     break;
                 case "inspiration":
-                    town.Stories.Mayor.Inspiration = Math.Clamp(town.Stories.Mayor.Inspiration + (int)v, 0, 1);
+                    Sheet.Inspire(town, (int)v, "");
                     break;
                 case "people":
                 {
@@ -912,7 +953,7 @@ public static class Stories
             var stage = StageOf(town, s);
             // Gold counts against an option: a sure thing that costs 100 gold weighs like an even chance.
             int best = -1;
-            double bestScore = double.MinValue, bestChance = 0;
+            double bestScore = double.MinValue;
             for (int i = 0; i < stage.Options.Count; i++)
             {
                 var o = stage.Options[i];
@@ -923,7 +964,6 @@ public static class Stories
                 {
                     best = i;
                     bestScore = score;
-                    bestChance = c;
                 }
             }
             if (best < 0)
@@ -931,7 +971,8 @@ public static class Stories
                 Lapse(town, s);
                 return;
             }
-            bool inspire = DefOf(town, s).Stakes == "high" && bestChance < 0.6 && town.Stories.Mayor.Inspiration > 0;
+            // Inspiration is only spent if the roll fails, so the stand-in keeps it for anything above low stakes.
+            bool inspire = DefOf(town, s).Stakes != "low";
             Resolve(town, s.Id, best, inspire);
         }
     }

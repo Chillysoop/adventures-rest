@@ -157,6 +157,9 @@ public static class Intel
     /// Buy a company's report: at its asking price, or haggled down (the company may turn the offer
     /// down, and sulk). Null when it is not for sale, the company won't deal, or the treasury is short.
     /// </summary>
+    /// <summary>The haggling DC at which a mayor with no bonus succeeds with the given chance.</summary>
+    public static int HaggleDc(double chance) => Math.Clamp(21 - (int)Math.Round(chance * 20), 2, 21);
+
     public static IntelDeal? Buy(Town town, int partyId, bool haggle)
     {
         var r = town.Content.World.Intel;
@@ -172,7 +175,9 @@ public static class Intel
         {
             double rel = Relation(town, party.Name, tellers);
             double chance = Math.Clamp((rel - r.RefuseBelow) / (100 - r.RefuseBelow), 0, 1) - (tellers[0].Has(Trait.Greedy) ? 0.2 : 0);
-            if (!town.Rng.Chance(chance))
+            // The mayor haggles in person: a Persuasion check, at a DC an untrained mayor would make that often.
+            var check = Sheet.Decide(town, "haggle", HaggleDc(chance));
+            if (check != null ? !Sheet.Succeeded(check) : !town.Rng.Chance(chance))
             {
                 Deal(town, party.Name, r.Insult);
                 company.Refusals++;

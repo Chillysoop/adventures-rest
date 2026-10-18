@@ -129,7 +129,7 @@ public partial class Main
         foot.AddThemeConstantOverride("separation", 10);
         if (m.Inspiration > 0)
         {
-            var inspire = new CheckBox { Text = "Spend inspiration for advantage", ButtonPressed = _inspire, FocusMode = FocusModeEnum.None, TooltipText = "Roll two d20s and keep the higher. A natural 20 earns inspiration back." };
+            var inspire = new CheckBox { Text = $"Reroll with Inspiration if it fails ({m.Inspiration} left)", ButtonPressed = _inspire, FocusMode = FocusModeEnum.None, TooltipText = "If the d20 misses, spend one Inspiration to throw it again. It is only spent on a miss. Running the town well and natural 20s earn it." };
             inspire.Toggled += on =>
             {
                 _inspire = on;
@@ -171,8 +171,8 @@ public partial class Main
             var (mod, prof, ab) = Stories.Bonus(t, o.Skill, o.Ability);
             string name = o.Skill != "" ? t.Content.Stories.Skill(o.Skill)?.Name ?? o.Skill : ab.ToUpperInvariant();
             int bonus = mod + prof;
-            string adv = Stories.Advantage(t, s, o, _inspire);
-            sub = $"{name} {(bonus >= 0 ? "+" : "−")}{Math.Abs(bonus)} ({ab.ToUpperInvariant()}{(prof > 0 ? ", proficient" : "")}) vs DC {o.Dc} · {Math.Round(Stories.Chance(t, s, o, _inspire) * 100)}%"
+            string adv = Stories.Advantage(t, s, o);
+            sub = $"{name} {(bonus >= 0 ? "+" : "−")}{Math.Abs(bonus)} ({ab.ToUpperInvariant()}{Edge(o.Skill)}) vs DC {o.Dc} · {Math.Round(Stories.Chance(t, s, o, _inspire) * 100)}%"
                 + (adv != "" ? $" · advantage: {adv}" : "") + (o.Cost > 0 ? $" · costs {Js.Str(o.Cost)}g" : "");
         }
         if (blocked != null) sub = $"{Ui.Cap(blocked)}.";
@@ -199,6 +199,19 @@ public partial class Main
         int id = s.Id;
         row.Pressed += () => Choose(id, index);
         return row;
+    }
+
+    /// <summary>What the mayor brings to a skill beyond the ability: training, expertise, a feat.</summary>
+    private string Edge(string skill)
+    {
+        var t = _sim.Town;
+        if (skill == "") return "";
+        var bits = new List<string>();
+        if (Stories.Expert(t, skill)) bits.Add("expert");
+        else if (Stories.Proficient(t, skill)) bits.Add("proficient");
+        foreach (var f in Sheet.Feats(t))
+            if (f.Skills.GetValueOrDefault(skill) is int n and > 0) bits.Add($"{f.Name} +{n}");
+        return bits.Count == 0 ? "" : ", " + string.Join(", ", bits);
     }
 
     /// <summary>Take an option: the sim rolls, and the card throws the die.</summary>
@@ -247,8 +260,8 @@ public partial class Main
             result.AddChild(w);
             string skill = t.Content.Stories.Skill(b.Skill)?.Name ?? b.Skill.ToUpperInvariant();
             string ab = (t.Content.Stories.Skill(b.Skill)?.Ability ?? b.Skill).ToUpperInvariant();
-            string math = $"{b.Die}{Signed(b.Modifier, ab)}{(b.Proficiency > 0 ? Signed(b.Proficiency, "proficiency") : "")} = [b]{b.Total}[/b] against DC {b.Dc}";
-            string adv = b.Advantage != "" ? $"  ·  advantage: {Ui.Esc(b.Advantage)}" : "";
+            string math = $"{b.Die}{Signed(b.Modifier, ab)}{(b.Proficiency > 0 ? Signed(b.Proficiency, "training") : "")} = [b]{b.Total}[/b] against DC {b.Dc}";
+            string adv = (b.Advantage != "" ? $"  ·  advantage: {Ui.Esc(b.Advantage)}" : "") + (b.Rerolled is int first ? $"  ·  rerolled a {first} with Inspiration" : "");
             result.AddChild(Ui.Rich($"[center]{Ui.C(Ui.Ink2, $"{Ui.Esc(skill)}: {math}{adv}")}[/center]", 13));
         }
         result.AddChild(Ui.Rich(LinkStory(s, b.Text), 15));
@@ -330,14 +343,32 @@ public partial class Main
         p.Card($"[font_size=19][b]{Ui.Esc(m.Name)}[/b][/font_size]\n{Ui.C(Ui.Ink2, $"Level {m.Level} {Ui.Esc(Stories.Title(t).ToLowerInvariant())} of {Ui.Esc(t.Name)} · {Ui.Esc(bg.Name.ToLowerInvariant())}")}", Ui.Gold);
         if (next is int n) p.Meter("Experience", 100.0 * (m.Xp - from) / Math.Max(1, n - from), $"{m.Xp}/{n}");
         else p.Meter("Experience", 100, $"{m.Xp}");
-        p.Note("You gain experience by seeing stories through. Levels raise your proficiency bonus, and levels 4 and 8 improve your best abilities.");
+        p.Note("You gain experience by seeing stories through. Each level lets you choose how you grow, and raises your proficiency bonus every four levels.");
+        if (Sheet.Pending(t) > 0) LevelUp(p);
 
         p.Heading("Abilities");
         var a = Stories.Scores(t);
         string sig = $"ab{a}";
         p.Add(sig, () => AbilityRow(a));
         int prof = Stories.ProficiencyBonus(m.Level);
-        p.Text($"{Tag($"Proficiency +{prof}", Ui.Ink)}   {Tag(m.Inspiration > 0 ? "Inspiration ●" : "Inspiration ○", m.Inspiration > 0 ? Ui.Gold : Ui.Ink2)}   {Ui.C(Ui.Ink2, $"[font_size=12]{m.Successes} won, {m.Failures} lost[/font_size]")}", 13);
+        int max = Sheet.InspirationMax(t);
+        string pips = new string('●', Math.Min(m.Inspiration, max)) + new string('○', Math.Max(0, max - m.Inspiration));
+        p.Text($"{Tag($"Proficiency +{prof}", Ui.Ink)}   {Tag($"Inspiration {pips}", m.Inspiration > 0 ? Ui.Gold : Ui.Ink2)}   {Ui.C(Ui.Ink2, $"[font_size=12]{m.Successes} won, {m.Failures} lost[/font_size]")}", 13);
+
+        p.Heading("Inspiration");
+        p.Note($"Spend one to reroll a failed d20 in a story. You hold up to {max}. Natural 20s earn it, and so does running the town well:");
+        foreach (var d in r.Deeds)
+        {
+            var (have, need) = Sheet.Progress(t, d);
+            string unit = d.Id == "content" ? $"days at {Js.Str(d.Threshold)}+ Mandate" : "";
+            p.Text($"{Ui.C(Ui.Gold, "✦")} {Ui.Esc(d.Name)}  {Ui.C(Ui.Ink2, $"[font_size=12]{(need > 1 ? $"{Math.Max(0, have)} of {need}{(unit != "" ? " " + unit : "")}" : "each one")}[/font_size]")}", 13);
+        }
+        var feats = Sheet.Feats(t);
+        if (feats.Count > 0)
+        {
+            p.Heading("Feats");
+            foreach (var f in feats) p.Text($"[b]{Ui.Esc(f.Name)}[/b]  {Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(f.Text)}[/font_size]")}", 13);
+        }
 
         p.Heading("Background");
         if (Stories.CanChooseBackground(t))
@@ -359,7 +390,7 @@ public partial class Main
         {
             var (mod, pr, ab) = Stories.Bonus(t, sk.Id);
             int bonus = mod + pr;
-            string dot = pr > 0 ? Ui.C(Ui.Gold, "●") : Ui.C(Ui.Line, "○");
+            string dot = Stories.Expert(t, sk.Id) ? Ui.C(Ui.Gold, "◆") : Stories.Proficient(t, sk.Id) ? Ui.C(Ui.Gold, "●") : Ui.C(Ui.Line, "○");
             return $"{dot} {(pr > 0 ? $"[b]{Ui.Esc(sk.Name)}[/b]" : Ui.Esc(sk.Name))} {Ui.C(Ui.Ink2, $"[font_size=11]{ab.ToUpperInvariant()}[/font_size]")}  [b]{(bonus >= 0 ? "+" : "−")}{Math.Abs(bonus)}[/b]";
         }).ToList();
         int half = (lines.Count + 1) / 2;
@@ -415,6 +446,91 @@ public partial class Main
             }
         }
         p.Commit();
+    }
+
+    /// <summary>The first ability picked for a +1/+1 improvement, until the second is.</summary>
+    private string? _abilityPick;
+
+    /// <summary>The level-up choice: two ability points or a feat at improvement levels, a skill or expertise at the others.</summary>
+    private void LevelUp(Pane p)
+    {
+        var t = _sim.Town;
+        var r = t.Content.Stories;
+        var (level, improvement) = Sheet.NextAdvance(t);
+        int pending = Sheet.Pending(t);
+        p.Card($"[font_size=16][b]Level {level}: choose how you grow[/b][/font_size]{(pending > 1 ? Ui.C(Ui.Ink2, $"  ({pending} choices waiting)") : "")}\n{Ui.C(Ui.Ink2, improvement ? "Raise two abilities by 1 (or one by 2), or take a feat." : $"Learn a new skill{(level >= r.ExpertiseFrom ? ", or become expert in one you know (double proficiency)" : "")}.")}", Ui.Gold);
+        if (improvement)
+        {
+            var scores = Stories.Scores(t);
+            string sig = $"lvab{level}{_abilityPick}{scores}";
+            p.Add(sig, () =>
+            {
+                var row = new HBoxContainer();
+                row.AddThemeConstantOverride("separation", 6);
+                foreach (var ab in Ability.All)
+                {
+                    string adv = _abilityPick == null ? "" : $"ability:{_abilityPick},{ab}";
+                    bool ok = _abilityPick == null ? scores[ab] < 20 : Sheet.Refuse(t, adv) == null;
+                    var b = new Button { Text = $"{ab.ToUpperInvariant()} {scores[ab]}{(_abilityPick == ab ? " +1" : "")}", Disabled = !ok, FocusMode = FocusModeEnum.None, SizeFlagsHorizontal = SizeFlags.ExpandFill, ThemeTypeVariation = _abilityPick == ab ? "Post" : "" };
+                    string pick = ab;
+                    b.Pressed += () =>
+                    {
+                        if (_abilityPick == null) _abilityPick = pick;
+                        else
+                        {
+                            Act(() => _sim.AdvanceMayor($"ability:{_abilityPick},{pick}"));
+                            _abilityPick = null;
+                        }
+                        _dirty = true;
+                    };
+                    row.AddChild(b);
+                }
+                return row;
+            });
+            if (_abilityPick != null) p.Note($"+1 {_abilityPick.ToUpperInvariant()}. Pick a second ability, or {_abilityPick.ToUpperInvariant()} again for +2.");
+            foreach (var f in r.Feats)
+            {
+                string id = "feat:" + f.Id;
+                bool ok = Sheet.Refuse(t, id) == null;
+                p.Row($"[b]{Ui.Esc(f.Name)}[/b]\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(f.Text)}[/font_size]")}", ("Take", ok, false, () => Act(() => _sim.AdvanceMayor(id))));
+            }
+            return;
+        }
+        var choices = r.Skills
+            .Select(sk => (Skill: sk, Advance: Stories.Proficient(t, sk.Id) ? "expertise:" + sk.Id : "skill:" + sk.Id))
+            .Where(c => Sheet.Refuse(t, c.Advance) == null)
+            .ToList();
+        p.Add($"lvsk{level}{string.Join("|", choices.Select(c => c.Advance))}", () =>
+        {
+            var grid = new GridContainer { Columns = 3 };
+            grid.AddThemeConstantOverride("h_separation", 6);
+            grid.AddThemeConstantOverride("v_separation", 6);
+            foreach (var (sk, adv) in choices)
+            {
+                bool expert = adv.StartsWith("expertise:", StringComparison.Ordinal);
+                var b = new Button { Text = $"{(expert ? "◆ " : "+ ")}{sk.Name}", FocusMode = FocusModeEnum.None, SizeFlagsHorizontal = SizeFlags.ExpandFill, TooltipText = expert ? $"Become expert in {sk.Name}: double proficiency." : $"Learn {sk.Name} ({sk.Ability.ToUpperInvariant()})." };
+                string a = adv;
+                b.Pressed += () => Act(() => _sim.AdvanceMayor(a));
+                grid.AddChild(b);
+            }
+            return grid;
+        });
+    }
+
+    /// <summary>The newest everyday-decision check shown, so each roll toasts once.</summary>
+    private int _checksSeen = -1;
+
+    /// <summary>A d20 rolled on one of the player's decisions shows as a toast.</summary>
+    private void SyncChecks()
+    {
+        var st = _sim.Town.Stories;
+        if (_checksSeen < 0 || _checksSeen > st.Checks) _checksSeen = st.Checks;
+        if (st.Checks == _checksSeen || st.LastCheck is not { } b) return;
+        _checksSeen = st.Checks;
+        if (_sim.Options.AutoStories) return;
+        var r = _sim.Town.Content.Stories;
+        string skill = r.Skill(b.Skill)?.Name ?? b.Skill;
+        Toast($"d20 {skill}: {b.Die} → {b.Total} vs DC {b.Dc}, {Stories.Word(b.Result)}.{(b.Text != "" ? " " + b.Text : "")}");
     }
 
     private static Control SkillCell(string bbcode)

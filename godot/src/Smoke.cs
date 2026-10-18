@@ -94,7 +94,19 @@ public partial class Main
             case 21:
                 if (_beat == null || _beatResult is not { Visible: true }) throw new InvalidOperationException("the roll did not land");
                 CloseStory();
-                return 5;
+                // A level up on the Mayor tab: one skill-level choice and one improvement.
+                _sim.Town.Stories.Mayor.Level = Math.Max(_sim.Town.Stories.Mayor.Level, 4);
+                SetTab(Tab.Mayor);
+                return 10;
+            case 22:
+                for (int i = 0; i < 6 && Sheet.Pending(_sim.Town) > 0; i++)
+                {
+                    var (_, improvement) = Sheet.NextAdvance(_sim.Town);
+                    string adv = improvement ? "feat:lucky" : _sim.Town.Content.Stories.Skills.Select(s => "skill:" + s.Id).First(a => Sheet.Refuse(_sim.Town, a) == null);
+                    if (!_sim.AdvanceMayor(adv)) throw new InvalidOperationException($"the mayor could not take {adv}");
+                    _dirty = true;
+                }
+                return 10;
             default:
                 var t = _sim.Town;
                 GD.Print($"SMOKE OK seed={_sim.Options.Seed} day={t.Day} population={t.Population} buildings={t.Buildings.Count} outcome={t.Outcome?.ToString() ?? "none"}");

@@ -83,6 +83,10 @@ public sealed class Options
     public string? Story, Background;
     public int? StoryPick;
 
+    /// <summary>--mayor-level N raises the mayor to level N (advances left to choose); --advance A spends one (repeatable); --inspiration N sets it. For shots.</summary>
+    public int? MayorLevel, Inspiration;
+    public List<string> Advances = [];
+
     public string? DecorTool;
     public double[]? DecorAt;
 
@@ -141,6 +145,9 @@ public sealed class Options
                 case "--story": o.Story = Next(); break;
                 case "--story-pick": o.StoryPick = int.Parse(Next()); break;
                 case "--background": o.Background = Next(); break;
+                case "--mayor-level": o.MayorLevel = int.Parse(Next()); break;
+                case "--advance": o.Advances.Add(Next()); break;
+                case "--inspiration": o.Inspiration = int.Parse(Next()); break;
                 case "--decor-at": o.DecorAt = Next().Split(',').Select(v => double.Parse(v, System.Globalization.CultureInfo.InvariantCulture)).ToArray(); break;
                 case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--buy":
                     o.Script.Add((args[i][2..], Next()));

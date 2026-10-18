@@ -61,11 +61,29 @@ public class StoriesTests
         Assert.Equal(8, a.Int);
         Assert.Equal((3, 2, Ability.Str), Stories.Bonus(t, "athletics"));
         Assert.Equal((-1, 0, Ability.Int), Stories.Bonus(t, "arcana"));
+        // Levels bring advances the player chooses: abilities or a feat at 4 and 8, skills at the others.
         t.Stories.Mayor.Level = 4;
-        Assert.Equal(19, Stories.Scores(t).Str);
-        t.Stories.Mayor.Level = 8;
-        Assert.Equal(20, Stories.Scores(t).Str);
+        Assert.Equal(3, Sheet.Pending(t));
+        Assert.NotNull(Sheet.Refuse(t, "ability:str,str"));
+        Assert.True(Sheet.Advance(t, "skill:persuasion"));
+        Assert.Equal((1, 2, Ability.Cha), Stories.Bonus(t, "persuasion"));
+        Assert.True(Sheet.Advance(t, "expertise:athletics"));
+        Assert.Equal((3, 4, Ability.Str), Stories.Bonus(t, "athletics"));
+        Assert.Null(Sheet.Refuse(t, "feat:lucky"));
+        Assert.NotNull(Sheet.Refuse(t, "ability:str,str,str"));
+        Assert.NotNull(Sheet.Refuse(t, "skill:arcana"));
+        Assert.True(Sheet.Advance(t, "ability:str,con"));
+        Assert.Equal(18, Stories.Scores(t).Str);
         Assert.Equal(16, Stories.Scores(t).Con);
+        Assert.Equal(0, Sheet.Pending(t));
+        Assert.False(Sheet.Advance(t, "skill:arcana"));
+        t.Stories.Mayor.Level = 8;
+        Assert.True(Sheet.Advance(t, "skill:arcana"));
+        Assert.True(Sheet.Advance(t, "skill:history"));
+        Assert.True(Sheet.Advance(t, "skill:insight"));
+        Assert.True(Sheet.Advance(t, "feat:silver-tongue"));
+        Assert.Equal((1, 3 + 2, Ability.Cha), Stories.Bonus(t, "persuasion"));
+        Assert.False(Sheet.Advance(t, "feat:silver-tongue"));
         Assert.Equal(3, Stories.ProficiencyBonus(5));
         Assert.False(Stories.ChooseBackground(t, "no-such-background"));
     }
@@ -136,7 +154,7 @@ public class StoriesTests
     }
 
     [Fact]
-    public void AdvantageImprovesTheOddsAndSpendsInspiration()
+    public void InspirationRerollsAMissAndIsSpentOnlyThen()
     {
         var sim = Player();
         sim.RunDays(3);
@@ -146,13 +164,83 @@ public class StoriesTests
         var o = Stories.StageOf(t, s).Options[0];
         double plain = Stories.Chance(t, s, o);
         Assert.Equal(plain, Stories.Chance(t, s, o, inspired: true));
-        t.Stories.Mayor.Inspiration = 1;
+        t.Stories.Mayor.Inspiration = 3;
         Assert.Equal(1 - (1 - plain) * (1 - plain), Stories.Chance(t, s, o, inspired: true), 9);
         var beat = sim.ResolveStory(s.Id, 0, inspired: true)!;
-        Assert.Equal("inspiration", beat.Advantage);
-        Assert.NotNull(beat.Other);
-        Assert.True(beat.Die >= beat.Other);
-        Assert.Equal(beat.Die == 20 ? 1 : 0, t.Stories.Mayor.Inspiration);
+        int spent = beat.Rerolled != null ? 1 : 0;
+        Assert.Equal(Math.Min(3, 3 - spent + (beat.Die == 20 ? 1 : 0)), t.Stories.Mayor.Inspiration);
+        // Over many stories, a reroll only ever follows a miss.
+        for (int i = 0; i < 40; i++)
+        {
+            t.Stories.Mayor.Inspiration = 1;
+            var st = Stories.Open(t, "shrine-omen") ?? Stories.Open(t, "old-heirloom");
+            if (st == null) continue;
+            var b = Stories.Resolve(t, st.Id, 0, inspired: true)!;
+            if (b.Rerolled is int first) Assert.True(first == 1 || first + b.Modifier + b.Proficiency < b.Dc);
+            else Assert.Equal(b.Die == 20 ? 2 : 1, t.Stories.Mayor.Inspiration);
+        }
+    }
+
+    [Fact]
+    public void FeatsChangeTheDice()
+    {
+        var t = Player().Town;
+        Assert.True(Stories.ChooseBackground(t, "soldier"));
+        t.Stories.Mayor.Level = 4;
+        Assert.True(Sheet.Advance(t, "skill:persuasion"));
+        Assert.True(Sheet.Advance(t, "skill:insight"));
+        double before = Sheet.Chance(t, "athletics", "", 25, false, false);
+        Assert.True(Sheet.Advance(t, "feat:practised-hand"));
+        // Trained skills lose their natural 1s; an untrained one keeps them.
+        Assert.Equal(before, Sheet.Chance(t, "athletics", "", 25, false, false));
+        Assert.Equal(1.0, Sheet.Chance(t, "athletics", "", 2, false, false), 9);
+        Assert.Equal(18 / 20.0, Sheet.Chance(t, "arcana", "", 2, false, false), 9);
+        Assert.Equal(1.0, Sheet.Chance(t, "athletics", "", 9, false, false), 9);
+        t.Stories.Mayor.Level = 8;
+        Assert.True(Sheet.Advance(t, "skill:history"));
+        Assert.True(Sheet.Advance(t, "skill:arcana"));
+        Assert.True(Sheet.Advance(t, "skill:nature"));
+        Assert.Equal(3, Sheet.InspirationMax(t));
+        Assert.True(Sheet.Advance(t, "feat:inspiring-leader"));
+        Assert.Equal(4, Sheet.InspirationMax(t));
+        Assert.Equal(1, t.Stories.Mayor.Inspiration);
+    }
+
+    [Fact]
+    public void RunningTheTownWellEarnsInspiration()
+    {
+        var sim = Player();
+        sim.RunDays(2);
+        var t = sim.Town;
+        Assert.Equal(0, t.Stories.Mayor.Inspiration);
+        Sheet.Repelled(t);
+        Sheet.Repelled(t);
+        sim.RunDays(1);
+        Assert.Equal(1, t.Stories.Mayor.Inspiration);
+        Assert.Contains(t.Ledger.Entries, e => e.Category == LedgerCategory.Story && e.Text.Contains("inspired by the town standing firm"));
+        var content = t.Content.Stories.Deeds.First(d => d.Id == "content");
+        Assert.Equal(content.Every, Sheet.Progress(t, content).Need);
+        // It stops at what the mayor can hold.
+        for (int i = 0; i < 20; i++) Sheet.Repelled(t);
+        sim.RunDays(1);
+        Assert.Equal(Sheet.InspirationMax(t), t.Stories.Mayor.Inspiration);
+    }
+
+    [Fact]
+    public void EverydayDecisionsRollTheMayorsDice()
+    {
+        var sim = Player();
+        var t = sim.Town;
+        int checks = t.Stories.Checks;
+        var b = Sheet.Decide(t, "motion")!;
+        Assert.Equal(checks + 1, t.Stories.Checks);
+        Assert.Same(b, t.Stories.LastCheck);
+        Assert.Equal("persuasion", b.Skill);
+        Assert.Contains(t.Ledger.Entries, e => e.Text.StartsWith($"Mayor {t.Stories.Mayor.Name} rolls Persuasion"));
+        Assert.Equal(Sheet.Succeeded(b) ? (b.Result == StoryResult.Critical ? 2.0 : 1.0) : 0, Sheet.Gain(t, "motion", b));
+        Assert.Null(Sheet.Decide(t, "no-such-decision"));
+        Assert.Equal(11, Intel.HaggleDc(0.5));
+        Assert.Equal(21, Intel.HaggleDc(0));
     }
 
     [Fact]
@@ -164,6 +252,7 @@ public class StoriesTests
         Assert.True(t.Stories.All.Count >= 10, $"only {t.Stories.All.Count} stories in 200 days");
         Assert.True(t.Stories.All.Count(s => s.Done) >= t.Stories.All.Count - 2);
         Assert.True(t.Stories.Mayor.Level >= 2);
+        Assert.Equal(0, Sheet.Pending(t));
         Assert.True(t.Stories.All.Select(s => s.Def).Distinct().Count() >= 6);
     }
 }

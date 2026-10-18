@@ -974,6 +974,7 @@ public static class Menaces
             var champion = town.Heroes.Where(a => !a.IsAway).OrderByDescending(x => x.Hero!.Level).ThenBy(x => x.Id).FirstOrDefault();
             string by = champion != null ? $"{champion.Name} and the watch" : "the watch";
             town.Log(LedgerCategory.War, Importance.Notable, Saga.Cap(Saga.Fill(town, r.Repelled, m).Replace("{where}", place).Replace("{by}", by)), champion != null ? [champion.Id] : []);
+            Sheet.Repelled(town);
             town.Tension += 6;
             return;
         }
@@ -1157,6 +1158,7 @@ public static class Menaces
         }
         m.Power *= r.AssaultRetreat;
         town.Log(LedgerCategory.War, Importance.Major, $"{Saga.Cap(Saga.Fill(town, f.Repelled, m))} (Chronicle {town.Chronicles.Count})", champions.Select(a => a.Id).ToList());
+        Sheet.Repelled(town);
     }
 
     private static void Chronicle(Town town, List<string> lines, ExpeditionOutcome outcome, List<Agent> champions)
@@ -1305,7 +1307,7 @@ public static class Menaces
             town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, am.Demand, m)));
             return;
         }
-        if (town.Tick >= answer) Answer(town, m.Id, false);
+        if (town.Tick >= answer) Answer(town, m.Id, false, answered: false);
     }
 
     /// <summary>A would-be overlord whose demand for fealty waits on the town's answer.</summary>
@@ -1313,7 +1315,8 @@ public static class Menaces
         town.Saga.Menaces.Where(m => m.Alive && m.DemandDueTick != null && !m.Refused && town.Saga.YokeId != m.Id).OrderBy(m => m.Id).FirstOrDefault();
 
     /// <summary>The mayor answers a demand for fealty: bend the knee and pay tribute, or refuse and face its host.</summary>
-    public static bool Answer(Town town, int menaceId, bool submit)
+    /// <summary>Answer a menace's demand; answered (not left to lapse), the mayor rolls to kneel with dignity or to refuse so it gives them pause.</summary>
+    public static bool Answer(Town town, int menaceId, bool submit, bool answered = true)
     {
         if (menaceId < 1 || menaceId > town.Saga.Menaces.Count) return false;
         var m = town.Saga.Menaces[menaceId - 1];
@@ -1324,6 +1327,8 @@ public static class Menaces
         {
             Saga.Swear(town, m);
             town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, am.Submitted, m)));
+            // Kneeling with dignity keeps the town's respect.
+            if (answered) town.Mandate = Math.Min(100, town.Mandate + Sheet.Gain(town, "submit", Sheet.Decide(town, "submit")));
             return true;
         }
         m.Refused = true;
@@ -1331,6 +1336,7 @@ public static class Menaces
         m.NextStrikeTick = Math.Min(m.NextStrikeTick, town.Tick + 2 * SimTime.HoursPerDay);
         if (m.Stage >= MenaceStage.Dominion) m.NextAssaultTick = town.Tick;
         town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, am.Refused, m)));
+        if (answered) m.Power *= 1 - Sheet.Gain(town, "refuse", Sheet.Decide(town, "refuse"));
         return true;
     }
 
