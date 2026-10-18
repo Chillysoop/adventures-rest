@@ -21,7 +21,7 @@
     "produces": { "Ale": 0.55, "Food": 0.45 }, "profession": "farmer",
     "blurb": "Barley and hop poles, malted and brewed on the farm into ale for the taverns." },
   { "id": "orchard", "name": "Orchard", "zone": "Farmland", "tier": "village", "cost": 70, "timber": 6, "buildHours": 65, "jobs": 3, "wage": 0.7,
-    "produces": { "Food": 0.85, "Ale": 0.3 }, "profession": "orchardist",
+    "produces": { "Food": 0.85, "Ale": 0.3 }, "profession": "farmer",
     "blurb": "Apple and pear trees: little in spring, a great crop of fruit and cider in autumn." },
   { "id": "lumber_camp", "name": "Lumber Camp", "zone": "Industry", "cost": 45, "timber": 0, "buildHours": 50, "jobs": 3, "wage": 0.7,
     "produces": { "Timber": 0.8 }, "profession": "woodcutter" },
