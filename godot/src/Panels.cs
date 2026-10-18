@@ -18,20 +18,16 @@ public partial class Main
     {
         var p = _panes[Tab.War];
         var t = _sim.Town;
-        var d = t.Defenses;
         var stage = Stages[t.Enemy.Stage];
         double? est = Threat.EstimatedStrength(t);
         double def = Threat.Defense(t);
         double scale = Math.Max(Math.Max(def, est ?? 0), 1);
         var camp = t.Sites.FirstOrDefault(s => s.Def.Id == t.Content.Enemy.Outpost.Id);
-        double palCost = Threat.BuildCost(t, DefenseWork.Palisade);
-        double towCost = Threat.BuildCost(t, DefenseWork.Tower);
-        int maxTowers = t.Content.Enemy.Tower.Max;
         int home = t.Heroes.Count(a => !a.IsAway);
 
         p.Begin();
         string arrival = t.Enemy.Stage == ThreatStage.Marching && t.Enemy.ArrivalTick is int at
-            ? "\n" + Ui.C(Ui.Bad, $"[b]They reach the walls in {Ui.Days((int)Math.Ceiling((at - t.Tick) / 24.0))}. Heroes in town will face the warlord.[/b]")
+            ? "\n" + Ui.C(Ui.Bad, $"[b]They reach the {Garrison.Place(t, t.Enemy.Approach)} in {Ui.Days((int)Math.Ceiling((at - t.Tick) / 24.0))}. Call the watch to arms there; heroes in town will face the warlord.[/b]")
             : "";
         p.Card($"[font_size=17][b]{Ui.Esc(Ui.Cap(t.Content.Enemy.Name))}[/b][/font_size]\n{stage.Text}{arrival}");
         p.Heading("Strength");
@@ -39,20 +35,9 @@ public partial class Main
         else p.Text($"{Ui.C(Ui.Ink2, "Warband")}    [i]Unknown. Nobody has seen it yet.[/i]", 13);
         p.Meter("Your defence", 100 * def / scale, $"{Math.Round(def)}");
         p.Note($"Defence counts the watch, heroes in town, a militia of townsfolk, and the walls (×{Threat.Fortification(t):0.00}). The warband grows while dungeons go uncleared.");
-        p.Heading("Fortifications");
-        if (d.Palisade == PalisadeState.Built) p.Row($"[b]Palisade[/b]\n{Ui.C(Ui.Ink2, $"[font_size=12]Multiplies your defence by {t.Content.Enemy.Defense.Palisade}.[/font_size]")}  {Tag("Built", Ui.Good)}");
-        else if (d.Palisade == PalisadeState.Building)
-            p.Row($"[b]Palisade[/b]  {Tag($"Building, {Ui.Days((int)Math.Ceiling(((d.PalisadeReadyTick ?? t.Tick) - t.Tick) / 24.0))} left", Ui.Gold)}\n{Ui.C(Ui.Ink2, $"[font_size=12]Multiplies your defence by {t.Content.Enemy.Defense.Palisade}.[/font_size]")}");
-        else
-            p.Row($"[b]Palisade[/b]\n{Ui.C(Ui.Ink2, $"[font_size=12]Multiplies your defence by {t.Content.Enemy.Defense.Palisade}.[/font_size]")}",
-                ($"Build {Math.Round(palCost)}g", t.Treasury >= palCost, true, () => Act(() => _sim.BuildDefense(DefenseWork.Palisade))));
-        string towers = $"[b]Watchtowers[/b]\n{Ui.C(Ui.Ink2, $"[font_size=12]Each adds {Math.Round(t.Content.Enemy.Defense.PerTower * 100)}% more, and the town sees farther into the fog.[/font_size]")}";
-        if (d.Palisade != PalisadeState.Built) p.Row($"{towers}  {Tag("Needs the palisade")}");
-        else if (d.Towers + d.TowersBuilding.Count >= maxTowers) p.Row($"{towers}  {Tag($"{d.Towers} of {maxTowers}", Ui.Good)}");
-        else
-            p.Row($"{towers}  {Tag($"{d.Towers}{(d.TowersBuilding.Count > 0 ? $" (+{d.TowersBuilding.Count} building)" : "")} of {maxTowers}")}",
-                ($"Build {Math.Round(towCost)}g", t.Treasury >= towCost, true, () => Act(() => _sim.BuildDefense(DefenseWork.Tower))));
-        p.Row($"[b]Watch[/b]  {Tag($"{t.Watch} watchmen")}\n{Ui.C(Ui.Ink2, "[font_size=12]Hired through the Captain's motions in the Council.[/font_size]")}");
+        RenderGuard(p, t);
+        RenderWorks(p, t);
+        p.Heading("Heroes");
         p.Row($"[b]Heroes in town[/b]  {Tag(home.ToString())}\n{Ui.C(Ui.Ink2, "[font_size=12]Only heroes can kill the warlord when he comes.[/font_size]")}");
         if (camp != null && !camp.Cleared) p.Note("The war camp feeds the warband. Post a bounty on it in the Bounties tab to strike first.");
         RenderSellswords(p, t);
@@ -455,6 +440,9 @@ public partial class Main
         if (sel == null) p.Note("Click a building, a person or a site on the map.");
         else if (sel.Kind == "agent") InspectAgent(p, t, t.Agent(sel.Id));
         else if (sel.Kind == "building") InspectBuilding(p, t, t.Building(sel.Id));
+        else if (sel.Kind == "wall") InspectWall(p, t, sel.Id);
+        else if (sel.Kind == "tower") InspectTower(p, t, sel.Id);
+        else if (sel.Kind == "flag") InspectFlag(p, t, sel.Id);
         else if (Quests.Site(t, sel.SiteId) is SiteState s) InspectSite(p, t, s);
         p.Commit();
     }
