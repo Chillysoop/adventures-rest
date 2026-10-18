@@ -315,7 +315,7 @@ public static class Loyalty
         s.FiefId = null;
     }
 
-    private static void Strip(Agent a)
+    internal static void Strip(Agent a)
     {
         var s = a.Hero!;
         s.Knight = false;

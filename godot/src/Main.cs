@@ -150,8 +150,10 @@ public partial class Main : Control
 
     private void NewTown(int seed, bool autoplay = false)
     {
-        // With --autoplay the stand-in mayor keeps playing, for demos and screenshots.
-        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay }));
+        RememberLegends();
+        // With --autoplay the stand-in mayor keeps playing, for demos and screenshots; only a player's towns meet old legends.
+        var legends = autoplay ? [] : ProfileLegends();
+        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay, Legends = legends }));
     }
 
     /// <summary>Show a town: a new one, or one loaded from a save.</summary>
@@ -484,6 +486,7 @@ public partial class Main : Control
         var t = _sim.Town;
         _endShown = true;
         SetSpeed(0);
+        RememberLegends();
         bool won = t.Outcome == Outcome.Victory;
         foreach (var c in _endOverlay.GetChildren()) c.QueueFree();
         var center = new CenterContainer();
