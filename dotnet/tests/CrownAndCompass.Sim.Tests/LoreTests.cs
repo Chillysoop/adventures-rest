@@ -27,6 +27,7 @@ public class LoreTests
         foreach (var f in C.Library.Factions) HasLineage("faction:" + f.Id);
         foreach (var b in C.Library.Backgrounds.Where(b => b.Source == "crown-and-compass")) HasLineage("background:" + b.Id);
         foreach (var m in C.Mercenaries.Companies) HasLineage("mercenary:" + m.Id);
+        foreach (var i in C.Institutions.Institutions) HasLineage("institution:" + i.Id);
     }
 
     [Fact]
@@ -53,6 +54,7 @@ public class LoreTests
                     "faction" => C.Library.Faction(parts[1]) != null,
                     "background" => C.Library.Background(parts[1]) != null,
                     "mercenary" => C.Mercenaries.Companies.Any(m => m.Id == parts[1]),
+                    "institution" => C.Institutions.Def(parts[1]) != null,
                     _ => false,
                 };
                 Assert.True(real, $"{l.Id}: {s} is not in the game");
