@@ -78,6 +78,15 @@ public sealed record HousingDef
     public double Tax { get; init; }
 }
 
+/// <summary>Desire paths (city.json "paths"): wear per walk, how much a day's walks can wear, what's left of wear by the next day, and the wear that makes a lane.</summary>
+public sealed record PathRules
+{
+    public double WearPerTrip { get; init; } = 0.008;
+    public int MostTrips { get; init; } = 20;
+    public double Fade { get; init; } = 0.97;
+    public double Lay { get; init; } = 1.2;
+}
+
 /// <summary>How the town grows (content/game/city.json).</summary>
 public sealed record CityRules
 {
@@ -95,6 +104,9 @@ public sealed record CityRules
 
     /// <summary>Each service id as a sentence names it ("a bathhouse").</summary>
     public IReadOnlyDictionary<string, string> Services { get; init; } = new Dictionary<string, string>();
+
+    /// <summary>How feet wear paths to buildings off the streets.</summary>
+    public PathRules Paths { get; init; } = new();
 
     /// <summary>Days a house must be content (at UpgradeAt or better) before it grows.</summary>
     public int UpgradeDays { get; init; } = 6;
@@ -497,6 +509,8 @@ public static class City
         var next = town.Content.Building(h.Next);
         if (Locked(town, next) is { } why) return why;
         if (!Allows(town, next, town.Lot(house.LotId))) return $"a {next.Name.ToLowerInvariant()} can't stand in the {WardOf(town, town.Lot(house.LotId)).Name}";
+        // The town's own houses are let to those who can't build: they grow roomier, never grand.
+        if (house.OwnerId == null && next.Wards.Count > 0) return "the town lets its houses to working folk, not as manors";
         var nh = Housing(town, next.Id);
         if (nh != null && Prospect(town, house, nh) < town.Content.City.UpgradeAt) return "the town can't yet give a bigger house what it wants";
         return null;

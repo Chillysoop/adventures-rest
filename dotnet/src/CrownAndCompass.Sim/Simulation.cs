@@ -84,6 +84,7 @@ public sealed class Simulation
         Brain.Daily(t);
         Economy.Daily(t);
         City.Daily(t, Options.AutoMayor && Options.AutoPlanning);
+        Streets.Wear(t);
         Property.Daily(t);
         Population.DailyDepartures(t);
         Population.DailyArrivals(t);

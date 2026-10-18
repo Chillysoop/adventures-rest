@@ -58,7 +58,7 @@ public static class Land
                     if (plan.Taken[i] != 0 || plan.Zones[i] == (byte)zone) continue;
                     if (!overwrite && plan.Zones[i] != (byte)Zone.None) continue;
                     // Only ground in a ward the town has laid out takes paint.
-                    if (zone != Zone.None && !City.IsOpen(town, (cx + 0.5) / Res, (cy + 0.5) / Res)) continue;
+                    if (zone != Zone.None && !Open(town, i)) continue;
                     plan.Zones[i] = (byte)zone;
                     n++;
                 }
@@ -66,6 +66,7 @@ public static class Land
         if (n > 0)
         {
             plan.Changed();
+            plan.Painted++;
             // New paint far from any street gets one.
             if (zone != Zone.None) Streets.Serve(town);
         }
@@ -78,7 +79,7 @@ public static class Land
         var plan = town.Plan;
         int n = 0;
         for (int i = 0; i < plan.Zones.Length; i++)
-            if (plan.Zones[i] == (byte)Zone.None && plan.Taken[i] == 0 && City.IsOpen(town, (i % Size + 0.5) / Res, (i / Size + 0.5) / Res)) n++;
+            if (plan.Zones[i] == (byte)Zone.None && plan.Taken[i] == 0 && Open(town, i)) n++;
         return n;
     }
 
@@ -101,14 +102,16 @@ public static class Land
         var probe = town.Content.Buildings.Where(d => d.Zone == zone && d.Buildable && d.Wards.Count == 0).OrderByDescending(d => Footprint(d).W * Footprint(d).D).ThenBy(d => d.Id, StringComparer.Ordinal).FirstOrDefault()
             ?? new BuildingDef { Id = "", Name = "", Zone = zone };
         var plan = town.Plan;
+        var (w, d) = Footprint(probe);
         var marked = new List<int>();
         int n = 0;
-        for (; n < cap; n++)
+        // Each probe takes the first spot down the street list that it fits, as Find would, so one walk down the list counts them all.
+        foreach (var (_, x, y, yaw) in Streets.Fronts(town, d, zone))
         {
-            var lot = Find(town, probe, zone);
-            if (lot == null) break;
-            plan.Changed();
-            foreach (int i in Cells(lot.X, lot.Y, lot.W, lot.D, lot.Yaw))
+            if (n >= cap) break;
+            if (!City.Allows(town, probe, x, y) || !Fits(town, x, y, w, d, yaw, zone)) continue;
+            n++;
+            foreach (int i in Cells(x, y, w, d, yaw))
                 if (i >= 0)
                 {
                     plan.Taken[i] = -1;
@@ -116,9 +119,6 @@ public static class Land
                 }
         }
         foreach (int i in marked) plan.Taken[i] = 0;
-        // The probes are gone: forget what was found around them.
-        plan.Changed();
-        plan.Fresh();
         plan.Plots[zone] = n;
         return n;
     }
@@ -160,6 +160,9 @@ public static class Land
     public static bool Fits(Town town, double x, double y, int w, int d, double yaw, Zone? zone)
     {
         var plan = town.Plan;
+        // Most spots fail at the middle: try that first.
+        int cx = (int)(x * Res), cy = (int)(y * Res), mid = cy * Size + cx;
+        if (cx < 0 || cy < 0 || cx >= Size || cy >= Size || plan.Taken[mid] != 0 || plan.Paved[mid] != 0 || (zone is Zone zm && plan.Zones[mid] != (byte)zm)) return false;
         foreach (int i in Cells(x, y, w, d, yaw))
         {
             if (i < 0 || plan.Taken[i] != 0 || plan.Paved[i] != 0) return false;
@@ -187,10 +190,25 @@ public static class Land
         return spot == null ? null : new Lot(town.Lots.Count, spot.X, spot.Y) { W = w, D = d, Yaw = spot.Yaw, Zone = zone ?? Zone.Civic };
     }
 
+    /// <summary>
+    /// As <see cref="Find"/>, but in the cheapest ward to live in that has room: where the council puts the houses it lets
+    /// to working folk, so they can pay the rent.
+    /// </summary>
+    public static Lot? FindCheapest(Town town, BuildingDef def, Zone zone)
+    {
+        var (w, d) = Footprint(def);
+        var fronts = Streets.Fronts(town, d, zone);
+        foreach (double rent in town.Content.City.Wards.Select(x => x.Rent).Distinct().Order())
+            foreach (var (_, x, y, yaw) in fronts)
+                if (WardAt(town, (int)(y * Res) * Size + (int)(x * Res)).Rent == rent && City.Allows(town, def, x, y) && Fits(town, x, y, w, d, yaw, zone))
+                    return new Lot(town.Lots.Count, x, y) { W = w, D = d, Yaw = yaw, Zone = zone };
+        return null;
+    }
+
     private static Lot? Search(Town town, BuildingDef def, int w, int d, Zone? zone)
     {
         // Fronting on a street, the way the townsfolk build.
-        foreach (var (_, x, y, yaw) in Streets.Frontage(town, d, zone).OrderBy(c => c.Score).ThenBy(c => c.X).ThenBy(c => c.Y))
+        foreach (var (_, x, y, yaw) in Streets.Fronts(town, d, zone))
             if (City.Allows(town, def, x, y) && Fits(town, x, y, w, d, yaw, zone))
                 return new Lot(town.Lots.Count, x, y) { W = w, D = d, Yaw = yaw, Zone = zone ?? Zone.Civic };
         // The council's works take any open ground when no street has room, facing the nearest street.
@@ -268,6 +286,21 @@ public static class Land
     public static bool PaintPatch(Town town, Zone zone, double radius, double maxDist, double ring) =>
         PaintPatch(town, zone, radius, (x, y, dist) => dist > maxDist || (ring > 0 && dist < ring - 0.5) ? null : ring == 0 ? dist : Math.Abs(dist - ring));
 
+    /// <summary>The ward a cell's middle lies in (<see cref="City.WardOf(Town, double, double)"/>), kept for the plan's life.</summary>
+    public static WardDef WardAt(Town town, int i)
+    {
+        var plan = town.Plan;
+        if (plan.Wards == null)
+        {
+            plan.Wards = new WardDef[Size * Size];
+            for (int c = 0; c < plan.Wards.Length; c++) plan.Wards[c] = City.WardOf(town, (c % Size + 0.5) / Res, (c / Size + 0.5) / Res);
+        }
+        return plan.Wards[i];
+    }
+
+    /// <summary>Whether a cell lies in a ward the town has laid out (<see cref="City.IsOpen(Town, double, double)"/> at its middle).</summary>
+    public static bool Open(Town town, int i) => town.City.OpenWards.Contains(WardAt(town, i).Id);
+
     /// <summary>
     /// Zone a round patch of open ground, centred on the open cell in a laid-out ward with the lowest
     /// <paramref name="key"/> (x, y, distance from the hall; null passes the cell over). Returns false when there's no room.
@@ -283,7 +316,7 @@ public static class Land
             double x = (i % Size + 0.5) / Res, y = (i / Size + 0.5) / Res;
             double dist = Math.Sqrt((x - Town.Center) * (x - Town.Center) + (y - Town.Center) * (y - Town.Center));
             if (key(x, y, dist) is not double k) continue;
-            if (!City.IsOpen(town, x, y)) continue;
+            if (!Open(town, i)) continue;
             k += Jitter(i) * 0.5;
             if (k < bestKey)
             {
@@ -307,6 +340,9 @@ public sealed class LandPlan
     public List<Street> Streets { get; set; } = [];
     public byte[] Paved { get; set; } = new byte[Land.Size * Land.Size];
 
+    /// <summary>How worn the ground is by feet off the streets, per cell (a path becomes a lane at <see cref="PathRules.Lay"/>).</summary>
+    public float[] Worn { get; set; } = new float[Land.Size * Land.Size];
+
     /// <summary>Ground height per cell, from the town's seed (<see cref="Hills.Grid"/>).</summary>
     [field: NotSaved]
     public float[]? Heights { get; set; }
@@ -322,6 +358,24 @@ public sealed class LandPlan
     [field: NotSaved]
     public Dictionary<Zone, int> Plots { get; } = [];
 
+    /// <summary>Bumped whenever paint changes (<see cref="Streets.Fronts"/>).</summary>
+    [field: NotSaved]
+    public int Painted { get; set; }
+
+    [field: NotSaved]
+    public (int, int) FrontsKey { get; set; } = (-1, -1);
+
+    [field: NotSaved]
+    public Dictionary<(int, Zone?), List<(double Score, double X, double Y, double Yaw)>> Fronts { get; } = [];
+
+    /// <summary>The ward each cell lies in (<see cref="Land.WardAt"/>).</summary>
+    [field: NotSaved]
+    public WardDef[]? Wards { get; set; }
+
+    /// <summary>Whether each building's door is off the streets (<see cref="Streets.Offroad"/>).</summary>
+    [field: NotSaved]
+    public Dictionary<int, bool> Offroad { get; } = [];
+
     [field: NotSaved]
     public int Seen { get; set; } = -1;
 
@@ -333,6 +387,7 @@ public sealed class LandPlan
         if (Seen == Version) return;
         Found.Clear();
         Plots.Clear();
+        Offroad.Clear();
         Seen = Version;
     }
 }

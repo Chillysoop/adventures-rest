@@ -486,7 +486,8 @@ public partial class TownView(MapView map) : Node3D
     /// <summary>The footings that prop buildings up on a slope; the lanes and yards are painted on the ground (<see cref="Ground(Town)"/>).</summary>
     private void Lots(Town town)
     {
-        string key = $"{town.Lots.Count}|{town.Plan.Streets.Count}";
+        // Paths wear in and grow back day by day.
+        string key = $"{town.Lots.Count}|{town.Plan.Streets.Count}|{town.Day}";
         if (key == _groundKey) return;
         _groundKey = key;
         var k = new MeshKit();
@@ -580,6 +581,19 @@ public partial class TownView(MapView map) : Node3D
         // The square's trodden middle.
         for (int i = 0; i < n * n; i++)
             if (town.Plan.Paved[i / n / GroundUp * Land.Size + i % n / GroundUp] != 0) lane[i] = Mathf.Max(lane[i], 0.8f);
+        // Paths half worn in by feet going to buildings off the lanes: fainter than a lane until they become one.
+        var worn = town.Plan.Worn;
+        float lay = (float)town.Content.City.Paths.Lay;
+        for (int y = 0; y < n; y++)
+            for (int x = 0; x < n; x++)
+            {
+                float cx = (x + 0.5f) / GroundUp - 0.5f, cy = (y + 0.5f) / GroundUp - 0.5f;
+                int x0 = Math.Clamp((int)cx, 0, Land.Size - 2), y0 = Math.Clamp((int)cy, 0, Land.Size - 2);
+                float fx = Mathf.Clamp(cx - x0, 0, 1), fy = Mathf.Clamp(cy - y0, 0, 1);
+                int c = y0 * Land.Size + x0;
+                float w = Mathf.Lerp(Mathf.Lerp(worn[c], worn[c + 1], fx), Mathf.Lerp(worn[c + Land.Size], worn[c + Land.Size + 1], fx), fy);
+                if (w > 0.03f) lane[y * n + x] = Mathf.Max(lane[y * n + x], Mathf.SmoothStep(0.05f, lay, w) * 0.6f);
+            }
         // Yards: worn ground round each building, and a footpath from its door to the lane.
         foreach (var l in town.Lots)
         {

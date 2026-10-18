@@ -36,7 +36,7 @@ public static class Mayor
         // and alongside a street, so it fills from the street.
         float[] field = [];
         double? Key(double x, double y, double d) =>
-            (City.WardOf(town, x, y).Favours == zone ? 0 : 100) + (edge ? Math.Abs(d - (reach + 1)) : d)
+            (Land.WardAt(town, (int)(y * Land.Res) * Land.Size + (int)(x * Land.Res)).Favours == zone ? 0 : 100) + (edge ? Math.Abs(d - (reach + 1)) : d)
             + Math.Abs(field[(int)(y * Land.Res) * Land.Size + (int)(x * Land.Res)] / Land.Res - 2) * 0.7;
         for (int i = 0; i < 12 && Planning.VacantZoned(town, zone) < minVacant; i++)
         {
@@ -127,11 +127,12 @@ public static class Mayor
     public static bool CommissionHousing(Town town, int minHomeless = 5)
     {
         int homeless = town.Workers.Count(a => a.HomeId == null);
-        bool building = town.Buildings.Any(b => b.IsSite && b.OwnerId == null && b.Def.Housing > 0);
-        if (homeless < minHomeless || building) return false;
+        // One house at a time, more while many sleep rough.
+        int building = town.Buildings.Count(b => b.IsSite && b.OwnerId == null && b.Def.Housing > 0);
+        if (homeless < minHomeless || building > homeless / 12) return false;
 
         var house = town.Content.Building("house");
-        var lot = Property.FindLot(town, house);
+        var lot = Land.FindCheapest(town, house, house.Zone);
         if (lot == null) return false;
         double cost = house.Cost + Planning.Materials(town, house);
         if (town.Treasury < cost + 50) return false;

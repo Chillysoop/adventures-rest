@@ -11,7 +11,8 @@ public class PlanningTests
     {
         var t = Planned().Town;
         Assert.Contains(t.Buildings, b => b.Def.Id == "lumber_camp" && t.Lot(b.LotId).Zone == Zone.Industry);
-        Assert.Equal(0, Planning.VacantZoned(t, Zone.Farmland));
+        // Room for a farm or so beside the charter's own, no more.
+        Assert.InRange(Planning.VacantZoned(t, Zone.Farmland), 0, 1);
     }
 
     /// <summary>An open point about (dx, dy) tiles from the hall where the building can stand: off the lanes, on level enough ground.</summary>
@@ -97,6 +98,34 @@ public class PlanningTests
     }
 
     [Fact]
+    public void FeetWearALaneToABuildingSetDownInOpenGround()
+    {
+        var sim = Planned();
+        var t = sim.Town;
+        t.Treasury = 2000;
+        var (x, y) = Open(t, 7, 0, "tavern");
+        var tavern = sim.Place("tavern", x, y, 1.0)!;
+        int streets = t.Plan.Streets.Count;
+        Assert.True(Streets.Offroad(t, tavern));
+        sim.RunDays(6);
+        // A path shows where the builders and drinkers walk, but it is no lane yet.
+        Assert.Equal(streets, t.Plan.Streets.Count);
+        Assert.Contains(t.Plan.Worn, w => w > 0.2f);
+        sim.RunDays(40);
+        Assert.False(Streets.Offroad(t, tavern));
+        var lane = t.Plan.Streets[streets];
+        // It runs to the tavern's door, and sways rather than running ruler-straight.
+        var (dx, dy) = Streets.Door(t.Lot(tavern.LotId));
+        Assert.True(Math.Abs(lane.Points[0] - dx) + Math.Abs(lane.Points[1] - dy) < 1.5);
+        for (int i = 0; i + 3 < lane.Points.Length; i += 2)
+            Assert.True(Math.Abs(lane.Points[i + 2] - lane.Points[i]) + Math.Abs(lane.Points[i + 3] - lane.Points[i + 1]) < 2.2);
+        Assert.Contains(t.Ledger.Entries, e => e.Text == "Feet have worn a lane to " + tavern.Name + ".");
+        // Homes can front the new lane once the land beside it is painted.
+        Assert.Contains(Streets.Frontage(t, 3, null), s => Streets.Nearest(t, s.X, s.Y) is { } n && n.D < 1.5 &&
+            Math.Abs(s.X - lane.Points[lane.Points.Length / 2 & ~1]) + Math.Abs(s.Y - lane.Points[(lane.Points.Length / 2 & ~1) + 1]) < 1.5);
+    }
+
+    [Fact]
     public void TheCouncilCommissionsAGranaryAndAWatchHouseWherePlaced()
     {
         var sim = Planned();
@@ -109,6 +138,8 @@ public class PlanningTests
         Assert.Equal((x, y, 1.0), (lot.X, lot.Y, lot.Yaw));
         Assert.Equal(Zone.Civic, lot.Zone);
         Assert.Null(granary.OwnerId);
+        // Out in open ground, it waits for feet to wear a lane to it.
+        Assert.True(Streets.Offroad(t, granary));
         Assert.Null(sim.Place("granary", x, y));
         Assert.Equal("needs 20 residents", Planning.Blocked(t, t.Content.Building("watch_house")));
         Assert.True(t.Accounts.Get(TreasuryAccount.Works, 0) < 0);

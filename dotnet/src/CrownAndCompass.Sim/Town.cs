@@ -49,6 +49,11 @@ public sealed class Building(int id, BuildingDef def, int lotId)
 
     public double RevenueToday { get; set; }
 
+    /// <summary>Walks to or from it since yesterday while it stands off the streets, and the sum of where they came from (tiles).</summary>
+    public int Trips { get; set; }
+    public double TripX { get; set; }
+    public double TripY { get; set; }
+
     /// <summary>Patron-hours of evening talk since the last rumour roll (taverns only).</summary>
     public int Talk { get; set; }
     public int DaysInDebt { get; set; }

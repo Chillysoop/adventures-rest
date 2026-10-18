@@ -33,7 +33,7 @@ public static class Hills
             }
             for (int i = 0; i < 40 && hills.Count < 9; i++)
             {
-                double a = Next() * Math.PI * 2, d = 6 + Next() * 18;
+                double a = Next() * Math.PI * 2, d = 10 + Next() * 16;
                 double x = Town.Center + Math.Cos(a) * d, y = Town.Center + Math.Sin(a) * d;
                 if (hills.Any(h => Math.Abs(h.X - x) + Math.Abs(h.Y - y) < 5)) continue;
                 // Some round knolls, some long ridges.
@@ -61,7 +61,7 @@ public static class Hills
         }
         double dc = Math.Sqrt((x - Town.Center) * (x - Town.Center) + (y - Town.Center) * (y - Town.Center));
         // The square is level.
-        return h * Smooth(3.5, 7, dc);
+        return h * Smooth(4, 10, dc);
     }
 
     private static double Smooth(double a, double b, double x)

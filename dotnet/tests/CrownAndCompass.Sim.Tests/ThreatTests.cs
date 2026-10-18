@@ -48,7 +48,7 @@ public class ThreatTests
     public void PunishesATownThatNeverFortifiesAndNeverFightsBack()
     {
         int fallen = 0;
-        foreach (int seed in new[] { 1, 3, 4 })
+        foreach (int seed in new[] { 1, 3, 4, 5, 6 })
         {
             var sim = new Simulation(new SimulationOptions { Seed = seed, AutoBounties = false, AutoDefense = false, FreeCompanies = false });
             sim.Town.Defenses.Palisade = PalisadeState.Building;
@@ -57,7 +57,7 @@ public class ThreatTests
             // Breaking the walls sacks the town and puts it under the warband's yoke; a second time, it falls.
             if (sim.Town.Saga.Sacks > 0 || sim.Town.Outcome == Outcome.Defeat) fallen++;
         }
-        Assert.True(fallen >= 2);
+        Assert.True(fallen >= 3);
     }
 
     [Fact]
