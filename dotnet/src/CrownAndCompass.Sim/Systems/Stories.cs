@@ -317,6 +317,8 @@ public sealed class Story
     /// <summary>The fallen hero in the hall of heroes the story is about.</summary>
     public int? FallenId { get; set; }
 
+    /// <summary>The person out in the wilds the story is about (<see cref="Neighbours"/>).</summary>
+    public int? ContactId { get; set; }
     /// <summary>The institutions the story is about, in the order its needs name them (a request, or two of them at odds).</summary>
     public List<string> Institutions { get; } = [];
     /// <summary>When the next stage comes, if the story waits on it (a party's next sending).</summary>
@@ -379,7 +381,7 @@ public static class Stories
     /// precedent:id (1 sets it, -1 forgets it) and calling:id (1: the story's hero takes it up, -1: it ends).
     /// </summary>
     public static readonly string[] EffectKeys =
-        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "esteem", "heroXp", "personal", "dismiss", "edge", "swell", "partyHurt", "rest", "slots", "loot", "partyLoyalty", "turnBack", "fine", "jail", "taint", "infamy", "exile", "goodwill", "goodwill2"];
+        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "esteem", "heroXp", "personal", "dismiss", "edge", "swell", "partyHurt", "rest", "slots", "loot", "partyLoyalty", "turnBack", "fine", "jail", "taint", "infamy", "exile", "goodwill", "goodwill2", "prosperity", "security", "contact", "band", "moves"];
 
     /// <summary>
     /// Every need a story or option can name; besides these, precedent:id, decree:id, season:id and
@@ -388,7 +390,7 @@ public static class Stories
     /// with no calling yet) and faction:id (binds that faction while it has a chapter).
     /// </summary>
     public static readonly string[] Needs =
-        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "settlement", "route", "courted", "veteran", "fallen", "admirer", "aggrieved", "abroad", "homeward", "victorious", "lawbreaker", "famous", "infamous"];
+        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "settlement", "route", "courted", "veteran", "fallen", "admirer", "aggrieved", "abroad", "homeward", "victorious", "lawbreaker", "famous", "infamous", "trouble", "contact", "band", "forge"];
 
     private static readonly string[] Prefixed = ["precedent:", "decree:", "season:"];
 
@@ -419,6 +421,7 @@ public static class Stories
         || key.StartsWith("decree:", StringComparison.Ordinal) && c.Stories.Decree(key[7..]) != null
         || key.StartsWith("precedent:", StringComparison.Ordinal) && c.Stories.Precedent(key[10..]) != null
         || key.StartsWith("calling:", StringComparison.Ordinal) && c.Stories.Calling(key[8..]) != null
+        || key.StartsWith("project:", StringComparison.Ordinal) && c.Neighbours.Project(key[8..]) != null
         || key.StartsWith("fixture:", StringComparison.Ordinal) && c.Institutions.Fixture(key[8..]) != null;
 
     // ---------- The mayor ----------
@@ -797,6 +800,32 @@ public static class Stories
                 var found = Pick(town.Settlements.Where(Fits).OrderBy(x => x.Id).ToList());
                 s.SettlementId = found?.Id;
                 return found != null;
+            }
+            case "trouble":
+            case "band":
+            case "forge":
+            {
+                bool Fits(Settlement x) => !x.Razed && town.Regions[x.RegionId].Known && x.Standing > -20 && need switch
+                {
+                    "trouble" => x.Trouble != null,
+                    "band" => x.Band is { Home: true, Members: > 0 },
+                    _ => !x.Projects.Contains("forge") && x.Works == null && Neighbours.ProjectsFor(town, x).Any(p => p.Id == "forge"),
+                };
+                if (s.SettlementId is int sid) return Fits(town.Settlements[sid]);
+                if (!bind) return false;
+                var found = Pick(town.Settlements.Where(Fits).OrderBy(x => x.Id).ToList());
+                s.SettlementId = found?.Id;
+                return found != null;
+            }
+            case "contact":
+            {
+                bool Fits(Contact c) => !c.Gone && c.Memories.Count > 0 && c.Regard >= 40 && town.Settlements[c.SettlementId] is { Razed: false } cs && town.Regions[cs.RegionId].Known;
+                if (s.ContactId is int cid) return Neighbours.ContactById(town, cid) is { } bound && Fits(bound);
+                if (!bind) return false;
+                var c = Pick(town.Neighbours.Cast.Where(Fits).OrderBy(x => x.Id).ToList());
+                s.ContactId = c?.Id;
+                if (c != null) s.SettlementId ??= c.SettlementId;
+                return c != null;
             }
             case "veteran":
             {
@@ -1189,6 +1218,37 @@ public static class Stories
                 case "heat":
                     if (s.FactionId is string hf && Factions.Find(town, hf) is { } hfs) hfs.Heat = Math.Clamp(hfs.Heat + v, 0, 100);
                     break;
+                case "prosperity":
+                case "security":
+                    if (s.SettlementId is int ps && town.Settlements[ps] is { Razed: false } pst)
+                    {
+                        if (key == "prosperity") pst.Prosperity = Math.Clamp(pst.Prosperity + v, 0, 100);
+                        else pst.Security = Math.Clamp(pst.Security + v, 0, 100);
+                        said.Add($"{pst.Name}'s {key} {(v > 0 ? "+" : "−")}{Js.Str(Math.Abs(v))}");
+                    }
+                    break;
+                case "contact":
+                    if (s.ContactId is int rc && Neighbours.ContactById(town, rc) is { Gone: false } rcc)
+                    {
+                        rcc.Regard = Math.Clamp(rcc.Regard + v, 0, 100);
+                        said.Add($"{rcc.Name}'s regard {(v > 0 ? "+" : "−")}{Js.Str(Math.Abs(v))}");
+                    }
+                    break;
+                case "band":
+                    if (s.SettlementId is int bs && town.Settlements[bs].Band is { Members: > 0 } band)
+                    {
+                        band.Members = Math.Max(1, band.Members + (int)v);
+                        said.Add($"{band.Name} {(v > 0 ? "+" : "−")}{Math.Abs((int)v)}");
+                    }
+                    break;
+                case "moves":
+                    // The person the story is about leaves the wilds to live in the town.
+                    if (v > 0 && s.ContactId is int mc && Neighbours.ContactById(town, mc) is { Gone: false } mcc)
+                    {
+                        mcc.Gone = true;
+                        said.Add($"{mcc.Name} moves to {town.Name}");
+                    }
+                    break;
                 case "esteem":
                     if (s.HeroId is int eh && Hero(town, eh) is { } ea)
                     {
@@ -1275,6 +1335,10 @@ public static class Stories
                 if (v < 0) town.Stories.Precedents.Remove(id);
                 else if (!town.Stories.Precedents.ContainsKey(id)) town.Stories.Precedents[id] = town.Day;
             }
+            else if (key.StartsWith("project:", StringComparison.Ordinal))
+            {
+                if (v > 0 && s.SettlementId is int gs && Neighbours.Give(town, town.Settlements[gs], key[8..]) is { Length: > 0 } built) said.Add(built);
+            }
             else if (key.StartsWith("fixture:", StringComparison.Ordinal))
             {
                 if (v > 0 && Institutions.Fix(town, key[8..]) is { Length: > 0 } fixture) said.Add(fixture);
@@ -1356,6 +1420,11 @@ public static class Stories
         Put("{ward}", () => s.Ward is string w ? City.Ward(town, w).Name : "the old town");
         Put("{settlement}", () => s.SettlementId is int st ? town.Settlements[st].Name : "a far town");
         Put("{people}", () => s.SettlementId is int sp ? town.Settlements[sp].People : "the folk of a far town");
+        Put("{leader}", () => s.SettlementId is int sl ? town.Settlements[sl].Leader : "their leader");
+        Put("{band}", () => s.SettlementId is int sb ? town.Settlements[sb].Band?.Name ?? "their band" : "their band");
+        Put("{trouble}", () => s.SettlementId is int stt && Neighbours.TroubleOf(town, town.Settlements[stt]) is { } td ? td.Name : "their trouble");
+        Put("{contact}", () => s.ContactId is int ci && Neighbours.ContactById(town, ci) is { } cc ? cc.Name : "an old friend");
+        Put("{memory}", () => s.ContactId is int cm && Neighbours.ContactById(town, cm) is { Memories.Count: > 0 } cmm ? cmm.Memories[^1] : "old kindnesses");
         Put("{season}", () => Seasons.Current(town).Name.ToLowerInvariant());
         Put("{fallen}", () => s.FallenId is int fh ? town.Agent(fh).Name : "a fallen hero");
         Put("{fallenName}", () => s.FallenId is int fh ? town.Agent(fh).GivenName : "the fallen");

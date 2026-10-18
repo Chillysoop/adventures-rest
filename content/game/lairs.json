@@ -7,6 +7,7 @@
   "actEveryDays": [6, 12],
   "kinds": {
     "beasts": { "growth": 0.6, "verb": "hunt" },
+    "dragon": { "growth": 0.5, "verb": "hunt" },
     "tribe": { "growth": 0.5, "verb": "raid" },
     "undead": { "growth": 0.6, "verb": "walk" },
     "schemers": { "growth": 0.4, "verb": "whisper" },

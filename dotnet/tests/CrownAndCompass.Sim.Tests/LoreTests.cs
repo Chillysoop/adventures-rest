@@ -99,7 +99,8 @@ public class LoreTests
         for (int d = 0; d < 400 && sim.Town.Saga.Menaces.Count(m => m.Named) < 2; d++) sim.RunDays(1);
         var t = sim.Town;
         Assert.NotEmpty(t.Heroes);
-        foreach (var h in t.Heroes)
+        // Turncoats (Turning.Join) come with a past instead of a background.
+        foreach (var h in t.Heroes.Where(h => h.Hero!.Background != ""))
         {
             // A foe who came over to the town keeps the lineage of what it was, not a background.
             if (t.Saga.Menaces.FirstOrDefault(m => m.TurnedHeroId == h.Id) is { } was)

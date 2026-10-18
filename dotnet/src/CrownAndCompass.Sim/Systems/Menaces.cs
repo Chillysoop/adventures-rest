@@ -152,6 +152,9 @@ public sealed record MenaceRules
     public IReadOnlyList<MenaceCunningDef> Cunning { get; init; } = [];
     public IReadOnlyList<MenaceAmbitionDef> Ambitions { get; init; } = [];
     public MenaceFeudRules Feud { get; init; } = new();
+
+    /// <summary>Villains' plans and the assets their strength rests on (<see cref="Plots"/>).</summary>
+    public PlotRules Plots { get; init; } = new();
 }
 
 public enum MenaceStage
@@ -244,6 +247,17 @@ public sealed class Menace
     public int? DemandDueTick { get; set; }
     public bool Refused { get; set; }
 
+    /// <summary>What its strength rests on, each kept at one of its sites, and what it is working toward (<see cref="Plots"/>).</summary>
+    public List<MenaceAsset> Assets { get; } = [];
+    public MenacePlan? Plan { get; set; }
+    public int NextPlanDay { get; set; }
+
+    /// <summary>Its leader's right hand, who may get away when the leader does not.</summary>
+    public string Lieutenant { get; set; } = "";
+
+    /// <summary>The settlement whose road it holds and tolls, if any.</summary>
+    public int? TollOn { get; set; }
+
     /// <summary>The warband keeps its own name until it is crowned.</summary>
     public string? FixedName { get; init; }
     public bool Alive => EndedDay == null;
@@ -309,6 +323,7 @@ public static class Menaces
             if (town.Outcome != null) return;
         }
         Feuds(town);
+        Plots.Daily(town);
         Watch(town);
         Fester(town);
         Cult(town);
@@ -320,6 +335,8 @@ public static class Menaces
     }
 
     // Birth --------------------------------------------------------------------------------------
+
+    internal static string NewLeaderName(Town town, MenaceKindDef def) => NewLeader(town, def);
 
     private static string NewLeader(Town town, MenaceKindDef def)
     {
@@ -415,6 +432,7 @@ public static class Menaces
         m.Peak = m.Stage;
         m.NextStrikeTick = town.Tick + town.Rng.Range(Rules(town).StrikeEveryDays[0], Rules(town).StrikeEveryDays[1] + 1) * SimTime.HoursPerDay;
         town.Saga.Menaces.Add(m);
+        Plots.Arm(town, m);
         return m;
     }
 
@@ -675,7 +693,7 @@ public static class Menaces
         var r = Rules(town);
         var cu = CunningOf(town, m);
         var am = AmbitionOf(town, m);
-        double g = r.Growth * cu.Growth * am.Growth * (seat.Known != SiteKnowledge.Unheard ? 1 : r.UnknownGrowth) * (1 + m.Holdings.Count * r.HoldingGrowth) * Saga.Pace(town) * Seasons.Activity(town, m.Kind);
+        double g = r.Growth * cu.Growth * am.Growth * (seat.Known != SiteKnowledge.Unheard ? 1 : r.UnknownGrowth) * (1 + m.Holdings.Count * r.HoldingGrowth) * Plots.Growth(town, m) * Saga.Pace(town) * Seasons.Activity(town, m.Kind);
         if (m.FactionId != null && Factions.Find(town, m.FactionId) is FactionState f && f.Active) g += f.Members.Count * 0.1;
         // Every party that went for it and came back without finishing it makes it bolder, and a proud one angry.
         if (seat.Attempts > m.SeenAttempts)
@@ -737,8 +755,12 @@ public static class Menaces
         if (lair == null) return null;
         m.Holdings.Add(lair.Def.Id);
         lair.Strength = town.Content.Lairs.MaxStrength;
+        Plots.Stock(town, m, lair);
         return lair;
     }
+
+    /// <summary>The menace takes in another lair as a holding (a plan's supply camp), if one is free.</summary>
+    internal static SiteState? TakeHolding(Town town, Menace m) => Quests.Site(town, m.SeatId) is { } seat ? Recruit(town, m, seat) : null;
 
     /// <summary>The power a stage starts at.</summary>
     private static double Threshold(Town town, MenaceStage stage)
@@ -1182,6 +1204,7 @@ public static class Menaces
         foreach (var id in m.Holdings.ToList())
         {
             if (!Quests.Site(town, id)!.Cleared) continue;
+            Plots.Seize(town, m, Quests.Site(town, id)!);
             m.Holdings.Remove(id);
             m.Power = Math.Max(0, m.Power - r.HoldingCleared);
             Trespass(town, m);
@@ -1209,6 +1232,7 @@ public static class Menaces
         }
         if (refuge == null)
         {
+            Plots.LastStand(town, m, seat);
             End(town, m);
             return;
         }
@@ -1217,6 +1241,7 @@ public static class Menaces
         string oldLeader = m.Leader;
         bool escaped = town.Rng.Chance(0.5);
         if (!escaped) m.Leader = NewLeader(town, m.Def);
+        Plots.SeatFell(town, m, seat, refuge, escaped);
         Seat(town, m, refuge);
         m.Power *= r.SeatBroken;
         m.BaseLevel = Math.Max(1, m.BaseLevel - r.BrokenLevels);
@@ -1246,7 +1271,11 @@ public static class Menaces
         s.BigBadEscapes++;
         string fled = seat.Def.Name;
         var refuge = m.Holdings.Select(id => Quests.Site(town, id)!).Where(x => !x.Cleared).OrderByDescending(x => x.Def.Tier).ThenBy(x => x.Def.Id, StringComparer.Ordinal).FirstOrDefault();
-        if (refuge != null) Seat(town, m, refuge);
+        if (refuge != null)
+        {
+            Plots.SeatFell(town, m, seat, refuge, true);
+            Seat(town, m, refuge);
+        }
         else
         {
             refuge = seat;
@@ -1291,6 +1320,8 @@ public static class Menaces
         if (!m.Alive) return;
         m.EndedDay = town.Day;
         m.Holdings.Clear();
+        m.Assets.Clear();
+        m.Plan = null;
         Saga.Relief(town);
         // The warlord's own death is told by Threat.
         if (m.Named && !m.BigBad && !m.Redeemed && m.Origin != FromWarband && m.Def.Slain != "") town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, m.Def.Slain, m)));
