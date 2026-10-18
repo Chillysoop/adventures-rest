@@ -128,7 +128,7 @@
     {
       "id": "alerts",
       "title": "Alerts",
-      "text": "When something needs you, an alert appears along the top. [b]Click[/b] it to go where you can answer it; [b]right-click[/b] to dismiss it.",
+      "text": "When something needs you, an icon appears along the top: red is urgent, gold waits on your decision, and the number counts alerts of that kind. [b]Hover[/b] for a summary, [b]click[/b] to go where you can answer it (or pick from the list), and [b]right-click[/b] to dismiss. Alerts clear once the problem is solved, and minor ones fade on their own.",
       "when": "alert:",
       "point": "alerts",
       "teaches": []

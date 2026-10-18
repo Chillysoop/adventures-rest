@@ -171,7 +171,6 @@ public partial class Main : Control
     private void OnLedger(LedgerEntry e)
     {
         if (Newsworthy(e)) Feed(e);
-        AlertFor(e);
         // Real time with pause: the war's turning points stop the clock so the player can react.
         if (e.Category == LedgerCategory.War && e.Importance == Importance.Major && _speed > 0 && !_opts.NoPause) SetSpeed(0);
         if (_sim.Town.Outcome != null && !_endShown) CallDeferred(MethodName.ShowEnd);
@@ -290,7 +289,7 @@ public partial class Main : Control
         _map.TimeScale = Speeds[_speed];
 
         AgeFeed(delta);
-        SyncAlerts();
+        SyncAlerts(delta);
         ScriptedAlert();
         SyncMarkers();
         SyncGuide();
