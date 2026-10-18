@@ -144,5 +144,8 @@
     "Someone has painted a red tusk on the town hall door in the night."
   ],
   "growthPerResident": 0.012,
-  "marchConfidence": 0.8
+  "marchConfidence": 0.8,
+  "marchWaneAfter": 200,
+  "marchWanePerDay": 0.008,
+  "marchWaneFloor": 0.25
 }

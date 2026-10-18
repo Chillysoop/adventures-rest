@@ -443,6 +443,11 @@ public sealed record EnemyDef
     /// <summary>The warlord marches only once the warband is at least this share of the town's defence.</summary>
     public double MarchConfidence { get; init; }
 
+    /// <summary>Past this day a warband that has not marched grows restless: the confidence it needs wanes by this much a day, down to the floor.</summary>
+    public int MarchWaneAfter { get; init; }
+    public double MarchWanePerDay { get; init; }
+    public double MarchWaneFloor { get; init; } = 1;
+
     /// <summary>Warband strength at which each escalation stage begins.</summary>
     public required EnemyStages Stages { get; init; }
 
@@ -1157,6 +1162,7 @@ public sealed class Content
     public DecorRules Decor { get; init; } = new();
     public SeasonRules Seasons { get; init; } = new();
     public TradeRules Trade { get; init; } = new();
+    public NeighbourRules Neighbours { get; init; } = new();
     public LegacyRules Legacies { get; init; } = new();
 
     /// <summary>The world's history: its ages, the powers that rose and fell, and the calendar (content/game/history.json).</summary>
@@ -1334,6 +1340,7 @@ public sealed class Content
             Decor = Parse<DecorRules>("decor.json"),
             Seasons = Parse<SeasonRules>("seasons.json"),
             Trade = Parse<TradeRules>("trade.json"),
+            Neighbours = Parse<NeighbourRules>("neighbours.json"),
             Legacies = Parse<LegacyRules>("legacies.json"),
             History = Parse<HistoryRules>("history.json"),
             Stories = stories,

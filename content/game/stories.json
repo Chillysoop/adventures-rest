@@ -4848,6 +4848,213 @@
           "infamy": 3
         }
       }
+    },
+    {
+      "id": "master-smith",
+      "title": "The master smith of {settlement}",
+      "stakes": "medium",
+      "source": "road",
+      "needs": [
+        "forge"
+      ],
+      "minDay": 200,
+      "repeatDays": 240,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The best smith in {settlement} has walked to {town} with a choice for you. The great forge at home is failing. They could bring their hammers here and work for {town}, or, with {town}'s coin, reline the old forge and make {settlement} a stronger friend.",
+          "options": [
+            {
+              "label": "Invite them to settle here",
+              "prefer": 0.1,
+              "success": {
+                "text": "The smith moves into {town} with two apprentices and a cart of tools. {leader} of {settlement} sends a cool note about it.",
+                "effects": {
+                  "people": 3,
+                  "regard": -6,
+                  "prosperity": -6
+                }
+              }
+            },
+            {
+              "label": "Pay to reline their forge",
+              "cost": 180,
+              "prefer": 0.2,
+              "success": {
+                "text": "The smith goes home with {town}'s gold, and within a month the forges of {settlement} roar again.",
+                "effects": {
+                  "project:forge": 1,
+                  "regard": 12
+                }
+              }
+            },
+            {
+              "label": "Ask them to train apprentices here first",
+              "skill": "persuasion",
+              "dc": 14,
+              "success": {
+                "text": "The smith agrees to a season in {town}, teaching, then goes home to a forge {settlement} rebuilds on the strength of it.",
+                "effects": {
+                  "people": 1,
+                  "regard": 6,
+                  "prosperity": 4
+                }
+              },
+              "failure": {
+                "text": "The smith hears a town trying to have it both ways, and goes home with nothing settled.",
+                "effects": {
+                  "regard": -3
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The smith waits three days for an answer, then goes home.",
+        "effects": {
+          "regard": -3
+        }
+      }
+    },
+    {
+      "id": "old-friend",
+      "title": "A letter from {contact}",
+      "stakes": "low",
+      "source": "road",
+      "needs": [
+        "contact"
+      ],
+      "minDay": 160,
+      "repeatDays": 90,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{contact} of {settlement}, who remembers {memory}, writes to ask a favour: a loan to see them through a lean season, and a word from {town} to the merchants who will not deal with them.",
+          "options": [
+            {
+              "label": "Send the loan and the word",
+              "cost": 60,
+              "prefer": 0.2,
+              "success": {
+                "text": "{contact} writes back within the week. {settlement} hears that {town} stands by its friends.",
+                "effects": {
+                  "contact": 15,
+                  "regard": 5
+                }
+              }
+            },
+            {
+              "label": "Put in a word, but no coin",
+              "skill": "persuasion",
+              "dc": 13,
+              "success": {
+                "text": "Your letter to the merchants does the trick on its own. {contact} is grateful.",
+                "effects": {
+                  "contact": 8
+                }
+              },
+              "failure": {
+                "text": "The merchants ignore you, and {contact} is left where they were.",
+                "effects": {
+                  "contact": -5
+                }
+              }
+            },
+            {
+              "label": "Invite them to live in {town}",
+              "skill": "insight",
+              "dc": 12,
+              "success": {
+                "text": "You read {contact} right: they were ready to leave. They come to {town} with their family.",
+                "effects": {
+                  "moves": 1,
+                  "people": 2,
+                  "regard": -2
+                }
+              },
+              "failure": {
+                "text": "{contact} is stung: they asked for help at home, not a way out of it.",
+                "effects": {
+                  "contact": -10
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "No answer goes to {contact}. They do not write again.",
+        "effects": {
+          "contact": -10
+        }
+      }
+    },
+    {
+      "id": "band-arms",
+      "title": "{band} ask for arms",
+      "stakes": "low",
+      "source": "road",
+      "needs": [
+        "band"
+      ],
+      "minDay": 180,
+      "repeatDays": 150,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{band}, the band {settlement} raised to look after its own, send their captain to {town}. They have more courage than steel, and ask for arms.",
+          "options": [
+            {
+              "label": "Arm them",
+              "cost": 90,
+              "prefer": 0.15,
+              "success": {
+                "text": "{band} ride home in new mail. {settlement} feels safer for it.",
+                "effects": {
+                  "band": 1,
+                  "security": 10,
+                  "regard": 6
+                }
+              }
+            },
+            {
+              "label": "Let them train with the town's heroes",
+              "skill": "athletics",
+              "dc": 13,
+              "aid": "hero",
+              "success": {
+                "text": "A fortnight in {town}'s yard, and {band} go home sharper than they came.",
+                "effects": {
+                  "band": 1,
+                  "regard": 4
+                }
+              },
+              "failure": {
+                "text": "The training goes badly: a broken arm and hurt pride.",
+                "effects": {
+                  "regard": -2
+                }
+              }
+            },
+            {
+              "label": "Turn them away",
+              "success": {
+                "text": "{band} go home with nothing but the road under their boots.",
+                "effects": {
+                  "regard": -4
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "{band}'s captain waits at the gate a day and goes home.",
+        "effects": {
+          "regard": -3
+        }
+      }
     }
   ],
   "decrees": [
