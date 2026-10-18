@@ -128,6 +128,9 @@ public sealed class Simulation
     /// <summary>Order a palisade or a watchtower.</summary>
     public bool BuildDefense(DefenseWork what) => Threat.Build(Town, what);
 
+    /// <summary>Answer a menace's demand for fealty: bend the knee and pay tribute, or refuse and face its host.</summary>
+    public bool AnswerDemand(int menaceId, bool submit) => Menaces.Answer(Town, menaceId, submit);
+
     /// <summary>Pay a caster in town to scry a site, showing it live for a few hours.</summary>
     public Scrying? CommissionScrying(string siteId) => Knowledge.CommissionScrying(Town, siteId);
 

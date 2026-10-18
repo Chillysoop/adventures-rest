@@ -212,6 +212,9 @@ public sealed record MonsterDef
     public int Ac { get; init; }
     public int Attack { get; init; }
 
+    /// <summary>Intelligence score, from the library unless set here; 0 reads as 10.</summary>
+    public int Int { get; init; }
+
     /// <summary>Damage dice of its best attack, as "1d6+2".</summary>
     public string Damage { get; init; } = "";
 
@@ -1145,6 +1148,7 @@ public sealed class Content
             Plural = m.Plural != "" ? m.Plural : Library.Plural(name),
             Hp = m.Hp > 0 ? m.Hp : lm.Hp,
             Ac = m.Ac > 0 ? m.Ac : lm.Ac,
+            Int = m.Int > 0 ? m.Int : lm.Int,
             Attack = m.Attack > 0 ? m.Attack : lm.ToHit,
             Damage = m.Damage != "" ? m.Damage : lm.Damage?.ToString() ?? "1d4",
             Attacks = m.Attacks > 0 ? m.Attacks : lm.Attacks,
