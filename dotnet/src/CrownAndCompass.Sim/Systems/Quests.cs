@@ -176,6 +176,9 @@ public static class Quests
     private static readonly int[] XpLevels =
         [0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000, 85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000];
 
+    /// <summary>XP from the start of a level to the next.</summary>
+    internal static int XpToNext(int level) => level >= XpLevels.Length ? 0 : XpLevels[level] - XpLevels[level - 1];
+
     private static readonly string[] PartyAdjectives = ["Ashen", "Iron", "Crimson", "Silver", "Gallows", "Lucky", "Broken", "Midnight", "Copper", "Wandering"];
     private static readonly string[] PartyNouns = ["Blades", "Lanterns", "Owls", "Shields", "Hounds", "Crows", "Compasses", "Wolves", "Pilgrims", "Daggers"];
 
@@ -246,6 +249,8 @@ public static class Quests
             MaxHp = 1,
             Hp = 1,
         };
+        // Masters of arms who retired here train the newcomers.
+        sheet.Xp += Legacies.MentorXp(town, level);
         sheet.MaxHp = Expedition.HeroMaxHp(sheet, a.Abilities.Con);
         sheet.Hp = sheet.MaxHp;
         Gear.Equip(town.Content.Library, sheet);

@@ -162,6 +162,18 @@ public static class Gear
         return s.Magic.TryGetValue("trinket", out var t) ? $"{kit}; {t.Name}" : kit;
     }
 
+    /// <summary>The best magic item of one hero passes to another, who wears it; returns it, or null if there was none.</summary>
+    public static LibItem? Pass(Town town, Agent from, Agent to)
+    {
+        var s = from.Hero!;
+        var best = s.Magic.Keys.Select(k => (Slot: k, Item: s.Magic[k])).OrderByDescending(x => x.Item.Tier).ThenByDescending(x => x.Item.ValueGp).ThenBy(x => x.Item.Name, StringComparer.Ordinal).FirstOrDefault();
+        if (best.Item == null) return null;
+        s.Magic.Remove(best.Slot);
+        Relist(s);
+        Wear(town, to, best.Item);
+        return best.Item;
+    }
+
     private static void Relist(HeroSheet s)
     {
         s.Items.Clear();
