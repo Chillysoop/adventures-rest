@@ -238,6 +238,8 @@ public static class Trade
     private static void StandIn(Town town)
     {
         if (Open(town).Count() >= Cap(town)) return;
+        // A careful mayor fits out no caravans while a warband camps at an unwalled town's door.
+        if (Threat.IsActive(town) && town.Defenses.Palisade != PalisadeState.Built) return;
         var s = town.Settlements
             .Where(x => Refuse(town, x) == null && town.Treasury >= OpenCost(town, x) * 2 + 300)
             .OrderByDescending(x => x.Standing)
