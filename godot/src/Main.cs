@@ -397,6 +397,9 @@ public partial class Main : Control
     public override void _Process(double delta)
     {
         double dt = Math.Min(0.1, delta);
+        // --scroll F: hold the open window scrolled to that share of its length (for screenshots).
+        if (_opts.Scroll is float sf && _window.Visible && _windowTab is Tab wt && _scrolls.TryGetValue(wt, out var sc))
+            sc.ScrollVertical = (int)(sf * Math.Max(0, sc.GetVScrollBar().MaxValue - sc.Size.Y));
         _acc += dt * Speeds[_speed];
         int steps = 0;
         while (_acc >= 1 && steps < 8)

@@ -66,6 +66,6 @@ public static class Director
             return;
         }
         town.QuietDays = 0;
-        town.Log(LedgerCategory.Town, Importance.Major, $"A hooded stranger leaves a purse of {Js.Str(reward)} gold at the town hall, for whoever clears {target.Def.Name}{(news ? $", {Rumors.Days(target.Def.Distance)} out, the den of {target.Believed}" : "")}. No name is given.");
+        town.Log(LedgerCategory.Town, Importance.Major, $"A hooded stranger leaves a purse of {Js.Str(reward)} gold at the town hall, for whoever clears {target.Def.Name}{(news ? $", {Rumors.Away(target.Def.Distance)}, the den of {target.Believed}" : "")}. No name is given.");
     }
 }

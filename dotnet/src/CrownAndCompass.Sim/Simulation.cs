@@ -130,6 +130,7 @@ public sealed class Simulation
         Intel.Daily(t, Options.AutoMayor && Options.AutoBounties && Options.AutoIntel);
         Bastions.Daily(t, Options.AutoMayor && Options.AutoBastions);
         Watch.Daily(t, Options.AutoMayor && Options.AutoBounties);
+        Undercity.Daily(t, Options.AutoMayor);
         Lairs.Daily(t, Options.AutoMayor);
         Rumors.Daily(t);
         Shrines.Daily(t, Options.AutoMayor);
@@ -198,6 +199,9 @@ public sealed class Simulation
 
     /// <summary>Raise a memorial to a hero in the hall of heroes.</summary>
     public bool RaiseMemorial(int heroId) => Legacies.RaiseMemorial(Town, heroId);
+
+    /// <summary>Send the watch down into a level of the undercity each night, or call them back.</summary>
+    public bool PatrolUndercity(string levelId, bool on) => Undercity.SetPatrol(Town, levelId, on);
 
     /// <summary>Set how generously the council funds an institution: 0 unfunded, 1 modest, 2 generous.</summary>
     public bool FundInstitution(string institutionId, int level) => Institutions.Fund(Town, institutionId, level);

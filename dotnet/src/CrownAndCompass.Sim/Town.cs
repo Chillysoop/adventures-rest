@@ -249,6 +249,7 @@ public static class TreasuryAccount
     public const string Bastions = "Bastions";
     public const string Callings = "Callings";
     public const string Legacies = "Legacies";
+    public const string Undercity = "Undercity";
     public const string Region = "The region";
     public const string Institutions = "Institutions";
 }
@@ -416,6 +417,9 @@ public sealed class Town
 
     /// <summary>The hall of heroes: those who fell in the town's service or retired here, in the order they did (<see cref="Systems.Legacies"/>).</summary>
     public List<Systems.Legacy> Legacies { get; } = [];
+
+    /// <summary>The open levels of the undercity, shallowest first (<see cref="Systems.Undercity"/>).</summary>
+    public List<Systems.UnderLevel> Undercity { get; } = [];
 
     /// <summary>The city's institutions, in the order they opened (<see cref="Systems.Institutions"/>).</summary>
     public List<Systems.InstitutionState> Institutions { get; } = [];
