@@ -174,6 +174,19 @@ public sealed class HeroSheet
 
     /// <summary>Healing potions from the general store, carried into the next delve.</summary>
     public int Potions { get; set; }
+
+    /// <summary>What the hero cares about in a mayor (a temper in content/game/regard.json); "" until settled.</summary>
+    public string Temper { get; set; } = "";
+
+    /// <summary>What the hero thinks of the mayor's choices, -100 to 100 (<see cref="Systems.Regard"/>).</summary>
+    public double Regard { get; set; }
+
+    /// <summary>The choice that last moved their regard most ("chose to keep the gates shut"), and which way.</summary>
+    public string RegardWhy { get; set; } = "";
+    public bool RegardPleased { get; set; }
+
+    /// <summary>Their personal quest: "" not yet asked, "done" seen through, "failed" let down.</summary>
+    public string Personal { get; set; } = "";
 }
 
 /// <summary>

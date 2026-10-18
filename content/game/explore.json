@@ -1,0 +1,124 @@
+{
+  "_doc": "Exploring companies (Systems/Explore.cs). The council posts a commission on a region; heroes take it, march out, wander the region and report what they find before doing anything about it. Each find can be investigated in chapters (hours each, a party check, a risk on failure, more learned on success, like a dig site); the last chapter brings its reward. Times are hours, distances are days of march.",
+  "commission": { "base": 40, "perRing": 35, "days": 12, "minHeroes": 2, "maxHeroes": 4, "autoEveryDays": 10, "autoReserve": 150 },
+  "exploreDays": 3,
+  "keepDays": 2,
+  "sight": 0.5,
+  "encounterChance": 0.45,
+  "decideHours": 36,
+  "birdHours": 10,
+  "clueBonus": 2,
+  "homeHp": 0.45,
+  "kinds": [
+    {
+      "id": "lair",
+      "name": "Hostile lair",
+      "found": "{leader} sends word: \"We have come on {what} in {region}, about {days} out. {sign} We have not been seen. What would you have us do?\"",
+      "signs": ["Smoke rises from it at dusk.", "There are tracks everywhere, all going in.", "Bones are piled outside it.", "Something is singing in there, badly.", "The birds will not go near it."],
+      "chapters": [
+        { "title": "Watch it from cover", "text": "They lie up in the brush and watch {what} through a day.", "hours": 10, "skill": "stealth", "dc": 10, "dcPerTier": 1, "risk": "alert",
+          "success": "They count them going in and out: {who}. It is a place for heroes of about level {tier}.",
+          "failure": "A sentry looks straight at their hide. They pull back before anyone comes, but the place is awake now." },
+        { "title": "Scout the ways in", "text": "They circle {what} by night looking for a back way.", "hours": 12, "skill": "perception", "dc": 11, "dcPerTier": 1, "risk": "fight",
+          "success": "They find a way in the guards never watch.",
+          "failure": "They walk into a patrol in the dark." },
+        { "title": "Learn its weakness", "text": "They wait for the right moment and slip close enough to listen.", "hours": 16, "skill": "investigation", "dc": 13, "dcPerTier": 1, "risk": "fight", "reward": "weakness",
+          "success": "They learn when the place sleeps and where its leader beds down. Whoever goes in will catch it weak.",
+          "failure": "Something smells them on the wind." }
+      ],
+      "options": [ { "act": "engage", "label": "Go in now" }, { "act": "mark", "label": "Mark it and keep exploring" } ]
+    },
+    {
+      "id": "settlement",
+      "name": "Friendly-looking settlement",
+      "found": "{leader} sends word: \"There is a settlement in {region}, {settlement}. Smoke from the chimneys, people in the fields. They look friendly enough. Shall we go in?\"",
+      "chapters": [
+        { "title": "Watch their comings and goings", "text": "They camp on the hill above {settlement} and watch.", "hours": 8, "skill": "insight", "dc": 10, "risk": "time",
+          "success": "They are {people}, and they keep a watch that knows its work. Nothing here wishes the town harm.",
+          "failure": "They cannot make the place out; a day goes by." },
+        { "title": "Share their table", "text": "They walk down openly and ask for the headman.", "hours": 12, "skill": "persuasion", "dc": 12, "risk": "offend", "reward": "friends",
+          "success": "A feast, songs, and the names of every danger for a day around. {people} will remember {town} kindly.",
+          "failure": "Someone takes a joke the wrong way and they are shown the road." }
+      ],
+      "options": [ { "act": "parley", "label": "Greet them openly", "skill": "persuasion", "dc": 11 }, { "act": "onward", "label": "Note it and keep exploring" } ]
+    },
+    {
+      "id": "company",
+      "name": "Another adventuring party",
+      "found": "{leader} sends word: \"We have crossed paths with another company, the {band}, {count} of them, camped by the road in {region}. They are watching us as hard as we are watching them.\"",
+      "bands": ["Gilded Ravens", "Hollow Oaks", "Lantern Wardens", "Ninefold Pact", "Saltwind Company", "Brass Hounds", "Ember Coats", "Last Lights", "Thornback Riders", "Quiet Spears"],
+      "chapters": [
+        { "title": "Shadow them", "text": "They follow the {band} a while to see what they are about.", "hours": 8, "skill": "stealth", "dc": 12, "risk": "offend",
+          "success": "Honest sellswords, by the look of them, on their way home from somewhere bad.",
+          "failure": "The {band} catch them at it and are not pleased." },
+        { "title": "Swap stories at their fire", "text": "They bring a skin of wine to the {band}'s fire.", "hours": 6, "skill": "persuasion", "dc": 12, "risk": "offend", "reward": "maps",
+          "success": "Over the wine the {band} draw their maps in the ashes and name the places they barely got out of.",
+          "failure": "The talk turns to who is the better company, and ends there." }
+      ],
+      "options": [ { "act": "news", "label": "Trade news with them", "skill": "persuasion", "dc": 10 }, { "act": "invite", "label": "Invite them to {town}", "skill": "persuasion", "dc": 14 }, { "act": "onward", "label": "Give them a wide berth" } ]
+    },
+    {
+      "id": "caravan",
+      "name": "Trade caravan",
+      "found": "{leader} sends word: \"A caravan out of {settlement} is on the road through {region}: {wagons} wagons, a few guards, a long way from home. They would pay for company on the road.\"",
+      "chapters": [
+        { "title": "Look over the wagons", "text": "They walk the line of wagons while the drovers water the mules.", "hours": 4, "skill": "insight", "dc": 11, "risk": "offend", "reward": "bargain",
+          "success": "The caravan master is honest and has more to sell than they show. He offers them the pick of it, cheap.",
+          "failure": "The caravan master does not like being looked over and says so." }
+      ],
+      "options": [ { "act": "escort", "label": "Escort it to {town}" }, { "act": "maps", "label": "Buy their road maps", "cost": 40 }, { "act": "onward", "label": "Wave them on" } ]
+    },
+    {
+      "id": "font",
+      "name": "Magical source",
+      "found": "{leader} sends word: \"There is something in {region}: {sign} The air hums. We do not know what it is.\"",
+      "signs": ["a spring that runs uphill and glows at night.", "a ring of white stones where the snow never lies.", "a fallen star in a crater of glass.", "a tree with silver leaves, ringing in the wind.", "a pool that shows the sky of another place."],
+      "chapters": [
+        { "title": "Take its measure", "text": "They circle it at a careful distance and try to name the magic.", "hours": 8, "skill": "arcana", "dc": 12, "risk": "wound",
+          "success": "It is old magic, a font where the weave runs close to the world.",
+          "failure": "It lashes out at whoever came too close." },
+        { "title": "Trace where it flows", "text": "They follow the hum through the country around it.", "hours": 12, "skill": "nature", "dc": 13, "risk": "time",
+          "success": "They find where it pools, and where it can safely be drawn on.",
+          "failure": "The trail goes cold and they lose a day." },
+        { "title": "Attune to it", "text": "The bravest of them sits in it through a night.", "hours": 10, "skill": "arcana", "dc": 15, "risk": "wound", "reward": "attune",
+          "success": "By dawn the font knows them. They carry a little of it home.",
+          "failure": "It throws them out, smoking." }
+      ],
+      "options": [ { "act": "onward", "label": "Mark it and keep exploring" } ]
+    },
+    {
+      "id": "ruin",
+      "name": "Ancient ruin",
+      "found": "{leader} sends word: \"We have found ruins in {region}, older than anything we know: {sign} Nobody has been inside in a long, long time.\"",
+      "signs": ["a stair going down into the hill, carved with faces.", "a broken tower on a ring of standing stones.", "the roof of a hall showing through the moss.", "a gate with no wall, sealed with bronze.", "statues of kings, all of them facing away from the road."],
+      "chapters": [
+        { "title": "Map the outer halls", "text": "They work their way through the rubble with rope and lamp.", "hours": 10, "skill": "investigation", "dc": 11, "risk": "wound",
+          "success": "They find the old builders' marks: this was raised in the days of {power}.",
+          "failure": "A floor gives way under them." },
+        { "title": "Read the old writing", "text": "They copy the carvings by lamplight and argue over them.", "hours": 12, "skill": "history", "dc": 13, "risk": "time",
+          "success": "The carvings tell of a sealed vault below, and how it opens.",
+          "failure": "The words make no sense to anyone; another day gone." },
+        { "title": "Open the vault", "text": "They do what the carvings say and push.", "hours": 8, "skill": "athletics", "dc": 14, "risk": "fight", "reward": "vault",
+          "success": "The vault opens on what {power} left behind.",
+          "failure": "Something was left to guard it." }
+      ],
+      "options": [ { "act": "onward", "label": "Mark it and keep exploring" } ]
+    }
+  ],
+  "weights": { "company": 3, "caravan": 3, "font": 1.5, "ruin": 2 },
+  "rewards": { "weakness": 0.6, "friends": 18, "parley": 8, "offend": -6, "mapsTrust": 75, "inviteDays": 4, "escortGold": 30, "escortFood": 40, "bargain": 25, "attuneXp": 150, "vaultGold": 120 },
+  "texts": {
+    "onward": "They mark it on their map and push on into {region}.",
+    "home": "They turn for home.",
+    "mark": "They mark {what} on their map, slip away and push on.",
+    "engage": "They check their blades and go in from where they stand.",
+    "lapse": "No answer comes, so {leader} decides for them: {choice}.",
+    "bird": "No one among them can cast a sending, so they send a bird with the message and wait for the answer.",
+    "spotted": "The place is roused: whoever goes in will find it ready.",
+    "wound": "{who} takes the worst of it ({dmg} damage).",
+    "dies": "{who} does not get up.",
+    "offend": "{people} think less of {town} for it.",
+    "time": "It costs them a day.",
+    "back": "The {party} walk back into town from {region}{finds}."
+  }
+}

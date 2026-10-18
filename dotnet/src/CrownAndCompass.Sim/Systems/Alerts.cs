@@ -32,7 +32,7 @@ public sealed record AlertKind(string Id, string Title, string Icon, AlertLevel 
 /// One thing the player should act on. The key stays the same while it is the same problem, so a dismissed
 /// alert stays dismissed until it is resolved and comes back. Site, agent or town aim the camera.
 /// </summary>
-public sealed record Alert(string Key, AlertKind Kind, string Text, string Tip, string? SiteId = null, int? AgentId = null, bool AtTown = false, int? StoryId = null, int? Wall = null);
+public sealed record Alert(string Key, AlertKind Kind, string Text, string Tip, string? SiteId = null, int? AgentId = null, bool AtTown = false, int? StoryId = null, int? Wall = null, int? FindId = null);
 
 /// <summary>
 /// The player's to-do list, in the manner of Paradox games. Standing alerts are read off the town each
@@ -56,6 +56,7 @@ public static class Alerts
     public static readonly AlertKind GrandWork = new("grandwork", "Grand works", "gold", AlertLevel.Decision, AlertWindow.City);
     public static readonly AlertKind Crisis = new("crisis", "A crisis", "d20", AlertLevel.Urgent, AlertWindow.Story);
     public static readonly AlertKind Story = new("story", "Events", "d20", AlertLevel.Decision, AlertWindow.Story);
+    public static readonly AlertKind Explorers = new("explorers", "Explorers' reports", "compass", AlertLevel.Decision, AlertWindow.Bounties);
     public static readonly AlertKind LevelUp = new("levelup", "Level up", "d20", AlertLevel.Decision, AlertWindow.Mayor);
     public static readonly AlertKind Bastion = new("bastion", "Bastions", "heroes", AlertLevel.Decision, AlertWindow.Companies);
     public static readonly AlertKind Heroes = new("heroes", "Restless heroes", "heroes", AlertLevel.Decision, AlertWindow.None);
@@ -66,7 +67,7 @@ public static class Alerts
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Crisis, Hunger, Coffers, Unrest, Hostile, Motion, Fealty, Stores, Story, LevelUp, Charter, GrandWork, Bastion, Heroes, Work, Settlers, Trade, Housing];
+        [Siege, Crisis, Hunger, Coffers, Unrest, Hostile, Motion, Fealty, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Bastion, Heroes, Work, Settlers, Trade, Housing];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
     public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Hostility, Winter, Growth, Routes, Loyalty, Homes];
@@ -102,6 +103,14 @@ public static class Alerts
             int days = Math.Max(1, (int)Math.Ceiling((s.DueTick - t.Tick) / 24.0));
             yield return new($"story:{s.Id}:{s.Stage}", d.Stakes == "high" ? Crisis : Story, Stories.Fill(t, s, d.Title),
                 $"{Cap(Stories.StakesOf(t, s).Name)} stakes. Step in and roll, or in {Days(days)} it runs its course without you.", StoryId: s.Id, AgentId: s.HeroId);
+        }
+        // Each find explorers have sent word of and are waiting on.
+        foreach (var f in Explore.Waiting(t))
+        {
+            var s = Explore.Survey(t, f.SurveyId)!;
+            int hours = Math.Max(1, f.DueTick - t.Tick);
+            yield return new($"find:{f.Id}:{f.Log.Count}", Explorers, Explore.Title(t, f),
+                $"The {s.Name} found {Explore.What(t, f)} and wait for word. In {(hours >= 24 ? Days((int)Math.Ceiling(hours / 24.0)) : $"{hours} hours")} their leader decides.", FindId: f.Id);
         }
         if (Sheet.Pending(t) > 0)
         {
