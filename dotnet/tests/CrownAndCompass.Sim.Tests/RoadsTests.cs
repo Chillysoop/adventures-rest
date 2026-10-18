@@ -70,15 +70,18 @@ public class RoadsTests
         var sim = new Simulation(new SimulationOptions { Seed = 3 });
         var t = sim.Town;
         Party? party = null;
-        for (int day = 0; day < 120 && party == null; day++)
+        // The town may call a party home before it gets there: follow the first that goes all the way.
+        for (int day = 0; day < 200 && party == null; day++)
         {
             sim.RunDays(1);
-            party = t.Parties.FirstOrDefault(p => p.DepartTick == t.Tick);
+            var leaving = t.Parties.FirstOrDefault(p => !p.Resolved && p.RecalledTick == null && p.ArriveTick > t.Tick);
+            if (leaving == null) continue;
+            while (t.Tick < leaving.ArriveTick && leaving.RecalledTick == null) sim.Step();
+            if (leaving.RecalledTick == null) party = leaving;
         }
         Assert.NotNull(party);
-        while (t.Tick < party!.ArriveTick) sim.Step();
         sim.Step();
-        Assert.True(party.Resolved);
+        Assert.True(party!.Resolved);
         Assert.NotNull(party.Result);
         Assert.True(party.ReturnTick >= party.LeaveTick && party.LeaveTick >= party.ArriveTick);
         // The town hears nothing until they are back.
