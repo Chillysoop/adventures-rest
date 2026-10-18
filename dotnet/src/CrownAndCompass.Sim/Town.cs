@@ -140,7 +140,8 @@ public sealed class Market
     public double Quote(Good g, double qty)
     {
         double fromStock = Math.Min(qty, Stock(g));
-        return fromStock * Price(g) + (qty - fromStock) * BasePrice(g) * ImportPremium;
+        // A save from before seasons has no premium until the next day sets one.
+        return fromStock * Price(g) + (qty - fromStock) * BasePrice(g) * (ImportPremium > 0 ? ImportPremium : 3.0);
     }
 
     public double Buy(Good g, double qty)
