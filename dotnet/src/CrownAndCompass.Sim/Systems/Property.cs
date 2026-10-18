@@ -179,7 +179,7 @@ public static class Property
 
     public static Lot? FindLot(Town town, Zone zone) =>
         town.Lots
-            .Where(l => l.Zone == zone && l.IsVacant && l.OwnerId == null)
+            .Where(l => l.Zone == zone && l.IsVacant && l.OwnerId == null && !Decor.Garden(town, l))
             .OrderBy(Town.DistanceFromCenter)
             .ThenBy(l => l.Id)
             .FirstOrDefault();

@@ -162,6 +162,9 @@ public static class TreasuryAccount
     public const string Factions = "Factions";
     public const string Works = "Town works";
     public const string Honours = "Honours";
+    public const string Decorations = "Decorations";
+    public const string Orchards = "Orchards";
+    public const string Intel = "Intel";
 }
 
 /// <summary>How the campaign ended.</summary>
@@ -204,6 +207,9 @@ public sealed class Town
     public List<SiteState> Sites { get; } = [];
     public List<Bounty> Bounties { get; } = [];
     public List<Party> Parties { get; } = [];
+
+    /// <summary>Adventuring companies the town has dealt with, by first dealing (<see cref="Intel"/>).</summary>
+    public List<CompanyState> Companies { get; } = [];
     public List<Chronicle> Chronicles { get; } = [];
     public List<Seat> Seats { get; } = [];
     public List<Motion> Motions { get; } = [];
@@ -263,6 +269,9 @@ public sealed class Town
     /// <summary>The campaign arc: its acts, the menaces abroad, and the town's dread (<see cref="Systems.Saga"/>).</summary>
     public SagaState Saga { get; } = new();
     public Defenses Defenses { get; } = new();
+
+    /// <summary>Trees, benches, lamps, statues: the set dressing the player has placed (<see cref="Systems.Decor"/>).</summary>
+    public DecorState Decor { get; } = new();
 
     /// <summary>How the campaign ended: the big bad slain, or the town fallen.</summary>
     public Outcome? Outcome { get; set; }
@@ -328,7 +337,7 @@ public sealed class Town
         return Math.Sqrt((l.X - c) * (l.X - c) + (l.Y - c) * (l.Y - c));
     }
 
-    public double LotPrice(Lot lot) => 15 + Population * 0.4 + Math.Max(0, 8 - DistanceFromCenter(lot)) * 2;
+    public double LotPrice(Lot lot) => 15 + Population * 0.4 + Math.Max(0, 8 - DistanceFromCenter(lot)) * 2 + Systems.Decor.LandValue(this, lot);
 
     public Building AddBuilding(BuildingDef def, Lot lot, int? ownerId, string name, bool complete)
     {
@@ -340,6 +349,7 @@ public sealed class Town
             Opened = complete,
         };
         Buildings.Add(b);
+        Systems.Decor.ClearLot(this, lot);
         lot.BuildingId = b.Id;
         lot.OwnerId = ownerId;
         return b;

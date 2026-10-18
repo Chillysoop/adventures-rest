@@ -37,6 +37,9 @@ public partial class Main
     private string? _tipKind;
     private readonly List<(AlertKind Kind, List<Alert> Items, Control Icon)> _alertGroups = [];
 
+    /// <summary>Every alert on the strip now, for the tutorial's "alert:" conditions.</summary>
+    private IEnumerable<Alert> ShownAlerts => _alertGroups.SelectMany(g => g.Items);
+
     /// <summary>The top-centre column: the alert strip, then the paused pill under it.</summary>
     private VBoxContainer BuildAlerts()
     {
@@ -94,6 +97,7 @@ public partial class Main
     private void Go(Alert a)
     {
         CloseAlertList();
+        GuideEvent("alert");
         var t = _sim.Town;
         if (a.EntryId is int id)
         {

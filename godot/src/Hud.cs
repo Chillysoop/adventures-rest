@@ -28,6 +28,7 @@ public partial class Main
         [Tab.War] = "War",
         [Tab.Council] = "Council",
         [Tab.Bounties] = "Bounties and the road",
+        [Tab.Companies] = "Adventuring companies",
         [Tab.Faith] = "Faith and factions",
         [Tab.Campaign] = "The campaign",
         [Tab.Chronicles] = "Chronicles",
@@ -114,17 +115,19 @@ public partial class Main
         {
             int k = i;
             var b = new Button { Text = labels[i], ThemeTypeVariation = "Speed", ToggleMode = true, TooltipText = tips[i], CustomMinimumSize = new Vector2(38, 0) };
-            b.Pressed += () => SetSpeed(k);
+            b.Pressed += () => PlayerSpeed(k);
             sh.AddChild(b);
             _speedButtons[i] = b;
         }
         bar.AddChild(speeds);
+        _speedsBox = speeds;
         _seedLabel = Ui.Label("seed 1", Ui.Ink2, null, 11);
         _seedLabel.SizeFlagsVertical = SizeFlags.ShrinkCenter;
         bar.AddChild(_seedLabel);
         var menu = new Button { Text = "Menu", TooltipText = "Save, load or start a new town (Esc)", SizeFlagsVertical = SizeFlags.ShrinkCenter, FocusMode = FocusModeEnum.None };
         menu.Pressed += () => ToggleMenu();
         bar.AddChild(menu);
+        _menuButton = menu;
         return panel;
     }
 
@@ -240,6 +243,7 @@ public partial class Main
         _window.Visible = true;
         SyncDock();
         _dirty = true;
+        GuideEvent($"tab:{t}");
     }
 
     private void CloseWindow()
@@ -287,6 +291,7 @@ public partial class Main
         _buildToggle.Pressed += ToggleBuildBar;
         row.AddChild(_buildToggle);
         AddChild(dock);
+        _dock = dock;
         dock.SetAnchorsAndOffsetsPreset(LayoutPreset.CenterBottom, LayoutPresetMode.Minsize, Gap);
         dock.GrowHorizontal = GrowDirection.Both;
         dock.GrowVertical = GrowDirection.Begin;
@@ -336,7 +341,8 @@ public partial class Main
         };
         _feed.AddChild(card);
         _feed.MoveChild(card, 0);
-        while (_feed.GetChildCount() > 5) _feed.GetChild(_feed.GetChildCount() - 1).Free();
+        // Fewer while the tutorial card sits below the feed.
+        while (_feed.GetChildCount() > (_guideCard.Visible ? 3 : 5)) _feed.GetChild(_feed.GetChildCount() - 1).Free();
     }
 
     private void AgeFeed(double delta)
@@ -379,6 +385,7 @@ public partial class Main
         frame.AddThemeStyleboxOverride("panel", Glass(10, 6, 6));
         var mini = new Minimap(_map) { CustomMinimumSize = new Vector2(220, 220) };
         frame.AddChild(mini);
+        _miniFrame = frame;
         corner.AddChild(frame);
         AddChild(corner);
         corner.SetAnchorsAndOffsetsPreset(LayoutPreset.BottomRight, LayoutPresetMode.Minsize, Gap);

@@ -4,9 +4,9 @@ Every asset in the game is either made here or licensed CC0 / CC-BY. Add a line 
 
 ## Third party (CC0)
 
-- **Kenney, Fantasy Town Kit 2.0** — houses, walls, roofs, market stalls, banners. https://kenney.nl/assets/fantasy-town-kit
+- **Kenney, Fantasy Town Kit 2.0** — houses, walls, roofs, market stalls, banners, fountains, hedges, benches. https://kenney.nl/assets/fantasy-town-kit
 - **Kenney, Castle Kit** — towers, gates, flags. https://kenney.nl/assets/castle-kit
-- **Kenney, Nature Kit** — trees, rocks, bushes, tents, logs. https://kenney.nl/assets/nature-kit
+- **Kenney, Nature Kit** — trees, rocks, bushes, tents, logs, flowers, statues and fences for decorations. https://kenney.nl/assets/nature-kit
 
 All three are CC0 (licence files in `models/LICENSE-kenney-*.txt`). Credit is not required but given:
 "Kenney (www.kenney.nl)". `tools/kenney_bake.py` downloads them and bakes the models used into `models/kenney.bin`

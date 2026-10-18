@@ -7,7 +7,7 @@ namespace CrownAndCompass.Client;
 /// <summary>
 /// Command-line options after "--", for sharing a moment or checking a build headlessly:
 /// <c>--seed 7 --day 40 --autoplay --tab bounties --site wolfwood --scry wolfwood --screenshot shot.png</c>.
-/// Also <c>--scout site</c>, <c>--mirror site</c>, <c>--build pool|spire|tower|palisade</c> and <c>--relic item-id</c>.
+/// Also <c>--scout site</c>, <c>--mirror site</c>, <c>--build pool|spire|tower|palisade</c>, <c>--relic item-id</c> and <c>--buy all|N</c> (companies' reports).
 /// </summary>
 public sealed class Options
 {
@@ -16,6 +16,9 @@ public sealed class Options
     public int Hour;
     public int? Speed;
     public string? Tab;
+
+    /// <summary>With --autoplay, leave companies' reports unbought for the player (screenshots of the companies window).</summary>
+    public bool KeepReports;
     public string? Site;
     public string? Screenshot;
     public int Frames = 45;
@@ -27,6 +30,10 @@ public sealed class Options
     /// <summary>--load a save file instead of starting a town; --menu opens the game menu (for screenshots).</summary>
     public string? Load;
     public bool Menu;
+
+    /// <summary>--title shows the main menu; --tutorial start|step-id runs the tutorial from there (screenshots).</summary>
+    public bool Title;
+    public string? Tutorial;
     public bool Hero;
     /// <summary>For screenshots: click the alert at this position in the strip (0 is the first) once it shows.</summary>
     public int? Alert;
@@ -55,6 +62,13 @@ public sealed class Options
     public string? Plan, Tool;
     public int[]? Hover;
 
+    /// <summary>--beautify D: dress the town as a player who cares how it looks, keeping its square open from day D (see <see cref="Showcase"/>).</summary>
+    public int? Beautify;
+
+    /// <summary>--decor picks a decoration (or "eraser") to hold; --decor-at x,y,angle shows it at a point in lots.</summary>
+    public string? DecorTool;
+    public double[]? DecorAt;
+
     public static Options Parse(string[] args)
     {
         var o = new Options();
@@ -75,10 +89,13 @@ public sealed class Options
                 case "--autoplay": o.Autoplay = true; break;
                 case "--load": o.Load = Next(); break;
                 case "--menu": o.Menu = true; break;
+                case "--title": o.Title = true; break;
+                case "--tutorial": o.Tutorial = Next(); break;
                 case "--hero": o.Hero = true; break;
                 case "--alert": o.Alert = int.Parse(Next()); break;
                 case "--alert-hover": o.AlertHover = int.Parse(Next()); break;
                 case "--no-pause": o.NoPause = true; break;
+                case "--keep-reports": o.KeepReports = true; break;
                 case "--cam": o.Cam = float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture); break;
                 case "--look":
                     var xy = Next().Split(',');
@@ -97,7 +114,10 @@ public sealed class Options
                 case "--plan": o.Plan = Next(); break;
                 case "--tool": o.Tool = Next(); break;
                 case "--hover": o.Hover = Next().Split(',').Select(int.Parse).ToArray(); break;
-                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic":
+                case "--beautify": o.Beautify = int.Parse(Next()); break;
+                case "--decor": o.DecorTool = Next(); break;
+                case "--decor-at": o.DecorAt = Next().Split(',').Select(v => double.Parse(v, System.Globalization.CultureInfo.InvariantCulture)).ToArray(); break;
+                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--buy":
                     o.Script.Add((args[i][2..], Next()));
                     break;
             }
@@ -136,6 +156,16 @@ public sealed class Options
                     break;
                 case "mirror":
                     sim.PlantMirror(arg);
+                    break;
+                case "buy":
+                    // Buy companies' reports ("all", or how many, newest first), topping up the treasury to pay.
+                    var sale = Intel.ForSale(t);
+                    int n = arg == "all" ? sale.Count : int.Parse(arg);
+                    foreach (var p in sale.Take(n))
+                    {
+                        t.Treasury += Intel.Ask(t, p);
+                        sim.BuyIntel(p.Id);
+                    }
                     break;
                 case "relic":
                     // For showing a late-game moment quickly: a party has just brought a relic home.
