@@ -119,7 +119,7 @@ public partial class Main : Control
         }
         foreach (var adv in _opts.Advances) _sim.AdvanceMayor(adv);
         if (_opts.Inspiration is int insp) _sim.Town.Stories.Mayor.Inspiration = insp;
-        if (_opts.Story is string story && Stories.Open(_sim.Town, story) is { } opened)
+        if (_opts.Story is string story && OpenScripted(story) is { } opened)
         {
             OpenStory(opened.Id);
             if (_opts.StoryPick is int pick) Choose(opened.Id, pick);
@@ -127,6 +127,24 @@ public partial class Main : Control
         if (_opts.Menu) OpenMenu();
         if (plain || _opts.Title || _opts.Smoke) ShowTitle();
         if (_opts.History is string power) OpenHistory(power == "" ? null : power);
+    }
+
+    /// <summary>A story for a scripted shot; a sending comes from the first party out on a bounty that it fits.</summary>
+    private Story? OpenScripted(string id)
+    {
+        var t = _sim.Town;
+        if (t.Content.Stories.Story(id) is not { } d || !Sendings.Is(d)) return Stories.Open(t, id);
+        // Wait (up to a few days) for a party on the road far enough from its site.
+        for (int hour = 0; hour < 24 * 6; hour++)
+        {
+            foreach (var p in t.Parties.Where(p => !p.Returned && p.BountyId != null).OrderBy(p => p.Id))
+            {
+                p.Asked = 0;
+                if (Sendings.Open(t, p, id) is { } s) return s;
+            }
+            _sim.Step();
+        }
+        return null;
     }
 
     /// <summary>The town behind the main menu: a random one, a month into the stand-in mayor's care, in the morning light.</summary>
