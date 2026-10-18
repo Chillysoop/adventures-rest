@@ -19,6 +19,7 @@ public partial class TownRolls(MapView map) : Control
     private sealed class Pop
     {
         public int AgentId;
+        public Vector2? Place;
         public string Skill = "";
         public int Die, Total;
         public StoryResult Result;
@@ -32,15 +33,19 @@ public partial class TownRolls(MapView map) : Control
     /// Show a check someone in town just made. Dropped when zoomed out, when they aren't on screen, or when
     /// enough are already up (the newest wait for none: the oldest give way).
     /// </summary>
-    public void Show(int agentId, string skill, int die, int modifier, StoryResult result)
+    public void Show(int agentId, string skill, int die, int modifier, StoryResult result) => Show(agentId, skill, die, modifier, result, null);
+
+    /// <summary>The same, with where it happened on the ground (in front of a tavern, a shop) for when the person isn't drawn there.</summary>
+    public void Show(int agentId, string skill, int die, int modifier, StoryResult result, Vector2? place)
     {
-        if (map.Distance > ShowDistance || map.Strategic || !Where(agentId, out _)) return;
+        if (map.Distance > ShowDistance || map.Strategic || !Where(agentId, place, out _)) return;
         _pops.RemoveAll(p => p.AgentId == agentId);
         if (_pops.Count >= MaxShown) _pops.RemoveAt(0);
         float h = Geo.Hash(agentId * 131 + die * 7 + _pops.Count);
         _pops.Add(new Pop
         {
             AgentId = agentId,
+            Place = place,
             Skill = skill,
             Die = Math.Clamp(die, 1, 20),
             Total = die + modifier,
@@ -50,12 +55,12 @@ public partial class TownRolls(MapView map) : Control
         SetProcess(true);
     }
 
-    /// <summary>Above the person's head on screen, if they are in town and in view.</summary>
-    private bool Where(int agentId, out Vector2 screen)
+    /// <summary>Above the person's head on screen, if they are in town and in view; else over the place it happened, if given.</summary>
+    private bool Where(int agentId, Vector2? place, out Vector2 screen)
     {
         screen = default;
-        if (!map.Crowd.People.Sprites.TryGetValue(agentId, out var s) || !s.Visible) return false;
-        return map.OnScreen(map.Gen.At(s.P, 0.62f), out screen);
+        if (map.Crowd.People.Sprites.TryGetValue(agentId, out var s) && s.Visible) return map.OnScreen(map.Gen.At(s.P, 0.62f), out screen);
+        return place is Vector2 p && map.OnScreen(map.Gen.At(p, 0.62f), out screen);
     }
 
     public override void _Process(double delta)
@@ -80,7 +85,7 @@ public partial class TownRolls(MapView map) : Control
         float zoom = Mathf.Clamp(60 / Mathf.Max(20, map.Distance), 0.7f, 1.3f);
         foreach (var p in _pops)
         {
-            if (!Where(p.AgentId, out var at)) continue;
+            if (!Where(p.AgentId, p.Place, out var at)) continue;
             float alpha = p.Age < Tumble + Hold ? 1 : 1 - (p.Age - Tumble - Hold) / Fade;
             float u = Mathf.Min(1, p.Age / Tumble);
             float r = 10 * zoom;
