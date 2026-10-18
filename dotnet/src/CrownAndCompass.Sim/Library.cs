@@ -174,6 +174,15 @@ public sealed record LibFaction
     public IReadOnlyList<string> Peoples { get; init; } = [];
 }
 
+/// <summary>A background a hero can have come up through (content/original/backgrounds.json and the SRD's).</summary>
+public sealed record LibBackground
+{
+    public required string Id { get; init; }
+    public required string Name { get; init; }
+    public required string Source { get; init; }
+    public string Text { get; init; } = "";
+}
+
 /// <summary>
 /// The content library (content/srd, content/open/*, content/original): every monster, class, spell
 /// and magic item the game can draw on. Ids are unique per kind across folders, so lookups are by id.
@@ -187,6 +196,7 @@ public sealed class Library
     public IReadOnlyList<LibItem> Items { get; }
     public IReadOnlyList<LibDeity> Deities { get; }
     public IReadOnlyList<LibFaction> Factions { get; }
+    public IReadOnlyList<LibBackground> Backgrounds { get; }
 
     /// <summary>Weapons, armour and shields a hero can buy at a forge or a store.</summary>
     public IReadOnlyList<LibGear> Gear { get; }
@@ -198,6 +208,7 @@ public sealed class Library
     private readonly Dictionary<string, LibDeity> _deities;
     private readonly Dictionary<string, LibFaction> _factions;
     private readonly Dictionary<string, LibGear> _gear;
+    private readonly Dictionary<string, LibBackground> _backgrounds;
 
     public Library(
         IEnumerable<LibMonster> monsters,
@@ -206,7 +217,8 @@ public sealed class Library
         IEnumerable<LibItem> items,
         IEnumerable<LibDeity>? deities = null,
         IEnumerable<LibFaction>? factions = null,
-        IEnumerable<LibGear>? gear = null)
+        IEnumerable<LibGear>? gear = null,
+        IEnumerable<LibBackground>? backgrounds = null)
     {
         Monsters = monsters.OrderBy(m => m.Id, StringComparer.Ordinal).ToList();
         Classes = classes.OrderBy(c => c.Id, StringComparer.Ordinal).ToList();
@@ -222,6 +234,8 @@ public sealed class Library
         _factions = Factions.ToDictionary(f => f.Id);
         Gear = (gear ?? []).OrderBy(g => g.Id, StringComparer.Ordinal).ToList();
         _gear = Gear.ToDictionary(g => g.Id);
+        Backgrounds = (backgrounds ?? []).OrderBy(b => b.Id, StringComparer.Ordinal).ToList();
+        _backgrounds = Backgrounds.ToDictionary(b => b.Id);
     }
 
     public LibMonster? Monster(string id) => _monsters.GetValueOrDefault(id);
@@ -231,6 +245,7 @@ public sealed class Library
     public LibDeity? Deity(string id) => _deities.GetValueOrDefault(id);
     public LibFaction? Faction(string id) => _factions.GetValueOrDefault(id);
     public LibGear? GearOf(string id) => _gear.GetValueOrDefault(id);
+    public LibBackground? Background(string id) => _backgrounds.GetValueOrDefault(id);
 
     /// <summary>Spells a class can cast, lowest level first, then by id.</summary>
     public IEnumerable<LibSpell> SpellsOf(string classId) =>
@@ -271,11 +286,12 @@ public sealed class Library
         var deities = new Dictionary<string, LibDeity>();
         var factions = new Dictionary<string, LibFaction>();
         var gear = new Dictionary<string, LibGear>();
+        var backgrounds = new Dictionary<string, LibBackground>();
         // Folder order only matters if an id repeats; the README promises it doesn't, and the first wins.
         foreach (var (path, read) in files.OrderBy(f => f.Path, StringComparer.Ordinal))
         {
             string kind = System.IO.Path.GetFileNameWithoutExtension(path);
-            if (kind is not ("monsters" or "classes" or "spells" or "magic-items" or "deities" or "factions" or "equipment")) continue;
+            if (kind is not ("monsters" or "classes" or "spells" or "magic-items" or "deities" or "factions" or "equipment" or "backgrounds")) continue;
             using var doc = JsonDocument.Parse(read());
             foreach (var e in doc.RootElement.EnumerateArray())
             {
@@ -288,13 +304,14 @@ public sealed class Library
                     case "magic-items": items.TryAdd(id, ParseItem(e)); break;
                     case "deities": deities.TryAdd(id, ParseDeity(e)); break;
                     case "factions": factions.TryAdd(id, ParseFaction(e)); break;
+                    case "backgrounds": backgrounds.TryAdd(id, new LibBackground { Id = id, Name = Str(e, "name"), Source = Str(e, "source"), Text = Str(e, "text") }); break;
                     case "equipment":
                         if (ParseGear(e) is LibGear g) gear.TryAdd(id, g);
                         break;
                 }
             }
         }
-        return new Library(monsters.Values, classes.Values, spells.Values, items.Values, deities.Values, factions.Values, gear.Values);
+        return new Library(monsters.Values, classes.Values, spells.Values, items.Values, deities.Values, factions.Values, gear.Values, backgrounds.Values);
     }
 
     private static string Str(JsonElement e, string key) =>

@@ -25,6 +25,9 @@ public sealed record HistoryRules
     public IReadOnlyList<HistoryAge> Ages { get; init; } = [];
     public IReadOnlyList<HistoryPower> Powers { get; init; } = [];
     public IReadOnlyList<HistoryEvent> Events { get; init; } = [];
+
+    /// <summary>Where every menace kind, people, faction and hero background comes from (LoreTests checks each has one).</summary>
+    public IReadOnlyList<HistoryLineage> Lineages { get; init; } = [];
 }
 
 /// <summary>A stretch of the world the timeline gives a column: the region themes that lie there now.</summary>
@@ -63,6 +66,38 @@ public sealed record HistoryPower
 
     /// <summary>What of it is left in the game.</summary>
     public string Heirs { get; init; } = "";
+}
+
+/// <summary>
+/// The lore check: who something descends from in the history, and what that makes it want and be.
+/// A menace takes its kind's lineage for the region its seat is in (the one with no themes elsewhere);
+/// a hero takes a background whose lineage lists their class, and a trait from it and from their people.
+/// </summary>
+public sealed record HistoryLineage
+{
+    public string Id { get; init; } = "";
+
+    /// <summary>The history power it descends from.</summary>
+    public string Power { get; init; } = "";
+
+    /// <summary>What it is the lineage of: "menace:undead", "people:dwarves", "faction:quiet-hand", "background:sage".</summary>
+    public IReadOnlyList<string> Subjects { get; init; } = [];
+
+    /// <summary>Menaces only: the region themes it holds; none for its kind's lineage everywhere else.</summary>
+    public IReadOnlyList<string> Themes { get; init; } = [];
+    public string Title { get; init; } = "";
+
+    /// <summary>What it wants, and why ({leader}, {seat}, {region}, {town} for menaces).</summary>
+    public string Motive { get; init; } = "";
+
+    /// <summary>Habits it leaves on a person (Trait names).</summary>
+    public IReadOnlyList<string> Traits { get; init; } = [];
+
+    /// <summary>Backgrounds only: the classes that come up through it.</summary>
+    public IReadOnlyList<string> Classes { get; init; } = [];
+
+    /// <summary>Menaces only: how much likelier each ambition is for its heirs.</summary>
+    public Dictionary<string, double> Ambitions { get; init; } = [];
 }
 
 public sealed record HistoryEvent
@@ -116,5 +151,56 @@ public static class Annals
         town.Log(LedgerCategory.Town, Importance.Notable, h.Ally
             .Replace("{People}", people.Length == 0 ? people : char.ToUpperInvariant(people[0]) + people[1..])
             .Replace("{history}", s.Kin.History.Replace("{S}", s.Name)));
+    }
+
+    /// <summary>The lineage of a people, faction or background ("people:dwarves"), if the history gives one.</summary>
+    public static HistoryLineage? LineageOf(HistoryRules h, string subject) =>
+        h.Lineages.FirstOrDefault(l => l.Subjects.Contains(subject));
+
+    public static HistoryLineage? Lineage(HistoryRules h, string id) => h.Lineages.FirstOrDefault(l => l.Id == id);
+
+    /// <summary>A menace's lineage: its kind's heirs of the region its seat lies in, else its kind's own.</summary>
+    public static HistoryLineage? ForMenace(HistoryRules h, string kind, string? theme)
+    {
+        var heirs = h.Lineages.Where(l => l.Subjects.Contains("menace:" + kind)).ToList();
+        return heirs.FirstOrDefault(l => theme != null && l.Themes.Contains(theme)) ?? heirs.FirstOrDefault(l => l.Themes.Count == 0);
+    }
+
+    /// <summary>The motive a menace's lineage gives it, told with its names.</summary>
+    public static string Motive(Town town, Menace m) =>
+        Lineage(town.Content.History, m.Lineage) is HistoryLineage l && l.Motive != "" ? Saga.Fill(town, l.Motive, m) : "";
+
+    /// <summary>
+    /// A new hero's past: a background whose lineage lists their class, and a trait from it and from the
+    /// people who sent them. Chosen by the hero's id, not dice, so arrivals elsewhere replay unchanged.
+    /// </summary>
+    public static void Raise(Town town, Agent a, HeroSheet sheet, string? people)
+    {
+        var h = town.Content.History;
+        var backgrounds = town.Content.Library.Backgrounds
+            .Where(b => LineageOf(h, "background:" + b.Id) is HistoryLineage l && l.Classes.Contains(sheet.Cls.Id))
+            .ToList();
+        if (backgrounds.Count > 0)
+        {
+            var b = backgrounds[a.Id % backgrounds.Count];
+            sheet.Background = b.Id;
+            Shape(a, LineageOf(h, "background:" + b.Id)!.Traits, a.Id);
+        }
+        if (people != null && LineageOf(h, "people:" + people) is HistoryLineage kin) Shape(a, kin.Traits, a.Id / 2);
+    }
+
+    private static void Shape(Agent a, IReadOnlyList<string> traits, int pick)
+    {
+        if (traits.Count == 0 || !Enum.TryParse<Trait>(traits[pick % traits.Count], out var t)) return;
+        if (a.Traits.Contains(t) || Population.Opposed(a.Traits, t)) return;
+        a.Traits = new HashSet<Trait>(a.Traits) { t };
+    }
+
+    /// <summary>"Once a caravan guard: rode guard on the Oasis road, ..." for arrivals and the hero sheet.</summary>
+    public static string Past(Town town, Agent a)
+    {
+        if (a.Hero is not HeroSheet hs || hs.Background == "" || town.Content.Library.Background(hs.Background) is not LibBackground b) return "";
+        var l = LineageOf(town.Content.History, "background:" + b.Id);
+        return l == null || l.Motive == "" ? $"Once {Agent.Article(b.Name)} {b.Name.ToLowerInvariant()}." : $"Once {Agent.Article(b.Name)} {b.Name.ToLowerInvariant()}: {l.Motive}.";
     }
 }

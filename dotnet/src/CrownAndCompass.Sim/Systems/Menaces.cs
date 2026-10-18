@@ -213,6 +213,9 @@ public sealed class Menace
     public string Cunning { get; set; } = "cunning";
     public string Ambition { get; set; } = "conquest";
 
+    /// <summary>Whose heir it is in the world's history (a lineage id, content/game/history.json): what it wants and why.</summary>
+    public string Lineage { get; set; } = "";
+
     /// <summary>It has grown as far as its wits allow, and the town has been told.</summary>
     public bool Plateaued { get; set; }
     public int NextDomainDay { get; set; }
@@ -352,8 +355,10 @@ public static class Menaces
     }
 
     /// <summary>What it wants, weighted by what suits its kind and its wits.</summary>
-    private static string PickAmbition(Town town, string kind, string cunning)
+    private static string PickAmbition(Town town, string kind, string cunning, string lineage = "")
     {
+        var heirs = Annals.Lineage(town.Content.History, lineage)?.Ambitions;
+        double Weight(MenaceAmbitionDef a) => a.Weight * (heirs != null && heirs.TryGetValue(a.Id, out double x) ? x : 1);
         int rank = CunningRank(town, cunning);
         var fit = Rules(town).Ambitions
             .Where(a => a.Kinds.Count == 0 || a.Kinds.Contains(kind))
@@ -361,16 +366,16 @@ public static class Menaces
             .Where(a => a.MaxCunning == "" || rank <= CunningRank(town, a.MaxCunning))
             .ToList();
         if (fit.Count == 0) return Rules(town).Ambitions.Count > 0 ? "territory" : DefaultAmbition.Id;
-        double roll = town.Rng.Next() * fit.Sum(a => a.Weight);
+        double roll = town.Rng.Next() * fit.Sum(Weight);
         foreach (var a in fit)
         {
-            roll -= a.Weight;
+            roll -= Weight(a);
             if (roll < 0) return a.Id;
         }
         return fit[^1].Id;
     }
 
-    private static Menace Create(Town town, SiteState seat, string kind, string origin, double power, string? leader = null, string? faction = null, string? fixedName = null, string? cunning = null)
+    private static Menace Create(Town town, SiteState seat, string kind, string origin, double power, string? leader = null, string? faction = null, string? fixedName = null, string? cunning = null, string? lineage = null)
     {
         var def = KindDef(town, kind);
         var m = new Menace
@@ -388,7 +393,8 @@ public static class Menaces
         };
         Seat(town, m, seat);
         m.Cunning = cunning ?? CunningFor(town, IntOf(town, seat.Def.Boss.Monster));
-        m.Ambition = PickAmbition(town, kind, m.Cunning);
+        m.Lineage = lineage ?? Annals.ForMenace(town.Content.History, kind, World.RegionOf(town, seat)?.Theme.Id)?.Id ?? "";
+        m.Ambition = PickAmbition(town, kind, m.Cunning, m.Lineage);
         m.BaseLevel = World.LevelOf(seat);
         m.BornLevel = m.BaseLevel;
         m.Level = m.BaseLevel;
@@ -435,7 +441,8 @@ public static class Menaces
         if (region != null) region.Known = true;
         Spread(town, m, seat, 60);
         string text = Saga.Grim(town) && m.Def.RiseDark != "" ? m.Def.RiseDark : m.Def.Rise;
-        town.Log(LedgerCategory.War, Importance.Major, Saga.Fill(town, text, m));
+        string motive = Annals.Motive(town, m);
+        town.Log(LedgerCategory.War, Importance.Major, Saga.Fill(town, text, m) + (motive == "" ? "" : " " + motive));
     }
 
     /// <summary>Word of what holds the seat now: the town's belief catches up with the menace's level.</summary>
@@ -530,6 +537,7 @@ public static class Menaces
             BaseLevel = 4,
             Cunning = CunningFor(town, IntOf(town, e.WarlordBattle.Monster)),
             Ambition = "conquest",
+            Lineage = Annals.ForMenace(town.Content.History, "tribe", null)?.Id ?? "",
         };
         town.Saga.Menaces.Add(m);
         SyncWarband(town, m);
@@ -574,7 +582,7 @@ public static class Menaces
             .FirstOrDefault();
         if (far == null) return null;
         var mind = Rules(town).Cunning.LastOrDefault(c => c.Crown)?.Id;
-        var m = Create(town, far, foe.Kind, "awakened", Rules(town).Stages.Overlord, foe.Leader != "" ? foe.Leader : null, cunning: mind);
+        var m = Create(town, far, foe.Kind, "awakened", Rules(town).Stages.Overlord, foe.Leader != "" ? foe.Leader : null, cunning: mind, lineage: foe.Lineage != "" ? foe.Lineage : null);
         m.Named = true;
         return m;
     }

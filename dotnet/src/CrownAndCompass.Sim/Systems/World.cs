@@ -428,8 +428,8 @@ public static class World
             if (town.Taverns.Count == 0 || town.Heroes.Count >= City.HeroCap(town) || !town.Rng.Chance(b.HeroChance)) continue;
             var cls = town.Content.Classes.FirstOrDefault(c => c.Id == town.Rng.Pick(b.Classes));
             if (cls == null) continue;
-            var a = Quests.CreateHero(town, cls, town.Rng.Chance(0.6) ? 2 : 3, s.Kin.Race);
-            town.Log(LedgerCategory.Arrival, Importance.Notable, $"{a.Describe()}, comes from {s.Name} with a letter from {s.People}: they have heard the town needs blades. ({a.TraitList()})", [a.Id]);
+            var a = Quests.CreateHero(town, cls, town.Rng.Chance(0.6) ? 2 : 3, s.Kin.Race, s.Kin.Id);
+            town.Log(LedgerCategory.Arrival, Importance.Notable, $"{a.Describe()}, comes from {s.Name} with a letter from {s.People}: they have heard the town needs blades. {Annals.Past(town, a)} ({a.TraitList()})", [a.Id]);
         }
     }
 

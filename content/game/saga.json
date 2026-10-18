@@ -591,17 +591,17 @@
     "fallback": [
       {
         "kind": "beasts",
-        "leader": "Vermithrax the Old Wyrm",
+        "leader": "Vermithrax the Old Wyrm", "lineage": "wyrm-blood",
         "text": "The Old Wyrm who burned the Stonekings has slipped the chains the Smith-King forged for him four thousand years ago."
       },
       {
         "kind": "undead",
-        "leader": "Ashkara the Deathless",
+        "leader": "Ashkara the Deathless", "lineage": "ninefold-dead",
         "text": "The ninth mask-queen of Ashkaar, who became a lich rather than die with her empire, has walked out of the Tomb of the Nine Masks."
       },
       {
         "kind": "schemers",
-        "leader": "the Lord of the Last Door",
+        "leader": "the Lord of the Last Door", "lineage": "last-door",
         "text": "It sold King Maudren his way past the Ferryman and ended Caldor in a decade. Now it has found another buyer."
       }
     ],
