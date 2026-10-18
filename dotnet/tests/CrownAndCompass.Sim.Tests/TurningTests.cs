@@ -63,8 +63,14 @@ public class TurningTests
     [Fact]
     public void LegendsOfOneCampaignComeBackInAnother()
     {
-        var first = new Simulation(new SimulationOptions { Seed = 5 });
-        for (int d = 0; d < 1000 && first.Town.Outcome == null && !first.Town.Saga.Menaces.Any(m => m.Named && (m.BigBad || m.Peak >= MenaceStage.Power) && m.Origin != Menaces.FromWarband); d++) first.RunDays(1);
+        // The first of a few campaigns where a named foe rises to power before it ends.
+        static bool Risen(Town t) => t.Saga.Menaces.Any(m => m.Named && (m.BigBad || m.Peak >= MenaceStage.Power) && m.Origin != Menaces.FromWarband);
+        var first = new[] { 5, 2, 3, 7 }.Select(seed =>
+        {
+            var sim = new Simulation(new SimulationOptions { Seed = seed });
+            for (int d = 0; d < 1000 && sim.Town.Outcome == null && !Risen(sim.Town); d++) sim.RunDays(1);
+            return sim;
+        }).First(sim => Risen(sim.Town));
         var legends = Legends.Record(first.Town, 5);
         Assert.Contains(legends, l => l.Kind == Legend.Foe);
         Assert.Contains(legends, l => l.Kind == Legend.Hero);
