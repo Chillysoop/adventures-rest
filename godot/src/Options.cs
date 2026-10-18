@@ -57,6 +57,10 @@ public sealed class Options
     public float Trees = 1;
     public bool Bench;
 
+    /// <summary>--smoke plays a build through from the main menu and quits with its verdict (see <see cref="Main"/>'s Smoke.cs); --smoke-days sets how far the town runs first.</summary>
+    public bool Smoke;
+    public int SmokeDays = 120;
+
     /// <summary>Keep time running through war news, for recording clips.</summary>
     public bool NoPause;
     public readonly List<(string Verb, string Arg)> Script = [];
@@ -115,6 +119,8 @@ public sealed class Options
                 case "--yaw": o.Yaw = int.Parse(Next()); break;
                 case "--trees": o.Trees = float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture); break;
                 case "--bench": o.Bench = true; break;
+                case "--smoke": o.Smoke = true; break;
+                case "--smoke-days": o.SmokeDays = int.Parse(Next()); break;
                 case "--plan": o.Plan = Next(); break;
                 case "--tool": o.Tool = Next(); break;
                 case "--hover": o.Hover = Next().Split(',').Select(int.Parse).ToArray(); break;
