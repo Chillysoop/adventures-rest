@@ -210,7 +210,7 @@ public static class Property
         // Landlords build ahead of the town: a few empty beds draw settlers down the road.
         if (homeless <= openBeds && openBeds >= 2) return;
         var house = RentalKind(town);
-        if (a.Gold < TotalCost(town, house, town.Lots[0]) * 1.5) return;
+        if (a.Gold < (town.LotPrice(Town.Grid) + house.Cost + Planning.Materials(town, house)) * 1.5) return;
         if (TryBuild(town, a, house, true) && !a.Has(Trait.Greedy)) a.Ambition = Ambition.None;
     }
 
@@ -254,20 +254,11 @@ public static class Property
         return true;
     }
 
-    public static Lot? FindLot(Town town, Zone zone) =>
-        town.Lots
-            .Where(l => l.Zone == zone && l.IsVacant && l.OwnerId == null && City.IsOpen(town, l) && !Decor.Garden(town, l))
-            .OrderBy(Town.DistanceFromCenter)
-            .ThenBy(l => l.Id)
-            .FirstOrDefault();
+    /// <summary>Where a building of this kind would go on its zone's painted land, nearest the hall, in a ward it may stand in (<see cref="Land.Find"/>).</summary>
+    public static Lot? FindLot(Town town, BuildingDef def) => Land.Find(town, def, def.Zone);
 
-    /// <summary>The nearest vacant lot of the building's zone, in a ward it may stand in.</summary>
-    public static Lot? FindLot(Town town, BuildingDef def) =>
-        town.Lots
-            .Where(l => l.Zone == def.Zone && l.IsVacant && l.OwnerId == null && City.Allows(town, def, l) && !Decor.Garden(town, l))
-            .OrderBy(Town.DistanceFromCenter)
-            .ThenBy(l => l.Id)
-            .FirstOrDefault();
+    /// <summary>As <see cref="FindLot(Town, BuildingDef)"/>, on another zone's land.</summary>
+    public static Lot? FindLot(Town town, Zone zone, BuildingDef def) => Land.Find(town, def, zone);
 
     public static string NameFor(Town town, BuildingDef def, Agent? owner)
     {

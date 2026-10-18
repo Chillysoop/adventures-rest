@@ -150,21 +150,32 @@ public class DecorTests
     }
 
     [Fact]
-    public void ADecoratedOpenLotIsAGardenAndBuildersClearZonedOnes()
+    public void DecoratedOpenGroundIsAGardenAndBuildersClearWhatTheyBuildOver()
     {
         var sim = Planned();
         var t = sim.Town;
-        var open = t.Lots.First(l => l.IsVacant && l.Zone == Zone.None && Town.DistanceFromCenter(l) < 6);
-        Assert.NotNull(sim.Decorate("flowers", open.X + 0.5, open.Y + 0.5, 0));
-        Assert.True(Decor.Garden(t, open));
-        Assert.Equal(0, sim.ZoneLots([open.Id], Zone.Residential));
+        t.Treasury = 2000;
+        // Open, unpainted ground near the hall, off the lanes.
+        (double X, double Y) OpenGround(double dx, double dy)
+        {
+            for (double r = 0; r < 6; r += 0.25)
+                for (int k = 0; k < 16; k++)
+                {
+                    double x = Town.Center + dx + r * Math.Cos(k * Math.PI / 8), y = Town.Center + dy + r * Math.Sin(k * Math.PI / 8);
+                    int i = (int)(y * Land.Res) * Land.Size + (int)(x * Land.Res);
+                    if (t.Plan.Zones[i] == (byte)Zone.None && Planning.SpotBlocked(t, t.Content.Building("granary"), x, y, 0) == null) return (x, y);
+                }
+            throw new InvalidOperationException("no open ground");
+        }
+        var (fx, fy) = OpenGround(-5, 0);
+        Assert.NotNull(sim.Decorate("flowers", fx, fy, 0));
+        Assert.True(Decor.Garden(t, fx, fy));
+        sim.PaintZone([(fx, fy)], 1.5, Zone.Residential);
+        Assert.Equal((byte)Zone.None, t.Plan.Zones[(int)(fy * Land.Res) * Land.Size + (int)(fx * Land.Res)]);
 
-        var zoned = t.Lots.First(l => l.IsVacant && l.Zone == Zone.None && l != open && Town.DistanceFromCenter(l) > 3 && City.IsOpen(t, l));
-        var bench = sim.Decorate("bench", zoned.X + 0.5, zoned.Y + 0.5, 0)!;
-        sim.ZoneLots([zoned.Id], Zone.None);
-        zoned.Zone = Zone.Civic;
-        Assert.False(Decor.Garden(t, zoned));
-        Assert.NotNull(sim.Place("granary", zoned.Id));
+        var (bx, by) = OpenGround(5, 0);
+        var bench = sim.Decorate("bench", bx, by, 0)!;
+        Assert.NotNull(sim.Place("granary", bx, by, 0));
         Assert.DoesNotContain(t.Decor.Pieces, p => p.Id == bench.Id);
     }
 
@@ -193,6 +204,7 @@ public class DecorTests
         var t = sim.Town;
         Assert.NotEmpty(t.Decor.Pieces);
         // It keeps off the wards laid out, so headless towns lose no building land to it.
-        Assert.All(t.Decor.Pieces, p => Assert.True(p.X < 0 || p.Y < 0 || p.X >= Town.Grid || p.Y >= Town.Grid || t.LotAt((int)p.X, (int)p.Y).Zone == Zone.None));
+        Assert.All(t.Decor.Pieces, p => Assert.True(p.X < 0 || p.Y < 0 || p.X >= Town.Grid || p.Y >= Town.Grid
+            || t.Plan.Zones[(int)(p.Y * Land.Res) * Land.Size + (int)(p.X * Land.Res)] == (byte)Zone.None));
     }
 }

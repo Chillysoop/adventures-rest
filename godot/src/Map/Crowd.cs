@@ -30,8 +30,10 @@ public sealed class AgentPositions(MapView map)
         if (a.LocationId is int loc)
         {
             var lot = town.Lot(town.Building(loc).LotId);
-            // Gather along the street in front of the building.
-            return new Vector2(Geo.Margin + lot.X + 0.12f + j1 * 0.76f, Geo.Margin + lot.Y + 0.9f + (j2 - 0.5f) * 0.12f);
+            // Gather in the lane in front of the building, whichever way it faces.
+            var f = Geo.LotFront(lot);
+            float half = lot.W / (float)Sim.Systems.Land.Res / 2;
+            return Geo.LotPos(lot) + f * (lot.D / (float)Sim.Systems.Land.Res / 2 + 0.12f + (j2 - 0.5f) * 0.08f) + new Vector2(f.Y, -f.X) * ((j1 - 0.5f) * 2 * half);
         }
         // Wanderers drift around the square, picking a new spot every few hours.
         int k = town.Tick / 4;

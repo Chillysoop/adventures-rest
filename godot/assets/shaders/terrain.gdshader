@@ -23,6 +23,12 @@ uniform int track_count = 0;
 uniform vec4 rings[12];
 uniform vec4 ring_colors[12];
 uniform int ring_count = 0;
+// The town: worn lanes (r) and trodden yards (g), and the painted zone plan (colour premultiplied by alpha), over the town's plan square.
+uniform sampler2D town_tex : filter_linear, repeat_disable, hint_default_black;
+uniform sampler2D zones_tex : filter_linear, repeat_disable, hint_default_transparent;
+uniform vec2 town_origin = vec2(0.0);
+uniform float town_size = 0.0;
+uniform float zone_strength = 0.1;
 
 varying vec3 wpos;
 varying vec3 wnrm;
@@ -113,6 +119,23 @@ void fragment() {
 	vec3 turned = mix(vec3(0.62, 0.30, 0.13), vec3(0.82, 0.60, 0.20), nz3.g) * (0.75 + 0.3 * nz2.r);
 	col = mix(col, turned, autumn * clamp(canopy * 1.4, 0.0, 0.9) * 0.85);
 	col = lay_snow(col, p, snow_cover(p, normalize(wnrm).y) * smoothstep(-0.5, -0.1, h));
+	// The town's lanes and yards, worn into the grass (and trodden clear of snow) with ragged edges; the zone plan painted over them.
+	vec2 tuv = (p - town_origin) / max(town_size, 1.0);
+	if (town_size > 0.0 && tuv.x > 0.0 && tuv.y > 0.0 && tuv.x < 1.0 && tuv.y < 1.0) {
+		vec4 tw = texture(town_tex, tuv);
+		float yard = smoothstep(0.25, 0.75, tw.g + (nz2.r - 0.5) * 0.5 + (nz3.g - 0.5) * 0.3);
+		col = mix(col, mix(col, vec3(0.55, 0.50, 0.33), 0.6) * (0.92 + 0.12 * nz3.r), yard * 0.75);
+		float lane = smoothstep(0.32, 0.62, tw.r + (nz3.b - 0.5) * 0.35 + (g2.g - 0.5) * 0.15);
+		vec3 dirt = mix(vec3(0.62, 0.52, 0.37), vec3(0.70, 0.60, 0.43), nz3.r) * (0.9 + 0.12 * g1.r);
+		// A darker rut along the middle where the carts go.
+		dirt *= 1.0 - 0.1 * smoothstep(0.85, 1.0, tw.r);
+		col = mix(col, dirt, lane);
+		vec4 z = texture(zones_tex, tuv);
+		float zedge = smoothstep(0.42, 0.58, z.a);
+		float rim = smoothstep(0.42, 0.5, z.a) * (1.0 - smoothstep(0.55, 0.7, z.a));
+		vec3 zc = z.rgb / max(z.a, 0.001);
+		col = mix(col, mix(zc, vec3(1.0), rim * 0.35), clamp((zedge + rim * 1.4) * zone_strength, 0.0, 1.0) * (1.0 - strategic));
+	}
 
 	// Tracks the parties have walked, from their reports.
 	for (int i = 0; i < track_count; i++) {

@@ -210,10 +210,10 @@ public static class Watch
     {
         var w = Rules(town).Works.FirstOrDefault(x => x.Building == buildingId);
         if (w == null || WorkBlocked(town, w) != null) return null;
-        var lot = at ?? Property.FindLot(town, Zone.Civic) ?? Property.FindLot(town, Zone.None);
+        var def = town.Content.Building(buildingId);
+        var lot = at ?? Planning.CivicLot(town, def);
         if (lot == null) return null;
         lot.Zone = Zone.Civic;
-        var def = town.Content.Building(buildingId);
         town.Book(TreasuryAccount.Sight, -WorkCost(town, w));
         town.Market.Buy(Good.Timber, def.Timber);
         var b = town.AddBuilding(def, lot, null, $"the {def.Name}", false);

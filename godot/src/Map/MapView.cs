@@ -141,6 +141,12 @@ public partial class MapView : Control
         Planner = new Planner(this) { MouseFilter = MouseFilterEnum.Ignore };
         AddChild(Planner);
         Planner.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        // Paint and placements show at once, even while the game is paused.
+        Planner.Changed += () =>
+        {
+            _town.Planning(Planner.Active);
+            if (Sim != null) _town.Refresh();
+        };
         Decorator = new Decorator(this) { MouseFilter = MouseFilterEnum.Ignore };
         AddChild(Decorator);
         Decorator.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
@@ -471,6 +477,10 @@ public partial class MapView : Control
                 else Planner.Release(ToWorld(b.Position));
                 AcceptEvent();
                 return true;
+            case InputEventMouseButton { ButtonIndex: MouseButton.WheelUp or MouseButton.WheelDown, Pressed: true, ShiftPressed: true } w:
+                if (!Planner.Wheel(w.ButtonIndex == MouseButton.WheelUp)) return false;
+                AcceptEvent();
+                return true;
             case InputEventMouseButton { ButtonIndex: MouseButton.Right, Pressed: true, DoubleClick: false }:
                 Planner.Pick(null);
                 AcceptEvent();
@@ -557,13 +567,8 @@ public partial class MapView : Control
             }
         }
         if (best >= 0) return Selection.Agent(best);
-        int gx = Mathf.FloorToInt(w.X - Geo.Margin), gy = Mathf.FloorToInt(w.Y - Geo.Margin);
-        if (gx >= 0 && gy >= 0 && gx < Geo.Grid && gy < Geo.Grid)
-        {
-            var lot = town.LotAt(gx, gy);
-            if (lot.BuildingId is int b) return Selection.Building(b);
-        }
-        return null;
+        var at = Planner.ToTown(w);
+        return Land.BuildingAt(town, at.X, at.Y) is int b ? Selection.Building(b) : null;
     }
 
     /// <summary>Rendering counters for the frame-time check: draw calls, primitives, objects.</summary>

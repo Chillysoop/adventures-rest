@@ -2,11 +2,21 @@ using CrownAndCompass.Sim.Systems;
 
 namespace CrownAndCompass.Sim;
 
-public sealed class Lot(int id, int x, int y)
+/// <summary>The patch of ground one building stands on, anywhere and at any heading inside the town (<see cref="Systems.Land"/>).</summary>
+public sealed class Lot(int id, double x, double y)
 {
     public int Id { get; } = id;
-    public int X { get; } = x;
-    public int Y { get; } = y;
+
+    /// <summary>Centre, in tiles from the town's corner.</summary>
+    public double X { get; } = x;
+    public double Y { get; } = y;
+
+    /// <summary>Footprint in plan cells: width along the front, depth front to back.</summary>
+    public int W { get; init; } = 3;
+    public int D { get; init; } = 3;
+
+    /// <summary>Heading in radians: 0 faces +y, and the front turns to (−sin, cos).</summary>
+    public double Yaw { get; init; }
 
     public Zone Zone { get; set; } = Zone.None;
 
@@ -38,6 +48,11 @@ public sealed class Building(int id, BuildingDef def, int lotId)
     public double Cash { get; set; }
 
     public double RevenueToday { get; set; }
+
+    /// <summary>Walks to or from it since yesterday while it stands off the streets, and the sum of where they came from (tiles).</summary>
+    public int Trips { get; set; }
+    public double TripX { get; set; }
+    public double TripY { get; set; }
 
     /// <summary>Patron-hours of evening talk since the last rumour roll (taverns only).</summary>
     public int Talk { get; set; }
@@ -224,7 +239,7 @@ public enum Outcome
 
 public sealed class Town
 {
-    /// <summary>Lots on a side: the old town in the middle, then the walled ring, then the outer wards (<see cref="Systems.City"/>).</summary>
+    /// <summary>Tiles on a side: the old town in the middle, then the walled ring, then the outer wards (<see cref="Systems.City"/>).</summary>
     public const int Grid = 48;
 
     public string Name { get; } = "Briarford";
@@ -251,6 +266,9 @@ public sealed class Town
     public int UnpaidDays { get; set; }
 
     public List<Lot> Lots { get; } = [];
+
+    /// <summary>The painted plan: zones and built ground, cell by cell (<see cref="Systems.Land"/>).</summary>
+    public Systems.LandPlan Plan { get; } = new();
     public List<Building> Buildings { get; } = [];
     public List<Agent> Agents { get; } = [];
     public List<SiteState> Sites { get; } = [];
@@ -350,9 +368,6 @@ public sealed class Town
         Rng = new Rng(seed);
         TaxRate = content.Rules.TaxRate;
         Market = new Market(content.City.BasePrice) { ExportShare = content.City.ExportShare };
-        for (int y = 0; y < Grid; y++)
-            for (int x = 0; x < Grid; x++)
-                Lots.Add(new Lot(Lots.Count, x, y));
     }
 
     /// <summary>Move gold into (positive) or out of (negative) the treasury, booked under an account.</summary>
@@ -386,19 +401,19 @@ public sealed class Town
     public Agent Agent(int id) => Agents[id - 1];
     public Building Building(int id) => Buildings[id];
     public Lot Lot(int id) => Lots[id];
-    public Lot LotAt(int x, int y) => Lots[y * Grid + x];
 
     public int NewAgentId() => _nextAgentId++;
 
-    public static double DistanceFromCenter(Lot l)
-    {
-        double c = (Grid - 1) / 2.0;
-        return Math.Sqrt((l.X - c) * (l.X - c) + (l.Y - c) * (l.Y - c));
-    }
+    /// <summary>The middle of the town, where the hall stands, in tiles from its corner.</summary>
+    public const double Center = Grid / 2.0;
 
-    public double LotPrice(Lot lot) =>
-        (15 + Math.Min(Population, 300) * 0.4 + Math.Max(0, Population - 300) * 0.1 + Math.Max(0, 8 - DistanceFromCenter(lot)) * 2) * Systems.City.WardOf(this, lot).Land
-        + Systems.Decor.LandValue(this, lot);
+    public static double DistanceFromCenter(Lot l) => Math.Sqrt((l.X - Center) * (l.X - Center) + (l.Y - Center) * (l.Y - Center));
+
+    public double LotPrice(Lot lot) => LotPrice(DistanceFromCenter(lot)) * Systems.City.WardOf(this, lot).Land + Systems.Decor.LandValue(this, lot);
+
+    /// <summary>Land is dearer near the hall (before the ward's own price and the beauty round it).</summary>
+    public double LotPrice(double distance) =>
+        15 + Math.Min(Population, 300) * 0.4 + Math.Max(0, Population - 300) * 0.1 + Math.Max(0, 8 - distance) * 2;
 
     public Building AddBuilding(BuildingDef def, Lot lot, int? ownerId, string name, bool complete)
     {
@@ -410,7 +425,10 @@ public sealed class Town
             Opened = complete,
         };
         Buildings.Add(b);
+        if (lot.Id != Lots.Count) throw new InvalidOperationException("A lot is claimed once, as soon as it is found.");
         Systems.Decor.ClearLot(this, lot);
+        Lots.Add(lot);
+        Systems.Land.Claim(this, lot);
         lot.BuildingId = b.Id;
         lot.OwnerId = ownerId;
         return b;

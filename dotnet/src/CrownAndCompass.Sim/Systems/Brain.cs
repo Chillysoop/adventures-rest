@@ -117,6 +117,13 @@ public static class Brain
     private static void Execute(Town town, Agent a, Activity act)
     {
         a.Activity = act;
+        int? was = a.LocationId;
+        Go(town, a, act);
+        if (a.LocationId != was && a.LocationId != null) Streets.Trip(town, was, a.LocationId);
+    }
+
+    private static void Go(Town town, Agent a, Activity act)
+    {
         switch (act)
         {
             case Activity.Sleeping:
