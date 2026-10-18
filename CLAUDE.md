@@ -43,6 +43,10 @@
   `famous`/`infamous` needs.
 - Alerts (the Paradox-style icon strip): raise one from the sim by adding a kind and a rule in `Systems/Alerts.cs`
   (rules read the town, never write or roll dice; an alert lasts while its rule names it). Each alert is one action for the player; news goes to the Ledger, not the strip.
+- Density (`Systems/Density.cs`, city.json `densities` and `sprawl`): low/medium/high per plan cell (`LandPlan.Density`), painted
+  with homes and shops (`PaintZone(..., density)`, also over built land of the zone). `BuildingDef.Density` is the least a building
+  needs (townhouse/manor medium, tall_house high); `HousingDef.Dense` is the house it grows into on high land; high land drops
+  the lane between buildings. The stand-in mayor zones denser out to `reach * sqrt(population)` tiles, capped by `WardDef.Densest`.
 - Decorations (`content/game/decor.json`, `Systems/Decor.cs`, client `Map/Decorator.cs`, `Map/DecorView.cs`): free positions in
   tiles from the town's corner and any angle (radians, model front +Z turned by it). Every piece needs a small effect in
   another system, capped in decor.json. Pieces claim plan cells (`Decor.Cells`, `LandPlan.Decor`): `Land.Fits` and lanes go

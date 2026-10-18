@@ -222,8 +222,11 @@ public sealed class Simulation
     /// <summary>Survey a ward and lay out its streets, opening its ground to zoning.</summary>
     public bool OpenWard(string wardId) => City.OpenWard(Town, wardId);
 
-    /// <summary>Paint a brush stroke of a zone over open ground in open wards (Zone.None clears it): dabs in tiles from the town's corner. Returns cells changed.</summary>
-    public int PaintZone(IEnumerable<(double X, double Y)> dabs, double radius, Zone zone) => Planning.Paint(Town, dabs, radius, zone);
+    /// <summary>
+    /// Paint a brush stroke of a zone over open ground in open wards (Zone.None clears it): dabs in tiles from the town's corner.
+    /// Homes and shops take a density (0 low, 1 medium, 2 high, as the charter allows), and land of the zone already built on takes it too. Returns cells changed.
+    /// </summary>
+    public int PaintZone(IEnumerable<(double X, double Y)> dabs, double radius, Zone zone, int density = 0) => Planning.Paint(Town, dabs, radius, zone, density);
 
     /// <summary>Place a government building, charter house or town-owned business at a point and heading (null faces the nearest lane), paid from the treasury.</summary>
     public Building? Place(string buildingId, double x, double y, double? yaw = null) => Planning.Place(Town, buildingId, x, y, yaw);

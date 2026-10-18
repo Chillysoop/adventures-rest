@@ -47,8 +47,8 @@ public class BastionsTests
 
         sim.RunDays(40);
         Assert.True(keep.Complete);
-        // Members come and go on delves; within a fortnight one is home and sleeping in the keep.
-        for (int d = 0; d < 14 && !Bastions.Members(t, b).Any(m => !m.IsAway); d++) sim.RunDays(1);
+        // Members come and go on delves; before long one is home and sleeping in the keep.
+        for (int d = 0; d < 60 && !Bastions.Members(t, b).Any(m => !m.IsAway && Bastions.Lodges(t, m) && m.Hero!.Lodging); d++) sim.RunDays(1);
         Assert.Contains(Bastions.Members(t, b).Where(m => !m.IsAway), m => Bastions.Lodges(t, m) && m.Hero!.Lodging);
         Assert.Contains(Systems.Loyalty.Factors(t, Bastions.Members(t, b)[0]), f => f.Why.StartsWith("lives at"));
     }

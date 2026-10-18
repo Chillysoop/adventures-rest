@@ -65,7 +65,7 @@ public class TurningTests
     {
         // A campaign whose great foe rose far enough to be remembered (most do; some are won first).
         List<Legend> legends = [];
-        foreach (int seed in new[] { 5, 7, 9, 11 })
+        foreach (int seed in new[] { 3, 5, 7, 9, 11 })
         {
             var first = new Simulation(new SimulationOptions { Seed = seed });
             for (int d = 0; d < 1000 && first.Town.Outcome == null && !first.Town.Saga.Menaces.Any(m => m.Named && (m.BigBad || m.Peak >= MenaceStage.Power) && m.Origin != Menaces.FromWarband); d++) first.RunDays(1);
