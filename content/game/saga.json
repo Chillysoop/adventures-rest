@@ -1,0 +1,482 @@
+{
+  "climaxDay": 120,
+  "acts": [
+    {
+      "name": "Points of Light",
+      "levels": [
+        1,
+        4
+      ],
+      "opensAtLevel": 0,
+      "earliestDay": 0,
+      "latestDay": 0,
+      "arrivalBonus": 0,
+      "pace": 1.0,
+      "seeds": [],
+      "intro": "",
+      "introDark": ""
+    },
+    {
+      "name": "The Wider Wilds",
+      "levels": [
+        4,
+        6
+      ],
+      "opensAtLevel": 3,
+      "earliestDay": 110,
+      "latestDay": 220,
+      "arrivalBonus": 1,
+      "pace": 1.2,
+      "seeds": [
+        [
+          4,
+          6
+        ],
+        [
+          2,
+          3
+        ]
+      ],
+      "intro": "{town}'s name has reached the wider wilds. Seasoned blades come looking for work, and with them come darker stories from farther out.",
+      "introDark": "The roads beyond the hills are no longer safe for anyone. Those who still come to {town} come armed, and the stories they bring are worse each week."
+    },
+    {
+      "name": "Lords of the Land",
+      "levels": [
+        6,
+        9
+      ],
+      "opensAtLevel": 5,
+      "earliestDay": 280,
+      "latestDay": 400,
+      "arrivalBonus": 2,
+      "pace": 1.4,
+      "seeds": [
+        [
+          6,
+          9
+        ],
+        [
+          3,
+          5
+        ]
+      ],
+      "intro": "Kings write to {town} now, and so do worse things. The powers of the land have noticed the town on the river ford.",
+      "introDark": "The powers of the land have noticed {town}, and they see it as a prize. Banners nobody wants to see are flying in the far valleys."
+    },
+    {
+      "name": "The Long Night",
+      "levels": [
+        9,
+        12
+      ],
+      "opensAtLevel": 7,
+      "earliestDay": 460,
+      "latestDay": 540,
+      "arrivalBonus": 3,
+      "pace": 1.6,
+      "seeds": [
+        [
+          4,
+          6
+        ]
+      ],
+      "finale": true,
+      "intro": "One enemy has outgrown all the rest. {bigbad} has risen, and the whole of the land waits to see whether {town} will stand.",
+      "introDark": "The sun comes up grey over {town}. {bigbad} has risen, and there are people in the streets who say it would be easier to kneel."
+    }
+  ],
+  "menaces": {
+    "festerDays": 45,
+    "festerEveryDays": 25,
+    "growth": 0.5,
+    "unknownGrowth": 0.5,
+    "holdingGrowth": 0.3,
+    "failedDelve": 10,
+    "perLevel": 70,
+    "maxLevel": 14,
+    "stages": {
+      "rising": 80,
+      "power": 200,
+      "dominion": 400,
+      "overlord": 450
+    },
+    "strikeEveryDays": [
+      10,
+      16
+    ],
+    "strikeShare": 0.15,
+    "repelLoss": 0.3,
+    "holdingCleared": 40,
+    "seatBroken": 0.5,
+    "brokenLevels": 2,
+    "assaultEveryDays": [
+      35,
+      50
+    ],
+    "marchDays": 4,
+    "assaultConfidence": 0.7,
+    "assaultRetreat": 0.6,
+    "settlementHit": 25,
+    "bountyBonus": 60,
+    "kinds": {
+      "tribe": {
+        "types": [
+          "humanoid",
+          "giant"
+        ],
+        "leaders": [
+          "Vorga Ironjaw",
+          "Skarn the Flayer",
+          "Hruth Ashmane",
+          "Grisk Many-Scars",
+          "Ulgra Bonebreaker",
+          "Morrak Cinderfist",
+          "Durza Two-Axes",
+          "Krag the Unbowed",
+          "Ogrim Blackhand",
+          "Hesh Wolfmother"
+        ],
+        "titles": [
+          "{leader}'s band",
+          "{leader}'s horde",
+          "the Host of {leader}",
+          "the Dominion of {leader}",
+          "{leader}, the Red King"
+        ],
+        "people": "warriors",
+        "rise": "Hunters coming down from {region} say {leader} has taken {seat} and is calling every warband in the hills to it.",
+        "riseDark": "Hunters coming down from {region} say {leader} has taken {seat}. The bands that answer the call march past burned farms to get there.",
+        "strike": [
+          "Riders of {name} fall on {where} by night and drive off the stock.",
+          "A war party of {name} burns the hayricks at {where} and is gone before the bell stops ringing.",
+          "Outriders of {name} waylay the carts on the road to {where} and take everything that can be carried."
+        ],
+        "strikeDark": [
+          "Riders of {name} fall on {where} by night. They take the stock and leave the barn burning, and someone's body in the lane.",
+          "{name} sends a message to {where}: a head on a spear at the crossroads. Everyone knows whose."
+        ],
+        "raze": "{people} are gone: {name} has burned {settlement} to the ground. The smoke can be seen from the walls.",
+        "slain": "{leader} is dead, and the horde breaks apart into quarrelling bands."
+      },
+      "undead": {
+        "types": [
+          "undead"
+        ],
+        "leaders": [
+          "Sir Aldric the Unburied",
+          "Morwen Greyhand",
+          "the Ashen Abbot",
+          "Old Corvus",
+          "Lady Vessaline",
+          "Thane Haldor",
+          "the Pale Bishop",
+          "Lord Caddoc Hollowe",
+          "Mother Ash",
+          "the Drowned Knight"
+        ],
+        "titles": [
+          "the dead of {seat}",
+          "the Barrow of {leader}",
+          "{leader}, the Barrow-King",
+          "the Grey Dominion of {leader}",
+          "{leader}, the Deathless"
+        ],
+        "people": "dead",
+        "rise": "The dead are walking out of {region} in long grey lines toward {seat}. Something there called them, and the priests say its name is {leader}.",
+        "riseDark": "The dead are walking out of {region} toward {seat}, and among them, the shepherds swear, are faces they buried last winter.",
+        "strike": [
+          "Grey shapes from {name} walk into {where} after dark. The watch drives them off with fire, shaking.",
+          "Every dog in {where} howls at once at midnight. In the morning the well water tastes of grave dirt.",
+          "Something from {name} scratches at the doors of {where} all night, and is gone by first light."
+        ],
+        "strikeDark": [
+          "Grey shapes from {name} walk into {where} after dark. In the morning a family is missing, and their door stands open.",
+          "The dead of {name} come to {where} for one of their own. The grave they leave behind is empty again by morning."
+        ],
+        "raze": "{people} do not answer the bells any more. {name} has walked through {settlement}, and now its people walk with it.",
+        "slain": "{leader} crumbles to dust, and across the land the dead lie down again."
+      },
+      "schemers": {
+        "types": [
+          "fiend",
+          "fey",
+          "aberration",
+          "celestial"
+        ],
+        "leaders": [
+          "Mother Nettle",
+          "Grandmother Skulk",
+          "Auntie Brine",
+          "Sister Wormwood",
+          "the Velvet Man",
+          "Old Hesk",
+          "the Lantern Thief",
+          "Cousin Bramble",
+          "the Smiling Guest",
+          "Madame Yarrow"
+        ],
+        "titles": [
+          "the whispers of {seat}",
+          "the Coven of {leader}",
+          "{leader}, Mistress of {region}",
+          "the Thorn Court of {leader}",
+          "{leader}, Queen of Thorns"
+        ],
+        "people": "folk",
+        "rise": "Pedlars from {region} won't say {leader}'s name above a whisper, but they all say it. Bargains are being struck at {seat}.",
+        "riseDark": "Pedlars from {region} have stopped coming. The last one smiled too much, and left a gift of {leader}'s at every door.",
+        "strike": [
+          "A pedlar with a too-wide smile sells charms in {where}. By week's end three of the buyers have sickened and the charms are gone.",
+          "The milk sours in every pail in {where}, and a stranger's footprints lead from the dairy toward {seat}.",
+          "Someone in {where} wakes having signed a paper they do not remember. The ink is red, and the name on it is {leader}'s."
+        ],
+        "strikeDark": [
+          "Children in {where} sing a rhyme nobody taught them, about {leader} and the doors that open at night. Two of them walk out of town and are not found.",
+          "A woman from {where} trades her shadow to {leader} for her husband's health. He recovers. She is found in the river."
+        ],
+        "raze": "{people} have struck a bargain with {name}. {settlement} still stands, but its gates are shut to {town} and its people smile at nothing.",
+        "slain": "{leader}'s bargains come undone all at once. In {region}, people wake and do not know how long they slept."
+      },
+      "beasts": {
+        "types": [
+          "beast",
+          "monstrosity",
+          "dragon"
+        ],
+        "leaders": [
+          "Ashfang",
+          "the Grey Widow",
+          "Old Tusker",
+          "Rimewing",
+          "the Night Stag",
+          "Bloodmaw",
+          "Gorehorn",
+          "the White Hart",
+          "Old Mother Spindle",
+          "Thunderhoof"
+        ],
+        "titles": [
+          "the beast of {seat}",
+          "{leader} of {seat}",
+          "{leader}, the Terror of {region}",
+          "{leader}, the Ruin of {region}",
+          "{leader}, the Devourer"
+        ],
+        "people": "herds",
+        "rise": "Trappers in {region} have a name for the thing that has made {seat} its den: {leader}. They no longer set their lines that way.",
+        "riseDark": "Trappers in {region} have a name for the thing at {seat}: {leader}. They found what was left of the last ones who went to look.",
+        "strike": [
+          "{leader} comes down out of {region} and takes cattle from {where} in a single night.",
+          "Something huge has been at the fences of {where}: posts snapped like kindling, tracks the size of cartwheels.",
+          "The herds at {where} stampede at midnight. In the morning half are gone, and {leader}'s cry is heard from the hills."
+        ],
+        "strikeDark": [
+          "{leader} comes down out of {region} and tears the roof off a barn in {where}. The farmer's family hid in the root cellar till dawn; the farmer did not.",
+          "{leader} takes a shepherd from the hills above {where}, and leaves the crook standing in the snow."
+        ],
+        "raze": "{people} are no more. {name} has made a hunting ground of {settlement}.",
+        "slain": "{leader} is slain, and the wild country of {region} breathes again."
+      },
+      "rivals": {
+        "types": [
+          "humanoid"
+        ],
+        "leaders": [
+          "Captain Rhosk",
+          "Lady Merrow Vane",
+          "Black Tom Hollis",
+          "the Margrave Osric",
+          "Sable Jen",
+          "Baron Coldwater",
+          "Sir Gerrit Vance",
+          "the Widow Marl",
+          "Captain Ivo Saltmarsh",
+          "Countess Ilse Raeburn"
+        ],
+        "titles": [
+          "the toll-men of {seat}",
+          "{leader}'s Free Lances",
+          "{leader}, Lord of {region}",
+          "the Iron March of {leader}",
+          "{leader}, the Usurper"
+        ],
+        "people": "traders",
+        "rise": "{leader} has hired every sword in {region} and holds {seat} like a lord. The caravans pay what they're told.",
+        "riseDark": "{leader} hangs those who will not pay along the road to {seat}. The caravans pay, and some of them stop coming.",
+        "strike": [
+          "{leader}'s men stop the carts outside {where} and take a third of everything for passage.",
+          "Hired blades of {name} rough up the owner of {where} and leave with the till.",
+          "{leader}'s agents buy up the grain meant for {where} and sell it back at twice the price."
+        ],
+        "strikeDark": [
+          "{leader}'s men stop the carts outside {where}. The carter who argued is left hanging from the milestone as a lesson.",
+          "{name} burns {where} for refusing to pay, and posts a notice on the town hall door saying why."
+        ],
+        "raze": "{people} have bent the knee: {settlement} now flies {leader}'s colours and sends nothing to {town}.",
+        "slain": "{leader} is dead, and the free lances melt away to look for a new paymaster."
+      },
+      "cult": {
+        "types": [
+          "undead",
+          "fiend"
+        ],
+        "leaders": [
+          "the Hollow Cantor",
+          "Brother Ashes",
+          "the Grey Precentor",
+          "Mother Mourning",
+          "the Lamplighter"
+        ],
+        "titles": [
+          "the choir under the hill",
+          "the Hollow Choir",
+          "the Choir of {leader}",
+          "the Hollow Church",
+          "The Hollow King, risen"
+        ],
+        "people": "faithful",
+        "rise": "The singing under {seat} goes on every night now. The priests of {town} say a name the choir answers to: {leader}.",
+        "riseDark": "The singing under {seat} can be heard from the market square at midnight, and some of the townsfolk hum along without knowing it.",
+        "strike": [
+          "Graves in {town}'s burying ground are found open again, and a lantern burns at {where} that nobody lit.",
+          "Hymns nobody knows are chalked on the walls of {where} overnight. The priests scrub them off; they are back by morning.",
+          "A procession of hooded figures crosses the fields by {where} at midnight, singing, and does not answer when hailed."
+        ],
+        "strikeDark": [
+          "A whole household at {where} walks out at midnight toward {seat}, singing. The watch is told not to follow.",
+          "The bell of the shrine rings by itself at {where}, and in the morning the oldest woman in the lane is gone."
+        ],
+        "raze": "{people} of {settlement} have taken the Hollow King's hymn. Their dead do not stay buried, and they say this is a mercy.",
+        "slain": "{leader} falls silent, and the singing under the hill stops at last."
+      }
+    },
+    "powerText": "{oldname} has become {name}. {leader} holds {seat} and {holdings} besides, and the lesser lairs of {region} answer the call.",
+    "dominionText": "{name} is a power in the land now. {leader} sends heralds and threats the way kings do, and {town} is on the list.",
+    "repelled": "Raiders of {name} come for {where}, and {by} drive them off.",
+    "broken": "{leader} flees {seat} ahead of the heroes and takes refuge at {refuge}. {name} is broken, but not finished.",
+    "succeeded": "{leader} dies at {seat}. {heir} takes up the banner at {refuge}, and {name} fights on.",
+    "rootless": "The heroes clear {seat}, but the singing in {town} does not stop. {name} will find another hall.",
+    "maxByAct": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "bountyEveryDays": 20
+  },
+  "dread": {
+    "tones": [
+      25,
+      50,
+      75
+    ],
+    "stageWeights": [
+      0,
+      3,
+      9,
+      18,
+      28
+    ],
+    "yoke": 20,
+    "razed": 6,
+    "maxRazed": 24,
+    "warbandRaids": 6,
+    "warbandMarching": 12,
+    "follow": 0.1,
+    "scarDecay": 0.25,
+    "sack": 35,
+    "menaceDestroyed": 10,
+    "yokeBroken": 20,
+    "evilFavor": 0.03,
+    "fleeEveryDays": [
+      8,
+      14
+    ],
+    "flee": [
+      1,
+      3
+    ],
+    "desertChance": 0.25,
+    "desertRenown": 10,
+    "refugees": [
+      2,
+      4
+    ],
+    "abandonAt": 95,
+    "abandonDays": 30,
+    "flight": "The {family} family load a cart before dawn and take the south road. They do not say goodbye.",
+    "desert": "{hero} settles the tavern bill and rides out at first light. \"This town is finished,\" they tell the gatekeeper.",
+    "refugeesText": "{n} survivors of {settlement} reach the gates of {town} with nothing but what they carry.",
+    "abandoned": "There is no one left who believes. The last families of {town} take the south road together, and the town on the river ford is left to the crows.",
+    "toneUp": [
+      "",
+      "Unease spreads through {town}. People bar their doors at night who never did before.",
+      "A grim mood settles over {town}. The taverns are quiet, and the temple is full.",
+      "Darkness gathers over {town}. Some say aloud what many think: that the town is finished."
+    ],
+    "toneDown": [
+      "Hope returns to {town}. Children play in the square again, and the bards are back.",
+      "The worst seems to be over. {town} starts to rebuild, and to talk about the future.",
+      "{town} is grim still, but no longer despairing. People begin to look each other in the eye again."
+    ],
+    "relativeFloor": 0.25,
+    "relativeCap": 1.5,
+    "grimFleeEveryDays": [
+      20,
+      30
+    ],
+    "toneMargin": 10,
+    "toneDays": 20
+  },
+  "yoke": {
+    "everyDays": 10,
+    "share": 0.3,
+    "minimum": 20,
+    "missedToMarch": 3,
+    "graceDays": 60,
+    "sack": "The defence collapses. {leader}'s host pours through the breach and puts {town} to the torch. They do not stay: they empty the treasury, hang the town bell in their own hall, and leave a tax-taker at the town hall. {town} is under the yoke of {name}.",
+    "tribute": "{name}'s tax-taker counts out {gold} gold from the treasury and rides away with it. Nobody meets anybody's eye.",
+    "missed": "{name}'s tax-taker finds the treasury empty. He says nothing, and rides away fast.",
+    "broken": "The yoke of {name} is broken! The tax-taker is run out of {town} with the whole market jeering behind him."
+  },
+  "finale": {
+    "firstMarchDays": 60,
+    "crown": "{leader} is not satisfied with {region}. {name} sends heralds to every town in the land: kneel, or burn. {town} is the first on the list.",
+    "fallback": [
+      {
+        "kind": "beasts",
+        "leader": "Vermithrax the Old Wyrm"
+      },
+      {
+        "kind": "undead",
+        "leader": "Queen Ysolde the Deathless"
+      },
+      {
+        "kind": "schemers",
+        "leader": "the Lord of the Last Door"
+      }
+    ],
+    "fallbackText": "Something old wakes in {region}, something that slept through the whole history of {town}. {leader} has risen, and its hunger has a direction.",
+    "victory": "{leader} is dead. {town}'s heroes come home through cheering crowds, and the long night is over. The bards will be singing about {town} for a hundred years.",
+    "victoryDark": "{leader} is dead. {town} is half ash and half graves, but it stands, and the morning is clear for the first time in a year.",
+    "defeat": "{town} falls to {name}. The bards will sing about it, but not in {town}.",
+    "march": "{name} is on the march! {leader} leads some {army} toward {town}. They will reach the walls in {days} days.",
+    "repelled": "{town} holds. {leader} draws off with what is left of the host, but {name} is not finished.",
+    "overlordLevel": [
+      9,
+      13
+    ],
+    "overChampion": 1,
+    "marchGrowth": 0.1,
+    "rideEveryDays": 20,
+    "rideAfterDays": 20,
+    "rideUnder": 3,
+    "ride": "{heroes} ride out for {seat} to face {leader}. The whole of {town} turns out at the gate to watch them go.",
+    "marchArmy": [
+      0.7,
+      0.9
+    ],
+    "yokeRideUnder": 0
+  }
+}

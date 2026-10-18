@@ -41,6 +41,9 @@ public sealed class Settlement
     /// <summary>How its people feel about the town, -100 to 100.</summary>
     public double Standing { get; set; }
     public bool Allied { get; set; }
+
+    /// <summary>Burned, emptied or bent to a menace's will (<see cref="Menaces"/>): it pleads, trades and allies no more.</summary>
+    public bool Razed { get; set; }
     public int Envoys { get; set; }
     public int NextPleaDay { get; set; }
 
@@ -313,7 +316,7 @@ public static class World
         {
             // Feelings cool or warm back toward where they started.
             double d = s.Kin.Start - s.Standing;
-            if (!s.Allied) s.Standing += Math.Sign(d) * Math.Min(Math.Abs(d), w.Standing.Drift);
+            if (!s.Allied && !s.Razed) s.Standing += Math.Sign(d) * Math.Min(Math.Abs(d), w.Standing.Drift);
         }
         LapsePleas(town);
         PostPleas(town);
@@ -341,7 +344,7 @@ public static class World
         foreach (var s in town.Settlements)
         {
             var region = town.Regions[s.RegionId];
-            if (!region.Known || town.Day < s.NextPleaDay) continue;
+            if (!region.Known || s.Razed || town.Day < s.NextPleaDay) continue;
             if (town.Pleas.Count(p => p.Status is PleaStatus.Open or PleaStatus.Taken) >= rules.MaxOpen) break;
             s.NextPleaDay = town.Day + town.Rng.Range(rules.PleaEveryDays[0], rules.PleaEveryDays[1] + 1);
             if (town.Pleas.Any(p => p.SettlementId == s.Id && p.Status is PleaStatus.Open or PleaStatus.Taken)) continue;
@@ -395,7 +398,7 @@ public static class World
         var rules = town.Content.World.Standing;
         if (town.Day - town.LastEnvoyDay < rules.EnvoyEveryDays || town.Treasury < rules.EnvoyCost + 200) return;
         var target = town.Settlements
-            .Where(s => !s.Allied && town.Regions[s.RegionId].Known)
+            .Where(s => !s.Allied && !s.Razed && town.Regions[s.RegionId].Known)
             .OrderByDescending(s => s.Standing)
             .ThenBy(s => s.Id)
             .FirstOrDefault();
@@ -408,7 +411,7 @@ public static class World
         var rules = town.Content.World.Standing;
         if (settlementId < 0 || settlementId >= town.Settlements.Count) return false;
         var s = town.Settlements[settlementId];
-        if (!town.Regions[s.RegionId].Known || town.Treasury < rules.EnvoyCost) return false;
+        if (!town.Regions[s.RegionId].Known || s.Razed || town.Treasury < rules.EnvoyCost) return false;
         town.Book(TreasuryAccount.Envoys, -rules.EnvoyCost);
         town.LastEnvoyDay = town.Day;
         // Gifts please less each time.
@@ -422,6 +425,7 @@ public static class World
     /// <summary>Move a people's standing, and seal an alliance when it climbs high enough.</summary>
     public static void Shift(Town town, Settlement s, double delta)
     {
+        if (s.Razed) return;
         s.Standing = Math.Clamp(s.Standing + delta, -100, 100);
         if (s.Allied || s.Standing < town.Content.World.Standing.Ally) return;
         s.Allied = true;

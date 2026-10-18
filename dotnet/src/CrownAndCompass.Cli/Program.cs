@@ -60,7 +60,7 @@ town.Ledger.OnWrite(e =>
     if (e.Importance >= minImportance) Print(e.Format());
 });
 
-for (int d = 0; d < days; d++)
+for (int d = 0; d < days && town.Outcome == null; d++)
 {
     sim.RunDays(1);
     var s = sim.History[^1];
@@ -78,11 +78,10 @@ Print($"=== {town.Name} after {days} days (seed {seed}) ===");
 var final = sim.Snapshot();
 Print($"Population {final.Population} ({town.Agents.Count(a => a.Departed)} have left), treasury {Js.ToFixed(final.Treasury, 0)} gold.");
 Print(
-    town.Outcome == Outcome.Victory
-        ? "The Last Stand is won: the warlord is dead."
-        : town.Outcome == Outcome.Defeat
-            ? "The town has fallen to the warband."
-            : $"The warband stands at {Js.Str(Js.Round(town.Enemy.Strength))} ({town.Enemy.Stage.Name()}); {town.Enemy.Raids} raids, {town.Enemy.Sieges} sieges so far.");
+    town.Outcome != null
+        ? $"{Saga.EndTitle(town)}: {town.Saga.EndText}"
+        : $"The warband stands at {Js.Str(Js.Round(town.Enemy.Strength))} ({town.Enemy.Stage.Name()}); {town.Enemy.Raids} raids, {town.Enemy.Sieges} sieges so far.");
+if (Saga.Summary(town) != "") Print(Saga.Summary(town));
 var counts = new OrderedMap<string, int>();
 foreach (var b in town.Buildings) if (b.Complete) counts[b.Def.Name] = counts.Get(b.Def.Name, 0) + 1;
 foreach (var (name, n) in counts.OrderBy(kv => kv.Key, StringComparer.Ordinal)) Print($"  {name}: {n}");

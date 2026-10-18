@@ -384,7 +384,7 @@ public static class Factions
 
     private static void CheckExposure(Town town, FactionState f)
     {
-        if (!f.Secret || f.Known || f.Heat < Rules(town).ExposeAt) return;
+        if (!f.Secret || f.Known || f.Members.Count == 0 || f.Heat < Rules(town).ExposeAt) return;
         f.Known = true;
         var leader = town.Agent(f.LeaderId!.Value);
         town.Log(

@@ -38,6 +38,9 @@ public sealed record SimulationOptions
 
     /// <summary>Whether the warband exists at all (sandbox and some tests turn it off).</summary>
     public bool Enemy { get; init; } = true;
+
+    /// <summary>Run the campaign arc (acts, festering menaces, dread); off, the Last Stand ends the game.</summary>
+    public bool Saga { get; init; } = true;
 }
 
 /// <summary>
@@ -54,6 +57,7 @@ public sealed class Simulation
     {
         Options = options ?? new SimulationOptions();
         Town = new Town(content ?? Content.Default(), Options.Seed);
+        Town.Saga.Enabled = Options.Saga && Options.Enemy;
         Charter();
     }
 
@@ -95,6 +99,7 @@ public sealed class Simulation
         Shrines.Daily(t, Options.AutoMayor);
         Faith.Daily(t);
         Factions.Daily(t, Options.AutoMayor);
+        Saga.Daily(t, Options.AutoMayor);
         Economy.Daily(t, true);
         History.Add(Snapshot());
         t.AccountsYesterday = t.AccountsToday;

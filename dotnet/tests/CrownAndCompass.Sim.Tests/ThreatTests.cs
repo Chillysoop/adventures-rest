@@ -9,6 +9,13 @@ public class ThreatTests
         for (int d = 0; d < maxDays && sim.Town.Outcome == null; d++) sim.RunDays(1);
     }
 
+    /// <summary>Until the Last Stand settles Act I: the warlord dead, or the town sacked or fallen.</summary>
+    private static void RunUntilLastStand(Simulation sim, int maxDays)
+    {
+        var t = sim.Town;
+        for (int d = 0; d < maxDays && t.Outcome == null && t.Saga.Sacks == 0 && Threat.IsActive(t); d++) sim.RunDays(1);
+    }
+
     [Fact]
     public void EscalatesThroughForeshadowedStagesAndRaisesAWarCampHeroesCanRaid()
     {
@@ -46,8 +53,9 @@ public class ThreatTests
             var sim = new Simulation(new SimulationOptions { Seed = seed, AutoBounties = false, AutoDefense = false, FreeCompanies = false });
             sim.Town.Defenses.Palisade = PalisadeState.Building;
             sim.Town.Defenses.PalisadeReadyTick = int.MaxValue;
-            RunUntilOutcome(sim, 250);
-            if (sim.Town.Outcome == Outcome.Defeat) fallen++;
+            RunUntilLastStand(sim, 250);
+            // Breaking the walls sacks the town and puts it under the warband's yoke; a second time, it falls.
+            if (sim.Town.Saga.Sacks > 0 || sim.Town.Outcome == Outcome.Defeat) fallen++;
         }
         Assert.True(fallen >= 2);
     }
@@ -59,8 +67,8 @@ public class ThreatTests
         foreach (int seed in new[] { 1, 2, 3 })
         {
             var sim = new Simulation(new SimulationOptions { Seed = seed });
-            RunUntilOutcome(sim, 260);
-            if (sim.Town.Outcome == Outcome.Victory) won++;
+            RunUntilLastStand(sim, 260);
+            if (sim.Town.Enemy.Stage == ThreatStage.Defeated) won++;
             Assert.True(sim.Town.Enemy.Strength >= 0);
         }
         Assert.True(won >= 2);

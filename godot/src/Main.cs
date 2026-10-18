@@ -393,13 +393,10 @@ public partial class Main : Control
         card.AddThemeStyleboxOverride("panel", box);
         var v = new VBoxContainer();
         v.AddThemeConstantOverride("separation", 10);
-        var h = Ui.Label(won ? "The Last Stand is won" : $"{t.Name} has fallen", Ui.Ink, Ui.Display, 22);
+        var h = Ui.Label(Saga.EndTitle(t), Ui.Ink, Ui.Display, 22);
         h.HorizontalAlignment = HorizontalAlignment.Center;
         v.AddChild(h);
-        string leader = t.Content.Enemy.Leader;
-        var body = Ui.Rich("[center]" + (won
-            ? $"{Ui.Esc(leader)} lies dead before your walls on day {t.Day}. The Marchlands will sing of {Ui.Esc(t.Name)}. The full account is in the Chronicles."
-            : $"{Ui.Esc(leader)}'s banner flies over the town hall on day {t.Day}. The full account is in the Chronicles.") + "[/center]");
+        var body = Ui.Rich($"[center]{Ui.Esc(t.Saga.EndText)} The full account is in the Chronicles.[/center]");
         v.AddChild(body);
         var actions = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
         actions.AddThemeConstantOverride("separation", 8);

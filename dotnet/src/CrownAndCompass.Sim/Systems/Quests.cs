@@ -246,7 +246,7 @@ public static class Quests
 
         // More taverns, more talk on the roads: seasoned heroes hear of the town and come.
         double green = Math.Max(0.4, 0.7 - town.Content.Rumors.BetterHeroesPerTavern * (taverns.Count - 1));
-        int level = town.Rng.Chance(green) ? 1 : town.Rng.Chance(0.8) ? 2 : 3;
+        int level = (town.Rng.Chance(green) ? 1 : town.Rng.Chance(0.8) ? 2 : 3) + Saga.ArrivalBonus(town);
         var a = CreateHero(town, PickClass(town), level);
         string where = taverns[town.Rng.Range(0, taverns.Count)].Name;
         town.Log(LedgerCategory.Arrival, Importance.Notable, $"{a.Describe()}, walks into {where} looking for paid work. ({a.TraitList()})", [a.Id]);

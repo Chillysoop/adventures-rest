@@ -258,9 +258,12 @@ public sealed class Town
     public int FestivalDays { get; set; }
 
     public EnemyState Enemy { get; } = new();
+
+    /// <summary>The campaign arc: its acts, the menaces abroad, and the town's dread (<see cref="Systems.Saga"/>).</summary>
+    public SagaState Saga { get; } = new();
     public Defenses Defenses { get; } = new();
 
-    /// <summary>How the campaign ended: the Last Stand won, or the town fallen.</summary>
+    /// <summary>How the campaign ended: the big bad slain, or the town fallen.</summary>
     public Outcome? Outcome { get; set; }
 
     /// <summary>The Director's read of recent drama; it decays each day.</summary>
