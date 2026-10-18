@@ -17,6 +17,7 @@ public partial class Main
         Zones,
         Government,
         Commission,
+        Decor,
     }
 
     /// <summary>One button on the bar: a zone to paint, a building to place, or a defense to order.</summary>
@@ -48,6 +49,7 @@ public partial class Main
             new("Farm", Building: "farm"), new("Lumber Camp", Building: "lumber_camp"), new("Forge", Building: "forge"),
             new("Brewery", Building: "brewery"), new("Tavern", Building: "tavern"), new("General Store", Building: "general_store"),
         ],
+        [BuildGroup.Decor] = [],
     };
 
     private static readonly Dictionary<BuildGroup, string> GroupHints = new()
@@ -55,6 +57,7 @@ public partial class Main
         [BuildGroup.Zones] = "Zone open land. Townsfolk and newcomers buy zoned lots and build what the town's economy needs.",
         [BuildGroup.Government] = "Government works, paid from the treasury and built by the town's builders.",
         [BuildGroup.Commission] = "Commission a business the town owns and runs. Its profits go to the treasury.",
+        [BuildGroup.Decor] = "Set dressing, anywhere and at any angle. Every piece makes its corner pleasanter and does one small job for the town.",
     };
 
     private void BuildBuildBar()
@@ -99,13 +102,22 @@ public partial class Main
             _dirty = true;
             SyncBuildButtons();
         };
+        _map.Decorator.Changed += () =>
+        {
+            _dirty = true;
+            SyncDecorButtons();
+        };
         ShowBuildGroup(BuildGroup.Zones);
     }
 
     private void ToggleBuildBar()
     {
         _buildBar.Visible = !_buildBar.Visible;
-        if (!_buildBar.Visible) _map.Planner.Pick(null);
+        if (!_buildBar.Visible)
+        {
+            _map.Planner.Pick(null);
+            _map.Decorator.Pick(null);
+        }
         _buildToggle.SetPressedNoSignal(_buildBar.Visible);
         _dirty = true;
     }
@@ -117,6 +129,12 @@ public partial class Main
         foreach (var c in _buildItems.GetChildren()) c.Free();
         _buildButtons.Clear();
         _map.Planner.Pick(null);
+        _map.Decorator.Pick(null);
+        if (g == BuildGroup.Decor)
+        {
+            ShowDecor();
+            return;
+        }
         foreach (var item in BuildItems[g])
         {
             var b = new Button { ToggleMode = item.Defense == null, FocusMode = FocusModeEnum.None, CustomMinimumSize = new Vector2(112, 58), ClipText = true };
@@ -157,6 +175,11 @@ public partial class Main
     private void RenderBuild()
     {
         if (!_buildBar.Visible) return;
+        if (_buildGroup == BuildGroup.Decor)
+        {
+            RenderDecor();
+            return;
+        }
         var town = _sim.Town;
         foreach (var (item, b) in _buildButtons)
         {

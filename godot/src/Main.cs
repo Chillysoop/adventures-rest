@@ -64,7 +64,14 @@ public partial class Main : Control
         // Started plainly, the game picks up the newest save; arguments set up a moment instead.
         bool loaded = _opts.Load is string file ? LoadFile(file, "the save") : OS.GetCmdlineUserArgs().Length == 0 && Continue();
         if (!loaded) NewTown(_opts.Seed ?? 1, _opts.Autoplay);
-        if (_opts.Day > 0) _sim.RunDays(_opts.Day);
+        if (_opts.Beautify is int keep && keep < _opts.Day)
+        {
+            _sim.RunDays(keep);
+            Showcase.Reserve(_sim);
+            _sim.RunDays(_opts.Day - keep);
+            Showcase.Dress(_sim);
+        }
+        else if (_opts.Day > 0) _sim.RunDays(_opts.Day);
         if (_opts.Hour > 0) for (int i = 0; i < _opts.Hour; i++) _sim.Step();
         _opts.ApplyScript(_sim);
         SetSpeed(_opts.Speed ?? 1);
@@ -76,6 +83,7 @@ public partial class Main : Control
         foreach (var (kind, at, label) in _opts.Markers) _map.Markers.Add(new Marker(kind, at, _sim.Town.Day, label));
         if (_opts.OpenMarker is int open && open < _map.Markers.Count) CallDeferred(MethodName.OpenMarkerAt, open);
         if (_opts.Plan is string plan) OpenPlan(plan, _opts.Tool, _opts.Hover);
+        if (_opts.DecorTool is string piece) OpenDecor(piece, _opts.DecorAt);
         if (_opts.Yaw != 0) _map.Rotate(_opts.Yaw);
         // --hero picks the town's most storied hero in town, for a look at their sheet.
         if (_opts.Hero && _sim.Town.Heroes.Where(a => !a.IsAway).OrderByDescending(a => a.Hero!.Items.Count).ThenByDescending(a => a.Hero!.Level).ThenBy(a => a.Id).FirstOrDefault() is Agent hero)
@@ -126,6 +134,7 @@ public partial class Main : Control
         _sim = sim;
         _lastAutosaveDay = sim.Town.Day;
         _map.Planner.Pick(null);
+        _map.Decorator.Pick(null);
         _map.Bind(_sim);
         _sim.Town.Ledger.OnWrite(OnLedger);
         _townName.Text = _sim.Town.Name;
@@ -215,6 +224,8 @@ public partial class Main : Control
         else if (k.Keycode == Key.Home) _map.Recenter();
         else if (k.Keycode == Key.B) ToggleBuildBar();
         else if (k.Keycode == Key.Escape && _map.Planner.Active) _map.Planner.Pick(null);
+        else if (k.Keycode == Key.Escape && _map.Decorator.Active) _map.Decorator.Pick(null);
+        else if (k.Keycode == Key.R && _map.Decorator.Active) _map.Decorator.Turn(k.ShiftPressed ? -1 : 1);
         else if (k.Keycode == Key.M) ToggleStrategic();
         else if (k.Keycode == Key.Escape && _inspector.Visible) Select(null);
         else if (k.Keycode == Key.Escape && _window.Visible) CloseWindow();
