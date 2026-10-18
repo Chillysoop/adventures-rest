@@ -291,6 +291,12 @@ public sealed record TownRules
     /// <summary>Per-resident upkeep doubles at this many residents: bigger towns cost more per head.</summary>
     public double UpkeepGrowth { get; init; }
 
+    /// <summary>A young town draws settlers looking for cheap land: this much attraction at the founding, fading to none at <see cref="FrontierSize"/> residents.</summary>
+    public double FrontierDraw { get; init; }
+
+    /// <summary>Residents at which a town stops drawing settlers just for being new (<see cref="FrontierDraw"/>).</summary>
+    public double FrontierSize { get; init; } = 1;
+
     /// <summary>Daily cost of keeping the town hall and council running.</summary>
     public double CivicUpkeep { get; init; }
 
