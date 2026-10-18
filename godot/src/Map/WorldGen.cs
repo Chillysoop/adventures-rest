@@ -145,8 +145,9 @@ public sealed class WorldGen
     /// <summary>The river's centre line as x for a given y: straight past the town, meandering further out.</summary>
     public float RiverX(float y)
     {
-        float far = Mathf.SmoothStep(30, 260, Mathf.Abs(y - Geo.Center.Y));
-        return Geo.Center.X + 15 + far * (Mathf.Sin(y * 0.011f + _riverPhase) * 46 + Mathf.Sin(y * 0.033f + _riverPhase * 2) * 12);
+        // Straight past the Riverside ward on the town's east edge, wandering once clear of it.
+        float far = Mathf.SmoothStep(Geo.Grid / 2 + 8, 280, Mathf.Abs(y - Geo.Center.Y));
+        return Geo.Center.X + Geo.Grid / 2 + 3 + far * (Mathf.Sin(y * 0.011f + _riverPhase) * 46 + Mathf.Sin(y * 0.033f + _riverPhase * 2) * 12);
     }
 
     public float RiverDistance(Vector2 p)

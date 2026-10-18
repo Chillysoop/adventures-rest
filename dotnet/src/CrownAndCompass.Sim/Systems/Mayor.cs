@@ -13,22 +13,30 @@ public static class Mayor
     {
         if (plan)
         {
-            KeepZoned(town, Zone.Residential, 3, 9.5, 0);
-            KeepZoned(town, Zone.Commercial, 2, 8, 0);
-            KeepZoned(town, Zone.Industry, 2, 11.5, 5.5);
-            KeepZoned(town, Zone.Farmland, 2, 99, 7);
+            int scale = 1 + town.Population / 150;
+            KeepZoned(town, Zone.Residential, 2 + scale, false);
+            KeepZoned(town, Zone.Commercial, 1 + scale, false);
+            KeepZoned(town, Zone.Industry, 1 + scale, true);
+            KeepZoned(town, Zone.Farmland, 1 + scale, true);
             RaiseWorks(town, defend);
+            RaiseInstitutions(town);
+            RaiseServices(town);
             PutIdleToWork(town);
         }
         CommissionHousing(town);
     }
 
-    /// <param name="ring">Distance from the hall the zone prefers; 0 keeps it as near the hall as it can.</param>
-    private static void KeepZoned(Town town, Zone zone, int minVacant, double maxDist, double ring)
+    /// <summary>Keep a few lots of each zone vacant: in a ward that favours the zone first, then near the hall (or far out, for fields and workshops).</summary>
+    private static void KeepZoned(Town town, Zone zone, int minVacant, bool edge)
     {
-        // A round patch at a time, as a player would paint it, until the zone has the open plots it wants.
+        if (Planning.VacantZoned(town, zone) >= minVacant) return;
+        double reach = town.Lots.Count == 0 ? 0 : town.Lots.Max(Town.DistanceFromCenter);
+        // A round patch at a time, as a player would paint it, until the zone has the open plots it wants:
+        // in the wards that favour it first; fields and workshops out at the edge of the built town, homes and shops close in.
+        double? Key(double x, double y, double d) =>
+            (City.WardOf(town, x, y).Favours == zone ? 0 : 100) + (edge ? Math.Abs(d - (reach + 1)) : d);
         for (int i = 0; i < 12 && Planning.VacantZoned(town, zone) < minVacant; i++)
-            if (!Land.PaintPatch(town, zone, zone == Zone.Farmland ? 1.4 : 1.1, maxDist + 0.5, ring)) break;
+            if (!Land.PaintPatch(town, zone, zone == Zone.Farmland ? 1.4 : 1.1, Key)) break;
     }
 
     /// <summary>A granary once the town is a village, and a watch house once it keeps a watch.</summary>
@@ -46,6 +54,43 @@ public static class Mayor
         }
     }
 
+    /// <summary>The institutions the next charter asks for, and the walls, raised as the treasury allows (one at a time).</summary>
+    private static void RaiseInstitutions(Town town)
+    {
+        var next = City.NextTier(town);
+        if (next == null || town.Population < next.Residents * 0.7) return;
+        if (next.Walls != "")
+        {
+            var work = next.Walls == "CityWall" ? DefenseWork.CityWall : DefenseWork.StoneWall;
+            if (work == DefenseWork.CityWall && town.Defenses.StoneWall == PalisadeState.None) work = DefenseWork.StoneWall;
+            if (Threat.BuildBlocked(town, work) == null && town.Treasury >= Threat.BuildCost(town, work) + 250) Threat.Build(town, work);
+        }
+        if (town.Buildings.Any(b => b.IsSite && (Planning.IsGovernment(town, b.Def) || (b.OwnerId == null && b.Def.IsBusiness)))) return;
+        foreach (string id in next.Requires)
+        {
+            if (town.Buildings.Any(b => b.Def.Id == id && !b.ForSale)) continue;
+            var d = town.Content.Building(id);
+            if (id == town.Content.Shrines.Temple || id == "general_store" || id == "tavern") continue;
+            if (Planning.Blocked(town, d) != null || town.Treasury < Planning.Cost(town, d) + 200) continue;
+            var lot = d.IsBusiness && !d.Civic ? Property.FindLot(town, d) ?? Planning.CivicLot(town, d) : Planning.CivicLot(town, d);
+            if (lot != null && Planning.Place(town, id, lot) != null) return;
+        }
+    }
+
+    /// <summary>Another market hall or library when the town has outgrown the ones it has.</summary>
+    private static void RaiseServices(Town town)
+    {
+        if (town.Buildings.Any(b => b.IsSite && Planning.IsGovernment(town, b.Def))) return;
+        foreach (var d in town.Content.Buildings.Where(d => d.Civic && d.Serves.Count > 0).OrderBy(d => d.Cost).ThenBy(d => d.Id, StringComparer.Ordinal))
+        {
+            string service = d.Serves.Keys.Order(StringComparer.Ordinal).First();
+            if (!town.Buildings.Any(b => b.Def.Id == d.Id) || City.CoverageOf(town, service) >= 0.9) continue;
+            if (Planning.Blocked(town, d) != null || town.Treasury < Planning.Cost(town, d) + 500) continue;
+            var lot = Planning.CivicLot(town, d);
+            if (lot != null && Planning.Place(town, d.Id, lot) != null) return;
+        }
+    }
+
     /// <summary>
     /// When idle hands pile up and no one has the purse to open a business, the council opens one
     /// itself: the business the town most wants, run by the town. Keeps a poor town from starving
@@ -55,20 +100,20 @@ public static class Mayor
     {
         var workers = town.Workers;
         int idle = workers.Count(a => a.JobId == null);
-        if (town.Day < 10 || idle < Math.Max(4, workers.Count / 4)) return;
+        if (town.Day < 10 || idle < Math.Max(4, workers.Count / 10)) return;
         if (town.Buildings.Any(b => b.IsSite && b.Def.IsBusiness)) return;
         // A workshop, never a tavern: a town-run inn drains purses the townsfolk need for homes and
         // businesses of their own, and the town keeps to a few works so private trade can grow.
         int run = town.Buildings.Count(b => b.Def.IsBusiness && b.OwnerId == null && !b.ForSale);
-        if (run >= 1 + workers.Count / 20) return;
+        if (run >= 1 + workers.Count / 15) return;
         var best = town.Content.Buildings
-            .Where(d => d.Buildable && d.IsBusiness && d.Produces.Count > 0)
+            .Where(d => d.Buildable && d.IsBusiness && d.Produces.Count > 0 && City.Unlocked(town, d))
             .Select(d => (d, s: Property.Demand(town, d.Id)))
             .OrderByDescending(x => x.s)
             .ThenBy(x => x.d.Id, StringComparer.Ordinal)
             .First();
         if (best.s < 1.0 || town.Treasury < Planning.Cost(town, best.d) + 60) return;
-        var lot = Property.FindLot(town, best.d.Zone, best.d) ?? Land.Find(town, best.d, null);
+        var lot = Property.FindLot(town, best.d) ?? Land.Find(town, best.d, null);
         if (lot != null) Planning.Place(town, best.d.Id, lot);
     }
 
@@ -80,13 +125,13 @@ public static class Mayor
         if (homeless < minHomeless || building) return false;
 
         var house = town.Content.Building("house");
-        var lot = Property.FindLot(town, Zone.Residential, house);
+        var lot = Property.FindLot(town, house);
         if (lot == null) return false;
-        double cost = house.Cost + town.Market.Quote(Good.Timber, house.Timber);
+        double cost = house.Cost + Planning.Materials(town, house);
         if (town.Treasury < cost + 50) return false;
 
         town.Book(TreasuryAccount.CharterHouses, -cost);
-        town.Market.Buy(Good.Timber, house.Timber);
+        Planning.BuyMaterials(town, house);
         var site = town.AddBuilding(house, lot, null, Property.NameFor(town, house, null), false);
         site.LaborBudget = house.BuildHours * Brain.ConstructionWage;
         town.Log(LedgerCategory.Town, Importance.Routine, $"With {homeless} people sleeping rough, the council commissions {site.Name}.");

@@ -84,6 +84,8 @@ public class LoyaltyTests
         {
             a.Hero!.Loyalty = 0;
             a.Gold = 0;
+            // Disloyal, not destitute: an empty purse alone would send them off for want of a meal.
+            a.MiserableDays = 0;
             sim.RunDays(1);
         }
         Assert.True(a.Departed);

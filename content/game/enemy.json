@@ -28,6 +28,8 @@
     "heroLevel": 4,
     "militiaPerWorker": 0.5,
     "palisade": 1.5,
+    "stoneWall": 2.0,
+    "cityWall": 2.6,
     "perTower": 0.15
   },
   "palisade": {
@@ -40,6 +42,20 @@
     "timber": 10,
     "days": 3,
     "max": 4
+  },
+  "stoneWall": {
+    "cost": 900,
+    "timber": 20,
+    "stone": 120,
+    "days": 12,
+    "tier": "town"
+  },
+  "cityWall": {
+    "cost": 2400,
+    "timber": 40,
+    "stone": 320,
+    "days": 20,
+    "tier": "city"
   },
   "outpost": {
     "id": "bloodtusk_camp",

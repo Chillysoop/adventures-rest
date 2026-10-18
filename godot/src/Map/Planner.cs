@@ -9,7 +9,8 @@ namespace CrownAndCompass.Client.Map;
 /// (drag to paint, [ and ] or Shift+wheel to size it), and the townsfolk site their own buildings inside
 /// the paint. A building tool shows its footprint under the cursor: click to place it facing the hall,
 /// or press and drag to turn it to face any way (Shift+wheel turns it too). Right-click puts the tool down.
-/// The paint itself is drawn on the ground by <see cref="TownView"/>; this draws the brush and the ghost.
+/// The wards are outlined and named; land in a ward not yet laid out is shaded and can't be painted.
+/// The paint itself is drawn on the ground by <see cref="TownView"/>; this draws the wards, the brush and the ghost.
 /// </summary>
 public partial class Planner(MapView map) : Control
 {
@@ -141,6 +142,7 @@ public partial class Planner(MapView map) : Control
     {
         if (Tool == null || map.Sim == null || _hover is not Vector2 h) return;
         var town = map.Sim.Town;
+        Wards(town);
         if (Tool.Zone is Zone z)
         {
             var c = z == Zone.None ? new Color(0.95f, 0.9f, 0.8f) : ZoneColor(z);
@@ -167,6 +169,55 @@ public partial class Planner(MapView map) : Control
             DrawStringOutline(Ui.Bold, s - new Vector2(lw / 2, 0), label, HorizontalAlignment.Left, -1, 13, 4, new Color(0.08f, 0.06f, 0.04f, 0.85f));
             DrawString(Ui.Bold, s - new Vector2(lw / 2, 0), label, HorizontalAlignment.Left, -1, 13, new Color("f6eedb"));
         }
+    }
+
+    /// <summary>Ward borders, closed wards shaded, and each ward's name at its middle: grey with the charter it waits for until it is laid out.</summary>
+    private void Wards(Town town)
+    {
+        var border = new Color("f6eedb", 0.55f);
+        var shade = new Color(0.05f, 0.04f, 0.03f, 0.38f);
+        var sums = new Dictionary<string, (float X, float Y, int N)>();
+        var wards = new WardDef[Geo.Grid * Geo.Grid];
+        for (int y = 0; y < Geo.Grid; y++)
+            for (int x = 0; x < Geo.Grid; x++)
+                wards[y * Geo.Grid + x] = City.WardOf(town, x + 0.5, y + 0.5);
+        for (int y = 0; y < Geo.Grid; y++)
+        {
+            int run = -1;
+            for (int x = 0; x <= Geo.Grid; x++)
+            {
+                // Closed land shaded a row run at a time.
+                bool closed = x < Geo.Grid && !town.City.OpenWards.Contains(wards[y * Geo.Grid + x].Id);
+                if (closed && run < 0) run = x;
+                if (!closed && run >= 0)
+                {
+                    DrawColoredPolygon([Screen(new(run, y)), Screen(new(x, y)), Screen(new(x, y + 1)), Screen(new(run, y + 1))], shade);
+                    run = -1;
+                }
+                if (x == Geo.Grid) break;
+                var w = wards[y * Geo.Grid + x];
+                var (sx, sy, n) = sums.GetValueOrDefault(w.Id);
+                sums[w.Id] = (sx + x + 0.5f, sy + y + 0.5f, n + 1);
+                if (x + 1 < Geo.Grid && !ReferenceEquals(wards[y * Geo.Grid + x + 1], w)) DrawLine(Screen(new(x + 1, y)), Screen(new(x + 1, y + 1)), border, 2, true);
+                if (y + 1 < Geo.Grid && !ReferenceEquals(wards[(y + 1) * Geo.Grid + x], w)) DrawLine(Screen(new(x, y + 1)), Screen(new(x + 1, y + 1)), border, 2, true);
+            }
+        }
+        foreach (var w in town.Content.City.Wards)
+        {
+            if (!sums.TryGetValue(w.Id, out var c) || c.N == 0) continue;
+            bool open = town.City.OpenWards.Contains(w.Id);
+            string sub = open ? "" : City.Reached(town, w.Tier) ? $"ready to lay out · {w.Cost:N0}g" : $"needs a {City.TierName(town, w.Tier).ToLowerInvariant()}";
+            var at = map.ToScreen(FromTown(c.X / c.N, c.Y / c.N), 0.6f);
+            Label(at, w.Name.ToUpperInvariant(), 13, open ? new Color("f6eedb") : new Color("cfc6b4", 0.8f));
+            if (sub != "") Label(at + new Vector2(0, 16), sub, 11, new Color("cfc6b4", 0.8f));
+        }
+    }
+
+    private void Label(Vector2 at, string text, int size, Color c)
+    {
+        var w = Ui.Bold.GetStringSize(text, HorizontalAlignment.Left, -1, size).X;
+        DrawStringOutline(Ui.Bold, at - new Vector2(w / 2, 0), text, HorizontalAlignment.Left, -1, size, 4, new Color(0.08f, 0.06f, 0.04f, 0.85f));
+        DrawString(Ui.Bold, at - new Vector2(w / 2, 0), text, HorizontalAlignment.Left, -1, size, c);
     }
 
     private Vector2 Screen(Vector2 town) => map.ToScreen(FromTown(town.X, town.Y), 0.06f);

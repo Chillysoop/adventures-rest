@@ -31,7 +31,8 @@ public sealed class Lot(int id, double x, double y)
 public sealed class Building(int id, BuildingDef def, int lotId)
 {
     public int Id { get; } = id;
-    public BuildingDef Def { get; } = def;
+    /// <summary>What it is; a house that grows a storey or falls back takes a new one.</summary>
+    public BuildingDef Def { get; set; } = def;
     public int LotId { get; } = lotId;
 
     public string Name { get; set; } = "";
@@ -54,13 +55,23 @@ public sealed class Building(int id, BuildingDef def, int lotId)
     public bool ForSale { get; set; }
     public bool Closed { get; set; }
 
+    /// <summary>A house: how content its families were yesterday with what the town gives them (0 to 1).</summary>
+    public double Contentment { get; set; } = 1;
+
+    /// <summary>Days in a row its families were content enough to grow, or wanting enough to fall back.</summary>
+    public int UpDays { get; set; }
+    public int DownDays { get; set; }
+
     public OrderedMap<Good, double> Stock { get; } = new();
     public List<int> Workers { get; } = [];
     public List<int> Residents { get; } = [];
 
     public bool Complete => BuildProgress >= Def.BuildHours;
     public bool IsSite => !Complete;
-    public int OpenJobs => Complete && !Closed && !ForSale ? Math.Max(0, Def.Jobs - Workers.Count) : 0;
+    /// <summary>The town hall's road crews: extra hands the treasury hires out of the town's upkeep.</summary>
+    public int Crew { get; set; }
+
+    public int OpenJobs => Complete && !Closed && !ForSale ? Math.Max(0, Def.Jobs + Crew - Workers.Count) : 0;
     public int OpenBeds => Complete ? Math.Max(0, Def.Housing - Residents.Count) : 0;
 
     public double StockOf(Good g) => Stock.Get(g, 0);
@@ -74,28 +85,40 @@ public sealed class Building(int id, BuildingDef def, int lotId)
 /// </summary>
 public sealed class Market
 {
-    public static double BasePrice(Good g) => g switch
-    {
-        Good.Food => 1.0,
-        Good.Timber => 1.5,
-        Good.Tools => 4.0,
-        Good.Ale => 1.2,
-        _ => throw new ArgumentOutOfRangeException(nameof(g)),
-    };
-
+    private readonly Dictionary<Good, double> _base = [];
     private readonly Dictionary<Good, double> _stock = [];
     private readonly Dictionary<Good, double> _target = [];
 
+    // What makers sold today, and the average price it fetched yesterday.
+    private readonly Dictionary<Good, double> _soldQty = [];
+    private readonly Dictionary<Good, double> _soldValue = [];
+    private readonly Dictionary<Good, double> _realized = [];
+
     public double ImportedToday { get; private set; }
 
-    public Market()
+    /// <param name="basePrice">Each good's price when supply meets demand (content/game/city.json).</param>
+    public Market(Func<Good, double> basePrice)
     {
         foreach (var g in Goods.All)
         {
+            _base[g] = basePrice(g);
             _stock[g] = 0;
             _target[g] = 20;
+            _soldQty[g] = 0;
+            _soldValue[g] = 0;
+            _realized[g] = 0;
         }
     }
+
+    /// <summary>
+    /// What makers actually got for a unit yesterday, before the cut; today's price if nothing sold.
+    /// A glut that sinks the price through the day shows here even after the evening caravan clears it.
+    /// </summary>
+    public double Realized(Good g) => _realized[g] > 0 ? _realized[g] : Price(g);
+
+    public double BasePrice(Good g) => _base[g];
+
+    public double Target(Good g) => _target[g];
 
     public double Stock(Good g) => _stock[g];
 
@@ -103,10 +126,13 @@ public sealed class Market
 
     public void Seed(Good g, double qty) => _stock[g] = Stock(g) + qty;
 
+    /// <summary>Share of base price the river barges and caravans pay for any surplus: the floor under every price.</summary>
+    public double ExportShare { get; set; } = 0.75;
+
     public double Price(Good g)
     {
         double ratio = Math.Sqrt(_target[g] / (Stock(g) + 1));
-        return BasePrice(g) * Math.Max(0.4, Math.Min(3.0, ratio));
+        return BasePrice(g) * Math.Max(ExportShare, Math.Min(3.0, ratio));
     }
 
     /// <summary>Cost of buying qty now, importing the shortfall by caravan at a premium.</summary>
@@ -127,8 +153,11 @@ public sealed class Market
 
     public double Sell(Good g, double qty)
     {
-        double revenue = qty * Price(g) * 0.9;
+        double price = Price(g);
+        double revenue = qty * price * 0.9;
         _stock[g] = Stock(g) + qty;
+        _soldQty[g] += qty;
+        _soldValue[g] += qty * price;
         return revenue;
     }
 
@@ -139,6 +168,9 @@ public sealed class Market
         {
             double cap = _target[g] * 1.2;
             if (Stock(g) > cap) _stock[g] = cap;
+            _realized[g] = _soldQty[g] > 0 ? _soldValue[g] / _soldQty[g] : 0;
+            _soldQty[g] = 0;
+            _soldValue[g] = 0;
         }
         ImportedToday = 0;
     }
@@ -172,6 +204,9 @@ public static class TreasuryAccount
     public const string Factions = "Factions";
     public const string Works = "Town works";
     public const string Honours = "Honours";
+    public const string Charters = "Charters";
+    public const string HearthTax = "Hearth tax";
+    public const string Wards = "Wards";
 }
 
 /// <summary>How the campaign ended.</summary>
@@ -183,13 +218,14 @@ public enum Outcome
 
 public sealed class Town
 {
-    public const int Grid = 24;
+    /// <summary>Tiles on a side: the old town in the middle, then the walled ring, then the outer wards (<see cref="Systems.City"/>).</summary>
+    public const int Grid = 48;
 
     public string Name { get; } = "Briarford";
     public int Seed { get; }
     public Rng Rng { get; }
     public Ledger Ledger { get; } = new();
-    public Market Market { get; } = new();
+    public Market Market { get; }
     public int Tick { get; set; }
     public double Treasury { get; set; }
     public double TaxRate { get; set; }
@@ -275,6 +311,9 @@ public sealed class Town
 
     /// <summary>The campaign arc: its acts, the menaces abroad, and the town's dread (<see cref="Systems.Saga"/>).</summary>
     public SagaState Saga { get; } = new();
+
+    /// <summary>The town's tier, its wards and what its households want (<see cref="Systems.City"/>).</summary>
+    public CityState City { get; } = new();
     public Defenses Defenses { get; } = new();
 
     /// <summary>How the campaign ended: the big bad slain, or the town fallen.</summary>
@@ -295,6 +334,7 @@ public sealed class Town
         Seed = seed;
         Rng = new Rng(seed);
         TaxRate = content.Rules.TaxRate;
+        Market = new Market(content.City.BasePrice) { ExportShare = content.City.ExportShare };
     }
 
     /// <summary>Move gold into (positive) or out of (negative) the treasury, booked under an account.</summary>
@@ -336,10 +376,11 @@ public sealed class Town
 
     public static double DistanceFromCenter(Lot l) => Math.Sqrt((l.X - Center) * (l.X - Center) + (l.Y - Center) * (l.Y - Center));
 
-    public double LotPrice(Lot lot) => LotPrice(DistanceFromCenter(lot));
+    public double LotPrice(Lot lot) => LotPrice(DistanceFromCenter(lot)) * Systems.City.WardOf(this, lot).Land;
 
-    /// <summary>Land is dearer near the hall.</summary>
-    public double LotPrice(double distance) => 15 + Population * 0.4 + Math.Max(0, 8 - distance) * 2;
+    /// <summary>Land is dearer near the hall (before the ward's own price).</summary>
+    public double LotPrice(double distance) =>
+        15 + Math.Min(Population, 300) * 0.4 + Math.Max(0, Population - 300) * 0.1 + Math.Max(0, 8 - distance) * 2;
 
     public Building AddBuilding(BuildingDef def, Lot lot, int? ownerId, string name, bool complete)
     {
@@ -358,6 +399,14 @@ public sealed class Town
         lot.OwnerId = ownerId;
         return b;
     }
+
+    /// <summary>While the townsfolk choose their hour (Brain.Hourly): the open taverns and how many drink in each.</summary>
+    [NotSaved]
+    internal List<Building>? HourTaverns;
+    [NotSaved]
+    internal Dictionary<int, int>? Drinkers;
+    [NotSaved]
+    internal int? DrinkerWasAt;
 
     public List<Building> Taverns => Buildings.Where(b => b.Complete && b.Def.Venue && !b.Closed && !b.ForSale).ToList();
 

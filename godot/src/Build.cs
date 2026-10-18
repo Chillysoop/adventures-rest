@@ -23,32 +23,44 @@ public partial class Main
     private sealed record BuildItem(string Label, Zone? Zone = null, string? Building = null, DefenseWork? Defense = null);
 
     private PanelContainer _buildBar = null!;
-    private HBoxContainer _buildItems = null!;
+    private HFlowContainer _buildItems = null!;
     private Label _buildHint = null!;
     private Button _buildToggle = null!;
     private BuildGroup _buildGroup = BuildGroup.Zones;
     private readonly Dictionary<BuildGroup, Button> _groupButtons = [];
     private readonly List<(BuildItem Item, Button Button)> _buildButtons = [];
 
-    private static readonly Dictionary<BuildGroup, BuildItem[]> BuildItems = new()
+    private static readonly BuildItem[] Zones =
+    [
+        new("Residential", Zone.Residential), new("Commercial", Zone.Commercial), new("Industry", Zone.Industry),
+        new("Farmland", Zone.Farmland), new("Clear zone", Zone.None),
+    ];
+
+    private static readonly BuildItem[] Defenses =
+    [
+        new("Palisade", Defense: DefenseWork.Palisade), new("Watchtower", Defense: DefenseWork.Tower),
+        new("Stone Walls", Defense: DefenseWork.StoneWall), new("City Wall", Defense: DefenseWork.CityWall),
+    ];
+
+    /// <summary>The bar's buttons, from the content: everything the town could ever place, in the order the charters open it.</summary>
+    private BuildItem[] BuildItems(BuildGroup g)
     {
-        [BuildGroup.Zones] =
-        [
-            new("Residential", Zone.Residential), new("Commercial", Zone.Commercial), new("Industry", Zone.Industry),
-            new("Farmland", Zone.Farmland), new("Clear zone", Zone.None),
-        ],
-        [BuildGroup.Government] =
-        [
-            new("Charter House", Building: "house"), new("Granary", Building: "granary"), new("Watch House", Building: "watch_house"),
-            new("Temple", Building: "temple"), new("Scrying Pool", Building: "scrying_pool"), new("Sleepless Spire", Building: "sleepless_spire"),
-            new("Palisade", Defense: DefenseWork.Palisade), new("Watchtower", Defense: DefenseWork.Tower),
-        ],
-        [BuildGroup.Commission] =
-        [
-            new("Farm", Building: "farm"), new("Lumber Camp", Building: "lumber_camp"), new("Forge", Building: "forge"),
-            new("Brewery", Building: "brewery"), new("Tavern", Building: "tavern"), new("General Store", Building: "general_store"),
-        ],
-    };
+        var town = _sim.Town;
+        int Order(BuildingDef d) => d.Tier == "" ? 0 : City.TierIndex(town, d.Tier);
+        IEnumerable<BuildingDef> Sorted(Func<BuildingDef, bool> keep) =>
+            town.Content.Buildings.Where(keep).OrderBy(Order).ThenBy(d => d.Cost).ThenBy(d => d.Id, StringComparer.Ordinal);
+        return g switch
+        {
+            BuildGroup.Zones => Zones,
+            BuildGroup.Government =>
+            [
+                new("Charter House", Building: "house"),
+                .. Sorted(d => Planning.IsGovernment(town, d) && d.Id != "town_hall").Select(d => new BuildItem(d.Name, Building: d.Id)),
+                .. Defenses,
+            ],
+            _ => [.. Sorted(d => d.Buildable && d.IsBusiness && !Planning.IsGovernment(town, d)).Select(d => new BuildItem(d.Name, Building: d.Id))],
+        };
+    }
 
     private static readonly Dictionary<BuildGroup, string> GroupHints = new()
     {
@@ -83,8 +95,10 @@ public partial class Main
         head.AddChild(_buildHint);
         col.AddChild(head);
 
-        _buildItems = new HBoxContainer();
-        _buildItems.AddThemeConstantOverride("separation", 6);
+        // Rows that wrap: the lists grow with every charter.
+        _buildItems = new HFlowContainer { CustomMinimumSize = new Vector2(1180, 0) };
+        _buildItems.AddThemeConstantOverride("h_separation", 6);
+        _buildItems.AddThemeConstantOverride("v_separation", 6);
         col.AddChild(_buildItems);
 
         AddChild(_buildBar);
@@ -117,7 +131,7 @@ public partial class Main
         foreach (var c in _buildItems.GetChildren()) c.Free();
         _buildButtons.Clear();
         _map.Planner.Pick(null);
-        foreach (var item in BuildItems[g])
+        foreach (var item in BuildItems(g))
         {
             var b = new Button { ToggleMode = item.Defense == null, FocusMode = FocusModeEnum.None, CustomMinimumSize = new Vector2(112, 58), ClipText = true };
             b.AddThemeFontSizeOverride("font_size", 12);
@@ -173,9 +187,15 @@ public partial class Main
             }
             else if (item.Defense is DefenseWork d)
             {
-                why = DefenseBlocked(town, d);
+                why = Threat.BuildBlocked(town, d);
                 line = why ?? $"{Threat.BuildCost(town, d)}g";
-                tip = d == DefenseWork.Palisade ? "A wall of stakes around the town. Raiders and the warband break on it." : "A tower on the palisade. Each one adds to the town's strength at the walls.";
+                tip = d switch
+                {
+                    DefenseWork.Palisade => "A wall of stakes around the town. Raiders and the warband break on it.",
+                    DefenseWork.Tower => "A tower on the walls. Each one adds to the town's strength at the walls.",
+                    DefenseWork.StoneWall => "Stone walls around the old town and the inner wards, far stronger than stakes. A large town needs them for its charter. The outer wards stay outside.",
+                    _ => "The great wall of a city, around every inner ward. A great city needs it for its charter.",
+                };
             }
             else
             {
@@ -211,26 +231,13 @@ public partial class Main
 
     private static string DemandWord(double d) => d >= 1.05 ? "wanted" : d >= 0.8 ? "steady" : "enough";
 
-    private static string? DefenseBlocked(Town town, DefenseWork d)
-    {
-        var def = town.Defenses;
-        if (d == DefenseWork.Palisade && def.Palisade != PalisadeState.None) return def.Palisade == PalisadeState.Built ? "built" : "under way";
-        if (d == DefenseWork.Tower)
-        {
-            if (def.Palisade != PalisadeState.Built) return "needs the palisade";
-            if (def.Towers + def.TowersBuilding.Count >= town.Content.Enemy.Tower.Max) return "all built";
-        }
-        if (town.Treasury < Threat.BuildCost(town, d)) return "not enough gold";
-        return null;
-    }
-
     /// <summary>For screenshots: open the bar on a group, pick a tool, and preview a stroke (or a placement dragged to face a point) from tile (x, y) to (x2, y2) of the town.</summary>
     private void OpenPlan(string group, string? tool, int[]? hover)
     {
         if (!_buildBar.Visible) ToggleBuildBar();
         if (Enum.TryParse<BuildGroup>(group, true, out var g)) ShowBuildGroup(g);
         if (tool == null) return;
-        var item = BuildItems[_buildGroup].FirstOrDefault(i => i.Building == tool || (i.Zone?.ToString().Equals(tool, StringComparison.OrdinalIgnoreCase) ?? false));
+        var item = BuildItems(_buildGroup).FirstOrDefault(i => i.Building == tool || (i.Zone?.ToString().Equals(tool, StringComparison.OrdinalIgnoreCase) ?? false));
         if (item == null) return;
         _map.Planner.Pick(new Planner.PlanTool(item.Zone, item.Building));
         if (hover is { Length: >= 2 })

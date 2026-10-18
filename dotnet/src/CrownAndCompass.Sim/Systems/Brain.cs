@@ -13,13 +13,28 @@ public static class Brain
 
     public static void Hourly(Town town)
     {
+        // Count the drinkers once and keep the count as each agent moves, rather than recounting the
+        // whole town every time someone looks for a seat.
+        var drinkers = new Dictionary<int, int>();
+        foreach (var x in town.Agents)
+            if (!x.Departed && x.Activity == Activity.Drinking && x.LocationId is int at) drinkers[at] = drinkers.GetValueOrDefault(at) + 1;
+        town.HourTaverns = town.Taverns;
+        town.Drinkers = drinkers;
+        double festival = Council.FestivalMood(town);
         foreach (var a in town.Agents)
         {
             if (a.Departed || a.IsAway) continue;
             UpdateNeeds(a);
+            int? was = a.Activity == Activity.Drinking ? a.LocationId : null;
+            town.DrinkerWasAt = was;
             Execute(town, a, Choose(town, a));
-            SampleMood(a, Council.FestivalMood(town) + (a.Activity == Activity.Praying ? town.Content.Shrines.PrayMood : 0) + Faith.Mood(town, a));
+            if (was is int w) drinkers[w]--;
+            if (a.Activity == Activity.Drinking && a.LocationId is int now) drinkers[now] = drinkers.GetValueOrDefault(now) + 1;
+            SampleMood(a, festival + (a.Activity == Activity.Praying ? town.Content.Shrines.PrayMood : 0) + Faith.Mood(town, a) + City.HomeMood(town, a));
         }
+        town.HourTaverns = null;
+        town.Drinkers = null;
+        town.DrinkerWasAt = null;
     }
 
     private static void UpdateNeeds(Agent a)
@@ -50,7 +65,7 @@ public static class Brain
             work = (a.Has(Trait.Lazy) ? 0.55 : 0.85) + (a.Has(Trait.Greedy) ? 0.1 : 0) + (a.Has(Trait.Ambitious) ? 0.05 : 0);
 
         double drink = 0;
-        if (IsEvening(hour) && a.Gold >= 8 && town.Taverns.Count > 0)
+        if (IsEvening(hour) && a.Gold >= 8 && (town.HourTaverns ?? town.Taverns).Count > 0)
         {
             drink =
                 0.25 +
@@ -161,8 +176,8 @@ public static class Brain
 
     private static void DoDrink(Town town, Agent a)
     {
-        var tavern = town.Taverns
-            .Where(t => PatronsAt(town, t) < t.Def.Capacity)
+        var tavern = (town.HourTaverns ?? town.Taverns)
+            .Where(t => Seated(town, a, t) < t.Def.Capacity)
             .OrderByDescending(t => OpinionOfOwner(a, t))
             .ThenBy(t => t.Id)
             .FirstOrDefault();
@@ -198,6 +213,15 @@ public static class Brain
     }
 
     private static int OpinionOfOwner(Agent a, Building b) => b.OwnerId != null ? a.OpinionOf(b.OwnerId.Value) : 0;
+
+    /// <summary>Drinkers at the tavern as the agent looks for a seat, the agent among them if already there.</summary>
+    private static int Seated(Town town, Agent a, Building t)
+    {
+        if (town.Drinkers == null) return PatronsAt(town, t);
+        // The running count still holds the agent's last hour; this hour they are drinking wherever they stand.
+        int others = town.Drinkers.GetValueOrDefault(t.Id) - (town.DrinkerWasAt == t.Id ? 1 : 0);
+        return others + (a.LocationId == t.Id ? 1 : 0);
+    }
 
     public static int PatronsAt(Town town, Building b)
     {

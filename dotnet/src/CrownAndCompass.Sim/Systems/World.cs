@@ -384,7 +384,7 @@ public static class World
             var b = s.Kin.Boon;
             if (b.Good is Good g && b.Qty > 0) town.Market.Seed(g, b.Qty);
             if (b.HeroChance <= 0 || b.Classes.Count == 0 || s.Kin.Race == "") continue;
-            if (town.Taverns.Count == 0 || town.Heroes.Count >= Quests.MaxHeroes || !town.Rng.Chance(b.HeroChance)) continue;
+            if (town.Taverns.Count == 0 || town.Heroes.Count >= City.HeroCap(town) || !town.Rng.Chance(b.HeroChance)) continue;
             var cls = town.Content.Classes.FirstOrDefault(c => c.Id == town.Rng.Pick(b.Classes));
             if (cls == null) continue;
             var a = Quests.CreateHero(town, cls, town.Rng.Chance(0.6) ? 2 : 3, s.Kin.Race);

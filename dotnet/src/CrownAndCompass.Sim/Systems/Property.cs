@@ -11,6 +11,7 @@ public static class Property
 
     public static void Daily(Town town)
     {
+        int idle = town.Workers.Count(x => x.JobId == null);
         foreach (var a in town.Workers)
         {
             switch (a.Ambition)
@@ -23,36 +24,101 @@ public static class Property
                     break;
                 case Ambition.Landlord:
                     TryBuildRental(town, a);
+                    // A landlord with more gold than tenants puts it to work where hands are idle.
+                    if (a.Gold > 320 && idle >= 3) TryOpenBusiness(town, a, keepAmbition: true);
                     break;
                 case Ambition.None:
                     if (a.Has(Trait.Ambitious) && a.Gold > 180) a.Ambition = Ambition.OpenBusiness;
                     else if (a.Has(Trait.Greedy) && a.Gold > 120) a.Ambition = Ambition.Landlord;
+                    // Savings sit idle only so long: anyone but the lazy buys into a trade the town wants.
+                    else if (!a.Has(Trait.Lazy) && a.Gold > 240) a.Ambition = Ambition.OpenBusiness;
                     break;
             }
+        }
+        Invest(town, idle);
+    }
+
+    /// <summary>
+    /// The town's richest put their savings to work: each day a few of them (more in a bigger town)
+    /// open whatever business the town wants most, whatever their own ambitions, so money hoarded by
+    /// a lucky few comes back as jobs.
+    /// </summary>
+    private static void Invest(Town town, int idle)
+    {
+        var workers = town.Workers;
+        int slots = 1 + workers.Count / 150;
+        foreach (var a in workers.Where(x => x.Gold > 300 && !x.Has(Trait.Lazy)).OrderByDescending(x => x.Gold).ThenBy(x => x.Id).Take(slots).ToList())
+        {
+            if (idle <= 0 && town.Workers.Count(x => x.HomeId == null) == 0) return;
+            int before = town.Buildings.Count;
+            TryOpenBusiness(town, a, keepAmbition: true);
+            if (town.Buildings.Count > before) idle -= 2;
         }
     }
 
     /// <summary>How much the town wants another building of this kind (1.0 = balanced).</summary>
     public static double Demand(Town town, string buildingId)
     {
+        // Every would-be owner asks the same question many times a day; answer it once per hour.
+        var city = town.City;
+        long stamp = (long)town.Tick * 100_000 + town.Buildings.Count;
+        if (city.DemandStamp != stamp)
+        {
+            city.DemandCache.Clear();
+            city.DemandStamp = stamp;
+        }
+        if (city.DemandCache.TryGetValue(buildingId, out double cached)) return cached;
+        double demand = WorkOutDemand(town, buildingId);
+        city.DemandCache[buildingId] = demand;
+        return demand;
+    }
+
+    private static double WorkOutDemand(Town town, string buildingId)
+    {
+        var d = town.Content.Building(buildingId);
+        if (!City.Unlocked(town, d)) return 0;
         var m = town.Market;
         // Sites already rising will add supply soon; each one dampens the signal.
         double pending = 1 - 0.15 * town.Buildings.Count(b => b.IsSite && b.Def.Id == buildingId);
         // Idle hands are cheap labor: a pool of unemployed makes any workshop look attractive.
         int idle = town.Workers.Count(a => a.JobId == null);
-        double labor = Math.Min(0.4, idle * 0.025);
+        double labor = Math.Min(0.4, idle * 0.04);
         double signal = buildingId switch
         {
-            "farm" => m.Price(Good.Food) / Market.BasePrice(Good.Food) + labor,
-            "lumber_camp" => m.Price(Good.Timber) / Market.BasePrice(Good.Timber) + labor,
-            "forge" => m.Price(Good.Tools) / Market.BasePrice(Good.Tools) + labor,
-            "brewery" => m.Price(Good.Ale) / Market.BasePrice(Good.Ale) + labor,
             "tavern" => TavernDemand(town),
             "general_store" => StoreDemand(town),
+            _ when d.Produces.Count > 0 => ProducerSignal(m.Realized(d.Produces[0].Key) / m.BasePrice(d.Produces[0].Key), labor),
+            _ when d.Fee > 0 && d.Serves.Count > 0 => ServiceDemand(town, d),
             _ => 0,
         };
         return pending * signal;
     }
+
+    /// <summary>
+    /// A workshop pays when its good is dear. Idle hands make it look better still: even a trade in glut
+    /// can sell its surplus to the barges at the export price (a healthy market sits near 0.91 of base,
+    /// the export floor at 0.75), so idle hands push the town into trades it can ship downriver.
+    /// </summary>
+    private static double ProducerSignal(double ratio, double labor) => ratio + labor * (ratio >= 0.88 ? 1 : 0.6);
+
+    /// <summary>A bathhouse or theatre pays when the residents who want one outnumber the places in the ones there are.</summary>
+    private static double ServiceDemand(Town town, BuildingDef d)
+    {
+        string service = d.Serves.Keys.Order(StringComparer.Ordinal).First();
+        double capacity = 0;
+        foreach (var b in town.Buildings)
+            if (b.Def.Serves.TryGetValue(service, out int n) && !b.ForSale) capacity += n;
+        int users = 0;
+        foreach (var house in town.Buildings)
+            if (house.Complete && City.Housing(town, house.Def.Id) is { } h && (h.Services.Contains(service) || HousingWants(town, h, service))) users += house.Residents.Count;
+        if (users < d.Serves[service] * 0.3) return 0;
+        if (capacity == 0) return 2.0;
+        return users / capacity;
+    }
+
+    /// <summary>Families a step below want what the next house up needs, so the town builds ahead of them.</summary>
+    private static bool HousingWants(Town town, HousingDef h, string service) =>
+        h.Next != "" && City.Housing(town, h.Next) is { } next && next.Services.Contains(service) && City.Reached(town, town.Content.Building(h.Next).Tier);
 
     private static double TavernDemand(Town town)
     {
@@ -70,7 +136,7 @@ public static class Property
         return heroes / (stores * 8.0);
     }
 
-    private static void TryOpenBusiness(Town town, Agent a)
+    private static void TryOpenBusiness(Town town, Agent a, bool keepAmbition = false)
     {
         // A bargain first: a failed business going cheap.
         var forSale = town.Buildings
@@ -91,12 +157,13 @@ public static class Property
             town.Lot(forSale.LotId).OwnerId = a.Id;
             forSale.Name = NameFor(town, forSale.Def, a);
             town.Log(LedgerCategory.Property, Importance.Notable, $"{a.Name} buys the shuttered {old} for {Js.ToFixed(price, 0)} gold and reopens it as {forSale.Name}.", [a.Id]);
-            AfterOpening(a);
+            if (!keepAmbition) AfterOpening(a);
             return;
         }
 
-        var candidates = town.Content.Buildings.Where(d => d.Buildable && d.IsBusiness).ToList();
+        var candidates = town.Content.Buildings.Where(d => d.Buildable && d.IsBusiness && City.Unlocked(town, d)).ToList();
         BuildingDef? pick = null;
+        if (candidates.Count == 0) return;
         if (a.DreamBusiness != null && Demand(town, a.DreamBusiness) >= 0.85)
         {
             pick = town.Content.Building(a.DreamBusiness);
@@ -112,7 +179,7 @@ public static class Property
         }
         if (pick == null) return;
 
-        if (TryBuild(town, a, pick, false)) AfterOpening(a);
+        if (TryBuild(town, a, pick, false) && !keepAmbition) AfterOpening(a);
     }
 
     private static void AfterOpening(Agent a)
@@ -140,18 +207,28 @@ public static class Property
         int homeless = town.Workers.Count(x => x.HomeId == null);
         int openBeds = 0;
         foreach (var b in town.Buildings) openBeds += b.IsSite ? b.Def.Housing : b.OpenBeds;
-        if (homeless <= openBeds) return;
-        var house = town.Content.Building("house");
-        if (a.Gold < (town.LotPrice(Town.Grid) + house.Cost + town.Market.Quote(Good.Timber, house.Timber)) * 1.5) return;
+        // Landlords build ahead of the town: a few empty beds draw settlers down the road.
+        if (homeless <= openBeds && openBeds >= 2) return;
+        var house = RentalKind(town);
+        if (a.Gold < (town.LotPrice(Town.Grid) + house.Cost + Planning.Materials(town, house)) * 1.5) return;
         if (TryBuild(town, a, house, true) && !a.Has(Trait.Greedy)) a.Ambition = Ambition.None;
     }
 
+    /// <summary>A landlord builds tenements once there is open land outside the walls for them, cottages until then.</summary>
+    private static BuildingDef RentalKind(Town town)
+    {
+        var tenement = town.Content.Building("tenement");
+        return City.Unlocked(town, tenement) && FindLot(town, tenement) != null ? tenement : town.Content.Building("house");
+    }
+
     public static double TotalCost(Town town, BuildingDef def, Lot lot) =>
-        town.LotPrice(lot) + def.Cost + town.Market.Quote(Good.Timber, def.Timber);
+        town.LotPrice(lot) + def.Cost + Planning.Materials(town, def);
 
     private static bool TryBuild(Town town, Agent a, BuildingDef def, bool rental)
     {
-        var lot = FindLot(town, def.Zone, def);
+        // Short of the build itself, no lot is cheap enough: don't go looking.
+        if (a.Gold < def.Cost + Planning.Materials(town, def)) return false;
+        var lot = FindLot(town, def);
         if (lot == null)
         {
             if (a.Gold >= def.Cost) Planning.NoLand(town, def.Zone, a);
@@ -162,13 +239,13 @@ public static class Property
 
         a.Gold -= lotPrice;
         town.Book(TreasuryAccount.LandSales, lotPrice);
-        a.Gold -= town.Market.Buy(Good.Timber, def.Timber);
+        a.Gold -= Planning.BuyMaterials(town, def);
         a.Gold -= def.Cost;
 
         var site = town.AddBuilding(def, lot, a.Id, NameFor(town, def, a), false);
         site.LaborBudget = def.BuildHours * Brain.ConstructionWage;
 
-        string what = def.Id == "house" ? (rental ? "a house to let" : "a home for the family") : site.Name;
+        string what = def.Housing > 0 ? (rental ? $"a {def.Name.ToLowerInvariant()} to let" : "a home for the family") : site.Name;
         town.Log(
             LedgerCategory.Property,
             def.IsBusiness ? Importance.Notable : Importance.Routine,
@@ -177,7 +254,10 @@ public static class Property
         return true;
     }
 
-    /// <summary>Where a building of this kind would go on the zone's painted land, nearest the hall (<see cref="Land.Find"/>).</summary>
+    /// <summary>Where a building of this kind would go on its zone's painted land, nearest the hall, in a ward it may stand in (<see cref="Land.Find"/>).</summary>
+    public static Lot? FindLot(Town town, BuildingDef def) => Land.Find(town, def, def.Zone);
+
+    /// <summary>As <see cref="FindLot(Town, BuildingDef)"/>, on another zone's land.</summary>
     public static Lot? FindLot(Town town, Zone zone, BuildingDef def) => Land.Find(town, def, zone);
 
     public static string NameFor(Town town, BuildingDef def, Agent? owner)
@@ -206,8 +286,11 @@ public static class Property
             case "general_store":
                 name = $"{family}'s General Store";
                 break;
+            case "tenement":
+                name = owner == null ? "the Charter Tenement" : $"{family}'s Rents";
+                break;
             default:
-                name = def.Name;
+                name = def.IsBusiness && owner != null ? $"{family} {def.Name}" : def.Name;
                 break;
         }
         // A tycoon's second forge is "Nailo's Forge No. 2", not a twin.

@@ -9,18 +9,28 @@ public static class Economy
 
     public static void Hourly(Town town)
     {
+        bool workHours = SimTime.IsWorkHours(town.Hour);
+        double? salesTax = null;
         foreach (var b in town.Buildings)
         {
+            // A site nobody in town is working on hires a day labourer off the road, paid from its budget.
+            // The last few hours of a site get finished on credit if its budget has run dry.
+            if (workHours && b.IsSite && b.Workers.Count == 0 && (b.LaborBudget >= Brain.ConstructionWage || b.Def.BuildHours - b.BuildProgress <= 4))
+            {
+                b.BuildProgress += 1;
+                b.LaborBudget = Math.Max(0, b.LaborBudget - Brain.ConstructionWage);
+                continue;
+            }
             if (!b.Complete || b.Closed || b.ForSale || b.Def.Produces.Count == 0) continue;
             foreach (int wid in b.Workers)
             {
                 var w = town.Agent(wid);
-                if (w.Activity == Activity.Working && w.LocationId == b.Id) Produce(town, b);
+                if (w.Activity == Activity.Working && w.LocationId == b.Id) Produce(town, b, salesTax ??= town.TaxRate + Planning.SalesBoost(town));
             }
         }
     }
 
-    private static void Produce(Town town, Building b)
+    private static void Produce(Town town, Building b, double salesTax)
     {
         double rate = 1.0;
         if (b.StockOf(Good.Tools) >= ToolUsePerHour)
@@ -44,7 +54,7 @@ public static class Economy
         foreach (var (good, qty) in b.Def.Produces)
         {
             double revenue = town.Market.Sell(good, qty * rate);
-            double tax = revenue * town.TaxRate;
+            double tax = revenue * salesTax;
             town.Book(TreasuryAccount.SalesTax, tax);
             b.Cash += revenue - tax;
             b.RevenueToday += revenue;
@@ -62,15 +72,24 @@ public static class Economy
             Upkeep(town);
         }
         HousingMarket(town);
+        if (!jobsAndHousingOnly) Crews(town);
         JobMarket(town);
     }
 
-    /// <summary>The cost of running a town: the watch, roads and wells grow with it, so growth isn't free money.</summary>
+    /// <summary>
+    /// The cost of running a town: the watch, roads and wells grow with it, so growth isn't free money.
+    /// Part of it pays road crews hired from the idle (<see cref="Crews"/>); their wages, already paid
+    /// by the hour, come out of the bill rather than on top of it.
+    /// </summary>
     private static void Upkeep(Town town)
     {
-        var rules = town.Content.Rules;
-        int n = town.Workers.Count;
-        double bill = rules.CivicUpkeep + rules.UpkeepPerResident * n * (1 + n / rules.UpkeepGrowth) + Planning.Upkeep(town);
+        double bill = UpkeepBill(town);
+        var hall = Hall(town);
+        if (hall != null && hall.Cash < 0)
+        {
+            bill = Math.Max(bill, -hall.Cash);
+            hall.Cash = 0;
+        }
         double paid = Math.Min(bill, Math.Max(0, town.Treasury));
         town.Book(TreasuryAccount.Upkeep, -paid);
         if (paid < bill && town.UnpaidDays++ == 0)
@@ -78,14 +97,81 @@ public static class Economy
         else if (paid >= bill) town.UnpaidDays = 0;
     }
 
+    public static double UpkeepBill(Town town)
+    {
+        var rules = town.Content.Rules;
+        int n = town.Workers.Count;
+        return rules.CivicUpkeep + PerResidentUpkeep(town, n) + Planning.Upkeep(town);
+    }
+
+    private static double PerResidentUpkeep(Town town, int n)
+    {
+        var rules = town.Content.Rules;
+        return rules.UpkeepPerResident * n * (1 + Math.Min(n, rules.UpkeepGrowth * 1.5) / rules.UpkeepGrowth);
+    }
+
+    public static Building? Hall(Town town) => town.Buildings.FirstOrDefault(b => b.Def.Id == "town_hall");
+
+    /// <summary>
+    /// The town hall hires idle hands onto road crews, as many as the roads-and-wells share of the
+    /// upkeep pays for, so that money goes round the town instead of out of it. Crewmen leave for any
+    /// trade that will have them.
+    /// </summary>
+    private static void Crews(Town town)
+    {
+        var hall = Hall(town);
+        if (hall == null) return;
+        var rules = town.Content.Rules;
+        int idle = town.Workers.Count(a => a.JobId == null);
+        int afford = (int)(PerResidentUpkeep(town, town.Workers.Count) * rules.CrewShare / (rules.CrewWage * 8));
+        if (town.Treasury <= 0) afford = 0;
+        hall.Crew = Math.Max(0, Math.Min(afford, hall.Workers.Count + idle));
+        // Crews shrink by the last hired; the rest look for a trade.
+        while (hall.Workers.Count > hall.Crew)
+        {
+            int id = hall.Workers[^1];
+            hall.Workers.RemoveAt(hall.Workers.Count - 1);
+            town.Agent(id).JobId = null;
+        }
+        foreach (int id in hall.Workers.ToList())
+        {
+            var job = town.Buildings
+                .Where(b => b.Id != hall.Id && b.OpenJobs > 0)
+                .OrderByDescending(b => b.Def.Wage)
+                .ThenBy(b => b.Id)
+                .FirstOrDefault()
+                ?? town.Buildings.FirstOrDefault(b => b.IsSite && b.Workers.Count < 3 && b.LaborBudget >= Brain.ConstructionWage);
+            if (job == null) break;
+            Population.Remove(hall.Workers, id);
+            town.Agent(id).JobId = job.Id;
+            job.Workers.Add(id);
+        }
+    }
+
     private static void UpdateMarket(Town town)
     {
         int pop = town.Population;
         var m = town.Market;
+        var sites = town.Buildings.Where(b => b.IsSite).ToList();
         m.SetTarget(Good.Food, pop * 3 + 40 + Planning.FoodStore(town));
-        m.SetTarget(Good.Timber, 40 + town.Buildings.Count(b => b.IsSite) * 10);
+        m.SetTarget(Good.Timber, 40 + sites.Count * 10);
         m.SetTarget(Good.Tools, 10 + town.BusinessCount());
         m.SetTarget(Good.Ale, pop * 0.6 + 10);
+        // Everything else: a few days of what the households want and the workshops burn, and what the builders need.
+        var use = new OrderedMap<Good, double>();
+        foreach (var (g, q) in town.City.Wanted) use[g] = use.Get(g, 0) + q;
+        foreach (var b in town.Buildings)
+        {
+            if (!b.Complete || b.Closed || b.ForSale) continue;
+            foreach (var (g, q) in b.Def.Consumes) use[g] = use.Get(g, 0) + q * b.Workers.Count * 8;
+        }
+        double stone = 0;
+        foreach (var b in sites) stone += b.Def.Stone;
+        foreach (var g in Goods.All)
+        {
+            if (g is Good.Food or Good.Timber or Good.Tools or Good.Ale) continue;
+            m.SetTarget(g, 10 + use.Get(g, 0) * 3 + (g == Good.Stone ? 20 + stone : 0));
+        }
         m.DailyCaravan();
     }
 
@@ -194,12 +280,13 @@ public static class Economy
                 var r = town.Agent(rid);
                 if (house.OwnerId == r.Id || (house.OwnerId != null && r.SpouseId == house.OwnerId)) continue;
                 var landlord = house.OwnerId != null ? town.Agent(house.OwnerId.Value) : null;
-                if (r.Gold >= house.Def.Rent)
+                double rent = RentOf(town, house);
+                if (r.Gold >= rent)
                 {
                     r.RentArrears = 0;
-                    r.Gold -= house.Def.Rent;
-                    if (landlord != null) landlord.Gold += house.Def.Rent;
-                    else town.Book(TreasuryAccount.Rent, house.Def.Rent);
+                    r.Gold -= rent;
+                    if (landlord != null) landlord.Gold += rent;
+                    else town.Book(TreasuryAccount.Rent, rent);
                 }
                 else if (landlord != null && landlord.Has(Trait.Generous))
                 {
@@ -224,6 +311,9 @@ public static class Economy
             }
         }
     }
+
+    /// <summary>A bed's daily rent: the house's own, dearer or cheaper by its ward.</summary>
+    public static double RentOf(Town town, Building house) => Js.Round(house.Def.Rent * City.WardOf(town, town.Lot(house.LotId)).Rent * 10) / 10;
 
     /// <summary>Heroes lodge at the tavern between expeditions, even when married to a townsperson.</summary>
     public static void MoveIn(Town town, Agent a, Building home)
@@ -252,7 +342,7 @@ public static class Economy
             double purse = a.Gold + (spouse?.Gold ?? 0);
             int Score(Building b) => b.OwnerId == a.Id ? 1000 : b.OwnerId != null ? a.OpinionOf(b.OwnerId.Value) : 0;
             var home = town.Buildings
-                .Where(b => b.Complete && b.OpenBeds >= beds && (b.OwnerId == a.Id || purse >= b.Def.Rent * beds * 3))
+                .Where(b => b.Complete && b.OpenBeds >= beds && (b.OwnerId == a.Id || purse >= RentOf(town, b) * beds * 3))
                 .OrderByDescending(Score)
                 .ThenBy(b => b.Id)
                 .FirstOrDefault();
@@ -269,6 +359,13 @@ public static class Economy
         {
             if (!site.IsSite || site.LaborBudget >= Brain.ConstructionWage) continue;
             // Weak laborers fall behind the estimate; an owner who can afford it pays for the last hours.
+            double rest0 = Math.Ceiling(site.Def.BuildHours - site.BuildProgress) * Brain.ConstructionWage;
+            if (site.OwnerId == null && town.Treasury >= rest0 + 20)
+            {
+                town.Book(TreasuryAccount.Works, -rest0);
+                site.LaborBudget += rest0;
+                continue;
+            }
             if (site.OwnerId is int oid)
             {
                 var owner = town.Agent(oid);
@@ -293,13 +390,15 @@ public static class Economy
             // Owners staff their own businesses first.
             var job = town.Buildings.FirstOrDefault(b => b.OwnerId == a.Id && b.Complete && b.Def.IsBusiness && b.OpenJobs > 0);
             job ??= town.Buildings
-                .Where(b => b.OpenJobs > 0)
+                .Where(b => b.OpenJobs > 0 && b.Crew == 0)
                 .OrderByDescending(b => b.Def.Profession == a.Profession ? 1 : 0)
                 .ThenByDescending(b => b.Def.Wage)
                 .ThenBy(b => b.Id)
                 .FirstOrDefault();
             job ??= town.Buildings.FirstOrDefault(
                 b => b.IsSite && b.Workers.Count < 3 && (b.LaborBudget >= Brain.ConstructionWage || b.OwnerId == a.Id));
+            // The road crews take whoever is left.
+            job ??= town.Buildings.FirstOrDefault(b => b.Crew > 0 && b.OpenJobs > 0);
             if (job == null) continue;
 
             a.JobId = job.Id;

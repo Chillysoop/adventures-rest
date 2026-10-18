@@ -19,6 +19,7 @@ public class PlanningTests
     {
         var p = (Town.Center + dx, Town.Center + dy);
         Assert.Null(Land.BuildingAt(t, p.Item1, p.Item2));
+        Assert.True(City.IsOpen(t, p.Item1, p.Item2));
         return p;
     }
 

@@ -182,7 +182,7 @@ public static class Council
         var res = town.Residents;
         double mood = res.Count > 0 ? Js.Sum(res, a => a.LastDayMood) / res.Count : 65;
         var speaker = FindSeat(town, SeatId.Speaker);
-        double drift = (mood - 70) * 0.04;
+        double drift = (mood - 70) * 0.04 + Planning.Mandate(town) * 0.05;
         if (speaker != null && speaker.HolderId != null) drift += speaker.Loyalty >= LowLoyalty ? 0.15 * Competence(town, speaker) : -0.5;
         town.Mandate = Clamp(town.Mandate + drift, 0, 100);
     }

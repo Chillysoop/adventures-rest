@@ -57,11 +57,23 @@ public static class Land
                     int i = cy * Size + cx;
                     if (plan.Taken[i] != 0 || plan.Zones[i] == (byte)zone) continue;
                     if (!overwrite && plan.Zones[i] != (byte)Zone.None) continue;
+                    // Only ground in a ward the town has laid out takes paint.
+                    if (zone != Zone.None && !City.IsOpen(town, (cx + 0.5) / Res, (cy + 0.5) / Res)) continue;
                     plan.Zones[i] = (byte)zone;
                     n++;
                 }
         }
         if (n > 0) plan.Changed();
+        return n;
+    }
+
+    /// <summary>Unpainted, unbuilt cells in the wards the town has laid out.</summary>
+    public static int OpenGround(Town town)
+    {
+        var plan = town.Plan;
+        int n = 0;
+        for (int i = 0; i < plan.Zones.Length; i++)
+            if (plan.Zones[i] == (byte)Zone.None && plan.Taken[i] == 0 && City.IsOpen(town, (i % Size + 0.5) / Res, (i / Size + 0.5) / Res)) n++;
         return n;
     }
 
@@ -81,7 +93,7 @@ public static class Land
         town.Plan.Fresh();
         if (town.Plan.Plots.TryGetValue(zone, out int known)) return known;
         // The largest the townsfolk build in the zone, so a count of one means anything of theirs fits.
-        var probe = town.Content.Buildings.Where(d => d.Zone == zone && d.Buildable).OrderByDescending(d => Footprint(d).W * Footprint(d).D).ThenBy(d => d.Id, StringComparer.Ordinal).FirstOrDefault()
+        var probe = town.Content.Buildings.Where(d => d.Zone == zone && d.Buildable && d.Wards.Count == 0).OrderByDescending(d => Footprint(d).W * Footprint(d).D).ThenBy(d => d.Id, StringComparer.Ordinal).FirstOrDefault()
             ?? new BuildingDef { Id = "", Name = "", Zone = zone };
         var plan = town.Plan;
         var marked = new List<int>();
@@ -159,12 +171,14 @@ public static class Land
         var (w, d) = Footprint(def);
         var plan = town.Plan;
         plan.Fresh();
-        if (!plan.Found.TryGetValue((zone, w, d), out var spot)) plan.Found[(zone, w, d)] = spot = Search(town, w, d, zone);
+        // Buildings kept to certain wards search on their own; the rest share a search per zone and size.
+        var key = (zone, w, d, def.Wards.Count == 0 ? "" : def.Id);
+        if (!plan.Found.TryGetValue(key, out var spot)) plan.Found[key] = spot = Search(town, def, w, d, zone);
         // A fresh lot each time: the caller may set its zone, and claims it under the next id.
         return spot == null ? null : new Lot(town.Lots.Count, spot.X, spot.Y) { W = w, D = d, Yaw = spot.Yaw, Zone = zone ?? Zone.Civic };
     }
 
-    private static Lot? Search(Town town, int w, int d, Zone? zone)
+    private static Lot? Search(Town town, BuildingDef def, int w, int d, Zone? zone)
     {
         var plan = town.Plan;
         // Centres sit on cell centres for odd sizes and on cell corners for even ones, so a square building fills whole cells.
@@ -183,6 +197,7 @@ public static class Land
         {
             // Nudged off the cell centre, so nothing lines up on the plan's raster.
             double x = (i % Size + ox + (Jitter(i * 7 + 1) - 0.5) * 0.8) / Res, y = (i / Size + oy + (Jitter(i * 7 + 2) - 0.5) * 0.8) / Res;
+            if (!City.Allows(town, def, x, y)) continue;
             double face = FaceHall(x, y);
             // Turned a little off the hall when the straight heading doesn't fit: lanes bend.
             foreach (double off in Bends)
@@ -198,6 +213,7 @@ public static class Land
     {
         var (w, d) = Footprint(def);
         double a = yaw ?? FaceHall(x, y);
+        if (!City.Allows(town, def, x, y)) return null;
         return Fits(town, x, y, w, d, a, null) ? new Lot(town.Lots.Count, x, y) { W = w, D = d, Yaw = a } : null;
     }
 
@@ -229,7 +245,14 @@ public static class Land
     /// Zone a round patch of open ground for the zone at about <paramref name="ring"/> tiles from the hall
     /// (0: as near as it gets), no farther than <paramref name="maxDist"/>. Returns false when there's no room.
     /// </summary>
-    public static bool PaintPatch(Town town, Zone zone, double radius, double maxDist, double ring)
+    public static bool PaintPatch(Town town, Zone zone, double radius, double maxDist, double ring) =>
+        PaintPatch(town, zone, radius, (x, y, dist) => dist > maxDist || (ring > 0 && dist < ring - 0.5) ? null : ring == 0 ? dist : Math.Abs(dist - ring));
+
+    /// <summary>
+    /// Zone a round patch of open ground, centred on the open cell in a laid-out ward with the lowest
+    /// <paramref name="key"/> (x, y, distance from the hall; null passes the cell over). Returns false when there's no room.
+    /// </summary>
+    public static bool PaintPatch(Town town, Zone zone, double radius, Func<double, double, double, double?> key)
     {
         var plan = town.Plan;
         int best = -1;
@@ -239,16 +262,16 @@ public static class Land
             if (plan.Zones[i] != (byte)Zone.None || plan.Taken[i] != 0) continue;
             double x = (i % Size + 0.5) / Res, y = (i / Size + 0.5) / Res;
             double dist = Math.Sqrt((x - Town.Center) * (x - Town.Center) + (y - Town.Center) * (y - Town.Center));
-            if (dist > maxDist || (ring > 0 && dist < ring - 0.5)) continue;
-            double key = (ring == 0 ? dist : Math.Abs(dist - ring)) + Jitter(i) * 0.5;
-            if (key < bestKey)
+            if (key(x, y, dist) is not double k) continue;
+            if (!City.IsOpen(town, x, y)) continue;
+            k += Jitter(i) * 0.5;
+            if (k < bestKey)
             {
-                bestKey = key;
+                bestKey = k;
                 best = i;
             }
         }
         if (best < 0) return false;
-        // Patches lean outward a little from the open cell found, so they grow the zone instead of filling crumbs.
         double bx = (best % Size + 0.5) / Res, by = (best / Size + 0.5) / Res;
         return Brush(town, [(bx, by)], radius, zone, overwrite: false) > 0;
     }
@@ -266,7 +289,7 @@ public sealed class LandPlan
 
     /// <summary>Searches answered for this <see cref="Version"/>: a spot (or none) per zone and footprint, and open plot counts.</summary>
     [field: NotSaved]
-    public Dictionary<(Zone?, int, int), Lot?> Found { get; } = [];
+    public Dictionary<(Zone?, int, int, string), Lot?> Found { get; } = [];
 
     [field: NotSaved]
     public Dictionary<Zone, int> Plots { get; } = [];

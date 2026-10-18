@@ -151,6 +151,14 @@ public static class Faith
     /// <summary>Where an agent goes to pray: their own god's house if it has one.</summary>
     public static Building? PlaceFor(Town town, Agent a) => a.Faith is null or "" ? null : Places(town, a.Faith).FirstOrDefault();
 
+    /// <summary>Whether the god has a finished house in town (Places without the sorting, for every agent every hour).</summary>
+    public static bool HasPlace(Town town, string deityId)
+    {
+        foreach (var kv in town.Faiths.Dedications)
+            if (kv.Value == deityId && town.Building(kv.Key).Complete) return true;
+        return false;
+    }
+
     public static List<Agent> Followers(Town town, string deityId) => town.Residents.Where(a => a.Faith == deityId).ToList();
 
     /// <summary>The god whose temple stands (or is rising) in town.</summary>
@@ -176,7 +184,7 @@ public static class Faith
     public static double Mood(Town town, Agent a)
     {
         var god = Of(town, a);
-        if (god == null || PlaceFor(town, a) == null) return 0;
+        if (god == null || a.Faith is null or "" || !HasPlace(town, a.Faith)) return 0;
         var r = Rules(town);
         return (IsHolyDay(town, god) ? r.HolyDayMood : 0) + (a.Devout ? r.WorshipMood : 0);
     }

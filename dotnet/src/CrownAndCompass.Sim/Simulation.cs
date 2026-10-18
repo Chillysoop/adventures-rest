@@ -83,6 +83,7 @@ public sealed class Simulation
         var t = Town;
         Brain.Daily(t);
         Economy.Daily(t);
+        City.Daily(t, Options.AutoMayor && Options.AutoPlanning);
         Property.Daily(t);
         Population.DailyDepartures(t);
         Population.DailyArrivals(t);
@@ -148,7 +149,13 @@ public sealed class Simulation
     /// <summary>Back a faction the town knows with treasury gold.</summary>
     public bool SupportFaction(string factionId, double gold) => Factions.Support(Town, factionId, gold);
 
-    /// <summary>Paint a brush stroke of a zone over open ground (Zone.None clears it): dabs in tiles from the town's corner. Returns cells changed.</summary>
+    /// <summary>Claim the next charter (hamlet, village, town...) once the town has earned it.</summary>
+    public bool RaiseCharter() => City.RaiseCharter(Town);
+
+    /// <summary>Survey a ward and lay out its streets, opening its ground to zoning.</summary>
+    public bool OpenWard(string wardId) => City.OpenWard(Town, wardId);
+
+    /// <summary>Paint a brush stroke of a zone over open ground in open wards (Zone.None clears it): dabs in tiles from the town's corner. Returns cells changed.</summary>
     public int PaintZone(IEnumerable<(double X, double Y)> dabs, double radius, Zone zone) => Planning.Paint(Town, dabs, radius, zone);
 
     /// <summary>Place a government building, charter house or town-owned business at a point and heading (null faces the hall), paid from the treasury.</summary>

@@ -92,6 +92,16 @@ Print(
         ? $"{Saga.EndTitle(town)}: {town.Saga.EndText}"
         : $"The warband stands at {Js.Str(Js.Round(town.Enemy.Strength))} ({town.Enemy.Stage.Name()}); {town.Enemy.Raids} raids, {town.Enemy.Sieges} sieges so far.");
 if (Saga.Summary(town) != "") Print(Saga.Summary(town));
+Print($"A {City.Tier(town).Name.ToLowerInvariant()} of about {City.Souls(town)} souls; wards laid out: {string.Join(", ", town.City.OpenWards.Select(w => City.Ward(town, w).Name))}.");
+Print("Treasury books, all time: " + string.Join(", ", town.Accounts.OrderBy(kv => kv.Value).Select(kv => $"{kv.Key} {Js.ToFixed(kv.Value, 0)}")));
+Print("Vacant zoned lots: " + string.Join(", ", Planning.Paintable.Select(z => $"{z} {Planning.VacantZoned(town, z)}")) + $"; unzoned open {town.Lots.Count(l => l.Zone == Zone.None && City.IsOpen(town, l))}");
+Print("Demand: " + string.Join(", ", town.Content.Buildings.Where(d => d.Buildable && d.IsBusiness).Select(d => $"{d.Id} {Js.ToFixed(Property.Demand(town, d.Id), 2)}")));
+Print("Houses: " + string.Join(", ", town.Buildings.Where(b => b.Complete && b.Def.Housing > 0).GroupBy(b => b.Def.Id).OrderBy(g => g.Key, StringComparer.Ordinal).Select(g => $"{g.Key} {g.Count()} (content {Js.ToFixed(g.Average(b => b.Contentment), 2)})")));
+Print("Coverage: " + string.Join(", ", town.City.Coverage.Select(kv => $"{kv.Key} {Js.ToFixed(kv.Value, 2)}")) + "; next charter needs: " + string.Join("; ", City.Missing(town)));
+Print("Ambitions: " + string.Join(", ", town.Workers.GroupBy(a => a.Ambition).OrderBy(g => g.Key).Select(g => $"{g.Key} {g.Count()} (avg {Js.ToFixed(g.Average(a => a.Gold), 0)}g, max {Js.ToFixed(g.Max(a => a.Gold), 0)}g)")) + $"; idle {town.Workers.Count(a => a.JobId == null)} (avg {Js.ToFixed(town.Workers.Where(a => a.JobId == null).Select(a => a.Gold).DefaultIfEmpty(0).Average(), 0)}g); open jobs {town.Buildings.Sum(b => b.OpenJobs)}");
+Print($"Road crews: {Economy.Hall(town)?.Workers.Count}/{Economy.Hall(town)?.Crew}; upkeep bill {Js.ToFixed(Economy.UpkeepBill(town), 0)}/day");
+Print("Sites: " + string.Join(", ", town.Buildings.Where(b => b.IsSite).Select(b => $"{b.Name} [{b.Def.Id}] {Js.ToFixed(b.BuildProgress, 0)}/{b.Def.BuildHours} budget {Js.ToFixed(b.LaborBudget, 0)} workers {b.Workers.Count} owner {town.OwnerName(b.OwnerId)}")));
+Print("Market: " + string.Join(", ", Goods.All.Select(g => $"{g} {Js.ToFixed(town.Market.Stock(g), 0)}/{Js.ToFixed(town.Market.Target(g), 0)} @{Js.ToFixed(town.Market.Price(g), 2)}")));
 var counts = new OrderedMap<string, int>();
 foreach (var b in town.Buildings) if (b.Complete) counts[b.Def.Name] = counts.Get(b.Def.Name, 0) + 1;
 foreach (var (name, n) in counts.OrderBy(kv => kv.Key, StringComparer.Ordinal)) Print($"  {name}: {n}");

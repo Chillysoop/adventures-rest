@@ -129,7 +129,6 @@ public sealed record Chronicle(
 /// </summary>
 public static class Quests
 {
-    public const int MaxHeroes = 12;
     private const int BountyDays = 10;
     private const double Lodging = 1;
     private static readonly int[] XpLevels =
@@ -242,7 +241,7 @@ public static class Quests
         var taverns = town.Taverns;
         if (taverns.Count == 0) return;
         int heroes = town.Heroes.Count;
-        if (heroes >= MaxHeroes) return;
+        if (heroes >= City.HeroCap(town)) return;
         int open = town.Bounties.Count(b => b.Status == BountyStatus.Open);
         double chance = Math.Min(0.9, 0.12 + 0.25 * open + (heroes < 4 ? 0.2 : 0));
         if (!town.Rng.Chance(chance)) return;
