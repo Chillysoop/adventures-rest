@@ -1254,8 +1254,8 @@ public partial class TownView(MapView map) : Node3D
         for (int i = 0; i <= 16; i++)
             k.Box(new Vector3(-L + i * L / 8, 0.32f, 0), new Vector3(0.028f, 0.14f, 0.09f), dark, stone);
         k.Box(new Vector3(0, 0.44f, 0), new Vector3(2 * L + 0.03f, 0.06f, 0.1f), stone, stone.Lightened(0.1f));
-        k.Box(new Vector3(-L, 0.5f, 0.04f), new Vector3(2 * L, 0.02f, 0.015f), stone);
-        k.Box(new Vector3(-L, 0.5f, -0.04f), new Vector3(2 * L, 0.02f, 0.015f), stone);
+        k.Box(new Vector3(0, 0.5f, 0.04f), new Vector3(2 * L, 0.02f, 0.015f), stone);
+        k.Box(new Vector3(0, 0.5f, -0.04f), new Vector3(2 * L, 0.02f, 0.015f), stone);
         k.Box(new Vector3(0, 0.5f, 0), new Vector3(2 * L, 0.01f, 0.065f), new Color("3f6f95"));
         // The spring house at the hill end, the fountain at the town end.
         k.Push(MeshKit.At(L + 0.06f, 0, 0, 0, 0.13f));
