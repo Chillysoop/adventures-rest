@@ -1,5 +1,5 @@
 {
-  "reach": 17,
+  "reach": 30,
   "refund": 0.5,
   "appealMood": 0.6,
   "moodCap": 6,
@@ -9,6 +9,11 @@
   "restLoneliness": 0.6,
   "landPerAppeal": 0.8,
   "landCap": 8,
+  "contentPerAppeal": 0.015,
+  "contentCap": 0.1,
+  "contentFloor": -0.05,
+  "wardPerAppeal": 0.02,
+  "wardCap": 0.15,
   "lightWatch": 0.2,
   "deterCap": 0.15,
   "tradeCap": 0.12,
