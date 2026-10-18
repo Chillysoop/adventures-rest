@@ -2,6 +2,7 @@
 // Usage: dotnet run --project dotnet/src/CrownAndCompass.Cli -- [--seed N] [--days N] [--all] [--stats] [--people N] [--chronicles] [--world]
 //        [--load file.save] [--save file.save]   (play on from a save, for --days more; write one at the end)
 //        [--legends file.json]   (foes and heroes of earlier runs may come back; this run's are added to the file)
+//        [--summary]   (print only one JSON line on how the campaign stands, for scripts/gate.ts)
 // Prints exactly what `npm run sim` prints for the same arguments.
 
 using System.Globalization;
@@ -19,6 +20,7 @@ bool world = false;
 string? load = null;
 string? save = null;
 string? legends = null;
+bool summary = false;
 
 static int Number(string[] args, ref int i) => i + 1 < args.Length ? int.Parse(args[++i], CultureInfo.InvariantCulture) : 0;
 
@@ -52,6 +54,9 @@ for (int i = 0; i < args.Length; i++)
             break;
         case "--legends":
             legends = i + 1 < args.Length ? args[++i] : null;
+            break;
+        case "--summary":
+            summary = true;
             break;
         case "--people":
             people = Number(args, ref i);
@@ -169,6 +174,23 @@ if (chronicles)
 
 if (save != null) SaveGame.WriteFile(save, sim);
 if (legends != null) File.WriteAllText(legends, Legends.Write(Legends.Merge(past, Legends.Record(town, seed))));
+
+if (summary)
+{
+    // One line for the merge gate: how the campaign ended (or stands), and enough of the state to tell two runs apart.
+    output.Clear();
+    string outcome = town.Outcome == Outcome.Victory ? "won" : town.Outcome == Outcome.Defeat ? "lost" : "unfinished";
+    Print(System.Text.Json.JsonSerializer.Serialize(new
+    {
+        seed,
+        outcome,
+        day = town.Day,
+        population = final.Population,
+        treasury = Js.Round(final.Treasury),
+        ledger = entries.Count,
+        chronicles = town.Chronicles.Count,
+    }));
+}
 
 using var stdout = Console.OpenStandardOutput();
 var bytes = new UTF8Encoding(false).GetBytes(string.Join("\n", output) + "\n");

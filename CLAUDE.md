@@ -56,3 +56,27 @@
 - Art: only CC0/CC-BY or our own; credit every pack in `godot/assets/CREDITS.md`. Kenney models are baked by
   `python3 tools/kenney_bake.py` into `godot/assets/models/kenney.bin`. Shader colours are sRGB converted once in the
   shader (no `source_color` hint). Client decoration randomness goes through `Geo.Hash`, never the sim's rng.
+
+## Merging and publishing builds
+
+- The merge gate is `node scripts/gate.ts` (CI jobs `gate-sim` and `gate-client`). On a PR it merges the latest main in
+  first, then runs the unit tests, a 12-campaign 1,000-day sweep compared with `dotnet/gate-baseline.json` (fails if
+  wins or defeats move by more than 3, the median ending moves over 20%, or a campaign ends far sooner), a save/load
+  replay, a save written by main that must still load and play on, and the exported Linux build played from the main
+  menu with `--smoke` (new town, every window, build bar, campaign map, save and load, tutorial, History) failing on
+  any engine error. A PR that adds a window or screen adds it to `godot/src/Smoke.cs`.
+- A PR that changes balance on purpose runs `node scripts/gate.ts --sim --rebaseline` and says why in its description.
+  A save break on purpose bumps `SaveGame.Version`.
+- Merge only with every check green on a run that included the latest main. If main moved since, merge main into the
+  branch, push and wait for green again: two PRs that pass alone can fail together.
+- Publish game builds only with `node scripts/gate.ts --publish /mnt/project-files/godot` from a clean checkout of
+  origin/main. It reruns the whole gate, exports Windows, Linux and macOS, replaces the three zips in place and writes
+  `godot/BUILD.md`; nothing is published when the gate fails. Then ask the coordinator to have the auto-update thread
+  swap the new build in.
+- Disk: after publishing, and after posting screenshots, run `node scripts/cleanup.ts` and then `--apply`. It logs
+  every deletion to `/mnt/project-files/cleanup-log.md` first and removes stale staging files, old build zips, exact
+  duplicates and older shots of the same screen (same file name in another pass folder). It never touches
+  `local-build-sync/`, `uploads/` or `.notes/`. Name a new shot after what it shows, reusing the old name when it
+  replaces an older shot of the same screen. Delete Godot templates, `godot/build/` and old worktrees in your
+  container when done.
+

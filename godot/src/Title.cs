@@ -117,9 +117,9 @@ public partial class Main
         SetSpeed(1);
     }
 
-    private void StartTown(bool tutorial)
+    private void StartTown(bool tutorial, int? seed = null, bool autoplay = false)
     {
-        NewTown((int)(GD.Randi() % 9999) + 1);
+        NewTown(seed ?? (int)(GD.Randi() % 9999) + 1, autoplay);
         // Begin at first light rather than in the dark of the first midnight.
         for (int i = 0; i < 7; i++) _sim.Step();
         HideTitle();
