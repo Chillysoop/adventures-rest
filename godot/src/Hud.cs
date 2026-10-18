@@ -37,6 +37,7 @@ public partial class Main
         [Tab.Campaign] = "The campaign",
         [Tab.Chronicles] = "Chronicles",
         [Tab.Mayor] = "The mayor",
+        [Tab.Library] = "The library",
         [Tab.Inspect] = "Inspect",
     };
 

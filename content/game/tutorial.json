@@ -304,6 +304,15 @@
       "teaches": ["command:PatrolUndercity"]
     },
     {
+      "id": "library",
+      "title": "The library and its scholars",
+      "text": "Your scholars can study something new. Open [b]Library[/b]. Each town grows its own tree of discoveries: smiths, weavers and scribes, neighbours of other peoples, trade routes, temples and libraries each reveal ideas of their own. Pick one to [b]study[/b] (the first time pays its commission) and set how generously the council [b]funds[/b] the scholars. Spellbooks from delves and caravans make the library stronger, draw stronger wizards to town and open higher circles of town magic.",
+      "when": "alert:scholars",
+      "point": "tab:Library",
+      "until": "tab:Library",
+      "teaches": ["tab:Library", "command:StudyDiscovery", "command:FundResearch"]
+    },
+    {
       "id": "campaign-map",
       "title": "The campaign map",
       "text": "Press [b]M[/b] or [b]Campaign map[/b] to see the same land as an inked map. Drop markers to plan, drag them to move them, and press [b]Delete[/b] to remove the one under the cursor.",
