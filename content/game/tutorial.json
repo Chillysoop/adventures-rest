@@ -158,6 +158,15 @@
       "teaches": ["tab:Campaign", "tab:Chronicles"]
     },
     {
+      "id": "fealty",
+      "title": "A demand for fealty",
+      "text": "Some enemies want your town kneeling, not burning. When their heralds come, open [b]Campaign[/b]: [b]Bend the knee[/b] and pay tribute while their raiders stay away, or [b]Refuse[/b] and face their host. Silence counts as a refusal.",
+      "when": "alert:demand",
+      "point": "tab:Campaign",
+      "until": "tab:Campaign",
+      "teaches": ["command:AnswerDemand"]
+    },
+    {
       "id": "save",
       "title": "Saving",
       "text": "[b]Esc[/b] or [b]Menu[/b] opens the game menu with five save slots. The town autosaves every three days and when you quit. [b]F5[/b] quicksaves and [b]F9[/b] loads it.",
@@ -180,6 +189,13 @@
       "point": "tab:City",
       "when": "alert:charter",
       "teaches": ["command:OpenWard"]
+    },
+    {
+      "id": "history",
+      "title": "The old world",
+      "text": "Every ruin in the wilds is left over from an older age. [b]History[/b] in the game menu (Esc) shows the empires, peoples and wars before your town, and the Ledger tells each region's old story when a party first gets there.",
+      "point": "menu",
+      "teaches": []
     },
     {
       "id": "done",

@@ -212,6 +212,9 @@ public sealed record MonsterDef
     public int Ac { get; init; }
     public int Attack { get; init; }
 
+    /// <summary>Intelligence score, from the library unless set here; 0 reads as 10.</summary>
+    public int Int { get; init; }
+
     /// <summary>Damage dice of its best attack, as "1d6+2".</summary>
     public string Damage { get; init; } = "";
 
@@ -682,6 +685,9 @@ public sealed record ThemeDef
 
     /// <summary>The terrain as a returning party describes it.</summary>
     public string Text { get; init; } = "";
+
+    /// <summary>Old stories of the fallen powers that held it (content/game/history.json), one heard on the first visit.</summary>
+    public IReadOnlyList<string> History { get; init; } = [];
     public IReadOnlyList<SiteKindDef> Sites { get; init; } = [];
 
     /// <summary>Scene lines by encounter kind (wander, trap, hazard, puzzle, parley, treasure, boss).</summary>
@@ -725,6 +731,9 @@ public sealed record PeopleDef
 
     /// <summary>Starting standing with the town, -100 to 100.</summary>
     public double Start { get; init; }
+
+    /// <summary>Where they come from in the world's history, told when they ally.</summary>
+    public string History { get; init; } = "";
     public IReadOnlyList<string> Settlements { get; init; } = [];
     public BoonDef Boon { get; init; } = new();
 }
@@ -1081,6 +1090,9 @@ public sealed class Content
     public DecorRules Decor { get; init; } = new();
     public SeasonRules Seasons { get; init; } = new();
 
+    /// <summary>The world's history: its ages, the powers that rose and fell, and the calendar (content/game/history.json).</summary>
+    public HistoryRules History { get; init; } = new();
+
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
 
@@ -1146,6 +1158,7 @@ public sealed class Content
             Plural = m.Plural != "" ? m.Plural : Library.Plural(name),
             Hp = m.Hp > 0 ? m.Hp : lm.Hp,
             Ac = m.Ac > 0 ? m.Ac : lm.Ac,
+            Int = m.Int > 0 ? m.Int : lm.Int,
             Attack = m.Attack > 0 ? m.Attack : lm.ToHit,
             Damage = m.Damage != "" ? m.Damage : lm.Damage?.ToString() ?? "1d4",
             Attacks = m.Attacks > 0 ? m.Attacks : lm.Attacks,
@@ -1216,6 +1229,7 @@ public sealed class Content
             City = Parse<CityRules>("city.json"),
             Decor = Parse<DecorRules>("decor.json"),
             Seasons = Parse<SeasonRules>("seasons.json"),
+            History = Parse<HistoryRules>("history.json"),
         };
     }
 

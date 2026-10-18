@@ -21,6 +21,87 @@ public sealed record MenaceKindDef
     public string Slain { get; init; } = "";
 }
 
+/// <summary>
+/// How far a menace can scheme, set by its founding leader's Intelligence: a mindless beast hunts and
+/// never rules, a kobold band takes a valley and squabbles, a vampire lord builds a domain and can be crowned.
+/// </summary>
+public sealed record MenaceCunningDef
+{
+    public string Id { get; init; } = "";
+    public string Name { get; init; } = "";
+
+    /// <summary>The highest leader Intelligence this tier covers; tiers are listed lowest first.</summary>
+    public int MaxInt { get; init; } = 99;
+    public MenaceStage MaxStage { get; init; } = MenaceStage.Dominion;
+
+    /// <summary>Levels its seat can rise above where it started.</summary>
+    public int LevelGain { get; init; } = 20;
+    public double Growth { get; init; } = 1;
+    public bool Holdings { get; init; } = true;
+
+    /// <summary>Whether the finale can crown it the big bad, and how much its power counts toward it.</summary>
+    public bool Crown { get; init; }
+    public double CrownWeight { get; init; } = 1;
+
+    /// <summary>A patient menace brings another settlement of the wilds under its sway every so many days once it has risen, up to a cap.</summary>
+    public int DomainEveryDays { get; init; }
+    public int MaxDomain { get; init; }
+    public string Domain { get; init; } = "";
+
+    /// <summary>Told once, when it has grown as far as its wits allow.</summary>
+    public string Plateau { get; init; } = "";
+}
+
+/// <summary>What a menace wants, which decides how it treats the town: hunt, hold, conquer, rule, infect or scheme.</summary>
+public sealed record MenaceAmbitionDef
+{
+    public string Id { get; init; } = "";
+    public string Name { get; init; } = "";
+
+    /// <summary>One line for the Campaign window: {town}.</summary>
+    public string What { get; init; } = "";
+
+    /// <summary>Cunning tiers it needs (by id, inclusive); empty means any.</summary>
+    public string MinCunning { get; init; } = "";
+    public string MaxCunning { get; init; } = "";
+
+    /// <summary>Menace kinds it suits; empty means any.</summary>
+    public IReadOnlyList<string> Kinds { get; init; } = [];
+    public double Weight { get; init; } = 1;
+    public bool Marches { get; init; }
+    public double Growth { get; init; } = 1;
+
+    // territory
+    public string Provoked { get; init; } = "";
+    public int ProvokeDays { get; init; } = 40;
+
+    // vassal
+    public string Demand { get; init; } = "";
+    public string Submitted { get; init; } = "";
+    public string Refused { get; init; } = "";
+    public int AnswerDays { get; init; } = 10;
+
+    // plague
+    public IReadOnlyList<string> Infect { get; init; } = [];
+    public string Warded { get; init; } = "";
+
+    // intrigue
+    public IReadOnlyList<string> Schemes { get; init; } = [];
+    public string Caught { get; init; } = "";
+}
+
+/// <summary>Menaces that share a region fight over it: the stronger takes a lair, or swallows the weaker whole.</summary>
+public sealed record MenaceFeudRules
+{
+    public int[] EveryDays { get; init; } = [30, 50];
+    public double Take { get; init; } = 0.25;
+
+    /// <summary>How many times stronger it must be to swallow the other.</summary>
+    public double Absorb { get; init; } = 2.5;
+    public string Taken { get; init; } = "";
+    public string Absorbed { get; init; } = "";
+}
+
 public sealed record MenaceStageRules
 {
     public double Rising { get; init; } = 80;
@@ -68,6 +149,9 @@ public sealed record MenaceRules
     public string Succeeded { get; init; } = "";
     public string Rootless { get; init; } = "";
     public IReadOnlyDictionary<string, MenaceKindDef> Kinds { get; init; } = new Dictionary<string, MenaceKindDef>();
+    public IReadOnlyList<MenaceCunningDef> Cunning { get; init; } = [];
+    public IReadOnlyList<MenaceAmbitionDef> Ambitions { get; init; } = [];
+    public MenaceFeudRules Feud { get; init; } = new();
 }
 
 public enum MenaceStage
@@ -96,6 +180,9 @@ public sealed class Menace
     public List<string> Holdings { get; } = [];
     public string Region { get; set; } = "the hills";
 
+    /// <summary>The level of the seat it was born at; BaseLevel drops when it is broken.</summary>
+    public int BornLevel { get; set; }
+
     /// <summary>The level the seat started at; Level is that plus what Power has added.</summary>
     public int BaseLevel { get; set; } = 1;
     public int Level { get; set; } = 1;
@@ -121,6 +208,28 @@ public sealed class Menace
     public bool BigBad { get; set; }
     public int? EndedDay { get; set; }
     public string? FactionId { get; init; }
+
+    /// <summary>How far it can scheme (a cunning tier id, from its founder's Intelligence) and what it wants (an ambition id).</summary>
+    public string Cunning { get; set; } = "cunning";
+    public string Ambition { get; set; } = "conquest";
+
+    /// <summary>Whose heir it is in the world's history (a lineage id, content/game/history.json): what it wants and why.</summary>
+    public string Lineage { get; set; } = "";
+
+    /// <summary>It has grown as far as its wits allow, and the town has been told.</summary>
+    public bool Plateaued { get; set; }
+    public int NextDomainDay { get; set; }
+
+    /// <summary>Settlements of the wilds it has brought under its sway.</summary>
+    public int Domain { get; set; }
+    public int NextFeudDay { get; set; }
+
+    /// <summary>A territorial menace strikes at the town only while provoked.</summary>
+    public int ProvokedUntilTick { get; set; }
+
+    /// <summary>A would-be overlord's demand for fealty: when its answer is due, and whether the town refused.</summary>
+    public int? DemandDueTick { get; set; }
+    public bool Refused { get; set; }
 
     /// <summary>The warband keeps its own name until it is crowned.</summary>
     public string? FixedName { get; init; }
@@ -181,14 +290,20 @@ public static class Menaces
                 if (seat.Cleared) continue;
             }
             Grow(town, m, seat);
+            if (m.Stage >= MenaceStage.Power) Demand(town, m);
             if (m.Stage >= MenaceStage.Rising && town.Tick >= m.NextStrikeTick) Strike(town, m, seat);
             if (m.Stage >= MenaceStage.Dominion) Assaults(town, m);
             if (town.Outcome != null) return;
         }
+        Feuds(town);
         Watch(town);
         Fester(town);
         Cult(town);
-        if (autoMayor) AutoBounty(town);
+        if (autoMayor)
+        {
+            AutoAnswer(town);
+            AutoBounty(town);
+        }
     }
 
     // Birth --------------------------------------------------------------------------------------
@@ -205,7 +320,62 @@ public static class Menaces
 
     private static string KindOf(SiteState s) => s.Def.Kind is "" or null ? "beasts" : s.Def.Kind;
 
-    private static Menace Create(Town town, SiteState seat, string kind, string origin, double power, string? leader = null, string? faction = null, string? fixedName = null)
+    // Wits and wants -----------------------------------------------------------------------------
+
+    private static readonly MenaceCunningDef DefaultCunning = new() { Id = "cunning", Name = "cunning", Crown = true };
+    private static readonly MenaceAmbitionDef DefaultAmbition = new() { Id = "conquest", Name = "conquers", Marches = true };
+
+    public static MenaceCunningDef CunningOf(Town town, Menace m) => Rules(town).Cunning.FirstOrDefault(c => c.Id == m.Cunning) ?? DefaultCunning;
+
+    public static MenaceAmbitionDef AmbitionOf(Town town, Menace m) => Rules(town).Ambitions.FirstOrDefault(a => a.Id == m.Ambition) ?? DefaultAmbition;
+
+    /// <summary>Whether the finale may crown it: only a mind that can rule becomes the big bad.</summary>
+    public static bool CanCrown(Town town, Menace m) => CunningOf(town, m).Crown;
+
+    private static int CunningRank(Town town, string id)
+    {
+        var tiers = Rules(town).Cunning;
+        for (int i = 0; i < tiers.Count; i++)
+            if (tiers[i].Id == id) return i;
+        return -1;
+    }
+
+    /// <summary>The tier a leader of this Intelligence schemes at.</summary>
+    private static string CunningFor(Town town, int intelligence)
+    {
+        var tier = Rules(town).Cunning.FirstOrDefault(c => intelligence <= c.MaxInt) ?? Rules(town).Cunning.LastOrDefault();
+        return tier?.Id ?? DefaultCunning.Id;
+    }
+
+    private static int IntOf(Town town, string monsterId)
+    {
+        if (monsterId == "") return 10;
+        int i = town.Content.Monster(monsterId).Int;
+        return i > 0 ? i : 10;
+    }
+
+    /// <summary>What it wants, weighted by what suits its kind and its wits.</summary>
+    private static string PickAmbition(Town town, string kind, string cunning, string lineage = "")
+    {
+        var heirs = Annals.Lineage(town.Content.History, lineage)?.Ambitions;
+        double Weight(MenaceAmbitionDef a) => a.Weight * (heirs != null && heirs.TryGetValue(a.Id, out double x) ? x : 1);
+        int rank = CunningRank(town, cunning);
+        var fit = Rules(town).Ambitions
+            .Where(a => a.Kinds.Count == 0 || a.Kinds.Contains(kind))
+            .Where(a => a.MinCunning == "" || rank >= CunningRank(town, a.MinCunning))
+            .Where(a => a.MaxCunning == "" || rank <= CunningRank(town, a.MaxCunning))
+            .ToList();
+        if (fit.Count == 0) return Rules(town).Ambitions.Count > 0 ? "territory" : DefaultAmbition.Id;
+        double roll = town.Rng.Next() * fit.Sum(Weight);
+        foreach (var a in fit)
+        {
+            roll -= Weight(a);
+            if (roll < 0) return a.Id;
+        }
+        return fit[^1].Id;
+    }
+
+    private static Menace Create(Town town, SiteState seat, string kind, string origin, double power, string? leader = null, string? faction = null, string? fixedName = null, string? cunning = null, string? lineage = null)
     {
         var def = KindDef(town, kind);
         var m = new Menace
@@ -222,7 +392,11 @@ public static class Menaces
             SeenAttempts = seat.Attempts,
         };
         Seat(town, m, seat);
+        m.Cunning = cunning ?? CunningFor(town, IntOf(town, seat.Def.Boss.Monster));
+        m.Lineage = lineage ?? Annals.ForMenace(town.Content.History, kind, World.RegionOf(town, seat)?.Theme.Id)?.Id ?? "";
+        m.Ambition = PickAmbition(town, kind, m.Cunning, m.Lineage);
         m.BaseLevel = World.LevelOf(seat);
+        m.BornLevel = m.BaseLevel;
         m.Level = m.BaseLevel;
         m.Stage = StageFor(town, m);
         m.Peak = m.Stage;
@@ -267,7 +441,8 @@ public static class Menaces
         if (region != null) region.Known = true;
         Spread(town, m, seat, 60);
         string text = Saga.Grim(town) && m.Def.RiseDark != "" ? m.Def.RiseDark : m.Def.Rise;
-        town.Log(LedgerCategory.War, Importance.Major, Saga.Fill(town, text, m));
+        string motive = Annals.Motive(town, m);
+        town.Log(LedgerCategory.War, Importance.Major, Saga.Fill(town, text, m) + (motive == "" ? "" : " " + motive));
     }
 
     /// <summary>Word of what holds the seat now: the town's belief catches up with the menace's level.</summary>
@@ -360,6 +535,9 @@ public static class Menaces
             SeatId = e.Outpost.Id,
             SeatName = e.Outpost.Name,
             BaseLevel = 4,
+            Cunning = CunningFor(town, IntOf(town, e.WarlordBattle.Monster)),
+            Ambition = "conquest",
+            Lineage = Annals.ForMenace(town.Content.History, "tribe", null)?.Id ?? "",
         };
         town.Saga.Menaces.Add(m);
         SyncWarband(town, m);
@@ -369,7 +547,8 @@ public static class Menaces
     private static void SyncWarband(Town town, Menace m)
     {
         m.Power = town.Enemy.Strength;
-        m.Level = Math.Max(m.Level, Math.Min(Rules(town).MaxLevel, m.BaseLevel + (int)(m.Power / Rules(town).PerLevel)));
+        // The big bad keeps the level it was crowned at, the warband's host as much as any other.
+        if (!m.BigBad) m.Level = Math.Max(m.Level, Math.Min(Rules(town).MaxLevel, m.BaseLevel + (int)(m.Power / Rules(town).PerLevel)));
         if (!m.BigBad) m.Stage = StageFor(town, m);
         // Under the yoke, the warlord waits in his camp: burning it is how the town gets at him.
         if ((town.Saga.YokeId == m.Id || m.BigBad) && Quests.Site(town, m.SeatId) is SiteState camp && camp.Cleared && camp.Def.Boss.Monster == town.Content.Enemy.WarlordBattle.Monster)
@@ -402,7 +581,8 @@ public static class Menaces
             .ThenBy(s => s.Def.Id, StringComparer.Ordinal)
             .FirstOrDefault();
         if (far == null) return null;
-        var m = Create(town, far, foe.Kind, "awakened", Rules(town).Stages.Overlord, foe.Leader != "" ? foe.Leader : null);
+        var mind = Rules(town).Cunning.LastOrDefault(c => c.Crown)?.Id;
+        var m = Create(town, far, foe.Kind, "awakened", Rules(town).Stages.Overlord, foe.Leader != "" ? foe.Leader : null, cunning: mind, lineage: foe.Lineage != "" ? foe.Lineage : null);
         m.Named = true;
         return m;
     }
@@ -467,18 +647,22 @@ public static class Menaces
     private static void Grow(Town town, Menace m, SiteState seat)
     {
         var r = Rules(town);
-        double g = r.Growth * (seat.Known != SiteKnowledge.Unheard ? 1 : r.UnknownGrowth) * (1 + m.Holdings.Count * r.HoldingGrowth) * Saga.Pace(town) * Seasons.Activity(town, m.Kind);
+        var cu = CunningOf(town, m);
+        var am = AmbitionOf(town, m);
+        double g = r.Growth * cu.Growth * am.Growth * (seat.Known != SiteKnowledge.Unheard ? 1 : r.UnknownGrowth) * (1 + m.Holdings.Count * r.HoldingGrowth) * Saga.Pace(town) * Seasons.Activity(town, m.Kind);
         if (m.FactionId != null && Factions.Find(town, m.FactionId) is FactionState f && f.Active) g += f.Members.Count * 0.1;
-        // Every party that went for it and came back without finishing it makes it bolder.
+        // Every party that went for it and came back without finishing it makes it bolder, and a proud one angry.
         if (seat.Attempts > m.SeenAttempts)
         {
             g += (seat.Attempts - m.SeenAttempts) * r.FailedDelve;
             m.SeenAttempts = seat.Attempts;
+            Trespass(town, m);
         }
         m.Power += g;
+        Ceiling(town, m, cu);
 
-        // A menace outgrows its act by a few levels at most; the big bad keeps the level it was crowned at.
-        int level = Math.Min(Math.Min(r.MaxLevel, Saga.CurrentAct(town).Levels[^1] + 3), m.BaseLevel + (int)(m.Power / r.PerLevel));
+        // A menace outgrows its act by a few levels at most, and a dull one hardly at all; the big bad keeps the level it was crowned at.
+        int level = Math.Min(Math.Min(Math.Min(r.MaxLevel, Saga.CurrentAct(town).Levels[^1] + 3), m.BaseLevel + cu.LevelGain), m.BaseLevel + (int)(m.Power / r.PerLevel));
         if (m.BigBad) level = m.Level;
         if (level > seat.Def.Tier)
         {
@@ -487,10 +671,11 @@ public static class Menaces
             if (m.Named) Spread(town, m, seat, 50);
         }
         m.Stage = StageFor(town, m);
+        Domain(town, m, seat, cu);
         var before = m.Peak;
         if (m.Stage <= before) return;
         m.Peak = m.Stage;
-        if (m.Stage >= MenaceStage.Power) Recruit(town, m, seat);
+        if (m.Stage >= MenaceStage.Power && cu.Holdings) Recruit(town, m, seat);
         if (m.Stage == MenaceStage.Rising)
         {
             if (m.FactionId != null && seat.Cleared) Factions.Waken(town);
@@ -515,7 +700,7 @@ public static class Menaces
     }
 
     /// <summary>The menace takes in the nearest free lair, preferring its own region: a holding, at full strength.</summary>
-    private static void Recruit(Town town, Menace m, SiteState seat)
+    private static SiteState? Recruit(Town town, Menace m, SiteState seat)
     {
         var lair = town.Sites
             .Where(s => Free(town, s))
@@ -523,9 +708,71 @@ public static class Menaces
             .ThenBy(s => Math.Abs(s.Def.Distance - seat.Def.Distance))
             .ThenBy(s => s.Def.Id, StringComparer.Ordinal)
             .FirstOrDefault();
-        if (lair == null) return;
+        if (lair == null) return null;
         m.Holdings.Add(lair.Def.Id);
         lair.Strength = town.Content.Lairs.MaxStrength;
+        return lair;
+    }
+
+    /// <summary>The power a stage starts at.</summary>
+    private static double Threshold(Town town, MenaceStage stage)
+    {
+        var st = Rules(town).Stages;
+        return stage switch
+        {
+            MenaceStage.Rising => st.Rising,
+            MenaceStage.Power => st.Power,
+            MenaceStage.Dominion => st.Dominion,
+            MenaceStage.Overlord => st.Overlord,
+            _ => 0,
+        };
+    }
+
+    /// <summary>A dull menace grows only as far as its wits: its power stops short of the next stage.</summary>
+    private static void Ceiling(Town town, Menace m, MenaceCunningDef cu)
+    {
+        if (m.BigBad || cu.MaxStage >= MenaceStage.Dominion) return;
+        double cap = Threshold(town, cu.MaxStage + 1) - 1;
+        if (m.Power <= cap) return;
+        m.Power = cap;
+        if (m.Plateaued) return;
+        m.Plateaued = true;
+        if (m.Named && cu.Plateau != "") town.Log(LedgerCategory.War, Importance.Notable, Saga.Cap(Saga.Fill(town, cu.Plateau, m)));
+    }
+
+    /// <summary>
+    /// A patient mind builds a domain: once risen, it brings the nearest free settlement of the wilds under its
+    /// sway every so often, with tithes and fear rather than raids. The settlement turns from the town, and the menace grows.
+    /// </summary>
+    private static void Domain(Town town, Menace m, SiteState seat, MenaceCunningDef cu)
+    {
+        // Crowned, it stops building and comes for the town.
+        if (cu.DomainEveryDays <= 0 || m.Stage < MenaceStage.Rising || m.BigBad) return;
+        if (m.NextDomainDay == 0)
+        {
+            m.NextDomainDay = town.Day + cu.DomainEveryDays;
+            return;
+        }
+        if (town.Day < m.NextDomainDay || m.Domain >= cu.MaxDomain) return;
+        m.NextDomainDay = town.Day + cu.DomainEveryDays;
+        var s = Neighbour(town, seat, swayed: true);
+        if (s == null) return;
+        m.Domain++;
+        s.Standing = Math.Max(-100, Math.Min(s.Standing, 0) - Rules(town).SettlementHit);
+        s.Allied = false;
+        m.Power += Rules(town).FailedDelve;
+        if (cu.Domain != "" && (m.Named || town.Regions[s.RegionId].Known))
+            town.Log(LedgerCategory.Rumor, Importance.Notable, Saga.Cap(Saga.Fill(town, cu.Domain, m).Replace("{settlement}", s.Name)));
+    }
+
+    /// <summary>The town's heroes came for it, or for its lairs: a menace that only holds its land now wants blood.</summary>
+    private static void Trespass(Town town, Menace m)
+    {
+        var am = AmbitionOf(town, m);
+        if (am.Id != "territory") return;
+        if (town.Tick >= m.ProvokedUntilTick && m.Named && am.Provoked != "") town.Log(LedgerCategory.War, Importance.Notable, Saga.Cap(Saga.Fill(town, am.Provoked, m)));
+        m.ProvokedUntilTick = town.Tick + am.ProvokeDays * SimTime.HoursPerDay;
+        m.NextStrikeTick = Math.Min(m.NextStrikeTick, town.Tick + 2 * SimTime.HoursPerDay);
     }
 
     /// <summary>A stronger library creature of the menace's kind takes the seat at its new level.</summary>
@@ -576,22 +823,89 @@ public static class Menaces
         double far = 1 + 0.25 * Math.Max(0, seat.Def.Distance - 1);
         // A menace in its season strikes more often; one out of it keeps to its lair.
         m.NextStrikeTick = town.Tick + (int)Math.Round(rng.Range(r.StrikeEveryDays[0], r.StrikeEveryDays[1] + 1) * far / Seasons.Activity(town, m.Kind)) * SimTime.HoursPerDay;
+        var am = AmbitionOf(town, m);
+        // Left alone, a menace that only holds its land keeps to it.
+        if (am.Id == "territory" && town.Tick >= m.ProvokedUntilTick) return;
         // Past its first rise it turns on the peoples of the wilds as often as on the town.
         var victim = m.Stage >= MenaceStage.Power ? Neighbour(town, seat) : null;
-        if (victim != null && rng.Chance(0.5))
+        // Its vassal pays to be spared; the peoples of the wilds are not.
+        bool sworn = town.Saga.YokeId == m.Id && !town.Saga.Defied;
+        if (victim != null && (sworn || rng.Chance(0.5)))
         {
             HitSettlement(town, m, victim);
             return;
         }
-        HitTown(town, m);
+        if (sworn) return;
+        if (am.Id == "plague" && am.Infect.Count > 0) Infect(town, m, am);
+        else if (am.Id == "intrigue" && am.Schemes.Count > 0) Scheme(town, m, am);
+        else HitTown(town, m);
     }
 
-    private static Settlement? Neighbour(Town town, SiteState seat)
+    /// <summary>A night visit: a townsperson taken, and the menace grows on what it takes. Defenders at home can keep the door.</summary>
+    private static void Infect(Town town, Menace m, MenaceAmbitionDef am)
+    {
+        var r = Rules(town);
+        var rng = town.Rng;
+        var people = town.Workers.OrderBy(a => a.Id).ToList();
+        if (people.Count == 0) return;
+        var v = people[rng.Range(0, people.Count)];
+        double hunger = m.Power * r.StrikeShare * (0.7 + rng.Next() * 0.6);
+        if (Threat.LocalDefense(town) * (0.5 + Council.WatchStrength(town)) >= hunger)
+        {
+            var champion = town.Heroes.Where(a => !a.IsAway).OrderByDescending(x => x.Hero!.Level).ThenBy(x => x.Id).FirstOrDefault();
+            string by = champion != null ? champion.Name : "the watch";
+            m.Power = Math.Max(0, m.Power - hunger * r.RepelLoss);
+            town.Log(LedgerCategory.War, Importance.Routine, Saga.Cap(Saga.Fill(town, am.Warded, m).Replace("{victim}", v.Name).Replace("{by}", by)), champion != null ? [champion.Id, v.Id] : [v.Id]);
+            town.Tension += 6;
+            return;
+        }
+        string where = v.JobId is int w ? town.Building(w).Name : town.Name;
+        string text = am.Infect[rng.Range(0, am.Infect.Count)];
+        Threat.Kill(town, v);
+        m.Power += r.FailedDelve;
+        Saga.Scar(town, 1);
+        town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, text, m).Replace("{victim}", v.Name).Replace("{where}", where)), [v.Id]);
+        town.Tension += 20;
+    }
+
+    /// <summary>Agents, bribes and whispers instead of raiders. A strong watch catches them.</summary>
+    private static void Scheme(Town town, Menace m, MenaceAmbitionDef am)
+    {
+        var r = Rules(town);
+        var rng = town.Rng;
+        if (rng.Chance(Council.WatchStrength(town)))
+        {
+            m.Power = Math.Max(0, m.Power - r.FailedDelve);
+            town.Log(LedgerCategory.War, Importance.Notable, Saga.Cap(Saga.Fill(town, am.Caught, m)));
+            return;
+        }
+        int pick = rng.Range(0, am.Schemes.Count);
+        double gold = 0;
+        switch (pick % 3)
+        {
+            case 0:
+                gold = Math.Floor(Math.Min(Math.Max(0, town.Treasury) * 0.15, 30 + m.Level * 15));
+                if (gold > 0) town.Book(TreasuryAccount.Discrepancies, -gold);
+                m.Power += gold * 0.1;
+                break;
+            case 1:
+                town.Mandate = Math.Max(0, town.Mandate - 6);
+                break;
+            default:
+                town.Tension += 25;
+                break;
+        }
+        m.Power += r.FailedDelve * 0.5;
+        town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, am.Schemes[pick], m).Replace("{gold}", Js.Str(gold))));
+    }
+
+    private static Settlement? Neighbour(Town town, SiteState seat, bool swayed = false)
     {
         var region = World.RegionOf(town, seat);
         if (region == null) return null;
+        // A domain takes in only settlements not already cowed.
         return town.Settlements
-            .Where(s => !s.Razed)
+            .Where(s => !s.Razed && (!swayed || s.Standing > -25))
             .OrderBy(s => s.RegionId == region.Id ? 0 : 1)
             .ThenBy(s => Math.Abs(town.Regions[s.RegionId].Ring - region.Ring))
             .ThenBy(s => World.AngleBetween(town.Regions[s.RegionId].Bearing, region.Bearing))
@@ -683,6 +997,11 @@ public static class Menaces
         if (restrained || m.NextAssaultTick is not int next || town.Tick < next) return;
         bool due = m.BigBad && town.Day >= s.CrownDay + f.FirstMarchDays;
         bool provoked = s.YokeId == m.Id && s.Defied;
+        var am = AmbitionOf(town, m);
+        // Only a menace that wants the town's walls comes for them, until it is crowned or defied.
+        if (!due && !provoked && !m.BigBad && !am.Marches) return;
+        // A would-be overlord asks before it marches.
+        if (m.DemandDueTick != null && !m.Refused) return;
         if (!due && !provoked && m.Power < Threat.Defense(town, allies: false) * r.AssaultConfidence)
         {
             m.NextAssaultTick = town.Tick + 10 * SimTime.HoursPerDay;
@@ -834,6 +1153,7 @@ public static class Menaces
             if (!Quests.Site(town, id)!.Cleared) continue;
             m.Holdings.Remove(id);
             m.Power = Math.Max(0, m.Power - r.HoldingCleared);
+            Trespass(town, m);
         }
     }
 
@@ -944,6 +1264,105 @@ public static class Menaces
         if (m.Named && !m.BigBad && m.Origin != FromWarband && m.Def.Slain != "") town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, m.Def.Slain, m)));
         Saga.Unyoke(town, m);
         if (m.BigBad) Saga.Win(town, m);
+    }
+
+    // Demands -----------------------------------------------------------------------------------
+
+    /// <summary>Once it is a power, a would-be overlord sends heralds: kneel and pay, or face it. No answer is an answer.</summary>
+    private static void Demand(Town town, Menace m)
+    {
+        var am = AmbitionOf(town, m);
+        if (am.Id != "vassal" || m.BigBad || m.Refused || town.Saga.YokeId != null) return;
+        if (m.DemandDueTick is not int answer)
+        {
+            if (PendingDemand(town) != null) return;
+            m.DemandDueTick = town.Tick + am.AnswerDays * SimTime.HoursPerDay;
+            m.Named = true;
+            town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, am.Demand, m)));
+            return;
+        }
+        if (town.Tick >= answer) Answer(town, m.Id, false);
+    }
+
+    /// <summary>A would-be overlord whose demand for fealty waits on the town's answer.</summary>
+    public static Menace? PendingDemand(Town town) =>
+        town.Saga.Menaces.Where(m => m.Alive && m.DemandDueTick != null && !m.Refused && town.Saga.YokeId != m.Id).OrderBy(m => m.Id).FirstOrDefault();
+
+    /// <summary>The mayor answers a demand for fealty: bend the knee and pay tribute, or refuse and face its host.</summary>
+    public static bool Answer(Town town, int menaceId, bool submit)
+    {
+        if (menaceId < 1 || menaceId > town.Saga.Menaces.Count) return false;
+        var m = town.Saga.Menaces[menaceId - 1];
+        if (PendingDemand(town) != m) return false;
+        var am = AmbitionOf(town, m);
+        m.DemandDueTick = null;
+        if (submit && town.Saga.YokeId == null)
+        {
+            Saga.Swear(town, m);
+            town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, am.Submitted, m)));
+            return true;
+        }
+        m.Refused = true;
+        // Its raiders come at once; its host, once it can field one.
+        m.NextStrikeTick = Math.Min(m.NextStrikeTick, town.Tick + 2 * SimTime.HoursPerDay);
+        if (m.Stage >= MenaceStage.Dominion) m.NextAssaultTick = town.Tick;
+        town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, am.Refused, m)));
+        return true;
+    }
+
+    /// <summary>The stand-in mayor kneels only to a host the walls could not hold.</summary>
+    private static void AutoAnswer(Town town)
+    {
+        if (PendingDemand(town) is not Menace m) return;
+        Answer(town, m.Id, m.Power > Threat.Defense(town, allies: false) * 1.2);
+    }
+
+    // Feuds --------------------------------------------------------------------------------------
+
+    /// <summary>Menaces with a reach fight their neighbours: the stronger takes a lair, or swallows a weak one whole.</summary>
+    private static void Feuds(Town town)
+    {
+        var fr = Rules(town).Feud;
+        foreach (var m in Alive(town))
+        {
+            if (!m.Alive || m.Origin == FromWarband || m.Stage < MenaceStage.Power || !AmbitionOf(town, m).Marches) continue;
+            if (m.NextFeudDay == 0) m.NextFeudDay = town.Day + town.Rng.Range(fr.EveryDays[0], fr.EveryDays[1] + 1);
+            if (town.Day < m.NextFeudDay) continue;
+            m.NextFeudDay = town.Day + town.Rng.Range(fr.EveryDays[0], fr.EveryDays[1] + 1);
+            var seat = Quests.Site(town, m.SeatId);
+            if (seat == null) continue;
+            var region = World.RegionOf(town, seat);
+            if (region == null) continue;
+            var rival = Alive(town)
+                .Where(o => o != m && !o.BigBad && o.Origin != FromWarband && town.Saga.YokeId != o.Id && o.Power < m.Power)
+                .Select(o => (Menace: o, Region: Quests.Site(town, o.SeatId) is SiteState os ? World.RegionOf(town, os) : null))
+                .Where(x => x.Region != null && Math.Abs(x.Region.Ring - region.Ring) <= 1 && World.AngleBetween(x.Region.Bearing, region.Bearing) <= 45)
+                .OrderBy(x => x.Region!.Id == region.Id ? 0 : 1)
+                .ThenBy(x => x.Menace.Id)
+                .Select(x => x.Menace)
+                .FirstOrDefault();
+            if (rival == null) continue;
+            bool heard = region.Known;
+            if (rival.Holdings.Count == 0 && m.Power >= rival.Power * fr.Absorb)
+            {
+                m.Power += rival.Power * 0.5;
+                string other = rival.Name;
+                rival.EndedDay = town.Day;
+                Saga.Relief(town);
+                if (heard && fr.Absorbed != "") town.Log(LedgerCategory.Rumor, Importance.Notable, Saga.Cap(Saga.Fill(town, fr.Absorbed, m).Replace("{other}", other)));
+                continue;
+            }
+            if (rival.Holdings.Count == 0) continue;
+            var cu = CunningOf(town, m);
+            if (!cu.Holdings) continue;
+            string lair = rival.Holdings.OrderBy(id => id, StringComparer.Ordinal).First();
+            rival.Holdings.Remove(lair);
+            rival.Power = Math.Max(0, rival.Power - Rules(town).HoldingCleared);
+            m.Holdings.Add(lair);
+            m.Power += rival.Power * fr.Take * 0.2;
+            if (heard && fr.Taken != "")
+                town.Log(LedgerCategory.Rumor, Importance.Notable, Saga.Cap(Saga.Fill(town, fr.Taken, m).Replace("{other}", rival.Name).Replace("{lair}", Quests.Site(town, lair)!.Def.Name)));
+        }
     }
 
     // The stand-in mayor -------------------------------------------------------------------------

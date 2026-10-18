@@ -169,7 +169,7 @@
           "the Ashen Abbot",
           "Old Corvus",
           "Lady Vessaline",
-          "Thane Haldor",
+          "Thane Harrow",
           "the Pale Bishop",
           "Lord Caddoc Hollowe",
           "Mother Ash",
@@ -363,7 +363,152 @@
       4,
       5
     ],
-    "bountyEveryDays": 20
+    "bountyEveryDays": 20,
+    "cunning": [
+      {
+        "id": "mindless",
+        "name": "mindless",
+        "maxInt": 5,
+        "maxStage": "rising",
+        "levelGain": 2,
+        "holdings": false,
+        "crown": false,
+        "plateau": "{name} has grown as large as a thing like that can grow. It hunts; it will never rule."
+      },
+      {
+        "id": "crafty",
+        "name": "low cunning",
+        "maxInt": 9,
+        "maxStage": "power",
+        "levelGain": 4,
+        "crown": false,
+        "plateau": "{name} has taken all the ground its kind can hold. {leader} is no king: the band squabbles, raids and stays where it is."
+      },
+      {
+        "id": "cunning",
+        "name": "cunning",
+        "maxInt": 13,
+        "maxStage": "dominion",
+        "levelGain": 20,
+        "crown": true
+      },
+      {
+        "id": "mastermind",
+        "name": "mastermind",
+        "maxInt": 99,
+        "maxStage": "dominion",
+        "levelGain": 20,
+        "growth": 0.7,
+        "crown": true,
+        "crownWeight": 1.2,
+        "domainEveryDays": 45,
+        "domain": "Word from {region}: {settlement} now sends tithes to {leader}, and no longer looks to {town}. {name} is patient, and its borders creep outward a valley at a time.",
+        "maxDomain": 4
+      }
+    ],
+    "ambitions": [
+      {
+        "id": "hunger",
+        "name": "hunts",
+        "what": "It wants to feed. It raids herds and fields and never thinks past its belly.",
+        "maxCunning": "crafty",
+        "weight": 1,
+        "kinds": [
+          "beasts"
+        ],
+        "marches": false
+      },
+      {
+        "id": "territory",
+        "name": "holds its land",
+        "what": "It wants its own ground and nothing more. Leave it be and it keeps to itself; trespass or fail against it and it strikes back.",
+        "weight": 2,
+        "kinds": [],
+        "marches": false,
+        "growth": 0.8,
+        "provoked": "{name} will not forgive the trespass. {leader}'s creatures are seen on the roads toward {town}.",
+        "provokeDays": 40
+      },
+      {
+        "id": "conquest",
+        "name": "conquers",
+        "what": "It wants everything: the land, the peoples of the wilds, and {town}'s walls.",
+        "minCunning": "crafty",
+        "weight": 2,
+        "kinds": [
+          "tribe",
+          "rivals",
+          "undead",
+          "beasts"
+        ],
+        "marches": true
+      },
+      {
+        "id": "vassal",
+        "name": "wants vassals",
+        "what": "It wants {town} kneeling, not burning: a tax and a bent knee. Refuse and it comes to take them.",
+        "minCunning": "cunning",
+        "weight": 2,
+        "kinds": [
+          "tribe",
+          "rivals",
+          "schemers",
+          "undead"
+        ],
+        "marches": true,
+        "demand": "Heralds of {name} ride into {town} under a black banner. {leader} offers peace and protection for a third of the treasury every ten days. Refuse, and the host marches.",
+        "submitted": "{town} bends the knee to {name}. The heralds leave a tax-taker at the town hall, and the raiders stay away.",
+        "refused": "{town} sends the heralds of {name} home with their banner in the mud. {leader} calls the host to arms.",
+        "answerDays": 10
+      },
+      {
+        "id": "plague",
+        "name": "spreads undeath",
+        "what": "It wants {town}'s people for its own. Its strikes come at night, and the ones it takes do not stay dead.",
+        "minCunning": "cunning",
+        "weight": 3,
+        "kinds": [
+          "undead",
+          "cult"
+        ],
+        "marches": false,
+        "infect": [
+          "{victim} of {where} is found pale and cold, two small wounds at the throat. People in {town} bar their windows and whisper about {leader}.",
+          "{victim} walks out of {town} after midnight and does not come back. Shepherds say they saw them on the road to {seat}, walking with the dead.",
+          "Three graves in {town}'s yard are found open and empty at dawn. {victim} was in one of them, and {leader} has another servant."
+        ],
+        "warded": "Something comes to {town} in the night for {victim}, but {by} keeps the door. {leader} goes hungry."
+      },
+      {
+        "id": "intrigue",
+        "name": "schemes",
+        "what": "It wants {town} rotten from within: bought councillors, emptied coffers, neighbours at each other's throats.",
+        "minCunning": "cunning",
+        "weight": 3,
+        "kinds": [
+          "schemers",
+          "cult",
+          "rivals"
+        ],
+        "marches": false,
+        "schemes": [
+          "Gold goes missing from {town}'s treasury: {gold} gold, and a forged ledger in its place. The trail leads toward {seat}.",
+          "Agents of {name} whisper in {town}'s taverns that the mayor sold the town to save their own skin. The Mandate suffers.",
+          "A merchant in {town} is found to be in the pay of {leader}. The market sours, and neighbours eye each other."
+        ],
+        "caught": "The watch catches an agent of {name} with a satchel of letters. {leader}'s web in {town} loses a strand."
+      }
+    ],
+    "feud": {
+      "everyDays": [
+        30,
+        50
+      ],
+      "take": 0.25,
+      "absorb": 2.5,
+      "taken": "Word from {region}: {name} has driven {other} out of {lair} and holds it now.",
+      "absorbed": "Word from {region}: {other} is no more. {leader} broke it and took its warriors, and {name} grows."
+    }
   },
   "dread": {
     "tones": [
@@ -446,26 +591,29 @@
     "fallback": [
       {
         "kind": "beasts",
-        "leader": "Vermithrax the Old Wyrm"
+        "leader": "Vermithrax the Old Wyrm", "lineage": "wyrm-blood",
+        "text": "The Old Wyrm who burned the Stonekings has slipped the chains the Smith-King forged for him four thousand years ago."
       },
       {
         "kind": "undead",
-        "leader": "Queen Ysolde the Deathless"
+        "leader": "Ashkara the Deathless", "lineage": "ninefold-dead",
+        "text": "The ninth mask-queen of Ashkaar, who became a lich rather than die with her empire, has walked out of the Tomb of the Nine Masks."
       },
       {
         "kind": "schemers",
-        "leader": "the Lord of the Last Door"
+        "leader": "the Lord of the Last Door", "lineage": "last-door",
+        "text": "It sold King Maudren his way past the Ferryman and ended Caldor in a decade. Now it has found another buyer."
       }
     ],
     "fallbackText": "Something old wakes in {region}, something that slept through the whole history of {town}. {leader} has risen, and its hunger has a direction.",
-    "victory": "{leader} is dead. {town}'s heroes come home through cheering crowds, and the long night is over. The bards will be singing about {town} for a hundred years.",
+    "victory": "{leader} is dead. {town}'s heroes come home through cheering crowds, and the second Long Night is over. The bards will be singing about {town} for a hundred years.",
     "victoryDark": "{leader} is dead. {town} is half ash and half graves, but it stands, and the morning is clear for the first time in a year.",
     "defeat": "{town} falls to {name}. The bards will sing about it, but not in {town}.",
     "march": "{name} is on the march! {leader} leads some {army} toward {town}. They will reach the walls in {days} days.",
     "repelled": "{town} holds. {leader} draws off with what is left of the host, but {name} is not finished.",
     "overlordLevel": [
       9,
-      13
+      11
     ],
     "marchGrowth": 0.1,
     "rideEveryDays": 20,

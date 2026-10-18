@@ -63,6 +63,7 @@ public partial class Main
         TitleButton(col, "Start a new town", "A fresh town on a random seed", primary: false, () => StartTown(tutorial: false));
         TitleButton(col, "Start with tutorial", "A fresh town, with a guide to the basics", primary: false, () => StartTown(tutorial: true));
         TitleButton(col, "Load a town", "Pick a save slot", primary: false, OpenLoad);
+        TitleButton(col, "History of the world", "The ages, empires and peoples before your town", primary: false, () => OpenHistory());
         TitleButton(col, "Quit", "Close the game", primary: false, () => GetTree().Quit());
     }
 
@@ -116,9 +117,9 @@ public partial class Main
         SetSpeed(1);
     }
 
-    private void StartTown(bool tutorial)
+    private void StartTown(bool tutorial, int? seed = null, bool autoplay = false)
     {
-        NewTown((int)(GD.Randi() % 9999) + 1);
+        NewTown(seed ?? (int)(GD.Randi() % 9999) + 1, autoplay);
         // Begin at first light rather than in the dark of the first midnight.
         for (int i = 0; i < 7; i++) _sim.Step();
         HideTitle();

@@ -72,42 +72,52 @@
   },
   "peoples": [
     { "id": "villagers", "name": "the folk of {S}", "people": "villagers", "kind": "village", "race": "human",
+      "history": "their grandparents' grandparents were Caldor's river tribes, and they stayed when the kingdom fell.",
       "start": 25, "settlements": ["{A}ford", "{A}by", "{A} Green", "{A}wick", "Little {A}"],
       "boon": { "troops": 10, "good": "Food", "qty": 6, "heroChance": 0.05, "classes": ["fighter", "ranger", "cleric"],
         "text": "carts of grain and cheese come up the road from {S}" } },
     { "id": "halflings", "name": "the halflings of {S}", "people": "halflings", "kind": "shire", "race": "halfling",
+      "history": "they settled the farms the Crown Marches emptied, and they remember who fed them in the Red Tide.",
       "start": 30, "settlements": ["{A}bottom", "{A} Burrows", "{A}hollow"],
       "boon": { "troops": 8, "good": "Ale", "qty": 4, "heroChance": 0.08, "classes": ["rogue", "bard", "cartographer"],
         "text": "barrels of {S} brown ale roll into the taverns" } },
     { "id": "dwarves", "name": "the dwarves of {S}", "people": "dwarves", "kind": "hold", "race": "dwarf",
+      "history": "they are heirs of Khaz Varrund, the Deep Realm, and they have never forgiven the dragons.",
       "start": 0, "settlements": ["{A}hold", "Khaz {B}", "{A} Deep", "{B}'s Anvil"],
       "boon": { "troops": 40, "good": "Tools", "qty": 2, "heroChance": 0.12, "classes": ["fighter", "cleric", "paladin", "warden"],
         "text": "dwarven smiths of {S} send tools and iron to the market" } },
     { "id": "elves", "name": "the elves of {S}", "people": "elves", "kind": "enclave", "race": "elf",
+      "history": "they are the last of the Court of First Leaves, and they remember Caldor's axes.",
       "start": -10, "settlements": ["{B}'s Bower", "the {A} Glade", "{A}leaf Hall", "the Court of {B}"],
       "boon": { "troops": 30, "good": "Timber", "qty": 3, "heroChance": 0.14, "classes": ["ranger", "druid", "wizard", "bard"],
         "text": "the elves of {S} mark which trees may be felled, and the woodcutters prosper" } },
     { "id": "gnomes", "name": "the gnomes of {S}", "people": "deep gnomes", "kind": "burrow", "race": "gnome",
+      "history": "they stayed in Khaz Varrund's lower workings when the dwarves fled, and have mapped every tunnel since.",
       "start": 5, "settlements": ["{A}spark Burrow", "the {A} Workings", "{B}'s Gearhole"],
       "boon": { "troops": 15, "good": "Tools", "qty": 1, "heroChance": 0.1, "classes": ["wizard", "rogue", "reliquarian"],
         "maps": true, "text": "gnome tinkers from {S} trade clockwork and maps of the deep ways" } },
     { "id": "lizardfolk", "name": "the lizardfolk of {S}", "people": "lizardfolk", "kind": "stilt village",
+      "history": "they served the serpent-priests of the Coil and outlived them, and they will not go to the Drowned Temple.",
       "start": -5, "settlements": ["{A} Stilts", "the {A} Nest", "{B}'s Rookery"],
       "boon": { "troops": 20, "good": "Food", "qty": 4, "heroChance": 0, "maps": true,
         "text": "lizardfolk guides from {S} trade eels and show safe paths through the fen" } },
     { "id": "templars", "name": "the brothers and sisters of {S}", "people": "templars", "kind": "monastery", "race": "human",
+      "history": "their order was founded by the Dawn Wardens who held the Dawn Gate through the first Long Night.",
       "start": 15, "settlements": ["{A} Abbey", "the Chapterhouse of {B}", "{A} Priory"],
       "boon": { "troops": 25, "heroChance": 0.16, "classes": ["cleric", "paladin", "monk"],
         "text": "{S} sends healers and holy water" } },
     { "id": "freeport", "name": "the merchant captains of {S}", "people": "port folk", "kind": "free city", "race": "human",
+      "history": "their harbour shut its gates on the Long Night and opened them as a free city, and it has knelt to no crown since.",
       "start": 10, "settlements": ["{A}haven", "Port {B}", "{A}mouth"],
       "boon": { "troops": 20, "good": "Ale", "qty": 3, "heroChance": 0.1, "classes": ["bard", "rogue", "sorcerer", "warlock"],
         "text": "ships from {S} bring wine, salt fish and sellswords" } },
     { "id": "frostsworn", "name": "the frost-sworn of {S}", "people": "frost-sworn", "kind": "hall", "race": "human",
+      "history": "their jarls sent three of Caldor's armies home in boxes, and they despise tribute.",
       "start": -5, "settlements": ["{A}hall", "the {A} Steading", "{B}'s Mead-hall"],
       "boon": { "troops": 30, "good": "Food", "qty": 2, "heroChance": 0.12, "classes": ["barbarian", "fighter", "druid"],
         "text": "the frost-sworn of {S} send furs, smoked meat and young warriors" } },
     { "id": "oasis", "name": "the caravan lords of {S}", "people": "caravaneers", "kind": "oasis city", "race": "human",
+      "history": "they are the grandchildren of the Ninefold Throne of Ashkaar, and they know which tombs to leave shut.",
       "start": 0, "settlements": ["{A} Wells", "{B}'s Oasis", "the {A} Bazaar"],
       "boon": { "troops": 15, "good": "Ale", "qty": 2, "heroChance": 0.1, "classes": ["monk", "warlock", "sorcerer"],
         "text": "caravans from {S} unload spice, silk and date wine" } }
@@ -119,8 +129,13 @@
       "habitats": ["grassland", "hills", "forest"], "weight": 3, "minRing": 0, "maxRing": 2,
       "peoples": ["villagers", "halflings"],
       "text": "hedged fields and quiet mills, with trouble on the roads",
+      "history": [
+        "In the Age of Crowns these fields fed Caldor. The Red Tide burned them in 380 AL, and halflings settled the empty farms after.",
+        "Caldor's tax roads still run straight as a spear under the hedges here, though the milestones have been carted off for walls.",
+        "Every barrow in these downs is older than the farms. The farmers plough round them and do not ask whose they are."
+      ],
       "sites": [
-        { "names": ["the Crooked Mill", "{A}field Barrow", "Gallows Ford", "the Old Tithe Tower", "the {A} Bandit Camp"],
+        { "names": ["the Crooked Mill", "{A}field Barrow", "Gallows Ford", "the Old Tithe Tower", "the {A} Bandit Camp", "Red Tide Barrow", "the Ford-King's Milestone"],
           "habitats": ["grassland", "hills", "ruins"], "deck": ["wander", "wander", "trap", "parley", "treasure", "hazard"] }
       ],
       "texts": {
@@ -138,8 +153,13 @@
       "habitats": ["forest", "feywild"], "weight": 3, "minRing": 0,
       "peoples": ["elves"],
       "text": "giant trees, bramble walls and mossy stone circles",
+      "history": [
+        "These woods belonged to the Court of First Leaves before any human cut a tree, and the elves remember every axe.",
+        "The stone circles in this wood were raised by the Court of First Leaves to mark bargains with the Green Hush. Some of the bargains have not ended.",
+        "Caldor's foresters cut a road through here in the Age of Crowns. The wood took it back in a single lifetime."
+      ],
       "sites": [
-        { "names": ["Webbed Hollow", "the Weeping Ring", "Grandmother Tallow's Hut", "the Briar Gate", "the {A} Circle"],
+        { "names": ["Webbed Hollow", "the Weeping Ring", "Grandmother Tallow's Hut", "the Briar Gate", "the {A} Circle", "the Court's Fallen Oak"],
           "habitats": ["forest", "swamp", "feywild"], "deck": ["wander", "hazard", "wander", "puzzle", "parley", "treasure"] }
       ],
       "texts": {
@@ -157,8 +177,13 @@
       "habitats": ["mountain", "hills"], "weight": 3, "minRing": 0,
       "peoples": ["dwarves", "gnomes"],
       "text": "scree slopes, pine ridges and high passes riddled with old mine adits",
+      "history": [
+        "The Stonekings cut their halls into these peaks before Vermithrax burned them out, and the Red Tide came down these same passes in 380 AL.",
+        "The mine adits in these crags were dug by the Smith-King's holds, who guarded the passes for three thousand years.",
+        "Giant-sized stairs climb these slopes to nowhere: the last of a Stoneking hall that Vermithrax burned off the mountain."
+      ],
       "sites": [
-        { "names": ["the Lost Mine of {B}", "the {A} Delving", "Hammerdeep", "the Red Stair", "Skullpass Keep"],
+        { "names": ["the Lost Mine of {B}", "the {A} Delving", "Hammerdeep", "the Red Stair", "Skullpass Keep", "the Stoneking's Throne", "Ghorvak's Pass"],
           "habitats": ["mountain", "caves", "underworld"], "deck": ["wander", "trap", "wander", "hazard", "treasure", "puzzle"] },
         { "names": ["the {A} Eyrie", "the Giant's Steading", "the Anvil That Burned"],
           "habitats": ["mountain", "hills"], "deck": ["wander", "hazard", "wander", "parley", "treasure"] }
@@ -179,8 +204,13 @@
       "peoples": ["gnomes", "dwarves"],
       "settlementChance": 0.35,
       "text": "cave mouths that breathe cold air, and dungeons going down and down",
+      "history": [
+        "These are the upper workings of Khaz Varrund, the dwarves' Deep Realm, abandoned when its miners broke into something below that breathed.",
+        "The deep gnomes say the dwarves who dug here fled in a single night, and left their suppers on the tables.",
+        "Somewhere below these caves is the breach where Khaz Varrund's miners broke through. The air still comes up from it, warm."
+      ],
       "sites": [
-        { "names": ["the Glimmering Rot", "Lake Without Shore", "Chainmarket", "the Vault That Breathes", "the {A} Warrens", "the Dungeon of {B}"],
+        { "names": ["the Glimmering Rot", "Lake Without Shore", "Chainmarket", "the Vault That Breathes", "the {A} Warrens", "the Dungeon of {B}", "the Gates of Khaz Varrund"],
           "habitats": ["caves", "underworld", "ruins"], "deck": ["wander", "trap", "wander", "trap", "puzzle", "wander", "treasure"] }
       ],
       "texts": {
@@ -199,8 +229,13 @@
       "peoples": ["villagers", "templars"],
       "settlementChance": 0.4,
       "text": "toppled castles and broken highways of a kingdom that fell",
+      "history": [
+        "This was the heartland of the High Kingdom of Caldor, which ruled from the coast to the sands until the first Long Night.",
+        "Caldor's lords fought over these castles for seven centuries after the kingdom fell, and every one of them claimed the crown.",
+        "These walls were built in Ostrava's name, and her law is still carved on the gateposts, if anyone could read it."
+      ],
       "sites": [
-        { "names": ["Castle {B}", "the Old Watchtower", "{A} Keep", "the Tower of Inverted Stairs", "the Vault of the Last King"],
+        { "names": ["Castle {B}", "the Old Watchtower", "{A} Keep", "the Tower of Inverted Stairs", "the Vault of the Last King", "Maudren's Gate", "the Ford-King's Tomb", "the Last Milestone of Caldor"],
           "habitats": ["ruins", "urban", "tomb"], "deck": ["wander", "wander", "trap", "parley", "wander", "treasure"] }
       ],
       "texts": {
@@ -218,8 +253,13 @@
       "habitats": ["grassland", "hills", "tomb"], "weight": 2, "minRing": 1,
       "peoples": ["templars"],
       "text": "heath, standing stones and mass graves where the dead walk",
+      "history": [
+        "Caldor's civil wars filled this moor with mass graves, and in the first Long Night its dead were the first to walk.",
+        "The Field of Spears was fought here in 140 BL, and the grass still grows thin over the grave pits.",
+        "The Dawn Wardens held a gate on this heath through the whole of the first Long Night, until the Lantern Mother lit her lamp."
+      ],
       "sites": [
-        { "names": ["the Field of Spears", "King-under-Turf", "the Lantern Ossuary", "the Chapel of Unrung Bells", "{A} Cairn"],
+        { "names": ["the Field of Spears", "King-under-Turf", "the Lantern Ossuary", "the Chapel of Unrung Bells", "{A} Cairn", "the Fallen Dawn Gate"],
           "habitats": ["tomb", "ruins", "shadowfell"], "deck": ["wander", "trap", "wander", "puzzle", "hazard", "treasure"] }
       ],
       "texts": {
@@ -237,8 +277,13 @@
       "habitats": ["swamp", "lake"], "weight": 2, "minRing": 1,
       "peoples": ["lizardfolk"],
       "text": "reed beds, stilt villages and sinking ruins lost in fog",
+      "history": [
+        "Before the sea rose the serpent-priests of the Coil ruled here. Their temples sank with their saints still inside.",
+        "The lizardfolk say the Coil's saints are not dead in their sunken temples, only waiting for the water to go down.",
+        "Before the Coil drowned, the river tribes paid its tithe in eels at the edge of this marsh."
+      ],
       "sites": [
-        { "names": ["the Drowned Temple", "the Sinking Saints", "Lanternless Isle", "the Gullet", "the {A} Hag's Hut"],
+        { "names": ["the Drowned Temple", "the Sinking Saints", "Lanternless Isle", "the Gullet", "the {A} Hag's Hut", "the Coil Steps"],
           "habitats": ["swamp", "temple", "tomb"], "deck": ["wander", "hazard", "wander", "puzzle", "wander", "treasure"] }
       ],
       "texts": {
@@ -256,8 +301,13 @@
       "habitats": ["coast", "ocean"], "weight": 2, "minRing": 1,
       "peoples": ["freeport", "villagers"],
       "text": "cliffs, coves and reefs where smugglers and worse come ashore",
+      "history": [
+        "These were Caldor's harbours, free cities since the Fall, and their wharves bred the Gilded Scale and the Quiet Hand.",
+        "Caldor's treasure fleets sailed from these coves, and some of them are still on the reefs.",
+        "The Quiet Hand was born on these wharves, and its first members were the harbour pilots who knew every smuggler's cove."
+      ],
       "sites": [
-        { "names": ["the False Light", "Gull's Tooth Cove", "Brinehold", "the Barnacled Chapel", "the Wreck of the {A}"],
+        { "names": ["the False Light", "Gull's Tooth Cove", "Brinehold", "the Barnacled Chapel", "the Wreck of the {A}", "the Old Customs House"],
           "habitats": ["coast", "caves", "ruins"], "deck": ["wander", "hazard", "wander", "parley", "trap", "treasure"] }
       ],
       "texts": {
@@ -275,8 +325,13 @@
       "habitats": ["arctic", "mountain"], "weight": 2, "minRing": 2,
       "peoples": ["frostsworn"],
       "text": "ice fields under the aurora, whale-bone camps and frozen lakes",
+      "history": [
+        "The Stonekings ruled the ice before the frost giant clans, and the frost-sworn jarls drove the giants into the glaciers and never knelt to Caldor.",
+        "Caldor sent three armies into this ice, and the frost-sworn jarls sent every one of them home in boxes.",
+        "The frost giants of the Rime Clans still sleep in the glaciers, and the jarls do not dig."
+      ],
       "sites": [
-        { "names": ["the Iceforged Hall", "the Wreck of the Pale Gull", "the Howling Shelf", "the Frostwight Mound", "the {A} Ice Cave"],
+        { "names": ["the Iceforged Hall", "the Wreck of the Pale Gull", "the Howling Shelf", "the Frostwight Mound", "the {A} Ice Cave", "the Rime Clans' Throne"],
           "habitats": ["arctic", "caves", "mountain"], "deck": ["wander", "hazard", "wander", "hazard", "parley", "treasure"] }
       ],
       "texts": {
@@ -294,8 +349,13 @@
       "habitats": ["desert", "badlands"], "weight": 2, "minRing": 2,
       "peoples": ["oasis"],
       "text": "dunes, salt flats and buried cities under a cruel sun",
+      "history": [
+        "Under these sands lies the green river land of the Ninefold Throne of Ashkaar, which lost its rain to the Stormmother.",
+        "The nine masked kings of Ashkaar are buried under these dunes, each in a tomb grander than the last.",
+        "The ninth mask-queen of Ashkaar tried to bind the Stormmother, and the rain has not fallen here since."
+      ],
       "sites": [
-        { "names": ["the Sleeping King's Stair", "Saltbone Crossing", "the Mirror Pan", "the Tomb of the Nine Masks", "the {A} Pyramid"],
+        { "names": ["the Sleeping King's Stair", "Saltbone Crossing", "the Mirror Pan", "the Tomb of the Nine Masks", "the {A} Pyramid", "the Dry Floodgates of Ashkaar", "the Ninth Mask's Gate"],
           "habitats": ["desert", "tomb", "temple"], "deck": ["wander", "trap", "hazard", "puzzle", "wander", "treasure"] }
       ],
       "texts": {
@@ -314,8 +374,13 @@
       "peoples": ["dwarves"],
       "settlementChance": 0.4,
       "text": "lava fields, obsidian spires and sulphur springs",
+      "history": [
+        "Vermithrax the Old Wyrm sleeps in chains under this smoking mountain, where the Smith-King forged them and died.",
+        "Dwarves and elves fought side by side here to chain Vermithrax, the only time they ever have.",
+        "The obsidian here is the Stonekings' halls, melted when the Old Wyrm burned them."
+      ],
       "sites": [
-        { "names": ["the Ember Choir", "Glasswound", "the Smith-King's Furnace", "the Ashfall Gate", "the {A} Caldera"],
+        { "names": ["the Ember Choir", "Glasswound", "the Smith-King's Furnace", "the Ashfall Gate", "the {A} Caldera", "the Chained Mountain"],
           "habitats": ["mountain", "caves", "plane-of-fire"], "deck": ["wander", "hazard", "wander", "trap", "treasure"] }
       ],
       "texts": {
@@ -334,8 +399,13 @@
       "peoples": ["elves"],
       "settlementChance": 0.5,
       "text": "twilight glades and mirrored lakes where the seasons run out of order",
+      "history": [
+        "Here the Court of First Leaves withdrew into twilight, and its hags and lords still keep the bargains it broke long ago.",
+        "The Lord of the Last Door is said to keep a house in these glades, and to sell what no one else will.",
+        "The seasons here run in the order they ran when the Court of First Leaves held the whole world."
+      ],
       "sites": [
-        { "names": ["the Feast That Never Ends", "Moonbridge", "Under-the-Hill", "the Palace of Unkept Promises", "the {A} Ring"],
+        { "names": ["the Feast That Never Ends", "Moonbridge", "Under-the-Hill", "the Palace of Unkept Promises", "the {A} Ring", "the First Leaf Court"],
           "habitats": ["feywild", "forest"], "deck": ["wander", "puzzle", "wander", "parley", "hazard", "treasure"] }
       ],
       "texts": {
