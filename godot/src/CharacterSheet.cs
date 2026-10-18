@@ -18,7 +18,29 @@ public partial class Main
         ["pickpocket"] = "a hand in a purse",
         ["steal"] = "the town strongbox",
         ["intimidate"] = "facing a brawler down",
+        ["bargain"] = "haggling over gear",
     };
+
+    private int _rollsSeen = -1;
+
+    /// <summary>
+    /// Pop a little d20 over each townsperson or hero who rolled a check since the last frame. Idle tavern talk
+    /// only shows on a natural 20 or 1, so the few dice on screen go to haggles, songs, brawls and thieves.
+    /// </summary>
+    private void SyncTownRolls()
+    {
+        var t = _sim.Town;
+        if (_rollsSeen < 0 || _rollsSeen > t.CheckSerial) _rollsSeen = t.CheckSerial;
+        if (t.CheckSerial == _rollsSeen) return;
+        foreach (var c in t.Checks)
+        {
+            if (c.Serial <= _rollsSeen || c.AgentId is not int id) continue;
+            if (c.Kind == "talk" && !c.Critical && !c.Fumble) continue;
+            var result = c.Critical ? StoryResult.Critical : c.Fumble ? StoryResult.Fumble : c.Success ? StoryResult.Success : StoryResult.Failure;
+            _map.Rolls.Show(id, Skills.Name(t, c.Skill), c.Die, c.Bonus, result);
+        }
+        _rollsSeen = t.CheckSerial;
+    }
 
     /// <summary>
     /// Anyone's character sheet: ability scores, proficiency, all eighteen skills with their bonus (trained ones

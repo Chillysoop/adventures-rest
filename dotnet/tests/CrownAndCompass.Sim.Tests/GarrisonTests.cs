@@ -129,7 +129,7 @@ public class GarrisonTests
             var t = sim.Town;
             for (int d = 0; d < 400 && t.Enemy.Stage != ThreatStage.Marching && t.Outcome == null; d++) sim.RunDays(1);
             if (t.Enemy.Stage != ThreatStage.Marching || !Garrison.Walled(t) || t.Watch == 0) continue;
-            var march = t.Ledger.Entries.Last(e => e.Text.Contains("is on the march"));
+            var march = t.Ledger.Entries.Last(e => e.Category == LedgerCategory.War && e.Text.Contains("is on the march"));
             Assert.Contains($"come at the {Garrison.Place(t, t.Enemy.Approach)}", march.Text);
             sim.RunDays(1);
             Assert.Contains(t.Garrison.Posts, p => p.Auto && (p.Index == t.Enemy.Approach || p.Kind == PostKind.Gate));

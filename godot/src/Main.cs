@@ -188,14 +188,25 @@ public partial class Main : Control
             {
                 _ledgerFilter = imp;
                 foreach (var c in filters.GetChildren().OfType<Button>()) c.ButtonPressed = c == b;
+                ShowPaper(false);
                 _ledgerShown = -1;
                 _dirty = true;
             };
             filters.AddChild(b);
         }
+        var paper = new Button { Text = "Broadsheet", ToggleMode = true, TooltipText = "The town's weekly paper, and the front page you can pay for" };
+        paper.AddThemeFontSizeOverride("font_size", 12);
+        paper.Pressed += () =>
+        {
+            foreach (var c in filters.GetChildren().OfType<Button>()) c.ButtonPressed = c == paper;
+            ShowPaper(true);
+            _dirty = true;
+        };
+        filters.AddChild(paper);
         box.AddChild(filters);
         _ledgerText = Ui.Rich("");
         box.AddChild(_ledgerText);
+        BuildPaper(box);
     }
 
     // ---------- Game ----------
@@ -411,6 +422,7 @@ public partial class Main : Control
         SyncStories(delta);
         SyncFinds();
         SyncChecks();
+        SyncTownRolls();
         if (_title.Visible) _map.Drift(1, (float)delta * 0.035f);
         if (_dirty)
         {
@@ -531,6 +543,11 @@ public partial class Main : Control
 
     private void RenderLedger()
     {
+        if (_paperShown)
+        {
+            RenderPaper();
+            return;
+        }
         var entries = _sim.Town.Ledger.Entries;
         if (entries.Count == _ledgerShown) return;
         _ledgerShown = entries.Count;

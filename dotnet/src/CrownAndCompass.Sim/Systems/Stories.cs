@@ -76,6 +76,9 @@ public sealed record PrecedentDef
 
     /// <summary>How the Mayor tab tells it ("The gates were opened to the refugees of {town}").</summary>
     public string Text { get; init; } = "";
+
+    /// <summary>Days after it is set before stories that call back to it can come up (a debt takes time to fall due).</summary>
+    public int After { get; init; }
 }
 
 public sealed record StakesDef
@@ -376,7 +379,7 @@ public static class Stories
     /// precedent:id (1 sets it, -1 forgets it) and calling:id (1: the story's hero takes it up, -1: it ends).
     /// </summary>
     public static readonly string[] EffectKeys =
-        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "esteem", "goodwill", "goodwill2", "heroXp", "personal", "dismiss", "edge", "swell", "partyHurt", "rest", "slots", "loot", "partyLoyalty", "turnBack", "infamy", "exile"];
+        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "esteem", "heroXp", "personal", "dismiss", "edge", "swell", "partyHurt", "rest", "slots", "loot", "partyLoyalty", "turnBack", "fine", "jail", "taint", "infamy", "exile", "goodwill", "goodwill2"];
 
     /// <summary>
     /// Every need a story or option can name; besides these, precedent:id, decree:id, season:id and
@@ -385,7 +388,7 @@ public static class Stories
     /// with no calling yet) and faction:id (binds that faction while it has a chapter).
     /// </summary>
     public static readonly string[] Needs =
-        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "settlement", "route", "courted", "veteran", "fallen", "admirer", "aggrieved", "abroad", "homeward", "victorious", "famous", "infamous"];
+        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "settlement", "route", "courted", "veteran", "fallen", "admirer", "aggrieved", "abroad", "homeward", "victorious", "lawbreaker", "famous", "infamous"];
 
     private static readonly string[] Prefixed = ["precedent:", "decree:", "season:"];
 
@@ -522,6 +525,12 @@ public static class Stories
     }
 
     // ---------- Stories ----------
+
+    /// <summary>Set a precedent the town will remember, unless it already does.</summary>
+    internal static void Remember(Town town, string id)
+    {
+        if (!town.Stories.Precedents.ContainsKey(id)) town.Stories.Precedents[id] = town.Day;
+    }
 
     public static Story? Find(Town town, int id) => town.Stories.All.FirstOrDefault(s => s.Id == id);
 
@@ -797,6 +806,14 @@ public static class Stories
                 s.HeroId = v?.Id;
                 return v != null;
             }
+            case "lawbreaker":
+            {
+                if (s.HeroId is int lh) return Hero(town, lh) is { } la && !la.IsAway && la.Hero!.JailedUntil == null;
+                if (!bind) return false;
+                var lb = Pick(town.Heroes.Where(a => Regard.Lawless(town, a)).OrderBy(a => a.Id).ToList());
+                s.HeroId = lb?.Id;
+                return lb != null;
+            }
             case "admirer":
             case "aggrieved":
             {
@@ -848,7 +865,8 @@ public static class Stories
                 bool not = need.StartsWith('!');
                 string n = not ? need[1..] : need;
                 bool holds;
-                if (n.StartsWith("precedent:", StringComparison.Ordinal)) holds = town.Stories.Precedents.ContainsKey(n[10..]);
+                if (n.StartsWith("precedent:", StringComparison.Ordinal))
+                    holds = town.Stories.Precedents.TryGetValue(n[10..], out int set) && (not || town.Day - set >= (town.Content.Stories.Precedent(n[10..])?.After ?? 0));
                 else if (n.StartsWith("decree:", StringComparison.Ordinal)) holds = Decrees.InForce(town, n[7..]);
                 else if (n.StartsWith("season:", StringComparison.Ordinal)) holds = Seasons.Current(town).Id == n[7..];
                 else if (n.StartsWith("institution:", StringComparison.Ordinal))
@@ -1209,6 +1227,29 @@ public static class Stories
                     if (said1 != "") said.Add(said1);
                     break;
                 }
+                case "fine":
+                    if (s.HeroId is int fh && Hero(town, fh) is { } fa && v > 0)
+                    {
+                        double paid = Math.Min(v, Math.Floor(Math.Max(0, fa.Gold)));
+                        fa.Gold -= paid;
+                        town.Book(TreasuryAccount.Fines, paid);
+                        said.Add($"{fa.GivenName} pays a fine of {Js.Str(paid)} gold");
+                    }
+                    break;
+                case "taint":
+                    if (s.HeroId is int tnh && Hero(town, tnh) is { } tna && v > 0)
+                    {
+                        tna.Hero!.Taint += (int)v;
+                        said.Add($"{tna.GivenName} carries a dark gift");
+                    }
+                    break;
+                case "jail":
+                    if (s.HeroId is int jh && Hero(town, jh) is { } ja && v > 0)
+                    {
+                        ja.Hero!.JailedUntil = town.Tick + (int)v * SimTime.HoursPerDay;
+                        said.Add($"{ja.GivenName} spends {(int)v} days in the cells");
+                    }
+                    break;
                 case "expose":
                     // The hero names the faction's members to the watch.
                     if (v > 0 && s.FactionId is string ef && Factions.Find(town, ef) is { Active: true, Known: false } efs)

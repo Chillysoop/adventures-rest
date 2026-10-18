@@ -128,7 +128,7 @@ public static class Threat
     {
         var d = town.Content.Enemy.Defense;
         int heroLevels = town.Heroes.Where(a => !a.IsAway).Sum(a => a.Hero!.Level);
-        double baseDefense = town.Watch * d.Watchman * Planning.WatchFactor(town) + heroLevels * d.HeroLevel + town.Workers.Count * d.MilitiaPerWorker + Faith.Defense(town) + Factions.Defense(town) + Callings.Defence(town) + Institutions.Defence(town) + Loyalty.Defense(town) + Notoriety.Defense(town) + Decor.Defense(town) + Mercenaries.Defense(town) + Bastions.Defense(town) + (allies ? World.AllyTroops(town) : 0);
+        double baseDefense = town.Watch * d.Watchman * Planning.WatchFactor(town) + heroLevels * d.HeroLevel + town.Workers.Count * d.MilitiaPerWorker + Faith.Defense(town) + Factions.Defense(town) + Callings.Defence(town) + Institutions.Defence(town) + Loyalty.Defense(town) + Notoriety.Defense(town) + Decor.Defense(town) + Mercenaries.Defense(town) + Clockwork.Defense(town) + Bastions.Defense(town) + (allies ? World.AllyTroops(town) : 0);
         return baseDefense * Fortification(town);
     }
 
@@ -299,6 +299,9 @@ public static class Threat
                 text += $". {v.Name} dies defending it";
             }
         }
+        // They may drag the hands off to their war camp, to be rescued in time or lost.
+        var camp = town.Sites.FirstOrDefault(x => x.Def.Id == e.Outpost.Id);
+        text += Captives.Take(town, camp, target);
         town.Log(LedgerCategory.War, Importance.Major, $"{text}. The watch arrives too late.", victims);
         town.Tension += 25 + victims.Count * 10;
         town.Mandate = Math.Max(0, town.Mandate - 4);
