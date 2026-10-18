@@ -83,7 +83,7 @@ public sealed class AgentPositions(MapView map)
 public partial class Crowd(MapView map) : Node3D
 {
     public readonly AgentPositions People = new(map);
-    private readonly MultiMeshInstance3D _folk = Make(), _heroes = Make(), _orcs = Make(), _banners = Make();
+    private readonly MultiMeshInstance3D _folk = Make(), _heroes = Make(), _orcs = Make(), _banners = Make(), _guards = Make();
     private readonly List<float> _buf = [];
 
     private static MultiMeshInstance3D Make() => new()
@@ -110,7 +110,10 @@ public partial class Crowd(MapView map) : Node3D
         kit.Quad(a, b, c, d, Colors.White);
         kit.Quad(d, c, b, a, Colors.White);
         _banners.Multimesh.Mesh = kit.Build();
-        foreach (var m in new[] { _folk, _heroes, _orcs, _banners }) AddChild(m);
+        kit.Clear();
+        Soldier(kit);
+        _guards.Multimesh.Mesh = kit.Build();
+        foreach (var m in new[] { _folk, _heroes, _orcs, _banners, _guards }) AddChild(m);
     }
 
     /// <summary>A little person: tunic (tinted per instance), head and hands (skin from instance data), a hood or hat.</summary>
@@ -133,6 +136,27 @@ public partial class Crowd(MapView map) : Node3D
             k.Frustum(new Vector3(0, 0.235f, 0), 0.048f, 0.03f, 0.03f, 6, new Color("8a7a66"));
         }
         else k.Frustum(new Vector3(0, 0.235f, 0), 0.046f, 0, 0.05f, 6, new Color("7a6448"));
+        k.Pop();
+    }
+
+    /// <summary>One of the town watch: a tabard in the instance colour over mail, a kettle helm, a spear and a round shield.</summary>
+    private static void Soldier(MeshKit k)
+    {
+        var skin = new Color(1, 1, 1, MeshKit.Flag.Skin);
+        var steel = new Color("9aa0a6");
+        k.Push(MeshKit.At(0, 0, 0, 0, 1.6f));
+        k.Frustum(new Vector3(-0.025f, 0, 0), 0.019f, 0.019f, 0.07f, 4, new Color("3a2c22"));
+        k.Frustum(new Vector3(0.025f, 0, 0), 0.019f, 0.019f, 0.07f, 4, new Color("3a2c22"));
+        k.Frustum(new Vector3(0, 0.06f, 0), 0.064f, 0.05f, 0.11f, 6, Colors.White);
+        k.Box(new Vector3(0, 0.12f, 0), new Vector3(0.1f, 0.05f, 0.09f), steel);
+        k.Blob(new Vector3(0, 0.205f, 0), new Vector3(0.04f, 0.043f, 0.04f), skin);
+        k.Frustum(new Vector3(0, 0.215f, 0), 0.06f, 0.04f, 0.035f, 8, steel);
+        k.Blob(new Vector3(0.06f, 0.1f, 0.01f), new Vector3(0.018f, 0.018f, 0.018f), skin);
+        k.Box(new Vector3(0.065f, 0.0f, 0.02f), new Vector3(0.012f, 0.36f, 0.012f), new Color("6a4a30"));
+        k.Frustum(new Vector3(0.065f, 0.36f, 0.02f), 0.014f, 0, 0.05f, 4, steel);
+        k.Push(MeshKit.At(-0.07f, 0.1f, 0.01f, Mathf.Pi / 2));
+        k.Frustum(Vector3.Zero, 0.05f, 0.05f, 0.012f, 8, new Color("7a2a22"), steel);
+        k.Pop();
         k.Pop();
     }
 
@@ -199,7 +223,7 @@ public partial class Crowd(MapView map) : Node3D
         }
 
         // Companies on the road, under their banner; the fog swallows them past the town's light.
-        var banners = new List<(Vector3 P, float Yaw)>();
+        var banners = new List<(Vector3 P, float Yaw, Color Color)>();
         foreach (var p in town.Parties)
         {
             if (p.Returned || !map.Geo.Pins.TryGetValue(p.SiteId, out var pin)) continue;
@@ -231,7 +255,7 @@ public partial class Crowd(MapView map) : Node3D
                 float bob = Mathf.Abs(Mathf.Sin(now * 9 + i * 1.7f)) * 0.03f;
                 Put(gen.At(pos + off, bob), yaw, Palette.ClassColor(a.Hero?.Cls.Id ?? ""), Palette.RaceColor(a.Race), 1.1f);
             }
-            banners.Add((gen.At(stopped ? pos + side * 0.9f : pos), yaw));
+            banners.Add((gen.At(stopped ? pos + side * 0.9f : pos), yaw, Palette.Gold));
         }
         // Explorers, the same, under their green banner.
         foreach (var sv in town.Surveys)
@@ -258,7 +282,7 @@ public partial class Crowd(MapView map) : Node3D
                 float bob = Mathf.Abs(Mathf.Sin(now * 9 + i * 1.7f)) * 0.03f;
                 Put(gen.At(pos + off, bob), yaw, Palette.ClassColor(a.Hero?.Cls.Id ?? ""), Palette.RaceColor(a.Race), 1.1f);
             }
-            banners.Add((gen.At(moving ? pos : pos + side * 0.9f), yaw));
+            banners.Add((gen.At(moving ? pos : pos + side * 0.9f), yaw, new Color("4f8a4a")));
         }
         foreach (var s in town.Scouts)
         {
@@ -270,7 +294,8 @@ public partial class Crowd(MapView map) : Node3D
             Put(gen.At(pos), Mathf.Atan2(dir.X, dir.Y), new Color("3f5f3a"), Palette.RaceColor(a.Race), 1.1f);
         }
         Flush(_heroes);
-        foreach (var (bp, yaw) in banners) Put(bp, yaw + Mathf.Pi / 2, Palette.Gold, Colors.White, 2.2f);
+        Guards(town, now, banners);
+        foreach (var (bp, yaw, col) in banners) Put(bp, yaw + Mathf.Pi / 2, col, Colors.White, 2.2f);
         Flush(_banners);
 
         // The warband on the march, seen only once it is inside the light.
@@ -292,6 +317,108 @@ public partial class Crowd(MapView map) : Node3D
             }
         }
         Flush(_orcs);
+    }
+
+    /// <summary>Where each guard stands on the map this frame, for picking them out with the mouse.</summary>
+    public readonly Dictionary<int, Vector2> GuardSpots = [];
+
+    private static readonly Color Tabard = new("8a2a24");
+
+    /// <summary>
+    /// The town watch: pacing their beat along the wall walk, standing their posts on a called stretch, a tower top or
+    /// round a flag, and crossing town between them when an order sends them. Flags fly the watch's red.
+    /// </summary>
+    private void Guards(Town town, float now, List<(Vector3 P, float Yaw, Color Color)> banners)
+    {
+        GuardSpots.Clear();
+        var gen = map.Gen;
+        var walk = map.TownView.Walk;
+        var ranks = new Dictionary<int, int>();
+        var counts = new Dictionary<int, int>();
+        foreach (var g in town.Garrison.Guards)
+            if (g.PostId is int pid)
+            {
+                ranks[g.Id] = counts.GetValueOrDefault(pid);
+                counts[pid] = ranks[g.Id] + 1;
+            }
+        foreach (var g in town.Garrison.Guards)
+        {
+            var post = Garrison.Post(town, g.PostId);
+            int rank = ranks.GetValueOrDefault(g.Id), of = post != null ? counts.GetValueOrDefault(post.Id, 1) : 1;
+            var (spot, lift, face) = Stand(town, walk, g, post, rank, of, now);
+            float t = town.Tick + map.HourFraction;
+            Vector2 p = spot;
+            float yaw = face;
+            if (t < g.ArriveTick && g.ArriveTick > g.DepartTick)
+            {
+                // On the way: straight across town, climbing to the wall walk at the end.
+                var from = new Vector2(Geo.Margin + (float)g.FromX, Geo.Margin + (float)g.FromY);
+                float f = Mathf.Clamp((t - g.DepartTick) / (g.ArriveTick - g.DepartTick), 0, 1);
+                p = from.Lerp(spot, f);
+                lift *= Mathf.Pow(f, 6);
+                var dir = spot - from;
+                if (dir.LengthSquared() > 1e-4f) yaw = Mathf.Atan2(dir.X, dir.Y);
+                lift += Mathf.Abs(Mathf.Sin(now * 9 + g.Id)) * 0.025f;
+            }
+            GuardSpots[g.Id] = p;
+            Put(gen.At(p, lift), yaw, Tabard, Palette.RaceColor("human"), 1.05f);
+        }
+        Flush(_guards);
+        foreach (var post in town.Garrison.Posts)
+        {
+            if (post.Kind != PostKind.Flag) continue;
+            var at = new Vector2(Geo.Margin + (float)post.X, Geo.Margin + (float)post.Y);
+            banners.Add((gen.At(at), Mathf.Sin(now * 0.7f + post.Id) * 0.4f, new Color("b8322a")));
+        }
+    }
+
+    /// <summary>Where a guard stands (or paces) once there, how high above the ground, and which way they face.</summary>
+    private static (Vector2 Spot, float Lift, float Yaw) Stand(Town town, WallWalk? walk, Guard g, GuardPost? post, int rank, int of, float now)
+    {
+        float Out(Vector2 p)
+        {
+            var o = p - Geo.Center;
+            return Mathf.Atan2(o.X, o.Y);
+        }
+        if (post?.Kind == PostKind.Flag)
+        {
+            var at = new Vector2(Geo.Margin + (float)post.X, Geo.Margin + (float)post.Y);
+            float a = rank * Mathf.Tau / Math.Max(1, of) + post.Id;
+            var p = at + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * 0.45f;
+            return (p, 0, Mathf.Atan2(p.X - at.X, p.Y - at.Y));
+        }
+        if (walk == null) return (Geo.Center + new Vector2(Mathf.Cos(g.Id * 2.4f), Mathf.Sin(g.Id * 2.4f)) * (1.5f + g.Id % 3), 0, g.Id);
+        if (post?.Kind == PostKind.Tower && post.Index < walk.Towers.Length)
+        {
+            var c = walk.Towers[post.Index];
+            float a = rank * Mathf.Pi + 0.6f;
+            var p = c + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * 0.1f;
+            return (p, walk.TowerTop, Out(c));
+        }
+        int section = post == null ? g.Beat : post.Kind == PostKind.Tower ? Garrison.TowerSection(town, post.Index) : post.Index;
+        var arc = walk.Sections[Math.Clamp(section, 0, walk.Sections.Length - 1)];
+        if (post != null)
+        {
+            // Spread along the called stretch, facing out over the wall.
+            var p = AlongArc(arc, (rank + 0.5f) / of * 0.8f + 0.1f);
+            return (p, walk.Height, Out(p));
+        }
+        // On their beat: up and down the stretch, a little out of step with the others.
+        float speed = 0.05f + Geo.Hash(g.Id) * 0.03f;
+        float u = 0.5f + 0.42f * Mathf.Sin(now * speed * Mathf.Tau + g.Id * 1.7f);
+        var at2 = AlongArc(arc, u);
+        var ahead = AlongArc(arc, Mathf.Clamp(u + (Mathf.Cos(now * speed * Mathf.Tau + g.Id * 1.7f) >= 0 ? 0.02f : -0.02f), 0, 1));
+        var d = ahead - at2;
+        return (at2, walk.Height, d.LengthSquared() > 1e-6f ? Mathf.Atan2(d.X, d.Y) : Out(at2));
+    }
+
+    /// <summary>A point a share of the way along a polyline.</summary>
+    private static Vector2 AlongArc(Vector2[] arc, float u)
+    {
+        if (arc.Length == 1) return arc[0];
+        float f = Mathf.Clamp(u, 0, 1) * (arc.Length - 1);
+        int i = Math.Min(arc.Length - 2, (int)f);
+        return arc[i].Lerp(arc[i + 1], f - i);
     }
 
     public Vector2? PartyPos(Town town, Party p) => Geo.PartyAt(town, p, map.HourFraction)?.Pos;

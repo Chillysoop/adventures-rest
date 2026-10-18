@@ -26,12 +26,12 @@ public static class Sheet
     }
 
     /// <summary>The chance a check succeeds (a natural 20 always does, a natural 1 never), with advantage and an inspired reroll if it has them.</summary>
-    public static double Chance(Town town, string skill, string ability, int dc, bool advantage, bool inspired)
+    public static double Chance(Town town, string skill, string ability, int dc, bool advantage, bool inspired, int help = 0)
     {
         var (mod, prof, _) = Stories.Bonus(town, skill, ability);
         int faces = 0;
         for (int f = 1; f <= 20; f++)
-            if (Hits(town, skill, f, mod + prof, dc)) faces++;
+            if (Hits(town, skill, f, mod + prof + help, dc)) faces++;
         double p = faces / 20.0;
         if (advantage) p = 1 - (1 - p) * (1 - p);
         if (inspired && town.Stories.Mayor.Inspiration > 0) p = 1 - (1 - p) * (1 - p);
@@ -41,10 +41,10 @@ public static class Sheet
     public static int PartialMargin(Town town) => Rules(town).PartialMargin + Feats(town).Sum(f => f.PartialMargin);
 
     /// <summary>
-    /// Roll a check of the mayor's: the d20 (two, keeping the higher, with advantage), and if it misses
+    /// Roll a check of the mayor's, with any help (a party on the sending stone): the d20 (two, keeping the higher, with advantage), and if it misses
     /// and inspiration is asked for and in hand, one spent to throw again. A natural 20 earns inspiration.
     /// </summary>
-    public static StoryBeat Roll(Town town, string skill, string ability, int dc, string advantage, bool inspired, bool partial)
+    public static StoryBeat Roll(Town town, string skill, string ability, int dc, string advantage, bool inspired, bool partial, int help = 0)
     {
         var m = town.Stories.Mayor;
         var beat = new StoryBeat { Tick = town.Tick, Skill = skill != "" ? skill : ability, Dc = dc, Advantage = advantage };
@@ -58,7 +58,7 @@ public static class Sheet
             return Math.Max(d, other);
         }
         int die = Throw();
-        if (inspired && m.Inspiration > 0 && !Hits(town, skill, die, mod + prof, dc))
+        if (inspired && m.Inspiration > 0 && !Hits(town, skill, die, mod + prof + help, dc))
         {
             m.Inspiration--;
             beat.Rerolled = Face(town, skill, die);
@@ -68,7 +68,8 @@ public static class Sheet
         beat.Die = die;
         beat.Modifier = mod;
         beat.Proficiency = prof;
-        beat.Total = die + mod + prof;
+        beat.Help = help;
+        beat.Total = die + mod + prof + help;
         beat.Result = die == 20 ? StoryResult.Critical
             : die == 1 ? StoryResult.Fumble
             : beat.Total >= dc ? StoryResult.Success

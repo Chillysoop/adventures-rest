@@ -32,7 +32,7 @@ public sealed record AlertKind(string Id, string Title, string Icon, AlertLevel 
 /// One thing the player should act on. The key stays the same while it is the same problem, so a dismissed
 /// alert stays dismissed until it is resolved and comes back. Site, agent or town aim the camera.
 /// </summary>
-public sealed record Alert(string Key, AlertKind Kind, string Text, string Tip, string? SiteId = null, int? AgentId = null, bool AtTown = false, int? StoryId = null, int? FindId = null);
+public sealed record Alert(string Key, AlertKind Kind, string Text, string Tip, string? SiteId = null, int? AgentId = null, bool AtTown = false, int? StoryId = null, int? Wall = null, int? FindId = null);
 
 /// <summary>
 /// The player's to-do list, in the manner of Paradox games. Standing alerts are read off the town each
@@ -81,14 +81,14 @@ public static class Alerts
         if (t.Enemy.Stage == ThreatStage.Marching && t.Enemy.ArrivalTick is int at)
         {
             int days = Math.Max(1, (int)Math.Ceiling((at - t.Tick) / 24.0));
-            yield return new("march", Siege, $"Siege in {Days(days)}", "The warband is marching on the town. Man the walls and keep heroes home.", AtTown: true);
+            yield return new("march", Siege, $"Siege in {Days(days)}", $"The warband is marching on the {Garrison.Place(t, t.Enemy.Approach)}. Call the watch to arms there and keep heroes home.", AtTown: true, Wall: t.Enemy.Approach);
         }
         else if (t.Enemy.Stage == ThreatStage.Raids)
             yield return new("raids", Siege, "Raiders by night", "The warband raids the town when its heroes are away. Build walls, hire the watch, clear the war camp.");
         foreach (var m in t.Saga.Menaces.Where(m => m.Alive && m.Named && m.ArrivalTick is int).OrderBy(m => m.Id))
         {
             int days = Math.Max(1, (int)Math.Ceiling((m.ArrivalTick!.Value - t.Tick) / 24.0));
-            yield return new($"menace:{m.Id}", Siege, $"{Cap(m.Name)} in {Days(days)}", $"The host of {m.Name} marches on the town from {m.SeatName}. Man the walls and call the heroes home.", AtTown: true);
+            yield return new($"menace:{m.Id}", Siege, $"{Cap(m.Name)} in {Days(days)}", $"The host of {m.Name} marches from {m.SeatName} on the {Garrison.Place(t, m.Approach)}. Call the watch to arms there and the heroes home.", AtTown: true, Wall: m.Approach);
         }
         if (Menaces.PendingDemand(t) is { } dm)
             yield return new($"demand:{dm.Id}", Fealty, "A demand for fealty", $"{Cap(dm.Name)} wants the town as its vassal. Bend the knee or refuse in the Campaign window; silence is a refusal.");

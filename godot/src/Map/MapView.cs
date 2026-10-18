@@ -9,6 +9,11 @@ public sealed record Selection(string Kind, int Id = 0, string SiteId = "")
     public static Selection Agent(int id) => new("agent", id);
     public static Selection Building(int id) => new("building", id);
     public static Selection Site(string id) => new("site", 0, id);
+
+    /// <summary>A section of the outer wall (0 is the gate), one of its towers, or a guard flag (by its order's id).</summary>
+    public static Selection Wall(int section) => new("wall", section);
+    public static Selection Tower(int index) => new("tower", index);
+    public static Selection Flag(int postId) => new("flag", postId);
 }
 
 /// <summary>
@@ -53,6 +58,13 @@ public partial class MapView : Control
     /// <summary>Decorations in hand; while it has a piece, left clicks and drags place it instead of panning.</summary>
     public Decorator Decorator { get; private set; } = null!;
     public DecorView Decor => _decor;
+    public TownView TownView => _town;
+
+    /// <summary>The guard flag is in hand: a left click plants it there.</summary>
+    public bool Flagging { get; set; }
+
+    /// <summary>The player clicked the map with the guard flag in hand.</summary>
+    public event Action<Vector2>? FlagDropped;
     public bool Strategic { get; private set; }
     private float _strategic;
 
@@ -418,7 +430,8 @@ public partial class MapView : Control
                 else if (!_dragging)
                 {
                     var w = ToWorld(mb.Position);
-                    if (Placing is MarkerKind kind)
+                    if (Flagging && !Strategic) FlagDropped?.Invoke(w);
+                    else if (Placing is MarkerKind kind)
                     {
                         var m = new Marker(kind, w, Sim.Town.Day);
                         Markers.Add(m);
@@ -446,7 +459,7 @@ public partial class MapView : Control
         else if (e is InputEventMouseMotion hover && hover.ButtonMask == 0)
         {
             HoverMarker = Strategic && Placing == null ? MarkerAt(hover.Position) : null;
-            MouseDefaultCursorShape = Placing != null ? CursorShape.Cross : HoverMarker != null ? CursorShape.Move : CursorShape.Arrow;
+            MouseDefaultCursorShape = Placing != null || Flagging ? CursorShape.Cross : HoverMarker != null ? CursorShape.Move : CursorShape.Arrow;
         }
         else if (e is InputEventMouseMotion carry && _grab != null && (carry.ButtonMask & MouseButtonMask.Left) != 0)
         {
@@ -572,6 +585,22 @@ public partial class MapView : Control
             }
         }
         if (best >= 0) return Selection.Agent(best);
+        // The watch: its flags, a guard (who stands for their post), then the wall itself.
+        foreach (var p in town.Garrison.Posts)
+            if (p.Kind == PostKind.Flag && new Vector2(Geo.Margin + (float)p.X, Geo.Margin + (float)p.Y).DistanceTo(w) < 0.45f) return Selection.Flag(p.Id);
+        foreach (var (id, p) in _crowd.GuardSpots)
+        {
+            if (p.DistanceTo(w) > 0.25f || town.Garrison.Guards.FirstOrDefault(g => g.Id == id) is not { } guard) continue;
+            var post = Garrison.Post(town, guard.PostId);
+            return post?.Kind switch
+            {
+                PostKind.Flag => Selection.Flag(post.Id),
+                PostKind.Tower => Selection.Tower(post.Index),
+                PostKind.Wall or PostKind.Gate => Selection.Wall(post.Index),
+                _ => Garrison.Walled(town) ? Selection.Wall(guard.Beat) : null,
+            };
+        }
+        if (_town.WallAt(town, w) is var (kind, idx)) return kind == "tower" ? Selection.Tower(idx) : Selection.Wall(idx);
         var at = Planner.ToTown(w);
         return Land.BuildingAt(town, at.X, at.Y) is int b ? Selection.Building(b) : null;
     }
