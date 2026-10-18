@@ -28,6 +28,9 @@ public sealed class EnemyState
     public int RaidWaited { get; set; }
     public int LastSignTick { get; set; }
 
+    /// <summary>The wall section the march comes at (<see cref="Garrison.Approach"/>).</summary>
+    public int Approach { get; set; }
+
     /// <summary>Signs shown lately, so the same rumour doesn't repeat.</summary>
     public List<string> RecentSigns { get; } = [];
 }
@@ -49,6 +52,15 @@ public enum DefenseWork
 
     /// <summary>The city wall round the four inner wards, once it is a city.</summary>
     CityWall,
+
+    /// <summary>A stone gatehouse with a portcullis on the south road, once the stone walls stand.</summary>
+    Gatehouse,
+
+    /// <summary>A moat dug round the stone walls.</summary>
+    Moat,
+
+    /// <summary>Barracks built into the stone walls, where the watch lives.</summary>
+    Barracks,
 }
 
 public sealed class Defenses
@@ -64,6 +76,14 @@ public sealed class Defenses
     public int? StoneWallReadyTick { get; set; }
     public PalisadeState CityWall { get; set; } = PalisadeState.None;
     public int? CityWallReadyTick { get; set; }
+    public PalisadeState Gatehouse { get; set; } = PalisadeState.None;
+    public int? GatehouseReadyTick { get; set; }
+    public PalisadeState Moat { get; set; } = PalisadeState.None;
+    public int? MoatReadyTick { get; set; }
+
+    /// <summary>Wall barracks standing, and the ready ticks of those going up.</summary>
+    public int Barracks { get; set; }
+    public List<int> BarracksBuilding { get; set; } = [];
 
     /// <summary>The innermost ring the walls leave outside: 1 behind stone walls, 2 behind the city wall, 99 with none.</summary>
     public int OutsideRing => CityWall == PalisadeState.Built ? 2 : StoneWall == PalisadeState.Built ? 1 : 99;
@@ -119,7 +139,7 @@ public static class Threat
         double walls = w.CityWall == PalisadeState.Built ? d.CityWall
             : w.StoneWall == PalisadeState.Built ? d.StoneWall
             : w.Palisade == PalisadeState.Built ? d.Palisade : 1;
-        return walls * (1 + d.PerTower * w.Towers + Planning.Defense(town));
+        return walls * Garrison.MoatFactor(town) * (1 + d.PerTower * w.Towers + Garrison.FortBonus(town) + Planning.Defense(town));
     }
 
     /// <summary>What the town's scouts believe the warband numbers, rounded the way rumours are.</summary>
@@ -177,11 +197,12 @@ public static class Threat
             Next(ThreatStage.Marching);
             int march = e.MarchDays + Seasons.MarchDays(town);
             en.ArrivalTick = town.Tick + march * SimTime.HoursPerDay;
+            en.Approach = Garrison.Approach(town, en.Sieges);
             town.Log(
                 LedgerCategory.War,
                 Importance.Major,
                 $"{Cap(e.Name)} is on the march! {e.Leader} leads some {Js.Str(Js.Round(en.Strength / 10) * 10)} warriors toward {town.Name}. " +
-                $"They will reach the walls in {march} days.");
+                $"Scouts say they come at the {Garrison.Place(town, en.Approach)}, and will reach it in {march} days.");
         }
     }
 
@@ -243,13 +264,14 @@ public static class Threat
 
         // They strike outside the walls: the farm or camp farthest from the town hall, or failing that whatever stands beyond the stone.
         int outside = town.Defenses.OutsideRing;
-        var target = town.Buildings
-            .Where(b => b.Complete && (b.Def.Zone == Zone.Farmland || b.Def.Id == "lumber_camp" || City.Ring(town, town.Lot(b.LotId)) >= outside))
+        var target = Garrison.Unguarded(town, town.Buildings.Where(b => b.Complete && (b.Def.Zone == Zone.Farmland || b.Def.Id == "lumber_camp" || City.Ring(town, town.Lot(b.LotId)) >= outside)).ToList())
             .OrderByDescending(b => b.Def.Zone == Zone.Farmland || b.Def.Id == "lumber_camp" ? 1 : 0)
             .ThenByDescending(b => Distance(town, b.LotId))
             .ThenBy(b => b.Id)
             .FirstOrDefault();
         string where = target != null ? target.Name : "the outlying fields";
+        local *= Garrison.FlagFactor(town, target);
+        if (target != null && Garrison.Covered(town, target)) timing += ", where the watch had planted its flag";
 
         if (local >= raiders)
         {
@@ -287,7 +309,7 @@ public static class Threat
     {
         var d = town.Content.Enemy.Defense;
         var home = town.Heroes.Where(a => !a.IsAway);
-        return (town.Watch * d.Watchman * Planning.WatchFactor(town) + home.Sum(a => a.Hero!.Level) * d.HeroLevel) * Fortification(town) * (0.7 + town.Rng.Next() * 0.6);
+        return (Garrison.NightWatch(town) * d.Watchman * Planning.WatchFactor(town) + home.Sum(a => a.Hero!.Level) * d.HeroLevel) * Fortification(town) * (0.7 + town.Rng.Next() * 0.6);
     }
 
     /// <summary>
@@ -311,8 +333,6 @@ public static class Threat
         return away && town.Tick >= en.NextRaidTick - 2 * SimTime.HoursPerDay;
     }
 
-    private static string Wall(int w) => w == 1 ? "gate" : w == 2 ? "east wall" : "river side";
-
     private static void Siege(Town town)
     {
         var e = town.Content.Enemy;
@@ -320,6 +340,7 @@ public static class Threat
         var rng = town.Rng;
         en.Sieges++;
         var lines = new List<string>();
+        Garrison.Sync(town);
         double def = Defense(town);
         double startDef = def;
         int breaches = 0;
@@ -333,19 +354,21 @@ public static class Threat
         for (int w = 1; w <= e.SiegeWaves && breaches < e.BreachesToFall; w++)
         {
             double wave = (en.Strength / (e.SiegeWaves - w + 1)) * (0.8 + rng.Next() * 0.4);
-            double hold = (def / (e.SiegeWaves - w + 1)) * (0.8 + rng.Next() * 0.4);
-            if (hold >= wave)
+            int at = Garrison.WaveSection(town, en.Approach, w);
+            double hold = (def / (e.SiegeWaves - w + 1)) * (0.8 + rng.Next() * 0.4) * Garrison.SectionFactor(town, at);
+            double wading = Garrison.Wade(town, wave);
+            if (hold >= wading)
             {
-                def -= wave * 0.15;
+                def -= wading * 0.15;
                 en.Strength -= wave;
-                lines.Add($"Wave {w}: {Js.Str(Js.Round(wave))} orcs hit the {Wall(w)} and break against it.");
+                lines.Add($"Wave {w}: {Js.Str(Js.Round(wave))} orcs hit the {Garrison.Place(town, at)} and break against it.");
             }
             else
             {
-                def -= wave * 0.35;
+                def -= wading * 0.35;
                 en.Strength -= wave * 0.5;
                 breaches++;
-                lines.Add($"Wave {w}: {Js.Str(Js.Round(wave))} orcs breach the {Wall(w)}. Fighting spills into the streets.");
+                lines.Add($"Wave {w}: {Js.Str(Js.Round(wave))} orcs breach the {Garrison.Place(town, at)}. Fighting spills into the streets.");
             }
         }
 
@@ -515,6 +538,9 @@ public static class Threat
             DefenseWork.Palisade => e.Palisade,
             DefenseWork.Tower => e.Tower,
             DefenseWork.StoneWall => e.StoneWall,
+            DefenseWork.Gatehouse => town.Content.Garrison.GatehouseWork,
+            DefenseWork.Moat => town.Content.Garrison.MoatWork,
+            DefenseWork.Barracks => town.Content.Garrison.BarracksWork,
             _ => e.CityWall,
         };
     }
@@ -530,13 +556,21 @@ public static class Threat
                 return d.Palisade == PalisadeState.Built ? "built" : "under way";
             case DefenseWork.Tower when d.Palisade != PalisadeState.Built:
                 return "needs the palisade";
-            case DefenseWork.Tower when d.Towers + d.TowersBuilding.Count >= spec.Max:
-                return $"the town has {spec.Max}";
+            case DefenseWork.Tower when d.Towers + d.TowersBuilding.Count >= Garrison.MaxTowers(town):
+                return $"the wall carries {Garrison.MaxTowers(town)}";
             case DefenseWork.StoneWall when d.StoneWall != PalisadeState.None:
                 return d.StoneWall == PalisadeState.Built ? "built" : "under way";
             case DefenseWork.CityWall when d.CityWall != PalisadeState.None:
                 return d.CityWall == PalisadeState.Built ? "built" : "under way";
             case DefenseWork.CityWall when d.StoneWall != PalisadeState.Built:
+                return "needs the stone walls";
+            case DefenseWork.Gatehouse when d.Gatehouse != PalisadeState.None:
+                return d.Gatehouse == PalisadeState.Built ? "built" : "under way";
+            case DefenseWork.Moat when d.Moat != PalisadeState.None:
+                return d.Moat == PalisadeState.Built ? "dug" : "under way";
+            case DefenseWork.Barracks when d.Barracks + d.BarracksBuilding.Count >= spec.Max:
+                return $"the walls hold {spec.Max}";
+            case DefenseWork.Gatehouse or DefenseWork.Moat or DefenseWork.Barracks when d.StoneWall != PalisadeState.Built:
                 return "needs the stone walls";
         }
         if (spec.Tier != "" && !City.Reached(town, spec.Tier)) return $"needs the town to be a {City.TierName(town, spec.Tier).ToLowerInvariant()}";
@@ -563,7 +597,23 @@ public static class Threat
                 break;
             case DefenseWork.Tower:
                 d.TowersBuilding.Add(ready);
-                town.Log(LedgerCategory.War, Importance.Notable, "Carpenters start on a watchtower on the palisade.");
+                town.Log(LedgerCategory.War, Importance.Notable, d.StoneWall == PalisadeState.Built
+                    ? $"Masons start on a stone tower on the {town.Content.Garrison.Sections[Garrison.TowerSection(town, d.Towers + d.TowersBuilding.Count - 1)]} wall."
+                    : "Carpenters start on a watchtower on the palisade.");
+                break;
+            case DefenseWork.Gatehouse:
+                d.Gatehouse = PalisadeState.Building;
+                d.GatehouseReadyTick = ready;
+                town.Log(LedgerCategory.War, Importance.Notable, $"Masons begin a gatehouse over the south road, with a portcullis and murder holes. It will take {spec.Days} days.");
+                break;
+            case DefenseWork.Moat:
+                d.Moat = PalisadeState.Building;
+                d.MoatReadyTick = ready;
+                town.Log(LedgerCategory.War, Importance.Notable, $"Diggers start a moat round the stone walls, to be filled from the river. It will take {spec.Days} days.");
+                break;
+            case DefenseWork.Barracks:
+                d.BarracksBuilding.Add(ready);
+                town.Log(LedgerCategory.War, Importance.Notable, $"Masons hollow out barracks in the thickness of the walls, bunks for {town.Content.Garrison.BarracksHouses} of the watch.");
                 break;
             case DefenseWork.StoneWall:
                 d.StoneWall = PalisadeState.Building;
@@ -608,7 +658,24 @@ public static class Threat
         {
             d.Towers += done.Count;
             d.TowersBuilding = d.TowersBuilding.Where(t => town.Tick < t).ToList();
-            town.Log(LedgerCategory.War, Importance.Routine, "A new watchtower stands on the palisade.");
+            town.Log(LedgerCategory.War, Importance.Routine, d.StoneWall == PalisadeState.Built ? "A new stone tower stands on the walls." : "A new watchtower stands on the palisade.");
+        }
+        if (d.Gatehouse == PalisadeState.Building && d.GatehouseReadyTick != null && town.Tick >= d.GatehouseReadyTick)
+        {
+            d.Gatehouse = PalisadeState.Built;
+            town.Log(LedgerCategory.War, Importance.Notable, "The gatehouse is finished. Its portcullis drops at dusk.");
+        }
+        if (d.Moat == PalisadeState.Building && d.MoatReadyTick != null && town.Tick >= d.MoatReadyTick)
+        {
+            d.Moat = PalisadeState.Built;
+            town.Log(LedgerCategory.War, Importance.Notable, "The river is let into the new moat. The walls stand in water now.");
+        }
+        var bunks = d.BarracksBuilding.Where(t => town.Tick >= t).ToList();
+        if (bunks.Count > 0)
+        {
+            d.Barracks += bunks.Count;
+            d.BarracksBuilding = d.BarracksBuilding.Where(t => town.Tick < t).ToList();
+            town.Log(LedgerCategory.War, Importance.Routine, "The wall barracks are finished, and the watch moves into the walls.");
         }
     }
 
@@ -618,7 +685,8 @@ public static class Threat
         int stage = StageIndex(town.Enemy.Stage);
         if (stage < StageIndex(ThreatStage.Probing)) return;
         if (town.Defenses.Palisade == PalisadeState.None && town.Treasury > BuildCost(town, DefenseWork.Palisade) + 150) Build(town, DefenseWork.Palisade);
-        else if (stage >= StageIndex(ThreatStage.Raids) && town.Treasury > BuildCost(town, DefenseWork.Tower) + 200) Build(town, DefenseWork.Tower);
+        // The palisade's towers; more on the stone come later, among the wall works (Garrison.Daily).
+        else if (stage >= StageIndex(ThreatStage.Raids) && town.Defenses.Towers + town.Defenses.TowersBuilding.Count < town.Content.Enemy.Tower.Max && town.Treasury > BuildCost(town, DefenseWork.Tower) + 200) Build(town, DefenseWork.Tower);
     }
 
     public static void Kill(Town town, Agent a)
