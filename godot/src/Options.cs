@@ -19,6 +19,9 @@ public sealed class Options
 
     /// <summary>With --autoplay, leave companies' reports unbought for the player (screenshots of the companies window).</summary>
     public bool KeepReports;
+
+    /// <summary>Lift the fog everywhere (screenshots of the wilds and the roads through them).</summary>
+    public bool Reveal;
     public string? Site;
     public string? Screenshot;
     public int Frames = 45;
@@ -96,6 +99,7 @@ public sealed class Options
                 case "--alert-hover": o.AlertHover = int.Parse(Next()); break;
                 case "--no-pause": o.NoPause = true; break;
                 case "--keep-reports": o.KeepReports = true; break;
+                case "--reveal": o.Reveal = true; break;
                 case "--cam": o.Cam = float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture); break;
                 case "--look":
                     var xy = Next().Split(',');

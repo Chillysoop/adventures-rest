@@ -107,6 +107,32 @@ public sealed class Party
     /// <summary>Set when a sending called the party home before it reached the site.</summary>
     public int? RecalledTick { get; set; }
 
+    // The road (see Roads) ----------------------------------------------------------------------
+
+    /// <summary>The road out to the site, and the one home (chosen when they leave the site).</summary>
+    public List<Waypoint> Out { get; set; } = [];
+    public List<Waypoint> Home { get; set; } = [];
+
+    /// <summary>What they said at the gate about the way to go; it opens the chronicle.</summary>
+    public List<string> Said { get; } = [];
+
+    /// <summary>When they reach the site, and when they set off home from it.</summary>
+    public int ArriveTick { get; set; }
+    public int LeaveTick { get; set; }
+
+    /// <summary>Stops near the site: a camp before going in, the delve, falling back to rest.</summary>
+    public List<Halt> Halts { get; } = [];
+
+    /// <summary>The venture has been settled (on reaching the site); <see cref="Result"/> waits for the homecoming.</summary>
+    public bool Resolved { get; set; }
+    public ExpeditionResult? Result { get; set; }
+
+    /// <summary>They found the site empty and turned back.</summary>
+    public bool Empty { get; set; }
+
+    /// <summary>When the last of them died, for a party that never comes home.</summary>
+    public int? GoneTick { get; set; }
+
     /// <summary>
     /// Home, but keeping its report to itself: no council bounty paid for it, so what it saw stays off
     /// the town's map until the town buys it (<see cref="Intel"/>).
@@ -378,7 +404,7 @@ public static class Quests
             town.Log(
                 LedgerCategory.Quest,
                 Importance.Notable,
-                $"The {party.Name} ({string.Join(", ", members.Select(m => $"{m.GivenName} the {m.Hero!.Cls.Name}"))}) take the bounty on {s.Def.Name} and march out at dawn.",
+                $"The {party.Name} ({string.Join(", ", members.Select(m => $"{m.GivenName} the {m.Hero!.Cls.Name}"))}) take the bounty on {s.Def.Name} and march out at dawn{Roads.Summary(party)}.",
                 members.Select(m => m.Id).ToList());
         }
     }
@@ -390,7 +416,6 @@ public static class Quests
         // A company keeps its name, unless another band under that name is already on the road.
         string? name = leader.Hero!.PartyName;
         if (name == null || town.Parties.Any(p => !p.Returned && p.Name == name)) name = PartyName(town);
-        int travel = s.Def.Distance * 2 + 1;
         var party = new Party
         {
             Id = town.Parties.Count + 1,
@@ -399,8 +424,8 @@ public static class Quests
             BountyId = bounty?.Id,
             SiteId = s.Def.Id,
             DepartTick = town.Tick,
-            ReturnTick = town.Tick + travel * SimTime.HoursPerDay,
         };
+        Roads.Depart(town, party, members, s, bounty);
         town.Parties.Add(party);
         if (bounty != null)
         {
@@ -452,7 +477,8 @@ public static class Quests
                 Knowledge.ComeHome(town, party, s, bounty, members);
                 continue;
             }
-            if (s.Cleared)
+            if (!party.Resolved) Roads.Arrive(town, party);
+            if (party.Empty)
             {
                 // The rumour that sent them was false: the place stands empty.
                 foreach (var m in members) m.Hero!.AwayUntil = null;
@@ -474,7 +500,8 @@ public static class Quests
                     members.Select(m => m.Id).ToList());
                 continue;
             }
-            var result = Expedition.Run(town.Rng, town.Content, s.Def, members, party.Sendings, Lairs.Swell(town, s));
+            var result = party.Result!;
+            result.Apply(members);
 
             var chronicle = new Chronicle(
                 town.Chronicles.Count + 1,
@@ -514,6 +541,12 @@ public static class Quests
             if (result.Outcome == ExpeditionOutcome.Wiped) party.Withheld = false;
             party.SawCleared = result.Outcome == ExpeditionOutcome.Cleared;
             if (result.Outcome != ExpeditionOutcome.Wiped && !party.Withheld) Rumors.Confirm(town, s, $"the {party.Name}");
+            else if (result.Outcome == ExpeditionOutcome.Wiped && result.SiteCleared)
+            {
+                // They killed it and died on the road home; the town never learns.
+                s.Cleared = true;
+                s.ClearedTick = town.Tick;
+            }
             if (result.Outcome == ExpeditionOutcome.Cleared)
             {
                 s.Cleared = true;

@@ -64,6 +64,7 @@ public partial class Main : Control
         BuildTitle();
         BuildGuide();
         _map.TreeScale = _opts.Trees;
+        Map.Fog.RevealAll = _opts.Reveal;
         // Started plainly, the game opens on the main menu over a town that has been growing a while;
         // arguments set up a moment instead.
         bool plain = OS.GetCmdlineUserArgs().Length == 0;

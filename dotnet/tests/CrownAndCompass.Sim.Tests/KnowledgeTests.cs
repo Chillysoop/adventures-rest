@@ -41,9 +41,12 @@ public class KnowledgeTests
         var t = sim.Town;
         var site = Quests.Site(t, party.SiteId)!;
         int attempts = site.Attempts;
-        for (int i = 0; i < 6; i++) sim.Step();
+        for (int i = 0; i < 9; i++) sim.Step();
+        // Three hours on the road since dawn: they march the same three hours back.
+        double walked = Roads.Marched(t.Content, party.DepartTick, t.Tick);
+        Assert.True(walked > 0);
         Assert.NotNull(sim.SendWord(party.Id, recall: true));
-        Assert.Equal(t.Tick + 6, party.ReturnTick);
+        Assert.Equal((int)Math.Ceiling(Roads.Finish(t.Content, t.Tick, walked)), party.ReturnTick);
         Assert.Null(sim.SendWord(party.Id, recall: true));
         sim.RunDays(1);
         Assert.True(party.Returned);
