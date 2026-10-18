@@ -36,6 +36,9 @@ public sealed record LibMonster
     public int Ac { get; init; }
     public int Hp { get; init; }
 
+    /// <summary>Intelligence score: how far a menace it leads can scheme (10 when the entry has none).</summary>
+    public int Int { get; init; } = 10;
+
     /// <summary>The strongest attack's to-hit, damage and name, and how many it makes a round.</summary>
     public int ToHit { get; init; }
     public Dice? Damage { get; init; }
@@ -369,6 +372,7 @@ public sealed class Library
             Cr = Num(e, "cr"),
             Ac = (int)Num(e, "ac"),
             Hp = (int)Num(e, "hp"),
+            Int = e.TryGetProperty("abilities", out var ab) && ab.ValueKind == JsonValueKind.Object && Num(ab, "int") > 0 ? (int)Num(ab, "int") : 10,
             ToHit = toHit,
             Damage = damage,
             Weapon = weapon,

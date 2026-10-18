@@ -40,7 +40,7 @@ public class SagaTests(LongCampaign campaign) : IClassFixture<LongCampaign>
         var seeded = t.Saga.Menaces.Where(m => m.Origin == "act").ToList();
         Assert.NotEmpty(seeded);
         var bands = t.Content.Saga.Acts.SelectMany(a => a.Seeds).ToList();
-        foreach (var m in seeded) Assert.Contains(bands, b => m.BaseLevel >= b[0] && m.BaseLevel <= b[^1]);
+        foreach (var m in seeded) Assert.Contains(bands, b => m.BornLevel >= b[0] && m.BornLevel <= b[^1]);
     }
 
     [Fact]
@@ -67,7 +67,8 @@ public class SagaTests(LongCampaign campaign) : IClassFixture<LongCampaign>
         foreach (var h in t.Heroes) h.Hero!.Level = 12;
         m.BigBad = true;
         Menaces.Ascend(t, m);
-        Assert.Equal(t.Content.Saga.Finale.OverlordLevel[0], m.Level);
+        var band = t.Content.Saga.Finale.OverlordLevel;
+        Assert.Equal(Math.Clamp(9, band[0], band[^1]), m.Level);
     }
 
     [Fact]

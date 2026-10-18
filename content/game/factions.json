@@ -129,7 +129,7 @@
         "theft": 4,
         "whisper": 1
       },
-      "founded": "Hooded figures are seen slipping into the cellar of {den} long after closing. Whatever meets down there swears by {patron}, and it is called {name}."
+      "founded": "Hooded figures are seen slipping into the cellar of {den} long after closing. Whatever meets down there swears by {patron}, and it is called {name}. Its members say Nim himself founded the guild on the wharves of the first Free Ports."
     },
     {
       "ref": "gilded-scale",
@@ -157,7 +157,7 @@
         "vigilance": 2
       },
       "hall": "the Gilded Scale guildhall",
-      "founded": "{names} found a chapter of {name} in {town}: fair weight, fair price, and a louder voice at the council."
+      "founded": "{names} found a chapter of {name} in {town}: fair weight, fair price, and a louder voice at the council, as the guild has had in the Free Ports since 212 AL."
     },
     {
       "ref": "compass-lodge",
@@ -179,7 +179,7 @@
         "recruitHero": 1
       },
       "hall": "the Compass Lodge hall",
-      "founded": "{names} hang a compass over the door of {den} and declare a chapter of {name}: maps shared, healing split, contracts of their own."
+      "founded": "{names} hang a compass over the door of {den} and declare a chapter of {name}: maps shared, healing split, contracts of their own. The Lodge's mark is a compass over a broken crown: Caldor's roads, opened again."
     },
     {
       "ref": "unshut-book",
@@ -211,7 +211,7 @@
         "study": 1
       },
       "hall": "the Athenaeum of the Unshut Book",
-      "founded": "{names} open a chapter of {name} in {town}, and start buying every old map and relic the town has."
+      "founded": "{names} open a chapter of {name} in {town}, and start buying every old map and relic the town has. The Order wants everything Caldor forgot."
     },
     {
       "ref": "dawn-wardens",
@@ -242,7 +242,7 @@
         "hunt": 3
       },
       "hall": "the Wardens' chapter house",
-      "founded": "{names} kneel before {patron}'s altar and swear {town} to the protection of {name}. Their banner goes up over the gate."
+      "founded": "{names} kneel before {patron}'s altar and swear {town} to the protection of {name}. Their banner goes up over the gate, as it went up over the Dawn Gate in the first Long Night."
     },
     {
       "ref": "thornward-circle",
@@ -271,7 +271,7 @@
         "protest": 1
       },
       "hall": "the Thornward grove-house",
-      "founded": "{names} plant a ring of thorn at the edge of {town} and call it a grove: {name} keeps watch over the land here now."
+      "founded": "{names} plant a ring of thorn at the edge of {town} and call it a grove: {name} keeps watch over the land here now, as it has kept Sylvaine's old pact between field and forest since the Elder Age."
     },
     {
       "ref": "hollow-choir",
@@ -294,7 +294,7 @@
         "rite": 3,
         "graves": 2
       },
-      "founded": "Someone has scratched a sewn-shut mouth into the door of the burying ground. Old women make signs against it and will not say why."
+      "founded": "Someone has scratched a sewn-shut mouth into the door of the burying ground. Old women make signs against it and will not say why. The sewn mouth was the mark of King Maudren's court singers, twelve centuries ago."
     }
   ],
   "smuggleTake": 8,
