@@ -2,7 +2,7 @@
   "keep": "bastion_keep",
   "found": {
     "level": 5,
-    "renown": 80,
+    "renown": 40,
     "members": 2,
     "firstDay": 60,
     "perTier": { "thorp": 0, "hamlet": 1, "village": 1, "town": 2, "large_town": 3, "city": 4, "great_city": 5 },

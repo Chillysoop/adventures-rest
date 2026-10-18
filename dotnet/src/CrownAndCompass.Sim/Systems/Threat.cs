@@ -128,7 +128,7 @@ public static class Threat
     {
         var d = town.Content.Enemy.Defense;
         int heroLevels = town.Heroes.Where(a => !a.IsAway).Sum(a => a.Hero!.Level);
-        double baseDefense = town.Watch * d.Watchman * Planning.WatchFactor(town) + heroLevels * d.HeroLevel + town.Workers.Count * d.MilitiaPerWorker + Faith.Defense(town) + Factions.Defense(town) + Callings.Defence(town) + Loyalty.Defense(town) + Decor.Defense(town) + Mercenaries.Defense(town) + Bastions.Defense(town) + (allies ? World.AllyTroops(town) : 0);
+        double baseDefense = town.Watch * d.Watchman * Planning.WatchFactor(town) + heroLevels * d.HeroLevel + town.Workers.Count * d.MilitiaPerWorker + Faith.Defense(town) + Factions.Defense(town) + Callings.Defence(town) + Loyalty.Defense(town) + Notoriety.Defense(town) + Decor.Defense(town) + Mercenaries.Defense(town) + Bastions.Defense(town) + (allies ? World.AllyTroops(town) : 0);
         return baseDefense * Fortification(town);
     }
 
@@ -435,8 +435,8 @@ public static class Threat
             foreach (var c in champions)
             {
                 if (result.Dead.Contains(c.Id)) continue;
-                c.Hero!.Renown += 10;
-                c.Hero.Kills += result.Kills.Get(c.Id, 0);
+                Notoriety.Deed(town, c, "slay", 10);
+                c.Hero!.Kills += result.Kills.Get(c.Id, 0);
             }
             slain = result.Outcome == ExpeditionOutcome.Cleared;
         }
