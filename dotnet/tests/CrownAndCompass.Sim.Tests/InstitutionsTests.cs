@@ -178,6 +178,24 @@ public class InstitutionsTests
     }
 
     [Fact]
+    public void TheChapterhouseSwearsAnOathAndQuarrelsWithTheTemple()
+    {
+        var sim = Player();
+        var t = sim.Town;
+        sim.RunDays(1);
+        Raise(t, "chapterhouse");
+        Raise(t, "temple");
+        sim.RunDays(1);
+        var chapter = Institutions.Find(t, "paladin-chapterhouse")!;
+        Assert.StartsWith("Knight-Commander ", Institutions.KeeperName(t, chapter));
+        Assert.True(Institutions.Defence(t) > 0);
+        Assert.True(sim.ChooseInstitution("paladin-chapterhouse", "crown"));
+        var story = Stories.Open(t, "chapter-and-temple")!;
+        Assert.Equal(["paladin-chapterhouse", "temple-district"], story.Institutions);
+        Assert.Contains("oath of the crown", Stories.Fill(t, story, "{choice}"));
+    }
+
+    [Fact]
     public void AnInstitutionShutsWhenItsBuildingCloses()
     {
         var sim = Player();

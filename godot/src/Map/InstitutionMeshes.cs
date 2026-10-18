@@ -126,4 +126,85 @@ public partial class TownView
         k.Frustum(new Vector3(0.42f, 0.416f, -0.34f), 0.07f, 0, 0.08f, 4, new Color("8e3b2e"), null, Mathf.Pi / 4);
         k.Add("castle/flag-pennant", MeshKit.At(0.42f, 0.49f, -0.34f, 0, 0.12f), Palette.Kenney(Dyes[(v + 1) % Dyes.Length]));
     }
+
+    /// <summary>The paladin chapterhouse: a stone hall with a squat bell tower, white-and-gold banners and a tilting yard.</summary>
+    private static void Chapterhouse(MeshKit k, int v)
+    {
+        k.Push(MeshKit.At(-0.08f, 0, -0.14f, 0, Fit(4, 2, 0.78f)));
+        Walls(k, 4, 2, 0, true, v + 401, true);
+        Walls(k, 4, 2, 1, true, v + 403, false);
+        k.Push(MeshKit.At(0, 2, 0));
+        k.Gable(0, 4, 2, 1.0f, new Color("4a5a7a"), Palette.Stone, 0.12f);
+        k.Pop();
+        var white = Palette.Kenney(new Color("e8e2d0"));
+        for (int i = 0; i < 3; i++)
+            k.Add("town/banner-green", new Transform3D(Basis.FromEuler(new Vector3(0, -Mathf.Pi / 2, 0)), new Vector3(-1.2f + i * 1.2f, 0.95f, 1.02f)), white);
+        k.Pop();
+        // The bell tower at the corner, capped in gold.
+        var stone = WallStone(new Color("4a5a7a"), 0.9f);
+        k.Add("castle/tower-square-base", MeshKit.At(0.36f, 0, -0.22f, 0, 0.26f), stone);
+        k.Add("castle/tower-square-mid", MeshKit.At(0.36f, 0.26f, -0.22f, 0, 0.26f), stone);
+        k.Add("castle/tower-square-top-roof", MeshKit.At(0.36f, 0.52f, -0.22f, 0, 0.26f), stone);
+        k.Frustum(new Vector3(0.36f, 0.8f, -0.22f), 0.02f, 0, 0.1f, 4, Palette.Gold);
+        // A sanded tilting yard with a lance rail.
+        k.Box(new Vector3(0, 0.004f, 0.3f), new Vector3(0.9f, 0.012f, 0.3f), new Color("b8a070"));
+        k.Box(new Vector3(0, 0.012f, 0.3f), new Vector3(0.7f, 0.06f, 0.02f), Palette.Timber);
+        k.Box(new Vector3(-0.38f, 0, 0.3f), new Vector3(0.02f, 0.14f, 0.02f), Palette.DarkTimber);
+        k.Box(new Vector3(0.38f, 0, 0.3f), new Vector3(0.02f, 0.14f, 0.02f), Palette.DarkTimber);
+    }
+
+    /// <summary>The alchemists' quarter: a crooked row of narrow workshops with tall chimneys, glass alembics and coloured fumes.</summary>
+    private static void AlchemistsQuarter(MeshKit k, int v)
+    {
+        var plaster = new[] { new Color("c8b89a"), new Color("b8c0a0"), new Color("c0a8b0") };
+        for (int i = 0; i < 3; i++)
+        {
+            k.Push(MeshKit.At(-0.32f + i * 0.32f, 0, -0.18f + (i % 2) * 0.06f, (i - 1) * 0.08f, 0.15f));
+            Walls(k, 2, 2, 0, false, v + 411 + i, true);
+            Walls(k, 2, 2, 1, false, v + 415 + i, false);
+            k.Push(MeshKit.At(0, 2, 0));
+            k.Gable(0, 2, 2, 1.1f, new Color("5a4a6a"), plaster[i], 0.1f);
+            k.Pop();
+            Chimney(k, 0.5f, 2.3f, -0.4f, true);
+            k.Pop();
+        }
+        // Benches of glassware in the lane, glowing in three colours.
+        var glow = new[] { new Color("6af0a0", MeshKit.Flag.Magic), new Color("f06ad0", MeshKit.Flag.Magic), new Color("6ab0f0", MeshKit.Flag.Magic) };
+        for (int i = 0; i < 3; i++)
+        {
+            var at = new Vector3(-0.3f + i * 0.3f, 0, 0.24f);
+            k.Box(at, new Vector3(0.18f, 0.06f, 0.07f), Palette.DarkTimber);
+            k.Frustum(at + new Vector3(-0.04f, 0.06f, 0), 0.025f, 0.008f, 0.06f, 8, glow[(i + v) % 3]);
+            k.Frustum(at + new Vector3(0.04f, 0.06f, 0), 0.02f, 0.02f, 0.05f, 8, glow[(i + v + 1) % 3]);
+        }
+        k.Add("nature/campfire_logs", MeshKit.At(0.38f, 0.004f, 0.36f, 0, 0.08f));
+    }
+
+    /// <summary>The artificers' foundry: a long brick works with a great water-wheel, a tall stack and brass machines in the yard.</summary>
+    private static void ArtificersFoundry(MeshKit k, int v)
+    {
+        k.Push(MeshKit.At(-0.06f, 0, -0.16f, 0, Fit(4, 2, 0.8f)));
+        Walls(k, 4, 2, 0, true, v + 421, true);
+        Walls(k, 4, 2, 1, true, v + 423, false);
+        k.Push(MeshKit.At(0, 2, 0));
+        k.Gable(0, 4, 2, 0.8f, new Color("5a5550"), new Color("9a5a40"), 0.1f);
+        k.Pop();
+        Chimney(k, 1.5f, 2, -0.5f, true);
+        Chimney(k, -1.5f, 2, -0.5f, true);
+        k.Pop();
+        // The great wheel at the side.
+        var wheel = new Color("6e5238");
+        k.Push(MeshKit.At(-0.46f, 0.2f, -0.12f, Mathf.Pi / 2, 1));
+        k.Frustum(Vector3.Zero, 0.2f, 0.2f, 0.05f, 12, wheel, Palette.DarkTimber);
+        k.Pop();
+        // Brass machines and gears in the yard.
+        var brass = new Color("c8a04a");
+        k.Box(new Vector3(0.2f, 0, 0.28f), new Vector3(0.14f, 0.12f, 0.1f), brass, brass.Lightened(0.2f));
+        k.Frustum(new Vector3(0.2f, 0.12f, 0.28f), 0.04f, 0.02f, 0.1f, 8, brass);
+        k.Frustum(new Vector3(-0.1f, 0.02f, 0.3f), 0.07f, 0.07f, 0.02f, 10, brass.Darkened(0.2f));
+        k.Frustum(new Vector3(-0.2f, 0.02f, 0.34f), 0.05f, 0.05f, 0.02f, 8, brass.Darkened(0.1f));
+        // A brass sentry by the gate.
+        k.Box(new Vector3(0.36f, 0, 0.36f), new Vector3(0.04f, 0.12f, 0.03f), brass);
+        k.Blob(new Vector3(0.36f, 0.15f, 0.36f), new Vector3(0.025f, 0.025f, 0.025f), brass.Lightened(0.15f));
+    }
 }

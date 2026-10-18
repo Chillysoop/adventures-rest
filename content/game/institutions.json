@@ -394,6 +394,360 @@
           "text": "A halfling with a laugh you can hear from the gate, who has never once been seen to sleep, and keeps a book of debts he never collects."
         }
       ]
+    },
+    {
+      "id": "paladin-chapterhouse",
+      "name": "the Paladin Chapterhouse",
+      "building": "chapterhouse",
+      "tier": "village",
+      "title": "Knight-Commander",
+      "blurb": "A fortified hall where an order of paladins keeps its vigil, trains its squires and judges its own. Its oath shapes what the knights do for the town, and a knight who breaks it is the town's problem too.",
+      "service": {
+        "defence": 2,
+        "tension": -0.05,
+        "faction": "dawn-wardens",
+        "standing": 0.05
+      },
+      "choice": {
+        "label": "the oath the chapter swears",
+        "text": "Every chapter swears one oath above the others, and the town lives with what it means.",
+        "options": [
+          {
+            "id": "devotion",
+            "name": "the oath of devotion",
+            "deity": "lantern-mother",
+            "text": "The knights tend the sick and walk the night streets with lanterns: wounds heal and folk sleep easier.",
+            "service": {
+              "heal": 0.06,
+              "mood": 0.1
+            }
+          },
+          {
+            "id": "vengeance",
+            "name": "the oath of vengeance",
+            "deity": "red-banner",
+            "text": "The knights swear to hunt every raider to its den: the wilds fear the town a little more.",
+            "service": {
+              "dread": -0.03
+            }
+          },
+          {
+            "id": "ancients",
+            "name": "the oath of the green",
+            "deity": "greenhush",
+            "text": "The knights guard the fields and orchards as if they were shrines: the harvest is safer and sweeter.",
+            "service": {
+              "yields": {
+                "Food": 1.05
+              },
+              "mood": 0.05
+            }
+          },
+          {
+            "id": "crown",
+            "name": "the oath of the crown",
+            "deity": "iron-crown",
+            "text": "The knights swear to the town's law before their own conscience: the streets are orderly, if stern.",
+            "service": {
+              "tension": -0.12
+            }
+          }
+        ]
+      },
+      "keepers": [
+        {
+          "name": "Dame Aveline Thorne",
+          "text": "Forty years in the saddle and three horses buried, she still rises at the third bell to pray and expects her knights to do the same."
+        },
+        {
+          "name": "Ser Corwin Halloway",
+          "text": "A reformed sellsword who found his god in a burning village, he is gentle with the weak and terrifying to everyone else."
+        },
+        {
+          "name": "Brother-Captain Joss Mallory",
+          "text": "Young for his rank and painfully earnest, he keeps a ledger of every promise the town has ever made him."
+        }
+      ]
+    },
+    {
+      "id": "alchemists-quarter",
+      "name": "the Alchemists' Quarter",
+      "building": "alchemists_quarter",
+      "tier": "village",
+      "title": "Master Alchemist",
+      "blurb": "A crooked lane of stills, kilns and coloured smoke where alchemists brew for the town. Potions and dyes flow out; now and then so does something that was meant to stay in the jar.",
+      "service": {
+        "yields": {
+          "Potions": 1.1,
+          "Herbs": 1.05
+        },
+        "gold": 0.5,
+        "tension": 0.02
+      },
+      "choice": {
+        "label": "what the quarter brews most",
+        "text": "Every still in the quarter can brew anything, given time. The council's coin decides what they brew first.",
+        "options": [
+          {
+            "id": "draughts",
+            "name": "healing draughts",
+            "text": "Red bottles by the crate: heroes come home sooner and fewer die of their wounds.",
+            "service": {
+              "heal": 0.06,
+              "yields": {
+                "Potions": 1.08
+              }
+            }
+          },
+          {
+            "id": "fire",
+            "name": "alchemist's fire",
+            "text": "Clay pots of sticky flame stacked by the walls: the watch has something to throw.",
+            "service": {
+              "defence": 2,
+              "tension": 0.02
+            }
+          },
+          {
+            "id": "dyes",
+            "name": "dyes and perfumes",
+            "text": "Madder reds and saffron yellows: the weavers' cloth sells further and dearer.",
+            "service": {
+              "yields": {
+                "Cloth": 1.08
+              },
+              "gold": 1
+            }
+          },
+          {
+            "id": "elixirs",
+            "name": "elixirs of youth",
+            "text": "Very expensive, very popular and very slightly poisonous: the gold pours in.",
+            "service": {
+              "gold": 2,
+              "tension": 0.05
+            }
+          }
+        ]
+      },
+      "keepers": [
+        {
+          "name": "Odo Brimwick",
+          "text": "Eyebrowless since an accident he will not discuss, he tastes every batch himself and has outlived two apprentices who did not."
+        },
+        {
+          "name": "Sabeth Quill",
+          "text": "She left the wizards' college over a matter of principle and a small fire, and has been proving them wrong ever since."
+        },
+        {
+          "name": "Old Mother Tansy",
+          "text": "A herb-wife who learned her letters at sixty, she keeps her formulae in rhymes and her coin under a loose brick."
+        }
+      ]
+    },
+    {
+      "id": "artificers-foundry",
+      "name": "the Artificers' Foundry",
+      "building": "artificers_foundry",
+      "tier": "town",
+      "title": "Forgemaster",
+      "blurb": "Furnaces, lathes and a great water-wheel, where artificers build clockwork, engines and the odd marvel. Better tools and faster building, and inventions with minds of their own.",
+      "service": {
+        "yields": {
+          "Tools": 1.08
+        },
+        "build": 0.04
+      },
+      "choice": {
+        "label": "what the foundry builds",
+        "text": "The artificers can build anything the council can pay for. What they build first shapes the town.",
+        "options": [
+          {
+            "id": "clockwork",
+            "name": "clockwork labourers",
+            "text": "Brass porters and stone-lifting engines: every building in town goes up faster.",
+            "service": {
+              "build": 0.05
+            }
+          },
+          {
+            "id": "engines",
+            "name": "engines of war",
+            "text": "Ballistae on the towers and a springal at the gate: the walls bite back.",
+            "service": {
+              "defence": 2
+            }
+          },
+          {
+            "id": "lamps",
+            "name": "lamps and pumps",
+            "text": "Clockwork pumps and everburning lamps in every street: life is easier and the nights brighter.",
+            "service": {
+              "mood": 0.15,
+              "tension": -0.03
+            }
+          },
+          {
+            "id": "wonders",
+            "name": "wonders for sale",
+            "text": "Singing birds of silver and self-turning spits for rich men's kitchens: the merchants pay handsomely.",
+            "service": {
+              "gold": 2
+            }
+          }
+        ]
+      },
+      "keepers": [
+        {
+          "name": "Ingra Coppervein",
+          "text": "A dwarf who left her clan's forges for wanting to build things that move, she talks to her machines and claims they listen."
+        },
+        {
+          "name": "Pell Fennimore",
+          "text": "A gnome of boundless enthusiasm and very few finished projects, he has patented the same kettle three times."
+        },
+        {
+          "name": "Master Hollis Grane",
+          "text": "Grey, precise and humourless, he lost a hand to a steam valve and replaced it with a better one."
+        }
+      ]
+    },
+    {
+      "id": "grand-arena",
+      "name": "the Grand Arena",
+      "building": "arena",
+      "adopt": true,
+      "tier": "city",
+      "title": "Arena Master",
+      "blurb": "The city's arena under a master of games: duels, beasts and races before roaring crowds. It keeps the city cheerful and its coffers full, and every so often someone wants to fight to the death.",
+      "service": {
+        "mood": 0.2,
+        "gold": 1,
+        "tension": -0.05
+      },
+      "choice": {
+        "label": "what fills the arena",
+        "text": "The crowds come for anything bloody or fast. The council decides which.",
+        "options": [
+          {
+            "id": "duels",
+            "name": "heroes' duels",
+            "text": "The town's champions spar for glory: travellers come to see a real hero fight.",
+            "service": {
+              "arrivals": 0.005,
+              "mood": 0.1
+            }
+          },
+          {
+            "id": "beasts",
+            "name": "beast fights",
+            "text": "Owlbears and bulettes dragged from the wilds and killed before the crowd: the wilds seem less fearsome.",
+            "service": {
+              "dread": -0.02,
+              "gold": 0.5
+            }
+          },
+          {
+            "id": "races",
+            "name": "chariot races",
+            "text": "Four teams, four colours, and wagers on all of them: a river of gold.",
+            "service": {
+              "gold": 1.5
+            }
+          },
+          {
+            "id": "trials",
+            "name": "trials by combat",
+            "text": "Grudges settled with blunted blades instead of knives in alleys: the streets are calmer.",
+            "service": {
+              "tension": -0.12
+            }
+          }
+        ]
+      },
+      "keepers": [
+        {
+          "name": "Varro Stake",
+          "text": "A retired gladiator with a voice like a landslide, he knows every fighter's weakness and every bookmaker's price."
+        },
+        {
+          "name": "Lady Ismene Corr",
+          "text": "A noblewoman who bought the games to annoy her family, she runs them with a fan in one hand and a ledger in the other."
+        },
+        {
+          "name": "Grumm One-Tusk",
+          "text": "A half-orc who fought in the pits as a boy, he insists every fighter is paid and every beast is fed."
+        }
+      ]
+    },
+    {
+      "id": "bards-college",
+      "name": "the Bards' College",
+      "building": "theatre",
+      "adopt": true,
+      "tier": "large_town",
+      "title": "Dean of Bards",
+      "blurb": "The theatre becomes a college of bards: players, poets and loremasters who sing the town's deeds and keep its memory. What they sing about decides how the town sees itself, and what the world hears of it.",
+      "service": {
+        "mood": 0.15,
+        "arrivals": 0.005
+      },
+      "choice": {
+        "label": "what the college sings",
+        "text": "Bards will sing anything. The town will believe what they sing most.",
+        "options": [
+          {
+            "id": "heroes",
+            "name": "the deeds of the town's heroes",
+            "text": "Ballads of every delve and duel: heroes walk taller, and more come looking for the town in the songs.",
+            "service": {
+              "arrivals": 0.005,
+              "mood": 0.05
+            }
+          },
+          {
+            "id": "lore",
+            "name": "the old histories",
+            "text": "Lays of the fallen kingdoms: the town's scholars learn faster, and its people know their place in the world.",
+            "service": {
+              "yields": {
+                "Books": 1.1
+              },
+              "mood": 0.05
+            }
+          },
+          {
+            "id": "satire",
+            "name": "satires of the powerful",
+            "text": "Nobody is safe from the stage, the mayor least of all: folk laugh instead of riot.",
+            "service": {
+              "tension": -0.12
+            }
+          },
+          {
+            "id": "romance",
+            "name": "songs of love",
+            "text": "Every tavern hums the season's tune: the town is a happier place to live.",
+            "service": {
+              "mood": 0.2
+            }
+          }
+        ]
+      },
+      "keepers": [
+        {
+          "name": "Lysander Vale",
+          "text": "Once the most famous voice in the Free Ports, now hoarse and vain, he teaches as if every pupil were his last chance at an encore."
+        },
+        {
+          "name": "Mistress Oona Fairweather",
+          "text": "A halfling loremaster who has memorised four thousand verses and forgives no one a wrong rhyme."
+        },
+        {
+          "name": "Kit Marlow",
+          "text": "A young playwright with a quill sharper than most swords and enemies in every guildhall."
+        }
+      ]
     }
   ],
   "fixtures": [
@@ -476,6 +830,54 @@
         "gold": 0.8,
         "mood": 0.05
       }
+    },
+    {
+      "id": "oath-stone",
+      "name": "the oath-stone",
+      "institution": "paladin-chapterhouse",
+      "text": "A standing stone in the chapterhouse yard where the town's oaths are sworn. Few lie with a hand on it.",
+      "service": {
+        "tension": -0.05
+      }
+    },
+    {
+      "id": "everburning-lamps",
+      "name": "everburning lamps",
+      "institution": "alchemists-quarter",
+      "text": "Glass globes of cold alchemical light along the main street, gifts of a grateful quarter.",
+      "service": {
+        "mood": 0.1
+      }
+    },
+    {
+      "id": "brass-gatekeeper",
+      "name": "the brass gatekeeper",
+      "institution": "artificers-foundry",
+      "text": "A clockwork sentinel at the gate that never sleeps and never takes a bribe.",
+      "service": {
+        "defence": 1,
+        "tension": -0.03
+      }
+    },
+    {
+      "id": "champions-statue",
+      "name": "the champion's statue",
+      "institution": "grand-arena",
+      "text": "A bronze of the town's greatest arena champion, polished bright by the hands of every child who touches it for luck.",
+      "service": {
+        "mood": 0.1,
+        "arrivals": 0.003
+      }
+    },
+    {
+      "id": "town-anthem",
+      "name": "the town's anthem",
+      "institution": "bards-college",
+      "text": "A song written for the town that every child knows by heart and every traveller carries away.",
+      "service": {
+        "mood": 0.1,
+        "arrivals": 0.003
+      }
     }
   ],
   "precedents": [
@@ -490,6 +892,18 @@
     {
       "id": "hand-in-bazaar",
       "text": "The Quiet Hand was given a stall in the bazaar's back rows"
+    },
+    {
+      "id": "knight-redeemed",
+      "text": "The town gave a fallen knight a second chance"
+    },
+    {
+      "id": "foundry-licence",
+      "text": "The town licenses every invention the foundry builds"
+    },
+    {
+      "id": "free-stage",
+      "text": "The town promised its bards they may mock anyone"
     }
   ],
   "requests": [
@@ -2250,6 +2664,949 @@
         "text": "The Hand keeps meeting, and nobody says anything.",
         "effects": {
           "standing": 2
+        }
+      }
+    },
+    {
+      "id": "chapter-fallen-knight",
+      "title": "A knight breaks the oath",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "institution:paladin-chapterhouse"
+      ],
+      "minDay": 40,
+      "repeatDays": 150,
+      "stages": [
+        {
+          "id": "start",
+          "text": "One of {keeper}'s knights got drunk, drew steel on a carter and broke {choice}. The chapter would strip him of his spurs and drive him out; his family begs the mayor for mercy.",
+          "options": [
+            {
+              "label": "Let the chapter judge its own",
+              "success": {
+                "text": "The knight rides out of the gate at dawn without his spurs. The chapter is satisfied.",
+                "effects": {
+                  "goodwill": 6,
+                  "tension": -1
+                }
+              }
+            },
+            {
+              "label": "Ask for a second chance",
+              "skill": "persuasion",
+              "dc": 14,
+              "prefer": 0.05,
+              "success": {
+                "text": "{keeperName} grants it, grudgingly: the knight will serve a year as a squire again.",
+                "effects": {
+                  "goodwill": -2,
+                  "mandate": 1,
+                  "precedent:knight-redeemed": 1
+                }
+              },
+              "failure": {
+                "text": "{keeperName} will not hear of it, and resents being asked.",
+                "effects": {
+                  "goodwill": -6
+                }
+              }
+            },
+            {
+              "label": "Have the town's court try him instead",
+              "success": {
+                "text": "The court fines him and lets him go. The knights mutter about civil men judging holy ones.",
+                "effects": {
+                  "goodwill": -8,
+                  "tension": -1,
+                  "gold": 15
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The chapter judges him without the mayor, and notes that the mayor did not care.",
+        "effects": {
+          "goodwill": -3
+        }
+      }
+    },
+    {
+      "id": "chapter-crusade",
+      "title": "The chapter would ride out",
+      "stakes": "medium",
+      "source": "war",
+      "needs": [
+        "institution:paladin-chapterhouse",
+        "menace"
+      ],
+      "minDay": 80,
+      "repeatDays": 180,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{keeper} asks the council's blessing and purse for a crusade against {menace}. The knights would ride out within the week.",
+          "options": [
+            {
+              "label": "Fund the crusade",
+              "cost": 150,
+              "prefer": 0.1,
+              "success": {
+                "text": "The knights ride out under the town's banner and return with {menace} bloodied and their ranks thinned.",
+                "effects": {
+                  "foePower": -15,
+                  "goodwill": 10,
+                  "mandate": 2
+                }
+              }
+            },
+            {
+              "label": "Bless it, but pay nothing",
+              "skill": "persuasion",
+              "dc": 13,
+              "success": {
+                "text": "The knights go anyway, fewer and poorer, and do what they can.",
+                "effects": {
+                  "foePower": -6,
+                  "goodwill": 2
+                }
+              },
+              "failure": {
+                "text": "Without coin the crusade never leaves the yard, and the knights blame the council.",
+                "effects": {
+                  "goodwill": -6
+                }
+              }
+            },
+            {
+              "label": "Forbid it: the town needs them here",
+              "success": {
+                "text": "The knights stay and stand on the walls, sullen.",
+                "effects": {
+                  "goodwill": -8
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The knights wait for a blessing that never comes.",
+        "effects": {
+          "goodwill": -4
+        }
+      }
+    },
+    {
+      "id": "chapter-and-temple",
+      "title": "Whose holy day",
+      "stakes": "low",
+      "source": "faith",
+      "needs": [
+        "institution:paladin-chapterhouse",
+        "institution:temple-district"
+      ],
+      "minDay": 60,
+      "repeatDays": 200,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{keeper} wants the great square for the chapter's vigil on the same night {keeper2} has promised it to the temple's procession. Both expect the mayor to settle it.",
+          "options": [
+            {
+              "label": "Give the square to the knights",
+              "success": {
+                "text": "The vigil is splendid, and the priests sulk in the side streets.",
+                "effects": {
+                  "goodwill": 5,
+                  "goodwill2": -5
+                }
+              }
+            },
+            {
+              "label": "Give the square to the temple",
+              "success": {
+                "text": "The procession is glorious, and the knights stand guard at its edges, stone-faced.",
+                "effects": {
+                  "goodwill": -5,
+                  "goodwill2": 5
+                }
+              }
+            },
+            {
+              "label": "Make them share it",
+              "skill": "persuasion",
+              "dc": 15,
+              "prefer": 0.05,
+              "success": {
+                "text": "Knights and priests keep the night together, and it becomes a festival the town remembers.",
+                "effects": {
+                  "goodwill": 3,
+                  "goodwill2": 3,
+                  "festival": 1
+                }
+              },
+              "failure": {
+                "text": "Knights and priests spend the night arguing over precedence in front of everyone.",
+                "effects": {
+                  "goodwill": -3,
+                  "goodwill2": -3,
+                  "tension": 2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "Both turn up, and the night ends with shoving.",
+        "effects": {
+          "goodwill": -3,
+          "goodwill2": -3,
+          "tension": 2
+        }
+      }
+    },
+    {
+      "id": "alchemy-explosion",
+      "title": "A still explodes",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "institution:alchemists-quarter"
+      ],
+      "minDay": 40,
+      "repeatDays": 140,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A still in {institution} has gone up in green fire and taken a neighbour's roof with it. The neighbours want the quarter moved outside the walls; {keeper} says it was an accident and will not happen again.",
+          "options": [
+            {
+              "label": "Pay for the roof and let them carry on",
+              "cost": 60,
+              "prefer": 0.05,
+              "success": {
+                "text": "A new roof, a stern word, and the quarter goes back to work.",
+                "effects": {
+                  "goodwill": 6
+                }
+              }
+            },
+            {
+              "label": "Make the quarter pay",
+              "success": {
+                "text": "{keeperName} pays, with very bad grace.",
+                "effects": {
+                  "goodwill": -4,
+                  "tension": -1
+                }
+              }
+            },
+            {
+              "label": "Order stone walls between the stills",
+              "cost": 100,
+              "success": {
+                "text": "The quarter grumbles and builds them. Nothing has burned since.",
+                "effects": {
+                  "goodwill": -2,
+                  "tension": -2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The neighbours take the matter into their own hands, and the quarter's windows are broken.",
+        "effects": {
+          "goodwill": -4,
+          "tension": 3
+        }
+      }
+    },
+    {
+      "id": "alchemy-reagent",
+      "title": "A rare reagent",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "institution:alchemists-quarter",
+        "site"
+      ],
+      "minDay": 50,
+      "repeatDays": 160,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{keeper} needs the heart of a beast from {site} for a great work, and offers the council a share of what comes of it.",
+          "options": [
+            {
+              "label": "Hire hunters for it",
+              "cost": 60,
+              "prefer": 0.05,
+              "success": {
+                "text": "The heart arrives in a bucket of ice, and the quarter's great work bubbles for a month.",
+                "effects": {
+                  "goodwill": 6,
+                  "reveal": 1
+                }
+              }
+            },
+            {
+              "label": "Tell {keeperName} to fetch it themselves",
+              "skill": "survival",
+              "dc": 13,
+              "success": {
+                "text": "{keeperName} goes, and comes back singed but triumphant.",
+                "effects": {
+                  "goodwill": 3
+                }
+              },
+              "failure": {
+                "text": "{keeperName} comes back without it, and without an eyebrow.",
+                "effects": {
+                  "goodwill": -3
+                }
+              }
+            },
+            {
+              "label": "Refuse",
+              "success": {
+                "text": "The great work waits.",
+                "effects": {
+                  "goodwill": -3
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The great work waits.",
+        "effects": {
+          "goodwill": -2
+        }
+      }
+    },
+    {
+      "id": "alchemy-and-grove",
+      "title": "Moonpetal",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "institution:alchemists-quarter",
+        "institution:druid-grove"
+      ],
+      "minDay": 70,
+      "repeatDays": 220,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The alchemists want to harvest the moonpetal that grows only in the druids' sacred pool. {keeper} offers good coin; {keeper2} says the pool is not for sale.",
+          "options": [
+            {
+              "label": "Side with the grove",
+              "success": {
+                "text": "The moonpetal stays. The alchemists find a substitute that works almost as well.",
+                "effects": {
+                  "goodwill": -5,
+                  "goodwill2": 6
+                }
+              }
+            },
+            {
+              "label": "Side with the alchemists",
+              "success": {
+                "text": "The petals are harvested, the potions are superb, and the druids do not forgive it.",
+                "effects": {
+                  "goodwill": 6,
+                  "goodwill2": -10,
+                  "gold": 40
+                }
+              }
+            },
+            {
+              "label": "Broker a sharing",
+              "skill": "persuasion",
+              "dc": 15,
+              "prefer": 0.05,
+              "success": {
+                "text": "The druids harvest a few petals each full moon, and sell them dear. Both sides are grudgingly content.",
+                "effects": {
+                  "goodwill": 3,
+                  "goodwill2": 3
+                }
+              },
+              "failure": {
+                "text": "Neither side will budge, and both blame the mayor.",
+                "effects": {
+                  "goodwill": -3,
+                  "goodwill2": -3
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The alchemists harvest by night, and the druids catch them at it.",
+        "effects": {
+          "goodwill": -2,
+          "goodwill2": -8,
+          "tension": 2
+        }
+      }
+    },
+    {
+      "id": "foundry-automaton",
+      "title": "A runaway automaton",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "institution:artificers-foundry"
+      ],
+      "minDay": 50,
+      "repeatDays": 150,
+      "stages": [
+        {
+          "id": "start",
+          "text": "One of {keeper}'s clockwork labourers has wandered out of {institution} and is carrying a market stall, very carefully, towards the river.",
+          "options": [
+            {
+              "label": "Send the watch to stop it",
+              "skill": "athletics",
+              "dc": 13,
+              "prefer": 0.05,
+              "success": {
+                "text": "Six watchmen and a net bring it down. The stall survives; the watchmen are bruised.",
+                "effects": {
+                  "goodwill": 2,
+                  "tension": -1
+                }
+              },
+              "failure": {
+                "text": "The automaton walks into the river, stall and all. The stallholder wants paying.",
+                "effects": {
+                  "gold": -30,
+                  "goodwill": -2
+                }
+              }
+            },
+            {
+              "label": "Let {keeperName} talk it down",
+              "skill": "arcana",
+              "dc": 14,
+              "success": {
+                "text": "{keeperName} whistles a long, odd tune, and it puts the stall down and walks home.",
+                "effects": {
+                  "goodwill": 5
+                }
+              },
+              "failure": {
+                "text": "{keeperName}'s tune makes it walk faster.",
+                "effects": {
+                  "goodwill": -3,
+                  "gold": -20
+                }
+              }
+            },
+            {
+              "label": "Have it broken up",
+              "success": {
+                "text": "Hammers make short work of it. {keeperName} weeps over the parts.",
+                "effects": {
+                  "goodwill": -8,
+                  "tension": -1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The automaton reaches the river and keeps walking. It is still down there.",
+        "effects": {
+          "goodwill": -3,
+          "tension": 1
+        }
+      }
+    },
+    {
+      "id": "foundry-patent",
+      "title": "Two inventors, one invention",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "institution:artificers-foundry"
+      ],
+      "minDay": 60,
+      "repeatDays": 160,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Two of the foundry's artificers swear they invented the same self-stoking furnace. {keeper} wants the council to grant one a licence and settle it.",
+          "options": [
+            {
+              "label": "Grant licences on the council's terms",
+              "success": {
+                "text": "From now on, every invention is licensed by the town, for a fee. The artificers grumble and pay.",
+                "effects": {
+                  "goodwill": -3,
+                  "gold": 25,
+                  "precedent:foundry-licence": 1
+                }
+              }
+            },
+            {
+              "label": "Let them build it together",
+              "skill": "insight",
+              "dc": 13,
+              "prefer": 0.05,
+              "success": {
+                "text": "They hate each other, and the furnace is the best ever built.",
+                "effects": {
+                  "goodwill": 4
+                }
+              },
+              "failure": {
+                "text": "They burn the first one down arguing over the flue.",
+                "effects": {
+                  "goodwill": -3
+                }
+              }
+            },
+            {
+              "label": "Stay out of it",
+              "success": {
+                "text": "{keeperName} settles it by giving the furnace to a third artificer entirely.",
+                "effects": {
+                  "goodwill": -1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The quarrel goes on for months.",
+        "effects": {
+          "goodwill": -2
+        }
+      }
+    },
+    {
+      "id": "foundry-and-library",
+      "title": "Schematics in the stacks",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "institution:artificers-foundry",
+        "building:library"
+      ],
+      "minDay": 80,
+      "repeatDays": 9999,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{keeper} has learned that the town's library holds a dwarven book of schematics, and wants it lent to the foundry. The librarians say it is far too old to leave the reading room.",
+          "options": [
+            {
+              "label": "Order the book lent",
+              "success": {
+                "text": "The schematics come back oily and dog-eared, and the foundry builds something marvellous from them.",
+                "effects": {
+                  "goodwill": 8,
+                  "fixture:brass-gatekeeper": 1,
+                  "tension": 1
+                }
+              }
+            },
+            {
+              "label": "Pay a copyist",
+              "cost": 80,
+              "prefer": 0.1,
+              "success": {
+                "text": "A careful copy goes to the foundry; the original stays safe. The gatekeeper they build from it stands at the gate to this day.",
+                "effects": {
+                  "goodwill": 5,
+                  "fixture:brass-gatekeeper": 1
+                }
+              }
+            },
+            {
+              "label": "Side with the librarians",
+              "success": {
+                "text": "The book stays where it is. {keeperName} is not pleased.",
+                "effects": {
+                  "goodwill": -5
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "{keeperName} tries to borrow it without asking, and is caught.",
+        "effects": {
+          "goodwill": -3,
+          "tension": 2
+        }
+      }
+    },
+    {
+      "id": "arena-champion",
+      "title": "A challenge in the arena",
+      "stakes": "medium",
+      "source": "heroes",
+      "needs": [
+        "institution:grand-arena",
+        "hero"
+      ],
+      "minDay": 40,
+      "repeatDays": 180,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A champion from the south has beaten every fighter in {institution} and now calls out {hero} by name before the whole crowd. {keeper} says the town's honour is on the line.",
+          "options": [
+            {
+              "label": "Let {heroName} fight",
+              "skill": "athletics",
+              "dc": 15,
+              "aid": "hero",
+              "prefer": 0.05,
+              "success": {
+                "text": "{heroName} wins in the fourth bout, and the crowd carries them through the streets.",
+                "effects": {
+                  "renown": 3,
+                  "goodwill": 6,
+                  "fixture:champions-statue": 1
+                }
+              },
+              "failure": {
+                "text": "{heroName} loses badly and limps off to jeers.",
+                "effects": {
+                  "wound": 8,
+                  "goodwill": -2
+                }
+              }
+            },
+            {
+              "label": "Refuse the challenge",
+              "success": {
+                "text": "The crowd boos, and {keeperName} has to give back half the gate.",
+                "effects": {
+                  "goodwill": -6
+                }
+              }
+            },
+            {
+              "label": "Pay the champion to lose",
+              "cost": 100,
+              "success": {
+                "text": "The fight is thrilling and the result never in doubt. Only {keeperName} knows.",
+                "effects": {
+                  "goodwill": 2,
+                  "renown": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The southern champion claims the town has no heroes, and the crowd half believes it.",
+        "effects": {
+          "goodwill": -3
+        }
+      }
+    },
+    {
+      "id": "arena-beast-loose",
+      "title": "A beast loose from the pens",
+      "stakes": "high",
+      "source": "town",
+      "needs": [
+        "institution:grand-arena"
+      ],
+      "minDay": 60,
+      "repeatDays": 200,
+      "stages": [
+        {
+          "id": "start",
+          "text": "An owlbear has broken out of the arena's pens and is loose in the streets. {keeper} swears the bars were sound.",
+          "options": [
+            {
+              "label": "Send the watch",
+              "skill": "athletics",
+              "dc": 14,
+              "needs": [
+                "watch"
+              ],
+              "success": {
+                "text": "The watch corners it in a bakery, with losses on both sides.",
+                "effects": {
+                  "tension": 1,
+                  "goodwill": -1
+                }
+              },
+              "failure": {
+                "text": "The watch flees, and the owlbear eats the bakery's stock and goes back to its pen of its own accord.",
+                "effects": {
+                  "tension": 3,
+                  "goodwill": -3
+                }
+              }
+            },
+            {
+              "label": "Call on a hero",
+              "skill": "animal-handling",
+              "dc": 14,
+              "needs": [
+                "hero"
+              ],
+              "aid": "hero",
+              "prefer": 0.05,
+              "success": {
+                "text": "{heroName} drives it back into the pen with a torch and a lot of shouting.",
+                "effects": {
+                  "renown": 1,
+                  "goodwill": 4
+                }
+              },
+              "failure": {
+                "text": "{heroName} is mauled, and the beast is killed.",
+                "effects": {
+                  "wound": 10,
+                  "goodwill": -2
+                }
+              }
+            },
+            {
+              "label": "Close the arena's pens for good",
+              "success": {
+                "text": "No more beasts in the arena. The crowds are smaller.",
+                "effects": {
+                  "goodwill": -8,
+                  "tension": -1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The owlbear rampages for a night before the watch kills it.",
+        "effects": {
+          "tension": 4,
+          "goodwill": -4,
+          "people": -1
+        }
+      }
+    },
+    {
+      "id": "bards-satire",
+      "title": "A play about the mayor",
+      "stakes": "medium",
+      "source": "council",
+      "needs": [
+        "institution:bards-college"
+      ],
+      "minDay": 40,
+      "repeatDays": 240,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The college's new play is about a vain, greedy mayor who looks remarkably like the real one. The town loves it. {keeper} waits to see what the mayor will do.",
+          "options": [
+            {
+              "label": "Laugh along",
+              "prefer": 0.05,
+              "success": {
+                "text": "The mayor attends opening night and laughs loudest. The town warms to them.",
+                "effects": {
+                  "mandate": 3,
+                  "goodwill": 6,
+                  "precedent:free-stage": 1
+                }
+              }
+            },
+            {
+              "label": "Ask for the worst lines to be cut",
+              "skill": "persuasion",
+              "dc": 14,
+              "success": {
+                "text": "{keeperName} cuts them, and the cut lines become the town's favourite jokes.",
+                "effects": {
+                  "mandate": -1,
+                  "goodwill": -3
+                }
+              },
+              "failure": {
+                "text": "{keeperName} refuses, loudly, on stage.",
+                "effects": {
+                  "mandate": -2,
+                  "goodwill": -5
+                }
+              }
+            },
+            {
+              "label": "Close the play",
+              "success": {
+                "text": "The play closes. Everyone hears about it, and everyone takes the bards' side.",
+                "effects": {
+                  "mandate": -4,
+                  "goodwill": -12,
+                  "tension": 2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The play runs for months, and nobody hears the mayor's side.",
+        "effects": {
+          "mandate": -1,
+          "goodwill": 1
+        }
+      }
+    },
+    {
+      "id": "bards-and-hall",
+      "title": "A ballad for the hall",
+      "stakes": "low",
+      "source": "heroes",
+      "needs": [
+        "institution:bards-college",
+        "institution:adventurers-hall",
+        "hero"
+      ],
+      "minDay": 60,
+      "repeatDays": 220,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{keeper} wants to write the hall's great ballad, but {keeper2} insists it be about {hero} and get every detail right. The bards say the truth is never as good as the song.",
+          "options": [
+            {
+              "label": "Let the bards embellish it",
+              "success": {
+                "text": "The ballad is magnificent and largely invented. {heroName} is famous for things they never did.",
+                "effects": {
+                  "renown": 2,
+                  "goodwill": 5,
+                  "goodwill2": -3
+                }
+              }
+            },
+            {
+              "label": "Insist on the truth",
+              "success": {
+                "text": "The ballad is shorter, and the hall's companies love it.",
+                "effects": {
+                  "renown": 1,
+                  "goodwill": -3,
+                  "goodwill2": 5
+                }
+              }
+            },
+            {
+              "label": "Let {heroName} tell it",
+              "skill": "performance",
+              "dc": 14,
+              "aid": "hero",
+              "prefer": 0.05,
+              "success": {
+                "text": "{heroName} tells it in the taproom, and the bards scribble. The ballad is honest and stirring.",
+                "effects": {
+                  "renown": 2,
+                  "goodwill": 3,
+                  "goodwill2": 3,
+                  "fixture:town-anthem": 1
+                }
+              },
+              "failure": {
+                "text": "{heroName} stammers through it, and the bards fill in the gaps.",
+                "effects": {
+                  "goodwill": 2,
+                  "goodwill2": -2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The bards write it anyway, and the hall hates it.",
+        "effects": {
+          "goodwill": 1,
+          "goodwill2": -4
+        }
+      }
+    },
+    {
+      "id": "bards-rival-troupe",
+      "title": "A rival troupe",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "institution:bards-college"
+      ],
+      "minDay": 50,
+      "repeatDays": 180,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A travelling troupe has set up in the square and is drawing the college's crowds. {keeper} asks the council to move them on.",
+          "options": [
+            {
+              "label": "Move them on",
+              "success": {
+                "text": "The troupe moves on, and the college's benches fill again.",
+                "effects": {
+                  "goodwill": 5
+                }
+              }
+            },
+            {
+              "label": "Invite them into the college",
+              "skill": "persuasion",
+              "dc": 13,
+              "prefer": 0.05,
+              "success": {
+                "text": "The two companies stage a festival of plays together, and the town talks of nothing else.",
+                "effects": {
+                  "goodwill": 3,
+                  "festival": 1
+                }
+              },
+              "failure": {
+                "text": "The two companies hate each other on sight.",
+                "effects": {
+                  "goodwill": -4
+                }
+              }
+            },
+            {
+              "label": "Let the crowds decide",
+              "success": {
+                "text": "The troupe stays a month and the college sulks.",
+                "effects": {
+                  "goodwill": -4
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The troupe stays, and the college sulks.",
+        "effects": {
+          "goodwill": -3
         }
       }
     }

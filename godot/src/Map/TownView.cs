@@ -265,6 +265,9 @@ public partial class TownView(MapView map) : Node3D
             case "adventurers_hall": AdventurersHall(kit, v); break;
             case "druid_grove": DruidGrove(kit, v); break;
             case "grand_bazaar": Bazaar(kit, v); break;
+            case "chapterhouse": Chapterhouse(kit, v); break;
+            case "alchemists_quarter": AlchemistsQuarter(kit, v); break;
+            case "artificers_foundry": ArtificersFoundry(kit, v); break;
             default: House(kit, v); break;
         }
     }
