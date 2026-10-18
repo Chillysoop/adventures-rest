@@ -135,6 +135,18 @@ public sealed record FinaleRules
     public int YokeRideUnder { get; init; }
     public string Ride { get; init; } = "";
     public string Repelled { get; init; } = "";
+
+    /// <summary>
+    /// The big bad does not die the first time its seat falls: it escapes this many times, and always while
+    /// the Long Night is younger than MinDays, falling back to a holding or regrouping at its seat after
+    /// RegroupDays. Strong heroes win the finale sooner, but never in a single blow.
+    /// </summary>
+    public int Escapes { get; init; } = 2;
+    public int MinDays { get; init; } = 120;
+    public int RegroupDays { get; init; } = 30;
+    public double EscapeLoss { get; init; } = 0.8;
+    public string Escape { get; init; } = "";
+    public string Regroup { get; init; } = "";
 }
 
 /// <summary>The campaign arc (content/game/saga.json).</summary>
@@ -181,6 +193,9 @@ public sealed class SagaState
 
     public int? BigBadId { get; set; }
     public int CrownDay { get; set; }
+
+    /// <summary>Times the big bad has been driven from its seat and got away.</summary>
+    public int BigBadEscapes { get; set; }
 
     /// <summary>The menace whose yoke the town is under after a sack, and whether it has stopped waiting for tribute.</summary>
     public int? YokeId { get; set; }

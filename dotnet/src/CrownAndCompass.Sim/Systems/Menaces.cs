@@ -797,6 +797,14 @@ public static class Menaces
         else lines.Add($"The walls hold, but no hero is in town to face {m.Leader}.");
 
         Chronicle(town, lines, slain ? ExpeditionOutcome.Cleared : ExpeditionOutcome.Retreated, champions);
+        if (slain && m.BigBad && seat != null && MayEscape(town))
+        {
+            // Beaten at the walls, the big bad is carried off the field and back to its seat to heal.
+            town.Saga.BigBadEscapes++;
+            m.Power *= r.AssaultRetreat * f.EscapeLoss;
+            town.Log(LedgerCategory.War, Importance.Major, $"{m.Leader} is struck down before the walls of {town.Name}, but the host carries its master off the field, back to {seat.Def.Name}. (Chronicle {town.Chronicles.Count})", champions.Select(a => a.Id).ToList());
+            return;
+        }
         if (slain)
         {
             town.Log(LedgerCategory.War, Importance.Major, $"{m.Leader} falls before the walls of {town.Name}! (Chronicle {town.Chronicles.Count})", champions.Select(a => a.Id).ToList());
@@ -831,6 +839,7 @@ public static class Menaces
     private static void SeatFalls(Town town, Menace m, SiteState seat)
     {
         var r = Rules(town);
+        if (m.BigBad && Escapes(town, m, seat)) return;
         var refuge = m.BigBad ? null : m.Holdings.Select(id => Quests.Site(town, id)!).Where(s => !s.Cleared).OrderByDescending(s => s.Def.Tier).ThenBy(s => s.Def.Id, StringComparer.Ordinal).FirstOrDefault();
         if (refuge == null && !m.BigBad && m.FactionId != null && Factions.Find(town, m.FactionId) is FactionState f && f.Active)
         {
@@ -869,6 +878,40 @@ public static class Menaces
             LedgerCategory.War,
             Importance.Major,
             Saga.Cap(text.Replace("{leader}", oldLeader).Replace("{heir}", m.Leader).Replace("{seat}", fled).Replace("{refuge}", refuge.Def.Name).Replace("{name}", old)));
+    }
+
+    /// <summary>
+    /// The big bad driven from its seat gets away while it has escapes left or the Long Night is young: to its
+    /// strongest holding, or back to the same seat once it has regrouped. Returns false when this was the end.
+    /// </summary>
+    private static bool Escapes(Town town, Menace m, SiteState seat)
+    {
+        var s = town.Saga;
+        var f = town.Content.Saga.Finale;
+        if (!MayEscape(town)) return false;
+        s.BigBadEscapes++;
+        string fled = seat.Def.Name;
+        var refuge = m.Holdings.Select(id => Quests.Site(town, id)!).Where(x => !x.Cleared).OrderByDescending(x => x.Def.Tier).ThenBy(x => x.Def.Id, StringComparer.Ordinal).FirstOrDefault();
+        if (refuge != null) Seat(town, m, refuge);
+        else
+        {
+            refuge = seat;
+            seat.Cleared = false;
+            seat.QuietUntil = town.Tick + f.RegroupDays * SimTime.HoursPerDay;
+        }
+        m.SeenAttempts = refuge.Attempts;
+        m.Power *= f.EscapeLoss;
+        Empower(town, m, refuge, m.Level);
+        string text = refuge == seat ? f.Regroup : f.Escape;
+        town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, text, m).Replace("{fled}", fled).Replace("{refuge}", refuge.Def.Name)));
+        return true;
+    }
+
+    /// <summary>Whether a beaten big bad still gets away: it has escapes left, or the Long Night is too young to end.</summary>
+    private static bool MayEscape(Town town)
+    {
+        var f = town.Content.Saga.Finale;
+        return town.Saga.BigBadEscapes < f.Escapes || town.Day < town.Saga.CrownDay + f.MinDays;
     }
 
     /// <summary>The menace is finished. Its holdings go back to being ordinary lairs.</summary>

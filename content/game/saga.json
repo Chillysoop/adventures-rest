@@ -22,9 +22,9 @@
         4,
         6
       ],
-      "opensAtLevel": 2,
-      "earliestDay": 110,
-      "latestDay": 220,
+      "opensAtLevel": 3,
+      "earliestDay": 140,
+      "latestDay": 240,
       "arrivalBonus": 1,
       "pace": 1.2,
       "seeds": [
@@ -46,9 +46,9 @@
         6,
         9
       ],
-      "opensAtLevel": 4,
-      "earliestDay": 280,
-      "latestDay": 400,
+      "opensAtLevel": 5,
+      "earliestDay": 320,
+      "latestDay": 440,
       "arrivalBonus": 2,
       "pace": 1.4,
       "seeds": [
@@ -70,9 +70,9 @@
         9,
         12
       ],
-      "opensAtLevel": 6,
-      "earliestDay": 420,
-      "latestDay": 600,
+      "opensAtLevel": 7,
+      "earliestDay": 520,
+      "latestDay": 660,
       "arrivalBonus": 3,
       "pace": 1.6,
       "seeds": [
@@ -469,7 +469,13 @@
     ],
     "marchGrowth": 0.1,
     "rideEveryDays": 20,
-    "rideAfterDays": 20,
+    "rideAfterDays": 30,
+    "escapes": 2,
+    "minDays": 120,
+    "regroupDays": 30,
+    "escapeLoss": 0.8,
+    "escape": "{fled} falls, but {leader} is not there to die in it. {Name} slips away to {refuge} and gathers what is left. The Long Night is not over.",
+    "regroup": "{fled} is cleared, but {leader} got out by a back way before the end. Within the month its servants are creeping back into the ruins. The Long Night is not over.",
     "rideUnder": 3,
     "ride": "{heroes} ride out for {seat} to face {leader}. The whole of {town} turns out at the gate to watch them go.",
     "marchArmy": [
