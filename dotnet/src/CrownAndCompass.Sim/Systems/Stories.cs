@@ -34,6 +34,12 @@ public sealed record StoryRules
     public List<MayorBackground> Backgrounds { get; init; } = [];
     public List<StoryDef> Stories { get; init; } = [];
 
+    /// <summary>Standing orders a story can put in force for a while (<see cref="Decrees"/>).</summary>
+    public List<DecreeDef> Decrees { get; init; } = [];
+
+    /// <summary>What the town remembers the mayor deciding, which later stories turn on.</summary>
+    public List<PrecedentDef> Precedents { get; init; } = [];
+
     /// <summary>Inspiration the mayor can hold at once, before feats.</summary>
     public int InspirationMax { get; init; } = 3;
 
@@ -55,6 +61,17 @@ public sealed record StoryRules
     public SkillDef? Skill(string id) => Skills.FirstOrDefault(s => s.Id == id);
     public MayorBackground Background(string id) => Backgrounds.FirstOrDefault(b => b.Ref == id) ?? Backgrounds[0];
     public StoryDef? Story(string id) => Stories.FirstOrDefault(s => s.Id == id);
+    public DecreeDef? Decree(string id) => Decrees.FirstOrDefault(d => d.Id == id);
+    public PrecedentDef? Precedent(string id) => Precedents.FirstOrDefault(p => p.Id == id);
+}
+
+/// <summary>Something the town remembers: a gate opened or closed, a pact made, a witch burned or sheltered.</summary>
+public sealed record PrecedentDef
+{
+    public string Id { get; init; } = "";
+
+    /// <summary>How the Mayor tab tells it ("The gates were opened to the refugees of {town}").</summary>
+    public string Text { get; init; } = "";
 }
 
 public sealed record StakesDef
@@ -139,6 +156,9 @@ public sealed record StoryDef
     public int MinPopulation { get; init; }
     public double Weight { get; init; } = 1;
 
+    /// <summary>Weight added for every hundred people: petitions come more often as the town grows.</summary>
+    public double PerHundred { get; init; }
+
     /// <summary>Days before the same story can open again.</summary>
     public int RepeatDays { get; init; } = 90;
     public List<StoryStage> Stages { get; init; } = [];
@@ -171,6 +191,9 @@ public sealed record StoryOption
 
     /// <summary>"hero": the bound hero lends a hand, which is advantage.</summary>
     public string Aid { get; init; } = "";
+
+    /// <summary>How much the stand-in mayor leans to this option over its odds (a hard choice's sensible default).</summary>
+    public double Prefer { get; init; }
     public StoryOutcome Success { get; init; } = new();
     public StoryOutcome Failure { get; init; } = new();
 
@@ -266,6 +289,10 @@ public sealed class Story
     public string? SiteId { get; set; }
     public int? PartyId { get; set; }
     public string? Power { get; set; }
+
+    /// <summary>The townsperson who brought a petition, and the ward it is about.</summary>
+    public int? PetitionerId { get; set; }
+    public string? Ward { get; set; }
     public List<StoryBeat> Beats { get; } = [];
 }
 
@@ -277,6 +304,12 @@ public sealed class StoryState
 
     /// <summary>The day each story last opened, so it does not repeat too soon.</summary>
     public OrderedMap<string, int> LastDay { get; } = new();
+
+    /// <summary>Decrees in force, and the day each lapses.</summary>
+    public OrderedMap<string, int> Decrees { get; } = new();
+
+    /// <summary>Precedents set, and the day each was.</summary>
+    public OrderedMap<string, int> Precedents { get; } = new();
 
     public IEnumerable<Story> Open => All.Where(s => !s.Done);
 
@@ -307,13 +340,32 @@ public static class Stories
 {
     private static StoryRules Rules(Town town) => town.Content.Stories;
 
-    /// <summary>Every effect an outcome can have, in the order they apply.</summary>
+    /// <summary>Every effect an outcome can have, in the order they apply; then decree:id (days, or -1 to repeal) and precedent:id (1 sets it, -1 forgets it).</summary>
     public static readonly string[] EffectKeys =
-        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "delay", "festival", "reveal", "inspiration"];
+        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "delay", "festival", "reveal", "inspiration", "people", "leaves"];
 
-    /// <summary>Every need a story or option can name.</summary>
+    /// <summary>Every need a story or option can name; besides these, precedent:id, decree:id and season:id, each negated with a leading !.</summary>
     public static readonly string[] Needs =
-        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor"];
+        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward"];
+
+    private static readonly string[] Prefixed = ["precedent:", "decree:", "season:"];
+
+    /// <summary>Whether content may name this need: a plain one, or a precedent, decree or season the content defines.</summary>
+    public static bool KnownNeed(Content c, string need)
+    {
+        if (Needs.Contains(need)) return true;
+        string n = need.TrimStart('!');
+        if (n.StartsWith("precedent:", StringComparison.Ordinal)) return c.Stories.Precedent(n[10..]) != null;
+        if (n.StartsWith("decree:", StringComparison.Ordinal)) return c.Stories.Decree(n[7..]) != null;
+        if (n.StartsWith("season:", StringComparison.Ordinal)) return c.Seasons.Seasons.Any(x => x.Id == n[7..]);
+        return false;
+    }
+
+    /// <summary>Whether content may name this effect: a plain one, or a decree or precedent the content defines.</summary>
+    public static bool KnownEffect(Content c, string key) =>
+        EffectKeys.Contains(key)
+        || key.StartsWith("decree:", StringComparison.Ordinal) && c.Stories.Decree(key[7..]) != null
+        || key.StartsWith("precedent:", StringComparison.Ordinal) && c.Stories.Precedent(key[10..]) != null;
 
     // ---------- The mayor ----------
 
@@ -439,6 +491,7 @@ public static class Stories
     {
         var r = Rules(town);
         var st = town.Stories;
+        Decrees.Daily(town);
         foreach (var s in Pending(town))
             if (town.Tick >= s.DueTick) Lapse(town, s);
         if (autoMayor)
@@ -454,12 +507,12 @@ public static class Stories
             if (Bind(town, d) is { } bound) fits.Add((d, bound));
         }
         if (fits.Count == 0) return;
-        double total = Js.Sum(fits, f => f.Def.Weight);
+        double total = Js.Sum(fits, f => WeightOf(town, f.Def));
         double roll = town.Rng.Next() * total;
         var pick = fits[^1];
         foreach (var f in fits)
         {
-            roll -= f.Def.Weight;
+            roll -= WeightOf(town, f.Def);
             if (roll < 0)
             {
                 pick = f;
@@ -468,6 +521,8 @@ public static class Stories
         }
         Begin(town, pick.Def, pick.Bound);
     }
+
+    private static double WeightOf(Town town, StoryDef d) => d.Weight + d.PerHundred * town.Population / 100.0;
 
     /// <summary>Open a story now, binding what it is about; null when its needs are not met. Tests and scripted shots call it directly.</summary>
     public static Story? Open(Town town, string defId)
@@ -493,7 +548,7 @@ public static class Stories
         return s;
     }
 
-    private static List<int> Agents(Story s) => s.HeroId is int h ? [h] : [];
+    private static List<int> Agents(Story s) => s.HeroId is int h ? [h] : s.PetitionerId is int p ? [p] : [];
 
     /// <summary>Bind what a story is about from the town as it stands, or null if one of its needs is unmet.</summary>
     private static Story? Bind(Town town, StoryDef d)
@@ -617,8 +672,35 @@ public static class Stories
                 return town.Treasury < 150;
             case "watch":
                 return town.Watch >= 1;
+            case "petitioner":
+            {
+                if (s.PetitionerId is int pid) return town.Agent(pid) is { Departed: false };
+                if (!bind) return false;
+                var a = Pick(town.Workers.Where(a => a.HomeId != null && a.Age >= 18).OrderBy(a => a.Id).ToList());
+                s.PetitionerId = a?.Id;
+                return a != null;
+            }
+            case "ward":
+            {
+                if (s.Ward != null) return true;
+                if (!bind) return false;
+                var open = town.City.OpenWards;
+                // A petition comes from the newer wards when there are any: the old town has had its say.
+                var wards = open.Count > 1 ? open.Where(w => w != open[0]).ToList() : open.ToList();
+                s.Ward = wards.Count == 0 ? null : wards[town.Rng.Range(0, wards.Count)];
+                return s.Ward != null;
+            }
             default:
-                throw new InvalidDataException($"Unknown story need {need}");
+            {
+                bool not = need.StartsWith('!');
+                string n = not ? need[1..] : need;
+                bool holds;
+                if (n.StartsWith("precedent:", StringComparison.Ordinal)) holds = town.Stories.Precedents.ContainsKey(n[10..]);
+                else if (n.StartsWith("decree:", StringComparison.Ordinal)) holds = Decrees.InForce(town, n[7..]);
+                else if (n.StartsWith("season:", StringComparison.Ordinal)) holds = Seasons.Current(town).Id == n[7..];
+                else throw new InvalidDataException($"Unknown story need {need}");
+                return holds != not;
+            }
         }
     }
 
@@ -748,7 +830,7 @@ public static class Stories
     {
         var said = new List<string>();
         foreach (var key in effects.Keys)
-            if (!EffectKeys.Contains(key)) throw new InvalidDataException($"Unknown story effect {key} in {s.Def}");
+            if (!KnownEffect(town.Content, key)) throw new InvalidDataException($"Unknown story effect {key} in {s.Def}");
         foreach (var key in EffectKeys)
         {
             if (!effects.TryGetValue(key, out double v) || v == 0) continue;
@@ -827,6 +909,37 @@ public static class Stories
                 case "inspiration":
                     Sheet.Inspire(town, (int)v, "");
                     break;
+                case "people":
+                {
+                    int n = Population.Settle(town, (int)v);
+                    if (n != 0) said.Add($"{(n > 0 ? "+" : "−")}{Math.Abs(n)} {(Math.Abs(n) == 1 ? "settler" : "settlers")}");
+                    break;
+                }
+                case "leaves":
+                    // The petitioner, and their household, give up on the town.
+                    if (s.PetitionerId is int pid && town.Agent(pid) is { Departed: false } pa)
+                    {
+                        Population.Depart(town, pa);
+                        if (pa.SpouseId is int sp && town.Agent(sp) is { Departed: false } spouse) Population.Depart(town, spouse);
+                        said.Add($"{pa.GivenName} leaves {town.Name}");
+                    }
+                    break;
+            }
+        }
+        // Decrees and precedents follow, in the order the outcome names them.
+        foreach (var (key, v) in effects.OrderBy(e => e.Key, StringComparer.Ordinal))
+        {
+            if (key.StartsWith("decree:", StringComparison.Ordinal))
+            {
+                string id = key[7..];
+                if (v < 0) Decrees.Repeal(town, id);
+                else said.Add(Decrees.Enact(town, id, (int)v));
+            }
+            else if (key.StartsWith("precedent:", StringComparison.Ordinal))
+            {
+                string id = key[10..];
+                if (v < 0) town.Stories.Precedents.Remove(id);
+                else if (!town.Stories.Precedents.ContainsKey(id)) town.Stories.Precedents[id] = town.Day;
             }
         }
         return said.Count == 0 ? "" : $" ({string.Join(", ", said)})";
@@ -846,7 +959,7 @@ public static class Stories
                 var o = stage.Options[i];
                 if (Blocked(town, s, o) != null || (o.Cost > 0 && town.Treasury < o.Cost + 100)) continue;
                 double c = Chance(town, s, o);
-                double score = c - o.Cost / 200;
+                double score = c - o.Cost / 200 + o.Prefer;
                 if (score > bestScore + 1e-9)
                 {
                     best = i;
@@ -889,6 +1002,11 @@ public static class Stories
         Put("{party}", () => s.PartyId is int p && town.Parties.FirstOrDefault(x => x.Id == p) is { } party ? party.Name : "the party");
         Put("{power}", () => s.Power is string pid && town.Content.History.Powers.FirstOrDefault(p => p.Id == pid) is { } pw ? pw.Name : "an old power");
         Put("{god}", () => Faith.Prose(Faith.TempleGod(town) ?? Faith.CharterGod(town)));
+        Put("{petitioner}", () => s.PetitionerId is int p ? town.Agent(p).Name : "a townsman");
+        Put("{petitionerName}", () => s.PetitionerId is int p ? town.Agent(p).GivenName : "the petitioner");
+        Put("{trade}", () => s.PetitionerId is int p ? town.Agent(p).Profession.ToLowerInvariant() : "townsman");
+        Put("{ward}", () => s.Ward is string w ? City.Ward(town, w).Name : "the old town");
+        Put("{season}", () => Seasons.Current(town).Name.ToLowerInvariant());
         return Cap(sb.ToString());
     }
 

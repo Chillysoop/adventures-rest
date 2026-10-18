@@ -20,7 +20,7 @@ public static class Brain
             if (!x.Departed && x.Activity == Activity.Drinking && x.LocationId is int at) drinkers[at] = drinkers.GetValueOrDefault(at) + 1;
         town.HourTaverns = town.Taverns;
         town.Drinkers = drinkers;
-        double festival = Council.FestivalMood(town) + Seasons.Mood(town);
+        double festival = Council.FestivalMood(town) + Seasons.Mood(town) + Decrees.Mood(town);
         foreach (var a in town.Agents)
         {
             if (a.Departed || a.IsAway) continue;
@@ -165,7 +165,7 @@ public static class Brain
         if (b.IsSite)
         {
             a.Activity = Activity.Building;
-            b.BuildProgress += Math.Max(0.5, 1 + 0.1 * Rng.Modifier(a.Abilities.Str)) * Seasons.Build(town);
+            b.BuildProgress += Math.Max(0.5, 1 + 0.1 * Rng.Modifier(a.Abilities.Str)) * Seasons.Build(town) * Decrees.Build(town);
             if (b.OwnerId != a.Id)
             {
                 double pay = Math.Min(ConstructionWage, b.LaborBudget);

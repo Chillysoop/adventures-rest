@@ -229,6 +229,7 @@ public static class TreasuryAccount
     public const string Stores = "Winter stores";
     public const string Intel = "Intel";
     public const string Stories = "Stories";
+    public const string Decrees = "Decrees";
 }
 
 /// <summary>How the campaign ended.</summary>

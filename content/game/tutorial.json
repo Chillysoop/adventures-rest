@@ -168,6 +168,15 @@
       "teaches": ["command:AdvanceMayor"]
     },
     {
+      "id": "petitions",
+      "title": "Petitions and hard choices",
+      "text": "As the town grows, its people bring you [b]petitions[/b]: a moved boundary stone, a road deep in mud, a widow of the watch. Some of your answers put a [b]decree[/b] in force for a while, such as lifted tolls or a curfew, and some choices are hard ones the town remembers. Open [b]Mayor[/b] to see the decrees in force and what the town remembers. Later stories turn on them.",
+      "when": "day:70",
+      "point": "tab:Mayor",
+      "until": "tab:Mayor",
+      "teaches": []
+    },
+    {
       "id": "campaign-map",
       "title": "The campaign map",
       "text": "Press [b]M[/b] or [b]Campaign map[/b] to see the same land as an inked map. Drop markers to plan, drag them to move them, and press [b]Delete[/b] to remove the one under the cursor.",
