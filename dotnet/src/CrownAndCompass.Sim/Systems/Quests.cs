@@ -435,8 +435,8 @@ public static class Quests
                 members.Add(r);
                 levels += r.Hero!.Level;
             }
-            // Heroes won't walk into a site they can't handle; the bounty waits for a stronger company. Good arms count for levels.
-            if (levels + (int)Math.Floor(Gear.Levels(town.Content, members) * members.Count) < 3 * tier || members.Count < 3) continue;
+            // Heroes won't walk into a site they can't handle; the bounty waits for a stronger company.
+            if (levels < 3 * tier || members.Count < 3) continue;
 
             var party = Launch(town, members, s, bounty);
             town.Log(
