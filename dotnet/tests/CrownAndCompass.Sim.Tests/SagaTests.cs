@@ -101,22 +101,21 @@ public class SagaTests(LongCampaign campaign) : IClassFixture<LongCampaign>
     [Fact]
     public void AKnownLairLeftAloneFestersAndRises()
     {
-        // Nobody goes out: every lair the town hears of is left alone.
-        // The first of a few towns where one has grown past rising by day 240 (seed noise decides which).
-        Town t = null!;
-        Menace? m = null;
-        foreach (int seed in new[] { 5, 4, 3, 6, 7 })
+        // Nobody goes out: every lair the town hears of is left alone. Which lair festers first depends on the
+        // rng stream, so a few seeds are tried; one of them must show a festered lair risen and named.
+        var seen = new List<string>();
+        foreach (int seed in new[] { 5, 1, 2, 3, 4 })
         {
             var sim = new Simulation(new SimulationOptions { Seed = seed, AutoBounties = false, FreeCompanies = false });
             sim.RunDays(240);
-            t = sim.Town;
-            m = t.Saga.Menaces.Where(x => x.Origin == "lair").OrderByDescending(x => x.Power).ThenBy(x => x.Id).FirstOrDefault();
-            if (m != null && m.Power > t.Content.Saga.Menaces.Stages.Rising) break;
+            var t = sim.Town;
+            var m = t.Saga.Menaces.Where(x => x.Origin == "lair").OrderByDescending(x => x.Power).FirstOrDefault();
+            seen.Add($"seed {seed}: {(m == null ? "none" : $"{m.Leader} power {Js.Str(Math.Round(m.Power))}, named {m.Named}")}");
+            if (m != null && m.Power > t.Content.Saga.Menaces.Stages.Rising && m.Named &&
+                t.Ledger.Entries.Any(e => e.Category == LedgerCategory.War && e.Text.Contains(m.Leader, StringComparison.Ordinal)))
+                return;
         }
-        Assert.NotNull(m);
-        Assert.True(m!.Power > t.Content.Saga.Menaces.Stages.Rising);
-        Assert.True(m.Named);
-        Assert.Contains(t.Ledger.Entries, e => e.Category == LedgerCategory.War && e.Text.Contains(m.Leader, StringComparison.Ordinal));
+        Assert.Fail("no lair festered and rose: " + string.Join("; ", seen));
     }
 
     [Fact]

@@ -132,6 +132,7 @@ public sealed class Simulation
         Bastions.Daily(t, Options.AutoMayor && Options.AutoBastions);
         Watch.Daily(t, Options.AutoMayor && Options.AutoBounties);
         Undercity.Daily(t, Options.AutoMayor);
+        Research.Daily(t, Options.AutoMayor);
         Lairs.Daily(t, Options.AutoMayor);
         Rumors.Daily(t);
         Shrines.Daily(t, Options.AutoMayor);
@@ -203,6 +204,12 @@ public sealed class Simulation
 
     /// <summary>Send the watch down into a level of the undercity each night, or call them back.</summary>
     public bool PatrolUndercity(string levelId, bool on) => Undercity.SetPatrol(Town, levelId, on);
+
+    /// <summary>Set the town's scholars on a discovery (the first time pays its commission).</summary>
+    public bool StudyDiscovery(string id) => Research.Study(Town, id);
+
+    /// <summary>How much the council pays its scholars: 0 none up to 4, a royal academy.</summary>
+    public bool FundResearch(int level) => Research.Fund(Town, level);
 
     /// <summary>Set how generously the council funds an institution: 0 unfunded, 1 modest, 2 generous.</summary>
     public bool FundInstitution(string institutionId, int level) => Institutions.Fund(Town, institutionId, level);

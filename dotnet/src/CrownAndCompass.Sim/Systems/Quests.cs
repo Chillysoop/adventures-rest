@@ -292,6 +292,7 @@ public static class Quests
         };
         // Masters of arms who retired here train the newcomers.
         sheet.Xp += Legacies.MentorXp(town, level);
+        sheet.Xp += (int)Math.Floor(Research.Xp(town) * XpToNext(level));
         sheet.MaxHp = Expedition.HeroMaxHp(sheet, a.Abilities.Con);
         sheet.Hp = sheet.MaxHp;
         Gear.Equip(town.Content.Library, sheet);
