@@ -96,11 +96,25 @@ public static class Merchants
             if (price > offer) (best, offer) = (shop, price);
         }
         if (best == null) return false;
+        // The hero talks the keeper up, if they can, as far as the shop's purse goes.
+        offer = Math.Floor(Math.Min(offer * (1 + Haggle(town, best, a)), Math.Max(offer, Purse(town, best) - r.Keep)));
         Pay(town, best, offer);
         a.Gold += offer;
         town.Wares.Add(new Ware { ShopId = best.Id, ItemId = it.Id, Paid = offer, Day = town.Day });
         town.Log(LedgerCategory.Business, Importance.Routine, $"{a.Name} sells the {it.Name} to {best.Name} for {Js.Str(offer)} gold. It goes up on the shelf.", [a.Id]);
         return true;
+    }
+
+    /// <summary>
+    /// A hero haggles with the shopkeeper: their Persuasion against the keeper's Insight. What share of the
+    /// price the hero wins (0 if the keeper holds firm, or nobody keeps the shop).
+    /// </summary>
+    public static double Haggle(Town town, Building shop, Agent hero)
+    {
+        if (shop.OwnerId is not int o || town.Agent(o) is not { Departed: false } keeper || keeper.Id == hero.Id) return 0;
+        var c = town.Content.Skills.Check("bargain");
+        var (h, _) = Skills.Contest(town, hero, c.Skill, keeper, "insight", "bargain", shop.Id);
+        return !h.Success ? 0 : h.Critical ? c.Critical : c.Success;
     }
 
     /// <summary>What a shop can pay with: its till and its keeper's own savings.</summary>

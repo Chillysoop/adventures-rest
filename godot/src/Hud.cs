@@ -231,7 +231,7 @@ public partial class Main
         AddChild(_inspector);
         _inspector.AnchorTop = _inspector.AnchorBottom = 1;
         _inspector.OffsetBottom = -(DockHeight + Gap * 2 + 16);
-        _inspector.OffsetTop = _inspector.OffsetBottom - 380;
+        _inspector.OffsetTop = _inspector.OffsetBottom - 540;
         PlaceInspector();
     }
 

@@ -329,10 +329,16 @@ public static class Gear
     private static void Buy(Town town, Agent a, Offer o)
     {
         var s = a.Hero!;
-        a.Gold -= o.Price;
-        if (o.Ware != null) Merchants.Bought(town, o.Shop, o.Ware, o.Price);
+        if (o.Ware != null)
+        {
+            // Second-hand pieces are haggled over; new stock goes at the price on the board.
+            double price = Math.Ceiling(o.Price * (1 - Merchants.Haggle(town, o.Shop, a)));
+            a.Gold -= price;
+            Merchants.Bought(town, o.Shop, o.Ware, price);
+        }
         else
         {
+            a.Gold -= o.Price;
             double tax = o.Price * town.TaxRate;
             town.Book(TreasuryAccount.SalesTax, tax);
             o.Shop.Cash += o.Price - tax - o.Price * Rules(town).Wholesale;

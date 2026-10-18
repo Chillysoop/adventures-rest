@@ -46,6 +46,8 @@ public static class Social
                         : town.Rng.Pick(patrons.Where(x => x.Id != p.Id).ToList());
                 Interact(town, tavern, p, partner);
             }
+            Skills.Perform(town, tavern, patrons);
+            Skills.Pickpocket(town, tavern, patrons);
         }
     }
 
@@ -55,9 +57,11 @@ public static class Social
         int before = q.OpinionOf(p.Id);
         int beforeMutual = p.OpinionOf(q.Id);
 
-        int roll = rng.D20();
-        int total =
-            roll + Rng.Modifier(p.Abilities.Cha) + (p.Has(Trait.Gregarious) ? 2 : 0) - (p.Has(Trait.Shy) ? 2 : 0) - (p.Drinks >= 3 ? 2 : 0) + before / 25;
+        // Persuasion: the ale, their nature and what the listener already thinks of them all count.
+        var talk = Skills.Roll(town, p, town.Content.Skills.Check("talk").Skill, 9, "talk", q.Id, tavern.Id,
+            (p.Has(Trait.Gregarious) ? 2 : 0) - (p.Has(Trait.Shy) ? 2 : 0) - (p.Drinks >= 3 ? 2 : 0) + before / 25);
+        int roll = talk.Die;
+        int total = talk.Total;
 
         int delta = roll == 20 ? 15 : total >= 15 ? 8 : total >= 9 ? 3 : total >= 5 ? -3 : q.Has(Trait.HotTempered) ? -16 : -10;
         int after = q.ChangeOpinion(p.Id, delta);
@@ -78,9 +82,18 @@ public static class Social
         // Brawl.
         if (after <= RivalThreshold && (q.Has(Trait.HotTempered) || q.Drinks >= 3) && rng.Chance(0.35))
         {
+            if (Skills.Calm(town, tavern, q)) return;
             if (town.Watch > 0 && rng.Chance(Council.WatchStrength(town)))
-                town.Log(LedgerCategory.Brawl, Importance.Routine, $"The watch steps in at {tavern.Name} before {q.Name} can swing at {p.Name}.", [q.Id, p.Id]);
-            else Brawl(town, tavern, q, p);
+            {
+                var face = Skills.Intimidate(town, tavern, q);
+                if (face.Success)
+                {
+                    town.Log(LedgerCategory.Brawl, Importance.Routine, $"The watch steps in at {tavern.Name} and stares {q.Name} down before they can swing at {p.Name} ({Skills.Said(town, face)}).", [q.Id, p.Id]);
+                    return;
+                }
+                town.Log(LedgerCategory.Brawl, Importance.Routine, $"The watch shouts at {q.Name} to sit down, and {q.GivenName} swings anyway ({Skills.Said(town, face)}).", [q.Id, p.Id]);
+            }
+            Brawl(town, tavern, q, p);
             return;
         }
 
@@ -109,11 +122,10 @@ public static class Social
     private static void Brawl(Town town, Building tavern, Agent attacker, Agent target)
     {
         var rng = town.Rng;
-        int ar = rng.D20();
-        int tr = rng.D20();
-        int am = Rng.Modifier(attacker.Abilities.Str);
-        int tm = Rng.Modifier(target.Abilities.Str);
-        bool attackerWins = ar + am >= tr + tm;
+        string skill = town.Content.Skills.Check("brawl").Skill;
+        var (ac, tc) = Skills.Contest(town, attacker, skill, target, skill, "brawl", tavern.Id);
+        int ar = ac.Die, tr = tc.Die, am = ac.Bonus, tm = tc.Bonus;
+        bool attackerWins = ac.Success;
         var winner = attackerWins ? attacker : target;
         var loser = attackerWins ? target : attacker;
         var (wr, wm, lr, lm) = attackerWins ? (ar, am, tr, tm) : (tr, tm, ar, am);
@@ -127,6 +139,8 @@ public static class Social
         loser.LocationId = loser.HomeId;
         attacker.ChangeOpinion(target.Id, -20);
         target.ChangeOpinion(attacker.Id, -20);
+        var around = town.Agents.Where(a => !a.Departed && a.Activity == Activity.Drinking && a.LocationId == tavern.Id && a.Id != winner.Id);
+        var healer = Skills.Tend(town, tavern, loser, around);
 
         string crit = wr == 20 ? " A natural 20!" : lr == 1 ? " A natural 1." : "";
         town.Log(
@@ -134,7 +148,8 @@ public static class Social
             Importance.Notable,
             $"A brawl breaks out at {tavern.Name}: {attacker.Name} swings at {target.Name}. " +
             $"{winner.GivenName} (d20 {wr}{Sign(wm)}) lays {loser.GivenName} (d20 {lr}{Sign(lm)}) out cold.{crit} " +
-            $"{loser.GivenName} pays {Js.ToFixed(paid, 0)} gold for the broken chairs.",
+            $"{loser.GivenName} pays {Js.ToFixed(paid, 0)} gold for the broken chairs." +
+            (healer != null ? $" {healer.Name} sees to the bruises." : ""),
             [attacker.Id, target.Id]);
     }
 
