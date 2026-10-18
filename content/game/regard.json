@@ -1,13 +1,14 @@
 {
   "step": 8,
   "decay": 0.99,
-  "loyalty": 0.3,
-  "maxLoyalty": 15,
+  "loyalty": 0.25,
+  "maxLoyalty": 10,
   "admire": 24,
   "aggrieved": -20,
   "personalLevel": 3,
   "friend": 2,
   "rival": -2,
+  "standIn": 0.4,
   "tags": [
     { "id": "mercy", "name": "mercy" },
     { "id": "harsh", "name": "a hard hand" },

@@ -1125,7 +1125,7 @@ public static class Stories
                 var o = stage.Options[i];
                 if (Blocked(town, s, o) != null || (o.Cost > 0 && town.Treasury < o.Cost + 100)) continue;
                 double c = Chance(town, s, o);
-                double score = c - o.Cost / 200 + o.Prefer;
+                double score = c - o.Cost / 200 + o.Prefer + Regard.Sway(town, o.Tags);
                 if (score > bestScore + 1e-9)
                 {
                     best = i;

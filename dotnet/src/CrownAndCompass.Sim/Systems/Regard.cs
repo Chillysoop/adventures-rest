@@ -46,6 +46,9 @@ public sealed record RegardRules
     /// <summary>Added to a party's check when the hero making it has a friend beside them, or a rival.</summary>
     public int Friend { get; init; } = 2;
     public int Rival { get; init; } = -2;
+
+    /// <summary>How far the stand-in mayor leans toward choices the heroes would like (the share pleased less the share angered, times this).</summary>
+    public double StandIn { get; init; } = 0.4;
     public List<RegardTag> Tags { get; init; } = [];
     public List<TemperDef> Tempers { get; init; } = [];
 
@@ -113,6 +116,15 @@ public static class Regard
             else if (v < 0) angered.Add(a);
         }
         return (pleased, angered);
+    }
+
+    /// <summary>How much the stand-in mayor leans toward a choice for what the heroes in town would make of it: the share pleased less the share angered, weighted.</summary>
+    public static double Sway(Town town, IReadOnlyCollection<string> tags)
+    {
+        if (tags.Count == 0) return 0;
+        var (pleased, angered) = Reactions(town, tags);
+        int heroes = town.Heroes.Count;
+        return heroes == 0 ? 0 : Rules(town).StandIn * (pleased.Count - angered.Count) / heroes;
     }
 
     /// <summary>
