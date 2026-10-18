@@ -1140,8 +1140,8 @@ public static class Menaces
             foreach (var c in champions)
             {
                 if (result.Dead.Contains(c.Id)) continue;
-                c.Hero!.Renown += 10;
-                c.Hero.Kills += result.Kills.Get(c.Id, 0);
+                Notoriety.Deed(town, c, "slay", 10);
+                c.Hero!.Kills += result.Kills.Get(c.Id, 0);
             }
             slain = result.Outcome == ExpeditionOutcome.Cleared;
         }

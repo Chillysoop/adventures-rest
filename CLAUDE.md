@@ -37,6 +37,10 @@
   that carries between runs; each feature owns a section (`legends` now). The sim never reads it: the client passes it
   in `SimulationOptions` (`Legends`), and the town keeps what it used in saved state. Turncoats and returning legends
   are `Systems/Turning.cs` with numbers in saga.json `turning`.
+- Notoriety (`Systems/Notoriety.cs`, numbers in `content/game/notoriety.json`): heroes (`HeroSheet.Renown`, `Infamy`,
+  `Epithet`) and companies (`CompanyState.Renown`, `Infamy`) earn fame or infamy through `Notoriety.Deed`/`CompanyDeed`;
+  new deeds that should make a name call those rather than adding to `Renown` directly. Stories bind them with the
+  `famous`/`infamous` needs.
 - Alerts (the Paradox-style icon strip): raise one from the sim by adding a kind and a rule in `Systems/Alerts.cs`
   (rules read the town, never write or roll dice; an alert lasts while its rule names it). Each alert is one action for the player; news goes to the Ledger, not the strip.
 - Institutions (`content/game/institutions.json`, `Systems/Institutions.cs`, client `godot/src/Institutions.cs`): a

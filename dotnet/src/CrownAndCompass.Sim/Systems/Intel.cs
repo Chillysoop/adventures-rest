@@ -12,6 +12,10 @@ public sealed class CompanyState
     public double GoldPaid { get; set; }
     public int Refusals { get; set; }
 
+    /// <summary>The company's name abroad: fame from its deeds, infamy from its members' (<see cref="Notoriety"/>).</summary>
+    public int Renown { get; set; }
+    public int Infamy { get; set; }
+
     /// <summary>Turned down an offer and will not hear another before this tick.</summary>
     public int? SulkUntil { get; set; }
 }
@@ -138,7 +142,7 @@ public static class Intel
         var r = town.Content.World.Intel;
         var tellers = Tellers(town, party);
         double rel = Relation(town, party.Name, tellers);
-        double markup = r.Hostile + (r.Friendly - r.Hostile) * rel / 100 + (tellers.Count > 0 && tellers[0].Has(Trait.Greedy) ? r.Greedy : 0);
+        double markup = r.Hostile + (r.Friendly - r.Hostile) * rel / 100 + (tellers.Count > 0 && tellers[0].Has(Trait.Greedy) ? r.Greedy : 0) + Notoriety.IntelMarkup(town, party.Name);
         return Math.Max(1, Js.Round(Worth(town, party) * markup));
     }
 

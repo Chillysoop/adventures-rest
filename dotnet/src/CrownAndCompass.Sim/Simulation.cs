@@ -134,6 +134,7 @@ public sealed class Simulation
         Institutions.Daily(t, Options.AutoMayor && Options.AutoPlanning);
         Regard.Daily(t);
         Loyalty.Daily(t, Options.AutoMayor);
+        Notoriety.Daily(t);
         Decor.Daily(t);
         Stories.Daily(t, Options.AutoMayor && Options.AutoStories);
         Sheet.Daily(t, Options.AutoMayor && Options.AutoStories);

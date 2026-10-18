@@ -376,7 +376,7 @@ public static class Stories
     /// precedent:id (1 sets it, -1 forgets it) and calling:id (1: the story's hero takes it up, -1: it ends).
     /// </summary>
     public static readonly string[] EffectKeys =
-        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "esteem", "goodwill", "goodwill2", "heroXp", "personal", "dismiss", "edge", "swell", "partyHurt", "rest", "slots", "loot", "partyLoyalty", "turnBack"];
+        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "esteem", "goodwill", "goodwill2", "heroXp", "personal", "dismiss", "edge", "swell", "partyHurt", "rest", "slots", "loot", "partyLoyalty", "turnBack", "infamy", "exile"];
 
     /// <summary>
     /// Every need a story or option can name; besides these, precedent:id, decree:id, season:id and
@@ -385,7 +385,7 @@ public static class Stories
     /// with no calling yet) and faction:id (binds that faction while it has a chapter).
     /// </summary>
     public static readonly string[] Needs =
-        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "settlement", "route", "courted", "veteran", "fallen", "admirer", "aggrieved", "abroad", "homeward", "victorious"];
+        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "settlement", "route", "courted", "veteran", "fallen", "admirer", "aggrieved", "abroad", "homeward", "victorious", "famous", "infamous"];
 
     private static readonly string[] Prefixed = ["precedent:", "decree:", "season:"];
 
@@ -642,6 +642,19 @@ public static class Stories
                 if (s.HeroId is int h) return Hero(town, h) is { } a && (need == "hero" || a.Hero!.Restless);
                 if (!bind) return false;
                 var a2 = Pick(town.Heroes.Where(a => !a.IsAway && (need == "hero" || a.Hero!.Restless)).OrderBy(a => a.Id).ToList());
+                s.HeroId = a2?.Id;
+                return a2 != null;
+            }
+            case "famous":
+            case "infamous":
+            {
+                var nr = town.Content.Notoriety;
+                bool Fits(Agent a) => need == "famous"
+                    ? Notoriety.FameTier(town, a.Hero!) >= nr.StoryFame
+                    : Notoriety.InfamyTier(town, a.Hero!) >= nr.StoryInfamy;
+                if (s.HeroId is int h) return Hero(town, h) is { } a && Fits(a);
+                if (!bind) return false;
+                var a2 = Pick(town.Heroes.Where(a => !a.IsAway && Fits(a)).OrderBy(a => a.Id).ToList());
                 s.HeroId = a2?.Id;
                 return a2 != null;
             }
@@ -1130,7 +1143,30 @@ public static class Stories
                     break;
                 }
                 case "renown":
-                    if (s.HeroId is int rh && Hero(town, rh) is { } ra) ra.Hero!.Renown = Math.Max(0, ra.Hero.Renown + (int)v);
+                case "infamy":
+                    // The bound hero's name, and their company's with it.
+                    if (s.HeroId is int nh && Hero(town, nh) is { } na)
+                    {
+                        var ns = na.Hero!;
+                        if (key == "renown")
+                        {
+                            if (v > 0) Notoriety.Deed(town, na, "story", (int)v);
+                            else ns.Renown = Math.Max(0, ns.Renown + (int)v);
+                            if (ns.PartyName != null) Notoriety.CompanyDeed(town, ns.PartyName, (int)Math.Max(0, v / 2));
+                        }
+                        else if (v > 0) Notoriety.Deed(town, na, "brawl", 0, (int)v);
+                        else ns.Infamy = Math.Max(0, ns.Infamy + (int)v);
+                        said.Add($"{na.GivenName}'s {(key == "renown" ? "renown" : "infamy")} {(v > 0 ? "+" : "−")}{Js.Str(Math.Abs(v))}");
+                    }
+                    break;
+                case "exile":
+                    // The bound hero is handed over or sent away.
+                    if (s.HeroId is int gone && Hero(town, gone) is { } exiled)
+                    {
+                        Loyalty.Strip(exiled);
+                        Population.Depart(town, exiled);
+                        said.Add($"{exiled.GivenName} leaves {town.Name}");
+                    }
                     break;
                 case "heat":
                     if (s.FactionId is string hf && Factions.Find(town, hf) is { } hfs) hfs.Heat = Math.Clamp(hfs.Heat + v, 0, 100);
