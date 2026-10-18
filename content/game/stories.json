@@ -4154,6 +4154,171 @@
       "ignored": { "text": "The chalice goes back without a word from the mayor. The merchants take note.", "effects": { "mandate": -2 } }
     },
     {
+      "id": "gift-wells", "title": "A stranger at the well", "stakes": "medium", "source": "town",
+      "needs": ["!precedent:fey-bargain"], "minDay": 40, "repeatDays": 400,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A tall stranger in a green coat stands at the town well, trailing their fingers in the water. They say they could make every well in {town} run sweet and cold forever, as a gift. They ask nothing now. Nobody saw them come through the gate.",
+          "options": [
+            {
+              "label": "Accept the gift with thanks", "tags": ["coin", "valor"],
+              "success": { "text": "The stranger smiles too widely and is gone. By morning the water tastes like spring rain, and the fields drink deep.", "effects": { "food": 80, "mandate": 3, "precedent:fey-bargain": 1 } }
+            },
+            {
+              "label": "Ask what it will cost", "tags": ["caution"], "skill": "insight", "dc": 14,
+              "success": { "text": "\"Nothing that you would miss,\" they say, and you see they mean it to be a riddle. You turn them away, politely.", "effects": { "mandate": 1 } },
+              "failure": { "text": "They laugh and say it is a gift. You can't read them, and you send them off to be safe. The townsfolk wonder why.", "effects": { "mandate": -1 } }
+            },
+            {
+              "label": "Send for the priests", "tags": ["faith", "caution"],
+              "success": { "text": "The stranger does not wait for the priests. The bucket they touched has sprouted moss.", "effects": { "favour": 2 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "The stranger is gone by dusk. The well water tastes faintly of mint for a week." }
+    },
+    {
+      "id": "gift-wells-due", "title": "The green coat returns", "stakes": "high", "source": "town",
+      "needs": ["precedent:fey-bargain"], "repeatDays": 400,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The stranger in the green coat is back at the well, and the water has gone still. \"A gift is a gift,\" they say, \"and thanks are thanks. I'll take {town}'s summer songs. Every one, for a year and a day.\"",
+          "options": [
+            {
+              "label": "Give them the songs", "tags": ["caution"],
+              "success": { "text": "The taverns fall quiet. Nobody can remember a tune all year, and the festivals are dull, grey things.", "effects": { "mandate": -5, "precedent:fey-bargain": -1 } }
+            },
+            {
+              "label": "Offer gold instead", "tags": ["coin", "generous"], "cost": 250,
+              "success": { "text": "They weigh the purse, sniff it, and accept with a sigh. The wells stay sweet.", "effects": { "precedent:fey-bargain": -1 } }
+            },
+            {
+              "label": "Out-bargain them", "tags": ["guile"], "skill": "deception", "dc": 16,
+              "success": { "text": "You offer them every song the town has yet to write. They laugh until they cry, and go. The wells stay sweet.", "effects": { "mandate": 3, "precedent:fey-bargain": -1 } },
+              "failure": { "text": "They see through it and take the songs and the sweet water both. The wells run brackish.", "effects": { "mandate": -5, "food": -60, "precedent:fey-bargain": -1 } }
+            },
+            {
+              "label": "Refuse and break the bargain", "tags": ["valor", "freedom"],
+              "success": { "text": "The stranger shrugs. By morning every well in {town} is brackish, and the fields wilt.", "effects": { "food": -100, "mandate": -2, "dread": 3, "precedent:fey-bargain": -1 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "Nobody answers the stranger, so they take what they came for. The taverns go quiet for a year.", "effects": { "mandate": -5, "precedent:fey-bargain": -1 } }
+    },
+    {
+      "id": "gift-contract", "title": "A notary with a purse", "stakes": "medium", "source": "town",
+      "needs": ["!precedent:signed-clause"], "minDay": 60, "repeatDays": 400,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A notary in immaculate black lays a heavy purse and a contract on the council table. Three hundred gold, they say, for the town's goodwill, and one small clause the mayor need not trouble with. The ink smells of hot iron.",
+          "options": [
+            {
+              "label": "Sign it", "tags": ["coin"],
+              "success": { "text": "You sign. The notary blots it, bows, and leaves the purse. Nobody saw them leave the hall.", "effects": { "gold": 300, "precedent:signed-clause": 1 } }
+            },
+            {
+              "label": "Read the small print first", "tags": ["caution", "order"], "skill": "investigation", "dc": 15,
+              "success": { "text": "The clause gives the signer's town to the notary's master on demand. You hand the contract back. The notary only smiles.", "effects": { "mandate": 2 } },
+              "failure": { "text": "The letters swim in front of your eyes. You send the notary away with nothing signed, uneasily.", "effects": {} }
+            },
+            {
+              "label": "Throw them out", "tags": ["valor", "harsh"],
+              "success": { "text": "The watch walks the notary to the gate. The scorch marks on the table don't scrub out.", "effects": { "dread": 1 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "The notary waits a day in the hall, then is simply gone, and so is the purse." }
+    },
+    {
+      "id": "gift-contract-due", "title": "The clause falls due", "stakes": "high", "source": "town",
+      "needs": ["precedent:signed-clause"], "repeatDays": 400,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The notary is back, with a copy of the contract. The clause, they explain kindly, gives their master the use of {town}'s hall for one night a month, for ever. The candles in the room burn blue as they talk.",
+          "options": [
+            {
+              "label": "Honour the contract", "tags": ["order"],
+              "success": { "text": "Once a month the hall is locked, and nobody walks past it after dark. The town knows something is wrong.", "effects": { "mandate": -6, "dread": 4, "precedent:signed-clause": -1 } }
+            },
+            {
+              "label": "Buy it back at double", "tags": ["coin", "caution"], "cost": 600,
+              "success": { "text": "The notary counts six hundred gold and tears the contract in two. It burns before it hits the floor.", "effects": { "precedent:signed-clause": -1 } }
+            },
+            {
+              "label": "Find a loophole", "tags": ["guile"], "skill": "investigation", "dc": 17,
+              "success": { "text": "The clause names the hall, and the town has a new hall now, by your quick decree. The notary's smile slips for the first time.", "effects": { "mandate": 4, "precedent:signed-clause": -1 } },
+              "failure": { "text": "There is no loophole. The notary takes the hall, and the town learns why.", "effects": { "mandate": -7, "dread": 5, "precedent:signed-clause": -1 } }
+            },
+            {
+              "label": "Have the priests burn it", "tags": ["faith", "valor"], "skill": "religion", "dc": 15,
+              "success": { "text": "The contract burns on the altar with a sound like a scream. The notary is never seen again.", "effects": { "favour": 3, "mandate": 3, "precedent:signed-clause": -1 } },
+              "failure": { "text": "It will not burn. The notary takes the hall, and the temple is shamed.", "effects": { "favour": -3, "mandate": -6, "dread": 4, "precedent:signed-clause": -1 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "The notary takes the hall without asking twice.", "effects": { "mandate": -7, "dread": 4, "precedent:signed-clause": -1 } }
+    },
+    {
+      "id": "gift-apples", "title": "A basket of red apples", "stakes": "low", "source": "town",
+      "needs": ["!precedent:crone-apples"], "minDay": 30, "repeatDays": 300,
+      "stages": [
+        {
+          "id": "start",
+          "text": "An old woman with a basket of very red apples is going door to door in the poor lanes. Anyone who eats one, she says, will never catch the fever. She'll leave the whole basket for the town, and ask a small favour later.",
+          "options": [
+            {
+              "label": "Take the basket", "tags": ["mercy", "generous"],
+              "success": { "text": "The apples go round the lanes. The coughing stops by the end of the week. She waves from the edge of the woods.", "effects": { "mandate": 3, "people": 2, "precedent:crone-apples": 1 } }
+            },
+            {
+              "label": "Have the healers test one", "tags": ["caution"], "skill": "medicine", "dc": 13,
+              "success": { "text": "The flesh is red right through to the core, and the healer's cat won't go near it. You send her on her way.", "effects": { "favour": 1 } },
+              "failure": { "text": "The healers find nothing. By the time you decide, she has gone, basket and all.", "effects": {} }
+            },
+            {
+              "label": "Run her out of town", "tags": ["harsh", "order"],
+              "success": { "text": "She goes, cackling. The apples she left on the well rot to black overnight.", "effects": { "mandate": -1 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "She leaves an apple on the mayor's doorstep. Nobody eats it." }
+    },
+    {
+      "id": "gift-apples-due", "title": "The crone's favour", "stakes": "medium", "source": "town",
+      "needs": ["precedent:crone-apples"], "repeatDays": 300,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The old woman is back for her favour. She wants the oldest stone of the town's shrine for her garden wall, and she wants it carried to the woods tonight.",
+          "options": [
+            {
+              "label": "Give her the stone", "tags": ["caution"],
+              "success": { "text": "The stone goes to the woods on a cart. The shrine feels colder afterward, and the priests won't say why.", "effects": { "favour": -4, "precedent:crone-apples": -1 } }
+            },
+            {
+              "label": "Offer her a hero's help instead", "tags": ["valor", "generous"], "skill": "persuasion", "dc": 14,
+              "success": { "text": "She accepts a season of heroes' errands in the woods, grudgingly. Nobody asks what they carry.", "effects": { "mandate": 1, "precedent:crone-apples": -1 } },
+              "failure": { "text": "She wants the stone and nothing else, and takes it while the town sleeps.", "effects": { "favour": -5, "precedent:crone-apples": -1 } }
+            },
+            {
+              "label": "Refuse her", "tags": ["valor", "faith"],
+              "success": { "text": "She hisses. That night the fever comes back to the poor lanes, worse than before.", "effects": { "people": -3, "mandate": -3, "precedent:crone-apples": -1 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "The shrine's oldest stone is gone in the morning, and moss grows in the hollow.", "effects": { "favour": -4, "precedent:crone-apples": -1 } }
+    },
+    {
       "id": "grievance", "title": "{hero} has a grievance", "stakes": "medium", "source": "heroes",
       "needs": ["aggrieved"], "repeatDays": 15, "weight": 5,
       "stages": [
@@ -4316,7 +4481,10 @@
     {"id": "parleyed", "text": "The mayor's heroes talked raiders out of their hold instead of killing them."},
     {"id": "captives-lost", "text": "Townsfolk carried off in a raid were never brought home."},
     {"id": "captives-freed", "text": "Heroes brought home townsfolk carried off in a raid."},
-    {"id": "hero-dismissed", "text": "The mayor sent a hero packing."}
+    {"id": "hero-dismissed", "text": "The mayor sent a hero packing."},
+    {"id": "fey-bargain", "text": "The mayor let a stranger in a green coat sweeten the wells.", "after": 40},
+    {"id": "signed-clause", "text": "The mayor signed a smiling notary's contract without reading the small print.", "after": 60},
+    {"id": "crone-apples", "text": "The mayor took a crone's apples to cure the fever.", "after": 30}
   ],
   "callings": [
     {"id": "towns-bard", "class": "bard", "name": "The town's bard", "mood": 1, "arrivals": 0.03, "gold": -1, "text": "Plays the tavern every night. Spirits rise, and the road hears of it."},

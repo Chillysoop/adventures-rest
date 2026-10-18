@@ -76,6 +76,9 @@ public sealed record PrecedentDef
 
     /// <summary>How the Mayor tab tells it ("The gates were opened to the refugees of {town}").</summary>
     public string Text { get; init; } = "";
+
+    /// <summary>Days after it is set before stories that call back to it can come up (a debt takes time to fall due).</summary>
+    public int After { get; init; }
 }
 
 public sealed record StakesDef
@@ -839,7 +842,8 @@ public static class Stories
                 bool not = need.StartsWith('!');
                 string n = not ? need[1..] : need;
                 bool holds;
-                if (n.StartsWith("precedent:", StringComparison.Ordinal)) holds = town.Stories.Precedents.ContainsKey(n[10..]);
+                if (n.StartsWith("precedent:", StringComparison.Ordinal))
+                    holds = town.Stories.Precedents.TryGetValue(n[10..], out int set) && (not || town.Day - set >= (town.Content.Stories.Precedent(n[10..])?.After ?? 0));
                 else if (n.StartsWith("decree:", StringComparison.Ordinal)) holds = Decrees.InForce(town, n[7..]);
                 else if (n.StartsWith("season:", StringComparison.Ordinal)) holds = Seasons.Current(town).Id == n[7..];
                 else if (n.StartsWith("building:", StringComparison.Ordinal)) holds = town.Buildings.Any(b => b.Def.Id == n[9..] && b.Complete && !b.Closed);
