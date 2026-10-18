@@ -226,6 +226,15 @@ public static class Lairs
         foreach (var a in town.Residents)
         {
             if (a.ThrallOf == null || (town.Day + a.Id) % r.ThrallStealDays != 0) continue;
+            // Past the watch first: caught, and the spell on them is broken in the cells.
+            if (!Skills.SlipPast(town, a))
+            {
+                var site = town.Sites.FirstOrDefault(x => x.Def.Id == a.ThrallOf);
+                a.ThrallOf = null;
+                town.Log(LedgerCategory.Hardship, Importance.Notable,
+                    $"The watch catches {a.Name} with a hand in the town strongbox ({Skills.Said(town, town.Checks[^1])}). In the cells they weep and swear they were made to{(site != null && site.Known != SiteKnowledge.Unheard ? $" by whatever waits at {site.Def.Name}" : "")}.", [a.Id]);
+                continue;
+            }
             // The coin goes missing quietly: the accounts show it, the Ledger does not.
             double take = Math.Min(Math.Max(0, town.Treasury), town.Rng.Range(r.ThrallSteal[0], r.ThrallSteal[1] + 1));
             if (take > 0) town.Book(TreasuryAccount.Discrepancies, -take);

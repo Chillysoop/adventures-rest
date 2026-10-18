@@ -880,13 +880,8 @@ public static class Explore
         _ => SkillKind.Hazard,
     };
 
-    /// <summary>A member's bonus on a check: the skill's ability modifier, and proficiency where their class is trained in it.</summary>
-    public static int Bonus(Town town, Agent a, string skill)
-    {
-        string ab = town.Content.Stories.Skill(skill)?.Ability ?? Ability.Wis;
-        int cls = a.Hero!.Cls.Skills.GetValueOrDefault(Kind(skill), 0);
-        return Rng.Modifier(a.Abilities[ab]) + cls + (cls > 0 ? Expedition.Proficiency(a.Hero.Level) : 0);
-    }
+    /// <summary>A member's bonus on a check: the one on their character sheet (<see cref="Skills.Bonus"/>).</summary>
+    public static int Bonus(Town town, Agent a, string skill) => Skills.Bonus(town, a, skill);
 
     /// <summary>Who in the company makes a check: the best at it.</summary>
     public static Agent? Best(Town town, IReadOnlyList<Agent> members, string skill) =>
