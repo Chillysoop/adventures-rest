@@ -15,7 +15,7 @@
     {
       "name": "Generous",
       "gold": 6,
-      "scale": 1.5,
+      "scale": 1.25,
       "regard": 50
     }
   ],
@@ -35,7 +35,7 @@
       "title": "High Priest",
       "blurb": "The temple and the shrines around it, with their almshouses, pilgrims' hostels and processions. The council decides which god's house gets the best ground and the council's coin, and that god's blessing falls on the town.",
       "service": {
-        "mood": 0.6,
+        "mood": 0.3,
         "tension": -0.1,
         "favour": 0.25
       },
@@ -50,7 +50,7 @@
             "text": "Her infirmary opens beside the temple: heroes come home from the wilds and are on their feet in days.",
             "service": {
               "heal": 0.12,
-              "mood": 0.4
+              "mood": 0.2
             }
           },
           {
@@ -94,7 +94,7 @@
             "text": "Merchants leave coins in Nim's bowl for luck, and the luck seems to stick: trade is good.",
             "service": {
               "gold": 1.5,
-              "arrivals": 0.02
+              "arrivals": 0.01
             }
           }
         ]
@@ -122,7 +122,7 @@
       "blurb": "Where companies register, read the contract board and gear up. More heroes make the town their base, and the hall's specialty shapes what its members are good for.",
       "service": {
         "heroes": 1,
-        "arrivals": 0.02,
+        "arrivals": 0.01,
         "faction": "compass-lodge",
         "standing": 0.05
       },
@@ -161,7 +161,7 @@
             "text": "Hall members bring back the lost and the wounded. Heroes heal faster between delves.",
             "service": {
               "heal": 0.1,
-              "mood": 0.2
+              "mood": 0.1
             }
           }
         ]
@@ -190,8 +190,8 @@
       "service": {
         "routes": 1,
         "gold": 1,
-        "arrivals": 0.02,
-        "mood": 0.2
+        "arrivals": 0.01,
+        "mood": 0.1
       },
       "choice": {
         "label": "which merchants the bazaar invites",
@@ -205,7 +205,7 @@
               "yields": {
                 "Cloth": 1.12
               },
-              "mood": 0.3
+              "mood": 0.15
             }
           },
           {
@@ -223,7 +223,7 @@
             "name": "spice and incense caravans",
             "text": "The streets smell of far lands, and travellers come to see what the fuss is about.",
             "service": {
-              "arrivals": 0.03,
+              "arrivals": 0.015,
               "gold": 1
             }
           },
@@ -266,7 +266,7 @@
           "Food": 1.05,
           "Herbs": 1.1
         },
-        "mood": 0.4,
+        "mood": 0.2,
         "tension": -0.05,
         "faction": "thornward-circle",
         "standing": 0.05
@@ -311,8 +311,8 @@
             "name": "the waters",
             "text": "The streams through town run clean and cold: people are healthier, and settlers notice.",
             "service": {
-              "mood": 0.4,
-              "arrivals": 0.02
+              "mood": 0.2,
+              "arrivals": 0.01
             }
           }
         ]
@@ -341,8 +341,8 @@
       "title": "Proprietor",
       "blurb": "The oldest tavern in town, grown famous: where rumours land, companies form and odd visitors come asking for help. Its style decides who drinks there.",
       "service": {
-        "mood": 0.3,
-        "arrivals": 0.01
+        "mood": 0.15,
+        "arrivals": 0.005
       },
       "choice": {
         "label": "what kind of house the tavern keeps",
@@ -354,7 +354,7 @@
             "text": "Feather beds and clean linen: merchants and wealthy travellers stay, and spend.",
             "service": {
               "gold": 1.5,
-              "arrivals": 0.03
+              "arrivals": 0.015
             }
           },
           {
@@ -364,7 +364,7 @@
             "service": {
               "heroes": 1,
               "tension": 0.06,
-              "mood": 0.2
+              "mood": 0.1
             }
           },
           {
@@ -404,7 +404,7 @@
       "text": "A young mimic sits by the tavern door as a strongbox. Troublemakers who sit on it once never come back.",
       "service": {
         "tension": -0.08,
-        "mood": 0.1
+        "mood": 0.05
       }
     },
     {
@@ -432,9 +432,9 @@
       "institution": "druid-grove",
       "text": "Willow and ash grown into a bridge over the river. Carts cross it, children climb it, and it grows a little every spring.",
       "service": {
-        "arrivals": 0.03,
+        "arrivals": 0.015,
         "build": 0.03,
-        "mood": 0.2
+        "mood": 0.1
       }
     },
     {
@@ -443,7 +443,7 @@
       "institution": "temple-district",
       "text": "A long hall of cots beside the temple for those who walk to it. Some stay.",
       "service": {
-        "arrivals": 0.02,
+        "arrivals": 0.01,
         "favour": 0.05
       }
     },
@@ -453,7 +453,7 @@
       "institution": "druid-grove",
       "text": "The awakened oak that walked to the market square, and stayed. It shades the stalls and settles arguments by dropping acorns.",
       "service": {
-        "mood": 0.3,
+        "mood": 0.15,
         "tension": -0.04
       }
     },
@@ -463,7 +463,7 @@
       "institution": "adventurers-hall",
       "text": "Heads, horns and a manticore's tail over the hall's hearth. Young heroes come to see it.",
       "service": {
-        "arrivals": 0.02,
+        "arrivals": 0.01,
         "heroes": 0.5
       }
     },
@@ -474,7 +474,7 @@
       "text": "Seeds from a far caravan, coaxed into a walled garden behind the bazaar. Its pepper sells for silver.",
       "service": {
         "gold": 0.8,
-        "mood": 0.1
+        "mood": 0.05
       }
     }
   ],
