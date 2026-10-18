@@ -20,8 +20,7 @@ public partial class Main
     private VBoxContainer _feed = null!;
     private double _clockReal;
     private Button _strategicButton = null!;
-    private HBoxContainer _markerBar = null!;
-    private readonly Dictionary<MarkerKind, Button> _markerButtons = [];
+    private Label _help = null!;
 
     private static readonly Dictionary<Tab, string> Titles = new()
     {
@@ -292,12 +291,12 @@ public partial class Main
         dock.GrowHorizontal = GrowDirection.Both;
         dock.GrowVertical = GrowDirection.Begin;
 
-        var help = Ui.Label("Scroll to zoom · drag to pan · Q/E rotate · M campaign map · double right-click to recenter", new Color("f6eedb", 0.5f), Ui.Medium, 11);
-        help.MouseFilter = MouseFilterEnum.Ignore;
-        AddChild(help);
-        help.SetAnchorsAndOffsetsPreset(LayoutPreset.CenterBottom, LayoutPresetMode.Minsize, Gap + DockHeight + 4);
-        help.GrowHorizontal = GrowDirection.Both;
-        help.GrowVertical = GrowDirection.Begin;
+        _help = Ui.Label(MapHelp, new Color("f6eedb", 0.5f), Ui.Medium, 11);
+        _help.MouseFilter = MouseFilterEnum.Ignore;
+        AddChild(_help);
+        _help.SetAnchorsAndOffsetsPreset(LayoutPreset.CenterBottom, LayoutPresetMode.Minsize, Gap + DockHeight + 4);
+        _help.GrowHorizontal = GrowDirection.Both;
+        _help.GrowVertical = GrowDirection.Begin;
     }
 
     // ---------- News feed ----------
@@ -364,24 +363,7 @@ public partial class Main
         var corner = new VBoxContainer();
         corner.AddThemeConstantOverride("separation", 6);
 
-        _markerBar = new HBoxContainer { Visible = false, Alignment = BoxContainer.AlignmentMode.End };
-        _markerBar.AddThemeConstantOverride("separation", 4);
-        foreach (var k in Enum.GetValues<MarkerKind>())
-        {
-            var b = new Button { Text = Overlay.MarkerGlyph(k), ToggleMode = true, TooltipText = $"Place a {k.ToString().ToLowerInvariant()} marker (right-click one to remove it)", FocusMode = FocusModeEnum.None, CustomMinimumSize = new Vector2(36, 32) };
-            var c = Overlay.MarkerColor(k);
-            b.AddThemeStyleboxOverride("normal", Ui.Box(c.Darkened(0.35f), c, 8, 1, 6, 4));
-            b.AddThemeStyleboxOverride("hover", Ui.Box(c.Darkened(0.2f), Ui.Ink, 8, 1, 6, 4));
-            b.AddThemeStyleboxOverride("pressed", Ui.Box(c, Ui.Ink, 8, 2, 6, 4));
-            b.Pressed += () =>
-            {
-                _map.Placing = b.ButtonPressed ? k : null;
-                SyncMarkers();
-            };
-            _markerBar.AddChild(b);
-            _markerButtons[k] = b;
-        }
-        corner.AddChild(_markerBar);
+        corner.AddChild(BuildMarkerBar());
 
         var tools = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.End };
         tools.AddThemeConstantOverride("separation", 4);
@@ -402,19 +384,5 @@ public partial class Main
         corner.SetAnchorsAndOffsetsPreset(LayoutPreset.BottomRight, LayoutPresetMode.Minsize, Gap);
         corner.GrowHorizontal = GrowDirection.Begin;
         corner.GrowVertical = GrowDirection.Begin;
-    }
-
-    private void ToggleStrategic()
-    {
-        _map.ToggleStrategic();
-        _strategicButton.ButtonPressed = _map.Strategic;
-        _markerBar.Visible = _map.Strategic;
-        if (!_map.Strategic) _map.Placing = null;
-        SyncMarkers();
-    }
-
-    private void SyncMarkers()
-    {
-        foreach (var (k, b) in _markerButtons) b.SetPressedNoSignal(_map.Placing == k);
     }
 }

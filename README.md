@@ -139,6 +139,12 @@ takes many hours to explore. Art credits are in [`godot/assets/CREDITS.md`](godo
   `tools/kenney_bake.py`) with generated parts (`MeshKit.cs`), all in one vertex-coloured batch per kind.
 - Camera: scroll to zoom from street level to the whole map, drag to pan, Q/E to rotate, double right-click to recenter.
   M switches to the strategic view: the same land as an inked campaign map, where markers can be placed.
+- Markers (`src/Markers.cs`): in the strategic view, pick a kind (rally, attack, defend, scout, danger, claim, note) and
+  click to place it (Shift-click places several). Click a marker to name it or change its kind, drag it to move it,
+  right-click or Delete to remove it; the list button flies to any of them. They show on both views and the corner map
+  and are kept in the save.
+- Trails: companies, scouts and the warband leave a line of footsteps over their last day or so of road, drawn only on
+  ground the town sees live and fading where it runs into the fog, so nothing moving unseen is ever given away.
 - Fog of war (`src/Map/Fog.cs`), derived from the sim each frame: the town's own light (wider with watchtowers) is live;
   roads and sites that a party came home to describe are *scouted* as of that day and go stale after 30 days; everything
   else is *rumoured*. Parties vanish into the fog when they leave the light. A scrying shows a site live for a few hours.
@@ -171,7 +177,7 @@ Options after `--`: `--seed`, `--day`, `--hour`, `--speed 0-4`, `--tab` (opens t
 plays), `--bounty <site>`, `--scry <site>`, `--scout <site>`, `--mirror <site>`, `--send`, `--recall`,
 `--build palisade|tower|pool|spire`, `--relic <item-id>`, `--hero` (inspect the most storied hero), `--alert N` (click the Nth alert once it shows), `--no-pause` (keep
 time running through war news), `--screenshot <png>`, `--frames N`, `--cam <distance>` (with `--look x,y` or `--site`
-to aim it), `--flyout` (for clips: pull back from the town to the whole map), `--yaw <quarter turns>`, `--strategic`, `--trees <density>` (stress test) and `--bench` (prints frame time,
+to aim it), `--flyout` (for clips: pull back from the town to the whole map), `--yaw <quarter turns>`, `--strategic`, `--marker kind,x,y[,name]` (place a marker), `--open-marker N` (open its card), `--trees <density>` (stress test) and `--bench` (prints frame time,
 map CPU time, draw calls and triangles, then quits). For a clip, add Godot's own `--write-movie clip.avi --fixed-fps 30 --quit-after 900` before the `--`.
 
 ## Time model

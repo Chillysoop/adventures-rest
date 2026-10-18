@@ -21,6 +21,7 @@ public partial class Overlay(MapView map) : Control
         if (map.Sim == null) return;
         var town = map.Sim.Town;
         DrawSites(town);
+        DrawTrails(town);
         DrawParties(town);
         DrawWarband(town);
         DrawMarkers();
@@ -190,8 +191,8 @@ public partial class Overlay(MapView map) : Control
             if (p.Returned || !map.Geo.Pins.ContainsKey(p.SiteId)) continue;
             var pos = map.Crowd.PartyPos(town, p);
             float fogA = map.Fog.AlphaAt(pos);
-            if (fogA > 0.45f || !map.OnScreen(map.Gen.At(pos, 1), out var at)) continue;
-            float fade = 1 - Mathf.Clamp(fogA / 0.45f, 0, 1);
+            if (fogA >= Fog.SightAlpha || !map.OnScreen(map.Gen.At(pos, 1), out var at)) continue;
+            float fade = 1 - Mathf.Clamp(fogA / Fog.SightAlpha, 0, 1);
             Banner(at - new Vector2(0, 14), Palette.Gold, InkC, fade);
             if (map.Distance > 90) Text(at + new Vector2(0, 6), p.Name, Ui.Medium, 11, new Color(Cream, fade), 3);
         }
@@ -199,7 +200,7 @@ public partial class Overlay(MapView map) : Control
         {
             if (!s.Out || !map.Geo.Pins.TryGetValue(s.SiteId, out var pin)) continue;
             var pos = map.Crowd.ScoutPos(town, s, pin);
-            if (map.Fog.AlphaAt(pos) > 0.45f || !map.OnScreen(map.Gen.At(pos, 1), out var at)) continue;
+            if (map.Fog.AlphaAt(pos) >= Fog.SightAlpha || !map.OnScreen(map.Gen.At(pos, 1), out var at)) continue;
             if (map.Distance < 90) continue;
             DrawColoredPolygon([at + new Vector2(-6, 4), at + new Vector2(0, -8), at + new Vector2(6, 4)], new Color("3f5f3a"));
             DrawCircle(at + new Vector2(0, -6), 3, new Color("e0c0a0"));
@@ -221,32 +222,210 @@ public partial class Overlay(MapView map) : Control
 
     public static Color MarkerColor(MarkerKind k) => k switch
     {
+        MarkerKind.Rally => new Color("d07a2c"),
         MarkerKind.Attack => new Color("c0392b"),
         MarkerKind.Defend => new Color("3a6ab0"),
         MarkerKind.Scout => new Color("4f8a4a"),
-        MarkerKind.Danger => new Color("e0a020"),
+        MarkerKind.Danger => new Color("d9a021"),
+        MarkerKind.Claim => new Color("7d55a8"),
         _ => new Color("8a7a66"),
     };
 
-    public static string MarkerGlyph(MarkerKind k) => k switch
+    public static string MarkerName(MarkerKind k) => k switch
     {
-        MarkerKind.Attack => "⚔",
-        MarkerKind.Defend => "⛨",
-        MarkerKind.Scout => "◉",
-        MarkerKind.Danger => "!",
-        _ => "✎",
+        MarkerKind.Rally => "Rally point",
+        MarkerKind.Attack => "Attack",
+        MarkerKind.Defend => "Defend",
+        MarkerKind.Scout => "Scout here",
+        MarkerKind.Danger => "Danger",
+        MarkerKind.Claim => "Claim",
+        _ => "Note",
     };
 
-    /// <summary>The player's markers: pins with a glyph, at one size on both views.</summary>
+    /// <summary>The kinds in the order the palette shows them.</summary>
+    public static readonly MarkerKind[] MarkerKinds = [MarkerKind.Rally, MarkerKind.Attack, MarkerKind.Defend, MarkerKind.Scout, MarkerKind.Danger, MarkerKind.Claim, MarkerKind.Note];
+
+    /// <summary>A marker's pictogram, drawn with shapes so it looks the same on every system; s is about 1 for a 22 px disc.</summary>
+    public static void MarkerGlyph(CanvasItem ci, MarkerKind k, Vector2 c, float s, Color col)
+    {
+        Vector2 P(float x, float y) => c + new Vector2(x, y) * s;
+        switch (k)
+        {
+            case MarkerKind.Rally:
+                ci.DrawRect(new Rect2(P(-4.5f, -7), new Vector2(1.8f, 14) * s), col);
+                ci.DrawColoredPolygon([P(-2.7f, -7), P(6, -4.5f), P(-2.7f, -1.5f)], col);
+                break;
+            case MarkerKind.Attack:
+                ci.DrawLine(P(-6, -6), P(6, 6), col, 2 * s, true);
+                ci.DrawLine(P(6, -6), P(-6, 6), col, 2 * s, true);
+                ci.DrawLine(P(-6, 1.5f), P(-1.5f, 6), col, 2 * s, true);
+                ci.DrawLine(P(6, 1.5f), P(1.5f, 6), col, 2 * s, true);
+                break;
+            case MarkerKind.Defend:
+                ci.DrawColoredPolygon([P(-6, -6), P(6, -6), P(6, -1), P(0, 7), P(-6, -1)], col);
+                ci.DrawLine(P(0, -4.5f), P(0, 4.5f), MarkerColor(k), 1.5f * s);
+                break;
+            case MarkerKind.Scout:
+                var eye = new Vector2[16];
+                for (int i = 0; i < 16; i++)
+                {
+                    float a = i / 16f * Mathf.Tau;
+                    eye[i] = P(Mathf.Cos(a) * 7, Mathf.Sin(a) * 4);
+                }
+                ci.DrawColoredPolygon(eye, col);
+                ci.DrawCircle(c, 2.6f * s, MarkerColor(k).Darkened(0.4f));
+                break;
+            case MarkerKind.Danger:
+                ci.DrawColoredPolygon([P(-1.6f, -7), P(1.6f, -7), P(1, 2), P(-1, 2)], col);
+                ci.DrawCircle(P(0, 5), 1.7f * s, col);
+                break;
+            case MarkerKind.Claim:
+                ci.DrawColoredPolygon([P(-6.5f, 5), P(-6.5f, -4), P(-3.2f, 0), P(0, -6), P(3.2f, 0), P(6.5f, -4), P(6.5f, 5)], col);
+                break;
+            default:
+                for (int i = 0; i < 3; i++) ci.DrawRect(new Rect2(P(-5.5f, -5 + i * 4), new Vector2(i == 2 ? 7 : 11, 1.8f) * s), col);
+                break;
+        }
+    }
+
+    /// <summary>The player's markers: pins with a pictogram and an optional name, at one size on both views.</summary>
     private void DrawMarkers()
     {
-        foreach (var m in map.Markers)
+        var labels = new List<Rect2>();
+        // The marker in hand or under the cursor draws last, so it sits on top.
+        foreach (var m in map.Markers.OrderBy(m => m == map.HoverMarker ? 1 : 0))
         {
             if (!map.OnScreen(map.Gen.At(m.P), out var at)) continue;
             var c = MarkerColor(m.Kind);
-            DrawColoredPolygon([at, at + new Vector2(-9, -16), at + new Vector2(9, -16)], c.Darkened(0.3f));
-            Disc(at - new Vector2(0, 22), 11, c, Cream, 2);
-            Text(at - new Vector2(0, 16), MarkerGlyph(m.Kind), Ui.Bold, 13, Cream, 2);
+            bool hot = m == map.HoverMarker;
+            float r = hot ? 13 : 11;
+            DrawCircle(at, 2.5f, new Color(0, 0, 0, 0.45f));
+            DrawColoredPolygon([at, at + new Vector2(-r * 0.75f, -16), at + new Vector2(r * 0.75f, -16)], c.Darkened(0.3f));
+            Disc(at - new Vector2(0, 22), r, c, hot ? Colors.White : Cream, hot ? 2.5f : 2);
+            MarkerGlyph(this, m.Kind, at - new Vector2(0, 22), r / 11, Cream);
+            if (m.Label == "") continue;
+            // Names keep out of each other's way like site names: the later one is left off.
+            float w = Ui.Bold.GetStringSize(m.Label, HorizontalAlignment.Left, -1, 13).X;
+            var box = new Rect2(at.X - w / 2 - 6, at.Y + 3, w + 12, 19);
+            if (!hot && labels.Any(l => l.Intersects(box))) continue;
+            labels.Add(box);
+            DrawStyleBox(LabelBox(c), box);
+            DrawString(Ui.Bold, new Vector2(box.Position.X + 6, box.Position.Y + 14), m.Label, HorizontalAlignment.Left, -1, 13, Cream);
+        }
+    }
+
+    private static readonly Dictionary<Color, StyleBoxFlat> LabelBoxes = [];
+
+    private static StyleBoxFlat LabelBox(Color c)
+    {
+        if (!LabelBoxes.TryGetValue(c, out var box)) LabelBoxes[c] = box = Ui.Box(new Color(0.09f, 0.07f, 0.05f, 0.82f), c, 6, 1, 0, 0);
+        return box;
+    }
+
+    // ---------- Trails ----------
+
+    /// <summary>How many game hours of road a trail remembers, and how finely it is sampled.</summary>
+    private const float TrailHours = 30, TrailStep = 0.5f;
+
+    private readonly List<(Vector2 P, float A)> _trail = [];
+
+    /// <summary>
+    /// Tracks behind companies, scouts and the warband over the last day or so of their road. A track
+    /// shows only where the town can see the ground now, thinning with age and fading out where it
+    /// runs into the fog, so it never gives away where anyone went unseen.
+    /// </summary>
+    private void DrawTrails(Town town)
+    {
+        float now = town.Tick + map.HourFraction;
+        bool strategic = map.Strategic;
+        foreach (var p in town.Parties)
+        {
+            if (!map.Geo.Pins.TryGetValue(p.SiteId, out var pin)) continue;
+            if (p.Returned && p.ReturnTick + TrailHours < now) continue;
+            float end = p.Returned ? p.ReturnTick : float.MaxValue;
+            Trail(h => now + h < p.DepartTick || now + h > end ? null : Geo.Center + (pin - Geo.Center) * Geo.PartyLeg(town, p, map.HourFraction + h),
+                strategic ? new Color("5a3a12") : new Color("ffd65a"));
+        }
+        foreach (var s in town.Scouts)
+        {
+            if (!map.Geo.Pins.TryGetValue(s.SiteId, out var pin) || s.Lost) continue;
+            if (s.Home && s.ReturnTick + TrailHours < now) continue;
+            var dir = (pin - Geo.Center).Normalized();
+            Trail(h =>
+            {
+                if (now + h < s.DepartTick || now + h > s.ReturnTick) return null;
+                float leg = (float)Watch.ScoutLeg(town, s, map.HourFraction + h);
+                return leg >= 1 ? pin - dir * 6 + new Vector2(dir.Y, -dir.X) * 2 : Geo.Center + (pin - Geo.Center) * leg;
+            }, strategic ? new Color("2f4f2a") : new Color("b8f0a0"));
+        }
+        var en = town.Enemy;
+        if (en.Stage == ThreatStage.Marching && en.ArrivalTick is int arrival)
+        {
+            float total = town.Content.Enemy.MarchDays * SimTime.HoursPerDay;
+            var from = map.Geo.Pins.TryGetValue(town.Content.Enemy.Outpost.Id, out var camp) ? camp : Geo.Center + new Vector2(60, -60);
+            Trail(h =>
+            {
+                float t = 1 - (arrival - now - h) / total;
+                return t < 0 ? null : from + (Geo.Center - from) * Mathf.Min(t, 1) * 0.85f;
+            }, strategic ? new Color("7a1a10") : new Color("ff7a60"));
+        }
+    }
+
+    /// <summary>One trail: positions back through time (h hours ago is pos(-h)), drawn as a line of footsteps.</summary>
+    private void Trail(Func<float, Vector2?> pos, Color color)
+    {
+        _trail.Clear();
+        var fog = map.Fog;
+        for (float h = 0; h <= TrailHours; h += TrailStep)
+        {
+            if (pos(-h) is not Vector2 w) break;
+            if (_trail.Count > 0 && _trail[^1].P.DistanceSquaredTo(w) < 0.04f) continue;
+            float seen = 1 - Mathf.Clamp(fog.AlphaAt(w) / Fog.SightAlpha, 0, 1);
+            _trail.Add((w, seen * (1 - h / TrailHours)));
+        }
+        if (_trail.Count < 2) return;
+        // Steps at an even spacing on screen, so the trail reads the same at any zoom.
+        const float Spacing = 8;
+        bool ink = map.Strategic;
+        float carry = 0;
+        Vector2? prev = null;
+        float prevA = 0;
+        int steps = 0;
+        foreach (var (w, a) in _trail)
+        {
+            var cam = map.Camera;
+            var w3 = map.Gen.At(w, 0.2f);
+            if (cam.IsPositionBehind(w3))
+            {
+                prev = null;
+                continue;
+            }
+            var sp = cam.UnprojectPosition(w3);
+            if (prev is Vector2 q && (a > 0.01f || prevA > 0.01f))
+            {
+                float len = q.DistanceTo(sp);
+                bool onScreen = new Rect2(-40, -40, Size.X + 80, Size.Y + 80).Intersects(new Rect2(q, Vector2.Zero).Expand(sp));
+                if (onScreen)
+                    for (float d = Spacing - carry; d < len && steps < 900; d += Spacing, steps++)
+                    {
+                        float k = d / len;
+                        float alpha = Mathf.Lerp(prevA, a, k);
+                        if (alpha < 0.03f) continue;
+                        var at = q.Lerp(sp, k);
+                        // Steps shrink as well as pale toward the fog, so the trail tapers into it.
+                        float size = 0.55f + 0.45f * alpha;
+                        // Gilded steps on the live map; inked dashes across the campaign map's parchment.
+                        if (ink) DrawLine(at - (sp - q) / len * 2.5f * size, at + (sp - q) / len * 2.5f * size, color with { A = 0.85f * alpha }, 2.2f * size, true);
+                        else
+                        {
+                            DrawCircle(at, 2.8f * size, new Color(0.08f, 0.06f, 0.04f, 0.6f * alpha));
+                            DrawCircle(at, 1.9f * size, color with { A = alpha });
+                        }
+                    }
+                carry = len < 1e-3f ? carry : (carry + len) % Spacing;
+            }
+            prev = sp;
+            prevA = a;
         }
     }
 

@@ -37,6 +37,10 @@ public sealed class Options
     public bool StrategicView;
     public int Yaw;
 
+    /// <summary>Markers to place for a screenshot (--marker rally,512,470,Muster here) and one to open the card of (--open-marker 0).</summary>
+    public readonly List<(Map.MarkerKind Kind, Godot.Vector2 At, string Label)> Markers = [];
+    public int? OpenMarker;
+
     /// <summary>Extra trees per forest tile and a frame-time report, for the late-game performance check.</summary>
     public float Trees = 1;
     public bool Bench;
@@ -78,6 +82,12 @@ public sealed class Options
                     o.Look = new Godot.Vector2(float.Parse(xy[0], System.Globalization.CultureInfo.InvariantCulture), float.Parse(xy[1], System.Globalization.CultureInfo.InvariantCulture));
                     break;
                 case "--strategic": o.StrategicView = true; break;
+                case "--marker":
+                    var mk = Next().Split(',', 4);
+                    if (Enum.TryParse<Map.MarkerKind>(mk[0], true, out var kind))
+                        o.Markers.Add((kind, new Godot.Vector2(float.Parse(mk[1], System.Globalization.CultureInfo.InvariantCulture), float.Parse(mk[2], System.Globalization.CultureInfo.InvariantCulture)), mk.Length > 3 ? mk[3] : ""));
+                    break;
+                case "--open-marker": o.OpenMarker = int.Parse(Next()); break;
                 case "--yaw": o.Yaw = int.Parse(Next()); break;
                 case "--trees": o.Trees = float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture); break;
                 case "--bench": o.Bench = true; break;

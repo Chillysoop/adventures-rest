@@ -73,6 +73,8 @@ public partial class Main : Control
         if (_opts.Cam is float cam)
             _map.LookAt(_opts.Look ?? (_opts.Site is string at && _map.Geo.Pins.TryGetValue(at, out var pin) ? pin : Map.Geo.Center), cam);
         if (_opts.StrategicView) ToggleStrategic();
+        foreach (var (kind, at, label) in _opts.Markers) _map.Markers.Add(new Marker(kind, at, _sim.Town.Day, label));
+        if (_opts.OpenMarker is int open && open < _map.Markers.Count) CallDeferred(MethodName.OpenMarkerAt, open);
         if (_opts.Plan is string plan) OpenPlan(plan, _opts.Tool, _opts.Hover);
         if (_opts.Yaw != 0) _map.Rotate(_opts.Yaw);
         // --hero picks the town's most storied hero in town, for a look at their sheet.
@@ -82,6 +84,8 @@ public partial class Main : Control
         ClearFeed();
         if (_opts.Menu) OpenMenu();
     }
+
+    private void OpenMarkerAt(int i) => OpenMarker(_map.Markers[i]);
 
     private void BuildLedgerPane()
     {
@@ -198,6 +202,11 @@ public partial class Main : Control
         if (_menu.Visible)
         {
             if (k.Keycode == Key.Escape) CloseMenu();
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+        if (MarkerKey(k.Keycode))
+        {
             GetViewport().SetInputAsHandled();
             return;
         }

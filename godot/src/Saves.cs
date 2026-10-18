@@ -264,11 +264,11 @@ public partial class Main
         tw.TweenCallback(Callable.From(() => pill.Visible = false));
     }
 
-    private sealed record SavedMarker(string Kind, float X, float Y, int Day);
+    private sealed record SavedMarker(string Kind, float X, float Y, int Day, string? Label = null);
 
     /// <summary>The client's own part of a save: the player's map markers.</summary>
     private string ClientData() =>
-        JsonSerializer.Serialize(_map.Markers.Select(m => new SavedMarker(m.Kind.ToString(), m.P.X, m.P.Y, m.Day)).ToList());
+        JsonSerializer.Serialize(_map.Markers.Select(m => new SavedMarker(m.Kind.ToString(), m.P.X, m.P.Y, m.Day, m.Label)).ToList());
 
     private void RestoreClientData(string? json)
     {
@@ -276,7 +276,7 @@ public partial class Main
         try
         {
             foreach (var m in JsonSerializer.Deserialize<List<SavedMarker>>(json) ?? [])
-                if (Enum.TryParse<MarkerKind>(m.Kind, out var kind)) _map.Markers.Add(new Marker(kind, new Vector2(m.X, m.Y), m.Day));
+                if (Enum.TryParse<MarkerKind>(m.Kind, out var kind)) _map.Markers.Add(new Marker(kind, new Vector2(m.X, m.Y), m.Day, m.Label ?? ""));
         }
         catch (JsonException)
         {

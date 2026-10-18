@@ -202,7 +202,7 @@ public partial class Crowd(MapView map) : Node3D
         {
             if (p.Returned || !map.Geo.Pins.TryGetValue(p.SiteId, out var pin)) continue;
             var pos = PartyPos(town, p);
-            if (map.Fog.AlphaAt(pos) > 0.45f) continue;
+            if (map.Fog.AlphaAt(pos) >= Fog.SightAlpha) continue;
             var dir = (pin - Geo.Center).Normalized();
             float leg = Geo.PartyLeg(town, p, map.HourFraction);
             bool home = leg < Geo.PartyLeg(town, p, map.HourFraction - 0.05f);
@@ -222,7 +222,7 @@ public partial class Crowd(MapView map) : Node3D
         {
             if (!s.Out || !map.Geo.Pins.TryGetValue(s.SiteId, out var pin)) continue;
             var pos = ScoutPos(town, s, pin);
-            if (map.Fog.AlphaAt(pos) > 0.45f) continue;
+            if (map.Fog.AlphaAt(pos) >= Fog.SightAlpha) continue;
             var a = town.Agent(s.HeroId);
             var dir = (pin - pos).Normalized();
             Put(gen.At(pos), Mathf.Atan2(dir.X, dir.Y), new Color("3f5f3a"), Palette.RaceColor(a.Race), 1.1f);
@@ -244,7 +244,7 @@ public partial class Crowd(MapView map) : Node3D
             for (int i = 0; i < n; i++)
             {
                 var o = new Vector2((Geo.Hash(i * 5 + 1) - 0.5f) * 7, (Geo.Hash(i * 5 + 2) - 0.5f) * 5);
-                if (map.Fog.AlphaAt(pos + o) > 0.45f) continue;
+                if (map.Fog.AlphaAt(pos + o) >= Fog.SightAlpha) continue;
                 float bob = Mathf.Abs(Mathf.Sin(now * 8 + i)) * 0.03f;
                 Put(gen.At(pos + o, bob), Mathf.Atan2(dir.X, dir.Y), i % 7 == 0 ? new Color("4a2018") : new Color("6a3a2a"), Colors.White, 1.1f);
             }
