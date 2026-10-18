@@ -81,8 +81,8 @@
     "calm": { "skill": "insight", "dc": 13, "text": "reads the mood and has {who} shown the door before a fist flies" },
     "intimidate": { "skill": "intimidation", "dc": 12 },
     "tend": { "skill": "medicine", "dc": 10, "rest": 45 },
-    "haggle": { "skill": "persuasion", "dc": 13, "success": 0.1, "critical": 0.2, "fumble": -0.1 },
-    "craft": { "dc": 12, "success": 1.05, "critical": 1.15, "fumble": 0.9 },
+    "haggle": { "skill": "persuasion", "dc": 13, "success": 0.1, "critical": 0.2, "failure": -0.05, "fumble": -0.1 },
+    "craft": { "dc": 12, "success": 1.05, "critical": 1.15, "failure": 0.96, "fumble": 0.9 },
     "perform": { "skill": "performance", "dc": 12, "chance": 0.15, "audience": 3, "mood": 8, "fumbleMood": -5, "tip": 0.25 },
     "pickpocket": { "skill": "sleight-of-hand", "chance": 0.02, "poor": 20, "take": [2, 9], "caught": -40 },
     "steal": { "skill": "stealth" }

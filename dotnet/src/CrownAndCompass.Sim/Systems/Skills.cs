@@ -62,6 +62,7 @@ public sealed record CheckDef
     public string Text { get; init; } = "";
     public double Chance { get; init; }
     public double Success { get; init; }
+    public double Failure { get; init; }
     public double Critical { get; init; }
     public double Fumble { get; init; }
     public int Audience { get; init; }
@@ -280,7 +281,7 @@ public static class Skills
             }
             if (best == null) continue;
             var chk = Roll(town, best, skill, c.Dc, "craft", null, b.Id);
-            double f = chk.Critical ? c.Critical : chk.Fumble ? c.Fumble : chk.Success ? c.Success : 1;
+            double f = chk.Critical ? c.Critical : chk.Fumble ? c.Fumble : chk.Success ? c.Success : c.Failure;
             b.KnackPct = (int)Math.Round((f - 1) * 100);
         }
     }
@@ -288,12 +289,12 @@ public static class Skills
     /// <summary>A business's yield for the day from its craft check.</summary>
     public static double Yield(Building b) => 1 + b.KnackPct / 100.0;
 
-    /// <summary>Haggling over a business's supplies: what share of the price the buyer saves (less than none on a fumble).</summary>
+    /// <summary>Haggling over a business's supplies: what share of the price the buyer saves (less than none when the carter sees them coming).</summary>
     public static double Haggle(Town town, Agent buyer, Building b)
     {
         var c = Rules(town).Check("haggle");
         var chk = Roll(town, buyer, c.Skill, c.Dc, "haggle", null, b.Id);
-        return chk.Critical ? c.Critical : chk.Fumble ? c.Fumble : chk.Success ? c.Success : 0;
+        return chk.Critical ? c.Critical : chk.Fumble ? c.Fumble : chk.Success ? c.Success : c.Failure;
     }
 
     /// <summary>Someone takes up a song at the tavern: the best performer there tries, and the room warms to it, tips, or groans.</summary>
