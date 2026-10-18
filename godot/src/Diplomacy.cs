@@ -62,7 +62,7 @@ public partial class Main
             string boon = s.Kin.Boon.Text != "" ? Ui.Cap(s.Kin.Boon.Text.Replace("{S}", s.Name)) + (s.Kin.Boon.Troops > 0 ? ", and their warriors come if the walls are attacked." : ".") : "";
             string head = $"[b]{Ui.Esc(s.Name)}[/b]  {Tag(word, color)}{(s.Razed ? "" : $" {Ui.C(Ui.Ink2, $"[font_size=12]{(s.Standing >= 0 ? "+" : "−")}{Math.Abs(Math.Round(s.Standing))}[/font_size]")}")}" +
                           $"{(pleas > 0 ? "  " + Tag(pleas == 1 ? "1 plea" : $"{pleas} pleas", Ui.Gold) : "")}\n" +
-                          Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Ui.Cap(s.People))}, a {Ui.Esc(s.Kin.Kind)} in {Ui.Esc(region.Name)}, {Ui.Days(region.Days)} out[/font_size]") +
+                          Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Ui.Cap(s.People))}, {Agent.Article(s.Kin.Kind)} {Ui.Esc(s.Kin.Kind)} in {Ui.Esc(region.Name)}, {Ui.Days(region.Days)} out[/font_size]") +
                           (s.Razed ? "" : $"\n[font_size=12]{Ui.Esc(goods)}[/font_size]") +
                           (s.Razed || boon == "" ? "" : "\n" + Ui.C(Ui.Ink2, $"[font_size=12]{(s.Allied ? "" : $"Allied at {Js.Str(w.Ally)}: ")}{Ui.Esc(boon)}[/font_size]"));
             if (s.Razed)
