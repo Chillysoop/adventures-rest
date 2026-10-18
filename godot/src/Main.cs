@@ -71,6 +71,7 @@ public partial class Main : Control
         BuildHistory();
         BuildGuide();
         BuildStory();
+        BuildFind();
         _map.TreeScale = _opts.Trees;
         Map.Fog.RevealAll = _opts.Reveal;
         // Started plainly, the game opens on the main menu over a town that has been growing a while;
@@ -127,6 +128,12 @@ public partial class Main : Control
         {
             OpenStory(opened.Id);
             if (_opts.StoryPick is int pick) Choose(opened.Id, pick);
+        }
+        if (_opts.Find && Explore.Waiting(_sim.Town).FirstOrDefault() is { } waiting)
+        {
+            _findSeen[waiting.Id] = waiting.Log.Count;
+            if (_opts.FindPick is string act) OrderFind(waiting.Id, act);
+            else OpenFind(waiting.Id);
         }
         if (_opts.Menu) OpenMenu();
         if (plain || _opts.Title || _opts.Smoke) ShowTitle();
@@ -192,7 +199,7 @@ public partial class Main : Control
         RememberLegends();
         // With --autoplay the stand-in mayor keeps playing, for demos and screenshots; only a player's towns meet old legends.
         var legends = autoplay ? [] : ProfileLegends();
-        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay, AutoStories = autoplay, Legends = legends }));
+        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay, AutoStories = autoplay, AutoExplore = autoplay && !_opts.Find, Legends = legends }));
     }
 
     /// <summary>Show a town: a new one, or one loaded from a save.</summary>
@@ -218,6 +225,9 @@ public partial class Main : Control
         _step = null;
         CloseStory();
         _storySeen = sim.Town.Stories.All.Count;
+        CloseFind();
+        _findSeen.Clear();
+        _findShownBeat.Clear();
         foreach (var p in _panes.Values) p.Invalidate();
         _dirty = true;
         CloseWindow();
@@ -307,6 +317,12 @@ public partial class Main : Control
     public override void _UnhandledKeyInput(InputEvent e)
     {
         if (e is not InputEventKey { Pressed: true, Echo: false } k) return;
+        if (_find.Visible && k.Keycode == Key.Escape)
+        {
+            CloseFind();
+            GetViewport().SetInputAsHandled();
+            return;
+        }
         if (_story.Visible && k.Keycode == Key.Escape)
         {
             // A sending can't be waved away: the party is waiting on the stone.
@@ -387,6 +403,7 @@ public partial class Main : Control
         SyncMarkers();
         SyncGuide();
         SyncStories(delta);
+        SyncFinds();
         SyncChecks();
         if (_title.Visible) _map.Drift(1, (float)delta * 0.035f);
         if (_dirty)
