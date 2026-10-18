@@ -30,43 +30,52 @@ public sealed record CallingDef : DecreeDef
 }
 
 /// <summary>
-/// Callings held, by calling, each by one hero (<see cref="StoryState.Callings"/>). A hero holds one at a
-/// time; a calling ends when its hero leaves, dies or turns, renounces it when their loyalty runs out, or
-/// a story ends it.
+/// Callings held, by hero (<see cref="StoryState.Callings"/>). A hero holds one at a time, and two heroes
+/// can hold the same one (two druids each keeping a grove). A calling ends when its hero leaves, dies or
+/// turns, is renounced when their loyalty runs out, or is ended by a story.
 /// </summary>
 public static class Callings
 {
-    /// <summary>The callings held now, in the order they were taken up.</summary>
+    /// <summary>The callings held now, one for each hero holding one, in the order they were taken up.</summary>
     public static IEnumerable<CallingDef> Held(Town town) =>
-        town.Stories.Callings.Keys.Select(id => town.Content.Stories.Calling(id)).OfType<CallingDef>();
+        town.Stories.Callings.Values.Select(id => town.Content.Stories.Calling(id)).OfType<CallingDef>();
 
-    public static Agent? Holder(Town town, string id) =>
-        town.Stories.Callings.TryGetValue(id, out int h) && town.Agent(h) is { Departed: false, Dead: false, Hero: not null } a ? a : null;
-
-    /// <summary>The calling a hero holds, if any.</summary>
-    public static CallingDef? Of(Town town, Agent a)
+    /// <summary>Heroes holding a calling, with it, in the order they took it up.</summary>
+    public static IEnumerable<(Agent Hero, CallingDef Calling)> Holders(Town town)
     {
-        foreach (var (id, h) in town.Stories.Callings)
-            if (h == a.Id) return town.Content.Stories.Calling(id);
+        foreach (var (h, id) in town.Stories.Callings)
+            if (town.Content.Stories.Calling(id) is { } d && Living(town, h) is { } a) yield return (a, d);
+    }
+
+    /// <summary>The first hero holding the calling, if any.</summary>
+    public static Agent? Holder(Town town, string id)
+    {
+        foreach (var (h, held) in town.Stories.Callings)
+            if (held == id && Living(town, h) is { } a) return a;
         return null;
     }
+
+    private static Agent? Living(Town town, int id) => town.Agent(id) is { Departed: false, Dead: false, Hero: not null } a ? a : null;
+
+    /// <summary>The calling a hero holds, if any.</summary>
+    public static CallingDef? Of(Town town, Agent a) =>
+        town.Stories.Callings.TryGetValue(a.Id, out var id) ? town.Content.Stories.Calling(id) : null;
 
     /// <summary>The hero takes up the calling, giving up any other they held. Returns a note for the Ledger.</summary>
     public static string Take(Town town, Agent hero, string id)
     {
         var d = town.Content.Stories.Calling(id) ?? throw new InvalidDataException($"Unknown calling {id}");
-        if (Of(town, hero) is { } old) town.Stories.Callings.Remove(old.Id);
-        town.Stories.Callings[id] = hero.Id;
+        town.Stories.Callings.Remove(hero.Id);
+        town.Stories.Callings[hero.Id] = id;
         return $"{hero.GivenName}: {d.Name}";
     }
 
-    public static void End(Town town, string id, string why)
+    /// <summary>The hero gives up their calling; with a reason, the Ledger says why.</summary>
+    public static void End(Town town, Agent hero, string why)
     {
-        var d = town.Content.Stories.Calling(id);
-        if (d == null || !town.Stories.Callings.ContainsKey(id)) return;
-        var hero = Holder(town, id);
-        town.Stories.Callings.Remove(id);
-        if (hero != null && why != "")
+        if (Of(town, hero) is not { } d) return;
+        town.Stories.Callings.Remove(hero.Id);
+        if (why != "")
             town.Log(LedgerCategory.Story, Importance.Notable, $"{Loyalty.Styled(town, hero)} {why} ({d.Name.ToLowerInvariant()}).", [hero.Id]);
     }
 
@@ -74,7 +83,7 @@ public static class Callings
     public static double Defence(Town town)
     {
         double sum = 0;
-        foreach (var (id, h) in town.Stories.Callings)
+        foreach (var (h, id) in town.Stories.Callings)
             if (town.Content.Stories.Calling(id) is { Defence: > 0 } d && !town.Agent(h).IsAway) sum += d.Defence;
         return sum;
     }
@@ -85,20 +94,20 @@ public static class Callings
         var st = town.Stories;
         if (st.Callings.Count == 0) return;
         double desert = town.Content.Loyalty.Desert;
-        foreach (var id in st.Callings.Keys.ToList())
+        foreach (var h in st.Callings.Keys.ToList())
         {
-            var d = town.Content.Stories.Calling(id);
-            var hero = Holder(town, id);
+            var d = town.Content.Stories.Calling(st.Callings[h]);
+            var hero = Living(town, h);
             if (d == null || hero == null || hero.Hero!.TurnedTo != null || hero.Hero.DefectedTo != null)
             {
-                var gone = town.Agent(st.Callings[id]);
-                st.Callings.Remove(id);
+                var gone = town.Agent(h);
+                st.Callings.Remove(h);
                 if (d != null) town.Log(LedgerCategory.Story, Importance.Routine, $"{d.Name} ends with {gone.Name} {(gone.Dead ? "dead" : "gone from " + town.Name)}.");
                 continue;
             }
             if (hero.Hero.Loyalty < desert)
             {
-                End(town, id, "has had enough of the town and gives it up");
+                End(town, hero, "has had enough of the town and gives it up");
                 continue;
             }
             if (d.Gold != 0) town.Book(TreasuryAccount.Callings, d.Gold);

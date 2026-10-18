@@ -397,7 +397,7 @@ public sealed class Town
     public List<Agent> Heroes => Agents.Where(a => !a.Departed && a.Hero != null).ToList();
 
     /// <summary>The callings heroes hold (<see cref="Systems.Callings"/>); the tutorial watches it.</summary>
-    public IReadOnlyList<string> Callings => Stories.Callings.Keys;
+    public IReadOnlyList<int> Callings => Stories.Callings.Keys;
 
     public int Population
     {

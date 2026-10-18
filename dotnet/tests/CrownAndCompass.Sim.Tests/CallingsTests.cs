@@ -48,7 +48,7 @@ public class CallingsTests
         // A sworn paladin is not asked again; the oath outlives a save.
         Assert.NotEqual(hero.Id, Stories.Open(t, "paladin-oath")?.HeroId);
         var back = SaveGame.Read(SaveGame.Write(sim));
-        Assert.Equal(hero.Id, back.Town.Stories.Callings["oath-shield"]);
+        Assert.Equal(hero.Id, back.Town.Stories.Callings.Keys.Single());
 
         Population.Depart(t, hero);
         sim.RunDays(1);

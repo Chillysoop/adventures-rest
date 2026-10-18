@@ -315,8 +315,8 @@ public sealed class StoryState
     /// <summary>Precedents set, and the day each was.</summary>
     public OrderedMap<string, int> Precedents { get; } = new();
 
-    /// <summary>Callings held, and the hero holding each.</summary>
-    public OrderedMap<string, int> Callings { get; } = new();
+    /// <summary>Callings held, by the hero holding each.</summary>
+    public OrderedMap<int, string> Callings { get; } = new();
 
     public IEnumerable<Story> Open => All.Where(s => !s.Done);
 
@@ -737,9 +737,14 @@ public static class Stories
                 else if (n.StartsWith("calling:", StringComparison.Ordinal))
                 {
                     // A calling held binds the hero who holds it.
-                    var holder = Callings.Holder(town, n[8..]);
-                    holds = holder != null && (s.HeroId == null || s.HeroId == holder.Id);
-                    if (holds && !not && bind) s.HeroId = holder!.Id;
+                    string id = n[8..];
+                    if (s.HeroId is int bound) holds = Hero(town, bound) is { } a && Callings.Of(town, a)?.Id == id;
+                    else
+                    {
+                        var holder = Callings.Holder(town, id);
+                        holds = holder != null;
+                        if (holds && !not && bind) s.HeroId = holder!.Id;
+                    }
                 }
                 else throw new InvalidDataException($"Unknown story need {need}");
                 return holds != not;
@@ -1001,8 +1006,9 @@ public static class Stories
             else if (key.StartsWith("calling:", StringComparison.Ordinal))
             {
                 string id = key[8..];
-                if (v < 0) Callings.End(town, id, "");
-                else if (s.HeroId is int ch && Hero(town, ch) is { } ca) said.Add(Callings.Take(town, ca, id));
+                if (s.HeroId is not int ch || Hero(town, ch) is not { } ca) continue;
+                if (v > 0) said.Add(Callings.Take(town, ca, id));
+                else if (Callings.Of(town, ca)?.Id == id) Callings.End(town, ca, "");
             }
         }
         return said.Count == 0 ? "" : $" ({string.Join(", ", said)})";
