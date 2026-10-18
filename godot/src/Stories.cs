@@ -12,8 +12,6 @@ namespace CrownAndCompass.Client;
 /// </summary>
 public partial class Main
 {
-    private const double RollSeconds = 0.9;
-
     private PanelContainer _story = null!;
     private VBoxContainer _storyBox = null!;
     private int? _storyId;
@@ -24,8 +22,6 @@ public partial class Main
 
     /// <summary>The roll on screen: the beat it shows and when the die was thrown.</summary>
     private StoryBeat? _beat;
-    private double _beatAt;
-    private Label? _dieFace, _dieOther;
     private Control? _beatResult;
 
     private void BuildStory()
@@ -71,7 +67,6 @@ public partial class Main
     /// </summary>
     private void SyncStories(double delta)
     {
-        if (_story.Visible && _beat != null) AnimateRoll();
         if (_title.Visible || _menu.Visible) return;
         if (!_opts.Smoke && Sendings.Waiting(_sim.Town).FirstOrDefault() is { } sending)
         {
@@ -102,7 +97,6 @@ public partial class Main
     private void RenderStory(Story s)
     {
         foreach (var c in _storyBox.GetChildren()) c.Free();
-        _dieFace = _dieOther = null;
         _beatResult = null;
         var t = _sim.Town;
         var d = Stories.DefOf(t, s);
@@ -255,7 +249,6 @@ public partial class Main
         if (beat == null) return;
         GuideEvent("roll");
         _beat = beat;
-        _beatAt = _clockReal;
         _dirty = true;
         if (Stories.Find(_sim.Town, storyId) is { } s) RenderStory(s);
     }
@@ -264,40 +257,16 @@ public partial class Main
     {
         var t = _sim.Town;
         bool rolled = b.Result is not (StoryResult.Certain or StoryResult.Ignored);
-        if (rolled)
-        {
-            var dice = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
-            dice.AddThemeConstantOverride("separation", 18);
-            dice.AddChild(Die(out _dieFace, 112));
-            if (b.Other is int)
-            {
-                var other = Die(out _dieOther, 70);
-                other.Modulate = new Color(1, 1, 1, 0.45f);
-                dice.AddChild(other);
-            }
-            _storyBox.AddChild(dice);
-        }
         var result = new VBoxContainer { Visible = !rolled };
         result.AddThemeConstantOverride("separation", 8);
         if (rolled)
         {
-            var (word, color) = b.Result switch
-            {
-                StoryResult.Critical => ("NATURAL 20", Ui.Gold),
-                StoryResult.Success => ("SUCCESS", Ui.Good),
-                StoryResult.Partial => ("SUCCESS, AT A COST", Ui.Gold),
-                StoryResult.Fumble => ("NATURAL 1", Ui.Bad),
-                _ => ("FAILURE", Ui.Bad),
-            };
-            var w = Ui.Label(word, color, Ui.Display, 26);
-            w.HorizontalAlignment = HorizontalAlignment.Center;
-            result.AddChild(w);
             string skill = t.Content.Stories.Skill(b.Skill)?.Name ?? b.Skill.ToUpperInvariant();
-            string ab = (t.Content.Stories.Skill(b.Skill)?.Ability ?? b.Skill).ToUpperInvariant();
-            string helped = b.Help != 0 ? Signed(b.Help, Ui.Esc(b.Helpers)) : "";
-            string math = $"{b.Die}{Signed(b.Modifier, ab)}{(b.Proficiency > 0 ? Signed(b.Proficiency, "training") : "")}{helped} = [b]{b.Total}[/b] against DC {b.Dc}";
-            string adv = (b.Advantage != "" ? $"  ·  advantage: {Ui.Esc(b.Advantage)}" : "") + (b.Rerolled is int first ? $"  ·  rerolled a {first} with Inspiration" : "");
-            result.AddChild(Ui.Rich($"[center]{Ui.C(Ui.Ink2, $"{Ui.Esc(skill)}: {math}{adv}")}[/center]", 13));
+            var roll = new DiceRoll(b, DiceRoll.MayorTerms(t, b), $"{t.Stories.Mayor.Name} rolls {skill}", false, InstantRolls) { SizeFlagsHorizontal = SizeFlags.ShrinkCenter };
+            roll.Landed += () => result.Visible = true;
+            _storyBox.AddChild(roll);
+            string adv = string.Join("  ·  ", new[] { b.Advantage != "" ? $"advantage: {Ui.Esc(b.Advantage)}" : "", b.Rerolled is int first ? $"rerolled a {first} with Inspiration" : "" }.Where(x => x != ""));
+            if (adv != "") result.AddChild(Ui.Rich($"[center]{Ui.C(Ui.Ink2, adv)}[/center]", 13));
         }
         result.AddChild(Ui.Rich(LinkStory(s, b.Text), 15));
         var foot = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.End };
@@ -317,54 +286,8 @@ public partial class Main
         _beatResult = result;
     }
 
-    private static string Signed(int n, string what) => $" {(n >= 0 ? "+" : "−")} {Math.Abs(n)} ({what})";
-
-    private static Control Die(out Label face, int size)
-    {
-        var holder = new Control { CustomMinimumSize = new Vector2(size, size) };
-        var tex = new TextureRect { Texture = Ui.Icon("d20"), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered };
-        holder.AddChild(tex);
-        tex.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        face = Ui.Label("", Colors.White, Ui.Display, size * 3 / 8);
-        face.HorizontalAlignment = HorizontalAlignment.Center;
-        face.VerticalAlignment = VerticalAlignment.Center;
-        face.AddThemeColorOverride("font_outline_color", new Color(0.11f, 0.09f, 0.07f));
-        face.AddThemeConstantOverride("outline_size", Math.Max(4, size / 14));
-        holder.AddChild(face);
-        face.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        face.OffsetTop = size / 12f;
-        return holder;
-    }
-
-    /// <summary>The die tumbles through faces, then lands on the roll and the result shows.</summary>
-    private void AnimateRoll()
-    {
-        if (_beat == null || _dieFace == null || !IsInstanceValid(_dieFace)) return;
-        double age = _clockReal - _beatAt;
-        // Screenshots and the smoke test land the die at once.
-        bool landed = age >= RollSeconds || _opts.Screenshot != null || _opts.Smoke;
-        if (!landed)
-        {
-            int face = (int)(GD.Randi() % 20) + 1;
-            _dieFace.Text = face.ToString();
-            if (_dieOther != null) _dieOther.Text = ((int)(GD.Randi() % 20) + 1).ToString();
-            _dieFace.GetParent<Control>().Rotation = (float)(Math.Sin(age * 30) * 0.25 * (1 - age / RollSeconds));
-            return;
-        }
-        if (_beatResult is { Visible: false })
-        {
-            _dieFace.Text = _beat.Die.ToString();
-            _dieFace.GetParent<Control>().Rotation = 0;
-            if (_dieOther != null) _dieOther.Text = (_beat.Other ?? 0).ToString();
-            _beatResult.Visible = true;
-            _dieFace.AddThemeColorOverride("font_color", _beat.Result switch
-            {
-                StoryResult.Critical => Ui.Gold,
-                StoryResult.Fumble => new Color("ffb0a4"),
-                _ => Colors.White,
-            });
-        }
-    }
+    /// <summary>Screenshots and the smoke test land every die at once.</summary>
+    private bool InstantRolls => _opts.Screenshot != null || _opts.Smoke;
 
     // ---------- The mayor's sheet ----------
 
@@ -566,7 +489,13 @@ public partial class Main
     /// <summary>The newest everyday-decision check shown, so each roll toasts once.</summary>
     private int _checksSeen = -1;
 
-    /// <summary>A d20 rolled on one of the player's decisions shows as a toast.</summary>
+    /// <summary>The small roll for the newest everyday decision, and when it finished.</summary>
+    private PanelContainer? _check;
+
+    /// <summary>
+    /// A d20 rolled on one of the player's decisions throws a small die under the top bar without stopping
+    /// play: the bonuses add up, the verdict and what came of it show, and it fades a few seconds later.
+    /// </summary>
     private void SyncChecks()
     {
         var st = _sim.Town.Stories;
@@ -574,9 +503,39 @@ public partial class Main
         if (st.Checks == _checksSeen || st.LastCheck is not { } b) return;
         _checksSeen = st.Checks;
         if (_sim.Options.AutoStories) return;
-        var r = _sim.Town.Content.Stories;
-        string skill = r.Skill(b.Skill)?.Name ?? b.Skill;
-        Toast($"d20 {skill}: {b.Die} → {b.Total} vs DC {b.Dc}, {Stories.Word(b.Result)}.{(b.Text != "" ? " " + b.Text : "")}");
+        var t = _sim.Town;
+        string skill = t.Content.Stories.Skill(b.Skill)?.Name ?? b.Skill;
+        _check?.QueueFree();
+        var pill = new PanelContainer { MouseFilter = MouseFilterEnum.Pass, ZIndex = 15 };
+        pill.AddThemeStyleboxOverride("panel", Ui.Flat(new Color(0.08f, 0.06f, 0.04f, 0.9f), 14, 8, 14));
+        var v = new VBoxContainer();
+        v.AddThemeConstantOverride("separation", 2);
+        v.AddChild(Ui.Label($"{skill.ToUpperInvariant()} CHECK", Ui.Ink2, Ui.Bold, 10));
+        var roll = new DiceRoll(b, DiceRoll.MayorTerms(t, b), "", true, InstantRolls);
+        v.AddChild(roll);
+        var text = Ui.Label(b.Text, new Color("f6eedb"), Ui.Medium, 12);
+        text.Visible = false;
+        text.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        text.CustomMinimumSize = new Vector2(Math.Max(roll.CustomMinimumSize.X, 260), 0);
+        if (b.Text != "") v.AddChild(text);
+        pill.AddChild(v);
+        AddChild(pill);
+        pill.SetAnchorsAndOffsetsPreset(LayoutPreset.CenterTop, LayoutPresetMode.Minsize, TopBar + 44);
+        pill.GrowHorizontal = GrowDirection.Both;
+        _check = pill;
+        roll.Landed += () =>
+        {
+            text.Visible = true;
+            if (!IsInstanceValid(pill)) return;
+            var tw = pill.CreateTween();
+            tw.TweenInterval(3.2);
+            tw.TweenProperty(pill, "modulate:a", 0.0, 0.6);
+            tw.TweenCallback(Callable.From(() =>
+            {
+                if (_check == pill) _check = null;
+                pill.QueueFree();
+            }));
+        };
     }
 
     private static Control SkillCell(string bbcode)
