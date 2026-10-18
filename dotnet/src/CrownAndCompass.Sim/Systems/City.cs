@@ -172,6 +172,9 @@ public sealed class CityState
     /// <summary>Wards laid out so far, in the order they opened.</summary>
     public List<string> OpenWards { get; } = ["old_town"];
 
+    /// <summary>How each ward feels about the mayor, -100 to 100 (<see cref="Wards"/>).</summary>
+    public OrderedMap<string, double> Feeling { get; set; } = new();
+
     /// <summary>Share of each service the town covers (1 = enough for everyone), as of the last day.</summary>
     public OrderedMap<string, double> Coverage { get; set; } = new();
 
@@ -217,7 +220,7 @@ public static class City
     public static bool Reached(Town town, string tierId) => TierIndex(town, tierId) <= town.City.Tier;
 
     /// <summary>The most heroes who will make their home here at this tier.</summary>
-    public static int HeroCap(Town town) => Tier(town).Heroes + GrandWorks.Heroes(town);
+    public static int HeroCap(Town town) => Tier(town).Heroes + GrandWorks.Heroes(town) + Institutions.Heroes(town);
 
     /// <summary>The size the townsfolk boast of: every resident's household.</summary>
     public static int Souls(Town town) => (int)Js.Round(town.Population * town.Content.City.SoulsPerResident);
@@ -361,7 +364,8 @@ public static class City
     {
         if (a.HomeId == null) return 0;
         var home = town.Building(a.HomeId.Value);
-        double mood = WardOf(town, town.Lot(home.LotId)).Mood + Density.Mood(town, home);
+        var ward = WardOf(town, town.Lot(home.LotId));
+        double mood = ward.Mood + Wards.Mood(town, ward.Id) + Clockwork.Mood(town) + Density.Mood(town, home);
         if (Housing(town, home.Def.Id) is { } h && (h.Goods.Count > 0 || h.Services.Count > 0))
             mood += (home.Contentment - 0.5) * 2 * town.Content.City.NeedsMood;
         return mood;
@@ -454,7 +458,7 @@ public static class City
                 sum += CoverageOf(town, s);
                 needs++;
             }
-            house.Contentment = Math.Clamp((needs == 0 ? 1 : sum / needs) + Decor.Comfort(town, house) + grand, 0, 1);
+            house.Contentment = Math.Clamp((needs == 0 ? 1 : sum / needs) + Decor.Comfort(town, house) + Wards.Comfort(town, house) + grand, 0, 1);
         }
         town.City.Wanted = wanted;
         town.City.Supplied = supplied;
@@ -547,7 +551,7 @@ public static class City
             sum += CoverageOf(town, s);
             needs++;
         }
-        return Math.Clamp((needs == 0 ? 1 : sum / needs) + Decor.Comfort(town, house) + GrandWorks.Comfort(town), 0, 1);
+        return Math.Clamp((needs == 0 ? 1 : sum / needs) + Decor.Comfort(town, house) + Wards.Comfort(town, house) + GrandWorks.Comfort(town), 0, 1);
     }
 
     /// <summary>Why this house can't grow now, or null when it can.</summary>

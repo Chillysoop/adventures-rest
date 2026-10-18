@@ -25,6 +25,7 @@ public partial class Main : Control
         Bounties,
         Companies,
         Diplomacy,
+        Institutions,
         Faith,
         Campaign,
         Chronicles,
@@ -98,6 +99,9 @@ public partial class Main : Control
         if (_opts.Wall is int wall) Select(Selection.Wall(wall));
         if (_opts.Cam is float cam)
             _map.LookAt(_opts.Look ?? (_opts.Site is string at && _map.Geo.Pins.TryGetValue(at, out var pin) ? pin : Map.Geo.Center), cam);
+        // --at aims the camera at the town's first finished building of a kind.
+        if (_opts.At is string atKind && _sim.Town.Buildings.Where(b => b.Def.Id == atKind && b.Complete).OrderBy(b => b.Id).FirstOrDefault() is Building at0)
+            _map.LookAt(Map.Geo.LotPos(_sim.Town.Lot(at0.LotId)), _opts.Cam ?? 22);
         if (_opts.StrategicView) ToggleStrategic();
         foreach (var (kind, at, label) in _opts.Markers) _map.Markers.Add(new Marker(kind, at, _sim.Town.Day, label));
         if (_opts.OpenMarker is int open && open < _map.Markers.Count) CallDeferred(MethodName.OpenMarkerAt, open);
@@ -182,14 +186,25 @@ public partial class Main : Control
             {
                 _ledgerFilter = imp;
                 foreach (var c in filters.GetChildren().OfType<Button>()) c.ButtonPressed = c == b;
+                ShowPaper(false);
                 _ledgerShown = -1;
                 _dirty = true;
             };
             filters.AddChild(b);
         }
+        var paper = new Button { Text = "Broadsheet", ToggleMode = true, TooltipText = "The town's weekly paper, and the front page you can pay for" };
+        paper.AddThemeFontSizeOverride("font_size", 12);
+        paper.Pressed += () =>
+        {
+            foreach (var c in filters.GetChildren().OfType<Button>()) c.ButtonPressed = c == paper;
+            ShowPaper(true);
+            _dirty = true;
+        };
+        filters.AddChild(paper);
         box.AddChild(filters);
         _ledgerText = Ui.Rich("");
         box.AddChild(_ledgerText);
+        BuildPaper(box);
     }
 
     // ---------- Game ----------
@@ -423,6 +438,7 @@ public partial class Main : Control
                     case Tab.Chronicles: RenderChronicles(); break;
                     case Tab.Mayor: RenderMayor(); break;
                     case Tab.Diplomacy: RenderDiplomacy(); break;
+                    case Tab.Institutions: RenderInstitutions(); break;
                 }
             if (_inspector.Visible) RenderInspect();
             RenderBuild();
@@ -524,6 +540,11 @@ public partial class Main : Control
 
     private void RenderLedger()
     {
+        if (_paperShown)
+        {
+            RenderPaper();
+            return;
+        }
         var entries = _sim.Town.Ledger.Entries;
         if (entries.Count == _ledgerShown) return;
         _ledgerShown = entries.Count;

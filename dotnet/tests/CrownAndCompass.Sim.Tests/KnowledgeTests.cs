@@ -54,8 +54,9 @@ public class KnowledgeTests
         // The recalled trip does not count as an attempt; the reopened bounty may be taken again at once.
         int retakes = t.Parties.Count(p => p.SiteId == party.SiteId && p.DepartTick > party.DepartTick);
         Assert.Equal(attempts - 1 + retakes, site.Attempts);
-        // Home unless back on the road with another party or out scouting.
-        Assert.All(party.Members, id => Assert.Equal(t.Parties.Any(p => !p.Returned && p.Members.Contains(id)) || t.Scouts.Any(s => s.Out && s.HeroId == id), t.Agent(id).IsAway));
+        // Home unless back on the road with another party, out scouting or off exploring.
+        Assert.All(party.Members, id => Assert.Equal(t.Parties.Any(p => !p.Returned && p.Members.Contains(id)) || t.Scouts.Any(s => s.Out && s.HeroId == id)
+            || t.Surveys.Any(s => Explore.Out(s) && s.Members.Contains(id)), t.Agent(id).IsAway));
         Assert.Contains(t.Ledger.Entries, e => e.Text.Contains("called home from the road"));
     }
 

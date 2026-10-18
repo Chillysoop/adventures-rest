@@ -193,11 +193,21 @@ public partial class Main
         }
         if (blocked != null) sub = $"{Ui.Cap(blocked)}.";
         // The heroes in town who would like or resent the choice, by their tempers.
+        // So do the wards, each by what it cares about.
         var (pleased, angered) = Regard.Reactions(t, o.Tags);
-        string Who(List<Agent> heroes) => string.Join(", ", heroes.Take(3).Select(h => h.GivenName)) + (heroes.Count > 3 ? $" +{heroes.Count - 3}" : "");
+        var (wardsPleased, wardsAngered) = Wards.Reactions(t, o.Tags);
+        string Who(List<Agent> heroes, List<WardDef> wards)
+        {
+            var names = heroes.Take(3).Select(h => h.GivenName).ToList();
+            string more = heroes.Count > 3 ? $" +{heroes.Count - 3}" : "";
+            var all = new List<string>();
+            if (names.Count > 0) all.Add(string.Join(", ", names) + more);
+            all.AddRange(wards.Select(w => w.Name));
+            return string.Join(", ", all);
+        }
         var feel = new List<string>();
-        if (pleased.Count > 0) feel.Add(Ui.C(Ui.Good, $"Pleases {Ui.Esc(Who(pleased))}"));
-        if (angered.Count > 0) feel.Add(Ui.C(Ui.Bad, $"Angers {Ui.Esc(Who(angered))}"));
+        if (pleased.Count + wardsPleased.Count > 0) feel.Add(Ui.C(Ui.Good, $"Pleases {Ui.Esc(Who(pleased, wardsPleased))}"));
+        if (angered.Count + wardsAngered.Count > 0) feel.Add(Ui.C(Ui.Bad, $"Angers {Ui.Esc(Who(angered, wardsAngered))}"));
         var row = new Button { Disabled = blocked != null, FocusMode = FocusModeEnum.None, CustomMinimumSize = new Vector2(0, feel.Count > 0 ? 72 : 54), MouseDefaultCursorShape = CursorShape.PointingHand };
         var normal = Ui.Box(new Color(Ui.Panel2, 0.9f), Ui.Line, 8, 1, 14, 8);
         var hover = Ui.Box(new Color(Ui.Gold, 0.14f), Ui.Gold, 8, 1, 14, 8);

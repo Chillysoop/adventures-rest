@@ -23,6 +23,7 @@ public enum AlertWindow
     Mayor,
     Diplomacy,
     Companies,
+    Institutions,
 }
 
 /// <summary>A group of alerts: one icon on the strip, with a count and a hover list of what is in it.</summary>
@@ -44,6 +45,7 @@ public sealed record Alert(string Key, AlertKind Kind, string Text, string Tip, 
 public static class Alerts
 {
     public static readonly AlertKind Siege = new("siege", "Under attack", "warband", AlertLevel.Urgent, AlertWindow.War);
+    public static readonly AlertKind Captives = new("captives", "Townsfolk taken", "heroes", AlertLevel.Urgent, AlertWindow.Bounties);
     public static readonly AlertKind Hunger = new("hunger", "Hunger", "bread", AlertLevel.Urgent, AlertWindow.Council);
     public static readonly AlertKind Coffers = new("coffers", "Empty coffers", "gold", AlertLevel.Urgent, AlertWindow.Council);
     public static readonly AlertKind Unrest = new("unrest", "Unrest", "mandate", AlertLevel.Urgent, AlertWindow.Council);
@@ -59,6 +61,7 @@ public static class Alerts
     public static readonly AlertKind Explorers = new("explorers", "Explorers' reports", "compass", AlertLevel.Decision, AlertWindow.Bounties);
     public static readonly AlertKind LevelUp = new("levelup", "Level up", "d20", AlertLevel.Decision, AlertWindow.Mayor);
     public static readonly AlertKind Bastion = new("bastion", "Bastions", "heroes", AlertLevel.Decision, AlertWindow.Companies);
+    public static readonly AlertKind Institution = new("institution", "Institutions", "favour", AlertLevel.Decision, AlertWindow.Institutions);
     public static readonly AlertKind Heroes = new("heroes", "Restless heroes", "heroes", AlertLevel.Decision, AlertWindow.None);
     public static readonly AlertKind Housing = new("housing", "Housing", "homeless", AlertLevel.Minor, AlertWindow.Council);
     public static readonly AlertKind Work = new("work", "Idle hands", "population", AlertLevel.Decision, AlertWindow.City);
@@ -67,10 +70,10 @@ public static class Alerts
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Crisis, Hunger, Coffers, Unrest, Hostile, Motion, Fealty, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Bastion, Heroes, Work, Settlers, Trade, Housing];
+        [Siege, Captives, Crisis, Hunger, Coffers, Unrest, Hostile, Motion, Fealty, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Bastion, Institution, Heroes, Work, Settlers, Trade, Housing];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
-    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Hostility, Winter, Growth, Routes, Loyalty, Homes];
+    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Hostility, Winter, Growth, Routes, Loyalty, Homes, Keepers];
 
     public static List<Alert> Standing(Town town) => Rules.SelectMany(r => r(town)).ToList();
 
@@ -89,6 +92,17 @@ public static class Alerts
         {
             int days = Math.Max(1, (int)Math.Ceiling((m.ArrivalTick!.Value - t.Tick) / 24.0));
             yield return new($"menace:{m.Id}", Siege, $"{Cap(m.Name)} in {Days(days)}", $"The host of {m.Name} marches from {m.SeatName} on the {Garrison.Place(t, m.Approach)}. Call the watch to arms there and the heroes home.", AtTown: true, Wall: m.Approach);
+        }
+        foreach (var c in Systems.Captives.Held(t).OrderBy(c => c.Id))
+        {
+            if (Quests.Site(t, c.SiteId) is not { } s) continue;
+            int days = Math.Max(1, (int)Math.Ceiling((c.DueTick - t.Tick) / 24.0));
+            bool posted = t.Bounties.Any(b => b.SiteId == c.SiteId && Quests.IsActive(b));
+            yield return new($"captives:{c.Id}", Captives, $"{c.Captives.Count} held at {s.Def.Name}, {Days(days)}",
+                posted
+                    ? $"A rescue is posted. If no party brings them home in {Days(days)}, they are lost."
+                    : $"Raiders carried {(c.Captives.Count == 1 ? "a townsperson" : $"{c.Captives.Count} townsfolk")} off. Post a rescue bounty on {s.Def.Name} in the Bounties window before {Days(days)} run out.",
+                SiteId: s.Def.Id);
         }
         if (Menaces.PendingDemand(t) is { } dm)
             yield return new($"demand:{dm.Id}", Fealty, "A demand for fealty", $"{Cap(dm.Name)} wants the town as its vassal. Bend the knee or refuse in the Campaign window; silence is a refusal.");
@@ -211,6 +225,22 @@ public static class Alerts
                 .Select(p => p.Label.ToLowerInvariant()).ToList();
             string why = worst.Count == 0 ? "" : $" Most of all: {string.Join(" and ", worst)}.";
             yield return new("settlers", Settlers, "Settlers stay away", $"Few newcomers will come while things stand as they are.{why} The City window shows every reason.");
+        }
+    }
+
+    /// <summary>An institution waiting on the council's choice, or a keeper whose patience has run out.</summary>
+    private static IEnumerable<Alert> Keepers(Town t)
+    {
+        foreach (var s in t.Institutions)
+        {
+            var d = Institutions.DefOf(t, s);
+            if (s.Shut) continue;
+            if (s.Choice == "" && d.Choice != null)
+                yield return new($"institution:{d.Id}", Institution, $"Decide {d.Choice.Label}",
+                    $"{Cap(d.Name)} is open and {Institutions.KeeperName(t, s)} is waiting on the council. {d.Choice.Text} Choose in the Institutions window.");
+            else if (s.Regard <= -40)
+                yield return new($"keeper:{d.Id}", Institution, $"{Institutions.KeeperName(t, s)} is bitter",
+                    $"{Cap(d.Name)} gives the town little while its keeper feels like this. Fund it more generously in the Institutions window, or answer its next request.");
         }
     }
 

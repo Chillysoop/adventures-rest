@@ -1,0 +1,17 @@
+{
+  "step": 6,
+  "decay": 0.98,
+  "comfort": 0.1,
+  "mood": 3,
+  "wards": [
+    { "id": "old_town", "voice": "the first families", "likes": ["order", "caution"], "dislikes": ["guile"] },
+    { "id": "market", "voice": "the stallholders", "likes": ["coin", "freedom"], "dislikes": ["harsh"] },
+    { "id": "trades", "voice": "the guild masters", "likes": ["order", "coin"], "dislikes": ["generous"] },
+    { "id": "temple", "voice": "the temple wardens", "likes": ["faith", "mercy"], "dislikes": ["guile", "harsh"] },
+    { "id": "hill", "voice": "the manor houses", "likes": ["order", "harsh"], "dislikes": ["generous", "freedom"] },
+    { "id": "riverside", "voice": "the wharf crews", "likes": ["freedom", "guile"], "dislikes": ["order"] },
+    { "id": "field", "voice": "the tenement folk", "likes": ["generous", "mercy"], "dislikes": ["harsh", "coin"] },
+    { "id": "southgate", "voice": "the innkeepers and carters", "likes": ["coin", "valor"], "dislikes": ["caution"] },
+    { "id": "tanners", "voice": "the tanners' row", "likes": ["generous", "freedom"], "dislikes": ["order"] }
+  ]
+}

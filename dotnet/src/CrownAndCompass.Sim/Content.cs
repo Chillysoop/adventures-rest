@@ -570,6 +570,28 @@ public sealed record PotionRules
     public string Dice { get; init; } = "2d4+2";
 }
 
+/// <summary>Spell scrolls as the scriptorium sells them: one area spell, read once by any hero who casts.</summary>
+public sealed record ScrollRules
+{
+    public string Item { get; init; } = "spell-scroll-1st-level";
+    public double Price { get; init; } = 50;
+    public double Wholesale { get; init; } = 20;
+    public int Carry { get; init; } = 1;
+    public string Dice { get; init; } = "3d6";
+    public int Targets { get; init; } = 3;
+
+    /// <summary>Buildings that sell them.</summary>
+    public IReadOnlyList<string> Shops { get; init; } = ["scriptorium", "mage_tower"];
+
+    /// <summary>Chance a hoard holds a scroll for a caster in the party.</summary>
+    public double Found { get; init; } = 0.2;
+
+    /// <summary>The class that copies a found scroll into its spellbook instead of carrying it, the damage each copied spell adds to its area spell, and the most it copies.</summary>
+    public string Copier { get; init; } = "wizard";
+    public int CopyBonus { get; init; } = 1;
+    public int MaxCopied { get; init; } = 4;
+}
+
 /// <summary>The shrine, the temple and the town's god (content/game/faith.json).</summary>
 public sealed record ShrineRules
 {
@@ -600,6 +622,7 @@ public sealed record ShrineRules
     public double CrusadeReward { get; init; } = 140;
     public double CrusadeReserve { get; init; } = 40;
     public PotionRules Potion { get; init; } = new();
+    public ScrollRules Scroll { get; init; } = new();
 }
 
 /// <summary>How one kind of enemy lives off-screen (GDD enemy table).</summary>
@@ -1148,6 +1171,9 @@ public sealed class Content
     /// <summary>Adventuring companies' bastions: who may raise one, their facilities and turns (content/game/bastions.json).</summary>
     public BastionRules Bastions { get; init; } = new();
 
+    /// <summary>The city's institutions: their keepers, services, choices and requests (content/game/institutions.json).</summary>
+    public InstitutionRules Institutions { get; init; } = new();
+
     /// <summary>Sellsword companies for hire and how their campaigns go (content/game/mercenaries.json).</summary>
     public MercRules Mercenaries { get; init; } = new();
 
@@ -1158,6 +1184,12 @@ public sealed class Content
     /// <summary>The town guard's posts and the wall works past the stone walls (content/game/garrison.json).</summary>
     public GarrisonRules Garrison { get; init; } = new();
 
+    /// <summary>Bounty terms and townsfolk carried off in raids (content/game/bounties.json).</summary>
+    public BountyRules Bounties { get; init; } = new();
+    public BroadsheetRules Broadsheet { get; init; } = new();
+    public ClockworkRules Clockwork { get; init; } = new();
+    public MerchantRules Merchants { get; init; } = new();
+    public WardRules Wards { get; init; } = new();
     /// <summary>Fame and infamy for heroes and companies (content/game/notoriety.json).</summary>
     public NotorietyRules Notoriety { get; init; } = new();
 
@@ -1272,6 +1304,10 @@ public sealed class Content
     private static Content Load(Func<string, string> read)
     {
         T Parse<T>(string file) => JsonSerializer.Deserialize<T>(read(file), JsonOptions) ?? throw new InvalidDataException($"Empty content file {file}");
+        // The institutions' requests are story events like any other, kept with the institutions.
+        var institutions = Parse<InstitutionRules>("institutions.json");
+        var stories = WithSendings(Parse<StoryRules>("stories.json"), Parse<SendingRules>("sendings.json"));
+        stories = stories with { Stories = [.. stories.Stories, .. institutions.Requests], Precedents = [.. stories.Precedents, .. institutions.Precedents] };
         return new Content(
             Parse<List<BuildingDef>>("buildings.json"),
             Parse<NamesFile>("names.json").Races,
@@ -1300,13 +1336,19 @@ public sealed class Content
             Trade = Parse<TradeRules>("trade.json"),
             Legacies = Parse<LegacyRules>("legacies.json"),
             History = Parse<HistoryRules>("history.json"),
-            Stories = WithSendings(Parse<StoryRules>("stories.json"), Parse<SendingRules>("sendings.json")),
+            Stories = stories,
+            Institutions = institutions,
             Sendings = Parse<SendingRules>("sendings.json"),
             Bastions = Parse<BastionRules>("bastions.json"),
             Mercenaries = Parse<MercRules>("mercenaries.json"),
             Regard = Parse<RegardRules>("regard.json"),
             Explore = Parse<ExploreRules>("explore.json"),
             Garrison = Parse<GarrisonRules>("garrison.json"),
+            Bounties = Parse<BountyRules>("bounties.json"),
+            Broadsheet = Parse<BroadsheetRules>("broadsheet.json"),
+            Clockwork = Parse<ClockworkRules>("clockwork.json"),
+            Merchants = Parse<MerchantRules>("merchants.json"),
+            Wards = Parse<WardRules>("wards.json"),
             Notoriety = Parse<NotorietyRules>("notoriety.json"),
         };
     }
