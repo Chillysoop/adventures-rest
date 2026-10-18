@@ -16,17 +16,19 @@ public static class Planning
     public const double MaxBrush = 3;
 
     /// <summary>Paint a brush stroke (Zone.None clears land; civic land is made only by placing government buildings). Returns cells changed.</summary>
-    public static int Paint(Town town, IEnumerable<(double X, double Y)> dabs, double radius, Zone zone)
+    public static int Paint(Town town, IEnumerable<(double X, double Y)> dabs, double radius, Zone zone, int density = 0)
     {
         if (zone != Zone.None && !Paintable.Contains(zone)) return 0;
-        int n = Land.Brush(town, dabs, Math.Clamp(radius, 0.25, MaxBrush), zone);
+        if (!Density.Takes(zone)) density = Density.Low;
+        if (Density.Blocked(town, density) != null) return 0;
+        int n = Land.Brush(town, dabs, Math.Clamp(radius, 0.25, MaxBrush), zone, density: density);
         if (n > 0)
             town.Log(
                 LedgerCategory.Property,
                 Importance.Routine,
                 zone == Zone.None
                     ? $"The council takes {Acres(n)} off the plan."
-                    : $"The council zones {Acres(n)} as {ZoneName(zone)} land.");
+                    : $"The council zones {Acres(n)} as {(density > Density.Low ? Density.Name(town, density).ToLowerInvariant() + "-density " : "")}{ZoneName(zone)} land.");
         return n;
     }
 
@@ -100,7 +102,8 @@ public static class Planning
     {
         var ward = City.WardOf(town, x, y);
         if (!City.IsOpen(town, x, y)) return $"the {ward.Name} has not been laid out";
-        if (!City.Allows(town, d, x, y)) return $"it can't stand in the {ward.Name}";
+        if (!City.AllowsWard(town, d, x, y)) return $"it can't stand in the {ward.Name}";
+        if (!Density.Allows(town, d, x, y)) return $"it needs land zoned {Density.Name(town, d.Density).ToLowerInvariant()} density";
         if (Land.At(town, d, x, y, yaw) != null) return null;
         var (w, dd) = Land.Footprint(d);
         double a = yaw ?? Streets.Facing(town, x, y);

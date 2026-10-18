@@ -469,7 +469,7 @@ public sealed class Town
     public double LotPrice(Lot lot)
     {
         var ward = Systems.City.WardOf(this, lot);
-        return LotPrice(DistanceFromCenter(lot)) * ward.Land * Systems.Decor.Prestige(this, ward.Id) + Systems.Decor.LandValue(this, lot);
+        return LotPrice(DistanceFromCenter(lot)) * ward.Land * Systems.Density.LandFactor(this, lot) * Systems.Decor.Prestige(this, ward.Id) + Systems.Decor.LandValue(this, lot);
     }
 
     /// <summary>Land is dearer near the hall (before the ward's own price and the beauty round it).</summary>

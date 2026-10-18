@@ -68,6 +68,7 @@ public partial class Main
             else p.Row(text, ("Show", true, false, () => LookAtWard(id)), ("Lay out", why == null, true, () => { _sim.OpenWard(id); _dirty = true; }));
         }
 
+        RenderDensity(p, t);
         RenderGrandWorks(p, t);
 
         p.Heading("Houses");
@@ -81,7 +82,7 @@ public partial class Main
             string wants = City.Wants(t, h);
             string needs = h.Goods.Count + h.Services.Count == 0 ? "Wants nothing but a roof."
                 : wants == "" ? "Has all it wants." : $"Short of {wants}.";
-            string grow = h.Next != "" ? $" Grows into a {t.Content.Building(h.Next).Name.ToLowerInvariant()} when its family has what that wants." : "";
+            string grow = h.Next != "" ? $" Grows into a {t.Content.Building(h.Next).Name.ToLowerInvariant()}{(h.Dense != "" ? $" (a {t.Content.Building(h.Dense).Name.ToLowerInvariant()} on high-density land)" : "")} when its family has what that wants." : "";
             p.Row($"[b]{Ui.Esc(def.Name)}[/b]  {Tag($"{homes.Count}")}  {Ui.C(Ui.Ink2, $"[font_size=11]{people} living · {h.Tax:0.##}g hearth tax a day[/font_size]")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{needs}{grow}[/font_size]")}");
             if (homes.Count > 0 && (h.Goods.Count > 0 || h.Services.Count > 0)) p.Meter("Content", content * 100, $"{Math.Round(content * 100)}%", content < t.Content.City.DowngradeBelow);
         }
@@ -139,6 +140,22 @@ public partial class Main
                 : ($"Patrol · {Js.Str(r.PatrolCost)}g a day", true, false, () => Act(() => _sim.PatrolUndercity(id, true))));
         }
         p.Note($"Each charter breaks into a deeper level under the town. Left alone, a level stirs, faster with secret societies at work and more people above, and at {Js.Str(r.RiseAt)} something comes up into the streets. Post a bounty on it in Bounties (heroes go down with no road to walk), or send the watch down at night to slow it.");
+    }
+
+    /// <summary>Zoning densities: which the charter allows, and how many households live at each.</summary>
+    private static void RenderDensity(Pane p, Town t)
+    {
+        p.Heading("Density");
+        var homes = t.Buildings.Where(b => b.Def.Housing > 0 && b.Complete).ToList();
+        for (int level = 0; level < t.Content.City.Densities.Count; level++)
+        {
+            var d = t.Content.City.Densities[level];
+            int lvl = level;
+            int people = homes.Where(b => Density.At(t, t.Lot(b.LotId)) == lvl).Sum(b => b.Residents.Count);
+            string status = Density.Blocked(t, level) == null ? Tag("unlocked", Ui.Good) : Tag($"needs {City.TierName(t, d.Tier).ToLowerInvariant()}");
+            p.Row($"[b]{Ui.Esc(d.Name)} density[/b]  {status}  {Ui.C(Ui.Ink2, $"[font_size=11]{people} living[/font_size]")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(d.Blurb)}[/font_size]")}");
+        }
+        p.Note("Paint dense homes and shops from the build bar's zones, over open ground or streets already built. Old walled cores grow tall first; let lower sprawl spread outside the walls.");
     }
 
     /// <summary>The season: what it does to the town, the winter stores, and the visitors it brings.</summary>
