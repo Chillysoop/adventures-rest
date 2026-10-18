@@ -220,7 +220,7 @@ public static class City
     public static bool Reached(Town town, string tierId) => TierIndex(town, tierId) <= town.City.Tier;
 
     /// <summary>The most heroes who will make their home here at this tier.</summary>
-    public static int HeroCap(Town town) => Tier(town).Heroes + GrandWorks.Heroes(town);
+    public static int HeroCap(Town town) => Tier(town).Heroes + GrandWorks.Heroes(town) + Institutions.Heroes(town);
 
     /// <summary>The size the townsfolk boast of: every resident's household.</summary>
     public static int Souls(Town town) => (int)Js.Round(town.Population * town.Content.City.SoulsPerResident);

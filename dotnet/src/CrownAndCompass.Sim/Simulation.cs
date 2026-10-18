@@ -133,6 +133,7 @@ public sealed class Simulation
         Saga.Daily(t, Options.AutoMayor);
         Turning.Daily(t);
         Legacies.Daily(t, Options.AutoMayor);
+        Institutions.Daily(t, Options.AutoMayor && Options.AutoPlanning);
         Regard.Daily(t);
         Wards.Daily(t);
         Broadsheet.Daily(t, Options.AutoMayor && Options.AutoStories);
@@ -171,6 +172,12 @@ public sealed class Simulation
 
     /// <summary>Raise a memorial to a hero in the hall of heroes.</summary>
     public bool RaiseMemorial(int heroId) => Legacies.RaiseMemorial(Town, heroId);
+
+    /// <summary>Set how generously the council funds an institution: 0 unfunded, 1 modest, 2 generous.</summary>
+    public bool FundInstitution(string institutionId, int level) => Institutions.Fund(Town, institutionId, level);
+
+    /// <summary>Make an institution's choice: which god's temple gets the land, the tavern's style, what the bazaar trades in.</summary>
+    public bool ChooseInstitution(string institutionId, string option) => Institutions.Choose(Town, institutionId, option);
 
     /// <summary>The player's other lever: sign or veto the motion before the council.</summary>
     public bool DecideMotion(int motionId, bool sign) => Council.Decide(Town, motionId, sign);
