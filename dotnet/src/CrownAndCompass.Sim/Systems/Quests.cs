@@ -221,7 +221,7 @@ public static class Quests
     }
 
     /// <summary>Hand an unearned reward back to whoever put it up.</summary>
-    private static void Refund(Town town, Bounty b)
+    public static void Refund(Town town, Bounty b)
     {
         if (b.FunderId != null) town.Building(b.FunderId.Value).Cash += b.Reward;
         else town.Book(TreasuryAccount.Bounties, b.Reward);
@@ -255,7 +255,7 @@ public static class Quests
         return a;
     }
 
-    private static ClassDef PickClass(Town town)
+    internal static ClassDef PickClass(Town town)
     {
         var classes = town.Content.Classes;
         int total = classes.Sum(c => c.Weight);
@@ -305,9 +305,10 @@ public static class Quests
         {
             var s = a.Hero!;
             if (s.AwayUntil != null) continue;
-            // A bed above the tavern.
-            s.Lodging = taverns.Count > 0 && a.Gold >= Lodging;
-            if (s.Lodging)
+            // A bed at the company's bastion, or above the tavern.
+            bool home = Bastions.Lodges(town, a);
+            s.Lodging = home || (taverns.Count > 0 && a.Gold >= Lodging);
+            if (s.Lodging && !home)
             {
                 var t = taverns[a.Id % taverns.Count];
                 a.Gold -= Lodging;
@@ -614,7 +615,7 @@ public static class Quests
         }
     }
 
-    private static void GainXp(Town town, Agent a, int xp)
+    internal static void GainXp(Town town, Agent a, int xp)
     {
         var s = a.Hero!;
         s.Xp += xp;

@@ -71,6 +71,15 @@ public sealed class Building(int id, BuildingDef def, int lotId)
     public List<int> Workers { get; } = [];
     public List<int> Residents { get; } = [];
 
+    /// <summary>A grand work: stages funded so far. Builders can't go past the last funded stage (<see cref="Systems.GrandWorks"/>).</summary>
+    public int Stage { get; set; }
+
+    /// <summary>Hours builders may reach before the next stage is funded: all of them for any other building.</summary>
+    public double Funded => Def.IsGrand ? Def.Stages.Take(Stage).Sum(s => s.Hours) : Def.BuildHours;
+
+    /// <summary>Builders' work on a site, stopping at the funded stage.</summary>
+    public void Raise(double hours) => BuildProgress = Math.Min(BuildProgress + hours, Math.Max(BuildProgress, Funded));
+
     public bool Complete => BuildProgress >= Def.BuildHours;
     public bool IsSite => !Complete;
     /// <summary>The town hall's road crews: extra hands the treasury hires out of the town's upkeep.</summary>
@@ -229,8 +238,11 @@ public static class TreasuryAccount
     public const string Stores = "Winter stores";
     public const string Intel = "Intel";
     public const string Stories = "Stories";
+    public const string GrandWorks = "Grand works";
+    public const string Mercenaries = "Mercenaries";
     public const string Decrees = "Decrees";
     public const string Trade = "Trade";
+    public const string Bastions = "Bastions";
     public const string Callings = "Callings";
 }
 
@@ -281,6 +293,12 @@ public sealed class Town
 
     /// <summary>Adventuring companies the town has dealt with, by first dealing (<see cref="Intel"/>).</summary>
     public List<CompanyState> Companies { get; } = [];
+
+    /// <summary>Companies' own compounds in town, by founding (<see cref="Systems.Bastions"/>).</summary>
+    public List<BastionState> Bastions { get; } = [];
+
+    /// <summary>Companies' requests for the council's leave to raise a bastion, oldest first.</summary>
+    public List<BastionRequest> BastionRequests { get; } = [];
     public List<Chronicle> Chronicles { get; } = [];
     public List<Seat> Seats { get; } = [];
     public List<Motion> Motions { get; } = [];
@@ -319,6 +337,9 @@ public sealed class Town
 
     /// <summary>Library items parties brought home for the town (ids), in the order they came.</summary>
     public List<string> Relics { get; } = [];
+
+    /// <summary>Sellsword companies under contract to the town (<see cref="Systems.Mercenaries"/>).</summary>
+    public List<Hire> Hires { get; } = [];
 
     /// <summary>Free scryings from the Scrying Pool used today.</summary>
     public int FreeScryingsUsed { get; set; }

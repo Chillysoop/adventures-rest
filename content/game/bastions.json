@@ -1,0 +1,69 @@
+{
+  "keep": "bastion_keep",
+  "found": {
+    "level": 5,
+    "renown": 80,
+    "members": 2,
+    "firstDay": 60,
+    "perTier": { "thorp": 0, "hamlet": 1, "village": 1, "town": 2, "large_town": 3, "city": 4, "great_city": 5 },
+    "spare": 1.15,
+    "nearest": 7,
+    "slotsNeeded": 3
+  },
+  "council": {
+    "answerDays": 10,
+    "refuseDays": 60,
+    "grantDealings": 4,
+    "giftDealings": 12,
+    "giftLoyalty": 6,
+    "refuseDealings": -12,
+    "refuseLoyalty": -8,
+    "refusedFeeling": -8
+  },
+  "members": {
+    "max": 6,
+    "loyalty": 10,
+    "reserveBase": 150,
+    "reservePerLevel": 30,
+    "tithe": 0.5
+  },
+  "upkeep": {
+    "chestReserve": 120,
+    "reopenAt": 200,
+    "buildSpare": 1.25
+  },
+  "turnDays": 7,
+  "slots": [
+    { "level": 5, "facilities": 2 },
+    { "level": 9, "facilities": 4 },
+    { "level": 13, "facilities": 5 },
+    { "level": 17, "facilities": 6 }
+  ],
+  "defender": 2.5,
+  "veterancy": 0.5,
+  "maxVeterancy": 4,
+  "facilities": [
+    { "building": "bastion_garden", "level": 5, "order": "harvest", "priority": 1, "amount": 2, "carry": 4, "sale": 12 },
+    { "building": "bastion_yard", "level": 5, "order": "drill", "priority": 2, "threatened": true },
+    { "building": "bastion_smithy", "level": 5, "order": "craft", "priority": 3 },
+    { "building": "bastion_maproom", "level": 5, "order": "research", "priority": 4, "trust": 70 },
+    { "building": "bastion_sanctum", "level": 9, "order": "tend", "priority": 5, "amount": 6 },
+    { "building": "bastion_counting", "level": 9, "order": "trade", "priority": 6, "amount": 40, "perHundred": 6 },
+    { "building": "bastion_proving", "level": 9, "order": "train", "priority": 7, "amount": 60, "perLevel": 25 },
+    { "building": "bastion_banners", "level": 13, "order": "recruit", "priority": 8, "amount": 3 },
+    { "building": "bastion_vault", "level": 17, "order": "vault", "priority": 9, "amount": 2 }
+  ],
+  "events": [
+    { "id": "quiet", "weight": 46 },
+    { "id": "visitors", "weight": 10, "gold": 60, "text": "Old friends of the {company} pass through {bastion} and leave {gold} gold in thanks." },
+    { "id": "attack", "weight": 9, "text": "Raiders who hold a grudge against the {company} come over the wall of {bastion} by night." },
+    { "id": "thief", "weight": 7, "gold": 0.15, "text": "{hireling}, hired at {facility}, is caught with a hand in the {company}'s chest and turned out." },
+    { "id": "quit", "weight": 6, "text": "The hirelings at {facility} walk out over their wages; the {company} will have to hire again." },
+    { "id": "refugees", "weight": 7, "settlers": 3, "text": "Families fleeing the wilds take shelter at {bastion}. The {company} sees them settled in {town}." },
+    { "id": "guest", "weight": 5, "text": "{hero} rides up to {bastion} asking to join the {company}." },
+    { "id": "treasure", "weight": 5, "text": "Digging a new cellar at {bastion}, the hirelings break into an older one, and find {item}." },
+    { "id": "aid", "weight": 5, "gold": 80, "mandate": 2, "text": "With hard times in {town}, the {company} opens its chest: {gold} gold for the council's works." }
+  ],
+  "prefixes": ["Raven", "Thorn", "Ember", "Stag", "Grey", "Wolf", "Oak", "Storm", "Lantern", "Iron", "Ash", "Hollow", "Crow", "Briar", "Kestrel", "Owl"],
+  "suffixes": ["hold", "hall", "gard", "keep", "watch", "stead", "rest", "mote", "fast", "barrow"]
+}

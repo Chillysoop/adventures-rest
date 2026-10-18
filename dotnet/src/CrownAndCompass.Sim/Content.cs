@@ -110,7 +110,34 @@ public sealed record BuildingDef
     [JsonConverter(typeof(GoodsListConverter))]
     public IReadOnlyList<KeyValuePair<Good, double>> Consumes { get; init; } = [];
 
+    /// <summary>Part of an adventuring company's bastion: the company pays its hirelings and keeps what it earns (<see cref="Systems.Bastions"/>).</summary>
+    public bool Bastion { get; init; }
+
+    /// <summary>A grand work: added to every house's contentment while it stands.</summary>
+    public double Comfort { get; init; }
+
+    /// <summary>A grand work: added to the town's draw on settlers while it stands.</summary>
+    public double Attraction { get; init; }
+
+    /// <summary>A grand work: more heroes the town can keep while it stands.</summary>
+    public int Heroes { get; init; }
+
+    /// <summary>A grand work's stages, funded one after another; its build hours are theirs summed (<see cref="Systems.GrandWorks"/>).</summary>
+    public IReadOnlyList<WorkStage> Stages { get; init; } = [];
+
     public bool IsBusiness => Jobs > 0;
+    public bool IsGrand => Stages.Count > 0;
+}
+
+/// <summary>One stage of a grand work: the gold and goods it draws when it starts, and the builders' hours it takes.</summary>
+public sealed record WorkStage
+{
+    public string Name { get; init; } = "";
+    public double Gold { get; init; }
+
+    [JsonConverter(typeof(GoodsListConverter))]
+    public IReadOnlyList<KeyValuePair<Good, double>> Goods { get; init; } = [];
+    public double Hours { get; init; }
 }
 
 public sealed record RaceDef
@@ -1111,6 +1138,12 @@ public sealed class Content
     /// <summary>Story events and the mayor's character sheet (content/game/stories.json).</summary>
     public StoryRules Stories { get; init; } = new();
 
+    /// <summary>Adventuring companies' bastions: who may raise one, their facilities and turns (content/game/bastions.json).</summary>
+    public BastionRules Bastions { get; init; } = new();
+
+    /// <summary>Sellsword companies for hire and how their campaigns go (content/game/mercenaries.json).</summary>
+    public MercRules Mercenaries { get; init; } = new();
+
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
 
@@ -1250,6 +1283,8 @@ public sealed class Content
             Trade = Parse<TradeRules>("trade.json"),
             History = Parse<HistoryRules>("history.json"),
             Stories = Parse<StoryRules>("stories.json"),
+            Bastions = Parse<BastionRules>("bastions.json"),
+            Mercenaries = Parse<MercRules>("mercenaries.json"),
         };
     }
 
