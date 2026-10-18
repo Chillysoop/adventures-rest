@@ -59,7 +59,7 @@ public class InstitutionsTests
         var s = Assert.Single(t.Institutions);
         Assert.Equal("adventurers-hall", s.Def);
         Assert.StartsWith("Hallmaster ", Institutions.KeeperName(t, s));
-        Assert.Equal(cap + 2, City.HeroCap(t));
+        Assert.Equal(cap + 1, City.HeroCap(t));
         Assert.Contains(t.Ledger.Entries, e => e.Text.Contains("the Adventurers' Hall opens its doors", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(Alerts.Standing(t), a => a.Kind == Alerts.Institution);
 

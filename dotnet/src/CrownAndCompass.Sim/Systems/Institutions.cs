@@ -465,6 +465,34 @@ public static class Institutions
         return f.Name;
     }
 
+    /// <summary>What a service does, in short phrases for the Institutions window, at a strength (1 is modest funding).</summary>
+    public static List<string> Describe(Town town, ServiceDef d, double k = 1)
+    {
+        var said = new List<string>();
+        string N(double v, int places = 0) => Js.ToFixed(Math.Abs(v * k), places);
+        if (d.Heroes > 0) said.Add($"room for {Js.Str(Math.Max(1, Math.Floor(d.Heroes * k + 0.05)))} more {(d.Heroes * k >= 1.95 ? "heroes" : "hero")}");
+        if (d.Routes > 0) said.Add("one more trade route");
+        if (d.Defence != 0) said.Add($"{(d.Defence > 0 ? "+" : "−")}{N(d.Defence)} defence on the walls");
+        if (d.Heal > 0) said.Add($"heroes heal {N(d.Heal * 100)}% more a night");
+        if (d.Escort > 0) said.Add($"{N(d.Escort * 100)}% fewer caravans waylaid");
+        foreach (var (g, y) in d.Yields.OrderBy(y => y.Key, StringComparer.Ordinal))
+            said.Add($"{(y >= 1 ? "+" : "−")}{Js.ToFixed(Math.Abs((y - 1) * k * 100), 0)}% {g.ToLowerInvariant()}");
+        if (d.Build != 0) said.Add($"builders {N(d.Build * 100)}% {(d.Build > 0 ? "faster" : "slower")}");
+        if (d.Mood != 0) said.Add(d.Mood > 0 ? $"+{N(d.Mood, 1)} mood" : $"−{N(d.Mood, 1)} mood");
+        if (d.Arrivals != 0) said.Add(d.Arrivals > 0 ? "draws settlers" : "puts settlers off");
+        if (d.Gold != 0) said.Add($"{(d.Gold > 0 ? "+" : "−")}{N(d.Gold, 1)} gold a day");
+        if (d.Tension != 0) said.Add(d.Tension < 0 ? "calmer streets" : "rowdier streets");
+        if (d.Dread < 0) said.Add("eases dread");
+        if (d.Favour > 0) said.Add("the gods' favour");
+        if (d.Faction != "" && town.Content.Factions.Factions.FirstOrDefault(f => f.Ref == d.Faction) is { } fd)
+        {
+            string name = town.Content.Library.Faction(fd.Ref)?.Name ?? fd.Ref;
+            if (d.Standing != 0) said.Add($"{(d.Standing > 0 ? "warms" : "cools")} {name}");
+            if (d.FactionHeat < 0) said.Add($"keeps {name} out of sight");
+        }
+        return said;
+    }
+
     /// <summary>How the keeper feels, in a word.</summary>
     public static string Feeling(double regard) => regard switch
     {
