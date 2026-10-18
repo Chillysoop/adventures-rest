@@ -103,6 +103,7 @@ public sealed class Simulation
         Brain.Daily(t);
         Seasons.Daily(t);
         Economy.Daily(t);
+        Merchants.Daily(t);
         City.Daily(t, Options.AutoMayor && Options.AutoPlanning);
         GrandWorks.Daily(t, Options.AutoMayor && Options.AutoPlanning);
         Streets.Wear(t);

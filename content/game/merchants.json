@@ -1,0 +1,16 @@
+{
+  "shops": ["general_store", "forge"],
+  "share": 0.6,
+  "resale": 1.1,
+  "keep": 40,
+  "maxWares": 4,
+  "standing": 0.2,
+  "fence": {
+    "faction": "quiet-hand",
+    "share": 0.8,
+    "cut": 0.25,
+    "heat": 3,
+    "cap": 1.2,
+    "tempers": ["greedy", "free"]
+  }
+}

@@ -1158,6 +1158,7 @@ public sealed class Content
     /// <summary>Bounty terms and townsfolk carried off in raids (content/game/bounties.json).</summary>
     public BountyRules Bounties { get; init; } = new();
     public BroadsheetRules Broadsheet { get; init; } = new();
+    public MerchantRules Merchants { get; init; } = new();
 
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
@@ -1307,6 +1308,7 @@ public sealed class Content
             Garrison = Parse<GarrisonRules>("garrison.json"),
             Bounties = Parse<BountyRules>("bounties.json"),
             Broadsheet = Parse<BroadsheetRules>("broadsheet.json"),
+            Merchants = Parse<MerchantRules>("merchants.json"),
         };
     }
 

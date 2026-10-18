@@ -304,6 +304,9 @@ public sealed class Town
     /// <summary>The town broadsheet: its issues and the slant paid for in the next (<see cref="Systems.Broadsheet"/>).</summary>
     public PressState Press { get; } = new();
 
+    /// <summary>Second-hand magic items on the shops' shelves (<see cref="Systems.Merchants"/>).</summary>
+    public List<Ware> Wares { get; } = [];
+
     public List<BastionState> Bastions { get; } = [];
 
     /// <summary>Companies' requests for the council's leave to raise a bastion, oldest first.</summary>
