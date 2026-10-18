@@ -24,16 +24,16 @@ public enum AlertWindow
 public sealed record AlertKind(string Id, string Title, string Icon, AlertLevel Level, AlertWindow Window);
 
 /// <summary>
-/// One thing that needs the player. The key stays the same while it is the same problem, so a dismissed
-/// alert stays dismissed until it is resolved and comes back. Site, agent or town aim the camera; an
-/// entry id means it is Ledger news and the client takes the player to what the entry names.
+/// One thing the player should act on. The key stays the same while it is the same problem, so a dismissed
+/// alert stays dismissed until it is resolved and comes back. Site, agent or town aim the camera.
 /// </summary>
-public sealed record Alert(string Key, AlertKind Kind, string Text, string Tip, string? SiteId = null, int? AgentId = null, bool AtTown = false, int? EntryId = null);
+public sealed record Alert(string Key, AlertKind Kind, string Text, string Tip, string? SiteId = null, int? AgentId = null, bool AtTown = false);
 
 /// <summary>
 /// The player's to-do list, in the manner of Paradox games. Standing alerts are read off the town each
 /// time (nothing here is saved): an alert lasts while its rule names it, so resolving the problem clears
-/// it. Big Ledger news becomes a minor alert that fades. To raise a new alert, add a kind below and a
+/// it. Each alert is an action for the player, Paradox style: news belongs in the Ledger and the feed, not
+/// here. To raise a new alert, add a kind below and a
 /// rule to <see cref="Rules"/> (or a line in an existing rule); the client groups, orders and aims it.
 /// </summary>
 public static class Alerts
@@ -48,16 +48,10 @@ public static class Alerts
     public static readonly AlertKind Housing = new("housing", "Housing", "homeless", AlertLevel.Minor, AlertWindow.Council);
     public static readonly AlertKind Work = new("work", "Idle hands", "population", AlertLevel.Minor, AlertWindow.Council);
 
-    public static readonly AlertKind WarNews = new("news-war", "War news", "warband", AlertLevel.Minor, AlertWindow.War);
-    public static readonly AlertKind QuestNews = new("news-quest", "Adventures", "quest", AlertLevel.Minor, AlertWindow.Bounties);
-    public static readonly AlertKind FaithNews = new("news-faith", "The gods", "faith", AlertLevel.Minor, AlertWindow.Faith);
-    public static readonly AlertKind FactionNews = new("news-faction", "Factions", "standing", AlertLevel.Minor, AlertWindow.Faith);
-    public static readonly AlertKind CouncilNews = new("news-council", "Council", "mandate", AlertLevel.Minor, AlertWindow.Council);
-    public static readonly AlertKind News = new("news", "News", "alert", AlertLevel.Minor, AlertWindow.Ledger);
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Hunger, Coffers, Unrest, Hostile, Motion, Heroes, Housing, Work, WarNews, QuestNews, FaithNews, FactionNews, CouncilNews, News];
+        [Siege, Hunger, Coffers, Unrest, Hostile, Motion, Heroes, Housing, Work];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
     public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Food, Money, Council, Hostility, Loyalty, Homes];
@@ -127,23 +121,6 @@ public static class Alerts
         int idle = workers.Count(a => a.JobId == null);
         if (idle >= Math.Max(4, workers.Count / 5))
             yield return new("idle", Work, $"{idle} out of work", "Idle townsfolk drift away. Zone land for shops, workshops and farms.", AtTown: true);
-    }
-
-    /// <summary>Big news as a minor alert: every major entry, and notable war news.</summary>
-    public static Alert? ForEntry(LedgerEntry e)
-    {
-        if (e.Importance != Importance.Major && !(e.Category == LedgerCategory.War && e.Importance == Importance.Notable)) return null;
-        var kind = e.Category switch
-        {
-            LedgerCategory.War => WarNews,
-            LedgerCategory.Quest => QuestNews,
-            LedgerCategory.Faith => FaithNews,
-            LedgerCategory.Faction => FactionNews,
-            LedgerCategory.Council => CouncilNews,
-            _ => News,
-        };
-        string text = e.Text.Length > 34 ? e.Text[..32].TrimEnd(' ', ',', '.') + "…" : e.Text;
-        return new($"entry:{e.Id}", kind, Cap(text), e.Text, EntryId: e.Id);
     }
 
     private static string Cap(string s) => s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];

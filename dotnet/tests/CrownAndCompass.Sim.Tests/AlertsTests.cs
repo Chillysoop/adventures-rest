@@ -43,18 +43,4 @@ public class AlertsTests
         }
         Assert.Equal(quiet.Town.Ledger.Entries.Select(e => e.Format()), watched.Town.Ledger.Entries.Select(e => e.Format()));
     }
-
-    [Fact]
-    public void OnlyBigNewsBecomesAnAlert()
-    {
-        var major = new LedgerEntry(7, 30, LedgerCategory.Quest, Importance.Major, "The party returns from the Old Mill with a dragon's hoard and tales to tell", []);
-        var a = Alerts.ForEntry(major);
-        Assert.NotNull(a);
-        Assert.Equal(Alerts.QuestNews, a!.Kind);
-        Assert.Equal(AlertLevel.Minor, a.Kind.Level);
-        Assert.Equal(7, a.EntryId);
-        Assert.True(a.Text.Length <= 34);
-        Assert.Null(Alerts.ForEntry(major with { Importance = Importance.Notable }));
-        Assert.NotNull(Alerts.ForEntry(major with { Category = LedgerCategory.War, Importance = Importance.Notable }));
-    }
 }

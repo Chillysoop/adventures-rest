@@ -10,16 +10,15 @@ namespace CrownAndCompass.Client;
 /// The alert strip under the top bar, in the manner of Paradox games: one icon per kind of trouble, urgent
 /// first, with a count when several share it. Hover for a summary of each; click to go where it is answered
 /// (a kind with several opens a list to pick from); right-click to dismiss. What the alerts are comes from
-/// the sim (<see cref="Alerts"/>): standing alerts last while their condition does and clear once it is
-/// resolved, Ledger news fades. Minor alerts time out on their own while the clock runs; decisions and urgent
-/// ones stay until resolved or dismissed. A dismissed or faded standing alert returns only after it clears.
+/// the sim (<see cref="Alerts"/>), and each is one thing the player should act on (news stays in the feed):
+/// an alert lasts while its condition does and clears once it is resolved. Minor alerts also time out while
+/// the clock runs; decisions and urgent ones stay until resolved or dismissed. A dismissed or faded alert
+/// returns only after its condition clears and comes back.
 /// </summary>
 public partial class Main
 {
     private const double MinorSeconds = 60;
-    private const double NewsSeconds = 45;
     private const double FadeSeconds = 6;
-    private const int MaxNews = 12;
 
     private HBoxContainer _alertRow = null!;
     private PanelContainer _alertTip = null!, _alertList = null!;
@@ -28,7 +27,6 @@ public partial class Main
     /// <summary>Seconds of running (unpaused) game, so minor alerts wait while the player reads.</summary>
     private double _alertClock;
     private List<Alert> _standing = [];
-    private readonly List<Alert> _news = [];
     private readonly Dictionary<string, double> _alertBorn = [];
     private readonly HashSet<string> _dismissed = [];
     private string _alertSig = "";
@@ -80,32 +78,12 @@ public partial class Main
 
     private List<Alert> StandingAlerts() => Alerts.Standing(_sim.Town);
 
-    /// <summary>Big news becomes an alert that fades on its own; the feed still carries everything newsworthy.</summary>
-    private void AlertFor(LedgerEntry e)
-    {
-        if (Alerts.ForEntry(e) is not { } a) return;
-        _news.Add(a);
-        // At high speed news piles up; keep the freshest, the Ledger keeps the rest.
-        if (_news.Count > MaxNews)
-        {
-            _alertBorn.Remove(_news[0].Key);
-            _news.RemoveAt(0);
-        }
-    }
-
     /// <summary>Answer an alert: its window, and the site, person or town it is about.</summary>
     private void Go(Alert a)
     {
         CloseAlertList();
         GuideEvent("alert");
         var t = _sim.Town;
-        if (a.EntryId is int id)
-        {
-            // News is read once it is followed.
-            _dismissed.Add(a.Key);
-            if (id >= 1 && id <= t.Ledger.Entries.Count) GoTo(t.Ledger.Entries[id - 1]);
-            return;
-        }
         Tab? tab = a.Kind.Window switch
         {
             AlertWindow.Ledger => Tab.Ledger,
@@ -172,7 +150,7 @@ public partial class Main
     private double? AlertLeft(Alert a)
     {
         if (a.Kind.Level != AlertLevel.Minor) return null;
-        return _alertBorn.GetValueOrDefault(a.Key, _alertClock) + (a.EntryId != null ? NewsSeconds : MinorSeconds) - _alertClock;
+        return _alertBorn.GetValueOrDefault(a.Key, _alertClock) + MinorSeconds - _alertClock;
     }
 
     /// <summary>Age the alerts, rebuild the strip when what it shows changes, and fade what is about to time out.</summary>
@@ -181,14 +159,12 @@ public partial class Main
         if (Speeds[_speed] > 0) _alertClock += delta;
         var standing = _standing;
         // A dismissed standing alert comes back only once its condition has cleared and returned.
-        _dismissed.RemoveWhere(k => !k.StartsWith("entry:") && standing.All(a => a.Key != k));
-        var all = standing.Concat(_news.AsEnumerable().Reverse()).Where(a => !_dismissed.Contains(a.Key)).ToList();
+        _dismissed.RemoveWhere(k => standing.All(a => a.Key != k));
+        var all = standing.Where(a => !_dismissed.Contains(a.Key)).ToList();
         foreach (var a in all) _alertBorn.TryAdd(a.Key, _alertClock);
         foreach (var a in all)
             if (AlertLeft(a) <= 0) _dismissed.Add(a.Key);
-        _news.RemoveAll(a => _dismissed.Contains(a.Key));
         foreach (var k in _alertBorn.Keys.Where(k => all.All(a => a.Key != k)).ToList()) _alertBorn.Remove(k);
-        _dismissed.RemoveWhere(k => k.StartsWith("entry:") && _news.All(a => a.Key != k));
 
         var shown = all.Where(a => !_dismissed.Contains(a.Key)).ToList();
         string sig = string.Join("|", shown.Select(a => a.Key + a.Text));
@@ -306,9 +282,8 @@ public partial class Main
         {
             var item = new VBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
             item.AddThemeConstantOverride("separation", 1);
-            // News carries its whole entry as the tip; the shortened headline would only repeat it.
-            if (a.EntryId == null) item.AddChild(Ui.Label(a.Text, Ui.Ink, Ui.Medium, 13));
-            var tip = Ui.Label(a.Tip, a.EntryId == null ? Ui.Ink2 : Ui.Ink, Ui.Body, 12);
+            item.AddChild(Ui.Label(a.Text, Ui.Ink, Ui.Medium, 13));
+            var tip = Ui.Label(a.Tip, Ui.Ink2, Ui.Body, 12);
             tip.AutowrapMode = TextServer.AutowrapMode.WordSmart;
             tip.CustomMinimumSize = new Vector2(300, 0);
             item.AddChild(tip);
@@ -421,7 +396,6 @@ public partial class Main
 
     private void ClearAlerts()
     {
-        _news.Clear();
         _standing = [];
         _dismissed.Clear();
         _alertBorn.Clear();
