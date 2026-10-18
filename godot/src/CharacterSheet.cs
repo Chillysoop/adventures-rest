@@ -1,3 +1,4 @@
+using CrownAndCompass.Client.Map;
 using CrownAndCompass.Sim;
 using CrownAndCompass.Sim.Systems;
 
@@ -23,6 +24,9 @@ public partial class Main
 
     private int _rollsSeen = -1;
 
+    /// <summary>Frames until --rolls replays the latest checks (once the crowd is on the map), or 0.</summary>
+    private int _rollsReplay;
+
     /// <summary>
     /// Pop a little d20 over each townsperson or hero who rolled a check since the last frame. Idle tavern talk
     /// only shows on a natural 20 or 1, so the few dice on screen go to haggles, songs, brawls and thieves.
@@ -31,15 +35,25 @@ public partial class Main
     {
         var t = _sim.Town;
         if (_rollsSeen < 0 || _rollsSeen > t.CheckSerial) _rollsSeen = t.CheckSerial;
+        if (_rollsReplay > 0 && --_rollsReplay == 0) _rollsSeen = Math.Max(0, t.CheckSerial - 24);
         if (t.CheckSerial == _rollsSeen) return;
         foreach (var c in t.Checks)
         {
             if (c.Serial <= _rollsSeen || c.AgentId is not int id) continue;
             if (c.Kind == "talk" && !c.Critical && !c.Fumble) continue;
             var result = c.Critical ? StoryResult.Critical : c.Fumble ? StoryResult.Fumble : c.Success ? StoryResult.Success : StoryResult.Failure;
-            _map.Rolls.Show(id, Skills.Name(t, c.Skill), c.Die, c.Bonus, result);
+            _map.Rolls.Show(id, Skills.Name(t, c.Skill), c.Die, c.Bonus, result, c.BuildingId is int b ? Front(t, b, id) : null);
         }
         _rollsSeen = t.CheckSerial;
+    }
+
+    /// <summary>A spot in the lane in front of a building, spread by who it is, for a roll whose roller isn't drawn there.</summary>
+    private static Godot.Vector2 Front(Town t, int buildingId, int agentId)
+    {
+        var lot = t.Lot(t.Building(buildingId).LotId);
+        var f = Geo.LotFront(lot);
+        float half = lot.W / (float)Land.Res / 2;
+        return Geo.LotPos(lot) + f * (lot.D / (float)Land.Res / 2 + 0.25f) + new Godot.Vector2(f.Y, -f.X) * ((Geo.Hash(agentId * 13 + 1) - 0.5f) * 2 * half);
     }
 
     /// <summary>
