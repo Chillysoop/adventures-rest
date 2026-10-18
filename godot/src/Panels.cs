@@ -552,6 +552,16 @@ public partial class Main
         string mood = hs.Loyalty < lr.Desert ? "ready to leave" : hs.Loyalty < lr.Restless ? "restless" : hs.Loyalty >= 75 ? "devoted" : hs.Loyalty >= 60 ? "loyal" : "content";
         var why = Loyalty.Factors(t, a).OrderByDescending(f => Math.Abs(f.Points)).Take(4).Select(f => $"{f.Why} {(f.Points >= 0 ? "+" : "−")}{Math.Round(Math.Abs(f.Points))}");
         p.Text($"{Tag($"Loyalty {loyalty}", color)} {Ui.C(color, mood)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(string.Join(" · ", why))}[/font_size]")}", 13);
+        if (Regard.TemperOf(t, a) is TemperDef temper)
+        {
+            // What they make of the mayor, and the choice that moved them last.
+            double r = Math.Round(hs.Regard);
+            var rc = r >= 15 ? Ui.Good : r <= -15 ? Ui.Bad : Ui.Ink2;
+            string thinks = r >= t.Content.Regard.Admire ? "trusts you" : r >= 15 ? "approves of you" : r <= t.Content.Regard.Aggrieved ? "has a grievance" : r <= -15 ? "disapproves of you" : "undecided about you";
+            string last = hs.RegardWhy != "" ? $" Last {(hs.RegardPleased ? "pleased" : "angered")} by: you {hs.RegardWhy}." : "";
+            string quest = hs.Personal == "done" ? " You saw their personal quest through." : hs.Personal == "failed" ? " You let them down over their personal quest." : "";
+            p.Text($"{Tag(temper.Name, Ui.Ink2)} {Ui.C(rc, $"Regard {(r >= 0 ? "+" : "−")}{Math.Abs(r)}, {thinks}")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Ui.Cap(temper.Text))}: {Ui.Esc(Regard.Describe(t, temper))}.{Ui.Esc(last + quest)}[/font_size]")}", 13);
+        }
         string? knight = Loyalty.KnightBlocked(t, a);
         string? champion = Loyalty.ChampionBlocked(t, a);
         double purse = Js.Round(lr.Reward.PerLevel * hs.Level);
