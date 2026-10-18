@@ -213,6 +213,7 @@ public static class Trade
             route.Spent += bought * price;
         }
         World.Shift(town, s, r.StandingPerCaravan);
+        Armory.Caravan(town, s);
         town.Log(LedgerCategory.Town, Importance.Routine,
             $"The caravan comes home from {s.Name}: {(sent > 0 ? $"{Js.Str(Js.Round(sent))} {Lower(route.Export)} sold for {Js.Str(Js.Round(earned))} gold" : $"no {Lower(route.Export)} to spare this time")}" +
             $"{(bought > 0 ? $", {Js.Str(Js.Round(bought))} {Lower(route.Import)} bought for {Js.Str(Js.Round(bought * price))}" : "")}.");

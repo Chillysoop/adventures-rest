@@ -248,6 +248,7 @@ public static class TreasuryAccount
     public const string Mercenaries = "Mercenaries";
     public const string Decrees = "Decrees";
     public const string Trade = "Trade";
+    public const string Armory = "Armory";
     public const string Bastions = "Bastions";
     public const string Callings = "Callings";
     public const string Legacies = "Legacies";
@@ -418,6 +419,9 @@ public sealed class Town
 
     /// <summary>The town's trade routes to the other settlements (<see cref="Systems.Trade"/>).</summary>
     public TradeState Trade { get; } = new();
+
+    /// <summary>The town armory: items to gift heroes, and loot offered to the town (<see cref="Systems.Armory"/>).</summary>
+    public ArmoryState Armory { get; } = new();
 
     /// <summary>The people of the wilds the town has dealt with, who remember it (<see cref="Systems.Neighbours"/>).</summary>
     public NeighbourState Neighbours { get; } = new();
