@@ -48,7 +48,11 @@ public static class Lairs
             }
             if (s.Cleared)
             {
-                if (s.Held) town.Book(TreasuryAccount.Outposts, -r.Outpost.Upkeep);
+                // A knight's own retainers hold their lands at no cost to the treasury.
+                if (s.Held)
+                {
+                    if (Loyalty.Lord(town, s.Def.Id) == null) town.Book(TreasuryAccount.Outposts, -r.Outpost.Upkeep);
+                }
                 else if (s.ResettleTick != null && town.Tick >= s.ResettleTick) Resettle(town, s);
                 continue;
             }

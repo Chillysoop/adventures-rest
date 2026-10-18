@@ -122,8 +122,23 @@ public sealed record ClassDef
     /// <summary>The spellcasting ability for classes that cast (int, wis or cha).</summary>
     public string Casting { get; init; } = "";
     public int HitDie { get; init; }
-    public int Armor { get; init; }
+
+    /// <summary>The die of the class's attack spell, for classes that fight with magic (<see cref="Spell"/>).</summary>
     public int DamageDie { get; init; }
+
+    /// <summary>The kit a hero of the class arrives with: a weapon (library equipment id), then the better ones they may buy.</summary>
+    public string Weapon { get; init; } = "";
+    public IReadOnlyList<string> Better { get; init; } = [];
+
+    /// <summary>Armours the class wears, the first one arriving on their back; empty for none.</summary>
+    public IReadOnlyList<string> Wears { get; init; } = [];
+    public bool Shield { get; init; }
+
+    /// <summary>The ability added to 10 + Dex when the class fights unarmoured (barbarians, monks).</summary>
+    public string Unarmored { get; init; } = "";
+
+    /// <summary>Fights with an attack spell (the damage die and the casting ability), not the weapon.</summary>
+    public bool Spell { get; init; }
     public IReadOnlyDictionary<string, int> Skills { get; init; } = new Dictionary<string, int>();
     public int Weight { get; init; }
     public bool Sneak { get; init; }
@@ -259,6 +274,7 @@ public static class MotionKind
     public const string DismissWatch = "dismiss_watch";
     public const string Festival = "festival";
     public const string BuildHomes = "build_homes";
+    public const string Knight = "knight";
 }
 
 public sealed record SeatDef
@@ -789,6 +805,12 @@ public sealed class Content
     /// <summary>The campaign arc: acts, festering menaces, dread and the finale (content/game/saga.json).</summary>
     public SagaRules Saga { get; init; } = new();
 
+    /// <summary>What heroes can buy, where, and what they get for loot they don't need (content/game/gear.json).</summary>
+    public GearRules Gear { get; init; } = new();
+
+    /// <summary>Heroes' loyalty, knighthoods, fiefs and the town's champion (content/game/loyalty.json).</summary>
+    public LoyaltyRules Loyalty { get; init; } = new();
+
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
 
@@ -918,6 +940,8 @@ public sealed class Content
             Faith = Parse<FaithRules>("faith.json"),
             Factions = Parse<FactionRules>("factions.json"),
             Saga = Parse<SagaRules>("saga.json"),
+            Gear = Parse<GearRules>("gear.json"),
+            Loyalty = Parse<LoyaltyRules>("loyalty.json"),
         };
     }
 

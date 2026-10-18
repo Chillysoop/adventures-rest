@@ -13,7 +13,8 @@
     "hire_watch":    { "steward": -0.5, "speaker": 0,  "captain": 1 },
     "dismiss_watch": { "steward": 1,    "speaker": 0,  "captain": -1 },
     "festival":      { "steward": -1,   "speaker": 1,  "captain": -0.3 },
-    "build_homes":   { "steward": -0.5, "speaker": 1,  "captain": 0 }
+    "build_homes":   { "steward": -0.5, "speaker": 1,  "captain": 0 },
+    "knight":        { "steward": -0.3, "speaker": 0.5, "captain": 1 }
   },
   "taxStep": 0.02,
   "minTax": 0.04,

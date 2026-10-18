@@ -200,7 +200,7 @@ public static class Factions
 
     public static double Coffers(Town town, FactionState f) => f.HallId != null ? town.Building(f.HallId.Value).Cash : f.Purse;
 
-    private static void AddCoffers(Town town, FactionState f, double amount)
+    internal static void AddCoffers(Town town, FactionState f, double amount)
     {
         if (f.HallId != null) town.Building(f.HallId.Value).Cash += amount;
         else f.Purse += amount;

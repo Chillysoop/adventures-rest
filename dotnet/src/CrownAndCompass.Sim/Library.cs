@@ -87,6 +87,34 @@ public sealed record LibItem
     public string Text { get; init; } = "";
 }
 
+/// <summary>Mundane arms and armour from the equipment lists, boiled down to what a fight needs.</summary>
+public sealed record LibGear
+{
+    public required string Id { get; init; }
+    public required string Name { get; init; }
+    public required string Source { get; init; }
+
+    /// <summary>weapon, armor or shield.</summary>
+    public string Slot { get; init; } = "";
+    public double CostGp { get; init; }
+
+    /// <summary>A weapon's damage dice.</summary>
+    public Dice? Damage { get; init; }
+    public IReadOnlyList<string> Properties { get; init; } = [];
+
+    /// <summary>Armour class it gives (a shield's +2).</summary>
+    public int Ac { get; init; }
+    public bool AddDex { get; init; }
+
+    /// <summary>Most Dexterity a medium armour lets through; null for none (light armour).</summary>
+    public int? DexCap { get; init; }
+
+    /// <summary>Strength the heavy armours ask for.</summary>
+    public int Strength { get; init; }
+
+    public bool TwoHanded => Properties.Any(p => p.StartsWith("Two-Handed", StringComparison.Ordinal));
+}
+
 /// <summary>A god of the pantheon (content/original/deities.json), boiled down to what the faith system needs.</summary>
 public sealed record LibDeity
 {
@@ -157,12 +185,16 @@ public sealed class Library
     public IReadOnlyList<LibDeity> Deities { get; }
     public IReadOnlyList<LibFaction> Factions { get; }
 
+    /// <summary>Weapons, armour and shields a hero can buy at a forge or a store.</summary>
+    public IReadOnlyList<LibGear> Gear { get; }
+
     private readonly Dictionary<string, LibMonster> _monsters;
     private readonly Dictionary<string, LibClass> _classes;
     private readonly Dictionary<string, LibSpell> _spells;
     private readonly Dictionary<string, LibItem> _items;
     private readonly Dictionary<string, LibDeity> _deities;
     private readonly Dictionary<string, LibFaction> _factions;
+    private readonly Dictionary<string, LibGear> _gear;
 
     public Library(
         IEnumerable<LibMonster> monsters,
@@ -170,7 +202,8 @@ public sealed class Library
         IEnumerable<LibSpell> spells,
         IEnumerable<LibItem> items,
         IEnumerable<LibDeity>? deities = null,
-        IEnumerable<LibFaction>? factions = null)
+        IEnumerable<LibFaction>? factions = null,
+        IEnumerable<LibGear>? gear = null)
     {
         Monsters = monsters.OrderBy(m => m.Id, StringComparer.Ordinal).ToList();
         Classes = classes.OrderBy(c => c.Id, StringComparer.Ordinal).ToList();
@@ -184,6 +217,8 @@ public sealed class Library
         Factions = (factions ?? []).OrderBy(f => f.Id, StringComparer.Ordinal).ToList();
         _deities = Deities.ToDictionary(d => d.Id);
         _factions = Factions.ToDictionary(f => f.Id);
+        Gear = (gear ?? []).OrderBy(g => g.Id, StringComparer.Ordinal).ToList();
+        _gear = Gear.ToDictionary(g => g.Id);
     }
 
     public LibMonster? Monster(string id) => _monsters.GetValueOrDefault(id);
@@ -192,6 +227,7 @@ public sealed class Library
     public LibItem? Item(string id) => _items.GetValueOrDefault(id);
     public LibDeity? Deity(string id) => _deities.GetValueOrDefault(id);
     public LibFaction? Faction(string id) => _factions.GetValueOrDefault(id);
+    public LibGear? GearOf(string id) => _gear.GetValueOrDefault(id);
 
     /// <summary>Spells a class can cast, lowest level first, then by id.</summary>
     public IEnumerable<LibSpell> SpellsOf(string classId) =>
@@ -231,11 +267,12 @@ public sealed class Library
         var items = new Dictionary<string, LibItem>();
         var deities = new Dictionary<string, LibDeity>();
         var factions = new Dictionary<string, LibFaction>();
+        var gear = new Dictionary<string, LibGear>();
         // Folder order only matters if an id repeats; the README promises it doesn't, and the first wins.
         foreach (var (path, read) in files.OrderBy(f => f.Path, StringComparer.Ordinal))
         {
             string kind = System.IO.Path.GetFileNameWithoutExtension(path);
-            if (kind is not ("monsters" or "classes" or "spells" or "magic-items" or "deities" or "factions")) continue;
+            if (kind is not ("monsters" or "classes" or "spells" or "magic-items" or "deities" or "factions" or "equipment")) continue;
             using var doc = JsonDocument.Parse(read());
             foreach (var e in doc.RootElement.EnumerateArray())
             {
@@ -248,10 +285,13 @@ public sealed class Library
                     case "magic-items": items.TryAdd(id, ParseItem(e)); break;
                     case "deities": deities.TryAdd(id, ParseDeity(e)); break;
                     case "factions": factions.TryAdd(id, ParseFaction(e)); break;
+                    case "equipment":
+                        if (ParseGear(e) is LibGear g) gear.TryAdd(id, g);
+                        break;
                 }
             }
         }
-        return new Library(monsters.Values, classes.Values, spells.Values, items.Values, deities.Values, factions.Values);
+        return new Library(monsters.Values, classes.Values, spells.Values, items.Values, deities.Values, factions.Values, gear.Values);
     }
 
     private static string Str(JsonElement e, string key) =>
@@ -390,6 +430,31 @@ public sealed class Library
             Fog = Fog(e),
             Text = Str(e, "text"),
         };
+    }
+
+    /// <summary>Only weapons with damage dice, armour and shields; the rest of the gear lists isn't fought with.</summary>
+    private static LibGear? ParseGear(JsonElement e)
+    {
+        string id = Str(e, "id");
+        if (e.TryGetProperty("weapon", out var w) && w.ValueKind == JsonValueKind.Object && Dice.Parse(Str(w, "damage")) is Dice dmg)
+            return new LibGear { Id = id, Name = Str(e, "name"), Source = Str(e, "source"), Slot = "weapon", CostGp = Num(e, "costGp"), Damage = dmg, Properties = Strings(w, "properties") };
+        if (e.TryGetProperty("armor", out var a) && a.ValueKind == JsonValueKind.Object)
+        {
+            bool shield = Str(Rt(e), "slot") == "shield";
+            return new LibGear
+            {
+                Id = id,
+                Name = Str(e, "name"),
+                Source = Str(e, "source"),
+                Slot = shield ? "shield" : "armor",
+                CostGp = Num(e, "costGp"),
+                Ac = (int)Num(a, "ac"),
+                AddDex = Flag(a, "addDex"),
+                DexCap = a.TryGetProperty("dexCap", out var cap) && cap.ValueKind == JsonValueKind.Number ? cap.GetInt32() : null,
+                Strength = (int)Num(a, "strength"),
+            };
+        }
+        return null;
     }
 
     private static LibDeity ParseDeity(JsonElement e)

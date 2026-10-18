@@ -37,6 +37,9 @@ public sealed class Motion
     /// <summary>Gold the treasury pays if it passes.</summary>
     public double Cost { get; init; }
 
+    /// <summary>The agent the motion is about (the hero to knight), if any.</summary>
+    public int? TargetId { get; init; }
+
     public int ProposedTick { get; init; }
     public int DeadlineTick { get; init; }
     public List<Vote> Votes { get; set; } = [];
@@ -223,7 +226,7 @@ public static class Council
         }
     }
 
-    private sealed record Proposal(string Kind, double Cost, string Why);
+    private sealed record Proposal(string Kind, double Cost, string Why, int? TargetId = null);
 
     private static void Propose(Town town, bool autoDecide)
     {
@@ -244,6 +247,7 @@ public static class Council
                 ProposerId = h.Id,
                 Text = MotionText(town, p),
                 Cost = p.Cost,
+                TargetId = p.TargetId,
                 ProposedTick = town.Tick,
                 DeadlineTick = town.Tick + c.MotionDays * SimTime.HoursPerDay,
             };
@@ -285,7 +289,7 @@ public static class Council
             case SeatId.Captain:
                 if (brawls >= 2 || town.Watch < town.Population / 30)
                     return new Proposal(MotionKind.HireWatch, 0, brawls >= 2 ? $"{brawls} brawls this week" : "the streets go unwatched");
-                return null;
+                return KnightProposal(town);
             case SeatId.Speaker:
             {
                 if (homeless >= 3) return new Proposal(MotionKind.BuildHomes, HouseCost(town), $"{homeless} people sleep rough");
@@ -295,11 +299,22 @@ public static class Council
                     return new Proposal(MotionKind.Festival, festival, "spirits are low");
                 if (town.TaxRate > c.MinTax + 1e-9 && town.Treasury > upkeep * 20 && books > 0)
                     return new Proposal(MotionKind.LowerTax, 0, "the coffers are full while the people pay");
-                return null;
+                return KnightProposal(town);
             }
             default:
                 return null;
         }
+    }
+
+    /// <summary>A hero of renown the town has not yet honoured, put forward for knighthood.</summary>
+    private static Proposal? KnightProposal(Town town)
+    {
+        var k = town.Content.Loyalty.Knight;
+        if (Loyalty.LastKnighting(town) is int last && town.Day - last < k.GapDays) return null;
+        if (town.Treasury < k.Cost * 4) return null;
+        var hero = Loyalty.Candidate(town);
+        if (hero == null) return null;
+        return new Proposal(MotionKind.Knight, k.Cost, $"{hero.GivenName} has won {hero.Hero!.Renown} renown in the town's name", hero.Id);
     }
 
     private static double HouseCost(Town town)
@@ -321,6 +336,7 @@ public static class Council
             MotionKind.DismissWatch => $"{c.WatchPerMotion} watchmen be let go",
             MotionKind.Festival => $"the town hold a festival, at a cost of {Js.Str(p.Cost)} gold",
             MotionKind.BuildHomes => $"the town build a charter house for the homeless, at a cost of {Js.Str(p.Cost)} gold",
+            MotionKind.Knight => $"{town.Agent(p.TargetId!.Value).Name} be knighted, at a cost of {Js.Str(p.Cost)} gold",
             _ => throw new ArgumentOutOfRangeException(nameof(p), p.Kind, null),
         };
     }
@@ -371,6 +387,7 @@ public static class Council
         if (!passed)
         {
             town.Log(LedgerCategory.Council, Importance.Notable, $"{who} {(sign == null ? "lets the motion fall" : "vetoes the motion")}: {m.Text}.", [m.ProposerId]);
+            if (m.Kind == MotionKind.Knight && town.Agent(m.TargetId!.Value) is { Departed: false } snubbed) Loyalty.Slighted(town, snubbed);
             return;
         }
         if (m.Cost > town.Treasury)
@@ -407,6 +424,9 @@ public static class Council
                 town.FestivalDays = c.FestivalDays;
                 town.Mandate = Clamp(town.Mandate + 5, 0, 100);
                 town.Log(LedgerCategory.Town, Importance.Major, $"Lanterns go up across {town.Name}: the town holds a festival, and the ale flows on the council's coin.");
+                break;
+            case MotionKind.Knight:
+                if (!Loyalty.Knight(town, town.Agent(m.TargetId!.Value))) town.Log(LedgerCategory.Council, Importance.Routine, "The knighting cannot go ahead after all.");
                 break;
             case MotionKind.BuildHomes:
                 if (!Mayor.CommissionHousing(town, 1)) town.Log(LedgerCategory.Council, Importance.Routine, "There is nowhere to build the charter house yet.");

@@ -33,6 +33,11 @@ public static class Expedition
         public bool Down { get; set; }
         public bool Dead { get; set; }
         public int Heals { get; set; } = agent.Hero!.Cls.HealsAt(agent.Hero.Level);
+
+        /// <summary>From the hero's gear, worked out once for the delve.</summary>
+        public int Ac { get; init; }
+        public int Attack { get; init; }
+        public int Skill { get; init; }
     }
 
     private sealed class Foe(MonsterDef def)
@@ -64,17 +69,6 @@ public static class Expedition
         return Math.Max(1, die + Rng.Modifier(con) + (sheet.Level - 1) * Math.Max(1, die / 2 + 1 + Rng.Modifier(con)));
     }
 
-    public static int HeroAc(Agent a)
-    {
-        var s = a.Hero!;
-        return 10 + s.Cls.Armor + Math.Min(2, Math.Max(0, Rng.Modifier(a.Abilities.Dex))) + s.ArmorBonus;
-    }
-
-    private static int AttackBonus(Agent a)
-    {
-        var s = a.Hero!;
-        return Proficiency(s.Level) + Rng.Modifier(a.Abilities[s.Cls.Primary]) + s.WeaponBonus;
-    }
 
     private static string Sign(int n) => n >= 0 ? $"+{n}" : $"-{-n}";
 
@@ -96,7 +90,7 @@ public static class Expedition
             _rng = rng;
             _content = content;
             _site = site;
-            Party = heroes.Select(agent => new Combatant(agent)).ToList();
+            Party = heroes.Select(agent => new Combatant(agent) { Ac = Gear.Ac(content, agent), Attack = Gear.Attack(content, agent), Skill = Gear.Skill(content, agent.Hero!) }).ToList();
         }
 
         /// <summary>Traps and hazards hit harder in sites built for higher levels: one more set of dice every four levels.</summary>
@@ -141,7 +135,7 @@ public static class Expedition
         {
             int ab = kind == SkillKind.Hazard ? Math.Max(c.Agent.Abilities.Con, c.Agent.Abilities.Wis) : c.Agent.Abilities[SkillAbility[kind]];
             int cls = c.Sheet.Cls.Skills.GetValueOrDefault(kind, 0);
-            return Rng.Modifier(ab) + cls + (cls > 0 ? Proficiency(c.Sheet.Level) : 0);
+            return Rng.Modifier(ab) + cls + (cls > 0 ? Proficiency(c.Sheet.Level) : 0) + c.Skill;
         }
 
         private static void Hurt(Combatant c, int dmg)
@@ -359,7 +353,7 @@ public static class Expedition
 
                 var target = living[0];
                 int roll = rng.D20();
-                int atk = AttackBonus(c.Agent);
+                int atk = c.Attack;
                 if (roll == 1)
                 {
                     if (rng.Chance(0.3)) Log($"{name} rolls a natural 1 and nearly loses {s.Cls.Fumble}.");
@@ -367,7 +361,7 @@ public static class Expedition
                 }
                 if (roll == 20 || roll + atk >= target.Def.Ac)
                 {
-                    int dmg = rng.Roll(roll == 20 ? 2 : 1, s.Cls.DamageDie) + Rng.Modifier(c.Agent.Abilities[s.Cls.Primary]) + s.WeaponBonus;
+                    int dmg = Gear.Damage(_content, rng, c.Agent, roll == 20);
                     if (s.Cls.Sneak && Standing.Count > 1) dmg += rng.Roll((int)Math.Ceiling(s.Level / 2.0), 6);
                     dmg = Math.Max(1, dmg);
                     target.Hp -= dmg;
@@ -400,7 +394,7 @@ public static class Expedition
                     var t = rng.Pick(targets);
                     int roll = rng.D20();
                     if (roll == 1) continue;
-                    if (roll == 20 || roll + f.Def.Attack >= HeroAc(t.Agent))
+                    if (roll == 20 || roll + f.Def.Attack >= t.Ac)
                     {
                         int dmg = Math.Max(1, f.Def.Dice.Roll(rng, roll == 20));
                         Hurt(t, dmg);
@@ -562,11 +556,14 @@ public static class Expedition
                 }
                 else
                 {
-                    var who = run.Party.Where(c => !c.Dead).OrderBy(c => c.Sheet.Items.Count).ThenBy(c => c.Agent.Id).First();
+                    // Whoever gains most from it claims it; if nobody does, the one with least takes it to sell.
+                    var who = run.Party
+                        .Where(c => !c.Dead)
+                        .OrderByDescending(c => Math.Max(0, Gear.Gain(content, c.Agent, item)))
+                        .ThenBy(c => c.Sheet.Items.Count)
+                        .ThenBy(c => c.Agent.Id)
+                        .First();
                     items.Add(new ExpeditionItem(who.Agent.Id, item));
-                    if (item.Slot == "weapon") who.Sheet.WeaponBonus += content.Loot.WeaponBonus[Math.Min(item.Tier, content.Loot.WeaponBonus.Length - 1)];
-                    else if (item.Slot is "armor" or "shield") who.Sheet.ArmorBonus += 1;
-                    who.Sheet.Items.Add(item.Name);
                     line += $" and the {item.Name}, which {who.Agent.GivenName} claims";
                 }
             }

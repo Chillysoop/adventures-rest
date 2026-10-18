@@ -99,13 +99,49 @@ public sealed class HeroSheet
     public int MaxHp { get; set; }
     public int Hp { get; set; }
 
-    /// <summary>Magic weapon bonus (attack and damage).</summary>
+    /// <summary>Passing weapon bonus (attack and damage), such as a god's blessing; gear adds its own.</summary>
     public int WeaponBonus { get; set; }
 
-    /// <summary>Magic armor or ward bonus (AC).</summary>
+    /// <summary>Passing armour or ward bonus (AC); gear adds its own.</summary>
     public int ArmorBonus { get; set; }
 
+    /// <summary>Arms and armour from the library's equipment lists; null for none (<see cref="Systems.Gear"/>).</summary>
+    public LibGear? Weapon { get; set; }
+    public LibGear? Armor { get; set; }
+    public LibGear? Shield { get; set; }
+
+    /// <summary>Magic gear worn, by slot (weapon, armor, shield, trinket).</summary>
+    public OrderedMap<string, LibItem> Magic { get; } = new();
+
+    /// <summary>Names of the magic gear worn, in slot order.</summary>
     public List<string> Items { get; } = [];
+
+    /// <summary>How far the hero will stand by the town, 0 to 100 (<see cref="Systems.Loyalty"/>).</summary>
+    public double Loyalty { get; set; } = 55;
+
+    /// <summary>Days in a row the hero has been ready to leave.</summary>
+    public int DisloyalDays { get; set; }
+
+    /// <summary>Has let the taverns know they are unhappy (said once until they are content again).</summary>
+    public bool Restless { get; set; }
+
+    /// <summary>Gold the town paid them lately (bounties, rewards, stipends), fading day by day.</summary>
+    public double Pay { get; set; }
+
+    /// <summary>Knighted by the town: Ser, with a stipend and an oath.</summary>
+    public bool Knight { get; set; }
+    public int? KnightedDay { get; set; }
+
+    /// <summary>A cleared site the town granted the knight as their land.</summary>
+    public string? FiefId { get; set; }
+
+    /// <summary>The town's sworn champion (one at a time).</summary>
+    public bool Champion { get; set; }
+    public int LastRewardDay { get; set; } = -99;
+
+    /// <summary>The menace they went over to, or the faction they ran to.</summary>
+    public int? TurnedTo { get; set; }
+    public string? DefectedTo { get; set; }
     public int Renown { get; set; }
     public int Kills { get; set; }
     public int Expeditions { get; set; }
