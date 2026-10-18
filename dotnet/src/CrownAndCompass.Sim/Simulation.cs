@@ -30,6 +30,9 @@ public sealed record SimulationOptions
     /// <summary>Let the stand-in mayor buy companies' reports of new ground; off when a player deals with the companies.</summary>
     public bool AutoIntel { get; init; } = true;
 
+    /// <summary>Let the stand-in mayor buy loot for the town armory and gift it to heroes; off when a player keeps the armory.</summary>
+    public bool AutoArmory { get; init; } = true;
+
     /// <summary>Let the stand-in mayor give companies leave to raise bastions; off when a player answers them.</summary>
     public bool AutoBastions { get; init; } = true;
 
@@ -119,6 +122,7 @@ public sealed class Simulation
         Garrison.Daily(t, Options.AutoMayor && Options.AutoDefense);
         World.Daily(t, Options.AutoMayor);
         Trade.Daily(t, Options.AutoMayor);
+        Armory.Daily(t, Options.AutoMayor && Options.AutoArmory);
         Neighbours.Daily(t, Options.AutoMayor);
         Mercenaries.Daily(t, Options.AutoMayor && Options.AutoDefense);
         Clockwork.Daily(t, Options.AutoMayor && Options.AutoDefense);
@@ -154,8 +158,23 @@ public sealed class Simulation
         t.AccountsToday = new();
     }
 
-    /// <summary>The player's lever: post a bounty on a site, paid from the treasury into escrow.</summary>
-    public Bounty? PostBounty(string siteId, double reward, string terms = "slay") => Quests.PostBounty(Town, siteId, reward, null, terms);
+    /// <summary>The player's lever: post a bounty on a site, paid from the treasury into escrow; terms say how (slay, drive, parley, rescue, fetch); with loot to the town the hoard's magic comes to the armory.</summary>
+    public Bounty? PostBounty(string siteId, double reward, string terms = "slay", bool lootToTown = false) => Quests.PostBounty(Town, siteId, reward, null, terms, lootToTown);
+
+    /// <summary>Give a hero in town an item from the armory: magic arms, armour or a charm to wear, or a sending stone to carry.</summary>
+    public bool Gift(int stockId, int heroId) => Armory.Gift(Town, stockId, heroId);
+
+    /// <summary>Buy loot a hero or a caravan offers the town, into the armory.</summary>
+    public bool BuyLoot(int offerId) => Armory.Buy(Town, offerId);
+
+    /// <summary>Sell an item from the armory to the merchants.</summary>
+    public bool SellStock(int stockId) => Armory.Sell(Town, stockId);
+
+    /// <summary>Offer a company a loot pact: the magic it finds comes to the armory, for a finder's fee. A wary company refuses.</summary>
+    public bool OfferPact(string company) => Armory.OfferPact(Town, company);
+
+    /// <summary>Release a company from its loot pact.</summary>
+    public bool EndPact(string company) => Armory.EndPact(Town, company);
 
     /// <summary>The player's lever: pay a company to go and explore a region, the reward held until they come home.</summary>
     public Commission? PostSurvey(int regionId, double? reward = null) => Explore.Post(Town, regionId, reward);
@@ -350,6 +369,7 @@ public sealed class Simulation
         Council.InitCouncil(t);
         Threat.InitThreat(t);
         Factions.InitFactions(t);
+        Armory.Init(t);
 
         if (Options.AutoMayor && Options.AutoPlanning) Mayor.Daily(t);
         else

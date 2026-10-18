@@ -1162,6 +1162,9 @@ public sealed class Content
     public DecorRules Decor { get; init; } = new();
     public SeasonRules Seasons { get; init; } = new();
     public TradeRules Trade { get; init; } = new();
+
+    /// <summary>The town armory: gifts, loot terms and pacts, buying loot (content/game/armory.json).</summary>
+    public ArmoryRules Armory { get; init; } = new();
     public NeighbourRules Neighbours { get; init; } = new();
     public LegacyRules Legacies { get; init; } = new();
     public UndercityRules Undercity { get; init; } = new();
@@ -1346,6 +1349,7 @@ public sealed class Content
             Decor = Parse<DecorRules>("decor.json"),
             Seasons = Parse<SeasonRules>("seasons.json"),
             Trade = Parse<TradeRules>("trade.json"),
+            Armory = Parse<ArmoryRules>("armory.json"),
             Neighbours = Parse<NeighbourRules>("neighbours.json"),
             Legacies = Parse<LegacyRules>("legacies.json"),
             Undercity = Parse<UndercityRules>("undercity.json"),

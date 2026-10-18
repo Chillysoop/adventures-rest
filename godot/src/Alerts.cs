@@ -97,6 +97,7 @@ public partial class Main
             AlertWindow.Diplomacy => Tab.Diplomacy,
             AlertWindow.Library => Tab.Library,
             AlertWindow.Companies => Tab.Companies,
+            AlertWindow.Armory => Tab.Armory,
             AlertWindow.Institutions => Tab.Institutions,
             _ => null,
         };
