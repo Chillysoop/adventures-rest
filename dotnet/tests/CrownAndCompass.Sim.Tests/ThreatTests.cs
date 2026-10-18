@@ -35,7 +35,7 @@ public class ThreatTests
     [Fact]
     public void AnnouncesTheMarchDaysBeforeTheSiege()
     {
-        var sim = new Simulation(new SimulationOptions { Seed = 5, AutoBounties = false });
+        var sim = new Simulation(new SimulationOptions { Seed = 5, AutoBounties = false, AutoStories = false });
         RunUntilOutcome(sim, 250);
         var march = sim.Town.Ledger.Entries.FirstOrDefault(e => e.Text.Contains("is on the march"));
         var siege = sim.Town.Chronicles.FirstOrDefault(c => c.PartyName.StartsWith("Defenders", StringComparison.Ordinal));
@@ -50,7 +50,7 @@ public class ThreatTests
         int fallen = 0;
         foreach (int seed in new[] { 1, 2, 3, 4, 5, 6, 7 })
         {
-            var sim = new Simulation(new SimulationOptions { Seed = seed, AutoBounties = false, AutoDefense = false, FreeCompanies = false });
+            var sim = new Simulation(new SimulationOptions { Seed = seed, AutoBounties = false, AutoDefense = false, FreeCompanies = false, AutoStories = false });
             sim.Town.Defenses.Palisade = PalisadeState.Building;
             sim.Town.Defenses.PalisadeReadyTick = int.MaxValue;
             RunUntilLastStand(sim, 250);

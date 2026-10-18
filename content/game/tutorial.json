@@ -45,6 +45,14 @@
       "teaches": ["tab:Ledger"]
     },
     {
+      "id": "mayor",
+      "title": "You, the mayor",
+      "text": "You have a character sheet of your own, like any adventurer. Open [b]Mayor[/b] (or press [b]C[/b]) to see your abilities and skills, and pick who you were before the charter: a soldier, a sage, a disgraced councillor... Your background decides what you're good at when you step into the town's stories.",
+      "point": "tab:Mayor",
+      "until": "tab:Mayor",
+      "teaches": ["tab:Mayor", "key:C", "command:ChooseBackground"]
+    },
+    {
       "id": "build",
       "title": "Zone the land",
       "text": "Open the build bar with [b]Build[/b] or [b]B[/b]. You don't place houses: you paint zones, and the townsfolk build homes, farms and shops in them as they can afford to. Government buildings you place yourself: click to set one down, or drag to turn it any way.",
@@ -79,7 +87,7 @@
     {
       "id": "decorate",
       "title": "Dress the town",
-      "text": "The build bar's [b]Decor[/b] tab has trees, benches, lamps, fountains, statues and more. Set them anywhere at any angle: click to place, drag to aim, and [b]R[/b] or Shift+wheel turns the piece. Drag fences and hedges into rows, paint trees and flowers, and clear pieces for half their price back. Every piece helps a little: benches rest the neighbours, lamps help the watch, stalls lift trade, statues win favour and loyalty.",
+      "text": "The build bar's [b]Decor[/b] tab has trees, benches, lamps, fountains, statues and more. Set them anywhere at any angle: click to place, drag to aim, and [b]R[/b] or Shift+wheel turns the piece. Drag fences and hedges into rows, paint trees and flowers, and clear pieces for half their price back. Every piece helps a little: benches rest the neighbours, lamps help the watch, stalls lift trade, statues win favour and loyalty, and houses on a pleasant street grow a storey sooner. Builders and lanes go round what you set down.",
       "when": "day:10",
       "point": "buildbar",
       "until": "decorated",
@@ -140,6 +148,15 @@
       "when": "alert:",
       "point": "alerts",
       "teaches": []
+    },
+    {
+      "id": "stories",
+      "title": "Step into a story",
+      "text": "Things happen in town that you can step into: a brawl at the inn, a hero packing to leave, an envoy from the enemy, a host on the march. A card pops up with your choices. Each is a [b]d20 roll[/b] of your own skill against a DC, and the card shows your odds. Pick one and roll. Choose [b]Later[/b] to leave it on the alert strip, but a story you leave alone runs its course without you.",
+      "when": "alert:story",
+      "point": "alerts",
+      "until": "roll",
+      "teaches": ["command:ResolveStory"]
     },
     {
       "id": "campaign-map",

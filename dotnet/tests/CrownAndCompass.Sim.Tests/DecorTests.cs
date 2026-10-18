@@ -52,7 +52,7 @@ public class DecorTests
         Assert.Equal(1.234, bench!.Angle, 6);
         Assert.True(t.Treasury < before);
         Assert.Null(sim.Decorate("lamp", spot.X + 0.05, spot.Y, 0));
-        Assert.Null(sim.Decorate("lamp", 40, 40, 0));
+        Assert.Equal("too far from town", Decor.SpotBlocked(t, Decor.Rules(t).Piece("lamp"), Town.Center + 31, Town.Center));
         Assert.Equal(5.5, Decor.NormalAngle(5.5 - 4 * Math.PI), 6);
         Assert.True(sim.ClearDecoration(bench.Id));
         Assert.Empty(t.Decor.Pieces);
@@ -150,7 +150,7 @@ public class DecorTests
     }
 
     [Fact]
-    public void DecoratedOpenGroundIsAGardenAndBuildersClearWhatTheyBuildOver()
+    public void DecoratedOpenGroundIsAGardenAndBuildersAndLanesGoRoundDecorations()
     {
         var sim = Planned();
         var t = sim.Town;
@@ -173,10 +173,49 @@ public class DecorTests
         sim.PaintZone([(fx, fy)], 1.5, Zone.Residential);
         Assert.Equal((byte)Zone.None, t.Plan.Zones[(int)(fy * Land.Res) * Land.Size + (int)(fx * Land.Res)]);
 
+        // A bench where the granary would go: the builders won't knock it down, and say why.
         var (bx, by) = OpenGround(5, 0);
+        var granary = t.Content.Building("granary");
+        var (w, d) = Land.Footprint(granary);
+        Assert.True(Land.Fits(t, bx, by, w, d, 0, null));
         var bench = sim.Decorate("bench", bx, by, 0)!;
-        Assert.NotNull(sim.Place("granary", bx, by, 0));
-        Assert.DoesNotContain(t.Decor.Pieces, p => p.Id == bench.Id);
+        Assert.NotNull(bench);
+        Assert.False(Land.Fits(t, bx, by, w, d, 0, null));
+        Assert.Null(sim.Place("granary", bx, by, 0));
+        Assert.Contains("decorations", Planning.SpotBlocked(t, granary, bx, by, 0));
+        Assert.Contains(t.Decor.Pieces, p => p.Id == bench.Id);
+        Assert.True(Decor.Cells(t)![(int)(by * Land.Res) * Land.Size + (int)(bx * Land.Res)]);
+        // Cleared away, the ground is free again.
+        Assert.True(sim.ClearDecoration(bench.Id));
+        Assert.True(Land.Fits(t, bx, by, w, d, 0, null));
+        // Nothing goes on a street.
+        var lane = t.Plan.Streets.First(r => !r.Square);
+        Assert.Equal("that's the street", Decor.SpotBlocked(t, Decor.Rules(t).Piece("lamp"), lane.Points[0], lane.Points[1]));
+    }
+
+    [Fact]
+    public void PleasantStreetsHelpHousesGrowAndMakeAWardDearer()
+    {
+        var sim = Planned(days: 60);
+        var t = sim.Town;
+        var house = t.Buildings.Where(b => b.Complete && b.Def.Housing > 0 && City.Housing(t, b.Def.Id)?.Next is { Length: > 0 }).OrderBy(b => b.Id).First();
+        var next = City.Housing(t, City.Housing(t, house.Def.Id)!.Next)!;
+        var ward = City.WardOf(t, t.Lot(house.LotId));
+        double prospect = City.Prospect(t, house, next), land = t.LotPrice(t.Lot(house.LotId));
+        Assert.Equal(1, Decor.Prestige(t, ward.Id));
+        foreach (var id in new[] { "flowers", "bench", "oak", "fountain", "flowers", "column" })
+            if (Decor.Rules(t).Piece(id).Population <= t.Population) Near(sim, id, house, within: 1.6);
+        Assert.True(Decor.Comfort(t, house) > 0);
+        Assert.True(Decor.Comfort(t, house) <= Decor.Rules(t).ContentCap);
+        Assert.True(City.Prospect(t, house, next) > prospect || prospect >= 1);
+        Assert.True(Decor.Prestige(t, ward.Id) > 1);
+        Assert.True(Decor.Prestige(t, ward.Id) <= 1 + Decor.Rules(t).WardCap);
+        Assert.True(t.LotPrice(t.Lot(house.LotId)) > land);
+        // The stocks next door make a household less content.
+        var stocks = Near(sim, "stocks", house, within: 1.6);
+        foreach (var p in t.Decor.Pieces.Where(p => p.Id != stocks.Id).ToList()) sim.ClearDecoration(p.Id);
+        Assert.True(Decor.Comfort(t, house) < 0);
+        Assert.True(Decor.Comfort(t, house) >= Decor.Rules(t).ContentFloor);
     }
 
     [Fact]

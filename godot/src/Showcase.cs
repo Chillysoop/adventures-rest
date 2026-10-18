@@ -95,52 +95,89 @@ public static class Showcase
             sim.Decorate("bench", gx + 1.38, gy + 0.32, 0);
         }
 
-        // Round the town: orchards and hives by the fields, fenced; a drill yard by the gate; trees along the road.
-        var hall = t.Buildings[0];
-        double c = Town.Grid / 2.0;
-        double edge = Town.Grid + 0.8;
+        // Before the hall, in the open middle of its square: a fountain ringed with benches and lamps.
+        var hall = t.Lot(t.Buildings[0].LotId);
+        double fx = -Math.Sin(hall.Yaw), fy = Math.Cos(hall.Yaw), out0 = hall.D / (2.0 * Land.Res) + 0.85;
+        double hx = hall.X + fx * out0, hy = hall.Y + fy * out0;
+        // Lanes cross the square from the hall's door: the fountain takes the nearest clear ground.
+        if (Decor.Spot(t, t.Content.Decor.Piece("fountain"), hx, hy, within: 2.5) is { } fs) (hx, hy) = fs;
+        sim.Decorate("fountain", hx, hy, hall.Yaw);
         for (int i = 0; i < 4; i++)
-            for (int j = 0; j < 3; j++)
-                Try(sim, "fruit_tree", edge + i * 0.55, c - 2 + j * 0.6, i * 1.3 + j);
-        sim.Decorate("beehive", edge + 2.5, c - 2.1, 0.4);
-        sim.Decorate("beehive", edge + 2.5, c - 1.4, 0.9);
-        for (int i = 0; i < 8; i++) Try(sim, "fence", edge - 0.3 + i * 0.5, c - 2.6, 0);
-        for (int i = 0; i < 8; i++) Try(sim, "fence", edge - 0.3 + i * 0.5, c + 0.2, 0);
-        Try(sim, "scarecrow", edge + 3.2, c - 1, 0.5);
-        Try(sim, "haystack", edge + 3.1, c - 0.2, 0.3);
-
-        double yard = -1.2;
-        Try(sim, "training_dummy", c - 1, yard, 0);
-        Try(sim, "training_dummy", c - 0.5, yard - 0.1, 0.2);
-        Try(sim, "archery_butts", c + 0.4, yard - 0.5, 0);
-        Try(sim, "archery_butts", c + 1.1, yard - 0.5, 0);
-        Try(sim, "brazier", c - 1.5, yard - 0.6, 0);
-        Try(sim, "stocks", c + 2, yard, 0.1);
-        Try(sim, "notice_board", c - 0.2, -0.45, 0);
-        Try(sim, "market_stall", c + 0.9, -0.5, 0);
-        Try(sim, "market_stall", c + 1.7, -0.5, 0);
-        Try(sim, "cart", c + 2.6, -0.6, 0.3);
-        Try(sim, "crates", c + 2.3, -0.25, 0.2);
-        Try(sim, "well", c - 1.4, -0.55, 0);
-
-        for (int i = 0; i < 14; i++)
         {
-            Try(sim, i % 3 == 0 ? "birch" : "oak", -0.7, 1 + i * 1.05, i * 0.9);
-            Try(sim, i % 2 == 0 ? "pine" : "oak", Town.Grid + 0.6, c + 2 + i * 0.5, i * 1.7);
+            double a = hall.Yaw + Math.PI / 4 + i * Math.PI / 2;
+            Try(sim, "bench", hx + Math.Sin(a) * 0.72, hy + Math.Cos(a) * 0.72, Decor.NormalAngle(a + Math.PI));
+            Try(sim, "lamp", hx + Math.Sin(a + Math.PI / 4) * 0.8, hy + Math.Cos(a + Math.PI / 4) * 0.8, 0);
         }
-        for (int i = 0; i < 10; i++) Try(sim, "bush", -0.35, 1.5 + i * 1.3, i);
-        Try(sim, "obelisk", -0.9, c, 0);
-        Try(sim, "column", -0.9, c - 1.2, 0);
-        Try(sim, "column", -0.9, c + 1.2, 0);
-        Try(sim, "bandstand", c, Town.Grid + 1.1, Math.PI);
-        Try(sim, "founder_statue", c - 1.6, Town.Grid + 1, Math.PI);
-        for (int i = 0; i < 6; i++) Try(sim, "lamp", c - 3 + i * 1.2, Town.Grid + 0.35, 0);
+
+        // Round the town, just past the last houses: orchards and hives, fenced; a drill yard; a market by the road; a ring of trees.
+        double c = Town.Center;
+        double reach = t.Buildings.Max(b => Math.Sqrt((t.Lot(b.LotId).X - c) * (t.Lot(b.LotId).X - c) + (t.Lot(b.LotId).Y - c) * (t.Lot(b.LotId).Y - c)));
+        (double X, double Y) At(double a, double extra) => (c + Math.Cos(a) * (reach + extra), c + Math.Sin(a) * (reach + extra));
+        // Along and across the ring at an angle: u outward, v around.
+        (double X, double Y) Off((double X, double Y) p, double a, double u, double v) => (p.X + Math.Cos(a) * u - Math.Sin(a) * v, p.Y + Math.Sin(a) * u + Math.Cos(a) * v);
+
+        double ao = 0;
+        var orchard = At(ao, 1.6);
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 4; j++)
+            {
+                var p = Off(orchard, ao, i * 0.6, (j - 1.5) * 0.6);
+                Try(sim, "fruit_tree", p.X, p.Y, i * 1.3 + j);
+            }
+        for (int j = 0; j < 7; j++)
+        {
+            var p = Off(orchard, ao, -0.5, (j - 3) * 0.5);
+            Try(sim, "fence", p.X, p.Y, Decor.NormalAngle(-ao - Math.PI / 2));
+        }
+        foreach (var (u, v, id) in new[] { (1.8, -1.0, "beehive"), (1.8, -0.4, "beehive"), (1.9, 0.6, "scarecrow"), (1.7, 1.3, "haystack") })
+        {
+            var p = Off(orchard, ao, u, v);
+            Try(sim, id, p.X, p.Y, u + v);
+        }
+
+        double ay = -Math.PI / 2;
+        var yard = At(ay, 1.4);
+        foreach (var (u, v, id) in new[] { (0.0, -1.0, "training_dummy"), (0.1, -0.5, "training_dummy"), (0.5, 0.4, "archery_butts"), (0.5, 1.1, "archery_butts"), (-0.3, -1.5, "brazier"), (-0.2, 1.8, "stocks") })
+        {
+            var p = Off(yard, ay, u, v);
+            Try(sim, id, p.X, p.Y, Decor.NormalAngle(Math.PI / 2 - ay));
+        }
+
+        double am = Math.PI / 2;
+        var market = At(am, 1.0);
+        foreach (var (u, v, id) in new[] { (0.0, -1.2, "notice_board"), (0.0, -0.4, "market_stall"), (0.0, 0.5, "market_stall"), (0.3, 1.3, "cart"), (-0.3, 1.2, "crates"), (0.5, -1.4, "well") })
+        {
+            var p = Off(market, am, u, v);
+            Try(sim, id, p.X, p.Y, Decor.NormalAngle(Math.PI / 2 - am + Math.PI));
+        }
+
+        var square = At(Math.PI, 1.3);
+        Try(sim, "founder_statue", square.X, square.Y, Math.PI / 2);
+        foreach (var (u, v, id) in new[] { (0.0, -1.0, "column"), (0.0, 1.0, "column"), (0.9, 0.0, "obelisk"), (-0.2, 2.0, "bandstand") })
+        {
+            var p = Off(square, Math.PI, u, v);
+            Try(sim, id, p.X, p.Y, Math.PI / 2);
+        }
+
+        for (int i = 0; i < 40; i++)
+        {
+            double a = i * Math.PI * 2 / 40 + 0.04;
+            var p = At(a, 3.4 + Geo(i) * 0.6);
+            Try(sim, i % 4 == 0 ? "birch" : i % 3 == 0 ? "pine" : "oak", p.X, p.Y, i * 0.9);
+            if (i % 2 == 0)
+            {
+                var q = At(a + 0.05, 2.8);
+                Try(sim, "bush", q.X, q.Y, i);
+            }
+        }
     }
+
+    private static double Geo(int i) => Map.Geo.Hash(i * 13 + 5);
 
     private static void Try(Simulation sim, string id, double x, double y, double angle)
     {
         if (sim.Decorate(id, x, y, angle) != null) return;
         var t = sim.Town;
-        if (Decor.Spot(t, t.Content.Decor.Piece(id), x, y, within: 0.8) is { } s) sim.Decorate(id, s.X, s.Y, angle);
+        if (Decor.Spot(t, t.Content.Decor.Piece(id), x, y, within: 1.2) is { } s) sim.Decorate(id, s.X, s.Y, angle);
     }
 }

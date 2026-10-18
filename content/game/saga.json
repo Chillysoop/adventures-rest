@@ -631,5 +631,103 @@
       0.9
     ],
     "yokeRideUnder": 0
+  },
+  "turning": {
+    "spared": 0.04,
+    "waver": 0.00015,
+    "minCunning": "crafty",
+    "maxLevel": 9,
+    "loyalty": 40,
+    "kinds": {
+      "tribe": {
+        "race": "half-orc",
+        "classes": [
+          "barbarian",
+          "fighter"
+        ]
+      },
+      "rivals": {
+        "race": "human",
+        "classes": [
+          "fighter",
+          "rogue",
+          "bard"
+        ]
+      },
+      "undead": {
+        "race": "human",
+        "classes": [
+          "paladin",
+          "warlock"
+        ]
+      },
+      "schemers": {
+        "race": "human",
+        "classes": [
+          "warlock",
+          "bard",
+          "hedge-witch"
+        ]
+      },
+      "cult": {
+        "race": "human",
+        "classes": [
+          "cleric",
+          "warlock"
+        ]
+      },
+      "beasts": {
+        "race": "human",
+        "classes": [
+          "druid",
+          "sorcerer"
+        ],
+        "shape": " It walks in on two legs, in a borrowed shape, and only its eyes are its own."
+      }
+    },
+    "spareText": [
+      "Beaten at {seat}, {leader} throws down their arms and begs quarter. The heroes spare them, and {leader} swears to serve {town}: against all that {heirs} ever stood for.{shape}",
+      "{leader} kneels in the ruin of {seat} and asks to live. The heroes bring them home in chains, and in a month the chains are off. {Heirs} have never bred a turncoat before.{shape}"
+    ],
+    "waverText": [
+      "{leader} walks out of {seat} alone and unarmed and kneels at {town}'s gate. Nobody knows what changed their heart. {Heirs} call it the worst betrayal in their history.{shape}",
+      "A letter comes from {seat} in {leader}'s own hand: they are done with {name}, and they want to fight for {town}. They arrive the next morning, alone.{shape}"
+    ],
+    "fall": 0.0001,
+    "fallDay": 90,
+    "fallLevel": 3,
+    "fallKinds": {
+      "fighter": "rivals",
+      "barbarian": "tribe",
+      "paladin": "undead",
+      "warden": "rivals",
+      "rogue": "rivals",
+      "ranger": "beasts",
+      "monk": "cult",
+      "cartographer": "rivals",
+      "wizard": "schemers",
+      "sorcerer": "schemers",
+      "warlock": "schemers",
+      "reliquarian": "undead",
+      "cleric": "cult",
+      "druid": "beasts",
+      "bard": "schemers",
+      "hedge-witch": "schemers"
+    },
+    "fallText": [
+      "{hero} rides out of {town} one night and does not come back. Everything their past taught them should have held them; it did not.{past}",
+      "Something found {hero} in the wilds and spoke to them, and they listened. They leave {town} without a word to their friends.{past}"
+    ],
+    "legendDay": 60,
+    "legendChance": 0.0008,
+    "legendFoe": [
+      "A stranger asks for the mayor at {town}'s gate and gives the name {name}. In another age, {name} {deed}. Whatever happened between then and now, {name} has come to fight for {town}.",
+      "The watch nearly loose their bows at the shape on the road, but it only kneels. It is {name}, who in another age {deed}, and it offers its service to {town}."
+    ],
+    "legendHeroChance": 0.1,
+    "legendHero": [
+      "Old songs know that name. In another age, {name} {deed}. Something in the long dark has changed them.",
+      "The oldest folk in {town} go pale at the name. In another age, {name} {deed}, and now they lead the enemy."
+    ]
   }
 }

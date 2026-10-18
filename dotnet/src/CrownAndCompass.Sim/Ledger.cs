@@ -25,6 +25,7 @@ public enum LedgerCategory
     Rumor,
     Faith,
     Faction,
+    Story,
 }
 
 public sealed record LedgerEntry(int Id, int Tick, LedgerCategory Category, Importance Importance, string Text, IReadOnlyList<int> Agents)

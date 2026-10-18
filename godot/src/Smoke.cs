@@ -1,4 +1,5 @@
 using CrownAndCompass.Sim;
+using CrownAndCompass.Sim.Systems;
 using Godot;
 
 namespace CrownAndCompass.Client;
@@ -6,7 +7,7 @@ namespace CrownAndCompass.Client;
 /// <summary>
 /// With --smoke: the merge gate's play-through of a build (<c>scripts/gate.ts</c>). From the main menu it
 /// starts a new town, plays on at top speed, opens every window, the build bar, the campaign map and the
-/// game menu, saves and loads, starts the tutorial and opens the History, a few frames apart so each one draws. It prints
+/// game menu, saves and loads, starts the tutorial, opens the History and steps into a story event, a few frames apart so each one draws. It prints
 /// <c>SMOKE OK</c> and quits with 0, or <c>SMOKE FAIL</c> and 1; the gate also fails on any engine error.
 /// </summary>
 public partial class Main
@@ -45,23 +46,23 @@ public partial class Main
             case 2:
                 foreach (var tab in Enum.GetValues<Tab>()) SetTab(tab);
                 return 1;
-            case 3 or 4 or 5 or 6 or 7 or 8 or 9 or 10 or 11:
-                // One window open at a time, each given a few frames to draw.
+            case >= 3 and <= 12:
+                // One window open at a time, each given a few frames to draw (Inspect, the last, opens by clicking).
                 OpenWindow(Enum.GetValues<Tab>()[stage - 3]);
                 return 5;
-            case 12:
+            case 13:
                 CloseWindow();
                 ToggleBuildBar();
                 return 5;
-            case 13:
+            case 14:
                 ToggleBuildBar();
                 ToggleStrategic();
                 return 10;
-            case 14:
+            case 15:
                 ToggleStrategic();
                 OpenMenu();
                 return 5;
-            case 15:
+            case 16:
             {
                 // Save and load through the same calls the game menu uses, to a scratch file.
                 string path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"crown-smoke-{System.Environment.ProcessId}.save");
@@ -73,14 +74,26 @@ public partial class Main
                 SetSpeed(Speeds.Length - 1);
                 return 60;
             }
-            case 16:
+            case 17:
                 StartTutorial();
                 return 10;
-            case 17:
+            case 18:
                 OpenHistory(null);
                 return 10;
-            case 18:
+            case 19:
                 CloseHistory();
+                return 5;
+            case 20:
+            {
+                // A story event's card, as one pops up: open it and take the first option, which throws the die.
+                var story = Stories.Open(_sim.Town, "shrine-omen") ?? throw new InvalidOperationException("no story would open");
+                OpenStory(story.Id);
+                Choose(story.Id, 0);
+                return 70;
+            }
+            case 21:
+                if (_beat == null || _beatResult is not { Visible: true }) throw new InvalidOperationException("the roll did not land");
+                CloseStory();
                 return 5;
             default:
                 var t = _sim.Town;

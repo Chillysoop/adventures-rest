@@ -291,6 +291,12 @@ public sealed record TownRules
     /// <summary>Per-resident upkeep doubles at this many residents: bigger towns cost more per head.</summary>
     public double UpkeepGrowth { get; init; }
 
+    /// <summary>A young town draws settlers looking for cheap land: this much attraction at the founding, fading to none at <see cref="FrontierSize"/> residents.</summary>
+    public double FrontierDraw { get; init; }
+
+    /// <summary>Residents at which a town stops drawing settlers just for being new (<see cref="FrontierDraw"/>).</summary>
+    public double FrontierSize { get; init; } = 1;
+
     /// <summary>Daily cost of keeping the town hall and council running.</summary>
     public double CivicUpkeep { get; init; }
 
@@ -1095,6 +1101,9 @@ public sealed class Content
     /// <summary>The world's history: its ages, the powers that rose and fell, and the calendar (content/game/history.json).</summary>
     public HistoryRules History { get; init; } = new();
 
+    /// <summary>Story events and the mayor's character sheet (content/game/stories.json).</summary>
+    public StoryRules Stories { get; init; } = new();
+
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
 
@@ -1231,6 +1240,7 @@ public sealed class Content
             City = Parse<CityRules>("city.json"),
             Decor = Parse<DecorRules>("decor.json"),
             History = Parse<HistoryRules>("history.json"),
+            Stories = Parse<StoryRules>("stories.json"),
         };
     }
 
