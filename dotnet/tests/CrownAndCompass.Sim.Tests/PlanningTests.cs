@@ -97,4 +97,16 @@ public class PlanningTests
         Assert.NotNull(temple);
         Assert.Equal(lot.Id, temple!.LotId);
     }
+
+    [Fact]
+    public void TheStandInPutsIdleHandsToWorkInATownNoOneInvestsIn()
+    {
+        // Seed 30 used to stall with a dozen idle, run the treasury dry and starve by day 90.
+        var sim = new Simulation(new SimulationOptions { Seed = 30 });
+        sim.RunDays(120);
+        var t = sim.Town;
+        Assert.Contains(t.Buildings, b => b.Def.IsBusiness && b.OwnerId == null && b.Def.Produces.Count > 0);
+        Assert.True(t.Population >= 20);
+        Assert.True(t.Market.Price(Good.Food) < 2);
+    }
 }

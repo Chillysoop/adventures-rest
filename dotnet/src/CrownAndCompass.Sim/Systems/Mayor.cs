@@ -18,6 +18,7 @@ public static class Mayor
             KeepZoned(town, Zone.Industry, 2, 9.5, 5);
             KeepZoned(town, Zone.Farmland, 2, 99, 5.5);
             RaiseWorks(town, defend);
+            PutIdleToWork(town);
         }
         CommissionHousing(town);
     }
@@ -53,6 +54,32 @@ public static class Mayor
             if (lot != null) Planning.Place(town, id, lot.Id);
             return;
         }
+    }
+
+    /// <summary>
+    /// When idle hands pile up and no one has the purse to open a business, the council opens one
+    /// itself: the business the town most wants, run by the town. Keeps a poor town from starving
+    /// with half its people out of work.
+    /// </summary>
+    private static void PutIdleToWork(Town town)
+    {
+        var workers = town.Workers;
+        int idle = workers.Count(a => a.JobId == null);
+        if (town.Day < 10 || idle < Math.Max(4, workers.Count / 4)) return;
+        if (town.Buildings.Any(b => b.IsSite && b.Def.IsBusiness)) return;
+        // A workshop, never a tavern: a town-run inn drains purses the townsfolk need for homes and
+        // businesses of their own, and the town keeps to a few works so private trade can grow.
+        int run = town.Buildings.Count(b => b.Def.IsBusiness && b.OwnerId == null && !b.ForSale);
+        if (run >= 1 + workers.Count / 20) return;
+        var best = town.Content.Buildings
+            .Where(d => d.Buildable && d.IsBusiness && d.Produces.Count > 0)
+            .Select(d => (d, s: Property.Demand(town, d.Id)))
+            .OrderByDescending(x => x.s)
+            .ThenBy(x => x.d.Id, StringComparer.Ordinal)
+            .First();
+        if (best.s < 1.0 || town.Treasury < Planning.Cost(town, best.d) + 60) return;
+        var lot = Property.FindLot(town, best.d.Zone) ?? Property.FindLot(town, Zone.None);
+        if (lot != null) Planning.Place(town, best.d.Id, lot.Id);
     }
 
     /// <summary>Build a charter house for the homeless, paid by the treasury. Returns whether one was started.</summary>
