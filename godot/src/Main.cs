@@ -21,6 +21,7 @@ public partial class Main : Control
         War,
         Council,
         Bounties,
+        Companies,
         Faith,
         Campaign,
         Chronicles,
@@ -115,7 +116,7 @@ public partial class Main : Control
     private void NewTown(int seed, bool autoplay = false)
     {
         // With --autoplay the stand-in mayor keeps playing, for demos and screenshots.
-        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoCouncil = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay }));
+        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay }));
     }
 
     /// <summary>Show a town: a new one, or one loaded from a save.</summary>
@@ -258,6 +259,7 @@ public partial class Main : Control
                     case Tab.War: RenderWar(); break;
                     case Tab.Council: RenderCouncil(); break;
                     case Tab.Bounties: RenderBounties(); break;
+                    case Tab.Companies: RenderCompanies(); break;
                     case Tab.Faith: RenderFaith(); break;
                     case Tab.Campaign: RenderCampaign(); break;
                     case Tab.Chronicles: RenderChronicles(); break;

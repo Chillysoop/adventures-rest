@@ -41,6 +41,28 @@
     "veteran": 3,
     "greenStep": 1
   },
+  "intel": {
+    "base": 10,
+    "newRegion": 30,
+    "perRing": 15,
+    "newSite": 20,
+    "perTier": 6,
+    "freshDays": 45,
+    "minFresh": 0.25,
+    "forgetDays": 120,
+    "friendly": 0.8,
+    "hostile": 1.5,
+    "greedy": 0.15,
+    "refuseBelow": 20,
+    "haggle": 0.7,
+    "sulkDays": 6,
+    "fair": 2,
+    "grumble": -1,
+    "insult": -4,
+    "bounty": 3,
+    "maxDealings": 30,
+    "reserve": 150
+  },
   "delve": {
     "breakOff": 0.25,
     "bossBreakOff": 0.15,
