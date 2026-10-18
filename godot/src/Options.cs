@@ -7,7 +7,8 @@ namespace CrownAndCompass.Client;
 /// <summary>
 /// Command-line options after "--", for sharing a moment or checking a build headlessly:
 /// <c>--seed 7 --day 40 --autoplay --tab bounties --site wolfwood --scry wolfwood --screenshot shot.png</c>.
-/// Also <c>--scout site</c>, <c>--mirror site</c>, <c>--build pool|spire|tower|palisade</c>, <c>--relic item-id</c> and <c>--buy all|N</c> (companies' reports).
+/// Also <c>--scout site</c>, <c>--mirror site</c>, <c>--build pool|spire|tower|palisade</c>, <c>--relic item-id</c> and <c>--buy all|N</c> (companies' reports);
+/// for the walls <c>--works palisade|stone|all</c> (raised at once), <c>--call N|tower:N</c>, <c>--flag x,y[,guards]</c> and <c>--wait hours</c>.
 /// </summary>
 public sealed class Options
 {
@@ -43,6 +44,9 @@ public sealed class Options
     public string? History;
     public string? Tutorial;
     public bool Hero;
+
+    /// <summary>--wall N: select a section of the outer wall (0 is the gate) in the inspector, for shots of the call to arms.</summary>
+    public int? Wall { get; private set; }
 
     /// <summary>--house: select the house on the most pleasant street, for screenshots of the inspector.</summary>
     public bool House;
@@ -117,6 +121,7 @@ public sealed class Options
                 case "--history": o.History = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
                 case "--tutorial": o.Tutorial = Next(); break;
                 case "--hero": o.Hero = true; break;
+                case "--wall": o.Wall = int.Parse(Next()); break;
                 case "--house": o.House = true; break;
                 case "--alert": o.Alert = int.Parse(Next()); break;
                 case "--alert-hover": o.AlertHover = int.Parse(Next()); break;
@@ -152,7 +157,7 @@ public sealed class Options
                 case "--advance": o.Advances.Add(Next()); break;
                 case "--inspiration": o.Inspiration = int.Parse(Next()); break;
                 case "--decor-at": o.DecorAt = Next().Split(',').Select(v => double.Parse(v, System.Globalization.CultureInfo.InvariantCulture)).ToArray(); break;
-                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--buy":
+                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--buy" or "--call" or "--flag" or "--wait" or "--works":
                     o.Script.Add((args[i][2..], Next()));
                     break;
             }
@@ -185,6 +190,31 @@ public sealed class Options
                     break;
                 case "build":
                     sim.BuildDefense(arg == "tower" ? DefenseWork.Tower : DefenseWork.Palisade);
+                    break;
+                case "works":
+                    // For shots of the walls: raise them at once, the stone and (with "all") every work that goes on it.
+                    var d = t.Defenses;
+                    d.Palisade = PalisadeState.Built;
+                    if (arg == "palisade") d.Towers = Math.Max(d.Towers, 2);
+                    else d.StoneWall = PalisadeState.Built;
+                    if (arg == "all")
+                    {
+                        d.Gatehouse = d.Moat = PalisadeState.Built;
+                        d.Barracks = t.Content.Garrison.BarracksWork.Max;
+                        d.Towers = Garrison.MaxTowers(t);
+                    }
+                    Garrison.Sync(t);
+                    break;
+                case "call":
+                    if (arg.StartsWith("tower:", StringComparison.Ordinal)) sim.CallToArms(PostKind.Tower, int.Parse(arg[6..]));
+                    else sim.CallToArms(PostKind.Wall, int.Parse(arg));
+                    break;
+                case "flag":
+                    var f = arg.Split(',').Select(v => double.Parse(v, System.Globalization.CultureInfo.InvariantCulture)).ToArray();
+                    sim.PlantFlag(f[0], f[1], f.Length > 2 ? (int)f[2] : 0);
+                    break;
+                case "wait":
+                    for (int h = 0; h < int.Parse(arg); h++) sim.Step();
                     break;
                 case "scout":
                     sim.PostScout(arg);

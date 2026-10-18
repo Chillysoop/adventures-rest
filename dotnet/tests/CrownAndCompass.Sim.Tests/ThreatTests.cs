@@ -35,7 +35,7 @@ public class ThreatTests
     [Fact]
     public void AnnouncesTheMarchDaysBeforeTheSiege()
     {
-        var sim = new Simulation(new SimulationOptions { Seed = 5, AutoBounties = false, AutoStories = false });
+        var sim = new Simulation(new SimulationOptions { Seed = 4, AutoBounties = false, AutoStories = false });
         RunUntilOutcome(sim, 250);
         var march = sim.Town.Ledger.Entries.FirstOrDefault(e => e.Text.Contains("is on the march"));
         var siege = sim.Town.Chronicles.FirstOrDefault(c => c.PartyName.StartsWith("Defenders", StringComparison.Ordinal));

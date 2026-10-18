@@ -53,6 +53,7 @@ public partial class Main
         AddChild(_map);
         _map.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         _map.Picked += sel => Select(sel);
+        _map.FlagDropped += OnFlagDropped;
 
         AddChild(BuildTopBar());
         BuildPaused();

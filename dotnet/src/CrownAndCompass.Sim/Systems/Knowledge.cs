@@ -99,6 +99,14 @@ public static class Knowledge
     /// <summary>A party can still be called home until it goes into the site.</summary>
     public static bool CanRecall(Town town, Party party) => !party.Returned && party.RecalledTick == null && LegOf(town, party) == Leg.Outbound;
 
+    /// <summary>The party turns round where it stands and walks home.</summary>
+    internal static void TurnBack(Town town, Party party)
+    {
+        party.RecalledTick = town.Tick;
+        Roads.Recall(town, party);
+        foreach (int id in party.Members) town.Agent(id).Hero!.AwayUntil = party.ReturnTick;
+    }
+
     /// <summary>
     /// Send a message by sending stone to a party on the road. With recall, the party turns back;
     /// otherwise it answers with where it is. Returns the answer, or null when the party is home or
@@ -116,9 +124,7 @@ public static class Knowledge
         string answer;
         if (recall)
         {
-            party.RecalledTick = town.Tick;
-            Roads.Recall(town, party);
-            foreach (int id in party.Members) town.Agent(id).Hero!.AwayUntil = party.ReturnTick;
+            TurnBack(town, party);
             answer = $"\"Understood. Turning back from the road to {site.Def.Name}.\"";
         }
         else

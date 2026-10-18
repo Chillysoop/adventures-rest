@@ -1139,6 +1139,9 @@ public sealed class Content
     /// <summary>Story events and the mayor's character sheet (content/game/stories.json).</summary>
     public StoryRules Stories { get; init; } = new();
 
+    /// <summary>Sending-stone quests from parties on the road (content/game/sendings.json); their stories are among <see cref="Stories"/> too.</summary>
+    public SendingRules Sendings { get; init; } = new();
+
     /// <summary>Adventuring companies' bastions: who may raise one, their facilities and turns (content/game/bastions.json).</summary>
     public BastionRules Bastions { get; init; } = new();
 
@@ -1147,6 +1150,9 @@ public sealed class Content
 
     /// <summary>Sellsword companies for hire and how their campaigns go (content/game/mercenaries.json).</summary>
     public MercRules Mercenaries { get; init; } = new();
+
+    /// <summary>The town guard's posts and the wall works past the stone walls (content/game/garrison.json).</summary>
+    public GarrisonRules Garrison { get; init; } = new();
 
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
@@ -1261,7 +1267,7 @@ public sealed class Content
         T Parse<T>(string file) => JsonSerializer.Deserialize<T>(read(file), JsonOptions) ?? throw new InvalidDataException($"Empty content file {file}");
         // The institutions' requests are story events like any other, kept with the institutions.
         var institutions = Parse<InstitutionRules>("institutions.json");
-        var stories = Parse<StoryRules>("stories.json");
+        var stories = WithSendings(Parse<StoryRules>("stories.json"), Parse<SendingRules>("sendings.json"));
         stories = stories with { Stories = [.. stories.Stories, .. institutions.Requests], Precedents = [.. stories.Precedents, .. institutions.Precedents] };
         return new Content(
             Parse<List<BuildingDef>>("buildings.json"),
@@ -1293,9 +1299,20 @@ public sealed class Content
             History = Parse<HistoryRules>("history.json"),
             Stories = stories,
             Institutions = institutions,
+            Sendings = Parse<SendingRules>("sendings.json"),
             Bastions = Parse<BastionRules>("bastions.json"),
             Mercenaries = Parse<MercRules>("mercenaries.json"),
+            Garrison = Parse<GarrisonRules>("garrison.json"),
         };
+    }
+
+    /// <summary>The sending quests are stories like any other, of their own source.</summary>
+    private static StoryRules WithSendings(StoryRules stories, SendingRules sendings)
+    {
+        foreach (var d in sendings.Stories)
+            if (d.Source != Systems.Sendings.Source) throw new InvalidDataException($"Sending {d.Id} must have source \"{Systems.Sendings.Source}\"");
+        stories.Stories.AddRange(sendings.Stories);
+        return stories;
     }
 
     /// <summary>A file of content/game/ as built into the library, for readers outside the sim (the tutorial).</summary>

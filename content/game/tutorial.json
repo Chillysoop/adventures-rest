@@ -137,10 +137,28 @@
     {
       "id": "war",
       "title": "Ready the walls",
-      "text": "Something will come for Briarford sooner or later. [b]War[/b] shows the threat and lets you raise towers and palisades. Raiders strike when your heroes are away, so don't send everyone at once.",
+      "text": "Something will come for Briarford sooner or later. [b]War[/b] shows the threat and the walls: start with a timber palisade and watchtowers, then raise stone walls, a gatehouse, a moat and barracks in the walls as the town grows. Raiders strike when your heroes are away, so don't send everyone at once.",
       "point": "tab:War",
       "until": "tab:War",
       "teaches": ["tab:War", "command:BuildDefense"]
+    },
+    {
+      "id": "guard-flags",
+      "title": "Post the guard",
+      "text": "You don't steer the watch by hand: you give it orders. Press [b]G[/b] (or [b]Plant[/b] under Town guard in [b]War[/b]) and click anywhere to plant a flag; the nearest guards walk there and stand watch. Raiders shy away from what a flag covers, and what it covers holds better. Click a flag to stand it down. Try planting one by your farms.",
+      "point": "tab:War",
+      "when": "day:12",
+      "until": "flag",
+      "teaches": ["key:G", "command:PlantFlag", "command:StandDown"]
+    },
+    {
+      "id": "call-to-arms",
+      "title": "Call to arms",
+      "text": "A host is marching, and the scouts say which side it comes at. Click the alert, or that stretch of wall, and press [b]Call to arms[/b]: the nearest of the watch run up onto it. Every wall section, tower and the gate can be called. A stretch with more guards than its share holds better when a wave hits it; a manned tower adds its archers.",
+      "point": "inspector",
+      "when": "alert:march",
+      "until": "call",
+      "teaches": ["command:CallToArms"]
     },
     {
       "id": "sellswords",
@@ -288,6 +306,13 @@
         "command:FundInstitution",
         "command:ChooseInstitution"
       ]
+    },
+    {
+      "id": "sendings",
+      "title": "Word from the road",
+      "text": "A party on a bounty with a caster can spend a spell slot to reach you by sending stone and ask how to go on: pay the toll or bluff, trust the captured scout, bring home the captives or the gold. The game pauses until you answer. Each choice rolls your d20 plus your sheet, plus help from the party's best hand at it. Some quests go on over several sendings. An [b]Adventurers' Hall[/b] (Government) adds to every roll, unlocks choices of its own, and lets parties send word more often.",
+      "when": "count:Parties",
+      "teaches": []
     },
     {
       "id": "history",

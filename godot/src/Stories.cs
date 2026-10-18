@@ -65,11 +65,25 @@ public partial class Main
         _dirty = true;
     }
 
-    /// <summary>A new story pops up on its own (while the player is playing, not watching the stand-in); high stakes pause the clock.</summary>
+    /// <summary>
+    /// A new story pops up on its own (while the player is playing, not watching the stand-in); high stakes
+    /// pause the clock. A party's sending always pauses it, and the clock stays stopped until it is answered.
+    /// </summary>
     private void SyncStories(double delta)
     {
         if (_story.Visible && _beat != null) AnimateRoll();
-        if (_title.Visible || _menu.Visible || _story.Visible) return;
+        if (_title.Visible || _menu.Visible) return;
+        if (!_opts.Smoke && Sendings.Waiting(_sim.Town).FirstOrDefault() is { } sending)
+        {
+            if (_speed > 0) SetSpeed(0);
+            if (!_story.Visible)
+            {
+                _storySeen = Math.Max(_storySeen, sending.Id);
+                OpenStory(sending.Id);
+            }
+            return;
+        }
+        if (_story.Visible) return;
         var next = Stories.Pending(_sim.Town).FirstOrDefault(s => s.Id > _storySeen);
         if (next == null) return;
         _storySeen = next.Id;
@@ -98,11 +112,13 @@ public partial class Main
         var head = new HBoxContainer();
         head.AddThemeConstantOverride("separation", 10);
         head.AddChild(new TextureRect { Texture = Ui.Icon("d20"), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2(30, 30), SizeFlagsVertical = SizeFlags.ShrinkCenter });
+        bool sending = Sendings.Is(d);
         head.AddChild(Ui.Label(word, color, Ui.Bold, 11));
-        head.AddChild(Ui.Label("·  " + d.Source.ToUpperInvariant(), Ui.Ink2, Ui.Bold, 11));
+        head.AddChild(Ui.Label("·  " + (sending ? "SENDING STONE" : d.Source.ToUpperInvariant()), sending ? Ui.Accent : Ui.Ink2, Ui.Bold, 11));
         var spacer = new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         head.AddChild(spacer);
-        if (!s.Done)
+        if (sending && !s.Done) head.AddChild(Ui.Label("Game paused until you answer", Ui.Ink2, Ui.Medium, 11));
+        else if (!s.Done)
         {
             int days = Math.Max(1, (int)Math.Ceiling((s.DueTick - t.Tick) / 24.0));
             head.AddChild(Ui.Label($"Runs its course in {Ui.Days(days)}", Ui.Ink2, Ui.Medium, 11));
@@ -137,13 +153,18 @@ public partial class Main
             };
             foot.AddChild(inspire);
         }
-        var who = Ui.Rich(Ui.C(Ui.Ink2, $"[font_size=12]Rolling as [url=mayor]{Ui.C(Ui.Accent, Ui.Esc(m.Name))}[/url], level {m.Level} {Ui.Esc(Stories.Title(t).ToLowerInvariant())}[/font_size]"), 12);
+        string withParty = Sendings.PartyOf(t, s) is { } party ? $", with the {Ui.Esc(party.Name)} on the stone" : "";
+        var who = Ui.Rich(Ui.C(Ui.Ink2, $"[font_size=12]Rolling as [url=mayor]{Ui.C(Ui.Accent, Ui.Esc(m.Name))}[/url], level {m.Level} {Ui.Esc(Stories.Title(t).ToLowerInvariant())}{withParty}[/font_size]"), 12);
         who.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         who.SizeFlagsVertical = SizeFlags.ShrinkCenter;
         foot.AddChild(who);
-        var later = new Button { Text = "Later", TooltipText = "Leave it on the alert strip for now", FocusMode = FocusModeEnum.None };
-        later.Pressed += CloseStory;
-        foot.AddChild(later);
+        // A sending must be answered: the party is waiting on the stone.
+        if (!Sendings.Is(d))
+        {
+            var later = new Button { Text = "Later", TooltipText = "Leave it on the alert strip for now", FocusMode = FocusModeEnum.None };
+            later.Pressed += CloseStory;
+            foot.AddChild(later);
+        }
         _storyBox.AddChild(foot);
     }
 
@@ -172,7 +193,8 @@ public partial class Main
             string name = o.Skill != "" ? t.Content.Stories.Skill(o.Skill)?.Name ?? o.Skill : ab.ToUpperInvariant();
             int bonus = mod + prof;
             string adv = Stories.Advantage(t, s, o);
-            sub = $"{name} {(bonus >= 0 ? "+" : "−")}{Math.Abs(bonus)} ({ab.ToUpperInvariant()}{Edge(o.Skill)}) vs DC {o.Dc} · {Math.Round(Stories.Chance(t, s, o, _inspire) * 100)}%"
+            string help = string.Concat(Sendings.Helpers(t, s, o).Select(h => $" + {h.Name} {(h.Bonus >= 0 ? "+" : "−")}{Math.Abs(h.Bonus)}"));
+            sub = $"{name} {(bonus >= 0 ? "+" : "−")}{Math.Abs(bonus)} ({ab.ToUpperInvariant()}{Edge(o.Skill)}){help} vs DC {o.Dc} · {Math.Round(Stories.Chance(t, s, o, _inspire) * 100)}%"
                 + (adv != "" ? $" · advantage: {adv}" : "") + (o.Cost > 0 ? $" · costs {Js.Str(o.Cost)}g" : "");
         }
         if (blocked != null) sub = $"{Ui.Cap(blocked)}.";
@@ -260,17 +282,21 @@ public partial class Main
             result.AddChild(w);
             string skill = t.Content.Stories.Skill(b.Skill)?.Name ?? b.Skill.ToUpperInvariant();
             string ab = (t.Content.Stories.Skill(b.Skill)?.Ability ?? b.Skill).ToUpperInvariant();
-            string math = $"{b.Die}{Signed(b.Modifier, ab)}{(b.Proficiency > 0 ? Signed(b.Proficiency, "training") : "")} = [b]{b.Total}[/b] against DC {b.Dc}";
+            string helped = b.Help != 0 ? Signed(b.Help, Ui.Esc(b.Helpers)) : "";
+            string math = $"{b.Die}{Signed(b.Modifier, ab)}{(b.Proficiency > 0 ? Signed(b.Proficiency, "training") : "")}{helped} = [b]{b.Total}[/b] against DC {b.Dc}";
             string adv = (b.Advantage != "" ? $"  ·  advantage: {Ui.Esc(b.Advantage)}" : "") + (b.Rerolled is int first ? $"  ·  rerolled a {first} with Inspiration" : "");
             result.AddChild(Ui.Rich($"[center]{Ui.C(Ui.Ink2, $"{Ui.Esc(skill)}: {math}{adv}")}[/center]", 13));
         }
         result.AddChild(Ui.Rich(LinkStory(s, b.Text), 15));
         var foot = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.End };
-        var go = new Button { Text = s.Done ? "Close" : "Continue", ThemeTypeVariation = "Post", FocusMode = FocusModeEnum.None };
+        // A quest waiting on the party's next sending closes until the stone wakes again.
+        bool waits = s.WaitTick is int wait && wait > t.Tick;
+        if (waits) result.AddChild(Ui.Rich(Ui.C(Ui.Ink2, "[i]The stone goes quiet. They will send again when there is news.[/i]"), 13));
+        var go = new Button { Text = s.Done || waits ? "Close" : "Continue", ThemeTypeVariation = "Post", FocusMode = FocusModeEnum.None };
         int id = s.Id;
         go.Pressed += () =>
         {
-            if (Stories.Find(_sim.Town, id) is { Done: false }) OpenStory(id);
+            if (Stories.Find(_sim.Town, id) is { Done: false } open && (open.WaitTick ?? 0) <= _sim.Town.Tick) OpenStory(id);
             else CloseStory();
         };
         foot.AddChild(go);
