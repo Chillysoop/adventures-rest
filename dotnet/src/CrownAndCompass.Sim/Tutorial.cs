@@ -65,11 +65,12 @@ public static class Tutorial
     /// <summary>
     /// A number read off the town for steps to watch: "count:Bounties" is the size of that list on
     /// <see cref="Town"/> (any public list works, so a new system needs no code here); "zoned" is the lots
-    /// zoned. Null for a name that means nothing.
+    /// zoned, "decorated" the decorations set down. Null for a name that means nothing.
     /// </summary>
     public static int? Measure(Town t, string token)
     {
         if (token == "zoned") return t.Lots.Count(l => l.Zone != Zone.None);
+        if (token == "decorated") return t.Decor.Pieces.Count;
         if (!token.StartsWith("count:", StringComparison.Ordinal)) return null;
         var prop = typeof(Town).GetProperty(token[6..], BindingFlags.Public | BindingFlags.Instance);
         return prop?.GetValue(t) is IEnumerable items and not string ? items.Cast<object>().Count() : null;

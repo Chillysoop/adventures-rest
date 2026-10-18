@@ -69,6 +69,15 @@
       "teaches": ["tab:Council", "command:DecideMotion"]
     },
     {
+      "id": "decorate",
+      "title": "Dress the town",
+      "text": "The build bar's [b]Decor[/b] tab has trees, benches, lamps, fountains, statues and more. Set them anywhere at any angle: click to place, drag to aim, and [b]R[/b] or Shift+wheel turns the piece. Drag fences and hedges into rows, paint trees and flowers, and clear pieces for half their price back. Every piece helps a little: benches rest the neighbours, lamps help the watch, stalls lift trade, statues win favour and loyalty.",
+      "when": "day:10",
+      "point": "buildbar",
+      "until": "decorated",
+      "teaches": ["command:Decorate", "command:ClearDecoration", "key:R"]
+    },
+    {
       "id": "heroes-arrive",
       "title": "Heroes for hire",
       "text": "Adventurers have come to town. They drink, train and wait for work. Click one to see their sheet: you can reward them, knight them, grant them a fief or name a champion, and loyal heroes stay when times turn dark.",

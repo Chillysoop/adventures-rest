@@ -37,7 +37,8 @@ MODELS = {
         roof roof-gable roof-gable-end roof-gable-top roof-gable-detail roof-high roof-high-gable roof-high-gable-end roof-high-point roof-point roof-window
         chimney chimney-base chimney-top banner-red banner-green stall stall-red stall-green stall-bench cart cart-high lantern
         fountain-round fountain-round-detail windmill watermill wheel fence fence-gate hedge planks pillar-wood pillar-stone overhang
-        rock-large rock-small rock-wide""".split(),
+        rock-large rock-small rock-wide
+        tree tree-high tree-high-round tree-crooked fountain-square fountain-square-detail stall-stool hedge-large poles""".split(),
     "castle": """tower-square tower-square-base tower-square-mid tower-square-mid-windows tower-square-top tower-square-top-roof tower-square-roof
         tower-hexagon-base tower-hexagon-mid tower-hexagon-roof tower-hexagon-top tower-base tower-top wall wall-half wall-corner wall-doorway
         wall-pillar gate flag flag-banner-long flag-pennant flag-wide siege-catapult siege-ram siege-tower siege-ballista
@@ -48,7 +49,9 @@ MODELS = {
         cliff_large_rock cliff_large_stone cliff_cave_rock cliff_cave_stone cliff_block_rock
         tent_detailedOpen tent_detailedClosed tent_smallOpen campfire_logs campfire_stones log log_large log_stack log_stackLarge stump_old stump_round
         crops_wheatStageB crops_cornStageC crops_dirtDoubleRow crop_pumpkin fence_simple fence_planks statue_ring statue_head
-        plant_bush plant_bushLarge mushroom_redGroup lily_large bridge_wood bridge_stone platform_stone sign pot_small""".split(),
+        plant_bush plant_bushLarge mushroom_redGroup lily_large bridge_wood bridge_stone platform_stone sign pot_small
+        flower_redA flower_yellowA flower_purpleA flower_redB flower_yellowB plant_bushDetailed tree_default tree_pineRoundB tree_tall
+        statue_obelisk statue_column statue_block pot_large campfire_bricks fence_simpleHigh""".split(),
 }
 
 COMP = {5120: np.int8, 5121: np.uint8, 5122: np.int16, 5123: np.uint16, 5125: np.uint32, 5126: np.float32}
