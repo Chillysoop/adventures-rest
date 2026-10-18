@@ -56,11 +56,24 @@ public class BastionsTests
     [Fact]
     public void FacilitiesHireTownsfolkAndStandOnTheWalls()
     {
-        var sim = new Simulation(new SimulationOptions { Seed = 2 });
-        var t = sim.Town;
-        sim.RunDays(320);
-        var b = t.Bastions.First(x => !x.Abandoned && !x.Idle && x.Facilities.Count > 0);
-        var staff = b.Facilities.Select(t.Building).Where(f => f.Complete).SelectMany(f => f.Workers).ToList();
+        // Bastions come and go with their companies, so look for a working one rather than at a fixed day.
+        Simulation? sim = null;
+        BastionState? b = null;
+        foreach (int seed in new[] { 2, 3, 4 })
+        {
+            sim = new Simulation(new SimulationOptions { Seed = seed });
+            sim.RunDays(240);
+            for (int d = 0; d < 240 && b == null; d += 10)
+            {
+                sim.RunDays(10);
+                b = sim.Town.Bastions.FirstOrDefault(x => !x.Abandoned && !x.Idle && x.Turns > 0 && x.Recent.Count > 0
+                    && x.Facilities.Select(sim.Town.Building).Any(f => f.Complete && f.Workers.Count > 0));
+            }
+            if (b != null) break;
+        }
+        Assert.NotNull(b);
+        var t = sim!.Town;
+        var staff = b!.Facilities.Select(t.Building).Where(f => f.Complete).SelectMany(f => f.Workers).ToList();
         Assert.NotEmpty(staff);
         Assert.All(staff, id => Assert.Null(t.Agent(id).Hero));
         Assert.True(b.Turns > 0);

@@ -67,8 +67,8 @@ public static class Expedition
 
         /// <summary>From the hero's gear, worked out once for the delve.</summary>
         public int Ac { get; init; }
-        public int Attack { get; init; }
-        public int Skill { get; init; }
+        public int Attack { get; set; }
+        public int Skill { get; set; }
 
         /// <summary>Been out often enough to keep their head when a friend falls.</summary>
         public bool Veteran { get; init; }
@@ -95,6 +95,17 @@ public static class Expedition
     private static string The(MonsterDef d) => d.Named ? d.Name : $"the {d.Name}";
 
     public static int Proficiency(int level) => 2 + (level - 1) / 4;
+
+    /// <summary>
+    /// A hero's bonus on a check of an ability away from a delve (over a sending stone): its modifier,
+    /// plus proficiency and class training in the matching delving skill, plus the gear's.
+    /// </summary>
+    public static int HeroBonus(Content content, Agent a, string ability, string kind)
+    {
+        var sheet = a.Hero!;
+        int cls = kind == "" ? 0 : sheet.Cls.Skills.GetValueOrDefault(kind, 0);
+        return (ability == "" ? 0 : Rng.Modifier(a.Abilities[ability])) + cls + (cls > 0 ? Proficiency(sheet.Level) : 0) + Gear.Skill(content, sheet);
+    }
 
     /// <remarks>Integer division matches the TS sim because hit dice are even (d6 to d12).</remarks>
     public static int HeroMaxHp(HeroSheet sheet, int con)
@@ -191,6 +202,16 @@ public static class Expedition
             }
             int roll = _rng.D20();
             return new Check(who!, roll, roll + best);
+        }
+
+        /// <summary>The mayor's word over the sending stone: a bonus (or a penalty) on every check and blow at the site.</summary>
+        public void Hearten(int edge)
+        {
+            foreach (var c in Party)
+            {
+                c.Attack += edge;
+                c.Skill += edge;
+            }
         }
 
         private static int SkillBonus(Combatant c, string kind)
@@ -319,7 +340,9 @@ public static class Expedition
             var rng = _rng;
             var def = _content.Monster(e.Monster);
             var foes = new List<Foe>();
-            int n = rng.Range(e.Count[0], e.Count[1] + 1) + (def.Boss ? 0 : Swell);
+            int n = rng.Range(e.Count[0], e.Count[1] + 1);
+            // Fewer foes than drawn never empties a fight that had any.
+            if (!def.Boss) n = Math.Max(Math.Min(n, 1), n + Swell);
             for (int i = 0; i < n; i++) foes.Add(new Foe(def));
             if (!string.IsNullOrEmpty(e.Escort) && e.EscortCount != null)
             {

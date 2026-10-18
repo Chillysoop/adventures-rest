@@ -79,7 +79,7 @@ public sealed record NotorietyRules
     public double Courted { get; init; } = -4;
     public double Scorned { get; init; } = -4;
 
-    /// <summary>A famous hero wants a bigger share before a bounty interests them: share / (1 + Fee × tier).</summary>
+    /// <summary>A famous hero wants a bigger share before a bounty interests them: share / (1 + Fee × tiers past the first).</summary>
     public double Fee { get; init; } = 0.1;
 
     /// <summary>The town's most famous company draws heroes: chance per tier, and the share of greenhorns it turns into veterans.</summary>
@@ -219,7 +219,7 @@ public static class Notoriety
     }
 
     /// <summary>How much more a famous hero wants for a bounty: their share is divided by this.</summary>
-    public static double FeeFactor(Town town, Agent a) => a.Hero is HeroSheet s ? 1 + Rules(town).Fee * FameTier(town, s) : 1;
+    public static double FeeFactor(Town town, Agent a) => a.Hero is HeroSheet s ? 1 + Rules(town).Fee * Math.Max(0, FameTier(town, s) - 1) : 1;
 
     /// <summary>The fame tier of the most famous company with someone in town.</summary>
     public static int TownFame(Town town)
@@ -265,7 +265,7 @@ public static class Notoriety
         var s = a.Hero!;
         var list = new List<string>();
         int fame = FameTier(town, s), infamy = InfamyTier(town, s);
-        if (fame > 0) list.Add($"wants {Js.Str(Js.Round(r.Fee * fame * 100))}% more for a bounty");
+        if (fame > 1) list.Add($"wants {Js.Str(Js.Round(r.Fee * (fame - 1) * 100))}% more for a bounty");
         if (fame >= r.EpithetTier) list.Add($"+{Js.Str(fame * r.Defense)} at the walls");
         if (infamy >= r.KnightInfamy) list.Add("too notorious to knight");
         if (infamy > 0) list.Add("quick to make trouble");
