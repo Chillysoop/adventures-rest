@@ -78,6 +78,10 @@ public static class Population
         return races[0];
     }
 
+    /// <summary>Someone with these traits can't also have this one (shy and gregarious, say).</summary>
+    public static bool Opposed(IReadOnlySet<Trait> traits, Trait t) =>
+        Opposites.Any(o => (o.Item1 == t && traits.Contains(o.Item2)) || (o.Item2 == t && traits.Contains(o.Item1)));
+
     private static HashSet<Trait> RollTraits(Rng rng)
     {
         var traits = new HashSet<Trait>();
@@ -85,7 +89,7 @@ public static class Population
         for (int guard = 0; guard < 20 && traits.Count < wanted; guard++)
         {
             var t = rng.Pick(TraitOrder.All);
-            if (Opposites.Any(o => (o.Item1 == t && traits.Contains(o.Item2)) || (o.Item2 == t && traits.Contains(o.Item1)))) continue;
+            if (Opposed(traits, t)) continue;
             traits.Add(t);
         }
         return traits;

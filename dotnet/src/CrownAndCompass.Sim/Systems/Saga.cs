@@ -103,6 +103,9 @@ public sealed record FallbackFoe
     public string Kind { get; init; } = "beasts";
     public string Leader { get; init; } = "";
 
+    /// <summary>Its lineage in content/game/history.json, whatever region it wakes in.</summary>
+    public string Lineage { get; init; } = "";
+
     /// <summary>Who it is in the world's history (content/game/history.json), told when it wakes.</summary>
     public string Text { get; init; } = "";
 }

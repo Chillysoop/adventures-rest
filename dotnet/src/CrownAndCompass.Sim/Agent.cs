@@ -94,6 +94,9 @@ public sealed class Abilities
 public sealed class HeroSheet
 {
     public required ClassDef Cls { get; init; }
+
+    /// <summary>The library background they came up through (a lineage in content/game/history.json); "" for none.</summary>
+    public string Background { get; set; } = "";
     public int Level { get; set; }
     public int Xp { get; set; }
     public int MaxHp { get; set; }
