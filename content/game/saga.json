@@ -434,6 +434,7 @@
     "share": 0.3,
     "minimum": 20,
     "missedToMarch": 3,
+    "graceDays": 60,
     "sack": "The defence collapses. {leader}'s host pours through the breach and puts {town} to the torch. They do not stay: they empty the treasury, hang the town bell in their own hall, and leave a tax-taker at the town hall. {town} is under the yoke of {name}.",
     "tribute": "{name}'s tax-taker counts out {gold} gold from the treasury and rides away with it. Nobody meets anybody's eye.",
     "missed": "{name}'s tax-taker finds the treasury empty. He says nothing, and rides away fast.",
@@ -467,7 +468,7 @@
       13
     ],
     "overChampion": 1,
-    "marchGrowth": 0.15,
+    "marchGrowth": 0.1,
     "rideEveryDays": 20,
     "rideAfterDays": 20,
     "rideUnder": 3,

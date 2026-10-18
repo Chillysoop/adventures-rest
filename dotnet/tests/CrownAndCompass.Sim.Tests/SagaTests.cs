@@ -2,7 +2,7 @@ using CrownAndCompass.Sim.Systems;
 
 namespace CrownAndCompass.Sim.Tests;
 
-/// <summary>One long campaign, played once and shared by the tests that read it.</summary>
+/// <summary>One long campaign (it ends by day 1000 on every seed swept), played once and shared by the tests that read it.</summary>
 public sealed class LongCampaign
 {
     public Simulation Sim { get; }
@@ -10,7 +10,7 @@ public sealed class LongCampaign
     public LongCampaign()
     {
         Sim = new Simulation(new SimulationOptions { Seed = 1 });
-        for (int d = 0; d < 800 && Sim.Town.Outcome == null; d++) Sim.RunDays(1);
+        for (int d = 0; d < 1000 && Sim.Town.Outcome == null; d++) Sim.RunDays(1);
     }
 }
 

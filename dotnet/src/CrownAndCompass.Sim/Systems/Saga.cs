@@ -89,6 +89,9 @@ public sealed record YokeRules
 
     /// <summary>Tributes missed before the overlord stops waiting and marches.</summary>
     public int MissedToMarch { get; init; } = 2;
+
+    /// <summary>Days after the sack while the town rebuilds: an empty treasury then is not defiance.</summary>
+    public int GraceDays { get; init; } = 60;
     public string Sack { get; init; } = "";
     public string Tribute { get; init; } = "";
     public string Missed { get; init; } = "";
@@ -184,6 +187,7 @@ public sealed class SagaState
     public int? YokeId { get; set; }
     public bool Defied { get; set; }
     public int NextTributeTick { get; set; }
+    public int YokeTick { get; set; }
     public int MissedTribute { get; set; }
     public int Tributes { get; set; }
     public int Sacks { get; set; }
@@ -316,7 +320,7 @@ public static class Saga
         string intro = (Grim(town) && def.IntroDark != "" ? def.IntroDark : def.Intro)
             .Replace("{town}", town.Name)
             .Replace("{bigbad}", BigBad(town) is Menace b ? b.Name : "");
-        town.Log(LedgerCategory.Town, Importance.Major, $"{ActTitle(town, act)}. {intro}");
+        town.Log(LedgerCategory.Town, Importance.Major, Sentences($"{ActTitle(town, act)}. {intro}"));
         foreach (var band in def.Seeds) Menaces.Seed(town, band);
     }
 
@@ -361,6 +365,7 @@ public static class Saga
         s.Tributes = 0;
         s.NextRideDay = town.Day + Rules(town).Finale.RideAfterDays;
         s.NextTributeTick = town.Tick + y.EveryDays * SimTime.HoursPerDay;
+        s.YokeTick = town.Tick;
         town.Book(TreasuryAccount.Tribute, -Math.Max(0, town.Treasury));
         town.Mandate = 0;
         lines.Add(Fill(town, y.Sack, by));
@@ -391,8 +396,9 @@ public static class Saga
             town.Log(LedgerCategory.War, s.Tributes == 1 ? Importance.Notable : Importance.Routine, Fill(town, y.Tribute, m).Replace("{gold}", Js.Str(take)));
             return;
         }
-        s.MissedTribute++;
         town.Log(LedgerCategory.War, Importance.Notable, Fill(town, y.Missed, m));
+        if (town.Tick - s.YokeTick < y.GraceDays * SimTime.HoursPerDay) return;
+        s.MissedTribute++;
         if (s.MissedTribute >= y.MissedToMarch && !s.Defied)
         {
             s.Defied = true;
