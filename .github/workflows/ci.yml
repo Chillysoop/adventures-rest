@@ -34,3 +34,65 @@ jobs:
       - run: dotnet build godot/CrownAndCompass.csproj -c ExportRelease
       - name: Smoke-run the C# simulation
         run: dotnet run --project dotnet/src/CrownAndCompass.Cli -c Release --no-build -- --days 120 --seed 1 | tail -40
+
+  # The merge gate (scripts/gate.ts): the change merged onto the latest main must still play.
+  gate-sim:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Merge the latest main
+        if: github.event_name == 'pull_request'
+        run: |
+          git config user.name gate && git config user.email gate@localhost
+          git fetch origin main
+          git merge --no-edit origin/main || { echo "::error::This branch conflicts with main. Merge main into it and resolve the conflict."; exit 1; }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Tests, campaign sweep, save replay, saves from main
+        run: node scripts/gate.ts --sim --old-save ${{ github.event_name == 'pull_request' && 'origin/main' || 'HEAD~1' }}
+
+  gate-client:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Merge the latest main
+        if: github.event_name == 'pull_request'
+        run: |
+          git config user.name gate && git config user.email gate@localhost
+          git fetch origin main
+          git merge --no-edit origin/main || { echo "::error::This branch conflicts with main. Merge main into it and resolve the conflict."; exit 1; }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Cache Godot
+        id: godot-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/godot
+            ~/.local/share/godot/export_templates
+          key: godot-4.3-stable-mono-linux-1
+      - name: Install Godot 4.3 .NET and its Linux export template
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        run: |
+          base=https://github.com/godotengine/godot/releases/download/4.3-stable
+          mkdir -p ~/godot && cd ~/godot
+          curl -sSL -o godot.zip $base/Godot_v4.3-stable_mono_linux_x86_64.zip && unzip -q godot.zip && rm godot.zip
+          curl -sSL -o tpl.tpz $base/Godot_v4.3-stable_mono_export_templates.tpz
+          t=~/.local/share/godot/export_templates/4.3.stable.mono && mkdir -p $t
+          unzip -q -j tpl.tpz templates/version.txt templates/linux_release.x86_64 -d $t && rm tpl.tpz
+      - name: Install a virtual display
+        run: sudo apt-get install -y -qq xvfb > /dev/null
+      - name: Export the Linux build and play it through from the main menu
+        run: GODOT=$(ls ~/godot/*/Godot_v4.3-stable_mono_linux.x86_64) node scripts/gate.ts --client
