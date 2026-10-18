@@ -256,7 +256,7 @@ public static class Property
 
     public static Lot? FindLot(Town town, Zone zone) =>
         town.Lots
-            .Where(l => l.Zone == zone && l.IsVacant && l.OwnerId == null && City.IsOpen(town, l))
+            .Where(l => l.Zone == zone && l.IsVacant && l.OwnerId == null && City.IsOpen(town, l) && !Decor.Garden(town, l))
             .OrderBy(Town.DistanceFromCenter)
             .ThenBy(l => l.Id)
             .FirstOrDefault();
@@ -264,7 +264,7 @@ public static class Property
     /// <summary>The nearest vacant lot of the building's zone, in a ward it may stand in.</summary>
     public static Lot? FindLot(Town town, BuildingDef def) =>
         town.Lots
-            .Where(l => l.Zone == def.Zone && l.IsVacant && l.OwnerId == null && City.Allows(town, def, l))
+            .Where(l => l.Zone == def.Zone && l.IsVacant && l.OwnerId == null && City.Allows(town, def, l) && !Decor.Garden(town, l))
             .OrderBy(Town.DistanceFromCenter)
             .ThenBy(l => l.Id)
             .FirstOrDefault();

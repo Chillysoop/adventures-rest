@@ -30,7 +30,7 @@ public static class Brain
             Execute(town, a, Choose(town, a));
             if (was is int w) drinkers[w]--;
             if (a.Activity == Activity.Drinking && a.LocationId is int now) drinkers[now] = drinkers.GetValueOrDefault(now) + 1;
-            SampleMood(a, festival + (a.Activity == Activity.Praying ? town.Content.Shrines.PrayMood : 0) + Faith.Mood(town, a) + City.HomeMood(town, a));
+            SampleMood(a, festival + (a.Activity == Activity.Praying ? town.Content.Shrines.PrayMood : 0) + Faith.Mood(town, a) + City.HomeMood(town, a) + Decor.Mood(town, a));
         }
         town.HourTaverns = null;
         town.Drinkers = null;

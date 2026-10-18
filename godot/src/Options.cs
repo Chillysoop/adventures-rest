@@ -60,6 +60,13 @@ public sealed class Options
     public string? Plan, Tool;
     public int[]? Hover;
 
+    /// <summary>--beautify D: dress the town as a player who cares how it looks, keeping its square open from day D (see <see cref="Showcase"/>).</summary>
+    public int? Beautify;
+
+    /// <summary>--decor picks a decoration (or "eraser") to hold; --decor-at x,y,angle shows it at a point in lots.</summary>
+    public string? DecorTool;
+    public double[]? DecorAt;
+
     public static Options Parse(string[] args)
     {
         var o = new Options();
@@ -104,6 +111,9 @@ public sealed class Options
                 case "--plan": o.Plan = Next(); break;
                 case "--tool": o.Tool = Next(); break;
                 case "--hover": o.Hover = Next().Split(',').Select(int.Parse).ToArray(); break;
+                case "--beautify": o.Beautify = int.Parse(Next()); break;
+                case "--decor": o.DecorTool = Next(); break;
+                case "--decor-at": o.DecorAt = Next().Split(',').Select(v => double.Parse(v, System.Globalization.CultureInfo.InvariantCulture)).ToArray(); break;
                 case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--buy":
                     o.Script.Add((args[i][2..], Next()));
                     break;

@@ -22,6 +22,7 @@ public static class Mayor
             RaiseInstitutions(town);
             RaiseServices(town);
             PutIdleToWork(town);
+            Decor.StandIn(town, defend);
         }
         CommissionHousing(town);
     }
@@ -34,7 +35,7 @@ public static class Mayor
         double reach = 0;
         foreach (var l in town.Lots) if (l.Zone != Zone.None && City.IsOpen(town, l)) reach = Math.Max(reach, Town.DistanceFromCenter(l));
         var picked = town.Lots
-            .Where(l => l.Zone == Zone.None && l.IsVacant && City.IsOpen(town, l))
+            .Where(l => l.Zone == Zone.None && l.IsVacant && City.IsOpen(town, l) && !Decor.Garden(town, l))
             .Select(l => (l, w: City.WardOf(town, l), d: Town.DistanceFromCenter(l)))
             .OrderByDescending(x => x.w.Favours == zone ? 1 : 0)
             // Fields and workshops go out at the edge of the built town; homes and shops stay close in.

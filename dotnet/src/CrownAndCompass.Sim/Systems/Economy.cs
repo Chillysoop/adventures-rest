@@ -51,9 +51,10 @@ public static class Economy
             b.AddStock(good, -need);
         }
 
+        double yield = Decor.Yield(town, b);
         foreach (var (good, qty) in b.Def.Produces)
         {
-            double revenue = town.Market.Sell(good, qty * rate);
+            double revenue = town.Market.Sell(good, qty * rate * yield);
             double tax = revenue * salesTax;
             town.Book(TreasuryAccount.SalesTax, tax);
             b.Cash += revenue - tax;

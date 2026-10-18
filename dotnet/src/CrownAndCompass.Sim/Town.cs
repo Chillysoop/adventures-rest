@@ -197,6 +197,8 @@ public static class TreasuryAccount
     public const string Charters = "Charters";
     public const string HearthTax = "Hearth tax";
     public const string Wards = "Wards";
+    public const string Decorations = "Decorations";
+    public const string Orchards = "Orchards";
     public const string Intel = "Intel";
 }
 
@@ -307,6 +309,9 @@ public sealed class Town
     public CityState City { get; } = new();
     public Defenses Defenses { get; } = new();
 
+    /// <summary>Trees, benches, lamps, statues: the set dressing the player has placed (<see cref="Systems.Decor"/>).</summary>
+    public DecorState Decor { get; } = new();
+
     /// <summary>How the campaign ended: the big bad slain, or the town fallen.</summary>
     public Outcome? Outcome { get; set; }
 
@@ -373,7 +378,8 @@ public sealed class Town
     }
 
     public double LotPrice(Lot lot) =>
-        (15 + Math.Min(Population, 300) * 0.4 + Math.Max(0, Population - 300) * 0.1 + Math.Max(0, 8 - DistanceFromCenter(lot)) * 2) * Systems.City.WardOf(this, lot).Land;
+        (15 + Math.Min(Population, 300) * 0.4 + Math.Max(0, Population - 300) * 0.1 + Math.Max(0, 8 - DistanceFromCenter(lot)) * 2) * Systems.City.WardOf(this, lot).Land
+        + Systems.Decor.LandValue(this, lot);
 
     public Building AddBuilding(BuildingDef def, Lot lot, int? ownerId, string name, bool complete)
     {
@@ -385,6 +391,7 @@ public sealed class Town
             Opened = complete,
         };
         Buildings.Add(b);
+        Systems.Decor.ClearLot(this, lot);
         lot.BuildingId = b.Id;
         lot.OwnerId = ownerId;
         return b;

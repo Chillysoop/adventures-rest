@@ -27,7 +27,7 @@ public static class Planning
         {
             if (id < 0 || id >= town.Lots.Count) continue;
             var lot = town.Lot(id);
-            if (!CanZone(town, lot, zone)) continue;
+            if (!CanZone(town, lot, zone) || Decor.Garden(town, lot)) continue;
             lot.Zone = zone;
             n++;
         }
@@ -53,7 +53,7 @@ public static class Planning
         town.Log(LedgerCategory.Property, Importance.Notable, $"{a.Name} has gold for {ZoneName(zone)} land, but no {ZoneName(zone)} lot is zoned and for sale.", [a.Id]);
     }
 
-    public static int VacantZoned(Town town, Zone zone) => town.Lots.Count(l => l.Zone == zone && l.IsVacant && l.OwnerId == null && City.IsOpen(town, l));
+    public static int VacantZoned(Town town, Zone zone) => town.Lots.Count(l => l.Zone == zone && l.IsVacant && l.OwnerId == null && City.IsOpen(town, l) && !Decor.Garden(town, l));
 
     /// <summary>What the timber and stone for a building cost at today's market, caravans covering any shortfall.</summary>
     public static double Materials(Town town, BuildingDef d) => town.Market.Quote(Good.Timber, d.Timber) + town.Market.Quote(Good.Stone, d.Stone);
@@ -163,7 +163,7 @@ public static class Planning
     /// <summary>How much each watchman counts, from the watch houses.</summary>
     public static double WatchFactor(Town town)
     {
-        double f = 1;
+        double f = 1 + Decor.Watch(town);
         foreach (var b in Standing(town)) f += b.Def.WatchBoost;
         return f;
     }
