@@ -200,8 +200,55 @@ public static class Land
         }
         foreach (int i in Cells(x, y, w, d, yaw, 1))
             if (i >= 0 && plan.Taken[i] != 0) return false;
+        if (!Clear(town, x, y, w, d, yaw)) return false;
         // Not on ground too steep to prop up.
         return Hills.Span(town, x, y, w, d, yaw) <= Hills.MaxSpan;
+    }
+
+    /// <summary>
+    /// Whether a footprint keeps the town's gap from every building near it, measured on the turned rectangles themselves:
+    /// the cells only sample a footprint's middle, so two buildings at odd angles could otherwise cross at the corners.
+    /// </summary>
+    public static bool Clear(Town town, double x, double y, int w, int d, double yaw)
+    {
+        double gap = town.Content.Rules.BuildingGap;
+        var plan = town.Plan;
+        int reach = (int)Math.Ceiling(gap * Res) + 2;
+        int last = -1;
+        foreach (int i in Cells(x, y, w, d, yaw, reach))
+        {
+            int id = i < 0 ? 0 : plan.Taken[i] - 1;
+            if (id < 0 || id == last || id >= town.Lots.Count) continue;
+            last = id;
+            var lot = town.Lots[id];
+            if (Overlap(x, y, w, d, yaw, lot.X, lot.Y, lot.W, lot.D, lot.Yaw, gap)) return false;
+        }
+        return true;
+    }
+
+    /// <summary>Whether two footprints (centres in tiles, sizes in cells, any headings) come within <paramref name="gap"/> tiles of each other.</summary>
+    public static bool Overlap(double ax, double ay, int aw, int ad, double ayaw, double bx, double by, int bw, int bd, double byaw, double gap)
+    {
+        double ahw = aw / 2.0 / Res + gap / 2, ahd = ad / 2.0 / Res + gap / 2;
+        double bhw = bw / 2.0 / Res + gap / 2, bhd = bd / 2.0 / Res + gap / 2;
+        double dx = bx - ax, dy = by - ay;
+        double far = Math.Sqrt(ahw * ahw + ahd * ahd) + Math.Sqrt(bhw * bhw + bhd * bhd);
+        if (dx * dx + dy * dy >= far * far) return false;
+        // Separating axes: each rectangle's two sides.
+        foreach (double turn in (double[])[ayaw, byaw])
+            for (int k = 0; k < 2; k++)
+            {
+                double ux = k == 0 ? Math.Cos(turn) : -Math.Sin(turn), uy = k == 0 ? Math.Sin(turn) : Math.Cos(turn);
+                double ra = Reach(ahw, ahd, ayaw, ux, uy), rb = Reach(bhw, bhd, byaw, ux, uy);
+                if (Math.Abs(dx * ux + dy * uy) >= ra + rb - 1e-9) return false;
+            }
+        return true;
+    }
+
+    private static double Reach(double hw, double hd, double yaw, double ux, double uy)
+    {
+        double c = Math.Cos(yaw), s = Math.Sin(yaw);
+        return hw * Math.Abs(c * ux + s * uy) + hd * Math.Abs(-s * ux + c * uy);
     }
 
     /// <summary>

@@ -4,6 +4,7 @@
   "civicUpkeep": 6,
   "frontierDraw": 0.4,
   "frontierSize": 100,
+  "buildingGap": 0.15,
   "upkeepGrowth": 250,
   "crewShare": 0.5,
   "crewWage": 0.5
