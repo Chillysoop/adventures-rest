@@ -146,6 +146,7 @@ public partial class Main : Control
         _lastAutosaveDay = sim.Town.Day;
         _map.Planner.Pick(null);
         _map.Bind(_sim);
+        ShowBuildGroup(_buildGroup);
         _sim.Town.Ledger.OnWrite(OnLedger);
         _townName.Text = _sim.Town.Name;
         _seedLabel.Text = $"seed {seed}";

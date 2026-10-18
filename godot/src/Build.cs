@@ -45,6 +45,8 @@ public partial class Main
     /// <summary>The bar's buttons, from the content: everything the town could ever place, in the order the charters open it.</summary>
     private BuildItem[] BuildItems(BuildGroup g)
     {
+        // Before the first town is adopted there is nothing to build yet.
+        if (_sim == null) return g == BuildGroup.Zones ? Zones : [];
         var town = _sim.Town;
         int Order(BuildingDef d) => d.Tier == "" ? 0 : City.TierIndex(town, d.Tier);
         IEnumerable<BuildingDef> Sorted(Func<BuildingDef, bool> keep) =>
