@@ -68,15 +68,15 @@ public class PlanningTests
         sim.RunDays(120);
         var t = sim.Town;
         // More than the square: lanes have worn in, and none runs through a building.
-        Assert.True(t.Plan.Roads.Count > 5);
+        Assert.True(t.Plan.Streets.Count > 5);
         for (int i = 0; i < t.Plan.Paved.Length; i++) Assert.False(t.Plan.Paved[i] != 0 && t.Plan.Taken[i] != 0);
         foreach (var b in t.Buildings.Where(b => b.OwnerId != null))
         {
             var l = t.Lot(b.LotId);
-            Assert.True(Terrain.Span(t, l.X, l.Y, l.W, l.D, l.Yaw) <= Terrain.MaxSpan + 1e-9);
+            Assert.True(Hills.Span(t, l.X, l.Y, l.W, l.D, l.Yaw) <= Hills.MaxSpan + 1e-9);
             // Its door looks onto a lane close by.
-            double fx = l.X - Math.Sin(l.Yaw) * (l.D / (2.0 * Land.Res) + Roads.Verge + Roads.Width / 2 + 0.7), fy = l.Y + Math.Cos(l.Yaw) * (l.D / (2.0 * Land.Res) + Roads.Verge + Roads.Width / 2 + 0.7);
-            Assert.True(Roads.Nearest(t, fx, fy)!.Value.D < 0.9, $"{b.Name} faces no lane");
+            double fx = l.X - Math.Sin(l.Yaw) * (l.D / (2.0 * Land.Res) + Streets.Verge + Streets.Width / 2 + 0.7), fy = l.Y + Math.Cos(l.Yaw) * (l.D / (2.0 * Land.Res) + Streets.Verge + Streets.Width / 2 + 0.7);
+            Assert.True(Streets.Nearest(t, fx, fy)!.Value.D < 0.9, $"{b.Name} faces no lane");
         }
     }
 

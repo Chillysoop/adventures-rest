@@ -8,7 +8,7 @@ namespace CrownAndCompass.Sim.Systems;
 /// saves a long way round, so the lanes knit into a web rather than spokes.
 /// Buildings front onto the streets (<see cref="Land"/>).
 /// </summary>
-public static class Roads
+public static class Streets
 {
     /// <summary>Width of a lane, in tiles.</summary>
     public const double Width = 0.5;
@@ -34,8 +34,8 @@ public static class Roads
             pts[i * 2 + 1] = hall.Y + Math.Sin(a) * rr;
         }
         var plan = town.Plan;
-        var road = new Road { Id = plan.Roads.Count, Points = pts, Square = true };
-        plan.Roads.Add(road);
+        var road = new Street { Id = plan.Streets.Count, Points = pts, Square = true };
+        plan.Streets.Add(road);
         // Everything inside the rim is trodden open ground.
         for (int i = 0; i < plan.Paved.Length; i++)
         {
@@ -58,11 +58,11 @@ public static class Roads
     }
 
     /// <summary>Put a street on the plan.</summary>
-    public static Road Lay(Town town, double[] points)
+    public static Street Lay(Town town, double[] points)
     {
         var plan = town.Plan;
-        var road = new Road { Id = plan.Roads.Count, Points = points };
-        plan.Roads.Add(road);
+        var road = new Street { Id = plan.Streets.Count, Points = points };
+        plan.Streets.Add(road);
         for (int s = 0; s + 3 < points.Length; s += 2) Stamp(plan, points[s], points[s + 1], points[s + 2], points[s + 3]);
         plan.Changed();
         return road;
@@ -94,7 +94,7 @@ public static class Roads
     public static (double D, double X, double Y)? Nearest(Town town, double x, double y)
     {
         (double D, double X, double Y)? best = null;
-        foreach (var r in town.Plan.Roads)
+        foreach (var r in town.Plan.Streets)
             for (int s = 0; s + 3 < r.Points.Length; s += 2)
             {
                 var hit = SegmentDistance(x, y, r.Points[s], r.Points[s + 1], r.Points[s + 2], r.Points[s + 3]);
@@ -119,7 +119,7 @@ public static class Roads
         var plan = town.Plan;
         var spots = new List<(double, double, double, double)>();
         const double step = 0.3;
-        foreach (var r in plan.Roads)
+        foreach (var r in plan.Streets)
             for (int s = 0; s + 3 < r.Points.Length; s += 2)
             {
                 double ax = r.Points[s], ay = r.Points[s + 1], bx = r.Points[s + 2], by = r.Points[s + 3];
@@ -158,7 +158,7 @@ public static class Roads
     public static int Serve(Town town, int max = 16)
     {
         var plan = town.Plan;
-        if (plan.Roads.Count == 0) return 0;
+        if (plan.Streets.Count == 0) return 0;
         var skip = new HashSet<int>();
         var gap = new double[8];
         foreach (var z in Planning.Paintable) gap[(int)z] = Gap(town, z);
@@ -287,7 +287,7 @@ public static class Roads
     {
         var plan = town.Plan;
         int n = Land.Size;
-        var heights = Terrain.Grid(town);
+        var heights = Hills.Grid(town);
         var cost = new double[n * n];
         Array.Fill(cost, double.MaxValue);
         var from = new int[n * n];
@@ -389,7 +389,7 @@ public static class Roads
 }
 
 /// <summary>A street: a line through points in tiles, x then y. The square's is its rim, a closed loop.</summary>
-public sealed class Road
+public sealed class Street
 {
     public int Id { get; set; }
     public double[] Points { get; set; } = [];

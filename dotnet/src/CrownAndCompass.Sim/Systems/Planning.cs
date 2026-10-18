@@ -102,7 +102,7 @@ public static class Planning
         if (!City.Allows(town, d, x, y)) return $"it can't stand in the {ward.Name}";
         if (Land.At(town, d, x, y, yaw) != null) return null;
         var (w, dd) = Land.Footprint(d);
-        return Terrain.Span(town, x, y, w, dd, yaw ?? Roads.Facing(town, x, y)) > Terrain.MaxSpan ? "the ground is too steep" : "no room here";
+        return Hills.Span(town, x, y, w, dd, yaw ?? Streets.Facing(town, x, y)) > Hills.MaxSpan ? "the ground is too steep" : "no room here";
     }
 
     /// <summary>Place a building by hand at a point and heading (null faces the nearest lane), paid from the treasury.</summary>

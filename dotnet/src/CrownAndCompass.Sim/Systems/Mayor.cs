@@ -40,7 +40,7 @@ public static class Mayor
             + Math.Abs(field[(int)(y * Land.Res) * Land.Size + (int)(x * Land.Res)] / Land.Res - 2) * 0.7;
         for (int i = 0; i < 12 && Planning.VacantZoned(town, zone) < minVacant; i++)
         {
-            field = Roads.Field(town.Plan);
+            field = Streets.Field(town.Plan);
             if (!Land.PaintPatch(town, zone, zone == Zone.Farmland ? 2.4 : 2.0, Key)) break;
         }
     }

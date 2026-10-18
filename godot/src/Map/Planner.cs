@@ -124,7 +124,7 @@ public partial class Planner(MapView map) : Control
     {
         if (Tool?.Zone != null) Resize(up ? 1.15f : 1 / 1.15f);
         else if (Tool?.Building != null && _hover is Vector2 h)
-            _yaw = (_yaw ?? (float)Roads.Facing(map.Sim!.Town, h.X, h.Y)) + (up ? 1 : -1) * Mathf.Pi / 12;
+            _yaw = (_yaw ?? (float)Streets.Facing(map.Sim!.Town, h.X, h.Y)) + (up ? 1 : -1) * Mathf.Pi / 12;
         else return false;
         QueueRedraw();
         return true;
@@ -155,7 +155,7 @@ public partial class Planner(MapView map) : Control
         {
             var def = town.Content.Building(id);
             var at = _press ?? h;
-            double yaw = _yaw ?? Roads.Facing(town, at.X, at.Y);
+            double yaw = _yaw ?? Streets.Facing(town, at.X, at.Y);
             string? why = Planning.Blocked(town, def) ?? Planning.SpotBlocked(town, def, at.X, at.Y, yaw);
             var (w, d) = Land.Footprint(def);
             var c = why == null ? ZoneColor(Planning.ZoneFor(town, def)) : new Color(0.9f, 0.3f, 0.25f);

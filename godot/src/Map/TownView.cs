@@ -486,7 +486,7 @@ public partial class TownView(MapView map) : Node3D
     /// <summary>The footings that prop buildings up on a slope; the lanes and yards are painted on the ground (<see cref="Ground(Town)"/>).</summary>
     private void Lots(Town town)
     {
-        string key = $"{town.Lots.Count}|{town.Plan.Roads.Count}";
+        string key = $"{town.Lots.Count}|{town.Plan.Streets.Count}";
         if (key == _groundKey) return;
         _groundKey = key;
         var k = new MeshKit();
@@ -574,9 +574,9 @@ public partial class TownView(MapView map) : Node3D
                     into[i] = Mathf.Max(into[i], v);
                 }
         }
-        foreach (var r in town.Plan.Roads)
+        foreach (var r in town.Plan.Streets)
             for (int s = 0; s + 3 < r.Points.Length; s += 2)
-                Stroke(lane, new Vector2((float)r.Points[s], (float)r.Points[s + 1]), new Vector2((float)r.Points[s + 2], (float)r.Points[s + 3]), (float)Roads.Width * 0.36f, 0.09f);
+                Stroke(lane, new Vector2((float)r.Points[s], (float)r.Points[s + 1]), new Vector2((float)r.Points[s + 2], (float)r.Points[s + 3]), (float)Streets.Width * 0.36f, 0.09f);
         // The square's trodden middle.
         for (int i = 0; i < n * n; i++)
             if (town.Plan.Paved[i / n / GroundUp * Land.Size + i % n / GroundUp] != 0) lane[i] = Mathf.Max(lane[i], 0.8f);
@@ -591,7 +591,7 @@ public partial class TownView(MapView map) : Node3D
             float hw = l.W / (float)Land.Res / 2, hd = l.D / (float)Land.Res / 2;
             Stroke(yard, c - side * hw * 0.6f, c + side * hw * 0.6f, hd + 0.18f, 0.15f);
             var door = c + f * hd;
-            if (Roads.Nearest(town, door.X, door.Y) is { } near && near.D < 1.6)
+            if (Streets.Nearest(town, door.X, door.Y) is { } near && near.D < 1.6)
                 Stroke(lane, door, new Vector2((float)near.X, (float)near.Y), 0.07f, 0.06f);
         }
         var bytes = new byte[n * n * 4];
@@ -628,7 +628,7 @@ public partial class TownView(MapView map) : Node3D
     private void Zones(Town town)
     {
         var plan = town.Plan;
-        int version = $"{town.Lots.Count}|{plan.Roads.Count}|{plan.Zones.Aggregate(17, (h, z) => h * 31 + z)}".GetHashCode();
+        int version = $"{town.Lots.Count}|{plan.Streets.Count}|{plan.Zones.Aggregate(17, (h, z) => h * 31 + z)}".GetHashCode();
         if (version == _zoneVersion) return;
         _zoneVersion = version;
         int n = Land.Size * ZoneUp;

@@ -6,7 +6,7 @@ namespace CrownAndCompass.Sim.Systems;
 /// (the client props the low side on stilts or a plinth); ground too steep stays open.
 /// Pure function of the seed: nothing is saved, and it draws nothing from the town's rng.
 /// </summary>
-public static class Terrain
+public static class Hills
 {
     /// <summary>Most a footprint's ground may rise from its lowest corner to its highest, in tiles of height.</summary>
     public const double MaxSpan = 0.45;
@@ -17,7 +17,7 @@ public static class Terrain
     private static Hill[] _hills = [];
     private static readonly object Gate = new();
 
-    private static Hill[] Hills(int seed)
+    private static Hill[] Of(int seed)
     {
         lock (Gate)
         {
@@ -52,7 +52,7 @@ public static class Terrain
     public static double Height(int seed, double x, double y)
     {
         double h = 0;
-        foreach (var k in Hills(seed))
+        foreach (var k in Of(seed))
         {
             double dx = x - k.X, dy = y - k.Y, c = Math.Cos(k.Angle), s = Math.Sin(k.Angle);
             double u = (dx * c + dy * s) / k.Rx, v = (-dx * s + dy * c) / k.Ry;

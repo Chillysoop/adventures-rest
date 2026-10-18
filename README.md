@@ -167,7 +167,7 @@ takes many hours to explore. Art credits are in [`godot/assets/CREDITS.md`](godo
   zones are painted with a round brush ([ and ] or Shift+wheel size it) on a fine plan four cells to a tile, and
   townsfolk site each new building inside the paint themselves, fronting a lane. Lanes are never drawn: they wear in
   from the square to painted land by the easiest walk, round hills and buildings, and knit into a web (sim
-  `Systems/Roads.cs`). The town stands on gentle hills (`Systems/Terrain.cs`, shared with the client's heightmap);
+  `Systems/Streets.cs`). The town stands on gentle hills (`Systems/Hills.cs`, shared with the client's heightmap);
   buildings on a slope sit on a plinth or stilts with steps down from the door, and ground too steep stays open. Lanes
   and yards are painted into the terrain shader. Government works are placed at any point: click to face the nearest
   lane, or drag (or Shift+wheel) to turn them any way. The palisade follows the town's outline.

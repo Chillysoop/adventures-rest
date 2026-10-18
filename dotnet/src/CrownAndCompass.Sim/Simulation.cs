@@ -207,7 +207,7 @@ public sealed class Simulation
         var hallDef = c.Building("town_hall");
         var (hw, hd) = Land.Footprint(hallDef);
         t.AddBuilding(hallDef, new Lot(0, Town.Center, Town.Center) { W = hw, D = hd, Zone = Zone.Civic }, null, "the Town Hall", true);
-        Roads.Square(t, t.Lot(0));
+        Streets.Square(t, t.Lot(0));
         Quests.InitSites(t);
         World.Generate(t);
         Council.InitCouncil(t);

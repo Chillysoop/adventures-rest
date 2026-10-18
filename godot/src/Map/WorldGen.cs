@@ -177,10 +177,10 @@ public sealed class WorldGen
                 var p = new Vector2(x, y);
                 float h = RawHeight(x, y);
                 // The town was founded on dry ground by the ford: level round the hall, with the gentle hills
-                // the town plan knows (Terrain), so lanes and buildings sit on the same slopes the sim sited them on.
+                // the town plan knows (Hills), so lanes and buildings sit on the same slopes the sim sited them on.
                 float d = p.DistanceTo(Geo.Center);
                 float flat = Mathf.SmoothStep(Geo.Clearing, Geo.Clearing + 30, d);
-                float town = TownHeight + (float)Sim.Systems.Terrain.Height(townSeed, x - Geo.Margin, y - Geo.Margin);
+                float town = TownHeight + (float)Sim.Systems.Hills.Height(townSeed, x - Geo.Margin, y - Geo.Margin);
                 h = Mathf.Lerp(town, Mathf.Max(h, d < Geo.Clearing + 30 ? 1.2f : h), flat);
                 float dr = RiverDistance(p);
                 h = Mathf.Min(h, Mathf.Lerp(-1.1f, h, Mathf.SmoothStep(0.6f, 5.5f, dr)));

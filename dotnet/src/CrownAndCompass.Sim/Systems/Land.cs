@@ -2,7 +2,7 @@ namespace CrownAndCompass.Sim.Systems;
 
 /// <summary>
 /// The town's land, after Foundation: the player paints zones with a round brush on a fine raster
-/// (<see cref="Res"/> cells to a tile), streets grow out to the paint on their own (<see cref="Roads"/>), and
+/// (<see cref="Res"/> cells to a tile), streets grow out to the paint on their own (<see cref="Streets"/>), and
 /// every new building finds its own spot inside the paint fronting on a street, with a lane of open
 /// ground between it and its neighbours. A lot is the patch one building stands on; it exists only once something is built there.
 /// </summary>
@@ -67,7 +67,7 @@ public static class Land
         {
             plan.Changed();
             // New paint far from any street gets one.
-            if (zone != Zone.None) Roads.Serve(town);
+            if (zone != Zone.None) Streets.Serve(town);
         }
         return n;
     }
@@ -168,7 +168,7 @@ public static class Land
         foreach (int i in Cells(x, y, w, d, yaw, 1))
             if (i >= 0 && plan.Taken[i] != 0) return false;
         // Not on ground too steep to prop up.
-        return Terrain.Span(town, x, y, w, d, yaw) <= Terrain.MaxSpan;
+        return Hills.Span(town, x, y, w, d, yaw) <= Hills.MaxSpan;
     }
 
     /// <summary>
@@ -190,7 +190,7 @@ public static class Land
     private static Lot? Search(Town town, BuildingDef def, int w, int d, Zone? zone)
     {
         // Fronting on a street, the way the townsfolk build.
-        foreach (var (_, x, y, yaw) in Roads.Frontage(town, d, zone).OrderBy(c => c.Score).ThenBy(c => c.X).ThenBy(c => c.Y))
+        foreach (var (_, x, y, yaw) in Streets.Frontage(town, d, zone).OrderBy(c => c.Score).ThenBy(c => c.X).ThenBy(c => c.Y))
             if (City.Allows(town, def, x, y) && Fits(town, x, y, w, d, yaw, zone))
                 return new Lot(town.Lots.Count, x, y) { W = w, D = d, Yaw = yaw, Zone = zone ?? Zone.Civic };
         // The council's works take any open ground when no street has room, facing the nearest street.
@@ -218,7 +218,7 @@ public static class Land
             // Nudged off the cell centre, so nothing lines up on the plan's raster.
             double x = (i % Size + ox + (Jitter(i * 7 + 1) - 0.5) * 0.8) / Res, y = (i / Size + oy + (Jitter(i * 7 + 2) - 0.5) * 0.8) / Res;
             if (!City.Allows(town, def, x, y)) continue;
-            double face = Roads.Facing(town, x, y);
+            double face = Streets.Facing(town, x, y);
             // Turned a little off it when the straight heading doesn't fit.
             foreach (double off in Bends)
                 if (Fits(town, x, y, w, d, face + off, zone)) return new Lot(town.Lots.Count, x, y) { W = w, D = d, Yaw = face + off, Zone = zone ?? Zone.Civic };
@@ -232,7 +232,7 @@ public static class Land
     public static Lot? At(Town town, BuildingDef def, double x, double y, double? yaw = null)
     {
         var (w, d) = Footprint(def);
-        double a = yaw ?? Roads.Facing(town, x, y);
+        double a = yaw ?? Streets.Facing(town, x, y);
         if (!City.Allows(town, def, x, y)) return null;
         return Fits(town, x, y, w, d, a, null) ? new Lot(town.Lots.Count, x, y) { W = w, D = d, Yaw = a } : null;
     }
@@ -304,10 +304,10 @@ public sealed class LandPlan
     public int[] Taken { get; set; } = new int[Land.Size * Land.Size];
 
     /// <summary>The streets, and the cells they cover (1 where paved).</summary>
-    public List<Road> Roads { get; set; } = [];
+    public List<Street> Streets { get; set; } = [];
     public byte[] Paved { get; set; } = new byte[Land.Size * Land.Size];
 
-    /// <summary>Ground height per cell, from the town's seed (<see cref="Terrain.Grid"/>).</summary>
+    /// <summary>Ground height per cell, from the town's seed (<see cref="Hills.Grid"/>).</summary>
     [field: NotSaved]
     public float[]? Heights { get; set; }
 
