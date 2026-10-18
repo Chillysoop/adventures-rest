@@ -382,7 +382,7 @@ public static class Factions
 
     // Heat and exposure ---------------------------------------------------------------------------
 
-    private static void CheckExposure(Town town, FactionState f)
+    internal static void CheckExposure(Town town, FactionState f)
     {
         if (!f.Secret || f.Known || f.Members.Count == 0 || f.Heat < Rules(town).ExposeAt) return;
         f.Known = true;

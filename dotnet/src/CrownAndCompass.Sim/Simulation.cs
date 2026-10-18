@@ -132,6 +132,7 @@ public sealed class Simulation
         Turning.Daily(t);
         Legacies.Daily(t, Options.AutoMayor);
         Regard.Daily(t);
+        Broadsheet.Daily(t, Options.AutoMayor && Options.AutoStories);
         Loyalty.Daily(t, Options.AutoMayor);
         Decor.Daily(t);
         Stories.Daily(t, Options.AutoMayor && Options.AutoStories);
@@ -152,6 +153,9 @@ public sealed class Simulation
 
     /// <summary>The player's word to explorers about something they found ("dig", "engage", "onward", "home", "parley"...).</summary>
     public bool OrderExplorers(int findId, string act) => Explore.Order(Town, findId, act);
+
+    /// <summary>Pay the printer for the broadsheet's next front page ("praise", "hero" with a hero, "expose"). Returns why not, or null when bought.</summary>
+    public string? SlantBroadsheet(string slant, int? heroId = null) => Broadsheet.Buy(Town, slant, heroId);
 
     /// <summary>Send an envoy with gifts to a settlement out in the wilds, to win its people over.</summary>
     public bool SendEnvoy(int settlementId) => World.SendEnvoy(Town, settlementId);

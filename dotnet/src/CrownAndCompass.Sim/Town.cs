@@ -235,6 +235,7 @@ public static class TreasuryAccount
     public const string HearthTax = "Hearth tax";
     public const string Wards = "Wards";
     public const string Decorations = "Decorations";
+    public const string Broadsheet = "Broadsheet";
     public const string Orchards = "Orchards";
     public const string Stores = "Winter stores";
     public const string Intel = "Intel";
@@ -299,6 +300,9 @@ public sealed class Town
     /// <summary>Companies' own compounds in town, by founding (<see cref="Systems.Bastions"/>).</summary>
     /// <summary>Townsfolk carried off in raids, held until rescued or lost (<see cref="Captives"/>).</summary>
     public List<Captivity> Captivities { get; } = [];
+
+    /// <summary>The town broadsheet: its issues and the slant paid for in the next (<see cref="Systems.Broadsheet"/>).</summary>
+    public PressState Press { get; } = new();
 
     public List<BastionState> Bastions { get; } = [];
 
