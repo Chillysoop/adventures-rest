@@ -21,7 +21,7 @@ public partial class Main
     }
 
     /// <summary>One button on the bar: a zone to paint, a building to place, or a defense to order.</summary>
-    private sealed record BuildItem(string Label, Zone? Zone = null, string? Building = null, DefenseWork? Defense = null);
+    private sealed record BuildItem(string Label, Zone? Zone = null, string? Building = null, DefenseWork? Defense = null, int Density = 0);
 
     private PanelContainer _buildBar = null!;
     private HFlowContainer _buildItems = null!;
@@ -33,8 +33,10 @@ public partial class Main
 
     private static readonly BuildItem[] Zones =
     [
-        new("Residential", Zone.Residential), new("Commercial", Zone.Commercial), new("Industry", Zone.Industry),
-        new("Farmland", Zone.Farmland), new("Clear zone", Zone.None),
+        // Homes and shops come in three densities, unlocked by the charters (Density in the sim).
+        new("Residential", Zone.Residential), new("Res · Medium", Zone.Residential, Density: 1), new("Res · High", Zone.Residential, Density: 2),
+        new("Commercial", Zone.Commercial), new("Comm · Medium", Zone.Commercial, Density: 1), new("Comm · High", Zone.Commercial, Density: 2),
+        new("Industry", Zone.Industry), new("Farmland", Zone.Farmland), new("Clear zone", Zone.None),
     ];
 
     private static readonly BuildItem[] Defenses =
@@ -69,7 +71,7 @@ public partial class Main
 
     private static readonly Dictionary<BuildGroup, string> GroupHints = new()
     {
-        [BuildGroup.Zones] = "Paint zones on open land with the brush. Townsfolk and newcomers build what the town's economy needs in them, facing the lanes.",
+        [BuildGroup.Zones] = "Paint zones on open land with the brush. Townsfolk and newcomers build what the town's economy needs in them, facing the lanes. Denser homes and shops unlock with the charters: paint them over built streets too, and the houses there grow taller.",
         [BuildGroup.Government] = "Government works, paid from the treasury and built by the town's builders.",
         [BuildGroup.Commission] = "Commission a business the town owns and runs. Its profits go to the treasury.",
         [BuildGroup.Decor] = "Set dressing, anywhere and at any angle. Every piece makes its corner pleasanter and does one small job for the town.",
@@ -159,7 +161,7 @@ public partial class Main
             b.AddThemeFontSizeOverride("font_size", 12);
             if (item.Zone is Zone z)
             {
-                var c = Planner.ZoneColor(z);
+                var c = Planner.ZoneColor(z, item.Density);
                 b.AddThemeStyleboxOverride("normal", Ui.Box(c.Darkened(0.62f), c.Darkened(0.2f), 8, 1, 8, 6));
                 b.AddThemeStyleboxOverride("hover", Ui.Box(c.Darkened(0.5f), c, 8, 1, 8, 6));
                 b.AddThemeStyleboxOverride("pressed", Ui.Box(c.Darkened(0.3f), Ui.Ink, 8, 2, 8, 6));
@@ -179,14 +181,14 @@ public partial class Main
             _dirty = true;
             return;
         }
-        _map.Planner.Pick(b.ButtonPressed ? new Planner.PlanTool(item.Zone, item.Building) : null);
+        _map.Planner.Pick(b.ButtonPressed ? new Planner.PlanTool(item.Zone, item.Building, item.Density) : null);
     }
 
     private void SyncBuildButtons()
     {
         var tool = _map.Planner.Tool;
         foreach (var (item, b) in _buildButtons)
-            if (b.ToggleMode) b.SetPressedNoSignal(tool != null && tool.Zone == item.Zone && tool.Building == item.Building);
+            if (b.ToggleMode) b.SetPressedNoSignal(tool != null && tool.Zone == item.Zone && tool.Building == item.Building && tool.Density == item.Density);
     }
 
     /// <summary>Costs, open land and what blocks each item, refreshed as the town changes.</summary>
@@ -211,6 +213,13 @@ public partial class Main
                 tip = z == Zone.None
                     ? "Brush over painted land nobody has built on to take it off the plan."
                     : $"Paint {Planning.ZoneName(z)} land with a round brush; the townsfolk build their own {Planning.ZoneName(z)} buildings inside it, each turned to the square. [ and ] or Shift+wheel size the brush.";
+                if (Density.Takes(z))
+                {
+                    var dd = Density.Def(town, item.Density);
+                    why = Density.Blocked(town, item.Density);
+                    if (why != null) line = why.Replace($"{dd.Name.ToLowerInvariant()} density ", "");
+                    tip = $"{Ui.Cap(dd.Name.ToLowerInvariant())}-density {Planning.ZoneName(z)}: {dd.Blurb} Painting over built {Planning.ZoneName(z)} land changes its density too.";
+                }
             }
             else if (item.Defense is DefenseWork d)
             {
@@ -244,6 +253,7 @@ public partial class Main
         _buildHint.Text = _map.Planner.Tool switch
         {
             { Zone: Zone.None } => "Brush over painted land to clear it. [ ] or Shift+wheel sizes the brush. Right-click puts the tool down.",
+            { Zone: Zone z, Density: > 0 } t => $"Paint {Density.Name(town, t.Density).ToLowerInvariant()}-density {Planning.ZoneName(z)} land, on open ground or over built {Planning.ZoneName(z)} streets to let them grow taller. [ ] or Shift+wheel sizes the brush. Right-click puts the tool down.",
             { Zone: Zone z } => $"Paint {Planning.ZoneName(z)} land anywhere. [ ] or Shift+wheel sizes the brush. Right-click puts the tool down.",
             { Building: string id } => $"Click to place the {town.Content.Building(id).Name.ToLowerInvariant()} facing the square, or drag to turn it any way (Shift+wheel turns it too). Right-click puts the tool down.",
             _ => GroupHints[_buildGroup],
@@ -267,9 +277,12 @@ public partial class Main
         if (!_buildBar.Visible) ToggleBuildBar();
         if (Enum.TryParse<BuildGroup>(group, true, out var g)) ShowBuildGroup(g);
         if (tool == null) return;
-        var item = BuildItems(_buildGroup).FirstOrDefault(i => i.Building == tool || (i.Zone?.ToString().Equals(tool, StringComparison.OrdinalIgnoreCase) ?? false));
+        // A zone may name its density after a colon: residential:2.
+        var parts = tool.Split(':');
+        int dens = parts.Length > 1 && int.TryParse(parts[1], out int dv) ? dv : 0;
+        var item = BuildItems(_buildGroup).FirstOrDefault(i => i.Building == tool || ((i.Zone?.ToString().Equals(parts[0], StringComparison.OrdinalIgnoreCase) ?? false) && i.Density == dens));
         if (item == null) return;
-        _map.Planner.Pick(new Planner.PlanTool(item.Zone, item.Building));
+        _map.Planner.Pick(new Planner.PlanTool(item.Zone, item.Building, item.Density));
         if (hover is { Length: >= 2 })
         {
             Vector2 At(int x, int y) => Planner.FromTown(x, y);

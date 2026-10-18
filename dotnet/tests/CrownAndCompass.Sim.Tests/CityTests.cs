@@ -79,8 +79,11 @@ public class CityTests
         var t = Planned().Town;
         var manor = t.Content.Building("manor");
         foreach (var w in t.Content.City.Wards) t.City.OpenWards.Add(w.Id);
-        Assert.False(City.Allows(t, manor, PointIn(t, "market").X, PointIn(t, "market").Y));
-        Assert.True(City.Allows(t, manor, PointIn(t, "hill").X, PointIn(t, "hill").Y));
+        Assert.False(City.AllowsWard(t, manor, PointIn(t, "market").X, PointIn(t, "market").Y));
+        var hill = PointIn(t, "hill");
+        Assert.True(City.AllowsWard(t, manor, hill.X, hill.Y));
+        // A manor wants its land zoned medium density at least.
+        Assert.False(City.Allows(t, manor, hill.X, hill.Y));
         Assert.NotNull(City.Locked(t, manor));
         t.City.Tier = City.TierIndex(t, "city");
         Assert.Null(City.Locked(t, manor));
