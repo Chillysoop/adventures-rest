@@ -33,14 +33,16 @@ public class BastionsTests
     {
         var (sim, r) = Asked();
         var t = sim.Town;
-        double treasury = t.Treasury;
+        double sold = t.Accounts.Get(TreasuryAccount.LandSales, 0), bastions = t.Accounts.Get(TreasuryAccount.Bastions, 0);
         Assert.True(sim.AnswerBastion(r.Id, BastionAnswer.Grant));
         Assert.False(sim.AnswerBastion(r.Id, BastionAnswer.Refuse));
         sim.RunDays(1);
         var b = Assert.Single(t.Bastions);
         Assert.Equal(r.Company, b.Company);
         Assert.Equal(BastionRequestStatus.Founded, r.Status);
-        Assert.True(t.Treasury > treasury - 50, "the land was sold to them");
+        // The town sells them the land and pays nothing for the keep (other bills that day, like winter stores, aside).
+        Assert.True(t.Accounts.Get(TreasuryAccount.LandSales, 0) > sold, "the land was sold to them");
+        Assert.True(t.Accounts.Get(TreasuryAccount.Bastions, 0) >= bastions);
         var keep = Bastions.Keep(t, b);
         Assert.True(keep.Def.Bastion);
         Assert.All(Bastions.Members(t, b), m => Assert.Equal(b.Id, m.Hero!.BastionId));
