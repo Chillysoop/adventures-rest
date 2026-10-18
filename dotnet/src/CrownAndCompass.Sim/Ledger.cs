@@ -44,6 +44,8 @@ public sealed record LedgerEntry(int Id, int Tick, LedgerCategory Category, Impo
 public sealed class Ledger
 {
     private readonly List<LedgerEntry> _entries = [];
+    /// <summary>The client's and the CLI's hooks; not part of a save, so they subscribe again after a load.</summary>
+    [NotSaved]
     private readonly List<Action<LedgerEntry>> _listeners = [];
 
     public IReadOnlyList<LedgerEntry> Entries => _entries;

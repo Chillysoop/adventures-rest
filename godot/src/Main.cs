@@ -59,8 +59,11 @@ public partial class Main : Control
         Theme = Ui.BuildTheme();
         Ui.Links = OnLink;
         BuildLayout();
+        BuildMenu();
         _map.TreeScale = _opts.Trees;
-        NewTown(_opts.Seed ?? 1, _opts.Autoplay);
+        // Started plainly, the game picks up the newest save; arguments set up a moment instead.
+        bool loaded = _opts.Load is string file ? LoadFile(file, "the save") : OS.GetCmdlineUserArgs().Length == 0 && Continue();
+        if (!loaded) NewTown(_opts.Seed ?? 1, _opts.Autoplay);
         if (_opts.Day > 0) _sim.RunDays(_opts.Day);
         if (_opts.Hour > 0) for (int i = 0; i < _opts.Hour; i++) _sim.Step();
         _opts.ApplyScript(_sim);
@@ -77,6 +80,7 @@ public partial class Main : Control
             Select(Selection.Agent(hero.Id));
         // News from a fast-forward is in the Ledger; don't greet the player with a stale feed.
         ClearFeed();
+        if (_opts.Menu) OpenMenu();
     }
 
     private void BuildLedgerPane()
@@ -106,15 +110,23 @@ public partial class Main : Control
 
     private void NewTown(int seed, bool autoplay = false)
     {
-        _seed = seed;
         // With --autoplay the stand-in mayor keeps playing, for demos and screenshots.
-        _sim = new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoCouncil = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay });
+        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoCouncil = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay }));
+    }
+
+    /// <summary>Show a town: a new one, or one loaded from a save.</summary>
+    private void Adopt(Simulation sim)
+    {
+        int seed = sim.Options.Seed;
+        _seed = seed;
+        _sim = sim;
+        _lastAutosaveDay = sim.Town.Day;
         _map.Planner.Pick(null);
         _map.Bind(_sim);
         _sim.Town.Ledger.OnWrite(OnLedger);
         _townName.Text = _sim.Town.Name;
         _seedLabel.Text = $"seed {seed}";
-        _endShown = false;
+        _endShown = sim.Town.Outcome != null;
         _endOverlay.Visible = false;
         ClearFeed();
         _openChronicles.Clear();
@@ -183,6 +195,12 @@ public partial class Main : Control
     public override void _UnhandledKeyInput(InputEvent e)
     {
         if (e is not InputEventKey { Pressed: true, Echo: false } k) return;
+        if (_menu.Visible)
+        {
+            if (k.Keycode == Key.Escape) CloseMenu();
+            GetViewport().SetInputAsHandled();
+            return;
+        }
         if (k.Keycode == Key.Space) SetSpeed(_speed == 0 ? _lastSpeed : 0);
         else if (k.Keycode is >= Key.Key1 and <= Key.Key4) SetSpeed((int)(k.Keycode - Key.Key0));
         else if (k.Keycode == Key.Home) _map.Recenter();
@@ -193,6 +211,9 @@ public partial class Main : Control
         else if (k.Keycode == Key.Escape && _window.Visible) CloseWindow();
         else if (k.Keycode == Key.Q) _map.Rotate(-1);
         else if (k.Keycode == Key.E) _map.Rotate(1);
+        else if (k.Keycode == Key.Escape) OpenMenu();
+        else if (k.Keycode == Key.F5) Save("quick");
+        else if (k.Keycode == Key.F9) Load("quick");
         else return;
         GetViewport().SetInputAsHandled();
     }
@@ -210,6 +231,7 @@ public partial class Main : Control
             _dirty = true;
         }
         if (steps == 8) _acc = 0;
+        if (steps > 0 && _opts.Screenshot == null && !_opts.Bench) Autosave();
         _map.HourFraction = (float)_acc;
         _map.TimeScale = Speeds[_speed];
 

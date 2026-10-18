@@ -123,9 +123,9 @@ public partial class Main
         _seedLabel = Ui.Label("seed 1", Ui.Ink2, null, 11);
         _seedLabel.SizeFlagsVertical = SizeFlags.ShrinkCenter;
         bar.AddChild(_seedLabel);
-        var newTown = new Button { Text = "New town", TooltipText = "Start a fresh town with a random seed", SizeFlagsVertical = SizeFlags.ShrinkCenter };
-        newTown.Pressed += () => NewTown((int)(GD.Randi() % 9999) + 1);
-        bar.AddChild(newTown);
+        var menu = new Button { Text = "Menu", TooltipText = "Save, load or start a new town (Esc)", SizeFlagsVertical = SizeFlags.ShrinkCenter, FocusMode = FocusModeEnum.None };
+        menu.Pressed += () => ToggleMenu();
+        bar.AddChild(menu);
         return panel;
     }
 

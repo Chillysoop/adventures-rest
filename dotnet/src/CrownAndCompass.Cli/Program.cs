@@ -1,5 +1,6 @@
 // Headless runner: simulate a town and print its Ledger, so we can judge whether the city feels alive.
 // Usage: dotnet run --project dotnet/src/CrownAndCompass.Cli -- [--seed N] [--days N] [--all] [--stats] [--people N] [--chronicles] [--world]
+//        [--load file.save] [--save file.save]   (play on from a save, for --days more; write one at the end)
 // Prints exactly what `npm run sim` prints for the same arguments.
 
 using System.Globalization;
@@ -14,6 +15,8 @@ bool stats = false;
 int people = 3;
 bool chronicles = false;
 bool world = false;
+string? load = null;
+string? save = null;
 
 static int Number(string[] args, ref int i) => i + 1 < args.Length ? int.Parse(args[++i], CultureInfo.InvariantCulture) : 0;
 
@@ -39,6 +42,12 @@ for (int i = 0; i < args.Length; i++)
         case "--world":
             world = true;
             break;
+        case "--load":
+            load = i + 1 < args.Length ? args[++i] : null;
+            break;
+        case "--save":
+            save = i + 1 < args.Length ? args[++i] : null;
+            break;
         case "--people":
             people = Number(args, ref i);
             break;
@@ -48,13 +57,14 @@ for (int i = 0; i < args.Length; i++)
     }
 }
 
-var sim = new Simulation(new SimulationOptions { Seed = seed });
+var sim = load != null ? SaveGame.ReadFile(load, out _) : new Simulation(new SimulationOptions { Seed = seed });
 var town = sim.Town;
+seed = town.Seed;
 var minImportance = all ? Importance.Routine : Importance.Notable;
 var output = new List<string>();
 void Print(string s = "") => output.Add(s);
 
-foreach (var e in town.Ledger.Entries) if (e.Importance >= minImportance) Print(e.Format());
+if (load == null) foreach (var e in town.Ledger.Entries) if (e.Importance >= minImportance) Print(e.Format());
 town.Ledger.OnWrite(e =>
 {
     if (e.Importance >= minImportance) Print(e.Format());
@@ -140,6 +150,8 @@ if (chronicles)
         Print();
     }
 }
+
+if (save != null) SaveGame.WriteFile(save, sim);
 
 using var stdout = Console.OpenStandardOutput();
 var bytes = new UTF8Encoding(false).GetBytes(string.Join("\n", output) + "\n");
