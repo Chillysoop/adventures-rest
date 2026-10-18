@@ -97,7 +97,8 @@ public class LoreTests
         for (int d = 0; d < 400 && sim.Town.Saga.Menaces.Count(m => m.Named) < 2; d++) sim.RunDays(1);
         var t = sim.Town;
         Assert.NotEmpty(t.Heroes);
-        foreach (var h in t.Heroes)
+        // Turncoats (Turning.Join) come with a past instead of a background.
+        foreach (var h in t.Heroes.Where(h => h.Hero!.Background != ""))
         {
             var bg = Annals.LineageOf(H, "background:" + h.Hero!.Background);
             Assert.True(bg != null, $"{h.Name} has no background");
