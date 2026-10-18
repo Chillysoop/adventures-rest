@@ -38,10 +38,12 @@ public partial class DecorView(MapView map) : Node3D
         _key = "";
     }
 
-    private static float Y => WorldGen.TownHeight;
-
-    /// <summary>World position of a point in town lots.</summary>
-    public static Vector3 World(double x, double y) => new(Geo.Margin + (float)x, Y, Geo.Margin + (float)y);
+    /// <summary>World position of a point in town tiles, on the ground there.</summary>
+    public Vector3 World(double x, double y)
+    {
+        float wx = Geo.Margin + (float)x, wz = Geo.Margin + (float)y;
+        return new(wx, map.Gen.HeightAt(wx, wz), wz);
+    }
 
     /// <summary>Trees that sway with the foliage; everything else is a prop.</summary>
     public static bool IsTree(DecorDef d) => d.Group == "Greenery" && d.GrowDays > 0;

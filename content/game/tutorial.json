@@ -47,7 +47,7 @@
     {
       "id": "build",
       "title": "Zone the land",
-      "text": "Open the build bar with [b]Build[/b] or [b]B[/b]. You don't place houses: you paint zones, and the townsfolk build homes, farms and shops in them as they can afford to. Government buildings you place yourself.",
+      "text": "Open the build bar with [b]Build[/b] or [b]B[/b]. You don't place houses: you paint zones, and the townsfolk build homes, farms and shops in them as they can afford to. Government buildings you place yourself: click to set one down, or drag to turn it any way.",
       "point": "build",
       "until": "build",
       "teaches": ["key:B", "command:Place"]
@@ -55,10 +55,10 @@
     {
       "id": "zone",
       "title": "Paint a zone",
-      "text": "Pick a zone in the build bar, then drag across open ground near the town to paint it. Homes keep people off the streets; farms keep bread cheap.",
+      "text": "Pick a zone in the build bar, then brush across open ground near the town to paint it; [b][[/b] and [b]][/b] (or Shift+wheel) size the brush. Lanes wear in to the paint by themselves and the townsfolk build facing them. Homes keep people off the streets; farms keep bread cheap.",
       "point": "buildbar",
       "until": "zoned",
-      "teaches": ["command:ZoneLots"]
+      "teaches": ["command:PaintZone", "key:Bracketleft", "key:Bracketright"]
     },
     {
       "id": "city",

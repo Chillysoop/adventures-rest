@@ -28,19 +28,14 @@ public static class Shrines
     public static Building RaiseShrine(Town town)
     {
         var def = town.Content.Building(Rules(town).Shrine);
-        var lot = CivicLot(town)!;
+        var lot = CivicLot(town, def)!;
         var b = town.AddBuilding(def, lot, null, "", true);
         Faith.Dedicate(town, b, Faith.CharterGod(town));
         return b;
     }
 
     /// <summary>A civic lot near the hall for a house of worship or a guildhall, zoning one if needed.</summary>
-    public static Lot? CivicLot(Town town)
-    {
-        var lot = Property.FindLot(town, Zone.Civic) ?? Property.FindLot(town, Zone.None);
-        if (lot != null) lot.Zone = Zone.Civic;
-        return lot;
-    }
+    public static Lot? CivicLot(Town town, BuildingDef def) => Planning.CivicLot(town, def);
 
     public static double TempleCost(Town town)
     {
@@ -63,10 +58,10 @@ public static class Shrines
     public static Building? BuildTemple(Town town, Lot? at = null)
     {
         if (TempleBlocked(town) != null) return null;
-        var lot = at ?? CivicLot(town);
+        var def = town.Content.Building(Rules(town).Temple);
+        var lot = at ?? CivicLot(town, def);
         if (lot == null) return null;
         lot.Zone = Zone.Civic;
-        var def = town.Content.Building(Rules(town).Temple);
         town.Book(TreasuryAccount.Temple, -TempleCost(town));
         town.Market.Buy(Good.Timber, def.Timber);
         var god = Faith.TempleChoice(town);

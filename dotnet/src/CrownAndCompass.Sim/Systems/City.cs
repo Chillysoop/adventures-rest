@@ -78,6 +78,15 @@ public sealed record HousingDef
     public double Tax { get; init; }
 }
 
+/// <summary>Desire paths (city.json "paths"): wear per walk, how much a day's walks can wear, what's left of wear by the next day, and the wear that makes a lane.</summary>
+public sealed record PathRules
+{
+    public double WearPerTrip { get; init; } = 0.008;
+    public int MostTrips { get; init; } = 20;
+    public double Fade { get; init; } = 0.97;
+    public double Lay { get; init; } = 1.2;
+}
+
 /// <summary>How the town grows (content/game/city.json).</summary>
 public sealed record CityRules
 {
@@ -95,6 +104,9 @@ public sealed record CityRules
 
     /// <summary>Each service id as a sentence names it ("a bathhouse").</summary>
     public IReadOnlyDictionary<string, string> Services { get; init; } = new Dictionary<string, string>();
+
+    /// <summary>How feet wear paths to buildings off the streets.</summary>
+    public PathRules Paths { get; init; } = new();
 
     /// <summary>Days a house must be content (at UpgradeAt or better) before it grows.</summary>
     public int UpgradeDays { get; init; } = 6;
@@ -207,34 +219,41 @@ public static class City
         town.Content.City.Wards.FirstOrDefault(w => w.Id == id) ?? throw new KeyNotFoundException($"Unknown ward {id}");
 
     /// <summary>The ward a lot lies in: the ring by distance from the hall, the side by direction.</summary>
-    public static WardDef WardOf(Town town, Lot lot)
+    public static WardDef WardOf(Town town, Lot lot) => WardOf(town, lot.X, lot.Y);
+
+    /// <summary>The ward a point of the town (tiles from its corner) lies in.</summary>
+    public static WardDef WardOf(Town town, double x, double y)
     {
         var wards = town.Content.City.Wards;
-        int ring = Ring(lot);
+        int ring = Ring(x, y);
         if (ring == 0) return wards.First(w => w.Ring == 0);
-        string side = Side(lot);
+        string side = Side(x, y);
         return wards.FirstOrDefault(w => w.Ring == ring && w.Side == side) ?? wards.First(w => w.Ring == 0);
     }
 
-    /// <summary>Lots per ring band: the old town is the middle 16 by 16, each ring adds 8 on every side.</summary>
+    /// <summary>Tiles per ring band: the old town is the middle 16 by 16, each ring adds 8 on every side.</summary>
     public const int Band = 8;
 
-    public static int Ring(Lot lot)
+    public static int Ring(Lot lot) => Ring(lot.X, lot.Y);
+
+    public static int Ring(double x, double y)
     {
-        double c = (Town.Grid - 1) / 2.0;
-        double d = Math.Max(Math.Abs(lot.X - c), Math.Abs(lot.Y - c));
+        double d = Math.Max(Math.Abs(x - Town.Center), Math.Abs(y - Town.Center));
         return d < Band ? 0 : d < 2 * Band ? 1 : 2;
     }
 
-    public static string Side(Lot lot)
+    public static string Side(Lot lot) => Side(lot.X, lot.Y);
+
+    public static string Side(double x, double y)
     {
-        double c = (Town.Grid - 1) / 2.0;
-        double dx = lot.X - c, dy = lot.Y - c;
+        double dx = x - Town.Center, dy = y - Town.Center;
         if (Math.Abs(dx) >= Math.Abs(dy)) return dx > 0 ? "east" : "west";
         return dy > 0 ? "south" : "north";
     }
 
-    public static bool IsOpen(Town town, Lot lot) => town.City.OpenWards.Contains(WardOf(town, lot).Id);
+    public static bool IsOpen(Town town, Lot lot) => IsOpen(town, lot.X, lot.Y);
+
+    public static bool IsOpen(Town town, double x, double y) => town.City.OpenWards.Contains(WardOf(town, x, y).Id);
 
     /// <summary>Why the ward can't be laid out now, or null when it can.</summary>
     public static string? WardBlocked(Town town, string wardId)
@@ -253,14 +272,18 @@ public static class City
         var w = Ward(town, wardId);
         town.Book(TreasuryAccount.Wards, -w.Cost);
         town.City.OpenWards.Add(w.Id);
+        // New ground to paint and build on: searches of the old plan no longer hold.
+        town.Plan.Changed();
         town.Log(LedgerCategory.Town, Importance.Major, $"Surveyors stake out the {w.Name} and the first streets are cobbled. {w.Blurb}");
         return true;
     }
 
     /// <summary>Whether a building may stand on this lot: its ward is open and the building allows it.</summary>
-    public static bool Allows(Town town, BuildingDef d, Lot lot)
+    public static bool Allows(Town town, BuildingDef d, Lot lot) => Allows(town, d, lot.X, lot.Y);
+
+    public static bool Allows(Town town, BuildingDef d, double x, double y)
     {
-        var w = WardOf(town, lot);
+        var w = WardOf(town, x, y);
         if (!town.City.OpenWards.Contains(w.Id)) return false;
         return d.Wards.Count == 0 || d.Wards.Contains(w.Id);
     }
@@ -486,6 +509,8 @@ public static class City
         var next = town.Content.Building(h.Next);
         if (Locked(town, next) is { } why) return why;
         if (!Allows(town, next, town.Lot(house.LotId))) return $"a {next.Name.ToLowerInvariant()} can't stand in the {WardOf(town, town.Lot(house.LotId)).Name}";
+        // The town's own houses are let to those who can't build: they grow roomier, never grand.
+        if (house.OwnerId == null && next.Wards.Count > 0) return "the town lets its houses to working folk, not as manors";
         var nh = Housing(town, next.Id);
         if (nh != null && Prospect(town, house, nh) < town.Content.City.UpgradeAt) return "the town can't yet give a bigger house what it wants";
         return null;
@@ -585,9 +610,9 @@ public static class City
         if (next != null && Missing(town).Count == 0 && town.Treasury >= next.Cost + 150) RaiseCharter(town);
 
         // Lay out the next ward when land runs short, or when the treasury is flush and a ward is ready.
-        int vacant = town.Lots.Count(l => l.Zone == Zone.None && IsOpen(town, l));
+        int vacant = Land.OpenGround(town);
         bool flush = town.Treasury > 3000;
-        if (vacant >= 24 && !flush) return;
+        if (vacant >= 24 * Land.Res * Land.Res && !flush) return;
         var ward = town.Content.City.Wards
             .Where(w => WardBlocked(town, w.Id) == null && town.Treasury >= w.Cost + (flush ? 2500 : 200))
             .OrderBy(w => w.Ring)

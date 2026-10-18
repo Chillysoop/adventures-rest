@@ -33,7 +33,7 @@ public class ShrinesTests
     {
         var sim = new Simulation(new SimulationOptions { Seed = 1 });
         var t = sim.Town;
-        var lot = Property.FindLot(t, Zone.Commercial)!;
+        var lot = Planning.CivicLot(t, t.Content.Building("temple"))!;
         var temple = t.AddBuilding(t.Content.Building("temple"), lot, null, "the Temple", true);
         temple.Cash = 500;
         var site = t.Sites.First(s => s.Known != SiteKnowledge.Unheard);
