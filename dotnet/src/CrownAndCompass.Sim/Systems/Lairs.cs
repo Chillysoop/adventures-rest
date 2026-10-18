@@ -170,6 +170,7 @@ public static class Lairs
             target.Stock[Good.Food] = Math.Floor(target.Stock.Get(Good.Food, 0) * 0.5);
             text += loot > 0 ? $", carrying off food and {Js.Str(loot)} gold" : ", carrying off food";
         }
+        text += Captives.Take(town, s, target);
         town.Log(LedgerCategory.War, Importance.Major, $"{text}.");
         town.Tension += 15;
         town.Mandate = Math.Max(0, town.Mandate - 2);
@@ -257,7 +258,10 @@ public static class Lairs
         int kills = result.Kills.Values.Sum();
         s.Strength = Math.Max(0, s.Strength - kills * r.RetreatLossPerKill);
         if (result.Outcome != ExpeditionOutcome.Cleared) return;
-        s.ResettleTick = town.Tick + town.Rng.Range(r.ResettleDays[0], r.ResettleDays[1] + 1) * SimTime.HoursPerDay;
+        int wait = town.Rng.Range(r.ResettleDays[0], r.ResettleDays[1] + 1);
+        // Folk driven out rather than slain come back sooner.
+        if (result.Driven) wait = Math.Max(1, (int)Math.Round(wait * town.Content.Bounties.Term("drive").Resettle));
+        s.ResettleTick = town.Tick + wait * SimTime.HoursPerDay;
         foreach (var a in town.Residents.Where(a => a.ThrallOf == s.Def.Id))
         {
             a.ThrallOf = null;

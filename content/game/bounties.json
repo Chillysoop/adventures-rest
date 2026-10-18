@@ -1,0 +1,49 @@
+{
+  "temper": 0.25,
+  "errands": [
+    { "id": "ward", "name": "a warding on the walls", "text": "pale sigils are chalked on every gate, and the townsfolk sleep easier.", "dread": -6 },
+    { "id": "rain", "name": "rain on the fields", "text": "a soft rain falls on the fields for three days, and the granaries fill.", "food": 80 },
+    { "id": "sight", "name": "a scrying of the wilds", "text": "the mages spend a night over their mirrors and send the council word of places nobody had heard of.", "reveal": 2 },
+    { "id": "cure", "name": "a cure for the lanes", "text": "a mage walks the poor lanes with a censer, and the coughing stops.", "mandate": 3 }
+  ],
+  "terms": [
+    {
+      "id": "slay", "name": "Slay", "verb": "clear",
+      "text": "Kill what lives there and bring back the hoard. The place stays empty longest.",
+      "pay": 1, "tags": []
+    },
+    {
+      "id": "drive", "name": "Drive off", "verb": "drive the occupants out of",
+      "text": "Break them and let them run. Half the fighting and a third of the hoard, and something moves back in sooner.",
+      "pay": 0.8, "tags": ["mercy"], "rooms": 0.5, "loot": 0.3, "resettle": 0.5
+    },
+    {
+      "id": "parley", "name": "Talk down", "verb": "talk down the occupants of",
+      "text": "Send heroes with silver tongues to talk them into leaving. No blood if it works; a fight if it doesn't. Only for foes clever enough to bargain.",
+      "pay": 0.6, "tags": ["mercy", "guile"], "minInt": 6, "dc": 11, "dcPerTier": 2, "loot": 0.5
+    },
+    {
+      "id": "rescue", "name": "Rescue", "verb": "rescue the captives held at",
+      "text": "Fight in far enough to cut the captives loose, then get them home. The place itself is left standing.",
+      "pay": 1, "tags": ["valor", "mercy"], "rooms": 0.5, "captives": true
+    },
+    {
+      "id": "fetch", "name": "Fetch", "verb": "steal the best of the hoard from",
+      "text": "Get in, take the best thing in the hoard for the town, get out. The place is left standing.",
+      "pay": 0.8, "tags": ["coin", "guile"], "rooms": 0.5, "loot": 0.4, "item": true
+    }
+  ],
+  "captives": {
+    "firstDay": 25,
+    "chance": 0.6,
+    "min": 1,
+    "max": 3,
+    "days": 10,
+    "daysPerTier": 2,
+    "freedMandate": 5,
+    "freedRenown": 2,
+    "lostMandate": 6,
+    "lostTension": 12,
+    "lostStrength": 6
+  }
+}
