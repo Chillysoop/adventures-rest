@@ -369,6 +369,9 @@ public sealed class Town
     public CityState City { get; } = new();
     public Defenses Defenses { get; } = new();
 
+    /// <summary>The town guard on the walls and the orders it holds (<see cref="Systems.Garrison"/>).</summary>
+    public GarrisonState Garrison { get; } = new();
+
     /// <summary>Trees, benches, lamps, statues: the set dressing the player has placed (<see cref="Systems.Decor"/>).</summary>
     public DecorState Decor { get; } = new();
 
