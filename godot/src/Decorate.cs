@@ -96,7 +96,7 @@ public partial class Main
     public static string DecorEffects(DecorDef d)
     {
         var parts = new List<string>();
-        if (d.Appeal != 0) parts.Add(d.Appeal > 0 ? $"appeal +{d.Appeal:0.#}" : $"appeal {d.Appeal:0.#}");
+        if (d.Appeal != 0) parts.Add(d.Appeal > 0 ? $"appeal +{d.Appeal:0.#} (houses nearby grow sooner)" : $"appeal {d.Appeal:0.#} (neighbours less content)");
         if (d.Rest > 0) parts.Add("rest");
         if (d.Light > 0) parts.Add("lights the street for the watch");
         if (d.Trade > 0) parts.Add("trade nearby");

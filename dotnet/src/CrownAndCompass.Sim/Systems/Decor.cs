@@ -91,7 +91,7 @@ public sealed record DecorMayorRules
 /// <summary>Numbers for decorations and set dressing (content/game/decor.json).</summary>
 public sealed record DecorRules
 {
-    /// <summary>How far from the heart of town (in lots) decorations may be placed.</summary>
+    /// <summary>How far from the heart of town (in tiles) decorations may be placed.</summary>
     public double Reach { get; init; } = 17;
 
     /// <summary>Share of the cost back when a piece is cleared.</summary>
@@ -106,6 +106,15 @@ public sealed record DecorRules
     public double RestLoneliness { get; init; } = 0.6;
     public double LandPerAppeal { get; init; } = 0.8;
     public double LandCap { get; init; } = 8;
+
+    /// <summary>Contentment a household gains per point of appeal round its house (helping it grow a storey and keep it), within floor and cap.</summary>
+    public double ContentPerAppeal { get; init; } = 0.015;
+    public double ContentCap { get; init; } = 0.1;
+    public double ContentFloor { get; init; } = -0.05;
+
+    /// <summary>Land dearer in a ward per point of its buildings' average appeal, up to a share.</summary>
+    public double WardPerAppeal { get; init; } = 0.02;
+    public double WardCap { get; init; } = 0.15;
 
     /// <summary>Watch strength when every building is lit.</summary>
     public double LightWatch { get; init; } = 0.2;
@@ -140,7 +149,7 @@ public sealed class Decoration(int id, DecorDef def, double x, double y, double 
     public int Id { get; } = id;
     public DecorDef Def { get; } = def;
 
-    /// <summary>Position in lots: lot (x, y) covers x..x+1, y..y+1.</summary>
+    /// <summary>Position in tiles from the town's corner.</summary>
     public double X { get; } = x;
     public double Y { get; } = y;
 
@@ -180,6 +189,9 @@ public sealed class DecorState
         public readonly double[] Harvest = new double[buildings];
         public readonly double[] Talk = new double[buildings];
         public double LitShare;
+
+        /// <summary>Each ward's buildings' average appeal, by ward id.</summary>
+        public readonly Dictionary<string, double> Wards = [];
     }
 }
 
@@ -228,6 +240,10 @@ public static class Decor
         var (hx, hy) = Heart;
         if (Math.Sqrt((x - hx) * (x - hx) + (y - hy) * (y - hy)) > Rules(town).Reach) return "too far from town";
         double r = def.Size;
+        int cx = (int)Math.Floor(x * Land.Res), cy = (int)Math.Floor(y * Land.Res);
+        // Off the lanes and the square's rim; the open middle of the square is the place for a fountain.
+        if (cx >= 0 && cy >= 0 && cx < Land.Size && cy < Land.Size && town.Plan.Paved[cy * Land.Size + cx] != 0
+            && Streets.Nearest(town, x, y) is { } lane && lane.D < Streets.Width / 2 + r * 0.5) return "that's the street";
         foreach (var b in town.Buildings)
             if (Overlaps(town.Lot(b.LotId), x, y, r)) return "a building stands there";
         foreach (var p in town.Decor.Pieces)
@@ -261,7 +277,7 @@ public static class Decor
         if (def.Honors == "hero") d.HeroId = heroId is int h && town.Agent(h).IsHero && !town.Agent(h).Departed ? h : DefaultHero(town)?.Id;
         if (def.Honors == "god") d.Deity = deity != null && Faith.God(town, deity) is { Evil: false } ? deity : DefaultGod(town);
         town.Decor.Pieces.Add(d);
-        town.Decor.Version++;
+        Changed(town);
         if (!quiet && (def.Cost >= 40 || def.Honors != ""))
             town.Log(LedgerCategory.Town, Importance.Notable, $"The town raises {Describe(town, d)} for {Js.ToFixed(cost, 0)} gold.", d.HeroId is int id ? [id] : null);
         return d;
@@ -308,12 +324,47 @@ public static class Decor
         if (i < 0) return false;
         var d = town.Decor.Pieces[i];
         town.Decor.Pieces.RemoveAt(i);
-        town.Decor.Version++;
+        Changed(town);
         town.Book(TreasuryAccount.Decorations, Js.Round(d.Def.Cost * Rules(town).Refund));
         return true;
     }
 
-    /// <summary>Builders raising something on a lot clear any decoration in their way.</summary>
+    /// <summary>A piece went up or came down: the effects are worked out again, and builders and lanes look again where to go.</summary>
+    private static void Changed(Town town)
+    {
+        town.Decor.Version++;
+        town.Plan.Changed();
+    }
+
+    /// <summary>
+    /// The plan cells decorations stand on (null when there are none), worked out again after any change: builders
+    /// leave them be (<see cref="Land.Fits"/>), lanes go round them, and the brush leaves unpainted ones as gardens.
+    /// </summary>
+    public static bool[]? Cells(Town town)
+    {
+        var s = town.Decor;
+        var plan = town.Plan;
+        if (s.Pieces.Count == 0) return plan.Decor = null;
+        if (plan.Decor != null && plan.DecorSeen == s.Version) return plan.Decor;
+        int n = Land.Size;
+        var mask = new bool[n * n];
+        foreach (var p in s.Pieces)
+        {
+            // Any cell the piece's circle reaches into (half a cell's diagonal past its rim).
+            double r = p.Def.Size + 0.18;
+            for (int cy = (int)Math.Floor((p.Y - r) * Land.Res); cy <= (int)Math.Floor((p.Y + r) * Land.Res); cy++)
+                for (int cx = (int)Math.Floor((p.X - r) * Land.Res); cx <= (int)Math.Floor((p.X + r) * Land.Res); cx++)
+                {
+                    if (cx < 0 || cy < 0 || cx >= n || cy >= n) continue;
+                    double dx = (cx + 0.5) / Land.Res - p.X, dy = (cy + 0.5) / Land.Res - p.Y;
+                    if (dx * dx + dy * dy < r * r) mask[cy * n + cx] = true;
+                }
+        }
+        plan.DecorSeen = s.Version;
+        return plan.Decor = mask;
+    }
+
+    /// <summary>Builders raising something on a lot clear any decoration in their way (a piece set down by hand on the spot is kept off by <see cref="Land.Fits"/>).</summary>
     public static void ClearLot(Town town, Lot lot)
     {
         var gone = town.Decor.Pieces.Where(p => Overlaps(lot, p.X, p.Y, p.Def.Size)).Select(p => p.Id).ToList();
@@ -357,6 +408,8 @@ public static class Decor
                 if (f.Light[b.Id] >= 0.3) lit++;
             }
             f.LitShare = n > 0 ? (double)lit / n : 0;
+            foreach (var g in town.Buildings.Where(b => b.Complete).GroupBy(b => City.WardOf(town, town.Lot(b.LotId)).Id))
+                f.Wards[g.Key] = g.Average(b => f.Appeal[b.Id]);
         }
         s.Cached = f;
         return f;
@@ -364,7 +417,7 @@ public static class Decor
 
     /// <summary>
     /// Unpainted ground with a decoration on it is a garden: the brush passes it by, so nothing is built there.
-    /// A decoration on land already painted is cleared (half its price back) when something is built over it.
+    /// On painted land builders leave decorations standing and build round them (<see cref="Land.Fits"/>).
     /// </summary>
     /// <param name="pad">How far round the piece counts, in tiles (half a plan cell's width takes in any cell it touches).</param>
     public static bool Garden(Town town, double x, double y, double pad = 0)
@@ -415,6 +468,22 @@ public static class Decor
         if (town.Decor.Pieces.Count == 0) return 0;
         var r = Rules(town);
         return Math.Clamp(AppealAt(town, lot.X, lot.Y) * r.LandPerAppeal, 0, r.LandCap);
+    }
+
+    /// <summary>Contentment a household takes from a pleasant street (or loses beside the stocks): houses on fine streets grow a storey sooner.</summary>
+    public static double Comfort(Town town, Building house)
+    {
+        if (town.Decor.Pieces.Count == 0) return 0;
+        var r = Rules(town);
+        return Math.Clamp(AppealOf(town, house) * r.ContentPerAppeal, r.ContentFloor, r.ContentCap);
+    }
+
+    /// <summary>How much dearer land is in a ward its buildings make pleasant, as a multiplier (1 for none): the town sells its plots for more.</summary>
+    public static double Prestige(Town town, string wardId)
+    {
+        if (town.Decor.Pieces.Count == 0 || !Fields(town).Wards.TryGetValue(wardId, out double appeal)) return 1;
+        var r = Rules(town);
+        return 1 + Math.Clamp(appeal * r.WardPerAppeal, 0, r.WardCap);
     }
 
     /// <summary>Added to how much each watchman counts: lit streets and the stocks.</summary>

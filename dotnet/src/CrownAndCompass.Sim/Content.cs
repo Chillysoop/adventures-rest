@@ -1101,6 +1101,9 @@ public sealed class Content
     /// <summary>The world's history: its ages, the powers that rose and fell, and the calendar (content/game/history.json).</summary>
     public HistoryRules History { get; init; } = new();
 
+    /// <summary>Story events and the mayor's character sheet (content/game/stories.json).</summary>
+    public StoryRules Stories { get; init; } = new();
+
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
 
@@ -1237,6 +1240,7 @@ public sealed class Content
             City = Parse<CityRules>("city.json"),
             Decor = Parse<DecorRules>("decor.json"),
             History = Parse<HistoryRules>("history.json"),
+            Stories = Parse<StoryRules>("stories.json"),
         };
     }
 

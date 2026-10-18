@@ -215,6 +215,7 @@ public static class TreasuryAccount
     public const string Decorations = "Decorations";
     public const string Orchards = "Orchards";
     public const string Intel = "Intel";
+    public const string Stories = "Stories";
 }
 
 /// <summary>How the campaign ended.</summary>
@@ -333,6 +334,11 @@ public sealed class Town
     /// <summary>Trees, benches, lamps, statues: the set dressing the player has placed (<see cref="Systems.Decor"/>).</summary>
     public DecorState Decor { get; } = new();
 
+    /// <summary>The mayor's character sheet and the story events open and past (<see cref="Systems.Stories"/>).</summary>
+    public Systems.StoryState Stories => _stories ??= new Systems.StoryState { Mayor = Systems.Stories.NewMayor(this) };
+    // Made on first use, so a save from before stories existed gets a mayor too.
+    private Systems.StoryState? _stories;
+
     /// <summary>How the campaign ended: the big bad slain, or the town fallen.</summary>
     public Outcome? Outcome { get; set; }
 
@@ -393,7 +399,11 @@ public sealed class Town
 
     public static double DistanceFromCenter(Lot l) => Math.Sqrt((l.X - Center) * (l.X - Center) + (l.Y - Center) * (l.Y - Center));
 
-    public double LotPrice(Lot lot) => LotPrice(DistanceFromCenter(lot)) * Systems.City.WardOf(this, lot).Land + Systems.Decor.LandValue(this, lot);
+    public double LotPrice(Lot lot)
+    {
+        var ward = Systems.City.WardOf(this, lot);
+        return LotPrice(DistanceFromCenter(lot)) * ward.Land * Systems.Decor.Prestige(this, ward.Id) + Systems.Decor.LandValue(this, lot);
+    }
 
     /// <summary>Land is dearer near the hall (before the ward's own price and the beauty round it).</summary>
     public double LotPrice(double distance) =>
