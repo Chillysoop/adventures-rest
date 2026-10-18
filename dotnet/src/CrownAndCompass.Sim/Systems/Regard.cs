@@ -137,6 +137,7 @@ public static class Regard
     /// </summary>
     public static void Judge(Town town, IReadOnlyCollection<string> tags, string what, string about)
     {
+        Wards.Judge(town, tags, about);
         var (pleased, angered) = Reactions(town, tags);
         foreach (var a in pleased.Concat(angered))
         {

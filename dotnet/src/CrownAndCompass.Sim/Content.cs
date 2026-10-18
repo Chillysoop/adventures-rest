@@ -1159,6 +1159,7 @@ public sealed class Content
     public BountyRules Bounties { get; init; } = new();
     public BroadsheetRules Broadsheet { get; init; } = new();
     public MerchantRules Merchants { get; init; } = new();
+    public WardRules Wards { get; init; } = new();
 
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
@@ -1309,6 +1310,7 @@ public sealed class Content
             Bounties = Parse<BountyRules>("bounties.json"),
             Broadsheet = Parse<BroadsheetRules>("broadsheet.json"),
             Merchants = Parse<MerchantRules>("merchants.json"),
+            Wards = Parse<WardRules>("wards.json"),
         };
     }
 

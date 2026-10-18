@@ -133,6 +133,7 @@ public sealed class Simulation
         Turning.Daily(t);
         Legacies.Daily(t, Options.AutoMayor);
         Regard.Daily(t);
+        Wards.Daily(t);
         Broadsheet.Daily(t, Options.AutoMayor && Options.AutoStories);
         Loyalty.Daily(t, Options.AutoMayor);
         Decor.Daily(t);

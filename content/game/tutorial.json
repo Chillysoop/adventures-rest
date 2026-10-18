@@ -214,6 +214,7 @@
       "teaches": ["command:ResolveStory"]
     },
     {"id": "regard", "title": "Heroes judge your choices", "text": "Every hero has a temper: merciful, ruthless, pious, mercenary, lawful, free-spirited or bold. When you answer a story, each choice shows which heroes in town it would [b]please[/b] or [b]anger[/b]. What they think of you moves their loyalty, and it is shown when you select a hero. A hero who trusts you will ask for help with a personal quest of their own; one you keep angering will come to you with a grievance.", "point": "inspector", "when": "alert:story", "teaches": []},
+    {"id": "ward-voices", "title": "Every ward has a voice", "text": "The wards judge your choices too. The stallholders of the Market Ward like profit, the temple wardens like mercy and the gods, the wharf crews like free hands. A choice shows which wards it pleases or angers alongside the heroes. A ward that warms to you is more content, so its houses grow sooner; one you sour grumbles. See how each ward feels in the [b]City[/b] window.", "point": "tab:City", "when": "day:60", "teaches": []},
     {
       "id": "mayor-level",
       "title": "Level up",
