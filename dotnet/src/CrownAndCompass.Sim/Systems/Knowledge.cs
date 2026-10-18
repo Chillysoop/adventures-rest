@@ -36,7 +36,7 @@ public static class Knowledge
             .ToList();
 
     public static double ScryCost(Town town, SiteDef site) =>
-        town.Content.Knowledge.ScryBaseCost + town.Content.Knowledge.ScryCostPerDay * site.Distance;
+        Js.Round((town.Content.Knowledge.ScryBaseCost + town.Content.Knowledge.ScryCostPerDay * site.Distance) * (1 - Research.Scry(town)));
 
     public static Scrying? ActiveScrying(Town town, string siteId) =>
         town.Scryings.LastOrDefault(s => s.SiteId == siteId && town.Tick >= s.StartTick && town.Tick < s.EndTick);

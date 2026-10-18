@@ -48,7 +48,8 @@ public class ThreatTests
     public void PunishesATownThatNeverFortifiesAndNeverFightsBack()
     {
         int fallen = 0;
-        foreach (int seed in new[] { 1, 2, 3, 4, 5, 6, 7 })
+        // Fifteen seeds: with seven, any change to the rng stream could move the count past the line.
+        for (int seed = 1; seed <= 15; seed++)
         {
             var sim = new Simulation(new SimulationOptions { Seed = seed, AutoBounties = false, AutoDefense = false, FreeCompanies = false, AutoStories = false });
             sim.Town.Defenses.Palisade = PalisadeState.Building;
@@ -58,7 +59,7 @@ public class ThreatTests
             if (sim.Town.Saga.Sacks > 0 || sim.Town.Outcome == Outcome.Defeat) fallen++;
         }
         // Most fall; a few hold on the militia of a town grown big enough.
-        Assert.True(fallen >= 4);
+        Assert.True(fallen >= 8, $"{fallen} of 15 fell");
     }
 
     [Fact]

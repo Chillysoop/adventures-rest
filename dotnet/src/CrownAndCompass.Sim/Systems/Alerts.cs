@@ -23,6 +23,7 @@ public enum AlertWindow
     Mayor,
     Diplomacy,
     Companies,
+    Library,
     Institutions,
 }
 
@@ -53,6 +54,7 @@ public static class Alerts
     public static readonly AlertKind Motion = new("motion", "Council motions", "mandate", AlertLevel.Decision, AlertWindow.Council);
     public static readonly AlertKind Stores = new("stores", "Winter stores", "bread", AlertLevel.Decision, AlertWindow.City);
     public static readonly AlertKind Fealty = new("fealty", "Demands for fealty", "warband", AlertLevel.Decision, AlertWindow.Campaign);
+    public static readonly AlertKind Scholars = new("scholars", "Idle scholars", "d20", AlertLevel.Minor, AlertWindow.Library);
     public static readonly AlertKind Below = new("below", "Stirring below", "warband", AlertLevel.Decision, AlertWindow.City);
     public static readonly AlertKind Trade = new("trade", "Trade routes", "gold", AlertLevel.Minor, AlertWindow.Diplomacy);
     public static readonly AlertKind Neighbour = new("neighbour", "Neighbours in trouble", "favour", AlertLevel.Decision, AlertWindow.Diplomacy);
@@ -73,10 +75,10 @@ public static class Alerts
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Captives, Crisis, Hunger, Coffers, Unrest, Hostile, Motion, Fealty, Plot, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Bastion, Institution, Heroes, Neighbour, Work, Settlers, Below, Trade, Housing];
+        [Siege, Captives, Crisis, Hunger, Coffers, Unrest, Hostile, Motion, Fealty, Plot, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Bastion, Institution, Heroes, Neighbour, Work, Settlers, Below, Scholars, Trade, Housing];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
-    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Hostility, Winter, Growth, Routes, Region, Undercity, Loyalty, Homes, Keepers];
+    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Hostility, Winter, Growth, Routes, Region, Undercity, Study, Loyalty, Homes, Keepers];
 
     public static List<Alert> Standing(Town town) => Rules.SelectMany(r => r(town)).ToList();
 
@@ -214,6 +216,15 @@ public static class Alerts
             yield return new($"below:{l.Id}", Below, $"Something stirs in {d.Name}",
                 $"Stir {Math.Round(l.Stir)} of {Js.Str(r.RiseAt)}. Post a bounty on it in Bounties, or send the watch down on patrol from the City window, before it rises into the streets.");
         }
+    }
+
+    private static IEnumerable<Alert> Study(Town t)
+    {
+        if (t.Research.Study != null) yield break;
+        var open = Research.Open(t);
+        if (open.Count == 0) yield break;
+        yield return new("scholars", Scholars, "The scholars are idle",
+            $"{open.Count} {(open.Count == 1 ? "discovery is" : "discoveries are")} ready to study, {open[0].Name.ToLowerInvariant()} the cheapest. Set the scholars to work in the Library window.");
     }
 
     /// <summary>A friend in the wilds whose need the town can meet now, and a villain's plan close to done.</summary>

@@ -30,6 +30,7 @@ public partial class Main : Control
         Campaign,
         Chronicles,
         Mayor,
+        Library,
         Inspect,
     }
 
@@ -441,6 +442,7 @@ public partial class Main : Control
                     case Tab.Chronicles: RenderChronicles(); break;
                     case Tab.Mayor: RenderMayor(); break;
                     case Tab.Diplomacy: RenderDiplomacy(); break;
+                    case Tab.Library: RenderLibrary(); break;
                     case Tab.Institutions: RenderInstitutions(); break;
                 }
             if (_inspector.Visible) RenderInspect();

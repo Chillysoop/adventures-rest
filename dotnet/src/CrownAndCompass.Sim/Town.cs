@@ -249,6 +249,7 @@ public static class TreasuryAccount
     public const string Callings = "Callings";
     public const string Legacies = "Legacies";
     public const string Undercity = "Undercity";
+    public const string Research = "Research";
     public const string Region = "The region";
     public const string Institutions = "Institutions";
 }
@@ -416,6 +417,9 @@ public sealed class Town
 
     /// <summary>The open levels of the undercity, shallowest first (<see cref="Systems.Undercity"/>).</summary>
     public List<Systems.UnderLevel> Undercity { get; } = [];
+
+    /// <summary>The library, its spellbooks and what the town's scholars have discovered.</summary>
+    public Systems.ResearchState Research { get; } = new();
 
     /// <summary>The city's institutions, in the order they opened (<see cref="Systems.Institutions"/>).</summary>
     public List<Systems.InstitutionState> Institutions { get; } = [];
