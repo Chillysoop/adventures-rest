@@ -110,6 +110,13 @@ public partial class Main : Control
         ClearFeed();
         if (_opts.Tutorial is string step) StartTutorial(step == "start" ? null : step);
         if (_opts.Background is string bg) _sim.ChooseBackground(bg);
+        if (_opts.MayorLevel is int lv)
+        {
+            _sim.Town.Stories.Mayor.Level = lv;
+            _sim.Town.Stories.Mayor.Xp = Math.Max(_sim.Town.Stories.Mayor.Xp, _sim.Town.Content.Stories.Levels[lv - 1] + 60);
+        }
+        foreach (var adv in _opts.Advances) _sim.AdvanceMayor(adv);
+        if (_opts.Inspiration is int insp) _sim.Town.Stories.Mayor.Inspiration = insp;
         if (_opts.Story is string story && Stories.Open(_sim.Town, story) is { } opened)
         {
             OpenStory(opened.Id);
@@ -335,6 +342,7 @@ public partial class Main : Control
         SyncMarkers();
         SyncGuide();
         SyncStories(delta);
+        SyncChecks();
         if (_title.Visible) _map.Drift(1, (float)delta * 0.035f);
         if (_dirty)
         {
