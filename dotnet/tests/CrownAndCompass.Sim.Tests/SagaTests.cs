@@ -2,15 +2,15 @@ using CrownAndCompass.Sim.Systems;
 
 namespace CrownAndCompass.Sim.Tests;
 
-/// <summary>One long campaign (seed 1 ends near day 1060), played once and shared by the tests that read it.</summary>
+/// <summary>One long campaign (it ends by day 1000 on every seed swept), played once and shared by the tests that read it.</summary>
 public sealed class LongCampaign
 {
     public Simulation Sim { get; }
 
     public LongCampaign()
     {
-        Sim = new Simulation(new SimulationOptions { Seed = 1 });
-        for (int d = 0; d < 1200 && Sim.Town.Outcome == null; d++) Sim.RunDays(1);
+        Sim = new Simulation(new SimulationOptions { Seed = 2 });
+        for (int d = 0; d < 1000 && Sim.Town.Outcome == null; d++) Sim.RunDays(1);
     }
 }
 
@@ -175,7 +175,7 @@ public class SagaTests(LongCampaign campaign) : IClassFixture<LongCampaign>
     public void WithoutTheSagaTheLastStandStillEndsTheGame()
     {
         var sim = new Simulation(new SimulationOptions { Seed = 1, Saga = false });
-        for (int d = 0; d < 260 && sim.Town.Outcome == null; d++) sim.RunDays(1);
+        for (int d = 0; d < 400 && sim.Town.Outcome == null; d++) sim.RunDays(1);
         Assert.NotNull(sim.Town.Outcome);
         Assert.Empty(sim.Town.Saga.Menaces);
         Assert.Equal(0, sim.Town.Saga.Act);

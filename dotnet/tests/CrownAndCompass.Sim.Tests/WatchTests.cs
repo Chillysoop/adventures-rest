@@ -63,7 +63,7 @@ public class WatchTests
             catch (InvalidOperationException) { continue; }
             var t = sim.Town;
             t.Treasury += 1000;
-            var site = t.Sites.First(s => !s.Cleared);
+            var site = t.Sites.First(s => !s.Cleared && s.Known != SiteKnowledge.Unheard);
             var errand = sim.PlantMirror(site.Def.Id);
             Assert.NotNull(errand);
             Assert.Null(sim.PlantMirror(site.Def.Id));

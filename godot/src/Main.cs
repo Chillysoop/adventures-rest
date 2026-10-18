@@ -66,6 +66,7 @@ public partial class Main : Control
         BuildTitle();
         BuildGuide();
         _map.TreeScale = _opts.Trees;
+        Map.Fog.RevealAll = _opts.Reveal;
         // Started plainly, the game opens on the main menu over a town that has been growing a while;
         // arguments set up a moment instead.
         bool plain = OS.GetCmdlineUserArgs().Length == 0;
@@ -174,7 +175,6 @@ public partial class Main : Control
     private void OnLedger(LedgerEntry e)
     {
         if (Newsworthy(e)) Feed(e);
-        AlertFor(e);
         // Real time with pause: the war's turning points stop the clock so the player can react.
         if (e.Category == LedgerCategory.War && e.Importance == Importance.Major && _speed > 0 && !_opts.NoPause) SetSpeed(0);
         if (_sim.Town.Outcome != null && !_endShown) CallDeferred(MethodName.ShowEnd);
@@ -293,7 +293,7 @@ public partial class Main : Control
         _map.TimeScale = Speeds[_speed];
 
         AgeFeed(delta);
-        SyncAlerts();
+        SyncAlerts(delta);
         ScriptedAlert();
         SyncMarkers();
         SyncGuide();
