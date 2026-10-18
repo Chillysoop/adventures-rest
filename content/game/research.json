@@ -1,0 +1,675 @@
+{
+  "_doc": "Town magic and research (Systems/Research.cs). Lore per day comes from institutions, scholars among the townsfolk, casters in town and the library's books, the wizards' library's keeper (keeperLore × how well the institution is kept), times the council's funding. Each discovery is revealed only when one of its sparks holds in this town (craft:<profession>:<n>, folk:<race>:<n>, partner:<people>, building:<id>, book:<school>:<circle>, books:<n>, wizard:<level>, known:<id>, tier:<charter>), so every run's tree differs; requires must all hold to study it. Rank sets its lore and its commission in gold.",
+  "funding": [
+    {
+      "name": "none",
+      "gold": 0,
+      "lore": 0.25
+    },
+    {
+      "name": "a stipend",
+      "gold": 8,
+      "lore": 1
+    },
+    {
+      "name": "generous",
+      "gold": 25,
+      "lore": 1.75
+    },
+    {
+      "name": "lavish",
+      "gold": 80,
+      "lore": 2.5
+    },
+    {
+      "name": "a royal academy",
+      "gold": 300,
+      "lore": 3.5
+    }
+  ],
+  "fundingPerTier": 0.5,
+  "lore": [
+    0,
+    120,
+    300,
+    600,
+    1100,
+    1800
+  ],
+  "gold": [
+    0,
+    150,
+    500,
+    1500,
+    4000,
+    9000
+  ],
+  "institutions": [
+    {
+      "building": "library",
+      "lore": 2
+    },
+    {
+      "building": "scriptorium",
+      "lore": 0.6
+    },
+    {
+      "building": "temple",
+      "lore": 0.4
+    },
+    {
+      "building": "cathedral",
+      "lore": 1.2
+    },
+    {
+      "building": "guildhall",
+      "lore": 0.8
+    },
+    {
+      "building": "mage_tower",
+      "lore": 6
+    },
+    {
+      "building": "sleepless_spire",
+      "lore": 2
+    },
+    {
+      "building": "scrying_pool",
+      "lore": 1
+    }
+  ],
+  "scholars": {
+    "scribe": 0.3,
+    "alchemist": 0.3,
+    "cartographer": 0.25,
+    "herbalist": 0.12,
+    "priest": 0.1,
+    "acolyte": 0.05
+  },
+  "baseLore": 0.5,
+  "wizardLore": 0.15,
+  "casterLore": 0.05,
+  "casters": [
+    "sorcerer",
+    "warlock",
+    "cleric",
+    "druid",
+    "bard",
+    "hedge-witch",
+    "reliquarian"
+  ],
+  "bookLore": 0.08,
+  "keeperLore": 1.5,
+  "schools": [
+    "abjuration",
+    "conjuration",
+    "divination",
+    "enchantment",
+    "evocation",
+    "illusion",
+    "necromancy",
+    "transmutation"
+  ],
+  "bookFromDelve": 0.04,
+  "bookFromDelvePerTier": 0.02,
+  "bookFromCaravan": 0.03,
+  "bookPeoples": [
+    "elves",
+    "gnomes",
+    "freeport",
+    "oasis",
+    "templars"
+  ],
+  "bookPeoplesChance": 0.07,
+  "bastionBookDays": 60,
+  "bastionBookLevel": 5,
+  "ranks": [
+    {
+      "power": 0,
+      "name": "a shelf of grimoires"
+    },
+    {
+      "power": 8,
+      "name": "a wizard's study"
+    },
+    {
+      "power": 25,
+      "name": "the wizards' library"
+    },
+    {
+      "power": 60,
+      "name": "a great library"
+    },
+    {
+      "power": 120,
+      "name": "the Athenaeum"
+    }
+  ],
+  "joinEvery": 45,
+  "joinPower": 8,
+  "joinLevelPerPower": 0.12,
+  "joinLevelMax": 17,
+  "standIn": [
+    {
+      "treasury": 400,
+      "funding": 1
+    },
+    {
+      "treasury": 2500,
+      "funding": 2
+    },
+    {
+      "treasury": 8000,
+      "funding": 3
+    },
+    {
+      "treasury": 30000,
+      "funding": 4
+    }
+  ],
+  "standInReserve": 300,
+  "discoveries": [
+    {
+      "id": "tempered-steel",
+      "name": "Tempered steel",
+      "field": "crafts",
+      "rank": 1,
+      "text": "Quench and draw: blades and tools that hold an edge.",
+      "sparks": [
+        "craft:smith:2",
+        "folk:dwarf:3",
+        "partner:dwarves"
+      ],
+      "yields": {
+        "Tools": 1.15
+      }
+    },
+    {
+      "id": "deep-delving",
+      "name": "Deep delving",
+      "field": "crafts",
+      "rank": 2,
+      "text": "Dwarven shoring and pumps take the quarries deeper.",
+      "sparks": [
+        "folk:dwarf:6",
+        "partner:dwarves",
+        "craft:quarrier:4"
+      ],
+      "requires": [
+        "tier:town"
+      ],
+      "yields": {
+        "Stone": 1.2
+      }
+    },
+    {
+      "id": "fine-loom",
+      "name": "The fine loom",
+      "field": "crafts",
+      "rank": 1,
+      "text": "A treadle loom that weaves twice as fine.",
+      "sparks": [
+        "craft:weaver:2",
+        "partner:halflings",
+        "partner:freeport"
+      ],
+      "yields": {
+        "Cloth": 1.15
+      }
+    },
+    {
+      "id": "gnomish-joinery",
+      "name": "Gnomish joinery",
+      "field": "crafts",
+      "rank": 2,
+      "text": "Dovetails, glue and patience: furniture that outlasts its owners.",
+      "sparks": [
+        "folk:gnome:2",
+        "partner:gnomes",
+        "craft:carpenter:3"
+      ],
+      "yields": {
+        "Furniture": 1.2
+      },
+      "build": 0.03
+    },
+    {
+      "id": "clockwork",
+      "name": "Clockwork",
+      "field": "crafts",
+      "rank": 3,
+      "text": "Springs and escapements: cranes that lift by themselves, a clock on the hall.",
+      "sparks": [
+        "partner:gnomes",
+        "folk:gnome:5"
+      ],
+      "requires": [
+        "known:gnomish-joinery"
+      ],
+      "build": 0.08,
+      "yields": {
+        "Tools": 1.1
+      }
+    },
+    {
+      "id": "block-press",
+      "name": "The block press",
+      "field": "crafts",
+      "rank": 3,
+      "text": "Carved blocks and a screw press: books by the dozen, not by the year.",
+      "sparks": [
+        "craft:scribe:3",
+        "building:library"
+      ],
+      "requires": [
+        "known:old-histories"
+      ],
+      "yields": {
+        "Books": 1.4
+      },
+      "lore": 1
+    },
+    {
+      "id": "three-field",
+      "name": "Three-field rotation",
+      "field": "husbandry",
+      "rank": 1,
+      "text": "Rest a field in three and the land stays sweet.",
+      "sparks": [
+        "craft:farmer:6",
+        "folk:halfling:4",
+        "partner:halflings",
+        "partner:villagers"
+      ],
+      "yields": {
+        "Food": 1.1
+      }
+    },
+    {
+      "id": "dykes-and-drains",
+      "name": "Dykes and drains",
+      "field": "husbandry",
+      "rank": 2,
+      "text": "Lizardfolk know how to talk to wet ground.",
+      "sparks": [
+        "partner:lizardfolk",
+        "craft:farmer:14"
+      ],
+      "yields": {
+        "Food": 1.1
+      },
+      "ward": 0.05
+    },
+    {
+      "id": "hardy-flocks",
+      "name": "Hardy flocks",
+      "field": "husbandry",
+      "rank": 2,
+      "text": "Breeding from the frost-sworn's mountain sheep.",
+      "sparks": [
+        "craft:shepherd:3",
+        "partner:frostsworn"
+      ],
+      "yields": {
+        "Wool": 1.25
+      }
+    },
+    {
+      "id": "vintners-art",
+      "name": "The vintner's art",
+      "field": "husbandry",
+      "rank": 1,
+      "text": "Elven pruning and cool cellars.",
+      "sparks": [
+        "craft:vintner:2",
+        "partner:elves",
+        "folk:elf:4"
+      ],
+      "yields": {
+        "Wine": 1.25
+      },
+      "mood": 0.3
+    },
+    {
+      "id": "hopped-ale",
+      "name": "Hopped ale",
+      "field": "husbandry",
+      "rank": 1,
+      "text": "Bitter, clear and it keeps: the dwarves' way.",
+      "sparks": [
+        "craft:brewer:2",
+        "folk:dwarf:4"
+      ],
+      "yields": {
+        "Ale": 1.2
+      },
+      "mood": 0.3
+    },
+    {
+      "id": "herb-lore",
+      "name": "Elven herb-lore",
+      "field": "healing",
+      "rank": 1,
+      "text": "Which leaf, which root, which moon to cut it under.",
+      "sparks": [
+        "craft:herbalist:2",
+        "partner:elves",
+        "folk:elf:3"
+      ],
+      "yields": {
+        "Herbs": 1.2
+      }
+    },
+    {
+      "id": "distillation",
+      "name": "Distillation",
+      "field": "healing",
+      "rank": 2,
+      "text": "The caravan lords' alembics: draughts twice as strong.",
+      "sparks": [
+        "craft:alchemist:2",
+        "partner:oasis"
+      ],
+      "yields": {
+        "Potions": 1.25
+      }
+    },
+    {
+      "id": "clean-water",
+      "name": "Clean water",
+      "field": "healing",
+      "rank": 2,
+      "text": "Drains, cisterns and boiled water. Fewer fevers, cleaner sewers.",
+      "sparks": [
+        "building:bathhouse",
+        "known:herb-lore",
+        "tier:large_town"
+      ],
+      "mood": 0.5,
+      "arrivals": 0.03,
+      "ward": 0.1
+    },
+    {
+      "id": "field-surgery",
+      "name": "Field surgery",
+      "field": "healing",
+      "rank": 3,
+      "text": "Templar surgeons teach the hall's healers to close a wound on the road.",
+      "sparks": [
+        "partner:templars",
+        "craft:priest:3"
+      ],
+      "requires": [
+        "building:temple"
+      ],
+      "heroes": 1
+    },
+    {
+      "id": "bills-of-exchange",
+      "name": "Bills of exchange",
+      "field": "trade",
+      "rank": 2,
+      "text": "A letter from a trusted house is as good as a chest of coin.",
+      "sparks": [
+        "craft:factor:1",
+        "partner:freeport",
+        "partner:oasis"
+      ],
+      "gold": 6
+    },
+    {
+      "id": "star-charts",
+      "name": "Star charts",
+      "field": "trade",
+      "rank": 2,
+      "text": "Sailors' charts and the caravan lords' star tables: roads found by night.",
+      "sparks": [
+        "craft:cartographer:1",
+        "partner:freeport",
+        "partner:oasis"
+      ],
+      "arrivals": 0.04,
+      "scry": 0.2
+    },
+    {
+      "id": "guild-charters",
+      "name": "Guild charters",
+      "field": "trade",
+      "rank": 3,
+      "text": "Guilds that train apprentices and stand surety for their members.",
+      "sparks": [
+        "building:guildhall",
+        "building:market_hall"
+      ],
+      "requires": [
+        "tier:large_town"
+      ],
+      "gold": 10,
+      "build": 0.05
+    },
+    {
+      "id": "pike-drill",
+      "name": "Pike drill",
+      "field": "war",
+      "rank": 1,
+      "text": "Templars' drill: a wall of points the townsfolk can hold.",
+      "sparks": [
+        "craft:drillmaster:1",
+        "craft:sentry:3",
+        "partner:templars"
+      ],
+      "defence": 8,
+      "tension": -0.1
+    },
+    {
+      "id": "siegecraft",
+      "name": "Siegecraft",
+      "field": "war",
+      "rank": 3,
+      "text": "Dwarf engineers' engines for the walls.",
+      "sparks": [
+        "folk:dwarf:8",
+        "building:barracks"
+      ],
+      "requires": [
+        "known:clockwork"
+      ],
+      "defence": 20
+    },
+    {
+      "id": "monster-lore",
+      "name": "Monster lore",
+      "field": "war",
+      "rank": 2,
+      "text": "A bestiary from the reports of every company that came home.",
+      "sparks": [
+        "book:divination:2",
+        "craft:cartographer:1",
+        "building:adventurers_hall"
+      ],
+      "xp": 0.15,
+      "scry": 0.15
+    },
+    {
+      "id": "old-histories",
+      "name": "The old histories",
+      "field": "lore",
+      "rank": 1,
+      "text": "Copied chronicles of the Age of Crowns: who ruled here, and what was buried.",
+      "sparks": [
+        "craft:scribe:1",
+        "building:library",
+        "partner:elves"
+      ],
+      "mood": 0.3,
+      "lore": 0.5
+    },
+    {
+      "id": "hedge-cantrips",
+      "name": "Hedge cantrips",
+      "field": "lore",
+      "rank": 1,
+      "text": "Small charms every apprentice learns: mending, lights, a clean hearth.",
+      "sparks": [
+        "books:1",
+        "wizard:1"
+      ],
+      "lore": 0.5,
+      "mood": 0.2
+    },
+    {
+      "id": "everburning-lamps",
+      "name": "Everburning lamps",
+      "field": "arcana",
+      "rank": 2,
+      "text": "Flames that never go out on every corner and down every drain.",
+      "sparks": [
+        "book:evocation:2",
+        "partner:gnomes"
+      ],
+      "requires": [
+        "circle:2"
+      ],
+      "mood": 0.5,
+      "tension": -0.1,
+      "ward": 0.15
+    },
+    {
+      "id": "plant-growth",
+      "name": "Plant growth",
+      "field": "arcana",
+      "rank": 3,
+      "text": "The wizards walk the fields at sowing, and the furrows overflow.",
+      "sparks": [
+        "book:transmutation:3",
+        "folk:elf:6",
+        "partner:elves"
+      ],
+      "requires": [
+        "circle:3"
+      ],
+      "yields": {
+        "Food": 1.25
+      }
+    },
+    {
+      "id": "glyphs-of-warding",
+      "name": "Glyphs of warding",
+      "field": "arcana",
+      "rank": 3,
+      "text": "Sigils on the grates and doors below: what comes up, burns.",
+      "sparks": [
+        "book:abjuration:3",
+        "book:abjuration:4"
+      ],
+      "requires": [
+        "circle:3"
+      ],
+      "ward": 0.3,
+      "defence": 10
+    },
+    {
+      "id": "fabrication",
+      "name": "Fabrication",
+      "field": "arcana",
+      "rank": 4,
+      "text": "Raw stone and timber shaped by a word into walls and beams.",
+      "sparks": [
+        "book:transmutation:4",
+        "partner:gnomes"
+      ],
+      "requires": [
+        "circle:4"
+      ],
+      "build": 0.2,
+      "yields": {
+        "Furniture": 1.2
+      }
+    },
+    {
+      "id": "teleportation-circle",
+      "name": "Teleportation circle",
+      "field": "arcana",
+      "rank": 4,
+      "text": "A circle of silver in the hall: merchants and settlers step through from far cities.",
+      "sparks": [
+        "book:conjuration:5",
+        "partner:freeport"
+      ],
+      "requires": [
+        "circle:5"
+      ],
+      "arrivals": 0.1,
+      "gold": 15
+    },
+    {
+      "id": "guards-and-wards",
+      "name": "Guards and wards",
+      "field": "arcana",
+      "rank": 5,
+      "text": "The whole town woven into one warding: fog in the lanes, locked doors, webs on the stairs.",
+      "sparks": [
+        "book:abjuration:6"
+      ],
+      "requires": [
+        "circle:6"
+      ],
+      "ward": 0.5,
+      "defence": 40,
+      "mood": 0.5
+    },
+    {
+      "id": "heroes-feast",
+      "name": "The heroes' feast",
+      "field": "arcana",
+      "rank": 5,
+      "text": "A table conjured each new moon: who eats there fears nothing for a month.",
+      "sparks": [
+        "book:conjuration:6",
+        "building:cathedral"
+      ],
+      "requires": [
+        "circle:6"
+      ],
+      "heroes": 2,
+      "mood": 1
+    },
+    {
+      "id": "weather-working",
+      "name": "Weather-working",
+      "field": "arcana",
+      "rank": 5,
+      "text": "Rain when the farms need rain, sun at harvest.",
+      "sparks": [
+        "book:transmutation:7",
+        "wizard:13"
+      ],
+      "requires": [
+        "circle:7"
+      ],
+      "yields": {
+        "Food": 1.3,
+        "Wine": 1.2
+      },
+      "mood": 0.5
+    },
+    {
+      "id": "the-great-working",
+      "name": "The great working",
+      "field": "arcana",
+      "rank": 5,
+      "text": "One spell to remake the town's fortune, cast once in a lifetime.",
+      "sparks": [
+        "book:conjuration:9",
+        "wizard:17"
+      ],
+      "requires": [
+        "circle:9"
+      ],
+      "mood": 2,
+      "arrivals": 0.15,
+      "gold": 40,
+      "defence": 40
+    }
+  ]
+}

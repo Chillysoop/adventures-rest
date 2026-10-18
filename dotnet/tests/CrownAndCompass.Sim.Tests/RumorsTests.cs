@@ -45,9 +45,10 @@ public class RumorsTests
             sim.RunDays(120);
             rumors.AddRange(sim.Town.Rumors);
             // Whatever a party has reported on, the town believes as it is, unless a menace nobody has named yet
-            // has since grown in it: that change is secret until word of the menace spreads.
+            // has since grown in it: that change is secret until word of the menace spreads. A site someone else
+            // cleared after the report may have new occupants the town has not seen.
             var hidden = sim.Town.Saga.Menaces.Where(m => !m.Named).Select(m => m.SeatId).ToHashSet();
-            foreach (var s in sim.Town.Sites.Where(s => s.Known == SiteKnowledge.Confirmed && s.Trust == 100 && s.ThoughtCleared == s.Cleared && !hidden.Contains(s.Def.Id)))
+            foreach (var s in sim.Town.Sites.Where(s => s.Known == SiteKnowledge.Confirmed && s.Trust == 100 && s.ThoughtCleared == s.Cleared && !hidden.Contains(s.Def.Id) && !(s.ClearedTick > s.ReportTick)))
                 Assert.Equal(Rumors.Occupants(sim.Town.Content, s.Def), s.Believed);
         }
         Assert.Contains(rumors, r => !r.True);

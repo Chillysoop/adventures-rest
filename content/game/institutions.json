@@ -394,6 +394,76 @@
           "text": "A halfling with a laugh you can hear from the gate, who has never once been seen to sleep, and keeps a book of debts he never collects."
         }
       ]
+    },
+    {
+      "id": "wizards-library",
+      "name": "the Wizards' Library",
+      "building": "library",
+      "title": "Loremaster",
+      "blurb": "The town's library, grown into a house of wizards: reading rooms, a warded vault for the spellbooks, and the wizards the books draw to town. The council decides which school the wizards put first, and the library's keeper speeds the scholars' work.",
+      "service": {
+        "mood": 0.1,
+        "tension": -0.05,
+        "faction": "unshut-book",
+        "standing": 0.05
+      },
+      "choice": {
+        "label": "which school the wizards put first",
+        "text": "The wizards are few and the books many: the council asks them to bend their work to one school.",
+        "options": [
+          {
+            "id": "abjuration",
+            "name": "wards on the walls",
+            "text": "The wizards ring the town with wards that flare at night: raiders find the walls harder to take.",
+            "service": {
+              "defence": 8,
+              "tension": -0.05
+            }
+          },
+          {
+            "id": "conjuration",
+            "name": "hands that build",
+            "text": "Unseen servants haul stone and timber for the builders: every building goes up faster.",
+            "service": {
+              "build": 0.06
+            }
+          },
+          {
+            "id": "transmutation",
+            "name": "the alchemists' rooms",
+            "text": "The wizards turn their art to the workshops: tools come truer and herbs keep longer.",
+            "service": {
+              "yields": {
+                "Tools": 1.1,
+                "Herbs": 1.1
+              }
+            }
+          },
+          {
+            "id": "divination",
+            "name": "the scrying rooms",
+            "text": "The wizards watch the roads in their mirrors and warn the caravans: fewer are waylaid.",
+            "service": {
+              "escort": 0.15,
+              "gold": 1
+            }
+          }
+        ]
+      },
+      "keepers": [
+        {
+          "name": "Orsolya Venn",
+          "text": "A wizard who lost a hand to a book that bit and now keeps every grimoire in a cage, including the friendly ones."
+        },
+        {
+          "name": "Pell Quillan",
+          "text": "Young, nervous and brilliant, he reads three books at once and remembers all of them, but never where he left his spectacles."
+        },
+        {
+          "name": "Dame Hester Coil",
+          "text": "She was court wizard to a baron who died badly, and will not say how. She runs the library like a garrison."
+        }
+      ]
     }
   ],
   "fixtures": [
@@ -2250,6 +2320,71 @@
         "text": "The Hand keeps meeting, and nobody says anything.",
         "effects": {
           "standing": 2
+        }
+      }
+    },
+    {
+      "id": "library-overdue",
+      "title": "A book that will not come back to {institution}",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "institution:wizards-library"
+      ],
+      "minDay": 30,
+      "repeatDays": 140,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A spellbook borrowed from {institution} by a hedge-witch has not come back, and the witch has locked herself in her cottage with it. Odd lights show in her windows. {keeper} wants the council to act.",
+          "options": [
+            {
+              "label": "Buy the book from her",
+              "cost": 80,
+              "prefer": 0.05,
+              "success": {
+                "text": "The witch takes the coin and hands the book over, a little singed. She asks if she may read in the library instead. She may.",
+                "effects": {
+                  "goodwill": 8,
+                  "book": 2
+                }
+              }
+            },
+            {
+              "label": "Talk her into returning it",
+              "skill": "persuasion",
+              "dc": 13,
+              "success": {
+                "text": "She brings it back herself, with notes in the margins that the wizards find surprisingly useful.",
+                "effects": {
+                  "goodwill": 6,
+                  "lore": 40
+                }
+              },
+              "failure": {
+                "text": "She slams the door. Next morning the book is back on its shelf, and every candle in the library has turned blue.",
+                "effects": {
+                  "goodwill": -3,
+                  "tension": 1
+                }
+              }
+            },
+            {
+              "label": "Let her keep it",
+              "success": {
+                "text": "The library writes the book off. {keeperName} writes the council a letter about it.",
+                "effects": {
+                  "goodwill": -8
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The lights in the witch's windows grow stranger, and the library's goodwill thins.",
+        "effects": {
+          "goodwill": -6
         }
       }
     }

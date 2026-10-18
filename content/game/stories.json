@@ -5259,6 +5259,210 @@
           "stir": 5
         }
       }
+    },
+    {
+      "id": "grimoire-peddler",
+      "title": "A peddler with a grimoire",
+      "stakes": "low",
+      "source": "tavern",
+      "needs": [],
+      "minDay": 40,
+      "repeatDays": 90,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A peddler at {tavern} has a book wrapped in oilcloth that hums when you touch it. They swear it came out of a dead wizard's tower, and want gold for it before anyone asks how.",
+          "options": [
+            {
+              "label": "Buy it for the library",
+              "cost": 150,
+              "success": {
+                "text": "The book goes up to the library's shelves. The scholars sit up half the night with it.",
+                "effects": {
+                  "book": 3
+                }
+              }
+            },
+            {
+              "label": "Haggle",
+              "skill": "persuasion",
+              "dc": 13,
+              "success": {
+                "text": "The peddler takes a third of the price and a free night's ale. The book is the town's.",
+                "effects": {
+                  "gold": -50,
+                  "book": 2
+                }
+              },
+              "failure": {
+                "text": "The peddler takes offence and sells it to a passing tinker instead.",
+                "effects": {}
+              }
+            },
+            {
+              "label": "Have the watch ask where it came from",
+              "skill": "investigation",
+              "dc": 14,
+              "success": {
+                "text": "It was stolen from a wizard's heirs on the road. They thank the town with the book and a letter of credit.",
+                "effects": {
+                  "book": 3,
+                  "gold": 60,
+                  "mandate": 1
+                }
+              },
+              "failure": {
+                "text": "The peddler is gone by morning, book and all.",
+                "effects": {}
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The peddler moves on, and the book with them.",
+        "effects": {}
+      }
+    },
+    {
+      "id": "shelf-mimic",
+      "title": "Something on the library shelf",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "library"
+      ],
+      "minDay": 120,
+      "repeatDays": 150,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The librarian has a bandaged hand and a story: one of the big books on the top shelf bit them. It has teeth now, and it is eating the books on either side.",
+          "options": [
+            {
+              "label": "Ask the wizards to bind it",
+              "skill": "arcana",
+              "dc": 14,
+              "success": {
+                "text": "A mimic, starved and clever. Bound, it coughs up the pages it ate, and one book nobody knew the library had.",
+                "effects": {
+                  "book": 4,
+                  "lore": 30
+                }
+              },
+              "failure": {
+                "text": "The binding slips and the thing gets away into the stacks. It takes a week to corner it.",
+                "effects": {
+                  "lore": -40
+                }
+              }
+            },
+            {
+              "label": "Burn it where it sits",
+              "skill": "athletics",
+              "dc": 12,
+              "success": {
+                "text": "It squeals in the fire. The library smells of burnt leather for a month.",
+                "effects": {
+                  "mandate": 1
+                }
+              },
+              "failure": {
+                "text": "The fire spreads to the shelf. The mimic dies, and so does a good book.",
+                "effects": {
+                  "lore": -30,
+                  "gold": -60
+                }
+              }
+            },
+            {
+              "label": "Hire a company to deal with it",
+              "cost": 120,
+              "success": {
+                "text": "A pair of heroes take it out in the night, quietly, with a sack.",
+                "effects": {
+                  "mandate": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "Nobody comes. The thing on the top shelf eats on.",
+        "effects": {
+          "lore": -50
+        }
+      }
+    },
+    {
+      "id": "apprentice-fire",
+      "title": "An apprentice's experiment",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "scholars"
+      ],
+      "minDay": 90,
+      "repeatDays": 120,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Green smoke pours out of the scholars' rooms: an apprentice tried a working from the books before their master could stop them, and the fire won't go out with water.",
+          "options": [
+            {
+              "label": "Smother it with sand",
+              "skill": "athletics",
+              "dc": 12,
+              "success": {
+                "text": "Bucket chains of sand from the river, and it dies. Under the soot, the apprentice's notes show they were close to something.",
+                "effects": {
+                  "lore": 40
+                }
+              },
+              "failure": {
+                "text": "It burns through the night. Half a season's notes are ash.",
+                "effects": {
+                  "lore": -60,
+                  "mandate": -1
+                }
+              }
+            },
+            {
+              "label": "Make the apprentice undo it",
+              "skill": "arcana",
+              "dc": 15,
+              "success": {
+                "text": "White-faced, they say the working backwards, and the fire folds itself up. They will make a fine wizard one day.",
+                "effects": {
+                  "lore": 60,
+                  "inspiration": 1
+                }
+              },
+              "failure": {
+                "text": "The working twists. The fire goes out, and the apprentice's eyebrows with it, and the master's best book.",
+                "effects": {
+                  "lore": -40
+                }
+              }
+            },
+            {
+              "label": "Pay a priest to bless the water",
+              "cost": 40,
+              "success": {
+                "text": "Blessed water puts it out, hissing. The scholars grumble at the cost and go back to work.",
+                "effects": {}
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "It burns itself out by morning, along with much of the work.",
+        "effects": {
+          "lore": -70
+        }
+      }
     }
   ],
   "decrees": [

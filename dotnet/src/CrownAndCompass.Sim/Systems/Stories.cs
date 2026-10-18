@@ -381,16 +381,17 @@ public static class Stories
     /// precedent:id (1 sets it, -1 forgets it) and calling:id (1: the story's hero takes it up, -1: it ends).
     /// </summary>
     public static readonly string[] EffectKeys =
-        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "esteem", "heroXp", "personal", "dismiss", "edge", "swell", "partyHurt", "rest", "slots", "loot", "partyLoyalty", "turnBack", "fine", "jail", "taint", "infamy", "exile", "goodwill", "goodwill2", "prosperity", "security", "contact", "band", "moves", "stir"];
+        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "esteem", "heroXp", "personal", "dismiss", "edge", "swell", "partyHurt", "rest", "slots", "loot", "partyLoyalty", "turnBack", "fine", "jail", "taint", "infamy", "exile", "goodwill", "goodwill2", "prosperity", "security", "contact", "band", "moves", "stir", "book", "lore"];
 
     /// <summary>
     /// Every need a story or option can name; besides these, precedent:id, decree:id, season:id and
-    /// calling:id (held; binds its hero) and institution:id or institution:id:choice (open, and its choice
-    /// made so; binds it), each negated with a leading !, and class:id (binds a hero of the class in town
-    /// with no calling yet) and faction:id (binds that faction while it has a chapter).
+    /// calling:id (held; binds its hero), building:id, known:id (a discovery made) and institution:id or
+    /// institution:id:choice (open, and its choice made so; binds it), each negated with a leading !, and class:id
+    /// (binds a hero of the class in town with no calling yet), faction:id (binds that faction while it has a
+    /// chapter) and below:level (binds that undercity level while it is open and not cleared).
     /// </summary>
     public static readonly string[] Needs =
-        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "settlement", "route", "courted", "veteran", "fallen", "admirer", "aggrieved", "abroad", "homeward", "victorious", "lawbreaker", "famous", "infamous", "trouble", "contact", "band", "forge", "below"];
+        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "settlement", "route", "courted", "veteran", "fallen", "admirer", "aggrieved", "abroad", "homeward", "victorious", "lawbreaker", "famous", "infamous", "trouble", "contact", "band", "forge", "below", "library", "scholars"];
 
     private static readonly string[] Prefixed = ["precedent:", "decree:", "season:"];
 
@@ -412,6 +413,8 @@ public static class Stories
         if (need.StartsWith("class:", StringComparison.Ordinal)) return c.Classes.Any(x => x.Id == need[6..]);
         if (need.StartsWith("faction:", StringComparison.Ordinal)) return c.Factions.Factions.Any(x => x.Ref == need[8..]);
         if (n.StartsWith("building:", StringComparison.Ordinal)) return c.Buildings.Any(x => x.Id == n[9..]);
+        if (n.StartsWith("known:", StringComparison.Ordinal)) return c.Research.Discovery(n[6..]) != null;
+        if (need.StartsWith("below:", StringComparison.Ordinal)) return c.Undercity.Level(need[6..]) != null;
         return false;
     }
 
@@ -872,6 +875,10 @@ public static class Stories
                 return need == "abroad" ? Sendings.Abroad(town, party)
                     : Sendings.Homeward(town, party) && (need == "homeward" || party.Result!.Outcome == ExpeditionOutcome.Cleared);
             }
+            case "library":
+                return town.Research.Books.Count > 0;
+            case "scholars":
+                return town.Research.Study != null;
             case "fallen":
             {
                 // A hero fallen lately, with no memorial yet.
@@ -892,6 +899,16 @@ public static class Stories
                     var a2 = Pick(town.Heroes.Where(a => !a.IsAway && a.Hero!.Cls.Id == cls && Callings.Of(town, a) == null).OrderBy(a => a.Id).ToList());
                     s.HeroId = a2?.Id;
                     return a2 != null;
+                }
+                if (need.StartsWith("below:", StringComparison.Ordinal))
+                {
+                    // One level of the undercity, open and not cleared.
+                    var lv = Undercity.Of(town, need[6..]);
+                    if (lv == null || Undercity.Site(town, lv).Cleared) return false;
+                    string site = Undercity.Def(town, lv).Site.Id;
+                    if (s.SiteId is string bs) return bs == site;
+                    if (bind) s.SiteId = site;
+                    return true;
                 }
                 if (need.StartsWith("faction:", StringComparison.Ordinal))
                 {
@@ -916,6 +933,7 @@ public static class Stories
                     if (holds && !not && bind && !s.Institutions.Contains(parts[0])) s.Institutions.Add(parts[0]);
                 }
                 else if (n.StartsWith("building:", StringComparison.Ordinal)) holds = town.Buildings.Any(b => b.Def.Id == n[9..] && b.Complete && !b.Closed);
+                else if (n.StartsWith("known:", StringComparison.Ordinal)) holds = Research.IsKnown(town, n[6..]);
                 else if (n.StartsWith("calling:", StringComparison.Ordinal))
                 {
                     // A calling held binds the hero who holds it.
@@ -1186,6 +1204,16 @@ public static class Stories
                     {
                         sl.Stir = Math.Max(0, sl.Stir + v);
                         said.Add($"{Undercity.Def(town, sl).Name} {(v > 0 ? "stir" : "quiet")} ({(v > 0 ? "+" : "−")}{Js.Str(Math.Abs(v))})");
+                    }
+                    break;
+                case "book":
+                    if (v > 0) said.Add($"{Research.Add(town, (int)v, "from a story").Name} for the library");
+                    break;
+                case "lore":
+                    if (town.Research.Study is string studyId)
+                    {
+                        town.Research.Progress[studyId] = Math.Max(0, town.Research.Progress.Get(studyId, 0) + v);
+                        said.Add($"{(v > 0 ? "+" : "−")}{Js.Str(Math.Abs(v))} lore to {Research.Def(town, studyId).Name.ToLowerInvariant()}");
                     }
                     break;
                 case "memorial":
