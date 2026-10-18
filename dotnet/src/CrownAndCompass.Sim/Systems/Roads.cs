@@ -586,7 +586,8 @@ public static class Roads
             return;
         }
 
-        var v = new Expedition.Venture(town.Rng, content, members, site.Def) { Swell = Lairs.Swell(town, site), Clock = party.DepartTick };
+        var v = new Expedition.Venture(town.Rng, content, members, site.Def) { Swell = Lairs.Swell(town, site) + party.Swell, Clock = party.DepartTick };
+        if (party.Edge != 0) v.Hearten(party.Edge);
         v.Log($"{Expedition.ListNames(members.Select(m => m.GivenName).ToList())} set out for {site.Def.Name}.");
         foreach (var line in party.Said) v.Log(line);
         Walk(town, v, (0, 0), party.Out, party.DepartTick);

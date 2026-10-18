@@ -227,35 +227,6 @@
       "ignored": { "text": "Nobody from the hall comes. {heroName} takes it as an answer.", "effects": { "loyalty": -6 } }
     },
     {
-      "id": "party-storm", "title": "A sending from {party}", "stakes": "medium", "source": "road",
-      "needs": ["party"], "repeatDays": 45,
-      "stages": [
-        {
-          "id": "start",
-          "text": "The sending stone at the hall cracks with a voice: {party} is pinned by a storm far out in the wilds, and {hero} asks whether to press on or turn back.",
-          "options": [
-            {
-              "label": "Read the weather and guide them", "skill": "survival", "dc": 14,
-              "critical": { "text": "You call every turn of the storm right. {heroName} swears {town} has a weather-witch for a mayor.", "effects": { "loyalty": 10, "inspiration": 1 } },
-              "success": { "text": "They come through the storm on your word, and {heroName} won't forget it.", "effects": { "loyalty": 8 } },
-              "failure": { "text": "Your advice takes them into the teeth of it. They come through, but it costs them.", "effects": { "loyalty": -4, "wound": 6 } }
-            },
-            {
-              "label": "Find a safe road on the old maps", "skill": "history", "dc": 13,
-              "success": { "text": "An old road of the drovers runs in the lee of the ridge. They find it.", "effects": { "loyalty": 6 } },
-              "failure": { "text": "The old road is long gone under the scree.", "effects": { "loyalty": -2, "wound": 4 } }
-            },
-            {
-              "label": "Tell them to hold fast", "ability": "wis", "dc": 12,
-              "success": { "text": "They sit it out in a cave, and come on when the sky clears.", "effects": { "loyalty": 4 } },
-              "failure": { "text": "Holding fast means three cold nights with too little food.", "effects": { "wound": 3 } }
-            }
-          ]
-        }
-      ],
-      "ignored": { "text": "The stone stays silent. When they come home, {heroName} asks why nobody answered.", "effects": { "wound": 5, "loyalty": -6 } }
-    },
-    {
       "id": "council-feud", "title": "The {seat} is feuding", "stakes": "medium", "source": "council",
       "needs": ["seat"], "minDay": 20, "repeatDays": 70,
       "stages": [
