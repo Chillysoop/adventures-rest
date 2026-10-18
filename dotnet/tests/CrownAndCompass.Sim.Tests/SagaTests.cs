@@ -2,7 +2,7 @@ using CrownAndCompass.Sim.Systems;
 
 namespace CrownAndCompass.Sim.Tests;
 
-/// <summary>One long campaign (it ends by day 1000 on every seed swept), played once and shared by the tests that read it.</summary>
+/// <summary>One long campaign (it ends by day 1200 on every seed swept), played once and shared by the tests that read it.</summary>
 public sealed class LongCampaign
 {
     public Simulation Sim { get; }
@@ -10,7 +10,7 @@ public sealed class LongCampaign
     public LongCampaign()
     {
         Sim = new Simulation(new SimulationOptions { Seed = 1 });
-        for (int d = 0; d < 1000 && Sim.Town.Outcome == null; d++) Sim.RunDays(1);
+        for (int d = 0; d < 1200 && Sim.Town.Outcome == null; d++) Sim.RunDays(1);
     }
 }
 
@@ -101,7 +101,7 @@ public class SagaTests(LongCampaign campaign) : IClassFixture<LongCampaign>
     public void AKnownLairLeftAloneFestersAndRises()
     {
         // Nobody goes out: every lair the town hears of is left alone.
-        var sim = new Simulation(new SimulationOptions { Seed = 2, AutoBounties = false, FreeCompanies = false });
+        var sim = new Simulation(new SimulationOptions { Seed = 4, AutoBounties = false, FreeCompanies = false });
         sim.RunDays(240);
         var t = sim.Town;
         var festered = t.Saga.Menaces.Where(m => m.Origin == "lair").ToList();

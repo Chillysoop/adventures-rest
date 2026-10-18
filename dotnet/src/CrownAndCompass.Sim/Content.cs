@@ -65,6 +65,9 @@ public sealed record BuildingDef
     /// <summary>Granary: food the caravans leave in town on top of the usual stock.</summary>
     public double FoodStore { get; init; }
 
+    /// <summary>Footprint in plan cells (width, depth), when not the usual for its zone (<see cref="Systems.Land.Footprint"/>).</summary>
+    public int[]? Size { get; init; }
+
     /// <summary>One line for the build bar.</summary>
     public string Blurb { get; init; } = "";
 

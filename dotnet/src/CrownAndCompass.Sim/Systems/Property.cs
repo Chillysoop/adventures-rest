@@ -142,7 +142,7 @@ public static class Property
         foreach (var b in town.Buildings) openBeds += b.IsSite ? b.Def.Housing : b.OpenBeds;
         if (homeless <= openBeds) return;
         var house = town.Content.Building("house");
-        if (a.Gold < TotalCost(town, house, town.Lots[0]) * 1.5) return;
+        if (a.Gold < (town.LotPrice(Town.Grid) + house.Cost + town.Market.Quote(Good.Timber, house.Timber)) * 1.5) return;
         if (TryBuild(town, a, house, true) && !a.Has(Trait.Greedy)) a.Ambition = Ambition.None;
     }
 
@@ -151,7 +151,7 @@ public static class Property
 
     private static bool TryBuild(Town town, Agent a, BuildingDef def, bool rental)
     {
-        var lot = FindLot(town, def.Zone);
+        var lot = FindLot(town, def.Zone, def);
         if (lot == null)
         {
             if (a.Gold >= def.Cost) Planning.NoLand(town, def.Zone, a);
@@ -177,12 +177,8 @@ public static class Property
         return true;
     }
 
-    public static Lot? FindLot(Town town, Zone zone) =>
-        town.Lots
-            .Where(l => l.Zone == zone && l.IsVacant && l.OwnerId == null)
-            .OrderBy(Town.DistanceFromCenter)
-            .ThenBy(l => l.Id)
-            .FirstOrDefault();
+    /// <summary>Where a building of this kind would go on the zone's painted land, nearest the hall (<see cref="Land.Find"/>).</summary>
+    public static Lot? FindLot(Town town, Zone zone, BuildingDef def) => Land.Find(town, def, zone);
 
     public static string NameFor(Town town, BuildingDef def, Agent? owner)
     {

@@ -148,11 +148,11 @@ public sealed class Simulation
     /// <summary>Back a faction the town knows with treasury gold.</summary>
     public bool SupportFaction(string factionId, double gold) => Factions.Support(Town, factionId, gold);
 
-    /// <summary>Paint a zone over vacant, unowned lots (Zone.None clears them). Returns how many changed.</summary>
-    public int ZoneLots(IEnumerable<int> lotIds, Zone zone) => Planning.Paint(Town, lotIds, zone);
+    /// <summary>Paint a brush stroke of a zone over open ground (Zone.None clears it): dabs in tiles from the town's corner. Returns cells changed.</summary>
+    public int PaintZone(IEnumerable<(double X, double Y)> dabs, double radius, Zone zone) => Planning.Paint(Town, dabs, radius, zone);
 
-    /// <summary>Place a government building, charter house or town-owned business on a lot, paid from the treasury.</summary>
-    public Building? Place(string buildingId, int lotId) => Planning.Place(Town, buildingId, lotId);
+    /// <summary>Place a government building, charter house or town-owned business at a point and heading (null faces the hall), paid from the treasury.</summary>
+    public Building? Place(string buildingId, double x, double y, double? yaw = null) => Planning.Place(Town, buildingId, x, y, yaw);
 
     /// <summary>Knight a hero of renown: Ser, a stipend and an oath to the town.</summary>
     public bool Knight(int heroId) => Loyalty.Knight(Town, Town.Agent(heroId));
@@ -197,9 +197,9 @@ public sealed class Simulation
         var t = Town;
         var c = t.Content;
         t.Treasury = Options.StartingTreasury;
-        var center = t.LotAt(Town.Grid / 2 - 1, Town.Grid / 2 - 1);
-        center.Zone = Zone.Civic;
-        t.AddBuilding(c.Building("town_hall"), center, null, "the Town Hall", true);
+        var hallDef = c.Building("town_hall");
+        var (hw, hd) = Land.Footprint(hallDef);
+        t.AddBuilding(hallDef, new Lot(0, Town.Center, Town.Center) { W = hw, D = hd, Zone = Zone.Civic }, null, "the Town Hall", true);
         Quests.InitSites(t);
         World.Generate(t);
         Council.InitCouncil(t);
@@ -209,21 +209,13 @@ public sealed class Simulation
         if (Options.AutoMayor && Options.AutoPlanning) Mayor.Daily(t);
         else
         {
-            // The charter's own plan: the player zones everything after it.
-            Zone[] zones = [Zone.Residential, Zone.Residential, Zone.Residential, Zone.Commercial, Zone.Industry, Zone.Farmland];
-            foreach (var z in zones)
-            {
-                var lot = t.Lots
-                    .Where(l => l.Zone == Zone.None)
-                    .OrderBy(Town.DistanceFromCenter)
-                    .ThenBy(l => l.Id)
-                    .First();
-                lot.Zone = z;
-            }
+            // The charter's own plan, a patch of each zone round the hall: the player paints everything after it.
+            foreach (var (z, r, ring) in new[] { (Zone.Residential, 1.3, 0.0), (Zone.Commercial, 0.9, 0.0), (Zone.Industry, 0.9, 2.5), (Zone.Farmland, 1.1, 3.5) })
+                Land.PaintPatch(t, z, r, Town.Grid, ring);
         }
 
         var house = c.Building("house");
-        for (int i = 0; i < 2; i++) t.AddBuilding(house, FreeLot(Zone.Residential), null, Property.NameFor(t, house, null), true);
+        for (int i = 0; i < 2; i++) t.AddBuilding(house, FreeLot(Zone.Residential, house), null, Property.NameFor(t, house, null), true);
 
         Shrines.RaiseShrine(t);
 
@@ -238,10 +230,10 @@ public sealed class Simulation
 
         var farmDef = c.Building("farm");
         var campDef = c.Building("lumber_camp");
-        var farm = t.AddBuilding(farmDef, FreeLot(Zone.Farmland), farmer.Id, Property.NameFor(t, farmDef, farmer), true);
-        var camp = t.AddBuilding(campDef, FreeLot(Zone.Industry), woodcutter.Id, Property.NameFor(t, campDef, woodcutter), true);
+        var farm = t.AddBuilding(farmDef, FreeLot(Zone.Farmland, farmDef), farmer.Id, Property.NameFor(t, farmDef, farmer), true);
+        var camp = t.AddBuilding(campDef, FreeLot(Zone.Industry, campDef), woodcutter.Id, Property.NameFor(t, campDef, woodcutter), true);
         var storeDef = c.Building("general_store");
-        var store = t.AddBuilding(storeDef, FreeLot(Zone.Commercial), shopkeeper.Id, Property.NameFor(t, storeDef, shopkeeper), true);
+        var store = t.AddBuilding(storeDef, FreeLot(Zone.Commercial, storeDef), shopkeeper.Id, Property.NameFor(t, storeDef, shopkeeper), true);
         farm.Cash = 40;
         camp.Cash = 40;
         store.Cash = 40;
@@ -265,5 +257,5 @@ public sealed class Simulation
             t.Residents.Select(a => a.Id).ToList());
     }
 
-    private Lot FreeLot(Zone zone) => Property.FindLot(Town, zone)!;
+    private Lot FreeLot(Zone zone, BuildingDef def) => Property.FindLot(Town, zone, def) ?? Land.Find(Town, def, null)!;
 }

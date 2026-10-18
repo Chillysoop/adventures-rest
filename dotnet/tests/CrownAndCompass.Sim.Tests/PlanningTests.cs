@@ -7,40 +7,65 @@ public class PlanningTests
     private static Simulation Planned(int seed = 1) => new(new SimulationOptions { Seed = seed, AutoPlanning = false });
 
     [Fact]
-    public void WithoutTheStandInTheCharterZonesOnlyItsOwnLots()
+    public void WithoutTheStandInTheCharterZonesOnlyItsOwnPatches()
     {
         var t = Planned().Town;
         Assert.Contains(t.Buildings, b => b.Def.Id == "lumber_camp" && t.Lot(b.LotId).Zone == Zone.Industry);
         Assert.Equal(0, Planning.VacantZoned(t, Zone.Farmland));
     }
 
-    [Fact]
-    public void PaintedLotsAreZonedAndBuiltLotsAreLeftAlone()
+    /// <summary>An open point well away from the hall, in tiles.</summary>
+    private static (double X, double Y) Open(Town t, double dx, double dy)
     {
-        var sim = Planned();
-        var t = sim.Town;
-        var built = t.Lots.First(l => !l.IsVacant && l.Zone == Zone.Residential);
-        var open = t.Lots.Where(l => l.IsVacant && l.Zone == Zone.None).Take(3).Select(l => l.Id).ToList();
-        int n = sim.ZoneLots([.. open, built.Id], Zone.Commercial);
-        Assert.Equal(3, n);
-        Assert.All(open, id => Assert.Equal(Zone.Commercial, t.Lot(id).Zone));
-        Assert.NotEqual(Zone.Commercial, built.Zone);
-        Assert.Equal(0, sim.ZoneLots(open, Zone.Civic));
-        Assert.Equal(3, sim.ZoneLots(open, Zone.None));
+        var p = (Town.Center + dx, Town.Center + dy);
+        Assert.Null(Land.BuildingAt(t, p.Item1, p.Item2));
+        return p;
     }
 
     [Fact]
-    public void TownsfolkBuildOnlyWhereThePlayerZones()
+    public void ABrushPaintsRoundPatchesAndLeavesBuiltGroundAlone()
+    {
+        var sim = Planned();
+        var t = sim.Town;
+        var hall = t.Lot(t.Buildings[0].LotId);
+        int n = sim.PaintZone([Open(t, 6, 6), (hall.X, hall.Y)], 1, Zone.Commercial);
+        // A circle of radius one tile is about pi tiles, each Res² cells; the hall keeps its civic ground.
+        Assert.InRange(n, 40, 70 + 60);
+        Assert.Equal(Zone.Civic, Land.ZoneAt(t, (int)(hall.X * Land.Res), (int)(hall.Y * Land.Res)));
+        Assert.Equal(Zone.Commercial, Land.ZoneAt(t, (int)((Town.Center + 6) * Land.Res), (int)((Town.Center + 6) * Land.Res)));
+        Assert.Equal(0, sim.PaintZone([Open(t, 6, 6)], 1, Zone.Civic));
+        Assert.True(sim.PaintZone([Open(t, 6, 6)], 2, Zone.None) >= 40);
+        Assert.Contains(t.Ledger.Entries, e => e.Text.Contains("as commercial land"));
+    }
+
+    [Fact]
+    public void BuildingsTurnAnyWayAndNeverOverlap()
+    {
+        var sim = new Simulation(new SimulationOptions { Seed = 2 });
+        sim.RunDays(90);
+        var t = sim.Town;
+        // Not just the four compass headings: buildings face the hall from wherever they stand.
+        Assert.True(t.Lots.Select(l => Math.Round(l.Yaw, 2)).Distinct().Count() > 8);
+        var seen = new HashSet<int>();
+        foreach (var l in t.Lots)
+            foreach (int i in Land.Cells(l.X, l.Y, l.W, l.D, l.Yaw))
+            {
+                Assert.True(seen.Add(i), $"lot {l.Id} overlaps another");
+                Assert.Equal(l.Id + 1, t.Plan.Taken[i]);
+            }
+    }
+
+    [Fact]
+    public void TownsfolkBuildOnlyWhereThePlayerPaints()
     {
         var sim = Planned();
         sim.RunDays(20);
         var t = sim.Town;
         int before = t.Buildings.Count;
-        Assert.Contains(t.Ledger.Entries, e => e.Text.Contains("lot is zoned and for sale"));
-        var near = t.Lots.Where(l => l.IsVacant && l.Zone == Zone.None).OrderBy(Town.DistanceFromCenter).ThenBy(l => l.Id).ToList();
-        sim.ZoneLots(near.Take(4).Select(l => l.Id), Zone.Residential);
-        sim.ZoneLots(near.Skip(4).Take(3).Select(l => l.Id), Zone.Farmland);
-        sim.ZoneLots(near.Skip(7).Take(3).Select(l => l.Id), Zone.Commercial);
+        Assert.Contains(t.Ledger.Entries, e => e.Text.Contains("is painted on the plan"));
+        sim.PaintZone([Open(t, -4, 0), (Town.Center - 4, 1.5 + Town.Center)], 1.4, Zone.Residential);
+        sim.PaintZone([Open(t, 0, 5.5)], 1.6, Zone.Farmland);
+        sim.PaintZone([Open(t, 4, -3)], 1.2, Zone.Commercial);
         sim.RunDays(30);
         Assert.True(t.Buildings.Count > before);
         Assert.All(t.Buildings.Where(b => b.OwnerId != null), b => Assert.Equal(b.Def.Zone, t.Lot(b.LotId).Zone));
@@ -52,13 +77,14 @@ public class PlanningTests
         var sim = Planned();
         var t = sim.Town;
         t.Treasury = 2000;
-        var lot = t.Lots.First(l => l.IsVacant && l.Zone == Zone.None && Town.DistanceFromCenter(l) > 4);
-        var granary = sim.Place("granary", lot.Id);
+        var (x, y) = Open(t, 5, 0);
+        var granary = sim.Place("granary", x, y, 1.0);
         Assert.NotNull(granary);
-        Assert.Equal(lot.Id, granary!.LotId);
+        var lot = t.Lot(granary!.LotId);
+        Assert.Equal((x, y, 1.0), (lot.X, lot.Y, lot.Yaw));
         Assert.Equal(Zone.Civic, lot.Zone);
         Assert.Null(granary.OwnerId);
-        Assert.Null(sim.Place("granary", lot.Id));
+        Assert.Null(sim.Place("granary", x, y));
         Assert.Equal("needs 20 residents", Planning.Blocked(t, t.Content.Building("watch_house")));
         Assert.True(t.Accounts.Get(TreasuryAccount.Works, 0) < 0);
 
@@ -74,28 +100,29 @@ public class PlanningTests
         var sim = Planned();
         var t = sim.Town;
         t.Treasury = 1000;
-        var lot = t.Lots.First(l => l.IsVacant && l.Zone == Zone.None);
-        var forge = sim.Place("forge", lot.Id);
+        var (x, y) = Open(t, -5, 3);
+        var forge = sim.Place("forge", x, y);
         Assert.NotNull(forge);
         Assert.Null(forge!.OwnerId);
-        Assert.Equal(Zone.Industry, lot.Zone);
+        Assert.Equal(Zone.Industry, t.Lot(forge.LotId).Zone);
         Assert.Equal(Planning.StartingCash, forge.Cash);
-        Assert.Null(sim.Place("town_hall", t.Lots.First(l => l.IsVacant && l.Zone == Zone.None).Id));
+        var (hx, hy) = Open(t, -5, -5);
+        Assert.Null(sim.Place("town_hall", hx, hy));
     }
 
     [Fact]
-    public void ThePlayerPicksTheTemplesLot()
+    public void ThePlayerPicksTheTemplesSpot()
     {
         var sim = Planned();
         var t = sim.Town;
-        Assert.Null(sim.Place("temple", t.Lots.First(l => l.IsVacant && l.OwnerId == null).Id));
-        var lot = t.Lots.Last(l => l.IsVacant && l.Zone == Zone.None);
+        var (x, y) = Open(t, 0, -6);
+        Assert.Null(sim.Place("temple", x, y));
         // A big enough town with gold to spare.
         for (int i = 0; i < t.Content.Shrines.TemplePopulation; i++) Population.CreateAgent(t);
         t.Treasury = 5000;
-        var temple = sim.Place("temple", lot.Id);
+        var temple = sim.Place("temple", x, y);
         Assert.NotNull(temple);
-        Assert.Equal(lot.Id, temple!.LotId);
+        Assert.Equal((x, y), (t.Lot(temple!.LotId).X, t.Lot(temple.LotId).Y));
     }
 
     [Fact]

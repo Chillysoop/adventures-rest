@@ -79,7 +79,8 @@ public class GearTests
     public void HeroesBuyUpgradesAtTheForgeAndTheTownTakesItsTax()
     {
         var (_, t) = NewTown();
-        var forge = t.AddBuilding(t.Content.Building("forge"), t.Lots.First(l => l.IsVacant), null, "the Forge", true);
+        var forgeDef = t.Content.Building("forge");
+        var forge = t.AddBuilding(forgeDef, Land.Find(t, forgeDef, null)!, null, "the Forge", true);
         var a = Hero(t, "fighter");
         a.Gold = 500;
         double treasury = t.Treasury;
