@@ -287,7 +287,8 @@ public partial class Main : Control
         if (e is not InputEventKey { Pressed: true, Echo: false } k) return;
         if (_story.Visible && k.Keycode == Key.Escape)
         {
-            CloseStory();
+            // A sending can't be waved away: the party is waiting on the stone.
+            if (_storyId is not int sid || Stories.Find(_sim.Town, sid) is not { } open || !Sendings.Is(_sim.Town, open) || open.Done || open.WaitTick > _sim.Town.Tick) CloseStory();
             GetViewport().SetInputAsHandled();
             return;
         }

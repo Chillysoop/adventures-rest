@@ -82,6 +82,7 @@ public sealed class Simulation
         Property.Hourly(t);
         Social.Hourly(t);
         Roads.Hourly(t);
+        Sendings.Hourly(t, Options.AutoMayor && Options.AutoStories);
         t.Tick++;
         if (t.Hour == 0) DailyTick();
     }

@@ -278,6 +278,13 @@
       "teaches": []
     },
     {
+      "id": "sendings",
+      "title": "Word from the road",
+      "text": "A party on a bounty with a caster can spend a spell slot to reach you by sending stone and ask how to go on: pay the toll or bluff, trust the captured scout, bring home the captives or the gold. The game pauses until you answer. Each choice rolls your d20 plus your sheet, plus help from the party's best hand at it. Some quests go on over several sendings. An [b]Adventurers' Hall[/b] (Government) adds to every roll, unlocks choices of its own, and lets parties send word more often.",
+      "when": "count:Parties",
+      "teaches": []
+    },
+    {
       "id": "history",
       "title": "The old world",
       "text": "Every ruin in the wilds is left over from an older age. [b]History[/b] in the game menu (Esc) shows the empires, peoples and wars before your town, and the Ledger tells each region's old story when a party first gets there.",
