@@ -165,7 +165,7 @@ public static class Brain
         if (b.IsSite)
         {
             a.Activity = Activity.Building;
-            b.BuildProgress += Math.Max(0.5, 1 + 0.1 * Rng.Modifier(a.Abilities.Str)) * Seasons.Build(town) * Decrees.Build(town);
+            b.Raise(Math.Max(0.5, 1 + 0.1 * Rng.Modifier(a.Abilities.Str)) * Seasons.Build(town) * Decrees.Build(town));
             if (b.OwnerId != a.Id)
             {
                 double pay = Math.Min(ConstructionWage, b.LaborBudget);

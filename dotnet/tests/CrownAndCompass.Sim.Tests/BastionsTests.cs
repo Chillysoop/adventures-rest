@@ -47,6 +47,8 @@ public class BastionsTests
 
         sim.RunDays(40);
         Assert.True(keep.Complete);
+        // Members come and go on delves; within a fortnight one is home and sleeping in the keep.
+        for (int d = 0; d < 14 && !Bastions.Members(t, b).Any(m => !m.IsAway); d++) sim.RunDays(1);
         Assert.Contains(Bastions.Members(t, b).Where(m => !m.IsAway), m => Bastions.Lodges(t, m) && m.Hero!.Lodging);
         Assert.Contains(Systems.Loyalty.Factors(t, Bastions.Members(t, b)[0]), f => f.Why.StartsWith("lives at"));
     }
@@ -57,7 +59,7 @@ public class BastionsTests
         var sim = new Simulation(new SimulationOptions { Seed = 8 });
         var t = sim.Town;
         sim.RunDays(320);
-        var b = t.Bastions.First(x => !x.Abandoned && x.Facilities.Count > 0);
+        var b = t.Bastions.First(x => !x.Abandoned && !x.Idle && x.Facilities.Count > 0);
         var staff = b.Facilities.Select(t.Building).Where(f => f.Complete).SelectMany(f => f.Workers).ToList();
         Assert.NotEmpty(staff);
         Assert.All(staff, id => Assert.Null(t.Agent(id).Hero));

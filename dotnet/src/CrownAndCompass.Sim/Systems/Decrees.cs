@@ -1,7 +1,7 @@
 namespace CrownAndCompass.Sim.Systems;
 
 /// <summary>A standing order a story puts in force for a while: tolls lifted, a curfew, a levy, a guild's monopoly.</summary>
-public sealed record DecreeDef
+public record DecreeDef
 {
     public string Id { get; init; } = "";
     public string Name { get; init; } = "";
@@ -45,23 +45,26 @@ public static class Decrees
 
     public static int DaysLeft(Town town, string id) => Math.Max(0, town.Stories.Decrees.Get(id, town.Day) - town.Day);
 
-    public static double Mood(Town town) => Js.Sum(Active(town), d => d.Mood);
+    /// <summary>Decrees in force and the callings heroes hold: both move mood, settlers, build speed and yields.</summary>
+    private static IEnumerable<DecreeDef> InEffect(Town town) => Active(town).Concat(Callings.Held(town));
 
-    public static double Arrivals(Town town) => Js.Sum(Active(town), d => d.Arrivals);
+    public static double Mood(Town town) => Js.Sum(InEffect(town), d => d.Mood);
+
+    public static double Arrivals(Town town) => Js.Sum(InEffect(town), d => d.Arrivals);
 
     public static double Build(Town town)
     {
         double f = 1;
-        foreach (var d in Active(town)) f *= 1 + d.Build;
+        foreach (var d in InEffect(town)) f *= 1 + d.Build;
         return Math.Max(0.25, f);
     }
 
     public static double Yield(Town town, Good good)
     {
-        if (town.Stories.Decrees.Count == 0) return 1;
+        if (town.Stories.Decrees.Count == 0 && town.Stories.Callings.Count == 0) return 1;
         double f = 1;
         string key = good.ToString();
-        foreach (var d in Active(town)) f *= d.Yields.TryGetValue(key, out double y) ? y : 1;
+        foreach (var d in InEffect(town)) f *= d.Yields.TryGetValue(key, out double y) ? y : 1;
         return f;
     }
 

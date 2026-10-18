@@ -71,7 +71,8 @@ public class PlanningTests
         // More than the square: lanes have worn in, and none runs through a building.
         Assert.True(t.Plan.Streets.Count > 5);
         for (int i = 0; i < t.Plan.Paved.Length; i++) Assert.False(t.Plan.Paved[i] != 0 && t.Plan.Taken[i] != 0);
-        foreach (var b in t.Buildings.Where(b => b.OwnerId != null))
+        // A bastion's facilities face their keep across the compound's yard; the paths to them wear in over time.
+        foreach (var b in t.Buildings.Where(b => b.OwnerId != null && !(b.Def.Bastion && b.Def.Id != t.Content.Bastions.Keep)))
         {
             var l = t.Lot(b.LotId);
             Assert.True(Hills.Span(t, l.X, l.Y, l.W, l.D, l.Yaw) <= Hills.MaxSpan + 1e-9);

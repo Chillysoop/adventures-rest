@@ -17,7 +17,7 @@ public static class Economy
             // The last few hours of a site get finished on credit if its budget has run dry.
             if (workHours && b.IsSite && b.Workers.Count == 0 && (b.LaborBudget >= Brain.ConstructionWage || b.Def.BuildHours - b.BuildProgress <= 4))
             {
-                b.BuildProgress += Seasons.Build(town) * Decrees.Build(town);
+                b.Raise(Seasons.Build(town) * Decrees.Build(town));
                 b.LaborBudget = Math.Max(0, b.LaborBudget - Brain.ConstructionWage);
                 continue;
             }
@@ -360,6 +360,8 @@ public static class Economy
         foreach (var site in town.Buildings)
         {
             if (!site.IsSite || site.LaborBudget >= Brain.ConstructionWage) continue;
+            // A grand work waiting on its next stage lets its builders go; the treasury tops up only the stage under way.
+            if (site.Def.IsGrand && GrandWorks.TopUp(town, site)) continue;
             // Weak laborers fall behind the estimate; an owner who can afford it pays for the last hours.
             double rest0 = Math.Ceiling(site.Def.BuildHours - site.BuildProgress) * Brain.ConstructionWage;
             if (site.OwnerId == null && town.Treasury >= rest0 + 20)
