@@ -443,6 +443,11 @@ public sealed record EnemyDef
     /// <summary>The warlord marches only once the warband is at least this share of the town's defence.</summary>
     public double MarchConfidence { get; init; }
 
+    /// <summary>Past this day a warband that has not marched grows restless: the confidence it needs wanes by this much a day, down to the floor.</summary>
+    public int MarchWaneAfter { get; init; }
+    public double MarchWanePerDay { get; init; }
+    public double MarchWaneFloor { get; init; } = 1;
+
     /// <summary>Warband strength at which each escalation stage begins.</summary>
     public required EnemyStages Stages { get; init; }
 
@@ -570,6 +575,28 @@ public sealed record PotionRules
     public string Dice { get; init; } = "2d4+2";
 }
 
+/// <summary>Spell scrolls as the scriptorium sells them: one area spell, read once by any hero who casts.</summary>
+public sealed record ScrollRules
+{
+    public string Item { get; init; } = "spell-scroll-1st-level";
+    public double Price { get; init; } = 50;
+    public double Wholesale { get; init; } = 20;
+    public int Carry { get; init; } = 1;
+    public string Dice { get; init; } = "3d6";
+    public int Targets { get; init; } = 3;
+
+    /// <summary>Buildings that sell them.</summary>
+    public IReadOnlyList<string> Shops { get; init; } = ["scriptorium", "mage_tower"];
+
+    /// <summary>Chance a hoard holds a scroll for a caster in the party.</summary>
+    public double Found { get; init; } = 0.2;
+
+    /// <summary>The class that copies a found scroll into its spellbook instead of carrying it, the damage each copied spell adds to its area spell, and the most it copies.</summary>
+    public string Copier { get; init; } = "wizard";
+    public int CopyBonus { get; init; } = 1;
+    public int MaxCopied { get; init; } = 4;
+}
+
 /// <summary>The shrine, the temple and the town's god (content/game/faith.json).</summary>
 public sealed record ShrineRules
 {
@@ -600,6 +627,7 @@ public sealed record ShrineRules
     public double CrusadeReward { get; init; } = 140;
     public double CrusadeReserve { get; init; } = 40;
     public PotionRules Potion { get; init; } = new();
+    public ScrollRules Scroll { get; init; } = new();
 }
 
 /// <summary>How one kind of enemy lives off-screen (GDD enemy table).</summary>
@@ -1137,6 +1165,7 @@ public sealed class Content
     /// <summary>The crops a field can be sown with (content/game/farming.json).</summary>
     public FarmingRules Farming { get; init; } = new();
     public TradeRules Trade { get; init; } = new();
+    public NeighbourRules Neighbours { get; init; } = new();
     public LegacyRules Legacies { get; init; } = new();
 
     /// <summary>The world's history: its ages, the powers that rose and fell, and the calendar (content/game/history.json).</summary>
@@ -1164,6 +1193,12 @@ public sealed class Content
     /// <summary>The town guard's posts and the wall works past the stone walls (content/game/garrison.json).</summary>
     public GarrisonRules Garrison { get; init; } = new();
 
+    /// <summary>Bounty terms and townsfolk carried off in raids (content/game/bounties.json).</summary>
+    public BountyRules Bounties { get; init; } = new();
+    public BroadsheetRules Broadsheet { get; init; } = new();
+    public ClockworkRules Clockwork { get; init; } = new();
+    public MerchantRules Merchants { get; init; } = new();
+    public WardRules Wards { get; init; } = new();
     /// <summary>Fame and infamy for heroes and companies (content/game/notoriety.json).</summary>
     public NotorietyRules Notoriety { get; init; } = new();
 
@@ -1309,6 +1344,7 @@ public sealed class Content
             Seasons = Parse<SeasonRules>("seasons.json"),
             Farming = Parse<FarmingRules>("farming.json"),
             Trade = Parse<TradeRules>("trade.json"),
+            Neighbours = Parse<NeighbourRules>("neighbours.json"),
             Legacies = Parse<LegacyRules>("legacies.json"),
             History = Parse<HistoryRules>("history.json"),
             Stories = stories,
@@ -1319,6 +1355,11 @@ public sealed class Content
             Regard = Parse<RegardRules>("regard.json"),
             Explore = Parse<ExploreRules>("explore.json"),
             Garrison = Parse<GarrisonRules>("garrison.json"),
+            Bounties = Parse<BountyRules>("bounties.json"),
+            Broadsheet = Parse<BroadsheetRules>("broadsheet.json"),
+            Clockwork = Parse<ClockworkRules>("clockwork.json"),
+            Merchants = Parse<MerchantRules>("merchants.json"),
+            Wards = Parse<WardRules>("wards.json"),
             Notoriety = Parse<NotorietyRules>("notoriety.json"),
         };
     }

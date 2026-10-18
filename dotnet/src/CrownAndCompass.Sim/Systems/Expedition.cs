@@ -22,6 +22,13 @@ public sealed record ExpeditionResult(
     /// <summary>Each hero's hit points and potions when it was over; they go onto the sheets when the party gets home.</summary>
     public OrderedMap<int, int> Hp { get; init; } = new();
     public OrderedMap<int, int> Potions { get; init; } = new();
+    public OrderedMap<int, int> Scrolls { get; init; } = new();
+    public OrderedMap<int, int> Copied { get; init; } = new();
+
+    /// <summary>The bounty's terms were met short of slaying: the occupants talked down, driven out, the captives cut loose, the hoard robbed.</summary>
+    public bool Talked { get; init; }
+    public bool Driven { get; init; }
+    public bool GoalMet { get; init; }
 
     /// <summary>The site fell, though nobody lived to tell the town.</summary>
     public bool SiteCleared { get; init; }
@@ -36,6 +43,8 @@ public sealed record ExpeditionResult(
         {
             if (Hp.ContainsKey(a.Id)) a.Hero!.Hp = Hp.Get(a.Id, a.Hero.Hp);
             if (Potions.ContainsKey(a.Id)) a.Hero!.Potions = Potions.Get(a.Id, a.Hero.Potions);
+            if (Scrolls.ContainsKey(a.Id)) a.Hero!.Scrolls = Scrolls.Get(a.Id, a.Hero.Scrolls);
+            if (Copied.ContainsKey(a.Id)) a.Hero!.Copied = Copied.Get(a.Id, a.Hero.Copied);
         }
     }
 }
@@ -61,6 +70,8 @@ public static class Expedition
         /// <summary>Kept apart from the sheet until the party is home, so the town learns nothing early.</summary>
         public int Hp { get; set; } = agent.Hero!.Hp;
         public int Potions { get; set; } = agent.Hero!.Potions;
+        public int Scrolls { get; set; } = agent.Hero!.Scrolls;
+        public int Copied { get; set; } = agent.Hero!.Copied;
 
         /// <summary>Hit dice left to spend on short rests.</summary>
         public int HitDice { get; set; } = agent.Hero!.Level;
@@ -158,6 +169,12 @@ public static class Expedition
 
         /// <summary>The boss of the site is dead, whatever happens to them after.</summary>
         public bool SiteCleared;
+
+        /// <summary>The bounty's terms (<see cref="Systems.Terms"/>): null or slay fights to the heart of the place.</summary>
+        public TermDef? Terms;
+        public bool Talked;
+        public bool Driven;
+        public bool GoalMet;
         public readonly List<ExpeditionItem> Items = [];
 
         public Venture(Rng rng, Content content, IReadOnlyList<Agent> heroes, SiteDef? site = null)
@@ -461,7 +478,7 @@ public static class Expedition
                 {
                     var spell = s.Cls.AreaSpell!;
                     var targets = living.Take(3).ToList();
-                    int dmg = spell.Dice!.Value.Roll(rng) + (s.Level - 1) * spell.Dice.Value.Die / 2;
+                    int dmg = spell.Dice!.Value.Roll(rng) + (s.Level - 1) * spell.Dice.Value.Die / 2 + c.Copied * _content.Shrines.Scroll.CopyBonus;
                     int felled = 0;
                     foreach (var f in targets)
                     {
@@ -470,6 +487,24 @@ public static class Expedition
                     }
                     Credit(c, felled);
                     Log($"{name} looses {Library.Prose(spell.Name)} into {targets.Count} of them for {dmg} damage{(felled > 0 ? $", dropping {felled}" : "")}.");
+                    continue;
+                }
+
+                // A caster with a scroll reads it when the foes crowd in or the master of the place shows itself.
+                if (c.Scrolls > 0 && Scrolls.Reads(s.Cls) && (living.Count >= 3 || living.Any(f => f.Def.Boss)))
+                {
+                    var sr = _content.Shrines.Scroll;
+                    c.Scrolls--;
+                    var targets = living.OrderByDescending(f => f.Def.Boss).Take(sr.Targets).ToList();
+                    int dmg = Math.Max(1, (Sim.Dice.Parse(sr.Dice) ?? new Dice(3, 6, 0)).Roll(rng));
+                    int felled = 0;
+                    foreach (var f in targets)
+                    {
+                        f.Hp -= dmg;
+                        if (f.Hp <= 0) felled++;
+                    }
+                    Credit(c, felled);
+                    Log($"{name} reads a spell scroll aloud and it burns away, striking {targets.Count} of them for {dmg} damage{(felled > 0 ? $", dropping {felled}" : "")}.");
                     continue;
                 }
 
@@ -769,6 +804,26 @@ public static class Expedition
             var outcome = ExpeditionOutcome.Retreated;
             int at = 0;
             bool beaten = false;
+            // Talking them down: the party's best voice against the master of the place.
+            if (Terms is { Dc: > 0 } talk)
+            {
+                var boss = _content.Monster(site.Boss.Monster);
+                var check = BestCheck(SkillKind.Parley);
+                int dc = talk.Dc + talk.DcPerTier * Math.Max(1, site.Tier);
+                if (check.Total >= dc)
+                {
+                    Log($"{check.Name} goes in under a branch of truce and talks {The(boss)} round (d20 {check.Roll}, {check.Total} vs DC {dc}): they will quit {site.Name} by the next moon.");
+                    Talked = true;
+                    SiteCleared = true;
+                    Gold += (int)(_rng.Range(site.Loot[0], site.Loot[1] + 1) * talk.Loot);
+                    Halts.Insert(0, new Halt(start, Clock + 2, "delve"));
+                    Clock += 2;
+                    return ExpeditionOutcome.Cleared;
+                }
+                Log($"{check.Name} tries to talk {The(boss)} round (d20 {check.Roll}, {check.Total} vs DC {dc}), and it comes to blades.");
+            }
+            // A drive, a rescue or a raid on the hoard ends once the party is far enough in.
+            int goal = Terms is { Rooms: > 0 } part ? Math.Max(1, (int)Math.Ceiling(plan.Count * part.Rooms)) : int.MaxValue;
             while (true)
             {
                 bool boss = at == plan.Count;
@@ -803,6 +858,11 @@ public static class Expedition
                     break;
                 }
                 at++;
+                if (at >= goal && at < plan.Count + 1)
+                {
+                    outcome = Reach(site);
+                    break;
+                }
                 // Catch their breath before the next room.
                 ShortRest(true);
                 if (Wiped)
@@ -836,7 +896,7 @@ public static class Expedition
             }
             Halts.Insert(0, new Halt(start, Clock, "delve"));
 
-            if (outcome == ExpeditionOutcome.Cleared)
+            if (outcome == ExpeditionOutcome.Cleared && !Driven)
             {
                 SiteCleared = true;
                 Hoard(site);
@@ -844,15 +904,48 @@ public static class Expedition
             return outcome;
         }
 
+        /// <summary>Far enough in for the bounty's terms: drive the rest out, cut the captives loose, or rob the hoard.</summary>
+        private ExpeditionOutcome Reach(SiteDef site)
+        {
+            var t = Terms!;
+            int loot = (int)(_rng.Range(site.Loot[0], site.Loot[1] + 1) * t.Loot);
+            Gold += loot;
+            if (t.Captives)
+            {
+                Log($"In the pens at the back they find the captives, cut them loose and slip out of {site.Name} with them before the alarm.");
+                GoalMet = true;
+                return ExpeditionOutcome.Retreated;
+            }
+            if (t.Item)
+            {
+                Log($"They find the hoard, take what they can carry{(loot > 0 ? $" ({loot} gold)" : "")} and get out of {site.Name} before the rest of it wakes.");
+                Treasure(site, true);
+                GoalMet = true;
+                return ExpeditionOutcome.Retreated;
+            }
+            Log($"With half of {site.Name} taken, they set fire to the rest. What is left of its folk breaks and runs for the wilds{(loot > 0 ? $", leaving {loot} gold behind" : "")}.");
+            Driven = true;
+            SiteCleared = true;
+            return ExpeditionOutcome.Cleared;
+        }
+
         private void Hoard(SiteDef site)
         {
             int loot = _rng.Range(site.Loot[0], site.Loot[1] + 1);
             Gold += loot;
             string line = $"{Cap(site.Name)} is cleared. The hoard holds {loot} gold";
+            line += Treasure(site, false);
+            Log($"{line}.");
+        }
+
+        /// <summary>The magic item in a hoard, if there is one (always, when sure), and who takes it. Returns the words for the Ledger line.</summary>
+        private string Treasure(SiteDef site, bool sure)
+        {
+            string line = "";
             // Item tiers stop at 5 (legendary); sites for higher levels draw from the top of the list.
             int itemTier = Math.Min(site.Tier, 5);
             var pool = _content.LootItems.Where(it => it.Tier >= itemTier && it.Tier <= itemTier + 1).ToList();
-            if (pool.Count > 0 && _rng.Chance(_content.Loot.ItemChancePerTier * site.Tier))
+            if (pool.Count > 0 && (sure || _rng.Chance(_content.Loot.ItemChancePerTier * site.Tier)))
             {
                 var item = _rng.Pick(pool);
                 if (item.Slot == "town")
@@ -874,7 +967,25 @@ public static class Expedition
                     line += $" and the {item.Name}, which {who.Agent.GivenName} claims";
                 }
             }
-            Log($"{line}.");
+            string scroll = FindScroll();
+            if (scroll != "") line += line == "" ? $" and {scroll}" : $", and {scroll}";
+            if (sure && line != "") Log($"They bring back{line[4..]}.");
+            return line;
+        }
+
+        /// <summary>A hoard may hold a spell scroll: a wizard copies it into the spellbook, another caster carries it.</summary>
+        private string FindScroll()
+        {
+            var sr = _content.Shrines.Scroll;
+            var reader = Party.Where(c => !c.Dead && Scrolls.Reads(c.Sheet.Cls)).OrderBy(c => c.Agent.Id).FirstOrDefault();
+            if (reader == null || !_rng.Chance(sr.Found)) return "";
+            if (reader.Sheet.Cls.Id == sr.Copier && reader.Copied < sr.MaxCopied)
+            {
+                reader.Copied++;
+                return $"a spell scroll {reader.Agent.GivenName} copies into the spellbook by firelight";
+            }
+            reader.Scrolls++;
+            return $"a spell scroll {reader.Agent.GivenName} tucks away";
         }
 
         /// <summary>What happened, for the town to learn when (if) they come home.</summary>
@@ -883,10 +994,14 @@ public static class Expedition
             if (outcome == ExpeditionOutcome.Wiped) Log($"No one comes back from {siteName}.");
             var hp = new OrderedMap<int, int>();
             var potions = new OrderedMap<int, int>();
+            var scrolls = new OrderedMap<int, int>();
+            var copied = new OrderedMap<int, int>();
             foreach (var c in Party)
             {
                 hp[c.Agent.Id] = c.Dead ? 0 : Math.Max(1, c.Hp);
                 potions[c.Agent.Id] = c.Potions;
+                scrolls[c.Agent.Id] = c.Scrolls;
+                copied[c.Agent.Id] = c.Copied;
             }
             return new ExpeditionResult(
                 outcome,
@@ -899,8 +1014,13 @@ public static class Expedition
             {
                 Hp = hp,
                 Potions = potions,
+                Scrolls = scrolls,
+                Copied = copied,
                 SiteCleared = SiteCleared,
                 LostAt = LostAt,
+                Talked = Talked,
+                Driven = Driven,
+                GoalMet = GoalMet,
             };
         }
     }
@@ -915,9 +1035,10 @@ public static class Expedition
     /// </summary>
     /// <param name="slotsSpent">Spell slots the party spent on sending-stone messages; they come out of the healers' heals.</param>
     /// <param name="swell">Extra creatures in every fight but the boss's, from how strong the lair has grown.</param>
-    public static ExpeditionResult Run(Rng rng, Content content, SiteDef site, IReadOnlyList<Agent> heroes, int slotsSpent = 0, int swell = 0)
+    /// <param name="terms">The bounty's terms, when they are not to slay (<see cref="Terms"/>).</param>
+    public static ExpeditionResult Run(Rng rng, Content content, SiteDef site, IReadOnlyList<Agent> heroes, int slotsSpent = 0, int swell = 0, TermDef? terms = null)
     {
-        var run = new Venture(rng, content, heroes, site) { Swell = swell };
+        var run = new Venture(rng, content, heroes, site) { Swell = swell, Terms = terms };
         run.SpendSlots(slotsSpent);
         run.Log($"{ListNames(heroes.Select(h => h.GivenName).ToList())} set out for {site.Name}.");
         var outcome = run.Delve(site, 0);
