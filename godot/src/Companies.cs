@@ -25,6 +25,8 @@ public partial class Main
         p.Begin();
         p.Note("Only a party out on a council bounty reports to the town hall. A company out on its own account keeps what it saw: its road stays in the fog until the council buys the report.");
 
+        RenderBastions(p, t);
+
         p.Heading("Reports for sale");
         var sale = Intel.ForSale(t);
         // Reports with new ground first; the ones that would tell the town nothing new fold into one line.
@@ -92,5 +94,58 @@ public partial class Main
         }
         p.Note("Relation is the members' loyalty plus how the council has dealt with the company: council bounties and fair prices raise it, haggling and insulting offers lower it. Friends sell their reports cheap.");
         p.Commit();
+    }
+
+    /// <summary>Companies asking leave to raise a bastion, and the bastions that stand: who holds them, their chest, facilities and hirelings.</summary>
+    private void RenderBastions(Pane p, Town t)
+    {
+        var r = t.Content.Bastions;
+        var pending = Bastions.Pending(t);
+        var standing = t.Bastions.Where(b => !b.Abandoned).ToList();
+        var empty = t.Bastions.Where(b => b.Abandoned && b.TakenBy == null).ToList();
+        if (pending.Count == 0 && standing.Count == 0 && empty.Count == 0) return;
+        p.Heading("Bastions");
+        foreach (var q in pending)
+        {
+            var members = Intel.Members(t, q.Company);
+            string lead = members.Count > 0 ? $", led by {AgentLink(members[0])} {Ui.C(Ui.Ink2, $"{Ui.Esc(members[0].Hero!.Cls.Name)} {members[0].Hero!.Level}")}" : "";
+            string what = q.TakeOver is int bid ? $"to take on the empty {Ui.Esc(t.Bastions[bid - 1].Name)} for {Js.Str(q.Land)}g" : $"for ground on the edge of town (the land is worth {Js.Str(q.Land)}g)";
+            int id = q.Id;
+            p.Row($"[b]The {Ui.Esc(q.Company)}[/b]{lead} ask {what}.\n{Ui.C(Ui.Ink2, $"[font_size=12]They would live there and hire townsfolk to staff it. Silence in {Ui.Days(Bastions.DaysLeft(t, q))} is taken as leave.[/font_size]")}",
+                ("Grant", true, true, () => Act(() => _sim.AnswerBastion(id, BastionAnswer.Grant))),
+                ("Give the land", true, false, () => Act(() => _sim.AnswerBastion(id, BastionAnswer.Gift))),
+                ("Refuse", true, false, () => Act(() => _sim.AnswerBastion(id, BastionAnswer.Refuse))));
+        }
+        if (pending.Count > 0)
+            p.Note($"Granting sells them the land; giving it free wins the company's goodwill. Refusing sours them and keeps them from asking again for {Ui.Days(r.Council.RefuseDays)}.");
+        foreach (var b in standing)
+        {
+            var keep = Bastions.Keep(t, b);
+            var members = Bastions.Members(t, b);
+            var lord = b.LordId is int l ? t.Agent(l) : null;
+            int level = Bastions.Level(t, b);
+            string state = !keep.Complete ? Tag("Rising", Ui.Gold) : b.Idle ? Tag("Can't pay its hirelings", Ui.Bad) : Tag("Open", Ui.Good);
+            string head = $"[b]{BuildingLink(keep)}[/b] of the {Ui.Esc(b.Company)}  {state}\n" +
+                          Ui.C(Ui.Ink2, $"[font_size=12]Held by {(lord != null ? Ui.Esc(lord.Name) : "no one")} · {members.Count} living there · chest {Js.Str(Js.Round(b.Chest))}g · founded day {b.FoundedDay}[/font_size]");
+            var rows = new List<string>();
+            int slots = Bastions.Slots(t, level);
+            foreach (int fid in b.Facilities)
+            {
+                var f = t.Building(fid);
+                string staff = !f.Complete ? "being built" : $"{f.Workers.Count}/{f.Def.Jobs} hired";
+                rows.Add($"{BuildingLink(f)} {Ui.C(Ui.Ink2, $"({staff})")}");
+            }
+            for (int i = b.Facilities.Count; i < slots; i++) rows.Add(Ui.C(Ui.Ink2, "an empty plot"));
+            string keepStaff = keep.Complete ? $"{keep.Workers.Count}/{keep.Def.Jobs} hired at the keep" : "";
+            string next = slots <= b.Facilities.Count && Bastions.Slots(t, 20) > slots
+                ? $"More facilities as its best reaches level {r.Slots.Where(s => s.Facilities > slots).Select(s => s.Level).DefaultIfEmpty(0).Min()}."
+                : "";
+            string recent = b.Recent.Count > 0 ? $"\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(b.Recent[^1])}[/font_size]")}" : "";
+            p.Row($"{head}\n[font_size=13]{string.Join(" · ", rows)}{(keepStaff != "" ? " · " + keepStaff : "")}[/font_size]{recent}" + (next != "" ? $"\n{Ui.C(Ui.Ink2, $"[font_size=12]{next}[/font_size]")}" : ""));
+        }
+        foreach (var b in empty) p.Row($"[b]{BuildingLink(Bastions.Keep(t, b))}[/b]  {Tag("Empty", Ui.Ink2)}\n{Ui.C(Ui.Ink2, $"[font_size=12]Once the {Ui.Esc(b.Company)}'. Another company may take it on.[/font_size]")}");
+        int sentries = Bastions.Sentries(t);
+        p.Note($"Members live at their bastion instead of the tavern, which keeps them loyal. Each week its facilities do their work: draughts, drill, arms, word of new places, alms, trade, training and recruits." +
+               (sentries > 0 ? $" {sentries} sentries from the drill yards stand on the walls in a siege." : ""));
     }
 }
