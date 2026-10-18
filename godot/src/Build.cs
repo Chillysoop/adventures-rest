@@ -120,6 +120,7 @@ public partial class Main
         }
         _buildToggle.SetPressedNoSignal(_buildBar.Visible);
         _dirty = true;
+        if (_buildBar.Visible) GuideEvent("build");
     }
 
     private void ShowBuildGroup(BuildGroup g)

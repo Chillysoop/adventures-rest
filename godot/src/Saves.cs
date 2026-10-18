@@ -19,6 +19,7 @@ public partial class Main
     private Control _menu = null!;
     private VBoxContainer _slotList = null!;
     private Label _menuTitle = null!, _menuStatus = null!, _toast = null!;
+    private HBoxContainer _menuActions = null!;
     private int _speedBeforeMenu = 1;
     private int _lastAutosaveDay;
     private System.Threading.Tasks.Task? _writing;
@@ -72,8 +73,21 @@ public partial class Main
             Autosave(now: true);
             GetTree().Quit();
         };
-        foreach (var b in new[] { resume, quick, fresh, quit }) actions.AddChild(b);
+        var tutorial = new Button { Text = "Tutorial", TooltipText = "Run the tutorial again on this town" };
+        tutorial.Pressed += () =>
+        {
+            StartTutorial();
+            CloseMenu();
+        };
+        var title = new Button { Text = "Main menu", TooltipText = "Autosave, then go back to the main menu" };
+        title.Pressed += () =>
+        {
+            Autosave(now: true);
+            ShowTitle();
+        };
+        foreach (var b in new[] { resume, quick, fresh, tutorial, title, quit }) actions.AddChild(b);
         v.AddChild(actions);
+        _menuActions = actions;
         v.AddChild(new HSeparator());
 
         _slotList = new VBoxContainer();
@@ -103,23 +117,31 @@ public partial class Main
         if (!_menu.Visible) _speedBeforeMenu = _speed;
         SetSpeed(0);
         _menu.Visible = true;
+        _menuActions.Visible = !_menuLoadOnly;
         _menuStatus.Text = status ?? "";
         RenderSlots();
+        if (!_menuLoadOnly) GuideEvent("menu");
     }
 
     private void CloseMenu()
     {
         _menu.Visible = false;
+        // Load from the main menu goes back to it, with the clock still stopped.
+        if (_menuLoadOnly)
+        {
+            _menuLoadOnly = false;
+            return;
+        }
         SetSpeed(_speedBeforeMenu);
     }
 
     private void RenderSlots()
     {
         var t = _sim.Town;
-        _menuTitle.Text = $"{t.Name} · Day {t.Day}";
+        _menuTitle.Text = _menuLoadOnly ? "Load a town" : $"{t.Name} · Day {t.Day}";
         foreach (var c in _slotList.GetChildren()) c.Free();
         Section("Saved games");
-        for (int i = 1; i <= ManualSlots; i++) SlotRow($"slot-{i}", canSave: true);
+        for (int i = 1; i <= ManualSlots; i++) SlotRow($"slot-{i}", canSave: !_menuLoadOnly);
         Section("Autosaves");
         SlotRow("quick", canSave: false);
         for (int i = 1; i <= AutoSlots; i++) SlotRow($"auto-{i}", canSave: false);
@@ -190,6 +212,7 @@ public partial class Main
         });
         if (wait) _writing.Wait();
         if (slot.StartsWith("auto-")) return;
+        GuideEvent("save");
         Toast($"Saved to {SlotTitle(slot).ToLowerInvariant()}");
         if (_menu.Visible)
         {
@@ -210,6 +233,7 @@ public partial class Main
             Adopt(sim);
             RestoreClientData(client);
             if (_menu.Visible) CloseMenu();
+            HideTitle();
             Toast($"Loaded {what}: {sim.Town.Name}, day {sim.Town.Day}");
             return true;
         }
@@ -235,7 +259,7 @@ public partial class Main
         Save(slot, wait: now);
     }
 
-    /// <summary>With no arguments the game picks up where it left off: the newest save of any kind.</summary>
+    /// <summary>Continue on the main menu: pick up where the player left off, from the newest save of any kind.</summary>
     private bool Continue()
     {
         if (!Directory.Exists(SaveDir)) return false;
@@ -245,7 +269,8 @@ public partial class Main
 
     public override void _Notification(int what)
     {
-        if (what == NotificationWMCloseRequest && _sim != null && _opts.Screenshot == null && !_opts.Bench)
+        // On the main menu the town behind it is either a showcase or already autosaved on the way out.
+        if (what == NotificationWMCloseRequest && _sim != null && _opts.Screenshot == null && !_opts.Bench && !_title.Visible)
         {
             Autosave(now: true);
             GetTree().Quit();

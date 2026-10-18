@@ -1019,6 +1019,9 @@ public sealed class Content
         };
     }
 
+    /// <summary>A file of content/game/ as built into the library, for readers outside the sim (the tutorial).</summary>
+    public static string ReadText(string name) => ReadEmbedded(name);
+
     private static string ReadEmbedded(string name)
     {
         var asm = typeof(Content).Assembly;
