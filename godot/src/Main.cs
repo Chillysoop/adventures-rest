@@ -95,6 +95,9 @@ public partial class Main : Control
         if (_opts.Site is string site) Select(Selection.Site(site));
         if (_opts.Cam is float cam)
             _map.LookAt(_opts.Look ?? (_opts.Site is string at && _map.Geo.Pins.TryGetValue(at, out var pin) ? pin : Map.Geo.Center), cam);
+        // --at aims the camera at the town's first finished building of a kind.
+        if (_opts.At is string atKind && _sim.Town.Buildings.Where(b => b.Def.Id == atKind && b.Complete).OrderBy(b => b.Id).FirstOrDefault() is Building at0)
+            _map.LookAt(Map.Geo.LotPos(_sim.Town.Lot(at0.LotId)), _opts.Cam ?? 22);
         if (_opts.StrategicView) ToggleStrategic();
         foreach (var (kind, at, label) in _opts.Markers) _map.Markers.Add(new Marker(kind, at, _sim.Town.Day, label));
         if (_opts.OpenMarker is int open && open < _map.Markers.Count) CallDeferred(MethodName.OpenMarkerAt, open);
