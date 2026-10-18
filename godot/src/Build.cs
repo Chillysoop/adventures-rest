@@ -125,6 +125,7 @@ public partial class Main
             _dirty = true;
             SyncBuildButtons();
         };
+        _map.Planner.Said += Toast;
         _map.Decorator.Changed += () =>
         {
             _dirty = true;
@@ -264,10 +265,10 @@ public partial class Main
         _buildHint.Text = _map.Planner.Tool switch
         {
             { Zone: Zone.None } => "Brush over painted land to clear it. [ ] or Shift+wheel sizes the brush. Right-click puts the tool down.",
-            { Zone: Zone.Farmland, Crop: string c } => $"Sow fields with {(Farming.Crop(town, c)?.Name ?? c).ToLowerInvariant()}, out beyond the houses where the farmers live; painting over open fields of another crop resows them. [ ] or Shift+wheel sizes the brush. Right-click puts the tool down.",
-            { Zone: Zone z, Density: > 0 } t => $"Paint {Density.Name(town, t.Density).ToLowerInvariant()}-density {Planning.ZoneName(z)} land, on open ground or over built {Planning.ZoneName(z)} streets to let them grow taller. [ ] or Shift+wheel sizes the brush. Right-click puts the tool down.",
-            { Zone: Zone z } => $"Paint {Planning.ZoneName(z)} land anywhere. [ ] or Shift+wheel sizes the brush. Right-click puts the tool down.",
-            { Building: string id } => $"Click to place the {town.Content.Building(id).Name.ToLowerInvariant()} facing the square, or drag to turn it any way (Shift+wheel turns it too). Right-click puts the tool down.",
+            { Zone: Zone.Farmland, Crop: string c } => $"Sow fields with {(Farming.Crop(town, c)?.Name ?? c).ToLowerInvariant()}, out beyond the houses where the farmers live; painting over open fields of another crop resows them (other zones stay as they are: clear them first to repaint). Right-click puts the tool down.",
+            { Zone: Zone z, Density: > 0 } t => $"Paint {Density.Name(town, t.Density).ToLowerInvariant()}-density {Planning.ZoneName(z)} land, on open ground or over built {Planning.ZoneName(z)} streets to let them grow taller (other zones stay as they are: clear them first to repaint). Faint outlines show where buildings will fit. [ ] or Shift+wheel sizes the brush. Right-click puts the tool down.",
+            { Zone: Zone z } => $"Paint {Planning.ZoneName(z)} land on open ground (other zones stay as they are: clear them first to repaint). Faint outlines show where buildings will fit. [ ] or Shift+wheel sizes the brush. Right-click puts the tool down.",
+            { Building: string id } => $"Click to place the {town.Content.Building(id).Name.ToLowerInvariant()} facing the nearest lane, or drag to turn it any way (Shift+wheel turns it too). Green ground takes it; a click near it settles on the nearest spot that fits. Right-click puts the tool down.",
             _ => GroupHints[_buildGroup],
         };
     }

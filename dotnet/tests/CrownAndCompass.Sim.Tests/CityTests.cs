@@ -22,7 +22,7 @@ public class CityTests
         var t = sim.Town;
         Assert.Equal("thorp", City.Tier(t).Id);
         Assert.Equal(["old_town"], t.City.OpenWards);
-        Assert.All(t.Buildings, b => Assert.Equal(0, City.Ring(t.Lot(b.LotId))));
+        Assert.All(t.Buildings, b => Assert.Equal(0, City.Ring(t, t.Lot(b.LotId))));
         var market = PointIn(t, "market");
         Assert.False(City.IsOpen(t, market.X, market.Y));
         Assert.Equal(0, sim.PaintZone([market], 1, Zone.Commercial));

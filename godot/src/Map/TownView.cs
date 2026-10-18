@@ -1768,13 +1768,6 @@ public partial class TownView(MapView map) : Node3D
         state == PalisadeState.Built ? 1
         : state == PalisadeState.Building && ready is int r ? Mathf.Clamp(1 - (r - town.Tick) / (float)(days * SimTime.HoursPerDay), 0, 1) : 0;
 
-    /// <summary>Lots a stone ring encloses: ring 0 is the old town, ring 1 adds the wards inside the city wall (see City.Ring).</summary>
-    public static Rect2 RingBounds(int ring)
-    {
-        int lo = Town.Grid / 2 - City.Band * (ring + 1), n = 2 * City.Band * (ring + 1);
-        return new Rect2(Geo.Margin + lo, Geo.Margin + lo, n, n);
-    }
-
     private void Palisade(Town town)
     {
         var d = town.Defenses;
@@ -1820,8 +1813,8 @@ public partial class TownView(MapView map) : Node3D
             }
         }
         bool gatehouse = d.Gatehouse == PalisadeState.Built;
-        if (stone > 0) StoneRing(k, RingLine(0), stone, 0.24f, 0.8f, 0.5f, 1, 12, WallStone(Slate, 0.82f), gatehouse || d.CityWall == PalisadeState.Built);
-        if (city > 0) StoneRing(k, RingLine(1), city, 0.3f, 1.05f, 0.62f, 2, 20, WallStone(new Color("9b3d2a"), 0.72f), gatehouse);
+        if (stone > 0) StoneRing(k, RingLine(town, 0), stone, 0.24f, 0.8f, 0.5f, 1, 12, WallStone(Slate, 0.82f), gatehouse || d.CityWall == PalisadeState.Built);
+        if (city > 0) StoneRing(k, RingLine(town, 1), city, 0.3f, 1.05f, 0.62f, 2, 20, WallStone(new Color("9b3d2a"), 0.72f), gatehouse);
         Ramparts(k, town, line);
         k.Build(_walls.Mesh as ArrayMesh ?? (ArrayMesh)(_walls.Mesh = new ArrayMesh()));
     }
@@ -1849,23 +1842,19 @@ public partial class TownView(MapView map) : Node3D
 
     /// <summary>
     /// The line a stone ring follows round the wards it encloses (ring 0 the old town, ring 1 the wards inside the city wall):
-    /// a rounded square, so the wall bends with the land instead of running ruled-straight, starting at its south gate.
+    /// just outside the ward border (<see cref="City.Edge(Town, int, double)"/>), so the wall bends with it, starting at its south gate.
     /// </summary>
-    public static Vector2[] RingLine(int ring)
+    public static Vector2[] RingLine(Town town, int ring)
     {
-        var b = RingBounds(ring);
-        var c = b.GetCenter();
-        float r = b.Size.X / 2 * 1.04f;
+        var c = new Vector2(Geo.Margin + (float)Town.Center, Geo.Margin + (float)Town.Center);
         const int N = 96;
         var loop = new Vector2[N];
         for (int i = 0; i < N; i++)
         {
             // South (+y) first, then round clockwise as seen from above.
-            float a = Mathf.Pi / 2 + i * Mathf.Tau / N;
-            float ca = Mathf.Cos(a), sa = Mathf.Sin(a);
-            // A superellipse: square-shouldered, round-cornered, with a slight wobble so it never reads as drawn.
-            float rr = r / Mathf.Pow(Mathf.Pow(Mathf.Abs(ca), 4) + Mathf.Pow(Mathf.Abs(sa), 4), 0.25f) * (1 + (Geo.Hash(ring * 131 + i / 6) - 0.5f) * 0.03f);
-            loop[i] = c + new Vector2(ca, sa) * rr;
+            double a = Math.PI / 2 + i * Math.PI * 2 / N;
+            float r = (float)City.Edge(town, ring, a) + 0.35f;
+            loop[i] = c + new Vector2((float)Math.Cos(a), (float)Math.Sin(a)) * r;
         }
         return loop;
     }
@@ -1937,7 +1926,7 @@ public partial class TownView(MapView map) : Node3D
     {
         var pts = new List<Vector2>();
         foreach (var l in town.Lots)
-            if (l.Zone != Zone.Farmland) pts.AddRange(Geo.LotCorners(l, 0.35f));
+            if (l.Zone != Zone.Farmland) pts.AddRange(Geo.LotCorners(l, 0.7f));
         if (pts.Count < 3) return null;
         // Andrew's monotone chain, counter-clockwise from the lowest x.
         pts = [.. pts.OrderBy(p => p.X).ThenBy(p => p.Y)];
@@ -1951,6 +1940,20 @@ public partial class TownView(MapView map) : Node3D
                 hull.Add(p);
             }
             hull.RemoveAt(hull.Count - 1);
+        }
+        // Corners cut (Chaikin) round the hull, so the stockade runs round the town in a curve instead of a polygon;
+        // the corners stand out far enough that the cut leaves the buildings inside.
+        for (int pass = 0; pass < 3; pass++)
+        {
+            var round = new List<Vector2>(hull.Count * 2);
+            for (int i = 0; i < hull.Count; i++)
+            {
+                var a = hull[i];
+                var b = hull[(i + 1) % hull.Count];
+                round.Add(a.Lerp(b, 0.25f));
+                round.Add(a.Lerp(b, 0.75f));
+            }
+            hull = round;
         }
         return [.. hull];
     }

@@ -269,30 +269,85 @@ public static class City
     public static WardDef WardOf(Town town, double x, double y)
     {
         var wards = town.Content.City.Wards;
-        int ring = Ring(x, y);
+        int ring = Ring(town, x, y);
         if (ring == 0) return wards.First(w => w.Ring == 0);
-        string side = Side(x, y);
+        string side = Side(town, x, y);
         return wards.FirstOrDefault(w => w.Ring == ring && w.Side == side) ?? wards.First(w => w.Ring == 0);
     }
 
-    /// <summary>Tiles per ring band: the old town is the middle 16 by 16, each ring adds 8 on every side.</summary>
+    /// <summary>A ward's name as it reads in a sentence: "the Trades Ward", but "Castle Hill".</summary>
+    public static string The(WardDef w) => w.Name.EndsWith("Ward", StringComparison.Ordinal) ? $"the {w.Name}" : w.Name;
+
+    /// <summary>Tiles per ring band: the old town reaches about 8 tiles from the hall, each ring about 8 more.</summary>
     public const int Band = 8;
 
-    public static int Ring(Lot lot) => Ring(lot.X, lot.Y);
+    /// <summary>
+    /// How far from the hall ring <paramref name="ring"/> ends at a heading (radians from east, south positive), in tiles:
+    /// a square-shouldered, round-cornered loop with a slow wobble from the town's seed, so no border runs ruled-straight.
+    /// </summary>
+    public static double Edge(Town town, int ring, double angle) => Edge(town.Seed, ring, angle);
 
-    public static int Ring(double x, double y)
+    public static double Edge(int seed, int ring, double angle)
     {
-        double d = Math.Max(Math.Abs(x - Town.Center), Math.Abs(y - Town.Center));
-        return d < Band ? 0 : d < 2 * Band ? 1 : 2;
+        double c = Math.Cos(angle), s = Math.Sin(angle);
+        double r = Band * (ring + 1) / Math.Pow(Math.Pow(Math.Abs(c), 4) + Math.Pow(Math.Abs(s), 4), 0.25);
+        return r * (1 + Wobble(seed, ring, angle) * 0.07);
     }
 
-    public static string Side(Lot lot) => Side(lot.X, lot.Y);
+    /// <summary>
+    /// The heading of the border between two sides (0 between east and south, then round: south|west, west|north, north|east)
+    /// at a distance from the hall: near the diagonals, leaning a little with the seed and curving gently outward.
+    /// </summary>
+    public static double Split(Town town, int k, double dist) => Split(town.Seed, k, dist);
 
-    public static string Side(double x, double y)
+    public static double Split(int seed, int k, double dist) =>
+        Math.PI / 4 + k * Math.PI / 2 + (Hash(seed, 40 + k) - 0.5) * 0.3 + Math.Sin(dist / 5 + Hash(seed, 50 + k) * 6.3) * 0.08;
+
+    /// <summary>A slow wave round a ring, from about -1 to 1.</summary>
+    private static double Wobble(int seed, int ring, double angle)
     {
-        double dx = x - Town.Center, dy = y - Town.Center;
-        if (Math.Abs(dx) >= Math.Abs(dy)) return dx > 0 ? "east" : "west";
-        return dy > 0 ? "south" : "north";
+        double w = 0;
+        foreach (var (k, a) in new[] { (2, 0.45), (3, 0.35), (5, 0.2) })
+            w += a * Math.Sin(k * angle + Hash(seed, ring * 7 + k) * Math.PI * 2);
+        return w;
+    }
+
+    private static double Hash(int seed, int i)
+    {
+        uint h = (uint)seed * 2654435761u ^ (uint)(i + 1) * 2246822519u;
+        h ^= h >> 15;
+        h *= 2654435761u;
+        h ^= h >> 13;
+        return (h & 0xffffff) / (double)0x1000000;
+    }
+
+    public static int Ring(Town town, Lot lot) => Ring(town, lot.X, lot.Y);
+
+    public static int Ring(Town town, double x, double y)
+    {
+        double dx = x - Town.Center, dy = y - Town.Center, d = Math.Sqrt(dx * dx + dy * dy), a = Math.Atan2(dy, dx);
+        return d < Edge(town, 0, a) ? 0 : d < Edge(town, 1, a) ? 1 : 2;
+    }
+
+    public static string Side(Town town, Lot lot) => Side(town, lot.X, lot.Y);
+
+    private static readonly string[] Sides = ["south", "west", "north", "east"];
+
+    public static string Side(Town town, double x, double y)
+    {
+        double dx = x - Town.Center, dy = y - Town.Center, d = Math.Sqrt(dx * dx + dy * dy);
+        double a = Math.Atan2(dy, dx);
+        // Round from the east|south border: the side is the one whose two borders the heading lies between.
+        double from = Split(town, 0, d);
+        double t = a - from;
+        while (t < 0) t += Math.PI * 2;
+        while (t >= Math.PI * 2) t -= Math.PI * 2;
+        for (int k = 1; k < 4; k++)
+        {
+            double b = Split(town, k, d) - from;
+            if (t < b) return Sides[k - 1];
+        }
+        return "east";
     }
 
     public static bool IsOpen(Town town, Lot lot) => IsOpen(town, lot.X, lot.Y);
@@ -318,7 +373,7 @@ public static class City
         town.City.OpenWards.Add(w.Id);
         // New ground to paint and build on: searches of the old plan no longer hold.
         town.Plan.Changed();
-        town.Log(LedgerCategory.Town, Importance.Major, $"Surveyors stake out the {w.Name} and the first streets are cobbled. {w.Blurb}");
+        town.Log(LedgerCategory.Town, Importance.Major, $"Surveyors stake out {The(w)} and the first streets are cobbled. {w.Blurb}");
         return true;
     }
 

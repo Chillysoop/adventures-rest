@@ -56,13 +56,13 @@ public partial class TownView
         bool stone = d.StoneWall == PalisadeState.Built;
         if (d.CityWall == PalisadeState.Built)
         {
-            loop = RingLine(1);
+            loop = RingLine(town, 1);
             height = 1.0f;
             towerTop = 3.03f * 0.5f;
         }
         else if (stone)
         {
-            loop = RingLine(0);
+            loop = RingLine(town, 0);
             height = 0.76f;
             towerTop = 3.03f * 0.42f;
         }

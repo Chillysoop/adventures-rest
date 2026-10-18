@@ -329,6 +329,9 @@ public sealed record TownRules
     /// <summary>Residents at which a town stops drawing settlers just for being new (<see cref="FrontierDraw"/>).</summary>
     public double FrontierSize { get; init; } = 1;
 
+    /// <summary>Open ground, in tiles, kept between any two buildings' footprints however they are turned.</summary>
+    public double BuildingGap { get; init; }
+
     /// <summary>Daily cost of keeping the town hall and council running.</summary>
     public double CivicUpkeep { get; init; }
 

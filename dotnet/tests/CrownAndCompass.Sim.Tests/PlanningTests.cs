@@ -193,4 +193,53 @@ public class PlanningTests
         Assert.True(t.Population >= 20);
         Assert.True(t.Market.Price(Good.Food) < 2);
     }
+
+    [Fact]
+    public void AStrokeLeavesOtherZonesAloneAndTheEraserClearsThem()
+    {
+        var sim = Planned();
+        var t = sim.Town;
+        var at = Open(t, 5, -5, "house");
+        Assert.True(sim.PaintZone([at], 1, Zone.Residential) > 0);
+        int homes = Land.OpenCells(t, Zone.Residential);
+        // Painting shops over the homes changes none of them.
+        Assert.Equal(0, sim.PaintZone([at], 0.8, Zone.Commercial));
+        Assert.Equal(homes, Land.OpenCells(t, Zone.Residential));
+        // Cleared, the land takes the new zone.
+        Assert.True(sim.PaintZone([at], 0.8, Zone.None) > 0);
+        Assert.True(sim.PaintZone([at], 0.8, Zone.Commercial) > 0);
+    }
+
+    [Fact]
+    public void AClickOnAStreetSettlesTheBuildingOnTheNearestGroundThatTakesIt()
+    {
+        var sim = Planned();
+        var t = sim.Town;
+        var granary = t.Content.Building("granary");
+        // A point on a lane, where nothing can stand, with open ground beside it.
+        var (x, y, spot) = t.Plan.Streets.Where(r => !r.Square)
+            .SelectMany(r => Enumerable.Range(0, r.Points.Length / 2).Select(i => (X: r.Points[2 * i], Y: r.Points[2 * i + 1])))
+            .Select(p => (p.X, p.Y, Spot: Planning.Spot(t, granary, p.X, p.Y)))
+            .First(p => p.Spot != null && Land.At(t, granary, p.X, p.Y) == null);
+        Assert.NotNull(spot);
+        Assert.InRange(Math.Sqrt((spot.X - x) * (spot.X - x) + (spot.Y - y) * (spot.Y - y)), 0.01, Land.SnapReach + 1e-6);
+        Assert.Null(Planning.SpotBlocked(t, granary, x, y));
+        var site = sim.Place("granary", x, y);
+        Assert.NotNull(site);
+        Assert.Equal(spot.X, t.Lot(site.LotId).X);
+    }
+
+    [Fact]
+    public void WardBordersWanderInsteadOfRunningRuledStraight()
+    {
+        var t = Planned().Town;
+        // Along the old town's east edge, the border moves in and out by more than a lane's width.
+        var east = Enumerable.Range(-6, 13).Select(i => City.Edge(t, 0, i * 0.06)).ToList();
+        Assert.True(east.Max() - east.Min() > 0.3);
+        // And no two towns are laid out alike.
+        var other = Planned(2).Town;
+        Assert.NotEqual(City.Edge(t, 1, 1), City.Edge(other, 1, 1));
+        // A side's border isn't a ruled diagonal either.
+        Assert.NotEqual(City.Split(t, 0, 9), City.Split(t, 0, 15));
+    }
 }
