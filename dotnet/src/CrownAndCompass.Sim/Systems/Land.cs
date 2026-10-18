@@ -44,6 +44,7 @@ public static class Land
         var plan = town.Plan;
         int n = 0;
         double r2 = radius * radius * Res * Res;
+        var gardens = Gardens(town);
         foreach (var (x, y) in dabs)
         {
             double px = x * Res, py = y * Res;
@@ -59,6 +60,8 @@ public static class Land
                     if (!overwrite && plan.Zones[i] != (byte)Zone.None) continue;
                     // Only ground in a ward the town has laid out takes paint.
                     if (zone != Zone.None && !Open(town, i)) continue;
+                    // Unpainted ground with a decoration on it is a garden, and stays one.
+                    if (zone != Zone.None && plan.Zones[i] == (byte)Zone.None && gardens != null && gardens[i]) continue;
                     plan.Zones[i] = (byte)zone;
                     n++;
                 }
@@ -80,6 +83,16 @@ public static class Land
         int n = 0;
         for (int i = 0; i < plan.Zones.Length; i++)
             if (plan.Zones[i] == (byte)Zone.None && plan.Taken[i] == 0 && Open(town, i)) n++;
+        return n;
+    }
+
+    /// <summary>Open (unbuilt) cells painted with any zone a player paints.</summary>
+    public static int PaintedCells(Town town)
+    {
+        var plan = town.Plan;
+        int n = 0;
+        for (int i = 0; i < plan.Zones.Length; i++)
+            if (plan.Taken[i] == 0 && plan.Zones[i] is not ((byte)Zone.None or (byte)Zone.Civic)) n++;
         return n;
     }
 
@@ -298,6 +311,25 @@ public static class Land
         return plan.Wards[i];
     }
 
+    /// <summary>The cells decorations stand on (null when there are none): the brush leaves those unpainted as gardens.</summary>
+    private static bool[]? Gardens(Town town)
+    {
+        if (town.Decor.Pieces.Count == 0) return null;
+        var mask = new bool[Size * Size];
+        foreach (var p in town.Decor.Pieces)
+        {
+            double r = p.Def.Size + 0.18;
+            for (int cy = (int)((p.Y - r) * Res); cy <= (int)((p.Y + r) * Res); cy++)
+                for (int cx = (int)((p.X - r) * Res); cx <= (int)((p.X + r) * Res); cx++)
+                {
+                    if (cx < 0 || cy < 0 || cx >= Size || cy >= Size) continue;
+                    double dx = (cx + 0.5) / Res - p.X, dy = (cy + 0.5) / Res - p.Y;
+                    if (dx * dx + dy * dy < r * r) mask[cy * Size + cx] = true;
+                }
+        }
+        return mask;
+    }
+
     /// <summary>Whether a cell lies in a ward the town has laid out (<see cref="City.IsOpen(Town, double, double)"/> at its middle).</summary>
     public static bool Open(Town town, int i) => town.City.OpenWards.Contains(WardAt(town, i).Id);
 
@@ -310,6 +342,7 @@ public static class Land
         var plan = town.Plan;
         int best = -1;
         double bestKey = double.MaxValue;
+        var gardens = Gardens(town);
         for (int i = 0; i < plan.Zones.Length; i++)
         {
             if (plan.Zones[i] != (byte)Zone.None || plan.Taken[i] != 0) continue;
@@ -317,6 +350,7 @@ public static class Land
             double dist = Math.Sqrt((x - Town.Center) * (x - Town.Center) + (y - Town.Center) * (y - Town.Center));
             if (key(x, y, dist) is not double k) continue;
             if (!Open(town, i)) continue;
+            if (gardens != null && gardens[i]) continue;
             k += Jitter(i) * 0.5;
             if (k < bestKey)
             {

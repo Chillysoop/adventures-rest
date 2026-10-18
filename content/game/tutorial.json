@@ -1,0 +1,185 @@
+{
+  "steps": [
+    {
+      "id": "welcome",
+      "title": "Welcome, Mayor",
+      "text": "Briarford is yours to grow. You don't command heroes here: you post bounties, set laws and build, and the townsfolk and adventurers choose for themselves. Follow the [b]gold outline[/b] and this card through the basics. You can end the tutorial any time.",
+      "teaches": []
+    },
+    {
+      "id": "time",
+      "title": "Start the clock",
+      "text": "The town lives in real time, and you can pause whenever you like. Press [b]Space[/b] or a speed button to let time run. Keys [b]1[/b] to [b]4[/b] pick a speed. Big war news pauses the game for you.",
+      "point": "speeds",
+      "until": "speed",
+      "teaches": ["key:Space", "key:Key1", "key:Key4"]
+    },
+    {
+      "id": "camera",
+      "title": "Look around",
+      "text": "[b]Scroll[/b] to zoom and [b]drag[/b] to pan. [b]Q[/b] and [b]E[/b] turn the view. [b]Home[/b] or a double right-click brings you back to the town square. Try turning the view.",
+      "until": "rotate",
+      "teaches": ["key:Q", "key:E", "key:Home"]
+    },
+    {
+      "id": "inspect",
+      "title": "Meet the townsfolk",
+      "text": "Click anyone walking the streets, or any building, to inspect them. Names in the Ledger and the news are links that do the same.",
+      "point": "inspector",
+      "until": "select",
+      "teaches": []
+    },
+    {
+      "id": "resources",
+      "title": "The town at a glance",
+      "text": "Along the top: people, heroes, the treasury, the price of bread, your [b]Mandate[/b] (how much the townsfolk back you) and the homeless. Hover any of them for more. Keep bread cheap and Mandate high.",
+      "point": "topbar",
+      "teaches": []
+    },
+    {
+      "id": "ledger",
+      "title": "The Ledger",
+      "text": "Everything that happens in town is written in the Ledger, from brawls to weddings to dragons. Open it from the dock.",
+      "point": "tab:Ledger",
+      "until": "tab:Ledger",
+      "teaches": ["tab:Ledger"]
+    },
+    {
+      "id": "build",
+      "title": "Zone the land",
+      "text": "Open the build bar with [b]Build[/b] or [b]B[/b]. You don't place houses: you paint zones, and the townsfolk build homes, farms and shops in them as they can afford to. Government buildings you place yourself: click to set one down, or drag to turn it any way.",
+      "point": "build",
+      "until": "build",
+      "teaches": ["key:B", "command:Place"]
+    },
+    {
+      "id": "zone",
+      "title": "Paint a zone",
+      "text": "Pick a zone in the build bar, then brush across open ground near the town to paint it; [b][[/b] and [b]][/b] (or Shift+wheel) size the brush. Lanes wear in to the paint by themselves and the townsfolk build facing them. Homes keep people off the streets; farms keep bread cheap.",
+      "point": "buildbar",
+      "until": "zoned",
+      "teaches": ["command:PaintZone", "key:Bracketleft"]
+    },
+    {
+      "id": "city",
+      "title": "From thorp to great city",
+      "text": "[b]City[/b] shows what the town is chartered as and what the next charter asks for: enough households, the institutions it needs, sometimes walls, and gold. Claim it there when the list is all ticked, and new buildings and better houses open up.",
+      "point": "tab:City",
+      "until": "tab:City",
+      "teaches": ["tab:City", "command:RaiseCharter"]
+    },
+    {
+      "id": "council",
+      "title": "The council",
+      "text": "Three councillors bring motions for you to sign or veto, and you set taxes and the watch here. Signing what the town wants raises your Mandate; a council that stops listening is how mayors fall.",
+      "point": "tab:Council",
+      "until": "tab:Council",
+      "teaches": ["tab:Council", "command:DecideMotion"]
+    },
+    {
+      "id": "decorate",
+      "title": "Dress the town",
+      "text": "The build bar's [b]Decor[/b] tab has trees, benches, lamps, fountains, statues and more. Set them anywhere at any angle: click to place, drag to aim, and [b]R[/b] or Shift+wheel turns the piece. Drag fences and hedges into rows, paint trees and flowers, and clear pieces for half their price back. Every piece helps a little: benches rest the neighbours, lamps help the watch, stalls lift trade, statues win favour and loyalty.",
+      "when": "day:10",
+      "point": "buildbar",
+      "until": "decorated",
+      "teaches": ["command:Decorate", "command:ClearDecoration", "key:R"]
+    },
+    {
+      "id": "heroes-arrive",
+      "title": "Heroes for hire",
+      "text": "Adventurers have come to town. They drink, train and wait for work. Click one to see their sheet: you can reward them, knight them, grant them a fief or name a champion, and loyal heroes stay when times turn dark.",
+      "when": "count:Heroes",
+      "until": "select:agent",
+      "teaches": ["command:RewardHero", "command:Knight", "command:GrantFief", "command:NameChampion"]
+    },
+    {
+      "id": "bounties",
+      "title": "Post a bounty",
+      "text": "Heroes only go where gold leads them. In [b]Bounties[/b], post a reward on a site in the wilds and a company will take it up when they think they can win. Only bounties the council pays for lift the fog from the map.",
+      "point": "tab:Bounties",
+      "until": "count:Bounties",
+      "teaches": ["tab:Bounties", "command:PostBounty", "command:HoldSite"]
+    },
+    {
+      "id": "eyes",
+      "title": "Eyes on the wilds",
+      "text": "Once a party leaves town you lose sight of it in the fog. From [b]Bounties[/b] you can commission a scrying, post scouts, hide mirrors at a site, send word to a party or call it home, and later raise the Scrying Pool or the Sleepless Spire to see further.",
+      "when": "count:Parties",
+      "point": "tab:Bounties",
+      "teaches": ["command:CommissionScrying", "command:PostScout", "command:RecallScout", "command:PlantMirror", "command:SendWord", "command:BuildSightWork"]
+    },
+    {
+      "id": "companies",
+      "title": "Buy what others found",
+      "text": "Other adventuring companies roam the wilds too. In [b]Companies[/b] you can buy their reports to map ground you haven't paid to explore. Fresh news costs more, and so does a company that doesn't like you.",
+      "point": "tab:Companies",
+      "until": "tab:Companies",
+      "teaches": ["tab:Companies", "command:BuyIntel"]
+    },
+    {
+      "id": "war",
+      "title": "Ready the walls",
+      "text": "Something will come for Briarford sooner or later. [b]War[/b] shows the threat and lets you raise towers and palisades. Raiders strike when your heroes are away, so don't send everyone at once.",
+      "point": "tab:War",
+      "until": "tab:War",
+      "teaches": ["tab:War", "command:BuildDefense"]
+    },
+    {
+      "id": "faith",
+      "title": "Gods and factions",
+      "text": "[b]Faith[/b] shows the town's gods and the factions taking root. Build a temple to win a god's favour; back a faction with gold, or crack down on one that works against you.",
+      "point": "tab:Faith",
+      "until": "tab:Faith",
+      "teaches": ["tab:Faith", "command:BuildTemple", "command:SupportFaction", "command:CrackDown"]
+    },
+    {
+      "id": "alerts",
+      "title": "Alerts",
+      "text": "When something needs you, an icon appears along the top: red is urgent, gold waits on your decision, and the number counts alerts of that kind. [b]Hover[/b] for a summary, [b]click[/b] to go where you can answer it (or pick from the list), and [b]right-click[/b] to dismiss. Alerts clear once the problem is solved, and minor ones fade on their own.",
+      "when": "alert:",
+      "point": "alerts",
+      "teaches": []
+    },
+    {
+      "id": "campaign-map",
+      "title": "The campaign map",
+      "text": "Press [b]M[/b] or [b]Campaign map[/b] to see the same land as an inked map. Drop markers to plan, drag them to move them, and press [b]Delete[/b] to remove the one under the cursor.",
+      "point": "strategic",
+      "until": "strategic",
+      "teaches": ["key:M", "key:Delete"]
+    },
+    {
+      "id": "campaign",
+      "title": "The long road",
+      "text": "[b]Campaign[/b] tracks the saga: the acts, the menaces that fester when left alone, and the big bad. [b]Chronicles[/b] keeps the tales of your heroes' expeditions.",
+      "point": "tab:Campaign",
+      "until": "tab:Campaign",
+      "teaches": ["tab:Campaign", "tab:Chronicles"]
+    },
+    {
+      "id": "save",
+      "title": "Saving",
+      "text": "[b]Esc[/b] or [b]Menu[/b] opens the game menu with five save slots. The town autosaves every three days and when you quit. [b]F5[/b] quicksaves and [b]F9[/b] loads it.",
+      "point": "menu",
+      "teaches": ["key:Escape", "key:F5", "key:F9"]
+    },
+    {
+      "id": "wards",
+      "title": "New wards",
+      "text": "A new charter lets you lay out a new ward in the [b]City[/b] window. Each ward has its own character: the Market Ward favours shops, the Trades Ward workshops, Castle Hill holds the manors. Land outside the wards you have laid out can't be zoned.",
+      "point": "tab:City",
+      "when": "alert:charter",
+      "teaches": ["command:OpenWard"]
+    },
+    {
+      "id": "done",
+      "title": "The town is yours",
+      "text": "That's the basics. New tips will appear here as the town grows and as new features arrive in later builds. Good luck, Mayor.",
+      "teaches": []
+    }
+  ],
+  "untaught": {
+    "command:SendEnvoy": "The client has no button for envoys yet."
+  }
+}

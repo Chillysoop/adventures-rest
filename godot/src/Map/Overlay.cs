@@ -20,12 +20,33 @@ public partial class Overlay(MapView map) : Control
     {
         if (map.Sim == null) return;
         var town = map.Sim.Town;
+        DrawTerrain(town);
         DrawSites(town);
         DrawTrails(town);
         DrawParties(town);
         DrawWarband(town);
         DrawMarkers();
         DrawSelection(town);
+    }
+
+    /// <summary>
+    /// The names of the ridges, mires and deep woods the roads bend round, spaced out along their arc
+    /// like a map-maker's lettering, once the town has seen or been told of the ground.
+    /// </summary>
+    private void DrawTerrain(Town town)
+    {
+        if (map.Distance < 70) return;
+        var ink = map.Strategic ? new Color("4a3418") : new Color(0.95f, 0.92f, 0.82f, 0.85f);
+        foreach (var f in town.Terrain)
+        {
+            double mid = (f.Inner + f.Outer) / 2;
+            double a = f.Bearing * Math.PI / 180;
+            var c = Geo.FromDays(mid * Math.Sin(a), -mid * Math.Cos(a));
+            float fogA = map.Fog.AlphaAt(c);
+            if (fogA >= Fog.UnknownAlpha - 0.02f || !map.OnScreen(map.Gen.At(c, 2), out var at)) continue;
+            float fade = 1 - Mathf.Clamp((fogA - Fog.SightAlpha) / (Fog.UnknownAlpha - Fog.SightAlpha), 0, 0.7f);
+            Text(at, f.Name.ToUpperInvariant(), Ui.Medium, 10, ink with { A = ink.A * fade }, 3);
+        }
     }
 
     private void Text(Vector2 at, string text, Font font, int size, Color color, float outline = 4)
@@ -189,11 +210,19 @@ public partial class Overlay(MapView map) : Control
         foreach (var p in town.Parties)
         {
             if (p.Returned || !map.Geo.Pins.ContainsKey(p.SiteId)) continue;
-            var pos = map.Crowd.PartyPos(town, p);
+            if (Geo.PartyAt(town, p, map.HourFraction) is not var (pos, pace)) continue;
             float fogA = map.Fog.AlphaAt(pos);
             if (fogA >= Fog.SightAlpha || !map.OnScreen(map.Gen.At(pos, 1), out var at)) continue;
             float fade = 1 - Mathf.Clamp(fogA / Fog.SightAlpha, 0, 1);
             Banner(at - new Vector2(0, 14), Palette.Gold, InkC, fade);
+            // A camp fire by night, a thin smoke at the noon rest.
+            if (pace == Pace.Camped)
+            {
+                DrawCircle(at + new Vector2(0, 2), 11, new Color(1f, 0.6f, 0.2f, 0.18f * fade));
+                DrawCircle(at + new Vector2(0, 2), 6, new Color(1f, 0.6f, 0.2f, 0.3f * fade));
+                DrawCircle(at + new Vector2(0, 2), 3.2f, new Color(1f, 0.75f, 0.3f, 0.95f * fade));
+            }
+            else if (pace == Pace.Resting) DrawCircle(at + new Vector2(0, 2), 2.2f, new Color(0.85f, 0.8f, 0.7f, 0.6f * fade));
             if (map.Distance > 90) Text(at + new Vector2(0, 6), p.Name, Ui.Medium, 11, new Color(Cream, fade), 3);
         }
         foreach (var s in town.Scouts)
@@ -340,10 +369,10 @@ public partial class Overlay(MapView map) : Control
         bool strategic = map.Strategic;
         foreach (var p in town.Parties)
         {
-            if (!map.Geo.Pins.TryGetValue(p.SiteId, out var pin)) continue;
+            if (!map.Geo.Pins.ContainsKey(p.SiteId)) continue;
             if (p.Returned && p.ReturnTick + TrailHours < now) continue;
             float end = p.Returned ? p.ReturnTick : float.MaxValue;
-            Trail(h => now + h < p.DepartTick || now + h > end ? null : Geo.Center + (pin - Geo.Center) * Geo.PartyLeg(town, p, map.HourFraction + h),
+            Trail(h => now + h < p.DepartTick || now + h > end ? null : Geo.PartyAt(town, p, map.HourFraction + h)?.Pos,
                 strategic ? new Color("5a3a12") : new Color("ffd65a"));
         }
         foreach (var s in town.Scouts)

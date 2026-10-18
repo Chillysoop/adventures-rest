@@ -102,7 +102,10 @@ public class WorldTests
         var t = sim.Town;
         Assert.Contains(t.Parties, p => p.BountyId == null);
         Assert.True(t.Agents.Where(a => a.Hero != null).Max(a => a.Hero!.Level) >= 3);
-        Assert.Contains(t.Regions, r => r.Ring >= 1 && r.Visited);
+        // Nobody paid them, so the country they saw stays off the map until the council buys it.
+        var told = t.Parties.Where(p => p.Returned && !p.Withheld).Select(p => Quests.Site(t, p.SiteId)!.RegionId).ToHashSet();
+        Assert.All(t.Regions.Where(r => r.Visited), r => Assert.Contains(r.Id, told));
+        Assert.NotEmpty(Intel.ForSale(t));
     }
 
     [Fact]

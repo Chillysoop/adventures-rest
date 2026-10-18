@@ -97,6 +97,44 @@ public static class World
         Rumors.Hear(town, site, Rumors.Occupants(town.Content, site.Def), site.Def.Tier, trust);
     }
 
+    /// <summary>A fixed hash to [0, 1) for placing things; never the town's dice. The client's Geo.Hash is the same function.</summary>
+    public static double Hash(int n)
+    {
+        uint x = unchecked((uint)n * 0x45d9f3bu);
+        x = unchecked(((x >> 16) ^ x) * 0x45d9f3bu);
+        x = (x >> 16) ^ x;
+        return x / 4294967296.0;
+    }
+
+    /// <summary>
+    /// Where a site lies: its compass bearing (degrees, 0 north, clockwise) and how far out it is in
+    /// days of open-ground march. A region spreads its sites across its arc; sites outside any region
+    /// (the war camp) sit between the hand-written ones.
+    /// </summary>
+    public static (double Bearing, double Reach) Place(Town town, SiteState s)
+    {
+        int i = town.Sites.IndexOf(s);
+        double reach = s.Def.Distance * (0.82 + Hash(i * 7 + 3) * 0.3);
+        if (RegionOf(town, s) is { } region)
+        {
+            int k = region.SiteIds.IndexOf(s.Def.Id);
+            int n = region.SiteIds.Count;
+            double bearing = region.Bearing + (k - (n - 1) / 2.0) * region.Arc * 0.6 / Math.Max(1, n);
+            return (bearing, reach + (k % 2) * 0.14);
+        }
+        int baseCount = Math.Max(1, town.Content.Sites.Count);
+        double slot = i < baseCount ? i : i - baseCount + 0.5;
+        return (slot / baseCount * 360 + 20.05, reach);
+    }
+
+    /// <summary>The site's spot in day units from the town: x east, y south.</summary>
+    public static (double X, double Y) Spot(Town town, SiteState s)
+    {
+        var (b, r) = Place(town, s);
+        double a = b * Math.PI / 180;
+        return (r * Math.Sin(a), -r * Math.Cos(a));
+    }
+
     /// <summary>Experience for clearing a site: the encounter budget of its level.</summary>
     public static int Milestone(Town town, SiteState site)
     {
@@ -183,6 +221,9 @@ public static class World
                 region.SettlementId = s.Id;
             }
         }
+
+        // Last, so the country between the sites never shifts the regions and sites a seed makes.
+        Roads.Generate(town, rng);
     }
 
     private static ThemeDef WeightedTheme(Rng rng, IReadOnlyList<ThemeDef> themes)
@@ -460,16 +501,9 @@ public static class World
         var region = RegionOf(town, site);
         if (region == null) return 0;
         double paid = 0;
-        // The dead tell no tales: only a party that comes home describes the country.
-        if (outcome != ExpeditionOutcome.Wiped)
-        {
-            bool first = !region.Visited;
-            region.Visited = true;
-            region.Known = true;
-            // On the way they hear of the region's other sites from whoever lives there.
-            foreach (var id in region.SiteIds) Tell(town, Quests.Site(town, id)!, town.Content.World.Standing.VisitTrust);
-            if (first) Reveal(town, region, $"The {party.Name} bring back word of the lands beyond {region.Name}", 0);
-        }
+        // The dead tell no tales: only a party that comes home describes the country, and only to the
+        // council when it paid for the trip; anyone else must buy the report (Intel).
+        if (outcome != ExpeditionOutcome.Wiped && !party.Withheld) Describe(town, party, region);
         if (outcome == ExpeditionOutcome.Cleared)
         {
             var rules = town.Content.World.Standing;
@@ -486,6 +520,17 @@ public static class World
         }
         else if (plea != null) Reopen(plea);
         return paid;
+    }
+
+    /// <summary>A party's report reaches the council: the region is described and word of the lands beyond spreads.</summary>
+    public static void Describe(Town town, Party party, Region region)
+    {
+        bool first = !region.Visited;
+        region.Visited = true;
+        region.Known = true;
+        // On the way they hear of the region's other sites from whoever lives there.
+        foreach (var id in region.SiteIds) Tell(town, Quests.Site(town, id)!, town.Content.World.Standing.VisitTrust);
+        if (first) Reveal(town, region, $"The {party.Name} bring back word of the lands beyond {region.Name}", 0);
     }
 
     /// <summary>The party that took a plea came back without clearing the site: it stands open again.</summary>

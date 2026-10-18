@@ -175,7 +175,7 @@ public class SagaTests(LongCampaign campaign) : IClassFixture<LongCampaign>
     public void WithoutTheSagaTheLastStandStillEndsTheGame()
     {
         var sim = new Simulation(new SimulationOptions { Seed = 1, Saga = false });
-        for (int d = 0; d < 260 && sim.Town.Outcome == null; d++) sim.RunDays(1);
+        for (int d = 0; d < 400 && sim.Town.Outcome == null; d++) sim.RunDays(1);
         Assert.NotNull(sim.Town.Outcome);
         Assert.Empty(sim.Town.Saga.Menaces);
         Assert.Equal(0, sim.Town.Saga.Act);

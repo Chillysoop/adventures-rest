@@ -159,7 +159,7 @@ public static class Planning
     /// <summary>How much each watchman counts, from the watch houses.</summary>
     public static double WatchFactor(Town town)
     {
-        double f = 1;
+        double f = 1 + Decor.Watch(town);
         foreach (var b in Standing(town)) f += b.Def.WatchBoost;
         return f;
     }

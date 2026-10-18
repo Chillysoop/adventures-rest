@@ -212,6 +212,9 @@ public static class TreasuryAccount
     public const string Charters = "Charters";
     public const string HearthTax = "Hearth tax";
     public const string Wards = "Wards";
+    public const string Decorations = "Decorations";
+    public const string Orchards = "Orchards";
+    public const string Intel = "Intel";
 }
 
 /// <summary>How the campaign ended.</summary>
@@ -258,12 +261,18 @@ public sealed class Town
     public List<SiteState> Sites { get; } = [];
     public List<Bounty> Bounties { get; } = [];
     public List<Party> Parties { get; } = [];
+
+    /// <summary>Adventuring companies the town has dealt with, by first dealing (<see cref="Intel"/>).</summary>
+    public List<CompanyState> Companies { get; } = [];
     public List<Chronicle> Chronicles { get; } = [];
     public List<Seat> Seats { get; } = [];
     public List<Motion> Motions { get; } = [];
 
     /// <summary>The themed regions of the wilds, nearest ring first (<see cref="World"/>).</summary>
     public List<Region> Regions { get; } = [];
+
+    /// <summary>The country that bends the roads between the town and its sites (<see cref="Systems.Roads"/>).</summary>
+    public List<Feature> Terrain { get; } = [];
 
     /// <summary>Villages, holds and enclaves out in the wilds, by id.</summary>
     public List<Settlement> Settlements { get; } = [];
@@ -320,6 +329,9 @@ public sealed class Town
     /// <summary>The town's tier, its wards and what its households want (<see cref="Systems.City"/>).</summary>
     public CityState City { get; } = new();
     public Defenses Defenses { get; } = new();
+
+    /// <summary>Trees, benches, lamps, statues: the set dressing the player has placed (<see cref="Systems.Decor"/>).</summary>
+    public DecorState Decor { get; } = new();
 
     /// <summary>How the campaign ended: the big bad slain, or the town fallen.</summary>
     public Outcome? Outcome { get; set; }
@@ -381,9 +393,9 @@ public sealed class Town
 
     public static double DistanceFromCenter(Lot l) => Math.Sqrt((l.X - Center) * (l.X - Center) + (l.Y - Center) * (l.Y - Center));
 
-    public double LotPrice(Lot lot) => LotPrice(DistanceFromCenter(lot)) * Systems.City.WardOf(this, lot).Land;
+    public double LotPrice(Lot lot) => LotPrice(DistanceFromCenter(lot)) * Systems.City.WardOf(this, lot).Land + Systems.Decor.LandValue(this, lot);
 
-    /// <summary>Land is dearer near the hall (before the ward's own price).</summary>
+    /// <summary>Land is dearer near the hall (before the ward's own price and the beauty round it).</summary>
     public double LotPrice(double distance) =>
         15 + Math.Min(Population, 300) * 0.4 + Math.Max(0, Population - 300) * 0.1 + Math.Max(0, 8 - distance) * 2;
 
@@ -398,6 +410,7 @@ public sealed class Town
         };
         Buildings.Add(b);
         if (lot.Id != Lots.Count) throw new InvalidOperationException("A lot is claimed once, as soon as it is found.");
+        Systems.Decor.ClearLot(this, lot);
         Lots.Add(lot);
         Systems.Land.Claim(this, lot);
         lot.BuildingId = b.Id;

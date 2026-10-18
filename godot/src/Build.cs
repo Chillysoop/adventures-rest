@@ -17,6 +17,7 @@ public partial class Main
         Zones,
         Government,
         Commission,
+        Decor,
     }
 
     /// <summary>One button on the bar: a zone to paint, a building to place, or a defense to order.</summary>
@@ -45,8 +46,8 @@ public partial class Main
     /// <summary>The bar's buttons, from the content: everything the town could ever place, in the order the charters open it.</summary>
     private BuildItem[] BuildItems(BuildGroup g)
     {
-        // The bar is built before the first town exists.
-        if (g == BuildGroup.Zones || _sim == null) return Zones;
+        // Before the first town is adopted there is nothing to build yet.
+        if (_sim == null) return g == BuildGroup.Zones ? Zones : [];
         var town = _sim.Town;
         int Order(BuildingDef d) => d.Tier == "" ? 0 : City.TierIndex(town, d.Tier);
         IEnumerable<BuildingDef> Sorted(Func<BuildingDef, bool> keep) =>
@@ -60,15 +61,17 @@ public partial class Main
                 .. Sorted(d => Planning.IsGovernment(town, d) && d.Id != "town_hall").Select(d => new BuildItem(d.Name, Building: d.Id)),
                 .. Defenses,
             ],
+            BuildGroup.Decor => [],
             _ => [.. Sorted(d => d.Buildable && d.IsBusiness && !Planning.IsGovernment(town, d)).Select(d => new BuildItem(d.Name, Building: d.Id))],
         };
     }
 
     private static readonly Dictionary<BuildGroup, string> GroupHints = new()
     {
-        [BuildGroup.Zones] = "Zone open land. Townsfolk and newcomers buy zoned lots and build what the town's economy needs.",
+        [BuildGroup.Zones] = "Paint zones on open land with the brush. Townsfolk and newcomers build what the town's economy needs in them, facing the lanes.",
         [BuildGroup.Government] = "Government works, paid from the treasury and built by the town's builders.",
         [BuildGroup.Commission] = "Commission a business the town owns and runs. Its profits go to the treasury.",
+        [BuildGroup.Decor] = "Set dressing, anywhere and at any angle. Every piece makes its corner pleasanter and does one small job for the town.",
     };
 
     private void BuildBuildBar()
@@ -115,15 +118,25 @@ public partial class Main
             _dirty = true;
             SyncBuildButtons();
         };
+        _map.Decorator.Changed += () =>
+        {
+            _dirty = true;
+            SyncDecorButtons();
+        };
         ShowBuildGroup(BuildGroup.Zones);
     }
 
     private void ToggleBuildBar()
     {
         _buildBar.Visible = !_buildBar.Visible;
-        if (!_buildBar.Visible) _map.Planner.Pick(null);
+        if (!_buildBar.Visible)
+        {
+            _map.Planner.Pick(null);
+            _map.Decorator.Pick(null);
+        }
         _buildToggle.SetPressedNoSignal(_buildBar.Visible);
         _dirty = true;
+        if (_buildBar.Visible) GuideEvent("build");
     }
 
     private void ShowBuildGroup(BuildGroup g)
@@ -133,6 +146,12 @@ public partial class Main
         foreach (var c in _buildItems.GetChildren()) c.Free();
         _buildButtons.Clear();
         _map.Planner.Pick(null);
+        _map.Decorator.Pick(null);
+        if (g == BuildGroup.Decor)
+        {
+            ShowDecor();
+            return;
+        }
         foreach (var item in BuildItems(g))
         {
             var b = new Button { ToggleMode = item.Defense == null, FocusMode = FocusModeEnum.None, CustomMinimumSize = new Vector2(112, 58), ClipText = true };
@@ -173,6 +192,11 @@ public partial class Main
     private void RenderBuild()
     {
         if (!_buildBar.Visible) return;
+        if (_buildGroup == BuildGroup.Decor)
+        {
+            RenderDecor();
+            return;
+        }
         var town = _sim.Town;
         foreach (var (item, b) in _buildButtons)
         {

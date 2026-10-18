@@ -17,7 +17,31 @@ public sealed record ExpeditionResult(
     int Gold,
     int Xp,
     IReadOnlyList<ExpeditionItem> Items,
-    OrderedMap<int, int> Kills);
+    OrderedMap<int, int> Kills)
+{
+    /// <summary>Each hero's hit points and potions when it was over; they go onto the sheets when the party gets home.</summary>
+    public OrderedMap<int, int> Hp { get; init; } = new();
+    public OrderedMap<int, int> Potions { get; init; } = new();
+
+    /// <summary>The site fell, though nobody lived to tell the town.</summary>
+    public bool SiteCleared { get; init; }
+
+    /// <summary>Hours from the start of the delve to the moment the last of them died, for a wiped party.</summary>
+    public double? LostAt { get; init; }
+
+    /// <summary>Put the heroes' hit points and potions where they ended up.</summary>
+    public void Apply(IEnumerable<Agent> heroes)
+    {
+        foreach (var a in heroes)
+        {
+            if (Hp.ContainsKey(a.Id)) a.Hero!.Hp = Hp.Get(a.Id, a.Hero.Hp);
+            if (Potions.ContainsKey(a.Id)) a.Hero!.Potions = Potions.Get(a.Id, a.Hero.Potions);
+        }
+    }
+}
+
+/// <summary>A stretch of time a party spent stopped near its site: camped outside, delving, or fallen back to rest.</summary>
+public sealed record Halt(double From, double To, string Kind);
 
 /// <summary>
 /// The expedition resolver: a deterministic, seedable dice simulation of a party going into a
@@ -26,13 +50,20 @@ public sealed record ExpeditionResult(
 /// </summary>
 public static class Expedition
 {
-    private sealed class Combatant(Agent agent)
+    internal sealed class Combatant(Agent agent)
     {
         public Agent Agent { get; } = agent;
         public HeroSheet Sheet { get; } = agent.Hero!;
         public bool Down { get; set; }
         public bool Dead { get; set; }
         public int Heals { get; set; } = agent.Hero!.Cls.HealsAt(agent.Hero.Level);
+
+        /// <summary>Kept apart from the sheet until the party is home, so the town learns nothing early.</summary>
+        public int Hp { get; set; } = agent.Hero!.Hp;
+        public int Potions { get; set; } = agent.Hero!.Potions;
+
+        /// <summary>Hit dice left to spend on short rests.</summary>
+        public int HitDice { get; set; } = agent.Hero!.Level;
 
         /// <summary>From the hero's gear, worked out once for the delve.</summary>
         public int Ac { get; init; }
@@ -75,10 +106,14 @@ public static class Expedition
 
     private static string Sign(int n) => n >= 0 ? $"+{n}" : $"-{-n}";
 
-    private sealed class Delve
+    /// <summary>
+    /// One party's venture: the road, its camps and rests, the site itself. It keeps its own clock (in
+    /// ticks) and its own record of hit points, and hands back what happened as a result.
+    /// </summary>
+    public sealed class Venture
     {
         public readonly List<string> Lines = [];
-        public readonly List<Combatant> Party;
+        internal readonly List<Combatant> Party;
         public readonly OrderedMap<int, int> Kills = new();
         public int Gold;
         public int Swell;
@@ -88,18 +123,42 @@ public static class Expedition
         private readonly Content _content;
         private readonly SiteDef? _site;
 
-        public Delve(Rng rng, Content content, IReadOnlyList<Agent> heroes, SiteDef? site = null)
+        /// <summary>The tick it is for the party: time passes in fights, rests and camps.</summary>
+        public double Clock;
+
+        /// <summary>Times stopped near the site (fallen back to rest), for the map.</summary>
+        public readonly List<Halt> Halts = [];
+
+        /// <summary>How much sooner than usual they break off a fight: on the road, and on a second try.</summary>
+        private double _caution;
+
+        /// <summary>Share of the last fight's foes' hit points still standing when it ended.</summary>
+        public double FoeShare;
+
+        /// <summary>Short rests taken since the last long one.</summary>
+        private int _shortRests;
+
+        /// <summary>When the last of the party died, if it did.</summary>
+        public double? LostAt;
+
+        /// <summary>The boss of the site is dead, whatever happens to them after.</summary>
+        public bool SiteCleared;
+        public readonly List<ExpeditionItem> Items = [];
+
+        public Venture(Rng rng, Content content, IReadOnlyList<Agent> heroes, SiteDef? site = null)
         {
             _rng = rng;
             _content = content;
             _site = site;
             Party = heroes.Select(agent => new Combatant(agent) { Ac = Gear.Ac(content, agent), Attack = Gear.Attack(content, agent), Skill = Gear.Skill(content, agent.Hero!), Veteran = agent.Hero!.Expeditions >= content.World.Companies.Veteran }).ToList();
+            // Greenhorns with nobody seasoned among them lose their nerve sooner.
+            if (Party.Any(c => c.Sheet.Expeditions == 0) && !Party.Any(c => c.Veteran)) _caution = content.Roads.Retreat.GreenCaution;
         }
 
         /// <summary>Traps and hazards hit harder in sites built for higher levels: one more set of dice every four levels.</summary>
         private int Scale => _site == null ? 1 : 1 + (Math.Max(1, _site.Tier) - 1) / 4;
 
-        public List<Combatant> Standing => Party.Where(c => !c.Down && !c.Dead).ToList();
+        internal List<Combatant> Standing => Party.Where(c => !c.Down && !c.Dead).ToList();
 
         public void Log(string s) => Lines.Add(s);
 
@@ -110,7 +169,7 @@ public static class Expedition
             foreach (var c in Party)
             {
                 if (c.Dead) continue;
-                hp += Math.Max(0, c.Sheet.Hp);
+                hp += Math.Max(0, c.Hp);
                 max += c.Sheet.MaxHp;
             }
             return max == 0 ? 0 : (double)hp / max;
@@ -143,10 +202,10 @@ public static class Expedition
 
         private static void Hurt(Combatant c, int dmg)
         {
-            c.Sheet.Hp -= dmg;
-            if (c.Sheet.Hp <= 0)
+            c.Hp -= dmg;
+            if (c.Hp <= 0)
             {
-                c.Sheet.Hp = 0;
+                c.Hp = 0;
                 c.Down = true;
             }
         }
@@ -284,6 +343,8 @@ public static class Expedition
                 if (Standing.Count == 0) break;
                 if (foes.Any(f => f.Hp > 0) && BreakOff(def.Boss))
                 {
+                    int left = foes.Sum(f => f.Def.Hp);
+                    FoeShare = left == 0 ? 0 : foes.Sum(f => Math.Max(0, f.Hp)) / (double)left;
                     var fallen = Party.Where(c => c.Down && !c.Dead).Select(c => c.Agent.GivenName).ToList();
                     Log(fallen.Count == 0
                         ? "Bloodied and outmatched, the party breaks off and runs."
@@ -294,10 +355,12 @@ public static class Expedition
             }
 
             bool won = foes.All(f => f.Hp <= 0);
+            int foeMax = foes.Sum(f => f.Def.Hp);
+            FoeShare = foeMax == 0 ? 0 : foes.Sum(f => Math.Max(0, f.Hp)) / (double)foeMax;
             if (won)
             {
                 Xp += totalXp;
-                var hurt = Standing.Where(c => c.Sheet.Hp < c.Sheet.MaxHp / 3.0).Select(c => $"{c.Agent.GivenName} ({c.Sheet.Hp}/{c.Sheet.MaxHp} hp)").ToList();
+                var hurt = Standing.Where(c => c.Hp < c.Sheet.MaxHp / 3.0).Select(c => $"{c.Agent.GivenName} ({c.Hp}/{c.Sheet.MaxHp} hp)").ToList();
                 Log($"The fight is over in {round} round{(round == 1 ? "" : "s")}.{(hurt.Count > 0 ? $" Badly hurt: {string.Join(", ", hurt)}." : "")}");
             }
             AfterCombat();
@@ -310,7 +373,7 @@ public static class Expedition
             var rules = _content.World.Delve;
             int living = Party.Count(c => !c.Dead);
             int down = Party.Count(c => c.Down && !c.Dead);
-            return HpFraction() < (boss ? rules.BossBreakOff : rules.BreakOff) || (down > 0 && down >= rules.DownedShare * living);
+            return HpFraction() < (boss ? rules.BossBreakOff : rules.BreakOff) + _caution || (down > 0 && down >= rules.DownedShare * living);
         }
 
         /// <summary>A veteran's Wisdom (Medicine) check to stop a fallen friend's bleeding.</summary>
@@ -323,7 +386,7 @@ public static class Expedition
             int total = roll + Rng.Modifier(medic.Agent.Abilities.Wis);
             if (total < dc) return false;
             c.Down = false;
-            c.Sheet.Hp = 1;
+            c.Hp = 1;
             Log($"{medic.Agent.GivenName} binds {c.Agent.GivenName}'s wounds and stops the bleeding (d20 {roll}, {total} vs DC {dc}).");
             return true;
         }
@@ -339,24 +402,24 @@ public static class Expedition
                 string name = c.Agent.GivenName;
 
                 // A badly hurt hero downs a potion (a bonus action) and fights on.
-                if (s.Potions > 0 && s.Hp < s.MaxHp * 0.35)
+                if (c.Potions > 0 && c.Hp < s.MaxHp * 0.35)
                 {
-                    s.Potions--;
+                    c.Potions--;
                     int drunk = Potion();
-                    s.Hp = Math.Min(s.MaxHp, s.Hp + drunk);
+                    c.Hp = Math.Min(s.MaxHp, c.Hp + drunk);
                     Log($"{name} gulps a {PotionName()} (+{drunk} hp).");
                 }
 
                 // Clerics keep the party alive before they swing.
                 if (s.Cls.Healer && c.Heals > 0)
                 {
-                    var patient = Party.Where(p => !p.Dead && p.Sheet.Hp < p.Sheet.MaxHp * 0.4).OrderBy(p => p.Sheet.Hp).FirstOrDefault();
+                    var patient = Party.Where(p => !p.Dead && p.Hp < p.Sheet.MaxHp * 0.4).OrderBy(p => p.Hp).FirstOrDefault();
                     if (patient != null)
                     {
                         var spell = s.Cls.HealSpell!;
                         int healed = (spell.Dice ?? new Dice(1, 8, 0)).Roll(rng) + Rng.Modifier(c.Agent.Abilities[s.Cls.Casting]);
                         bool wasDown = patient.Down;
-                        patient.Sheet.Hp = Math.Min(patient.Sheet.MaxHp, patient.Sheet.Hp + Math.Max(1, healed));
+                        patient.Hp = Math.Min(patient.Sheet.MaxHp, patient.Hp + Math.Max(1, healed));
                         patient.Down = false;
                         c.Heals--;
                         if (wasDown) Log($"{name} drags {patient.Agent.GivenName} back from the brink with {Library.Prose(spell.Name)} (+{Math.Max(1, healed)} hp).");
@@ -445,7 +508,7 @@ public static class Expedition
                 {
                     healer.Heals--;
                     c.Down = false;
-                    c.Sheet.Hp = Math.Max(1, _rng.Roll(1, 8) + healer.Sheet.Level);
+                    c.Hp = Math.Max(1, _rng.Roll(1, 8) + healer.Sheet.Level);
                     Log($"{healer.Agent.GivenName} stabilizes {c.Agent.GivenName}.");
                     continue;
                 }
@@ -455,12 +518,12 @@ public static class Expedition
                     continue;
                 }
                 // No cleric to hand: a friend pours a potion down their throat.
-                var donor = Standing.FirstOrDefault(h => h.Sheet.Potions > 0);
+                var donor = Standing.FirstOrDefault(h => h.Potions > 0);
                 if (donor != null)
                 {
-                    donor.Sheet.Potions--;
+                    donor.Potions--;
                     c.Down = false;
-                    c.Sheet.Hp = Potion();
+                    c.Hp = Potion();
                     Log($"{donor.Agent.GivenName} pours a {PotionName()} down {c.Agent.GivenName}'s throat.");
                     continue;
                 }
@@ -485,53 +548,209 @@ public static class Expedition
                 else
                 {
                     c.Down = false;
-                    c.Sheet.Hp = 1;
+                    c.Hp = 1;
                     Log($"{c.Agent.GivenName} pulls through on death saves ({string.Join(", ", rolls)}).");
                 }
             }
         }
-    }
 
-    private static string Article(string w) => "aeiou".Contains(w[0]) ? "an" : "a";
+        public int Living => Party.Count(c => !c.Dead);
+        public int Fallen => Party.Count(c => c.Dead);
+        public bool Wiped => Standing.Count == 0;
 
-    private static string Cap(string s) => char.ToUpperInvariant(s[0]) + s[1..];
+        private RoadRules Roads => _content.Roads;
 
-    /// <param name="slotsSpent">Spell slots the party spent on sending-stone messages; they come out of the healers' heals.</param>
-    /// <param name="swell">Extra creatures in every fight but the boss's, from how strong the lair has grown.</param>
-    public static ExpeditionResult Run(Rng rng, Content content, SiteDef site, IReadOnlyList<Agent> heroes, int slotsSpent = 0, int swell = 0)
-    {
-        var run = new Delve(rng, content, heroes, site) { Swell = swell };
-        foreach (var c in run.Party)
+        /// <summary>Note when the party died out, the first time it does.</summary>
+        private void MarkLost()
         {
-            int spent = Math.Min(slotsSpent, c.Heals);
-            c.Heals -= spent;
-            slotsSpent -= spent;
-        }
-        var names = heroes.Select(h => h.GivenName).ToList();
-        run.Log($"{ListNames(names)} set out for {site.Name}.");
-
-        // Draw this delve's encounters from the site's deck.
-        var deck = site.Encounters.ToList();
-        int count = Math.Min(deck.Count, 2 + site.Tier);
-        var plan = new List<EncounterDef>();
-        for (int i = 0; i < count; i++)
-        {
-            int k = rng.Range(0, deck.Count);
-            plan.Add(deck[k]);
-            deck.RemoveAt(k);
+            if (Wiped && LostAt == null) LostAt = Clock;
         }
 
-        var outcome = ExpeditionOutcome.Retreated;
-        bool rested = false;
-        for (int i = 0; i <= plan.Count; i++)
+        /// <summary>A long rest: a night's sleep heals them, gives back their spells and half their hit dice.</summary>
+        public void LongRest()
         {
-            bool boss = i == plan.Count;
-            var e = boss ? site.Boss : plan[i];
-            if (boss) run.Log("At last, the heart of the place.");
-            if (e.Kind == "combat")
+            foreach (var c in Party)
             {
-                bool won = run.Combat(e, false);
-                if (run.Standing.Count == 0)
+                if (c.Dead) continue;
+                c.Down = false;
+                c.Hp = c.Sheet.MaxHp;
+                c.Heals = c.Sheet.Cls.HealsAt(c.Sheet.Level);
+                c.HitDice = Math.Min(c.Sheet.Level, c.HitDice + Math.Max(1, (int)(c.Sheet.Level * Roads.LongRest.HitDice)));
+            }
+            _shortRests = 0;
+        }
+
+        /// <summary>Spell slots spent on sendings since their last sleep come out of the healers' heals.</summary>
+        public void SpendSlots(int slots)
+        {
+            foreach (var c in Party)
+            {
+                int spent = Math.Min(slots, c.Heals);
+                c.Heals -= spent;
+                slots -= spent;
+            }
+        }
+
+        /// <summary>
+        /// An hour's short rest, if they need one and have one left: each hurt hero spends hit dice
+        /// (a roll of the hit die plus Constitution each) until back near full. Inside a site, the rest
+        /// can draw a wandering band.
+        /// </summary>
+        public bool ShortRest(bool inSite)
+        {
+            var r = Roads.ShortRest;
+            if (Wiped || _shortRests >= r.PerLongRest || HpFraction() >= r.Below) return false;
+            _shortRests++;
+            Clock += 1;
+            Log(Text("shortRest"));
+            foreach (var c in Standing)
+            {
+                while (c.HitDice > 0 && c.Hp < c.Sheet.MaxHp * 0.8)
+                {
+                    c.HitDice--;
+                    c.Hp = Math.Min(c.Sheet.MaxHp, c.Hp + Math.Max(1, _rng.Roll(1, c.Sheet.Cls.HitDie) + Rng.Modifier(c.Agent.Abilities.Con)));
+                }
+            }
+            if (inSite && _site != null && _rng.Chance(r.WanderChance))
+            {
+                var wander = _site.Encounters.FirstOrDefault(e => e.Kind == "wander");
+                if (wander != null)
+                {
+                    Log(Text("shortRestInterrupted"));
+                    Encounter(wander);
+                    MarkLost();
+                }
+            }
+            return true;
+        }
+
+        /// <summary>A night in camp on the road or outside a site: maybe trouble, then sleep.</summary>
+        public void Camp(int tier, IReadOnlyList<string> habitats, string? text = null)
+        {
+            if (Wiped) return;
+            var rules = Roads.Camp;
+            Log(text ?? Text("camp"));
+            if (_rng.Chance(rules.Ambush + rules.PerTier * tier))
+            {
+                var check = BestCheck(SkillKind.Perception);
+                bool seen = check.Total >= rules.WatchDc + tier / 2;
+                string watcher = check.Who.Agent.GivenName;
+                Log(Text(seen ? "campAmbush" : "campSurprised").Replace("{watcher}", watcher, StringComparison.Ordinal));
+                Wilds(tier, habitats, "they fight in the firelight", !seen);
+                MarkLost();
+            }
+            if (!Wiped) LongRest();
+        }
+
+        /// <summary>Crossing hard country: each of them makes the check, and something may be waiting there.</summary>
+        public void Cross(TerrainKindDef kind, string name, int tier)
+        {
+            if (Wiped) return;
+            var hz = kind.Hazard;
+            int dc = hz.Dc + tier / 2;
+            int scale = 1 + (Math.Max(1, tier) - 1) / 4;
+            var hurt = new List<string>();
+            foreach (var c in Standing)
+            {
+                int roll = _rng.D20();
+                if (roll + SkillBonus(c, hz.Skill) >= dc) continue;
+                int dmg = 0;
+                for (int k = 0; k < scale; k++) dmg += _rng.Roll(1, hz.Die);
+                Hurt(c, dmg);
+                hurt.Add($"{c.Agent.GivenName} ({dmg})");
+            }
+            string what = hz.Text.Count > 0 ? _rng.Pick(hz.Text) : $"the going in {name}";
+            Log(hurt.Count == 0 ? $"In {name}, {what}, but they come through unhurt." : $"In {name}, {what}. It costs them: {string.Join(", ", hurt)}.");
+            if (Party.Any(c => c.Down && !c.Dead)) AfterCombat();
+            MarkLost();
+            if (!Wiped && _rng.Chance(kind.Ambush))
+            {
+                Wilds(tier, kind.Habitats, kind.AmbushText.Count > 0 ? _rng.Pick(kind.AmbushText) : $"trouble in {name}", false);
+                MarkLost();
+            }
+        }
+
+        /// <summary>A fight with whatever roams this country, sized for its level.</summary>
+        private void Wilds(int tier, IReadOnlyList<string> habitats, string text, bool surprised)
+        {
+            tier = Math.Max(1, tier);
+            var probe = new SiteDef { Id = "wilds", Name = "the wilds", Tier = tier, Boss = new EncounterDef { Kind = "combat" }, Habitats = habitats };
+            double[] cr = [Math.Max(0.125, tier / 8.0), Math.Max(0.5, tier / 2.0)];
+            // Only what would attack travellers: nothing of good heart.
+            bool Hostile(MonsterDef m) => !(_content.Library.Monster(m.Id)?.Alignment.Contains("good") ?? false);
+            var pool = _content.Wanderers(probe, cr).Where(Hostile).ToList();
+            if (pool.Count == 0) pool = _content.Wanderers(probe with { Habitats = ["grassland", "forest", "hills"] }, cr).Where(Hostile).ToList();
+            if (pool.Count == 0) return;
+            var def = _rng.Pick(pool);
+            var budget = _content.World.Budget;
+            int xp = budget.Length == 0 ? 50 * tier : budget[Math.Min(tier, budget.Length) - 1] / 2;
+            int n = Math.Clamp(xp / Math.Max(1, def.Xp), 1, 5);
+            int swell = Swell;
+            double caution = _caution;
+            // Nothing to win out here: they run sooner than they would in a lair.
+            Swell = 0;
+            _caution = Math.Max(_caution, Roads.Retreat.RoadCaution);
+            Combat(new EncounterDef { Kind = "combat", Monster = def.Id, Count = [n, n], Text = text }, surprised);
+            Swell = swell;
+            _caution = caution;
+        }
+
+        private string Text(string key) =>
+            Roads.Texts.TryGetValue(key, out var lines) && lines.Count > 0 ? _rng.Pick(lines) : "";
+
+        private bool CanRetry(int retries)
+        {
+            var r = Roads.Retreat;
+            bool green = !r.GreenRetry && Party.Any(c => c.Sheet.Expeditions == 0) && !Party.Any(c => c.Veteran);
+            return retries > 0 && !green && Standing.Count >= r.MinStanding && Fallen * 2 < Party.Count;
+        }
+
+        /// <summary>Fall back out of the site, sleep until dawn, and go back in against defenders who are ready for them.</summary>
+        private void FallBack()
+        {
+            string where = _site?.Name ?? "the place";
+            Log(Text("fallBack").Replace("{site}", where, StringComparison.Ordinal));
+            double from = Clock;
+            Clock = Systems.Roads.WakeAfterRest(_content, Clock);
+            Halts.Add(new Halt(from, Clock, "fallback"));
+            LongRest();
+            Swell += Roads.Retreat.Alerted;
+            _caution += Roads.Retreat.Caution;
+            Log(Text("tryAgain").Replace("{site}", Cap(where), StringComparison.Ordinal));
+        }
+
+        /// <summary>
+        /// Into the site, encounter by encounter, with short rests between when they need them. A beaten
+        /// party with a retry left falls back, sleeps and goes in again; the boss's death clears it.
+        /// </summary>
+        public ExpeditionOutcome Delve(SiteDef site, int retries)
+        {
+            // Draw this delve's encounters from the site's deck.
+            var deck = site.Encounters.ToList();
+            int count = Math.Min(deck.Count, 2 + site.Tier);
+            var plan = new List<EncounterDef>();
+            for (int i = 0; i < count; i++)
+            {
+                int k = _rng.Range(0, deck.Count);
+                plan.Add(deck[k]);
+                deck.RemoveAt(k);
+            }
+
+            double start = Clock;
+            var outcome = ExpeditionOutcome.Retreated;
+            int at = 0;
+            bool beaten = false;
+            while (true)
+            {
+                bool boss = at == plan.Count;
+                var e = boss ? site.Boss : plan[at];
+                if (boss) Log("At last, the heart of the place.");
+                Clock += 1;
+                bool won = true;
+                if (e.Kind == "combat") won = Combat(e, false);
+                else Encounter(e);
+                MarkLost();
+                if (Wiped)
                 {
                     outcome = ExpeditionOutcome.Wiped;
                     break;
@@ -541,78 +760,141 @@ public static class Expedition
                     outcome = ExpeditionOutcome.Cleared;
                     break;
                 }
-                if (!won) break;
-            }
-            else
-            {
-                run.Encounter(e);
-                if (run.Standing.Count == 0)
+                if (!won)
+                {
+                    // Driven off: rest and try this fight again if it was close, or go home.
+                    if (CanRetry(retries) && FoeShare <= Roads.Retreat.FoeShare)
+                    {
+                        retries--;
+                        beaten = true;
+                        FallBack();
+                        continue;
+                    }
+                    if (beaten) Log(Text("giveUp"));
+                    break;
+                }
+                at++;
+                // Catch their breath before the next room.
+                ShortRest(true);
+                if (Wiped)
                 {
                     outcome = ExpeditionOutcome.Wiped;
                     break;
                 }
+                // Know when to quit, or when to fall back and come again.
+                var rules = _content.World.Delve;
+                double hp = HpFraction();
+                bool battered = hp < rules.TurnBack || Fallen * 2 >= Party.Count;
+                if (!battered && hp < Roads.Retreat.TurnBack && CanRetry(retries) && _shortRests >= Roads.ShortRest.PerLongRest)
+                {
+                    retries--;
+                    beaten = true;
+                    FallBack();
+                    continue;
+                }
+                if (battered)
+                {
+                    if (CanRetry(retries))
+                    {
+                        retries--;
+                        beaten = true;
+                        FallBack();
+                        continue;
+                    }
+                    Log("Too battered to go on, the party turns back.");
+                    break;
+                }
             }
+            Halts.Insert(0, new Halt(start, Clock, "delve"));
 
-            // A short rest halfway in.
-            if (!rested && i >= plan.Count / 2)
+            if (outcome == ExpeditionOutcome.Cleared)
             {
-                rested = true;
-                foreach (var c in run.Standing) c.Sheet.Hp = Math.Min(c.Sheet.MaxHp, c.Sheet.Hp + (int)Math.Ceiling(c.Sheet.MaxHp / 4.0));
+                SiteCleared = true;
+                Hoard(site);
             }
-            // Know when to quit.
-            if (!boss && (run.HpFraction() < content.World.Delve.TurnBack || run.Party.Count(c => c.Dead) * 2 >= run.Party.Count))
-            {
-                run.Log("Too battered to go on, the party turns back.");
-                break;
-            }
+            return outcome;
         }
 
-        var items = new List<ExpeditionItem>();
-        if (outcome == ExpeditionOutcome.Cleared)
+        private void Hoard(SiteDef site)
         {
-            int loot = rng.Range(site.Loot[0], site.Loot[1] + 1);
-            run.Gold += loot;
+            int loot = _rng.Range(site.Loot[0], site.Loot[1] + 1);
+            Gold += loot;
             string line = $"{Cap(site.Name)} is cleared. The hoard holds {loot} gold";
             // Item tiers stop at 5 (legendary); sites for higher levels draw from the top of the list.
             int itemTier = Math.Min(site.Tier, 5);
-            var pool = content.LootItems.Where(it => it.Tier >= itemTier && it.Tier <= itemTier + 1).ToList();
-            if (pool.Count > 0 && rng.Chance(content.Loot.ItemChancePerTier * site.Tier))
+            var pool = _content.LootItems.Where(it => it.Tier >= itemTier && it.Tier <= itemTier + 1).ToList();
+            if (pool.Count > 0 && _rng.Chance(_content.Loot.ItemChancePerTier * site.Tier))
             {
-                var item = rng.Pick(pool);
+                var item = _rng.Pick(pool);
                 if (item.Slot == "town")
                 {
                     // Too big or too strange for one hero: it goes to the town.
-                    items.Add(new ExpeditionItem(null, item));
+                    Items.Add(new ExpeditionItem(null, item));
                     line += $" and the {item.Name}, which they haul home for the town";
                 }
                 else
                 {
                     // Whoever gains most from it claims it; if nobody does, the one with least takes it to sell.
-                    var who = run.Party
+                    var who = Party
                         .Where(c => !c.Dead)
-                        .OrderByDescending(c => Math.Max(0, Gear.Gain(content, c.Agent, item)))
+                        .OrderByDescending(c => Math.Max(0, Gear.Gain(_content, c.Agent, item)))
                         .ThenBy(c => c.Sheet.Items.Count)
                         .ThenBy(c => c.Agent.Id)
                         .First();
-                    items.Add(new ExpeditionItem(who.Agent.Id, item));
+                    Items.Add(new ExpeditionItem(who.Agent.Id, item));
                     line += $" and the {item.Name}, which {who.Agent.GivenName} claims";
                 }
             }
-            run.Log($"{line}.");
-        }
-        else if (outcome == ExpeditionOutcome.Wiped)
-        {
-            run.Log($"No one comes back from {site.Name}.");
+            Log($"{line}.");
         }
 
-        return new ExpeditionResult(
-            outcome,
-            run.Lines,
-            run.Party.Where(c => c.Dead).Select(c => c.Agent.Id).ToList(),
-            run.Gold,
-            run.Xp,
-            items,
-            run.Kills);
+        /// <summary>What happened, for the town to learn when (if) they come home.</summary>
+        public ExpeditionResult Result(ExpeditionOutcome outcome, string siteName)
+        {
+            if (outcome == ExpeditionOutcome.Wiped) Log($"No one comes back from {siteName}.");
+            var hp = new OrderedMap<int, int>();
+            var potions = new OrderedMap<int, int>();
+            foreach (var c in Party)
+            {
+                hp[c.Agent.Id] = c.Dead ? 0 : Math.Max(1, c.Hp);
+                potions[c.Agent.Id] = c.Potions;
+            }
+            return new ExpeditionResult(
+                outcome,
+                Lines,
+                Party.Where(c => c.Dead).Select(c => c.Agent.Id).ToList(),
+                Gold,
+                Xp,
+                Items,
+                Kills)
+            {
+                Hp = hp,
+                Potions = potions,
+                SiteCleared = SiteCleared,
+                LostAt = LostAt,
+            };
+        }
+    }
+
+    private static string Article(string w) => "aeiou".Contains(w[0]) ? "an" : "a";
+
+    private static string Cap(string s) => char.ToUpperInvariant(s[0]) + s[1..];
+
+    /// <summary>
+    /// A fight or a delve settled on the spot (the battle at the walls, tests): the party goes in as it
+    /// is, with no road and no second try, and its wounds go straight onto the sheets.
+    /// </summary>
+    /// <param name="slotsSpent">Spell slots the party spent on sending-stone messages; they come out of the healers' heals.</param>
+    /// <param name="swell">Extra creatures in every fight but the boss's, from how strong the lair has grown.</param>
+    public static ExpeditionResult Run(Rng rng, Content content, SiteDef site, IReadOnlyList<Agent> heroes, int slotsSpent = 0, int swell = 0)
+    {
+        var run = new Venture(rng, content, heroes, site) { Swell = swell };
+        run.SpendSlots(slotsSpent);
+        run.Log($"{ListNames(heroes.Select(h => h.GivenName).ToList())} set out for {site.Name}.");
+        var outcome = run.Delve(site, 0);
+        var result = run.Result(outcome, site.Name);
+        result.Apply(heroes);
+        return result;
     }
 
     public static string ListNames(IReadOnlyList<string> names)

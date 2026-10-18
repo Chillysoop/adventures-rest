@@ -22,6 +22,7 @@ public static class Mayor
             RaiseInstitutions(town);
             RaiseServices(town);
             PutIdleToWork(town);
+            Decor.StandIn(town, defend);
         }
         CommissionHousing(town);
     }
