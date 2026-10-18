@@ -173,12 +173,14 @@ public static class Land
     public static bool Fits(Town town, double x, double y, int w, int d, double yaw, Zone? zone)
     {
         var plan = town.Plan;
+        // Decorations are the player's: builders leave them standing.
+        var decor = Decor.Cells(town);
         // Most spots fail at the middle: try that first.
         int cx = (int)(x * Res), cy = (int)(y * Res), mid = cy * Size + cx;
         if (cx < 0 || cy < 0 || cx >= Size || cy >= Size || plan.Taken[mid] != 0 || plan.Paved[mid] != 0 || (zone is Zone zm && plan.Zones[mid] != (byte)zm)) return false;
         foreach (int i in Cells(x, y, w, d, yaw))
         {
-            if (i < 0 || plan.Taken[i] != 0 || plan.Paved[i] != 0) return false;
+            if (i < 0 || plan.Taken[i] != 0 || plan.Paved[i] != 0 || (decor != null && decor[i])) return false;
             if (zone is Zone z && plan.Zones[i] != (byte)z) return false;
         }
         foreach (int i in Cells(x, y, w, d, yaw, 1))
@@ -312,23 +314,7 @@ public static class Land
     }
 
     /// <summary>The cells decorations stand on (null when there are none): the brush leaves those unpainted as gardens.</summary>
-    private static bool[]? Gardens(Town town)
-    {
-        if (town.Decor.Pieces.Count == 0) return null;
-        var mask = new bool[Size * Size];
-        foreach (var p in town.Decor.Pieces)
-        {
-            double r = p.Def.Size + 0.18;
-            for (int cy = (int)((p.Y - r) * Res); cy <= (int)((p.Y + r) * Res); cy++)
-                for (int cx = (int)((p.X - r) * Res); cx <= (int)((p.X + r) * Res); cx++)
-                {
-                    if (cx < 0 || cy < 0 || cx >= Size || cy >= Size) continue;
-                    double dx = (cx + 0.5) / Res - p.X, dy = (cy + 0.5) / Res - p.Y;
-                    if (dx * dx + dy * dy < r * r) mask[cy * Size + cx] = true;
-                }
-        }
-        return mask;
-    }
+    private static bool[]? Gardens(Town town) => Decor.Cells(town);
 
     /// <summary>Whether a cell lies in a ward the town has laid out (<see cref="City.IsOpen(Town, double, double)"/> at its middle).</summary>
     public static bool Open(Town town, int i) => town.City.OpenWards.Contains(WardAt(town, i).Id);
@@ -412,6 +398,13 @@ public sealed class LandPlan
 
     [field: NotSaved]
     public int Seen { get; set; } = -1;
+
+    /// <summary>The cells decorations stand on, and the decorations' version they were worked out for (<see cref="Decor.Cells"/>).</summary>
+    [field: NotSaved]
+    public bool[]? Decor { get; set; }
+
+    [field: NotSaved]
+    public int DecorSeen { get; set; } = -1;
 
     public void Changed() => Version++;
 
