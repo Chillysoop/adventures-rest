@@ -662,6 +662,7 @@ public static class Factions
         bool deep = f.Lore.Kind == "arcane";
         var target = town.Sites
             .Where(s => s.Known != SiteKnowledge.Unheard && !s.ThoughtCleared && (!deep || s.BelievedTier >= 2))
+            .Where(s => !Undercity.IsUnder(town, s) || Undercity.Stirring(town, s))
             .Where(s => !town.Bounties.Any(b => b.SiteId == s.Def.Id && b.Status is BountyStatus.Open or BountyStatus.Taken))
             .OrderBy(s => deep ? -s.BelievedTier : s.BelievedTier)
             .ThenBy(s => s.Def.Distance)

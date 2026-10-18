@@ -48,6 +48,9 @@ public sealed record SimulationOptions
     /// <summary>Let the stand-in mayor answer story events; off when a player steps into them.</summary>
     public bool AutoStories { get; init; } = true;
 
+    /// <summary>The stand-in mayor answers exploring companies' reports (with AutoBounties); off, they wait for the player.</summary>
+    public bool AutoExplore { get; init; } = true;
+
     /// <summary>Run the campaign arc (acts, festering menaces, dread); off, the Last Stand ends the game.</summary>
     public bool Saga { get; init; } = true;
 
@@ -83,6 +86,7 @@ public sealed class Simulation
         Social.Hourly(t);
         Roads.Hourly(t);
         Sendings.Hourly(t, Options.AutoMayor && Options.AutoStories);
+        Explore.Hourly(t, Options.AutoMayor && Options.AutoBounties && Options.AutoExplore);
         t.Tick++;
         if (t.Hour == 0) DailyTick();
     }
@@ -115,6 +119,7 @@ public sealed class Simulation
         Trade.Daily(t, Options.AutoMayor);
         Mercenaries.Daily(t, Options.AutoMayor && Options.AutoDefense);
         Quests.Daily(t, Options.AutoMayor && Options.AutoBounties, Options.FreeCompanies);
+        Explore.Daily(t, Options.AutoMayor && Options.AutoBounties);
         Intel.Daily(t, Options.AutoMayor && Options.AutoBounties && Options.AutoIntel);
         Bastions.Daily(t, Options.AutoMayor && Options.AutoBastions);
         Watch.Daily(t, Options.AutoMayor && Options.AutoBounties);
@@ -127,6 +132,7 @@ public sealed class Simulation
         Saga.Daily(t, Options.AutoMayor);
         Turning.Daily(t);
         Legacies.Daily(t, Options.AutoMayor);
+        Regard.Daily(t);
         Loyalty.Daily(t, Options.AutoMayor);
         Decor.Daily(t);
         Stories.Daily(t, Options.AutoMayor && Options.AutoStories);
@@ -141,6 +147,12 @@ public sealed class Simulation
 
     /// <summary>The player's lever: post a bounty on a site, paid from the treasury into escrow.</summary>
     public Bounty? PostBounty(string siteId, double reward) => Quests.PostBounty(Town, siteId, reward);
+
+    /// <summary>The player's lever: pay a company to go and explore a region, the reward held until they come home.</summary>
+    public Commission? PostSurvey(int regionId, double? reward = null) => Explore.Post(Town, regionId, reward);
+
+    /// <summary>The player's word to explorers about something they found ("dig", "engage", "onward", "home", "parley"...).</summary>
+    public bool OrderExplorers(int findId, string act) => Explore.Order(Town, findId, act);
 
     /// <summary>Send an envoy with gifts to a settlement out in the wilds, to win its people over.</summary>
     public bool SendEnvoy(int settlementId) => World.SendEnvoy(Town, settlementId);

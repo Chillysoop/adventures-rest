@@ -89,6 +89,9 @@ public static class Undercity
     public static UnderLevel? LevelOf(Town town, string siteId) =>
         town.Undercity.FirstOrDefault(l => Def(town, l).Site.Id == siteId);
 
+    /// <summary>Whether an undercity site's level stirs enough for the stand-in mayor to post a bounty on it.</summary>
+    public static bool Stirring(Town town, SiteState s) => LevelOf(town, s.Def.Id) is { } l && l.Stir >= Rules(town).StandInAt;
+
     public static SiteState Site(Town town, UnderLevel l) => Quests.Site(town, Def(town, l).Site.Id)!;
 
     /// <summary>The stir a level gathers today.</summary>

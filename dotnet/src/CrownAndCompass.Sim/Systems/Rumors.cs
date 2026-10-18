@@ -201,6 +201,7 @@ public static class Rumors
             Hear(town, site, who, site.BelievedTier, reliability);
         }
 
+        site.HeardFrom = source;
         var rumor = new Rumor
         {
             Id = town.Rumors.Count + 1,
@@ -227,6 +228,7 @@ public static class Rumors
     {
         var tavern = town.Taverns.FirstOrDefault();
         if (who != "" || tier != null) Hear(town, site, who != "" ? who : site.Believed, tier ?? site.BelievedTier, reliability);
+        if (site.HeardFrom == "") site.HeardFrom = source;
         var rumor = new Rumor
         {
             Id = town.Rumors.Count + 1,
@@ -265,6 +267,7 @@ public static class Rumors
     public static void Confirm(Town town, SiteState site, string by, bool? cleared = null, int? asOf = null)
     {
         site.Known = SiteKnowledge.Confirmed;
+        site.Found = true;
         site.Believed = Occupants(town.Content, site.Def);
         site.BelievedTier = site.Def.Tier;
         site.ThoughtCleared = cleared ?? site.Cleared;

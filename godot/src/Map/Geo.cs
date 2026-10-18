@@ -100,6 +100,35 @@ public sealed class Geo
         return (FromDays(w.X, w.Y), w.Pace);
     }
 
+    /// <summary>Where an exploring company is at <paramref name="hours"/> past the current tick, and whether it is on the move.</summary>
+    public static (Vector2 Pos, bool Moving) SurveyAt(Town town, Survey s, float hours)
+    {
+        var (x, y) = Explore.Where(town, s, town.Tick + hours);
+        return (FromDays(x, y), Explore.Marching(town, s, town.Tick + hours));
+    }
+
+    /// <summary>
+    /// Where the town thinks a site it has only heard of lies: somewhere near the truth, further off the
+    /// less the teller could be trusted. Once someone has seen it the pin is exact.
+    /// </summary>
+    public Vector2 Rough(SiteState s)
+    {
+        var pin = Pins[s.Def.Id];
+        if (s.Found || s.Known == SiteKnowledge.Confirmed) return pin;
+        int h = 0;
+        foreach (char c in s.Def.Id) h = h * 31 + c;
+        float off = TilesPerDay * 0.45f * Mathf.Clamp((100 - s.Trust) / 100f, 0.25f, 1);
+        float a = Hash(h) * Mathf.Tau;
+        return pin + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * off * (0.5f + Hash(h + 7) * 0.5f);
+    }
+
+    /// <summary>A settlement's spot on the map.</summary>
+    public static Vector2 SettlementPin(Town town, Settlement st)
+    {
+        var (x, y) = Explore.SettlementSpot(town, st);
+        return FromDays(x, y);
+    }
+
     /// <summary>0 by day, 1 at deep night, easing through dusk and dawn.</summary>
     public static float Nightness(Town town, float hours)
     {

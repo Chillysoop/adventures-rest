@@ -84,6 +84,8 @@ public static class Campaigns
         {
             // Companies go on what the town believes: a place it has heard of and thinks still held.
             if (site.Known == SiteKnowledge.Unheard || site.ThoughtCleared || busy.Contains(site.Def.Id)) continue;
+            // Nobody goes down under the town for glory until it stirs.
+            if (Undercity.IsUnder(town, site) && !Undercity.Stirring(town, site)) continue;
             int level = Math.Max(1, site.BelievedTier);
             if (level > cap || (war && site.Def.Distance > rules.WarDays)) continue;
             var region = World.RegionOf(town, site);

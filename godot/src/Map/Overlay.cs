@@ -22,6 +22,7 @@ public partial class Overlay(MapView map) : Control
         var town = map.Sim.Town;
         DrawTerrain(town);
         DrawSites(town);
+        DrawFinds(town);
         DrawTrails(town);
         DrawParties(town);
         DrawWarband(town);
@@ -82,8 +83,10 @@ public partial class Overlay(MapView map) : Control
         foreach (var site in order)
         {
             var pin = map.Geo.Pins[site.Def.Id];
-            if (!map.OnScreen(map.Gen.At(pin, 3.5f), out var at)) continue;
             var sight = fog.SightOf(site.Def.Id, pin);
+            // Hearsay puts a place only roughly where it is; someone has to go and look.
+            var spot = sight == Sight.Rumoured ? map.Geo.Rough(site) : pin;
+            if (!map.OnScreen(map.Gen.At(spot, 3.5f), out var at)) continue;
             var bounty = town.Bounties.FirstOrDefault(b => b.SiteId == site.Def.Id && b.Status is BountyStatus.Open or BountyStatus.Taken);
             float r = 13 + Math.Min(site.Def.Tier, 5) * 1.5f;
             int size = 14;
@@ -153,9 +156,51 @@ public partial class Overlay(MapView map) : Control
                     _ => "In sight",
                 },
                 Sight.Scouted when fog.LastReport(site.Def.Id) is Report rep => town.Day - rep.Day > Fog.StaleDays ? $"Last seen day {rep.Day}" : $"Scouted day {rep.Day}",
-                _ => site.Believed != "" ? $"Rumoured: {site.Believed}" : "Rumoured",
+                _ => site.Found ? $"Found: {site.Believed}" : site.HeardFrom != "" ? $"Somewhere near here, says {site.HeardFrom}" : site.Believed != "" ? $"Rumoured: {site.Believed}" : "Rumoured",
             };
             if (!far || sight != Sight.Rumoured) Text(at + new Vector2(0, r + size * 2 + 7), sub, Ui.Medium, size - 3, new Color(Cream, 0.68f), 3);
+        }
+    }
+
+    /// <summary>
+    /// What explorers have sent word of besides lairs (those are sites): settlements met, and fonts, ruins,
+    /// companies and caravans where they were found. Companies and caravans move on, so they show only
+    /// while the explorers wait on the mayor about them.
+    /// </summary>
+    private void DrawFinds(Town town)
+    {
+        foreach (var st in town.Settlements)
+        {
+            if (!st.Met || !map.OnScreen(map.Gen.At(Geo.SettlementPin(town, st), 3), out var at)) continue;
+            Disc(at, 12, st.Razed ? new Color("4a4440") : st.Allied ? new Color("3c6a4a") : new Color("4a5a6a"), st.Allied ? Palette.Gold : Cream, 2);
+            DrawColoredPolygon([at + new Vector2(-7, 5), at + new Vector2(-7, -1), at + new Vector2(0, -7), at + new Vector2(7, -1), at + new Vector2(7, 5)], Cream);
+            DrawRect(new Rect2(at.X - 1.5f, at.Y, 3, 5), InkC);
+            Text(at + new Vector2(0, 28), st.Name, Ui.Display, 13, Cream);
+        }
+        foreach (var f in town.Finds)
+        {
+            if (!f.Known || town.Tick < f.ReportTick || f.Kind is "lair" or "settlement") continue;
+            bool roaming = f.Kind is "company" or "caravan";
+            if (roaming && f.State == FindState.Done) continue;
+            if (!map.OnScreen(map.Gen.At(Geo.FromDays(f.X, f.Y), 3), out var at)) continue;
+            var fill = f.Kind switch { "font" => new Color("4a3a7a"), "ruin" => new Color("5a5246"), "caravan" => new Color("6a5a2a"), _ => new Color("3a4a5a") };
+            bool waiting = f.State == FindState.Open;
+            Disc(at, 11, fill, waiting ? Palette.Gold : Cream, waiting ? 3 : 2);
+            switch (f.Kind)
+            {
+                case "font":
+                    DrawColoredPolygon([at + new Vector2(0, -8), at + new Vector2(5, 0), at + new Vector2(0, 8), at + new Vector2(-5, 0)], new Color("d8c8ff"));
+                    break;
+                case "ruin":
+                    Glyph(at, "ruin", Cream);
+                    break;
+                default:
+                    Banner(at + new Vector2(-1, 8), f.Kind == "caravan" ? new Color("d9a021") : new Color("8fb0d0"), Cream, 1);
+                    break;
+            }
+            Text(at + new Vector2(0, 26), Explore.Title(town, f), Ui.Display, 12, new Color(Cream, 0.9f));
+            if (f.Chapter > 0 && Explore.Def(town, f).Chapters.Count is int n and > 0)
+                Text(at + new Vector2(0, 39), f.Chapter >= n ? "Fully explored" : $"Investigated {f.Chapter} of {n}", Ui.Medium, 10, new Color(Cream, 0.7f), 3);
         }
     }
 
@@ -224,6 +269,17 @@ public partial class Overlay(MapView map) : Control
             }
             else if (pace == Pace.Resting) DrawCircle(at + new Vector2(0, 2), 2.2f, new Color(0.85f, 0.8f, 0.7f, 0.6f * fade));
             if (map.Distance > 90) Text(at + new Vector2(0, 6), p.Name, Ui.Medium, 11, new Color(Cream, fade), 3);
+        }
+        foreach (var s in town.Surveys)
+        {
+            if (!Explore.Out(s)) continue;
+            var (pos, moving) = Geo.SurveyAt(town, s, map.HourFraction);
+            float fogA = map.Fog.AlphaAt(pos);
+            if (fogA >= Fog.SightAlpha || !map.OnScreen(map.Gen.At(pos, 1), out var at)) continue;
+            float fade = 1 - Mathf.Clamp(fogA / Fog.SightAlpha, 0, 1);
+            Banner(at - new Vector2(0, 14), new Color("6f9a5a"), InkC, fade);
+            if (!moving) DrawCircle(at + new Vector2(0, 2), 3.2f, new Color(1f, 0.75f, 0.3f, 0.95f * fade));
+            if (map.Distance > 90) Text(at + new Vector2(0, 6), s.Name, Ui.Medium, 11, new Color(Cream, fade), 3);
         }
         foreach (var s in town.Scouts)
         {
@@ -374,6 +430,13 @@ public partial class Overlay(MapView map) : Control
             float end = p.Returned ? p.ReturnTick : float.MaxValue;
             Trail(h => now + h < p.DepartTick || now + h > end ? null : Geo.PartyAt(town, p, map.HourFraction + h)?.Pos,
                 strategic ? new Color("5a3a12") : new Color("ffd65a"));
+        }
+        foreach (var s in town.Surveys)
+        {
+            if (s.Phase is SurveyPhase.Engaged or SurveyPhase.Lost || (s.Phase == SurveyPhase.Home && s.ReturnTick + TrailHours < now)) continue;
+            float end = s.Phase == SurveyPhase.Home ? s.ReturnTick : float.MaxValue;
+            Trail(h => now + h < s.DepartTick || now + h > end ? null : Geo.SurveyAt(town, s, map.HourFraction + h).Pos,
+                strategic ? new Color("2f4f2a") : new Color("c8f0a0"));
         }
         foreach (var s in town.Scouts)
         {
