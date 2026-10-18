@@ -917,6 +917,7 @@
       ],
       "minDay": 20,
       "repeatDays": 120,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -988,6 +989,7 @@
       ],
       "minDay": 40,
       "repeatDays": 180,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -1071,6 +1073,7 @@
       ],
       "minDay": 30,
       "repeatDays": 150,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -1141,6 +1144,7 @@
       ],
       "minDay": 60,
       "repeatDays": 240,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -1212,7 +1216,7 @@
       ],
       "minDay": 20,
       "repeatDays": 60,
-      "weight": 1.5,
+      "weight": 0.75,
       "stages": [
         {
           "id": "start",
@@ -1285,6 +1289,7 @@
       ],
       "minDay": 30,
       "repeatDays": 100,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -1364,6 +1369,7 @@
       ],
       "minDay": 50,
       "repeatDays": 150,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -1433,6 +1439,7 @@
       ],
       "minDay": 40,
       "repeatDays": 90,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -1499,6 +1506,7 @@
       ],
       "minDay": 30,
       "repeatDays": 120,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -1568,6 +1576,7 @@
       ],
       "minDay": 40,
       "repeatDays": 90,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -1628,6 +1637,7 @@
       ],
       "minDay": 60,
       "repeatDays": 200,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -1709,6 +1719,7 @@
       ],
       "minDay": 50,
       "repeatDays": 150,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -1781,6 +1792,7 @@
       ],
       "minDay": 30,
       "repeatDays": 150,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -1847,6 +1859,7 @@
       ],
       "minDay": 60,
       "repeatDays": 400,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -1919,6 +1932,7 @@
       ],
       "minDay": 50,
       "repeatDays": 9999,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -1984,6 +1998,7 @@
       ],
       "minDay": 90,
       "repeatDays": 200,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -2051,6 +2066,7 @@
       ],
       "minDay": 70,
       "repeatDays": 160,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -2120,6 +2136,7 @@
       ],
       "minDay": 60,
       "repeatDays": 300,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -2244,6 +2261,7 @@
       ],
       "minDay": 20,
       "repeatDays": 80,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -2308,7 +2326,7 @@
       ],
       "minDay": 60,
       "repeatDays": 9999,
-      "weight": 1.5,
+      "weight": 0.75,
       "stages": [
         {
           "id": "start",
@@ -2398,6 +2416,7 @@
       ],
       "minDay": 80,
       "repeatDays": 200,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -2469,6 +2488,7 @@
       ],
       "minDay": 60,
       "repeatDays": 120,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -2542,6 +2562,7 @@
       ],
       "minDay": 60,
       "repeatDays": 200,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -2610,6 +2631,7 @@
       ],
       "minDay": 40,
       "repeatDays": 160,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -2677,6 +2699,7 @@
       ],
       "minDay": 40,
       "repeatDays": 150,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -2744,6 +2767,7 @@
       ],
       "minDay": 80,
       "repeatDays": 180,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -2810,6 +2834,7 @@
       ],
       "minDay": 60,
       "repeatDays": 200,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -2879,6 +2904,7 @@
       ],
       "minDay": 40,
       "repeatDays": 140,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -2938,6 +2964,7 @@
       ],
       "minDay": 50,
       "repeatDays": 160,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -3002,6 +3029,7 @@
       ],
       "minDay": 70,
       "repeatDays": 220,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -3070,6 +3098,7 @@
       ],
       "minDay": 50,
       "repeatDays": 150,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -3144,6 +3173,7 @@
       ],
       "minDay": 60,
       "repeatDays": 160,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -3208,6 +3238,7 @@
       ],
       "minDay": 80,
       "repeatDays": 9999,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -3267,6 +3298,7 @@
       ],
       "minDay": 40,
       "repeatDays": 180,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -3334,6 +3366,7 @@
       ],
       "minDay": 60,
       "repeatDays": 200,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -3417,6 +3450,7 @@
       ],
       "minDay": 40,
       "repeatDays": 240,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -3487,6 +3521,7 @@
       ],
       "minDay": 60,
       "repeatDays": 220,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
@@ -3558,6 +3593,7 @@
       ],
       "minDay": 50,
       "repeatDays": 180,
+      "weight": 0.5,
       "stages": [
         {
           "id": "start",
