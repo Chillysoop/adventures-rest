@@ -636,6 +636,1148 @@
         }
       ],
       "ignored": { "text": "The fever burns itself out, but not before half the town has had it.", "effects": { "mandate": -6, "dread": 3 } }
+    },
+    {
+      "id": "boundary-stone",
+      "title": "{petitioner}'s boundary stone",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "petitioner"
+      ],
+      "minPopulation": 25,
+      "perHundred": 0.12,
+      "repeatDays": 45,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{petitioner}, a {trade}, stands before you with mud to the knee: a neighbour has moved the boundary stone between their plots by a full stride, and swears it was always there.",
+          "options": [
+            {
+              "label": "Walk the bounds and judge",
+              "skill": "insight",
+              "dc": 12,
+              "success": {
+                "text": "You pace it out with both of them and an old ox-goad for a rod. The stone goes back, and even the neighbour grudgingly shakes on it.",
+                "effects": {
+                  "mandate": 2
+                }
+              },
+              "failure": {
+                "text": "You judge for the neighbour, and the whole street knows you judged wrong.",
+                "effects": {
+                  "mandate": -2
+                }
+              }
+            },
+            {
+              "label": "Find a middle way",
+              "skill": "persuasion",
+              "dc": 11,
+              "success": {
+                "text": "Half a stride each and a jug of cider to seal it. Nobody is happy, which is how you know it's fair.",
+                "effects": {
+                  "mandate": 1
+                }
+              },
+              "failure": {
+                "text": "Neither will give an inch, and both blame you.",
+                "effects": {
+                  "mandate": -1
+                }
+              }
+            },
+            {
+              "label": "Pay one of them off",
+              "cost": 20,
+              "prefer": 0.1,
+              "success": {
+                "text": "Twenty gold for a stride of mud. The stone stays where it is, and so does the peace.",
+                "effects": {}
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "{petitionerName} moves the stone back by night, and the neighbour moves it again. The feud runs on.",
+        "effects": {
+          "mandate": -1
+        }
+      }
+    },
+    {
+      "id": "indenture",
+      "title": "An indenture in {ward}",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "petitioner",
+        "ward"
+      ],
+      "minPopulation": 60,
+      "perHundred": 0.08,
+      "repeatDays": 70,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{petitioner} begs you to break the indenture on their youngest, bound for seven years to a master in {ward} who feeds the apprentices thin gruel and works them by lamplight.",
+          "options": [
+            {
+              "label": "Shame the master into releasing the child",
+              "skill": "persuasion",
+              "dc": 13,
+              "success": {
+                "text": "Before half the guild you ask whether this is how a master keeps faith. The indenture is torn up by sundown.",
+                "effects": {
+                  "mandate": 3
+                }
+              },
+              "failure": {
+                "text": "The master quotes the indenture back to you, clause by clause, and he is within his rights.",
+                "effects": {
+                  "mandate": -1
+                }
+              }
+            },
+            {
+              "label": "Look into the master's books",
+              "skill": "investigation",
+              "dc": 12,
+              "success": {
+                "text": "The master has been short-weighting the guild's flour. The indenture is the least of his troubles now.",
+                "effects": {
+                  "mandate": 2,
+                  "gold": 25
+                }
+              },
+              "failure": {
+                "text": "His books are clean, or cleaned. Nothing to be done.",
+                "effects": {
+                  "mandate": -1
+                }
+              }
+            },
+            {
+              "label": "Buy out the indenture",
+              "cost": 40,
+              "prefer": 0.15,
+              "success": {
+                "text": "Forty gold, and the child walks home with {petitionerName}. The street will remember it.",
+                "effects": {
+                  "mandate": 2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "Nobody steps in. {petitionerName} takes the child and the family takes the south road.",
+        "effects": {
+          "leaves": 1
+        }
+      }
+    },
+    {
+      "id": "market-tolls",
+      "title": "The stallholders' petition",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "petitioner"
+      ],
+      "minPopulation": 80,
+      "perHundred": 0.08,
+      "repeatDays": 90,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{petitioner} brings a petition with forty marks on it: the stallholders want the market tolls lifted. They swear the town will earn it back twice over in trade and settlers.",
+          "options": [
+            {
+              "label": "Lift the tolls for the season",
+              "prefer": 0.2,
+              "success": {
+                "text": "Tolls are lifted. Carts come in from three valleys, and the treasury tightens its belt.",
+                "effects": {
+                  "mandate": 3,
+                  "decree:toll-free": 0
+                }
+              }
+            },
+            {
+              "label": "Make the guild pay the tolls instead",
+              "skill": "persuasion",
+              "dc": 14,
+              "success": {
+                "text": "The merchants' guild grumbles and pays the stallholders' tolls out of its own chest, to be seen to.",
+                "effects": {
+                  "mandate": 3,
+                  "gold": -20
+                }
+              },
+              "partial": {
+                "text": "The guild pays half, and you find the rest in the treasury.",
+                "effects": {
+                  "mandate": 2,
+                  "gold": -60
+                }
+              },
+              "failure": {
+                "text": "The guild refuses, and the stallholders saw you ask and fail.",
+                "effects": {
+                  "mandate": -2
+                }
+              }
+            },
+            {
+              "label": "Refuse",
+              "success": {
+                "text": "The tolls stay. The stallholders take down their petition and some take down their stalls.",
+                "effects": {
+                  "mandate": -3
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The petition goes unanswered. The stallholders take it as an answer.",
+        "effects": {
+          "mandate": -3
+        }
+      }
+    },
+    {
+      "id": "watch-widow",
+      "title": "The widow of the watch",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "petitioner",
+        "watch"
+      ],
+      "minDay": 40,
+      "repeatDays": 120,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{petitioner} lost their spouse on the wall last month, a watch guard who held a gate alone. Now there is rent due and three children to feed, and the watch's pay died on the wall too.",
+          "options": [
+            {
+              "label": "Grant the watch's families a pension",
+              "prefer": 0.2,
+              "success": {
+                "text": "The council grants a pension to every family the watch has lost. The watch stands a little straighter.",
+                "effects": {
+                  "mandate": 3,
+                  "decree:watch-pension": 0
+                }
+              }
+            },
+            {
+              "label": "Ask the temple to take them in",
+              "skill": "religion",
+              "dc": 12,
+              "needs": [
+                "temple"
+              ],
+              "success": {
+                "text": "The priests of {god} find the family rooms and work in the temple kitchens.",
+                "effects": {
+                  "mandate": 2,
+                  "favour": 2
+                }
+              },
+              "failure": {
+                "text": "The temple is full to the rafters with its own poor.",
+                "effects": {
+                  "mandate": -1
+                }
+              }
+            },
+            {
+              "label": "Pass round the hat",
+              "skill": "performance",
+              "dc": 13,
+              "success": {
+                "text": "You tell the story of the gate at the market cross, and the hat comes back heavy.",
+                "effects": {
+                  "mandate": 3
+                }
+              },
+              "failure": {
+                "text": "A few coppers, and some very hard looks at the town's purse.",
+                "effects": {
+                  "mandate": -1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "Nobody answers. {petitionerName} sells what can be sold and leaves.",
+        "effects": {
+          "mandate": -2,
+          "leaves": 1
+        }
+      }
+    },
+    {
+      "id": "tavern-curfew",
+      "title": "Neighbours of {tavern}",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "petitioner",
+        "tavern"
+      ],
+      "minPopulation": 50,
+      "perHundred": 0.05,
+      "repeatDays": 80,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{petitioner} hasn't slept a night through since spring: {tavern} roars till dawn, and the gutters are a disgrace. The neighbours want a curfew.",
+          "options": [
+            {
+              "label": "Set a tavern curfew",
+              "prefer": 0.05,
+              "success": {
+                "text": "The taps close at the evening bell. The neighbours sleep, and the drinkers grumble on the way home.",
+                "effects": {
+                  "mandate": 1,
+                  "decree:curfew": 0
+                }
+              }
+            },
+            {
+              "label": "Talk to the landlord",
+              "skill": "persuasion",
+              "dc": 12,
+              "success": {
+                "text": "The landlord shutters the windows, moves the dicing to the cellar and sweeps the lane. Peace, of a sort.",
+                "effects": {
+                  "mandate": 2
+                }
+              },
+              "failure": {
+                "text": "The landlord laughs and pours you a drink.",
+                "effects": {
+                  "mandate": -1
+                }
+              }
+            },
+            {
+              "label": "Leave the tavern be",
+              "success": {
+                "text": "You tell {petitionerName} that a frontier town is a loud town. They don't take it well.",
+                "effects": {
+                  "mandate": -1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "Nothing is done. {petitionerName} takes to throwing slops at the drinkers.",
+        "effects": {
+          "tension": 4
+        }
+      }
+    },
+    {
+      "id": "mend-the-road",
+      "title": "The road to {ward}",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "ward"
+      ],
+      "minPopulation": 150,
+      "perHundred": 0.06,
+      "repeatDays": 120,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The carters of {ward} have sent a delegation: the road in is axle-deep after every rain, and they want it drained and gravelled before the next.",
+          "options": [
+            {
+              "label": "Pay for the road",
+              "cost": 90,
+              "prefer": 0.2,
+              "success": {
+                "text": "Ditches, gravel and a stone culvert. Carts roll in dry, and the building sites get their timber on time.",
+                "effects": {
+                  "mandate": 2,
+                  "decree:good-roads": 0
+                }
+              }
+            },
+            {
+              "label": "Raise a work gang from the ward",
+              "skill": "persuasion",
+              "dc": 13,
+              "success": {
+                "text": "The ward turns out with spades on a feast day, and you dig the first ditch yourself.",
+                "effects": {
+                  "mandate": 3,
+                  "timber": -10,
+                  "decree:good-roads": 60
+                }
+              },
+              "failure": {
+                "text": "Twelve people come. The road is muddier for their trampling.",
+                "effects": {
+                  "mandate": -1
+                }
+              }
+            },
+            {
+              "label": "Survey a better line",
+              "skill": "survival",
+              "dc": 14,
+              "success": {
+                "text": "You find the old drove road on higher ground. It needs little more than clearing.",
+                "effects": {
+                  "mandate": 2,
+                  "decree:good-roads": 0
+                }
+              },
+              "failure": {
+                "text": "Your better line runs straight into a bog.",
+                "effects": {
+                  "mandate": -1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The road stays a bog, and the carters stop coming.",
+        "effects": {
+          "mandate": -2
+        }
+      }
+    },
+    {
+      "id": "harvest-tithe",
+      "title": "The farmers' tithe",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "petitioner",
+        "season:autumn"
+      ],
+      "minPopulation": 60,
+      "perHundred": 0.05,
+      "repeatDays": 150,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{petitioner} speaks for the farms: blight in the low fields and a wet summer. They ask that the town's tithe be eased for the harvest, or some will not see the spring.",
+          "options": [
+            {
+              "label": "Ease the tithe",
+              "prefer": 0.15,
+              "success": {
+                "text": "The tithe is eased for the season. The farms bring in every last sheaf, and the treasury goes without.",
+                "effects": {
+                  "mandate": 3,
+                  "decree:tithe-eased": 0
+                }
+              }
+            },
+            {
+              "label": "Check their claims in the fields",
+              "skill": "nature",
+              "dc": 13,
+              "success": {
+                "text": "You walk the low fields: real blight, but only in two. Those two are let off, the rest pay.",
+                "effects": {
+                  "mandate": 2,
+                  "gold": -25
+                }
+              },
+              "failure": {
+                "text": "You can't tell blight from bad husbandry, and the farmers see it.",
+                "effects": {
+                  "mandate": -2
+                }
+              }
+            },
+            {
+              "label": "Hold the tithe",
+              "success": {
+                "text": "The tithe stands. The farms pay, and remember.",
+                "effects": {
+                  "mandate": -3
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "Nobody answers, and the farmers hold back their tithe anyway.",
+        "effects": {
+          "mandate": -2,
+          "gold": -30
+        }
+      }
+    },
+    {
+      "id": "refugees",
+      "title": "Refugees at the gate",
+      "stakes": "high",
+      "source": "war",
+      "needs": [
+        "menace",
+        "!precedent:open-gates"
+      ],
+      "minDay": 80,
+      "minPopulation": 80,
+      "weight": 0.8,
+      "repeatDays": 240,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A column of carts and walking wounded is at the gate: families burned out of their villages by {menace}. They beg to be let in. The town's stores are what they are, and nobody can say who among them {menace} has sent.",
+          "options": [
+            {
+              "label": "Open the gates",
+              "prefer": 0.15,
+              "success": {
+                "text": "The gates open. The town makes room, and stretches its stores to the breaking point.",
+                "effects": {
+                  "mandate": 2,
+                  "food": -40,
+                  "people": 10,
+                  "tension": 6,
+                  "precedent:open-gates": 1
+                }
+              }
+            },
+            {
+              "label": "Take in only the able",
+              "skill": "insight",
+              "dc": 14,
+              "success": {
+                "text": "You walk the column and choose: smiths, masons, a midwife. The rest are given bread and pointed south.",
+                "effects": {
+                  "people": 5,
+                  "food": -15,
+                  "mandate": -1
+                }
+              },
+              "partial": {
+                "text": "You choose well enough, but one of them slips away by night with a map of the walls.",
+                "effects": {
+                  "people": 4,
+                  "food": -15,
+                  "dread": 3,
+                  "foePower": 0.05
+                }
+              },
+              "failure": {
+                "text": "You choose the wrong ones: within a week, a fire in the granary and two of them gone.",
+                "effects": {
+                  "people": 3,
+                  "food": -40,
+                  "dread": 4
+                }
+              }
+            },
+            {
+              "label": "Keep the gates shut",
+              "success": {
+                "text": "The gates stay shut. The column camps a night below the walls, then moves on into the dark.",
+                "effects": {
+                  "mandate": -4,
+                  "dread": 3,
+                  "precedent:closed-gates": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "While the council argues the column moves on, and not all of it reaches the next town.",
+        "effects": {
+          "mandate": -4,
+          "dread": 3,
+          "precedent:closed-gates": 1
+        }
+      }
+    },
+    {
+      "id": "refugee-quarter",
+      "title": "The newcomers' quarter",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "precedent:open-gates",
+        "ward"
+      ],
+      "minDay": 100,
+      "repeatDays": 2000,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The refugees you took in have crowded into {ward}, and the old families mutter about strange gods and stranger cooking. The newcomers ask for a voice on the ward's moot.",
+          "options": [
+            {
+              "label": "Give them a quarter and a voice",
+              "prefer": 0.15,
+              "success": {
+                "text": "The newcomers get their seat on the moot and a street of their own. Their cousins start coming up the road.",
+                "effects": {
+                  "mandate": -1,
+                  "decree:newcomers-quarter": 0
+                }
+              }
+            },
+            {
+              "label": "Bring the two together",
+              "skill": "performance",
+              "dc": 14,
+              "success": {
+                "text": "A feast on the ward green, each side cooking for the other. By midnight they're arguing about weddings.",
+                "effects": {
+                  "mandate": 3,
+                  "tension": -6,
+                  "festival": 1
+                }
+              },
+              "failure": {
+                "text": "The feast ends in a brawl over the last of the mutton.",
+                "effects": {
+                  "tension": 6
+                }
+              }
+            },
+            {
+              "label": "Tell them to keep their heads down",
+              "success": {
+                "text": "The newcomers keep their heads down. Some of them keep walking.",
+                "effects": {
+                  "people": -4,
+                  "tension": -3
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "Nothing is done, and the two sides settle it in the lanes.",
+        "effects": {
+          "tension": 8,
+          "mandate": -2
+        }
+      }
+    },
+    {
+      "id": "guild-monopoly",
+      "title": "The guild's offer",
+      "stakes": "high",
+      "source": "council",
+      "needs": [
+        "ward",
+        "!precedent:guild-pact"
+      ],
+      "minDay": 120,
+      "minPopulation": 150,
+      "weight": 0.7,
+      "repeatDays": 300,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The merchants' guild lays a chest on the council table: three hundred gold, and more each season, for the sole right to trade in {ward}. Every other stall there would answer to them.",
+          "options": [
+            {
+              "label": "Take the gold",
+              "prefer": 0.05,
+              "success": {
+                "text": "The chest goes into the treasury. The guild's men take down every other stall in the ward by Friday.",
+                "effects": {
+                  "gold": 300,
+                  "mandate": -3,
+                  "decree:guild-monopoly": 0,
+                  "precedent:guild-pact": 1
+                }
+              }
+            },
+            {
+              "label": "Bargain them down to a fair charter",
+              "skill": "persuasion",
+              "dc": 15,
+              "success": {
+                "text": "A charter, not a monopoly: the guild keeps a fair share of the ward's trade and pays well for the seal.",
+                "effects": {
+                  "gold": 120,
+                  "mandate": 1
+                }
+              },
+              "partial": {
+                "text": "They take the charter at a lower price, and grumble about it.",
+                "effects": {
+                  "gold": 60
+                }
+              },
+              "failure": {
+                "text": "The guild takes its chest and its custom to the next town.",
+                "effects": {
+                  "mandate": -1
+                }
+              }
+            },
+            {
+              "label": "Refuse",
+              "prefer": 0.1,
+              "success": {
+                "text": "You push the chest back across the table. The stallholders of {ward} hear of it by evening.",
+                "effects": {
+                  "mandate": 3
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "While you dither, the guild buys up the ward's stalls one by one anyway.",
+        "effects": {
+          "mandate": -2,
+          "decree:guild-monopoly": 60
+        }
+      }
+    },
+    {
+      "id": "guild-overreach",
+      "title": "The guild wants more",
+      "stakes": "medium",
+      "source": "council",
+      "needs": [
+        "precedent:guild-pact",
+        "seat"
+      ],
+      "minDay": 150,
+      "repeatDays": 2000,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Having bought one ward, the merchants' guild now wants the {seat} for its master, and hints that the gold could stop.",
+          "options": [
+            {
+              "label": "Break the pact",
+              "skill": "intimidation",
+              "dc": 15,
+              "success": {
+                "text": "You tear up the guild's monopoly before the council. The guild master goes white and says nothing.",
+                "effects": {
+                  "mandate": 4,
+                  "decree:guild-monopoly": -1,
+                  "precedent:guild-pact": -1
+                }
+              },
+              "failure": {
+                "text": "The guild's lawyers find the pact unbreakable, and the master laughs on the steps of the hall.",
+                "effects": {
+                  "mandate": -3
+                }
+              }
+            },
+            {
+              "label": "Give the guild its seat",
+              "success": {
+                "text": "The guild master takes his seat. The council's votes start to come out the guild's way.",
+                "effects": {
+                  "gold": 100,
+                  "seat": -15,
+                  "mandate": -3
+                }
+              }
+            },
+            {
+              "label": "Play the guild against the council",
+              "skill": "deception",
+              "dc": 14,
+              "success": {
+                "text": "A word here and a rumour there, and the guild and the {seat} are at each other's throats instead of yours.",
+                "effects": {
+                  "seat": -5,
+                  "mandate": 1
+                }
+              },
+              "failure": {
+                "text": "Both sides find out what you told the other.",
+                "effects": {
+                  "seat": -10,
+                  "mandate": -3
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The guild takes the silence as consent and buys the seat itself.",
+        "effects": {
+          "seat": -15,
+          "mandate": -2
+        }
+      }
+    },
+    {
+      "id": "levy",
+      "title": "The captain asks for a levy",
+      "stakes": "high",
+      "source": "war",
+      "needs": [
+        "warband"
+      ],
+      "minDay": 60,
+      "minPopulation": 60,
+      "weight": 0.8,
+      "repeatDays": 150,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{menace} has been seen on every ridge this month. The captain of the watch wants a levy: every able hand drilled on the green at dawn, the building sites be hanged.",
+          "options": [
+            {
+              "label": "Call the levy",
+              "prefer": 0.1,
+              "success": {
+                "text": "The levy is called. Spears on the green at dawn, and empty scaffolds by noon.",
+                "effects": {
+                  "dread": -4,
+                  "decree:levy": 0
+                }
+              }
+            },
+            {
+              "label": "Drill them yourself in the evenings",
+              "skill": "athletics",
+              "dc": 14,
+              "success": {
+                "text": "You lead the drill after the day's work, and the town learns to hold a line without losing a day's building.",
+                "effects": {
+                  "dread": -5,
+                  "mandate": 2
+                }
+              },
+              "failure": {
+                "text": "By the third evening half the drill is in the tavern, and the captain is furious.",
+                "effects": {
+                  "mandate": -2
+                }
+              }
+            },
+            {
+              "label": "Trust the walls and the watch",
+              "success": {
+                "text": "No levy. The captain salutes, and says nothing, loudly.",
+                "effects": {
+                  "dread": 2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "No answer comes. The captain drills those who will turn up.",
+        "effects": {
+          "dread": 1
+        }
+      }
+    },
+    {
+      "id": "witch-trial",
+      "title": "A witch at the well",
+      "stakes": "high",
+      "source": "faith",
+      "needs": [
+        "petitioner"
+      ],
+      "minDay": 50,
+      "minPopulation": 50,
+      "weight": 0.6,
+      "repeatDays": 300,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A crowd has dragged {petitioner} to the well, a {trade} who keeps herbs and talks to crows. The cows are dry and two children have the cough, and the crowd wants a reckoning.",
+          "options": [
+            {
+              "label": "Find out what really happened",
+              "skill": "investigation",
+              "dc": 15,
+              "success": {
+                "text": "You find the cowman's been watering the milk and the cough came in with a peddler. The crowd goes home ashamed.",
+                "effects": {
+                  "mandate": 3,
+                  "tension": -4
+                }
+              },
+              "partial": {
+                "text": "You find enough doubt to send the crowd home, though not to change their minds.",
+                "effects": {
+                  "tension": 2,
+                  "precedent:sheltered-witch": 1
+                }
+              },
+              "failure": {
+                "text": "You find nothing either way, and the crowd decides for itself.",
+                "effects": {},
+                "next": "crowd"
+              }
+            },
+            {
+              "label": "Stand between them and the crowd",
+              "skill": "intimidation",
+              "dc": 13,
+              "success": {
+                "text": "You stand at the well with your chain of office on and dare them. One by one, they go home.",
+                "effects": {
+                  "mandate": -2,
+                  "precedent:sheltered-witch": 1
+                }
+              },
+              "failure": {
+                "text": "The crowd shoves past you.",
+                "effects": {
+                  "mandate": -3
+                },
+                "next": "crowd"
+              }
+            },
+            {
+              "label": "Give the crowd what it wants",
+              "success": {
+                "text": "You step aside. {petitionerName} is driven out of {town} with stones at their back.",
+                "effects": {
+                  "mandate": 2,
+                  "tension": -6,
+                  "favour": -4,
+                  "dread": 4,
+                  "leaves": 1,
+                  "precedent:witch-burned": 1
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "crowd",
+          "text": "The crowd has a rope and a cart. {petitionerName} is looking at you.",
+          "options": [
+            {
+              "label": "Bundle them out the back way",
+              "skill": "stealth",
+              "dc": 13,
+              "success": {
+                "text": "A back door, a borrowed cloak and a cart of turnips. {petitionerName} is three miles off before the crowd knows.",
+                "effects": {
+                  "leaves": 1,
+                  "precedent:sheltered-witch": 1
+                }
+              },
+              "failure": {
+                "text": "You're caught at the gate with the witch in your cart.",
+                "effects": {
+                  "mandate": -5,
+                  "tension": 4,
+                  "leaves": 1
+                }
+              }
+            },
+            {
+              "label": "Let it happen",
+              "success": {
+                "text": "You turn away. The town has its reckoning, and some of it will never quite meet your eye again.",
+                "effects": {
+                  "tension": -8,
+                  "dread": 6,
+                  "favour": -5,
+                  "leaves": 1,
+                  "precedent:witch-burned": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "Nobody stops the crowd.",
+        "effects": {
+          "tension": -6,
+          "dread": 6,
+          "favour": -4,
+          "leaves": 1,
+          "precedent:witch-burned": 1
+        }
+      }
+    },
+    {
+      "id": "witch-gift",
+      "title": "A crow at the window",
+      "stakes": "low",
+      "source": "faith",
+      "needs": [
+        "precedent:sheltered-witch"
+      ],
+      "minDay": 80,
+      "repeatDays": 2000,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A crow taps at your window with a bundle tied to its leg: dried herbs and a note in a cramped hand. \"For what you did at the well.\"",
+          "options": [
+            {
+              "label": "Take the herbs to the sick",
+              "skill": "medicine",
+              "dc": 10,
+              "success": {
+                "text": "The herbs break three fevers in the lanes. You never say where they came from.",
+                "effects": {
+                  "mandate": 2,
+                  "inspiration": 1
+                }
+              },
+              "failure": {
+                "text": "You can't make head or tail of the herbs, but you keep the note.",
+                "effects": {
+                  "inspiration": 1
+                }
+              }
+            },
+            {
+              "label": "Burn the bundle",
+              "success": {
+                "text": "You burn it in the grate. Some debts are better left unpaid.",
+                "effects": {
+                  "favour": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The crow waits, then flies off with its bundle.",
+        "effects": {}
+      }
+    },
+    {
+      "id": "winter-hoard",
+      "title": "A hoard in the hungry winter",
+      "stakes": "high",
+      "source": "town",
+      "needs": [
+        "season:winter"
+      ],
+      "minDay": 80,
+      "minPopulation": 80,
+      "weight": 1.2,
+      "repeatDays": 300,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The cellars are emptying, and the town knows a grain merchant has a full granary behind the tannery. He'll sell, at four times the autumn price.",
+          "options": [
+            {
+              "label": "Seize the grain",
+              "prefer": 0.05,
+              "success": {
+                "text": "The watch breaks the granary doors. The town eats, the merchant rides off swearing, and every trading house hears of it.",
+                "effects": {
+                  "food": 60,
+                  "mandate": 4,
+                  "decree:merchants-wary": 0,
+                  "precedent:seized-grain": 1
+                }
+              }
+            },
+            {
+              "label": "Pay his price",
+              "cost": 150,
+              "prefer": 0.1,
+              "success": {
+                "text": "You pay. The merchant smiles and the town eats.",
+                "effects": {
+                  "food": 60
+                }
+              }
+            },
+            {
+              "label": "Make him sell at a fair price",
+              "skill": "intimidation",
+              "dc": 14,
+              "success": {
+                "text": "You remind him what crowds do to hoarders in hungry winters. He sells at the autumn price and thanks you for the advice.",
+                "effects": {
+                  "food": 60,
+                  "gold": -40,
+                  "mandate": 2
+                }
+              },
+              "failure": {
+                "text": "He calls your bluff and doubles the price.",
+                "effects": {
+                  "mandate": -2
+                }
+              }
+            },
+            {
+              "label": "Put the town on rations",
+              "success": {
+                "text": "Every household draws a measured share until the thaw. Nobody starves, and nobody is happy.",
+                "effects": {
+                  "food": 30,
+                  "mandate": -2,
+                  "decree:hard-winter-ration": 0
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The merchant sells to whoever pays most, and the poor go hungry.",
+        "effects": {
+          "mandate": -4,
+          "tension": 6
+        }
+      }
     }
+  ],
+  "decrees": [
+    {"id": "toll-free", "name": "Market tolls lifted", "days": 45, "gold": -3, "arrivals": 0.06, "mood": 1, "text": "No tolls at the market. Stallholders come from further off, settlers follow them, and the treasury feels it."},
+    {"id": "watch-pension", "name": "A pension for the watch's widows", "days": 120, "gold": -1.5, "mood": 1, "text": "The town keeps the families of the watch it lost. Folk sleep easier for it."},
+    {"id": "curfew", "name": "The tavern curfew", "days": 60, "mood": -1.5, "tension": -0.4, "text": "The taps close at the evening bell. The lanes are quieter and the town is crosser."},
+    {"id": "good-roads", "name": "Mended roads", "days": 90, "arrivals": 0.05, "build": 0.05, "text": "Drained and gravelled roads: carts reach the building sites, and the road brings more hopefuls."},
+    {"id": "tithe-eased", "name": "The eased tithe", "days": 30, "gold": -3, "mood": 1.5, "yields": {"Food": 1.1}, "text": "The farms keep more of the harvest this season, and work the harder for it."},
+    {"id": "guild-monopoly", "name": "The guild's monopoly", "days": 120, "gold": 3, "mood": -1.5, "arrivals": -0.06, "text": "One guild sets the prices in the ward. The treasury takes its share; nobody else likes it."},
+    {"id": "levy", "name": "The levy", "days": 30, "build": -0.2, "mood": -1, "tension": -0.3, "text": "Every able hand drills on the green at dawn. The building sites stand half empty."},
+    {"id": "merchants-wary", "name": "Merchants keep away", "days": 90, "arrivals": -0.06, "gold": -1, "text": "Word went round the trading houses that this town seizes grain. Caravans take the long road."},
+    {"id": "newcomers-quarter", "name": "A quarter for the newcomers", "days": 120, "mood": 1, "arrivals": 0.05, "text": "The refugees have a quarter and a voice of their own, and their cousins are coming up the road."},
+    {"id": "hard-winter-ration", "name": "Winter rationing", "days": 30, "mood": -2, "tension": 0.2, "text": "Every household draws a measured share from the common stores until the thaw."}
+  ],
+  "precedents": [
+    {"id": "open-gates", "text": "The gates were opened to the refugees, and the town took them in."},
+    {"id": "closed-gates", "text": "The gates stayed shut while refugees begged outside them."},
+    {"id": "guild-pact", "text": "The mayor sold a guild the trade of a ward."},
+    {"id": "witch-burned", "text": "A hedge-witch was given to the crowd."},
+    {"id": "sheltered-witch", "text": "The mayor stood between a hedge-witch and the crowd."},
+    {"id": "seized-grain", "text": "The mayor seized a merchant's hoard in the hungry winter."}
   ]
 }

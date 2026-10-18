@@ -25,7 +25,7 @@ public class StoriesTests
         foreach (var d in r.Stories)
         {
             Assert.Contains(d.Stakes, r.Stakes.Select(s => s.Id));
-            Assert.All(d.Needs, n => Assert.Contains(n, Stories.Needs));
+            Assert.All(d.Needs, n => Assert.True(Stories.KnownNeed(c, n), $"{d.Id} needs {n}"));
             var stages = d.Stages.Select(s => s.Id).ToHashSet();
             foreach (var stage in d.Stages)
             {
@@ -35,12 +35,12 @@ public class StoriesTests
                     if (o.Skill != "") Assert.NotNull(r.Skill(o.Skill));
                     if (o.Ability != "") Assert.Contains(o.Ability, abilities);
                     Assert.True(!o.Rolls || o.Dc > 0, $"{d.Id}: {o.Label} rolls without a DC");
-                    Assert.All(o.Needs, n => Assert.Contains(n, Stories.Needs));
+                    Assert.All(o.Needs, n => Assert.True(Stories.KnownNeed(c, n), $"{d.Id} option needs {n}"));
                     foreach (var outcome in o.Rolls ? new[] { o.Success, o.Failure, o.Critical, o.Partial, o.Fumble } : [o.Success])
                     {
                         if (outcome == null) continue;
                         Assert.NotEqual("", outcome.Text);
-                        Assert.All(outcome.Effects.Keys, k => Assert.Contains(k, Stories.EffectKeys));
+                        Assert.All(outcome.Effects.Keys, k => Assert.True(Stories.KnownEffect(c, k), $"{d.Id} effect {k}"));
                         Assert.True(outcome.Next == "" || stages.Contains(outcome.Next), $"{d.Id} leads to a stage it lacks: {outcome.Next}");
                     }
                 }

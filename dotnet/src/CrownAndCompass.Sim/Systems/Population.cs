@@ -115,7 +115,7 @@ public static class Population
 
         double attraction = 0.3 + 0.06 * openJobs + 0.04 * openBeds + 0.05 * sites - (foodPrice > 1.8 ? 0.4 : 0) - 0.04 * homeless - 0.06 * idle;
         // Word travels: a popular mayor draws settlers, high taxes turn them away.
-        attraction += (town.Mandate - 50) / 200 - (town.TaxRate - town.Content.Rules.TaxRate) * 5 + Decor.Draw(town) + Seasons.Arrivals(town);
+        attraction += (town.Mandate - 50) / 200 - (town.TaxRate - town.Content.Rules.TaxRate) * 5 + Decor.Draw(town) + Seasons.Arrivals(town) + Decrees.Arrivals(town);
         // A young town is a chance at cheap land: the frontier draws settlers until the town is a proper village.
         attraction += town.Content.Rules.FrontierDraw * Math.Max(0, 1 - town.Population / town.Content.Rules.FrontierSize);
         // Settlers want land to build on: with no residential lot zoned and for sale, fewer come.
@@ -132,6 +132,28 @@ public static class Population
             if (rng.Chance(0.3)) ArriveCouple(town);
             else ArriveSingle(town);
         }
+    }
+
+    /// <summary>
+    /// Settlers a story sends: n come in (as singles), or, with n below zero, the unhappiest households
+    /// (lowest mood, ties by id) leave. Returns how many people came or went.
+    /// </summary>
+    public static int Settle(Town town, int n)
+    {
+        if (n > 0)
+        {
+            for (int i = 0; i < n; i++) ArriveSingle(town);
+            return n;
+        }
+        int gone = 0;
+        foreach (var a in town.Workers.Where(a => a.Age >= 18).OrderBy(a => a.LastDayMood).ThenBy(a => a.Id).ToList())
+        {
+            if (gone >= -n) break;
+            if (a.Departed) continue;
+            Depart(town, a);
+            gone++;
+        }
+        return -gone;
     }
 
     private static void ArriveSingle(Town town)
