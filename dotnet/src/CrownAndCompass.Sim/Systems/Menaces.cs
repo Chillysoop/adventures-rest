@@ -216,6 +216,16 @@ public sealed class Menace
     /// <summary>Whose heir it is in the world's history (a lineage id, content/game/history.json): what it wants and why.</summary>
     public string Lineage { get; set; } = "";
 
+    /// <summary>Its leader turned and joined the town (as this hero), against its own history.</summary>
+    public bool Redeemed { get; set; }
+    public int? TurnedHeroId { get; set; }
+
+    /// <summary>The town's own hero who fell and leads it.</summary>
+    public int? FallenHeroId { get; set; }
+
+    /// <summary>Who its leader was in another campaign, told when it rises.</summary>
+    public string Legend { get; set; } = "";
+
     /// <summary>It has grown as far as its wits allow, and the town has been told.</summary>
     public bool Plateaued { get; set; }
     public int NextDomainDay { get; set; }
@@ -332,7 +342,7 @@ public static class Menaces
     /// <summary>Whether the finale may crown it: only a mind that can rule becomes the big bad.</summary>
     public static bool CanCrown(Town town, Menace m) => CunningOf(town, m).Crown;
 
-    private static int CunningRank(Town town, string id)
+    internal static int CunningRank(Town town, string id)
     {
         var tiers = Rules(town).Cunning;
         for (int i = 0; i < tiers.Count; i++)
@@ -375,7 +385,7 @@ public static class Menaces
         return fit[^1].Id;
     }
 
-    private static Menace Create(Town town, SiteState seat, string kind, string origin, double power, string? leader = null, string? faction = null, string? fixedName = null, string? cunning = null, string? lineage = null)
+    internal static Menace Create(Town town, SiteState seat, string kind, string origin, double power, string? leader = null, string? faction = null, string? fixedName = null, string? cunning = null, string? lineage = null)
     {
         var def = KindDef(town, kind);
         var m = new Menace
@@ -414,7 +424,7 @@ public static class Menaces
     }
 
     /// <summary>Sites free to become a menace's seat or holding.</summary>
-    private static bool Free(Town town, SiteState s) =>
+    internal static bool Free(Town town, SiteState s) =>
         !s.Cleared && !s.Held && s.Def.Id != town.Content.Enemy.Outpost.Id && s.Def.Id != town.Content.Factions.CryptSite?.Id && At(town, s.Def.Id) == null;
 
     /// <summary>An act brings a new power at its level, and announces it.</summary>
@@ -429,12 +439,24 @@ public static class Menaces
         if (pool.Count == 0) return null;
         var seat = pool[town.Rng.Range(0, pool.Count)];
         var m = Create(town, seat, KindOf(seat), "act", Rules(town).Stages.Rising);
+        Turning.Haunt(town, m);
         Announce(town, m, seat);
         return m;
     }
 
+    /// <summary>A new menace led by someone in particular (a fallen hero), seated at the free lair nearest their level. Not yet announced.</summary>
+    public static Menace? Rise(Town town, string kind, string leader, int level, string origin)
+    {
+        var seat = town.Sites
+            .Where(s => s.Generated && Free(town, s))
+            .OrderBy(s => Math.Abs(World.LevelOf(s) - level))
+            .ThenBy(s => s.Def.Id, StringComparer.Ordinal)
+            .FirstOrDefault();
+        return seat == null ? null : Create(town, seat, kind, origin, Rules(town).Stages.Rising, leader);
+    }
+
     /// <summary>The town hears the menace's name: its seat and region go on the map.</summary>
-    private static void Announce(Town town, Menace m, SiteState seat)
+    internal static void Announce(Town town, Menace m, SiteState seat)
     {
         m.Named = true;
         var region = World.RegionOf(town, seat);
@@ -442,7 +464,8 @@ public static class Menaces
         Spread(town, m, seat, 60);
         string text = Saga.Grim(town) && m.Def.RiseDark != "" ? m.Def.RiseDark : m.Def.Rise;
         string motive = Annals.Motive(town, m);
-        town.Log(LedgerCategory.War, Importance.Major, Saga.Fill(town, text, m) + (motive == "" ? "" : " " + motive));
+        string legend = m.Legend == "" ? "" : " " + m.Legend;
+        town.Log(LedgerCategory.War, Importance.Major, Saga.Fill(town, text, m) + legend + (motive == "" ? "" : " " + motive));
     }
 
     /// <summary>Word of what holds the seat now: the town's belief catches up with the menace's level.</summary>
@@ -1160,6 +1183,7 @@ public static class Menaces
     {
         var r = Rules(town);
         if (m.BigBad && Escapes(town, m, seat)) return;
+        if (Turning.Spared(town, m)) return;
         var refuge = m.BigBad ? null : m.Holdings.Select(id => Quests.Site(town, id)!).Where(s => !s.Cleared).OrderByDescending(s => s.Def.Tier).ThenBy(s => s.Def.Id, StringComparer.Ordinal).FirstOrDefault();
         if (refuge == null && !m.BigBad && m.FactionId != null && Factions.Find(town, m.FactionId) is FactionState f && f.Active)
         {
@@ -1242,7 +1266,7 @@ public static class Menaces
         m.Holdings.Clear();
         Saga.Relief(town);
         // The warlord's own death is told by Threat.
-        if (m.Named && !m.BigBad && m.Origin != FromWarband && m.Def.Slain != "") town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, m.Def.Slain, m)));
+        if (m.Named && !m.BigBad && !m.Redeemed && m.Origin != FromWarband && m.Def.Slain != "") town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, m.Def.Slain, m)));
         Saga.Unyoke(town, m);
         if (m.BigBad) Saga.Win(town, m);
     }

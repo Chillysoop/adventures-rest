@@ -199,6 +199,7 @@ public static class Annals
     /// <summary>"Once a caravan guard: rode guard on the Oasis road, ..." for arrivals and the hero sheet.</summary>
     public static string Past(Town town, Agent a)
     {
+        if (a.Hero is HeroSheet { Past: not "" } turned) return turned.Past;
         if (a.Hero is not HeroSheet hs || hs.Background == "" || town.Content.Library.Background(hs.Background) is not LibBackground b) return "";
         var l = LineageOf(town.Content.History, "background:" + b.Id);
         return l == null || l.Motive == "" ? $"Once {Agent.Article(b.Name)} {b.Name.ToLowerInvariant()}." : $"Once {Agent.Article(b.Name)} {b.Name.ToLowerInvariant()}: {l.Motive}.";
