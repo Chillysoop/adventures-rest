@@ -23,6 +23,10 @@ public sealed class Options
     /// <summary>For clips: the camera pulls slowly back from the town to the whole map, turning as it goes.</summary>
     public bool Flyout;
     public bool Autoplay;
+
+    /// <summary>--load a save file instead of starting a town; --menu opens the game menu (for screenshots).</summary>
+    public string? Load;
+    public bool Menu;
     public bool Hero;
     /// <summary>For screenshots: click the alert at this position in the strip (0 is the first) once it shows.</summary>
     public int? Alert;
@@ -63,6 +67,8 @@ public sealed class Options
                 case "--frames": o.Frames = int.Parse(Next()); break;
                 case "--flyout": o.Flyout = true; break;
                 case "--autoplay": o.Autoplay = true; break;
+                case "--load": o.Load = Next(); break;
+                case "--menu": o.Menu = true; break;
                 case "--hero": o.Hero = true; break;
                 case "--alert": o.Alert = int.Parse(Next()); break;
                 case "--no-pause": o.NoPause = true; break;
