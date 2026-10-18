@@ -190,7 +190,11 @@ public partial class Main
         chip.GuiInput += ev =>
         {
             if (ev is not InputEventMouseButton { Pressed: true } mb) return;
-            if (mb.ButtonIndex == MouseButton.Left) a.Go();
+            if (mb.ButtonIndex == MouseButton.Left)
+            {
+                a.Go();
+                GuideEvent("alert");
+            }
             else if (mb.ButtonIndex == MouseButton.Right)
             {
                 _dismissed.Add(a.Key);

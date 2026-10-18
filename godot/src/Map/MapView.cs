@@ -49,6 +49,10 @@ public partial class MapView : Control
 
     /// <summary>The town plan; while it has a tool, left clicks and drags zone or place instead of panning.</summary>
     public Planner Planner { get; private set; } = null!;
+
+    /// <summary>Decorations in hand; while it has a piece, left clicks and drags place it instead of panning.</summary>
+    public Decorator Decorator { get; private set; } = null!;
+    public DecorView Decor => _decor;
     public bool Strategic { get; private set; }
     private float _strategic;
 
@@ -60,6 +64,7 @@ public partial class MapView : Control
     private WorldView _world = null!;
     private TownView _town = null!;
     private Crowd _crowd = null!;
+    private DecorView _decor = null!;
     private Overlay _overlay = null!;
     private ShaderMaterial _grade = null!;
 
@@ -126,6 +131,8 @@ public partial class MapView : Control
         _vp.AddChild(_world);
         _town = new TownView(this);
         _vp.AddChild(_town);
+        _decor = new DecorView(this);
+        _vp.AddChild(_decor);
         _crowd = new Crowd(this);
         _vp.AddChild(_crowd);
         _overlay = new Overlay(this) { MouseFilter = MouseFilterEnum.Ignore };
@@ -134,6 +141,9 @@ public partial class MapView : Control
         Planner = new Planner(this) { MouseFilter = MouseFilterEnum.Ignore };
         AddChild(Planner);
         Planner.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        Decorator = new Decorator(this) { MouseFilter = MouseFilterEnum.Ignore };
+        AddChild(Decorator);
+        Decorator.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
     }
 
     public void Bind(Simulation sim)
@@ -143,6 +153,7 @@ public partial class MapView : Control
         Gen = new WorldGen(sim.Options.Seed, Geo, sim.Town, TreeScale);
         _world.Build(Gen, TreeScale);
         _town.Reset();
+        _decor.Reset();
         _crowd.Reset();
         Markers.Clear();
         HoverMarker = null;
@@ -207,10 +218,12 @@ public partial class MapView : Control
             _lastTick = town.Tick;
             _town.Refresh();
         }
+        _decor.Refresh();
         _crowd.Advance(dt);
         UpdateLight(town);
         _overlay.QueueRedraw();
         if (Planner.Active) Planner.QueueRedraw();
+        if (Decorator.Active) Decorator.QueueRedraw();
     }
 
     /// <summary>The town holds the territory it stands in; the enemy's camp corrupts its own and seeps into its neighbours.</summary>
@@ -339,6 +352,7 @@ public partial class MapView : Control
     public override void _GuiInput(InputEvent e)
     {
         if (Planner.Active && PlanInput(e)) return;
+        if (Decorator.Active && DecorInput(e)) return;
         if (e is InputEventMouseButton mb)
         {
             if (mb.ButtonIndex is MouseButton.WheelUp or MouseButton.WheelDown && mb.Pressed)
@@ -436,6 +450,35 @@ public partial class MapView : Control
                 return true;
             case InputEventMouseMotion mm when (mm.ButtonMask & (MouseButtonMask.Right | MouseButtonMask.Middle)) == 0:
                 Planner.Hover(ToWorld(mm.Position));
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>Left button places the piece in hand (a drag aims, paints or runs a row), Shift+wheel turns it, right-click puts it down.</summary>
+    private bool DecorInput(InputEvent e)
+    {
+        switch (e)
+        {
+            case InputEventMouseButton { ButtonIndex: MouseButton.Left } b:
+                if (b.Pressed) Decorator.Press(ToWorld(b.Position));
+                else Decorator.Release(ToWorld(b.Position));
+                AcceptEvent();
+                return true;
+            case InputEventMouseButton { ButtonIndex: MouseButton.WheelUp or MouseButton.WheelDown, Pressed: true, ShiftPressed: true } w:
+                Decorator.Turn(w.ButtonIndex == MouseButton.WheelUp ? 1 : -1);
+                AcceptEvent();
+                return true;
+            case InputEventMouseButton { ButtonIndex: MouseButton.Right, Pressed: true, DoubleClick: false }:
+                Decorator.Pick(null);
+                AcceptEvent();
+                return true;
+            case InputEventMouseMotion mm when (mm.ButtonMask & MouseButtonMask.Left) != 0:
+                Decorator.Drag(ToWorld(mm.Position));
+                AcceptEvent();
+                return true;
+            case InputEventMouseMotion mm when (mm.ButtonMask & (MouseButtonMask.Right | MouseButtonMask.Middle)) == 0:
+                Decorator.Hover(ToWorld(mm.Position));
                 return true;
         }
         return false;

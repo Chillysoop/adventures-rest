@@ -19,6 +19,7 @@ public static class Mayor
             KeepZoned(town, Zone.Farmland, 2, 99, 5.5);
             RaiseWorks(town, defend);
             PutIdleToWork(town);
+            Decor.StandIn(town, defend);
         }
         CommissionHousing(town);
     }
@@ -32,7 +33,7 @@ public static class Mayor
             .Where(l =>
             {
                 double d = Town.DistanceFromCenter(l);
-                return l.Zone == Zone.None && d <= maxDist && (ring == 0 || d >= ring - 0.5);
+                return l.Zone == Zone.None && !Decor.Garden(town, l) && d <= maxDist && (ring == 0 || d >= ring - 0.5);
             })
             .OrderBy(l => Key(Town.DistanceFromCenter(l)))
             .ThenBy(l => l.Id)
