@@ -102,7 +102,7 @@ public partial class Main : Control
         ClearFeed();
         if (_opts.Tutorial is string step) StartTutorial(step == "start" ? null : step);
         if (_opts.Menu) OpenMenu();
-        if (plain || _opts.Title) ShowTitle();
+        if (plain || _opts.Title || _opts.Smoke) ShowTitle();
         if (_opts.History is string power) OpenHistory(power == "" ? null : power);
     }
 
@@ -296,7 +296,7 @@ public partial class Main : Control
             _dirty = true;
         }
         if (steps == 8) _acc = 0;
-        if (steps > 0 && _opts.Screenshot == null && !_opts.Bench) Autosave();
+        if (steps > 0 && _opts.Screenshot == null && !_opts.Bench && !_opts.Smoke) Autosave();
         _map.HourFraction = (float)_acc;
         _map.TimeScale = Speeds[_speed];
 
@@ -327,6 +327,7 @@ public partial class Main : Control
             _dirty = false;
         }
         if (_opts.Bench) Bench(delta);
+        Smoke();
         if (_opts.Flyout) _map.Drift(1 + (float)delta * 0.16f, (float)delta * 0.05f);
         _opts.Capture(this, ref _frames);
     }
