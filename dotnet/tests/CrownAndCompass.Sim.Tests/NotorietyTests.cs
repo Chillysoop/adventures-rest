@@ -19,7 +19,7 @@ public class NotorietyTests
         var a = Hero(t);
         Notoriety.Deed(t, a, "clear", 5);
         Assert.Equal("", a.Hero!.Epithet);
-        Notoriety.Deed(t, a, "clear", 20);
+        Notoriety.Deed(t, a, "clear", 40);
         Assert.Contains(a.Hero.Epithet, t.Content.Notoriety.Deeds["clear"].Epithets);
         Assert.StartsWith(a.Name + " ", Loyalty.Styled(t, a));
         Assert.Contains(t.Ledger.Entries, e => e.Text.Contains("The bards have taken to calling"));
@@ -59,9 +59,9 @@ public class NotorietyTests
         var a = Hero(t);
         a.Hero!.PartyName = "Lucky Lanterns";
         var party = new Party { Id = 1, Name = "Lucky Lanterns", Members = [a.Id], SiteId = t.Sites[0].Def.Id };
-        Notoriety.Cleared(t, party, [a], 3, plea: false);
-        Assert.Equal(6, a.Hero.Renown);
-        Assert.Equal(6, Intel.Find(t, "Lucky Lanterns")!.Renown);
+        Notoriety.Cleared(t, party, [a], 5, plea: false);
+        Assert.Equal(10, a.Hero.Renown);
+        Assert.Equal(10, Intel.Find(t, "Lucky Lanterns")!.Renown);
         Assert.Equal(1, Notoriety.TownFame(t));
     }
 

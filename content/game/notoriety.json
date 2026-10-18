@@ -1,10 +1,10 @@
 {
   "fame": [
     { "at": 0, "name": "Unknown" },
-    { "at": 6, "name": "Known in town" },
-    { "at": 20, "name": "Famed in the realm" },
-    { "at": 45, "name": "Renowned" },
-    { "at": 90, "name": "Legendary" }
+    { "at": 10, "name": "Known in town" },
+    { "at": 40, "name": "Famed in the realm" },
+    { "at": 100, "name": "Renowned" },
+    { "at": 250, "name": "Legendary" }
   ],
   "infamy": [
     { "at": 0, "name": "Clean name" },
@@ -16,12 +16,12 @@
   "deeds": {
     "clear": { "epithets": ["the Delver", "the Ruinbreaker", "the Bold", "the Lanternbearer"], "text": "for the ruins they have cleared" },
     "slay": { "epithets": ["the Foebane", "the Valiant", "the Unbroken", "the Wallguard"], "text": "for the foe they cut down before the walls" },
-    "plea": { "epithets": ["the Warden", "Friend of the Wilds", "the Faithful"], "text": "for the villages they have answered" },
+    "plea": { "epithets": ["the Warden", "the Wildfriend", "the Faithful"], "text": "for the villages they have answered" },
     "level": { "epithets": ["the Seasoned", "the Wanderer", "the Storied"], "text": "for the road they have walked" },
     "honour": { "epithets": ["the Sworn", "the Shield of the Town"], "text": "for the honours the town has given them" },
     "story": { "epithets": ["the Songworthy", "the Bright"], "text": "for the tales told of them" },
-    "brawl": { "epithets": ["the Brawler", "Ironjaw", "the Quarrelsome"], "text": "for the tavern fights they start" },
-    "theft": { "epithets": ["the Light-Fingered", "the Cutpurse", "Quickhand"], "text": "for the purses that go missing round them" },
+    "brawl": { "epithets": ["the Brawler", "the Ironjaw", "the Quarrelsome"], "text": "for the tavern fights they start" },
+    "theft": { "epithets": ["the Light-Fingered", "the Cutpurse", "the Quickhand"], "text": "for the purses that go missing round them" },
     "desert": { "epithets": ["the Faithless", "the Oathbreaker"], "text": "for walking out on the town" },
     "betray": { "epithets": ["the Turncloak", "the Gatebreaker", "the Traitor"], "text": "for betraying the town" }
   },
@@ -43,11 +43,11 @@
   "knightInfamy": 2,
   "darkInfamy": 2,
   "fall": 0.5,
-  "decayDays": 15,
+  "decayDays": 30,
   "crime": {
     "chance": 0.0005,
-    "hotTempered": 0.004,
-    "greedy": 0.003,
+    "hotTempered": 0.01,
+    "greedy": 0.006,
     "perInfamyTier": 0.5,
     "restless": 2,
     "watchCatch": 3,
