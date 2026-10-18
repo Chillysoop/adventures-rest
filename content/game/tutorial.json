@@ -287,6 +287,15 @@
       "teaches": ["command:RaiseMemorial"]
     },
     {
+      "id": "undercity",
+      "title": "Under the streets",
+      "text": "Digging under the town has broken into its [b]undercity[/b]. Each new charter opens a deeper level: cellars, sewers, catacombs and worse. Left alone a level [b]stirs[/b], faster with secret factions at work, until something comes up into the streets at night. Open [b]City[/b] to send the watch down on [b]patrol[/b] for a little gold a day, or post a bounty: heroes can delve it with no road to walk, and a cleared level stays quiet for a season.",
+      "when": "count:Undercity",
+      "point": "tab:City",
+      "until": "tab:City",
+      "teaches": ["command:PatrolUndercity"]
+    },
+    {
       "id": "campaign-map",
       "title": "The campaign map",
       "text": "Press [b]M[/b] or [b]Campaign map[/b] to see the same land as an inked map. Drop markers to plan, drag them to move them, and press [b]Delete[/b] to remove the one under the cursor.",

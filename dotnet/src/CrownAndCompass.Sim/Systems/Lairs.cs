@@ -40,7 +40,7 @@ public static class Lairs
         var rng = town.Rng;
         foreach (var s in town.Sites.ToList())
         {
-            if (IsWarCamp(town, s)) continue;
+            if (IsWarCamp(town, s) || Undercity.IsUnder(town, s)) continue;
             if (s.NextActTick == null)
             {
                 s.Strength = r.StartStrength;
