@@ -87,6 +87,10 @@ public sealed class Options
     /// <summary>--decor picks a decoration (or "eraser") to hold; --decor-at x,y,angle shows it at a point in lots.</summary>
     /// <summary>--story ID opens that story event's card (a fresh one, bound to the town as it stands); --story-pick N takes option N; --background ID picks the mayor's past.</summary>
     public string? Story, Background;
+
+    /// <summary>--find: leave explorers' reports to the player and open the first one waiting; --find-pick ACT answers it.</summary>
+    public bool Find;
+    public string? FindPick;
     public int? StoryPick;
 
     /// <summary>--mayor-level N raises the mayor to level N (advances left to choose); --advance A spends one (repeatable); --inspiration N sets it. For shots.</summary>
@@ -151,6 +155,8 @@ public sealed class Options
                 case "--beautify": o.Beautify = int.Parse(Next()); break;
                 case "--decor": o.DecorTool = Next(); break;
                 case "--story": o.Story = Next(); break;
+                case "--find": o.Find = true; break;
+                case "--find-pick": o.FindPick = Next(); break;
                 case "--story-pick": o.StoryPick = int.Parse(Next()); break;
                 case "--background": o.Background = Next(); break;
                 case "--mayor-level": o.MayorLevel = int.Parse(Next()); break;

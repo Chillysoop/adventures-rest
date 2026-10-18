@@ -104,6 +104,11 @@ public partial class Main
             OpenStory(story);
             return;
         }
+        if (a.FindId is int find)
+        {
+            OpenFind(find);
+            return;
+        }
         if (tab is Tab w) OpenWindow(w);
         if (a.Wall is int section && Garrison.Walled(t))
         {

@@ -135,6 +135,13 @@ public partial class Main
                 if (_story.Visible && (_beat == null || _beatResult is not { Visible: true })) throw new InvalidOperationException("the sending's roll did not land");
                 CloseStory();
                 return 5;
+            case 27:
+                // An explorers' report card, as one pops up, with the company's latest roll if it has one.
+                if (_sim.Town.Finds.LastOrDefault() is { } find) OpenFind(find.Id, find.Beat);
+                return 70;
+            case 28:
+                CloseFind();
+                return 5;
             default:
                 var t = _sim.Town;
                 GD.Print($"SMOKE OK seed={_sim.Options.Seed} day={t.Day} population={t.Population} buildings={t.Buildings.Count} outcome={t.Outcome?.ToString() ?? "none"}");

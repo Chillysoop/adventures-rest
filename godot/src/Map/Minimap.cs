@@ -77,12 +77,24 @@ public partial class Minimap(MapView map) : Control
         foreach (var site in town.Sites)
         {
             if (site.Known == SiteKnowledge.Unheard || !map.Geo.Pins.TryGetValue(site.Def.Id, out var pin)) continue;
-            var p = ToMini(pin);
             bool bounty = town.Bounties.Any(b => b.SiteId == site.Def.Id && b.Status is BountyStatus.Open or BountyStatus.Taken);
             bool seen = map.Fog.SightOf(site.Def.Id, pin) != Sight.Rumoured;
+            if (!seen)
+            {
+                // Hearsay: a faint ring roughly where the teller said, not a pin.
+                DrawArc(ToMini(map.Geo.Rough(site)), 4, 0, Mathf.Tau, 12, bounty ? Ui.Gold : new Color(Ui.Ink2, 0.8f), 1.2f, true);
+                continue;
+            }
+            var p = ToMini(pin);
             DrawCircle(p, 3.2f, new Color(0, 0, 0, 0.6f));
-            DrawCircle(p, 2.4f, bounty ? Ui.Gold : site.Cleared && seen ? Ui.Good : seen ? Ui.Ink : Ui.Ink2);
+            DrawCircle(p, 2.4f, bounty ? Ui.Gold : site.Cleared ? Ui.Good : Ui.Ink);
         }
+        foreach (var st in town.Settlements)
+            if (st.Met) DrawRect(new Rect2(ToMini(Geo.SettlementPin(town, st)) - new Vector2(2.5f, 2.5f), new Vector2(5, 5)), st.Allied ? Ui.Good : new Color("8fb0d0"));
+        foreach (var f in town.Finds)
+            if (f.Known && town.Tick >= f.ReportTick && f.Kind is "font" or "ruin") DrawCircle(ToMini(Geo.FromDays(f.X, f.Y)), 2.2f, f.Kind == "font" ? new Color("b8a0ff") : new Color("c8b89a"));
+        foreach (var s in town.Surveys)
+            if (Explore.Out(s) && map.Fog.IsLive(Geo.SurveyAt(town, s, 0).Pos)) DrawCircle(ToMini(Geo.SurveyAt(town, s, 0).Pos), 2, new Color("8cc084"));
         foreach (var m in map.Markers)
         {
             var p = ToMini(m.P);

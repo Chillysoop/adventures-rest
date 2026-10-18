@@ -1151,6 +1151,8 @@ public sealed class Content
     /// <summary>Sellsword companies for hire and how their campaigns go (content/game/mercenaries.json).</summary>
     public MercRules Mercenaries { get; init; } = new();
 
+    /// <summary>Exploring companies and what they find (content/game/explore.json).</summary>
+    public ExploreRules Explore { get; init; } = new();
     /// <summary>The town guard's posts and the wall works past the stone walls (content/game/garrison.json).</summary>
     public GarrisonRules Garrison { get; init; } = new();
 
@@ -1302,6 +1304,7 @@ public sealed class Content
             Sendings = Parse<SendingRules>("sendings.json"),
             Bastions = Parse<BastionRules>("bastions.json"),
             Mercenaries = Parse<MercRules>("mercenaries.json"),
+            Explore = Parse<ExploreRules>("explore.json"),
             Garrison = Parse<GarrisonRules>("garrison.json"),
         };
     }
