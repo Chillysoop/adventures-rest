@@ -88,9 +88,12 @@ public partial class Main : Control
         else if (_opts.Day > 0) _sim.RunDays(_opts.Day);
         if (_opts.Hour > 0) for (int i = 0; i < _opts.Hour; i++) _sim.Step();
         _opts.ApplyScript(_sim);
+        // Stories the script's hours brought are the stand-in mayor's, not cards to greet the shot with.
+        if (_opts.Autoplay) _storySeen = _sim.Town.Stories.All.Count;
         SetSpeed(_opts.Speed ?? 1);
         if (_opts.Tab is string t && Enum.TryParse<Tab>(t, true, out var tab)) SetTab(tab);
         if (_opts.Site is string site) Select(Selection.Site(site));
+        if (_opts.Wall is int wall) Select(Selection.Wall(wall));
         if (_opts.Cam is float cam)
             _map.LookAt(_opts.Look ?? (_opts.Site is string at && _map.Geo.Pins.TryGetValue(at, out var pin) ? pin : Map.Geo.Center), cam);
         if (_opts.StrategicView) ToggleStrategic();
@@ -317,6 +320,8 @@ public partial class Main : Control
         else if (k.Keycode is >= Key.Key1 and <= Key.Key4) PlayerSpeed((int)(k.Keycode - Key.Key0));
         else if (k.Keycode == Key.Home) _map.Recenter();
         else if (k.Keycode == Key.B) ToggleBuildBar();
+        else if (k.Keycode == Key.G) ToggleFlag();
+        else if (k.Keycode == Key.Escape && _map.Flagging) ToggleFlag();
         else if (k.Keycode == Key.Escape && _map.Planner.Active) _map.Planner.Pick(null);
         else if (k.Keycode is Key.Bracketleft or Key.Bracketright && _map.Planner.Tool?.Zone != null) _map.Planner.Resize(k.Keycode == Key.Bracketright ? 1.15f : 1 / 1.15f);
         else if (k.Keycode == Key.Escape && _map.Decorator.Active) _map.Decorator.Pick(null);
