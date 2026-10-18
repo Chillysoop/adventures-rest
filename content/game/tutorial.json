@@ -143,6 +143,14 @@
       "teaches": ["tab:Companies", "command:BuyIntel"]
     },
     {
+      "id": "armory",
+      "title": "Arm your heroes",
+      "text": "The town hall keeps an [b]Armory[/b]. Give its magic arms, armour and charms to heroes in town to help them take on harder sites: they wear it at once, count it as pay and think better of you. A [b]sending stone[/b] lets a company with no caster send word home from the road. The armory fills from loot: post a bounty with [b]loot terms[/b] (a bigger reward, and the hoard's magic comes to the town), swear a company to a [b]loot pact[/b] for a finder's fee, or buy what heroes and caravans offer. Sell what nobody needs.",
+      "point": "tab:Armory",
+      "until": "tab:Armory",
+      "teaches": ["tab:Armory", "command:Gift", "command:BuyLoot", "command:SellStock", "command:OfferPact", "command:EndPact"]
+    },
+    {
       "id": "bastions",
       "title": "A bastion of their own",
       "text": "A company that has made its name asks the council for land on the edge of town to raise a [b]bastion[/b]: a keep where its heroes live, and facilities like a physic garden, a drill yard or a smithy. It hires townsfolk to staff them, so it brings jobs and pulls workers from poorer pay. Its sentries stand on the walls in a siege, and heroes with a bastion stay loyal. Answer in [b]Companies[/b]: grant the land, give it free, or refuse.",
@@ -333,7 +341,7 @@
     {
       "id": "sendings",
       "title": "Word from the road",
-      "text": "A party on a bounty with a caster can spend a spell slot to reach you by sending stone and ask how to go on: pay the toll or bluff, trust the captured scout, bring home the captives or the gold. The game pauses until you answer. Each choice rolls your d20 plus your sheet, plus help from the party's best hand at it. Some quests go on over several sendings. An [b]Adventurers' Hall[/b] (Government) adds to every roll, unlocks choices of its own, and lets parties send word more often.",
+      "text": "A party on a bounty with a caster (or one of the town's sending stones) can reach you by sending and ask how to go on: pay the toll or bluff, trust the captured scout, bring home the captives or the gold. The game pauses until you answer. Each choice rolls your d20 plus your sheet, plus help from the party's best hand at it. Some quests go on over several sendings. An [b]Adventurers' Hall[/b] (Government) adds to every roll, unlocks choices of its own, and lets parties send word more often.",
       "when": "count:Parties",
       "teaches": []
     },

@@ -90,6 +90,9 @@ public sealed class Bounty
 
     /// <summary>The building whose coffers hold the escrow (the temple), or null for the treasury.</summary>
     public int? FunderId { get; init; }
+
+    /// <summary>Loot terms: the company hands the hoard's magic to the town armory (<see cref="Armory"/>).</summary>
+    public bool LootToTown { get; init; }
 }
 
 public sealed class Party
@@ -223,7 +226,7 @@ public static class Quests
     /// Post a bounty, holding the reward in escrow from the treasury, or from a funder's coffers (the
     /// temple). Returns null if the payer can't cover it or the town knows of no such danger.
     /// </summary>
-    public static Bounty? PostBounty(Town town, string siteId, double reward, Building? funder = null)
+    public static Bounty? PostBounty(Town town, string siteId, double reward, Building? funder = null, bool lootToTown = false)
     {
         var s = Site(town, siteId);
         double purse = funder?.Cash ?? town.Treasury;
@@ -239,9 +242,10 @@ public static class Quests
             PostedTick = town.Tick,
             ExpiresTick = town.Tick + BountyDays * SimTime.HoursPerDay,
             FunderId = funder?.Id,
+            LootToTown = lootToTown,
         };
         town.Bounties.Add(b);
-        if (funder == null) town.Log(LedgerCategory.Town, Importance.Notable, $"The council posts a bounty of {Js.Str(reward)} gold on {s.Def.Name}.");
+        if (funder == null) town.Log(LedgerCategory.Town, Importance.Notable, $"The council posts a bounty of {Js.Str(reward)} gold on {s.Def.Name}{(lootToTown ? ", the hoard's magic to come to the town armory" : "")}.");
         return b;
     }
 
@@ -391,7 +395,8 @@ public static class Quests
             (a.Has(Trait.Greedy) ? 0.2 : 0) +
             (a.Has(Trait.HotTempered) ? 0.15 : 0) +
             (a.Has(Trait.Ambitious) ? 0.1 : 0) -
-            (a.Has(Trait.Lazy) ? 0.3 : 0) +
+            (a.Has(Trait.Lazy) ? 0.3 : 0) -
+            Armory.TermsCut(town, a, bounty) +
             town.Rng.Next() * 0.3;
     }
 
@@ -430,8 +435,8 @@ public static class Quests
                 members.Add(r);
                 levels += r.Hero!.Level;
             }
-            // Heroes won't walk into a site they can't handle; the bounty waits for a stronger company.
-            if (levels < 3 * tier || members.Count < 3) continue;
+            // Heroes won't walk into a site they can't handle; the bounty waits for a stronger company. Good arms count for levels.
+            if (levels + (int)Math.Floor(Gear.Levels(town.Content, members) * members.Count) < 3 * tier || members.Count < 3) continue;
 
             var party = Launch(town, members, s, bounty);
             town.Log(
@@ -641,7 +646,8 @@ public static class Quests
             foreach (var it in result.Items)
             {
                 if (it.HeroId == null) Watch.ReceiveRelic(town, it.Item, party.Name);
-                else if (survivors.Any(m => m.Id == it.HeroId)) Gear.Claim(town, town.Agent(it.HeroId.Value), it.Item);
+                else if (survivors.Any(m => m.Id == it.HeroId) && !Armory.HandIn(town, party, bounty, town.Agent(it.HeroId.Value), it.Item))
+                    Gear.Claim(town, town.Agent(it.HeroId.Value), it.Item);
             }
         }
     }
