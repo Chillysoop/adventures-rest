@@ -440,6 +440,11 @@ public sealed record EnemyDef
     /// <summary>The warlord marches only once the warband is at least this share of the town's defence.</summary>
     public double MarchConfidence { get; init; }
 
+    /// <summary>Past this day a warband that has not marched grows restless: the confidence it needs wanes by this much a day, down to the floor.</summary>
+    public int MarchWaneAfter { get; init; }
+    public double MarchWanePerDay { get; init; }
+    public double MarchWaneFloor { get; init; } = 1;
+
     /// <summary>Warband strength at which each escalation stage begins.</summary>
     public required EnemyStages Stages { get; init; }
 
