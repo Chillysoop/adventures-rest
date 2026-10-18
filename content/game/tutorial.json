@@ -270,6 +270,15 @@
       "teaches": ["command:OpenWard"]
     },
     {
+      "id": "density",
+      "title": "Build tall",
+      "text": "The town charter unlocks [b]medium density[/b] and the large town charter [b]high density[/b]. Pick [b]Res · Medium[/b] or [b]Res · High[/b] (or the Commercial ones) in the build bar and paint, even over streets that are already built. Houses there grow into stone townhouses, then into tall houses packed wall to wall like a walled city's old core. Dense land sells dearer and crowds its people a little, so let lower sprawl spread outside the walls.",
+      "point": "buildbar",
+      "when": "density",
+      "until": "dense",
+      "teaches": []
+    },
+    {
       "id": "grand-works",
       "title": "Grand works",
       "text": "A rich town can raise grand works: a clock tower, an aqueduct, a great gatehouse, a mage tower, royal gardens and in time a colossus, unlocked charter by charter. Begin one under [b]Grand works[/b] in the [b]City[/b] window and set it down like any government building. It rises over seasons, drawing gold and goods for each stage as the last is done, and helps the whole town for good once it stands.",

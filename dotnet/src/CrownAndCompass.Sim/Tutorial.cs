@@ -71,6 +71,9 @@ public static class Tutorial
     {
         if (token == "zoned") return Systems.Land.PaintedCells(t);
         if (token == "decorated") return t.Decor.Pieces.Count;
+        // The densest zoning the charter allows, and the cells zoned denser than low.
+        if (token == "density") return Systems.Density.Unlocked(t);
+        if (token == "dense") return t.Plan.Density.Count(d => d > 0);
         if (!token.StartsWith("count:", StringComparison.Ordinal)) return null;
         var prop = typeof(Town).GetProperty(token[6..], BindingFlags.Public | BindingFlags.Instance);
         return prop?.GetValue(t) is IEnumerable items and not string ? items.Cast<object>().Count() : null;
