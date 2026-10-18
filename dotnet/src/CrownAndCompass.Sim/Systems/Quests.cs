@@ -257,6 +257,7 @@ public static class Quests
         Annals.Raise(town, a, sheet, people);
         a.Hero = sheet;
         Loyalty.Arrive(town, a);
+        Regard.Arrive(town, a);
         return a;
     }
 

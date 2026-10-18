@@ -80,7 +80,11 @@ public static class Expedition
         public int Hp { get; set; } = def.Hp;
     }
 
-    private sealed record Check(Combatant Who, int Roll, int Total);
+    private sealed record Check(Combatant Who, int Roll, int Total, string With = "")
+    {
+        /// <summary>The hero's name, with the friend or rival who swayed the roll.</summary>
+        public string Name => With == "" ? Who.Agent.GivenName : $"{Who.Agent.GivenName}, {With},";
+    }
 
     private static readonly Dictionary<string, string> SkillAbility = new()
     {
@@ -190,7 +194,9 @@ public static class Expedition
                 }
             }
             int roll = _rng.D20();
-            return new Check(who!, roll, roll + best);
+            // A friend beside them steadies the hand; a rival in the party spoils it.
+            var (chem, with) = Regard.Chemistry(_content.Regard, who!.Agent, Standing.Select(c => c.Agent));
+            return new Check(who, roll, roll + best + chem, with);
         }
 
         private static int SkillBonus(Combatant c, string kind)
@@ -236,7 +242,7 @@ public static class Expedition
                 case "trap":
                 {
                     var check = BestCheck(SkillKind.Trap);
-                    string who = check.Who.Agent.GivenName;
+                    string who = check.Name;
                     if (check.Total >= e.Dc)
                     {
                         Log($"{Cap(e.Text)}: {who} spots it and disarms it (d20 {check.Roll}, {check.Total} vs DC {e.Dc}).");
@@ -276,7 +282,7 @@ public static class Expedition
                 case "parley":
                 {
                     var check = BestCheck(e.Kind == "puzzle" ? SkillKind.Puzzle : SkillKind.Parley);
-                    string who = check.Who.Agent.GivenName;
+                    string who = check.Name;
                     if (check.Total >= e.Dc)
                     {
                         int gold = _rng.Range(e.Gold[0], e.Gold[1] + 1);
@@ -299,7 +305,7 @@ public static class Expedition
                         var check = BestCheck(SkillKind.Perception);
                         bool spotted = check.Total >= 13;
                         Log(spotted
-                            ? $"{Cap(e.Text)}. {check.Who.Agent.GivenName} notices the lid breathing (d20 {check.Roll}, {check.Total} vs DC 13). It's a mimic."
+                            ? $"{Cap(e.Text)}. {check.Name} notices the lid breathing (d20 {check.Roll}, {check.Total} vs DC 13). It's a mimic."
                             : $"{Cap(e.Text)}. Nobody notices the lid breathing (d20 {check.Roll}, {check.Total} vs DC 13) until it bites. It's a mimic!");
                         Combat(new EncounterDef { Kind = "combat", Monster = "mimic", Count = [1, 1], Text = "the mimic" }, !spotted);
                         if (Standing.Count == 0) return;

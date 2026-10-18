@@ -175,6 +175,7 @@
       "until": "roll",
       "teaches": ["command:ResolveStory"]
     },
+    {"id": "regard", "title": "Heroes judge your choices", "text": "Every hero has a temper: merciful, ruthless, pious, mercenary, lawful, free-spirited or bold. When you answer a story, each choice shows which heroes in town it would [b]please[/b] or [b]anger[/b]. What they think of you moves their loyalty, and it is shown when you select a hero. A hero who trusts you will ask for help with a personal quest of their own; one you keep angering will come to you with a grievance.", "point": "inspector", "when": "alert:story", "teaches": []},
     {
       "id": "mayor-level",
       "title": "Level up",

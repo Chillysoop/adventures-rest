@@ -1145,6 +1145,9 @@ public sealed class Content
     /// <summary>Sellsword companies for hire and how their campaigns go (content/game/mercenaries.json).</summary>
     public MercRules Mercenaries { get; init; } = new();
 
+    /// <summary>Heroes' tempers and what they think of the mayor's choices (content/game/regard.json).</summary>
+    public RegardRules Regard { get; init; } = new();
+
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
 
@@ -1287,6 +1290,7 @@ public sealed class Content
             Stories = Parse<StoryRules>("stories.json"),
             Bastions = Parse<BastionRules>("bastions.json"),
             Mercenaries = Parse<MercRules>("mercenaries.json"),
+            Regard = Parse<RegardRules>("regard.json"),
         };
     }
 

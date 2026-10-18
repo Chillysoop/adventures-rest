@@ -1,0 +1,67 @@
+{
+  "step": 8,
+  "decay": 0.99,
+  "loyalty": 0.3,
+  "maxLoyalty": 15,
+  "admire": 24,
+  "aggrieved": -20,
+  "personalLevel": 3,
+  "friend": 2,
+  "rival": -2,
+  "tags": [
+    { "id": "mercy", "name": "mercy" },
+    { "id": "harsh", "name": "a hard hand" },
+    { "id": "faith", "name": "the gods" },
+    { "id": "coin", "name": "profit" },
+    { "id": "generous", "name": "an open purse" },
+    { "id": "order", "name": "law and order" },
+    { "id": "freedom", "name": "free hands" },
+    { "id": "guile", "name": "cunning" },
+    { "id": "valor", "name": "daring" },
+    { "id": "caution", "name": "caution" }
+  ],
+  "tempers": [
+    {
+      "id": "merciful", "name": "Merciful", "text": "spares the beaten and feeds the hungry",
+      "likes": ["mercy", "generous"], "dislikes": ["harsh"],
+      "classes": { "cleric": 3, "paladin": 2, "druid": 2, "monk": 2, "hedge-witch": 2, "bard": 1 },
+      "traits": { "Generous": 3 }
+    },
+    {
+      "id": "ruthless", "name": "Ruthless", "text": "thinks a soft hand gets a town killed",
+      "likes": ["harsh", "valor"], "dislikes": ["mercy"],
+      "classes": { "barbarian": 2, "fighter": 2, "warlock": 2, "rogue": 1, "sorcerer": 1 },
+      "traits": { "HotTempered": 3 }
+    },
+    {
+      "id": "pious", "name": "Pious", "text": "wants the gods given their due",
+      "likes": ["faith", "mercy"], "dislikes": ["guile"],
+      "classes": { "cleric": 3, "paladin": 3, "reliquarian": 3, "druid": 1 },
+      "traits": {}
+    },
+    {
+      "id": "greedy", "name": "Mercenary", "text": "respects a full treasury and a hard bargain",
+      "likes": ["coin"], "dislikes": ["generous"],
+      "classes": { "rogue": 2, "cartographer": 1, "warlock": 1, "fighter": 1 },
+      "traits": { "Greedy": 5 }
+    },
+    {
+      "id": "lawful", "name": "Lawful", "text": "wants the law kept, whoever it pinches",
+      "likes": ["order"], "dislikes": ["freedom", "guile"],
+      "classes": { "paladin": 2, "warden": 3, "fighter": 2, "monk": 2, "wizard": 2 },
+      "traits": {}
+    },
+    {
+      "id": "free", "name": "Free-spirited", "text": "hates a rule for its own sake",
+      "likes": ["freedom", "guile"], "dislikes": ["order"],
+      "classes": { "bard": 3, "rogue": 3, "sorcerer": 2, "ranger": 2, "barbarian": 1, "hedge-witch": 1 },
+      "traits": { "Romantic": 2 }
+    },
+    {
+      "id": "bold", "name": "Bold", "text": "would rather ride out than wait behind walls",
+      "likes": ["valor"], "dislikes": ["caution"],
+      "classes": { "fighter": 2, "barbarian": 2, "ranger": 2, "paladin": 1, "warden": 1, "cartographer": 2, "wizard": 1 },
+      "traits": { "Ambitious": 2 }
+    }
+  ]
+}
