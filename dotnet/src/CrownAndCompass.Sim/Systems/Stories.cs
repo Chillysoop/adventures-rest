@@ -314,6 +314,8 @@ public sealed class Story
     /// <summary>The fallen hero in the hall of heroes the story is about.</summary>
     public int? FallenId { get; set; }
 
+    /// <summary>The institutions the story is about, in the order its needs name them (a request, or two of them at odds).</summary>
+    public List<string> Institutions { get; } = [];
     /// <summary>When the next stage comes, if the story waits on it (a party's next sending).</summary>
     public int? WaitTick { get; set; }
     public List<StoryBeat> Beats { get; } = [];
@@ -374,12 +376,13 @@ public static class Stories
     /// precedent:id (1 sets it, -1 forgets it) and calling:id (1: the story's hero takes it up, -1: it ends).
     /// </summary>
     public static readonly string[] EffectKeys =
-        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "esteem", "heroXp", "personal", "dismiss", "edge", "swell", "partyHurt", "rest", "slots", "loot", "partyLoyalty", "turnBack", "infamy", "exile"];
+        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "esteem", "goodwill", "goodwill2", "heroXp", "personal", "dismiss", "edge", "swell", "partyHurt", "rest", "slots", "loot", "partyLoyalty", "turnBack", "infamy", "exile"];
 
     /// <summary>
     /// Every need a story or option can name; besides these, precedent:id, decree:id, season:id and
-    /// calling:id (held; binds its hero), each negated with a leading !, and class:id (binds a hero of the
-    /// class in town with no calling yet) and faction:id (binds that faction while it has a chapter).
+    /// calling:id (held; binds its hero) and institution:id or institution:id:choice (open, and its choice
+    /// made so; binds it), each negated with a leading !, and class:id (binds a hero of the class in town
+    /// with no calling yet) and faction:id (binds that faction while it has a chapter).
     /// </summary>
     public static readonly string[] Needs =
         ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "settlement", "route", "courted", "veteran", "fallen", "admirer", "aggrieved", "abroad", "homeward", "victorious", "famous", "infamous"];
@@ -395,6 +398,12 @@ public static class Stories
         if (n.StartsWith("decree:", StringComparison.Ordinal)) return c.Stories.Decree(n[7..]) != null;
         if (n.StartsWith("season:", StringComparison.Ordinal)) return c.Seasons.Seasons.Any(x => x.Id == n[7..]);
         if (n.StartsWith("calling:", StringComparison.Ordinal)) return c.Stories.Calling(n[8..]) != null;
+        if (n.StartsWith("institution:", StringComparison.Ordinal))
+        {
+            var parts = n[12..].Split(':');
+            var inst = c.Institutions.Def(parts[0]);
+            return inst != null && (parts.Length == 1 || parts.Length == 2 && inst.Choice?.Options.Any(o => o.Id == parts[1]) == true);
+        }
         if (need.StartsWith("class:", StringComparison.Ordinal)) return c.Classes.Any(x => x.Id == need[6..]);
         if (need.StartsWith("faction:", StringComparison.Ordinal)) return c.Factions.Factions.Any(x => x.Ref == need[8..]);
         if (n.StartsWith("building:", StringComparison.Ordinal)) return c.Buildings.Any(x => x.Id == n[9..]);
@@ -406,7 +415,8 @@ public static class Stories
         EffectKeys.Contains(key)
         || key.StartsWith("decree:", StringComparison.Ordinal) && c.Stories.Decree(key[7..]) != null
         || key.StartsWith("precedent:", StringComparison.Ordinal) && c.Stories.Precedent(key[10..]) != null
-        || key.StartsWith("calling:", StringComparison.Ordinal) && c.Stories.Calling(key[8..]) != null;
+        || key.StartsWith("calling:", StringComparison.Ordinal) && c.Stories.Calling(key[8..]) != null
+        || key.StartsWith("fixture:", StringComparison.Ordinal) && c.Institutions.Fixture(key[8..]) != null;
 
     // ---------- The mayor ----------
 
@@ -841,6 +851,13 @@ public static class Stories
                 if (n.StartsWith("precedent:", StringComparison.Ordinal)) holds = town.Stories.Precedents.ContainsKey(n[10..]);
                 else if (n.StartsWith("decree:", StringComparison.Ordinal)) holds = Decrees.InForce(town, n[7..]);
                 else if (n.StartsWith("season:", StringComparison.Ordinal)) holds = Seasons.Current(town).Id == n[7..];
+                else if (n.StartsWith("institution:", StringComparison.Ordinal))
+                {
+                    // An institution open (with its choice made so, if named) binds it, after any bound already.
+                    var parts = n[12..].Split(':');
+                    holds = Institutions.Find(town, parts[0]) is { Shut: false } inst && (parts.Length == 1 || inst.Choice == parts[1]);
+                    if (holds && !not && bind && !s.Institutions.Contains(parts[0])) s.Institutions.Add(parts[0]);
+                }
                 else if (n.StartsWith("building:", StringComparison.Ordinal)) holds = town.Buildings.Any(b => b.Def.Id == n[9..] && b.Complete && !b.Closed);
                 else if (n.StartsWith("calling:", StringComparison.Ordinal))
                 {
@@ -984,6 +1001,7 @@ public static class Stories
             return;
         }
         s.Done = true;
+        if (s.Institutions.Count > 0 && Institutions.Find(town, s.Institutions[0]) is { } asked) Institutions.Heard(town, asked, beat.Result == StoryResult.Ignored);
         if (beat.Result != StoryResult.Ignored) GainXp(town, Rules(town).StakesOf(d.Stakes).Xp);
     }
 
@@ -1113,6 +1131,17 @@ public static class Stories
                         said.Add($"a memorial to {ml.Name}");
                     }
                     break;
+                case "goodwill":
+                case "goodwill2":
+                {
+                    int i = key == "goodwill" ? 0 : 1;
+                    if (i < s.Institutions.Count && Institutions.Find(town, s.Institutions[i]) is { } inst)
+                    {
+                        Institutions.Esteem(town, inst, v);
+                        said.Add($"{Institutions.KeeperGiven(town, inst)}'s regard {(v > 0 ? "+" : "−")}{Js.Str(Math.Abs(v))}");
+                    }
+                    break;
+                }
                 case "renown":
                 case "infamy":
                     // The bound hero's name, and their company's with it.
@@ -1205,6 +1234,10 @@ public static class Stories
                 if (v < 0) town.Stories.Precedents.Remove(id);
                 else if (!town.Stories.Precedents.ContainsKey(id)) town.Stories.Precedents[id] = town.Day;
             }
+            else if (key.StartsWith("fixture:", StringComparison.Ordinal))
+            {
+                if (v > 0 && Institutions.Fix(town, key[8..]) is { Length: > 0 } fixture) said.Add(fixture);
+            }
             else if (key.StartsWith("calling:", StringComparison.Ordinal))
             {
                 string id = key[8..];
@@ -1286,10 +1319,21 @@ public static class Stories
         Put("{fallen}", () => s.FallenId is int fh ? town.Agent(fh).Name : "a fallen hero");
         Put("{fallenName}", () => s.FallenId is int fh ? town.Agent(fh).GivenName : "the fallen");
         Put("{fallenClass}", () => s.FallenId is int fh ? town.Agent(fh).Hero?.Cls.Name.ToLowerInvariant() ?? "hero" : "hero");
+        Put("{institution}", () => InstitutionName(town, s, 0));
+        Put("{institution2}", () => InstitutionName(town, s, 1));
+        Put("{keeper}", () => Bound(town, s, 0) is { } i ? Institutions.KeeperName(town, i) : "the keeper");
+        Put("{keeperName}", () => Bound(town, s, 0) is { } i ? Institutions.KeeperGiven(town, i) : "the keeper");
+        Put("{keeper2}", () => Bound(town, s, 1) is { } i ? Institutions.KeeperName(town, i) : "the other keeper");
+        Put("{keeper2Name}", () => Bound(town, s, 1) is { } i ? Institutions.KeeperGiven(town, i) : "the other keeper");
+        Put("{choice}", () => Bound(town, s, 0) is { } i && (Institutions.Chosen(town, i) is { } o) ? o.Name : "its calling");
         Put("{grievance}", () => s.HeroId is int g && town.Agent(g).Hero is { RegardWhy: not "" } gs ? gs.RegardWhy : "made the choices they did");
         Put("{class}", () => s.HeroId is int h ? town.Agent(h).Hero?.Cls.Name.ToLowerInvariant() ?? "hero" : "hero");
         return Cap(sb.ToString());
     }
+
+    private static InstitutionState? Bound(Town town, Story s, int i) => i < s.Institutions.Count ? Institutions.Find(town, s.Institutions[i]) : null;
+
+    private static string InstitutionName(Town town, Story s, int i) => i < s.Institutions.Count && town.Content.Institutions.Def(s.Institutions[i]) is { } d ? d.Name : "the institution";
 
     internal static string Cap(string s) => s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
 

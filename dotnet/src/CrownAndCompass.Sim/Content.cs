@@ -1151,6 +1151,9 @@ public sealed class Content
     /// <summary>Adventuring companies' bastions: who may raise one, their facilities and turns (content/game/bastions.json).</summary>
     public BastionRules Bastions { get; init; } = new();
 
+    /// <summary>The city's institutions: their keepers, services, choices and requests (content/game/institutions.json).</summary>
+    public InstitutionRules Institutions { get; init; } = new();
+
     /// <summary>Sellsword companies for hire and how their campaigns go (content/game/mercenaries.json).</summary>
     public MercRules Mercenaries { get; init; } = new();
 
@@ -1275,6 +1278,10 @@ public sealed class Content
     private static Content Load(Func<string, string> read)
     {
         T Parse<T>(string file) => JsonSerializer.Deserialize<T>(read(file), JsonOptions) ?? throw new InvalidDataException($"Empty content file {file}");
+        // The institutions' requests are story events like any other, kept with the institutions.
+        var institutions = Parse<InstitutionRules>("institutions.json");
+        var stories = WithSendings(Parse<StoryRules>("stories.json"), Parse<SendingRules>("sendings.json"));
+        stories = stories with { Stories = [.. stories.Stories, .. institutions.Requests], Precedents = [.. stories.Precedents, .. institutions.Precedents] };
         return new Content(
             Parse<List<BuildingDef>>("buildings.json"),
             Parse<NamesFile>("names.json").Races,
@@ -1303,7 +1310,8 @@ public sealed class Content
             Trade = Parse<TradeRules>("trade.json"),
             Legacies = Parse<LegacyRules>("legacies.json"),
             History = Parse<HistoryRules>("history.json"),
-            Stories = WithSendings(Parse<StoryRules>("stories.json"), Parse<SendingRules>("sendings.json")),
+            Stories = stories,
+            Institutions = institutions,
             Sendings = Parse<SendingRules>("sendings.json"),
             Bastions = Parse<BastionRules>("bastions.json"),
             Mercenaries = Parse<MercRules>("mercenaries.json"),

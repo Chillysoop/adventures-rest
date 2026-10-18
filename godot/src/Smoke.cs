@@ -32,6 +32,14 @@ public partial class Main
     /// <summary>Run one stage of the play-through and say how many frames to wait before the next.</summary>
     private int SmokeStage(int stage)
     {
+        // Every window gets its stage: the stages after the windows move along by one for each window past the first eleven.
+        int windows = Enum.GetValues<Tab>().Length - 1, extra = windows - 11;
+        if (stage >= 3 && stage < 3 + windows)
+        {
+            OpenWindow(Enum.GetValues<Tab>()[stage - 3]);
+            return 5;
+        }
+        if (stage >= 3 + windows) stage -= extra;
         switch (stage)
         {
             case 0:
