@@ -38,6 +38,15 @@ public partial class MapView : Control
     public readonly List<Marker> Markers = [];
     public MarkerKind? Placing { get; set; }
 
+    /// <summary>The marker under the cursor in the strategic view, drawn raised.</summary>
+    public Marker? HoverMarker { get; private set; }
+
+    /// <summary>A marker was clicked or just placed, so the player can name or change it.</summary>
+    public event Action<Marker>? MarkerOpened;
+
+    /// <summary>The left button went down on the map; the marker editor closes on it.</summary>
+    public event Action? Pressed;
+
     /// <summary>The town plan; while it has a tool, left clicks and drags zone or place instead of panning.</summary>
     public Planner Planner { get; private set; } = null!;
     public bool Strategic { get; private set; }
@@ -136,6 +145,8 @@ public partial class MapView : Control
         _town.Reset();
         _crowd.Reset();
         Markers.Clear();
+        HoverMarker = null;
+        _grab = null;
         Selection = null;
         _first = true;
         _manual = false;
@@ -321,6 +332,10 @@ public partial class MapView : Control
     private Vector2 _pressAt;
     private bool _dragging;
 
+    // A marker picked up in the strategic view, and where on it the cursor took hold.
+    private Marker? _grab;
+    private Vector2 _grabOffset;
+
     public override void _GuiInput(InputEvent e)
     {
         if (Planner.Active && PlanInput(e)) return;
@@ -341,14 +356,31 @@ public partial class MapView : Control
                 {
                     _pressAt = mb.Position;
                     _dragging = false;
+                    Pressed?.Invoke();
+                    if (Strategic && Placing == null && MarkerAt(mb.Position) is Marker m)
+                    {
+                        _grab = m;
+                        _grabOffset = ToScreen(m.P) - mb.Position;
+                    }
+                }
+                else if (_grab != null)
+                {
+                    if (!_dragging) MarkerOpened?.Invoke(_grab);
+                    _grab = null;
                 }
                 else if (!_dragging)
                 {
                     var w = ToWorld(mb.Position);
                     if (Placing is MarkerKind kind)
                     {
-                        Markers.Add(new Marker(kind, w, Sim.Town.Day));
-                        Placing = null;
+                        var m = new Marker(kind, w, Sim.Town.Day);
+                        Markers.Add(m);
+                        // Shift keeps the tool for a row of markers; otherwise name the one just placed.
+                        if (!mb.ShiftPressed)
+                        {
+                            Placing = null;
+                            MarkerOpened?.Invoke(m);
+                        }
                     }
                     else
                     {
@@ -361,8 +393,20 @@ public partial class MapView : Control
             else if (mb.ButtonIndex == MouseButton.Right && mb.Pressed)
             {
                 if (mb.DoubleClick) Recenter();
-                else if (Strategic) RemoveMarkerNear(mb.Position);
+                else if (Strategic && MarkerAt(mb.Position) is Marker m) Markers.Remove(m);
             }
+        }
+        else if (e is InputEventMouseMotion hover && hover.ButtonMask == 0)
+        {
+            HoverMarker = Strategic && Placing == null ? MarkerAt(hover.Position) : null;
+            MouseDefaultCursorShape = Placing != null ? CursorShape.Cross : HoverMarker != null ? CursorShape.Move : CursorShape.Arrow;
+        }
+        else if (e is InputEventMouseMotion carry && _grab != null && (carry.ButtonMask & MouseButtonMask.Left) != 0)
+        {
+            if (!_dragging && carry.Position.DistanceTo(_pressAt) < 5) return;
+            _dragging = true;
+            _grab.P = ToWorld(carry.Position + _grabOffset).Clamp(Vector2.Zero, new Vector2(Geo.World, Geo.World));
+            AcceptEvent();
         }
         else if (e is InputEventMouseMotion mm && (mm.ButtonMask & (MouseButtonMask.Left | MouseButtonMask.Right | MouseButtonMask.Middle)) != 0)
         {
@@ -397,10 +441,31 @@ public partial class MapView : Control
         return false;
     }
 
-    private void RemoveMarkerNear(Vector2 screen)
+    /// <summary>The marker whose pin is under a screen point, if any; the nearest when they overlap.</summary>
+    public Marker? MarkerAt(Vector2 screen)
     {
-        var m = Markers.Where(m => ToScreen(m.P).DistanceTo(screen) < 24).OrderBy(m => ToScreen(m.P).DistanceTo(screen)).FirstOrDefault();
-        if (m != null) Markers.Remove(m);
+        Marker? best = null;
+        float bestD = 16;
+        foreach (var m in Markers)
+        {
+            if (!OnScreen(Gen.At(m.P), out var at)) continue;
+            float d = Mathf.Min(screen.DistanceTo(at - new Vector2(0, 22)), screen.DistanceTo(at - new Vector2(0, 8)));
+            if (d <= bestD)
+            {
+                bestD = d;
+                best = m;
+            }
+        }
+        return best;
+    }
+
+    /// <summary>Leave the strategic view's marker tools: drop the tool and any marker in hand.</summary>
+    public void ClearMarkerTools()
+    {
+        Placing = null;
+        HoverMarker = null;
+        _grab = null;
+        MouseDefaultCursorShape = CursorShape.Arrow;
     }
 
     public Selection? Pick(Vector2 w, Vector2 screen)
@@ -443,6 +508,7 @@ public partial class MapView : Control
     public int TreeInstances => _world.TreeInstances;
 }
 
+/// <summary>What a marker says. Saves keep the name, so new kinds go at the end.</summary>
 public enum MarkerKind
 {
     Attack,
@@ -450,7 +516,18 @@ public enum MarkerKind
     Scout,
     Danger,
     Note,
+    Rally,
+    Claim,
 }
 
-/// <summary>A mark on the map placed by the player (and later by allies), shown in both views.</summary>
-public sealed record Marker(MarkerKind Kind, Vector2 P, int Day);
+/// <summary>
+/// A mark on the map placed by the player (and later by allies), shown in both views. It belongs to
+/// the client, not the simulation, and is kept in the client part of a save.
+/// </summary>
+public sealed class Marker(MarkerKind kind, Vector2 p, int day, string label = "")
+{
+    public MarkerKind Kind { get; set; } = kind;
+    public Vector2 P { get; set; } = p;
+    public int Day { get; } = day;
+    public string Label { get; set; } = label;
+}

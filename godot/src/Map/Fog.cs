@@ -207,7 +207,10 @@ public sealed class Fog
         return _alpha[y * N + x];
     }
 
-    public bool IsLive(Vector2 w) => AlphaAt(w) < 0.3f;
+    /// <summary>Fog thinner than this is seen live; anything moving through thicker fog, or its tracks, is never drawn.</summary>
+    public const float SightAlpha = 0.3f;
+
+    public bool IsLive(Vector2 w) => AlphaAt(w) < SightAlpha;
 
     /// <summary>How well reports describe a world point, 0 (never described) to 1.</summary>
     public float KnownAt(Vector2 w)
