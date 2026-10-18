@@ -77,6 +77,7 @@ public partial class Main
             for (int i = 0; i < h.Events.Count; i++)
                 lines.Add($"{Ui.C(Ui.Gold, $"[b]{i + 1}[/b]")}  {Ui.Esc(h.Events[i].Text)}  {Ui.C(Ui.Ink2, $"[font_size=12]{Annals.Year(h, h.Events[i].Year)}[/font_size]")}");
             lines.Add("");
+            lines.AddRange(LegendLines());
             foreach (var age in h.Ages)
                 lines.Add($"[b]{Ui.Esc(age.Name)}[/b]  {Ui.C(Ui.Ink2, $"[font_size=12]{Annals.Year(h, age.From)} to {Annals.Year(h, age.To)}[/font_size]")}\n{Ui.C(Ui.Ink2, Ui.Esc(age.Text))}\n");
             _historyStory.Text = string.Join("\n", lines);

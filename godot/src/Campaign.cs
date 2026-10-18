@@ -97,8 +97,12 @@ public partial class Main
         var fallen = s.Menaces.Where(m => !m.Alive && m.Named).OrderByDescending(m => m.EndedDay).ThenBy(m => m.Id).Take(5).ToList();
         if (fallen.Count > 0)
         {
-            p.Heading("Destroyed");
-            foreach (var m in fallen) p.Text($"{Ui.C(Ui.Ink2, $"[font_size=11]Day {m.EndedDay}[/font_size]")}  {Ui.Esc(Ui.Cap(m.Name))}", 13);
+            p.Heading("Destroyed or turned");
+            foreach (var m in fallen)
+            {
+                string turned = m.Redeemed ? "  " + Tag($"{m.Leader} joined {t.Name}", Ui.Good) : "";
+                p.Text($"{Ui.C(Ui.Ink2, $"[font_size=11]Day {m.EndedDay}[/font_size]")}  {Ui.Esc(Ui.Cap(m.Name))}{turned}", 13);
+            }
         }
         p.Commit();
     }

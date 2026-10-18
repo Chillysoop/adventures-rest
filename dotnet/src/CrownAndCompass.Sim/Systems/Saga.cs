@@ -165,6 +165,7 @@ public sealed record SagaRules
     public DreadRules Dread { get; init; } = new();
     public YokeRules Yoke { get; init; } = new();
     public FinaleRules Finale { get; init; } = new();
+    public TurningRules Turning { get; init; } = new();
 }
 
 /// <summary>How the town feels about its chances: the campaign's tone.</summary>
@@ -189,6 +190,13 @@ public sealed class SagaState
 
     /// <summary>Every menace there has been, in the order they arose; ended ones keep EndedDay.</summary>
     public List<Menace> Menaces { get; } = [];
+
+    /// <summary>Foes and heroes of earlier campaigns who may come back (<see cref="Systems.Turning"/>), and the names already used.</summary>
+    public List<Legend> Legends { get; } = [];
+    public List<string> LegendsUsed { get; } = [];
+    public bool LegendJoined { get; set; }
+    public bool LegendHaunted { get; set; }
+    public bool Wavered { get; set; }
 
     /// <summary>The town's fear, 0 to 100, and the part of it that outlasts its causes.</summary>
     public double Dread { get; set; }

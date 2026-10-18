@@ -33,6 +33,10 @@
   Every menace kind, people, faction and hero background needs a `lineages` entry there naming the power it descends
   from and its motive; menaces add themes and ambition weights, backgrounds the classes that come up through them, and
   either can add traits. `LoreTests` fails on anything without one. Use original names only, never a WotC setting's.
+- Across campaigns: the client's profile `user://profile.json` (`godot/src/Profile.cs`) is the one store for anything
+  that carries between runs; each feature owns a section (`legends` now). The sim never reads it: the client passes it
+  in `SimulationOptions` (`Legends`), and the town keeps what it used in saved state. Turncoats and returning legends
+  are `Systems/Turning.cs` with numbers in saga.json `turning`.
 - Alerts (the Paradox-style icon strip): raise one from the sim by adding a kind and a rule in `Systems/Alerts.cs`
   (rules read the town, never write or roll dice; an alert lasts while its rule names it). Each alert is one action for the player; news goes to the Ledger, not the strip.
 - Decorations (`content/game/decor.json`, `Systems/Decor.cs`, client `Map/Decorator.cs`, `Map/DecorView.cs`): free positions in

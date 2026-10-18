@@ -97,6 +97,9 @@ public sealed class HeroSheet
 
     /// <summary>The library background they came up through (a lineage in content/game/history.json); "" for none.</summary>
     public string Background { get; set; } = "";
+
+    /// <summary>Who they were before, when it isn't a background: a menace's leader who turned, a legend of another campaign.</summary>
+    public string Past { get; set; } = "";
     public int Level { get; set; }
     public int Xp { get; set; }
     public int MaxHp { get; set; }
@@ -219,7 +222,7 @@ public sealed class Agent
     /// <summary>Opinion of other agents, -100..100, in the order they were first met.</summary>
     public OrderedMap<int, int> Opinions { get; } = new();
 
-    public string Name => $"{GivenName} {FamilyName}";
+    public string Name => FamilyName == "" ? GivenName : $"{GivenName} {FamilyName}";
 
     public bool Has(Trait t) => Traits.Contains(t);
 
