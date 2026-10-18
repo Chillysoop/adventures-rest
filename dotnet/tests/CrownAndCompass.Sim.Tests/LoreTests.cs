@@ -101,6 +101,12 @@ public class LoreTests
         Assert.NotEmpty(t.Heroes);
         foreach (var h in t.Heroes)
         {
+            // A foe who came over to the town keeps the lineage of what it was, not a background.
+            if (t.Saga.Menaces.FirstOrDefault(m => m.TurnedHeroId == h.Id) is { } was)
+            {
+                Assert.NotNull(Annals.Lineage(H, was.Lineage));
+                continue;
+            }
             var bg = Annals.LineageOf(H, "background:" + h.Hero!.Background);
             Assert.True(bg != null, $"{h.Name} has no background");
             Assert.Contains(h.Hero.Cls.Id, bg!.Classes);
