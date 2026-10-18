@@ -56,7 +56,43 @@ public sealed record WardDef
 
     /// <summary>Outside every wall: cheap, rowdy, and raided first (GDD rule C4).</summary>
     public bool Outer { get; init; }
+
+    /// <summary>The densest the stand-in mayor zones it (the lords of Castle Hill keep their gardens, and the outer wards their sprawl).</summary>
+    public int Densest { get; init; } = 2;
     public string Blurb { get; init; } = "";
+}
+
+/// <summary>
+/// How tightly a zone may be built (city.json "densities"): low land keeps cottages with gardens between,
+/// medium lets houses rise to stone townhouses, high packs tall houses wall to wall as in an old walled core.
+/// </summary>
+public sealed record DensityDef
+{
+    public required string Id { get; init; }
+    public string Name { get; init; } = "";
+
+    /// <summary>The charter that unlocks it.</summary>
+    public string Tier { get; init; } = "";
+
+    /// <summary>Cells of open ground kept round each building: 0 builds wall to wall.</summary>
+    public int Lane { get; init; } = 1;
+
+    /// <summary>Land price on it, against low land: what the right to build high is worth.</summary>
+    public double Land { get; init; } = 1;
+
+    /// <summary>Mood its residents carry for the crowding.</summary>
+    public double Mood { get; init; }
+    public string Blurb { get; init; } = "";
+}
+
+/// <summary>
+/// How far from the hall the stand-in mayor zones a density (city.json "sprawl"): out to <see cref="Reach"/> tiles
+/// for every square root of a resident, so the dense core spreads outward as the town grows.
+/// </summary>
+public sealed record SprawlStep
+{
+    public int Density { get; init; }
+    public double Reach { get; init; }
 }
 
 /// <summary>What the families of one kind of house want, and what it grows into.</summary>
@@ -66,6 +102,9 @@ public sealed record HousingDef
 
     /// <summary>The house it grows into once its families are content and the tier allows.</summary>
     public string Next { get; init; } = "";
+
+    /// <summary>The house it grows into instead on high-density land, when that is a different one.</summary>
+    public string Dense { get; init; } = "";
 
     /// <summary>Goods each resident buys a day.</summary>
     [JsonConverter(typeof(GoodsListConverter))]
@@ -101,6 +140,8 @@ public sealed record CityRules
     public IReadOnlyList<TierDef> Tiers { get; init; } = [];
     public IReadOnlyList<WardDef> Wards { get; init; } = [];
     public IReadOnlyList<HousingDef> Housing { get; init; } = [];
+    public IReadOnlyList<DensityDef> Densities { get; init; } = [];
+    public IReadOnlyList<SprawlStep> Sprawl { get; init; } = [];
 
     /// <summary>Each service id as a sentence names it ("a bathhouse").</summary>
     public IReadOnlyDictionary<string, string> Services { get; init; } = new Dictionary<string, string>();
@@ -281,7 +322,10 @@ public static class City
     /// <summary>Whether a building may stand on this lot: its ward is open and the building allows it.</summary>
     public static bool Allows(Town town, BuildingDef d, Lot lot) => Allows(town, d, lot.X, lot.Y);
 
-    public static bool Allows(Town town, BuildingDef d, double x, double y)
+    public static bool Allows(Town town, BuildingDef d, double x, double y) => AllowsWard(town, d, x, y) && Density.Allows(town, d, x, y);
+
+    /// <summary>As <see cref="Allows(Town, BuildingDef, double, double)"/>, whatever the density the land is zoned for.</summary>
+    public static bool AllowsWard(Town town, BuildingDef d, double x, double y)
     {
         var w = WardOf(town, x, y);
         if (!town.City.OpenWards.Contains(w.Id)) return false;
@@ -306,14 +350,18 @@ public static class City
     public static HousingDef? Housing(Town town, string buildingId) => town.Content.City.Housing.FirstOrDefault(h => h.Id == buildingId);
 
     /// <summary>The house a level down, the one this kind grew from.</summary>
-    public static HousingDef? Previous(Town town, string buildingId) => town.Content.City.Housing.FirstOrDefault(h => h.Next == buildingId);
+    public static HousingDef? Previous(Town town, string buildingId) => town.Content.City.Housing.FirstOrDefault(h => h.Next == buildingId || h.Dense == buildingId);
+
+    /// <summary>The house this one grows into where it stands: the dense kind on land zoned dense enough for it.</summary>
+    public static string NextFor(Town town, Building house, HousingDef h) =>
+        h.Dense != "" && Density.At(town, town.Lot(house.LotId)) >= town.Content.Building(h.Dense).Density ? h.Dense : h.Next;
 
     /// <summary>Mood a resident carries from home: the ward's character, and how content the household is.</summary>
     public static double HomeMood(Town town, Agent a)
     {
         if (a.HomeId == null) return 0;
         var home = town.Building(a.HomeId.Value);
-        double mood = WardOf(town, town.Lot(home.LotId)).Mood;
+        double mood = WardOf(town, town.Lot(home.LotId)).Mood + Density.Mood(town, home);
         if (Housing(town, home.Def.Id) is { } h && (h.Goods.Count > 0 || h.Services.Count > 0))
             mood += (home.Contentment - 0.5) * 2 * town.Content.City.NeedsMood;
         return mood;
@@ -506,10 +554,13 @@ public static class City
     public static string? UpgradeBlocked(Town town, Building house)
     {
         var h = Housing(town, house.Def.Id);
-        if (h == null || h.Next == "") return "it is as grand as houses get";
-        var next = town.Content.Building(h.Next);
+        string nextId = h == null ? "" : NextFor(town, house, h);
+        if (h == null || nextId == "") return "it is as grand as houses get";
+        var next = town.Content.Building(nextId);
         if (Locked(town, next) is { } why) return why;
-        if (!Allows(town, next, town.Lot(house.LotId))) return $"a {next.Name.ToLowerInvariant()} can't stand in the {WardOf(town, town.Lot(house.LotId)).Name}";
+        var lot = town.Lot(house.LotId);
+        if (!AllowsWard(town, next, lot.X, lot.Y)) return $"a {next.Name.ToLowerInvariant()} can't stand in the {WardOf(town, lot).Name}";
+        if (!Density.Allows(town, next, lot.X, lot.Y)) return $"a {next.Name.ToLowerInvariant()} needs land zoned {Density.Def(town, next.Density).Name.ToLowerInvariant()} density";
         // The town's own houses are let to those who can't build: they grow roomier, never grand.
         if (house.OwnerId == null && next.Wards.Count > 0) return "the town lets its houses to working folk, not as manors";
         var nh = Housing(town, next.Id);
@@ -523,7 +574,7 @@ public static class City
     private static void TryUpgrade(Town town, Building house)
     {
         if (UpgradeBlocked(town, house) != null) return;
-        var next = town.Content.Building(Housing(town, house.Def.Id)!.Next);
+        var next = town.Content.Building(NextFor(town, house, Housing(town, house.Def.Id)!));
         double cost = UpgradeCost(town, next);
         double labor = next.BuildHours * 0.5 * Brain.ConstructionWage;
         if (house.OwnerId is int oid)
@@ -609,6 +660,7 @@ public static class City
     {
         var next = NextTier(town);
         if (next != null && Missing(town).Count == 0 && town.Treasury >= next.Cost + 150) RaiseCharter(town);
+        Density.StandIn(town);
 
         // Lay out the next ward when land runs short, or when the treasury is flush and a ward is ready.
         int vacant = Land.OpenGround(town);

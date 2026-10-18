@@ -220,6 +220,7 @@ public partial class TownView(MapView map) : Node3D
             case "townhouse": Townhouse(kit, v); break;
             case "manor": Manor(kit, v); break;
             case "tenement": Tenement(kit, v); break;
+            case "tall_house": TallHouse(kit, v); break;
             case "quarry": Quarry(kit, v); break;
             case "sheepfold": Sheepfold(kit, v); break;
             case "weaver": Weaver(kit, v); break;
@@ -689,6 +690,35 @@ public partial class TownView(MapView map) : Node3D
             Sheet(k, new Vector3(x, 1.62f, 1.25f), new Vector3(x, 1.3f, 1.25f), new Vector3(x + 0.3f, 1.3f, 1.25f), new Vector3(x + 0.3f, 1.62f, 1.25f), c);
         }
         k.Pop();
+    }
+
+    /// <summary>
+    /// A tall house: three narrow gable-fronted houses of four and five storeys built wall to wall, stone below and
+    /// jettied timber above, filling its lot to the edges so a dense street reads as one packed row.
+    /// </summary>
+    private static void TallHouse(MeshKit k, int v)
+    {
+        for (int h = 0; h < 3; h++)
+        {
+            int floors = 4 + (int)(Geo.Hash(v * 31 + h * 7 + 5) * 2.2f);
+            k.Push(MeshKit.At((h - 1) * 0.318f, 0, -0.02f, 0, 0.318f));
+            // Party walls between the three are never seen.
+            int party = h == 0 ? 1 : h == 2 ? 2 : 3;
+            Walls(k, 1, 3, 0, true, v * 11 + h * 3 + 151, true, party);
+            for (int f = 1; f < floors; f++)
+            {
+                // Each storey above juts a little further over the street.
+                k.Push(MeshKit.At(0, 0, 0.04f * f));
+                Walls(k, 1, 3, f, false, v * 11 + h * 3 + 151 + f, false, party);
+                k.Pop();
+                k.Box(new Vector3(0, f - 0.03f, 0.04f * f), new Vector3(1.04f, 0.06f, 3.04f), Palette.DarkTimber);
+            }
+            k.Push(MeshKit.At(0, 0, 0.04f * (floors - 1)));
+            GableZ(k, floors, 1, 3, 0.85f, RoofOf(v + h * 3 + 2), Palette.Plaster, 0.08f);
+            k.Pop();
+            Chimney(k, 0.26f, floors, -1.1f, (v + h) % 2 == 0);
+            k.Pop();
+        }
     }
 
     /// <summary>A quarry: a stepped rock face, cut blocks stacked for the carts, and a timber hoist.</summary>
@@ -1594,7 +1624,7 @@ public partial class TownView(MapView map) : Node3D
     private void Zones(Town town)
     {
         var plan = town.Plan;
-        int version = $"{town.Lots.Count}|{plan.Streets.Count}|{plan.Zones.Aggregate(17, (h, z) => h * 31 + z)}".GetHashCode();
+        int version = $"{town.Lots.Count}|{plan.Streets.Count}|{plan.Zones.Aggregate(17, (h, z) => h * 31 + z)}|{plan.Density.Aggregate(17, (h, z) => h * 31 + z)}".GetHashCode();
         if (version == _zoneVersion) return;
         _zoneVersion = version;
         int n = Land.Size * ZoneUp;
@@ -1605,7 +1635,7 @@ public partial class TownView(MapView map) : Node3D
                 int i = y / ZoneUp * Land.Size + x / ZoneUp, o = (y * n + x) * 4;
                 var z = (Zone)plan.Zones[i];
                 bool show = z is not (Zone.None or Zone.Civic) && plan.Taken[i] == 0 && plan.Paved[i] == 0;
-                var c = show ? Planner.ZoneColor(z) : new Color(0, 0, 0, 0);
+                var c = show ? Planner.ZoneColor(z, plan.Density[i]) : new Color(0, 0, 0, 0);
                 _zoneBuf[o] = c.R * c.A;
                 _zoneBuf[o + 1] = c.G * c.A;
                 _zoneBuf[o + 2] = c.B * c.A;
