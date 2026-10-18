@@ -35,13 +35,18 @@ public class ThreatTests
     [Fact]
     public void AnnouncesTheMarchDaysBeforeTheSiege()
     {
-        var sim = new Simulation(new SimulationOptions { Seed = 5, AutoBounties = false, AutoStories = false });
-        RunUntilOutcome(sim, 250);
-        var march = sim.Town.Ledger.Entries.FirstOrDefault(e => e.Text.Contains("is on the march"));
-        var siege = sim.Town.Chronicles.FirstOrDefault(c => c.PartyName.StartsWith("Defenders", StringComparison.Ordinal));
-        Assert.NotNull(march);
-        Assert.NotNull(siege);
-        Assert.True(siege.ReturnDay * 24 - march.Tick >= 2 * 24);
+        // Some seeds' heroes break the warband before it ever marches; the first that marches must give warning.
+        foreach (int seed in new[] { 5, 6, 7, 8, 9 })
+        {
+            var sim = new Simulation(new SimulationOptions { Seed = seed, AutoBounties = false, AutoStories = false });
+            RunUntilOutcome(sim, 250);
+            var march = sim.Town.Ledger.Entries.FirstOrDefault(e => e.Text.Contains("is on the march"));
+            var siege = sim.Town.Chronicles.FirstOrDefault(c => c.PartyName.StartsWith("Defenders", StringComparison.Ordinal));
+            if (march == null || siege == null) continue;
+            Assert.True(siege.ReturnDay * 24 - march.Tick >= 2 * 24);
+            return;
+        }
+        Assert.Fail("no seed's warband marched on the town");
     }
 
     [Fact]
