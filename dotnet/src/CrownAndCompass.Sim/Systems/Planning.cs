@@ -16,6 +16,9 @@ public static class Planning
     public static bool CanZone(Lot lot, Zone zone) =>
         lot.IsVacant && lot.OwnerId == null && lot.Zone != zone && (zone == Zone.None || Paintable.Contains(zone));
 
+    /// <summary>As <see cref="CanZone(Lot, Zone)"/>, and the lot's ward has been laid out.</summary>
+    public static bool CanZone(Town town, Lot lot, Zone zone) => CanZone(lot, zone) && City.IsOpen(town, lot);
+
     /// <summary>Zone a stroke of lots. Returns how many changed.</summary>
     public static int Paint(Town town, IEnumerable<int> lotIds, Zone zone)
     {
@@ -24,7 +27,7 @@ public static class Planning
         {
             if (id < 0 || id >= town.Lots.Count) continue;
             var lot = town.Lot(id);
-            if (!CanZone(lot, zone)) continue;
+            if (!CanZone(town, lot, zone)) continue;
             lot.Zone = zone;
             n++;
         }
@@ -50,7 +53,13 @@ public static class Planning
         town.Log(LedgerCategory.Property, Importance.Notable, $"{a.Name} has gold for {ZoneName(zone)} land, but no {ZoneName(zone)} lot is zoned and for sale.", [a.Id]);
     }
 
-    public static int VacantZoned(Town town, Zone zone) => town.Lots.Count(l => l.Zone == zone && l.IsVacant && l.OwnerId == null);
+    public static int VacantZoned(Town town, Zone zone) => town.Lots.Count(l => l.Zone == zone && l.IsVacant && l.OwnerId == null && City.IsOpen(town, l));
+
+    /// <summary>What the timber and stone for a building cost at today's market, caravans covering any shortfall.</summary>
+    public static double Materials(Town town, BuildingDef d) => town.Market.Quote(Good.Timber, d.Timber) + town.Market.Quote(Good.Stone, d.Stone);
+
+    /// <summary>Buy a building's timber and stone; returns what they cost.</summary>
+    public static double BuyMaterials(Town town, BuildingDef d) => town.Market.Buy(Good.Timber, d.Timber) + town.Market.Buy(Good.Stone, d.Stone);
 
     // Government building --------------------------------------------------------------------
 
@@ -70,7 +79,7 @@ public static class Planning
     {
         if (d.Id == town.Content.Shrines.Temple) return Shrines.TempleCost(town);
         if (SightWork(town, d.Id) is { } w) return Watch.WorkCost(town, w);
-        return Js.Round(d.Cost + town.Market.Quote(Good.Timber, d.Timber) + (d.IsBusiness ? StartingCash : 0));
+        return Js.Round(d.Cost + Materials(town, d) + (d.IsBusiness ? StartingCash : 0));
     }
 
     /// <summary>Working capital the treasury puts in a new town-owned business.</summary>
@@ -82,6 +91,7 @@ public static class Planning
         if (d.Id == town.Content.Shrines.Temple) return Shrines.TempleBlocked(town);
         if (SightWork(town, d.Id) is { } w) return Watch.WorkBlocked(town, w);
         if (!Placeable(town).Contains(d)) return "not the town's to build";
+        if (City.Locked(town, d) is { } locked) return locked;
         int count = town.Buildings.Count(b => b.Def.Id == d.Id);
         if (d.Max > 0 && count >= d.Max) return $"the town has {d.Max}";
         if (town.Population < d.Population) return $"needs {d.Population} residents";
@@ -90,10 +100,13 @@ public static class Planning
     }
 
     /// <summary>Why this lot can't take the building, or null when it can.</summary>
-    public static string? LotBlocked(Town town, Lot lot)
+    public static string? LotBlocked(Town town, Lot lot, BuildingDef? d = null)
     {
         if (!lot.IsVacant) return "the lot is built on";
         if (lot.OwnerId != null) return "the lot is privately owned";
+        var ward = City.WardOf(town, lot);
+        if (!City.IsOpen(town, lot)) return $"the {ward.Name} has not been laid out";
+        if (d != null && !City.Allows(town, d, lot)) return $"it can't stand in the {ward.Name}";
         return null;
     }
 
@@ -103,13 +116,13 @@ public static class Planning
         if (lotId < 0 || lotId >= town.Lots.Count) return null;
         var d = town.Content.Building(buildingId);
         var lot = town.Lot(lotId);
-        if (Blocked(town, d) != null || LotBlocked(town, lot) != null) return null;
+        if (Blocked(town, d) != null || LotBlocked(town, lot, d) != null) return null;
         if (d.Id == town.Content.Shrines.Temple) return Shrines.BuildTemple(town, lot);
         if (SightWork(town, d.Id) != null) return Watch.BuildWork(town, d.Id, lot);
 
         double cost = Cost(town, d);
         town.Book(d.Id == "house" ? TreasuryAccount.CharterHouses : TreasuryAccount.Works, -cost);
-        town.Market.Buy(Good.Timber, d.Timber);
+        BuyMaterials(town, d);
         lot.Zone = ZoneFor(town, d);
         string name = d.Civic ? CivicName(town, d) : Property.NameFor(town, d, null);
         var site = town.AddBuilding(d, lot, null, name, false);
@@ -131,9 +144,14 @@ public static class Planning
     }
 
     /// <summary>A vacant lot near the hall for a government work: civic land first, then any open lot.</summary>
-    public static Lot? CivicLot(Town town)
+    public static Lot? CivicLot(Town town, BuildingDef? d = null)
     {
-        var lot = Property.FindLot(town, Zone.Civic) ?? Property.FindLot(town, Zone.None);
+        Lot? Find(Zone z) => d == null ? Property.FindLot(town, z) : town.Lots
+            .Where(l => l.Zone == z && l.IsVacant && l.OwnerId == null && City.Allows(town, d, l))
+            .OrderBy(Town.DistanceFromCenter)
+            .ThenBy(l => l.Id)
+            .FirstOrDefault();
+        var lot = Find(Zone.Civic) ?? Find(Zone.None);
         if (lot != null) lot.Zone = Zone.Civic;
         return lot;
     }
@@ -155,6 +173,30 @@ public static class Planning
     {
         double f = 0;
         foreach (var b in Standing(town)) f += b.Def.FoodStore;
+        return f;
+    }
+
+    /// <summary>Mandate the townsfolk lend the mayor for the courthouse, the cathedral and the other great works.</summary>
+    public static double Mandate(Town town)
+    {
+        double f = 0;
+        foreach (var b in Standing(town)) f += b.Def.Mandate;
+        return f;
+    }
+
+    /// <summary>How much stronger the walls are for the barracks and the keep.</summary>
+    public static double Defense(Town town)
+    {
+        double f = 0;
+        foreach (var b in Standing(town)) f += b.Def.Defense;
+        return f;
+    }
+
+    /// <summary>Extra share of sales tax from the market halls.</summary>
+    public static double SalesBoost(Town town)
+    {
+        double f = 0;
+        foreach (var b in Standing(town)) f += b.Def.SalesBoost;
         return f;
     }
 
