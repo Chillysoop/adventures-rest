@@ -176,6 +176,7 @@ public static class Streets
     public static int Serve(Town town, int max = 16)
     {
         var plan = town.Plan;
+        Decor.Cells(town);
         if (plan.Streets.Count == 0) return 0;
         var skip = new HashSet<int>();
         var gap = new double[8];
@@ -304,6 +305,7 @@ public static class Streets
     public static void Wear(Town town)
     {
         var plan = town.Plan;
+        Decor.Cells(town);
         var rules = town.Content.City.Paths;
         var worn = plan.Worn;
         for (int i = 0; i < worn.Length; i++)
@@ -463,10 +465,11 @@ public static class Streets
         return path;
     }
 
-    /// <summary>Whether a lane can't pass through this cell: a building on it or right beside it.</summary>
+    /// <summary>Whether a lane can't pass through this cell: a building on it or right beside it, or a decoration on it.</summary>
     private static bool Blocked(LandPlan plan, int x, int y)
     {
         int n = Land.Size;
+        if (plan.Decor is { } decor && decor[y * n + x]) return true;
         for (int yy = y - 1; yy <= y + 1; yy++)
             for (int xx = x - 1; xx <= x + 1; xx++)
                 if (plan.Taken[yy * n + xx] != 0) return true;

@@ -399,7 +399,11 @@ public sealed class Town
 
     public static double DistanceFromCenter(Lot l) => Math.Sqrt((l.X - Center) * (l.X - Center) + (l.Y - Center) * (l.Y - Center));
 
-    public double LotPrice(Lot lot) => LotPrice(DistanceFromCenter(lot)) * Systems.City.WardOf(this, lot).Land + Systems.Decor.LandValue(this, lot);
+    public double LotPrice(Lot lot)
+    {
+        var ward = Systems.City.WardOf(this, lot);
+        return LotPrice(DistanceFromCenter(lot)) * ward.Land * Systems.Decor.Prestige(this, ward.Id) + Systems.Decor.LandValue(this, lot);
+    }
 
     /// <summary>Land is dearer near the hall (before the ward's own price and the beauty round it).</summary>
     public double LotPrice(double distance) =>

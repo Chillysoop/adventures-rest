@@ -100,6 +100,12 @@ public partial class Main : Control
         // --hero picks the town's most storied hero in town, for a look at their sheet.
         if (_opts.Hero && _sim.Town.Heroes.Where(a => !a.IsAway).OrderByDescending(a => a.Hero!.Items.Count).ThenByDescending(a => a.Hero!.Level).ThenBy(a => a.Id).FirstOrDefault() is Agent hero)
             Select(Selection.Agent(hero.Id));
+        if (_opts.House && _sim.Town.Buildings.Where(b => b.Complete && b.Def.Housing > 0).OrderByDescending(b => Decor.Comfort(_sim.Town, b)).ThenBy(b => b.Id).FirstOrDefault() is Building house)
+        {
+            Select(Selection.Building(house.Id));
+            var lot = _sim.Town.Lot(house.LotId);
+            _map.LookAt(new Vector2(Map.Geo.Margin + (float)lot.X, Map.Geo.Margin + (float)lot.Y), 7);
+        }
         // News from a fast-forward is in the Ledger; don't greet the player with a stale feed.
         ClearFeed();
         if (_opts.Tutorial is string step) StartTutorial(step == "start" ? null : step);
@@ -152,8 +158,10 @@ public partial class Main : Control
 
     private void NewTown(int seed, bool autoplay = false)
     {
-        // With --autoplay the stand-in mayor keeps playing, for demos and screenshots.
-        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay, AutoStories = autoplay }));
+        RememberLegends();
+        // With --autoplay the stand-in mayor keeps playing, for demos and screenshots; only a player's towns meet old legends.
+        var legends = autoplay ? [] : ProfileLegends();
+        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay, AutoStories = autoplay, Legends = legends }));
     }
 
     /// <summary>Show a town: a new one, or one loaded from a save.</summary>
@@ -500,6 +508,7 @@ public partial class Main : Control
         var t = _sim.Town;
         _endShown = true;
         SetSpeed(0);
+        RememberLegends();
         bool won = t.Outcome == Outcome.Victory;
         foreach (var c in _endOverlay.GetChildren()) c.QueueFree();
         var center = new CenterContainer();

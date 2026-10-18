@@ -33,12 +33,17 @@
   Every menace kind, people, faction and hero background needs a `lineages` entry there naming the power it descends
   from and its motive; menaces add themes and ambition weights, backgrounds the classes that come up through them, and
   either can add traits. `LoreTests` fails on anything without one. Use original names only, never a WotC setting's.
+- Across campaigns: the client's profile `user://profile.json` (`godot/src/Profile.cs`) is the one store for anything
+  that carries between runs; each feature owns a section (`legends` now). The sim never reads it: the client passes it
+  in `SimulationOptions` (`Legends`), and the town keeps what it used in saved state. Turncoats and returning legends
+  are `Systems/Turning.cs` with numbers in saga.json `turning`.
 - Alerts (the Paradox-style icon strip): raise one from the sim by adding a kind and a rule in `Systems/Alerts.cs`
   (rules read the town, never write or roll dice; an alert lasts while its rule names it). Each alert is one action for the player; news goes to the Ledger, not the strip.
 - Decorations (`content/game/decor.json`, `Systems/Decor.cs`, client `Map/Decorator.cs`, `Map/DecorView.cs`): free positions in
-  lots (doubles, lot (x, y) covers x..x+1) and any angle (radians, model front +Z turned by it). Every piece needs a small
-  effect in another system, capped in decor.json. `--beautify D` dresses a town for screenshots; `--decor oak --decor-at x,y,a`
-  shows the tool.
+  tiles from the town's corner and any angle (radians, model front +Z turned by it). Every piece needs a small effect in
+  another system, capped in decor.json. Pieces claim plan cells (`Decor.Cells`, `LandPlan.Decor`): `Land.Fits` and lanes go
+  round them, and they never stand on a lane. Appeal adds to house contentment (`Decor.Comfort`) and to ward land prices
+  (`Decor.Prestige`). `--beautify D` dresses a town for screenshots; `--decor oak --decor-at x,y,a` shows the tool.
 - Godot client in `godot/` (Godot 4.3 .NET). Screenshots: `xvfb-run -a godot --path godot --rendering-driver opengl3
   --resolution 1600x900 -- --seed N --day D --autoplay --screenshot out.png` (`--cam`, `--look`, `--site`, `--strategic`
   aim it; `--bench` checks the performance budget in the GDD). Exports go to `godot/build/` (ignored).

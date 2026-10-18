@@ -405,7 +405,7 @@ public static class City
                 sum += CoverageOf(town, s);
                 needs++;
             }
-            house.Contentment = needs == 0 ? 1 : sum / needs;
+            house.Contentment = Math.Clamp((needs == 0 ? 1 : sum / needs) + Decor.Comfort(town, house), 0, 1);
         }
         town.City.Wanted = wanted;
         town.City.Supplied = supplied;
@@ -498,7 +498,7 @@ public static class City
             sum += CoverageOf(town, s);
             needs++;
         }
-        return needs == 0 ? 1 : sum / needs;
+        return Math.Clamp((needs == 0 ? 1 : sum / needs) + Decor.Comfort(town, house), 0, 1);
     }
 
     /// <summary>Why this house can't grow now, or null when it can.</summary>

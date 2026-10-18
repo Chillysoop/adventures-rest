@@ -259,6 +259,7 @@ public partial class Main
             .OrderBy(s => File.Exists(SlotPath(s)) ? File.GetLastWriteTimeUtc(SlotPath(s)) : DateTime.MinValue)
             .First();
         Save(slot, wait: now);
+        RememberLegends();
     }
 
     /// <summary>Continue on the main menu: pick up where the player left off, from the newest save of any kind.</summary>

@@ -102,7 +102,9 @@ public static class Planning
         if (!City.Allows(town, d, x, y)) return $"it can't stand in the {ward.Name}";
         if (Land.At(town, d, x, y, yaw) != null) return null;
         var (w, dd) = Land.Footprint(d);
-        return Hills.Span(town, x, y, w, dd, yaw ?? Streets.Facing(town, x, y)) > Hills.MaxSpan ? "the ground is too steep" : "no room here";
+        double a = yaw ?? Streets.Facing(town, x, y);
+        if (Decor.Cells(town) is { } decor && Land.Cells(x, y, w, dd, a).Any(i => i >= 0 && decor[i])) return "decorations stand there: clear them first";
+        return Hills.Span(town, x, y, w, dd, a) > Hills.MaxSpan ? "the ground is too steep" : "no room here";
     }
 
     /// <summary>Place a building by hand at a point and heading (null faces the nearest lane), paid from the treasury.</summary>
