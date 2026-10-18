@@ -71,6 +71,33 @@ public class SagaTests(LongCampaign campaign) : IClassFixture<LongCampaign>
     }
 
     [Fact]
+    public void TheBigBadEscapesItsFirstDefeatsAndAYoungLongNight()
+    {
+        var sim = new Simulation(new SimulationOptions { Seed = 3, AutoMayor = false, FreeCompanies = false });
+        var t = sim.Town;
+        sim.RunDays(1);
+        var f = t.Content.Saga.Finale;
+        var m = Menaces.Seed(t, [9, 9])!;
+        m.BigBad = true;
+        Menaces.Ascend(t, m);
+        t.Saga.CrownDay = t.Day;
+        for (int i = 0; i < f.Escapes + 1; i++)
+        {
+            Quests.Site(t, m.SeatId)!.Cleared = true;
+            Menaces.Daily(t, false);
+            Assert.True(m.Alive);
+        }
+        Assert.Equal(f.Escapes + 1, t.Saga.BigBadEscapes);
+        Assert.Null(t.Outcome);
+
+        // Out of escapes and the Long Night is old: this time it dies.
+        t.Saga.CrownDay = t.Day - f.MinDays;
+        Quests.Site(t, m.SeatId)!.Cleared = true;
+        Menaces.Daily(t, false);
+        Assert.False(m.Alive);
+    }
+
+    [Fact]
     public void AKnownLairLeftAloneFestersAndRises()
     {
         // Nobody goes out: every lair the town hears of is left alone.
