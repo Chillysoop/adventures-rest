@@ -54,7 +54,7 @@ public static class Tutorial
     public static readonly string[] Anchors = ["speeds", "topbar", "clock", "threat", "alerts", "feed", "build", "buildbar", "strategic", "minimap", "markers", "menu", "window", "inspector", "dock"];
 
     /// <summary>Things the player does in the client that can finish a step.</summary>
-    public static readonly string[] Events = ["next", "speed", "pause", "rotate", "select", "select:agent", "select:building", "select:site", "build", "strategic", "menu", "save", "alert", "roll", "flag", "call", "select:wall", "select:tower", "select:flag"];
+    public static readonly string[] Events = ["next", "speed", "pause", "rotate", "select", "select:agent", "select:building", "select:site", "build", "strategic", "menu", "save", "alert", "roll", "flag", "call", "select:wall", "select:tower", "select:flag", "explorers"];
 
     private static TutorialBook? _default;
 
@@ -71,6 +71,9 @@ public static class Tutorial
     {
         if (token == "zoned") return Systems.Land.PaintedCells(t);
         if (token == "decorated") return t.Decor.Pieces.Count;
+        // The densest zoning the charter allows, and the cells zoned denser than low.
+        if (token == "density") return Systems.Density.Unlocked(t);
+        if (token == "dense") return t.Plan.Density.Count(d => d > 0);
         if (!token.StartsWith("count:", StringComparison.Ordinal)) return null;
         var prop = typeof(Town).GetProperty(token[6..], BindingFlags.Public | BindingFlags.Instance);
         return prop?.GetValue(t) is IEnumerable items and not string ? items.Cast<object>().Count() : null;

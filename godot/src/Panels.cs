@@ -187,6 +187,7 @@ public partial class Main
             }
         }
 
+        RenderExplore(p, t);
         RenderEyes(p, t);
 
         p.Heading("Bounty board");
@@ -242,6 +243,49 @@ public partial class Main
             p.Card(string.Join("\n", books.Select(kv => $"{Ui.Esc(kv.Key)}   {Ui.C(kv.Value >= 0 ? Ui.Good : Ui.Bad, $"[b]{Sign(kv.Value)}[/b]")}")) + $"\n[b]Net[/b]   {Ui.C(net >= 0 ? Ui.Good : Ui.Bad, $"[b]{Sign(net)}[/b]")}");
         }
         p.Commit();
+    }
+
+    /// <summary>Companies out exploring, the council's open offers, and the country a company could be sent to.</summary>
+    private void RenderExplore(Pane p, Town t)
+    {
+        p.Heading("Exploring");
+        p.Note("Nothing goes on the map by itself. Travellers and allies tell of places; to find them for certain, pay a company to explore a region. They send word of what they find and wait for yours.");
+        foreach (var s in t.Surveys.Where(Explore.Out).OrderBy(x => x.Id))
+        {
+            var region = t.Regions[s.RegionId];
+            var at = s.AtFind is int fid ? Explore.FindOf(t, fid) : null;
+            string state = s.Phase switch
+            {
+                SurveyPhase.Outbound => $"On the road to {Ui.Esc(region.Name)}",
+                SurveyPhase.Exploring => s.Escorting ? "Walking a caravan home" : $"Exploring {Ui.Esc(region.Name)}, {Ui.Days(Math.Max(1, (int)Math.Ceiling((s.ExploreUntil - t.Tick) / 24.0)))} left",
+                SurveyPhase.Waiting when at != null => t.Tick >= at.ReportTick ? $"Waiting for word at {Ui.Esc(Explore.Title(t, at))}" : $"Stopped in {Ui.Esc(region.Name)}; a bird is on its way",
+                SurveyPhase.Investigating when at != null && Explore.NextChapter(t, at) is { } ch => $"Investigating {Ui.Esc(Explore.Title(t, at))}: {Ui.Esc(ch.Title.ToLowerInvariant())}",
+                _ => "Coming home",
+            };
+            string members = string.Join(", ", s.Members.Select(t.Agent).Where(a => !a.Dead).Select(a => AgentLink(a, a.GivenName)));
+            int finds = s.Finds.Count(id => Explore.FindOf(t, id)!.Known);
+            var buttons = new List<(string, bool, bool, Action)>();
+            if (at is { State: FindState.Open } && t.Tick >= at.ReportTick)
+            {
+                int id = at.Id;
+                buttons.Add(("Read their report", true, true, () => OpenFind(id)));
+            }
+            p.Row($"[b]The {Ui.Esc(s.Name)}[/b]  {Tag(finds == 1 ? "1 find" : $"{finds} finds", new Color("8cc084"))}\n{state} · {members}", buttons.ToArray());
+        }
+        foreach (var c in t.Commissions.Where(c => c.Status == BountyStatus.Open))
+            p.Row($"{Ui.Esc(t.Regions[c.RegionId].Name)}  {Tag($"Offer posted: {Math.Round(c.Reward)}g", Ui.Gold)}\n{Ui.C(Ui.Ink2, "[font_size=12]Waiting for a company to take it.[/font_size]")}");
+        int strongest = t.Heroes.Select(h => h.Hero!.Level).DefaultIfEmpty(1).Max();
+        foreach (var r in t.Regions.Where(r => r.Known && Explore.CanCommission(t, r.Id)).OrderBy(r => r.Ring).ThenBy(r => r.Id))
+        {
+            int heard = r.SiteIds.Count(id => Quests.Site(t, id)!.Known != SiteKnowledge.Unheard);
+            int found = r.SiteIds.Count(id => Quests.Site(t, id)!.Found);
+            int reward = (int)Math.Round(Explore.SuggestedReward(t, r));
+            string what = !r.Visited ? "Never explored" : found == 0 ? "Explored, nothing found" : $"{found} {(found == 1 ? "place" : "places")} found";
+            string danger = r.Levels[0] > strongest + 1 ? Ui.C(Ui.Bad, " · too dangerous for the town's heroes yet") : "";
+            int rid = r.Id;
+            p.Row($"{Ui.Esc(r.Name)} {Ui.C(Ui.Ink2, $"[font_size=11]{Ui.Esc(r.Theme.Name)}, {Ui.Days(r.Days)} out[/font_size]")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{what}{(heard > found ? $", {heard - found} more heard of" : "")}[/font_size]")}{danger}",
+                ($"Explore {reward}g", t.Treasury >= reward, false, () => Act(() => _sim.PostSurvey(rid, reward))));
+        }
     }
 
     private static string ScryClasses(Town t) =>
@@ -508,6 +552,16 @@ public partial class Main
         string mood = hs.Loyalty < lr.Desert ? "ready to leave" : hs.Loyalty < lr.Restless ? "restless" : hs.Loyalty >= 75 ? "devoted" : hs.Loyalty >= 60 ? "loyal" : "content";
         var why = Loyalty.Factors(t, a).OrderByDescending(f => Math.Abs(f.Points)).Take(4).Select(f => $"{f.Why} {(f.Points >= 0 ? "+" : "−")}{Math.Round(Math.Abs(f.Points))}");
         p.Text($"{Tag($"Loyalty {loyalty}", color)} {Ui.C(color, mood)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(string.Join(" · ", why))}[/font_size]")}", 13);
+        if (Regard.TemperOf(t, a) is TemperDef temper)
+        {
+            // What they make of the mayor, and the choice that moved them last.
+            double r = Math.Round(hs.Regard);
+            var rc = r >= 15 ? Ui.Good : r <= -15 ? Ui.Bad : Ui.Ink2;
+            string thinks = r >= t.Content.Regard.Admire ? "trusts you" : r >= 15 ? "approves of you" : r <= t.Content.Regard.Aggrieved ? "has a grievance" : r <= -15 ? "disapproves of you" : "undecided about you";
+            string last = hs.RegardWhy != "" ? $" Last {(hs.RegardPleased ? "pleased" : "angered")} by: you {hs.RegardWhy}." : "";
+            string quest = hs.Personal == "done" ? " You saw their personal quest through." : hs.Personal == "failed" ? " You let them down over their personal quest." : "";
+            p.Text($"{Tag(temper.Name, Ui.Ink2)} {Ui.C(rc, $"Regard {(r >= 0 ? "+" : "−")}{Math.Abs(r)}, {thinks}")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Ui.Cap(temper.Text))}: {Ui.Esc(Regard.Describe(t, temper))}.{Ui.Esc(last + quest)}[/font_size]")}", 13);
+        }
         string? knight = Loyalty.KnightBlocked(t, a);
         string? champion = Loyalty.ChampionBlocked(t, a);
         double purse = Js.Round(lr.Reward.PerLevel * hs.Level);
@@ -557,7 +611,10 @@ public partial class Main
             Sight.Scouted when report != null => t.Day - report.Day > Fog.StaleDays
                 ? $"Last seen on day {report.Day}, in a report {t.Day - report.Day} days old. Things may have changed."
                 : $"Scouted on day {report.Day}. You know it as the party described it, not as it is now.",
-            _ => "Only a name in tavern gossip. Nobody who went there has come back to describe it.",
+            _ when t.Finds.LastOrDefault(f => f.SiteId == s.Def.Id && f.Known) is { } find => $"Found by the {Ui.Esc(Explore.Survey(t, find.SurveyId)!.Name)} on day {SimTime.DayOf(find.FoundTick)}, who sent word of it.",
+            _ => s.HeardFrom != ""
+                ? $"Only hearsay, from {Ui.Esc(s.HeardFrom)}. The map shows roughly where; nobody has seen it. Send explorers to find it."
+                : "Only a name in tavern gossip. Nobody who went there has come back to describe it.",
         };
         p.Text(seen);
         // What the taverns say, newest first: a teller, how far to trust them, and whether it proved true.

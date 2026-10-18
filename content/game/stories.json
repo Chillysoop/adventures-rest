@@ -120,18 +120,18 @@
           "text": "Two caravan hands and a militiaman off duty are trading punches over a game of knucklebones, and half of {tavern} has taken sides.",
           "options": [
             {
-              "label": "Wade in and pull them apart", "skill": "athletics", "dc": 12,
+              "label": "Wade in and pull them apart", "tags": ["valor", "order"], "skill": "athletics", "dc": 12,
               "success": { "text": "You haul the loudest of them out by the collar, and the room cheers.", "effects": { "mandate": 3 } },
               "partial": { "text": "You break it up, but a table and two benches don't survive it.", "effects": { "mandate": 1, "gold": -10 } },
               "failure": { "text": "You end up on the floor with ale in your hair. People will tell that one for weeks.", "effects": { "mandate": -2 } }
             },
             {
-              "label": "Shout them down", "skill": "intimidation", "dc": 13,
+              "label": "Shout them down", "tags": ["order"], "skill": "intimidation", "dc": 13,
               "success": { "text": "The room goes quiet at the mayor's voice, and the brawlers sit down sheepishly.", "effects": { "mandate": 2 } },
               "failure": { "text": "Nobody hears you over the noise. The watch clears the room at midnight.", "effects": { "mandate": -2 } }
             },
             {
-              "label": "Buy a round for the house", "cost": 25,
+              "label": "Buy a round for the house", "tags": ["generous"], "cost": 25,
               "success": { "text": "Nothing ends a fight like free ale.", "effects": { "mandate": 2 } }
             }
           ]
@@ -148,17 +148,17 @@
           "text": "A smiling stranger has won at three-dragon every night this week, and the losers say his deck has more dragons than it should.",
           "options": [
             {
-              "label": "Watch the game closely", "skill": "investigation", "dc": 13,
+              "label": "Watch the game closely", "tags": ["order"], "skill": "investigation", "dc": 13,
               "success": { "text": "You catch the card in his sleeve. His winnings go back to the town.", "effects": { "gold": 40, "mandate": 2 } },
               "failure": { "text": "You see nothing amiss. He tips his hat to you on his way out.", "effects": { "mandate": -1 } }
             },
             {
-              "label": "Read the man, not the cards", "skill": "insight", "dc": 12,
+              "label": "Read the man, not the cards", "tags": ["guile"], "skill": "insight", "dc": 12,
               "success": { "text": "One look tells you he's lying. Faced with it, he pays back the worst of his marks and leaves.", "effects": { "gold": 20, "mandate": 2 } },
               "failure": { "text": "He seems an honest sort to you. The losers disagree.", "effects": { "mandate": -1 } }
             },
             {
-              "label": "Sit down and play him", "skill": "sleight-of-hand", "dc": 14,
+              "label": "Sit down and play him", "tags": ["guile", "valor"], "skill": "sleight-of-hand", "dc": 14,
               "critical": { "text": "You cheat the cheat, and he leaves town with his pockets turned out.", "effects": { "gold": 100, "mandate": 2 } },
               "success": { "text": "You beat him at his own game, to roars from the tables.", "effects": { "gold": 50, "mandate": 1 } },
               "failure": { "text": "He takes you for a purse of the town's gold, and smiles while he does it.", "effects": { "gold": -30 } },
@@ -178,18 +178,18 @@
           "text": "{hero} has bet a crowd at the well that nobody in {town} can out-wrestle them, and the crowd is calling for the mayor.",
           "options": [
             {
-              "label": "Take the wager", "skill": "athletics", "dc": 14,
+              "label": "Take the wager", "tags": ["valor", "freedom"], "skill": "athletics", "dc": 14,
               "success": { "text": "You pin {heroName} in the mud to cheers. They laugh and buy you a drink.", "effects": { "loyalty": 8, "mandate": 3 } },
               "partial": { "text": "You last longer than anyone thought, and {heroName} claps you on the back.", "effects": { "loyalty": 5, "mandate": 1 } },
               "failure": { "text": "{heroName} throws you in the trough, then helps you out, grinning.", "effects": { "loyalty": 3, "mandate": -2 } }
             },
             {
-              "label": "Toast them instead", "skill": "performance", "dc": 11,
+              "label": "Toast them instead", "tags": ["generous"], "skill": "performance", "dc": 11,
               "success": { "text": "Your toast to {town}'s champions has the crowd stamping. {heroName} goes red to the ears.", "effects": { "loyalty": 6, "mandate": 1 } },
               "failure": { "text": "The toast falls flat, and {heroName} wanders off.", "effects": { "loyalty": -2 } }
             },
             {
-              "label": "Put a stop to it", "skill": "intimidation", "dc": 12,
+              "label": "Put a stop to it", "tags": ["order"], "skill": "intimidation", "dc": 12,
               "success": { "text": "The crowd breaks up. {heroName} sulks, but does as you say.", "effects": { "mandate": 1, "loyalty": -3 } },
               "failure": { "text": "{heroName} laughs in your face and the crowd laughs with them.", "effects": { "loyalty": -6, "mandate": -1 } }
             }
@@ -207,53 +207,24 @@
           "text": "{hero} has been seen buying rope and rations, and the word at the inn is that they mean to leave for a town that pays better.",
           "options": [
             {
-              "label": "Remind them what the town owes them", "skill": "persuasion", "dc": 14,
+              "label": "Remind them what the town owes them", "tags": ["order"], "skill": "persuasion", "dc": 14,
               "success": { "text": "You talk until the candles gutter. {heroName} unpacks.", "effects": { "loyalty": 15, "mandate": 1 } },
               "partial": { "text": "{heroName} stays, for now, and for a little gold.", "effects": { "loyalty": 8, "gold": -30 } },
               "failure": { "text": "{heroName} hears you out and says nothing. The pack stays by the door.", "effects": { "loyalty": -5 } }
             },
             {
-              "label": "Find out what is really wrong", "skill": "insight", "dc": 13,
+              "label": "Find out what is really wrong", "tags": ["mercy"], "skill": "insight", "dc": 13,
               "success": { "text": "It isn't the pay. It's that nobody thanked them for the last one. You do.", "effects": { "loyalty": 12 } },
               "failure": { "text": "You guess wrong, and {heroName} is offended.", "effects": { "loyalty": -3 } }
             },
             {
-              "label": "Send a purse to their room", "cost": 80,
+              "label": "Send a purse to their room", "tags": ["generous"], "cost": 80,
               "success": { "text": "Gold talks. {heroName} stays.", "effects": { "loyalty": 12 } }
             }
           ]
         }
       ],
       "ignored": { "text": "Nobody from the hall comes. {heroName} takes it as an answer.", "effects": { "loyalty": -6 } }
-    },
-    {
-      "id": "party-storm", "title": "A sending from {party}", "stakes": "medium", "source": "road",
-      "needs": ["party"], "repeatDays": 45,
-      "stages": [
-        {
-          "id": "start",
-          "text": "The sending stone at the hall cracks with a voice: {party} is pinned by a storm far out in the wilds, and {hero} asks whether to press on or turn back.",
-          "options": [
-            {
-              "label": "Read the weather and guide them", "skill": "survival", "dc": 14,
-              "critical": { "text": "You call every turn of the storm right. {heroName} swears {town} has a weather-witch for a mayor.", "effects": { "loyalty": 10, "inspiration": 1 } },
-              "success": { "text": "They come through the storm on your word, and {heroName} won't forget it.", "effects": { "loyalty": 8 } },
-              "failure": { "text": "Your advice takes them into the teeth of it. They come through, but it costs them.", "effects": { "loyalty": -4, "wound": 6 } }
-            },
-            {
-              "label": "Find a safe road on the old maps", "skill": "history", "dc": 13,
-              "success": { "text": "An old road of the drovers runs in the lee of the ridge. They find it.", "effects": { "loyalty": 6 } },
-              "failure": { "text": "The old road is long gone under the scree.", "effects": { "loyalty": -2, "wound": 4 } }
-            },
-            {
-              "label": "Tell them to hold fast", "ability": "wis", "dc": 12,
-              "success": { "text": "They sit it out in a cave, and come on when the sky clears.", "effects": { "loyalty": 4 } },
-              "failure": { "text": "Holding fast means three cold nights with too little food.", "effects": { "wound": 3 } }
-            }
-          ]
-        }
-      ],
-      "ignored": { "text": "The stone stays silent. When they come home, {heroName} asks why nobody answered.", "effects": { "wound": 5, "loyalty": -6 } }
     },
     {
       "id": "council-feud", "title": "The {seat} is feuding", "stakes": "medium", "source": "council",
@@ -264,19 +235,19 @@
           "text": "{councillor}, the {seat}, has called a fellow councillor a thief in open session, and both refuse to sit until the other apologises.",
           "options": [
             {
-              "label": "Broker a peace", "skill": "persuasion", "dc": 14,
+              "label": "Broker a peace", "tags": ["mercy"], "skill": "persuasion", "dc": 14,
               "success": { "text": "A shared jug, a long night and a handshake. The council sits again.", "effects": { "seat": 12, "mandate": 3 } },
               "partial": { "text": "They sit again, glaring at each other across the table.", "effects": { "seat": 5 } },
               "failure": { "text": "Your peace lasts until the first vote.", "effects": { "seat": -6, "mandate": -2 } }
             },
             {
-              "label": "Look into the charge", "skill": "investigation", "dc": 15,
+              "label": "Look into the charge", "tags": ["order"], "skill": "investigation", "dc": 15,
               "critical": { "text": "The accounts don't lie: a fat purse was skimmed, and every coin of it comes back.", "effects": { "gold": 120, "mandate": 4 } },
               "success": { "text": "There was a thief, and the gold comes back. {councillor} was right, and insufferable about it.", "effects": { "gold": 60, "seat": -4, "mandate": 3 } },
               "failure": { "text": "You find nothing, and both of them feel accused.", "effects": { "seat": -10, "mandate": -3 } }
             },
             {
-              "label": "Order them back to work", "skill": "intimidation", "dc": 13,
+              "label": "Order them back to work", "tags": ["harsh", "order"], "skill": "intimidation", "dc": 13,
               "success": { "text": "They go back to work, sullen but quiet.", "effects": { "mandate": 1, "seat": -4 } },
               "failure": { "text": "{councillor} walks out of the chamber, and half the town hears why.", "effects": { "mandate": -3, "seat": -8 } }
             }
@@ -294,16 +265,16 @@
           "text": "A messenger brings a sealed letter from {faction}: their people will be at the town's service, for a seat at your table and a blind eye now and then.",
           "options": [
             {
-              "label": "Drive a hard bargain", "skill": "persuasion", "dc": 14,
+              "label": "Drive a hard bargain", "tags": ["coin", "guile"], "skill": "persuasion", "dc": 14,
               "success": { "text": "You get their help and a gift for the treasury, and give them very little.", "effects": { "standing": 12, "gold": 40 } },
               "failure": { "text": "They think you greedy, and go away to think again.", "effects": { "standing": -5 } }
             },
             {
-              "label": "Accept, warily",
+              "label": "Accept, warily", "tags": ["coin"],
               "success": { "text": "You shake on it. Some in town mutter about the company you keep.", "effects": { "standing": 15, "mandate": -2 } }
             },
             {
-              "label": "Refuse them to their face", "skill": "intimidation", "dc": 13,
+              "label": "Refuse them to their face", "tags": ["valor", "order"], "skill": "intimidation", "dc": 13,
               "success": { "text": "The messenger leaves pale, and the town hears that its mayor can't be bought.", "effects": { "standing": -8, "mandate": 3 } },
               "failure": { "text": "They laugh at the threat, and remember it.", "effects": { "standing": -12 } }
             }
@@ -321,18 +292,18 @@
           "text": "The watch has caught someone copying the treasury's books by candlelight. Under the ink on their fingers is the mark of {faction}.",
           "options": [
             {
-              "label": "Question them", "skill": "intimidation", "dc": 14,
+              "label": "Question them", "tags": ["harsh", "order"], "skill": "intimidation", "dc": 14,
               "success": { "text": "They talk, and the fine for their release is paid in full by {faction}.", "effects": { "gold": 50, "standing": -6, "mandate": 3 } },
               "failure": { "text": "They say nothing at all, and are gone from the cells by morning.", "effects": { "mandate": -2 } }
             },
             {
-              "label": "Turn them, and feed {faction} false books", "skill": "deception", "dc": 15,
+              "label": "Turn them, and feed {faction} false books", "tags": ["guile"], "skill": "deception", "dc": 15,
               "critical": { "text": "Every false figure is believed, and {faction} is made a laughing stock.", "effects": { "standing": -10, "mandate": 4, "inspiration": 1 } },
               "success": { "text": "The spy goes home with books that lead {faction} nowhere, and the fine is paid twice over.", "effects": { "gold": 60, "standing": -4 } },
               "failure": { "text": "The spy sees through you, and every word of it goes back to {faction}.", "effects": { "standing": -12 } }
             },
             {
-              "label": "Let them go with a warning",
+              "label": "Let them go with a warning", "tags": ["mercy"],
               "success": { "text": "The courtesy is not lost on {faction}. The town is less pleased.", "effects": { "standing": 6, "mandate": -3 } }
             }
           ]
@@ -349,17 +320,17 @@
           "text": "A rider under a filthy white rag waits at the ford. {menace} wants to talk about who the valleys belong to.",
           "options": [
             {
-              "label": "Parley, and take their measure", "skill": "insight", "dc": 14,
+              "label": "Parley, and take their measure", "tags": ["caution"], "skill": "insight", "dc": 14,
               "success": { "text": "You learn more from what the envoy won't say than from what they do, and the heroes hear all of it.", "effects": { "foePower": -0.06, "dread": -3 } },
               "failure": { "text": "The envoy learns more about {town} than you do about them.", "effects": { "dread": 3 } }
             },
             {
-              "label": "Lie about the walls", "skill": "deception", "dc": 15,
+              "label": "Lie about the walls", "tags": ["guile"], "skill": "deception", "dc": 15,
               "success": { "text": "The envoy rides off sure the town has twice the walls it has. {menace} turns its eyes elsewhere a while.", "effects": { "foePower": -0.08, "dread": -2 } },
               "failure": { "text": "The envoy smiles at the lie. {menace} knows now how thin the walls are.", "effects": { "foePower": 0.05, "dread": 3 } }
             },
             {
-              "label": "Send them off with a warning", "skill": "intimidation", "dc": 15,
+              "label": "Send them off with a warning", "tags": ["valor"], "skill": "intimidation", "dc": 15,
               "success": { "text": "The envoy goes white and spurs away. The town watches from the walls, and cheers.", "effects": { "dread": -4, "mandate": 3 } },
               "failure": { "text": "The envoy laughs and spits in the ford.", "effects": { "dread": 3, "mandate": -2 } }
             }
@@ -377,7 +348,7 @@
           "text": "Scouts say the host of {menace} will camp tonight at the ford below {town}. There is still time to do something about it.",
           "options": [
             {
-              "label": "Lead a sally against the camp", "skill": "athletics", "dc": 16, "aid": "hero",
+              "label": "Lead a sally against the camp", "tags": ["valor"], "skill": "athletics", "dc": 16, "aid": "hero",
               "critical": { "text": "You fall on the camp in the small hours and burn half its wagons. You're home before dawn, and the bells ring for you.", "effects": { "foePower": -0.18, "mandate": 5, "dread": -5, "inspiration": 1 } },
               "success": { "text": "You strike the camp at moonset and are back behind the walls by first light. The host will march on lighter.", "effects": { "foePower": -0.12, "mandate": 4, "dread": -3 } },
               "partial": { "text": "You do real harm to the camp, and bring back wounded.", "effects": { "foePower": -0.06, "wound": 6 } },
@@ -385,17 +356,17 @@
               "fumble": { "text": "It goes wrong from the first step. The host jeers at the walls all night.", "effects": { "wound": 12, "mandate": -5, "dread": 4 } }
             },
             {
-              "label": "Flood the ford", "skill": "nature", "dc": 15,
+              "label": "Flood the ford", "tags": ["guile"], "skill": "nature", "dc": 15,
               "success": { "text": "You break the old weir at midnight, and the river does the rest. The host must find another crossing.", "effects": { "delay": 48 }, "next": "deserter" },
               "failure": { "text": "The weir holds against everything you throw at it.", "effects": { "delay": 6 } }
             },
             {
-              "label": "Spread panic in their camp", "skill": "deception", "dc": 16,
+              "label": "Spread panic in their camp", "tags": ["guile"], "skill": "deception", "dc": 16,
               "success": { "text": "By morning the camp believes the town has a dragon. Deserters stream off into the hills.", "effects": { "foePower": -0.08, "delay": 24 } },
               "failure": { "text": "Your false rumours never reach the camp's fires.", "effects": {} }
             },
             {
-              "label": "Ring the bells and man the walls",
+              "label": "Ring the bells and man the walls", "tags": ["caution"],
               "success": { "text": "No tricks tonight: every hand to the walls, and the town sleeps a little easier for it.", "effects": { "dread": -2, "mandate": 1 } }
             }
           ]
@@ -405,12 +376,12 @@
           "text": "While the host searches for a crossing, a deserter from the ranks of {menace} comes to the gate, offering its order of march for a pardon.",
           "options": [
             {
-              "label": "Hear them out", "skill": "insight", "dc": 15,
+              "label": "Hear them out", "tags": ["mercy"], "skill": "insight", "dc": 15,
               "success": { "text": "The deserter is genuine. The heroes know now where the host is weakest.", "effects": { "foePower": -0.08, "dread": -4 } },
               "failure": { "text": "It was a ruse: the false order of march costs the town half a day.", "effects": { "delay": -12, "mandate": -2 } }
             },
             {
-              "label": "Hang them from the wall", "skill": "intimidation", "dc": 12,
+              "label": "Hang them from the wall", "tags": ["harsh"], "skill": "intimidation", "dc": 12,
               "success": { "text": "The host sees what {town} does with its kind.", "effects": { "dread": -3, "mandate": 2 } },
               "failure": { "text": "The town is sickened by it.", "effects": { "dread": 2, "mandate": -3 } }
             }
@@ -429,17 +400,17 @@
           "text": "Smoke at dawn over the outlying farms. Raiders of {menace} have driven off the cattle, and the farmers want them back.",
           "options": [
             {
-              "label": "Track the raiders", "skill": "survival", "dc": 14, "aid": "hero",
+              "label": "Track the raiders", "tags": ["valor"], "skill": "survival", "dc": 14, "aid": "hero",
               "success": { "text": "You find the cattle in a gully, and the raiders guarding them run.", "effects": { "food": 40, "foePower": -0.05, "mandate": 3 } },
               "failure": { "text": "The trail goes cold in the rocks, and an arrow from the heights wounds one of your riders.", "effects": { "mandate": -2, "wound": 5 } }
             },
             {
-              "label": "Rally the farmers", "skill": "persuasion", "dc": 13,
+              "label": "Rally the farmers", "tags": ["valor", "freedom"], "skill": "persuasion", "dc": 13,
               "success": { "text": "The farmers band together and bring half the herd home themselves.", "effects": { "food": 25, "mandate": 2 } },
               "failure": { "text": "The farmers go home, and the herd is gone.", "effects": { "food": -15, "mandate": -2 } }
             },
             {
-              "label": "Pay the farmers for their loss", "cost": 60,
+              "label": "Pay the farmers for their loss", "tags": ["generous"], "cost": 60,
               "success": { "text": "Gold won't bring the cattle back, but the farmers know the hall stands with them.", "effects": { "mandate": 3 } }
             }
           ]
@@ -456,17 +427,17 @@
           "text": "The lamps of {god} burned blue all night at the shrine, and the townsfolk want to know what it means.",
           "options": [
             {
-              "label": "Interpret the omen", "skill": "religion", "dc": 12,
+              "label": "Interpret the omen", "tags": ["faith"], "skill": "religion", "dc": 12,
               "success": { "text": "A sign of favour, you tell them, and the shrine is full by evening.", "effects": { "favour": 6, "mandate": 2 } },
               "failure": { "text": "Your reading convinces nobody, the priests least of all.", "effects": { "mandate": -1 } }
             },
             {
-              "label": "Call it a blessing and throw a feast", "skill": "performance", "dc": 12, "cost": 30,
+              "label": "Call it a blessing and throw a feast", "tags": ["faith", "generous"], "skill": "performance", "dc": 12, "cost": 30,
               "success": { "text": "The town feasts under blue lamps, and talks of nothing else for days.", "effects": { "festival": 1, "mandate": 3 } },
               "failure": { "text": "The feast is a damp affair, and the lamps go out halfway through.", "effects": { "mandate": -1 } }
             },
             {
-              "label": "Say it is only marsh gas", "skill": "nature", "dc": 11,
+              "label": "Say it is only marsh gas", "tags": ["coin"], "skill": "nature", "dc": 11,
               "success": { "text": "The sensible folk nod. The priests don't.", "effects": { "mandate": 1, "favour": -2 } },
               "failure": { "text": "Marsh gas, in a stone shrine? Nobody believes you.", "effects": { "favour": -4, "mandate": -2 } }
             }
@@ -490,12 +461,12 @@
               "failure": { "text": "It's a fake, and the town paid for it.", "effects": { "gold": -30 } }
             },
             {
-              "label": "Sense what clings to it", "skill": "arcana", "dc": 15,
+              "label": "Sense what clings to it", "tags": ["faith"], "skill": "arcana", "dc": 15,
               "success": { "text": "An old blessing, not a curse. You give it to the shrine, and sell the peddler's other trinkets.", "effects": { "favour": 5, "gold": 80 } },
               "failure": { "text": "Something cold looks back at you out of the metal. You sleep badly for a week.", "effects": { "dread": 2 } }
             },
             {
-              "label": "Haggle it off the peddler", "skill": "persuasion", "dc": 13,
+              "label": "Haggle it off the peddler", "tags": ["coin", "guile"], "skill": "persuasion", "dc": 13,
               "success": { "text": "You get it for a song and sell it for a choir.", "effects": { "gold": 60 } },
               "failure": { "text": "The peddler knows what he has.", "effects": { "gold": -20 } }
             }
@@ -513,17 +484,17 @@
           "text": "The cooper's daughter went out for mushrooms yesterday and hasn't come home. Her mother is at the hall door.",
           "options": [
             {
-              "label": "Lead the search", "skill": "survival", "dc": 12,
+              "label": "Lead the search", "tags": ["valor", "mercy"], "skill": "survival", "dc": 12,
               "success": { "text": "You find her by the brook at dusk, cold and cross and quite safe.", "effects": { "mandate": 4 } },
               "failure": { "text": "The search finds nothing. She walks home the next morning, half frozen.", "effects": { "mandate": -2 } }
             },
             {
-              "label": "Send for the hounds", "skill": "animal-handling", "dc": 11,
+              "label": "Send for the hounds", "tags": ["mercy"], "skill": "animal-handling", "dc": 11,
               "success": { "text": "The old hound has her scent in a moment.", "effects": { "mandate": 3 } },
               "failure": { "text": "The hounds chase a deer for an hour. She's found at dawn.", "effects": { "mandate": -1 } }
             },
             {
-              "label": "Ask a hero to find her", "needs": ["hero"],
+              "label": "Ask a hero to find her", "tags": ["mercy"], "needs": ["hero"],
               "success": { "text": "A hero has her home by supper, on their shoulders.", "effects": { "mandate": 2 } }
             }
           ]
@@ -540,17 +511,17 @@
           "text": "A crowd at the granary door is shouting about the price of bread, and someone has brought a torch.",
           "options": [
             {
-              "label": "Calm the crowd", "skill": "persuasion", "dc": 14,
+              "label": "Calm the crowd", "tags": ["mercy"], "skill": "persuasion", "dc": 14,
               "success": { "text": "You stand on a barrel and talk them home, one promise at a time.", "effects": { "mandate": 4 } },
               "partial": { "text": "They go home, with a sack or two of grain each.", "effects": { "mandate": 1, "food": -10 } },
               "failure": { "text": "The granary door gives way. By morning the stores are thinner and tempers no better.", "effects": { "mandate": -5, "food": -25 } }
             },
             {
-              "label": "Buy a wagon of grain from the river barges", "cost": 90,
+              "label": "Buy a wagon of grain from the river barges", "tags": ["generous", "mercy"], "cost": 90,
               "success": { "text": "The wagon rolls in at noon, and the crowd cheers it to the granary.", "effects": { "food": 60, "mandate": 2 } }
             },
             {
-              "label": "Face them down", "skill": "intimidation", "dc": 14,
+              "label": "Face them down", "tags": ["harsh", "order"], "skill": "intimidation", "dc": 14,
               "success": { "text": "The torch goes out. The crowd goes home, muttering.", "effects": { "mandate": 1 } },
               "failure": { "text": "The crowd boos you off the steps.", "effects": { "mandate": -6 } }
             }
@@ -573,11 +544,11 @@
               "failure": { "text": "It looks like nonsense to you, and you buy it anyway, out of pity.", "effects": { "gold": -15 } }
             },
             {
-              "label": "Buy it, whatever it's worth", "cost": 25,
+              "label": "Buy it, whatever it's worth", "tags": ["generous"], "cost": 25,
               "success": { "text": "The map is smudged, but the hill is on it.", "effects": { "reveal": 1 } }
             },
             {
-              "label": "Let him talk himself out", "skill": "insight", "dc": 13,
+              "label": "Let him talk himself out", "tags": ["guile"], "skill": "insight", "dc": 13,
               "success": { "text": "By the fourth ale he's told you the way for free.", "effects": { "reveal": 1 } },
               "failure": { "text": "He falls asleep halfway through the story.", "effects": {} }
             }
@@ -595,17 +566,17 @@
           "text": "Folk without homes have raised a camp of hides and sailcloth by the river. The neighbours want it gone, and the camp wants a roof.",
           "options": [
             {
-              "label": "Find them work and beds", "skill": "persuasion", "dc": 13,
+              "label": "Find them work and beds", "tags": ["mercy", "generous"], "skill": "persuasion", "dc": 13,
               "success": { "text": "A few doors open, a few hands are hired, and the camp shrinks by half.", "effects": { "mandate": 3 } },
               "failure": { "text": "Nobody has room to spare, or so they say.", "effects": { "mandate": -2 } }
             },
             {
-              "label": "Get the neighbours building", "skill": "performance", "dc": 13,
+              "label": "Get the neighbours building", "tags": ["mercy"], "skill": "performance", "dc": 13,
               "success": { "text": "A building bee by the river, with a fiddler and a cauldron of stew. Two cabins go up by dark.", "effects": { "timber": -15, "mandate": 4 } },
               "failure": { "text": "Three people come, and one of them is the fiddler.", "effects": { "mandate": -1 } }
             },
             {
-              "label": "Clear the camp", "skill": "intimidation", "dc": 11,
+              "label": "Clear the camp", "tags": ["harsh", "order"], "skill": "intimidation", "dc": 11,
               "success": { "text": "The camp moves on downriver. The neighbours are pleased, and nobody else is.", "effects": { "mandate": 1 } },
               "failure": { "text": "The camp won't move, and the whole town watches you fail to move it.", "effects": { "mandate": -3 } }
             }
@@ -623,18 +594,18 @@
           "text": "Three households are down with a sweating fever, and a fourth this morning. The herbwife says it came up the river.",
           "options": [
             {
-              "label": "Tend the sick", "skill": "medicine", "dc": 15,
+              "label": "Tend the sick", "tags": ["mercy", "valor"], "skill": "medicine", "dc": 15,
               "success": { "text": "Willow bark, clean water and long nights. The fever breaks in every house.", "effects": { "mandate": 5 } },
               "partial": { "text": "The fever breaks, but the herbs and the nursing cost the town.", "effects": { "mandate": 2, "gold": -40 } },
               "failure": { "text": "The fever is beyond your herbs.", "effects": { "mandate": -2 }, "next": "spread" }
             },
             {
-              "label": "Close off the sick lanes", "skill": "intimidation", "dc": 14,
+              "label": "Close off the sick lanes", "tags": ["harsh", "caution"], "skill": "intimidation", "dc": 14,
               "success": { "text": "The lanes are closed and kept closed. The fever burns out where it started.", "effects": { "mandate": -1 } },
               "failure": { "text": "People slip through the cordon at night.", "effects": { "mandate": -2 }, "next": "spread" }
             },
             {
-              "label": "Pay the temple's healers", "cost": 120, "needs": ["temple"],
+              "label": "Pay the temple's healers", "tags": ["faith", "generous"], "cost": 120, "needs": ["temple"],
               "success": { "text": "The priests of {god} go house to house, and the fever goes with them.", "effects": { "mandate": 3, "favour": 3 } }
             }
           ]
@@ -644,17 +615,17 @@
           "text": "The fever has jumped the lanes. Doors are chalked, and people are blaming strangers.",
           "options": [
             {
-              "label": "Find where it comes from", "skill": "investigation", "dc": 16,
+              "label": "Find where it comes from", "tags": ["valor"], "skill": "investigation", "dc": 16,
               "success": { "text": "A fouled well by the tannery. You seal it, and the fever fades within the week.", "effects": { "mandate": 4 } },
               "failure": { "text": "You never find the source. The fever runs its course, and takes its toll.", "effects": { "mandate": -6, "dread": 4 } }
             },
             {
-              "label": "Pray with the sick", "skill": "religion", "dc": 14,
+              "label": "Pray with the sick", "tags": ["faith", "mercy"], "skill": "religion", "dc": 14,
               "success": { "text": "Whether it's {god} or the rest, the town comes through, and remembers who sat with them.", "effects": { "favour": 5, "mandate": 3 } },
               "failure": { "text": "The prayers bring comfort, and nothing else.", "effects": { "mandate": -4 } }
             },
             {
-              "label": "Send for a healer at any price", "cost": 200,
+              "label": "Send for a healer at any price", "tags": ["generous"], "cost": 200,
               "success": { "text": "A healer from the south arrives in a lacquered coach, and earns every coin.", "effects": { "mandate": 2 } }
             }
           ],
@@ -680,7 +651,7 @@
           "text": "{petitioner}, a {trade}, stands before you with mud to the knee: a neighbour has moved the boundary stone between their plots by a full stride, and swears it was always there.",
           "options": [
             {
-              "label": "Walk the bounds and judge",
+              "label": "Walk the bounds and judge", "tags": ["order"],
               "skill": "insight",
               "dc": 12,
               "success": {
@@ -697,7 +668,7 @@
               }
             },
             {
-              "label": "Find a middle way",
+              "label": "Find a middle way", "tags": ["mercy"],
               "skill": "persuasion",
               "dc": 11,
               "success": {
@@ -714,7 +685,7 @@
               }
             },
             {
-              "label": "Pay one of them off",
+              "label": "Pay one of them off", "tags": ["coin", "guile"],
               "cost": 20,
               "prefer": 0.1,
               "success": {
@@ -750,7 +721,7 @@
           "text": "{petitioner} begs you to break the indenture on their youngest, bound for seven years to a master in {ward} who feeds the apprentices thin gruel and works them by lamplight.",
           "options": [
             {
-              "label": "Shame the master into releasing the child",
+              "label": "Shame the master into releasing the child", "tags": ["mercy"],
               "skill": "persuasion",
               "dc": 13,
               "success": {
@@ -767,7 +738,7 @@
               }
             },
             {
-              "label": "Look into the master's books",
+              "label": "Look into the master's books", "tags": ["order"],
               "skill": "investigation",
               "dc": 12,
               "success": {
@@ -785,7 +756,7 @@
               }
             },
             {
-              "label": "Buy out the indenture",
+              "label": "Buy out the indenture", "tags": ["generous", "mercy"],
               "cost": 40,
               "prefer": 0.15,
               "success": {
@@ -822,7 +793,7 @@
           "text": "{petitioner} brings a petition with forty marks on it: the stallholders want the market tolls lifted. They swear the town will earn it back twice over in trade and settlers.",
           "options": [
             {
-              "label": "Lift the tolls for the season",
+              "label": "Lift the tolls for the season", "tags": ["freedom", "generous"],
               "prefer": 0.2,
               "success": {
                 "text": "Tolls are lifted. Carts come in from three valleys, and the treasury tightens its belt.",
@@ -833,7 +804,7 @@
               }
             },
             {
-              "label": "Make the guild pay the tolls instead",
+              "label": "Make the guild pay the tolls instead", "tags": ["coin", "harsh"],
               "skill": "persuasion",
               "dc": 14,
               "success": {
@@ -858,7 +829,7 @@
               }
             },
             {
-              "label": "Refuse",
+              "label": "Refuse", "tags": ["coin", "order"],
               "success": {
                 "text": "The tolls stay. The stallholders take down their petition and some take down their stalls.",
                 "effects": {
@@ -893,7 +864,7 @@
           "text": "{petitioner} lost their spouse on the wall last month, a watch guard who held a gate alone. Now there is rent due and three children to feed, and the watch's pay died on the wall too.",
           "options": [
             {
-              "label": "Grant the watch's families a pension",
+              "label": "Grant the watch's families a pension", "tags": ["generous", "mercy"],
               "prefer": 0.2,
               "success": {
                 "text": "The council grants a pension to every family the watch has lost. The watch stands a little straighter.",
@@ -904,7 +875,7 @@
               }
             },
             {
-              "label": "Ask the temple to take them in",
+              "label": "Ask the temple to take them in", "tags": ["faith"],
               "skill": "religion",
               "dc": 12,
               "needs": [
@@ -925,7 +896,7 @@
               }
             },
             {
-              "label": "Pass round the hat",
+              "label": "Pass round the hat", "tags": ["coin"],
               "skill": "performance",
               "dc": 13,
               "success": {
@@ -970,7 +941,7 @@
           "text": "{petitioner} hasn't slept a night through since spring: {tavern} roars till dawn, and the gutters are a disgrace. The neighbours want a curfew.",
           "options": [
             {
-              "label": "Set a tavern curfew",
+              "label": "Set a tavern curfew", "tags": ["order"],
               "prefer": 0.05,
               "success": {
                 "text": "The taps close at the evening bell. The neighbours sleep, and the drinkers grumble on the way home.",
@@ -981,7 +952,7 @@
               }
             },
             {
-              "label": "Talk to the landlord",
+              "label": "Talk to the landlord", "tags": ["mercy"],
               "skill": "persuasion",
               "dc": 12,
               "success": {
@@ -998,7 +969,7 @@
               }
             },
             {
-              "label": "Leave the tavern be",
+              "label": "Leave the tavern be", "tags": ["freedom"],
               "success": {
                 "text": "You tell {petitionerName} that a frontier town is a loud town. They don't take it well.",
                 "effects": {
@@ -1033,7 +1004,7 @@
           "text": "The carters of {ward} have sent a delegation: the road in is axle-deep after every rain, and they want it drained and gravelled before the next.",
           "options": [
             {
-              "label": "Pay for the road",
+              "label": "Pay for the road", "tags": ["generous"],
               "cost": 90,
               "prefer": 0.2,
               "success": {
@@ -1045,7 +1016,7 @@
               }
             },
             {
-              "label": "Raise a work gang from the ward",
+              "label": "Raise a work gang from the ward", "tags": ["order"],
               "skill": "persuasion",
               "dc": 13,
               "success": {
@@ -1064,7 +1035,7 @@
               }
             },
             {
-              "label": "Survey a better line",
+              "label": "Survey a better line", "tags": ["caution"],
               "skill": "survival",
               "dc": 14,
               "success": {
@@ -1109,7 +1080,7 @@
           "text": "{petitioner} speaks for the farms: blight in the low fields and a wet summer. They ask that the town's tithe be eased for the harvest, or some will not see the spring.",
           "options": [
             {
-              "label": "Ease the tithe",
+              "label": "Ease the tithe", "tags": ["mercy", "generous"],
               "prefer": 0.15,
               "success": {
                 "text": "The tithe is eased for the season. The farms bring in every last sheaf, and the treasury goes without.",
@@ -1120,7 +1091,7 @@
               }
             },
             {
-              "label": "Check their claims in the fields",
+              "label": "Check their claims in the fields", "tags": ["order"],
               "skill": "nature",
               "dc": 13,
               "success": {
@@ -1138,7 +1109,7 @@
               }
             },
             {
-              "label": "Hold the tithe",
+              "label": "Hold the tithe", "tags": ["coin", "harsh"],
               "success": {
                 "text": "The tithe stands. The farms pay, and remember.",
                 "effects": {
@@ -1176,7 +1147,7 @@
           "text": "A column of carts and walking wounded is at the gate: families burned out of their villages by {menace}. They beg to be let in. The town's stores are what they are, and nobody can say who among them {menace} has sent.",
           "options": [
             {
-              "label": "Open the gates",
+              "label": "Open the gates", "tags": ["mercy", "generous"],
               "prefer": 0.15,
               "success": {
                 "text": "The gates open. The town makes room, and stretches its stores to the breaking point.",
@@ -1190,7 +1161,7 @@
               }
             },
             {
-              "label": "Take in only the able",
+              "label": "Take in only the able", "tags": ["coin"],
               "skill": "insight",
               "dc": 14,
               "success": {
@@ -1220,7 +1191,7 @@
               }
             },
             {
-              "label": "Keep the gates shut",
+              "label": "Keep the gates shut", "tags": ["harsh", "caution"],
               "success": {
                 "text": "The gates stay shut. The column camps a night below the walls, then moves on into the dark.",
                 "effects": {
@@ -1259,7 +1230,7 @@
           "text": "The refugees you took in have crowded into {ward}, and the old families mutter about strange gods and stranger cooking. The newcomers ask for a voice on the ward's moot.",
           "options": [
             {
-              "label": "Give them a quarter and a voice",
+              "label": "Give them a quarter and a voice", "tags": ["mercy", "freedom"],
               "prefer": 0.15,
               "success": {
                 "text": "The newcomers get their seat on the moot and a street of their own. Their cousins start coming up the road.",
@@ -1270,7 +1241,7 @@
               }
             },
             {
-              "label": "Bring the two together",
+              "label": "Bring the two together", "tags": ["mercy"],
               "skill": "performance",
               "dc": 14,
               "success": {
@@ -1289,7 +1260,7 @@
               }
             },
             {
-              "label": "Tell them to keep their heads down",
+              "label": "Tell them to keep their heads down", "tags": ["harsh"],
               "success": {
                 "text": "The newcomers keep their heads down. Some of them keep walking.",
                 "effects": {
@@ -1328,7 +1299,7 @@
           "text": "The merchants' guild lays a chest on the council table: three hundred gold, and more each season, for the sole right to trade in {ward}. Every other stall there would answer to them.",
           "options": [
             {
-              "label": "Take the gold",
+              "label": "Take the gold", "tags": ["coin"],
               "prefer": 0.05,
               "success": {
                 "text": "The chest goes into the treasury. The guild's men take down every other stall in the ward by Friday.",
@@ -1341,7 +1312,7 @@
               }
             },
             {
-              "label": "Bargain them down to a fair charter",
+              "label": "Bargain them down to a fair charter", "tags": ["order"],
               "skill": "persuasion",
               "dc": 15,
               "success": {
@@ -1365,7 +1336,7 @@
               }
             },
             {
-              "label": "Refuse",
+              "label": "Refuse", "tags": ["freedom"],
               "prefer": 0.1,
               "success": {
                 "text": "You push the chest back across the table. The stallholders of {ward} hear of it by evening.",
@@ -1402,7 +1373,7 @@
           "text": "Having bought one ward, the merchants' guild now wants the {seat} for its master, and hints that the gold could stop.",
           "options": [
             {
-              "label": "Break the pact",
+              "label": "Break the pact", "tags": ["valor", "freedom"],
               "skill": "intimidation",
               "dc": 15,
               "success": {
@@ -1421,7 +1392,7 @@
               }
             },
             {
-              "label": "Give the guild its seat",
+              "label": "Give the guild its seat", "tags": ["coin"],
               "success": {
                 "text": "The guild master takes his seat. The council's votes start to come out the guild's way.",
                 "effects": {
@@ -1432,7 +1403,7 @@
               }
             },
             {
-              "label": "Play the guild against the council",
+              "label": "Play the guild against the council", "tags": ["guile"],
               "skill": "deception",
               "dc": 14,
               "success": {
@@ -1479,7 +1450,7 @@
           "text": "{menace} has been seen on every ridge this month. The captain of the watch wants a levy: every able hand drilled on the green at dawn, the building sites be hanged.",
           "options": [
             {
-              "label": "Call the levy",
+              "label": "Call the levy", "tags": ["order", "valor"],
               "prefer": 0.1,
               "success": {
                 "text": "The levy is called. Spears on the green at dawn, and empty scaffolds by noon.",
@@ -1490,7 +1461,7 @@
               }
             },
             {
-              "label": "Drill them yourself in the evenings",
+              "label": "Drill them yourself in the evenings", "tags": ["valor"],
               "skill": "athletics",
               "dc": 14,
               "success": {
@@ -1508,7 +1479,7 @@
               }
             },
             {
-              "label": "Trust the walls and the watch",
+              "label": "Trust the walls and the watch", "tags": ["caution", "freedom"],
               "success": {
                 "text": "No levy. The captain salutes, and says nothing, loudly.",
                 "effects": {
@@ -1544,7 +1515,7 @@
           "text": "A crowd has dragged {petitioner} to the well, a {trade} who keeps herbs and talks to crows. The cows are dry and two children have the cough, and the crowd wants a reckoning.",
           "options": [
             {
-              "label": "Find out what really happened",
+              "label": "Find out what really happened", "tags": ["order"],
               "skill": "investigation",
               "dc": 15,
               "success": {
@@ -1568,7 +1539,7 @@
               }
             },
             {
-              "label": "Stand between them and the crowd",
+              "label": "Stand between them and the crowd", "tags": ["mercy", "valor"],
               "skill": "intimidation",
               "dc": 13,
               "success": {
@@ -1587,7 +1558,7 @@
               }
             },
             {
-              "label": "Give the crowd what it wants",
+              "label": "Give the crowd what it wants", "tags": ["harsh"],
               "success": {
                 "text": "You step aside. {petitionerName} is driven out of {town} with stones at their back.",
                 "effects": {
@@ -1607,7 +1578,7 @@
           "text": "The crowd has a rope and a cart. {petitionerName} is looking at you.",
           "options": [
             {
-              "label": "Bundle them out the back way",
+              "label": "Bundle them out the back way", "tags": ["mercy", "guile"],
               "skill": "stealth",
               "dc": 13,
               "success": {
@@ -1627,7 +1598,7 @@
               }
             },
             {
-              "label": "Let it happen",
+              "label": "Let it happen", "tags": ["harsh"],
               "success": {
                 "text": "You turn away. The town has its reckoning, and some of it will never quite meet your eye again.",
                 "effects": {
@@ -1669,7 +1640,7 @@
           "text": "A crow taps at your window with a bundle tied to its leg: dried herbs and a note in a cramped hand. \"For what you did at the well.\"",
           "options": [
             {
-              "label": "Take the herbs to the sick",
+              "label": "Take the herbs to the sick", "tags": ["mercy", "freedom"],
               "skill": "medicine",
               "dc": 10,
               "success": {
@@ -1687,7 +1658,7 @@
               }
             },
             {
-              "label": "Burn the bundle",
+              "label": "Burn the bundle", "tags": ["faith", "harsh"],
               "success": {
                 "text": "You burn it in the grate. Some debts are better left unpaid.",
                 "effects": {
@@ -1721,7 +1692,7 @@
           "text": "The cellars are emptying, and the town knows a grain merchant has a full granary behind the tannery. He'll sell, at four times the autumn price.",
           "options": [
             {
-              "label": "Seize the grain",
+              "label": "Seize the grain", "tags": ["harsh", "order"],
               "prefer": 0.05,
               "success": {
                 "text": "The watch breaks the granary doors. The town eats, the merchant rides off swearing, and every trading house hears of it.",
@@ -1734,7 +1705,7 @@
               }
             },
             {
-              "label": "Pay his price",
+              "label": "Pay his price", "tags": ["coin"],
               "cost": 150,
               "prefer": 0.1,
               "success": {
@@ -1745,7 +1716,7 @@
               }
             },
             {
-              "label": "Make him sell at a fair price",
+              "label": "Make him sell at a fair price", "tags": ["order"],
               "skill": "intimidation",
               "dc": 14,
               "success": {
@@ -1764,7 +1735,7 @@
               }
             },
             {
-              "label": "Put the town on rations",
+              "label": "Put the town on rations", "tags": ["caution", "order"],
               "success": {
                 "text": "Every household draws a measured share until the thaw. Nobody starves, and nobody is happy.",
                 "effects": {
@@ -1802,7 +1773,7 @@
           "text": "{hero} has been playing {tavern} for their supper, and the room fills whenever they do. They ask whether {town} would keep a bard of its own.",
           "options": [
             {
-              "label": "Give them the stage and a purse",
+              "label": "Give them the stage and a purse", "tags": ["generous", "freedom"],
               "cost": 40,
               "prefer": 0.3,
               "success": {
@@ -1814,7 +1785,7 @@
               }
             },
             {
-              "label": "Sing the chorus with them",
+              "label": "Sing the chorus with them", "tags": ["freedom"],
               "skill": "performance",
               "dc": 13,
               "prefer": 0.2,
@@ -1849,7 +1820,7 @@
               }
             },
             {
-              "label": "Ask them for a ballad of the founding",
+              "label": "Ask them for a ballad of the founding", "tags": ["freedom"],
               "skill": "history",
               "dc": 12,
               "success": {
@@ -1868,7 +1839,7 @@
               }
             },
             {
-              "label": "Say the town has no gold for minstrels",
+              "label": "Say the town has no gold for minstrels", "tags": ["coin"],
               "success": {
                 "text": "{heroName} bows, a little too low, and plays on for their supper.",
                 "effects": {
@@ -1903,7 +1874,7 @@
           "text": "{heroName}'s new song is about {councillor}, the {seat}, and a goat. All {town} is singing it.",
           "options": [
             {
-              "label": "Laugh along with the town",
+              "label": "Laugh along with the town", "tags": ["freedom"],
               "prefer": 0.1,
               "success": {
                 "text": "You sing the goat's verse louder than anyone. The town loves it; {councillor} does not.",
@@ -1915,7 +1886,7 @@
               }
             },
             {
-              "label": "Ask the bard to drop the verse",
+              "label": "Ask the bard to drop the verse", "tags": ["mercy"],
               "skill": "persuasion",
               "dc": 13,
               "success": {
@@ -1934,7 +1905,7 @@
               }
             },
             {
-              "label": "Answer with a verse of your own",
+              "label": "Answer with a verse of your own", "tags": ["valor"],
               "skill": "performance",
               "dc": 15,
               "success": {
@@ -1962,7 +1933,7 @@
               }
             },
             {
-              "label": "Forbid the song",
+              "label": "Forbid the song", "tags": ["harsh", "order"],
               "success": {
                 "text": "The song stops. So does {heroName}'s playing for the town.",
                 "effects": {
@@ -2000,7 +1971,7 @@
           "text": "{hero} kneels at the gate at dawn and asks to swear an oath to {town}. A paladin's oath binds both ways, and the words are yours to choose.",
           "options": [
             {
-              "label": "Swear the Oath of the Shield: hold the walls",
+              "label": "Swear the Oath of the Shield: hold the walls", "tags": ["valor", "faith"],
               "prefer": 0.3,
               "success": {
                 "text": "'While I stand, the gate stands.' {heroName} rises sworn to the walls.",
@@ -2012,7 +1983,7 @@
               }
             },
             {
-              "label": "Swear the Oath of Mercy: tend the weak",
+              "label": "Swear the Oath of Mercy: tend the weak", "tags": ["mercy", "faith"],
               "prefer": 0.25,
               "success": {
                 "text": "'No one in this town goes hungry while I eat.' {heroName} rises sworn to the poor lanes.",
@@ -2024,7 +1995,7 @@
               }
             },
             {
-              "label": "Swear the Oath of Vengeance: hunt what preys on us",
+              "label": "Swear the Oath of Vengeance: hunt what preys on us", "tags": ["harsh", "faith"],
               "prefer": 0.25,
               "success": {
                 "text": "'Whatever comes for {town} will find me first.' The town sleeps a little easier, and {heroName} a little less.",
@@ -2036,7 +2007,7 @@
               }
             },
             {
-              "label": "Swear them to the walls before the altar",
+              "label": "Swear them to the walls before the altar", "tags": ["faith", "order"],
               "skill": "religion",
               "dc": 13,
               "needs": [
@@ -2060,7 +2031,7 @@
               }
             },
             {
-              "label": "Tell them the town needs no oaths",
+              "label": "Tell them the town needs no oaths", "tags": ["freedom"],
               "success": {
                 "text": "{heroName} rises, unsworn, and does not kneel at that gate again.",
                 "effects": {
@@ -2095,7 +2066,7 @@
           "text": "The watch has caught a boy stealing bread, and {hero} stands between him and the stocks. 'My oath is to the weak,' they say. 'Put me there instead.'",
           "options": [
             {
-              "label": "Let the oath stand",
+              "label": "Let the oath stand", "tags": ["mercy"],
               "prefer": 0.15,
               "success": {
                 "text": "The boy goes free into {heroName}'s keeping. Some say the law has gone soft; more say the oath is real.",
@@ -2107,7 +2078,7 @@
               }
             },
             {
-              "label": "Find out why he stole",
+              "label": "Find out why he stole", "tags": ["mercy", "order"],
               "skill": "insight",
               "dc": 13,
               "success": {
@@ -2127,7 +2098,7 @@
               }
             },
             {
-              "label": "Let the law take its course",
+              "label": "Let the law take its course", "tags": ["harsh", "order"],
               "success": {
                 "text": "The boy goes to the stocks. {heroName} watches, then walks out through the gate, and the oath is broken.",
                 "effects": {
@@ -2166,7 +2137,7 @@
           "text": "{faction} has offered {hero} a seat at its table in the cellar. {heroName} has come to you first, which is more than most rogues would.",
           "options": [
             {
-              "label": "Take the seat and keep their knives off the town",
+              "label": "Take the seat and keep their knives off the town", "tags": ["guile"],
               "prefer": 0.25,
               "success": {
                 "text": "{heroName} sits down with {faction}. There are fewer thefts in the market, and a fat envelope reaches the hall every week.",
@@ -2178,7 +2149,7 @@
               }
             },
             {
-              "label": "Take the seat and tell me everything",
+              "label": "Take the seat and tell me everything", "tags": ["guile"],
               "skill": "deception",
               "dc": 13,
               "prefer": 0.2,
@@ -2208,7 +2179,7 @@
               }
             },
             {
-              "label": "Ask them to name names to the watch",
+              "label": "Ask them to name names to the watch", "tags": ["order"],
               "skill": "persuasion",
               "dc": 14,
               "needs": [
@@ -2231,7 +2202,7 @@
               }
             },
             {
-              "label": "Forbid it",
+              "label": "Forbid it", "tags": ["order", "harsh"],
               "success": {
                 "text": "{heroName} shrugs. The cellar door stays shut to them, for now.",
                 "effects": {
@@ -2268,7 +2239,7 @@
           "text": "{faction} wants something for the quiet it keeps: {hero} is to see the watch walks the other way while a caravan's strongbox goes missing.",
           "options": [
             {
-              "label": "Look the other way",
+              "label": "Look the other way", "tags": ["guile", "coin"],
               "prefer": 0.1,
               "success": {
                 "text": "The strongbox goes missing. A share of it turns up at the town hall in a flour sack.",
@@ -2281,7 +2252,7 @@
               }
             },
             {
-              "label": "Have {heroName} talk them out of it",
+              "label": "Have {heroName} talk them out of it", "tags": ["mercy"],
               "skill": "persuasion",
               "dc": 14,
               "aid": "hero",
@@ -2301,7 +2272,7 @@
               }
             },
             {
-              "label": "Spring a trap with the watch",
+              "label": "Spring a trap with the watch", "tags": ["order", "valor"],
               "skill": "investigation",
               "dc": 14,
               "needs": [
@@ -2354,7 +2325,7 @@
           "text": "{hero} watched the militia drill on the green and laughed out loud. Now they offer to teach them properly, for a modest wage.",
           "options": [
             {
-              "label": "Hire them as drillmaster",
+              "label": "Hire them as drillmaster", "tags": ["valor"],
               "cost": 30,
               "prefer": 0.3,
               "success": {
@@ -2366,7 +2337,7 @@
               }
             },
             {
-              "label": "Spar with them on the green first",
+              "label": "Spar with them on the green first", "tags": ["valor"],
               "skill": "athletics",
               "dc": 14,
               "success": {
@@ -2395,7 +2366,7 @@
               }
             },
             {
-              "label": "Say the militia will do as it is",
+              "label": "Say the militia will do as it is", "tags": ["caution"],
               "success": {
                 "text": "{heroName} shrugs and goes back to their ale.",
                 "effects": {
@@ -2429,7 +2400,7 @@
           "text": "{hero} has challenged anyone in {town} to lift the millstone in the square. Nobody can, and {heroName} is getting bored, and loud.",
           "options": [
             {
-              "label": "Hold games on the green",
+              "label": "Hold games on the green", "tags": ["valor", "generous"],
               "cost": 50,
               "prefer": 0.25,
               "success": {
@@ -2443,7 +2414,7 @@
               }
             },
             {
-              "label": "Lift the stone yourself",
+              "label": "Lift the stone yourself", "tags": ["valor"],
               "skill": "athletics",
               "dc": 16,
               "success": {
@@ -2472,7 +2443,7 @@
               }
             },
             {
-              "label": "Put them to work at the building sites",
+              "label": "Put them to work at the building sites", "tags": ["coin"],
               "skill": "persuasion",
               "dc": 12,
               "success": {
@@ -2517,7 +2488,7 @@
           "text": "{hero} asks leave to serve at {temple}: to preach on rest days or, if the town would rather, to tend the sick in the poorer lanes.",
           "options": [
             {
-              "label": "Preach at the temple",
+              "label": "Preach at the temple", "tags": ["faith"],
               "prefer": 0.25,
               "success": {
                 "text": "{heroName} preaches every rest day, and {temple} is fuller than it has been in years.",
@@ -2529,7 +2500,7 @@
               }
             },
             {
-              "label": "Tend the sick in the lanes",
+              "label": "Tend the sick in the lanes", "tags": ["mercy", "faith"],
               "prefer": 0.25,
               "success": {
                 "text": "{heroName} goes door to door with salves and prayers. The poor lanes bless the mayor's name.",
@@ -2541,7 +2512,7 @@
               }
             },
             {
-              "label": "Lead the first rite with them",
+              "label": "Lead the first rite with them", "tags": ["faith"],
               "skill": "religion",
               "dc": 13,
               "success": {
@@ -2588,7 +2559,7 @@
           "text": "{hero} has found an old oak grove by the river, where the woodcutters mean to start next. They ask the town to spare it, and say the land will thank it.",
           "options": [
             {
-              "label": "Spare the grove",
+              "label": "Spare the grove", "tags": ["faith", "freedom"],
               "prefer": 0.25,
               "success": {
                 "text": "The axes go elsewhere. {heroName} keeps the grove, and the fields downriver come up greener.",
@@ -2599,7 +2570,7 @@
               }
             },
             {
-              "label": "Let them choose which trees fall",
+              "label": "Let them choose which trees fall", "tags": ["mercy"],
               "skill": "nature",
               "dc": 12,
               "prefer": 0.2,
@@ -2619,7 +2590,7 @@
               }
             },
             {
-              "label": "Fell it for timber",
+              "label": "Fell it for timber", "tags": ["coin", "harsh"],
               "success": {
                 "text": "The grove comes down in a week. {heroName} watches every tree fall.",
                 "effects": {
@@ -2657,7 +2628,7 @@
           "text": "{hero} has walked every road out of {town} and says nobody is watching them. They have also found tracks out past the old roads that they don't like.",
           "options": [
             {
-              "label": "Make them warden of the roads",
+              "label": "Make them warden of the roads", "tags": ["freedom"],
               "cost": 30,
               "prefer": 0.3,
               "success": {
@@ -2687,7 +2658,7 @@
               }
             },
             {
-              "label": "Do both, and pay them well",
+              "label": "Do both, and pay them well", "tags": ["generous"],
               "cost": 60,
               "success": {
                 "text": "{heroName} takes the horn and the purse, and comes back with a map: something is out at {site}.",
@@ -2724,7 +2695,7 @@
           "text": "Every dawn {hero} moves slow as water through the forms in the square, and a crowd of apprentices has started copying them before work.",
           "options": [
             {
-              "label": "Give them the old granary for a school",
+              "label": "Give them the old granary for a school", "tags": ["generous"],
               "cost": 40,
               "prefer": 0.3,
               "success": {
@@ -2736,7 +2707,7 @@
               }
             },
             {
-              "label": "Join the forms yourself",
+              "label": "Join the forms yourself", "tags": ["valor"],
               "skill": "acrobatics",
               "dc": 13,
               "success": {
@@ -2763,7 +2734,7 @@
               }
             },
             {
-              "label": "Ask them to train the watch",
+              "label": "Ask them to train the watch", "tags": ["order"],
               "needs": [
                 "watch"
               ],
@@ -2801,7 +2772,7 @@
           "text": "Wild magic got loose from {hero} in the market: the fountain ran with wine for an hour, a cart floated off over the roofs, and somebody's goat is talking.",
           "options": [
             {
-              "label": "Calm the crowd",
+              "label": "Calm the crowd", "tags": ["mercy"],
               "skill": "persuasion",
               "dc": 13,
               "success": {
@@ -2820,7 +2791,7 @@
               }
             },
             {
-              "label": "Call it a festival",
+              "label": "Call it a festival", "tags": ["freedom"],
               "cost": 20,
               "prefer": 0.1,
               "success": {
@@ -2833,7 +2804,7 @@
               }
             },
             {
-              "label": "Put the spark to work in the forges",
+              "label": "Put the spark to work in the forges", "tags": ["coin"],
               "skill": "arcana",
               "dc": 14,
               "prefer": 0.2,
@@ -2862,7 +2833,7 @@
               }
             },
             {
-              "label": "Banish them from the market",
+              "label": "Banish them from the market", "tags": ["harsh"],
               "success": {
                 "text": "{heroName} goes, red-faced. The market is calmer and the sorcerer is not.",
                 "effects": {
@@ -2898,7 +2869,7 @@
           "text": "{hero}'s patron spoke through them in the night, in a voice that was not theirs: it will fill {town}'s coffers, if {town} will remember its name.",
           "options": [
             {
-              "label": "Accept the gift",
+              "label": "Accept the gift", "tags": ["coin", "guile"],
               "prefer": 0.05,
               "success": {
                 "text": "Gold is found in the old well by morning, and more every week after. Nobody likes to draw water there now.",
@@ -2911,7 +2882,7 @@
               }
             },
             {
-              "label": "Bargain for better terms",
+              "label": "Bargain for better terms", "tags": ["coin", "guile"],
               "skill": "deception",
               "dc": 15,
               "success": {
@@ -2938,7 +2909,7 @@
               }
             },
             {
-              "label": "Have the priests drive it out",
+              "label": "Have the priests drive it out", "tags": ["faith", "harsh"],
               "skill": "religion",
               "dc": 14,
               "needs": [
@@ -2963,7 +2934,7 @@
               }
             },
             {
-              "label": "Refuse it",
+              "label": "Refuse it", "tags": ["faith", "caution"],
               "prefer": 0.15,
               "success": {
                 "text": "'{town} remembers no name but its own.' {heroName} looks relieved, and a little afraid.",
@@ -3000,7 +2971,7 @@
           "text": "{hero}'s patron wants its due. Its name is to be carved over the town gate, so that all who walk beneath it know whose town this is.",
           "options": [
             {
-              "label": "Carve the name",
+              "label": "Carve the name", "tags": ["coin"],
               "success": {
                 "text": "It is carved. Children cross the road rather than walk under it.",
                 "effects": {
@@ -3011,7 +2982,7 @@
               }
             },
             {
-              "label": "Break the pact",
+              "label": "Break the pact", "tags": ["valor", "faith"],
               "skill": "arcana",
               "dc": 15,
               "prefer": 0.15,
@@ -3035,7 +3006,7 @@
               }
             },
             {
-              "label": "Have {heroName} bargain with it",
+              "label": "Have {heroName} bargain with it", "tags": ["guile"],
               "skill": "persuasion",
               "dc": 16,
               "aid": "hero",
@@ -3082,7 +3053,7 @@
           "text": "{hero} wants to open a school in {town}: letters and numbers for every child, 'and a little arcana, for the bright ones.'",
           "options": [
             {
-              "label": "Fund the school",
+              "label": "Fund the school", "tags": ["generous"],
               "cost": 60,
               "prefer": 0.3,
               "success": {
@@ -3094,7 +3065,7 @@
               }
             },
             {
-              "label": "Ask for wards on the walls instead",
+              "label": "Ask for wards on the walls instead", "tags": ["caution"],
               "prefer": 0,
               "success": {
                 "text": "{heroName} sighs, and sets wards into the gatehouse stones instead.",
@@ -3105,7 +3076,7 @@
               }
             },
             {
-              "label": "Talk magic with them over supper",
+              "label": "Talk magic with them over supper", "tags": ["freedom"],
               "skill": "arcana",
               "dc": 14,
               "success": {
@@ -3132,7 +3103,7 @@
               }
             },
             {
-              "label": "Turn them down",
+              "label": "Turn them down", "tags": ["coin"],
               "success": {
                 "text": "{heroName} closes their book with a snap.",
                 "effects": {
@@ -3166,7 +3137,7 @@
           "text": "{hero} has stood a watch at the gate every night this month, unpaid and unasked. Now they ask for the keys, and the right to say who comes in after dark.",
           "options": [
             {
-              "label": "Give them the keys",
+              "label": "Give them the keys", "tags": ["freedom"],
               "prefer": 0.3,
               "success": {
                 "text": "{heroName} hangs the keys at their belt and is not seen to sleep. Nobody comes in after dark that {heroName} has not looked at.",
@@ -3177,7 +3148,7 @@
               }
             },
             {
-              "label": "Have them walk the outer wards instead",
+              "label": "Have them walk the outer wards instead", "tags": ["valor"],
               "prefer": 0.15,
               "success": {
                 "text": "{heroName} walks the lanes beyond the walls with a lantern every night. The newer wards sleep easier.",
@@ -3188,7 +3159,7 @@
               }
             },
             {
-              "label": "Test them at the gate yourself",
+              "label": "Test them at the gate yourself", "tags": ["order"],
               "skill": "insight",
               "dc": 13,
               "success": {
@@ -3208,7 +3179,7 @@
               }
             },
             {
-              "label": "Leave the gate to the watch",
+              "label": "Leave the gate to the watch", "tags": ["order", "caution"],
               "success": {
                 "text": "{heroName} hands back a key they had copied, and stops coming to the gate.",
                 "effects": {
@@ -3243,7 +3214,7 @@
           "text": "{hero} has spread a half-finished map across a tavern table: every road, ford and ruin within three days of {town}, with a great blank in the middle. They want a room to finish it in.",
           "options": [
             {
-              "label": "Give them a map room in the town hall",
+              "label": "Give them a map room in the town hall", "tags": ["generous"],
               "cost": 40,
               "prefer": 0.3,
               "success": {
@@ -3275,7 +3246,7 @@
               }
             },
             {
-              "label": "Buy the map as it stands",
+              "label": "Buy the map as it stands", "tags": ["coin"],
               "cost": 25,
               "success": {
                 "text": "You pay for the map. {heroName} takes the coin to another town's tavern.",
@@ -3311,7 +3282,7 @@
           "text": "{hero} has brought back a fragment of an old reliquary from a tomb. It is warm to the touch and, late at night, it whispers. They want to know if {town} will house it.",
           "options": [
             {
-              "label": "Enshrine it at the temple",
+              "label": "Enshrine it at the temple", "tags": ["faith"],
               "needs": [
                 "temple"
               ],
@@ -3326,7 +3297,7 @@
               }
             },
             {
-              "label": "Listen to what it says",
+              "label": "Listen to what it says", "tags": ["faith"],
               "skill": "religion",
               "dc": 15,
               "success": {
@@ -3355,7 +3326,7 @@
               }
             },
             {
-              "label": "Sell it to a collector",
+              "label": "Sell it to a collector", "tags": ["coin"],
               "success": {
                 "text": "A collector from the Free Ports pays well and asks no questions. {heroName} thinks you sold something you shouldn't have.",
                 "effects": {
@@ -3392,7 +3363,7 @@
           "text": "{hero} has been brewing in the back of the apothecary between delves, and the midwives swear by their salves. They offer to brew for the whole town, if the town will have a witch.",
           "options": [
             {
-              "label": "Make her the town's herbalist",
+              "label": "Make her the town's herbalist", "tags": ["mercy", "freedom"],
               "prefer": 0.3,
               "success": {
                 "text": "{heroName} brews by the apothecary fire and nobody calls them a witch to their face. Fevers break sooner.",
@@ -3403,7 +3374,7 @@
               }
             },
             {
-              "label": "Ask them to bless the fields",
+              "label": "Ask them to bless the fields", "tags": ["faith"],
               "skill": "nature",
               "dc": 13,
               "success": {
@@ -3423,7 +3394,7 @@
               }
             },
             {
-              "label": "Send them away",
+              "label": "Send them away", "tags": ["harsh"],
               "success": {
                 "text": "{heroName} packs their jars quietly. The midwives are angry with you.",
                 "effects": {
@@ -3459,7 +3430,7 @@
           "text": "The caravan master from {settlement} swears the town's market weighers have been shorting {people} a pound in every ten, and wants it made good before the next caravan loads.",
           "options": [
             {
-              "label": "Weigh it out in front of them",
+              "label": "Weigh it out in front of them", "tags": ["order"],
               "skill": "investigation",
               "dc": 12,
               "success": {
@@ -3477,7 +3448,7 @@
               }
             },
             {
-              "label": "Smooth it over",
+              "label": "Smooth it over", "tags": ["mercy"],
               "skill": "persuasion",
               "dc": 13,
               "success": {
@@ -3494,7 +3465,7 @@
               }
             },
             {
-              "label": "Make it good from the treasury",
+              "label": "Make it good from the treasury", "tags": ["generous"],
               "cost": 30,
               "prefer": 0.1,
               "success": {
@@ -3532,7 +3503,7 @@
           "text": "The watch has found barrels on the {settlement} caravan that were never weighed or taxed: smugglers are riding with the town's own drovers.",
           "options": [
             {
-              "label": "Catch them in the act",
+              "label": "Catch them in the act", "tags": ["order"],
               "skill": "investigation",
               "dc": 14,
               "success": {
@@ -3550,7 +3521,7 @@
               }
             },
             {
-              "label": "Take a cut and say nothing",
+              "label": "Take a cut and say nothing", "tags": ["coin", "guile"],
               "skill": "deception",
               "dc": 12,
               "success": {
@@ -3577,7 +3548,7 @@
               }
             },
             {
-              "label": "Warn {people}",
+              "label": "Warn {people}", "tags": ["mercy"],
               "prefer": 0.1,
               "success": {
                 "text": "You send word down the road, and {people} catch the smugglers at their end. They think the better of {town} for it.",
@@ -3613,7 +3584,7 @@
           "text": "{people} ask to keep an envoy house in {town}: a roof, a flag over the door and a seat at the market moot. The council fears spies.",
           "options": [
             {
-              "label": "Grant it, and furnish it",
+              "label": "Grant it, and furnish it", "tags": ["generous"],
               "cost": 80,
               "prefer": 0.15,
               "success": {
@@ -3624,7 +3595,7 @@
               }
             },
             {
-              "label": "Grant it, but watch it",
+              "label": "Grant it, but watch it", "tags": ["guile", "caution"],
               "skill": "insight",
               "dc": 13,
               "success": {
@@ -3641,7 +3612,7 @@
               }
             },
             {
-              "label": "Refuse",
+              "label": "Refuse", "tags": ["caution"],
               "success": {
                 "text": "No envoy house: {people} take the refusal politely, and remember it.",
                 "effects": {
@@ -3678,7 +3649,7 @@
           "text": "{people} propose a marriage: the heir of their first house and the {seat}'s youngest. It would bind {settlement} to {town} in all but name, and the {seat} is not sure.",
           "options": [
             {
-              "label": "Hold a wedding they will sing of",
+              "label": "Hold a wedding they will sing of", "tags": ["generous"],
               "cost": 250,
               "prefer": 0.15,
               "success": {
@@ -3691,7 +3662,7 @@
               }
             },
             {
-              "label": "Talk the {seat} round to a modest match",
+              "label": "Talk the {seat} round to a modest match", "tags": ["coin"],
               "skill": "persuasion",
               "dc": 15,
               "success": {
@@ -3719,7 +3690,7 @@
               }
             },
             {
-              "label": "Decline the match",
+              "label": "Decline the match", "tags": ["freedom"],
               "success": {
                 "text": "You decline with every courtesy, and {people} take it well, outwardly.",
                 "effects": {
@@ -3753,7 +3724,7 @@
           "text": "The caravan from {settlement} brings a whole troupe this summer: merchants, players and a dancing bear. They ask for a pitch on the green.",
           "options": [
             {
-              "label": "Give them the best pitch",
+              "label": "Give them the best pitch", "tags": ["generous"],
               "cost": 40,
               "prefer": 0.1,
               "success": {
@@ -3766,7 +3737,7 @@
               }
             },
             {
-              "label": "Charge them a fair pitch fee",
+              "label": "Charge them a fair pitch fee", "tags": ["coin", "order"],
               "skill": "persuasion",
               "dc": 11,
               "success": {
@@ -3809,7 +3780,7 @@
           "text": "{hero} has come home from more roads than anyone in {town} can count, and asks the mayor for leave to stop. The old {class} would rather teach the young ones at the practice yard than bleed for one more bounty.",
           "options": [
             {
-              "label": "Let them retire and teach",
+              "label": "Let them retire and teach", "tags": ["mercy"],
               "prefer": 0.1,
               "success": {
                 "text": "{heroName} hangs the sword over the practice yard gate. From now on every new blade in town learns from a master.",
@@ -3820,7 +3791,7 @@
               }
             },
             {
-              "label": "Ask for one more season",
+              "label": "Ask for one more season", "tags": ["valor"],
               "skill": "persuasion",
               "dc": 14,
               "success": {
@@ -3837,7 +3808,7 @@
               }
             },
             {
-              "label": "Pay them to stay on",
+              "label": "Pay them to stay on", "tags": ["coin"],
               "cost": 150,
               "success": {
                 "text": "A fat purse and a new cloak: {heroName} stays, for now.",
@@ -3871,7 +3842,7 @@
           "text": "The road brings {fallen} home on a bier, wrapped in a company cloak. The town turns out at the gate, and everyone is watching to see what the mayor will do for the fallen {fallenClass}.",
           "options": [
             {
-              "label": "A hero's funeral and a stone",
+              "label": "A hero's funeral and a stone", "tags": ["generous", "faith"],
               "cost": 120,
               "prefer": 0.1,
               "success": {
@@ -3883,7 +3854,7 @@
               }
             },
             {
-              "label": "Speak over the grave yourself",
+              "label": "Speak over the grave yourself", "tags": ["mercy"],
               "skill": "performance",
               "dc": 12,
               "success": {
@@ -3900,7 +3871,7 @@
               }
             },
             {
-              "label": "A plain burial",
+              "label": "A plain burial", "tags": ["coin"],
               "success": {
                 "text": "A plain grave in the yard behind the temple. The heroes in the taverns notice how little it took.",
                 "effects": {
@@ -3933,7 +3904,7 @@
           "text": "A widow and two thin children stand at the town hall door: the family {fallen} sent coin home to. With the {fallenClass} dead, the coin has stopped.",
           "options": [
             {
-              "label": "Pay them a pension",
+              "label": "Pay them a pension", "tags": ["generous", "mercy"],
               "cost": 90,
               "prefer": 0.1,
               "success": {
@@ -3945,7 +3916,7 @@
               }
             },
             {
-              "label": "Find them work and a roof",
+              "label": "Find them work and a roof", "tags": ["mercy"],
               "skill": "persuasion",
               "dc": 13,
               "success": {
@@ -3963,7 +3934,7 @@
               }
             },
             {
-              "label": "Send them away",
+              "label": "Send them away", "tags": ["harsh", "coin"],
               "success": {
                 "text": "The family go back down the road, and the heroes in the taverns see them go.",
                 "effects": {
@@ -3981,6 +3952,174 @@
           "mandate": -2
         }
       }
+    },
+    {
+      "id": "personal-lost-kin", "title": "{hero}'s lost sister", "stakes": "medium", "source": "heroes",
+      "needs": ["admirer"], "repeatDays": 30,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} comes to the town hall alone and shuts the door. A drover swears he saw their sister, long thought dead, working a hill mine under another name. They trust you more than anyone in {town} to help.",
+          "options": [
+            {
+              "label": "Pay a guide to take them there", "tags": ["generous"], "cost": 60,
+              "success": { "text": "The guide knows the mine. {heroName} comes back with their sister on the cart beside them, and says they will not forget it.", "effects": { "personal": 1, "loyalty": 15, "esteem": 15, "renown": 2, "heroXp": 0.3 } }
+            },
+            {
+              "label": "Have the drovers asked about her", "skill": "investigation", "dc": 13, "aid": "hero",
+              "success": { "text": "The drovers point the way to the right valley. The reunion is told in every tavern for a week.", "effects": { "personal": 1, "loyalty": 15, "esteem": 15, "renown": 2, "heroXp": 0.3, "mandate": 2 } },
+              "partial": { "text": "The trail is right, but it costs {heroName} a fortnight's wages in bribes to the mine boss.", "effects": { "personal": 1, "loyalty": 10, "esteem": 10, "heroXp": 0.2 } },
+              "failure": { "text": "The trail goes cold in the hills. {heroName} does not blame you, but they stop asking.", "effects": { "personal": -1, "loyalty": -5, "esteem": -5 } }
+            },
+            {
+              "label": "Ride out with them yourself", "tags": ["valor"], "skill": "survival", "dc": 14, "aid": "hero",
+              "success": { "text": "Mayor and hero ride in under the mine gate together. The miners still talk about it.", "effects": { "personal": 1, "loyalty": 20, "esteem": 25, "renown": 3, "heroXp": 0.4, "mandate": 3 } },
+              "failure": { "text": "A rockfall turns you back two days short. {heroName} thanks you for trying.", "effects": { "personal": -1, "esteem": 5, "wound": 4 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "{heroName} goes alone and comes back alone, and drinks a long time without speaking.", "effects": { "personal": -1, "loyalty": -10, "esteem": -15 } }
+    },
+    {
+      "id": "personal-old-debt", "title": "The debt {hero} owes", "stakes": "medium", "source": "heroes",
+      "needs": ["admirer"], "repeatDays": 30,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A moneylender's men from down the river have come for {hero}, waving a contract signed in a bad year. {heroName} asks you, quietly, for help settling it before it comes to knives.",
+          "options": [
+            {
+              "label": "Pay the debt from the treasury", "tags": ["generous"], "cost": 120,
+              "success": { "text": "The contract burns in the town hall grate. {heroName} swears their sword to {town} for as long as it will have them.", "effects": { "personal": 1, "loyalty": 20, "esteem": 15 } }
+            },
+            {
+              "label": "Pick the contract apart", "tags": ["guile", "order"], "skill": "investigation", "dc": 14,
+              "success": { "text": "A forged seal, a wrong date: the contract is worthless, and the moneylender's men leave with nothing.", "effects": { "personal": 1, "loyalty": 15, "esteem": 20, "mandate": 2 } },
+              "partial": { "text": "You knock the debt down by half. The treasury pays the rest.", "effects": { "personal": 1, "loyalty": 10, "esteem": 10, "gold": -50 } },
+              "failure": { "text": "The contract holds. {heroName} pays it off themselves, coin by coin.", "effects": { "personal": -1, "esteem": -5 } }
+            },
+            {
+              "label": "Tell the collectors to leave town", "tags": ["valor", "harsh"], "skill": "intimidation", "dc": 13, "aid": "hero",
+              "success": { "text": "The collectors ride out faster than they rode in, and nobody comes after them.", "effects": { "personal": 1, "loyalty": 15, "esteem": 15, "renown": 1 } },
+              "failure": { "text": "They leave, but they will be back with more men. {heroName} has to pay up.", "effects": { "personal": -1, "esteem": -5, "mandate": -1 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "{heroName} settles it at night, outside the walls. Nobody asks how.", "effects": { "personal": -1, "esteem": -15, "loyalty": -8, "tension": 2 } }
+    },
+    {
+      "id": "personal-rival", "title": "{hero}'s old rival", "stakes": "low", "source": "heroes",
+      "needs": ["admirer", "tavern"], "repeatDays": 30,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A captain of a rival company has been telling every tavern on the road that {hero} ran from a fight years ago. {heroName} wants the lie answered where the whole town can hear it.",
+          "options": [
+            {
+              "label": "Hold a contest of arms on the green", "tags": ["valor"], "cost": 30,
+              "success": { "text": "{heroName} puts the rival in the dust before half the town. Nobody tells the story any more.", "effects": { "personal": 1, "festival": 1, "renown": 3, "loyalty": 10, "esteem": 15, "heroXp": 0.2 } }
+            },
+            {
+              "label": "Answer it with a song at {tavern}", "tags": ["freedom"], "skill": "performance", "dc": 13,
+              "success": { "text": "By the third verse the whole of {tavern} is laughing at the rival. The tale is {heroName}'s now.", "effects": { "personal": 1, "renown": 2, "loyalty": 10, "esteem": 15, "mandate": 1 } },
+              "failure": { "text": "The song falls flat, and the rival laughs loudest.", "effects": { "personal": -1, "esteem": -5 } }
+            },
+            {
+              "label": "Find out who saw it", "tags": ["order"], "skill": "insight", "dc": 12,
+              "success": { "text": "Two old soldiers remember it the other way round: the rival ran. The captain leaves before supper.", "effects": { "personal": 1, "renown": 2, "loyalty": 10, "esteem": 10 } },
+              "failure": { "text": "Nobody remembers anything for certain.", "effects": { "personal": -1 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "The story goes round unanswered, and {heroName} stops coming to the tavern.", "effects": { "personal": -1, "esteem": -10, "loyalty": -5 } }
+    },
+    {
+      "id": "personal-heirloom", "title": "{hero}'s stolen blade", "stakes": "low", "source": "heroes",
+      "needs": ["admirer"], "repeatDays": 30,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The sword {hero}'s grandmother carried was stolen on the road years ago. Now a peddler swears he saw it on a fence's table in the market.",
+          "options": [
+            {
+              "label": "Have the watch search the market", "tags": ["order"], "needs": ["watch"], "skill": "investigation", "dc": 12,
+              "success": { "text": "The watch turns over the fence's stall and finds it wrapped in sacking. {heroName} weeps over it in the street.", "effects": { "personal": 1, "loyalty": 15, "esteem": 15, "heroXp": 0.2 } },
+              "failure": { "text": "The fence is long gone, and the blade with him.", "effects": { "personal": -1, "esteem": -5 } }
+            },
+            {
+              "label": "Buy it back, no questions asked", "tags": ["generous", "guile"], "cost": 50,
+              "success": { "text": "The fence names his price and hands it over. {heroName} wears it on every ride after.", "effects": { "personal": 1, "loyalty": 15, "esteem": 15, "heroXp": 0.2 } }
+            },
+            {
+              "label": "Read the peddler", "skill": "insight", "dc": 13,
+              "success": { "text": "The peddler is lying: he wants a reward for nothing. The real blade turns up a month later at a smith's, and {heroName} thanks you for the warning.", "effects": { "personal": 1, "esteem": 10, "loyalty": 8 } },
+              "failure": { "text": "You believe him, and the trail leads nowhere.", "effects": { "personal": -1, "gold": -10 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "The blade is sold on to somebody passing through.", "effects": { "personal": -1, "esteem": -10 } }
+    },
+    {
+      "id": "personal-mentor", "title": "{hero}'s old teacher", "stakes": "low", "source": "heroes",
+      "needs": ["admirer"], "repeatDays": 30,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The {class} who taught {hero} everything is dying in a hermitage three days' ride away, and has sent for them. {heroName} would be gone while bounties wait.",
+          "options": [
+            {
+              "label": "Give them leave and a good horse", "tags": ["mercy", "generous"], "cost": 25,
+              "success": { "text": "{heroName} gets there in time. They come back quieter, and better at their trade: the old teacher's last lesson.", "effects": { "personal": 1, "loyalty": 15, "esteem": 15, "heroXp": 0.6 } }
+            },
+            {
+              "label": "Send a temple healer with them", "tags": ["faith", "mercy"], "needs": ["temple"], "skill": "medicine", "dc": 13,
+              "success": { "text": "The healer buys the old teacher a season more. {heroName} spends it learning everything they can.", "effects": { "personal": 1, "loyalty": 20, "esteem": 20, "heroXp": 0.8, "favour": 2 } },
+              "failure": { "text": "The healer can only ease the end. {heroName} is grateful all the same.", "effects": { "personal": 1, "loyalty": 10, "esteem": 10, "heroXp": 0.4 } }
+            },
+            {
+              "label": "Ask them to stay; the town needs them", "tags": ["order", "caution"],
+              "success": { "text": "{heroName} stays. The news of the death comes a week later.", "effects": { "personal": -1, "loyalty": -8, "esteem": -20 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "{heroName} goes without a word to anyone.", "effects": { "personal": 1, "heroXp": 0.4, "esteem": -5 } }
+    },
+    {
+      "id": "grievance", "title": "{hero} has a grievance", "stakes": "medium", "source": "heroes",
+      "needs": ["aggrieved"], "repeatDays": 15, "weight": 5,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} stops you in the square with half the market listening. They have not forgotten that you {grievance}, and they want to know what kind of mayor {town} has.",
+          "options": [
+            {
+              "label": "Hear them out and own the choice", "tags": ["mercy"], "skill": "persuasion", "dc": 13,
+              "success": { "text": "You do not take it back, but you give your reasons plainly. {heroName} nods, and the crowd goes back to its haggling.", "effects": { "esteem": 30, "loyalty": 5 } },
+              "partial": { "text": "{heroName} is not won over, but they are not leaving either.", "effects": { "esteem": 15, "mandate": -1 } },
+              "failure": { "text": "It comes out wrong, and {heroName} walks off in the middle of it.", "effects": { "esteem": -5, "mandate": -2 } }
+            },
+            {
+              "label": "Make it up to them with a purse", "tags": ["generous"], "cost": 50,
+              "success": { "text": "{heroName} weighs the purse in their hand and lets it drop. For now.", "effects": { "esteem": 15, "loyalty": 8 } }
+            },
+            {
+              "label": "Stand by it, and say so", "tags": ["valor", "order"], "skill": "intimidation", "dc": 14,
+              "success": { "text": "You do not give an inch, and the square sees it. {heroName} respects that more than an apology.", "effects": { "esteem": 20, "mandate": 2 } },
+              "failure": { "text": "The square sees a mayor shouting at a hero, and {heroName} sees the same.", "effects": { "esteem": -10, "mandate": -2, "loyalty": -5 } }
+            },
+            {
+              "label": "Tell them to leave {town}", "tags": ["harsh"], "prefer": -0.7,
+              "success": { "text": "There is no more to say.", "effects": { "dismiss": 1, "mandate": -1 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "You keep out of the square. {heroName} tells the taverns the mayor would not face them.", "effects": { "esteem": -10, "loyalty": -10, "mandate": -2 } }
     },
     {
       "id": "master-smith",

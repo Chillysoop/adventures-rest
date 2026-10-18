@@ -7,7 +7,7 @@ namespace CrownAndCompass.Client;
 /// <summary>
 /// With --smoke: the merge gate's play-through of a build (<c>scripts/gate.ts</c>). From the main menu it
 /// starts a new town, plays on at top speed, opens every window, the build bar, the campaign map, a wall and a guard flag and the
-/// game menu, saves and loads, starts the tutorial, opens the History and steps into a story event, a few frames apart so each one draws. It prints
+/// game menu, saves and loads, starts the tutorial, opens the History, steps into a story event and answers a party's sending, a few frames apart so each one draws. It prints
 /// <c>SMOKE OK</c> and quits with 0, or <c>SMOKE FAIL</c> and 1; the gate also fails on any engine error.
 /// </summary>
 public partial class Main
@@ -114,6 +114,26 @@ public partial class Main
                     _dirty = true;
                 }
                 return 10;
+            case 25:
+            {
+                // A party's sending: the card with the party's and the hall's help on each roll, answered with the first choice.
+                SetTab(Tab.Mayor);
+                if (OpenScripted("bridge-toll") is not { } sending) return 1;
+                OpenStory(sending.Id);
+                Choose(sending.Id, 0);
+                return 70;
+            }
+            case 26:
+                if (_story.Visible && (_beat == null || _beatResult is not { Visible: true })) throw new InvalidOperationException("the sending's roll did not land");
+                CloseStory();
+                return 5;
+            case 27:
+                // An explorers' report card, as one pops up, with the company's latest roll if it has one.
+                if (_sim.Town.Finds.LastOrDefault() is { } find) OpenFind(find.Id, find.Beat);
+                return 70;
+            case 28:
+                CloseFind();
+                return 5;
             default:
                 var t = _sim.Town;
                 GD.Print($"SMOKE OK seed={_sim.Options.Seed} day={t.Day} population={t.Population} buildings={t.Buildings.Count} outcome={t.Outcome?.ToString() ?? "none"}");

@@ -110,6 +110,23 @@
       "teaches": ["tab:Bounties", "command:PostBounty", "command:HoldSite"]
     },
     {
+      "id": "explore",
+      "title": "Send explorers",
+      "text": "The map only shows what someone has told the town, and hearsay is only a rough ring where the teller said. To find places for certain, open [b]Bounties[/b] and pay a company to [b]Explore[/b] a region. They wander it, and every lair, settlement, caravan, rival company, magical font or old ruin they come on, they report before they do anything about it.",
+      "point": "tab:Bounties",
+      "until": "count:Surveys",
+      "teaches": ["command:PostSurvey"]
+    },
+    {
+      "id": "discoveries",
+      "title": "What the explorers found",
+      "text": "Explorers have sent word and are waiting for yours. [b]Investigate further[/b] works through a find a chapter at a time: hours of work and a d20 check for the company, a risk if it goes wrong and more learned when it goes right, until the last chapter pays off. Or have them go in, deal with it, keep exploring, or come home. If no word comes, their leader decides.",
+      "when": "alert:find",
+      "point": "alerts",
+      "until": "explorers",
+      "teaches": ["command:OrderExplorers"]
+    },
+    {
       "id": "eyes",
       "title": "Eyes on the wilds",
       "text": "Once a party leaves town you lose sight of it in the fog. From [b]Bounties[/b] you can commission a scrying, post scouts, hide mirrors at a site, send word to a party or call it home, and later raise the Scrying Pool or the Sleepless Spire to see further.",
@@ -193,6 +210,7 @@
       "until": "roll",
       "teaches": ["command:ResolveStory"]
     },
+    {"id": "regard", "title": "Heroes judge your choices", "text": "Every hero has a temper: merciful, ruthless, pious, mercenary, lawful, free-spirited or bold. When you answer a story, each choice shows which heroes in town it would [b]please[/b] or [b]anger[/b]. What they think of you moves their loyalty, and it is shown when you select a hero. A hero who trusts you will ask for help with a personal quest of their own; one you keep angering will come to you with a grievance.", "point": "inspector", "when": "alert:story", "teaches": []},
     {
       "id": "mayor-level",
       "title": "Level up",
@@ -306,11 +324,27 @@
       "teaches": ["command:OpenWard"]
     },
     {
+      "id": "density",
+      "title": "Build tall",
+      "text": "The town charter unlocks [b]medium density[/b] and the large town charter [b]high density[/b]. Pick [b]Res · Medium[/b] or [b]Res · High[/b] (or the Commercial ones) in the build bar and paint, even over streets that are already built. Houses there grow into stone townhouses, then into tall houses packed wall to wall like a walled city's old core. Dense land sells dearer and crowds its people a little, so let lower sprawl spread outside the walls.",
+      "point": "buildbar",
+      "when": "density",
+      "until": "dense",
+      "teaches": []
+    },
+    {
       "id": "grand-works",
       "title": "Grand works",
       "text": "A rich town can raise grand works: a clock tower, an aqueduct, a great gatehouse, a mage tower, royal gardens and in time a colossus, unlocked charter by charter. Begin one under [b]Grand works[/b] in the [b]City[/b] window and set it down like any government building. It rises over seasons, drawing gold and goods for each stage as the last is done, and helps the whole town for good once it stands.",
       "point": "tab:City",
       "when": "alert:grandwork",
+      "teaches": []
+    },
+    {
+      "id": "sendings",
+      "title": "Word from the road",
+      "text": "A party on a bounty with a caster can spend a spell slot to reach you by sending stone and ask how to go on: pay the toll or bluff, trust the captured scout, bring home the captives or the gold. The game pauses until you answer. Each choice rolls your d20 plus your sheet, plus help from the party's best hand at it. Some quests go on over several sendings. An [b]Adventurers' Hall[/b] (Government) adds to every roll, unlocks choices of its own, and lets parties send word more often.",
+      "when": "count:Parties",
       "teaches": []
     },
     {

@@ -132,12 +132,17 @@ public static class Annals
         region.Theme.History.Count == 0 ? null : region.Theme.History[region.Id % region.Theme.History.Count];
 
     /// <summary>A party's first visit to a region: the old story of whoever held it.</summary>
-    public static void Visited(Town town, Party party, Region region)
+    public static void Visited(Town town, Party party, Region region) => Visited(town, party.Name, region);
+
+    /// <summary>A company back from exploring a region tells its old story.</summary>
+    public static void Explored(Town town, string company, Region region) => Visited(town, company, region);
+
+    private static void Visited(Town town, string company, Region region)
     {
         var h = town.Content.History;
         if (Story(region) is not string story || h.Visit == "") return;
         town.Log(LedgerCategory.Quest, Importance.Notable, h.Visit
-            .Replace("{party}", party.Name)
+            .Replace("{party}", company)
             .Replace("{region}", region.Name)
             .Replace("{history}", story));
     }

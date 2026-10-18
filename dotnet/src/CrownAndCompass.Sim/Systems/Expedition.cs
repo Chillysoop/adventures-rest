@@ -67,8 +67,8 @@ public static class Expedition
 
         /// <summary>From the hero's gear, worked out once for the delve.</summary>
         public int Ac { get; init; }
-        public int Attack { get; init; }
-        public int Skill { get; init; }
+        public int Attack { get; set; }
+        public int Skill { get; set; }
 
         /// <summary>Been out often enough to keep their head when a friend falls.</summary>
         public bool Veteran { get; init; }
@@ -80,7 +80,11 @@ public static class Expedition
         public int Hp { get; set; } = def.Hp;
     }
 
-    private sealed record Check(Combatant Who, int Roll, int Total);
+    private sealed record Check(Combatant Who, int Roll, int Total, string With = "")
+    {
+        /// <summary>The hero's name, with the friend or rival who swayed the roll.</summary>
+        public string Name => With == "" ? Who.Agent.GivenName : $"{Who.Agent.GivenName}, {With},";
+    }
 
     private static readonly Dictionary<string, string> SkillAbility = new()
     {
@@ -95,6 +99,17 @@ public static class Expedition
     private static string The(MonsterDef d) => d.Named ? d.Name : $"the {d.Name}";
 
     public static int Proficiency(int level) => 2 + (level - 1) / 4;
+
+    /// <summary>
+    /// A hero's bonus on a check of an ability away from a delve (over a sending stone): its modifier,
+    /// plus proficiency and class training in the matching delving skill, plus the gear's.
+    /// </summary>
+    public static int HeroBonus(Content content, Agent a, string ability, string kind)
+    {
+        var sheet = a.Hero!;
+        int cls = kind == "" ? 0 : sheet.Cls.Skills.GetValueOrDefault(kind, 0);
+        return (ability == "" ? 0 : Rng.Modifier(a.Abilities[ability])) + cls + (cls > 0 ? Proficiency(sheet.Level) : 0) + Gear.Skill(content, sheet);
+    }
 
     /// <remarks>Integer division matches the TS sim because hit dice are even (d6 to d12).</remarks>
     public static int HeroMaxHp(HeroSheet sheet, int con)
@@ -190,7 +205,19 @@ public static class Expedition
                 }
             }
             int roll = _rng.D20();
-            return new Check(who!, roll, roll + best);
+            // A friend beside them steadies the hand; a rival in the party spoils it.
+            var (chem, with) = Regard.Chemistry(_content.Regard, who!.Agent, Standing.Select(c => c.Agent));
+            return new Check(who, roll, roll + best + chem, with);
+        }
+
+        /// <summary>The mayor's word over the sending stone: a bonus (or a penalty) on every check and blow at the site.</summary>
+        public void Hearten(int edge)
+        {
+            foreach (var c in Party)
+            {
+                c.Attack += edge;
+                c.Skill += edge;
+            }
         }
 
         private static int SkillBonus(Combatant c, string kind)
@@ -236,7 +263,7 @@ public static class Expedition
                 case "trap":
                 {
                     var check = BestCheck(SkillKind.Trap);
-                    string who = check.Who.Agent.GivenName;
+                    string who = check.Name;
                     if (check.Total >= e.Dc)
                     {
                         Log($"{Cap(e.Text)}: {who} spots it and disarms it (d20 {check.Roll}, {check.Total} vs DC {e.Dc}).");
@@ -276,7 +303,7 @@ public static class Expedition
                 case "parley":
                 {
                     var check = BestCheck(e.Kind == "puzzle" ? SkillKind.Puzzle : SkillKind.Parley);
-                    string who = check.Who.Agent.GivenName;
+                    string who = check.Name;
                     if (check.Total >= e.Dc)
                     {
                         int gold = _rng.Range(e.Gold[0], e.Gold[1] + 1);
@@ -299,7 +326,7 @@ public static class Expedition
                         var check = BestCheck(SkillKind.Perception);
                         bool spotted = check.Total >= 13;
                         Log(spotted
-                            ? $"{Cap(e.Text)}. {check.Who.Agent.GivenName} notices the lid breathing (d20 {check.Roll}, {check.Total} vs DC 13). It's a mimic."
+                            ? $"{Cap(e.Text)}. {check.Name} notices the lid breathing (d20 {check.Roll}, {check.Total} vs DC 13). It's a mimic."
                             : $"{Cap(e.Text)}. Nobody notices the lid breathing (d20 {check.Roll}, {check.Total} vs DC 13) until it bites. It's a mimic!");
                         Combat(new EncounterDef { Kind = "combat", Monster = "mimic", Count = [1, 1], Text = "the mimic" }, !spotted);
                         if (Standing.Count == 0) return;
@@ -319,7 +346,9 @@ public static class Expedition
             var rng = _rng;
             var def = _content.Monster(e.Monster);
             var foes = new List<Foe>();
-            int n = rng.Range(e.Count[0], e.Count[1] + 1) + (def.Boss ? 0 : Swell);
+            int n = rng.Range(e.Count[0], e.Count[1] + 1);
+            // Fewer foes than drawn never empties a fight that had any.
+            if (!def.Boss) n = Math.Max(Math.Min(n, 1), n + Swell);
             for (int i = 0; i < n; i++) foes.Add(new Foe(def));
             if (!string.IsNullOrEmpty(e.Escort) && e.EscortCount != null)
             {
@@ -671,7 +700,7 @@ public static class Expedition
         }
 
         /// <summary>A fight with whatever roams this country, sized for its level.</summary>
-        private void Wilds(int tier, IReadOnlyList<string> habitats, string text, bool surprised)
+        public void Wilds(int tier, IReadOnlyList<string> habitats, string text, bool surprised)
         {
             tier = Math.Max(1, tier);
             var probe = new SiteDef { Id = "wilds", Name = "the wilds", Tier = tier, Boss = new EncounterDef { Kind = "combat" }, Habitats = habitats };

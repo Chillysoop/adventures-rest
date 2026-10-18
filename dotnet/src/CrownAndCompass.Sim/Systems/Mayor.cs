@@ -52,11 +52,11 @@ public static class Mayor
         }
     }
 
-    /// <summary>A granary once the town is a village, and a watch house once it keeps a watch.</summary>
+    /// <summary>A granary once the town is a village, a watch house once it keeps a watch, and an adventurers' hall once heroes come and go.</summary>
     private static void RaiseWorks(Town town, bool defend)
     {
         if (town.Buildings.Any(b => b.IsSite && Planning.IsGovernment(town, b.Def))) return;
-        foreach (var (id, pop, watch, spare) in new[] { ("granary", 25, 0, 150.0), ("watch_house", 30, 2, 200.0) })
+        foreach (var (id, pop, watch, spare) in new[] { ("granary", 25, 0, 150.0), ("watch_house", 30, 2, 200.0), ("adventurers_hall", 60, 0, 300.0) })
         {
             var d = town.Content.Building(id);
             if ((id == "watch_house" && !defend) || town.Buildings.Any(b => b.Def.Id == id) || town.Population < pop || town.Watch < watch) continue;

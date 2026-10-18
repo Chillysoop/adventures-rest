@@ -483,8 +483,8 @@ public static class Roads
     {
         var mind = Mind(town, members, Hurry(town, bounty, site), false);
         var spot = World.Spot(town, site);
-        party.Out = Plan(town, (0, 0), spot, mind, town.Rng, party.Said);
-        double outHours = Hours(town, (0, 0), party.Out);
+        party.Out = Plan(town, party.Start, spot, mind, town.Rng, party.Said);
+        double outHours = Hours(town, party.Start, party.Out);
         double arrive = Finish(town.Content, party.DepartTick, outHours);
         party.ArriveTick = (int)Math.Ceiling(arrive);
         // A first guess at the homecoming, made good when they reach the site.
@@ -574,22 +574,23 @@ public static class Roads
         var spot = World.Spot(town, site);
         if (party.Out.Count == 0) party.Out = [new Waypoint { X = spot.X, Y = spot.Y }];
         var members = party.Members.Select(town.Agent).ToList();
-        double arrive = Math.Max(town.Tick, Finish(content, party.DepartTick, Hours(town, (0, 0), party.Out)));
+        double arrive = Math.Max(town.Tick, Finish(content, party.DepartTick, Hours(town, party.Start, party.Out)));
         if (site.Cleared)
         {
             // Nobody there: they turn straight round.
             party.Empty = true;
             party.LeaveTick = town.Tick;
-            party.Home = Reverse(party.Out, (0, 0));
+            party.Home = party.Start == (0, 0) ? Reverse(party.Out, (0, 0)) : [new Waypoint { X = 0, Y = 0 }];
             party.ReturnTick = (int)Math.Ceiling(Finish(content, town.Tick, Hours(town, spot, party.Home)));
             foreach (var m in members) m.Hero!.AwayUntil = party.ReturnTick;
             return;
         }
 
-        var v = new Expedition.Venture(town.Rng, content, members, site.Def) { Swell = Lairs.Swell(town, site), Clock = party.DepartTick };
+        var v = new Expedition.Venture(town.Rng, content, members, site.Def) { Swell = Lairs.Swell(town, site) + party.Swell, Clock = party.DepartTick };
+        if (party.Edge != 0) v.Hearten(party.Edge);
         v.Log($"{Expedition.ListNames(members.Select(m => m.GivenName).ToList())} set out for {site.Def.Name}.");
         foreach (var line in party.Said) v.Log(line);
-        Walk(town, v, (0, 0), party.Out, party.DepartTick);
+        Walk(town, v, party.Start, party.Out, party.DepartTick);
 
         var outcome = ExpeditionOutcome.Wiped;
         double leave = v.Clock;
@@ -629,7 +630,7 @@ public static class Roads
         {
             party.GoneTick = (int)Math.Ceiling(v.LostAt ?? leave);
             // The town waits for them as long as the walk home would have taken.
-            if (party.Home.Count == 0) party.Home = Reverse(party.Out, (0, 0));
+            if (party.Home.Count == 0) party.Home = Reverse(party.Out, party.Start);
         }
         party.ReturnTick = Math.Max(party.LeaveTick, (int)Math.Ceiling(Finish(content, party.LeaveTick, Hours(town, spot, party.Home))));
         foreach (var m in members) m.Hero!.AwayUntil = party.ReturnTick;
@@ -643,6 +644,8 @@ public static class Roads
     internal static void Recall(Town town, Party party)
     {
         double walked = Marched(town.Content, party.DepartTick, town.Tick);
+        // A party that set out from the wilds (explorers who chose to fight) still has the road from there to town.
+        walked += Hours(town, party.Start, [new Waypoint { X = 0, Y = 0 }]);
         party.ReturnTick = (int)Math.Ceiling(Finish(town.Content, town.Tick, walked));
     }
 
@@ -652,19 +655,19 @@ public static class Roads
         var content = town.Content;
         var site = Quests.Site(town, party.SiteId)!;
         var spot = World.Spot(town, site);
-        if (t <= party.DepartTick) return new Whereabouts(0, 0, Pace.Camped);
+        if (t <= party.DepartTick) return new Whereabouts(party.Start.X, party.Start.Y, Pace.Camped);
         if (party.GoneTick is int gone && t >= gone) return null;
         if (party.RecalledTick is int rt)
         {
             double m0 = Marched(content, party.DepartTick, Math.Min(t, rt));
             double back = t > rt ? Marched(content, rt, t) : 0;
-            var p = Along(town, (0, 0), party.Out, Math.Max(0, m0 - back));
+            var p = Along(town, party.Start, party.Out, Math.Max(0, m0 - back));
             return new Whereabouts(p.X, p.Y, PaceAt(content, t));
         }
         if (t < party.ArriveTick || !party.Resolved)
         {
             if (t >= party.ArriveTick) return new Whereabouts(spot.X, spot.Y, Pace.Camped);
-            var p = Along(town, (0, 0), party.Out, Marched(content, party.DepartTick, t));
+            var p = Along(town, party.Start, party.Out, Marched(content, party.DepartTick, t));
             return new Whereabouts(p.X, p.Y, PaceAt(content, t));
         }
         if (t < party.LeaveTick)
@@ -673,7 +676,7 @@ public static class Roads
             if (halt != null && halt.Kind != "delve")
             {
                 // Camped a little way back down the road.
-                var back = Along(town, spot, party.Home.Count > 0 ? party.Home : Reverse(party.Out, (0, 0)), 0.8);
+                var back = Along(town, spot, party.Home.Count > 0 ? party.Home : Reverse(party.Out, party.Start), 0.8);
                 return new Whereabouts(back.X, back.Y, Pace.Camped);
             }
             return new Whereabouts(spot.X, spot.Y, Pace.Delving);
@@ -688,18 +691,18 @@ public static class Roads
         var lines = new List<List<(double X, double Y)>>();
         var site = Quests.Site(town, party.SiteId)!;
         var spot = World.Spot(town, site);
-        var outLine = new List<(double X, double Y)> { (0, 0) };
+        var outLine = new List<(double X, double Y)> { party.Start };
         if (party.RecalledTick is int rt)
         {
             double walked = Marched(town.Content, party.DepartTick, rt);
-            var cur = (X: 0.0, Y: 0.0);
+            var cur = party.Start;
             double h = 0;
             foreach (var w in party.Out)
             {
                 double leg = LegHours(town.Content.Roads, cur, w);
                 if (h + leg >= walked)
                 {
-                    outLine.Add(Along(town, (0, 0), party.Out, walked));
+                    outLine.Add(Along(town, party.Start, party.Out, walked));
                     break;
                 }
                 outLine.Add((w.X, w.Y));

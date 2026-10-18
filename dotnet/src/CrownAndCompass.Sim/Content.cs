@@ -54,6 +54,9 @@ public sealed record BuildingDef
     /// <summary>The only wards it can stand in; empty for any open ward.</summary>
     public IReadOnlyList<string> Wards { get; init; } = [];
 
+    /// <summary>The least density (city.json "densities": 0 low, 1 medium, 2 high) the land under it must be zoned for.</summary>
+    public int Density { get; init; }
+
     /// <summary>Services it gives (tavern, shrine, market, bath, theatre, learning, spectacle) and how many residents each covers.</summary>
     public IReadOnlyDictionary<string, int> Serves { get; init; } = new Dictionary<string, int>();
 
@@ -1145,12 +1148,19 @@ public sealed class Content
     /// <summary>Story events and the mayor's character sheet (content/game/stories.json).</summary>
     public StoryRules Stories { get; init; } = new();
 
+    /// <summary>Sending-stone quests from parties on the road (content/game/sendings.json); their stories are among <see cref="Stories"/> too.</summary>
+    public SendingRules Sendings { get; init; } = new();
+
     /// <summary>Adventuring companies' bastions: who may raise one, their facilities and turns (content/game/bastions.json).</summary>
     public BastionRules Bastions { get; init; } = new();
 
     /// <summary>Sellsword companies for hire and how their campaigns go (content/game/mercenaries.json).</summary>
     public MercRules Mercenaries { get; init; } = new();
 
+    /// <summary>Heroes' tempers and what they think of the mayor's choices (content/game/regard.json).</summary>
+    public RegardRules Regard { get; init; } = new();
+    /// <summary>Exploring companies and what they find (content/game/explore.json).</summary>
+    public ExploreRules Explore { get; init; } = new();
     /// <summary>The town guard's posts and the wall works past the stone walls (content/game/garrison.json).</summary>
     public GarrisonRules Garrison { get; init; } = new();
 
@@ -1294,11 +1304,23 @@ public sealed class Content
             Neighbours = Parse<NeighbourRules>("neighbours.json"),
             Legacies = Parse<LegacyRules>("legacies.json"),
             History = Parse<HistoryRules>("history.json"),
-            Stories = Parse<StoryRules>("stories.json"),
+            Stories = WithSendings(Parse<StoryRules>("stories.json"), Parse<SendingRules>("sendings.json")),
+            Sendings = Parse<SendingRules>("sendings.json"),
             Bastions = Parse<BastionRules>("bastions.json"),
             Mercenaries = Parse<MercRules>("mercenaries.json"),
+            Regard = Parse<RegardRules>("regard.json"),
+            Explore = Parse<ExploreRules>("explore.json"),
             Garrison = Parse<GarrisonRules>("garrison.json"),
         };
+    }
+
+    /// <summary>The sending quests are stories like any other, of their own source.</summary>
+    private static StoryRules WithSendings(StoryRules stories, SendingRules sendings)
+    {
+        foreach (var d in sendings.Stories)
+            if (d.Source != Systems.Sendings.Source) throw new InvalidDataException($"Sending {d.Id} must have source \"{Systems.Sendings.Source}\"");
+        stories.Stories.AddRange(sendings.Stories);
+        return stories;
     }
 
     /// <summary>A file of content/game/ as built into the library, for readers outside the sim (the tutorial).</summary>

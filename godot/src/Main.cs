@@ -71,6 +71,7 @@ public partial class Main : Control
         BuildHistory();
         BuildGuide();
         BuildStory();
+        BuildFind();
         _map.TreeScale = _opts.Trees;
         Map.Fog.RevealAll = _opts.Reveal;
         // Started plainly, the game opens on the main menu over a town that has been growing a while;
@@ -123,14 +124,38 @@ public partial class Main : Control
         }
         foreach (var adv in _opts.Advances) _sim.AdvanceMayor(adv);
         if (_opts.Inspiration is int insp) _sim.Town.Stories.Mayor.Inspiration = insp;
-        if (_opts.Story is string story && Stories.Open(_sim.Town, story) is { } opened)
+        if (_opts.Story is string story && OpenScripted(story) is { } opened)
         {
             OpenStory(opened.Id);
             if (_opts.StoryPick is int pick) Choose(opened.Id, pick);
         }
+        if (_opts.Find && Explore.Waiting(_sim.Town).FirstOrDefault() is { } waiting)
+        {
+            _findSeen[waiting.Id] = waiting.Log.Count;
+            if (_opts.FindPick is string act) OrderFind(waiting.Id, act);
+            else OpenFind(waiting.Id);
+        }
         if (_opts.Menu) OpenMenu();
         if (plain || _opts.Title || _opts.Smoke) ShowTitle();
         if (_opts.History is string power) OpenHistory(power == "" ? null : power);
+    }
+
+    /// <summary>A story for a scripted shot; a sending comes from the first party out on a bounty that it fits.</summary>
+    private Story? OpenScripted(string id)
+    {
+        var t = _sim.Town;
+        if (t.Content.Stories.Story(id) is not { } d || !Sendings.Is(d)) return Stories.Open(t, id);
+        // Wait (up to a few days) for a party on the road far enough from its site.
+        for (int hour = 0; hour < 24 * 6; hour++)
+        {
+            foreach (var p in t.Parties.Where(p => !p.Returned && p.BountyId != null).OrderBy(p => p.Id))
+            {
+                p.Asked = 0;
+                if (Sendings.Open(t, p, id) is { } s) return s;
+            }
+            _sim.Step();
+        }
+        return null;
     }
 
     /// <summary>The town behind the main menu: a random one, a month into the stand-in mayor's care, in the morning light.</summary>
@@ -174,7 +199,7 @@ public partial class Main : Control
         RememberLegends();
         // With --autoplay the stand-in mayor keeps playing, for demos and screenshots; only a player's towns meet old legends.
         var legends = autoplay ? [] : ProfileLegends();
-        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay, AutoStories = autoplay, Legends = legends }));
+        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay, AutoStories = autoplay, AutoExplore = autoplay && !_opts.Find, Legends = legends }));
     }
 
     /// <summary>Show a town: a new one, or one loaded from a save.</summary>
@@ -200,6 +225,9 @@ public partial class Main : Control
         _step = null;
         CloseStory();
         _storySeen = sim.Town.Stories.All.Count;
+        CloseFind();
+        _findSeen.Clear();
+        _findShownBeat.Clear();
         foreach (var p in _panes.Values) p.Invalidate();
         _dirty = true;
         CloseWindow();
@@ -289,9 +317,16 @@ public partial class Main : Control
     public override void _UnhandledKeyInput(InputEvent e)
     {
         if (e is not InputEventKey { Pressed: true, Echo: false } k) return;
+        if (_find.Visible && k.Keycode == Key.Escape)
+        {
+            CloseFind();
+            GetViewport().SetInputAsHandled();
+            return;
+        }
         if (_story.Visible && k.Keycode == Key.Escape)
         {
-            CloseStory();
+            // A sending can't be waved away: the party is waiting on the stone.
+            if (_storyId is not int sid || Stories.Find(_sim.Town, sid) is not { } open || !Sendings.Is(_sim.Town, open) || open.Done || open.WaitTick > _sim.Town.Tick) CloseStory();
             GetViewport().SetInputAsHandled();
             return;
         }
@@ -368,6 +403,7 @@ public partial class Main : Control
         SyncMarkers();
         SyncGuide();
         SyncStories(delta);
+        SyncFinds();
         SyncChecks();
         if (_title.Visible) _map.Drift(1, (float)delta * 0.035f);
         if (_dirty)

@@ -187,6 +187,9 @@ public sealed record StoryOption
     public string Ability { get; init; } = "";
     public int Dc { get; init; }
 
+    /// <summary>What the choice stands for (mercy, a hard hand...), which heroes judge by their temper (<see cref="Regard"/>).</summary>
+    public List<string> Tags { get; init; } = [];
+
     /// <summary>Gold from the treasury to try it at all.</summary>
     public double Cost { get; init; }
 
@@ -218,6 +221,9 @@ public sealed record StoryOutcome
     public string Text { get; init; } = "";
     public Dictionary<string, double> Effects { get; init; } = [];
     public string Next { get; init; } = "";
+
+    /// <summary>Hours until the next stage comes (a party's next sending); 0 for at once.</summary>
+    public int After { get; init; }
 }
 
 /// <summary>The mayor, as a D&amp;D character: background, level and XP, inspiration. Abilities and skills follow from them.</summary>
@@ -274,6 +280,10 @@ public sealed class StoryBeat
 
     /// <summary>Why it had advantage, if it did.</summary>
     public string Advantage { get; set; } = "";
+
+    /// <summary>What others added to the mayor's roll (a party over the sending stone, the Adventurers' Hall), and who.</summary>
+    public int Help { get; set; }
+    public string Helpers { get; set; } = "";
 }
 
 public sealed class Story
@@ -306,6 +316,8 @@ public sealed class Story
 
     /// <summary>The person out in the wilds the story is about (<see cref="Neighbours"/>).</summary>
     public int? ContactId { get; set; }
+    /// <summary>When the next stage comes, if the story waits on it (a party's next sending).</summary>
+    public int? WaitTick { get; set; }
     public List<StoryBeat> Beats { get; } = [];
 }
 
@@ -328,6 +340,9 @@ public sealed class StoryState
     public OrderedMap<int, string> Callings { get; } = new();
 
     public IEnumerable<Story> Open => All.Where(s => !s.Done);
+
+    /// <summary>Open, and not waiting on a later stage.</summary>
+    public IEnumerable<Story> Waiting(int tick) => All.Where(s => !s.Done && (s.WaitTick ?? 0) <= tick);
 
     /// <summary>Each deed's count already rewarded with inspiration.</summary>
     public OrderedMap<string, int> Deeds { get; } = new();
@@ -361,7 +376,7 @@ public static class Stories
     /// precedent:id (1 sets it, -1 forgets it) and calling:id (1: the story's hero takes it up, -1: it ends).
     /// </summary>
     public static readonly string[] EffectKeys =
-        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "prosperity", "security", "contact", "band", "moves"];
+        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "esteem", "heroXp", "personal", "dismiss", "edge", "swell", "partyHurt", "rest", "slots", "loot", "partyLoyalty", "turnBack", "prosperity", "security", "contact", "band", "moves"];
 
     /// <summary>
     /// Every need a story or option can name; besides these, precedent:id, decree:id, season:id and
@@ -369,7 +384,7 @@ public static class Stories
     /// class in town with no calling yet) and faction:id (binds that faction while it has a chapter).
     /// </summary>
     public static readonly string[] Needs =
-        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "settlement", "route", "courted", "veteran", "fallen", "trouble", "contact", "band", "forge"];
+        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "settlement", "route", "courted", "veteran", "fallen", "admirer", "aggrieved", "abroad", "homeward", "victorious", "trouble", "contact", "band", "forge"];
 
     private static readonly string[] Prefixed = ["precedent:", "decree:", "season:"];
 
@@ -384,6 +399,7 @@ public static class Stories
         if (n.StartsWith("calling:", StringComparison.Ordinal)) return c.Stories.Calling(n[8..]) != null;
         if (need.StartsWith("class:", StringComparison.Ordinal)) return c.Classes.Any(x => x.Id == need[6..]);
         if (need.StartsWith("faction:", StringComparison.Ordinal)) return c.Factions.Factions.Any(x => x.Ref == need[8..]);
+        if (n.StartsWith("building:", StringComparison.Ordinal)) return c.Buildings.Any(x => x.Id == n[9..]);
         return false;
     }
 
@@ -512,8 +528,8 @@ public static class Stories
 
     public static StakesDef StakesOf(Town town, Story s) => Rules(town).StakesOf(DefOf(town, s).Stakes);
 
-    /// <summary>Open stories, oldest first.</summary>
-    public static List<Story> Pending(Town town) => town.Stories.Open.OrderBy(s => s.Id).ToList();
+    /// <summary>Open stories waiting on the mayor now, oldest first (not those waiting on a later sending).</summary>
+    public static List<Story> Pending(Town town) => town.Stories.Waiting(town.Tick).OrderBy(s => s.Id).ToList();
 
     public static void Daily(Town town, bool autoMayor)
     {
@@ -525,12 +541,14 @@ public static class Stories
             if (town.Tick >= s.DueTick) Lapse(town, s);
         if (autoMayor)
             foreach (var s in Pending(town)) StandIn(town, s);
-        if (r.Stories.Count == 0 || town.Day < Math.Max(r.FirstDay, st.NextDay) || st.Open.Count() >= r.MaxOpen || town.Outcome != null) return;
+        if (r.Stories.Count == 0 || town.Day < Math.Max(r.FirstDay, st.NextDay) || st.Open.Count(s => !Sendings.Is(town, s)) >= r.MaxOpen || town.Outcome != null) return;
         if (!town.Rng.Chance(r.Chance)) return;
         var open = st.Open.Select(s => s.Def).ToHashSet();
         var fits = new List<(StoryDef Def, Story Bound)>();
         foreach (var d in r.Stories)
         {
+            // Sendings come from parties on the road (Sendings.Hourly), not the town.
+            if (Sendings.Is(d)) continue;
             if (open.Contains(d.Id) || town.Day < d.MinDay || town.Population < d.MinPopulation) continue;
             if (st.LastDay.Get(d.Id, -9999) + d.RepeatDays > town.Day) continue;
             if (Bind(town, d) is { } bound) fits.Add((d, bound));
@@ -561,6 +579,14 @@ public static class Stories
         return Begin(town, d, bound);
     }
 
+    /// <summary>A sending opens with the party already bound, and falls due in hours rather than days.</summary>
+    internal static Story BeginSending(Town town, StoryDef d, Story s, int dueHours)
+    {
+        var story = Begin(town, d, s);
+        story.DueTick = town.Tick + dueHours;
+        return story;
+    }
+
     private static Story Begin(Town town, StoryDef d, Story s)
     {
         var st = town.Stories;
@@ -578,6 +604,14 @@ public static class Stories
     }
 
     private static List<int> Agents(Story s) => s.HeroId is int h ? [h] : s.PetitionerId is int p ? [p] : [];
+
+    /// <summary>Bind a story on top of what is already bound (a sending's party, hero and site).</summary>
+    internal static Story? BindFrom(Town town, StoryDef d, Story seed)
+    {
+        foreach (var need in d.Needs)
+            if (!Meet(town, need, seed, bind: true)) return null;
+        return seed;
+    }
 
     /// <summary>Bind what a story is about from the town as it stands, or null if one of its needs is unmet.</summary>
     private static Story? Bind(Town town, StoryDef d)
@@ -769,6 +803,25 @@ public static class Stories
                 s.HeroId = v?.Id;
                 return v != null;
             }
+            case "admirer":
+            case "aggrieved":
+            {
+                bool Fits(Agent a) => need == "admirer" ? Regard.Admirer(town, a) : Regard.Aggrieved(town, a);
+                if (s.HeroId is int h) return Hero(town, h) is { } a && (need == "admirer" ? !a.IsAway && a.Hero!.Personal == "" : !a.IsAway);
+                if (!bind) return false;
+                var a2 = Pick(town.Heroes.Where(Fits).OrderBy(a => a.Id).ToList());
+                s.HeroId = a2?.Id;
+                return a2 != null;
+            }
+            case "abroad":
+            case "homeward":
+            case "victorious":
+            {
+                // Bound by the sending: where the party is now.
+                if (s.PartyId is not int sp || town.Parties.FirstOrDefault(p => p.Id == sp) is not { } party) return false;
+                return need == "abroad" ? Sendings.Abroad(town, party)
+                    : Sendings.Homeward(town, party) && (need == "homeward" || party.Result!.Outcome == ExpeditionOutcome.Cleared);
+            }
             case "fallen":
             {
                 // A hero fallen lately, with no memorial yet.
@@ -804,6 +857,7 @@ public static class Stories
                 if (n.StartsWith("precedent:", StringComparison.Ordinal)) holds = town.Stories.Precedents.ContainsKey(n[10..]);
                 else if (n.StartsWith("decree:", StringComparison.Ordinal)) holds = Decrees.InForce(town, n[7..]);
                 else if (n.StartsWith("season:", StringComparison.Ordinal)) holds = Seasons.Current(town).Id == n[7..];
+                else if (n.StartsWith("building:", StringComparison.Ordinal)) holds = town.Buildings.Any(b => b.Def.Id == n[9..] && b.Complete && !b.Closed);
                 else if (n.StartsWith("calling:", StringComparison.Ordinal))
                 {
                     // A calling held binds the hero who holds it.
@@ -836,6 +890,7 @@ public static class Stories
                 "tavern" => "needs a tavern",
                 "rich" => "needs a full treasury",
                 "hero" => "needs a hero in town",
+                _ when need.StartsWith("building:", StringComparison.Ordinal) => $"needs {Article(town.Content.Building(need[9..]).Name)}",
                 _ => $"needs {need}",
             };
         return null;
@@ -862,7 +917,7 @@ public static class Stories
 
     /// <summary>The chance the check succeeds, with advantage if it has it and an inspired reroll if one is asked for and in hand.</summary>
     public static double Chance(Town town, Story s, StoryOption o, bool inspired = false) =>
-        !o.Rolls ? 1 : Sheet.Chance(town, o.Skill, o.Ability, o.Dc, Advantage(town, s, o) != "", inspired);
+        !o.Rolls ? 1 : Sheet.Chance(town, o.Skill, o.Ability, o.Dc, Advantage(town, s, o) != "", inspired, Sendings.HelpTotal(town, s, o));
 
     /// <summary>
     /// The mayor's answer to a story's current stage: option by index, with inspiration spent to reroll
@@ -886,7 +941,9 @@ public static class Stories
         }
         else
         {
-            beat = Sheet.Roll(town, o.Skill, o.Ability, o.Dc, Advantage(town, s, o), inspired, o.Partial != null);
+            var help = Sendings.Helpers(town, s, o);
+            beat = Sheet.Roll(town, o.Skill, o.Ability, o.Dc, Advantage(town, s, o), inspired, o.Partial != null, help.Sum(h => h.Bonus));
+            beat.Helpers = string.Join(", ", help.Select(h => $"{h.Name} {(h.Bonus >= 0 ? "+" : "−")}{Math.Abs(h.Bonus)}"));
             outcome = beat.Result switch
             {
                 StoryResult.Critical => o.Critical ?? o.Success,
@@ -901,13 +958,16 @@ public static class Stories
         beat.Stage = stage.Id;
         beat.Option = Fill(town, s, o.Label);
         Conclude(town, s, beat, outcome);
+        // The heroes hear what the mayor chose, and judge it by their tempers.
+        if (o.Tags.Count > 0) Regard.Judge(town, o.Tags, $"chose to {Lower(beat.Option)}", Fill(town, s, DefOf(town, s).Title));
         return beat;
     }
 
     /// <summary>A story nobody stepped into runs its course.</summary>
     private static void Lapse(Town town, Story s)
     {
-        var outcome = StageOf(town, s).Ignored ?? DefOf(town, s).Ignored ?? new StoryOutcome { Text = "In the end it comes to nothing." };
+        var outcome = StageOf(town, s).Ignored ?? DefOf(town, s).Ignored
+            ?? new StoryOutcome { Text = Sendings.Is(town, s) ? "No answer comes, and they do as they think best." : "In the end it comes to nothing." };
         var beat = new StoryBeat { Tick = town.Tick, Stage = s.Stage, Option = "Let it run its course", Result = StoryResult.Ignored };
         // A story left alone ends there, whatever its outcome would lead to.
         Conclude(town, s, beat, outcome with { Next = "" });
@@ -919,14 +979,24 @@ public static class Stories
         string effects = Apply(town, s, outcome.Effects);
         beat.Text = Fill(town, s, outcome.Text);
         s.Beats.Add(beat);
-        string roll = beat.Result is StoryResult.Certain or StoryResult.Ignored ? "" : $" ({Rules(town).Skill(beat.Skill)?.Name ?? Cap(beat.Skill)} {beat.Total} against DC {beat.Dc}: {Word(beat.Result)})";
+        string roll = beat.Result is StoryResult.Certain or StoryResult.Ignored ? "" : $" ({Rules(town).Skill(beat.Skill)?.Name ?? Cap(beat.Skill)} {beat.Total} against DC {beat.Dc}{(beat.Helpers != "" ? $", with {beat.Helpers}" : "")}: {Word(beat.Result)})";
         bool goesOn = outcome.Next != "" && d.Stages.Any(x => x.Id == outcome.Next);
         town.Log(LedgerCategory.Story, d.Stakes == "high" && !goesOn ? Importance.Major : Importance.Notable,
             $"{Fill(town, s, d.Title)}: {(beat.Result == StoryResult.Ignored ? "left to run its course" : $"Mayor {town.Stories.Mayor.Name} chose to {Lower(beat.Option)}")}{roll}. {beat.Text}{effects}", Agents(s));
         if (goesOn)
         {
             s.Stage = outcome.Next;
-            s.DueTick = Math.Max(s.DueTick, town.Tick + 2 * SimTime.HoursPerDay);
+            if (Sendings.Is(d))
+            {
+                // The party sends again when it can; the mayor has the usual hours to answer then.
+                int after = outcome.After;
+                // It always comes before they reach the site (or home) again.
+                if (Sendings.PartyOf(town, s) is { } p) after = Math.Min(after, Math.Max(0, (p.Resolved ? p.ReturnTick : p.ArriveTick) - town.Tick - 2));
+                s.WaitTick = after > 0 ? town.Tick + after : null;
+                s.DueTick = town.Tick + after + town.Content.Sendings.DueHours;
+                if (after > 0 && Sendings.PartyOf(town, s) is { } sp) sp.Sendings++;
+            }
+            else s.DueTick = Math.Max(s.DueTick, town.Tick + 2 * SimTime.HoursPerDay);
             return;
         }
         s.Done = true;
@@ -1096,6 +1166,44 @@ public static class Stories
                         said.Add($"{mcc.Name} moves to {town.Name}");
                     }
                     break;
+                case "esteem":
+                    if (s.HeroId is int eh && Hero(town, eh) is { } ea)
+                    {
+                        Regard.Esteem(ea, v);
+                        said.Add($"{ea.GivenName} thinks {(v > 0 ? "better" : "worse")} of the mayor");
+                    }
+                    break;
+                case "heroXp":
+                    // A share of what the hero needs for their next level.
+                    if (s.HeroId is int xh && Hero(town, xh) is { } xa)
+                    {
+                        int next = Quests.XpToNext(xa.Hero!.Level);
+                        if (next > 0) Quests.GainXp(town, xa, (int)(next * v));
+                    }
+                    break;
+                case "personal":
+                    if (s.HeroId is int ph && Hero(town, ph) is { } pa2) pa2.Hero!.Personal = v > 0 ? "done" : "failed";
+                    break;
+                case "dismiss":
+                    if (v > 0 && s.HeroId is int dh && Hero(town, dh) is { } da)
+                    {
+                        Loyalty.Dismiss(town, da);
+                        said.Add($"{da.GivenName} leaves {town.Name}");
+                    }
+                    break;
+                case "edge":
+                case "swell":
+                case "partyHurt":
+                case "rest":
+                case "slots":
+                case "loot":
+                case "partyLoyalty":
+                case "turnBack":
+                {
+                    string said1 = Sendings.Apply(town, s, key, v);
+                    if (said1 != "") said.Add(said1);
+                    break;
+                }
                 case "expose":
                     // The hero names the faction's members to the watch.
                     if (v > 0 && s.FactionId is string ef && Factions.Find(town, ef) is { Active: true, Known: false } efs)
@@ -1137,9 +1245,12 @@ public static class Stories
     }
 
     /// <summary>The stand-in mayor's answer: the likeliest option it can afford, spending inspiration when the stakes are high and the odds poor.</summary>
+    /// <summary>The stand-in answers a story through to its end, or as far as it can now.</summary>
+    internal static void Answer(Town town, Story s) => StandIn(town, s);
+
     private static void StandIn(Town town, Story s)
     {
-        for (int guard = 0; guard < 8 && !s.Done; guard++)
+        for (int guard = 0; guard < 8 && !s.Done && (s.WaitTick ?? 0) <= town.Tick; guard++)
         {
             var stage = StageOf(town, s);
             // Gold counts against an option: a sure thing that costs 100 gold weighs like an even chance.
@@ -1150,7 +1261,7 @@ public static class Stories
                 var o = stage.Options[i];
                 if (Blocked(town, s, o) != null || (o.Cost > 0 && town.Treasury < o.Cost + 100)) continue;
                 double c = Chance(town, s, o);
-                double score = c - o.Cost / 200 + o.Prefer;
+                double score = c - o.Cost / 200 + o.Prefer + Regard.Sway(town, o.Tags);
                 if (score > bestScore + 1e-9)
                 {
                     best = i;
@@ -1208,11 +1319,12 @@ public static class Stories
         Put("{fallen}", () => s.FallenId is int fh ? town.Agent(fh).Name : "a fallen hero");
         Put("{fallenName}", () => s.FallenId is int fh ? town.Agent(fh).GivenName : "the fallen");
         Put("{fallenClass}", () => s.FallenId is int fh ? town.Agent(fh).Hero?.Cls.Name.ToLowerInvariant() ?? "hero" : "hero");
+        Put("{grievance}", () => s.HeroId is int g && town.Agent(g).Hero is { RegardWhy: not "" } gs ? gs.RegardWhy : "made the choices they did");
         Put("{class}", () => s.HeroId is int h ? town.Agent(h).Hero?.Cls.Name.ToLowerInvariant() ?? "hero" : "hero");
         return Cap(sb.ToString());
     }
 
-    private static string Cap(string s) => s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
+    internal static string Cap(string s) => s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
 
     private static string Lower(string s) => s.Length == 0 ? s : char.ToLowerInvariant(s[0]) + s[1..];
 }

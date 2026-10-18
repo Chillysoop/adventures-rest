@@ -40,7 +40,7 @@ public static class Intel
 
     /// <summary>Whether the council paid for this trip with a bounty from the treasury.</summary>
     public static bool Commissioned(Town town, Party party) =>
-        party.BountyId is int bid && town.Bounties[bid - 1].FunderId == null;
+        (party.BountyId is int bid && town.Bounties[bid - 1].FunderId == null) || party.SurveyId != null;
 
     public static CompanyState Company(Town town, string name)
     {

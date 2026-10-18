@@ -26,6 +26,12 @@ public sealed class SiteState(SiteDef def)
 
     public SiteKnowledge Known { get; set; }
 
+    /// <summary>Someone has seen it with their own eyes (a party, a scout, explorers, an ally's map): the town knows where it really is, not just roughly.</summary>
+    public bool Found { get; set; }
+
+    /// <summary>Who the town last heard of it from ("a tinker passing through", "the dwarves of Ironhold").</summary>
+    public string HeardFrom { get; set; } = "";
+
     /// <summary>Who the town thinks lives there ("goblins", "an ogre"), from the last rumour or report.</summary>
     public string Believed { get; set; } = "";
     public int BelievedTier { get; set; }
@@ -101,11 +107,27 @@ public sealed class Party
     public int ReturnTick { get; set; }
     public bool Returned { get; set; }
 
+    /// <summary>Where it set out from, in day units: the town, or the spot where explorers chose to go in (<see cref="Explore"/>).</summary>
+    public (double X, double Y) Start { get; init; }
+
+    /// <summary>The exploring company it grew out of, which the council paid for.</summary>
+    public int? SurveyId { get; init; }
+
     /// <summary>Sending-stone messages exchanged on the road; each costs one of the party's spell slots.</summary>
     public int Sendings { get; set; }
 
     /// <summary>Set when a sending called the party home before it reached the site.</summary>
     public int? RecalledTick { get; set; }
+
+    /// <summary>Sending-stone quests the party has asked the mayor about on this venture (<see cref="Sendings"/>).</summary>
+    public int Asked { get; set; }
+
+    /// <summary>What the mayor's answers did to the delve to come: a bonus on the party's checks and blows, foes added to each fight.</summary>
+    public int Edge { get; set; }
+    public int Swell { get; set; }
+
+    /// <summary>Gold the answers turned up on the way, split with the take at the homecoming.</summary>
+    public double Bonus { get; set; }
 
     // The road (see Roads) ----------------------------------------------------------------------
 
@@ -257,6 +279,7 @@ public static class Quests
         Annals.Raise(town, a, sheet, people);
         a.Hero = sheet;
         Loyalty.Arrive(town, a);
+        Regard.Arrive(town, a);
         return a;
     }
 
@@ -573,7 +596,7 @@ public static class Quests
                 bounty.Status = BountyStatus.Failed;
                 Refund(town, bounty);
             }
-            pay += World.AfterDelve(town, party, s, result.Outcome);
+            pay += World.AfterDelve(town, party, s, result.Outcome) + party.Bonus;
             if (survivors.Count > 0)
             {
                 double share = pay / survivors.Count;

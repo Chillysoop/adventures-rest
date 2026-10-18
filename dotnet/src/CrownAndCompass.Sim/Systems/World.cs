@@ -42,6 +42,9 @@ public sealed class Settlement
     public double Standing { get; set; }
     public bool Allied { get; set; }
 
+    /// <summary>Explorers or envoys have met its people: it shows on the town's map.</summary>
+    public bool Met { get; set; }
+
     /// <summary>Burned, emptied or bent to a menace's will (<see cref="Menaces"/>): it pleads, trades and allies no more.</summary>
     public bool Razed { get; set; }
     public int Envoys { get; set; }
@@ -111,10 +114,11 @@ public static class World
     public static bool RegionKnown(Town town, SiteState site) => RegionOf(town, site)?.Known ?? true;
 
     /// <summary>The town learns of a site from people who should know; a better source replaces a worse one.</summary>
-    private static void Tell(Town town, SiteState site, int trust)
+    public static void Tell(Town town, SiteState site, int trust, string from)
     {
         if (site.Known == SiteKnowledge.Confirmed || (site.Known == SiteKnowledge.Rumoured && site.Trust >= trust)) return;
         Rumors.Hear(town, site, Rumors.Occupants(town.Content, site.Def), site.Def.Tier, trust);
+        site.HeardFrom = from;
     }
 
     /// <summary>A fixed hash to [0, 1) for placing things; never the town's dice. The client's Geo.Hash is the same function.</summary>
@@ -430,7 +434,7 @@ public static class World
         if (s.Razed || !town.Regions[s.RegionId].Known) return null;
         if (town.Pleas.Any(p => p.SiteId == site.Def.Id && p.Status is PleaStatus.Open or PleaStatus.Taken)) return null;
         double reward = Js.Round(rules.PleaRewardPerLevel * LevelOf(site) * (s.Allied ? 1.5 : 1) * bonus);
-        Tell(town, site, rules.PleaTrust);
+        Tell(town, site, rules.PleaTrust, $"a runner from {s.Name}");
         var plea = new Plea
         {
             Id = town.Pleas.Count + 1,
@@ -561,8 +565,9 @@ public static class World
         bool first = !region.Visited;
         region.Visited = true;
         region.Known = true;
-        // On the way they hear of the region's other sites from whoever lives there.
-        foreach (var id in region.SiteIds) Tell(town, Quests.Site(town, id)!, town.Content.World.Standing.VisitTrust);
+        // On the way they hear of the region's other sites from whoever lives there; empty country tells nothing.
+        if (SettlementIn(town, region) is { Razed: false } home)
+            foreach (var id in region.SiteIds) Tell(town, Quests.Site(town, id)!, town.Content.World.Standing.VisitTrust, home.People);
         if (first) Annals.Visited(town, party, region);
         if (first) Reveal(town, region, $"The {party.Name} bring back word of the lands beyond {region.Name}", 0);
     }
@@ -585,7 +590,14 @@ public static class World
         foreach (var r in news)
         {
             r.Known = true;
-            if (trust > 0) foreach (var id in r.SiteIds) Tell(town, Quests.Site(town, id)!, trust);
+            if (trust <= 0) continue;
+            foreach (var id in r.SiteIds)
+            {
+                var site = Quests.Site(town, id)!;
+                Tell(town, site, trust, lead);
+                // An ally's map puts the place where it really is.
+                site.Found = true;
+            }
         }
         string lands = Expedition.ListNames(news.Select(r =>
         {
