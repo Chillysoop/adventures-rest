@@ -201,6 +201,9 @@ public sealed class Menace
 
     /// <summary>When its marching host reaches the walls.</summary>
     public int? ArrivalTick { get; set; }
+
+    /// <summary>The wall section its host comes at.</summary>
+    public int Approach { get; set; }
     public int SeenAttempts { get; set; }
 
     /// <summary>Times its host has marched on the town.</summary>
@@ -965,10 +968,11 @@ public static class Menaces
             .ThenBy(b => b.Id)
             .Take(4)
             .ToList();
+        target = Garrison.Unguarded(town, target);
         var where = target.Count > 0 ? target[rng.Range(0, target.Count)] : null;
         string place = where?.Name ?? "the outlying fields";
         double raiders = m.Power * r.StrikeShare * (0.7 + rng.Next() * 0.6);
-        if (Threat.LocalDefense(town) >= raiders)
+        if (Threat.LocalDefense(town) * Garrison.FlagFactor(town, where) >= raiders)
         {
             m.Power = Math.Max(0, m.Power - raiders * r.RepelLoss);
             var champion = town.Heroes.Where(a => !a.IsAway).OrderByDescending(x => x.Hero!.Level).ThenBy(x => x.Id).FirstOrDefault();
@@ -1033,6 +1037,7 @@ public static class Menaces
         }
         int march = r.MarchDays + Seasons.MarchDays(town);
         m.ArrivalTick = town.Tick + march * SimTime.HoursPerDay;
+        m.Approach = Garrison.Approach(town, 1000 + m.Id * 31 + m.Marches);
         // The big bad gathers a greater host for every march: the finale's doom clock.
         if (m.BigBad)
         {
@@ -1041,10 +1046,8 @@ public static class Menaces
         }
         m.Marches++;
         string army = $"{Js.Str(Js.Round(m.Power / 10) * 10)} {m.Def.People}";
-        town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, f.March, m).Replace("{army}", army).Replace("{days}", march.ToString())));
+        town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, f.March, m).Replace("{army}", army).Replace("{days}", march.ToString())) + $" Scouts say it will come at the {Garrison.Place(town, m.Approach)}.");
     }
-
-    private static string Wall(int w) => w == 1 ? "gate" : w == 2 ? "east wall" : "river side";
 
     /// <summary>The menace's host at the walls: three waves, then its leader against the heroes at home, as at the Last Stand.</summary>
     private static void Assault(Town town, Menace m)
@@ -1055,6 +1058,7 @@ public static class Menaces
         m.ArrivalTick = null;
         m.NextAssaultTick = town.Tick + rng.Range(r.AssaultEveryDays[0], r.AssaultEveryDays[1] + 1) * SimTime.HoursPerDay;
         var lines = new List<string>();
+        Garrison.Sync(town);
         double def = Threat.Defense(town);
         double startDef = def;
         double army = m.Power;
@@ -1064,19 +1068,21 @@ public static class Menaces
         for (int w = 1; w <= 3 && breaches < 2; w++)
         {
             double wave = (army / (3 - w + 1)) * (0.8 + rng.Next() * 0.4);
-            double hold = (def / (3 - w + 1)) * (0.8 + rng.Next() * 0.4);
-            if (hold >= wave)
+            int at = Garrison.WaveSection(town, m.Approach, w);
+            double hold = (def / (3 - w + 1)) * (0.8 + rng.Next() * 0.4) * Garrison.SectionFactor(town, at);
+            double wading = Garrison.Wade(town, wave);
+            if (hold >= wading)
             {
-                def -= wave * 0.15;
+                def -= wading * 0.15;
                 army -= wave;
-                lines.Add($"Wave {w}: the {m.Def.People} of {m.Leader} hit the {Wall(w)} and break against it.");
+                lines.Add($"Wave {w}: the {m.Def.People} of {m.Leader} hit the {Garrison.Place(town, at)} and break against it.");
             }
             else
             {
-                def -= wave * 0.35;
+                def -= wading * 0.35;
                 army -= wave * 0.5;
                 breaches++;
-                lines.Add($"Wave {w}: the {m.Def.People} of {m.Leader} breach the {Wall(w)}. Fighting spills into the streets.");
+                lines.Add($"Wave {w}: the {m.Def.People} of {m.Leader} breach the {Garrison.Place(town, at)}. Fighting spills into the streets.");
             }
         }
         m.Power = Math.Max(0, army);
