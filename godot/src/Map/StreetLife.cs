@@ -12,7 +12,7 @@ namespace CrownAndCompass.Client.Map;
 /// </summary>
 public partial class Crowd
 {
-    private const float BubbleDistance = 70;
+    private const float BubbleDistance = 40;
     private const float LineSeconds = 6;
     private readonly List<Label3D> _bubbles = [];
     private List<Scene> _scenes = [];
