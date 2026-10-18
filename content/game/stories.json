@@ -12,6 +12,32 @@
   "levels": [0, 150, 400, 750, 1200, 1750, 2400, 3150, 4000, 5000],
   "titles": ["Reeve", "Reeve", "Alderman", "Alderman", "Burgomaster", "Burgomaster", "Lord Mayor", "Lord Mayor", "Warden of the March", "Warden of the March"],
   "improvements": [4, 8],
+  "expertiseFrom": 3,
+  "inspirationMax": 3,
+  "deeds": [
+    { "id": "charter", "name": "Raise a charter", "text": "the town's new charter", "every": 1 },
+    { "id": "bounties", "name": "Fulfil bounties", "text": "the bounties the heroes have brought home", "every": 4 },
+    { "id": "repelled", "name": "Throw back raids and assaults", "text": "the town standing firm against its foes", "every": 2 },
+    { "id": "slain", "name": "See menaces ended", "text": "a menace gone from the map", "every": 1 },
+    { "id": "content", "name": "Keep the town content", "text": "a long stretch of contented folk", "every": 30, "threshold": 70 }
+  ],
+  "feats": [
+    { "id": "silver-tongue", "name": "Silver Tongue", "text": "+2 to Persuasion and Deception.", "skills": { "persuasion": 2, "deception": 2 } },
+    { "id": "voice-of-command", "name": "Voice of Command", "text": "+2 to Intimidation and Athletics.", "skills": { "intimidation": 2, "athletics": 2 } },
+    { "id": "keen-mind", "name": "Keen Mind", "text": "+2 to Insight and Investigation.", "skills": { "insight": 2, "investigation": 2 } },
+    { "id": "lucky", "name": "Lucky", "text": "Regain an Inspiration every 20 days.", "regainDays": 20 },
+    { "id": "inspiring-leader", "name": "Inspiring Leader", "text": "Hold one more Inspiration, and gain one now.", "inspiration": 1 },
+    { "id": "practised-hand", "name": "Practised Hand", "text": "On skills you are trained in, a d20 under 6 counts as a 6. No natural 1s.", "floor": 6 },
+    { "id": "cool-head", "name": "Cool Head", "text": "A miss within 5 of the DC is a success at a cost, where a choice allows one.", "partialMargin": 2 }
+  ],
+  "decisions": {
+    "motion": { "skill": "persuasion", "dc": 12, "gain": 1, "success": "The hall comes round to the mayor's view (+1 Mandate).", "failure": "The hall grumbles, but goes along." },
+    "submit": { "skill": "persuasion", "dc": 13, "gain": 3, "success": "The mayor kneels without grovelling, and the town respects it (+3 Mandate).", "failure": "" },
+    "refuse": { "skill": "intimidation", "dc": 13, "gain": 0.05, "success": "The answer gives the foe pause; some of its followers slip away.", "failure": "" },
+    "envoy": { "skill": "persuasion", "dc": 12, "gain": 4, "success": "The mayor's own letter goes down well (+4 standing).", "failure": "" },
+    "crackdown": { "skill": "intimidation", "dc": 12, "gain": 1, "success": "The mayor faces the crooks down in person (+1 Mandate).", "failure": "" },
+    "haggle": { "skill": "persuasion", "dc": 12, "gain": 0, "success": "", "failure": "" }
+  },
   "array": [15, 14, 13, 12, 10, 8],
   "skills": [
     { "id": "acrobatics", "name": "Acrobatics", "ability": "dex" },

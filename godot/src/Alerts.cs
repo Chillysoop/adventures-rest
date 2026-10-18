@@ -93,6 +93,7 @@ public partial class Main
             AlertWindow.Faith => Tab.Faith,
             AlertWindow.Campaign => Tab.Campaign,
             AlertWindow.City => Tab.City,
+            AlertWindow.Mayor => Tab.Mayor,
             _ => null,
         };
         if (a.StoryId is int story)

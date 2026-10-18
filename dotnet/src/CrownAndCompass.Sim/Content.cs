@@ -131,6 +131,8 @@ public static class Ability
     public const string Int = "int";
     public const string Wis = "wis";
     public const string Cha = "cha";
+
+    public static readonly string[] All = [Str, Dex, Con, Int, Wis, Cha];
 }
 
 /// <summary>Skill check kinds: trap, hazard, puzzle, parley, perception.</summary>
