@@ -33,6 +33,7 @@ public partial class Main
         [Tab.Faith] = "Faith and factions",
         [Tab.Campaign] = "The campaign",
         [Tab.Chronicles] = "Chronicles",
+        [Tab.Mayor] = "The mayor",
         [Tab.Inspect] = "Inspect",
     };
 
