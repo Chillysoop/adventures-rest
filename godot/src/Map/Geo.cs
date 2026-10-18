@@ -84,6 +84,8 @@ public sealed class Geo
         bool moved = false;
         foreach (var s in town.Sites)
         {
+            // The undercity lies under the town: no pin out on the map.
+            if (s.Def.Distance == 0) continue;
             var p = FromDays(Sim.Systems.World.Spot(town, s));
             if (!Pins.TryGetValue(s.Def.Id, out var old) || old.DistanceTo(p) > 0.25f) moved = true;
             Pins[s.Def.Id] = p;

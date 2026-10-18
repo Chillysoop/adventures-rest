@@ -619,7 +619,7 @@ public static class Factions
             site,
             "a fence",
             null,
-            $"A fence who drinks with the Quiet Hand says {site.Def.Name}, {Rumors.Days(site.Def.Distance)} out, is held by {who}",
+            $"A fence who drinks with the Quiet Hand says {site.Def.Name}, {Rumors.Away(site.Def.Distance)}, is held by {who}",
             Rules(town).WhisperReliability,
             true,
             who,
@@ -664,6 +664,7 @@ public static class Factions
         var errand = deep ? Errands.Pick(town) : null;
         var target = town.Sites
             .Where(s => s.Known != SiteKnowledge.Unheard && !s.ThoughtCleared && (!deep || s.BelievedTier >= 2))
+            .Where(s => !Undercity.IsUnder(town, s) || Undercity.Stirring(town, s))
             .Where(s => !town.Bounties.Any(b => b.SiteId == s.Def.Id && b.Status is BountyStatus.Open or BountyStatus.Taken))
             .OrderBy(s => deep && errand == null ? -s.BelievedTier : s.BelievedTier)
             .ThenBy(s => s.Def.Distance)
