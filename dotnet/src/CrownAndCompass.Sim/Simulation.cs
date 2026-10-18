@@ -119,6 +119,7 @@ public sealed class Simulation
         Loyalty.Daily(t, Options.AutoMayor);
         Decor.Daily(t);
         Stories.Daily(t, Options.AutoMayor && Options.AutoStories);
+        Sheet.Daily(t, Options.AutoMayor && Options.AutoStories);
         Economy.Daily(t, true);
         History.Add(Snapshot());
         t.AccountsYesterday = t.AccountsToday;
@@ -214,6 +215,9 @@ public sealed class Simulation
 
     /// <summary>Say who the mayor was before the charter, which sets their abilities and skills.</summary>
     public bool ChooseBackground(string backgroundId) => Stories.ChooseBackground(Town, backgroundId);
+
+    /// <summary>Spend the mayor's next level on an advance: "ability:str,cha", "feat:lucky", "skill:arcana" or "expertise:persuasion".</summary>
+    public bool AdvanceMayor(string advance) => Sheet.Advance(Town, advance);
 
     public DayStats Snapshot()
     {

@@ -127,6 +127,9 @@ public static class Council
         var m = town.Motions.FirstOrDefault(x => x.Id == motionId);
         if (m == null || m.Status != MotionStatus.Pending) return false;
         Resolve(town, m, sign);
+        // Carrying the hall (or fumbling it) moves the town's trust a little.
+        var b = Sheet.Decide(town, "motion");
+        town.Mandate = Math.Clamp(town.Mandate + Sheet.Gain(town, "motion", b) - (b?.Result == StoryResult.Fumble ? town.Content.Stories.Decisions["motion"].Gain : 0), 0, 100);
         return true;
     }
 
