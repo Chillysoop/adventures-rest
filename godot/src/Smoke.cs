@@ -6,7 +6,7 @@ namespace CrownAndCompass.Client;
 /// <summary>
 /// With --smoke: the merge gate's play-through of a build (<c>scripts/gate.ts</c>). From the main menu it
 /// starts a new town, plays on at top speed, opens every window, the build bar, the campaign map and the
-/// game menu, saves and loads, and starts the tutorial, a few frames apart so each one draws. It prints
+/// game menu, saves and loads, starts the tutorial and opens the History, a few frames apart so each one draws. It prints
 /// <c>SMOKE OK</c> and quits with 0, or <c>SMOKE FAIL</c> and 1; the gate also fails on any engine error.
 /// </summary>
 public partial class Main
@@ -76,6 +76,12 @@ public partial class Main
             case 16:
                 StartTutorial();
                 return 10;
+            case 17:
+                OpenHistory(null);
+                return 10;
+            case 18:
+                CloseHistory();
+                return 5;
             default:
                 var t = _sim.Town;
                 GD.Print($"SMOKE OK seed={_sim.Options.Seed} day={t.Day} population={t.Population} buildings={t.Buildings.Count} outcome={t.Outcome?.ToString() ?? "none"}");

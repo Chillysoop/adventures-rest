@@ -171,9 +171,10 @@ async function oldSave(ref: string) {
     sh("git", ["worktree", "add", "--detach", dir, ref], { quiet: true });
     sh("dotnet", ["build", "dotnet/src/CrownAndCompass.Cli", "-c", "Release", "--nologo", "-v", "q"], { cwd: dir, quiet: true });
     const save = join(dir, "old.save");
-    const written = await campaign(cliDll(dir), ["--days", "200", "--seed", "7", "--save", save], dir);
-    if (typeof written === "string") {
-      note(`Skipped the old-save check: ${ref} could not write a save (${written.split("\n")[0]})`);
+    // Older commits' CLIs know no --summary, so this one only has to write the save.
+    const written = await run("dotnet", [cliDll(dir), "--days", "200", "--seed", "7", "--save", save], { cwd: dir, timeoutMs: 10 * 60_000 });
+    if (written.code !== 0 || !existsSync(save)) {
+      note(`Skipped the old-save check: ${ref} could not write a save (${written.out.trim().split("\n").at(-1)})`);
       return;
     }
     const loaded = await campaign(cliDll(root), ["--load", save, "--days", "120"]);
