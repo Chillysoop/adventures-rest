@@ -63,6 +63,15 @@ public partial class Main
             string status = open ? Tag("laid out", Ui.Good) : City.Reached(t, w.Tier) ? Tag($"{w.Cost:N0}g") : Tag($"needs {City.TierName(t, w.Tier).ToLowerInvariant()}");
             string favour = w.Favours != Zone.None ? $" Favours {Planning.ZoneName(w.Favours)}." : "";
             string text = $"[b]{Ui.Esc(w.Name)}[/b]  {status}  {Ui.C(Ui.Ink2, $"[font_size=11]{where}[/font_size]")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(w.Blurb)}{favour}[/font_size]")}";
+            if (t.Content.Wards.Of(w.Id) is { } temper)
+            {
+                // Who speaks for the ward, what it cares about, and how it feels about the mayor now.
+                double f = Wards.Feeling(t, w.Id);
+                var fc = f >= 15 ? Ui.Good : f <= -15 ? Ui.Bad : Ui.Ink2;
+                string cares = Regard.Describe(t, new TemperDef { Likes = temper.Likes, Dislikes = temper.Dislikes });
+                text += $"\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Ui.Cap(temper.Voice))} {Ui.Esc(cares.Replace("; dislikes ", "; they dislike ").Replace("likes ", "like "))}.[/font_size]")}";
+                if (open) text += $" {Ui.C(fc, $"[font_size=12]{Ui.Cap(Wards.Describe(f))} ({(f >= 0 ? "+" : "−")}{Math.Abs(Math.Round(f))}).[/font_size]")}";
+            }
             var id = w.Id;
             if (open) p.Row(text, ("Show", true, false, () => LookAtWard(id)));
             else p.Row(text, ("Show", true, false, () => LookAtWard(id)), ("Lay out", why == null, true, () => { _sim.OpenWard(id); _dirty = true; }));
