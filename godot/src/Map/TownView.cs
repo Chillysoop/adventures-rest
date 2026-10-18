@@ -1676,7 +1676,7 @@ public partial class TownView(MapView map) : Node3D
         float city = Progress(town, d.CityWall, d.CityWallReadyTick, e.CityWall.Days);
         // Once the stone walls stand, the timber palisade and its towers come down.
         bool timber = d.StoneWall != PalisadeState.Built;
-        string key = $"{d.Palisade}|{Math.Round(done, 2)}|{d.Towers}|{(line == null ? "" : string.Join(';', line))}|{timber}|{Math.Round(stone, 2)}|{Math.Round(city, 2)}";
+        string key = $"{d.Palisade}|{Math.Round(done, 2)}|{d.Towers}|{(line == null ? "" : string.Join(';', line))}|{timber}|{Math.Round(stone, 2)}|{Math.Round(city, 2)}|{d.Gatehouse}|{d.Moat}|{d.Barracks}|{d.CityWall}";
         if (key == _wallKey) return;
         _wallKey = key;
         var k = new MeshKit();
@@ -1698,18 +1698,22 @@ public partial class TownView(MapView map) : Node3D
                 }
             }
             var castle = Palette.Kenney(new Color("9b3d2a"));
-            for (int i = 0; i < Math.Min(4, d.Towers); i++)
+            for (int i = 0; i < d.Towers; i++)
             {
-                // Towers spread evenly round the wall.
-                var c = Along(line, perim * i / 4f);
+                // Each tower on the section the sim puts it.
+                var c = RayHit(line, Bearing(town, Garrison.TowerSection(town, i)));
                 float g = Ground(c);
                 k.Add("castle/tower-square-base", MeshKit.At(c.X, g, c.Y, 0, 0.42f), castle);
                 k.Add("castle/tower-square-mid", MeshKit.At(c.X, g + 0.42f, c.Y, 0, 0.42f), castle);
-                k.Add("castle/tower-square-top-roof", MeshKit.At(c.X, g + 0.84f, c.Y, 0, 0.42f), castle);
+                // An open fighting top, where the watch stand when the tower is called to arms.
+                k.Add("castle/tower-square-top", MeshKit.At(c.X, g + 0.84f, c.Y, 0, 0.42f), castle);
+                k.Add("castle/flag-pennant", MeshKit.At(c.X, g + 0.97f, c.Y, 0, 0.3f), Palette.Kenney(new Color("b8322a")));
             }
         }
-        if (stone > 0) StoneRing(k, RingLine(0), stone, 0.24f, 0.8f, 0.5f, 1, 12, WallStone(Slate, 0.82f));
-        if (city > 0) StoneRing(k, RingLine(1), city, 0.3f, 1.05f, 0.62f, 2, 20, WallStone(new Color("9b3d2a"), 0.72f));
+        bool gatehouse = d.Gatehouse == PalisadeState.Built;
+        if (stone > 0) StoneRing(k, RingLine(0), stone, 0.24f, 0.8f, 0.5f, 1, 12, WallStone(Slate, 0.82f), gatehouse || d.CityWall == PalisadeState.Built);
+        if (city > 0) StoneRing(k, RingLine(1), city, 0.3f, 1.05f, 0.62f, 2, 20, WallStone(new Color("9b3d2a"), 0.72f), gatehouse);
+        Ramparts(k, town, line);
         k.Build(_walls.Mesh as ArrayMesh ?? (ArrayMesh)(_walls.Mesh = new ArrayMesh()));
     }
 
@@ -1761,7 +1765,7 @@ public partial class TownView(MapView map) : Node3D
     /// A stone curtain wall along a closed loop that starts at its gate, towers spaced round it,
     /// and a gatehouse where the south road leaves. Raised round the loop as the work goes on.
     /// </summary>
-    private void StoneRing(MeshKit k, Vector2[] loop, float done, float thick, float high, float tower, int mids, int towers, Func<Color, Color> tint)
+    private void StoneRing(MeshKit k, Vector2[] loop, float done, float thick, float high, float tower, int mids, int towers, Func<Color, Color> tint, bool gatehouse = true)
     {
         float perim = Perimeter(loop), reach = done * perim + 0.01f, gap = tower * 0.75f;
         // Wall sections, leaving the gateway open at the loop's start.
@@ -1792,8 +1796,13 @@ public partial class TownView(MapView map) : Node3D
             TowerStack(k, 0, 0, tower, stack, tint);
             k.Pop();
         }
-        // The gatehouse on the south road: two taller towers, a portcullis and the arch over it.
+        // The gatehouse on the south road: two taller towers, a portcullis and the arch over it; until it is built, timber gates.
         if (reach < perim) return;
+        if (!gatehouse)
+        {
+            TimberGate(k, loop[0], (loop[0] - Geo.Center).Normalized());
+            return;
+        }
         var gate = loop[0];
         var side = (loop[1] - loop[^1]).Normalized();
         float gy = Ground(gate);

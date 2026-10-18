@@ -104,6 +104,11 @@ public partial class Main
             return;
         }
         if (tab is Tab w) OpenWindow(w);
+        if (a.Wall is int section && Garrison.Walled(t))
+        {
+            ShowWall(section);
+            return;
+        }
         if (a.SiteId is string site && _map.Geo.Pins.TryGetValue(site, out var pin))
         {
             Look(pin, 45);
