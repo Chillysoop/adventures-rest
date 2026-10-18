@@ -1,0 +1,47 @@
+{
+  "name": "The {town} Crier",
+  "every": 7,
+  "population": 40,
+  "stories": 4,
+  "cost": 25,
+  "costPerPop": 0.25,
+  "sections": {
+    "War": "From the walls",
+    "Quest": "Heroes abroad",
+    "Council": "In council",
+    "Story": "At the mayor's door",
+    "Faction": "Whispers",
+    "Faith": "From the temples",
+    "Hardship": "Hard times",
+    "Town": "About town",
+    "Construction": "New on the streets",
+    "Business": "Trade",
+    "Property": "Trade",
+    "Arrival": "New faces",
+    "Departure": "Farewells",
+    "Romance": "Hearts",
+    "Brawl": "Tavern brawls",
+    "Social": "About town",
+    "Rumor": "Word on the street"
+  },
+  "slants": [
+    {
+      "id": "praise", "name": "Praise the mayor",
+      "text": "Pay the printer to sing the mayor's praises. Approval rises, but less each issue in a row, and a run of flattery can be found out.",
+      "lead": "A steady hand at the helm: townsfolk agree the mayor has never served them better",
+      "tags": ["guile"], "mandate": 4, "fade": 0.35, "exposed": 0.05, "exposedPerIssue": 0.15, "exposedMandate": 8
+    },
+    {
+      "id": "hero", "name": "Cry up a hero",
+      "text": "Put a hero on the front page. Their fame grows and they warm to you; heroes who prize courage like it.",
+      "lead": "{hero}: the hero this town deserves",
+      "tags": ["valor"], "renown": 3, "regard": 10, "needsHero": true
+    },
+    {
+      "id": "expose", "name": "Name the guilds",
+      "text": "Print what the watch suspects about the town's secret societies. The most active of them comes under scrutiny and may be named outright.",
+      "lead": "Who meets in our cellars at night? The Crier asks the questions others won't",
+      "tags": ["order"], "heat": 20, "needsSecret": true
+    }
+  ]
+}

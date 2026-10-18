@@ -33,15 +33,14 @@ public class BastionsTests
     {
         var (sim, r) = Asked();
         var t = sim.Town;
-        // The day's other spending (envoys, wages) moves the treasury, so look at the land book itself.
-        double sold = t.Accounts.Get(TreasuryAccount.LandSales, 0);
+        double sales = t.Accounts.Get(TreasuryAccount.LandSales, 0);
         Assert.True(sim.AnswerBastion(r.Id, BastionAnswer.Grant));
         Assert.False(sim.AnswerBastion(r.Id, BastionAnswer.Refuse));
         sim.RunDays(1);
         var b = Assert.Single(t.Bastions);
         Assert.Equal(r.Company, b.Company);
         Assert.Equal(BastionRequestStatus.Founded, r.Status);
-        Assert.True(t.Accounts.Get(TreasuryAccount.LandSales, 0) > sold, "the land was sold to them");
+        Assert.True(t.Accounts.Get(TreasuryAccount.LandSales, 0) > sales, "the land was sold to them");
         var keep = Bastions.Keep(t, b);
         Assert.True(keep.Def.Bastion);
         Assert.All(Bastions.Members(t, b), m => Assert.Equal(b.Id, m.Hero!.BastionId));

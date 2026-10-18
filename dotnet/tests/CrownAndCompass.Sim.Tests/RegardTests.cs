@@ -110,4 +110,33 @@ public class RegardTests
         a.ChangeOpinion(b.Id, -100);
         Assert.Equal(r.Rival, Regard.Chemistry(r, a, [a, b]).Bonus);
     }
+
+    [Fact]
+    public void AHeroOnTheWrongSideOfTheLawCanBeFinedOrJailed()
+    {
+        var sim = Player();
+        var t = sim.Town;
+        sim.RunDays(5);
+        foreach (var h in t.Heroes) h.Hero!.Temper = "lawful";
+        var rogue = WithTemper(t, "greedy");
+        rogue.Gold = 100;
+        Assert.True(Regard.Lawless(t, rogue));
+        var s = Stories.Open(t, "hero-pilfer");
+        Assert.NotNull(s);
+        Assert.Equal(rogue.Id, s!.HeroId);
+        int fine = Stories.StageOf(t, s).Options.FindIndex(o => o.Success.Effects.ContainsKey("fine") && o.Skill == "");
+        double treasury = t.Treasury;
+        Stories.Resolve(t, s.Id, fine);
+        Assert.True(rogue.Gold < 100);
+        Assert.True(t.Treasury > treasury);
+
+        var jail = Stories.Open(t, "hero-pilfer");
+        Assert.NotNull(jail);
+        int cells = Stories.StageOf(t, jail!).Options.FindIndex(o => o.Success.Effects.ContainsKey("jail"));
+        Stories.Resolve(t, jail!.Id, cells);
+        Assert.NotNull(rogue.Hero!.JailedUntil);
+        Assert.False(Quests.Available(rogue));
+        sim.RunDays(11);
+        Assert.Null(rogue.Hero.JailedUntil);
+    }
 }
