@@ -251,6 +251,24 @@
       "teaches": ["tab:Diplomacy", "command:SendEnvoy", "command:OpenTradeRoute", "command:CloseTradeRoute"]
     },
     {
+      "id": "neighbours",
+      "title": "Neighbours with lives of their own",
+      "text": "Every settlement in [b]Diplomacy[/b] has a leader, its own small band of adventurers, and troubles: missing hunters, a broken mill, a fever. Its band goes after what it can and asks your heroes for help when it fails. Send [b]aid[/b] to meet a need, or pay for a [b]project[/b] there that lasts: a watchtower, a bridge, a waystation where your parties rest. The people you help remember it and come back with favours, and friends send relief when a host marches on you.",
+      "when": "alert:neighbour",
+      "point": "tab:Diplomacy",
+      "until": "tab:Diplomacy",
+      "teaches": ["command:AidSettlement", "command:FundProject"]
+    },
+    {
+      "id": "plots",
+      "title": "What villains are planning",
+      "text": "A menace with a name is always working toward something: seizing a road, sending tithe-takers, gathering for a raid. Scrying its seat, or a friend in a nearby settlement, tells you its plan, and the [b]Campaign[/b] window shows it with the war chests, camps and hoards its strength rests on. Clear the holding where one is kept and the town takes it, and the plan is set back. A safe settlement, with a watchtower and a strong band, can turn a plan away on its own.",
+      "when": "alert:plot",
+      "point": "tab:Campaign",
+      "until": "tab:Campaign",
+      "teaches": []
+    },
+    {
       "id": "callings",
       "title": "Heroes and their callings",
       "text": "Every class of hero brings its own stories: a bard asks for the tavern's stage, a paladin offers to swear an oath, a rogue is courted by the thieves' guild, a warlock's patron makes an offer. Some answers give the hero a [b]calling[/b], a lasting part in the town that moves it every day while the hero stays loyal. [b]Mayor[/b] lists the callings held, and a hero's card shows theirs.",

@@ -79,7 +79,7 @@ public static class Lairs
     {
         bool acted = s.Def.Kind switch
         {
-            "beasts" => Hunt(town, s),
+            "beasts" or "dragon" => Hunt(town, s),
             "tribe" => TribeActs(town, s, autoMayor),
             "undead" => Walk(town, s),
             "schemers" => Whisper(town, s),
@@ -293,6 +293,7 @@ public static class Lairs
     internal static string KindOf(string type, string was) => type switch
     {
         "undead" => "undead",
+        "dragon" => "dragon",
         "humanoid" => was == "rivals" ? "rivals" : "tribe",
         "giant" => "tribe",
         "fiend" or "fey" or "aberration" or "celestial" => "schemers",

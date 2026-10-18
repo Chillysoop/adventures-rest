@@ -90,7 +90,7 @@ public partial class Main
             var (word, color) = MenaceStages[m.Stage];
             string march = m.ArrivalTick is int at && at > t.Tick ? "  " + Tag($"marching, {Ui.Days((int)Math.Ceiling((at - t.Tick) / 24.0))} out", Ui.Bad) : "";
             string held = m.Holdings.Count > 0 ? $" It holds {m.Holdings.Count} more {(m.Holdings.Count == 1 ? "lair" : "lairs")}." : "";
-            p.Row($"[b]{Ui.Esc(Ui.Cap(m.Name))}[/b]  {Tag(word, color)}  {Tag($"level {m.Level}")}{march}\n{Tag(Menaces.CunningOf(t, m).Name)}  {Tag(Menaces.AmbitionOf(t, m).Name)}{Heirs(t, m)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Annals.Motive(t, m))} {Ui.Esc(Wants(t, m))} {Seat(t, m)}{held}[/font_size]")}");
+            p.Row($"[b]{Ui.Esc(Ui.Cap(m.Name))}[/b]  {Tag(word, color)}  {Tag($"level {m.Level}")}{march}\n{Tag(Menaces.CunningOf(t, m).Name)}  {Tag(Menaces.AmbitionOf(t, m).Name)}{Heirs(t, m)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Annals.Motive(t, m))} {Ui.Esc(Wants(t, m))} {Seat(t, m)}{held}[/font_size]")}{Plan(t, m)}{Assets(t, m)}");
         }
         p.Note("A threat grows while nobody clears its seat, as far as its wits allow: a beast only hunts, a dull band takes a valley and stops, a cunning or masterful leader builds a domain and can become the big bad. What it wants decides what it does to the town. Clearing the seat breaks it, and it falls back to a lair it holds.");
 
@@ -105,6 +105,28 @@ public partial class Main
             }
         }
         p.Commit();
+    }
+
+    /// <summary>What it is working toward, once the town has learned of it, and how long the town has to stop it.</summary>
+    private static string Plan(Town t, Menace m)
+    {
+        if (m.Plan is not { Known: true } plan) return "";
+        int days = Math.Max(0, plan.DueDay - t.Day);
+        return $"\n[font_size=13]{Tag("Plan", Ui.Gold)} {Ui.Esc(Plots.Describe(t, m))} {Ui.C(days <= 8 ? Ui.Bad : Ui.Ink2, $"({Ui.Days(days)} left)")}[/font_size]";
+    }
+
+    /// <summary>What its strength rests on, and where each is kept, so the player knows which holding to hit.</summary>
+    private static string Assets(Town t, Menace m)
+    {
+        if (m.Assets.Count == 0) return "";
+        var parts = m.Assets.Select(a =>
+        {
+            string name = Plots.AssetOf(t, a)?.Name ?? a.Def;
+            var site = Quests.Site(t, a.SiteId);
+            string where = site == null ? "" : site.Known == SiteKnowledge.Unheard ? " somewhere unknown" : $" at {site.Def.Name}";
+            return $"{name}{where}";
+        });
+        return $"\n[font_size=12]{Tag("Rests on")} {Ui.Esc(string.Join(" · ", parts))}[/font_size]";
     }
 
     /// <summary>Whose heirs it is in the world's history.</summary>
