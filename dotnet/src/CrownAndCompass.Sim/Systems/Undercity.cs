@@ -25,15 +25,15 @@ public sealed record UnderLevelDef
 public sealed record UndercityRules
 {
     public double StirPerFaction { get; init; } = 0.25;
-    public double StirPerHundred { get; init; } = 0.08;
+    public double StirPerHundred { get; init; } = 0.04;
     public double WarnAt { get; init; } = 60;
     public double RiseAt { get; init; } = 100;
     public double RiseAfter { get; init; } = 30;
     public double PatrolCost { get; init; } = 6;
-    public double PatrolCut { get; init; } = 0.6;
+    public double PatrolCut { get; init; } = 0.75;
     public int[] RiseDead { get; init; } = [1, 3];
     public double RiseMandate { get; init; } = -5;
-    public double RiseTension { get; init; } = 20;
+    public double RiseTension { get; init; } = 8;
     public int RefillDays { get; init; } = 60;
     public double ClearedMandate { get; init; } = 3;
     public double ClearedHeat { get; init; } = 15;
@@ -89,8 +89,8 @@ public static class Undercity
     public static UnderLevel? LevelOf(Town town, string siteId) =>
         town.Undercity.FirstOrDefault(l => Def(town, l).Site.Id == siteId);
 
-    /// <summary>Whether an undercity site's level stirs enough for the stand-in mayor to post a bounty on it.</summary>
-    public static bool Stirring(Town town, SiteState s) => LevelOf(town, s.Def.Id) is { } l && l.Stir >= Rules(town).StandInAt;
+    /// <summary>Whether an undercity site's level stirs enough (the town has heard it) for companies and the stand-in mayor to go down.</summary>
+    public static bool Stirring(Town town, SiteState s) => LevelOf(town, s.Def.Id) is { } l && l.Stir >= Rules(town).WarnAt;
 
     public static SiteState Site(Town town, UnderLevel l) => Quests.Site(town, Def(town, l).Site.Id)!;
 
@@ -155,7 +155,7 @@ public static class Undercity
                     site.ThoughtCleared = false;
                     site.Known = SiteKnowledge.Rumoured;
                     l.RefillDay = null;
-                    l.Stir = r.RiseAfter;
+                    l.Stir = 0;
                     town.Log(LedgerCategory.Town, Importance.Routine, $"Night-soil men hear things moving in {Def(town, l).Name} again. The dark below has filled.");
                 }
                 continue;

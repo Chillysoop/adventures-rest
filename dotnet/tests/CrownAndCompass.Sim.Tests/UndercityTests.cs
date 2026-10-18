@@ -93,7 +93,7 @@ public class UndercityTests
         sim.RunDays(t.Content.Undercity.RefillDays);
         Assert.False(site.Cleared);
         Assert.Null(l.RefillDay);
-        Assert.True(l.Stir >= t.Content.Undercity.RiseAfter);
+        Assert.True(l.Stir < t.Content.Undercity.WarnAt);
     }
 
     [Fact]

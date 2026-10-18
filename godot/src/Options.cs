@@ -25,6 +25,8 @@ public sealed class Options
     /// <summary>Lift the fog everywhere (screenshots of the wilds and the roads through them).</summary>
     public bool Reveal;
     public string? Site;
+    /// <summary>Aim the camera at the first finished building with this id.</summary>
+    public string? At;
     public string? Screenshot;
     public int Frames = 45;
 
@@ -114,6 +116,7 @@ public sealed class Options
                 case "--tab": o.Tab = Next(); break;
                 case "--scroll": o.Scroll = float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture); break;
                 case "--site": o.Site = Next(); break;
+                case "--at": o.At = Next(); break;
                 case "--screenshot": o.Screenshot = Next(); break;
                 case "--frames": o.Frames = int.Parse(Next()); break;
                 case "--flyout": o.Flyout = true; break;
