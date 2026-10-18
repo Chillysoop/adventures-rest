@@ -97,6 +97,9 @@ public partial class MapView : Control
     public AgentPositions Agents => _crowd.People;
     public Crowd Crowd => _crowd;
 
+    /// <summary>The little d20s over people's heads when they make a check.</summary>
+    public TownRolls Rolls { get; private set; } = null!;
+
     public override void _Ready()
     {
         ClipContents = true;
@@ -150,6 +153,9 @@ public partial class MapView : Control
         _overlay = new Overlay(this) { MouseFilter = MouseFilterEnum.Ignore };
         AddChild(_overlay);
         _overlay.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        Rolls = new TownRolls(this) { MouseFilter = MouseFilterEnum.Ignore };
+        AddChild(Rolls);
+        Rolls.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         Planner = new Planner(this) { MouseFilter = MouseFilterEnum.Ignore };
         AddChild(Planner);
         Planner.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
