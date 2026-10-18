@@ -32,6 +32,13 @@
 - Godot client in `godot/` (Godot 4.3 .NET). Screenshots: `xvfb-run -a godot --path godot --rendering-driver opengl3
   --resolution 1600x900 -- --seed N --day D --autoplay --screenshot out.png` (`--cam`, `--look`, `--site`, `--strategic`
   aim it; `--bench` checks the performance budget in the GDD). Exports go to `godot/build/` (ignored).
+- Tutorial: `content/game/tutorial.json` teaches every player-facing feature, and `TutorialTests` fails when a player
+  command on `Simulation`, a dock tab (`Tab` in `godot/src/Main.cs`) or a client hotkey has no step whose `teaches` lists
+  it (`command:PostBounty`, `tab:War`, `key:B`). So a PR adding a feature adds or updates its step in the same PR. A step
+  can outline part of the HUD (`point`), wait for the player (`until`: a client event, `tab:X`, or `count:<any Town
+  list>`) and hold back until it is relevant (`when`: `count:X`, `day:N`, `alert:<key>`), so new systems rarely need
+  client code (`godot/src/Guide.cs`). Keep step ids stable: players who finished the tutorial are shown steps with new
+  ids as "New in this build". The main menu is `godot/src/Title.cs` (`--title`, `--tutorial start|<step-id>` for shots).
 - Art: only CC0/CC-BY or our own; credit every pack in `godot/assets/CREDITS.md`. Kenney models are baked by
   `python3 tools/kenney_bake.py` into `godot/assets/models/kenney.bin`. Shader colours are sRGB converted once in the
   shader (no `source_color` hint). Client decoration randomness goes through `Geo.Hash`, never the sim's rng.

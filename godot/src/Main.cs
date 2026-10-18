@@ -61,10 +61,15 @@ public partial class Main : Control
         Ui.Links = OnLink;
         BuildLayout();
         BuildMenu();
+        BuildTitle();
+        BuildGuide();
         _map.TreeScale = _opts.Trees;
-        // Started plainly, the game picks up the newest save; arguments set up a moment instead.
-        bool loaded = _opts.Load is string file ? LoadFile(file, "the save") : OS.GetCmdlineUserArgs().Length == 0 && Continue();
-        if (!loaded) NewTown(_opts.Seed ?? 1, _opts.Autoplay);
+        // Started plainly, the game opens on the main menu over a town that has been growing a while;
+        // arguments set up a moment instead.
+        bool plain = OS.GetCmdlineUserArgs().Length == 0;
+        bool loaded = _opts.Load is string file && LoadFile(file, "the save");
+        if (!loaded && plain) Showcase();
+        else if (!loaded) NewTown(_opts.Seed ?? 1, _opts.Autoplay);
         if (_opts.Day > 0) _sim.RunDays(_opts.Day);
         if (_opts.Hour > 0) for (int i = 0; i < _opts.Hour; i++) _sim.Step();
         _opts.ApplyScript(_sim);
@@ -83,7 +88,18 @@ public partial class Main : Control
             Select(Selection.Agent(hero.Id));
         // News from a fast-forward is in the Ledger; don't greet the player with a stale feed.
         ClearFeed();
+        if (_opts.Tutorial is string step) StartTutorial(step == "start" ? null : step);
         if (_opts.Menu) OpenMenu();
+        if (plain || _opts.Title) ShowTitle();
+    }
+
+    /// <summary>The town behind the main menu: a random one, a month into the stand-in mayor's care, in the morning light.</summary>
+    private void Showcase()
+    {
+        NewTown((int)(GD.Randi() % 9999) + 1, autoplay: true);
+        _sim.RunDays(30);
+        for (int i = 0; i < 10; i++) _sim.Step();
+        ClearFeed();
     }
 
     private void OpenMarkerAt(int i) => OpenMarker(_map.Markers[i]);
@@ -136,6 +152,7 @@ public partial class Main : Control
         ClearFeed();
         _openChronicles.Clear();
         _ledgerShown = -1;
+        _step = null;
         foreach (var p in _panes.Values) p.Invalidate();
         _dirty = true;
         CloseWindow();
@@ -159,6 +176,13 @@ public partial class Main : Control
         _pausedPill.GetParent<Control>().Visible = i == 0;
     }
 
+    /// <summary>The player changed the speed (a key or a button), which the tutorial watches for.</summary>
+    private void PlayerSpeed(int i)
+    {
+        SetSpeed(i);
+        GuideEvent(i == 0 ? "pause" : "speed");
+    }
+
     /// <summary>Open a management window, or close it if it is the one already open (the dock's toggle).</summary>
     private void SetTab(Tab t)
     {
@@ -170,6 +194,7 @@ public partial class Main : Control
     private void Select(Selection? sel)
     {
         _map.Selection = sel;
+        if (sel != null) GuideEvent($"select:{sel.Kind}");
         _inspector.Visible = sel != null;
         PlaceInspector();
         _dirty = true;
@@ -206,21 +231,29 @@ public partial class Main : Control
             GetViewport().SetInputAsHandled();
             return;
         }
+        if (_title.Visible)
+        {
+            GetViewport().SetInputAsHandled();
+            return;
+        }
         if (MarkerKey(k.Keycode))
         {
             GetViewport().SetInputAsHandled();
             return;
         }
-        if (k.Keycode == Key.Space) SetSpeed(_speed == 0 ? _lastSpeed : 0);
-        else if (k.Keycode is >= Key.Key1 and <= Key.Key4) SetSpeed((int)(k.Keycode - Key.Key0));
+        if (k.Keycode == Key.Space) PlayerSpeed(_speed == 0 ? _lastSpeed : 0);
+        else if (k.Keycode is >= Key.Key1 and <= Key.Key4) PlayerSpeed((int)(k.Keycode - Key.Key0));
         else if (k.Keycode == Key.Home) _map.Recenter();
         else if (k.Keycode == Key.B) ToggleBuildBar();
         else if (k.Keycode == Key.Escape && _map.Planner.Active) _map.Planner.Pick(null);
         else if (k.Keycode == Key.M) ToggleStrategic();
         else if (k.Keycode == Key.Escape && _inspector.Visible) Select(null);
         else if (k.Keycode == Key.Escape && _window.Visible) CloseWindow();
-        else if (k.Keycode == Key.Q) _map.Rotate(-1);
-        else if (k.Keycode == Key.E) _map.Rotate(1);
+        else if (k.Keycode is Key.Q or Key.E)
+        {
+            _map.Rotate(k.Keycode == Key.Q ? -1 : 1);
+            GuideEvent("rotate");
+        }
         else if (k.Keycode == Key.Escape) OpenMenu();
         else if (k.Keycode == Key.F5) Save("quick");
         else if (k.Keycode == Key.F9) Load("quick");
@@ -249,6 +282,8 @@ public partial class Main : Control
         SyncAlerts();
         ScriptedAlert();
         SyncMarkers();
+        SyncGuide();
+        if (_title.Visible) _map.Drift(1, (float)delta * 0.035f);
         if (_dirty)
         {
             RenderHeader();

@@ -199,6 +199,7 @@ public partial class Main
         }
         _help.Text = _map.Strategic ? StrategicHelp : MapHelp;
         SyncMarkers();
+        if (_map.Strategic) GuideEvent("strategic");
     }
 
     private const string MapHelp = "Scroll to zoom · drag to pan · Q/E rotate · M campaign map · double right-click to recenter";
