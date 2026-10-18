@@ -119,7 +119,7 @@ public static class Campaigns
         town.Log(
             LedgerCategory.Quest,
             Importance.Notable,
-            $"The {party.Name} ({string.Join(", ", members.Select(m => $"{m.GivenName} the {m.Hero!.Cls.Name} {m.Hero.Level}"))}) set out for {where}{why}.",
+            $"The {party.Name} ({string.Join(", ", members.Select(m => $"{m.GivenName} the {m.Hero!.Cls.Name} {m.Hero.Level}"))}) set out for {where}{why}{Roads.Summary(party)}.",
             members.Select(m => m.Id).ToList());
     }
 }

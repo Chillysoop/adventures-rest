@@ -211,6 +211,9 @@ public sealed class Town
     /// <summary>The themed regions of the wilds, nearest ring first (<see cref="World"/>).</summary>
     public List<Region> Regions { get; } = [];
 
+    /// <summary>The country that bends the roads between the town and its sites (<see cref="Systems.Roads"/>).</summary>
+    public List<Feature> Terrain { get; } = [];
+
     /// <summary>Villages, holds and enclaves out in the wilds, by id.</summary>
     public List<Settlement> Settlements { get; } = [];
 

@@ -68,6 +68,7 @@ public sealed class Simulation
         Economy.Hourly(t);
         Property.Hourly(t);
         Social.Hourly(t);
+        Roads.Hourly(t);
         t.Tick++;
         if (t.Hour == 0) DailyTick();
     }

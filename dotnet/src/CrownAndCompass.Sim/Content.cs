@@ -763,6 +763,148 @@ public sealed record DelveRules
     public int FirstAidDc { get; init; }
 }
 
+/// <summary>A kind of country that bends the roads: a ridge, a mire, a tangled wood (content/game/roads.json).</summary>
+public sealed record TerrainKindDef
+{
+    public required string Id { get; init; }
+    public string Name { get; init; } = "";
+
+    /// <summary>"over" the ridge, "through" the mire, "across" the gorge.</summary>
+    public string Through { get; init; } = "through";
+    public IReadOnlyList<string> Names { get; init; } = [];
+    public IReadOnlyList<string> Words { get; init; } = [];
+
+    /// <summary>How much slower the going is inside it than on open ground.</summary>
+    public double Slow { get; init; } = 1.5;
+
+    /// <summary>How much a party fears crossing it, before weighing its own strength.</summary>
+    public double Danger { get; init; } = 1;
+    public TerrainHazardDef Hazard { get; init; } = new();
+
+    /// <summary>Chance something attacks a party crossing it.</summary>
+    public double Ambush { get; init; }
+    public IReadOnlyList<string> Habitats { get; init; } = [];
+    public IReadOnlyList<string> AmbushText { get; init; } = [];
+}
+
+public sealed record TerrainHazardDef
+{
+    /// <summary>The check each member makes (a <see cref="SkillKind"/>).</summary>
+    public string Skill { get; init; } = SkillKind.Hazard;
+
+    /// <summary>DC before the country's level is added.</summary>
+    public int Dc { get; init; } = 11;
+    public int Die { get; init; } = 6;
+    public IReadOnlyList<string> Text { get; init; } = [];
+}
+
+/// <summary>How a party weighs a short, risky road against a long, safe one.</summary>
+public sealed record RouteChoiceRules
+{
+    /// <summary>Cost of a day's extra march.</summary>
+    public double TimeWeight { get; init; } = 1;
+
+    /// <summary>Cost of a unit of danger for a party of the country's level.</summary>
+    public double RiskWeight { get; init; } = 1.4;
+
+    /// <summary>Danger multipliers: a bold leader, green heroes with no veteran, a party coming home hurt.</summary>
+    public double Bold { get; init; } = 0.55;
+    public double Green { get; init; } = 1.5;
+    public double Wounded { get; init; } = 2.2;
+
+    /// <summary>Time multipliers: a lazy leader, people waiting on them (a plea, the warband raiding).</summary>
+    public double Lazy { get; init; } = 1.6;
+    public double Urgent { get; init; } = 1.6;
+
+    /// <summary>Spread of the party's mood on the day, in units of cost.</summary>
+    public double Noise { get; init; } = 0.5;
+}
+
+public sealed record ShortRestRules
+{
+    /// <summary>They rest when the party is below this share of its hit points.</summary>
+    public double Below { get; init; } = 0.75;
+    public int PerLongRest { get; init; } = 2;
+
+    /// <summary>Chance a short rest inside a site draws a wandering band.</summary>
+    public double WanderChance { get; init; } = 0.12;
+}
+
+public sealed record LongRestRules
+{
+    /// <summary>Share of their hit dice heroes get back from a night's sleep.</summary>
+    public double HitDice { get; init; } = 0.5;
+}
+
+public sealed record RetreatRules
+{
+    /// <summary>Times a beaten party falls back, sleeps and goes in again.</summary>
+    public int Retries { get; init; } = 1;
+
+    /// <summary>They only try again with at least this many still on their feet.</summary>
+    public int MinStanding { get; init; } = 2;
+
+    /// <summary>A party below this share of hit points that has a retry left falls back to rest rather than going home.</summary>
+    public double TurnBack { get; init; } = 0.5;
+
+    /// <summary>After being driven off, they only come back if the foes were this badly hurt or worse (share of their hit points left).</summary>
+    public double FoeShare { get; init; } = 0.5;
+
+    /// <summary>Extra creatures waiting for them when they come back.</summary>
+    public int Alerted { get; init; } = 1;
+
+    /// <summary>How much sooner (share of hit points) they break off a fight on a second try, and in a fight on the road.</summary>
+    public double Caution { get; init; } = 0.15;
+    public double RoadCaution { get; init; } = 0.25;
+
+    /// <summary>Whether greenhorns with no veteran among them try again; without one to steady them, they go home.</summary>
+    public bool GreenRetry { get; init; } = true;
+
+    /// <summary>How much sooner greenhorns with no veteran among them break off a fight.</summary>
+    public double GreenCaution { get; init; }
+}
+
+public sealed record CampRules
+{
+    /// <summary>Nightly chance of trouble at a camp, plus this much per level of the country.</summary>
+    public double Ambush { get; init; } = 0.05;
+    public double PerTier { get; init; } = 0.006;
+
+    /// <summary>The watch's Wisdom (Perception) DC to see it coming.</summary>
+    public int WatchDc { get; init; } = 12;
+
+    /// <summary>Reaching a site after this hour, a party camps and goes in at dawn.</summary>
+    public int LateHour { get; init; } = 14;
+}
+
+/// <summary>Roads, rests and the country between the town and its sites (content/game/roads.json).</summary>
+public sealed record RoadRules
+{
+    /// <summary>Hours a party marches a day; a day's march is one day of distance on open ground.</summary>
+    public int MarchHours { get; init; } = 10;
+    public int Dawn { get; init; } = 6;
+
+    /// <summary>When the midday short rest starts.</summary>
+    public int Noon { get; init; } = 11;
+    public ShortRestRules ShortRest { get; init; } = new();
+    public LongRestRules LongRest { get; init; } = new();
+    public RetreatRules Retreat { get; init; } = new();
+    public CampRules Camp { get; init; } = new();
+    public int[] FeaturesPerRegion { get; init; } = [1, 2];
+
+    /// <summary>Share of its region's arc a feature spans.</summary>
+    public double[] Arc { get; init; } = [0.35, 0.7];
+
+    /// <summary>Days a detour keeps clear of a feature's edge.</summary>
+    public double Margin { get; init; } = 0.12;
+    public RouteChoiceRules Choice { get; init; } = new();
+    public IReadOnlyDictionary<string, List<string>> Texts { get; init; } = new Dictionary<string, List<string>>();
+    public IReadOnlyList<TerrainKindDef> Kinds { get; init; } = [];
+
+    /// <summary>The kinds of country each region theme puts in front of its sites (a kind twice is twice as likely).</summary>
+    public IReadOnlyDictionary<string, List<string>> Themes { get; init; } = new Dictionary<string, List<string>>();
+}
+
 /// <summary>The wilds: rings of themed regions around the town, their sites and the peoples living there (content/game/world.json).</summary>
 public sealed record WorldRules
 {
@@ -810,6 +952,9 @@ public sealed class Content
 
     /// <summary>The themed regions, sites and peoples of the wilds.</summary>
     public WorldRules World { get; init; } = new();
+
+    /// <summary>Roads, rests and the country that bends them.</summary>
+    public RoadRules Roads { get; init; } = new();
 
     /// <summary>How lairs grow, act and are resettled.</summary>
     public LairRules Lairs { get; init; } = new();
@@ -958,6 +1103,7 @@ public sealed class Content
             Knowledge = Parse<KnowledgeRules>("knowledge.json"),
             Loot = Parse<LootRules>("loot.json"),
             World = Parse<WorldRules>("world.json"),
+            Roads = Parse<RoadRules>("roads.json"),
             Rumors = Parse<RumorRules>("rumors.json"),
             Lairs = Parse<LairRules>("lairs.json"),
             Shrines = Parse<ShrineRules>("shrines.json"),
