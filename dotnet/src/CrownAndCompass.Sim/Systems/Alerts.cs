@@ -20,6 +20,7 @@ public enum AlertWindow
     Campaign,
     City,
     Story,
+    Mayor,
 }
 
 /// <summary>A group of alerts: one icon on the strip, with a count and a hover list of what is in it.</summary>
@@ -46,10 +47,12 @@ public static class Alerts
     public static readonly AlertKind Unrest = new("unrest", "Unrest", "mandate", AlertLevel.Urgent, AlertWindow.Council);
     public static readonly AlertKind Hostile = new("hostile", "Hostile factions", "suspicion", AlertLevel.Urgent, AlertWindow.Faith);
     public static readonly AlertKind Motion = new("motion", "Council motions", "mandate", AlertLevel.Decision, AlertWindow.Council);
+    public static readonly AlertKind Stores = new("stores", "Winter stores", "bread", AlertLevel.Decision, AlertWindow.City);
     public static readonly AlertKind Fealty = new("fealty", "Demands for fealty", "warband", AlertLevel.Decision, AlertWindow.Campaign);
     public static readonly AlertKind Charter = new("charter", "Charters", "favour", AlertLevel.Decision, AlertWindow.City);
     public static readonly AlertKind Crisis = new("crisis", "A crisis", "d20", AlertLevel.Urgent, AlertWindow.Story);
     public static readonly AlertKind Story = new("story", "Events", "d20", AlertLevel.Decision, AlertWindow.Story);
+    public static readonly AlertKind LevelUp = new("levelup", "Level up", "d20", AlertLevel.Decision, AlertWindow.Mayor);
     public static readonly AlertKind Heroes = new("heroes", "Restless heroes", "heroes", AlertLevel.Decision, AlertWindow.None);
     public static readonly AlertKind Housing = new("housing", "Housing", "homeless", AlertLevel.Minor, AlertWindow.Council);
     public static readonly AlertKind Work = new("work", "Idle hands", "population", AlertLevel.Minor, AlertWindow.Council);
@@ -57,10 +60,10 @@ public static class Alerts
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Crisis, Hunger, Coffers, Unrest, Hostile, Motion, Fealty, Story, Charter, Heroes, Housing, Work];
+        [Siege, Crisis, Hunger, Coffers, Unrest, Hostile, Motion, Fealty, Stores, Story, LevelUp, Charter, Heroes, Housing, Work];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
-    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Hostility, Growth, Loyalty, Homes];
+    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Hostility, Winter, Growth, Loyalty, Homes];
 
     public static List<Alert> Standing(Town town) => Rules.SelectMany(r => r(town)).ToList();
 
@@ -94,6 +97,12 @@ public static class Alerts
             yield return new($"story:{s.Id}:{s.Stage}", d.Stakes == "high" ? Crisis : Story, Stories.Fill(t, s, d.Title),
                 $"{Cap(Stories.StakesOf(t, s).Name)} stakes. Step in and roll, or in {Days(days)} it runs its course without you.", StoryId: s.Id, AgentId: s.HeroId);
         }
+        if (Sheet.Pending(t) > 0)
+        {
+            var (level, improvement) = Sheet.NextAdvance(t);
+            yield return new($"levelup:{level}", LevelUp, $"Mayor {t.Stories.Mayor.Name} reached level {level}",
+                $"Choose how the mayor grows on the Mayor tab: {(improvement ? "raise two abilities or take a feat" : "learn a new skill, or become expert in one")}.");
+        }
     }
 
     private static IEnumerable<Alert> Food(Town t)
@@ -123,6 +132,15 @@ public static class Alerts
     {
         foreach (var f in t.Factions.Where(f => f.Active && f.Known && f.Standing <= -30).OrderBy(f => f.Id, StringComparer.Ordinal))
             yield return new($"faction:{f.Id}", Hostile, $"{Cap(f.Name)} turns hostile", "A faction in town is working against you. Crack down, or win it back.");
+    }
+
+    private static IEnumerable<Alert> Winter(Town t)
+    {
+        var s = Seasons.Current(t);
+        bool late = s.Id == "winter" || (Seasons.Next(t).Id == "winter" && Seasons.DaysLeft(t) <= 10);
+        if (late && Seasons.StoresFull(t) < 0.5 && Seasons.LayInQuote(t).Food > 0)
+            yield return new("stores", Stores, "The winter stores are short",
+                $"The cellars and granaries hold {Math.Round(Seasons.StoresFull(t) * 100)}% of what the town needs to see out the winter. Lay in grain from the traders in the City window, or build a granary.");
     }
 
     private static IEnumerable<Alert> Growth(Town t)

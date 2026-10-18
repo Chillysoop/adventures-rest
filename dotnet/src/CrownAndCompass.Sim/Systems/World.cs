@@ -459,7 +459,7 @@ public static class World
         double gain = rules.Envoy / (1 + 0.25 * s.Envoys);
         s.Envoys++;
         town.Log(LedgerCategory.Town, Importance.Routine, $"The council sends an envoy with {Js.Str(rules.EnvoyCost)} gold of gifts to {s.People}.");
-        Shift(town, s, gain);
+        Shift(town, s, gain + Sheet.Gain(town, "envoy", Sheet.Decide(town, "envoy")));
         return true;
     }
 

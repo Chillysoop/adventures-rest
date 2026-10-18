@@ -110,6 +110,13 @@ public partial class Main : Control
         ClearFeed();
         if (_opts.Tutorial is string step) StartTutorial(step == "start" ? null : step);
         if (_opts.Background is string bg) _sim.ChooseBackground(bg);
+        if (_opts.MayorLevel is int lv)
+        {
+            _sim.Town.Stories.Mayor.Level = lv;
+            _sim.Town.Stories.Mayor.Xp = Math.Max(_sim.Town.Stories.Mayor.Xp, _sim.Town.Content.Stories.Levels[lv - 1] + 60);
+        }
+        foreach (var adv in _opts.Advances) _sim.AdvanceMayor(adv);
+        if (_opts.Inspiration is int insp) _sim.Town.Stories.Mayor.Inspiration = insp;
         if (_opts.Story is string story && Stories.Open(_sim.Town, story) is { } opened)
         {
             OpenStory(opened.Id);
@@ -335,6 +342,7 @@ public partial class Main : Control
         SyncMarkers();
         SyncGuide();
         SyncStories(delta);
+        SyncChecks();
         if (_title.Visible) _map.Drift(1, (float)delta * 0.035f);
         if (_dirty)
         {
@@ -405,7 +413,9 @@ public partial class Main : Control
     {
         var t = _sim.Town;
         var s = _sim.Snapshot();
-        _clock.Text = $"Day {t.Day} · {t.Hour:00}:00";
+        var season = Seasons.Current(t);
+        _clock.Text = $"Day {t.Day} · {season.Name} · {t.Hour:00}:00";
+        _clock.TooltipText = $"{season.Name} of year {Seasons.Year(t)}, day {Seasons.DayOf(t)} of {Seasons.Rules(t).Days}. {Seasons.Next(t).Name} comes in {Ui.Days(Seasons.DaysLeft(t))}.\n{season.Blurb}";
         _tierLabel.Text = $"{City.Tier(t).Name} · about {City.Souls(t):N0} souls";
         _motionDot.Visible = Council.PendingMotion(t) != null;
         _standing = StandingAlerts();

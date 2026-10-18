@@ -152,11 +152,20 @@
     {
       "id": "stories",
       "title": "Step into a story",
-      "text": "Things happen in town that you can step into: a brawl at the inn, a hero packing to leave, an envoy from the enemy, a host on the march. A card pops up with your choices. Each is a [b]d20 roll[/b] of your own skill against a DC, and the card shows your odds. Pick one and roll. Choose [b]Later[/b] to leave it on the alert strip, but a story you leave alone runs its course without you.",
+      "text": "Things happen in town that you can step into: a brawl at the inn, a hero packing to leave, an envoy from the enemy, a host on the march. A card pops up with your choices. Each is a [b]d20 roll[/b] of your own skill against a DC, and the card shows your odds. Pick one and roll. Choose [b]Later[/b] to leave it on the alert strip, but a story you leave alone runs its course without you. Running the town well earns [b]Inspiration[/b]: tick it on the card and a failed roll is thrown again.",
       "when": "alert:story",
       "point": "alerts",
       "until": "roll",
       "teaches": ["command:ResolveStory"]
+    },
+    {
+      "id": "mayor-level",
+      "title": "Level up",
+      "text": "Seeing stories through gives you experience, and each level lets you choose how you grow on the [b]Mayor[/b] tab: learn a new skill or become expert in one, and at levels 4 and 8 raise your abilities or take a feat such as Lucky or Silver Tongue. Your sheet also rolls when you decide motions, answer demands, send envoys, crack down and haggle, so a better mayor gets a little more out of every decision.",
+      "when": "alert:levelup",
+      "point": "tab:Mayor",
+      "until": "tab:Mayor",
+      "teaches": ["command:AdvanceMayor"]
     },
     {
       "id": "campaign-map",
@@ -189,6 +198,15 @@
       "text": "[b]Esc[/b] or [b]Menu[/b] opens the game menu with five save slots. The town autosaves every three days and when you quit. [b]F5[/b] quicksaves and [b]F9[/b] loads it.",
       "point": "menu",
       "teaches": ["key:Escape", "key:F5", "key:F9"]
+    },
+    {
+      "id": "seasons",
+      "title": "The turning year",
+      "text": "The clock shows the season. Summer brings visitors and war bands, autumn the harvest, and winter empty fields, snowbound roads and the hungry dead. Autumn's harvest fills the cellars and granaries for the winter: if the [b]Winter stores[/b] in the City window run short, lay in grain from the traders before the snow.",
+      "point": "clock",
+      "when": "day:45",
+      "until": "tab:City",
+      "teaches": ["command:LayInStores"]
     },
     {
       "id": "wards",

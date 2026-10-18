@@ -136,7 +136,7 @@ public static class Threat
         if (!enemy || !IsActive(town)) return;
 
         // Living off a sacked town's tribute, the warband grows slowly.
-        if (en.Stage != ThreatStage.Marching) en.Strength += Growth(town) * director * (Saga.Restrained(town) ? 0.25 : 1);
+        if (en.Stage != ThreatStage.Marching) en.Strength += Growth(town) * director * (Saga.Restrained(town) ? 0.25 : 1) * Seasons.Warband(town);
         OutpostFalls(town);
         Advance(town);
         if (en.Stage == ThreatStage.Raids && RaidTonight(town)) Raid(town);
@@ -175,12 +175,13 @@ public static class Threat
         else if (en.Stage == ThreatStage.Raids && !Saga.Restrained(town) && en.Strength >= e.Stages.March && en.Strength >= Defense(town, allies: false) * e.MarchConfidence)
         {
             Next(ThreatStage.Marching);
-            en.ArrivalTick = town.Tick + e.MarchDays * SimTime.HoursPerDay;
+            int march = e.MarchDays + Seasons.MarchDays(town);
+            en.ArrivalTick = town.Tick + march * SimTime.HoursPerDay;
             town.Log(
                 LedgerCategory.War,
                 Importance.Major,
                 $"{Cap(e.Name)} is on the march! {e.Leader} leads some {Js.Str(Js.Round(en.Strength / 10) * 10)} warriors toward {town.Name}. " +
-                $"They will reach the walls in {e.MarchDays} days.");
+                $"They will reach the walls in {march} days.");
         }
     }
 
@@ -233,7 +234,7 @@ public static class Threat
         var rng = town.Rng;
         en.Raids++;
         en.RaidWaited = 0;
-        en.NextRaidTick = town.Tick + rng.Range(e.RaidEveryDays[0], e.RaidEveryDays[1] + 1) * SimTime.HoursPerDay;
+        en.NextRaidTick = town.Tick + (int)Math.Round(rng.Range(e.RaidEveryDays[0], e.RaidEveryDays[1] + 1) / Seasons.Warband(town)) * SimTime.HoursPerDay;
         double raiders = Math.Max(4, Js.Round(en.Strength * e.RaidShare * (0.7 + rng.Next() * 0.6)));
         var home = town.Heroes.Where(a => !a.IsAway).ToList();
         double local = LocalDefense(town);
@@ -482,7 +483,7 @@ public static class Threat
     {
         var e = town.Content.Enemy;
         var en = town.Enemy;
-        if (!IsActive(town)) return;
+        if (!IsActive(town) || Menaces.WarlordEscapes(town, camp)) return;
         en.Stage = ThreatStage.Defeated;
         en.Strength = 0;
         en.Outpost = false;

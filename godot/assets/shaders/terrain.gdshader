@@ -114,7 +114,12 @@ void fragment() {
 	float canopy = forest * far * smoothstep(0.35, 0.65, nz2.r * 0.6 + nz3.b * 0.4 + forest * 0.3);
 	col = mix(col, mix(vec3(0.17, 0.27, 0.15), vec3(0.27, 0.40, 0.21), nz3.g), clamp(canopy * 1.4, 0.0, 0.9));
 
-	// The town's lanes and yards, worn into the grass with ragged edges; the zone plan painted over them.
+	// The season: grass turns straw in autumn and fresh in spring; winter lays patchy snow over all but steep rock and water.
+	col = season_grass(col);
+	vec3 turned = mix(vec3(0.62, 0.30, 0.13), vec3(0.82, 0.60, 0.20), nz3.g) * (0.75 + 0.3 * nz2.r);
+	col = mix(col, turned, autumn * clamp(canopy * 1.4, 0.0, 0.9) * 0.85);
+	col = lay_snow(col, p, snow_cover(p, normalize(wnrm).y) * smoothstep(-0.5, -0.1, h));
+	// The town's lanes and yards, worn into the grass (and trodden clear of snow) with ragged edges; the zone plan painted over them.
 	vec2 tuv = (p - town_origin) / max(town_size, 1.0);
 	if (town_size > 0.0 && tuv.x > 0.0 && tuv.y > 0.0 && tuv.x < 1.0 && tuv.y < 1.0) {
 		vec4 tw = texture(town_tex, tuv);

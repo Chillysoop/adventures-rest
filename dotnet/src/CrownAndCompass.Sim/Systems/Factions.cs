@@ -917,6 +917,8 @@ public static class Factions
             f.Active = false;
             f.DormantUntil = town.Day + r.DormantDays;
         }
+        // A mayor who stares the town's crooks down wins a little more trust.
+        town.Mandate = Math.Min(100, town.Mandate + Sheet.Gain(town, "crackdown", Sheet.Decide(town, "crackdown")));
         return true;
     }
 

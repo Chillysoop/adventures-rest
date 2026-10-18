@@ -672,7 +672,7 @@ public static class Menaces
         var r = Rules(town);
         var cu = CunningOf(town, m);
         var am = AmbitionOf(town, m);
-        double g = r.Growth * cu.Growth * am.Growth * (seat.Known != SiteKnowledge.Unheard ? 1 : r.UnknownGrowth) * (1 + m.Holdings.Count * r.HoldingGrowth) * Saga.Pace(town);
+        double g = r.Growth * cu.Growth * am.Growth * (seat.Known != SiteKnowledge.Unheard ? 1 : r.UnknownGrowth) * (1 + m.Holdings.Count * r.HoldingGrowth) * Saga.Pace(town) * Seasons.Activity(town, m.Kind);
         if (m.FactionId != null && Factions.Find(town, m.FactionId) is FactionState f && f.Active) g += f.Members.Count * 0.1;
         // Every party that went for it and came back without finishing it makes it bolder, and a proud one angry.
         if (seat.Attempts > m.SeenAttempts)
@@ -844,7 +844,8 @@ public static class Menaces
         var r = Rules(town);
         var rng = town.Rng;
         double far = 1 + 0.25 * Math.Max(0, seat.Def.Distance - 1);
-        m.NextStrikeTick = town.Tick + (int)Math.Round(rng.Range(r.StrikeEveryDays[0], r.StrikeEveryDays[1] + 1) * far) * SimTime.HoursPerDay;
+        // A menace in its season strikes more often; one out of it keeps to its lair.
+        m.NextStrikeTick = town.Tick + (int)Math.Round(rng.Range(r.StrikeEveryDays[0], r.StrikeEveryDays[1] + 1) * far / Seasons.Activity(town, m.Kind)) * SimTime.HoursPerDay;
         var am = AmbitionOf(town, m);
         // Left alone, a menace that only holds its land keeps to it.
         if (am.Id == "territory" && town.Tick >= m.ProvokedUntilTick) return;
@@ -973,6 +974,7 @@ public static class Menaces
             var champion = town.Heroes.Where(a => !a.IsAway).OrderByDescending(x => x.Hero!.Level).ThenBy(x => x.Id).FirstOrDefault();
             string by = champion != null ? $"{champion.Name} and the watch" : "the watch";
             town.Log(LedgerCategory.War, Importance.Notable, Saga.Cap(Saga.Fill(town, r.Repelled, m).Replace("{where}", place).Replace("{by}", by)), champion != null ? [champion.Id] : []);
+            Sheet.Repelled(town);
             town.Tension += 6;
             return;
         }
@@ -1029,7 +1031,8 @@ public static class Menaces
             m.NextAssaultTick = town.Tick + 10 * SimTime.HoursPerDay;
             return;
         }
-        m.ArrivalTick = town.Tick + r.MarchDays * SimTime.HoursPerDay;
+        int march = r.MarchDays + Seasons.MarchDays(town);
+        m.ArrivalTick = town.Tick + march * SimTime.HoursPerDay;
         // The big bad gathers a greater host for every march: the finale's doom clock.
         if (m.BigBad)
         {
@@ -1038,7 +1041,7 @@ public static class Menaces
         }
         m.Marches++;
         string army = $"{Js.Str(Js.Round(m.Power / 10) * 10)} {m.Def.People}";
-        town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, f.March, m).Replace("{army}", army).Replace("{days}", r.MarchDays.ToString())));
+        town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, f.March, m).Replace("{army}", army).Replace("{days}", march.ToString())));
     }
 
     private static string Wall(int w) => w == 1 ? "gate" : w == 2 ? "east wall" : "river side";
@@ -1155,6 +1158,7 @@ public static class Menaces
         }
         m.Power *= r.AssaultRetreat;
         town.Log(LedgerCategory.War, Importance.Major, $"{Saga.Cap(Saga.Fill(town, f.Repelled, m))} (Chronicle {town.Chronicles.Count})", champions.Select(a => a.Id).ToList());
+        Sheet.Repelled(town);
     }
 
     private static void Chronicle(Town town, List<string> lines, ExpeditionOutcome outcome, List<Agent> champions)
@@ -1251,6 +1255,23 @@ public static class Menaces
         return true;
     }
 
+    /// <summary>
+    /// The warlord crowned big bad gets out of his burning war camp as any big bad would: the warband
+    /// thins, regroups at the camp, and comes again. Returns false when this was the end.
+    /// </summary>
+    public static bool WarlordEscapes(Town town, SiteState camp)
+    {
+        var m = town.Saga.Menaces.FirstOrDefault(x => x.Alive && x.BigBad && x.Origin == FromWarband);
+        if (m == null || !MayEscape(town)) return false;
+        var f = town.Content.Saga.Finale;
+        town.Saga.BigBadEscapes++;
+        camp.Cleared = false;
+        camp.QuietUntil = town.Tick + f.RegroupDays * SimTime.HoursPerDay;
+        town.Enemy.Strength *= f.EscapeLoss;
+        town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, f.Regroup, m).Replace("{fled}", camp.Def.Name).Replace("{refuge}", camp.Def.Name)));
+        return true;
+    }
+
     /// <summary>Whether a beaten big bad still gets away: it has escapes left, or the Long Night is too young to end.</summary>
     private static bool MayEscape(Town town)
     {
@@ -1286,7 +1307,7 @@ public static class Menaces
             town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, am.Demand, m)));
             return;
         }
-        if (town.Tick >= answer) Answer(town, m.Id, false);
+        if (town.Tick >= answer) Answer(town, m.Id, false, answered: false);
     }
 
     /// <summary>A would-be overlord whose demand for fealty waits on the town's answer.</summary>
@@ -1294,7 +1315,8 @@ public static class Menaces
         town.Saga.Menaces.Where(m => m.Alive && m.DemandDueTick != null && !m.Refused && town.Saga.YokeId != m.Id).OrderBy(m => m.Id).FirstOrDefault();
 
     /// <summary>The mayor answers a demand for fealty: bend the knee and pay tribute, or refuse and face its host.</summary>
-    public static bool Answer(Town town, int menaceId, bool submit)
+    /// <summary>Answer a menace's demand; answered (not left to lapse), the mayor rolls to kneel with dignity or to refuse so it gives them pause.</summary>
+    public static bool Answer(Town town, int menaceId, bool submit, bool answered = true)
     {
         if (menaceId < 1 || menaceId > town.Saga.Menaces.Count) return false;
         var m = town.Saga.Menaces[menaceId - 1];
@@ -1305,6 +1327,8 @@ public static class Menaces
         {
             Saga.Swear(town, m);
             town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, am.Submitted, m)));
+            // Kneeling with dignity keeps the town's respect.
+            if (answered) town.Mandate = Math.Min(100, town.Mandate + Sheet.Gain(town, "submit", Sheet.Decide(town, "submit")));
             return true;
         }
         m.Refused = true;
@@ -1312,6 +1336,7 @@ public static class Menaces
         m.NextStrikeTick = Math.Min(m.NextStrikeTick, town.Tick + 2 * SimTime.HoursPerDay);
         if (m.Stage >= MenaceStage.Dominion) m.NextAssaultTick = town.Tick;
         town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, am.Refused, m)));
+        if (answered) m.Power *= 1 - Sheet.Gain(town, "refuse", Sheet.Decide(town, "refuse"));
         return true;
     }
 

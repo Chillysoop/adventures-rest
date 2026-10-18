@@ -93,6 +93,7 @@ public sealed class Simulation
     {
         var t = Town;
         Brain.Daily(t);
+        Seasons.Daily(t);
         Economy.Daily(t);
         City.Daily(t, Options.AutoMayor && Options.AutoPlanning);
         Streets.Wear(t);
@@ -118,6 +119,7 @@ public sealed class Simulation
         Loyalty.Daily(t, Options.AutoMayor);
         Decor.Daily(t);
         Stories.Daily(t, Options.AutoMayor && Options.AutoStories);
+        Sheet.Daily(t, Options.AutoMayor && Options.AutoStories);
         Economy.Daily(t, true);
         History.Add(Snapshot());
         t.AccountsYesterday = t.AccountsToday;
@@ -202,6 +204,9 @@ public sealed class Simulation
     public Decoration? Decorate(string decorId, double x, double y, double angle, int? heroId = null, string? deity = null) =>
         Decor.Place(Town, decorId, x, y, angle, heroId, deity);
 
+    /// <summary>Buy grain off the traders for the winter stores (autumn and winter).</summary>
+    public bool LayInStores() => Seasons.LayIn(Town);
+
     /// <summary>Clear a decoration away for half its price back.</summary>
     public bool ClearDecoration(int decorationId) => Decor.Remove(Town, decorationId);
 
@@ -210,6 +215,9 @@ public sealed class Simulation
 
     /// <summary>Say who the mayor was before the charter, which sets their abilities and skills.</summary>
     public bool ChooseBackground(string backgroundId) => Stories.ChooseBackground(Town, backgroundId);
+
+    /// <summary>Spend the mayor's next level on an advance: "ability:str,cha", "feat:lucky", "skill:arcana" or "expertise:persuasion".</summary>
+    public bool AdvanceMayor(string advance) => Sheet.Advance(Town, advance);
 
     public DayStats Snapshot()
     {
