@@ -30,6 +30,8 @@ public sealed class Options
     public bool Hero;
     /// <summary>For screenshots: click the alert at this position in the strip (0 is the first) once it shows.</summary>
     public int? Alert;
+    /// <summary>For screenshots: show the hover summary of the alert icon at this position.</summary>
+    public int? AlertHover;
 
     /// <summary>Camera distance in tiles and an optional point to look at (--cam 40 --look 512,480), and the strategic view.</summary>
     public float? Cam;
@@ -75,6 +77,7 @@ public sealed class Options
                 case "--menu": o.Menu = true; break;
                 case "--hero": o.Hero = true; break;
                 case "--alert": o.Alert = int.Parse(Next()); break;
+                case "--alert-hover": o.AlertHover = int.Parse(Next()); break;
                 case "--no-pause": o.NoPause = true; break;
                 case "--cam": o.Cam = float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture); break;
                 case "--look":

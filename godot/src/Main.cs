@@ -245,7 +245,7 @@ public partial class Main : Control
         _map.TimeScale = Speeds[_speed];
 
         AgeFeed(delta);
-        SyncAlerts();
+        SyncAlerts(delta);
         ScriptedAlert();
         SyncMarkers();
         if (_dirty)
