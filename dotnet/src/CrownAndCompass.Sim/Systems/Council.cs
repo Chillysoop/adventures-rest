@@ -82,6 +82,16 @@ public static class Council
 
     public static Motion? PendingMotion(Town town) => town.Motions.FirstOrDefault(m => m.Status == MotionStatus.Pending);
 
+    /// <summary>
+    /// The pending motion if the council settles it on the next step, because the mayor let its days run out. The client
+    /// stops the clock on it: at top speed a motion's three days pass in seconds.
+    /// </summary>
+    public static Motion? Lapsing(Town town) =>
+        PendingMotion(town) is { } m && (town.Tick + 1) % SimTime.HoursPerDay == 0 && town.Tick + 1 >= m.DeadlineTick ? m : null;
+
+    /// <summary>Whole days, at least one, until the council settles a motion the mayor leaves alone.</summary>
+    public static int DaysLeft(Town town, Motion m) => Math.Max(1, (int)Math.Ceiling((m.DeadlineTick - town.Tick) / (double)SimTime.HoursPerDay));
+
     /// <summary>How well the watch keeps the peace, 0 to ~0.85: more watchmen, a capable and loyal captain.</summary>
     public static double WatchStrength(Town town)
     {

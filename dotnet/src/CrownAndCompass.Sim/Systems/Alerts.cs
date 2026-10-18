@@ -55,12 +55,13 @@ public static class Alerts
     public static readonly AlertKind LevelUp = new("levelup", "Level up", "d20", AlertLevel.Decision, AlertWindow.Mayor);
     public static readonly AlertKind Heroes = new("heroes", "Restless heroes", "heroes", AlertLevel.Decision, AlertWindow.None);
     public static readonly AlertKind Housing = new("housing", "Housing", "homeless", AlertLevel.Minor, AlertWindow.Council);
-    public static readonly AlertKind Work = new("work", "Idle hands", "population", AlertLevel.Minor, AlertWindow.Council);
+    public static readonly AlertKind Work = new("work", "Idle hands", "population", AlertLevel.Decision, AlertWindow.City);
+    public static readonly AlertKind Settlers = new("settlers", "No settlers", "population", AlertLevel.Decision, AlertWindow.City);
 
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Crisis, Hunger, Coffers, Unrest, Hostile, Motion, Fealty, Stores, Story, LevelUp, Charter, Heroes, Housing, Work];
+        [Siege, Crisis, Hunger, Coffers, Unrest, Hostile, Motion, Fealty, Stores, Story, LevelUp, Charter, Heroes, Work, Settlers, Housing];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
     public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Hostility, Winter, Growth, Loyalty, Homes];
@@ -123,7 +124,8 @@ public static class Alerts
     private static IEnumerable<Alert> Council(Town t)
     {
         if (Systems.Council.PendingMotion(t) is { } m)
-            yield return new($"motion:{m.Id}", Motion, "A motion awaits you", Cap(m.Text));
+            yield return new($"motion:{m.Id}", Motion, $"Council votes in {Days(Systems.Council.DaysLeft(t, m))}",
+                $"The council moves that {m.Text}. Sign or veto it in the Council window, or the council's vote settles it.");
         if (t.Mandate < 30)
             yield return new("mandate", Unrest, "The town is turning on you", $"Mandate {Math.Round(t.Mandate)}. Below this the council stops listening.");
     }
@@ -165,8 +167,19 @@ public static class Alerts
             yield return new("homeless", Housing, $"{homeless} homeless", "Townsfolk with no roof lose heart and leave. More homes are needed.", AtTown: true);
         int idle = workers.Count(a => a.JobId == null);
         if (idle >= Math.Max(4, workers.Count / 5))
-            yield return new("idle", Work, $"{idle} out of work", "Idle townsfolk drift away. Zone land for shops, workshops and farms.", AtTown: true);
+            yield return new("idle", Work, $"{idle} out of work", "Idle townsfolk drift away, and every one of them puts settlers off. Zone land for shops, workshops and farms.", AtTown: true);
+        var draw = Population.Appeal(t);
+        if (draw.Total < StalledAppeal)
+        {
+            var worst = draw.Parts.Where(p => p.Value < 0).OrderBy(p => p.Value).ThenBy(p => p.Label, StringComparer.Ordinal).Take(2)
+                .Select(p => p.Label.ToLowerInvariant()).ToList();
+            string why = worst.Count == 0 ? "" : $" Most of all: {string.Join(" and ", worst)}.";
+            yield return new("settlers", Settlers, "Settlers stay away", $"Few newcomers will come while things stand as they are.{why} The City window shows every reason.");
+        }
     }
+
+    /// <summary>Below this appeal a small town gains a settler or two a week at most: a stall the player should hear about.</summary>
+    private const double StalledAppeal = 0.15;
 
     private static string Cap(string s) => s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
 }

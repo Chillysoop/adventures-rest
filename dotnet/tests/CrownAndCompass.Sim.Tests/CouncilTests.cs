@@ -48,6 +48,24 @@ public class CouncilTests
     }
 
     [Fact]
+    public void NamesTheMotionThatLapsesOnTheVeryNextStep()
+    {
+        // The client pauses on this, so it must warn exactly once: the step before the council settles the motion.
+        var sim = new Simulation(new SimulationOptions { Seed = 3, AutoCouncil = false });
+        var m = UntilMotion(sim);
+        int warned = 0;
+        while (m.Status == MotionStatus.Pending)
+        {
+            bool lapsing = Council.Lapsing(sim.Town) == m;
+            if (lapsing) warned++;
+            sim.Step();
+            Assert.Equal(lapsing, m.Status != MotionStatus.Pending);
+        }
+        Assert.Equal(1, warned);
+        Assert.Equal(DecidedBy.Council, m.DecidedBy);
+    }
+
+    [Fact]
     public void LetsTheCouncilVoteStandWhenTheMayorSaysNothing()
     {
         var sim = new Simulation(new SimulationOptions { Seed = 3, AutoCouncil = false });

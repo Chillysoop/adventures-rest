@@ -21,6 +21,7 @@ public partial class Main
         p.Card($"[font_size=17][b]{Ui.Esc(tier.Name)}[/b][/font_size]  {Tag($"about {City.Souls(t):N0} souls")}  {Tag($"{t.Population} households")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(tier.Blurb)}[/font_size]")}");
 
         RenderSeason(p, t);
+        RenderSettlers(t, p);
 
         var next = City.NextTier(t);
         if (next != null)
@@ -141,6 +142,17 @@ public partial class Main
         if (holding && more > 0) p.Row(Ui.C(Ui.Ink2, $"[font_size=12]{why}[/font_size]"), ($"Lay in stores · {cost:N0}g", t.Treasury >= cost, true, () => { _sim.LayInStores(); _dirty = true; }));
         else p.Note(why + " Granaries hold more.");
         p.Text($"{Tag($"{st.Tourists} visitors")}  {Ui.C(Ui.Ink2, $"[font_size=12]spent {st.TouristGold:N0}g yesterday and {st.SeasonGold:N0}g this season at the taverns and shops[/font_size]")}", 13);
+    }
+
+    /// <summary>Why settlers come or stay away: each reason with its sign, as the arrivals roll counts it.</summary>
+    private static void RenderSettlers(Town t, Pane p)
+    {
+        var draw = Population.Appeal(t);
+        double week = Population.WeeklySettlers(t, draw.Total);
+        p.Heading("Why settlers come or don't");
+        foreach (var part in draw.Parts)
+            p.Text($"{Ui.C(part.Value >= 0 ? Ui.Good : Ui.Bad, $"{(part.Value >= 0 ? "+" : "−")}{Math.Abs(part.Value):0.00}")}  {Ui.Esc(part.Label)}", 13);
+        p.Note($"Draw {draw.Total:0.00} of at most 1.60: about {Math.Round(week)} newcomers a week. Taxes above {Math.Round(t.Content.Rules.TaxRate * 100)}% and idle hands cost the most; open jobs and empty beds help.");
     }
 
     private static string? Previous(Town t, string housingId) => City.Previous(t, housingId)?.Id;
