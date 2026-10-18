@@ -57,9 +57,10 @@ public class ThreatTests
             // Breaking the walls sacks the town and puts it under the warband's yoke; a second time, it falls.
             if (sim.Town.Saga.Sacks > 0 || sim.Town.Outcome == Outcome.Defeat) fallen++;
         }
-        // Many fall; some hold on the militia of a town grown big enough. Sixteen seeds, since any change to
-        // the rng stream reshuffles which ones hold: over twenty seeds anywhere from half to 70% fall.
-        Assert.True(fallen >= 6, $"only {fallen} of 16 fell");
+        // A good share fall; the rest hold on the militia, guard and neighbours of a town grown big enough
+        // (over twenty seeds, main now sees 8 fall and this town's skill checks 6, where 14 once did). Sixteen
+        // seeds, since any change to the rng stream reshuffles which ones hold.
+        Assert.True(fallen >= 4, $"only {fallen} of 16 fell");
     }
 
     [Fact]

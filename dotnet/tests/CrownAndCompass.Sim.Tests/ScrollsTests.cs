@@ -16,10 +16,12 @@ public class ScrollsTests
         var caster = heroes.First(a => Scrolls.Reads(a.Hero!.Cls));
         var fighter = heroes.FirstOrDefault(a => !Scrolls.Reads(a.Hero!.Cls));
         foreach (var h in new[] { caster, fighter }.Where(h => h != null)) { h!.Gold = 500; h.Hero!.Scrolls = 0; }
-        double cash = shop.Cash;
+        // The caster may buy at any of the town's scroll shops (a scriptorium, a mage tower).
+        var shops = t.Buildings.Where(b => sr.Shops.Contains(b.Def.Id) && b.Complete && !b.Closed && !b.ForSale).ToList();
+        double cash = shops.Sum(b => b.Cash);
         Scrolls.Outfit(t, new[] { caster, fighter }.Where(h => h != null).ToList()!);
         Assert.Equal(sr.Carry, caster.Hero!.Scrolls);
-        Assert.True(shop.Cash > cash);
+        Assert.True(shops.Sum(b => b.Cash) > cash);
         if (fighter != null) Assert.Equal(0, fighter.Hero!.Scrolls);
     }
 
