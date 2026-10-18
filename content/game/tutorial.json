@@ -126,6 +126,15 @@
       "teaches": ["tab:Companies", "command:BuyIntel"]
     },
     {
+      "id": "bastions",
+      "title": "A bastion of their own",
+      "text": "A company that has made its name asks the council for land on the edge of town to raise a [b]bastion[/b]: a keep where its heroes live, and facilities like a physic garden, a drill yard or a smithy. It hires townsfolk to staff them, so it brings jobs and pulls workers from poorer pay. Its sentries stand on the walls in a siege, and heroes with a bastion stay loyal. Answer in [b]Companies[/b]: grant the land, give it free, or refuse.",
+      "when": "count:BastionRequests",
+      "point": "tab:Companies",
+      "until": "tab:Companies",
+      "teaches": ["command:AnswerBastion"]
+    },
+    {
       "id": "war",
       "title": "Ready the walls",
       "text": "Something will come for Briarford sooner or later. [b]War[/b] shows the threat and lets you raise towers and palisades. Raiders strike when your heroes are away, so don't send everyone at once.",
