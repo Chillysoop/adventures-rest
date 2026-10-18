@@ -366,6 +366,8 @@ public partial class DiceRoll : Control
             pts[0] = Project(c, r, turn * Verts[a]);
             pts[1] = Project(c, r, turn * Verts[b]);
             pts[2] = Project(c, r, turn * Verts[d]);
+            // A tiny die (a pop over someone in town) can squash a face to a sliver Godot can't triangulate.
+            if (Mathf.Abs((pts[1] - pts[0]).Cross(pts[2] - pts[0])) < 0.5f) continue;
             float lit = 0.38f + 0.62f * Mathf.Max(0, n.Dot(Light));
             float spec = Mathf.Pow(Mathf.Max(0, n.Dot((Light + Vector3.Back).Normalized())), 24) * 0.35f;
             var col = new Color(body.R * lit + spec, body.G * lit + spec, body.B * lit + spec, alpha);

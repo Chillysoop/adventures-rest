@@ -338,6 +338,15 @@
       "teaches": []
     },
     {
+      "id": "skill-checks",
+      "title": "Everyone rolls",
+      "text": "Everyone in town has a character sheet: click anyone to see their abilities and all eighteen skills. Townsfolk are trained only in their trade (a shopkeeper in Persuasion and Insight, a smith in Athletics) and grow slowly better with practice; heroes are better at most things. Their everyday moments are real d20 checks: haggling over supplies or a second-hand sword, a day's work, a song at the tavern, a hand in a purse, a brawl, the barkeep or the watch stepping in. The dice pop up over their heads, and the sheet keeps their latest rolls.",
+      "when": "day:4",
+      "point": "inspector",
+      "until": "select:agent",
+      "teaches": []
+    },
+    {
       "id": "save",
       "title": "Saving",
       "text": "[b]Esc[/b] or [b]Menu[/b] opens the game menu with five save slots. The town autosaves every three days and when you quit. [b]F5[/b] quicksaves and [b]F9[/b] loads it.",
