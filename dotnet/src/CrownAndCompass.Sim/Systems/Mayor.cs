@@ -17,7 +17,7 @@ public static class Mayor
             KeepZoned(town, Zone.Residential, 2 + scale, false);
             KeepZoned(town, Zone.Commercial, 1 + scale, false);
             KeepZoned(town, Zone.Industry, 1 + scale, true);
-            KeepZoned(town, Zone.Farmland, 1 + scale, true);
+            KeepFields(town, 1 + scale);
             RaiseWorks(town, defend);
             RaiseInstitutions(town);
             RaiseServices(town);
@@ -29,9 +29,11 @@ public static class Mayor
     }
 
     /// <summary>Keep a few lots of each zone vacant: in a ward that favours the zone first, then near the hall (or far out, for fields and workshops).</summary>
-    private static void KeepZoned(Town town, Zone zone, int minVacant, bool edge)
+    /// <param name="crop">Fields only: the crop they are sown with (<see cref="Farming"/>).</param>
+    /// <param name="extra">Patches to paint even when the zone has its open plots.</param>
+    private static void KeepZoned(Town town, Zone zone, int minVacant, bool edge, byte crop = 0, int extra = 0)
     {
-        if (Planning.VacantZoned(town, zone) >= minVacant) return;
+        if (Planning.VacantZoned(town, zone) >= minVacant && extra == 0) return;
         double reach = town.Lots.Count == 0 ? 0 : town.Lots.Max(Town.DistanceFromCenter);
         // A round patch at a time, as a player would paint it, until the zone has the open plots it wants:
         // in the wards that favour it first; fields and workshops out at the edge of the built town, homes and shops close in;
@@ -45,11 +47,28 @@ public static class Mayor
                 + (zone == Zone.Residential ? Math.Max(0, ward.Rent - 1) * 20 : 0)
                 + Math.Abs(field[i] / Land.Res - 2) * 0.7;
         }
-        for (int i = 0; i < 12 && Planning.VacantZoned(town, zone) < minVacant; i++)
+        for (int i = 0; i < 12 && (Planning.VacantZoned(town, zone) < minVacant || extra-- > 0); i++)
         {
             field = Streets.Field(town.Plan);
-            if (!Land.PaintPatch(town, zone, zone == Zone.Farmland ? 2.4 : 2.0, Key)) break;
+            if (!Land.PaintPatch(town, zone, zone == Zone.Farmland ? 2.4 : 2.0, Key, crop)) break;
         }
+    }
+
+    /// <summary>
+    /// Fields as farms are wanted: a field for each farm the town wants that has none open (two a day at most, and not
+    /// while plenty of fields lie open), then open fields kept each sown with the crop furthest below its share of the town's farms (farming.json).
+    /// </summary>
+    private static void KeepFields(Town town, int minVacant)
+    {
+        int sown = 0;
+        foreach (var crop in Farming.Crops(town).Where(c => Farming.Blocked(town, c) == null).OrderByDescending(c => Property.Demand(town, c.Building)).ThenBy(c => c.Id, StringComparer.Ordinal))
+        {
+            if (sown >= 2 || Property.Demand(town, crop.Building) < 0.95 || Planning.VacantZoned(town, Zone.Farmland) > minVacant * 3 + 3) break;
+            if (Land.Find(town, town.Content.Building(crop.Building), Zone.Farmland) != null) continue;
+            KeepZoned(town, Zone.Farmland, minVacant, true, Farming.Code(town, crop.Id), 1);
+            sown++;
+        }
+        KeepZoned(town, Zone.Farmland, minVacant, true, Farming.Code(town, Farming.Next(town)?.Id ?? "wheat"));
     }
 
     /// <summary>A granary once the town is a village, a watch house once it keeps a watch, and an adventurers' hall once heroes come and go.</summary>

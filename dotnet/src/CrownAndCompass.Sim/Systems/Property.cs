@@ -87,7 +87,8 @@ public static class Property
         {
             "tavern" => TavernDemand(town),
             "general_store" => StoreDemand(town),
-            _ when d.Produces.Count > 0 => ProducerSignal(m.Realized(d.Produces[0].Key) / m.BasePrice(d.Produces[0].Key), labor),
+            // A crop with its own calendar is worth more sown in the season it beats the rest (Farming.Signal).
+            _ when d.Produces.Count > 0 => ProducerSignal(m.Realized(d.Produces[0].Key) / m.BasePrice(d.Produces[0].Key), labor) * Farming.Signal(town, d),
             _ when d.Fee > 0 && d.Serves.Count > 0 => ServiceDemand(town, d),
             _ => 0,
         };
@@ -175,7 +176,18 @@ public static class Property
                 .OrderByDescending(x => x.s)
                 .ThenBy(x => x.d.Id, StringComparer.Ordinal)
                 .ToList();
-            if (scored[0].s >= 1.05) pick = scored[0].d;
+            foreach (var (d, s) in scored)
+            {
+                if (s < 1.05) break;
+                // A farm stands only in a field sown with its crop: with other fields open, the next trade gets a look.
+                if (d.Zone == Zone.Farmland && FindLot(town, d) == null && Land.OpenPlots(town, Zone.Farmland) > 0)
+                {
+                    if (pick == null && Farming.Crop(town, Farming.CropOf(town, d)) is { } crop) Planning.NoField(town, crop, a);
+                    continue;
+                }
+                pick = d;
+                break;
+            }
         }
         if (pick == null) return;
 

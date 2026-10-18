@@ -278,7 +278,8 @@ public sealed class Simulation
     /// Paint a brush stroke of a zone over open ground in open wards (Zone.None clears it): dabs in tiles from the town's corner.
     /// Homes and shops take a density (0 low, 1 medium, 2 high, as the charter allows), and land of the zone already built on takes it too. Returns cells changed.
     /// </summary>
-    public int PaintZone(IEnumerable<(double X, double Y)> dabs, double radius, Zone zone, int density = 0) => Planning.Paint(Town, dabs, radius, zone, density);
+    /// <param name="crop">Farmland: the crop its fields are sown with (content/game/farming.json); null sows wheat.</param>
+    public int PaintZone(IEnumerable<(double X, double Y)> dabs, double radius, Zone zone, int density = 0, string? crop = null) => Planning.Paint(Town, dabs, radius, zone, density, crop);
 
     /// <summary>Place a government building, charter house or town-owned business at a point and heading (null faces the nearest lane), paid from the treasury.</summary>
     public Building? Place(string buildingId, double x, double y, double? yaw = null) => Planning.Place(Town, buildingId, x, y, yaw);
@@ -376,7 +377,7 @@ public sealed class Simulation
         {
             // The charter's own plan, a patch of each zone round the hall: the player paints everything after it.
             foreach (var (z, r, ring) in new[] { (Zone.Residential, 2.2, 0.0), (Zone.Commercial, 1.7, 0.0), (Zone.Industry, 1.8, 3.5), (Zone.Farmland, 2.2, 5.0) })
-                Land.PaintPatch(t, z, r, Town.Grid, ring);
+                Land.PaintPatch(t, z, r, Town.Grid, ring, z == Zone.Farmland ? Farming.Code(t, "wheat") : (byte)0);
         }
 
         var house = c.Building("house");

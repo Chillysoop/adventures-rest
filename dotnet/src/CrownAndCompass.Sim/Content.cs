@@ -1164,6 +1164,9 @@ public sealed class Content
     /// <summary>Decorations and set dressing the player can place (content/game/decor.json).</summary>
     public DecorRules Decor { get; init; } = new();
     public SeasonRules Seasons { get; init; } = new();
+
+    /// <summary>The crops a field can be sown with (content/game/farming.json).</summary>
+    public FarmingRules Farming { get; init; } = new();
     public TradeRules Trade { get; init; } = new();
 
     /// <summary>The town armory: gifts, loot terms and pacts, buying loot (content/game/armory.json).</summary>
@@ -1351,6 +1354,7 @@ public sealed class Content
             City = Parse<CityRules>("city.json"),
             Decor = Parse<DecorRules>("decor.json"),
             Seasons = Parse<SeasonRules>("seasons.json"),
+            Farming = Parse<FarmingRules>("farming.json"),
             Trade = Parse<TradeRules>("trade.json"),
             Armory = Parse<ArmoryRules>("armory.json"),
             Neighbours = Parse<NeighbourRules>("neighbours.json"),
