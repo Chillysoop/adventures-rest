@@ -215,6 +215,7 @@ public static class TreasuryAccount
     public const string Decorations = "Decorations";
     public const string Orchards = "Orchards";
     public const string Intel = "Intel";
+    public const string Stories = "Stories";
 }
 
 /// <summary>How the campaign ended.</summary>
@@ -332,6 +333,11 @@ public sealed class Town
 
     /// <summary>Trees, benches, lamps, statues: the set dressing the player has placed (<see cref="Systems.Decor"/>).</summary>
     public DecorState Decor { get; } = new();
+
+    /// <summary>The mayor's character sheet and the story events open and past (<see cref="Systems.Stories"/>).</summary>
+    public Systems.StoryState Stories => _stories ??= new Systems.StoryState { Mayor = Systems.Stories.NewMayor(this) };
+    // Made on first use, so a save from before stories existed gets a mayor too.
+    private Systems.StoryState? _stories;
 
     /// <summary>How the campaign ended: the big bad slain, or the town fallen.</summary>
     public Outcome? Outcome { get; set; }

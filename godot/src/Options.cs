@@ -79,6 +79,10 @@ public sealed class Options
     public int? Beautify;
 
     /// <summary>--decor picks a decoration (or "eraser") to hold; --decor-at x,y,angle shows it at a point in lots.</summary>
+    /// <summary>--story ID opens that story event's card (a fresh one, bound to the town as it stands); --story-pick N takes option N; --background ID picks the mayor's past.</summary>
+    public string? Story, Background;
+    public int? StoryPick;
+
     public string? DecorTool;
     public double[]? DecorAt;
 
@@ -134,6 +138,9 @@ public sealed class Options
                 case "--hover": o.Hover = Next().Split(',').Select(int.Parse).ToArray(); break;
                 case "--beautify": o.Beautify = int.Parse(Next()); break;
                 case "--decor": o.DecorTool = Next(); break;
+                case "--story": o.Story = Next(); break;
+                case "--story-pick": o.StoryPick = int.Parse(Next()); break;
+                case "--background": o.Background = Next(); break;
                 case "--decor-at": o.DecorAt = Next().Split(',').Select(v => double.Parse(v, System.Globalization.CultureInfo.InvariantCulture)).ToArray(); break;
                 case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--buy":
                     o.Script.Add((args[i][2..], Next()));
