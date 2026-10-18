@@ -700,7 +700,7 @@ public static class Expedition
         }
 
         /// <summary>A fight with whatever roams this country, sized for its level.</summary>
-        private void Wilds(int tier, IReadOnlyList<string> habitats, string text, bool surprised)
+        public void Wilds(int tier, IReadOnlyList<string> habitats, string text, bool surprised)
         {
             tier = Math.Max(1, tier);
             var probe = new SiteDef { Id = "wilds", Name = "the wilds", Tier = tier, Boss = new EncounterDef { Kind = "combat" }, Habitats = habitats };

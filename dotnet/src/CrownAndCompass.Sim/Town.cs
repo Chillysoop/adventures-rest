@@ -221,6 +221,7 @@ public static class TreasuryAccount
     public const string Patron = "Patron";
     public const string Scrying = "Scrying";
     public const string Scouts = "Scouts";
+    public const string Exploring = "Exploring";
     public const string Sight = "Sight works";
     public const string Envoys = "Envoys";
     public const string Temple = "Temple";
@@ -320,6 +321,15 @@ public sealed class Town
 
     /// <summary>Scryings the mayor has commissioned, oldest first.</summary>
     public List<Scrying> Scryings { get; } = [];
+
+    /// <summary>The council's offers to pay a company to explore a region, oldest first (<see cref="Systems.Explore"/>).</summary>
+    public List<Systems.Commission> Commissions { get; } = [];
+
+    /// <summary>Companies sent out exploring, oldest first.</summary>
+    public List<Systems.Survey> Surveys { get; } = [];
+
+    /// <summary>What exploring companies have come on, oldest first.</summary>
+    public List<Systems.Find> Finds { get; } = [];
 
     /// <summary>Scouts posted to watch sites, oldest first.</summary>
     public List<Scout> Scouts { get; } = [];
