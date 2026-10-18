@@ -280,6 +280,33 @@ public static class Gear
         }
     }
 
+    /// <summary>
+    /// A company smithy's week for one hero: the plain weapon or armour of their class that beats theirs most,
+    /// made free. Returns what they were given, or null when nothing the smiths make beats what they carry.
+    /// </summary>
+    public static string? Forge(Town town, Agent a)
+    {
+        var s = a.Hero!;
+        var lib = town.Content.Library;
+        LibGear? best = null;
+        string slot = "";
+        double points = 0;
+        if (!s.Cls.Spell)
+            foreach (var id in s.Cls.Better)
+                if (lib.GearOf(id) is LibGear w && (Avg(w.Damage) - Avg(s.Weapon?.Damage)) / 2 is double p && p > points)
+                    (best, slot, points) = (w, "weapon", p);
+        int dex = Rng.Modifier(a.Abilities.Dex);
+        foreach (var id in s.Cls.Wears)
+            if (lib.GearOf(id) is LibGear arm && a.Abilities.Str >= arm.Strength && s.Armor != null && ArmorAc(arm, dex, a) - ArmorAc(s.Armor, dex, a) is int p && p > points)
+                (best, slot, points) = (arm, "armor", p);
+        if (best == null) return null;
+        if (slot == "weapon") s.Weapon = best;
+        else s.Armor = best;
+        Relist(s);
+        string what = Library.Prose(best.Name);
+        return slot == "armor" ? what : $"{Agent.Article(what)} {what}";
+    }
+
     private static void Buy(Town town, Agent a, Offer o)
     {
         var s = a.Hero!;

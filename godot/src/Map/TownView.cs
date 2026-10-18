@@ -239,6 +239,22 @@ public partial class TownView(MapView map) : Node3D
             case "arena": Arena(kit, v); break;
             case "keep": Keep(kit); break;
             case "guildhall": Guildhall(kit, v); break;
+            // A company's bastion: its own keep under its banner, and facilities after the town's own kinds.
+            case "bastion_keep":
+                // Smaller than the city's keep: a company's hall, not a lord's castle.
+                kit.Push(MeshKit.At(0, 0, 0, 0, 0.72f));
+                Keep(kit, Dyes[v % Dyes.Length]);
+                kit.Pop();
+                break;
+            case "bastion_garden": HerbGarden(kit, v); break;
+            case "bastion_yard": Barracks(kit, v); break;
+            case "bastion_smithy": Forge(kit, v); break;
+            case "bastion_maproom": Library(kit, v); break;
+            case "bastion_sanctum": Temple(kit, v); break;
+            case "bastion_counting": Guildhall(kit, v); break;
+            case "bastion_proving": Arena(kit, v); break;
+            case "bastion_banners": Courthouse(kit, v); break;
+            case "bastion_vault": WatchHouse(kit, v); break;
             case "clock_tower": ClockTower(kit); break;
             case "aqueduct": Aqueduct(kit); break;
             case "great_gatehouse": Gatehouse(kit); break;
@@ -1152,11 +1168,11 @@ public partial class TownView(MapView map) : Node3D
     }
 
     /// <summary>The keep: a great square tower inside four corner towers and curtain walls, the lord's flag on top.</summary>
-    private static void Keep(MeshKit k)
+    private static void Keep(MeshKit k, Color? flag = null)
     {
         var castle = WallStone(new Color("4f5f8a"), 0.85f);
         TowerStack(k, 0, -0.04f, 0.5f, ["tower-square-base", "tower-square-mid-windows", "tower-square-mid", "tower-square-top"], castle);
-        k.Add("castle/flag-wide", MeshKit.At(0, 1.66f, -0.04f, Mathf.Pi / 2, 0.55f), Palette.Kenney(new Color("b8322a")));
+        k.Add("castle/flag-wide", MeshKit.At(0, 1.66f, -0.04f, Mathf.Pi / 2, 0.55f), Palette.Kenney(flag ?? new Color("b8322a")));
         float c = 0.38f;
         foreach (var (x, z) in new[] { (-c, -c), (c, -c), (-c, c), (c, c) })
             TowerStack(k, x, z, 0.22f, ["tower-square-base", "tower-square-mid", "tower-square-top-roof"], castle);

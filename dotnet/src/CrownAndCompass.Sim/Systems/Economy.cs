@@ -182,7 +182,8 @@ public static class Economy
     {
         foreach (var b in town.Buildings)
         {
-            if (!b.Complete || !b.Def.IsBusiness || b.ForSale)
+            // A bastion's buildings settle with the company's chest (Bastions.Daily).
+            if (!b.Complete || !b.Def.IsBusiness || b.ForSale || b.Def.Bastion)
             {
                 b.RevenueToday = 0;
                 continue;

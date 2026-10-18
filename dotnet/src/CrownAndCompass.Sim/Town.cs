@@ -241,6 +241,7 @@ public static class TreasuryAccount
     public const string GrandWorks = "Grand works";
     public const string Mercenaries = "Mercenaries";
     public const string Decrees = "Decrees";
+    public const string Bastions = "Bastions";
     public const string Callings = "Callings";
 }
 
@@ -291,6 +292,12 @@ public sealed class Town
 
     /// <summary>Adventuring companies the town has dealt with, by first dealing (<see cref="Intel"/>).</summary>
     public List<CompanyState> Companies { get; } = [];
+
+    /// <summary>Companies' own compounds in town, by founding (<see cref="Systems.Bastions"/>).</summary>
+    public List<BastionState> Bastions { get; } = [];
+
+    /// <summary>Companies' requests for the council's leave to raise a bastion, oldest first.</summary>
+    public List<BastionRequest> BastionRequests { get; } = [];
     public List<Chronicle> Chronicles { get; } = [];
     public List<Seat> Seats { get; } = [];
     public List<Motion> Motions { get; } = [];

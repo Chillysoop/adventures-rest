@@ -110,6 +110,9 @@ public sealed record BuildingDef
     [JsonConverter(typeof(GoodsListConverter))]
     public IReadOnlyList<KeyValuePair<Good, double>> Consumes { get; init; } = [];
 
+    /// <summary>Part of an adventuring company's bastion: the company pays its hirelings and keeps what it earns (<see cref="Systems.Bastions"/>).</summary>
+    public bool Bastion { get; init; }
+
     /// <summary>A grand work: added to every house's contentment while it stands.</summary>
     public double Comfort { get; init; }
 
@@ -1131,6 +1134,9 @@ public sealed class Content
     /// <summary>Story events and the mayor's character sheet (content/game/stories.json).</summary>
     public StoryRules Stories { get; init; } = new();
 
+    /// <summary>Adventuring companies' bastions: who may raise one, their facilities and turns (content/game/bastions.json).</summary>
+    public BastionRules Bastions { get; init; } = new();
+
     /// <summary>Sellsword companies for hire and how their campaigns go (content/game/mercenaries.json).</summary>
     public MercRules Mercenaries { get; init; } = new();
 
@@ -1272,6 +1278,7 @@ public sealed class Content
             Seasons = Parse<SeasonRules>("seasons.json"),
             History = Parse<HistoryRules>("history.json"),
             Stories = Parse<StoryRules>("stories.json"),
+            Bastions = Parse<BastionRules>("bastions.json"),
             Mercenaries = Parse<MercRules>("mercenaries.json"),
         };
     }

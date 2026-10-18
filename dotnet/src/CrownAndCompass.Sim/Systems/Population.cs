@@ -282,7 +282,8 @@ public static class Population
             if (b.OwnerId != a.Id) continue;
             b.OwnerId = null;
             town.Lot(b.LotId).OwnerId = null;
-            if (b.Def.Jobs > 0) Economy.PutUpForSale(town, b);
+            // A bastion passes to the next of its company (Bastions.Daily), or stands empty.
+            if (b.Def.Jobs > 0 && !b.Def.Bastion) Economy.PutUpForSale(town, b);
         }
         foreach (var lot in town.Lots) if (lot.OwnerId == a.Id) lot.OwnerId = null;
         // Whoever leaves, by the road or the grave, leaves their factions too.
