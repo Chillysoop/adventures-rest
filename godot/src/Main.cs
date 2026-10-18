@@ -11,8 +11,9 @@ namespace CrownAndCompass.Client;
 /// </summary>
 public partial class Main : Control
 {
-    /// <summary>In-game hours per real second for each speed button; index 0 is paused.</summary>
-    private static readonly int[] Speeds = [0, 1, 4, 12, 36];
+    /// <summary>In-game hours per real second for each speed button; index 0 is paused. At normal speed a day and
+    /// night last a minute (1×, 4×, 12× and 36× of that).</summary>
+    private static readonly double[] Speeds = [0, 0.4, 1.6, 4.8, 14.4];
     private const int LedgerLimit = 250;
 
     private enum Tab
@@ -88,9 +89,12 @@ public partial class Main : Control
         else if (_opts.Day > 0) _sim.RunDays(_opts.Day);
         if (_opts.Hour > 0) for (int i = 0; i < _opts.Hour; i++) _sim.Step();
         _opts.ApplyScript(_sim);
+        // Stories the script's hours brought are the stand-in mayor's, not cards to greet the shot with.
+        if (_opts.Autoplay) _storySeen = _sim.Town.Stories.All.Count;
         SetSpeed(_opts.Speed ?? 1);
         if (_opts.Tab is string t && Enum.TryParse<Tab>(t, true, out var tab)) SetTab(tab);
         if (_opts.Site is string site) Select(Selection.Site(site));
+        if (_opts.Wall is int wall) Select(Selection.Wall(wall));
         if (_opts.Cam is float cam)
             _map.LookAt(_opts.Look ?? (_opts.Site is string at && _map.Geo.Pins.TryGetValue(at, out var pin) ? pin : Map.Geo.Center), cam);
         if (_opts.StrategicView) ToggleStrategic();
@@ -336,6 +340,8 @@ public partial class Main : Control
         else if (k.Keycode is >= Key.Key1 and <= Key.Key4) PlayerSpeed((int)(k.Keycode - Key.Key0));
         else if (k.Keycode == Key.Home) _map.Recenter();
         else if (k.Keycode == Key.B) ToggleBuildBar();
+        else if (k.Keycode == Key.G) ToggleFlag();
+        else if (k.Keycode == Key.Escape && _map.Flagging) ToggleFlag();
         else if (k.Keycode == Key.Escape && _map.Planner.Active) _map.Planner.Pick(null);
         else if (k.Keycode is Key.Bracketleft or Key.Bracketright && _map.Planner.Tool?.Zone != null) _map.Planner.Resize(k.Keycode == Key.Bracketright ? 1.15f : 1 / 1.15f);
         else if (k.Keycode == Key.Escape && _map.Decorator.Active) _map.Decorator.Pick(null);
@@ -372,7 +378,8 @@ public partial class Main : Control
         if (steps == 8) _acc = 0;
         if (steps > 0 && _opts.Screenshot == null && !_opts.Bench && !_opts.Smoke) Autosave();
         _map.HourFraction = (float)_acc;
-        _map.TimeScale = Speeds[_speed];
+        // Townsfolk walk at the pace of the speed button, not of the hours: a slower day doesn't slow their stride.
+        _map.TimeScale = (float)(Speeds[_speed] / Speeds[1]);
 
         AgeFeed(delta);
         SyncAlerts(delta);

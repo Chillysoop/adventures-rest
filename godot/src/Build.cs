@@ -40,7 +40,8 @@ public partial class Main
     private static readonly BuildItem[] Defenses =
     [
         new("Palisade", Defense: DefenseWork.Palisade), new("Watchtower", Defense: DefenseWork.Tower),
-        new("Stone Walls", Defense: DefenseWork.StoneWall), new("City Wall", Defense: DefenseWork.CityWall),
+        new("Stone Walls", Defense: DefenseWork.StoneWall), new("Gatehouse", Defense: DefenseWork.Gatehouse),
+        new("Moat", Defense: DefenseWork.Moat), new("Wall Barracks", Defense: DefenseWork.Barracks), new("City Wall", Defense: DefenseWork.CityWall),
     ];
 
     /// <summary>The bar's buttons, from the content: everything the town could ever place, in the order the charters open it.</summary>
@@ -218,7 +219,10 @@ public partial class Main
                 tip = d switch
                 {
                     DefenseWork.Palisade => "A wall of stakes around the town. Raiders and the warband break on it.",
-                    DefenseWork.Tower => "A tower on the walls. Each one adds to the town's strength at the walls.",
+                    DefenseWork.Tower => "A tower on the walls. Each one adds to the town's strength at the walls, and two of the watch live in it. Stone walls carry more of them.",
+                    DefenseWork.Gatehouse => "A stone gatehouse with a portcullis over the south road. The gate holds far better when a siege tries it.",
+                    DefenseWork.Moat => "A moat round the stone walls, filled from the river. Every wave wades it, and the walls count for more.",
+                    DefenseWork.Barracks => "Barracks in the thickness of the stone walls. The watch lives there: cheaper to keep, and quicker to the walls when the horn sounds.",
                     DefenseWork.StoneWall => "Stone walls around the old town and the inner wards, far stronger than stakes. A large town needs them for its charter. The outer wards stay outside.",
                     _ => "The great wall of a city, around every inner ward. A great city needs it for its charter.",
                 };

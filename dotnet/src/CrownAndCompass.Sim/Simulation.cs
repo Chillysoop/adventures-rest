@@ -110,6 +110,7 @@ public sealed class Simulation
         Council.Daily(t, Options.AutoCouncil);
         double pace = Director.Daily(t);
         Threat.Daily(t, pace, Options.AutoMayor && Options.AutoDefense, Options.Enemy);
+        Garrison.Daily(t, Options.AutoMayor && Options.AutoDefense);
         World.Daily(t, Options.AutoMayor);
         Trade.Daily(t, Options.AutoMayor);
         Mercenaries.Daily(t, Options.AutoMayor && Options.AutoDefense);
@@ -156,6 +157,15 @@ public sealed class Simulation
 
     /// <summary>Order a palisade or a watchtower.</summary>
     public bool BuildDefense(DefenseWork what) => Threat.Build(Town, what);
+
+    /// <summary>Sound the call to arms on a wall section, a tower or the gate: the nearest of the watch run to man it.</summary>
+    public GuardPost? CallToArms(PostKind kind, int index) => Garrison.CallToArms(Town, kind, index);
+
+    /// <summary>Plant a flag where the watch should stand guard (tiles from the town's corner), with this many guards.</summary>
+    public GuardPost? PlantFlag(double x, double y, int guards = 0) => Garrison.PlantFlag(Town, x, y, guards);
+
+    /// <summary>Stand a call to arms or a flag down; its guards go back to walking the walls.</summary>
+    public bool StandDown(int postId) => Garrison.StandDown(Town, postId);
 
     /// <summary>Answer a menace's demand for fealty: bend the knee and pay tribute, or refuse and face its host.</summary>
     public bool AnswerDemand(int menaceId, bool submit) => Menaces.Answer(Town, menaceId, submit);

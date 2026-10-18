@@ -6,7 +6,7 @@ namespace CrownAndCompass.Client;
 
 /// <summary>
 /// With --smoke: the merge gate's play-through of a build (<c>scripts/gate.ts</c>). From the main menu it
-/// starts a new town, plays on at top speed, opens every window, the build bar, the campaign map and the
+/// starts a new town, plays on at top speed, opens every window, the build bar, the campaign map, a wall and a guard flag and the
 /// game menu, saves and loads, starts the tutorial, opens the History, steps into a story event and answers a party's sending, a few frames apart so each one draws. It prints
 /// <c>SMOKE OK</c> and quits with 0, or <c>SMOKE FAIL</c> and 1; the gate also fails on any engine error.
 /// </summary>
@@ -60,9 +60,16 @@ public partial class Main
                 return 10;
             case 16:
                 ToggleStrategic();
-                OpenMenu();
+                // The town guard: a stretch of wall in the inspector, and a flag planted by the map click.
+                if (_map.TownView.Walk != null) ShowWall(1);
+                ToggleFlag();
+                OnFlagDropped(CrownAndCompass.Client.Map.Geo.Center + new Vector2(3, 2));
                 return 5;
             case 17:
+                CloseWindow();
+                OpenMenu();
+                return 5;
+            case 18:
             {
                 // Save and load through the same calls the game menu uses, to a scratch file.
                 string path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"crown-smoke-{System.Environment.ProcessId}.save");
@@ -74,16 +81,16 @@ public partial class Main
                 SetSpeed(Speeds.Length - 1);
                 return 60;
             }
-            case 18:
+            case 19:
                 StartTutorial();
                 return 10;
-            case 19:
+            case 20:
                 OpenHistory(null);
                 return 10;
-            case 20:
+            case 21:
                 CloseHistory();
                 return 5;
-            case 21:
+            case 22:
             {
                 // A story event's card, as one pops up: open it and take the first option, which throws the die.
                 var story = Stories.Open(_sim.Town, "shrine-omen") ?? throw new InvalidOperationException("no story would open");
@@ -91,14 +98,14 @@ public partial class Main
                 Choose(story.Id, 0);
                 return 70;
             }
-            case 22:
+            case 23:
                 if (_beat == null || _beatResult is not { Visible: true }) throw new InvalidOperationException("the roll did not land");
                 CloseStory();
                 // A level up on the Mayor tab: one skill-level choice and one improvement.
                 _sim.Town.Stories.Mayor.Level = Math.Max(_sim.Town.Stories.Mayor.Level, 4);
                 SetTab(Tab.Mayor);
                 return 10;
-            case 23:
+            case 24:
                 for (int i = 0; i < 6 && Sheet.Pending(_sim.Town) > 0; i++)
                 {
                     var (_, improvement) = Sheet.NextAdvance(_sim.Town);
@@ -107,7 +114,7 @@ public partial class Main
                     _dirty = true;
                 }
                 return 10;
-            case 24:
+            case 25:
             {
                 // A party's sending: the card with the party's and the hall's help on each roll, answered with the first choice.
                 SetTab(Tab.Mayor);
@@ -116,7 +123,7 @@ public partial class Main
                 Choose(sending.Id, 0);
                 return 70;
             }
-            case 25:
+            case 26:
                 if (_story.Visible && (_beat == null || _beatResult is not { Visible: true })) throw new InvalidOperationException("the sending's roll did not land");
                 CloseStory();
                 return 5;
