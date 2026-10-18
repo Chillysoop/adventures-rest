@@ -175,7 +175,11 @@ public partial class Crowd(MapView map) : Node3D
         k.Pop();
     }
 
-    public void Reset() => People.Reset();
+    public void Reset()
+    {
+        People.Reset();
+        _sceneTick = -1;
+    }
 
     private int _count;
 
@@ -218,8 +222,12 @@ public partial class Crowd(MapView map) : Node3D
                 var body = a.Hero != null ? Palette.ClassColor(a.Hero.Cls.Id) : Tunics[a.Id % Tunics.Length];
                 Put(p, s.Yaw, body, Palette.RaceColor(a.Race));
             }
-            // Heroes on the road and scouts join the heroes' batch below.
-            if (!heroes) Flush(_folk);
+            // Heroes on the road and scouts join the heroes' batch below; street scenes join the townsfolk.
+            if (!heroes)
+            {
+                Street(town, now);
+                Flush(_folk);
+            }
         }
 
         // Companies on the road, under their banner; the fog swallows them past the town's light.

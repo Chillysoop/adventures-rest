@@ -382,7 +382,7 @@ public static class Factions
 
     // Heat and exposure ---------------------------------------------------------------------------
 
-    private static void CheckExposure(Town town, FactionState f)
+    internal static void CheckExposure(Town town, FactionState f)
     {
         if (!f.Secret || f.Known || f.Members.Count == 0 || f.Heat < Rules(town).ExposeAt) return;
         f.Known = true;
@@ -660,18 +660,22 @@ public static class Factions
         if (hall == null || !hall.Complete || hall.Cash < r.ContractMin) return;
         if (town.Bounties.Any(b => b.FunderId == hall.Id && b.Status is BountyStatus.Open or BountyStatus.Taken)) return;
         bool deep = f.Lore.Kind == "arcane";
+        // The mages send heroes for the best of a hoard, and pay the town in a spell; an errand goes where heroes will go.
+        var errand = deep ? Errands.Pick(town) : null;
         var target = town.Sites
             .Where(s => s.Known != SiteKnowledge.Unheard && !s.ThoughtCleared && (!deep || s.BelievedTier >= 2))
             .Where(s => !town.Bounties.Any(b => b.SiteId == s.Def.Id && b.Status is BountyStatus.Open or BountyStatus.Taken))
-            .OrderBy(s => deep ? -s.BelievedTier : s.BelievedTier)
+            .OrderBy(s => deep && errand == null ? -s.BelievedTier : s.BelievedTier)
             .ThenBy(s => s.Def.Distance)
             .ThenBy(s => s.Def.Id, StringComparer.Ordinal)
             .FirstOrDefault();
         if (target == null) return;
         double reward = Math.Min(hall.Cash, Math.Max(r.ContractMin, Quests.SuggestedReward(Math.Max(1, target.BelievedTier)) * 0.6));
         reward = Js.Round(reward);
-        if (Quests.PostBounty(town, target.Def.Id, reward, hall) == null) return;
-        string why = deep ? "and asks only for first look at whatever relics come out" : "for any company with the nerve";
+        var posted = Quests.PostBounty(town, target.Def.Id, reward, hall, errand != null ? "fetch" : "slay");
+        if (posted == null) return;
+        if (errand != null) posted.Errand = errand.Id;
+        string why = errand != null ? $"for the best of its hoard, and promise{(f.Plural ? "" : "s")} the town {errand.Name} when it comes back" : deep ? "and asks only for first look at whatever relics come out" : "for any company with the nerve";
         town.Log(LedgerCategory.Faction, Importance.Notable, $"{Cap(f.Name)} {f.Verb("puts", "put")} up {Js.Str(reward)} gold from {f.Verb("its", "their")} own coffers on {target.Def.Name}, {why}.");
     }
 

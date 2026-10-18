@@ -19,5 +19,6 @@
   "crusadeKinds": ["undead", "schemers"],
   "crusadeReward": 140,
   "crusadeReserve": 40,
-  "potion": { "item": "potion-of-healing", "price": 12, "wholesale": 5, "carry": 2, "dice": "2d4+2" }
+  "potion": { "item": "potion-of-healing", "price": 12, "wholesale": 5, "carry": 2, "dice": "2d4+2" },
+  "scroll": { "item": "spell-scroll-1st-level", "price": 50, "wholesale": 20, "carry": 1, "dice": "3d6", "targets": 3, "shops": ["scriptorium", "mage_tower"], "found": 0.2, "copier": "wizard", "copyBonus": 1, "maxCopied": 4 }
 }

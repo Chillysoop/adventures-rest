@@ -38,6 +38,9 @@ public sealed record TurningRules
     public int FallDay { get; init; } = 90;
     public int FallLevel { get; init; } = 3;
 
+    /// <summary>Each dark gift a hero took multiplies their chance to fall by this much more.</summary>
+    public double TaintFall { get; init; } = 20;
+
     /// <summary>The menace kind a fallen hero of each class leads.</summary>
     public IReadOnlyDictionary<string, string> FallKinds { get; init; } = new Dictionary<string, string>();
 
@@ -137,12 +140,12 @@ public static class Turning
     {
         var r = Rules(town);
         if (town.Day < r.FallDay || Menaces.Alive(town).Any(m => m.Origin == FromFallen)) return;
-        foreach (var a in town.Heroes.Where(h => !h.IsAway && h.Hero!.Level >= r.FallLevel).OrderBy(h => h.Id).ToList())
+        foreach (var a in town.Heroes.Where(h => !h.IsAway && (h.Hero!.Level >= r.FallLevel || h.Hero.Taint > 0)).OrderBy(h => h.Id).ToList())
         {
             var s = a.Hero!;
             if (!r.FallKinds.ContainsKey(s.Cls.Id)) continue;
             // Loyal heroes are harder to turn, but nobody is beyond it.
-            if (!town.Rng.Chance(r.Fall * Math.Max(0.25, 1.5 - s.Loyalty / 100) * Notoriety.FallFactor(town, s))) continue;
+            if (!town.Rng.Chance(r.Fall * Math.Max(0.25, 1.5 - s.Loyalty / 100) * Notoriety.FallFactor(town, s) * (1 + r.TaintFall * s.Taint))) continue;
             FallFrom(town, a);
             return;
         }
