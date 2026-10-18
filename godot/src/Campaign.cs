@@ -49,6 +49,16 @@ public partial class Main
         else next = $"\n{Ui.C(Ui.Ink2, $"[font_size=12]The last act. Your champions are level {champ}.[/font_size]")}";
         p.Card($"[font_size=17][b]{Ui.Esc(Saga.ActTitle(t, s.Act))}[/b][/font_size]  {Tag($"since day {s.ActDays[^1]}")}{next}");
 
+        if (Menaces.PendingDemand(t) is { } dm)
+        {
+            var am = Menaces.AmbitionOf(t, dm);
+            var y = t.Content.Saga.Yoke;
+            int days = dm.DemandDueTick is int due ? (int)Math.Ceiling((due - t.Tick) / 24.0) : 0;
+            p.Card($"{Tag("A DEMAND FOR FEALTY", Ui.Accent)}\n[b]{Ui.Esc(Ui.Cap(dm.Name))}[/b] wants {Ui.Esc(t.Name)} as its vassal: {Math.Round(y.Share * 100)}% of the treasury every {Ui.Days(y.EveryDays)}, and its raiders stay away.\n{Ui.C(Ui.Ink2, $"[font_size=12]Refuse and its host marches on the walls. Say nothing for {Ui.Days(Math.Max(1, days))} and that is a refusal.[/font_size]")}", Ui.Accent);
+            int id = dm.Id;
+            p.Buttons(("Bend the knee", true, false, () => Act(() => _sim.AnswerDemand(id, true))), ("Refuse", true, true, () => Act(() => _sim.AnswerDemand(id, false))));
+        }
+
         var big = Saga.BigBad(t);
         if (big is { Alive: true })
         {
@@ -80,9 +90,9 @@ public partial class Main
             var (word, color) = MenaceStages[m.Stage];
             string march = m.ArrivalTick is int at && at > t.Tick ? "  " + Tag($"marching, {Ui.Days((int)Math.Ceiling((at - t.Tick) / 24.0))} out", Ui.Bad) : "";
             string held = m.Holdings.Count > 0 ? $" It holds {m.Holdings.Count} more {(m.Holdings.Count == 1 ? "lair" : "lairs")}." : "";
-            p.Row($"[b]{Ui.Esc(Ui.Cap(m.Name))}[/b]  {Tag(word, color)}  {Tag($"level {m.Level}")}{march}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Seat(t, m)}{held}[/font_size]")}");
+            p.Row($"[b]{Ui.Esc(Ui.Cap(m.Name))}[/b]  {Tag(word, color)}  {Tag($"level {m.Level}")}{march}\n{Tag(Menaces.CunningOf(t, m).Name)}  {Tag(Menaces.AmbitionOf(t, m).Name)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Wants(t, m))} {Seat(t, m)}{held}[/font_size]")}");
         }
-        p.Note("A threat grows while nobody clears its seat: it takes nearby lairs, raids the roads, razes settlements and at last marches on the walls. Clearing the seat breaks it, and it falls back to a lair it holds.");
+        p.Note("A threat grows while nobody clears its seat, as far as its wits allow: a beast only hunts, a dull band takes a valley and stops, a cunning or masterful leader builds a domain and can become the big bad. What it wants decides what it does to the town. Clearing the seat breaks it, and it falls back to a lair it holds.");
 
         var fallen = s.Menaces.Where(m => !m.Alive && m.Named).OrderByDescending(m => m.EndedDay).ThenBy(m => m.Id).Take(5).ToList();
         if (fallen.Count > 0)
@@ -92,6 +102,8 @@ public partial class Main
         }
         p.Commit();
     }
+
+    private static string Wants(Town t, Menace m) => Menaces.AmbitionOf(t, m).What.Replace("{town}", t.Name);
 
     /// <summary>Where it sits, as far as the town knows.</summary>
     private static string Seat(Town t, Menace m)

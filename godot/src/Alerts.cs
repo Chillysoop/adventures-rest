@@ -58,6 +58,8 @@ public partial class Main
                 () => OpenWindow(Tab.War)));
         if (Council.PendingMotion(t) is { } m)
             list.Add(new($"motion:{m.Id}", "mandate", "A motion awaits you", Ui.Cap(m.Text), Ui.Gold, () => OpenWindow(Tab.Council)));
+        if (Menaces.PendingDemand(t) is { } dm)
+            list.Add(new($"demand:{dm.Id}", "warband", "A demand for fealty", $"{Ui.Cap(dm.Name)} wants the town as its vassal. Bend the knee or refuse in the Campaign window.", Ui.Bad, () => OpenWindow(Tab.Campaign)));
         if (s.Homeless > 0)
             list.Add(new("homeless", "homeless", $"{s.Homeless} homeless", "Townsfolk with no roof lose heart and leave. More homes are needed.", Ui.Gold,
                 () => { OpenWindow(Tab.Council); Look(Geo.Center, 40); }));
