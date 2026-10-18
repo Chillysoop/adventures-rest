@@ -65,31 +65,44 @@ public static class Roads
         {
             if (!rules.Themes.TryGetValue(region.Theme.Id, out var ids) || ids.Count == 0) continue;
             int n = rng.Range(rules.FeaturesPerRegion[0], rules.FeaturesPerRegion[^1] + 1);
-            double prev = region.Ring == 0 ? 0.35 : w.Rings[region.Ring - 1].Days;
             for (int i = 0; i < n; i++)
             {
                 var kind = rules.Kinds.FirstOrDefault(k => k.Id == rng.Pick(ids));
                 if (kind == null) continue;
-                for (int tries = 0; tries < 8; tries++)
+                for (int tries = 0; tries < 10; tries++)
                 {
                     double arc = region.Arc * (rules.Arc[0] + rng.Next() * (rules.Arc[^1] - rules.Arc[0]));
-                    double bearing = (region.Bearing + (rng.Next() - 0.5) * 0.7 * region.Arc + 360) % 360;
-                    double depth = 0.3 + rng.Next() * 0.35;
-                    // The first stands between the town and the region; a second may lie beyond it.
-                    double mid = i == 0 ? prev + 0.25 + rng.Next() * Math.Max(0.1, region.Days - prev - 0.5) : region.Days + 0.3 + rng.Next() * 0.6;
+                    double bearing = (region.Bearing + (rng.Next() - 0.5) * 0.8 * region.Arc + 360) % 360;
+                    // The open ground along this arc between the sites that lie on it: hard country fills a gap.
+                    var reaches = spots
+                        .Where(p => Math.Abs(AngleDiff(Math.Atan2(p.X, -p.Y) * 180 / Math.PI, bearing)) < arc / 2 + 12)
+                        .Select(p => Math.Sqrt(p.X * p.X + p.Y * p.Y))
+                        .Append(0.15)
+                        .Append(region.Days + 2.5)
+                        .OrderBy(r => r)
+                        .ToList();
+                    var gaps = new List<(double A, double B)>();
+                    for (int g = 1; g < reaches.Count; g++)
+                        if (reaches[g] - reaches[g - 1] >= 0.62) gaps.Add((reaches[g - 1] + 0.22, reaches[g] - 0.22));
+                    // The first lies in front of the region's sites; another may lie anywhere open.
+                    var fits = i == 0 ? gaps.Where(g => g.B <= region.Days + 0.3).ToList() : gaps;
+                    if (fits.Count == 0) continue;
+                    var gap = i == 0 ? fits[^1] : rng.Pick(fits);
+                    double depth = Math.Min(gap.B - gap.A, 0.3 + rng.Next() * 0.35);
+                    double outer = gap.B - rng.Next() * (gap.B - gap.A - depth);
                     var f = new Feature
                     {
                         Id = town.Terrain.Count,
                         Name = Name(rng, kind),
                         Kind = kind,
                         RegionId = region.Id,
-                        Tier = region.Levels[0],
+                        Tier = TierAt(town, outer),
                         Bearing = Js.Round(bearing * 10) / 10.0,
                         Arc = Js.Round(arc * 10) / 10.0,
-                        Inner = Js.Round(Math.Max(0.35, mid - depth / 2) * 100) / 100.0,
-                        Outer = Js.Round((mid + depth / 2) * 100) / 100.0,
+                        Inner = Js.Round(Math.Max(0.4, outer - depth) * 100) / 100.0,
+                        Outer = Js.Round(outer * 100) / 100.0,
                     };
-                    if (spots.Any(p => Contains(f, p.X, p.Y, 0.18)) || town.Terrain.Any(o => Overlaps(o, f))) continue;
+                    if (f.Outer - f.Inner < 0.2 || spots.Any(p => Contains(f, p.X, p.Y, 0.18)) || town.Terrain.Any(o => Overlaps(o, f))) continue;
                     town.Terrain.Add(f);
                     break;
                 }
@@ -114,7 +127,7 @@ public static class Roads
 
     private static bool Overlaps(Feature a, Feature b) =>
         a.Inner - 0.2 < b.Outer && b.Inner - 0.2 < a.Outer &&
-        Math.Abs(AngleDiff(a.Bearing, b.Bearing)) < (a.Arc + b.Arc) / 2 + 30 / Math.Max(0.5, Math.Min(a.Outer, b.Outer));
+        Math.Abs(AngleDiff(a.Bearing, b.Bearing)) < (a.Arc + b.Arc) / 2 + 12 / Math.Max(0.5, Math.Min(a.Outer, b.Outer));
 
     /// <summary>Whether a point lies inside the feature, grown by a margin in days.</summary>
     public static bool Contains(Feature f, double x, double y, double margin = 0)

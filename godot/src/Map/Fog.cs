@@ -18,7 +18,8 @@ public enum Sight
 }
 
 /// <summary>What one party's report taught the town.</summary>
-public sealed record Report(string SiteId, int Day, bool ReachedSite, float Reach, ExpeditionOutcome? Outcome);
+/// <summary>A party's or scout's account; <see cref="Roads"/> are the roads it walked (world points), or null for the straight road out.</summary>
+public sealed record Report(string SiteId, int Day, bool ReachedSite, float Reach, ExpeditionOutcome? Outcome, IReadOnlyList<Vector2[]>? Roads = null);
 
 /// <summary>
 /// The fog of war. Everything is derived from the simulation (parties that came home, scryings,
@@ -54,7 +55,10 @@ public sealed class Fog
     /// <summary>How far a live view of a site reaches around it, in tiles.</summary>
     public const float SiteSight = 13;
 
-    public static float SpireRadius(Geo geo, int reach) => geo.TownRadius + 10 + reach * Geo.TilesPerDay + SiteSight;
+    /// <summary>Set by --reveal: the whole map is in sight.</summary>
+    public static bool RevealAll;
+
+    public static float SpireRadius(Geo geo, int reach) => Geo.DayRadius(reach) + SiteSight;
 
     public Fog()
     {
@@ -70,6 +74,7 @@ public sealed class Fog
         // The town's lamplight reaches a little past its edge; each watchtower sees farther.
         LightRadius = geo.TownRadius + 9 + town.Defenses.Towers * 5;
         LiveAreas.Add((Geo.Center, LightRadius));
+        if (RevealAll) LiveAreas.Add((Geo.Center, Geo.World));
         // The Sleepless Spire lights every site within its reach.
         int reach = Watch.Reach(town);
         if (reach > 0) LiveAreas.Add((Geo.Center, SpireRadius(geo, reach)));
@@ -93,9 +98,9 @@ public sealed class Fog
             var chron = town.Chronicles.FirstOrDefault(c => c.PartyName == p.Name && c.DepartDay == SimTime.DayOf(p.DepartTick));
             // Nobody comes home from a wiped party, so nobody describes the road.
             if (chron?.Outcome == ExpeditionOutcome.Wiped) continue;
-            var site = Quests.Site(town, p.SiteId)!;
-            float reach = p.RecalledTick is int rt ? Mathf.Clamp((rt - p.DepartTick) / (float)(site.Def.Distance * SimTime.HoursPerDay), 0, 1) : 1;
-            Reports.Add(new Report(p.SiteId, SimTime.DayOf(p.ReturnTick), p.RecalledTick == null, reach, chron?.Outcome));
+            // They describe the roads they actually walked, round or through the hard country.
+            var roads = Roads.Walked(town, p).Select(line => line.Select(Geo.FromDays).ToArray()).ToList();
+            Reports.Add(new Report(p.SiteId, SimTime.DayOf(p.ReturnTick), p.RecalledTick == null, 1, chron?.Outcome, roads));
         }
         // Scouts who come home describe the road and the site they watched.
         foreach (var s in town.Scouts)
@@ -104,6 +109,18 @@ public sealed class Fog
             float reach = s.Arrived ? 1 : Mathf.Clamp((s.LeaveTick - s.DepartTick) / (float)Math.Max(1, s.ArriveTick - s.DepartTick), 0, 1);
             Reports.Add(new Report(s.SiteId, SimTime.DayOf(s.ReturnTick), s.Arrived, reach, null));
         }
+    }
+
+    /// <summary>The stretches of road a report describes.</summary>
+    private static IEnumerable<(Vector2 A, Vector2 B)> Segments(Report r, Vector2 pin)
+    {
+        if (r.Roads == null)
+        {
+            yield return (Geo.Center, Geo.Center + (pin - Geo.Center) * r.Reach);
+            yield break;
+        }
+        foreach (var line in r.Roads)
+            for (int i = 1; i < line.Length; i++) yield return (line[i - 1], line[i]);
     }
 
     private static int Px(float world) => (int)((world - X0) * PerTile);
@@ -157,9 +174,11 @@ public sealed class Fog
         foreach (var r in Reports)
         {
             if (!geo.Pins.TryGetValue(r.SiteId, out var pin)) continue;
-            var end = Geo.Center + (pin - Geo.Center) * r.Reach;
-            Grow(Geo.Center, 0);
-            Grow(end, ReportRoad);
+            foreach (var (a, b) in Segments(r, pin))
+            {
+                Grow(a, ReportRoad);
+                Grow(b, ReportRoad);
+            }
             if (r.ReachedSite) Grow(pin, ReportSite);
         }
         int x0 = Math.Max(0, Px(bx0)), y0 = Math.Max(0, Px(by0)), x1 = Math.Min(N - 1, Px(bx1)), y1 = Math.Min(N - 1, Px(by1));
@@ -173,8 +192,7 @@ public sealed class Fog
         foreach (var r in Reports)
         {
             if (!geo.Pins.TryGetValue(r.SiteId, out var pin)) continue;
-            var end = Geo.Center + (pin - Geo.Center) * r.Reach;
-            Stamp(Geo.Center, end, ReportRoad, r.Day);
+            foreach (var (a, b) in Segments(r, pin)) Stamp(a, b, ReportRoad, r.Day);
             if (r.ReachedSite) Stamp(pin, pin, ReportSite, r.Day);
         }
         int today = town.Day;

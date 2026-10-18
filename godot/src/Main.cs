@@ -62,6 +62,7 @@ public partial class Main : Control
         BuildLayout();
         BuildMenu();
         _map.TreeScale = _opts.Trees;
+        Map.Fog.RevealAll = _opts.Reveal;
         // Started plainly, the game picks up the newest save; arguments set up a moment instead.
         bool loaded = _opts.Load is string file ? LoadFile(file, "the save") : OS.GetCmdlineUserArgs().Length == 0 && Continue();
         if (!loaded) NewTown(_opts.Seed ?? 1, _opts.Autoplay);
