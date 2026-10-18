@@ -1097,6 +1097,7 @@ public sealed class Content
 
     /// <summary>Decorations and set dressing the player can place (content/game/decor.json).</summary>
     public DecorRules Decor { get; init; } = new();
+    public SeasonRules Seasons { get; init; } = new();
 
     /// <summary>The world's history: its ages, the powers that rose and fell, and the calendar (content/game/history.json).</summary>
     public HistoryRules History { get; init; } = new();
@@ -1239,6 +1240,7 @@ public sealed class Content
             Loyalty = Parse<LoyaltyRules>("loyalty.json"),
             City = Parse<CityRules>("city.json"),
             Decor = Parse<DecorRules>("decor.json"),
+            Seasons = Parse<SeasonRules>("seasons.json"),
             History = Parse<HistoryRules>("history.json"),
             Stories = Parse<StoryRules>("stories.json"),
         };

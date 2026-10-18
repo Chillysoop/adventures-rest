@@ -665,17 +665,22 @@ internal sealed class StateReader(ContentIndex content, JsonElement root)
         var ctor = t.IsValueType ? null : t.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, Type.EmptyTypes);
         object obj = ctor != null ? ctor.Invoke(null) : RuntimeHelpers.GetUninitializedObject(t);
         if (id is int i) _ids[i] = obj;
+        var seen = new HashSet<FieldInfo>();
         foreach (var p in e.EnumerateObject())
         {
             if (p.Name.StartsWith('$') || !info.Fields.TryGetValue(p.Name, out var f)) continue;
             f.SetValue(obj, Value(p.Value, f.FieldType));
+            seen.Add(f);
         }
-        // Collections a save does not carry (skipped fields, or ones added since) start empty.
+        // Collections a save does not carry (skipped fields, or ones added since) start empty, and so does
+        // state a save from before it existed leaves out (a get-only property such as Town.Seasons).
         foreach (var f in info.Ordered.Concat(info.Skipped))
         {
             if (f.FieldType.IsValueType || f.GetValue(obj) != null) continue;
             var natural = TypeInfo.Natural(f.FieldType);
-            if (natural != typeof(string) && typeof(IEnumerable).IsAssignableFrom(natural) && !natural.IsArray && natural.GetConstructor(Type.EmptyTypes) != null)
+            bool collection = natural != typeof(string) && typeof(IEnumerable).IsAssignableFrom(natural) && !natural.IsArray;
+            bool added = f.IsInitOnly && !seen.Contains(f) && natural.IsClass && natural != typeof(string);
+            if ((collection || added) && natural.GetConstructor(Type.EmptyTypes) != null)
                 f.SetValue(obj, Activator.CreateInstance(natural));
         }
         return obj;

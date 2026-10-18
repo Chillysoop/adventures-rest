@@ -313,7 +313,34 @@ public partial class MapView : Control
         var haze = new Color("c4cfd2").Lerp(new Color("e2b896"), dusk * 0.6f).Lerp(new Color("1c2236"), night);
         _env.BackgroundColor = haze;
         _env.FogLightColor = haze;
+        UpdateSeason(town);
         if (town.Outcome == Outcome.Defeat) _env.AmbientLightColor = _env.AmbientLightColor.Lerp(new Color("a03020"), 0.4f);
+    }
+
+    private Vector3 _season = new(-1, -1, -1);
+
+    /// <summary>The land shows the season: snow in winter, turned leaves in autumn, fresh green in spring; winter light is colder and greyer.</summary>
+    private void UpdateSeason(Town town)
+    {
+        var look = Seasons.Look(town);
+        var s = new Vector3((float)look.Winter, (float)look.Autumn, (float)look.Spring);
+        if (!s.IsEqualApprox(_season))
+        {
+            _season = s;
+            Mats.SetAll("snow", s.X);
+            Mats.SetAll("autumn", s.Y);
+            Mats.SetAll("spring", s.Z);
+            _grade.SetShaderParameter("saturation", 0.9f - s.X * 0.12f + s.Z * 0.04f);
+            _grade.SetShaderParameter("cold", s.X);
+        }
+        // The inked campaign map keeps its own light.
+        s *= 1 - _strategic;
+        _sun.LightColor = _sun.LightColor.Lerp(new Color("e4ecf6"), s.X * 0.6f).Lerp(new Color("ffe2b8"), s.Y * 0.35f);
+        _sun.LightEnergy *= 1 - s.X * 0.12f;
+        _env.AmbientLightColor = _env.AmbientLightColor.Lerp(new Color("b8c4d4"), s.X * 0.5f);
+        var haze = _env.BackgroundColor.Lerp(new Color("cdd3da"), s.X * 0.3f * (1 - Geo.Nightness(town, HourFraction)));
+        _env.BackgroundColor = haze;
+        _env.FogLightColor = haze;
     }
 
     // ---------- Projection and picking ----------

@@ -8,10 +8,12 @@ uniform float hide_in_strategic = 0.0;
 
 varying vec3 wpos;
 varying vec3 skin;
+varying float up;
 
 void vertex() {
 	wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	skin = INSTANCE_CUSTOM.rgb;
+	up = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz).y;
 	if (hide_in_strategic > 0.5) VERTEX *= 1.0 - strategic;
 	if (hidden_by_fog(wpos.xz)) VERTEX = vec3(0.0);
 }
@@ -20,6 +22,8 @@ void fragment() {
 	vec3 c = COLOR.rgb;
 	float a = COLOR.a;
 	vec3 emit = vec3(0.0);
+	// Winter snow on roofs, ledges and the ground about the town, but not on faces, lamps or fires.
+	if (a > 0.95) c = lay_snow(c, wpos.xz, snow_cover(wpos.xz, up * 1.7) * (1.0 - strategic));
 	if (abs(a - 0.45) < 0.05) c = skin;
 	if (abs(a - 0.6) < 0.05) {
 		vec3 lamp = vec3(1.0, 0.72, 0.38);
