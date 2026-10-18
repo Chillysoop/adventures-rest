@@ -153,7 +153,7 @@ public static class Knowledge
         town.Log(
             LedgerCategory.Quest,
             Importance.Notable,
-            $"The {party.Name} walk back into town, called home from the road to {site.Def.Name}." + (bounty != null ? " The bounty is posted again." : ""),
+            $"The {party.Name} walk back into town, called home from the road to {site.Def.Name}." + (bounty != null ? " The bounty is posted again." : "") + (party.Withheld ? Intel.Keeping : ""),
             members.Select(m => m.Id).ToList());
     }
 }

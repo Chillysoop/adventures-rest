@@ -10,7 +10,7 @@ public enum Sight
     /// <summary>Never seen: the terrain's silhouette at most. Sites are names from tavern gossip.</summary>
     Rumoured,
 
-    /// <summary>Described by a party that came home; the picture is as old as the report.</summary>
+    /// <summary>Described by a party that came home on a council bounty, or whose report the town bought; the picture is as old as the trip.</summary>
     Scouted,
 
     /// <summary>Seen right now: inside the town's lamplight and towers, or watched by a scrying, scout, mirror or the Spire.</summary>
@@ -88,7 +88,8 @@ public sealed class Fog
         Reports.Clear();
         foreach (var p in town.Parties)
         {
-            if (!p.Returned) continue;
+            // A company back from a trip the council didn't pay for keeps what it saw until the town buys it.
+            if (!p.Returned || p.Withheld) continue;
             var chron = town.Chronicles.FirstOrDefault(c => c.PartyName == p.Name && c.DepartDay == SimTime.DayOf(p.DepartTick));
             // Nobody comes home from a wiped party, so nobody describes the road.
             if (chron?.Outcome == ExpeditionOutcome.Wiped) continue;
