@@ -69,6 +69,9 @@ public static class Campaigns
         // Bold leaders reach a step higher, but only with a full company behind them.
         bool bold = (leader.Has(Trait.Ambitious) || leader.Has(Trait.HotTempered)) && members.Count >= rules.MaxMembers;
         int cap = (int)Math.Floor(avg) + (bold ? rules.BoldStep : 0);
+        // Greenhorns with no veteran to lead them start somewhere gentler.
+        if (members.Any(m => m.Hero!.Expeditions == 0) && !members.Any(m => m.Hero!.Expeditions >= rules.Veteran))
+            cap = Math.Max(1, cap - rules.GreenStep);
         // When war looms, heroes keep close to home; with the warband marching, nobody leaves.
         var stage = town.Enemy.Stage;
         bool war = Threat.IsActive(town) && stage >= ThreatStage.Raids;

@@ -738,6 +738,29 @@ public sealed record CompanyRules
 
     /// <summary>Extra appeal of burning the warband's camp.</summary>
     public double CampGlory { get; init; } = 0.4;
+
+    /// <summary>Expeditions after which a hero is a veteran who can lead greenhorns.</summary>
+    public int Veteran { get; init; } = 3;
+
+    /// <summary>Levels a company of greenhorns with no veteran to lead them steps down when picking a site.</summary>
+    public int GreenStep { get; init; } = 1;
+}
+
+/// <summary>When a party in a delve gives up, and how it tends its fallen.</summary>
+public sealed record DelveRules
+{
+    /// <summary>Share of the party's hit points left at which they break off a fight (a boss fight, which they press harder).</summary>
+    public double BreakOff { get; init; } = 0.2;
+    public double BossBreakOff { get; init; } = 0.15;
+
+    /// <summary>They also break off once this share of the living party is down.</summary>
+    public double DownedShare { get; init; } = 1;
+
+    /// <summary>Share of hit points below which they turn back between encounters.</summary>
+    public double TurnBack { get; init; } = 0.3;
+
+    /// <summary>DC of the Wisdom (Medicine) check a companion makes to stabilize the fallen; 0 means no first aid.</summary>
+    public int FirstAidDc { get; init; }
 }
 
 /// <summary>The wilds: rings of themed regions around the town, their sites and the peoples living there (content/game/world.json).</summary>
@@ -754,6 +777,7 @@ public sealed record WorldRules
     public double SettlementChance { get; init; } = 0.75;
     public StandingRules Standing { get; init; } = new();
     public CompanyRules Companies { get; init; } = new();
+    public DelveRules Delve { get; init; } = new();
     public IReadOnlyList<PeopleDef> Peoples { get; init; } = [];
     public IReadOnlyList<ThemeDef> Themes { get; init; } = [];
 }
