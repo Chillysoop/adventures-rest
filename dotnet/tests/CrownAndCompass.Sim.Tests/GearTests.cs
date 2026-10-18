@@ -64,9 +64,15 @@ public class GearTests
         var a = Hero(t, "fighter");
         Gear.Claim(t, a, t.Content.Library.Item("weapon-2")!);
         double gold = a.Gold;
-        // A +1 weapon is no use to someone with a +2: it goes to a merchant.
+        // A +1 weapon is no use to someone with a +2: they offer it to the town, then sell it to a merchant.
         Gear.Claim(t, a, t.Content.Library.Item("weapon-1")!);
         Assert.Equal("weapon-2", a.Hero!.Magic["weapon"].Id);
+        var offer = Assert.Single(t.Armory.Offers);
+        Assert.Equal("weapon-1", offer.Item.Id);
+        Assert.True(offer.Price > Gear.SellValue(t, offer.Item));
+        t.Tick = offer.Until * SimTime.HoursPerDay;
+        Armory.Daily(t, false);
+        Assert.Empty(t.Armory.Offers);
         Assert.True(a.Gold > gold);
         // A wizard can't wear armour magic and has no shield arm.
         var wizard = Hero(t, "wizard");

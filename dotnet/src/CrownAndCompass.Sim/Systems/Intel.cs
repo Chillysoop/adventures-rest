@@ -18,6 +18,12 @@ public sealed class CompanyState
 
     /// <summary>Turned down an offer and will not hear another before this tick.</summary>
     public int? SulkUntil { get; set; }
+
+    /// <summary>Sworn to hand the magic it finds to the town armory, for a finder's fee (a share of its worth) (<see cref="Armory"/>).</summary>
+    public bool Pact { get; set; }
+    public double PactFee { get; set; }
+    public int PactDay { get; set; }
+    public int Handed { get; set; }
 }
 
 /// <summary>What the council answered a company's asking price with.</summary>
@@ -68,6 +74,17 @@ public static class Intel
     /// <summary>Heroes riding under a company's name today, strongest first.</summary>
     public static List<Agent> Members(Town town, string name) =>
         town.Heroes.Where(h => h.Hero!.PartyName == name && !h.Departed && !h.Dead).OrderByDescending(h => h.Hero!.Level).ThenBy(h => h.Id).ToList();
+
+    /// <summary>Every company with a member still riding, friendliest first.</summary>
+    public static List<(string Name, List<Agent> Members)> MembersByCompany(Town town) =>
+        town.Heroes.Where(h => !h.Departed && !h.Dead && h.Hero!.PartyName != null).Select(h => h.Hero!.PartyName!)
+            .Concat(town.Companies.Select(c => c.Name))
+            .Distinct()
+            .Select(n => (Name: n, Members: Members(town, n)))
+            .Where(x => x.Members.Count > 0)
+            .OrderByDescending(x => Relation(town, x.Name, x.Members))
+            .ThenBy(x => x.Name, StringComparer.Ordinal)
+            .ToList();
 
     /// <summary>What these heroes, as this company, think of the town, 0 to 100.</summary>
     public static double Relation(Town town, string name, IReadOnlyList<Agent> members)

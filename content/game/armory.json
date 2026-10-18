@@ -1,0 +1,46 @@
+{
+  "stone": "sending-stone-pair",
+  "start": ["sending-stone-pair"],
+  "stoneSlots": 3,
+  "stoneTrips": 1,
+  "gift": {
+    "loyalty": 5,
+    "perTier": 2,
+    "pay": 0.5,
+    "payCap": 150,
+    "againDays": 14
+  },
+  "terms": {
+    "cut": 0.15,
+    "greedyCut": 0.3,
+    "markup": 1.25
+  },
+  "pact": {
+    "minRelation": 50,
+    "fee": 0.5,
+    "friendly": 0.8,
+    "devoted": 0.6,
+    "greedy": 1.25,
+    "refused": -3,
+    "sulkDays": 10,
+    "handed": 0.5,
+    "unpaid": -2
+  },
+  "buy": {
+    "markup": 1.2,
+    "wary": 1.5,
+    "days": 6
+  },
+  "caravan": {
+    "chance": 0.35,
+    "stone": 0.3,
+    "stonePrice": 150,
+    "markup": 2.5,
+    "days": 12
+  },
+  "auto": {
+    "reserve": 400,
+    "share": 0.3,
+    "sellAfterDays": 120
+  }
+}
