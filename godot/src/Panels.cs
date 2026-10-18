@@ -90,6 +90,9 @@ public partial class Main
             : "A campaign costs a war chest of wages. Sellswords can break a menace's hold and its seat, but only heroes can end the greatest foe.");
     }
 
+    /// <summary>The terms the bounty board posts on (<see cref="Terms"/>).</summary>
+    private string _terms = "slay";
+
     private void Act(Action a)
     {
         a();
@@ -191,6 +194,22 @@ public partial class Main
         RenderEyes(p, t);
 
         p.Heading("Bounty board");
+        // How the job is to be done: the terms every Post button below uses.
+        var chosen = t.Content.Bounties.Term(_terms);
+        p.Buttons(t.Content.Bounties.Terms.Select(term => (term.Name, true, term.Id == chosen.Id, (Action)(() => Act(() => _terms = term.Id)))).ToArray());
+        var (pleased, angered) = Regard.Reactions(t, chosen.Tags);
+        string Who(List<Agent> heroes) => string.Join(", ", heroes.Take(4).Select(h => h.GivenName)) + (heroes.Count > 4 ? $" +{heroes.Count - 4}" : "");
+        var feel = new List<string>();
+        if (pleased.Count > 0) feel.Add(Ui.C(Ui.Good, $"Pleases {Ui.Esc(Who(pleased))}"));
+        if (angered.Count > 0) feel.Add(Ui.C(Ui.Bad, $"Angers {Ui.Esc(Who(angered))}"));
+        p.Note($"[b]{Ui.Esc(chosen.Name)}:[/b] {Ui.Esc(chosen.Text)}{(feel.Count > 0 ? "\n" + string.Join("  ·  ", feel) : "")}");
+        foreach (var c in Captives.Held(t).OrderBy(c => c.Id))
+        {
+            if (Quests.Site(t, c.SiteId) is not SiteState held) continue;
+            int left = Math.Max(1, (int)Math.Ceiling((c.DueTick - t.Tick) / 24.0));
+            string names = string.Join(", ", c.Captives.Select(id => t.Agent(id).Name));
+            p.Card($"[b]Held at {SiteLink(held.Def)}[/b]  {Tag($"{left} {(left == 1 ? "day" : "days")} left", Ui.Bad)}\n[font_size=12]{Ui.Esc(names)}. Post a [b]Rescue[/b] on {Ui.Esc(held.Def.Name)} before the days run out, or clear it.[/font_size]", Ui.Bad);
+        }
         var scryer = Knowledge.Scryers(t).FirstOrDefault();
         bool freeScry = Watch.FreeScryingsLeft(t) > 0;
         bool canScout = Watch.Watchers(t).Count > 0;
@@ -200,17 +219,19 @@ public partial class Main
             if (s.Known == SiteKnowledge.Unheard) continue;
             var live = t.Bounties.FirstOrDefault(b => b.SiteId == s.Def.Id && b.Status is BountyStatus.Open or BountyStatus.Taken);
             var party = live?.PartyId is int pid ? t.Parties.FirstOrDefault(x => x.Id == pid) : null;
-            int reward = Quests.SuggestedReward(Math.Max(1, s.BelievedTier));
+            int reward = (int)Terms.Suggested(t, s, chosen);
             string status;
             var buttons = new List<(string, bool, bool, Action)>();
             if (s.ThoughtCleared) status = Tag("Cleared", Ui.Good);
             else if (party != null && !party.Returned) status = Tag($"{Ui.Esc(party.Name)} on the road", Ui.Gold);
-            else if (live != null) status = Tag($"Bounty posted: {Math.Round(live.Reward)}g", Ui.Gold);
+            else if (live != null) status = Tag($"{(live.Terms == "slay" ? "Bounty" : Terms.Of(t, live).Name)} posted: {Math.Round(live.Reward)}g", Ui.Gold);
             else
             {
                 status = s.Attempts > 0 ? Tag($"{s.Attempts} failed {(s.Attempts == 1 ? "attempt" : "attempts")}", Ui.Bad) : Tag("Unexplored");
                 string sid = s.Def.Id;
-                buttons.Add(($"Post {reward}g", t.Treasury >= reward, true, () => Act(() => _sim.PostBounty(sid, reward))));
+                string terms = chosen.Id;
+                bool fits = Terms.Blocked(t, s, chosen) == null;
+                if (fits) buttons.Add(($"{chosen.Name} · {reward}g", t.Treasury >= reward, true, () => Act(() => _sim.PostBounty(sid, reward, terms))));
             }
             if (!s.ThoughtCleared && Watch.LiveOf(t, s) == null)
             {

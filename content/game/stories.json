@@ -4120,6 +4120,111 @@
         }
       ],
       "ignored": { "text": "You keep out of the square. {heroName} tells the taverns the mayor would not face them.", "effects": { "esteem": -10, "loyalty": -10, "mandate": -2 } }
+    },
+    {
+      "id": "parley-remembered", "title": "The folk who were talked out", "stakes": "medium", "source": "road",
+      "needs": ["precedent:parleyed"], "minDay": 90, "repeatDays": 200,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The folk your heroes talked out of their hold, rather than put to the sword, are at the gate: thinner than they were, and asking for work. Half the market remembers what they used to take from the farms.",
+          "options": [
+            {
+              "label": "Take them in as labourers", "tags": ["mercy", "generous"],
+              "success": { "text": "They dig ditches and haul stone, and in a season nobody remembers they were raiders.", "effects": { "people": 4, "tension": 3, "mandate": 1, "precedent:parleyed": -1 } }
+            },
+            {
+              "label": "Hire them as scouts for the roads", "tags": ["guile"], "skill": "insight", "dc": 13,
+              "success": { "text": "Who knows the hills better than the folk who used to hide in them? They show the wardens three paths nobody knew.", "effects": { "dread": -3, "gold": -30, "mandate": 2, "precedent:parleyed": -1 } },
+              "failure": { "text": "Two of them vanish with the town's horses on the first night.", "effects": { "gold": -40, "mandate": -2, "precedent:parleyed": -1 } }
+            },
+            {
+              "label": "Turn them away", "tags": ["harsh", "caution"],
+              "success": { "text": "They go back into the hills. Some say they will not be so easily talked down a second time.", "effects": { "dread": 3, "precedent:parleyed": -1 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "They camp outside the walls for a week, then move on.", "effects": { "tension": 2, "precedent:parleyed": -1 } }
+    },
+    {
+      "id": "captives-remembered", "title": "One of the lost comes home", "stakes": "medium", "source": "war",
+      "needs": ["precedent:captives-lost"], "minDay": 60, "repeatDays": 200,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A gaunt figure walks in at the south gate wearing raiders' leathers. It is one of the townsfolk everyone mourned: they say they escaped, and the families they left want to know why nobody came.",
+          "options": [
+            {
+              "label": "Welcome them home in the square", "tags": ["mercy"], "skill": "persuasion", "dc": 13,
+              "success": { "text": "You meet them in front of everyone and say it plainly: the town failed them. The families weep, and so do you.", "effects": { "mandate": 4, "tension": -4, "precedent:captives-lost": -1 } },
+              "failure": { "text": "The words come out like an excuse, and the families hear them that way.", "effects": { "mandate": -2, "tension": 3, "precedent:captives-lost": -1 } }
+            },
+            {
+              "label": "Have the watch question them first", "tags": ["order", "caution"], "needs": ["watch"], "skill": "insight", "dc": 14,
+              "success": { "text": "They were sent: the raiders wanted eyes inside the walls. They tell you everything, gratefully, and it is worth a great deal.", "effects": { "dread": -4, "mandate": 1, "precedent:captives-lost": -1 } },
+              "failure": { "text": "The questioning finds nothing, and the families call it cruelty.", "effects": { "mandate": -3, "tension": 4, "precedent:captives-lost": -1 } }
+            },
+            {
+              "label": "Pay the families what was owed", "tags": ["generous"], "cost": 80,
+              "success": { "text": "Gold does not bring anyone back, but it is something, and they know it.", "effects": { "mandate": 2, "tension": -2, "precedent:captives-lost": -1 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "The families stop speaking to the town hall. The one who came home leaves again before winter.", "effects": { "mandate": -3, "tension": 4, "precedent:captives-lost": -1 } }
+    },
+    {
+      "id": "captives-thanks", "title": "A debt from the rescued", "stakes": "low", "source": "town",
+      "needs": ["precedent:captives-freed"], "minDay": 50, "repeatDays": 200,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The families of the townsfolk your heroes brought home have taken up a collection. They want to give the town something it will remember.",
+          "options": [
+            {
+              "label": "A feast for the heroes who went", "tags": ["generous", "valor"],
+              "success": { "text": "The heroes eat at the head of the table, and are toasted until dawn.", "effects": { "festival": 1, "mandate": 2, "precedent:captives-freed": -1 } }
+            },
+            {
+              "label": "Gold for the watch", "tags": ["order"],
+              "success": { "text": "The purse goes to the watch house, and two more of the rescued's cousins sign on.", "effects": { "gold": 60, "precedent:captives-freed": -1 } }
+            },
+            {
+              "label": "Ask them to keep it", "tags": ["mercy"],
+              "success": { "text": "They insist, and in the end they leave it at the temple door.", "effects": { "favour": 3, "mandate": 1, "precedent:captives-freed": -1 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "The collection goes to the tavern instead.", "effects": { "precedent:captives-freed": -1 } }
+    },
+    {
+      "id": "dismissed-returns", "title": "A hero you sent away", "stakes": "medium", "source": "heroes",
+      "needs": ["precedent:hero-dismissed", "hero"], "minDay": 60, "repeatDays": 200,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Word comes that the hero you sent packing has been telling every company on the road what kind of mayor {town} has. {hero} has heard it twice this week, and wants to know whether it is true.",
+          "options": [
+            {
+              "label": "Tell {heroName} the whole story", "tags": ["order"], "skill": "persuasion", "dc": 12, "aid": "hero",
+              "success": { "text": "{heroName} hears you out and shrugs: they would have done the same. They say so in the tavern, loudly.", "effects": { "esteem": 15, "mandate": 1, "precedent:hero-dismissed": -1 } },
+              "failure": { "text": "{heroName} listens, and says nothing, and keeps their pack by the door.", "effects": { "esteem": -10, "precedent:hero-dismissed": -1 } }
+            },
+            {
+              "label": "Send a letter making peace", "tags": ["mercy"], "skill": "persuasion", "dc": 14,
+              "success": { "text": "The old hero writes back, gruffly. The stories on the road stop.", "effects": { "mandate": 2, "esteem": 5, "precedent:hero-dismissed": -1 } },
+              "failure": { "text": "The letter is read aloud in a tavern two towns away, and laughed at.", "effects": { "mandate": -2, "precedent:hero-dismissed": -1 } }
+            },
+            {
+              "label": "Let them talk", "tags": ["valor"],
+              "success": { "text": "You have work to do. The stories go on.", "effects": { "esteem": -5, "precedent:hero-dismissed": -1 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "The stories go on, and two companies pass {town} by.", "effects": { "mandate": -2, "precedent:hero-dismissed": -1 } }
     }
   ],
   "decrees": [
@@ -4143,7 +4248,11 @@
     {"id": "seized-grain", "text": "The mayor seized a merchant's hoard in the hungry winter."}
 ,
     {"id": "oath-broken", "text": "The mayor made a paladin break their oath of mercy."},
-    {"id": "patron-bargain", "text": "The town took a dark patron's gold."}
+    {"id": "patron-bargain", "text": "The town took a dark patron's gold."},
+    {"id": "parleyed", "text": "The mayor's heroes talked raiders out of their hold instead of killing them."},
+    {"id": "captives-lost", "text": "Townsfolk carried off in a raid were never brought home."},
+    {"id": "captives-freed", "text": "Heroes brought home townsfolk carried off in a raid."},
+    {"id": "hero-dismissed", "text": "The mayor sent a hero packing."}
   ],
   "callings": [
     {"id": "towns-bard", "class": "bard", "name": "The town's bard", "mood": 1, "arrivals": 0.03, "gold": -1, "text": "Plays the tavern every night. Spirits rise, and the road hears of it."},

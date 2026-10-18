@@ -299,6 +299,9 @@ public static class Threat
                 text += $". {v.Name} dies defending it";
             }
         }
+        // They may drag the hands off to their war camp, to be rescued in time or lost.
+        var camp = town.Sites.FirstOrDefault(x => x.Def.Id == e.Outpost.Id);
+        text += Captives.Take(town, camp, target);
         town.Log(LedgerCategory.War, Importance.Major, $"{text}. The watch arrives too late.", victims);
         town.Tension += 25 + victims.Count * 10;
         town.Mandate = Math.Max(0, town.Mandate - 4);

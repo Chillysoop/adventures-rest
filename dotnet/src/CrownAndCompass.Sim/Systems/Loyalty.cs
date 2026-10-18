@@ -317,6 +317,7 @@ public static class Loyalty
         LoseLands(town, a);
         Strip(a);
         Population.Depart(town, a);
+        Stories.Remember(town, "hero-dismissed");
     }
 
     /// <summary>A turncoat's land is lost: the gates are opened to whatever comes.</summary>

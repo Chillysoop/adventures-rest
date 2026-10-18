@@ -90,6 +90,9 @@ public sealed class Bounty
 
     /// <summary>The building whose coffers hold the escrow (the temple), or null for the treasury.</summary>
     public int? FunderId { get; init; }
+
+    /// <summary>How the job is to be done: slay, drive, parley, rescue or fetch (<see cref="Systems.Terms"/>).</summary>
+    public string Terms { get; init; } = "slay";
 }
 
 public sealed class Party
@@ -217,18 +220,20 @@ public static class Quests
 
     public static SiteState? Site(Town town, string id) => town.Sites.FirstOrDefault(s => s.Def.Id == id);
 
-    private static bool IsActive(Bounty b) => b.Status is BountyStatus.Open or BountyStatus.Taken;
+    internal static bool IsActive(Bounty b) => b.Status is BountyStatus.Open or BountyStatus.Taken;
 
     /// <summary>
     /// Post a bounty, holding the reward in escrow from the treasury, or from a funder's coffers (the
     /// temple). Returns null if the payer can't cover it or the town knows of no such danger.
     /// </summary>
-    public static Bounty? PostBounty(Town town, string siteId, double reward, Building? funder = null)
+    public static Bounty? PostBounty(Town town, string siteId, double reward, Building? funder = null, string terms = "slay")
     {
         var s = Site(town, siteId);
         double purse = funder?.Cash ?? town.Treasury;
         if (s == null || s.Known == SiteKnowledge.Unheard || s.ThoughtCleared || reward <= 0 || purse < reward) return null;
         if (town.Bounties.Any(b => b.SiteId == siteId && IsActive(b))) return null;
+        var term = town.Content.Bounties.Term(terms);
+        if (term.Id != terms || Systems.Terms.Blocked(town, s, term) != null) return null;
         if (funder != null) funder.Cash -= reward;
         else town.Book(TreasuryAccount.Bounties, -reward);
         var b = new Bounty
@@ -239,9 +244,15 @@ public static class Quests
             PostedTick = town.Tick,
             ExpiresTick = town.Tick + BountyDays * SimTime.HoursPerDay,
             FunderId = funder?.Id,
+            Terms = term.Id,
         };
         town.Bounties.Add(b);
-        if (funder == null) town.Log(LedgerCategory.Town, Importance.Notable, $"The council posts a bounty of {Js.Str(reward)} gold on {s.Def.Name}.");
+        if (funder == null)
+            town.Log(LedgerCategory.Town, Importance.Notable, term.Id == "slay"
+                ? $"The council posts a bounty of {Js.Str(reward)} gold on {s.Def.Name}."
+                : $"The council posts a bounty of {Js.Str(reward)} gold to {term.Verb} {s.Def.Name}.");
+        // The heroes judge the terms as they judge any choice of the mayor's.
+        if (term.Tags.Count > 0) Regard.Judge(town, term.Tags, $"posted a bounty to {term.Verb} {s.Def.Name}", "Bounties");
         return b;
     }
 
@@ -303,6 +314,8 @@ public static class Quests
         LodgingAndRest(town);
         Gear.Shop(town);
         ExpireBounties(town);
+        Captives.Daily(town);
+        if (autoMayor) Captives.AutoPost(town);
         if (autoMayor) AutoPost(town);
         FormParties(town);
         if (companies) Campaigns.Daily(town);
@@ -389,6 +402,7 @@ public static class Quests
             (a.Has(Trait.HotTempered) ? 0.15 : 0) +
             (a.Has(Trait.Ambitious) ? 0.1 : 0) -
             (a.Has(Trait.Lazy) ? 0.3 : 0) +
+            Systems.Terms.Interest(town, a, bounty) +
             town.Rng.Next() * 0.3;
     }
 
@@ -545,7 +559,9 @@ public static class Quests
             town.Chronicles.Add(chronicle);
 
             // Bodies carried home can be raised at the temple; a wiped party leaves nobody to carry them.
-            double pay = result.Gold + (result.Outcome == ExpeditionOutcome.Cleared ? bounty?.Reward ?? 0 : 0);
+            // A rescue or a raid on the hoard earns the bounty without clearing the place.
+            bool earned = result.Outcome == ExpeditionOutcome.Cleared || result.GoalMet;
+            double pay = result.Gold + (earned ? bounty?.Reward ?? 0 : 0);
             var rites = new List<(string Text, int Id)>();
             var raised = result.Outcome == ExpeditionOutcome.Wiped ? [] : Shrines.Raise(town, result.Dead, party.Name, ref pay, rites);
             var dead = result.Dead.Where(id => !raised.Contains(id)).ToList();
@@ -577,9 +593,16 @@ public static class Quests
                 s.Cleared = true;
                 s.ClearedTick = town.Tick;
             }
-            if (result.Outcome == ExpeditionOutcome.Cleared)
+            if (result.GoalMet && result.Outcome != ExpeditionOutcome.Wiped)
             {
+                if (bounty != null) bounty.Status = BountyStatus.Completed;
+                if (Captives.At(town, s.Def.Id) is { } held && bounty?.Terms == "rescue") Captives.Free(town, held, party);
+            }
+            else if (result.Outcome == ExpeditionOutcome.Cleared)
+            {
+                if (result.Talked) Stories.Remember(town, "parleyed");
                 s.Cleared = true;
+                if (Captives.At(town, s.Def.Id) is { } freed) Captives.Free(town, freed, party);
                 // A victory is the talk of the taverns even when the report isn't sold: the town knows the
                 // place is cleared, though not what the company saw on the way.
                 s.ThoughtCleared = true;
@@ -600,7 +623,7 @@ public static class Quests
             if (survivors.Count > 0)
             {
                 double share = pay / survivors.Count;
-                double townShare = result.Outcome == ExpeditionOutcome.Cleared && bounty != null ? bounty.Reward / survivors.Count : 0;
+                double townShare = earned && bounty != null ? bounty.Reward / survivors.Count : 0;
                 // Clearing a site is a milestone worth as much again as a hard fight there.
                 int xp = result.Xp + (result.Outcome == ExpeditionOutcome.Cleared ? World.Milestone(town, s) : 0);
                 int xpShare = (int)Math.Floor((double)xp / survivors.Count);

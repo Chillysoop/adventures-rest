@@ -145,7 +145,7 @@ public sealed class Simulation
     }
 
     /// <summary>The player's lever: post a bounty on a site, paid from the treasury into escrow.</summary>
-    public Bounty? PostBounty(string siteId, double reward) => Quests.PostBounty(Town, siteId, reward);
+    public Bounty? PostBounty(string siteId, double reward, string terms = "slay") => Quests.PostBounty(Town, siteId, reward, null, terms);
 
     /// <summary>The player's lever: pay a company to go and explore a region, the reward held until they come home.</summary>
     public Commission? PostSurvey(int regionId, double? reward = null) => Explore.Post(Town, regionId, reward);

@@ -297,6 +297,9 @@ public sealed class Town
     public List<CompanyState> Companies { get; } = [];
 
     /// <summary>Companies' own compounds in town, by founding (<see cref="Systems.Bastions"/>).</summary>
+    /// <summary>Townsfolk carried off in raids, held until rescued or lost (<see cref="Captives"/>).</summary>
+    public List<Captivity> Captivities { get; } = [];
+
     public List<BastionState> Bastions { get; } = [];
 
     /// <summary>Companies' requests for the council's leave to raise a bastion, oldest first.</summary>

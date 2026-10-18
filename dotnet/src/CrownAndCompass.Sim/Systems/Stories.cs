@@ -513,6 +513,12 @@ public static class Stories
 
     // ---------- Stories ----------
 
+    /// <summary>Set a precedent the town will remember, unless it already does.</summary>
+    internal static void Remember(Town town, string id)
+    {
+        if (!town.Stories.Precedents.ContainsKey(id)) town.Stories.Precedents[id] = town.Day;
+    }
+
     public static Story? Find(Town town, int id) => town.Stories.All.FirstOrDefault(s => s.Id == id);
 
     public static StoryDef DefOf(Town town, Story s) => Rules(town).Story(s.Def) ?? throw new KeyNotFoundException($"Unknown story {s.Def}");

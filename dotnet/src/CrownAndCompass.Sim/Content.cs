@@ -1155,6 +1155,9 @@ public sealed class Content
     /// <summary>The town guard's posts and the wall works past the stone walls (content/game/garrison.json).</summary>
     public GarrisonRules Garrison { get; init; } = new();
 
+    /// <summary>Bounty terms and townsfolk carried off in raids (content/game/bounties.json).</summary>
+    public BountyRules Bounties { get; init; } = new();
+
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
 
@@ -1301,6 +1304,7 @@ public sealed class Content
             Regard = Parse<RegardRules>("regard.json"),
             Explore = Parse<ExploreRules>("explore.json"),
             Garrison = Parse<GarrisonRules>("garrison.json"),
+            Bounties = Parse<BountyRules>("bounties.json"),
         };
     }
 
