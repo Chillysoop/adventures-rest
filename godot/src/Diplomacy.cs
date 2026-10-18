@@ -18,6 +18,40 @@ public partial class Main
         : s.Standing >= -20 ? ("Wary", Ui.Gold)
         : ("Hostile", Ui.Bad);
 
+    /// <summary>A settlement's own life: its leader, how it is doing, its band, its trouble and what the town has built there.</summary>
+    private static string Life(Town t, Settlement s)
+    {
+        var lead = Neighbours.LeaderOf(t, s);
+        string Level(double v) => v >= 70 ? "high" : v >= 45 ? "fair" : v >= 25 ? "low" : "dire";
+        Color Shade(double v) => v >= 45 ? Ui.Good : v >= 25 ? Ui.Gold : Ui.Bad;
+        string lines = $"[font_size=12]Led by {Ui.Esc(s.Leader)}, their {Ui.Esc(lead.Title)} · prosperity {Ui.C(Shade(s.Prosperity), Level(s.Prosperity))} · security {Ui.C(Shade(s.Security), Level(s.Security))}";
+        if (s.Band is { } b)
+            lines += b.Members > 0
+                ? $"\n{Ui.Esc(Ui.Cap(b.Name))}: {b.Members} strong, level {b.Level}, {b.Wins} {(b.Wins == 1 ? "win" : "wins")}{(b.Home ? "" : ", out on a job")}"
+                : $"\n{Ui.Esc(Ui.Cap(b.Name))} were broken; {Ui.Esc(s.Name)} is raising another";
+        if (s.Band?.CaptiveAt is string at && Quests.Site(t, at) is { } held)
+            lines += $"\n{Ui.C(Ui.Bad, $"Their captain {Ui.Esc(s.Band.CaptiveName ?? "")} is held at {Ui.Esc(held.Def.Name)}: clear it to bring them home.")}";
+        if (Neighbours.TroubleOf(t, s) is { } tr)
+        {
+            string where = s.Trouble!.SiteId is string sid && Quests.Site(t, sid) is { } site ? $", from {Ui.Esc(site.Def.Name)}" : "";
+            lines += $"\n{Ui.C(s.Trouble.Severity >= 60 ? Ui.Bad : Ui.Gold, $"Trouble: {Ui.Esc(tr.Name)}{where} ({Math.Round(s.Trouble.Severity)}% to the worst)")}";
+        }
+        if (Plots.Tolled(t, s) is { } toll) lines += $"\n{Ui.C(Ui.Bad, $"{Ui.Esc(Ui.Cap(toll.Name))} holds the road here and tolls it.")}";
+        var built = s.Projects.Select(id => t.Content.Neighbours.Project(id)?.Name ?? id).ToList();
+        if (s.Works is string w && t.Content.Neighbours.Project(w) is { } wp) built.Add($"{wp.Name} (building, {Ui.Days(Math.Max(0, s.WorksDoneDay - t.Day))})");
+        if (built.Count > 0) lines += $"\nBuilt by {Ui.Esc(t.Name)}: {Ui.Esc(string.Join(", ", built))}";
+        return lines + "[/font_size]";
+    }
+
+    /// <summary>The people there who remember the town, and what they remember.</summary>
+    private static string Cast(Town t, Settlement s)
+    {
+        var cast = Neighbours.CastOf(t, s).Where(c => c.Memories.Count > 0).OrderByDescending(c => c.Regard).ThenBy(c => c.Id).Take(3).ToList();
+        if (cast.Count == 0) return Ui.C(Ui.Ink2, "[font_size=11]No one there owes the town anything yet.[/font_size]");
+        return string.Join("\n", cast.Select(c =>
+            Ui.C(Ui.Ink2, $"[font_size=11]{Ui.Esc(c.Name)}, {Ui.Esc(c.Role == "leader" ? Neighbours.LeaderOf(t, s).Title : c.Role)}{(c.Regard >= t.Content.Neighbours.Cast.Regard ? ", a friend" : "")}: remembers {Ui.Esc(c.Memories[^1])}[/font_size]")));
+    }
+
     private void RenderDiplomacy()
     {
         var p = _panes[Tab.Diplomacy];
@@ -70,8 +104,11 @@ public partial class Main
                 p.Row(head);
                 continue;
             }
+            head += "\n" + Life(t, s);
             var buttons = new List<(string, bool, bool, Action)>();
             if (!s.Allied) buttons.Add(($"Envoy · {Js.Str(w.EnvoyCost)}g", t.Treasury >= w.EnvoyCost, false, () => Act(() => _sim.SendEnvoy(id))));
+            if (Neighbours.TroubleOf(t, s) is { Kind: "need", Aid: { } aid })
+                buttons.Add(($"Aid · {Js.Str(aid.Gold)}g, {Js.Str(aid.Qty)} {aid.Good.ToString().ToLowerInvariant()}", Neighbours.AidRefused(t, s) == null, true, () => Act(() => _sim.AidSettlement(id))));
             if (!open.Any(r => r.SettlementId == s.Id) && trade.Offers.Count > 0)
             {
                 string? no = Trade.Refuse(t, s);
@@ -81,8 +118,18 @@ public partial class Main
                     : ("Trade", false, false, () => { }));
                 if (no != null) head += "\n" + Ui.C(Ui.Ink2, $"[font_size=11]No route yet: {Ui.Esc(no)}.[/font_size]");
             }
-            p.Row(head, buttons.ToArray());
+            p.Text(head);
+            if (buttons.Count > 0) p.Buttons(buttons.ToArray());
+            var build = Neighbours.ProjectsFor(t, s).Where(x => !s.Projects.Contains(x.Id)).ToList();
+            if (s.Works == null && build.Count > 0)
+                p.Buttons(build.Select(x =>
+                {
+                    string pid = x.Id;
+                    return ($"{x.Name} · {Js.Str(x.Cost)}g", Neighbours.ProjectRefused(t, s, x) == null, false, (Action)(() => Act(() => _sim.FundProject(id, pid))));
+                }).ToArray());
+            p.Row(Cast(t, s));
         }
+        p.Note("Each settlement has its own leader, its own band of adventurers and its own troubles. Aid meets a need; a project there lasts (a watchtower keeps it safe, a bridge or patrol keeps its road open, a waystation lets your parties rest). The people you help remember it.");
         p.Note($"Envoys carry gifts, and each one pleases a little less than the last. Clearing trouble near a people, answering their pleas and every caravan that gets through all raise standing. At {Js.Str(w.Ally)} they ally with the town.");
         p.Commit();
     }

@@ -192,7 +192,7 @@ public static class Threat
             en.NextRaidTick = town.Tick + town.Rng.Range(2, 4) * SimTime.HoursPerDay;
             town.Log(LedgerCategory.War, Importance.Major, $"{Cap(e.Name)} has grown bold. Its raiders will come for the outlying farms next.");
         }
-        else if (en.Stage == ThreatStage.Raids && !Saga.Restrained(town) && en.Strength >= e.Stages.March && en.Strength >= Defense(town, allies: false) * e.MarchConfidence)
+        else if (en.Stage == ThreatStage.Raids && !Saga.Restrained(town) && en.Strength >= e.Stages.March && en.Strength >= Defense(town, allies: false) * MarchConfidence(town))
         {
             Next(ThreatStage.Marching);
             int march = e.MarchDays + Seasons.MarchDays(town);
@@ -204,6 +204,14 @@ public static class Threat
                 $"{Cap(e.Name)} is on the march! {e.Leader} leads some {Js.Str(Js.Round(en.Strength / 10) * 10)} warriors toward {town.Name}. " +
                 $"Scouts say they come at the {Garrison.Place(town, en.Approach)}, and will reach it in {march} days.");
         }
+    }
+
+    /// <summary>The share of the town's defence the warband must match to march. A warband kept waiting too long marches anyway, so every campaign reaches its Last Stand.</summary>
+    public static double MarchConfidence(Town town)
+    {
+        var e = town.Content.Enemy;
+        double wane = 1 - e.MarchWanePerDay * Math.Max(0, town.Day - e.MarchWaneAfter);
+        return e.MarchConfidence * Math.Max(Math.Min(1, e.MarchWaneFloor), wane);
     }
 
     private static void Sign(Town town)

@@ -4,7 +4,7 @@ namespace CrownAndCompass.Sim.Tests;
 
 public class SendingsTests
 {
-    /// <summary>A town (the mayor answering for themselves) whose first party on a bounty with a caster has just marched out, far enough from its site for a quest.</summary>
+    /// <summary>A town (the mayor answering for themselves, no adventurers' hall yet) whose first party on a bounty with a caster has just marched out, far enough from its site for a quest.</summary>
     private static (Simulation Sim, Party Party) PartyOnTheRoad()
     {
         for (int seed = 1; seed <= 30; seed++)
@@ -14,6 +14,8 @@ public class SendingsTests
             {
                 sim.RunDays(1);
                 var t = sim.Town;
+                // A town that has not raised its adventurers' hall yet, so the tests can raise it themselves.
+                if (t.Buildings.Any(b => b.Def.Id == "adventurers_hall")) break;
                 var p = t.Day < 30 ? null : t.Parties.FirstOrDefault(x => Sendings.Abroad(t, x) && x.BountyId != null && Knowledge.SlotsLeft(t, x) > 0 && x.ArriveTick - t.Tick >= 30);
                 if (p != null)
                 {

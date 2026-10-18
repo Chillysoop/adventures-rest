@@ -118,6 +118,7 @@ public sealed class Simulation
         Garrison.Daily(t, Options.AutoMayor && Options.AutoDefense);
         World.Daily(t, Options.AutoMayor);
         Trade.Daily(t, Options.AutoMayor);
+        Neighbours.Daily(t, Options.AutoMayor);
         Mercenaries.Daily(t, Options.AutoMayor && Options.AutoDefense);
         Clockwork.Daily(t, Options.AutoMayor && Options.AutoDefense);
         Quests.Daily(t, Options.AutoMayor && Options.AutoBounties, Options.FreeCompanies);
@@ -164,6 +165,12 @@ public sealed class Simulation
 
     /// <summary>Send an envoy with gifts to a settlement out in the wilds, to win its people over.</summary>
     public bool SendEnvoy(int settlementId) => World.SendEnvoy(Town, settlementId);
+
+    /// <summary>Send coin and goods to see a settlement through its trouble.</summary>
+    public bool AidSettlement(int settlementId) => Neighbours.Aid(Town, settlementId);
+
+    /// <summary>Pay for a shared improvement (a watchtower, a bridge, a waystation) at a settlement.</summary>
+    public bool FundProject(int settlementId, string projectId) => Neighbours.Fund(Town, settlementId, projectId);
 
     /// <summary>Open a trade route to a settlement: export goes out, import comes back.</summary>
     public bool OpenTradeRoute(int settlementId, Good export, Good import) => Trade.OpenRoute(Town, settlementId, export, import) != null;
