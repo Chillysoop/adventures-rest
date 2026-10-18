@@ -32,11 +32,17 @@ public static class Mayor
         if (Planning.VacantZoned(town, zone) >= minVacant) return;
         double reach = town.Lots.Count == 0 ? 0 : town.Lots.Max(Town.DistanceFromCenter);
         // A round patch at a time, as a player would paint it, until the zone has the open plots it wants:
-        // in the wards that favour it first; fields and workshops out at the edge of the built town, homes and shops close in.
+        // in the wards that favour it first; fields and workshops out at the edge of the built town, homes and shops close in;
+        // and alongside a street, so it fills from the street.
+        float[] field = [];
         double? Key(double x, double y, double d) =>
-            (City.WardOf(town, x, y).Favours == zone ? 0 : 100) + (edge ? Math.Abs(d - (reach + 1)) : d);
+            (City.WardOf(town, x, y).Favours == zone ? 0 : 100) + (edge ? Math.Abs(d - (reach + 1)) : d)
+            + Math.Abs(field[(int)(y * Land.Res) * Land.Size + (int)(x * Land.Res)] / Land.Res - 2) * 0.7;
         for (int i = 0; i < 12 && Planning.VacantZoned(town, zone) < minVacant; i++)
-            if (!Land.PaintPatch(town, zone, zone == Zone.Farmland ? 1.4 : 1.1, Key)) break;
+        {
+            field = Roads.Field(town.Plan);
+            if (!Land.PaintPatch(town, zone, zone == Zone.Farmland ? 2.4 : 2.0, Key)) break;
+        }
     }
 
     /// <summary>A granary once the town is a village, and a watch house once it keeps a watch.</summary>

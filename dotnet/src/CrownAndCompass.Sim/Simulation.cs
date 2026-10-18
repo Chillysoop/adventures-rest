@@ -158,7 +158,7 @@ public sealed class Simulation
     /// <summary>Paint a brush stroke of a zone over open ground in open wards (Zone.None clears it): dabs in tiles from the town's corner. Returns cells changed.</summary>
     public int PaintZone(IEnumerable<(double X, double Y)> dabs, double radius, Zone zone) => Planning.Paint(Town, dabs, radius, zone);
 
-    /// <summary>Place a government building, charter house or town-owned business at a point and heading (null faces the hall), paid from the treasury.</summary>
+    /// <summary>Place a government building, charter house or town-owned business at a point and heading (null faces the nearest lane), paid from the treasury.</summary>
     public Building? Place(string buildingId, double x, double y, double? yaw = null) => Planning.Place(Town, buildingId, x, y, yaw);
 
     /// <summary>Knight a hero of renown: Ser, a stipend and an oath to the town.</summary>
@@ -207,6 +207,7 @@ public sealed class Simulation
         var hallDef = c.Building("town_hall");
         var (hw, hd) = Land.Footprint(hallDef);
         t.AddBuilding(hallDef, new Lot(0, Town.Center, Town.Center) { W = hw, D = hd, Zone = Zone.Civic }, null, "the Town Hall", true);
+        Roads.Square(t, t.Lot(0));
         Quests.InitSites(t);
         World.Generate(t);
         Council.InitCouncil(t);
@@ -217,7 +218,7 @@ public sealed class Simulation
         else
         {
             // The charter's own plan, a patch of each zone round the hall: the player paints everything after it.
-            foreach (var (z, r, ring) in new[] { (Zone.Residential, 1.3, 0.0), (Zone.Commercial, 0.9, 0.0), (Zone.Industry, 0.9, 2.5), (Zone.Farmland, 1.1, 3.5) })
+            foreach (var (z, r, ring) in new[] { (Zone.Residential, 2.2, 0.0), (Zone.Commercial, 1.7, 0.0), (Zone.Industry, 1.8, 3.5), (Zone.Farmland, 2.2, 5.0) })
                 Land.PaintPatch(t, z, r, Town.Grid, ring);
         }
 
@@ -264,5 +265,12 @@ public sealed class Simulation
             t.Residents.Select(a => a.Id).ToList());
     }
 
-    private Lot FreeLot(Zone zone, BuildingDef def) => Property.FindLot(Town, zone, def) ?? Land.Find(Town, def, null)!;
+    /// <summary>A founder's lot in the zone's patch, or, failing that, anywhere open (it takes the zone all the same).</summary>
+    private Lot FreeLot(Zone zone, BuildingDef def)
+    {
+        if (Property.FindLot(Town, zone, def) is { } lot) return lot;
+        lot = Land.Find(Town, def, null)!;
+        lot.Zone = zone;
+        return lot;
+    }
 }

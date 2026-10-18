@@ -94,16 +94,18 @@ public static class Planning
         return null;
     }
 
-    /// <summary>Why the building can't stand at this point and heading (null faces the hall), or null when it can.</summary>
+    /// <summary>Why the building can't stand at this point and heading (null faces the nearest lane), or null when it can.</summary>
     public static string? SpotBlocked(Town town, BuildingDef d, double x, double y, double? yaw = null)
     {
         var ward = City.WardOf(town, x, y);
         if (!City.IsOpen(town, x, y)) return $"the {ward.Name} has not been laid out";
         if (!City.Allows(town, d, x, y)) return $"it can't stand in the {ward.Name}";
-        return Land.At(town, d, x, y, yaw) == null ? "no room here" : null;
+        if (Land.At(town, d, x, y, yaw) != null) return null;
+        var (w, dd) = Land.Footprint(d);
+        return Terrain.Span(town, x, y, w, dd, yaw ?? Roads.Facing(town, x, y)) > Terrain.MaxSpan ? "the ground is too steep" : "no room here";
     }
 
-    /// <summary>Place a building by hand at a point and heading (null faces the hall), paid from the treasury.</summary>
+    /// <summary>Place a building by hand at a point and heading (null faces the nearest lane), paid from the treasury.</summary>
     public static Building? Place(Town town, string buildingId, double x, double y, double? yaw = null)
     {
         if (!town.Content.Buildings.Any(b => b.Id == buildingId)) return null;

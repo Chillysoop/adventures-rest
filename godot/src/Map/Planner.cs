@@ -7,7 +7,7 @@ namespace CrownAndCompass.Client.Map;
 /// <summary>
 /// The town plan while a build tool is picked, after Foundation: zones are painted with a round brush
 /// (drag to paint, [ and ] or Shift+wheel to size it), and the townsfolk site their own buildings inside
-/// the paint. A building tool shows its footprint under the cursor: click to place it facing the hall,
+/// the paint. A building tool shows its footprint under the cursor: click to place it facing the nearest lane,
 /// or press and drag to turn it to face any way (Shift+wheel turns it too). Right-click puts the tool down.
 /// The wards are outlined and named; land in a ward not yet laid out is shaded and can't be painted.
 /// The paint itself is drawn on the ground by <see cref="TownView"/>; this draws the wards, the brush and the ghost.
@@ -30,7 +30,7 @@ public partial class Planner(MapView map) : Control
 
     private Vector2? _hover, _press;
 
-    /// <summary>The heading a building ghost is turned to, or null to face the hall.</summary>
+    /// <summary>The heading a building ghost is turned to, or null to face the nearest lane.</summary>
     private float? _yaw;
 
     public bool Active => Tool != null;
@@ -124,7 +124,7 @@ public partial class Planner(MapView map) : Control
     {
         if (Tool?.Zone != null) Resize(up ? 1.15f : 1 / 1.15f);
         else if (Tool?.Building != null && _hover is Vector2 h)
-            _yaw = (_yaw ?? (float)Land.FaceHall(h.X, h.Y)) + (up ? 1 : -1) * Mathf.Pi / 12;
+            _yaw = (_yaw ?? (float)Roads.Facing(map.Sim!.Town, h.X, h.Y)) + (up ? 1 : -1) * Mathf.Pi / 12;
         else return false;
         QueueRedraw();
         return true;
@@ -155,7 +155,7 @@ public partial class Planner(MapView map) : Control
         {
             var def = town.Content.Building(id);
             var at = _press ?? h;
-            double yaw = _yaw ?? Land.FaceHall(at.X, at.Y);
+            double yaw = _yaw ?? Roads.Facing(town, at.X, at.Y);
             string? why = Planning.Blocked(town, def) ?? Planning.SpotBlocked(town, def, at.X, at.Y, yaw);
             var (w, d) = Land.Footprint(def);
             var c = why == null ? ZoneColor(Planning.ZoneFor(town, def)) : new Color(0.9f, 0.3f, 0.25f);

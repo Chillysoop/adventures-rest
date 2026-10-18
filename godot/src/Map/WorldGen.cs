@@ -61,7 +61,7 @@ public sealed class WorldGen
         _n3 = new Noise(seed * 91 + 23);
         _riverPhase = Geo.Hash(seed * 13 + 5) * 6.28f;
         BuildTerritories(geo, town);
-        BuildHeight();
+        BuildHeight(town.Seed);
         BuildForest(geo, treeScale);
     }
 
@@ -169,17 +169,19 @@ public sealed class WorldGen
         return h;
     }
 
-    private void BuildHeight()
+    private void BuildHeight(int townSeed)
     {
         for (int y = 0; y <= N; y++)
             for (int x = 0; x <= N; x++)
             {
                 var p = new Vector2(x, y);
                 float h = RawHeight(x, y);
-                // The town was founded on flat, dry ground by the ford.
+                // The town was founded on dry ground by the ford: level round the hall, with the gentle hills
+                // the town plan knows (Terrain), so lanes and buildings sit on the same slopes the sim sited them on.
                 float d = p.DistanceTo(Geo.Center);
                 float flat = Mathf.SmoothStep(Geo.Clearing, Geo.Clearing + 30, d);
-                h = Mathf.Lerp(TownHeight, Mathf.Max(h, d < Geo.Clearing + 30 ? 1.2f : h), flat);
+                float town = TownHeight + (float)Sim.Systems.Terrain.Height(townSeed, x - Geo.Margin, y - Geo.Margin);
+                h = Mathf.Lerp(town, Mathf.Max(h, d < Geo.Clearing + 30 ? 1.2f : h), flat);
                 float dr = RiverDistance(p);
                 h = Mathf.Min(h, Mathf.Lerp(-1.1f, h, Mathf.SmoothStep(0.6f, 5.5f, dr)));
                 Height[y * (N + 1) + x] = h;

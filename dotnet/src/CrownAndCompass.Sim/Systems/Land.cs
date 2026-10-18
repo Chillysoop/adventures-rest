@@ -2,9 +2,9 @@ namespace CrownAndCompass.Sim.Systems;
 
 /// <summary>
 /// The town's land, after Foundation: the player paints zones with a round brush on a fine raster
-/// (<see cref="Res"/> cells to a tile), and every new building finds its own spot inside the paint,
-/// turned to face the hall, with a lane of open ground between it and its neighbours. A lot is the
-/// patch one building stands on; it exists only once something is built there.
+/// (<see cref="Res"/> cells to a tile), streets grow out to the paint on their own (<see cref="Roads"/>), and
+/// every new building finds its own spot inside the paint fronting on a street, with a lane of open
+/// ground between it and its neighbours. A lot is the patch one building stands on; it exists only once something is built there.
 /// </summary>
 public static class Land
 {
@@ -63,7 +63,12 @@ public static class Land
                     n++;
                 }
         }
-        if (n > 0) plan.Changed();
+        if (n > 0)
+        {
+            plan.Changed();
+            // New paint far from any street gets one.
+            if (zone != Zone.None) Roads.Serve(town);
+        }
         return n;
     }
 
@@ -121,10 +126,13 @@ public static class Land
     // Siting ----------------------------------------------------------------------------------
 
     /// <summary>The heading (radians) that turns a building's front toward the hall. Heading 0 faces +y; heading a faces (−sin a, cos a).</summary>
-    public static double FaceHall(double x, double y)
+    public static double FaceHall(double x, double y) => FaceToward(x, y, Town.Center, Town.Center);
+
+    /// <summary>The heading that turns a building at (x, y) to face the point (tx, ty).</summary>
+    public static double FaceToward(double x, double y, double tx, double ty)
     {
-        double dx = Town.Center - x, dy = Town.Center - y;
-        return dx * dx + dy * dy < 0.25 ? 0 : Math.Atan2(-dx, dy);
+        double dx = tx - x, dy = ty - y;
+        return dx * dx + dy * dy < 1e-6 ? 0 : Math.Atan2(-dx, dy);
     }
 
     /// <summary>The cells a footprint centred at (x, y) in tiles covers, turned to <paramref name="yaw"/> (any angle).</summary>
@@ -147,24 +155,25 @@ public static class Land
             }
     }
 
-    /// <summary>Whether a building fits here: every cell on the plan, open, and in the zone; a lane of unbuilt ground around it.</summary>
+    /// <summary>Whether a building fits here: every cell on the plan, open, off the streets, and in the zone; a lane of unbuilt ground around it.</summary>
     /// <param name="zone">Null takes any land that isn't built on (the council's own works).</param>
     public static bool Fits(Town town, double x, double y, int w, int d, double yaw, Zone? zone)
     {
         var plan = town.Plan;
         foreach (int i in Cells(x, y, w, d, yaw))
         {
-            if (i < 0 || plan.Taken[i] != 0) return false;
+            if (i < 0 || plan.Taken[i] != 0 || plan.Paved[i] != 0) return false;
             if (zone is Zone z && plan.Zones[i] != (byte)z) return false;
         }
         foreach (int i in Cells(x, y, w, d, yaw, 1))
             if (i >= 0 && plan.Taken[i] != 0) return false;
-        return true;
+        // Not on ground too steep to prop up.
+        return Terrain.Span(town, x, y, w, d, yaw) <= Terrain.MaxSpan;
     }
 
     /// <summary>
-    /// Where a new building of this kind would go in the zone: the open spot nearest the hall that it fits,
-    /// a little shuffled so streets don't come out ruled. Not yet on the plan: <see cref="Town.AddBuilding"/> claims it.
+    /// Where a new building of this kind would go in the zone: the open spot on a street nearest the hall
+    /// that it fits, a little shuffled so streets don't fill in order. Not yet on the plan: <see cref="Town.AddBuilding"/> claims it.
     /// </summary>
     public static Lot? Find(Town town, BuildingDef def, Zone? zone)
     {
@@ -180,7 +189,18 @@ public static class Land
 
     private static Lot? Search(Town town, BuildingDef def, int w, int d, Zone? zone)
     {
+        // Fronting on a street, the way the townsfolk build.
+        foreach (var (_, x, y, yaw) in Roads.Frontage(town, d, zone).OrderBy(c => c.Score).ThenBy(c => c.X).ThenBy(c => c.Y))
+            if (City.Allows(town, def, x, y) && Fits(town, x, y, w, d, yaw, zone))
+                return new Lot(town.Lots.Count, x, y) { W = w, D = d, Yaw = yaw, Zone = zone ?? Zone.Civic };
+        // The council's works take any open ground when no street has room, facing the nearest street.
+        return zone == null ? Anywhere(town, def, w, d) : null;
+    }
+
+    private static Lot? Anywhere(Town town, BuildingDef def, int w, int d)
+    {
         var plan = town.Plan;
+        Zone? zone = null;
         // Centres sit on cell centres for odd sizes and on cell corners for even ones, so a square building fills whole cells.
         double ox = w % 2 == 1 ? 0.5 : 0, oy = d % 2 == 1 ? 0.5 : 0;
         var candidates = new List<(double Score, int Cell)>();
@@ -198,8 +218,8 @@ public static class Land
             // Nudged off the cell centre, so nothing lines up on the plan's raster.
             double x = (i % Size + ox + (Jitter(i * 7 + 1) - 0.5) * 0.8) / Res, y = (i / Size + oy + (Jitter(i * 7 + 2) - 0.5) * 0.8) / Res;
             if (!City.Allows(town, def, x, y)) continue;
-            double face = FaceHall(x, y);
-            // Turned a little off the hall when the straight heading doesn't fit: lanes bend.
+            double face = Roads.Facing(town, x, y);
+            // Turned a little off it when the straight heading doesn't fit.
             foreach (double off in Bends)
                 if (Fits(town, x, y, w, d, face + off, zone)) return new Lot(town.Lots.Count, x, y) { W = w, D = d, Yaw = face + off, Zone = zone ?? Zone.Civic };
         }
@@ -208,11 +228,11 @@ public static class Land
 
     private static readonly double[] Bends = [0, 0.2, -0.2, 0.4, -0.4, 0.7, -0.7];
 
-    /// <summary>A building placed by hand at any point and heading (null faces the hall); it takes any unbuilt ground.</summary>
+    /// <summary>A building placed by hand at any point and heading (null faces the nearest street); it takes any unbuilt ground off the streets.</summary>
     public static Lot? At(Town town, BuildingDef def, double x, double y, double? yaw = null)
     {
         var (w, d) = Footprint(def);
-        double a = yaw ?? FaceHall(x, y);
+        double a = yaw ?? Roads.Facing(town, x, y);
         if (!City.Allows(town, def, x, y)) return null;
         return Fits(town, x, y, w, d, a, null) ? new Lot(town.Lots.Count, x, y) { W = w, D = d, Yaw = a } : null;
     }
@@ -230,7 +250,7 @@ public static class Land
     }
 
     /// <summary>A fixed shuffle per cell, the same every run, so towns don't all grow alike in rings.</summary>
-    private static double Jitter(int i)
+    public static double Jitter(int i)
     {
         uint h = (uint)i * 2654435761u;
         h ^= h >> 15;
@@ -282,6 +302,14 @@ public sealed class LandPlan
 {
     public byte[] Zones { get; set; } = new byte[Land.Size * Land.Size];
     public int[] Taken { get; set; } = new int[Land.Size * Land.Size];
+
+    /// <summary>The streets, and the cells they cover (1 where paved).</summary>
+    public List<Road> Roads { get; set; } = [];
+    public byte[] Paved { get; set; } = new byte[Land.Size * Land.Size];
+
+    /// <summary>Ground height per cell, from the town's seed (<see cref="Terrain.Grid"/>).</summary>
+    [field: NotSaved]
+    public float[]? Heights { get; set; }
 
     /// <summary>Bumped whenever a cell changes, so searches of an unchanged plan are answered from memory.</summary>
     [field: NotSaved]
