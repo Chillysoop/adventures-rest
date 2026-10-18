@@ -96,6 +96,7 @@ public sealed class Simulation
         Seasons.Daily(t);
         Economy.Daily(t);
         City.Daily(t, Options.AutoMayor && Options.AutoPlanning);
+        GrandWorks.Daily(t, Options.AutoMayor && Options.AutoPlanning);
         Streets.Wear(t);
         Property.Daily(t);
         Population.DailyDepartures(t);
@@ -106,6 +107,7 @@ public sealed class Simulation
         double pace = Director.Daily(t);
         Threat.Daily(t, pace, Options.AutoMayor && Options.AutoDefense, Options.Enemy);
         World.Daily(t, Options.AutoMayor);
+        Mercenaries.Daily(t, Options.AutoMayor && Options.AutoDefense);
         Quests.Daily(t, Options.AutoMayor && Options.AutoBounties, Options.FreeCompanies);
         Intel.Daily(t, Options.AutoMayor && Options.AutoBounties && Options.AutoIntel);
         Watch.Daily(t, Options.AutoMayor && Options.AutoBounties);
@@ -218,6 +220,15 @@ public sealed class Simulation
 
     /// <summary>Spend the mayor's next level on an advance: "ability:str,cha", "feat:lucky", "skill:arcana" or "expertise:persuasion".</summary>
     public bool AdvanceMayor(string advance) => Sheet.Advance(Town, advance);
+
+    /// <summary>Sign a sellsword company: a fee now and a wage every day it stays.</summary>
+    public bool HireMercenaries(string companyId) => Mercenaries.Hire(Town, companyId);
+
+    /// <summary>Pay off a sellsword company that is home.</summary>
+    public bool DismissMercenaries(string companyId) => Mercenaries.Dismiss(Town, companyId);
+
+    /// <summary>Fund a campaign: send a hired company against a menace's seat.</summary>
+    public bool MarchMercenaries(string companyId, int menaceId) => Mercenaries.March(Town, companyId, menaceId);
 
     public DayStats Snapshot()
     {

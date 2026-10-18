@@ -74,6 +74,7 @@ public static class Planning
     {
         if (d.Id == town.Content.Shrines.Temple) return Shrines.TempleCost(town);
         if (SightWork(town, d.Id) is { } w) return Watch.WorkCost(town, w);
+        if (d.IsGrand) return GrandWorks.StageCost(town, d, 0);
         return Js.Round(d.Cost + Materials(town, d) + (d.IsBusiness ? StartingCash : 0));
     }
 
@@ -124,10 +125,17 @@ public static class Planning
         if (SightWork(town, d.Id) != null) return Watch.BuildWork(town, d.Id, lot);
 
         double cost = Cost(town, d);
-        town.Book(d.Id == "house" ? TreasuryAccount.CharterHouses : TreasuryAccount.Works, -cost);
-        BuyMaterials(town, d);
         lot.Zone = ZoneFor(town, d);
         string name = d.Civic ? CivicName(town, d) : Property.NameFor(town, d, null);
+        if (d.IsGrand)
+        {
+            var work = town.AddBuilding(d, lot, null, name, false);
+            GrandWorks.Fund(town, work, TreasuryAccount.GrandWorks);
+            town.Log(LedgerCategory.Town, Importance.Major, $"The council breaks ground on a grand work, {work.Name}, beginning with {d.Stages[0].Name}. It will rise in {d.Stages.Count} stages, each paid for as the last is done.");
+            return work;
+        }
+        town.Book(d.Id == "house" ? TreasuryAccount.CharterHouses : TreasuryAccount.Works, -cost);
+        BuyMaterials(town, d);
         var site = town.AddBuilding(d, lot, null, name, false);
         site.LaborBudget = d.BuildHours * Brain.ConstructionWage;
         if (d.IsBusiness) site.Cash = StartingCash;
