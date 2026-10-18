@@ -189,6 +189,14 @@
       "teaches": ["command:HireMercenaries", "command:MarchMercenaries", "command:DismissMercenaries"]
     },
     {
+      "id": "clockwork",
+      "title": "Clockwork wardens",
+      "text": "A city with a mage tower or a guildhall can build [b]clockwork wardens[/b] under the [b]War[/b] tab. They never sleep and can't be bribed, so they help the watch catch a schemer's agents even when its captain is crooked. But townsfolk don't like being watched by brass, and the Quiet Hand or a scheming foe may try to steal one. A mage tower keeps the keys safer.",
+      "point": "tab:War",
+      "when": "day:300",
+      "teaches": ["command:BuildWarden", "command:ScrapWarden"]
+    },
+    {
       "id": "faith",
       "title": "Gods and factions",
       "text": "[b]Faith[/b] shows the town's gods and the factions taking root. Build a temple to win a god's favour; back a faction with gold, or crack down on one that works against you.",

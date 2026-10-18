@@ -41,6 +41,7 @@ public partial class Main
         p.Row($"[b]Heroes in town[/b]  {Tag(home.ToString())}\n{Ui.C(Ui.Ink2, "[font_size=12]Only heroes can kill the warlord when he comes.[/font_size]")}");
         if (camp != null && !camp.Cleared) p.Note("The war camp feeds the warband. Post a bounty on it in the Bounties tab to strike first.");
         RenderSellswords(p, t);
+        RenderClockwork(p, t);
         p.Commit();
     }
 
@@ -88,6 +89,23 @@ public partial class Main
         p.Note(targets.Count == 0
             ? "Hired companies stand on the walls with the watch. Once the town knows where a named menace sits, you can send them against it."
             : "A campaign costs a war chest of wages. Sellswords can break a menace's hold and its seat, but only heroes can end the greatest foe.");
+    }
+
+    /// <summary>Clockwork wardens: build one for the walls, or break one up.</summary>
+    private void RenderClockwork(Pane p, Town t)
+    {
+        var r = Clockwork.Rules(t);
+        var c = t.Clockwork;
+        p.Heading("Clockwork wardens");
+        if (r.Tier != "" && !City.Reached(t, r.Tier) && c.Wardens == 0)
+        {
+            p.Note($"Tireless brass guards that take no bribes. A {City.TierName(t, r.Tier).ToLowerInvariant()} with a mage tower or a guildhall can build them.");
+            return;
+        }
+        string? why = Clockwork.BuildBlocked(t);
+        p.Row($"[b]On the walls[/b]  {Tag($"{c.Wardens} of {r.Max}", c.Wardens > 0 ? Ui.Good : Ui.Ink2)}{(c.Seized > 0 ? "  " + Tag($"{c.Seized} stolen", Ui.Bad) : "")}\n{Ui.C(Ui.Ink2, $"[font_size=12]Each adds {r.Strength:0} strength and helps the watch catch a schemer's agents, however crooked its captain. {r.Upkeep:0}g a day to wind. Townsfolk don't trust them (mood {Clockwork.Mood(t):0.0}), and the Quiet Hand or a scheming foe may steal one; a mage tower keeps the keys safer.{(why != null ? $" Can't build: {Ui.Esc(why)}." : "")}[/font_size]")}",
+            ($"Build · {r.Cost:N0}g", why == null, true, () => Act(() => _sim.BuildWarden())),
+            ("Scrap", c.Wardens > 0, false, () => Act(() => _sim.ScrapWarden())));
     }
 
     /// <summary>The terms the bounty board posts on (<see cref="Terms"/>).</summary>

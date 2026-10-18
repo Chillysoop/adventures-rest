@@ -1181,6 +1181,7 @@ public sealed class Content
     /// <summary>Bounty terms and townsfolk carried off in raids (content/game/bounties.json).</summary>
     public BountyRules Bounties { get; init; } = new();
     public BroadsheetRules Broadsheet { get; init; } = new();
+    public ClockworkRules Clockwork { get; init; } = new();
     public MerchantRules Merchants { get; init; } = new();
     public WardRules Wards { get; init; } = new();
 
@@ -1332,6 +1333,7 @@ public sealed class Content
             Garrison = Parse<GarrisonRules>("garrison.json"),
             Bounties = Parse<BountyRules>("bounties.json"),
             Broadsheet = Parse<BroadsheetRules>("broadsheet.json"),
+            Clockwork = Parse<ClockworkRules>("clockwork.json"),
             Merchants = Parse<MerchantRules>("merchants.json"),
             Wards = Parse<WardRules>("wards.json"),
         };

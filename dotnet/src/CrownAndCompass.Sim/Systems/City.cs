@@ -317,7 +317,7 @@ public static class City
         if (a.HomeId == null) return 0;
         var home = town.Building(a.HomeId.Value);
         var ward = WardOf(town, town.Lot(home.LotId));
-        double mood = ward.Mood + Wards.Mood(town, ward.Id);
+        double mood = ward.Mood + Wards.Mood(town, ward.Id) + Clockwork.Mood(town);
         if (Housing(town, home.Def.Id) is { } h && (h.Goods.Count > 0 || h.Services.Count > 0))
             mood += (home.Contentment - 0.5) * 2 * town.Content.City.NeedsMood;
         return mood;

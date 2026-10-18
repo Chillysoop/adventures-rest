@@ -119,6 +119,7 @@ public sealed class Simulation
         World.Daily(t, Options.AutoMayor);
         Trade.Daily(t, Options.AutoMayor);
         Mercenaries.Daily(t, Options.AutoMayor && Options.AutoDefense);
+        Clockwork.Daily(t, Options.AutoMayor && Options.AutoDefense);
         Quests.Daily(t, Options.AutoMayor && Options.AutoBounties, Options.FreeCompanies);
         Explore.Daily(t, Options.AutoMayor && Options.AutoBounties);
         Intel.Daily(t, Options.AutoMayor && Options.AutoBounties && Options.AutoIntel);
@@ -272,6 +273,12 @@ public sealed class Simulation
 
     /// <summary>Pay off a sellsword company that is home.</summary>
     public bool DismissMercenaries(string companyId) => Mercenaries.Dismiss(Town, companyId);
+
+    /// <summary>Build a clockwork warden for the walls (a city with a mage tower or guildhall).</summary>
+    public bool BuildWarden() => Clockwork.Build(Town);
+
+    /// <summary>Break up a clockwork warden.</summary>
+    public bool ScrapWarden() => Clockwork.Scrap(Town);
 
     /// <summary>Fund a campaign: send a hired company against a menace's seat.</summary>
     public bool MarchMercenaries(string companyId, int menaceId) => Mercenaries.March(Town, companyId, menaceId);

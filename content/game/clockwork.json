@@ -1,0 +1,16 @@
+{
+  "tier": "city",
+  "workshops": ["mage_tower", "guildhall"],
+  "cost": 900,
+  "upkeep": 6,
+  "max": 6,
+  "strength": 30,
+  "catch": 0.05,
+  "distrust": 0.4,
+  "distrustCap": 2,
+  "seize": 0.003,
+  "faction": "quiet-hand",
+  "schemers": "schemers",
+  "seizedPower": 25,
+  "keys": "mage_tower"
+}

@@ -236,6 +236,7 @@ public static class TreasuryAccount
     public const string Wards = "Wards";
     public const string Decorations = "Decorations";
     public const string Broadsheet = "Broadsheet";
+    public const string Clockwork = "Clockwork";
     public const string Orchards = "Orchards";
     public const string Stores = "Winter stores";
     public const string Intel = "Intel";
@@ -297,7 +298,6 @@ public sealed class Town
     /// <summary>Adventuring companies the town has dealt with, by first dealing (<see cref="Intel"/>).</summary>
     public List<CompanyState> Companies { get; } = [];
 
-    /// <summary>Companies' own compounds in town, by founding (<see cref="Systems.Bastions"/>).</summary>
     /// <summary>Townsfolk carried off in raids, held until rescued or lost (<see cref="Captives"/>).</summary>
     public List<Captivity> Captivities { get; } = [];
 
@@ -307,6 +307,7 @@ public sealed class Town
     /// <summary>Second-hand magic items on the shops' shelves (<see cref="Systems.Merchants"/>).</summary>
     public List<Ware> Wares { get; } = [];
 
+    /// <summary>Companies' own compounds in town, by founding (<see cref="Systems.Bastions"/>).</summary>
     public List<BastionState> Bastions { get; } = [];
 
     /// <summary>Companies' requests for the council's leave to raise a bastion, oldest first.</summary>
@@ -358,6 +359,9 @@ public sealed class Town
 
     /// <summary>Library items parties brought home for the town (ids), in the order they came.</summary>
     public List<string> Relics { get; } = [];
+
+    /// <summary>Clockwork wardens on the walls (<see cref="Systems.Clockwork"/>).</summary>
+    public ClockworkState Clockwork { get; } = new();
 
     /// <summary>Sellsword companies under contract to the town (<see cref="Systems.Mercenaries"/>).</summary>
     public List<Hire> Hires { get; } = [];
