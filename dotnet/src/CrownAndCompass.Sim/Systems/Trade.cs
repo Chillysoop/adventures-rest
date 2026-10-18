@@ -92,7 +92,7 @@ public static class Trade
     public static IEnumerable<TradeRoute> Open(Town town) => town.Trade.Routes.Where(r => !r.Closed);
 
     /// <summary>Routes the town's charter lets it run.</summary>
-    public static int Cap(Town town) => Rules(town).Routes.GetValueOrDefault(City.Tier(town).Id, 0);
+    public static int Cap(Town town) => Rules(town).Routes.GetValueOrDefault(City.Tier(town).Id, 0) + Institutions.Routes(town);
 
     public static Settlement SettlementOf(Town town, TradeRoute r) => town.Settlements[r.SettlementId];
 
@@ -225,7 +225,7 @@ public static class Trade
         var region = town.Regions[s.RegionId];
         int near = town.Saga.Menaces.Count(m => m.Alive && Quests.Site(town, m.SeatId) is { RegionId: int rid } && rid >= 0 && rid < town.Regions.Count
             && Math.Abs(town.Regions[rid].Ring - region.Ring) <= 1 && Near(town.Regions[rid], region));
-        return Math.Min(0.5, r.Raid + r.RaidPerMenace * near);
+        return Math.Min(0.5, r.Raid + r.RaidPerMenace * near) * (1 - Institutions.Escort(town));
     }
 
     private static bool Near(Region a, Region b)

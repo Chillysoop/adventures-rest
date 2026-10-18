@@ -202,7 +202,7 @@ public static class Shrines
             return s.MaxHp - s.Hp;
         }
         if (Shrine(town) != null) healed += (int)Math.Ceiling(s.MaxHp * Rules(town).ShrineRest);
-        return healed;
+        return healed + Institutions.Rest(town, s.MaxHp);
     }
 
     /// <summary>
