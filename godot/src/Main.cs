@@ -23,6 +23,7 @@ public partial class Main : Control
         Council,
         Bounties,
         Companies,
+        Diplomacy,
         Faith,
         Campaign,
         Chronicles,
@@ -378,6 +379,7 @@ public partial class Main : Control
                     case Tab.Campaign: RenderCampaign(); break;
                     case Tab.Chronicles: RenderChronicles(); break;
                     case Tab.Mayor: RenderMayor(); break;
+                    case Tab.Diplomacy: RenderDiplomacy(); break;
                 }
             if (_inspector.Visible) RenderInspect();
             RenderBuild();

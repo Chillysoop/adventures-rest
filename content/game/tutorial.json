@@ -194,6 +194,15 @@
       "teaches": []
     },
     {
+      "id": "diplomacy",
+      "title": "Diplomacy and trade",
+      "text": "Out in the wilds live other peoples: villages, dwarf holds, elf enclaves, free ports and oasis cities. Open [b]Diplomacy[/b] to see what each thinks of the town. Send an [b]envoy[/b] with gifts to win them over, and once they think well enough of you, open a [b]trade route[/b]: a caravan sells your surplus to them and brings back what you are short of. Every caravan that gets through warms them further, and at 60 they ally with the town. A bigger charter lets you run more routes.",
+      "when": "alert:trade",
+      "point": "tab:Diplomacy",
+      "until": "tab:Diplomacy",
+      "teaches": ["tab:Diplomacy", "command:SendEnvoy", "command:OpenTradeRoute", "command:CloseTradeRoute"]
+    },
+    {
       "id": "callings",
       "title": "Heroes and their callings",
       "text": "Every class of hero brings its own stories: a bard asks for the tavern's stage, a paladin offers to swear an oath, a rogue is courted by the thieves' guild, a warlock's patron makes an offer. Some answers give the hero a [b]calling[/b], a lasting part in the town that moves it every day while the hero stays loyal. [b]Mayor[/b] lists the callings held, and a hero's card shows theirs.",
@@ -273,7 +282,5 @@
       "teaches": []
     }
   ],
-  "untaught": {
-    "command:SendEnvoy": "The client has no button for envoys yet."
-  }
+  "untaught": {}
 }
