@@ -151,7 +151,18 @@ public sealed class HeroSheet
 
     /// <summary>The bastion the hero lives in and rides for (<see cref="Systems.Bastions"/>), by id.</summary>
     public int? BastionId { get; set; }
+
+    /// <summary>Fame from deeds (<see cref="Systems.Notoriety"/>).</summary>
     public int Renown { get; set; }
+
+    /// <summary>Ill fame from brawls, theft, desertion and treachery; it fades slowly.</summary>
+    public int Infamy { get; set; }
+
+    /// <summary>What the bards (or the gossips) call them: "the Delver", "the Turncloak"; "" for none.</summary>
+    public string Epithet { get; set; } = "";
+
+    /// <summary>The epithet is an ill name, earned by infamy.</summary>
+    public bool EpithetIll { get; set; }
     public int Kills { get; set; }
     public int Expeditions { get; set; }
     public string? PartyName { get; set; }

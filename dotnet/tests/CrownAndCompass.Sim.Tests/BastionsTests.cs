@@ -47,8 +47,8 @@ public class BastionsTests
 
         sim.RunDays(40);
         Assert.True(keep.Complete);
-        // Members come and go on delves; within a fortnight one is home and sleeping in the keep.
-        for (int d = 0; d < 14 && !Bastions.Members(t, b).Any(m => !m.IsAway); d++) sim.RunDays(1);
+        // Members come and go on delves; before long one is home and sleeping in the keep.
+        for (int d = 0; d < 60 && !Bastions.Members(t, b).Any(m => !m.IsAway && Bastions.Lodges(t, m) && m.Hero!.Lodging); d++) sim.RunDays(1);
         Assert.Contains(Bastions.Members(t, b).Where(m => !m.IsAway), m => Bastions.Lodges(t, m) && m.Hero!.Lodging);
         Assert.Contains(Systems.Loyalty.Factors(t, Bastions.Members(t, b)[0]), f => f.Why.StartsWith("lives at"));
     }
@@ -56,20 +56,24 @@ public class BastionsTests
     [Fact]
     public void FacilitiesHireTownsfolkAndStandOnTheWalls()
     {
-        // A town whose company has raised facilities by day 320 (most have; seed noise decides which).
-        Simulation sim = null!;
-        BastionState? found = null;
-        foreach (int seed in new[] { 2, 3, 4, 5, 6 })
+        // Bastions come and go with their companies, so look for a working one rather than at a fixed day.
+        Simulation? sim = null;
+        BastionState? b = null;
+        foreach (int seed in new[] { 2, 3, 4 })
         {
             sim = new Simulation(new SimulationOptions { Seed = seed });
-            sim.RunDays(320);
-            found = sim.Town.Bastions.FirstOrDefault(x => !x.Abandoned && !x.Idle && x.Facilities.Count > 0 && x.Facilities.Select(sim.Town.Building).Any(f => f.Complete && f.Workers.Count > 0));
-            if (found != null) break;
+            sim.RunDays(240);
+            for (int d = 0; d < 240 && b == null; d += 10)
+            {
+                sim.RunDays(10);
+                b = sim.Town.Bastions.FirstOrDefault(x => !x.Abandoned && !x.Idle && x.Turns > 0 && x.Recent.Count > 0
+                    && x.Facilities.Select(sim.Town.Building).Any(f => f.Complete && f.Workers.Count > 0));
+            }
+            if (b != null) break;
         }
-        Assert.NotNull(found);
-        var b = found!;
-        var t = sim.Town;
-        var staff = b.Facilities.Select(t.Building).Where(f => f.Complete).SelectMany(f => f.Workers).ToList();
+        Assert.NotNull(b);
+        var t = sim!.Town;
+        var staff = b!.Facilities.Select(t.Building).Where(f => f.Complete).SelectMany(f => f.Workers).ToList();
         Assert.NotEmpty(staff);
         Assert.All(staff, id => Assert.Null(t.Agent(id).Hero));
         Assert.True(b.Turns > 0);

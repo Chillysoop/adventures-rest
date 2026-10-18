@@ -54,6 +54,9 @@ public sealed record BuildingDef
     /// <summary>The only wards it can stand in; empty for any open ward.</summary>
     public IReadOnlyList<string> Wards { get; init; } = [];
 
+    /// <summary>The least density (city.json "densities": 0 low, 1 medium, 2 high) the land under it must be zoned for.</summary>
+    public int Density { get; init; }
+
     /// <summary>Services it gives (tavern, shrine, market, bath, theatre, learning, spectacle) and how many residents each covers.</summary>
     public IReadOnlyDictionary<string, int> Serves { get; init; } = new Dictionary<string, int>();
 
@@ -1184,6 +1187,8 @@ public sealed class Content
     public ClockworkRules Clockwork { get; init; } = new();
     public MerchantRules Merchants { get; init; } = new();
     public WardRules Wards { get; init; } = new();
+    /// <summary>Fame and infamy for heroes and companies (content/game/notoriety.json).</summary>
+    public NotorietyRules Notoriety { get; init; } = new();
 
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
@@ -1336,6 +1341,7 @@ public sealed class Content
             Clockwork = Parse<ClockworkRules>("clockwork.json"),
             Merchants = Parse<MerchantRules>("merchants.json"),
             Wards = Parse<WardRules>("wards.json"),
+            Notoriety = Parse<NotorietyRules>("notoriety.json"),
         };
     }
 

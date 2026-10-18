@@ -331,11 +331,13 @@ public static class Quests
         int heroes = town.Heroes.Count;
         if (heroes >= City.HeroCap(town)) return;
         int open = town.Bounties.Count(b => b.Status == BountyStatus.Open);
-        double chance = Math.Min(0.9, 0.12 + 0.25 * open + (heroes < 4 ? 0.2 : 0));
+        // A famous company in town draws others who want to ride with it, or against it.
+        int fame = Notoriety.TownFame(town);
+        double chance = Math.Min(0.9, 0.12 + 0.25 * open + (heroes < 4 ? 0.2 : 0) + town.Content.Notoriety.Arrivals * fame);
         if (!town.Rng.Chance(chance)) return;
 
         // More taverns, more talk on the roads: seasoned heroes hear of the town and come.
-        double green = Math.Max(0.4, 0.7 - town.Content.Rumors.BetterHeroesPerTavern * (taverns.Count - 1));
+        double green = Math.Max(0.3, Math.Max(0.4, 0.7 - town.Content.Rumors.BetterHeroesPerTavern * (taverns.Count - 1)) - town.Content.Notoriety.Seasoned * fame);
         int level = (town.Rng.Chance(green) ? 1 : town.Rng.Chance(0.8) ? 2 : 3) + Saga.ArrivalBonus(town);
         var a = CreateHero(town, PickClass(town), level);
         string where = taverns[town.Rng.Range(0, taverns.Count)].Name;
@@ -398,7 +400,8 @@ public static class Quests
     {
         // Heroes judge a site by what the town believes of it, so a rumour that undersells it is deadly.
         int tier = Math.Max(1, Site(town, bounty.SiteId)!.BelievedTier);
-        double share = bounty.Reward / Math.Max(1, partySize);
+        // A famous name wants a bigger share before the work is worth it.
+        double share = bounty.Reward / Math.Max(1, partySize) / Notoriety.FeeFactor(town, a);
         return
             share / (tier * 40) +
             (a.Has(Trait.Greedy) ? 0.2 : 0) +
@@ -625,6 +628,7 @@ public static class Quests
             }
             if (earned && result.Outcome != ExpeditionOutcome.Wiped && bounty is { Errand: not "" }) Errands.Keep(town, bounty);
             pay += World.AfterDelve(town, party, s, result.Outcome) + party.Bonus;
+            if (result.Outcome == ExpeditionOutcome.Cleared && survivors.Count > 0) Notoriety.Cleared(town, party, survivors, s.Def.Tier, party.PleaId != null);
             if (survivors.Count > 0)
             {
                 double share = pay / survivors.Count;
@@ -637,7 +641,6 @@ public static class Quests
                     m.Gold += share;
                     m.Hero!.Pay += townShare;
                     GainXp(town, m, xpShare);
-                    m.Hero!.Renown += result.Outcome == ExpeditionOutcome.Cleared ? 2 * s.Def.Tier : 0;
                     foreach (var o in survivors) if (o.Id != m.Id) m.ChangeOpinion(o.Id, 15);
                 }
             }
@@ -690,6 +693,7 @@ public static class Quests
                 _ => "",
             };
             town.Log(LedgerCategory.Quest, fame != "" ? Importance.Major : Importance.Notable, $"{a.Name} reaches level {s.Level}.{fame}", [a.Id]);
+            Notoriety.Leveled(town, a, s.Level);
         }
     }
 }

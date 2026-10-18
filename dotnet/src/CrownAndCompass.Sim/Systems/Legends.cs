@@ -86,6 +86,8 @@ public static class Legends
             .Where(a => a.Hero != null && !a.Dead && (a.Hero.TurnedTo != null || !a.Departed))
             .OrderByDescending(a => a.Hero!.Champion)
             .ThenByDescending(a => a.Hero!.TurnedTo != null)
+            // The names the bards sang, for good or ill, outlast the merely strong.
+            .ThenByDescending(a => a.Hero!.Renown + a.Hero.Infamy)
             .ThenByDescending(a => a.Hero!.Level)
             .ThenBy(a => a.Id)
             .Take(HeroesKept);
@@ -99,7 +101,7 @@ public static class Legends
             {
                 Kind = Legend.Hero,
                 Name = a.Name,
-                Title = s.Champion ? $"champion of {town.Name}" : s.Cls.Name,
+                Title = s.Champion ? $"champion of {town.Name}" : s.Epithet != "" ? Saga.Cap(s.Epithet) : s.Cls.Name,
                 Race = town.Content.Races.FirstOrDefault(r => r.Name == a.Race)?.Id ?? "",
                 Cls = s.Cls.Id,
                 Level = s.Level,

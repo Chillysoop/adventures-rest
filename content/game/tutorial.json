@@ -294,6 +294,14 @@
       "teaches": ["command:AnswerDemand"]
     },
     {
+      "id": "notoriety",
+      "title": "Fame and infamy",
+      "text": "Heroes and companies make names for themselves. Clearing ruins, answering villages and holding the walls earn [b]renown[/b], and the bards give the famous an epithet. Brawls, theft, desertion and treachery earn [b]infamy[/b]. Click a hero to see their name: famous heroes draw others to town and frighten the foe, but they want more for a bounty and other towns court them unless you honour them. The council won't knight the notorious, and their past tends to catch up with them. [b]Companies[/b] shows each company's name abroad.",
+      "when": "day:35",
+      "point": "inspector",
+      "teaches": []
+    },
+    {
       "id": "save",
       "title": "Saving",
       "text": "[b]Esc[/b] or [b]Menu[/b] opens the game menu with five save slots. The town autosaves every three days and when you quit. [b]F5[/b] quicksaves and [b]F9[/b] loads it.",
@@ -316,6 +324,15 @@
       "point": "tab:City",
       "when": "alert:charter",
       "teaches": ["command:OpenWard"]
+    },
+    {
+      "id": "density",
+      "title": "Build tall",
+      "text": "The town charter unlocks [b]medium density[/b] and the large town charter [b]high density[/b]. Pick [b]Res · Medium[/b] or [b]Res · High[/b] (or the Commercial ones) in the build bar and paint, even over streets that are already built. Houses there grow into stone townhouses, then into tall houses packed wall to wall like a walled city's old core. Dense land sells dearer and crowds its people a little, so let lower sprawl spread outside the walls.",
+      "point": "buildbar",
+      "when": "density",
+      "until": "dense",
+      "teaches": []
     },
     {
       "id": "grand-works",

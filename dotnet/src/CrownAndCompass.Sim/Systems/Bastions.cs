@@ -6,7 +6,7 @@ public sealed record BastionFoundRules
     /// <summary>Level the company's best must have reached.</summary>
     public int Level { get; init; } = 5;
 
-    /// <summary>Renown the members have between them.</summary>
+    /// <summary>Renown the company's name has earned (<see cref="Notoriety"/>); an infamous company is refused.</summary>
     public int Renown { get; init; } = 80;
     public int Members { get; init; } = 2;
     public int FirstDay { get; init; } = 60;
@@ -571,7 +571,7 @@ public static class Bastions
 
     // Founding --------------------------------------------------------------------------------
 
-    /// <summary>A company that could ask for a bastion: under one name, in town, not in a bastion, with its best at level and renown enough between them.</summary>
+    /// <summary>A company that could ask for a bastion: under one name, in town, not in a bastion, with its best at level and a name famous (and clean) enough.</summary>
     public static List<(string Company, List<Agent> Members)> Hopefuls(Town town)
     {
         var f = Rules(town).Found;
@@ -579,7 +579,7 @@ public static class Bastions
             .Where(h => h.Hero!.PartyName != null && h.Hero.BastionId == null && !h.Dead)
             .GroupBy(h => h.Hero!.PartyName!)
             .Select(g => (Company: g.Key, Members: g.OrderByDescending(h => h.Hero!.Level).ThenBy(h => h.Id).ToList()))
-            .Where(x => x.Members.Count >= f.Members && x.Members[0].Hero!.Level >= f.Level && x.Members.Sum(h => h.Hero!.Renown) >= f.Renown && OfCompany(town, x.Company) == null)
+            .Where(x => x.Members.Count >= f.Members && x.Members[0].Hero!.Level >= f.Level && Intel.Find(town, x.Company) is { } c && c.Renown >= f.Renown && Notoriety.InfamyTier(town, c) < town.Content.Notoriety.KnightInfamy && OfCompany(town, x.Company) == null)
             .OrderBy(x => x.Company, StringComparer.Ordinal)
             .ToList();
     }
@@ -982,7 +982,7 @@ public static class Bastions
                 int check = town.Rng.Range(1, 21) + sentries * 2 + b.Veterancy + home.Count * 3;
                 if (check >= 15)
                 {
-                    foreach (var m in home) m.Hero!.Renown += 1;
+                    foreach (var m in home) Notoriety.Deed(town, m, "slay", 1);
                     text = Fill(ev.Text, vars) + " " + (home.Count > 0 ? "The company is home, and the raiders are cut down in the yard." : $"The sentries drive them off.");
                 }
                 else

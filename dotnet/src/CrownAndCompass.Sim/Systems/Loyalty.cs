@@ -132,9 +132,9 @@ public static class Loyalty
     public static string Styled(Town town, Agent a)
     {
         var s = a.Hero;
-        if (s == null || !s.Knight) return a.Name;
+        if (s == null || !s.Knight) return Notoriety.Known(a);
         string of = s.FiefId != null && Quests.Site(town, s.FiefId) is SiteState site ? $" of {site.Def.Name}" : "";
-        return $"Ser {a.Name}{of}";
+        return $"Ser {Notoriety.Known(a)}{of}";
     }
 
     // What sways them -----------------------------------------------------------------------------
@@ -172,6 +172,7 @@ public static class Loyalty
         var (regardWhy, regard) = Regard.Loyalty(town, a);
         Add(regardWhy, regard);
         if (Callings.Of(town, a) is { } calling) Add(calling.Name.ToLowerInvariant(), calling.Loyalty);
+        foreach (var (why, pts) in Notoriety.LoyaltyFactors(town, a)) Add(why, pts);
         if (s.Knight) Add("knighted", r.Rank);
         if (s.FiefId != null) Add("lands of their own", r.Rank);
         if (s.Champion) Add($"champion of {town.Name}", r.Rank);
@@ -262,7 +263,7 @@ public static class Loyalty
     // Leaving -------------------------------------------------------------------------------------
 
     private static bool Dark(Town town, Agent a) =>
-        a.Has(Trait.HotTempered) || a.Has(Trait.Greedy) || Faith.Of(town, a)?.Evil == true || a.Hero!.Loyalty < 10;
+        a.Has(Trait.HotTempered) || a.Has(Trait.Greedy) || Faith.Of(town, a)?.Evil == true || a.Hero!.Loyalty < 10 || Notoriety.Dark(town, a.Hero);
 
     /// <summary>The menace a turncoat would run to: the strongest one abroad that has risen.</summary>
     private static Menace? Patron(Town town) =>
@@ -294,6 +295,7 @@ public static class Loyalty
                     ? $"{name} throws in with {faction.Name} and is gone from the taverns{took}."
                     : $"{name} vanishes from {town.Name}{took}. Nobody saw who helped them.",
                 [a.Id]);
+            Notoriety.Betrayed(town, a);
         }
         else if (menace != null && Dark(town, a))
         {
@@ -301,10 +303,12 @@ public static class Loyalty
             s.TurnedTo = menace.Id;
             LoseLands(town, a);
             town.Log(LedgerCategory.War, Importance.Major, $"{name} rides out of {town.Name} and does not come back. Travellers swear they saw them at {menace.SeatName}, serving {menace.Name}.", [a.Id]);
+            Notoriety.Betrayed(town, a);
         }
         else
         {
             town.Log(LedgerCategory.Departure, Importance.Major, $"{name} slips out of {town.Name} before dawn with {Js.Str(Js.Round(a.Gold))} gold and all their gear, saying the town never did right by them.", [a.Id]);
+            Notoriety.Deserted(town, a);
         }
         Strip(a);
         Population.Depart(town, a);
@@ -364,6 +368,7 @@ public static class Loyalty
             string line = $"{name} unbars the {gates[opened++ % gates.Length]} gate for {foe} and is gone into the dark.";
             lines.Add(line);
             town.Log(LedgerCategory.War, Importance.Major, $"Treachery at the walls: {line}", [a.Id]);
+            Notoriety.Betrayed(town, a);
             if (m != null && m.Origin != Menaces.FromWarband)
             {
                 s.TurnedTo = m.Id;
@@ -403,6 +408,7 @@ public static class Loyalty
         if (s.Knight) return "already a knight";
         if (s.Level < r.Level) return $"needs level {r.Level}";
         if (s.Renown < r.Renown) return $"needs renown {r.Renown}";
+        if (Notoriety.TooInfamousToKnight(town, s)) return "too notorious for the council to knight";
         if (town.Heroes.Count(h => h.Hero!.Knight) >= r.Max) return $"the town can keep {r.Max} knights";
         if (town.Treasury < r.Cost) return $"needs {Js.Str(r.Cost)} gold";
         return null;
@@ -430,6 +436,7 @@ public static class Loyalty
         Sway(a, r.Loyalty);
         town.Mandate = Math.Min(100, town.Mandate + 2);
         town.Log(LedgerCategory.Council, Importance.Major, $"In the Town Hall the mayor lays a sword on {a.Name}'s shoulder. Rise, Ser {a.GivenName}, knight of {town.Name}.", [a.Id]);
+        Notoriety.Honoured(town, a);
         return true;
     }
 
@@ -498,6 +505,7 @@ public static class Loyalty
             Importance.Major,
             $"{Styled(town, a)} is named champion of {town.Name}{(old != null ? $", in place of {old.Name}" : "")}. They will stand first on the walls.",
             old != null ? [a.Id, old.Id] : [a.Id]);
+        Notoriety.Honoured(town, a);
         return true;
     }
 
