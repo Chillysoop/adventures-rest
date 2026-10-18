@@ -1,0 +1,367 @@
+{
+  "chance": 0.3,
+  "perTrip": 1,
+  "leadHours": 10,
+  "dueHours": 36,
+  "partyShare": 0.5,
+  "kinds": {
+    "acrobatics": "trap", "sleight-of-hand": "trap", "stealth": "trap",
+    "athletics": "hazard", "survival": "hazard",
+    "arcana": "puzzle", "history": "puzzle", "investigation": "puzzle", "religion": "puzzle",
+    "deception": "parley", "intimidation": "parley", "performance": "parley", "persuasion": "parley",
+    "animal-handling": "perception", "insight": "perception", "medicine": "perception", "nature": "perception", "perception": "perception"
+  },
+  "aids": [
+    { "building": "adventurers_hall", "name": "the Adventurers' Hall", "bonus": 2, "trips": 1 },
+    { "building": "library", "name": "the library's books", "bonus": 1, "skills": ["arcana", "history", "investigation", "religion"] },
+    { "building": "temple", "name": "the temple's priests", "bonus": 1, "skills": ["religion", "medicine", "insight"] },
+    { "building": "scrying_pool", "name": "the Scrying Pool", "bonus": 2, "skills": ["perception", "investigation", "survival"] },
+    { "building": "mage_tower", "name": "the Mage Tower", "bonus": 2, "skills": ["arcana"] }
+  ],
+  "stories": [
+    {
+      "id": "party-storm", "title": "A sending from the {party}", "stakes": "medium", "source": "sending", "needs": ["abroad"], "repeatDays": 45,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The sending stone at the hall cracks with a voice: the {party} are pinned by a storm far out in the wilds, and {hero} asks whether to press on or turn back.",
+          "options": [
+            { "label": "Read the weather and guide them", "skill": "survival", "dc": 20,
+              "critical": { "text": "You call every turn of the storm right. {heroName} swears {town} has a weather-witch for a mayor.", "effects": { "partyLoyalty": 8, "edge": 1, "inspiration": 1 } },
+              "success": { "text": "They come through the storm on your word, dry enough to fight.", "effects": { "partyLoyalty": 6, "edge": 1 } },
+              "failure": { "text": "Your advice takes them into the teeth of it. They come through, but it costs them.", "effects": { "partyLoyalty": -4, "partyHurt": 5 } } },
+            { "label": "Find a safe road on the old maps", "skill": "history", "dc": 19,
+              "success": { "text": "An old drovers' road runs in the lee of the ridge. They find it.", "effects": { "partyLoyalty": 4 } },
+              "failure": { "text": "The old road is long gone under the scree.", "effects": { "partyHurt": 3 } } },
+            { "label": "Send the hall's storm-road for that country", "needs": ["building:adventurers_hall"], "skill": "survival", "dc": 15,
+              "success": { "text": "The hall keeps a book of storm-roads, and this one is in it. They walk round the weather and rest under a cliff.", "effects": { "partyLoyalty": 6, "rest": 4, "edge": 1 } },
+              "failure": { "text": "The storm-road is out of date, but it gets them to shelter.", "effects": { "partyLoyalty": 2 } } },
+            { "label": "Tell them to turn back", "prefer": -0.6,
+              "success": { "text": "They turn for home. The bounty will wait for better weather.", "effects": { "turnBack": 1, "partyLoyalty": 2 } } }
+          ]
+        }
+      ],
+      "ignored": { "text": "The stone stays silent. They press on through the storm and pay for it.", "effects": { "partyHurt": 5, "partyLoyalty": -5 } }
+    },
+    {
+      "id": "bridge-toll", "title": "A toll on the road to {site}", "stakes": "low", "source": "sending", "needs": ["abroad"], "repeatDays": 40,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} speaks through the stone: \"A dozen spears hold the bridge on the road to {site} and want forty gold a head. We can pay, talk, or go through them. Your call, mayor.\"",
+          "options": [
+            { "label": "Talk them down", "skill": "persuasion", "dc": 19,
+              "success": { "text": "They let the {party} pass for a song and a promise of custom. {heroName} laughs down the stone.", "effects": { "partyLoyalty": 4 } },
+              "partial": { "text": "They settle for a few coins and a tale of the road.", "effects": { "loot": -10 } },
+              "failure": { "text": "Talk fails, and the {party} pay in full and in a temper.", "effects": { "loot": -30, "partyLoyalty": -2 } } },
+            { "label": "Bluff that the town's riders are behind them", "skill": "deception", "dc": 20,
+              "success": { "text": "The spears melt into the reeds.", "effects": { "partyLoyalty": 3, "renown": 1 } },
+              "failure": { "text": "Nobody believes it, and the bridge is cleared the hard way.", "effects": { "partyHurt": 4 } } },
+            { "label": "Name the bridge as the town's under charter", "needs": ["building:adventurers_hall"], "skill": "history", "dc": 16,
+              "success": { "text": "The hall's charter names the bridge as a free crossing for registered companies, and the toll-men know better than to argue with a charter.", "effects": { "partyLoyalty": 5, "mandate": 1 } },
+              "failure": { "text": "The toll-men can't read, and the {party} pay.", "effects": { "loot": -20 } } },
+            { "label": "Pay it from the treasury", "cost": 40,
+              "success": { "text": "The town pays, and the {party} cross fresh.", "effects": { "partyLoyalty": 5 } } }
+          ]
+        }
+      ],
+      "ignored": { "text": "No word comes, and the {party} go through them.", "effects": { "partyHurt": 4 } }
+    },
+    {
+      "id": "caught-scout", "title": "The {party} caught a scout", "stakes": "medium", "source": "sending", "needs": ["abroad"], "repeatDays": 50,
+      "stages": [
+        {
+          "id": "start",
+          "text": "\"We caught one of them watching the road,\" {hero} sends, \"a lookout from {site}. What do we do with it?\"",
+          "options": [
+            { "label": "Make it talk", "skill": "intimidation", "dc": 19,
+              "critical": { "text": "It tells them everything: the watch, the doors, where the leader sleeps.", "effects": { "edge": 2, "swell": -1 } },
+              "success": { "text": "It tells them the hour the watch changes.", "effects": { "edge": 1 } },
+              "failure": { "text": "It spits and says nothing, then slips its bonds in the night and runs home to warn them.", "effects": { "swell": 1 } } },
+            { "label": "Win it over", "skill": "persuasion", "dc": 20,
+              "success": { "text": "It hates its masters more than it fears them, and offers to show the {party} a way in.", "next": "guide", "after": 8 },
+              "failure": { "text": "It agrees to everything, which is never a good sign. They keep it tied.", "effects": {} } },
+            { "label": "Let it go", "prefer": -0.6,
+              "success": { "text": "They turn it loose with a warning. It runs straight back to {site}.", "effects": { "swell": 1, "partyLoyalty": -1 } } }
+          ]
+        },
+        {
+          "id": "guide",
+          "text": "Hours later the stone wakes again. \"The scout says there's a back way into {site}, a drain under the north wall. It could be a trap. Do we trust it?\"",
+          "options": [
+            { "label": "Read its face for the lie", "skill": "insight", "dc": 19,
+              "success": { "text": "It's telling the truth. The {party} go in by the drain, behind the guards.", "effects": { "edge": 2, "swell": -1, "partyLoyalty": 4 } },
+              "failure": { "text": "It was a trap. They fight their way out of the drain.", "effects": { "partyHurt": 6, "swell": 1 } } },
+            { "label": "Send it in first", "skill": "investigation", "dc": 17,
+              "success": { "text": "The scout goes ahead, and the way is clear.", "effects": { "edge": 1 } },
+              "failure": { "text": "It bolts at the first turning and raises the alarm.", "effects": { "swell": 1 } } },
+            { "label": "Go in by the front as planned", "prefer": -0.5,
+              "success": { "text": "They leave the scout tied to a tree, with water, and go in the honest way.", "effects": {} } }
+          ]
+        }
+      ],
+      "ignored": { "text": "With no word from the mayor, they gag it and leave it. Someone finds it before they reach {site}.", "effects": { "swell": 1 } }
+    },
+    {
+      "id": "rival-company", "title": "Another company on the road to {site}", "stakes": "medium", "source": "sending", "needs": ["abroad"], "repeatDays": 50, "minDay": 30,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} sends: \"Another company is camped a mile behind us, bound for {site} too. They mean to be first in and first at the gold.\"",
+          "options": [
+            { "label": "Push on through the night", "skill": "athletics", "dc": 19,
+              "success": { "text": "The {party} reach {site} a day ahead, tired but first.", "effects": { "loot": 30, "partyHurt": 2 } },
+              "failure": { "text": "They run themselves ragged and get there second anyway.", "effects": { "partyHurt": 4 } } },
+            { "label": "Propose they go in together and split it", "skill": "persuasion", "dc": 18,
+              "success": { "text": "The rivals agree. Two companies make short work of the outer halls.", "effects": { "swell": -1, "loot": -20, "renown": 1 } },
+              "failure": { "text": "The rivals laugh and break camp early.", "effects": { "loot": -20 } } },
+            { "label": "Have the hall rule on whose contract it is", "needs": ["building:adventurers_hall"], "skill": "persuasion", "dc": 15,
+              "success": { "text": "The hall's register shows the {party} took the contract first. The rivals turn aside, grumbling.", "effects": { "loot": 20, "partyLoyalty": 5 } },
+              "failure": { "text": "The rivals were never registered and don't care. It's a race.", "effects": {} } },
+            { "label": "Let them have the first go", "prefer": -0.5,
+              "success": { "text": "The {party} wait and let the rivals take the first blows.", "effects": { "swell": -1, "loot": -40, "partyLoyalty": -3 } } }
+          ]
+        }
+      ],
+      "ignored": { "text": "The {party} race them and both arrive spent.", "effects": { "partyHurt": 3 } }
+    },
+    {
+      "id": "fever-in-camp", "title": "Marsh fever strikes the {party}", "stakes": "medium", "source": "sending", "needs": ["abroad"], "repeatDays": 50,
+      "stages": [
+        {
+          "id": "start",
+          "text": "\"Marsh fever,\" {hero} sends, voice rough. \"Half of us are shaking with it. We're two days from {site}.\"",
+          "options": [
+            { "label": "Talk them through the cure", "skill": "medicine", "dc": 19,
+              "success": { "text": "Willow bark, boiled water and a day's rest. The fever breaks.", "effects": { "rest": 2, "partyLoyalty": 4 } },
+              "failure": { "text": "The cure is half right. They go on weak.", "effects": { "partyHurt": 5, "edge": -1 } } },
+            { "label": "Have the temple pray for them", "needs": ["temple"], "skill": "religion", "dc": 16,
+              "success": { "text": "The priests pray at dawn, and the fever lifts with the mist.", "effects": { "rest": 4, "favour": 2, "partyLoyalty": 5 } },
+              "failure": { "text": "The prayers bring comfort, if not a cure.", "effects": { "partyHurt": 3 } } },
+            { "label": "Tell them to come home", "prefer": -0.5,
+              "success": { "text": "They turn back. The bounty stays on the board.", "effects": { "turnBack": 1, "partyLoyalty": 3 } } }
+          ]
+        }
+      ],
+      "ignored": { "text": "They press on shaking.", "effects": { "partyHurt": 6, "edge": -1 } }
+    },
+    {
+      "id": "map-seller", "title": "A map of {site}", "stakes": "low", "source": "sending", "needs": ["abroad"], "repeatDays": 45,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} sends: \"A pedlar at the last village swears he has a map of {site}, drawn by a delver who came out alive. He wants sixty gold.\"",
+          "options": [
+            { "label": "Haggle him down", "skill": "persuasion", "dc": 18,
+              "success": { "text": "They get the map for twenty and a pair of boots.", "effects": { "loot": -20 }, "next": "true", "after": 6 },
+              "failure": { "text": "He won't budge, and they won't pay.", "effects": {} } },
+            { "label": "Pay him from the treasury", "cost": 60,
+              "success": { "text": "The town pays. {heroName} pores over the map by firelight.", "effects": {}, "next": "true", "after": 6 } },
+            { "label": "Check his map against the library's survey", "needs": ["building:library"], "skill": "investigation", "dc": 15,
+              "success": { "text": "The library has the same delver's notes, and they match. The {party} know {site} before they reach it, for nothing.", "effects": { "edge": 2 } },
+              "failure": { "text": "Nothing in the library matches. They pass on it.", "effects": {} } },
+            { "label": "Pass on it", "prefer": -0.5,
+              "success": { "text": "They leave the pedlar to his next fool.", "effects": {} } }
+          ]
+        },
+        {
+          "id": "true",
+          "text": "\"The map's strange,\" {hero} sends. \"Half of it fits what we can see from here. The other half shows a door that shouldn't be there.\"",
+          "options": [
+            { "label": "Work out which half is true", "skill": "investigation", "dc": 18,
+              "success": { "text": "The odd door is real, and it goes round the worst of the halls.", "effects": { "edge": 1, "swell": -1 } },
+              "failure": { "text": "The door is a fake, and the halls behind it are full.", "effects": { "swell": 1 } } },
+            { "label": "Trust the half that fits", "prefer": -0.45,
+              "success": { "text": "They use what fits and ignore the rest.", "effects": { "edge": 1 } } }
+          ]
+        }
+      ],
+      "ignored": { "text": "They leave the pedlar be.", "effects": {} }
+    },
+    {
+      "id": "village-plea", "title": "A village begs the {party} for help", "stakes": "high", "source": "sending", "needs": ["abroad"], "repeatDays": 60, "minDay": 20,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} sends: \"A hamlet on the road to {site} has lost three children to wolves this month. They're begging us to stay a night and hunt. It'll cost us time and blood.\"",
+          "options": [
+            { "label": "Stay and hunt", "prefer": 0.3,
+              "success": { "text": "The {party} set out after dark with the hamlet's dogs.", "next": "hunt", "after": 8 } },
+            { "label": "Teach the hamlet to guard itself", "skill": "survival", "dc": 19,
+              "success": { "text": "Ditches, stakes and fires at the field edge. The hamlet thanks {town}.", "effects": { "mandate": 2, "renown": 1 } },
+              "failure": { "text": "They try, but the hamlet is too few to hold a line.", "effects": { "partyLoyalty": -2 } } },
+            { "label": "Press on to {site}", "prefer": -0.6,
+              "success": { "text": "The {party} leave before dawn. Nobody in the hamlet waves.", "effects": { "partyLoyalty": -4, "mandate": -1 } } }
+          ]
+        },
+        {
+          "id": "hunt",
+          "text": "\"These are no wolves,\" comes {heroName}'s voice, low. \"A dire beast leads them, big as a cart horse. We've found its den.\"",
+          "options": [
+            { "label": "Smoke them out at dawn", "skill": "nature", "dc": 20,
+              "critical": { "text": "The pack bolts into the snares, and the beast dies at the den mouth. The hamlet sends its young people to {town} to learn a trade.", "effects": { "renown": 2, "people": 4, "mandate": 3, "partyLoyalty": 6 } },
+              "success": { "text": "The beast dies at the den mouth. Four of the hamlet's folk follow the {party} back to {town} to start over.", "effects": { "renown": 2, "people": 3, "mandate": 2, "partyLoyalty": 4 } },
+              "failure": { "text": "They kill it, but it fights like a demon.", "effects": { "partyHurt": 8, "renown": 1, "mandate": 1 } } },
+            { "label": "Fall on it while it sleeps", "skill": "stealth", "dc": 19,
+              "success": { "text": "It never wakes. The hamlet feasts the {party} and sends word of {town}'s heroes down the valley.", "effects": { "renown": 2, "mandate": 2, "people": 2 } },
+              "failure": { "text": "It wakes. It's a long, bad night.", "effects": { "partyHurt": 9, "slots": 1, "renown": 1 } } },
+            { "label": "Send the hall's beast-hunters' lore", "needs": ["building:adventurers_hall"], "skill": "nature", "dc": 16,
+              "success": { "text": "The hall's bestiary names the beast and its weakness: fire and noise. It runs into the spears.", "effects": { "renown": 2, "people": 3, "mandate": 2, "partyLoyalty": 5 } },
+              "failure": { "text": "The bestiary is wrong about this one.", "effects": { "partyHurt": 6, "renown": 1 } } }
+          ]
+        }
+      ],
+      "ignored": { "text": "With no word from {town}, the {party} stay a night and hunt, and go on bloodied.", "effects": { "partyHurt": 6, "renown": 1 } }
+    },
+    {
+      "id": "sealed-door", "title": "The sealed door of {site}", "stakes": "medium", "source": "sending", "needs": ["abroad"], "repeatDays": 50,
+      "stages": [
+        {
+          "id": "start",
+          "text": "\"We've scouted ahead,\" {hero} sends. \"The way into {site} is a door carved with a riddle in an old tongue. Nobody here can read it.\"",
+          "options": [
+            { "label": "Work out the riddle", "skill": "arcana", "dc": 20,
+              "success": { "text": "The answer is 'the river'. The door rolls aside, and the guard-glyphs behind it go dark.", "effects": { "edge": 2 } },
+              "failure": { "text": "Wrong answer. The glyphs flare, and they go in singed.", "effects": { "partyHurt": 4 } } },
+            { "label": "Find who carved it", "skill": "history", "dc": 19,
+              "success": { "text": "It's the work of an old power's masons, who always left a servants' door. They find it.", "effects": { "edge": 1, "swell": -1 } },
+              "failure": { "text": "No book you know has the carving in it.", "effects": {} } },
+            { "label": "Watch the door through the Scrying Pool", "needs": ["building:scrying_pool"], "skill": "perception", "dc": 15,
+              "success": { "text": "In the pool you see who comes and goes, and the word they speak at the door.", "effects": { "edge": 2, "swell": -1 } },
+              "failure": { "text": "The pool shows only mist.", "effects": {} } },
+            { "label": "Tell them to break it down", "prefer": -0.5,
+              "success": { "text": "They break it down. Everything inside hears them.", "effects": { "swell": 1, "slots": 1 } } }
+          ]
+        }
+      ],
+      "ignored": { "text": "They break the door down. Everything inside hears them.", "effects": { "swell": 1 } }
+    },
+    {
+      "id": "hall-contract", "title": "A better offer for the {party}", "stakes": "low", "source": "sending", "needs": ["abroad", "building:adventurers_hall"], "repeatDays": 40,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The hall's own stone chimes. {hero}: \"A merchant on the road heard we're registered at {town}'s hall. He'll pay us to see his wagons to the next town first.\"",
+          "options": [
+            { "label": "Take his gold, keep the bounty", "skill": "persuasion", "dc": 17,
+              "success": { "text": "He pays well and the detour is short.", "effects": { "loot": 50, "partyLoyalty": 3 } },
+              "failure": { "text": "He haggles them down to a pittance, and the detour costs a day.", "effects": { "loot": 15 } } },
+            { "label": "Ask him what he's carrying", "skill": "insight", "dc": 18,
+              "success": { "text": "Smuggled blades for whatever holds {site}. The {party} seize them and sends the merchant packing.", "effects": { "swell": -1, "mandate": 1 } },
+              "failure": { "text": "He's carrying exactly what he says.", "effects": { "loot": 30 } } },
+            { "label": "Keep to the bounty", "prefer": -0.5,
+              "success": { "text": "The {party} keep to the road.", "effects": { "partyLoyalty": 1 } } }
+          ]
+        }
+      ],
+      "ignored": { "text": "They take his gold and the long way round.", "effects": { "loot": 30 } }
+    },
+    {
+      "id": "captives-or-gold", "title": "The {party} found captives", "stakes": "high", "source": "sending", "needs": ["victorious"], "repeatDays": 50,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} sends from the road home: \"{site} is done. We found folk chained in the cellars, and a chest of coin. We can't carry both through the hills.\"",
+          "options": [
+            { "label": "Bring the captives home",
+              "success": { "text": "The {party} carry the captives home. Most of them stay in {town}.", "effects": { "people": 4, "mandate": 4, "renown": 2, "partyLoyalty": 4 } } },
+            { "label": "Bring the gold", "prefer": -0.2,
+              "success": { "text": "They bring the chest. The captives walk on their own, slowly, and some of them don't make it.", "effects": { "loot": 90, "mandate": -3 } } },
+            { "label": "Carry both, somehow", "skill": "athletics", "dc": 21,
+              "success": { "text": "They build a litter and carry both, a mile at a time. {town} cheers them in.", "effects": { "people": 4, "loot": 90, "mandate": 3, "renown": 2 } },
+              "failure": { "text": "They try, and the hills punish them for it. The captives make it; most of the coin doesn't.", "effects": { "people": 3, "loot": 20, "partyHurt": 6 } } },
+            { "label": "Send the hall's wagon to meet them", "needs": ["building:adventurers_hall"], "cost": 30,
+              "success": { "text": "The hall's wagon meets them at the ford. Captives and coin both come home.", "effects": { "people": 4, "loot": 90, "mandate": 3, "renown": 2 } } }
+          ]
+        }
+      ],
+      "ignored": { "text": "They bring the captives, and leave the coin.", "effects": { "people": 3, "mandate": 2 } }
+    },
+    {
+      "id": "whispering-blade", "title": "A blade that whispers", "stakes": "high", "source": "sending", "needs": ["victorious"], "repeatDays": 70, "minDay": 40,
+      "stages": [
+        {
+          "id": "start",
+          "text": "\"{site} had a sword in it,\" {hero} sends, \"black iron, warm to the touch. It talks when the fire's low. It wants to come to {town}.\"",
+          "options": [
+            { "label": "Find out what it is", "skill": "arcana", "dc": 19,
+              "success": { "text": "A blade forged for an old power's champion, still loyal to the power.", "next": "choose" },
+              "failure": { "text": "Its voice gets into your head through the stone. You find yourself agreeing with it.", "next": "choose", "effects": { "dread": 2 } } },
+            { "label": "Tell them to bury it", "prefer": 0.2,
+              "success": { "text": "They bury it under a cairn and don't look back. {heroName} dreams of it for a month.", "effects": { "partyLoyalty": -1 } } }
+          ]
+        },
+        {
+          "id": "choose",
+          "text": "\"So what do we do with it?\" {heroName} asks. Behind the voice, something else whispers.",
+          "options": [
+            { "label": "Destroy it", "skill": "religion", "dc": 20,
+              "success": { "text": "Holy water and a hot forge on the road. It screams as it breaks.", "effects": { "dread": -3, "favour": 2, "renown": 2 } },
+              "failure": { "text": "It won't break. They bury it deep and mark the place.", "effects": { "dread": 1 } } },
+            { "label": "Seal it in the hall's vault", "needs": ["building:adventurers_hall"],
+              "success": { "text": "Sealed and chained in the hall's vault. Collectors in three cities write to ask the price.", "effects": { "gold": 80, "renown": 2 } } },
+            { "label": "Let {heroName} carry it", "skill": "insight", "dc": 20, "prefer": -0.3,
+              "success": { "text": "{heroName} masters it. The blade goes quiet and cuts true.", "effects": { "renown": 3, "loyalty": 4 } },
+              "failure": { "text": "{heroName} carries it home, and listens to it more each night.", "effects": { "renown": 2, "loyalty": -12, "dread": 2 } } }
+          ]
+        }
+      ],
+      "ignored": { "text": "They leave it where they found it, and somebody else picks it up.", "effects": { "dread": 2 } }
+    },
+    {
+      "id": "lost-in-the-hills", "title": "The {party} are lost", "stakes": "high", "source": "sending", "needs": ["abroad"], "repeatDays": 70, "minDay": 25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "\"Mayor, we're lost,\" {hero} sends. \"Fog for two days. The guide ran off. We've food for three more.\"",
+          "options": [
+            { "label": "Steer them by the stars", "skill": "survival", "dc": 20,
+              "success": { "text": "The fog thins at night. You talk them north by the Wheel.", "next": "ridge", "after": 10, "effects": { "partyLoyalty": 3 } },
+              "failure": { "text": "Your stars are someone else's. They walk in a circle and lose a day.", "next": "ridge", "after": 10, "effects": { "partyHurt": 3 } } },
+            { "label": "Have them follow water downhill", "skill": "nature", "dc": 17,
+              "success": { "text": "A stream leads them out of the fog by evening.", "next": "ridge", "after": 10 },
+              "failure": { "text": "The stream sinks into a bog.", "next": "ridge", "after": 10, "effects": { "partyHurt": 2 } } },
+            { "label": "Send the Scrying Pool's sight to find them", "needs": ["building:scrying_pool"], "skill": "perception", "dc": 14,
+              "success": { "text": "In the pool you see them, and the road a mile to their east. They're out by noon.", "effects": { "partyLoyalty": 6, "edge": 1 } },
+              "failure": { "text": "The pool shows fog.", "next": "ridge", "after": 10 } }
+          ]
+        },
+        {
+          "id": "ridge",
+          "text": "The stone wakes again. \"We're out of the fog, on a ridge above {site}. We're tired and short of food. Go in now, rest a day, or come home?\"",
+          "options": [
+            { "label": "Rest a day and forage", "skill": "survival", "dc": 17,
+              "success": { "text": "A deer and a cold spring. They go in fed and rested.", "effects": { "rest": 6 } },
+              "failure": { "text": "Thin forage, but sleep helps.", "effects": { "rest": 2 } } },
+            { "label": "Rouse them for one last push", "skill": "performance", "dc": 18,
+              "success": { "text": "You give them a speech they'll repeat to their grandchildren. They go in burning.", "effects": { "edge": 2, "partyLoyalty": 5 } },
+              "failure": { "text": "The speech falls flat in the cold.", "effects": { "partyLoyalty": -1 } } },
+            { "label": "Call them home", "prefer": -0.5,
+              "success": { "text": "They turn for home, alive.", "effects": { "turnBack": 1, "partyLoyalty": 4 } } }
+          ]
+        }
+      ],
+      "ignored": { "text": "No answer comes. They find their own way out, hungry.", "effects": { "partyHurt": 6, "partyLoyalty": -4 } }
+    },
+    {
+      "id": "spare-the-slot", "title": "The {party} ask for a blessing", "stakes": "low", "source": "sending", "needs": ["abroad"], "repeatDays": 35,
+      "stages": [
+        {
+          "id": "start",
+          "text": "\"We're a day from {site},\" {hero} sends. \"Our caster can spend the last of the stone on a ward, or keep the spell for the fight. And the lads want a word from the mayor.\"",
+          "options": [
+            { "label": "Give them a word to fight by", "skill": "performance", "dc": 17,
+              "success": { "text": "They'll carry your words in with them.", "effects": { "edge": 1, "partyLoyalty": 3 } },
+              "failure": { "text": "{heroName} thanks you politely.", "effects": {} } },
+            { "label": "Tell the caster to cast the ward", "skill": "arcana", "dc": 16,
+              "success": { "text": "The ward holds through the first fight.", "effects": { "slots": 1, "edge": 2 } },
+              "failure": { "text": "The ward fizzles and the spell is gone.", "effects": { "slots": 1 } } },
+            { "label": "Keep the spell", "prefer": -0.4,
+              "success": { "text": "They keep it for the fight.", "effects": {} } }
+          ]
+        }
+      ],
+      "ignored": { "text": "They keep the spell.", "effects": {} }
+    }
+  ]
+}
