@@ -30,6 +30,7 @@ public partial class Main
         [Tab.Council] = "Council",
         [Tab.Bounties] = "Bounties and the road",
         [Tab.Faith] = "Faith and factions",
+        [Tab.Campaign] = "The campaign",
         [Tab.Chronicles] = "Chronicles",
         [Tab.Inspect] = "Inspect",
     };
