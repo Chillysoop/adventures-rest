@@ -22,6 +22,7 @@ public partial class Main : Control
         Council,
         Bounties,
         Faith,
+        Campaign,
         Chronicles,
         Inspect,
     }
@@ -249,6 +250,7 @@ public partial class Main : Control
                     case Tab.Council: RenderCouncil(); break;
                     case Tab.Bounties: RenderBounties(); break;
                     case Tab.Faith: RenderFaith(); break;
+                    case Tab.Campaign: RenderCampaign(); break;
                     case Tab.Chronicles: RenderChronicles(); break;
                 }
             if (_inspector.Visible) RenderInspect();

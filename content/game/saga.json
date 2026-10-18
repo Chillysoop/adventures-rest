@@ -22,7 +22,7 @@
         4,
         6
       ],
-      "opensAtLevel": 3,
+      "opensAtLevel": 2,
       "earliestDay": 110,
       "latestDay": 220,
       "arrivalBonus": 1,
@@ -46,7 +46,7 @@
         6,
         9
       ],
-      "opensAtLevel": 5,
+      "opensAtLevel": 4,
       "earliestDay": 280,
       "latestDay": 400,
       "arrivalBonus": 2,
@@ -70,9 +70,9 @@
         9,
         12
       ],
-      "opensAtLevel": 7,
-      "earliestDay": 460,
-      "latestDay": 540,
+      "opensAtLevel": 6,
+      "earliestDay": 420,
+      "latestDay": 600,
       "arrivalBonus": 3,
       "pace": 1.6,
       "seeds": [

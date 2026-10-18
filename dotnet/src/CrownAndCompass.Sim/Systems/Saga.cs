@@ -574,7 +574,7 @@ public static class Saga
         if (!s.Enabled || Rules(town).Acts.Count == 0) return "";
         var alive = s.Menaces.Where(m => m.Alive).ToList();
         string foes = alive.Count == 0 ? "no menaces abroad" : string.Join("; ", alive.Select(m => $"{m.Name} (level {m.Level}, {m.Stage.ToString().ToLowerInvariant()}{(m.BigBad ? ", the big bad" : "")})"));
-        return $"{ActTitle(town, s.Act)} (from day {s.ActDays[^1]}). Dread {Js.Str(Js.Round(s.Dread))} ({s.Tone.ToString().ToLowerInvariant()}, peak {Js.Str(Js.Round(s.PeakDread))}), sacked {s.Sacks}x. {Cap(foes)}.";
+        return $"{ActTitle(town, s.Act)} (from day {s.ActDays[^1]}). Dread {Js.Str(Js.Round(s.Dread))} ({s.Tone.ToString().ToLowerInvariant()}, peak {Js.Str(Js.Round(s.PeakDread))}), sacked {s.Sacks}x, champions level {ChampionLevel(town)}. {Cap(foes)}.";
     }
 
     private static string Roman(int n) => n switch
