@@ -37,7 +37,16 @@
     "minScore": 0.3,
     "boldStep": 1,
     "warDays": 1,
-    "campGlory": 0.4
+    "campGlory": 0.4,
+    "veteran": 3,
+    "greenStep": 1
+  },
+  "delve": {
+    "breakOff": 0.25,
+    "bossBreakOff": 0.15,
+    "downedShare": 0.5,
+    "turnBack": 0.35,
+    "firstAidDc": 15
   },
   "peoples": [
     { "id": "villagers", "name": "the folk of {S}", "people": "villagers", "kind": "village", "race": "human",

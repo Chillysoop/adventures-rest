@@ -38,6 +38,9 @@ public static class Expedition
         public int Ac { get; init; }
         public int Attack { get; init; }
         public int Skill { get; init; }
+
+        /// <summary>Been out often enough to keep their head when a friend falls.</summary>
+        public bool Veteran { get; init; }
     }
 
     private sealed class Foe(MonsterDef def)
@@ -90,7 +93,7 @@ public static class Expedition
             _rng = rng;
             _content = content;
             _site = site;
-            Party = heroes.Select(agent => new Combatant(agent) { Ac = Gear.Ac(content, agent), Attack = Gear.Attack(content, agent), Skill = Gear.Skill(content, agent.Hero!) }).ToList();
+            Party = heroes.Select(agent => new Combatant(agent) { Ac = Gear.Ac(content, agent), Attack = Gear.Attack(content, agent), Skill = Gear.Skill(content, agent.Hero!), Veteran = agent.Hero!.Expeditions >= content.World.Companies.Veteran }).ToList();
         }
 
         /// <summary>Traps and hazards hit harder in sites built for higher levels: one more set of dice every four levels.</summary>
@@ -279,9 +282,12 @@ public static class Expedition
                 if (foes.All(f => f.Hp <= 0)) break;
                 MonstersAct(foes);
                 if (Standing.Count == 0) break;
-                if (HpFraction() < (def.Boss ? 0.15 : 0.2) && foes.Any(f => f.Hp > 0))
+                if (foes.Any(f => f.Hp > 0) && BreakOff(def.Boss))
                 {
-                    Log("Bloodied and outmatched, the party breaks off and runs.");
+                    var fallen = Party.Where(c => c.Down && !c.Dead).Select(c => c.Agent.GivenName).ToList();
+                    Log(fallen.Count == 0
+                        ? "Bloodied and outmatched, the party breaks off and runs."
+                        : $"Bloodied and outmatched, the party breaks off and runs, dragging {ListNames(fallen)} with them.");
                     AfterCombat();
                     return false;
                 }
@@ -296,6 +302,30 @@ public static class Expedition
             }
             AfterCombat();
             return won;
+        }
+
+        /// <summary>Too hurt, or too many friends down, to win this one.</summary>
+        private bool BreakOff(bool boss)
+        {
+            var rules = _content.World.Delve;
+            int living = Party.Count(c => !c.Dead);
+            int down = Party.Count(c => c.Down && !c.Dead);
+            return HpFraction() < (boss ? rules.BossBreakOff : rules.BreakOff) || (down > 0 && down >= rules.DownedShare * living);
+        }
+
+        /// <summary>A veteran's Wisdom (Medicine) check to stop a fallen friend's bleeding.</summary>
+        private bool FirstAid(Combatant c)
+        {
+            int dc = _content.World.Delve.FirstAidDc;
+            var medic = Standing.Where(h => h.Veteran).OrderByDescending(h => Rng.Modifier(h.Agent.Abilities.Wis)).ThenBy(h => h.Agent.Id).FirstOrDefault();
+            if (dc <= 0 || medic == null) return false;
+            int roll = _rng.D20();
+            int total = roll + Rng.Modifier(medic.Agent.Abilities.Wis);
+            if (total < dc) return false;
+            c.Down = false;
+            c.Sheet.Hp = 1;
+            Log($"{medic.Agent.GivenName} binds {c.Agent.GivenName}'s wounds and stops the bleeding (d20 {roll}, {total} vs DC {dc}).");
+            return true;
         }
 
         private void HeroesAct(List<Foe> foes, int round)
@@ -434,6 +464,7 @@ public static class Expedition
                     Log($"{donor.Agent.GivenName} pours a {PotionName()} down {c.Agent.GivenName}'s throat.");
                     continue;
                 }
+                if (FirstAid(c)) continue;
                 int ok = 0;
                 int fail = 0;
                 var rolls = new List<int>();
@@ -529,7 +560,7 @@ public static class Expedition
                 foreach (var c in run.Standing) c.Sheet.Hp = Math.Min(c.Sheet.MaxHp, c.Sheet.Hp + (int)Math.Ceiling(c.Sheet.MaxHp / 4.0));
             }
             // Know when to quit.
-            if (!boss && (run.HpFraction() < 0.3 || run.Party.Count(c => c.Dead) * 2 >= run.Party.Count))
+            if (!boss && (run.HpFraction() < content.World.Delve.TurnBack || run.Party.Count(c => c.Dead) * 2 >= run.Party.Count))
             {
                 run.Log("Too battered to go on, the party turns back.");
                 break;
