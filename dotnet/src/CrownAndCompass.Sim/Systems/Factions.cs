@@ -584,7 +584,7 @@ public static class Factions
         foreach (var (name, qty) in goods.OrderBy(kv => kv.Key, StringComparer.Ordinal))
         {
             var g = Enum.Parse<Good>(name);
-            if (town.Market.Price(g) <= Market.BasePrice(g)) continue;
+            if (town.Market.Price(g) <= town.Market.BasePrice(g)) continue;
             town.Market.Seed(g, qty);
             any = true;
         }
@@ -679,7 +679,7 @@ public static class Factions
     {
         var r = Rules(town);
         // The lodge sends for help only when a posted job is going begging.
-        if (town.Heroes.Count >= r.HeroCap || Coffers(town, f) < r.RecruitHeroCost || town.Taverns.Count == 0) return;
+        if (town.Heroes.Count >= Math.Max(r.HeroCap, City.HeroCap(town)) || Coffers(town, f) < r.RecruitHeroCost || town.Taverns.Count == 0) return;
         if (!town.Bounties.Any(b => b.Status == BountyStatus.Open)) return;
         var classes = town.Content.Classes;
         int roll = town.Rng.Range(0, classes.Sum(c => c.Weight));
@@ -774,7 +774,7 @@ public static class Factions
 
     private static void BlessFields(Town town, FactionState f)
     {
-        if (town.Market.Price(Good.Food) <= Market.BasePrice(Good.Food)) return;
+        if (town.Market.Price(Good.Food) <= town.Market.BasePrice(Good.Food)) return;
         town.Market.Seed(Good.Food, Rules(town).BlessFood);
         var druid = Best(town, f, Ability.Wis);
         town.Log(LedgerCategory.Faction, Importance.Routine, $"{(druid != null ? druid.Name : "A druid")} of {f.Name} walks the furrows at dusk singing to the soil. The harvest comes in heavy.", druid != null ? [druid.Id] : []);

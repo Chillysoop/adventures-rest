@@ -43,6 +43,12 @@ public enum DefenseWork
 {
     Palisade,
     Tower,
+
+    /// <summary>Stone walls round the old town, once it is a town (GDD rule C4).</summary>
+    StoneWall,
+
+    /// <summary>The city wall round the four inner wards, once it is a city.</summary>
+    CityWall,
 }
 
 public sealed class Defenses
@@ -53,6 +59,14 @@ public sealed class Defenses
 
     /// <summary>Ready ticks of towers under construction.</summary>
     public List<int> TowersBuilding { get; set; } = [];
+
+    public PalisadeState StoneWall { get; set; } = PalisadeState.None;
+    public int? StoneWallReadyTick { get; set; }
+    public PalisadeState CityWall { get; set; } = PalisadeState.None;
+    public int? CityWallReadyTick { get; set; }
+
+    /// <summary>The innermost ring the walls leave outside: 1 behind stone walls, 2 behind the city wall, 99 with none.</summary>
+    public int OutsideRing => CityWall == PalisadeState.Built ? 2 : StoneWall == PalisadeState.Built ? 1 : 99;
 }
 
 /// <summary>
@@ -101,7 +115,11 @@ public static class Threat
     public static double Fortification(Town town)
     {
         var d = town.Content.Enemy.Defense;
-        return (town.Defenses.Palisade == PalisadeState.Built ? d.Palisade : 1) * (1 + d.PerTower * town.Defenses.Towers);
+        var w = town.Defenses;
+        double walls = w.CityWall == PalisadeState.Built ? d.CityWall
+            : w.StoneWall == PalisadeState.Built ? d.StoneWall
+            : w.Palisade == PalisadeState.Built ? d.Palisade : 1;
+        return walls * (1 + d.PerTower * w.Towers + Planning.Defense(town));
     }
 
     /// <summary>What the town's scouts believe the warband numbers, rounded the way rumours are.</summary>
@@ -222,10 +240,12 @@ public static class Threat
         var party = Lairs.AwayParty(town);
         string timing = party != null && Lairs.AwayShare(town) >= town.Content.Lairs.SoftShare ? $", while the {party.Name} are away" : "";
 
-        // They strike the farm or camp farthest from the town hall.
+        // They strike outside the walls: the farm or camp farthest from the town hall, or failing that whatever stands beyond the stone.
+        int outside = town.Defenses.OutsideRing;
         var target = town.Buildings
-            .Where(b => b.Complete && (b.Def.Zone == Zone.Farmland || b.Def.Id == "lumber_camp"))
-            .OrderByDescending(b => Distance(town, b.LotId))
+            .Where(b => b.Complete && (b.Def.Zone == Zone.Farmland || b.Def.Id == "lumber_camp" || City.Ring(town.Lot(b.LotId)) >= outside))
+            .OrderByDescending(b => b.Def.Zone == Zone.Farmland || b.Def.Id == "lumber_camp" ? 1 : 0)
+            .ThenByDescending(b => Distance(town, b.LotId))
             .ThenBy(b => b.Id)
             .FirstOrDefault();
         string where = target != null ? target.Name : "the outlying fields";
@@ -486,36 +506,82 @@ public static class Threat
     }
 
     /// <summary>The player's lever: order a palisade or a watchtower, paid from the treasury.</summary>
-    public static bool Build(Town town, DefenseWork what)
+    public static WorkSpec Spec(Town town, DefenseWork what)
     {
         var e = town.Content.Enemy;
+        return what switch
+        {
+            DefenseWork.Palisade => e.Palisade,
+            DefenseWork.Tower => e.Tower,
+            DefenseWork.StoneWall => e.StoneWall,
+            _ => e.CityWall,
+        };
+    }
+
+    /// <summary>Why the town can't order this work now, or null when it can.</summary>
+    public static string? BuildBlocked(Town town, DefenseWork what)
+    {
         var d = town.Defenses;
-        var spec = what == DefenseWork.Palisade ? e.Palisade : e.Tower;
-        if (what == DefenseWork.Palisade && d.Palisade != PalisadeState.None) return false;
-        if (what == DefenseWork.Tower && (d.Palisade != PalisadeState.Built || d.Towers + d.TowersBuilding.Count >= e.Tower.Max)) return false;
-        double cost = spec.Cost + town.Market.Quote(Good.Timber, spec.Timber);
-        if (town.Treasury < cost) return false;
+        var spec = Spec(town, what);
+        switch (what)
+        {
+            case DefenseWork.Palisade when d.Palisade != PalisadeState.None:
+                return d.Palisade == PalisadeState.Built ? "built" : "under way";
+            case DefenseWork.Tower when d.Palisade != PalisadeState.Built:
+                return "needs the palisade";
+            case DefenseWork.Tower when d.Towers + d.TowersBuilding.Count >= spec.Max:
+                return $"the town has {spec.Max}";
+            case DefenseWork.StoneWall when d.StoneWall != PalisadeState.None:
+                return d.StoneWall == PalisadeState.Built ? "built" : "under way";
+            case DefenseWork.CityWall when d.CityWall != PalisadeState.None:
+                return d.CityWall == PalisadeState.Built ? "built" : "under way";
+            case DefenseWork.CityWall when d.StoneWall != PalisadeState.Built:
+                return "needs the stone walls";
+        }
+        if (spec.Tier != "" && !City.Reached(town, spec.Tier)) return $"needs the town to be a {City.TierName(town, spec.Tier).ToLowerInvariant()}";
+        if (town.Treasury < BuildCost(town, what)) return "not enough gold";
+        return null;
+    }
+
+    public static bool Build(Town town, DefenseWork what)
+    {
+        var d = town.Defenses;
+        var spec = Spec(town, what);
+        if (BuildBlocked(town, what) != null) return false;
+        double cost = BuildCost(town, what);
         town.Book(TreasuryAccount.Defenses, -cost);
         town.Market.Buy(Good.Timber, spec.Timber);
+        town.Market.Buy(Good.Stone, spec.Stone);
         int ready = town.Tick + spec.Days * SimTime.HoursPerDay;
-        if (what == DefenseWork.Palisade)
+        switch (what)
         {
-            d.Palisade = PalisadeState.Building;
-            d.PalisadeReadyTick = ready;
-            town.Log(LedgerCategory.War, Importance.Notable, $"Work begins on a palisade around {town.Name}. It will take {spec.Days} days.");
-        }
-        else
-        {
-            d.TowersBuilding.Add(ready);
-            town.Log(LedgerCategory.War, Importance.Notable, "Carpenters start on a watchtower on the palisade.");
+            case DefenseWork.Palisade:
+                d.Palisade = PalisadeState.Building;
+                d.PalisadeReadyTick = ready;
+                town.Log(LedgerCategory.War, Importance.Notable, $"Work begins on a palisade around {town.Name}. It will take {spec.Days} days.");
+                break;
+            case DefenseWork.Tower:
+                d.TowersBuilding.Add(ready);
+                town.Log(LedgerCategory.War, Importance.Notable, "Carpenters start on a watchtower on the palisade.");
+                break;
+            case DefenseWork.StoneWall:
+                d.StoneWall = PalisadeState.Building;
+                d.StoneWallReadyTick = ready;
+                town.Log(LedgerCategory.War, Importance.Notable, $"Masons begin stone walls round the old town. It will take {spec.Days} days.");
+                break;
+            default:
+                d.CityWall = PalisadeState.Building;
+                d.CityWallReadyTick = ready;
+                town.Log(LedgerCategory.War, Importance.Major, $"Work begins on the city wall, a ring of stone round the four inner wards. It will take {spec.Days} days.");
+                break;
         }
         return true;
     }
 
     public static double BuildCost(Town town, DefenseWork what)
     {
-        var spec = what == DefenseWork.Palisade ? town.Content.Enemy.Palisade : town.Content.Enemy.Tower;
-        return Js.Round(spec.Cost + town.Market.Quote(Good.Timber, spec.Timber));
+        var spec = Spec(town, what);
+        return Js.Round(spec.Cost + town.Market.Quote(Good.Timber, spec.Timber) + town.Market.Quote(Good.Stone, spec.Stone));
     }
 
     private static void FinishDefenses(Town town)
@@ -525,6 +591,16 @@ public static class Threat
         {
             d.Palisade = PalisadeState.Built;
             town.Log(LedgerCategory.War, Importance.Notable, $"The palisade is finished. {town.Name} sleeps a little easier.");
+        }
+        if (d.StoneWall == PalisadeState.Building && d.StoneWallReadyTick != null && town.Tick >= d.StoneWallReadyTick)
+        {
+            d.StoneWall = PalisadeState.Built;
+            town.Log(LedgerCategory.War, Importance.Major, $"The stone walls round the old town are finished. Whatever stands outside them is the raiders' first mark.");
+        }
+        if (d.CityWall == PalisadeState.Building && d.CityWallReadyTick != null && town.Tick >= d.CityWallReadyTick)
+        {
+            d.CityWall = PalisadeState.Built;
+            town.Log(LedgerCategory.War, Importance.Major, $"The city wall is closed. {town.Name} is a walled city.");
         }
         var done = d.TowersBuilding.Where(t => town.Tick >= t).ToList();
         if (done.Count > 0)
@@ -556,7 +632,7 @@ public static class Threat
     public static double Distance(Town town, int lotId)
     {
         var l = town.Lots[lotId];
-        const double c = 7.5;
+        const double c = (Town.Grid - 1) / 2.0;
         return Js.Hypot(l.X - c, l.Y - c);
     }
 

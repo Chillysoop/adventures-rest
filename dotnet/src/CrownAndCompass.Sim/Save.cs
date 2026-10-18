@@ -34,7 +34,7 @@ public sealed class SaveException(string message, Exception? inner = null) : Exc
 public static class SaveGame
 {
     /// <summary>Bump when a change makes older saves unreadable; older versions are refused with a message.</summary>
-    public const int Version = 1;
+    public const int Version = 2;
 
     private static readonly byte[] Magic = "CROWN&COMPASS SAVE\n"u8.ToArray();
 

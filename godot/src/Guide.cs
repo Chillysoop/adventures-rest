@@ -150,7 +150,7 @@ public partial class Main
         var t = _sim.Town;
         if (s.When == "") return true;
         if (s.When.StartsWith("day:", StringComparison.Ordinal)) return int.TryParse(s.When[4..], out int d) && t.Day >= d;
-        if (s.When.StartsWith("alert:", StringComparison.Ordinal)) return _shownAlerts.Any(a => a.Key.StartsWith(s.When[6..], StringComparison.Ordinal));
+        if (s.When.StartsWith("alert:", StringComparison.Ordinal)) return ShownAlerts.Any(a => a.Key.StartsWith(s.When[6..], StringComparison.Ordinal));
         return Tutorial.Measure(t, s.When) > 0;
     }
 

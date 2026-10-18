@@ -201,22 +201,35 @@ public partial class Crowd(MapView map) : Node3D
         foreach (var p in town.Parties)
         {
             if (p.Returned || !map.Geo.Pins.TryGetValue(p.SiteId, out var pin)) continue;
-            var pos = PartyPos(town, p);
+            if (Geo.PartyAt(town, p, map.HourFraction) is not var (pos, pace)) continue;
             if (map.Fog.AlphaAt(pos) >= Fog.SightAlpha) continue;
+            // Facing the way they are walking (or were, when they stopped).
             var dir = (pin - Geo.Center).Normalized();
-            float leg = Geo.PartyLeg(town, p, map.HourFraction);
-            bool home = leg < Geo.PartyLeg(town, p, map.HourFraction - 0.05f);
-            if (home) dir = -dir;
+            for (float back = 0.25f; back <= 4; back *= 2)
+                if (Geo.PartyAt(town, p, map.HourFraction - back) is var (was, _) && was.DistanceSquaredTo(pos) > 0.0004f)
+                {
+                    dir = (pos - was).Normalized();
+                    break;
+                }
             float yaw = Mathf.Atan2(dir.X, dir.Y);
             var side = new Vector2(dir.Y, -dir.X);
+            bool stopped = pace is Pace.Camped or Pace.Resting;
             for (int i = 0; i < p.Members.Count; i++)
             {
                 var a = town.Agent(p.Members[i]);
+                if (stopped)
+                {
+                    // Sitting round the fire, facing it.
+                    float ang = i * Mathf.Tau / p.Members.Count + 0.4f;
+                    var ring = new Vector2(Mathf.Cos(ang), Mathf.Sin(ang)) * 0.55f;
+                    Put(gen.At(pos + ring), Mathf.Atan2(-ring.X, -ring.Y), Palette.ClassColor(a.Hero?.Cls.Id ?? ""), Palette.RaceColor(a.Race), 1.1f);
+                    continue;
+                }
                 var off = -dir * (0.35f + i / 2 * 0.32f) + side * ((i % 2) - 0.5f) * 0.3f;
                 float bob = Mathf.Abs(Mathf.Sin(now * 9 + i * 1.7f)) * 0.03f;
                 Put(gen.At(pos + off, bob), yaw, Palette.ClassColor(a.Hero?.Cls.Id ?? ""), Palette.RaceColor(a.Race), 1.1f);
             }
-            banners.Add((gen.At(pos), yaw));
+            banners.Add((gen.At(stopped ? pos + side * 0.9f : pos), yaw));
         }
         foreach (var s in town.Scouts)
         {
@@ -252,11 +265,7 @@ public partial class Crowd(MapView map) : Node3D
         Flush(_orcs);
     }
 
-    public Vector2 PartyPos(Town town, Party p)
-    {
-        var pin = map.Geo.Pins[p.SiteId];
-        return Geo.Center + (pin - Geo.Center) * Geo.PartyLeg(town, p, map.HourFraction);
-    }
+    public Vector2? PartyPos(Town town, Party p) => Geo.PartyAt(town, p, map.HourFraction)?.Pos;
 
     public Vector2 ScoutPos(Town town, Scout s, Vector2 pin)
     {

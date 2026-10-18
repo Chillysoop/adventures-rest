@@ -2,5 +2,7 @@
   "taxRate": 0.1,
   "upkeepPerResident": 1.2,
   "civicUpkeep": 6,
-  "upkeepGrowth": 250
+  "upkeepGrowth": 250,
+  "crewShare": 0.5,
+  "crewWage": 0.5
 }

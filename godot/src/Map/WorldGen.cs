@@ -1,4 +1,5 @@
 using CrownAndCompass.Sim;
+using CrownAndCompass.Sim.Systems;
 using Godot;
 
 namespace CrownAndCompass.Client.Map;
@@ -53,6 +54,9 @@ public sealed class WorldGen
     private readonly Noise _n1, _n2, _n3;
     private readonly float _riverPhase;
 
+    /// <summary>The sim's hard country (<see cref="Roads"/>), raised out of the ground here so the roads bend round what you see.</summary>
+    private readonly Feature[] _features;
+
     public WorldGen(int seed, Geo geo, Town town, float treeScale = 1)
     {
         Seed = seed;
@@ -60,6 +64,7 @@ public sealed class WorldGen
         _n2 = new Noise(seed * 57 + 11);
         _n3 = new Noise(seed * 91 + 23);
         _riverPhase = Geo.Hash(seed * 13 + 5) * 6.28f;
+        _features = town.Terrain.ToArray();
         BuildTerritories(geo, town);
         BuildHeight();
         BuildForest(geo, treeScale);
@@ -127,6 +132,94 @@ public sealed class WorldGen
             var biome = site.Def.Habitats.Select(HabitatBiome).FirstOrDefault(b => b != null);
             if (biome is Biome b) Biomes[TerritoryAt(pin)] = b;
         }
+        // Hard country colours the territories it covers.
+        for (int c = 0; c < Biomes.Length; c++)
+        {
+            if (c == TownCell || FeatureAt(SeedOf(c)) is not var (f, k) || k < 0.35f) continue;
+            if (FeatureBiome(f.Kind.Id) is Biome b) Biomes[c] = b;
+        }
+    }
+
+    // ---------- Hard country ----------
+
+    public static Biome? FeatureBiome(string kind) => kind switch
+    {
+        "ridge" or "icefield" => Biome.Crags,
+        "mire" => Biome.Marsh,
+        "tangle" => Biome.Woodland,
+        "barrows" or "waste" => Biome.Heath,
+        _ => null,
+    };
+
+    /// <summary>Days out from the town for a world point: the inverse of <see cref="Geo.DayRadius"/>.</summary>
+    private static double DaysOut(float r) => r >= Geo.DayRadius(0.3) ? (r - Geo.Reach0) / Geo.TilesPerDay : r / (Geo.TilesPerDay + Geo.Reach0 / 0.3);
+
+    /// <summary>
+    /// The feature a point lies in and how deep inside it (0 at a ragged edge to 1 a few tiles in), or
+    /// null. Edges wander with noise so a ridge or a mire never reads as a ruled shape.
+    /// </summary>
+    public (Feature F, float K)? FeatureAt(Vector2 p)
+    {
+        if (_features.Length == 0) return null;
+        var d = p - Geo.Center;
+        float rw = d.Length();
+        if (rw < Geo.Clearing) return null;
+        double r = DaysOut(rw);
+        double bearing = Mathf.RadToDeg(Mathf.Atan2(d.X, -d.Y));
+        foreach (var f in _features)
+        {
+            if (r < f.Inner - 0.2 || r > f.Outer + 0.2) continue;
+            double diff = ((bearing - f.Bearing) % 360 + 540) % 360 - 180;
+            double side = (f.Arc / 2 - Math.Abs(diff)) * Math.PI / 180 * r;
+            double inside = Math.Min(Math.Min(r - f.Inner, f.Outer - r), side) * Geo.TilesPerDay;
+            inside += _n2.Fbm(p.X / 22 + f.Id * 7, p.Y / 22, 3) * 4;
+            if (inside > -3) return (f, Mathf.SmoothStep(-3, 12, (float)inside));
+        }
+        return null;
+    }
+
+    /// <summary>How the hard country reshapes the ground at a point.</summary>
+    private float FeatureHeight(Vector2 p, float h)
+    {
+        if (FeatureAt(p) is not var (f, k) || k <= 0) return h;
+        switch (f.Kind.Id)
+        {
+            case "ridge":
+                return h + Mathf.SmoothStep(0, 1, k) * (12 + 34 * Mathf.Pow(_n2.Ridge(p.X / 45 + f.Id, p.Y / 45, 4), 1.3f));
+            case "icefield":
+                return h + k * (4 + 6 * _n1.Fbm(p.X / 40, p.Y / 40, 3));
+            case "mire":
+                return Mathf.Lerp(h, 0.25f + _n1.Fbm(p.X / 14, p.Y / 14, 3) * 1.2f, k);
+            case "gorge":
+            {
+                // A ravine down the middle of the band, water at the bottom.
+                var d = p - Geo.Center;
+                double r = DaysOut(d.Length());
+                double mid = (f.Inner + f.Outer) / 2, half = (f.Outer - f.Inner) / 2;
+                float core = 1 - Mathf.SmoothStep(0.15f, 0.55f, (float)(Math.Abs(r - mid) / Math.Max(0.05, half)));
+                return Mathf.Lerp(h, -1.4f, core * k) + k * (1 - core) * 3;
+            }
+            case "barrows":
+                return h + k * 1.2f * Mathf.Max(0, _n1.Get(p.X / 6, p.Y / 6));
+            case "waste":
+                return Mathf.Lerp(h, Mathf.Max(h, 1.5f), k) + k * Mathf.Abs(_n3.Get(p.X / 9, p.Y / 9)) * 2;
+            default:
+                return h;
+        }
+    }
+
+    /// <summary>Forest bias the hard country adds: thick in a tangled wood, none on bare rock or waste.</summary>
+    private float FeatureForest(Vector2 p, float bias)
+    {
+        if (FeatureAt(p) is not var (f, k) || k <= 0) return bias;
+        return f.Kind.Id switch
+        {
+            "tangle" => bias + 0.75f * k,
+            "ridge" or "icefield" or "waste" => Mathf.Lerp(bias, -1, k),
+            "mire" => Mathf.Lerp(bias, -0.05f, k),
+            "barrows" => Mathf.Lerp(bias, -0.5f, k),
+            _ => bias,
+        };
     }
 
     public static Biome? HabitatBiome(string habitat) => habitat switch
@@ -145,8 +238,9 @@ public sealed class WorldGen
     /// <summary>The river's centre line as x for a given y: straight past the town, meandering further out.</summary>
     public float RiverX(float y)
     {
-        float far = Mathf.SmoothStep(30, 260, Mathf.Abs(y - Geo.Center.Y));
-        return Geo.Center.X + 15 + far * (Mathf.Sin(y * 0.011f + _riverPhase) * 46 + Mathf.Sin(y * 0.033f + _riverPhase * 2) * 12);
+        // Straight past the Riverside ward on the town's east edge, wandering once clear of it.
+        float far = Mathf.SmoothStep(Geo.Grid / 2 + 8, 280, Mathf.Abs(y - Geo.Center.Y));
+        return Geo.Center.X + Geo.Grid / 2 + 3 + far * (Mathf.Sin(y * 0.011f + _riverPhase) * 46 + Mathf.Sin(y * 0.033f + _riverPhase * 2) * 12);
     }
 
     public float RiverDistance(Vector2 p)
@@ -179,6 +273,7 @@ public sealed class WorldGen
                 float d = p.DistanceTo(Geo.Center);
                 float flat = Mathf.SmoothStep(Geo.Clearing, Geo.Clearing + 30, d);
                 h = Mathf.Lerp(TownHeight, Mathf.Max(h, d < Geo.Clearing + 30 ? 1.2f : h), flat);
+                h = FeatureHeight(p, h);
                 float dr = RiverDistance(p);
                 h = Mathf.Min(h, Mathf.Lerp(-1.1f, h, Mathf.SmoothStep(0.6f, 5.5f, dr)));
                 Height[y * (N + 1) + x] = h;
@@ -265,6 +360,7 @@ public sealed class WorldGen
                     Biome.Heath => -0.32f,
                     _ => -0.2f,
                 };
+                bias = FeatureForest(p, bias);
                 float f = Mathf.SmoothStep(-0.05f, 0.4f, _n3.Fbm(p.X / 75, p.Y / 75, 4) + bias);
                 // No forest on water, bare peaks, steep scree, or the town's own clearing.
                 if (h < 0.4f || h > 36) f = 0;

@@ -97,6 +97,44 @@ public static class World
         Rumors.Hear(town, site, Rumors.Occupants(town.Content, site.Def), site.Def.Tier, trust);
     }
 
+    /// <summary>A fixed hash to [0, 1) for placing things; never the town's dice. The client's Geo.Hash is the same function.</summary>
+    public static double Hash(int n)
+    {
+        uint x = unchecked((uint)n * 0x45d9f3bu);
+        x = unchecked(((x >> 16) ^ x) * 0x45d9f3bu);
+        x = (x >> 16) ^ x;
+        return x / 4294967296.0;
+    }
+
+    /// <summary>
+    /// Where a site lies: its compass bearing (degrees, 0 north, clockwise) and how far out it is in
+    /// days of open-ground march. A region spreads its sites across its arc; sites outside any region
+    /// (the war camp) sit between the hand-written ones.
+    /// </summary>
+    public static (double Bearing, double Reach) Place(Town town, SiteState s)
+    {
+        int i = town.Sites.IndexOf(s);
+        double reach = s.Def.Distance * (0.82 + Hash(i * 7 + 3) * 0.3);
+        if (RegionOf(town, s) is { } region)
+        {
+            int k = region.SiteIds.IndexOf(s.Def.Id);
+            int n = region.SiteIds.Count;
+            double bearing = region.Bearing + (k - (n - 1) / 2.0) * region.Arc * 0.6 / Math.Max(1, n);
+            return (bearing, reach + (k % 2) * 0.14);
+        }
+        int baseCount = Math.Max(1, town.Content.Sites.Count);
+        double slot = i < baseCount ? i : i - baseCount + 0.5;
+        return (slot / baseCount * 360 + 20.05, reach);
+    }
+
+    /// <summary>The site's spot in day units from the town: x east, y south.</summary>
+    public static (double X, double Y) Spot(Town town, SiteState s)
+    {
+        var (b, r) = Place(town, s);
+        double a = b * Math.PI / 180;
+        return (r * Math.Sin(a), -r * Math.Cos(a));
+    }
+
     /// <summary>Experience for clearing a site: the encounter budget of its level.</summary>
     public static int Milestone(Town town, SiteState site)
     {
@@ -183,6 +221,9 @@ public static class World
                 region.SettlementId = s.Id;
             }
         }
+
+        // Last, so the country between the sites never shifts the regions and sites a seed makes.
+        Roads.Generate(town, rng);
     }
 
     private static ThemeDef WeightedTheme(Rng rng, IReadOnlyList<ThemeDef> themes)
@@ -384,7 +425,7 @@ public static class World
             var b = s.Kin.Boon;
             if (b.Good is Good g && b.Qty > 0) town.Market.Seed(g, b.Qty);
             if (b.HeroChance <= 0 || b.Classes.Count == 0 || s.Kin.Race == "") continue;
-            if (town.Taverns.Count == 0 || town.Heroes.Count >= Quests.MaxHeroes || !town.Rng.Chance(b.HeroChance)) continue;
+            if (town.Taverns.Count == 0 || town.Heroes.Count >= City.HeroCap(town) || !town.Rng.Chance(b.HeroChance)) continue;
             var cls = town.Content.Classes.FirstOrDefault(c => c.Id == town.Rng.Pick(b.Classes));
             if (cls == null) continue;
             var a = Quests.CreateHero(town, cls, town.Rng.Chance(0.6) ? 2 : 3, s.Kin.Race);

@@ -6,7 +6,7 @@ namespace CrownAndCompass.Client.Map;
 
 /// <summary>
 /// Where things sit on the map, in world tiles (one tile is one town lot): a 1024-tile square of
-/// wilderness with the 16x16 town grid at its heart, a river past the ford the town was founded
+/// wilderness with the town grid (48 lots a side, in rings of wards) at its heart, a river past the ford the town was founded
 /// on, and the adventure sites a few days' march out. Decoration is hashed from fixed numbers so
 /// it never touches the simulation's Rng.
 /// </summary>
@@ -20,8 +20,11 @@ public sealed class Geo
     /// <summary>Tiles a party covers in a day on the road; sites sit this far out per day of travel.</summary>
     public const float TilesPerDay = 44;
 
-    /// <summary>Everything within this radius of the town stays clear of forest and flat enough to build on.</summary>
-    public const float Clearing = 15;
+    /// <summary>World tiles from the town's heart to where the wilds begin: a site or road point zero days out sits here.</summary>
+    public const float Reach0 = Clearing + 7;
+
+    /// <summary>Everything within this radius of the town stays clear of forest and flat enough to build on: the whole grid, every ward.</summary>
+    public const float Clearing = Grid * 0.75f;
 
     public readonly Dictionary<string, Vector2> Pins = [];
     public float TownRadius { get; private set; } = 3;
@@ -38,10 +41,23 @@ public sealed class Geo
 
     public static Vector2 LotPos(Lot l) => new(Margin + l.X, Margin + l.Y);
 
+    /// <summary>World tiles from the town's heart for a spot this many days out (eased in near the town, so a party walks out of it smoothly).</summary>
+    public static float DayRadius(double days) => (float)(days * TilesPerDay + Reach0 * Math.Min(1, days / 0.3));
+
+    /// <summary>A spot in the sim's day units (x east, y south of the town) on the map.</summary>
+    public static Vector2 FromDays(double x, double y)
+    {
+        double r = Math.Sqrt(x * x + y * y);
+        if (r < 1e-6) return Center;
+        return Center + new Vector2((float)(x / r), (float)(y / r)) * DayRadius(r);
+    }
+
+    public static Vector2 FromDays((double X, double Y) p) => FromDays(p.X, p.Y);
+
     /// <summary>
-    /// The wilds keep their distance from the frontier: sites sit beyond the edge of the settled
-    /// area, a day's march out per day of travel, and drift outward as the town grows.
-    /// Returns true when a pin moved enough to matter for cached drawing.
+    /// The town's settled radius (for its lamplight), and every site's pin where the sim puts it: on its
+    /// region's bearing, a day's march out per day of travel. Returns true when a pin moved enough to
+    /// matter for cached drawing.
     /// </summary>
     public bool PlaceSites(Town town, float ease)
     {
@@ -49,52 +65,21 @@ public sealed class Geo
         foreach (var l in town.Lots)
             if (l.Zone != Zone.None) r = Mathf.Max(r, new Vector2(Margin + l.X + 0.5f, Margin + l.Y + 0.5f).DistanceTo(Center) + 0.7f);
         TownRadius += (r - TownRadius) * ease;
-        int baseCount = town.Content.Sites.Count;
         bool moved = false;
-        for (int i = 0; i < town.Sites.Count; i++)
+        foreach (var s in town.Sites)
         {
-            var s = town.Sites[i];
-            float a;
-            float rr = TownRadius + 10 + s.Def.Distance * TilesPerDay * (0.82f + Hash(i * 7 + 3) * 0.3f);
-            if (Sim.Systems.World.RegionOf(town, s) is { } region)
-            {
-                // Spread a region's sites across its arc of the compass (bearing 0 is north, clockwise).
-                int k = region.SiteIds.IndexOf(s.Def.Id);
-                int n = region.SiteIds.Count;
-                float bearing = (float)(region.Bearing + (k - (n - 1) / 2f) * region.Arc * 0.6f / Math.Max(1, n));
-                a = -Mathf.Pi / 2 + Mathf.DegToRad(bearing);
-                rr += (k % 2) * 6;
-            }
-            else
-            {
-                // Content sites keep fixed slots; sites raised later (the war camp) sit between them.
-                float slot = i < baseCount ? i : i - baseCount + 0.5f;
-                a = -Mathf.Pi / 2 + slot / baseCount * Mathf.Tau + 0.35f;
-            }
-            var p = Center + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * rr;
+            var p = FromDays(Sim.Systems.World.Spot(town, s));
             if (!Pins.TryGetValue(s.Def.Id, out var old) || old.DistanceTo(p) > 0.25f) moved = true;
             Pins[s.Def.Id] = p;
         }
         return moved;
     }
 
-    /// <summary>Where a party is between town (0) and its site (1), counting fractional hours.</summary>
-    public static float PartyLeg(Town town, Party p, float hours)
+    /// <summary>Where a party is at <paramref name="hours"/> past the current tick, and what it is doing; null once it is lost.</summary>
+    public static (Vector2 Pos, Pace Pace)? PartyAt(Town town, Party p, float hours)
     {
-        var site = Quests.Site(town, p.SiteId)!;
-        float e = town.Tick + hours - p.DepartTick;
-        float outbound = site.Def.Distance * SimTime.HoursPerDay;
-        if (p.RecalledTick is int rt)
-        {
-            float turned = rt - p.DepartTick;
-            float peak = turned / outbound;
-            if (e < turned) return e / outbound;
-            float back = Math.Max(1, p.ReturnTick - rt);
-            return Mathf.Clamp(peak * (1 - (e - turned) / back), 0, 1);
-        }
-        if (e < outbound) return e / outbound;
-        if (e < outbound + SimTime.HoursPerDay) return 1;
-        return Mathf.Clamp(1 - (e - outbound - SimTime.HoursPerDay) / outbound, 0, 1);
+        if (Roads.Where(town, p, town.Tick + hours) is not { } w) return null;
+        return (FromDays(w.X, w.Y), w.Pace);
     }
 
     /// <summary>0 by day, 1 at deep night, easing through dusk and dawn.</summary>

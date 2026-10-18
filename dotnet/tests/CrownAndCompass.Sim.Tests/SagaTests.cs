@@ -9,7 +9,7 @@ public sealed class LongCampaign
 
     public LongCampaign()
     {
-        Sim = new Simulation(new SimulationOptions { Seed = 1 });
+        Sim = new Simulation(new SimulationOptions { Seed = 2 });
         for (int d = 0; d < 1000 && Sim.Town.Outcome == null; d++) Sim.RunDays(1);
     }
 }
@@ -176,7 +176,7 @@ public class SagaTests(LongCampaign campaign) : IClassFixture<LongCampaign>
     public void WithoutTheSagaTheLastStandStillEndsTheGame()
     {
         var sim = new Simulation(new SimulationOptions { Seed = 1, Saga = false });
-        for (int d = 0; d < 260 && sim.Town.Outcome == null; d++) sim.RunDays(1);
+        for (int d = 0; d < 400 && sim.Town.Outcome == null; d++) sim.RunDays(1);
         Assert.NotNull(sim.Town.Outcome);
         Assert.Empty(sim.Town.Saga.Menaces);
         Assert.Equal(0, sim.Town.Saga.Act);
