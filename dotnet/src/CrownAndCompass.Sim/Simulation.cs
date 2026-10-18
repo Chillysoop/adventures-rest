@@ -106,6 +106,7 @@ public sealed class Simulation
         double pace = Director.Daily(t);
         Threat.Daily(t, pace, Options.AutoMayor && Options.AutoDefense, Options.Enemy);
         World.Daily(t, Options.AutoMayor);
+        Trade.Daily(t, Options.AutoMayor);
         Quests.Daily(t, Options.AutoMayor && Options.AutoBounties, Options.FreeCompanies);
         Intel.Daily(t, Options.AutoMayor && Options.AutoBounties && Options.AutoIntel);
         Watch.Daily(t, Options.AutoMayor && Options.AutoBounties);
@@ -133,6 +134,11 @@ public sealed class Simulation
 
     /// <summary>Send an envoy with gifts to a settlement out in the wilds, to win its people over.</summary>
     public bool SendEnvoy(int settlementId) => World.SendEnvoy(Town, settlementId);
+
+    /// <summary>Open a trade route to a settlement: export goes out, import comes back.</summary>
+    public bool OpenTradeRoute(int settlementId, Good export, Good import) => Trade.OpenRoute(Town, settlementId, export, import) != null;
+
+    public bool CloseTradeRoute(int routeId) => Trade.CloseRoute(Town, routeId);
 
     /// <summary>The player's other lever: sign or veto the motion before the council.</summary>
     public bool DecideMotion(int motionId, bool sign) => Council.Decide(Town, motionId, sign);

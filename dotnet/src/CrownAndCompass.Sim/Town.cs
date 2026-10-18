@@ -230,6 +230,7 @@ public static class TreasuryAccount
     public const string Intel = "Intel";
     public const string Stories = "Stories";
     public const string Decrees = "Decrees";
+    public const string Trade = "Trade";
 }
 
 /// <summary>How the campaign ended.</summary>
@@ -350,6 +351,9 @@ public sealed class Town
 
     /// <summary>The turning year: festival days and the visitors (<see cref="Systems.Seasons"/>).</summary>
     public SeasonState Seasons { get; } = new();
+
+    /// <summary>The town's trade routes to the other settlements (<see cref="Systems.Trade"/>).</summary>
+    public TradeState Trade { get; } = new();
 
     /// <summary>The mayor's character sheet and the story events open and past (<see cref="Systems.Stories"/>).</summary>
     public Systems.StoryState Stories => _stories ??= new Systems.StoryState { Mayor = Systems.Stories.NewMayor(this) };

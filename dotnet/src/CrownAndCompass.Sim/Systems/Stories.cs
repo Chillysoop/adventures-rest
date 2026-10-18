@@ -293,6 +293,9 @@ public sealed class Story
     /// <summary>The townsperson who brought a petition, and the ward it is about.</summary>
     public int? PetitionerId { get; set; }
     public string? Ward { get; set; }
+
+    /// <summary>The settlement out in the wilds a story is about (its people, a trade route there).</summary>
+    public int? SettlementId { get; set; }
     public List<StoryBeat> Beats { get; } = [];
 }
 
@@ -342,11 +345,11 @@ public static class Stories
 
     /// <summary>Every effect an outcome can have, in the order they apply; then decree:id (days, or -1 to repeal) and precedent:id (1 sets it, -1 forgets it).</summary>
     public static readonly string[] EffectKeys =
-        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "delay", "festival", "reveal", "inspiration", "people", "leaves"];
+        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "delay", "festival", "reveal", "inspiration", "people", "leaves", "regard"];
 
     /// <summary>Every need a story or option can name; besides these, precedent:id, decree:id and season:id, each negated with a leading !.</summary>
     public static readonly string[] Needs =
-        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward"];
+        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "settlement", "route", "courted"];
 
     private static readonly string[] Prefixed = ["precedent:", "decree:", "season:"];
 
@@ -690,6 +693,22 @@ public static class Stories
                 s.Ward = wards.Count == 0 ? null : wards[town.Rng.Range(0, wards.Count)];
                 return s.Ward != null;
             }
+            case "settlement":
+            case "route":
+            case "courted":
+            {
+                bool Fits(Settlement x) => !x.Razed && town.Regions[x.RegionId].Known && need switch
+                {
+                    "route" => Trade.Open(town).Any(r => r.SettlementId == x.Id),
+                    "courted" => !x.Allied && x.Standing >= 25,
+                    _ => x.Standing > -20,
+                };
+                if (s.SettlementId is int sid) return Fits(town.Settlements[sid]);
+                if (!bind) return false;
+                var found = Pick(town.Settlements.Where(Fits).OrderBy(x => x.Id).ToList());
+                s.SettlementId = found?.Id;
+                return found != null;
+            }
             default:
             {
                 bool not = need.StartsWith('!');
@@ -915,6 +934,13 @@ public static class Stories
                     if (n != 0) said.Add($"{(n > 0 ? "+" : "−")}{Math.Abs(n)} {(Math.Abs(n) == 1 ? "settler" : "settlers")}");
                     break;
                 }
+                case "regard":
+                    if (s.SettlementId is int rs && town.Settlements[rs] is { Razed: false } st)
+                    {
+                        World.Shift(town, st, v);
+                        said.Add($"{st.Name}'s regard {(v > 0 ? "+" : "−")}{Js.Str(Math.Abs(v))}");
+                    }
+                    break;
                 case "leaves":
                     // The petitioner, and their household, give up on the town.
                     if (s.PetitionerId is int pid && town.Agent(pid) is { Departed: false } pa)
@@ -1006,6 +1032,8 @@ public static class Stories
         Put("{petitionerName}", () => s.PetitionerId is int p ? town.Agent(p).GivenName : "the petitioner");
         Put("{trade}", () => s.PetitionerId is int p ? town.Agent(p).Profession.ToLowerInvariant() : "townsman");
         Put("{ward}", () => s.Ward is string w ? City.Ward(town, w).Name : "the old town");
+        Put("{settlement}", () => s.SettlementId is int st ? town.Settlements[st].Name : "a far town");
+        Put("{people}", () => s.SettlementId is int sp ? town.Settlements[sp].People : "the folk of a far town");
         Put("{season}", () => Seasons.Current(town).Name.ToLowerInvariant());
         return Cap(sb.ToString());
     }

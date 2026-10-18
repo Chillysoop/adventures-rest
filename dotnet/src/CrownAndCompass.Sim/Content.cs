@@ -747,6 +747,9 @@ public sealed record PeopleDef
     public string History { get; init; } = "";
     public IReadOnlyList<string> Settlements { get; init; } = [];
     public BoonDef Boon { get; init; } = new();
+
+    /// <summary>What they buy from the town and sell to it along a trade route (<see cref="Systems.Trade"/>).</summary>
+    public Systems.TradeGoodsDef Trade { get; init; } = new();
 }
 
 public sealed record StandingRules
@@ -1100,6 +1103,7 @@ public sealed class Content
     /// <summary>Decorations and set dressing the player can place (content/game/decor.json).</summary>
     public DecorRules Decor { get; init; } = new();
     public SeasonRules Seasons { get; init; } = new();
+    public TradeRules Trade { get; init; } = new();
 
     /// <summary>The world's history: its ages, the powers that rose and fell, and the calendar (content/game/history.json).</summary>
     public HistoryRules History { get; init; } = new();
@@ -1243,6 +1247,7 @@ public sealed class Content
             City = Parse<CityRules>("city.json"),
             Decor = Parse<DecorRules>("decor.json"),
             Seasons = Parse<SeasonRules>("seasons.json"),
+            Trade = Parse<TradeRules>("trade.json"),
             History = Parse<HistoryRules>("history.json"),
             Stories = Parse<StoryRules>("stories.json"),
         };

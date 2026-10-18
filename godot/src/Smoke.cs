@@ -46,23 +46,23 @@ public partial class Main
             case 2:
                 foreach (var tab in Enum.GetValues<Tab>()) SetTab(tab);
                 return 1;
-            case >= 3 and <= 12:
+            case >= 3 and <= 13:
                 // One window open at a time, each given a few frames to draw (Inspect, the last, opens by clicking).
                 OpenWindow(Enum.GetValues<Tab>()[stage - 3]);
                 return 5;
-            case 13:
+            case 14:
                 CloseWindow();
                 ToggleBuildBar();
                 return 5;
-            case 14:
+            case 15:
                 ToggleBuildBar();
                 ToggleStrategic();
                 return 10;
-            case 15:
+            case 16:
                 ToggleStrategic();
                 OpenMenu();
                 return 5;
-            case 16:
+            case 17:
             {
                 // Save and load through the same calls the game menu uses, to a scratch file.
                 string path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"crown-smoke-{System.Environment.ProcessId}.save");
@@ -74,16 +74,16 @@ public partial class Main
                 SetSpeed(Speeds.Length - 1);
                 return 60;
             }
-            case 17:
+            case 18:
                 StartTutorial();
                 return 10;
-            case 18:
+            case 19:
                 OpenHistory(null);
                 return 10;
-            case 19:
+            case 20:
                 CloseHistory();
                 return 5;
-            case 20:
+            case 21:
             {
                 // A story event's card, as one pops up: open it and take the first option, which throws the die.
                 var story = Stories.Open(_sim.Town, "shrine-omen") ?? throw new InvalidOperationException("no story would open");
@@ -91,14 +91,14 @@ public partial class Main
                 Choose(story.Id, 0);
                 return 70;
             }
-            case 21:
+            case 22:
                 if (_beat == null || _beatResult is not { Visible: true }) throw new InvalidOperationException("the roll did not land");
                 CloseStory();
                 // A level up on the Mayor tab: one skill-level choice and one improvement.
                 _sim.Town.Stories.Mayor.Level = Math.Max(_sim.Town.Stories.Mayor.Level, 4);
                 SetTab(Tab.Mayor);
                 return 10;
-            case 22:
+            case 23:
                 for (int i = 0; i < 6 && Sheet.Pending(_sim.Town) > 0; i++)
                 {
                     var (_, improvement) = Sheet.NextAdvance(_sim.Town);

@@ -177,6 +177,15 @@
       "teaches": []
     },
     {
+      "id": "diplomacy",
+      "title": "Diplomacy and trade",
+      "text": "Out in the wilds live other peoples: villages, dwarf holds, elf enclaves, free ports and oasis cities. Open [b]Diplomacy[/b] to see what each thinks of the town. Send an [b]envoy[/b] with gifts to win them over, and once they think well enough of you, open a [b]trade route[/b]: a caravan sells your surplus to them and brings back what you are short of. Every caravan that gets through warms them further, and at 60 they ally with the town. A bigger charter lets you run more routes.",
+      "when": "alert:trade",
+      "point": "tab:Diplomacy",
+      "until": "tab:Diplomacy",
+      "teaches": ["tab:Diplomacy", "command:SendEnvoy", "command:OpenTradeRoute", "command:CloseTradeRoute"]
+    },
+    {
       "id": "campaign-map",
       "title": "The campaign map",
       "text": "Press [b]M[/b] or [b]Campaign map[/b] to see the same land as an inked map. Drop markers to plan, drag them to move them, and press [b]Delete[/b] to remove the one under the cursor.",
@@ -239,7 +248,5 @@
       "teaches": []
     }
   ],
-  "untaught": {
-    "command:SendEnvoy": "The client has no button for envoys yet."
-  }
+  "untaught": {}
 }
