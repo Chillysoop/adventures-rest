@@ -54,6 +54,9 @@ public sealed record BuildingDef
     /// <summary>The only wards it can stand in; empty for any open ward.</summary>
     public IReadOnlyList<string> Wards { get; init; } = [];
 
+    /// <summary>The least density (city.json "densities": 0 low, 1 medium, 2 high) the land under it must be zoned for.</summary>
+    public int Density { get; init; }
+
     /// <summary>Services it gives (tavern, shrine, market, bath, theatre, learning, spectacle) and how many residents each covers.</summary>
     public IReadOnlyDictionary<string, int> Serves { get; init; } = new Dictionary<string, int>();
 

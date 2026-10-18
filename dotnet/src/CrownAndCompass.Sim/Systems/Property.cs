@@ -214,9 +214,14 @@ public static class Property
         if (TryBuild(town, a, house, true) && !a.Has(Trait.Greedy)) a.Ambition = Ambition.None;
     }
 
-    /// <summary>A landlord builds tenements once there is open land outside the walls for them, cottages until then.</summary>
+    /// <summary>
+    /// A landlord builds tall houses wall to wall on high-density land, tenements on open land outside the walls,
+    /// and cottages until the town has either.
+    /// </summary>
     private static BuildingDef RentalKind(Town town)
     {
+        foreach (var d in town.Content.Buildings.Where(d => d.Zone == Zone.Residential && d.Buildable && d.Density > Density.Low).OrderByDescending(d => d.Density).ThenBy(d => d.Id, StringComparer.Ordinal))
+            if (City.Unlocked(town, d) && FindLot(town, d) != null) return d;
         var tenement = town.Content.Building("tenement");
         return City.Unlocked(town, tenement) && FindLot(town, tenement) != null ? tenement : town.Content.Building("house");
     }

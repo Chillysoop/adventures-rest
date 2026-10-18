@@ -14,8 +14,8 @@ namespace CrownAndCompass.Client.Map;
 /// </summary>
 public partial class Planner(MapView map) : Control
 {
-    /// <summary>A zone to paint (Zone.None clears land), or a building to place, by content id.</summary>
-    public sealed record PlanTool(Zone? Zone, string? Building);
+    /// <summary>A zone to paint (Zone.None clears land) at a density (homes and shops only), or a building to place, by content id.</summary>
+    public sealed record PlanTool(Zone? Zone, string? Building, int Density = 0);
 
     public PlanTool? Tool { get; private set; }
 
@@ -46,6 +46,15 @@ public partial class Planner(MapView map) : Control
         _yaw = null;
         QueueRedraw();
         Changed?.Invoke();
+    }
+
+    /// <summary>A zone's paint, deeper and stronger the denser the land is zoned.</summary>
+    public static Color ZoneColor(Zone z, int density)
+    {
+        var c = ZoneColor(z);
+        if (density <= 0) return c;
+        c.ToHsv(out float h, out float s, out float v);
+        return Color.FromHsv(h, Mathf.Min(1, s * (1 + 0.28f * density)), v * (1 - 0.2f * density));
     }
 
     public static Color ZoneColor(Zone z) => z switch
@@ -105,7 +114,7 @@ public partial class Planner(MapView map) : Control
         if (Tool is { Zone: Zone z } && _stroke.Count > 0)
         {
             Dab(ToTown(w));
-            if (map.Sim.PaintZone(_stroke.Select(p => ((double)p.X, (double)p.Y)), Radius, z) > 0) Changed?.Invoke();
+            if (map.Sim.PaintZone(_stroke.Select(p => ((double)p.X, (double)p.Y)), Radius, z, Tool.Density) > 0) Changed?.Invoke();
             _stroke.Clear();
         }
         else if (Tool is { Building: string id } && _press is Vector2 at)
@@ -152,7 +161,7 @@ public partial class Planner(MapView map) : Control
         Wards(town);
         if (Tool.Zone is Zone z)
         {
-            var c = z == Zone.None ? new Color(0.95f, 0.9f, 0.8f) : ZoneColor(z);
+            var c = z == Zone.None ? new Color(0.95f, 0.9f, 0.8f) : ZoneColor(z, Tool.Density);
             // Where the zone's buildings will go on the land already painted, faintly, so a stroke's worth shows at once.
             if (z != Zone.None)
                 foreach (var l in PlotsOf(town, z))

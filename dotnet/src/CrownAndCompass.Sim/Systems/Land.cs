@@ -39,10 +39,12 @@ public static class Land
     /// (Zone.None clears it). Built-on ground keeps its zone. Returns how many cells changed.
     /// </summary>
     /// <param name="overwrite">False leaves zoned land alone and paints only open ground.</param>
-    public static int Brush(Town town, IEnumerable<(double X, double Y)> dabs, double radius, Zone zone, bool overwrite = true)
+    /// <param name="density">How tightly the paint lets the zone be built (<see cref="Density"/>); built-on ground of the same zone takes it too, so an old street can be zoned to grow taller.</param>
+    public static int Brush(Town town, IEnumerable<(double X, double Y)> dabs, double radius, Zone zone, bool overwrite = true, int density = 0)
     {
         var plan = town.Plan;
         int n = 0;
+        byte dens = (byte)(Density.Takes(zone) ? density : 0);
         double r2 = radius * radius * Res * Res;
         var gardens = Gardens(town);
         foreach (var (x, y) in dabs)
@@ -56,7 +58,14 @@ public static class Land
                     double dx = cx + 0.5 - px, dy = cy + 0.5 - py;
                     if (dx * dx + dy * dy > r2) continue;
                     int i = cy * Size + cx;
-                    if (plan.Taken[i] != 0 || plan.Zones[i] == (byte)zone) continue;
+                    if (plan.Taken[i] != 0 || plan.Zones[i] == (byte)zone)
+                    {
+                        // Painted or built land of the zone only changes its density.
+                        if (zone == Zone.None || plan.Zones[i] != (byte)zone || plan.Density[i] == dens || !Open(town, i)) continue;
+                        plan.Density[i] = dens;
+                        n++;
+                        continue;
+                    }
                     // A company's bastion grounds take no paint.
                     if (zone != Zone.None && plan.Grounds[i] != 0) continue;
                     if (!overwrite && plan.Zones[i] != (byte)Zone.None) continue;
@@ -65,6 +74,7 @@ public static class Land
                     // Unpainted ground with a decoration on it is a garden, and stays one.
                     if (zone != Zone.None && plan.Zones[i] == (byte)Zone.None && gardens != null && gardens[i]) continue;
                     plan.Zones[i] = (byte)zone;
+                    plan.Density[i] = dens;
                     n++;
                 }
         }
@@ -126,7 +136,7 @@ public static class Land
     {
         town.Plan.Fresh();
         // The largest the townsfolk build in the zone, so a count of one means anything of theirs fits.
-        var probe = town.Content.Buildings.Where(d => d.Zone == zone && d.Buildable && d.Wards.Count == 0).OrderByDescending(d => Footprint(d).W * Footprint(d).D).ThenBy(d => d.Id, StringComparer.Ordinal).FirstOrDefault()
+        var probe = town.Content.Buildings.Where(d => d.Zone == zone && d.Buildable && d.Wards.Count == 0 && d.Density == 0).OrderByDescending(d => Footprint(d).W * Footprint(d).D).ThenBy(d => d.Id, StringComparer.Ordinal).FirstOrDefault()
             ?? new BuildingDef { Id = "", Name = "", Zone = zone };
         var plan = town.Plan;
         var (w, d) = Footprint(probe);
@@ -198,9 +208,12 @@ public static class Land
             if (plan.Grounds[i] != 0 && plan.Grounds[i] != ground) return false;
             if (zone is Zone z && plan.Zones[i] != (byte)z) return false;
         }
-        foreach (int i in Cells(x, y, w, d, yaw, 1))
-            if (i >= 0 && plan.Taken[i] != 0) return false;
-        if (!Clear(town, x, y, w, d, yaw)) return false;
+        // Dense land builds wall to wall; elsewhere a lane of open ground runs round each building.
+        int lane = Density.Lane(town, plan.Density[mid]);
+        if (lane > 0)
+            foreach (int i in Cells(x, y, w, d, yaw, lane))
+                if (i >= 0 && plan.Taken[i] != 0) return false;
+        if (!Clear(town, x, y, w, d, yaw, lane > 0 ? town.Content.Rules.BuildingGap : 0)) return false;
         // Not on ground too steep to prop up.
         return Hills.Span(town, x, y, w, d, yaw) <= Hills.MaxSpan;
     }
@@ -209,9 +222,9 @@ public static class Land
     /// Whether a footprint keeps the town's gap from every building near it, measured on the turned rectangles themselves:
     /// the cells only sample a footprint's middle, so two buildings at odd angles could otherwise cross at the corners.
     /// </summary>
-    public static bool Clear(Town town, double x, double y, int w, int d, double yaw)
+    /// <param name="gap">Tiles kept clear (none on dense land, where buildings share walls but still never cross).</param>
+    public static bool Clear(Town town, double x, double y, int w, int d, double yaw, double gap)
     {
-        double gap = town.Content.Rules.BuildingGap;
         var plan = town.Plan;
         int reach = (int)Math.Ceiling(gap * Res) + 2;
         int last = -1;
@@ -261,7 +274,7 @@ public static class Land
         var plan = town.Plan;
         plan.Fresh();
         // Buildings kept to certain wards search on their own; the rest share a search per zone and size.
-        var key = (zone, w, d, def.Wards.Count == 0 ? "" : def.Id);
+        var key = (zone, w, d, def.Wards.Count == 0 && def.Density == 0 ? "" : def.Id);
         if (!plan.Found.TryGetValue(key, out var spot)) plan.Found[key] = spot = Search(town, def, w, d, zone);
         // A fresh lot each time: the caller may set its zone, and claims it under the next id.
         return spot == null ? null : new Lot(town.Lots.Count, spot.X, spot.Y) { W = w, D = d, Yaw = spot.Yaw, Zone = zone ?? Zone.Civic };
@@ -433,7 +446,8 @@ public static class Land
         }
         if (best < 0) return false;
         double bx = (best % Size + 0.5) / Res, by = (best / Size + 0.5) / Res;
-        return Brush(town, [(bx, by)], radius, zone, overwrite: false) > 0;
+        // As dense as the stand-in mayor zones that ward by now.
+        return Brush(town, [(bx, by)], radius, zone, overwrite: false, density: Density.Target(town, bx, by)) > 0;
     }
 }
 
@@ -442,6 +456,9 @@ public sealed class LandPlan
 {
     public byte[] Zones { get; set; } = new byte[Land.Size * Land.Size];
     public int[] Taken { get; set; } = new int[Land.Size * Land.Size];
+
+    /// <summary>How tightly each cell may be built (<see cref="Systems.Density"/>: 0 low, 1 medium, 2 high).</summary>
+    public byte[] Density { get; set; } = new byte[Land.Size * Land.Size];
 
     /// <summary>Ground held for a company's bastion (its grounds number), 0 for none: only its own facilities go there (<see cref="Bastions"/>).</summary>
     public byte[] Grounds { get; set; } = new byte[Land.Size * Land.Size];

@@ -16,18 +16,20 @@ public static class Planning
     public const double MaxBrush = 3;
 
     /// <summary>Paint a brush stroke (Zone.None clears land; civic land is made only by placing government buildings). Returns cells changed.</summary>
-    public static int Paint(Town town, IEnumerable<(double X, double Y)> dabs, double radius, Zone zone)
+    public static int Paint(Town town, IEnumerable<(double X, double Y)> dabs, double radius, Zone zone, int density = 0)
     {
         if (zone != Zone.None && !Paintable.Contains(zone)) return 0;
-        // A zone paints open ground only, so a stroke never eats another zone: the eraser clears land to repaint it.
-        int n = Land.Brush(town, dabs, Math.Clamp(radius, 0.25, MaxBrush), zone, overwrite: zone == Zone.None);
+        if (!Density.Takes(zone)) density = Density.Low;
+        if (Density.Blocked(town, density) != null) return 0;
+        // A zone paints open ground only (and the density of its own land), so a stroke never eats another zone: the eraser clears land to repaint it.
+        int n = Land.Brush(town, dabs, Math.Clamp(radius, 0.25, MaxBrush), zone, overwrite: zone == Zone.None, density: density);
         if (n > 0)
             town.Log(
                 LedgerCategory.Property,
                 Importance.Routine,
                 zone == Zone.None
                     ? $"The council takes {Acres(n)} off the plan."
-                    : $"The council zones {Acres(n)} as {ZoneName(zone)} land.");
+                    : $"The council zones {Acres(n)} as {(density > Density.Low ? Density.Name(town, density).ToLowerInvariant() + "-density " : "")}{ZoneName(zone)} land.");
         return n;
     }
 
@@ -101,7 +103,8 @@ public static class Planning
     {
         var ward = City.WardOf(town, x, y);
         if (!City.IsOpen(town, x, y)) return $"{City.The(ward)} has not been laid out";
-        if (!City.Allows(town, d, x, y)) return $"it can't stand in {City.The(ward)}";
+        if (!City.AllowsWard(town, d, x, y)) return $"it can't stand in {City.The(ward)}";
+        if (!Density.Allows(town, d, x, y)) return $"it needs land zoned {Density.Name(town, d.Density).ToLowerInvariant()} density";
         if (Spot(town, d, x, y, yaw) != null) return null;
         // Nothing near fits: say what's in the way at the spot itself.
         var (w, dd) = Land.Footprint(d);

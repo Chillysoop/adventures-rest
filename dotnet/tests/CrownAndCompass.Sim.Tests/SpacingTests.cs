@@ -14,9 +14,15 @@ public class SpacingTests(ITestOutputHelper output)
         var hits = new List<(Building, Building)>();
         for (int i = 0; i < boxes.Count; i++)
             for (int j = i + 1; j < boxes.Count; j++)
-                if (Land.Overlap(boxes[i].L.X, boxes[i].L.Y, boxes[i].L.W, boxes[i].L.D, boxes[i].L.Yaw, boxes[j].L.X, boxes[j].L.Y, boxes[j].L.W, boxes[j].L.D, boxes[j].L.Yaw, gap)) hits.Add((boxes[i].B, boxes[j].B));
+            {
+                // Dense land builds wall to wall: there the footprints may touch but never cross.
+                double g = Dense(t, boxes[i].L) || Dense(t, boxes[j].L) ? 0 : gap;
+                if (Land.Overlap(boxes[i].L.X, boxes[i].L.Y, boxes[i].L.W, boxes[i].L.D, boxes[i].L.Yaw, boxes[j].L.X, boxes[j].L.Y, boxes[j].L.W, boxes[j].L.D, boxes[j].L.Yaw, g)) hits.Add((boxes[i].B, boxes[j].B));
+            }
         return hits;
     }
+
+    private static bool Dense(Town t, Lot l) => Density.Lane(t, t.Plan.Density[(int)(l.Y * Land.Res) * Land.Size + (int)(l.X * Land.Res)]) == 0;
 
     [Theory]
     [InlineData(1)]
