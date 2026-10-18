@@ -102,7 +102,7 @@ public class SagaTests(LongCampaign campaign) : IClassFixture<LongCampaign>
     public void AKnownLairLeftAloneFestersAndRises()
     {
         // Nobody goes out: every lair the town hears of is left alone.
-        var sim = new Simulation(new SimulationOptions { Seed = 4, AutoBounties = false, FreeCompanies = false });
+        var sim = new Simulation(new SimulationOptions { Seed = 5, AutoBounties = false, FreeCompanies = false });
         sim.RunDays(240);
         var t = sim.Town;
         var festered = t.Saga.Menaces.Where(m => m.Origin == "lair").ToList();
