@@ -87,6 +87,7 @@ public sealed class Simulation
         var t = Town;
         Brain.Daily(t);
         Economy.Daily(t);
+        City.Daily(t, Options.AutoMayor && Options.AutoPlanning);
         Property.Daily(t);
         Population.DailyDepartures(t);
         Population.DailyArrivals(t);
@@ -156,6 +157,12 @@ public sealed class Simulation
 
     /// <summary>Back a faction the town knows with treasury gold.</summary>
     public bool SupportFaction(string factionId, double gold) => Factions.Support(Town, factionId, gold);
+
+    /// <summary>Claim the next charter (hamlet, village, town...) once the town has earned it.</summary>
+    public bool RaiseCharter() => City.RaiseCharter(Town);
+
+    /// <summary>Survey a ward and lay out its streets, opening its lots to zoning.</summary>
+    public bool OpenWard(string wardId) => City.OpenWard(Town, wardId);
 
     /// <summary>Paint a zone over vacant, unowned lots (Zone.None clears them). Returns how many changed.</summary>
     public int ZoneLots(IEnumerable<int> lotIds, Zone zone) => Planning.Paint(Town, lotIds, zone);

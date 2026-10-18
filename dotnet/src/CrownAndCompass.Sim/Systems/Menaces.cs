@@ -369,7 +369,8 @@ public static class Menaces
     private static void SyncWarband(Town town, Menace m)
     {
         m.Power = town.Enemy.Strength;
-        m.Level = Math.Max(m.Level, Math.Min(Rules(town).MaxLevel, m.BaseLevel + (int)(m.Power / Rules(town).PerLevel)));
+        // The big bad keeps the level it was crowned at, the warband's host as much as any other.
+        if (!m.BigBad) m.Level = Math.Max(m.Level, Math.Min(Rules(town).MaxLevel, m.BaseLevel + (int)(m.Power / Rules(town).PerLevel)));
         if (!m.BigBad) m.Stage = StageFor(town, m);
         // Under the yoke, the warlord waits in his camp: burning it is how the town gets at him.
         if ((town.Saga.YokeId == m.Id || m.BigBad) && Quests.Site(town, m.SeatId) is SiteState camp && camp.Cleared && camp.Def.Boss.Monster == town.Content.Enemy.WarlordBattle.Monster)

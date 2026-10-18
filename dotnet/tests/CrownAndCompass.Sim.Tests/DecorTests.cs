@@ -159,7 +159,7 @@ public class DecorTests
         Assert.True(Decor.Garden(t, open));
         Assert.Equal(0, sim.ZoneLots([open.Id], Zone.Residential));
 
-        var zoned = t.Lots.First(l => l.IsVacant && l.Zone == Zone.None && l != open && Town.DistanceFromCenter(l) > 3);
+        var zoned = t.Lots.First(l => l.IsVacant && l.Zone == Zone.None && l != open && Town.DistanceFromCenter(l) > 3 && City.IsOpen(t, l));
         var bench = sim.Decorate("bench", zoned.X + 0.5, zoned.Y + 0.5, 0)!;
         sim.ZoneLots([zoned.Id], Zone.None);
         zoned.Zone = Zone.Civic;
@@ -192,7 +192,7 @@ public class DecorTests
         sim.RunDays(150);
         var t = sim.Town;
         Assert.NotEmpty(t.Decor.Pieces);
-        // It keeps off the town plan, so headless towns lose no building land to it.
-        Assert.All(t.Decor.Pieces, p => Assert.True(p.X < 0 || p.Y < 0 || p.X > Town.Grid || p.Y > Town.Grid));
+        // It keeps off the wards laid out, so headless towns lose no building land to it.
+        Assert.All(t.Decor.Pieces, p => Assert.True(p.X < 0 || p.Y < 0 || p.X >= Town.Grid || p.Y >= Town.Grid || t.LotAt((int)p.X, (int)p.Y).Zone == Zone.None));
     }
 }

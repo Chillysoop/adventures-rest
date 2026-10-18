@@ -18,6 +18,7 @@ public enum AlertWindow
     Bounties,
     Faith,
     Campaign,
+    City,
 }
 
 /// <summary>A group of alerts: one icon on the strip, with a count and a hover list of what is in it.</summary>
@@ -44,6 +45,7 @@ public static class Alerts
     public static readonly AlertKind Unrest = new("unrest", "Unrest", "mandate", AlertLevel.Urgent, AlertWindow.Council);
     public static readonly AlertKind Hostile = new("hostile", "Hostile factions", "suspicion", AlertLevel.Urgent, AlertWindow.Faith);
     public static readonly AlertKind Motion = new("motion", "Council motions", "mandate", AlertLevel.Decision, AlertWindow.Council);
+    public static readonly AlertKind Charter = new("charter", "Charters", "favour", AlertLevel.Decision, AlertWindow.City);
     public static readonly AlertKind Heroes = new("heroes", "Restless heroes", "heroes", AlertLevel.Decision, AlertWindow.None);
     public static readonly AlertKind Housing = new("housing", "Housing", "homeless", AlertLevel.Minor, AlertWindow.Council);
     public static readonly AlertKind Work = new("work", "Idle hands", "population", AlertLevel.Minor, AlertWindow.Council);
@@ -51,10 +53,10 @@ public static class Alerts
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Hunger, Coffers, Unrest, Hostile, Motion, Heroes, Housing, Work];
+        [Siege, Hunger, Coffers, Unrest, Hostile, Motion, Charter, Heroes, Housing, Work];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
-    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Food, Money, Council, Hostility, Loyalty, Homes];
+    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Food, Money, Council, Hostility, Growth, Loyalty, Homes];
 
     public static List<Alert> Standing(Town town) => Rules.SelectMany(r => r(town)).ToList();
 
@@ -80,7 +82,7 @@ public static class Alerts
     {
         double price = t.Market.Price(Good.Food);
         int starving = t.Workers.Count(a => a.Hunger >= 85);
-        if (price >= Market.BasePrice(Good.Food) * 2.2 || starving >= Math.Max(3, t.Population / 8))
+        if (price >= t.Market.BasePrice(Good.Food) * 2.2 || starving >= Math.Max(3, t.Population / 8))
             yield return new("hunger", Hunger, starving > 0 ? $"{starving} going hungry" : "Bread is scarce",
                 $"A loaf costs {price:0.00}g and the stores are thin. Zone more farmland, or bless the harvest.");
     }
@@ -103,6 +105,13 @@ public static class Alerts
     {
         foreach (var f in t.Factions.Where(f => f.Active && f.Known && f.Standing <= -30).OrderBy(f => f.Id, StringComparer.Ordinal))
             yield return new($"faction:{f.Id}", Hostile, $"{Cap(f.Name)} turns hostile", "A faction in town is working against you. Crack down, or win it back.");
+    }
+
+    private static IEnumerable<Alert> Growth(Town t)
+    {
+        if (City.NextTier(t) is { } charter && City.Missing(t).Count == 0)
+            yield return new($"charter:{charter.Id}", Charter, $"Claim the charter of a {charter.Name.ToLowerInvariant()}",
+                "The town has all the charter asks for. Seal it in the City window to open new wards and buildings.");
     }
 
     private static IEnumerable<Alert> Loyalty(Town t)

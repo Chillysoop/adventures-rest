@@ -61,6 +61,14 @@
       "teaches": ["command:ZoneLots"]
     },
     {
+      "id": "city",
+      "title": "From thorp to great city",
+      "text": "[b]City[/b] shows what the town is chartered as and what the next charter asks for: enough households, the institutions it needs, sometimes walls, and gold. Claim it there when the list is all ticked, and new buildings and better houses open up.",
+      "point": "tab:City",
+      "until": "tab:City",
+      "teaches": ["tab:City", "command:RaiseCharter"]
+    },
+    {
       "id": "council",
       "title": "The council",
       "text": "Three councillors bring motions for you to sign or veto, and you set taxes and the watch here. Signing what the town wants raises your Mandate; a council that stops listening is how mayors fall.",
@@ -155,6 +163,14 @@
       "text": "[b]Esc[/b] or [b]Menu[/b] opens the game menu with five save slots. The town autosaves every three days and when you quit. [b]F5[/b] quicksaves and [b]F9[/b] loads it.",
       "point": "menu",
       "teaches": ["key:Escape", "key:F5", "key:F9"]
+    },
+    {
+      "id": "wards",
+      "title": "New wards",
+      "text": "A new charter lets you lay out a new ward in the [b]City[/b] window. Each ward has its own character: the Market Ward favours shops, the Trades Ward workshops, Castle Hill holds the manors. Land outside the wards you have laid out can't be zoned.",
+      "point": "tab:City",
+      "when": "alert:charter",
+      "teaches": ["command:OpenWard"]
     },
     {
       "id": "history",
