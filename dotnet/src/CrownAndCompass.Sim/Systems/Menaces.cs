@@ -438,12 +438,14 @@ public static class Menaces
         Spread(town, m, seat, 70);
     }
 
-    /// <summary>The big bad stands a couple of levels over the town's champions, and never sinks below where it has grown to.</summary>
+    /// <summary>
+    /// The big bad is as strong as it grew while the town let it be, within the finale's band. It does not
+    /// rise to meet the town's champions: heroes the town has raised well are what wins the Long Night.
+    /// </summary>
     private static int OverlordLevel(Town town, Menace m)
     {
         var f = town.Content.Saga.Finale;
-        int crowned = Math.Clamp(Saga.ChampionLevel(town) + f.OverChampion, f.OverlordLevel[0], f.OverlordLevel[^1]);
-        return Math.Min(Math.Max(m.Level, crowned), f.OverlordLevel[^1]);
+        return Math.Clamp(m.Level, f.OverlordLevel[0], f.OverlordLevel[^1]);
     }
 
     // Growth -------------------------------------------------------------------------------------
