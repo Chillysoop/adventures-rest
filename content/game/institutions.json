@@ -119,9 +119,9 @@
       "name": "the Adventurers' Hall",
       "building": "adventurers_hall",
       "title": "Hallmaster",
-      "blurb": "Where companies register, read the contract board and gear up. More heroes make the town their base, and the hall's specialty shapes what its members are good for.",
+      "blurb": "Where companies register, read the contract board and gear up. Contract fees pay the town a little, and the hall's specialty shapes what its members are good for.",
       "service": {
-        "heroes": 1,
+        "gold": 1,
         "arrivals": 0.01,
         "faction": "compass-lodge",
         "standing": 0.05

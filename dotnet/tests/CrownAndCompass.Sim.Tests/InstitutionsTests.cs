@@ -48,24 +48,26 @@ public class InstitutionsTests
     }
 
     [Fact]
-    public void AHallOpensWithAKeeperAndRoomForMoreHeroes()
+    public void AHallOpensWithAKeeperAndItsCallingServesTheTown()
     {
         var sim = Player();
         var t = sim.Town;
         sim.RunDays(1);
-        int cap = City.HeroCap(t);
         Raise(t, "adventurers_hall");
         sim.RunDays(1);
         var s = Assert.Single(t.Institutions);
         Assert.Equal("adventurers-hall", s.Def);
         Assert.StartsWith("Hallmaster ", Institutions.KeeperName(t, s));
-        Assert.Equal(cap + 1, City.HeroCap(t));
         Assert.Contains(t.Ledger.Entries, e => e.Text.Contains("the Adventurers' Hall opens its doors", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(Alerts.Standing(t), a => a.Kind == Alerts.Institution);
 
-        // Unfunded, it gives far less: no extra heroes at all.
+        // Monster-hunters stand on the walls; unfunded, the hall gives far less.
+        Assert.Equal(0, Institutions.Defence(t));
+        Assert.True(sim.ChooseInstitution("adventurers-hall", "monster-hunters"));
+        double funded = Institutions.Defence(t);
+        Assert.True(funded > 0);
         Assert.True(sim.FundInstitution("adventurers-hall", 0));
-        Assert.Equal(cap, City.HeroCap(t));
+        Assert.True(Institutions.Defence(t) < funded);
     }
 
     [Fact]
