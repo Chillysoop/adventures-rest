@@ -39,6 +39,9 @@ public sealed class SiteState(SiteDef def)
     /// <summary>When it was last cleared.</summary>
     public int? ClearedTick { get; set; }
 
+    /// <summary>When the first-hand account the town believes was taken; an older report bought later does not overrule it.</summary>
+    public int? ReportTick { get; set; }
+
     // The lair, off-screen (see Lairs) ------------------------------------------------------------
 
     /// <summary>How many live there and how bold they are; swells the fights and drives what they do.</summary>
@@ -103,6 +106,19 @@ public sealed class Party
 
     /// <summary>Set when a sending called the party home before it reached the site.</summary>
     public int? RecalledTick { get; set; }
+
+    /// <summary>
+    /// Home, but keeping its report to itself: no council bounty paid for it, so what it saw stays off
+    /// the town's map until the town buys it (<see cref="Intel"/>).
+    /// </summary>
+    public bool Withheld { get; set; }
+
+    /// <summary>The site stood empty when they left it (their report's word on it).</summary>
+    public bool SawCleared { get; set; }
+
+    /// <summary>Set when the company sold its report to the town, and for how much.</summary>
+    public int? SoldTick { get; set; }
+    public double SoldFor { get; set; }
 }
 
 public sealed record Chronicle(
@@ -428,6 +444,8 @@ public static class Quests
             var s = Site(town, party.SiteId)!;
             var bounty = party.BountyId is int bid ? town.Bounties[bid - 1] : null;
             var members = party.Members.Select(town.Agent).ToList();
+            // Only a council bounty buys the council the report; anyone else keeps theirs to sell.
+            party.Withheld = !Intel.Commissioned(town, party);
             if (party.RecalledTick != null)
             {
                 Knowledge.ComeHome(town, party, s, bounty, members);
@@ -444,11 +462,14 @@ public static class Quests
                 }
                 if (party.PleaId is int pid) World.Reopen(town.Pleas[pid - 1]);
                 s.ClearedTick = town.Tick;
-                Rumors.Confirm(town, s, $"the {party.Name}");
+                party.SawCleared = true;
+                // Word that the place is empty gets round the taverns either way; the report itself is for sale.
+                if (!party.Withheld) Rumors.Confirm(town, s, $"the {party.Name}");
+                else s.ThoughtCleared = true;
                 town.Log(
                     LedgerCategory.Quest,
                     Importance.Notable,
-                    $"The {party.Name} find {s.Def.Name} empty, as cold as the day it was cleared. The tavern was wrong" + (bounty != null ? "; the bounty goes back to the treasury." : "."),
+                    $"The {party.Name} find {s.Def.Name} empty, as cold as the day it was cleared. The tavern was wrong" + (bounty != null ? "; the bounty goes back to the treasury." : ".") + (party.Withheld ? Intel.Keeping : ""),
                     members.Select(m => m.Id).ToList());
                 continue;
             }
@@ -489,13 +510,22 @@ public static class Quests
                 foreach (var other in town.Residents) if (other.OpinionOf(id) >= 40) other.Loneliness = Math.Min(100, other.Loneliness + 30);
             }
 
-            if (result.Outcome != ExpeditionOutcome.Wiped) Rumors.Confirm(town, s, $"the {party.Name}");
+            if (result.Outcome == ExpeditionOutcome.Wiped) party.Withheld = false;
+            party.SawCleared = result.Outcome == ExpeditionOutcome.Cleared;
+            if (result.Outcome != ExpeditionOutcome.Wiped && !party.Withheld) Rumors.Confirm(town, s, $"the {party.Name}");
             if (result.Outcome == ExpeditionOutcome.Cleared)
             {
                 s.Cleared = true;
+                // A victory is the talk of the taverns even when the report isn't sold: the town knows the
+                // place is cleared, though not what the company saw on the way.
                 s.ThoughtCleared = true;
                 s.ClearedTick = town.Tick;
                 if (bounty != null) bounty.Status = BountyStatus.Completed;
+                if (Intel.Commissioned(town, party))
+                {
+                    Intel.Deal(town, party.Name, town.Content.World.Intel.Bounty);
+                    Intel.Company(town, party.Name).Bounties++;
+                }
             }
             else if (bounty != null)
             {
@@ -537,6 +567,7 @@ public static class Quests
                 text = $"The {party.Name} limp back from {s.Def.Name} empty-handed" +
                        (result.Dead.Count > 0 ? $", carrying {(result.Dead.Count == 1 ? $"{deadNames}'s body" : $"the bodies of {deadNames}")}." : ".");
             }
+            if (party.Withheld) text += Intel.Keeping;
             town.Log(LedgerCategory.Quest, Importance.Major, $"{text} (Chronicle {chronicle.Id})", members.Select(m => m.Id).ToList());
             foreach (var (rite, id) in rites) town.Log(LedgerCategory.Faith, Importance.Major, rite, [id]);
             Lairs.AfterDelve(town, s, result);

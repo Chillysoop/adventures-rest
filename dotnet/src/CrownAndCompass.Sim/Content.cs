@@ -811,6 +811,51 @@ public sealed record DelveRules
     public int FirstAidDc { get; init; }
 }
 
+/// <summary>
+/// What the town pays companies for reports it never paid a bounty for, and how a company's dealings
+/// with the town hall sway its price (<see cref="Systems.Intel"/>).
+/// </summary>
+public sealed record IntelRules
+{
+    /// <summary>Gold any first-hand account is worth, even one that tells the town nothing new.</summary>
+    public double Base { get; init; } = 10;
+
+    /// <summary>Gold for a region the town has never had described, plus this much per ring out.</summary>
+    public double NewRegion { get; init; } = 30;
+    public double PerRing { get; init; } = 15;
+
+    /// <summary>Gold for setting the town right about a site, plus this much per level of the site.</summary>
+    public double NewSite { get; init; } = 20;
+    public double PerTier { get; init; } = 6;
+
+    /// <summary>Days over which a report loses its worth, down to MinFresh of it; after ForgetDays it is not for sale.</summary>
+    public int FreshDays { get; init; } = 45;
+    public double MinFresh { get; init; } = 0.25;
+    public int ForgetDays { get; init; } = 120;
+
+    /// <summary>Asking price as a share of the worth from a company that loves the town (100) to one that loathes it (0).</summary>
+    public double Friendly { get; init; } = 0.8;
+    public double Hostile { get; init; } = 1.5;
+    public double Greedy { get; init; } = 0.15;
+
+    /// <summary>Below this relation a company will not sell to the town at all.</summary>
+    public double RefuseBelow { get; init; } = 20;
+
+    /// <summary>The council's haggled offer as a share of the asking price, and days a company sulks after turning it down.</summary>
+    public double Haggle { get; init; } = 0.7;
+    public int SulkDays { get; init; } = 6;
+
+    /// <summary>Dealings points: paying the asking price, a deal haggled down, an offer turned down, a town bounty completed.</summary>
+    public double Fair { get; init; } = 2;
+    public double Grumble { get; init; } = -1;
+    public double Insult { get; init; } = -4;
+    public double Bounty { get; init; } = 3;
+    public double MaxDealings { get; init; } = 30;
+
+    /// <summary>Treasury the stand-in mayor keeps back before buying a report.</summary>
+    public double Reserve { get; init; } = 150;
+}
+
 /// <summary>The wilds: rings of themed regions around the town, their sites and the peoples living there (content/game/world.json).</summary>
 public sealed record WorldRules
 {
@@ -826,6 +871,7 @@ public sealed record WorldRules
     public StandingRules Standing { get; init; } = new();
     public CompanyRules Companies { get; init; } = new();
     public DelveRules Delve { get; init; } = new();
+    public IntelRules Intel { get; init; } = new();
     public IReadOnlyList<PeopleDef> Peoples { get; init; } = [];
     public IReadOnlyList<ThemeDef> Themes { get; init; } = [];
 }
@@ -1020,6 +1066,9 @@ public sealed class Content
             City = Parse<CityRules>("city.json"),
         };
     }
+
+    /// <summary>A file of content/game/ as built into the library, for readers outside the sim (the tutorial).</summary>
+    public static string ReadText(string name) => ReadEmbedded(name);
 
     private static string ReadEmbedded(string name)
     {

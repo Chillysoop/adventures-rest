@@ -257,13 +257,16 @@ public static class Rumors
     /// The truth about a site reaches town: a party's report, or someone seeing it. Belief snaps to the
     /// world, open rumours about the place are settled, and the town hears which tale was wrong.
     /// </summary>
-    public static void Confirm(Town town, SiteState site, string by)
+    /// <param name="cleared">What the report says of the site, when it is older than today (a report bought later).</param>
+    /// <param name="asOf">When the report was taken; defaults to now.</param>
+    public static void Confirm(Town town, SiteState site, string by, bool? cleared = null, int? asOf = null)
     {
         site.Known = SiteKnowledge.Confirmed;
         site.Believed = Occupants(town.Content, site.Def);
         site.BelievedTier = site.Def.Tier;
-        site.ThoughtCleared = site.Cleared;
+        site.ThoughtCleared = cleared ?? site.Cleared;
         site.Trust = 100;
+        site.ReportTick = asOf ?? town.Tick;
         Rumor? wrong = null;
         foreach (var r in town.Rumors)
         {
@@ -276,7 +279,7 @@ public static class Rumors
         town.Log(
             LedgerCategory.Rumor,
             Importance.Routine,
-            $"{Cap(by)} put paid to {wrong.Source}'s {what}: {(site.Cleared ? "the place is empty" : $"it is {site.Believed}")}.",
+            $"{Cap(by)} put paid to {wrong.Source}'s {what}: {(site.ThoughtCleared ? "the place is empty" : $"it is {site.Believed}")}.",
             wrong.SourceId != null ? [wrong.SourceId.Value] : []);
     }
 

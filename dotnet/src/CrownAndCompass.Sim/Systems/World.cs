@@ -460,16 +460,9 @@ public static class World
         var region = RegionOf(town, site);
         if (region == null) return 0;
         double paid = 0;
-        // The dead tell no tales: only a party that comes home describes the country.
-        if (outcome != ExpeditionOutcome.Wiped)
-        {
-            bool first = !region.Visited;
-            region.Visited = true;
-            region.Known = true;
-            // On the way they hear of the region's other sites from whoever lives there.
-            foreach (var id in region.SiteIds) Tell(town, Quests.Site(town, id)!, town.Content.World.Standing.VisitTrust);
-            if (first) Reveal(town, region, $"The {party.Name} bring back word of the lands beyond {region.Name}", 0);
-        }
+        // The dead tell no tales: only a party that comes home describes the country, and only to the
+        // council when it paid for the trip; anyone else must buy the report (Intel).
+        if (outcome != ExpeditionOutcome.Wiped && !party.Withheld) Describe(town, party, region);
         if (outcome == ExpeditionOutcome.Cleared)
         {
             var rules = town.Content.World.Standing;
@@ -486,6 +479,17 @@ public static class World
         }
         else if (plea != null) Reopen(plea);
         return paid;
+    }
+
+    /// <summary>A party's report reaches the council: the region is described and word of the lands beyond spreads.</summary>
+    public static void Describe(Town town, Party party, Region region)
+    {
+        bool first = !region.Visited;
+        region.Visited = true;
+        region.Known = true;
+        // On the way they hear of the region's other sites from whoever lives there.
+        foreach (var id in region.SiteIds) Tell(town, Quests.Site(town, id)!, town.Content.World.Standing.VisitTrust);
+        if (first) Reveal(town, region, $"The {party.Name} bring back word of the lands beyond {region.Name}", 0);
     }
 
     /// <summary>The party that took a plea came back without clearing the site: it stands open again.</summary>

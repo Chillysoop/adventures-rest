@@ -122,6 +122,7 @@ public partial class Main
         if (!_buildBar.Visible) _map.Planner.Pick(null);
         _buildToggle.SetPressedNoSignal(_buildBar.Visible);
         _dirty = true;
+        if (_buildBar.Visible) GuideEvent("build");
     }
 
     private void ShowBuildGroup(BuildGroup g)

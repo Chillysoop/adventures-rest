@@ -197,6 +197,7 @@ public static class TreasuryAccount
     public const string Charters = "Charters";
     public const string HearthTax = "Hearth tax";
     public const string Wards = "Wards";
+    public const string Intel = "Intel";
 }
 
 /// <summary>How the campaign ended.</summary>
@@ -240,6 +241,9 @@ public sealed class Town
     public List<SiteState> Sites { get; } = [];
     public List<Bounty> Bounties { get; } = [];
     public List<Party> Parties { get; } = [];
+
+    /// <summary>Adventuring companies the town has dealt with, by first dealing (<see cref="Intel"/>).</summary>
+    public List<CompanyState> Companies { get; } = [];
     public List<Chronicle> Chronicles { get; } = [];
     public List<Seat> Seats { get; } = [];
     public List<Motion> Motions { get; } = [];
