@@ -1131,6 +1131,7 @@ public sealed class Content
     public DecorRules Decor { get; init; } = new();
     public SeasonRules Seasons { get; init; } = new();
     public TradeRules Trade { get; init; } = new();
+    public NeighbourRules Neighbours { get; init; } = new();
     public LegacyRules Legacies { get; init; } = new();
 
     /// <summary>The world's history: its ages, the powers that rose and fell, and the calendar (content/game/history.json).</summary>
@@ -1282,6 +1283,7 @@ public sealed class Content
             Decor = Parse<DecorRules>("decor.json"),
             Seasons = Parse<SeasonRules>("seasons.json"),
             Trade = Parse<TradeRules>("trade.json"),
+            Neighbours = Parse<NeighbourRules>("neighbours.json"),
             Legacies = Parse<LegacyRules>("legacies.json"),
             History = Parse<HistoryRules>("history.json"),
             Stories = Parse<StoryRules>("stories.json"),

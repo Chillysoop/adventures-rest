@@ -47,6 +47,26 @@ public sealed class Settlement
     public int Envoys { get; set; }
     public int NextPleaDay { get; set; }
 
+    // Its own life (<see cref="Neighbours"/>) ---------------------------------------------------
+
+    /// <summary>Who leads it; empty until the settlement is first looked at.</summary>
+    public string Leader { get; set; } = "";
+
+    /// <summary>How well it is doing and how safe it is, 0 to 100.</summary>
+    public double Prosperity { get; set; } = 50;
+    public double Security { get; set; } = 50;
+    public SettlementTrouble? Trouble { get; set; }
+    public int NextTroubleDay { get; set; }
+    public LocalBand? Band { get; set; }
+
+    /// <summary>Projects the town has paid for there, and the one being built and when it is done.</summary>
+    public List<string> Projects { get; } = [];
+    public string? Works { get; set; }
+    public int WorksDoneDay { get; set; }
+
+    /// <summary>The day it last sent relief to the town.</summary>
+    public int ReliefDay { get; set; } = -999;
+
     /// <summary>"the dwarves of Ironhold".</summary>
     public string People => Kin.Name.Replace("{S}", Name);
 }
@@ -393,27 +413,38 @@ public static class World
             var site = town.Sites
                 .Where(x => !x.Cleared && LevelOf(x) <= strongest + 1 && x.RegionId is int rid && town.Regions[rid].Ring == region.Ring && town.Regions[rid].Known)
                 .Where(x => !town.Pleas.Any(p => p.SiteId == x.Def.Id && p.Status is PleaStatus.Open or PleaStatus.Taken))
-                .OrderBy(x => x.RegionId == region.Id ? 0 : 1)
+                .OrderBy(x => x.Def.Id == s.Trouble?.SiteId ? 0 : 1)
+                .ThenBy(x => x.RegionId == region.Id ? 0 : 1)
                 .ThenBy(x => x.Def.Tier)
                 .ThenBy(x => x.Def.Id, StringComparer.Ordinal)
                 .FirstOrDefault();
             if (site == null) continue;
-            double reward = rules.PleaRewardPerLevel * LevelOf(site) * (s.Allied ? 1.5 : 1);
-            Tell(town, site, rules.PleaTrust);
-            var plea = new Plea
-            {
-                Id = town.Pleas.Count + 1,
-                SettlementId = s.Id,
-                SiteId = site.Def.Id,
-                Reward = reward,
-                ExpiresDay = town.Day + rules.PleaDays,
-            };
-            town.Pleas.Add(plea);
-            town.Log(
-                LedgerCategory.Quest,
-                Importance.Notable,
-                $"A runner from {s.Name} reaches the taverns: {s.People} beg for help with {site.Def.Name} and offer {Js.Str(reward)} gold to whoever deals with it.");
+            Plead(town, s, site, 1);
         }
+    }
+
+    /// <summary>A settlement begs the town's heroes for help with a site, offering a reward (more when its own band failed).</summary>
+    internal static Plea? Plead(Town town, Settlement s, SiteState site, double bonus)
+    {
+        var rules = town.Content.World.Standing;
+        if (s.Razed || !town.Regions[s.RegionId].Known) return null;
+        if (town.Pleas.Any(p => p.SiteId == site.Def.Id && p.Status is PleaStatus.Open or PleaStatus.Taken)) return null;
+        double reward = Js.Round(rules.PleaRewardPerLevel * LevelOf(site) * (s.Allied ? 1.5 : 1) * bonus);
+        Tell(town, site, rules.PleaTrust);
+        var plea = new Plea
+        {
+            Id = town.Pleas.Count + 1,
+            SettlementId = s.Id,
+            SiteId = site.Def.Id,
+            Reward = reward,
+            ExpiresDay = town.Day + rules.PleaDays,
+        };
+        town.Pleas.Add(plea);
+        town.Log(
+            LedgerCategory.Quest,
+            Importance.Notable,
+            $"A runner from {s.Name} reaches the taverns: {s.People} beg for help with {site.Def.Name} and offer {Js.Str(reward)} gold to whoever deals with it.");
+        return plea;
     }
 
     /// <summary>The peoples allied with the town send goods to market and, now and then, a hero.</summary>
@@ -423,7 +454,7 @@ public static class World
         {
             if (!s.Allied) continue;
             var b = s.Kin.Boon;
-            if (b.Good is Good g && b.Qty > 0) town.Market.Seed(g, b.Qty);
+            if (b.Good is Good g && b.Qty > 0) town.Market.Seed(g, b.Qty * Neighbours.BoonShare(town, s));
             if (b.HeroChance <= 0 || b.Classes.Count == 0 || s.Kin.Race == "") continue;
             if (town.Taverns.Count == 0 || town.Heroes.Count >= City.HeroCap(town) || !town.Rng.Chance(b.HeroChance)) continue;
             var cls = town.Content.Classes.FirstOrDefault(c => c.Id == town.Rng.Pick(b.Classes));
@@ -487,7 +518,7 @@ public static class World
         double t = 0;
         foreach (var s in town.Settlements)
             if (s.Allied) t += s.Kin.Boon.Troops;
-        return t;
+        return t + Neighbours.Troops(town);
     }
 
     // ---- Parties coming home ----
@@ -498,6 +529,7 @@ public static class World
     /// </summary>
     public static double AfterDelve(Town town, Party party, SiteState site, ExpeditionOutcome outcome)
     {
+        Neighbours.AfterDelve(town, party, site, outcome);
         var plea = party.PleaId is int pid ? town.Pleas[pid - 1] : null;
         var region = RegionOf(town, site);
         if (region == null) return 0;

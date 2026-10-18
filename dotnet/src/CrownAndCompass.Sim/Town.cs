@@ -245,6 +245,7 @@ public static class TreasuryAccount
     public const string Bastions = "Bastions";
     public const string Callings = "Callings";
     public const string Legacies = "Legacies";
+    public const string Region = "The region";
 }
 
 /// <summary>How the campaign ended.</summary>
@@ -377,6 +378,9 @@ public sealed class Town
 
     /// <summary>The town's trade routes to the other settlements (<see cref="Systems.Trade"/>).</summary>
     public TradeState Trade { get; } = new();
+
+    /// <summary>The people of the wilds the town has dealt with, who remember it (<see cref="Systems.Neighbours"/>).</summary>
+    public NeighbourState Neighbours { get; } = new();
 
     /// <summary>The hall of heroes: those who fell in the town's service or retired here, in the order they did (<see cref="Systems.Legacies"/>).</summary>
     public List<Systems.Legacy> Legacies { get; } = [];
