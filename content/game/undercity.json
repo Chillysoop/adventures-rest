@@ -1,0 +1,414 @@
+{
+  "_doc": "The undercity (Systems/Undercity.cs). Each level opens when the town reaches its charter tier and adds its site to the bounty board, under the town (distance 0). Every open, uncleared level stirs each day: its stir, plus stirPerFaction for each active secret faction, plus stirPerHundred per 100 residents; a patrol (patrolCost gold a day) cuts it by patrolCut. At warnAt the town hears it; at riseAt something comes up: riseDead townsfolk lost (one fewer with a patrol), riseMandate, riseTension, and stir falls to riseAfter. Clearing a level quiets it for refillDays (then it fills again from nothing), gives clearedMandate and heat to secret factions (clearedHeat); then the dark below fills again. The stand-in mayor patrols a level from standInAt stir when the treasury holds standInGold; companies, faction contracts and the stand-in's bounties go down only once a level stirs past warnAt.",
+  "stirPerFaction": 0.25,
+  "stirPerHundred": 0.04,
+  "warnAt": 60,
+  "riseAt": 100,
+  "riseAfter": 30,
+  "patrolCost": 6,
+  "patrolCut": 0.75,
+  "riseDead": [
+    1,
+    3
+  ],
+  "riseMandate": -5,
+  "riseTension": 8,
+  "refillDays": 60,
+  "clearedMandate": 3,
+  "clearedHeat": 15,
+  "standInAt": 50,
+  "standInGold": 600,
+  "levels": [
+    {
+      "id": "cellars",
+      "name": "the Old Cellars",
+      "tier": "village",
+      "stir": 0.5,
+      "text": "Under the old town's houses run cellars older than the houses: smugglers' holes, forgotten wine vaults and rooms nobody remembers bricking up.",
+      "rise": "Things come up through the cellar floors in the night: rats in their hundreds, and something bigger behind them.",
+      "site": {
+        "id": "under_cellars",
+        "name": "the Old Cellars",
+        "kind": "beasts",
+        "tier": 1,
+        "distance": 0,
+        "habitats": [
+          "underworld",
+          "urban",
+          "sewer"
+        ],
+        "encounters": [
+          {
+            "kind": "combat",
+            "monster": "giant-rat-diseased",
+            "count": [
+              3,
+              6
+            ],
+            "text": "giant rats boiling out of a broken barrel"
+          },
+          {
+            "kind": "trap",
+            "dc": 12,
+            "damageDie": 6,
+            "text": "a rotten floor over a deeper cellar"
+          },
+          {
+            "kind": "wander",
+            "cr": [
+              0.125,
+              0.5
+            ],
+            "budget": 150,
+            "text": "something squeezing between the walls"
+          },
+          {
+            "kind": "treasure",
+            "gold": [
+              10,
+              40
+            ],
+            "text": "a smuggler's stash behind a loose brick"
+          }
+        ],
+        "boss": {
+          "kind": "combat",
+          "monster": "swarm-of-rats",
+          "count": [
+            2,
+            3
+          ],
+          "escort": "giant-rat-diseased",
+          "escortCount": [
+            2,
+            4
+          ],
+          "text": "the rat-mother's nest, a seething heap of fur"
+        },
+        "loot": [
+          20,
+          60
+        ]
+      }
+    },
+    {
+      "id": "sewers",
+      "name": "the Sewers",
+      "tier": "town",
+      "stir": 0.6,
+      "text": "The town's new sewers run into old brick tunnels nobody dug. Night-soil men say the tunnels go further every year.",
+      "rise": "The sewer grates lift in the night. What climbs out drags a watchman back down with it.",
+      "site": {
+        "id": "under_sewers",
+        "name": "the Sewers",
+        "kind": "beasts",
+        "tier": 2,
+        "distance": 0,
+        "habitats": [
+          "underworld",
+          "sewer",
+          "swamp"
+        ],
+        "encounters": [
+          {
+            "kind": "combat",
+            "monster": "giant-centipede",
+            "count": [
+              2,
+              4
+            ],
+            "text": "centipedes as long as a man in the brickwork"
+          },
+          {
+            "kind": "hazard",
+            "dc": 13,
+            "damageDie": 6,
+            "text": "the tunnel floods with a black, stinking tide"
+          },
+          {
+            "kind": "combat",
+            "monster": "gray-ooze",
+            "count": [
+              1,
+              2
+            ],
+            "text": "a grey slick on the walkway that moves"
+          },
+          {
+            "kind": "wander",
+            "cr": [
+              0.25,
+              2
+            ],
+            "budget": 450,
+            "text": "something swimming under the sludge"
+          },
+          {
+            "kind": "parley",
+            "dc": 13,
+            "gold": [
+              10,
+              30
+            ],
+            "text": "a night-soil man who knows the old tunnels"
+          }
+        ],
+        "boss": {
+          "kind": "combat",
+          "monster": "otyugh",
+          "count": [
+            1,
+            1
+          ],
+          "text": "the otyugh that has been eating the town's refuse for years"
+        },
+        "loot": [
+          60,
+          140
+        ]
+      }
+    },
+    {
+      "id": "catacombs",
+      "name": "the Catacombs",
+      "tier": "large_town",
+      "stir": 0.7,
+      "text": "Below the sewers the masons broke into catacombs: niche on niche of the dead of a town that stood here before this one.",
+      "rise": "The dead of the old town walk up out of the catacombs and through the streets until dawn.",
+      "site": {
+        "id": "under_catacombs",
+        "name": "the Catacombs",
+        "kind": "undead",
+        "tier": 3,
+        "distance": 0,
+        "habitats": [
+          "tomb",
+          "underworld"
+        ],
+        "encounters": [
+          {
+            "kind": "combat",
+            "monster": "skeleton",
+            "count": [
+              3,
+              6
+            ],
+            "text": "skeletons stepping out of their niches"
+          },
+          {
+            "kind": "trap",
+            "dc": 14,
+            "damageDie": 8,
+            "text": "a collapsing ossuary stair"
+          },
+          {
+            "kind": "combat",
+            "monster": "ghoul",
+            "count": [
+              2,
+              4
+            ],
+            "text": "ghouls at their feast"
+          },
+          {
+            "kind": "wander",
+            "cr": [
+              0.5,
+              3
+            ],
+            "budget": 900,
+            "text": "cold breath in the dark"
+          },
+          {
+            "kind": "puzzle",
+            "dc": 14,
+            "gold": [
+              30,
+              80
+            ],
+            "text": "a sealed tomb with a riddle on its door"
+          }
+        ],
+        "boss": {
+          "kind": "combat",
+          "monster": "wight",
+          "count": [
+            1,
+            1
+          ],
+          "escort": "zombie",
+          "escortCount": [
+            3,
+            5
+          ],
+          "text": "a wight in the rusted crown of a forgotten lord"
+        },
+        "loot": [
+          150,
+          300
+        ]
+      }
+    },
+    {
+      "id": "vaults",
+      "name": "the Drowned Vaults",
+      "tier": "city",
+      "stir": 0.8,
+      "text": "Deeper still lie vaults of a treasury from before the town: flooded halls, sealed strongrooms and the things that came to guard them.",
+      "rise": "Shapes of living shadow rise through the cellars of the market, and three families do not wake.",
+      "site": {
+        "id": "under_vaults",
+        "name": "the Drowned Vaults",
+        "kind": "schemers",
+        "tier": 4,
+        "distance": 0,
+        "habitats": [
+          "underworld",
+          "ruins"
+        ],
+        "encounters": [
+          {
+            "kind": "combat",
+            "monster": "gargoyle",
+            "count": [
+              1,
+              3
+            ],
+            "text": "gargoyles on the vault arches"
+          },
+          {
+            "kind": "trap",
+            "dc": 15,
+            "damageDie": 10,
+            "text": "a strongroom door rigged with a falling block"
+          },
+          {
+            "kind": "combat",
+            "monster": "mimic",
+            "count": [
+              1,
+              1
+            ],
+            "text": "a strongbox that bites"
+          },
+          {
+            "kind": "wander",
+            "cr": [
+              1,
+              4
+            ],
+            "budget": 1800,
+            "text": "something old in the flooded halls"
+          },
+          {
+            "kind": "treasure",
+            "gold": [
+              80,
+              200
+            ],
+            "mimicChance": 0.2,
+            "text": "coin chests in a sealed strongroom"
+          }
+        ],
+        "boss": {
+          "kind": "combat",
+          "monster": "vampire-spawn",
+          "count": [
+            1,
+            1
+          ],
+          "escort": "shadow",
+          "escortCount": [
+            2,
+            3
+          ],
+          "text": "the vault's warden, a pale thing that has not seen the sun in an age"
+        },
+        "loot": [
+          300,
+          600
+        ]
+      }
+    },
+    {
+      "id": "deeps",
+      "name": "the Deep Ways",
+      "tier": "great_city",
+      "stir": 0.9,
+      "text": "At the bottom of the vaults a stair runs on down, into the dark between the roots of the world.",
+      "rise": "Something vast stirs under the city. Streets crack, a well fills with black water and the gibbering is heard from the cellars of a whole ward.",
+      "site": {
+        "id": "under_deeps",
+        "name": "the Deep Ways",
+        "kind": "schemers",
+        "tier": 5,
+        "distance": 0,
+        "habitats": [
+          "underworld",
+          "caves"
+        ],
+        "encounters": [
+          {
+            "kind": "combat",
+            "monster": "grick",
+            "count": [
+              2,
+              4
+            ],
+            "text": "gricks folded among the stalactites"
+          },
+          {
+            "kind": "hazard",
+            "dc": 16,
+            "damageDie": 10,
+            "text": "a chasm with a rope bridge older than the town"
+          },
+          {
+            "kind": "combat",
+            "monster": "gibbering-mouther",
+            "count": [
+              1,
+              2
+            ],
+            "text": "a gibbering mouth of many mouths"
+          },
+          {
+            "kind": "wander",
+            "cr": [
+              2,
+              6
+            ],
+            "budget": 3200,
+            "text": "the dark looking back"
+          },
+          {
+            "kind": "treasure",
+            "gold": [
+              150,
+              400
+            ],
+            "text": "a dead explorer's pack"
+          }
+        ],
+        "boss": {
+          "kind": "combat",
+          "monster": "cloaker",
+          "count": [
+            1,
+            1
+          ],
+          "escort": "grick",
+          "escortCount": [
+            2,
+            3
+          ],
+          "text": "a cloaker hanging over the last stair"
+        },
+        "loot": [
+          500,
+          900
+        ]
+      }
+    }
+  ]
+}

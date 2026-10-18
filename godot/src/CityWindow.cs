@@ -116,7 +116,39 @@ public partial class Main
             }
             p.Note("How much of what the houses want to buy the market could sell them yesterday. Workshops open where these run short.");
         }
+        RenderUnder(p, t);
         p.Commit();
+    }
+
+    /// <summary>The undercity: each level under the town, how restless it is, and the watch's patrols.</summary>
+    private void RenderUnder(Pane p, Town t)
+    {
+        var r = t.Content.Undercity;
+        p.Heading("Under the streets");
+        foreach (var d in r.Levels)
+        {
+            var l = Undercity.Of(t, d.Id);
+            if (l == null)
+            {
+                var tier = t.Content.City.Tiers.FirstOrDefault(x => x.Id == d.Tier);
+                p.Text(Ui.C(Ui.Ink2, $"{Ui.Esc(Ui.Cap(d.Name))}: opens with the charter of a {Ui.Esc(tier?.Name.ToLowerInvariant() ?? d.Tier)}"), 13);
+                continue;
+            }
+            var site = Undercity.Site(t, l);
+            string mood = Undercity.Mood(t, l);
+            var color = mood == "stirring" ? Ui.Bad : mood == "restless" ? Ui.Gold : Ui.Good;
+            string state = site.Cleared
+                ? $"cleared {l.Cleared} {(l.Cleared == 1 ? "time" : "times")}; the dark fills again in {Ui.Days(Math.Max(0, (l.RefillDay ?? t.Day) - t.Day))}"
+                : $"stir {Math.Round(l.Stir)} of {Js.Str(r.RiseAt)}, rising {Js.Str(Math.Round(Undercity.Rate(t, l), 2))} a day{(l.Rose > 0 ? $" · has risen {l.Rose} {(l.Rose == 1 ? "time" : "times")}" : "")}";
+            string head = $"[b]{Ui.Esc(Ui.Cap(d.Name))}[/b]  {Tag(mood, color)}  {Ui.C(Ui.Ink2, $"[font_size=12]tier {d.Site.Tier}[/font_size]")}\n" +
+                          Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(state)}[/font_size]");
+            string id = d.Id;
+            if (site.Cleared && !l.Patrol) p.Row(head);
+            else p.Row(head, l.Patrol
+                ? ("Call off the patrol", true, false, () => Act(() => _sim.PatrolUndercity(id, false)))
+                : ($"Patrol · {Js.Str(r.PatrolCost)}g a day", true, false, () => Act(() => _sim.PatrolUndercity(id, true))));
+        }
+        p.Note($"Each charter breaks into a deeper level under the town. Left alone, a level stirs, faster with secret societies at work and more people above, and at {Js.Str(r.RiseAt)} something comes up into the streets. Post a bounty on it in Bounties (heroes go down with no road to walk), or send the watch down at night to slow it.");
     }
 
     /// <summary>Zoning densities: which the charter allows, and how many households live at each.</summary>

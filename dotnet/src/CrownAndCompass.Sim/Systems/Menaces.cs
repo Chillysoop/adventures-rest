@@ -446,7 +446,7 @@ public static class Menaces
 
     /// <summary>Sites free to become a menace's seat or holding.</summary>
     internal static bool Free(Town town, SiteState s) =>
-        !s.Cleared && !s.Held && s.Def.Id != town.Content.Enemy.Outpost.Id && s.Def.Id != town.Content.Factions.CryptSite?.Id && At(town, s.Def.Id) == null;
+        !s.Cleared && !s.Held && s.Def.Id != town.Content.Enemy.Outpost.Id && s.Def.Id != town.Content.Factions.CryptSite?.Id && !Undercity.IsUnder(town, s) && At(town, s.Def.Id) == null;
 
     /// <summary>An act brings a new power at its level, and announces it.</summary>
     public static Menace? Seed(Town town, int[] band)
