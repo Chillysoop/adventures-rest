@@ -9,15 +9,19 @@ public class BastionsTests
     private static (Simulation Sim, BastionRequest Request) Asked()
     {
         foreach (int seed in new[] { 3, 2, 4, 6 })
-        {
-            var sim = new Simulation(new SimulationOptions { Seed = seed, AutoBastions = false });
-            for (int d = 0; d < 400; d++)
-            {
-                sim.RunDays(1);
-                if (Bastions.Pending(sim.Town).FirstOrDefault() is { } r) return (sim, r);
-            }
-        }
+            if (Asked(seed) is { } asked) return asked;
         throw new Exception("no company asked for a bastion");
+    }
+
+    private static (Simulation Sim, BastionRequest Request)? Asked(int seed)
+    {
+        var sim = new Simulation(new SimulationOptions { Seed = seed, AutoBastions = false });
+        for (int d = 0; d < 400; d++)
+        {
+            sim.RunDays(1);
+            if (Bastions.Pending(sim.Town).FirstOrDefault() is { } r) return (sim, r);
+        }
+        return null;
     }
 
     [Fact]
@@ -43,7 +47,7 @@ public class BastionsTests
 
     private static bool GrantAndMoveIn(int seed)
     {
-        var (sim, r) = Asked(seed);
+        if (Asked(seed) is not var (sim, r)) return false;
         var t = sim.Town;
         double sales = t.Accounts.Get(TreasuryAccount.LandSales, 0);
         Assert.True(sim.AnswerBastion(r.Id, BastionAnswer.Grant));
