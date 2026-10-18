@@ -96,6 +96,7 @@ public partial class Main
             AlertWindow.Mayor => Tab.Mayor,
             AlertWindow.Diplomacy => Tab.Diplomacy,
             AlertWindow.Companies => Tab.Companies,
+            AlertWindow.Institutions => Tab.Institutions,
             _ => null,
         };
         if (a.StoryId is int story)

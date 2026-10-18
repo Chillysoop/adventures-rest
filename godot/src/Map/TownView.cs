@@ -240,11 +240,6 @@ public partial class TownView(MapView map) : Node3D
             case "arena": Arena(kit, v); break;
             case "keep": Keep(kit); break;
             case "guildhall": Guildhall(kit, v); break;
-            // The adventurers' hall: a guildhall under a company banner.
-            case "adventurers_hall":
-                Guildhall(kit, v);
-                kit.Add("nature/sign", MeshKit.At(1.2f, 0, 1.4f, 0, 0.8f));
-                break;
             // A company's bastion: its own keep under its banner, and facilities after the town's own kinds.
             case "bastion_keep":
                 // Smaller than the city's keep: a company's hall, not a lord's castle.
@@ -267,6 +262,9 @@ public partial class TownView(MapView map) : Node3D
             case "mage_tower": MageTower(kit); break;
             case "royal_gardens": Gardens(kit); break;
             case "colossus": Colossus(kit); break;
+            case "adventurers_hall": AdventurersHall(kit, v); break;
+            case "druid_grove": DruidGrove(kit, v); break;
+            case "grand_bazaar": Bazaar(kit, v); break;
             default: House(kit, v); break;
         }
     }
