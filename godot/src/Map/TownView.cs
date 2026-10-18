@@ -84,6 +84,19 @@ public partial class TownView(MapView map) : Node3D
     private readonly Dictionary<string, MultiMeshInstance3D> _batches = [];
     private readonly MeshInstance3D _ground = new() { MaterialOverride = Mats.Props, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off };
     private readonly MeshInstance3D _walls = new() { MaterialOverride = Mats.Props };
+
+    /// <summary>The painted zones, a plane over the town textured from the plan, one texel a cell.</summary>
+    private readonly MeshInstance3D _zones = new()
+    {
+        Mesh = new PlaneMesh { Size = new Vector2(Geo.Grid, Geo.Grid) },
+        MaterialOverride = Mats.Zones,
+        CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+        Position = new Vector3(Geo.Center.X, WorldGen.TownHeight + 0.035f, Geo.Center.Y),
+    };
+
+    private ImageTexture? _zoneTex;
+    private int _zoneVersion = -1;
+    private bool _planning;
     private readonly Dictionary<string, MeshInstance3D> _landmarks = [];
     private string _groundKey = "", _wallKey = "", _buildKey = "";
 
@@ -91,6 +104,7 @@ public partial class TownView(MapView map) : Node3D
     {
         AddChild(_ground);
         AddChild(_walls);
+        AddChild(_zones);
     }
 
     public void Reset()
@@ -100,12 +114,14 @@ public partial class TownView(MapView map) : Node3D
         foreach (var l in _landmarks.Values) l.QueueFree();
         _landmarks.Clear();
         _groundKey = _wallKey = _buildKey = "";
+        _zoneVersion = -1;
     }
 
     public void Refresh()
     {
         var town = map.Sim.Town;
         Lots(town);
+        Zones(town);
         Palisade(town);
         Buildings(town);
         Landmarks(town);
@@ -123,24 +139,27 @@ public partial class TownView(MapView map) : Node3D
 
     private void Buildings(Town town)
     {
-        var groups = new SortedDictionary<string, List<(Vector3 P, float Yaw, bool Sign)>>(StringComparer.Ordinal);
+        var groups = new SortedDictionary<string, List<(Vector3 P, float Yaw, float Scale)>>(StringComparer.Ordinal);
         foreach (var b in town.Buildings.OrderBy(b => b.Id))
         {
             var lot = town.Lot(b.LotId);
-            var p = new Vector3(Geo.Margin + lot.X + 0.5f, Y, Geo.Margin + lot.Y + 0.5f);
+            var c = Geo.LotPos(lot);
+            var p = new Vector3(c.X, Y, c.Y);
             string key = MeshKey(b);
             if (!groups.TryGetValue(key, out var list)) groups[key] = list = [];
-            // Most buildings face the street to the south; a few turn their backs for variety.
-            float yaw = b.Def.Id is "farm" or "lumber_camp" ? (b.Id % 2) * Mathf.Pi / 2
-                : b.Def.Id == "house" && b.Id % 3 == 1 ? Mathf.Pi / 2 : 0;
-            list.Add((p, yaw, b.Closed || b.ForSale));
+            // Every building faces the way its lot was sited (toward the hall, or as the player turned it),
+            // scaled from the one-tile models to its footprint.
+            float yaw = Geo.LotYaw(lot), scale = Math.Max(lot.W, lot.D) / (float)Land.Res / 0.92f;
+            list.Add((p, yaw, scale));
             if (b.Closed || b.ForSale)
             {
                 if (!groups.TryGetValue("sign", out var signs)) groups["sign"] = signs = [];
-                signs.Add((p + new Vector3(-0.32f, 0, 0.38f), 0.3f, false));
+                var f = Geo.LotFront(lot);
+                var at = c + f * (lot.D / (float)Land.Res / 2 + 0.1f) + new Vector2(f.Y, -f.X) * 0.25f;
+                signs.Add((new Vector3(at.X, Y, at.Y), yaw + 0.3f, 1));
             }
         }
-        string all = string.Join('|', groups.Select(g => $"{g.Key}:{string.Join(',', g.Value.Select(v => $"{v.P.X},{v.P.Z}"))}"));
+        string all = string.Join('|', groups.Select(g => $"{g.Key}:{string.Join(',', g.Value.Select(v => $"{v.P.X},{v.P.Z},{v.Yaw}"))}"));
         if (all == _buildKey) return;
         _buildKey = all;
         foreach (var (key, mmi) in _batches)
@@ -159,7 +178,7 @@ public partial class TownView(MapView map) : Node3D
             }
             mmi.Multimesh.InstanceCount = list.Count;
             for (int i = 0; i < list.Count; i++)
-                mmi.Multimesh.SetInstanceTransform(i, new Transform3D(Basis.FromEuler(new Vector3(0, list[i].Yaw, 0)), list[i].P));
+                mmi.Multimesh.SetInstanceTransform(i, new Transform3D(Basis.FromEuler(new Vector3(0, list[i].Yaw, 0)).Scaled(Vector3.One * list[i].Scale), list[i].P));
         }
     }
 
@@ -462,16 +481,15 @@ public partial class TownView(MapView map) : Node3D
 
     // ---------- Ground ----------
 
+    /// <summary>A yard of trodden ground under every building, turned with it.</summary>
     private void Lots(Town town)
     {
-        string key = string.Join(',', town.Lots.Select(l => (int)l.Zone));
+        string key = town.Lots.Count.ToString();
         if (key == _groundKey) return;
         _groundKey = key;
         var k = new MeshKit();
         foreach (var l in town.Lots)
         {
-            if (l.Zone == Zone.None) continue;
-            float x = Geo.Margin + l.X + 0.5f, z = Geo.Margin + l.Y + 0.5f;
             var c = l.Zone switch
             {
                 Zone.Civic => new Color("b4aa94"),
@@ -480,51 +498,129 @@ public partial class TownView(MapView map) : Node3D
                 Zone.Industry => new Color("8a7a66"),
                 _ => new Color("8f8a5c"),
             };
-            float s = l.Zone == Zone.Farmland ? 0.98f : 1.02f;
-            k.Box(new Vector3(x, Y - 0.05f, z), new Vector3(s, 0.065f, s), c.Darkened(Geo.Hash(l.X * 31 + l.Y) * 0.08f));
-            if (l.Zone == Zone.Civic)
-                for (int i = 0; i < 4; i++)
-                    k.Box(new Vector3(x - 0.375f + i * 0.25f, Y + 0.012f, z), new Vector3(0.22f, 0.01f, 0.95f), new Color("c4b8a0"));
+            var at = Geo.LotPos(l);
+            float w = l.W / (float)Land.Res + 0.12f, d = l.D / (float)Land.Res + 0.12f;
+            k.Push(MeshKit.At(at.X, Y, at.Y, Geo.LotYaw(l)));
+            k.Box(new Vector3(0, -0.05f, 0), new Vector3(w, 0.065f, d), c.Darkened(Geo.Hash(l.Id * 31 + 7) * 0.08f));
+            // A worn apron where the door opens onto the lane.
+            if (l.Zone != Zone.Farmland) k.Box(new Vector3(0, -0.045f, d / 2), new Vector3(w * 0.4f, 0.065f, 0.16f), Palette.Dirt.Darkened(0.05f));
+            k.Pop();
         }
         k.Build(_ground.Mesh as ArrayMesh ?? (ArrayMesh)(_ground.Mesh = new ArrayMesh()));
+    }
+
+    /// <summary>Show the painted zones strongly while the player plans, faintly otherwise.</summary>
+    public void Planning(bool on)
+    {
+        _planning = on;
+        Mats.Zones.SetShaderParameter("strength", on ? 0.5f : 0.1f);
+    }
+
+    /// <summary>Zone paint texels to a plan cell: the plan is drawn finer than it is kept, then softened, so painted edges come out round.</summary>
+    private const int ZoneUp = 4;
+
+    private readonly float[] _zoneBuf = new float[Land.Size * ZoneUp * Land.Size * ZoneUp * 4], _zoneTmp = new float[Land.Size * ZoneUp * Land.Size * ZoneUp * 4];
+
+    /// <summary>Refresh the zone paint texture when the plan has changed: open painted ground only, built ground is shown by its yards.</summary>
+    private void Zones(Town town)
+    {
+        var plan = town.Plan;
+        int version = $"{town.Lots.Count}|{plan.Zones.Aggregate(17, (h, z) => h * 31 + z)}".GetHashCode();
+        if (version == _zoneVersion) return;
+        _zoneVersion = version;
+        int n = Land.Size * ZoneUp;
+        // Premultiplied colour, so softening across a zone's edge fades it out instead of darkening it.
+        for (int y = 0; y < n; y++)
+            for (int x = 0; x < n; x++)
+            {
+                int i = y / ZoneUp * Land.Size + x / ZoneUp, o = (y * n + x) * 4;
+                var z = (Zone)plan.Zones[i];
+                bool show = z is not (Zone.None or Zone.Civic) && plan.Taken[i] == 0;
+                var c = show ? Planner.ZoneColor(z) : new Color(0, 0, 0, 0);
+                _zoneBuf[o] = c.R * c.A;
+                _zoneBuf[o + 1] = c.G * c.A;
+                _zoneBuf[o + 2] = c.B * c.A;
+                _zoneBuf[o + 3] = c.A;
+            }
+        for (int pass = 0; pass < 2; pass++)
+        {
+            Blur(_zoneBuf, _zoneTmp, n, 1, n, 3);
+            Blur(_zoneTmp, _zoneBuf, n, n, 1, 3);
+        }
+        var bytes = new byte[n * n * 4];
+        for (int i = 0; i < bytes.Length; i++) bytes[i] = (byte)Mathf.Clamp(Mathf.RoundToInt(_zoneBuf[i] * 255), 0, 255);
+        var img = Image.CreateFromData(n, n, false, Image.Format.Rgba8, bytes);
+        if (_zoneTex == null)
+        {
+            _zoneTex = ImageTexture.CreateFromImage(img);
+            Mats.Zones.SetShaderParameter("zones_tex", _zoneTex);
+        }
+        else _zoneTex.Update(img);
+    }
+
+    /// <summary>A box blur of radius r along one axis (step between neighbours <paramref name="step"/>, between lines <paramref name="line"/>).</summary>
+    private static void Blur(float[] src, float[] dst, int n, int step, int line, int r)
+    {
+        float k = 1f / (2 * r + 1);
+        for (int l = 0; l < n; l++)
+            for (int ch = 0; ch < 4; ch++)
+            {
+                float sum = 0;
+                int Idx(int t) => (l * line + Math.Clamp(t, 0, n - 1) * step) * 4 + ch;
+                for (int t = -r; t <= r; t++) sum += src[Idx(t)];
+                for (int t = 0; t < n; t++)
+                {
+                    dst[Idx(t)] = sum * k;
+                    sum += src[Idx(t + r + 1)] - src[Idx(t - r)];
+                }
+            }
     }
 
     private void Palisade(Town town)
     {
         var d = town.Defenses;
-        var bounds = WallBounds(town);
+        var line = WallLine(town);
         float total = town.Content.Enemy.Palisade.Days * SimTime.HoursPerDay;
         float done = d.Palisade == PalisadeState.Building && d.PalisadeReadyTick is int ready ? 1 - (ready - town.Tick) / total : d.Palisade == PalisadeState.Built ? 1 : 0;
-        string key = $"{d.Palisade}|{Math.Round(done, 2)}|{d.Towers}|{bounds}";
+        string key = $"{d.Palisade}|{Math.Round(done, 2)}|{d.Towers}|{(line == null ? "" : string.Join(';', line))}";
         if (key == _wallKey) return;
         _wallKey = key;
         var k = new MeshKit();
-        if (bounds is Rect2 b && d.Palisade != PalisadeState.None)
+        if (line != null)
         {
-            // Sharpened stakes along the perimeter, raised clockwise so a rising wall reads as progress.
-            float w = b.Size.X, h = b.Size.Y, perim = 2 * (w + h);
-            int stakes = (int)(perim / 0.13f), shown = (int)(stakes * Mathf.Clamp(done, 0, 1));
-            for (int i = 0; i < shown; i++)
+            float perim = 0;
+            for (int i = 0; i < line.Length; i++) perim += line[i].DistanceTo(line[(i + 1) % line.Length]);
+            // A point a distance along the wall, going round from the first corner.
+            Vector2 Along(float t)
             {
-                float t = (float)i / stakes * perim;
-                float x, y;
-                if (t < w) (x, y) = (b.Position.X + t, b.Position.Y);
-                else if ((t -= w) < h) (x, y) = (b.End.X, b.Position.Y + t);
-                else if ((t -= h) < w) (x, y) = (b.End.X - t, b.End.Y);
-                else (x, y) = (b.Position.X, b.End.Y - (t - w));
-                float sh = 0.32f + Geo.Hash(i) * 0.06f;
-                var col = i % 2 == 0 ? Palette.Timber : new Color("8a6239");
-                k.Frustum(new Vector3(x, Y, y), 0.055f, 0.055f, sh, 5, col, col, i);
-                k.Frustum(new Vector3(x, Y + sh, y), 0.055f, 0, 0.1f, 5, col, null, i);
+                for (int i = 0; i < line.Length; i++)
+                {
+                    var a = line[i];
+                    var b = line[(i + 1) % line.Length];
+                    float len = a.DistanceTo(b);
+                    if (t <= len) return a.Lerp(b, len > 0 ? t / len : 0);
+                    t -= len;
+                }
+                return line[0];
             }
-        }
-        if (bounds is Rect2 bb)
-        {
-            Vector2[] corners = [bb.Position, new(bb.End.X, bb.Position.Y), bb.End, new(bb.Position.X, bb.End.Y)];
+            if (d.Palisade != PalisadeState.None)
+            {
+                // Sharpened stakes all round, raised in order so a rising wall reads as progress.
+                int stakes = (int)(perim / 0.13f), shown = (int)(stakes * Mathf.Clamp(done, 0, 1));
+                for (int i = 0; i < shown; i++)
+                {
+                    var p = Along((float)i / stakes * perim);
+                    float sh = 0.32f + Geo.Hash(i) * 0.06f;
+                    var col = i % 2 == 0 ? Palette.Timber : new Color("8a6239");
+                    k.Frustum(new Vector3(p.X, Y, p.Y), 0.055f, 0.055f, sh, 5, col, col, i);
+                    k.Frustum(new Vector3(p.X, Y + sh, p.Y), 0.055f, 0, 0.1f, 5, col, null, i);
+                }
+            }
             var castle = Palette.Kenney(new Color("9b3d2a"));
             for (int i = 0; i < Math.Min(4, d.Towers); i++)
             {
-                var c = corners[i];
+                // Towers spread evenly round the wall.
+                var c = Along(perim * i / 4f);
                 k.Add("castle/tower-square-base", MeshKit.At(c.X, Y, c.Y, 0, 0.42f), castle);
                 k.Add("castle/tower-square-mid", MeshKit.At(c.X, Y + 0.42f, c.Y, 0, 0.42f), castle);
                 k.Add("castle/tower-square-top-roof", MeshKit.At(c.X, Y + 0.84f, c.Y, 0, 0.42f), castle);
@@ -533,20 +629,30 @@ public partial class TownView(MapView map) : Node3D
         k.Build(_walls.Mesh as ArrayMesh ?? (ArrayMesh)(_walls.Mesh = new ArrayMesh()));
     }
 
-    /// <summary>Bounds of the walled town: every zoned lot except the farms, which lie outside the wall.</summary>
-    public static Rect2? WallBounds(Town town)
+    /// <summary>
+    /// The walled town: the convex hull of every building but the farms (which lie outside the wall),
+    /// pushed out a little so the stakes clear the yards. Null before there is anything to wall in.
+    /// </summary>
+    public static Vector2[]? WallLine(Town town)
     {
-        float x0 = float.MaxValue, y0 = float.MaxValue, x1 = float.MinValue, y1 = float.MinValue;
+        var pts = new List<Vector2>();
         foreach (var l in town.Lots)
+            if (l.Zone != Zone.Farmland) pts.AddRange(Geo.LotCorners(l, 0.35f));
+        if (pts.Count < 3) return null;
+        // Andrew's monotone chain, counter-clockwise from the lowest x.
+        pts = [.. pts.OrderBy(p => p.X).ThenBy(p => p.Y)];
+        var hull = new List<Vector2>();
+        for (int pass = 0; pass < 2; pass++)
         {
-            if (l.Zone is Zone.None or Zone.Farmland) continue;
-            x0 = Mathf.Min(x0, l.X);
-            y0 = Mathf.Min(y0, l.Y);
-            x1 = Mathf.Max(x1, l.X + 1);
-            y1 = Mathf.Max(y1, l.Y + 1);
+            int start = hull.Count;
+            foreach (var p in pass == 0 ? pts : Enumerable.Reverse(pts))
+            {
+                while (hull.Count >= start + 2 && (hull[^1] - hull[^2]).Cross(p - hull[^2]) <= 0) hull.RemoveAt(hull.Count - 1);
+                hull.Add(p);
+            }
+            hull.RemoveAt(hull.Count - 1);
         }
-        if (x0 == float.MaxValue) return null;
-        return new Rect2(Geo.Margin + x0 - 0.3f, Geo.Margin + y0 - 0.3f, x1 - x0 + 0.6f, y1 - y0 + 0.6f);
+        return [.. hull];
     }
 
     // ---------- Landmarks ----------

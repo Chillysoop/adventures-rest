@@ -21,7 +21,7 @@ public sealed class Geo
     public const float TilesPerDay = 44;
 
     /// <summary>Everything within this radius of the town stays clear of forest and flat enough to build on.</summary>
-    public const float Clearing = 15;
+    public const float Clearing = 18;
 
     public readonly Dictionary<string, Vector2> Pins = [];
     public float TownRadius { get; private set; } = 3;
@@ -36,7 +36,24 @@ public sealed class Geo
 
     public Geo(Town town) => PlaceSites(town, 1);
 
-    public static Vector2 LotPos(Lot l) => new(Margin + l.X, Margin + l.Y);
+    /// <summary>The centre of a lot on the map.</summary>
+    public static Vector2 LotPos(Lot l) => new(Margin + (float)l.X, Margin + (float)l.Y);
+
+    /// <summary>A lot's facing on the map: the yaw (about +y) that turns a model's front (+z) the way the building faces.</summary>
+    public static float LotYaw(Lot l) => -(float)l.Yaw;
+
+    /// <summary>The way a lot's front faces, on the map.</summary>
+    public static Vector2 LotFront(Lot l) => new(-Mathf.Sin((float)l.Yaw), Mathf.Cos((float)l.Yaw));
+
+    /// <summary>A lot's four corners on the map (front two last), grown by <paramref name="grow"/> tiles on every side.</summary>
+    public static Vector2[] LotCorners(Lot l, float grow = 0)
+    {
+        var c = LotPos(l);
+        var f = LotFront(l);
+        var u = new Vector2(f.Y, -f.X) * (l.W / (float)Sim.Systems.Land.Res / 2 + grow);
+        var v = f * (l.D / (float)Sim.Systems.Land.Res / 2 + grow);
+        return [c - u - v, c + u - v, c + u + v, c - u + v];
+    }
 
     /// <summary>
     /// The wilds keep their distance from the frontier: sites sit beyond the edge of the settled
@@ -46,8 +63,7 @@ public sealed class Geo
     public bool PlaceSites(Town town, float ease)
     {
         float r = 3;
-        foreach (var l in town.Lots)
-            if (l.Zone != Zone.None) r = Mathf.Max(r, new Vector2(Margin + l.X + 0.5f, Margin + l.Y + 0.5f).DistanceTo(Center) + 0.7f);
+        foreach (var l in town.Lots) r = Mathf.Max(r, LotPos(l).DistanceTo(Center) + 0.9f);
         TownRadius += (r - TownRadius) * ease;
         int baseCount = town.Content.Sites.Count;
         bool moved = false;

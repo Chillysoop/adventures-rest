@@ -10,7 +10,8 @@ public static class Mats
     public static readonly ShaderMaterial Props = Make("props");
     public static readonly ShaderMaterial People = Make("props");
     public static readonly ShaderMaterial Foliage = Make("foliage");
-    public static readonly ShaderMaterial[] All = [Terrain, Water, Props, People, Foliage];
+    public static readonly ShaderMaterial Zones = Make("zones");
+    public static readonly ShaderMaterial[] All = [Terrain, Water, Props, People, Foliage, Zones];
 
     private static ShaderMaterial Make(string name) => new() { Shader = GD.Load<Shader>($"res://assets/shaders/{name}.gdshader") };
 

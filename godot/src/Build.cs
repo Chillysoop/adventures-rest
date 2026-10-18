@@ -165,8 +165,11 @@ public partial class Main
             string tip;
             if (item.Zone is Zone z)
             {
-                line = z == Zone.None ? "free" : $"{Planning.VacantZoned(town, z)} open";
-                tip = z == Zone.None ? "Drag over zoned land nobody has bought to take it off the plan." : $"Drag over open land to zone it {Planning.ZoneName(z)}.";
+                int open = z == Zone.None ? 0 : Planning.VacantZoned(town, z);
+                line = z == Zone.None ? "eraser" : open >= 30 ? "plenty of room" : open == 0 ? "no room" : $"room for {open}";
+                tip = z == Zone.None
+                    ? "Brush over painted land nobody has built on to take it off the plan."
+                    : $"Paint {Planning.ZoneName(z)} land with a round brush; the townsfolk build their own {Planning.ZoneName(z)} buildings inside it, each turned to the square. [ and ] or Shift+wheel size the brush.";
             }
             else if (item.Defense is DefenseWork d)
             {
@@ -190,9 +193,9 @@ public partial class Main
         SyncBuildButtons();
         _buildHint.Text = _map.Planner.Tool switch
         {
-            { Zone: Zone.None } => "Drag over open land to clear its zone. Right-click to put the tool down.",
-            { Zone: Zone z } => $"Drag over open land to zone it {Planning.ZoneName(z)}. Right-click to put the tool down.",
-            { Building: string id } => $"Click an open lot for the {town.Content.Building(id).Name.ToLowerInvariant()}. Right-click to put the tool down.",
+            { Zone: Zone.None } => "Brush over painted land to clear it. [ ] or Shift+wheel sizes the brush. Right-click puts the tool down.",
+            { Zone: Zone z } => $"Paint {Planning.ZoneName(z)} land anywhere. [ ] or Shift+wheel sizes the brush. Right-click puts the tool down.",
+            { Building: string id } => $"Click to place the {town.Content.Building(id).Name.ToLowerInvariant()} facing the square, or drag to turn it any way (Shift+wheel turns it too). Right-click puts the tool down.",
             _ => GroupHints[_buildGroup],
         };
     }
@@ -221,7 +224,7 @@ public partial class Main
         return null;
     }
 
-    /// <summary>For screenshots: open the bar on a group, pick a tool, and preview a stroke from lot (x, y) to (x2, y2).</summary>
+    /// <summary>For screenshots: open the bar on a group, pick a tool, and preview a stroke (or a placement dragged to face a point) from tile (x, y) to (x2, y2) of the town.</summary>
     private void OpenPlan(string group, string? tool, int[]? hover)
     {
         if (!_buildBar.Visible) ToggleBuildBar();
@@ -232,7 +235,7 @@ public partial class Main
         _map.Planner.Pick(new Planner.PlanTool(item.Zone, item.Building));
         if (hover is { Length: >= 2 })
         {
-            Vector2 At(int x, int y) => new(Map.Geo.Margin + x + 0.5f, Map.Geo.Margin + y + 0.5f);
+            Vector2 At(int x, int y) => Planner.FromTown(x, y);
             if (hover.Length >= 4) _map.Planner.Press(At(hover[0], hover[1]));
             _map.Planner.Hover(At(hover[^2], hover[^1]));
         }

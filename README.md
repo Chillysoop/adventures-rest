@@ -132,7 +132,7 @@ Godot 4.3 (.NET, Compatibility renderer) with the C# sim as a project reference.
 (`src/Main.cs`, `src/Panels.cs`); the map (`src/Map/`) is a 3D world in the spirit of Northgard, scaled for a map that
 takes many hours to explore. Art credits are in [`godot/assets/CREDITS.md`](godot/assets/CREDITS.md).
 
-- The map: one continuous 1024×1024-tile world (1 tile = 1 lot, about 44 tiles per day of march) generated from the
+- The map: one continuous 1024×1024-tile world (about 44 tiles per day of march) generated from the
   seed (`WorldGen.cs`): hills, mountain chains, a river past the town, biomes and forests, cut into Northgard-style
   territories. Terrain is 16×16 chunks with three levels of detail; trees and ground clutter are instanced per chunk and
   give way to painted canopy from far off. Buildings mix Kenney's CC0 kits (baked into `assets/models/kenney.bin` by
@@ -163,6 +163,11 @@ takes many hours to explore. Art credits are in [`godot/assets/CREDITS.md`](godo
   the window that answers it and, when it happened somewhere, flies the camera there and inspects the place or person.
 - Resource icons: every resource has one icon (`godot/assets/icons/`), used in the top bar, meters, buttons and anywhere
   text names an amount of gold.
+- Planning after Foundation, with no grid anywhere (`src/Build.cs`, `src/Map/Planner.cs`; sim `Systems/Land.cs`):
+  zones are painted with a round brush ([ and ] or Shift+wheel size it) on a fine plan four cells to a tile, and
+  townsfolk site each new building inside the paint themselves, turned at any angle to face the town square with a lane
+  around it. Government works are placed at any point: click to face the square, or drag (or Shift+wheel) to turn
+  them any way. The palisade follows the town's outline.
 - Townsfolk walk at a steady pace, a little brisker at higher speeds and still when paused.
 - Faith and factions: each god's followers, houses, holy days and favour towards a miracle; the known factions with
   their members, coffers, suspicion and standing, and the mayor's levers (crack down, or support with treasury gold).
