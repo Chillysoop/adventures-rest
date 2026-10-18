@@ -229,7 +229,8 @@ public static class Quests
 
     public static int SuggestedReward(int tier) => 50 * tier + 30 * tier * tier;
 
-    public static Agent CreateHero(Town town, ClassDef cls, int level, string? race = null)
+    /// <param name="people">The people (content/game/world.json) who sent them, if any.</param>
+    public static Agent CreateHero(Town town, ClassDef cls, int level, string? race = null, string? people = null)
     {
         var a = Population.CreateAgent(town, new NewAgentOptions { Profession = cls.Name, Gold = town.Rng.Range(10, 40), Race = race });
         a.Ambition = Ambition.None;
@@ -248,6 +249,7 @@ public static class Quests
         sheet.MaxHp = Expedition.HeroMaxHp(sheet, a.Abilities.Con);
         sheet.Hp = sheet.MaxHp;
         Gear.Equip(town.Content.Library, sheet);
+        Annals.Raise(town, a, sheet, people);
         a.Hero = sheet;
         Loyalty.Arrive(town, a);
         return a;
@@ -293,7 +295,7 @@ public static class Quests
         int level = (town.Rng.Chance(green) ? 1 : town.Rng.Chance(0.8) ? 2 : 3) + Saga.ArrivalBonus(town);
         var a = CreateHero(town, PickClass(town), level);
         string where = taverns[town.Rng.Range(0, taverns.Count)].Name;
-        town.Log(LedgerCategory.Arrival, Importance.Notable, $"{a.Describe()}, walks into {where} looking for paid work. ({a.TraitList()})", [a.Id]);
+        town.Log(LedgerCategory.Arrival, Importance.Notable, $"{a.Describe()}, walks into {where} looking for paid work. {Annals.Past(town, a)} ({a.TraitList()})", [a.Id]);
     }
 
     private static void LodgingAndRest(Town town)
