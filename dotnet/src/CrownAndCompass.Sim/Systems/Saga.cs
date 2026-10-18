@@ -102,6 +102,12 @@ public sealed record FallbackFoe
 {
     public string Kind { get; init; } = "beasts";
     public string Leader { get; init; } = "";
+
+    /// <summary>Its lineage in content/game/history.json, whatever region it wakes in.</summary>
+    public string Lineage { get; init; } = "";
+
+    /// <summary>Who it is in the world's history (content/game/history.json), told when it wakes.</summary>
+    public string Text { get; init; } = "";
 }
 
 public sealed record FinaleRules
@@ -343,13 +349,15 @@ public static class Saga
     {
         var s = town.Saga;
         var f = Rules(town).Finale;
-        var top = s.Menaces.Where(m => m.Alive).OrderByDescending(m => m.Power).ThenBy(m => m.Id).FirstOrDefault();
+        // Only a mind that can rule is crowned: a beast or a kobold band may be the worst thing abroad, but it is no big bad.
+        var top = s.Menaces.Where(m => m.Alive && Menaces.CanCrown(town, m)).OrderByDescending(m => m.Power * Menaces.CunningOf(town, m).CrownWeight).ThenBy(m => m.Id).FirstOrDefault();
         string text;
         if (top == null)
         {
-            top = Menaces.Awaken(town, f.Fallback.Count > 0 ? town.Rng.Pick(f.Fallback) : new FallbackFoe { Leader = "the Old Wyrm" });
+            var foe = f.Fallback.Count > 0 ? town.Rng.Pick(f.Fallback) : new FallbackFoe { Leader = "the Old Wyrm" };
+            top = Menaces.Awaken(town, foe);
             if (top == null) return;
-            text = Fill(town, f.FallbackText, top);
+            text = Fill(town, f.FallbackText, top) + (foe.Text != "" ? " " + Fill(town, foe.Text, top) : "");
         }
         else text = Fill(town, f.Crown, top);
         s.BigBadId = top.Id;
@@ -384,6 +392,22 @@ public static class Saga
         town.Mandate = 0;
         lines.Add(Fill(town, y.Sack, by));
         return true;
+    }
+
+    /// <summary>The town bends the knee to a would-be overlord without a fight: the yoke, with no sack.</summary>
+    public static void Swear(Town town, Menace to)
+    {
+        var s = town.Saga;
+        var y = Rules(town).Yoke;
+        s.YokeId = to.Id;
+        s.Defied = false;
+        s.MissedTribute = 0;
+        s.Tributes = 0;
+        s.NextRideDay = town.Day + Rules(town).Finale.RideAfterDays;
+        s.NextTributeTick = town.Tick + y.EveryDays * SimTime.HoursPerDay;
+        s.YokeTick = town.Tick;
+        s.Scars += Rules(town).Dread.Sack * 0.5;
+        town.Mandate = Math.Max(0, town.Mandate - 15);
     }
 
     /// <summary>The town falls for good.</summary>

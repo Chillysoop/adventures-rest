@@ -85,7 +85,9 @@ public partial class Main
             Autosave(now: true);
             ShowTitle();
         };
-        foreach (var b in new[] { resume, quick, fresh, tutorial, title, quit }) actions.AddChild(b);
+        var history = new Button { Text = "History", TooltipText = "The ages, empires and peoples before your town" };
+        history.Pressed += () => OpenHistory();
+        foreach (var b in new[] { resume, quick, fresh, tutorial, history, title, quit }) actions.AddChild(b);
         v.AddChild(actions);
         _menuActions = actions;
         v.AddChild(new HSeparator());
