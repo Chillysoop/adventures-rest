@@ -326,7 +326,9 @@ public partial class TownView
         k.Blob(new Vector3(0.32f, 0.08f, 0.3f), new Vector3(0.035f, 0.035f, 0.035f), beast.Lightened(0.1f));
         // The keeper's lodge by the gate.
         k.Box(new Vector3(-0.3f, 0, 0.26f), new Vector3(0.16f, 0.12f, 0.12f), Palette.Plaster);
-        k.Frustum(new Vector3(-0.3f, 0.12f, 0.26f), 0.12f, 0, 0.08f, 4, new Color("5f6a34"), null, Mathf.Pi / 4);
+        k.Push(MeshKit.At(-0.3f, 0, 0.26f));
+        k.Pyramid(0.12f, 0.16f, 0.12f, 0.08f, new Color("5f6a34"), 0.015f);
+        k.Pop();
     }
 
     /// <summary>The auction house: a tall, gloomy hall with a dark slate roof, a gilt sign and lots stacked under a side awning.</summary>
@@ -396,7 +398,9 @@ public partial class TownView
         k.Blob(new Vector3(0.36f, 0, 0.3f), new Vector3(0.12f, 0.07f, 0.1f), new Color("7a6a54"), 0.2f, v);
         k.Blob(new Vector3(-0.38f, 0, -0.32f), new Vector3(0.1f, 0.06f, 0.09f), new Color("7a6a54"), 0.2f, v + 1);
         k.Box(new Vector3(0.3f, 0, -0.36f), new Vector3(0.18f, 0.1f, 0.12f), Palette.Timber);
-        k.Frustum(new Vector3(0.3f, 0.1f, -0.36f), 0.13f, 0, 0.07f, 4, Palette.DarkTimber, null, Mathf.Pi / 4);
+        k.Push(MeshKit.At(0.3f, 0, -0.36f));
+        k.Pyramid(0.1f, 0.18f, 0.12f, 0.07f, Palette.DarkTimber, 0.015f);
+        k.Pop();
     }
 
     /// <summary>The embassy quarter: a fountain square ringed by a half-sunk dwarven hall, a pavilion of living trees and a flooded courtyard.</summary>
@@ -426,10 +430,14 @@ public partial class TownView
             foreach (float z in new[] { 0.24f, 0.36f })
                 k.Box(new Vector3(x, 0, z), new Vector3(0.015f, 0.1f, 0.015f), Palette.DarkTimber);
         k.Box(new Vector3(0.24f, 0.1f, 0.3f), new Vector3(0.22f, 0.08f, 0.17f), new Color("a89060"));
-        k.Frustum(new Vector3(0.24f, 0.18f, 0.3f), 0.16f, 0, 0.09f, 4, new Color("c8b070"), null, Mathf.Pi / 4);
+        k.Push(MeshKit.At(0.24f, 0, 0.3f));
+        k.Pyramid(0.18f, 0.22f, 0.17f, 0.09f, new Color("c8b070"), 0.02f);
+        k.Pop();
         // A League merchant-envoy's house with its town banner.
         k.Box(new Vector3(-0.3f, 0, 0.28f), new Vector3(0.26f, 0.2f, 0.22f), Palette.Plaster);
-        k.Frustum(new Vector3(-0.3f, 0.2f, 0.28f), 0.2f, 0, 0.12f, 4, new Color("8e3b2e"), null, Mathf.Pi / 4);
+        k.Push(MeshKit.At(-0.3f, 0, 0.28f));
+        k.Pyramid(0.2f, 0.26f, 0.22f, 0.12f, new Color("8e3b2e"), 0.02f);
+        k.Pop();
         k.Box(new Vector3(-0.16f, 0, 0.18f), new Vector3(0.01f, 0.3f, 0.01f), Palette.DarkTimber);
         k.Box(new Vector3(-0.13f, 0.22f, 0.18f), new Vector3(0.06f, 0.07f, 0.004f), Dyes[v % Dyes.Length]);
     }
@@ -502,26 +510,27 @@ public partial class TownView
         // A great arched door the dragon uses, and a bowl for the beacon.
         k.Box(new Vector3(-0.04f, 0.06f, 0.13f), new Vector3(0.14f, 0.18f, 0.02f), new Color("1c1814"));
         k.Frustum(new Vector3(0.18f, 0.555f, -0.2f), 0.05f, 0.06f, 0.03f, 8, Palette.Stone, new Color("f08030", MeshKit.Flag.Magic));
-        // The dragon, curled on the ledge with its wings folded: its colour is its keeper's.
-        var hide = (v % 3) switch { 0 => new Color("5a8a6a"), 1 => new Color("a8382c"), _ => new Color("a8acb4") };
+        // The dragon, curled on the ledge with its wings half open: its colour is its keeper's.
+        var hide = (v % 3) switch { 0 => new Color("5a9a6a"), 1 => new Color("b8402c"), _ => new Color("b4b8c4") };
         var belly = hide.Lightened(0.3f);
-        float y = 0.555f;
-        k.Blob(new Vector3(-0.06f, y + 0.06f, -0.04f), new Vector3(0.13f, 0.08f, 0.09f), hide);
-        k.Blob(new Vector3(-0.06f, y + 0.035f, 0.0f), new Vector3(0.1f, 0.04f, 0.06f), belly);
+        k.Push(MeshKit.At(-0.04f, 0.555f, -0.06f, 0.5f + v * 0.7f, 1.9f));
+        k.Blob(new Vector3(-0.02f, 0.06f, 0.02f), new Vector3(0.13f, 0.08f, 0.09f), hide);
+        k.Blob(new Vector3(-0.02f, 0.035f, 0.06f), new Vector3(0.1f, 0.04f, 0.06f), belly);
         // Neck and head, raised to look over the town.
-        k.Blob(new Vector3(0.06f, y + 0.12f, 0.04f), new Vector3(0.04f, 0.06f, 0.04f), hide);
-        k.Blob(new Vector3(0.1f, y + 0.19f, 0.08f), new Vector3(0.035f, 0.05f, 0.035f), hide);
-        k.Blob(new Vector3(0.13f, y + 0.24f, 0.12f), new Vector3(0.05f, 0.03f, 0.04f), hide);
-        k.Frustum(new Vector3(0.11f, y + 0.26f, 0.1f), 0.008f, 0, 0.05f, 4, new Color("e8e0c8"));
-        k.Frustum(new Vector3(0.15f, y + 0.26f, 0.1f), 0.008f, 0, 0.05f, 4, new Color("e8e0c8"));
-        // Folded wings along its back, and the tail wrapped round the ledge.
-        k.Blob(new Vector3(-0.1f, y + 0.12f, -0.1f), new Vector3(0.12f, 0.04f, 0.06f), hide.Darkened(0.15f));
-        k.Blob(new Vector3(-0.02f, y + 0.12f, -0.12f), new Vector3(0.08f, 0.06f, 0.03f), hide.Darkened(0.2f));
+        k.Blob(new Vector3(0.1f, 0.12f, 0.1f), new Vector3(0.04f, 0.06f, 0.04f), hide);
+        k.Blob(new Vector3(0.14f, 0.19f, 0.14f), new Vector3(0.035f, 0.05f, 0.035f), hide);
+        k.Blob(new Vector3(0.17f, 0.24f, 0.18f), new Vector3(0.05f, 0.03f, 0.04f), hide);
+        k.Frustum(new Vector3(0.15f, 0.26f, 0.16f), 0.008f, 0, 0.05f, 4, new Color("e8e0c8"));
+        k.Frustum(new Vector3(0.19f, 0.26f, 0.16f), 0.008f, 0, 0.05f, 4, new Color("e8e0c8"));
+        // Wings half spread over its back, and the tail wrapped round the ledge.
+        k.Blob(new Vector3(-0.1f, 0.15f, -0.08f), new Vector3(0.16f, 0.02f, 0.09f), hide.Darkened(0.15f));
+        k.Blob(new Vector3(0.06f, 0.15f, -0.1f), new Vector3(0.12f, 0.02f, 0.08f), hide.Darkened(0.2f));
         for (int i = 0; i < 5; i++)
         {
             float a = Mathf.Pi * 0.9f + i * 0.35f;
-            k.Blob(new Vector3(-0.04f + Mathf.Cos(a) * 0.2f, y + 0.025f, -0.06f + Mathf.Sin(a) * 0.2f), new Vector3(0.035f - i * 0.005f, 0.025f, 0.035f - i * 0.005f), hide);
+            k.Blob(new Vector3(Mathf.Cos(a) * 0.14f, 0.025f, Mathf.Sin(a) * 0.12f), new Vector3(0.035f - i * 0.005f, 0.025f, 0.035f - i * 0.005f), hide);
         }
+        k.Pop();
         // A heap of the collection glinting by the door.
         k.Blob(new Vector3(0.24f, 0.08f, 0.2f), new Vector3(0.06f, 0.03f, 0.05f), Palette.Gold, 0.3f, v);
     }
