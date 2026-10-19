@@ -340,6 +340,15 @@
       "teaches": ["command:AnswerDemand"]
     },
     {
+      "id": "crises",
+      "title": "End-game crises",
+      "text": "An enemy power left alone in the later acts begins its [b]crisis[/b]: the Great Horde, the Long Dark, Wyrmfire, the Night of Knives. The cleverer and stronger the enemy, the worse it is. A crisis burns houses, knifes councillors, fouls the stores and saps the walls, then ends with its whole host at the gates. Break its seat before then and the crisis dies with it. Crises overlap and feed each other, so leave several alone and they come thick and fast. When two enemies in crisis are about to fight, [b]Campaign[/b] lets you ride out and fall on one of them, or keep behind the walls.",
+      "when": "alert:doom",
+      "point": "tab:Campaign",
+      "until": "tab:Campaign",
+      "teaches": ["command:JoinClash"]
+    },
+    {
       "id": "notoriety",
       "title": "Fame and infamy",
       "text": "Heroes and companies make names for themselves. Clearing ruins, answering villages and holding the walls earn [b]renown[/b], and the bards give the famous an epithet. Brawls, theft, desertion and treachery earn [b]infamy[/b]. Click a hero to see their name: famous heroes draw others to town and frighten the foe, but they want more for a bounty and other towns court them unless you honour them. The council won't knight the notorious, and their past tends to catch up with them. [b]Companies[/b] shows each company's name abroad.",

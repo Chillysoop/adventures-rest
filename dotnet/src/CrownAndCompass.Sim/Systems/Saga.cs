@@ -504,6 +504,7 @@ public static class Saga
             target += d.StageWeights[Math.Min(d.StageWeights.Length - 1, (int)m.Stage)] * scale;
         }
         if (s.YokeId != null) target += d.Yoke;
+        target += Crises.Dread(town);
         target += Math.Min(d.MaxRazed, town.Settlements.Count(x => x.Razed) * d.Razed);
         if (Threat.IsActive(town) && !Restrained(town))
             target += town.Enemy.Stage == ThreatStage.Marching ? d.WarbandMarching : town.Enemy.Stage == ThreatStage.Raids ? d.WarbandRaids : 0;

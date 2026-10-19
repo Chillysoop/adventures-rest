@@ -1,0 +1,190 @@
+{
+  "minAct": 2,
+  "ripenDays": 30,
+  "disturbDays": 12,
+  "cooldownDays": 150,
+  "score": {
+    "cunning": { "mindless": 0, "crafty": 0.8, "cunning": 1.15, "mastermind": 1.6 },
+    "perLevel": 0.08,
+    "powerFloor": 0.5,
+    "powerCap": 2.0,
+    "bigBad": 1.5
+  },
+  "severities": [
+    {
+      "id": "lesser", "name": "lesser", "min": 0,
+      "phaseDays": [40, 35], "blowEvery": [15, 21], "blows": 1, "strength": 1.0,
+      "army": 0.7, "dread": 4, "scar": 3, "culminationBlows": 2
+    },
+    {
+      "id": "great", "name": "great", "min": 1.5,
+      "phaseDays": [36, 32], "blowEvery": [11, 15], "blows": 1, "strength": 1.4,
+      "army": 0.95, "dread": 8, "scar": 6, "culminationBlows": 3
+    },
+    {
+      "id": "dire", "name": "dire", "min": 3.0,
+      "phaseDays": [32, 28], "blowEvery": [7, 11], "blows": 2, "strength": 1.9,
+      "army": 1.15, "dread": 13, "scar": 10, "culminationBlows": 4
+    }
+  ],
+  "pressureAct": 1,
+  "pressureGap": [25, 45],
+  "gather": 1.5,
+  "callAllies": { "crafty": 0.1, "cunning": 0.3, "mastermind": 0.6 },
+  "allyShare": 0.6,
+  "ally": "{ally} answers the call of {leader}: some {n} of its warriors march with {name} on {town}.",
+  "absorbers": ["undead", "cult", "tribe"],
+  "absorbOver": 1.5,
+  "absorbText": {
+    "undead": "{leader} falls on {other} and raises its fallen as its own. {name} marches with their corpses now.",
+    "cult": "The choir of {name} sings over the dead of {other}, and they get up and join the hymn.",
+    "tribe": "{leader} breaks {other} and makes its warriors swear to the horde, or die. Most swear."
+  },
+  "cascade": 0.15,
+  "overlapArmy": 0.08,
+  "afterSack": 1.2,
+  "strikeShare": 0.2,
+  "wallsWeak": 0.8,
+  "wallsWeakDays": 20,
+  "vengeance": {
+    "strikeAt": 30,
+    "decay": 0.4,
+    "cost": 30,
+    "everyDays": [6, 12],
+    "minCunning": "crafty",
+    "heat": { "attempt": 14, "holding": 22, "broken": 45, "clash": 35, "refused": 30 },
+    "deeds": {
+      "attempt": "the heroes who came for {seat}",
+      "holding": "the loss of a lair",
+      "broken": "the fall of {seat}",
+      "clash": "the town's part in the battle at {where}",
+      "refused": "the town's refusal"
+    },
+    "vow": "Word comes back from {seat}: {leader} has sworn {town} will pay for {deed}.",
+    "blows": { "assassinate": 3, "burn": 1, "treasury": 1, "walls": 1 }
+  },
+  "clash": {
+    "everyDays": [15, 25],
+    "noticeDays": 5,
+    "reach": 1,
+    "loserLoss": 0.6,
+    "winnerLoss": 0.25,
+    "absorb": 2.5,
+    "townShare": 0.3,
+    "militiaPerDead": 60,
+    "truceDays": 20,
+    "announce": "Scouts say {a} and {b} are both gathering toward {where}. Their hosts will meet there in {days} days. {town} can ride out and fall on one of them while it fights the other, or keep behind its walls.",
+    "fought": "{winner} and {loser} meet in battle at {where}. {winner} holds the field; {loser} drags its wounded home.",
+    "swallowed": "{winner} breaks {loser} at {where} and takes its warriors. Whatever {loser} was brewing, {winner} brews now.",
+    "joined": "{town}'s heroes and the watch ride out to {where} and fall on {target} from the flank while it fights {other}.",
+    "pact": "{a} and {b} come to the walls of {town} together. The two hosts have made common cause.",
+    "melee": "{a} and {b} reach the walls of {town} within days of each other and turn on one another before the gates. {winner} drives {loser} off and comes on, bloodied."
+  },
+  "blows": {
+    "raid": {
+      "landed": "",
+      "stopped": ""
+    },
+    "burn": {
+      "landed": "Fire in the night: {by} set {where} alight. By morning it is a shell, and {owner} must rebuild.",
+      "stopped": "Someone tried to fire {where} in the night. {guard} caught the torches before the thatch took."
+    },
+    "assassinate": {
+      "landed": "At dawn {victim} is found dead, a black feather on the pillow. Everyone knows whose sign it is: {by}.",
+      "stopped": "An assassin of {by} came in the night for {victim}. {guard} got there first."
+    },
+    "walls": {
+      "landed": "Agents of {by} have been at the walls: mortar picked out, a gate bar sawn half through. The masons say it will be weeks before the defences are whole.",
+      "stopped": "The watch catches a stranger with a mason's chisel at the foot of the walls. Under the lash he names {by}."
+    },
+    "treasury": {
+      "landed": "{gold} gold is gone from the treasury overnight. The clerk who kept the keys is gone too, and the trail leads toward {seat}.",
+      "stopped": "A clerk is caught carrying the treasury's ledgers out of the town hall at midnight. Paid by {by}, he says."
+    },
+    "stores": {
+      "landed": "Rot in the granaries: someone of {by} has fouled the stores. A third of the town's food goes to the midden.",
+      "stopped": "A watchman finds a sack of blackrot spores by the granary door, and the man who dropped it running for the gate."
+    },
+    "discord": {
+      "landed": "Pamphlets and whispers of {by} set the wards against each other. The council is shouted down in its own hall.",
+      "stopped": "The watch traces the poisonous pamphlets to a printer in the pay of {by} and breaks his press."
+    },
+    "dead": {
+      "landed": "The graves of {town} open at night and the dead walk the lanes. {victims} do not live to see morning.",
+      "stopped": "The dead come up out of the burying ground and the watch and {guard} put them back in it before dawn."
+    },
+    "terror": {
+      "landed": "Every dog in {town} howls at once at midnight, and every child dreams the same dream of {leader}. Nobody sleeps."
+    }
+  },
+  "kinds": {
+    "tribe": {
+      "name": "the Great Horde",
+      "what": "Every band in the hills is gathering under one banner to break the walls.",
+      "start": "War drums in every valley at once. {leader} has called every band within a month's march, and they are coming: {name}'s crisis has begun, the Great Horde.",
+      "phase": "The Great Horde swells. Bands the town has never heard of stream past the ruined farms toward {seat}.",
+      "culminate": "The Great Horde is on the move. Every spear {leader} could gather marches on {town} at once.",
+      "averted": "With {leader} broken, the Great Horde falls apart into quarrelling bands before it ever marches.",
+      "blows": { "raid": 3, "burn": 2, "walls": 1 }
+    },
+    "undead": {
+      "name": "the Long Dark",
+      "what": "The dead of every barrow are waking, and they hunger for the living town.",
+      "start": "The bells of {town} ring by themselves at midnight. In every barrow from here to {seat} the dead are stirring: {name}'s crisis has begun, the Long Dark.",
+      "phase": "The Long Dark deepens. Days grow short and grey, and the dead walk even at noon near {seat}.",
+      "culminate": "The Long Dark falls. {leader} leads every corpse in {region} against the walls of {town}.",
+      "averted": "With {leader} gone, the dead lie down again in their barrows, and the Long Dark lifts.",
+      "blows": { "dead": 3, "terror": 2, "raid": 1 }
+    },
+    "dragon": {
+      "name": "Wyrmfire",
+      "what": "It means to burn the town street by street until it kneels or is ash.",
+      "start": "A shadow crosses the sun over {town} and does not stop. {leader} has decided the town is its to burn: Wyrmfire has begun.",
+      "phase": "Wyrmfire grows. Farms burn every week now, and the drakes of {seat} hunt the roads.",
+      "culminate": "{leader} comes for {town} with every drake and tithe-taker it commands, and the sky over the walls turns red.",
+      "averted": "{leader} is laid low, and the fires go out across the land. Wyrmfire is over.",
+      "blows": { "burn": 4, "raid": 1, "treasury": 1 }
+    },
+    "schemers": {
+      "name": "the Night of Knives",
+      "what": "Its agents are inside the walls, buying clerks, poisoning wells and killing councillors.",
+      "start": "A councillor's dog is found strangled with a silk cord, and a note: soon. {leader}'s agents are inside {town}: the Night of Knives has begun.",
+      "phase": "The Night of Knives draws closer. Nobody in the council trusts anybody, and doors are barred at dusk.",
+      "culminate": "The Night of Knives: {leader}'s agents strike everywhere at once, and {name} marches on the walls to finish the work.",
+      "averted": "With {leader} fallen, its agents scatter and the Night of Knives never comes.",
+      "blows": { "assassinate": 2, "treasury": 2, "discord": 2, "stores": 1, "walls": 1 }
+    },
+    "beasts": {
+      "name": "the Devouring",
+      "what": "It is driving every hungry thing in the wilds toward the town's fields.",
+      "start": "The herds come down out of {region} in a panic, and something worse comes after them. {leader} is hungry: the Devouring has begun.",
+      "phase": "The Devouring spreads. Fields are trampled flat and whole flocks vanish in a night.",
+      "culminate": "{leader} drives every beast of {region} down on {town} in one great hunt.",
+      "averted": "{leader} is dead, and the beasts of {region} scatter back into the wild. The Devouring is over.",
+      "blows": { "raid": 3, "burn": 2, "terror": 1 }
+    },
+    "rivals": {
+      "name": "the Usurpation",
+      "what": "It means to take the town for itself: buy its council, break its trade, then march in.",
+      "start": "Heralds in fine livery read a proclamation in the square: {leader} claims {town} by right of conquest. The Usurpation has begun.",
+      "phase": "The Usurpation tightens its grip. Merchants are bought, and the roads to {town} answer to {leader}.",
+      "culminate": "{leader} rides on {town} at the head of {name} to claim the town hall.",
+      "averted": "{leader} is beaten, and the Usurpation dies with the claim.",
+      "blows": { "treasury": 2, "discord": 2, "assassinate": 1, "raid": 1 }
+    },
+    "cult": {
+      "name": "the Hollow Hymn",
+      "what": "Its choir is singing something old awake under the town.",
+      "start": "Everyone in {town} wakes humming the same slow tune. The choir of {name} has begun the Hollow Hymn.",
+      "phase": "The Hollow Hymn grows louder. Neighbours sing it in their sleep, and the graves are restless.",
+      "culminate": "The Hollow Hymn ends on its last note, and {name} comes up out of the ground against {town}.",
+      "averted": "The choir is silenced, and the Hollow Hymn is forgotten by morning.",
+      "blows": { "dead": 2, "terror": 2, "assassinate": 1, "discord": 1 }
+    }
+  },
+  "ended": {
+    "held": "{town} holds against {crisis}. {name} limps away, its crisis spent.",
+    "sacked": "{crisis} has broken {town}. {name} goes home laden, and every other enemy in the land has seen it done.",
+    "routed": "{name}'s host is broken before it ever reaches the walls. {crisis} is spent."
+  }
+}

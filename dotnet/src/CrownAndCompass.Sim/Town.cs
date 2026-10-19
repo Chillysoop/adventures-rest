@@ -430,6 +430,12 @@ public sealed class Town
     /// <summary>The hall of heroes: those who fell in the town's service or retired here, in the order they did (<see cref="Systems.Legacies"/>).</summary>
     public List<Systems.Legacy> Legacies { get; } = [];
 
+    /// <summary>Enemy powers' end-game crises and the clashes between them (<see cref="Systems.Crises"/>).</summary>
+    public Systems.CrisisBook Crises { get; } = new();
+
+    /// <summary>Foes' grudges against the town (<see cref="Systems.Vengeance"/>).</summary>
+    public List<Systems.Grudge> Grudges { get; } = [];
+
     /// <summary>The open levels of the undercity, shallowest first (<see cref="Systems.Undercity"/>).</summary>
     public List<Systems.UnderLevel> Undercity { get; } = [];
 

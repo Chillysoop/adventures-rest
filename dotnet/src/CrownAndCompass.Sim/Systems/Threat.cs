@@ -139,7 +139,7 @@ public static class Threat
         double walls = w.CityWall == PalisadeState.Built ? d.CityWall
             : w.StoneWall == PalisadeState.Built ? d.StoneWall
             : w.Palisade == PalisadeState.Built ? d.Palisade : 1;
-        return walls * Garrison.MoatFactor(town) * (1 + d.PerTower * w.Towers + Garrison.FortBonus(town) + Planning.Defense(town));
+        return walls * Blows.WallFactor(town) * Garrison.MoatFactor(town) * (1 + d.PerTower * w.Towers + Garrison.FortBonus(town) + Planning.Defense(town));
     }
 
     /// <summary>What the town's scouts believe the warband numbers, rounded the way rumours are.</summary>
@@ -277,9 +277,15 @@ public static class Threat
             .ThenByDescending(b => Distance(town, b.LotId))
             .ThenBy(b => b.Id)
             .FirstOrDefault();
-        string where = target != null ? target.Name : "the outlying fields";
+        if (!WorthRaiding(town, target, raiders))
+        {
+            // Nothing out there worth the blood: they watch the walls and ride off.
+            if (rng.Chance(0.3)) town.Log(LedgerCategory.War, Importance.Routine, $"Riders of {e.Name} look the town over from the treeline at dusk, and turn back.");
+            return;
+        }
+        string where = target!.Name;
         local *= Garrison.FlagFactor(town, target);
-        if (target != null && Garrison.Covered(town, target)) timing += ", where the watch had planted its flag";
+        if (Garrison.Covered(town, target)) timing += ", where the watch had planted its flag";
 
         if (local >= raiders)
         {
@@ -292,14 +298,13 @@ public static class Threat
         }
         string text = $"Some {Js.Str(raiders)} raiders fall on {where} in the night{timing}";
         var victims = new List<int>();
-        if (target != null)
         {
             double loot = Math.Floor(target.Cash * 0.6);
             target.Cash -= loot;
             foreach (var (g, q) in target.Stock.ToList()) target.Stock[g] = Math.Floor(q * 0.3);
             text += loot > 0 ? $", carrying off the stores and {Js.Str(loot)} gold" : ", carrying off the stores";
             var workers = target.Workers.Select(town.Agent).Where(a => !a.Departed).ToList();
-            if (workers.Count > 0 && rng.Chance(0.45))
+            if (workers.Count > 0 && rng.Chance(town.Content.Enemy.Defense.RaidKill))
             {
                 var v = workers[rng.Range(0, workers.Count)];
                 Kill(town, v);
@@ -310,18 +315,34 @@ public static class Threat
         // They may drag the hands off to their war camp, to be rescued in time or lost.
         var camp = town.Sites.FirstOrDefault(x => x.Def.Id == e.Outpost.Id);
         text += Captives.Take(town, camp, target);
+        if (rng.Chance(town.Content.Enemy.Defense.RaidBurn))
+        {
+            Blows.Wreck(town, target, 0.4 + rng.Next() * 0.3);
+            text += $". They fire {target.Name} as they go";
+        }
         town.Log(LedgerCategory.War, Importance.Major, $"{text}. The watch arrives too late.", victims);
         town.Tension += 25 + victims.Count * 10;
         town.Mandate = Math.Max(0, town.Mandate - 4);
     }
 
     /// <summary>The watch and the heroes at home against raiders tonight, behind whatever walls there are.</summary>
-    public static double LocalDefense(Town town)
+    public static double LocalDefense(Town town, bool roll = true)
     {
         var d = town.Content.Enemy.Defense;
         var home = town.Heroes.Where(a => !a.IsAway);
-        return (Garrison.NightWatch(town) * d.Watchman * Planning.WatchFactor(town) + home.Sum(a => a.Hero!.Level) * d.HeroLevel) * Fortification(town) * (0.7 + town.Rng.Next() * 0.6);
+        return (Garrison.NightWatch(town) * d.Watchman * Planning.WatchFactor(town) + home.Sum(a => a.Hero!.Level) * d.HeroLevel) * Fortification(town) * (roll ? 0.7 + town.Rng.Next() * 0.6 : 1);
     }
+
+    /// <summary>Outside the walls (or there are none yet), or out in the fields: what raiders can reach.</summary>
+    public static bool Exposed(Town town, Building b) =>
+        b.Def.Zone == Zone.Farmland || b.Def.Id == "lumber_camp" || City.Ring(town, town.Lot(b.LotId)) >= town.Defenses.OutsideRing;
+
+    /// <summary>
+    /// Raiders don't throw themselves away: they go only for a building beyond the walls, and only when they
+    /// expect to beat the watch and the heroes they would meet there.
+    /// </summary>
+    public static bool WorthRaiding(Town town, Building? target, double raiders) =>
+        target != null && Exposed(town, target) && raiders >= LocalDefense(town, roll: false) * Garrison.FlagFactor(town, target) * town.Content.Enemy.Defense.RaidNerve;
 
     /// <summary>
     /// Raiders pick their night (GDD rule E8): with the heroes home they hang back a day or three; once

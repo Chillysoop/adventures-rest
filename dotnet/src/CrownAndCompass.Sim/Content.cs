@@ -414,6 +414,13 @@ public sealed record EnemyDefense
     public double StoneWall { get; init; } = 2.0;
     public double CityWall { get; init; } = 2.6;
     public double PerTower { get; init; }
+
+    /// <summary>Raiders come only when they expect to win: their numbers against this share of the defenders they expect.</summary>
+    public double RaidNerve { get; init; } = 0.8;
+
+    /// <summary>Chances a raid that gets through kills someone, and (for a very hostile foe) burns what it hit.</summary>
+    public double RaidKill { get; init; } = 0.15;
+    public double RaidBurn { get; init; } = 0.25;
 }
 
 public sealed record WorkSpec
@@ -1214,6 +1221,9 @@ public sealed class Content
     /// <summary>Townsfolk and heroes' skills and everyday checks (content/game/skills.json).</summary>
     public SkillRules Skills { get; init; } = new();
 
+    /// <summary>Enemy powers' end-game crises, their blows against the town and their clashes (content/game/crises.json).</summary>
+    public CrisisRules Crises { get; init; } = new();
+
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
 
@@ -1377,6 +1387,7 @@ public sealed class Content
             Wards = Parse<WardRules>("wards.json"),
             Notoriety = Parse<NotorietyRules>("notoriety.json"),
             Skills = Parse<SkillRules>("skills.json"),
+            Crises = Parse<CrisisRules>("crises.json"),
         };
     }
 

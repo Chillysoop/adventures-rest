@@ -139,6 +139,8 @@ public sealed class Simulation
         Faith.Daily(t);
         Factions.Daily(t, Options.AutoMayor);
         Saga.Daily(t, Options.AutoMayor);
+        Crises.Daily(t, Options.AutoMayor && Options.AutoDefense);
+        Vengeance.Daily(t);
         Turning.Daily(t);
         Legacies.Daily(t, Options.AutoMayor);
         Institutions.Daily(t, Options.AutoMayor && Options.AutoPlanning);
@@ -231,6 +233,9 @@ public sealed class Simulation
 
     /// <summary>Stand a call to arms or a flag down; its guards go back to walking the walls.</summary>
     public bool StandDown(int postId) => Garrison.StandDown(Town, postId);
+
+    /// <summary>Answer a clash between two enemies in crisis: ride out against one of them (its menace id), or 0 to keep behind the walls.</summary>
+    public bool JoinClash(int clashId, int againstMenaceId) => Crises.Join(Town, clashId, againstMenaceId);
 
     /// <summary>Answer a menace's demand for fealty: bend the knee and pay tribute, or refuse and face its host.</summary>
     public bool AnswerDemand(int menaceId, bool submit) => Menaces.Answer(Town, menaceId, submit);
