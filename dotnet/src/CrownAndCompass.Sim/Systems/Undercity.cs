@@ -102,6 +102,7 @@ public static class Undercity
             + r.StirPerFaction * town.Factions.Count(f => f.Active && f.Secret)
             + r.StirPerHundred * town.Residents.Count / 100.0;
         rate *= 1 - Research.Ward(town);
+        rate *= 1 - Institutions.Hush(town);
         return l.Patrol ? rate * (1 - r.PatrolCut) : rate;
     }
 

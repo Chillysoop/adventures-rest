@@ -207,4 +207,41 @@ public partial class TownView
         k.Box(new Vector3(0.36f, 0, 0.36f), new Vector3(0.04f, 0.12f, 0.03f), brass);
         k.Blob(new Vector3(0.36f, 0.15f, 0.36f), new Vector3(0.025f, 0.025f, 0.025f), brass.Lightened(0.15f));
     }
+
+    /// <summary>The undercity gate: a squat warded gatehouse over a stair going down into the dark, with an iron grate and green lamps.</summary>
+    private static void UndercityGate(MeshKit k, int v)
+    {
+        k.Push(MeshKit.At(0, 0, 0.02f, 0, 1.3f));
+        // A squat gatehouse of grey stone: a vaulted block between two stubby towers, with a black arch facing the stair.
+        var stone = new Color("9a948a");
+        var dark = new Color("16141a");
+        k.Box(new Vector3(0, 0, -0.2f), new Vector3(0.44f, 0.26f, 0.22f), stone, stone.Darkened(0.15f));
+        k.Frustum(new Vector3(0, 0.26f, -0.2f), 0.2f, 0.12f, 0.08f, 4, new Color("4a4650"), null, Mathf.Pi / 4);
+        k.Box(new Vector3(0, 0, -0.088f), new Vector3(0.14f, 0.18f, 0.01f), dark);
+        foreach (float x in new[] { -0.27f, 0.27f })
+        {
+            k.Box(new Vector3(x, 0, -0.2f), new Vector3(0.13f, 0.36f, 0.13f), stone.Darkened(0.08f), stone.Darkened(0.2f));
+            k.Frustum(new Vector3(x, 0.36f, -0.2f), 0.1f, 0, 0.12f, 4, new Color("4a4650"), null, Mathf.Pi / 4);
+        }
+        // The stair down: a dark pit in front of the gate, with steps falling into it and an iron grate over its far end.
+        k.Box(new Vector3(0, -0.02f, 0.18f), new Vector3(0.3f, 0.03f, 0.28f), dark);
+        var step = new Color("6a665c");
+        for (int i = 0; i < 4; i++)
+            k.Box(new Vector3(0, 0.012f - i * 0.006f, 0.3f - i * 0.05f), new Vector3(0.24f, 0.01f, 0.04f), step.Darkened(i * 0.12f));
+        var iron = new Color("2e2c30");
+        for (int i = 0; i < 6; i++)
+            k.Box(new Vector3(-0.12f + i * 0.048f, 0, 0.06f), new Vector3(0.008f, 0.1f, 0.008f), iron);
+        k.Box(new Vector3(0, 0.1f, 0.06f), new Vector3(0.26f, 0.012f, 0.012f), iron);
+        // Kerb stones round the pit and the warden's green lamps.
+        k.Box(new Vector3(-0.17f, 0, 0.18f), new Vector3(0.03f, 0.03f, 0.3f), Palette.Stone);
+        k.Box(new Vector3(0.17f, 0, 0.18f), new Vector3(0.03f, 0.03f, 0.3f), Palette.Stone);
+        var lamp = new Color("7af0a0", MeshKit.Flag.Magic);
+        foreach (float x in new[] { -0.2f, 0.2f })
+        {
+            k.Box(new Vector3(x, 0, 0.34f), new Vector3(0.015f, 0.14f, 0.015f), iron);
+            k.Blob(new Vector3(x, 0.16f, 0.34f), new Vector3(0.02f, 0.025f, 0.02f), lamp);
+        }
+        k.Add("castle/flag-pennant", MeshKit.At(0.27f, 0.48f, -0.2f, 0, 0.1f), Palette.Kenney(Dyes[(v + 2) % Dyes.Length]));
+        k.Pop();
+    }
 }

@@ -55,7 +55,7 @@
     {
       "id": "build",
       "title": "Zone the land",
-      "text": "Open the build bar with [b]Build[/b] or [b]B[/b]. You don't place houses: you paint zones, and the townsfolk build homes, farms and shops in them as they can afford to. Government buildings you place yourself: click to set one down, or drag to turn it any way.",
+      "text": "Open the build bar with [b]Build[/b] or [b]B[/b]. You don't place houses: you paint zones, and the townsfolk build homes, farms and shops in them as they can afford to. Government buildings you place yourself: click to set one down, or drag to turn it any way. Green ground shows where it fits, and if your spot is too tight or too steep it settles on the nearest one that works.",
       "point": "build",
       "until": "build",
       "teaches": ["key:B", "command:Place"]
@@ -63,7 +63,7 @@
     {
       "id": "zone",
       "title": "Paint a zone",
-      "text": "Pick a zone in the build bar, then brush across open ground near the town to paint it; [b][[/b] and [b]][/b] (or Shift+wheel) size the brush. Lanes wear in to the paint by themselves and the townsfolk build facing them. Homes keep people off the streets; farms keep bread cheap.",
+      "text": "Pick a zone in the build bar, then brush across open ground near the town to paint it; [b][[/b] and [b]][/b] (or Shift+wheel) size the brush. Plot outlines show where the buildings will go; lanes wear in to the paint by themselves and the townsfolk build facing them. Homes keep people off the streets; farms keep bread cheap.",
       "point": "buildbar",
       "until": "zoned",
       "teaches": ["command:PaintZone", "key:Bracketleft", "key:Bracketright"]
@@ -150,6 +150,7 @@
       "title": "Arm your heroes",
       "text": "The town hall keeps an [b]Armory[/b]. Give its magic arms, armour and charms to heroes in town to help them take on harder sites: they wear it at once, count it as pay and think better of you. A [b]sending stone[/b] lets a company with no caster send word home from the road. The armory fills from loot: post a bounty with [b]loot terms[/b] (a bigger reward, and the hoard's magic comes to the town), swear a company to a [b]loot pact[/b] for a finder's fee, or buy what heroes and caravans offer. Sell what nobody needs.",
       "point": "tab:Armory",
+      "when": "day:15",
       "until": "tab:Armory",
       "teaches": ["tab:Armory", "command:Gift", "command:BuyLoot", "command:SellStock", "command:OfferPact", "command:EndPact"]
     },
@@ -165,7 +166,7 @@
     {
       "id": "war",
       "title": "Ready the walls",
-      "text": "Something will come for Briarford sooner or later. [b]War[/b] shows the threat and the walls: start with a timber palisade and watchtowers, then raise stone walls, a gatehouse, a moat and barracks in the walls as the town grows. Raiders strike when your heroes are away, so don't send everyone at once.",
+      "text": "Something will come for Briarford sooner or later. [b]War[/b] shows the threat and the walls: start with a timber palisade and watchtowers, then raise stone walls, a gatehouse, a moat and barracks in the walls as the town grows. Builders keep a clear strip along the wall line so the stone, towers and moat have room later. Raiders strike when your heroes are away, so don't send everyone at once.",
       "point": "tab:War",
       "until": "tab:War",
       "teaches": ["tab:War", "command:BuildDefense"]
@@ -230,6 +231,7 @@
       "teaches": ["command:ResolveStory"]
     },
     {"id": "regard", "title": "Heroes judge your choices", "text": "Every hero has a temper: merciful, ruthless, pious, mercenary, lawful, free-spirited or bold. When you answer a story, each choice shows which heroes in town it would [b]please[/b] or [b]anger[/b]. What they think of you moves their loyalty, and it is shown when you select a hero. A hero who trusts you will ask for help with a personal quest of their own; one you keep angering will come to you with a grievance.", "point": "inspector", "when": "alert:story", "teaches": []},
+    {"id": "bargains", "title": "Law and strange bargains", "text": "Heroes break the law too: a brawl or a theft comes to you to [b]pardon[/b], [b]fine[/b] or [b]jail[/b], and the heroes watching judge it. Beware gifts from strangers, like sweet wells or a notary's purse: each carries a debt that falls due weeks later. A menace may offer a hero strength in a dream, and every dark gift taken makes them likelier to fall, unless you forbid it. Foes can change sides as well: a beaten leader may beg quarter or come over to the town, and heroes from your past towns' legends may turn up looking for work.", "point": "alerts", "when": "day:50", "teaches": []},
     {"id": "ward-voices", "title": "Every ward has a voice", "text": "The wards judge your choices too. The stallholders of the Market Ward like profit, the temple wardens like mercy and the gods, the wharf crews like free hands. A choice shows which wards it pleases or angers alongside the heroes. A ward that warms to you is more content, so its houses grow sooner; one you sour grumbles. See how each ward feels in the [b]City[/b] window.", "point": "tab:City", "when": "day:60", "teaches": []},
     {
       "id": "mayor-level",
@@ -407,7 +409,7 @@
     {
       "id": "institutions",
       "title": "The town's institutions",
-      "text": "A town grows around its institutions: the temple district, an adventurers' hall, a druid grove, a grand bazaar, the famous tavern, and as it grows a paladin chapterhouse, an alchemists' quarter, an artificers' foundry, a bards' college and a grand arena. Each is run by a keeper with a name and a temper, does something for the whole town every day, and asks you for something now and then. In the [b]Institutions[/b] window, make each one's choice (which god the temple district honours, the tavern's style) and set how generously the council funds it: generous patronage buys more of its service and its keeper's goodwill. Raise the new ones from the Government build bar; the college and the arena form around the town's theatre and arena.",
+      "text": "A town grows around its institutions: the temple district, an adventurers' hall, a druid grove, a grand bazaar, the famous tavern, and as it grows a gate over the undercity, a paladin chapterhouse, an alchemists' quarter, an artificers' foundry, a bards' college and a grand arena. Each is run by a keeper with a name and a temper, does something for the whole town every day, and asks you for something now and then. In the [b]Institutions[/b] window, make each one's choice (which god the temple district honours, the tavern's style) and set how generously the council funds it: generous patronage buys more of its service and its keeper's goodwill. Raise the new ones from the Government build bar; the college and the arena form around the town's theatre and arena.",
       "point": "tab:Institutions",
       "when": "count:Institutions",
       "teaches": [
