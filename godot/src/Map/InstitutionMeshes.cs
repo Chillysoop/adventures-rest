@@ -211,14 +211,19 @@ public partial class TownView
     /// <summary>The undercity gate: a squat warded gatehouse over a stair going down into the dark, with an iron grate and green lamps.</summary>
     private static void UndercityGate(MeshKit k, int v)
     {
-        var stone = WallStone(new Color("5a5850"), 0.85f);
-        k.Add("castle/gate", MeshKit.At(0, 0, -0.18f, 0, 0.34f), stone);
-        k.Add("castle/tower-square-base", MeshKit.At(-0.3f, 0, -0.18f, 0, 0.2f), stone);
-        k.Add("castle/tower-square-top", MeshKit.At(-0.3f, 0.2f, -0.18f, 0, 0.2f), stone);
-        k.Add("castle/tower-square-base", MeshKit.At(0.3f, 0, -0.18f, 0, 0.2f), stone);
-        k.Add("castle/tower-square-top", MeshKit.At(0.3f, 0.2f, -0.18f, 0, 0.2f), stone);
-        // The stair down: a dark pit in front of the gate, with steps falling into it and an iron grate over its far end.
+        k.Push(MeshKit.At(0, 0, 0.02f, 0, 1.3f));
+        // A squat gatehouse of grey stone: a vaulted block between two stubby towers, with a black arch facing the stair.
+        var stone = new Color("9a948a");
         var dark = new Color("16141a");
+        k.Box(new Vector3(0, 0, -0.2f), new Vector3(0.44f, 0.26f, 0.22f), stone, stone.Darkened(0.15f));
+        k.Frustum(new Vector3(0, 0.26f, -0.2f), 0.2f, 0.12f, 0.08f, 4, new Color("4a4650"), null, Mathf.Pi / 4);
+        k.Box(new Vector3(0, 0, -0.088f), new Vector3(0.14f, 0.18f, 0.01f), dark);
+        foreach (float x in new[] { -0.27f, 0.27f })
+        {
+            k.Box(new Vector3(x, 0, -0.2f), new Vector3(0.13f, 0.36f, 0.13f), stone.Darkened(0.08f), stone.Darkened(0.2f));
+            k.Frustum(new Vector3(x, 0.36f, -0.2f), 0.1f, 0, 0.12f, 4, new Color("4a4650"), null, Mathf.Pi / 4);
+        }
+        // The stair down: a dark pit in front of the gate, with steps falling into it and an iron grate over its far end.
         k.Box(new Vector3(0, -0.02f, 0.18f), new Vector3(0.3f, 0.03f, 0.28f), dark);
         var step = new Color("6a665c");
         for (int i = 0; i < 4; i++)
@@ -236,6 +241,7 @@ public partial class TownView
             k.Box(new Vector3(x, 0, 0.34f), new Vector3(0.015f, 0.14f, 0.015f), iron);
             k.Blob(new Vector3(x, 0.16f, 0.34f), new Vector3(0.02f, 0.025f, 0.02f), lamp);
         }
-        k.Add("castle/flag-pennant", MeshKit.At(0.3f, 0.42f, -0.18f, 0, 0.1f), Palette.Kenney(Dyes[(v + 2) % Dyes.Length]));
+        k.Add("castle/flag-pennant", MeshKit.At(0.27f, 0.48f, -0.2f, 0, 0.1f), Palette.Kenney(Dyes[(v + 2) % Dyes.Length]));
+        k.Pop();
     }
 }
