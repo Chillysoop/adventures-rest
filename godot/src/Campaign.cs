@@ -145,8 +145,9 @@ public partial class Main
         }
         foreach (var g in grudges)
         {
-            var marked = g.Marked.Select(t.Agent).Where(h => !h.Dead && !h.Departed).Select(h => h.GivenName).ToList();
-            string who = marked.Count == 0 ? "" : $" It has marked {Ui.Esc(string.Join(", ", marked))} for death.";
+            var marked = g.Marked.Select(t.Agent).Where(h => !h.Dead && !h.Departed).OrderBy(h => h.Id).Select(h => h.Name).ToList();
+            string names = marked.Count <= 4 ? string.Join(", ", marked) : $"{string.Join(", ", marked.Take(3))} and {marked.Count - 3} more";
+            string who = marked.Count == 0 ? "" : $" It has marked {Ui.Esc(names)} for death.";
             p.Row($"{Tag("Vengeance", Ui.Bad)} [b]{Ui.Esc(Ui.Cap(g.Name))}[/b] has sworn revenge on {Ui.Esc(t.Name)}.{who}\n{Ui.C(Ui.Ink2, "[font_size=12]Its agents come for marked heroes in town first, then councillors, houses, the treasury and the walls. A strong watch catches them; the grudge cools in time, and dies with its master.[/font_size]")}");
         }
     }
