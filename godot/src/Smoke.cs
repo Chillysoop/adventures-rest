@@ -7,7 +7,7 @@ namespace CrownAndCompass.Client;
 /// <summary>
 /// With --smoke: the merge gate's play-through of a build (<c>scripts/gate.ts</c>). From the main menu it
 /// starts a new town, plays on at top speed, opens every window, the build bar, the campaign map, a wall and a guard flag and the
-/// game menu, saves and loads, starts the tutorial, opens the History, steps into a story event and answers a party's sending, a few frames apart so each one draws. It prints
+/// game menu, saves and loads, starts the tutorial, opens the History and the glossary with a pinned keyword card, steps into a story event and answers a party's sending, a few frames apart so each one draws. It prints
 /// <c>SMOKE OK</c> and quits with 0, or <c>SMOKE FAIL</c> and 1; the gate also fails on any engine error.
 /// </summary>
 public partial class Main
@@ -97,9 +97,15 @@ public partial class Main
                 return 10;
             case 21:
                 CloseHistory();
-                return 5;
+                // The glossary, and a keyword's card pinned over it.
+                OpenGlossary("mandate");
+                Pin("warband");
+                if (_kwPinned.Count == 0) throw new InvalidOperationException("the keyword card did not pin");
+                return 10;
             case 22:
             {
+                CloseGlossary();
+                UnpinAll();
                 // A story event's card, as one pops up: open it and take the first option, which throws the die.
                 var story = Stories.Open(_sim.Town, "shrine-omen") ?? throw new InvalidOperationException("no story would open");
                 OpenStory(story.Id);

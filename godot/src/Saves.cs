@@ -87,7 +87,9 @@ public partial class Main
         };
         var history = new Button { Text = "History", TooltipText = "The ages, empires and peoples before your town" };
         history.Pressed += () => OpenHistory();
-        foreach (var b in new[] { resume, quick, fresh, tutorial, history, title, quit }) actions.AddChild(b);
+        var glossary = new Button { Text = "Glossary", TooltipText = "Every keyword in the game, explained (F1)" };
+        glossary.Pressed += () => OpenGlossary();
+        foreach (var b in new[] { resume, quick, fresh, tutorial, history, glossary, title, quit }) actions.AddChild(b);
         v.AddChild(actions);
         _menuActions = actions;
         v.AddChild(new HSeparator());
@@ -140,7 +142,7 @@ public partial class Main
     private void RenderSlots()
     {
         var t = _sim.Town;
-        _menuTitle.Text = _menuLoadOnly ? "Load a town" : $"{t.Name} · Day {t.Day}";
+        _menuTitle.Text = _menuLoadOnly ? "Load a town" : $"{t.Name} · Day {t.Day} · seed {_seed}";
         foreach (var c in _slotList.GetChildren()) c.Free();
         Section("Saved games");
         for (int i = 1; i <= ManualSlots; i++) SlotRow($"slot-{i}", canSave: !_menuLoadOnly);

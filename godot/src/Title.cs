@@ -64,6 +64,7 @@ public partial class Main
         TitleButton(col, "Start with tutorial", "A fresh town, with a guide to the basics", primary: false, () => StartTown(tutorial: true));
         TitleButton(col, "Load a town", "Pick a save slot", primary: false, OpenLoad);
         TitleButton(col, "History of the world", "The ages, empires and peoples before your town", primary: false, () => OpenHistory());
+        TitleButton(col, "Glossary", "Every keyword in the game, explained (F1)", primary: false, () => OpenGlossary());
         TitleButton(col, "Quit", "Close the game", primary: false, () => GetTree().Quit());
     }
 

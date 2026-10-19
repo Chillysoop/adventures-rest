@@ -80,17 +80,17 @@ public partial class Main
             lines.AddRange(LegendLines());
             foreach (var age in h.Ages)
                 lines.Add($"[b]{Ui.Esc(age.Name)}[/b]  {Ui.C(Ui.Ink2, $"[font_size=12]{Annals.Year(h, age.From)} to {Annals.Year(h, age.To)}[/font_size]")}\n{Ui.C(Ui.Ink2, Ui.Esc(age.Text))}\n");
-            _historyStory.Text = string.Join("\n", lines);
+            Ui.SetRich(_historyStory, string.Join("\n", lines));
             return;
         }
         string lanes = string.Join(", ", p.Lanes.Select(l => h.Lanes.First(x => x.Id == l).Name.ToLowerInvariant()));
         string until = p.To >= h.Year ? "to this day" : $"to {Annals.Year(h, p.To)}";
-        _historyStory.Text =
+        Ui.SetRich(_historyStory,
             $"[font_size=20][b]{Ui.Esc(p.Name)}[/b][/font_size]\n" +
             $"{Ui.C(HistoryChart.Colour(p.Kind).Lightened(0.25f), $"{Annals.Year(h, p.From)} {until}")} · {Ui.C(Ui.Ink2, Ui.Esc(lanes))}\n\n" +
             $"{Ui.Esc(p.Text)}\n\n" +
             (p.Heirs != "" ? $"{Ui.C(Ui.Gold, "[b]What is left of it[/b]")}\n{Ui.Esc(p.Heirs)}\n\n" : "") +
-            Ui.C(Ui.Ink2, "Click it again, or an empty stretch, for the milestones.");
+            Ui.C(Ui.Ink2, "Click it again, or an empty stretch, for the milestones."));
     }
 }
 

@@ -79,7 +79,8 @@ public static class Merchants
         {
             double paid = Math.Floor(Math.Min(it.ValueGp * r.Fence.Share, cap * r.Fence.Cap));
             a.Gold += paid;
-            Factions.AddCoffers(town, f, Math.Floor(it.ValueGp * r.Fence.Cut));
+            // The fence's cut is in proportion to what it paid, so a priceless relic sold at the capped price mints no fortune.
+            Factions.AddCoffers(town, f, Math.Floor(paid * r.Fence.Cut / r.Fence.Share));
             f.Heat = Math.Min(100, f.Heat + r.Fence.Heat);
             string den = f.DenId != null ? $" in the cellar of {town.Building(f.DenId.Value).Name}" : "";
             town.Log(LedgerCategory.Faction, Importance.Routine, $"{a.Name} sells the {it.Name} to a fence{den} for {Js.Str(paid)} gold, no questions asked.", [a.Id]);
