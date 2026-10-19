@@ -20,7 +20,7 @@ public static class Brain
             if (!x.Departed && x.Activity == Activity.Drinking && x.LocationId is int at) drinkers[at] = drinkers.GetValueOrDefault(at) + 1;
         town.HourTaverns = town.Taverns;
         town.Drinkers = drinkers;
-        double festival = Council.FestivalMood(town) + Seasons.Mood(town) + Decrees.Mood(town) + Institutions.Mood(town);
+        double festival = Council.FestivalMood(town) + Seasons.Mood(town) + Decrees.Mood(town) + Institutions.Mood(town) + Taxes.Mood(town);
         foreach (var a in town.Agents)
         {
             if (a.Departed || a.IsAway) continue;
@@ -61,7 +61,7 @@ public static class Brain
         double eat = a.Hunger > 35 ? (canEat ? (a.Hunger / 100) * 1.4 + (hour == 7 || hour == 12 || hour == 18 ? 0.2 : 0) : 0.05) : 0;
 
         double work = 0;
-        if (a.JobId != null && IsWorkHours(hour))
+        if (a.JobId != null && IsWorkHours(hour) && !Taxes.Striking(town, a))
             work = (a.Has(Trait.Lazy) ? 0.55 : 0.85) + (a.Has(Trait.Greedy) ? 0.1 : 0) + (a.Has(Trait.Ambitious) ? 0.05 : 0);
 
         double drink = 0;

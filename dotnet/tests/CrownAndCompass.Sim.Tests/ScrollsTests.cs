@@ -7,10 +7,16 @@ public class ScrollsTests
     [Fact]
     public void CastersBuyScrollsAtTheScriptoriumAndOthersDoNot()
     {
-        var sim = new Simulation(new SimulationOptions { Seed = 1 });
-        var t = sim.Town;
-        var sr = t.Content.Shrines.Scroll;
-        for (int d = 0; d < 600 && !t.Buildings.Any(b => sr.Shops.Contains(b.Def.Id) && b.Complete && !b.Closed && !b.ForSale); d++) sim.RunDays(1);
+        // The first seed whose town opens a scroll shop: which towns grow one depends on the balance of the day.
+        Town t = null!;
+        var sr = Content.Default().Shrines.Scroll;
+        for (int seed = 1; seed <= 4; seed++)
+        {
+            var sim = new Simulation(new SimulationOptions { Seed = seed });
+            t = sim.Town;
+            for (int d = 0; d < 600 && t.Outcome == null && !t.Buildings.Any(b => sr.Shops.Contains(b.Def.Id) && b.Complete && !b.Closed && !b.ForSale); d++) sim.RunDays(1);
+            if (t.Buildings.Any(b => sr.Shops.Contains(b.Def.Id) && b.Complete && !b.Closed && !b.ForSale)) break;
+        }
         var shop = t.Buildings.First(b => sr.Shops.Contains(b.Def.Id) && b.Complete && !b.Closed && !b.ForSale);
         var heroes = t.Agents.Where(a => a.Hero != null).OrderBy(a => a.Id).ToList();
         var caster = heroes.First(a => Scrolls.Reads(a.Hero!.Cls));

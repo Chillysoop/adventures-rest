@@ -323,6 +323,9 @@ public sealed record TownRules
     /// <summary>Per-resident upkeep doubles at this many residents: bigger towns cost more per head.</summary>
     public double UpkeepGrowth { get; init; }
 
+    /// <summary>Government buildings' upkeep grows by its own amount again for every this many residents they serve.</summary>
+    public double ServiceGrowth { get; init; }
+
     /// <summary>A young town draws settlers looking for cheap land: this much attraction at the founding, fading to none at <see cref="FrontierSize"/> residents.</summary>
     public double FrontierDraw { get; init; }
 
@@ -1217,6 +1220,8 @@ public sealed class Content
     public BountyRules Bounties { get; init; } = new();
     public BroadsheetRules Broadsheet { get; init; } = new();
     public ClockworkRules Clockwork { get; init; } = new();
+    /// <summary>The tax rate and the unrest of underfunded services (content/game/taxes.json).</summary>
+    public TaxRules Taxes { get; init; } = new();
     public MerchantRules Merchants { get; init; } = new();
     public WardRules Wards { get; init; } = new();
     /// <summary>Fame and infamy for heroes and companies (content/game/notoriety.json).</summary>
@@ -1387,6 +1392,7 @@ public sealed class Content
             Bounties = Parse<BountyRules>("bounties.json"),
             Broadsheet = Parse<BroadsheetRules>("broadsheet.json"),
             Clockwork = Parse<ClockworkRules>("clockwork.json"),
+            Taxes = Parse<TaxRules>("taxes.json"),
             Merchants = Parse<MerchantRules>("merchants.json"),
             Wards = Parse<WardRules>("wards.json"),
             Notoriety = Parse<NotorietyRules>("notoriety.json"),

@@ -241,11 +241,12 @@ public static class Planning
         return f;
     }
 
-    /// <summary>Daily running cost of the government buildings.</summary>
+    /// <summary>Daily running cost of the government buildings: a bigger town keeps more clerks, priests and guards in each.</summary>
     public static double Upkeep(Town town)
     {
         double f = 0;
         foreach (var b in Standing(town)) f += b.Def.Upkeep;
-        return f;
+        double grow = town.Content.Rules.ServiceGrowth;
+        return grow > 0 ? Js.Round(f * (1 + town.Workers.Count / grow)) : f;
     }
 }

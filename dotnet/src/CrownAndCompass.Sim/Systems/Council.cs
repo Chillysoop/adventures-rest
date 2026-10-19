@@ -249,7 +249,7 @@ public static class Council
         {
             if (s.HolderId == null) continue;
             // A steward in a foe's pay keeps moving to send the watch home.
-            var p = Infiltration.Steers(town, s) ? new Proposal(MotionKind.DismissWatch, 0, "the watch costs more than the town can bear") : ProposalFor(town, s.Def.Id);
+            var p = Infiltration.Steers(town, s) ? new Proposal(MotionKind.DismissWatch, 0, "the watch costs more than the town can bear") : ProposalFor(town, s.Def.Id, autoDecide);
             if (p == null || RecentlyFailed(town, p.Kind) || !town.Rng.Chance(0.5)) continue;
             var h = town.Agent(s.HolderId.Value);
             var m = new Motion
@@ -280,12 +280,13 @@ public static class Council
     private static bool RecentlyFailed(Town town, string kind) =>
         town.Motions.Any(m => m.Kind == kind && m.Status == MotionStatus.Failed && town.Tick - m.ProposedTick < 12 * SimTime.HoursPerDay);
 
-    private static Proposal? ProposalFor(Town town, string id)
+    /// <summary>What a seat moves. Tax motions only come before a council that settles itself: a mayor at the table sets taxes by hand (<see cref="Taxes"/>).</summary>
+    private static Proposal? ProposalFor(Town town, string id, bool taxes)
     {
         var c = town.Content.Council;
         // A week's average, so one big land sale or charter house doesn't swing the council.
         double books = town.RecentNet.Count > 0 ? Js.Sum(town.RecentNet, v => v) / town.RecentNet.Count : 0;
-        double upkeep = -town.AccountsYesterday.Get(TreasuryAccount.Upkeep, 0) - town.AccountsYesterday.Get(TreasuryAccount.Watch, 0);
+        double upkeep = -town.AccountsYesterday.Get(TreasuryAccount.Upkeep, 0) - town.AccountsYesterday.Get(TreasuryAccount.CountingHouse, 0) - town.AccountsYesterday.Get(TreasuryAccount.Watch, 0);
         var workers = town.Workers;
         int homeless = workers.Count(a => a.HomeId == null);
         double mood = workers.Count > 0 ? Js.Sum(workers, a => a.LastDayMood) / workers.Count : 65;
@@ -298,9 +299,9 @@ public static class Council
             {
                 // A red week only matters while the coffers couldn't ride it out: the Speaker calls the same
                 // reserve full and moves taxes down again, so acting on a red week above it only ping-pongs the town.
-                bool red = books < 0 && town.Treasury < upkeep * 20;
-                if ((red || town.Treasury < upkeep * 5) && town.TaxRate < c.MaxTax - 1e-9)
-                    return new Proposal(MotionKind.RaiseTax, 0, red ? "the books have run red this week" : "the treasury is thin");
+                bool red = books < 0 && town.Treasury < upkeep * 20, underfunded = Taxes.Funding(town) < 1;
+                if (taxes && (red || underfunded || town.Treasury < upkeep * 5) && town.TaxRate < c.MaxTax - 1e-9)
+                    return new Proposal(MotionKind.RaiseTax, 0, red ? "the books have run red this week" : underfunded ? "the town's services cost more than it takes in" : "the treasury is thin");
                 if (red && town.Watch > 0) return new Proposal(MotionKind.DismissWatch, 0, "the watch costs more than the town can bear");
                 return null;
             }
@@ -318,7 +319,7 @@ public static class Council
                 bool festivalDue = lastFestival == null || town.Tick - lastFestival.ProposedTick > 20 * SimTime.HoursPerDay;
                 if (mood < 70 && festivalDue && town.FestivalDays == 0 && town.Treasury > festival * 4)
                     return new Proposal(MotionKind.Festival, festival, "spirits are low");
-                if (town.TaxRate > c.MinTax + 1e-9 && town.Treasury > upkeep * 20 && books > 0)
+                if (taxes && town.TaxRate > c.MinTax + 1e-9 && town.Treasury > upkeep * 20 && books > 0 && Taxes.Funding(town) > 1.2)
                     return new Proposal(MotionKind.LowerTax, 0, "the coffers are full while the people pay");
                 return KnightProposal(town);
             }

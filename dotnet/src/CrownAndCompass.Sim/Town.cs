@@ -217,6 +217,7 @@ public static class TreasuryAccount
     public const string CharterHouses = "Charter houses";
     public const string Bounties = "Bounties";
     public const string Upkeep = "Upkeep";
+    public const string CountingHouse = "Counting house";
     public const string Watch = "Watch";
     public const string CouncilMotions = "Council motions";
     public const string Discrepancies = "Discrepancies";
@@ -373,6 +374,9 @@ public sealed class Town
 
     /// <summary>Clockwork wardens on the walls (<see cref="Systems.Clockwork"/>).</summary>
     public ClockworkState Clockwork { get; } = new();
+
+    /// <summary>The town's services weighed against its income, and the unrest when they go short (<see cref="Systems.Taxes"/>).</summary>
+    public TaxState Taxes { get; } = new();
 
     /// <summary>Sellsword companies under contract to the town (<see cref="Systems.Mercenaries"/>).</summary>
     public List<Hire> Hires { get; } = [];

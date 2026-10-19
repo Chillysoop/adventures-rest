@@ -1,6 +1,7 @@
 // Headless runner: simulate a town and print its Ledger, so we can judge whether the city feels alive.
 // Usage: dotnet run --project dotnet/src/CrownAndCompass.Cli -- [--seed N] [--days N] [--all] [--stats] [--people N] [--chronicles] [--world]
 //        [--load file.save] [--save file.save]   (play on from a save, for --days more; write one at the end)
+//        [--hand-council]   (the council leaves taxes to a mayor who never touches them, as a hands-off player would)
 //        [--legends file.json]   (foes and heroes of earlier runs may come back; this run's are added to the file)
 //        [--summary]   (print only one JSON line on how the campaign stands, for scripts/gate.ts)
 // Prints exactly what `npm run sim` prints for the same arguments.
@@ -21,6 +22,7 @@ string? load = null;
 string? save = null;
 string? legends = null;
 bool summary = false;
+bool handTaxes = false;
 
 static int Number(string[] args, ref int i) => i + 1 < args.Length ? int.Parse(args[++i], CultureInfo.InvariantCulture) : 0;
 
@@ -55,6 +57,9 @@ for (int i = 0; i < args.Length; i++)
         case "--legends":
             legends = i + 1 < args.Length ? args[++i] : null;
             break;
+        case "--hand-council":
+            handTaxes = true;
+            break;
         case "--summary":
             summary = true;
             break;
@@ -68,7 +73,7 @@ for (int i = 0; i < args.Length; i++)
 }
 
 var past = legends != null && File.Exists(legends) ? Legends.Read(File.ReadAllText(legends)) : [];
-var sim = load != null ? SaveGame.ReadFile(load, out _) : new Simulation(new SimulationOptions { Seed = seed, Legends = past });
+var sim = load != null ? SaveGame.ReadFile(load, out _) : new Simulation(new SimulationOptions { Seed = seed, Legends = past, AutoCouncil = !handTaxes });
 var town = sim.Town;
 seed = town.Seed;
 var minImportance = all ? Importance.Routine : Importance.Notable;
@@ -90,7 +95,8 @@ for (int d = 0; d < days && town.Outcome == null; d++)
         Print(
             $"  -- end of day {s.Day}: pop {s.Population}, homeless {s.Homeless}, idle {s.Unemployed}, " +
             $"buildings {s.Buildings} (+{s.Sites} rising), treasury {Js.ToFixed(s.Treasury, 0)}, food {Js.ToFixed(s.FoodPrice, 2)}g, " +
-            $"mood {Js.ToFixed(s.AverageMood, 0)}, avg purse {Js.ToFixed(s.AverageGold, 0)}g");
+            $"mood {Js.ToFixed(s.AverageMood, 0)}, avg purse {Js.ToFixed(s.AverageGold, 0)}g, " +
+            $"tax {Js.ToFixed(town.TaxRate * 100, 0)}%, income {Js.ToFixed(Taxes.Income(town), 0)}/services {Js.ToFixed(Taxes.Services(town), 0)}, unrest {Js.ToFixed(town.Taxes.Unrest, 0)}");
     }
 }
 

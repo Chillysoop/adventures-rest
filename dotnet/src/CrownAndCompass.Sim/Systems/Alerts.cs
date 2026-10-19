@@ -50,6 +50,7 @@ public static class Alerts
     public static readonly AlertKind Captives = new("captives", "Townsfolk taken", "heroes", AlertLevel.Urgent, AlertWindow.Bounties);
     public static readonly AlertKind Hunger = new("hunger", "Hunger", "bread", AlertLevel.Urgent, AlertWindow.Council);
     public static readonly AlertKind Coffers = new("coffers", "Empty coffers", "gold", AlertLevel.Urgent, AlertWindow.Council);
+    public static readonly AlertKind Underfunded = new("underfunded", "Services go short", "gold", AlertLevel.Urgent, AlertWindow.Council);
     public static readonly AlertKind Unrest = new("unrest", "Unrest", "mandate", AlertLevel.Urgent, AlertWindow.Council);
     public static readonly AlertKind Hostile = new("hostile", "Hostile factions", "suspicion", AlertLevel.Urgent, AlertWindow.Faith);
     public static readonly AlertKind Motion = new("motion", "Council motions", "mandate", AlertLevel.Decision, AlertWindow.Council);
@@ -82,7 +83,7 @@ public static class Alerts
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Captives, Doom, Crisis, Hunger, Coffers, Unrest, Hostile, Motion, Fealty, Clash, Traitor, Plot, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Bastion, Institution, Heroes, Neighbour, Loot, Work, Settlers, Below, Scholars, Trade, Gifts, Outpost, Housing];
+        [Siege, Captives, Doom, Crisis, Hunger, Coffers, Underfunded, Unrest, Hostile, Motion, Fealty, Clash, Traitor, Plot, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Bastion, Institution, Heroes, Neighbour, Loot, Work, Settlers, Below, Scholars, Trade, Gifts, Outpost, Housing];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
     public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Hostility, Winter, Growth, Routes, Region, Undercity, Study, Loyalty, Armoury, Homes, Keepers, Outposts];
@@ -174,6 +175,10 @@ public static class Alerts
     {
         if (t.Treasury < 25)
             yield return new("treasury", Coffers, "The coffers are empty", $"{Math.Floor(t.Treasury)}g left. Raise taxes or hold back on bounties.");
+        // Services that cost more than the town takes in: unrest is coming, or already here.
+        if (Taxes.Funding(t) < 1)
+            yield return new("underfunded", Underfunded, t.Taxes.Unrest >= 1 ? $"Unrest {Math.Round(t.Taxes.Unrest)}" : "Services cost more than taxes bring",
+                $"The town's services cost {Math.Round(Taxes.Services(t))}g a day; taxes, rents and trade bring {Math.Round(Taxes.Income(t))}g. Raise taxes in the Council window, or find more income, before the townsfolk take to the streets.");
     }
 
     private static IEnumerable<Alert> Council(Town t)

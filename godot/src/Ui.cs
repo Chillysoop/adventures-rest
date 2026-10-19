@@ -362,6 +362,7 @@ public static class Ui
     /// <summary>Which glossary entry a meter's label stands for.</summary>
     public static string? MeterKeyword(string label) => label switch
     {
+        "Unrest" => "unrest",
         "Warband" => "warband",
         "Your defence" => "defence",
         "Mandate" => "mandate",
