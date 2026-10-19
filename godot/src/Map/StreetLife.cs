@@ -12,7 +12,9 @@ namespace CrownAndCompass.Client.Map;
 /// </summary>
 public partial class Crowd
 {
-    private const float BubbleDistance = 40;
+    private const float BubbleDistance = 32;
+    /// <summary>Beyond this camera distance a bubble grows with it, so its words stay the same size on screen.</summary>
+    private const float BubbleScaleFrom = 14;
     private const float LineSeconds = 6;
     private readonly List<Label3D> _bubbles = [];
     private List<Scene> _scenes = [];
@@ -80,6 +82,7 @@ public partial class Crowd
         }
         var scenes = _scenes;
         bool talk = map.Distance < BubbleDistance;
+        var scale = Vector3.One * Mathf.Max(1, map.Distance / BubbleScaleFrom);
         int used = 0;
         foreach (var s in scenes)
         {
@@ -91,6 +94,7 @@ public partial class Crowd
             var bubble = Bubble(used++);
             bubble.Text = line;
             bubble.Position = gen.At(s.P, 0.62f);
+            bubble.Scale = scale;
             bubble.Visible = true;
         }
         for (int i = used; i < _bubbles.Count; i++) _bubbles[i].Visible = false;

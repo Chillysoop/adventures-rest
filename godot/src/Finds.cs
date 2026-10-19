@@ -24,10 +24,7 @@ public partial class Main
     private void BuildFind()
     {
         _find = new PanelContainer { Visible = false, CustomMinimumSize = new Vector2(620, 0), ZIndex = 20, MouseFilter = MouseFilterEnum.Stop };
-        var box = Glass(14, 24, 20);
-        box.BorderColor = new Color("8cc084");
-        box.BorderWidthTop = 3;
-        _find.AddThemeStyleboxOverride("panel", box);
+        _find.AddThemeStyleboxOverride("panel", Castle.Oak(26, 22));
         _findBox = new VBoxContainer();
         _findBox.AddThemeConstantOverride("separation", 10);
         _find.AddChild(_findBox);

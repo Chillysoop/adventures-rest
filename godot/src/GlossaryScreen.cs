@@ -55,7 +55,7 @@ public partial class Main
         left.AddChild(_glossarySearch);
         var listScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
         var listPanel = new PanelContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
-        listPanel.AddThemeStyleboxOverride("panel", Ui.Box(Ui.Panel, Ui.Line, 10, 1, 6, 6));
+        listPanel.AddThemeStyleboxOverride("panel", Castle.Oak(12, 12));
         listPanel.AddChild(listScroll);
         left.AddChild(listPanel);
         _glossaryList = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
@@ -63,7 +63,7 @@ public partial class Main
         listScroll.AddChild(_glossaryList);
 
         var page = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        page.AddThemeStyleboxOverride("panel", Ui.Box(Ui.Panel, Ui.Line, 10, 1, 26, 22));
+        page.AddThemeStyleboxOverride("panel", Castle.Oak(30, 26));
         body.AddChild(page);
         var pageScroll = new ScrollContainer { HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
         page.AddChild(pageScroll);
