@@ -14,13 +14,16 @@ namespace CrownAndCompass.Client.Map;
 /// </summary>
 public partial class Planner(MapView map) : Control
 {
-    /// <summary>A zone to paint (Zone.None clears land) at a density (homes and shops only), or a building to place, by content id.</summary>
-    public sealed record PlanTool(Zone? Zone, string? Building, int Density = 0);
+    /// <summary>A zone to paint (Zone.None clears land) at a density (homes and shops only) or sown with a crop (farmland), or a building to place, by content id.</summary>
+    public sealed record PlanTool(Zone? Zone, string? Building, int Density = 0, string? Crop = null);
 
     public PlanTool? Tool { get; private set; }
 
     /// <summary>The plan changed (land zoned, a building placed, or the tool put down).</summary>
     public event Action? Changed;
+
+    /// <summary>A placement went through or didn't, in a line for the player.</summary>
+    public event Action<string>? Said;
 
     /// <summary>Brush radius in tiles; kept between picks.</summary>
     public float Radius { get; private set; } = 1.2f;
@@ -53,6 +56,13 @@ public partial class Planner(MapView map) : Control
         c.ToHsv(out float h, out float s, out float v);
         return Color.FromHsv(h, Mathf.Min(1, s * (1 + 0.28f * density)), v * (1 - 0.2f * density));
     }
+
+    /// <summary>A field's paint: its crop's colour (content/game/farming.json), or farmland's for land sown with any.</summary>
+    public static Color CropColor(CropDef? crop) => crop is { Color: not "" } ? new Color(crop.Color) : ZoneColor(Zone.Farmland);
+
+    /// <summary>The paint of a tool: a crop's colour for fields.</summary>
+    public static Color ToolColor(Town town, PlanTool t) =>
+        t.Zone == Zone.Farmland && t.Crop != null ? CropColor(Farming.Crop(town, t.Crop)) : ZoneColor(t.Zone ?? Zone.None, t.Density);
 
     public static Color ZoneColor(Zone z) => z switch
     {
@@ -111,18 +121,22 @@ public partial class Planner(MapView map) : Control
         if (Tool is { Zone: Zone z } && _stroke.Count > 0)
         {
             Dab(ToTown(w));
-            if (map.Sim.PaintZone(_stroke.Select(p => ((double)p.X, (double)p.Y)), Radius, z, Tool.Density) > 0) Changed?.Invoke();
+            if (map.Sim.PaintZone(_stroke.Select(p => ((double)p.X, (double)p.Y)), Radius, z, Tool.Density, Tool.Crop) > 0) Changed?.Invoke();
             _stroke.Clear();
         }
         else if (Tool is { Building: string id } && _press is Vector2 at)
         {
             _press = null;
-            if (map.Sim.Place(id, at.X, at.Y, _yaw) != null)
+            var def = town.Content.Building(id);
+            string? why = Planning.Blocked(town, def) ?? Planning.SpotBlocked(town, def, at.X, at.Y, _yaw);
+            if (map.Sim.Place(id, at.X, at.Y, _yaw) is { } site)
             {
+                Said?.Invoke($"Builders are raising {site.Name}.");
                 // One commission per pick: the next costs more, and the bar shows why if it can't be had.
                 Pick(null);
                 return;
             }
+            Said?.Invoke($"The {def.Name.ToLowerInvariant()} can't go there: {why ?? "no room here"}.");
             _yaw = null;
         }
         QueueRedraw();
@@ -154,7 +168,11 @@ public partial class Planner(MapView map) : Control
         Wards(town);
         if (Tool.Zone is Zone z)
         {
-            var c = z == Zone.None ? new Color(0.95f, 0.9f, 0.8f) : ZoneColor(z, Tool.Density);
+            var c = z == Zone.None ? new Color(0.95f, 0.9f, 0.8f) : ToolColor(town, Tool);
+            // Where the zone's buildings will go on the land already painted, faintly, so a stroke's worth shows at once.
+            if (z != Zone.None)
+                foreach (var l in PlotsOf(town, z))
+                    Footprint(new Vector2((float)l.X, (float)l.Y), l.W / (float)Land.Res, l.D / (float)Land.Res, (float)l.Yaw, new Color(c, 0.12f), new Color(c, 0.6f), 1);
             // The stroke so far, as the brush will leave it, then the brush ring at the cursor.
             foreach (var p in _stroke) Disc(p, Radius, new Color(c, 0.18f));
             Ring(h, Radius, new Color(c, 0.95f), 2.5f);
@@ -163,20 +181,71 @@ public partial class Planner(MapView map) : Control
         else if (Tool.Building is string id)
         {
             var def = town.Content.Building(id);
+            Ground(town, def);
             var at = _press ?? h;
-            double yaw = _yaw ?? Streets.Facing(town, at.X, at.Y);
-            string? why = Planning.Blocked(town, def) ?? Planning.SpotBlocked(town, def, at.X, at.Y, yaw);
+            string? why = Planning.Blocked(town, def);
+            // The ghost settles where a click would put it: the spot itself, or the nearest that fits.
+            var lot = why == null ? Planning.Spot(town, def, at.X, at.Y, _yaw) : null;
+            if (why == null && lot == null) why = Planning.SpotBlocked(town, def, at.X, at.Y, _yaw);
+            var spot = lot != null ? new Vector2((float)lot.X, (float)lot.Y) : at;
+            double yaw = lot?.Yaw ?? _yaw ?? Streets.Facing(town, at.X, at.Y);
             var (w, d) = Land.Footprint(def);
             var c = why == null ? ZoneColor(Planning.ZoneFor(town, def)) : new Color(0.9f, 0.3f, 0.25f);
-            Footprint(at, w / (float)Land.Res, d / (float)Land.Res, (float)yaw, new Color(c, 0.55f), c);
+            if (spot.DistanceTo(at) > 0.05f) DrawLine(Screen(at), Screen(spot), new Color(c, 0.8f), 1.5f, true);
+            Footprint(spot, w / (float)Land.Res, d / (float)Land.Res, (float)yaw, new Color(c, 0.55f), c);
             // An arrow from the middle to the front shows which way it will face.
-            var front = at + new Vector2(-Mathf.Sin((float)yaw), Mathf.Cos((float)yaw)) * (d / (float)Land.Res * 0.5f + 0.25f);
-            DrawLine(Screen(at), Screen(front), new Color("f6eedb"), 2.5f, true);
+            var front = spot + new Vector2(-Mathf.Sin((float)yaw), Mathf.Cos((float)yaw)) * (d / (float)Land.Res * 0.5f + 0.25f);
+            DrawLine(Screen(spot), Screen(front), new Color("f6eedb"), 2.5f, true);
             var label = why == null ? def.Name : Ui.Cap(why);
-            var s = map.ToScreen(FromTown(at.X, at.Y), 0.7f);
+            var s = map.ToScreen(FromTown(spot.X, spot.Y), 0.7f);
             var lw = Ui.Bold.GetStringSize(label, HorizontalAlignment.Left, -1, 13).X;
             DrawStringOutline(Ui.Bold, s - new Vector2(lw / 2, 0), label, HorizontalAlignment.Left, -1, 13, 4, new Color(0.08f, 0.06f, 0.04f, 0.85f));
             DrawString(Ui.Bold, s - new Vector2(lw / 2, 0), label, HorizontalAlignment.Left, -1, 13, new Color("f6eedb"));
+        }
+    }
+
+    private (Zone Zone, int Version, List<Lot> Lots)? _plots;
+
+    /// <summary>Where a zone's buildings would go, worked out again only when the plan changes.</summary>
+    private List<Lot> PlotsOf(Town town, Zone z)
+    {
+        if (_plots is { } p && p.Zone == z && p.Version == town.Plan.Version) return p.Lots;
+        var lots = Land.Plots(town, z, 120);
+        _plots = (z, town.Plan.Version, lots);
+        return lots;
+    }
+
+    /// <summary>Half a tile per sample: whether the building fits there facing the nearest lane.</summary>
+    private const float Sample = 0.5f;
+
+    private (string Id, int Version, int Wards, bool[] Fits)? _ground;
+
+    /// <summary>The ground that takes the building, shaded green a row run at a time; worked out again only when the plan changes.</summary>
+    private void Ground(Town town, BuildingDef def)
+    {
+        int n = (int)(Town.Grid / Sample);
+        if (_ground is not { } g || g.Id != def.Id || g.Version != town.Plan.Version || g.Wards != town.City.OpenWards.Count)
+        {
+            var fits = new bool[n * n];
+            for (int y = 0; y < n; y++)
+                for (int x = 0; x < n; x++)
+                    fits[y * n + x] = Land.At(town, def, (x + 0.5) * Sample, (y + 0.5) * Sample) != null;
+            _ground = g = (def.Id, town.Plan.Version, town.City.OpenWards.Count, fits);
+        }
+        var green = new Color(0.45f, 0.9f, 0.4f, 0.13f);
+        for (int y = 0; y < n; y++)
+        {
+            int run = -1;
+            for (int x = 0; x <= n; x++)
+            {
+                bool ok = x < n && g.Fits[y * n + x];
+                if (ok && run < 0) run = x;
+                if (!ok && run >= 0)
+                {
+                    DrawColoredPolygon([Screen(new(run * Sample, y * Sample)), Screen(new(x * Sample, y * Sample)), Screen(new(x * Sample, (y + 1) * Sample)), Screen(new(run * Sample, (y + 1) * Sample))], green);
+                    run = -1;
+                }
+            }
         }
     }
 
@@ -185,41 +254,92 @@ public partial class Planner(MapView map) : Control
     {
         var border = new Color("f6eedb", 0.55f);
         var shade = new Color(0.05f, 0.04f, 0.03f, 0.38f);
-        var sums = new Dictionary<string, (float X, float Y, int N)>();
-        var wards = new WardDef[Geo.Grid * Geo.Grid];
-        for (int y = 0; y < Geo.Grid; y++)
-            for (int x = 0; x < Geo.Grid; x++)
-                wards[y * Geo.Grid + x] = City.WardOf(town, x + 0.5, y + 0.5);
-        for (int y = 0; y < Geo.Grid; y++)
-        {
-            int run = -1;
-            for (int x = 0; x <= Geo.Grid; x++)
-            {
-                // Closed land shaded a row run at a time.
-                bool closed = x < Geo.Grid && !town.City.OpenWards.Contains(wards[y * Geo.Grid + x].Id);
-                if (closed && run < 0) run = x;
-                if (!closed && run >= 0)
-                {
-                    DrawColoredPolygon([Screen(new(run, y)), Screen(new(x, y)), Screen(new(x, y + 1)), Screen(new(run, y + 1))], shade);
-                    run = -1;
-                }
-                if (x == Geo.Grid) break;
-                var w = wards[y * Geo.Grid + x];
-                var (sx, sy, n) = sums.GetValueOrDefault(w.Id);
-                sums[w.Id] = (sx + x + 0.5f, sy + y + 0.5f, n + 1);
-                if (x + 1 < Geo.Grid && !ReferenceEquals(wards[y * Geo.Grid + x + 1], w)) DrawLine(Screen(new(x + 1, y)), Screen(new(x + 1, y + 1)), border, 2, true);
-                if (y + 1 < Geo.Grid && !ReferenceEquals(wards[(y + 1) * Geo.Grid + x], w)) DrawLine(Screen(new(x, y + 1)), Screen(new(x + 1, y + 1)), border, 2, true);
-            }
-        }
+        double c = Town.Center;
+        // The borders are curves (City.Edge, City.Split), drawn from them rather than from cells so they never stair-step.
+        Vector2 At(double a, double r) => new((float)(c + Math.Cos(a) * r), (float)(c + Math.Sin(a) * r));
+        // The town's square edge along a heading: where the outer ring ends.
+        double Rim(double a) => c / Math.Max(Math.Abs(Math.Cos(a)), Math.Abs(Math.Sin(a)));
+        double Inner(int ring, double a) => ring == 0 ? 0 : City.Edge(town, ring - 1, a);
+        double Outer(int ring, double a) => ring == 2 ? Rim(a) : City.Edge(town, ring, a);
+        const int Steps = 24;
         foreach (var w in town.Content.City.Wards)
         {
-            if (!sums.TryGetValue(w.Id, out var c) || c.N == 0) continue;
             bool open = town.City.OpenWards.Contains(w.Id);
+            var poly = new List<Vector2>();
+            Vector2 mid;
+            if (w.Ring == 0)
+            {
+                for (int i = 0; i < Steps * 4; i++) poly.Add(At(i * Math.PI * 2 / (Steps * 4), City.Edge(town, 0, i * Math.PI * 2 / (Steps * 4))));
+                mid = new Vector2((float)c, (float)c);
+            }
+            else
+            {
+                int j = Array.IndexOf(Sides, w.Side);
+                if (j < 0) continue;
+                // A side lies between border j and border j + 1, round from east|south (City.Side); east wraps past a full turn.
+                double SplitAt(int i, double r) => City.Split(town, i % 4, r) + (i >= 4 ? Math.PI * 2 : 0);
+                // Where a border crosses a ring's edge (the edge's own wobble moves it a little: twice round settles it).
+                double Cross(int i, Func<double, double> edge) => SplitAt(i, edge(SplitAt(i, edge(SplitAt(i, 0)))));
+                Func<double, double> inner = a => Inner(w.Ring, a), outer = a => Outer(w.Ring, a);
+                double a0 = Cross(j, inner), a1 = Cross(j + 1, inner), b0 = Cross(j, outer), b1 = Cross(j + 1, outer);
+                for (int i = 0; i <= Steps; i++)
+                {
+                    double a = a0 + (a1 - a0) * i / Steps;
+                    poly.Add(At(a, inner(a)));
+                }
+                // Out along the far border, back round the outer edge, and in along the near one.
+                for (int i = 1; i < 6; i++)
+                {
+                    double r = inner(a1) + (outer(b1) - inner(a1)) * i / 6;
+                    poly.Add(At(SplitAt(j + 1, r), r));
+                }
+                for (int i = Steps; i >= 0; i--)
+                {
+                    double a = b0 + (b1 - b0) * i / Steps;
+                    poly.Add(At(a, outer(a)));
+                }
+                for (int i = 5; i >= 1; i--)
+                {
+                    double r = inner(a0) + (outer(b0) - inner(a0)) * i / 6;
+                    poly.Add(At(SplitAt(j, r), r));
+                }
+                double am = (a0 + a1) / 2, rm = (Inner(w.Ring, am) + Outer(w.Ring, am)) / 2;
+                mid = At(am, rm);
+            }
+            var screen = poly.Select(Screen).ToArray();
+            // Closed land shaded a strip of small quads at a time: a whole curved ward seen in perspective can defeat triangulation.
+            if (!open && w.Ring > 0)
+                for (int i = 0; i < Steps; i++)
+                {
+                    // Inner points run 0..Steps; the outer edge runs back from Steps + 6 (see the order above).
+                    int o = Steps + 6 + Steps - i;
+                    Vector2[] quad = [screen[i], screen[i + 1], screen[o - 1], screen[o]];
+                    // Past the horizon the projection folds a quad over or squeezes it flat: nothing to shade there, and Godot can't triangulate it.
+                    if (Convex(quad)) DrawColoredPolygon(quad, shade);
+                }
+            DrawPolyline([.. screen, screen[0]], border, 2, true);
             string sub = open ? "" : City.Reached(town, w.Tier) ? $"ready to lay out · {w.Cost:N0}g" : $"needs a {City.TierName(town, w.Tier).ToLowerInvariant()}";
-            var at = map.ToScreen(FromTown(c.X / c.N, c.Y / c.N), 0.6f);
+            var at = map.ToScreen(FromTown(mid.X, mid.Y), 0.6f);
             Label(at, w.Name.ToUpperInvariant(), 13, open ? new Color("f6eedb") : new Color("cfc6b4", 0.8f));
             if (sub != "") Label(at + new Vector2(0, 16), sub, 11, new Color("cfc6b4", 0.8f));
         }
+    }
+
+    private static readonly string[] Sides = ["south", "west", "north", "east"];
+
+    /// <summary>Whether a quad on screen turns the same way at every corner, with some area to it.</summary>
+    private static bool Convex(Vector2[] q)
+    {
+        int sign = 0;
+        for (int i = 0; i < q.Length; i++)
+        {
+            float cross = (q[(i + 1) % q.Length] - q[i]).Cross(q[(i + 2) % q.Length] - q[(i + 1) % q.Length]);
+            if (!float.IsFinite(cross) || Mathf.Abs(cross) < 0.5f) return false;
+            int s = Math.Sign(cross);
+            if (sign != 0 && s != sign) return false;
+            sign = s;
+        }
+        return true;
     }
 
     private void Label(Vector2 at, string text, int size, Color c)
@@ -250,7 +370,7 @@ public partial class Planner(MapView map) : Control
         DrawPolyline([.. p, p[0]], col, width, true);
     }
 
-    private void Footprint(Vector2 c, float w, float d, float yaw, Color fill, Color edge)
+    private void Footprint(Vector2 c, float w, float d, float yaw, Color fill, Color edge, float width = 2)
     {
         float s = Mathf.Sin(yaw), co = Mathf.Cos(yaw);
         // Width runs along (cos, sin), depth along the front (−sin, cos).
@@ -258,6 +378,6 @@ public partial class Planner(MapView map) : Control
         var v = new Vector2(-s, co) * (d / 2);
         Vector2[] p = [Screen(c - u - v), Screen(c + u - v), Screen(c + u + v), Screen(c - u + v)];
         DrawColoredPolygon(p, fill);
-        DrawPolyline([.. p, p[0]], edge, 2, true);
+        DrawPolyline([.. p, p[0]], edge, width, true);
     }
 }

@@ -85,17 +85,26 @@ public class DensityTests
         var tall = t.Content.Building("tall_house");
         var (w, d) = Land.Footprint(tall);
         // Find a spot in fresh paint, claim it, then try its neighbour one footprint over: only dense land takes it.
-        var at = OpenSpot(t, 5);
-        sim.PaintZone([at], 2.5, Zone.Residential, Density.High);
-        var lot = Land.Find(t, tall, Zone.Residential);
-        Assert.NotNull(lot);
-        Land.Claim(t, lot!);
-        double ux = Math.Cos(lot!.Yaw), uy = Math.Sin(lot.Yaw), step = w / (double)Land.Res;
-        bool dense = Land.Fits(t, lot.X + ux * step, lot.Y + uy * step, w, d, lot.Yaw, Zone.Residential)
-            || Land.Fits(t, lot.X - ux * step, lot.Y - uy * step, w, d, lot.Yaw, Zone.Residential);
+        // A few spots in turn, since one may sit against a lane or the edge of the ward.
+        Lot? lot = null;
+        bool dense = false;
+        foreach (double from in new[] { 5.0, 4, 6, 3 })
+        {
+            var at = OpenSpot(t, from);
+            // Zones paint open ground only, so clear whatever else is near first.
+            sim.PaintZone([at], 2.5, Zone.None);
+            sim.PaintZone([at], 2.5, Zone.Residential, Density.High);
+            lot = Land.Find(t, tall, Zone.Residential);
+            Assert.NotNull(lot);
+            double ux = Math.Cos(lot!.Yaw), uy = Math.Sin(lot.Yaw), step = w / (double)Land.Res;
+            Land.Claim(t, lot);
+            dense = Land.Fits(t, lot.X + ux * step, lot.Y + uy * step, w, d, lot.Yaw, Zone.Residential)
+                || Land.Fits(t, lot.X - ux * step, lot.Y - uy * step, w, d, lot.Yaw, Zone.Residential);
+            if (dense) break;
+        }
         Assert.True(dense, "a tall house fits right against its neighbour");
-        Assert.True(Density.LandFactor(t, lot) > 1);
-        Assert.True(Density.Mood(t, t.AddBuilding(tall, lot, null, "test", true)) < 0);
+        Assert.True(Density.LandFactor(t, lot!) > 1);
+        Assert.True(Density.Mood(t, t.AddBuilding(tall, lot!, null, "test", true)) < 0);
     }
 
     [Fact]
@@ -108,7 +117,7 @@ public class DensityTests
         Assert.True(t.City.Tier >= City.TierIndex(t, "large_town"), $"still a {City.Tier(t).Name}");
         double Mean(int ring)
         {
-            var houses = t.Buildings.Where(b => b.Def.Housing > 0 && b.Complete && City.Ring(t.Lot(b.LotId)) == ring).ToList();
+            var houses = t.Buildings.Where(b => b.Def.Housing > 0 && b.Complete && City.Ring(t, t.Lot(b.LotId)) == ring).ToList();
             return houses.Count == 0 ? 0 : houses.Average(b => Density.At(t, t.Lot(b.LotId)));
         }
         Assert.True(Mean(0) > Mean(2), $"old town {Mean(0)} vs outer wards {Mean(2)}");

@@ -24,12 +24,14 @@ public partial class Main : Control
         Council,
         Bounties,
         Companies,
+        Armory,
         Diplomacy,
         Institutions,
         Faith,
         Campaign,
         Chronicles,
         Mayor,
+        Library,
         Inspect,
     }
 
@@ -111,6 +113,15 @@ public partial class Main : Control
         // --hero picks the town's most storied hero in town, for a look at their sheet.
         if (_opts.Hero && _sim.Town.Heroes.Where(a => !a.IsAway).OrderByDescending(a => a.Hero!.Epithet != "").ThenByDescending(a => a.Hero!.Items.Count).ThenByDescending(a => a.Hero!.Level).ThenBy(a => a.Id).FirstOrDefault() is Agent hero)
             Select(Selection.Agent(hero.Id));
+        // --rolls looks at the building with the most recent checks and replays them, for a shot of the dice.
+        if (_opts.Rolls && _sim.Town.Checks.Where(c => c.BuildingId != null).GroupBy(c => c.BuildingId!.Value).OrderByDescending(g => g.Count()).ThenBy(g => g.Key).FirstOrDefault() is { } busiest)
+        {
+            var lot = _sim.Town.Lot(_sim.Town.Building(busiest.Key).LotId);
+            _map.LookAt(new Vector2(Map.Geo.Margin + (float)lot.X, Map.Geo.Margin + (float)lot.Y), _opts.Cam ?? 14);
+            _rollsReplay = 20;
+        }
+        if (_opts.Folk && _sim.Town.Workers.Where(a => !a.IsAway).OrderByDescending(a => a.Practice).ThenBy(a => a.Id).FirstOrDefault() is Agent folk)
+            Select(Selection.Agent(folk.Id));
         if (_opts.House && _sim.Town.Buildings.Where(b => b.Complete && b.Def.Housing > 0).OrderByDescending(b => Decor.Comfort(_sim.Town, b)).ThenBy(b => b.Id).FirstOrDefault() is Building house)
         {
             Select(Selection.Building(house.Id));
@@ -214,7 +225,7 @@ public partial class Main : Control
         RememberLegends();
         // With --autoplay the stand-in mayor keeps playing, for demos and screenshots; only a player's towns meet old legends.
         var legends = autoplay ? [] : ProfileLegends();
-        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay, AutoStories = autoplay, AutoExplore = autoplay && !_opts.Find, Legends = legends }));
+        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoArmory = autoplay && !_opts.KeepArmory, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay, AutoStories = autoplay, AutoExplore = autoplay && !_opts.Find, Legends = legends }));
     }
 
     /// <summary>Show a town: a new one, or one loaded from a save.</summary>
@@ -423,6 +434,7 @@ public partial class Main : Control
         SyncStories(delta);
         SyncFinds();
         SyncChecks();
+        SyncTownRolls();
         if (_title.Visible) _map.Drift(1, (float)delta * 0.035f);
         if (_dirty)
         {
@@ -436,11 +448,13 @@ public partial class Main : Control
                     case Tab.Council: RenderCouncil(); break;
                     case Tab.Bounties: RenderBounties(); break;
                     case Tab.Companies: RenderCompanies(); break;
+                    case Tab.Armory: RenderArmory(); break;
                     case Tab.Faith: RenderFaith(); break;
                     case Tab.Campaign: RenderCampaign(); break;
                     case Tab.Chronicles: RenderChronicles(); break;
                     case Tab.Mayor: RenderMayor(); break;
                     case Tab.Diplomacy: RenderDiplomacy(); break;
+                    case Tab.Library: RenderLibrary(); break;
                     case Tab.Institutions: RenderInstitutions(); break;
                 }
             if (_inspector.Visible) RenderInspect();

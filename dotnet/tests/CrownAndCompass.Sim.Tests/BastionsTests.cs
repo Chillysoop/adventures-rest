@@ -4,8 +4,16 @@ namespace CrownAndCompass.Sim.Tests;
 
 public class BastionsTests
 {
-    /// <summary>Run until the first company asks for a bastion (the player answers, so it waits).</summary>
-    private static (Simulation Sim, BastionRequest Request) Asked(int seed = 3)
+    /// <summary>Run until the first company asks for a bastion (the player answers, so it waits). Any town will do,
+    /// so a few seeds are tried: where companies make their name drifts with the layout.</summary>
+    private static (Simulation Sim, BastionRequest Request) Asked()
+    {
+        foreach (int seed in new[] { 3, 2, 4, 6 })
+            if (Asked(seed) is { } asked) return asked;
+        throw new Exception("no company asked for a bastion");
+    }
+
+    private static (Simulation Sim, BastionRequest Request)? Asked(int seed)
     {
         var sim = new Simulation(new SimulationOptions { Seed = seed, AutoBastions = false });
         for (int d = 0; d < 400; d++)
@@ -13,7 +21,7 @@ public class BastionsTests
             sim.RunDays(1);
             if (Bastions.Pending(sim.Town).FirstOrDefault() is { } r) return (sim, r);
         }
-        throw new Exception("no company asked for a bastion");
+        return null;
     }
 
     [Fact]
@@ -31,21 +39,20 @@ public class BastionsTests
     [Fact]
     public void GrantingRaisesAKeepTheTownBuildsAndCompanyMembersMoveIn()
     {
-        // The company moves in once one of them is home and their purses cover the keep; which campaign gets there
-        // first shifts with every other system, so take the first of a few that does.
-        Simulation sim = null!;
-        BastionRequest r = null!;
-        double sales = 0;
-        foreach (int seed in new[] { 3, 4, 5, 2 })
-        {
-            (sim, r) = Asked(seed);
-            sales = sim.Town.Accounts.Get(TreasuryAccount.LandSales, 0);
-            Assert.True(sim.AnswerBastion(r.Id, BastionAnswer.Grant));
-            Assert.False(sim.AnswerBastion(r.Id, BastionAnswer.Refuse));
-            sim.RunDays(1);
-            if (sim.Town.Bastions.Count > 0) break;
-        }
+        // A company can die out on its delves before anyone sleeps in the keep; then try the next town.
+        for (int seed = 3; seed < 9; seed++)
+            if (GrantAndMoveIn(seed)) return;
+        Assert.Fail("no company lived to move into its keep in six towns");
+    }
+
+    private static bool GrantAndMoveIn(int seed)
+    {
+        if (Asked(seed) is not var (sim, r)) return false;
         var t = sim.Town;
+        double sales = t.Accounts.Get(TreasuryAccount.LandSales, 0);
+        Assert.True(sim.AnswerBastion(r.Id, BastionAnswer.Grant));
+        Assert.False(sim.AnswerBastion(r.Id, BastionAnswer.Refuse));
+        sim.RunDays(1);
         var b = Assert.Single(t.Bastions);
         Assert.Equal(r.Company, b.Company);
         Assert.Equal(BastionRequestStatus.Founded, r.Status);
@@ -58,8 +65,10 @@ public class BastionsTests
         Assert.True(keep.Complete);
         // Members come and go on delves; before long one is home and sleeping in the keep.
         for (int d = 0; d < 60 && !Bastions.Members(t, b).Any(m => !m.IsAway && Bastions.Lodges(t, m) && m.Hero!.Lodging); d++) sim.RunDays(1);
+        if (Bastions.Members(t, b).Count == 0) return false;
         Assert.Contains(Bastions.Members(t, b).Where(m => !m.IsAway), m => Bastions.Lodges(t, m) && m.Hero!.Lodging);
         Assert.Contains(Systems.Loyalty.Factors(t, Bastions.Members(t, b)[0]), f => f.Why.StartsWith("lives at"));
+        return true;
     }
 
     [Fact]

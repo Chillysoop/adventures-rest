@@ -101,6 +101,7 @@ public static class Undercity
         double rate = Def(town, l).Stir
             + r.StirPerFaction * town.Factions.Count(f => f.Active && f.Secret)
             + r.StirPerHundred * town.Residents.Count / 100.0;
+        rate *= 1 - Research.Ward(town);
         return l.Patrol ? rate * (1 - r.PatrolCut) : rate;
     }
 

@@ -181,10 +181,13 @@ public class DecorTests
         var bench = sim.Decorate("bench", bx, by, 0)!;
         Assert.NotNull(bench);
         Assert.False(Land.Fits(t, bx, by, w, d, 0, null));
-        Assert.Null(sim.Place("granary", bx, by, 0));
-        Assert.Contains("decorations", Planning.SpotBlocked(t, granary, bx, by, 0));
+        Assert.Null(Land.At(t, granary, bx, by, 0));
+        // Placed there by hand, it settles beside the bench instead.
+        int benchCell = (int)(by * Land.Res) * Land.Size + (int)(bx * Land.Res);
+        Assert.True(Decor.Cells(t)![benchCell]);
+        if (Planning.Spot(t, granary, bx, by, 0) is { } beside) Assert.DoesNotContain(benchCell, Land.Cells(beside.X, beside.Y, w, d, beside.Yaw));
+        else Assert.Contains("decorations", Planning.SpotBlocked(t, granary, bx, by, 0));
         Assert.Contains(t.Decor.Pieces, p => p.Id == bench.Id);
-        Assert.True(Decor.Cells(t)![(int)(by * Land.Res) * Land.Size + (int)(bx * Land.Res)]);
         // Cleared away, the ground is free again.
         Assert.True(sim.ClearDecoration(bench.Id));
         Assert.True(Land.Fits(t, bx, by, w, d, 0, null));

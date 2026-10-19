@@ -22,6 +22,9 @@ public sealed class Options
     /// <summary>With --autoplay, leave companies' reports unbought for the player (screenshots of the companies window).</summary>
     public bool KeepReports;
 
+    /// <summary>With --autoplay, the stand-in leaves the armory to the player: stock and offers wait (--keep-armory).</summary>
+    public bool KeepArmory;
+
     /// <summary>Lift the fog everywhere (screenshots of the wilds and the roads through them).</summary>
     public bool Reveal;
     public string? Site;
@@ -45,6 +48,12 @@ public sealed class Options
     public string? History;
     public string? Tutorial;
     public bool Hero;
+
+    /// <summary>--folk: select the most practised townsperson, for a look at their character sheet.</summary>
+    public bool Folk;
+
+    /// <summary>--rolls: look into the busiest tavern and replay its latest skill checks as dice over people's heads.</summary>
+    public bool Rolls;
 
     /// <summary>--wall N: select a section of the outer wall (0 is the gate) in the inspector, for shots of the call to arms.</summary>
     public int? Wall { get; private set; }
@@ -127,12 +136,15 @@ public sealed class Options
                 case "--history": o.History = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
                 case "--tutorial": o.Tutorial = Next(); break;
                 case "--hero": o.Hero = true; break;
+                case "--folk": o.Folk = true; break;
+                case "--rolls": o.Rolls = true; break;
                 case "--wall": o.Wall = int.Parse(Next()); break;
                 case "--house": o.House = true; break;
                 case "--alert": o.Alert = int.Parse(Next()); break;
                 case "--alert-hover": o.AlertHover = int.Parse(Next()); break;
                 case "--no-pause": o.NoPause = true; break;
                 case "--keep-reports": o.KeepReports = true; break;
+                case "--keep-armory": o.KeepArmory = true; break;
                 case "--reveal": o.Reveal = true; break;
                 case "--cam": o.Cam = float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture); break;
                 case "--look":
@@ -165,7 +177,7 @@ public sealed class Options
                 case "--advance": o.Advances.Add(Next()); break;
                 case "--inspiration": o.Inspiration = int.Parse(Next()); break;
                 case "--decor-at": o.DecorAt = Next().Split(',').Select(v => double.Parse(v, System.Globalization.CultureInfo.InvariantCulture)).ToArray(); break;
-                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--buy" or "--call" or "--flag" or "--wait" or "--works":
+                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--stock" or "--pact" or "--buy" or "--call" or "--flag" or "--wait" or "--works":
                     o.Script.Add((args[i][2..], Next()));
                     break;
             }
@@ -239,6 +251,15 @@ public sealed class Options
                         t.Treasury += Intel.Ask(t, p);
                         sim.BuyIntel(p.Id);
                     }
+                    break;
+                case "stock":
+                    // For armory shots: a find handed in under a pact.
+                    if (t.Content.Library.Item(arg) is LibItem find) Armory.Add(t, find, "handed in under a pact");
+                    break;
+                case "pact":
+                    // Swear the friendliest company ("best"), or the one named, to a loot pact.
+                    string? company = arg == "best" ? Intel.MembersByCompany(t).Select(x => x.Name).FirstOrDefault() : arg;
+                    if (company != null) sim.OfferPact(company);
                     break;
                 case "relic":
                     // For showing a late-game moment quickly: a party has just brought a relic home.

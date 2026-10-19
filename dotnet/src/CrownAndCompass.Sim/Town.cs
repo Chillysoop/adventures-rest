@@ -49,6 +49,9 @@ public sealed class Building(int id, BuildingDef def, int lotId)
 
     public double RevenueToday { get; set; }
 
+    /// <summary>How today's work went at its craft check, in percent of yield (<see cref="Systems.Skills.Daily"/>).</summary>
+    public int KnackPct { get; set; }
+
     /// <summary>Walks to or from it since yesterday while it stands off the streets, and the sum of where they came from (tiles).</summary>
     public int Trips { get; set; }
     public double TripX { get; set; }
@@ -245,10 +248,12 @@ public static class TreasuryAccount
     public const string Mercenaries = "Mercenaries";
     public const string Decrees = "Decrees";
     public const string Trade = "Trade";
+    public const string Armory = "Armory";
     public const string Bastions = "Bastions";
     public const string Callings = "Callings";
     public const string Legacies = "Legacies";
     public const string Undercity = "Undercity";
+    public const string Research = "Research";
     public const string Region = "The region";
     public const string Institutions = "Institutions";
 }
@@ -384,6 +389,14 @@ public sealed class Town
     /// <summary>Paid watchmen keeping the peace.</summary>
     public int Watch { get; set; }
 
+    /// <summary>The skill checks rolled lately, oldest first, for the client's dice (<see cref="Systems.Skills"/>); not saved.</summary>
+    public List<Systems.SkillCheck> Checks => _checks ??= [];
+    [NotSaved]
+    private List<Systems.SkillCheck>? _checks;
+
+    /// <summary>Checks rolled so far; each check's serial, so the client knows which it has shown.</summary>
+    public int CheckSerial { get; set; }
+
     /// <summary>Days of festival left.</summary>
     public int FestivalDays { get; set; }
 
@@ -408,6 +421,9 @@ public sealed class Town
     /// <summary>The town's trade routes to the other settlements (<see cref="Systems.Trade"/>).</summary>
     public TradeState Trade { get; } = new();
 
+    /// <summary>The town armory: items to gift heroes, and loot offered to the town (<see cref="Systems.Armory"/>).</summary>
+    public ArmoryState Armory { get; } = new();
+
     /// <summary>The people of the wilds the town has dealt with, who remember it (<see cref="Systems.Neighbours"/>).</summary>
     public NeighbourState Neighbours { get; } = new();
 
@@ -416,6 +432,9 @@ public sealed class Town
 
     /// <summary>The open levels of the undercity, shallowest first (<see cref="Systems.Undercity"/>).</summary>
     public List<Systems.UnderLevel> Undercity { get; } = [];
+
+    /// <summary>The library, its spellbooks and what the town's scholars have discovered.</summary>
+    public Systems.ResearchState Research { get; } = new();
 
     /// <summary>The city's institutions, in the order they opened (<see cref="Systems.Institutions"/>).</summary>
     public List<Systems.InstitutionState> Institutions { get; } = [];

@@ -40,11 +40,13 @@ public static class Land
     /// </summary>
     /// <param name="overwrite">False leaves zoned land alone and paints only open ground.</param>
     /// <param name="density">How tightly the paint lets the zone be built (<see cref="Density"/>); built-on ground of the same zone takes it too, so an old street can be zoned to grow taller.</param>
-    public static int Brush(Town town, IEnumerable<(double X, double Y)> dabs, double radius, Zone zone, bool overwrite = true, int density = 0)
+    /// <param name="crop">Farmland only: the crop the fields are sown with (<see cref="Farming"/>, 0 for any); open fields of another crop are resown.</param>
+    public static int Brush(Town town, IEnumerable<(double X, double Y)> dabs, double radius, Zone zone, bool overwrite = true, int density = 0, byte crop = 0)
     {
         var plan = town.Plan;
         int n = 0;
         byte dens = (byte)(Density.Takes(zone) ? density : 0);
+        if (zone != Zone.Farmland) crop = 0;
         double r2 = radius * radius * Res * Res;
         var gardens = Gardens(town);
         foreach (var (x, y) in dabs)
@@ -60,9 +62,12 @@ public static class Land
                     int i = cy * Size + cx;
                     if (plan.Taken[i] != 0 || plan.Zones[i] == (byte)zone)
                     {
-                        // Painted or built land of the zone only changes its density.
-                        if (zone == Zone.None || plan.Zones[i] != (byte)zone || plan.Density[i] == dens || !overwrite || !Open(town, i)) continue;
+                        // Painted or built land of the zone only changes its density, and open fields their crop.
+                        if (zone == Zone.None || plan.Zones[i] != (byte)zone || !Open(town, i)) continue;
+                        bool resow = plan.Taken[i] == 0 && plan.Crops[i] != crop;
+                        if (plan.Density[i] == dens && !resow) continue;
                         plan.Density[i] = dens;
+                        if (resow) plan.Crops[i] = crop;
                         n++;
                         continue;
                     }
@@ -75,6 +80,7 @@ public static class Land
                     if (zone != Zone.None && plan.Zones[i] == (byte)Zone.None && gardens != null && gardens[i]) continue;
                     plan.Zones[i] = (byte)zone;
                     plan.Density[i] = dens;
+                    plan.Crops[i] = crop;
                     n++;
                 }
         }
@@ -123,19 +129,31 @@ public static class Land
     {
         town.Plan.Fresh();
         if (town.Plan.Plots.TryGetValue(zone, out int known)) return known;
+        int n = Plots(town, zone, cap).Count;
+        town.Plan.Plots[zone] = n;
+        return n;
+    }
+
+    /// <summary>
+    /// Where the zone's largest buildings would go on its open land, sited in turn as the townsfolk would (up to <paramref name="cap"/>):
+    /// what <see cref="OpenPlots"/> counts, and what the client outlines while a zone brush is held.
+    /// </summary>
+    public static List<Lot> Plots(Town town, Zone zone, int cap = 30)
+    {
+        town.Plan.Fresh();
         // The largest the townsfolk build in the zone, so a count of one means anything of theirs fits.
         var probe = town.Content.Buildings.Where(d => d.Zone == zone && d.Buildable && d.Wards.Count == 0 && d.Density == 0).OrderByDescending(d => Footprint(d).W * Footprint(d).D).ThenBy(d => d.Id, StringComparer.Ordinal).FirstOrDefault()
             ?? new BuildingDef { Id = "", Name = "", Zone = zone };
         var plan = town.Plan;
         var (w, d) = Footprint(probe);
         var marked = new List<int>();
-        int n = 0;
+        var found = new List<Lot>();
         // Each probe takes the first spot down the street list that it fits, as Find would, so one walk down the list counts them all.
         foreach (var (_, x, y, yaw) in Streets.Fronts(town, d, zone))
         {
-            if (n >= cap) break;
+            if (found.Count >= cap) break;
             if (!City.Allows(town, probe, x, y) || !Fits(town, x, y, w, d, yaw, zone)) continue;
-            n++;
+            found.Add(new Lot(-1, x, y) { W = w, D = d, Yaw = yaw, Zone = zone });
             foreach (int i in Cells(x, y, w, d, yaw))
                 if (i >= 0)
                 {
@@ -144,8 +162,7 @@ public static class Land
                 }
         }
         foreach (int i in marked) plan.Taken[i] = 0;
-        plan.Plots[zone] = n;
-        return n;
+        return found;
     }
 
     // Siting ----------------------------------------------------------------------------------
@@ -183,7 +200,8 @@ public static class Land
     /// <summary>Whether a building fits here: every cell on the plan, open, off the streets, and in the zone; a lane of unbuilt ground around it.</summary>
     /// <param name="zone">Null takes any land that isn't built on (the council's own works).</param>
     /// <param name="ground">The bastion grounds it may stand on (<see cref="LandPlan.Grounds"/>); nothing else builds on a company's grounds.</param>
-    public static bool Fits(Town town, double x, double y, int w, int d, double yaw, Zone? zone, int ground = 0)
+    /// <param name="crop">The crop a farm grows (<see cref="Farming.CropOf"/>): it stands only in fields sown with it, or with none.</param>
+    public static bool Fits(Town town, double x, double y, int w, int d, double yaw, Zone? zone, int ground = 0, byte crop = 0)
     {
         var plan = town.Plan;
         // Decorations are the player's: builders leave them standing.
@@ -196,14 +214,65 @@ public static class Land
             if (i < 0 || plan.Taken[i] != 0 || plan.Paved[i] != 0 || (decor != null && decor[i])) return false;
             if (plan.Grounds[i] != 0 && plan.Grounds[i] != ground) return false;
             if (zone is Zone z && plan.Zones[i] != (byte)z) return false;
+            if (crop != 0 && plan.Crops[i] != 0 && plan.Crops[i] != crop) return false;
         }
-        // Dense land builds wall to wall.
+        // Nothing stands where the town wall runs or will run, nor where its towers, barracks and moat will go.
+        foreach (int i in Cells(x, y, w, d, yaw, 1))
+            if (i >= 0 && OnWallStrip(town, i)) return false;
+        // Dense land builds wall to wall; elsewhere a lane of open ground runs round each building.
         int lane = Density.Lane(town, plan.Density[mid]);
         if (lane > 0)
             foreach (int i in Cells(x, y, w, d, yaw, lane))
                 if (i >= 0 && plan.Taken[i] != 0) return false;
+        if (!Clear(town, x, y, w, d, yaw, lane > 0 ? town.Content.Rules.BuildingGap : 0)) return false;
         // Not on ground too steep to prop up.
         return Hills.Span(town, x, y, w, d, yaw) <= Hills.MaxSpan;
+    }
+
+    /// <summary>
+    /// Whether a footprint keeps the town's gap from every building near it, measured on the turned rectangles themselves:
+    /// the cells only sample a footprint's middle, so two buildings at odd angles could otherwise cross at the corners.
+    /// </summary>
+    /// <param name="gap">Tiles kept clear (none on dense land, where buildings share walls but still never cross).</param>
+    public static bool Clear(Town town, double x, double y, int w, int d, double yaw, double gap)
+    {
+        var plan = town.Plan;
+        int reach = (int)Math.Ceiling(gap * Res) + 2;
+        int last = -1;
+        foreach (int i in Cells(x, y, w, d, yaw, reach))
+        {
+            int id = i < 0 ? 0 : plan.Taken[i] - 1;
+            if (id < 0 || id == last || id >= town.Lots.Count) continue;
+            last = id;
+            var lot = town.Lots[id];
+            if (Overlap(x, y, w, d, yaw, lot.X, lot.Y, lot.W, lot.D, lot.Yaw, gap)) return false;
+        }
+        return true;
+    }
+
+    /// <summary>Whether two footprints (centres in tiles, sizes in cells, any headings) come within <paramref name="gap"/> tiles of each other.</summary>
+    public static bool Overlap(double ax, double ay, int aw, int ad, double ayaw, double bx, double by, int bw, int bd, double byaw, double gap)
+    {
+        double ahw = aw / 2.0 / Res + gap / 2, ahd = ad / 2.0 / Res + gap / 2;
+        double bhw = bw / 2.0 / Res + gap / 2, bhd = bd / 2.0 / Res + gap / 2;
+        double dx = bx - ax, dy = by - ay;
+        double far = Math.Sqrt(ahw * ahw + ahd * ahd) + Math.Sqrt(bhw * bhw + bhd * bhd);
+        if (dx * dx + dy * dy >= far * far) return false;
+        // Separating axes: each rectangle's two sides.
+        foreach (double turn in (double[])[ayaw, byaw])
+            for (int k = 0; k < 2; k++)
+            {
+                double ux = k == 0 ? Math.Cos(turn) : -Math.Sin(turn), uy = k == 0 ? Math.Sin(turn) : Math.Cos(turn);
+                double ra = Reach(ahw, ahd, ayaw, ux, uy), rb = Reach(bhw, bhd, byaw, ux, uy);
+                if (Math.Abs(dx * ux + dy * uy) >= ra + rb - 1e-9) return false;
+            }
+        return true;
+    }
+
+    private static double Reach(double hw, double hd, double yaw, double ux, double uy)
+    {
+        double c = Math.Cos(yaw), s = Math.Sin(yaw);
+        return hw * Math.Abs(c * ux + s * uy) + hd * Math.Abs(-s * ux + c * uy);
     }
 
     /// <summary>
@@ -216,8 +285,9 @@ public static class Land
         var plan = town.Plan;
         plan.Fresh();
         // Buildings kept to certain wards search on their own; the rest share a search per zone and size.
-        var key = (zone, w, d, def.Wards.Count == 0 && def.Density == 0 ? "" : def.Id);
-        if (!plan.Found.TryGetValue(key, out var spot)) plan.Found[key] = spot = Search(town, def, w, d, zone);
+        byte crop = Farming.CropOf(town, def);
+        var key = (zone, w, d, def.Wards.Count == 0 && def.Density == 0 && crop == 0 ? "" : def.Id);
+        if (!plan.Found.TryGetValue(key, out var spot)) plan.Found[key] = spot = Search(town, def, w, d, zone, crop);
         // A fresh lot each time: the caller may set its zone, and claims it under the next id.
         return spot == null ? null : new Lot(town.Lots.Count, spot.X, spot.Y) { W = w, D = d, Yaw = spot.Yaw, Zone = zone ?? Zone.Civic };
     }
@@ -237,11 +307,11 @@ public static class Land
         return null;
     }
 
-    private static Lot? Search(Town town, BuildingDef def, int w, int d, Zone? zone)
+    private static Lot? Search(Town town, BuildingDef def, int w, int d, Zone? zone, byte crop)
     {
         // Fronting on a street, the way the townsfolk build.
         foreach (var (_, x, y, yaw) in Streets.Fronts(town, d, zone))
-            if (City.Allows(town, def, x, y) && Fits(town, x, y, w, d, yaw, zone))
+            if (City.Allows(town, def, x, y) && Fits(town, x, y, w, d, yaw, zone, crop: zone == Zone.Farmland ? crop : (byte)0))
                 return new Lot(town.Lots.Count, x, y) { W = w, D = d, Yaw = yaw, Zone = zone ?? Zone.Civic };
         // The council's works take any open ground when no street has room, facing the nearest street.
         return zone == null ? Anywhere(town, def, w, d) : null;
@@ -287,6 +357,31 @@ public static class Land
         return Fits(town, x, y, w, d, a, null) ? new Lot(town.Lots.Count, x, y) { W = w, D = d, Yaw = a } : null;
     }
 
+    /// <summary>
+    /// As <see cref="At"/>, but forgiving: when the spot itself won't take the building, the nearest spot that will within
+    /// <see cref="SnapReach"/> tiles, turned a little if no heading was asked for (or nudged off the one that was).
+    /// </summary>
+    public static Lot? Near(Town town, BuildingDef def, double x, double y, double? yaw = null)
+    {
+        if (At(town, def, x, y, yaw) is { } exact) return exact;
+        double[] turns = yaw == null ? Bends : [0, 0.1, -0.1, 0.2, -0.2];
+        for (double r = 0.15; r <= SnapReach + 1e-9; r += 0.15)
+        {
+            int n = Math.Max(8, (int)Math.Ceiling(r * 2 * Math.PI / 0.15));
+            foreach (double turn in turns)
+                for (int i = 0; i < n; i++)
+                {
+                    double a = i * Math.PI * 2 / n, px = x + Math.Cos(a) * r, py = y + Math.Sin(a) * r;
+                    double head = (yaw ?? Streets.Facing(town, px, py)) + turn;
+                    if (At(town, def, px, py, head) is { } lot) return lot;
+                }
+        }
+        return null;
+    }
+
+    /// <summary>How far a hand-placed building may be moved to the nearest spot it fits, in tiles.</summary>
+    public const double SnapReach = 0.9;
+
     /// <summary>Put a lot on the plan: its cells are taken, and painted with its zone.</summary>
     public static void Claim(Town town, Lot lot)
     {
@@ -315,8 +410,20 @@ public static class Land
     /// Zone a round patch of open ground for the zone at about <paramref name="ring"/> tiles from the hall
     /// (0: as near as it gets), no farther than <paramref name="maxDist"/>. Returns false when there's no room.
     /// </summary>
-    public static bool PaintPatch(Town town, Zone zone, double radius, double maxDist, double ring) =>
-        PaintPatch(town, zone, radius, (x, y, dist) => dist > maxDist || (ring > 0 && dist < ring - 0.5) ? null : ring == 0 ? dist : Math.Abs(dist - ring));
+    public static bool PaintPatch(Town town, Zone zone, double radius, double maxDist, double ring, byte crop = 0) =>
+        PaintPatch(town, zone, radius, (x, y, dist) => dist > maxDist || (ring > 0 && dist < ring - 0.5) ? null : ring == 0 ? dist : Math.Abs(dist - ring), crop);
+
+    /// <summary>Whether a cell's middle lies on the strip kept clear along the wall lines (<see cref="City.OnWallStrip"/>), kept for the plan's life.</summary>
+    public static bool OnWallStrip(Town town, int i)
+    {
+        var plan = town.Plan;
+        if (plan.WallStrip == null)
+        {
+            plan.WallStrip = new bool[Size * Size];
+            for (int c = 0; c < plan.WallStrip.Length; c++) plan.WallStrip[c] = City.OnWallStrip(town, (c % Size + 0.5) / Res, (c / Size + 0.5) / Res);
+        }
+        return plan.WallStrip[i];
+    }
 
     /// <summary>The ward a cell's middle lies in (<see cref="City.WardOf(Town, double, double)"/>), kept for the plan's life.</summary>
     public static WardDef WardAt(Town town, int i)
@@ -340,7 +447,7 @@ public static class Land
     /// Zone a round patch of open ground, centred on the open cell in a laid-out ward with the lowest
     /// <paramref name="key"/> (x, y, distance from the hall; null passes the cell over). Returns false when there's no room.
     /// </summary>
-    public static bool PaintPatch(Town town, Zone zone, double radius, Func<double, double, double, double?> key)
+    public static bool PaintPatch(Town town, Zone zone, double radius, Func<double, double, double, double?> key, byte crop = 0)
     {
         var plan = town.Plan;
         int best = -1;
@@ -364,7 +471,7 @@ public static class Land
         if (best < 0) return false;
         double bx = (best % Size + 0.5) / Res, by = (best / Size + 0.5) / Res;
         // As dense as the stand-in mayor zones that ward by now.
-        return Brush(town, [(bx, by)], radius, zone, overwrite: false, density: Density.Target(town, bx, by)) > 0;
+        return Brush(town, [(bx, by)], radius, zone, overwrite: false, density: Density.Target(town, bx, by), crop: crop) > 0;
     }
 }
 
@@ -376,6 +483,9 @@ public sealed class LandPlan
 
     /// <summary>How tightly each cell may be built (<see cref="Systems.Density"/>: 0 low, 1 medium, 2 high).</summary>
     public byte[] Density { get; set; } = new byte[Land.Size * Land.Size];
+
+    /// <summary>The crop each farmland cell is sown with (<see cref="Farming.Code"/>, 0 for any).</summary>
+    public byte[] Crops { get; set; } = new byte[Land.Size * Land.Size];
 
     /// <summary>Ground held for a company's bastion (its grounds number), 0 for none: only its own facilities go there (<see cref="Bastions"/>).</summary>
     public byte[] Grounds { get; set; } = new byte[Land.Size * Land.Size];
@@ -415,6 +525,10 @@ public sealed class LandPlan
     /// <summary>The ward each cell lies in (<see cref="Land.WardAt"/>).</summary>
     [field: NotSaved]
     public WardDef[]? Wards { get; set; }
+
+    /// <summary>Whether each cell lies on the strip kept clear along the wall lines (<see cref="Land.OnWallStrip"/>).</summary>
+    [field: NotSaved]
+    public bool[]? WallStrip { get; set; }
 
     /// <summary>Whether each building's door is off the streets (<see cref="Streets.Offroad"/>).</summary>
     [field: NotSaved]

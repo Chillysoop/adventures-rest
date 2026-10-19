@@ -30,12 +30,14 @@ public partial class Main
         [Tab.Council] = "Council",
         [Tab.Bounties] = "Bounties and the road",
         [Tab.Companies] = "Adventuring companies",
+        [Tab.Armory] = "The town armory",
         [Tab.Diplomacy] = "Diplomacy and trade",
         [Tab.Institutions] = "The town's institutions",
         [Tab.Faith] = "Faith and factions",
         [Tab.Campaign] = "The campaign",
         [Tab.Chronicles] = "Chronicles",
         [Tab.Mayor] = "The mayor",
+        [Tab.Library] = "The library",
         [Tab.Inspect] = "Inspect",
     };
 
@@ -231,7 +233,7 @@ public partial class Main
         AddChild(_inspector);
         _inspector.AnchorTop = _inspector.AnchorBottom = 1;
         _inspector.OffsetBottom = -(DockHeight + Gap * 2 + 16);
-        _inspector.OffsetTop = _inspector.OffsetBottom - 380;
+        _inspector.OffsetTop = _inspector.OffsetBottom - 540;
         PlaceInspector();
     }
 

@@ -165,7 +165,8 @@ public class SendingsTests
         Assert.True(sent.Count >= 3, $"only {sent.Count} sendings in 240 days");
         Assert.All(sent.Where(s => s.OpenedTick < t.Tick - 72), s => Assert.True(s.Done));
         Assert.Contains(sent, s => s.Beats.Any(b => b.Result != StoryResult.Ignored));
-        Assert.All(t.Parties, p => Assert.True(p.Asked <= 2));
+        // One a trip, one more for the Adventurers' Hall, and one for a party carrying a town sending stone.
+        Assert.All(t.Parties, p => Assert.True(p.Asked <= 2 + t.Content.Armory.StoneTrips));
     }
 
     [Fact]

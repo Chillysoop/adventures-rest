@@ -23,6 +23,8 @@ public enum AlertWindow
     Mayor,
     Diplomacy,
     Companies,
+    Library,
+    Armory,
     Institutions,
 }
 
@@ -53,6 +55,7 @@ public static class Alerts
     public static readonly AlertKind Motion = new("motion", "Council motions", "mandate", AlertLevel.Decision, AlertWindow.Council);
     public static readonly AlertKind Stores = new("stores", "Winter stores", "bread", AlertLevel.Decision, AlertWindow.City);
     public static readonly AlertKind Fealty = new("fealty", "Demands for fealty", "warband", AlertLevel.Decision, AlertWindow.Campaign);
+    public static readonly AlertKind Scholars = new("scholars", "Idle scholars", "d20", AlertLevel.Minor, AlertWindow.Library);
     public static readonly AlertKind Below = new("below", "Stirring below", "warband", AlertLevel.Decision, AlertWindow.City);
     public static readonly AlertKind Trade = new("trade", "Trade routes", "gold", AlertLevel.Minor, AlertWindow.Diplomacy);
     public static readonly AlertKind Neighbour = new("neighbour", "Neighbours in trouble", "favour", AlertLevel.Decision, AlertWindow.Diplomacy);
@@ -69,14 +72,16 @@ public static class Alerts
     public static readonly AlertKind Housing = new("housing", "Housing", "homeless", AlertLevel.Minor, AlertWindow.Council);
     public static readonly AlertKind Work = new("work", "Idle hands", "population", AlertLevel.Decision, AlertWindow.City);
     public static readonly AlertKind Settlers = new("settlers", "No settlers", "population", AlertLevel.Decision, AlertWindow.City);
+    public static readonly AlertKind Loot = new("loot", "Loot for sale", "gold", AlertLevel.Decision, AlertWindow.Armory);
+    public static readonly AlertKind Gifts = new("gifts", "Arms to give", "heroes", AlertLevel.Minor, AlertWindow.Armory);
 
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Captives, Crisis, Hunger, Coffers, Unrest, Hostile, Motion, Fealty, Plot, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Bastion, Institution, Heroes, Neighbour, Work, Settlers, Below, Trade, Housing];
+        [Siege, Captives, Crisis, Hunger, Coffers, Unrest, Hostile, Motion, Fealty, Plot, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Bastion, Institution, Heroes, Neighbour, Loot, Work, Settlers, Below, Scholars, Trade, Gifts, Housing];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
-    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Hostility, Winter, Growth, Routes, Region, Undercity, Loyalty, Homes, Keepers];
+    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Hostility, Winter, Growth, Routes, Region, Undercity, Study, Loyalty, Armoury, Homes, Keepers];
 
     public static List<Alert> Standing(Town town) => Rules.SelectMany(r => r(town)).ToList();
 
@@ -216,6 +221,15 @@ public static class Alerts
         }
     }
 
+    private static IEnumerable<Alert> Study(Town t)
+    {
+        if (t.Research.Study != null) yield break;
+        var open = Research.Open(t);
+        if (open.Count == 0) yield break;
+        yield return new("scholars", Scholars, "The scholars are idle",
+            $"{open.Count} {(open.Count == 1 ? "discovery is" : "discoveries are")} ready to study, {open[0].Name.ToLowerInvariant()} the cheapest. Set the scholars to work in the Library window.");
+    }
+
     /// <summary>A friend in the wilds whose need the town can meet now, and a villain's plan close to done.</summary>
     private static IEnumerable<Alert> Region(Town t)
     {
@@ -240,6 +254,23 @@ public static class Alerts
         foreach (var a in t.Heroes.Where(a => a.Hero!.Restless && !a.IsAway).OrderBy(a => a.Id))
             yield return new($"restless:{a.Id}", Heroes, $"{a.Name} is restless",
                 $"Loyalty {Math.Round(a.Hero!.Loyalty)}. A purse, a knighthood or a fief may win them back before they leave.", AgentId: a.Id);
+    }
+
+    /// <summary>Loot offered that a hero in town would use, and armory stock a hero in town would.</summary>
+    private static IEnumerable<Alert> Armoury(Town t)
+    {
+        foreach (var o in t.Armory.Offers.Where(o => t.Treasury >= o.Price).OrderBy(o => o.Id))
+        {
+            var taker = Armory.Takers(t, o.Item).FirstOrDefault(x => x.Hero.Id != o.HeroId).Hero;
+            if (taker == null) continue;
+            int days = Math.Max(1, o.Until - t.Day);
+            yield return new($"loot:{o.Id}", Loot, $"{Cap(o.Seller)} offers the {Gear.Plainly(o.Item)}",
+                $"{Js.Str(o.Price)}g for the town armory; {taker.GivenName} could use it. Buy it in the Armory window; in {Days(days)} it is sold elsewhere.", AgentId: o.HeroId);
+        }
+        foreach (var s in t.Armory.Stock.OrderBy(s => s.Id))
+            if (Armory.Takers(t, s.Item).FirstOrDefault().Hero is { } a)
+                yield return new($"gift:{s.Id}:{a.Id}", Gifts, $"Give the {Gear.Plainly(s.Item)} to {a.GivenName}",
+                    Armory.IsStone(t, s.Item) ? $"With a sending stone their company can send word home without a caster's spell slot. Give it in the Armory window." : $"It would serve {a.Name} better than what they carry. Give it in the Armory window.", AgentId: a.Id);
     }
 
     private static IEnumerable<Alert> Homes(Town t)

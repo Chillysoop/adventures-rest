@@ -45,8 +45,8 @@ public static class Decrees
 
     public static int DaysLeft(Town town, string id) => Math.Max(0, town.Stories.Decrees.Get(id, town.Day) - town.Day);
 
-    /// <summary>Decrees in force and the callings heroes hold: both move mood, settlers, build speed and yields.</summary>
-    private static IEnumerable<DecreeDef> InEffect(Town town) => Active(town).Concat(Callings.Held(town));
+    /// <summary>Decrees in force, the callings heroes hold and the town's discoveries: all move mood, settlers, build speed and yields.</summary>
+    private static IEnumerable<DecreeDef> InEffect(Town town) => Active(town).Concat(Callings.Held(town)).Concat(Research.Known(town));
 
     public static double Mood(Town town) => Js.Sum(InEffect(town), d => d.Mood);
 
@@ -61,7 +61,7 @@ public static class Decrees
 
     public static double Yield(Town town, Good good)
     {
-        if (town.Stories.Decrees.Count == 0 && town.Stories.Callings.Count == 0) return 1;
+        if (town.Stories.Decrees.Count == 0 && town.Stories.Callings.Count == 0 && town.Research.Known.Count == 0) return 1;
         double f = 1;
         string key = good.ToString();
         foreach (var d in InEffect(town)) f *= d.Yields.TryGetValue(key, out double y) ? y : 1;

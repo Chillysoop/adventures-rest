@@ -95,7 +95,9 @@ public partial class Main
             AlertWindow.City => Tab.City,
             AlertWindow.Mayor => Tab.Mayor,
             AlertWindow.Diplomacy => Tab.Diplomacy,
+            AlertWindow.Library => Tab.Library,
             AlertWindow.Companies => Tab.Companies,
+            AlertWindow.Armory => Tab.Armory,
             AlertWindow.Institutions => Tab.Institutions,
             _ => null,
         };

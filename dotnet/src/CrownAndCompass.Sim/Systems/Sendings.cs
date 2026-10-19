@@ -133,7 +133,7 @@ public static class Sendings
             foreach (var party in town.Parties.OrderBy(p => p.Id))
             {
                 if (party.Returned || party.BountyId == null || party.RecalledTick != null || busy.Contains(party.Id)) continue;
-                if (party.Asked >= trips || Knowledge.SlotsLeft(town, party) == 0) continue;
+                if (party.Asked >= trips + Armory.StoneTrips(town, party) || Knowledge.SlotsLeft(town, party) == 0) continue;
                 if (!town.Rng.Chance(r.Chance / SimTime.HoursPerDay)) continue;
                 Open(town, party);
             }

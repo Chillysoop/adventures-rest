@@ -197,8 +197,10 @@ public partial class Main
                 string members = string.Join(", ", party.Members.Select(id => AgentLink(t.Agent(id), t.Agent(id).GivenName)));
                 string where = party.RecalledTick != null ? "Called home" : $"Gone {Ui.Days(gone)} to {SiteLink(site.Def)}";
                 string slotNote = slots == 0
-                    ? Ui.C(Ui.Ink2, Knowledge.Slots(t, party) == 0 ? "No caster with them: no sending stone." : "No spell slots left for a sending.")
-                    : Ui.C(Ui.Ink2, $"{slots} spell {(slots == 1 ? "slot" : "slots")} for sendings. Each one costs a slot{(party.Members.Any(id => t.Agent(id).Hero!.Cls.Healer) ? ", and a healer's slot is a heal they won't have in the dungeon" : "")}.");
+                    ? Ui.C(Ui.Ink2, Knowledge.Slots(t, party) == 0 ? "No caster and no sending stone with them: no way to send word." : "No spell slots or stone sendings left.")
+                    : Ui.C(Ui.Ink2, Sim.Systems.Armory.Carries(t, party)
+                        ? $"They carry one of the town's sending stones: {slots} {(slots == 1 ? "sending" : "sendings")} left."
+                        : $"{slots} spell {(slots == 1 ? "slot" : "slots")} for sendings. Each one costs a slot{(party.Members.Any(id => t.Agent(id).Hero!.Cls.Healer) ? ", and a healer's slot is a heal they won't have in the dungeon" : "")}.");
                 int id = party.Id;
                 p.Card($"[b]The {Ui.Esc(party.Name)}[/b]  {Tag($"due back day {due}", Ui.Gold)}\n{where} · {members}\n[font_size=12]{slotNote}[/font_size]");
                 if (Knowledge.Slots(t, party) > 0)
@@ -244,7 +246,7 @@ public partial class Main
             else if (party != null && !party.Returned) status = Tag($"{Ui.Esc(party.Name)} on the road", Ui.Gold);
             else if (live != null && live.Errand != "" && t.Content.Bounties.Errands.FirstOrDefault(x => x.Id == live.Errand) is { } boon)
                 status = Tag($"Mages' errand: {Math.Round(live.Reward)}g and {boon.Name}", Ui.Gold);
-            else if (live != null) status = Tag($"{(live.Terms == "slay" ? "Bounty" : Terms.Of(t, live).Name)} posted: {Math.Round(live.Reward)}g", Ui.Gold);
+            else if (live != null) status = Tag($"{(live.Terms == "slay" ? "Bounty" : Terms.Of(t, live).Name)} posted: {Math.Round(live.Reward)}g{(live.LootToTown ? ", loot to the town" : "")}", Ui.Gold);
             else
             {
                 status = s.Attempts > 0 ? Tag($"{s.Attempts} failed {(s.Attempts == 1 ? "attempt" : "attempts")}", Ui.Bad) : Tag("Unexplored");
@@ -252,6 +254,8 @@ public partial class Main
                 string terms = chosen.Id;
                 bool fits = Terms.Blocked(t, s, chosen) == null;
                 if (fits) buttons.Add(($"{chosen.Name} · {reward}g", t.Treasury >= reward, true, () => Act(() => _sim.PostBounty(sid, reward, terms))));
+                double withLoot = Sim.Systems.Armory.TermsReward(t, reward);
+                if (fits && !chosen.Item) buttons.Add(($"{Js.Str(withLoot)}g, loot to us", t.Treasury >= withLoot, false, () => Act(() => _sim.PostBounty(sid, withLoot, terms, lootToTown: true))));
             }
             if (!s.ThoughtCleared && Watch.LiveOf(t, s) == null)
             {
@@ -554,14 +558,14 @@ public partial class Main
             if (cls.AreaSpell != null) spells.Add(cls.AreaSpell.Name);
             string role = cls.Role == "" ? "" : $"{Ui.Cap(cls.Role)}{(cls.Magic != "" ? $", {cls.Magic} caster" : "")}";
             p.Text(Ui.C(Ui.Ink2, $"{Ui.Esc(role)}{(spells.Count > 0 ? $" · casts {Ui.Esc(string.Join(", ", spells))}" : "")}"), 13);
-            p.Text($"Fights with {Ui.Esc(Gear.Describe(hs))} · AC {Gear.Ac(t.Content, a)} · attack +{Gear.Attack(t.Content, a)}", 13);
+            p.Text($"Fights with {Ui.Esc(Gear.Describe(hs))} · AC {Gear.Ac(t.Content, a)} · attack +{Gear.Attack(t.Content, a)}{(hs.Stone ? " · carries a town sending stone" : "")}", 13);
             InspectNotoriety(p, t, a, hs);
             InspectLoyalty(p, t, a, hs);
         }
         p.Text($"{Ui.Esc(status)} · {Math.Floor(a.Gold)} gold · mood {Math.Round(a.LastDayMood)}");
         p.Text($"Lives at {Ui.Esc(home)}; {(a.Hero != null ? "lives by bounties" : $"works at {Ui.Esc(job)}")}.");
         if (a.SpouseId is int sp) p.Text($"Married to {AgentLink(t.Agent(sp))}");
-        p.Text(Ui.C(Ui.Ink2, a.Abilities.ToString()), 12);
+        InspectSheet(p, t, a);
         var friends = a.Opinions.Where(kv => kv.Value >= 40).OrderBy(kv => kv.Key).Select(kv => AgentLink(t.Agent(kv.Key))).ToList();
         var foes = a.Opinions.Where(kv => kv.Value <= -30).OrderBy(kv => kv.Key).Select(kv => AgentLink(t.Agent(kv.Key))).ToList();
         if (friends.Count > 0) p.Text($"Friends: {string.Join(", ", friends)}");

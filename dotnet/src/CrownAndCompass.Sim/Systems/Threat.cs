@@ -128,7 +128,7 @@ public static class Threat
     {
         var d = town.Content.Enemy.Defense;
         int heroLevels = town.Heroes.Where(a => !a.IsAway).Sum(a => a.Hero!.Level);
-        double baseDefense = town.Watch * d.Watchman * Planning.WatchFactor(town) + heroLevels * d.HeroLevel + town.Workers.Count * d.MilitiaPerWorker + Faith.Defense(town) + Factions.Defense(town) + Callings.Defence(town) + Institutions.Defence(town) + Loyalty.Defense(town) + Notoriety.Defense(town) + Decor.Defense(town) + Mercenaries.Defense(town) + Clockwork.Defense(town) + Bastions.Defense(town) + (allies ? World.AllyTroops(town) : 0);
+        double baseDefense = town.Watch * d.Watchman * Planning.WatchFactor(town) + heroLevels * d.HeroLevel + town.Workers.Count * d.MilitiaPerWorker + Faith.Defense(town) + Factions.Defense(town) + Callings.Defence(town) + Institutions.Defence(town) + Loyalty.Defense(town) + Notoriety.Defense(town) + Decor.Defense(town) + Mercenaries.Defense(town) + Clockwork.Defense(town) + Bastions.Defense(town) + Research.Defense(town) + (allies ? World.AllyTroops(town) : 0);
         return baseDefense * Fortification(town);
     }
 
@@ -272,7 +272,7 @@ public static class Threat
 
         // They strike outside the walls: the farm or camp farthest from the town hall, or failing that whatever stands beyond the stone.
         int outside = town.Defenses.OutsideRing;
-        var target = Garrison.Unguarded(town, town.Buildings.Where(b => b.Complete && (b.Def.Zone == Zone.Farmland || b.Def.Id == "lumber_camp" || City.Ring(town.Lot(b.LotId)) >= outside)).ToList())
+        var target = Garrison.Unguarded(town, town.Buildings.Where(b => b.Complete && (b.Def.Zone == Zone.Farmland || b.Def.Id == "lumber_camp" || City.Ring(town, town.Lot(b.LotId)) >= outside)).ToList())
             .OrderByDescending(b => b.Def.Zone == Zone.Farmland || b.Def.Id == "lumber_camp" ? 1 : 0)
             .ThenByDescending(b => Distance(town, b.LotId))
             .ThenBy(b => b.Id)

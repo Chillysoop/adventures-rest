@@ -30,6 +30,9 @@ public sealed record SimulationOptions
     /// <summary>Let the stand-in mayor buy companies' reports of new ground; off when a player deals with the companies.</summary>
     public bool AutoIntel { get; init; } = true;
 
+    /// <summary>Let the stand-in mayor buy loot for the town armory and gift it to heroes; off when a player keeps the armory.</summary>
+    public bool AutoArmory { get; init; } = true;
+
     /// <summary>Let the stand-in mayor give companies leave to raise bastions; off when a player answers them.</summary>
     public bool AutoBastions { get; init; } = true;
 
@@ -103,6 +106,7 @@ public sealed class Simulation
         Brain.Daily(t);
         Seasons.Daily(t);
         Economy.Daily(t);
+        Skills.Daily(t);
         Merchants.Daily(t);
         City.Daily(t, Options.AutoMayor && Options.AutoPlanning);
         GrandWorks.Daily(t, Options.AutoMayor && Options.AutoPlanning);
@@ -118,6 +122,7 @@ public sealed class Simulation
         Garrison.Daily(t, Options.AutoMayor && Options.AutoDefense);
         World.Daily(t, Options.AutoMayor);
         Trade.Daily(t, Options.AutoMayor);
+        Armory.Daily(t, Options.AutoMayor && Options.AutoArmory);
         Neighbours.Daily(t, Options.AutoMayor);
         Mercenaries.Daily(t, Options.AutoMayor && Options.AutoDefense);
         Clockwork.Daily(t, Options.AutoMayor && Options.AutoDefense);
@@ -127,6 +132,7 @@ public sealed class Simulation
         Bastions.Daily(t, Options.AutoMayor && Options.AutoBastions);
         Watch.Daily(t, Options.AutoMayor && Options.AutoBounties);
         Undercity.Daily(t, Options.AutoMayor);
+        Research.Daily(t, Options.AutoMayor);
         Lairs.Daily(t, Options.AutoMayor);
         Rumors.Daily(t);
         Shrines.Daily(t, Options.AutoMayor);
@@ -152,8 +158,23 @@ public sealed class Simulation
         t.AccountsToday = new();
     }
 
-    /// <summary>The player's lever: post a bounty on a site, paid from the treasury into escrow.</summary>
-    public Bounty? PostBounty(string siteId, double reward, string terms = "slay") => Quests.PostBounty(Town, siteId, reward, null, terms);
+    /// <summary>The player's lever: post a bounty on a site, paid from the treasury into escrow; terms say how (slay, drive, parley, rescue, fetch); with loot to the town the hoard's magic comes to the armory.</summary>
+    public Bounty? PostBounty(string siteId, double reward, string terms = "slay", bool lootToTown = false) => Quests.PostBounty(Town, siteId, reward, null, terms, lootToTown);
+
+    /// <summary>Give a hero in town an item from the armory: magic arms, armour or a charm to wear, or a sending stone to carry.</summary>
+    public bool Gift(int stockId, int heroId) => Armory.Gift(Town, stockId, heroId);
+
+    /// <summary>Buy loot a hero or a caravan offers the town, into the armory.</summary>
+    public bool BuyLoot(int offerId) => Armory.Buy(Town, offerId);
+
+    /// <summary>Sell an item from the armory to the merchants.</summary>
+    public bool SellStock(int stockId) => Armory.Sell(Town, stockId);
+
+    /// <summary>Offer a company a loot pact: the magic it finds comes to the armory, for a finder's fee. A wary company refuses.</summary>
+    public bool OfferPact(string company) => Armory.OfferPact(Town, company);
+
+    /// <summary>Release a company from its loot pact.</summary>
+    public bool EndPact(string company) => Armory.EndPact(Town, company);
 
     /// <summary>The player's lever: pay a company to go and explore a region, the reward held until they come home.</summary>
     public Commission? PostSurvey(int regionId, double? reward = null) => Explore.Post(Town, regionId, reward);
@@ -183,6 +204,12 @@ public sealed class Simulation
 
     /// <summary>Send the watch down into a level of the undercity each night, or call them back.</summary>
     public bool PatrolUndercity(string levelId, bool on) => Undercity.SetPatrol(Town, levelId, on);
+
+    /// <summary>Set the town's scholars on a discovery (the first time pays its commission).</summary>
+    public bool StudyDiscovery(string id) => Research.Study(Town, id);
+
+    /// <summary>How much the council pays its scholars: 0 none up to 4, a royal academy.</summary>
+    public bool FundResearch(int level) => Research.Fund(Town, level);
 
     /// <summary>Set how generously the council funds an institution: 0 unfunded, 1 modest, 2 generous.</summary>
     public bool FundInstitution(string institutionId, int level) => Institutions.Fund(Town, institutionId, level);
@@ -251,7 +278,8 @@ public sealed class Simulation
     /// Paint a brush stroke of a zone over open ground in open wards (Zone.None clears it): dabs in tiles from the town's corner.
     /// Homes and shops take a density (0 low, 1 medium, 2 high, as the charter allows), and land of the zone already built on takes it too. Returns cells changed.
     /// </summary>
-    public int PaintZone(IEnumerable<(double X, double Y)> dabs, double radius, Zone zone, int density = 0) => Planning.Paint(Town, dabs, radius, zone, density);
+    /// <param name="crop">Farmland: the crop its fields are sown with (content/game/farming.json); null sows wheat.</param>
+    public int PaintZone(IEnumerable<(double X, double Y)> dabs, double radius, Zone zone, int density = 0, string? crop = null) => Planning.Paint(Town, dabs, radius, zone, density, crop);
 
     /// <summary>Place a government building, charter house or town-owned business at a point and heading (null faces the nearest lane), paid from the treasury.</summary>
     public Building? Place(string buildingId, double x, double y, double? yaw = null) => Planning.Place(Town, buildingId, x, y, yaw);
@@ -342,13 +370,14 @@ public sealed class Simulation
         Council.InitCouncil(t);
         Threat.InitThreat(t);
         Factions.InitFactions(t);
+        Armory.Init(t);
 
         if (Options.AutoMayor && Options.AutoPlanning) Mayor.Daily(t);
         else
         {
             // The charter's own plan, a patch of each zone round the hall: the player paints everything after it.
             foreach (var (z, r, ring) in new[] { (Zone.Residential, 2.2, 0.0), (Zone.Commercial, 1.7, 0.0), (Zone.Industry, 1.8, 3.5), (Zone.Farmland, 2.2, 5.0) })
-                Land.PaintPatch(t, z, r, Town.Grid, ring);
+                Land.PaintPatch(t, z, r, Town.Grid, ring, z == Zone.Farmland ? Farming.Code(t, "wheat") : (byte)0);
         }
 
         var house = c.Building("house");

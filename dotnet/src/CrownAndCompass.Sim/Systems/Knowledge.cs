@@ -27,6 +27,9 @@ public static class Knowledge
 
     private static bool IsSender(Town town, Agent a) => Casts(town, a, town.Content.Knowledge.SendSpell);
 
+    /// <summary>Whether the hero can cast a sending themselves.</summary>
+    public static bool Sends(Town town, Agent a) => IsSender(town, a);
+
     /// <summary>Casters in town able to scry, strongest first.</summary>
     public static List<Agent> Scryers(Town town) =>
         town.Heroes
@@ -36,7 +39,7 @@ public static class Knowledge
             .ToList();
 
     public static double ScryCost(Town town, SiteDef site) =>
-        town.Content.Knowledge.ScryBaseCost + town.Content.Knowledge.ScryCostPerDay * site.Distance;
+        Js.Round((town.Content.Knowledge.ScryBaseCost + town.Content.Knowledge.ScryCostPerDay * site.Distance) * (1 - Research.Scry(town)));
 
     public static Scrying? ActiveScrying(Town town, string siteId) =>
         town.Scryings.LastOrDefault(s => s.SiteId == siteId && town.Tick >= s.StartTick && town.Tick < s.EndTick);
@@ -75,11 +78,11 @@ public static class Knowledge
         return scry;
     }
 
-    /// <summary>Spell slots a party carries for sendings: each caster's base slots plus more with level.</summary>
+    /// <summary>Spell slots a party carries for sendings: each caster's base slots plus more with level, and a town sending stone's.</summary>
     public static int Slots(Town town, Party party)
     {
         var k = town.Content.Knowledge;
-        int slots = 0;
+        int slots = Armory.StoneSlots(town, party);
         foreach (int id in party.Members)
         {
             var a = town.Agent(id);

@@ -149,6 +149,13 @@ public static class Gear
         return $"+{m.Groups[2].Value} {Library.Prose(on?.Name ?? m.Groups[1].Value)}";
     }
 
+    /// <summary>An item's name with no hero to fit it to: "+1 weapon", "Frost Brand".</summary>
+    public static string Plainly(LibItem it)
+    {
+        var m = Plain.Match(it.Name);
+        return m.Success ? $"+{m.Groups[2].Value} {m.Groups[1].Value.ToLowerInvariant()}" : it.Name;
+    }
+
     /// <summary>What the hero fights with, for the sheet: "+1 longsword, chain mail, shield; Cloak of Elvenkind".</summary>
     public static string Describe(HeroSheet s)
     {
@@ -199,16 +206,29 @@ public static class Gear
 
     private static void Wear(Town town, Agent a, LibItem it)
     {
+        if (Fit(town, a, it) is LibItem old) Sell(town, a, old);
+    }
+
+    /// <summary>The hero wears the item in its slot; returns what they wore there before, or null.</summary>
+    public static LibItem? Fit(Town town, Agent a, LibItem it)
+    {
         var s = a.Hero!;
         string slot = SlotOf(it);
         var old = s.Magic.TryGetValue(slot, out var o) ? o : null;
         s.Magic[slot] = it;
         Relist(s);
-        if (old != null) Sell(town, a, old);
+        return old;
     }
 
+    /// <summary>A hero with loot to spare offers it to the town armory first, and sells it on the road if the town won't buy.</summary>
     private static void Sell(Town town, Agent a, LibItem it)
     {
+        if (!Armory.OfferToTown(town, a, it)) SellOnRoad(town, a, it);
+    }
+
+    public static void SellOnRoad(Town town, Agent a, LibItem it)
+    {
+        // The town's shops and the fence bid next, then a passing merchant.
         if (Merchants.Sell(town, a, it)) return;
         double gold = SellValue(town, it);
         a.Gold += gold;
@@ -329,10 +349,16 @@ public static class Gear
     private static void Buy(Town town, Agent a, Offer o)
     {
         var s = a.Hero!;
-        a.Gold -= o.Price;
-        if (o.Ware != null) Merchants.Bought(town, o.Shop, o.Ware, o.Price);
+        if (o.Ware != null)
+        {
+            // Second-hand pieces are haggled over; new stock goes at the price on the board.
+            double price = Math.Ceiling(o.Price * (1 - Merchants.Haggle(town, o.Shop, a)));
+            a.Gold -= price;
+            Merchants.Bought(town, o.Shop, o.Ware, price);
+        }
         else
         {
+            a.Gold -= o.Price;
             double tax = o.Price * town.TaxRate;
             town.Book(TreasuryAccount.SalesTax, tax);
             o.Shop.Cash += o.Price - tax - o.Price * Rules(town).Wholesale;

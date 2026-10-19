@@ -122,6 +122,12 @@ public sealed class HeroSheet
     /// <summary>Names of the magic gear worn, in slot order.</summary>
     public List<string> Items { get; } = [];
 
+    /// <summary>Carries one of the town's sending stones: their company can send word with no caster's slot (<see cref="Systems.Armory"/>).</summary>
+    public bool Stone { get; set; }
+
+    /// <summary>The day the mayor last gave them something from the armory.</summary>
+    public int LastGiftDay { get; set; } = -99;
+
     /// <summary>How far the hero will stand by the town, 0 to 100 (<see cref="Systems.Loyalty"/>).</summary>
     public double Loyalty { get; set; } = 55;
 
@@ -242,6 +248,9 @@ public sealed class Agent
     public int? JobId { get; set; }
     public int? SpouseId { get; set; }
     public int? CourtingId { get; set; }
+
+    /// <summary>Successes at their trade's skills, which slowly make them better at it (<see cref="Systems.Skills"/>).</summary>
+    public int Practice { get; set; }
 
     public Activity Activity { get; set; } = Activity.Idle;
     public int? LocationId { get; set; }

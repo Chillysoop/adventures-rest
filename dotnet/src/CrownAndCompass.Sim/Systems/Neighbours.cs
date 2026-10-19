@@ -602,7 +602,12 @@ public static class Neighbours
     {
         s.Cleared = true;
         s.ClearedTick = town.Tick;
-        if (s.Known != SiteKnowledge.Unheard) s.ThoughtCleared = true;
+        if (s.Known != SiteKnowledge.Unheard)
+        {
+            // Whoever cleared it says what they fought, so word of it also corrects who the town thought lived there.
+            s.ThoughtCleared = true;
+            s.Believed = Rumors.Occupants(town.Content, s.Def);
+        }
         foreach (var b in town.Bounties.Where(b => b.SiteId == s.Def.Id && b.Status == BountyStatus.Open))
         {
             b.Status = BountyStatus.Failed;

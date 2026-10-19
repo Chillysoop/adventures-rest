@@ -329,6 +329,9 @@ public sealed record TownRules
     /// <summary>Residents at which a town stops drawing settlers just for being new (<see cref="FrontierDraw"/>).</summary>
     public double FrontierSize { get; init; } = 1;
 
+    /// <summary>Open ground, in tiles, kept between any two buildings' footprints however they are turned.</summary>
+    public double BuildingGap { get; init; }
+
     /// <summary>Daily cost of keeping the town hall and council running.</summary>
     public double CivicUpkeep { get; init; }
 
@@ -1161,10 +1164,18 @@ public sealed class Content
     /// <summary>Decorations and set dressing the player can place (content/game/decor.json).</summary>
     public DecorRules Decor { get; init; } = new();
     public SeasonRules Seasons { get; init; } = new();
+
+    /// <summary>The crops a field can be sown with (content/game/farming.json).</summary>
+    public FarmingRules Farming { get; init; } = new();
     public TradeRules Trade { get; init; } = new();
+
+    /// <summary>The town armory: gifts, loot terms and pacts, buying loot (content/game/armory.json).</summary>
+    public ArmoryRules Armory { get; init; } = new();
     public NeighbourRules Neighbours { get; init; } = new();
     public LegacyRules Legacies { get; init; } = new();
     public UndercityRules Undercity { get; init; } = new();
+
+    public ResearchRules Research { get; init; } = new();
 
     /// <summary>The world's history: its ages, the powers that rose and fell, and the calendar (content/game/history.json).</summary>
     public HistoryRules History { get; init; } = new();
@@ -1199,6 +1210,9 @@ public sealed class Content
     public WardRules Wards { get; init; } = new();
     /// <summary>Fame and infamy for heroes and companies (content/game/notoriety.json).</summary>
     public NotorietyRules Notoriety { get; init; } = new();
+
+    /// <summary>Townsfolk and heroes' skills and everyday checks (content/game/skills.json).</summary>
+    public SkillRules Skills { get; init; } = new();
 
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
@@ -1340,10 +1354,13 @@ public sealed class Content
             City = Parse<CityRules>("city.json"),
             Decor = Parse<DecorRules>("decor.json"),
             Seasons = Parse<SeasonRules>("seasons.json"),
+            Farming = Parse<FarmingRules>("farming.json"),
             Trade = Parse<TradeRules>("trade.json"),
+            Armory = Parse<ArmoryRules>("armory.json"),
             Neighbours = Parse<NeighbourRules>("neighbours.json"),
             Legacies = Parse<LegacyRules>("legacies.json"),
             Undercity = Parse<UndercityRules>("undercity.json"),
+            Research = Parse<ResearchRules>("research.json"),
             History = Parse<HistoryRules>("history.json"),
             Stories = stories,
             Institutions = institutions,
@@ -1359,6 +1376,7 @@ public sealed class Content
             Merchants = Parse<MerchantRules>("merchants.json"),
             Wards = Parse<WardRules>("wards.json"),
             Notoriety = Parse<NotorietyRules>("notoriety.json"),
+            Skills = Parse<SkillRules>("skills.json"),
         };
     }
 
