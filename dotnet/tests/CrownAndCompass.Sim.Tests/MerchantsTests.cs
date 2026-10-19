@@ -67,4 +67,20 @@ public class MerchantsTests
         Assert.True(Factions.Coffers(t, guild) > coffers);
         Assert.Contains(t.Ledger.Entries, e => e.Text.Contains("to a fence"));
     }
+    [Fact]
+    public void APricelessRelicFencedMintsNoFortune()
+    {
+        var sim = new Simulation(new SimulationOptions { Seed = 3 });
+        var t = sim.Town;
+        var guild = Factions.Find(t, t.Content.Merchants.Fence.Faction)!;
+        for (int d = 0; d < 300 && !(guild.Active && guild.Members.Count > 0); d++) sim.RunDays(1);
+        var hero = Quests.CreateHero(t, t.Content.Classes.First(c => c.Id == "rogue"), 3);
+        hero.Hero!.Temper = "greedy";
+        var relic = t.Content.Library.Items.OrderByDescending(i => i.ValueGp).First();
+        double gold = hero.Gold, coffers = Factions.Coffers(t, guild);
+        Assert.True(Merchants.Sell(t, hero, relic));
+        double paid = hero.Gold - gold, cut = Factions.Coffers(t, guild) - coffers;
+        Assert.True(paid < relic.ValueGp * 0.1);
+        Assert.True(cut <= paid, $"the fence kept {cut} for an item it paid {paid} for");
+    }
 }
