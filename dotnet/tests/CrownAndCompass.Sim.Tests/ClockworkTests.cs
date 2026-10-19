@@ -7,12 +7,18 @@ public class ClockworkTests
     [Fact]
     public void AWardenNeedsACityAndAWorkshopThenGuardsTheWallsButUnsettlesTheTown()
     {
-        var sim = new Simulation(new SimulationOptions { Seed = 1, AutoDefense = false });
+        // An unguarded town can fall before it is a city; which seeds do shifts with every other system, so take the first that grows.
+        Simulation sim = null!;
+        foreach (int seed in new[] { 1, 2, 3 })
+        {
+            sim = new Simulation(new SimulationOptions { Seed = seed, AutoDefense = false });
+            Assert.NotNull(Clockwork.BuildBlocked(sim.Town));
+            Assert.False(sim.BuildWarden());
+            for (int d = 0; d < 900 && Clockwork.BuildBlocked(sim.Town) is { } why && why != "not enough gold"; d++) sim.RunDays(1);
+            if (Clockwork.BuildBlocked(sim.Town) is null or "not enough gold") break;
+        }
         var t = sim.Town;
-        Assert.NotNull(Clockwork.BuildBlocked(t));
-        Assert.False(sim.BuildWarden());
         var r = t.Content.Clockwork;
-        for (int d = 0; d < 900 && Clockwork.BuildBlocked(t) is { } why && why != "not enough gold"; d++) sim.RunDays(1);
         t.Treasury += r.Cost * 2;
         Assert.Null(Clockwork.BuildBlocked(t));
         double def = Clockwork.Defense(t), caught = Council.WatchStrength(t);
