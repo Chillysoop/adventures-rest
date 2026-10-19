@@ -218,6 +218,51 @@ public class InstitutionsTests
     }
 
     [Fact]
+    public void TheRoostWatchesTheRoadsAndTheOracleSeesAPlaceNoOneHasHeardOf()
+    {
+        var sim = Player();
+        var t = sim.Town;
+        sim.RunDays(1);
+        Raise(t, "griffon_roost");
+        Raise(t, "observatory");
+        sim.RunDays(1);
+        Assert.StartsWith("Roostmaster ", Institutions.KeeperName(t, Institutions.Find(t, "griffon-roost")!));
+        double escort = Institutions.Escort(t);
+        Assert.True(escort > 0);
+        Assert.True(sim.ChooseInstitution("griffon-roost", "roads"));
+        Assert.True(Institutions.Escort(t) > escort);
+        var story = Stories.Open(t, "oracle-vision")!;
+        var site = Quests.Site(t, story.SiteId!)!;
+        Assert.Equal(SiteKnowledge.Unheard, site.Known);
+        Assert.Contains(site.Def.Name, Stories.Fill(t, story, "she sees {site}"));
+    }
+
+    [Fact]
+    public void TheHallBringsTheFoundingBannerHomeAndTheDragonGuardsTheWalls()
+    {
+        var sim = Player();
+        var t = sim.Town;
+        sim.RunDays(1);
+        Raise(t, "hall_of_heroes");
+        Raise(t, "dragon_eyrie");
+        sim.RunDays(1);
+        t.Treasury = 1000;
+        var hero = Quests.CreateHero(t, t.Content.Classes[0], 5);
+        var s = Stories.Open(t, "heroes-banner")!;
+        s.HeroId = hero.Id;
+        // A reward finds the banner; paying the robber-lord's price brings it home to the empty pedestal.
+        Stories.Resolve(t, s.Id, 1);
+        Assert.Equal("price", s.Stage);
+        Stories.Resolve(t, s.Id, 0);
+        Assert.Contains("founding-banner", Institutions.Find(t, "hall-of-heroes")!.Fixtures);
+
+        Assert.StartsWith("Dragon ", Institutions.KeeperName(t, Institutions.Find(t, "resident-dragon")!));
+        double defence = Institutions.Defence(t);
+        Assert.True(sim.ChooseInstitution("resident-dragon", "protector"));
+        Assert.True(Institutions.Defence(t) > defence);
+    }
+
+    [Fact]
     public void AnInstitutionShutsWhenItsBuildingCloses()
     {
         var sim = Player();

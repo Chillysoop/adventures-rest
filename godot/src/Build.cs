@@ -84,7 +84,7 @@ public partial class Main
     private void BuildBuildBar()
     {
         _buildBar = new PanelContainer { Visible = false };
-        _buildBar.AddThemeStyleboxOverride("panel", Glass(14, 12, 10));
+        _buildBar.AddThemeStyleboxOverride("panel", Castle.Oak(16, 14));
         var col = new VBoxContainer();
         col.AddThemeConstantOverride("separation", 8);
         _buildBar.AddChild(col);

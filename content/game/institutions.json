@@ -891,6 +891,724 @@
           "text": "An old priest of the dead who took the post nobody wanted. He talks to the dark below as if it might answer, and sometimes it does."
         }
       ]
+    },
+    {
+      "id": "griffon-roost",
+      "name": "the Griffon Roost",
+      "building": "griffon_roost",
+      "tier": "town",
+      "title": "Roostmaster",
+      "blurb": "A timber tower of perches and nesting ledges where riders keep a flight of griffons. They wheel over the roads and the walls, and nothing sneaks up on a town that is watched from the sky.",
+      "service": {
+        "escort": 0.08,
+        "defence": 1,
+        "dread": -0.01
+      },
+      "choice": {
+        "label": "what the griffons fly for",
+        "text": "A flight of griffons can only be in one sky at a time. The council decides whose.",
+        "options": [
+          {
+            "id": "roads",
+            "name": "watching the roads",
+            "text": "Riders sweep the trade roads at dawn and dusk: ambushers are seen from a mile off.",
+            "service": {
+              "escort": 0.1
+            }
+          },
+          {
+            "id": "walls",
+            "name": "guarding the walls",
+            "text": "The flight circles the town: raiders find griffons stooping on them before they reach the gate.",
+            "service": {
+              "defence": 2
+            }
+          },
+          {
+            "id": "post",
+            "name": "carrying the post",
+            "text": "Letters, writs and small parcels by griffon to every town within a day's flight: merchants pay well for speed.",
+            "service": {
+              "gold": 2,
+              "mood": 0.05
+            }
+          },
+          {
+            "id": "breeding",
+            "name": "breeding foals",
+            "text": "The roost raises foals and sells them to lords and companies who can afford them.",
+            "service": {
+              "gold": 3,
+              "defence": -0.5
+            }
+          }
+        ]
+      },
+      "keepers": [
+        {
+          "name": "Hesk Windrow",
+          "text": "A one-eyed rider who lost the other to a griffon he still flies. He says it was a fair trade."
+        },
+        {
+          "name": "Maudry Featherstone",
+          "text": "She talks to the griffons in a whistled language no one else understands, and to people as little as possible."
+        },
+        {
+          "name": "Tamsin Gale",
+          "text": "The youngest roostmaster the marches ever named, who wins every argument by flying away from it."
+        }
+      ]
+    },
+    {
+      "id": "monster-sanctuary",
+      "name": "the Monster Sanctuary",
+      "building": "monster_sanctuary",
+      "tier": "large_town",
+      "title": "Beastwarden",
+      "blurb": "Walled pens, deep pools and a great iron aviary where wounded or orphaned monsters are kept, studied and sometimes healed. The town both loves and fears it, and visitors come from far away to stare.",
+      "service": {
+        "mood": 0.1,
+        "gold": 1,
+        "dread": 0.01,
+        "arrivals": 0.005
+      },
+      "choice": {
+        "label": "what the sanctuary is for",
+        "text": "A cage full of monsters can be a school, a show, a hospital or a garrison. The council decides which.",
+        "options": [
+          {
+            "id": "study",
+            "name": "study",
+            "text": "Scholars draw and dissect: their notes make remedies from venoms and hides.",
+            "service": {
+              "yields": {
+                "Potions": 1.08,
+                "Herbs": 1.05
+              }
+            }
+          },
+          {
+            "id": "show",
+            "name": "a menagerie for visitors",
+            "text": "Ticketed walks past the pens: crowds, coin, and the odd fainting.",
+            "service": {
+              "gold": 3,
+              "mood": 0.1,
+              "tension": 0.02
+            }
+          },
+          {
+            "id": "release",
+            "name": "healing and release",
+            "text": "Beasts are mended and let go far from the roads: the wilds are a little kinder to the town.",
+            "service": {
+              "dread": -0.03,
+              "escort": 0.04
+            }
+          },
+          {
+            "id": "guardians",
+            "name": "trained guardians",
+            "text": "The tamest beasts are trained to guard the gates. Raiders do not like what they find there.",
+            "service": {
+              "defence": 2,
+              "dread": 0.01
+            }
+          }
+        ]
+      },
+      "keepers": [
+        {
+          "name": "Corvane Ashby",
+          "text": "A former monster-hunter who stopped killing them after he raised an owlbear cub by mistake. He still has the scars, and the owlbear."
+        },
+        {
+          "name": "Ildra Venn",
+          "text": "A scholar who keeps meticulous records of every bite she has ever received, and is on her third ledger."
+        },
+        {
+          "name": "Gutch",
+          "text": "A half-orc of few words and enormous patience, who can calm a basilisk by humming and has never explained how."
+        }
+      ]
+    },
+    {
+      "id": "cursed-auction-house",
+      "name": "the Auction House of Marrow Lane",
+      "building": "auction_house",
+      "tier": "large_town",
+      "title": "Auctioneer",
+      "blurb": "A grand, gloomy hall where relics from ruins and dead adventurers' estates go under the hammer. The prices are excellent. Some of the lots are cursed. The auctioneer will not say which.",
+      "service": {
+        "gold": 3,
+        "tension": 0.02,
+        "dread": 0.01
+      },
+      "choice": {
+        "label": "the house's terms of sale",
+        "text": "Every lot carries a risk. The council decides how the house deals with it.",
+        "options": [
+          {
+            "id": "caveat",
+            "name": "buyer beware",
+            "text": "No questions, no guarantees, no refunds: the best prices and the worst surprises.",
+            "service": {
+              "gold": 3,
+              "tension": 0.02,
+              "dread": 0.01
+            }
+          },
+          {
+            "id": "appraised",
+            "name": "every lot appraised",
+            "text": "A wizard checks every lot before the hammer falls: fewer curses, smaller profits.",
+            "service": {
+              "gold": -1,
+              "dread": -0.02,
+              "tension": -0.02
+            }
+          },
+          {
+            "id": "sealed",
+            "name": "sealed lots for the brave",
+            "text": "Cursed lots are sold sealed to buyers who sign a waiver: adventurers love it.",
+            "service": {
+              "gold": 1,
+              "mood": 0.05
+            }
+          },
+          {
+            "id": "shadow",
+            "name": "a private room",
+            "text": "A back room for buyers who prefer not to be seen: the Quiet Hand is a regular.",
+            "service": {
+              "gold": 4,
+              "faction": "quiet-hand",
+              "standing": 0.1,
+              "tension": 0.03
+            }
+          }
+        ]
+      },
+      "keepers": [
+        {
+          "name": "Silas Marrow",
+          "text": "Gaunt, courteous and always in mourning black, he has sold three cursed crowns and never once touched one himself."
+        },
+        {
+          "name": "Madame Orsolya Vey",
+          "text": "A dealer in antiquities who speaks of every lot as if it were a living person, which on occasion it is."
+        },
+        {
+          "name": "Pim Tallowby",
+          "text": "A cheerful halfling with a hammer, a ledger and a remarkable talent for not being in the room when something goes wrong."
+        }
+      ]
+    },
+    {
+      "id": "fey-market",
+      "name": "the Fey Market",
+      "building": "fey_market",
+      "tier": "town",
+      "title": "Market Warden",
+      "blurb": "On moonlit nights a market of stalls that were not there by day: fey traders selling bottled laughter, glass apples and luck by the ounce. Everything has a price, and not all prices are paid in coin.",
+      "service": {
+        "mood": 0.15,
+        "yields": {
+          "Herbs": 1.05
+        },
+        "tension": 0.01
+      },
+      "choice": {
+        "label": "the market's rules",
+        "text": "The fey will trade on whatever terms the town sets, and keep to the letter of them. The council writes the letter.",
+        "options": [
+          {
+            "id": "coin",
+            "name": "coin only",
+            "text": "No bargains for names, years or firstborns: honest trade, at fey prices.",
+            "service": {
+              "gold": 2,
+              "tension": -0.02
+            }
+          },
+          {
+            "id": "bargains",
+            "name": "any bargain freely made",
+            "text": "Townsfolk may trade what they like. Most get the better of it. Some do not.",
+            "service": {
+              "gold": 1,
+              "mood": 0.15,
+              "tension": 0.03,
+              "arrivals": 0.005
+            }
+          },
+          {
+            "id": "revels",
+            "name": "revels at the full moon",
+            "text": "Music, dancing and lanterns on the water: the town loves it, and works a little less the morning after.",
+            "service": {
+              "mood": 0.25,
+              "build": -0.03
+            }
+          },
+          {
+            "id": "glamours",
+            "name": "glamours for the town",
+            "text": "The fey spin glamours over the streets: the town looks finer than it is, and settlers come.",
+            "service": {
+              "arrivals": 0.01,
+              "mood": 0.05
+            }
+          }
+        ]
+      },
+      "keepers": [
+        {
+          "name": "Old Nettle",
+          "text": "A townswoman who once bargained with a fey lord and won, and has been the only person they will deal with since."
+        },
+        {
+          "name": "Lirael of the Hollow Hill",
+          "text": "A fey courtier exiled for reasons she finds hilarious, who keeps order with a smile no one wants to see twice."
+        },
+        {
+          "name": "Jory Blackthorn",
+          "text": "A tinker who has spent too many nights in the market and now sees the stalls by day, which bothers him less than you would think."
+        }
+      ]
+    },
+    {
+      "id": "oracle-observatory",
+      "name": "the Oracle's Observatory",
+      "building": "observatory",
+      "tier": "city",
+      "title": "Oracle",
+      "blurb": "A domed tower of brass and glass where the oracle reads stars, smoke and bones. Some of what she sees comes true. The trick is knowing which.",
+      "service": {
+        "dread": -0.02,
+        "defence": 1,
+        "favour": 0.05
+      },
+      "choice": {
+        "label": "what the oracle watches",
+        "text": "Even an oracle can only watch one sky at a time. The council decides which way she looks.",
+        "options": [
+          {
+            "id": "enemies",
+            "name": "the town's enemies",
+            "text": "She reads the stars for war and treachery: the walls are manned before the enemy comes.",
+            "service": {
+              "defence": 2
+            }
+          },
+          {
+            "id": "harvests",
+            "name": "harvests and weather",
+            "text": "She tells the farmers when to sow and reap: the fields bear more.",
+            "service": {
+              "yields": {
+                "Food": 1.06
+              }
+            }
+          },
+          {
+            "id": "markets",
+            "name": "the markets",
+            "text": "She tells the merchants which caravans will come and which will not: the town trades shrewdly.",
+            "service": {
+              "gold": 3,
+              "escort": 0.05
+            }
+          },
+          {
+            "id": "gods",
+            "name": "the will of the gods",
+            "text": "She reads omens for the temples: the faithful are comforted, and the gods take note.",
+            "service": {
+              "favour": 0.1,
+              "mood": 0.1
+            }
+          }
+        ]
+      },
+      "keepers": [
+        {
+          "name": "Sibyl Auremont",
+          "text": "Blind since birth and unbothered by it, she says the stars are louder than they look."
+        },
+        {
+          "name": "Kestrel Duskwater",
+          "text": "A former navigator who reads the sky like a chart and hates being asked about love."
+        },
+        {
+          "name": "The Veiled One",
+          "text": "No one in town has seen her face. She answers questions before they are asked, which makes conversation brief."
+        }
+      ]
+    },
+    {
+      "id": "dungeon-entrance",
+      "name": "the Delve",
+      "building": "dungeon_entrance",
+      "tier": "town",
+      "title": "Delvemaster",
+      "blurb": "Diggers under the town broke into a buried hall of the Stonekings: stair below stair of giant-cut stone, sealed doors and older things behind them. A shaft, a winch and a ledger now stand over it, and companies come from far away to go down.",
+      "service": {
+        "heroes": 0.5,
+        "gold": 1,
+        "dread": 0.01
+      },
+      "choice": {
+        "label": "what the town does with the hall below",
+        "text": "A dungeon under the streets can make a town rich and famous, or eat it from below. The council decides how wide the way down stands.",
+        "options": [
+          {
+            "id": "sealed",
+            "name": "seal it",
+            "text": "Rubble, mortar and a ward over the shaft: the hall sleeps, and so does the town.",
+            "service": {
+              "dread": -0.03,
+              "heroes": -0.5,
+              "gold": -1
+            }
+          },
+          {
+            "id": "expedition",
+            "name": "a guarded expedition gate",
+            "text": "Licensed companies only, a watch on the winch and a rescue rope always ready: steady salvage, few surprises.",
+            "service": {
+              "gold": 2,
+              "defence": 1
+            }
+          },
+          {
+            "id": "open",
+            "name": "open to every company",
+            "text": "Anyone with a lantern and a fee goes down. Coin, heroes and trouble all come up the shaft.",
+            "service": {
+              "gold": 3,
+              "heroes": 1,
+              "dread": 0.02,
+              "tension": 0.03
+            }
+          },
+          {
+            "id": "famous",
+            "name": "the town above the dungeon",
+            "text": "Inns, guides, maps and souvenir giant-teeth: the dungeon becomes the town's name, and travellers come just to look.",
+            "service": {
+              "gold": 2,
+              "arrivals": 0.01,
+              "mood": 0.05
+            }
+          }
+        ]
+      },
+      "keepers": [
+        {
+          "name": "Odda Ropeknot",
+          "text": "A dwarf who has pulled more companies out of holes than anyone living, and bills them for the rope."
+        },
+        {
+          "name": "Senna Varlow",
+          "text": "A retired cartographer who has mapped nine levels below and is sure there is a tenth, because the ninth has a door with no stair."
+        },
+        {
+          "name": "Bertil Hask",
+          "text": "A former grave-digger who found the hall by accident and has been trying to make a living from it ever since."
+        }
+      ]
+    },
+    {
+      "id": "embassy-quarter",
+      "name": "the Embassy Quarter",
+      "building": "embassy_quarter",
+      "tier": "large_town",
+      "title": "Chamberlain",
+      "blurb": "A walled square of envoys' houses: a dwarven reception hall half under the ground, a pavilion of living trees, and a flooded courtyard for guests who would rather swim. The Chamberlain keeps the peace between them, and the trade roads open wider for it.",
+      "service": {
+        "routes": 0.5,
+        "arrivals": 0.005,
+        "gold": 1
+      },
+      "choice": {
+        "label": "which embassy gets the best ground",
+        "text": "Every embassy wants the square's fountain at its door. The one that gets it brings the most.",
+        "options": [
+          {
+            "id": "deep",
+            "name": "the heirs of the Deep Realm",
+            "text": "Dwarves and deep gnomes in a hall dug under the square: ore, tools and masons come up the roads.",
+            "service": {
+              "yields": {
+                "Tools": 1.08
+              },
+              "build": 0.03
+            }
+          },
+          {
+            "id": "forest",
+            "name": "the Court of First Leaves",
+            "text": "Elven envoys in a pavilion of living boughs: herbs, timber and a little more patience in the town.",
+            "service": {
+              "yields": {
+                "Herbs": 1.08,
+                "Timber": 1.05
+              },
+              "tension": -0.03
+            }
+          },
+          {
+            "id": "fens",
+            "name": "the stilt villages of the fens",
+            "text": "Lizardfolk envoys in a flooded courtyard: fish, reeds and boatmen who know every river.",
+            "service": {
+              "yields": {
+                "Food": 1.05
+              },
+              "escort": 0.05
+            }
+          },
+          {
+            "id": "league",
+            "name": "the free towns of the League",
+            "text": "The League's old towns send merchants as envoys: another trade road and more coin on it.",
+            "service": {
+              "routes": 1,
+              "gold": 1
+            }
+          }
+        ]
+      },
+      "keepers": [
+        {
+          "name": "Lord Aubric Fane",
+          "text": "A courtier from a marcher house so old it has run out of land, who can insult anyone in eleven languages and never does."
+        },
+        {
+          "name": "Mirela Quent",
+          "text": "A former smuggler who knows every envoy's secrets because she used to carry them."
+        },
+        {
+          "name": "Tobbe Underhill",
+          "text": "A halfling who believes any quarrel can be ended with the right dinner, and has the kitchen to prove it."
+        }
+      ]
+    },
+    {
+      "id": "planar-gatehouse",
+      "name": "the Gatehouse of Ways",
+      "building": "planar_gate",
+      "tier": "city",
+      "title": "Warden of Ways",
+      "blurb": "A ring of black stone taller than the walls, raised on the pattern of the old Ashkaari gates, that opens on places no road reaches. What comes through is rich, strange and sometimes hungry, and the Warden of Ways decides which door stands open.",
+      "service": {
+        "gold": 3,
+        "arrivals": 0.005,
+        "dread": 0.02,
+        "tension": 0.02
+      },
+      "choice": {
+        "label": "which way the gate opens",
+        "text": "The ring can be tuned to one far place at a time. Each sends its own goods, visitors and trouble.",
+        "options": [
+          {
+            "id": "brass",
+            "name": "the Brass Shore",
+            "text": "A coast of burning sand where salamander smiths work metal in the open air: tools and fire-hardened stone.",
+            "service": {
+              "yields": {
+                "Tools": 1.1
+              },
+              "build": 0.05,
+              "tension": 0.02
+            }
+          },
+          {
+            "id": "sung",
+            "name": "the Sung City",
+            "text": "A city where every agreement must be sung. Its merchants pay in silver notes, and the town learns to hum.",
+            "service": {
+              "gold": 3,
+              "mood": 0.1
+            }
+          },
+          {
+            "id": "hours",
+            "name": "the Hall of Hours",
+            "text": "A quiet place of bells and white stone where the hurt are mended: pilgrims, healers and calmer nights.",
+            "service": {
+              "heal": 0.08,
+              "dread": -0.04,
+              "favour": 0.05
+            }
+          },
+          {
+            "id": "dark",
+            "name": "keep it dark",
+            "text": "The ring is left cold and warded. Nothing comes through, and nothing pays.",
+            "service": {
+              "gold": -3,
+              "dread": -0.03,
+              "tension": -0.02
+            }
+          }
+        ]
+      },
+      "keepers": [
+        {
+          "name": "Ishmar Tey",
+          "text": "A scholar of the old Ashkaari gates who has been through nine of them and back out of eight."
+        },
+        {
+          "name": "Dame Corisande Vell",
+          "text": "A former knight of the League who guards the ring with a sword and a ledger, and trusts neither."
+        },
+        {
+          "name": "Pell",
+          "text": "A small, very old being of uncertain origin who came through the ring the day it was finished and has been helpful ever since."
+        }
+      ]
+    },
+    {
+      "id": "hall-of-heroes",
+      "name": "the Hall of Heroes",
+      "building": "hall_of_heroes",
+      "tier": "town",
+      "title": "Curator",
+      "blurb": "A long, high hall of trophies, memorial stones and recovered relics, with the town's adventures painted on its walls. Retired heroes teach in its yard, visitors come to stare, and one pedestal near the door stands empty, waiting for the founding banner the town lost long ago.",
+      "service": {
+        "heroes": 0.5,
+        "mood": 0.05,
+        "arrivals": 0.003
+      },
+      "choice": {
+        "label": "what the hall honours first",
+        "text": "A hall of heroes can be a museum, a memorial, a school or a seat of old champions. The council decides which.",
+        "options": [
+          {
+            "id": "trophies",
+            "name": "trophies and relics",
+            "text": "Monster heads, broken crowns and a dragon's tooth the size of a door: travellers pay to see them.",
+            "service": {
+              "gold": 2,
+              "arrivals": 0.005
+            }
+          },
+          {
+            "id": "fallen",
+            "name": "the fallen",
+            "text": "Memorial stones and candles for every hero who died for the town: the town mourns, and fears less.",
+            "service": {
+              "mood": 0.1,
+              "dread": -0.02
+            }
+          },
+          {
+            "id": "school",
+            "name": "a school for heroes",
+            "text": "Retired heroes train the young in the yard, and more of them stay on in the town.",
+            "service": {
+              "heroes": 1
+            }
+          },
+          {
+            "id": "champions",
+            "name": "a seat of old champions",
+            "text": "Grey-haired heroes sit as a council of their own, and stand on the walls when it matters.",
+            "service": {
+              "defence": 2,
+              "tension": -0.03
+            }
+          }
+        ]
+      },
+      "keepers": [
+        {
+          "name": "Old Marta Greyhand",
+          "text": "A retired sellsword who lost a hand to a troll and keeps it, pickled, in the first case by the door."
+        },
+        {
+          "name": "Fennick Dawe",
+          "text": "A bard who never adventured, knows every hero's story better than they do, and corrects them."
+        },
+        {
+          "name": "Sir Hallam Brook",
+          "text": "A knight who outlived his whole company and now dusts their shields every morning, one by one."
+        }
+      ]
+    },
+    {
+      "id": "resident-dragon",
+      "name": "the Dragon's Eyrie",
+      "building": "dragon_eyrie",
+      "tier": "large_town",
+      "title": "Dragon",
+      "blurb": "A dragon has taken the old tower on the hill as its residence, by treaty. It guards the town, eats a great deal, collects things, and has opinions about all of them. Roofs are built steeper now, festivals have a dragon in them, and children dare each other to wave.",
+      "service": {
+        "defence": 3,
+        "dread": 0.02,
+        "gold": -1,
+        "mood": 0.05
+      },
+      "choice": {
+        "label": "the dragon's duties under the treaty",
+        "text": "The treaty names what the dragon does for the town in return for its tower, its meat and its collection.",
+        "options": [
+          {
+            "id": "protector",
+            "name": "protector",
+            "text": "It circles the walls at dusk and the roads at dawn. Raiders who see it turn round.",
+            "service": {
+              "defence": 4,
+              "escort": 0.06
+            }
+          },
+          {
+            "id": "scholar",
+            "name": "scholar",
+            "text": "It reads in the library by night and lectures by day. Scribes copy what it remembers from the age of giants.",
+            "service": {
+              "yields": {
+                "Books": 1.1
+              },
+              "tension": -0.02
+            }
+          },
+          {
+            "id": "patron",
+            "name": "patron",
+            "text": "It lends from its hoard at a dragon's interest and invests in the town's trades.",
+            "service": {
+              "gold": 4
+            }
+          },
+          {
+            "id": "neighbour",
+            "name": "a sociable neighbour",
+            "text": "It attends every feast, judges the bake-off and gives rides at midsummer. Visitors come from three counties.",
+            "service": {
+              "mood": 0.15,
+              "arrivals": 0.01
+            }
+          }
+        ]
+      },
+      "keepers": [
+        {
+          "name": "Verdigrael",
+          "text": "A green-bronze dragon of great age who left the brood of the Old Wyrm, and says it was the best decision of its first thousand years."
+        },
+        {
+          "name": "Ossira Cinderwing",
+          "text": "A young red dragon who wants very much to be admired, and has found that a town admires better than a village burns."
+        },
+        {
+          "name": "Haldrex Greyquill",
+          "text": "A silver-grey dragon who came for the library, stayed for the bread, and keeps a list of everyone who has ever been rude to it."
+        }
+      ]
     }
   ],
   "fixtures": [
@@ -1041,6 +1759,150 @@
         "mood": 0.05,
         "hush": 0.05
       }
+    },
+    {
+      "id": "griffon-weathervane",
+      "name": "a griffon weathervane",
+      "institution": "griffon-roost",
+      "text": "A great bronze griffon on the roost's peak that turns before every storm. The farmers swear by it.",
+      "service": {
+        "yields": {
+          "Food": 1.02
+        },
+        "mood": 0.03
+      }
+    },
+    {
+      "id": "sanctuary-dragon-egg",
+      "name": "a dragon's egg",
+      "institution": "monster-sanctuary",
+      "text": "A warm, humming egg in a nest of coals. The whole town is waiting to see what hatches.",
+      "service": {
+        "arrivals": 0.005,
+        "mood": 0.05,
+        "gold": 1
+      }
+    },
+    {
+      "id": "auction-iron-box",
+      "name": "the iron box",
+      "institution": "cursed-auction-house",
+      "text": "A lead-lined vault where cursed lots wait to be appraised. Things inside it knock, but less than they used to.",
+      "service": {
+        "dread": -0.02,
+        "tension": -0.02
+      }
+    },
+    {
+      "id": "fey-ring",
+      "name": "a mushroom ring",
+      "institution": "fey-market",
+      "text": "A ring of white mushrooms in the market square that no one steps in. The fey keep their word more carefully near it.",
+      "service": {
+        "tension": -0.03,
+        "mood": 0.05
+      }
+    },
+    {
+      "id": "observatory-orrery",
+      "name": "a great orrery",
+      "institution": "oracle-observatory",
+      "text": "A clockwork model of the heavens, its brass spheres turning slowly overhead. It is sometimes a day ahead of the sky.",
+      "service": {
+        "defence": 0.5,
+        "favour": 0.05
+      }
+    },
+    {
+      "id": "delvers-winch",
+      "name": "a great winch over the shaft",
+      "institution": "dungeon-entrance",
+      "text": "A counterweighted winch that lowers whole companies and hauls them back up, wounded or not.",
+      "service": {
+        "heroes": 0.5,
+        "heal": 0.03
+      }
+    },
+    {
+      "id": "giants-door",
+      "name": "a giant's door in the square",
+      "institution": "dungeon-entrance",
+      "text": "A stone door three storeys high, hauled up from the deep and stood in the market square. Travellers come to stand in it.",
+      "service": {
+        "arrivals": 0.005,
+        "mood": 0.05
+      }
+    },
+    {
+      "id": "living-pavilion",
+      "name": "a pavilion of living trees",
+      "institution": "embassy-quarter",
+      "text": "The elven envoys' gift: a pavilion whose boughs grew into its roof overnight. Treaties signed under it tend to hold.",
+      "service": {
+        "tension": -0.03,
+        "mood": 0.05
+      }
+    },
+    {
+      "id": "envoys-table",
+      "name": "the envoys' long table",
+      "institution": "embassy-quarter",
+      "text": "A table where every embassy dines once a month by treaty. Most quarrels end over the second course.",
+      "service": {
+        "routes": 0.5,
+        "tension": -0.02
+      }
+    },
+    {
+      "id": "singing-stone",
+      "name": "a singing stone",
+      "institution": "planar-gatehouse",
+      "text": "A stone from the Sung City that hums the terms of every deal made beside it. Nobody cheats within earshot.",
+      "service": {
+        "gold": 1,
+        "tension": -0.02
+      }
+    },
+    {
+      "id": "founding-banner",
+      "name": "the founding banner",
+      "institution": "hall-of-heroes",
+      "text": "The banner the town's founders carried, recovered and hung over the empty pedestal at last. The whole town turned out to see it raised.",
+      "service": {
+        "mood": 0.15,
+        "defence": 1,
+        "heroes": 0.5
+      }
+    },
+    {
+      "id": "wall-of-names",
+      "name": "a wall of names",
+      "institution": "hall-of-heroes",
+      "text": "A wall carved with the name of every hero who fell for the town. People leave flowers under the names they knew.",
+      "service": {
+        "mood": 0.05,
+        "dread": -0.02
+      }
+    },
+    {
+      "id": "dragon-beacon",
+      "name": "a dragonfire beacon",
+      "institution": "resident-dragon",
+      "text": "A stone bowl on the tower that the dragon lights when danger comes. Everyone within ten miles knows to bar the door.",
+      "service": {
+        "defence": 2,
+        "escort": 0.03
+      }
+    },
+    {
+      "id": "griffon-hatchlings",
+      "name": "griffon hatchlings for the rescue riders",
+      "institution": "griffon-roost",
+      "text": "Hatchlings raised at the sanctuary and trained at the roost, flying rescue for lost companies and caravans.",
+      "service": {
+        "escort": 0.05,
+        "heal": 0.03
+      }
     }
   ],
   "precedents": [
@@ -1071,6 +1933,18 @@
     {
       "id": "undermarket-blind-eye",
       "text": "The town turned a blind eye to the market under the streets"
+    },
+    {
+      "id": "fey-bargain-honoured",
+      "text": "The town honoured a bargain made with the fey"
+    },
+    {
+      "id": "auction-refund",
+      "text": "The town made the auction house refund a cursed lot"
+    },
+    {
+      "id": "dragon-tithe",
+      "text": "The town paid the dragon's tithe"
     }
   ],
   "requests": [
@@ -4355,6 +5229,2920 @@
         "text": "The warden hangs an old pot on a chain instead.",
         "effects": {
           "goodwill": -2
+        }
+      }
+    },
+    {
+      "id": "roost-wild-flight",
+      "title": "A wild flight",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "institution:griffon-roost"
+      ],
+      "minDay": 40,
+      "repeatDays": 200,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A wild flight of griffons has come down from the peaks and is circling the roost, screaming. {keeper} says the tame ones want to join them, and the wild ones want the town's sheep.",
+          "options": [
+            {
+              "label": "Let the riders drive them off",
+              "skill": "athletics",
+              "dc": 14,
+              "success": {
+                "text": "The riders go up, and the wild flight goes back to the peaks with one fewer of its number.",
+                "effects": {
+                  "goodwill": 2,
+                  "tension": -1
+                }
+              },
+              "failure": {
+                "text": "Two riders come down hurt, and the wild flight takes the sheep anyway.",
+                "effects": {
+                  "food": -20,
+                  "goodwill": -2
+                }
+              }
+            },
+            {
+              "label": "Let {keeperName} try to tame one",
+              "skill": "animal-handling",
+              "dc": 15,
+              "prefer": 0.05,
+              "success": {
+                "text": "A wild griffon lands on the roost and stays. The flight is one stronger.",
+                "effects": {
+                  "goodwill": 6,
+                  "fixture:griffon-weathervane": 1
+                }
+              },
+              "failure": {
+                "text": "The wild griffon will not be tamed, and takes a rider's arm with it when it goes.",
+                "effects": {
+                  "goodwill": -3,
+                  "people": -1
+                }
+              }
+            },
+            {
+              "label": "Pay the shepherds and wait",
+              "cost": 50,
+              "success": {
+                "text": "The wild flight eats well for a week and leaves. The shepherds are paid for their sheep.",
+                "effects": {
+                  "goodwill": -1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The wild flight takes a dozen sheep and a shepherd's dog and goes.",
+        "effects": {
+          "food": -25,
+          "tension": 2,
+          "goodwill": -2
+        }
+      }
+    },
+    {
+      "id": "roost-and-hall",
+      "title": "Griffons for a company",
+      "stakes": "low",
+      "source": "heroes",
+      "needs": [
+        "institution:griffon-roost",
+        "institution:adventurers-hall",
+        "hero"
+      ],
+      "minDay": 60,
+      "repeatDays": 200,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero}'s company wants to hire griffons to fly them over the worst of the road to their next job. {keeper2} thinks it is a fine idea; {keeper} says the griffons are not mules.",
+          "options": [
+            {
+              "label": "Lend them the griffons",
+              "success": {
+                "text": "{heroName}'s company flies out over the trees, and is back before anyone expected.",
+                "effects": {
+                  "goodwill": -3,
+                  "goodwill2": 5,
+                  "heroXp": 40,
+                  "gold": 20
+                }
+              }
+            },
+            {
+              "label": "Lend one rider to scout for them",
+              "success": {
+                "text": "A rider scouts the road ahead and the company walks it safely.",
+                "effects": {
+                  "goodwill": 1,
+                  "goodwill2": 2,
+                  "heroXp": 20
+                }
+              }
+            },
+            {
+              "label": "Refuse",
+              "success": {
+                "text": "The company walks, grumbling, and the hall's clerks grumble louder.",
+                "effects": {
+                  "goodwill": 3,
+                  "goodwill2": -4
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The company walks.",
+        "effects": {
+          "goodwill2": -2
+        }
+      }
+    },
+    {
+      "id": "sanctuary-escape",
+      "title": "Something got out",
+      "stakes": "high",
+      "source": "town",
+      "needs": [
+        "institution:monster-sanctuary"
+      ],
+      "minDay": 50,
+      "repeatDays": 200,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Something got out of the sanctuary overnight. {keeper} will not say what, only that it is probably not dangerous and that everyone should stay indoors.",
+          "options": [
+            {
+              "label": "Send the watch to hunt it",
+              "skill": "survival",
+              "dc": 14,
+              "needs": [
+                "watch"
+              ],
+              "success": {
+                "text": "The watch corners a terrified displacer kitten in a bakery and brings it back in a sack.",
+                "effects": {
+                  "tension": -1,
+                  "goodwill": 1
+                }
+              },
+              "failure": {
+                "text": "The watch corners it, and it was dangerous. Two of them are in the healers' house.",
+                "effects": {
+                  "tension": 3,
+                  "goodwill": -2,
+                  "people": -1
+                }
+              }
+            },
+            {
+              "label": "Let {keeperName} lure it back",
+              "skill": "animal-handling",
+              "dc": 13,
+              "prefer": 0.05,
+              "success": {
+                "text": "{keeperName} sits in the square with a bucket of eels and a lullaby, and by dawn it has crept back to its pen.",
+                "effects": {
+                  "goodwill": 5
+                }
+              },
+              "failure": {
+                "text": "It does not come back, and the bucket of eels is found empty in the morning.",
+                "effects": {
+                  "tension": 2,
+                  "goodwill": -1
+                }
+              }
+            },
+            {
+              "label": "Shut the sanctuary until it is found",
+              "success": {
+                "text": "The pens are closed and the town hunts it for a week.",
+                "effects": {
+                  "goodwill": -6,
+                  "tension": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "It is found three days later living under the temple steps, and the town will not forget it.",
+        "effects": {
+          "tension": 3,
+          "dread": 1,
+          "goodwill": -2
+        }
+      }
+    },
+    {
+      "id": "sanctuary-egg",
+      "title": "An egg from the ruins",
+      "stakes": "medium",
+      "source": "heroes",
+      "needs": [
+        "institution:monster-sanctuary",
+        "hero"
+      ],
+      "minDay": 80,
+      "repeatDays": 320,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} has come back from a ruin with a warm, humming egg. {keeper} would give a great deal to keep it, and admits not knowing what it will hatch into.",
+          "options": [
+            {
+              "label": "Give it to the sanctuary",
+              "success": {
+                "text": "The egg is set in a nest of coals. The town lines up to look at it.",
+                "effects": {
+                  "goodwill": 8,
+                  "renown": 1,
+                  "fixture:sanctuary-dragon-egg": 1
+                }
+              }
+            },
+            {
+              "label": "Sell it",
+              "success": {
+                "text": "A collector from the coast pays a fortune for it.",
+                "effects": {
+                  "gold": 150,
+                  "goodwill": -4
+                }
+              }
+            },
+            {
+              "label": "Destroy it before it hatches",
+              "success": {
+                "text": "{heroName} smashes it. Whatever was inside was very nearly something.",
+                "effects": {
+                  "goodwill": -8,
+                  "dread": -1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "{heroName} keeps it under the bed, and the inn's rooms are warmer all winter.",
+        "effects": {
+          "goodwill": -2
+        }
+      }
+    },
+    {
+      "id": "sanctuary-and-arena",
+      "title": "Beasts for the games",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "institution:monster-sanctuary",
+        "institution:grand-arena"
+      ],
+      "minDay": 60,
+      "repeatDays": 240,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{keeper2} wants three of the sanctuary's beasts for the great games. {keeper} would sooner feed the Arena Master to them.",
+          "options": [
+            {
+              "label": "Lend the arena the beasts",
+              "success": {
+                "text": "The games are the best in years, and one beast does not come back.",
+                "effects": {
+                  "gold": 60,
+                  "goodwill": -8,
+                  "goodwill2": 6,
+                  "festival": 1
+                }
+              }
+            },
+            {
+              "label": "Forbid it",
+              "success": {
+                "text": "The games go on with hired brawlers. The crowds are thinner.",
+                "effects": {
+                  "goodwill": 5,
+                  "goodwill2": -5
+                }
+              }
+            },
+            {
+              "label": "A show of tricks, not a fight",
+              "skill": "animal-handling",
+              "dc": 15,
+              "prefer": 0.05,
+              "success": {
+                "text": "The beasts perform, untouched, and the crowd loves them more than any fight.",
+                "effects": {
+                  "goodwill": 3,
+                  "goodwill2": 3
+                }
+              },
+              "failure": {
+                "text": "The beasts will not perform, and the crowd jeers both keepers.",
+                "effects": {
+                  "goodwill": -2,
+                  "goodwill2": -2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The Arena Master steals a beast in the night, and both keepers come to the council shouting.",
+        "effects": {
+          "goodwill": -4,
+          "goodwill2": -2,
+          "tension": 2
+        }
+      }
+    },
+    {
+      "id": "auction-cursed-lot",
+      "title": "A lot that whispers",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "institution:cursed-auction-house"
+      ],
+      "minDay": 40,
+      "repeatDays": 180,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A merchant who bought a silver mirror at the auction house says it whispers at night and that his wife has started answering. He wants his money back. {keeper} says all sales are final.",
+          "options": [
+            {
+              "label": "Make the house refund him",
+              "success": {
+                "text": "{keeperName} refunds him with a face like a closed door. The mirror goes back in the vault.",
+                "effects": {
+                  "goodwill": -5,
+                  "mandate": 2,
+                  "precedent:auction-refund": 1
+                }
+              }
+            },
+            {
+              "label": "Have a priest break the curse",
+              "skill": "religion",
+              "dc": 14,
+              "cost": 30,
+              "success": {
+                "text": "The mirror stops whispering. The merchant's wife misses it.",
+                "effects": {
+                  "goodwill": 2,
+                  "dread": -1,
+                  "mandate": 1
+                }
+              },
+              "failure": {
+                "text": "The priest breaks the mirror, and the whispering moves into the walls.",
+                "effects": {
+                  "dread": 2,
+                  "tension": 2
+                }
+              }
+            },
+            {
+              "label": "Let the sale stand",
+              "success": {
+                "text": "The merchant leaves town, mirror and all.",
+                "effects": {
+                  "goodwill": 3,
+                  "mandate": -2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The merchant's wife leaves town with the mirror, and he blames the council.",
+        "effects": {
+          "mandate": -2,
+          "goodwill": 1
+        }
+      }
+    },
+    {
+      "id": "auction-mimic-lot",
+      "title": "Lot forty-two",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "institution:cursed-auction-house"
+      ],
+      "minDay": 50,
+      "repeatDays": 260,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Lot forty-two is a fine oak chest, and it has eaten an under-auctioneer. {keeper} would like to sell it anyway, as a curiosity.",
+          "options": [
+            {
+              "label": "Sell it, with a warning",
+              "success": {
+                "text": "A collector buys it at a fine price and is never seen again. Nor is the chest.",
+                "effects": {
+                  "gold": 80,
+                  "goodwill": 4,
+                  "tension": 1
+                }
+              }
+            },
+            {
+              "label": "Have it destroyed",
+              "success": {
+                "text": "The watch hacks it apart. It screams. Nobody in the hall sleeps well that night.",
+                "effects": {
+                  "goodwill": -3,
+                  "dread": 1
+                }
+              }
+            },
+            {
+              "label": "Lock it in an iron box",
+              "cost": 60,
+              "success": {
+                "text": "The chest goes into a lead-lined vault with the other things that knock. The auctioneer approves of the vault, if not the loss.",
+                "effects": {
+                  "goodwill": 1,
+                  "fixture:auction-iron-box": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The chest wanders off one night and turns up in a tavern cellar.",
+        "effects": {
+          "tension": 2,
+          "goodwill": -1
+        }
+      }
+    },
+    {
+      "id": "auction-and-temple",
+      "title": "A relic under the hammer",
+      "stakes": "medium",
+      "source": "faith",
+      "needs": [
+        "institution:cursed-auction-house",
+        "institution:temple-district"
+      ],
+      "minDay": 60,
+      "repeatDays": 260,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{keeper} has a holy relic up for sale, plundered from a ruined shrine. {keeper2} says it belongs to the gods and will not have it sold to the highest bidder.",
+          "options": [
+            {
+              "label": "Buy it for the temple",
+              "cost": 120,
+              "success": {
+                "text": "The council buys the relic and gives it back to the gods. The temple is grateful, and so is the auctioneer.",
+                "effects": {
+                  "goodwill": 3,
+                  "goodwill2": 8
+                }
+              }
+            },
+            {
+              "label": "Order it given up",
+              "success": {
+                "text": "The auctioneer gives it up and does not forgive the council.",
+                "effects": {
+                  "goodwill": -8,
+                  "goodwill2": 6,
+                  "mandate": 1
+                }
+              }
+            },
+            {
+              "label": "Let the sale go ahead",
+              "success": {
+                "text": "A stranger in grey buys it, and the priests pray against him.",
+                "effects": {
+                  "gold": 40,
+                  "goodwill": 4,
+                  "goodwill2": -8
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The relic is sold to a stranger and the priests preach against the auction house.",
+        "effects": {
+          "goodwill2": -5,
+          "tension": 1
+        }
+      }
+    },
+    {
+      "id": "auction-tainted-blade",
+      "title": "A blade with a past",
+      "stakes": "medium",
+      "source": "heroes",
+      "needs": [
+        "institution:cursed-auction-house",
+        "hero"
+      ],
+      "minDay": 60,
+      "repeatDays": 240,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} has their eye on a black sword at the auction: fine steel, an old curse, and a reputation for making its owners great and then terrible. {keeper} says the bidding opens tomorrow.",
+          "options": [
+            {
+              "label": "Let {heroName} buy it",
+              "success": {
+                "text": "{heroName} carries the black sword out of the hall. It fits their hand perfectly.",
+                "effects": {
+                  "goodwill": 4,
+                  "heroXp": 60,
+                  "taint": 1
+                }
+              }
+            },
+            {
+              "label": "Talk {heroName} out of it",
+              "skill": "persuasion",
+              "dc": 14,
+              "prefer": 0.05,
+              "success": {
+                "text": "{heroName} lets it go, and the sword goes to a mercenary who is never heard of again.",
+                "effects": {
+                  "goodwill": -1
+                }
+              },
+              "failure": {
+                "text": "{heroName} buys it anyway, sulking.",
+                "effects": {
+                  "taint": 1,
+                  "goodwill": 3
+                }
+              }
+            },
+            {
+              "label": "Buy it and lock it away",
+              "cost": 100,
+              "success": {
+                "text": "The council buys the sword and puts it in the vault, where it waits.",
+                "effects": {
+                  "goodwill": 2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "{heroName} buys it while the council is still talking.",
+        "effects": {
+          "taint": 1,
+          "goodwill": 2
+        }
+      }
+    },
+    {
+      "id": "fey-bargain",
+      "title": "A bargain gone wrong",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "institution:fey-market"
+      ],
+      "minDay": 40,
+      "repeatDays": 200,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A baker traded the colour of her eyes for a basket of fey bread that never goes stale. Now she wants her eyes back. {keeper} says a bargain is a bargain.",
+          "options": [
+            {
+              "label": "Honour the bargain",
+              "success": {
+                "text": "The baker keeps her bread and her grey eyes. The fey trade more freely with a town that keeps its word.",
+                "effects": {
+                  "goodwill": 6,
+                  "mandate": -1,
+                  "precedent:fey-bargain-honoured": 1
+                }
+              }
+            },
+            {
+              "label": "Bargain for them back",
+              "skill": "persuasion",
+              "dc": 15,
+              "prefer": 0.05,
+              "success": {
+                "text": "The fey trader gives back the colour of her eyes in exchange for a song no one has heard before. The town's bards are busy for a week.",
+                "effects": {
+                  "goodwill": 2,
+                  "mandate": 2
+                }
+              },
+              "failure": {
+                "text": "The fey trader agrees, for the colour of the mayor's own eyes. The council declines.",
+                "effects": {
+                  "goodwill": -2
+                }
+              }
+            },
+            {
+              "label": "Forbid such bargains",
+              "success": {
+                "text": "The market stays, but the fey trade sourly now.",
+                "effects": {
+                  "goodwill": -6,
+                  "mandate": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The baker sells fey bread for the rest of her life and never complains again.",
+        "effects": {
+          "goodwill": 2
+        }
+      }
+    },
+    {
+      "id": "fey-changeling",
+      "title": "A changeling",
+      "stakes": "high",
+      "source": "town",
+      "needs": [
+        "institution:fey-market"
+      ],
+      "minDay": 50,
+      "repeatDays": 300,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A family swears their baby was swapped for a changeling on market night. {keeper} says the fey would never; the family has a pitchfork.",
+          "options": [
+            {
+              "label": "Investigate",
+              "skill": "insight",
+              "dc": 14,
+              "success": {
+                "text": "It is their baby, teething and furious. The family is reassured, and the market's name with it.",
+                "effects": {
+                  "goodwill": 4,
+                  "tension": -1
+                }
+              },
+              "failure": {
+                "text": "Nobody can tell, and the street divides over it.",
+                "effects": {
+                  "tension": 3,
+                  "goodwill": -2
+                }
+              }
+            },
+            {
+              "label": "Demand the fey return the child",
+              "success": {
+                "text": "A fey courtier returns a baby in the night. Everyone agrees it is the right one. Mostly.",
+                "effects": {
+                  "goodwill": -4,
+                  "tension": -1,
+                  "dread": 1
+                }
+              }
+            },
+            {
+              "label": "Close the market for a month",
+              "success": {
+                "text": "The stalls do not come back for a month, and the town is duller for it.",
+                "effects": {
+                  "goodwill": -8,
+                  "tension": -2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The family leaves town with a baby that laughs at things no one else can see.",
+        "effects": {
+          "tension": 2,
+          "dread": 1,
+          "goodwill": -1
+        }
+      }
+    },
+    {
+      "id": "fey-and-grove",
+      "title": "A fey road through the grove",
+      "stakes": "medium",
+      "source": "faith",
+      "needs": [
+        "institution:fey-market",
+        "institution:druid-grove"
+      ],
+      "minDay": 60,
+      "repeatDays": 260,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{keeper} wants to open a fey road from the market through the grove's oldest trees, so traders can come from the Hollow Hill directly. {keeper2} says the trees will never be the same.",
+          "options": [
+            {
+              "label": "Open the fey road",
+              "success": {
+                "text": "Fey traders walk out of the oldest oak on market nights. The market thrives; the grove sulks.",
+                "effects": {
+                  "goodwill": 6,
+                  "goodwill2": -6,
+                  "gold": 40,
+                  "fixture:fey-ring": 1
+                }
+              }
+            },
+            {
+              "label": "Refuse",
+              "success": {
+                "text": "The trees stay as they are, and the fey market's warden goes quiet.",
+                "effects": {
+                  "goodwill": -5,
+                  "goodwill2": 5
+                }
+              }
+            },
+            {
+              "label": "Let the druids and the fey bargain",
+              "skill": "nature",
+              "dc": 15,
+              "prefer": 0.05,
+              "success": {
+                "text": "The druids set terms the fey can keep. The road opens on the solstice only.",
+                "effects": {
+                  "goodwill": 3,
+                  "goodwill2": 3
+                }
+              },
+              "failure": {
+                "text": "The druids and the fey quarrel, and the oak splits.",
+                "effects": {
+                  "goodwill": -3,
+                  "goodwill2": -5
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "A fey road opens anyway, one night, and closes behind three townsfolk.",
+        "effects": {
+          "people": -1,
+          "goodwill2": -3,
+          "dread": 2
+        }
+      }
+    },
+    {
+      "id": "oracle-vision",
+      "title": "A vision of the wilds",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "institution:oracle-observatory",
+        "unheard"
+      ],
+      "minDay": 60,
+      "repeatDays": 120,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{keeper} has seen a place in the smoke: {site}, and what waits there. She will describe it for the council's maps, for a price.",
+          "options": [
+            {
+              "label": "Pay for the vision",
+              "cost": 40,
+              "success": {
+                "text": "The oracle describes {site} in detail, and the cartographers draw it in.",
+                "effects": {
+                  "goodwill": 4,
+                  "reveal": 1
+                }
+              }
+            },
+            {
+              "label": "Ask her to describe it for the good of the town",
+              "skill": "persuasion",
+              "dc": 14,
+              "success": {
+                "text": "She describes it, sighing, and the maps are richer for it.",
+                "effects": {
+                  "reveal": 1,
+                  "goodwill": -1
+                }
+              },
+              "failure": {
+                "text": "She will not, and the vision fades.",
+                "effects": {
+                  "goodwill": -3
+                }
+              }
+            },
+            {
+              "label": "Decline",
+              "success": {
+                "text": "{keeperName} keeps the vision to herself, as is her right.",
+                "effects": {
+                  "goodwill": -2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The vision fades, unrecorded.",
+        "effects": {
+          "goodwill": -1
+        }
+      }
+    },
+    {
+      "id": "oracle-doom",
+      "title": "A prophecy of doom",
+      "stakes": "medium",
+      "source": "council",
+      "needs": [
+        "institution:oracle-observatory"
+      ],
+      "minDay": 60,
+      "repeatDays": 300,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{keeper} has foretold that the town will burn before the year is out. The town is in a panic. She is quite sure, mostly.",
+          "options": [
+            {
+              "label": "Announce it and prepare",
+              "success": {
+                "text": "The town digs firebreaks and fills cisterns. Nothing burns. Was the prophecy wrong, or was it averted?",
+                "effects": {
+                  "goodwill": 4,
+                  "tension": -1,
+                  "dread": 1,
+                  "gold": -30
+                }
+              }
+            },
+            {
+              "label": "Ask her to read again",
+              "skill": "arcana",
+              "dc": 14,
+              "prefer": 0.05,
+              "success": {
+                "text": "She reads again: it was not the town that would burn, but a barn. The barn burns. Everyone is relieved.",
+                "effects": {
+                  "goodwill": 2,
+                  "tension": -2
+                }
+              },
+              "failure": {
+                "text": "She reads again and sees it again. The town is more frightened than ever.",
+                "effects": {
+                  "dread": 3,
+                  "tension": 2
+                }
+              }
+            },
+            {
+              "label": "Silence her",
+              "success": {
+                "text": "The oracle is forbidden to speak of it. The rumours are worse than the prophecy.",
+                "effects": {
+                  "goodwill": -8,
+                  "tension": 3
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The prophecy spreads unchecked, and the town lives in fear.",
+        "effects": {
+          "dread": 3,
+          "tension": 2
+        }
+      }
+    },
+    {
+      "id": "oracle-and-library",
+      "title": "The star charts",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "institution:oracle-observatory",
+        "institution:wizards-library"
+      ],
+      "minDay": 60,
+      "repeatDays": 260,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{keeper} needs the library's oldest star charts. {keeper2} will not let them leave the building.",
+          "options": [
+            {
+              "label": "Order them lent",
+              "success": {
+                "text": "The charts go to the tower. The oracle's readings grow sharper, and the librarian sulks.",
+                "effects": {
+                  "goodwill": 5,
+                  "goodwill2": -4,
+                  "fixture:observatory-orrery": 1
+                }
+              }
+            },
+            {
+              "label": "Have the oracle read them in the library",
+              "success": {
+                "text": "The oracle reads them at the library's tables, and both keepers learn something.",
+                "effects": {
+                  "goodwill": 2,
+                  "goodwill2": 2,
+                  "lore": 20
+                }
+              }
+            },
+            {
+              "label": "Leave them where they are",
+              "success": {
+                "text": "The oracle reads the sky without them, and says so often.",
+                "effects": {
+                  "goodwill": -3,
+                  "goodwill2": 2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The charts stay in the library, and the oracle stops speaking to the librarian.",
+        "effects": {
+          "goodwill": -2,
+          "goodwill2": -1
+        }
+      }
+    },
+    {
+      "id": "delve-overdue",
+      "title": "A company overdue below",
+      "stakes": "high",
+      "source": "heroes",
+      "needs": [
+        "institution:dungeon-entrance",
+        "hero"
+      ],
+      "minDay": 50,
+      "repeatDays": 180,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A company went down the shaft four days ago with rope for three. {keeper} has heard nothing up the speaking tube since yesterday and wants a rescue sent before the lanterns run out.",
+          "options": [
+            {
+              "label": "Send {heroName} down after them",
+              "skill": "survival",
+              "dc": 14,
+              "aid": "hero",
+              "prefer": 0.05,
+              "success": {
+                "text": "{heroName} finds them on the sixth stair, starving behind a door that only opens from outside, and brings every one of them up.",
+                "effects": {
+                  "goodwill": 6,
+                  "heroXp": 40,
+                  "renown": 1
+                }
+              },
+              "failure": {
+                "text": "{heroName} brings up two of the five, and does not talk about the other three.",
+                "effects": {
+                  "goodwill": 2,
+                  "wound": 10,
+                  "people": -1
+                }
+              }
+            },
+            {
+              "label": "Lower the rescue rope and wait",
+              "skill": "perception",
+              "dc": 15,
+              "success": {
+                "text": "On the third night a hand pulls on the rope. Then four more.",
+                "effects": {
+                  "goodwill": 3
+                }
+              },
+              "failure": {
+                "text": "The rope comes up cut.",
+                "effects": {
+                  "goodwill": -3,
+                  "dread": 2
+                }
+              }
+            },
+            {
+              "label": "They knew the risk",
+              "success": {
+                "text": "{keeper} crosses their names off the ledger, slowly.",
+                "effects": {
+                  "goodwill": -5,
+                  "dread": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "Nobody goes after them. Their names stay in the ledger with no line through them.",
+        "effects": {
+          "goodwill": -4,
+          "dread": 2
+        }
+      }
+    },
+    {
+      "id": "delve-hoard",
+      "title": "A hoard from the deep",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "institution:dungeon-entrance"
+      ],
+      "minDay": 60,
+      "repeatDays": 200,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A company has come up the shaft with a Stoneking's hoard: gold rings the size of cartwheels and a crown no one can lift alone. The town's charter says a share is the council's. {keeper} says the companies will stop coming if the council takes it.",
+          "options": [
+            {
+              "label": "Take the council's share",
+              "success": {
+                "text": "The treasury fills. The next companies go down a little less eagerly.",
+                "effects": {
+                  "gold": 120,
+                  "goodwill": -4
+                }
+              }
+            },
+            {
+              "label": "Let the company keep it",
+              "success": {
+                "text": "The company drinks the town dry and tells everyone where they found it. More companies arrive.",
+                "effects": {
+                  "goodwill": 5,
+                  "mandate": 1,
+                  "gold": 20
+                }
+              }
+            },
+            {
+              "label": "Buy the crown for the town",
+              "cost": 80,
+              "success": {
+                "text": "The giant's crown is set up in the square. People sit in it.",
+                "effects": {
+                  "goodwill": 3,
+                  "festival": 2,
+                  "fixture:giants-door": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The company sells the hoard piecemeal in the next town over.",
+        "effects": {
+          "goodwill": -1
+        }
+      }
+    },
+    {
+      "id": "delve-followed",
+      "title": "Something followed them up",
+      "stakes": "high",
+      "source": "town",
+      "needs": [
+        "institution:dungeon-entrance"
+      ],
+      "minDay": 70,
+      "repeatDays": 220,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Something came up the shaft clinging under the winch cage and is now loose in the cellars round the Delve. {keeper} saw it go by and will only say it had too many joints.",
+          "options": [
+            {
+              "label": "Send the watch into the cellars",
+              "skill": "athletics",
+              "dc": 14,
+              "needs": [
+                "watch"
+              ],
+              "success": {
+                "text": "The watch corners it in a cooper's cellar and finishes it with pitchforks and spears.",
+                "effects": {
+                  "goodwill": 2,
+                  "mandate": 1
+                }
+              },
+              "failure": {
+                "text": "It takes a watchman before the rest drive it back down the shaft.",
+                "effects": {
+                  "people": -1,
+                  "dread": 3,
+                  "goodwill": -2
+                }
+              }
+            },
+            {
+              "label": "Have the Delvemaster lure it back",
+              "skill": "animal-handling",
+              "dc": 15,
+              "prefer": 0.05,
+              "success": {
+                "text": "{keeperName} lowers a side of beef and the cage, and it climbs aboard. The cage goes down without it coming back.",
+                "effects": {
+                  "goodwill": 4
+                }
+              },
+              "failure": {
+                "text": "It takes the beef and stays.",
+                "effects": {
+                  "dread": 2,
+                  "goodwill": -2
+                }
+              }
+            },
+            {
+              "label": "Shut the Delve until it's found",
+              "success": {
+                "text": "A week of shut doors. A cat finds it first, and nobody is sure the cat won.",
+                "effects": {
+                  "gold": -40,
+                  "goodwill": -3,
+                  "dread": -1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "It is seen on rooftops for a month, then not again.",
+        "effects": {
+          "dread": 4,
+          "tension": 2
+        }
+      }
+    },
+    {
+      "id": "delve-door",
+      "title": "A door with no stair",
+      "stakes": "medium",
+      "source": "heroes",
+      "needs": [
+        "institution:dungeon-entrance",
+        "unheard",
+        "hero"
+      ],
+      "minDay": 80,
+      "repeatDays": 260,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "On the ninth level {keeper}'s mappers found a giant's door carved with a map of the world above. One mark on it lies where no one in town has ever been: {site}.",
+          "options": [
+            {
+              "label": "Have {heroName} copy the map",
+              "skill": "investigation",
+              "dc": 13,
+              "aid": "hero",
+              "prefer": 0.05,
+              "success": {
+                "text": "{heroName} spends a night under the door with chalk and paper and comes up with a road to {site}.",
+                "effects": {
+                  "reveal": 1,
+                  "heroXp": 20,
+                  "goodwill": 3
+                }
+              },
+              "failure": {
+                "text": "{heroName} copies half of it before the lantern fails.",
+                "effects": {
+                  "goodwill": 1
+                }
+              }
+            },
+            {
+              "label": "Open the door",
+              "skill": "athletics",
+              "dc": 16,
+              "success": {
+                "text": "It opens on a sealed vault, and the vault on a staircase going down again. The Delve is deeper than anyone thought.",
+                "effects": {
+                  "gold": 60,
+                  "dread": 2,
+                  "goodwill": 4
+                }
+              },
+              "failure": {
+                "text": "It does not open, and something on the other side knows someone tried.",
+                "effects": {
+                  "dread": 3
+                }
+              }
+            },
+            {
+              "label": "Leave the ninth level alone",
+              "success": {
+                "text": "The mappers are told to stop at eight. They grumble, and keep mapping.",
+                "effects": {
+                  "goodwill": -2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The mappers copy the door on their own and sell the map in the tavern.",
+        "effects": {
+          "goodwill": -1,
+          "reveal": 1
+        }
+      }
+    },
+    {
+      "id": "delve-and-hall",
+      "title": "Who runs the delve contracts",
+      "stakes": "low",
+      "source": "heroes",
+      "needs": [
+        "institution:dungeon-entrance",
+        "institution:adventurers-hall"
+      ],
+      "minDay": 60,
+      "repeatDays": 240,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{keeper2} wants every company that goes down the shaft registered at the hall and paying its dues there. {keeper} says the Delve keeps its own ledger and always has.",
+          "options": [
+            {
+              "label": "The hall registers them",
+              "success": {
+                "text": "Contracts, dues and rescue insurance, all in the hall's neat hand. The Delvemaster sulks by the winch.",
+                "effects": {
+                  "goodwill": -4,
+                  "goodwill2": 5,
+                  "gold": 20
+                }
+              }
+            },
+            {
+              "label": "The Delve keeps its ledger",
+              "success": {
+                "text": "{keeperName} keeps the ledger. The Hallmaster keeps a list of grievances.",
+                "effects": {
+                  "goodwill": 5,
+                  "goodwill2": -4
+                }
+              }
+            },
+            {
+              "label": "One ledger, kept together",
+              "cost": 30,
+              "success": {
+                "text": "Two keepers and one ledger. They argue over every line and catch every mistake.",
+                "effects": {
+                  "goodwill": 2,
+                  "goodwill2": 2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "Two ledgers, neither complete, and a company goes down that is in neither.",
+        "effects": {
+          "goodwill": -2,
+          "goodwill2": -2
+        }
+      }
+    },
+    {
+      "id": "delve-and-sanctuary",
+      "title": "A beast from the deep",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "institution:dungeon-entrance",
+        "institution:monster-sanctuary"
+      ],
+      "minDay": 70,
+      "repeatDays": 240,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A company has brought up a pale, eyeless beast from the bottom of the Delve, alive, in a net. {keeper2} wants it for the sanctuary. {keeper} wants it thrown back down before its mother comes looking.",
+          "options": [
+            {
+              "label": "Give it to the sanctuary",
+              "skill": "animal-handling",
+              "dc": 14,
+              "prefer": 0.05,
+              "success": {
+                "text": "The beast settles in the sanctuary's darkest pen and eats only mushrooms. Scholars come from three towns.",
+                "effects": {
+                  "goodwill": -3,
+                  "goodwill2": 6
+                }
+              },
+              "failure": {
+                "text": "It settles in. Then, one night, something large comes up the shaft looking for it.",
+                "effects": {
+                  "goodwill2": 3,
+                  "dread": 4,
+                  "tension": 2
+                }
+              }
+            },
+            {
+              "label": "Send it back down",
+              "success": {
+                "text": "The net is lowered on the winch and comes up empty. The Delve is quiet.",
+                "effects": {
+                  "goodwill": 4,
+                  "goodwill2": -4
+                }
+              }
+            },
+            {
+              "label": "Sell it",
+              "success": {
+                "text": "A collector from the coast pays very well and asks no questions.",
+                "effects": {
+                  "gold": 80,
+                  "goodwill": -1,
+                  "goodwill2": -5
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The beast chews through the net and goes home on its own.",
+        "effects": {
+          "goodwill": -1,
+          "goodwill2": -2
+        }
+      }
+    },
+    {
+      "id": "embassy-concessions",
+      "title": "An envoy's terms",
+      "stakes": "medium",
+      "source": "trade",
+      "needs": [
+        "institution:embassy-quarter",
+        "settlement"
+      ],
+      "minDay": 60,
+      "repeatDays": 180,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The envoy from {settlement} asks for a lower toll on their wagons. {keeper} says it would make a friend of them; the merchants say it would make a beggar of the treasury.",
+          "options": [
+            {
+              "label": "Grant the lower toll",
+              "success": {
+                "text": "{settlement}'s wagons roll in toll-free and their envoy toasts the town at every dinner.",
+                "effects": {
+                  "gold": -40,
+                  "regard": 8,
+                  "prosperity": 5,
+                  "goodwill": 4
+                }
+              }
+            },
+            {
+              "label": "Bargain for something back",
+              "skill": "persuasion",
+              "dc": 14,
+              "prefer": 0.05,
+              "success": {
+                "text": "{keeperName} trades the toll for {settlement}'s grain at a good price. Both sides call it a victory.",
+                "effects": {
+                  "regard": 4,
+                  "food": 30,
+                  "goodwill": 3
+                }
+              },
+              "failure": {
+                "text": "The envoy takes offence at the haggling and goes home early.",
+                "effects": {
+                  "regard": -4,
+                  "goodwill": -2
+                }
+              }
+            },
+            {
+              "label": "Refuse",
+              "success": {
+                "text": "The envoy bows very low and very coldly.",
+                "effects": {
+                  "regard": -5,
+                  "goodwill": -2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The envoy waits a month for an answer, then stops waiting.",
+        "effects": {
+          "regard": -3,
+          "goodwill": -2
+        }
+      }
+    },
+    {
+      "id": "embassy-duel",
+      "title": "Two envoys and one fountain",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "institution:embassy-quarter"
+      ],
+      "minDay": 50,
+      "repeatDays": 220,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Two envoys both claim the same corner of the square for their banners, and one has challenged the other to a duel at dawn. {keeper} begs the council to stop it without seeming to take sides.",
+          "options": [
+            {
+              "label": "Stop it with a feast",
+              "cost": 40,
+              "success": {
+                "text": "Both envoys are seated at the council's table, with the fountain between them. By the pudding they are allies against the cook.",
+                "effects": {
+                  "goodwill": 5,
+                  "fixture:envoys-table": 1
+                }
+              }
+            },
+            {
+              "label": "Let them duel",
+              "success": {
+                "text": "A great deal of shouting, one scratch and two delighted crowds. Both claim the corner.",
+                "effects": {
+                  "goodwill": -3,
+                  "tension": 1
+                }
+              }
+            },
+            {
+              "label": "Settle it by the old charter",
+              "skill": "history",
+              "dc": 13,
+              "success": {
+                "text": "{keeper} finds a line in the charter that gives the corner to neither. Both are equally annoyed, which is the point.",
+                "effects": {
+                  "goodwill": 3,
+                  "mandate": 1
+                }
+              },
+              "failure": {
+                "text": "The charter is no help, and both envoys say so to their kings.",
+                "effects": {
+                  "goodwill": -2,
+                  "tension": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "They duel. Nobody dies, but their kings hear about it.",
+        "effects": {
+          "goodwill": -3,
+          "tension": 2
+        }
+      }
+    },
+    {
+      "id": "embassy-asylum",
+      "title": "A request for sanctuary",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "institution:embassy-quarter"
+      ],
+      "minDay": 60,
+      "repeatDays": 260,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A minor noble has climbed the embassy quarter's wall at night and asks the town for sanctuary from their own family. {keeper} says hiding them will be noticed, and handing them over will be remembered.",
+          "options": [
+            {
+              "label": "Grant sanctuary",
+              "success": {
+                "text": "The noble stays, opens a perfumery and becomes very popular. Their family sends a letter every month.",
+                "effects": {
+                  "people": 1,
+                  "goodwill": -1,
+                  "tension": 1
+                }
+              }
+            },
+            {
+              "label": "Send them home",
+              "success": {
+                "text": "The family sends a gift of thanks and a promise. The noble's servants spit as they pass the town hall.",
+                "effects": {
+                  "gold": 60,
+                  "goodwill": 2,
+                  "mandate": -1
+                }
+              }
+            },
+            {
+              "label": "Find out why they ran",
+              "skill": "insight",
+              "dc": 13,
+              "prefer": 0.05,
+              "success": {
+                "text": "The family wanted them married to a lich's grandson. The town keeps them, and nobody argues.",
+                "effects": {
+                  "people": 1,
+                  "goodwill": 3,
+                  "mandate": 1
+                }
+              },
+              "failure": {
+                "text": "The story changes every time they tell it.",
+                "effects": {
+                  "goodwill": -1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The noble climbs back over the wall and is gone by morning.",
+        "effects": {
+          "goodwill": -2
+        }
+      }
+    },
+    {
+      "id": "embassy-and-tavern",
+      "title": "Envoys in their cups",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "institution:embassy-quarter",
+        "institution:famous-tavern"
+      ],
+      "minDay": 60,
+      "repeatDays": 240,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Three envoys have been drinking in {keeper2}'s back room every night and talking far too freely. {keeper} wants it stopped; {keeper2} says it is the best trade the tavern has had all year.",
+          "options": [
+            {
+              "label": "Let them drink, and listen",
+              "success": {
+                "text": "The tavern's ears and the council's purse both do well. The envoys never suspect.",
+                "effects": {
+                  "goodwill": -2,
+                  "goodwill2": 4,
+                  "gold": 40,
+                  "mandate": 1
+                }
+              }
+            },
+            {
+              "label": "Give the envoys their own cellar",
+              "cost": 40,
+              "success": {
+                "text": "The quarter gets a wine cellar of its own. The tavern loses its best customers.",
+                "effects": {
+                  "goodwill": 4,
+                  "goodwill2": -4
+                }
+              }
+            },
+            {
+              "label": "Warn the envoys",
+              "success": {
+                "text": "The envoys are touched by the warning and drink more carefully, and more gratefully.",
+                "effects": {
+                  "goodwill": 3,
+                  "goodwill2": -1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "One envoy says something unforgivable about another's queen, loudly.",
+        "effects": {
+          "goodwill": -3,
+          "tension": 2
+        }
+      }
+    },
+    {
+      "id": "embassy-and-grove",
+      "title": "A pavilion that grows",
+      "stakes": "low",
+      "source": "faith",
+      "needs": [
+        "institution:embassy-quarter",
+        "institution:druid-grove"
+      ],
+      "minDay": 60,
+      "repeatDays": 300,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The elven envoys want the grove's druids to sing a pavilion of living trees into the embassy square. {keeper2} will do it if the square's paving comes up for good. {keeper} hates the idea of mud at a reception.",
+          "options": [
+            {
+              "label": "Let the trees grow",
+              "cost": 30,
+              "success": {
+                "text": "The pavilion grows overnight, boughs knotted into a roof. Envoys sign under it and seem to mean it.",
+                "effects": {
+                  "goodwill": 2,
+                  "goodwill2": 5,
+                  "fixture:living-pavilion": 1
+                }
+              }
+            },
+            {
+              "label": "A pavilion in tubs",
+              "success": {
+                "text": "A handsome pavilion of potted trees. The elves are too polite to say what they think.",
+                "effects": {
+                  "goodwill": 3,
+                  "goodwill2": -2
+                }
+              }
+            },
+            {
+              "label": "Keep the paving",
+              "success": {
+                "text": "The paving stays. The elven envoy plants one seed between two stones anyway.",
+                "effects": {
+                  "goodwill": 2,
+                  "goodwill2": -4
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "A tree comes up through the paving on its own, and nobody quite dares cut it down.",
+        "effects": {
+          "goodwill": -1,
+          "goodwill2": 1
+        }
+      }
+    },
+    {
+      "id": "ways-sung-delegation",
+      "title": "A treaty that must be sung",
+      "stakes": "medium",
+      "source": "trade",
+      "needs": [
+        "institution:planar-gatehouse"
+      ],
+      "minDay": 60,
+      "repeatDays": 200,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A merchant delegation has come through the ring from a place where every agreement must be sung, and refuses to sign anything spoken. {keeper} needs someone to sing the town's side of the deal.",
+          "options": [
+            {
+              "label": "The mayor sings",
+              "skill": "performance",
+              "dc": 14,
+              "success": {
+                "text": "Your voice cracks on the third verse, and the delegation weeps for joy at your sincerity. The deal is very good.",
+                "effects": {
+                  "gold": 120,
+                  "goodwill": 4,
+                  "mandate": 1
+                }
+              },
+              "failure": {
+                "text": "The delegation listens politely, then sings a short, sad verse about tone.",
+                "effects": {
+                  "gold": 20,
+                  "goodwill": -1
+                }
+              }
+            },
+            {
+              "label": "Hire a choir",
+              "cost": 30,
+              "success": {
+                "text": "The choir sings the terms in four parts. The delegation signs, and asks for the choir's names.",
+                "effects": {
+                  "gold": 60,
+                  "goodwill": 2
+                }
+              }
+            },
+            {
+              "label": "Send them home unsung",
+              "success": {
+                "text": "They sing their farewell on the way back through the ring. It is quite rude.",
+                "effects": {
+                  "goodwill": -3
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The delegation sings to the square all night, then leaves.",
+        "effects": {
+          "goodwill": -2
+        }
+      }
+    },
+    {
+      "id": "ways-uninvited",
+      "title": "Something came through uninvited",
+      "stakes": "high",
+      "source": "town",
+      "needs": [
+        "institution:planar-gatehouse"
+      ],
+      "minDay": 70,
+      "repeatDays": 240,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The ring flared at midnight and something stepped through that nobody had tuned it for. It is sitting in the gatehouse yard, very still, looking at the town. {keeper} has the ring shut and wants orders.",
+          "options": [
+            {
+              "label": "Speak to it",
+              "skill": "arcana",
+              "dc": 15,
+              "prefer": 0.05,
+              "success": {
+                "text": "It was lost, and grateful, and leaves a gift of something warm and bright before it goes back.",
+                "effects": {
+                  "gold": 60,
+                  "goodwill": 4,
+                  "dread": -2
+                }
+              },
+              "failure": {
+                "text": "It answers in a way that makes the watch's noses bleed, and walks back through the ring. Nobody sleeps that night.",
+                "effects": {
+                  "dread": 4,
+                  "goodwill": -1
+                }
+              }
+            },
+            {
+              "label": "Drive it back with the watch",
+              "skill": "intimidation",
+              "dc": 14,
+              "needs": [
+                "watch"
+              ],
+              "success": {
+                "text": "The watch advances in a line, and it steps backwards through the ring with what looks like a shrug.",
+                "effects": {
+                  "goodwill": 2,
+                  "mandate": 1
+                }
+              },
+              "failure": {
+                "text": "The watch advances, and two of them do not come back from the far side of the ring.",
+                "effects": {
+                  "people": -1,
+                  "dread": 3,
+                  "goodwill": -3
+                }
+              }
+            },
+            {
+              "label": "Leave it be",
+              "success": {
+                "text": "By dawn it is gone. So are all the town's bells.",
+                "effects": {
+                  "dread": 2,
+                  "goodwill": -2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "It walks into the town at dawn and is seen in three places at once.",
+        "effects": {
+          "dread": 5,
+          "tension": 3
+        }
+      }
+    },
+    {
+      "id": "ways-flicker",
+      "title": "The ring flickers",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "institution:planar-gatehouse"
+      ],
+      "minDay": 80,
+      "repeatDays": 220,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The black stones of the ring have begun to hum out of tune, and the far side flickers between places nobody chose. {keeper} says the ring needs costly re-attuning, or it should be shut for a season.",
+          "options": [
+            {
+              "label": "Pay to re-attune it",
+              "cost": 80,
+              "success": {
+                "text": "A week of chanting, chalk and silver dust, and the ring opens clean again.",
+                "effects": {
+                  "goodwill": 5
+                }
+              }
+            },
+            {
+              "label": "Shut it for a season",
+              "success": {
+                "text": "The ring goes dark and the gatehouse yard goes quiet. Traders grumble.",
+                "effects": {
+                  "gold": -40,
+                  "goodwill": -2,
+                  "dread": -2
+                }
+              }
+            },
+            {
+              "label": "Try to tune it by ear",
+              "skill": "arcana",
+              "dc": 15,
+              "prefer": 0.05,
+              "success": {
+                "text": "{keeperName} hums at the stones for a day and a night, and they hum back in tune.",
+                "effects": {
+                  "goodwill": 4
+                }
+              },
+              "failure": {
+                "text": "The ring opens on somewhere very cold for an hour, and half the town has frostbite.",
+                "effects": {
+                  "goodwill": -2,
+                  "dread": 2,
+                  "tension": 2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The ring opens itself one night onto a field of red grass, and closes again with three sheep from it in the yard.",
+        "effects": {
+          "dread": 2,
+          "goodwill": -2
+        }
+      }
+    },
+    {
+      "id": "ways-and-bards",
+      "title": "A song for the treaty",
+      "stakes": "low",
+      "source": "trade",
+      "needs": [
+        "institution:planar-gatehouse",
+        "institution:bards-college"
+      ],
+      "minDay": 70,
+      "repeatDays": 280,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{keeper} wants the bards' college to write the town a treaty-song for the far side of the ring, so the town need not hire a choir each time. {keeper2} says a song like that is a year's work, and should be paid like it.",
+          "options": [
+            {
+              "label": "Commission the song",
+              "cost": 60,
+              "success": {
+                "text": "The college writes a treaty-song in nine verses, and the far side's merchants hum it on the way home. A stone from their city comes back as thanks.",
+                "effects": {
+                  "goodwill": 4,
+                  "goodwill2": 5,
+                  "fixture:singing-stone": 1
+                }
+              }
+            },
+            {
+              "label": "Ask for a short one",
+              "success": {
+                "text": "Four verses, cheaply done. The far side finds it charming, in a provincial way.",
+                "effects": {
+                  "goodwill": 2,
+                  "goodwill2": 1,
+                  "gold": 20
+                }
+              }
+            },
+            {
+              "label": "No song",
+              "success": {
+                "text": "The gate keeps hiring choirs, and the college keeps not writing.",
+                "effects": {
+                  "goodwill": -2,
+                  "goodwill2": -2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "A student at the college writes one anyway and sells it to the gatehouse for a song.",
+        "effects": {
+          "goodwill": 1,
+          "goodwill2": -1
+        }
+      }
+    },
+    {
+      "id": "ways-and-temple",
+      "title": "A visitor from the Hall of Hours",
+      "stakes": "medium",
+      "source": "faith",
+      "needs": [
+        "institution:planar-gatehouse",
+        "institution:temple-district"
+      ],
+      "minDay": 70,
+      "repeatDays": 280,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A tall, quiet figure in white came through the ring and has been standing in the temple courtyard since dawn. {keeper2} thinks it is a messenger of the gods. {keeper} thinks it is a tourist.",
+          "options": [
+            {
+              "label": "Receive it in the temple",
+              "skill": "religion",
+              "dc": 14,
+              "prefer": 0.05,
+              "success": {
+                "text": "It blesses the temple's bells, so that they ring true for a hundred years, and leaves without a word.",
+                "effects": {
+                  "goodwill": 1,
+                  "goodwill2": 6,
+                  "favour": 10,
+                  "dread": -2
+                }
+              },
+              "failure": {
+                "text": "It looks around the temple, sighs, and leaves.",
+                "effects": {
+                  "goodwill2": -2,
+                  "goodwill": 2
+                }
+              }
+            },
+            {
+              "label": "Ask what it wants",
+              "success": {
+                "text": "It wanted to hear the town's bells. It hears them, smiles, and goes home.",
+                "effects": {
+                  "goodwill": 3,
+                  "goodwill2": 2
+                }
+              }
+            },
+            {
+              "label": "Move it along",
+              "success": {
+                "text": "It moves along, through the ring, without looking back. The priests are scandalised.",
+                "effects": {
+                  "goodwill": 3,
+                  "goodwill2": -5
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "It stands in the courtyard for a week, then is gone, and the courtyard's flowers bloom out of season.",
+        "effects": {
+          "goodwill2": 2,
+          "goodwill": -1
+        }
+      }
+    },
+    {
+      "id": "heroes-banner",
+      "title": "The empty pedestal",
+      "stakes": "medium",
+      "source": "heroes",
+      "needs": [
+        "institution:hall-of-heroes",
+        "hero"
+      ],
+      "minDay": 80,
+      "repeatDays": 400,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{keeper} has found a letter in the founders' chest: the town's founding banner was carried off by raiders a lifetime ago and hung in a robber-lord's hall in the hills. The hall still stands. {keeper} asks for a hero to bring it home.",
+          "options": [
+            {
+              "label": "Send {heroName} to find it",
+              "skill": "investigation",
+              "dc": 13,
+              "aid": "hero",
+              "prefer": 0.05,
+              "success": {
+                "text": "{heroName} finds the robber-lord's hall, and the banner in it, behind a robber-lord's grandson who wants a price.",
+                "effects": {
+                  "heroXp": 20
+                },
+                "next": "price"
+              },
+              "failure": {
+                "text": "{heroName} finds the hall burned and the trail cold, for now.",
+                "effects": {
+                  "goodwill": -1
+                }
+              }
+            },
+            {
+              "label": "Offer a reward for it",
+              "cost": 40,
+              "success": {
+                "text": "A reward is cried in every town on the road. Months later, a pedlar brings a letter: the banner is in a robber-lord's hall, and its keeper wants a price.",
+                "effects": {},
+                "next": "price"
+              }
+            },
+            {
+              "label": "The pedestal can wait",
+              "success": {
+                "text": "{keeper} puts the letter back in the chest.",
+                "effects": {
+                  "goodwill": -3
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "price",
+          "text": "The robber-lord's grandson will give the banner up for two hundred gold, or for a duel with the town's champion. {heroName} is ready either way.",
+          "options": [
+            {
+              "label": "Pay the price",
+              "cost": 200,
+              "success": {
+                "text": "The banner comes home in a cart, the whole town lining the road. It goes up over the empty pedestal.",
+                "effects": {
+                  "goodwill": 8,
+                  "mandate": 2,
+                  "festival": 2,
+                  "fixture:founding-banner": 1
+                }
+              }
+            },
+            {
+              "label": "{heroName} takes the duel",
+              "skill": "athletics",
+              "dc": 15,
+              "aid": "hero",
+              "success": {
+                "text": "{heroName} wins in the third pass and carries the banner home on their spear. The town will tell it for a hundred years.",
+                "effects": {
+                  "goodwill": 8,
+                  "renown": 2,
+                  "heroXp": 40,
+                  "festival": 2,
+                  "fixture:founding-banner": 1
+                }
+              },
+              "failure": {
+                "text": "{heroName} loses, honourably, and comes home bloodied and empty-handed.",
+                "effects": {
+                  "wound": 15,
+                  "goodwill": 2
+                }
+              }
+            },
+            {
+              "label": "Walk away",
+              "success": {
+                "text": "The banner stays in the hills. {keeper} sets the letter on the empty pedestal.",
+                "effects": {
+                  "goodwill": -4
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The letter goes back in the chest.",
+        "effects": {
+          "goodwill": -2
+        }
+      }
+    },
+    {
+      "id": "heroes-curator",
+      "title": "An old hero wants to put down the sword",
+      "stakes": "low",
+      "source": "heroes",
+      "needs": [
+        "institution:hall-of-heroes",
+        "veteran"
+      ],
+      "minDay": 90,
+      "repeatDays": 240,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{heroName} has been coming to the hall of heroes every evening to look at the old shields. {keeper} says they would make a fine teacher in the yard, if the town can spare them from the road.",
+          "options": [
+            {
+              "label": "Let {heroName} retire to the hall",
+              "success": {
+                "text": "{heroName} hangs up their sword in the hall and starts shouting at young heroes in the yard. The young heroes improve.",
+                "effects": {
+                  "retire": 1,
+                  "goodwill": 6
+                }
+              }
+            },
+            {
+              "label": "Ask them for one more season",
+              "success": {
+                "text": "{heroName} nods, and goes back out on the road. They still come to the hall every evening.",
+                "effects": {
+                  "goodwill": -1,
+                  "loyalty": 5
+                }
+              }
+            },
+            {
+              "label": "Let them teach between contracts",
+              "cost": 20,
+              "success": {
+                "text": "{heroName} teaches in the yard when they are home, and the hall pays them for it.",
+                "effects": {
+                  "goodwill": 3,
+                  "heroXp": 10
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "{heroName} keeps coming to the hall, and keeps saying nothing.",
+        "effects": {
+          "goodwill": -1
+        }
+      }
+    },
+    {
+      "id": "heroes-names",
+      "title": "A name for the wall",
+      "stakes": "medium",
+      "source": "heroes",
+      "needs": [
+        "institution:hall-of-heroes",
+        "fallen"
+      ],
+      "minDay": 40,
+      "repeatDays": 120,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{keeper} wants {fallen}'s shield hung in the hall of heroes and their name carved where the town will see it. The stonecutters want paying.",
+          "options": [
+            {
+              "label": "Carve the name and hang the shield",
+              "cost": 60,
+              "success": {
+                "text": "{fallen}'s shield goes up, and their name is the first on a new wall. People leave flowers under it.",
+                "effects": {
+                  "memorial": 1,
+                  "goodwill": 5,
+                  "fixture:wall-of-names": 1
+                }
+              }
+            },
+            {
+              "label": "Hang the shield only",
+              "success": {
+                "text": "The shield goes up on a nail by the door. {keeper} polishes it every day.",
+                "effects": {
+                  "goodwill": 2
+                }
+              }
+            },
+            {
+              "label": "Not now",
+              "success": {
+                "text": "{keeper} keeps the shield behind the counter.",
+                "effects": {
+                  "goodwill": -3
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The shield gathers dust behind the counter.",
+        "effects": {
+          "goodwill": -2
+        }
+      }
+    },
+    {
+      "id": "heroes-claimant",
+      "title": "Someone wants the axe back",
+      "stakes": "low",
+      "source": "heroes",
+      "needs": [
+        "institution:hall-of-heroes",
+        "site"
+      ],
+      "minDay": 60,
+      "repeatDays": 260,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A stranger in a travelling cloak says the great axe in the hall's third case belonged to their grandmother, and was lost at {site}. They will trade a map of the place for it. {keeper} would rather keep the axe.",
+          "options": [
+            {
+              "label": "Trade the axe for the map",
+              "success": {
+                "text": "The stranger leaves with the axe, crying. The map is very good.",
+                "effects": {
+                  "reveal": 1,
+                  "goodwill": -3
+                }
+              }
+            },
+            {
+              "label": "Keep the axe",
+              "success": {
+                "text": "The stranger leaves without it, and without leaving the map.",
+                "effects": {
+                  "goodwill": 3
+                }
+              }
+            },
+            {
+              "label": "Ask them to prove it",
+              "skill": "insight",
+              "dc": 13,
+              "success": {
+                "text": "They know the name scratched under the axe's grip. {keeper} gives it back gladly, and they give the map gladly too.",
+                "effects": {
+                  "reveal": 1,
+                  "goodwill": 2
+                }
+              },
+              "failure": {
+                "text": "They cannot name the mark under the grip, and leave in a hurry.",
+                "effects": {
+                  "goodwill": 4
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The stranger comes back every week to look at the axe.",
+        "effects": {
+          "goodwill": -1
+        }
+      }
+    },
+    {
+      "id": "heroes-and-auction",
+      "title": "A hero's shield at auction",
+      "stakes": "low",
+      "source": "heroes",
+      "needs": [
+        "institution:hall-of-heroes",
+        "institution:cursed-auction-house"
+      ],
+      "minDay": 70,
+      "repeatDays": 280,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{keeper2} has a battered shield on the block that {keeper} swears belonged to one of the town's founders. The auction house will not lower the reserve for sentiment.",
+          "options": [
+            {
+              "label": "Buy it for the hall",
+              "cost": 70,
+              "success": {
+                "text": "The founder's shield goes up in the hall of heroes, and the auctioneer's commission goes up on the next lot.",
+                "effects": {
+                  "goodwill": 5,
+                  "goodwill2": 3
+                }
+              }
+            },
+            {
+              "label": "Ask the auction house to donate it",
+              "skill": "persuasion",
+              "dc": 14,
+              "success": {
+                "text": "{keeper2} gives it up with a speech about civic virtue, and charges the next three buyers more.",
+                "effects": {
+                  "goodwill": 4,
+                  "goodwill2": -3
+                }
+              },
+              "failure": {
+                "text": "{keeper2} laughs and sells it to a collector from the coast.",
+                "effects": {
+                  "goodwill": -2,
+                  "goodwill2": 1
+                }
+              }
+            },
+            {
+              "label": "Let it sell",
+              "success": {
+                "text": "A collector from the coast buys it. {keeper} does not speak to {keeper2} for a month.",
+                "effects": {
+                  "goodwill": -4,
+                  "goodwill2": 3
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The shield sells while the council is still deciding.",
+        "effects": {
+          "goodwill": -3,
+          "goodwill2": 2
+        }
+      }
+    },
+    {
+      "id": "dragon-hunger",
+      "title": "The dragon is hungry",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "institution:resident-dragon"
+      ],
+      "minDay": 40,
+      "repeatDays": 160,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Sheep have been going missing from the hill farms, three at a time. {keeper} says, with great dignity, that the treaty's meat ration was set when it was smaller.",
+          "options": [
+            {
+              "label": "Raise the ration",
+              "success": {
+                "text": "A cart of meat goes up the hill every day. The farms keep their sheep, and the treasury feels it.",
+                "effects": {
+                  "food": -40,
+                  "goodwill": 6
+                }
+              }
+            },
+            {
+              "label": "Let it hunt the wilds",
+              "success": {
+                "text": "It hunts the hills beyond the roads, and the wolves and worse that lived there are fewer.",
+                "effects": {
+                  "goodwill": 3,
+                  "dread": -1,
+                  "tension": 1
+                }
+              }
+            },
+            {
+              "label": "Hold it to the treaty",
+              "skill": "persuasion",
+              "dc": 15,
+              "prefer": 0.05,
+              "success": {
+                "text": "{keeperName} hears the treaty read aloud, slowly, and agrees. The sheep stop going missing.",
+                "effects": {
+                  "goodwill": -2,
+                  "mandate": 1
+                }
+              },
+              "failure": {
+                "text": "{keeperName} hears the treaty read, and eats the parchment.",
+                "effects": {
+                  "goodwill": -5,
+                  "dread": 3,
+                  "food": -20
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "More sheep go missing, and then a cow, and then a barn.",
+        "effects": {
+          "food": -30,
+          "dread": 2,
+          "goodwill": -2
+        }
+      }
+    },
+    {
+      "id": "dragon-tithe",
+      "title": "The dragon's collection",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "institution:resident-dragon"
+      ],
+      "minDay": 60,
+      "repeatDays": 220,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{keeper} has decided that its collection needs a piece from every great house in the town: a ring, a cup, a portrait. It asks the council to arrange it, as a courtesy.",
+          "options": [
+            {
+              "label": "Pay the tithe from the treasury",
+              "cost": 80,
+              "success": {
+                "text": "The council buys the pieces and sends them up the hill on velvet. {keeperName} is gracious about it for weeks.",
+                "effects": {
+                  "goodwill": 8,
+                  "precedent:dragon-tithe": 1
+                }
+              }
+            },
+            {
+              "label": "Ask the houses to give",
+              "success": {
+                "text": "Most houses give something small and showy. One gives nothing, and the dragon notices.",
+                "effects": {
+                  "goodwill": 3,
+                  "tension": 2,
+                  "mandate": -1
+                }
+              }
+            },
+            {
+              "label": "Offer a better gift",
+              "skill": "insight",
+              "dc": 14,
+              "success": {
+                "text": "You offer the dragon a seat at every feast instead. It is, it turns out, very lonely.",
+                "effects": {
+                  "goodwill": 6
+                }
+              },
+              "failure": {
+                "text": "It considers the offer, and declines it, and takes a weathervane on the way home.",
+                "effects": {
+                  "goodwill": -3,
+                  "dread": 2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "Small things start to go missing from the great houses. Everyone knows where they went.",
+        "effects": {
+          "goodwill": -3,
+          "tension": 2
+        }
+      }
+    },
+    {
+      "id": "dragon-shelter",
+      "title": "The dragon asks a kindness",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "institution:resident-dragon",
+        "settlement"
+      ],
+      "minDay": 80,
+      "repeatDays": 260,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{keeper} has flown over {settlement} and seen raiders closing on it. It asks the town to open its gates to their people, and says it will guard the road while they come.",
+          "options": [
+            {
+              "label": "Open the gates",
+              "success": {
+                "text": "A long column comes down the road under the dragon's wings. The town is crowded, and kinder.",
+                "effects": {
+                  "people": 4,
+                  "food": -30,
+                  "goodwill": 6,
+                  "regard": 10
+                }
+              }
+            },
+            {
+              "label": "Send food instead",
+              "success": {
+                "text": "Wagons of grain go out under the dragon's guard. {settlement} holds.",
+                "effects": {
+                  "food": -40,
+                  "goodwill": 3,
+                  "security": 10,
+                  "regard": 5
+                }
+              }
+            },
+            {
+              "label": "Let them manage",
+              "success": {
+                "text": "{keeperName} goes to guard them anyway, alone, and is gone a week.",
+                "effects": {
+                  "goodwill": -5,
+                  "regard": -3
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The dragon guards {settlement} without the town, and comes back with opinions about it.",
+        "effects": {
+          "goodwill": -3,
+          "regard": 2
+        }
+      }
+    },
+    {
+      "id": "dragon-and-library",
+      "title": "The dragon wants to read",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "institution:resident-dragon",
+        "institution:wizards-library"
+      ],
+      "minDay": 70,
+      "repeatDays": 260,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{keeper} wants to read the library's oldest book: a chronicle of the giant kings. {keeper2} is afraid it will not give the book back, and more afraid of saying so.",
+          "options": [
+            {
+              "label": "Let the dragon borrow it",
+              "success": {
+                "text": "It returns the book a month later, with notes in the margin in a script no one has seen for four thousand years. The scholars weep.",
+                "effects": {
+                  "goodwill": 5,
+                  "goodwill2": 3,
+                  "lore": 30
+                }
+              }
+            },
+            {
+              "label": "Let it read in the library",
+              "cost": 20,
+              "success": {
+                "text": "The dragon lies in the courtyard with its head through the reading-room window, turning pages with a claw.",
+                "effects": {
+                  "goodwill": 3,
+                  "goodwill2": 4,
+                  "lore": 15
+                }
+              }
+            },
+            {
+              "label": "Refuse",
+              "success": {
+                "text": "The dragon is very polite about it, and very cold for a season.",
+                "effects": {
+                  "goodwill": -5,
+                  "goodwill2": 2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The book is found on the dragon's tower one morning, carefully returned the next.",
+        "effects": {
+          "goodwill": -1,
+          "goodwill2": -2
+        }
+      }
+    },
+    {
+      "id": "dragon-and-sanctuary",
+      "title": "The egg in the sanctuary",
+      "stakes": "high",
+      "source": "town",
+      "needs": [
+        "institution:resident-dragon",
+        "institution:monster-sanctuary"
+      ],
+      "minDay": 80,
+      "repeatDays": 400,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{keeper} has smelled the dragon's egg in {keeper2}'s care, and wants it. Whether as a parent, a guardian or a meal, it will not say.",
+          "options": [
+            {
+              "label": "Give it the egg",
+              "success": {
+                "text": "The dragon carries the egg to its tower and broods it with great tenderness. The beastwarden is heartbroken.",
+                "effects": {
+                  "goodwill": 8,
+                  "goodwill2": -6
+                }
+              }
+            },
+            {
+              "label": "Let them share the hatching",
+              "skill": "persuasion",
+              "dc": 15,
+              "prefer": 0.05,
+              "success": {
+                "text": "Dragon and beastwarden sit up together through the hatching. Neither will say who cried.",
+                "effects": {
+                  "goodwill": 4,
+                  "goodwill2": 4
+                }
+              },
+              "failure": {
+                "text": "They quarrel over the egg, and the sanctuary loses a wall.",
+                "effects": {
+                  "goodwill": -2,
+                  "goodwill2": -3,
+                  "dread": 2
+                }
+              }
+            },
+            {
+              "label": "Keep it in the sanctuary",
+              "success": {
+                "text": "{keeper2} keeps the egg. The dragon circles the sanctuary every night, low.",
+                "effects": {
+                  "goodwill": -6,
+                  "goodwill2": 5,
+                  "dread": 2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The egg is gone from the sanctuary one morning. Nobody asks where.",
+        "effects": {
+          "goodwill2": -4,
+          "goodwill": 2
+        }
+      }
+    },
+    {
+      "id": "dragon-and-roost",
+      "title": "Two kinds of wings",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "institution:resident-dragon",
+        "institution:griffon-roost"
+      ],
+      "minDay": 70,
+      "repeatDays": 280,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The griffons will not fly when the dragon is in the sky, and the dragon likes the sky at dawn. {keeper2} wants the dragon kept to its tower until noon. {keeper} finds the request impertinent.",
+          "options": [
+            {
+              "label": "Divide the sky by hour",
+              "success": {
+                "text": "Dragon at dawn, griffons at noon. Both keepers grumble and both keep to it.",
+                "effects": {
+                  "goodwill": 2,
+                  "goodwill2": 2
+                }
+              }
+            },
+            {
+              "label": "Side with the roost",
+              "success": {
+                "text": "The dragon keeps to its tower till noon, and lets everyone know it.",
+                "effects": {
+                  "goodwill": -5,
+                  "goodwill2": 5
+                }
+              }
+            },
+            {
+              "label": "Side with the dragon",
+              "success": {
+                "text": "The roost flies at night now, and the riders are tired.",
+                "effects": {
+                  "goodwill": 5,
+                  "goodwill2": -5
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "A griffon and the dragon meet over the market at dawn. Nobody is hurt, but the market is.",
+        "effects": {
+          "goodwill": -2,
+          "goodwill2": -2,
+          "tension": 2
+        }
+      }
+    },
+    {
+      "id": "sanctuary-and-roost",
+      "title": "Hatchlings for the riders",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "institution:monster-sanctuary",
+        "institution:griffon-roost"
+      ],
+      "minDay": 70,
+      "repeatDays": 400,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A clutch of griffon eggs rescued from poachers has hatched at the sanctuary. {keeper} wants to raise them wild and release them; {keeper2} wants them for a rescue flight to pull lost companies and caravans out of trouble.",
+          "options": [
+            {
+              "label": "Train them as rescue mounts",
+              "success": {
+                "text": "The hatchlings grow up between the sanctuary and the roost, and fly rescue for the whole road.",
+                "effects": {
+                  "goodwill": -3,
+                  "goodwill2": 6,
+                  "fixture:griffon-hatchlings": 1
+                }
+              }
+            },
+            {
+              "label": "Raise them wild",
+              "success": {
+                "text": "The young griffons are flown out to the hills and let go. One comes back every spring to look.",
+                "effects": {
+                  "goodwill": 6,
+                  "goodwill2": -3,
+                  "dread": -1
+                }
+              }
+            },
+            {
+              "label": "Half and half",
+              "success": {
+                "text": "Two go to the roost, three go to the hills. Neither keeper is quite satisfied.",
+                "effects": {
+                  "goodwill": 2,
+                  "goodwill2": 2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The hatchlings grow up in the sanctuary, too tame for the wild and too wild for the roost.",
+        "effects": {
+          "goodwill": -1,
+          "goodwill2": -1
         }
       }
     }

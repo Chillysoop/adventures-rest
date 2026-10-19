@@ -99,6 +99,8 @@ public partial class Main : Control
         if (_opts.Autoplay) _storySeen = _sim.Town.Stories.All.Count;
         SetSpeed(_opts.Speed ?? 1);
         if (_opts.Tab is string t && Enum.TryParse<Tab>(t, true, out var tab)) SetTab(tab);
+        if (_opts.Dock is string dk && Array.FindIndex(Groups, g => g.Name.Equals(dk, StringComparison.OrdinalIgnoreCase)) is int dg and >= 0)
+            Callable.From(() => OpenPicker(dg)).CallDeferred();
         if (_opts.Site is string site) Select(Selection.Site(site));
         if (_opts.Wall is int wall) Select(Selection.Wall(wall));
         if (_opts.Cam is float cam)
@@ -411,6 +413,7 @@ public partial class Main : Control
         else if (k.Keycode == Key.R && _map.Decorator.Active) _map.Decorator.Turn(k.ShiftPressed ? -1 : 1);
         else if (k.Keycode == Key.M) ToggleStrategic();
         else if (k.Keycode == Key.C) SetTab(Tab.Mayor);
+        else if (k.Keycode == Key.Escape && _picker.Visible) ClosePicker();
         else if (k.Keycode == Key.Escape && _inspector.Visible) Select(null);
         else if (k.Keycode == Key.Escape && _window.Visible) CloseWindow();
         else if (k.Keycode is Key.Q or Key.E)

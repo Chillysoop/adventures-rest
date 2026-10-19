@@ -61,7 +61,7 @@ public partial class Main
     private (PanelContainer, VBoxContainer) AlertPopup(MouseFilterEnum filter)
     {
         var panel = new PanelContainer { Visible = false, MouseFilter = filter, ZIndex = 50, CustomMinimumSize = new Vector2(300, 0) };
-        panel.AddThemeStyleboxOverride("panel", Glass(10, 12, 10));
+        panel.AddThemeStyleboxOverride("panel", Castle.Oak(16, 14));
         var box = new VBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
         box.AddThemeConstantOverride("separation", 6);
         panel.AddChild(box);
@@ -389,6 +389,7 @@ public partial class Main
     /// <summary>A click anywhere outside the open list closes it.</summary>
     public override void _Input(InputEvent e)
     {
+        PickerInput(e);
         if (_openKind == null || e is not InputEventMouseButton { Pressed: true } mb) return;
         var p = mb.Position;
         if (_alertList.GetGlobalRect().HasPoint(p) || _alertRow.GetGlobalRect().HasPoint(p)) return;

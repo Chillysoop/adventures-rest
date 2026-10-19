@@ -27,10 +27,7 @@ public partial class Main
     private void BuildStory()
     {
         _story = new PanelContainer { Visible = false, CustomMinimumSize = new Vector2(600, 0), ZIndex = 20, MouseFilter = MouseFilterEnum.Stop };
-        var box = Glass(14, 24, 20);
-        box.BorderColor = Ui.Gold;
-        box.BorderWidthTop = 3;
-        _story.AddThemeStyleboxOverride("panel", box);
+        _story.AddThemeStyleboxOverride("panel", Castle.Oak(26, 22));
         _storyBox = new VBoxContainer();
         _storyBox.AddThemeConstantOverride("separation", 10);
         _story.AddChild(_storyBox);
@@ -101,7 +98,8 @@ public partial class Main
         var t = _sim.Town;
         var d = Stories.DefOf(t, s);
         var (word, color) = StakesLook(d.Stakes);
-        ((StyleBoxFlat)_story.GetThemeStylebox("panel")).BorderColor = color;
+        // The stakes' colour as a rule across the top of the oak card.
+        _storyBox.AddChild(new ColorRect { Color = color, CustomMinimumSize = new Vector2(0, 3), MouseFilter = MouseFilterEnum.Ignore });
 
         var head = new HBoxContainer();
         head.AddThemeConstantOverride("separation", 10);

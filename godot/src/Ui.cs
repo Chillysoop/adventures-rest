@@ -52,10 +52,9 @@ public static class Ui
         t.SetStylebox("panel", "Panel", Box(Bg, Bg, 0, 0));
 
         // Buttons: ghost by default; the "Post" variation is the accent call to action.
-        t.SetStylebox("normal", "Button", Box(Panel, Line, 8, 1, 10, 5));
-        t.SetStylebox("hover", "Button", Box(Panel2, Ink2, 8, 1, 10, 5));
-        t.SetStylebox("pressed", "Button", Box(Panel2, Accent, 8, 1, 10, 5));
-        t.SetStylebox("disabled", "Button", Box(Panel, Line, 8, 1, 10, 5));
+        // Oak planks with iron studs (Castle.cs); the "Post" variation is a red banner for the main action.
+        foreach (var state in new[] { "normal", "hover", "pressed", "disabled" }) t.SetStylebox(state, "Button", Castle.Button(state, banner: false, 11, 6));
+        t.SetStylebox("hover_pressed", "Button", Castle.Button("pressed", banner: false, 11, 6));
         t.SetStylebox("focus", "Button", new StyleBoxEmpty());
         t.SetColor("font_color", "Button", Ink);
         t.SetColor("font_hover_color", "Button", Ink);
@@ -64,10 +63,7 @@ public static class Ui
         t.SetFont("font", "Button", Medium);
 
         t.SetTypeVariation("Post", "Button");
-        t.SetStylebox("normal", "Post", Box(Accent, Accent, 8, 0, 12, 6));
-        t.SetStylebox("hover", "Post", Box(Accent.Lightened(0.1f), Accent, 8, 0, 12, 6));
-        t.SetStylebox("pressed", "Post", Box(Accent.Darkened(0.15f), Accent, 8, 0, 12, 6));
-        t.SetStylebox("disabled", "Post", Box(Accent with { A = 0.35f }, Accent, 8, 0, 12, 6));
+        foreach (var state in new[] { "normal", "hover", "pressed", "disabled" }) t.SetStylebox(state, "Post", Castle.Button(state, banner: true, 13, 6));
         t.SetColor("font_color", "Post", Colors.White);
         t.SetColor("font_hover_color", "Post", Colors.White);
         t.SetColor("font_pressed_color", "Post", Colors.White);
