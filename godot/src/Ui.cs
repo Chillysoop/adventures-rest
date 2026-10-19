@@ -1,4 +1,5 @@
 using System.Text;
+using CrownAndCompass.Sim;
 using Godot;
 
 namespace CrownAndCompass.Client;
@@ -146,7 +147,7 @@ public static class Ui
     }
 
     /// <summary>Wrapping BBCode text whose [url] links report to the client (agents, sites, chronicles).</summary>
-    public static RichTextLabel Rich(string bbcode, int size = 14)
+    public static RichTextLabel Rich(string bbcode, int size = 14, string? skip = null)
     {
         var r = new RichTextLabel
         {
@@ -157,18 +158,178 @@ public static class Ui
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             MetaUnderlined = false,
         };
-        r.Text = Coined(bbcode);
+        r.Text = Dress(bbcode, skip);
         if (size != 14)
         {
             r.AddThemeFontSizeOverride("normal_font_size", size);
             r.AddThemeFontSizeOverride("bold_font_size", size);
         }
-        r.MetaClicked += meta => Links?.Invoke(meta.AsString());
+        r.MetaClicked += meta =>
+        {
+            string m = meta.AsString();
+            if (m.StartsWith("kw:", StringComparison.Ordinal)) Keywords?.Pin(m[3..]);
+            else Links?.Invoke(m);
+        };
+        r.MetaHoverStarted += meta =>
+        {
+            string m = meta.AsString();
+            if (m.StartsWith("kw:", StringComparison.Ordinal)) Keywords?.Hover(m[3..], r);
+        };
+        r.MetaHoverEnded += meta =>
+        {
+            if (meta.AsString().StartsWith("kw:", StringComparison.Ordinal)) Keywords?.Unhover();
+        };
         return r;
     }
 
+    /// <summary>Set a rich label's text, dressed like <see cref="Rich"/>'s: coins and keywords.</summary>
+    public static void SetRich(RichTextLabel r, string bbcode) => r.Text = Dress(bbcode);
+
     /// <summary>Where link clicks go; set by Main.</summary>
     public static Action<string>? Links;
+
+    /// <summary>Shows and pins the glossary's cards for keywords; set by Main.</summary>
+    public static IKeywordCards? Keywords;
+
+    /// <summary>Everything rich text gets: the gold icon on sums of money, and links on the glossary's keywords.</summary>
+    public static string Dress(string bbcode, string? skip = null) => Keyworded(Coined(bbcode), skip);
+
+    // ---- Keywords: every glossary term in rich text links to its entry (content/game/glossary.json) ----
+
+    public static readonly Color KeywordColor = new("ecd59a");
+    private static Dictionary<string, GlossaryEntry>? _byWord;
+    private static Dictionary<string, GlossaryEntry>? _byId;
+    private static System.Text.RegularExpressions.Regex? _keywords;
+
+    public static GlossaryEntry? Entry(string id)
+    {
+        LoadGlossary();
+        return _byId!.GetValueOrDefault(id);
+    }
+
+    public static GlossaryEntry? EntryForWord(string word)
+    {
+        LoadGlossary();
+        return _byWord!.GetValueOrDefault(word.ToLowerInvariant());
+    }
+
+    /// <summary>The pattern that finds keywords (see <see cref="Glossary.Pattern"/>).</summary>
+    public static System.Text.RegularExpressions.Regex KeywordPattern
+    {
+        get
+        {
+            LoadGlossary();
+            return _keywords!;
+        }
+    }
+
+    private static void LoadGlossary()
+    {
+        if (_keywords != null) return;
+        var book = Glossary.Default();
+        _byWord = Glossary.Words(book).ToDictionary(p => p.Word, p => p.Entry);
+        _byId = book.Entries.ToDictionary(e => e.Id);
+        _keywords = Glossary.Pattern(book);
+    }
+
+    /// <summary>
+    /// Make a control stand for a keyword: hovering it shows the entry's card (with a line of its own, such as the
+    /// figure's meaning right now) and a click pins it. Replaces the control's tooltip.
+    /// </summary>
+    public static void KeywordOn(Control c, string id, Func<string>? extra = null)
+    {
+        c.TooltipText = "";
+        c.MouseFilter = Control.MouseFilterEnum.Stop;
+        c.MouseDefaultCursorShape = Control.CursorShape.Help;
+        c.MouseEntered += () => Keywords?.Show(id, extra?.Invoke());
+        c.MouseExited += () => Keywords?.Unhover();
+        c.GuiInput += e =>
+        {
+            if (e is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left }) Keywords?.Pin(id, extra?.Invoke());
+        };
+    }
+
+    /// <summary>A kind's icon as a link to its glossary card (an enemy kind, a good), or nothing if it has none.</summary>
+    public static string KindIcon(string id, int size = 18) =>
+        Entry(id) is { Icon: not "" } e ? $"[url=kw:{e.Id}]{Img(e.Icon, size)}[/url] " : "";
+
+    /// <summary>A keyword's link: its icon (if it has one) and the word in the keyword colour.</summary>
+    public static string KeywordLink(GlossaryEntry e, string word, bool icon = true) =>
+        $"[url=kw:{e.Id}]{(icon && e.Icon != "" ? Img(e.Icon, 15) : "")}{C(KeywordColor, word)}[/url]";
+
+    /// <summary>
+    /// Link the glossary's keywords in a piece of rich text: the first mention of each in a line, outside tags,
+    /// links and images. <paramref name="skip"/> leaves one entry plain (its own card).
+    /// </summary>
+    public static string Keyworded(string bbcode, string? skip = null)
+    {
+        LoadGlossary();
+        var sb = new StringBuilder(bbcode.Length + 64);
+        var seen = new HashSet<string>();
+        int depth = 0; // inside [url] or [img]: left alone
+        int i = 0;
+        while (i < bbcode.Length)
+        {
+            if (bbcode[i] == '[')
+            {
+                int close = bbcode.IndexOf(']', i);
+                if (close < 0) { sb.Append(bbcode, i, bbcode.Length - i); break; }
+                string tag = bbcode.Substring(i, close - i + 1);
+                if (tag.StartsWith("[url", StringComparison.Ordinal) || tag.StartsWith("[img", StringComparison.Ordinal)) depth++;
+                else if (tag is "[/url]" or "[/img]") depth = Math.Max(0, depth - 1);
+                sb.Append(tag);
+                i = close + 1;
+                continue;
+            }
+            int next = bbcode.IndexOf('[', i);
+            if (next < 0) next = bbcode.Length;
+            string run = bbcode.Substring(i, next - i);
+            sb.Append(depth > 0 ? run : LinkRun(run, seen, skip));
+            i = next;
+        }
+        return sb.ToString();
+    }
+
+    private static bool InName(string run, int at)
+    {
+        if (!char.IsUpper(run[at]) || at < 2 || run[at - 1] != ' ') return false;
+        int end = at - 1;
+        int start = end;
+        while (start > 0 && !char.IsWhiteSpace(run[start - 1])) start--;
+        return start < end && char.IsUpper(run[start]) && char.IsLetter(run[end - 1]);
+    }
+
+    private static string LinkRun(string run, HashSet<string> seen, string? skip)
+    {
+        var sb = new StringBuilder(run.Length + 32);
+        int at = 0;
+        foreach (System.Text.RegularExpressions.Match m in _keywords!.Matches(run))
+        {
+            // A new line is a new entry in a list: its keywords link again.
+            if (run.IndexOf('\n', at, m.Index - at) >= 0) seen.Clear();
+            var e = _byWord![m.Value.ToLowerInvariant()];
+            sb.Append(run, at, m.Index - at);
+            at = m.Index + m.Length;
+            if (e.Id == skip || !seen.Add(e.Id))
+            {
+                sb.Append(m.Value);
+                continue;
+            }
+            // "120 gold" already wears the coin, and a capitalised word after another is part of a name
+            // ("the Drowned Temple", "the Clock Tower"), not the keyword.
+            bool counted = m.Index >= 2 && run[m.Index - 1] == ' ' && char.IsDigit(run[m.Index - 2]);
+            if (counted || InName(run, m.Index))
+            {
+                sb.Append(m.Value);
+                seen.Remove(e.Id);
+                continue;
+            }
+            sb.Append(KeywordLink(e, m.Value));
+        }
+        if (run.IndexOf('\n', at) >= 0) seen.Clear();
+        sb.Append(run, at, run.Length - at);
+        return sb.ToString();
+    }
 
     public static string Esc(string s) => s.Replace("[", "[lb]");
 
@@ -177,6 +338,17 @@ public static class Ui
     public static string C(Color c, string text) => $"[color={Hex(c)}]{text}[/color]";
 
     public static string Days(int n) => $"{n} {(n == 1 ? "day" : "days")}";
+
+    /// <summary>Which glossary entry a meter's label stands for.</summary>
+    public static string? MeterKeyword(string label) => label switch
+    {
+        "Warband" => "warband",
+        "Your defence" => "defence",
+        "Mandate" => "mandate",
+        "Favour" => "favour",
+        "Suspicion" => "suspicion",
+        _ => null,
+    };
 
     /// <summary>Which icon goes with a meter's label.</summary>
     public static string? MeterIcon(string label) => label switch
@@ -223,6 +395,19 @@ public static class Ui
     }
 }
 
+/// <summary>The hover and pinned cards that explain keywords (Main implements it in Keywords.cs).</summary>
+public interface IKeywordCards
+{
+    /// <summary>A keyword link in rich text is under the mouse.</summary>
+    void Hover(string id, Control from);
+
+    /// <summary>A control that stands for a keyword is under the mouse; <paramref name="extra"/> adds a line of its own.</summary>
+    void Show(string id, string? extra);
+    void Unhover();
+    void Pin(string id);
+    void Pin(string id, string? extra);
+}
+
 /// <summary>
 /// A side pane rebuilt from a description each time the game changes, but only re-instantiated
 /// when the description differs, so a running clock never steals a click or a hover.
@@ -264,7 +449,7 @@ public sealed class Pane
     public void Heading(string text) =>
         Add("h" + text, () =>
         {
-            var l = Ui.Label(text.ToUpperInvariant(), Ui.Ink2, Ui.Bold, 11);
+            var l = Ui.Label(text.ToUpperInvariant(), Ui.Ink2, Ui.Bold, 12);
             l.AddThemeConstantOverride("line_spacing", 0);
             var m = new MarginContainer();
             m.AddThemeConstantOverride("margin_top", 12);
@@ -274,7 +459,7 @@ public sealed class Pane
 
     public void Text(string bbcode, int size = 14) => Add("t" + size + bbcode, () => Ui.Rich(bbcode, size));
 
-    public void Note(string text) => Text(Ui.C(Ui.Ink2, text), 12);
+    public void Note(string text) => Text(Ui.C(Ui.Ink2, text), 13);
 
     /// <summary>A card with a tinted background, for summaries at the top of a pane.</summary>
     public void Card(string bbcode, Color? border = null) =>
@@ -339,8 +524,9 @@ public sealed class Pane
             var h = new HBoxContainer();
             h.AddThemeConstantOverride("separation", 8);
             if (Ui.MeterIcon(label) is string icon) h.AddChild(new TextureRect { Texture = Ui.Icon(icon), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2(16, 16), SizeFlagsVertical = Control.SizeFlags.ShrinkCenter });
-            var l = Ui.Label(label, Ui.Ink2, null, 12);
-            l.CustomMinimumSize = new Vector2(80, 0);
+            var l = Ui.Label(label, Ui.Ink2, null, 13);
+            l.CustomMinimumSize = new Vector2(84, 0);
+            if (Ui.MeterKeyword(label) is string kw) Ui.KeywordOn(l, kw);
             h.AddChild(l);
             var bar = new MeterBar { Value = (float)Math.Clamp(value / 100, 0, 1), Fill = bad ? Ui.Bad : Ui.Gold, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(60, 8), SizeFlagsVertical = Control.SizeFlags.ShrinkCenter };
             h.AddChild(bar);

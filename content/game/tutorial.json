@@ -37,6 +37,14 @@
       "teaches": []
     },
     {
+      "id": "keywords",
+      "title": "Gold words",
+      "text": "Words in gold, like Mandate or the warband, are keywords. [b]Hover[/b] one anywhere for a card that explains it, and [b]click[/b] it to pin the card so it stays while you read on; drag a pinned card by its title, close it with its cross. The book at the top right, or [b]F1[/b], opens the whole glossary. Try hovering a figure on the top bar and clicking it.",
+      "point": "glossary",
+      "until": "pin",
+      "teaches": ["key:F1"]
+    },
+    {
       "id": "ledger",
       "title": "The Ledger",
       "text": "Everything that happens in town is written in the Ledger, from brawls to weddings to dragons. Open it from the dock.",

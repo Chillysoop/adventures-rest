@@ -12,7 +12,7 @@ namespace CrownAndCompass.Client;
 /// </summary>
 public partial class Main
 {
-    private const int TopBar = 58, DockHeight = 58, Gap = 12;
+    private const int TopBar = 58, DockHeight = 66, Gap = 12;
 
     private PanelContainer _window = null!, _inspector = null!;
     private Label _windowTitle = null!;
@@ -94,8 +94,7 @@ public partial class Main
         _townName = Ui.Label("Briarford", Ui.Ink, Ui.Display, 20);
         title.AddChild(_townName);
         _tierLabel = Ui.Label("Thorp", Ui.Ink2, Ui.Medium, 10);
-        _tierLabel.TooltipText = "What the town is chartered as, and its people counting every household. Open the City window to grow it.";
-        _tierLabel.MouseFilter = MouseFilterEnum.Pass;
+        Ui.KeywordOn(_tierLabel, "charter", () => "Open the City window to see what the next charter asks for.");
         title.AddChild(_tierLabel);
         bar.AddChild(title);
         bar.AddChild(new VSeparator());
@@ -111,6 +110,7 @@ public partial class Main
         _clock.MouseFilter = MouseFilterEnum.Pass;
         bar.AddChild(_clock);
         _threatPill = new PanelContainer { SizeFlagsVertical = SizeFlags.ShrinkCenter };
+        Ui.KeywordOn(_threatPill, "warband", () => Stages[_sim.Town.Enemy.Stage].Text);
         _threat = Ui.Label("QUIET", Ui.Ink, Ui.Bold, 11);
         _threatPill.AddChild(_threat);
         bar.AddChild(_threatPill);
@@ -132,9 +132,11 @@ public partial class Main
         }
         bar.AddChild(speeds);
         _speedsBox = speeds;
-        _seedLabel = Ui.Label("seed 1", Ui.Ink2, null, 11);
-        _seedLabel.SizeFlagsVertical = SizeFlags.ShrinkCenter;
-        bar.AddChild(_seedLabel);
+        var book = new Button { Icon = Ui.Icon("glossary"), TooltipText = "Glossary: every keyword explained (F1)", SizeFlagsVertical = SizeFlags.ShrinkCenter, FocusMode = FocusModeEnum.None, ExpandIcon = false };
+        book.AddThemeConstantOverride("icon_max_width", 20);
+        book.Pressed += () => OpenGlossary();
+        bar.AddChild(book);
+        _glossaryButton = book;
         var menu = new Button { Text = "Menu", TooltipText = "Save, load or start a new town (Esc)", SizeFlagsVertical = SizeFlags.ShrinkCenter, FocusMode = FocusModeEnum.None };
         menu.Pressed += () => ToggleMenu();
         bar.AddChild(menu);
@@ -282,7 +284,7 @@ public partial class Main
         foreach (var t in Enum.GetValues<Tab>())
         {
             if (t == Tab.Inspect) continue;
-            var b = new Button { Text = t.ToString(), ThemeTypeVariation = "Tab", ToggleMode = true, FocusMode = FocusModeEnum.None, CustomMinimumSize = new Vector2(92, 0) };
+            var b = DockButton(t.ToString(), $"tab-{t.ToString().ToLowerInvariant()}", Titles[t] + (t == Tab.Mayor ? " (C)" : ""));
             b.Pressed += () => SetTab(t);
             row.AddChild(b);
             _tabButtons[t] = b;
@@ -298,7 +300,7 @@ public partial class Main
             }
         }
         row.AddChild(new VSeparator());
-        _buildToggle = new Button { Text = "Build", ThemeTypeVariation = "Tab", ToggleMode = true, FocusMode = FocusModeEnum.None, TooltipText = "Zone land and place government buildings (B)", CustomMinimumSize = new Vector2(92, 0) };
+        _buildToggle = DockButton("Build", "tab-build", "Zone land and place government buildings (B)");
         _buildToggle.Pressed += ToggleBuildBar;
         row.AddChild(_buildToggle);
         AddChild(dock);
@@ -307,12 +309,46 @@ public partial class Main
         dock.GrowHorizontal = GrowDirection.Both;
         dock.GrowVertical = GrowDirection.Begin;
 
-        _help = Ui.Label(MapHelp, new Color("f6eedb", 0.5f), Ui.Medium, 11);
+        _help = Ui.Label(MapHelp, new Color("f6eedb", 0.72f), Ui.Medium, 12);
+        _help.AddThemeColorOverride("font_outline_color", new Color(0, 0, 0, 0.6f));
+        _help.AddThemeConstantOverride("outline_size", 4);
         _help.MouseFilter = MouseFilterEnum.Ignore;
         AddChild(_help);
         _help.SetAnchorsAndOffsetsPreset(LayoutPreset.CenterBottom, LayoutPresetMode.Minsize, Gap + DockHeight + 4);
         _help.GrowHorizontal = GrowDirection.Both;
         _help.GrowVertical = GrowDirection.Begin;
+    }
+
+    /// <summary>A dock button: its icon over a short name, so fifteen of them fit beside the corner map.</summary>
+    private static Button DockButton(string text, string icon, string tip)
+    {
+        var b = new Button
+        {
+            Text = text,
+            Icon = Ui.Icon(icon),
+            ThemeTypeVariation = "Tab",
+            ToggleMode = true,
+            FocusMode = FocusModeEnum.None,
+            TooltipText = tip,
+            ExpandIcon = false,
+            IconAlignment = HorizontalAlignment.Center,
+            VerticalIconAlignment = VerticalAlignment.Top,
+            CustomMinimumSize = new Vector2(66, 0),
+        };
+        b.AddThemeConstantOverride("icon_max_width", 22);
+        b.AddThemeConstantOverride("h_separation", 2);
+        b.AddThemeFontSizeOverride("font_size", 12);
+        foreach (var state in new[] { "normal", "hover" }) b.AddThemeStyleboxOverride(state, Ui.Flat(Colors.Transparent, 5, 4, 8));
+        var on = Ui.Flat(new Color(Ui.Gold, 0.12f), 5, 4, 8);
+        on.BorderColor = Ui.Accent;
+        on.BorderWidthBottom = 2;
+        b.AddThemeStyleboxOverride("pressed", on);
+        b.AddThemeStyleboxOverride("hover_pressed", on);
+        b.AddThemeColorOverride("icon_normal_color", Ui.Ink2);
+        b.AddThemeColorOverride("icon_hover_color", Ui.Ink);
+        b.AddThemeColorOverride("icon_pressed_color", Ui.Gold);
+        b.AddThemeColorOverride("icon_hover_pressed_color", Ui.Gold);
+        return b;
     }
 
     // ---------- News feed ----------
@@ -342,7 +378,7 @@ public partial class Main
         s.BorderColor = color;
         s.BorderWidthLeft = 3;
         card.AddThemeStyleboxOverride("panel", s);
-        var text = Ui.Rich($"{Ui.C(color, $"[font_size=10][b]{e.Category.ToString().ToUpperInvariant()}[/b][/font_size]")}  {Ui.C(Ui.Ink2, $"[font_size=10]Day {e.Tick / SimTime.HoursPerDay + 1}[/font_size]")}\n[font_size=13]{LinkNames(e)}[/font_size]");
+        var text = Ui.Rich($"{Ui.C(color, $"[font_size=11][b]{e.Category.ToString().ToUpperInvariant()}[/b][/font_size]")}  {Ui.C(Ui.Ink2, $"[font_size=11]Day {e.Tick / SimTime.HoursPerDay + 1}[/font_size]")}\n[font_size=13]{LinkNames(e)}[/font_size]");
         card.AddChild(text);
         card.SetMeta("until", _clockReal + (e.Importance == Importance.Major ? 30 : 14));
         card.GuiInput += ev =>
