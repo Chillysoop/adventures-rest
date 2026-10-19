@@ -101,4 +101,16 @@ public class QuestsTests
             if (b.Status == BountyStatus.Taken) Assert.Contains(sim.Town.Parties, p => p.BountyId == b.Id && !p.Returned);
         }
     }
+    [Fact]
+    public void HeroesAskMoreForGreatDangerAndFromARichTown()
+    {
+        var sim = new Simulation(new SimulationOptions { Seed = 2 });
+        var t = sim.Town;
+        t.Treasury = 0;
+        Assert.True(Quests.Asking(t, 5) > 5 * Quests.Asking(t, 1) * 2);
+        double poor = Quests.Asking(t, 3);
+        t.Treasury = 1_000_000;
+        Assert.Equal(1 + t.Content.Bounties.Pay.WealthCap, Quests.Wealth(t));
+        Assert.True(Quests.Asking(t, 3) > poor * 2.5);
+    }
 }

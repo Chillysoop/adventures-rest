@@ -2,7 +2,7 @@ namespace CrownAndCompass.Sim.Systems;
 
 /// <summary>
 /// Grand works: great civic projects (a clock tower, an aqueduct, a gatehouse, a mage tower, royal gardens,
-/// a colossus) that the charters unlock and that soak up a rich town's gold. Each is a building in
+/// a colossus, and at the great city's charter three wonders: a cathedral, a palace and a citadel) that the charters unlock and that soak up a rich town's gold. Each is a building in
 /// buildings.json with stages. Placing one pays for the first stage; when the builders finish a stage the
 /// next draws its gold and goods from the treasury and the market, waiting while the treasury can't spare
 /// them, so a work rises over seasons in plain sight. Once it stands it lends the town a lasting bonus

@@ -78,8 +78,10 @@ public partial class Main
             int id = r.Id;
             p.Row($"[b]{Ui.Esc(s.Name)}[/b]  {Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(s.People)}[/font_size]")}\n" +
                   $"[font_size=13]{Ui.Esc(r.Export.ToString())} out, {Ui.Esc(r.Import.ToString())} back · next caravan home in {Ui.Days(days)}[/font_size]\n" +
-                  Ui.C(Ui.Ink2, $"[font_size=12]{r.Caravans} {(r.Caravans == 1 ? "run" : "runs")}{(r.Raided > 0 ? $", {r.Raided} waylaid" : "")} · sold {Js.Str(Js.Round(r.Earned))}g, bought {Js.Str(Js.Round(r.Spent))}g · road danger {Math.Round(Trade.RaidChance(t, s) * 100)}%[/font_size]"),
-                ("Close", true, false, () => Act(() => _sim.CloseTradeRoute(id))));
+                  Ui.C(Ui.Ink2, $"[font_size=12]{r.Wagons} {(r.Wagons == 1 ? "wagon" : "wagons")} · {r.Caravans} {(r.Caravans == 1 ? "run" : "runs")}{(r.Raided > 0 ? $", {r.Raided} waylaid" : "")} · sold {Js.Str(Js.Round(r.Earned))}g, bought {Js.Str(Js.Round(r.Spent))}g · road danger {Math.Round(Trade.RaidChance(t, s) * 100)}%[/font_size]"),
+                Trade.WagonCost(t, r) is double wagon
+                    ? [($"Add a wagon · {Js.Str(wagon)}g", t.Treasury >= wagon, true, () => Act(() => _sim.AddWagon(id))), ("Close", true, false, () => Act(() => _sim.CloseTradeRoute(id)))]
+                    : [("Close", true, false, () => Act(() => _sim.CloseTradeRoute(id)))]);
         }
 
         p.Heading("Peoples of the wilds");

@@ -52,6 +52,13 @@ public sealed record TradeRules
     /// <summary>Chance a caravan is waylaid: a base, more for each living menace in or next to the route's region.</summary>
     public double Raid { get; init; } = 0.03;
     public double RaidPerMenace { get; init; } = 0.06;
+
+    /// <summary>Wagons a caravan can grow to; each one past the first carries WagonLoad more of a load.</summary>
+    public int Wagons { get; init; } = 4;
+    public double WagonLoad { get; init; } = 0.75;
+
+    /// <summary>Gold to add the second, third and fourth wagons.</summary>
+    public double[] WagonCost { get; init; } = [200, 450, 900];
 }
 
 /// <summary>A trade route the town runs to a settlement: what it sends, what it brings back, and how it has done.</summary>
@@ -66,6 +73,9 @@ public sealed class TradeRoute
     public bool Closed { get; set; }
     public int Caravans { get; set; }
     public int Raided { get; set; }
+
+    /// <summary>How many wagons its caravan runs; more carry more of the surplus out.</summary>
+    public int Wagons { get; set; } = 1;
 
     /// <summary>Gold the exports fetched and the imports cost, over the route's life.</summary>
     public double Earned { get; set; }
@@ -101,8 +111,25 @@ public static class Trade
 
     public static double OpenCost(Town town, Settlement s) => Rules(town).OpenCost + Rules(town).OpenPerDay * town.Regions[s.RegionId].Days;
 
-    public static double Load(Town town, Settlement s) =>
-        (Rules(town).Load + Rules(town).LoadPerHundred * town.Population / 100.0) * (s.Allied ? Rules(town).AllyLoad : 1);
+    public static double Load(Town town, Settlement s, TradeRoute? route = null) =>
+        (Rules(town).Load + Rules(town).LoadPerHundred * town.Population / 100.0) * (s.Allied ? Rules(town).AllyLoad : 1)
+        * (1 + Rules(town).WagonLoad * ((route?.Wagons ?? 1) - 1));
+
+    /// <summary>Gold to add the next wagon to a route's caravan, or null when it runs all it can.</summary>
+    public static double? WagonCost(Town town, TradeRoute route) =>
+        route.Wagons >= Rules(town).Wagons || route.Wagons - 1 >= Rules(town).WagonCost.Length ? null : Rules(town).WagonCost[route.Wagons - 1];
+
+    /// <summary>The player's lever: add a wagon to a route's caravan so it carries more of the surplus out (and more back).</summary>
+    public static bool AddWagon(Town town, int routeId)
+    {
+        if (town.Trade.Routes.FirstOrDefault(r => r.Id == routeId) is not { Closed: false } route) return false;
+        if (WagonCost(town, route) is not double cost || town.Treasury < cost) return false;
+        town.Book(TreasuryAccount.Trade, -cost);
+        route.Wagons++;
+        town.Log(LedgerCategory.Town, Importance.Notable,
+            $"The council buys another wagon for the caravan to {SettlementOf(town, route).Name} ({Js.Str(cost)} gold). It now runs {route.Wagons} wagons.");
+        return true;
+    }
 
     /// <summary>Why the town can't open a route to this settlement now, or null if it can.</summary>
     public static string? Refuse(Town town, Settlement s)
@@ -188,7 +215,7 @@ public static class Trade
     {
         var r = Rules(town);
         var m = town.Market;
-        double load = Load(town, s);
+        double load = Load(town, s, route);
         double sent = Math.Max(0, Math.Min(load, m.Stock(route.Export) - m.Target(route.Export) * r.KeepShare));
         route.Caravans++;
         if (town.Rng.Chance(RaidChance(town, s)))
@@ -239,6 +266,10 @@ public static class Trade
     /// <summary>The stand-in mayor opens a route when it can afford it comfortably, to the friendliest people that will trade.</summary>
     private static void StandIn(Town town)
     {
+        // A rich town puts more wagons on the road it already runs, the cheapest first.
+        var grow = Open(town).Where(x => WagonCost(town, x) is double c && town.Treasury >= c * 3 + 500)
+            .OrderBy(x => WagonCost(town, x)).ThenBy(x => x.Id).FirstOrDefault();
+        if (grow != null) AddWagon(town, grow.Id);
         if (Open(town).Count() >= Cap(town)) return;
         // A careful mayor fits out no caravans while a warband camps at an unwalled town's door.
         if (Threat.IsActive(town) && town.Defenses.Palisade != PalisadeState.Built) return;

@@ -199,6 +199,8 @@ public sealed class Simulation
 
     public bool CloseTradeRoute(int routeId) => Trade.CloseRoute(Town, routeId);
 
+    public bool AddWagon(int routeId) => Trade.AddWagon(Town, routeId);
+
     /// <summary>Raise a memorial to a hero in the hall of heroes.</summary>
     public bool RaiseMemorial(int heroId) => Legacies.RaiseMemorial(Town, heroId);
 
