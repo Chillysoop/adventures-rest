@@ -1,5 +1,6 @@
 {
   "temper": 0.25,
+  "pay": { "perTier": 50, "perTierSq": 30, "perTierCube": 6, "wealthFree": 2000, "wealthPer": 10000, "wealthCap": 2, "heroLevel": 0.04 },
   "errands": [
     { "id": "ward", "name": "a warding on the walls", "text": "pale sigils are chalked on every gate, and the townsfolk sleep easier.", "dread": -6 },
     { "id": "rain", "name": "rain on the fields", "text": "a soft rain falls on the fields for three days, and the granaries fill.", "food": 80 },

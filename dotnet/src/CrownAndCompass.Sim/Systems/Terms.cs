@@ -79,8 +79,25 @@ public sealed record BountyRules
     public double Temper { get; init; } = 0.25;
     public List<TermDef> Terms { get; init; } = [];
     public CaptiveRules Captives { get; init; } = new();
+    public BountyPay Pay { get; init; } = new();
 
     public TermDef Term(string id) => Terms.FirstOrDefault(t => t.Id == id) ?? Terms.FirstOrDefault() ?? new TermDef { Id = "slay", Name = "Slay", Verb = "clear" };
+}
+
+/// <summary>
+/// What heroes ask to take on a bounty: a price that climbs steeply with the danger (PerTier, PerTierSq and PerTierCube
+/// times the tier), and more from a town known to be rich (one more share of it per WealthPer gold the treasury holds
+/// above WealthFree, at most WealthCap more). Seasoned heroes expect HeroLevel more of their share for each level.
+/// </summary>
+public sealed record BountyPay
+{
+    public double PerTier { get; init; } = 50;
+    public double PerTierSq { get; init; } = 30;
+    public double PerTierCube { get; init; }
+    public double WealthFree { get; init; } = 2000;
+    public double WealthPer { get; init; } = 10000;
+    public double WealthCap { get; init; } = 2;
+    public double HeroLevel { get; init; }
 }
 
 /// <summary>Townsfolk carried off in a raid, held at a site until rescued or lost.</summary>
@@ -121,7 +138,7 @@ public static class Terms
     }
 
     /// <summary>The reward a bounty on these terms should carry, after the suggested reward for the believed tier.</summary>
-    public static double Suggested(Town town, SiteState s, TermDef term) => Js.Round(Quests.SuggestedReward(Math.Max(1, s.BelievedTier)) * term.Pay);
+    public static double Suggested(Town town, SiteState s, TermDef term) => Js.Round(Quests.Asking(town, Math.Max(1, s.BelievedTier)) * term.Pay);
 
     /// <summary>A hero's interest in the terms: more when they suit the hero's temper, less when they go against it.</summary>
     public static double Interest(Town town, Agent a, Bounty b)
