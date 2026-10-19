@@ -32,6 +32,7 @@ public partial class Main
         _find.SetAnchorsAndOffsetsPreset(LayoutPreset.Center, LayoutPresetMode.Minsize);
         _find.GrowHorizontal = GrowDirection.Both;
         _find.GrowVertical = GrowDirection.Both;
+        _find.MinimumSizeChanged += () => Ui.Refit(_find);
     }
 
     private void OpenFind(int id, StoryBeat? roll = null)
@@ -73,7 +74,7 @@ public partial class Main
 
     private void RenderFind(Find f)
     {
-        foreach (var c in _findBox.GetChildren()) c.Free();
+        Ui.Clear(_findBox);
         var t = _sim.Town;
         var s = Explore.Survey(t, f.SurveyId)!;
         var def = Explore.Def(t, f);

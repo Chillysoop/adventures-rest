@@ -247,7 +247,7 @@ public static class City
         var lines = new List<string>();
         if (town.Population < next.Residents) lines.Add($"{next.Residents} residents (now {town.Population})");
         foreach (string id in next.Requires)
-            if (!Has(town, id)) lines.Add($"a {town.Content.Building(id).Name.ToLowerInvariant()}");
+            if (!Has(town, id)) lines.Add($"{Agent.Article(town.Content.Building(id).Name)} {town.Content.Building(id).Name.ToLowerInvariant()}");
         if (next.Walls != "" && !WallsStand(town, next.Walls)) lines.Add(next.Walls == "CityWall" ? "the city wall" : "stone walls");
         if (town.Treasury < next.Cost) lines.Add($"{Js.Str(next.Cost)} gold for the charter");
         return lines;
@@ -655,8 +655,8 @@ public static class City
         var next = town.Content.Building(nextId);
         if (Locked(town, next) is { } why) return why;
         var lot = town.Lot(house.LotId);
-        if (!AllowsWard(town, next, lot.X, lot.Y)) return $"a {next.Name.ToLowerInvariant()} can't stand in the {WardOf(town, lot).Name}";
-        if (!Density.Allows(town, next, lot.X, lot.Y)) return $"a {next.Name.ToLowerInvariant()} needs land zoned {Density.Def(town, next.Density).Name.ToLowerInvariant()} density";
+        if (!AllowsWard(town, next, lot.X, lot.Y)) return $"{Agent.Article(next.Name)} {next.Name.ToLowerInvariant()} can't stand in the {WardOf(town, lot).Name}";
+        if (!Density.Allows(town, next, lot.X, lot.Y)) return $"{Agent.Article(next.Name)} {next.Name.ToLowerInvariant()} needs land zoned {Density.Def(town, next.Density).Name.ToLowerInvariant()} density";
         // The town's own houses are let to those who can't build: they grow roomier, never grand.
         if (house.OwnerId == null && next.Wards.Count > 0) return "the town lets its houses to working folk, not as manors";
         var nh = Housing(town, next.Id);

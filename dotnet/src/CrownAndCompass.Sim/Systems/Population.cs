@@ -47,8 +47,18 @@ public static class Population
         bool entrepreneur = profession == "merchant" || traits.Contains(Trait.Ambitious);
 
         var a = new Agent { Id = town.NewAgentId() };
-        a.GivenName = rng.Pick(raceDef.Given);
+        int given = rng.Range(0, raceDef.Given.Count);
         a.FamilyName = opts.FamilyName ?? rng.Pick(raceDef.Family);
+        // Two living townsfolk never share a full name (it read as one councillor holding two seats): take the
+        // next given name on the list instead, which costs no extra dice.
+        for (int k = 0; k < raceDef.Given.Count; k++)
+        {
+            string g = raceDef.Given[(given + k) % raceDef.Given.Count];
+            if (town.Agents.Any(o => !o.Departed && !o.Dead && o.GivenName == g && o.FamilyName == a.FamilyName)) continue;
+            given = (given + k) % raceDef.Given.Count;
+            break;
+        }
+        a.GivenName = raceDef.Given[given];
         a.Race = raceDef.Name;
         a.Age = rng.Range(18, 56);
         a.Abilities = Abilities.Roll(rng);
@@ -207,7 +217,7 @@ public static class Population
         if (a.Ambition == Ambition.OpenBusiness)
         {
             string dream = a.DreamBusiness != null
-                ? $"dreaming of opening a {town.Content.Building(a.DreamBusiness).Name.ToLowerInvariant()}"
+                ? $"dreaming of opening {Agent.Article(town.Content.Building(a.DreamBusiness).Name)} {town.Content.Building(a.DreamBusiness).Name.ToLowerInvariant()}"
                 : "looking for a business to buy into";
             town.Log(LedgerCategory.Arrival, Importance.Notable, $"{a.Describe()}, rides in with {Js.ToFixed(a.Gold, 0)} gold, {dream}.", [a.Id]);
         }

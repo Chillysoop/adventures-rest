@@ -809,7 +809,7 @@ public static class Neighbours
     {
         var good = f.Good ?? (s.Kin.Trade.Offers.Count > 0 ? s.Kin.Trade.Offers[0] : Good.Food);
         string text = f.Text.Replace("{name}", c.Name).Replace("{memory}", c.Memories[^1]).Replace("{good}", Lower(good.ToString())).Replace("{qty}", Js.Str(f.Qty))
-            .Replace("{band}", s.Band?.Name ?? "their band");
+            .Replace("{band}", s.Band?.Name ?? "their band").Replace("{town}", town.Name);
         c.Favours++;
         switch (f.Kind)
         {
@@ -846,6 +846,8 @@ public static class Neighbours
                 var cls = town.Content.Classes.FirstOrDefault(x => x.Id == classes[town.Rng.Range(0, classes.Count)]) ?? town.Content.Classes[0];
                 int level = Math.Max(1, (s.Band?.Level ?? 2));
                 var a = Quests.CreateHero(town, cls, level, s.Kin.Race == "" ? null : s.Kin.Race, s.Kin.Id);
+                // The one who walks in is the contact the text names, not a stranger.
+                if (c.Name != "") a.GivenName = c.Name.Split(' ')[0];
                 c.Gone = true;
                 town.Log(LedgerCategory.Arrival, Importance.Notable, $"{Saga.Cap(text)} {a.Describe()}.", [a.Id]);
                 return;

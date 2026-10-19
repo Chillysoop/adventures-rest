@@ -298,7 +298,12 @@ public partial class Main
         _feed.AddChild(card);
         _feed.MoveChild(card, 0);
         // Fewer while the tutorial card sits below the feed.
-        while (_feed.GetChildCount() > (_guideCard.Visible ? 3 : 5)) _feed.GetChild(_feed.GetChildCount() - 1).Free();
+        while (_feed.GetChildCount() > (_guideCard.Visible ? 3 : 5))
+        {
+            var old = _feed.GetChild(_feed.GetChildCount() - 1);
+            _feed.RemoveChild(old);
+            old.QueueFree();
+        }
     }
 
     private void AgeFeed(double delta)
@@ -314,7 +319,7 @@ public partial class Main
 
     private void ClearFeed()
     {
-        foreach (var c in _feed.GetChildren()) c.Free();
+        Ui.Clear(_feed);
         ClearAlerts();
     }
 

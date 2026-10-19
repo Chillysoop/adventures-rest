@@ -31,10 +31,11 @@ public partial class Main
             : "";
         p.Card($"{Ui.KindIcon("warband", 22)}[font_size=17][b]{Ui.Esc(Ui.Cap(t.Content.Enemy.Name))}[/b][/font_size]\n{stage.Text}{arrival}");
         p.Heading("Strength");
-        if (est is double e) p.Meter("Warband", 100 * e / scale, $"~{Math.Round(e)}", true);
-        else p.Text($"{Ui.C(Ui.Ink2, "Warband")}    [i]Unknown. Nobody has seen it yet.[/i]", 13);
+        // A broken warband has no strength left to guess at.
+        if (Threat.IsActive(t) && est is double e) p.Meter("Warband", 100 * e / scale, $"~{Math.Round(e)}", true);
+        else if (Threat.IsActive(t)) p.Text($"{Ui.C(Ui.Ink2, "Warband")}    [i]Unknown. Nobody has seen it yet.[/i]", 13);
         p.Meter("Your defence", 100 * def / scale, $"{Math.Round(def)}");
-        p.Note($"Defence counts the watch, heroes in town, a militia of townsfolk, and the walls (×{Threat.Fortification(t):0.00}). The warband grows while dungeons go uncleared.");
+        p.Note($"Defence counts the watch, heroes in town, a militia of townsfolk, and the walls (×{Threat.Fortification(t):0.00}).{(Threat.IsActive(t) ? " The warband grows while dungeons go uncleared." : "")}");
         RenderGuard(p, t);
         RenderWorks(p, t);
         p.Heading("Heroes");
