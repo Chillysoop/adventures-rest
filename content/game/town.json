@@ -2,6 +2,8 @@
   "taxRate": 0.1,
   "upkeepPerResident": 1.2,
   "civicUpkeep": 6,
+  "treasuryFree": 15000,
+  "treasuryKeep": 0.003,
   "frontierDraw": 0.4,
   "frontierSize": 100,
   "buildingGap": 0.1,

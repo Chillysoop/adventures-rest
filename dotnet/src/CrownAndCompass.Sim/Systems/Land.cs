@@ -323,15 +323,19 @@ public static class Land
         Zone? zone = null;
         // Centres sit on cell centres for odd sizes and on cell corners for even ones, so a square building fills whole cells.
         double ox = w % 2 == 1 ? 0.5 : 0, oy = d % 2 == 1 ? 0.5 : 0;
+        // Open or civic ground first; when the zones have painted over all of it, the council takes unbuilt plots of
+        // homes and shops (never fields), so the town's works never wait on land the mayor zoned for something else.
         var candidates = new List<(double Score, int Cell)>();
         for (int i = 0; i < plan.Zones.Length; i++)
         {
             if (plan.Taken[i] != 0) continue;
-            if (zone is Zone z ? plan.Zones[i] != (byte)z : plan.Zones[i] is not ((byte)Zone.None or (byte)Zone.Civic)) continue;
+            byte z = plan.Zones[i];
+            if (z == (byte)Zone.Farmland) continue;
             int cx = i % Size, cy = i / Size;
             double x = (cx + ox) / Res, y = (cy + oy) / Res;
             double dist = Math.Sqrt((x - Town.Center) * (x - Town.Center) + (y - Town.Center) * (y - Town.Center));
-            candidates.Add((dist + Jitter(i) * 0.6, i));
+            bool spare = z is (byte)Zone.None or (byte)Zone.Civic;
+            candidates.Add((dist + Jitter(i) * 0.6 + (spare ? 0 : 1000), i));
         }
         foreach (var (_, i) in candidates.OrderBy(c => c.Score).ThenBy(c => c.Cell))
         {

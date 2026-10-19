@@ -12,7 +12,10 @@ public class ClockworkTests
         Assert.NotNull(Clockwork.BuildBlocked(t));
         Assert.False(sim.BuildWarden());
         var r = t.Content.Clockwork;
-        for (int d = 0; d < 900 && Clockwork.BuildBlocked(t) is { } why && why != "not enough gold"; d++) sim.RunDays(1);
+        // A workshop comes with the town's growth; the charter is granted outright so the test doesn't hang on how the campaign goes.
+        for (int d = 0; d < 900 && !Clockwork.Workshop(t) && t.Outcome == null; d++) sim.RunDays(1);
+        Assert.True(Clockwork.Workshop(t));
+        if (!City.Reached(t, r.Tier)) t.City.Tier = City.TierIndex(t, r.Tier);
         t.Treasury += r.Cost * 2;
         Assert.Null(Clockwork.BuildBlocked(t));
         double def = Clockwork.Defense(t), caught = Council.WatchStrength(t);

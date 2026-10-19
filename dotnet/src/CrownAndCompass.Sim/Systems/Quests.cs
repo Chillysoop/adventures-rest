@@ -273,6 +273,20 @@ public static class Quests
 
     public static int SuggestedReward(int tier) => 50 * tier + 30 * tier * tier;
 
+    /// <summary>What heroes ask of this town for a site of this tier: steeper for great danger, dearer when the treasury is full.</summary>
+    public static double Asking(Town town, int tier)
+    {
+        var p = town.Content.Bounties.Pay;
+        return Js.Round((p.PerTier * tier + p.PerTierSq * tier * tier + p.PerTierCube * tier * tier * tier) * Wealth(town));
+    }
+
+    /// <summary>How much more heroes expect from a rich town, from 1 up to 1 + WealthCap.</summary>
+    public static double Wealth(Town town)
+    {
+        var p = town.Content.Bounties.Pay;
+        return 1 + Math.Min(p.WealthCap, Math.Max(0, town.Treasury - p.WealthFree) / p.WealthPer);
+    }
+
     /// <param name="people">The people (content/game/world.json) who sent them, if any.</param>
     public static Agent CreateHero(Town town, ClassDef cls, int level, string? race = null, string? people = null)
     {
@@ -399,7 +413,7 @@ public static class Quests
             .ThenBy(s => s.Attempts)
             .FirstOrDefault();
         if (target == null) return;
-        double reward = SuggestedReward(target.BelievedTier) + 20 * target.Attempts;
+        double reward = Asking(town, target.BelievedTier) + 20 * target.Attempts;
         if (town.Treasury < reward + 100) return;
         PostBounty(town, target.Def.Id, reward);
     }
@@ -410,8 +424,10 @@ public static class Quests
         int tier = Math.Max(1, Site(town, bounty.SiteId)!.BelievedTier);
         // A famous name wants a bigger share before the work is worth it.
         double share = bounty.Reward / Math.Max(1, partySize) / Notoriety.FeeFactor(town, a);
+        // A rich town and a seasoned hero both raise the share that makes the work worth it.
+        double expected = tier * 40 * Wealth(town) * (1 + town.Content.Bounties.Pay.HeroLevel * a.Hero!.Level);
         return
-            share / (tier * 40) +
+            share / expected +
             (a.Has(Trait.Greedy) ? 0.2 : 0) +
             (a.Has(Trait.HotTempered) ? 0.15 : 0) +
             (a.Has(Trait.Ambitious) ? 0.1 : 0) -

@@ -40,6 +40,42 @@ public sealed record FactionDef
 
     /// <summary>The Ledger line when it takes root: {names}, {den}, {patron}, {name}, {town}.</summary>
     public string Founded { get; init; } = "";
+
+    /// <summary>Shares its takings out among its members, keeping only a small stash in the den (<see cref="FactionRules.Stash"/>).</summary>
+    public bool Shares { get; init; }
+
+    /// <summary>Survivors of a crackdown strike back at the town for a while (<see cref="FactionRules.Vendetta"/>).</summary>
+    public bool Vendetta { get; init; }
+}
+
+/// <summary>What a guild keeps in its den before the rest is shared out: Base plus PerMember for each member.</summary>
+public sealed record StashRules
+{
+    public double Base { get; init; } = 60;
+    public double PerMember { get; init; } = 15;
+
+    /// <summary>Shares the leader takes for each one a member gets.</summary>
+    public double LeaderShares { get; init; } = 3;
+
+    /// <summary>The share of an exiled member's purse the watch takes with them in a crackdown.</summary>
+    public double Seize { get; init; } = 0.75;
+}
+
+/// <summary>How a guild that survives a crackdown gets its own back.</summary>
+public sealed record VendettaRules
+{
+    public int Days { get; init; } = 45;
+    public double Chance { get; init; } = 0.2;
+
+    /// <summary>A bribed clerk's take from the treasury: Share of it, at most Cap.</summary>
+    public double Share { get; init; } = 0.03;
+    public double Cap { get; init; } = 300;
+
+    /// <summary>Gold of damage when the guild burns a civic building's stores, from Fire[0] to Fire[1].</summary>
+    public int[] Fire { get; init; } = [40, 120];
+
+    /// <summary>Mandate the mayor loses when their door is marked.</summary>
+    public double Threat { get; init; } = 3;
 }
 
 /// <summary>Numbers shared by every faction (content/game/factions.json).</summary>
@@ -97,6 +133,8 @@ public sealed record FactionRules
     public double WakenHeat { get; init; } = 30;
     public int WhisperReliability { get; init; } = 70;
     public SiteDef? CryptSite { get; init; }
+    public StashRules Stash { get; init; } = new();
+    public VendettaRules Vendetta { get; init; } = new();
     public IReadOnlyList<FactionDef> Factions { get; init; } = [];
 }
 
@@ -167,6 +205,9 @@ public sealed class FactionState(FactionDef def, LibFaction lore)
 
     public string? CryptId { get; set; }
     public bool CryptBroken { get; set; }
+
+    /// <summary>Day until which the guild strikes back at the town for a crackdown.</summary>
+    public int VendettaUntil { get; set; }
 }
 
 /// <summary>
@@ -242,11 +283,13 @@ public static class Factions
                 continue;
             }
             Dues(town, f);
+            Share(town, f);
             Recruit(town, f);
             f.Heat = Math.Max(0, f.Heat - Rules(town).HeatDecay);
             if (f.Secret && f.DenId == null && town.Taverns.Count > 0) f.DenId = town.Taverns[0].Id;
             CheckExposure(town, f);
             if (f.Active && town.Day >= f.QuietUntil && town.Rng.Chance(Rules(town).ActionChance)) Act(town, f);
+            if (f.Active && town.Day < f.VendettaUntil && town.Rng.Chance(Rules(town).Vendetta.Chance)) StrikeBack(town, f);
         }
         CryptCleared(town);
         if (auto) Policy(town);
@@ -373,6 +416,19 @@ public static class Factions
         }
     }
 
+    /// <summary>A guild that shares its takings keeps a small stash in the den and splits the rest among its members, so no raid finds a fortune.</summary>
+    private static void Share(Town town, FactionState f)
+    {
+        if (!f.Def.Shares || f.Members.Count == 0) return;
+        var stash = Rules(town).Stash;
+        double excess = Coffers(town, f) - (stash.Base + stash.PerMember * f.Members.Count);
+        // The leader takes LeaderShares to everyone else's one.
+        double each = Math.Floor(excess / (f.Members.Count - 1 + stash.LeaderShares));
+        if (each < 1) return;
+        foreach (int id in f.Members) town.Agent(id).Gold += id == f.LeaderId ? each * stash.LeaderShares : each;
+        AddCoffers(town, f, -each * (f.Members.Count - 1 + stash.LeaderShares));
+    }
+
     private static void Recruit(Town town, FactionState f)
     {
         if (!town.Rng.Chance(Rules(town).RecruitChance)) return;
@@ -483,6 +539,64 @@ public static class Factions
             .FirstOrDefault();
 
     private static bool Vigilant(Town town) => town.Factions.Any(x => x.Active && x.VigilanceUntil > town.Day);
+
+    /// <summary>
+    /// What is left of a guild after a crackdown gets its own back: a bribed clerk robs the treasury, the stores of a
+    /// civic building burn, or the mayor's door is marked. A stronger watch catches more of them in the act.
+    /// </summary>
+    private static void StrikeBack(Town town, FactionState f)
+    {
+        var r = Rules(town);
+        var v = r.Vendetta;
+        var rng = town.Rng;
+        var agent = Best(town, f, Ability.Dex);
+        if (agent == null) return;
+        int roll = rng.D20();
+        int bonus = Rng.Modifier(agent.Abilities.Dex) + (agent.Hero?.Cls.Sneak == true ? agent.Hero.Level + 2 : 0);
+        double dc = r.TheftDc + Council.WatchStrength(town) * r.TheftDcPerWatch + (Vigilant(town) ? r.VigilanceDc : 0);
+        var hall = Economy.Hall(town);
+        int kind = rng.Range(0, 3);
+        if (kind == 1 && hall == null) kind = 2;
+        if (roll == 1 || roll + bonus < dc)
+        {
+            double fine = Math.Min(Math.Floor(Math.Max(0, agent.Gold)), r.Fine);
+            agent.Gold -= fine;
+            if (fine > 0) town.Book(TreasuryAccount.Fines, fine);
+            f.Caught[agent.Id] = f.Caught.Get(agent.Id, 0) + 1;
+            string caught = kind switch
+            {
+                0 => $"The watch catches {agent.Name} passing gold to a clerk of the counting-house (d20 {roll})",
+                1 => $"The watch catches {agent.Name} behind {hall!.Name} at night with a tinderbox and a grudge (d20 {roll})",
+                _ => $"The watch catches {agent.Name} with a knife at the mayor's door before dawn (d20 {roll})",
+            };
+            town.Log(
+                LedgerCategory.Faction,
+                Importance.Notable,
+                $"{caught}. {agent.GivenName} is fined {Js.Str(fine)} gold and swears {f.Name} will not forget the raid.",
+                [agent.Id]);
+            return;
+        }
+        if (kind == 0 && town.Treasury > 0)
+        {
+            double take = Math.Floor(Math.Min(v.Cap, town.Treasury * v.Share));
+            if (take < 1) return;
+            town.Book(TreasuryAccount.Discrepancies, -take);
+            agent.Gold += take;
+            town.Log(LedgerCategory.Faction, Importance.Notable, $"A clerk in the counting-house is found to have been paid by {f.Name}. {Js.Str(take)} gold is missing from the treasury, and the guild sends word that this is for the raid.", [agent.Id]);
+        }
+        else if (kind == 1)
+        {
+            double damage = Math.Min(Math.Max(0, town.Treasury), rng.Range(v.Fire[0], v.Fire[1] + 1));
+            town.Book(TreasuryAccount.Factions, -damage);
+            town.Log(LedgerCategory.Faction, Importance.Notable, $"Fire takes the store-rooms behind {hall!.Name} in the night. Mending it costs {Js.Str(damage)} gold, and the guild's mark is chalked on the door.", [agent.Id]);
+        }
+        else
+        {
+            town.Mandate = Math.Max(0, town.Mandate - v.Threat);
+            town.Log(LedgerCategory.Faction, Importance.Notable, $"The mayor wakes to find the mark of {f.Name} cut into the front door. Word of it goes round the taverns, and the council looks less sure of the mayor.", [agent.Id]);
+        }
+        f.Heat = Math.Min(100, f.Heat + 4);
+    }
 
     private static void Theft(Town town, FactionState f)
     {
@@ -892,9 +1006,18 @@ public static class Factions
                 a.Devout = false;
             }
         }
+        // The watch takes part of what the exiles carry; the rest leaves town with them.
+        double purses = 0;
+        if (f.Def.Shares)
+            foreach (var a in exiled)
+            {
+                double take = Math.Floor(Math.Max(0, a.Gold) * r.Stash.Seize);
+                a.Gold -= take;
+                purses += take;
+            }
         foreach (var a in exiled) Population.Depart(town, a);
-        double seized = Math.Max(0, Coffers(town, f));
-        AddCoffers(town, f, -seized);
+        double seized = Math.Max(0, Coffers(town, f)) + purses;
+        AddCoffers(town, f, -(seized - purses));
         town.Book(TreasuryAccount.Fines, fines + seized);
         f.Members.RemoveAll(i => exiled.Any(a => a.Id == i));
         // Half of those fined have had enough; a cult loses everyone.
@@ -916,6 +1039,7 @@ public static class Factions
             (after.Count > 0 ? $", {string.Join(after.Count > 1 ? ", and " : "", after)}." : ".") +
             (f.Members.Count > 0 ? $" What is left of {f.Name} goes to ground." : $" {Cap(f.Name)} {f.Verb("is", "are")} broken."),
             members.Select(a => a.Id).ToList());
+        if (f.Members.Count > 0 && f.Def.Vendetta) f.VendettaUntil = town.Day + r.Vendetta.Days;
         if (f.Members.Count > 0 && f.Secret) f.Known = false;
         else
         {

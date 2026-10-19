@@ -37,6 +37,14 @@
       "teaches": []
     },
     {
+      "id": "keywords",
+      "title": "Gold words",
+      "text": "Words in gold, like Mandate or the warband, are keywords. [b]Hover[/b] one anywhere for a card that explains it, and [b]click[/b] it to pin the card so it stays while you read on; drag a pinned card by its title, close it with its cross. The book at the top right, or [b]F1[/b], opens the whole glossary. Try hovering a figure on the top bar and clicking it.",
+      "point": "glossary",
+      "until": "pin",
+      "teaches": ["key:F1"]
+    },
+    {
       "id": "ledger",
       "title": "The Ledger",
       "text": "Everything that happens in town is written in the Ledger, from brawls to weddings to dragons. Open it from the dock.",
@@ -261,6 +269,15 @@
       "teaches": ["tab:Diplomacy", "command:SendEnvoy", "command:OpenTradeRoute", "command:CloseTradeRoute"]
     },
     {
+      "id": "wagons",
+      "title": "Bigger caravans",
+      "text": "Goods your town makes beyond what it needs earn nothing sitting in the market: the evening carters clear them away. A [b]trade route[/b] turns that surplus into gold. In [b]Diplomacy[/b], [b]Add a wagon[/b] to a route and its caravan carries more out on every run, up to four wagons. A bigger charter lets you run more routes, too.",
+      "when": "day:150",
+      "point": "tab:Diplomacy",
+      "until": "tab:Diplomacy",
+      "teaches": ["command:AddWagon"]
+    },
+    {
       "id": "neighbours",
       "title": "Neighbours with lives of their own",
       "text": "Every settlement in [b]Diplomacy[/b] has a leader, its own small band of adventurers, and troubles: missing hunters, a broken mill, a fever. Its band goes after what it can and asks your heroes for help when it fails. Send [b]aid[/b] to meet a need, or pay for a [b]project[/b] there that lasts: a watchtower, a bridge, a waystation where your parties rest. The people you help remember it and come back with favours, and friends send relief when a host marches on you.",
@@ -410,7 +427,7 @@
     {
       "id": "grand-works",
       "title": "Grand works",
-      "text": "A rich town can raise grand works: a clock tower, an aqueduct, a great gatehouse, a mage tower, royal gardens and in time a colossus, unlocked charter by charter. Begin one under [b]Grand works[/b] in the [b]City[/b] window and set it down like any government building. It rises over seasons, drawing gold and goods for each stage as the last is done, and helps the whole town for good once it stands.",
+      "text": "A rich town can raise grand works: a clock tower, an aqueduct, a great gatehouse, a mage tower, royal gardens, and in a great city a colossus and three wonders (a cathedral, a palace and a citadel), unlocked charter by charter. A treasury that sits on more than 15,000 gold costs a little each day to keep, so a rich city does best to build. Begin one under [b]Grand works[/b] in the [b]City[/b] window and set it down like any government building. It rises over seasons, drawing gold and goods for each stage as the last is done, and helps the whole town for good once it stands.",
       "point": "tab:City",
       "when": "alert:grandwork",
       "teaches": []

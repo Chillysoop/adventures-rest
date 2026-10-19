@@ -46,6 +46,10 @@ public sealed class Options
 
     /// <summary>--history [power-id]: open the world's history timeline, with a power's story picked.</summary>
     public string? History;
+
+    /// <summary>--glossary [entry-id]: open the glossary at an entry; --keyword id[,id] pins keyword cards (screenshots).</summary>
+    public string? Glossary;
+    public List<string> Keywords = [];
     public string? Tutorial;
     public bool Hero;
 
@@ -134,6 +138,8 @@ public sealed class Options
                 case "--menu": o.Menu = true; break;
                 case "--title": o.Title = true; break;
                 case "--history": o.History = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
+                case "--glossary": o.Glossary = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
+                case "--keyword": o.Keywords.AddRange(Next().Split(',')); break;
                 case "--tutorial": o.Tutorial = Next(); break;
                 case "--hero": o.Hero = true; break;
                 case "--folk": o.Folk = true; break;
@@ -195,7 +201,7 @@ public sealed class Options
             {
                 case "bounty":
                     var site = Quests.Site(t, arg);
-                    if (site != null) sim.PostBounty(arg, Quests.SuggestedReward(site.Def.Tier));
+                    if (site != null) sim.PostBounty(arg, Quests.Asking(t, site.Def.Tier));
                     break;
                 case "scry":
                     sim.CommissionScrying(arg);

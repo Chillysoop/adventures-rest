@@ -12,10 +12,18 @@ All three are CC0 (licence files in `models/LICENSE-kenney-*.txt`). Credit is no
 "Kenney (www.kenney.nl)". `tools/kenney_bake.py` downloads them and bakes the models used into `models/kenney.bin`
 (one colour per triangle, recoloured to our palette in `src/Map/TownView.cs`).
 
+## Third party (CC BY 3.0)
+
+- **game-icons.net** (Lorc, Delapouite and contributors) — the goods, enemy-kind, dock and glossary icons in `icons/`
+  written by `scripts/icons.ts` (food, timber, tools, ale, stone, wool, cloth, furniture, herbs, potions, wine, books,
+  tribe, undead, schemers, beasts, dragon, cult, rivals, tab-*, glossary). https://game-icons.net, licence
+  https://creativecommons.org/licenses/by/3.0/. Recoloured and outlined for the game.
+
 ## Made for this game
 
 - Terrain, water, foliage, fog of war and the strategic map: shaders in `shaders/`, generated from the seed at load.
 - Townsfolk, heroes, orcs, banners, far trees, roofs, grass, flowers and site landmarks: generated in `src/Map/MeshKit.cs`
   and its callers.
-- Resource and alert icons in `icons/`: drawn for this game (SVG).
+- Gold, bread, people, heroes, homeless, mandate, favour, suspicion, defence, warband, d20, compass and alert icons in
+  `icons/`: drawn for this game (SVG).
 - Fonts: see `fonts/` (SIL Open Font License).
