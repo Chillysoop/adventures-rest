@@ -218,7 +218,7 @@ public partial class Main
             "window" => _window,
             "inspector" => _inspector,
             "dock" => _dock,
-            _ when point.StartsWith("tab:", StringComparison.Ordinal) && Enum.TryParse<Tab>(point[4..], out var tab) && _tabButtons.TryGetValue(tab, out var b) => _window.Visible && _windowTab == tab ? null : b,
+            _ when point.StartsWith("tab:", StringComparison.Ordinal) && Enum.TryParse<Tab>(point[4..], out var tab) && _tabButtons.TryGetValue(tab, out var b) => TabAnchor(tab, b),
             _ => null,
         };
         return c != null && c.IsVisibleInTree() ? c : null;

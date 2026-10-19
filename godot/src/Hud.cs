@@ -12,7 +12,7 @@ namespace CrownAndCompass.Client;
 /// </summary>
 public partial class Main
 {
-    private const int TopBar = 58, DockHeight = 66, Gap = 12;
+    private const int TopBar = 58, DockHeight = 48, Gap = 12;
 
     private PanelContainer _window = null!, _inspector = null!;
     private Label _windowTitle = null!;
@@ -206,6 +206,7 @@ public partial class Main
     private void BuildWindow()
     {
         _window = Floating(out var body, out _windowTitle, () => CloseWindow());
+        body.AddChild(BuildShelf());
         foreach (var t in Enum.GetValues<Tab>())
             if (t != Tab.Inspect) body.AddChild(MakeScroll(t));
         AddChild(_window);
@@ -245,6 +246,8 @@ public partial class Main
         foreach (var (k, s) in _scrolls)
             if (k != Tab.Inspect) s.Visible = k == t;
         _window.Visible = true;
+        _groupLast[GroupOf(t)] = t;
+        ClosePicker();
         SyncDock();
         _dirty = true;
         GuideEvent($"tab:{t}");
@@ -255,91 +258,6 @@ public partial class Main
         _window.Visible = false;
         _windowTab = null;
         SyncDock();
-    }
-
-    private void SyncDock()
-    {
-        foreach (var (k, b) in _tabButtons) b.ButtonPressed = _window.Visible && _windowTab == k;
-        PlaceInspector();
-    }
-
-    // ---------- The dock ----------
-
-    private void BuildDock()
-    {
-        var dock = new PanelContainer();
-        dock.AddThemeStyleboxOverride("panel", Castle.Ledge(12, 6));
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", 4);
-        dock.AddChild(row);
-        foreach (var t in Enum.GetValues<Tab>())
-        {
-            if (t == Tab.Inspect) continue;
-            var b = DockButton(t.ToString(), $"tab-{t.ToString().ToLowerInvariant()}", Titles[t] + (t == Tab.Mayor ? " (C)" : ""));
-            b.Pressed += () => SetTab(t);
-            row.AddChild(b);
-            _tabButtons[t] = b;
-            if (t == Tab.Council)
-            {
-                _motionDot = new ColorRect { Color = Ui.Accent, Visible = false, MouseFilter = MouseFilterEnum.Ignore };
-                b.AddChild(_motionDot);
-                _motionDot.SetAnchorsAndOffsetsPreset(LayoutPreset.TopRight);
-                _motionDot.OffsetLeft = -10;
-                _motionDot.OffsetRight = -4;
-                _motionDot.OffsetTop = 8;
-                _motionDot.OffsetBottom = 14;
-            }
-        }
-        row.AddChild(new VSeparator());
-        _buildToggle = DockButton("Build", "tab-build", "Zone land and place government buildings (B)");
-        _buildToggle.Pressed += ToggleBuildBar;
-        row.AddChild(_buildToggle);
-        AddChild(dock);
-        _dock = dock;
-        dock.SetAnchorsAndOffsetsPreset(LayoutPreset.CenterBottom, LayoutPresetMode.Minsize, Gap);
-        dock.GrowHorizontal = GrowDirection.Both;
-        dock.GrowVertical = GrowDirection.Begin;
-
-        _help = Ui.Label(MapHelp, new Color("f6eedb", 0.72f), Ui.Medium, 12);
-        _help.AddThemeColorOverride("font_outline_color", new Color(0, 0, 0, 0.6f));
-        _help.AddThemeConstantOverride("outline_size", 4);
-        _help.MouseFilter = MouseFilterEnum.Ignore;
-        AddChild(_help);
-        _help.SetAnchorsAndOffsetsPreset(LayoutPreset.CenterBottom, LayoutPresetMode.Minsize, Gap + DockHeight + 14);
-        _help.GrowHorizontal = GrowDirection.Both;
-        _help.GrowVertical = GrowDirection.Begin;
-    }
-
-    /// <summary>A dock button: its icon over a short name, so fifteen of them fit beside the corner map.</summary>
-    private static Button DockButton(string text, string icon, string tip)
-    {
-        var b = new Button
-        {
-            Text = text,
-            Icon = Ui.Icon(icon),
-            ThemeTypeVariation = "Tab",
-            ToggleMode = true,
-            FocusMode = FocusModeEnum.None,
-            TooltipText = tip,
-            ExpandIcon = false,
-            IconAlignment = HorizontalAlignment.Center,
-            VerticalIconAlignment = VerticalAlignment.Top,
-            CustomMinimumSize = new Vector2(66, 0),
-        };
-        b.AddThemeConstantOverride("icon_max_width", 22);
-        b.AddThemeConstantOverride("h_separation", 2);
-        b.AddThemeFontSizeOverride("font_size", 12);
-        foreach (var state in new[] { "normal", "hover" }) b.AddThemeStyleboxOverride(state, Ui.Flat(Colors.Transparent, 5, 4, 8));
-        var on = Ui.Flat(new Color(Ui.Gold, 0.12f), 5, 4, 8);
-        on.BorderColor = Ui.Accent;
-        on.BorderWidthBottom = 2;
-        b.AddThemeStyleboxOverride("pressed", on);
-        b.AddThemeStyleboxOverride("hover_pressed", on);
-        b.AddThemeColorOverride("icon_normal_color", Ui.Ink2);
-        b.AddThemeColorOverride("icon_hover_color", Ui.Ink);
-        b.AddThemeColorOverride("icon_pressed_color", Ui.Gold);
-        b.AddThemeColorOverride("icon_hover_pressed_color", Ui.Gold);
-        return b;
     }
 
     // ---------- News feed ----------

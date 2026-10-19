@@ -97,7 +97,9 @@ public partial class Main
                 return 10;
             case 21:
                 CloseHistory();
-                // The glossary, and a keyword's card pinned over it.
+                // Each dock group's list, then the glossary with a keyword's card pinned over it.
+                for (int g = 0; g < Groups.Length; g++) OpenPicker(g);
+                ClosePicker();
                 OpenGlossary("mandate");
                 Pin("warband");
                 if (_kwPinned.Count == 0) throw new InvalidOperationException("the keyword card did not pin");

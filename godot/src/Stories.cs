@@ -98,7 +98,8 @@ public partial class Main
         var t = _sim.Town;
         var d = Stories.DefOf(t, s);
         var (word, color) = StakesLook(d.Stakes);
-        ((StyleBoxFlat)_story.GetThemeStylebox("panel")).BorderColor = color;
+        // The stakes' colour as a rule across the top of the oak card.
+        _storyBox.AddChild(new ColorRect { Color = color, CustomMinimumSize = new Vector2(0, 3), MouseFilter = MouseFilterEnum.Ignore });
 
         var head = new HBoxContainer();
         head.AddThemeConstantOverride("separation", 10);
