@@ -83,11 +83,10 @@ public static class Council
     public static Motion? PendingMotion(Town town) => town.Motions.FirstOrDefault(m => m.Status == MotionStatus.Pending);
 
     /// <summary>
-    /// The pending motion if the council settles it on the next step, because the mayor let its days run out. The client
-    /// stops the clock on it: at top speed a motion's three days pass in seconds.
+    /// A motion the council settles within the day if the mayor leaves it. The clock no longer stops for motions: its
+    /// alert waits on the strip and flashes red over its last day instead.
     /// </summary>
-    public static Motion? Lapsing(Town town) =>
-        PendingMotion(town) is { } m && (town.Tick + 1) % SimTime.HoursPerDay == 0 && town.Tick + 1 >= m.DeadlineTick ? m : null;
+    public static bool Closing(Town town, Motion m) => m.DeadlineTick - town.Tick <= SimTime.HoursPerDay;
 
     /// <summary>Whole days, at least one, until the council settles a motion the mayor leaves alone.</summary>
     public static int DaysLeft(Town town, Motion m) => Math.Max(1, (int)Math.Ceiling((m.DeadlineTick - town.Tick) / (double)SimTime.HoursPerDay));

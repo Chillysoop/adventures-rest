@@ -110,4 +110,44 @@ public class TermsTests
         Assert.Equal("", b.Errand);
         Assert.Contains(t.Ledger.Entries, e => e.Text.Contains("keeps its word"));
     }
+
+    [Fact]
+    public void AWipedCompanysGearLiesWhereItFellUntilAPartyBringsItHome()
+    {
+        var sim = Player();
+        var t = sim.Town;
+        var goblins = Quests.Site(t, "goblin_warrens")!;
+        goblins.Known = SiteKnowledge.Rumoured;
+        var recover = t.Content.Bounties.Term("recover");
+        Assert.True(recover.Fallen);
+        Assert.NotNull(Terms.Blocked(t, goblins, recover));
+
+        var heroes = Party(t, 3);
+        var charm = t.Content.Library.Items.First(x => x.Rarity == "uncommon");
+        heroes[0].Hero!.Magic["trinket"] = charm;
+        var party = new Party { Id = 77, Name = "Lost Lanterns", Members = heroes.Select(a => a.Id).ToList(), SiteId = goblins.Def.Id };
+        var lost = Remains.Lie(t, party, goblins, heroes);
+        Assert.Same(lost, Remains.At(t, goblins.Def.Id));
+        Assert.Contains(charm, lost.Gear);
+
+        // The card tells of it, and its first answer posts the recovery bounty.
+        t.Treasury = 5000;
+        var card = Stories.Lost(t, lost, party);
+        Assert.NotNull(card);
+        Assert.Null(Stories.Lost(t, lost, party));
+        Assert.Null(Terms.Blocked(t, goblins, recover));
+        Assert.NotNull(Stories.Resolve(t, card!.Id, 0));
+        var bounty = t.Bounties.Single(b => b.SiteId == goblins.Def.Id);
+        Assert.Equal("recover", bounty.Terms);
+
+        // On those terms a party goes only as far as the fallen.
+        var run = Expedition.Run(new Rng(3), t.Content, goblins.Def, Party(t, 6), terms: recover);
+        if (run.GoalMet) Assert.Contains(run.Lines, l => l.Contains("fallen"));
+
+        int stock = t.Armory.Stock.Count;
+        Remains.Recover(t, lost, party);
+        Assert.Null(Remains.At(t, goblins.Def.Id));
+        Assert.Equal(stock + 1, t.Armory.Stock.Count);
+        Assert.Contains(t.Ledger.Entries, e => e.Text.Contains("bring the Lost Lanterns home"));
+    }
 }

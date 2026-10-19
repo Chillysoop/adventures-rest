@@ -48,20 +48,19 @@ public class CouncilTests
     }
 
     [Fact]
-    public void NamesTheMotionThatLapsesOnTheVeryNextStep()
+    public void FlagsAMotionOverItsLastDay()
     {
-        // The client pauses on this, so it must warn exactly once: the step before the council settles the motion.
+        // The alert flashes red while this holds: from a day before the council settles it until it does.
         var sim = new Simulation(new SimulationOptions { Seed = 3, AutoCouncil = false });
         var m = UntilMotion(sim);
-        int warned = 0;
+        int closing = 0;
         while (m.Status == MotionStatus.Pending)
         {
-            bool lapsing = Council.Lapsing(sim.Town) == m;
-            if (lapsing) warned++;
+            if (Council.Closing(sim.Town, m)) closing++;
+            else Assert.Equal(0, closing);
             sim.Step();
-            Assert.Equal(lapsing, m.Status != MotionStatus.Pending);
         }
-        Assert.Equal(1, warned);
+        Assert.Equal(SimTime.HoursPerDay, closing);
         Assert.Equal(DecidedBy.Council, m.DecidedBy);
     }
 

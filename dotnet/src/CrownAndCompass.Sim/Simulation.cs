@@ -133,7 +133,7 @@ public sealed class Simulation
         Watch.Daily(t, Options.AutoMayor && Options.AutoBounties);
         Undercity.Daily(t, Options.AutoMayor);
         Research.Daily(t, Options.AutoMayor);
-        Lairs.Daily(t, Options.AutoMayor);
+        Lairs.Daily(t, Options.AutoMayor, Options.AutoDefense);
         Rumors.Daily(t);
         Shrines.Daily(t, Options.AutoMayor);
         Faith.Daily(t);

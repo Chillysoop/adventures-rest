@@ -32,6 +32,11 @@
       "id": "fetch", "name": "Fetch", "verb": "steal the best of the hoard from",
       "text": "Get in, take the best thing in the hoard for the town, get out. The place is left standing.",
       "pay": 0.8, "tags": ["coin", "guile"], "rooms": 0.5, "loot": 0.4, "item": true
+    },
+    {
+      "id": "recover", "name": "Recover", "verb": "bring home the fallen company lost at",
+      "text": "Fight in to where a company of ours fell, and bring home their bones and the gear they carried. The place itself is left standing.",
+      "pay": 0.8, "tags": ["valor", "mercy"], "rooms": 0.5, "loot": 0.3, "fallen": true
     }
   ],
   "captives": {
