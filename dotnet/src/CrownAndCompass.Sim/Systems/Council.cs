@@ -249,7 +249,8 @@ public static class Council
         foreach (var s in town.Seats)
         {
             if (s.HolderId == null) continue;
-            var p = ProposalFor(town, s.Def.Id);
+            // A steward in a foe's pay keeps moving to send the watch home.
+            var p = Infiltration.Steers(town, s) ? new Proposal(MotionKind.DismissWatch, 0, "the watch costs more than the town can bear") : ProposalFor(town, s.Def.Id);
             if (p == null || RecentlyFailed(town, p.Kind) || !town.Rng.Chance(0.5)) continue;
             var h = town.Agent(s.HolderId.Value);
             var m = new Motion
@@ -366,6 +367,11 @@ public static class Council
                 continue;
             }
             var voter = town.Agent(s.HolderId.Value);
+            if (Infiltration.Vote(town, voter.Id, m) is bool bought)
+            {
+                votes.Add(new Vote(s.Def.Id, bought));
+                continue;
+            }
             double lean = town.Content.Council.Alignment[m.Kind][s.Def.Id] * 50 + voter.OpinionOf(m.ProposerId) * 0.3 + town.Rng.Range(-25, 25);
             votes.Add(new Vote(s.Def.Id, lean > 0));
         }

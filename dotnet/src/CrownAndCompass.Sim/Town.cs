@@ -435,6 +435,7 @@ public sealed class Town
 
     /// <summary>Foes' grudges against the town (<see cref="Systems.Vengeance"/>).</summary>
     public List<Systems.Grudge> Grudges { get; } = [];
+    public List<Systems.Mole> Moles { get; } = [];
 
     /// <summary>The open levels of the undercity, shallowest first (<see cref="Systems.Undercity"/>).</summary>
     public List<Systems.UnderLevel> Undercity { get; } = [];

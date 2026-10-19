@@ -186,5 +186,64 @@
     "held": "{town} holds against {crisis}. {name} limps away, its crisis spent.",
     "sacked": "{crisis} has broken {town}. {name} goes home laden, and every other enemy in the land has seen it done.",
     "routed": "{name}'s host is broken before it ever reaches the walls. {crisis} is spent."
+  },
+  "infiltration": {
+    "minCunning": "cunning",
+    "chance": 0.5,
+    "caught": 0.5,
+    "everyDays": [
+      5,
+      9
+    ],
+    "daily": 0.8,
+    "perAct": 6,
+    "whisper": 35,
+    "proof": 100,
+    "skim": 0.05,
+    "skimCap": 60,
+    "powerPerGold": 0.5,
+    "dismiss": 2,
+    "mandate": 3,
+    "unmasked": {
+      "mandate": 4,
+      "heat": 25
+    },
+    "wrong": {
+      "mandate": 8,
+      "loyalty": 30
+    },
+    "lieLow": 0.5,
+    "whispers": "Talk in the taverns: someone on the council answers to {by}. Two names go round: {a} and {b}. The council can be asked to throw one of them out.",
+    "proven": "The watch lays the proof before the council: {victim} has served {by} all along. {victim} is gone over the wall by morning, and the {seat} sits empty.",
+    "accused": "The mayor names {victim} before the council as the servant of {by}, and the proof bears it out. {victim} is gone over the wall by morning, and the {seat} sits empty.",
+    "innocent": "The mayor names {victim} before the council as the servant of {by}. It is a lie someone fed the mayor: {victim} is cleared and resigns in disgust, and the town wonders who the mayor listens to.",
+    "acts": {
+      "skim": "The {seat}'s ledgers are out by {gold} gold this week. Nobody can say where it went.",
+      "dismiss": "{victim} sends {n} of the watch home to save their wages, though nobody asked.",
+      "slander": "{victim} has been telling the taverns that the mayor sleeps through the night while the town burns.",
+      "vote": "{victim} talks the council round against the mayor's wishes."
+    },
+    "kinds": {
+      "undead": {
+        "turn": "{victim} comes home pale from a supper at a stranger's house on the hill and is never quite the same. They keep to their rooms by day.",
+        "caught": "The watch finds a pale stranger at {victim}'s door after dark and drives it off with torches and a priest. It leaves a smell of grave-earth behind."
+      },
+      "schemers": {
+        "turn": "{victim} has a new friend from out of town: a soft-spoken woman who brings them sweet wine and listens to every grievance.",
+        "caught": "The watch catches a hedge-witch slipping a charm into {victim}'s cup at the inn. She laughs as they drag her off."
+      },
+      "dragon": {
+        "turn": "A gracious stranger with golden eyes buys {victim} dinner every night for a week. {victim} speaks well of dragons now.",
+        "caught": "The watch turns away a gracious stranger with golden eyes who wanted a word with {victim}. Nobody saw where they went."
+      },
+      "rivals": {
+        "turn": "{victim} has paid off their debts all at once, and nobody can say with whose gold.",
+        "caught": "The watch catches a factor of the toll-men offering {victim} a purse in a back room. {victim} turns it down, loudly."
+      },
+      "cult": {
+        "turn": "{victim} has started humming a hymn nobody else in town knows.",
+        "caught": "The watch catches a grey-robed preacher at {victim}'s door after dark, and runs them out of town."
+      }
+    }
   }
 }

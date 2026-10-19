@@ -57,6 +57,7 @@ public static class Alerts
     public static readonly AlertKind Fealty = new("fealty", "Demands for fealty", "warband", AlertLevel.Decision, AlertWindow.Campaign);
     public static readonly AlertKind Doom = new("doom", "End-game crises", "warband", AlertLevel.Urgent, AlertWindow.Campaign);
     public static readonly AlertKind Clash = new("clash", "Enemies clash", "warband", AlertLevel.Decision, AlertWindow.Campaign);
+    public static readonly AlertKind Traitor = new("traitor", "A traitor on the council", "mandate", AlertLevel.Decision, AlertWindow.Council);
     public static readonly AlertKind Scholars = new("scholars", "Idle scholars", "d20", AlertLevel.Minor, AlertWindow.Library);
     public static readonly AlertKind Below = new("below", "Stirring below", "warband", AlertLevel.Decision, AlertWindow.City);
     public static readonly AlertKind Trade = new("trade", "Trade routes", "gold", AlertLevel.Minor, AlertWindow.Diplomacy);
@@ -80,7 +81,7 @@ public static class Alerts
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Captives, Doom, Crisis, Hunger, Coffers, Unrest, Hostile, Motion, Fealty, Clash, Plot, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Bastion, Institution, Heroes, Neighbour, Loot, Work, Settlers, Below, Scholars, Trade, Gifts, Housing];
+        [Siege, Captives, Doom, Crisis, Hunger, Coffers, Unrest, Hostile, Motion, Fealty, Clash, Traitor, Plot, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Bastion, Institution, Heroes, Neighbour, Loot, Work, Settlers, Below, Scholars, Trade, Gifts, Housing];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
     public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Hostility, Winter, Growth, Routes, Region, Undercity, Study, Loyalty, Armoury, Homes, Keepers];
@@ -126,6 +127,9 @@ public static class Alerts
         foreach (var x in Crises.Pending(t).OrderBy(x => x.Id))
             yield return new($"clash:{x.Id}", Clash, $"Battle at {x.Where} in {Days(Math.Max(1, x.Day - t.Day))}",
                 $"{Cap(t.Saga.Menaces[x.A - 1].Name)} and {t.Saga.Menaces[x.B - 1].Name} are about to fight. Ride out against one of them or keep behind the walls, in the Campaign window.");
+        foreach (var (mole, a, b) in Infiltration.Whispered(t))
+            yield return new($"traitor:{mole.Id}", Traitor, $"{a.GivenName} or {b.GivenName}?",
+                $"The taverns say {a.Name} or {b.Name} serves {mole.By}. Name one before the council in the Council window, or wait for the watch to find proof while the traitor works.");
         if (Menaces.PendingDemand(t) is { } dm)
             yield return new($"demand:{dm.Id}", Fealty, "A demand for fealty", $"{Cap(dm.Name)} wants the town as its vassal. Bend the knee or refuse in the Campaign window; silence is a refusal.");
     }

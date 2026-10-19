@@ -366,6 +366,15 @@
       "teaches": ["command:JoinClash"]
     },
     {
+      "id": "traitor",
+      "title": "A traitor on the council",
+      "text": "A clever enemy with a grudge, a vampire, a coven or a wyrm in a man's shape, may win over a councillor instead of sending knives. Its servant votes against the watch and the knights, skims the treasury into its master's war chest, sends the watch home or slanders you. When the taverns start naming names, [b]Council[/b] shows the two suspects: name one before the council. Name the traitor and they flee; name an honest councillor and they resign in disgust. Wait, and the watch finds the proof in time.",
+      "when": "alert:traitor",
+      "point": "tab:Council",
+      "until": "tab:Council",
+      "teaches": ["command:AccuseCouncillor"]
+    },
+    {
       "id": "notoriety",
       "title": "Fame and infamy",
       "text": "Heroes and companies make names for themselves. Clearing ruins, answering villages and holding the walls earn [b]renown[/b], and the bards give the famous an epithet. Brawls, theft, desertion and treachery earn [b]infamy[/b]. Click a hero to see their name: famous heroes draw others to town and frighten the foe, but they want more for a bounty and other towns court them unless you honour them. The council won't knight the notorious, and their past tends to catch up with them. [b]Companies[/b] shows each company's name abroad.",

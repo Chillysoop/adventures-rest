@@ -34,6 +34,10 @@ public sealed class Grudge
     /// <summary>How hard its agents are to catch (a blow's cunning, see <see cref="Blows"/>).</summary>
     public double Cunning { get; set; } = 1;
     public List<int> Marked { get; } = [];
+
+    /// <summary>The foe's kind and wits (a menace kind and cunning tier), for the plots only some foes hatch (<see cref="Infiltration"/>).</summary>
+    public string Kind { get; set; } = "";
+    public string Wits { get; set; } = "";
     public int NextDay { get; set; }
     public bool Vowed { get; set; }
 }
@@ -88,6 +92,11 @@ public static class Vengeance
         var seat = Quests.Site(town, m.SeatId);
         double cunning = town.Content.Crises.Score.Cunning.GetValueOrDefault(m.Cunning, 1);
         Wrong(town, Key(m), new Culprit(m.Name, m.Leader, seat?.Def.Name ?? m.Region), wrong, cunning, heroes, where);
+        if (Of(town, Key(m)) is { } g)
+        {
+            g.Kind = m.Kind;
+            g.Wits = m.Cunning;
+        }
     }
 
     public static void Daily(Town town)
@@ -125,6 +134,8 @@ public static class Vengeance
             if (Blows.Murder(town, by, g.Cunning, mark)) g.Marked.Remove(mark.Id);
             return;
         }
+        // A clever foe may buy, charm or blood-bind a councillor instead.
+        if (Infiltration.Try(town, g)) return;
         var weights = Rules(town).Blows.OrderBy(kv => kv.Key, StringComparer.Ordinal).ToList();
         if (weights.Count == 0) return;
         double roll = town.Rng.Next() * weights.Sum(kv => kv.Value);

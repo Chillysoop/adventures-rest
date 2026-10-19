@@ -136,6 +136,7 @@ public sealed record CrisisRules
     public int WallsWeakDays { get; init; } = 20;
     public CrisisClashRules Clash { get; init; } = new();
     public VengeanceRules Vengeance { get; init; } = new();
+    public InfiltrationRules Infiltration { get; init; } = new();
     public IReadOnlyDictionary<string, BlowText> Blows { get; init; } = new Dictionary<string, BlowText>();
     public IReadOnlyDictionary<string, CrisisKindDef> Kinds { get; init; } = new Dictionary<string, CrisisKindDef>();
     public CrisisEndText Ended { get; init; } = new();

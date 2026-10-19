@@ -110,4 +110,74 @@ public class CrisesTests
         Assert.True(g.Heat < t.Content.Crises.Vengeance.StrikeAt);
         Assert.Contains(t.Ledger.Entries.Skip(entries), e => e.Text.Contains(m.Name, StringComparison.Ordinal) || e.Text.Contains(m.Leader, StringComparison.Ordinal));
     }
+
+    private static (Simulation Sim, Grudge G) Plotting()
+    {
+        var sim = new Simulation(new SimulationOptions { Seed = 4 });
+        sim.RunDays(60);
+        var t = sim.Town;
+        var m = Menaces.Seed(t, [2, 3])!;
+        var g = new Grudge { Foe = Vengeance.Key(m), Name = m.Name, Leader = m.Leader, Seat = m.SeatName, Kind = "undead", Wits = "mastermind", Cunning = 1.6 };
+        t.Grudges.Add(g);
+        t.Watch = 0;
+        Assert.True(t.Seats.Count(s => s.HolderId != null) >= 2);
+        return (sim, g);
+    }
+
+    [Fact]
+    public void AVampireWinsOverACouncillorWhoWorksAgainstTheTownUntilTheTavernsNameNames()
+    {
+        var (sim, g) = Plotting();
+        var t = sim.Town;
+        for (int i = 0; i < 50 && t.Moles.Count == 0; i++) Infiltration.Try(t, g);
+        var mole = Assert.Single(t.Moles);
+        Assert.True(Infiltration.Try(t, g) == false || t.Moles.Count == 1);
+        var motion = new Motion { Id = 999, Kind = MotionKind.HireWatch, Proposer = "x", Text = "hire" };
+        Assert.False(Infiltration.Vote(t, mole.AgentId, motion));
+        Assert.Null(Infiltration.Vote(t, t.Seats.First(s => s.HolderId != null && s.HolderId != mole.AgentId).HolderId!.Value, motion));
+        Assert.Empty(Infiltration.Whispered(t));
+        mole.Suspicion = t.Content.Crises.Infiltration.Whisper;
+        sim.RunDays(1);
+        var (_, a, b) = Assert.Single(Infiltration.Whispered(t));
+        Assert.Contains(mole.AgentId, new[] { a.Id, b.Id });
+        Assert.Contains(Alerts.Standing(t), x => x.Key == $"traitor:{mole.Id}");
+    }
+
+    [Fact]
+    public void NamingTheTraitorDrivesThemOutAndNamingTheWrongOneCostsTheMayor()
+    {
+        var (sim, g) = Plotting();
+        var t = sim.Town;
+        for (int i = 0; i < 50 && t.Moles.Count == 0; i++) Infiltration.Try(t, g);
+        var mole = t.Moles[0];
+        mole.Suspicion = t.Content.Crises.Infiltration.Whisper;
+        sim.RunDays(1);
+        int decoy = mole.DecoyId!.Value;
+        double mandate = t.Mandate;
+        Assert.True(sim.AccuseCouncillor(decoy));
+        Assert.True(t.Mandate < mandate);
+        Assert.DoesNotContain(t.Seats, s => s.HolderId == decoy);
+        Assert.Null(mole.DecoyId);
+        Assert.Single(t.Moles);
+        mole.Suspicion = t.Content.Crises.Infiltration.Whisper;
+        sim.RunDays(1);
+        Assert.NotNull(mole.DecoyId);
+        Assert.True(sim.AccuseCouncillor(mole.AgentId));
+        Assert.Empty(t.Moles);
+        Assert.True(t.Agent(mole.AgentId).Departed);
+        Assert.False(sim.AccuseCouncillor(mole.AgentId));
+    }
+
+    [Fact]
+    public void LeftAloneTheWatchFindsTheProof()
+    {
+        var (sim, g) = Plotting();
+        var t = sim.Town;
+        for (int i = 0; i < 50 && t.Moles.Count == 0; i++) Infiltration.Try(t, g);
+        var mole = t.Moles[0];
+        mole.Suspicion = t.Content.Crises.Infiltration.Proof - 0.01;
+        sim.RunDays(1);
+        Assert.Empty(t.Moles);
+        Assert.Contains(t.Ledger.Entries, e => e.Text.Contains("the proof", StringComparison.Ordinal));
+    }
 }
