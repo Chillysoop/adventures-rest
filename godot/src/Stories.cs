@@ -27,10 +27,7 @@ public partial class Main
     private void BuildStory()
     {
         _story = new PanelContainer { Visible = false, CustomMinimumSize = new Vector2(600, 0), ZIndex = 20, MouseFilter = MouseFilterEnum.Stop };
-        var box = Glass(14, 24, 20);
-        box.BorderColor = Ui.Gold;
-        box.BorderWidthTop = 3;
-        _story.AddThemeStyleboxOverride("panel", box);
+        _story.AddThemeStyleboxOverride("panel", Castle.Oak(26, 22));
         _storyBox = new VBoxContainer();
         _storyBox.AddThemeConstantOverride("separation", 10);
         _story.AddChild(_storyBox);

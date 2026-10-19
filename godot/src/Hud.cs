@@ -77,12 +77,7 @@ public partial class Main
     private Control BuildTopBar()
     {
         var panel = new PanelContainer();
-        var style = Ui.Flat(new Color(0.07f, 0.06f, 0.045f, 0.92f), 16, 6);
-        style.BorderColor = Ui.Line;
-        style.BorderWidthBottom = 1;
-        style.ShadowColor = new Color(0, 0, 0, 0.3f);
-        style.ShadowSize = 6;
-        panel.AddThemeStyleboxOverride("panel", style);
+        panel.AddThemeStyleboxOverride("panel", Castle.Parapet());
         panel.SetAnchorsPreset(LayoutPreset.TopWide);
         panel.OffsetBottom = TopBar;
 
@@ -176,16 +171,12 @@ public partial class Main
     private PanelContainer Floating(out VBoxContainer body, out Label title, Action close)
     {
         var win = new PanelContainer { Visible = false };
-        win.AddThemeStyleboxOverride("panel", Glass(12));
+        win.AddThemeStyleboxOverride("panel", Castle.Oak(4, 4));
         body = new VBoxContainer();
         body.AddThemeConstantOverride("separation", 0);
         win.AddChild(body);
         var head = new PanelContainer { MouseDefaultCursorShape = CursorShape.Move };
-        var hs = Ui.Flat(new Color(Ui.Panel2, 0.95f), 14, 8);
-        hs.CornerRadiusTopLeft = hs.CornerRadiusTopRight = 12;
-        hs.BorderColor = Ui.Line;
-        hs.BorderWidthBottom = 1;
-        head.AddThemeStyleboxOverride("panel", hs);
+        head.AddThemeStyleboxOverride("panel", Castle.Beam(16, 8));
         var hb = new HBoxContainer();
         head.AddChild(hb);
         title = Ui.Label("", Ui.Ink, Ui.Display, 16);
@@ -277,7 +268,7 @@ public partial class Main
     private void BuildDock()
     {
         var dock = new PanelContainer();
-        dock.AddThemeStyleboxOverride("panel", Glass(14, 8, 6));
+        dock.AddThemeStyleboxOverride("panel", Castle.Ledge(12, 6));
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", 4);
         dock.AddChild(row);
@@ -314,7 +305,7 @@ public partial class Main
         _help.AddThemeConstantOverride("outline_size", 4);
         _help.MouseFilter = MouseFilterEnum.Ignore;
         AddChild(_help);
-        _help.SetAnchorsAndOffsetsPreset(LayoutPreset.CenterBottom, LayoutPresetMode.Minsize, Gap + DockHeight + 4);
+        _help.SetAnchorsAndOffsetsPreset(LayoutPreset.CenterBottom, LayoutPresetMode.Minsize, Gap + DockHeight + 14);
         _help.GrowHorizontal = GrowDirection.Both;
         _help.GrowVertical = GrowDirection.Begin;
     }
@@ -429,7 +420,7 @@ public partial class Main
         corner.AddChild(tools);
 
         var frame = new PanelContainer();
-        frame.AddThemeStyleboxOverride("panel", Glass(10, 6, 6));
+        frame.AddThemeStyleboxOverride("panel", Castle.Oak(8, 8));
         var mini = new Minimap(_map) { CustomMinimumSize = new Vector2(220, 220) };
         frame.AddChild(mini);
         _miniFrame = frame;

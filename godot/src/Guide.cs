@@ -46,10 +46,7 @@ public partial class Main
         AddChild(_outline);
 
         _guideCard = new PanelContainer { Visible = false, CustomMinimumSize = new Vector2(340, 0), ZIndex = 5 };
-        var box = Glass(12, 18, 14);
-        box.BorderColor = Ui.Gold;
-        box.BorderWidthLeft = 3;
-        _guideCard.AddThemeStyleboxOverride("panel", box);
+        _guideCard.AddThemeStyleboxOverride("panel", Castle.Oak(20, 16));
         var v = new VBoxContainer();
         v.AddThemeConstantOverride("separation", 8);
         _guideCard.AddChild(v);
