@@ -90,7 +90,7 @@ public partial class Main
             var (word, color) = MenaceStages[m.Stage];
             string march = m.ArrivalTick is int at && at > t.Tick ? "  " + Tag($"marching, {Ui.Days((int)Math.Ceiling((at - t.Tick) / 24.0))} out", Ui.Bad) : "";
             string held = m.Holdings.Count > 0 ? $" It holds {m.Holdings.Count} more {(m.Holdings.Count == 1 ? "lair" : "lairs")}." : "";
-            p.Row($"[b]{Ui.Esc(Ui.Cap(m.Name))}[/b]  {Tag(word, color)}  {Tag($"level {m.Level}")}{march}\n{Tag(Menaces.CunningOf(t, m).Name)}  {Tag(Menaces.AmbitionOf(t, m).Name)}{Heirs(t, m)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Annals.Motive(t, m))} {Ui.Esc(Wants(t, m))} {Seat(t, m)}{held}[/font_size]")}{Plan(t, m)}{Assets(t, m)}");
+            p.Row($"{Ui.KindIcon(m.Kind, 20)}[b]{Ui.Esc(Ui.Cap(m.Name))}[/b]  {Tag(word, color)}  {Tag($"level {m.Level}")}{march}\n{Tag(Menaces.CunningOf(t, m).Name)}  {Tag(Menaces.AmbitionOf(t, m).Name)}{Heirs(t, m)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Annals.Motive(t, m))} {Ui.Esc(Wants(t, m))} {Seat(t, m)}{held}[/font_size]")}{Plan(t, m)}{Assets(t, m)}");
         }
         p.Note("A threat grows while nobody clears its seat, as far as its wits allow: a beast only hunts, a dull band takes a valley and stops, a cunning or masterful leader builds a domain and can become the big bad. What it wants decides what it does to the town. Clearing the seat breaks it, and it falls back to a lair it holds.");
 
@@ -101,7 +101,7 @@ public partial class Main
             foreach (var m in fallen)
             {
                 string turned = m.Redeemed ? "  " + Tag($"{m.Leader} joined {t.Name}", Ui.Good) : "";
-                p.Text($"{Ui.C(Ui.Ink2, $"[font_size=11]Day {m.EndedDay}[/font_size]")}  {Ui.Esc(Ui.Cap(m.Name))}{turned}", 13);
+                p.Text($"{Ui.C(Ui.Ink2, $"[font_size=12]Day {m.EndedDay}[/font_size]")}  {Ui.KindIcon(m.Kind, 16)}{Ui.Esc(Ui.Cap(m.Name))}{turned}", 13);
             }
         }
         p.Commit();

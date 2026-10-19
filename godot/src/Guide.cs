@@ -33,7 +33,7 @@ public partial class Main
     private RichTextLabel _guideText = null!;
     private Button _guideNext = null!;
     private Panel _outline = null!;
-    private Control _speedsBox = null!, _menuButton = null!, _dock = null!, _miniFrame = null!;
+    private Control _speedsBox = null!, _menuButton = null!, _glossaryButton = null!, _dock = null!, _miniFrame = null!;
 
     private void BuildGuide()
     {
@@ -194,7 +194,7 @@ public partial class Main
         int i = Book.Steps.IndexOf(s);
         _guideCount.Text = _guideNew ? $"NEW IN THIS BUILD · {left} LEFT" : $"TUTORIAL · {i + 1} OF {Book.Steps.Count}";
         _guideTitle.Text = s.Title;
-        _guideText.Text = s.Text;
+        Ui.SetRich(_guideText, s.Text);
         bool waits = s.Until != "next";
         _guideNext.Text = waits ? "Skip" : i == Book.Steps.Count - 1 ? "Finish" : "Next";
         _guideNext.ThemeTypeVariation = waits ? "" : "Post";
@@ -217,6 +217,7 @@ public partial class Main
             "minimap" => _miniFrame,
             "markers" => _markerBar,
             "menu" => _menuButton,
+            "glossary" => _glossaryButton,
             "window" => _window,
             "inspector" => _inspector,
             "dock" => _dock,

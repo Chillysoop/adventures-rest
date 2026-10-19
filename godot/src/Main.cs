@@ -48,7 +48,7 @@ public partial class Main : Control
     private readonly HashSet<int> _openChronicles = [];
 
     private Label _tierLabel = null!;
-    private Label _townName = null!, _clock = null!, _seedLabel = null!, _threat = null!;
+    private Label _townName = null!, _clock = null!, _threat = null!;
     private PanelContainer _threatPill = null!;
     private readonly Button[] _speedButtons = new Button[5];
     private readonly Dictionary<Tab, Button> _tabButtons = [];
@@ -72,9 +72,11 @@ public partial class Main : Control
         BuildMenu();
         BuildTitle();
         BuildHistory();
+        BuildGlossary();
         BuildGuide();
         BuildStory();
         BuildFind();
+        BuildKeywords();
         _map.TreeScale = _opts.Trees;
         Map.Fog.RevealAll = _opts.Reveal;
         // Started plainly, the game opens on the main menu over a town that has been growing a while;
@@ -153,6 +155,13 @@ public partial class Main : Control
         if (_opts.Menu) OpenMenu();
         if (plain || _opts.Title || _opts.Smoke) ShowTitle();
         if (_opts.History is string power) OpenHistory(power == "" ? null : power);
+        if (_opts.Glossary is string entry) OpenGlossary(entry == "" ? null : entry);
+        for (int i = 0; i < _opts.Keywords.Count; i++)
+        {
+            var at = new Vector2(GetViewportRect().Size.X - 360 * (i + 1) - 20, 150 + 40 * i);
+            Pin(_opts.Keywords[i]);
+            _kwPinned[^1].Position = at;
+        }
     }
 
     /// <summary>A story for a scripted shot; a sending comes from the first party out on a bounty that it fits.</summary>
@@ -242,7 +251,7 @@ public partial class Main : Control
         ShowBuildGroup(_buildGroup);
         _sim.Town.Ledger.OnWrite(OnLedger);
         _townName.Text = _sim.Town.Name;
-        _seedLabel.Text = $"seed {seed}";
+
         _endShown = sim.Town.Outcome != null;
         _endOverlay.Visible = false;
         ClearFeed();
@@ -356,6 +365,18 @@ public partial class Main : Control
             GetViewport().SetInputAsHandled();
             return;
         }
+        if (_glossary.Visible)
+        {
+            if (k.Keycode is Key.Escape or Key.F1) CloseGlossary();
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+        if (k.Keycode == Key.F1)
+        {
+            OpenGlossary();
+            GetViewport().SetInputAsHandled();
+            return;
+        }
         if (_history.Visible)
         {
             if (k.Keycode == Key.Escape) CloseHistory();
@@ -433,6 +454,7 @@ public partial class Main : Control
         SyncGuide();
         SyncStories(delta);
         SyncFinds();
+        SyncKeywords(delta);
         SyncChecks();
         SyncTownRolls();
         if (_title.Visible) _map.Drift(1, (float)delta * 0.035f);
@@ -504,6 +526,7 @@ public partial class Main : Control
     };
 
     private readonly List<(Label K, Label V)> _statCards = [];
+    private readonly string[] _statTips = new string[6];
 
     private void RenderHeader()
     {
@@ -521,24 +544,29 @@ public partial class Main : Control
         _threatPill.AddThemeStyleboxOverride("panel", Ui.Box(stage.Level == 2 ? Ui.Bad : Ui.Panel, pillColor, 99, 1, 10, 3));
         _threat.AddThemeColorOverride("font_color", stage.Level == 2 ? Colors.White : stage.Level == 1 ? Ui.Gold : Ui.Ink);
 
-        (string, string, string, string)[] stats =
+        int away = t.Heroes.Count(a => a.IsAway);
+        (string, string, string, string, string)[] stats =
         [
-            ("Households", "population", s.Population.ToString(), $"Households living in town, about {City.Souls(t):N0} souls"),
-            ("Heroes", "heroes", t.Heroes.Count.ToString(), "Adventurers in town or on the road"),
-            ("Treasury", "gold", $"{Math.Floor(t.Treasury)}", "Gold in the town's coffers"),
-            ("Bread", "bread", $"{s.FoodPrice:0.00}", "The price of a loaf, in gold: it climbs when food runs short"),
-            ("Mandate", "mandate", $"{Math.Round(t.Mandate)}", "The townsfolk's approval of you, out of 100"),
-            ("Homeless", "homeless", s.Homeless.ToString(), "Townsfolk with no roof"),
+            ("Households", "population", $"{s.Population:N0}", $"Now: {s.Population:N0} households, about {City.Souls(t):N0} souls.", "households"),
+            ("Heroes", "heroes", t.Heroes.Count.ToString(), $"Now: {t.Heroes.Count - away} in town, {away} on the road.", "hero"),
+            ("Treasury", "gold", $"{Math.Floor(t.Treasury):N0}", $"Now: {Math.Floor(t.Treasury):N0} gold in the treasury.", "gold"),
+            ("Bread price", "bread", $"{s.FoodPrice:0.00}", $"Now: a loaf costs {s.FoodPrice:0.00} gold.", "bread-price"),
+            ("Mandate", "mandate", $"{Math.Round(t.Mandate)}", $"Now: {Math.Round(t.Mandate)} out of 100.", "mandate"),
+            ("Homeless", "homeless", s.Homeless.ToString(), s.Homeless == 0 ? "Now: everyone has a roof." : $"Now: {s.Homeless} without a roof.", "homeless"),
         ];
+        for (int i = 0; i < stats.Length; i++) _statTips[i] = stats[i].Item4;
         if (_statCards.Count == 0)
-            foreach (var st in stats)
+            for (int si = 0; si < stats.Length; si++)
             {
-                var card = new HBoxContainer { TooltipText = st.Item4, MouseFilter = MouseFilterEnum.Pass };
+                var st = stats[si];
+                int slot = si;
+                var card = new HBoxContainer();
+                Ui.KeywordOn(card, st.Item5, () => _statTips[slot]);
                 card.AddThemeConstantOverride("separation", 6);
                 card.AddChild(new TextureRect { Texture = Ui.Icon(st.Item2), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2(24, 24), SizeFlagsVertical = SizeFlags.ShrinkCenter, MouseFilter = MouseFilterEnum.Ignore });
                 var v = new VBoxContainer();
                 v.AddThemeConstantOverride("separation", -3);
-                var k = Ui.Label("", Ui.Ink2, Ui.Medium, 10);
+                var k = Ui.Label("", Ui.Ink2, Ui.Medium, 11);
                 var val = Ui.Label("", Ui.Ink, Ui.Bold, 16);
                 v.AddChild(k);
                 v.AddChild(val);
@@ -581,14 +609,14 @@ public partial class Main : Control
                 LedgerCategory.Construction or LedgerCategory.Property => Ui.Good,
                 _ => Ui.Ink2,
             };
-            sb.Append(Ui.C(Ui.Ink2, $"[font_size=11]Day {day} · {e.Tick % 24:00}:00[/font_size]"))
+            sb.Append(Ui.C(Ui.Ink2, $"[font_size=12]Day {day} · {e.Tick % 24:00}:00[/font_size]"))
                 .Append("  ")
-                .Append(Ui.C(catColor, $"[font_size=10][b]{e.Category.ToString().ToUpperInvariant()}[/b][/font_size]"))
+                .Append(Ui.C(catColor, $"[font_size=11][b]{e.Category.ToString().ToUpperInvariant()}[/b][/font_size]"))
                 .Append('\n');
             string text = LinkNames(e);
             sb.Append(e.Importance == Importance.Major ? $"{Ui.C(Ui.Gold, "◆")} [b]{text}[/b]" : text).Append("\n[font_size=6] [/font_size]\n");
         }
-        _ledgerText.Text = Ui.Coined(sb.ToString());
+        Ui.SetRich(_ledgerText, sb.ToString());
     }
 
     /// <summary>Turn the names of agents an entry mentions into links that open the inspector.</summary>

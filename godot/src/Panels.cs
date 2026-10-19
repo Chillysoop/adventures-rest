@@ -29,7 +29,7 @@ public partial class Main
         string arrival = t.Enemy.Stage == ThreatStage.Marching && t.Enemy.ArrivalTick is int at
             ? "\n" + Ui.C(Ui.Bad, $"[b]They reach the {Garrison.Place(t, t.Enemy.Approach)} in {Ui.Days((int)Math.Ceiling((at - t.Tick) / 24.0))}. Call the watch to arms there; heroes in town will face the warlord.[/b]")
             : "";
-        p.Card($"[font_size=17][b]{Ui.Esc(Ui.Cap(t.Content.Enemy.Name))}[/b][/font_size]\n{stage.Text}{arrival}");
+        p.Card($"{Ui.KindIcon("warband", 22)}[font_size=17][b]{Ui.Esc(Ui.Cap(t.Content.Enemy.Name))}[/b][/font_size]\n{stage.Text}{arrival}");
         p.Heading("Strength");
         if (est is double e) p.Meter("Warband", 100 * e / scale, $"~{Math.Round(e)}", true);
         else p.Text($"{Ui.C(Ui.Ink2, "Warband")}    [i]Unknown. Nobody has seen it yet.[/i]", 13);
