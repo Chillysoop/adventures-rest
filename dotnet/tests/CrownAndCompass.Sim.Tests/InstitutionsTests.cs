@@ -196,6 +196,28 @@ public class InstitutionsTests
     }
 
     [Fact]
+    public void TheUndercityGateHushesTheDarkBelowAndItsKnockingBindsALevel()
+    {
+        var sim = Player();
+        var t = sim.Town;
+        t.City.Tier = City.TierIndex(t, "village");
+        sim.RunDays(1);
+        var level = Assert.Single(t.Undercity);
+        double before = Undercity.Rate(t, level);
+        Raise(t, "undercity_gate");
+        sim.RunDays(1);
+        var gate = Institutions.Find(t, "undercity-gate")!;
+        Assert.StartsWith("Gatewarden ", Institutions.KeeperName(t, gate));
+        double hushed = Undercity.Rate(t, level);
+        Assert.True(hushed < before);
+        Assert.True(sim.ChooseInstitution("undercity-gate", "sealed"));
+        Assert.True(Undercity.Rate(t, level) < hushed);
+        Assert.Contains(Institutions.Describe(t, C.Institutions.Def("undercity-gate")!.Service), x => x.Contains("undercity stirs"));
+        var story = Stories.Open(t, "gate-knocking")!;
+        Assert.Equal(Undercity.Def(t, level).Site.Id, story.SiteId);
+    }
+
+    [Fact]
     public void AnInstitutionShutsWhenItsBuildingCloses()
     {
         var sim = Player();
