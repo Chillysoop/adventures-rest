@@ -148,6 +148,12 @@ public partial class Main
             p.Buttons(($"Sign{Decree(true)}", true, true, () => Act(() => _sim.DecideMotion(id, true))), ($"Veto{Decree(false)}", true, false, () => Act(() => _sim.DecideMotion(id, false))));
             p.Note("Going against the council's majority is a decree: it costs Mandate and angers the councillors you overrule.");
         }
+        foreach (var (mole, a, b) in Infiltration.Whispered(t))
+        {
+            p.Card($"[b]A traitor on the council[/b]\n{Ui.C(Ui.Ink2, $"The taverns say {AgentLink(a)} or {AgentLink(b)} serves {Ui.Esc(mole.By)}. Name the traitor and they flee; name an honest councillor and they resign, and the council resents it. Wait, and the watch finds the proof while the traitor goes on working.")}", Ui.Bad);
+            int ia = a.Id, ib = b.Id;
+            p.Buttons(($"Name {a.GivenName}", true, false, () => Act(() => _sim.AccuseCouncillor(ia))), ($"Name {b.GivenName}", true, false, () => Act(() => _sim.AccuseCouncillor(ib))));
+        }
         p.Heading("Seats");
         foreach (var s in t.Seats)
         {

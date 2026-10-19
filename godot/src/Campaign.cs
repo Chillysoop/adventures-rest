@@ -72,6 +72,8 @@ public partial class Main
             p.Card($"{Tag("UNDER THE YOKE", Ui.Accent)}\n[b]{Ui.Esc(Ui.Cap(yoke.Name))}[/b] takes {Math.Round(y.Share * 100)}% of the treasury every {Ui.Days(y.EveryDays)}.{missed}\n{Ui.C(Ui.Ink2, "[font_size=12]Kill its leader to break the yoke. The walls break a second time, and the town falls.[/font_size]")}", Ui.Accent);
         }
 
+        RenderCrises(p, t);
+
         p.Heading("Dread");
         var tone = Tones[s.Tone];
         p.Meter(tone.Word, s.Dread, $"{Math.Round(s.Dread)}", s.Tone >= Tone.Grim);
@@ -106,6 +108,52 @@ public partial class Main
         }
         p.Commit();
     }
+
+    private static readonly Dictionary<string, Color> Severities = new() { ["lesser"] = Ui.Gold, ["great"] = Ui.Accent, ["dire"] = Ui.Bad };
+
+    /// <summary>End-game crises under way, battles between enemies the town can join, and the foes sworn to revenge.</summary>
+    private void RenderCrises(Pane p, Town t)
+    {
+        var crises = Crises.Active(t).OrderBy(c => Crises.DaysLeft(t, c)).ThenBy(c => c.Id).ToList();
+        var clashes = Crises.Pending(t).OrderBy(x => x.Id).ToList();
+        var grudges = t.Grudges.Where(g => g.Heat > 0 || g.Marked.Count > 0).OrderByDescending(g => g.Heat).ThenBy(g => g.Foe, StringComparer.Ordinal).ToList();
+        if (crises.Count == 0 && clashes.Count == 0 && grudges.Count == 0) return;
+        p.Heading("Crises");
+        foreach (var c in crises)
+        {
+            var m = Crises.MenaceOf(t, c);
+            var sv = Crises.SeverityOf(t, c);
+            var color = Severities.GetValueOrDefault(sv.Id, Ui.Accent);
+            int days = Crises.DaysLeft(t, c);
+            string phase = c.Phase switch
+            {
+                CrisisPhase.Gathering => "Gathering its strength",
+                CrisisPhase.Onslaught => "Striking at the town",
+                _ => "Its host is marching on the walls",
+            };
+            string when = c.Phase == CrisisPhase.Marching ? $"It reaches the walls in {Ui.Days(Math.Max(1, days))}." : $"It culminates in about {Ui.Days(days)}, with its host at the walls.";
+            string blows = c.BlowsLanded + c.BlowsStopped == 0 ? "" : $" Blows so far: {c.BlowsLanded} landed, {c.BlowsStopped} stopped.";
+            p.Card($"{Tag($"{sv.Name.ToUpperInvariant()} CRISIS", color)}  {Tag(phase)}\n[font_size=16][b]{Ui.Esc(Ui.Cap(Crises.Title(t, c)))}[/b][/font_size] of {Ui.Esc(m.Name)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Crises.KindOf(t, m).What)} {when}{blows} Break its seat first and the crisis dies with it. {Seat(t, m)}[/font_size]")}", color);
+        }
+        foreach (var x in clashes)
+        {
+            var a = t.Saga.Menaces[x.A - 1];
+            var b = t.Saga.Menaces[x.B - 1];
+            int id = x.Id, aid = a.Id, bid = b.Id;
+            p.Card($"{Tag("ENEMIES CLASH", Ui.Accent)}\n[b]{Ui.Esc(Ui.Cap(a.Name))}[/b] and [b]{Ui.Esc(b.Name)}[/b] will meet in battle in {Ui.Esc(x.Where)} in {Ui.Days(Math.Max(1, x.Day - t.Day))}.\n{Ui.C(Ui.Ink2, "[font_size=12]Ride out with the heroes at home and part of the watch and fall on one of them while it fights the other. Some of the watch may not come back, and the one you strike will want revenge; the other holds its hand for a while. Say nothing and the town keeps behind its walls.[/font_size]")}", Ui.Accent);
+            p.Buttons(($"Strike {Short(a)}", true, false, () => Act(() => _sim.JoinClash(id, aid))), ($"Strike {Short(b)}", true, false, () => Act(() => _sim.JoinClash(id, bid))), ("Keep behind the walls", true, true, () => Act(() => _sim.JoinClash(id, 0))));
+        }
+        foreach (var g in grudges)
+        {
+            var marked = g.Marked.Select(t.Agent).Where(h => !h.Dead && !h.Departed).OrderBy(h => h.Id).Select(h => h.Name).ToList();
+            string names = marked.Count <= 4 ? string.Join(", ", marked) : $"{string.Join(", ", marked.Take(3))} and {marked.Count - 3} more";
+            string who = marked.Count == 0 ? "" : $" It has marked {Ui.Esc(names)} for death.";
+            p.Row($"{Tag("Vengeance", Ui.Bad)} [b]{Ui.Esc(Ui.Cap(g.Name))}[/b] has sworn revenge on {Ui.Esc(t.Name)}.{who}\n{Ui.C(Ui.Ink2, "[font_size=12]Its agents come for marked heroes in town first, then councillors, houses, the treasury and the walls. A strong watch catches them; the grudge cools in time, and dies with its master.[/font_size]")}");
+        }
+    }
+
+    /// <summary>A menace by its leader's name, for a button.</summary>
+    private static string Short(Menace m) => m.Leader;
 
     /// <summary>What it is working toward, once the town has learned of it, and how long the town has to stop it.</summary>
     private static string Plan(Town t, Menace m)

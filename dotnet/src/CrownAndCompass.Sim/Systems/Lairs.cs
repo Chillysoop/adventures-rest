@@ -152,6 +152,8 @@ public static class Lairs
         var target = Outlying(town);
         string where = target?.Name ?? "the outlying fields";
         double raiders = Math.Max(3, Js.Round(s.Strength * 0.3 * (0.7 + rng.Next() * 0.6)));
+        // A band that can't win stays home and waits for a better night.
+        if (!Threat.WorthRaiding(town, target, raiders)) return true;
         double local = Threat.LocalDefense(town);
         var party = AwayParty(town);
         string timing = party != null && AwayShare(town) >= r.SoftShare ? $", while the {party.Name} are away" : "";
@@ -184,7 +186,7 @@ public static class Lairs
         var rng = town.Rng;
         var target = Outlying(town);
         string where = target?.Name ?? "the fields";
-        if (s.Strength < r.UndeadKillAt || target == null)
+        if (s.Strength < r.UndeadKillAt || !Threat.WorthRaiding(town, target, s.Strength * 0.3))
         {
             town.Log(LedgerCategory.War, Importance.Notable, $"Shapes that should be in the ground are seen walking at the edge of {where}, {(s.Known == SiteKnowledge.Unheard ? "coming from somewhere past the hills" : $"from the direction of {s.Def.Name}")}. No one sleeps well.");
             town.Tension += 6;
@@ -198,7 +200,7 @@ public static class Lairs
             town.Tension += 3;
             return true;
         }
-        var workers = target.Workers.Select(town.Agent).Where(a => !a.Departed).OrderBy(a => a.Id).ToList();
+        var workers = target!.Workers.Select(town.Agent).Where(a => !a.Departed).OrderBy(a => a.Id).ToList();
         if (workers.Count == 0) return false;
         var v = workers[rng.Range(0, workers.Count)];
         Threat.Kill(town, v);
