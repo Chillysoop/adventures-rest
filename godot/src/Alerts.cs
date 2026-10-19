@@ -207,6 +207,14 @@ public partial class Main
             double left = items.Max(a => AlertLeft(a) ?? double.MaxValue);
             float alpha = left < FadeSeconds ? (float)Math.Max(0.15, left / FadeSeconds) : 1;
             icon.Modulate = new Color(1, 1, 1, kind.Level == AlertLevel.Urgent ? pulse : alpha);
+            // A council motion over its last day flashes a red outline: the clock no longer stops for it.
+            if (kind == Alerts.Motion && icon.GetThemeStylebox("panel") is StyleBoxFlat box)
+            {
+                bool closing = Council.PendingMotion(_sim.Town) is { } m && Council.Closing(_sim.Town, m);
+                float flash = 0.5f + 0.5f * Mathf.Sin((float)_clockReal * 7);
+                box.BorderColor = closing ? new Color(Ui.Bad, 0.35f + 0.65f * flash) : LevelColor(kind.Level);
+                box.SetBorderWidthAll(closing ? 3 : 2);
+            }
         }
     }
 

@@ -566,6 +566,8 @@ public static class Quests
                 if (party.PleaId is int pid) World.Reopen(town.Pleas[pid - 1]);
                 s.ClearedTick = town.Tick;
                 party.SawCleared = true;
+                // Whatever killed the fallen is gone too: the party carries them home.
+                if (Remains.At(town, s.Def.Id) is { } lost) Remains.Recover(town, lost, party);
                 // Word that the place is empty gets round the taverns either way; the report itself is for sale.
                 if (!party.Withheld) Rumors.Confirm(town, s, $"the {party.Name}");
                 else s.ThoughtCleared = true;
@@ -629,12 +631,14 @@ public static class Quests
             {
                 if (bounty != null) bounty.Status = BountyStatus.Completed;
                 if (Captives.At(town, s.Def.Id) is { } held && bounty?.Terms == "rescue") Captives.Free(town, held, party);
+                if (Remains.At(town, s.Def.Id) is { } lost && bounty != null && Systems.Terms.Of(town, bounty).Fallen) Remains.Recover(town, lost, party);
             }
             else if (result.Outcome == ExpeditionOutcome.Cleared)
             {
                 if (result.Talked) Stories.Remember(town, "parleyed");
                 s.Cleared = true;
                 if (Captives.At(town, s.Def.Id) is { } freed) Captives.Free(town, freed, party);
+                if (Remains.At(town, s.Def.Id) is { } fallen) Remains.Recover(town, fallen, party);
                 // A victory is the talk of the taverns even when the report isn't sold: the town knows the
                 // place is cleared, though not what the company saw on the way.
                 s.ThoughtCleared = true;
@@ -689,6 +693,8 @@ public static class Quests
             }
             if (party.Withheld) text += Intel.Keeping;
             town.Log(LedgerCategory.Quest, Importance.Major, $"{text} (Chronicle {chronicle.Id})", members.Select(m => m.Id).ToList());
+            // A company lost to the last hero: their gear lies with them, and a card asks whether to go after it.
+            if (result.Outcome == ExpeditionOutcome.Wiped) Stories.Lost(town, Remains.Lie(town, party, s, members), party);
             foreach (var (rite, id) in rites) town.Log(LedgerCategory.Faith, Importance.Major, rite, [id]);
             Lairs.AfterDelve(town, s, result);
             foreach (var it in result.Items)

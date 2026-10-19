@@ -34,7 +34,7 @@ public static class Lairs
     public static Party? AwayParty(Town town) =>
         town.Parties.Where(p => !p.Returned).OrderByDescending(p => p.DepartTick).ThenBy(p => p.Id).FirstOrDefault();
 
-    public static void Daily(Town town, bool autoMayor)
+    public static void Daily(Town town, bool autoMayor, bool autoDefense = true)
     {
         var r = Rules(town);
         var rng = town.Rng;
@@ -64,7 +64,7 @@ public static class Lairs
             if (s.Strength >= r.ActAt && town.Tick >= s.NextActTick) Act(town, s, autoMayor);
         }
         Thralls(town);
-        if (autoMayor) AutoHold(town);
+        if (autoMayor && autoDefense) AutoHold(town);
     }
 
     /// <summary>Far lairs reach the town less often: half again the wait for every day of road past the first.</summary>
@@ -366,16 +366,24 @@ public static class Lairs
         return true;
     }
 
-    private static void AutoHold(Town town)
+    /// <summary>
+    /// The cleared site the town would garrison next, when it can spare the gold: the stand-in mayor holds it, and a
+    /// player is asked on the alert strip instead (the watch never marches out without the mayor's word).
+    /// </summary>
+    public static SiteState? WorthHolding(Town town)
     {
         var o = Rules(town).Outpost;
-        if (town.Treasury < o.Cost + 600) return;
-        var s = town.Sites
+        if (town.Treasury < o.Cost + 600) return null;
+        return town.Sites
             .Where(x => !IsWarCamp(town, x) && HoldBlocked(town, x) == null)
             .OrderBy(x => x.Def.Distance)
             .ThenBy(x => x.Def.Id, StringComparer.Ordinal)
             .FirstOrDefault();
-        if (s != null) Hold(town, s.Def.Id);
+    }
+
+    private static void AutoHold(Town town)
+    {
+        if (WorthHolding(town) is { } s) Hold(town, s.Def.Id);
     }
 
     private static string Cap(string s) => s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];

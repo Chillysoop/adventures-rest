@@ -214,7 +214,7 @@ public partial class Main
             if (item.Zone is Zone z)
             {
                 int open = z == Zone.None ? 0 : Planning.VacantZoned(town, z);
-                line = z == Zone.None ? "eraser" : open >= 30 ? "plenty of room" : open == 0 ? "no room" : $"room for {open}";
+                line = z == Zone.None ? "eraser" : open >= 30 ? "plenty of room" : open == 0 ? "paint more" : $"room for {open}";
                 tip = z == Zone.None
                     ? "Brush over painted land nobody has built on to take it off the plan."
                     : $"Paint {Planning.ZoneName(z)} land with a round brush; the townsfolk build their own {Planning.ZoneName(z)} buildings inside it, each turned to the square. [ and ] or Shift+wheel size the brush.";

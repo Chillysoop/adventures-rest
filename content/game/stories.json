@@ -170,6 +170,31 @@
       "ignored": { "text": "He leaves on the morning cart with a purse full of {town}'s coin.", "effects": { "mandate": -2 } }
     },
     {
+      "id": "company-lost", "title": "The {party} do not come home", "stakes": "medium", "source": "lost",
+      "needs": [],
+      "stages": [
+        {
+          "id": "start",
+          "text": "Days past their time, a shepherd brings word from {site}: the {party} went in and none came out. Whatever they carried, blades and charms and all, lies there with them.",
+          "options": [
+            {
+              "label": "Send a party to bring them home", "tags": ["valor", "mercy"], "needs": ["remains"], "prefer": 0.3,
+              "success": { "text": "A bounty goes up on the board before the bells stop: whoever brings the {party} home from {site}, and what they carried, will be paid for it.", "effects": { "recover": 1 } }
+            },
+            {
+              "label": "Ring the bells for them", "tags": ["faith", "mercy"],
+              "success": { "text": "The town stands bareheaded in the square while the bells ring for the {party}. Their gear stays at {site}, for anyone who clears it to find.", "effects": { "mandate": 1 } }
+            },
+            {
+              "label": "Let the wilds keep them", "tags": ["caution", "coin"],
+              "success": { "text": "No one else goes after them. Heroes in the taverns mutter that the town forgets its dead quickly.", "effects": { "mandate": -1 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "Nobody sends for them. Their gear stays at {site}, for anyone who clears it to find.", "effects": {} }
+    },
+    {
       "id": "hero-wager", "title": "{hero}'s wager", "stakes": "low", "source": "heroes",
       "needs": ["hero"], "repeatDays": 50,
       "stages": [
