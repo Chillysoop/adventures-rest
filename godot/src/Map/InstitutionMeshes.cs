@@ -369,4 +369,160 @@ public partial class TownView
             k.Box(new Vector3(Mathf.Cos(a) * 0.42f, 0, Mathf.Sin(a) * 0.38f), new Vector3(0.03f, 0.08f, 0.03f), Palette.Stone);
         }
     }
+
+    /// <summary>The Delve: a walled shaft into the dark under a timber winch frame, a giant-cut stone arch and spoil heaps.</summary>
+    private static void DungeonEntrance(MeshKit k, int v)
+    {
+        var stone = new Color("8c8478");
+        k.Box(new Vector3(0, 0.003f, 0), new Vector3(0.96f, 0.01f, 0.96f), Palette.Dirt);
+        // The shaft: a low round wall about a black pit.
+        k.Frustum(new Vector3(0.06f, 0, -0.06f), 0.24f, 0.23f, 0.07f, 12, stone, new Color("141210"));
+        // The winch: an A-frame either side, a beam across, a drum and a cage on its rope.
+        foreach (float x in new[] { -0.2f, 0.32f })
+        {
+            k.Box(new Vector3(x, 0, -0.14f), new Vector3(0.03f, 0.42f, 0.03f), Palette.Timber);
+            k.Box(new Vector3(x, 0, 0.02f), new Vector3(0.03f, 0.42f, 0.03f), Palette.Timber);
+        }
+        k.Box(new Vector3(0.06f, 0.42f, -0.06f), new Vector3(0.58f, 0.035f, 0.035f), Palette.DarkTimber);
+        k.Frustum(new Vector3(0.06f, 0.33f, -0.06f), 0.003f, 0.003f, 0.09f, 6, Palette.DarkTimber);
+        k.Box(new Vector3(0.06f, 0.2f, -0.06f), new Vector3(0.1f, 0.12f, 0.1f), new Color("4a4038"));
+        // The giant's arch the diggers broke through, standing over the stair.
+        var giant = new Color("a49c8a");
+        k.Box(new Vector3(-0.36f, 0, 0.26f), new Vector3(0.08f, 0.34f, 0.1f), giant);
+        k.Box(new Vector3(-0.06f, 0, 0.26f), new Vector3(0.08f, 0.34f, 0.1f), giant);
+        k.Box(new Vector3(-0.21f, 0.34f, 0.26f), new Vector3(0.4f, 0.08f, 0.12f), giant.Darkened(0.08f));
+        k.Box(new Vector3(-0.21f, 0, 0.26f), new Vector3(0.22f, 0.02f, 0.1f), new Color("181614"));
+        // Spoil heaps and the Delvemaster's hut.
+        k.Blob(new Vector3(0.36f, 0, 0.3f), new Vector3(0.12f, 0.07f, 0.1f), new Color("7a6a54"), 0.2f, v);
+        k.Blob(new Vector3(-0.38f, 0, -0.32f), new Vector3(0.1f, 0.06f, 0.09f), new Color("7a6a54"), 0.2f, v + 1);
+        k.Box(new Vector3(0.3f, 0, -0.36f), new Vector3(0.18f, 0.1f, 0.12f), Palette.Timber);
+        k.Frustum(new Vector3(0.3f, 0.1f, -0.36f), 0.13f, 0, 0.07f, 4, Palette.DarkTimber, null, Mathf.Pi / 4);
+    }
+
+    /// <summary>The embassy quarter: a fountain square ringed by a half-sunk dwarven hall, a pavilion of living trees and a flooded courtyard.</summary>
+    private static void EmbassyQuarter(MeshKit k, int v)
+    {
+        var paving = new Color("b4aa94");
+        k.Box(new Vector3(0, 0.003f, 0), new Vector3(0.98f, 0.01f, 0.96f), paving);
+        // The fountain.
+        k.Frustum(new Vector3(0, 0, 0.05f), 0.1f, 0.1f, 0.035f, 10, Palette.Stone, new Color("4a8aa8"));
+        k.Frustum(new Vector3(0, 0.035f, 0.05f), 0.015f, 0.01f, 0.08f, 6, Palette.Stone);
+        // The dwarven reception hall: a low stone front with a great door, its roof a grassy mound.
+        k.Box(new Vector3(-0.28f, 0, -0.3f), new Vector3(0.36f, 0.12f, 0.3f), new Color("6e665c"));
+        k.Blob(new Vector3(-0.28f, 0.1f, -0.33f), new Vector3(0.2f, 0.07f, 0.16f), new Color("5f7a3c"));
+        k.Box(new Vector3(-0.28f, 0, -0.149f), new Vector3(0.1f, 0.09f, 0.01f), new Color("3a2a1c"));
+        k.Box(new Vector3(-0.28f, 0.09f, -0.148f), new Vector3(0.14f, 0.02f, 0.012f), Palette.Gold);
+        // The elven pavilion: trunks whose boughs knot into a roof.
+        var bark = new Color("6a5440");
+        for (int i = 0; i < 5; i++)
+        {
+            float a = i * Mathf.Tau / 5;
+            k.Box(new Vector3(0.28f + Mathf.Cos(a) * 0.12f, 0, -0.28f + Mathf.Sin(a) * 0.1f), new Vector3(0.025f, 0.2f, 0.025f), bark);
+        }
+        k.Blob(new Vector3(0.28f, 0.2f, -0.28f), new Vector3(0.18f, 0.09f, 0.15f), new Color("7aa850"), 0.25f, v + 7);
+        // The flooded courtyard of the fen envoys, with a stilt house.
+        k.Box(new Vector3(0.24f, 0.004f, 0.3f), new Vector3(0.42f, 0.012f, 0.3f), new Color("3f7a7a"));
+        foreach (float x in new[] { 0.16f, 0.32f })
+            foreach (float z in new[] { 0.24f, 0.36f })
+                k.Box(new Vector3(x, 0, z), new Vector3(0.015f, 0.1f, 0.015f), Palette.DarkTimber);
+        k.Box(new Vector3(0.24f, 0.1f, 0.3f), new Vector3(0.22f, 0.08f, 0.17f), new Color("a89060"));
+        k.Frustum(new Vector3(0.24f, 0.18f, 0.3f), 0.16f, 0, 0.09f, 4, new Color("c8b070"), null, Mathf.Pi / 4);
+        // A League merchant-envoy's house with its town banner.
+        k.Box(new Vector3(-0.3f, 0, 0.28f), new Vector3(0.26f, 0.2f, 0.22f), Palette.Plaster);
+        k.Frustum(new Vector3(-0.3f, 0.2f, 0.28f), 0.2f, 0, 0.12f, 4, new Color("8e3b2e"), null, Mathf.Pi / 4);
+        k.Box(new Vector3(-0.16f, 0, 0.18f), new Vector3(0.01f, 0.3f, 0.01f), Palette.DarkTimber);
+        k.Box(new Vector3(-0.13f, 0.22f, 0.18f), new Vector3(0.06f, 0.07f, 0.004f), Dyes[v % Dyes.Length]);
+    }
+
+    /// <summary>The gatehouse of ways: a standing ring of black stone on a dais, the far place shimmering inside it, guard stones around.</summary>
+    private static void PlanarGate(MeshKit k, int v)
+    {
+        var black = new Color("2e2c34");
+        k.Frustum(new Vector3(0, 0, 0), 0.44f, 0.42f, 0.04f, 16, new Color("6a6470"), new Color("8a8494"));
+        k.Frustum(new Vector3(0, 0.04f, 0), 0.3f, 0.29f, 0.03f, 16, new Color("5a5460"), new Color("7a7484"));
+        // The ring itself, stood upright: blocks round a circle in the X-Y plane.
+        const int n = 14;
+        float r = 0.24f, cy = 0.07f + r + 0.02f;
+        for (int i = 0; i < n; i++)
+        {
+            float a = i * Mathf.Tau / n;
+            k.Push(new Transform3D(new Basis(Vector3.Back, a), new Vector3(Mathf.Cos(a) * r, cy + Mathf.Sin(a) * r, 0)));
+            k.Box(new Vector3(-0.025f, -0.05f, 0), new Vector3(0.07f, 0.11f, 0.09f), black);
+            k.Pop();
+        }
+        // The far side, glowing through the ring: its colour varies with where the ring is tuned.
+        var far = (v % 3) switch { 0 => new Color("f0a040", MeshKit.Flag.Magic), 1 => new Color("a0c8ff", MeshKit.Flag.Magic), _ => new Color("f4f0d8", MeshKit.Flag.Magic) };
+        k.Blob(new Vector3(0, cy, 0), new Vector3(0.2f, 0.2f, 0.012f), far);
+        // Guard stones and braziers round the dais.
+        for (int i = 0; i < 6; i++)
+        {
+            float a = i * Mathf.Tau / 6 + Mathf.Pi / 6;
+            var at = new Vector3(Mathf.Cos(a) * 0.4f, 0, Mathf.Sin(a) * 0.4f);
+            k.Box(at, new Vector3(0.05f, 0.16f, 0.05f), black.Lightened(0.1f));
+            k.Blob(at + new Vector3(0, 0.18f, 0), new Vector3(0.018f, 0.022f, 0.018f), new Color("a080f0", MeshKit.Flag.Magic));
+        }
+    }
+
+    /// <summary>The hall of heroes: a long stone hall under a slate roof hung with banners, and a pedestal with a statue before the door.</summary>
+    private static void HallOfHeroes(MeshKit k, int v)
+    {
+        k.Box(new Vector3(0, 0.004f, 0.02f), new Vector3(0.98f, 0.012f, 0.8f), new Color("a49a84"));
+        k.Push(MeshKit.At(0, 0, -0.14f, 0, Fit(4, 2, 0.88f)));
+        Walls(k, 4, 2, 0, true, v + 451, true);
+        k.Push(MeshKit.At(0, 1, 0));
+        k.Gable(0, 4, 2, 1.1f, new Color("4a5260"), Palette.Stone, 0.14f);
+        k.Pop();
+        for (int i = 0; i < 4; i++)
+            k.Add("town/banner-green", new Transform3D(Basis.FromEuler(new Vector3(0, -Mathf.Pi / 2, 0)), new Vector3(-1.5f + i, 0.95f, 1.02f)), Palette.Kenney(Dyes[(v + i * 2) % Dyes.Length]));
+        // A great shield over the door.
+        k.Box(new Vector3(0, 1.25f, 1.03f), new Vector3(0.4f, 0.4f, 0.05f), Palette.Gold);
+        k.Pop();
+        // The pedestal and its statue of a hero with a raised sword.
+        var marble = new Color("dcd6c8");
+        k.Box(new Vector3(0, 0, 0.3f), new Vector3(0.12f, 0.08f, 0.12f), Palette.Stone);
+        k.Box(new Vector3(0, 0.08f, 0.3f), new Vector3(0.05f, 0.1f, 0.04f), marble);
+        k.Blob(new Vector3(0, 0.2f, 0.3f), new Vector3(0.022f, 0.025f, 0.022f), marble);
+        k.Box(new Vector3(0.03f, 0.15f, 0.3f), new Vector3(0.008f, 0.14f, 0.008f), new Color("b8b8c0"));
+        // Old shields on stands along the path.
+        foreach (float x in new[] { -0.32f, -0.18f, 0.18f, 0.32f })
+        {
+            k.Box(new Vector3(x, 0, 0.32f), new Vector3(0.01f, 0.08f, 0.01f), Palette.DarkTimber);
+            k.Box(new Vector3(x, 0.07f, 0.325f), new Vector3(0.06f, 0.07f, 0.01f), Dyes[(int)((x + 1) * 10 + v) % Dyes.Length]);
+        }
+    }
+
+    /// <summary>The dragon's eyrie: a broad stone tower on a rocky knoll, a ledge at the top, and the dragon itself curled on it.</summary>
+    private static void DragonEyrie(MeshKit k, int v)
+    {
+        var rock = new Color("7a7064");
+        k.Blob(new Vector3(0, 0, 0), new Vector3(0.46f, 0.12f, 0.44f), rock, 0.25f, v + 11, rock.Darkened(0.15f));
+        var stone = new Color("9c9484");
+        k.Frustum(new Vector3(-0.04f, 0.06f, -0.06f), 0.22f, 0.19f, 0.46f, 10, stone, stone.Darkened(0.12f));
+        k.Frustum(new Vector3(-0.04f, 0.52f, -0.06f), 0.27f, 0.27f, 0.035f, 10, stone.Darkened(0.2f), stone.Darkened(0.05f));
+        // A great arched door the dragon uses, and a bowl for the beacon.
+        k.Box(new Vector3(-0.04f, 0.06f, 0.13f), new Vector3(0.14f, 0.18f, 0.02f), new Color("1c1814"));
+        k.Frustum(new Vector3(0.18f, 0.555f, -0.2f), 0.05f, 0.06f, 0.03f, 8, Palette.Stone, new Color("f08030", MeshKit.Flag.Magic));
+        // The dragon, curled on the ledge with its wings folded: its colour is its keeper's.
+        var hide = (v % 3) switch { 0 => new Color("5a8a6a"), 1 => new Color("a8382c"), _ => new Color("a8acb4") };
+        var belly = hide.Lightened(0.3f);
+        float y = 0.555f;
+        k.Blob(new Vector3(-0.06f, y + 0.06f, -0.04f), new Vector3(0.13f, 0.08f, 0.09f), hide);
+        k.Blob(new Vector3(-0.06f, y + 0.035f, 0.0f), new Vector3(0.1f, 0.04f, 0.06f), belly);
+        // Neck and head, raised to look over the town.
+        k.Blob(new Vector3(0.06f, y + 0.12f, 0.04f), new Vector3(0.04f, 0.06f, 0.04f), hide);
+        k.Blob(new Vector3(0.1f, y + 0.19f, 0.08f), new Vector3(0.035f, 0.05f, 0.035f), hide);
+        k.Blob(new Vector3(0.13f, y + 0.24f, 0.12f), new Vector3(0.05f, 0.03f, 0.04f), hide);
+        k.Frustum(new Vector3(0.11f, y + 0.26f, 0.1f), 0.008f, 0, 0.05f, 4, new Color("e8e0c8"));
+        k.Frustum(new Vector3(0.15f, y + 0.26f, 0.1f), 0.008f, 0, 0.05f, 4, new Color("e8e0c8"));
+        // Folded wings along its back, and the tail wrapped round the ledge.
+        k.Blob(new Vector3(-0.1f, y + 0.12f, -0.1f), new Vector3(0.12f, 0.04f, 0.06f), hide.Darkened(0.15f));
+        k.Blob(new Vector3(-0.02f, y + 0.12f, -0.12f), new Vector3(0.08f, 0.06f, 0.03f), hide.Darkened(0.2f));
+        for (int i = 0; i < 5; i++)
+        {
+            float a = Mathf.Pi * 0.9f + i * 0.35f;
+            k.Blob(new Vector3(-0.04f + Mathf.Cos(a) * 0.2f, y + 0.025f, -0.06f + Mathf.Sin(a) * 0.2f), new Vector3(0.035f - i * 0.005f, 0.025f, 0.035f - i * 0.005f), hide);
+        }
+        // A heap of the collection glinting by the door.
+        k.Blob(new Vector3(0.24f, 0.08f, 0.2f), new Vector3(0.06f, 0.03f, 0.05f), Palette.Gold, 0.3f, v);
+    }
 }
