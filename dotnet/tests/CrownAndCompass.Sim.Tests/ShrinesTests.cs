@@ -31,6 +31,24 @@ public class ShrinesTests
     }
 
     [Fact]
+    public void CivicWorksFindRoomWhenTheZonesCoverTheOldTown()
+    {
+        // Seed 1 paints every open cell of the old town with homes and shops by day 60, long before a second ward opens:
+        // the temple and the village's civic works still find room on plots nobody has built on yet.
+        var sim = new Simulation(new SimulationOptions { Seed = 1 });
+        sim.RunDays(100);
+        var t = sim.Town;
+        Assert.Single(t.City.OpenWards);
+        Assert.Contains(t.Buildings, b => b.Def.Id == "temple");
+        foreach (var id in new[] { "watch_house", "granary", "market_hall" })
+        {
+            var lot = Planning.CivicLot(t, t.Content.Building(id));
+            Assert.NotNull(lot);
+            Assert.NotEqual(Zone.Farmland, lot!.Zone);
+        }
+    }
+
+    [Fact]
     public void TheTemplePaysItsOwnBountiesAndTakesBackWhatGoesUnearned()
     {
         var sim = new Simulation(new SimulationOptions { Seed = 1 });
