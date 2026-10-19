@@ -818,6 +818,79 @@
           "text": "A young playwright with a quill sharper than most swords and enemies in every guildhall."
         }
       ]
+    },
+    {
+      "id": "undercity-gate",
+      "name": "the Undercity Gate",
+      "building": "undercity_gate",
+      "tier": "village",
+      "title": "Gatewarden",
+      "blurb": "A warded gatehouse over the stair down into the cellars, the sewers and whatever lies under them. Its warden keeps a ledger of everyone who goes down and everyone who comes back, and the dark below stirs slower for it.",
+      "service": {
+        "hush": 0.15,
+        "tension": -0.02,
+        "faction": "quiet-hand",
+        "factionHeat": 0.1
+      },
+      "choice": {
+        "label": "what the Gatewarden does with the way down",
+        "text": "The council decides what the gate is for: keeping the dark in, letting the brave down, or letting the trade that already goes on below go on in the open.",
+        "options": [
+          {
+            "id": "sealed",
+            "name": "bar it with iron",
+            "text": "Iron grates, chains and a watch on every drain: little goes down, and less comes up.",
+            "service": {
+              "hush": 0.2
+            }
+          },
+          {
+            "id": "delvers",
+            "name": "license the delvers",
+            "text": "Rat-catchers, treasure-hunters and green companies pay a fee to go down, and bring back salvage the warden taxes.",
+            "service": {
+              "gold": 2,
+              "hush": 0.05
+            }
+          },
+          {
+            "id": "undermarket",
+            "name": "let the undermarket trade",
+            "text": "The cellars host a night market the council pretends not to see. It pays, the Quiet Hand likes it, and it is noisy down there.",
+            "service": {
+              "gold": 3,
+              "hush": -0.1,
+              "standing": 0.1,
+              "factionHeat": -0.15,
+              "tension": 0.02
+            }
+          },
+          {
+            "id": "lanterns",
+            "name": "lanterns for the dead",
+            "text": "A shrine at the foot of the stair, lamps along the old tunnels and prayers for whoever was buried down there: the town fears the dark a little less.",
+            "service": {
+              "hush": 0.1,
+              "dread": -0.02,
+              "mood": 0.05
+            }
+          }
+        ]
+      },
+      "keepers": [
+        {
+          "name": "Brannoc Ironstair",
+          "text": "A dwarf who counts the steps every morning in case one has gone missing. One did, once, and he will tell you about it."
+        },
+        {
+          "name": "Ysel Marrowdew",
+          "text": "A former tomb-robber who knows every tunnel because she dug half of them, and who now charges others for what she used to do for free."
+        },
+        {
+          "name": "Father Ambrose Tull",
+          "text": "An old priest of the dead who took the post nobody wanted. He talks to the dark below as if it might answer, and sometimes it does."
+        }
+      ]
     }
   ],
   "fixtures": [
@@ -948,6 +1021,26 @@
         "mood": 0.1,
         "arrivals": 0.003
       }
+    },
+    {
+      "id": "warning-bell",
+      "name": "a warning bell below",
+      "institution": "undercity-gate",
+      "text": "A bell hung at the bottom of the stair, rung by whatever tries to pass. The watch is down there before it stops swinging.",
+      "service": {
+        "hush": 0.08,
+        "defence": 0.5
+      }
+    },
+    {
+      "id": "tamed-ooze",
+      "name": "a tamed ooze in the sewers",
+      "institution": "undercity-gate",
+      "text": "A great clear ooze that the warden feeds on rubbish. The sewers have never been cleaner, and nothing small lives down there any more.",
+      "service": {
+        "mood": 0.05,
+        "hush": 0.05
+      }
     }
   ],
   "precedents": [
@@ -974,6 +1067,10 @@
     {
       "id": "free-stage",
       "text": "The town promised its bards they may mock anyone"
+    },
+    {
+      "id": "undermarket-blind-eye",
+      "text": "The town turned a blind eye to the market under the streets"
     }
   ],
   "requests": [
@@ -3779,6 +3876,485 @@
         "text": "The troupe stays, and the college sulks.",
         "effects": {
           "goodwill": -3
+        }
+      }
+    },
+    {
+      "id": "gate-knocking",
+      "title": "Knocking under the gate",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "institution:undercity-gate",
+        "below"
+      ],
+      "minDay": 40,
+      "repeatDays": 160,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Something is knocking on the inside of the old door at the bottom of the gate's stair, slow and patient, every night. {keeper} wants to know whether the council would rather open it or brick it up.",
+          "options": [
+            {
+              "label": "Open it with the watch",
+              "skill": "athletics",
+              "dc": 14,
+              "needs": [
+                "watch"
+              ],
+              "success": {
+                "text": "The watch opens it on something that was waiting a long time and was not ready for spears. {site} is quieter for it.",
+                "effects": {
+                  "stir": -20,
+                  "goodwill": 3,
+                  "mandate": 1
+                }
+              },
+              "failure": {
+                "text": "The door opens and the watch runs. Whatever was knocking is out in the tunnels now.",
+                "effects": {
+                  "stir": 12,
+                  "goodwill": -2,
+                  "tension": 2
+                }
+              }
+            },
+            {
+              "label": "Ask a hero to open it",
+              "skill": "perception",
+              "dc": 14,
+              "needs": [
+                "hero"
+              ],
+              "aid": "hero",
+              "prefer": 0.05,
+              "success": {
+                "text": "{heroName} opens it, goes through, and comes back an hour later with a broken blade and a story. The knocking stops.",
+                "effects": {
+                  "stir": -30,
+                  "renown": 1,
+                  "goodwill": 4
+                }
+              },
+              "failure": {
+                "text": "{heroName} comes back up bleeding and will not say what was behind it.",
+                "effects": {
+                  "wound": 12,
+                  "stir": -10
+                }
+              }
+            },
+            {
+              "label": "Brick it up",
+              "success": {
+                "text": "Three courses of brick and a ward chalked on them. The knocking goes on, fainter.",
+                "effects": {
+                  "stir": 5,
+                  "goodwill": -2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "One night the knocking stops. Nobody knows which side of the door it is on now.",
+        "effects": {
+          "stir": 15,
+          "goodwill": -3
+        }
+      }
+    },
+    {
+      "id": "gate-ooze",
+      "title": "An ooze in the sewers",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "institution:undercity-gate"
+      ],
+      "minDay": 30,
+      "repeatDays": 220,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The sewer men have found a great clear ooze eating its way along the drains. {keeper} thinks it could be fed on rubbish and kept, like a dog; the sewer men want it burned.",
+          "options": [
+            {
+              "label": "Let the Gatewarden keep it",
+              "skill": "animal-handling",
+              "dc": 13,
+              "prefer": 0.05,
+              "success": {
+                "text": "{keeperName} coaxes it into the old cistern with a cart of offal. The sewers are cleaner than they have been in a hundred years.",
+                "effects": {
+                  "goodwill": 5,
+                  "fixture:tamed-ooze": 1
+                }
+              },
+              "failure": {
+                "text": "It eats the cart, the offal and a sewer man's boots, with the sewer man still in them for a moment.",
+                "effects": {
+                  "goodwill": -2,
+                  "tension": 2,
+                  "people": -1
+                }
+              }
+            },
+            {
+              "label": "Burn it out",
+              "success": {
+                "text": "The drains stink of it for a week, and the warden sulks.",
+                "effects": {
+                  "goodwill": -3
+                }
+              }
+            },
+            {
+              "label": "Sell it to an alchemist",
+              "success": {
+                "text": "An alchemist pays well for it and asks whether there are more.",
+                "effects": {
+                  "gold": 60,
+                  "goodwill": -1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "Left alone, it eats the sewer grates and wanders into a cellar.",
+        "effects": {
+          "tension": 2,
+          "goodwill": -2
+        }
+      }
+    },
+    {
+      "id": "gate-undermarket",
+      "title": "A deal gone bad below",
+      "stakes": "medium",
+      "source": "faction",
+      "needs": [
+        "institution:undercity-gate:undermarket"
+      ],
+      "minDay": 50,
+      "repeatDays": 200,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Two traders in the undermarket came to knives over a crate nobody will name. One is dead, the watch wants to go down in force, and {keeper} says the market only works if the watch stays above.",
+          "options": [
+            {
+              "label": "Keep the watch above",
+              "success": {
+                "text": "The market settles its own quarrel, quietly. {keeperName} sends up a purse and a nod.",
+                "effects": {
+                  "gold": 40,
+                  "goodwill": 5,
+                  "tension": 1,
+                  "precedent:undermarket-blind-eye": 1
+                }
+              }
+            },
+            {
+              "label": "Send the watch down",
+              "success": {
+                "text": "The watch takes the crate and the killer. The market moves deeper, and the warden's ledger has gaps now.",
+                "effects": {
+                  "mandate": 2,
+                  "goodwill": -6,
+                  "stir": 5
+                }
+              }
+            },
+            {
+              "label": "Find out what was in the crate",
+              "skill": "investigation",
+              "dc": 15,
+              "prefer": 0.05,
+              "success": {
+                "text": "A sealed reliquary out of {site}. The killer is taken quietly, and the reliquary goes to the temple.",
+                "effects": {
+                  "goodwill": 2,
+                  "mandate": 1
+                }
+              },
+              "failure": {
+                "text": "The crate is gone by the time anyone asks.",
+                "effects": {
+                  "goodwill": -1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The market buries its dead in the tunnels and opens again the next night.",
+        "effects": {
+          "tension": 2,
+          "goodwill": 1
+        }
+      }
+    },
+    {
+      "id": "gate-and-temple",
+      "title": "The dead under the town",
+      "stakes": "medium",
+      "source": "faith",
+      "needs": [
+        "institution:undercity-gate",
+        "institution:temple-district",
+        "below"
+      ],
+      "minDay": 60,
+      "repeatDays": 240,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Diggers have broken into a forgotten burial vault in {site}. {keeper2} wants the bones raised and buried again with every rite; {keeper} wants the vault sealed before what lies there notices the light.",
+          "options": [
+            {
+              "label": "Raise and rebury them",
+              "skill": "religion",
+              "dc": 14,
+              "prefer": 0.05,
+              "success": {
+                "text": "A long procession of bones goes up the stair by lamplight, and the town's dead rest easier. So does the town.",
+                "effects": {
+                  "goodwill": -2,
+                  "goodwill2": 6,
+                  "stir": -15,
+                  "dread": -2
+                }
+              },
+              "failure": {
+                "text": "Something in the vault does not want to be moved. Priests come up running, and the bones are left where they fell.",
+                "effects": {
+                  "goodwill2": -3,
+                  "stir": 10,
+                  "dread": 2
+                }
+              }
+            },
+            {
+              "label": "Seal the vault",
+              "success": {
+                "text": "Mortar, iron and a ward of the warden's own. The priests call it a second burial without rites.",
+                "effects": {
+                  "goodwill": 5,
+                  "goodwill2": -4,
+                  "stir": -5
+                }
+              }
+            },
+            {
+              "label": "Bless the vault and leave the dead in it",
+              "cost": 40,
+              "success": {
+                "text": "Priests and warden go down together, and the vault is blessed where it lies. Both grumble, neither refuses.",
+                "effects": {
+                  "goodwill": 2,
+                  "goodwill2": 2,
+                  "stir": -10
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "No one decides, and the diggers fill the hole back in themselves. Lights are seen down there at night.",
+        "effects": {
+          "stir": 10,
+          "goodwill": -2,
+          "goodwill2": -2
+        }
+      }
+    },
+    {
+      "id": "gate-and-hall",
+      "title": "Contracts for the deep",
+      "stakes": "low",
+      "source": "heroes",
+      "needs": [
+        "institution:undercity-gate",
+        "institution:adventurers-hall",
+        "below"
+      ],
+      "minDay": 60,
+      "repeatDays": 220,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{keeper2} wants the hall's companies to take delving contracts in {site}, paid by the hall and logged at the gate. {keeper} says green companies going down for coin is how the dark gets fed.",
+          "options": [
+            {
+              "label": "Let the hall post contracts",
+              "success": {
+                "text": "Companies queue at the gate with lanterns and fresh rope. Most come back, richer.",
+                "effects": {
+                  "goodwill": -3,
+                  "goodwill2": 5,
+                  "stir": -15,
+                  "gold": 20
+                }
+              }
+            },
+            {
+              "label": "Only veterans may go down",
+              "success": {
+                "text": "The warden checks every company's ledger at the stair. Fewer go down, and fewer stay there.",
+                "effects": {
+                  "goodwill": 4,
+                  "goodwill2": -2,
+                  "stir": -5
+                }
+              }
+            },
+            {
+              "label": "Keep the way down shut to companies",
+              "success": {
+                "text": "The hall's companies go back to the road, muttering about the warden.",
+                "effects": {
+                  "goodwill": 4,
+                  "goodwill2": -5
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "Companies go down anyway, without contracts or a ledger, and not all of them come back.",
+        "effects": {
+          "stir": 5,
+          "goodwill": -2,
+          "goodwill2": -2
+        }
+      }
+    },
+    {
+      "id": "gate-and-tavern",
+      "title": "A tunnel from the tavern",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "institution:undercity-gate",
+        "institution:famous-tavern"
+      ],
+      "minDay": 50,
+      "repeatDays": 240,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{keeper} has found a tunnel from the old cellars running straight into {keeper2}'s cellar under the famous tavern, worn smooth by feet and barrels. Neither will say who dug it.",
+          "options": [
+            {
+              "label": "Brick it up",
+              "success": {
+                "text": "The tunnel is bricked at both ends. The tavern's ale gets dearer, and {keeper2} will not look the warden in the eye.",
+                "effects": {
+                  "goodwill": 4,
+                  "goodwill2": -4,
+                  "stir": -5
+                }
+              }
+            },
+            {
+              "label": "Let it be: it is a tavern",
+              "success": {
+                "text": "The barrels keep rolling. The warden writes it in the ledger and underlines it twice.",
+                "effects": {
+                  "goodwill": -3,
+                  "goodwill2": 4,
+                  "tension": 1
+                }
+              }
+            },
+            {
+              "label": "Follow it to the end",
+              "skill": "investigation",
+              "dc": 14,
+              "prefer": 0.05,
+              "success": {
+                "text": "At the far end the watch finds a smugglers' cache, and the council a nice share of it.",
+                "effects": {
+                  "gold": 60,
+                  "goodwill": 2,
+                  "goodwill2": -2,
+                  "mandate": 1
+                }
+              },
+              "failure": {
+                "text": "The tunnel branches, and branches again, and the watch comes back up lost and empty-handed.",
+                "effects": {
+                  "goodwill": -1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The barrels keep rolling, and so do the rumours.",
+        "effects": {
+          "tension": 1,
+          "goodwill": -2
+        }
+      }
+    },
+    {
+      "id": "gate-bell",
+      "title": "A bell for the stair",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "institution:undercity-gate"
+      ],
+      "minDay": 30,
+      "repeatDays": 300,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{keeper} asks for a bell to hang at the foot of the stair, so that whatever tries to come up rings it before it reaches the street.",
+          "options": [
+            {
+              "label": "Cast the bell",
+              "cost": 50,
+              "success": {
+                "text": "The bell is cast and hung. Twice that winter it rings in the night, and twice the watch is down there before it stops.",
+                "effects": {
+                  "goodwill": 5,
+                  "fixture:warning-bell": 1
+                }
+              }
+            },
+            {
+              "label": "A lantern will do",
+              "success": {
+                "text": "{keeperName} hangs a lantern and says nothing more about it.",
+                "effects": {
+                  "goodwill": -2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The warden hangs an old pot on a chain instead.",
+        "effects": {
+          "goodwill": -2
         }
       }
     }
