@@ -80,6 +80,48 @@ public class FactionsTests
     }
 
     [Fact]
+    public void TheThievesShareTheirTakingsSoARaidFindsNoFortune()
+    {
+        var sim = new Simulation(new SimulationOptions { Seed = 2 });
+        var t = sim.Town;
+        sim.RunDays(1);
+        var hand = Factions.Find(t, "quiet-hand")!;
+        hand.Active = true;
+        hand.Known = true;
+        hand.QuietUntil = int.MaxValue;
+        hand.Purse = 10000;
+        var members = t.Residents.Take(4).ToList();
+        hand.Members.AddRange(members.Select(a => a.Id));
+        double before = members.Sum(a => a.Gold);
+        sim.RunDays(1);
+        var stash = t.Content.Factions.Stash;
+        Assert.True(Factions.Coffers(t, hand) <= stash.Base + stash.PerMember * hand.Members.Count + hand.Members.Count + stash.LeaderShares);
+        Assert.True(members.Sum(a => a.Gold) > before + 9000);
+        double treasury = t.Treasury, leaderGold = members[0].Gold;
+        Assert.True(sim.CrackDown("quiet-hand"));
+        // The haul is the den's stash, the fines and most of the leader's purse, nowhere near the 10,000 they made.
+        Assert.InRange(t.Treasury - treasury, leaderGold * stash.Seize - t.Content.Factions.CrackdownCost, 6000);
+    }
+
+    [Fact]
+    public void AGuildThatSurvivesACrackdownStrikesBack()
+    {
+        var sim = new Simulation(new SimulationOptions { Seed = 2 });
+        var t = sim.Town;
+        sim.RunDays(1);
+        var hand = Factions.Find(t, "quiet-hand")!;
+        hand.Active = true;
+        hand.Known = true;
+        hand.Members.AddRange(t.Residents.Take(6).Select(a => a.Id));
+        Assert.True(sim.CrackDown("quiet-hand"));
+        Assert.True(hand.Members.Count > 0);
+        Assert.Equal(t.Day + t.Content.Factions.Vendetta.Days, hand.VendettaUntil);
+        int entries = t.Ledger.Entries.Count;
+        sim.RunDays(t.Content.Factions.Vendetta.Days);
+        Assert.Contains(t.Ledger.Entries.Skip(entries), e => e.Category == LedgerCategory.Faction && (e.Text.Contains("for the raid") || e.Text.Contains("mark") || e.Text.Contains("grudge")));
+    }
+
+    [Fact]
     public void TheCouncilCanOnlyBackAFactionItKnows()
     {
         var sim = new Simulation(new SimulationOptions { Seed = 2 });
