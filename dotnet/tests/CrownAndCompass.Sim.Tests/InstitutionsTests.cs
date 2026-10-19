@@ -238,6 +238,31 @@ public class InstitutionsTests
     }
 
     [Fact]
+    public void TheHallBringsTheFoundingBannerHomeAndTheDragonGuardsTheWalls()
+    {
+        var sim = Player();
+        var t = sim.Town;
+        sim.RunDays(1);
+        Raise(t, "hall_of_heroes");
+        Raise(t, "dragon_eyrie");
+        sim.RunDays(1);
+        t.Treasury = 1000;
+        var hero = Quests.CreateHero(t, t.Content.Classes[0], 5);
+        var s = Stories.Open(t, "heroes-banner")!;
+        s.HeroId = hero.Id;
+        // A reward finds the banner; paying the robber-lord's price brings it home to the empty pedestal.
+        Stories.Resolve(t, s.Id, 1);
+        Assert.Equal("price", s.Stage);
+        Stories.Resolve(t, s.Id, 0);
+        Assert.Contains("founding-banner", Institutions.Find(t, "hall-of-heroes")!.Fixtures);
+
+        Assert.StartsWith("Dragon ", Institutions.KeeperName(t, Institutions.Find(t, "resident-dragon")!));
+        double defence = Institutions.Defence(t);
+        Assert.True(sim.ChooseInstitution("resident-dragon", "protector"));
+        Assert.True(Institutions.Defence(t) > defence);
+    }
+
+    [Fact]
     public void AnInstitutionShutsWhenItsBuildingCloses()
     {
         var sim = Player();

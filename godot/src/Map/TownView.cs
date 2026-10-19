@@ -280,6 +280,11 @@ public partial class TownView(MapView map) : Node3D
             case "monster_sanctuary": MonsterSanctuary(kit, v); break;
             case "auction_house": AuctionHouse(kit, v); break;
             case "observatory": Observatory(kit, v); break;
+            case "dungeon_entrance": DungeonEntrance(kit, v); break;
+            case "embassy_quarter": EmbassyQuarter(kit, v); break;
+            case "planar_gate": PlanarGate(kit, v); break;
+            case "hall_of_heroes": HallOfHeroes(kit, v); break;
+            case "dragon_eyrie": DragonEyrie(kit, v); break;
             default: House(kit, v); break;
         }
     }
