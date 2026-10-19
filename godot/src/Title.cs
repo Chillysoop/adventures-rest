@@ -73,13 +73,11 @@ public partial class Main
         var b = new Button { Text = text, TooltipText = tip, CustomMinimumSize = new Vector2(320, 50), SizeFlagsHorizontal = SizeFlags.ShrinkBegin, Alignment = HorizontalAlignment.Left, FocusMode = FocusModeEnum.None };
         b.AddThemeFontOverride("font", Ui.Display);
         b.AddThemeFontSizeOverride("font_size", 20);
-        var normal = Ui.Box(primary ? new Color(Ui.Gold, 0.16f) : new Color(0.1f, 0.085f, 0.065f, 0.75f), primary ? Ui.Gold : new Color(Ui.Line, 0.9f), 10, 1, 20, 8);
-        var hover = Ui.Box(new Color(Ui.Gold, 0.24f), Ui.Gold, 10, 1, 20, 8);
-        hover.BorderWidthLeft = 4;
-        b.AddThemeStyleboxOverride("normal", normal);
-        b.AddThemeStyleboxOverride("hover", hover);
-        b.AddThemeStyleboxOverride("pressed", hover);
-        b.AddThemeStyleboxOverride("disabled", Ui.Box(new Color(0.1f, 0.085f, 0.065f, 0.5f), new Color(Ui.Line, 0.5f), 10, 1, 20, 8));
+        // Oak planks with iron studs, and the red banner for the first choice (Castle.cs).
+        b.AddThemeStyleboxOverride("normal", Castle.Button("normal", primary, 22, 8));
+        b.AddThemeStyleboxOverride("hover", Castle.Button("hover", primary, 22, 8));
+        b.AddThemeStyleboxOverride("pressed", Castle.Button("pressed", primary, 22, 8));
+        b.AddThemeStyleboxOverride("disabled", Castle.Button("disabled", primary, 22, 8));
         b.AddThemeColorOverride("font_color", Ui.Ink);
         b.AddThemeColorOverride("font_hover_color", Colors.White);
         b.AddThemeColorOverride("font_disabled_color", new Color(Ui.Ink2, 0.5f));
