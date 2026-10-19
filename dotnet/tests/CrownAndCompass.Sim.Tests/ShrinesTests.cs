@@ -24,11 +24,29 @@ public class ShrinesTests
         var t = sim.Town;
         Assert.Contains(t.Residents, a => a.Devout);
         Assert.Contains(t.Ledger.Entries, e => e.Category == LedgerCategory.Faith);
-        // A town big enough with gold to spare has raised one; a poorer one waits for the money, a crowded one for room.
-        bool room = Shrines.CivicLot(t, t.Content.Building("temple")) != null;
-        if (t.Population >= t.Content.Shrines.TemplePopulation + 10 && t.Treasury > Shrines.TempleCost(t) + 250 && room)
+        // A town big enough with gold to spare has raised one; a poorer one waits for the money. There is always room.
+        Assert.NotNull(Shrines.CivicLot(t, t.Content.Building("temple")));
+        if (t.Population >= t.Content.Shrines.TemplePopulation + 10 && t.Treasury > Shrines.TempleCost(t) + 250)
             Assert.Contains(t.Buildings, b => b.Def.Id == "temple");
-        Assert.True(t.Buildings.Any(b => b.Def.Id == "temple") || Shrines.TempleBlocked(t) != null || t.Treasury <= Shrines.TempleCost(t) + 250 || !room);
+        Assert.True(t.Buildings.Any(b => b.Def.Id == "temple") || Shrines.TempleBlocked(t) != null || t.Treasury <= Shrines.TempleCost(t) + 250);
+    }
+
+    [Fact]
+    public void CivicWorksFindRoomWhenTheZonesCoverTheOldTown()
+    {
+        // Seed 1 paints every open cell of the old town with homes and shops by day 60, long before a second ward opens:
+        // the temple and the village's civic works still find room on plots nobody has built on yet.
+        var sim = new Simulation(new SimulationOptions { Seed = 1 });
+        sim.RunDays(100);
+        var t = sim.Town;
+        Assert.Single(t.City.OpenWards);
+        Assert.Contains(t.Buildings, b => b.Def.Id == "temple");
+        foreach (var id in new[] { "watch_house", "granary", "market_hall" })
+        {
+            var lot = Planning.CivicLot(t, t.Content.Building(id));
+            Assert.NotNull(lot);
+            Assert.NotEqual(Zone.Farmland, lot!.Zone);
+        }
     }
 
     [Fact]
