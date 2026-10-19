@@ -271,6 +271,7 @@ public partial class TownView(MapView map) : Node3D
             case "chapterhouse": Chapterhouse(kit, v); break;
             case "alchemists_quarter": AlchemistsQuarter(kit, v); break;
             case "artificers_foundry": ArtificersFoundry(kit, v); break;
+            case "undercity_gate": UndercityGate(kit, v); break;
             default: House(kit, v); break;
         }
     }

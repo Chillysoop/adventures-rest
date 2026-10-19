@@ -78,6 +78,9 @@ public sealed record ServiceDef : DecreeDef
     /// <summary>More trade routes the charter allows.</summary>
     public double Routes { get; init; }
 
+    /// <summary>Share taken off the stir the undercity gathers each day.</summary>
+    public double Hush { get; init; }
+
     /// <summary>A faction it works with or against, and what it does each day to that faction's standing and heat.</summary>
     public string Faction { get; init; } = "";
     public double Standing { get; init; }
@@ -281,6 +284,9 @@ public static class Institutions
     /// <summary>Extra hit points a night's rest in town heals.</summary>
     public static int Rest(Town town, int maxHp) => town.Institutions.Count == 0 ? 0 : (int)Math.Ceiling(maxHp * Sum(town, d => d.Heal) - 1e-9);
 
+    /// <summary>Share off the stir the undercity gathers, at most three fifths.</summary>
+    public static double Hush(Town town) => town.Institutions.Count == 0 ? 0 : Math.Clamp(Sum(town, d => d.Hush), -0.5, 0.6);
+
     public static double Build(Town town) => town.Institutions.Count == 0 ? 1 : 1 + Sum(town, d => d.Build);
 
     /// <summary>What each good's makers produce, multiplied: a yield of 1.1 at full strength is a tenth more.</summary>
@@ -475,6 +481,7 @@ public static class Institutions
         if (d.Defence != 0) said.Add($"{(d.Defence > 0 ? "+" : "−")}{N(d.Defence)} defence on the walls");
         if (d.Heal > 0) said.Add($"heroes heal {N(d.Heal * 100)}% more a night");
         if (d.Escort > 0) said.Add($"{N(d.Escort * 100)}% fewer caravans waylaid");
+        if (d.Hush != 0) said.Add($"the undercity stirs {N(d.Hush * 100)}% {(d.Hush > 0 ? "slower" : "faster")}");
         foreach (var (g, y) in d.Yields.OrderBy(y => y.Key, StringComparer.Ordinal))
             said.Add($"{(y >= 1 ? "+" : "−")}{Js.ToFixed(Math.Abs((y - 1) * k * 100), 0)}% {g.ToLowerInvariant()}");
         if (d.Build != 0) said.Add($"builders {N(d.Build * 100)}% {(d.Build > 0 ? "faster" : "slower")}");
