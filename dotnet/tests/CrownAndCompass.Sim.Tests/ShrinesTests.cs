@@ -24,10 +24,11 @@ public class ShrinesTests
         var t = sim.Town;
         Assert.Contains(t.Residents, a => a.Devout);
         Assert.Contains(t.Ledger.Entries, e => e.Category == LedgerCategory.Faith);
-        // A town big enough with gold to spare has raised one; a poorer one waits for the money.
-        if (t.Population >= t.Content.Shrines.TemplePopulation + 10 && t.Treasury > Shrines.TempleCost(t) + 250)
+        // A town big enough with gold to spare has raised one; a poorer one waits for the money, a crowded one for room.
+        bool room = Shrines.CivicLot(t, t.Content.Building("temple")) != null;
+        if (t.Population >= t.Content.Shrines.TemplePopulation + 10 && t.Treasury > Shrines.TempleCost(t) + 250 && room)
             Assert.Contains(t.Buildings, b => b.Def.Id == "temple");
-        Assert.True(t.Buildings.Any(b => b.Def.Id == "temple") || Shrines.TempleBlocked(t) != null || t.Treasury <= Shrines.TempleCost(t) + 250);
+        Assert.True(t.Buildings.Any(b => b.Def.Id == "temple") || Shrines.TempleBlocked(t) != null || t.Treasury <= Shrines.TempleCost(t) + 250 || !room);
     }
 
     [Fact]
