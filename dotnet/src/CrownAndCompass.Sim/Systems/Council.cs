@@ -296,12 +296,15 @@ public static class Council
         switch (id)
         {
             case SeatId.Steward:
+            {
                 // A red week only matters while the coffers couldn't ride it out: the Speaker calls the same
-                // reserve full and moves taxes down again, so rising past it only ping-pongs the rate.
-                if (((books < 0 && town.Treasury < upkeep * 20) || town.Treasury < upkeep * 5) && town.TaxRate < c.MaxTax - 1e-9)
-                    return new Proposal(MotionKind.RaiseTax, 0, books < 0 ? "the books have run red this week" : "the treasury is thin");
-                if (books < 0 && town.Watch > 0) return new Proposal(MotionKind.DismissWatch, 0, "the watch costs more than the town can bear");
+                // reserve full and moves taxes down again, so acting on a red week above it only ping-pongs the town.
+                bool red = books < 0 && town.Treasury < upkeep * 20;
+                if ((red || town.Treasury < upkeep * 5) && town.TaxRate < c.MaxTax - 1e-9)
+                    return new Proposal(MotionKind.RaiseTax, 0, red ? "the books have run red this week" : "the treasury is thin");
+                if (red && town.Watch > 0) return new Proposal(MotionKind.DismissWatch, 0, "the watch costs more than the town can bear");
                 return null;
+            }
             case SeatId.Captain:
                 if (brawls >= 2 || town.Watch < town.Population / 30)
                     return new Proposal(MotionKind.HireWatch, 0, brawls >= 2 ? $"{brawls} brawls this week" : "the streets go unwatched");
