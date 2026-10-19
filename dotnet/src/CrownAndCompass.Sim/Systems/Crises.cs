@@ -427,6 +427,9 @@ public static class Crises
         Absorb(town, m);
         int others = Active(town).Count(x => x != c);
         double host = Threat.Defense(town) * sv.Army * (1 + r.OverlapArmy * others) * (0.9 + town.Rng.Next() * 0.2);
+        // The big bad's doom clock: every march it has made swells the host its crisis brings, so a finale the heroes
+        // cannot end at the seat or the breach ends at the walls instead.
+        if (m.BigBad) host = Math.Max(host, Threat.Defense(town) * town.Content.Saga.Finale.MarchGrowth * m.Marches);
         c.PowerBefore = m.Power;
         m.Power = Math.Max(m.Power, host) + Allies(town, m);
         c.Phase = CrisisPhase.Marching;
