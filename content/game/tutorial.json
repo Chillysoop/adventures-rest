@@ -409,7 +409,7 @@
     {
       "id": "institutions",
       "title": "The town's institutions",
-      "text": "A town grows around its institutions: the temple district, an adventurers' hall, a druid grove, a grand bazaar, the famous tavern, and as it grows a paladin chapterhouse, an alchemists' quarter, an artificers' foundry, a bards' college and a grand arena. Each is run by a keeper with a name and a temper, does something for the whole town every day, and asks you for something now and then. In the [b]Institutions[/b] window, make each one's choice (which god the temple district honours, the tavern's style) and set how generously the council funds it: generous patronage buys more of its service and its keeper's goodwill. Raise the new ones from the Government build bar; the college and the arena form around the town's theatre and arena.",
+      "text": "A town grows around its institutions: the temple district, an adventurers' hall, a druid grove, a grand bazaar, the famous tavern, and as it grows a gate over the undercity, a paladin chapterhouse, an alchemists' quarter, an artificers' foundry, a bards' college and a grand arena. Each is run by a keeper with a name and a temper, does something for the whole town every day, and asks you for something now and then. In the [b]Institutions[/b] window, make each one's choice (which god the temple district honours, the tavern's style) and set how generously the council funds it: generous patronage buys more of its service and its keeper's goodwill. Raise the new ones from the Government build bar; the college and the arena form around the town's theatre and arena.",
       "point": "tab:Institutions",
       "when": "count:Institutions",
       "teaches": [

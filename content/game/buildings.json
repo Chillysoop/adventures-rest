@@ -131,6 +131,8 @@
     "blurb": "Where the company keeps what it should not. Now and then something in it wakes and proves useful." },
   { "id": "adventurers_hall", "name": "Adventurers' Hall", "size": [5, 4], "zone": "Civic", "buildable": false, "civic": true, "tier": "hamlet", "cost": 200, "timber": 26, "stone": 4, "buildHours": 110, "max": 1,
     "blurb": "Where companies register, read the contract board, gear up and keep a sending stone of their own. Contract fees, better answers to parties who send word from the road, and a Hallmaster with requests of their own." },
+  { "id": "undercity_gate", "name": "Undercity Gate", "size": [3, 3], "zone": "Civic", "buildable": false, "civic": true, "tier": "village", "cost": 240, "timber": 10, "stone": 22, "buildHours": 100, "max": 1,
+    "blurb": "A warded stone gatehouse over the way down into the cellars and everything under them. Whatever stirs below stirs slower, and its Gatewarden decides what goes down and what comes up." },
   { "id": "chapterhouse", "name": "Paladin Chapterhouse", "size": [5, 4], "zone": "Civic", "buildable": false, "civic": true, "tier": "village", "cost": 340, "timber": 18, "stone": 30, "buildHours": 150, "max": 1,
     "blurb": "A fortified hall for an order of paladins. A little more safety, an oath that shapes the town, and a Knight-Commander who expects the town to keep its word." },
   { "id": "alchemists_quarter", "name": "Alchemists' Quarter", "size": [5, 4], "zone": "Civic", "buildable": false, "civic": true, "tier": "village", "cost": 280, "timber": 20, "stone": 14, "buildHours": 130, "max": 1,
