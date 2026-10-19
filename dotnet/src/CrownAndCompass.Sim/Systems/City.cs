@@ -126,6 +126,17 @@ public sealed record PathRules
     public double Lay { get; init; } = 1.2;
 }
 
+/// <summary>
+/// The strip along each wall line (city.json "wallStrip") that nothing is built on, in tiles inside and outside the line:
+/// room for the widest the wall grows (stone, towers, the barracks behind it, the moat and its banks), so a palisade can
+/// be raised and upgraded in place without a building in its way.
+/// </summary>
+public sealed record WallStripRules
+{
+    public double Inside { get; init; } = 0.9;
+    public double Outside { get; init; } = 1.6;
+}
+
 /// <summary>How the town grows (content/game/city.json).</summary>
 public sealed record CityRules
 {
@@ -148,6 +159,9 @@ public sealed record CityRules
 
     /// <summary>How feet wear paths to buildings off the streets.</summary>
     public PathRules Paths { get; init; } = new();
+
+    /// <summary>The ground kept clear along each wall line for the wall's widest works.</summary>
+    public WallStripRules WallStrip { get; init; } = new();
 
     /// <summary>Days a house must be content (at UpgradeAt or better) before it grows.</summary>
     public int UpgradeDays { get; init; } = 6;
@@ -286,6 +300,29 @@ public static class City
     /// a square-shouldered, round-cornered loop with a slow wobble from the town's seed, so no border runs ruled-straight.
     /// </summary>
     public static double Edge(Town town, int ring, double angle) => Edge(town.Seed, ring, angle);
+
+    /// <summary>
+    /// How far from the hall the wall round ring <paramref name="ring"/> runs at a heading: the palisade and the stone wall round
+    /// the old town (ring 0), the city wall (ring 1). It stands just outside the ring, far enough that the strip kept clear
+    /// for it (<see cref="OnWallStrip"/>) begins at the ring's edge and takes none of the land inside.
+    /// </summary>
+    public static double Wall(Town town, int ring, double angle) => Edge(town, ring, angle) + town.Content.City.WallStrip.Inside;
+
+    /// <summary>The rings walls are raised round, innermost first.</summary>
+    public const int WallRings = 2;
+
+    /// <summary>Whether a point lies on the strip kept clear along a wall line (<see cref="WallStripRules"/>), walls built or not.</summary>
+    public static bool OnWallStrip(Town town, double x, double y)
+    {
+        var strip = town.Content.City.WallStrip;
+        double dx = x - Town.Center, dy = y - Town.Center, dist = Math.Sqrt(dx * dx + dy * dy), a = Math.Atan2(dy, dx);
+        for (int ring = 0; ring < WallRings; ring++)
+        {
+            double off = dist - Wall(town, ring, a);
+            if (off >= -strip.Inside && off <= strip.Outside) return true;
+        }
+        return false;
+    }
 
     public static double Edge(int seed, int ring, double angle)
     {

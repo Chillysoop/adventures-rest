@@ -216,6 +216,9 @@ public static class Land
             if (zone is Zone z && plan.Zones[i] != (byte)z) return false;
             if (crop != 0 && plan.Crops[i] != 0 && plan.Crops[i] != crop) return false;
         }
+        // Nothing stands where the town wall runs or will run, nor where its towers, barracks and moat will go.
+        foreach (int i in Cells(x, y, w, d, yaw, 1))
+            if (i >= 0 && OnWallStrip(town, i)) return false;
         // Dense land builds wall to wall; elsewhere a lane of open ground runs round each building.
         int lane = Density.Lane(town, plan.Density[mid]);
         if (lane > 0)
@@ -410,6 +413,18 @@ public static class Land
     public static bool PaintPatch(Town town, Zone zone, double radius, double maxDist, double ring, byte crop = 0) =>
         PaintPatch(town, zone, radius, (x, y, dist) => dist > maxDist || (ring > 0 && dist < ring - 0.5) ? null : ring == 0 ? dist : Math.Abs(dist - ring), crop);
 
+    /// <summary>Whether a cell's middle lies on the strip kept clear along the wall lines (<see cref="City.OnWallStrip"/>), kept for the plan's life.</summary>
+    public static bool OnWallStrip(Town town, int i)
+    {
+        var plan = town.Plan;
+        if (plan.WallStrip == null)
+        {
+            plan.WallStrip = new bool[Size * Size];
+            for (int c = 0; c < plan.WallStrip.Length; c++) plan.WallStrip[c] = City.OnWallStrip(town, (c % Size + 0.5) / Res, (c / Size + 0.5) / Res);
+        }
+        return plan.WallStrip[i];
+    }
+
     /// <summary>The ward a cell's middle lies in (<see cref="City.WardOf(Town, double, double)"/>), kept for the plan's life.</summary>
     public static WardDef WardAt(Town town, int i)
     {
@@ -510,6 +525,10 @@ public sealed class LandPlan
     /// <summary>The ward each cell lies in (<see cref="Land.WardAt"/>).</summary>
     [field: NotSaved]
     public WardDef[]? Wards { get; set; }
+
+    /// <summary>Whether each cell lies on the strip kept clear along the wall lines (<see cref="Land.OnWallStrip"/>).</summary>
+    [field: NotSaved]
+    public bool[]? WallStrip { get; set; }
 
     /// <summary>Whether each building's door is off the streets (<see cref="Streets.Offroad"/>).</summary>
     [field: NotSaved]

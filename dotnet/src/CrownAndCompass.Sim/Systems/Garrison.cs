@@ -151,25 +151,13 @@ public static class Garrison
     }
 
     /// <summary>
-    /// How far the outer wall stands from the town's heart along a section's bearing: the city wall or the stone walls
-    /// round their wards (rounded squares), else the palisade round the settled lots.
+    /// How far the outer wall stands from the town's heart along a section's bearing: the city wall, else the stone wall
+    /// or the palisade, which stand on the same line round the old town (<see cref="City.Wall"/>).
     /// </summary>
     public static double Radius(Town town, int section)
     {
-        var (dx, dy) = Bearing(town, section);
-        var d = town.Defenses;
-        if (d.StoneWall == PalisadeState.Built)
-        {
-            double half = City.Band * (d.CityWall == PalisadeState.Built ? 2 : 1) * 1.04;
-            return half / Math.Pow(Math.Pow(Math.Abs(dx), 4) + Math.Pow(Math.Abs(dy), 4), 0.25);
-        }
-        double r = 4;
-        foreach (var l in town.Lots)
-        {
-            if (l.Zone == Zone.Farmland || SectionAt(town, l.X, l.Y) != section) continue;
-            r = Math.Max(r, Js.Hypot(l.X - Town.Center, l.Y - Town.Center) + 1);
-        }
-        return r;
+        double a = Math.PI / 2 + section * 2 * Math.PI / Sections(town);
+        return City.Wall(town, town.Defenses.CityWall == PalisadeState.Built ? 1 : 0, a);
     }
 
     /// <summary>The middle of a section of the outer wall.</summary>

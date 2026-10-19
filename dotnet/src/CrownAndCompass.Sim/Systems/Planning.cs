@@ -119,6 +119,9 @@ public static class Planning
     public static string? SpotBlocked(Town town, BuildingDef d, double x, double y, double? yaw = null)
     {
         var ward = City.WardOf(town, x, y);
+        const string wall = "the town wall runs there: its line is kept clear for the stone, towers and moat it will grow into";
+        // The wall line sits just past a ring's edge, so a click on it would otherwise read as unopened land.
+        if (City.OnWallStrip(town, x, y) && Spot(town, d, x, y, yaw) == null) return wall;
         if (!City.IsOpen(town, x, y)) return $"{City.The(ward)} has not been laid out";
         if (!City.AllowsWard(town, d, x, y)) return $"it can't stand in {City.The(ward)}";
         if (!Density.Allows(town, d, x, y)) return $"it needs land zoned {Density.Name(town, d.Density).ToLowerInvariant()} density";
@@ -129,6 +132,7 @@ public static class Planning
         var plan = town.Plan;
         var cells = Land.Cells(x, y, w, dd, a).ToList();
         if (cells.Any(i => i < 0)) return "too near the edge of the town's land";
+        if (Land.Cells(x, y, w, dd, a, 1).Any(i => i >= 0 && Land.OnWallStrip(town, i))) return wall;
         if (Decor.Cells(town) is { } decor && cells.Any(i => decor[i])) return "decorations stand there: clear them first";
         if (cells.Any(i => plan.Taken[i] != 0)) return "another building stands there";
         if (cells.Any(i => plan.Paved[i] != 0)) return "that's a street";

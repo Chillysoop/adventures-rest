@@ -1853,7 +1853,7 @@ public partial class TownView(MapView map) : Node3D
         {
             // South (+y) first, then round clockwise as seen from above.
             double a = Math.PI / 2 + i * Math.PI * 2 / N;
-            float r = (float)City.Edge(town, ring, a) + 0.35f;
+            float r = (float)City.Wall(town, ring, a);
             loop[i] = c + new Vector2((float)Math.Cos(a), (float)Math.Sin(a)) * r;
         }
         return loop;
@@ -1919,44 +1919,10 @@ public partial class TownView(MapView map) : Node3D
     }
 
     /// <summary>
-    /// The walled town: the convex hull of every building but the farms (which lie outside the wall),
-    /// pushed out a little so the stakes clear the yards. Null before there is anything to wall in.
+    /// Where the palisade stands: the line round the old town that its stone wall will replace in place, kept clear of
+    /// buildings from the founding (<see cref="City.OnWallStrip"/>).
     /// </summary>
-    public static Vector2[]? WallLine(Town town)
-    {
-        var pts = new List<Vector2>();
-        foreach (var l in town.Lots)
-            if (l.Zone != Zone.Farmland) pts.AddRange(Geo.LotCorners(l, 0.7f));
-        if (pts.Count < 3) return null;
-        // Andrew's monotone chain, counter-clockwise from the lowest x.
-        pts = [.. pts.OrderBy(p => p.X).ThenBy(p => p.Y)];
-        var hull = new List<Vector2>();
-        for (int pass = 0; pass < 2; pass++)
-        {
-            int start = hull.Count;
-            foreach (var p in pass == 0 ? pts : Enumerable.Reverse(pts))
-            {
-                while (hull.Count >= start + 2 && (hull[^1] - hull[^2]).Cross(p - hull[^2]) <= 0) hull.RemoveAt(hull.Count - 1);
-                hull.Add(p);
-            }
-            hull.RemoveAt(hull.Count - 1);
-        }
-        // Corners cut (Chaikin) round the hull, so the stockade runs round the town in a curve instead of a polygon;
-        // the corners stand out far enough that the cut leaves the buildings inside.
-        for (int pass = 0; pass < 3; pass++)
-        {
-            var round = new List<Vector2>(hull.Count * 2);
-            for (int i = 0; i < hull.Count; i++)
-            {
-                var a = hull[i];
-                var b = hull[(i + 1) % hull.Count];
-                round.Add(a.Lerp(b, 0.25f));
-                round.Add(a.Lerp(b, 0.75f));
-            }
-            hull = round;
-        }
-        return [.. hull];
-    }
+    public static Vector2[] WallLine(Town town) => RingLine(town, 0);
 
     // ---------- Landmarks ----------
 
