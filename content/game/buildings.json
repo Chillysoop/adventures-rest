@@ -196,5 +196,35 @@
       { "name": "the crowned head", "gold": 9000, "goods": { "Stone": 200, "Tools": 60 }, "hours": 700 },
       { "name": "the gilding", "gold": 10000, "goods": { "Tools": 40, "Cloth": 60 }, "hours": 650 }
     ],
-    "blurb": "A grand work: a bronze-and-stone colossus of the town's founder, its lantern seen for a day's ride. Pilgrims and traders come to see it, and the mayor who raised it is remembered." }
+    "blurb": "A grand work: a bronze-and-stone colossus of the town's founder, its lantern seen for a day's ride. Pilgrims and traders come to see it, and the mayor who raised it is remembered." },
+  { "id": "great_cathedral", "name": "Great Cathedral", "size": [6, 5], "zone": "Civic", "buildable": false, "civic": true, "tier": "great_city", "buildHours": 4200,
+    "upkeep": 30, "max": 1, "comfort": 0.06, "mandate": 8, "attraction": 0.1,
+    "stages": [
+      { "name": "the crypt and footings", "gold": 9000, "goods": { "Stone": 300, "Timber": 60 }, "hours": 700 },
+      { "name": "the nave", "gold": 12000, "goods": { "Stone": 400, "Timber": 120 }, "hours": 900 },
+      { "name": "the flying buttresses", "gold": 12000, "goods": { "Stone": 300, "Tools": 60 }, "hours": 850 },
+      { "name": "the rose window", "gold": 11000, "goods": { "Tools": 60, "Cloth": 40 }, "hours": 750 },
+      { "name": "the great spire", "gold": 14000, "goods": { "Stone": 300, "Tools": 60 }, "hours": 1000 }
+    ],
+    "blurb": "A wonder of the great city: a cathedral whose spire is the tallest thing in the realm, raised over a generation. Every household is prouder for it, and the council stands behind a mayor who gave the town its heart." },
+  { "id": "royal_palace", "name": "Royal Palace", "size": [6, 5], "zone": "Civic", "buildable": false, "civic": true, "tier": "great_city", "buildHours": 4000,
+    "upkeep": 40, "max": 1, "mandate": 6, "attraction": 0.2, "heroes": 3, "salesBoost": 0.03,
+    "stages": [
+      { "name": "the great terrace", "gold": 10000, "goods": { "Stone": 300, "Timber": 80 }, "hours": 700 },
+      { "name": "the throne hall", "gold": 14000, "goods": { "Stone": 300, "Timber": 120, "Cloth": 60 }, "hours": 900 },
+      { "name": "the wings and courts", "gold": 14000, "goods": { "Stone": 300, "Tools": 60 }, "hours": 900 },
+      { "name": "the gilded domes", "gold": 14000, "goods": { "Tools": 60, "Cloth": 60, "Wine": 40 }, "hours": 800 },
+      { "name": "the pleasure gardens", "gold": 10000, "goods": { "Herbs": 80, "Stone": 100 }, "hours": 700 }
+    ],
+    "blurb": "A wonder of the great city: a palace fit for a crown the town has not yet been offered. Envoys, merchant princes and famous heroes come to be seen at its court." },
+  { "id": "sky_citadel", "name": "Skyward Citadel", "size": [5, 5], "zone": "Civic", "buildable": false, "civic": true, "tier": "great_city", "buildHours": 4400,
+    "upkeep": 45, "max": 1, "defense": 0.25, "watchBoost": 0.2, "heroes": 2, "mandate": 4,
+    "stages": [
+      { "name": "the rock-cut keep", "gold": 11000, "goods": { "Stone": 400 }, "hours": 800 },
+      { "name": "the inner towers", "gold": 13000, "goods": { "Stone": 400, "Timber": 80 }, "hours": 900 },
+      { "name": "the warded halls", "gold": 13000, "goods": { "Potions": 40, "Books": 30, "Stone": 200 }, "hours": 900 },
+      { "name": "the great beacon", "gold": 12000, "goods": { "Tools": 80, "Potions": 30 }, "hours": 850 },
+      { "name": "the flight of banners", "gold": 10000, "goods": { "Cloth": 80, "Tools": 40 }, "hours": 700 }
+    ],
+    "blurb": "A wonder of the great city: a citadel of towers on the town's highest ground, crowned by a beacon that burns all night. Whatever comes against the walls, the citadel's garrison and its wards stand behind them." }
 ]

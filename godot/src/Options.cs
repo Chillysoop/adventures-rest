@@ -204,7 +204,7 @@ public sealed class Options
             {
                 case "bounty":
                     var site = Quests.Site(t, arg);
-                    if (site != null) sim.PostBounty(arg, Quests.SuggestedReward(site.Def.Tier));
+                    if (site != null) sim.PostBounty(arg, Quests.Asking(t, site.Def.Tier));
                     break;
                 case "scry":
                     sim.CommissionScrying(arg);

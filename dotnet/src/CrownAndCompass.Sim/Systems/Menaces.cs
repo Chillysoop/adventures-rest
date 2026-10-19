@@ -1453,7 +1453,7 @@ public static class Menaces
         if (target.Seat == null) return;
         if (town.Bounties.Any(b => b.SiteId == target.Seat.Def.Id && b.Status is BountyStatus.Open or BountyStatus.Taken)) return;
         int level = Math.Max(1, target.Seat.Def.Tier);
-        double reward = Math.Min(Quests.SuggestedReward(level) + r.BountyBonus, Math.Floor(town.Treasury * 0.6));
+        double reward = Math.Min(Quests.Asking(town, level) + r.BountyBonus, Math.Floor(town.Treasury * 0.6));
         if (reward < 40 * level) return;
         if (Quests.PostBounty(town, target.Seat.Def.Id, reward) != null) target.Menace.NextBountyDay = town.Day + r.BountyEveryDays;
     }

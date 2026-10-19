@@ -335,6 +335,10 @@ public sealed record TownRules
     /// <summary>Daily cost of keeping the town hall and council running.</summary>
     public double CivicUpkeep { get; init; }
 
+    /// <summary>A great treasury costs keeping: TreasuryKeep of the gold above TreasuryFree each day, in clerks, guards and tithes.</summary>
+    public double TreasuryFree { get; init; } = 15000;
+    public double TreasuryKeep { get; init; }
+
     /// <summary>Share of the per-resident upkeep paid out as wages to road crews hired from the idle.</summary>
     public double CrewShare { get; init; } = 0.5;
 

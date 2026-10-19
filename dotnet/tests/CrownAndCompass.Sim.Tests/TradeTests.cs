@@ -129,4 +129,23 @@ public class TradeTests
         Stories.Resolve(t, story.Id, 2);
         Assert.True(s.Standing > before);
     }
+    [Fact]
+    public void MoreWagonsCarryMoreOfTheSurplusUpToFour()
+    {
+        var (sim, s) = Ready();
+        var t = sim.Town;
+        var (export, import) = Trade.Suggest(t, s);
+        Assert.True(sim.OpenTradeRoute(s.Id, export, import));
+        var route = Trade.Open(t).Single();
+        double one = Trade.Load(t, s, route);
+        t.Treasury += 5000;
+        double treasury = t.Treasury;
+        Assert.True(sim.AddWagon(route.Id));
+        Assert.Equal(2, route.Wagons);
+        Assert.True(Trade.Load(t, s, route) > one * 1.5);
+        Assert.True(t.Treasury < treasury);
+        while (Trade.WagonCost(t, route) != null) Assert.True(sim.AddWagon(route.Id));
+        Assert.Equal(t.Content.Trade.Wagons, route.Wagons);
+        Assert.False(sim.AddWagon(route.Id));
+    }
 }

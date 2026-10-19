@@ -129,6 +129,8 @@
         "theft": 4,
         "whisper": 1
       },
+      "shares": true,
+      "vendetta": true,
       "founded": "Hooded figures are seen slipping into the cellar of {den} long after closing. Whatever meets down there swears by {patron}, and it is called {name}. Its members say Nim himself founded the guild on the wharves of the first Free Ports."
     },
     {
@@ -317,5 +319,19 @@
     "theft": 3
   },
   "theftMinCash": 30,
-  "maxDues": 2
+  "maxDues": 2,
+  "stash": {
+    "base": 100,
+    "perMember": 40,
+    "leaderShares": 3,
+    "seize": 0.75
+  },
+  "vendetta": {
+    "days": 45,
+    "chance": 0.2,
+    "share": 0.03,
+    "cap": 300,
+    "fire": [40, 120],
+    "threat": 3
+  }
 }

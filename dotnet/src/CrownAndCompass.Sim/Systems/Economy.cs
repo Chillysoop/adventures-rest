@@ -103,8 +103,12 @@ public static class Economy
     {
         var rules = town.Content.Rules;
         int n = town.Workers.Count;
-        return rules.CivicUpkeep + PerResidentUpkeep(town, n) + Planning.Upkeep(town);
+        return rules.CivicUpkeep + PerResidentUpkeep(town, n) + Planning.Upkeep(town) + TreasuryUpkeep(town);
     }
+
+    /// <summary>What keeping a great treasury costs a day: counting-house clerks, strongroom guards and the tithes a rich town is asked for.</summary>
+    public static double TreasuryUpkeep(Town town) =>
+        Js.Round(Math.Max(0, town.Treasury - town.Content.Rules.TreasuryFree) * town.Content.Rules.TreasuryKeep);
 
     private static double PerResidentUpkeep(Town town, int n)
     {
