@@ -212,7 +212,7 @@ public partial class Main
 
     private void RebuildAlerts(List<Alert> shown)
     {
-        foreach (var c in _alertRow.GetChildren()) c.Free();
+        Ui.Clear(_alertRow);
         _alertGroups.Clear();
         string? tipKind = _alertTip.Visible ? _tipKind : null;
         _alertTip.Visible = false;
@@ -298,7 +298,7 @@ public partial class Main
     {
         if (_openKind == kind.Id) return;
         _tipKind = kind.Id;
-        foreach (var c in _alertTipBox.GetChildren()) c.Free();
+        Ui.Clear(_alertTipBox);
         _alertTipBox.AddChild(AlertHeading(kind, items.Count));
         foreach (var a in items.Take(5))
         {
@@ -323,7 +323,7 @@ public partial class Main
     private void ShowAlertList(AlertKind kind, List<Alert> items, Control chip)
     {
         _openKind = kind.Id;
-        foreach (var c in _alertListBox.GetChildren()) c.Free();
+        Ui.Clear(_alertListBox);
         _alertListBox.AddChild(AlertHeading(kind, items.Count));
         foreach (var a in items)
         {

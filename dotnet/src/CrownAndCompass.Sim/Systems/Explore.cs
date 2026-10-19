@@ -936,7 +936,7 @@ public static class Explore
     private static void Decide(Town town, Find f, bool lapsed)
     {
         var choice = Pick(town, f);
-        Carry(town, f, choice, lapsed ? Text(town, "lapse").Replace("{choice}", Lower(choice.Label), StringComparison.Ordinal) : "");
+        Carry(town, f, choice, lapsed ? Fill(town, f, Text(town, "lapse").Replace("{choice}", Lower(choice.Label), StringComparison.Ordinal)) : "");
     }
 
     /// <summary>What a sensible leader (or the stand-in mayor) does about a find.</summary>

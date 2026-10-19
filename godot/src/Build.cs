@@ -151,7 +151,7 @@ public partial class Main
     {
         _buildGroup = g;
         foreach (var (k, b) in _groupButtons) b.SetPressedNoSignal(k == g);
-        foreach (var c in _buildItems.GetChildren()) c.Free();
+        Ui.Clear(_buildItems);
         _buildButtons.Clear();
         _map.Planner.Pick(null);
         _map.Decorator.Pick(null);

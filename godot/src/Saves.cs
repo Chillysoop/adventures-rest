@@ -140,7 +140,7 @@ public partial class Main
     {
         var t = _sim.Town;
         _menuTitle.Text = _menuLoadOnly ? "Load a town" : $"{t.Name} · Day {t.Day} · seed {_seed}";
-        foreach (var c in _slotList.GetChildren()) c.Free();
+        Ui.Clear(_slotList);
         Section("Saved games");
         for (int i = 1; i <= ManualSlots; i++) SlotRow($"slot-{i}", canSave: !_menuLoadOnly);
         Section("Autosaves");

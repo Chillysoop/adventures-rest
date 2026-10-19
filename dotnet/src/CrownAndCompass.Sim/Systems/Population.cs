@@ -207,7 +207,7 @@ public static class Population
         if (a.Ambition == Ambition.OpenBusiness)
         {
             string dream = a.DreamBusiness != null
-                ? $"dreaming of opening a {town.Content.Building(a.DreamBusiness).Name.ToLowerInvariant()}"
+                ? $"dreaming of opening {Agent.Article(town.Content.Building(a.DreamBusiness).Name)} {town.Content.Building(a.DreamBusiness).Name.ToLowerInvariant()}"
                 : "looking for a business to buy into";
             town.Log(LedgerCategory.Arrival, Importance.Notable, $"{a.Describe()}, rides in with {Js.ToFixed(a.Gold, 0)} gold, {dream}.", [a.Id]);
         }

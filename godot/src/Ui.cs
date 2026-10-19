@@ -143,6 +143,19 @@ public static class Ui
     }
 
     /// <summary>Wrapping BBCode text whose [url] links report to the client (agents, sites, chronicles).</summary>
+    /// <summary>
+    /// Empty a container. Children leave the tree now and are freed at the end of the frame, so a button can
+    /// rebuild the box it sits in from its own Pressed signal (freeing it outright mid-signal crashes the engine).
+    /// </summary>
+    public static void Clear(Node box)
+    {
+        foreach (var c in box.GetChildren())
+        {
+            box.RemoveChild(c);
+            c.QueueFree();
+        }
+    }
+
     public static RichTextLabel Rich(string bbcode, int size = 14, string? skip = null)
     {
         var r = new RichTextLabel
@@ -476,9 +489,16 @@ public sealed class Pane
         {
             var v = new VBoxContainer();
             v.AddThemeConstantOverride("separation", 8);
-            var h = new HBoxContainer();
-            h.AddThemeConstantOverride("separation", 8);
-            h.AddChild(Ui.Rich(bbcode));
+            // Three or more buttons would squeeze the text to a letter a line in a narrow window: they wrap below it.
+            bool below = buttons.Length > 2;
+            Container h = below ? new HFlowContainer() : new HBoxContainer();
+            h.AddThemeConstantOverride(below ? "h_separation" : "separation", 8);
+            if (below)
+            {
+                h.AddThemeConstantOverride("v_separation", 6);
+                v.AddChild(Ui.Rich(bbcode));
+            }
+            else h.AddChild(Ui.Rich(bbcode));
             foreach (var b in buttons)
             {
                 var btn = new Button { Text = b.Label, Disabled = !b.Enabled, SizeFlagsVertical = Control.SizeFlags.ShrinkCenter, ThemeTypeVariation = b.Primary ? "Post" : "" };

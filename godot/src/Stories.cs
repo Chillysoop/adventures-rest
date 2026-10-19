@@ -93,7 +93,7 @@ public partial class Main
 
     private void RenderStory(Story s)
     {
-        foreach (var c in _storyBox.GetChildren()) c.Free();
+        Ui.Clear(_storyBox);
         _beatResult = null;
         var t = _sim.Town;
         var d = Stories.DefOf(t, s);
