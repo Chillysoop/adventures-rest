@@ -244,4 +244,129 @@ public partial class TownView
         k.Add("castle/flag-pennant", MeshKit.At(0.27f, 0.48f, -0.2f, 0, 0.1f), Palette.Kenney(Dyes[(v + 2) % Dyes.Length]));
         k.Pop();
     }
+
+    /// <summary>The griffon roost: a tall timber tower ringed with perches, griffons on the ledges and a feed yard below.</summary>
+    private static void GriffonRoost(MeshKit k, int v)
+    {
+        var wood = Palette.Timber;
+        k.Frustum(new Vector3(0, 0, -0.08f), 0.2f, 0.15f, 0.62f, 8, wood, wood.Darkened(0.1f));
+        k.Frustum(new Vector3(0, 0.62f, -0.08f), 0.24f, 0.02f, 0.2f, 8, new Color("6a4a30"), null, Mathf.Pi / 8);
+        // Perches jutting out at two heights, a griffon on some of them.
+        var hide = new Color("a07a48");
+        var feather = new Color("e8dcc0");
+        for (int i = 0; i < 6; i++)
+        {
+            float a = i * Mathf.Tau / 6 + v * 0.3f, h = i % 2 == 0 ? 0.28f : 0.48f;
+            var dir = new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a));
+            var at = new Vector3(0, h, -0.08f) + dir * 0.24f;
+            k.Box(at - new Vector3(0, 0.01f, 0), new Vector3(0.08f, 0.015f, 0.08f), Palette.DarkTimber);
+            if (i % 3 == 0) continue;
+            k.Blob(at + new Vector3(0, 0.035f, 0), new Vector3(0.04f, 0.03f, 0.04f), hide);
+            k.Blob(at + dir * 0.035f + new Vector3(0, 0.065f, 0), new Vector3(0.02f, 0.02f, 0.02f), feather);
+        }
+        // A fenced feed yard with a trough.
+        k.Box(new Vector3(0, 0.003f, 0.3f), new Vector3(0.7f, 0.01f, 0.22f), Palette.Dirt);
+        k.Box(new Vector3(0, 0, 0.42f), new Vector3(0.7f, 0.05f, 0.015f), Palette.DarkTimber);
+        k.Box(new Vector3(0.18f, 0, 0.3f), new Vector3(0.16f, 0.04f, 0.05f), Palette.Timber);
+    }
+
+    /// <summary>The fey market: ribboned stalls round a mushroom ring, lit by lanterns that glow in colours lamps do not come in.</summary>
+    private static void FeyMarket(MeshKit k, int v)
+    {
+        var awnings = new[] { new Color("b07ad8"), new Color("6ad0c0"), new Color("e8a0c8"), new Color("a0d870") };
+        for (int i = 0; i < 6; i++)
+        {
+            float a = i * Mathf.Tau / 6 + 0.3f;
+            var at = new Vector3(Mathf.Cos(a) * 0.32f, 0, Mathf.Sin(a) * 0.26f);
+            k.Push(MeshKit.At(at.X, 0, at.Z, -a + Mathf.Pi / 2, 1));
+            k.Box(new Vector3(0, 0, 0), new Vector3(0.12f, 0.05f, 0.07f), Palette.Timber);
+            k.Box(new Vector3(-0.055f, 0, 0.03f), new Vector3(0.01f, 0.12f, 0.01f), Palette.DarkTimber);
+            k.Box(new Vector3(0.055f, 0, 0.03f), new Vector3(0.01f, 0.12f, 0.01f), Palette.DarkTimber);
+            k.Box(new Vector3(0, 0.12f, 0), new Vector3(0.14f, 0.012f, 0.1f), awnings[(i + v) % awnings.Length]);
+            k.Pop();
+        }
+        // The mushroom ring at the heart of the square.
+        for (int i = 0; i < 10; i++)
+        {
+            float a = i * Mathf.Tau / 10;
+            var at = new Vector3(Mathf.Cos(a) * 0.12f, 0, Mathf.Sin(a) * 0.12f);
+            k.Box(at, new Vector3(0.008f, 0.02f, 0.008f), new Color("e8e0d0"));
+            k.Blob(at + new Vector3(0, 0.025f, 0), new Vector3(0.015f, 0.008f, 0.015f), new Color("f4f0e8"));
+        }
+        var glow = new[] { new Color("c08af0", MeshKit.Flag.Magic), new Color("7af0d0", MeshKit.Flag.Magic), new Color("f0a0e0", MeshKit.Flag.Magic) };
+        for (int i = 0; i < 4; i++)
+        {
+            float a = i * Mathf.Tau / 4 + 0.78f;
+            var at = new Vector3(Mathf.Cos(a) * 0.44f, 0, Mathf.Sin(a) * 0.36f);
+            k.Box(at, new Vector3(0.01f, 0.18f, 0.01f), Palette.DarkTimber);
+            k.Blob(at + new Vector3(0, 0.2f, 0), new Vector3(0.022f, 0.028f, 0.022f), glow[i % glow.Length]);
+        }
+    }
+
+    /// <summary>The monster sanctuary: walled pens and a deep pool round an iron aviary dome, with something large in one pen.</summary>
+    private static void MonsterSanctuary(MeshKit k, int v)
+    {
+        var stone = new Color("8a8478");
+        // A ring wall with a gate gap at the front.
+        k.Box(new Vector3(0, 0, -0.44f), new Vector3(0.92f, 0.08f, 0.03f), stone);
+        k.Box(new Vector3(-0.46f, 0, 0), new Vector3(0.03f, 0.08f, 0.9f), stone);
+        k.Box(new Vector3(0.46f, 0, 0), new Vector3(0.03f, 0.08f, 0.9f), stone);
+        k.Box(new Vector3(-0.28f, 0, 0.44f), new Vector3(0.36f, 0.08f, 0.03f), stone);
+        k.Box(new Vector3(0.28f, 0, 0.44f), new Vector3(0.36f, 0.08f, 0.03f), stone);
+        // The aviary: an iron cage dome.
+        var iron = new Color("3a3a40");
+        k.Frustum(new Vector3(-0.18f, 0, -0.18f), 0.2f, 0.2f, 0.18f, 10, iron.Lightened(0.15f));
+        k.Blob(new Vector3(-0.18f, 0.18f, -0.18f), new Vector3(0.2f, 0.14f, 0.2f), iron);
+        // The pool and a pen with a beast in it.
+        k.Box(new Vector3(0.22f, 0.002f, -0.2f), new Vector3(0.3f, 0.01f, 0.26f), new Color("2f6f8a"));
+        k.Box(new Vector3(0.2f, 0, 0.2f), new Vector3(0.32f, 0.06f, 0.012f), Palette.DarkTimber);
+        k.Box(new Vector3(0.04f, 0, 0.28f), new Vector3(0.012f, 0.06f, 0.16f), Palette.DarkTimber);
+        var beast = (v % 3) switch { 0 => new Color("6a4a2a"), 1 => new Color("4a6a3a"), _ => new Color("7a6a8a") };
+        k.Blob(new Vector3(0.24f, 0.05f, 0.3f), new Vector3(0.08f, 0.05f, 0.06f), beast);
+        k.Blob(new Vector3(0.32f, 0.08f, 0.3f), new Vector3(0.035f, 0.035f, 0.035f), beast.Lightened(0.1f));
+        // The keeper's lodge by the gate.
+        k.Box(new Vector3(-0.3f, 0, 0.26f), new Vector3(0.16f, 0.12f, 0.12f), Palette.Plaster);
+        k.Frustum(new Vector3(-0.3f, 0.12f, 0.26f), 0.12f, 0, 0.08f, 4, new Color("5f6a34"), null, Mathf.Pi / 4);
+    }
+
+    /// <summary>The auction house: a tall, gloomy hall with a dark slate roof, a gilt sign and lots stacked under a side awning.</summary>
+    private static void AuctionHouse(MeshKit k, int v)
+    {
+        k.Push(MeshKit.At(0, 0, -0.1f, 0, Fit(3, 2, 0.78f)));
+        Walls(k, 3, 2, 0, true, v + 431, true);
+        Walls(k, 3, 2, 1, true, v + 433, false);
+        k.Push(MeshKit.At(0, 2, 0));
+        k.Gable(0, 3, 2, 1.4f, new Color("3a3048"), Palette.Stone, 0.14f);
+        k.Pop();
+        k.Box(new Vector3(0, 1.3f, 1.02f), new Vector3(1.2f, 0.25f, 0.04f), Palette.Gold);
+        k.Pop();
+        // Crates and draped lots under an awning, one of them with teeth.
+        k.Box(new Vector3(0.3f, 0.2f, 0.32f), new Vector3(0.3f, 0.012f, 0.18f), new Color("4a3a5a"));
+        k.Box(new Vector3(0.18f, 0, 0.3f), new Vector3(0.01f, 0.2f, 0.01f), Palette.DarkTimber);
+        k.Box(new Vector3(0.42f, 0, 0.3f), new Vector3(0.01f, 0.2f, 0.01f), Palette.DarkTimber);
+        k.Box(new Vector3(0.24f, 0, 0.34f), new Vector3(0.07f, 0.05f, 0.05f), Palette.Timber);
+        k.Box(new Vector3(0.34f, 0, 0.32f), new Vector3(0.06f, 0.08f, 0.05f), new Color("6a2a3a"));
+        k.Box(new Vector3(-0.1f, 0, 0.32f), new Vector3(0.09f, 0.06f, 0.06f), new Color("6e5238"), new Color("5a4028"));
+        k.Box(new Vector3(-0.1f, 0.06f, 0.35f), new Vector3(0.08f, 0.008f, 0.004f), new Color("f0f0e8"));
+    }
+
+    /// <summary>The oracle's observatory: a round stone tower under a brass dome with a telescope through its slot.</summary>
+    private static void Observatory(MeshKit k, int v)
+    {
+        var stone = new Color("b8b0a0");
+        k.Frustum(new Vector3(0, 0, -0.04f), 0.24f, 0.21f, 0.5f, 12, stone, stone.Darkened(0.1f));
+        k.Frustum(new Vector3(0, 0.5f, -0.04f), 0.25f, 0.25f, 0.03f, 12, stone.Darkened(0.15f));
+        k.Blob(new Vector3(0, 0.53f, -0.04f), new Vector3(0.22f, 0.18f, 0.22f), new Color("c8a04a"));
+        k.Push(MeshKit.At(0.06f, 0.62f, 0.04f, 0.6f, 1));
+        k.Frustum(Vector3.Zero, 0.035f, 0.025f, 0.26f, 8, new Color("8a6a2a"), Palette.Gold);
+        k.Pop();
+        // Stairs up to the door and a ring of standing stones in the garden.
+        for (int i = 0; i < 3; i++)
+            k.Box(new Vector3(0, 0, 0.22f + i * 0.04f), new Vector3(0.14f, 0.06f - i * 0.02f, 0.04f), stone.Darkened(0.08f));
+        for (int i = 0; i < 7; i++)
+        {
+            float a = i * Mathf.Tau / 7 + v * 0.2f;
+            k.Box(new Vector3(Mathf.Cos(a) * 0.42f, 0, Mathf.Sin(a) * 0.38f), new Vector3(0.03f, 0.08f, 0.03f), Palette.Stone);
+        }
+    }
 }
