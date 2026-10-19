@@ -78,14 +78,15 @@ public static class Alerts
     public static readonly AlertKind Settlers = new("settlers", "No settlers", "population", AlertLevel.Decision, AlertWindow.City);
     public static readonly AlertKind Loot = new("loot", "Loot for sale", "gold", AlertLevel.Decision, AlertWindow.Armory);
     public static readonly AlertKind Gifts = new("gifts", "Arms to give", "heroes", AlertLevel.Minor, AlertWindow.Armory);
+    public static readonly AlertKind Outpost = new("outpost", "Land to hold", "warband", AlertLevel.Minor, AlertWindow.None);
 
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Captives, Doom, Crisis, Hunger, Coffers, Underfunded, Unrest, Hostile, Motion, Fealty, Clash, Traitor, Plot, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Bastion, Institution, Heroes, Neighbour, Loot, Work, Settlers, Below, Scholars, Trade, Gifts, Housing];
+        [Siege, Captives, Doom, Crisis, Hunger, Coffers, Underfunded, Unrest, Hostile, Motion, Fealty, Clash, Traitor, Plot, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Bastion, Institution, Heroes, Neighbour, Loot, Work, Settlers, Below, Scholars, Trade, Gifts, Outpost, Housing];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
-    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Hostility, Winter, Growth, Routes, Region, Undercity, Study, Loyalty, Armoury, Homes, Keepers];
+    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Hostility, Winter, Growth, Routes, Region, Undercity, Study, Loyalty, Armoury, Homes, Keepers, Outposts];
 
     public static List<Alert> Standing(Town town) => Rules.SelectMany(r => r(town)).ToList();
 
@@ -301,7 +302,13 @@ public static class Alerts
         var workers = t.Workers;
         int homeless = workers.Count(a => a.HomeId == null);
         if (homeless > 0)
-            yield return new("homeless", Housing, $"{homeless} homeless", "Townsfolk with no roof lose heart and leave. More homes are needed.", AtTown: true);
+        {
+            // Townsfolk build their own homes, but only on residential land: say whether there is any left to build on.
+            string room = Planning.VacantZoned(t, Zone.Residential) == 0
+                ? "Every residential plot is taken: paint more residential land from the Build bar (B) and they will build homes on it."
+                : "Homes are going up on the residential land; painting more lets more go up at once.";
+            yield return new("homeless", Housing, $"{homeless} homeless", $"Townsfolk with no roof lose heart and leave. {room}", AtTown: true);
+        }
         int idle = workers.Count(a => a.JobId == null);
         if (idle >= Math.Max(4, workers.Count / 5))
             yield return new("idle", Work, $"{idle} out of work", "Idle townsfolk drift away, and every one of them puts settlers off. Zone land for shops, workshops and farms.", AtTown: true);
@@ -313,6 +320,15 @@ public static class Alerts
             string why = worst.Count == 0 ? "" : $" Most of all: {string.Join(" and ", worst)}.";
             yield return new("settlers", Settlers, "Settlers stay away", $"Few newcomers will come while things stand as they are.{why} The City window shows every reason.");
         }
+    }
+
+    /// <summary>A cleared site the town can afford to garrison before something moves back in. The watch waits for the word.</summary>
+    private static IEnumerable<Alert> Outposts(Town t)
+    {
+        if (Lairs.WorthHolding(t) is not { } s) yield break;
+        var o = t.Content.Lairs.Outpost;
+        yield return new($"outpost:{s.Def.Id}", Outpost, $"Hold {s.Def.Name}?",
+            $"{s.Def.Name} is cleared, and something will move back in unless the town holds it. A garrison of the watch costs {Js.Str(o.Cost)} gold and {Js.Str(o.Upkeep)} a day; send it from the site's panel.", SiteId: s.Def.Id);
     }
 
     /// <summary>An institution waiting on the council's choice, or a keeper whose patience has run out.</summary>

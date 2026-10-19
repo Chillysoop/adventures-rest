@@ -904,7 +904,7 @@ public static class Expedition
             return outcome;
         }
 
-        /// <summary>Far enough in for the bounty's terms: drive the rest out, cut the captives loose, or rob the hoard.</summary>
+        /// <summary>Far enough in for the bounty's terms: drive the rest out, cut the captives loose, bring the fallen home, or rob the hoard.</summary>
         private ExpeditionOutcome Reach(SiteDef site)
         {
             var t = Terms!;
@@ -913,6 +913,12 @@ public static class Expedition
             if (t.Captives)
             {
                 Log($"In the pens at the back they find the captives, cut them loose and slip out of {site.Name} with them before the alarm.");
+                GoalMet = true;
+                return ExpeditionOutcome.Retreated;
+            }
+            if (t.Fallen)
+            {
+                Log($"Where the fighting was worst they find what is left of the town's fallen, and carry them and their gear out of {site.Name}{(loot > 0 ? $" with {loot} gold besides" : "")}.");
                 GoalMet = true;
                 return ExpeditionOutcome.Retreated;
             }

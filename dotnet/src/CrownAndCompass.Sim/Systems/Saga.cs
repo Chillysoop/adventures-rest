@@ -166,6 +166,9 @@ public sealed record SagaRules
     public YokeRules Yoke { get; init; } = new();
     public FinaleRules Finale { get; init; } = new();
     public TurningRules Turning { get; init; } = new();
+
+    /// <summary>Days with no living menace and no crisis, from Act II on, before a new power rises at the act's level.</summary>
+    public int LullDays { get; init; } = 20;
 }
 
 /// <summary>How the town feels about its chances: the campaign's tone.</summary>
@@ -184,6 +187,9 @@ public sealed class SagaState
 
     /// <summary>Index of the current act.</summary>
     public int Act { get; set; }
+
+    /// <summary>Days in a row with no living menace and no crisis (<see cref="Saga.Lull"/>).</summary>
+    public int QuietDays { get; set; }
 
     /// <summary>Day each act opened, in order.</summary>
     public List<int> ActDays { get; } = [1];
@@ -298,6 +304,7 @@ public static class Saga
         Menaces.Daily(town, autoMayor);
         if (town.Outcome != null) return;
         AdvanceAct(town);
+        Lull(town);
         Tribute(town);
         LastRide(town);
         Dread(town);
@@ -320,6 +327,24 @@ public static class Saga
         Quests.Launch(town, champions, seat, bounty);
         string names = Expedition.ListNames(champions.Select(h => $"{h.GivenName} the {h.Hero!.Cls.Name} {h.Hero.Level}").ToList());
         town.Log(LedgerCategory.Quest, Importance.Major, Fill(town, f.Ride, b).Replace("{heroes}", names), champions.Select(h => h.Id).ToList());
+    }
+
+    /// <summary>
+    /// A well-run town is never left in peace for long: once the wilds have gone quiet (no menace alive, no crisis under
+    /// way) for <see cref="SagaRules.LullDays"/>, from Act II on, a new power rises at the current act's level.
+    /// </summary>
+    internal static void Lull(Town town)
+    {
+        var s = town.Saga;
+        var act = CurrentAct(town);
+        if (s.Act == 0 || act.Seeds.Count == 0 || s.Menaces.Any(m => m.Alive) || Crises.Active(town).Any())
+        {
+            s.QuietDays = 0;
+            return;
+        }
+        if (++s.QuietDays < Rules(town).LullDays) return;
+        s.QuietDays = 0;
+        Menaces.Seed(town, act.Seeds[0]);
     }
 
     // Acts ---------------------------------------------------------------------------------------

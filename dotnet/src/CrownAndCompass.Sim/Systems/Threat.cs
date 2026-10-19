@@ -178,7 +178,8 @@ public static class Threat
         if (en.Stage == ThreatStage.Quiet && en.Strength >= e.Stages.Omens)
         {
             Next(ThreatStage.Omens);
-            town.Log(LedgerCategory.War, Importance.Major, e.Omens[0]);
+            // The first omen is news, not a call to act, so it goes to the feed without stopping the clock.
+            town.Log(LedgerCategory.War, Importance.Notable, e.Omens[0]);
             en.RecentSigns.Add(e.Omens[0]);
         }
         else if (en.Stage == ThreatStage.Omens && en.Strength >= e.Stages.Probing)
@@ -655,7 +656,7 @@ public static class Threat
             default:
                 d.CityWall = PalisadeState.Building;
                 d.CityWallReadyTick = ready;
-                town.Log(LedgerCategory.War, Importance.Major, $"Work begins on the city wall, a ring of stone round the four inner wards. It will take {spec.Days} days.");
+                town.Log(LedgerCategory.War, Importance.Notable, $"Work begins on the city wall, a ring of stone round the four inner wards. It will take {spec.Days} days.");
                 break;
         }
         return true;
@@ -678,12 +679,12 @@ public static class Threat
         if (d.StoneWall == PalisadeState.Building && d.StoneWallReadyTick != null && town.Tick >= d.StoneWallReadyTick)
         {
             d.StoneWall = PalisadeState.Built;
-            town.Log(LedgerCategory.War, Importance.Major, $"The stone walls round the old town are finished. Whatever stands outside them is the raiders' first mark.");
+            town.Log(LedgerCategory.War, Importance.Notable, $"The stone walls round the old town are finished. Whatever stands outside them is the raiders' first mark.");
         }
         if (d.CityWall == PalisadeState.Building && d.CityWallReadyTick != null && town.Tick >= d.CityWallReadyTick)
         {
             d.CityWall = PalisadeState.Built;
-            town.Log(LedgerCategory.War, Importance.Major, $"The city wall is closed. {town.Name} is a walled city.");
+            town.Log(LedgerCategory.War, Importance.Notable, $"The city wall is closed. {town.Name} is a walled city.");
         }
         var done = d.TowersBuilding.Where(t => town.Tick >= t).ToList();
         if (done.Count > 0)

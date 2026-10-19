@@ -35,6 +35,9 @@ public sealed record TermDef
 
     /// <summary>The party brings back the best thing in the hoard for certain.</summary>
     public bool Item { get; init; }
+
+    /// <summary>Only where a company of the town's was wiped out: the party brings home their bones and their gear.</summary>
+    public bool Fallen { get; init; }
 }
 
 public sealed record CaptiveRules
@@ -112,6 +115,21 @@ public sealed class Captivity
     public bool Freed { get; set; }
 }
 
+/// <summary>A company of the town's wiped out at a site, and the magic gear they carried in with them.</summary>
+public sealed class FallenCompany
+{
+    public int Id { get; set; }
+    public string SiteId { get; set; } = "";
+    public string Company { get; set; } = "";
+    public List<int> Heroes { get; set; } = [];
+    public List<LibItem> Gear { get; set; } = [];
+
+    /// <summary>Sending stones of the town's they carried.</summary>
+    public int Stones { get; set; }
+    public int Tick { get; set; }
+    public bool Done { get; set; }
+}
+
 /// <summary>
 /// Bounty terms: the mayor says how a job is to be done, not only where. Slaying clears a site for good;
 /// driving the occupants off is quicker and cheaper but they come back sooner; talking them down costs no
@@ -134,6 +152,7 @@ public static class Terms
             if (boss.Int < term.MinInt) return $"what lives at {s.Def.Name} won't bargain";
         }
         if (term.Captives && Captives.At(town, s.Def.Id) == null) return "nobody is held captive there";
+        if (term.Fallen && Remains.At(town, s.Def.Id) == null) return "no company of ours fell there";
         return null;
     }
 
@@ -299,5 +318,71 @@ public static class Errands
         }
         string who = b.FunderId is int f ? town.Building(f).Name : "The mages";
         town.Log(LedgerCategory.Faction, Importance.Notable, $"{Stories.Cap(who)} keeps its word for the errand: {boon.Text}");
+    }
+}
+
+/// <summary>
+/// The fallen: when a company is wiped out its bones and gear lie where it fell. A card asks the mayor whether to send
+/// another party after them; a bounty on the Recover terms, or any party that clears the place, brings the gear home
+/// to the armory.
+/// </summary>
+public static class Remains
+{
+    public static FallenCompany? At(Town town, string siteId) => town.Fallen.FirstOrDefault(f => !f.Done && f.SiteId == siteId);
+
+    public static TermDef? Terms(Town town) => town.Content.Bounties.Terms.FirstOrDefault(t => t.Fallen);
+
+    /// <summary>A company is lost at a site: what they carried stays there with them.</summary>
+    public static FallenCompany Lie(Town town, Party party, SiteState site, List<Agent> members)
+    {
+        // A second company lost at the same place lies with the first.
+        if (At(town, site.Def.Id) is { } already)
+        {
+            already.Company += $" and the {party.Name}";
+            already.Heroes.AddRange(members.Select(a => a.Id));
+            already.Gear.AddRange(members.SelectMany(a => a.Hero!.Magic.Values));
+            already.Stones += members.Count(a => a.Hero!.Stone);
+            foreach (var a in members) a.Hero!.Stone = false;
+            return already;
+        }
+        var f = new FallenCompany
+        {
+            Id = town.Fallen.Count + 1,
+            SiteId = site.Def.Id,
+            Company = party.Name,
+            Heroes = members.Select(a => a.Id).ToList(),
+            Gear = members.SelectMany(a => a.Hero!.Magic.Values).ToList(),
+            Stones = members.Count(a => a.Hero!.Stone),
+            Tick = town.Tick,
+        };
+        foreach (var a in members) a.Hero!.Stone = false;
+        town.Fallen.Add(f);
+        return f;
+    }
+
+    /// <summary>The recovery bounty the card offers: on the Recover terms, at the reward they suggest.</summary>
+    public static double Reward(Town town, FallenCompany f) =>
+        Terms(town) is { } t && Quests.Site(town, f.SiteId) is { } s ? Systems.Terms.Suggested(town, s, t) : 0;
+
+    public static bool CanPost(Town town, string siteId) =>
+        At(town, siteId) is { } f && Terms(town) is { } t && Quests.Site(town, siteId) is { } s
+        && Systems.Terms.Blocked(town, s, t) == null && !s.ThoughtCleared && town.Treasury >= Reward(town, f)
+        && !town.Bounties.Any(b => b.SiteId == siteId && Quests.IsActive(b));
+
+    public static Bounty? Post(Town town, string siteId) =>
+        CanPost(town, siteId) ? Quests.PostBounty(town, siteId, Reward(town, At(town, siteId)!), null, Terms(town)!.Id) : null;
+
+    /// <summary>A party brings the fallen home: their gear goes to the armory, and the town buries its own.</summary>
+    public static void Recover(Town town, FallenCompany f, Party by)
+    {
+        f.Done = true;
+        foreach (var it in f.Gear) Armory.Add(town, it, $"the {f.Company}");
+        if (Armory.StoneItem(town) is { } stone)
+            for (int i = 0; i < f.Stones; i++) Armory.Add(town, stone, $"the {f.Company}");
+        town.Mandate = Math.Min(100, town.Mandate + 2);
+        string site = Quests.Site(town, f.SiteId)?.Def.Name ?? "the wilds";
+        int pieces = f.Gear.Count + f.Stones;
+        string gear = pieces == 0 ? "" : pieces == 1 ? $" Their {(f.Gear.Count == 1 ? f.Gear[0].Name : "sending stone")} goes to the armory." : $" {pieces} pieces of their gear go to the armory.";
+        town.Log(LedgerCategory.Quest, Importance.Major, $"The {by.Name} bring the {f.Company} home from {site}, and the town buries its own.{gear}", f.Heroes);
     }
 }

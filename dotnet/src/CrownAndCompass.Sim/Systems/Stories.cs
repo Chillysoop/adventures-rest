@@ -381,7 +381,7 @@ public static class Stories
     /// precedent:id (1 sets it, -1 forgets it) and calling:id (1: the story's hero takes it up, -1: it ends).
     /// </summary>
     public static readonly string[] EffectKeys =
-        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "esteem", "heroXp", "personal", "dismiss", "edge", "swell", "partyHurt", "rest", "slots", "loot", "partyLoyalty", "turnBack", "fine", "jail", "taint", "infamy", "exile", "goodwill", "goodwill2", "prosperity", "security", "contact", "band", "moves", "stir", "book", "lore"];
+        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "esteem", "heroXp", "personal", "dismiss", "edge", "swell", "partyHurt", "rest", "slots", "loot", "partyLoyalty", "turnBack", "fine", "jail", "taint", "infamy", "exile", "goodwill", "goodwill2", "prosperity", "security", "contact", "band", "moves", "stir", "book", "lore", "recover"];
 
     /// <summary>
     /// Every need a story or option can name; besides these, precedent:id, decree:id, season:id and
@@ -391,7 +391,7 @@ public static class Stories
     /// chapter) and below:level (binds that undercity level while it is open and not cleared).
     /// </summary>
     public static readonly string[] Needs =
-        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "settlement", "route", "courted", "veteran", "fallen", "admirer", "aggrieved", "abroad", "homeward", "victorious", "lawbreaker", "famous", "infamous", "trouble", "contact", "band", "forge", "below", "library", "scholars"];
+        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "settlement", "route", "courted", "veteran", "fallen", "admirer", "aggrieved", "abroad", "homeward", "victorious", "lawbreaker", "famous", "infamous", "trouble", "contact", "band", "forge", "below", "library", "scholars", "remains"];
 
     private static readonly string[] Prefixed = ["precedent:", "decree:", "season:"];
 
@@ -569,8 +569,8 @@ public static class Stories
         var fits = new List<(StoryDef Def, Story Bound)>();
         foreach (var d in r.Stories)
         {
-            // Sendings come from parties on the road (Sendings.Hourly), not the town.
-            if (Sendings.Is(d)) continue;
+            // Sendings come from parties on the road (Sendings.Hourly), and word of a lost company from its wipe (Lost), not the town.
+            if (Sendings.Is(d) || d.Source == LostSource) continue;
             if (open.Contains(d.Id) || town.Day < d.MinDay || town.Population < d.MinPopulation) continue;
             if (st.LastDay.Get(d.Id, -9999) + d.RepeatDays > town.Day) continue;
             if (Bind(town, d) is { } bound) fits.Add((d, bound));
@@ -598,6 +598,21 @@ public static class Stories
     {
         var d = Rules(town).Story(defId);
         if (d == null || Bind(town, d) is not { } bound) return null;
+        return Begin(town, d, bound);
+    }
+
+    /// <summary>The source of the card that tells of a company wiped out (<see cref="Remains"/>).</summary>
+    public const string LostSource = "lost";
+
+    /// <summary>
+    /// A company is wiped out: a card tells the mayor and offers to send another party after their gear. One card per
+    /// place at a time; a second company lost there is told on the card already open.
+    /// </summary>
+    public static Story? Lost(Town town, FallenCompany f, Party party)
+    {
+        if (town.Outcome != null || town.Stories.Open.Any(o => o.SiteId == f.SiteId && DefOf(town, o).Source == LostSource)) return null;
+        var d = Rules(town).Stories.FirstOrDefault(x => x.Source == LostSource);
+        if (d == null || BindFrom(town, d, new Story { SiteId = f.SiteId, PartyId = party.Id }) is not { } bound) return null;
         return Begin(town, d, bound);
     }
 
@@ -739,6 +754,8 @@ public static class Stories
                 s.BuildingId = b?.Id;
                 return b != null;
             }
+            case "remains":
+                return s.SiteId is string rid && Remains.CanPost(town, rid);
             case "site":
             case "unheard":
             {
@@ -966,6 +983,7 @@ public static class Stories
                 "tavern" => "needs a tavern",
                 "rich" => "needs a full treasury",
                 "hero" => "needs a hero in town",
+                "remains" => "the treasury can't fund the bounty",
                 _ when need.StartsWith("building:", StringComparison.Ordinal) => $"needs {Article(town.Content.Building(need[9..]).Name)}",
                 _ => $"needs {need}",
             };
@@ -1215,6 +1233,10 @@ public static class Stories
                         town.Research.Progress[studyId] = Math.Max(0, town.Research.Progress.Get(studyId, 0) + v);
                         said.Add($"{(v > 0 ? "+" : "−")}{Js.Str(Math.Abs(v))} lore to {Research.Def(town, studyId).Name.ToLowerInvariant()}");
                     }
+                    break;
+                case "recover":
+                    if (v > 0 && s.SiteId is string lostAt && Remains.Post(town, lostAt) is { } rb)
+                        said.Add($"a bounty of {Js.Str(rb.Reward)} gold to bring the fallen home");
                     break;
                 case "memorial":
                     if (v > 0 && s.FallenId is int mf && Legacies.Of(town, mf) is { Memorial: false } ml)

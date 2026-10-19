@@ -1,5 +1,6 @@
 {
   "climaxDay": 120,
+  "lullDays": 20,
   "acts": [
     {
       "name": "Points of Light",

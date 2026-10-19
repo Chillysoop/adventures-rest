@@ -310,6 +310,9 @@ public sealed class Town
     /// <summary>Townsfolk carried off in raids, held until rescued or lost (<see cref="Captives"/>).</summary>
     public List<Captivity> Captivities { get; } = [];
 
+    /// <summary>Companies wiped out in the wilds, and the gear that lies with them (<see cref="Remains"/>).</summary>
+    public List<FallenCompany> Fallen { get; } = [];
+
     /// <summary>The town broadsheet: its issues and the slant paid for in the next (<see cref="Systems.Broadsheet"/>).</summary>
     public PressState Press { get; } = new();
 

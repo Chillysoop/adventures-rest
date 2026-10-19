@@ -265,7 +265,11 @@ public partial class Main
         var scryer = Knowledge.Scryers(t).FirstOrDefault();
         bool freeScry = Watch.FreeScryingsLeft(t) > 0;
         bool canScout = Watch.Watchers(t).Count > 0;
-        foreach (var s in t.Sites)
+        // Threats first: a site an alert names (a war camp, a crisis's seat) or the warband's camp, then the rest of the
+        // open country, with cleared places last.
+        var named = Alerts.Standing(t).Where(a => a.SiteId != null).Select(a => a.SiteId!).ToHashSet();
+        int Rank(SiteState s) => s.ThoughtCleared ? 2 : named.Contains(s.Def.Id) || s.Def.Id == t.Content.Enemy.Outpost.Id ? 0 : 1;
+        foreach (var s in t.Sites.OrderBy(Rank))
         {
             // The board only lists what the town has heard of.
             if (s.Known == SiteKnowledge.Unheard) continue;
