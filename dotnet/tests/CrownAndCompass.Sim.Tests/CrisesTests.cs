@@ -98,7 +98,8 @@ public class CrisesTests
         var (sim, m) = Seeded();
         var t = sim.Town;
         m.Cunning = "mastermind";
-        var hero = t.Heroes.OrderBy(h => h.Id).First();
+        for (int d = 0; d < 120 && !t.Heroes.Any(h => !h.IsAway); d++) sim.RunDays(1);
+        var hero = t.Heroes.Where(h => !h.IsAway).OrderBy(h => h.Id).First();
         Vengeance.Wrong(t, Vengeance.Key(m), new Culprit(m.Name, m.Leader, m.SeatName), "broken", 1.6, [hero.Id]);
         var g = Vengeance.Of(t, Vengeance.Key(m));
         Assert.NotNull(g);
