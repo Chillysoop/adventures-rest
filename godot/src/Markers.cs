@@ -101,7 +101,7 @@ public partial class Main
     private void BuildMarkerCard()
     {
         _markerCard = new PanelContainer { Visible = false, CustomMinimumSize = new Vector2(268, 0) };
-        _markerCard.AddThemeStyleboxOverride("panel", Glass(10, 12, 10));
+        _markerCard.AddThemeStyleboxOverride("panel", Castle.Oak(16, 14));
         var box = new VBoxContainer();
         box.AddThemeConstantOverride("separation", 8);
         _markerCard.AddChild(box);

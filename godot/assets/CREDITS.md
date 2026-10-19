@@ -26,4 +26,6 @@ All three are CC0 (licence files in `models/LICENSE-kenney-*.txt`). Credit is no
   and its callers.
 - Gold, bread, people, heroes, homeless, mandate, favour, suspicion, defence, warband, d20, compass and alert icons in
   `icons/`: drawn for this game (SVG).
+- The castle look in `ui/` (oak panels, iron brackets, beams, stone parapet and ledge, plank and banner buttons):
+  drawn for this game by `scripts/castle-ui.ts` (SVG).
 - Fonts: see `fonts/` (SIL Open Font License).

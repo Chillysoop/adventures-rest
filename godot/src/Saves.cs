@@ -44,10 +44,7 @@ public partial class Main
         _menu.AddChild(center);
         center.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         var card = new PanelContainer { CustomMinimumSize = new Vector2(680, 0) };
-        var box = Glass(14, 22, 18);
-        box.BorderColor = Ui.Gold;
-        box.BorderWidthTop = 3;
-        card.AddThemeStyleboxOverride("panel", box);
+        card.AddThemeStyleboxOverride("panel", Castle.Oak(26, 22));
         center.AddChild(card);
         var v = new VBoxContainer();
         v.AddThemeConstantOverride("separation", 10);

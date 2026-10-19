@@ -132,10 +132,7 @@ public partial class Main : IKeywordCards
     {
         var card = new PanelContainer { CustomMinimumSize = new Vector2(CardWidth, 0), MouseFilter = MouseFilterEnum.Stop };
         card.SetMeta("kw", e.Id);
-        var style = Glass(10, 14, 10);
-        style.BorderColor = pinned ? Ui.Gold : new Color(Ui.KeywordColor, 0.6f);
-        style.BorderWidthTop = pinned ? 3 : 1;
-        card.AddThemeStyleboxOverride("panel", style);
+        card.AddThemeStyleboxOverride("panel", Castle.Oak(18, 14));
         var v = new VBoxContainer();
         v.AddThemeConstantOverride("separation", 6);
         card.AddChild(v);
@@ -170,10 +167,11 @@ public partial class Main : IKeywordCards
             };
         }
         v.AddChild(head);
-        v.AddChild(new ColorRect { Color = Ui.Line, CustomMinimumSize = new Vector2(0, 1), MouseFilter = MouseFilterEnum.Ignore });
+        // A pinned card is marked by a gold rule under its name.
+        v.AddChild(new ColorRect { Color = pinned ? Ui.Gold : Ui.Line, CustomMinimumSize = new Vector2(0, pinned ? 2 : 1), MouseFilter = MouseFilterEnum.Ignore });
 
         // Rich text that fits its content needs its width up front, or the card sizes itself to a one-word column.
-        float inner = CardWidth - 28;
+        float inner = CardWidth - 36;
         var text = Ui.Rich(e.Text, 14, skip: e.Id);
         text.CustomMinimumSize = new Vector2(inner, 0);
         v.AddChild(text);
