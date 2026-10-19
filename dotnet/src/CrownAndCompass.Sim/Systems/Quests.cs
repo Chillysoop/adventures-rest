@@ -186,11 +186,15 @@ public sealed record Chronicle(
     int DepartDay,
     int ReturnDay,
     ExpeditionOutcome Outcome,
-    IReadOnlyList<string> Lines)
+    IReadOnlyList<string> Lines,
+    bool GoalMet = false)
 {
+    /// <summary>How it ended in a word: a party that pulled out with what the bounty asked for (captives, the fallen, the hoard) got the job done.</summary>
+    public string Verdict => GoalMet && Outcome == ExpeditionOutcome.Retreated ? "job done" : Outcome.ToString().ToLowerInvariant();
+
     public string Format()
     {
-        string head = $"Chronicle {Id}: the {PartyName} at {SiteName} (days {DepartDay} to {ReturnDay}, {Outcome.ToString().ToLowerInvariant()})";
+        string head = $"Chronicle {Id}: the {PartyName} at {SiteName} (days {DepartDay} to {ReturnDay}, {Verdict})";
         return string.Join("\n", new[] { head }.Concat(Members.Select(m => $"  {m}")).Concat(Lines.Select(l => $"  - {l}")));
     }
 }
@@ -589,7 +593,8 @@ public static class Quests
                 SimTime.DayOf(party.DepartTick),
                 town.Day,
                 result.Outcome,
-                result.Lines);
+                result.Lines,
+                result.GoalMet && result.Outcome != ExpeditionOutcome.Wiped);
             town.Chronicles.Add(chronicle);
 
             // Bodies carried home can be raised at the temple; a wiped party leaves nobody to carry them.
@@ -685,6 +690,11 @@ public static class Quests
             else if (result.Outcome == ExpeditionOutcome.Wiped)
             {
                 text = $"The {party.Name} never return from {s.Def.Name}. {names} {(members.Count == 1 ? "is" : "are")} presumed dead.";
+            }
+            else if (chronicle.GoalMet)
+            {
+                text = $"The {party.Name} are back from {s.Def.Name} with what they went for" +
+                       (result.Dead.Count > 0 ? $", but {deadNames} did not come home." : ".");
             }
             else
             {

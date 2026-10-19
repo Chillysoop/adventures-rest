@@ -76,6 +76,9 @@ public partial class Main
             }
             return;
         }
+        // A card whose story ran its course (or was answered by the stand-in) while it sat unanswered closes,
+        // so it neither takes a dead click nor holds back the stories behind it.
+        if (_story.Visible && _beat == null && _storyId is int open && Stories.Find(_sim.Town, open) is not { Done: false }) CloseStory();
         // One card at a time: a discovery's report on screen is answered first.
         if (_story.Visible || _find.Visible) return;
         var next = Stories.Pending(_sim.Town).FirstOrDefault(s => s.Id > _storySeen);
