@@ -136,8 +136,8 @@ public static class Population
         double attraction = 0.3 + jobs + beds + building - bread - roofless - workless;
         // Word travels: a popular mayor draws settlers, high taxes turn them away.
         double mandate = (town.Mandate - 50) / 200, tax = (town.TaxRate - town.Content.Rules.TaxRate) * 5, decor = Decor.Draw(town), works = GrandWorks.Draw(town);
-        double season = Seasons.Arrivals(town), decrees = Decrees.Arrivals(town), institutions = Institutions.Arrivals(town);
-        attraction += mandate - tax + decor + works + season + decrees + institutions;
+        double season = Seasons.Arrivals(town), decrees = Decrees.Arrivals(town), institutions = Institutions.Arrivals(town), unrest = Taxes.Attraction(town);
+        attraction += mandate - tax + decor + works + season + decrees + institutions + unrest;
         // A young town is a chance at cheap land: the frontier draws settlers until the town is a proper village.
         double frontier = town.Content.Rules.FrontierDraw * Math.Max(0, 1 - town.Population / town.Content.Rules.FrontierSize);
         attraction += frontier;
@@ -161,6 +161,7 @@ public static class Population
         Add($"The season ({Seasons.Current(town).Name.ToLowerInvariant()})", season);
         Add("Decrees in force", decrees);
         Add("The town's institutions", institutions);
+        Add("Unrest over neglected services", unrest);
         Add("Cheap land in a young town", frontier);
         Add("No zoned home lots for sale", -land);
         return new(attraction, parts);

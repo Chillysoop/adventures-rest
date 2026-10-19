@@ -154,6 +154,7 @@ public sealed class Simulation
         Stories.Daily(t, Options.AutoMayor && Options.AutoStories);
         Sheet.Daily(t, Options.AutoMayor && Options.AutoStories);
         Economy.Daily(t, true);
+        Taxes.Close(t);
         History.Add(Snapshot());
         t.AccountsYesterday = t.AccountsToday;
         t.RecentNet.Add(Js.Sum(t.AccountsToday.Values, v => v));
@@ -221,6 +222,9 @@ public sealed class Simulation
 
     /// <summary>Make an institution's choice: which god's temple gets the land, the tavern's style, what the bazaar trades in.</summary>
     public bool ChooseInstitution(string institutionId, string option) => Institutions.Choose(Town, institutionId, option);
+
+    /// <summary>The player's lever: set the tax rate (a share, e.g. 0.12); higher fills the treasury and sours the town.</summary>
+    public bool SetTax(double rate) => Taxes.Set(Town, rate);
 
     /// <summary>The player's other lever: sign or veto the motion before the council.</summary>
     public bool DecideMotion(int motionId, bool sign) => Council.Decide(Town, motionId, sign);

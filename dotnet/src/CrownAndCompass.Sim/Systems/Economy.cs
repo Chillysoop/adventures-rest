@@ -93,7 +93,11 @@ public static class Economy
             hall.Cash = 0;
         }
         double paid = Math.Min(bill, Math.Max(0, town.Treasury));
-        town.Book(TreasuryAccount.Upkeep, -paid);
+        // Keeping a great treasury is booked apart: it is the price of hoarding, not a service the town gets.
+        double hoard = Math.Min(paid, TreasuryUpkeep(town));
+        if (hoard > 0) town.Book(TreasuryAccount.CountingHouse, -hoard);
+        town.Book(TreasuryAccount.Upkeep, -(paid - hoard));
+        town.Taxes.Unpaid += bill - paid;
         if (paid < bill && town.UnpaidDays++ == 0)
             town.Log(LedgerCategory.Hardship, Importance.Notable, "The treasury runs dry. The watch and the road crews go unpaid.");
         else if (paid >= bill) town.UnpaidDays = 0;

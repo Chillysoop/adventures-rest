@@ -93,6 +93,15 @@
       "teaches": ["tab:Council", "command:DecideMotion"]
     },
     {
+      "id": "taxes",
+      "title": "Taxes and unrest",
+      "text": "You set the town's [b]taxes[/b] in [b]Council[/b]. Every household, hall and institution adds to what the town's services cost, so the rate that paid for a village won't pay for a city. When services cost more than taxes, rents and trade bring in, [b]unrest[/b] climbs: moods sour, your Mandate slips, settlers stay away, and at its worst workers down tools and march on the hall. Raise taxes a point at a time, or find more income: trade routes, wonders, institutions that pay their way.",
+      "when": "day:30",
+      "point": "tab:Council",
+      "until": "tab:Council",
+      "teaches": ["command:SetTax"]
+    },
+    {
       "id": "decorate",
       "title": "Dress the town",
       "text": "The build bar's [b]Decor[/b] tab has trees, benches, lamps, fountains, statues and more. Set them anywhere at any angle: click to place, drag to aim, and [b]R[/b] or Shift+wheel turns the piece. Drag fences and hedges into rows, paint trees and flowers, and clear pieces for half their price back. Every piece helps a little: benches rest the neighbours, lamps help the watch, stalls lift trade, statues win favour and loyalty, and houses on a pleasant street grow a storey sooner. Builders and lanes go round what you set down.",

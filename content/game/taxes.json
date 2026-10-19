@@ -1,0 +1,19 @@
+{
+  "min": 0.04,
+  "max": 0.25,
+  "step": 0.01,
+  "moodPerPoint": 0.6,
+  "days": 7,
+  "income": ["Sales tax", "Ale tax", "Hearth tax", "Rent", "Land sales", "Town businesses", "Trade", "Orchards", "Tribute", "Institutions", "Grand works", "The region", "Wards", "Bastions"],
+  "services": ["Upkeep", "Watch", "Institutions", "Outposts", "Clockwork", "Decorations", "Undercity"],
+  "scale": 250,
+  "rise": 3,
+  "ease": 2,
+  "grace": 40,
+  "mood": 20,
+  "mandate": 1,
+  "attraction": 0.4,
+  "strikeAt": 60,
+  "strikeShare": 0.3,
+  "stages": [25, 50, 75]
+}

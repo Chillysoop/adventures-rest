@@ -130,6 +130,7 @@ public partial class Main
         p.Meter("Mandate", t.Mandate, $"{Math.Round(t.Mandate)}", t.Mandate < 30);
         p.Note("The townsfolk's approval of you. It follows their mood and falls when you rule by decree. A popular mayor draws settlers.");
         p.Text(facts, 12);
+        RenderTaxes(p, t);
         p.Heading("Before the council");
         if (pending == null) p.Note("No motion before the council. Councillors bring one when their portfolio needs it.");
         else
@@ -176,6 +177,30 @@ public partial class Main
                 p.Text($"{Ui.C(Ui.Ink2, $"[font_size=11]Day {m.ProposedTick / 24 + 1}[/font_size]")}  {Ui.Esc(Ui.Cap(m.Text))}  {Tag(m.Status == MotionStatus.Passed ? $"passed{(m.Decree ? " by decree" : "")}" : $"failed{(m.Decree ? " by decree" : "")}", m.Status == MotionStatus.Passed ? Ui.Good : Ui.Bad)}", 13);
         }
         p.Commit();
+    }
+
+    /// <summary>The tax rate the mayor sets, and what the town's services cost against what it takes in.</summary>
+    private void RenderTaxes(Pane p, Town t)
+    {
+        var r = Taxes.Rules(t);
+        double rate = t.TaxRate, usual = t.Content.Rules.TaxRate, unrest = t.Taxes.Unrest;
+        int pct = (int)Math.Round(rate * 100);
+        p.Heading("Taxes");
+        double mood = Taxes.Mood(t) + r.Mood * unrest / 100;
+        p.Row($"[b]Tax rate[/b]  {Tag($"{pct}%", rate > usual + 1e-9 ? Ui.Bad : rate < usual - 1e-9 ? Ui.Good : Ui.Ink)}\n{Ui.C(Ui.Ink2, $"[font_size=12]Taken from every sale, drink and hearth. Above {Math.Round(usual * 100)}% each point sours the townsfolk and puts settlers off; below it pleases them (mood {(mood >= 0 ? "+" : "")}{mood:0.0} now).[/font_size]")}",
+            ("−1%", rate > r.Min + 1e-9, false, () => Act(() => _sim.SetTax(rate - r.Step))),
+            ("+1%", rate < r.Max - 1e-9, true, () => Act(() => _sim.SetTax(rate + r.Step))));
+        double income = Taxes.Income(t), services = Taxes.Services(t), funding = Taxes.Funding(t);
+        bool shortfall = funding < 1;
+        p.Text($"Services {Tag($"{services:N0}g a day", shortfall ? Ui.Bad : Ui.Ink)}   Taxes, rents and trade {Tag($"{income:N0}g a day", shortfall ? Ui.Bad : Ui.Good)}", 12);
+        p.Meter("Unrest", unrest, $"{Math.Round(unrest)}", unrest >= 25);
+        p.Note(unrest >= r.StrikeAt
+            ? $"The town's services are falling apart and workers are downing tools to protest. Raise taxes or find more income: trade routes, wonders, institutions that pay."
+            : shortfall
+                ? "The watch, the roads, the wells and the institutions cost more than the town takes in. Unrest is climbing: it sours every household, costs Mandate and turns settlers away, and at its worst workers walk out."
+                : unrest > 0
+                    ? "The town's services are paid for again, and the unrest is easing."
+                    : "Services grow with the town: every new household, hall and institution costs upkeep. While taxes, rents and trade cover them, the townsfolk are content.");
     }
 
     // ---------- Bounties and the road ----------
