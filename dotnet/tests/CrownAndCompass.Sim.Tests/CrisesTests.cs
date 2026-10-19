@@ -72,6 +72,8 @@ public class CrisesTests
         var sim = new Simulation(new SimulationOptions { Seed = 2 });
         sim.RunDays(20);
         var t = sim.Town;
+        // A night with someone home to meet them: with every hero out and no watch, any band is worth it.
+        for (int d = 0; d < 60 && Threat.LocalDefense(t, roll: false) <= 0; d++) sim.RunDays(1);
         var farm = t.Buildings.First(b => b.Complete && Threat.Exposed(t, b));
         Assert.True(Threat.WorthRaiding(t, farm, 10_000));
         Assert.False(Threat.WorthRaiding(t, farm, 0));

@@ -35,6 +35,7 @@ public partial class Main
         _story.SetAnchorsAndOffsetsPreset(LayoutPreset.Center, LayoutPresetMode.Minsize);
         _story.GrowHorizontal = GrowDirection.Both;
         _story.GrowVertical = GrowDirection.Both;
+        _story.MinimumSizeChanged += () => Ui.Refit(_story);
     }
 
     /// <summary>Show a story's card at its current stage.</summary>
@@ -75,7 +76,8 @@ public partial class Main
             }
             return;
         }
-        if (_story.Visible) return;
+        // One card at a time: a discovery's report on screen is answered first.
+        if (_story.Visible || _find.Visible) return;
         var next = Stories.Pending(_sim.Town).FirstOrDefault(s => s.Id > _storySeen);
         if (next == null) return;
         _storySeen = next.Id;
@@ -528,7 +530,7 @@ public partial class Main
         if (b.Text != "") v.AddChild(text);
         pill.AddChild(v);
         AddChild(pill);
-        pill.SetAnchorsAndOffsetsPreset(LayoutPreset.CenterTop, LayoutPresetMode.Minsize, TopBar + 44);
+        pill.SetAnchorsAndOffsetsPreset(LayoutPreset.CenterTop, LayoutPresetMode.Minsize, TopBar + 56);
         pill.GrowHorizontal = GrowDirection.Both;
         _check = pill;
         roll.Landed += () =>

@@ -32,6 +32,7 @@ public partial class Main
         _find.SetAnchorsAndOffsetsPreset(LayoutPreset.Center, LayoutPresetMode.Minsize);
         _find.GrowHorizontal = GrowDirection.Both;
         _find.GrowVertical = GrowDirection.Both;
+        _find.MinimumSizeChanged += () => Ui.Refit(_find);
     }
 
     private void OpenFind(int id, StoryBeat? roll = null)

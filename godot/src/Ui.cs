@@ -147,6 +147,17 @@ public static class Ui
     /// Empty a container. Children leave the tree now and are freed at the end of the frame, so a button can
     /// rebuild the box it sits in from its own Pressed signal (freeing it outright mid-signal crashes the engine).
     /// </summary>
+    /// <summary>
+    /// Shrink a centred card back to its content and re-centre it once the frame lays it out. A container
+    /// only ever grows on its own, so a card whose wrapped text first measured tall (before it knew its
+    /// width) would keep that height as an empty column down the screen.
+    /// </summary>
+    public static void Refit(Control card) => Callable.From(() =>
+    {
+        card.ResetSize();
+        card.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.Center, Control.LayoutPresetMode.Minsize);
+    }).CallDeferred();
+
     public static void Clear(Node box)
     {
         foreach (var c in box.GetChildren())

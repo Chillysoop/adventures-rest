@@ -296,7 +296,9 @@ public static class Council
         switch (id)
         {
             case SeatId.Steward:
-                if ((books < 0 || town.Treasury < upkeep * 5) && town.TaxRate < c.MaxTax - 1e-9)
+                // A red week only matters while the coffers couldn't ride it out: the Speaker calls the same
+                // reserve full and moves taxes down again, so rising past it only ping-pongs the rate.
+                if (((books < 0 && town.Treasury < upkeep * 20) || town.Treasury < upkeep * 5) && town.TaxRate < c.MaxTax - 1e-9)
                     return new Proposal(MotionKind.RaiseTax, 0, books < 0 ? "the books have run red this week" : "the treasury is thin");
                 if (books < 0 && town.Watch > 0) return new Proposal(MotionKind.DismissWatch, 0, "the watch costs more than the town can bear");
                 return null;
@@ -306,7 +308,10 @@ public static class Council
                 return KnightProposal(town);
             case SeatId.Speaker:
             {
-                if (homeless >= 3) return new Proposal(MotionKind.BuildHomes, HouseCost(town), $"{homeless} people sleep rough");
+                // One charter house at a time: moving the same motion every few days while the last one goes up
+                // only interrupts the mayor.
+                bool housing = town.Buildings.Any(b => b.IsSite && b.OwnerId == null && b.Def.Housing > 0);
+                if (homeless >= 3 && !housing) return new Proposal(MotionKind.BuildHomes, HouseCost(town), $"{homeless} people sleep rough");
                 var lastFestival = town.Motions.LastOrDefault(m => m.Kind == MotionKind.Festival && m.Status == MotionStatus.Passed);
                 bool festivalDue = lastFestival == null || town.Tick - lastFestival.ProposedTick > 20 * SimTime.HoursPerDay;
                 if (mood < 70 && festivalDue && town.FestivalDays == 0 && town.Treasury > festival * 4)

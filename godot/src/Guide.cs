@@ -192,7 +192,10 @@ public partial class Main
         _guideCount.Text = _guideNew ? $"NEW IN THIS BUILD · {left} LEFT" : $"TUTORIAL · {i + 1} OF {Book.Steps.Count}";
         _guideTitle.Text = s.Title;
         Ui.SetRich(_guideText, s.Text);
-        bool waits = s.Until != "next";
+        // A step whose action the player already took on their own ("count:Surveys" with a survey out) only
+        // needs reading: it would otherwise wait for a second one and hold back every step after it.
+        bool already = s.Until.StartsWith("count:", StringComparison.Ordinal) && _stepBase > 0;
+        bool waits = s.Until != "next" && !already;
         _guideNext.Text = waits ? "Skip" : i == Book.Steps.Count - 1 ? "Finish" : "Next";
         _guideNext.ThemeTypeVariation = waits ? "" : "Post";
         _guideNext.Disabled = false;
