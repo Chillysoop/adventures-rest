@@ -218,6 +218,26 @@ public class InstitutionsTests
     }
 
     [Fact]
+    public void TheRoostWatchesTheRoadsAndTheOracleSeesAPlaceNoOneHasHeardOf()
+    {
+        var sim = Player();
+        var t = sim.Town;
+        sim.RunDays(1);
+        Raise(t, "griffon_roost");
+        Raise(t, "observatory");
+        sim.RunDays(1);
+        Assert.StartsWith("Roostmaster ", Institutions.KeeperName(t, Institutions.Find(t, "griffon-roost")!));
+        double escort = Institutions.Escort(t);
+        Assert.True(escort > 0);
+        Assert.True(sim.ChooseInstitution("griffon-roost", "roads"));
+        Assert.True(Institutions.Escort(t) > escort);
+        var story = Stories.Open(t, "oracle-vision")!;
+        var site = Quests.Site(t, story.SiteId!)!;
+        Assert.Equal(SiteKnowledge.Unheard, site.Known);
+        Assert.Contains(site.Def.Name, Stories.Fill(t, story, "she sees {site}"));
+    }
+
+    [Fact]
     public void AnInstitutionShutsWhenItsBuildingCloses()
     {
         var sim = Player();
