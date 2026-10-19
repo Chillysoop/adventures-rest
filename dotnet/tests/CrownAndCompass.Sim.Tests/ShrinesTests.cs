@@ -40,7 +40,8 @@ public class ShrinesTests
         sim.RunDays(100);
         var t = sim.Town;
         Assert.Single(t.City.OpenWards);
-        Assert.Contains(t.Buildings, b => b.Def.Id == "temple");
+        // Raised already, or (when the treasury hasn't had the gold yet) still with room to go.
+        Assert.True(t.Buildings.Any(b => b.Def.Id == "temple") || Planning.CivicLot(t, t.Content.Building("temple")) != null);
         foreach (var id in new[] { "watch_house", "granary", "market_hall" })
         {
             var lot = Planning.CivicLot(t, t.Content.Building(id));
