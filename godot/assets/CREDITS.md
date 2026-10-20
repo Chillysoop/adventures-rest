@@ -23,6 +23,9 @@ All three are CC0 (licence files in `models/LICENSE-kenney-*.txt`). Credit is no
 ## Made for this game
 
 - Terrain, water, foliage, fog of war and the strategic map: shaders in `shaders/`, generated from the seed at load.
+- Homes (cottage, timber house, townhouse, tenement, tall house, manor): modelled for this game in Blender from code by
+  `tools/blender_houses.py`, baked to `models/crafted.bin`.
+- Cliff faces round the plateaus: generated in `src/Map/WorldView.cs` (BuildCliffs).
 - Townsfolk, heroes, orcs, banners, far trees, roofs, grass, flowers and site landmarks: generated in `src/Map/MeshKit.cs`
   and its callers.
 - Gold, bread, people, heroes, homeless, mandate, favour, suspicion, defence, warband, d20, compass and alert icons in

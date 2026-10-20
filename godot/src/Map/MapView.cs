@@ -337,7 +337,7 @@ public partial class MapView : Control
         _camera.Far = _dist * 4 + 600;
         _sun.DirectionalShadowMaxDistance = Mathf.Clamp(_dist * 2.2f, 40, 260);
         _sun.ShadowEnabled = _dist < 400;
-        _env.FogDensity = 0.35f / (_dist + 120);
+        _env.FogDensity = (_painted ? 0.6f : 0.35f) / (_dist + 120);
         float far = Mathf.SmoothStep(220, 650, _dist);
         _strategic += ((Strategic ? 1 : 0) - _strategic) * (1 - Mathf.Exp(-dt * 5));
         if (Mathf.Abs(_strategic - (Strategic ? 1 : 0)) < 0.002f) _strategic = Strategic ? 1 : 0;
@@ -369,6 +369,7 @@ public partial class MapView : Control
         _env.BackgroundColor = haze;
         _env.FogLightColor = haze;
         UpdateSeason(town);
+        PaintLight(night);
         if (town.Outcome == Outcome.Defeat) _env.AmbientLightColor = _env.AmbientLightColor.Lerp(new Color("a03020"), 0.4f);
     }
 
@@ -396,6 +397,44 @@ public partial class MapView : Control
         var haze = _env.BackgroundColor.Lerp(new Color("cdd3da"), s.X * 0.3f * (1 - Geo.Nightness(town, HourFraction)));
         _env.BackgroundColor = haze;
         _env.FogLightColor = haze;
+    }
+
+    private bool _painted;
+    private readonly List<ShaderMaterial> _inks = new();
+
+    /// <summary>The painted look (on unless --style classic): banded cel light with cool shadows and a rim, richer greens, ink outlines, glow, deeper haze.</summary>
+    public void Painted()
+    {
+        _painted = true;
+        Mats.SetAll("toon", 1.0f);
+        _grade.SetShaderParameter("contrast", 1.12f);
+        _env.GlowEnabled = true;
+        _env.GlowIntensity = 0.55f;
+        _env.GlowBloom = 0.08f;
+        _env.GlowHdrThreshold = 0.9f;
+        var ink = GD.Load<Shader>("res://assets/shaders/ink.gdshader");
+        foreach (var m in new[] { Mats.Props, Mats.Foliage })
+        {
+            var pass = new ShaderMaterial { Shader = ink };
+            pass.SetShaderParameter("noise_tex", m.GetShaderParameter("noise_tex"));
+            if (m == Mats.Foliage) pass.SetShaderParameter("sway", 1.0f);
+            m.NextPass = pass;
+            _inks.Add(pass);
+        }
+    }
+
+    private void PaintLight(float night)
+    {
+        if (!_painted) return;
+        // Stronger warm key, cooler violet-blue fill: shadows read as colour, not grey.
+        _sun.LightEnergy *= 1.15f;
+        _sun.LightColor = _sun.LightColor.Lerp(new Color("ffe6bf"), 0.5f * (1 - night));
+        _env.AmbientLightColor = _env.AmbientLightColor.Lerp(new Color("8d9ad0"), 0.35f * (1 - night));
+        _env.AmbientLightEnergy *= 0.95f;
+        var haze = _env.BackgroundColor.Lerp(new Color("a9c3d8"), 0.6f * (1 - night));
+        _env.BackgroundColor = haze;
+        _env.FogLightColor = haze;
+        _grade.SetShaderParameter("saturation", 1.12f);
     }
 
     // ---------- Projection and picking ----------

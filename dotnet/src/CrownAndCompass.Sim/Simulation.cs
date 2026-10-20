@@ -155,6 +155,7 @@ public sealed class Simulation
         Factions.Daily(t, Options.AutoMayor);
         Saga.Daily(t, Options.AutoMayor);
         Crises.Daily(t, Options.AutoMayor && Options.AutoDefense);
+        Powers.Daily(t);
         Vengeance.Daily(t);
         Sightings.Daily(t);
         Menaces.Track(t);
@@ -435,6 +436,15 @@ public sealed class Simulation
     /// <summary>Sign a sellsword company: a fee now and a wage every day it stays.</summary>
     public bool HireMercenaries(string companyId) => Mercenaries.Hire(Town, companyId);
 
+    /// <summary>Send a minor power gifts: favour that lifts its standing, and outbids an enemy courting it.</summary>
+    public bool CourtPower(string powerId) => Powers.Court(Town, powerId);
+
+    /// <summary>Pay a minor power's price to make it the town's ally, for a daily tithe.</summary>
+    public bool AllyWithPower(string powerId) => Powers.Ally(Town, powerId);
+
+    /// <summary>End an alliance with a minor power.</summary>
+    public bool BreakWithPower(string powerId) => Powers.Break(Town, powerId);
+
     /// <summary>Pay off a sellsword company that is home.</summary>
     public bool DismissMercenaries(string companyId) => Mercenaries.Dismiss(Town, companyId);
 
@@ -484,6 +494,7 @@ public sealed class Simulation
         Council.InitCouncil(t);
         Threat.InitThreat(t);
         Factions.InitFactions(t);
+        Powers.Init(t);
         Armory.Init(t);
 
         if (Options.AutoMayor && Options.AutoPlanning) Mayor.Daily(t);

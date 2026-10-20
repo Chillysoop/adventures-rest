@@ -61,7 +61,12 @@ public sealed record LibClass
 
     /// <summary>full, half, pact, or empty for classes that cast nothing.</summary>
     public string Magic { get; init; } = "";
+
+    /// <summary>What the class gains at each level, by name ("Extra Attack" at 5).</summary>
+    public IReadOnlyList<LibFeature> Features { get; init; } = [];
 }
+
+public sealed record LibFeature(int Level, string Name);
 
 public sealed record LibSpell
 {
@@ -435,6 +440,9 @@ public sealed class Library
             Primary = Strings(e, "primaryAbilities"),
             Role = hasRt ? Str(rt, "role") : "",
             Magic = hasRt ? Str(rt, "magic") : "",
+            Features = e.TryGetProperty("features", out var fs) && fs.ValueKind == JsonValueKind.Array
+                ? fs.EnumerateArray().Where(f => f.ValueKind == JsonValueKind.Object).Select(f => new LibFeature((int)Num(f, "level"), Str(f, "name"))).ToList()
+                : [],
         };
     }
 

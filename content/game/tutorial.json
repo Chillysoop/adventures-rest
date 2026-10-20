@@ -352,6 +352,15 @@
       "teaches": ["tab:Diplomacy", "command:SendEnvoy", "command:OpenTradeRoute", "command:CloseTradeRoute"]
     },
     {
+      "id": "powers",
+      "title": "Minor powers",
+      "text": "Beyond the peoples of the wilds stand the [b]minor powers[/b]: the Black Ledger's smugglers, the Silent Knife's assassins, the Lanternbearers' spies, the Crown League's lords, the Vermilion Conclave's wizards, the Ember Court's dragon and the Mire Grandmothers' coven. Each has a leader, a goal and a price, and likes or hates what your town does. In [b]Diplomacy[/b], [b]Send gifts[/b] to raise their standing, then pay their price to [b]Ally[/b] with them for a daily tithe, or [b]Break[/b] with one you no longer want. Your enemies court them too: when word comes that an enemy's envoys are at a power's door, outbid them with gifts before it answers, or it will arm your enemy, strike at your town and march with its host.",
+      "when": "day:80",
+      "point": "tab:Diplomacy",
+      "until": "tab:Diplomacy",
+      "teaches": ["command:CourtPower", "command:AllyWithPower", "command:BreakWithPower"]
+    },
+    {
       "id": "wagons",
       "title": "Bigger caravans",
       "text": "Goods your town makes beyond what it needs earn nothing sitting in the market: the evening carters clear them away. A [b]trade route[/b] turns that surplus into gold. In [b]Diplomacy[/b], [b]Add a wagon[/b] to a route and its caravan carries more out on every run, up to four wagons. A bigger charter lets you run more routes, too.",
@@ -608,6 +617,13 @@
       "text": "A party on a bounty with a caster (or one of the town's sending stones) can reach you by sending and ask how to go on: pay the toll or bluff, trust the captured scout, bring home the captives or the gold. The game pauses until you answer. Each choice rolls your d20 plus your sheet, plus help from the party's best hand at it. Some quests go on over several sendings. An [b]Adventurers' Hall[/b] (Government) adds to every roll, unlocks choices of its own, and lets parties send word more often.",
       "when": "count:Parties",
       "teaches": []
+    },
+    {
+      "id": "tales",
+      "title": "Tales at the tavern",
+      "text": "When a company comes home from a delve worth telling, the tavern tells it: a card walks you through it room by room, with the heroes' own words and their dice. [b]Skip[/b] jumps to the big moment, and every chronicle in the Ledger has a [b]Hear the tale[/b] link. Loading a game, and each new season, opens with what happened last time ([b]Enter[/b] carries on).",
+      "when": "count:Chronicles",
+      "teaches": ["key:Enter"]
     },
     {
       "id": "history",

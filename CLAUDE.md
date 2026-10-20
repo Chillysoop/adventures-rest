@@ -118,6 +118,14 @@
   list>`) and hold back until it is relevant (`when`: `count:X`, `day:N`, `alert:<key>`), so new systems rarely need
   client code (`godot/src/Guide.cs`). Keep step ids stable: players who finished the tutorial are shown steps with new
   ids as "New in this build". The main menu is `godot/src/Title.cs` (`--title`, `--tutorial start|<step-id>` for shots).
+- Look: the painted style is the default (`MapView.Painted`: cel bands in `light()` via `cel()` in common.gdshaderinc, ink outline
+  `ink.gdshader` as the props/foliage next_pass, glow, haze; `--style classic` for the old look, `--clean` hides the HUD in shots).
+  MeshKit faces must wind outward (the outline inks inside-out parts black). Homes are modelled in Blender from code
+  (`tools/blender_houses.py`, Blender as a pip module: `python3 -m pip install bpy`) and baked to `models/crafted.bin` in the
+  kenney.bin layout; roof faces bake as (255, 0, shade) and `TownView.RoofPaint` colours them.
+- Cliffs (`Systems/Cliffs.cs`, passage.json `cliffs`): plateaus in the near wilds past the plan, a pure function of the seed. Passage
+  treats each as a barrier opened only at its ramps (`Passage.Obstacles`, `RoundCliffs` for roads); the client raises them
+  (`WorldGen`) and faces them with rock (`WorldView.BuildCliffs`).
 - Art: only CC0/CC-BY or our own; credit every pack in `godot/assets/CREDITS.md`. Kenney models are baked by
   `python3 tools/kenney_bake.py` into `godot/assets/models/kenney.bin`. Shader colours are sRGB converted once in the
   shader (no `source_color` hint). Client decoration randomness goes through `Geo.Hash`, never the sim's rng.

@@ -7,7 +7,7 @@ namespace CrownAndCompass.Client;
 /// <summary>
 /// With --smoke: the merge gate's play-through of a build (<c>scripts/gate.ts</c>). From the main menu (and its choice of storytellers) it
 /// starts a new town, plays on at top speed, opens every window, the build bar, the campaign map, a wall and a guard flag and the
-/// game menu, saves and loads, starts the tutorial, opens the History and the glossary with a pinned keyword card, steps into a story event, answers a party's sending and opens the tourney card with a bet on it, a few frames apart so each one draws. It prints
+/// game menu, saves and loads, starts the tutorial, opens the History and the glossary with a pinned keyword card, steps into a story event, answers a party's sending, opens the tourney card with a bet on it, opens the recap and a tavern tale, a few frames apart so each one draws. It prints
 /// <c>SMOKE OK</c> and quits with 0, or <c>SMOKE FAIL</c> and 1; the gate also fails on any engine error.
 /// </summary>
 public partial class Main
@@ -169,8 +169,23 @@ public partial class Main
                 return 70;
             case 28:
                 CloseFind();
-                return 5;
+                // "Last time in...", as a loaded game opens with it.
+                OpenRecap(Math.Max(1, _sim.Town.Day - 15), "Welcome back");
+                return 10;
             case 29:
+                if (!_recap.Visible) throw new InvalidOperationException("the recap did not open");
+                _recap.Visible = false;
+                // A delve told at the tavern, skipped to its big moment so its roll and map draw.
+                if (_sim.Town.Chronicles.LastOrDefault(c => c.Beats.Count > 0) is { } tale)
+                {
+                    OpenTale(tale.Id);
+                    SkipTaleTo(null);
+                }
+                return 40;
+            case 30:
+                CloseTale();
+                return 5;
+            case 31:
             {
                 // The tourney card: a grand tourney put on today, a stake on the first event, and its first heats ridden.
                 if (!Tournaments.Stage(_sim.Town, 1)) throw new InvalidOperationException("the tourney would not stage");
@@ -181,7 +196,7 @@ public partial class Main
                 _dirty = true;
                 return 40;
             }
-            case 30:
+            case 32:
                 if (!_tourney.Visible || _sim.Town.Tourney.Events[0].Heats.Count == 0) throw new InvalidOperationException("the tourney's heats did not show");
                 CloseTourney();
                 return 5;

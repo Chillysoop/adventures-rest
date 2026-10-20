@@ -1197,6 +1197,7 @@ public static class Menaces
         double army = m.Power;
         int breaches = 0;
         army = Crises.Converge(town, m, army, lines);
+        if (army > 0) army += Powers.JoinHost(town, m, lines);
         if (army <= 0) return;
         lines.Add($"{Saga.Cap(m.Name)}, some {Js.Str(Js.Round(army))} strong, comes against {town.Name}. The defenders muster {Js.Str(Js.Round(startDef))} strong.");
         var record = Battles.Begin(town, $"menace:{m.Id}", m.Kind, m.Name, m.Def.People, m.Leader, m.Approach, army, startDef);

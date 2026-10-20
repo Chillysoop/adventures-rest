@@ -75,9 +75,12 @@ public partial class Main : Control
         BuildStory();
         BuildFind();
         BuildTourney();
+        BuildTale();
+        BuildRecap();
         BuildKeywords();
         _map.TreeScale = _opts.Trees;
         Map.Fog.RevealAll = _opts.Reveal;
+        if (_opts.Style != "classic") _map.Painted();
         // Started plainly, the game opens on the main menu over a town that has been growing a while;
         // arguments set up a moment instead.
         bool plain = OS.GetCmdlineUserArgs().Length == 0;
@@ -181,6 +184,13 @@ public partial class Main : Control
             if (_opts.FindPick is string act) OrderFind(waiting.Id, act);
             else OpenFind(waiting.Id);
         }
+        if (_opts.Tale is string tale && (tale == "last" ? _sim.Town.Chronicles.LastOrDefault(c => c.Beats.Count > 0 && c.MemberIds.Count > 0)?.Id : int.TryParse(tale, out int tn) ? tn : null) is int taleId)
+        {
+            OpenTale(taleId);
+            // A shot of a tale lands on its most telling beat: the master's room, or the worst of it.
+            if (_opts.Screenshot != null) SkipTaleTo(_opts.TaleAt);
+        }
+        if (_opts.Recap) OpenRecap(Math.Max(1, _sim.Town.Day - 20), "Last time");
         if (_opts.Menu) OpenMenu();
         if (plain || _opts.Title || _opts.Smoke) ShowTitle();
         if (_opts.Storytellers) PickStoryteller(false);
@@ -320,6 +330,11 @@ public partial class Main : Control
         _storySeen = sim.Town.Stories.All.Count;
         CloseFind();
         _findSeen.Clear();
+        CloseTale();
+        _recap.Visible = false;
+        _talesSeen = -1;
+        _momentsSeen = -1;
+        _seasonSeen = "";
         _findShownBeat.Clear();
         foreach (var p in _panes.Values) p.Invalidate();
         _dirty = true;
@@ -394,6 +409,9 @@ public partial class Main : Control
             case "mayor":
                 OpenWindow(Tab.Mayor);
                 break;
+            case "tale":
+                OpenTale(int.Parse(parts[1]));
+                break;
             case "chron":
                 int id = int.Parse(parts[1]);
                 if (!_openChronicles.Add(id)) _openChronicles.Remove(id);
@@ -405,6 +423,18 @@ public partial class Main : Control
     public override void _UnhandledKeyInput(InputEvent e)
     {
         if (e is not InputEventKey { Pressed: true, Echo: false } k) return;
+        if (_recap.Visible && k.Keycode is Key.Escape or Key.Enter or Key.Space)
+        {
+            _recap.Visible = false;
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+        if (_tale.Visible && k.Keycode == Key.Escape)
+        {
+            CloseTale();
+            GetViewport().SetInputAsHandled();
+            return;
+        }
         if (_find.Visible && k.Keycode == Key.Escape)
         {
             CloseFind();
@@ -516,6 +546,9 @@ public partial class Main : Control
         SyncStories(delta);
         SyncFinds();
         SyncTourney();
+        SyncTales(delta);
+        SyncRecap();
+        SyncMoments();
         SyncKeywords(delta);
         SyncChecks();
         SyncTownRolls();

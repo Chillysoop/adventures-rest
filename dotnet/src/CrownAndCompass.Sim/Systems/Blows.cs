@@ -55,6 +55,7 @@ public static class Blows
     /// <summary>The blow itself, at once: at the building or victim given, or one picked now.</summary>
     internal static bool Resolve(Town town, string kind, Culprit by, double raiders, double cunning, Agent? mark, Building? at)
     {
+        if (Powers.Forewarned(town, by)) return false;
         switch (kind)
         {
             case Burn:

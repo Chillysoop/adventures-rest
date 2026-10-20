@@ -338,7 +338,21 @@ public static class Roads
             cur = (w.X, w.Y);
         }
         if (home) path.Add(new Waypoint { X = 0, Y = 0, Way = "gate" });
-        return path;
+        return (mind.Ways & Ways.Sheer) != 0 ? path : RoundCliffs(town, from, path);
+    }
+
+    /// <summary>The road bent round any plateau near the town (<see cref="Cliffs"/>) a stretch would climb over.</summary>
+    private static List<Waypoint> RoundCliffs(Town town, (double X, double Y) from, List<Waypoint> path)
+    {
+        var outp = new List<Waypoint>(path.Count);
+        var cur = from;
+        foreach (var w in path)
+        {
+            foreach (var (x, y) in Passage.RoundCliffs(town, cur, (w.X, w.Y))) outp.Add(new Waypoint { X = x, Y = y });
+            outp.Add(w);
+            cur = (w.X, w.Y);
+        }
+        return outp;
     }
 
     /// <summary>One stretch of a road, from one spot to the next with no river between: round or through the hard country on the way.</summary>
@@ -675,6 +689,8 @@ public static class Roads
         if (party.Edge != 0) v.Hearten(party.Edge);
         if (party.BountyId is int tb && town.Bounties[tb - 1].Terms != "slay") v.Terms = Terms.Of(town, town.Bounties[tb - 1]);
         v.Log($"{Expedition.ListNames(members.Select(m => m.GivenName).ToList())} set out for {site.Def.Name}.");
+        v.Mark("setout");
+        v.Speak("setout");
         foreach (var line in party.Said) v.Log(line);
         Walk(town, v, party.Start, party.Out, party.DepartTick);
 

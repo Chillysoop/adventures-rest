@@ -1268,8 +1268,14 @@ public sealed class Content
     /// <summary>Sellsword companies for hire and how their campaigns go (content/game/mercenaries.json).</summary>
     public MercRules Mercenaries { get; init; } = new();
 
+    /// <summary>Minor powers the town and its enemies court (content/game/powers.json).</summary>
+    public PowerRules Powers { get; init; } = new();
+
     /// <summary>Heroes' tempers and what they think of the mayor's choices (content/game/regard.json).</summary>
     public RegardRules Regard { get; init; } = new();
+
+    /// <summary>What heroes say in the dark, at the table and over the graves of the fallen (content/game/voices.json).</summary>
+    public VoiceRules Voices { get; init; } = new();
     /// <summary>Exploring companies and what they find (content/game/explore.json).</summary>
     public ExploreRules Explore { get; init; } = new();
     /// <summary>The town guard's posts and the wall works past the stone walls (content/game/garrison.json).</summary>
@@ -1467,7 +1473,9 @@ public sealed class Content
             Sendings = Parse<SendingRules>("sendings.json"),
             Bastions = Parse<BastionRules>("bastions.json"),
             Mercenaries = Parse<MercRules>("mercenaries.json"),
+            Powers = Parse<PowerRules>("powers.json"),
             Regard = Parse<RegardRules>("regard.json"),
+            Voices = Parse<VoiceRules>("voices.json"),
             Explore = Parse<ExploreRules>("explore.json"),
             Garrison = Parse<GarrisonRules>("garrison.json"),
             Bounties = Parse<BountyRules>("bounties.json"),

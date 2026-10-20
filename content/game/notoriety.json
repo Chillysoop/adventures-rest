@@ -19,6 +19,7 @@
     "plea": { "epithets": ["the Warden", "the Wildfriend", "the Faithful"], "text": "for the villages they have answered" },
     "level": { "epithets": ["the Seasoned", "the Wanderer", "the Storied"], "text": "for the road they have walked" },
     "honour": { "epithets": ["the Sworn", "the Shield of the Town"], "text": "for the honours the town has given them", "record": "{hero} was honoured by the town" },
+    "vow": { "epithets": ["the Oathkeeper", "the Avenger", "the Mourner"], "text": "for the vow they kept over a friend's grave", "record": "{hero} kept a vow sworn over a friend's grave" },
     "story": { "epithets": ["the Songworthy", "the Bright"], "text": "for the tales told of them", "record": "{hero} did a deed the taverns still tell" },
     "brawl": { "epithets": ["the Brawler", "the Ironjaw", "the Quarrelsome"], "text": "for the tavern fights they start" },
     "theft": { "epithets": ["the Light-Fingered", "the Cutpurse", "the Quickhand"], "text": "for the purses that go missing round them" },
@@ -30,7 +31,7 @@
     "lists": { "epithets": ["the Gallant", "the Game"], "text": "for the good showing they make in the lists" },
     "race": { "epithets": ["Swiftfoot", "the Hare", "Windheel"], "text": "for the race they ran round the walls", "record": "{hero} won the race at the tourney" }
   },
-  "fameDeeds": { "plea": 3, "honour": 5, "levels": { "5": 4, "11": 10, "17": 20 } },
+  "fameDeeds": { "plea": 3, "honour": 5, "vow": 6, "levels": { "5": 4, "11": 10, "17": 20 } },
   "infamyDeeds": { "brawl": 3, "theft": 5, "desert": 8, "betray": 25 },
   "companyShare": 0.5,
   "epithetTier": 2,
