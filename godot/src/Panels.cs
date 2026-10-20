@@ -624,6 +624,11 @@ public partial class Main
             string role = cls.Role == "" ? "" : $"{Ui.Cap(cls.Role)}{(cls.Magic != "" ? $", {cls.Magic} caster" : "")}";
             p.Text(Ui.C(Ui.Ink2, $"{Ui.Esc(role)}{(spells.Count > 0 ? $" · casts {Ui.Esc(string.Join(", ", spells))}" : "")}"), 13);
             p.Text($"Fights with {Ui.Esc(Gear.Describe(hs))} · AC {Gear.Ac(t.Content, a)} · attack +{Gear.Attack(t.Content, a)}{(hs.Stone ? " · carries a town sending stone" : "")}", 13);
+            var (alone, carries) = Passage.Of(t, a);
+            string mount = hs.Mount != "" && t.Content.Passage.Mount(hs.Mount) is { } md ? $"Rides a {md.Name}" : "";
+            string crosses = Passage.Describe(alone), party = Passage.Describe(carries & ~alone) is var more && more != "" ? $"; carries the whole party over {more}" : "";
+            if (mount != "" || crosses != "" || party != "")
+                p.Text(Ui.C(Ui.Ink2, Ui.Esc($"{mount}{(mount != "" && crosses != "" ? " · " : "")}{(crosses != "" ? $"can cross {crosses}" : "")}{party}")), 13);
             InspectNotoriety(p, t, a, hs);
             InspectLoyalty(p, t, a, hs);
         }

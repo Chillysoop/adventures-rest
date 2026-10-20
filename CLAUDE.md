@@ -62,6 +62,12 @@
 - Wards (city.json `wards`, `unsettled`, `rings`): never laid out by hand. The charter opens rings (`City.RingOpen`); a quarter
   (ring + side) with `founding` finished buildings becomes the ring's ward its buildings draw most (`WardDef.Draws`, `City.Form`,
   `CityState.Sectors`). The map outlines a ward round its own buildings. `City.Migrate` maps old saves' wards to their quarters.
+- Passage (`Systems/Passage.cs`, `content/game/passage.json`): nobody crosses walls, the moat, the river, lakes or peaks
+  on foot except at an opening. Town walkers route through gates with `Passage.Next` (the client's `Crowd` uses it), lanes
+  skip the wall bands (`Passage.Mask`), and every walled section must keep an opening (`Passage.Sealed` stays empty). The
+  river and its fords and bridges come from the sim (`Passage.River`, `Crossings`); roads.json kinds with a `barrier` are
+  skirted unless the party has the way across (mounts, spells, items in passage.json; `Passage.Abilities`). Townsfolk
+  only swim the moat or climb the wall when fleeing a raid next to them (`Passage.Fleeing`), never to get to work.
 - Decorations (`content/game/decor.json`, `Systems/Decor.cs`, client `Map/Decorator.cs`, `Map/DecorView.cs`): free positions in
   tiles from the town's corner and any angle (radians, model front +Z turned by it). Every piece needs a small effect in
   another system, capped in decor.json. Pieces claim plan cells (`Decor.Cells`, `LandPlan.Decor`): `Land.Fits` and lanes go

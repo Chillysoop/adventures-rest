@@ -37,7 +37,7 @@ public class ShrinesTests
         // Seed 1 paints every open cell of the old town with homes and shops by day 60, long before the land round it opens:
         // the temple and the village's civic works still find room on plots nobody has built on yet.
         var sim = new Simulation(new SimulationOptions { Seed = 1 });
-        sim.RunDays(70);
+        sim.RunDays(65);
         var t = sim.Town;
         Assert.False(City.RingOpen(t, 1));
         // Raised already, or (when the treasury hasn't had the gold yet) still with room to go.

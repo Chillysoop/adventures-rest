@@ -152,6 +152,7 @@ public sealed class Simulation
         Broadsheet.Daily(t, Options.AutoMayor && Options.AutoStories);
         Loyalty.Daily(t, Options.AutoMayor);
         Notoriety.Daily(t);
+        Passage.Daily(t);
         Decor.Daily(t);
         Stories.Daily(t, Options.AutoMayor && Options.AutoStories);
         Sheet.Daily(t, Options.AutoMayor && Options.AutoStories);

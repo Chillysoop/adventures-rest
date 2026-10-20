@@ -467,8 +467,9 @@ public static class Garrison
         return f;
     }
 
-    /// <summary>A wave thinned by the moat it had to wade.</summary>
-    public static double Wade(Town town, double wave) => town.Defenses.Moat == PalisadeState.Built ? wave * Rules(town).MoatWave : wave;
+    /// <summary>A wave thinned by the moat it had to wade; the share of it that flies or swims (<paramref name="fliers"/>) goes over unharmed.</summary>
+    public static double Wade(Town town, double wave, double fliers = 0) =>
+        town.Defenses.Moat == PalisadeState.Built ? wave * (fliers + (1 - fliers) * Rules(town).MoatWave) : wave;
 
     /// <summary>What the gatehouse and the moat add to the town's fortification.</summary>
     public static double FortBonus(Town town) => town.Defenses.Gatehouse == PalisadeState.Built ? Rules(town).GatehouseFort : 0;

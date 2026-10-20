@@ -424,6 +424,8 @@ public static class Streets
         var plan = town.Plan;
         int n = Land.Size;
         var heights = Hills.Grid(town);
+        // No lane through a standing wall or its moat: feet go by the gate.
+        var walls = Passage.Mask(town);
         var cost = new double[n * n];
         Array.Fill(cost, double.MaxValue);
         var from = new int[n * n];
@@ -455,7 +457,7 @@ public static class Streets
                 int nx = x + dx, ny = y + dy;
                 if (nx < 1 || ny < 1 || nx >= n - 1 || ny >= n - 1) continue;
                 int j = ny * n + nx;
-                if (Blocked(plan, nx, ny)) continue;
+                if (Blocked(plan, nx, ny) || (walls != null && walls[j])) continue;
                 double grade = Math.Abs(heights[j] - heights[i]) * Land.Res / len;
                 double step = len * (1 + 30 * grade * grade + Land.Jitter(j) * 0.9);
                 // A lane keeps its distance from the street it would run beside, then meets it square on.
