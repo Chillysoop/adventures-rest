@@ -1267,6 +1267,9 @@ public sealed class Content
 
     /// <summary>Heroes' tempers and what they think of the mayor's choices (content/game/regard.json).</summary>
     public RegardRules Regard { get; init; } = new();
+
+    /// <summary>What heroes say in the dark, at the table and over the graves of the fallen (content/game/voices.json).</summary>
+    public VoiceRules Voices { get; init; } = new();
     /// <summary>Exploring companies and what they find (content/game/explore.json).</summary>
     public ExploreRules Explore { get; init; } = new();
     /// <summary>The town guard's posts and the wall works past the stone walls (content/game/garrison.json).</summary>
@@ -1278,6 +1281,8 @@ public sealed class Content
     public ClockworkRules Clockwork { get; init; } = new();
     /// <summary>The tax rate and the unrest of underfunded services (content/game/taxes.json).</summary>
     public TaxRules Taxes { get; init; } = new();
+    /// <summary>The top bar's month and when a trend counts as trouble (content/game/trends.json).</summary>
+    public TrendRules Trends { get; init; } = new();
     public MerchantRules Merchants { get; init; } = new();
     public WardRules Wards { get; init; } = new();
     /// <summary>Fame and infamy for heroes and companies (content/game/notoriety.json).</summary>
@@ -1453,12 +1458,14 @@ public sealed class Content
             Mercenaries = Parse<MercRules>("mercenaries.json"),
             Powers = Parse<PowerRules>("powers.json"),
             Regard = Parse<RegardRules>("regard.json"),
+            Voices = Parse<VoiceRules>("voices.json"),
             Explore = Parse<ExploreRules>("explore.json"),
             Garrison = Parse<GarrisonRules>("garrison.json"),
             Bounties = Parse<BountyRules>("bounties.json"),
             Broadsheet = Parse<BroadsheetRules>("broadsheet.json"),
             Clockwork = Parse<ClockworkRules>("clockwork.json"),
             Taxes = Parse<TaxRules>("taxes.json"),
+            Trends = Parse<TrendRules>("trends.json"),
             Merchants = Parse<MerchantRules>("merchants.json"),
             Wards = Parse<WardRules>("wards.json"),
             Notoriety = Parse<NotorietyRules>("notoriety.json"),

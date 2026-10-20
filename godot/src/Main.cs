@@ -54,7 +54,6 @@ public partial class Main : Control
     private readonly Dictionary<Tab, ScrollContainer> _scrolls = [];
     private readonly Dictionary<Tab, Pane> _panes = [];
     private HBoxContainer _stats = null!;
-    private ColorRect _motionDot = null!;
     private Control _endOverlay = null!;
     private RichTextLabel _ledgerText = null!;
     private int _ledgerShown = -1;
@@ -75,15 +74,19 @@ public partial class Main : Control
         BuildGuide();
         BuildStory();
         BuildFind();
+        BuildTale();
+        BuildRecap();
         BuildKeywords();
         _map.TreeScale = _opts.Trees;
         Map.Fog.RevealAll = _opts.Reveal;
+        if (_opts.Style != "classic") _map.Painted();
         // Started plainly, the game opens on the main menu over a town that has been growing a while;
         // arguments set up a moment instead.
         bool plain = OS.GetCmdlineUserArgs().Length == 0;
         bool loaded = _opts.Load is string file && LoadFile(file, "the save");
         if (!loaded && plain) Showcase();
         else if (!loaded) NewTown(_opts.Seed ?? 1, _opts.Autoplay);
+        if (_opts.Tax is double tax) _sim.SetTax(tax);
         if (_opts.Beautify is int keep && keep < _opts.Day)
         {
             _sim.RunDays(keep);
@@ -100,8 +103,9 @@ public partial class Main : Control
         if (_opts.Autoplay) _storySeen = _sim.Town.Stories.All.Count;
         SetSpeed(_opts.Speed ?? 1);
         if (_opts.Tab is string t && Enum.TryParse<Tab>(t, true, out var tab)) SetTab(tab);
-        if (_opts.Dock is string dk && Array.FindIndex(Groups, g => g.Name.Equals(dk, StringComparison.OrdinalIgnoreCase)) is int dg and >= 0)
-            Callable.From(() => OpenPicker(dg)).CallDeferred();
+        if (_opts.Tray is string tray && Trays.FirstOrDefault(d => d.Id.Equals(tray, StringComparison.OrdinalIgnoreCase)) is { } td)
+            Callable.From(() => OpenTray(td.Id)).CallDeferred();
+        if (_opts.Stat is int stat) Callable.From(() => { RenderHeader(); ShowStatTip(stat); }).CallDeferred();
         if (_opts.Site is string site) Select(Selection.Site(site));
         if (_opts.Wall is int wall) Select(Selection.Wall(wall));
         if (_opts.Strike) ShowStrike(true);
@@ -169,6 +173,13 @@ public partial class Main : Control
             if (_opts.FindPick is string act) OrderFind(waiting.Id, act);
             else OpenFind(waiting.Id);
         }
+        if (_opts.Tale is string tale && (tale == "last" ? _sim.Town.Chronicles.LastOrDefault(c => c.Beats.Count > 0 && c.MemberIds.Count > 0)?.Id : int.TryParse(tale, out int tn) ? tn : null) is int taleId)
+        {
+            OpenTale(taleId);
+            // A shot of a tale lands on its most telling beat: the master's room, or the worst of it.
+            if (_opts.Screenshot != null) SkipTaleTo(_opts.TaleAt);
+        }
+        if (_opts.Recap) OpenRecap(Math.Max(1, _sim.Town.Day - 20), "Last time");
         if (_opts.Menu) OpenMenu();
         if (plain || _opts.Title || _opts.Smoke) ShowTitle();
         if (_opts.History is string power) OpenHistory(power == "" ? null : power);
@@ -251,7 +262,7 @@ public partial class Main : Control
         RememberLegends();
         // With --autoplay the stand-in mayor keeps playing, for demos and screenshots; only a player's towns meet old legends.
         var legends = autoplay ? [] : ProfileLegends();
-        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoArmory = autoplay && !_opts.KeepArmory, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay, AutoStories = autoplay, AutoExplore = autoplay && !_opts.Find, Legends = legends }));
+        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoArmory = autoplay && !_opts.KeepArmory, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay && _opts.Tax == null, AutoDefense = autoplay, AutoPlanning = autoplay, AutoStories = autoplay, AutoExplore = autoplay && !_opts.Find, Legends = legends }));
     }
 
     /// <summary>Show a town: a new one, or one loaded from a save.</summary>
@@ -278,6 +289,11 @@ public partial class Main : Control
         _storySeen = sim.Town.Stories.All.Count;
         CloseFind();
         _findSeen.Clear();
+        CloseTale();
+        _recap.Visible = false;
+        _talesSeen = -1;
+        _momentsSeen = -1;
+        _seasonSeen = "";
         _findShownBeat.Clear();
         foreach (var p in _panes.Values) p.Invalidate();
         _dirty = true;
@@ -308,7 +324,7 @@ public partial class Main : Control
         GuideEvent(i == 0 ? "pause" : "speed");
     }
 
-    /// <summary>Open a management window, or close it if it is the one already open (the dock's toggle).</summary>
+    /// <summary>Open a management window, or close it if it is the one already open (the rail's toggle).</summary>
     private void SetTab(Tab t)
     {
         if (t == Tab.Inspect) return;
@@ -342,6 +358,9 @@ public partial class Main : Control
             case "mayor":
                 OpenWindow(Tab.Mayor);
                 break;
+            case "tale":
+                OpenTale(int.Parse(parts[1]));
+                break;
             case "chron":
                 int id = int.Parse(parts[1]);
                 if (!_openChronicles.Add(id)) _openChronicles.Remove(id);
@@ -353,6 +372,18 @@ public partial class Main : Control
     public override void _UnhandledKeyInput(InputEvent e)
     {
         if (e is not InputEventKey { Pressed: true, Echo: false } k) return;
+        if (_recap.Visible && k.Keycode is Key.Escape or Key.Enter or Key.Space)
+        {
+            _recap.Visible = false;
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+        if (_tale.Visible && k.Keycode == Key.Escape)
+        {
+            CloseTale();
+            GetViewport().SetInputAsHandled();
+            return;
+        }
         if (_find.Visible && k.Keycode == Key.Escape)
         {
             CloseFind();
@@ -401,6 +432,7 @@ public partial class Main : Control
             return;
         }
         if (k.Keycode == Key.Space) PlayerSpeed(_speed == 0 ? _lastSpeed : 0);
+        else if (k.ShiftPressed && k.Keycode is >= Key.Key0 and <= Key.Key9) SetTab(QuickTabs[((int)(k.Keycode - Key.Key0) + 9) % 10]);
         else if (k.Keycode is >= Key.Key1 and <= Key.Key4) PlayerSpeed((int)(k.Keycode - Key.Key0));
         else if (k.Keycode == Key.Home) _map.Recenter();
         else if (k.Keycode == Key.B) ToggleBuildBar();
@@ -415,7 +447,7 @@ public partial class Main : Control
         else if (k.Keycode == Key.R && _map.Decorator.Active) _map.Decorator.Turn(k.ShiftPressed ? -1 : 1);
         else if (k.Keycode == Key.M) ToggleStrategic();
         else if (k.Keycode == Key.C) SetTab(Tab.Mayor);
-        else if (k.Keycode == Key.Escape && _picker.Visible) ClosePicker();
+        else if (k.Keycode == Key.Escape && _drawer.Visible) CloseTray();
         else if (k.Keycode == Key.Escape && _inspector.Visible) Select(null);
         else if (k.Keycode == Key.Escape && _window.Visible) CloseWindow();
         else if (k.Keycode is Key.Q or Key.E)
@@ -459,6 +491,9 @@ public partial class Main : Control
         SyncGuide();
         SyncStories(delta);
         SyncFinds();
+        SyncTales(delta);
+        SyncRecap();
+        SyncMoments();
         SyncKeywords(delta);
         SyncChecks();
         SyncTownRolls();
@@ -484,6 +519,7 @@ public partial class Main : Control
                     case Tab.Library: RenderLibrary(); break;
                     case Tab.Institutions: RenderInstitutions(); break;
                 }
+            if (_drawer.Visible) RenderTray();
             if (_inspector.Visible) RenderInspect();
             if (_strikePanel.Visible) RenderStrike();
             RenderBuild();
@@ -531,18 +567,14 @@ public partial class Main : Control
         [ThreatStage.Victorious] = ("Fallen", 2, "The town has fallen to the warband."),
     };
 
-    private readonly List<(Label K, Label V)> _statCards = [];
-    private readonly string[] _statTips = new string[6];
 
     private void RenderHeader()
     {
         var t = _sim.Town;
-        var s = _sim.Snapshot();
         var season = Seasons.Current(t);
         _clock.Text = $"Day {t.Day} · {season.Name} · {t.Hour:00}:00";
         _clock.TooltipText = $"{season.Name} of year {Seasons.Year(t)}, day {Seasons.DayOf(t)} of {Seasons.Rules(t).Days}. {Seasons.Next(t).Name} comes in {Ui.Days(Seasons.DaysLeft(t))}.\n{season.Blurb}";
         _tierLabel.Text = $"{City.Tier(t).Name} · about {City.Souls(t):N0} souls";
-        _motionDot.Visible = Council.PendingMotion(t) != null;
         _standing = StandingAlerts();
         var stage = Stages[t.Enemy.Stage];
         _threat.Text = (t.Enemy.Stage == ThreatStage.Marching && t.Enemy.ArrivalTick is int at ? $"Siege in {Math.Ceiling((at - t.Tick) / 24.0)}d" : stage.Label).ToUpperInvariant();
@@ -550,41 +582,7 @@ public partial class Main : Control
         _threatPill.AddThemeStyleboxOverride("panel", Ui.Box(stage.Level == 2 ? Ui.Bad : Ui.Panel, pillColor, 99, 1, 10, 3));
         _threat.AddThemeColorOverride("font_color", stage.Level == 2 ? Colors.White : stage.Level == 1 ? Ui.Gold : Ui.Ink);
 
-        int away = t.Heroes.Count(a => a.IsAway);
-        (string, string, string, string, string)[] stats =
-        [
-            ("Households", "population", $"{s.Population:N0}", $"Now: {s.Population:N0} households, about {City.Souls(t):N0} souls.", "households"),
-            ("Heroes", "heroes", t.Heroes.Count.ToString(), $"Now: {t.Heroes.Count - away} in town, {away} on the road.", "hero"),
-            ("Treasury", "gold", $"{Math.Floor(t.Treasury):N0}", $"Now: {Math.Floor(t.Treasury):N0} gold in the treasury.", "gold"),
-            ("Bread price", "bread", $"{s.FoodPrice:0.00}", $"Now: a loaf costs {s.FoodPrice:0.00} gold.", "bread-price"),
-            ("Mandate", "mandate", $"{Math.Round(t.Mandate)}", $"Now: {Math.Round(t.Mandate)} out of 100.", "mandate"),
-            ("Homeless", "homeless", s.Homeless.ToString(), s.Homeless == 0 ? "Now: everyone has a roof." : $"Now: {s.Homeless} without a roof.", "homeless"),
-        ];
-        for (int i = 0; i < stats.Length; i++) _statTips[i] = stats[i].Item4;
-        if (_statCards.Count == 0)
-            for (int si = 0; si < stats.Length; si++)
-            {
-                var st = stats[si];
-                int slot = si;
-                var card = new HBoxContainer();
-                Ui.KeywordOn(card, st.Item5, () => _statTips[slot]);
-                card.AddThemeConstantOverride("separation", 6);
-                card.AddChild(new TextureRect { Texture = Ui.Icon(st.Item2), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2(24, 24), SizeFlagsVertical = SizeFlags.ShrinkCenter, MouseFilter = MouseFilterEnum.Ignore });
-                var v = new VBoxContainer();
-                v.AddThemeConstantOverride("separation", -3);
-                var k = Ui.Label("", Ui.Ink2, Ui.Medium, 11);
-                var val = Ui.Label("", Ui.Ink, Ui.Bold, 16);
-                v.AddChild(k);
-                v.AddChild(val);
-                card.AddChild(v);
-                _stats.AddChild(card);
-                _statCards.Add((k, val));
-            }
-        for (int i = 0; i < stats.Length; i++)
-        {
-            _statCards[i].K.Text = stats[i].Item1.ToUpperInvariant();
-            _statCards[i].V.Text = stats[i].Item3;
-        }
+        RenderStats(t);
     }
 
     // ---------- Ledger ----------

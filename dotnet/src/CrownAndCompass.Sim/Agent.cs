@@ -214,6 +214,20 @@ public sealed class HeroSheet
 
     /// <summary>Dark gifts taken: each one makes the hero likelier to fall (<see cref="Systems.Turning"/>).</summary>
     public int Taint { get; set; }
+
+    /// <summary>Mishaps and feats on delves, by kind, that grow into running jokes (<see cref="Systems.Voices"/>).</summary>
+    public OrderedMap<string, int> Gags { get; } = new();
+
+    /// <summary>What their friends call them after a running joke ("Butterfingers"), and which joke; "" for none.</summary>
+    public string Nickname { get; set; } = "";
+    public string NicknameFor { get; set; } = "";
+
+    /// <summary>The site they swore over a friend's grave to see cleared, and the friend.</summary>
+    public string? Vow { get; set; }
+    public string VowFor { get; set; } = "";
+
+    /// <summary>Where each magic item they carry came from, by item id ("Taken from King-under-Turf on day 51...").</summary>
+    public OrderedMap<string, string> ItemTales { get; } = new();
 }
 
 /// <summary>
