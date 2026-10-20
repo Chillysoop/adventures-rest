@@ -1087,6 +1087,7 @@ public static class Menaces
         string text = lines.Count > 0 ? lines[rng.Range(0, lines.Count)] : "{name} strikes at {where}.";
         string fire = burned ? $" They leave {place} burning behind them." : "";
         town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, text, m).Replace("{where}", place)) + fire, victims);
+        if (burned) Fires.Spread(town, where);
         Sightings.Report(town, $"raid:{m.Id}", Sightings.Flight, m.Name, (int)raiders, m.SeatId, where.Id, null, 0.25, SimTime.HoursPerDay, "");
         town.Tension += 15 + victims.Count * 10;
         town.Mandate = Math.Max(0, town.Mandate - 3);

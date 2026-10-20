@@ -313,6 +313,15 @@ public partial class Main : Control
 
     private void Select(Selection? sel)
     {
+        // Clicking an enemy's agent in the crowd has the watch seize them on the spot.
+        if (sel is { Kind: "lurker" })
+        {
+            var l = Lurkers.Of(_sim.Town, sel.Id);
+            Hint(l != null && _sim.Seize(sel.Id) ? $"The watch seizes {l.Disguise} by {Lurkers.Where(_sim.Town, l)}." : "They have slipped away.");
+            GuideEvent("seize");
+            _dirty = true;
+            return;
+        }
         _map.Selection = sel;
         if (sel != null) GuideEvent($"select:{sel.Kind}");
         _inspector.Visible = sel != null;

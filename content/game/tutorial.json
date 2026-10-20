@@ -218,6 +218,15 @@
       "teaches": ["key:G", "command:PlantFlag", "command:StandDown"]
     },
     {
+      "id": "lurker",
+      "title": "A stranger in the crowd",
+      "text": "Townsfolk have spotted someone who doesn't belong: an enemy's agent, looking over what they mean to burn, knife or spoil tonight. Click the alert to go there, find the [b]hooded figure[/b] drifting among the townsfolk, and click them to have the watch seize them before dark. Leave them, and the watch has to stop the blow when it falls.",
+      "when": "alert:lurker",
+      "point": "alerts",
+      "until": "seize",
+      "teaches": ["command:Seize"]
+    },
+    {
       "id": "call-to-arms",
       "title": "Call to arms",
       "text": "A host is marching, and the scouts say which side it comes at. Click the alert, or that stretch of wall, and press [b]Call to arms[/b]: the nearest of the watch run up onto it. Every wall section, tower and the gate can be called. A stretch with more guards than its share holds better when a wave hits it; a manned tower adds its archers.",

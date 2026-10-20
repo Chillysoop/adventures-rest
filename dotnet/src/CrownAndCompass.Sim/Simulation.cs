@@ -90,6 +90,7 @@ public sealed class Simulation
         Roads.Hourly(t);
         Sendings.Hourly(t, Options.AutoMayor && Options.AutoStories);
         Explore.Hourly(t, Options.AutoMayor && Options.AutoBounties && Options.AutoExplore);
+        Lurkers.Hourly(t);
         t.Tick++;
         if (t.Hour == 0) DailyTick();
     }
@@ -167,6 +168,9 @@ public sealed class Simulation
         if (t.RecentNet.Count > 7) t.RecentNet.RemoveAt(0);
         t.AccountsToday = new();
     }
+
+    /// <summary>Have the watch seize an enemy's agent the townsfolk pointed out, before it strikes tonight.</summary>
+    public bool Seize(int lurkerId) => Lurkers.Seize(Town, lurkerId);
 
     /// <summary>The player's lever: post a bounty on a site, paid from the treasury into escrow; terms say how (slay, drive, parley, rescue, fetch); with loot to the town the hoard's magic comes to the armory.</summary>
     public Bounty? PostBounty(string siteId, double reward, string terms = "slay", bool lootToTown = false) => Quests.PostBounty(Town, siteId, reward, null, terms, lootToTown);

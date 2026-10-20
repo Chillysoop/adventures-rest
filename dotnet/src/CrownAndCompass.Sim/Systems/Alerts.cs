@@ -82,11 +82,12 @@ public static class Alerts
     public static readonly AlertKind Gifts = new("gifts", "Arms to give", "heroes", AlertLevel.Minor, AlertWindow.Armory);
     public static readonly AlertKind Outpost = new("outpost", "Land to hold", "warband", AlertLevel.Minor, AlertWindow.None);
     public static readonly AlertKind Stalled = new("stalled", "Building stalled", "gold", AlertLevel.Decision, AlertWindow.None);
+    public static readonly AlertKind Lurker = new("lurker", "A stranger watching", "suspicion", AlertLevel.Urgent, AlertWindow.None);
 
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Sighted, Captives, Doom, Crisis, Fear, Hunger, Coffers, Underfunded, Unrest, Hostile, Motion, Fealty, Clash, Traitor, Plot, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Bastion, Institution, Heroes, Neighbour, Loot, Stalled, Work, Settlers, Below, Scholars, Trade, Gifts, Outpost, Housing];
+        [Siege, Sighted, Lurker, Captives, Doom, Crisis, Fear, Hunger, Coffers, Underfunded, Unrest, Hostile, Motion, Fealty, Clash, Traitor, Plot, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Bastion, Institution, Heroes, Neighbour, Loot, Stalled, Work, Settlers, Below, Scholars, Trade, Gifts, Outpost, Housing];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
     public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Hostility, Winter, Growth, Routes, Region, Undercity, Study, Loyalty, Armoury, Homes, Sites, Keepers, Outposts];
@@ -119,6 +120,14 @@ public static class Alerts
                     ? $"{Cap(g.Reporter)} saw about {g.Count} {g.Foe} coming. The watch's flag covers {mark.Name}; keep it there tonight."
                     : $"{Cap(g.Reporter)} saw about {g.Count} {g.Foe} coming for {mark.Name}. They strike tonight. Plant a guard flag over it (G on the map) or keep heroes home.",
                 BuildingId: mark.Id);
+        }
+        // An enemy's agent loitering in town until dark: find them in the crowd and have them seized.
+        foreach (var l in t.Lurkers.OrderBy(l => l.Id))
+        {
+            int hours = Math.Max(1, l.StrikeTick - t.Tick);
+            yield return new($"lurker:{l.Id}", Lurker, $"A stranger by {Lurkers.Where(t, l)}",
+                $"Folk point out {l.Disguise} near {Lurkers.Where(t, l)}, watching. Find them in the crowd there (the hooded figure) and click them to have the watch seize them, before they act after dark in {hours} {(hours == 1 ? "hour" : "hours")}.",
+                BuildingId: l.BuildingId, Wall: l.BuildingId == null ? 0 : null);
         }
         foreach (var c in Systems.Captives.Held(t).OrderBy(c => c.Id))
         {

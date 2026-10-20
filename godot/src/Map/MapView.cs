@@ -14,6 +14,9 @@ public sealed record Selection(string Kind, int Id = 0, string SiteId = "")
     public static Selection Wall(int section) => new("wall", section);
     public static Selection Tower(int index) => new("tower", index);
     public static Selection Flag(int postId) => new("flag", postId);
+
+    /// <summary>An enemy's agent loitering in town (<see cref="Sim.Systems.Lurkers"/>).</summary>
+    public static Selection Lurker(int id) => new("lurker", id);
 }
 
 /// <summary>
@@ -82,6 +85,7 @@ public partial class MapView : Control
     private WorldView _world = null!;
     private TownView _town = null!;
     private Crowd _crowd = null!;
+    private LurkerView _lurkers = null!;
     private DecorView _decor = null!;
     private Overlay _overlay = null!;
     private ShaderMaterial _grade = null!;
@@ -156,6 +160,8 @@ public partial class MapView : Control
         _vp.AddChild(_decor);
         _crowd = new Crowd(this);
         _vp.AddChild(_crowd);
+        _lurkers = new LurkerView(this);
+        _vp.AddChild(_lurkers);
         _overlay = new Overlay(this) { MouseFilter = MouseFilterEnum.Ignore };
         AddChild(_overlay);
         _overlay.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
@@ -258,6 +264,7 @@ public partial class MapView : Control
         }
         _decor.Refresh();
         _crowd.Advance(dt);
+        _lurkers.Advance();
         UpdateLight(town);
         _overlay.QueueRedraw();
         if (Planner.Active) Planner.QueueRedraw();
@@ -596,6 +603,9 @@ public partial class MapView : Control
             var spot = Fog.SightOf(site.Def.Id, p) == Sight.Rumoured ? Geo.Rough(site) : p;
             if (ToScreen(spot, 1).DistanceTo(screen) < 26) return Selection.Site(site.Def.Id);
         }
+        // An enemy's agent in the crowd comes before the townsfolk round them: finding them is the point.
+        foreach (var (id, p) in _lurkers.Spots)
+            if (p.DistanceTo(w) < 0.4f) return Selection.Lurker(id);
         int best = -1;
         float bestD = 0.35f;
         foreach (var (id, s) in _crowd.People.Sprites)

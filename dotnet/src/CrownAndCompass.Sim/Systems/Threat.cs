@@ -321,12 +321,15 @@ public static class Threat
         // They may drag the hands off to their war camp, to be rescued in time or lost.
         var camp = town.Sites.FirstOrDefault(x => x.Def.Id == e.Outpost.Id);
         text += Captives.Take(town, camp, target);
+        bool burned = false;
         if (rng.Chance(town.Content.Enemy.Defense.RaidBurn) && Blows.Burns(target))
         {
             Blows.Wreck(town, target, 0.4 + rng.Next() * 0.3);
             text += $". They fire {target.Name} as they go";
+            burned = true;
         }
         town.Log(LedgerCategory.War, Importance.Major, $"{text}. The watch arrives too late.", victims);
+        if (burned) Fires.Spread(town, target);
         town.Tension += 25 + victims.Count * 10;
         town.Mandate = Math.Max(0, town.Mandate - 4);
     }

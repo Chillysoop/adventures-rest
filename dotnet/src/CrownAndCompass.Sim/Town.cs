@@ -393,6 +393,10 @@ public sealed class Town
     public List<Systems.Sighting> Sightings { get; } = [];
     public int SightingCount { get; set; }
 
+    /// <summary>Enemies' agents loose in town, looking over what they mean to strike tonight (<see cref="Systems.Lurkers"/>).</summary>
+    public List<Systems.Lurker> Lurkers { get; } = [];
+    public int LurkerCount { get; set; }
+
     /// <summary>Mirrors hidden at sites, oldest first; smashed ones stay with SmashedTick set.</summary>
     public List<Mirror> Mirrors { get; } = [];
 

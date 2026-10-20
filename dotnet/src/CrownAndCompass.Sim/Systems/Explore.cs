@@ -606,10 +606,13 @@ public static class Explore
     /// <summary>Set off on a new stretch of road from where the company stands.</summary>
     private static void March(Town town, Survey s, (double X, double Y) to, string kind)
     {
+        // Nobody left standing to walk it (all fell at the find): the company's fate is settled elsewhere.
+        var living = Living(town, s);
+        if (living.Count == 0) return;
         var from = Where(town, s, town.Tick);
         if (s.Legs.Count > 0 && s.Legs[^1].Stop == null && End(town, s.Legs[^1]) > town.Tick) s.Legs[^1].Stop = town.Tick;
         var said = new List<string>();
-        var route = Roads.Plan(town, from, to, Roads.Mind(town, Living(town, s), false, Hp(town, s) < 0.6), town.Rng, said);
+        var route = Roads.Plan(town, from, to, Roads.Mind(town, living, false, Hp(town, s) < 0.6), town.Rng, said);
         s.Legs.Add(new SurveyLeg { FromX = from.X, FromY = from.Y, Route = route, Start = town.Tick, Kind = kind });
     }
 

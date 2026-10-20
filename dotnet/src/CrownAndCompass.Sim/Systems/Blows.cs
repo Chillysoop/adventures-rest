@@ -40,15 +40,27 @@ public static class Blows
     /// <summary>The walls' strength while saboteurs' damage is unmended.</summary>
     public static double WallFactor(Town town) => town.Crises.WallsWeakUntil > town.Day ? Rules(town).WallsWeak : 1;
 
-    /// <summary>Strike one blow of a kind (not a raid, which is the menace's own). Returns whether it landed.</summary>
-    public static bool Strike(Town town, string kind, Culprit by, double raiders, double cunning)
+    /// <summary>
+    /// Strike one blow of a kind (not a raid, which is the menace's own). Returns whether it landed, or null when an
+    /// agent has slipped into town to strike it later (<see cref="Lurkers"/>): fire, a knife and sabotage are done
+    /// by someone who has to come and look first, and can be caught at it. A crisis or a grudge (by its foe) that
+    /// sent the agent hears how it went then.
+    /// </summary>
+    public static bool? Strike(Town town, string kind, Culprit by, double raiders, double cunning, Agent? mark = null, int? crisis = null, string? foe = null)
+    {
+        if (Lurkers.Covert(kind) && Lurkers.Slip(town, kind, by, raiders, cunning, mark, crisis, foe)) return null;
+        return Resolve(town, kind, by, raiders, cunning, mark, null);
+    }
+
+    /// <summary>The blow itself, at once: at the building or victim given, or one picked now.</summary>
+    internal static bool Resolve(Town town, string kind, Culprit by, double raiders, double cunning, Agent? mark, Building? at)
     {
         switch (kind)
         {
             case Burn:
-                return Arson(town, by, raiders);
+                return Arson(town, by, raiders, at);
             case Assassinate:
-                return Murder(town, by, cunning);
+                return Murder(town, by, cunning, mark);
             case Walls:
             case Treasury:
             case Stores:
@@ -64,14 +76,14 @@ public static class Blows
         }
     }
 
-    private static string Fill(Town town, string text, Culprit by) => Saga.Sentences(text
+    internal static string Fill(Town town, string text, Culprit by) => Saga.Sentences(text
         .Replace("{by}", by.Name)
         .Replace("{leader}", by.Leader)
         .Replace("{seat}", by.Seat)
         .Replace("{town}", town.Name));
 
     /// <summary>The best hero at home, or the watch: who meets a blow in the night.</summary>
-    private static (string Name, int? Id) Guard(Town town, Agent? not = null)
+    internal static (string Name, int? Id) Guard(Town town, Agent? not = null)
     {
         var h = town.Heroes.Where(a => !a.IsAway && a != not).OrderByDescending(a => a.Hero!.Level).ThenBy(a => a.Id).FirstOrDefault();
         return h != null ? ($"{h.Name} and the watch", h.Id) : ("the watch", null);
@@ -85,24 +97,16 @@ public static class Blows
     /// stops most, but some slip through (crises.json arsonSlips), and slate and lime (<see cref="Research.Fireproof"/>)
     /// put some out. Burned, it stands as a shell until its owner (or the town) pays to rebuild it.
     /// </summary>
-    public static bool Arson(Town town, Culprit by, double raiders)
+    public static bool Arson(Town town, Culprit by, double raiders, Building? at = null)
     {
         var rng = town.Rng;
         var t = Text(town, Burn);
-        var marks = town.Buildings
-            .Where(b => b.Complete && !b.Def.IsGrand && b.Def.Zone is Zone.Residential or Zone.Commercial or Zone.Industry or Zone.Farmland)
-            .OrderBy(b => b.Id)
-            .ToList();
-        if (marks.Count == 0) return false;
-        var timber = marks.Where(Burns).ToList();
-        if (timber.Count == 0)
+        var target = at is { Complete: true } && Burns(at) ? at : Kindling(town);
+        if (target == null)
         {
-            if (t.Stone != "") town.Log(LedgerCategory.War, Importance.Notable, Fill(town, t.Stone, by));
+            if (t.Stone != "" && town.Buildings.Any(b => b.Complete)) town.Log(LedgerCategory.War, Importance.Notable, Fill(town, t.Stone, by));
             return false;
         }
-        var open = Garrison.Unguarded(town, timber);
-        var pool = open.Count > 0 ? open : timber;
-        var target = pool[rng.Range(0, pool.Count)];
         if (Threat.LocalDefense(town) * Garrison.FlagFactor(town, target) >= raiders * (0.7 + rng.Next() * 0.6) && !rng.Chance(Rules(town).ArsonSlips))
         {
             var g = Guard(town);
@@ -118,10 +122,24 @@ public static class Blows
         }
         Wreck(town, target, 0.5 + rng.Next() * 0.3);
         town.Log(LedgerCategory.War, Importance.Major, Fill(town, t.Landed, by).Replace("{where}", target.Name).Replace("{owner}", town.OwnerName(target.OwnerId)), target.OwnerId is int o ? [o] : []);
+        Fires.Spread(town, target);
         town.Tension += 15;
         town.Mandate = Math.Max(0, town.Mandate - 2);
         Saga.Scar(town, 1);
         return true;
+    }
+
+    /// <summary>What an arsonist would fire: a timber house, shop, workshop or farm, on the side the watch's flags leave open; null when nothing burns.</summary>
+    public static Building? Kindling(Town town)
+    {
+        var timber = town.Buildings
+            .Where(b => b.Complete && !b.Def.IsGrand && b.Def.Zone is Zone.Residential or Zone.Commercial or Zone.Industry or Zone.Farmland && Burns(b))
+            .OrderBy(b => b.Id)
+            .ToList();
+        if (timber.Count == 0) return null;
+        var open = Garrison.Unguarded(town, timber);
+        var pool = open.Count > 0 ? open : timber;
+        return pool[town.Rng.Range(0, pool.Count)];
     }
 
     /// <summary>
@@ -148,28 +166,10 @@ public static class Blows
     public static bool Murder(Town town, Culprit by, double cunning, Agent? mark = null)
     {
         var rng = town.Rng;
-        var councillors = town.Seats.Where(s => s.HolderId is int h && !town.Agent(h).Dead).OrderBy(s => s.Def.Id, StringComparer.Ordinal).ToList();
-        var heroes = town.Heroes.Where(a => !a.IsAway).OrderBy(a => a.Id).ToList();
-        Agent? victim;
-        string who;
-        // One the foe has sworn to kill, if they are in town.
-        if (mark is { Dead: false, Departed: false, Hero: not null } && !mark.IsAway)
-        {
-            victim = mark;
-            who = $"{victim.Name} the {victim.Hero!.Cls.Name.ToLowerInvariant()}";
-        }
-        else if (councillors.Count > 0 && (heroes.Count == 0 || rng.Chance(0.6)))
-        {
-            var seat = councillors[rng.Range(0, councillors.Count)];
-            victim = town.Agent(seat.HolderId!.Value);
-            who = $"{victim.Name}, the town's {seat.Def.Title.ToLowerInvariant()}";
-        }
-        else if (heroes.Count > 0)
-        {
-            victim = heroes[rng.Range(0, heroes.Count)];
-            who = $"{victim.Name} the {victim.Hero!.Cls.Name.ToLowerInvariant()}";
-        }
-        else return false;
+        // One the foe has sworn to kill (or its agent has been watching), if they are in town.
+        var victim = mark is { Dead: false, Departed: false } && !mark.IsAway ? mark : Victim(town);
+        if (victim == null) return false;
+        string who = Who(town, victim);
         var t = Text(town, Assassinate);
         // A seasoned hero is hard to knife in the dark.
         double guard = Council.WatchStrength(town) / Math.Max(0.5, cunning) + (victim.Hero is { } hs ? hs.Level * 0.04 : 0);
@@ -186,6 +186,24 @@ public static class Blows
         town.Mandate = Math.Max(0, town.Mandate - 5);
         Saga.Scar(town, 2);
         return true;
+    }
+
+    /// <summary>Who an assassin would come for: a councillor, or a hero at home; null when there is nobody.</summary>
+    public static Agent? Victim(Town town)
+    {
+        var rng = town.Rng;
+        var councillors = town.Seats.Where(s => s.HolderId is int h && !town.Agent(h).Dead).OrderBy(s => s.Def.Id, StringComparer.Ordinal).ToList();
+        var heroes = town.Heroes.Where(a => !a.IsAway).OrderBy(a => a.Id).ToList();
+        if (councillors.Count > 0 && (heroes.Count == 0 || rng.Chance(0.6))) return town.Agent(councillors[rng.Range(0, councillors.Count)].HolderId!.Value);
+        return heroes.Count > 0 ? heroes[rng.Range(0, heroes.Count)] : null;
+    }
+
+    /// <summary>A victim as the Ledger names them: by their class, or their seat on the council.</summary>
+    public static string Who(Town town, Agent a)
+    {
+        if (a.Hero != null) return $"{a.Name} the {a.Hero.Cls.Name.ToLowerInvariant()}";
+        var seat = town.Seats.FirstOrDefault(s => s.HolderId == a.Id);
+        return seat != null ? $"{a.Name}, the town's {seat.Def.Title.ToLowerInvariant()}" : a.Name;
     }
 
     /// <summary>Agents at the walls, in the treasury, in the granaries or among the wards. The watch may catch them.</summary>
