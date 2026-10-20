@@ -402,7 +402,10 @@ public static class Passage
         // In the gateway or on the bridge, short of either end: on through it, to the end on the far side.
         foreach (var b in all)
         {
-            if (!OnBarrier(b, from) && !(Inside(b.Outer, from.X, from.Y) && !Inside(b.Loop, from.X, from.Y))) continue;
+            bool on = OnBarrier(b, from);
+            if (!on && !(Inside(b.Outer, from.X, from.Y) && !Inside(b.Loop, from.X, from.Y))) continue;
+            // Off the bridge already, with a doorstep beside it in plain sight across the verge: straight there, not back to the end.
+            if (!on && !Inside(b.Loop, to.X, to.Y) && Hit(b.Edge, from, to) == null) continue;
             foreach (var o in b.Openings)
             {
                 if (SegDist(from, o.In, o.Out) > 0.35) continue;
