@@ -47,8 +47,8 @@ public partial class Main
         col.SetAnchorsAndOffsetsPreset(LayoutPreset.TopWide);
         col.OffsetTop = TopBar + 10;
         // Between the management window on the left and the news feed on the right.
-        col.OffsetLeft = 480;
-        col.OffsetRight = -360;
+        col.OffsetLeft = RailWidth + 480;
+        col.OffsetRight = -(TrayWidth + 360);
         _alertRow = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore, Alignment = BoxContainer.AlignmentMode.Center };
         _alertRow.AddThemeConstantOverride("separation", 6);
         col.AddChild(_alertRow);
@@ -84,23 +84,7 @@ public partial class Main
         CloseAlertList();
         GuideEvent("alert");
         var t = _sim.Town;
-        Tab? tab = a.Kind.Window switch
-        {
-            AlertWindow.Ledger => Tab.Ledger,
-            AlertWindow.War => Tab.War,
-            AlertWindow.Council => Tab.Council,
-            AlertWindow.Bounties => Tab.Bounties,
-            AlertWindow.Faith => Tab.Faith,
-            AlertWindow.Campaign => Tab.Campaign,
-            AlertWindow.City => Tab.City,
-            AlertWindow.Mayor => Tab.Mayor,
-            AlertWindow.Diplomacy => Tab.Diplomacy,
-            AlertWindow.Library => Tab.Library,
-            AlertWindow.Companies => Tab.Companies,
-            AlertWindow.Armory => Tab.Armory,
-            AlertWindow.Institutions => Tab.Institutions,
-            _ => null,
-        };
+        Tab? tab = TabOf(a.Kind.Window);
         if (a.Kind.Window == AlertWindow.Tourney)
         {
             OpenTourney();
@@ -260,6 +244,7 @@ public partial class Main
             if (open.Icon == null || open.Items.Count < 2) CloseAlertList();
             else ShowAlertList(open.Kind, open.Items, open.Icon);
         }
+        UpdateBadges();
     }
 
     private Control AlertIcon(AlertKind kind, List<Alert> items)
@@ -445,7 +430,6 @@ public partial class Main
     /// <summary>A click anywhere outside the open list closes it.</summary>
     public override void _Input(InputEvent e)
     {
-        PickerInput(e);
         if (_openKind == null || e is not InputEventMouseButton { Pressed: true } mb) return;
         var p = mb.Position;
         if (_alertList.GetGlobalRect().HasPoint(p) || _alertRow.GetGlobalRect().HasPoint(p)) return;

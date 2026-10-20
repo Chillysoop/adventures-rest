@@ -76,6 +76,8 @@ public sealed record BuildingDef
     public int Housing { get; init; }
     public double Rent { get; init; }
     public bool Venue { get; init; }
+
+    /// <summary>Townsfolk it holds at once on an outing (a tavern's drinkers, a shrine's worshippers, a bathhouse's bathers); 0 = it takes no visitors (<see cref="Systems.Crowds"/>).</summary>
     public int Capacity { get; init; }
     public string? Profession { get; init; }
 
@@ -1276,6 +1278,8 @@ public sealed class Content
     public ClockworkRules Clockwork { get; init; } = new();
     /// <summary>The tax rate and the unrest of underfunded services (content/game/taxes.json).</summary>
     public TaxRules Taxes { get; init; } = new();
+    /// <summary>The top bar's month and when a trend counts as trouble (content/game/trends.json).</summary>
+    public TrendRules Trends { get; init; } = new();
     public MerchantRules Merchants { get; init; } = new();
     public WardRules Wards { get; init; } = new();
     /// <summary>Fame and infamy for heroes and companies (content/game/notoriety.json).</summary>
@@ -1295,6 +1299,8 @@ public sealed class Content
 
     /// <summary>The yearly tourney: its events, levels, champions and betting (content/game/tournaments.json).</summary>
     public TourneyRules Tourney { get; init; } = new();
+    /// <summary>How many fit in a tavern, shrine or bathhouse at once, and what the townsfolk do when it is full (content/game/crowds.json).</summary>
+    public CrowdRules Crowds { get; init; } = new();
 
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
@@ -1456,6 +1462,7 @@ public sealed class Content
             Broadsheet = Parse<BroadsheetRules>("broadsheet.json"),
             Clockwork = Parse<ClockworkRules>("clockwork.json"),
             Taxes = Parse<TaxRules>("taxes.json"),
+            Trends = Parse<TrendRules>("trends.json"),
             Merchants = Parse<MerchantRules>("merchants.json"),
             Wards = Parse<WardRules>("wards.json"),
             Notoriety = Parse<NotorietyRules>("notoriety.json"),
@@ -1464,6 +1471,7 @@ public sealed class Content
             Skills = Parse<SkillRules>("skills.json"),
             Crises = Parse<CrisisRules>("crises.json"),
             Tourney = Parse<TourneyRules>("tournaments.json"),
+            Crowds = Parse<CrowdRules>("crowds.json"),
         };
     }
 

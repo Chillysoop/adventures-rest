@@ -131,6 +131,9 @@ public sealed class Party
     public int ReturnTick { get; set; }
     public bool Returned { get; set; }
 
+    /// <summary>Whether it went in the sky dock's airship, which stays with it until it is home.</summary>
+    public bool Airship { get; set; }
+
     /// <summary>Where it set out from, in day units: the town, or the spot where explorers chose to go in (<see cref="Explore"/>).</summary>
     public (double X, double Y) Start { get; init; }
 

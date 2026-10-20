@@ -13,28 +13,20 @@ public static class Brain
 
     public static void Hourly(Town town)
     {
-        // Count the drinkers once and keep the count as each agent moves, rather than recounting the
-        // whole town every time someone looks for a seat.
-        var drinkers = new Dictionary<int, int>();
-        foreach (var x in town.Agents)
-            if (!x.Departed && x.Activity == Activity.Drinking && x.LocationId is int at) drinkers[at] = drinkers.GetValueOrDefault(at) + 1;
-        town.HourTaverns = town.Taverns;
-        town.Drinkers = drinkers;
+        // Count who is out where once and keep the count as each agent moves, rather than recounting the
+        // whole town every time someone comes to a door.
+        Crowds.Begin(town);
         double festival = Council.FestivalMood(town) + Seasons.Mood(town) + Decrees.Mood(town) + Institutions.Mood(town) + Taxes.Mood(town) + Tournaments.Mood(town);
         foreach (var a in town.Agents)
         {
             if (a.Departed || a.IsAway) continue;
             UpdateNeeds(a);
-            int? was = a.Activity == Activity.Drinking ? a.LocationId : null;
-            town.DrinkerWasAt = was;
+            Crowds.Leave(town, a);
             Execute(town, a, Choose(town, a));
-            if (was is int w) drinkers[w]--;
-            if (a.Activity == Activity.Drinking && a.LocationId is int now) drinkers[now] = drinkers.GetValueOrDefault(now) + 1;
-            SampleMood(a, festival + (a.Activity == Activity.Praying ? town.Content.Shrines.PrayMood : 0) + Faith.Mood(town, a) + City.HomeMood(town, a) + Decor.Mood(town, a));
+            Crowds.Moved(town, a);
+            SampleMood(a, festival + (a.Activity == Activity.Praying ? town.Content.Shrines.PrayMood : 0) + Faith.Mood(town, a) + City.HomeMood(town, a) + Decor.Mood(town, a) + Crowds.Mood(town, a));
         }
-        town.HourTaverns = null;
-        town.Drinkers = null;
-        town.DrinkerWasAt = null;
+        Crowds.End(town);
     }
 
     private static void UpdateNeeds(Agent a)
@@ -46,7 +38,8 @@ public static class Brain
         a.Loneliness = Math.Min(100, a.Loneliness + (asleep ? 0.3 : lonely));
     }
 
-    private static Activity Choose(Town town, Agent a)
+    /// <param name="barred">An outing just found full, which the agent thinks again about.</param>
+    private static Activity Choose(Town town, Agent a, Activity? barred = null)
     {
         int hour = town.Hour;
         bool night = IsNight(hour);
@@ -65,7 +58,7 @@ public static class Brain
             work = (a.Has(Trait.Lazy) ? 0.55 : 0.85) + (a.Has(Trait.Greedy) ? 0.1 : 0) + (a.Has(Trait.Ambitious) ? 0.05 : 0);
 
         double drink = 0;
-        if (IsEvening(hour) && a.Gold >= 8 && (town.HourTaverns ?? town.Taverns).Count > 0)
+        if (IsEvening(hour) && a.Gold >= 8 && barred != Activity.Drinking && Crowds.PlacesOf(town, Crowds.Tavern).Count > 0)
         {
             drink =
                 0.25 +
@@ -78,28 +71,20 @@ public static class Brain
 
         const double relax = 0.3;
         double wander = night ? 0 : 0.15;
-        double pray = Shrines.PrayScore(town, a, hour);
+        double pray = barred == Activity.Praying ? 0 : Shrines.PrayScore(town, a, hour);
+        double visit = barred == Activity.Visiting ? 0 : Crowds.VisitScore(town, a, hour);
 
-        (Activity, double)[] options = pray > 0
-            ?
-            [
-                (Activity.Sleeping, sleep),
-                (Activity.Eating, eat),
-                (Activity.Working, work),
-                (Activity.Drinking, drink),
-                (Activity.Relaxing, relax),
-                (Activity.Wandering, wander),
-                (Activity.Praying, pray),
-            ]
-            :
-            [
-                (Activity.Sleeping, sleep),
-                (Activity.Eating, eat),
-                (Activity.Working, work),
-                (Activity.Drinking, drink),
-                (Activity.Relaxing, relax),
-                (Activity.Wandering, wander),
-            ];
+        var options = new List<(Activity, double)>(8)
+        {
+            (Activity.Sleeping, sleep),
+            (Activity.Eating, eat),
+            (Activity.Working, work),
+            (Activity.Drinking, drink),
+            (Activity.Relaxing, relax),
+            (Activity.Wandering, wander),
+        };
+        if (pray > 0) options.Add((Activity.Praying, pray));
+        if (visit > 0) options.Add((Activity.Visiting, visit));
         var best = Activity.Relaxing;
         double bestScore = double.NegativeInfinity;
         foreach (var (act, score) in options)
@@ -116,13 +101,25 @@ public static class Brain
 
     private static void Execute(Town town, Agent a, Activity act)
     {
-        a.Activity = act;
+        a.TurnedFrom = null;
         int? was = a.LocationId;
-        Go(town, a, act);
+        a.Activity = act;
+        // A full door: the agent thinks again about the hour, and does the next best thing.
+        if (!Go(town, a, act))
+        {
+            var next = Choose(town, a, act);
+            a.Activity = next;
+            if (!Go(town, a, next))
+            {
+                a.Activity = Activity.Relaxing;
+                Go(town, a, Activity.Relaxing);
+            }
+        }
         if (a.LocationId != was && a.LocationId != null) Streets.Trip(town, was, a.LocationId);
     }
 
-    private static void Go(Town town, Agent a, Activity act)
+    /// <summary>Spend the hour on the activity; false when it was an outing and every place near was full.</summary>
+    private static bool Go(Town town, Agent a, Activity act)
     {
         switch (act)
         {
@@ -140,8 +137,7 @@ public static class Brain
                 DoWork(town, a);
                 break;
             case Activity.Drinking:
-                DoDrink(town, a);
-                break;
+                return DoDrink(town, a);
             case Activity.Relaxing:
                 a.LocationId = a.HomeId;
                 a.Fatigue = Math.Max(0, a.Fatigue - 1.5);
@@ -153,9 +149,11 @@ public static class Brain
                 a.Loneliness = Math.Max(0, a.Loneliness - 1);
                 break;
             case Activity.Praying:
-                Shrines.Pray(town, a);
-                break;
+                return Shrines.Pray(town, a);
+            case Activity.Visiting:
+                return Crowds.Visit(town, a);
         }
+        return true;
     }
 
     private static void DoWork(Town town, Agent a)
@@ -208,21 +206,14 @@ public static class Brain
         }
     }
 
-    private static void DoDrink(Town town, Agent a)
+    private static bool DoDrink(Town town, Agent a)
     {
-        var tavern = (town.HourTaverns ?? town.Taverns)
-            .Where(t => Seated(town, a, t) < t.Def.Capacity)
-            .OrderByDescending(t => OpinionOfOwner(a, t))
-            .ThenBy(t => t.Id)
-            .FirstOrDefault();
-        if (tavern == null)
-        {
-            a.Activity = Activity.Relaxing;
-            a.LocationId = a.HomeId;
-            return;
-        }
+        // Their local, though a keeper they like is worth a longer walk (and one they don't, a shorter); on to the next if it is full.
+        var from = Crowds.From(town, a);
+        double keeper = town.Content.Crowds.Keeper;
+        var tavern = Crowds.Enter(town, a, Crowds.PlacesOf(town, Crowds.Tavern), t => Crowds.Distance(town, t, from) - OpinionOfOwner(a, t) * keeper);
+        if (tavern == null) return false;
 
-        a.LocationId = tavern.Id;
         if (tavern.StockOf(Good.Ale) < 1)
         {
             double restock = Math.Min(10, Math.Max(0, tavern.Cash) / Math.Max(0.1, town.Market.Price(Good.Ale)));
@@ -244,25 +235,10 @@ public static class Brain
             a.Drinks++;
         }
         a.Loneliness = Math.Max(0, a.Loneliness - 8);
+        return true;
     }
 
     private static int OpinionOfOwner(Agent a, Building b) => b.OwnerId != null ? a.OpinionOf(b.OwnerId.Value) : 0;
-
-    /// <summary>Drinkers at the tavern as the agent looks for a seat, the agent among them if already there.</summary>
-    private static int Seated(Town town, Agent a, Building t)
-    {
-        if (town.Drinkers == null) return PatronsAt(town, t);
-        // The running count still holds the agent's last hour; this hour they are drinking wherever they stand.
-        int others = town.Drinkers.GetValueOrDefault(t.Id) - (town.DrinkerWasAt == t.Id ? 1 : 0);
-        return others + (a.LocationId == t.Id ? 1 : 0);
-    }
-
-    public static int PatronsAt(Town town, Building b)
-    {
-        int n = 0;
-        foreach (var x in town.Agents) if (!x.Departed && x.Activity == Activity.Drinking && x.LocationId == b.Id) n++;
-        return n;
-    }
 
     private static void SampleMood(Agent a, double bonus)
     {
@@ -280,6 +256,7 @@ public static class Brain
 
     public static void Daily(Town town)
     {
+        Crowds.Daily(town);
         foreach (var a in town.Residents)
         {
             if (a.IsAway) continue;

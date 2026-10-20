@@ -168,6 +168,7 @@ public sealed class Simulation
         Sheet.Daily(t, Options.AutoMayor && Options.AutoStories);
         Economy.Daily(t, true);
         Taxes.Close(t);
+        Trends.Close(t);
         History.Add(Snapshot());
         t.AccountsYesterday = t.AccountsToday;
         t.RecentNet.Add(Js.Sum(t.AccountsToday.Values, v => v));
@@ -247,6 +248,14 @@ public sealed class Simulation
 
     /// <summary>Order a palisade or a watchtower.</summary>
     public bool BuildDefense(DefenseWork what) => Threat.Build(Town, what);
+
+    /// <summary>Lays out where a wall runs (ring 0 round the old town, 1 the city wall) as a closed loop in tiles; null, or why not.</summary>
+    public string? DrawWall(int ring, IEnumerable<(double X, double Y)> points) => WallLines.Draw(Town, ring, points.ToList());
+
+    /// <summary>A gate on a wall's line, snapped to the nearest point of it; null, or why not.</summary>
+    public string? PlaceGate(int ring, double x, double y) => WallLines.PlaceGate(Town, ring, x, y);
+
+    public string? RemoveGate(int ring, int index) => WallLines.RemoveGate(Town, ring, index);
 
     /// <summary>Sound the call to arms on a wall section, a tower or the gate: the nearest of the watch run to man it.</summary>
     public GuardPost? CallToArms(PostKind kind, int index) => Garrison.CallToArms(Town, kind, index);
