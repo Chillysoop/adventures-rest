@@ -217,6 +217,9 @@ public sealed record CityRules
     /// <summary>The ground kept clear along each wall line for the wall's widest works.</summary>
     public WallStripRules WallStrip { get; init; } = new();
 
+    /// <summary>How the player may draw the walls and place their gates.</summary>
+    public WallRules WallLines { get; init; } = new();
+
     /// <summary>Days a house must be content (at UpgradeAt or better) before it grows.</summary>
     public int UpgradeDays { get; init; } = 6;
 
@@ -255,6 +258,10 @@ public sealed class CityState
     /// <summary>Goods the households wanted yesterday, and the share of it they got.</summary>
     public OrderedMap<Good, double> Wanted { get; set; } = new();
     public OrderedMap<Good, double> Supplied { get; set; } = new();
+
+    /// <summary>Where the player drew the walls and put their gates (<see cref="WallLines"/>), and a count bumped when they change.</summary>
+    public List<WallPlan> WallPlans { get; set; } = [];
+    public int WallVersion { get; set; }
 
     /// <summary>Day the town last heard the charter could be claimed, so the notice comes once.</summary>
     public int ReadyNoticeTier { get; set; } = -1;
@@ -378,7 +385,15 @@ public static class City
     /// the old town (ring 0), the city wall (ring 1). It stands just outside the ring, far enough that the strip kept clear
     /// for it (<see cref="OnWallStrip"/>) begins at the ring's edge and takes none of the land inside.
     /// </summary>
-    public static double Wall(Town town, int ring, double angle) => Edge(town, ring, angle) + town.Content.City.WallStrip.Inside;
+    public static double Wall(Town town, int ring, double angle)
+    {
+        if (WallLines.Plan(town, ring) is { Radii.Length: > 0 } p) return WallLines.RadiusAt(p, angle);
+        double line = Edge(town, ring, angle) + town.Content.City.WallStrip.Inside;
+        // A line not yet drawn keeps clear of the other wall's drawn line: outside it for the city wall, inside it for the old town's.
+        if (WallLines.Plan(town, 1 - ring) is not { Radii.Length: > 0 } o) return line;
+        double other = WallLines.RadiusAt(o, angle), apart = WallLines.Rules(town).Apart;
+        return ring == 0 ? Math.Min(line, other - apart) : Math.Max(line, other + apart);
+    }
 
     /// <summary>The rings walls are raised round, innermost first.</summary>
     public const int WallRings = 2;

@@ -89,8 +89,8 @@ public sealed class Defenses
     public int? AlarmBuilding { get; set; }
     public int AlarmUntil { get; set; }
 
-    /// <summary>The innermost ring the walls leave outside: 1 behind stone walls, 2 behind the city wall, 99 with none.</summary>
-    public int OutsideRing => CityWall == PalisadeState.Built ? 2 : StoneWall == PalisadeState.Built ? 1 : 99;
+    /// <summary>The last day the walls going up stood idle for want of timber or stone, or -1.</summary>
+    public int WallsShort { get; set; } = -1;
 }
 
 /// <summary>
@@ -276,8 +276,7 @@ public static class Threat
         string timing = party != null && Lairs.AwayShare(town) >= town.Content.Lairs.SoftShare ? $", while the {party.Name} are away" : "";
 
         // They strike outside the walls: the farm or camp farthest from the town hall, or failing that whatever stands beyond the stone.
-        int outside = town.Defenses.OutsideRing;
-        var target = Garrison.Unguarded(town, town.Buildings.Where(b => b.Complete && (b.Def.Zone == Zone.Farmland || b.Def.Id == "lumber_camp" || City.Ring(town, town.Lot(b.LotId)) >= outside)).ToList())
+        var target = Garrison.Unguarded(town, town.Buildings.Where(b => b.Complete && Exposed(town, b)).ToList())
             .OrderByDescending(b => b.Def.Zone == Zone.Farmland || b.Def.Id == "lumber_camp" ? 1 : 0)
             .ThenByDescending(b => Distance(town, b.LotId))
             .ThenBy(b => b.Id)
@@ -341,7 +340,7 @@ public static class Threat
 
     /// <summary>Outside the walls (or there are none yet), or out in the fields: what raiders can reach.</summary>
     public static bool Exposed(Town town, Building b) =>
-        b.Def.Zone == Zone.Farmland || b.Def.Id == "lumber_camp" || City.Ring(town, town.Lot(b.LotId)) >= town.Defenses.OutsideRing;
+        b.Def.Zone == Zone.Farmland || b.Def.Id == "lumber_camp" || WallLines.Outside(town, town.Lot(b.LotId).X, town.Lot(b.LotId).Y);
 
     /// <summary>
     /// Raiders don't throw themselves away: they go only for a building beyond the walls, and only when they
@@ -612,6 +611,8 @@ public static class Threat
                 return "needs the stone walls";
         }
         if (spec.Tier != "" && !City.Reached(town, spec.Tier)) return $"needs the town to be a {City.TierName(town, spec.Tier).ToLowerInvariant()}";
+        // Every wall needs a gate, put on its line by hand before the masons start.
+        if (IsWall(what) && WallLines.Gates(town, WallLines.RingOf(what)).Count == 0) return "needs a gate: place one on the wall's line";
         if (town.Treasury < BuildCost(town, what)) return "not enough gold";
         return null;
     }
@@ -621,10 +622,17 @@ public static class Threat
         var d = town.Defenses;
         var spec = Spec(town, what);
         if (BuildBlocked(town, what) != null) return false;
-        double cost = BuildCost(town, what);
-        town.Book(TreasuryAccount.Defenses, -cost);
-        town.Market.Buy(Good.Timber, spec.Timber);
-        town.Market.Buy(Good.Stone, spec.Stone);
+        if (IsWall(what))
+        {
+            // A wall's timber and stone come off the market as it rises (Haul), so it waits when the market runs dry.
+            town.Book(TreasuryAccount.Defenses, -spec.Cost);
+        }
+        else
+        {
+            town.Book(TreasuryAccount.Defenses, -BuildCost(town, what));
+            town.Market.Buy(Good.Timber, spec.Timber);
+            town.Market.Buy(Good.Stone, spec.Stone);
+        }
         int ready = town.Tick + spec.Days * SimTime.HoursPerDay;
         switch (what)
         {
@@ -673,9 +681,54 @@ public static class Threat
         return Js.Round(spec.Cost + town.Market.Quote(Good.Timber, spec.Timber) + town.Market.Quote(Good.Stone, spec.Stone));
     }
 
+    /// <summary>The walls themselves, raised along the line the player drew, as the market has their timber and stone.</summary>
+    public static bool IsWall(DefenseWork w) => w is DefenseWork.Palisade or DefenseWork.StoneWall or DefenseWork.CityWall;
+
+    /// <summary>
+    /// A day's timber and stone for each wall going up, off the market's stock. What it can't get holds the work back: the
+    /// day's share of the work waits, so the wall finishes later, and the alert strip says so.
+    /// </summary>
+    private static void Haul(Town town)
+    {
+        var d = town.Defenses;
+        bool shortToday = false;
+        foreach (var (work, state, ready) in new[] { (DefenseWork.Palisade, d.Palisade, d.PalisadeReadyTick), (DefenseWork.StoneWall, d.StoneWall, d.StoneWallReadyTick), (DefenseWork.CityWall, d.CityWall, d.CityWallReadyTick) })
+        {
+            // A work held back indefinitely (ready at int.MaxValue) draws nothing and can't slip further.
+            if (state != PalisadeState.Building || ready is not int tick || tick == int.MaxValue) continue;
+            var spec = Spec(town, work);
+            double share = 1, paid = 0;
+            foreach (var (g, total) in new[] { (Good.Timber, spec.Timber), (Good.Stone, spec.Stone) })
+            {
+                if (total <= 0) continue;
+                double need = total / Math.Max(1, spec.Days);
+                var (qty, cost) = town.Market.Take(g, need);
+                paid += cost;
+                share = Math.Min(share, qty / need);
+            }
+            if (paid > 0) town.Book(TreasuryAccount.Defenses, -paid);
+            if (share >= 1 - 1e-9) continue;
+            shortToday = true;
+            int late = (int)Math.Min(Math.Round((1 - share) * SimTime.HoursPerDay), int.MaxValue - (long)tick);
+            switch (work)
+            {
+                case DefenseWork.Palisade: d.PalisadeReadyTick = tick + late; break;
+                case DefenseWork.StoneWall: d.StoneWallReadyTick = tick + late; break;
+                default: d.CityWallReadyTick = tick + late; break;
+            }
+        }
+        if (shortToday && d.WallsShort < town.Day - 1)
+            town.Log(LedgerCategory.War, Importance.Notable, "Work on the walls slows: the market is short of the timber and stone they need.");
+        if (shortToday) d.WallsShort = town.Day;
+    }
+
     private static void FinishDefenses(Town town)
     {
         var d = town.Defenses;
+        // Walls raised before gates were placed by hand keep the south gate they always had.
+        if (WallLines.Begun(town, 0)) WallLines.EnsureGate(town, 0);
+        if (WallLines.Begun(town, 1)) WallLines.EnsureGate(town, 1);
+        Haul(town);
         if (d.Palisade == PalisadeState.Building && d.PalisadeReadyTick != null && town.Tick >= d.PalisadeReadyTick)
         {
             d.Palisade = PalisadeState.Built;
@@ -722,7 +775,11 @@ public static class Threat
     {
         int stage = StageIndex(town.Enemy.Stage);
         if (stage < StageIndex(ThreatStage.Probing)) return;
-        if (town.Defenses.Palisade == PalisadeState.None && town.Treasury > BuildCost(town, DefenseWork.Palisade) + 150) Build(town, DefenseWork.Palisade);
+        if (town.Defenses.Palisade == PalisadeState.None && town.Treasury > BuildCost(town, DefenseWork.Palisade) + 150)
+        {
+            WallLines.EnsureGate(town, 0);
+            Build(town, DefenseWork.Palisade);
+        }
         // The palisade's towers; more on the stone come later, among the wall works (Garrison.Daily).
         else if (stage >= StageIndex(ThreatStage.Raids) && town.Defenses.Towers + town.Defenses.TowersBuilding.Count < town.Content.Enemy.Tower.Max && town.Treasury > BuildCost(town, DefenseWork.Tower) + 200) Build(town, DefenseWork.Tower);
     }

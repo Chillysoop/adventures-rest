@@ -163,6 +163,9 @@ public static class Garrison
     /// <summary>The middle of a section of the outer wall.</summary>
     public static (double X, double Y) WallPoint(Town town, int section)
     {
+        // The gate post stands at the outer wall's main gate, wherever it was put.
+        int ring = town.Defenses.CityWall == PalisadeState.Built ? 1 : 0;
+        if (section == 0 && Walled(town) && WallLines.Gates(town, ring) is { Count: > 0 } gates) return WallLines.Point(town, ring, gates[0]);
         var (dx, dy) = Bearing(town, section);
         double r = Radius(town, section);
         return (Town.Center + dx * r, Town.Center + dy * r);
