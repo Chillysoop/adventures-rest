@@ -170,6 +170,8 @@ public sealed class Simulation
         Secrets.Daily(t, Options.AutoMayor && Options.AutoCouncil);
         Guilds.Daily(t, Options.AutoMayor && Options.AutoCouncil);
         Notoriety.Daily(t);
+        Heraldry.Daily(t);
+        Eggs.Daily(t);
         Passage.Daily(t);
         Decor.Daily(t);
         Stories.Daily(t, Options.AutoMayor && Options.AutoStories);

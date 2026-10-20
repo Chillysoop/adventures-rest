@@ -24,14 +24,14 @@
   },
   "spells": [
     { "spell": "water-walk", "ways": ["water"], "partySlot": 3 },
-    { "spell": "fly", "ways": ["water", "sheer"], "partySlot": 6 },
+    { "spell": "fly", "ways": ["water", "sheer", "air"], "partySlot": 6 },
     { "spell": "spider-climb", "ways": ["sheer"], "partySlot": 5 }
   ],
   "items": [
-    { "item": "carpet-of-flying", "ways": ["water", "sheer"], "party": true },
-    { "item": "broom-of-flying", "ways": ["water", "sheer"] },
-    { "item": "winged-boots", "ways": ["water", "sheer"] },
-    { "item": "wings-of-flying", "ways": ["water", "sheer"] },
+    { "item": "carpet-of-flying", "ways": ["water", "sheer", "air"], "party": true },
+    { "item": "broom-of-flying", "ways": ["water", "sheer", "air"] },
+    { "item": "winged-boots", "ways": ["water", "sheer", "air"] },
+    { "item": "wings-of-flying", "ways": ["water", "sheer", "air"] },
     { "item": "ring-of-water-walking", "ways": ["water"] },
     { "item": "slippers-of-spider-climbing", "ways": ["sheer"] },
     { "item": "ring-of-swimming", "ways": ["river"] },
@@ -42,12 +42,21 @@
       "text": ["{hero} buys a riding horse, and rides it up and down the high street twice to be seen on it.", "{hero} has a horse now: no more walking to the edge of the map."] },
     { "id": "warhorse", "name": "warhorse", "ways": ["river"], "spell": "find-steed",
       "text": ["{hero} calls a steed out of the light: a grey warhorse that comes when whistled for and is never there when it isn't wanted.", "A warhorse answers {hero}'s prayer, its coat the colour of their oath."] },
-    { "id": "griffon", "name": "griffon", "ways": ["river", "water", "sheer"], "price": 900, "buyAt": 1800, "level": 9, "institution": "griffon-roost",
-      "text": ["{hero} buys a griffon from the Roost. The Roostmaster spends a week teaching them to stay on it; the griffon spends it deciding whether to let them.", "{hero} rides a griffon now, and the river, the lakes and the mountains are no longer in the way."] }
+    { "id": "griffon", "name": "griffon", "ways": ["river", "water", "sheer", "air"], "price": 900, "buyAt": 1800, "level": 9, "institution": "griffon-roost",
+      "text": ["{hero} buys a griffon from the Roost. The Roostmaster spends a week teaching them to stay on it; the griffon spends it deciding whether to let them.", "{hero} rides a griffon now, and the river, the lakes and the mountains are no longer in the way."] },
+    { "id": "giant-owl", "name": "giant owl", "ways": ["river", "water", "sheer", "air"], "price": 600, "buyAt": 1300, "level": 7, "institution": "griffon-roost",
+      "classes": ["rogue", "ranger", "druid", "warlock", "bard"],
+      "text": ["{hero} buys a giant owl from the Roost: it flies without a sound and sees in the dark better than they do.", "A giant owl takes {hero} up by night. Nobody hears them come or go any more."] },
+    { "id": "giant-eagle", "name": "giant eagle", "ways": ["river", "water", "sheer", "air"], "level": 6, "institution": "griffon-roost", "chooses": 0.012, "renown": 20,
+      "text": ["A giant eagle lands on the Roost, ignores the Roostmaster and walks the length of the hall looking at every hero in turn. It stops at {hero} and bows its head. Eagles are never sold; they choose.", "Out of a clear sky a giant eagle drops onto the Roost's top perch and calls for {hero} by the name the songs give them. It will carry no one else."] },
+    { "id": "snow-bear", "name": "snow bear", "ways": ["river"], "eases": ["icefield", "ridge"], "ease": 0.7, "fights": 14,
+      "tame": { "terrain": ["icefield", "ridge"], "meet": 0.35, "dc": 15, "spells": ["animal-friendship", "dominate-beast"],
+        "won": ["A great white snow bear stands across the trail. {hero} walks up to it alone and wins it over {how}; it follows them home and lets them ride.", "On the ice they meet a snow bear sow whose cubs are long grown. {hero} calms her {how}, and she carries them the rest of the way."],
+        "lost": ["A snow bear blocks the trail and {hero} tries to win it over, but it shrugs them off into a drift and lumbers away.", "{hero} gets close enough to a snow bear to touch it, which is exactly when it decides it has had enough."] } }
   ],
   "airship": {
     "name": "the town's airship",
-    "ways": ["river", "water", "sheer"],
+    "ways": ["river", "water", "sheer", "air"],
     "text": ["{party} go aboard {ship} at the Sky Dock and sail out over everything that stands in the way.", "The riggers cast off and {ship} lifts {party} over the rooftops, bound straight for their job."]
   },
   "fliers": { "dragon": 1.0, "schemers": 0.35, "beasts": 0.2, "cult": 0.1 },

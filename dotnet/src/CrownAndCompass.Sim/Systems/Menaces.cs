@@ -1057,7 +1057,10 @@ public static class Menaces
         if (!Threat.WorthRaiding(town, where, raiders)) return false;
         string place = where!.Name;
         Passage.Alarm(town, where);
-        if (Threat.LocalDefense(town) * Garrison.FlagFactor(town, where) >= raiders)
+        // A sky watch sees them come over the hills in time for the watch to turn out: they meet them at the fence.
+        double warned = 1 + Institutions.SkyWatch(town) / 48.0 * town.Content.Enemy.Defense.SkyWatch;
+        if (warned > 1) town.Log(LedgerCategory.War, Importance.Routine, $"{Saga.Cap(Sightings.SkyRider(town))} sees {m.Name}'s raiders coming for {place} and rings the alarm.");
+        if (Threat.LocalDefense(town) * Garrison.FlagFactor(town, where) * warned >= raiders)
         {
             m.Power = Math.Max(0, m.Power - raiders * r.RepelLoss);
             var champion = town.Heroes.Where(a => !a.IsAway).OrderByDescending(x => x.Hero!.Level).ThenBy(x => x.Id).FirstOrDefault();

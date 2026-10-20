@@ -84,6 +84,15 @@ public sealed record ServiceDef : DecreeDef
     /// <summary>Share taken off the stir the undercity gathers each day.</summary>
     public double Hush { get; init; }
 
+    /// <summary>Share fewer townsfolk break under a low mood: the calm a monastery teaches (<see cref="Moods"/>).</summary>
+    public double Calm { get; init; }
+
+    /// <summary>More heroes of these classes come to the town (weight added to the class's own when a hero is drawn).</summary>
+    public IReadOnlyDictionary<string, double> Calling { get; init; } = new Dictionary<string, double>();
+
+    /// <summary>Hours sooner a sky watch of riders spots raiders on their way and brings the news (<see cref="Institutions.SkyWatch"/>).</summary>
+    public double SkyWatch { get; init; }
+
     /// <summary>A faction it works with or against, and what it does each day to that faction's standing and heat.</summary>
     public string Faction { get; init; } = "";
     public double Standing { get; init; }
@@ -285,6 +294,15 @@ public static class Institutions
         double n = town.Institutions.Count == 0 ? 0 : Sum(town, d => d.Airship);
         return n < 0.05 ? 0 : Math.Max(1, (int)Math.Floor(n + 0.05));
     }
+
+    /// <summary>Share off the chance a low mood breaks someone, at most a half.</summary>
+    public static double Calm(Town town) => town.Institutions.Count == 0 ? 0 : Math.Clamp(Sum(town, d => d.Calm), 0, 0.5);
+
+    /// <summary>Weight institutions add to drawing a hero of this class.</summary>
+    public static int Calling(Town town, string cls) => town.Institutions.Count == 0 ? 0 : (int)Math.Round(Sum(town, d => d.Calling.GetValueOrDefault(cls)));
+
+    /// <summary>Hours sooner than the fields the town's riders in the sky see a raid coming: at most two days.</summary>
+    public static int SkyWatch(Town town) => town.Institutions.Count == 0 ? 0 : (int)Math.Clamp(Math.Round(Sum(town, d => d.SkyWatch)), 0, 48);
 
     public static int Routes(Town town) => town.Institutions.Count == 0 ? 0 : (int)Math.Floor(Sum(town, d => d.Routes) + 0.05);
 
@@ -492,6 +510,10 @@ public static class Institutions
         if (d.Defence != 0) said.Add($"{(d.Defence > 0 ? "+" : "−")}{N(d.Defence)} defence on the walls");
         if (d.Heal > 0) said.Add($"heroes heal {N(d.Heal * 100)}% more a night");
         if (d.Escort > 0) said.Add($"{N(d.Escort * 100)}% fewer caravans waylaid");
+        if (d.Calm > 0) said.Add($"{N(d.Calm * 100)}% fewer townsfolk break under a dark mood");
+        foreach (var (cls, w) in d.Calling.OrderBy(c => c.Key, StringComparer.Ordinal))
+            if (w > 0) said.Add($"draws {town.Content.Classes.FirstOrDefault(c => c.Id == cls)?.Name.ToLowerInvariant() ?? cls} heroes");
+        if (d.SkyWatch > 0) said.Add($"a sky watch that sees raiders {N(d.SkyWatch)} hours sooner");
         if (d.Hush != 0) said.Add($"the undercity stirs {N(d.Hush * 100)}% {(d.Hush > 0 ? "slower" : "faster")}");
         foreach (var (g, y) in d.Yields.OrderBy(y => y.Key, StringComparer.Ordinal))
             said.Add($"{(y >= 1 ? "+" : "−")}{Js.ToFixed(Math.Abs((y - 1) * k * 100), 0)}% {g.ToLowerInvariant()}");

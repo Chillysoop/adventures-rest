@@ -172,6 +172,58 @@
       "ignored": { "text": "He leaves on the morning cart with a purse full of {town}'s coin.", "effects": { "mandate": -2 } }
     },
     {
+      "id": "dragon-egg", "title": "A dragon's egg", "stakes": "high", "source": "egg",
+      "needs": ["egg"], "weight": 0,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The egg sits in the town hall on a bed of straw, warm to the touch, and something inside it shifts when the bells ring. The council wants the mayor's word before anyone else does something about it.",
+          "options": [
+            {
+              "label": "Keep it warm in the keep and let it hatch", "tags": ["valor", "freedom"], "prefer": 0.3,
+              "success": { "text": "Braziers go down to the keep's deepest cellar, and the egg with them. Whatever hatches will know {town} first.", "effects": { "egg": 1, "mandate": 1 } }
+            },
+            {
+              "label": "Sell it to a buyer who asks no questions", "tags": ["coin"],
+              "success": { "text": "A carriage with no crest comes by night, and leaves a chest of gold behind.", "effects": { "egg": 2, "mandate": -1 } }
+            },
+            {
+              "label": "Give it back to the wilds", "tags": ["caution", "mercy"],
+              "success": { "text": "The heroes who found it carry it back the way they came. The town breathes easier, and a little wistfully.", "effects": { "egg": 3, "dread": -2 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "Nobody decides, so the egg goes down to the warm cellar under the keep until somebody does.", "effects": { "egg": 1 } }
+    },
+    {
+      "id": "dragon-mother", "title": "The mother comes", "stakes": "high", "source": "egg",
+      "needs": ["eggHeld"], "weight": 0,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A shadow crosses the fields at noon and the cattle scatter. A great dragon circles {town} once, low enough to tear thatch from the roofs, and lands on the hill above the gate. She can smell what the town is keeping.",
+          "options": [
+            {
+              "label": "Carry it out to her and bow", "tags": ["caution", "mercy"],
+              "success": { "text": "The mayor walks out alone with it. The dragon takes her child, looks at the mayor for a long moment, and flies away without burning anything.", "effects": { "egg": 3, "dread": -3, "mandate": -1 } }
+            },
+            {
+              "label": "Hide it deep and wait her out", "tags": ["cunning"], "skill": "stealth", "dc": 16,
+              "success": { "text": "Wet sacking, cold iron and a cellar under the cellar: by dusk she gives up the scent and goes.", "effects": { "mandate": 2 } },
+              "failure": { "text": "She finds it. She takes it, and she burns the street it was under on her way out.", "effects": { "egg": 4, "people": -2, "dread": 4 } }
+            },
+            {
+              "label": "Ring the bells and stand on the walls", "tags": ["valor"], "skill": "intimidation", "dc": 18,
+              "success": { "text": "Every bow, ballista and hero in {town} turns on the hill. She weighs the cost, roars once and goes. The taverns sing about it for a month.", "effects": { "mandate": 5, "dread": -4 } },
+              "failure": { "text": "She comes over the walls like a storm. When it is over she has her child, and {town} has a great many funerals.", "effects": { "egg": 4, "people": -4, "dread": 6 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "Nobody answers her. She takes what is hers and leaves the gatehouse burning.", "effects": { "egg": 4, "people": -1, "dread": 3 } }
+    },
+    {
       "id": "company-lost", "title": "The {party} do not come home", "stakes": "medium", "source": "lost",
       "needs": [],
       "stages": [

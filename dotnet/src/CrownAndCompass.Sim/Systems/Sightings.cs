@@ -54,7 +54,7 @@ public static class Sightings
     public static void Clear(Town town, string key) => town.Sightings.RemoveAll(s => s.Key == key);
 
     /// <summary>Record a sighting (replacing any older one of the same force) and put the witness's words in the Ledger.</summary>
-    public static Sighting Report(Town town, string key, string kind, string foe, int count, string? fromSite, int? targetId, int? section, double progress, int hours, string text, Importance importance = Importance.Notable)
+    public static Sighting Report(Town town, string key, string kind, string foe, int count, string? fromSite, int? targetId, int? section, double progress, int hours, string text, Importance importance = Importance.Notable, string? reporter = null)
     {
         var old = Of(town, key);
         Clear(town, key);
@@ -65,7 +65,7 @@ public static class Sightings
             Kind = kind,
             Foe = foe,
             Count = count,
-            Reporter = Witness(town, kind, targetId),
+            Reporter = reporter ?? Witness(town, kind, targetId),
             Tick = town.Tick,
             UntilTick = town.Tick + hours,
             FromSite = fromSite,
@@ -85,6 +85,7 @@ public static class Sightings
     /// </summary>
     public static string Witness(Town town, string kind, int? targetId)
     {
+        if (kind == Host && Institutions.SkyWatch(town) > 0) return SkyRider(town);
         if (kind == Host)
         {
             var scout = town.Scouts.Where(s => s.Out).OrderBy(s => s.Id).FirstOrDefault();
@@ -105,6 +106,16 @@ public static class Sightings
             if (hand != null) return $"{hand.GivenName} from {b.Name}";
         }
         return kind == Host ? "a frightened carter" : "a woodcutter";
+    }
+
+    /// <summary>A rider of the town's sky watch, by name when a hero in town flies, for the reporter of a sighting from the air.</summary>
+    public static string SkyRider(Town town)
+    {
+        var flier = town.Heroes
+            .Where(a => !a.IsAway && !a.Dead && !a.Departed && a.Hero!.Mount != "" && town.Content.Passage.Mount(a.Hero.Mount) is { } m && m.Ways.Contains("air"))
+            .OrderBy(a => a.Id)
+            .FirstOrDefault();
+        return flier != null ? $"{flier.Name}, flying with the sky watch," : "a rider of the sky watch";
     }
 
     /// <summary>Daily: stale reports fade, and armies on the march are seen again as they come on.</summary>

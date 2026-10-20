@@ -214,7 +214,7 @@ public class PassageTests
         heroes[0].Hero!.Mount = "griffon";
         Assert.Equal(Ways.None, Passage.Abilities(t, heroes) & Ways.Sheer);
         foreach (var h in heroes) h.Hero!.Mount = "griffon";
-        Assert.Equal(Ways.River | Ways.Water | Ways.Sheer, Passage.Abilities(t, heroes));
+        Assert.Equal(Ways.River | Ways.Water | Ways.Sheer | Ways.Air, Passage.Abilities(t, heroes));
         // Horses swim the river but no lake.
         foreach (var h in heroes) h.Hero!.Mount = "horse";
         Assert.Equal(Ways.River, Passage.Abilities(t, heroes) & (Ways.River | Ways.Water));

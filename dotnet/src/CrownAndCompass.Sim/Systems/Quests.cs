@@ -350,12 +350,13 @@ public static class Quests
     internal static ClassDef PickClass(Town town)
     {
         var classes = town.Content.Classes;
-        int total = classes.Sum(c => c.Weight);
+        int W(ClassDef c) => c.Weight + Institutions.Calling(town, c.Id);
+        int total = classes.Sum(W);
         int roll = town.Rng.Range(0, total);
         foreach (var c in classes)
         {
-            if (roll < c.Weight) return c;
-            roll -= c.Weight;
+            if (roll < W(c)) return c;
+            roll -= W(c);
         }
         return classes[0];
     }
@@ -671,6 +672,7 @@ public static class Quests
                 foreach (var other in town.Residents) if (other.OpinionOf(id) >= 40) other.Loneliness = Math.Min(100, other.Loneliness + 30);
             }
 
+            if (result.Outcome != ExpeditionOutcome.Wiped) Heraldry.Home(town, party.Name, result.Dead.Count > 0 || result.Kills.Count > 0 && survivors.Any(m => m.Hero!.Hp < m.Hero.MaxHp / 2));
             if (result.Outcome == ExpeditionOutcome.Wiped) party.Withheld = false;
             party.SawCleared = result.Outcome == ExpeditionOutcome.Cleared;
             if (result.Outcome != ExpeditionOutcome.Wiped && !party.Withheld) Rumors.Confirm(town, s, $"the {party.Name}");
@@ -712,6 +714,7 @@ public static class Quests
             pay += World.AfterDelve(town, party, s, result.Outcome) + party.Bonus;
             Alchemy.Homecoming(town, party, s.Def, result.Outcome, survivors);
             if (result.Outcome == ExpeditionOutcome.Cleared && survivors.Count > 0) Notoriety.Cleared(town, party, survivors, s.Def.Tier, party.PleaId != null);
+            if (result.Outcome == ExpeditionOutcome.Cleared && survivors.Count > 0) Eggs.Found(town, party, s);
             if (survivors.Count > 0)
             {
                 double share = pay / survivors.Count;

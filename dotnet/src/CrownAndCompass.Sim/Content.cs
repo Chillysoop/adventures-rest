@@ -449,6 +449,9 @@ public sealed record EnemyDefense
     /// <summary>Chances a raid that gets through kills someone, and (for a very hostile foe) burns what it hit.</summary>
     public double RaidKill { get; init; } = 0.15;
     public double RaidBurn { get; init; } = 0.25;
+
+    /// <summary>How much more the watch can do against a raid a full two-day sky watch saw coming (<see cref="Systems.Institutions.SkyWatch"/>).</summary>
+    public double SkyWatch { get; init; } = 0.5;
 }
 
 public sealed record WorkSpec
@@ -851,6 +854,9 @@ public sealed record BoonDef
     /// <summary>They share their maps: every region next to theirs becomes known.</summary>
     public bool Maps { get; init; }
     public string Text { get; init; } = "";
+
+    /// <summary>Hard country (by kind) an ally's guides take the town's companies through faster and safer: share of its slowness taken off.</summary>
+    public IReadOnlyDictionary<string, double> Guides { get; init; } = new Dictionary<string, double>();
 }
 
 /// <summary>A people with settlements out in the wilds: dwarves, elves, villagers...</summary>
@@ -1296,6 +1302,12 @@ public sealed class Content
     /// <summary>Fame and infamy for heroes and companies (content/game/notoriety.json).</summary>
     public NotorietyRules Notoriety { get; init; } = new();
 
+    /// <summary>Dragon eggs, hatching and the town's own dragon (content/game/eggs.json).</summary>
+    public EggRules Eggs { get; init; } = new();
+
+    /// <summary>Companies' arms and how their colours wear (content/game/heraldry.json).</summary>
+    public HeraldryRules Heraldry { get; init; } = new();
+
     /// <summary>Walls, moats, the river and the ground nobody crosses on foot, and what crosses it anyway (content/game/passage.json).</summary>
     public PassageRules Passage { get; init; } = new();
 
@@ -1488,6 +1500,8 @@ public sealed class Content
             Wards = Parse<WardRules>("wards.json"),
             Notoriety = Parse<NotorietyRules>("notoriety.json"),
             Passage = Parse<PassageRules>("passage.json"),
+            Heraldry = Parse<HeraldryRules>("heraldry.json"),
+            Eggs = Parse<EggRules>("eggs.json"),
             Assess = Parse<AssessRules>("assess.json"),
             Skills = Parse<SkillRules>("skills.json"),
             Crises = Parse<CrisisRules>("crises.json"),
