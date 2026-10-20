@@ -11,7 +11,7 @@
   "loyalty": 0.4,
   "firstDemand": 6,
   "stagger": 5,
-  "demandGap": 24,
+  "demandGap": 36,
   "demandDays": 8,
   "met": 25,
   "lapsed": 25,
