@@ -136,7 +136,14 @@ public class RegardTests
         Stories.Resolve(t, jail!.Id, cells);
         Assert.NotNull(rogue.Hero!.JailedUntil);
         Assert.False(Quests.Available(rogue));
-        sim.RunDays(11);
+        // Fed in the cells for the length of the sentence: a hero who starves and leaves town is never released.
+        for (int d = 0; d < 11; d++)
+        {
+            rogue.Hunger = 0;
+            rogue.MiserableDays = 0;
+            sim.RunDays(1);
+        }
+        Assert.False(rogue.Departed);
         Assert.Null(rogue.Hero.JailedUntil);
     }
 }
