@@ -194,7 +194,9 @@ public partial class Main
                 int ev = _sim.Town.Tourney.Events.FindIndex(e => Tournaments.BetBlocked(_sim.Town, e) == null);
                 if (ev < 0) throw new InvalidOperationException("no tourney event takes bets");
                 var first = _sim.Town.Tourney.Events[ev];
-                if (!_sim.PlaceBet(ev, first.Draw[0], Tournaments.Rules(_sim.Town).Betting.Min)) throw new InvalidOperationException("the bet was refused");
+                // On the favourite: a rider whose chance has fallen to nothing (hurt, gone) takes no stake.
+                int pick = Tournaments.Chances(_sim.Town, first).OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key).First().Key;
+                if (!_sim.PlaceBet(ev, pick, Tournaments.Rules(_sim.Town).Betting.Min)) throw new InvalidOperationException("the bet was refused");
                 OpenTourney();
                 for (int h = 0; h < 14; h++) _sim.Step();
                 _dirty = true;
