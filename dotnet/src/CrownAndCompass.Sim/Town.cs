@@ -116,6 +116,16 @@ public sealed class Market
 
     public double ImportedToday { get; private set; }
 
+    // What the town bought from the market today and yesterday, and what the caravans had to bring in yesterday.
+    private readonly Dictionary<Good, double> _bought = [];
+    private readonly Dictionary<Good, double> _boughtYesterday = [];
+    private readonly Dictionary<Good, double> _importedYesterday = [];
+    private readonly Dictionary<Good, double> _importedToday = [];
+
+    public double BoughtYesterday(Good g) => _boughtYesterday.GetValueOrDefault(g);
+
+    public double ImportedYesterday(Good g) => _importedYesterday.GetValueOrDefault(g);
+
     /// <param name="basePrice">Each good's price when supply meets demand (content/game/city.json).</param>
     public Market(Func<Good, double> basePrice)
     {
@@ -177,6 +187,8 @@ public sealed class Market
         double fromStock = Math.Min(qty, Stock(g));
         _stock[g] = Stock(g) - fromStock;
         ImportedToday += qty - fromStock;
+        _bought[g] = _bought.GetValueOrDefault(g) + qty;
+        _importedToday[g] = _importedToday.GetValueOrDefault(g) + qty - fromStock;
         return cost;
     }
 
@@ -200,6 +212,10 @@ public sealed class Market
             _realized[g] = _soldQty[g] > 0 ? _soldValue[g] / _soldQty[g] : 0;
             _soldQty[g] = 0;
             _soldValue[g] = 0;
+            _boughtYesterday[g] = _bought.GetValueOrDefault(g);
+            _bought[g] = 0;
+            _importedYesterday[g] = _importedToday.GetValueOrDefault(g);
+            _importedToday[g] = 0;
         }
         ImportedToday = 0;
     }
@@ -381,6 +397,9 @@ public sealed class Town
 
     /// <summary>The town's services weighed against its income, and the unrest when they go short (<see cref="Systems.Taxes"/>).</summary>
     public TaxState Taxes { get; } = new();
+
+    /// <summary>The last month of the town's key numbers, for the top bar (<see cref="Systems.Trends"/>).</summary>
+    public TrendState Trends { get; } = new();
 
     /// <summary>Sellsword companies under contract to the town (<see cref="Systems.Mercenaries"/>).</summary>
     public List<Hire> Hires { get; } = [];

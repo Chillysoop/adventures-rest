@@ -58,6 +58,10 @@
   another system, capped in decor.json. Pieces claim plan cells (`Decor.Cells`, `LandPlan.Decor`): `Land.Fits` and lanes go
   round them, and they never stand on a lane. Appeal adds to house contentment (`Decor.Comfort`) and to ward land prices
   (`Decor.Prestige`). `--beautify D` dresses a town for screenshots; `--decor oak --decor-at x,y,a` shows the tool.
+- Menus: every window is one click on the left rail (`godot/src/Dock.cs`, `Groups`/`Blurbs`, Shift+number `QuickTabs`); its
+  badges count the alerts whose `AlertWindow` it answers, so a new alert badges its window for free. The action tray on the
+  right (`godot/src/Tray.cs`: Bounties, Council, Events, War) slides out a drawer to act without a window. The top bar's
+  monthly trends and hover cards read `Systems/Trends.cs` (30 days of books, food, Mandate, unrest; numbers in trends.json).
 - Godot client in `godot/` (Godot 4.3 .NET). Screenshots: `xvfb-run -a godot --path godot --rendering-driver opengl3
   --resolution 1600x900 -- --seed N --day D --autoplay --screenshot out.png` (`--cam`, `--look`, `--site`, `--strategic`
   aim it; `--bench` checks the performance budget in the GDD). Exports go to `godot/build/` (ignored).
