@@ -92,7 +92,7 @@ public partial class Main
             var (word, color) = MenaceStages[m.Stage];
             string march = m.ArrivalTick is int at && at > t.Tick ? "  " + Tag($"marching, {Ui.Days((int)Math.Ceiling((at - t.Tick) / 24.0))} out", Ui.Bad) : "";
             string held = m.Holdings.Count > 0 ? $" It holds {m.Holdings.Count} more {(m.Holdings.Count == 1 ? "lair" : "lairs")}." : "";
-            p.Row($"{Ui.KindIcon(m.Kind, 20)}[b]{Ui.Esc(Ui.Cap(m.Name))}[/b]  {Tag(word, color)}  {Tag($"level {m.Level}")}{march}\n{Tag(Menaces.CunningOf(t, m).Name)}  {Tag(Menaces.AmbitionOf(t, m).Name)}{Heirs(t, m)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Annals.Motive(t, m))} {Ui.Esc(Wants(t, m))} {Seat(t, m)}{held}[/font_size]")}{Plan(t, m)}{Assets(t, m)}");
+            p.Card($"{Ui.KindIcon(m.Kind, 20)}[b]{Ui.Esc(Ui.Cap(m.Name))}[/b]  {Tag(word, color)}  {Tag($"level {m.Level}")}{march}\n{Leader(m)}{Tag(Menaces.CunningOf(t, m).Name)}  {Tag(Menaces.AmbitionOf(t, m).Name)}{Heirs(t, m)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Annals.Motive(t, m))} {Ui.Esc(Wants(t, m))} {Seat(t, m)}{held}[/font_size]")}{Remembers(t, m)}{LastHeard(t, m)}{Plan(t, m)}{Assets(t, m)}", color);
         }
         p.Note("A threat grows while nobody clears its seat, as far as its wits allow: a beast only hunts, a dull band takes a valley and stops, a cunning or masterful leader builds a domain and can become the big bad. What it wants decides what it does to the town. Clearing the seat breaks it, and it falls back to a lair it holds.");
 
@@ -151,6 +151,29 @@ public partial class Main
             p.Row($"{Tag("Vengeance", Ui.Bad)} [b]{Ui.Esc(Ui.Cap(g.Name))}[/b] has sworn revenge on {Ui.Esc(t.Name)}.{who}\n{Ui.C(Ui.Ink2, "[font_size=12]Its agents come for marked heroes in town first, then councillors, houses, the treasury and the walls. A strong watch catches them; the grudge cools in time, and dies with its master.[/font_size]")}");
         }
     }
+
+    /// <summary>Who leads it, and their right hand.</summary>
+    private static string Leader(Menace m) =>
+        m.Leader == "" ? "" : $"[font_size=13]Led by [b]{Ui.Esc(m.Leader)}[/b]{(m.Lieutenant != "" ? $", with {Ui.Esc(m.Lieutenant)} at their side" : "")}[/font_size]  ";
+
+    /// <summary>What it holds against the town: the wrongs it remembers, its grudge and who it has marked.</summary>
+    private static string Remembers(Town t, Menace m)
+    {
+        var parts = m.Memories.AsEnumerable().Reverse().Take(3).ToList();
+        if (Vengeance.Of(t, Vengeance.Key(m)) is { } g)
+        {
+            var marked = g.Marked.Select(t.Agent).Where(h => !h.Dead && !h.Departed).OrderBy(h => h.Id).Select(h => h.Name).Take(3).ToList();
+            if (marked.Count > 0) parts.Add($"has marked {string.Join(", ", marked)} for death");
+            else if (g.Heat >= t.Content.Crises.Vengeance.StrikeAt) parts.Add("is sending knives");
+        }
+        if (m.Repulsed > 0) parts.Add(m.Repulsed == 1 ? "will come back bigger after its last raid was driven off" : $"has been driven off {m.Repulsed} times running, and comes bigger each time");
+        if (parts.Count == 0) return "";
+        return $"\n[font_size=12]{Tag("Remembers", Ui.Bad)} {Ui.Esc(Ui.Cap(string.Join("; ", parts)))}.[/font_size]";
+    }
+
+    /// <summary>The last the town heard of it.</summary>
+    private static string LastHeard(Town t, Menace m) =>
+        m.LastHeard == "" ? "" : $"\n[font_size=12]{Tag($"Last heard, day {m.LastHeardDay}")} {Ui.C(Ui.Ink2, Ui.Esc(m.LastHeard))}[/font_size]";
 
     /// <summary>A menace by its leader's name, for a button.</summary>
     private static string Short(Menace m) => m.Leader;

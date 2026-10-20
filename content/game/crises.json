@@ -45,6 +45,7 @@
   "afterSack": 1.2,
   "strikeShare": 0.2,
   "wallsWeak": 0.8,
+  "arsonSlips": 0.33,
   "wallsWeakDays": 20,
   "vengeance": {
     "strikeAt": 30,
@@ -52,19 +53,21 @@
     "cost": 30,
     "everyDays": [6, 12],
     "minCunning": "crafty",
-    "heat": { "attempt": 14, "holding": 22, "broken": 45, "clash": 35, "refused": 30 },
+    "heat": { "attempt": 14, "holding": 22, "broken": 45, "clash": 35, "refused": 30, "envoy": 20 },
     "deeds": {
       "attempt": "the heroes who came for {seat}",
       "holding": "the loss of a lair",
       "broken": "the fall of {seat}",
       "clash": "the town's part in the battle at {where}",
-      "refused": "the town's refusal"
+      "refused": "the town's refusal",
+      "envoy": "its envoy sent off with a warning"
     },
     "vow": "Word comes back from {seat}: {leader} has sworn {town} will pay for {deed}.",
     "blows": { "assassinate": 3, "burn": 1, "treasury": 1, "walls": 1 }
   },
   "clash": {
-    "everyDays": [15, 25],
+    "everyDays": [8, 13],
+    "feudChance": 0.6,
     "noticeDays": 5,
     "reach": 1,
     "loserLoss": 0.6,
@@ -87,7 +90,9 @@
     },
     "burn": {
       "landed": "Fire in the night: {by} set {where} alight. By morning it is a shell, and {owner} must rebuild.",
-      "stopped": "Someone tried to fire {where} in the night. {guard} caught the torches before the thatch took."
+      "stopped": "Someone tried to fire {where} in the night. {guard} caught the torches before the thatch took.",
+      "smoulder": "Someone set fire to {where} in the night, but the slate roof and the limewash held. By morning there is only a scorch mark.",
+      "stone": "{by}'s firebrands went looking for something to burn in {town} and found only stone."
     },
     "assassinate": {
       "landed": "At dawn {victim} is found dead, a black feather on the pillow. Everyone knows whose sign it is: {by}.",

@@ -53,6 +53,9 @@ public sealed record TradeRules
     public double Raid { get; init; } = 0.03;
     public double RaidPerMenace { get; init; } = 0.06;
 
+    /// <summary>Share of its power a menace gains from each caravan it takes once it holds the road.</summary>
+    public double WaylayFeeds { get; init; } = 0;
+
     /// <summary>Wagons a caravan can grow to; each one past the first carries WagonLoad more of a load.</summary>
     public int Wagons { get; init; } = 4;
     public double WagonLoad { get; init; } = 0.75;
@@ -73,6 +76,9 @@ public sealed class TradeRoute
     public bool Closed { get; set; }
     public int Caravans { get; set; }
     public int Raided { get; set; }
+
+    /// <summary>Caravans lost in a row: the road's raiders get bolder, and get a name.</summary>
+    public int LostInRow { get; set; }
 
     /// <summary>How many wagons its caravan runs; more carry more of the surplus out.</summary>
     public int Wagons { get; set; } = 1;
@@ -221,10 +227,25 @@ public static class Trade
         if (town.Rng.Chance(RaidChance(town, s)))
         {
             route.Raided++;
+            route.LostInRow++;
             m.Seed(route.Export, -sent);
-            town.Log(LedgerCategory.War, Importance.Notable, $"The caravan to {s.Name} is waylaid on the road. The {Lower(route.Export)} is lost, and the drovers limp home with nothing.");
+            var culprit = Waylayer(town, s);
+            int esc = town.Content.Lairs.EscalateAt;
+            if (culprit != null && route.LostInRow >= esc)
+            {
+                // The third caravan running: the road belongs to them now, and they grow fat on it.
+                culprit.Power += Math.Max(1, culprit.Power * r.WaylayFeeds);
+                Menaces.Remember(culprit, $"{route.LostInRow} caravans taken on the road to {s.Name}");
+                Saga.Scar(town, 1);
+                town.Log(LedgerCategory.War, Importance.Major, $"Another caravan to {s.Name} lost, the {Ordinal(route.LostInRow)} running. {Cap(culprit.Name)} holds that road now and grows fat on {town.Name}'s wagons. The drovers want an escort, or that road closed.");
+            }
+            else if (culprit != null && route.LostInRow == esc - 1)
+                town.Log(LedgerCategory.War, Importance.Notable, $"The caravan to {s.Name} is waylaid again. This time the drovers saw whose banners: {culprit.Name}. The {Lower(route.Export)} is lost.");
+            else
+                town.Log(LedgerCategory.War, Importance.Notable, $"The caravan to {s.Name} is waylaid on the road. The {Lower(route.Export)} is lost, and the drovers limp home with nothing.");
             return;
         }
+        route.LostInRow = 0;
         double earned = sent * m.BasePrice(route.Export) * (s.Kin.Trade.Wants.Contains(route.Export) ? r.WantedPrice : r.ExportPrice);
         m.Seed(route.Export, -sent);
         if (earned > 0) town.Book(TreasuryAccount.Trade, earned);
@@ -256,6 +277,19 @@ public static class Trade
         // A bridge or patrol makes the road safer, and so do escorts; a menace holding it, far worse.
         return Math.Min(0.6, (r.Raid + r.RaidPerMenace * near) * Neighbours.RaidShare(town, s) + Plots.TollRaid(town, s)) * (1 - Institutions.Escort(town));
     }
+
+    /// <summary>The strongest living menace on the road to a settlement, if any: who the drovers will name.</summary>
+    private static Menace? Waylayer(Town town, Settlement s)
+    {
+        var region = town.Regions[s.RegionId];
+        return town.Saga.Menaces
+            .Where(m => m.Alive && m.Named && Quests.Site(town, m.SeatId) is { RegionId: int rid } && rid >= 0 && rid < town.Regions.Count
+                && Math.Abs(town.Regions[rid].Ring - region.Ring) <= 1 && Near(town.Regions[rid], region))
+            .OrderByDescending(m => m.Power).ThenBy(m => m.Id)
+            .FirstOrDefault();
+    }
+
+    private static string Ordinal(int n) => n switch { 3 => "third", 4 => "fourth", 5 => "fifth", 6 => "sixth", _ => $"{n}th" };
 
     private static bool Near(Region a, Region b)
     {

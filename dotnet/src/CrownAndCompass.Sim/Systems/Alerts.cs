@@ -35,7 +35,7 @@ public sealed record AlertKind(string Id, string Title, string Icon, AlertLevel 
 /// One thing the player should act on. The key stays the same while it is the same problem, so a dismissed
 /// alert stays dismissed until it is resolved and comes back. Site, agent or town aim the camera.
 /// </summary>
-public sealed record Alert(string Key, AlertKind Kind, string Text, string Tip, string? SiteId = null, int? AgentId = null, bool AtTown = false, int? StoryId = null, int? Wall = null, int? FindId = null);
+public sealed record Alert(string Key, AlertKind Kind, string Text, string Tip, string? SiteId = null, int? AgentId = null, bool AtTown = false, int? StoryId = null, int? Wall = null, int? FindId = null, int? BuildingId = null);
 
 /// <summary>
 /// The player's to-do list, in the manner of Paradox games. Standing alerts are read off the town each
@@ -47,10 +47,12 @@ public sealed record Alert(string Key, AlertKind Kind, string Text, string Tip, 
 public static class Alerts
 {
     public static readonly AlertKind Siege = new("siege", "Under attack", "warband", AlertLevel.Urgent, AlertWindow.War);
+    public static readonly AlertKind Sighted = new("sighted", "Raiders sighted", "warband", AlertLevel.Urgent, AlertWindow.War);
     public static readonly AlertKind Captives = new("captives", "Townsfolk taken", "heroes", AlertLevel.Urgent, AlertWindow.Bounties);
     public static readonly AlertKind Hunger = new("hunger", "Hunger", "bread", AlertLevel.Urgent, AlertWindow.Council);
     public static readonly AlertKind Coffers = new("coffers", "Empty coffers", "gold", AlertLevel.Urgent, AlertWindow.Council);
     public static readonly AlertKind Underfunded = new("underfunded", "Services go short", "gold", AlertLevel.Urgent, AlertWindow.Council);
+    public static readonly AlertKind Fear = new("fear", "Fear", "warband", AlertLevel.Urgent, AlertWindow.Campaign);
     public static readonly AlertKind Unrest = new("unrest", "Unrest", "mandate", AlertLevel.Urgent, AlertWindow.Council);
     public static readonly AlertKind Hostile = new("hostile", "Hostile factions", "suspicion", AlertLevel.Urgent, AlertWindow.Faith);
     public static readonly AlertKind Motion = new("motion", "Council motions", "mandate", AlertLevel.Decision, AlertWindow.Council);
@@ -83,7 +85,7 @@ public static class Alerts
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Captives, Doom, Crisis, Hunger, Coffers, Underfunded, Unrest, Hostile, Motion, Fealty, Clash, Traitor, Plot, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Bastion, Institution, Heroes, Neighbour, Loot, Work, Settlers, Below, Scholars, Trade, Gifts, Outpost, Housing];
+        [Siege, Sighted, Captives, Doom, Crisis, Fear, Hunger, Coffers, Underfunded, Unrest, Hostile, Motion, Fealty, Clash, Traitor, Plot, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Bastion, Institution, Heroes, Neighbour, Loot, Work, Settlers, Below, Scholars, Trade, Gifts, Outpost, Housing];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
     public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Hostility, Winter, Growth, Routes, Region, Undercity, Study, Loyalty, Armoury, Homes, Keepers, Outposts];
@@ -105,6 +107,17 @@ public static class Alerts
         {
             int days = Math.Max(1, (int)Math.Ceiling((m.ArrivalTick!.Value - t.Tick) / 24.0));
             yield return new($"menace:{m.Id}", Siege, $"{Cap(m.Name)} in {Days(days)}", $"The host of {m.Name} marches from {m.SeatName} on the {Garrison.Place(t, m.Approach)}. Call the watch to arms there and the heroes home.", AtTown: true, Wall: m.Approach);
+        }
+        // A band someone saw on its way: a night to put guards over its mark.
+        foreach (var g in t.Sightings.Where(g => g.Kind == Sightings.Band && g.TargetId != null).OrderBy(g => g.Id))
+        {
+            if (t.Buildings.FirstOrDefault(b => b.Id == g.TargetId) is not { } mark) continue;
+            bool guarded = Garrison.Covered(t, mark);
+            yield return new($"sighted:{g.Id}", Sighted, $"{Cap(g.Foe)} heading for {mark.Name}",
+                guarded
+                    ? $"{Cap(g.Reporter)} saw about {g.Count} {g.Foe} coming. The watch's flag covers {mark.Name}; keep it there tonight."
+                    : $"{Cap(g.Reporter)} saw about {g.Count} {g.Foe} coming for {mark.Name}. They strike tonight. Plant a guard flag over it (G on the map) or keep heroes home.",
+                BuildingId: mark.Id);
         }
         foreach (var c in Systems.Captives.Held(t).OrderBy(c => c.Id))
         {
@@ -186,6 +199,14 @@ public static class Alerts
         if (Systems.Council.PendingMotion(t) is { } m)
             yield return new($"motion:{m.Id}", Motion, $"Council votes in {Days(Systems.Council.DaysLeft(t, m))}",
                 $"The council moves that {m.Text}. Sign or veto it in the Council window, or the council's vote settles it.");
+        var d = t.Content.Saga.Dread;
+        if (t.Saga.Dread >= d.WarnAt && t.Outcome == null)
+        {
+            string worst = Saga.WorstFear(t) is { } wm ? $" {Cap(wm.Name)} frightens them most." : "";
+            yield return Saga.AbandonIn(t) is int left
+                ? new("fear", Fear, $"Town gives up in {Days(left)}", $"Fear is at {Math.Round(t.Saga.Dread)}. If it stays this high for {Days(left)} more, the townsfolk abandon {t.Name} and the campaign is lost.{worst} Break a menace from the Campaign window, win a fight, or fund the temples to lift spirits.", AtTown: true)
+                : new("fear", Fear, $"Fear {Math.Round(t.Saga.Dread)} of {Math.Round(d.AbandonAt)}", $"The town is losing heart. If fear reaches {Math.Round(d.AbandonAt)} and stays there for {Days(d.AbandonDays)}, the townsfolk abandon {t.Name}.{worst} Break a menace from the Campaign window, win a fight, or fund the temples to lift spirits.", AtTown: true);
+        }
         if (t.Mandate < 30)
             yield return new("mandate", Unrest, "The town is turning on you", $"Mandate {Math.Round(t.Mandate)}. Below this the council stops listening.");
     }

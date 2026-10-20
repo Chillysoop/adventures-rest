@@ -3,6 +3,7 @@
   "perTrip": 1,
   "leadHours": 10,
   "dueHours": 36,
+  "quietFromAct": 2,
   "partyShare": 0.5,
   "kinds": {
     "acrobatics": "trap", "sleight-of-hand": "trap", "stealth": "trap",

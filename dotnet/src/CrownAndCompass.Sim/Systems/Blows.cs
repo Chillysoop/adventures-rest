@@ -5,6 +5,10 @@ public sealed record BlowText
 {
     public string Landed { get; init; } = "";
     public string Stopped { get; init; } = "";
+
+    /// <summary>For fire: set but failed to catch (<see cref="Research.Fireproof"/>), and nothing left that burns.</summary>
+    public string Smoulder { get; init; } = "";
+    public string Stone { get; init; } = "";
 }
 
 /// <summary>Who struck the blow, for the Ledger: a menace, a guild, a cult.</summary>
@@ -73,22 +77,42 @@ public static class Blows
         return h != null ? ($"{h.Name} and the watch", h.Id) : ("the watch", null);
     }
 
-    /// <summary>Fire set in a house, shop, workshop or farm. Burned, it stands as a shell until its owner (or the town) pays to rebuild it.</summary>
+    /// <summary>Whether fire can take a building: stone never burns.</summary>
+    public static bool Burns(Building b) => b.Def.Stone <= 0;
+
+    /// <summary>
+    /// Fire set in a timber house, shop, workshop or farm, on the side the watch's flags leave open. The watch
+    /// stops most, but some slip through (crises.json arsonSlips), and slate and lime (<see cref="Research.Fireproof"/>)
+    /// put some out. Burned, it stands as a shell until its owner (or the town) pays to rebuild it.
+    /// </summary>
     public static bool Arson(Town town, Culprit by, double raiders)
     {
         var rng = town.Rng;
+        var t = Text(town, Burn);
         var marks = town.Buildings
             .Where(b => b.Complete && !b.Def.IsGrand && b.Def.Zone is Zone.Residential or Zone.Commercial or Zone.Industry or Zone.Farmland)
             .OrderBy(b => b.Id)
             .ToList();
         if (marks.Count == 0) return false;
-        var open = Garrison.Unguarded(town, marks);
-        var target = (open.Count > 0 ? open : marks)[rng.Range(0, (open.Count > 0 ? open : marks).Count)];
-        var t = Text(town, Burn);
-        if (Threat.LocalDefense(town) * Garrison.FlagFactor(town, target) >= raiders * (0.7 + rng.Next() * 0.6))
+        var timber = marks.Where(Burns).ToList();
+        if (timber.Count == 0)
+        {
+            if (t.Stone != "") town.Log(LedgerCategory.War, Importance.Notable, Fill(town, t.Stone, by));
+            return false;
+        }
+        var open = Garrison.Unguarded(town, timber);
+        var pool = open.Count > 0 ? open : timber;
+        var target = pool[rng.Range(0, pool.Count)];
+        if (Threat.LocalDefense(town) * Garrison.FlagFactor(town, target) >= raiders * (0.7 + rng.Next() * 0.6) && !rng.Chance(Rules(town).ArsonSlips))
         {
             var g = Guard(town);
             town.Log(LedgerCategory.War, Importance.Notable, Saga.Sentences(Fill(town, t.Stopped, by).Replace("{where}", target.Name).Replace("{guard}", g.Name)), g.Id is int gid ? [gid] : []);
+            town.Tension += 4;
+            return false;
+        }
+        if (rng.Chance(Research.Fireproof(town)))
+        {
+            town.Log(LedgerCategory.War, Importance.Notable, Fill(town, t.Smoulder, by).Replace("{where}", target.Name));
             town.Tension += 4;
             return false;
         }

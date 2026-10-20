@@ -111,6 +111,12 @@ public partial class Main
             OpenFind(find);
             return;
         }
+        if (a.BuildingId is int bid && t.Buildings.FirstOrDefault(b => b.Id == bid) is { } mark)
+        {
+            Look(Geo.LotPos(t.Lot(mark.LotId)), 30);
+            Select(Selection.Building(bid));
+            return;
+        }
         if (tab is Tab w) OpenWindow(w);
         if (a.Wall is int section && Garrison.Walled(t))
         {

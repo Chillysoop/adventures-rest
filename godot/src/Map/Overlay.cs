@@ -26,6 +26,7 @@ public partial class Overlay(MapView map) : Control
         DrawTrails(town);
         DrawParties(town);
         DrawWarband(town);
+        DrawSightings(town);
         DrawMarkers();
         DrawSelection(town);
     }
@@ -303,6 +304,53 @@ public partial class Overlay(MapView map) : Control
         if (!map.Fog.IsLive(pos) || !map.OnScreen(map.Gen.At(pos, 2), out var at)) return;
         Banner(at - new Vector2(0, 16), new Color("c0392b"), InkC, 1);
         Text(at + new Vector2(0, 8), town.Content.Enemy.Name, Ui.Bold, 13, new Color("ffb0a0"));
+    }
+
+    private static readonly Color SightRed = new("c0392b");
+
+    /// <summary>Where a sighting puts the force on the map, and the way it was heading.</summary>
+    public static (Vector2 Pos, Vector2 Heading) SightingAt(Town town, Geo geo, Sighting g)
+    {
+        var target = g.TargetId is int bid && town.Buildings.FirstOrDefault(b => b.Id == bid) is { } mark
+            ? Geo.LotPos(town.Lot(mark.LotId))
+            : g.Section is int sec
+                ? new Vector2(Geo.Margin, Geo.Margin) + new Vector2((float)Garrison.WallPoint(town, sec).X, (float)Garrison.WallPoint(town, sec).Y)
+                : Geo.Center;
+        var site = g.FromSite != null ? town.Sites.FirstOrDefault(x => x.Def.Id == g.FromSite) : null;
+        var from = site != null && geo.Pins.ContainsKey(site.Def.Id) ? geo.Rough(site) : Geo.Center + (target - Geo.Center).Normalized() * Geo.TilesPerDay * 2;
+        float p = (float)g.Progress;
+        return g.Kind == Sightings.Flight ? (target + (from - target) * p, from) : (from + (target - from) * p, target);
+    }
+
+    /// <summary>
+    /// Enemies someone has seen and reported: a red pin where they were seen, an arrow the way they were heading, and who
+    /// saw them and when. It is news, not a live view, so it shows through the fog and fades as it goes stale.
+    /// </summary>
+    private void DrawSightings(Town town)
+    {
+        foreach (var g in town.Sightings.OrderBy(g => g.Id))
+        {
+            var (pos, heading) = SightingAt(town, map.Geo, g);
+            if (!map.OnScreen(map.Gen.At(pos, 2), out var at)) continue;
+            float age = Mathf.Clamp((town.Tick + map.HourFraction - g.Tick) / Mathf.Max(1, g.UntilTick - g.Tick), 0, 1);
+            float a = 1 - age * 0.6f;
+            if (map.OnScreen(map.Gen.At(pos + (heading - pos).LimitLength(14), 2), out var ahead))
+            {
+                var dir = (ahead - at).Normalized();
+                for (float d = 14; d < (ahead - at).Length() - 6; d += 9) DrawLine(at + dir * d, at + dir * Mathf.Min(d + 5, (ahead - at).Length() - 6), new Color(SightRed, 0.85f * a), 2.5f, true);
+                var tip = ahead;
+                var side = new Vector2(-dir.Y, dir.X);
+                DrawColoredPolygon([tip, tip - dir * 9 + side * 5, tip - dir * 9 - side * 5], new Color(SightRed, 0.85f * a));
+            }
+            Disc(at - new Vector2(0, 18), 10, new Color(SightRed, a), new Color(Cream, a), 2);
+            MarkerGlyph(this, MarkerKind.Danger, at - new Vector2(0, 18), 0.9f, new Color(Cream, a));
+            if (map.Distance < 25) continue;
+            string label = $"{Ui.Cap(Sightings.What(g))} · {g.Reporter.TrimEnd(',')}, {Sightings.Ago(town, g)}";
+            float w = Ui.Medium.GetStringSize(label, HorizontalAlignment.Left, -1, 12).X;
+            var box = new Rect2(at.X - w / 2 - 6, at.Y + 2, w + 12, 18);
+            DrawStyleBox(LabelBox(SightRed), box);
+            DrawString(Ui.Medium, new Vector2(box.Position.X + 6, box.Position.Y + 13), label, HorizontalAlignment.Left, -1, 12, new Color(Cream, a));
+        }
     }
 
     public static Color MarkerColor(MarkerKind k) => k switch

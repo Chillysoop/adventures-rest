@@ -843,6 +843,7 @@
     ],
     "abandonAt": 95,
     "abandonDays": 30,
+    "warnAt": 80,
     "flight": "The {family} family load a cart before dawn and take the south road. They do not say goodbye.",
     "desert": "{hero} settles the tavern bill and rides out at first light. \"This town is finished,\" they tell the gatekeeper.",
     "refugeesText": "{n} survivors of {settlement} reach the gates of {town} with nothing but what they carry.",

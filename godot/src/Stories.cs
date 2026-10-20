@@ -66,7 +66,7 @@ public partial class Main
     private void SyncStories(double delta)
     {
         if (_title.Visible || _menu.Visible) return;
-        if (!_opts.Smoke && Sendings.Waiting(_sim.Town).FirstOrDefault() is { } sending)
+        if (!_opts.Smoke && Sendings.Waiting(_sim.Town).FirstOrDefault(w => Sendings.Pauses(_sim.Town, w)) is { } sending)
         {
             if (_speed > 0) SetSpeed(0);
             if (!_story.Visible)
@@ -81,7 +81,8 @@ public partial class Main
         if (_story.Visible && _beat == null && _storyId is int open && Stories.Find(_sim.Town, open) is not { Done: false }) CloseStory();
         // One card at a time: a discovery's report on screen is answered first.
         if (_story.Visible || _find.Visible) return;
-        var next = Stories.Pending(_sim.Town).FirstOrDefault(s => s.Id > _storySeen);
+        // Quiet sendings (late in the campaign, not high stakes) wait on the alert strip rather than popping up.
+        var next = Stories.Pending(_sim.Town).FirstOrDefault(s => s.Id > _storySeen && !Sendings.Is(_sim.Town, s));
         if (next == null) return;
         _storySeen = next.Id;
         if (_opts.Smoke) return;
@@ -114,7 +115,7 @@ public partial class Main
         head.AddChild(Ui.Label("·  " + (sending ? "SENDING STONE" : d.Source == Stories.LostSource ? "THE FALLEN" : d.Source.ToUpperInvariant()), sending ? Ui.Accent : Ui.Ink2, Ui.Bold, 11));
         var spacer = new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         head.AddChild(spacer);
-        if (sending && !s.Done) head.AddChild(Ui.Label("Game paused until you answer", Ui.Ink2, Ui.Medium, 11));
+        if (sending && !s.Done && Sendings.Pauses(t, s)) head.AddChild(Ui.Label("Game paused until you answer", Ui.Ink2, Ui.Medium, 11));
         else if (!s.Done)
         {
             int days = Math.Max(1, (int)Math.Ceiling((s.DueTick - t.Tick) / 24.0));
@@ -191,7 +192,7 @@ public partial class Main
             int bonus = mod + prof;
             string adv = Stories.Advantage(t, s, o);
             string help = string.Concat(Sendings.Helpers(t, s, o).Select(h => $" + {h.Name} {(h.Bonus >= 0 ? "+" : "−")}{Math.Abs(h.Bonus)}"));
-            sub = $"{name} {(bonus >= 0 ? "+" : "−")}{Math.Abs(bonus)} ({ab.ToUpperInvariant()}{Edge(o.Skill)}){help} vs DC {o.Dc} · {Math.Round(Stories.Chance(t, s, o, _inspire) * 100)}%"
+            sub = $"{name} {(bonus >= 0 ? "+" : "−")}{Math.Abs(bonus)} ({ab.ToUpperInvariant()}{Edge(o.Skill)}){help} vs DC {Stories.DcOf(t, o)} · {Math.Round(Stories.Chance(t, s, o, _inspire) * 100)}%"
                 + (adv != "" ? $" · advantage: {adv}" : "") + (o.Cost > 0 ? $" · costs {Js.Str(o.Cost)}g" : "");
         }
         if (blocked != null) sub = $"{Ui.Cap(blocked)}.";

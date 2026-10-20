@@ -255,6 +255,17 @@ public sealed class Menace
     /// <summary>Its leader's right hand, who may get away when the leader does not.</summary>
     public string Lieutenant { get; set; } = "";
 
+    /// <summary>The last the town heard of it (a Ledger line) and when, for its leader card.</summary>
+    public string LastHeard { get; set; } = "";
+    public int LastHeardDay { get; set; }
+
+    /// <summary>What it holds against the town, newest last (a few at most), for its leader card.</summary>
+    public List<string> Memories { get; } = [];
+
+    /// <summary>Its raids the town has driven off in a row (each comes bigger), and the side of town the last was turned back at.</summary>
+    public int Repulsed { get; set; }
+    public int? RepulsedAt { get; set; }
+
     /// <summary>The settlement whose road it holds and tolls, if any.</summary>
     public int? TollOn { get; set; }
 
@@ -984,6 +995,36 @@ public static class Menaces
     /// <summary>Very hostile: the big bad, an enemy in crisis, or one that wants the town's walls or its flesh. Only these burn what they raid.</summary>
     public static bool Hostile(Town town, Menace m) => m.BigBad || Crises.Of(town, m) != null || AmbitionOf(town, m).Id is "conquest" or "hunger";
 
+    /// <summary>The side of town a building stands on (a wall section).</summary>
+    private static int Side(Town town, Building b) => Garrison.SectionAt(town, town.Lot(b.LotId).X, town.Lot(b.LotId).Y);
+
+    /// <summary>Something the menace will hold against the town; its card shows the last few.</summary>
+    public static void Remember(Menace m, string what)
+    {
+        if (what == "" || m.Memories.LastOrDefault() == what) return;
+        m.Memories.Add(what);
+        if (m.Memories.Count > 4) m.Memories.RemoveAt(0);
+    }
+
+    /// <summary>Daily: the latest Ledger news naming each known menace becomes the last the town heard of it.</summary>
+    public static void Track(Town town)
+    {
+        var entries = town.Ledger.Entries;
+        var known = town.Saga.Menaces.Where(m => m.Alive && (m.Named || m.Origin == FromWarband)).OrderBy(m => m.Id).ToList();
+        for (int i = Math.Max(0, town.Saga.HeardUpTo); i < entries.Count; i++)
+        {
+            var e = entries[i];
+            if (e.Category is not (LedgerCategory.War or LedgerCategory.Rumor or LedgerCategory.Faith)) continue;
+            foreach (var m in known)
+                if (e.Text.Contains(m.Name, StringComparison.Ordinal) || (m.Leader != "" && e.Text.Contains(m.Leader, StringComparison.Ordinal)))
+                {
+                    m.LastHeard = e.Text;
+                    m.LastHeardDay = SimTime.DayOf(e.Tick);
+                }
+        }
+        town.Saga.HeardUpTo = entries.Count;
+    }
+
     /// <summary>A raid of a crisis (<see cref="Crises"/>), this many strong. Returns whether it got through.</summary>
     internal static bool Raid(Town town, Menace m, double raiders) => HitTown(town, m, raiders);
 
@@ -998,8 +1039,10 @@ public static class Menaces
             .Take(4)
             .ToList();
         target = Garrison.Unguarded(town, target).Where(b => Threat.Exposed(town, b)).ToList();
+        // Turned back on one side last time, it tries another.
+        if (m.RepulsedAt is int side && target.Any(b => Side(town, b) != side)) target = target.Where(b => Side(town, b) != side).ToList();
         var where = target.Count > 0 ? target[rng.Range(0, target.Count)] : null;
-        double raiders = (strength ?? m.Power * r.StrikeShare) * (0.7 + rng.Next() * 0.6);
+        double raiders = (strength ?? m.Power * r.StrikeShare) * (0.7 + rng.Next() * 0.6) * (1 + town.Content.Lairs.RebuffBand * Math.Min(town.Content.Lairs.MaxRebuffs, m.Repulsed));
         // Nothing beyond the walls it could take tonight: it does not waste its warriors.
         if (!Threat.WorthRaiding(town, where, raiders)) return false;
         string place = where!.Name;
@@ -1009,10 +1052,15 @@ public static class Menaces
             var champion = town.Heroes.Where(a => !a.IsAway).OrderByDescending(x => x.Hero!.Level).ThenBy(x => x.Id).FirstOrDefault();
             string by = champion != null ? $"{champion.Name} and the watch" : "the watch";
             town.Log(LedgerCategory.War, Importance.Notable, Saga.Cap(Saga.Fill(town, r.Repelled, m).Replace("{where}", place).Replace("{by}", by)), champion != null ? [champion.Id] : []);
+            m.Repulsed++;
+            m.RepulsedAt = Side(town, where);
+            Remember(m, $"driven off at {place} by {by}");
             Sheet.Repelled(town);
             town.Tension += 6;
             return false;
         }
+        m.Repulsed = 0;
+        m.RepulsedAt = null;
         var d = town.Content.Enemy.Defense;
         bool dark = rng.Chance(Saga.Grim(town) ? d.RaidKill * 2 : d.RaidKill), burned = false;
         var victims = new List<int>();
@@ -1028,7 +1076,7 @@ public static class Menaces
                 victims.Add(v.Id);
             }
             // Only a foe that means the town real harm puts it to the torch.
-            if (Hostile(town, m) && rng.Chance(d.RaidBurn))
+            if (Hostile(town, m) && rng.Chance(d.RaidBurn) && Blows.Burns(where))
             {
                 Blows.Wreck(town, where, 0.4 + rng.Next() * 0.3);
                 burned = true;
@@ -1038,6 +1086,7 @@ public static class Menaces
         string text = lines.Count > 0 ? lines[rng.Range(0, lines.Count)] : "{name} strikes at {where}.";
         string fire = burned ? $" They leave {place} burning behind them." : "";
         town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, text, m).Replace("{where}", place)) + fire, victims);
+        Sightings.Report(town, $"raid:{m.Id}", Sightings.Flight, m.Name, (int)raiders, m.SeatId, where.Id, null, 0.25, SimTime.HoursPerDay, "");
         town.Tension += 15 + victims.Count * 10;
         town.Mandate = Math.Max(0, town.Mandate - 3);
         return true;

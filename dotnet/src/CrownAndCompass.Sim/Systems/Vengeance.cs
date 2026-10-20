@@ -90,6 +90,7 @@ public static class Vengeance
         var sites = m.Holdings.Prepend(m.SeatId).ToHashSet();
         heroes ??= town.Parties.Where(p => sites.Contains(p.SiteId)).OrderByDescending(p => p.DepartTick).ThenByDescending(p => p.Id).FirstOrDefault()?.Members ?? [];
         var seat = Quests.Site(town, m.SeatId);
+        Menaces.Remember(m, Rules(town).Deeds.GetValueOrDefault(wrong, "").Replace("{seat}", seat?.Def.Name ?? m.Region).Replace("{where}", where));
         double cunning = town.Content.Crises.Score.Cunning.GetValueOrDefault(m.Cunning, 1);
         Wrong(town, Key(m), new Culprit(m.Name, m.Leader, seat?.Def.Name ?? m.Region), wrong, cunning, heroes, where);
         if (Of(town, Key(m)) is { } g)

@@ -108,6 +108,7 @@ public partial class Main
         if (d.Gold != 0) e.Add($"{(d.Gold > 0 ? "+" : "−")}{Js.Str(Math.Abs(d.Gold))}g a day");
         if (d.Heroes != 0) e.Add($"+{d.Heroes} {(d.Heroes == 1 ? "hero" : "heroes")}");
         if (d.Defence != 0) e.Add($"defence +{Js.Str(d.Defence)}");
+        if (d.Fireproof != 0) e.Add($"fires {Math.Round(d.Fireproof * 100)}% less likely to catch");
         if (d.Ward != 0) e.Add($"undercity stirs {Math.Round(d.Ward * 100)}% slower");
         if (d.Xp != 0) e.Add("new heroes better trained");
         if (d.Scry != 0) e.Add($"scrying {Math.Round(d.Scry * 100)}% cheaper");

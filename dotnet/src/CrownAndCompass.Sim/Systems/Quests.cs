@@ -67,6 +67,21 @@ public sealed class SiteState(SiteDef def)
 
     /// <summary>The town keeps an outpost here: nothing resettles it, and the town sees it live.</summary>
     public bool Held { get; set; }
+
+    /// <summary>How it picks its night (lairs.json habits); empty until it first acts.</summary>
+    public string Habit { get; set; } = "";
+
+    /// <summary>Times running the town has turned its bands back (each comes bigger), and its threats have come to nothing (they escalate).</summary>
+    public int Rebuffs { get; set; }
+    public int Stirs { get; set; }
+
+    /// <summary>A band on its way: the building it means to hit and how many are in it.</summary>
+    public int? BandTarget { get; set; }
+    public double BandSize { get; set; }
+    public int? LastRaidDay { get; set; }
+
+    /// <summary>The town refused its tribute: a tribute-taker raids next.</summary>
+    public bool Refused { get; set; }
 }
 
 public enum BountyStatus

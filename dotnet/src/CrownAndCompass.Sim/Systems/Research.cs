@@ -31,6 +31,9 @@ public sealed record DiscoveryDef : DecreeDef
     /// <summary>Added to the town's defence against assaults.</summary>
     public double Defence { get; init; }
 
+    /// <summary>The share of fires set in timber buildings that fail to catch (slate roofs, lime wash, wards).</summary>
+    public double Fireproof { get; init; }
+
     /// <summary>New heroes arrive with this share of the XP to their next level.</summary>
     public double Xp { get; init; }
 
@@ -186,6 +189,8 @@ public static class Research
     public static double Defense(Town town) => Js.Sum(Known(town), d => d.Defence);
 
     public static double Ward(Town town) => Math.Min(0.8, Js.Sum(Known(town), d => d.Ward));
+
+    public static double Fireproof(Town town) => Math.Min(0.9, Js.Sum(Known(town), d => d.Fireproof));
 
     public static double Xp(Town town) => Math.Min(0.75, Js.Sum(Known(town), d => d.Xp));
 

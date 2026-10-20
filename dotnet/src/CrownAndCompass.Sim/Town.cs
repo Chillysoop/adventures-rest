@@ -357,6 +357,10 @@ public sealed class Town
     /// <summary>Scouts posted to watch sites, oldest first.</summary>
     public List<Scout> Scouts { get; } = [];
 
+    /// <summary>Enemies on the move that someone saw and reported (<see cref="Systems.Sightings"/>), and how many reports there have been.</summary>
+    public List<Systems.Sighting> Sightings { get; } = [];
+    public int SightingCount { get; set; }
+
     /// <summary>Mirrors hidden at sites, oldest first; smashed ones stay with SmashedTick set.</summary>
     public List<Mirror> Mirrors { get; } = [];
 
