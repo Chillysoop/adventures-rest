@@ -399,6 +399,9 @@ public static class Alerts
     /// <summary>A council site standing idle for want of timber or stone the market hasn't got.</summary>
     private static IEnumerable<Alert> Sites(Town t)
     {
+        if (t.Defenses.WallsShort >= t.Day - 1)
+            yield return new("stalled:walls", Stalled, "The walls wait for timber and stone",
+                "The masons on the walls stand idle half the day: the market is short of timber and stone. Zone industry for a quarry and a lumber camp, or wait for the market to fill.");
         foreach (var b in t.Buildings)
         {
             if (!Construction.Stalled(t, b)) continue;

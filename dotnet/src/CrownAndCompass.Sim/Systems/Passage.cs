@@ -128,6 +128,14 @@ public sealed record FleeRules
     public double Radius { get; init; } = 6;
 }
 
+/// <summary>The sky dock's airship: what it carries a company over, and how the telling goes.</summary>
+public sealed record AirshipRules
+{
+    public string Name { get; init; } = "the town's airship";
+    public IReadOnlyList<string> Ways { get; init; } = [];
+    public IReadOnlyList<string> Text { get; init; } = [];
+}
+
 public sealed record PassageRules
 {
     public WallPassRules Walls { get; init; } = new();
@@ -136,6 +144,7 @@ public sealed record PassageRules
     public IReadOnlyList<CrossSpellDef> Spells { get; init; } = [];
     public IReadOnlyList<CrossItemDef> Items { get; init; } = [];
     public IReadOnlyList<MountDef> Mounts { get; init; } = [];
+    public AirshipRules Airship { get; init; } = new();
 
     /// <summary>Share of a menace kind's host that flies or swims and pays the moat no mind.</summary>
     public IReadOnlyDictionary<string, double> Fliers { get; init; } = new Dictionary<string, double>();
@@ -197,7 +206,7 @@ public static class Passage
     private static string Key(Town town)
     {
         var d = town.Defenses;
-        return $"{d.Palisade}|{d.StoneWall}|{d.CityWall}|{d.Moat}|{d.Gatehouse}";
+        return $"{d.Palisade}|{d.StoneWall}|{d.CityWall}|{d.Moat}|{d.Gatehouse}|{town.City.WallVersion}";
     }
 
     /// <summary>
@@ -243,12 +252,19 @@ public static class Passage
             var (bx, by) = loop[(i + 1) % N];
             area += ax * by - bx * ay;
         }
-        var (gx, gy) = loop[0];
-        double ox = gx - Town.Center, oy = gy - Town.Center, len = Math.Sqrt(ox * ox + oy * oy);
-        (ox, oy) = (ox / len, oy / len);
-        string gate = kind == "palisade" ? "gate" : town.Defenses.Gatehouse == PalisadeState.Built && ring == 0 ? "gatehouse" : "gate";
-        var opening = new Opening(reach > w.Wall ? "bridge" : gate, (gx - ox * w.GateIn, gy - oy * w.GateIn), (gx + ox * (reach + w.GateOut), gy + oy * (reach + w.GateOut)));
-        return new Barrier(kind, loop, edge, outer, [opening], Math.Abs(area) / 2) { Reach = reach, Foot = w.Wall, Round = w.Round };
+        // Its gates, where the player put them on the line (the main gate first, which the gatehouse stands over).
+        var heads = WallLines.Gates(town, ring);
+        if (heads.Count == 0) heads = [Math.PI / 2];
+        var openings = new List<Opening>();
+        for (int g = 0; g < heads.Count; g++)
+        {
+            var (gx, gy) = WallLines.Point(town, ring, heads[g]);
+            double ox = gx - Town.Center, oy = gy - Town.Center, len = Math.Sqrt(ox * ox + oy * oy);
+            (ox, oy) = (ox / len, oy / len);
+            string gate = kind == "palisade" ? "gate" : g == 0 && town.Defenses.Gatehouse == PalisadeState.Built && ring == 0 ? "gatehouse" : "gate";
+            openings.Add(new Opening(reach > w.Wall ? "bridge" : gate, (gx - ox * w.GateIn, gy - oy * w.GateIn), (gx + ox * (reach + w.GateOut), gy + oy * (reach + w.GateOut))));
+        }
+        return new Barrier(kind, loop, edge, outer, openings, Math.Abs(area) / 2) { Reach = reach, Foot = w.Wall, Round = w.Round };
     }
 
     /// <summary>A closed loop moved out by <paramref name="d"/> tiles, every edge parallel to its own (mitred corners).</summary>
@@ -809,6 +825,55 @@ public static class Passage
         "sheer" => Ways.Sheer,
         _ => Ways.None,
     };
+
+    // ---- The sky dock ----
+
+    /// <summary>Airships at the sky dock that aren't already out with a company.</summary>
+    public static int AirshipsFree(Town town) => Institutions.Airships(town) - town.Parties.Count(p => p.Airship && !p.Returned);
+
+    /// <summary>What a straight march from a to b meets that nobody walks: the river, a lake, sheer heights.</summary>
+    public static Ways Meets(Town town, (double X, double Y) a, (double X, double Y) b)
+    {
+        var w = MeetsRiver(town, a, b) != null ? Ways.River : Ways.None;
+        foreach (var f in town.Terrain)
+        {
+            var needs = Needs(f.Kind);
+            if (needs == Ways.None || (w & needs) != 0) continue;
+            for (int i = 0; i <= 40; i++)
+                if (Roads.Contains(f, a.X + (b.X - a.X) * i / 40, a.Y + (b.Y - a.Y) * i / 40))
+                {
+                    w |= needs;
+                    break;
+                }
+        }
+        return w;
+    }
+
+    /// <summary>
+    /// A company setting out whose road meets water or heights it can't cross on its own takes a free airship from the
+    /// sky dock, out and home again; the mind it plans with then crosses what the ship does.
+    /// </summary>
+    public static RouteMind Board(Town town, Party party, RouteMind mind, (double X, double Y) from, (double X, double Y) to)
+    {
+        var r = Rules(town).Airship;
+        var ship = Parse(r.Ways);
+        if (ship == Ways.None || (Meets(town, from, to) & ~mind.Ways) == Ways.None || AirshipsFree(town) <= 0) return mind;
+        party.Airship = true;
+        if (r.Text.Count > 0)
+        {
+            string line = r.Text[town.Rng.Range(0, r.Text.Count)].Replace("{party}", party.Name, StringComparison.Ordinal).Replace("{ship}", r.Name, StringComparison.Ordinal);
+            town.Log(LedgerCategory.Quest, Importance.Routine, line);
+        }
+        return Aboard(town, party, mind);
+    }
+
+    /// <summary>The mind of a company with an airship under it: it crosses what the ship does.</summary>
+    public static RouteMind Aboard(Town town, Party party, RouteMind mind)
+    {
+        if (!party.Airship) return mind;
+        var r = Rules(town).Airship;
+        return mind with { Ways = mind.Ways | Parse(r.Ways), Carrier = r.Name };
+    }
 
     /// <summary>Share of a menace's host that flies or swims over the moat as if it weren't there.</summary>
     public static double Fliers(Town town, string menaceKind) => Rules(town).Fliers.TryGetValue(menaceKind, out var f) ? f : 0;
