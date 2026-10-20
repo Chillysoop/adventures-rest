@@ -189,8 +189,12 @@ public partial class Main
             {
                 // The tourney card: a grand tourney put on today, a stake on the first event, and its first heats ridden.
                 if (!Tournaments.Stage(_sim.Town, 1)) throw new InvalidOperationException("the tourney would not stage");
-                var first = _sim.Town.Tourney.Events[0];
-                if (!_sim.PlaceBet(0, first.Draw[0], Tournaments.Rules(_sim.Town).Betting.Min)) throw new InvalidOperationException("the bet was refused");
+                // A stake on the first event not yet under way (today's may have begun, by the hour), from a treasury that can spare it.
+                _sim.Town.Treasury = Math.Max(_sim.Town.Treasury, 5000);
+                int ev = _sim.Town.Tourney.Events.FindIndex(e => Tournaments.BetBlocked(_sim.Town, e) == null);
+                if (ev < 0) throw new InvalidOperationException("no tourney event takes bets");
+                var first = _sim.Town.Tourney.Events[ev];
+                if (!_sim.PlaceBet(ev, first.Draw[0], Tournaments.Rules(_sim.Town).Betting.Min)) throw new InvalidOperationException("the bet was refused");
                 OpenTourney();
                 for (int h = 0; h < 14; h++) _sim.Step();
                 _dirty = true;
