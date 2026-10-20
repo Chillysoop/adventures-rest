@@ -40,6 +40,8 @@ public sealed class MeshKit
 
     public void Tri(Vector3 a, Vector3 b, Vector3 c, Color col)
     {
+        // A mirroring transform turns the winding inside out; swap two corners to keep faces outward.
+        if (Xf.Basis.Determinant() < 0) (b, c) = (c, b);
         a = Xf * a;
         b = Xf * b;
         c = Xf * c;
@@ -124,11 +126,11 @@ public sealed class MeshKit
             var p1 = b + new Vector3(Mathf.Cos(a1) * r0, 0, Mathf.Sin(a1) * r0);
             var q0 = b + new Vector3(Mathf.Cos(a0) * r1, h, Mathf.Sin(a0) * r1);
             var q1 = b + new Vector3(Mathf.Cos(a1) * r1, h, Mathf.Sin(a1) * r1);
-            if (r1 <= 0.0001f) Tri(p1, p0, q0, col);
+            if (r1 <= 0.0001f) Tri(p0, p1, q0, col);
             else
             {
-                Quad(p1, p0, q0, q1, col);
-                Tri(b + new Vector3(0, h, 0), q1, q0, cap ?? col);
+                Quad(p0, p1, q1, q0, col);
+                Tri(b + new Vector3(0, h, 0), q0, q1, cap ?? col);
             }
         }
     }

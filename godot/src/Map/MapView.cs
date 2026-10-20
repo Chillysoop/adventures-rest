@@ -371,7 +371,7 @@ public partial class MapView : Control
     private bool _painted;
     private readonly List<ShaderMaterial> _inks = new();
 
-    /// <summary>Trial look (--style painted): banded cel light with cool shadows and a rim, richer greens, ink outlines, glow, deeper haze.</summary>
+    /// <summary>The painted look (on unless --style classic): banded cel light with cool shadows and a rim, richer greens, ink outlines, glow, deeper haze.</summary>
     public void Painted()
     {
         _painted = true;

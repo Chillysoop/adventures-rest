@@ -4,7 +4,7 @@ uniform sampler2D noise_tex : filter_linear_mipmap, repeat_enable;
 uniform float world_size = 1024.0;
 uniform float night = 0.0;
 uniform float strategic = 0.0;
-// Trial painted look (--style painted): banded cel light, rim, richer colour.
+// The painted look (MapView.Painted): banded cel light, rim, richer colour.
 uniform float toon = 0.0;
 // The season, blended across its turns (summer is the baseline look): snow lying in winter, turned leaves in autumn,
 // fresh greens in spring. Set on every material by MapView from Seasons.Look.
