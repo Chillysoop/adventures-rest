@@ -140,13 +140,40 @@ public partial class Main
     {
         var p = _panes[Tab.Council];
         var t = _sim.Town;
-        var pending = Council.PendingMotion(t);
         p.Begin();
         string facts = $"{Tag($"Tax {Math.Round(t.TaxRate * 100)}%", Ui.Ink)}   {Tag($"Watch {t.Watch}", Ui.Ink)}{(t.FestivalDays > 0 ? "   " + Tag("Festival!", Ui.Gold) : "")}";
         p.Meter("Mandate", t.Mandate, $"{Math.Round(t.Mandate)}", t.Mandate < 30);
         p.Note("The townsfolk's approval of you. It follows their mood and falls when you rule by decree. A popular mayor draws settlers.");
         p.Text(facts, 12);
         RenderTaxes(p, t);
+        RenderMotion(p, t);
+        p.Heading("Seats");
+        foreach (var s in t.Seats)
+        {
+            if (s.HolderId is not int holder)
+            {
+                p.Row($"{Ui.C(Ui.Ink2, $"[b]{Ui.Esc(s.Def.Title)}[/b]")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{(t.Population < s.Def.UnlockPopulation ? $"Opens when {s.Def.UnlockPopulation} households live here" : "Vacant, to be filled tomorrow")}[/font_size]")}");
+                continue;
+            }
+            var a = t.Agent(holder);
+            string mood = s.Loyalty >= 60 ? "Loyal" : s.Loyalty >= 25 ? "Wary" : "Disloyal";
+            int skill = Council.Competence(t, s);
+            p.Row($"[b]{Ui.Esc(s.Def.Title)}[/b]  {Tag(mood, s.Loyalty < 25 ? Ui.Bad : s.Loyalty >= 60 ? Ui.Good : Ui.Ink2)}\n{AgentLink(a)} {Ui.C(Ui.Ink2, $"[font_size=12]· {a.Race} {a.Profession} · skill {(skill >= 0 ? "+" : "")}{skill} · loyalty {Math.Round(s.Loyalty)}\nMinds {Ui.Esc(s.Def.Portfolio)}. Wants {Ui.Esc(s.Def.Agenda)}.[/font_size]")}");
+        }
+        var history = t.Motions.Where(m => m.Status != MotionStatus.Pending).TakeLast(8).Reverse().ToList();
+        if (history.Count > 0)
+        {
+            p.Heading("Past motions");
+            foreach (var m in history)
+                p.Text($"{Ui.C(Ui.Ink2, $"[font_size=11]Day {m.ProposedTick / 24 + 1}[/font_size]")}  {Ui.Esc(Ui.Cap(m.Text))}  {Tag(m.Status == MotionStatus.Passed ? $"passed{(m.Decree ? " by decree" : "")}" : $"failed{(m.Decree ? " by decree" : "")}", m.Status == MotionStatus.Passed ? Ui.Good : Ui.Bad)}", 13);
+        }
+        p.Commit();
+    }
+
+    /// <summary>The motion before the council, and any traitor the taverns whisper of: the council window's and the tray's.</summary>
+    private void RenderMotion(Pane p, Town t)
+    {
+        var pending = Council.PendingMotion(t);
         p.Heading("Before the council");
         if (pending == null) p.Note("No motion before the council. Councillors bring one when their portfolio needs it.");
         else
@@ -172,27 +199,6 @@ public partial class Main
             int ia = a.Id, ib = b.Id;
             p.Buttons(($"Name {a.GivenName}", true, false, () => Act(() => _sim.AccuseCouncillor(ia))), ($"Name {b.GivenName}", true, false, () => Act(() => _sim.AccuseCouncillor(ib))));
         }
-        p.Heading("Seats");
-        foreach (var s in t.Seats)
-        {
-            if (s.HolderId is not int holder)
-            {
-                p.Row($"{Ui.C(Ui.Ink2, $"[b]{Ui.Esc(s.Def.Title)}[/b]")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{(t.Population < s.Def.UnlockPopulation ? $"Opens when {s.Def.UnlockPopulation} households live here" : "Vacant, to be filled tomorrow")}[/font_size]")}");
-                continue;
-            }
-            var a = t.Agent(holder);
-            string mood = s.Loyalty >= 60 ? "Loyal" : s.Loyalty >= 25 ? "Wary" : "Disloyal";
-            int skill = Council.Competence(t, s);
-            p.Row($"[b]{Ui.Esc(s.Def.Title)}[/b]  {Tag(mood, s.Loyalty < 25 ? Ui.Bad : s.Loyalty >= 60 ? Ui.Good : Ui.Ink2)}\n{AgentLink(a)} {Ui.C(Ui.Ink2, $"[font_size=12]· {a.Race} {a.Profession} · skill {(skill >= 0 ? "+" : "")}{skill} · loyalty {Math.Round(s.Loyalty)}\nMinds {Ui.Esc(s.Def.Portfolio)}. Wants {Ui.Esc(s.Def.Agenda)}.[/font_size]")}");
-        }
-        var history = t.Motions.Where(m => m.Status != MotionStatus.Pending).TakeLast(8).Reverse().ToList();
-        if (history.Count > 0)
-        {
-            p.Heading("Past motions");
-            foreach (var m in history)
-                p.Text($"{Ui.C(Ui.Ink2, $"[font_size=11]Day {m.ProposedTick / 24 + 1}[/font_size]")}  {Ui.Esc(Ui.Cap(m.Text))}  {Tag(m.Status == MotionStatus.Passed ? $"passed{(m.Decree ? " by decree" : "")}" : $"failed{(m.Decree ? " by decree" : "")}", m.Status == MotionStatus.Passed ? Ui.Good : Ui.Bad)}", 13);
-        }
-        p.Commit();
     }
 
     /// <summary>The tax rate the mayor sets, and what the town's services cost against what it takes in.</summary>
@@ -232,31 +238,7 @@ public partial class Main
             ? "Heroes need a tavern before they will come to town."
             : $"{idle} {(idle == 1 ? "hero is" : "heroes are")} in town. Parties need at least three, and tougher sites want higher levels.");
 
-        var road = t.Parties.Where(x => !x.Returned).ToList();
-        if (road.Count > 0)
-        {
-            p.Heading("On the road");
-            foreach (var party in road)
-            {
-                var site = Quests.Site(t, party.SiteId)!;
-                int gone = (t.Tick - party.DepartTick) / 24;
-                int due = SimTime.DayOf(party.ReturnTick);
-                int slots = Knowledge.SlotsLeft(t, party);
-                string members = string.Join(", ", party.Members.Select(id => AgentLink(t.Agent(id), t.Agent(id).GivenName)));
-                string where = party.RecalledTick != null ? "Called home" : $"Gone {Ui.Days(gone)} to {SiteLink(site.Def)}";
-                string slotNote = slots == 0
-                    ? Ui.C(Ui.Ink2, Knowledge.Slots(t, party) == 0 ? "No caster and no sending stone with them: no way to send word." : "No spell slots or stone sendings left.")
-                    : Ui.C(Ui.Ink2, Sim.Systems.Armory.Carries(t, party)
-                        ? $"They carry one of the town's sending stones: {slots} {(slots == 1 ? "sending" : "sendings")} left."
-                        : $"{slots} spell {(slots == 1 ? "slot" : "slots")} for sendings. Each one costs a slot{(party.Members.Any(id => t.Agent(id).Hero!.Cls.Healer) ? ", and a healer's slot is a heal they won't have in the dungeon" : "")}.");
-                int id = party.Id;
-                p.Card($"[b]The {Ui.Esc(party.Name)}[/b]  {Tag($"due back day {due}", Ui.Gold)}\n{where} · {members}\n[font_size=12]{slotNote}[/font_size]");
-                if (Knowledge.Slots(t, party) > 0)
-                    p.Buttons(
-                        ("Ask for word", slots > 0, false, () => Act(() => _sim.SendWord(id))),
-                        ("Call them home", slots > 0 && Knowledge.CanRecall(t, party), false, () => Act(() => _sim.SendWord(id, recall: true))));
-            }
-        }
+        RenderRoad(p, t);
 
         RenderExplore(p, t);
         RenderEyes(p, t);
@@ -346,6 +328,36 @@ public partial class Main
             p.Card(string.Join("\n", books.Select(kv => $"{Ui.Esc(kv.Key)}   {Ui.C(kv.Value >= 0 ? Ui.Good : Ui.Bad, $"[b]{Sign(kv.Value)}[/b]")}")) + $"\n[b]Net[/b]   {Ui.C(net >= 0 ? Ui.Good : Ui.Bad, $"[b]{Sign(net)}[/b]")}");
         }
         p.Commit();
+    }
+
+    /// <summary>Parties out on the road, with their sendings: the bounty board's and the tray's.</summary>
+    private void RenderRoad(Pane p, Town t)
+    {
+        var road = t.Parties.Where(x => !x.Returned).ToList();
+        if (road.Count > 0)
+        {
+            p.Heading("On the road");
+            foreach (var party in road)
+            {
+                var site = Quests.Site(t, party.SiteId)!;
+                int gone = (t.Tick - party.DepartTick) / 24;
+                int due = SimTime.DayOf(party.ReturnTick);
+                int slots = Knowledge.SlotsLeft(t, party);
+                string members = string.Join(", ", party.Members.Select(id => AgentLink(t.Agent(id), t.Agent(id).GivenName)));
+                string where = party.RecalledTick != null ? "Called home" : $"Gone {Ui.Days(gone)} to {SiteLink(site.Def)}";
+                string slotNote = slots == 0
+                    ? Ui.C(Ui.Ink2, Knowledge.Slots(t, party) == 0 ? "No caster and no sending stone with them: no way to send word." : "No spell slots or stone sendings left.")
+                    : Ui.C(Ui.Ink2, Sim.Systems.Armory.Carries(t, party)
+                        ? $"They carry one of the town's sending stones: {slots} {(slots == 1 ? "sending" : "sendings")} left."
+                        : $"{slots} spell {(slots == 1 ? "slot" : "slots")} for sendings. Each one costs a slot{(party.Members.Any(id => t.Agent(id).Hero!.Cls.Healer) ? ", and a healer's slot is a heal they won't have in the dungeon" : "")}.");
+                int id = party.Id;
+                p.Card($"[b]The {Ui.Esc(party.Name)}[/b]  {Tag($"due back day {due}", Ui.Gold)}\n{where} · {members}\n[font_size=12]{slotNote}[/font_size]");
+                if (Knowledge.Slots(t, party) > 0)
+                    p.Buttons(
+                        ("Ask for word", slots > 0, false, () => Act(() => _sim.SendWord(id))),
+                        ("Call them home", slots > 0 && Knowledge.CanRecall(t, party), false, () => Act(() => _sim.SendWord(id, recall: true))));
+            }
+        }
     }
 
     /// <summary>Companies out exploring, the council's open offers, and the country a company could be sent to.</summary>

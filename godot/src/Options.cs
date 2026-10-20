@@ -18,8 +18,12 @@ public sealed class Options
     public int Hour;
     public int? Speed;
     public string? Tab;
-    /// <summary>--dock Town opens that dock group list, for screenshots.</summary>
-    public string? Dock;
+    /// <summary>--tray Bounties opens that drawer of the action tray, for screenshots.</summary>
+    public string? Tray;
+    /// <summary>--stat N: hover the Nth resource in the top bar, for a shot of its month.</summary>
+    public int? Stat;
+    /// <summary>--tax 0.05: set the tax rate before the days run, for a shot of a town in the red.</summary>
+    public double? Tax;
     public float? Scroll;
 
     /// <summary>With --autoplay, leave companies' reports unbought for the player (screenshots of the companies window).</summary>
@@ -149,7 +153,9 @@ public sealed class Options
                 case "--hour": o.Hour = int.Parse(Next()); break;
                 case "--speed": o.Speed = int.Parse(Next()); break;
                 case "--tab": o.Tab = Next(); break;
-                case "--dock": o.Dock = Next(); break;
+                case "--tray": o.Tray = Next(); break;
+                case "--stat": o.Stat = int.Parse(Next()); break;
+                case "--tax": o.Tax = double.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture); break;
                 case "--scroll": o.Scroll = float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture); break;
                 case "--site": o.Site = Next(); break;
                 case "--at": o.At = Next(); break;
