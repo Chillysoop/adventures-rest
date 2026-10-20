@@ -1290,6 +1290,9 @@ public sealed class Content
     /// <summary>Enemy powers' end-game crises, their blows against the town and their clashes (content/game/crises.json).</summary>
     public CrisisRules Crises { get; init; } = new();
 
+    /// <summary>The yearly tourney: its events, levels, champions and betting (content/game/tournaments.json).</summary>
+    public TourneyRules Tourney { get; init; } = new();
+
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
 
@@ -1457,6 +1460,7 @@ public sealed class Content
             Assess = Parse<AssessRules>("assess.json"),
             Skills = Parse<SkillRules>("skills.json"),
             Crises = Parse<CrisisRules>("crises.json"),
+            Tourney = Parse<TourneyRules>("tournaments.json"),
         };
     }
 

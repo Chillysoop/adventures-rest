@@ -7,7 +7,7 @@ namespace CrownAndCompass.Client;
 /// <summary>
 /// With --smoke: the merge gate's play-through of a build (<c>scripts/gate.ts</c>). From the main menu it
 /// starts a new town, plays on at top speed, opens every window, the build bar, the campaign map, a wall and a guard flag and the
-/// game menu, saves and loads, starts the tutorial, opens the History and the glossary with a pinned keyword card, steps into a story event and answers a party's sending, a few frames apart so each one draws. It prints
+/// game menu, saves and loads, starts the tutorial, opens the History and the glossary with a pinned keyword card, steps into a story event, answers a party's sending and opens the tourney card with a bet on it, a few frames apart so each one draws. It prints
 /// <c>SMOKE OK</c> and quits with 0, or <c>SMOKE FAIL</c> and 1; the gate also fails on any engine error.
 /// </summary>
 public partial class Main
@@ -162,6 +162,21 @@ public partial class Main
                 return 70;
             case 28:
                 CloseFind();
+                return 5;
+            case 29:
+            {
+                // The tourney card: a grand tourney put on today, a stake on the first event, and its first heats ridden.
+                if (!Tournaments.Stage(_sim.Town, 1)) throw new InvalidOperationException("the tourney would not stage");
+                var first = _sim.Town.Tourney.Events[0];
+                if (!_sim.PlaceBet(0, first.Draw[0], Tournaments.Rules(_sim.Town).Betting.Min)) throw new InvalidOperationException("the bet was refused");
+                OpenTourney();
+                for (int h = 0; h < 14; h++) _sim.Step();
+                _dirty = true;
+                return 40;
+            }
+            case 30:
+                if (!_tourney.Visible || _sim.Town.Tourney.Events[0].Heats.Count == 0) throw new InvalidOperationException("the tourney's heats did not show");
+                CloseTourney();
                 return 5;
             default:
                 var t = _sim.Town;

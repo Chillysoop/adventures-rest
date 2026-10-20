@@ -486,6 +486,17 @@
     {"id": "builders", "title": "Builders and homes", "text": "Each builders' yard puts three more crews to work, so more homes, shops and works can go up at once. Build one from the government buildings when the town's sites queue for builders. Homes grow a storey only when what folk need is close by: a tavern, a shrine, a market, food of several kinds, something pleasant on the street. Click a house to see what it waits for.", "when": "day:15", "teaches": []},
     {"id": "cobbles", "title": "Cobbled streets", "text": "Once the town is chartered a town, its masons pave the streets with stone on their own: the square first, then street by street outward from the centre, as the market has stone and the treasury can spare the gold. Families on a cobbled street are a little happier. Keep a quarry working and they'll get further.", "when": "day:120", "teaches": []},
     {
+      "id": "tourney",
+      "title": "The summer tourney",
+      "text": "Each summer, once the town is a village, the council proposes a tourney: [b]the Joust[/b], [b]the Archery[/b], [b]the Wizards' Duel[/b] and [b]the Race[/b], one a day. Click its alert to open the tourney card, then fund it modest, grand or legendary (the richer the treasury, the dearer it is), or skip it and let the town down. The town's heroes ride where their class suits the event, against champions of the neighbouring settlements. Before an event's first heat you may stake treasury gold on one rider: the card shows each rider's odds and what a win pays. The heats are rolled on the d20 hour by hour while the game runs on; winners earn renown and epithets, and the crowds pay at the gate and spend in the shops. An arena makes it all bigger.",
+      "when": "alert:tourney",
+      "teaches": [
+        "command:FundTourney",
+        "command:SkipTourney",
+        "command:PlaceBet"
+      ]
+    },
+    {
       "id": "grand-works",
       "title": "Grand works",
       "text": "A rich town can raise grand works: a clock tower, an aqueduct, a great gatehouse, a mage tower, royal gardens, and in a great city a colossus and three wonders (a cathedral, a palace and a citadel), unlocked charter by charter. A treasury that sits on more than 15,000 gold costs a little each day to keep, so a rich city does best to build. Begin one under [b]Grand works[/b] in the [b]City[/b] window and set it down like any government building. It rises over seasons, drawing gold and goods for each stage as the last is done, and helps the whole town for good once it stands.",

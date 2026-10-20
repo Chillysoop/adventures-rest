@@ -20,7 +20,7 @@ public static class Brain
             if (!x.Departed && x.Activity == Activity.Drinking && x.LocationId is int at) drinkers[at] = drinkers.GetValueOrDefault(at) + 1;
         town.HourTaverns = town.Taverns;
         town.Drinkers = drinkers;
-        double festival = Council.FestivalMood(town) + Seasons.Mood(town) + Decrees.Mood(town) + Institutions.Mood(town) + Taxes.Mood(town);
+        double festival = Council.FestivalMood(town) + Seasons.Mood(town) + Decrees.Mood(town) + Institutions.Mood(town) + Taxes.Mood(town) + Tournaments.Mood(town);
         foreach (var a in town.Agents)
         {
             if (a.Departed || a.IsAway) continue;

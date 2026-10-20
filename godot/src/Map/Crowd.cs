@@ -343,6 +343,7 @@ public partial class Crowd(MapView map) : Node3D
                     if (AgentPositions.Hand(town, site).Hauling && People.Carrying(site)) loads.Add((p, s.Yaw, site.Def.Stone > site.Def.Timber));
                 }
                 Street(town, now);
+                ListsCrowd(town, now);
                 Flush(_folk);
             }
         }
@@ -420,9 +421,13 @@ public partial class Crowd(MapView map) : Node3D
             var dir = (pin - pos).Normalized();
             Put(gen.At(pos), Mathf.Atan2(dir.X, dir.Y), new Color("3f5f3a"), Palette.RaceColor(a.Race), 1.1f);
         }
+        ListsRiders(town, now);
+        ListsBanners(town, now);
         Flush(_heroes);
+        PutHorses();
         Guards(town, now, banners);
         foreach (var (bp, yaw, col) in banners) Put(bp, yaw + Mathf.Pi / 2, col, Colors.White, 2.2f);
+        PutPennons();
         Flush(_banners);
 
         // The warband on the march, seen only once it is inside the light.

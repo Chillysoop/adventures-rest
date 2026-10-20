@@ -101,6 +101,11 @@ public partial class Main
             AlertWindow.Institutions => Tab.Institutions,
             _ => null,
         };
+        if (a.Kind.Window == AlertWindow.Tourney)
+        {
+            OpenTourney();
+            return;
+        }
         if (a.StoryId is int story)
         {
             OpenStory(story);
