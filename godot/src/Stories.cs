@@ -126,6 +126,7 @@ public partial class Main
         var title = Ui.Label(Stories.Fill(t, s, d.Title), Ui.Ink, Ui.Display, 24);
         title.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         _storyBox.AddChild(title);
+        if (FoeStrip(s) is { } foe) _storyBox.AddChild(foe);
 
         if (_beat != null)
         {
@@ -166,6 +167,44 @@ public partial class Main
         _storyBox.AddChild(foot);
     }
 
+    /// <summary>The enemy or the site a story is about: its portrait, its name and how dangerous the town thinks it is.</summary>
+    private Control? FoeStrip(Story s)
+    {
+        var t = _sim.Town;
+        Portrait face;
+        string name;
+        Control? bar = null;
+        if (s.MenaceId is int mid && mid >= 1 && mid <= t.Saga.Menaces.Count)
+        {
+            var m = t.Saga.Menaces[mid - 1];
+            face = Foes.Of(t, m, 52);
+            name = Ui.Cap(m.Name);
+            if (m.Alive) bar = Foes.Threat(t, m);
+        }
+        else if (s.Warband)
+        {
+            face = Foes.Warband(t, 52);
+            name = Ui.Cap(t.Content.Enemy.Name);
+            if (Assess.WarbandThreat(t) is Banded b) bar = Foes.Bar("Threat", b, Foes.Worse(b));
+        }
+        else if (s.SiteId is string sid && Quests.Site(t, sid) is { } site && !s.Institutions.Any())
+        {
+            face = Foes.Of(t, site, 52);
+            name = site.Def.Name;
+            if (!site.ThoughtCleared) bar = Foes.Bar("Danger", Assess.Danger(t, site), Foes.Worse(Assess.Danger(t, site)), "How hard it looks for the town's heroes, from what the town believes is there.");
+        }
+        else return null;
+        var h = new HBoxContainer();
+        h.AddThemeConstantOverride("separation", 12);
+        h.AddChild(face);
+        var v = new VBoxContainer { SizeFlagsVertical = SizeFlags.ShrinkCenter };
+        v.AddThemeConstantOverride("separation", 4);
+        v.AddChild(Ui.Label(name, Ui.Ink, Ui.Bold, 14));
+        if (bar != null) v.AddChild(bar);
+        h.AddChild(v);
+        return h;
+    }
+
     /// <summary>The hero a story is about, as a link.</summary>
     private string LinkStory(Story s, string text)
     {
@@ -192,7 +231,7 @@ public partial class Main
             int bonus = mod + prof;
             string adv = Stories.Advantage(t, s, o);
             string help = string.Concat(Sendings.Helpers(t, s, o).Select(h => $" + {h.Name} {(h.Bonus >= 0 ? "+" : "−")}{Math.Abs(h.Bonus)}"));
-            sub = $"{name} {(bonus >= 0 ? "+" : "−")}{Math.Abs(bonus)} ({ab.ToUpperInvariant()}{Edge(o.Skill)}){help} vs DC {Stories.DcOf(t, o)} · {Math.Round(Stories.Chance(t, s, o, _inspire) * 100)}%"
+            sub = $"{name} {(bonus >= 0 ? "+" : "−")}{Math.Abs(bonus)} ({ab.ToUpperInvariant()}{Edge(o.Skill)}){help} vs DC {Stories.DcOf(t, o)}"
                 + (adv != "" ? $" · advantage: {adv}" : "") + (o.Cost > 0 ? $" · costs {Js.Str(o.Cost)}g" : "");
         }
         if (blocked != null) sub = $"{Ui.Cap(blocked)}.";
@@ -212,7 +251,10 @@ public partial class Main
         var feel = new List<string>();
         if (pleased.Count + wardsPleased.Count > 0) feel.Add(Ui.C(Ui.Good, $"Pleases {Ui.Esc(Who(pleased, wardsPleased))}"));
         if (angered.Count + wardsAngered.Count > 0) feel.Add(Ui.C(Ui.Bad, $"Angers {Ui.Esc(Who(angered, wardsAngered))}"));
-        var row = new Button { Disabled = blocked != null, FocusMode = FocusModeEnum.None, CustomMinimumSize = new Vector2(0, feel.Count > 0 ? 72 : 54), MouseDefaultCursorShape = CursorShape.PointingHand };
+        double chance = Stories.Chance(t, s, o, _inspire);
+        var odds = Assess.Odds(t, chance);
+        var oddsColor = blocked != null ? Ui.Ink2 : Foes.Better(odds);
+        var row = new Button { Disabled = blocked != null, FocusMode = FocusModeEnum.None, CustomMinimumSize = new Vector2(0, feel.Count > 0 ? 94 : 76), MouseDefaultCursorShape = CursorShape.PointingHand };
         var normal = Ui.Box(new Color(Ui.Panel2, 0.9f), Ui.Line, 8, 1, 14, 8);
         var hover = Ui.Box(new Color(Ui.Gold, 0.14f), Ui.Gold, 8, 1, 14, 8);
         hover.BorderWidthLeft = 4;
@@ -237,10 +279,52 @@ public partial class Main
             feell.MouseFilter = MouseFilterEnum.Ignore;
             v.AddChild(feell);
         }
+        if (blocked == null)
+        {
+            v.AddChild(Gauges(o, chance, odds, oddsColor));
+            var touched = Assess.Impact(t, o).Touches.Select(w => w.Name).Distinct().ToList();
+            if (touched.Count > 0) row.TooltipText = $"What is at stake: {string.Join(", ", touched)}. Which way each goes depends on the roll.";
+        }
         row.AddChild(v);
+        // The odds' colour down the left edge: green for a safe bet, red for a long shot.
+        var edge = new ColorRect { Color = oddsColor, MouseFilter = MouseFilterEnum.Ignore };
+        row.AddChild(edge);
+        edge.SetAnchorsAndOffsetsPreset(LayoutPreset.LeftWide);
+        edge.OffsetLeft = 1;
+        edge.OffsetRight = 5;
+        edge.OffsetTop = 8;
+        edge.OffsetBottom = -8;
         int id = s.Id;
         row.Pressed += () => Choose(id, index);
         return row;
+    }
+
+    /// <summary>
+    /// A choice's bars: its odds (colour, segments and a word, with the exact chance), what it could win and what it
+    /// could cost as rough bands, and the icons of what it touches, without saying which way each would go.
+    /// </summary>
+    private HBoxContainer Gauges(StoryOption o, double chance, Banded odds, Color oddsColor)
+    {
+        var t = _sim.Town;
+        var h = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
+        h.AddThemeConstantOverride("separation", 14);
+        if (o.Rolls) h.AddChild(Foes.Bar("Odds", odds.Step + 1, odds.Steps, $"{odds.Name} · {Math.Round(chance * 100)}%", oddsColor, width: 60));
+        else h.AddChild(Foes.Bar("Odds", odds.Steps, odds.Steps, "Sure thing", oddsColor, width: 60));
+        var impact = Assess.Impact(t, o);
+        // A choice that only moves the story on has its stakes in what comes next.
+        if (impact.Reward.Step == 0 && o.Success.Next != "") h.AddChild(Foes.Bar("Reward", 0, impact.Reward.Steps - 1, "Comes later", Ui.Ink2, width: 33));
+        else h.AddChild(Foes.Stakes("Reward", impact.Reward, Foes.Scale(0)));
+        if (o.Rolls || impact.Risk.Step > 0) h.AddChild(Foes.Stakes(o.Rolls ? "Risk" : "Cost", impact.Risk, Foes.Scale(1)));
+        if (impact.Touches.Count > 0)
+        {
+            var at = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
+            at.AddThemeConstantOverride("separation", 3);
+            at.AddChild(Ui.Label("Touches", Ui.Ink2, Ui.Medium, 11));
+            foreach (var w in impact.Touches.Take(5))
+                at.AddChild(new TextureRect { Texture = Ui.Icon(w.Icon), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2(15, 15), SizeFlagsVertical = SizeFlags.ShrinkCenter, MouseFilter = MouseFilterEnum.Ignore });
+            h.AddChild(at);
+        }
+        return h;
     }
 
     /// <summary>What the mayor brings to a skill beyond the ability: training, expertise, a feat.</summary>

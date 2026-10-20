@@ -29,7 +29,23 @@ public partial class Main
         string arrival = t.Enemy.Stage == ThreatStage.Marching && t.Enemy.ArrivalTick is int at
             ? "\n" + Ui.C(Ui.Bad, $"[b]They reach the {Garrison.Place(t, t.Enemy.Approach)} in {Ui.Days((int)Math.Ceiling((at - t.Tick) / 24.0))}. Call the watch to arms there; heroes in town will face the warlord.[/b]")
             : "";
-        p.Card($"{Ui.KindIcon("warband", 22)}[font_size=17][b]{Ui.Esc(Ui.Cap(t.Content.Enemy.Name))}[/b][/font_size]\n{stage.Text}{arrival}");
+        var threat = Assess.WarbandThreat(t);
+        string card = $"{Ui.KindIcon("warband", 22)}[font_size=17][b]{Ui.Esc(Ui.Cap(t.Content.Enemy.Name))}[/b][/font_size]\n{stage.Text}{arrival}";
+        p.Add($"warband{threat?.Id}{card}", () =>
+        {
+            var panel = new PanelContainer();
+            panel.AddThemeStyleboxOverride("panel", Ui.Box(Ui.Panel2, Ui.Panel2, 10, 0, 12, 10));
+            var h = new HBoxContainer();
+            h.AddThemeConstantOverride("separation", 12);
+            h.AddChild(Foes.Warband(t, 60));
+            var v = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+            v.AddThemeConstantOverride("separation", 6);
+            v.AddChild(Ui.Rich(card));
+            if (threat is Banded b) v.AddChild(Foes.Bar("Threat", b, Foes.Worse(b), "The warband's strength as the scouts guess it, against the town's defence."));
+            h.AddChild(v);
+            panel.AddChild(h);
+            return panel;
+        });
         p.Heading("Strength");
         // A broken warband has no strength left to guess at.
         if (Threat.IsActive(t) && est is double e) p.Meter("Warband", 100 * e / scale, $"~{Math.Round(e)}", true);
@@ -305,7 +321,13 @@ public partial class Main
             string word = s.Known == SiteKnowledge.Rumoured && !s.ThoughtCleared
                 ? Ui.C(Ui.Ink2, $" [font_size=11]rumour: {Ui.Esc(s.Believed)} ({Rumors.Trust(s.Trust)})[/font_size]")
                 : "";
-            p.Row($"{SiteLink(s.Def)} {Ui.C(Ui.Gold, $"[font_size=11]{tier}[/font_size]")}{word}\n{status}", buttons.ToArray());
+            // Its face and how hard it looks for the town's heroes, both from what the town believes is there.
+            var danger = Assess.Danger(t, s);
+            var site = s;
+            string look = $"{Foes.CreatureFace(s.Believed, s.Def.Kind)}{s.Known}{s.ThoughtCleared}{danger.Id}";
+            p.Row($"{SiteLink(s.Def)} {Ui.C(Ui.Gold, $"[font_size=11]{tier}[/font_size]")}{word}\n{status}",
+                (look, () => Foes.Of(t, site, 44), s.ThoughtCleared ? null : () => Foes.Bar("Danger", danger, Foes.Worse(danger), "How hard it looks for the heroes on the town's books, from what the town believes is there. A rumour can be wrong.")),
+                buttons.ToArray());
         }
         p.Note(freeScry
             ? $"Scrying: the Scrying Pool will show one site live for {t.Content.Knowledge.ScryHours} hours today, free."
