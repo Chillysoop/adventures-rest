@@ -430,7 +430,8 @@ public static class Threat
 
         if (breaches >= e.BreachesToFall)
         {
-            if (Saga.Sack(town, Menaces.Warband(town), lines))
+            // Without the saga there is no yoke, and no warband to raise as a menace.
+            if (town.Saga.Enabled && Saga.Sack(town, Menaces.Warband(town), lines))
             {
                 WarlordInCamp(town);
                 Chronicle(town, lines, ExpeditionOutcome.Wiped, []);

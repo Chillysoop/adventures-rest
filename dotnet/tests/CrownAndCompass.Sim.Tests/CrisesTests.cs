@@ -112,8 +112,9 @@ public class CrisesTests
         int entries = t.Ledger.Entries.Count;
         for (int d = 0; d < 30 && g.Heat >= t.Content.Crises.Vengeance.StrikeAt; d++) sim.RunDays(1);
         Assert.True(g.Heat < t.Content.Crises.Vengeance.StrikeAt);
-        Assert.Contains(t.Ledger.Entries.Skip(entries), e => e.Text.Contains(m.Name, StringComparison.Ordinal) || e.Text.Contains(m.Leader, StringComparison.Ordinal) ||
-            e.Text.Contains(m.SeatName, StringComparison.Ordinal));
+        // It struck where the town could see it, or (the marked hero out of town) quietly turned a councillor or sent an agent in to strike.
+        Assert.True(t.Ledger.Entries.Skip(entries).Any(e => e.Text.Contains(m.Name, StringComparison.Ordinal) || e.Text.Contains(m.Leader, StringComparison.Ordinal) ||
+            e.Text.Contains(m.SeatName, StringComparison.Ordinal)) || t.Moles.Any(x => x.Foe == g.Foe) || t.Lurkers.Any(l => l.Leader == m.Leader || l.By == m.Name));
     }
 
     private static (Simulation Sim, Grudge G) Plotting()
