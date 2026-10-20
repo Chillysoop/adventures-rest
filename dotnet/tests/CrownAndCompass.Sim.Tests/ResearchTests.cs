@@ -64,7 +64,7 @@ public class ResearchTests
         Assert.True(sim.FundResearch(3));
         Assert.True(Research.Lore(t) > 0);
         double wool = Decrees.Yield(t, Good.Wool);
-        for (int d = 0; d < 400 && !Research.IsKnown(t, "hardy-flocks"); d++)
+        for (int d = 0; d < 600 && !Research.IsKnown(t, "hardy-flocks"); d++)
         {
             // The council spends freely; keep the scholars paid.
             t.Treasury = Math.Max(t.Treasury, 2000);

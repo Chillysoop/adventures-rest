@@ -60,4 +60,18 @@ public class LandmarksTests
         Assert.True(Ruins.Defence(t) > def || Institutions.SkyWatch(t) > sky);
         Assert.False(sim.RestoreRuin(r.Def.Id));
     }
+
+    /// <summary>The town keeps one dragon: an egg-raised one, grown, moves into the Eyrie, and a treaty dragon lets in no egg.</summary>
+    [Fact]
+    public void TheTownKeepsOneDragon()
+    {
+        var t = new Simulation(new SimulationOptions { Seed = 2 }).Town;
+        t.Egg = new DragonEgg { Kind = t.Content.Eggs.Kinds[0].Id, Kept = true, HatchedDay = 0, Grown = true, Name = "Cinder" };
+        Assert.NotNull(Eggs.Aid(t));
+        t.Institutions.Add(new InstitutionState { Def = Eggs.Eyrie });
+        Assert.Null(Eggs.Aid(t));
+        Assert.False(Eggs.Resident(t));
+        t.Egg = null;
+        Assert.True(Eggs.Resident(t));
+    }
 }

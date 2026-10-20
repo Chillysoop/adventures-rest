@@ -80,7 +80,9 @@ public partial class TownView
             f.Transform = new Transform3D(Basis.FromEuler(new Vector3(0, yaw, -0.35f)).Scaled(Vector3.One * 2.2f), at);
         }
 
-        if (town.Egg is not { HatchedDay: not null } egg || Eggs.Kind(town, egg.Kind) is not { } kind)
+        // Grown, the town's dragon moves into the Eyrie, which draws it curled on its ledge.
+        if (town.Egg is not { HatchedDay: not null } egg || Eggs.Kind(town, egg.Kind) is not { } kind
+            || egg.Grown && CrownAndCompass.Sim.Systems.Institutions.Find(town, Eggs.Eyrie) != null)
         {
             if (_dragon != null) _dragon.Visible = false;
             return;
