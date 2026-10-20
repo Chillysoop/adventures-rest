@@ -95,6 +95,14 @@ public partial class Minimap(MapView map) : Control
             if (f.Known && town.Tick >= f.ReportTick && f.Kind is "font" or "ruin") DrawCircle(ToMini(Geo.FromDays(f.X, f.Y)), 2.2f, f.Kind == "font" ? new Color("b8a0ff") : new Color("c8b89a"));
         foreach (var s in town.Surveys)
             if (Explore.Out(s) && map.Fog.IsLive(Geo.SurveyAt(town, s, 0).Pos)) DrawCircle(ToMini(Geo.SurveyAt(town, s, 0).Pos), 2, new Color("8cc084"));
+        foreach (var sp in Explore.Spots(town))
+        {
+            var p = ToMini(Geo.FromDays(sp.SpotX!.Value, sp.SpotY!.Value));
+            // A gold diamond: a spot marked for a company to look at.
+            DrawPolyline([p + new Vector2(0, -5), p + new Vector2(5, 0), p + new Vector2(0, 5), p + new Vector2(-5, 0), p + new Vector2(0, -5)], new Color(0, 0, 0, 0.6f), 3.5f, true);
+            DrawPolyline([p + new Vector2(0, -5), p + new Vector2(5, 0), p + new Vector2(0, 5), p + new Vector2(-5, 0), p + new Vector2(0, -5)], Ui.Gold, 1.8f, true);
+            DrawCircle(p, 1.4f, Ui.Gold);
+        }
         foreach (var m in map.Markers)
         {
             var p = ToMini(m.P);

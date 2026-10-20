@@ -65,6 +65,11 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["tab-library", "spell-book", mono],
   ["tab-build", "claw-hammer", mono],
   ["glossary", "open-book", mono],
+  // Quick orders over the corner map
+  ["order-defend", "guarded-tower", mono],
+  ["order-guard", "flying-flag", mono],
+  ["order-strike", "sword-brandish", mono],
+  ["order-scout", "spyglass", mono],
   // Enemy portraits (godot/src/Portrait.cs draws them on a medallion tinted by the enemy's kind)
   ...[
     "orc-head", "ogre", "troll", "goblin-head", "brutal-helm", "horned-helm", "giant",

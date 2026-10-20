@@ -8,7 +8,8 @@ namespace CrownAndCompass.Client;
 /// Command-line options after "--", for sharing a moment or checking a build headlessly:
 /// <c>--seed 7 --day 40 --autoplay --tab bounties --site wolfwood --scry wolfwood --screenshot shot.png</c>.
 /// Also <c>--scout site</c>, <c>--mirror site</c>, <c>--build pool|spire|tower|palisade</c>, <c>--relic item-id</c> and <c>--buy all|N</c> (companies' reports);
-/// for the walls <c>--works palisade|stone|all</c> (raised at once), <c>--call N|tower:N</c>, <c>--flag x,y[,guards]</c> and <c>--wait hours</c>.
+/// for the walls <c>--works palisade|stone|all</c> (raised at once), <c>--call N|tower:N</c>, <c>--flag x,y[,guards]</c> and <c>--wait hours</c>;
+/// <c>--spot x,y</c> marks a spot (days east and south) for a company to look at, and <c>--strike</c> opens the quick orders' Strike list.
 /// </summary>
 public sealed class Options
 {
@@ -110,6 +111,9 @@ public sealed class Options
 
     /// <summary>--find: leave explorers' reports to the player and open the first one waiting; --find-pick ACT answers it.</summary>
     public bool Find;
+
+    /// <summary>--strike: open the quick orders' Strike list over the corner map.</summary>
+    public bool Strike;
     public string? FindPick;
     public int? StoryPick;
 
@@ -152,6 +156,7 @@ public sealed class Options
                 case "--folk": o.Folk = true; break;
                 case "--rolls": o.Rolls = true; break;
                 case "--wall": o.Wall = int.Parse(Next()); break;
+                case "--strike": o.Strike = true; break;
                 case "--house": o.House = true; break;
                 case "--alert": o.Alert = int.Parse(Next()); break;
                 case "--alert-hover": o.AlertHover = int.Parse(Next()); break;
@@ -190,7 +195,7 @@ public sealed class Options
                 case "--advance": o.Advances.Add(Next()); break;
                 case "--inspiration": o.Inspiration = int.Parse(Next()); break;
                 case "--decor-at": o.DecorAt = Next().Split(',').Select(v => double.Parse(v, System.Globalization.CultureInfo.InvariantCulture)).ToArray(); break;
-                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--stock" or "--pact" or "--buy" or "--call" or "--flag" or "--wait" or "--works" or "--roster":
+                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--stock" or "--pact" or "--buy" or "--call" or "--flag" or "--wait" or "--works" or "--roster" or "--spot":
                     o.Script.Add((args[i][2..], Next()));
                     break;
             }
@@ -245,6 +250,10 @@ public sealed class Options
                 case "flag":
                     var f = arg.Split(',').Select(v => double.Parse(v, System.Globalization.CultureInfo.InvariantCulture)).ToArray();
                     sim.PlantFlag(f[0], f[1], f.Length > 2 ? (int)f[2] : 0);
+                    break;
+                case "spot":
+                    var sp = arg.Split(',').Select(v => double.Parse(v, System.Globalization.CultureInfo.InvariantCulture)).ToArray();
+                    sim.MarkSpot(sp[0], sp[1]);
                     break;
                 case "wait":
                     for (int h = 0; h < int.Parse(arg); h++) sim.Step();
