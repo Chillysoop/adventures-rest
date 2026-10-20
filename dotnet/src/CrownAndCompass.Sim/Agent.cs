@@ -35,6 +35,9 @@ public enum Activity
 
     /// <summary>Carrying timber or stone onto a building site (<see cref="Systems.Construction"/>).</summary>
     Hauling,
+
+    /// <summary>Out at a bathhouse, theatre, market hall, library or the arena (<see cref="Systems.Crowds"/>).</summary>
+    Visiting,
 }
 
 public static class TraitOrder
@@ -130,6 +133,9 @@ public sealed class HeroSheet
 
     /// <summary>Carries one of the town's sending stones: their company can send word with no caster's slot (<see cref="Systems.Armory"/>).</summary>
     public bool Stone { get; set; }
+
+    /// <summary>The site kind of the ward draught they drank before setting out, harder to hit there (<see cref="Systems.Alchemy"/>).</summary>
+    public string? Ward { get; set; }
 
     /// <summary>The day the mayor last gave them something from the armory.</summary>
     public int LastGiftDay { get; set; } = -99;
@@ -264,6 +270,12 @@ public sealed class Agent
     public Activity Activity { get; set; } = Activity.Idle;
     public int? LocationId { get; set; }
     public int Drinks { get; set; }
+
+    /// <summary>The full building they walked to this hour before thinking again (<see cref="Systems.Crowds"/>).</summary>
+    public int? TurnedFrom { get; set; }
+
+    /// <summary>Been out to a bathhouse, theatre or the like today.</summary>
+    public bool VisitedToday { get; set; }
 
     public int ArrivedTick { get; set; }
     public bool Departed { get; set; }

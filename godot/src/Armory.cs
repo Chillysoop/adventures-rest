@@ -91,6 +91,7 @@ public partial class Main
             p.Row($"[b]The {Ui.Esc(name)}[/b]  {Tag(word, color)}  {pact}\n{Ui.C(Ui.Ink2, $"[font_size=12]{home.Count} of {members.Count} in town{line}[/font_size]")}", buttons.ToArray());
         }
         p.Note("A purse sends each member in town gold from the treasury with the town's thanks.");
+        RenderAlchemy(p);
         p.Commit();
     }
 

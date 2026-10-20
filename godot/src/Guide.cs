@@ -221,7 +221,10 @@ public partial class Main
             "glossary" => _glossaryButton,
             "window" => _window,
             "inspector" => _inspector,
-            "dock" => _dock,
+            "dock" or "rail" => _rail,
+            "tray" => _trayColumn,
+            _ when point.StartsWith("tray:", StringComparison.Ordinal) && _trayButtons.TryGetValue(point[5..], out var tb) => _trayOpen == point[5..] ? _drawer : tb.Button,
+            "siege" => _siegeBanner,
             _ when point.StartsWith("tab:", StringComparison.Ordinal) && Enum.TryParse<Tab>(point[4..], out var tab) && _tabButtons.TryGetValue(tab, out var b) => TabAnchor(tab, b),
             _ => null,
         };

@@ -48,6 +48,9 @@ public sealed record SimulationOptions
     /// <summary>Whether the warband exists at all (sandbox and some tests turn it off).</summary>
     public bool Enemy { get; init; } = true;
 
+    /// <summary>Let the stand-in mayor hand out purses, fiefs and the championship; off, they come to the player as choices.</summary>
+    public bool AutoHonours { get; init; } = true;
+
     /// <summary>Let the stand-in mayor answer story events; off when a player steps into them.</summary>
     public bool AutoStories { get; init; } = true;
 
@@ -134,6 +137,7 @@ public sealed class Simulation
         World.Daily(t, Options.AutoMayor);
         Trade.Daily(t, Options.AutoMayor);
         Armory.Daily(t, Options.AutoMayor && Options.AutoArmory);
+        Alchemy.Daily(t, Options.AutoMayor && Options.AutoArmory);
         Neighbours.Daily(t, Options.AutoMayor);
         Mercenaries.Daily(t, Options.AutoMayor && Options.AutoDefense);
         Clockwork.Daily(t, Options.AutoMayor && Options.AutoDefense);
@@ -161,7 +165,8 @@ public sealed class Simulation
         Regard.Daily(t);
         Wards.Daily(t);
         Broadsheet.Daily(t, Options.AutoMayor && Options.AutoStories);
-        Loyalty.Daily(t, Options.AutoMayor);
+        Loyalty.Daily(t, Options.AutoMayor && Options.AutoHonours);
+        Secrets.Daily(t, Options.AutoMayor && Options.AutoCouncil);
         Notoriety.Daily(t);
         Passage.Daily(t);
         Decor.Daily(t);
@@ -169,6 +174,7 @@ public sealed class Simulation
         Sheet.Daily(t, Options.AutoMayor && Options.AutoStories);
         Economy.Daily(t, true);
         Taxes.Close(t);
+        Trends.Close(t);
         History.Add(Snapshot());
         t.AccountsYesterday = t.AccountsToday;
         t.RecentNet.Add(Js.Sum(t.AccountsToday.Values, v => v));
@@ -190,6 +196,12 @@ public sealed class Simulation
 
     /// <summary>Sell an item from the armory to the merchants.</summary>
     public bool SellStock(int stockId) => Armory.Sell(Town, stockId);
+
+    /// <summary>Brew a batch at the alchemy bench from two or three ingredients (herbs, monster parts); a new recipe gets a name in the town's book.</summary>
+    public bool Brew(IReadOnlyList<string> ingredients) => Alchemy.Brew(Town, ingredients);
+
+    /// <summary>Sell every dose of a potion on the town's shelf.</summary>
+    public bool SellPotions(string recipeId) => Alchemy.Sell(Town, recipeId);
 
     /// <summary>Offer a company a loot pact: the magic it finds comes to the armory, for a finder's fee. A wary company refuses.</summary>
     public bool OfferPact(string company) => Armory.OfferPact(Town, company);
@@ -222,6 +234,9 @@ public sealed class Simulation
 
     public bool AddWagon(int routeId) => Trade.AddWagon(Town, routeId);
 
+    /// <summary>Send the sky dock's airship on a trade run: cargo out to a settlement's market, gold and their goods home.</summary>
+    public bool SendSkyship(int settlementId, Good cargo) => Skyship.Send(Town, settlementId, cargo) != null;
+
     /// <summary>Raise a memorial to a hero in the hall of heroes.</summary>
     public bool RaiseMemorial(int heroId) => Legacies.RaiseMemorial(Town, heroId);
 
@@ -249,6 +264,14 @@ public sealed class Simulation
     /// <summary>Order a palisade or a watchtower.</summary>
     public bool BuildDefense(DefenseWork what) => Threat.Build(Town, what);
 
+    /// <summary>Lays out where a wall runs (ring 0 round the old town, 1 the city wall) as a closed loop in tiles; null, or why not.</summary>
+    public string? DrawWall(int ring, IEnumerable<(double X, double Y)> points) => WallLines.Draw(Town, ring, points.ToList());
+
+    /// <summary>A gate on a wall's line, snapped to the nearest point of it; null, or why not.</summary>
+    public string? PlaceGate(int ring, double x, double y) => WallLines.PlaceGate(Town, ring, x, y);
+
+    public string? RemoveGate(int ring, int index) => WallLines.RemoveGate(Town, ring, index);
+
     /// <summary>Sound the call to arms on a wall section, a tower or the gate: the nearest of the watch run to man it.</summary>
     public GuardPost? CallToArms(PostKind kind, int index) => Garrison.CallToArms(Town, kind, index);
 
@@ -266,6 +289,15 @@ public sealed class Simulation
 
     /// <summary>Name a councillor the taverns whisper about as a foe's servant.</summary>
     public bool AccuseCouncillor(int agentId) => Infiltration.Accuse(Town, agentId);
+
+    /// <summary>Pay to have a councillor's past looked into: a d20 check, helped by the watch.</summary>
+    public bool DigIntoCouncillor(int agentId) => Secrets.Dig(Town, agentId);
+
+    /// <summary>Spend a councillor's secret to have them vote aye or nay on the motion before the council.</summary>
+    public bool PressCouncillor(int agentId, bool yes) => Secrets.Press(Town, agentId, yes);
+
+    /// <summary>Make a councillor's secret public, costing them their seat.</summary>
+    public bool ExposeCouncillor(int agentId) => Secrets.Expose(Town, agentId);
 
     /// <summary>Answer a menace's demand for fealty: bend the knee and pay tribute, or refuse and face its host.</summary>
     public bool AnswerDemand(int menaceId, bool submit) => Menaces.Answer(Town, menaceId, submit);

@@ -32,22 +32,29 @@
     {
       "id": "resources",
       "title": "The town at a glance",
-      "text": "Along the top: people, heroes, the treasury, the price of bread, your [b]Mandate[/b] (how much the townsfolk back you) and the homeless. Hover any of them for more. Keep bread cheap and Mandate high.",
+      "text": "Along the top: households, heroes, the treasury, food, your [b]Mandate[/b] (how much the townsfolk back you), unrest and homes. Beside each is where it is heading over the last month, like [b]+212/mo[/b] in the treasury, and a red outline means it is heading for trouble. [b]Hover[/b] one for its month in full: where the gold came from and went, and when it runs out. Click one to open the window that fixes it.",
       "point": "topbar",
       "teaches": []
     },
     {
       "id": "keywords",
       "title": "Gold words",
-      "text": "Words in gold, like Mandate or the warband, are keywords. [b]Hover[/b] one anywhere for a card that explains it, and [b]click[/b] it to pin the card so it stays while you read on; drag a pinned card by its title, close it with its cross. The book at the top right, or [b]F1[/b], opens the whole glossary. Try hovering a figure on the top bar and clicking it.",
+      "text": "Words in gold, like Mandate or the warband, are keywords. [b]Hover[/b] one anywhere for a card that explains it, and [b]click[/b] it to pin the card so it stays while you read on; drag a pinned card by its title, close it with its cross. The book at the top right, or [b]F1[/b], opens the whole glossary. Try hovering one in this card and clicking it.",
       "point": "glossary",
       "until": "pin",
       "teaches": ["key:F1"]
     },
     {
+      "id": "rail",
+      "title": "Every window, one click",
+      "text": "Every window has a button on the rail down the left: hover one for its name. A [b]badge[/b] counts what waits for you there, red when it is urgent and gold for a decision. [b]Shift[/b] and a number opens the ten you'll use most: Shift+1 Bounties, Shift+2 Council, Shift+3 War, Shift+4 Campaign, Shift+5 City, on to Shift+0 for the Ledger.",
+      "point": "rail",
+      "teaches": ["key:Key9"]
+    },
+    {
       "id": "ledger",
       "title": "The Ledger",
-      "text": "Everything that happens in town is written in the Ledger, from brawls to weddings to dragons. Open [b]Town[/b] on the dock, then the [b]Ledger[/b].",
+      "text": "Everything that happens in town is written in the Ledger, from brawls to weddings to dragons. Open the [b]Ledger[/b] from the rail down the left.",
       "point": "tab:Ledger",
       "until": "tab:Ledger",
       "teaches": ["tab:Ledger"]
@@ -136,6 +143,13 @@
       "teaches": ["tab:Bounties", "command:PostBounty", "command:HoldSite"]
     },
     {
+      "id": "tray",
+      "title": "The action tray",
+      "text": "On the right edge sit the four things a mayor answers most: the [b]bounty board[/b], the [b]council[/b], [b]events[/b] and the [b]war[/b], each with a count of what waits. Click one and it slides out over the map, so you can post a bounty, sign a motion or answer a story without opening a window. Click it again to fold it away.",
+      "point": "tray",
+      "teaches": []
+    },
+    {
       "id": "explore",
       "title": "Send explorers",
       "text": "The map only shows what someone has told the town, and hearsay is only a rough ring where the teller said. To find places for certain, open [b]Bounties[/b] and pay a company to [b]Explore[/b] a region. They wander it, and every lair, settlement, caravan, rival company, magical font or old ruin they come on, they report before they do anything about it.",
@@ -163,6 +177,7 @@
     {"id": "terms", "title": "Bounty terms", "text": "A bounty says how the job is to be done, not only where. Pick the terms at the top of the [b]Bounty board[/b]: [b]Slay[/b] clears a place for good; [b]Drive off[/b] is quicker and cheaper, but something moves back in sooner; [b]Talk down[/b] sends silver tongues to bargain with foes clever enough to listen; [b]Fetch[/b] steals the best of the hoard for the town. Heroes take jobs that suit their temper, and every hero judges the terms you post.", "point": "tab:Bounties", "when": "day:25", "teaches": []},
     {"id": "sightings", "title": "Raiders sighted", "text": "Farmers, scouts and friendly towns bring word when they see enemies on the move. A red mark on the map shows where they were seen and which way they were heading. It is news, not a live view, and it fades as it goes stale. A band seen heading for a farm strikes that night: plant a guard flag over the farm ([b]G[/b]) and it may turn back, though it will come again with more. Each lair keeps its own habits (select a site to see its [b]Habit[/b]), and the [b]Campaign[/b] window shows every enemy leader, what they hold against your town and the last you heard of them.", "point": "alerts", "when": "alert:sighted", "teaches": []},
     {"id": "fear", "title": "Fear", "text": "When fear climbs near the top, the alert strip warns you, and once it sits there the alert counts the days until the townsfolk give up on the town and the campaign is lost. Break the menace that frightens them most, win a fight, or fund the temples to lift spirits. Stone buildings never burn, and a discovery in the Library can fireproof the timber ones.", "point": "alerts", "when": "alert:fear", "teaches": []},
+    {"id": "crowded", "title": "Full to the doors", "text": "Taverns, shrines, bathhouses, theatres, market halls, libraries and the arena each hold so many at once. Townsfolk walk to the one they like, and if it is full they try the next one near, or go home and do something else, a little put out. Select a building to see how full it is and how many it turned away yesterday. Places that keep turning people away serve their houses less, so the houses grow slower: let another open nearby.", "point": "alerts", "when": "alert:crowded", "teaches": []},
     {"id": "captives", "title": "Townsfolk taken", "text": "Raiders who get through can carry townsfolk off to their camp. They are held for a few days: post a [b]Rescue[/b] on the camp, or clear it, and they come home. If the days run out they are lost, and the town remembers it.", "point": "alerts", "when": "alert:captives", "teaches": []},
     {"id": "broadsheet", "title": "The town broadsheet", "text": "Once the town is big enough a printer sets up, and every week an issue goes on sale with the week's news. Open the [b]Ledger[/b] and press [b]Broadsheet[/b] to read it. You can pay for the next front page: [b]Praise the mayor[/b] wins approval but can be found out if you lean on it, [b]Cry up a hero[/b] puts the selected hero on the front page, and [b]Name the guilds[/b] puts the town's secret societies under scrutiny. Heroes judge what you pay the paper to say.", "point": "tab:Ledger", "when": "day:35", "teaches": ["command:SlantBroadsheet"]},
     {
@@ -192,6 +207,24 @@
       "teaches": ["tab:Armory", "command:Gift", "command:BuyLoot", "command:SellStock", "command:OfferPact", "command:EndPact"]
     },
     {
+      "id": "alchemy",
+      "title": "The alchemy bench",
+      "text": "An [b]Apothecary[/b] holds an alchemy bench. At the foot of the [b]Armory[/b] window, pick two or three ingredients and [b]Brew[/b]: herbs from the town's beds, and the monster parts companies bring home from the lairs they clear. Each lends a brew a little of a quality (mending, vigour, ember, rime, gloom, purity); a mix that reaches a recipe makes it, and the first batch gets the town's name in its recipe book. A mix that reaches nothing spoils.",
+      "point": "tab:Armory",
+      "when": "day:25",
+      "until": "tab:Armory",
+      "teaches": ["command:Brew"]
+    },
+    {
+      "id": "alchemy-shelf",
+      "title": "Potions on the shelf",
+      "text": "Your brews wait on the town's shelf. Heroes setting out take [b]healing draughts[/b] from it, a [b]ward[/b] makes them harder to hit at a lair of its kind, and a [b]fever-breaker[/b] pulls a townsperson back from a plague-bringer's night visit. Anything you have no use for sells: [b]Sell[/b] it from the shelf in the Armory window.",
+      "point": "tab:Armory",
+      "when": "count:Recipes",
+      "until": "tab:Armory",
+      "teaches": ["command:SellPotions"]
+    },
+    {
       "id": "bastions",
       "title": "A bastion of their own",
       "text": "A company that has made its name asks the council for land on the edge of town to raise a [b]bastion[/b]: a keep where its heroes live, and facilities like a physic garden, a drill yard or a smithy. It hires townsfolk to staff them, so it brings jobs and pulls workers from poorer pay. Its sentries stand on the walls in a siege, and heroes with a bastion stay loyal. Answer in [b]Companies[/b]: grant the land, give it free, or refuse.",
@@ -208,6 +241,7 @@
       "until": "tab:War",
       "teaches": ["tab:War", "command:BuildDefense"]
     },
+    {"id": "draw-walls", "title": "Draw your walls", "text": "You decide where the walls run. Pick the palisade, stone walls or city wall on the build bar and click round the town to draw the line: each click is a corner, and a click back on the first corner closes it. The line must go right round the town hall and can't run through a building. Then click on the line to place a gate (every wall needs at least one, and up to four). The masons start once the wall has a gate, and the wall rises as the market has its timber and stone. Buildings never go up across a wall's line.", "when": "day:30", "teaches": ["command:DrawWall", "command:PlaceGate", "command:RemoveGate", "key:Enter", "key:KpEnter", "key:Backspace"]},
     {
       "id": "guard-flags",
       "title": "Post the guard",
@@ -235,6 +269,7 @@
       "until": "call",
       "teaches": ["command:CallToArms"]
     },
+    {"id": "siege-watch", "title": "Watch the siege", "text": "A host at the walls camps before them through the night and storms them at dawn. The banner under the alert strip follows the fight wave by wave: click it to see the stretch of wall under attack, the ram at the gate and the archers on the walls. Where a wave breaks through, roofs by the breach catch fire. If the walls hold, the heroes at home sally out to meet the enemy leader. What wins it is what you did before the host came: walls and towers, the watch called to the side it attacks, heroes kept home.", "point": "siege", "when": "count:Battles", "teaches": []},
     {
       "id": "quick-orders",
       "title": "Quick orders",
@@ -324,6 +359,15 @@
       "point": "tab:Diplomacy",
       "until": "tab:Diplomacy",
       "teaches": ["command:AddWagon"]
+    },
+    {
+      "id": "sky-trade",
+      "title": "Merchant of the skies",
+      "text": "The [b]Sky Dock[/b]'s airship can trade as well as carry companies. In [b]Diplomacy[/b], under [b]The airship[/b], pick a people and a good the town can spare and [b]send[/b] it: it flies straight over rivers, lakes and mountains in half the days a caravan takes, needs no trade route, and moors anywhere the people aren't hostile. Every people pays its own price, more far out and for what they want, and less the more you have sold them lately, so spread your cargoes around. It comes home with the gold and a hold of their cheap goods the town is short of. Storms can hold it back and flying hosts can set on it. While it is out trading it carries no company, and while it carries a company it can't trade.",
+      "when": "airships",
+      "point": "tab:Diplomacy",
+      "until": "tab:Diplomacy",
+      "teaches": ["command:SendSkyship"]
     },
     {
       "id": "neighbours",
@@ -421,6 +465,23 @@
       "point": "tab:Council",
       "until": "tab:Council",
       "teaches": ["command:AccuseCouncillor"]
+    },
+    {
+      "id": "secrets",
+      "title": "Councillors' secrets",
+      "text": "Most councillors hide something: debts, a lover, wagons that pass the gate unsearched. In [b]Council[/b], [b]Dig[/b] beside a seat pays your people to find out; you roll Investigation, and more watchmen make it easier. Botch it and the councillor hears you were asking. A secret in hand is spent once: [b]press[/b] them to vote your way on the motion before the council, so you carry it without a decree, or [b]expose[/b] them and they lose the seat. Either way they won't forgive you, and pressing someone can leak.",
+      "when": "count:Motions",
+      "point": "tab:Council",
+      "until": "tab:Council",
+      "teaches": ["command:DigIntoCouncillor", "command:PressCouncillor", "command:ExposeCouncillor"]
+    },
+    {
+      "id": "honours",
+      "title": "Honours are yours to give",
+      "text": "When a loyal knight holds no land, or the town has no champion, the strip says so. Click it: a cleared site can be granted to the knight, who holds it with their own retainers and lives on its rents, and the champion stands first on the walls. The council moves knighthoods itself; sign them in [b]Council[/b].",
+      "when": "alert:honours",
+      "point": "alerts",
+      "until": "alert"
     },
     {
       "id": "notoriety",

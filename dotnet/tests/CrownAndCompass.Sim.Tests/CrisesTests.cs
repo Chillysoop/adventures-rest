@@ -172,7 +172,8 @@ public class CrisesTests
         Assert.Null(mole.DecoyId);
         Assert.Single(t.Moles);
         mole.Suspicion = t.Content.Crises.Infiltration.Whisper;
-        sim.RunDays(1);
+        // Only the plot's own day: a council election in a full day can unseat the traitor, who is then of no use to anyone.
+        Infiltration.Daily(t);
         Assert.NotNull(mole.DecoyId);
         Assert.True(sim.AccuseCouncillor(mole.AgentId));
         Assert.Empty(t.Moles);

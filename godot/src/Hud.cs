@@ -6,8 +6,8 @@ namespace CrownAndCompass.Client;
 
 /// <summary>
 /// The screen layout, after Foundation and its kin: the map fills the screen; a resource bar runs
-/// along the top with the clock and speeds; the management windows open from a dock at the bottom
-/// and float over the map; news slides in on the right; the inspector sits bottom left; the corner
+/// along the top with the clock and speeds; the management windows open from a rail down the left
+/// and float over the map; the action tray and the news sit on the right; the inspector sits bottom left; the corner
 /// map, the campaign-map toggle and the marker palette sit bottom right.
 /// </summary>
 public partial class Main
@@ -63,6 +63,7 @@ public partial class Main
         BuildInspector();
         BuildFeed();
         BuildDock();
+        BuildTray();
         BuildBuildBar();
         BuildCorner();
         BuildLensBar();
@@ -83,7 +84,7 @@ public partial class Main
         panel.OffsetBottom = TopBar;
 
         var bar = new HBoxContainer();
-        bar.AddThemeConstantOverride("separation", 16);
+        bar.AddThemeConstantOverride("separation", 10);
         panel.AddChild(bar);
         var title = new VBoxContainer { SizeFlagsVertical = SizeFlags.ShrinkCenter };
         title.AddThemeConstantOverride("separation", -4);
@@ -96,13 +97,13 @@ public partial class Main
         bar.AddChild(new VSeparator());
 
         _stats = new HBoxContainer { SizeFlagsVertical = SizeFlags.ShrinkCenter };
-        _stats.AddThemeConstantOverride("separation", 18);
+        _stats.AddThemeConstantOverride("separation", 2);
         bar.AddChild(_stats);
         bar.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
 
         _clock = Ui.Label("Day 1 · 00:00", Ui.Ink, Ui.Display, 16);
         _clock.SizeFlagsVertical = SizeFlags.ShrinkCenter;
-        _clock.CustomMinimumSize = new Vector2(190, 0);
+        _clock.CustomMinimumSize = new Vector2(176, 0);
         _clock.MouseFilter = MouseFilterEnum.Pass;
         bar.AddChild(_clock);
         _threatPill = new PanelContainer { SizeFlagsVertical = SizeFlags.ShrinkCenter };
@@ -146,8 +147,10 @@ public partial class Main
         var pill = new PanelContainer { MouseFilter = MouseFilterEnum.Ignore, SizeFlagsHorizontal = SizeFlags.ShrinkCenter };
         pill.AddThemeStyleboxOverride("panel", Ui.Flat(new Color(0.08f, 0.06f, 0.04f, 0.8f), 12, 4, 99));
         pill.AddChild(_pausedPill);
-        // Under the alert strip, centred.
-        BuildAlerts().AddChild(pill);
+        // Under the alert strip, centred, with the siege banner below it.
+        var col = BuildAlerts();
+        col.AddChild(pill);
+        BuildSiegeBanner(col);
     }
 
     // ---------- Management windows ----------
@@ -207,14 +210,13 @@ public partial class Main
     private void BuildWindow()
     {
         _window = Floating(out var body, out _windowTitle, () => CloseWindow());
-        body.AddChild(BuildShelf());
         foreach (var t in Enum.GetValues<Tab>())
             if (t != Tab.Inspect) body.AddChild(MakeScroll(t));
         AddChild(_window);
         _window.AnchorTop = 0;
         _window.AnchorBottom = 1;
-        _window.OffsetLeft = Gap;
-        _window.OffsetRight = Gap + 460;
+        _window.OffsetLeft = RailWidth + 6;
+        _window.OffsetRight = RailWidth + 6 + 460;
         _window.OffsetTop = TopBar + Gap;
         _window.OffsetBottom = -(DockHeight + Gap * 2 + 16);
     }
@@ -235,7 +237,7 @@ public partial class Main
     /// <summary>Bottom left, or beside the management window when one is open there.</summary>
     private void PlaceInspector()
     {
-        float left = _window.Visible && _window.OffsetLeft < 200 ? _window.OffsetRight + Gap : Gap;
+        float left = _window.Visible && _window.OffsetLeft < 200 ? _window.OffsetRight + Gap : RailWidth + 6;
         _inspector.OffsetLeft = left;
         _inspector.OffsetRight = left + 390;
     }
@@ -245,12 +247,10 @@ public partial class Main
         _windowTab = t;
         _windowTitle.Text = Titles[t];
         // The roster is a table: its window opens wide.
-        _window.OffsetRight = Gap + (t == Tab.Companies ? 900 : 460);
+        _window.OffsetRight = _window.OffsetLeft + (t == Tab.Companies ? 900 : 460);
         foreach (var (k, s) in _scrolls)
             if (k != Tab.Inspect) s.Visible = k == t;
         _window.Visible = true;
-        _groupLast[GroupOf(t)] = t;
-        ClosePicker();
         SyncDock();
         _dirty = true;
         GuideEvent($"tab:{t}");
@@ -274,6 +274,9 @@ public partial class Main
         _feed.GrowHorizontal = GrowDirection.Begin;
         _feed.GrowVertical = GrowDirection.End;
         _feed.OffsetTop = TopBar + Gap;
+        // Clear of the action tray on the right edge.
+        _feed.OffsetLeft -= TrayWidth;
+        _feed.OffsetRight -= TrayWidth;
     }
 
     /// <summary>The news worth looking up for: turning points, the war, quests, the council, faith and the factions.</summary>

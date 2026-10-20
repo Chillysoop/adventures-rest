@@ -76,6 +76,8 @@ public sealed record BuildingDef
     public int Housing { get; init; }
     public double Rent { get; init; }
     public bool Venue { get; init; }
+
+    /// <summary>Townsfolk it holds at once on an outing (a tavern's drinkers, a shrine's worshippers, a bathhouse's bathers); 0 = it takes no visitors (<see cref="Systems.Crowds"/>).</summary>
     public int Capacity { get; init; }
     public string? Profession { get; init; }
 
@@ -416,6 +418,9 @@ public sealed record CouncilRules
     public int MotionGapDays { get; init; }
     public double DecreeMandate { get; init; }
     public double StartingMandate { get; init; }
+
+    /// <summary>Councillors' secrets: digging for them, and spending them (<see cref="Systems.Secrets"/>).</summary>
+    public Systems.SecretRules Secrets { get; init; } = new();
 }
 
 public sealed record EnemyStages
@@ -1236,6 +1241,9 @@ public sealed class Content
 
     /// <summary>The town armory: gifts, loot terms and pacts, buying loot (content/game/armory.json).</summary>
     public ArmoryRules Armory { get; init; } = new();
+
+    /// <summary>The alchemy bench: ingredients, recipes and what potions do (content/game/alchemy.json).</summary>
+    public AlchemyRules Alchemy { get; init; } = new();
     public NeighbourRules Neighbours { get; init; } = new();
     public LegacyRules Legacies { get; init; } = new();
     public UndercityRules Undercity { get; init; } = new();
@@ -1273,6 +1281,8 @@ public sealed class Content
     public ClockworkRules Clockwork { get; init; } = new();
     /// <summary>The tax rate and the unrest of underfunded services (content/game/taxes.json).</summary>
     public TaxRules Taxes { get; init; } = new();
+    /// <summary>The top bar's month and when a trend counts as trouble (content/game/trends.json).</summary>
+    public TrendRules Trends { get; init; } = new();
     public MerchantRules Merchants { get; init; } = new();
     public WardRules Wards { get; init; } = new();
     /// <summary>Fame and infamy for heroes and companies (content/game/notoriety.json).</summary>
@@ -1292,6 +1302,8 @@ public sealed class Content
 
     /// <summary>The yearly tourney: its events, levels, champions and betting (content/game/tournaments.json).</summary>
     public TourneyRules Tourney { get; init; } = new();
+    /// <summary>How many fit in a tavern, shrine or bathhouse at once, and what the townsfolk do when it is full (content/game/crowds.json).</summary>
+    public CrowdRules Crowds { get; init; } = new();
 
     /// <summary>Townsfolk's inspirations and breaks (content/game/moods.json).</summary>
     public MoodRules Moods { get; init; } = new();
@@ -1442,6 +1454,7 @@ public sealed class Content
             Farming = Parse<FarmingRules>("farming.json"),
             Trade = Parse<TradeRules>("trade.json"),
             Armory = Parse<ArmoryRules>("armory.json"),
+            Alchemy = Parse<AlchemyRules>("alchemy.json"),
             Neighbours = Parse<NeighbourRules>("neighbours.json"),
             Legacies = Parse<LegacyRules>("legacies.json"),
             Undercity = Parse<UndercityRules>("undercity.json"),
@@ -1459,6 +1472,7 @@ public sealed class Content
             Broadsheet = Parse<BroadsheetRules>("broadsheet.json"),
             Clockwork = Parse<ClockworkRules>("clockwork.json"),
             Taxes = Parse<TaxRules>("taxes.json"),
+            Trends = Parse<TrendRules>("trends.json"),
             Merchants = Parse<MerchantRules>("merchants.json"),
             Wards = Parse<WardRules>("wards.json"),
             Notoriety = Parse<NotorietyRules>("notoriety.json"),
@@ -1467,6 +1481,7 @@ public sealed class Content
             Skills = Parse<SkillRules>("skills.json"),
             Crises = Parse<CrisisRules>("crises.json"),
             Tourney = Parse<TourneyRules>("tournaments.json"),
+            Crowds = Parse<CrowdRules>("crowds.json"),
             Moods = Parse<MoodRules>("moods.json"),
             Storytellers = Parse<StorytellerRules>("storytellers.json"),
         };

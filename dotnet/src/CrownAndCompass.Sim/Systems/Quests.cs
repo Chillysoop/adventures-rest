@@ -131,6 +131,9 @@ public sealed class Party
     public int ReturnTick { get; set; }
     public bool Returned { get; set; }
 
+    /// <summary>Whether it went in the sky dock's airship, which stays with it until it is home.</summary>
+    public bool Airship { get; set; }
+
     /// <summary>Where it set out from, in day units: the town, or the spot where explorers chose to go in (<see cref="Explore"/>).</summary>
     public (double X, double Y) Start { get; init; }
 
@@ -550,6 +553,7 @@ public static class Quests
         s.Attempts++;
         Shrines.Outfit(town, members);
         Scrolls.Outfit(town, members);
+        Alchemy.Outfit(town, members, s.Def);
         foreach (var m in members)
         {
             m.Hero!.PartyName = name;
@@ -691,6 +695,7 @@ public static class Quests
             }
             if (earned && result.Outcome != ExpeditionOutcome.Wiped && bounty is { Errand: not "" }) Errands.Keep(town, bounty);
             pay += World.AfterDelve(town, party, s, result.Outcome) + party.Bonus;
+            Alchemy.Homecoming(town, party, s.Def, result.Outcome, survivors);
             if (result.Outcome == ExpeditionOutcome.Cleared && survivors.Count > 0) Notoriety.Cleared(town, party, survivors, s.Def.Tier, party.PleaId != null);
             if (survivors.Count > 0)
             {
