@@ -55,9 +55,11 @@ public class CityTests
         {
             City.Form(t);
             Assert.Equal("edge", City.WardOf(t, east.X, east.Y).Id);
-            var lot = Land.Find(t, store, Zone.Commercial)!;
-            Assert.Equal(side, City.Side(t, lot.X, lot.Y));
-            t.AddBuilding(store, lot, null, $"Shop {i}", true);
+            // The charter's own shop land lies in the old town: build on the new paint out east.
+            var spot = Land.Plots(t, Zone.Commercial, 200).First(l => City.Ring(t, l.X, l.Y) == 1);
+            Assert.Equal(side, City.Side(t, spot.X, spot.Y));
+            var (w, d) = Land.Footprint(store);
+            t.AddBuilding(store, new Lot(t.Lots.Count, spot.X, spot.Y) { W = w, D = d, Yaw = spot.Yaw, Zone = Zone.Commercial }, null, $"Shop {i}", true);
         }
         City.Form(t);
         Assert.Equal("market", City.WardOf(t, east.X, east.Y).Id);

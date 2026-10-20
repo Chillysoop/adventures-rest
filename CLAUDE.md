@@ -53,6 +53,15 @@
   with homes and shops (`PaintZone(..., density)`, also over built land of the zone). `BuildingDef.Density` is the least a building
   needs (townhouse/manor medium, tall_house high); `HousingDef.Dense` is the house it grows into on high land; high land drops
   the lane between buildings. The stand-in mayor zones denser out to `reach * sqrt(population)` tiles, capped by `WardDef.Densest`.
+- Growth and construction (city.json `growth`, `construction`, `Systems/Construction.cs`): painting lays no streets. Buildings
+  site on street fronts or off them beside what's built (`Streets.Growth`, nearest the built town first), and the feet going to
+  them wear lanes (`Streets.Wear`). The townsfolk's builds on painted land wait for a free crew (`Construction.Room`), and a site
+  can't rise past its footings until builders haul its timber and stone (`Building.Hauled`, `Activity.Hauling`); labour budgets
+  use `Construction.Hours`. The client draws sites rising in six steps with a materials pile, haulers carrying loads, and a hired
+  hand at sites nobody in town works (`--rising` aims at one).
+- Wards (city.json `wards`, `unsettled`, `rings`): never laid out by hand. The charter opens rings (`City.RingOpen`); a quarter
+  (ring + side) with `founding` finished buildings becomes the ring's ward its buildings draw most (`WardDef.Draws`, `City.Form`,
+  `CityState.Sectors`). The map outlines a ward round its own buildings. `City.Migrate` maps old saves' wards to their quarters.
 - Decorations (`content/game/decor.json`, `Systems/Decor.cs`, client `Map/Decorator.cs`, `Map/DecorView.cs`): free positions in
   tiles from the town's corner and any angle (radians, model front +Z turned by it). Every piece needs a small effect in
   another system, capped in decor.json. Pieces claim plan cells (`Decor.Cells`, `LandPlan.Decor`): `Land.Fits` and lanes go

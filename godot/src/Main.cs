@@ -107,8 +107,8 @@ public partial class Main : Control
         // --at aims the camera at the town's first finished building of a kind.
         if (_opts.At is string atKind && _sim.Town.Buildings.Where(b => b.Def.Id == atKind && b.Complete).OrderBy(b => b.Id).FirstOrDefault() is Building at0)
             _map.LookAt(Map.Geo.LotPos(_sim.Town.Lot(at0.LotId)), _opts.Cam ?? 22);
-        // --rising aims at the building going up with the most hands on it.
-        if (_opts.Rising && _sim.Town.Buildings.Where(b => b.IsSite && !b.Def.IsGrand).OrderByDescending(b => b.Workers.Count).ThenByDescending(b => b.BuildProgress / b.Def.BuildHours).ThenBy(b => b.Id).FirstOrDefault() is Building rising)
+        // --rising aims at the building going up with the most hands on it, the least built first (for a clip of it rising).
+        if (_opts.Rising && _sim.Town.Buildings.Where(b => b.IsSite && !b.Def.IsGrand).OrderByDescending(b => b.Workers.Count).ThenBy(b => b.BuildProgress / b.Def.BuildHours).ThenBy(b => b.Id).FirstOrDefault() is Building rising)
             _map.LookAt(Map.Geo.LotPos(_sim.Town.Lot(rising.LotId)), _opts.Cam ?? 6);
         if (_opts.StrategicView) ToggleStrategic();
         foreach (var (kind, at, label) in _opts.Markers) _map.Markers.Add(new Marker(kind, at, _sim.Town.Day, label));

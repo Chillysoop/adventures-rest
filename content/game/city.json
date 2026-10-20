@@ -1,7 +1,7 @@
 {
   "soulsPerResident": 5,
   "exportShare": 0.75,
-  "paths": { "wearPerTrip": 0.008, "mostTrips": 20, "fade": 0.97, "lay": 1.2 },
+  "paths": { "wearPerTrip": 0.02, "mostTrips": 20, "fade": 0.97, "lay": 1.2 },
   "growth": { "reach": 1, "offStreet": 0.5, "yard": 1, "shuffle": 0.8, "hall": 0.05, "turn": 0.3 },
   "construction": { "crews": 2, "residents": 25, "most": 40, "footings": 0.1, "load": 3 },
   "wallStrip": { "inside": 0.9, "outside": 1.6 },

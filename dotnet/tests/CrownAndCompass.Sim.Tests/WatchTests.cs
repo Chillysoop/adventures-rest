@@ -35,7 +35,8 @@ public class WatchTests
         Assert.True(t.Agent(scout!.HeroId).IsAway);
         Assert.Null(Watch.LiveOf(t, site));
         while (t.Tick < scout.ArriveTick) sim.Step();
-        if (scout.Out) Assert.Equal(LiveSource.Scout, Watch.LiveOf(t, site));
+        // Unless it was seen off the moment it got there.
+        if (scout.Out && t.Tick < scout.LeaveTick) Assert.Equal(LiveSource.Scout, Watch.LiveOf(t, site));
         while (scout.Out) sim.Step();
         Assert.True(scout.Lost || !t.Agent(scout.HeroId).IsAway);
         Assert.NotEqual(LiveSource.Scout, Watch.LiveOf(t, site));
