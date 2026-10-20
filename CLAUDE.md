@@ -73,6 +73,11 @@
   on their own, nearest the centre first, `perDay` tiles from the market's stone stock (never imported) and the treasury above
   `reserve` (`Street.Cobbled`, `FromEnd`). Houses near cobbles gain `comfort`; the client draws them from the ground texture's blue
   channel.
+- Drawn walls (`Systems/WallLines.cs`, city.json `wallLines`): the player draws each wall's loop (`Simulation.DrawWall`, ring 0
+  the palisade/stone walls, ring 1 the city wall) and snaps gates onto it (`PlaceGate`, `RemoveGate`; at least one, the first
+  is the main gate). `City.Wall` reads the drawn line, so the clear strip, `Passage` openings, raids and the client follow it;
+  an undrawn line makes way for the other's. Walls draw their timber and stone daily (`Threat.Haul`) and slow when short
+  (the `stalled:walls` alert). Shots: `--draw-wall 0:x,y;x,y;... --gate 0:x,y` (tiles from the centre).
 - Wards (city.json `wards`, `unsettled`, `rings`): never laid out by hand. The charter opens rings (`City.RingOpen`); a quarter
   (ring + side) with `founding` finished buildings becomes the ring's ward its buildings draw most (`WardDef.Draws`, `City.Form`,
   `CityState.Sectors`). The map outlines a ward round its own buildings. `City.Migrate` maps old saves' wards to their quarters.
