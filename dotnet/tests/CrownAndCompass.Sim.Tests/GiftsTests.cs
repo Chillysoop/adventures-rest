@@ -18,7 +18,8 @@ public class GiftsTests
         Assert.True(t.Treasury > gold);
         Assert.Null(Stories.Open(t, "gift-contract-due"));
         sim.RunDays(t.Content.Stories.Precedent("signed-clause")!.After + 1);
-        foreach (var o in t.Stories.Open.ToList()) t.Stories.All.Remove(o);
+        // Close (not remove) whatever else is open: a removed story would hand its id to the next one.
+        foreach (var o in t.Stories.Open.ToList()) o.Done = true;
         var due = Stories.Open(t, "gift-contract-due");
         Assert.NotNull(due);
         int buy = Stories.StageOf(t, due!).Options.FindIndex(o => o.Cost > 0);
