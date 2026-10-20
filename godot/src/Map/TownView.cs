@@ -228,11 +228,7 @@ public partial class TownView(MapView map) : Node3D
             case "granary": Granary(kit, v); break;
             case "builders_yard": BuildersYard(kit, v); break;
             case "watch_house": WatchHouse(kit, v); break;
-            case "timber_house": TimberHouse(kit, v); break;
-            case "townhouse": Townhouse(kit, v); break;
-            case "manor": Manor(kit, v); break;
-            case "tenement": Tenement(kit, v); break;
-            case "tall_house": TallHouse(kit, v); break;
+            case "timber_house" or "townhouse" or "manor" or "tenement" or "tall_house": Crafted(kit, id, v); break;
             case "quarry": Quarry(kit, v); break;
             case "sheepfold": Sheepfold(kit, v); break;
             case "weaver": Weaver(kit, v); break;
@@ -363,17 +359,21 @@ public partial class TownView(MapView map) : Node3D
 
     private static Color RoofOf(int v) => Palette.Roofs[v % Palette.Roofs.Length];
 
-    private static void House(MeshKit k, int v)
+    /// <summary>
+    /// A home made in Blender (tools/blender_houses.py, models/crafted.bin): its roof painted in the house's roof colour, and every
+    /// other house turned end for end so a street of them doesn't repeat.
+    /// </summary>
+    private static void Crafted(MeshKit k, string id, int v)
     {
-        int w = 2, d = v == 2 ? 1 : 2;
-        k.Push(MeshKit.At(0, 0, -0.04f, 0, Fit(w, d, d == 1 ? 0.76f : 0.8f)));
-        Walls(k, w, d, 0, v == 1, v + 11, true);
-        k.Push(MeshKit.At(0, 1, 0));
-        k.Gable(0, w, d, d * 0.62f + 0.25f, RoofOf(v), Palette.Plaster, 0.12f);
-        k.Pop();
-        if (v != 2) Chimney(k, w / 2f - 0.45f, 1, -0.2f, v == 0);
-        k.Pop();
+        var roof = id == "manor" ? (v % 2 == 0 ? Slate : new Color("6e4a3a")) : RoofOf(v + (id == "house" ? 0 : 1));
+        k.Add("cc/" + id, MeshKit.At(0, 0, 0, 0, 1), RoofPaint(roof));
     }
+
+    /// <summary>Repaints a crafted model's roof faces, baked as (1, 0, shade), in a roof colour at that shade.</summary>
+    public static Func<Color, Color> RoofPaint(Color roof) => c =>
+        c.R > 0.99f && c.G < 0.01f ? new Color(roof.R * (0.4f + 0.62f * c.B), roof.G * (0.4f + 0.62f * c.B), roof.B * (0.4f + 0.62f * c.B)) : c;
+
+    private static void House(MeshKit k, int v) => Crafted(k, "house", v);
 
     /// <summary>A wayside shrine: a stone plinth under a little pyramid roof on four pillars, a gold sun inside.</summary>
     private static void Shrine(MeshKit k)
@@ -776,122 +776,6 @@ public partial class TownView(MapView map) : Node3D
         {
             k.Add("castle/" + p, MeshKit.At(x, y, z, 0, s), tint);
             y += p switch { "tower-square-top" => 0.3f, "tower-square-top-roof" => 1f, "tower-square-roof" => 2f, _ => 1.01f } * s;
-        }
-    }
-
-    /// <summary>A cottage grown a storey: a plastered ground floor under a jettied timber upper floor.</summary>
-    private static void TimberHouse(MeshKit k, int v)
-    {
-        k.Push(MeshKit.At(0, 0, -0.03f, 0, Fit(2, 2, 0.78f)));
-        Walls(k, 2, 2, 0, false, v + 111, true);
-        k.Box(new Vector3(0, 0.96f, 0), new Vector3(2.16f, 0.08f, 2.16f), Palette.DarkTimber);
-        k.Push(new Transform3D(Basis.FromScale(new Vector3(1.07f, 1, 1.07f)), Vector3.Zero));
-        Walls(k, 2, 2, 1, false, v + 113, false);
-        k.Pop();
-        k.Push(MeshKit.At(0, 2, 0));
-        k.Gable(0, 2.14f, 2.14f, 1.15f, RoofOf(v + 1), Palette.Plaster, 0.12f);
-        k.Pop();
-        Chimney(k, -0.55f, 2, -0.3f, v % 2 == 0);
-        k.Pop();
-    }
-
-    /// <summary>A pair of narrow gable-fronted townhouses: stone ground floor, timber storeys above.</summary>
-    private static void Townhouse(MeshKit k, int v)
-    {
-        for (int h = 0; h < 2; h++)
-        {
-            int floors = h == 0 || v < 2 ? 3 : 2;
-            k.Push(MeshKit.At(h == 0 ? -0.235f : 0.235f, 0, -0.02f, 0, 0.44f));
-            // The party wall between the pair is never seen.
-            int party = h == 0 ? 1 : 2;
-            Walls(k, 1, 2, 0, true, v * 7 + h * 3 + 121, true, party);
-            for (int f = 1; f < floors; f++) Walls(k, 1, 2, f, false, v * 7 + h * 3 + 121 + f, false, party);
-            k.Box(new Vector3(0, 0.97f, 0), new Vector3(1.06f, 0.06f, 2.06f), Palette.DarkTimber);
-            GableZ(k, floors, 1, 2, 0.9f, RoofOf(v + h * 2 + 1), Palette.Plaster, 0.08f);
-            Chimney(k, 0.24f, floors, -0.65f, (v + h) % 3 == 0);
-            k.Pop();
-        }
-    }
-
-    /// <summary>A manor: a broad two-storey stone house with a porch tower, behind a hedged garden.</summary>
-    private static void Manor(MeshKit k, int v)
-    {
-        k.Box(new Vector3(0, 0.004f, 0), new Vector3(0.98f, 0.016f, 0.98f), Lawn);
-        k.Box(new Vector3(-0.46f, 0, 0), new Vector3(0.06f, 0.12f, 0.96f), Hedge, Hedge.Lightened(0.1f));
-        k.Box(new Vector3(0.46f, 0, 0), new Vector3(0.06f, 0.12f, 0.96f), Hedge, Hedge.Lightened(0.1f));
-        k.Box(new Vector3(-0.28f, 0, 0.46f), new Vector3(0.36f, 0.12f, 0.06f), Hedge, Hedge.Lightened(0.1f));
-        k.Box(new Vector3(0.28f, 0, 0.46f), new Vector3(0.36f, 0.12f, 0.06f), Hedge, Hedge.Lightened(0.1f));
-        foreach (float x in new[] { -0.09f, 0.09f })
-            k.Box(new Vector3(x, 0, 0.46f), new Vector3(0.05f, 0.17f, 0.05f), new Color("b8b0a0"));
-        k.Box(new Vector3(0, 0.012f, 0.36f), new Vector3(0.12f, 0.01f, 0.22f), new Color("c8bca0"));
-        foreach (float x in new[] { -0.3f, 0.3f })
-            k.Blob(new Vector3(x, 0.08f, 0.3f), new Vector3(0.07f, 0.08f, 0.07f), new Color("4f7a3a"), 0.2f, (int)(x * 10) + v, Hedge);
-        var roof = v % 2 == 0 ? Slate : new Color("6e4a3a");
-        k.Push(MeshKit.At(0, 0, -0.17f, 0, 0.28f));
-        Walls(k, 3, 2, 0, true, v + 131, false);
-        Walls(k, 3, 2, 1, true, v + 133, false);
-        k.Push(MeshKit.At(0, 2, 0));
-        k.Gable(0, 3, 2, 1.1f, roof, Palette.Stone, 0.12f);
-        k.Pop();
-        Chimney(k, -1.15f, 2, -0.3f, true);
-        Chimney(k, 1.15f, 2, -0.3f);
-        // The porch tower, a storey above the roofs, gilded at the top.
-        k.Push(MeshKit.At(0, 0, 1.25f));
-        for (int f = 0; f < 3; f++) Walls(k, 1, 1, f, true, v + 135 + f, f == 0);
-        k.Pyramid(3, 1, 1, 0.9f, roof, 0.08f);
-        k.Pop();
-        k.Frustum(new Vector3(0, 3.85f, 1.25f), 0.08f, 0, 0.45f, 6, new Color(Palette.Gold, MeshKit.Flag.Magic));
-        k.Pop();
-    }
-
-    /// <summary>A tenement: a tall, crowded three-storey timber block with washing strung across its front.</summary>
-    private static void Tenement(MeshKit k, int v)
-    {
-        k.Push(MeshKit.At(0, 0, -0.04f, 0, Fit(2, 2, 0.9f)));
-        for (int f = 0; f < 3; f++) Walls(k, 2, 2, f, false, v * 5 + 141 + f, f == 0);
-        k.Push(MeshKit.At(0, 3, 0));
-        k.Gable(0, 2, 2, 0.75f, v % 2 == 0 ? new Color("4f4a46") : new Color("6a5442"), new Color("b8a888"), 0.1f);
-        k.Pop();
-        Chimney(k, -0.6f, 3, -0.4f, true);
-        Chimney(k, 0.1f, 3, -0.45f);
-        Chimney(k, 0.7f, 3, 0.4f, v % 2 == 1);
-        // A washing line from the first-floor windows, hung with the household's linen.
-        k.Box(new Vector3(0, 1.62f, 1.25f), new Vector3(2.1f, 0.03f, 0.03f), Palette.DarkTimber);
-        for (int i = 0; i < 4; i++)
-        {
-            float x = -0.8f + i * 0.5f + (v % 2) * 0.1f;
-            var c = i % 2 == 0 ? new Color("e8e0cc") : Dyes[(v + i) % Dyes.Length].Lightened(0.2f);
-            Sheet(k, new Vector3(x, 1.62f, 1.25f), new Vector3(x, 1.3f, 1.25f), new Vector3(x + 0.3f, 1.3f, 1.25f), new Vector3(x + 0.3f, 1.62f, 1.25f), c);
-        }
-        k.Pop();
-    }
-
-    /// <summary>
-    /// A tall house: three narrow gable-fronted houses of four and five storeys built wall to wall, stone below and
-    /// jettied timber above, filling its lot to the edges so a dense street reads as one packed row.
-    /// </summary>
-    private static void TallHouse(MeshKit k, int v)
-    {
-        for (int h = 0; h < 3; h++)
-        {
-            int floors = 4 + (int)(Geo.Hash(v * 31 + h * 7 + 5) * 2.2f);
-            k.Push(MeshKit.At((h - 1) * 0.318f, 0, -0.02f, 0, 0.318f));
-            // Party walls between the three are never seen.
-            int party = h == 0 ? 1 : h == 2 ? 2 : 3;
-            Walls(k, 1, 3, 0, true, v * 11 + h * 3 + 151, true, party);
-            for (int f = 1; f < floors; f++)
-            {
-                // Each storey above juts a little further over the street.
-                k.Push(MeshKit.At(0, 0, 0.04f * f));
-                Walls(k, 1, 3, f, false, v * 11 + h * 3 + 151 + f, false, party);
-                k.Pop();
-                k.Box(new Vector3(0, f - 0.03f, 0.04f * f), new Vector3(1.04f, 0.06f, 3.04f), Palette.DarkTimber);
-            }
-            k.Push(MeshKit.At(0, 0, 0.04f * (floors - 1)));
-            GableZ(k, floors, 1, 3, 0.85f, RoofOf(v + h * 3 + 2), Palette.Plaster, 0.08f);
-            k.Pop();
-            Chimney(k, 0.26f, floors, -1.1f, (v + h) % 2 == 0);
-            k.Pop();
         }
     }
 
