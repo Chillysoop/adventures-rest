@@ -36,6 +36,9 @@ public sealed class Options
     /// <summary>With --autoplay, the stand-in leaves the armory to the player: stock and offers wait (--keep-armory).</summary>
     public bool KeepArmory;
 
+    /// <summary>Ingredients put in the alchemy bench's pot for a shot (--brew hearthmint,grave-dust).</summary>
+    public List<string> Brew = [];
+
     /// <summary>Lift the fog everywhere (screenshots of the wilds and the roads through them).</summary>
     public bool Reveal;
     public string? Site;
@@ -202,6 +205,7 @@ public sealed class Options
                 case "--no-pause": o.NoPause = true; break;
                 case "--keep-reports": o.KeepReports = true; break;
                 case "--keep-armory": o.KeepArmory = true; break;
+                case "--brew": o.Brew.AddRange(Next().Split(',')); break;
                 case "--reveal": o.Reveal = true; break;
                 case "--cam": o.Cam = float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture); break;
                 case "--look":

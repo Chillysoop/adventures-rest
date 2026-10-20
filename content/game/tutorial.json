@@ -207,6 +207,24 @@
       "teaches": ["tab:Armory", "command:Gift", "command:BuyLoot", "command:SellStock", "command:OfferPact", "command:EndPact"]
     },
     {
+      "id": "alchemy",
+      "title": "The alchemy bench",
+      "text": "An [b]Apothecary[/b] holds an alchemy bench. At the foot of the [b]Armory[/b] window, pick two or three ingredients and [b]Brew[/b]: herbs from the town's beds, and the monster parts companies bring home from the lairs they clear. Each lends a brew a little of a quality (mending, vigour, ember, rime, gloom, purity); a mix that reaches a recipe makes it, and the first batch gets the town's name in its recipe book. A mix that reaches nothing spoils.",
+      "point": "tab:Armory",
+      "when": "day:25",
+      "until": "tab:Armory",
+      "teaches": ["command:Brew"]
+    },
+    {
+      "id": "alchemy-shelf",
+      "title": "Potions on the shelf",
+      "text": "Your brews wait on the town's shelf. Heroes setting out take [b]healing draughts[/b] from it, a [b]ward[/b] makes them harder to hit at a lair of its kind, and a [b]fever-breaker[/b] pulls a townsperson back from a plague-bringer's night visit. Anything you have no use for sells: [b]Sell[/b] it from the shelf in the Armory window.",
+      "point": "tab:Armory",
+      "when": "count:Recipes",
+      "until": "tab:Armory",
+      "teaches": ["command:SellPotions"]
+    },
+    {
       "id": "bastions",
       "title": "A bastion of their own",
       "text": "A company that has made its name asks the council for land on the edge of town to raise a [b]bastion[/b]: a keep where its heroes live, and facilities like a physic garden, a drill yard or a smithy. It hires townsfolk to staff them, so it brings jobs and pulls workers from poorer pay. Its sentries stand on the walls in a siege, and heroes with a bastion stay loyal. Answer in [b]Companies[/b]: grant the land, give it free, or refuse.",
