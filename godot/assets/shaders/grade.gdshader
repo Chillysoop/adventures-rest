@@ -6,6 +6,8 @@ uniform float vignette = 0.28;
 uniform float strategic = 0.0;
 // Winter's grade: the warm highlights cool and the whole frame greys a touch (set from the season).
 uniform float cold = 0.0;
+// The info lens: the town greys and dims so the lens's colours stand out over it.
+uniform float lens = 0.0;
 uniform float contrast = 1.0;
 
 void fragment() {
@@ -17,5 +19,6 @@ void fragment() {
 	c = clamp((c - 0.5) * contrast + 0.5, 0.0, 1.0);
 	vec2 d = UV - 0.5;
 	c *= 1.0 - vignette * dot(d, d) * 2.4;
+	c = mix(c, vec3(dot(c, vec3(0.299, 0.587, 0.114))) * 0.78, lens);
 	COLOR = vec4(c, 1.0);
 }

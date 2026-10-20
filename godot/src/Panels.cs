@@ -159,7 +159,9 @@ public partial class Main
             string mood = s.Loyalty >= 60 ? "Loyal" : s.Loyalty >= 25 ? "Wary" : "Disloyal";
             int skill = Council.Competence(t, s);
             p.Row($"[b]{Ui.Esc(s.Def.Title)}[/b]  {Tag(mood, s.Loyalty < 25 ? Ui.Bad : s.Loyalty >= 60 ? Ui.Good : Ui.Ink2)}\n{AgentLink(a)} {Ui.C(Ui.Ink2, $"[font_size=12]· {a.Race} {a.Profession} · skill {(skill >= 0 ? "+" : "")}{skill} · loyalty {Math.Round(s.Loyalty)}\nMinds {Ui.Esc(s.Def.Portfolio)}. Wants {Ui.Esc(s.Def.Agenda)}.[/font_size]")}");
+            RenderSecret(p, t, a);
         }
+        RenderGuilds(p, t);
         var history = t.Motions.Where(m => m.Status != MotionStatus.Pending).TakeLast(8).Reverse().ToList();
         if (history.Count > 0)
         {
@@ -192,6 +194,16 @@ public partial class Main
             int id = pending.Id;
             p.Buttons(($"Sign{Decree(true)}", true, true, () => Act(() => _sim.DecideMotion(id, true))), ($"Veto{Decree(false)}", true, false, () => Act(() => _sim.DecideMotion(id, false))));
             p.Note("Going against the council's majority is a decree: it costs Mandate and angers the councillors you overrule.");
+            // A secret in hand swings a councillor's vote, so the mayor can carry the hall without a decree.
+            var levers = pending.Votes
+                .Where(v => v.Seat != pending.Proposer && t.Seats.First(x => x.Def.Id == v.Seat).HolderId is int h && Secrets.Held(t, h) != null)
+                .Select(v => (v, h: t.Seats.First(x => x.Def.Id == v.Seat).HolderId!.Value))
+                .ToList();
+            if (levers.Count > 0)
+            {
+                p.Buttons([.. levers.Select(l => ($"Press {t.Agent(l.h).GivenName} to vote {(l.v.Yes ? "nay" : "aye")}", true, false, (Action)(() => Act(() => _sim.PressCouncillor(l.h, !l.v.Yes)))))]);
+                p.Note($"You know what they hide. Pressing them spends it: they vote your way, never forgive it, and {Math.Round(t.Content.Council.Secrets.Scandal * 100)}% of the time word gets out.");
+            }
         }
         foreach (var (mole, a, b) in Infiltration.Whispered(t))
         {
@@ -199,6 +211,30 @@ public partial class Main
             int ia = a.Id, ib = b.Id;
             p.Buttons(($"Name {a.GivenName}", true, false, () => Act(() => _sim.AccuseCouncillor(ia))), ($"Name {b.GivenName}", true, false, () => Act(() => _sim.AccuseCouncillor(ib))));
         }
+    }
+
+    /// <summary>What the mayor knows about a councillor, and the levers it gives: dig for a secret, then press them on the vote or expose them.</summary>
+    private void RenderSecret(Pane p, Town t, Agent a)
+    {
+        var r = t.Content.Council.Secrets;
+        int id = a.Id;
+        var known = Secrets.Of(t, id);
+        if (Secrets.Held(t, id) is { } held)
+        {
+            p.Text($"{Tag("Secret", Ui.Gold)} {Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Ui.Cap(Secrets.Describe(t, held)))}. Press them on a vote before the council, or expose them and they lose the seat.[/font_size]")}", 12);
+            p.Buttons(("Expose them", true, false, () => Act(() => _sim.ExposeCouncillor(id))));
+            return;
+        }
+        if (known is { Known: true })
+        {
+            p.Text(Ui.C(Ui.Ink2, known.Kind == "" ? "[font_size=12]Your people found nothing to hold over them.[/font_size]" : "[font_size=12]You have spent what you knew about them.[/font_size]"), 12);
+            return;
+        }
+        string? why = Secrets.DigBlocked(t, id);
+        int dc = Secrets.Dc(t);
+        double odds = Sheet.Chance(t, "investigation", "", dc, false, false);
+        p.Buttons(($"Dig into their past, {Js.Str(r.DigCost)}g · {Math.Round(odds * 100)}%", why == null, false, () => Act(() => _sim.DigIntoCouncillor(id))));
+        if (why != null && why != "only a councillor") p.Note(Ui.Cap(why) + ".");
     }
 
     /// <summary>The tax rate the mayor sets, and what the town's services cost against what it takes in.</summary>
@@ -646,6 +682,7 @@ public partial class Main
             InspectLoyalty(p, t, a, hs);
         }
         p.Text($"{Ui.Esc(status)} · {Math.Floor(a.Gold)} gold · mood {Math.Round(a.LastDayMood)}");
+        InspectMoods(p, t, a);
         p.Text($"Lives at {Ui.Esc(home)}; {(a.Hero != null ? "lives by bounties" : $"works at {Ui.Esc(job)}")}.");
         if (a.SpouseId is int sp) p.Text($"Married to {AgentLink(t.Agent(sp))}");
         InspectSheet(p, t, a);
@@ -659,6 +696,27 @@ public partial class Main
             p.Heading("Story so far");
             foreach (var e in history) p.Text($"{Ui.C(Ui.Ink2, $"[font_size=11]Day {e.Tick / 24 + 1}[/font_size]")}  {LinkNames(e)}", 13);
         }
+    }
+
+    /// <summary>The inspiration or break gripping them now, and what the last few came to.</summary>
+    private static void InspectMoods(Pane p, Town t, Agent a)
+    {
+        if (Moods.Episode(t, a) is { } d)
+        {
+            bool inspired = Moods.IsInspiration(t, d);
+            int hours = Math.Max(1, a.EpisodeUntil - t.Tick);
+            string left = hours >= 24 ? $"{(hours + 12) / 24} more day{((hours + 12) / 24 == 1 ? "" : "s")}" : $"{hours} more hour{(hours == 1 ? "" : "s")}";
+            p.Text($"{Tag(inspired ? "Inspired" : "Breaking", inspired ? Ui.Gold : Ui.Bad)} {Ui.C(inspired ? Ui.Gold : Ui.Bad, Ui.Esc(d.Name))} {Ui.C(Ui.Ink2, $"[font_size=12]· {left}[/font_size]")}", 13);
+        }
+        else if (!a.IsHero && !a.Departed)
+        {
+            var r = t.Content.Moods;
+            string streak = a.HighDays > 0 ? $"in high spirits {a.HighDays} day{(a.HighDays == 1 ? "" : "s")} running: an inspiration may strike from day {r.HighDays}"
+                : a.LowDays > 0 ? $"low {a.LowDays} day{(a.LowDays == 1 ? "" : "s")} running: past day {r.LowDays} they may break" : "";
+            if (streak != "") p.Text(Ui.C(a.LowDays > 0 ? Ui.Bad : Ui.Ink2, $"[font_size=12]{Ui.Cap(streak)}[/font_size]"), 13);
+        }
+        if (a.Moments.Count > 0)
+            p.Text(Ui.C(Ui.Ink2, $"[font_size=12]{string.Join("\n", a.Moments.AsEnumerable().Reverse().Select(m => Ui.Esc(m)))}[/font_size]"), 13);
     }
 
     /// <summary>Fame and infamy: what the world calls them, and what their name does for them.</summary>

@@ -9,6 +9,7 @@ namespace CrownAndCompass.Client.Map;
 /// temple and shrine, a crier with the broadsheet's headline the days after it prints, a hawker outside each store,
 /// a busker singing of the town's best hero on festival days, and a grumbler in a ward that is angry with the mayor.
 /// Each is a figure with a speech bubble that changes every few seconds; they show only by day and up close.
+/// Townsfolk in the grip of an inspiration or a break (<see cref="Moods"/>) say so over their own heads, in gold or in grey.
 /// </summary>
 public partial class Crowd
 {
@@ -18,9 +19,25 @@ public partial class Crowd
     private const float LineSeconds = 6;
     private readonly List<Label3D> _bubbles = [];
     private List<Scene> _scenes = [];
+    private List<(int Id, string Head, IReadOnlyList<string> Lines, bool Inspired)> _moods = [];
     private int _sceneTick = -1;
 
     private sealed record Scene(Vector2 P, Color Tunic, IReadOnlyList<string> Lines, int Salt);
+
+    private static readonly Color Said = new("f3ead4"), Inspired = new("ffd66b"), Broken = new("b9c4d6");
+
+    /// <summary>Townsfolk in the grip of an inspiration or a break, and what they say.</summary>
+    private static List<(int, string, IReadOnlyList<string>, bool)> MoodLines(Town town)
+    {
+        var list = new List<(int, string, IReadOnlyList<string>, bool)>();
+        foreach (var a in town.Agents)
+        {
+            if (a.Episode == "" || a.Departed || Moods.Episode(town, a) is not { } d || d.Emote.Count == 0) continue;
+            bool inspired = Moods.IsInspiration(town, d);
+            list.Add((a.Id, $"{a.GivenName}: {d.Name}{(inspired ? "!" : "")}", d.Emote, inspired));
+        }
+        return list;
+    }
 
     private static readonly Color Robe = new("e6dcc0"), Crier = new("8a2a2a"), Apron = new("5a7a4a"), Motley = new("b0582a"), Grey = new("6a6a6a");
 
@@ -78,6 +95,7 @@ public partial class Crowd
         if (town.Tick != _sceneTick)
         {
             _scenes = Scenes(town);
+            _moods = MoodLines(town);
             _sceneTick = town.Tick;
         }
         var scenes = _scenes;
@@ -93,10 +111,23 @@ public partial class Crowd
             string line = s.Lines[(int)(Geo.Hash(s.Salt * 7 + beat) * s.Lines.Count) % s.Lines.Count];
             var bubble = Bubble(used++);
             bubble.Text = line;
+            bubble.Modulate = Said;
             bubble.Position = gen.At(s.P, 0.62f);
             bubble.Scale = scale;
             bubble.Visible = true;
         }
+        if (talk)
+            foreach (var (id, head, lines, inspired) in _moods)
+            {
+                if (!People.Sprites.TryGetValue(id, out var s) || !s.Visible) continue;
+                int beat = (int)((now + Geo.Hash(id) * LineSeconds) / LineSeconds);
+                var bubble = Bubble(used++);
+                bubble.Text = $"{head}\n\"{lines[(int)(Geo.Hash(id * 7 + beat) * lines.Count) % lines.Count]}\"";
+                bubble.Modulate = inspired ? Inspired : Broken;
+                bubble.Position = gen.At(s.P, 0.62f);
+                bubble.Scale = scale;
+                bubble.Visible = true;
+            }
         for (int i = used; i < _bubbles.Count; i++) _bubbles[i].Visible = false;
     }
 

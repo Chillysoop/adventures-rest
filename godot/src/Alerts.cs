@@ -85,6 +85,11 @@ public partial class Main
         GuideEvent("alert");
         var t = _sim.Town;
         Tab? tab = TabOf(a.Kind.Window);
+        if (a.Kind.Window == AlertWindow.Tourney)
+        {
+            OpenTourney();
+            return;
+        }
         if (a.StoryId is int story)
         {
             OpenStory(story);
@@ -124,6 +129,12 @@ public partial class Main
     private void GoTo(LedgerEntry e)
     {
         var t = _sim.Town;
+        // A siege's news looks at the walls, where the map plays it out.
+        if (e.Importance == Importance.Major && SiegeOf(e) is { } siege)
+        {
+            ShowSiege(siege);
+            return;
+        }
         Tab? tab = e.Category switch
         {
             LedgerCategory.War => Tab.War,

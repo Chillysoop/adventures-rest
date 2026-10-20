@@ -66,6 +66,7 @@ public partial class Main
         BuildTray();
         BuildBuildBar();
         BuildCorner();
+        BuildLensBar();
 
         _endOverlay = new ColorRect { Color = new Color(0.08f, 0.055f, 0.03f, 0.55f), Visible = false };
         AddChild(_endOverlay);
@@ -146,8 +147,10 @@ public partial class Main
         var pill = new PanelContainer { MouseFilter = MouseFilterEnum.Ignore, SizeFlagsHorizontal = SizeFlags.ShrinkCenter };
         pill.AddThemeStyleboxOverride("panel", Ui.Flat(new Color(0.08f, 0.06f, 0.04f, 0.8f), 12, 4, 99));
         pill.AddChild(_pausedPill);
-        // Under the alert strip, centred.
-        BuildAlerts().AddChild(pill);
+        // Under the alert strip, centred, with the siege banner below it.
+        var col = BuildAlerts();
+        col.AddChild(pill);
+        BuildSiegeBanner(col);
     }
 
     // ---------- Management windows ----------
@@ -343,6 +346,7 @@ public partial class Main
         var home = new Button { Text = "Town", TooltipText = "Back to the town (Home, or double right-click)", FocusMode = FocusModeEnum.None };
         home.Pressed += () => _map.Recenter();
         tools.AddChild(home);
+        tools.AddChild(BuildLensButton());
         corner.AddChild(tools);
         corner.AddChild(BuildOrders());
 

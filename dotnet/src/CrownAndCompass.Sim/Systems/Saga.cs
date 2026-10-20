@@ -348,7 +348,7 @@ public static class Saga
             s.QuietDays = 0;
             return;
         }
-        if (++s.QuietDays < Rules(town).LullDays) return;
+        if (++s.QuietDays < Rules(town).LullDays * Storyteller.Of(town).Lull) return;
         s.QuietDays = 0;
         Menaces.Seed(town, act.Seeds[0]);
     }

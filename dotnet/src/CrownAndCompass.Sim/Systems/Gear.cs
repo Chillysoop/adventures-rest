@@ -143,6 +143,14 @@ public static class Gear
     /// <summary>"+1 longsword", "Frost Brand", "+2 chain mail".</summary>
     public static string Label(HeroSheet s, LibItem it)
     {
+        string slot = SlotOf(it);
+        if (s.Named.Count > 0 && s.Named.TryGetValue(slot, out var named) && s.Magic.TryGetValue(slot, out var worn) && ReferenceEquals(worn, it))
+            return $"{named} ({Unnamed(s, it)})";
+        return Unnamed(s, it);
+    }
+
+    private static string Unnamed(HeroSheet s, LibItem it)
+    {
         var m = Plain.Match(it.Name);
         if (!m.Success) return it.Name;
         var on = m.Groups[1].Value switch { "Weapon" => s.Weapon, "Armor" => s.Armor, _ => s.Shield };
@@ -176,12 +184,20 @@ public static class Gear
         var best = s.Magic.Keys.Select(k => (Slot: k, Item: s.Magic[k])).OrderByDescending(x => x.Item.Tier).ThenByDescending(x => x.Item.ValueGp).ThenBy(x => x.Item.Name, StringComparer.Ordinal).FirstOrDefault();
         if (best.Item == null) return null;
         s.Magic.Remove(best.Slot);
+        string named = s.Named.Get(best.Slot, "");
+        s.Named.Remove(best.Slot);
         Relist(s);
         Wear(town, to, best.Item);
+        // A forged blade keeps its name in new hands.
+        if (named != "" && to.Hero!.Magic.TryGetValue(best.Slot, out var worn) && ReferenceEquals(worn, best.Item))
+        {
+            to.Hero.Named[best.Slot] = named;
+            Relist(to.Hero);
+        }
         return best.Item;
     }
 
-    private static void Relist(HeroSheet s)
+    internal static void Relist(HeroSheet s)
     {
         s.Items.Clear();
         foreach (var slot in Slots)
@@ -216,6 +232,7 @@ public static class Gear
         string slot = SlotOf(it);
         var old = s.Magic.TryGetValue(slot, out var o) ? o : null;
         s.Magic[slot] = it;
+        s.Named.Remove(slot);
         Relist(s);
         return old;
     }

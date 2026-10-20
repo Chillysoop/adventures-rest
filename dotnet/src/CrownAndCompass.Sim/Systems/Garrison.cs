@@ -58,6 +58,9 @@ public sealed record GarrisonRules
     public WorkSpec GatehouseWork { get; init; } = new() { Cost = 450, Timber = 10, Stone = 60, Days = 8, Tier = "town" };
     public WorkSpec MoatWork { get; init; } = new() { Cost = 600, Days = 10, Tier = "town" };
     public WorkSpec BarracksWork { get; init; } = new() { Cost = 350, Timber = 15, Stone = 40, Days = 6, Max = 2, Tier = "town" };
+
+    /// <summary>How the map plays a siege back (<see cref="Battles"/>).</summary>
+    public BattleRules Battle { get; init; } = new();
 }
 
 /// <summary>Where a guard can be sent: a wall section, a tower, the gate, or a flag the player planted.</summary>

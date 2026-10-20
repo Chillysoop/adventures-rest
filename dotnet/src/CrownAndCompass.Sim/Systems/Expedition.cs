@@ -196,7 +196,7 @@ public static class Expedition
             _rng = rng;
             _content = content;
             _site = site;
-            Party = heroes.Select(agent => new Combatant(agent) { Ac = Gear.Ac(content, agent), Attack = Gear.Attack(content, agent), Skill = Gear.Skill(content, agent.Hero!), Veteran = agent.Hero!.Expeditions >= content.World.Companies.Veteran }).ToList();
+            Party = heroes.Select(agent => new Combatant(agent) { Ac = Gear.Ac(content, agent) + Alchemy.WardAc(content, agent.Hero!, site), Attack = Gear.Attack(content, agent), Skill = Gear.Skill(content, agent.Hero!), Veteran = agent.Hero!.Expeditions >= content.World.Companies.Veteran }).ToList();
             // Greenhorns with nobody seasoned among them lose their nerve sooner.
             if (Party.Any(c => c.Sheet.Expeditions == 0) && !Party.Any(c => c.Veteran)) _caution = content.Roads.Retreat.GreenCaution;
         }

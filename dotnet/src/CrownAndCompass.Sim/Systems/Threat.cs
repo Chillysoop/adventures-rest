@@ -268,8 +268,8 @@ public static class Threat
         var rng = town.Rng;
         en.Raids++;
         en.RaidWaited = 0;
-        en.NextRaidTick = town.Tick + (int)Math.Round(rng.Range(e.RaidEveryDays[0], e.RaidEveryDays[1] + 1) / Seasons.Warband(town)) * SimTime.HoursPerDay;
-        double raiders = Math.Max(4, Js.Round(en.Strength * e.RaidShare * (0.7 + rng.Next() * 0.6)));
+        en.NextRaidTick = town.Tick + (int)Math.Round(rng.Range(e.RaidEveryDays[0], e.RaidEveryDays[1] + 1) * Storyteller.RaidEvery(town) / Seasons.Warband(town)) * SimTime.HoursPerDay;
+        double raiders = Math.Max(4, Js.Round(en.Strength * e.RaidShare * (0.7 + rng.Next() * 0.6) * Storyteller.RaidStrength(town)));
         var home = town.Heroes.Where(a => !a.IsAway).ToList();
         double local = LocalDefense(town);
         var party = Lairs.AwayParty(town);
@@ -320,12 +320,15 @@ public static class Threat
         // They may drag the hands off to their war camp, to be rescued in time or lost.
         var camp = town.Sites.FirstOrDefault(x => x.Def.Id == e.Outpost.Id);
         text += Captives.Take(town, camp, target);
+        bool burned = false;
         if (rng.Chance(town.Content.Enemy.Defense.RaidBurn) && Blows.Burns(target))
         {
             Blows.Wreck(town, target, 0.4 + rng.Next() * 0.3);
             text += $". They fire {target.Name} as they go";
+            burned = true;
         }
         town.Log(LedgerCategory.War, Importance.Major, $"{text}. The watch arrives too late.", victims);
+        if (burned) Fires.Spread(town, target);
         town.Tension += 25 + victims.Count * 10;
         town.Mandate = Math.Max(0, town.Mandate - 4);
     }
@@ -387,6 +390,7 @@ public static class Threat
             $"The defenders muster {Js.Str(Js.Round(startDef))} strong" +
             (town.Defenses.Palisade == PalisadeState.Built ? " behind the palisade" : " with no wall to hide behind") +
             (towers != 0 ? $" and {towers} {(towers == 1 ? "tower" : "towers")}." : "."));
+        var record = Battles.Begin(town, "warband", "warband", e.Name, "orcs", e.Leader, en.Approach, en.Strength, startDef);
         def = Math.Max(0, def - Loyalty.Betray(town, e.Name, null, lines));
         for (int w = 1; w <= e.SiegeWaves && breaches < e.BreachesToFall; w++)
         {
@@ -398,6 +402,7 @@ public static class Threat
             {
                 def -= wading * 0.15;
                 en.Strength -= wave;
+                Battles.Wave(record, at, wave, false);
                 lines.Add($"Wave {w}: {Js.Str(Js.Round(wave))} orcs hit the {Garrison.Place(town, at)} and break against it.");
             }
             else
@@ -405,6 +410,7 @@ public static class Threat
                 def -= wading * 0.35;
                 en.Strength -= wave * 0.5;
                 breaches++;
+                Battles.Wave(record, at, wave, true);
                 lines.Add($"Wave {w}: {Js.Str(Js.Round(wave))} orcs breach the {Garrison.Place(town, at)}. Fighting spills into the streets.");
             }
         }
@@ -422,12 +428,16 @@ public static class Threat
             dead.Add(v);
         }
         if (dead.Count > 0) lines.Add($"{Expedition.ListNames(dead.Select(a => a.Name).ToList())} {(dead.Count == 1 ? "falls" : "fall")} on the walls.");
+        record.Fallen.AddRange(dead.Select(a => a.Id));
         town.Watch = Math.Max(0, town.Watch - breaches * 2);
 
         if (breaches >= e.BreachesToFall)
         {
-            if (Saga.Sack(town, Menaces.Warband(town), lines))
+            record.End = BattleEnd.Fell;
+            // Without the saga there is no yoke, and no warband to raise as a menace.
+            if (town.Saga.Enabled && Saga.Sack(town, Menaces.Warband(town), lines))
             {
+                record.End = BattleEnd.Sacked;
                 WarlordInCamp(town);
                 Chronicle(town, lines, ExpeditionOutcome.Wiped, []);
                 town.Log(LedgerCategory.War, Importance.Major, $"{town.Name} is sacked. {e.Leader}'s warband carries off the treasury and leaves the town under its yoke. (Chronicle {town.Chronicles.Count})", dead.Select(a => a.Id).ToList());
@@ -458,6 +468,8 @@ public static class Threat
             lines.Add($"The walls hold. {e.Leader} comes to the breach himself, and {Expedition.ListNames(champions.Select(a => a.GivenName).ToList())} go out to meet him.");
             var battle = new SiteDef { Id = "last_stand", Name = "the walls", Tier = 0, Distance = 0, Encounters = [], Boss = e.WarlordBattle, Loot = [0, 0] };
             var result = Expedition.Run(rng, town.Content, battle, champions);
+            record.Champions.AddRange(champions.Select(c => c.Id));
+            record.ChampionsFell.AddRange(result.Dead.Order());
             lines.AddRange(result.Lines.Skip(1).Where(l =>
                 !l.StartsWith("At last", StringComparison.Ordinal) &&
                 !l.Contains("is cleared. The hoard", StringComparison.Ordinal) &&
@@ -485,6 +497,7 @@ public static class Threat
         if (slain)
         {
             lines.Add($"{e.Leader} is dead. The warband breaks and scatters into the hills.");
+            record.End = BattleEnd.Slain;
             en.Stage = ThreatStage.Defeated;
             en.Strength = 0;
             town.Mandate = Math.Min(100, town.Mandate + 25);
@@ -499,6 +512,7 @@ public static class Threat
         else
         {
             lines.Add($"{e.Leader} sounds the retreat. The warband limps back to the hills to lick its wounds.");
+            record.End = champions.Count > 0 ? BattleEnd.Repelled : BattleEnd.Held;
             en.Stage = ThreatStage.Raids;
             en.ArrivalTick = null;
             en.Strength = Math.Max(town.Content.Enemy.Stages.Probing, en.Strength * 0.6);

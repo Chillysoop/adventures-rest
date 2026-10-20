@@ -74,6 +74,7 @@ public partial class Main : Control
         BuildGuide();
         BuildStory();
         BuildFind();
+        BuildTourney();
         BuildTale();
         BuildRecap();
         BuildKeywords();
@@ -96,12 +97,17 @@ public partial class Main : Control
         }
         else if (_opts.Day > 0) _sim.RunDays(_opts.Day);
         if (_opts.Hour > 0) for (int i = 0; i < _opts.Hour; i++) _sim.Step();
+        if (_opts.Siege is float siegeHours) SiegeShot(siegeHours);
         _opts.ApplyScript(_sim);
+        if (_opts.Tourney is int tourney) StageTourney(tourney);
+        if (_opts.Secrets) StageSecrets();
+        if (_opts.Guilds is string guilds) StageGuilds(guilds == "strike");
         _rosterPick = _opts.RosterPick ?? _rosterPick;
         _offerAnswer = _opts.RosterAnswer ?? _offerAnswer;
         // Stories the script's hours brought are the stand-in mayor's, not cards to greet the shot with.
         if (_opts.Autoplay) _storySeen = _sim.Town.Stories.All.Count;
         SetSpeed(_opts.Speed ?? 1);
+        _pot.AddRange(_opts.Brew);
         if (_opts.Tab is string t && Enum.TryParse<Tab>(t, true, out var tab)) SetTab(tab);
         if (_opts.Tray is string tray && Trays.FirstOrDefault(d => d.Id.Equals(tray, StringComparison.OrdinalIgnoreCase)) is { } td)
             Callable.From(() => OpenTray(td.Id)).CallDeferred();
@@ -109,6 +115,9 @@ public partial class Main : Control
         if (_opts.Site is string site) Select(Selection.Site(site));
         if (_opts.Wall is int wall) Select(Selection.Wall(wall));
         if (_opts.Strike) ShowStrike(true);
+        // --shadowed aims at the first settlement the town has met that lies under an enemy's shadow.
+        if (_opts.Shadowed && _sim.Town.Settlements.FirstOrDefault(s => s.Met && Shadows.Shadowed(s)) is { } dark)
+            _opts.Look ??= Map.Geo.SettlementPin(_sim.Town, dark);
         if (_opts.Cam is float cam)
             _map.LookAt(_opts.Look ?? (_opts.Site is string at && _map.Geo.Pins.TryGetValue(at, out var pin) ? pin : Map.Geo.Center), cam);
         // --at aims the camera at the town's first finished building of a kind.
@@ -122,6 +131,7 @@ public partial class Main : Control
         if (_opts.Rising && _sim.Town.Buildings.Where(b => b.IsSite && !b.Def.IsGrand).OrderByDescending(b => b.Workers.Count).ThenBy(b => b.BuildProgress / b.Def.BuildHours).ThenBy(b => b.Id).FirstOrDefault() is Building rising)
             _map.LookAt(Map.Geo.LotPos(_sim.Town.Lot(rising.LotId)), _opts.Cam ?? 6);
         if (_opts.StrategicView) ToggleStrategic();
+        if (_opts.Lens is string lens && Enum.TryParse<Map.Lens.Mode>(lens, true, out var lm)) _map.Lens.Show(true, lm);
         foreach (var (kind, at, label) in _opts.Markers) _map.Markers.Add(new Marker(kind, at, _sim.Town.Day, label));
         if (_opts.OpenMarker is int open && open < _map.Markers.Count) CallDeferred(MethodName.OpenMarkerAt, open);
         if (_opts.Plan is string plan) OpenPlan(plan, _opts.Tool, _opts.Hover);
@@ -139,6 +149,7 @@ public partial class Main : Control
         }
         if (_opts.Folk && _sim.Town.Workers.Where(a => !a.IsAway).OrderByDescending(a => a.Practice).ThenBy(a => a.Id).FirstOrDefault() is Agent folk)
             Select(Selection.Agent(folk.Id));
+        if (_opts.Episode is string episode) StageEpisode(episode);
         if (_opts.House && _sim.Town.Buildings.Where(b => b.Complete && b.Def.Housing > 0).OrderByDescending(b => Decor.Comfort(_sim.Town, b)).ThenBy(b => b.Id).FirstOrDefault() is Building house)
         {
             Select(Selection.Building(house.Id));
@@ -182,6 +193,7 @@ public partial class Main : Control
         if (_opts.Recap) OpenRecap(Math.Max(1, _sim.Town.Day - 20), "Last time");
         if (_opts.Menu) OpenMenu();
         if (plain || _opts.Title || _opts.Smoke) ShowTitle();
+        if (_opts.Storytellers) PickStoryteller(false);
         if (_opts.History is string power) OpenHistory(power == "" ? null : power);
         if (_opts.Glossary is string entry) OpenGlossary(entry == "" ? null : entry);
         for (int i = 0; i < _opts.Keywords.Count; i++)
@@ -190,6 +202,35 @@ public partial class Main : Control
             Pin(_opts.Keywords[i]);
             _kwPinned[^1].Position = at;
         }
+    }
+
+    /// <summary>
+    /// For a shot of an inspiration or a break: the first townsperson out in front of a building with a few others about,
+    /// struck with it now, the camera on them and their inspector open.
+    /// </summary>
+    private void StageEpisode(string id)
+    {
+        var t = _sim.Town;
+        var d = t.Content.Moods.Of(id);
+        if (d == null) return;
+        bool inspiration = Moods.IsInspiration(t, d);
+        // Someone whose trade fits, if anyone, out where they can be seen.
+        var who = t.Workers
+            .Where(a => !a.IsAway && a.Age >= 18 && a.LocationId != null && a.Activity is not Activity.Sleeping && a.Episode == "")
+            .OrderByDescending(a => d.Professions.Contains(a.JobId is int j && t.Building(j).Def.Profession is string p ? p : a.Profession) ? 1 : 0)
+            .ThenByDescending(a => d.Effect == "bender" ? (a.Activity == Activity.Drinking ? 1 : 0) : a.Activity == Activity.Working ? 1 : 0)
+            .ThenBy(a => a.Id)
+            .FirstOrDefault();
+        if (who == null || !(inspiration ? Moods.Inspire(t, who, id) : Moods.Break(t, who, id))) return;
+        // Take them where the episode keeps them, so the shot finds them there.
+        if (Moods.Holds(t, who) is Activity.Drinking && t.Taverns.Count > 0)
+        {
+            who.Activity = Activity.Drinking;
+            who.LocationId = t.Taverns.OrderBy(b => b.Id).First().Id;
+        }
+        if (who.LocationId is int at)
+            _map.LookAt(Map.Geo.LotPos(t.Lot(t.Building(at).LotId)), _opts.Cam ?? 9);
+        Select(Selection.Agent(who.Id));
     }
 
     /// <summary>A story for a scripted shot; a sending comes from the first party out on a bounty that it fits.</summary>
@@ -257,12 +298,12 @@ public partial class Main : Control
 
     // ---------- Game ----------
 
-    private void NewTown(int seed, bool autoplay = false)
+    private void NewTown(int seed, bool autoplay = false, string? storyteller = null)
     {
         RememberLegends();
         // With --autoplay the stand-in mayor keeps playing, for demos and screenshots; only a player's towns meet old legends.
         var legends = autoplay ? [] : ProfileLegends();
-        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoArmory = autoplay && !_opts.KeepArmory, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay && _opts.Tax == null, AutoDefense = autoplay, AutoPlanning = autoplay, AutoStories = autoplay, AutoExplore = autoplay && !_opts.Find, Legends = legends }));
+        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoArmory = autoplay && !_opts.KeepArmory, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay && _opts.Tax == null, AutoHonours = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay, AutoStories = autoplay, AutoExplore = autoplay && !_opts.Find, Legends = legends, Storyteller = storyteller ?? _opts.Storyteller ?? "rising" }));
     }
 
     /// <summary>Show a town: a new one, or one loaded from a save.</summary>
@@ -304,6 +345,7 @@ public partial class Main : Control
     private void OnLedger(LedgerEntry e)
     {
         if (Newsworthy(e)) Feed(e);
+        SiegeNews(e);
         // Real time with pause: the war's turning points stop the clock so the player can react.
         if (e.Category == LedgerCategory.War && e.Importance == Importance.Major && _speed > 0 && !_opts.NoPause) SetSpeed(0);
         if (_sim.Town.Outcome != null && !_endShown) CallDeferred(MethodName.ShowEnd);
@@ -334,6 +376,15 @@ public partial class Main : Control
 
     private void Select(Selection? sel)
     {
+        // Clicking an enemy's agent in the crowd has the watch seize them on the spot.
+        if (sel is { Kind: "lurker" })
+        {
+            var l = Lurkers.Of(_sim.Town, sel.Id);
+            Hint(l != null && _sim.Seize(sel.Id) ? $"The watch seizes {l.Disguise} by {Lurkers.Where(_sim.Town, l)}." : "They have slipped away.");
+            GuideEvent("seize");
+            _dirty = true;
+            return;
+        }
         _map.Selection = sel;
         if (sel != null) GuideEvent($"select:{sel.Kind}");
         _inspector.Visible = sel != null;
@@ -446,6 +497,8 @@ public partial class Main : Control
         else if (k.Keycode == Key.Escape && _map.Decorator.Active) _map.Decorator.Pick(null);
         else if (k.Keycode == Key.R && _map.Decorator.Active) _map.Decorator.Turn(k.ShiftPressed ? -1 : 1);
         else if (k.Keycode == Key.M) ToggleStrategic();
+        else if (k.Keycode == Key.L) ToggleLens();
+        else if (k.Keycode == Key.Escape && _map.Lens.On) _map.Lens.Show(false);
         else if (k.Keycode == Key.C) SetTab(Tab.Mayor);
         else if (k.Keycode == Key.Escape && _drawer.Visible) CloseTray();
         else if (k.Keycode == Key.Escape && _inspector.Visible) Select(null);
@@ -468,6 +521,7 @@ public partial class Main : Control
         // --scroll F: hold the open window scrolled to that share of its length (for screenshots).
         if (_opts.Scroll is float sf && _window.Visible && _windowTab is Tab wt && _scrolls.TryGetValue(wt, out var sc))
             sc.ScrollVertical = (int)(sf * Math.Max(0, sc.GetVScrollBar().MaxValue - sc.Size.Y));
+        TickLens(dt);
         _acc += dt * Speeds[_speed];
         int steps = 0;
         while (_acc >= 1 && steps < 8)
@@ -491,12 +545,14 @@ public partial class Main : Control
         SyncGuide();
         SyncStories(delta);
         SyncFinds();
+        SyncTourney();
         SyncTales(delta);
         SyncRecap();
         SyncMoments();
         SyncKeywords(delta);
         SyncChecks();
         SyncTownRolls();
+        SyncSiege();
         if (_title.Visible) _map.Drift(1, (float)delta * 0.035f);
         if (_dirty)
         {

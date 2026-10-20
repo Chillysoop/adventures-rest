@@ -380,7 +380,7 @@ public static class Council
                 votes.Add(new Vote(s.Def.Id, bought));
                 continue;
             }
-            double lean = town.Content.Council.Alignment[m.Kind][s.Def.Id] * 50 + voter.OpinionOf(m.ProposerId) * 0.3 + town.Rng.Range(-25, 25);
+            double lean = town.Content.Council.Alignment[m.Kind][s.Def.Id] * 50 + voter.OpinionOf(m.ProposerId) * 0.3 + Guilds.Lean(town, s.Def.Id, m.Kind) + town.Rng.Range(-25, 25);
             votes.Add(new Vote(s.Def.Id, lean > 0));
         }
         return votes;
@@ -406,6 +406,7 @@ public static class Council
                 s.Loyalty = Clamp(s.Loyalty + (v.Yes == passed ? 3 : -3) - (m.Decree && v.Yes != passed ? 8 : 0), 0, 100);
             }
             if (m.Decree) town.Mandate = Clamp(town.Mandate - town.Content.Council.DecreeMandate, 0, 100);
+            Guilds.Ruled(town, m.Kind, passed, $"{(passed ? "signed" : "vetoed")} the motion that {m.Text}");
         }
 
         string who = sign == null

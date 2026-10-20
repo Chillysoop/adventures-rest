@@ -36,6 +36,9 @@ public sealed class Options
     /// <summary>With --autoplay, the stand-in leaves the armory to the player: stock and offers wait (--keep-armory).</summary>
     public bool KeepArmory;
 
+    /// <summary>Ingredients put in the alchemy bench's pot for a shot (--brew hearthmint,grave-dust).</summary>
+    public List<string> Brew = [];
+
     /// <summary>Lift the fog everywhere (screenshots of the wilds and the roads through them).</summary>
     public bool Reveal;
     public string? Style;
@@ -57,6 +60,13 @@ public sealed class Options
     /// <summary>--title shows the main menu; --tutorial start|step-id runs the tutorial from there (screenshots).</summary>
     public bool Title;
 
+    /// <summary>--storyteller id: who tells a new town's story; --storytellers opens the main menu's choice of them.</summary>
+    public string? Storyteller;
+    public bool Storytellers;
+
+    /// <summary>--episode id: strike a townsperson out on the streets with that inspiration or break, look at them and open their inspector.</summary>
+    public string? Episode;
+
     /// <summary>--history [power-id]: open the world's history timeline, with a power's story picked.</summary>
     public string? History;
 
@@ -75,6 +85,12 @@ public sealed class Options
     /// <summary>--wall N: select a section of the outer wall (0 is the gate) in the inspector, for shots of the call to arms.</summary>
     public int? Wall { get; private set; }
 
+    /// <summary>
+    /// --siege H: run on to the next siege and stop H hours after the host reaches the walls (8 by default: it camps through
+    /// the night and the assault goes in at dawn, 6 hours in), the camera on the walls.
+    /// </summary>
+    public float? Siege;
+
     /// <summary>--house: select the house on the most pleasant street, for screenshots of the inspector.</summary>
     public bool House;
 
@@ -82,6 +98,16 @@ public sealed class Options
     public string? Crowded;
     /// <summary>Aim the camera at the building going up with the most hands on it (<c>--rising</c>), for a shot of the builders.</summary>
     public bool Rising;
+    /// <summary>--tourney N: put on a tourney of level N (0 modest to 2 legendary), stake on its second event and ride to that day's --tourney-hour, card open over the lists.</summary>
+    public int? Tourney;
+    public int TourneyHour = 13;
+    public int TourneyDay;
+    /// <summary>--secrets: put a motion before the council and hand the mayor a secret on each councillor, with the Council window open, for a shot of pressing a vote.</summary>
+    public bool Secrets;
+    /// <summary>--guilds [strike]: open the Council window on its guilds; with strike, the first guild walks out, for a shot of a strike.</summary>
+    public string? Guilds;
+    /// <summary>--tourney-plain: the shot of the lists without the card over it.</summary>
+    public bool TourneyCard = true;
     /// <summary>With <c>--at</c>: open that building's inspector (<c>--card</c>), for a shot of a monument's parts.</summary>
     public bool Card;
     /// <summary>For screenshots: click the alert at this position in the strip (0 is the first) once it shows.</summary>
@@ -93,6 +119,12 @@ public sealed class Options
     public float? Cam;
     public Godot.Vector2? Look;
     public bool StrategicView;
+
+    /// <summary>--shadowed: aim the camera at a settlement under an enemy's shadow (with --cam, for screenshots).</summary>
+    public bool Shadowed;
+
+    /// <summary>--lens room|work|growth|appeal|danger: open the info lens on that view (for screenshots).</summary>
+    public string? Lens;
     public int Yaw;
 
     /// <summary>Markers to place for a screenshot (--marker rally,512,470,Muster here) and one to open the card of (--open-marker 0).</summary>
@@ -168,6 +200,9 @@ public sealed class Options
                 case "--load": o.Load = Next(); break;
                 case "--menu": o.Menu = true; break;
                 case "--title": o.Title = true; break;
+                case "--storyteller": o.Storyteller = Next(); break;
+                case "--storytellers": o.Storytellers = o.Title = true; break;
+                case "--episode": o.Episode = Next(); break;
                 case "--history": o.History = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
                 case "--glossary": o.Glossary = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
                 case "--keyword": o.Keywords.AddRange(Next().Split(',')); break;
@@ -180,12 +215,20 @@ public sealed class Options
                 case "--house": o.House = true; break;
                 case "--crowded": o.Crowded = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
                 case "--rising": o.Rising = true; break;
+                case "--siege": o.Siege = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture) : 8; break;
                 case "--card": o.Card = true; break;
+                case "--tourney": o.Tourney = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? int.Parse(Next()) : 1; break;
+                case "--tourney-hour": o.TourneyHour = int.Parse(Next()); break;
+                case "--tourney-day": o.TourneyDay = int.Parse(Next()); break;
+                case "--tourney-plain": o.TourneyCard = false; break;
+                case "--secrets": o.Secrets = true; break;
+                case "--guilds": o.Guilds = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
                 case "--alert": o.Alert = int.Parse(Next()); break;
                 case "--alert-hover": o.AlertHover = int.Parse(Next()); break;
                 case "--no-pause": o.NoPause = true; break;
                 case "--keep-reports": o.KeepReports = true; break;
                 case "--keep-armory": o.KeepArmory = true; break;
+                case "--brew": o.Brew.AddRange(Next().Split(',')); break;
                 case "--reveal": o.Reveal = true; break;
                 case "--style": o.Style = Next(); break;
                 case "--clean": o.Clean = true; break;
@@ -195,6 +238,8 @@ public sealed class Options
                     o.Look = new Godot.Vector2(float.Parse(xy[0], System.Globalization.CultureInfo.InvariantCulture), float.Parse(xy[1], System.Globalization.CultureInfo.InvariantCulture));
                     break;
                 case "--strategic": o.StrategicView = true; break;
+                case "--shadowed": o.Shadowed = true; break;
+                case "--lens": o.Lens = Next(); break;
                 case "--marker":
                     var mk = Next().Split(',', 4);
                     if (Enum.TryParse<Map.MarkerKind>(mk[0], true, out var kind))
@@ -224,7 +269,7 @@ public sealed class Options
                 case "--advance": o.Advances.Add(Next()); break;
                 case "--inspiration": o.Inspiration = int.Parse(Next()); break;
                 case "--decor-at": o.DecorAt = Next().Split(',').Select(v => double.Parse(v, System.Globalization.CultureInfo.InvariantCulture)).ToArray(); break;
-                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--stock" or "--pact" or "--buy" or "--call" or "--flag" or "--wait" or "--works" or "--roster" or "--spot" or "--draw-wall" or "--gate" or "--raise":
+                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--stock" or "--pact" or "--buy" or "--call" or "--flag" or "--wait" or "--works" or "--roster" or "--spot" or "--draw-wall" or "--gate" or "--raise" or "--skyrun":
                     o.Script.Add((args[i][2..], Next()));
                     break;
             }
@@ -262,6 +307,18 @@ public sealed class Options
                     // For shots: a civic building finished at once on the lot the council would give it.
                     var rd = t.Content.Building(arg);
                     if (Planning.CivicLot(t, rd) is { } rlot) t.AddBuilding(rd, rlot, null, rd.Name, true);
+                    break;
+                case "skyrun":
+                    // For shots of the sky dock: send the airship on its best paying run ("best") or to a settlement by name,
+                    // with the hold stocked from the market's target if the town has nothing to spare.
+                    var ports = Skyship.Ports(t).Where(s => arg == "best" || s.Name == arg).ToList();
+                    foreach (var g in Goods.All.Where(g => Skyship.Spare(t, g) < t.Content.Trade.Sky.MinCargo && t.Market.Target(g) > 0).Take(3))
+                        t.Market.Seed(g, t.Market.Target(g));
+                    t.Treasury += 500;
+                    var pick = ports.SelectMany(s => Goods.All.Where(g => Skyship.Refuse(t, s, g) == null).Select(g => (S: s, G: g)))
+                        .OrderByDescending(x => Skyship.Profit(t, x.S, x.G)).FirstOrDefault();
+                    if (pick.S != null) sim.SendSkyship(pick.S.Id, pick.G);
+                    else Godot.GD.Print($"--skyrun {arg}: nowhere to fly");
                     break;
                 case "works":
                     // For shots of the walls: raise them at once, the stone and (with "all") every work that goes on it.

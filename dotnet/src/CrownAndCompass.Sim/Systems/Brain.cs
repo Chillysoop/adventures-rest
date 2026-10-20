@@ -16,7 +16,7 @@ public static class Brain
         // Count who is out where once and keep the count as each agent moves, rather than recounting the
         // whole town every time someone comes to a door.
         Crowds.Begin(town);
-        double festival = Council.FestivalMood(town) + Seasons.Mood(town) + Decrees.Mood(town) + Institutions.Mood(town) + Taxes.Mood(town);
+        double festival = Council.FestivalMood(town) + Seasons.Mood(town) + Decrees.Mood(town) + Institutions.Mood(town) + Taxes.Mood(town) + Tournaments.Mood(town);
         foreach (var a in town.Agents)
         {
             if (a.Departed || a.IsAway) continue;
@@ -48,13 +48,16 @@ public static class Brain
         // Sleep is sticky: once down for the night, stay down until rested or morning.
         if (a.Activity == Activity.Sleeping && a.Fatigue > 5 && (night || a.Fatigue > 40)) return Activity.Sleeping;
 
+        // A break holds them: on a bender they drink the waking hours away, sulking they stay in (Moods).
+        if (a.Episode != "" && !night && a.Fatigue < 90 && a.Hunger < 70 && Moods.Holds(town, a) is Activity held) return held;
+
         double sleep = (a.Fatigue / 100) * (night ? 2.0 : hour >= 21 ? 1.0 : 0.3) + (a.Fatigue > 90 ? 1 : 0);
 
         bool canEat = a.Gold >= town.Market.Quote(Good.Food, 1);
         double eat = a.Hunger > 35 ? (canEat ? (a.Hunger / 100) * 1.4 + (hour == 7 || hour == 12 || hour == 18 ? 0.2 : 0) : 0.05) : 0;
 
         double work = 0;
-        if (a.JobId != null && IsWorkHours(hour) && !Taxes.Striking(town, a))
+        if (a.JobId != null && IsWorkHours(hour) && !Taxes.Striking(town, a) && !Guilds.Striking(town, a))
             work = (a.Has(Trait.Lazy) ? 0.55 : 0.85) + (a.Has(Trait.Greedy) ? 0.1 : 0) + (a.Has(Trait.Ambitious) ? 0.05 : 0);
 
         double drink = 0;

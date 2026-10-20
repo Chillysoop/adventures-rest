@@ -119,7 +119,7 @@ public static class Social
 
     private static string Sign(int m) => m >= 0 ? $"+{m}" : $"-{-m}";
 
-    private static void Brawl(Town town, Building tavern, Agent attacker, Agent target)
+    internal static void Brawl(Town town, Building tavern, Agent attacker, Agent target)
     {
         var rng = town.Rng;
         string skill = town.Content.Skills.Check("brawl").Skill;

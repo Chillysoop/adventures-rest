@@ -186,7 +186,11 @@ public sealed record NeighbourRules
     public double AidedStanding { get; init; } = 12;
     public int[] Refugees { get; init; } = [2, 5];
     public double NewLeaderChance { get; init; } = 0.5;
-    public string NewLeader { get; init; } = "";
+
+    /// <summary>Rulers' temperaments and how reigns end (<see cref="Reigns"/>), and an enemy's shadow over the settlements (<see cref="Shadows"/>).</summary>
+    public IReadOnlyList<TemperamentDef> Temperaments { get; init; } = [];
+    public ReignRules Reigns { get; init; } = new();
+    public ShadowRules Shadow { get; init; } = new();
 
     /// <summary>The stand-in mayor aids when the treasury holds this many times the aid's cost.</summary>
     public double AidAuto { get; init; } = 3;
@@ -298,11 +302,13 @@ public static class Neighbours
         {
             if (s.Leader == "") Found(town, s);
             if (s.Razed) continue;
+            Reigns.Daily(town, s);
             Drift(town, s);
             Building(town, s);
             Troubles(town, s);
             Band(town, s);
         }
+        Shadows.Daily(town, autoMayor);
         Upkeep(town);
         Favours(town);
         Relief(town);
@@ -354,6 +360,7 @@ public static class Neighbours
         var r = Rules(town).Security;
         double t = r.Base + (s.Band is { Home: true } b ? b.Members * r.PerMember : 0);
         foreach (var p in s.Projects) t += Rules(town).Project(p)?.Security ?? 0;
+        t -= Shadows.SecurityLoss(town, s);
         foreach (var m in Menaces.Alive(town))
         {
             if (Quests.Site(town, m.SeatId) is not { RegionId: int rid }) continue;
@@ -374,6 +381,7 @@ public static class Neighbours
         if (s.Security < r.InsecureBelow) t -= r.Insecure;
         if (s.Trouble != null) t -= s.Trouble.Severity * r.Trouble;
         if (Plots.Tolled(town, s) != null) t -= r.Tolled;
+        t -= Shadows.ProsperityLoss(town, s);
         foreach (var p in s.Projects) t += Rules(town).Project(p)?.Prosperity ?? 0;
         return t;
     }
@@ -472,16 +480,8 @@ public static class Neighbours
             int n = Population.Settle(town, town.Rng.Range(r.Refugees[0], r.Refugees[1] + 1));
             if (n > 0) town.Log(LedgerCategory.Arrival, Importance.Routine, $"{n} {(n == 1 ? "family" : "families")} from {s.Name} come up the road to {town.Name}, having given up on home.");
         }
-        if (!town.Rng.Chance(r.NewLeaderChance)) return;
-        string old = s.Leader;
-        var lead = LeaderOf(town, s);
-        var free = lead.Names.Where(n => n != old && !town.Neighbours.Cast.Any(c => c.Name == n && !c.Gone)).ToList();
-        if (free.Count == 0) return;
-        s.Leader = free[town.Rng.Range(0, free.Count)];
-        foreach (var c in CastOf(town, s).Where(c => c.Role == "leader").ToList()) c.Gone = true;
-        town.Neighbours.Cast.Add(new Contact { Id = town.Neighbours.Cast.Count + 1, Name = s.Leader, Role = "leader", SettlementId = s.Id, Regard = Math.Max(0, s.Standing + 10), MetDay = town.Day, NextFavourDay = town.Day + Rules(town).Cast.FavourEveryDays[1] });
-        if (known && r.NewLeader != "")
-            town.Log(LedgerCategory.Town, Importance.Notable, Saga.Cap(Fill(town, s, r.NewLeader.Replace("{old}", old).Replace("{trouble}", Lower(def.Name)))));
+        if (!town.Rng.Chance(r.NewLeaderChance) || Reigns.Puppet(s) || Reigns.YearsOf(town, s) < 1) return;
+        Reigns.Fall(town, s, "stepdown", null, Lower(def.Name));
     }
 
     /// <summary>A party of the town's came home from a site: it may have ended a settlement's trouble or freed a band's captain.</summary>
@@ -594,6 +594,7 @@ public static class Neighbours
             b.Members = 0;
             b.RegrowDay = town.Day + br.RegrowDays;
             if (known) town.Log(LedgerCategory.Quest, Importance.Routine, Saga.Cap(Fill(town, s, br.Broken)).Replace("{site}", site.Def.Name));
+            Reigns.Broken(town, s);
         }
     }
 
@@ -621,7 +622,7 @@ public static class Neighbours
     {
         double t = 0;
         foreach (var s in town.Settlements)
-            if (s.Allied && !s.Razed && s.Band is { Home: true, Members: > 0 } b) t += b.Members * b.Level * Rules(town).Band.Troops;
+            if (s.Allied && !s.Razed && !Shadows.Paying(s) && s.Band is { Home: true, Members: > 0 } b) t += b.Members * b.Level * Rules(town).Band.Troops;
         return t;
     }
 
@@ -651,6 +652,7 @@ public static class Neighbours
         town.Log(LedgerCategory.Town, Importance.Routine, $"The council sends {Js.Str(aid.Gold)} gold and {Js.Str(aid.Qty)} {Lower(aid.Good.ToString())} to {s.Name} against {Lower(def.Name)}.");
         World.Shift(town, s, Rules(town).AidedStanding);
         Solve(town, s, def, null, aided: true);
+        Shadows.Aided(town, s);
         return true;
     }
 
@@ -773,7 +775,7 @@ public static class Neighbours
     }
 
     /// <summary>A name for someone of the settlement's people: from the names of the town's races, by its people's race.</summary>
-    private static string NewName(Town town, Settlement s)
+    internal static string NewName(Town town, Settlement s)
     {
         var race = town.Content.Races.FirstOrDefault(x => x.Id == s.Kin.Race) ?? town.Content.Races.First(x => x.Id == "human");
         var taken = town.Neighbours.Cast.Select(c => c.Name).ToHashSet();
@@ -867,9 +869,9 @@ public static class Neighbours
         foreach (var s in town.Settlements)
         {
             if (!s.Allied || s.Razed || s.Prosperity < r.MinProsperity || town.Day - s.ReliefDay < r.EveryDays) continue;
-            if (Plots.Tolled(town, s) != null) continue;
+            if (Plots.Tolled(town, s) != null || Shadows.Paying(s) || Reigns.Relief(town, s) <= 0) continue;
             s.ReliefDay = town.Day;
-            double food = Js.Round(r.Food * s.Prosperity / 50);
+            double food = Js.Round(r.Food * s.Prosperity / 50 * Reigns.Relief(town, s));
             town.Market.Seed(Good.Food, food);
             var c = CastOf(town, s).Where(x => x.Role != "leader" && x.Memories.Count > 0).OrderByDescending(x => x.Regard).ThenBy(x => x.Id).FirstOrDefault();
             string text = c != null ? r.Led.Replace("{contact}", c.Name).Replace("{memory}", c.Memories[^1]) : r.Text;
