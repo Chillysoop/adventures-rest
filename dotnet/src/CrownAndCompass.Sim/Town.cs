@@ -455,6 +455,9 @@ public sealed class Town
     /// <summary>The town guard on the walls and the orders it holds (<see cref="Systems.Garrison"/>).</summary>
     public GarrisonState Garrison { get; } = new();
 
+    /// <summary>The last few sieges as they were fought, for the map to play back (<see cref="Systems.Battles"/>).</summary>
+    public List<Systems.Battle> Battles { get; } = [];
+
     /// <summary>Trees, benches, lamps, statues: the set dressing the player has placed (<see cref="Systems.Decor"/>).</summary>
     public DecorState Decor { get; } = new();
 

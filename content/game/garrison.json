@@ -44,5 +44,12 @@
     "days": 6,
     "max": 2,
     "tier": "town"
+  },
+  "battle": {
+    "hours": 6,
+    "march": 0.12,
+    "waves": 0.58,
+    "sally": 0.2,
+    "keep": 4
   }
 }
