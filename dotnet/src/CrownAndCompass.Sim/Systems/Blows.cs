@@ -43,6 +43,7 @@ public static class Blows
     /// <summary>Strike one blow of a kind (not a raid, which is the menace's own). Returns whether it landed.</summary>
     public static bool Strike(Town town, string kind, Culprit by, double raiders, double cunning)
     {
+        if (Powers.Forewarned(town, by)) return false;
         switch (kind)
         {
             case Burn:

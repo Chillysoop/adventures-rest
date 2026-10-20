@@ -315,6 +315,15 @@
       "teaches": ["tab:Diplomacy", "command:SendEnvoy", "command:OpenTradeRoute", "command:CloseTradeRoute"]
     },
     {
+      "id": "powers",
+      "title": "Minor powers",
+      "text": "Beyond the peoples of the wilds stand the [b]minor powers[/b]: the Black Ledger's smugglers, the Silent Knife's assassins, the Lanternbearers' spies, the Crown League's lords, the Vermilion Conclave's wizards, the Ember Court's dragon and the Mire Grandmothers' coven. Each has a leader, a goal and a price, and likes or hates what your town does. In [b]Diplomacy[/b], [b]Send gifts[/b] to raise their standing, then pay their price to [b]Ally[/b] with them for a daily tithe, or [b]Break[/b] with one you no longer want. Your enemies court them too: when word comes that an enemy's envoys are at a power's door, outbid them with gifts before it answers, or it will arm your enemy, strike at your town and march with its host.",
+      "when": "day:80",
+      "point": "tab:Diplomacy",
+      "until": "tab:Diplomacy",
+      "teaches": ["command:CourtPower", "command:AllyWithPower", "command:BreakWithPower"]
+    },
+    {
       "id": "wagons",
       "title": "Bigger caravans",
       "text": "Goods your town makes beyond what it needs earn nothing sitting in the market: the evening carters clear them away. A [b]trade route[/b] turns that surplus into gold. In [b]Diplomacy[/b], [b]Add a wagon[/b] to a route and its caravan carries more out on every run, up to four wagons. A bigger charter lets you run more routes, too.",

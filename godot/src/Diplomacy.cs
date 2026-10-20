@@ -65,6 +65,8 @@ public partial class Main
         p.Card($"[font_size=17][b]{known.Count} {(known.Count == 1 ? "people" : "peoples")} known[/b][/font_size]\n" +
                Ui.C(Ui.Ink2, $"{allies} allied · {open.Count} of {Trade.Cap(t)} trade routes running · the {City.Tier(t).Name.ToLowerInvariant()}'s charter allows {Trade.Cap(t)}"), Ui.Gold);
 
+        RenderPowers(p, t);
+
         p.Heading("Trade routes");
         if (open.Count == 0)
             p.Note(Trade.Cap(t) == 0

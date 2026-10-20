@@ -1186,6 +1186,7 @@ public static class Menaces
         double army = m.Power;
         int breaches = 0;
         army = Crises.Converge(town, m, army, lines);
+        if (army > 0) army += Powers.JoinHost(town, m, lines);
         if (army <= 0) return;
         lines.Add($"{Saga.Cap(m.Name)}, some {Js.Str(Js.Round(army))} strong, comes against {town.Name}. The defenders muster {Js.Str(Js.Round(startDef))} strong.");
         def = Math.Max(0, def - Loyalty.Betray(town, m.Name, m, lines));
