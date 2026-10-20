@@ -1,17 +1,22 @@
 using Godot;
+using Alert = CrownAndCompass.Sim.Systems.Alert;
+using CrownAndCompass.Sim.Systems;
 
 namespace CrownAndCompass.Client;
 
 /// <summary>
-/// The dock, after RimWorld's bottom bar: a few groups instead of a button per window. Clicking a group pops its
-/// windows up in a short list above it, each with a line on what it is for; picking one opens the window, and the
-/// window's shelf under its title switches between the windows of the same group. Build sits at the end on its own.
+/// The rail down the left edge: every management window one click away, in five groups split by thin lines. Each
+/// button carries a badge counting the alerts that window answers (red when one is urgent, gold for decisions, a
+/// grey dot for minor ones), so the menu itself says where you are wanted. Shift and a number opens the ten most
+/// used. Build sits on its own at the bottom of the screen.
 /// </summary>
 public partial class Main
 {
     private sealed record DockGroup(string Name, string Icon, string Tip, Tab[] Tabs);
 
-    /// <summary>Every management window, in the group it belongs to. A window left out gets a group of its own.</summary>
+    private const int RailWidth = 58;
+
+    /// <summary>Every management window, in the group it belongs to on the rail.</summary>
     private static readonly DockGroup[] Groups =
     [
         new("Town", "tab-city", "Your town: the city, the mayor and the Ledger", [Tab.City, Tab.Mayor, Tab.Ledger]),
@@ -21,13 +26,13 @@ public partial class Main
         new("Lore", "tab-library", "The town's chronicles and its library", [Tab.Chronicles, Tab.Library]),
     ];
 
-    /// <summary>A line on each window, shown in the group's list.</summary>
+    /// <summary>A line on each window, shown when the rail button is hovered.</summary>
     private static readonly Dictionary<Tab, string> Blurbs = new()
     {
         [Tab.City] = "Charter, wards, housing and growth",
         [Tab.Mayor] = "Your character sheet and level-ups (C)",
         [Tab.Ledger] = "Everything that happened, day by day",
-        [Tab.Council] = "Motions, members and the town's laws",
+        [Tab.Council] = "Motions, members, taxes and the town's laws",
         [Tab.Institutions] = "Guilds, colleges and their keepers",
         [Tab.Faith] = "Gods, shrines and the factions",
         [Tab.Bounties] = "Post jobs and follow parties on the road",
@@ -40,60 +45,69 @@ public partial class Main
         [Tab.Library] = "Classes, monsters, spells and items",
     };
 
-    private readonly List<Button> _dockGroups = [];
-    private readonly Dictionary<int, Tab> _groupLast = [];
-    private readonly Dictionary<Tab, Button> _shelfButtons = [];
-    private PanelContainer _picker = null!;
-    private VBoxContainer _pickerList = null!;
-    private int _pickerGroup = -1;
-    private HBoxContainer _shelf = null!;
+    /// <summary>Shift+1 to Shift+0: the windows a mayor opens most, in that order.</summary>
+    private static readonly Tab[] QuickTabs = [Tab.Bounties, Tab.Council, Tab.War, Tab.Campaign, Tab.City, Tab.Companies, Tab.Armory, Tab.Diplomacy, Tab.Institutions, Tab.Ledger];
 
-    private static int GroupOf(Tab t)
+    private readonly Dictionary<Tab, (Label Count, PanelContainer Badge)> _badges = [];
+    private PanelContainer _rail = null!;
+
+    private static string QuickKey(Tab t) => Array.IndexOf(QuickTabs, t) is int i and >= 0 ? $"Shift+{(i + 1) % 10}" : "";
+
+    /// <summary>The window that answers an alert, if it has one.</summary>
+    private static Tab? TabOf(AlertWindow w) => w switch
     {
-        for (int i = 0; i < Groups.Length; i++)
-            if (Groups[i].Tabs.Contains(t)) return i;
-        return -1;
-    }
-
-    private static Tab[] TabsOf(int g) => g >= 0 ? Groups[g].Tabs : [];
+        AlertWindow.Ledger => Tab.Ledger,
+        AlertWindow.War => Tab.War,
+        AlertWindow.Council => Tab.Council,
+        AlertWindow.Bounties => Tab.Bounties,
+        AlertWindow.Faith => Tab.Faith,
+        AlertWindow.Campaign => Tab.Campaign,
+        AlertWindow.City => Tab.City,
+        AlertWindow.Mayor => Tab.Mayor,
+        AlertWindow.Diplomacy => Tab.Diplomacy,
+        AlertWindow.Library => Tab.Library,
+        AlertWindow.Companies => Tab.Companies,
+        AlertWindow.Armory => Tab.Armory,
+        AlertWindow.Institutions => Tab.Institutions,
+        _ => null,
+    };
 
     private void BuildDock()
     {
+        _rail = new PanelContainer();
+        _rail.AddThemeStyleboxOverride("panel", Castle.Oak(5, 8));
+        var col = new VBoxContainer();
+        col.AddThemeConstantOverride("separation", 2);
+        _rail.AddChild(col);
+        for (int g = 0; g < Groups.Length; g++)
+        {
+            if (g > 0)
+            {
+                var line = new ColorRect { Color = new Color(Ui.Line, 0.8f), CustomMinimumSize = new Vector2(0, 1), MouseFilter = MouseFilterEnum.Ignore };
+                var pad = new MarginContainer { MouseFilter = MouseFilterEnum.Ignore };
+                foreach (var s in new[] { "left", "right" }) pad.AddThemeConstantOverride($"margin_{s}", 6);
+                foreach (var s in new[] { "top", "bottom" }) pad.AddThemeConstantOverride($"margin_{s}", 3);
+                pad.AddChild(line);
+                col.AddChild(pad);
+            }
+            foreach (var t in Groups[g].Tabs) col.AddChild(RailButton(t));
+        }
+        AddChild(_rail);
+        _rail.SetAnchorsAndOffsetsPreset(LayoutPreset.TopLeft);
+        _rail.OffsetTop = TopBar + Gap;
+        _rail.OffsetLeft = 0;
+
+        // Build, on its own at the bottom.
         var dock = new PanelContainer();
         dock.AddThemeStyleboxOverride("panel", Castle.Ledge(12, 4));
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", 4);
-        dock.AddChild(row);
-        for (int i = 0; i < Groups.Length; i++)
-        {
-            var g = Groups[i];
-            int at = i;
-            var b = DockButton(g.Name, g.Icon, g.Tip);
-            b.Pressed += () => TogglePicker(at);
-            row.AddChild(b);
-            _dockGroups.Add(b);
-            if (g.Tabs.Contains(Tab.Council))
-            {
-                _motionDot = new ColorRect { Color = Ui.Accent, Visible = false, MouseFilter = MouseFilterEnum.Ignore };
-                b.AddChild(_motionDot);
-                _motionDot.SetAnchorsAndOffsetsPreset(LayoutPreset.TopRight);
-                _motionDot.OffsetLeft = -10;
-                _motionDot.OffsetRight = -4;
-                _motionDot.OffsetTop = 6;
-                _motionDot.OffsetBottom = 12;
-            }
-        }
-        row.AddChild(new VSeparator());
         _buildToggle = DockButton("Build", "tab-build", "Zone land and place government buildings (B)");
         _buildToggle.Pressed += ToggleBuildBar;
-        row.AddChild(_buildToggle);
+        dock.AddChild(_buildToggle);
         AddChild(dock);
         _dock = dock;
         dock.SetAnchorsAndOffsetsPreset(LayoutPreset.CenterBottom, LayoutPresetMode.Minsize, Gap);
         dock.GrowHorizontal = GrowDirection.Both;
         dock.GrowVertical = GrowDirection.Begin;
-
-        BuildPicker();
 
         _help = Ui.Label(MapHelp, new Color("f6eedb", 0.72f), Ui.Medium, 12);
         _help.AddThemeColorOverride("font_outline_color", new Color(0, 0, 0, 0.6f));
@@ -105,147 +119,94 @@ public partial class Main
         _help.GrowVertical = GrowDirection.Begin;
     }
 
-    /// <summary>The list a group pops up: one row per window, its icon, name and what it is for.</summary>
-    private void BuildPicker()
+    /// <summary>A window's button on the rail: its icon, with a badge in the corner for what waits there.</summary>
+    private Button RailButton(Tab t)
     {
-        _picker = new PanelContainer { Visible = false, MouseFilter = MouseFilterEnum.Stop };
-        _picker.AddThemeStyleboxOverride("panel", Castle.Oak(10, 10));
-        _pickerList = new VBoxContainer();
-        _pickerList.AddThemeConstantOverride("separation", 2);
-        _picker.AddChild(_pickerList);
-        AddChild(_picker);
-        foreach (var t in Enum.GetValues<Tab>())
+        string key = QuickKey(t);
+        var b = new Button
         {
-            if (t == Tab.Inspect) continue;
-            var b = new Button
+            Icon = Ui.Icon($"tab-{t.ToString().ToLowerInvariant()}"),
+            ThemeTypeVariation = "Tab",
+            ToggleMode = true,
+            FocusMode = FocusModeEnum.None,
+            ExpandIcon = false,
+            IconAlignment = HorizontalAlignment.Center,
+            CustomMinimumSize = new Vector2(46, 40),
+            TooltipText = $"{Titles[t]}{(key != "" ? $"  ({key})" : "")}\n{Blurbs.GetValueOrDefault(t, "")}",
+        };
+        b.AddThemeConstantOverride("icon_max_width", 24);
+        StyleDockButton(b, 4, 4);
+        var on = Ui.Flat(new Color(Ui.Gold, 0.16f), 5, 4, 4);
+        on.BorderColor = Ui.Accent;
+        on.BorderWidthLeft = 3;
+        b.AddThemeStyleboxOverride("pressed", on);
+        b.AddThemeStyleboxOverride("hover_pressed", on);
+        var tab = t;
+        b.Pressed += () => { SetTab(tab); GuideEvent("rail"); };
+
+        var badge = new PanelContainer { Visible = false, MouseFilter = MouseFilterEnum.Ignore };
+        var count = Ui.Label("", Colors.White, Ui.Bold, 11);
+        count.HorizontalAlignment = HorizontalAlignment.Center;
+        count.MouseFilter = MouseFilterEnum.Ignore;
+        badge.AddChild(count);
+        b.AddChild(badge);
+        _badges[t] = (count, badge);
+        _tabButtons[t] = b;
+        return b;
+    }
+
+    /// <summary>Count the alerts on the strip by the window that answers them, onto the rail's badges and the tray's.</summary>
+    private void UpdateBadges()
+    {
+        var by = new Dictionary<Tab, List<Alert>>();
+        foreach (var a in ShownAlerts)
+            if (TabOf(a.Kind.Window) is Tab t)
             {
-                Text = Titles[t],
-                Icon = Ui.Icon($"tab-{t.ToString().ToLowerInvariant()}"),
-                Alignment = HorizontalAlignment.Left,
-                FocusMode = FocusModeEnum.None,
-                ExpandIcon = false,
-                CustomMinimumSize = new Vector2(350, 48),
-                Visible = false,
-            };
-            b.AddThemeConstantOverride("icon_max_width", 24);
-            b.AddThemeConstantOverride("h_separation", 10);
-            b.AddThemeFontSizeOverride("font_size", 15);
-            b.AddThemeStyleboxOverride("normal", Ui.Flat(Colors.Transparent, 6, 10, 4));
-            b.AddThemeStyleboxOverride("hover", Ui.Flat(new Color(Ui.Gold, 0.14f), 6, 10, 4));
-            b.AddThemeStyleboxOverride("pressed", Ui.Flat(new Color(Ui.Gold, 0.2f), 6, 10, 4));
-            b.AddThemeColorOverride("icon_normal_color", Ui.Ink2);
-            b.AddThemeColorOverride("icon_hover_color", Ui.Gold);
-            // The window's name on top, a line on what it is for under it.
-            b.Text = "";
-            var words = new VBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
-            words.AddThemeConstantOverride("separation", -1);
-            words.AddChild(Ui.Label(Titles[t], Ui.Ink, Ui.Bold, 15));
-            words.AddChild(Ui.Label(Blurbs.GetValueOrDefault(t, ""), Ui.Ink2, Ui.Medium, 12));
-            foreach (var l in words.GetChildren().OfType<Control>()) l.MouseFilter = MouseFilterEnum.Ignore;
-            b.AddChild(words);
-            words.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-            words.OffsetLeft = 46;
-            words.Alignment = BoxContainer.AlignmentMode.Center;
-            var tab = t;
-            b.Pressed += () => OpenWindow(tab);
-            _pickerList.AddChild(b);
-            _tabButtons[t] = b;
-        }
-    }
-
-    private void TogglePicker(int g)
-    {
-        if (_picker.Visible && _pickerGroup == g) ClosePicker();
-        else OpenPicker(g);
-    }
-
-    private void OpenPicker(int g)
-    {
-        _pickerGroup = g;
-        foreach (var (t, b) in _tabButtons) b.Visible = GroupOf(t) == g;
-        _picker.Visible = true;
-        _picker.ResetSize();
-        _picker.Size = _picker.GetCombinedMinimumSize();
-        var from = _dockGroups[g].GetGlobalRect();
-        var vp = GetViewportRect().Size;
-        float x = Mathf.Clamp(from.Position.X + from.Size.X / 2 - _picker.Size.X / 2, Gap, vp.X - _picker.Size.X - Gap);
-        _picker.Position = new Vector2(x, _dock.GetGlobalRect().Position.Y - _picker.Size.Y - 6);
-        _picker.MoveToFront();
-        SyncDock();
-    }
-
-    private void ClosePicker()
-    {
-        if (!_picker.Visible) return;
-        _picker.Visible = false;
-        _pickerGroup = -1;
-        SyncDock();
-    }
-
-    /// <summary>A click outside the open list and the dock closes the list, as RimWorld's does.</summary>
-    private void PickerInput(InputEvent e)
-    {
-        if (!_picker.Visible || e is not InputEventMouseButton { Pressed: true } mb) return;
-        if (_picker.GetGlobalRect().HasPoint(mb.Position) || _dock.GetGlobalRect().HasPoint(mb.Position)) return;
-        ClosePicker();
-    }
-
-    /// <summary>The strip under a window's title with the other windows of its group.</summary>
-    private Control BuildShelf()
-    {
-        var pad = new MarginContainer();
-        foreach (var s in new[] { "left", "right" }) pad.AddThemeConstantOverride($"margin_{s}", 10);
-        pad.AddThemeConstantOverride("margin_top", 6);
-        _shelf = new HBoxContainer();
-        _shelf.AddThemeConstantOverride("separation", 4);
-        pad.AddChild(_shelf);
-        foreach (var t in Enum.GetValues<Tab>())
+                if (!by.TryGetValue(t, out var list)) by[t] = list = [];
+                list.Add(a);
+            }
+        foreach (var (t, (count, badge)) in _badges)
         {
-            if (t == Tab.Inspect) continue;
-            var b = new Button
-            {
-                Text = t.ToString(),
-                Icon = Ui.Icon($"tab-{t.ToString().ToLowerInvariant()}"),
-                ThemeTypeVariation = "Tab",
-                ToggleMode = true,
-                FocusMode = FocusModeEnum.None,
-                ExpandIcon = false,
-                TooltipText = Blurbs.GetValueOrDefault(t, ""),
-                SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            };
-            b.AddThemeConstantOverride("icon_max_width", 18);
-            b.AddThemeFontSizeOverride("font_size", 13);
-            StyleDockButton(b, 6, 5);
-            var tab = t;
-            b.Pressed += () => { if (_windowTab != tab) OpenWindow(tab); else b.SetPressedNoSignal(true); };
-            _shelf.AddChild(b);
-            _shelfButtons[t] = b;
+            var list = by.GetValueOrDefault(t);
+            SetBadge(count, badge, list ?? [], _tabButtons[t], $"{Titles[t]}{(QuickKey(t) is { Length: > 0 } k ? $"  ({k})" : "")}\n{Blurbs.GetValueOrDefault(t, "")}");
         }
-        return pad;
+        UpdateTrayBadges();
+    }
+
+    /// <summary>A badge for a list of alerts: how many, red if any is urgent, gold for decisions, a grey dot for minor ones.</summary>
+    private static void SetBadge(Label count, PanelContainer badge, List<Alert> alerts, Control owner, string tip)
+    {
+        badge.Visible = alerts.Count > 0;
+        if (alerts.Count == 0)
+        {
+            owner.TooltipText = tip;
+            return;
+        }
+        var top = alerts.Max(a => a.Kind.Level);
+        bool dot = top == AlertLevel.Minor;
+        count.Text = dot ? "" : alerts.Count.ToString();
+        count.Visible = !dot;
+        var fill = top == AlertLevel.Urgent ? new Color("c94b3b") : top == AlertLevel.Decision ? Ui.Gold : Ui.Ink2;
+        var s = Ui.Flat(fill, dot ? 4 : 5, dot ? 4 : 0, 99);
+        s.BorderColor = new Color("1b140d");
+        s.SetBorderWidthAll(1);
+        badge.AddThemeStyleboxOverride("panel", s);
+        count.AddThemeColorOverride("font_color", top == AlertLevel.Urgent ? Colors.White : new Color("2a1d0c"));
+        badge.CustomMinimumSize = dot ? new Vector2(9, 9) : new Vector2(18, 17);
+        owner.TooltipText = tip + "\n" + string.Join("\n", alerts.Take(4).Select(a => $"• {a.Text}"));
+        // In the owner's top-right corner (a button lays out no children of its own).
+        badge.Size = badge.GetCombinedMinimumSize();
+        badge.Position = new Vector2(Math.Max(owner.Size.X, owner.CustomMinimumSize.X) - badge.Size.X - 2, 2);
     }
 
     private void SyncDock()
     {
-        int open = _window.Visible && _windowTab is Tab w ? GroupOf(w) : -1;
-        for (int i = 0; i < _dockGroups.Count; i++) _dockGroups[i].SetPressedNoSignal(i == open || i == _pickerGroup);
-        foreach (var (t, b) in _shelfButtons)
-        {
-            b.Visible = open >= 0 && GroupOf(t) == open && TabsOf(open).Length > 1;
-            b.SetPressedNoSignal(_windowTab == t);
-        }
-        _shelf.GetParent<Control>().Visible = open >= 0 && TabsOf(open).Length > 1;
+        foreach (var (t, b) in _tabButtons) b.SetPressedNoSignal(_window.Visible && _windowTab == t);
         PlaceInspector();
     }
 
-    /// <summary>Where the tutorial points for a window: its row in the open list, its shelf button, else its group.</summary>
-    private Control? TabAnchor(Tab tab, Button row)
-    {
-        if (_window.Visible && _windowTab == tab) return null;
-        if (_picker.Visible && _pickerGroup == GroupOf(tab)) return row;
-        if (_shelfButtons.TryGetValue(tab, out var s) && s.IsVisibleInTree()) return s;
-        int g = GroupOf(tab);
-        return g >= 0 ? _dockGroups[g] : null;
-    }
+    /// <summary>Where the tutorial points for a window: its rail button, unless it is open already.</summary>
+    private Control? TabAnchor(Tab tab, Button row) => _window.Visible && _windowTab == tab ? null : row;
 
     /// <summary>A dock button: its icon beside a short name.</summary>
     private static Button DockButton(string text, string icon, string tip)
