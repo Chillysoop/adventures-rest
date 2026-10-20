@@ -216,7 +216,8 @@ public static class Powers
 
     // The day ------------------------------------------------------------------------------------
 
-    public static void Daily(Town town, bool autoMayor)
+    /// <summary>The stand-in mayor leaves the powers to the player: its gifts and tithes cost the finale more than they saved.</summary>
+    public static void Daily(Town town)
     {
         if (!town.Saga.Enabled || town.Outcome != null) return;
         Init(town);
@@ -236,7 +237,6 @@ public static class Powers
             if (p.CourtedBy != null && town.Day >= p.DecideDay) Decide(town, p, d);
         }
         Court(town);
-        if (autoMayor) Steward(town);
     }
 
     private static string Fill(Town town, string text, PowerState p, PowerDef d, Menace? enemy = null) => Saga.Sentences(text
@@ -479,20 +479,5 @@ public static class Powers
             return true;
         }
         return false;
-    }
-
-    // The stand-in mayor -------------------------------------------------------------------------
-
-    /// <summary>
-    /// Outbid an enemy when it is cheap enough to. The stand-in mayor never buys an alliance: a tithe drains the
-    /// gold the town's bounties and armory need, so allies are the player's own call.
-    /// </summary>
-    private static void Steward(Town town)
-    {
-        foreach (var p in town.Powers.Where(p => p.CourtedBy != null).OrderBy(p => p.Id, StringComparer.Ordinal))
-        {
-            var cost = GiftCost(town, p.Id);
-            for (int i = 0; i < 4 && Resolve(town, p) < p.Offer && town.Treasury >= cost * 3 + 1000; i++) Court(town, p.Id);
-        }
     }
 }
