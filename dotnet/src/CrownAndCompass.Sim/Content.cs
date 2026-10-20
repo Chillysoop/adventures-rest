@@ -418,6 +418,10 @@ public sealed record CouncilRules
     public double FestivalPerResident { get; init; }
     public int FestivalDays { get; init; }
     public double FestivalMood { get; init; }
+
+    /// <summary>Days between festivals, and the Mandate a festival the mayor calls on their own word earns.</summary>
+    public int FestivalGapDays { get; init; } = 20;
+    public double FestivalMandate { get; init; }
     public int MotionDays { get; init; }
     public int MotionGapDays { get; init; }
     public double DecreeMandate { get; init; }

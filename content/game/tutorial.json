@@ -97,10 +97,10 @@
     {
       "id": "council",
       "title": "The council",
-      "text": "Three councillors bring [b]motions[/b] for you to sign or veto, and you set [b]taxes[/b] and the watch here. Signing what the town wants raises your Mandate; a council that stops listening is how mayors fall. The council, events and the war also sit on the tray at the right edge, so you can answer them without opening a window.",
+      "text": "Three councillors bring [b]motions[/b] for you to sign or veto, and you set [b]taxes[/b] and the watch here, or call a [b]festival[/b] when spirits need lifting. Mandate fades back toward the middle unless you keep earning it; a council that stops listening is how mayors fall. The council, events and the war also sit on the tray at the right edge, so you can answer them without opening a window.",
       "point": "tab:Council",
       "until": "tab:Council",
-      "teaches": ["tab:Council", "command:DecideMotion"]
+      "teaches": ["tab:Council", "command:DecideMotion", "command:HoldFestival"]
     },
     {
       "id": "alerts",

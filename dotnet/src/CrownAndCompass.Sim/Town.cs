@@ -490,6 +490,9 @@ public sealed class Town
     /// <summary>Days of festival left.</summary>
     public int FestivalDays { get; set; }
 
+    /// <summary>Tick the last festival began, by motion or by the mayor's own word, or null before the first.</summary>
+    public int? FestivalTick { get; set; }
+
     public EnemyState Enemy { get; } = new();
 
     /// <summary>The campaign arc: its acts, the menaces abroad, and the town's dread (<see cref="Systems.Saga"/>).</summary>

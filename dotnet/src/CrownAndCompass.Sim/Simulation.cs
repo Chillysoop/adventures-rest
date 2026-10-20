@@ -266,6 +266,9 @@ public sealed class Simulation
     /// <summary>The player's other lever: sign or veto the motion before the council.</summary>
     public bool DecideMotion(int motionId, bool sign) => Council.Decide(Town, motionId, sign);
 
+    /// <summary>Call a festival on the mayor's own word: mood for a few days and a little Mandate, for gold.</summary>
+    public bool HoldFestival() => Council.HoldFestival(Town);
+
     /// <summary>Order a palisade or a watchtower.</summary>
     public bool BuildDefense(DefenseWork what) => Threat.Build(Town, what);
 

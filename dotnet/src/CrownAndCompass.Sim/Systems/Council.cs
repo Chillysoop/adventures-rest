@@ -105,6 +105,34 @@ public static class Council
     }
 
     /// <summary>Bonus mood while a festival runs.</summary>
+    /// <summary>What a festival costs the treasury: lanterns, ale and a feast for every household.</summary>
+    public static double FestivalCost(Town town) => Js.Round(town.Content.Council.FestivalBase + town.Content.Council.FestivalPerResident * town.Population);
+
+    /// <summary>Why the mayor can't call a festival now, or null.</summary>
+    public static string? FestivalBlocked(Town town)
+    {
+        var c = town.Content.Council;
+        if (town.FestivalDays > 0) return "a festival is on";
+        if (town.FestivalTick is int at && town.Tick - at < c.FestivalGapDays * SimTime.HoursPerDay)
+            return $"the last was {(town.Tick - at) / SimTime.HoursPerDay} days ago; the town tires of them under {c.FestivalGapDays}";
+        if (town.Treasury < FestivalCost(town)) return "not enough gold";
+        return null;
+    }
+
+    /// <summary>The mayor calls a festival on their own word and coin: no motion, a smaller Mandate than the council's blessing gives.</summary>
+    public static bool HoldFestival(Town town)
+    {
+        if (FestivalBlocked(town) != null) return false;
+        var c = town.Content.Council;
+        double cost = FestivalCost(town);
+        town.Book(TreasuryAccount.CouncilMotions, -cost);
+        town.FestivalDays = c.FestivalDays;
+        town.FestivalTick = town.Tick;
+        town.Mandate = Clamp(town.Mandate + c.FestivalMandate, 0, 100);
+        town.Log(LedgerCategory.Town, Importance.Major, $"Lanterns go up across {town.Name}: the mayor calls a festival, {Js.Str(cost)} gold of ale and bunting from the treasury.");
+        return true;
+    }
+
     public static double FestivalMood(Town town) => town.FestivalDays > 0 ? town.Content.Council.FestivalMood : 0;
 
     public static void Daily(Town town, bool autoDecide)
@@ -293,7 +321,7 @@ public static class Council
         var workers = town.Workers;
         int homeless = workers.Count(a => a.HomeId == null);
         double mood = workers.Count > 0 ? Js.Sum(workers, a => a.LastDayMood) / workers.Count : 65;
-        double festival = Js.Round(c.FestivalBase + c.FestivalPerResident * town.Population);
+        double festival = FestivalCost(town);
         int brawls = town.Ledger.Entries.Count(e => e.Category == LedgerCategory.Brawl && town.Tick - e.Tick < 7 * SimTime.HoursPerDay);
 
         switch (id)
@@ -321,7 +349,8 @@ public static class Council
                 bool housing = town.Buildings.Any(b => b.IsSite && b.OwnerId == null && b.Def.Housing > 0);
                 if (homeless >= 3 && !housing) return new Proposal(MotionKind.BuildHomes, HouseCost(town), $"{homeless} people sleep rough");
                 var lastFestival = town.Motions.LastOrDefault(m => m.Kind == MotionKind.Festival && m.Status == MotionStatus.Passed);
-                bool festivalDue = lastFestival == null || town.Tick - lastFestival.ProposedTick > 20 * SimTime.HoursPerDay;
+                bool festivalDue = (lastFestival == null || town.Tick - lastFestival.ProposedTick > c.FestivalGapDays * SimTime.HoursPerDay)
+                    && (town.FestivalTick == null || town.Tick - town.FestivalTick > c.FestivalGapDays * SimTime.HoursPerDay);
                 if (mood < 70 && festivalDue && town.FestivalDays == 0 && town.Treasury > festival * 4)
                     return new Proposal(MotionKind.Festival, festival, "spirits are low");
                 if (taxes && town.TaxRate > c.MinTax + 1e-9 && town.Treasury > upkeep * 20 && books > 0 && Taxes.Funding(town) > 1.2)
@@ -455,6 +484,7 @@ public static class Council
             case MotionKind.Festival:
                 town.Book(TreasuryAccount.CouncilMotions, -m.Cost);
                 town.FestivalDays = c.FestivalDays;
+                town.FestivalTick = town.Tick;
                 town.Mandate = Clamp(town.Mandate + 5, 0, 100);
                 town.Log(LedgerCategory.Town, Importance.Major, $"Lanterns go up across {town.Name}: the town holds a festival, and the ale flows on the council's coin.");
                 break;
