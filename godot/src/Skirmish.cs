@@ -15,7 +15,9 @@ public partial class Main
         ("warden", ["frost-brand", "dragon-scale-mail"]),
         ("ranger", ["oathbow"]),
         ("cleric", ["mithral-armor"]),
-        ("rogue", ["frost-brand"]),
+        ("rogue", ["frost-brand", "ring-of-protection"]),
+        ("wizard", ["cloak-of-protection"]),
+        ("bard", ["amulet-of-health"]),
         ("reliquarian", ["hammer-of-thunderbolts"]),
     ];
 
@@ -32,13 +34,21 @@ public partial class Main
     }
 
     /// <summary>--skirmish: the heroes fight raiders by the square, the camera on them (see <see cref="Map.Crowd.Skirmish"/>).</summary>
-    private void StageSkirmish(bool gear)
+    private void StageSkirmish(string[] spec)
     {
+        bool gear = spec.Contains("gear");
+        _map.Crowd.SkirmishKind = spec.FirstOrDefault(k => k is not ("gear" or "")) ?? "";
         var t = _sim.Town;
         var at = _opts.Look ??= OpenGround(t) ?? Map.Geo.Center + new Vector2(0, 4);
         _map.Crowd.Skirmish = at;
         _map.LookAt(at, _opts.Cam ?? 6);
         if (!gear) return;
+        // A moment after the fight starts, so the map sees them put it on.
+        GetTree().CreateTimer(3).Timeout += () => ArmSkirmishers(t);
+    }
+
+    private static void ArmSkirmishers(Town t)
+    {
         foreach (var (cls, items) in SkirmishGear)
             if (t.Agents.Where(a => a.Hero?.Cls.Id == cls && !a.Dead).OrderBy(a => a.Id).FirstOrDefault() is Agent hero)
                 foreach (var id in items)

@@ -12,13 +12,16 @@ namespace CrownAndCompass.Client.Map;
 /// </summary>
 public static class HeroKit
 {
-    public enum Frame { Plate, Mail, Leather, Robe, Bare }
+    public enum Frame { Plate, Mail, Leather, Robe, Bare, Bones, Brute, Beast }
 
-    public enum Head { GreatHelm, WingedHelm, HornedHelm, Hood, WizardHat, Cowl, Circlet, Mitre, Antlers, Feathered, Topknot, Sallet, WitchHat, Coif }
+    public enum Head { GreatHelm, WingedHelm, HornedHelm, Hood, WizardHat, Cowl, Circlet, Mitre, Antlers, Feathered, Topknot, Sallet, WitchHat, Coif, Skull, Tusks, Lizard, None }
 
     public enum Weapon { None, Sword, Greatsword, Axe, Greataxe, Hammer, Maul, Mace, Spear, Glaive, Dagger, Rapier, Staff, Sickle, Bow }
 
     public enum OffHand { None, Kite, Round, Orb, Lute, Lantern, Dagger, Book, Bow }
+
+    /// <summary>Where a worn trinket shows: a ring on the sword hand, a pendant, bracers, a belt gem, a circlet's stone, anklets. A cloak shows on the cape instead.</summary>
+    public enum Trinket { None, Ring, Pendant, Bracers, Belt, Circlet, Anklets }
 
     // Rig joints, matching rig.gdshaderinc.
     public static readonly Vector3 HandR = new(-0.128f, 0.19f, 0.02f), HandL = new(0.128f, 0.19f, 0.02f);
@@ -38,8 +41,19 @@ public static class HeroKit
 
     public static void Body(MeshKit k, Frame f)
     {
+        if (f == Frame.Beast)
+        {
+            Beast(k);
+            return;
+        }
+        if (f == Frame.Bones)
+        {
+            Bones(k);
+            return;
+        }
         var (legs, boots) = f switch
         {
+            Frame.Brute => (Skin, DarkLeather),
             Frame.Plate => (Steel, DarkSteel),
             Frame.Mail => (Chain, DarkLeather),
             Frame.Bare => (Skin, DarkLeather),
@@ -65,6 +79,23 @@ public static class HeroKit
             Frame.Robe => Trim(),
             _ => Skin,
         };
+        if (f == Frame.Brute)
+        {
+            // Hunched and broad: a bare chest, a loincloth in the host's colour, one great spiked pauldron.
+            k.Frustum(new Vector3(0, 0.145f, 0), 0.08f, 0.085f, 0.045f, 8, DarkLeather, null, Mathf.Pi / 8);
+            k.Frustum(new Vector3(0, 0.19f, 0.01f), 0.085f, 0.118f, 0.15f, 8, Skin, null, Mathf.Pi / 8);
+            k.Frustum(new Vector3(0, 0.34f, 0.01f), 0.118f, 0.05f, 0.04f, 8, Skin, null, Mathf.Pi / 8);
+            k.Quad(new(-0.05f, 0.15f, 0.086f), new(0.05f, 0.15f, 0.086f), new(0.055f, 0.05f, 0.08f), new(-0.055f, 0.05f, 0.08f), Trim());
+            k.Quad(new(0.05f, 0.15f, -0.086f), new(-0.05f, 0.15f, -0.086f), new(-0.055f, 0.05f, -0.08f), new(0.055f, 0.05f, -0.08f), Trim(0.8f));
+            k.Blob(new Vector3(0.128f, 0.35f, 0), new Vector3(0.075f, 0.055f, 0.07f), DarkSteel);
+            k.Frustum(new Vector3(0.14f, 0.38f, 0), 0.02f, 0, 0.07f, 4, Hex("d8d0c0"));
+            k.Frustum(new Vector3(0.1f, 0.38f, 0.03f), 0.016f, 0, 0.05f, 4, Hex("d8d0c0"));
+            k.Push(new Transform3D(new Basis(Vector3.Back, -0.6f), new Vector3(0, 0.26f, 0.1f)));
+            k.Box(Vector3.Zero, new Vector3(0.026f, 0.22f, 0.012f), DarkLeather);
+            k.Pop();
+            Arms(k, Skin, Skin, DarkLeather, 0.034f);
+            return;
+        }
         // Hips and a broad belt with a gold buckle.
         k.Frustum(new Vector3(0, 0.145f, 0), 0.07f, 0.075f, 0.045f, 8, DarkLeather, null, Mathf.Pi / 8);
         k.Box(new Vector3(0, 0.15f, 0.074f), new Vector3(0.034f, 0.032f, 0.012f), GoldM);
@@ -120,24 +151,85 @@ public static class HeroKit
                 break;
         }
 
+        var (sleeve, hand) = f switch
+        {
+            Frame.Plate => (Steel, Steel),
+            Frame.Mail => (Chain, DarkLeather),
+            Frame.Leather => (Trim(0.55f), DarkLeather),
+            Frame.Robe => (Trim(0.82f), Skin),
+            _ => (Skin, Skin),
+        };
+        var cuff = f switch { Frame.Plate => GoldM, Frame.Robe => GoldM, Frame.Mail => DarkSteel, _ => Leather };
+        Arms(k, sleeve, hand, cuff, f == Frame.Robe ? 0.042f : 0.027f);
+    }
+
+    private static void Arms(MeshKit k, Color sleeve, Color hand, Color cuff, float upper)
+    {
         foreach (int side in new[] { -1, 1 })
         {
             k.Part = side < 0 ? ArmR : ArmL;
             float x = side * 0.122f;
-            var (sleeve, hand) = f switch
-            {
-                Frame.Plate => (Steel, Steel),
-                Frame.Mail => (Chain, DarkLeather),
-                Frame.Leather => (Trim(0.55f), DarkLeather),
-                Frame.Robe => (Trim(0.82f), Skin),
-                _ => (Skin, Skin),
-            };
-            k.Frustum(new Vector3(x, 0.205f, 0.012f), f == Frame.Robe ? 0.042f : 0.027f, 0.033f, 0.13f, 6, sleeve);
+            k.Frustum(new Vector3(x, 0.205f, 0.012f), upper, 0.033f, 0.13f, 6, sleeve);
             k.Blob(new Vector3(side * 0.128f, 0.19f, 0.02f), new Vector3(0.035f, 0.033f, 0.035f), hand);
-            // Bracers or a gold cuff.
-            var cuff = f switch { Frame.Plate => GoldM, Frame.Robe => GoldM, Frame.Mail => DarkSteel, _ => Leather };
             k.Frustum(new Vector3(x, 0.208f, 0.014f), 0.034f, 0.034f, 0.03f, 6, cuff);
         }
+        k.Part = 0;
+    }
+
+    private static readonly Color Bone = Hex("e6dcc0"), Rust = Hex("8a5a3a");
+
+    /// <summary>The risen dead: bare bones, a rag in the host's colour, a rusted cap.</summary>
+    private static void Bones(MeshKit k)
+    {
+        foreach (int side in new[] { -1, 1 })
+        {
+            k.Part = side < 0 ? LegR : LegL;
+            float x = side * 0.045f;
+            k.Frustum(new Vector3(x, 0.02f, 0), 0.012f, 0.014f, 0.15f, 4, Bone);
+            k.Blob(new Vector3(x, 0.09f, 0.01f), new Vector3(0.018f, 0.016f, 0.016f), Bone);
+            k.Box(new Vector3(x, 0, 0.015f), new Vector3(0.03f, 0.02f, 0.05f), Bone);
+        }
+        k.Part = 0;
+        k.Frustum(new Vector3(0, 0.15f, 0), 0.05f, 0.04f, 0.035f, 6, Bone);
+        k.Frustum(new Vector3(0, 0.17f, -0.02f), 0.012f, 0.012f, 0.19f, 4, Bone);
+        for (int i = 0; i < 4; i++)
+            k.Frustum(new Vector3(0, 0.215f + i * 0.032f, 0), 0.068f - Mathf.Abs(i - 1.5f) * 0.006f, 0.068f - Mathf.Abs(i - 1.5f) * 0.006f, 0.014f, 8, Bone, null, Mathf.Pi / 8);
+        k.Quad(new(-0.05f, 0.18f, 0.06f), new(0.05f, 0.18f, 0.06f), new(0.06f, 0.06f, 0.055f), new(-0.04f, 0.08f, 0.055f), Trim(0.7f));
+        foreach (int side in new[] { -1, 1 }) k.Blob(new Vector3(side * 0.1f, 0.33f, 0), new Vector3(0.03f, 0.022f, 0.03f), Rust);
+        foreach (int side in new[] { -1, 1 })
+        {
+            k.Part = side < 0 ? ArmR : ArmL;
+            k.Frustum(new Vector3(side * 0.122f, 0.205f, 0.012f), 0.011f, 0.013f, 0.13f, 4, Bone);
+            k.Blob(new Vector3(side * 0.128f, 0.19f, 0.02f), new Vector3(0.022f, 0.02f, 0.022f), Bone);
+        }
+        k.Part = 0;
+    }
+
+    /// <summary>A great wolf of the wilds, low and long, the host's colour in its pelt.</summary>
+    private static void Beast(MeshKit k)
+    {
+        var pelt = Trim(0.9f);
+        k.Blob(new Vector3(0, 0.2f, 0), new Vector3(0.09f, 0.08f, 0.17f), pelt, 0.15f, 4, Trim(0.6f));
+        k.Blob(new Vector3(0, 0.25f, 0.08f), new Vector3(0.1f, 0.08f, 0.09f), pelt, 0.25f, 6, Trim(0.6f));
+        k.Blob(new Vector3(0, 0.27f, 0.2f), new Vector3(0.055f, 0.055f, 0.06f), pelt);
+        k.Frustum(new Vector3(0, 0.255f, 0.24f), 0.03f, 0.015f, 0.07f, 5, Trim(0.7f), Hex("1a1410"));
+        k.Push(new Transform3D(new Basis(Vector3.Right, Mathf.Pi / 2), new Vector3(0, 0.255f, 0.24f)));
+        k.Frustum(Vector3.Zero, 0.03f, 0.014f, 0.07f, 5, Trim(0.7f), Hex("1a1410"));
+        k.Pop();
+        foreach (int side in new[] { -1, 1 })
+        {
+            k.Frustum(new Vector3(side * 0.03f, 0.31f, 0.19f), 0.014f, 0, 0.04f, 3, Trim(0.6f));
+            k.Box(new Vector3(side * 0.02f, 0.28f, 0.255f), new Vector3(0.012f, 0.01f, 0.01f), Glow("ffcc40"));
+        }
+        k.Push(new Transform3D(new Basis(Vector3.Right, -2.3f), new Vector3(0, 0.22f, -0.15f)));
+        k.Frustum(Vector3.Zero, 0.03f, 0.008f, 0.14f, 5, pelt);
+        k.Pop();
+        foreach (int side in new[] { -1, 1 })
+            foreach (float z in new[] { 0.1f, -0.1f })
+            {
+                k.Part = (side < 0) == (z > 0) ? LegR : LegL;
+                k.Frustum(new Vector3(side * 0.05f, 0, z), 0.018f, 0.024f, 0.17f, 4, Trim(0.6f));
+            }
         k.Part = 0;
     }
 
@@ -157,6 +249,13 @@ public static class HeroKit
     {
         k.Part = HeadPart;
         var c = HeadAt;
+        if (h == Head.None) return;
+        if (h is Head.Skull or Head.Tusks or Head.Lizard)
+        {
+            FoeHead(k, h, c);
+            k.Part = 0;
+            return;
+        }
         bool face = h is not (Head.GreatHelm);
         k.Blob(c, new Vector3(0.062f, 0.066f, 0.06f), Skin);
         if (face)
@@ -286,6 +385,43 @@ public static class HeroKit
                 break;
         }
         k.Part = 0;
+    }
+
+    private static void FoeHead(MeshKit k, Head h, Vector3 c)
+    {
+        switch (h)
+        {
+            case Head.Skull:
+                k.Blob(c, new Vector3(0.056f, 0.06f, 0.056f), Bone);
+                k.Box(c + new Vector3(0, -0.07f, 0.01f), new Vector3(0.06f, 0.03f, 0.05f), Bone);
+                k.Box(new Vector3(-0.022f, c.Y, 0.05f), new Vector3(0.018f, 0.018f, 0.01f), Glow("5ac8ff"));
+                k.Box(new Vector3(0.022f, c.Y, 0.05f), new Vector3(0.018f, 0.018f, 0.01f), Glow("5ac8ff"));
+                k.Frustum(c + new Vector3(0, 0.02f, 0), 0.064f, 0.04f, 0.045f, 7, Rust, Rust);
+                break;
+            case Head.Tusks:
+                k.Blob(c + new Vector3(0, -0.01f, 0.01f), new Vector3(0.066f, 0.062f, 0.064f), Skin);
+                k.Box(c + new Vector3(0, -0.06f, 0.03f), new Vector3(0.08f, 0.04f, 0.05f), Skin);
+                k.Frustum(c + new Vector3(-0.025f, -0.05f, 0.06f), 0.009f, 0, 0.035f, 4, Hex("f0e8d0"));
+                k.Frustum(c + new Vector3(0.025f, -0.05f, 0.06f), 0.009f, 0, 0.035f, 4, Hex("f0e8d0"));
+                k.Box(c + new Vector3(0, 0.015f, 0.05f), new Vector3(0.08f, 0.016f, 0.02f), Hex("2a2420"));
+                k.Box(new Vector3(-0.022f, c.Y - 0.005f, 0.058f), new Vector3(0.014f, 0.01f, 0.008f), Glow("ff4a20"));
+                k.Box(new Vector3(0.022f, c.Y - 0.005f, 0.058f), new Vector3(0.014f, 0.01f, 0.008f), Glow("ff4a20"));
+                k.Frustum(c + new Vector3(0, 0.05f, -0.01f), 0.02f, 0.008f, 0.07f, 4, Hex("1e1a18"));
+                break;
+            case Head.Lizard:
+                k.Blob(c, new Vector3(0.058f, 0.058f, 0.062f), Skin);
+                k.Push(new Transform3D(new Basis(Vector3.Right, Mathf.Pi / 2 - 0.15f), c + new Vector3(0, -0.015f, 0.03f)));
+                k.Frustum(Vector3.Zero, 0.04f, 0.022f, 0.09f, 6, Skin);
+                k.Pop();
+                foreach (int side in new[] { -1, 1 })
+                {
+                    k.Push(new Transform3D(new Basis(Vector3.Right, -0.9f), c + new Vector3(side * 0.035f, 0.035f, -0.02f)));
+                    k.Frustum(Vector3.Zero, 0.014f, 0, 0.08f, 4, Hex("3a2a20"));
+                    k.Pop();
+                    k.Box(new Vector3(side * 0.03f, c.Y + 0.01f, 0.05f), new Vector3(0.012f, 0.01f, 0.01f), Glow("ffd040"));
+                }
+                break;
+        }
     }
 
     // Weapons -----------------------------------------------------------------------------------------
@@ -499,6 +635,62 @@ public static class HeroKit
             k.Tri(new(c.X, c.Y, t), new(p1.X, p1.Y, t), new(p0.X, p0.Y, t), front);
             k.Tri(new(c.X, c.Y, -t), new(p0.X, p0.Y, -t), new(p1.X, p1.Y, -t), back);
             k.Quad(new(p0.X, p0.Y, t), new(p1.X, p1.Y, t), new(p1.X, p1.Y, -t), new(p0.X, p0.Y, -t), edge);
+        }
+    }
+
+    /// <summary>A trinket's glowing stones and bands (Rune: they take the trinket's enchantment colour).</summary>
+    public static void TrinketPiece(MeshKit k, Trinket t)
+    {
+        var gem = Rune("ffffff");
+        switch (t)
+        {
+            case Trinket.Ring:
+                k.Part = ArmR;
+                k.Frustum(HandR + new Vector3(0, 0.012f, 0.0f), 0.038f, 0.038f, 0.01f, 8, GoldM);
+                k.Blob(HandR + new Vector3(-0.02f, 0.02f, 0.03f), new Vector3(0.012f, 0.012f, 0.012f), gem);
+                break;
+            case Trinket.Pendant:
+                k.Quad(new(-0.03f, 0.355f, 0.075f), new(0.03f, 0.355f, 0.075f), new(0.004f, 0.3f, 0.1f), new(-0.004f, 0.3f, 0.1f), GoldM);
+                k.Blob(new Vector3(0, 0.29f, 0.104f), new Vector3(0.018f, 0.022f, 0.01f), gem);
+                break;
+            case Trinket.Bracers:
+                foreach (int side in new[] { -1, 1 })
+                {
+                    k.Part = side < 0 ? ArmR : ArmL;
+                    k.Frustum(new Vector3(side * 0.122f, 0.212f, 0.014f), 0.037f, 0.037f, 0.022f, 6, gem);
+                }
+                break;
+            case Trinket.Belt:
+                k.Blob(new Vector3(0, 0.166f, 0.084f), new Vector3(0.016f, 0.016f, 0.01f), gem);
+                k.Frustum(new Vector3(0, 0.142f, 0), 0.078f, 0.078f, 0.008f, 8, gem, null, Mathf.Pi / 8);
+                break;
+            case Trinket.Circlet:
+                k.Part = HeadPart;
+                k.Blob(HeadAt + new Vector3(0, 0.035f, 0.066f), new Vector3(0.014f, 0.016f, 0.01f), gem);
+                break;
+            case Trinket.Anklets:
+                foreach (int side in new[] { -1, 1 })
+                {
+                    k.Part = side < 0 ? LegR : LegL;
+                    k.Frustum(new Vector3(side * 0.045f, 0.06f, 0.004f), 0.04f, 0.04f, 0.016f, 6, gem);
+                }
+                break;
+        }
+        k.Part = 0;
+    }
+
+    /// <summary>A legend's mark: a ring of light on the ground at their feet (drawn additive, aura.gdshader).</summary>
+    public static void Halo(MeshKit k)
+    {
+        const int N = 24;
+        var c = Hex("ffffff");
+        for (int i = 0; i < N; i++)
+        {
+            float a0 = i * Mathf.Tau / N, a1 = (i + 1) * Mathf.Tau / N;
+            Vector3 P(float a, float r) => new(Mathf.Cos(a) * r, 0.012f, Mathf.Sin(a) * r);
+            k.Quad(P(a0, 0.2f), P(a0, 0.25f), P(a1, 0.25f), P(a1, 0.2f), c);
+            // Rays rising off the ring, short and faint.
+            if (i % 3 == 0) k.Quad(P(a0, 0.23f), P(a0, 0.23f) + new Vector3(0, 0.12f, 0), P(a0 + 0.05f, 0.23f) + new Vector3(0, 0.12f, 0), P(a0 + 0.05f, 0.23f), c);
         }
     }
 

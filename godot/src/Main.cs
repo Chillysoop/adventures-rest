@@ -98,7 +98,7 @@ public partial class Main : Control
         else if (_opts.Day > 0) _sim.RunDays(_opts.Day);
         if (_opts.Hour > 0) for (int i = 0; i < _opts.Hour; i++) _sim.Step();
         if (_opts.Siege is float siegeHours) SiegeShot(siegeHours);
-        if (_opts.Skirmish is string skirmish) StageSkirmish(skirmish == "gear");
+        if (_opts.Skirmish is string skirmish) StageSkirmish(skirmish.Split(','));
         _opts.ApplyScript(_sim);
         if (_opts.Tourney is int tourney) StageTourney(tourney);
         if (_opts.Secrets) StageSecrets();

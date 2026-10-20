@@ -19,7 +19,19 @@ public partial class Heroes : Node3D
 
     /// <summary>How a hero looks, read off their sheet.</summary>
     public sealed record Look(Frame Frame, Head Head, Weapon Weapon, OffHand Off, bool Cape, Color Skin, Color Trim,
-        Color? Glow, int GlowStyle, bool Aura, Color? Armour, int Sparkle, Act Attack, Color Spell);
+        Color? Glow, int GlowStyle, bool Aura, Color? Armour, int Sparkle, Act Attack, Color Spell,
+        Trinket Trinket, Color? TrinketGlow, Color? CloakGlow, Color? Legend);
+
+    /// <summary>A hero just strapped on something powerful: shown as a banner over them for a few seconds (drawn by the map's overlay).</summary>
+    public sealed record Equip(int HeroId, string Text, Color Colour, float Born);
+
+    public readonly List<Equip> Equips = [];
+
+    /// <summary>Where each hero was drawn this frame, for the banners.</summary>
+    public Dictionary<int, Vector3> Spots { get; private set; } = [];
+    private Dictionary<int, Vector3> _spots = [];
+    private float _now;
+    public float Now => _now;
 
     private sealed class Batch(MultiMeshInstance3D mmi)
     {
@@ -36,7 +48,8 @@ public partial class Heroes : Node3D
     private readonly Batch[] _weapons = new Batch[Enum.GetValues<Weapon>().Length];
     private readonly Batch[] _auras = new Batch[Enum.GetValues<Weapon>().Length];
     private readonly Batch[] _offs = new Batch[Enum.GetValues<OffHand>().Length];
-    private Batch _cape = null!;
+    private readonly Batch[] _trinkets = new Batch[Enum.GetValues<Trinket>().Length];
+    private Batch _cape = null!, _halo = null!;
     private readonly List<Batch> _all = [];
 
     // The palette the shader indexes: slot 0 is "none"; colours are added as heroes need them.
@@ -74,7 +87,10 @@ public partial class Heroes : Node3D
         }
         foreach (var o in Enum.GetValues<OffHand>())
             if (o != OffHand.None) _offs[(int)o] = Make(k => OffHandPiece(k, o), Material);
+        foreach (var t in Enum.GetValues<Trinket>())
+            if (t != Trinket.None) _trinkets[(int)t] = Make(k => TrinketPiece(k, t), Material, false);
         _cape = Make(Cape, Material);
+        _halo = Make(Halo, AuraMaterial, false);
         _palette[0] = new Color(0, 0, 0, 0);
     }
 
@@ -98,11 +114,38 @@ public partial class Heroes : Node3D
     {
         var s = a.Hero!;
         int tier = s.Level >= 11 ? 2 : s.Level >= 6 ? 1 : 0;
-        object?[] key = [s.Weapon, s.Armor, s.Shield, s.Magic.Get("weapon", null!), s.Magic.Get("armor", null!), s.Magic.Get("shield", null!), s.Magic.Get("trinket", null!), tier, s.Cls.Id];
-        if (_looks.TryGetValue(a.Id, out var had) && had.Key.SequenceEqual(key)) return had.Look;
+        object?[] key = [s.Weapon, s.Armor, s.Shield, s.Magic.Get("weapon", null!), s.Magic.Get("armor", null!), s.Magic.Get("shield", null!), s.Magic.Get("trinket", null!), tier, s.Cls.Id, s.Epithet];
+        bool seen = _looks.TryGetValue(a.Id, out var had);
+        if (seen && had.Key.SequenceEqual(key)) return had.Look;
         var look = Read(a, tier);
+        // Something powerful newly worn: a banner over them (not for heroes seen for the first time).
+        if (seen)
+            for (int i = 3; i <= 6; i++)
+                if (key[i] is LibItem it && !Equals(had.Key[i], it) && Powerful(it))
+                {
+                    Equips.RemoveAll(e => e.HeroId == a.Id);
+                    Equips.Add(new Equip(a.Id, $"Equipped: {it.Name}", Enchantment(it.Name).Colour, _now));
+                }
         _looks[a.Id] = (key, look);
         return look;
+    }
+
+    /// <summary>Worth a banner: rare or better, or a ring or amulet of any rarity above common.</summary>
+    public static bool Powerful(LibItem it) => it.Rarity is "rare" or "very-rare" or "legendary" or "artifact"
+        || it.Rarity == "uncommon" && TrinketOf(it.Name) is Trinket.Ring or Trinket.Pendant;
+
+    /// <summary>Where a trinket shows on the body, from its name; None for a cloak (the cape shows it) or what can't be seen.</summary>
+    public static Trinket TrinketOf(string name)
+    {
+        string n = name.ToLowerInvariant();
+        if (n.StartsWith("ring") || n.Contains(" ring")) return Trinket.Ring;
+        if (n.Contains("amulet") || n.Contains("periapt") || n.Contains("necklace") || n.Contains("medallion") || n.Contains("scarab") || n.Contains("brooch") || n.Contains("talisman")) return Trinket.Pendant;
+        if (n.Contains("bracers") || n.Contains("gauntlets") || n.Contains("gloves")) return Trinket.Bracers;
+        if (n.Contains("belt") || n.Contains("girdle")) return Trinket.Belt;
+        if (n.Contains("circlet") || n.Contains("headband") || n.Contains("helm") || n.Contains("crown") || n.Contains("ioun")) return Trinket.Circlet;
+        if (n.Contains("boots") || n.Contains("slippers")) return Trinket.Anklets;
+        if (n.Contains("cloak") || n.Contains("cape") || n.Contains("mantle") || n.Contains("robe")) return Trinket.None;
+        return Trinket.Pendant;
     }
 
     private static readonly string[] Casters = ["wizard", "sorcerer", "warlock", "druid", "hedge-witch"];
@@ -113,6 +156,7 @@ public partial class Heroes : Node3D
         string cls = s.Cls.Id;
         var magicWeapon = s.Magic.Get("weapon", null!);
         var magicArmour = s.Magic.Get("armor", null!) ?? s.Magic.Get("shield", null!);
+        var trinket = s.Magic.Get("trinket", null!);
         string armour = s.Armor?.Id ?? "";
         var frame = armour switch
         {
@@ -167,8 +211,13 @@ public partial class Heroes : Node3D
             : weapon is Weapon.Spear or Weapon.Rapier or Weapon.Dagger ? Act.Thrust
             : Act.Swing;
         return new Look(frame, head, weapon, off, frame != Frame.Bare && cls != "monk", Palette.RaceColor(a.Race), Heraldic(Palette.ClassColor(cls)),
-            glow, style, magicWeapon != null && weapon != Weapon.None, armourGlow, sparkle, attack, spell);
+            glow, style, magicWeapon != null && weapon != Weapon.None, armourGlow, sparkle, attack, spell,
+            trinket is null ? Trinket.None : TrinketOf(trinket.Name), trinket is null ? null : Enchantment(trinket.Name).Colour,
+            trinket is { } cl && TrinketOf(cl.Name) == Trinket.None && IsCloak(cl.Name) ? Enchantment(cl.Name).Colour : null,
+            tier >= 2 || s.Epithet != "" ? Heraldic(Palette.ClassColor(cls)).Lightened(0.3f) : null);
     }
+
+    private static bool IsCloak(string name) => name.ToLowerInvariant() is var n && (n.Contains("cloak") || n.Contains("cape") || n.Contains("mantle") || n.Contains("robe"));
 
     /// <summary>A class colour made bold enough for a hero's tabard and cape: no muddy or near-black cloth.</summary>
     public static Color Heraldic(Color c) => Color.FromHsv(c.H, c.S < 0.15f ? c.S : Mathf.Max(c.S, 0.62f), Mathf.Max(c.V, 0.78f));
@@ -236,6 +285,36 @@ public partial class Heroes : Node3D
         _ => new Color("ffffff"),
     };
 
+    // Foes ----------------------------------------------------------------------------------------------
+
+    private readonly Dictionary<(string, bool, Color, Color), Look> _foes = [];
+
+    /// <summary>
+    /// How a host's warrior looks, by the kind of host (as <see cref="Sim.Battle.Kind"/> names it): orc brutes,
+    /// the risen dead, cultists, men-at-arms, cutthroats, wolves, drake-blooded spears. The chief is armed heavier,
+    /// their weapon burns and a red ring marks them out.
+    /// </summary>
+    public Look FoeLook(string kind, bool chief, Color body, Color skin)
+    {
+        if (_foes.TryGetValue((kind, chief, body, skin), out var had)) return had;
+        var (frame, head, weapon, off, attack) = kind switch
+        {
+            "undead" => (Frame.Bones, Head.Skull, chief ? Weapon.Greatsword : Weapon.Sword, chief ? OffHand.None : OffHand.Round, chief ? Act.Swing2 : Act.Swing),
+            "cult" => (Frame.Robe, Head.Cowl, chief ? Weapon.Staff : Weapon.Dagger, chief ? OffHand.Book : OffHand.Orb, chief ? Act.Cast : Act.Thrust),
+            "rivals" => (Frame.Mail, Head.Sallet, chief ? Weapon.Greatsword : Weapon.Spear, chief ? OffHand.None : OffHand.Round, chief ? Act.Swing2 : Act.Thrust),
+            "schemers" => (Frame.Leather, Head.Hood, chief ? Weapon.Rapier : Weapon.Dagger, OffHand.Dagger, Act.Thrust),
+            "beasts" => (Frame.Beast, Head.None, Weapon.None, OffHand.None, Act.Thrust),
+            "dragon" => (Frame.Mail, Head.Lizard, chief ? Weapon.Glaive : Weapon.Spear, chief ? OffHand.None : OffHand.Round, chief ? Act.Swing2 : Act.Thrust),
+            _ => (Frame.Brute, Head.Tusks, chief ? Weapon.Greataxe : Weapon.Axe, OffHand.None, chief ? Act.Swing2 : Act.Swing),
+        };
+        var glow = kind switch { "undead" => new Color("5ac8ff"), "cult" => new Color("b65cff"), "dragon" => new Color("ff7a1a"), _ => new Color("ff3a2a") };
+        var look = new Look(frame, head, weapon, off, chief && frame is not (Frame.Beast or Frame.Bones), skin, body,
+            chief || kind == "cult" ? glow : null, kind == "dragon" ? 2 : 1, chief && weapon != Weapon.None, null, chief ? 1 : 0, attack, glow,
+            Trinket.None, null, null, chief ? new Color("ff3a2a") : null);
+        _foes[(kind, chief, body, skin)] = look;
+        return look;
+    }
+
     // Drawing -----------------------------------------------------------------------------------------
 
     /// <summary>The hero standing at p facing yaw, doing act at phase u (0..1) of its cycle; flash is a hit landing on them.</summary>
@@ -248,15 +327,23 @@ public partial class Heroes : Node3D
     public void Put(Agent a, Transform3D xf, Act act, float u, float flash = 0)
     {
         if (a.Hero == null) return;
-        var l = LookOf(a);
+        PutLook(LookOf(a), xf, act, u, flash);
+        _spots[a.Id] = xf.Origin;
+    }
+
+    /// <summary>Anyone drawn from a look: a hero, or a foe (<see cref="FoeLook"/>).</summary>
+    public void PutLook(Look l, Transform3D xf, Act act, float u, float flash = 0)
+    {
         float r = Slot(l.Skin) + 32 * Slot(l.Trim);
         float g = l.Sparkle + Mathf.Clamp(flash, 0, 1) * 0.95f;
         float anim = (int)act + Mathf.Clamp(u - Mathf.Floor(u), 0, 0.998f);
         int wglow = l.Glow is Color wg ? Slot(wg, l.GlowStyle) : 0;
         int aglow = l.Armour is Color ag ? Slot(ag) : 0;
         Add(_bodies[(int)l.Frame], xf, r, g, 32 * aglow, anim);
-        Add(_heads[(int)l.Head], xf, r, g, 0, anim);
-        if (l.Cape) Add(_cape, xf, r, g, 0, anim);
+        if (l.Head != Head.None) Add(_heads[(int)l.Head], xf, r, g, 0, anim);
+        if (l.Cape) Add(_cape, xf, r, g, l.CloakGlow is Color cg ? 32 * Slot(cg) : 0, anim);
+        if (l.Trinket != Trinket.None) Add(_trinkets[(int)l.Trinket], xf, r, g, Slot(l.TrinketGlow!.Value), anim);
+        if (l.Legend is Color lg) Add(_halo, xf, r, 0, Slot(lg, 4), 0);
         if (l.Weapon != Weapon.None)
         {
             Add(_weapons[(int)l.Weapon], xf, r, g, wglow, anim);
@@ -274,8 +361,12 @@ public partial class Heroes : Node3D
     }
 
     /// <summary>Sends this frame's heroes to the GPU and starts the next frame empty.</summary>
-    public void Flush()
+    public void Flush(float now)
     {
+        _now = now;
+        (Spots, _spots) = (_spots, Spots);
+        _spots.Clear();
+        Equips.RemoveAll(e => now - e.Born > 6 || now < e.Born);
         if (_paletteDirty)
         {
             Material.SetShaderParameter("palette", _palette);
@@ -299,6 +390,9 @@ public partial class Heroes : Node3D
 
     /// <summary>A hero fighting: their attack and its phase. Seconds per blow.</summary>
     public const float Blow = 1.15f;
+
+    /// <summary>Stands in for "whatever this foe fights with" when drawing a host (<see cref="FoeLook"/>'s attack).</summary>
+    public const Act FoeAttack = (Act)99;
 
     public (Act Act, float U) Fighting(Agent a, float now) => (LookOf(a).Attack, now / Blow + a.Id * 0.23f);
 

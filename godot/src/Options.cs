@@ -79,7 +79,7 @@ public sealed class Options
     /// <summary>--folk: select the most practised townsperson, for a look at their character sheet.</summary>
     public bool Folk;
 
-    /// <summary>--skirmish [gear]: the town's heroes, one of each class, fight a ring of raiders by the square (for shots); "gear" hands them famous magic arms first.</summary>
+    /// <summary>--skirmish [gear][,kind]: the town's heroes, one of each class, fight a ring of raiders by the square (for shots); "gear" hands them famous magic arms a moment in; kind picks the foes (undead, cult, rivals, schemers, beasts, dragon; orcs by default).</summary>
     public string? Skirmish;
 
     /// <summary>--rolls: look into the busiest tavern and replay its latest skill checks as dice over people's heads.</summary>

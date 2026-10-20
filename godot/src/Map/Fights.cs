@@ -41,6 +41,20 @@ public partial class Crowd
 
     private readonly HashSet<int> _struck = [];
 
+    /// <summary>One of a host, in the chunky style (<see cref="Heroes.FoeLook"/>), scaled as the old figures were.</summary>
+    private void Foe(string kind, Vector3 p, float yaw, Color body, Color skin, float scale, Heroes.Act act, float u, float flash = 0, bool chief = false) =>
+        Heroes.PutLook(Heroes.FoeLook(kind, chief, body, skin), new Transform3D(Basis.FromEuler(new Vector3(0, yaw, 0)).Scaled(Vector3.One * scale * 0.95f), p), act == Heroes.FoeAttack ? Heroes.FoeLook(kind, chief, body, skin).Attack : act, u, flash);
+
+    /// <summary>One of a host fallen on their back.</summary>
+    private void FoeFallen(string kind, Vector3 p, float yaw, Color body, Color skin, float scale, bool chief = false)
+    {
+        var basis = Basis.FromEuler(new Vector3(0, yaw, 0)) * Basis.FromEuler(new Vector3(-Mathf.Pi / 2, 0, 0));
+        Heroes.PutLook(Heroes.FoeLook(kind, chief, body, skin) with { Legend = null }, new Transform3D(basis.Scaled(Vector3.One * scale * 0.95f), p + new Vector3(0, 0.03f, 0)), Heroes.Act.Idle, 0);
+    }
+
+    /// <summary>The kind of host the --skirmish heroes fight (--skirmish undead, cult, beasts...).</summary>
+    public string SkirmishKind = "";
+
     /// <summary>For shots and clips (--skirmish): the town's heroes, one of each class, fighting a ring of raiders at this spot.</summary>
     public Vector2? Skirmish;
     private readonly List<Agent> _skirmishers = [];
@@ -69,8 +83,7 @@ public partial class Crowd
         {
             var (hero, foe) = SkirmishSpot(k, _skirmishers.Count, _skirmishers[k]);
             var d = hero - foe;
-            float bob = Mathf.Max(0, Mathf.Sin(now * 4 + k * 1.3f)) * 0.03f;
-            Put(map.Gen.At(foe, bob), Mathf.Atan2(d.X, d.Y), k % 3 == 0 ? new Color("4a2018") : new Color("6a3a2a"), OrcSkin, 1.0f);
+            Foe(SkirmishKind, map.Gen.At(foe), Mathf.Atan2(d.X, d.Y), k % 3 == 0 ? new Color("4a2018") : new Color("8a3a2a"), SkirmishKind == "undead" ? new Color("cfc9b4") : OrcSkin, 1.0f, Heroes.FoeAttack, now / Heroes.Blow + k * 0.29f);
         }
     }
 

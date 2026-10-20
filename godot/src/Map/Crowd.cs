@@ -460,7 +460,6 @@ public partial class Crowd(MapView map) : Node3D
         SiegeHeroes(town, now);
         SkirmishHeroes(now);
         Flush(_heroes);
-        Heroes.Flush();
         PutHorses();
         Guards(town, now, banners);
         SiegeBanners(banners);
@@ -484,13 +483,14 @@ public partial class Crowd(MapView map) : Node3D
                 var o = new Vector2((Geo.Hash(i * 5 + 1) - 0.5f) * 7, (Geo.Hash(i * 5 + 2) - 0.5f) * 5);
                 if (map.Fog.AlphaAt(pos + o) >= Fog.SightAlpha) continue;
                 float bob = Mathf.Abs(Mathf.Sin(now * 8 + i)) * 0.03f;
-                Put(gen.At(pos + o, bob), Mathf.Atan2(dir.X, dir.Y), i % 7 == 0 ? new Color("4a2018") : new Color("6a3a2a"), OrcSkin, 1.1f);
+                Foe("", gen.At(pos + o), Mathf.Atan2(dir.X, dir.Y), i % 7 == 0 ? new Color("4a2018") : new Color("8a3a2a"), OrcSkin, 1.1f, Heroes.Act.Walk, now * 1.7f + i * 0.37f);
             }
         }
         SiegeHost(town, now);
         SkirmishFoes(now);
         Flush(_orcs);
         SiegeProps(town, now);
+        Heroes.Flush(now);
     }
 
     /// <summary>Where each guard stands on the map this frame, for picking them out with the mouse.</summary>

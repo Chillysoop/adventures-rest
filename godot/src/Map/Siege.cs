@@ -36,6 +36,7 @@ public partial class Crowd
         public int[] FireWave = [];
         public int Host;
         public Color Body, Skin, Chief;
+        public string Kind = "";
     }
 
     private SiegeLook? _look;
@@ -131,6 +132,7 @@ public partial class Crowd
     {
         var l = new SiegeLook { Id = b.Id, Walk = walk, Height = walk?.Height ?? 0, TowerTop = walk?.TowerTop ?? 0 };
         (l.Body, l.Skin, l.Chief) = HostColours(b.Kind);
+        l.Kind = b.Kind;
         l.Gate = walk?.Gate ?? OnWall(town, null, 0, 0.5f);
         l.GateOut = Outward(l.Gate);
         var front = OnWall(town, walk, b.Approach, 0.5f);
@@ -359,7 +361,7 @@ public partial class Crowd
                 yaw = Mathf.Atan2((inside - breach).X, (inside - breach).Y);
                 bob = s < 1 ? Mathf.Abs(Mathf.Sin(now * 9 + i)) * 0.03f : 0;
             }
-            Put(gen.At(p, bob), yaw, i % 9 == 0 ? l.Chief : l.Body, l.Skin, 1.1f);
+            Foe(l.Kind, gen.At(p), yaw, i % 9 == 0 ? l.Chief : l.Body, l.Skin, 1.1f, bob > 0 ? Heroes.Act.Walk : Heroes.Act.Idle, now * 1.7f + i * 0.37f);
             if (i % 6 == 0 && _dark) _torches.Add(gen.At(p + new Vector2(Mathf.Cos(yaw), -Mathf.Sin(yaw)) * 0.1f, bob + 0.5f));
         }
 
@@ -372,7 +374,7 @@ public partial class Crowd
             for (int c = 0; c < 4; c++)
             {
                 var o = l.GateOut.Orthogonal() * ((c % 2) - 0.5f) * 0.8f + l.GateOut * (0.5f + c / 2 * 0.4f);
-                Put(gen.At(ram + o, Mathf.Abs(Mathf.Sin(now * 3 + c)) * 0.02f), Mathf.Atan2(-l.GateOut.X, -l.GateOut.Y), l.Body, l.Skin, 1.1f);
+                Foe(l.Kind, gen.At(ram + o), Mathf.Atan2(-l.GateOut.X, -l.GateOut.Y), l.Body, l.Skin, 1.1f, Heroes.Act.Thrust, now * 0.5f + c * 0.25f);
             }
 
         // The leader: before the camp, then out to meet the heroes, then dead, carried off or drawing off.
@@ -390,7 +392,7 @@ public partial class Crowd
             if (b.End is BattleEnd.Slain or BattleEnd.Carried)
             {
                 if (b.End == BattleEnd.Carried) chief += l.Out * Ease(Seg(_u, 0.3f, 1)) * 16;
-                PutFallen(gen.At(chief), cyaw, l.Chief, l.Skin, 1.7f);
+                FoeFallen(l.Kind, gen.At(chief), cyaw, l.Chief, l.Skin, 1.7f, true);
                 return;
             }
             chief += l.Out * Ease(Seg(_u, 0.1f, 1)) * 16;
@@ -401,7 +403,8 @@ public partial class Crowd
             float s = _phase == BattlePhase.End ? 1 : Ease(_u);
             chief = s < 0.5f ? chief.Lerp(l.WaveAt[^1], s * 2) : l.WaveAt[^1].Lerp(l.Hall + new Vector2(0.9f, 0.9f), (s - 0.5f) * 2);
         }
-        Put(gen.At(chief), cyaw, l.Chief, l.Skin, 1.7f);
+        bool duel = _phase == BattlePhase.Sally && !b.Lost && b.Champions.Count > 0 && _u > 0.45f;
+        Foe(l.Kind, gen.At(chief), cyaw, l.Chief, l.Skin, 1.7f, duel ? Heroes.FoeAttack : Heroes.Act.Walk, duel ? now / Heroes.Blow : now * 1.4f, 0, true);
     }
 
     /// <summary>One wave's figures at a share <paramref name="u"/> of its stretch: running in, at the ladders, then back or over.</summary>
@@ -455,7 +458,7 @@ public partial class Crowd
                 {
                     if (dies)
                     {
-                        PutFallen(gen.At(foot), yaw + h1 * 2, l.Body, l.Skin, 1.1f);
+                        FoeFallen(l.Kind, gen.At(foot), yaw + h1 * 2, l.Body, l.Skin, 1.1f);
                         continue;
                     }
                     if (retreat || w < _wave || _phase != BattlePhase.Waves) continue;
@@ -466,7 +469,8 @@ public partial class Crowd
                 }
                 else if (run >= 1 && !climber) bob = Mathf.Max(0, Mathf.Sin(now * 7 + i)) * 0.04f;
             }
-            Put(gen.At(p, lift + bob), yaw, i % 9 == 0 ? l.Chief : l.Body, l.Skin, 1.1f);
+            bool striking = !wave.Breached && run >= 1 && !climber && u <= 0.68f + h3 * 0.06f;
+            Foe(l.Kind, gen.At(p, lift), yaw, i % 9 == 0 ? l.Chief : l.Body, l.Skin, 1.1f, striking ? Heroes.FoeAttack : bob > 0 ? Heroes.Act.Walk : Heroes.Act.Idle, striking ? now / Heroes.Blow + h1 : now * 1.8f + h1);
             if (i % 7 == 2 && _dark) _torches.Add(gen.At(p + new Vector2(Mathf.Cos(yaw), -Mathf.Sin(yaw)) * 0.1f, lift + bob + 0.5f));
         }
     }

@@ -42,7 +42,11 @@ void fragment() {
 	float rough = 0.9;
 	vec3 wn = normalize((INV_VIEW_MATRIX * vec4(NORMAL, 0.0)).xyz);
 	if (abs(a - 0.45) < 0.04) c = skin;
-	else if (abs(a - 0.15) < 0.04) c = trim * c;
+	else if (abs(a - 0.15) < 0.04) {
+		c = trim * c;
+		// An enchanted cloak shimmers in its colour.
+		if (aglow.a > 0.5) emit += aglow.rgb * (0.25 + 0.2 * sin(TIME * 3.0 + lpos.y * 30.0));
+	}
 	else if (abs(a - 0.7) < 0.04 || abs(a - 0.92) < 0.04) {
 		// Polished metal: a bright facet that catches the sun, and now and then a glint that twinkles.
 		rough = 0.3;
