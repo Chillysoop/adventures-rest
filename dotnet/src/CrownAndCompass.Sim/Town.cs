@@ -62,6 +62,14 @@ public sealed class Building(int id, BuildingDef def, int lotId)
 
     /// <summary>Patron-hours of evening talk since the last rumour roll (taverns only).</summary>
     public int Talk { get; set; }
+
+    /// <summary>Visitor-hours today (an hour each townsperson spent in on an outing), hours someone found it full and went elsewhere, the most in at once, and the same for yesterday (<see cref="Systems.Crowds"/>).</summary>
+    public int Visits { get; set; }
+    public int TurnedAway { get; set; }
+    public int Peak { get; set; }
+    public int VisitsLast { get; set; }
+    public int TurnedAwayLast { get; set; }
+    public int PeakLast { get; set; }
     public int DaysInDebt { get; set; }
     public bool ForSale { get; set; }
     public bool Closed { get; set; }
@@ -562,13 +570,15 @@ public sealed class Town
         return b;
     }
 
-    /// <summary>While the townsfolk choose their hour (Brain.Hourly): the open taverns and how many drink in each.</summary>
+    /// <summary>While the townsfolk choose their hour (Brain.Hourly): the places open to visitors by kind, and how many are out at each (<see cref="Systems.Crowds"/>).</summary>
     [NotSaved]
-    internal List<Building>? HourTaverns;
+    internal OrderedMap<string, List<Building>>? HourPlaces;
     [NotSaved]
-    internal Dictionary<int, int>? Drinkers;
+    internal List<string>? HourErrands;
     [NotSaved]
-    internal int? DrinkerWasAt;
+    internal Dictionary<int, int>? Present;
+    [NotSaved]
+    internal int? PresentWasAt;
 
     public List<Building> Taverns => Buildings.Where(b => b.Complete && b.Def.Venue && !b.Closed && !b.ForSale).ToList();
 

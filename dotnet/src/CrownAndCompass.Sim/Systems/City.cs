@@ -618,7 +618,8 @@ public static class City
         }
         int people = Math.Max(1, town.Workers.Count);
         var cov = new OrderedMap<string, double>();
-        foreach (var (s, c) in cap) cov[s] = Math.Min(1, c / people);
+        // Places so full they turned people away serve the town less than their size says.
+        foreach (var (s, c) in cap) cov[s] = Math.Min(1, c / people) * Crowds.Coverage(town, s);
         town.City.Coverage = cov;
     }
 

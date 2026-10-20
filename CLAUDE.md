@@ -62,6 +62,11 @@
 - Wards (city.json `wards`, `unsettled`, `rings`): never laid out by hand. The charter opens rings (`City.RingOpen`); a quarter
   (ring + side) with `founding` finished buildings becomes the ring's ward its buildings draw most (`WardDef.Draws`, `City.Form`,
   `CityState.Sectors`). The map outlines a ward round its own buildings. `City.Migrate` maps old saves' wards to their quarters.
+- Crowds (`Systems/Crowds.cs`, numbers in `content/game/crowds.json`): every building townsfolk go out to has a `capacity`
+  in buildings.json (`CrowdsTests` fails one that serves them without). Outings (drinking, praying, `Activity.Visiting` a
+  bathhouse/theatre/market hall/library/arena) go through `Crowds.Enter`: a full door turns them to the next place near or back
+  to choosing their hour (`Agent.TurnedFrom`). Yesterday's turned-away share cuts the service's coverage, adds to demand and
+  raises the `crowded` alert. Counts are kept once an hour (`Crowds.Begin`/`Moved`), so keep door checks O(1).
 - Decorations (`content/game/decor.json`, `Systems/Decor.cs`, client `Map/Decorator.cs`, `Map/DecorView.cs`): free positions in
   tiles from the town's corner and any angle (radians, model front +Z turned by it). Every piece needs a small effect in
   another system, capped in decor.json. Pieces claim plan cells (`Decor.Cells`, `LandPlan.Decor`): `Land.Fits` and lanes go

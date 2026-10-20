@@ -76,6 +76,8 @@ public sealed record BuildingDef
     public int Housing { get; init; }
     public double Rent { get; init; }
     public bool Venue { get; init; }
+
+    /// <summary>Townsfolk it holds at once on an outing (a tavern's drinkers, a shrine's worshippers, a bathhouse's bathers); 0 = it takes no visitors (<see cref="Systems.Crowds"/>).</summary>
     public int Capacity { get; init; }
     public string? Profession { get; init; }
 
@@ -1268,6 +1270,9 @@ public sealed class Content
     /// <summary>Enemy powers' end-game crises, their blows against the town and their clashes (content/game/crises.json).</summary>
     public CrisisRules Crises { get; init; } = new();
 
+    /// <summary>How many fit in a tavern, shrine or bathhouse at once, and what the townsfolk do when it is full (content/game/crowds.json).</summary>
+    public CrowdRules Crowds { get; init; } = new();
+
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
 
@@ -1434,6 +1439,7 @@ public sealed class Content
             Assess = Parse<AssessRules>("assess.json"),
             Skills = Parse<SkillRules>("skills.json"),
             Crises = Parse<CrisisRules>("crises.json"),
+            Crowds = Parse<CrowdRules>("crowds.json"),
         };
     }
 
