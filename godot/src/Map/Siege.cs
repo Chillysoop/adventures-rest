@@ -276,7 +276,7 @@ public partial class Crowd
             {
                 var spot = gen.At(l.Duel + ring * 0.7f) + new Vector3(0, 0.03f, 0);
                 var basis = Basis.FromEuler(new Vector3(0, face, 0)) * Basis.FromEuler(new Vector3(-Mathf.Pi / 2, 0, 0));
-                Heroes.Put(a, new Transform3D(basis.Scaled(new Vector3(1.15f, 1.15f, 1.15f)), spot), Heroes.Act.Idle, 0);
+                Heroes.Put(a, new Transform3D(basis.Scaled(Vector3.One * 1.15f * Heroes.Size), spot), Heroes.Act.Idle, 0);
             }
             else if (_phase == BattlePhase.Sally) Fight(a, l.Duel + ring * Heroes.Reach(a), gen.At(l.Duel, 0.35f), now, 1.15f);
             else Heroes.Put(a, gen.At(l.Duel + ring * 0.62f), face, Heroes.Act.Cheer, now * 0.8f + k * 0.4f, 0, 1.15f);

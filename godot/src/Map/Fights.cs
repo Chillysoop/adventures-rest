@@ -70,7 +70,7 @@ public partial class Crowd
             var (hero, foe) = SkirmishSpot(k, _skirmishers.Count, _skirmishers[k]);
             var d = hero - foe;
             float bob = Mathf.Max(0, Mathf.Sin(now * 4 + k * 1.3f)) * 0.03f;
-            Put(map.Gen.At(foe, bob), Mathf.Atan2(d.X, d.Y), k % 3 == 0 ? new Color("4a2018") : new Color("6a3a2a"), OrcSkin, 1.15f);
+            Put(map.Gen.At(foe, bob), Mathf.Atan2(d.X, d.Y), k % 3 == 0 ? new Color("4a2018") : new Color("6a3a2a"), OrcSkin, 1.0f);
         }
     }
 

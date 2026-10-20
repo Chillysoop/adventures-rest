@@ -438,6 +438,8 @@ public sealed class Options
     /// <summary>Save a screenshot and quit once enough frames have drawn for the camera to settle.</summary>
     public void Capture(Node node, ref int frames)
     {
+        // A clip being recorded (--write-movie) with --clean hides the HUD from the start, not just for the last frame.
+        if (Screenshot != null && Clean && frames == 5 && Engine.GetWriteMoviePath() != "") HideHud(node.GetTree().Root);
         if (Screenshot == null || ++frames < Frames) return;
         if (Clean && frames == Frames) { HideHud(node.GetTree().Root); return; }
         var img = node.GetViewport().GetTexture().GetImage();

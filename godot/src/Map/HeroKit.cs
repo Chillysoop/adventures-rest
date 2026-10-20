@@ -506,7 +506,7 @@ public static class HeroKit
     public static void Cape(MeshKit k)
     {
         k.Part = CapePart;
-        Vector3 a = new(-0.085f, 0.355f, -0.075f), b = new(0.085f, 0.355f, -0.075f), c = new(0.12f, 0.05f, -0.1f), d = new(-0.12f, 0.05f, -0.1f);
+        Vector3 a = new(-0.075f, 0.355f, -0.075f), b = new(0.075f, 0.355f, -0.075f), c = new(0.095f, 0.07f, -0.1f), d = new(-0.095f, 0.07f, -0.1f);
         k.Quad(b, a, (a + d) / 2 + new Vector3(0, 0, -0.03f), (b + c) / 2 + new Vector3(0, 0, -0.03f), Trim(0.85f));
         k.Quad((b + c) / 2 + new Vector3(0, 0, -0.03f), (a + d) / 2 + new Vector3(0, 0, -0.03f), d, c, Trim(0.85f));
         k.Quad(a, b, (b + c) / 2 + new Vector3(0, 0, -0.025f), (a + d) / 2 + new Vector3(0, 0, -0.025f), Trim(0.45f));

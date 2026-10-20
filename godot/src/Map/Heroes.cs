@@ -166,9 +166,12 @@ public partial class Heroes : Node3D
             : weapon is Weapon.Greatsword or Weapon.Greataxe or Weapon.Maul or Weapon.Glaive ? Act.Swing2
             : weapon is Weapon.Spear or Weapon.Rapier or Weapon.Dagger ? Act.Thrust
             : Act.Swing;
-        return new Look(frame, head, weapon, off, frame != Frame.Bare && cls != "monk", Palette.RaceColor(a.Race), Palette.ClassColor(cls),
+        return new Look(frame, head, weapon, off, frame != Frame.Bare && cls != "monk", Palette.RaceColor(a.Race), Heraldic(Palette.ClassColor(cls)),
             glow, style, magicWeapon != null && weapon != Weapon.None, armourGlow, sparkle, attack, spell);
     }
+
+    /// <summary>A class colour made bold enough for a hero's tabard and cape: no muddy or near-black cloth.</summary>
+    public static Color Heraldic(Color c) => Color.FromHsv(c.H, c.S < 0.15f ? c.S : Mathf.Max(c.S, 0.62f), Mathf.Max(c.V, 0.78f));
 
     /// <summary>The kind of weapon to draw: a magic weapon that names its kind (an axe, a hammer, a bow) shows as that, else the hero's own.</summary>
     public static Weapon KindOf(string id, string magic)
@@ -237,7 +240,10 @@ public partial class Heroes : Node3D
 
     /// <summary>The hero standing at p facing yaw, doing act at phase u (0..1) of its cycle; flash is a hit landing on them.</summary>
     public void Put(Agent a, Vector3 p, float yaw, Act act, float u, float flash = 0, float scale = 1) =>
-        Put(a, new Transform3D(Basis.FromEuler(new Vector3(0, yaw, 0)).Scaled(new Vector3(scale, scale, scale)), p), act, u, flash);
+        Put(a, new Transform3D(Basis.FromEuler(new Vector3(0, yaw, 0)).Scaled(Vector3.One * scale * Size), p), act, u, flash);
+
+    /// <summary>Heroes stand a head taller than anyone else in town.</summary>
+    public const float Size = 1.3f;
 
     public void Put(Agent a, Transform3D xf, Act act, float u, float flash = 0)
     {

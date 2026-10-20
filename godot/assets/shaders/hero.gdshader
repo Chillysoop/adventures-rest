@@ -49,7 +49,7 @@ void fragment() {
 		float facet = hash3(floor(wn * 6.0) + floor(lpos * 40.0));
 		float tw = step(0.985 - sparkle * 0.012, hash3(floor(wn * 6.0) + floor(TIME * 5.0 + facet * 7.0)));
 		emit += c * tw * (1.6 + sparkle * 0.8) * (1.0 - night * 0.5);
-		emit += c * sparkle * 0.06;
+		emit += c * (0.12 + sparkle * 0.06) * (0.6 + 0.4 * max(wn.y, 0.0));
 		// Enchanted armour glows along its plates in its colour.
 		if (aglow.a > 0.5 && a < 0.8) emit += aglow.rgb * (0.35 + 0.2 * sin(TIME * 2.0 + wpos.x));
 		if (a > 0.8) {
@@ -65,13 +65,15 @@ void fragment() {
 		// A focus, an orb, a holy symbol: lit from inside.
 		emit = c * (1.1 + 0.4 * sin(TIME * 2.5 + wpos.z));
 	}
+	// A little light of their own, so a hero never sinks into the night's shadows.
+	emit += c * (0.05 + 0.22 * night) * (1.0 - strategic);
 	float grain = texture(noise_tex, wpos.xz * 2.3 + vec2(wpos.y * 1.9)).r;
 	c = mix(c, mix(vec3(luma(c)), c, 1.25) * (0.94 + 0.12 * grain), toon);
 	// The heroic halo: a rim in the class colour, so a hero stands out of any crowd.
 	float fres = pow(1.0 - clamp(dot(NORMAL, VIEW), 0.0, 1.0), 3.0);
-	emit += fres * mix(vec3(1.0, 0.9, 0.7), trim, 0.6) * (0.35 + 0.3 * night) * (1.0 - strategic);
-	c = mix(c, vec3(1.0), flash * 0.8);
-	emit += flash * vec3(1.6, 1.3, 1.0);
+	emit += fres * mix(vec3(1.0, 0.9, 0.7), trim, 0.6) * (0.6 + 0.3 * night) * (1.0 - strategic);
+	c = mix(c, vec3(1.0, 0.85, 0.8), flash * 0.45);
+	emit += flash * vec3(0.55, 0.32, 0.25);
 	float cloud;
 	c = apply_fog(c, wpos.xz, TIME, cloud);
 	emit *= 1.0 - cloud;

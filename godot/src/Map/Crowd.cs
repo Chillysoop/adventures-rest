@@ -310,6 +310,7 @@ public partial class Crowd(MapView map) : Node3D
     }
 
     private int _count;
+    private float _clock;
 
     private void Put(Vector3 p, float yaw, Color body, Color skin, float scale = 1)
     {
@@ -334,7 +335,9 @@ public partial class Crowd(MapView map) : Node3D
         var town = map.Sim.Town;
         People.Advance(dt, map.TimeScale);
         Fx.Advance(dt);
-        float now = (float)Time.GetTicksMsec() / 1000f;
+        // The figures' own clock: frame time, so swings and strides keep pace in a recorded clip too.
+        _clock = (_clock + dt) % 3600;
+        float now = _clock;
         var gen = map.Gen;
         bool close = map.Distance < 260;
         Visible = close;
