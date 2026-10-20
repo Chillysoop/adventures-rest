@@ -61,9 +61,16 @@ public partial class Main
             case 14:
                 CloseWindow();
                 ToggleBuildBar();
+                // The info lens: every view worked out once, the last left on to draw until the next stage.
+                foreach (var m in CrownAndCompass.Client.Map.Lens.Modes)
+                {
+                    _map.Lens.Show(true, m);
+                    if (_map.Lens.Summary == "") throw new InvalidOperationException($"the {m} lens says nothing");
+                }
                 return 5;
             case 15:
                 ToggleBuildBar();
+                ToggleLens();
                 ToggleStrategic();
                 return 10;
             case 16:

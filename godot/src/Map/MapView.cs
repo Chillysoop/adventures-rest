@@ -174,7 +174,15 @@ public partial class MapView : Control
         Decorator = new Decorator(this) { MouseFilter = MouseFilterEnum.Ignore };
         AddChild(Decorator);
         Decorator.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        Lens = new Lens(this) { MouseFilter = MouseFilterEnum.Ignore };
+        AddChild(Lens);
+        Lens.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
     }
+
+    /// <summary>The info lens over the town (L): greys the map and colours one thing about it.</summary>
+    public Lens Lens { get; private set; } = null!;
+
+    private float _lens;
 
     public void Bind(Simulation sim)
     {
@@ -254,6 +262,9 @@ public partial class MapView : Control
         _overlay.QueueRedraw();
         if (Planner.Active) Planner.QueueRedraw();
         if (Decorator.Active) Decorator.QueueRedraw();
+        _lens += ((Lens.On && !Strategic ? 1 : 0) - _lens) * (1 - Mathf.Exp(-dt * 8));
+        _grade.SetShaderParameter("lens", _lens);
+        if (Lens.On) Lens.QueueRedraw();
     }
 
     /// <summary>The town holds the territory it stands in; the enemy's camp corrupts its own and seeps into its neighbours.</summary>

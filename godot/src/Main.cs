@@ -118,6 +118,7 @@ public partial class Main : Control
         if (_opts.Rising && _sim.Town.Buildings.Where(b => b.IsSite && !b.Def.IsGrand).OrderByDescending(b => b.Workers.Count).ThenBy(b => b.BuildProgress / b.Def.BuildHours).ThenBy(b => b.Id).FirstOrDefault() is Building rising)
             _map.LookAt(Map.Geo.LotPos(_sim.Town.Lot(rising.LotId)), _opts.Cam ?? 6);
         if (_opts.StrategicView) ToggleStrategic();
+        if (_opts.Lens is string lens && Enum.TryParse<Map.Lens.Mode>(lens, true, out var lm)) _map.Lens.Show(true, lm);
         foreach (var (kind, at, label) in _opts.Markers) _map.Markers.Add(new Marker(kind, at, _sim.Town.Day, label));
         if (_opts.OpenMarker is int open && open < _map.Markers.Count) CallDeferred(MethodName.OpenMarkerAt, open);
         if (_opts.Plan is string plan) OpenPlan(plan, _opts.Tool, _opts.Hover);
@@ -407,6 +408,8 @@ public partial class Main : Control
         else if (k.Keycode == Key.Escape && _map.Decorator.Active) _map.Decorator.Pick(null);
         else if (k.Keycode == Key.R && _map.Decorator.Active) _map.Decorator.Turn(k.ShiftPressed ? -1 : 1);
         else if (k.Keycode == Key.M) ToggleStrategic();
+        else if (k.Keycode == Key.L) ToggleLens();
+        else if (k.Keycode == Key.Escape && _map.Lens.On) _map.Lens.Show(false);
         else if (k.Keycode == Key.C) SetTab(Tab.Mayor);
         else if (k.Keycode == Key.Escape && _picker.Visible) ClosePicker();
         else if (k.Keycode == Key.Escape && _inspector.Visible) Select(null);
@@ -429,6 +432,7 @@ public partial class Main : Control
         // --scroll F: hold the open window scrolled to that share of its length (for screenshots).
         if (_opts.Scroll is float sf && _window.Visible && _windowTab is Tab wt && _scrolls.TryGetValue(wt, out var sc))
             sc.ScrollVertical = (int)(sf * Math.Max(0, sc.GetVScrollBar().MaxValue - sc.Size.Y));
+        TickLens(dt);
         _acc += dt * Speeds[_speed];
         int steps = 0;
         while (_acc >= 1 && steps < 8)

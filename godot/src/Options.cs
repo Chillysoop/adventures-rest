@@ -84,6 +84,9 @@ public sealed class Options
     public float? Cam;
     public Godot.Vector2? Look;
     public bool StrategicView;
+
+    /// <summary>--lens room|work|growth|appeal|danger: open the info lens on that view (for screenshots).</summary>
+    public string? Lens;
     public int Yaw;
 
     /// <summary>Markers to place for a screenshot (--marker rally,512,470,Muster here) and one to open the card of (--open-marker 0).</summary>
@@ -176,6 +179,7 @@ public sealed class Options
                     o.Look = new Godot.Vector2(float.Parse(xy[0], System.Globalization.CultureInfo.InvariantCulture), float.Parse(xy[1], System.Globalization.CultureInfo.InvariantCulture));
                     break;
                 case "--strategic": o.StrategicView = true; break;
+                case "--lens": o.Lens = Next(); break;
                 case "--marker":
                     var mk = Next().Split(',', 4);
                     if (Enum.TryParse<Map.MarkerKind>(mk[0], true, out var kind))

@@ -214,6 +214,7 @@ public partial class Main
             "build" => _buildBar.Visible ? null : _buildToggle,
             "buildbar" => _buildBar.Visible ? _buildBar : _buildToggle,
             "strategic" => _strategicButton,
+            "lens" => _lensBar.Visible ? _lensBar : _lensButton,
             "minimap" => _miniFrame,
             "markers" => _markerBar,
             "menu" => _menuButton,

@@ -111,6 +111,15 @@
       "teaches": ["command:Decorate", "command:ClearDecoration", "key:R"]
     },
     {
+      "id": "lens",
+      "title": "See the town at a glance",
+      "text": "Press [b]L[/b] or [b]Lens[/b] by the corner map to grey the town and colour one thing about it: [b]Room[/b] left on painted land, [b]Work[/b] (homes of the idle and places hiring), [b]Growth[/b] (houses ready for another storey, and what the rest wait on), [b]Appeal[/b] and [b]Danger[/b] (what raiders can reach). Hover a building to read why it is coloured so.",
+      "when": "day:14",
+      "point": "lens",
+      "until": "lens",
+      "teaches": ["key:L"]
+    },
+    {
       "id": "heroes-arrive",
       "title": "Heroes for hire",
       "text": "Adventurers have come to town. They drink, train and wait for work. Click one to see their sheet: you can reward them, knight them, grant them a fief or name a champion, and loyal heroes stay when times turn dark.",
