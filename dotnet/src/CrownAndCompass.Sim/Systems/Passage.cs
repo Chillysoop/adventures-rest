@@ -828,8 +828,8 @@ public static class Passage
 
     // ---- The sky dock ----
 
-    /// <summary>Airships at the sky dock that aren't already out with a company.</summary>
-    public static int AirshipsFree(Town town) => Institutions.Airships(town) - town.Parties.Count(p => p.Airship && !p.Returned);
+    /// <summary>Airships at the sky dock that aren't already out with a company or on a trade run (<see cref="Skyship"/>).</summary>
+    public static int AirshipsFree(Town town) => Institutions.Airships(town) - town.Parties.Count(p => p.Airship && !p.Returned) - (Skyship.Away(town) ? 1 : 0);
 
     /// <summary>What a straight march from a to b meets that nobody walks: the river, a lake, sheer heights.</summary>
     public static Ways Meets(Town town, (double X, double Y) a, (double X, double Y) b)

@@ -920,6 +920,14 @@ public static class Menaces
             return;
         }
         string where = v.JobId is int w ? town.Building(w).Name : town.Name;
+        // A fever-breaker from the alchemists' shelf pulls them back by morning.
+        if (Alchemy.Cure(town) is string cure)
+        {
+            m.Power = Math.Max(0, m.Power - hunger * r.RepelLoss);
+            town.Log(LedgerCategory.War, Importance.Notable, $"{v.Name} of {where} is found at dawn pale and fevered, marked by {m.Leader}. A dose of {cure} breaks the fever by noon.", [v.Id]);
+            town.Tension += 6;
+            return;
+        }
         string text = am.Infect[rng.Range(0, am.Infect.Count)];
         Threat.Kill(town, v);
         m.Power += r.FailedDelve;

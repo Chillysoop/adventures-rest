@@ -52,6 +52,69 @@ public partial class Main
             Ui.C(Ui.Ink2, $"[font_size=11]{Ui.Esc(c.Name)}, {Ui.Esc(c.Role == "leader" ? Neighbours.LeaderOf(t, s).Title : c.Role)}{(c.Regard >= t.Content.Neighbours.Cast.Regard ? ", a friend" : "")}: remembers {Ui.Esc(c.Memories[^1])}[/font_size]")));
     }
 
+    /// <summary>The people picked for the airship's next run in the Diplomacy window (-1: the best paying).</summary>
+    private int _skyPort = -1;
+
+    /// <summary>The sky dock's airship: where it is, and the run to send it on (<see cref="Skyship"/>).</summary>
+    private void SkyRuns(Pane p, Town t)
+    {
+        if (Institutions.Airships(t) == 0) return;
+        var sky = t.Trade.Sky;
+        var r = t.Content.Trade.Sky;
+        p.Heading("The airship");
+        string status;
+        if (sky.Out is { } run)
+            status = $"Bound for [b]{Ui.Esc(t.Settlements[run.SettlementId].Name)}[/b] with {Js.Str(Js.Round(run.Qty))} {Ui.Esc(run.Cargo.ToString().ToLowerInvariant())} · home in {Ui.Days(Math.Max(0, run.BackDay - t.Day))}{(run.Stormed ? ", held back by storms" : "")}";
+        else if (t.Parties.FirstOrDefault(x => x.Airship && !x.Returned) is { } party)
+            status = $"Out carrying [b]{Ui.Esc(party.Name)}[/b] to their job: it can't trade until it brings them home";
+        else status = "At anchor over the Sky Dock, its hold empty";
+        p.Row($"[font_size=13]{status}[/font_size]\n" +
+              Ui.C(Ui.Ink2, $"[font_size=12]Hold {Js.Str(Js.Round(Skyship.Hold(t)))} goods · {sky.Runs} {(sky.Runs == 1 ? "run" : "runs")} flown · sold {Js.Str(Js.Round(sky.Earned))}g, spent {Js.Str(Js.Round(sky.Spent))}g[/font_size]") +
+              (sky.LastLine != "" ? "\n" + Ui.C(Ui.Ink2, $"[font_size=11]Last run: {Ui.Esc(sky.LastLine)}[/font_size]") : ""));
+        if (Passage.AirshipsFree(t) <= 0) return;
+        var ports = Skyship.Ports(t).ToList();
+        if (ports.Count == 0)
+        {
+            p.Note("No people the town knows of will let it moor. Explorers and envoys find the airship somewhere to fly.");
+            return;
+        }
+        var cargo = Goods.All.Where(g => Skyship.Spare(t, g) >= r.MinCargo).ToList();
+        if (cargo.Count == 0)
+        {
+            p.Note("The town has nothing to spare for the hold: the market keeps back what the town needs. Surplus builds up as the makers outrun the households.");
+            return;
+        }
+        // Each people's best cargo, so the picker can say what they pay best for.
+        var best = ports.ToDictionary(s => s.Id, s => cargo.OrderByDescending(g => Skyship.Profit(t, s, g)).ThenBy(g => g).First());
+        if (ports.All(s => s.Id != _skyPort))
+            _skyPort = ports.OrderByDescending(s => Skyship.Profit(t, s, best[s.Id]) / Skyship.FlightDays(t, s)).ThenBy(s => s.Id).First().Id;
+        p.Text(Ui.C(Ui.Ink2, "Where to? Each people pays its own price, more far out and for what they want, and less the more you have sold them lately."), 12);
+        // Three to a row so a long list of peoples wraps inside the window.
+        foreach (var row in ports.Chunk(3))
+            p.Buttons(row.Select(s =>
+            {
+                int sid = s.Id;
+                return ($"{s.Name} · {Skyship.FlightDays(t, s)}d · {best[s.Id]}", true, sid == _skyPort, (Action)(() => { _skyPort = sid; _dirty = true; }));
+            }).ToArray());
+        var port = t.Settlements[_skyPort];
+        var region = t.Regions[port.RegionId];
+        double danger = Skyship.AmbushChance(t, port);
+        p.Text($"[b]{Ui.Esc(port.Name)}[/b] " + Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(port.People)} in {Ui.Esc(region.Name)} · {Ui.Days(Skyship.FlightDays(t, port))} there and back by air, {Ui.Days(Trade.TripDays(t, port))} by road · fit-out {Js.Str(Skyship.FitOut(t, port))}g" +
+               (danger > 0 ? $" · fliers {Math.Round(danger * 100)}%" : "") + "[/font_size]"), 13);
+        foreach (var g in cargo.OrderByDescending(g => Skyship.Profit(t, port, g)).ThenBy(g => g))
+        {
+            double qty = Skyship.Spare(t, g), gold = Skyship.Quote(t, port, g, qty), profit = gold - Skyship.FitOut(t, port);
+            string back = Skyship.Bring(t, port, g) is { } b ? $"Brings back {b.Good.ToString().ToLowerInvariant()} at {Js.ToFixed(b.Price, 1)}g" : "Brings back gold only";
+            string? no = Skyship.Refuse(t, port, g);
+            var cg = g;
+            int sid = port.Id;
+            p.Row($"[font_size=13][b]{g}[/b] · {Js.Str(Js.Round(qty))} to spare · {Js.ToFixed(Skyship.Price(t, port, g), 1)}g each there (home {Js.ToFixed(t.Market.BasePrice(g), 1)}g)[/font_size]\n" +
+                  Ui.C(profit > 0 ? Ui.Good : Ui.Bad, $"[font_size=12]Fetches about {Js.Str(Js.Round(gold))}g, clears {(profit >= 0 ? "" : "−")}{Js.Str(Math.Abs(Js.Round(profit)))}g after the fit-out[/font_size]") + "\n" +
+                  Ui.C(Ui.Ink2, $"[font_size=11]{Ui.Esc(back)}{(no != null ? $" · {Ui.Esc(no)}" : "")}[/font_size]"),
+                ("Send", no == null, profit > 0, () => Act(() => _sim.SendSkyship(sid, cg))));
+        }
+    }
+
     private void RenderDiplomacy()
     {
         var p = _panes[Tab.Diplomacy];
@@ -83,6 +146,8 @@ public partial class Main
                     ? [($"Add a wagon · {Js.Str(wagon)}g", t.Treasury >= wagon, true, () => Act(() => _sim.AddWagon(id))), ("Close", true, false, () => Act(() => _sim.CloseTradeRoute(id)))]
                     : [("Close", true, false, () => Act(() => _sim.CloseTradeRoute(id)))]);
         }
+
+        SkyRuns(p, t);
 
         p.Heading("Peoples of the wilds");
         if (known.Count == 0) p.Note("The town hasn't heard of anyone out there yet. Parties bring back word of the peoples in the regions they visit.");
