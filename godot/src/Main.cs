@@ -103,6 +103,7 @@ public partial class Main : Control
         // Stories the script's hours brought are the stand-in mayor's, not cards to greet the shot with.
         if (_opts.Autoplay) _storySeen = _sim.Town.Stories.All.Count;
         SetSpeed(_opts.Speed ?? 1);
+        _pot.AddRange(_opts.Brew);
         if (_opts.Tab is string t && Enum.TryParse<Tab>(t, true, out var tab)) SetTab(tab);
         if (_opts.Tray is string tray && Trays.FirstOrDefault(d => d.Id.Equals(tray, StringComparison.OrdinalIgnoreCase)) is { } td)
             Callable.From(() => OpenTray(td.Id)).CallDeferred();

@@ -306,6 +306,7 @@ public static class TreasuryAccount
     public const string Decrees = "Decrees";
     public const string Trade = "Trade";
     public const string Armory = "Armory";
+    public const string Alchemy = "Alchemy";
     public const string Bastions = "Bastions";
     public const string Callings = "Callings";
     public const string Legacies = "Legacies";
@@ -504,6 +505,12 @@ public sealed class Town
 
     /// <summary>The town armory: items to gift heroes, and loot offered to the town (<see cref="Systems.Armory"/>).</summary>
     public ArmoryState Armory { get; } = new();
+
+    /// <summary>The alchemy bench: monster parts in store, potions on the shelf and the town's recipe book (<see cref="Systems.Alchemy"/>).</summary>
+    public AlchemyState Alchemy { get; } = new();
+
+    /// <summary>The recipes the town has named, for tutorial steps to count.</summary>
+    public IReadOnlyList<RecipeEntry> Recipes => Alchemy.Book;
 
     /// <summary>The people of the wilds the town has dealt with, who remember it (<see cref="Systems.Neighbours"/>).</summary>
     public NeighbourState Neighbours { get; } = new();

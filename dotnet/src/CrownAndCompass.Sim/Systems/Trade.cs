@@ -62,6 +62,9 @@ public sealed record TradeRules
 
     /// <summary>Gold to add the second, third and fourth wagons.</summary>
     public double[] WagonCost { get; init; } = [200, 450, 900];
+
+    /// <summary>The sky dock's airship on trade runs (<see cref="Skyship"/>).</summary>
+    public SkyRules Sky { get; init; } = new();
 }
 
 /// <summary>A trade route the town runs to a settlement: what it sends, what it brings back, and how it has done.</summary>
@@ -91,6 +94,9 @@ public sealed class TradeRoute
 public sealed class TradeState
 {
     public List<TradeRoute> Routes { get; } = [];
+
+    /// <summary>The airship's trade runs (<see cref="Skyship"/>).</summary>
+    public SkyState Sky { get; } = new();
 }
 
 /// <summary>
@@ -216,6 +222,7 @@ public static class Trade
             route.NextDay = town.Day + TripDays(town, s);
         }
         if (autoMayor) StandIn(town);
+        Skyship.Daily(town, autoMayor);
     }
 
     private static void Caravan(Town town, TradeRoute route, Settlement s)
@@ -292,7 +299,7 @@ public static class Trade
 
     private static string Ordinal(int n) => n switch { 3 => "third", 4 => "fourth", 5 => "fifth", 6 => "sixth", _ => $"{n}th" };
 
-    private static bool Near(Region a, Region b)
+    internal static bool Near(Region a, Region b)
     {
         double d = Math.Abs(a.Bearing - b.Bearing) % 360;
         return Math.Min(d, 360 - d) <= (a.Arc + b.Arc) / 2 + 1;

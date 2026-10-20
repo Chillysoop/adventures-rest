@@ -132,6 +132,7 @@ public sealed class Simulation
         World.Daily(t, Options.AutoMayor);
         Trade.Daily(t, Options.AutoMayor);
         Armory.Daily(t, Options.AutoMayor && Options.AutoArmory);
+        Alchemy.Daily(t, Options.AutoMayor && Options.AutoArmory);
         Neighbours.Daily(t, Options.AutoMayor);
         Mercenaries.Daily(t, Options.AutoMayor && Options.AutoDefense);
         Clockwork.Daily(t, Options.AutoMayor && Options.AutoDefense);
@@ -191,6 +192,12 @@ public sealed class Simulation
     /// <summary>Sell an item from the armory to the merchants.</summary>
     public bool SellStock(int stockId) => Armory.Sell(Town, stockId);
 
+    /// <summary>Brew a batch at the alchemy bench from two or three ingredients (herbs, monster parts); a new recipe gets a name in the town's book.</summary>
+    public bool Brew(IReadOnlyList<string> ingredients) => Alchemy.Brew(Town, ingredients);
+
+    /// <summary>Sell every dose of a potion on the town's shelf.</summary>
+    public bool SellPotions(string recipeId) => Alchemy.Sell(Town, recipeId);
+
     /// <summary>Offer a company a loot pact: the magic it finds comes to the armory, for a finder's fee. A wary company refuses.</summary>
     public bool OfferPact(string company) => Armory.OfferPact(Town, company);
 
@@ -224,6 +231,9 @@ public sealed class Simulation
     public bool CloseTradeRoute(int routeId) => Trade.CloseRoute(Town, routeId);
 
     public bool AddWagon(int routeId) => Trade.AddWagon(Town, routeId);
+
+    /// <summary>Send the sky dock's airship on a trade run: cargo out to a settlement's market, gold and their goods home.</summary>
+    public bool SendSkyship(int settlementId, Good cargo) => Skyship.Send(Town, settlementId, cargo) != null;
 
     /// <summary>Raise a memorial to a hero in the hall of heroes.</summary>
     public bool RaiseMemorial(int heroId) => Legacies.RaiseMemorial(Town, heroId);
