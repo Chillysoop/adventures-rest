@@ -237,6 +237,9 @@ public sealed class Simulation
     /// <summary>Sound the call to arms on a wall section, a tower or the gate: the nearest of the watch run to man it.</summary>
     public GuardPost? CallToArms(PostKind kind, int index) => Garrison.CallToArms(Town, kind, index);
 
+    /// <summary>Man the walls at once: a call to arms on the gate and on every side a host is marching from.</summary>
+    public int ManTheWalls() => Garrison.ManTheWalls(Town);
+
     /// <summary>Plant a flag where the watch should stand guard (tiles from the town's corner), with this many guards.</summary>
     public GuardPost? PlantFlag(double x, double y, int guards = 0) => Garrison.PlantFlag(Town, x, y, guards);
 
@@ -254,6 +257,9 @@ public sealed class Simulation
 
     /// <summary>Pay a caster in town to scry a site, showing it live for a few hours.</summary>
     public Scrying? CommissionScrying(string siteId) => Knowledge.CommissionScrying(Town, siteId);
+
+    /// <summary>Mark a spot in the wilds (days of march east and south of the town) and pay a company to go and look at it.</summary>
+    public Commission? MarkSpot(double x, double y, double? reward = null) => Explore.PostSpot(Town, x, y, reward);
 
     /// <summary>Reach a party on the road by sending stone: ask for word, or call it home.</summary>
     public string? SendWord(int partyId, bool recall = false) => Knowledge.Send(Town, partyId, recall);

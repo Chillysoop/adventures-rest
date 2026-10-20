@@ -209,6 +209,15 @@
       "teaches": ["command:CallToArms"]
     },
     {
+      "id": "quick-orders",
+      "title": "Quick orders",
+      "text": "The four buttons over the corner map are there when you need to move fast. [b]Defend[/b] sounds the horn on the gate and on whichever side a host is marching from; it glows red while a side is left bare, and pressed again it stands them down. [b]Guard[/b] picks up a guard flag, like [b]G[/b]. [b]Strike[/b] lists the threats you know of, each with a bounty to post or sellswords to send. [b]Scout[/b] marks a spot: click anywhere on the map, even deep in the fog, and the council offers a company coin to walk there and tell you what it finds.",
+      "point": "orders",
+      "when": "day:8",
+      "until": "orders",
+      "teaches": ["command:ManTheWalls", "command:MarkSpot"]
+    },
+    {
       "id": "sellswords",
       "title": "Sellswords",
       "text": "Gold can buy an army too. Under [b]Sellswords[/b] in the [b]War[/b] tab, hire a mercenary company for a fee and a daily wage, and it stands on the walls with the watch. Once the town knows where a named menace sits, fund a campaign to march them against it. They can break its holds and even storm its seat, but only heroes can end the greatest foe. A company the treasury can't pay walks away.",

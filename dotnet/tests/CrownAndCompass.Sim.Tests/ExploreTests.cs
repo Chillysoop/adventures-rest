@@ -51,4 +51,33 @@ public class ExploreTests
         loaded.RunDays(30);
         Assert.Equal(Ledger(sim), Ledger(loaded));
     }
+
+    /// <summary>A spot the mayor marks is walked to and looked round, then the company comes home; one too near the town is refused.</summary>
+    [Fact]
+    public void CompanyLooksAtAMarkedSpot()
+    {
+        var sim = new Simulation(new SimulationOptions { Seed = 3, AutoBounties = true, AutoCouncil = true, AutoDefense = true, AutoPlanning = true, AutoExplore = false });
+        sim.RunDays(40);
+        var t = sim.Town;
+        t.Book(TreasuryAccount.Exploring, 500);
+        Assert.Null(sim.MarkSpot(0.1, 0.1));
+        var region = t.Regions.First(r => r.Ring == 0);
+        double a = region.Bearing * Math.PI / 180;
+        var (x, y) = (region.Days * Math.Sin(a), -region.Days * Math.Cos(a));
+        Assert.Equal(region.Id, Explore.RegionAt(t, x, y)!.Id);
+        var c = sim.MarkSpot(x, y);
+        Assert.NotNull(c);
+        Assert.NotNull(Explore.SpotBlocked(t, x + 0.05, y));
+        Survey? s = null;
+        for (int h = 0; h < 24 * 60 && (s == null || Explore.Out(s)); h++)
+        {
+            sim.Step();
+            s ??= t.Surveys.FirstOrDefault(v => v.CommissionId == c!.Id);
+            if (s != null && Explore.Waiting(t).FirstOrDefault(f => f.SurveyId == s.Id) is { } f) sim.OrderExplorers(f.Id, "home");
+        }
+        Assert.NotNull(s);
+        Assert.Equal(x, s!.SpotX);
+        Assert.NotEqual(SurveyPhase.Outbound, s.Phase);
+        Assert.Contains(s.Journal, j => j.Contains("spot the council marked", StringComparison.Ordinal));
+    }
 }

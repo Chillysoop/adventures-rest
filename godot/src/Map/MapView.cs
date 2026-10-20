@@ -65,6 +65,12 @@ public partial class MapView : Control
 
     /// <summary>The player clicked the map with the guard flag in hand.</summary>
     public event Action<Vector2>? FlagDropped;
+
+    /// <summary>The scout's mark is in hand: a left click, in either view, marks that spot for a company to look at.</summary>
+    public bool Scouting { get; set; }
+
+    /// <summary>The player clicked the map with the scout's mark in hand.</summary>
+    public event Action<Vector2>? SpotMarked;
     public bool Strategic { get; private set; }
     private float _strategic;
 
@@ -422,7 +428,7 @@ public partial class MapView : Control
                     _pressAt = mb.Position;
                     _dragging = false;
                     Pressed?.Invoke();
-                    if (Strategic && Placing == null && MarkerAt(mb.Position) is Marker m)
+                    if (Strategic && Placing == null && !Scouting && MarkerAt(mb.Position) is Marker m)
                     {
                         _grab = m;
                         _grabOffset = ToScreen(m.P) - mb.Position;
@@ -436,7 +442,8 @@ public partial class MapView : Control
                 else if (!_dragging)
                 {
                     var w = ToWorld(mb.Position);
-                    if (Flagging && !Strategic) FlagDropped?.Invoke(w);
+                    if (Scouting) SpotMarked?.Invoke(w);
+                    else if (Flagging && !Strategic) FlagDropped?.Invoke(w);
                     else if (Placing is MarkerKind kind)
                     {
                         var m = new Marker(kind, w, Sim.Town.Day);
@@ -465,7 +472,7 @@ public partial class MapView : Control
         else if (e is InputEventMouseMotion hover && hover.ButtonMask == 0)
         {
             HoverMarker = Strategic && Placing == null ? MarkerAt(hover.Position) : null;
-            MouseDefaultCursorShape = Placing != null || Flagging ? CursorShape.Cross : HoverMarker != null ? CursorShape.Move : CursorShape.Arrow;
+            MouseDefaultCursorShape = Placing != null || Flagging || Scouting ? CursorShape.Cross : HoverMarker != null ? CursorShape.Move : CursorShape.Arrow;
         }
         else if (e is InputEventMouseMotion carry && _grab != null && (carry.ButtonMask & MouseButtonMask.Left) != 0)
         {

@@ -58,6 +58,11 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["tab-library", "spell-book", mono],
   ["tab-build", "claw-hammer", mono],
   ["glossary", "open-book", mono],
+  // Quick orders over the corner map
+  ["order-defend", "guarded-tower", mono],
+  ["order-guard", "flying-flag", mono],
+  ["order-strike", "sword-brandish", mono],
+  ["order-scout", "spyglass", mono],
 ];
 
 for (const [name, glyph, tint] of icons) {

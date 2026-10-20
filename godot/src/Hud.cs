@@ -341,8 +341,9 @@ public partial class Main
         home.Pressed += () => _map.Recenter();
         tools.AddChild(home);
         corner.AddChild(tools);
+        corner.AddChild(BuildOrders());
 
-        var frame = new PanelContainer();
+        var frame = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ShrinkEnd };
         frame.AddThemeStyleboxOverride("panel", Castle.Oak(8, 8));
         var mini = new Minimap(_map) { CustomMinimumSize = new Vector2(220, 220) };
         frame.AddChild(mini);
