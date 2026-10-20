@@ -94,6 +94,8 @@ public partial class Main : Control
         else if (_opts.Day > 0) _sim.RunDays(_opts.Day);
         if (_opts.Hour > 0) for (int i = 0; i < _opts.Hour; i++) _sim.Step();
         _opts.ApplyScript(_sim);
+        _rosterPick = _opts.RosterPick ?? _rosterPick;
+        _offerAnswer = _opts.RosterAnswer ?? _offerAnswer;
         // Stories the script's hours brought are the stand-in mayor's, not cards to greet the shot with.
         if (_opts.Autoplay) _storySeen = _sim.Town.Stories.All.Count;
         SetSpeed(_opts.Speed ?? 1);

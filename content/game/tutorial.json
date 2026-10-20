@@ -165,6 +165,15 @@
       "teaches": ["tab:Companies", "command:BuyIntel"]
     },
     {
+      "id": "roster",
+      "title": "Pick a company for the job",
+      "text": "[b]Companies[/b] opens on the roster: every adventuring company in town with its power, loyalty, missions done and good deeds. Click a column to sort by it, and filter by who is ready or which classes ride with them. Pick a company and offer it a job by name. It weighs the pay, its temper, what it thinks of the council and the danger against its strength, then takes the job and marches at once, or tells you why not.",
+      "point": "tab:Companies",
+      "until": "tab:Companies",
+      "when": "count:Companies",
+      "teaches": ["command:OfferJob"]
+    },
+    {
       "id": "armory",
       "title": "Arm your heroes",
       "text": "The town hall keeps an [b]Armory[/b]. Give its magic arms, armour and charms to heroes in town to help them take on harder sites: they wear it at once, count it as pay and think better of you. A [b]sending stone[/b] lets a company with no caster send word home from the road. The armory fills from loot: post a bounty with [b]loot terms[/b] (a bigger reward, and the hoard's magic comes to the town), swear a company to a [b]loot pact[/b] for a finder's fee, or buy what heroes and caravans offer. Sell what nobody needs.",

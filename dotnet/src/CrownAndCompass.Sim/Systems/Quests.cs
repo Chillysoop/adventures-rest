@@ -437,7 +437,29 @@ public static class Quests
         PostBounty(town, target.Def.Id, reward);
     }
 
-    private static double Interest(Town town, Agent a, Bounty bounty, int partySize)
+    private static double Interest(Town town, Agent a, Bounty bounty, int partySize) =>
+        Motive(town, a, bounty, partySize) + town.Rng.Next() * 0.3;
+
+    /// <summary>What a hero makes of a bounty before the mood of the day: the pay against what they'd ask, their traits and the terms.</summary>
+    internal static double Motive(Town town, Agent a, Bounty bounty, int partySize) =>
+        // Summed term by term in this order, so the same heroes decide the same way they always have.
+        PayRatio(town, a, bounty, partySize) +
+        (a.Has(Trait.Greedy) ? 0.2 : 0) +
+        (a.Has(Trait.HotTempered) ? 0.15 : 0) +
+        (a.Has(Trait.Ambitious) ? 0.1 : 0) -
+        (a.Has(Trait.Lazy) ? 0.3 : 0) +
+        Systems.Terms.Interest(town, a, bounty) -
+        Armory.TermsCut(town, a, bounty);
+
+    /// <summary>How a hero's traits tilt them toward paid work.</summary>
+    internal static double Leaning(Agent a) =>
+        (a.Has(Trait.Greedy) ? 0.2 : 0) +
+        (a.Has(Trait.HotTempered) ? 0.15 : 0) +
+        (a.Has(Trait.Ambitious) ? 0.1 : 0) -
+        (a.Has(Trait.Lazy) ? 0.3 : 0);
+
+    /// <summary>A hero's share of the reward against the share that makes the work worth it to them.</summary>
+    internal static double PayRatio(Town town, Agent a, Bounty bounty, int partySize)
     {
         // Heroes judge a site by what the town believes of it, so a rumour that undersells it is deadly.
         int tier = Math.Max(1, Site(town, bounty.SiteId)!.BelievedTier);
@@ -445,15 +467,7 @@ public static class Quests
         double share = bounty.Reward / Math.Max(1, partySize) / Notoriety.FeeFactor(town, a);
         // A rich town and a seasoned hero both raise the share that makes the work worth it.
         double expected = tier * 40 * Wealth(town) * (1 + town.Content.Bounties.Pay.HeroLevel * a.Hero!.Level);
-        return
-            share / expected +
-            (a.Has(Trait.Greedy) ? 0.2 : 0) +
-            (a.Has(Trait.HotTempered) ? 0.15 : 0) +
-            (a.Has(Trait.Ambitious) ? 0.1 : 0) -
-            (a.Has(Trait.Lazy) ? 0.3 : 0) +
-            Systems.Terms.Interest(town, a, bounty) -
-            Armory.TermsCut(town, a, bounty) +
-            town.Rng.Next() * 0.3;
+        return share / expected;
     }
 
     public static bool Available(Agent a)
