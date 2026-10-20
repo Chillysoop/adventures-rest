@@ -384,6 +384,15 @@ public static class Passage
         var all = Barriers(town);
         if (desperate || all.Count == 0) return to;
         to = Clear(town, to);
+        // A doorstep on the bridge or in the gateway itself: reach that opening's end on this side, then walk along it.
+        foreach (var b in all)
+            foreach (var o in b.Openings)
+            {
+                if (!OnBarrier(b, to) || SegDist(to, o.In, o.Out) >= 0.35) continue;
+                if (SegDist(from, o.In, o.Out) < 0.35) return to;
+                var end = Inside(b.Loop, from.X, from.Y) ? o.In : o.Out;
+                return Dist(from, end) < 0.05 ? to : Next(town, from, end);
+            }
         Barrier? cross = null;
         bool outward = false;
         foreach (var b in all)

@@ -92,19 +92,26 @@ public static class Shrines
         return 0.15 + (a.Devout ? 0.55 : 0) + (a.LastDayMood < 50 ? 0.2 : 0) + a.Loneliness / 100 * 0.3;
     }
 
-    public static void Pray(Town town, Agent a)
+    /// <summary>Pray at their own god's house, else the nearest; false when it was full and nowhere near had room (<see cref="Crowds"/>).</summary>
+    public static bool Pray(Town town, Agent a)
     {
-        var holy = Faith.PlaceFor(town, a) ?? HolyPlace(town);
-        if (holy == null) return;
-        a.LocationId = holy.Id;
+        // Their own god's house first, its temple before its shrines; else the nearest.
+        var holy = Crowds.PlacesOf(town, Crowds.Holy);
+        if (holy.Count == 0) return true;
+        var from = Crowds.From(town, a);
+        string faith = a.Faith ?? "";
+        double Cost(Building b) =>
+            Crowds.Distance(town, b, from) + (faith != "" && town.Faiths.Dedications.Get(b.Id, "") == faith ? (b.Def.Id == Rules(town).Temple ? -2e6 : -1e6) : 0);
+        if (Crowds.Enter(town, a, holy, Cost) == null) return false;
         a.Loneliness = Math.Max(0, a.Loneliness - 2);
         a.PrayedToday = true;
         double offering = Rules(town).Offering;
         if (a.Gold >= offering * 10)
         {
             a.Gold -= offering;
-            holy.Cash += offering;
+            town.Building(a.LocationId!.Value).Cash += offering;
         }
+        return true;
     }
 
     // The day -------------------------------------------------------------------------------------

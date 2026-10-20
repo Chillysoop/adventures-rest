@@ -1,0 +1,21 @@
+{
+  "visitFrom": 9,
+  "visitUntil": 21,
+  "visitBase": 0.15,
+  "visitWanted": 0.25,
+  "visitLonely": 0.4,
+  "visitGregarious": 0.1,
+  "visitCompany": 3,
+  "visitMood": 0,
+  "turnedAwayMood": 8,
+  "keeper": 0.1,
+  "detour": 10,
+  "coverageLoss": 0.5,
+  "demand": 1.0,
+  "alertShare": 0.2,
+  "alertTurnedAway": 8,
+  "names": {
+    "tavern": "Taverns", "holy": "Houses of the gods", "bath": "Bathhouses", "theatre": "Theatres",
+    "market": "Market halls", "learning": "Libraries", "spectacle": "The arena"
+  }
+}

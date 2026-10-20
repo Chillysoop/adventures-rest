@@ -76,6 +76,7 @@ public static class Alerts
     public static readonly AlertKind Institution = new("institution", "Institutions", "favour", AlertLevel.Decision, AlertWindow.Institutions);
     public static readonly AlertKind Heroes = new("heroes", "Restless heroes", "heroes", AlertLevel.Decision, AlertWindow.None);
     public static readonly AlertKind Housing = new("housing", "Housing", "homeless", AlertLevel.Minor, AlertWindow.Council);
+    public static readonly AlertKind Crowded = new("crowded", "Full to the doors", "population", AlertLevel.Minor, AlertWindow.None);
     public static readonly AlertKind Work = new("work", "Idle hands", "population", AlertLevel.Decision, AlertWindow.City);
     public static readonly AlertKind Settlers = new("settlers", "No settlers", "population", AlertLevel.Decision, AlertWindow.City);
     public static readonly AlertKind Loot = new("loot", "Loot for sale", "gold", AlertLevel.Decision, AlertWindow.Armory);
@@ -86,10 +87,10 @@ public static class Alerts
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Sighted, Captives, Doom, Crisis, Fear, Hunger, Coffers, Underfunded, Unrest, Hostile, Motion, Fealty, Clash, Traitor, Plot, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Bastion, Institution, Heroes, Neighbour, Loot, Stalled, Work, Settlers, Below, Scholars, Trade, Gifts, Outpost, Housing];
+        [Siege, Sighted, Captives, Doom, Crisis, Fear, Hunger, Coffers, Underfunded, Unrest, Hostile, Motion, Fealty, Clash, Traitor, Plot, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Bastion, Institution, Heroes, Neighbour, Loot, Stalled, Work, Settlers, Below, Scholars, Trade, Gifts, Outpost, Housing, Crowded];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
-    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Hostility, Winter, Growth, Routes, Region, Undercity, Study, Loyalty, Armoury, Homes, Sites, Keepers, Outposts];
+    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Hostility, Winter, Growth, Routes, Region, Undercity, Study, Loyalty, Armoury, Homes, Sites, Crowds, Keepers, Outposts];
 
     public static List<Alert> Standing(Town town) => Rules.SelectMany(r => r(town)).ToList();
 
@@ -317,6 +318,43 @@ public static class Alerts
             if (Armory.Takers(t, s.Item).FirstOrDefault().Hero is { } a)
                 yield return new($"gift:{s.Id}:{a.Id}", Gifts, $"Give the {Gear.Plainly(s.Item)} to {a.GivenName}",
                     Armory.IsStone(t, s.Item) ? $"With a sending stone their company can send word home without a caster's spell slot. Give it in the Armory window." : $"It would serve {a.Name} better than what they carry. Give it in the Armory window.", AgentId: a.Id);
+    }
+
+    /// <summary>Taverns, shrines, bathhouses and the like so full yesterday that townsfolk were turned away at the door, while the player can add room.</summary>
+    private static IEnumerable<Alert> Crowds(Town t)
+    {
+        foreach (var (kind, away, busiest) in Systems.Crowds.Crowded(t))
+        {
+            string what = t.Content.Crowds.Names.TryGetValue(kind, out var n) ? n : kind;
+            string service = busiest.Def.Serves.Keys.Order(StringComparer.Ordinal).FirstOrDefault() ?? kind;
+            string? fix;
+            var aim = busiest;
+            if (busiest.Def.IsBusiness && !busiest.Def.Civic && !busiest.Def.Holy)
+                fix = $"Townsfolk open another {busiest.Def.Name.ToLowerInvariant()} where there is commercial land: paint some from the Build bar (B) near the crowd.";
+            else if (kind == Systems.Crowds.Holy)
+            {
+                // Houses of the gods grow into the temple, its nave, then the cathedral.
+                var temple = Shrines.Temple(t);
+                var nave = t.Content.Buildings.FirstOrDefault(d => d.PartOf == t.Content.Shrines.Temple && d.Capacity > 0);
+                var cathedral = t.Content.Buildings.FirstOrDefault(d => d.Id == "cathedral");
+                if (temple == null)
+                    fix = Shrines.TempleBlocked(t) is null or "not enough gold" ? "Build the temple from the Faith window: it holds many more." : null;
+                else if (nave != null && Monuments.Blocked(t, temple, nave) is null or "not enough gold")
+                {
+                    fix = $"Add the {nave.Name.ToLowerInvariant()} to {temple.Name}: select the temple to build onto it.";
+                    aim = temple;
+                }
+                else fix = cathedral != null && Planning.Blocked(t, cathedral) is null or "not enough gold" ? "Raise the cathedral from the Build bar (B)." : null;
+            }
+            else
+                fix = Planning.Blocked(t, busiest.Def) is null or "not enough gold"
+                    ? $"Raise another {busiest.Def.Name.ToLowerInvariant()} from the Build bar (B)."
+                    : null;
+            if (fix == null) continue;
+            yield return new($"crowded:{kind}", Crowded, $"{what} full",
+                $"{away} townsfolk found {what.ToLowerInvariant()} full yesterday and had to think again, and the houses that want {City.ServiceName(t, service)} grow slower. {fix}",
+                BuildingId: aim.Id);
+        }
     }
 
     private static IEnumerable<Alert> Homes(Town t)

@@ -114,7 +114,7 @@ public static class Property
             if (house.Complete && City.Housing(town, house.Def.Id) is { } h && (h.Services.Contains(service) || HousingWants(town, h, service))) users += house.Residents.Count;
         if (users < d.Serves[service] * 0.3) return 0;
         if (capacity == 0) return 2.0;
-        return users / capacity;
+        return users / capacity + Crowds.Demand(town, service);
     }
 
     /// <summary>Families a step below want what the next house up needs, so the town builds ahead of them.</summary>
@@ -125,7 +125,7 @@ public static class Property
     {
         int taverns = town.Buildings.Count(b => b.Def.Venue && !b.ForSale);
         if (taverns == 0) return town.Population >= 12 ? 3.0 : 0.5;
-        return town.Population / (taverns * 40.0);
+        return town.Population / (taverns * 40.0) + Crowds.Demand(town, Crowds.Tavern);
     }
 
     /// <summary>A general store lives on heroes buying potions before they march.</summary>
