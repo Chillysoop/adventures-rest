@@ -483,7 +483,10 @@ public static class Powers
 
     // The stand-in mayor -------------------------------------------------------------------------
 
-    /// <summary>Outbid an enemy when it is cheap enough to, and buy one good ally once the treasury can carry its tithe.</summary>
+    /// <summary>
+    /// Outbid an enemy when it is cheap enough to. The stand-in mayor never buys an alliance: a tithe drains the
+    /// gold the town's bounties and armory need, so allies are the player's own call.
+    /// </summary>
     private static void Steward(Town town)
     {
         foreach (var p in town.Powers.Where(p => p.CourtedBy != null).OrderBy(p => p.Id, StringComparer.Ordinal))
@@ -491,12 +494,5 @@ public static class Powers
             var cost = GiftCost(town, p.Id);
             for (int i = 0; i < 4 && Resolve(town, p) < p.Offer && town.Treasury >= cost * 3 + 1000; i++) Court(town, p.Id);
         }
-        if (Allies(town).Count() >= 2) return;
-        var pick = town.Powers
-            .Where(p => AllyBlocked(town, p.Id) == null && !Def(town, p.Id).Evil)
-            .Where(p => town.Treasury >= Def(town, p.Id).Price + Def(town, p.Id).Tithe * 150 + 2000)
-            .OrderByDescending(p => Def(town, p.Id).Ally.Defence).ThenBy(p => p.Id, StringComparer.Ordinal)
-            .FirstOrDefault();
-        if (pick != null) Ally(town, pick.Id);
     }
 }
