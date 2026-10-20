@@ -80,7 +80,7 @@ public static class Planning
 
     /// <summary>What the player can place on a lot: government works, charter houses, and town-owned businesses.</summary>
     public static IEnumerable<BuildingDef> Placeable(Town town) =>
-        town.Content.Buildings.Where(d => IsGovernment(town, d) || d.Id == "house" || (d.Buildable && d.IsBusiness));
+        town.Content.Buildings.Where(d => !d.IsPart && (IsGovernment(town, d) || d.Id == "house" || (d.Buildable && d.IsBusiness)));
 
     /// <summary>Built and run by the town, never by its townsfolk.</summary>
     public static bool IsGovernment(Town town, BuildingDef d) => d.Civic || d.Id == town.Content.Shrines.Temple || SightWork(town, d.Id) != null;
@@ -169,9 +169,10 @@ public static class Planning
             town.Log(LedgerCategory.Town, Importance.Major, $"The council breaks ground on a grand work, {work.Name}, beginning with {d.Stages[0].Name}. It will rise in {d.Stages.Count} stages, each paid for as the last is done.");
             return work;
         }
-        town.Book(d.Id == "house" ? TreasuryAccount.CharterHouses : TreasuryAccount.Works, -cost);
-        BuyMaterials(town, d);
+        // The council's timber and stone come off the market as the haulers carry them (Construction.Haul), so the work can stall.
+        town.Book(d.Id == "house" ? TreasuryAccount.CharterHouses : TreasuryAccount.Works, -(cost - Materials(town, d)));
         var site = town.AddBuilding(d, lot, null, name, false);
+        site.Draws = true;
         site.LaborBudget = Construction.Hours(town, d) * Brain.ConstructionWage;
         if (d.IsBusiness) site.Cash = StartingCash;
         town.Log(

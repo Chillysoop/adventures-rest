@@ -111,7 +111,8 @@ public static class GrandWorks
 
     // What standing works do ------------------------------------------------------------------
 
-    private static IEnumerable<Building> Standing(Town town) => town.Buildings.Where(b => b.Def.IsGrand && b.Complete);
+    /// <summary>Standing grand works, and monuments' parts, which lend their comfort, draw and hero beds the same way.</summary>
+    private static IEnumerable<Building> Standing(Town town) => town.Buildings.Where(b => (b.Def.IsGrand || b.Def.IsPart) && b.Complete);
 
     /// <summary>Added to every house's contentment.</summary>
     public static double Comfort(Town town) => Standing(town).Sum(b => b.Def.Comfort);

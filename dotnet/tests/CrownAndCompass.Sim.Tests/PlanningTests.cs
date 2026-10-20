@@ -111,7 +111,7 @@ public class PlanningTests
         var tavern = sim.Place("tavern", x, y, 1.0)!;
         int streets = t.Plan.Streets.Count;
         Assert.True(Streets.Offroad(t, tavern));
-        sim.RunDays(6);
+        sim.RunDays(4);
         // A path shows where the builders and drinkers walk, but it is no lane yet.
         Assert.Equal(streets, t.Plan.Streets.Count);
         Assert.Contains(t.Plan.Worn, w => w > 0.2f);
