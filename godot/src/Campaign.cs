@@ -92,7 +92,7 @@ public partial class Main
             var (word, color) = MenaceStages[m.Stage];
             string march = m.ArrivalTick is int at && at > t.Tick ? "  " + Tag($"marching, {Ui.Days((int)Math.Ceiling((at - t.Tick) / 24.0))} out", Ui.Bad) : "";
             string held = m.Holdings.Count > 0 ? $" It holds {m.Holdings.Count} more {(m.Holdings.Count == 1 ? "lair" : "lairs")}." : "";
-            FoeCard(p, [m], $"{Ui.KindIcon(m.Kind, 20)}[b]{Ui.Esc(Ui.Cap(m.Name))}[/b]  {Tag(word, color)}  {Tag($"level {m.Level}")}{march}\n{Leader(m)}{Tag(Menaces.CunningOf(t, m).Name)}  {Tag(Menaces.AmbitionOf(t, m).Name)}{Heirs(t, m)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Annals.Motive(t, m))} {Ui.Esc(Wants(t, m))} {Seat(t, m)}{held}[/font_size]")}{Remembers(t, m)}{LastHeard(t, m)}{Plan(t, m)}{Assets(t, m)}", color);
+            FoeCard(p, [m], $"{Ui.KindIcon(m.Kind, 20)}[b]{Ui.Esc(Ui.Cap(m.Name))}[/b]  {Tag(word, color)}  {Tag($"level {m.Level}")}{march}\n{Leader(m)}{Tag(Menaces.CunningOf(t, m).Name)}  {Tag(Menaces.AmbitionOf(t, m).Name)}{Heirs(t, m)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Annals.Motive(t, m))} {Ui.Esc(Wants(t, m))} {Seat(t, m)}{held}[/font_size]")}{Remembers(t, m)}{LastHeard(t, m)}{Plan(t, m)}{Assets(t, m)}{Backers(t, m)}", color);
         }
         p.Note("A threat grows while nobody clears its seat, as far as its wits allow: a beast only hunts, a dull band takes a valley and stops, a cunning or masterful leader builds a domain and can become the big bad. What it wants decides what it does to the town. Clearing the seat breaks it, and it falls back to a lair it holds.");
 
@@ -231,6 +231,17 @@ public partial class Main
             return $"{name}{where}";
         });
         return $"\n[font_size=12]{Tag("Rests on")} {Ui.Esc(string.Join(" · ", parts))}[/font_size]";
+    }
+
+    /// <summary>The minor powers it has bought, or is courting.</summary>
+    private static string Backers(Town t, Menace m)
+    {
+        var bought = Powers.Backing(t, m).Select(p => Powers.Name(t, p)).ToList();
+        var courting = t.Powers.Where(p => p.CourtedBy == m.Id).Select(p => Powers.Name(t, p)).ToList();
+        string line = "";
+        if (bought.Count > 0) line += $"\n[font_size=12]{Tag("Backed by", Ui.Bad)} {Ui.Esc(string.Join(" · ", bought))}[/font_size]";
+        if (courting.Count > 0) line += $"\n[font_size=12]{Tag("Courting", Ui.Gold)} {Ui.Esc(string.Join(" · ", courting))}[/font_size]";
+        return line;
     }
 
     /// <summary>Whose heirs it is in the world's history.</summary>

@@ -1,0 +1,112 @@
+{
+  "_doc": "Minor powers (Systems/Powers.cs): strong outside factions with a leader, a goal and a price, who side with the town or with one of its enemies. Standing settles toward base plus each liked signal (0-1, see Powers.Signal) times its weight, plus the favour the town's gifts bought (which fades by favourFade a day). At allyAt the town can pay price and then tithe a day for the ally boon; a town ally whose standing falls below leaveBelow, or whose tithe goes unpaid lapseDays, walks away. Allying angers its rivals by rivalHit. From courtFrom on, every courtEvery days the strongest risen enemy whose wits allow it courts one power that serves (serves 'any', the enemy's kind not in shuns): its offer is its power times its wits (cunning) times offerPerPower; if that beats the power's standing (plus allyResist when it is the town's ally) word comes through a witness and the town has noticeDays to raise standing past the offer with gifts (giftCost gold, giftFavour favour, each gift worth giftFalloff less than the last until they fade). Otherwise it joins that enemy: it arms it daily, skims the treasury, strikes with a Blows kind every strikeEvery days and adds host to the enemy's army at the walls. It goes back to neutral (standing reset to freedFavour favour) when that enemy dies, or comes back to the town early once standing reaches winBack. Each enemy takes at most perEnemy powers. Every power needs a library faction (ref) and a faction lineage in history.json.",
+  "courtFrom": 60,
+  "courtEvery": 45,
+  "noticeDays": 8,
+  "offerPerPower": 0.14,
+  "cunning": { "mindless": 0, "crafty": 0.6, "cunning": 1, "mastermind": 1.5 },
+  "allyResist": 25,
+  "perEnemy": 2,
+  "drift": 2,
+  "favourFade": 0.25,
+  "giftFavour": 12,
+  "giftFalloff": 0.35,
+  "giftMemory": 20,
+  "lapseDays": 5,
+  "leaveBelow": 5,
+  "rivalHit": 20,
+  "winBack": 40,
+  "freedFavour": -15,
+  "warnText": "{witness} brings the watch word from {name} just in time: {by} had people in the town tonight, and they are taken before they can strike.",
+  "powers": [
+    {
+      "id": "black-ledger", "ref": "black-ledger", "face": "bandit", "title": "Factor-General", "leader": "Corvane Mardt",
+      "goal": "wants every road on the frontier to pay the Ledger a toll, and every debt collected",
+      "seat": "its counting-house in the Free Ports",
+      "witness": "a Ledger factor drinking in the tavern",
+      "evil": true, "serves": "any", "shuns": [],
+      "base": -5, "likes": { "wealth": 25, "routes": 25 },
+      "allyAt": 30, "price": 450, "tithe": 5, "gift": 60,
+      "ally": { "defence": 25, "income": 9, "text": "a share of the Ledger's trade paid into the treasury, and its blades on the walls" },
+      "enemy": { "arm": 0.6, "skim": 4, "host": 35, "strike": "treasury", "strikeEvery": 50, "text": "Ledger arms for {enemy}, and smugglers skimming the treasury" }
+    },
+    {
+      "id": "silent-knife", "ref": "silent-knife", "face": "hooded-assassin", "title": "guildmaster", "leader": "the Mask Who Waits",
+      "goal": "wants contracts, gold, and no one asking where it sleeps",
+      "seat": "no hall anyone can find",
+      "witness": "a frightened go-between who wants it known he had no part",
+      "evil": true, "serves": "any", "shuns": [],
+      "base": -10, "likes": { "wealth": 30 },
+      "allyAt": 25, "price": 550, "tithe": 4, "gift": 70,
+      "ally": { "contract": 60, "cut": 0.15, "text": "one of the worst enemy's captains killed every season" },
+      "enemy": { "strike": "assassinate", "strikeEvery": 45, "text": "a knife in the night for one of the town's own every season" },
+      "contractText": "Word comes by a nameless boy with a black ribbon: one of {enemyLeader}'s captains was found in the morning with a dagger that casts no shadow. {enemy} is the weaker for it."
+    },
+    {
+      "id": "lanternbearers", "ref": "lanternbearers", "face": "spy", "title": "Lamplighter", "leader": "Wren Halloway",
+      "goal": "wants no tyrant, cult or fiend to rule the frontier",
+      "seat": "nowhere, and every inn with a lantern in the window",
+      "witness": "a travelling singer with a lantern pin inside her collar",
+      "evil": false, "serves": "none", "shuns": [],
+      "base": 15, "likes": { "slain": 30, "infamy": -40, "dark": -30 },
+      "allyAt": 30, "price": 250, "tithe": 2, "gift": 40,
+      "ally": { "defence": 10, "warn": 0.35, "text": "warnings to the watch, so a third of enemy agents' blows are stopped" },
+      "enemy": { "text": "nothing: it never serves the town's enemies" }
+    },
+    {
+      "id": "crown-league", "ref": "crown-league", "face": "crown", "title": "League Marshal", "leader": "Marshal Edrith Vane",
+      "goal": "wants every town on the frontier walled, garrisoned and sworn to answer the beacons",
+      "seat": "the beacon-tower at Harrowgate",
+      "witness": "a League herald in a ring-of-towers tabard",
+      "evil": false, "serves": "none", "shuns": [],
+      "base": 5, "likes": { "walls": 25, "growth": 20, "dark": -35 },
+      "allyAt": 35, "price": 700, "tithe": 9, "gift": 80,
+      "ally": { "defence": 70, "text": "League levies standing on the walls" },
+      "enemy": { "text": "nothing: it never serves the town's enemies" }
+    },
+    {
+      "id": "vermilion-conclave", "ref": "vermilion-conclave", "face": "warlock-hood", "title": "Scarlet Archmagister", "leader": "Archmagister Seraphel Quill",
+      "goal": "wants an enclave in every rich town, and first claim on every relic dug out of the wilds",
+      "seat": "the Vermilion Spire on the old Caldor road",
+      "witness": "an apprentice who ran from the Spire",
+      "evil": true, "serves": "any", "shuns": [],
+      "base": -5, "likes": { "wealth": 15, "growth": 15, "heroes": 15 },
+      "allyAt": 30, "price": 950, "tithe": 10, "gift": 90,
+      "ally": { "defence": 45, "text": "war-mages and wards on the walls" },
+      "enemy": { "arm": 0.4, "host": 55, "strike": "stores", "strikeEvery": 55, "text": "war-mages marching with {enemy}, and curses on the town's stores" }
+    },
+    {
+      "id": "ember-court", "ref": "ember-court", "face": "dragon-head", "title": "Ember Queen", "leader": "Ysmeralt, last daughter of Vermithrax",
+      "goal": "wants a hoard worthy of her father, and every lesser wyrm gone from her sky",
+      "seat": "the Ember Court in the smoking peaks",
+      "witness": "a kobold who fled the Court with singed scales",
+      "evil": true, "serves": "any", "shuns": ["dragon"],
+      "base": -15, "likes": { "wealth": 35, "slain": 10 },
+      "allyAt": 30, "price": 2600, "tithe": 26, "gift": 250,
+      "ally": { "defence": 140, "text": "the Ember Queen herself over the walls when a host comes" },
+      "enemy": { "arm": 0.5, "host": 160, "strike": "burn", "strikeEvery": 40, "text": "the Ember Queen flying with {enemy}'s host, and fire on the roofs" }
+    },
+    {
+      "id": "mire-grandmothers", "ref": "mire-grandmothers", "face": "witch-face", "title": "eldest of the coven", "leader": "Granny Wormwood",
+      "goal": "wants bargains struck and favours owed, and a town afraid enough to come asking",
+      "seat": "a stilt-house in the drowned fens",
+      "witness": "a hedge-witch who will not say how she knows",
+      "evil": true, "serves": "any", "shuns": [],
+      "base": -10, "likes": { "dread": 30, "growth": 10 },
+      "allyAt": 20, "price": 380, "tithe": 3, "gift": 50,
+      "ally": { "hex": 0.8, "text": "a hex on the worst enemy, so its strength withers a little each day" },
+      "enemy": { "arm": 0.3, "strike": "stores", "strikeEvery": 50, "text": "rot in the town's stores and blight in its fields" }
+    }
+  ],
+  "text": {
+    "courted": "{witness} says envoys of {enemy} have been seen at {seat}, offering {name} gold and promises. An answer is due in {days} days.",
+    "refused": "{witness} says {name} sent {enemy}'s envoys away empty-handed. {town} can breathe easier.",
+    "turned": "{witness} says {name} took {enemy}'s gold. Expect {act}.",
+    "allied": "{leader}, {title} of {name}, takes {town}'s gold and gives their word: {boon}.",
+    "left": "{name} broke with {town}: {why}.",
+    "broke": "The council sends {name} word that {town} no longer needs them. {leader} takes the news coldly.",
+    "freed": "{witness} says {name} gave up {enemy}'s cause, with no one left to pay for it.",
+    "wonBack": "{witness} says {name} turned their back on {enemy}. {town}'s gifts outweighed the enemy's gold.",
+    "hexed": "The Grandmothers' hex lies on {enemy}: its warriors sicken in their camps."
+  }
+}

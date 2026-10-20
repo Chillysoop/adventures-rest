@@ -287,6 +287,7 @@ public static class TreasuryAccount
     public const string Stories = "Stories";
     public const string GrandWorks = "Grand works";
     public const string Mercenaries = "Mercenaries";
+    public const string Powers = "Minor powers";
     public const string Decrees = "Decrees";
     public const string Trade = "Trade";
     public const string Armory = "Armory";
@@ -424,6 +425,9 @@ public sealed class Town
 
     /// <summary>Sellsword companies under contract to the town (<see cref="Systems.Mercenaries"/>).</summary>
     public List<Hire> Hires { get; } = [];
+
+    /// <summary>The minor powers and whose side each is on (<see cref="Systems.Powers"/>).</summary>
+    public List<PowerState> Powers { get; } = [];
 
     /// <summary>Free scryings from the Scrying Pool used today.</summary>
     public int FreeScryingsUsed { get; set; }
