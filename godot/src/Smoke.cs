@@ -7,7 +7,7 @@ namespace CrownAndCompass.Client;
 /// <summary>
 /// With --smoke: the merge gate's play-through of a build (<c>scripts/gate.ts</c>). From the main menu it
 /// starts a new town, plays on at top speed, opens every window, the build bar, the campaign map, a wall and a guard flag and the
-/// game menu, saves and loads, starts the tutorial, opens the History and the glossary with a pinned keyword card, steps into a story event and answers a party's sending, a few frames apart so each one draws. It prints
+/// game menu, saves and loads, starts the tutorial, opens the History and the glossary with a pinned keyword card, steps into a story event and answers a party's sending, opens the recap and a tavern tale, a few frames apart so each one draws. It prints
 /// <c>SMOKE OK</c> and quits with 0, or <c>SMOKE FAIL</c> and 1; the gate also fails on any engine error.
 /// </summary>
 public partial class Main
@@ -159,6 +159,21 @@ public partial class Main
                 return 70;
             case 28:
                 CloseFind();
+                // "Last time in...", as a loaded game opens with it.
+                OpenRecap(Math.Max(1, _sim.Town.Day - 15), "Welcome back");
+                return 10;
+            case 29:
+                if (!_recap.Visible) throw new InvalidOperationException("the recap did not open");
+                _recap.Visible = false;
+                // A delve told at the tavern, skipped to its big moment so its roll and map draw.
+                if (_sim.Town.Chronicles.LastOrDefault(c => c.Beats.Count > 0) is { } tale)
+                {
+                    OpenTale(tale.Id);
+                    SkipTaleTo(null);
+                }
+                return 40;
+            case 30:
+                CloseTale();
                 return 5;
             default:
                 var t = _sim.Town;

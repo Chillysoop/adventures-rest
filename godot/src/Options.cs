@@ -125,6 +125,11 @@ public sealed class Options
     /// <summary>--find: leave explorers' reports to the player and open the first one waiting; --find-pick ACT answers it.</summary>
     public bool Find;
 
+    /// <summary>--tales: companies tell their tales even with the stand-in mayor; --tale N|last opens one; --recap shows the recap card.</summary>
+    public bool Tales, Recap;
+    public string? Tale;
+    public int? TaleAt;
+
     /// <summary>--strike: open the quick orders' Strike list over the corner map.</summary>
     public bool Strike;
     public string? FindPick;
@@ -208,6 +213,10 @@ public sealed class Options
                 case "--decor": o.DecorTool = Next(); break;
                 case "--story": o.Story = Next(); break;
                 case "--find": o.Find = true; break;
+                case "--tales": o.Tales = true; break;
+                case "--tale": o.Tale = Next(); break;
+                case "--tale-at": o.TaleAt = int.Parse(Next()); break;
+                case "--recap": o.Recap = true; break;
                 case "--find-pick": o.FindPick = Next(); break;
                 case "--story-pick": o.StoryPick = int.Parse(Next()); break;
                 case "--background": o.Background = Next(); break;

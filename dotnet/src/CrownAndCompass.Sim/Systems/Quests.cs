@@ -207,6 +207,14 @@ public sealed record Chronicle(
     IReadOnlyList<string> Lines,
     bool GoalMet = false)
 {
+    /// <summary>The moments worth telling at the tavern (<see cref="TaleBeat"/>), the heroes by id, and who did not come home.</summary>
+    public IReadOnlyList<TaleBeat> Beats { get; init; } = [];
+    public IReadOnlyList<int> MemberIds { get; init; } = [];
+    public IReadOnlyList<int> Dead { get; init; } = [];
+
+    /// <summary>The bounty paid them, and what they split.</summary>
+    public int Gold { get; init; }
+
     /// <summary>How it ended in a word: a party that pulled out with what the bounty asked for (captives, the fallen, the hoard) got the job done.</summary>
     public string Verdict => GoalMet && Outcome == ExpeditionOutcome.Retreated ? "job done" : Outcome.ToString().ToLowerInvariant();
 
@@ -355,6 +363,7 @@ public static class Quests
     public static void Daily(Town town, bool autoMayor, bool companies = true)
     {
         ReturnParties(town);
+        Voices.Forsworn(town);
         HeroArrivals(town);
         LodgingAndRest(town);
         Gear.Shop(town);
@@ -452,7 +461,8 @@ public static class Quests
         (a.Has(Trait.Ambitious) ? 0.1 : 0) -
         (a.Has(Trait.Lazy) ? 0.3 : 0) +
         Systems.Terms.Interest(town, a, bounty) -
-        Armory.TermsCut(town, a, bounty);
+        Armory.TermsCut(town, a, bounty) +
+        (a.Hero!.Vow == bounty.SiteId ? town.Content.Voices.VowPull : 0);
 
     /// <summary>How a hero's traits tilt them toward paid work.</summary>
     internal static double Leaning(Agent a) =>
@@ -626,7 +636,12 @@ public static class Quests
                 town.Day,
                 result.Outcome,
                 result.Lines,
-                result.GoalMet && result.Outcome != ExpeditionOutcome.Wiped);
+                result.GoalMet && result.Outcome != ExpeditionOutcome.Wiped)
+            {
+                Beats = result.Beats,
+                MemberIds = members.Select(m => m.Id).ToList(),
+                Dead = result.Dead,
+            };
             town.Chronicles.Add(chronicle);
 
             // Bodies carried home can be raised at the temple; a wiped party leaves nobody to carry them.
@@ -734,7 +749,13 @@ public static class Quests
                        (result.Dead.Count > 0 ? $", carrying {(result.Dead.Count == 1 ? $"{deadNames}'s body" : $"the bodies of {deadNames}")}." : ".");
             }
             if (party.Withheld) text += Intel.Keeping;
+            town.Chronicles[^1] = chronicle with { Gold = (int)Js.Round(pay) };
             town.Log(LedgerCategory.Quest, Importance.Major, $"{text} (Chronicle {chronicle.Id})", members.Select(m => m.Id).ToList());
+            // The fallen are buried (or mourned, with nobody to carry them home), a friend may swear to finish
+            // what killed them, and the living come home with new names for each other.
+            Voices.Funeral(town, dead.Select(town.Agent).ToList(), survivors, s.Def.Id, s.Def.Name, result.Outcome != ExpeditionOutcome.Wiped);
+            if (result.Outcome == ExpeditionOutcome.Cleared) Voices.Cleared(town, s.Def.Id, s.Def.Name, survivors);
+            Voices.Jokes(town, party.Name, result.Gags, survivors);
             // A company lost to the last hero: their gear lies with them, and a card asks whether to go after it.
             if (result.Outcome == ExpeditionOutcome.Wiped) Stories.Lost(town, Remains.Lie(town, party, s, members), party);
             foreach (var (rite, id) in rites) town.Log(LedgerCategory.Faith, Importance.Major, rite, [id]);
@@ -743,7 +764,10 @@ public static class Quests
             {
                 if (it.HeroId == null) Watch.ReceiveRelic(town, it.Item, party.Name);
                 else if (survivors.Any(m => m.Id == it.HeroId) && !Armory.HandIn(town, party, bounty, town.Agent(it.HeroId.Value), it.Item))
+                {
                     Gear.Claim(town, town.Agent(it.HeroId.Value), it.Item);
+                    Moments.Claimed(town, town.Agent(it.HeroId.Value), it.Item, party.Name, s, survivors);
+                }
             }
         }
     }
@@ -768,6 +792,7 @@ public static class Quests
             };
             town.Log(LedgerCategory.Quest, fame != "" ? Importance.Major : Importance.Notable, $"{a.Name} reaches level {s.Level}.{fame}", [a.Id]);
             Notoriety.Leveled(town, a, s.Level);
+            Moments.Leveled(town, a, s.Level, before);
         }
     }
 }
