@@ -981,6 +981,9 @@ public sealed record TerrainKindDef
     public double Ambush { get; init; }
     public IReadOnlyList<string> Habitats { get; init; } = [];
     public IReadOnlyList<string> AmbushText { get; init; } = [];
+
+    /// <summary>"water" (a lake) or "sheer" (cliffs and peaks): nobody walks across, only flies, swims or climbs (<see cref="Systems.Passage"/>); "" for country anyone can.</summary>
+    public string Barrier { get; init; } = "";
 }
 
 public sealed record TerrainHazardDef
@@ -1277,6 +1280,9 @@ public sealed class Content
     /// <summary>Fame and infamy for heroes and companies (content/game/notoriety.json).</summary>
     public NotorietyRules Notoriety { get; init; } = new();
 
+    /// <summary>Walls, moats, the river and the ground nobody crosses on foot, and what crosses it anyway (content/game/passage.json).</summary>
+    public PassageRules Passage { get; init; } = new();
+
     /// <summary>The ladders the client's odds, threat and stakes bars read (content/game/assess.json).</summary>
     public AssessRules Assess { get; init; } = new();
 
@@ -1452,6 +1458,7 @@ public sealed class Content
             Merchants = Parse<MerchantRules>("merchants.json"),
             Wards = Parse<WardRules>("wards.json"),
             Notoriety = Parse<NotorietyRules>("notoriety.json"),
+            Passage = Parse<PassageRules>("passage.json"),
             Assess = Parse<AssessRules>("assess.json"),
             Skills = Parse<SkillRules>("skills.json"),
             Crises = Parse<CrisisRules>("crises.json"),

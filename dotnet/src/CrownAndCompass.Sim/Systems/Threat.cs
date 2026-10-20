@@ -85,6 +85,10 @@ public sealed class Defenses
     public int Barracks { get; set; }
     public List<int> BarracksBuilding { get; set; } = [];
 
+    /// <summary>The building raiders last struck, and the tick its alarm ends: who is near it and outside the walls runs for their life (<see cref="Passage.Fleeing"/>).</summary>
+    public int? AlarmBuilding { get; set; }
+    public int AlarmUntil { get; set; }
+
     /// <summary>The innermost ring the walls leave outside: 1 behind stone walls, 2 behind the city wall, 99 with none.</summary>
     public int OutsideRing => CityWall == PalisadeState.Built ? 2 : StoneWall == PalisadeState.Built ? 1 : 99;
 }
@@ -285,6 +289,7 @@ public static class Threat
             return;
         }
         string where = target!.Name;
+        Passage.Alarm(town, target);
         local *= Garrison.FlagFactor(town, target);
         if (Garrison.Covered(town, target)) timing += ", where the watch had planted its flag";
 

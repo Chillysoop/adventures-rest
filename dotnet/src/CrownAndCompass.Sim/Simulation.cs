@@ -113,6 +113,7 @@ public sealed class Simulation
         Monuments.Daily(t);
         if (Options.AutoMayor && Options.AutoPlanning) Construction.Daily(t);
         Streets.Wear(t);
+        Paving.Daily(t);
         Property.Daily(t);
         Population.DailyDepartures(t);
         Population.DailyArrivals(t);
@@ -154,6 +155,7 @@ public sealed class Simulation
         Broadsheet.Daily(t, Options.AutoMayor && Options.AutoStories);
         Loyalty.Daily(t, Options.AutoMayor);
         Notoriety.Daily(t);
+        Passage.Daily(t);
         Decor.Daily(t);
         Stories.Daily(t, Options.AutoMayor && Options.AutoStories);
         Sheet.Daily(t, Options.AutoMayor && Options.AutoStories);

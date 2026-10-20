@@ -1802,7 +1802,7 @@ public partial class TownView(MapView map) : Node3D
 
     /// <summary>
     /// The lanes, the square and the trodden yards round buildings, painted into a texture the terrain
-    /// shader blends in as worn earth with ragged edges (r: lane, g: yard), so they lie on the hills.
+    /// shader blends in as worn earth with ragged edges (r: lane, g: yard, b: cobbles the masons have laid), so they lie on the hills.
     /// </summary>
     private void Ground(Town town)
     {
@@ -1810,6 +1810,7 @@ public partial class TownView(MapView map) : Node3D
         float px = 1f / (Land.Res * GroundUp);
         var lane = new float[n * n];
         var yard = new float[n * n];
+        var cobble = new float[n * n];
         void Stroke(float[] into, Vector2 a, Vector2 b, float half, float soft)
         {
             float reach = half + soft;
@@ -1830,6 +1831,24 @@ public partial class TownView(MapView map) : Node3D
         foreach (var r in town.Plan.Streets)
             for (int s = 0; s + 3 < r.Points.Length; s += 2)
                 Stroke(lane, new Vector2((float)r.Points[s], (float)r.Points[s + 1]), new Vector2((float)r.Points[s + 2], (float)r.Points[s + 3]), (float)Streets.Width * 0.36f, 0.09f);
+        // Cobbles, from the end the masons began at, as far as they have got.
+        foreach (var r in town.Plan.Streets)
+        {
+            if (r.Cobbled <= 0) continue;
+            double left = r.Cobbled;
+            int m = r.Points.Length;
+            for (int k = 0; k + 3 < m && left > 0; k += 2)
+            {
+                int i = r.FromEnd ? m - 2 - k : k, j = r.FromEnd ? i - 2 : i + 2;
+                var a = new Vector2((float)r.Points[i], (float)r.Points[i + 1]);
+                var b = new Vector2((float)r.Points[j], (float)r.Points[j + 1]);
+                float seg = a.DistanceTo(b);
+                if (seg <= 1e-5f) continue;
+                var end = left >= seg ? b : a + (b - a) * (float)(left / seg);
+                Stroke(cobble, a, end, (float)Streets.Width * (r.Square ? 0.5f : 0.4f), 0.05f);
+                left -= seg;
+            }
+        }
         // The square's trodden middle.
         for (int i = 0; i < n * n; i++)
             if (town.Plan.Paved[i / n / GroundUp * Land.Size + i % n / GroundUp] != 0) lane[i] = Mathf.Max(lane[i], 0.8f);
@@ -1865,6 +1884,7 @@ public partial class TownView(MapView map) : Node3D
         {
             bytes[i * 4] = (byte)(Mathf.Clamp(lane[i], 0, 1) * 255);
             bytes[i * 4 + 1] = (byte)(Mathf.Clamp(yard[i], 0, 1) * 255);
+            bytes[i * 4 + 2] = (byte)(Mathf.Clamp(cobble[i], 0, 1) * 255);
             bytes[i * 4 + 3] = 255;
         }
         var img = Image.CreateFromData(n, n, false, Image.Format.Rgba8, bytes);
@@ -2155,6 +2175,35 @@ public partial class TownView(MapView map) : Node3D
             mi.Visible = sight != Sight.Rumoured;
             mi.Position = map.Gen.At(pin, -0.05f);
         }
+        // The river's bridges, where roads cross it (its fords are shallows in the water itself).
+        var gen = map.Gen;
+        for (int i = 0; i < gen.Crossings.Count; i++)
+        {
+            var (c, at, flow) = gen.Crossings[i];
+            string id = $"crossing:{i}";
+            if (c.Kind != "bridge" || _landmarks.ContainsKey(id)) continue;
+            var across = new Vector2(-flow.Y, flow.X);
+            float deck = Mathf.Max(gen.SurfaceAt(at.X + across.X * 4.6f, at.Y + across.Y * 4.6f), gen.SurfaceAt(at.X - across.X * 4.6f, at.Y - across.Y * 4.6f)) + 0.1f;
+            var mi = new MeshInstance3D { Mesh = Bridge(deck, i == 0), MaterialOverride = Mats.Props };
+            AddChild(mi);
+            _landmarks[id] = mi;
+            mi.Position = new Vector3(at.X, 0, at.Y);
+            mi.Rotation = new Vector3(0, Mathf.Atan2(across.X, across.Y), 0);
+        }
+    }
+
+    /// <summary>A bridge over the river, its deck at <paramref name="deck"/>: the town's of timber on stone piers, the old ones all stone.</summary>
+    private static ArrayMesh Bridge(float deck, bool timber)
+    {
+        var k = new MeshKit();
+        var stone = new Color("8a8478");
+        var wood = Palette.Timber;
+        k.Box(new Vector3(0, deck - 0.16f, 0), new Vector3(1.15f, 0.16f, 9.6f), timber ? wood : stone, timber ? new Color("8a6239") : new Color("9a9488"));
+        foreach (float x in new[] { -0.55f, 0.55f }) k.Box(new Vector3(x, deck, 0), new Vector3(0.08f, timber ? 0.14f : 0.2f, 9.6f), timber ? Palette.DarkTimber : stone);
+        foreach (float z in new[] { -2.4f, -0.8f, 0.8f, 2.4f }) k.Box(new Vector3(0, -1.4f, z), new Vector3(1.0f, deck + 1.25f, 0.5f), stone, stone);
+        // Abutments down into each bank, so the deck meets the ground instead of floating over it.
+        foreach (float z in new[] { -4.2f, 4.2f }) k.Box(new Vector3(0, -1.4f, z), new Vector3(1.3f, deck + 1.25f, 1.6f), stone, stone);
+        return k.Build();
     }
 
     /// <summary>A hash of a site id that is the same on every run (string.GetHashCode is not).</summary>

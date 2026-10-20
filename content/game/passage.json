@@ -1,0 +1,49 @@
+{
+  "walls": { "wall": 0.35, "moat": 1.6, "gateIn": 0.8, "gateOut": 0.8, "round": 0.4 },
+  "flee": { "hours": 3, "radius": 6 },
+  "river": {
+    "name": "the river",
+    "offset": 0.15,
+    "straight": 0.25,
+    "ease": 5.5,
+    "waves": [[1.05, 0.48], [0.27, 1.45]],
+    "length": 12,
+    "siteClear": 0.12,
+    "spacing": [1.2, 2.2],
+    "fords": 0.6,
+    "townCrossing": "the town bridge",
+    "fordNames": ["the {A} Ford", "{A}ford", "the {A} Shallows", "the {A} Stones"],
+    "bridgeNames": ["the {A} Bridge", "{A}bridge", "the Bridge of {A}", "the {A} Arch"],
+    "words": ["Old", "Grey", "Heron", "Miller's", "Broken", "Long", "Willow", "King's", "Black", "Stag", "Otter", "Low"]
+  },
+  "spells": [
+    { "spell": "water-walk", "ways": ["water"], "partySlot": 3 },
+    { "spell": "fly", "ways": ["water", "sheer"], "partySlot": 6 },
+    { "spell": "spider-climb", "ways": ["sheer"], "partySlot": 5 }
+  ],
+  "items": [
+    { "item": "carpet-of-flying", "ways": ["water", "sheer"], "party": true },
+    { "item": "broom-of-flying", "ways": ["water", "sheer"] },
+    { "item": "winged-boots", "ways": ["water", "sheer"] },
+    { "item": "wings-of-flying", "ways": ["water", "sheer"] },
+    { "item": "ring-of-water-walking", "ways": ["water"] },
+    { "item": "slippers-of-spider-climbing", "ways": ["sheer"] },
+    { "item": "ring-of-swimming", "ways": ["river"] },
+    { "item": "gloves-of-swimming-and-climbing", "ways": ["river", "sheer"] }
+  ],
+  "mounts": [
+    { "id": "horse", "name": "riding horse", "ways": ["river"], "price": 75, "buyAt": 350,
+      "text": ["{hero} buys a riding horse, and rides it up and down the high street twice to be seen on it.", "{hero} has a horse now: no more walking to the edge of the map."] },
+    { "id": "warhorse", "name": "warhorse", "ways": ["river"], "spell": "find-steed",
+      "text": ["{hero} calls a steed out of the light: a grey warhorse that comes when whistled for and is never there when it isn't wanted.", "A warhorse answers {hero}'s prayer, its coat the colour of their oath."] },
+    { "id": "griffon", "name": "griffon", "ways": ["river", "water", "sheer"], "price": 900, "buyAt": 1800, "level": 9, "institution": "griffon-roost",
+      "text": ["{hero} buys a griffon from the Roost. The Roostmaster spends a week teaching them to stay on it; the griffon spends it deciding whether to let them.", "{hero} rides a griffon now, and the river, the lakes and the mountains are no longer in the way."] }
+  ],
+  "fliers": { "dragon": 1.0, "schemers": 0.35, "beasts": 0.2, "cult": 0.1 },
+  "texts": {
+    "over": ["There is no road across {name}, but they go straight over it, thanks to {carrier}.", "Where everyone else goes round {name}, they cross it by {carrier}."],
+    "round": ["Nobody walks across {name}: they go round it, {days} out of their way.", "{name} stands in the way and there is no crossing it on foot; the long way round costs them {days}."],
+    "ford": ["They cross {river} at {name}, wading to the waist.", "They splash over {river} at {name}."],
+    "bridge": ["They cross {river} by {name}.", "{name} carries them over {river}."]
+  }
+}

@@ -69,6 +69,10 @@
   the market's stock as hauled and stall when it's out (`Construction.Stalled`, the `stalled` alert, `SendCaravan`);
   `Building.Priority` sends builders and materials to a site first. Client: `Map/MonumentMeshes.cs`, the card in `Panels.cs`
   (`--at temple --card` shows it).
+- Paving (`Systems/Paving.cs`, city.json `paving`): no player-laid paving. From the `tier` charter the masons cobble streets
+  on their own, nearest the centre first, `perDay` tiles from the market's stone stock (never imported) and the treasury above
+  `reserve` (`Street.Cobbled`, `FromEnd`). Houses near cobbles gain `comfort`; the client draws them from the ground texture's blue
+  channel.
 - Wards (city.json `wards`, `unsettled`, `rings`): never laid out by hand. The charter opens rings (`City.RingOpen`); a quarter
   (ring + side) with `founding` finished buildings becomes the ring's ward its buildings draw most (`WardDef.Draws`, `City.Form`,
   `CityState.Sectors`). The map outlines a ward round its own buildings. `City.Migrate` maps old saves' wards to their quarters.
@@ -77,6 +81,12 @@
   bathhouse/theatre/market hall/library/arena) go through `Crowds.Enter`: a full door turns them to the next place near or back
   to choosing their hour (`Agent.TurnedFrom`). Yesterday's turned-away share cuts the service's coverage, adds to demand and
   raises the `crowded` alert. Counts are kept once an hour (`Crowds.Begin`/`Moved`), so keep door checks O(1).
+- Passage (`Systems/Passage.cs`, `content/game/passage.json`): nobody crosses walls, the moat, the river, lakes or peaks
+  on foot except at an opening. Town walkers route through gates with `Passage.Next` (the client's `Crowd` uses it), lanes
+  skip the wall bands (`Passage.Mask`), and every walled section must keep an opening (`Passage.Sealed` stays empty). The
+  river and its fords and bridges come from the sim (`Passage.River`, `Crossings`); roads.json kinds with a `barrier` are
+  skirted unless the party has the way across (mounts, spells, items in passage.json; `Passage.Abilities`). Townsfolk
+  only swim the moat or climb the wall when fleeing a raid next to them (`Passage.Fleeing`), never to get to work.
 - Decorations (`content/game/decor.json`, `Systems/Decor.cs`, client `Map/Decorator.cs`, `Map/DecorView.cs`): free positions in
   tiles from the town's corner and any angle (radians, model front +Z turned by it). Every piece needs a small effect in
   another system, capped in decor.json. Pieces claim plan cells (`Decor.Cells`, `LandPlan.Decor`): `Land.Fits` and lanes go

@@ -211,6 +211,9 @@ public sealed record CityRules
     /// <summary>How many builds go up at once, and how materials reach them.</summary>
     public ConstructionRules Construction { get; init; } = new();
 
+    /// <summary>How the masons pave the streets with stone from the centre outward once the town is grand enough.</summary>
+    public PavingRules Paving { get; init; } = new();
+
     /// <summary>The ground kept clear along each wall line for the wall's widest works.</summary>
     public WallStripRules WallStrip { get; init; } = new();
 
@@ -705,7 +708,7 @@ public static class City
                 sum += CoverageOf(town, s);
                 needs++;
             }
-            house.Contentment = Math.Clamp((needs == 0 ? 1 : sum / needs) + Decor.Comfort(town, house) + Wards.Comfort(town, house) + grand, 0, 1);
+            house.Contentment = Math.Clamp((needs == 0 ? 1 : sum / needs) + Decor.Comfort(town, house) + Paving.Comfort(town, house) + Wards.Comfort(town, house) + grand, 0, 1);
         }
         town.City.Wanted = wanted;
         town.City.Supplied = supplied;
@@ -798,7 +801,7 @@ public static class City
             sum += CoverageOf(town, s);
             needs++;
         }
-        return Math.Clamp((needs == 0 ? 1 : sum / needs) + Decor.Comfort(town, house) + Wards.Comfort(town, house) + GrandWorks.Comfort(town), 0, 1);
+        return Math.Clamp((needs == 0 ? 1 : sum / needs) + Decor.Comfort(town, house) + Paving.Comfort(town, house) + Wards.Comfort(town, house) + GrandWorks.Comfort(town), 0, 1);
     }
 
     /// <summary>Why this house can't grow now, or null when it can.</summary>

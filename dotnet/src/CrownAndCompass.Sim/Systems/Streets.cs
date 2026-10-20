@@ -81,7 +81,7 @@ public static class Streets
     }
 
     /// <summary>Distance from a point to a segment, and the nearest point on it.</summary>
-    private static (double D, double X, double Y) SegmentDistance(double px, double py, double ax, double ay, double bx, double by)
+    internal static (double D, double X, double Y) SegmentDistance(double px, double py, double ax, double ay, double bx, double by)
     {
         double dx = bx - ax, dy = by - ay, len2 = dx * dx + dy * dy;
         double t = len2 < 1e-12 ? 0 : Math.Clamp(((px - ax) * dx + (py - ay) * dy) / len2, 0, 1);
@@ -424,6 +424,8 @@ public static class Streets
         var plan = town.Plan;
         int n = Land.Size;
         var heights = Hills.Grid(town);
+        // No lane through a standing wall or its moat: feet go by the gate.
+        var walls = Passage.Mask(town);
         var cost = new double[n * n];
         Array.Fill(cost, double.MaxValue);
         var from = new int[n * n];
@@ -455,7 +457,7 @@ public static class Streets
                 int nx = x + dx, ny = y + dy;
                 if (nx < 1 || ny < 1 || nx >= n - 1 || ny >= n - 1) continue;
                 int j = ny * n + nx;
-                if (Blocked(plan, nx, ny)) continue;
+                if (Blocked(plan, nx, ny) || (walls != null && walls[j])) continue;
                 double grade = Math.Abs(heights[j] - heights[i]) * Land.Res / len;
                 double step = len * (1 + 30 * grade * grade + Land.Jitter(j) * 0.9);
                 // A lane keeps its distance from the street it would run beside, then meets it square on.
@@ -578,4 +580,9 @@ public sealed class Street
     public int Id { get; set; }
     public double[] Points { get; set; } = [];
     public bool Square { get; set; }
+
+    /// <summary>Tiles of it the masons have paved with stone (<see cref="Paving"/>), from the start or, if <see cref="FromEnd"/>, the end.</summary>
+    public double Cobbled { get; set; }
+
+    public bool FromEnd { get; set; }
 }
