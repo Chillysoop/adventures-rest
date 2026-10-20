@@ -34,6 +34,10 @@ void fragment() {
 	} else if (abs(a - 0.8) < 0.05) {
 		emit = c * (0.9 + 0.35 * sin(TIME * 2.0));
 	}
+	// Painted: a little brush grain and richer colour on walls and roofs.
+	float grain = texture(noise_tex, wpos.xz * 2.3 + vec2(wpos.y * 1.9)).r;
+	c = mix(c, mix(vec3(luma(c)), c, 1.18) * (0.92 + 0.16 * grain), toon);
+	emit += rim(NORMAL, VIEW) * c * 2.0;
 	float cloud;
 	c = apply_fog(c, wpos.xz, TIME, cloud);
 	emit *= 1.0 - cloud;
@@ -45,4 +49,8 @@ void fragment() {
 	ALBEDO = to_linear(c);
 	EMISSION = to_linear(emit);
 	ROUGHNESS = 0.9;
+}
+
+void light() {
+	DIFFUSE_LIGHT += LIGHT_COLOR * cel(dot(NORMAL, LIGHT), ATTENUATION, ROUGHNESS) / PI;
 }

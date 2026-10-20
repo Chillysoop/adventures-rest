@@ -38,6 +38,8 @@ public sealed class Options
 
     /// <summary>Lift the fog everywhere (screenshots of the wilds and the roads through them).</summary>
     public bool Reveal;
+    public string? Style;
+    public bool Clean;
     public string? Site;
     /// <summary>Aim the camera at the first finished building with this id.</summary>
     public string? At;
@@ -185,6 +187,8 @@ public sealed class Options
                 case "--keep-reports": o.KeepReports = true; break;
                 case "--keep-armory": o.KeepArmory = true; break;
                 case "--reveal": o.Reveal = true; break;
+                case "--style": o.Style = Next(); break;
+                case "--clean": o.Clean = true; break;
                 case "--cam": o.Cam = float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture); break;
                 case "--look":
                     var xy = Next().Split(',');
@@ -348,10 +352,33 @@ public sealed class Options
         }
     }
 
+    /// <summary>--clean: hide everything drawn over the map (HUD, windows, labels) so only the world shows.</summary>
+    private static void HideHud(Node root)
+    {
+        var map = Find(root);
+        if (map == null) return;
+        foreach (var c in map.GetChildren()) if (c is CanvasItem ci && c is not SubViewportContainer) ci.Visible = false;
+        for (Node n = map; n.GetParent() is Node p; n = p)
+            foreach (var sib in p.GetChildren()) if (sib != n && sib is CanvasItem ci) ci.Visible = false;
+        Bubbles(root);
+        static void Bubbles(Node n)
+        {
+            if (n is Label3D l) l.Layers = 1 << 19;
+            foreach (var c in n.GetChildren()) Bubbles(c);
+        }
+        static Node? Find(Node n)
+        {
+            if (n is Client.Map.MapView) return n;
+            foreach (var c in n.GetChildren()) if (Find(c) is Node f) return f;
+            return null;
+        }
+    }
+
     /// <summary>Save a screenshot and quit once enough frames have drawn for the camera to settle.</summary>
     public void Capture(Node node, ref int frames)
     {
         if (Screenshot == null || ++frames < Frames) return;
+        if (Clean && frames == Frames) { HideHud(node.GetTree().Root); return; }
         var img = node.GetViewport().GetTexture().GetImage();
         img.SavePng(Screenshot);
         GD.Print($"Saved {Screenshot}");
