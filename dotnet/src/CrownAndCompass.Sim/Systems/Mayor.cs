@@ -18,6 +18,7 @@ public static class Mayor
             KeepZoned(town, Zone.Commercial, 1 + scale, false);
             KeepZoned(town, Zone.Industry, 1 + scale, true);
             KeepFields(town, 1 + scale);
+            RaiseYards(town);
             RaiseWorks(town, defend);
             RaiseInstitutions(town);
             RaiseServices(town);
@@ -69,6 +70,17 @@ public static class Mayor
             sown++;
         }
         KeepZoned(town, Zone.Farmland, minVacant, true, Farming.Code(town, Farming.Next(town)?.Id ?? "wheat"));
+    }
+
+    /// <summary>Another builders' yard when the town has outgrown its crews, so homes and shops don't queue for builders.</summary>
+    private static void RaiseYards(Town town)
+    {
+        if (Construction.Crews(town) >= Construction.Wanted(town)) return;
+        if (town.Buildings.Any(b => b.IsSite && b.Def.Crews > 0)) return;
+        var d = town.Content.Building("builders_yard");
+        if (Planning.Blocked(town, d) != null || town.Treasury < Planning.Cost(town, d) + 60) return;
+        var lot = Planning.CivicLot(town, d);
+        if (lot != null) Planning.Place(town, d.Id, lot);
     }
 
     /// <summary>A granary once the town is a village, a watch house once it keeps a watch, and an adventurers' hall once heroes come and go.</summary>
@@ -155,7 +167,7 @@ public static class Mayor
         int homeless = town.Workers.Count(a => a.HomeId == null);
         // One house at a time, more while many sleep rough.
         int building = town.Buildings.Count(b => b.IsSite && b.OwnerId == null && b.Def.Housing > 0);
-        if (homeless < minHomeless || building > homeless / 12) return false;
+        if (homeless < minHomeless || building > homeless / 12 || !Construction.Room(town)) return false;
 
         var house = town.Content.Building("house");
         var lot = Land.FindCheapest(town, house, house.Zone);
@@ -166,7 +178,7 @@ public static class Mayor
         town.Book(TreasuryAccount.CharterHouses, -cost);
         Planning.BuyMaterials(town, house);
         var site = town.AddBuilding(house, lot, null, Property.NameFor(town, house, null), false);
-        site.LaborBudget = house.BuildHours * Brain.ConstructionWage;
+        site.LaborBudget = Construction.Hours(town, house) * Brain.ConstructionWage;
         town.Log(LedgerCategory.Town, Importance.Routine, $"With {homeless} people sleeping rough, the council commissions {site.Name}.");
         return true;
     }

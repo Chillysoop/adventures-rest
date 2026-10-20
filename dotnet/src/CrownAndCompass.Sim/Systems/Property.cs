@@ -114,7 +114,7 @@ public static class Property
             if (house.Complete && City.Housing(town, house.Def.Id) is { } h && (h.Services.Contains(service) || HousingWants(town, h, service))) users += house.Residents.Count;
         if (users < d.Serves[service] * 0.3) return 0;
         if (capacity == 0) return 2.0;
-        return users / capacity;
+        return users / capacity + Crowds.Demand(town, service);
     }
 
     /// <summary>Families a step below want what the next house up needs, so the town builds ahead of them.</summary>
@@ -125,7 +125,7 @@ public static class Property
     {
         int taverns = town.Buildings.Count(b => b.Def.Venue && !b.ForSale);
         if (taverns == 0) return town.Population >= 12 ? 3.0 : 0.5;
-        return town.Population / (taverns * 40.0);
+        return town.Population / (taverns * 40.0) + Crowds.Demand(town, Crowds.Tavern);
     }
 
     /// <summary>A general store lives on heroes buying potions before they march.</summary>
@@ -245,6 +245,8 @@ public static class Property
     {
         // Short of the build itself, no lot is cheap enough: don't go looking.
         if (a.Gold < def.Cost + Planning.Materials(town, def)) return false;
+        // Every crew busy: the family waits its turn.
+        if (!Construction.Room(town)) return false;
         var lot = FindLot(town, def);
         if (lot == null)
         {
@@ -260,7 +262,7 @@ public static class Property
         a.Gold -= def.Cost;
 
         var site = town.AddBuilding(def, lot, a.Id, NameFor(town, def, a), false);
-        site.LaborBudget = def.BuildHours * Brain.ConstructionWage;
+        site.LaborBudget = Construction.Hours(town, def) * Brain.ConstructionWage;
 
         string what = def.Housing > 0 ? (rental ? $"a {def.Name.ToLowerInvariant()} to let" : "a home for the family") : site.Name;
         town.Log(

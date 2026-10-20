@@ -89,7 +89,9 @@ public static class SaveGame
             using var doc = JsonDocument.Parse(gz);
             var root = doc.RootElement;
             client = root.TryGetProperty("client", out var c) ? c.GetString() : null;
-            return (Simulation)new StateReader(ContentIndex.Of(content ?? Content.Default()), root).Read(typeof(Simulation));
+            var sim = (Simulation)new StateReader(ContentIndex.Of(content ?? Content.Default()), root).Read(typeof(Simulation));
+            Systems.City.Migrate(sim.Town);
+            return sim;
         }
         catch (Exception e) when (e is not SaveException)
         {

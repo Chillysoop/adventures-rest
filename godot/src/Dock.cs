@@ -36,7 +36,7 @@ public partial class Main
         [Tab.Institutions] = "Guilds, colleges and their keepers",
         [Tab.Faith] = "Gods, shrines and the factions",
         [Tab.Bounties] = "Post jobs and follow parties on the road",
-        [Tab.Companies] = "Adventuring companies and their reports",
+        [Tab.Companies] = "Roster of companies: sort, compare, offer jobs",
         [Tab.Armory] = "Gifts, loot and pacts with heroes",
         [Tab.War] = "The enemy, your defence, the guard and walls",
         [Tab.Diplomacy] = "Peoples, envoys and trade routes",

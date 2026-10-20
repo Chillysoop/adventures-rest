@@ -16,43 +16,55 @@ public class CityTests
     }
 
     [Fact]
-    public void ANewTownIsAThorpInsideTheOldTown()
+    public void ANewTownIsAThorpWithAllItsLandOpen()
     {
         var sim = Planned();
         var t = sim.Town;
         Assert.Equal("thorp", City.Tier(t).Id);
         Assert.Equal(["old_town"], t.City.OpenWards);
         Assert.All(t.Buildings, b => Assert.Equal(0, City.Ring(t, t.Lot(b.LotId))));
-        var market = PointIn(t, "market");
-        Assert.False(City.IsOpen(t, market.X, market.Y));
-        Assert.Equal(0, sim.PaintZone([market], 1, Zone.Commercial));
+        // Land is never bought or opened by charter: the town may zone anywhere from the first day.
+        var edge = PointIn(t, "edge");
+        Assert.True(City.IsOpen(t, edge.X, edge.Y));
+        Assert.True(sim.PaintZone([edge], 1, Zone.Commercial) > 0);
     }
 
     [Fact]
-    public void WardsLieInRingsAroundTheHall()
+    public void TheGroundRoundTheOldTownIsUnsettledUntilBuiltOn()
     {
         var t = Planned().Town;
         int c = Town.Grid / 2;
         Assert.Equal("old_town", City.WardOf(t, c + 0.5, c + 0.5).Id);
-        Assert.Equal("market", City.WardOf(t, c + City.Band + 2 + 0.5, c + 0.5).Id);
-        Assert.Equal("hill", City.WardOf(t, c + 0.5, c + City.Band + 2 + 0.5).Id);
-        Assert.Equal("riverside", City.WardOf(t, Town.Grid - 1 + 0.5, c + 0.5).Id);
-        Assert.Equal("field", City.WardOf(t, c + 0.5, 0 + 0.5).Id);
+        Assert.Equal("edge", City.WardOf(t, c + City.Band + 2 + 0.5, c + 0.5).Id);
+        Assert.Equal("edge", City.WardOf(t, c + 0.5, c + City.Band + 2 + 0.5).Id);
+        Assert.Equal("outskirts", City.WardOf(t, Town.Grid - 1 + 0.5, c + 0.5).Id);
     }
 
     [Fact]
-    public void AWardOpensOnlyOnceTheTownHasGrownIntoIt()
+    public void AQuarterGrowsIntoTheWardItsFirstBuildingsSuit()
     {
         var sim = Planned();
         var t = sim.Town;
-        t.Treasury = 5000;
-        Assert.Equal("needs the town to be a village", City.WardBlocked(t, "market"));
-        Assert.False(sim.OpenWard("market"));
+        int c = Town.Grid / 2;
+        var east = (X: c + City.Band + 3 + 0.5, Y: c + 0.5);
         t.City.Tier = City.TierIndex(t, "village");
-        Assert.True(sim.OpenWard("market"));
-        Assert.Equal("already laid out", City.WardBlocked(t, "market"));
-        Assert.True(sim.PaintZone([PointIn(t, "market")], 1, Zone.Commercial) > 0);
-        Assert.True(t.Accounts.Get(TreasuryAccount.Wards, 0) < 0);
+        Assert.True(sim.PaintZone([east], 3, Zone.Commercial) > 0);
+        var store = t.Content.Building("general_store");
+        string side = City.Side(t, east.X, east.Y);
+        for (int i = 0; i < t.Content.City.Founding; i++)
+        {
+            City.Form(t);
+            Assert.Equal("edge", City.WardOf(t, east.X, east.Y).Id);
+            // The charter's own shop land lies in the old town: build on the new paint out east.
+            var spot = Land.Plots(t, Zone.Commercial, 200).First(l => City.Ring(t, l.X, l.Y) == 1);
+            Assert.Equal(side, City.Side(t, spot.X, spot.Y));
+            var (w, d) = Land.Footprint(store);
+            t.AddBuilding(store, new Lot(t.Lots.Count, spot.X, spot.Y) { W = w, D = d, Yaw = spot.Yaw, Zone = Zone.Commercial }, null, $"Shop {i}", true);
+        }
+        City.Form(t);
+        Assert.Equal("market", City.WardOf(t, east.X, east.Y).Id);
+        Assert.Equal("market", t.City.Sectors[City.Sector(1, side)]);
+        Assert.Contains("market", t.City.OpenWards);
     }
 
     [Fact]
@@ -78,8 +90,11 @@ public class CityTests
     {
         var t = Planned().Town;
         var manor = t.Content.Building("manor");
-        foreach (var w in t.Content.City.Wards) t.City.OpenWards.Add(w.Id);
-        Assert.False(City.AllowsWard(t, manor, PointIn(t, "market").X, PointIn(t, "market").Y));
+        t.City.Tier = City.TierIndex(t, "village");
+        t.City.Sectors[City.Sector(1, "south")] = "hill";
+        t.City.OpenWards.Add("hill");
+        t.Plan.Wards = null;
+        Assert.False(City.AllowsWard(t, manor, PointIn(t, "edge").X, PointIn(t, "edge").Y));
         var hill = PointIn(t, "hill");
         Assert.True(City.AllowsWard(t, manor, hill.X, hill.Y));
         // A manor wants its land zoned medium density at least.

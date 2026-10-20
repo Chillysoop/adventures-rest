@@ -1,6 +1,6 @@
 {
   "_doc": "Exploring companies (Systems/Explore.cs). The council posts a commission on a region; heroes take it, march out, wander the region and report what they find before doing anything about it. Each find can be investigated in chapters (hours each, a party check, a risk on failure, more learned on success, like a dig site); the last chapter brings its reward. Times are hours, distances are days of march.",
-  "commission": { "base": 40, "perRing": 35, "days": 12, "minHeroes": 2, "maxHeroes": 4, "autoEveryDays": 10, "autoReserve": 150 },
+  "commission": { "base": 40, "perRing": 35, "days": 12, "minHeroes": 2, "maxHeroes": 4, "autoEveryDays": 10, "autoReserve": 150, "spotDays": 1, "spotRadius": 0.35, "maxSpots": 3 },
   "exploreDays": 3,
   "keepDays": 2,
   "sight": 0.5,

@@ -521,7 +521,7 @@ public static class Factions
         town.Market.Buy(Good.Timber, def.Timber);
         f.Purse -= cost;
         var hall = town.AddBuilding(def, lot, null, f.Def.Hall, false);
-        hall.LaborBudget = def.BuildHours * Brain.ConstructionWage;
+        hall.LaborBudget = Construction.Hours(town, def) * Brain.ConstructionWage;
         hall.Cash = f.Purse;
         f.Purse = 0;
         f.HallId = hall.Id;

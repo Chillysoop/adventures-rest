@@ -110,7 +110,10 @@ public sealed class Simulation
         Merchants.Daily(t);
         City.Daily(t, Options.AutoMayor && Options.AutoPlanning);
         GrandWorks.Daily(t, Options.AutoMayor && Options.AutoPlanning);
+        Monuments.Daily(t);
+        if (Options.AutoMayor && Options.AutoPlanning) Construction.Daily(t);
         Streets.Wear(t);
+        Paving.Daily(t);
         Property.Daily(t);
         Population.DailyDepartures(t);
         Population.DailyArrivals(t);
@@ -152,6 +155,7 @@ public sealed class Simulation
         Broadsheet.Daily(t, Options.AutoMayor && Options.AutoStories);
         Loyalty.Daily(t, Options.AutoMayor);
         Notoriety.Daily(t);
+        Passage.Daily(t);
         Decor.Daily(t);
         Stories.Daily(t, Options.AutoMayor && Options.AutoStories);
         Sheet.Daily(t, Options.AutoMayor && Options.AutoStories);
@@ -238,6 +242,9 @@ public sealed class Simulation
     /// <summary>Sound the call to arms on a wall section, a tower or the gate: the nearest of the watch run to man it.</summary>
     public GuardPost? CallToArms(PostKind kind, int index) => Garrison.CallToArms(Town, kind, index);
 
+    /// <summary>Man the walls at once: a call to arms on the gate and on every side a host is marching from.</summary>
+    public int ManTheWalls() => Garrison.ManTheWalls(Town);
+
     /// <summary>Plant a flag where the watch should stand guard (tiles from the town's corner), with this many guards.</summary>
     public GuardPost? PlantFlag(double x, double y, int guards = 0) => Garrison.PlantFlag(Town, x, y, guards);
 
@@ -256,10 +263,17 @@ public sealed class Simulation
     /// <summary>Pay a caster in town to scry a site, showing it live for a few hours.</summary>
     public Scrying? CommissionScrying(string siteId) => Knowledge.CommissionScrying(Town, siteId);
 
+    /// <summary>Mark a spot in the wilds (days of march east and south of the town) and pay a company to go and look at it.</summary>
+    public Commission? MarkSpot(double x, double y, double? reward = null) => Explore.PostSpot(Town, x, y, reward);
+
     /// <summary>Reach a party on the road by sending stone: ask for word, or call it home.</summary>
     public string? SendWord(int partyId, bool recall = false) => Knowledge.Send(Town, partyId, recall);
 
     /// <summary>Buy a company's report of a trip the council didn't pay for: at their asking price, or haggled down.</summary>
+    /// <summary>Offer one company a job by name; it takes it and marches at once, or turns it down. Null when it can't be offered.</summary>
+    public JobAnswer? OfferJob(string company, string siteId, double reward, string terms = "slay", bool lootToTown = false) =>
+        Roster.Offer(Town, company, siteId, reward, terms, lootToTown);
+
     public IntelDeal? BuyIntel(int partyId, bool haggle = false) => Intel.Buy(Town, partyId, haggle);
 
     /// <summary>Answer a company asking leave to raise a bastion: grant it (they buy the land), gift them the land, or refuse.</summary>
@@ -289,9 +303,6 @@ public sealed class Simulation
     /// <summary>Claim the next charter (hamlet, village, town...) once the town has earned it.</summary>
     public bool RaiseCharter() => City.RaiseCharter(Town);
 
-    /// <summary>Survey a ward and lay out its streets, opening its ground to zoning.</summary>
-    public bool OpenWard(string wardId) => City.OpenWard(Town, wardId);
-
     /// <summary>
     /// Paint a brush stroke of a zone over open ground in open wards (Zone.None clears it): dabs in tiles from the town's corner.
     /// Homes and shops take a density (0 low, 1 medium, 2 high, as the charter allows), and land of the zone already built on takes it too. Returns cells changed.
@@ -301,6 +312,27 @@ public sealed class Simulation
 
     /// <summary>Place a government building, charter house or town-owned business at a point and heading (null faces the nearest lane), paid from the treasury.</summary>
     public Building? Place(string buildingId, double x, double y, double? yaw = null) => Planning.Place(Town, buildingId, x, y, yaw);
+
+    /// <summary>Add a part to a monument (temple, keep, town hall): a nave, a bell tower, a curtain wall.</summary>
+    public Building? AddPart(int monumentId, string partId) => Monuments.Add(Town, Town.Building(monumentId), partId);
+
+    /// <summary>Add every part a monument can take now, as far as the gold goes. Returns how many were begun.</summary>
+    public int AddAllParts(int monumentId) => Monuments.AddAll(Town, Town.Building(monumentId));
+
+    /// <summary>Whether the council grows a monument a part at a time on its own, from gold it can spare.</summary>
+    public bool GrowMonument(int monumentId, bool grow)
+    {
+        var b = Town.Building(monumentId);
+        if (!Monuments.IsMonument(Town, b.Def)) return false;
+        b.Grow = grow;
+        return true;
+    }
+
+    /// <summary>Put a building site ahead of the others for builders and materials, or back in line.</summary>
+    public bool PrioritiseSite(int buildingId, bool first) => Construction.Prioritise(Town, Town.Building(buildingId), first);
+
+    /// <summary>Send a caravan for the timber and stone a stalled site is waiting on, at the import premium.</summary>
+    public bool SendCaravan(int buildingId) => Construction.SendCaravan(Town, Town.Building(buildingId));
 
     /// <summary>Knight a hero of renown: Ser, a stipend and an oath to the town.</summary>
     public bool Knight(int heroId) => Loyalty.Knight(Town, Town.Agent(heroId));

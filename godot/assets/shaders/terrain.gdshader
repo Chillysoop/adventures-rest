@@ -130,6 +130,17 @@ void fragment() {
 		// A darker rut along the middle where the carts go.
 		dirt *= 1.0 - 0.1 * smoothstep(0.85, 1.0, tw.r);
 		col = mix(col, dirt, lane);
+		// Cobbles the masons have laid: rounded stones in staggered rows, dark mortar between.
+		float cob = smoothstep(0.35, 0.6, tw.b);
+		if (cob > 0.0) {
+			vec2 cq = p * vec2(9.0, 12.0);
+			cq.x += step(1.0, mod(floor(cq.y), 2.0)) * 0.5;
+			vec2 cf = fract(cq) - 0.5;
+			float stone = 1.0 - smoothstep(0.36, 0.5, length(cf * vec2(0.9, 1.0)) + (nz3.g - 0.5) * 0.1);
+			vec3 cobc = mix(vec3(0.58, 0.56, 0.52), vec3(0.72, 0.69, 0.63), fract(sin(dot(floor(cq), vec2(12.9898, 78.233))) * 43758.5453));
+			vec3 mortar = vec3(0.42, 0.39, 0.34);
+			col = mix(col, mix(mortar, cobc, stone), cob);
+		}
 		vec4 z = texture(zones_tex, tuv);
 		float zedge = smoothstep(0.42, 0.58, z.a);
 		float rim = smoothstep(0.42, 0.5, z.a) * (1.0 - smoothstep(0.55, 0.7, z.a));

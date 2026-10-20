@@ -109,7 +109,7 @@ Print(
         ? $"{Saga.EndTitle(town)}: {town.Saga.EndText}"
         : $"The warband stands at {Js.Str(Js.Round(town.Enemy.Strength))} ({town.Enemy.Stage.Name()}); {town.Enemy.Raids} raids, {town.Enemy.Sieges} sieges so far.");
 if (Saga.Summary(town) != "") Print(Saga.Summary(town));
-Print($"A {City.Tier(town).Name.ToLowerInvariant()} of about {City.Souls(town)} souls; wards laid out: {string.Join(", ", town.City.OpenWards.Select(w => City.Ward(town, w).Name))}.");
+Print($"A {City.Tier(town).Name.ToLowerInvariant()} of about {City.Souls(town)} souls; wards: {string.Join(", ", town.City.OpenWards.Select(w => City.Ward(town, w).Name))}.");
 Print("Treasury books, all time: " + string.Join(", ", town.Accounts.OrderBy(kv => kv.Value).Select(kv => $"{kv.Key} {Js.ToFixed(kv.Value, 0)}")));
 Print("Vacant zoned lots: " + string.Join(", ", Planning.Paintable.Select(z => $"{z} {Planning.VacantZoned(town, z)}")) + $"; unpainted open ground {Land.OpenGround(town) / (Land.Res * Land.Res)} tiles");
 Print("Demand: " + string.Join(", ", town.Content.Buildings.Where(d => d.Buildable && d.IsBusiness).Select(d => $"{d.Id} {Js.ToFixed(Property.Demand(town, d.Id), 2)}")));

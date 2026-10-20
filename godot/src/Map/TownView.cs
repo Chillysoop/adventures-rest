@@ -137,7 +137,15 @@ public partial class TownView(MapView map) : Node3D
     {
         // A grand work rises in plain sight: its own shape, taller with every stage, in scaffold.
         if (b.IsSite && b.Def.IsGrand) return $"grand:{Math.Min(7, (int)(b.BuildProgress / b.Def.BuildHours * 8))}:{b.Def.Id}";
-        if (b.IsSite) return $"site:{Math.Min(3, (int)(b.BuildProgress / b.Def.BuildHours * 4))}";
+        // Any other site comes together in six steps: staked out, footings, then its own walls rising inside the scaffold,
+        // beside a pile of the timber and stone carried onto it and not yet built in.
+        if (b.IsSite)
+        {
+            double done = b.BuildProgress / b.Def.BuildHours;
+            double left = b.Hauled - Math.Max(0, (done - 0.1) / 0.9);
+            int pile = b.Hauled >= 1 && done >= 0.98 ? 0 : left > 0.3 ? 2 : left > 0.04 ? 1 : 0;
+            return $"rise:{Math.Min(5, (int)(done * 6))}:{pile}{(b.Def.Stone > b.Def.Timber ? "s" : "t")}:{b.Def.Id}";
+        }
         return $"{b.Def.Id}:{b.Id % 4}";
     }
 
@@ -193,6 +201,7 @@ public partial class TownView(MapView map) : Node3D
         var parts = key.Split(':');
         int v = parts.Length > 1 ? int.Parse(parts[1]) : 0;
         if (parts[0] == "grand") Rising(kit, parts[2], v);
+        else if (parts[0] == "rise") Site(kit, parts[3], v, parts[2][0] - '0', parts[2][1] == 's');
         else Draw(kit, parts[0], v);
         return _meshes[key] = kit.Build();
     }
@@ -201,7 +210,6 @@ public partial class TownView(MapView map) : Node3D
     {
         switch (id)
         {
-            case "site": Construction(kit, v); break;
             case "sign": kit.Add("nature/sign", MeshKit.At(0, 0, 0, 0, 0.7f)); break;
             case "tavern": Tavern(kit, v); break;
             case "town_hall": Hall(kit, v); break;
@@ -218,6 +226,7 @@ public partial class TownView(MapView map) : Node3D
             case "temple": Temple(kit, v); break;
             case "general_store": Store(kit, v); break;
             case "granary": Granary(kit, v); break;
+            case "builders_yard": BuildersYard(kit, v); break;
             case "watch_house": WatchHouse(kit, v); break;
             case "timber_house": TimberHouse(kit, v); break;
             case "townhouse": Townhouse(kit, v); break;
@@ -285,6 +294,23 @@ public partial class TownView(MapView map) : Node3D
             case "planar_gate": PlanarGate(kit, v); break;
             case "hall_of_heroes": HallOfHeroes(kit, v); break;
             case "dragon_eyrie": DragonEyrie(kit, v); break;
+            case "temple_nave": TempleNave(kit, v); break;
+            case "temple_bell_tower": TempleBellTower(kit); break;
+            case "temple_almshouse": Almshouse(kit, v); break;
+            case "temple_crypt": Crypt(kit); break;
+            case "temple_cloister": Cloister(kit); break;
+            case "temple_spire": Spire(kit, Slate); break;
+            case "keep_curtain_wall": CurtainWall(kit); break;
+            case "keep_chapel": CastleChapel(kit, v); break;
+            case "keep_gatehouse": CastleGatehouse(kit); break;
+            case "keep_great_hall": GreatHall(kit, v); break;
+            case "keep_barracks_wing": Barracks(kit, v); break;
+            case "keep_high_tower": HighTower(kit); break;
+            case "hall_bell_tower": HallBellTower(kit); break;
+            case "hall_council_chamber": Courthouse(kit, v); break;
+            case "hall_counting_house": Guildhall(kit, v); break;
+            case "hall_archive": Library(kit, v); break;
+            case "hall_banner_court": BannerCourt(kit, v); break;
             default: House(kit, v); break;
         }
     }
@@ -407,6 +433,29 @@ public partial class TownView(MapView map) : Node3D
         k.Pop();
         k.Pop();
         k.Add("town/cart", MeshKit.At(0.4f, 0, 0.44f, 0.3f, 0.45f));
+    }
+
+    private static void BuildersYard(MeshKit k, int v)
+    {
+        // An open-fronted workshop, a stack of sawn timber, dressed stone and a hoisting frame.
+        k.Box(new Vector3(0, 0, 0), new Vector3(0.96f, 0.03f, 0.96f), new Color("7d6a50"), new Color("948063"));
+        k.Push(MeshKit.At(-0.22f, 0.03f, -0.22f, 0, Fit(2, 1, 0.5f)));
+        Walls(k, 2, 1, 0, false, v + 97, true);
+        k.Push(MeshKit.At(0, 1, 0));
+        k.Gable(0, 2, 1, 0.6f, new Color("7a5232"), Palette.Plaster, 0.1f);
+        k.Pop();
+        k.Pop();
+        k.Add("nature/log_stackLarge", MeshKit.At(0.3f, 0.03f, -0.25f, 0.1f, 0.7f));
+        for (int i = 0; i < 3; i++)
+            k.Box(new Vector3(-0.3f + i * 0.16f, 0.03f, 0.28f), new Vector3(0.07f, 0.07f, 0.07f), Palette.Stone);
+        k.Box(new Vector3(-0.22f, 0.1f, 0.28f), new Vector3(0.07f, 0.07f, 0.07f), Palette.Stone);
+        // The hoist: two posts and a beam with a hanging block.
+        var wood = new Color("6a4a2e");
+        k.Box(new Vector3(0.22f, 0.03f, 0.3f), new Vector3(0.025f, 0.42f, 0.025f), wood);
+        k.Box(new Vector3(0.42f, 0.03f, 0.3f), new Vector3(0.025f, 0.42f, 0.025f), wood);
+        k.Box(new Vector3(0.32f, 0.44f, 0.3f), new Vector3(0.23f, 0.02f, 0.03f), wood);
+        k.Box(new Vector3(0.32f, 0.22f, 0.3f), new Vector3(0.05f, 0.05f, 0.05f), Palette.Stone);
+        k.Add("town/cart", MeshKit.At(0.05f, 0.03f, 0.05f, 0.8f, 0.25f));
     }
 
     private static void WatchHouse(MeshKit k, int v)
@@ -617,19 +666,51 @@ public partial class TownView(MapView map) : Node3D
         k.Pop();
     }
 
-    private static void Construction(MeshKit k, int stage)
+    /// <summary>
+    /// A building going up (<see cref="MeshKey"/>): staked out with string (stage 0), stone footings and corner posts (1), then
+    /// its own shape rising inside a timber scaffold from stage 2 on, with the materials carried in but not yet used piled
+    /// at the front corner (none, some, plenty; stone or timber).
+    /// </summary>
+    private static void Site(MeshKit k, string id, int stage, int pile, bool stone)
     {
-        // A footing, then a timber frame that rises with progress, wrapped in scaffold.
-        k.Box(new Vector3(0, 0, 0), new Vector3(0.72f, 0.05f, 0.5f), Palette.Stone);
-        float h = 0.12f + stage * 0.1f;
-        foreach (var (x, z) in new[] { (-0.33f, -0.22f), (0.33f, -0.22f), (-0.33f, 0.22f), (0.33f, 0.22f), (0, -0.22f), (0, 0.22f) })
-            k.Box(new Vector3(x, 0.05f, z), new Vector3(0.04f, h, 0.04f), Palette.Timber);
-        k.Box(new Vector3(0, 0.05f + h, -0.22f), new Vector3(0.7f, 0.035f, 0.035f), Palette.Timber);
-        k.Box(new Vector3(0, 0.05f + h, 0.22f), new Vector3(0.7f, 0.035f, 0.035f), Palette.Timber);
-        if (stage >= 2)
-            for (int i = 0; i < 3; i++) k.Box(new Vector3(-0.2f + i * 0.2f, 0.05f, -0.21f), new Vector3(0.18f, h * 0.7f, 0.02f), new Color("c8ab7e"));
-        k.Add("nature/log_stack", MeshKit.At(0.4f, 0, 0.36f, Mathf.Pi / 2, 0.6f));
-        k.Add("town/planks", MeshKit.At(-0.35f, 0, 0.38f, 0.2f, 0.25f));
+        k.Box(Vector3.Zero, new Vector3(0.9f, 0.015f, 0.9f), Palette.Dirt.Darkened(0.1f));
+        const float hx = 0.43f, hz = 0.43f;
+        (float X, float Z)[] corners = [(-hx, -hz), (hx, -hz), (hx, hz), (-hx, hz)];
+        if (stage == 0)
+        {
+            foreach (var (x, z) in corners) k.Box(new Vector3(x, 0, z), new Vector3(0.022f, 0.12f, 0.022f), Palette.Timber);
+            for (int i = 0; i < 4; i++)
+            {
+                var (ax, az) = corners[i];
+                var (bx, bz) = corners[(i + 1) % 4];
+                k.Box(new Vector3((ax + bx) / 2, 0.09f, (az + bz) / 2), new Vector3(Math.Abs(bx - ax) + 0.006f, 0.006f, Math.Abs(bz - az) + 0.006f), new Color("efe6cc"));
+            }
+        }
+        else if (stage == 1)
+        {
+            k.Box(new Vector3(0, 0, 0), new Vector3(hx * 2, 0.05f, hz * 2), Palette.Stone, Palette.Stone.Lightened(0.15f));
+            foreach (var (x, z) in corners) k.Box(new Vector3(x * 0.9f, 0.05f, z * 0.9f), new Vector3(0.035f, 0.22f, 0.035f), Palette.Timber);
+        }
+        else
+        {
+            float f = (stage - 1) / 4.5f;
+            k.Push(new Transform3D(Basis.FromScale(new Vector3(1, f, 1)), Vector3.Zero));
+            Draw(k, id, 0);
+            k.Pop();
+            // Scaffold poles a little above the walls, with a plank walk at each storey.
+            float h = 0.2f + 0.75f * f;
+            for (int i = 0; i <= 2; i++)
+                foreach (float z in new[] { -hz - 0.03f, hz + 0.03f })
+                    k.Box(new Vector3(-hx + i * hx, 0, z), new Vector3(0.016f, h, 0.016f), Palette.Timber);
+            for (float y = 0.15f; y < h; y += 0.2f)
+                foreach (float z in new[] { -hz - 0.03f, hz + 0.03f }) k.Box(new Vector3(0, y, z), new Vector3(hx * 2, 0.01f, 0.045f), new Color("c8ab7e"));
+        }
+        // The materials pile, at the front corner where the haulers drop their loads.
+        for (int i = 0; i < pile; i++)
+        {
+            if (stone) k.Box(new Vector3(hx - 0.06f - i * 0.11f, 0, hz + 0.1f), new Vector3(0.1f, 0.05f + 0.02f * i, 0.08f), Palette.Stone, Palette.Stone.Lightened(0.15f));
+            else k.Add(i == 0 ? "town/planks" : "nature/log_stack", MeshKit.At(hx - 0.08f - i * 0.18f, 0, hz + 0.12f, Mathf.Pi / 2, i == 0 ? 0.25f : 0.45f));
+        }
     }
 
     // ---------- City buildings ----------
@@ -1721,7 +1802,7 @@ public partial class TownView(MapView map) : Node3D
 
     /// <summary>
     /// The lanes, the square and the trodden yards round buildings, painted into a texture the terrain
-    /// shader blends in as worn earth with ragged edges (r: lane, g: yard), so they lie on the hills.
+    /// shader blends in as worn earth with ragged edges (r: lane, g: yard, b: cobbles the masons have laid), so they lie on the hills.
     /// </summary>
     private void Ground(Town town)
     {
@@ -1729,6 +1810,7 @@ public partial class TownView(MapView map) : Node3D
         float px = 1f / (Land.Res * GroundUp);
         var lane = new float[n * n];
         var yard = new float[n * n];
+        var cobble = new float[n * n];
         void Stroke(float[] into, Vector2 a, Vector2 b, float half, float soft)
         {
             float reach = half + soft;
@@ -1749,6 +1831,24 @@ public partial class TownView(MapView map) : Node3D
         foreach (var r in town.Plan.Streets)
             for (int s = 0; s + 3 < r.Points.Length; s += 2)
                 Stroke(lane, new Vector2((float)r.Points[s], (float)r.Points[s + 1]), new Vector2((float)r.Points[s + 2], (float)r.Points[s + 3]), (float)Streets.Width * 0.36f, 0.09f);
+        // Cobbles, from the end the masons began at, as far as they have got.
+        foreach (var r in town.Plan.Streets)
+        {
+            if (r.Cobbled <= 0) continue;
+            double left = r.Cobbled;
+            int m = r.Points.Length;
+            for (int k = 0; k + 3 < m && left > 0; k += 2)
+            {
+                int i = r.FromEnd ? m - 2 - k : k, j = r.FromEnd ? i - 2 : i + 2;
+                var a = new Vector2((float)r.Points[i], (float)r.Points[i + 1]);
+                var b = new Vector2((float)r.Points[j], (float)r.Points[j + 1]);
+                float seg = a.DistanceTo(b);
+                if (seg <= 1e-5f) continue;
+                var end = left >= seg ? b : a + (b - a) * (float)(left / seg);
+                Stroke(cobble, a, end, (float)Streets.Width * (r.Square ? 0.5f : 0.4f), 0.05f);
+                left -= seg;
+            }
+        }
         // The square's trodden middle.
         for (int i = 0; i < n * n; i++)
             if (town.Plan.Paved[i / n / GroundUp * Land.Size + i % n / GroundUp] != 0) lane[i] = Mathf.Max(lane[i], 0.8f);
@@ -1784,6 +1884,7 @@ public partial class TownView(MapView map) : Node3D
         {
             bytes[i * 4] = (byte)(Mathf.Clamp(lane[i], 0, 1) * 255);
             bytes[i * 4 + 1] = (byte)(Mathf.Clamp(yard[i], 0, 1) * 255);
+            bytes[i * 4 + 2] = (byte)(Mathf.Clamp(cobble[i], 0, 1) * 255);
             bytes[i * 4 + 3] = 255;
         }
         var img = Image.CreateFromData(n, n, false, Image.Format.Rgba8, bytes);
@@ -2074,6 +2175,35 @@ public partial class TownView(MapView map) : Node3D
             mi.Visible = sight != Sight.Rumoured;
             mi.Position = map.Gen.At(pin, -0.05f);
         }
+        // The river's bridges, where roads cross it (its fords are shallows in the water itself).
+        var gen = map.Gen;
+        for (int i = 0; i < gen.Crossings.Count; i++)
+        {
+            var (c, at, flow) = gen.Crossings[i];
+            string id = $"crossing:{i}";
+            if (c.Kind != "bridge" || _landmarks.ContainsKey(id)) continue;
+            var across = new Vector2(-flow.Y, flow.X);
+            float deck = Mathf.Max(gen.SurfaceAt(at.X + across.X * 4.6f, at.Y + across.Y * 4.6f), gen.SurfaceAt(at.X - across.X * 4.6f, at.Y - across.Y * 4.6f)) + 0.1f;
+            var mi = new MeshInstance3D { Mesh = Bridge(deck, i == 0), MaterialOverride = Mats.Props };
+            AddChild(mi);
+            _landmarks[id] = mi;
+            mi.Position = new Vector3(at.X, 0, at.Y);
+            mi.Rotation = new Vector3(0, Mathf.Atan2(across.X, across.Y), 0);
+        }
+    }
+
+    /// <summary>A bridge over the river, its deck at <paramref name="deck"/>: the town's of timber on stone piers, the old ones all stone.</summary>
+    private static ArrayMesh Bridge(float deck, bool timber)
+    {
+        var k = new MeshKit();
+        var stone = new Color("8a8478");
+        var wood = Palette.Timber;
+        k.Box(new Vector3(0, deck - 0.16f, 0), new Vector3(1.15f, 0.16f, 9.6f), timber ? wood : stone, timber ? new Color("8a6239") : new Color("9a9488"));
+        foreach (float x in new[] { -0.55f, 0.55f }) k.Box(new Vector3(x, deck, 0), new Vector3(0.08f, timber ? 0.14f : 0.2f, 9.6f), timber ? Palette.DarkTimber : stone);
+        foreach (float z in new[] { -2.4f, -0.8f, 0.8f, 2.4f }) k.Box(new Vector3(0, -1.4f, z), new Vector3(1.0f, deck + 1.25f, 0.5f), stone, stone);
+        // Abutments down into each bank, so the deck meets the ground instead of floating over it.
+        foreach (float z in new[] { -4.2f, 4.2f }) k.Box(new Vector3(0, -1.4f, z), new Vector3(1.3f, deck + 1.25f, 1.6f), stone, stone);
+        return k.Build();
     }
 
     /// <summary>A hash of a site id that is the same on every run (string.GetHashCode is not).</summary>

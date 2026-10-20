@@ -39,10 +39,28 @@ public sealed class Building(int id, BuildingDef def, int lotId)
     public int? OwnerId { get; set; }
     public double BuildProgress { get; set; }
 
+    /// <summary>A site: the share of its timber and stone carried onto it so far (<see cref="Systems.Construction"/>).</summary>
+    public double Hauled { get; set; } = 1;
+
     /// <summary>Set once the completion has been handled (workers released, owner moved in).</summary>
     public bool Opened { get; set; }
 
     public double LaborBudget { get; set; }
+
+    /// <summary>A monument's part: the building it belongs to (<see cref="Systems.Monuments"/>).</summary>
+    public int? ParentId { get; set; }
+
+    /// <summary>A monument: whether the council adds its next part on its own when the treasury can spare it.</summary>
+    public bool Grow { get; set; } = true;
+
+    /// <summary>A council site whose timber and stone come off the market as the haulers carry them, paid load by load (<see cref="Systems.Construction.Haul"/>).</summary>
+    public bool Draws { get; set; }
+
+    /// <summary>A site the player put first: builders and the town's timber and stone go to it ahead of the others.</summary>
+    public bool Priority { get; set; }
+
+    /// <summary>A council site waiting for timber or stone the market hasn't got: the tick it stalled, or -1.</summary>
+    public int StalledSince { get; set; } = -1;
 
     /// <summary>Business account: revenue in, wages and inputs out.</summary>
     public double Cash { get; set; }
@@ -59,6 +77,14 @@ public sealed class Building(int id, BuildingDef def, int lotId)
 
     /// <summary>Patron-hours of evening talk since the last rumour roll (taverns only).</summary>
     public int Talk { get; set; }
+
+    /// <summary>Visitor-hours today (an hour each townsperson spent in on an outing), hours someone found it full and went elsewhere, the most in at once, and the same for yesterday (<see cref="Systems.Crowds"/>).</summary>
+    public int Visits { get; set; }
+    public int TurnedAway { get; set; }
+    public int Peak { get; set; }
+    public int VisitsLast { get; set; }
+    public int TurnedAwayLast { get; set; }
+    public int PeakLast { get; set; }
     public int DaysInDebt { get; set; }
     public bool ForSale { get; set; }
     public bool Closed { get; set; }
@@ -82,6 +108,10 @@ public sealed class Building(int id, BuildingDef def, int lotId)
 
     /// <summary>Builders' work on a site, stopping at the funded stage.</summary>
     public void Raise(double hours) => BuildProgress = Math.Min(BuildProgress + hours, Math.Max(BuildProgress, Funded));
+
+    /// <summary>As <see cref="Raise(double)"/>, no further than the materials carried onto the site allow.</summary>
+    public void Raise(Town town, double hours) =>
+        BuildProgress = Math.Min(BuildProgress + hours, Math.Max(BuildProgress, Math.Min(Funded, Systems.Construction.Ready(town, this))));
 
     public bool Complete => BuildProgress >= Def.BuildHours;
     public bool IsSite => !Complete;
@@ -190,6 +220,16 @@ public sealed class Market
         _bought[g] = _bought.GetValueOrDefault(g) + qty;
         _importedToday[g] = _importedToday.GetValueOrDefault(g) + qty - fromStock;
         return cost;
+    }
+
+    /// <summary>Take up to qty from the stock alone (no caravan), returning how much there was and what it cost.</summary>
+    public (double Qty, double Cost) Take(Good g, double qty)
+    {
+        double took = Math.Min(qty, Stock(g));
+        if (took <= 0) return (0, 0);
+        double cost = took * Price(g);
+        _stock[g] = Stock(g) - took;
+        return (took, cost);
     }
 
     public double Sell(Good g, double qty)
@@ -561,6 +601,7 @@ public sealed class Town
             OwnerId = ownerId,
             Name = name,
             BuildProgress = complete ? def.BuildHours : 0,
+            Hauled = Systems.Construction.Start(def, complete),
             Opened = complete,
         };
         Buildings.Add(b);
@@ -573,13 +614,15 @@ public sealed class Town
         return b;
     }
 
-    /// <summary>While the townsfolk choose their hour (Brain.Hourly): the open taverns and how many drink in each.</summary>
+    /// <summary>While the townsfolk choose their hour (Brain.Hourly): the places open to visitors by kind, and how many are out at each (<see cref="Systems.Crowds"/>).</summary>
     [NotSaved]
-    internal List<Building>? HourTaverns;
+    internal OrderedMap<string, List<Building>>? HourPlaces;
     [NotSaved]
-    internal Dictionary<int, int>? Drinkers;
+    internal List<string>? HourErrands;
     [NotSaved]
-    internal int? DrinkerWasAt;
+    internal Dictionary<int, int>? Present;
+    [NotSaved]
+    internal int? PresentWasAt;
 
     public List<Building> Taverns => Buildings.Where(b => b.Complete && b.Def.Venue && !b.Closed && !b.ForSale).ToList();
 

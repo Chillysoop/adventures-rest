@@ -29,10 +29,20 @@ public sealed class Waypoint
     /// <summary>"road" on open ground, "cross" through <see cref="Feature"/>, "skirt" around it.</summary>
     public string Way { get; init; } = "road";
     public Feature? Feature { get; init; }
+
+    /// <summary>The ford or bridge the stretch ends at, for "ford" and "bridge" (<see cref="Passage.Crossings"/>).</summary>
+    public string Crossing { get; init; } = "";
 }
 
 /// <summary>How a party weighs time against danger when the road forks.</summary>
-public sealed record RouteMind(double TimeWeight, double RiskWeight, double Level, string Leader, string? Bold, bool Hurry, bool Wounded);
+public sealed record RouteMind(double TimeWeight, double RiskWeight, double Level, string Leader, string? Bold, bool Hurry, bool Wounded)
+{
+    /// <summary>What the party can cross that nobody walks: the river anywhere, open water, sheer heights (<see cref="Passage.Abilities"/>).</summary>
+    public Ways Ways { get; init; }
+
+    /// <summary>Who carries them over it, for the telling: "Mira's griffon", "on Oswin's carpet".</summary>
+    public string Carrier { get; init; } = "";
+}
 
 public enum Pace
 {
@@ -202,6 +212,13 @@ public static class Roads
         return hi - lo > 1e-9 ? (lo, hi) : null;
     }
 
+    /// <summary>A point inside a hull moved back toward the town until it is clear of it (itself when it is outside).</summary>
+    private static P Clear(List<P> inner, P p)
+    {
+        for (int i = 0; i < 40 && Clip(inner, p, p * 1.0001) != null; i++) p *= 0.97;
+        return p;
+    }
+
     private static List<P> Shrink(List<P> poly, double k)
     {
         var c = new P(poly.Average(p => p.X), poly.Average(p => p.Y));
@@ -262,6 +279,8 @@ public static class Roads
     public static RouteMind Mind(Town town, IReadOnlyList<Agent> members, bool hurry, bool wounded)
     {
         var c = town.Content.Roads.Choice;
+        // A company with nobody left standing still has a road home to draw, if no one to choose it.
+        if (members.Count == 0) return new RouteMind(c.TimeWeight, c.RiskWeight, 1, "", null, hurry, wounded);
         var leader = members[0];
         bool BoldOne(Agent a) => a.Has(Trait.Ambitious) || a.Has(Trait.HotTempered);
         var bold = members.FirstOrDefault(BoldOne);
@@ -269,7 +288,11 @@ public static class Roads
         double risk = c.RiskWeight * (BoldOne(leader) ? c.Bold : 1) * (green ? c.Green : 1) * (wounded ? c.Wounded : 1);
         double time = c.TimeWeight * (leader.Has(Trait.Lazy) ? c.Lazy : 1) * (hurry ? c.Urgent : 1);
         double level = members.Average(m => m.Hero!.Level) + Gear.Levels(town.Content, members);
-        return new RouteMind(time, risk, level, leader.GivenName, bold?.GivenName, hurry, wounded);
+        return new RouteMind(time, risk, level, leader.GivenName, bold?.GivenName, hurry, wounded)
+        {
+            Ways = Passage.Abilities(town, members),
+            Carrier = Passage.Carrier(town, members),
+        };
     }
 
     /// <summary>Whether a party's errand is pressing: a settlement waiting on them, or the warband raiding.</summary>
@@ -293,6 +316,33 @@ public static class Roads
     /// says so; their words go into <paramref name="said"/>.
     /// </summary>
     public static List<Waypoint> Plan(Town town, (double X, double Y) from, (double X, double Y) to, RouteMind mind, Rng rng, List<string> said)
+    {
+        var path = new List<Waypoint>();
+        var cur = from;
+        var goal = to;
+        // Through the town gate, never over the walls: out of it at the start, in by it at the end.
+        var gate = Passage.Gate(town);
+        bool home = gate != null && Js.Hypot(goal.X, goal.Y) < 1e-6;
+        if (gate is { } g && Js.Hypot(cur.X, cur.Y) < 1e-6)
+        {
+            path.Add(new Waypoint { X = g.X, Y = g.Y, Way = "gate" });
+            cur = g;
+        }
+        if (home) goal = gate!.Value;
+        // The river is crossed at its fords and bridges, unless they can swim or fly it anywhere; hard country is met on each stretch.
+        var stretches = (mind.Ways & Ways.River) != 0 ? [new Waypoint { X = goal.X, Y = goal.Y }] : Passage.Ford(town, cur, [new Waypoint { X = goal.X, Y = goal.Y }], said);
+        foreach (var w in stretches)
+        {
+            path.AddRange(Stretch(town, cur, (w.X, w.Y), mind, rng, said));
+            path[^1] = w;
+            cur = (w.X, w.Y);
+        }
+        if (home) path.Add(new Waypoint { X = 0, Y = 0, Way = "gate" });
+        return path;
+    }
+
+    /// <summary>One stretch of a road, from one spot to the next with no river between: round or through the hard country on the way.</summary>
+    private static List<Waypoint> Stretch(Town town, (double X, double Y) from, (double X, double Y) to, RouteMind mind, Rng rng, List<string> said)
     {
         var rules = town.Content.Roads;
         var start = new P(from.X, from.Y);
@@ -327,6 +377,41 @@ public static class Roads
             var inner = Shrink(hull, 0.985);
             bool forced = Clip(inner, cur, cur) != null || Contains(next, cur.X, cur.Y, rules.Margin) || Contains(next, goal.X, goal.Y, rules.Margin);
             var around = forced ? [] : Around(hull, cur, goal);
+            // A lake or sheer heights: nobody walks over. Those who can fly, walk on water or climb go straight across; the rest go round.
+            var needs = Passage.Needs(next.Kind);
+            if (needs != Ways.None)
+            {
+                // In the hollow before it (inside its hull, not in it): back off toward the town first, then round.
+                var back = cur;
+                var near = goal;
+                if (around.Count == 0 && (mind.Ways & needs) != needs && !Contains(next, cur.X, cur.Y) && !Contains(next, goal.X, goal.Y))
+                {
+                    back = Clear(inner, cur);
+                    near = Clear(inner, goal);
+                    around = Around(hull, back, near);
+                    if (around.Count > 0 && (back - cur).Length > 1e-9) path.Add(new Waypoint { X = back.X, Y = back.Y });
+                }
+                bool over = (mind.Ways & needs) == needs || around.Count == 0;
+                if (Passage.Rules(town).Texts.TryGetValue(over ? "over" : "round", out var told) && told.Count > 0)
+                    said.Add(Cap(rng.Pick(told)
+                        .Replace("{leader}", mind.Leader, StringComparison.Ordinal)
+                        .Replace("{carrier}", mind.Carrier, StringComparison.Ordinal)
+                        .Replace("{name}", next.Name, StringComparison.Ordinal)
+                        .Replace("{days}", DaysText(Math.Max(0, PathLength(cur, around, goal) - d.Length), rules.MarchHours), StringComparison.Ordinal)));
+                if (over)
+                {
+                    path.Add(new Waypoint { X = entry.X, Y = entry.Y });
+                    path.Add(new Waypoint { X = exit.X, Y = exit.Y, Way = "fly", Feature = next });
+                    cur = exit;
+                }
+                else
+                {
+                    foreach (var p in around) path.Add(new Waypoint { X = p.X, Y = p.Y, Way = "skirt", Feature = next });
+                    if ((near - goal).Length > 1e-9) path.Add(new Waypoint { X = near.X, Y = near.Y, Way = "skirt", Feature = next });
+                    cur = new P(path[^1].X, path[^1].Y);
+                }
+                continue;
+            }
             if (forced || around.Count == 0)
             {
                 path.Add(new Waypoint { X = entry.X, Y = entry.Y });
@@ -414,7 +499,7 @@ public static class Roads
         for (int i = route.Count - 1; i >= 0; i--)
         {
             var (x, y) = i > 0 ? (route[i - 1].X, route[i - 1].Y) : end;
-            back.Add(new Waypoint { X = x, Y = y, Way = route[i].Way, Feature = route[i].Feature });
+            back.Add(new Waypoint { X = x, Y = y, Way = route[i].Way, Feature = route[i].Feature, Crossing = route[i].Crossing });
         }
         return back;
     }
@@ -724,7 +809,9 @@ public static class Roads
     {
         var skirted = party.Out.Where(w => w.Way == "skirt" && w.Feature != null).Select(w => w.Feature!).Distinct().ToList();
         var crossed = party.Out.Where(w => w.Way == "cross" && w.Feature != null).Select(w => w.Feature!).Distinct().ToList();
+        var flown = party.Out.Where(w => w.Way == "fly" && w.Feature != null).Select(w => w.Feature!).Distinct().ToList();
         var bits = new List<string>();
+        if (flown.Count > 0) bits.Add($"straight over {flown[0].Name}");
         if (crossed.Count > 0) bits.Add($"straight {crossed[0].Kind.Through} {crossed[0].Name}");
         if (skirted.Count > 0) bits.Add($"the long way round {skirted[0].Name}");
         return bits.Count == 0 ? "" : $", taking {string.Join(" and ", bits)}";

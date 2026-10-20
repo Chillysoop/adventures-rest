@@ -18,10 +18,10 @@ public sealed class Geo
     public static readonly Vector2 Center = new(World / 2f, World / 2f);
 
     /// <summary>Tiles a party covers in a day on the road; sites sit this far out per day of travel.</summary>
-    public const float TilesPerDay = 44;
+    public const float TilesPerDay = (float)Passage.TilesPerDay;
 
     /// <summary>World tiles from the town's heart to where the wilds begin: a site or road point zero days out sits here.</summary>
-    public const float Reach0 = Clearing + 7;
+    public const float Reach0 = (float)Passage.Reach0;
 
     /// <summary>Everything within this radius of the town stays clear of forest and flat enough to build on: the whole grid, every ward.</summary>
     public const float Clearing = Grid * 0.75f;
@@ -70,6 +70,18 @@ public sealed class Geo
     }
 
     public static Vector2 FromDays((double X, double Y) p) => FromDays(p.X, p.Y);
+
+    /// <summary>A spot on the map in the sim's day units: the inverse of <see cref="FromDays(double, double)"/>.</summary>
+    public static (double X, double Y) ToDays(Vector2 w)
+    {
+        var d = w - Center;
+        float r = d.Length();
+        if (r < 1e-4f) return (0, 0);
+        // DayRadius eases in over the first 0.3 days, then grows a day's march per TilesPerDay.
+        float ease = DayRadius(0.3);
+        double days = r >= ease ? 0.3 + (r - ease) / TilesPerDay : r / (TilesPerDay + Reach0 / 0.3f);
+        return (d.X / r * days, d.Y / r * days);
+    }
 
     /// <summary>
     /// The town's settled radius (for its lamplight), and every site's pin where the sim puts it: on its

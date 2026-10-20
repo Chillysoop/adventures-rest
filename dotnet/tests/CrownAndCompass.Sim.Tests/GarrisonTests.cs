@@ -138,4 +138,22 @@ public class GarrisonTests
         }
         Assert.Fail("No seed marched on a walled town with a watch.");
     }
+
+    /// <summary>The quick order mans the gate and the side the warband marches from, and only those.</summary>
+    [Fact]
+    public void ManTheWallsCallsTheThreatenedSideAndTheGate()
+    {
+        var sim = Walled();
+        var t = sim.Town;
+        Assert.Equal(1, sim.ManTheWalls());
+        Assert.True(Garrison.WallsManned(t));
+        t.Enemy.Stage = ThreatStage.Marching;
+        t.Enemy.ArrivalTick = t.Tick + 48;
+        t.Enemy.Approach = 3;
+        Assert.False(Garrison.WallsManned(t));
+        Assert.Equal(2, sim.ManTheWalls());
+        Assert.True(Garrison.WallsManned(t));
+        Assert.Contains(t.Garrison.Posts, p => p.Kind == PostKind.Wall && p.Index == 3);
+        Assert.DoesNotContain(t.Garrison.Posts, p => p.Kind == PostKind.Wall && p.Index != 3);
+    }
 }

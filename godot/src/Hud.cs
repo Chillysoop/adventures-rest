@@ -29,7 +29,7 @@ public partial class Main
         [Tab.War] = "War",
         [Tab.Council] = "Council",
         [Tab.Bounties] = "Bounties and the road",
-        [Tab.Companies] = "Adventuring companies",
+        [Tab.Companies] = "Adventurers' roster",
         [Tab.Armory] = "The town armory",
         [Tab.Diplomacy] = "Diplomacy and trade",
         [Tab.Institutions] = "The town's institutions",
@@ -243,6 +243,8 @@ public partial class Main
     {
         _windowTab = t;
         _windowTitle.Text = Titles[t];
+        // The roster is a table: its window opens wide.
+        _window.OffsetRight = _window.OffsetLeft + (t == Tab.Companies ? 900 : 460);
         foreach (var (k, s) in _scrolls)
             if (k != Tab.Inspect) s.Visible = k == t;
         _window.Visible = true;
@@ -342,8 +344,9 @@ public partial class Main
         home.Pressed += () => _map.Recenter();
         tools.AddChild(home);
         corner.AddChild(tools);
+        corner.AddChild(BuildOrders());
 
-        var frame = new PanelContainer();
+        var frame = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ShrinkEnd };
         frame.AddThemeStyleboxOverride("panel", Castle.Oak(8, 8));
         var mini = new Minimap(_map) { CustomMinimumSize = new Vector2(220, 220) };
         frame.AddChild(mini);

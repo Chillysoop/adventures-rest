@@ -26,8 +26,10 @@ public sealed record TierDef
 }
 
 /// <summary>
-/// A ward of the town grid (GDD rule C3): the old town at the heart, four wards inside the city
-/// wall, and four outer wards beyond it. Rings and sides place it; the rest gives it a character.
+/// A ward of the town (GDD rule C3): the old town at the heart, four wards inside the city wall, and four outer wards beyond
+/// it. Wards are not laid out ahead: the land round the old town is split into a ring of quarters inside the wall and one
+/// outside, and a quarter becomes a ward once enough is built in it, the ward of its ring that best suits what was built
+/// there first (<see cref="Draws"/>, <see cref="City.Form"/>). Until then it is unsettled ground (city.json "unsettled").
 /// </summary>
 public sealed record WardDef
 {
@@ -37,14 +39,20 @@ public sealed record WardDef
     /// <summary>0 is the old town, 1 the ring inside the city wall, 2 the outer ring.</summary>
     public int Ring { get; init; }
 
-    /// <summary>north, east, south or west of the hall; empty for the old town.</summary>
+    /// <summary>The quarter (north, east, south or west of the hall) the ward stood in when wards were laid out by hand: where saves from then put it.</summary>
     public string Side { get; init; } = "";
 
-    /// <summary>The tier the town must reach before the ward can be laid out.</summary>
+    /// <summary>The tier the town must reach before a quarter can grow into this ward.</summary>
     public string Tier { get; init; } = "";
 
-    /// <summary>What surveying it and laying its streets costs the treasury.</summary>
-    public double Cost { get; init; }
+    /// <summary>
+    /// What draws a quarter to become this ward: a weight per finished building there, by its zone (Residential, Commercial,
+    /// Industry, Farmland), by its building id, "Holy" for temples and shrines, or "Fine" for houses grown past the cottage.
+    /// </summary>
+    public IReadOnlyDictionary<string, double> Draws { get; init; } = new Dictionary<string, double>();
+
+    /// <summary>Unsettled ground: a quarter that has not yet become a ward.</summary>
+    public bool Unsettled { get; init; }
     public double Rent { get; init; } = 1;
     public double Land { get; init; } = 1;
 
@@ -115,6 +123,15 @@ public sealed record HousingDef
 
     /// <summary>Hearth tax each resident pays the treasury a day at the town's usual tax rate; grander houses pay more.</summary>
     public double Tax { get; init; }
+
+    /// <summary>Services a house must have within <see cref="CityRules.NearReach"/> tiles before it can grow into this one.</summary>
+    public IReadOnlyList<string> Near { get; init; } = [];
+
+    /// <summary>Kinds of food the town must grow or catch (farms, orchards, fisheries...) before a house grows into this one.</summary>
+    public int Foods { get; init; }
+
+    /// <summary>The least appeal (decorations, gardens) a house's street must have before it grows into this one.</summary>
+    public double Beauty { get; init; }
 }
 
 /// <summary>Desire paths (city.json "paths"): wear per walk, how much a day's walks can wear, what's left of wear by the next day, and the wear that makes a lane.</summary>
@@ -124,6 +141,22 @@ public sealed record PathRules
     public int MostTrips { get; init; } = 20;
     public double Fade { get; init; } = 0.97;
     public double Lay { get; init; } = 1.2;
+}
+
+/// <summary>
+/// How painted zones fill in (city.json "growth"), as scores where lower is built first: <see cref="Reach"/> per tile a spot
+/// lies past the built town's edge, <see cref="OffStreet"/> for a spot not fronting a street, <see cref="Yard"/> per tile
+/// set back from one, <see cref="Shuffle"/> of chance, and <see cref="Hall"/> per tile from the hall. <see cref="Turn"/> is
+/// how far (radians) a grown building may stand off square to what it faces.
+/// </summary>
+public sealed record GrowthRules
+{
+    public double Reach { get; init; } = 1;
+    public double OffStreet { get; init; } = 0.5;
+    public double Yard { get; init; } = 1;
+    public double Shuffle { get; init; } = 0.8;
+    public double Hall { get; init; } = 0.05;
+    public double Turn { get; init; } = 0.3;
 }
 
 /// <summary>
@@ -150,6 +183,18 @@ public sealed record CityRules
     public double ExportShare { get; init; } = 0.75;
     public IReadOnlyList<TierDef> Tiers { get; init; } = [];
     public IReadOnlyList<WardDef> Wards { get; init; } = [];
+
+    /// <summary>The unsettled ground of each ring past the old town (ring 1 first): a quarter until it becomes a ward.</summary>
+    public IReadOnlyList<WardDef> Unsettled { get; init; } = [];
+
+    /// <summary>The tier that opens each ring of the town to zoning, the old town first.</summary>
+    public IReadOnlyList<string> Rings { get; init; } = [];
+
+    /// <summary>Finished buildings a quarter needs before it becomes a ward.</summary>
+    public int Founding { get; init; } = 4;
+
+    /// <summary>How well, per building, a quarter's buildings must draw a ward for the quarter to become it (<see cref="WardDef.Draws"/>).</summary>
+    public double Fit { get; init; } = 0.2;
     public IReadOnlyList<HousingDef> Housing { get; init; } = [];
     public IReadOnlyList<DensityDef> Densities { get; init; } = [];
     public IReadOnlyList<SprawlStep> Sprawl { get; init; } = [];
@@ -160,6 +205,15 @@ public sealed record CityRules
     /// <summary>How feet wear paths to buildings off the streets.</summary>
     public PathRules Paths { get; init; } = new();
 
+    /// <summary>How painted zones fill in from the built town outward.</summary>
+    public GrowthRules Growth { get; init; } = new();
+
+    /// <summary>How many builds go up at once, and how materials reach them.</summary>
+    public ConstructionRules Construction { get; init; } = new();
+
+    /// <summary>How the masons pave the streets with stone from the centre outward once the town is grand enough.</summary>
+    public PavingRules Paving { get; init; } = new();
+
     /// <summary>The ground kept clear along each wall line for the wall's widest works.</summary>
     public WallStripRules WallStrip { get; init; } = new();
 
@@ -169,6 +223,9 @@ public sealed record CityRules
     /// <summary>Days a house can go wanting (below DowngradeBelow) before it falls back a step.</summary>
     public int DowngradeDays { get; init; } = 10;
     public double UpgradeAt { get; init; } = 0.85;
+
+    /// <summary>How near, in tiles, the services a grander house needs must stand (<see cref="HousingDef.Near"/>).</summary>
+    public double NearReach { get; init; } = 8;
     public double DowngradeBelow { get; init; } = 0.4;
 
     /// <summary>Mood a fully content household carries; a wanting one loses as much.</summary>
@@ -183,8 +240,11 @@ public sealed class CityState
     /// <summary>Index into the tiers in city.json.</summary>
     public int Tier { get; set; }
 
-    /// <summary>Wards laid out so far, in the order they opened.</summary>
+    /// <summary>Wards formed so far, in the order they formed.</summary>
     public List<string> OpenWards { get; } = ["old_town"];
+
+    /// <summary>The ward each quarter has become ("ring:side", e.g. "1:west"), once it has (<see cref="City.Form"/>).</summary>
+    public OrderedMap<string, string> Sectors { get; set; } = new();
 
     /// <summary>How each ward feels about the mayor, -100 to 100 (<see cref="Wards"/>).</summary>
     public OrderedMap<string, double> Feeling { get; set; } = new();
@@ -208,7 +268,7 @@ public sealed class CityState
 
 /// <summary>
 /// The growing city (GDD rules C1, C3, C4): tiers claimed by charter once the town is big enough and
-/// its institutions stand; wards laid out as the tiers allow; houses that grow a storey when their
+/// its institutions stand; wards that grow out of what is built round the old town; houses that grow a storey when their
 /// families are content and fall back when they go wanting; and the goods and services they want.
 /// </summary>
 public static class City
@@ -274,19 +334,31 @@ public static class City
     // Wards ------------------------------------------------------------------------------------
 
     public static WardDef Ward(Town town, string id) =>
-        town.Content.City.Wards.FirstOrDefault(w => w.Id == id) ?? throw new KeyNotFoundException($"Unknown ward {id}");
+        town.Content.City.Wards.FirstOrDefault(w => w.Id == id) ?? town.Content.City.Unsettled.FirstOrDefault(w => w.Id == id)
+        ?? throw new KeyNotFoundException($"Unknown ward {id}");
 
     /// <summary>The ward a lot lies in: the ring by distance from the hall, the side by direction.</summary>
     public static WardDef WardOf(Town town, Lot lot) => WardOf(town, lot.X, lot.Y);
 
-    /// <summary>The ward a point of the town (tiles from its corner) lies in.</summary>
+    /// <summary>The ward a point of the town (tiles from its corner) lies in: its quarter's ward, or the ring's unsettled ground.</summary>
     public static WardDef WardOf(Town town, double x, double y)
     {
-        var wards = town.Content.City.Wards;
+        var c = town.Content.City;
         int ring = Ring(town, x, y);
-        if (ring == 0) return wards.First(w => w.Ring == 0);
-        string side = Side(town, x, y);
-        return wards.FirstOrDefault(w => w.Ring == ring && w.Side == side) ?? wards.First(w => w.Ring == 0);
+        if (ring == 0) return c.Wards.First(w => w.Ring == 0);
+        if (town.City.Sectors.TryGetValue(Sector(ring, Side(town, x, y)), out var id)) return Ward(town, id);
+        return c.Unsettled.FirstOrDefault(w => w.Ring == ring) ?? c.Wards.First(w => w.Ring == 0);
+    }
+
+    /// <summary>A quarter's key: its ring and its side of the hall.</summary>
+    public static string Sector(int ring, string side) => $"{ring}:{side}";
+
+    /// <summary>The quarter a ward has formed in, or null (the old town's is the middle).</summary>
+    public static (int Ring, string Side)? SectorOf(Town town, string wardId)
+    {
+        foreach (var (key, id) in town.City.Sectors)
+            if (id == wardId) return (int.Parse(key[..key.IndexOf(':')]), key[(key.IndexOf(':') + 1)..]);
+        return null;
     }
 
     /// <summary>A ward's name as it reads in a sentence: "the Trades Ward", but "Castle Hill".</summary>
@@ -389,29 +461,113 @@ public static class City
 
     public static bool IsOpen(Town town, Lot lot) => IsOpen(town, lot.X, lot.Y);
 
-    public static bool IsOpen(Town town, double x, double y) => town.City.OpenWards.Contains(WardOf(town, x, y).Id);
+    public static bool IsOpen(Town town, double x, double y) => RingOpen(town, Ring(town, x, y));
 
-    /// <summary>Why the ward can't be laid out now, or null when it can.</summary>
-    public static string? WardBlocked(Town town, string wardId)
+    /// <summary>Whether the town's charter reaches a ring, so its ground can be zoned and built on.</summary>
+    public static bool RingOpen(Town town, int ring)
     {
-        var w = Ward(town, wardId);
-        if (town.City.OpenWards.Contains(w.Id)) return "already laid out";
-        if (!Reached(town, w.Tier)) return $"needs the town to be a {TierName(town, w.Tier).ToLowerInvariant()}";
-        if (town.Treasury < w.Cost) return "not enough gold";
-        return null;
+        var rings = town.Content.City.Rings;
+        return ring == 0 || (ring < rings.Count && Reached(town, rings[ring]));
     }
 
-    /// <summary>Survey a ward and lay out its streets, opening its lots to zoning.</summary>
-    public static bool OpenWard(Town town, string wardId)
+    /// <summary>The charter that opens a ring to zoning.</summary>
+    public static string RingTier(Town town, int ring)
     {
-        if (WardBlocked(town, wardId) != null) return false;
-        var w = Ward(town, wardId);
-        town.Book(TreasuryAccount.Wards, -w.Cost);
-        town.City.OpenWards.Add(w.Id);
-        // New ground to paint and build on: searches of the old plan no longer hold.
-        town.Plan.Changed();
-        town.Log(LedgerCategory.Town, Importance.Major, $"Surveyors stake out {The(w)} and the first streets are cobbled. {w.Blurb}");
-        return true;
+        var rings = town.Content.City.Rings;
+        return ring < rings.Count ? rings[ring] : rings[^1];
+    }
+
+    private static readonly string[] Quarters = ["south", "west", "north", "east"];
+
+    /// <summary>
+    /// Daily: a quarter with enough finished buildings in it becomes a ward, the one of its ring (not yet formed elsewhere, its
+    /// tier reached) that what was built there draws most (<see cref="WardDef.Draws"/>). A quarter whose buildings draw none of
+    /// the wards open to it waits, unsettled, until one is.
+    /// </summary>
+    public static void Form(Town town)
+    {
+        var c = town.Content.City;
+        int need = c.Founding;
+        Dictionary<string, List<Building>>? bySector = null;
+        for (int ring = 1; ring <= WallRings && RingOpen(town, ring); ring++)
+            foreach (string side in Quarters)
+            {
+                string key = Sector(ring, side);
+                if (town.City.Sectors.ContainsKey(key)) continue;
+                bySector ??= Built(town);
+                if (!bySector.TryGetValue(key, out var here) || here.Count < need) continue;
+                var best = c.Wards
+                    .Where(w => w.Ring == ring && !town.City.OpenWards.Contains(w.Id) && Reached(town, w.Tier))
+                    .Select(w => (w, score: here.Sum(b => Draw(town, w, b))))
+                    .Where(x => x.score >= c.Fit * here.Count)
+                    .OrderByDescending(x => x.score)
+                    .ThenBy(x => x.w.Id, StringComparer.Ordinal)
+                    .Select(x => x.w)
+                    .FirstOrDefault();
+                if (best == null) continue;
+                town.City.Sectors[key] = best.Id;
+                town.City.OpenWards.Add(best.Id);
+                // The plan's ward per cell, and searches of the old plan, no longer hold.
+                town.Plan.Wards = null;
+                town.Plan.Changed();
+                town.Log(LedgerCategory.Town, Importance.Major, $"The {Describe(town, best, here)} {side} of the {(ring == 1 ? "old town" : "walls")} have grown into a quarter of their own: {The(best)}. {best.Blurb}");
+            }
+    }
+
+    /// <summary>The finished buildings in each unsettled quarter, by its key.</summary>
+    private static Dictionary<string, List<Building>> Built(Town town)
+    {
+        var map = new Dictionary<string, List<Building>>();
+        foreach (var b in town.Buildings)
+        {
+            if (!b.Complete || b.Def.Civic && !b.Def.Holy) continue;
+            var lot = town.Lot(b.LotId);
+            int ring = Ring(town, lot.X, lot.Y);
+            if (ring == 0) continue;
+            string key = Sector(ring, Side(town, lot.X, lot.Y));
+            if (!map.TryGetValue(key, out var list)) map[key] = list = [];
+            list.Add(b);
+        }
+        return map;
+    }
+
+    /// <summary>How much one building draws its quarter toward a ward.</summary>
+    public static double Draw(Town town, WardDef w, Building b)
+    {
+        double d = w.Draws.TryGetValue(b.Def.Zone.ToString(), out double z) ? z : 0;
+        if (w.Draws.TryGetValue(b.Def.Id, out double own)) d += own;
+        if (b.Def.Holy && w.Draws.TryGetValue("Holy", out double holy)) d += holy;
+        if (b.Def.Housing > 0 && b.Def.Id != "house" && w.Draws.TryGetValue("Fine", out double fine)) d += fine;
+        return d;
+    }
+
+    /// <summary>What drew a quarter to its ward, for the news of it: "shops and homes", "workshops and farms".</summary>
+    private static string Describe(Town town, WardDef w, List<Building> here)
+    {
+        var by = new Dictionary<string, double>();
+        foreach (var b in here)
+        {
+            void Add(string what, string key)
+            {
+                if (w.Draws.TryGetValue(key, out double v)) by[what] = by.GetValueOrDefault(what) + v;
+            }
+            Add(b.Def.Zone switch { Zone.Commercial => "shops", Zone.Industry => "workshops", Zone.Farmland => "farms", Zone.Residential => "homes", _ => "halls" }, b.Def.Zone.ToString());
+            Add(b.Def.Name.ToLowerInvariant() + "s", b.Def.Id);
+            if (b.Def.Holy) Add("shrines", "Holy");
+            if (b.Def.Housing > 0 && b.Def.Id != "house") Add("fine houses", "Fine");
+        }
+        var top = by.OrderByDescending(x => x.Value).ThenBy(x => x.Key, StringComparer.Ordinal).Take(2).Select(x => x.Key).ToList();
+        return string.Join(" and ", top);
+    }
+
+    /// <summary>Saves from before wards formed on their own: each ward laid out takes the quarter it stood in then.</summary>
+    public static void Migrate(Town town)
+    {
+        if (town.City.Sectors.Count > 0) return;
+        foreach (var id in town.City.OpenWards)
+            if (town.Content.City.Wards.FirstOrDefault(w => w.Id == id) is { Ring: > 0, Side: not "" } w)
+                town.City.Sectors[Sector(w.Ring, w.Side)] = w.Id;
+        town.Plan.Wards = null;
     }
 
     /// <summary>Whether a building may stand on this lot: its ward is open and the building allows it.</summary>
@@ -423,7 +579,7 @@ public static class City
     public static bool AllowsWard(Town town, BuildingDef d, double x, double y)
     {
         var w = WardOf(town, x, y);
-        if (!town.City.OpenWards.Contains(w.Id)) return false;
+        if (!RingOpen(town, w.Ring)) return false;
         return d.Wards.Count == 0 || d.Wards.Contains(w.Id);
     }
 
@@ -436,7 +592,7 @@ public static class City
     {
         if (!Reached(town, d.Tier)) return $"needs the town to be a {TierName(town, d.Tier).ToLowerInvariant()}";
         if (d.Wards.Count > 0 && !d.Wards.Any(town.City.OpenWards.Contains))
-            return $"needs the {string.Join(" or the ", d.Wards.Select(w => Ward(town, w).Name))}";
+            return $"needs the {string.Join(" or the ", d.Wards.Select(w => Ward(town, w).Name))} to grow up";
         return null;
     }
 
@@ -477,7 +633,8 @@ public static class City
         }
         int people = Math.Max(1, town.Workers.Count);
         var cov = new OrderedMap<string, double>();
-        foreach (var (s, c) in cap) cov[s] = Math.Min(1, c / people);
+        // Places so full they turned people away serve the town less than their size says.
+        foreach (var (s, c) in cap) cov[s] = Math.Min(1, c / people) * Crowds.Coverage(town, s);
         town.City.Coverage = cov;
     }
 
@@ -486,7 +643,7 @@ public static class City
     /// <summary>
     /// Daily: count the services, let every household buy what it wants, settle the service
     /// businesses' takings, grow the houses whose families are content and shrink the ones that
-    /// went wanting, and let the stand-in mayor claim charters and lay out wards.
+    /// went wanting, let quarters grow into wards, and let the stand-in mayor claim charters.
     /// </summary>
     public static void Daily(Town town, bool autoMayor)
     {
@@ -496,6 +653,7 @@ public static class City
         Takings(town);
         Grow(town);
         ReadyNotice(town);
+        Form(town);
         if (autoMayor) Steward(town);
     }
 
@@ -550,7 +708,7 @@ public static class City
                 sum += CoverageOf(town, s);
                 needs++;
             }
-            house.Contentment = Math.Clamp((needs == 0 ? 1 : sum / needs) + Decor.Comfort(town, house) + Wards.Comfort(town, house) + grand, 0, 1);
+            house.Contentment = Math.Clamp((needs == 0 ? 1 : sum / needs) + Decor.Comfort(town, house) + Paving.Comfort(town, house) + Wards.Comfort(town, house) + grand, 0, 1);
         }
         town.City.Wanted = wanted;
         town.City.Supplied = supplied;
@@ -643,7 +801,7 @@ public static class City
             sum += CoverageOf(town, s);
             needs++;
         }
-        return Math.Clamp((needs == 0 ? 1 : sum / needs) + Decor.Comfort(town, house) + Wards.Comfort(town, house) + GrandWorks.Comfort(town), 0, 1);
+        return Math.Clamp((needs == 0 ? 1 : sum / needs) + Decor.Comfort(town, house) + Paving.Comfort(town, house) + Wards.Comfort(town, house) + GrandWorks.Comfort(town), 0, 1);
     }
 
     /// <summary>Why this house can't grow now, or null when it can.</summary>
@@ -660,9 +818,55 @@ public static class City
         // The town's own houses are let to those who can't build: they grow roomier, never grand.
         if (house.OwnerId == null && next.Wards.Count > 0) return "the town lets its houses to working folk, not as manors";
         var nh = Housing(town, next.Id);
+        if (nh != null && NeedsBlocked(town, house, nh) is { } need) return need;
         if (nh != null && Prospect(town, house, nh) < town.Content.City.UpgradeAt) return "the town can't yet give a bigger house what it wants";
         return null;
     }
+
+    /// <summary>What the house's own street lacks for the next storey: services near it, food variety in town, some beauty; or null.</summary>
+    public static string? NeedsBlocked(Town town, Building house, HousingDef next)
+    {
+        double reach = town.Content.City.NearReach;
+        var lot = town.Lot(house.LotId);
+        foreach (string s in next.Near)
+            if (!Near(town, lot, s, reach)) return $"needs {Agent.Article(ServiceName(s))} {ServiceName(s)} within {Js.Str(reach)} tiles";
+        if (next.Foods > 0 && FoodKinds(town) is int kinds && kinds < next.Foods)
+            return $"needs {next.Foods} kinds of food grown in town (there {(kinds == 1 ? "is" : "are")} {kinds}): farms, orchards, root fields, fisheries";
+        if (next.Beauty > 0 && Decor.AppealOf(town, house) < next.Beauty) return "needs something pleasant on its street: trees, a fountain, a garden";
+        return null;
+    }
+
+    /// <summary>Whether a standing building giving the service is within reach of the lot.</summary>
+    public static bool Near(Town town, Lot lot, string service, double reach)
+    {
+        foreach (var b in town.Buildings)
+        {
+            if (!b.Complete || !b.Def.Serves.ContainsKey(service)) continue;
+            var l = town.Lot(b.LotId);
+            if ((l.X - lot.X) * (l.X - lot.X) + (l.Y - lot.Y) * (l.Y - lot.Y) <= reach * reach) return true;
+        }
+        return false;
+    }
+
+    /// <summary>Kinds of food the town grows or catches: each sort of farm, orchard or fishery standing counts once.</summary>
+    public static int FoodKinds(Town town)
+    {
+        var kinds = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var b in town.Buildings)
+            if (b.Complete && b.Def.Produces.Any(p => p.Key == Good.Food)) kinds.Add(b.Def.Id);
+        return kinds.Count;
+    }
+
+    private static string ServiceName(string service) => service switch
+    {
+        "shrine" => "shrine",
+        "market" => "market",
+        "tavern" => "tavern",
+        "bath" => "bathhouse",
+        "theatre" => "theatre",
+        "learning" => "library",
+        _ => service,
+    };
 
     public static double UpgradeCost(Town town, BuildingDef next) =>
         Js.Round(next.Cost * 0.6 + town.Market.Quote(Good.Timber, next.Timber) + town.Market.Quote(Good.Stone, next.Stone));
@@ -672,7 +876,7 @@ public static class City
         if (UpgradeBlocked(town, house) != null) return;
         var next = town.Content.Building(NextFor(town, house, Housing(town, house.Def.Id)!));
         double cost = UpgradeCost(town, next);
-        double labor = next.BuildHours * 0.5 * Brain.ConstructionWage;
+        double labor = Construction.Hours(town, next) * 0.5 * Brain.ConstructionWage;
         if (house.OwnerId is int oid)
         {
             var owner = town.Agent(oid);
@@ -690,6 +894,8 @@ public static class City
         string old = house.Def.Name.ToLowerInvariant();
         house.Def = next;
         house.BuildProgress = next.BuildHours * 0.5;
+        // The new storey's timber and stone are carried up before it rises.
+        house.Hauled = Construction.Start(next, false) == 1 ? 1 : 0.5;
         house.Opened = false;
         house.LaborBudget = labor;
         house.UpDays = 0;
@@ -751,24 +957,12 @@ public static class City
 
     // The stand-in mayor -----------------------------------------------------------------------
 
-    /// <summary>Claim charters as soon as they are earned, and lay out the next ward when land runs short.</summary>
+    /// <summary>Claim charters as soon as they are earned (wards form on their own, <see cref="Form"/>).</summary>
     private static void Steward(Town town)
     {
         var next = NextTier(town);
         if (next != null && Missing(town).Count == 0 && town.Treasury >= next.Cost + 150) RaiseCharter(town);
         Density.StandIn(town);
-
-        // Lay out the next ward when land runs short, or when the treasury is flush and a ward is ready.
-        int vacant = Land.OpenGround(town);
-        bool flush = town.Treasury > 3000;
-        if (vacant >= 24 * Land.Res * Land.Res && !flush) return;
-        var ward = town.Content.City.Wards
-            .Where(w => WardBlocked(town, w.Id) == null && town.Treasury >= w.Cost + (flush ? 2500 : 200))
-            .OrderBy(w => w.Ring)
-            .ThenBy(w => w.Cost)
-            .ThenBy(w => w.Id, StringComparer.Ordinal)
-            .FirstOrDefault();
-        if (ward != null) OpenWard(town, ward.Id);
     }
 
     private static string Cap(string s) => s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];

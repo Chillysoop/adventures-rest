@@ -19,6 +19,7 @@
     "shepherd": ["animal-handling", "survival"],
     "weaver": ["sleight-of-hand"],
     "carpenter": ["athletics"],
+    "builder": ["athletics"],
     "herbalist": ["medicine", "nature"],
     "alchemist": ["arcana", "medicine"],
     "fisher": ["survival", "nature"],

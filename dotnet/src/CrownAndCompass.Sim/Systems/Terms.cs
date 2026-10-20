@@ -83,6 +83,7 @@ public sealed record BountyRules
     public List<TermDef> Terms { get; init; } = [];
     public CaptiveRules Captives { get; init; } = new();
     public BountyPay Pay { get; init; } = new();
+    public OfferRules Offers { get; init; } = new();
 
     public TermDef Term(string id) => Terms.FirstOrDefault(t => t.Id == id) ?? Terms.FirstOrDefault() ?? new TermDef { Id = "slay", Name = "Slay", Verb = "clear" };
 }
@@ -101,6 +102,45 @@ public sealed record BountyPay
     public double WealthPer { get; init; } = 10000;
     public double WealthCap { get; init; } = 2;
     public double HeroLevel { get; init; }
+}
+
+/// <summary>
+/// A job offered to one company by name (<see cref="Roster"/>). Its riders weigh it as they weigh any bounty
+/// (pay, traits, terms) and add what the company thinks of the council, being asked by name, and the danger
+/// against their strength. The answer is that weighing plus a mood of the day, Spread wide, against Accept.
+/// </summary>
+public sealed record OfferRules
+{
+    /// <summary>Being asked by name flatters a company.</summary>
+    public double Asked { get; init; } = 0.1;
+
+    /// <summary>Per point of relation above (or below) 50, times this.</summary>
+    public double Relation { get; init; } = 0.004;
+
+    /// <summary>Lost at most when the riders' levels fall short of three per tier of the place, in proportion.</summary>
+    public double Danger { get; init; } = 0.8;
+
+    /// <summary>A famous company (FameTier at least PettyFame) finds a place of PettyTier or less beneath it.</summary>
+    public double Petty { get; init; } = 0.15;
+    public int PettyFame { get; init; } = 2;
+    public int PettyTier { get; init; } = 1;
+
+    public double Accept { get; init; } = 0.6;
+    public double Spread { get; init; } = 0.4;
+
+    /// <summary>The leaning words, by score: at least Eager, Willing, Unsure, Reluctant; anything less is Unwilling.</summary>
+    public double Eager { get; init; } = 0.8;
+    public double Willing { get; init; } = 0.65;
+    public double Unsure { get; init; } = 0.5;
+    public double Reluctant { get; init; } = 0.4;
+
+    /// <summary>An offer below Insult of the asking price that is turned down sours dealings by InsultDealings; one taken warms them by AcceptDealings.</summary>
+    public double Insult { get; init; } = 0.6;
+    public double InsultDealings { get; init; } = -3;
+    public double AcceptDealings { get; init; } = 2;
+
+    /// <summary>Most riders a company sends; heroes with no company join one short of three.</summary>
+    public int MaxRiders { get; init; } = 4;
 }
 
 /// <summary>Townsfolk carried off in a raid, held at a site until rescued or lost.</summary>
@@ -245,6 +285,7 @@ public static class Captives
             foreach (var m in by.Members.Select(town.Agent).Where(m => !m.Departed && m.Hero != null))
                 m.Hero!.Renown += r.FreedRenown;
         string site = Quests.Site(town, c.SiteId)?.Def.Name ?? "the raiders' camp";
+        if (by != null) Notoriety.Record(town, by.Name, $"brought {(people.Count == 1 ? "a captive" : $"{people.Count} captives")} home from {site}");
         town.Log(LedgerCategory.Quest, Importance.Major,
             by != null
                 ? $"The {by.Name} bring {Names(people)} home from {site}. The whole street turns out for them."
@@ -381,6 +422,7 @@ public static class Remains
             for (int i = 0; i < f.Stones; i++) Armory.Add(town, stone, $"the {f.Company}");
         town.Mandate = Math.Min(100, town.Mandate + 2);
         string site = Quests.Site(town, f.SiteId)?.Def.Name ?? "the wilds";
+        Notoriety.Record(town, by.Name, $"brought the fallen {f.Company} home from {site}");
         int pieces = f.Gear.Count + f.Stones;
         string gear = pieces == 0 ? "" : pieces == 1 ? $" Their {(f.Gear.Count == 1 ? f.Gear[0].Name : "sending stone")} goes to the armory." : $" {pieces} pieces of their gear go to the armory.";
         town.Log(LedgerCategory.Quest, Importance.Major, $"The {by.Name} bring the {f.Company} home from {site}, and the town buries its own.{gear}", f.Heroes);

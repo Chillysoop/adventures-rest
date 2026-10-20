@@ -94,6 +94,8 @@ public partial class Main : Control
         else if (_opts.Day > 0) _sim.RunDays(_opts.Day);
         if (_opts.Hour > 0) for (int i = 0; i < _opts.Hour; i++) _sim.Step();
         _opts.ApplyScript(_sim);
+        _rosterPick = _opts.RosterPick ?? _rosterPick;
+        _offerAnswer = _opts.RosterAnswer ?? _offerAnswer;
         // Stories the script's hours brought are the stand-in mayor's, not cards to greet the shot with.
         if (_opts.Autoplay) _storySeen = _sim.Town.Stories.All.Count;
         SetSpeed(_opts.Speed ?? 1);
@@ -103,11 +105,19 @@ public partial class Main : Control
         if (_opts.Stat is int stat) Callable.From(() => { RenderHeader(); ShowStatTip(stat); }).CallDeferred();
         if (_opts.Site is string site) Select(Selection.Site(site));
         if (_opts.Wall is int wall) Select(Selection.Wall(wall));
+        if (_opts.Strike) ShowStrike(true);
         if (_opts.Cam is float cam)
             _map.LookAt(_opts.Look ?? (_opts.Site is string at && _map.Geo.Pins.TryGetValue(at, out var pin) ? pin : Map.Geo.Center), cam);
         // --at aims the camera at the town's first finished building of a kind.
         if (_opts.At is string atKind && _sim.Town.Buildings.Where(b => b.Def.Id == atKind && b.Complete).OrderBy(b => b.Id).FirstOrDefault() is Building at0)
+        {
             _map.LookAt(Map.Geo.LotPos(_sim.Town.Lot(at0.LotId)), _opts.Cam ?? 22);
+            // --card opens its inspector too (a monument's parts, a site's say).
+            if (_opts.Card) Select(Selection.Building(at0.Id));
+        }
+        // --rising aims at the building going up with the most hands on it, the least built first (for a clip of it rising).
+        if (_opts.Rising && _sim.Town.Buildings.Where(b => b.IsSite && !b.Def.IsGrand).OrderByDescending(b => b.Workers.Count).ThenBy(b => b.BuildProgress / b.Def.BuildHours).ThenBy(b => b.Id).FirstOrDefault() is Building rising)
+            _map.LookAt(Map.Geo.LotPos(_sim.Town.Lot(rising.LotId)), _opts.Cam ?? 6);
         if (_opts.StrategicView) ToggleStrategic();
         foreach (var (kind, at, label) in _opts.Markers) _map.Markers.Add(new Marker(kind, at, _sim.Town.Day, label));
         if (_opts.OpenMarker is int open && open < _map.Markers.Count) CallDeferred(MethodName.OpenMarkerAt, open);
@@ -131,6 +141,12 @@ public partial class Main : Control
             Select(Selection.Building(house.Id));
             var lot = _sim.Town.Lot(house.LotId);
             _map.LookAt(new Vector2(Map.Geo.Margin + (float)lot.X, Map.Geo.Margin + (float)lot.Y), 7);
+        }
+        if (_opts.Crowded is string crowd && _sim.Town.Buildings.Where(b => b.Complete && b.Def.Capacity > 0 && (crowd == "" || Crowds.Kind(b.Def) == crowd)).OrderByDescending(b => b.TurnedAwayLast).ThenByDescending(b => Crowds.Inside(_sim.Town, b)).ThenBy(b => b.Id).FirstOrDefault() is Building crowded)
+        {
+            Select(Selection.Building(crowded.Id));
+            var lot = _sim.Town.Lot(crowded.LotId);
+            _map.LookAt(new Vector2(Map.Geo.Margin + (float)lot.X, Map.Geo.Margin + (float)lot.Y), _opts.Cam ?? 7);
         }
         // News from a fast-forward is in the Ledger; don't greet the player with a stale feed.
         ClearFeed();
@@ -392,6 +408,8 @@ public partial class Main : Control
         else if (k.Keycode == Key.B) ToggleBuildBar();
         else if (k.Keycode == Key.G) ToggleFlag();
         else if (k.Keycode == Key.Escape && _map.Flagging) ToggleFlag();
+        else if (k.Keycode == Key.Escape && _map.Scouting) ToggleScouting();
+        else if (k.Keycode == Key.Escape && _strikePanel.Visible) ShowStrike(false);
         else if (k.Keycode == Key.Escape && _map.Planner.Active) _map.Planner.Pick(null);
         else if (k.Keycode is Key.Bracketleft or Key.Bracketright && _map.Planner.Tool?.Zone != null) _map.Planner.Resize(k.Keycode == Key.Bracketright ? 1.15f : 1 / 1.15f);
         else if (k.Keycode == Key.Escape && _map.Decorator.Active) _map.Decorator.Pick(null);
@@ -438,6 +456,7 @@ public partial class Main : Control
         SyncAlerts(delta);
         ScriptedAlert();
         SyncMarkers();
+        SyncOrders();
         SyncGuide();
         SyncStories(delta);
         SyncFinds();
@@ -468,6 +487,7 @@ public partial class Main : Control
                 }
             if (_drawer.Visible) RenderTray();
             if (_inspector.Visible) RenderInspect();
+            if (_strikePanel.Visible) RenderStrike();
             RenderBuild();
             _dirty = false;
         }

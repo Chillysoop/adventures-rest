@@ -76,6 +76,8 @@ public sealed record BuildingDef
     public int Housing { get; init; }
     public double Rent { get; init; }
     public bool Venue { get; init; }
+
+    /// <summary>Townsfolk it holds at once on an outing (a tavern's drinkers, a shrine's worshippers, a bathhouse's bathers); 0 = it takes no visitors (<see cref="Systems.Crowds"/>).</summary>
     public int Capacity { get; init; }
     public string? Profession { get; init; }
 
@@ -128,8 +130,24 @@ public sealed record BuildingDef
     /// <summary>A grand work's stages, funded one after another; its build hours are theirs summed (<see cref="Systems.GrandWorks"/>).</summary>
     public IReadOnlyList<WorkStage> Stages { get; init; } = [];
 
+    /// <summary>A builders' yard: building crews it adds, so more of the townsfolk's builds can be under way at once (<see cref="Systems.Construction.Crews"/>).</summary>
+    public int Crews { get; init; }
+
+    /// <summary>A monument's part: the building it grows from (temple, keep, town hall), raised beside it (<see cref="Systems.Monuments"/>).</summary>
+    public string PartOf { get; init; } = "";
+
+    /// <summary>A part the monument must already have, standing or rising, before this one can be added.</summary>
+    public string After { get; init; } = "";
+
+    /// <summary>
+    /// What a standing part does each day for the town's standing: "god" with the monument's god (the temple's own, else
+    /// the town's), "faction:id" with a faction. Negative for a rival.
+    /// </summary>
+    public IReadOnlyDictionary<string, double> Favour { get; init; } = new Dictionary<string, double>();
+
     public bool IsBusiness => Jobs > 0;
     public bool IsGrand => Stages.Count > 0;
+    public bool IsPart => PartOf != "";
 }
 
 /// <summary>One stage of a grand work: the gold and goods it draws when it starts, and the builders' hours it takes.</summary>
@@ -963,6 +981,9 @@ public sealed record TerrainKindDef
     public double Ambush { get; init; }
     public IReadOnlyList<string> Habitats { get; init; } = [];
     public IReadOnlyList<string> AmbushText { get; init; } = [];
+
+    /// <summary>"water" (a lake) or "sheer" (cliffs and peaks): nobody walks across, only flies, swims or climbs (<see cref="Systems.Passage"/>); "" for country anyone can.</summary>
+    public string Barrier { get; init; } = "";
 }
 
 public sealed record TerrainHazardDef
@@ -1261,6 +1282,9 @@ public sealed class Content
     /// <summary>Fame and infamy for heroes and companies (content/game/notoriety.json).</summary>
     public NotorietyRules Notoriety { get; init; } = new();
 
+    /// <summary>Walls, moats, the river and the ground nobody crosses on foot, and what crosses it anyway (content/game/passage.json).</summary>
+    public PassageRules Passage { get; init; } = new();
+
     /// <summary>The ladders the client's odds, threat and stakes bars read (content/game/assess.json).</summary>
     public AssessRules Assess { get; init; } = new();
 
@@ -1269,6 +1293,9 @@ public sealed class Content
 
     /// <summary>Enemy powers' end-game crises, their blows against the town and their clashes (content/game/crises.json).</summary>
     public CrisisRules Crises { get; init; } = new();
+
+    /// <summary>How many fit in a tavern, shrine or bathhouse at once, and what the townsfolk do when it is full (content/game/crowds.json).</summary>
+    public CrowdRules Crowds { get; init; } = new();
 
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
@@ -1434,9 +1461,11 @@ public sealed class Content
             Merchants = Parse<MerchantRules>("merchants.json"),
             Wards = Parse<WardRules>("wards.json"),
             Notoriety = Parse<NotorietyRules>("notoriety.json"),
+            Passage = Parse<PassageRules>("passage.json"),
             Assess = Parse<AssessRules>("assess.json"),
             Skills = Parse<SkillRules>("skills.json"),
             Crises = Parse<CrisisRules>("crises.json"),
+            Crowds = Parse<CrowdRules>("crowds.json"),
         };
     }
 

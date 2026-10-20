@@ -517,7 +517,7 @@ public static class Bastions
 
     /// <summary>Gold a facility costs the chest: its ground, its build, materials and the labourers' wages.</summary>
     public static double FacilityCost(Town town, BastionState b, BuildingDef d) =>
-        town.LotPrice(town.Lot(Keep(town, b).LotId)) + d.Cost + Planning.Materials(town, d) + d.BuildHours * Brain.ConstructionWage;
+        town.LotPrice(town.Lot(Keep(town, b).LotId)) + d.Cost + Planning.Materials(town, d) + Construction.Hours(town, d) * Brain.ConstructionWage;
 
     private static void Grow(Town town, BastionState b)
     {
@@ -531,7 +531,7 @@ public static class Bastions
         if (lot == null) return;
         Pay(town, b, lot, d, gift: false);
         var site = town.AddBuilding(d, lot, b.LordId, $"the {d.Name} of {b.Name}", false);
-        site.LaborBudget = d.BuildHours * Brain.ConstructionWage;
+        site.LaborBudget = Construction.Hours(town, d) * Brain.ConstructionWage;
         b.Facilities.Add(site.Id);
         town.Log(LedgerCategory.Construction, Importance.Notable, $"The {b.Company} break ground on {site.Name} at {b.Name}.", b.LordId is int l ? [l] : []);
     }
@@ -545,7 +545,7 @@ public static class Bastions
             b.Chest -= land;
             town.Book(TreasuryAccount.LandSales, land);
         }
-        b.Chest -= Planning.BuyMaterials(town, d) + d.Cost + d.BuildHours * Brain.ConstructionWage;
+        b.Chest -= Planning.BuyMaterials(town, d) + d.Cost + Construction.Hours(town, d) * Brain.ConstructionWage;
     }
 
     /// <summary>Open posts filled from the town: the idle first (through the job market), then a worker lured from poorer pay, one a day.</summary>
@@ -595,7 +595,7 @@ public static class Bastions
     public static double KeepCost(Town town, Lot? lot)
     {
         var keep = town.Content.Building(Rules(town).Keep);
-        return (lot != null ? town.LotPrice(lot) : 0) + keep.Cost + Planning.Materials(town, keep) + keep.BuildHours * Brain.ConstructionWage;
+        return (lot != null ? town.LotPrice(lot) : 0) + keep.Cost + Planning.Materials(town, keep) + Construction.Hours(town, keep) * Brain.ConstructionWage;
     }
 
     private static void Requests(Town town, bool auto)
@@ -707,7 +707,7 @@ public static class Bastions
             };
             Pay(town, b, lot, keepDef, gift);
             var keep = town.AddBuilding(keepDef, lot, members[0].Id, name, false);
-            keep.LaborBudget = keepDef.BuildHours * Brain.ConstructionWage;
+            keep.LaborBudget = Construction.Hours(town, keepDef) * Brain.ConstructionWage;
             b.KeepId = keep.Id;
             Reserve(town, b, lot);
             Enlist(town, b, members);

@@ -8,7 +8,8 @@ namespace CrownAndCompass.Client;
 /// Command-line options after "--", for sharing a moment or checking a build headlessly:
 /// <c>--seed 7 --day 40 --autoplay --tab bounties --site wolfwood --scry wolfwood --screenshot shot.png</c>.
 /// Also <c>--scout site</c>, <c>--mirror site</c>, <c>--build pool|spire|tower|palisade</c>, <c>--relic item-id</c> and <c>--buy all|N</c> (companies' reports);
-/// for the walls <c>--works palisade|stone|all</c> (raised at once), <c>--call N|tower:N</c>, <c>--flag x,y[,guards]</c> and <c>--wait hours</c>.
+/// for the walls <c>--works palisade|stone|all</c> (raised at once), <c>--call N|tower:N</c>, <c>--flag x,y[,guards]</c> and <c>--wait hours</c>;
+/// <c>--spot x,y</c> marks a spot (days east and south) for a company to look at, and <c>--strike</c> opens the quick orders' Strike list.
 /// </summary>
 public sealed class Options
 {
@@ -27,6 +28,10 @@ public sealed class Options
 
     /// <summary>With --autoplay, leave companies' reports unbought for the player (screenshots of the companies window).</summary>
     public bool KeepReports;
+
+    /// <summary>For roster shots (--roster ready|offer): the company picked in the roster, and the answer to the job offered it.</summary>
+    public string? RosterPick;
+    public (string Company, string Site, JobAnswer Answer)? RosterAnswer;
 
     /// <summary>With --autoplay, the stand-in leaves the armory to the player: stock and offers wait (--keep-armory).</summary>
     public bool KeepArmory;
@@ -70,6 +75,13 @@ public sealed class Options
 
     /// <summary>--house: select the house on the most pleasant street, for screenshots of the inspector.</summary>
     public bool House;
+
+    /// <summary>--crowded [kind] selects the place (of a kind: tavern, holy, bath...) that turned the most townsfolk away yesterday, for a shot of the crowd at its door.</summary>
+    public string? Crowded;
+    /// <summary>Aim the camera at the building going up with the most hands on it (<c>--rising</c>), for a shot of the builders.</summary>
+    public bool Rising;
+    /// <summary>With <c>--at</c>: open that building's inspector (<c>--card</c>), for a shot of a monument's parts.</summary>
+    public bool Card;
     /// <summary>For screenshots: click the alert at this position in the strip (0 is the first) once it shows.</summary>
     public int? Alert;
     /// <summary>For screenshots: show the hover summary of the alert icon at this position.</summary>
@@ -110,6 +122,9 @@ public sealed class Options
 
     /// <summary>--find: leave explorers' reports to the player and open the first one waiting; --find-pick ACT answers it.</summary>
     public bool Find;
+
+    /// <summary>--strike: open the quick orders' Strike list over the corner map.</summary>
+    public bool Strike;
     public string? FindPick;
     public int? StoryPick;
 
@@ -154,7 +169,11 @@ public sealed class Options
                 case "--folk": o.Folk = true; break;
                 case "--rolls": o.Rolls = true; break;
                 case "--wall": o.Wall = int.Parse(Next()); break;
+                case "--strike": o.Strike = true; break;
                 case "--house": o.House = true; break;
+                case "--crowded": o.Crowded = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
+                case "--rising": o.Rising = true; break;
+                case "--card": o.Card = true; break;
                 case "--alert": o.Alert = int.Parse(Next()); break;
                 case "--alert-hover": o.AlertHover = int.Parse(Next()); break;
                 case "--no-pause": o.NoPause = true; break;
@@ -192,7 +211,7 @@ public sealed class Options
                 case "--advance": o.Advances.Add(Next()); break;
                 case "--inspiration": o.Inspiration = int.Parse(Next()); break;
                 case "--decor-at": o.DecorAt = Next().Split(',').Select(v => double.Parse(v, System.Globalization.CultureInfo.InvariantCulture)).ToArray(); break;
-                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--stock" or "--pact" or "--buy" or "--call" or "--flag" or "--wait" or "--works":
+                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--stock" or "--pact" or "--buy" or "--call" or "--flag" or "--wait" or "--works" or "--roster" or "--spot":
                     o.Script.Add((args[i][2..], Next()));
                     break;
             }
@@ -248,6 +267,10 @@ public sealed class Options
                     var f = arg.Split(',').Select(v => double.Parse(v, System.Globalization.CultureInfo.InvariantCulture)).ToArray();
                     sim.PlantFlag(f[0], f[1], f.Length > 2 ? (int)f[2] : 0);
                     break;
+                case "spot":
+                    var sp = arg.Split(',').Select(v => double.Parse(v, System.Globalization.CultureInfo.InvariantCulture)).ToArray();
+                    sim.MarkSpot(sp[0], sp[1]);
+                    break;
                 case "wait":
                     for (int h = 0; h < int.Parse(arg); h++) sim.Step();
                     break;
@@ -275,6 +298,22 @@ public sealed class Options
                     // Swear the friendliest company ("best"), or the one named, to a loot pact.
                     string? company = arg == "best" ? Intel.MembersByCompany(t).Select(x => x.Name).FirstOrDefault() : arg;
                     if (company != null) sim.OfferPact(company);
+                    break;
+                case "roster":
+                    // Wait (up to 40 days) for a company with three heroes fit to ride and pick it (healing those in town if
+                    // none is), and with "offer", offer it the job it leans toward most at half again the asking.
+                    for (int h = 0; h < 40 * SimTime.HoursPerDay && !Roster.Companies(t).Any(e => e.Ready >= 3 && e.Road == null); h++) sim.Step();
+                    var best = Roster.Companies(t).OrderByDescending(e => e.Ready).ThenByDescending(e => e.Members.Count(m => !m.IsAway)).ThenByDescending(e => e.Relation).FirstOrDefault();
+                    if (best == null) break;
+                    if (best.Ready == 0)
+                        foreach (var m in best.Members.Where(m => !m.IsAway)) m.Hero!.Hp = m.Hero.MaxHp;
+                    RosterPick = best.Name;
+                    if (arg != "offer") break;
+                    t.Treasury = Math.Max(t.Treasury, 3000);
+                    var job = t.Sites.Where(s => s.Known != SiteKnowledge.Unheard && !s.ThoughtCleared)
+                        .Select(s => Roster.Weigh(t, best.Name, s.Def.Id, Js.Round(Terms.Suggested(t, s, t.Content.Bounties.Term("slay")) * 1.5)))
+                        .Where(v => v.Blocked == null).OrderByDescending(v => v.Score).ThenBy(v => v.Site!.Def.Id, StringComparer.Ordinal).FirstOrDefault();
+                    if (job != null && sim.OfferJob(best.Name, job.Site!.Def.Id, job.Reward) is { } answer) RosterAnswer = (best.Name, job.Site.Def.Name, answer);
                     break;
                 case "relic":
                     // For showing a late-game moment quickly: a party has just brought a relic home.

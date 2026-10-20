@@ -338,6 +338,28 @@ public static class Garrison
 
     private static string Count(int n) => n == 1 ? "one" : n.ToString();
 
+    /// <summary>
+    /// The quick order to man the walls: the horn sounds on every side a host is marching from and on the gate,
+    /// or on the gate alone when the scouts name no side. Returns how many orders it gave.
+    /// </summary>
+    public static int ManTheWalls(Town town)
+    {
+        if (CallBlocked(town, PostKind.Gate, 0) != null) return 0;
+        int n = 0;
+        foreach (int s in Threatened(town).Distinct().Order())
+            if (s != 0 && CallToArms(town, PostKind.Wall, s) != null) n++;
+        if (CallToArms(town, PostKind.Gate, 0) != null) n++;
+        return n;
+    }
+
+    /// <summary>Whether every side a host comes from, and the gate, has a call to arms on it.</summary>
+    public static bool WallsManned(Town town)
+    {
+        bool Held(PostKind k, int i) => town.Garrison.Posts.Any(p => p.Kind == k && p.Index == i);
+        return Held(PostKind.Gate, 0) && Threatened(town).All(s => s == 0 || Held(PostKind.Wall, s));
+    }
+
+
     /// <summary>Send the nearest guards an order still lacks: those on their beats first, then those holding other orders.</summary>
     private static int Fill(Town town, GuardPost post)
     {
@@ -445,8 +467,9 @@ public static class Garrison
         return f;
     }
 
-    /// <summary>A wave thinned by the moat it had to wade.</summary>
-    public static double Wade(Town town, double wave) => town.Defenses.Moat == PalisadeState.Built ? wave * Rules(town).MoatWave : wave;
+    /// <summary>A wave thinned by the moat it had to wade; the share of it that flies or swims (<paramref name="fliers"/>) goes over unharmed.</summary>
+    public static double Wade(Town town, double wave, double fliers = 0) =>
+        town.Defenses.Moat == PalisadeState.Built ? wave * (fliers + (1 - fliers) * Rules(town).MoatWave) : wave;
 
     /// <summary>What the gatehouse and the moat add to the town's fortification.</summary>
     public static double FortBonus(Town town) => town.Defenses.Gatehouse == PalisadeState.Built ? Rules(town).GatehouseFort : 0;

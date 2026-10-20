@@ -168,6 +168,7 @@
     {"id": "terms", "title": "Bounty terms", "text": "A bounty says how the job is to be done, not only where. Pick the terms at the top of the [b]Bounty board[/b]: [b]Slay[/b] clears a place for good; [b]Drive off[/b] is quicker and cheaper, but something moves back in sooner; [b]Talk down[/b] sends silver tongues to bargain with foes clever enough to listen; [b]Fetch[/b] steals the best of the hoard for the town. Heroes take jobs that suit their temper, and every hero judges the terms you post.", "point": "tab:Bounties", "when": "day:25", "teaches": []},
     {"id": "sightings", "title": "Raiders sighted", "text": "Farmers, scouts and friendly towns bring word when they see enemies on the move. A red mark on the map shows where they were seen and which way they were heading. It is news, not a live view, and it fades as it goes stale. A band seen heading for a farm strikes that night: plant a guard flag over the farm ([b]G[/b]) and it may turn back, though it will come again with more. Each lair keeps its own habits (select a site to see its [b]Habit[/b]), and the [b]Campaign[/b] window shows every enemy leader, what they hold against your town and the last you heard of them.", "point": "alerts", "when": "alert:sighted", "teaches": []},
     {"id": "fear", "title": "Fear", "text": "When fear climbs near the top, the alert strip warns you, and once it sits there the alert counts the days until the townsfolk give up on the town and the campaign is lost. Break the menace that frightens them most, win a fight, or fund the temples to lift spirits. Stone buildings never burn, and a discovery in the Library can fireproof the timber ones.", "point": "alerts", "when": "alert:fear", "teaches": []},
+    {"id": "crowded", "title": "Full to the doors", "text": "Taverns, shrines, bathhouses, theatres, market halls, libraries and the arena each hold so many at once. Townsfolk walk to the one they like, and if it is full they try the next one near, or go home and do something else, a little put out. Select a building to see how full it is and how many it turned away yesterday. Places that keep turning people away serve their houses less, so the houses grow slower: let another open nearby.", "point": "alerts", "when": "alert:crowded", "teaches": []},
     {"id": "captives", "title": "Townsfolk taken", "text": "Raiders who get through can carry townsfolk off to their camp. They are held for a few days: post a [b]Rescue[/b] on the camp, or clear it, and they come home. If the days run out they are lost, and the town remembers it.", "point": "alerts", "when": "alert:captives", "teaches": []},
     {"id": "broadsheet", "title": "The town broadsheet", "text": "Once the town is big enough a printer sets up, and every week an issue goes on sale with the week's news. Open the [b]Ledger[/b] and press [b]Broadsheet[/b] to read it. You can pay for the next front page: [b]Praise the mayor[/b] wins approval but can be found out if you lean on it, [b]Cry up a hero[/b] puts the selected hero on the front page, and [b]Name the guilds[/b] puts the town's secret societies under scrutiny. Heroes judge what you pay the paper to say.", "point": "tab:Ledger", "when": "day:35", "teaches": ["command:SlantBroadsheet"]},
     {
@@ -177,6 +178,15 @@
       "point": "tab:Companies",
       "until": "tab:Companies",
       "teaches": ["tab:Companies", "command:BuyIntel"]
+    },
+    {
+      "id": "roster",
+      "title": "Pick a company for the job",
+      "text": "[b]Companies[/b] opens on the roster: every adventuring company in town with its power, loyalty, missions done and good deeds. Click a column to sort by it, and filter by who is ready or which classes ride with them. Pick a company and offer it a job by name. It weighs the pay, its temper, what it thinks of the council and the danger against its strength, then takes the job and marches at once, or tells you why not.",
+      "point": "tab:Companies",
+      "until": "tab:Companies",
+      "when": "count:Companies",
+      "teaches": ["command:OfferJob"]
     },
     {
       "id": "armory",
@@ -221,6 +231,15 @@
       "when": "alert:march",
       "until": "call",
       "teaches": ["command:CallToArms"]
+    },
+    {
+      "id": "quick-orders",
+      "title": "Quick orders",
+      "text": "The four buttons over the corner map are there when you need to move fast. [b]Defend[/b] sounds the horn on the gate and on whichever side a host is marching from; it glows red while a side is left bare, and pressed again it stands them down. [b]Guard[/b] picks up a guard flag, like [b]G[/b]. [b]Strike[/b] lists the threats you know of, each with a bounty to post or sellswords to send. [b]Scout[/b] marks a spot: click anywhere on the map, even deep in the fog, and the council offers a company coin to walk there and tell you what it finds.",
+      "point": "orders",
+      "when": "day:8",
+      "until": "orders",
+      "teaches": ["command:ManTheWalls", "command:MarkSpot"]
     },
     {
       "id": "sellswords",
@@ -436,10 +455,10 @@
     {
       "id": "wards",
       "title": "New wards",
-      "text": "A new charter lets you lay out a new ward in the [b]City[/b] window. Each ward has its own character: the Market Ward favours shops, the Trades Ward workshops, Castle Hill holds the manors. Land outside the wards you have laid out can't be zoned.",
+      "text": "A new charter opens more land round the old town to zoning. Wards aren't drawn ahead: once a few buildings stand in a quarter, it grows into a ward that suits them. Shops make a Market Ward, workshops a Trades Ward, shrines a Temple Ward, fine houses Castle Hill. See your wards in the [b]City[/b] window.",
       "point": "tab:City",
       "when": "alert:charter",
-      "teaches": ["command:OpenWard"]
+      "teaches": []
     },
     {
       "id": "density",
@@ -459,6 +478,10 @@
       "until": "sown",
       "teaches": []
     },
+    {"id": "monuments", "title": "Monuments that grow", "text": "The town hall, the temple and the keep start small and grow by the parts you add: a bell tower, a nave, a curtain wall, a great hall. Click the building to see its parts, what each gives and what it costs. [b]Add[/b] one, or [b]Build it all now[/b] if you're bold: every part at once can empty the treasury and the market's timber and stone. Leave [b]Grow on its own[/b] ticked and the council adds the next part whenever it can spare the gold.", "when": "day:20", "teaches": ["command:AddPart", "command:AddAllParts", "command:GrowMonument"]},
+    {"id": "site-first", "title": "Building sites", "text": "Click a building site to see how far along it is. [b]Put this site first[/b] sends builders and the market's timber and stone to it ahead of the others. The council's sites carry their timber and stone off the market as they go: if the market runs out, the builders stand idle and an alert says so. Build a lumber camp or quarry, or send for a caravan from the site, which is dear but quick.", "when": "day:12", "teaches": ["command:PrioritiseSite", "command:SendCaravan"]},
+    {"id": "builders", "title": "Builders and homes", "text": "Each builders' yard puts three more crews to work, so more homes, shops and works can go up at once. Build one from the government buildings when the town's sites queue for builders. Homes grow a storey only when what folk need is close by: a tavern, a shrine, a market, food of several kinds, something pleasant on the street. Click a house to see what it waits for.", "when": "day:15", "teaches": []},
+    {"id": "cobbles", "title": "Cobbled streets", "text": "Once the town is chartered a town, its masons pave the streets with stone on their own: the square first, then street by street outward from the centre, as the market has stone and the treasury can spare the gold. Families on a cobbled street are a little happier. Keep a quarry working and they'll get further.", "when": "day:120", "teaches": []},
     {
       "id": "grand-works",
       "title": "Grand works",

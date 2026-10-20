@@ -72,8 +72,14 @@ public partial class Main
                 if (_map.TownView.Walk != null) ShowWall(1);
                 ToggleFlag();
                 OnFlagDropped(CrownAndCompass.Client.Map.Geo.Center + new Vector2(3, 2));
+                // The quick orders over the corner map: man the walls, the Strike list, and a spot marked for a company.
+                QuickDefend();
+                ShowStrike(true);
+                ToggleScouting();
+                OnSpotMarked(CrownAndCompass.Client.Map.Geo.FromDays(0.9, -0.6));
                 return 5;
             case 17:
+                ShowStrike(false);
                 CloseWindow();
                 OpenMenu();
                 return 5;
