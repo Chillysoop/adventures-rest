@@ -81,7 +81,7 @@ public static class Streets
     }
 
     /// <summary>Distance from a point to a segment, and the nearest point on it.</summary>
-    private static (double D, double X, double Y) SegmentDistance(double px, double py, double ax, double ay, double bx, double by)
+    internal static (double D, double X, double Y) SegmentDistance(double px, double py, double ax, double ay, double bx, double by)
     {
         double dx = bx - ax, dy = by - ay, len2 = dx * dx + dy * dy;
         double t = len2 < 1e-12 ? 0 : Math.Clamp(((px - ax) * dx + (py - ay) * dy) / len2, 0, 1);
@@ -578,4 +578,9 @@ public sealed class Street
     public int Id { get; set; }
     public double[] Points { get; set; } = [];
     public bool Square { get; set; }
+
+    /// <summary>Tiles of it the masons have paved with stone (<see cref="Paving"/>), from the start or, if <see cref="FromEnd"/>, the end.</summary>
+    public double Cobbled { get; set; }
+
+    public bool FromEnd { get; set; }
 }

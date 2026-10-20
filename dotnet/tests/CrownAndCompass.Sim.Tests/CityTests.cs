@@ -16,16 +16,17 @@ public class CityTests
     }
 
     [Fact]
-    public void ANewTownIsAThorpInsideTheOldTown()
+    public void ANewTownIsAThorpWithAllItsLandOpen()
     {
         var sim = Planned();
         var t = sim.Town;
         Assert.Equal("thorp", City.Tier(t).Id);
         Assert.Equal(["old_town"], t.City.OpenWards);
         Assert.All(t.Buildings, b => Assert.Equal(0, City.Ring(t, t.Lot(b.LotId))));
+        // Land is never bought or opened by charter: the town may zone anywhere from the first day.
         var edge = PointIn(t, "edge");
-        Assert.False(City.IsOpen(t, edge.X, edge.Y));
-        Assert.Equal(0, sim.PaintZone([edge], 1, Zone.Commercial));
+        Assert.True(City.IsOpen(t, edge.X, edge.Y));
+        Assert.True(sim.PaintZone([edge], 1, Zone.Commercial) > 0);
     }
 
     [Fact]
@@ -46,7 +47,6 @@ public class CityTests
         var t = sim.Town;
         int c = Town.Grid / 2;
         var east = (X: c + City.Band + 3 + 0.5, Y: c + 0.5);
-        Assert.Equal(0, sim.PaintZone([east], 3, Zone.Commercial));
         t.City.Tier = City.TierIndex(t, "village");
         Assert.True(sim.PaintZone([east], 3, Zone.Commercial) > 0);
         var store = t.Content.Building("general_store");

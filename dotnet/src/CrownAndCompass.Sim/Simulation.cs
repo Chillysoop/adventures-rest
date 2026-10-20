@@ -113,6 +113,7 @@ public sealed class Simulation
         Monuments.Daily(t);
         if (Options.AutoMayor && Options.AutoPlanning) Construction.Daily(t);
         Streets.Wear(t);
+        Paving.Daily(t);
         Property.Daily(t);
         Population.DailyDepartures(t);
         Population.DailyArrivals(t);
