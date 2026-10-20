@@ -456,6 +456,9 @@ public sealed class Simulation
     /// <summary>End an alliance with a minor power.</summary>
     public bool BreakWithPower(string powerId) => Powers.Break(Town, powerId);
 
+    /// <summary>Answer a minor power's envoy: accept its offer or demand and pay its price, or send it home.</summary>
+    public bool AnswerEnvoy(string powerId, bool accept) => Powers.Answer(Town, powerId, accept);
+
     /// <summary>Pay off a sellsword company that is home.</summary>
     public bool DismissMercenaries(string companyId) => Mercenaries.Dismiss(Town, companyId);
 

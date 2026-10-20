@@ -683,7 +683,9 @@ public partial class Main
         }
         p.Text($"{Ui.Esc(status)} · {Math.Floor(a.Gold)} gold · mood {Math.Round(a.LastDayMood)}");
         InspectMoods(p, t, a);
-        p.Text($"Lives at {Ui.Esc(home)}; {(a.Hero != null ? "lives by bounties" : $"works at {Ui.Esc(job)}")}.");
+        string lives = a.HomeId == null && a.Hero?.Lodging != true ? "Sleeps rough" : $"Lives at {Ui.Esc(home)}";
+        string works = a.Hero != null ? "lives by bounties" : a.JobId == null ? "out of work" : $"works at {Ui.Esc(job)}";
+        p.Text($"{lives}; {works}.");
         if (a.SpouseId is int sp) p.Text($"Married to {AgentLink(t.Agent(sp))}");
         InspectSheet(p, t, a);
         var friends = a.Opinions.Where(kv => kv.Value >= 40).OrderBy(kv => kv.Key).Select(kv => AgentLink(t.Agent(kv.Key))).ToList();

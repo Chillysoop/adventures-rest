@@ -361,6 +361,15 @@
       "teaches": ["command:CourtPower", "command:AllyWithPower", "command:BreakWithPower"]
     },
     {
+      "id": "envoys",
+      "title": "Envoys",
+      "text": "A minor power has sent you an [b]envoy[/b]. A power that likes you offers an [b]alliance[/b] for less than its usual price; a cordial one offers a [b]pact[/b], and while it holds no enemy can buy it; a hostile one [b]demands tribute[/b], and remembers if you refuse. The Mire Grandmothers often ask a stranger price than gold. Answer in [b]Diplomacy[/b] before the envoy rides home. Watch the enemies' backers: each power that joins an enemy makes the next likelier to follow.",
+      "when": "alert:envoy",
+      "point": "tab:Diplomacy",
+      "until": "tab:Diplomacy",
+      "teaches": ["command:AnswerEnvoy"]
+    },
+    {
       "id": "wagons",
       "title": "Bigger caravans",
       "text": "Goods your town makes beyond what it needs earn nothing sitting in the market: the evening carters clear them away. A [b]trade route[/b] turns that surplus into gold. In [b]Diplomacy[/b], [b]Add a wagon[/b] to a route and its caravan carries more out on every run, up to four wagons. A bigger charter lets you run more routes, too.",

@@ -304,7 +304,7 @@ public partial class Main
         _feed.AddChild(card);
         _feed.MoveChild(card, 0);
         // Fewer while the tutorial card sits below the feed.
-        while (_feed.GetChildCount() > (_guideCard.Visible ? 3 : 5))
+        while (_feed.GetChildCount() > (_guideCard.Visible ? 2 : 5))
         {
             var old = _feed.GetChild(_feed.GetChildCount() - 1);
             _feed.RemoveChild(old);
@@ -317,9 +317,19 @@ public partial class Main
         _clockReal += delta;
         foreach (var c in _feed.GetChildren().OfType<Control>())
         {
+            // News holds still while the clock is stopped, so a pause for a raid still shows the raid when you look.
+            if (_speed == 0) c.SetMeta("until", (double)c.GetMeta("until") + delta);
             double left = (double)c.GetMeta("until") - _clockReal;
             if (left <= 0) c.QueueFree();
             else c.Modulate = new Color(1, 1, 1, (float)Math.Min(1, left / 1.5));
+        }
+        // The tutorial card keeps out from under the news: it sits mid-right, or lower while the feed reaches past it.
+        if (_guideCard.Visible)
+        {
+            float h = _guideCard.Size.Y, vh = GetViewportRect().Size.Y;
+            float below = _feed.GetChildCount() > 0 ? _feed.GetRect().End.Y + Gap : 0;
+            float y = Math.Min(Math.Max((vh - h) / 2, below), vh - h - Gap);
+            if (Math.Abs(_guideCard.Position.Y - y) > 0.5f) _guideCard.Position = new Vector2(_guideCard.Position.X, y);
         }
     }
 
