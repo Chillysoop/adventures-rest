@@ -57,7 +57,10 @@ public partial class Heroes : Node3D
     private readonly Dictionary<Color, int> _slots = [];
     private bool _paletteDirty = true;
 
-    private readonly Dictionary<int, (object?[] Key, Look Look)> _looks = [];
+    /// <summary>What a hero wears, compared each frame (no allocation) to know when their look must be read again.</summary>
+    private readonly record struct Worn(LibGear? Weapon, LibGear? Armor, LibGear? Shield, LibItem? MWeapon, LibItem? MArmor, LibItem? MShield, LibItem? MTrinket, int Tier, string Cls, string Epithet);
+
+    private readonly Dictionary<int, (Worn Key, Look Look)> _looks = [];
 
     public override void _Ready()
     {
@@ -114,14 +117,14 @@ public partial class Heroes : Node3D
     {
         var s = a.Hero!;
         int tier = s.Level >= 11 ? 2 : s.Level >= 6 ? 1 : 0;
-        object?[] key = [s.Weapon, s.Armor, s.Shield, s.Magic.Get("weapon", null!), s.Magic.Get("armor", null!), s.Magic.Get("shield", null!), s.Magic.Get("trinket", null!), tier, s.Cls.Id, s.Epithet];
+        var key = new Worn(s.Weapon, s.Armor, s.Shield, s.Magic.Get("weapon", null!), s.Magic.Get("armor", null!), s.Magic.Get("shield", null!), s.Magic.Get("trinket", null!), tier, s.Cls.Id, s.Epithet);
         bool seen = _looks.TryGetValue(a.Id, out var had);
-        if (seen && had.Key.SequenceEqual(key)) return had.Look;
+        if (seen && had.Key == key) return had.Look;
         var look = Read(a, tier);
         // Something powerful newly worn: a banner over them (not for heroes seen for the first time).
         if (seen)
-            for (int i = 3; i <= 6; i++)
-                if (key[i] is LibItem it && !Equals(had.Key[i], it) && Powerful(it))
+            foreach (var (now, was) in new[] { (key.MWeapon, had.Key.MWeapon), (key.MArmor, had.Key.MArmor), (key.MShield, had.Key.MShield), (key.MTrinket, had.Key.MTrinket) })
+                if (now is LibItem it && !Equals(was, it) && Powerful(it))
                 {
                     Equips.RemoveAll(e => e.HeroId == a.Id);
                     Equips.Add(new Equip(a.Id, $"Equipped: {it.Name}", Enchantment(it.Name).Colour, _now));
@@ -308,7 +311,8 @@ public partial class Heroes : Node3D
             _ => (Frame.Brute, Head.Tusks, chief ? Weapon.Greataxe : Weapon.Axe, OffHand.None, chief ? Act.Swing2 : Act.Swing),
         };
         var glow = kind switch { "undead" => new Color("5ac8ff"), "cult" => new Color("b65cff"), "dragon" => new Color("ff7a1a"), _ => new Color("ff3a2a") };
-        var look = new Look(frame, head, weapon, off, chief && frame is not (Frame.Beast or Frame.Bones), skin, body,
+        var cloth = Color.FromHsv(body.H, body.S, Mathf.Max(body.V, 0.5f));
+        var look = new Look(frame, head, weapon, off, chief && frame is not (Frame.Beast or Frame.Bones), skin, cloth,
             chief || kind == "cult" ? glow : null, kind == "dragon" ? 2 : 1, chief && weapon != Weapon.None, null, chief ? 1 : 0, attack, glow,
             Trinket.None, null, null, chief ? new Color("ff3a2a") : null);
         _foes[(kind, chief, body, skin)] = look;
