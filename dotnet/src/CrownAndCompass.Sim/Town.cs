@@ -357,6 +357,9 @@ public sealed class Town
     /// <summary>Companies' requests for the council's leave to raise a bastion, oldest first.</summary>
     public List<BastionRequest> BastionRequests { get; } = [];
     public List<Chronicle> Chronicles { get; } = [];
+
+    /// <summary>Heroes' recent level-ups and magic items, for the client's cards (<see cref="Systems.Moments"/>).</summary>
+    public List<HeroMoment> Moments { get; } = [];
     public List<Seat> Seats { get; } = [];
     public List<Motion> Motions { get; } = [];
 

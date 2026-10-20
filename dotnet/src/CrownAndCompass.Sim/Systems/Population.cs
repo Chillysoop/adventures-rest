@@ -49,13 +49,17 @@ public static class Population
         var a = new Agent { Id = town.NewAgentId() };
         int given = rng.Range(0, raceDef.Given.Count);
         a.FamilyName = opts.FamilyName ?? rng.Pick(raceDef.Family);
-        // Two living townsfolk never share a full name (it read as one councillor holding two seats): take the
-        // next given name on the list instead, which costs no extra dice.
-        for (int k = 0; k < raceDef.Given.Count; k++)
+        // Two living townsfolk never share a full name (it read as one councillor holding two seats), and a
+        // living hero's given name is left alone while another is free (a party of "Helena, Wellby and Helena"):
+        // take the next given name on the list instead, which costs no extra dice.
+        bool Taken(string g, bool heroes) => town.Agents.Any(o => !o.Departed && !o.Dead && o.GivenName == g && (o.FamilyName == a.FamilyName || heroes && o.Hero != null));
+        foreach (bool heroes in new[] { true, false })
         {
-            string g = raceDef.Given[(given + k) % raceDef.Given.Count];
-            if (town.Agents.Any(o => !o.Departed && !o.Dead && o.GivenName == g && o.FamilyName == a.FamilyName)) continue;
-            given = (given + k) % raceDef.Given.Count;
+            int free = -1;
+            for (int k = 0; k < raceDef.Given.Count && free < 0; k++)
+                if (!Taken(raceDef.Given[(given + k) % raceDef.Given.Count], heroes)) free = (given + k) % raceDef.Given.Count;
+            if (free < 0) continue;
+            given = free;
             break;
         }
         a.GivenName = raceDef.Given[given];

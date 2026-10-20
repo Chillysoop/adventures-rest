@@ -36,6 +36,12 @@ public sealed record ExpeditionResult(
     /// <summary>Hours from the start of the delve to the moment the last of them died, for a wiped party.</summary>
     public double? LostAt { get; init; }
 
+    /// <summary>The moments worth telling at the tavern, pointing into <see cref="Lines"/>.</summary>
+    public IReadOnlyList<TaleBeat> Beats { get; init; } = [];
+
+    /// <summary>Mishaps and feats that may grow into running jokes (<see cref="Voices"/>).</summary>
+    public IReadOnlyList<Gag> Gags { get; init; } = [];
+
     /// <summary>Put the heroes' hit points and potions where they ended up.</summary>
     public void Apply(IEnumerable<Agent> heroes)
     {
@@ -48,6 +54,12 @@ public sealed record ExpeditionResult(
         }
     }
 }
+
+/// <summary>
+/// One moment of a chronicle worth telling at the tavern: what kind of moment, the line it is, the hero it is
+/// about (0 for the party), and the d20 behind it (0 when nothing was rolled).
+/// </summary>
+public sealed record TaleBeat(int Line, string Kind, int HeroId = 0, int Roll = 0, int Total = 0, int Dc = 0);
 
 /// <summary>A stretch of time a party spent stopped near its site: camped outside, delving, or fallen back to rest.</summary>
 public sealed record Halt(double From, double To, string Kind);
@@ -139,6 +151,8 @@ public static class Expedition
     public sealed class Venture
     {
         public readonly List<string> Lines = [];
+        public readonly List<TaleBeat> Beats = [];
+        public readonly List<Gag> Gags = [];
         internal readonly List<Combatant> Party;
         public readonly OrderedMap<int, int> Kills = new();
         public int Gold;
@@ -192,7 +206,35 @@ public static class Expedition
 
         internal List<Combatant> Standing => Party.Where(c => !c.Down && !c.Dead).ToList();
 
-        public void Log(string s) => Lines.Add(s);
+        public void Log(string s) => Lines.Add(s.Length > 0 ? char.ToUpperInvariant(s[0]) + s[1..] : s);
+
+        /// <summary>Mark the line just logged as a moment for the tavern tale.</summary>
+        internal void Mark(string kind, Combatant? c = null, int roll = 0, int total = 0, int dc = 0) =>
+            Beats.Add(new TaleBeat(Lines.Count - 1, kind, c?.Agent.Id ?? 0, roll, total, dc));
+
+        private void Mark(string kind, Check check, int dc) => Mark(kind, check.Who, check.Roll, check.Total, dc);
+
+        /// <summary>A stable number for where they are in the tale, for picking words without the town's dice.</summary>
+        private uint Seed => Voices.Hash("venture", Lines.Count, Party[0].Agent.Id, (int)Clock);
+
+        /// <summary>Somebody in the party says something, if the moment moves them to.</summary>
+        internal void Speak(string moment, Combatant? about = null)
+        {
+            if (Voices.Say(_content, moment, Standing.Select(c => c.Agent).ToList(), about?.Agent, _site?.Name ?? "", Seed) is not { } said) return;
+            Log(said.Text);
+            Beats.Add(new TaleBeat(Lines.Count - 1, "say", said.Speaker));
+        }
+
+        /// <summary>A mishap or a feat that may become a running joke; the party teases a hero already named for it.</summary>
+        private void Gag(Combatant c, string kind)
+        {
+            Gags.Add(new Gag(c.Agent.Id, kind));
+            if (Voices.Tease(_content, kind, Standing.Select(x => x.Agent).ToList(), c.Agent, Seed) is { } tease)
+            {
+                Log(tease.Text);
+                Beats.Add(new TaleBeat(Lines.Count - 1, "say", tease.Speaker));
+            }
+        }
 
         public double HpFraction()
         {
@@ -284,6 +326,7 @@ public static class Expedition
                     if (check.Total >= e.Dc)
                     {
                         Log($"{Cap(e.Text)}: {who} spots it and disarms it (d20 {check.Roll}, {check.Total} vs DC {e.Dc}).");
+                        Mark("trap", check, e.Dc);
                         Xp += 25;
                     }
                     else
@@ -294,6 +337,7 @@ public static class Expedition
                         Hurt(victim, dmg);
                         Log($"{Cap(e.Text)}: {who} misses it (d20 {check.Roll}, {check.Total} vs DC {e.Dc}) and {victim.Agent.GivenName} takes {dmg} damage" +
                             (victim.Down ? " and drops." : "."));
+                        Mark("trap", check, e.Dc);
                         if (victim.Down) AfterCombat();
                     }
                     return;
@@ -313,6 +357,7 @@ public static class Expedition
                         }
                     }
                     Log(hurt.Count == 0 ? $"{Cap(e.Text)}, but the party pushes through unscathed." : $"{Cap(e.Text)}. It costs them: {string.Join(", ", hurt)}.");
+                    Mark("hazard");
                     if (Party.Any(c => c.Down && !c.Dead)) AfterCombat();
                     return;
                 }
@@ -328,10 +373,12 @@ public static class Expedition
                         Xp += 50;
                         if (e.Kind == "parley") _skipNextCombat = true;
                         Log($"{Cap(e.Text)}. {who} handles it (d20 {check.Roll}, {check.Total} vs DC {e.Dc}): {gold} gold{(e.Kind == "parley" ? " and a safer path" : "")}.");
+                        Mark(e.Kind, check, e.Dc);
                     }
                     else
                     {
                         Log($"{Cap(e.Text)}. {who} gets nowhere (d20 {check.Roll}, {check.Total} vs DC {e.Dc}).");
+                        Mark(e.Kind, check, e.Dc);
                     }
                     return;
                 }
@@ -351,6 +398,8 @@ public static class Expedition
                     int gold = _rng.Range(e.Gold[0], e.Gold[1] + 1);
                     Gold += gold;
                     Log(isMimic ? $"Inside the mimic's gullet: {gold} gold." : $"{Cap(e.Text)}: {gold} gold.");
+                    Mark("treasure");
+                    Speak("treasure");
                     return;
                 }
             }
@@ -375,6 +424,8 @@ public static class Expedition
             }
             string label = n == 1 ? (def.Named ? def.Name : $"{Article(def.Name)} {def.Name}") : $"{n} {def.Plural}";
             if (def.Id != "mimic") Log($"{Cap(e.Text)}: {label}{(foes.Count > n ? $", with {foes.Count - n} more at its side" : "")}.");
+            Mark(def.Boss ? "boss" : "fight");
+            if (def.Boss) Speak("boss");
 
             int totalXp = foes.Sum(f => f.Def.Xp);
             int round = 0;
@@ -395,6 +446,8 @@ public static class Expedition
                     Log(fallen.Count == 0
                         ? "Bloodied and outmatched, the party breaks off and runs."
                         : $"Bloodied and outmatched, the party breaks off and runs, dragging {ListNames(fallen)} with them.");
+                    Mark("retreat");
+                    Speak("retreat");
                     AfterCombat();
                     return false;
                 }
@@ -407,7 +460,10 @@ public static class Expedition
             {
                 Xp += totalXp;
                 var hurt = Standing.Where(c => c.Hp < c.Sheet.MaxHp / 3.0).Select(c => $"{c.Agent.GivenName} ({c.Hp}/{c.Sheet.MaxHp} hp)").ToList();
-                Log($"The fight is over in {round} round{(round == 1 ? "" : "s")}.{(hurt.Count > 0 ? $" Badly hurt: {string.Join(", ", hurt)}." : "")}");
+                string rounds = $"{round} round{(round == 1 ? "" : "s")}";
+                Log($"{Voices.Variant(_content, "over", "The fight is over in {rounds}.", Seed, ("rounds", rounds))}{(hurt.Count > 0 ? $" Badly hurt: {string.Join(", ", hurt)}." : "")}");
+                Mark("won");
+                Speak("victory");
             }
             AfterCombat();
             return won;
@@ -453,7 +509,8 @@ public static class Expedition
                     c.Potions--;
                     int drunk = Potion();
                     c.Hp = Math.Min(s.MaxHp, c.Hp + drunk);
-                    Log($"{name} gulps a {PotionName()} (+{drunk} hp).");
+                    Log(Voices.Variant(_content, "potion", "{name} gulps a {potion} (+{hp} hp).", Seed, ("name", name), ("potion", PotionName()), ("hp", drunk.ToString())));
+                    if (c.Potions == 0 && c.Sheet.Potions >= 3) Gag(c, "potion");
                 }
 
                 // Clerics keep the party alive before they swing.
@@ -468,7 +525,11 @@ public static class Expedition
                         patient.Hp = Math.Min(patient.Sheet.MaxHp, patient.Hp + Math.Max(1, healed));
                         patient.Down = false;
                         c.Heals--;
-                        if (wasDown) Log($"{name} drags {patient.Agent.GivenName} back from the brink with {Library.Prose(spell.Name)} (+{Math.Max(1, healed)} hp).");
+                        if (wasDown)
+                        {
+                            Log($"{name} drags {patient.Agent.GivenName} back from the brink with {Library.Prose(spell.Name)} (+{Math.Max(1, healed)} hp).");
+                            Mark("heal", c);
+                        }
                         continue;
                     }
                 }
@@ -487,6 +548,7 @@ public static class Expedition
                     }
                     Credit(c, felled);
                     Log($"{name} looses {Library.Prose(spell.Name)} into {targets.Count} of them for {dmg} damage{(felled > 0 ? $", dropping {felled}" : "")}.");
+                    Mark("spell", c);
                     continue;
                 }
 
@@ -513,7 +575,17 @@ public static class Expedition
                 int atk = c.Attack;
                 if (roll == 1)
                 {
-                    if (rng.Chance(0.3)) Log($"{name} rolls a natural 1 and nearly loses {s.Cls.Fumble}.");
+                    if (rng.Chance(0.3))
+                    {
+                        Log($"{name} rolls a natural 1 and nearly loses {s.Cls.Fumble}.");
+                        Mark("fumble", c, 1);
+                        if (c.Sheet.NicknameFor == "fumble") Gag(c, "fumble");
+                        else
+                        {
+                            Gags.Add(new Gag(c.Agent.Id, "fumble"));
+                            Speak("fumble", c);
+                        }
+                    }
                     continue;
                 }
                 if (roll == 20 || roll + atk >= target.Def.Ac)
@@ -523,8 +595,22 @@ public static class Expedition
                     dmg = Math.Max(1, dmg);
                     target.Hp -= dmg;
                     if (target.Hp <= 0) Credit(c, 1);
-                    if (roll == 20) Log($"Natural 20! {name} hits {The(target.Def)} for {dmg}{(target.Hp <= 0 ? " and it goes down" : "")}.");
-                    else if (target.Hp <= 0 && target.Def.Boss) Log($"{name} lands the killing blow on {The(target.Def)} (d20 {roll}{Sign(atk)}, {dmg} damage).");
+                    if (roll == 20)
+                    {
+                        Log($"Natural 20! {name} hits {The(target.Def)} for {dmg}{(target.Hp <= 0 ? " and it goes down" : "")}.");
+                        Mark(target.Hp <= 0 && target.Def.Boss ? "kill" : "crit", c, 20, 20 + atk, target.Def.Ac);
+                        if (c.Sheet.NicknameFor == "crit") Gag(c, "crit");
+                        else
+                        {
+                            Gags.Add(new Gag(c.Agent.Id, "crit"));
+                            Speak("crit", c);
+                        }
+                    }
+                    else if (target.Hp <= 0 && target.Def.Boss)
+                    {
+                        Log($"{name} lands the killing blow on {The(target.Def)} (d20 {roll}{Sign(atk)}, {dmg} damage).");
+                        Mark("kill", c, roll, roll + atk, target.Def.Ac);
+                    }
                 }
             }
         }
@@ -555,7 +641,17 @@ public static class Expedition
                     {
                         int dmg = Math.Max(1, f.Def.Dice.Roll(rng, roll == 20));
                         Hurt(t, dmg);
-                        if (t.Down) Log($"{Cap(The(f.Def))} {(roll == 20 ? "crits" : "hits")} {t.Agent.GivenName} for {dmg}. {t.Agent.GivenName} goes down.");
+                        if (t.Down)
+                        {
+                            Log($"{Cap(The(f.Def))} {(roll == 20 ? "crits" : "hits")} {t.Agent.GivenName} for {dmg}. {t.Agent.GivenName} goes down.");
+                            Mark("down", t);
+                            if (t.Sheet.NicknameFor == "down") Gag(t, "down");
+                            else
+                            {
+                                Gags.Add(new Gag(t.Agent.Id, "down"));
+                                Speak("down", t);
+                            }
+                        }
                     }
                 }
             }
@@ -608,12 +704,15 @@ public static class Expedition
                 {
                     c.Dead = true;
                     Log($"{c.Agent.GivenName} fails their death saves ({string.Join(", ", rolls)}) and dies.");
+                    Mark("death", c, rolls[^1]);
+                    Speak("death", c);
                 }
                 else
                 {
                     c.Down = false;
                     c.Hp = 1;
                     Log($"{c.Agent.GivenName} pulls through on death saves ({string.Join(", ", rolls)}).");
+                    Mark("saved", c, rolls[^1]);
                 }
             }
         }
@@ -813,6 +912,7 @@ public static class Expedition
                 if (check.Total >= dc)
                 {
                     Log($"{check.Name} goes in under a branch of truce and talks {The(boss)} round (d20 {check.Roll}, {check.Total} vs DC {dc}): they will quit {site.Name} by the next moon.");
+                    Mark("parley", check, dc);
                     Talked = true;
                     SiteCleared = true;
                     Gold += (int)(_rng.Range(site.Loot[0], site.Loot[1] + 1) * talk.Loot);
@@ -913,23 +1013,27 @@ public static class Expedition
             if (t.Captives)
             {
                 Log($"In the pens at the back they find the captives, cut them loose and slip out of {site.Name} with them before the alarm.");
+                Mark("goal");
                 GoalMet = true;
                 return ExpeditionOutcome.Retreated;
             }
             if (t.Fallen)
             {
                 Log($"Where the fighting was worst they find what is left of the town's fallen, and carry them and their gear out of {site.Name}{(loot > 0 ? $" with {loot} gold besides" : "")}.");
+                Mark("goal");
                 GoalMet = true;
                 return ExpeditionOutcome.Retreated;
             }
             if (t.Item)
             {
                 Log($"They find the hoard, take what they can carry{(loot > 0 ? $" ({loot} gold)" : "")} and get out of {site.Name} before the rest of it wakes.");
+                Mark("goal");
                 Treasure(site, true);
                 GoalMet = true;
                 return ExpeditionOutcome.Retreated;
             }
             Log($"With half of {site.Name} taken, they set fire to the rest. What is left of its folk breaks and runs for the wilds{(loot > 0 ? $", leaving {loot} gold behind" : "")}.");
+            Mark("goal");
             Driven = true;
             SiteCleared = true;
             return ExpeditionOutcome.Cleared;
@@ -942,6 +1046,8 @@ public static class Expedition
             string line = $"{Cap(site.Name)} is cleared. The hoard holds {loot} gold";
             line += Treasure(site, false);
             Log($"{line}.");
+            Mark("cleared");
+            Speak("treasure");
         }
 
         /// <summary>The magic item in a hoard, if there is one (always, when sure), and who takes it. Returns the words for the Ledger line.</summary>
@@ -997,7 +1103,11 @@ public static class Expedition
         /// <summary>What happened, for the town to learn when (if) they come home.</summary>
         public ExpeditionResult Result(ExpeditionOutcome outcome, string siteName)
         {
-            if (outcome == ExpeditionOutcome.Wiped) Log($"No one comes back from {siteName}.");
+            if (outcome == ExpeditionOutcome.Wiped)
+            {
+                Log($"No one comes back from {siteName}.");
+                Mark("lost");
+            }
             var hp = new OrderedMap<int, int>();
             var potions = new OrderedMap<int, int>();
             var scrolls = new OrderedMap<int, int>();
@@ -1027,6 +1137,8 @@ public static class Expedition
                 Talked = Talked,
                 Driven = Driven,
                 GoalMet = GoalMet,
+                Beats = Beats.ToList(),
+                Gags = Gags.ToList(),
             };
         }
     }

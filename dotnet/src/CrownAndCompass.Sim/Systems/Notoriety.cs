@@ -22,6 +22,9 @@ public sealed record FameDeeds
     public int Plea { get; init; } = 3;
     public int Honour { get; init; } = 5;
 
+    /// <summary>For keeping a vow sworn over a fallen friend's grave (<see cref="Voices"/>).</summary>
+    public int Vow { get; init; } = 6;
+
     /// <summary>Fame for reaching a level, by level.</summary>
     public Dictionary<string, int> Levels { get; init; } = [];
 }

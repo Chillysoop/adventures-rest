@@ -545,7 +545,8 @@ public partial class Main
         foreach (var c in Enumerable.Reverse(t.Chronicles))
         {
             var color = c.Outcome == ExpeditionOutcome.Cleared || c.GoalMet ? Ui.Good : c.Outcome == ExpeditionOutcome.Wiped ? Ui.Bad : Ui.Ink2;
-            string head = $"[url=chron:{c.Id}][b]{Ui.Esc(c.PartyName)}[/b][/url] at {Ui.Esc(c.SiteName)}  {Tag(c.Verdict, color)}\n{Ui.C(Ui.Ink2, $"[font_size=12]Day {c.DepartDay}–{c.ReturnDay} · {Ui.Esc(string.Join(", ", c.Members))}[/font_size]")}";
+            string tale = c.Beats.Count > 0 && c.MemberIds.Count > 0 ? $"  [url=tale:{c.Id}]{Ui.C(Ui.Gold, "▶ Hear the tale")}[/url]" : "";
+            string head = $"[url=chron:{c.Id}][b]{Ui.Esc(c.PartyName)}[/b][/url] at {Ui.Esc(c.SiteName)}  {Tag(c.Verdict, color)}{tale}\n{Ui.C(Ui.Ink2, $"[font_size=12]Day {c.DepartDay}–{c.ReturnDay} · {Ui.Esc(string.Join(", ", c.Members))}[/font_size]")}";
             if (_openChronicles.Contains(c.Id))
                 head += "\n" + string.Join("\n", c.Lines.Select(l => $"{Ui.C(color, "│")} [font_size=13]{Ui.Esc(l)}[/font_size]"));
             p.Row(head);

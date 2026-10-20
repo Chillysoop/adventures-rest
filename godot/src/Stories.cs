@@ -367,6 +367,7 @@ public partial class Main
             if (adv != "") result.AddChild(Ui.Rich($"[center]{Ui.C(Ui.Ink2, adv)}[/center]", 13));
         }
         result.AddChild(Ui.Rich(LinkStory(s, b.Text), 15));
+        if (b.Table != "") result.AddChild(Ui.Rich(Ui.C(Ui.Ink2, $"[i]{Ui.Esc(b.Table)}[/i]"), 13));
         var foot = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.End };
         // A quest waiting on the party's next sending closes until the stone wakes again.
         bool waits = s.WaitTick is int wait && wait > t.Tick;
