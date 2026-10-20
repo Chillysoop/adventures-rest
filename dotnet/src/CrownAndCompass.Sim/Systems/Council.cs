@@ -302,7 +302,9 @@ public static class Council
                 bool red = books < 0 && town.Treasury < upkeep * 20, underfunded = Taxes.Funding(town) < 1;
                 if (taxes && (red || underfunded || town.Treasury < upkeep * 5) && town.TaxRate < c.MaxTax - 1e-9)
                     return new Proposal(MotionKind.RaiseTax, 0, red ? "the books have run red this week" : underfunded ? "the town's services cost more than it takes in" : "the treasury is thin");
-                if (red && town.Watch > 0) return new Proposal(MotionKind.DismissWatch, 0, "the watch costs more than the town can bear");
+                // Not below the Captain's own floor, or the two seats hire and dismiss the same watchmen by turns
+                // (a watch the town truly can't pay hands in its badges by itself).
+                if (red && town.Watch > 0 && town.Watch > town.Population / 30) return new Proposal(MotionKind.DismissWatch, 0, "the watch costs more than the town can bear");
                 return null;
             }
             case SeatId.Captain:

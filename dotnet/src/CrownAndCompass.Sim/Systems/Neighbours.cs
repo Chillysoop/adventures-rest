@@ -334,6 +334,8 @@ public static class Neighbours
     {
         var b = Rules(town).Band;
         string name = b.Names.Count > 0 ? b.Names[names.Range(0, b.Names.Count)].Replace("{settlement}", s.Name) : $"the {s.Name} band";
+        // "the {settlement} Watch" for "the Court of Thaliel" would read "the the Court of Thaliel Watch".
+        if (name.StartsWith("the the ", StringComparison.Ordinal)) name = name[4..];
         string captain = b.Captains.Count > 0 ? b.Captains[names.Range(0, b.Captains.Count)] : "their captain";
         return new LocalBand { Name = name, Captain = captain, Level = Math.Max(1, town.Regions[s.RegionId].Levels[0]), Members = b.Members };
     }

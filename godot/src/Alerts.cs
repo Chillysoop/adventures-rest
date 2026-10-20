@@ -118,6 +118,8 @@ public partial class Main
             return;
         }
         if (tab is Tab w) OpenWindow(w);
+        // A faction turning hostile is answered under Factions, a long scroll below the gods.
+        if (a.Kind == Alerts.Hostile) ScrollToHeading("Factions");
         if (a.Wall is int section && Garrison.Walled(t))
         {
             ShowWall(section);

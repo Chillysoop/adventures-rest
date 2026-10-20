@@ -185,7 +185,7 @@ public partial class Main
         string when = DateTime.TryParse(h.Saved, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var d)
             ? d.ToLocalTime().ToString("d MMM HH:mm", CultureInfo.InvariantCulture)
             : "";
-        return $"{h.Town}, day {h.Day} · {h.Population} people · {Math.Floor(h.Treasury)} gold · {when}";
+        return $"{h.Town}, day {h.Day} · {h.Population} households · {Math.Floor(h.Treasury)} gold · {when}";
     }
 
     private static SaveHeader? Header(string slot)

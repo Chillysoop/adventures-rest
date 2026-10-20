@@ -118,7 +118,10 @@ public static class Alerts
             yield return new($"sighted:{g.Id}", Sighted, $"{Cap(g.Foe)} heading for {mark.Name}",
                 guarded
                     ? $"{Cap(g.Reporter)} saw about {g.Count} {g.Foe} coming. The watch's flag covers {mark.Name}; keep it there tonight."
-                    : $"{Cap(g.Reporter)} saw about {g.Count} {g.Foe} coming for {mark.Name}. They strike tonight. Plant a guard flag over it (G on the map) or keep heroes home.",
+                    : t.Watch == 0
+                        // No watch yet means no flag to plant: don't send the player to a button that can't work.
+                        ? $"{Cap(g.Reporter)} saw about {g.Count} {g.Foe} coming for {mark.Name}. They strike tonight. The town has no watch yet, so keep heroes home tonight."
+                        : $"{Cap(g.Reporter)} saw about {g.Count} {g.Foe} coming for {mark.Name}. They strike tonight. Plant a guard flag over it (G on the map) or keep heroes home.",
                 BuildingId: mark.Id);
         }
         foreach (var c in Systems.Captives.Held(t).OrderBy(c => c.Id))
@@ -273,6 +276,8 @@ public static class Alerts
         if (t.Research.Study != null) yield break;
         var open = Research.Open(t);
         if (open.Count == 0) yield break;
+        // Only once the town can pay for one: a study it can't afford isn't an action yet.
+        if (!open.Any(d => (t.Research.Progress.ContainsKey(d.Id) ? 0 : Research.Commission(t, d)) <= t.Treasury)) yield break;
         yield return new("scholars", Scholars, "The scholars are idle",
             $"{open.Count} {(open.Count == 1 ? "discovery is" : "discoveries are")} ready to study, {open[0].Name.ToLowerInvariant()} the cheapest. Set the scholars to work in the Library window.");
     }
