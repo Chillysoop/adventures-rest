@@ -630,12 +630,18 @@ public static class Decor
         return null;
     }
 
-    /// <summary>Land the town may want to build on: any ground of a ward laid out. The stand-in keeps to the land around it.</summary>
+    /// <summary>Land the town means to build on: ground painted with a zone or built on. The stand-in keeps to the land around it.</summary>
     private static bool Zoned(Town town, double x, double y)
     {
+        var plan = town.Plan;
         foreach (double dx in (double[])[-0.3, 0.3])
             foreach (double dy in (double[])[-0.3, 0.3])
-                if (x + dx >= 0 && y + dy >= 0 && x + dx < Town.Grid && y + dy < Town.Grid && City.IsOpen(town, x + dx, y + dy)) return true;
+            {
+                double px = x + dx, py = y + dy;
+                if (px < 0 || py < 0 || px >= Town.Grid || py >= Town.Grid) continue;
+                int i = (int)(py * Land.Res) * Land.Size + (int)(px * Land.Res);
+                if (plan.Zones[i] != (byte)Zone.None || plan.Taken[i] != 0) return true;
+            }
         return false;
     }
 
