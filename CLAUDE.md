@@ -73,6 +73,11 @@
   on their own, nearest the centre first, `perDay` tiles from the market's stone stock (never imported) and the treasury above
   `reserve` (`Street.Cobbled`, `FromEnd`). Houses near cobbles gain `comfort`; the client draws them from the ground texture's blue
   channel.
+- Drawn walls (`Systems/WallLines.cs`, city.json `wallLines`): the player draws each wall's loop (`Simulation.DrawWall`, ring 0
+  the palisade/stone walls, ring 1 the city wall) and snaps gates onto it (`PlaceGate`, `RemoveGate`; at least one, the first
+  is the main gate). `City.Wall` reads the drawn line, so the clear strip, `Passage` openings, raids and the client follow it;
+  an undrawn line makes way for the other's. Walls draw their timber and stone daily (`Threat.Haul`) and slow when short
+  (the `stalled:walls` alert). Shots: `--draw-wall 0:x,y;x,y;... --gate 0:x,y` (tiles from the centre).
 - Wards (city.json `wards`, `unsettled`, `rings`): never laid out by hand. The charter opens rings (`City.RingOpen`); a quarter
   (ring + side) with `founding` finished buildings becomes the ring's ward its buildings draw most (`WardDef.Draws`, `City.Form`,
   `CityState.Sectors`). The map outlines a ward round its own buildings. `City.Migrate` maps old saves' wards to their quarters.
@@ -87,11 +92,22 @@
   river and its fords and bridges come from the sim (`Passage.River`, `Crossings`); roads.json kinds with a `barrier` are
   skirted unless the party has the way across (mounts, spells, items in passage.json; `Passage.Abilities`). Townsfolk
   only swim the moat or climb the wall when fleeing a raid next to them (`Passage.Fleeing`), never to get to work.
+  The Sky Dock institution (`sky-dock`, service `airship`) lends a company its airship when its road meets what it
+  can't cross (`Passage.Board`, `Party.Airship`), one company at a time; trade runs build on the same ship.
+- Storytellers (`content/game/storytellers.json`, `Systems/Storyteller.cs`): the difficulty, chosen on New game (`SimulationOptions.Storyteller`,
+  kept as `Town.Storyteller`; CLI and client `--storyteller id`). Pacing code multiplies its levers by `Storyteller.*`; Rising is all 1s
+  with no swing and must roll nothing, so gate sweeps stay put. Moods (`content/game/moods.json`, `Systems/Moods.cs`): townsfolk high for
+  days get a trade inspiration, low ones break (`Agent.Episode`, shown as street bubbles and in the inspector; `--episode id` stages one).
+  Their rolls use `Moods.Dice` (seeded from seed, tick and person), not `Town.Rng`, so moods never shift the main stream.
 - Decorations (`content/game/decor.json`, `Systems/Decor.cs`, client `Map/Decorator.cs`, `Map/DecorView.cs`): free positions in
   tiles from the town's corner and any angle (radians, model front +Z turned by it). Every piece needs a small effect in
   another system, capped in decor.json. Pieces claim plan cells (`Decor.Cells`, `LandPlan.Decor`): `Land.Fits` and lanes go
   round them, and they never stand on a lane. Appeal adds to house contentment (`Decor.Comfort`) and to ward land prices
   (`Decor.Prestige`). `--beautify D` dresses a town for screenshots; `--decor oak --decor-at x,y,a` shows the tool.
+- Menus: every window is one click on the left rail (`godot/src/Dock.cs`, `Groups`/`Blurbs`, Shift+number `QuickTabs`); its
+  badges count the alerts whose `AlertWindow` it answers, so a new alert badges its window for free. The action tray on the
+  right (`godot/src/Tray.cs`: Bounties, Council, Events, War) slides out a drawer to act without a window. The top bar's
+  monthly trends and hover cards read `Systems/Trends.cs` (30 days of books, food, Mandate, unrest; numbers in trends.json).
 - Godot client in `godot/` (Godot 4.3 .NET). Screenshots: `xvfb-run -a godot --path godot --rendering-driver opengl3
   --resolution 1600x900 -- --seed N --day D --autoplay --screenshot out.png` (`--cam`, `--look`, `--site`, `--strategic`
   aim it; `--bench` checks the performance budget in the GDD). Exports go to `godot/build/` (ignored).
@@ -102,6 +118,14 @@
   list>`) and hold back until it is relevant (`when`: `count:X`, `day:N`, `alert:<key>`), so new systems rarely need
   client code (`godot/src/Guide.cs`). Keep step ids stable: players who finished the tutorial are shown steps with new
   ids as "New in this build". The main menu is `godot/src/Title.cs` (`--title`, `--tutorial start|<step-id>` for shots).
+- Look: the painted style is the default (`MapView.Painted`: cel bands in `light()` via `cel()` in common.gdshaderinc, ink outline
+  `ink.gdshader` as the props/foliage next_pass, glow, haze; `--style classic` for the old look, `--clean` hides the HUD in shots).
+  MeshKit faces must wind outward (the outline inks inside-out parts black). Homes are modelled in Blender from code
+  (`tools/blender_houses.py`, Blender as a pip module: `python3 -m pip install bpy`) and baked to `models/crafted.bin` in the
+  kenney.bin layout; roof faces bake as (255, 0, shade) and `TownView.RoofPaint` colours them.
+- Cliffs (`Systems/Cliffs.cs`, passage.json `cliffs`): plateaus in the near wilds past the plan, a pure function of the seed. Passage
+  treats each as a barrier opened only at its ramps (`Passage.Obstacles`, `RoundCliffs` for roads); the client raises them
+  (`WorldGen`) and faces them with rock (`WorldView.BuildCliffs`).
 - Art: only CC0/CC-BY or our own; credit every pack in `godot/assets/CREDITS.md`. Kenney models are baked by
   `python3 tools/kenney_bake.py` into `godot/assets/models/kenney.bin`. Shader colours are sRGB converted once in the
   shader (no `source_color` hint). Client decoration randomness goes through `Geo.Hash`, never the sim's rng.

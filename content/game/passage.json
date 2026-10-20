@@ -1,5 +1,11 @@
 {
   "walls": { "wall": 0.35, "moat": 1.6, "gateIn": 0.8, "gateOut": 0.8, "round": 0.4 },
+  "cliffs": {
+    "_doc": "Plateaus with sheer cliffs round the town (Systems/Cliffs.cs), in the near wilds past the town's plan. Tiles but for riverClear and siteClear (days). Walkers and roads go round them or up their ramps.",
+    "count": 4, "distance": [32, 48], "radius": [5, 9], "height": [3.2, 5], "face": 0.8,
+    "rampWidth": 1.4, "rampLength": 6, "twoRamps": 7,
+    "planClear": 1.5, "riverClear": 0.04, "siteClear": 0.04, "apart": 6, "roadArc": 0.45
+  },
   "flee": { "hours": 3, "radius": 6 },
   "river": {
     "name": "the river",
@@ -39,6 +45,11 @@
     { "id": "griffon", "name": "griffon", "ways": ["river", "water", "sheer"], "price": 900, "buyAt": 1800, "level": 9, "institution": "griffon-roost",
       "text": ["{hero} buys a griffon from the Roost. The Roostmaster spends a week teaching them to stay on it; the griffon spends it deciding whether to let them.", "{hero} rides a griffon now, and the river, the lakes and the mountains are no longer in the way."] }
   ],
+  "airship": {
+    "name": "the town's airship",
+    "ways": ["river", "water", "sheer"],
+    "text": ["{party} go aboard {ship} at the Sky Dock and sail out over everything that stands in the way.", "The riggers cast off and {ship} lifts {party} over the rooftops, bound straight for their job."]
+  },
   "fliers": { "dragon": 1.0, "schemers": 0.35, "beasts": 0.2, "cult": 0.1 },
   "texts": {
     "over": ["There is no road across {name}, but they go straight over it, thanks to {carrier}.", "Where everyone else goes round {name}, they cross it by {carrier}."],

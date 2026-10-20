@@ -348,7 +348,7 @@ public static class Saga
             s.QuietDays = 0;
             return;
         }
-        if (++s.QuietDays < Rules(town).LullDays) return;
+        if (++s.QuietDays < Rules(town).LullDays * Storyteller.Of(town).Lull) return;
         s.QuietDays = 0;
         Menaces.Seed(town, act.Seeds[0]);
     }
@@ -389,7 +389,8 @@ public static class Saga
         var s = town.Saga;
         var f = Rules(town).Finale;
         // Only a mind that can rule is crowned: a beast or a kobold band may be the worst thing abroad, but it is no big bad.
-        var top = s.Menaces.Where(m => m.Alive && Menaces.CanCrown(town, m)).OrderByDescending(m => m.Power * Menaces.CunningOf(town, m).CrownWeight).ThenBy(m => m.Id).FirstOrDefault();
+        // Nor one that only rose today: the big bad is grown out of play, not out of the morning's news.
+        var top = s.Menaces.Where(m => m.Alive && m.BornDay < town.Day && Menaces.CanCrown(town, m)).OrderByDescending(m => m.Power * Menaces.CunningOf(town, m).CrownWeight).ThenBy(m => m.Id).FirstOrDefault();
         string text;
         if (top == null)
         {

@@ -79,6 +79,9 @@ public sealed record DecorDef
 
     /// <summary>Added to how much each watchman counts against crime and raiders.</summary>
     public double Deter { get; init; }
+
+    /// <summary>Water to hand for a bucket chain: how much less likely an enemy's fire is to leap to buildings nearby (<see cref="Fires"/>).</summary>
+    public double Douse { get; init; }
 }
 
 public sealed record DecorMayorRules
@@ -129,6 +132,7 @@ public sealed record DecorRules
     public double DrawCap { get; init; } = 0.25;
     public double MandateCap { get; init; } = 0.15;
     public double DrillCap { get; init; } = 30;
+    public double DouseCap { get; init; } = 0.6;
 
     /// <summary>Loyalty points every hero gets per point of honours, up to HonorCap; and for their own statue.</summary>
     public double HonorPerStatue { get; init; } = 1.5;
@@ -520,6 +524,20 @@ public static class Decor
 
     /// <summary>Mandate a day from civic pride.</summary>
     public static double Mandate(Town town) => Math.Min(Rules(town).MandateCap, Sum(town, d => d.Mandate));
+
+    /// <summary>How well a bucket chain can fight a fire at a point: wells and fountains within their reach, fading at the edge.</summary>
+    public static double Douse(Town town, double x, double y)
+    {
+        double a = 0;
+        foreach (var d in town.Decor.Pieces)
+        {
+            if (d.Def.Douse == 0) continue;
+            double dx = x - d.X, dy = y - d.Y, r = d.Def.Radius * 1.5;
+            double dist2 = dx * dx + dy * dy;
+            if (dist2 < r * r) a += d.Def.Douse * Growth(town, d) * (1 - Math.Sqrt(dist2) / r);
+        }
+        return Math.Min(Rules(town).DouseCap, a);
+    }
 
     /// <summary>Strength at the walls from the drill yard.</summary>
     public static double Defense(Town town) => Math.Min(Rules(town).DrillCap, Sum(town, d => d.Drill));

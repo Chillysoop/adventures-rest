@@ -4,6 +4,8 @@ uniform sampler2D noise_tex : filter_linear_mipmap, repeat_enable;
 uniform float world_size = 1024.0;
 uniform float night = 0.0;
 uniform float strategic = 0.0;
+// The painted look (MapView.Painted): banded cel light, rim, richer colour.
+uniform float toon = 0.0;
 // The season, blended across its turns (summer is the baseline look): snow lying in winter, turned leaves in autumn,
 // fresh greens in spring. Set on every material by MapView from Seasons.Look.
 uniform float snow = 0.0;
@@ -79,4 +81,17 @@ vec3 season_grass(vec3 c) {
 	c = mix(c, straw, autumn * g * 0.55);
 	c = mix(c, fresh, spring * g * 0.9);
 	return mix(c, dormant, snow * (0.4 + 0.5 * g));
+}
+
+// Diffuse for light(): Godot's lambert wrap, or with toon two soft bands with the shadow folded into the dark one.
+float cel(float ndl, float atten, float rough) {
+	float wrap = max(0.0, (ndl + rough) / ((1.0 + rough) * (1.0 + rough))) * atten;
+	float lit = smoothstep(0.0, 0.1, ndl) * smoothstep(0.3, 0.6, atten);
+	float band = mix(0.17, 0.44, lit) + 0.08 * clamp(ndl, 0.0, 1.0) * lit;
+	return mix(wrap, band, toon);
+}
+
+// A warm sunlit rim on silhouettes, Northgard's soft halo.
+vec3 rim(vec3 n, vec3 v) {
+	return vec3(1.0, 0.9, 0.72) * pow(1.0 - clamp(dot(n, v), 0.0, 1.0), 4.0) * 0.16 * toon * (1.0 - night) * (1.0 - strategic);
 }

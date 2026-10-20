@@ -5,9 +5,9 @@ using Godot;
 namespace CrownAndCompass.Client;
 
 /// <summary>
-/// With --smoke: the merge gate's play-through of a build (<c>scripts/gate.ts</c>). From the main menu it
+/// With --smoke: the merge gate's play-through of a build (<c>scripts/gate.ts</c>). From the main menu (and its choice of storytellers) it
 /// starts a new town, plays on at top speed, opens every window, the build bar, the campaign map, a wall and a guard flag and the
-/// game menu, saves and loads, starts the tutorial, opens the History and the glossary with a pinned keyword card, steps into a story event and answers a party's sending, a few frames apart so each one draws. It prints
+/// game menu, saves and loads, starts the tutorial, opens the History and the glossary with a pinned keyword card, steps into a story event, answers a party's sending, opens the tourney card with a bet on it, opens the recap and a tavern tale, a few frames apart so each one draws. It prints
 /// <c>SMOKE OK</c> and quits with 0, or <c>SMOKE FAIL</c> and 1; the gate also fails on any engine error.
 /// </summary>
 public partial class Main
@@ -44,6 +44,9 @@ public partial class Main
         {
             case 0:
                 if (!_title.Visible) throw new InvalidOperationException("the main menu is not showing");
+                // New game asks for a storyteller first.
+                PickStoryteller(false);
+                if (!_tellers.Visible || _titleMenu.Visible) throw new InvalidOperationException("the storytellers are not showing");
                 return 10;
             case 1:
                 // What the main menu's New game does, with the stand-in mayor playing so later systems come into play.
@@ -61,9 +64,16 @@ public partial class Main
             case 14:
                 CloseWindow();
                 ToggleBuildBar();
+                // The info lens: every view worked out once, the last left on to draw until the next stage.
+                foreach (var m in CrownAndCompass.Client.Map.Lens.Modes)
+                {
+                    _map.Lens.Show(true, m);
+                    if (_map.Lens.Summary == "") throw new InvalidOperationException($"the {m} lens says nothing");
+                }
                 return 5;
             case 15:
                 ToggleBuildBar();
+                ToggleLens();
                 ToggleStrategic();
                 return 10;
             case 16:
@@ -103,9 +113,13 @@ public partial class Main
                 return 10;
             case 21:
                 CloseHistory();
-                // Each dock group's list, then the glossary with a keyword's card pinned over it.
-                for (int g = 0; g < Groups.Length; g++) OpenPicker(g);
-                ClosePicker();
+                // Each tray drawer, then the glossary with a keyword's card pinned over it.
+                foreach (var d in Trays)
+                {
+                    OpenTray(d.Id);
+                    RenderTray();
+                }
+                CloseTray();
                 OpenGlossary("mandate");
                 Pin("warband");
                 if (_kwPinned.Count == 0) throw new InvalidOperationException("the keyword card did not pin");
@@ -155,6 +169,42 @@ public partial class Main
                 return 70;
             case 28:
                 CloseFind();
+                // "Last time in...", as a loaded game opens with it.
+                OpenRecap(Math.Max(1, _sim.Town.Day - 15), "Welcome back");
+                return 10;
+            case 29:
+                if (!_recap.Visible) throw new InvalidOperationException("the recap did not open");
+                _recap.Visible = false;
+                // A delve told at the tavern, skipped to its big moment so its roll and map draw.
+                if (_sim.Town.Chronicles.LastOrDefault(c => c.Beats.Count > 0) is { } tale)
+                {
+                    OpenTale(tale.Id);
+                    SkipTaleTo(null);
+                }
+                return 40;
+            case 30:
+                CloseTale();
+                return 5;
+            case 31:
+            {
+                // The tourney card: a grand tourney put on today, a stake on the first event, and its first heats ridden.
+                if (!Tournaments.Stage(_sim.Town, 1)) throw new InvalidOperationException("the tourney would not stage");
+                // A stake on the first event not yet under way (today's may have begun, by the hour), from a treasury that can spare it.
+                _sim.Town.Treasury = Math.Max(_sim.Town.Treasury, 5000);
+                int ev = _sim.Town.Tourney.Events.FindIndex(e => Tournaments.BetBlocked(_sim.Town, e) == null);
+                if (ev < 0) throw new InvalidOperationException("no tourney event takes bets");
+                var first = _sim.Town.Tourney.Events[ev];
+                // On the favourite: a rider whose chance has fallen to nothing (hurt, gone) takes no stake.
+                int pick = Tournaments.Chances(_sim.Town, first).OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key).First().Key;
+                if (!_sim.PlaceBet(ev, pick, Tournaments.Rules(_sim.Town).Betting.Min)) throw new InvalidOperationException("the bet was refused");
+                OpenTourney();
+                for (int h = 0; h < 14; h++) _sim.Step();
+                _dirty = true;
+                return 40;
+            }
+            case 32:
+                if (!_tourney.Visible || _sim.Town.Tourney.Events[0].Heats.Count == 0) throw new InvalidOperationException("the tourney's heats did not show");
+                CloseTourney();
                 return 5;
             default:
                 var t = _sim.Town;

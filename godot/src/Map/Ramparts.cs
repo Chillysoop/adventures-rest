@@ -84,7 +84,9 @@ public partial class TownView
         float perim = Perimeter(loop);
         int steps = Math.Max(n * 4, (int)(perim / 0.2f));
         // Start halfway into section 0 (the gate) so no stretch wraps round the loop's start.
-        var gate = RayHit(loop, Bearing(town, 0));
+        int ring = d.CityWall == PalisadeState.Built ? 1 : 0;
+        var gatePoints = GatePoints(town, ring);
+        var gate = gatePoints.Length > 0 ? gatePoints[0] : RayHit(loop, Bearing(town, 0));
         float start = 0, bestD = float.MaxValue;
         for (int i = 0; i < steps; i++)
         {
@@ -116,7 +118,7 @@ public partial class TownView
         {
             // A plank walk behind the stakes for the watch, and a timber gate on the south road.
             Ribbon(k, loop, -0.14f, 0.12f, height, Palette.DarkTimber, false);
-            TimberGate(k, gate, (gate - Geo.Center).Normalized());
+            foreach (var g in gatePoints.Length > 0 ? gatePoints : [gate]) TimberGate(k, g, (g - Geo.Center).Normalized());
             return;
         }
         // The towers the town built, taller than the wall's own and flying its banner, with lit windows where the watch sleeps.

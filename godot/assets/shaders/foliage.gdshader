@@ -49,8 +49,16 @@ void fragment() {
 		c = mix(c, mix(vec3(0.93, 0.56, 0.70), vec3(0.97, 0.90, 0.88), step(0.9, seed)), bloom);
 	}
 	c = lay_snow(c, wpos.xz, snow_cover(wpos.xz + vec2(seed * 31.0), up * (evergreen ? 1.6 : 1.1) * (0.75 + 0.5 * speck)));
+	// Painted: deeper, more saturated crowns with sunny tips.
+	c = mix(c, mix(vec3(luma(c)), c, 1.3) * mix(0.85, 1.12, clamp(lift / 1.6, 0.0, 1.0)), toon * leaf);
+	vec3 emit = rim(NORMAL, VIEW) * c * 2.5;
 	float cloud;
 	c = apply_fog(c, wpos.xz, TIME, cloud);
+	EMISSION = to_linear(emit * (1.0 - cloud));
 	ALBEDO = to_linear(c);
 	ROUGHNESS = 1.0;
+}
+
+void light() {
+	DIFFUSE_LIGHT += LIGHT_COLOR * cel(dot(NORMAL, LIGHT), ATTENUATION, ROUGHNESS) / PI;
 }

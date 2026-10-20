@@ -250,5 +250,43 @@
         "caught": "The watch catches a grey-robed preacher at {victim}'s door after dark, and runs them out of town."
       }
     }
+  },
+  "lurkers": {
+    "strikeHour": 22,
+    "minHours": 10,
+    "disguises": [
+      "a hooded pedlar who sells nothing",
+      "a cloaked woman with a basket of nothing",
+      "a tinker who never mends a pot",
+      "a pilgrim who prays to no shrine",
+      "a one-eyed drover without a herd",
+      "a ratcatcher with an empty sack",
+      "a beggar in good boots",
+      "a fiddler who never plays"
+    ],
+    "seen": "Folk near {where} keep glancing at {disguise}, who doesn't belong here and watches more than they look.",
+    "caught": {
+      "burn": "{guard} drag {disguise} out of the crowd by {where}: under the cloak, a pot of lamp oil and a tinderbox. One of {by}'s firebrands, caught before dark.",
+      "assassinate": "{guard} seize {disguise} outside {where} with a blade wrapped in black cloth and {victim}'s name on their lips. {by} will have to find another knife.",
+      "walls": "{guard} take {disguise} at the gate with a mason's chisel and a saw for the gate bar. Under questioning they name {by}.",
+      "treasury": "{guard} grab {disguise} outside {where} with a copy of the treasury key in their glove. Paid by {by}, they say.",
+      "stores": "{guard} catch {disguise} by {where} with a sack of blackrot spores meant for the town's bread. Sent by {by}.",
+      "discord": "{guard} take {disguise} at {where} with a satchel of pamphlets against the council, printed in the pay of {by}."
+    },
+    "mandate": 2,
+    "calm": 4
+  },
+  "fire": {
+    "reach": 2.4,
+    "neighbours": 5,
+    "catch": 0.3,
+    "maxSpread": 3,
+    "watchDouse": 0.2,
+    "wreck": [
+      0.2,
+      0.4
+    ],
+    "spread": "The fire leaps from {from} to {list} before the bucket chain beats it down.",
+    "held": "A bucket chain from the nearest well holds the fire to {from}; the roofs beside it are only scorched."
   }
 }

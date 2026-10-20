@@ -6,7 +6,8 @@ namespace CrownAndCompass.Client;
 
 /// <summary>
 /// The main menu the game opens on: a town turning slowly behind the title, and Continue, Start, Start
-/// with tutorial, Load and Quit. The game menu (Esc) can bring it back.
+/// with tutorial, Load and Quit. Starting a town first asks who will tell its story: the storytellers of
+/// content/game/storytellers.json, the game's difficulty. The game menu (Esc) can bring it back.
 /// </summary>
 public partial class Main
 {
@@ -15,6 +16,8 @@ public partial class Main
     private Label _continueAbout = null!;
     private readonly List<Control> _hiddenByTitle = [];
     private bool _menuLoadOnly;
+    private VBoxContainer _titleMenu = null!, _tellers = null!;
+    private bool _tellTutorial;
 
     private void BuildTitle()
     {
@@ -45,9 +48,11 @@ public partial class Main
         _title.AddChild(pad);
         pad.SetAnchorsAndOffsetsPreset(LayoutPreset.LeftWide);
         pad.OffsetRight = 640;
-        var col = new VBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
+        var stack = new VBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
+        pad.AddChild(stack);
+        var col = _titleMenu = new VBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
         col.AddThemeConstantOverride("separation", 10);
-        pad.AddChild(col);
+        stack.AddChild(col);
 
         var name = Ui.Label("Crown & Compass", Ui.Ink, Ui.Display, 58);
         col.AddChild(name);
@@ -60,12 +65,40 @@ public partial class Main
         _continueAbout = Ui.Label("", Ui.Ink2, Ui.Body, 12);
         _continueAbout.CustomMinimumSize = new Vector2(0, 0);
         col.AddChild(_continueAbout);
-        TitleButton(col, "Start a new town", "A fresh town on a random seed", primary: false, () => StartTown(tutorial: false));
-        TitleButton(col, "Start with tutorial", "A fresh town, with a guide to the basics", primary: false, () => StartTown(tutorial: true));
+        TitleButton(col, "Start a new town", "A fresh town on a random seed", primary: false, () => PickStoryteller(tutorial: false));
+        TitleButton(col, "Start with tutorial", "A fresh town, with a guide to the basics", primary: false, () => PickStoryteller(tutorial: true));
         TitleButton(col, "Load a town", "Pick a save slot", primary: false, OpenLoad);
         TitleButton(col, "History of the world", "The ages, empires and peoples before your town", primary: false, () => OpenHistory());
         TitleButton(col, "Glossary", "Every keyword in the game, explained (F1)", primary: false, () => OpenGlossary());
         TitleButton(col, "Quit", "Close the game", primary: false, () => GetTree().Quit());
+
+        // Who tells the new town's story: one button each, with their character and what playing under them is like.
+        _tellers = new VBoxContainer { Alignment = BoxContainer.AlignmentMode.Center, Visible = false };
+        _tellers.AddThemeConstantOverride("separation", 6);
+        stack.AddChild(_tellers);
+        _tellers.AddChild(Ui.Label("Who tells your town's story?", Ui.Ink, Ui.Display, 30));
+        _tellers.AddChild(Ui.Label("The storyteller sets how hard the campaign pushes. You can't change it later.", Ui.Ink2, Ui.Body, 13));
+        _tellers.AddChild(new Control { CustomMinimumSize = new Vector2(0, 10) });
+        var rules = Sim.Content.Default().Storytellers;
+        foreach (var st in rules.Storytellers)
+        {
+            string id = st.Id;
+            TitleButton(_tellers, $"{st.Title}  ·  {st.Name}", st.Text, primary: id == rules.Default, () => StartTown(_tellTutorial, storyteller: id));
+            var about = Ui.Label($"{st.Character} {st.Text}", Ui.Ink2, Ui.Body, 13);
+            about.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            about.CustomMinimumSize = new Vector2(520, 0);
+            _tellers.AddChild(about);
+            _tellers.AddChild(new Control { CustomMinimumSize = new Vector2(0, 6) });
+        }
+        TitleButton(_tellers, "Back", "Back to the main menu", primary: false, () => PickStoryteller(null));
+    }
+
+    /// <summary>Show the storytellers to start a town under (with or without the tutorial), or with null go back to the menu.</summary>
+    private void PickStoryteller(bool? tutorial)
+    {
+        _tellTutorial = tutorial == true;
+        _titleMenu.Visible = tutorial == null;
+        _tellers.Visible = tutorial != null;
     }
 
     private static Button TitleButton(VBoxContainer col, string text, string tip, bool primary, Action pressed)
@@ -100,6 +133,7 @@ public partial class Main
         if (_menu.Visible) CloseMenu();
         SetSpeed(0);
         _title.Visible = true;
+        PickStoryteller(null);
         var newest = NewestSave();
         _continue.Disabled = newest == null;
         _continueAbout.Text = newest is var (slot, h) ? $"{SlotTitle(slot)}: {Describe(h)}" : "No saved towns yet";
@@ -116,9 +150,9 @@ public partial class Main
         SetSpeed(1);
     }
 
-    private void StartTown(bool tutorial, int? seed = null, bool autoplay = false)
+    private void StartTown(bool tutorial, int? seed = null, bool autoplay = false, string? storyteller = null)
     {
-        NewTown(seed ?? (int)(GD.Randi() % 9999) + 1, autoplay);
+        NewTown(seed ?? (int)(GD.Randi() % 9999) + 1, autoplay, storyteller);
         // Begin at first light rather than in the dark of the first midnight.
         for (int i = 0; i < 7; i++) _sim.Step();
         HideTitle();

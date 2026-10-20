@@ -132,7 +132,7 @@ public static class Vengeance
         var mark = g.Marked.Select(town.Agent).Where(a => !a.Dead && !a.Departed && !a.IsAway).OrderBy(a => a.Id).FirstOrDefault();
         if (mark != null)
         {
-            if (Blows.Murder(town, by, g.Cunning, mark)) g.Marked.Remove(mark.Id);
+            if (Blows.Strike(town, Blows.Assassinate, by, 40 * g.Cunning, g.Cunning, mark, foe: g.Foe) == true) g.Marked.Remove(mark.Id);
             return;
         }
         // A clever foe may buy, charm or blood-bind a councillor instead.
@@ -150,6 +150,6 @@ public static class Vengeance
                 break;
             }
         }
-        Blows.Strike(town, kind, by, 40 * g.Cunning, g.Cunning);
+        Blows.Strike(town, kind, by, 40 * g.Cunning, g.Cunning, foe: g.Foe);
     }
 }

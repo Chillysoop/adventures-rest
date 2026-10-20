@@ -236,6 +236,8 @@ public partial class Main
             if (_menu.Visible) CloseMenu();
             HideTitle();
             Toast($"Loaded {what}: {sim.Town.Name}, day {sim.Town.Day}");
+            // A session opens with "last time in...".
+            if (!_opts.Smoke && _opts.Screenshot == null) OpenRecap(Math.Max(1, sim.Town.Day - 15), "Welcome back");
             return true;
         }
         catch (Exception e) when (e is SaveException or IOException)

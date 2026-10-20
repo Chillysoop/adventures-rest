@@ -76,6 +76,7 @@ public static class Taxes
         if (Math.Abs(rate - town.TaxRate) < 1e-9) return false;
         bool up = rate > town.TaxRate;
         town.TaxRate = rate;
+        Guilds.Ruled(town, up ? MotionKind.RaiseTax : MotionKind.LowerTax, true, $"{(up ? "raised" : "lowered")} the town's taxes to {Pct(rate)}");
         town.Log(LedgerCategory.Council, Importance.Routine, up
             ? $"The mayor raises the town's taxes to {Pct(rate)}. The criers read it out in the square to a sour crowd."
             : $"The mayor lowers the town's taxes to {Pct(rate)}. The taverns drink to it.");

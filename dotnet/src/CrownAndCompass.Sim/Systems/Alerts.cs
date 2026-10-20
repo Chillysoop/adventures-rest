@@ -26,6 +26,7 @@ public enum AlertWindow
     Library,
     Armory,
     Institutions,
+    Tourney,
 }
 
 /// <summary>A group of alerts: one icon on the strip, with a count and a hover list of what is in it.</summary>
@@ -64,7 +65,9 @@ public static class Alerts
     public static readonly AlertKind Scholars = new("scholars", "Idle scholars", "d20", AlertLevel.Minor, AlertWindow.Library);
     public static readonly AlertKind Below = new("below", "Stirring below", "warband", AlertLevel.Decision, AlertWindow.City);
     public static readonly AlertKind Trade = new("trade", "Trade routes", "gold", AlertLevel.Minor, AlertWindow.Diplomacy);
+    public static readonly AlertKind Courted = new("courted", "Powers courted", "rivals", AlertLevel.Decision, AlertWindow.Diplomacy);
     public static readonly AlertKind Neighbour = new("neighbour", "Neighbours in trouble", "favour", AlertLevel.Decision, AlertWindow.Diplomacy);
+    public static readonly AlertKind Shadow = new("shadow", "Villages in shadow", "warband", AlertLevel.Decision, AlertWindow.Diplomacy);
     public static readonly AlertKind Plot = new("plot", "Villains' plans", "warband", AlertLevel.Decision, AlertWindow.Campaign);
     public static readonly AlertKind Charter = new("charter", "Charters", "favour", AlertLevel.Decision, AlertWindow.City);
     public static readonly AlertKind GrandWork = new("grandwork", "Grand works", "gold", AlertLevel.Decision, AlertWindow.City);
@@ -75,7 +78,8 @@ public static class Alerts
     public static readonly AlertKind Bastion = new("bastion", "Bastions", "heroes", AlertLevel.Decision, AlertWindow.Companies);
     public static readonly AlertKind Institution = new("institution", "Institutions", "favour", AlertLevel.Decision, AlertWindow.Institutions);
     public static readonly AlertKind Heroes = new("heroes", "Restless heroes", "heroes", AlertLevel.Decision, AlertWindow.None);
-    public static readonly AlertKind Housing = new("housing", "Housing", "homeless", AlertLevel.Minor, AlertWindow.Council);
+    public static readonly AlertKind Honours = new("honours", "Honours to give", "favour", AlertLevel.Decision, AlertWindow.None);
+    public static readonly AlertKind Housing = new("housing", "Housing", "homeless", AlertLevel.Minor, AlertWindow.City);
     public static readonly AlertKind Crowded = new("crowded", "Full to the doors", "population", AlertLevel.Minor, AlertWindow.None);
     public static readonly AlertKind Work = new("work", "Idle hands", "population", AlertLevel.Decision, AlertWindow.City);
     public static readonly AlertKind Settlers = new("settlers", "No settlers", "population", AlertLevel.Decision, AlertWindow.City);
@@ -83,18 +87,36 @@ public static class Alerts
     public static readonly AlertKind Gifts = new("gifts", "Arms to give", "heroes", AlertLevel.Minor, AlertWindow.Armory);
     public static readonly AlertKind Outpost = new("outpost", "Land to hold", "warband", AlertLevel.Minor, AlertWindow.None);
     public static readonly AlertKind Stalled = new("stalled", "Building stalled", "gold", AlertLevel.Decision, AlertWindow.None);
+    public static readonly AlertKind Lurker = new("lurker", "A stranger watching", "suspicion", AlertLevel.Urgent, AlertWindow.None);
+    public static readonly AlertKind Tourney = new("tourney", "The tourney", "favour", AlertLevel.Decision, AlertWindow.Tourney);
+    public static readonly AlertKind Strike = new("strike", "A guild on strike", "population", AlertLevel.Urgent, AlertWindow.Council);
+    public static readonly AlertKind Guild = new("guild", "Guild demands", "favour", AlertLevel.Decision, AlertWindow.Council);
+    public static readonly AlertKind Wager = new("wager", "Tourney bets", "gold", AlertLevel.Minor, AlertWindow.Tourney);
 
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Sighted, Captives, Doom, Crisis, Fear, Hunger, Coffers, Underfunded, Unrest, Hostile, Motion, Fealty, Clash, Traitor, Plot, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Bastion, Institution, Heroes, Neighbour, Loot, Stalled, Work, Settlers, Below, Scholars, Trade, Gifts, Outpost, Housing, Crowded];
+        [Siege, Sighted, Lurker, Captives, Doom, Crisis, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Fealty, Clash, Traitor, Plot, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Heroes, Honours, Courted, Neighbour, Shadow, Loot, Stalled, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Outpost, Housing, Crowded];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
-    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Hostility, Winter, Growth, Routes, Region, Undercity, Study, Loyalty, Armoury, Homes, Sites, Crowds, Keepers, Outposts];
+    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Crowds, Keepers, Outposts, Lists];
 
     public static List<Alert> Standing(Town town) => Rules.SelectMany(r => r(town)).ToList();
 
     private static string Days(int n) => n == 1 ? "1 day" : $"{n} days";
+
+    /// <summary>An enemy's envoys at a minor power's door: outbid them with gifts before it answers.</summary>
+    private static IEnumerable<Alert> Courting(Town t)
+    {
+        foreach (var p in t.Powers.Where(p => p.CourtedBy != null).OrderBy(p => p.Id, StringComparer.Ordinal))
+        {
+            var m = Powers.Suitor(t, p);
+            if (m == null || Powers.Resolve(t, p) >= p.Offer) continue;
+            int days = Math.Max(1, p.DecideDay - t.Day);
+            yield return new($"courted:{p.Id}", Courted, $"{Cap(m.Name)} courts {Powers.Name(t, p)}",
+                $"{Cap(Powers.Name(t, p))} answer in {Days(days)}. Their standing is {Js.Str(Js.Round(Powers.Resolve(t, p)))} against {m.Name}'s offer of {Js.Str(p.Offer)}: send gifts from the Diplomacy window to outbid it, or they join your enemy.");
+        }
+    }
 
     private static IEnumerable<Alert> War(Town t)
     {
@@ -123,6 +145,14 @@ public static class Alerts
                         ? $"{Cap(g.Reporter)} saw about {g.Count} {g.Foe} coming for {mark.Name}. They strike tonight. The town has no watch yet, so keep heroes home tonight."
                         : $"{Cap(g.Reporter)} saw about {g.Count} {g.Foe} coming for {mark.Name}. They strike tonight. Plant a guard flag over it (G on the map) or keep heroes home.",
                 BuildingId: mark.Id);
+        }
+        // An enemy's agent loitering in town until dark: find them in the crowd and have them seized.
+        foreach (var l in t.Lurkers.OrderBy(l => l.Id))
+        {
+            int hours = Math.Max(1, l.StrikeTick - t.Tick);
+            yield return new($"lurker:{l.Id}", Lurker, $"A stranger by {Lurkers.Where(t, l)}",
+                $"Folk point out {l.Disguise} near {Lurkers.Where(t, l)}, watching. Find them in the crowd there (the hooded figure) and click them to have the watch seize them, before they act after dark in {hours} {(hours == 1 ? "hour" : "hours")}.",
+                BuildingId: l.BuildingId, Wall: l.BuildingId == null ? 0 : null);
         }
         foreach (var c in Systems.Captives.Held(t).OrderBy(c => c.Id))
         {
@@ -216,6 +246,24 @@ public static class Alerts
             yield return new("mandate", Unrest, "The town is turning on you", $"Mandate {Math.Round(t.Mandate)}. Below this the council stops listening.");
     }
 
+    /// <summary>A trade guild on strike, or pressing a demand with a deadline.</summary>
+    private static IEnumerable<Alert> Trades(Town t)
+    {
+        var r = Guilds.Rules(t);
+        foreach (var g in t.Guilds)
+        {
+            string name = Cap(Guilds.Name(t, g));
+            if (Guilds.OnStrike(t, g))
+                yield return new($"strike:{g.Id}", Strike, $"{name} on strike for {Days(g.StrikeUntil - t.Day)}",
+                    $"Its workers have downed tools. In the Council window pay it off ({Js.Str(Guilds.PayCost(t, g))}g) or send the watch to break the strike (costs {Js.Str(r.BreakMandate)} Mandate).",
+                    AgentId: g.MasterId);
+            else if (Guilds.Want(t, g) is { } w)
+                yield return new($"guild:{g.Id}:{g.Due}", Guild, $"{name} wants {Guilds.WantText(t, g, w)}",
+                    $"The guild gives you {Days(Math.Max(1, g.Due - t.Day))}. Meet it from the Council window or it takes it ill{(g.Standing - r.Lapsed <= r.StrikeAt ? " and strikes" : "")}.",
+                    AgentId: g.MasterId);
+        }
+    }
+
     private static IEnumerable<Alert> Hostility(Town t)
     {
         foreach (var f in t.Factions.Where(f => f.Active && f.Known && f.Standing <= -30).OrderBy(f => f.Id, StringComparer.Ordinal))
@@ -288,6 +336,15 @@ public static class Alerts
         foreach (var s in t.Settlements.Where(x => x.Standing >= 10 && x.Trouble is { Severity: >= 40 } && Neighbours.AidRefused(t, x) == null).OrderBy(x => x.Id))
             yield return new($"neighbour:{s.Id}", Neighbour, $"{s.Name} needs help",
                 $"{Cap(s.People)} face {Neighbours.TroubleOf(t, s)!.Name}. Send aid from the Diplomacy window before it does its worst; they will remember who helped.");
+        // A people paying an enemy tribute (or ruled by its creature): one to win back.
+        foreach (var s in t.Settlements.Where(x => Shadows.Paying(x) && t.Regions[x.RegionId].Known).OrderBy(x => x.Id))
+        {
+            if (Shadows.Over(t, s) is not { } m) continue;
+            string source = s.Shadow!.SourceId is string sid && Quests.Site(t, sid) is { } site ? $" or clear {site.Def.Name}" : "";
+            yield return new($"shadow:{s.Id}", Shadow, $"{s.Name} pays {m.Name}",
+                $"{Cap(s.People)} send tribute to {m.Name} and no longer trade with the town. Send a hero to rally them or an envoy from the Diplomacy window{source} to win them back.",
+                SiteId: s.Shadow.SourceId);
+        }
         foreach (var m in Plots.Looming(t))
         {
             var p = m.Plan!;
@@ -306,6 +363,8 @@ public static class Alerts
         foreach (var a in t.Heroes.Where(a => a.Hero!.Restless && !a.IsAway).OrderBy(a => a.Id))
             yield return new($"restless:{a.Id}", Heroes, $"{a.Name} is restless",
                 $"Loyalty {Math.Round(a.Hero!.Loyalty)}. A purse, a knighthood or a fief may win them back before they leave.", AgentId: a.Id);
+        foreach (var o in Systems.Loyalty.Honours(t))
+            yield return new($"honours:{o.Key}", Honours, o.Title, o.Tip, SiteId: o.SiteId, AgentId: o.AgentId);
     }
 
     /// <summary>Loot offered that a hero in town would use, and armory stock a hero in town would.</summary>
@@ -390,6 +449,9 @@ public static class Alerts
     /// <summary>A council site standing idle for want of timber or stone the market hasn't got.</summary>
     private static IEnumerable<Alert> Sites(Town t)
     {
+        if (t.Defenses.WallsShort >= t.Day - 1)
+            yield return new("stalled:walls", Stalled, "The walls wait for timber and stone",
+                "The masons on the walls stand idle half the day: the market is short of timber and stone. Zone industry for a quarry and a lumber camp, or wait for the market to fill.");
         foreach (var b in t.Buildings)
         {
             if (!Construction.Stalled(t, b)) continue;
@@ -431,4 +493,19 @@ public static class Alerts
     private const double StalledAppeal = 0.15;
 
     private static string Cap(string s) => s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
+
+    /// <summary>The council's tourney waits on the mayor's purse; once it is on, the next event still open to a stake.</summary>
+    private static IEnumerable<Alert> Lists(Town t)
+    {
+        var st = t.Tourney;
+        if (st.Stage == TourneyStage.Proposed)
+        {
+            int days = Math.Max(1, st.OpenDay - t.Day);
+            yield return new("tourney:fund", Tourney, $"Fund the tourney ({Days(days)})",
+                $"The council has proposed the year's tourney. Pay for it modest, grand or legendary, or let it go and disappoint the town. Left unanswered, the council holds a modest one if the treasury can bear it.");
+        }
+        else if (st.Stage == TourneyStage.Running && st.Events.Select((e, i) => (e, i)).FirstOrDefault(x => !x.e.Started && x.e.Day <= t.Day + 1 && Tournaments.BetBlocked(t, x.e) == null) is ({ } next, int index))
+            yield return new($"tourney:bet:{index}", Wager, $"Bet on {Tournaments.DefOf(t, next).Name}",
+                $"{Cap(Tournaments.DefOf(t, next).Name)} is ridden {(next.Day == t.Day ? "today" : "tomorrow")}. Open the tourney card to see the draw and the odds, and stake the treasury's gold on a rider if you like.");
+    }
 }

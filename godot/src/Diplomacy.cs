@@ -24,7 +24,29 @@ public partial class Main
         var lead = Neighbours.LeaderOf(t, s);
         string Level(double v) => v >= 70 ? "high" : v >= 45 ? "fair" : v >= 25 ? "low" : "dire";
         Color Shade(double v) => v >= 45 ? Ui.Good : v >= 25 ? Ui.Gold : Ui.Bad;
-        string lines = $"[font_size=12]Led by {Ui.Esc(s.Leader)}, their {Ui.Esc(lead.Title)} · prosperity {Ui.C(Shade(s.Prosperity), Level(s.Prosperity))} · security {Ui.C(Shade(s.Security), Level(s.Security))}";
+        string ruler = s.Reign != null ? Reigns.Describe(t, s) : $"{s.Leader}, their {lead.Title}";
+        string lines = $"[font_size=12]Led by {Ui.C(Reigns.Puppet(s) ? Ui.Bad : Ui.Ink, Ui.Esc(ruler))} · prosperity {Ui.C(Shade(s.Prosperity), Level(s.Prosperity))} · security {Ui.C(Shade(s.Security), Level(s.Security))}";
+        if (s.Reign != null)
+        {
+            string temper = Reigns.Puppet(s) ? "" : Ui.Cap(Reigns.TemperOf(t, s).Text) + ".";
+            string was = Reigns.Succession(t, s);
+            if (temper != "" || was != "") lines += "\n" + Ui.C(Ui.Ink2, Ui.Esc($"{temper}{(temper != "" && was != "" ? " " : "")}{(was != "" ? was + "." : "")}"));
+        }
+        if (Shadows.Shadowed(s) && Shadows.Over(t, s) is { } dark)
+        {
+            var sh = s.Shadow!;
+            string form = sh.Form switch
+            {
+                "dread" => "lives in dread of",
+                "tribute" => "pays tribute to",
+                "cult" => "sings the hymns of",
+                _ => "is ruled for",
+            };
+            string from = sh.SourceId is string src && Quests.Site(t, src) is { } srcSite ? $"; clear {Ui.Esc(srcSite.Def.Name)} to loosen its grip" : "";
+            lines += "\n" + Ui.C(sh.Form == "dread" ? Ui.Gold : Ui.Bad, $"In shadow: {Ui.Esc(s.Name)} {form} {Ui.Esc(dark.Name)} ({Math.Round(sh.Depth)}% deep){from}.");
+            if (sh.RallyHeroId is int hid)
+                lines += "\n" + Ui.C(Ui.Ink2, $"{Ui.Esc(t.Agent(hid).GivenName)} is {(sh.Rallied ? "on the way home" : "on the way to rally them")}.");
+        }
         if (s.Band is { } b)
             lines += b.Members > 0
                 ? $"\n{Ui.Esc(Ui.Cap(b.Name))}: {b.Members} strong, level {b.Level}, {b.Wins} {(b.Wins == 1 ? "win" : "wins")}{(b.Home ? "" : ", out on a job")}"
@@ -52,6 +74,69 @@ public partial class Main
             Ui.C(Ui.Ink2, $"[font_size=11]{Ui.Esc(c.Name)}, {Ui.Esc(c.Role == "leader" ? Neighbours.LeaderOf(t, s).Title : c.Role)}{(c.Regard >= t.Content.Neighbours.Cast.Regard ? ", a friend" : "")}: remembers {Ui.Esc(c.Memories[^1])}[/font_size]")));
     }
 
+    /// <summary>The people picked for the airship's next run in the Diplomacy window (-1: the best paying).</summary>
+    private int _skyPort = -1;
+
+    /// <summary>The sky dock's airship: where it is, and the run to send it on (<see cref="Skyship"/>).</summary>
+    private void SkyRuns(Pane p, Town t)
+    {
+        if (Institutions.Airships(t) == 0) return;
+        var sky = t.Trade.Sky;
+        var r = t.Content.Trade.Sky;
+        p.Heading("The airship");
+        string status;
+        if (sky.Out is { } run)
+            status = $"Bound for [b]{Ui.Esc(t.Settlements[run.SettlementId].Name)}[/b] with {Js.Str(Js.Round(run.Qty))} {Ui.Esc(run.Cargo.ToString().ToLowerInvariant())} · home in {Ui.Days(Math.Max(0, run.BackDay - t.Day))}{(run.Stormed ? ", held back by storms" : "")}";
+        else if (t.Parties.FirstOrDefault(x => x.Airship && !x.Returned) is { } party)
+            status = $"Out carrying [b]{Ui.Esc(party.Name)}[/b] to their job: it can't trade until it brings them home";
+        else status = "At anchor over the Sky Dock, its hold empty";
+        p.Row($"[font_size=13]{status}[/font_size]\n" +
+              Ui.C(Ui.Ink2, $"[font_size=12]Hold {Js.Str(Js.Round(Skyship.Hold(t)))} goods · {sky.Runs} {(sky.Runs == 1 ? "run" : "runs")} flown · sold {Js.Str(Js.Round(sky.Earned))}g, spent {Js.Str(Js.Round(sky.Spent))}g[/font_size]") +
+              (sky.LastLine != "" ? "\n" + Ui.C(Ui.Ink2, $"[font_size=11]Last run: {Ui.Esc(sky.LastLine)}[/font_size]") : ""));
+        if (Passage.AirshipsFree(t) <= 0) return;
+        var ports = Skyship.Ports(t).ToList();
+        if (ports.Count == 0)
+        {
+            p.Note("No people the town knows of will let it moor. Explorers and envoys find the airship somewhere to fly.");
+            return;
+        }
+        var cargo = Goods.All.Where(g => Skyship.Spare(t, g) >= r.MinCargo).ToList();
+        if (cargo.Count == 0)
+        {
+            p.Note("The town has nothing to spare for the hold: the market keeps back what the town needs. Surplus builds up as the makers outrun the households.");
+            return;
+        }
+        // Each people's best cargo, so the picker can say what they pay best for.
+        var best = ports.ToDictionary(s => s.Id, s => cargo.OrderByDescending(g => Skyship.Profit(t, s, g)).ThenBy(g => g).First());
+        if (ports.All(s => s.Id != _skyPort))
+            _skyPort = ports.OrderByDescending(s => Skyship.Profit(t, s, best[s.Id]) / Skyship.FlightDays(t, s)).ThenBy(s => s.Id).First().Id;
+        p.Text(Ui.C(Ui.Ink2, "Where to? Each people pays its own price, more far out and for what they want, and less the more you have sold them lately."), 12);
+        // Three to a row so a long list of peoples wraps inside the window.
+        foreach (var row in ports.Chunk(3))
+            p.Buttons(row.Select(s =>
+            {
+                int sid = s.Id;
+                return ($"{s.Name} · {Skyship.FlightDays(t, s)}d · {best[s.Id]}", true, sid == _skyPort, (Action)(() => { _skyPort = sid; _dirty = true; }));
+            }).ToArray());
+        var port = t.Settlements[_skyPort];
+        var region = t.Regions[port.RegionId];
+        double danger = Skyship.AmbushChance(t, port);
+        p.Text($"[b]{Ui.Esc(port.Name)}[/b] " + Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(port.People)} in {Ui.Esc(region.Name)} · {Ui.Days(Skyship.FlightDays(t, port))} there and back by air, {Ui.Days(Trade.TripDays(t, port))} by road · fit-out {Js.Str(Skyship.FitOut(t, port))}g" +
+               (danger > 0 ? $" · fliers {Math.Round(danger * 100)}%" : "") + "[/font_size]"), 13);
+        foreach (var g in cargo.OrderByDescending(g => Skyship.Profit(t, port, g)).ThenBy(g => g))
+        {
+            double qty = Skyship.Spare(t, g), gold = Skyship.Quote(t, port, g, qty), profit = gold - Skyship.FitOut(t, port);
+            string back = Skyship.Bring(t, port, g) is { } b ? $"Brings back {b.Good.ToString().ToLowerInvariant()} at {Js.ToFixed(b.Price, 1)}g" : "Brings back gold only";
+            string? no = Skyship.Refuse(t, port, g);
+            var cg = g;
+            int sid = port.Id;
+            p.Row($"[font_size=13][b]{g}[/b] · {Js.Str(Js.Round(qty))} to spare · {Js.ToFixed(Skyship.Price(t, port, g), 1)}g each there (home {Js.ToFixed(t.Market.BasePrice(g), 1)}g)[/font_size]\n" +
+                  Ui.C(profit > 0 ? Ui.Good : Ui.Bad, $"[font_size=12]Fetches about {Js.Str(Js.Round(gold))}g, clears {(profit >= 0 ? "" : "−")}{Js.Str(Math.Abs(Js.Round(profit)))}g after the fit-out[/font_size]") + "\n" +
+                  Ui.C(Ui.Ink2, $"[font_size=11]{Ui.Esc(back)}{(no != null ? $" · {Ui.Esc(no)}" : "")}[/font_size]"),
+                ("Send", no == null, profit > 0, () => Act(() => _sim.SendSkyship(sid, cg))));
+        }
+    }
+
     private void RenderDiplomacy()
     {
         var p = _panes[Tab.Diplomacy];
@@ -59,11 +144,13 @@ public partial class Main
         var w = t.Content.World.Standing;
         var tr = t.Content.Trade;
         p.Begin();
-        var known = t.Settlements.Where(s => t.Regions[s.RegionId].Known).OrderBy(s => s.Razed).ThenByDescending(s => s.Allied).ThenByDescending(s => s.Standing).ThenBy(s => s.Id).ToList();
+        var known = t.Settlements.Where(s => t.Regions[s.RegionId].Known).OrderBy(s => s.Razed).ThenByDescending(s => Shadows.Shadowed(s)).ThenByDescending(s => s.Allied).ThenByDescending(s => s.Standing).ThenBy(s => s.Id).ToList();
         int allies = known.Count(s => s.Allied);
         var open = Trade.Open(t).OrderBy(r => r.Id).ToList();
         p.Card($"[font_size=17][b]{known.Count} {(known.Count == 1 ? "people" : "peoples")} known[/b][/font_size]\n" +
                Ui.C(Ui.Ink2, $"{allies} allied · {open.Count} of {Trade.Cap(t)} trade routes running · the {City.Tier(t).Name.ToLowerInvariant()}'s charter allows {Trade.Cap(t)}"), Ui.Gold);
+
+        RenderPowers(p, t);
 
         p.Heading("Trade routes");
         if (open.Count == 0)
@@ -83,6 +170,8 @@ public partial class Main
                     ? [($"Add a wagon · {Js.Str(wagon)}g", t.Treasury >= wagon, true, () => Act(() => _sim.AddWagon(id))), ("Close", true, false, () => Act(() => _sim.CloseTradeRoute(id)))]
                     : [("Close", true, false, () => Act(() => _sim.CloseTradeRoute(id)))]);
         }
+
+        SkyRuns(p, t);
 
         p.Heading("Peoples of the wilds");
         if (known.Count == 0) p.Note("The town hasn't heard of anyone out there yet. Parties bring back word of the peoples in the regions they visit.");
@@ -108,7 +197,9 @@ public partial class Main
             }
             head += "\n" + Life(t, s);
             var buttons = new List<(string, bool, bool, Action)>();
-            if (!s.Allied) buttons.Add(($"Envoy · {Js.Str(w.EnvoyCost)}g", t.Treasury >= w.EnvoyCost, false, () => Act(() => _sim.SendEnvoy(id))));
+            if (!s.Allied || Shadows.Shadowed(s)) buttons.Add(($"Envoy · {Js.Str(w.EnvoyCost)}g", t.Treasury >= w.EnvoyCost, false, () => Act(() => _sim.SendEnvoy(id))));
+            if (Shadows.Shadowed(s))
+                buttons.Add((Shadows.Rallier(t) is { } speaker && s.Shadow!.RallyHeroId == null ? $"Send {speaker.GivenName} to rally them" : "Rally", Shadows.RallyRefused(t, s) == null, true, () => Act(() => _sim.RallySettlement(id))));
             if (Neighbours.TroubleOf(t, s) is { Kind: "need", Aid: { } aid })
                 buttons.Add(($"Aid · {Js.Str(aid.Gold)}g, {Js.Str(aid.Qty)} {aid.Good.ToString().ToLowerInvariant()}", Neighbours.AidRefused(t, s) == null, true, () => Act(() => _sim.AidSettlement(id))));
             if (!open.Any(r => r.SettlementId == s.Id) && trade.Offers.Count > 0)
@@ -132,6 +223,7 @@ public partial class Main
             p.Row(Cast(t, s));
         }
         p.Note("Each settlement has its own leader, its own band of adventurers and its own troubles. Aid meets a need; a project there lasts (a watchtower keeps it safe, a bridge or patrol keeps its road open, a waystation lets your parties rest). The people you help remember it.");
+        p.Note("Rulers age, die and are overthrown, and each heir has a temperament of their own that warms or cools relations. A risen enemy's shadow spreads over the settlements near it: dread, then tribute (no trade, families fleeing to you), then a cult or a puppet ruler. Clear its site nearest them, send an envoy, or send a hero to rally them.");
         p.Note($"Envoys carry gifts, and each one pleases a little less than the last. Clearing trouble near a people, answering their pleas and every caravan that gets through all raise standing. At {Js.Str(w.Ally)} they ally with the town.");
         p.Commit();
     }

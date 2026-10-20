@@ -205,7 +205,7 @@
         "puzzle": ["a dwarf vault-door locked by a sequence of runes", "a mine cart rail that switches by the old guild's code"],
         "parley": ["a goat-herd who knows the hidden pass", "a dwarf prospector who wants an escort"],
         "treasure": ["a forgotten ore cart full of silver", "a dwarf lord's tomb-hoard"],
-        "boss": ["the beast that took the deepest hall", "the warlord in the drowned forge"]
+        "boss": ["whatever took the deepest hall", "the master of the drowned forge"]
       } },
     { "id": "deeproads", "name": "caverns", "regions": ["the {A} Deeps", "the Caves of {B}", "the {A} Underways", "the {A} Hollows"],
       "words": ["Glimmer", "Black", "Echo", "Rot", "Deep", "Crystal", "Dripping", "Lightless", "Fungal", "Worm"],
@@ -255,7 +255,7 @@
         "puzzle": ["the old king's seal-lock on the treasury", "a library whose shelves hide a door"],
         "parley": ["a deserter who wants out", "a ghost of a castellan who wants a debt paid"],
         "treasure": ["the toll-chest in the guardroom", "a royal strongroom nobody found"],
-        "boss": ["the self-styled lord on the broken throne", "the thing that rules the keep now"]
+        "boss": ["whatever sits the broken throne now", "the thing that rules the keep now"]
       } },
     { "id": "ashenbarrows", "name": "haunted moor", "regions": ["the {A} Barrows", "the Moor of {B}", "the {A} Heath"],
       "words": ["Ashen", "Grave", "Bone", "Mourn", "Raven", "Pale", "Lantern", "Hollow", "Barrow", "Wight"],
@@ -279,7 +279,7 @@
         "puzzle": ["a burial riddle carved on the lintel", "a ring of bells that must be rung in order"],
         "parley": ["a gravekeeper who knows the old names", "a restless ghost who bargains for rest"],
         "treasure": ["grave goods of a forgotten king", "a reliquary of tarnished silver"],
-        "boss": ["the barrow-king on his bier", "the necromancer in the ossuary"]
+        "boss": ["whatever sleeps on the barrow-king's bier", "the keeper of the ossuary"]
       } },
     { "id": "mirefen", "name": "swamp", "regions": ["the {A} Fen", "the {A}mire", "the Marsh of {B}"],
       "words": ["Black", "Reed", "Leech", "Murk", "Eel", "Bog", "Mist", "Sunken", "Will", "Frog"],
@@ -303,7 +303,7 @@
         "puzzle": ["a sealed reliquary that answers in riddles", "a drowned altar with a tide-lock"],
         "parley": ["a lizardfolk hunter who will guide for meat", "a marsh witch who trades in favours"],
         "treasure": ["an altar heaped with offerings", "a sunken barge's strongbox"],
-        "boss": ["the drowned priest beneath the bell", "the hag in her island hut"]
+        "boss": ["the thing beneath the drowned bell", "whatever lives in the island hut"]
       } },
     { "id": "saltreach", "name": "coast", "regions": ["the {A} Coast", "{A} Bay", "the {A} Isles"],
       "words": ["Salt", "Gull", "Wreck", "Storm", "Brine", "Grey", "Tide", "Kelp", "Cliff", "Pearl"],
@@ -327,7 +327,7 @@
         "puzzle": ["a lighthouse lens that must be turned to open the vault"],
         "parley": ["a smuggler who will sell out his captain", "a merfolk scout with a grievance"],
         "treasure": ["a smugglers' cache in the sea-cave", "a wrecked galleon's strongroom"],
-        "boss": ["the captain on the drowned deck", "the thing the wreckers serve"]
+        "boss": ["the master of the drowned deck", "the thing the wreckers serve"]
       } },
     { "id": "rimefell", "name": "frozen north", "regions": ["the {A} Waste", "{A}fell", "the {A} Glacier"],
       "words": ["Rime", "Frost", "White", "Howling", "Ice", "Winter", "Bitter", "Snow", "Aurora", "Wolf"],
@@ -351,7 +351,7 @@
         "puzzle": ["runes on a frozen door that thaw only in order"],
         "parley": ["a frost-sworn hunter who honours guests", "a giant who wants a contest, not a fight"],
         "treasure": ["a jarl's hoard sealed in the ice", "furs and amber in a dead trader's sled"],
-        "boss": ["the jarl of the ice hall", "the beast under the glacier"]
+        "boss": ["whatever holds the ice hall", "the thing under the glacier"]
       } },
     { "id": "duneglass", "name": "desert", "regions": ["the {A} Waste", "the {A} Sands", "the Dunes of {B}"],
       "words": ["Glass", "Salt", "Sun", "Dust", "Bone", "Red", "Mirage", "Scorpion", "Burning", "Brass"],
@@ -375,7 +375,7 @@
         "puzzle": ["a sphinx's question at the gate", "a star-chart lock on the inner tomb"],
         "parley": ["a nomad who trades water for news", "a djinn-blooded merchant with a map"],
         "treasure": ["a god-king's grave goods", "a caravan's lost gold"],
-        "boss": ["the god-king who would not stay dead", "the master of the buried city"]
+        "boss": ["the guardian of the god-king's tomb", "the master of the buried city"]
       } },
     { "id": "cinderwastes", "name": "volcanic wastes", "regions": ["the {A} Wastes", "the Cinders of {B}", "Mount {B}"],
       "words": ["Cinder", "Ash", "Ember", "Obsidian", "Sulphur", "Molten", "Smoke", "Brimstone", "Glass", "Flame"],
@@ -400,7 +400,7 @@
         "puzzle": ["a forge-lock that opens only to the right heat"],
         "parley": ["an azer smith who wants his anvil back"],
         "treasure": ["masterwork arms cooling in a forgotten forge"],
-        "boss": ["the lord of the furnace", "the wyrm in the caldera"]
+        "boss": ["the master of the furnace", "the thing in the caldera"]
       } },
     { "id": "feyfringe", "name": "fey crossing", "regions": ["the {A} Glades", "the Twilight of {B}", "the {A} Mere"],
       "words": ["Moon", "Twilight", "Mirror", "Dew", "Thistle", "Gloaming", "Starlit", "Honey", "Bramble", "Silver"],
@@ -425,7 +425,7 @@
         "puzzle": ["a bargain worded to trap the careless", "a mirror that shows the way only to the honest"],
         "parley": ["a satyr who will guide for a song", "a pixie who trades names"],
         "treasure": ["a fey lord's gifts, half of them real", "gold that has not yet turned to leaves"],
-        "boss": ["the court's cruel champion", "the queen of the hollow hill"]
+        "boss": ["the court's cruel champion", "whatever rules the hollow hill"]
       } }
   ]
 }

@@ -89,8 +89,8 @@ public sealed class Defenses
     public int? AlarmBuilding { get; set; }
     public int AlarmUntil { get; set; }
 
-    /// <summary>The innermost ring the walls leave outside: 1 behind stone walls, 2 behind the city wall, 99 with none.</summary>
-    public int OutsideRing => CityWall == PalisadeState.Built ? 2 : StoneWall == PalisadeState.Built ? 1 : 99;
+    /// <summary>The last day the walls going up stood idle for want of timber or stone, or -1.</summary>
+    public int WallsShort { get; set; } = -1;
 }
 
 /// <summary>
@@ -132,7 +132,7 @@ public static class Threat
     {
         var d = town.Content.Enemy.Defense;
         int heroLevels = town.Heroes.Where(a => !a.IsAway).Sum(a => a.Hero!.Level);
-        double baseDefense = town.Watch * d.Watchman * Planning.WatchFactor(town) + heroLevels * d.HeroLevel + town.Workers.Count * d.MilitiaPerWorker + Faith.Defense(town) + Factions.Defense(town) + Callings.Defence(town) + Institutions.Defence(town) + Loyalty.Defense(town) + Notoriety.Defense(town) + Decor.Defense(town) + Mercenaries.Defense(town) + Clockwork.Defense(town) + Bastions.Defense(town) + Research.Defense(town) + (allies ? World.AllyTroops(town) : 0);
+        double baseDefense = town.Watch * d.Watchman * Planning.WatchFactor(town) + heroLevels * d.HeroLevel + town.Workers.Count * d.MilitiaPerWorker + Faith.Defense(town) + Factions.Defense(town) + Callings.Defence(town) + Institutions.Defence(town) + Loyalty.Defense(town) + Notoriety.Defense(town) + Decor.Defense(town) + Mercenaries.Defense(town) + Powers.Defense(town) + Clockwork.Defense(town) + Bastions.Defense(town) + Research.Defense(town) + (allies ? World.AllyTroops(town) : 0);
         return baseDefense * Fortification(town);
     }
 
@@ -268,16 +268,15 @@ public static class Threat
         var rng = town.Rng;
         en.Raids++;
         en.RaidWaited = 0;
-        en.NextRaidTick = town.Tick + (int)Math.Round(rng.Range(e.RaidEveryDays[0], e.RaidEveryDays[1] + 1) / Seasons.Warband(town)) * SimTime.HoursPerDay;
-        double raiders = Math.Max(4, Js.Round(en.Strength * e.RaidShare * (0.7 + rng.Next() * 0.6)));
+        en.NextRaidTick = town.Tick + (int)Math.Round(rng.Range(e.RaidEveryDays[0], e.RaidEveryDays[1] + 1) * Storyteller.RaidEvery(town) / Seasons.Warband(town)) * SimTime.HoursPerDay;
+        double raiders = Math.Max(4, Js.Round(en.Strength * e.RaidShare * (0.7 + rng.Next() * 0.6) * Storyteller.RaidStrength(town)));
         var home = town.Heroes.Where(a => !a.IsAway).ToList();
         double local = LocalDefense(town);
         var party = Lairs.AwayParty(town);
         string timing = party != null && Lairs.AwayShare(town) >= town.Content.Lairs.SoftShare ? $", while the {party.Name} are away" : "";
 
         // They strike outside the walls: the farm or camp farthest from the town hall, or failing that whatever stands beyond the stone.
-        int outside = town.Defenses.OutsideRing;
-        var target = Garrison.Unguarded(town, town.Buildings.Where(b => b.Complete && (b.Def.Zone == Zone.Farmland || b.Def.Id == "lumber_camp" || City.Ring(town, town.Lot(b.LotId)) >= outside)).ToList())
+        var target = Garrison.Unguarded(town, town.Buildings.Where(b => b.Complete && Exposed(town, b)).ToList())
             .OrderByDescending(b => b.Def.Zone == Zone.Farmland || b.Def.Id == "lumber_camp" ? 1 : 0)
             .ThenByDescending(b => Distance(town, b.LotId))
             .ThenBy(b => b.Id)
@@ -321,12 +320,15 @@ public static class Threat
         // They may drag the hands off to their war camp, to be rescued in time or lost.
         var camp = town.Sites.FirstOrDefault(x => x.Def.Id == e.Outpost.Id);
         text += Captives.Take(town, camp, target);
+        bool burned = false;
         if (rng.Chance(town.Content.Enemy.Defense.RaidBurn) && Blows.Burns(target))
         {
             Blows.Wreck(town, target, 0.4 + rng.Next() * 0.3);
             text += $". They fire {target.Name} as they go";
+            burned = true;
         }
         town.Log(LedgerCategory.War, Importance.Major, $"{text}. The watch arrives too late.", victims);
+        if (burned) Fires.Spread(town, target);
         town.Tension += 25 + victims.Count * 10;
         town.Mandate = Math.Max(0, town.Mandate - 4);
     }
@@ -341,7 +343,7 @@ public static class Threat
 
     /// <summary>Outside the walls (or there are none yet), or out in the fields: what raiders can reach.</summary>
     public static bool Exposed(Town town, Building b) =>
-        b.Def.Zone == Zone.Farmland || b.Def.Id == "lumber_camp" || City.Ring(town, town.Lot(b.LotId)) >= town.Defenses.OutsideRing;
+        b.Def.Zone == Zone.Farmland || b.Def.Id == "lumber_camp" || WallLines.Outside(town, town.Lot(b.LotId).X, town.Lot(b.LotId).Y);
 
     /// <summary>
     /// Raiders don't throw themselves away: they go only for a building beyond the walls, and only when they
@@ -388,6 +390,7 @@ public static class Threat
             $"The defenders muster {Js.Str(Js.Round(startDef))} strong" +
             (town.Defenses.Palisade == PalisadeState.Built ? " behind the palisade" : " with no wall to hide behind") +
             (towers != 0 ? $" and {towers} {(towers == 1 ? "tower" : "towers")}." : "."));
+        var record = Battles.Begin(town, "warband", "warband", e.Name, "orcs", e.Leader, en.Approach, en.Strength, startDef);
         def = Math.Max(0, def - Loyalty.Betray(town, e.Name, null, lines));
         for (int w = 1; w <= e.SiegeWaves && breaches < e.BreachesToFall; w++)
         {
@@ -399,6 +402,7 @@ public static class Threat
             {
                 def -= wading * 0.15;
                 en.Strength -= wave;
+                Battles.Wave(record, at, wave, false);
                 lines.Add($"Wave {w}: {Js.Str(Js.Round(wave))} orcs hit the {Garrison.Place(town, at)} and break against it.");
             }
             else
@@ -406,6 +410,7 @@ public static class Threat
                 def -= wading * 0.35;
                 en.Strength -= wave * 0.5;
                 breaches++;
+                Battles.Wave(record, at, wave, true);
                 lines.Add($"Wave {w}: {Js.Str(Js.Round(wave))} orcs breach the {Garrison.Place(town, at)}. Fighting spills into the streets.");
             }
         }
@@ -423,12 +428,16 @@ public static class Threat
             dead.Add(v);
         }
         if (dead.Count > 0) lines.Add($"{Expedition.ListNames(dead.Select(a => a.Name).ToList())} {(dead.Count == 1 ? "falls" : "fall")} on the walls.");
+        record.Fallen.AddRange(dead.Select(a => a.Id));
         town.Watch = Math.Max(0, town.Watch - breaches * 2);
 
         if (breaches >= e.BreachesToFall)
         {
-            if (Saga.Sack(town, Menaces.Warband(town), lines))
+            record.End = BattleEnd.Fell;
+            // Without the saga there is no yoke, and no warband to raise as a menace.
+            if (town.Saga.Enabled && Saga.Sack(town, Menaces.Warband(town), lines))
             {
+                record.End = BattleEnd.Sacked;
                 WarlordInCamp(town);
                 Chronicle(town, lines, ExpeditionOutcome.Wiped, []);
                 town.Log(LedgerCategory.War, Importance.Major, $"{town.Name} is sacked. {e.Leader}'s warband carries off the treasury and leaves the town under its yoke. (Chronicle {town.Chronicles.Count})", dead.Select(a => a.Id).ToList());
@@ -459,6 +468,8 @@ public static class Threat
             lines.Add($"The walls hold. {e.Leader} comes to the breach himself, and {Expedition.ListNames(champions.Select(a => a.GivenName).ToList())} go out to meet him.");
             var battle = new SiteDef { Id = "last_stand", Name = "the walls", Tier = 0, Distance = 0, Encounters = [], Boss = e.WarlordBattle, Loot = [0, 0] };
             var result = Expedition.Run(rng, town.Content, battle, champions);
+            record.Champions.AddRange(champions.Select(c => c.Id));
+            record.ChampionsFell.AddRange(result.Dead.Order());
             lines.AddRange(result.Lines.Skip(1).Where(l =>
                 !l.StartsWith("At last", StringComparison.Ordinal) &&
                 !l.Contains("is cleared. The hoard", StringComparison.Ordinal) &&
@@ -486,6 +497,7 @@ public static class Threat
         if (slain)
         {
             lines.Add($"{e.Leader} is dead. The warband breaks and scatters into the hills.");
+            record.End = BattleEnd.Slain;
             en.Stage = ThreatStage.Defeated;
             en.Strength = 0;
             town.Mandate = Math.Min(100, town.Mandate + 25);
@@ -500,6 +512,7 @@ public static class Threat
         else
         {
             lines.Add($"{e.Leader} sounds the retreat. The warband limps back to the hills to lick its wounds.");
+            record.End = champions.Count > 0 ? BattleEnd.Repelled : BattleEnd.Held;
             en.Stage = ThreatStage.Raids;
             en.ArrivalTick = null;
             en.Strength = Math.Max(town.Content.Enemy.Stages.Probing, en.Strength * 0.6);
@@ -612,6 +625,8 @@ public static class Threat
                 return "needs the stone walls";
         }
         if (spec.Tier != "" && !City.Reached(town, spec.Tier)) return $"needs the town to be a {City.TierName(town, spec.Tier).ToLowerInvariant()}";
+        // Every wall needs a gate, put on its line by hand before the masons start.
+        if (IsWall(what) && WallLines.Gates(town, WallLines.RingOf(what)).Count == 0) return "needs a gate: place one on the wall's line";
         if (town.Treasury < BuildCost(town, what)) return "not enough gold";
         return null;
     }
@@ -621,10 +636,17 @@ public static class Threat
         var d = town.Defenses;
         var spec = Spec(town, what);
         if (BuildBlocked(town, what) != null) return false;
-        double cost = BuildCost(town, what);
-        town.Book(TreasuryAccount.Defenses, -cost);
-        town.Market.Buy(Good.Timber, spec.Timber);
-        town.Market.Buy(Good.Stone, spec.Stone);
+        if (IsWall(what))
+        {
+            // A wall's timber and stone come off the market as it rises (Haul), so it waits when the market runs dry.
+            town.Book(TreasuryAccount.Defenses, -spec.Cost);
+        }
+        else
+        {
+            town.Book(TreasuryAccount.Defenses, -BuildCost(town, what));
+            town.Market.Buy(Good.Timber, spec.Timber);
+            town.Market.Buy(Good.Stone, spec.Stone);
+        }
         int ready = town.Tick + spec.Days * SimTime.HoursPerDay;
         switch (what)
         {
@@ -673,9 +695,54 @@ public static class Threat
         return Js.Round(spec.Cost + town.Market.Quote(Good.Timber, spec.Timber) + town.Market.Quote(Good.Stone, spec.Stone));
     }
 
+    /// <summary>The walls themselves, raised along the line the player drew, as the market has their timber and stone.</summary>
+    public static bool IsWall(DefenseWork w) => w is DefenseWork.Palisade or DefenseWork.StoneWall or DefenseWork.CityWall;
+
+    /// <summary>
+    /// A day's timber and stone for each wall going up, off the market's stock. What it can't get holds the work back: the
+    /// day's share of the work waits, so the wall finishes later, and the alert strip says so.
+    /// </summary>
+    private static void Haul(Town town)
+    {
+        var d = town.Defenses;
+        bool shortToday = false;
+        foreach (var (work, state, ready) in new[] { (DefenseWork.Palisade, d.Palisade, d.PalisadeReadyTick), (DefenseWork.StoneWall, d.StoneWall, d.StoneWallReadyTick), (DefenseWork.CityWall, d.CityWall, d.CityWallReadyTick) })
+        {
+            // A work held back indefinitely (ready at int.MaxValue) draws nothing and can't slip further.
+            if (state != PalisadeState.Building || ready is not int tick || tick == int.MaxValue) continue;
+            var spec = Spec(town, work);
+            double share = 1, paid = 0;
+            foreach (var (g, total) in new[] { (Good.Timber, spec.Timber), (Good.Stone, spec.Stone) })
+            {
+                if (total <= 0) continue;
+                double need = total / Math.Max(1, spec.Days);
+                var (qty, cost) = town.Market.Take(g, need);
+                paid += cost;
+                share = Math.Min(share, qty / need);
+            }
+            if (paid > 0) town.Book(TreasuryAccount.Defenses, -paid);
+            if (share >= 1 - 1e-9) continue;
+            shortToday = true;
+            int late = (int)Math.Min(Math.Round((1 - share) * SimTime.HoursPerDay), int.MaxValue - (long)tick);
+            switch (work)
+            {
+                case DefenseWork.Palisade: d.PalisadeReadyTick = tick + late; break;
+                case DefenseWork.StoneWall: d.StoneWallReadyTick = tick + late; break;
+                default: d.CityWallReadyTick = tick + late; break;
+            }
+        }
+        if (shortToday && d.WallsShort < town.Day - 1)
+            town.Log(LedgerCategory.War, Importance.Notable, "Work on the walls slows: the market is short of the timber and stone they need.");
+        if (shortToday) d.WallsShort = town.Day;
+    }
+
     private static void FinishDefenses(Town town)
     {
         var d = town.Defenses;
+        // Walls raised before gates were placed by hand keep the south gate they always had.
+        if (WallLines.Begun(town, 0)) WallLines.EnsureGate(town, 0);
+        if (WallLines.Begun(town, 1)) WallLines.EnsureGate(town, 1);
+        Haul(town);
         if (d.Palisade == PalisadeState.Building && d.PalisadeReadyTick != null && town.Tick >= d.PalisadeReadyTick)
         {
             d.Palisade = PalisadeState.Built;
@@ -722,7 +789,11 @@ public static class Threat
     {
         int stage = StageIndex(town.Enemy.Stage);
         if (stage < StageIndex(ThreatStage.Probing)) return;
-        if (town.Defenses.Palisade == PalisadeState.None && town.Treasury > BuildCost(town, DefenseWork.Palisade) + 150) Build(town, DefenseWork.Palisade);
+        if (town.Defenses.Palisade == PalisadeState.None && town.Treasury > BuildCost(town, DefenseWork.Palisade) + 150)
+        {
+            WallLines.EnsureGate(town, 0);
+            Build(town, DefenseWork.Palisade);
+        }
         // The palisade's towers; more on the stone come later, among the wall works (Garrison.Daily).
         else if (stage >= StageIndex(ThreatStage.Raids) && town.Defenses.Towers + town.Defenses.TowersBuilding.Count < town.Content.Enemy.Tower.Max && town.Treasury > BuildCost(town, DefenseWork.Tower) + 200) Build(town, DefenseWork.Tower);
     }

@@ -525,6 +525,37 @@ public static class Loyalty
         return true;
     }
 
+    /// <summary>An honour the mayor could give now, for the alert strip: lands for a loyal knight, or a champion for a town without one.</summary>
+    public sealed record Offer(string Key, string Title, string Tip, int? AgentId = null, string? SiteId = null);
+
+    /// <summary>Lands for the most loyal landless knight, and a champion when the town has none: what the stand-in mayor would give, put to the player.</summary>
+    public static IEnumerable<Offer> Honours(Town town)
+    {
+        var r = Rules(town);
+        var knight = town.Heroes.Where(a => a.Hero!.Knight && a.Hero.FiefId == null && a.Hero.Loyalty >= 60).OrderByDescending(a => a.Hero!.Loyalty).ThenBy(a => a.Id).FirstOrDefault();
+        var site = knight == null ? null : FiefFor(town, knight);
+        if (knight != null && site != null)
+            yield return new($"fief:{knight.Id}", $"Lands for Ser {knight.GivenName}",
+                $"Ser {knight.Name} has served loyally and holds no land. {site.Def.Name} is cleared; grant it for {Js.Str(r.Fief.Cost)}g and their retainers hold it while they take its rents.", SiteId: site.Def.Id);
+        if (!town.Heroes.Any(a => a.Hero!.Champion) && ChampionFor(town) is { } best)
+            yield return new($"champion:{best.Id}", "Name a champion",
+                $"{town.Name} has no champion. {Styled(town, best)}, level {best.Hero!.Level}, would stand first on the walls; name them from their sheet.", AgentId: best.Id);
+    }
+
+    private static SiteState? FiefFor(Town town, Agent knight) => town.Sites
+        .Where(x => FiefBlocked(town, knight, x) == null)
+        .OrderByDescending(x => x.Held)
+        .ThenBy(x => x.Def.Distance)
+        .ThenBy(x => x.Def.Id, StringComparer.Ordinal)
+        .FirstOrDefault();
+
+    private static Agent? ChampionFor(Town town) => town.Heroes
+        .Where(a => ChampionBlocked(town, a) == null && a.Hero!.Loyalty >= 50)
+        .OrderByDescending(a => a.Hero!.Level)
+        .ThenByDescending(a => a.Hero!.Renown)
+        .ThenBy(a => a.Id)
+        .FirstOrDefault();
+
     /// <summary>Stand-in mayor: purses for the restless, lands for loyal knights, and a champion once one has earned it.</summary>
     private static void Policy(Town town)
     {
@@ -539,23 +570,12 @@ public static class Loyalty
         if (town.Treasury >= r.Fief.Cost + 400)
         {
             var knight = town.Heroes.FirstOrDefault(a => a.Hero!.Knight && a.Hero.FiefId == null && a.Hero.Loyalty >= 60);
-            var site = knight == null ? null : town.Sites
-                .Where(x => FiefBlocked(town, knight, x) == null)
-                .OrderByDescending(x => x.Held)
-                .ThenBy(x => x.Def.Distance)
-                .ThenBy(x => x.Def.Id, StringComparer.Ordinal)
-                .FirstOrDefault();
+            var site = knight == null ? null : FiefFor(town, knight);
             if (knight != null && site != null) Grant(town, knight, site.Def.Id);
         }
         if (!town.Heroes.Any(a => a.Hero!.Champion))
         {
-            var best = town.Heroes
-                .Where(a => ChampionBlocked(town, a) == null && a.Hero!.Loyalty >= 50)
-                .OrderByDescending(a => a.Hero!.Level)
-                .ThenByDescending(a => a.Hero!.Renown)
-                .ThenBy(a => a.Id)
-                .FirstOrDefault();
-            if (best != null) NameChampion(town, best);
+            if (ChampionFor(town) is { } best) NameChampion(town, best);
         }
     }
 }

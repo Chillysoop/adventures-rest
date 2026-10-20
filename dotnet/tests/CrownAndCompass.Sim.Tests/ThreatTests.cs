@@ -85,6 +85,9 @@ public class ThreatTests
         var sim = new Simulation(new SimulationOptions { Seed = 2, StartingTreasury = 0, Enemy = false });
         Assert.False(sim.BuildDefense(DefenseWork.Palisade));
         sim.Town.Treasury = 2000;
+        // Every wall needs a gate before the masons start.
+        Assert.False(sim.BuildDefense(DefenseWork.Palisade));
+        Assert.Null(sim.PlaceGate(0, Town.Center, Town.Center + City.Wall(sim.Town, 0, Math.PI / 2)));
         Assert.True(sim.BuildDefense(DefenseWork.Palisade));
         Assert.False(sim.BuildDefense(DefenseWork.Tower));
         double before = Threat.Defense(sim.Town);

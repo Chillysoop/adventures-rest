@@ -14,6 +14,9 @@ public sealed record Selection(string Kind, int Id = 0, string SiteId = "")
     public static Selection Wall(int section) => new("wall", section);
     public static Selection Tower(int index) => new("tower", index);
     public static Selection Flag(int postId) => new("flag", postId);
+
+    /// <summary>An enemy's agent loitering in town (<see cref="Sim.Systems.Lurkers"/>).</summary>
+    public static Selection Lurker(int id) => new("lurker", id);
 }
 
 /// <summary>
@@ -34,6 +37,10 @@ public partial class MapView : Control
 
     /// <summary>Fraction of the current hour already elapsed, for smooth marching between steps.</summary>
     public float HourFraction { get; set; }
+
+    /// <summary>Torches and burning roofs while a siege plays out (0 to 1), which lift the dark a little (<see cref="Crowd"/>).</summary>
+    public float Firelight { get; set; }
+    private float _fire;
     /// <summary>Game hours per real second (0 while paused); sets how briskly figures walk.</summary>
     public float TimeScale { get; set; } = 1;
 
@@ -82,6 +89,7 @@ public partial class MapView : Control
     private WorldView _world = null!;
     private TownView _town = null!;
     private Crowd _crowd = null!;
+    private LurkerView _lurkers = null!;
     private DecorView _decor = null!;
     private Overlay _overlay = null!;
     private ShaderMaterial _grade = null!;
@@ -156,6 +164,8 @@ public partial class MapView : Control
         _vp.AddChild(_decor);
         _crowd = new Crowd(this);
         _vp.AddChild(_crowd);
+        _lurkers = new LurkerView(this);
+        _vp.AddChild(_lurkers);
         _overlay = new Overlay(this) { MouseFilter = MouseFilterEnum.Ignore };
         AddChild(_overlay);
         _overlay.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
@@ -174,7 +184,15 @@ public partial class MapView : Control
         Decorator = new Decorator(this) { MouseFilter = MouseFilterEnum.Ignore };
         AddChild(Decorator);
         Decorator.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        Lens = new Lens(this) { MouseFilter = MouseFilterEnum.Ignore };
+        AddChild(Lens);
+        Lens.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
     }
+
+    /// <summary>The info lens over the town (L): greys the map and colours one thing about it.</summary>
+    public Lens Lens { get; private set; } = null!;
+
+    private float _lens;
 
     public void Bind(Simulation sim)
     {
@@ -203,6 +221,13 @@ public partial class MapView : Control
     public void ToggleStrategic() => Strategic = !Strategic;
 
     public void Rotate(int dir) => _goalYaw += dir * Mathf.Pi / 2;
+
+    /// <summary>Turn the camera by quarter turns until it stands nearest the given side of what it looks at.</summary>
+    public void Face(Vector2 side)
+    {
+        float want = Mathf.Round(Mathf.Atan2(side.X, side.Y) / (Mathf.Pi / 2)) * (Mathf.Pi / 2);
+        _goalYaw += Mathf.Wrap(want - _goalYaw, -Mathf.Pi, Mathf.Pi);
+    }
 
     /// <summary>Fly the camera to a world point, as the Ledger's links and the minimap do.</summary>
     /// <summary>Pull the camera back (factor above 1) or in, and turn it by yaw radians, keeping its target.</summary>
@@ -249,11 +274,16 @@ public partial class MapView : Control
             _town.Refresh();
         }
         _decor.Refresh();
+        _town.Sky(dt);
         _crowd.Advance(dt);
+        _lurkers.Advance();
         UpdateLight(town);
         _overlay.QueueRedraw();
         if (Planner.Active) Planner.QueueRedraw();
         if (Decorator.Active) Decorator.QueueRedraw();
+        _lens += ((Lens.On && !Strategic ? 1 : 0) - _lens) * (1 - Mathf.Exp(-dt * 8));
+        _grade.SetShaderParameter("lens", _lens);
+        if (Lens.On) Lens.QueueRedraw();
     }
 
     /// <summary>The town holds the territory it stands in; the enemy's camp corrupts its own and seeps into its neighbours.</summary>
@@ -307,7 +337,7 @@ public partial class MapView : Control
         _camera.Far = _dist * 4 + 600;
         _sun.DirectionalShadowMaxDistance = Mathf.Clamp(_dist * 2.2f, 40, 260);
         _sun.ShadowEnabled = _dist < 400;
-        _env.FogDensity = 0.35f / (_dist + 120);
+        _env.FogDensity = (_painted ? 0.6f : 0.35f) / (_dist + 120);
         float far = Mathf.SmoothStep(220, 650, _dist);
         _strategic += ((Strategic ? 1 : 0) - _strategic) * (1 - Mathf.Exp(-dt * 5));
         if (Mathf.Abs(_strategic - (Strategic ? 1 : 0)) < 0.002f) _strategic = Strategic ? 1 : 0;
@@ -319,7 +349,8 @@ public partial class MapView : Control
 
     private void UpdateLight(Town town)
     {
-        float night = Geo.Nightness(town, HourFraction);
+        _fire += (Firelight - _fire) * 0.05f;
+        float night = Geo.Nightness(town, HourFraction) * (1 - 0.6f * _fire);
         float dusk = Mathf.Clamp(1 - Mathf.Abs(night - 0.45f) * 2.5f, 0, 1);
         Mats.SetAll("night", night);
         float hour = (town.Tick % SimTime.HoursPerDay) + HourFraction;
@@ -332,12 +363,13 @@ public partial class MapView : Control
         var moon = new Color("8fa8e8");
         _sun.LightColor = day.Lerp(evening, dusk).Lerp(moon, night);
         _sun.LightEnergy = Mathf.Lerp(1.45f, 0.32f, night);
-        _env.AmbientLightColor = new Color("a4b4c6").Lerp(new Color("4a5a88"), night);
+        _env.AmbientLightColor = new Color("a4b4c6").Lerp(new Color("4a5a88"), night).Lerp(new Color("c08060"), _fire * night * 0.5f);
         _env.AmbientLightEnergy = Mathf.Lerp(0.48f, 0.4f, night);
         var haze = new Color("c4cfd2").Lerp(new Color("e2b896"), dusk * 0.6f).Lerp(new Color("1c2236"), night);
         _env.BackgroundColor = haze;
         _env.FogLightColor = haze;
         UpdateSeason(town);
+        PaintLight(night);
         if (town.Outcome == Outcome.Defeat) _env.AmbientLightColor = _env.AmbientLightColor.Lerp(new Color("a03020"), 0.4f);
     }
 
@@ -365,6 +397,44 @@ public partial class MapView : Control
         var haze = _env.BackgroundColor.Lerp(new Color("cdd3da"), s.X * 0.3f * (1 - Geo.Nightness(town, HourFraction)));
         _env.BackgroundColor = haze;
         _env.FogLightColor = haze;
+    }
+
+    private bool _painted;
+    private readonly List<ShaderMaterial> _inks = new();
+
+    /// <summary>The painted look (on unless --style classic): banded cel light with cool shadows and a rim, richer greens, ink outlines, glow, deeper haze.</summary>
+    public void Painted()
+    {
+        _painted = true;
+        Mats.SetAll("toon", 1.0f);
+        _grade.SetShaderParameter("contrast", 1.12f);
+        _env.GlowEnabled = true;
+        _env.GlowIntensity = 0.55f;
+        _env.GlowBloom = 0.08f;
+        _env.GlowHdrThreshold = 0.9f;
+        var ink = GD.Load<Shader>("res://assets/shaders/ink.gdshader");
+        foreach (var m in new[] { Mats.Props, Mats.Foliage })
+        {
+            var pass = new ShaderMaterial { Shader = ink };
+            pass.SetShaderParameter("noise_tex", m.GetShaderParameter("noise_tex"));
+            if (m == Mats.Foliage) pass.SetShaderParameter("sway", 1.0f);
+            m.NextPass = pass;
+            _inks.Add(pass);
+        }
+    }
+
+    private void PaintLight(float night)
+    {
+        if (!_painted) return;
+        // Stronger warm key, cooler violet-blue fill: shadows read as colour, not grey.
+        _sun.LightEnergy *= 1.15f;
+        _sun.LightColor = _sun.LightColor.Lerp(new Color("ffe6bf"), 0.5f * (1 - night));
+        _env.AmbientLightColor = _env.AmbientLightColor.Lerp(new Color("8d9ad0"), 0.35f * (1 - night));
+        _env.AmbientLightEnergy *= 0.95f;
+        var haze = _env.BackgroundColor.Lerp(new Color("a9c3d8"), 0.6f * (1 - night));
+        _env.BackgroundColor = haze;
+        _env.FogLightColor = haze;
+        _grade.SetShaderParameter("saturation", 1.12f);
     }
 
     // ---------- Projection and picking ----------
@@ -585,6 +655,9 @@ public partial class MapView : Control
             var spot = Fog.SightOf(site.Def.Id, p) == Sight.Rumoured ? Geo.Rough(site) : p;
             if (ToScreen(spot, 1).DistanceTo(screen) < 26) return Selection.Site(site.Def.Id);
         }
+        // An enemy's agent in the crowd comes before the townsfolk round them: finding them is the point.
+        foreach (var (id, p) in _lurkers.Spots)
+            if (p.DistanceTo(w) < 0.4f) return Selection.Lurker(id);
         int best = -1;
         float bestD = 0.35f;
         foreach (var (id, s) in _crowd.People.Sprites)

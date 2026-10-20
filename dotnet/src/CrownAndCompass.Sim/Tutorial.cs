@@ -51,10 +51,10 @@ public sealed record TutorialBook
 public static class Tutorial
 {
     /// <summary>Things on screen a step can point at, besides "tab:&lt;Tab&gt;" for a dock button.</summary>
-    public static readonly string[] Anchors = ["speeds", "topbar", "clock", "threat", "alerts", "feed", "build", "buildbar", "strategic", "minimap", "orders", "markers", "menu", "glossary", "window", "inspector", "dock"];
+    public static readonly string[] Anchors = ["speeds", "topbar", "clock", "threat", "alerts", "feed", "build", "buildbar", "strategic", "minimap", "orders", "lens", "markers", "menu", "glossary", "window", "inspector", "dock", "rail", "tray", "siege"];
 
     /// <summary>Things the player does in the client that can finish a step.</summary>
-    public static readonly string[] Events = ["next", "speed", "pause", "rotate", "select", "select:agent", "select:building", "select:site", "build", "strategic", "menu", "save", "alert", "roll", "flag", "call", "select:wall", "select:tower", "select:flag", "explorers", "pin", "glossary", "orders"];
+    public static readonly string[] Events = ["next", "speed", "pause", "rotate", "select", "select:agent", "select:building", "select:site", "build", "strategic", "menu", "save", "alert", "roll", "flag", "call", "select:wall", "select:tower", "select:flag", "explorers", "pin", "glossary", "orders", "lens", "seize"];
 
     private static TutorialBook? _default;
 
@@ -65,7 +65,7 @@ public static class Tutorial
     /// <summary>
     /// A number read off the town for steps to watch: "count:Bounties" is the size of that list on
     /// <see cref="Town"/> (any public list works, so a new system needs no code here); "zoned" is the painted
-    /// ground not yet built on, "decorated" the decorations set down. Null for a name that means nothing.
+    /// ground not yet built on, "decorated" the decorations set down, "airships" the sky dock's ships. Null for a name that means nothing.
     /// </summary>
     public static int? Measure(Town t, string token)
     {
@@ -75,6 +75,7 @@ public static class Tutorial
         if (token == "density") return Systems.Density.Unlocked(t);
         if (token == "dense") return t.Plan.Density.Count(d => d > 0);
         if (token == "sown") return t.Plan.Crops.Count(c => c > 1);
+        if (token == "airships") return Systems.Institutions.Airships(t);
         if (!token.StartsWith("count:", StringComparison.Ordinal)) return null;
         var prop = typeof(Town).GetProperty(token[6..], BindingFlags.Public | BindingFlags.Instance);
         return prop?.GetValue(t) is IEnumerable items and not string ? items.Cast<object>().Count() : null;

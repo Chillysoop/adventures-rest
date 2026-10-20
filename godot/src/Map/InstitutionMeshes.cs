@@ -270,6 +270,46 @@ public partial class TownView
         k.Box(new Vector3(0.18f, 0, 0.3f), new Vector3(0.16f, 0.04f, 0.05f), Palette.Timber);
     }
 
+    /// <summary>The sky dock: a tall mooring mast on a stone footing, a gasbag shed, and the town's airship riding at anchor when it's home.</summary>
+    private static void SkyDock(MeshKit k, int v, bool moored = true)
+    {
+        var wood = Palette.Timber;
+        var stone = new Color("8a8478");
+        k.Box(new Vector3(0, 0.003f, 0), new Vector3(0.96f, 0.012f, 0.96f), new Color("9a8a6a"));
+        // The mast: a stone foot, a tapering timber tower, a ring of iron at the top for the mooring line.
+        k.Frustum(new Vector3(-0.28f, 0, -0.28f), 0.14f, 0.12f, 0.12f, 8, stone, stone.Darkened(0.1f));
+        k.Frustum(new Vector3(-0.28f, 0.12f, -0.28f), 0.06f, 0.03f, 0.68f, 6, wood, wood.Darkened(0.1f));
+        k.Frustum(new Vector3(-0.28f, 0.78f, -0.28f), 0.05f, 0.05f, 0.03f, 8, new Color("3c3a38"));
+        // The long gasbag shed along the back, open at one end.
+        k.Box(new Vector3(0.18f, 0, 0.18f), new Vector3(0.5f, 0.22f, 0.56f), wood.Darkened(0.05f), Palette.DarkTimber);
+        k.Box(new Vector3(0.18f, 0.22f, 0.18f), new Vector3(0.54f, 0.04f, 0.6f), new Color("6a4a30"));
+        // Away on a run or with a company, the mast stands empty.
+        if (!moored) return;
+        // The airship, nose to the mast.
+        k.Push(MeshKit.At(0.06f, 0.7f, -0.1f, Mathf.Pi / 4 + v * 0.2f, 1));
+        Airship(k);
+        k.Pop();
+        // The mooring line from the mast's ring to the airship's nose.
+        k.Box(new Vector3(-0.16f, 0.78f, -0.24f), new Vector3(0.2f, 0.006f, 0.006f), Palette.DarkTimber);
+    }
+
+    /// <summary>The town's airship about its middle, nose toward -Z: a patched canvas gasbag, fins, and a timber gondola slung beneath.</summary>
+    public static void Airship(MeshKit k)
+    {
+        var canvas = new Color("d8ccb0");
+        var patch = new Color("b8a888");
+        // The gasbag, a cigar of overlapping swells so it reads round from any side.
+        for (int i = 0; i < 11; i++)
+        {
+            float z = -0.34f + i * 0.068f, r = 0.12f * Mathf.Pow(Mathf.Sin(Mathf.Pi * (i + 0.7f) / 11.4f), 0.6f) + 0.015f;
+            k.Blob(new Vector3(0, 0, z), new Vector3(r, r * 0.9f, 0.13f), i == 7 ? patch : canvas);
+        }
+        k.Box(new Vector3(0, -0.02f, 0.38f), new Vector3(0.012f, 0.16f, 0.12f), new Color("8e3b2e"));
+        k.Box(new Vector3(0, 0.05f, 0.38f), new Vector3(0.18f, 0.012f, 0.1f), new Color("8e3b2e"));
+        foreach (float z in new[] { -0.14f, 0.12f }) k.Box(new Vector3(0, -0.2f, z), new Vector3(0.008f, 0.1f, 0.008f), Palette.DarkTimber);
+        k.Box(new Vector3(0, -0.25f, -0.01f), new Vector3(0.09f, 0.06f, 0.32f), Palette.Timber, Palette.DarkTimber);
+    }
+
     /// <summary>The fey market: ribboned stalls round a mushroom ring, lit by lanterns that glow in colours lamps do not come in.</summary>
     private static void FeyMarket(MeshKit k, int v)
     {

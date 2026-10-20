@@ -290,6 +290,9 @@ public sealed class StoryBeat
     /// <summary>What others added to the mayor's roll (a party over the sending stone, the Adventurers' Hall), and who.</summary>
     public int Help { get; set; }
     public string Helpers { get; set; } = "";
+
+    /// <summary>How the people the choice touched took the roll ("Nell and Delia cheer."), for the card.</summary>
+    public string Table { get; set; } = "";
 }
 
 public sealed class Story
@@ -567,7 +570,7 @@ public static class Stories
         if (autoMayor)
             foreach (var s in Pending(town)) StandIn(town, s);
         if (r.Stories.Count == 0 || town.Day < Math.Max(r.FirstDay, st.NextDay) || st.Open.Count(s => !Sendings.Is(town, s)) >= r.MaxOpen || town.Outcome != null) return;
-        if (!town.Rng.Chance(r.Chance)) return;
+        if (!town.Rng.Chance(r.Chance * Storyteller.Of(town).Stories)) return;
         var open = st.Open.Select(s => s.Def).ToHashSet();
         var fits = new List<(StoryDef Def, Story Bound)>();
         foreach (var d in r.Stories)
@@ -1061,6 +1064,7 @@ public static class Stories
         }
         beat.Stage = stage.Id;
         beat.Option = Fill(town, s, o.Label);
+        beat.Table = Voices.Table(town, o.Tags, beat.Result);
         Conclude(town, s, beat, outcome);
         // The heroes hear what the mayor chose, and judge it by their tempers.
         if (o.Tags.Count > 0) Regard.Judge(town, o.Tags, $"chose to {Lower(beat.Option)}", Fill(town, s, DefOf(town, s).Title));

@@ -704,7 +704,7 @@ public static class Menaces
         var r = Rules(town);
         var cu = CunningOf(town, m);
         var am = AmbitionOf(town, m);
-        double g = r.Growth * cu.Growth * am.Growth * (seat.Known != SiteKnowledge.Unheard ? 1 : r.UnknownGrowth) * (1 + m.Holdings.Count * r.HoldingGrowth) * Plots.Growth(town, m) * Saga.Pace(town) * Seasons.Activity(town, m.Kind);
+        double g = r.Growth * cu.Growth * am.Growth * (seat.Known != SiteKnowledge.Unheard ? 1 : r.UnknownGrowth) * (1 + m.Holdings.Count * r.HoldingGrowth) * Plots.Growth(town, m) * Saga.Pace(town) * Storyteller.MenaceGrowth(town) * Seasons.Activity(town, m.Kind);
         if (m.FactionId != null && Factions.Find(town, m.FactionId) is FactionState f && f.Active) g += f.Members.Count * 0.1;
         // Every party that went for it and came back without finishing it makes it bolder, and a proud one angry.
         if (seat.Attempts > m.SeenAttempts)
@@ -821,6 +821,7 @@ public static class Menaces
         s.Standing = Math.Max(-100, Math.Min(s.Standing, 0) - Rules(town).SettlementHit);
         s.Allied = false;
         m.Power += Rules(town).FailedDelve;
+        Shadows.Sway(town, m, s);
         if (cu.Domain != "" && (m.Named || town.Regions[s.RegionId].Known))
             town.Log(LedgerCategory.Rumor, Importance.Notable, Saga.Cap(Saga.Fill(town, cu.Domain, m).Replace("{settlement}", s.Name)));
     }
@@ -882,7 +883,7 @@ public static class Menaces
         var rng = town.Rng;
         double far = 1 + 0.25 * Math.Max(0, seat.Def.Distance - 1);
         // A menace in its season strikes more often; one out of it keeps to its lair.
-        m.NextStrikeTick = town.Tick + (int)Math.Round(rng.Range(r.StrikeEveryDays[0], r.StrikeEveryDays[1] + 1) * far / Seasons.Activity(town, m.Kind)) * SimTime.HoursPerDay;
+        m.NextStrikeTick = town.Tick + (int)Math.Round(rng.Range(r.StrikeEveryDays[0], r.StrikeEveryDays[1] + 1) * far * Storyteller.StrikeEvery(town) / Seasons.Activity(town, m.Kind)) * SimTime.HoursPerDay;
         var am = AmbitionOf(town, m);
         // Left alone, a menace that only holds its land keeps to it.
         if (am.Id == "territory" && town.Tick >= m.ProvokedUntilTick) return;
@@ -920,6 +921,14 @@ public static class Menaces
             return;
         }
         string where = v.JobId is int w ? town.Building(w).Name : town.Name;
+        // A fever-breaker from the alchemists' shelf pulls them back by morning.
+        if (Alchemy.Cure(town) is string cure)
+        {
+            m.Power = Math.Max(0, m.Power - hunger * r.RepelLoss);
+            town.Log(LedgerCategory.War, Importance.Notable, $"{v.Name} of {where} is found at dawn pale and fevered, marked by {m.Leader}. A dose of {cure} breaks the fever by noon.", [v.Id]);
+            town.Tension += 6;
+            return;
+        }
         string text = am.Infect[rng.Range(0, am.Infect.Count)];
         Threat.Kill(town, v);
         m.Power += r.FailedDelve;
@@ -990,6 +999,7 @@ public static class Menaces
         s.Standing = Math.Max(-100, s.Standing - r.SettlementHit);
         if (s.Allied && s.Standing < 0) s.Allied = false;
         if (known) town.Log(LedgerCategory.War, Importance.Notable, $"Runners from {s.Name} say {m.Name} has fallen on {s.People}. They ask why {town.Name}'s heroes did not come.");
+        Reigns.Struck(town, s, m);
     }
 
     /// <summary>Very hostile: the big bad, an enemy in crisis, or one that wants the town's walls or its flesh. Only these burn what they raid.</summary>
@@ -1087,6 +1097,7 @@ public static class Menaces
         string text = lines.Count > 0 ? lines[rng.Range(0, lines.Count)] : "{name} strikes at {where}.";
         string fire = burned ? $" They leave {place} burning behind them." : "";
         town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, text, m).Replace("{where}", place)) + fire, victims);
+        if (burned) Fires.Spread(town, where);
         Sightings.Report(town, $"raid:{m.Id}", Sightings.Flight, m.Name, (int)raiders, m.SeatId, where.Id, null, 0.25, SimTime.HoursPerDay, "");
         town.Tension += 15 + victims.Count * 10;
         town.Mandate = Math.Max(0, town.Mandate - 3);
@@ -1186,8 +1197,10 @@ public static class Menaces
         double army = m.Power;
         int breaches = 0;
         army = Crises.Converge(town, m, army, lines);
+        if (army > 0) army += Powers.JoinHost(town, m, lines);
         if (army <= 0) return;
         lines.Add($"{Saga.Cap(m.Name)}, some {Js.Str(Js.Round(army))} strong, comes against {town.Name}. The defenders muster {Js.Str(Js.Round(startDef))} strong.");
+        var record = Battles.Begin(town, $"menace:{m.Id}", m.Kind, m.Name, m.Def.People, m.Leader, m.Approach, army, startDef);
         def = Math.Max(0, def - Loyalty.Betray(town, m.Name, m, lines));
         for (int w = 1; w <= 3 && breaches < 2; w++)
         {
@@ -1199,6 +1212,7 @@ public static class Menaces
             {
                 def -= wading * 0.15;
                 army -= wave;
+                Battles.Wave(record, at, wave, false);
                 lines.Add($"Wave {w}: the {m.Def.People} of {m.Leader} hit the {Garrison.Place(town, at)} and break against it.");
             }
             else
@@ -1206,6 +1220,7 @@ public static class Menaces
                 def -= wading * 0.35;
                 army -= wave * 0.5;
                 breaches++;
+                Battles.Wave(record, at, wave, true);
                 lines.Add($"Wave {w}: the {m.Def.People} of {m.Leader} breach the {Garrison.Place(town, at)}. Fighting spills into the streets.");
             }
         }
@@ -1223,13 +1238,16 @@ public static class Menaces
             dead.Add(v);
         }
         if (dead.Count > 0) lines.Add($"{Expedition.ListNames(dead.Select(a => a.Name).ToList())} {(dead.Count == 1 ? "falls" : "fall")} on the walls.");
+        record.Fallen.AddRange(dead.Select(a => a.Id));
         town.Watch = Math.Max(0, town.Watch - breaches * 2);
         town.Tension += 60 + dead.Count * 5;
 
         if (breaches >= 2)
         {
+            record.End = BattleEnd.Fell;
             if (Saga.Sack(town, m, lines))
             {
+                record.End = BattleEnd.Sacked;
                 Chronicle(town, lines, ExpeditionOutcome.Wiped, []);
                 town.Log(LedgerCategory.War, Importance.Major, $"{town.Name} is sacked by {m.Name}. (Chronicle {town.Chronicles.Count})", dead.Select(a => a.Id).ToList());
                 return;
@@ -1252,6 +1270,8 @@ public static class Menaces
             lines.Add($"The walls hold. {m.Leader} comes to the breach, and {Expedition.ListNames(champions.Select(a => a.GivenName).ToList())} go out to meet them.");
             var battle = new SiteDef { Id = "assault", Name = "the walls", Tier = 0, Distance = 0, Encounters = [], Boss = seat.Def.Boss, Loot = [0, 0] };
             var result = Expedition.Run(rng, town.Content, battle, champions);
+            record.Champions.AddRange(champions.Select(c => c.Id));
+            record.ChampionsFell.AddRange(result.Dead.Order());
             lines.AddRange(result.Lines.Skip(1).Where(l =>
                 !l.StartsWith("At last", StringComparison.Ordinal) &&
                 !l.Contains("is cleared. The hoard", StringComparison.Ordinal) &&
@@ -1273,6 +1293,7 @@ public static class Menaces
         else lines.Add($"The walls hold, but no hero is in town to face {m.Leader}.");
 
         Chronicle(town, lines, slain ? ExpeditionOutcome.Cleared : ExpeditionOutcome.Retreated, champions);
+        record.End = !slain ? (record.Champions.Count > 0 ? BattleEnd.Repelled : BattleEnd.Held) : m.BigBad && seat != null && MayEscape(town) ? BattleEnd.Carried : BattleEnd.Slain;
         if (slain && m.BigBad && seat != null && MayEscape(town))
         {
             // Beaten at the walls, the big bad is carried off the field and back to its seat to heal.

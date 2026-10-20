@@ -28,5 +28,33 @@
   "motionDays": 3,
   "motionGapDays": 3,
   "decreeMandate": 8,
-  "startingMandate": 60
+  "startingMandate": 60,
+  "secrets": {
+    "chance": 0.6,
+    "kinds": [
+      { "id": "debts", "weight": 3, "mandate": 0, "text": "{name} owes the moneylenders of three towns more than a councillor's purse could ever cover" },
+      { "id": "lover", "weight": 2, "mandate": -2, "text": "{name} slips out to a lover across town most nights, and their household doesn't know" },
+      { "id": "smuggling", "weight": 2, "mandate": 3, "text": "{name} has wagons that pass the gate unsearched, and a cellar full of what they carry" },
+      { "id": "shrine", "weight": 1, "mandate": 1, "text": "{name} keeps a shrine to a forbidden god behind a false wall in their cellar" },
+      { "id": "past", "weight": 2, "mandate": -1, "text": "{name} fled another town under another name, and someone there still wants them hanged" },
+      { "id": "bribes", "weight": 2, "mandate": 3, "text": "{name} takes coin from a merchant house to vote its way" }
+    ],
+    "digCost": 25,
+    "watchPerPoint": 4,
+    "watchMax": 3,
+    "digGapDays": 5,
+    "noticed": 10,
+    "pressed": 15,
+    "scandal": 0.15,
+    "scandalMandate": 4,
+    "fear": 5,
+    "rumour": 0.01,
+    "found": "The mayor's people come back with what they were sent for: {secret}.",
+    "clean": "The mayor's people dig into {name}, {seat}, and find nothing worse than a fondness for long speeches.",
+    "caught": "{name} hears that the mayor's people have been asking questions about them, and is cold in the council chamber after.",
+    "heard": "Tavern talk reaches the mayor's ear: {secret}.",
+    "press": "A quiet word with {name} before the vote, about what the mayor knows. The {seat} votes {vote}, and won't meet the mayor's eye.",
+    "leaked": "Word gets out that the mayor leaned on {name} with what they know. The town doesn't like how its council is run.",
+    "expose": "Before the whole council the mayor lays it out: {secret}. {name} gives up the seat of {seat} and leaves the chamber."
+  }
 }

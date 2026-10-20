@@ -158,6 +158,8 @@ public partial class TownView(MapView map) : Node3D
             var c = Geo.LotPos(lot);
             var p = new Vector3(c.X, Floor(lot), c.Y);
             string key = MeshKey(b);
+            // The mast stands empty while the airship is off (or flying out or in: see Sky).
+            if (key.StartsWith("sky_dock:", StringComparison.Ordinal) && !SkyMoored(town)) key = "sky_dock_away:" + key[9..];
             if (!groups.TryGetValue(key, out var list)) groups[key] = list = [];
             // Every building faces the way its lot was sited (toward the hall, or as the player turned it),
             // scaled from the one-tile models to its footprint.
@@ -228,11 +230,7 @@ public partial class TownView(MapView map) : Node3D
             case "granary": Granary(kit, v); break;
             case "builders_yard": BuildersYard(kit, v); break;
             case "watch_house": WatchHouse(kit, v); break;
-            case "timber_house": TimberHouse(kit, v); break;
-            case "townhouse": Townhouse(kit, v); break;
-            case "manor": Manor(kit, v); break;
-            case "tenement": Tenement(kit, v); break;
-            case "tall_house": TallHouse(kit, v); break;
+            case "timber_house" or "townhouse" or "manor" or "tenement" or "tall_house": Crafted(kit, id, v); break;
             case "quarry": Quarry(kit, v); break;
             case "sheepfold": Sheepfold(kit, v); break;
             case "weaver": Weaver(kit, v); break;
@@ -285,6 +283,8 @@ public partial class TownView(MapView map) : Node3D
             case "artificers_foundry": ArtificersFoundry(kit, v); break;
             case "undercity_gate": UndercityGate(kit, v); break;
             case "griffon_roost": GriffonRoost(kit, v); break;
+            case "sky_dock": SkyDock(kit, v); break;
+            case "sky_dock_away": SkyDock(kit, v, false); break;
             case "fey_market": FeyMarket(kit, v); break;
             case "monster_sanctuary": MonsterSanctuary(kit, v); break;
             case "auction_house": AuctionHouse(kit, v); break;
@@ -362,17 +362,21 @@ public partial class TownView(MapView map) : Node3D
 
     private static Color RoofOf(int v) => Palette.Roofs[v % Palette.Roofs.Length];
 
-    private static void House(MeshKit k, int v)
+    /// <summary>
+    /// A home made in Blender (tools/blender_houses.py, models/crafted.bin): its roof painted in the house's roof colour, and every
+    /// other house turned end for end so a street of them doesn't repeat.
+    /// </summary>
+    private static void Crafted(MeshKit k, string id, int v)
     {
-        int w = 2, d = v == 2 ? 1 : 2;
-        k.Push(MeshKit.At(0, 0, -0.04f, 0, Fit(w, d, d == 1 ? 0.76f : 0.8f)));
-        Walls(k, w, d, 0, v == 1, v + 11, true);
-        k.Push(MeshKit.At(0, 1, 0));
-        k.Gable(0, w, d, d * 0.62f + 0.25f, RoofOf(v), Palette.Plaster, 0.12f);
-        k.Pop();
-        if (v != 2) Chimney(k, w / 2f - 0.45f, 1, -0.2f, v == 0);
-        k.Pop();
+        var roof = id == "manor" ? (v % 2 == 0 ? Slate : new Color("6e4a3a")) : RoofOf(v + (id == "house" ? 0 : 1));
+        k.Add("cc/" + id, MeshKit.At(0, 0, 0, 0, 1), RoofPaint(roof));
     }
+
+    /// <summary>Repaints a crafted model's roof faces, baked as (1, 0, shade), in a roof colour at that shade.</summary>
+    public static Func<Color, Color> RoofPaint(Color roof) => c =>
+        c.R > 0.99f && c.G < 0.01f ? new Color(roof.R * (0.4f + 0.62f * c.B), roof.G * (0.4f + 0.62f * c.B), roof.B * (0.4f + 0.62f * c.B)) : c;
+
+    private static void House(MeshKit k, int v) => Crafted(k, "house", v);
 
     /// <summary>A wayside shrine: a stone plinth under a little pyramid roof on four pillars, a gold sun inside.</summary>
     private static void Shrine(MeshKit k)
@@ -775,122 +779,6 @@ public partial class TownView(MapView map) : Node3D
         {
             k.Add("castle/" + p, MeshKit.At(x, y, z, 0, s), tint);
             y += p switch { "tower-square-top" => 0.3f, "tower-square-top-roof" => 1f, "tower-square-roof" => 2f, _ => 1.01f } * s;
-        }
-    }
-
-    /// <summary>A cottage grown a storey: a plastered ground floor under a jettied timber upper floor.</summary>
-    private static void TimberHouse(MeshKit k, int v)
-    {
-        k.Push(MeshKit.At(0, 0, -0.03f, 0, Fit(2, 2, 0.78f)));
-        Walls(k, 2, 2, 0, false, v + 111, true);
-        k.Box(new Vector3(0, 0.96f, 0), new Vector3(2.16f, 0.08f, 2.16f), Palette.DarkTimber);
-        k.Push(new Transform3D(Basis.FromScale(new Vector3(1.07f, 1, 1.07f)), Vector3.Zero));
-        Walls(k, 2, 2, 1, false, v + 113, false);
-        k.Pop();
-        k.Push(MeshKit.At(0, 2, 0));
-        k.Gable(0, 2.14f, 2.14f, 1.15f, RoofOf(v + 1), Palette.Plaster, 0.12f);
-        k.Pop();
-        Chimney(k, -0.55f, 2, -0.3f, v % 2 == 0);
-        k.Pop();
-    }
-
-    /// <summary>A pair of narrow gable-fronted townhouses: stone ground floor, timber storeys above.</summary>
-    private static void Townhouse(MeshKit k, int v)
-    {
-        for (int h = 0; h < 2; h++)
-        {
-            int floors = h == 0 || v < 2 ? 3 : 2;
-            k.Push(MeshKit.At(h == 0 ? -0.235f : 0.235f, 0, -0.02f, 0, 0.44f));
-            // The party wall between the pair is never seen.
-            int party = h == 0 ? 1 : 2;
-            Walls(k, 1, 2, 0, true, v * 7 + h * 3 + 121, true, party);
-            for (int f = 1; f < floors; f++) Walls(k, 1, 2, f, false, v * 7 + h * 3 + 121 + f, false, party);
-            k.Box(new Vector3(0, 0.97f, 0), new Vector3(1.06f, 0.06f, 2.06f), Palette.DarkTimber);
-            GableZ(k, floors, 1, 2, 0.9f, RoofOf(v + h * 2 + 1), Palette.Plaster, 0.08f);
-            Chimney(k, 0.24f, floors, -0.65f, (v + h) % 3 == 0);
-            k.Pop();
-        }
-    }
-
-    /// <summary>A manor: a broad two-storey stone house with a porch tower, behind a hedged garden.</summary>
-    private static void Manor(MeshKit k, int v)
-    {
-        k.Box(new Vector3(0, 0.004f, 0), new Vector3(0.98f, 0.016f, 0.98f), Lawn);
-        k.Box(new Vector3(-0.46f, 0, 0), new Vector3(0.06f, 0.12f, 0.96f), Hedge, Hedge.Lightened(0.1f));
-        k.Box(new Vector3(0.46f, 0, 0), new Vector3(0.06f, 0.12f, 0.96f), Hedge, Hedge.Lightened(0.1f));
-        k.Box(new Vector3(-0.28f, 0, 0.46f), new Vector3(0.36f, 0.12f, 0.06f), Hedge, Hedge.Lightened(0.1f));
-        k.Box(new Vector3(0.28f, 0, 0.46f), new Vector3(0.36f, 0.12f, 0.06f), Hedge, Hedge.Lightened(0.1f));
-        foreach (float x in new[] { -0.09f, 0.09f })
-            k.Box(new Vector3(x, 0, 0.46f), new Vector3(0.05f, 0.17f, 0.05f), new Color("b8b0a0"));
-        k.Box(new Vector3(0, 0.012f, 0.36f), new Vector3(0.12f, 0.01f, 0.22f), new Color("c8bca0"));
-        foreach (float x in new[] { -0.3f, 0.3f })
-            k.Blob(new Vector3(x, 0.08f, 0.3f), new Vector3(0.07f, 0.08f, 0.07f), new Color("4f7a3a"), 0.2f, (int)(x * 10) + v, Hedge);
-        var roof = v % 2 == 0 ? Slate : new Color("6e4a3a");
-        k.Push(MeshKit.At(0, 0, -0.17f, 0, 0.28f));
-        Walls(k, 3, 2, 0, true, v + 131, false);
-        Walls(k, 3, 2, 1, true, v + 133, false);
-        k.Push(MeshKit.At(0, 2, 0));
-        k.Gable(0, 3, 2, 1.1f, roof, Palette.Stone, 0.12f);
-        k.Pop();
-        Chimney(k, -1.15f, 2, -0.3f, true);
-        Chimney(k, 1.15f, 2, -0.3f);
-        // The porch tower, a storey above the roofs, gilded at the top.
-        k.Push(MeshKit.At(0, 0, 1.25f));
-        for (int f = 0; f < 3; f++) Walls(k, 1, 1, f, true, v + 135 + f, f == 0);
-        k.Pyramid(3, 1, 1, 0.9f, roof, 0.08f);
-        k.Pop();
-        k.Frustum(new Vector3(0, 3.85f, 1.25f), 0.08f, 0, 0.45f, 6, new Color(Palette.Gold, MeshKit.Flag.Magic));
-        k.Pop();
-    }
-
-    /// <summary>A tenement: a tall, crowded three-storey timber block with washing strung across its front.</summary>
-    private static void Tenement(MeshKit k, int v)
-    {
-        k.Push(MeshKit.At(0, 0, -0.04f, 0, Fit(2, 2, 0.9f)));
-        for (int f = 0; f < 3; f++) Walls(k, 2, 2, f, false, v * 5 + 141 + f, f == 0);
-        k.Push(MeshKit.At(0, 3, 0));
-        k.Gable(0, 2, 2, 0.75f, v % 2 == 0 ? new Color("4f4a46") : new Color("6a5442"), new Color("b8a888"), 0.1f);
-        k.Pop();
-        Chimney(k, -0.6f, 3, -0.4f, true);
-        Chimney(k, 0.1f, 3, -0.45f);
-        Chimney(k, 0.7f, 3, 0.4f, v % 2 == 1);
-        // A washing line from the first-floor windows, hung with the household's linen.
-        k.Box(new Vector3(0, 1.62f, 1.25f), new Vector3(2.1f, 0.03f, 0.03f), Palette.DarkTimber);
-        for (int i = 0; i < 4; i++)
-        {
-            float x = -0.8f + i * 0.5f + (v % 2) * 0.1f;
-            var c = i % 2 == 0 ? new Color("e8e0cc") : Dyes[(v + i) % Dyes.Length].Lightened(0.2f);
-            Sheet(k, new Vector3(x, 1.62f, 1.25f), new Vector3(x, 1.3f, 1.25f), new Vector3(x + 0.3f, 1.3f, 1.25f), new Vector3(x + 0.3f, 1.62f, 1.25f), c);
-        }
-        k.Pop();
-    }
-
-    /// <summary>
-    /// A tall house: three narrow gable-fronted houses of four and five storeys built wall to wall, stone below and
-    /// jettied timber above, filling its lot to the edges so a dense street reads as one packed row.
-    /// </summary>
-    private static void TallHouse(MeshKit k, int v)
-    {
-        for (int h = 0; h < 3; h++)
-        {
-            int floors = 4 + (int)(Geo.Hash(v * 31 + h * 7 + 5) * 2.2f);
-            k.Push(MeshKit.At((h - 1) * 0.318f, 0, -0.02f, 0, 0.318f));
-            // Party walls between the three are never seen.
-            int party = h == 0 ? 1 : h == 2 ? 2 : 3;
-            Walls(k, 1, 3, 0, true, v * 11 + h * 3 + 151, true, party);
-            for (int f = 1; f < floors; f++)
-            {
-                // Each storey above juts a little further over the street.
-                k.Push(MeshKit.At(0, 0, 0.04f * f));
-                Walls(k, 1, 3, f, false, v * 11 + h * 3 + 151 + f, false, party);
-                k.Pop();
-                k.Box(new Vector3(0, f - 0.03f, 0.04f * f), new Vector3(1.04f, 0.06f, 3.04f), Palette.DarkTimber);
-            }
-            k.Push(MeshKit.At(0, 0, 0.04f * (floors - 1)));
-            GableZ(k, floors, 1, 3, 0.85f, RoofOf(v + h * 3 + 2), Palette.Plaster, 0.08f);
-            k.Pop();
-            Chimney(k, 0.26f, floors, -1.1f, (v + h) % 2 == 0);
-            k.Pop();
         }
     }
 
@@ -1993,7 +1881,7 @@ public partial class TownView(MapView map) : Node3D
         float city = Progress(town, d.CityWall, d.CityWallReadyTick, e.CityWall.Days);
         // Once the stone walls stand, the timber palisade and its towers come down.
         bool timber = d.StoneWall != PalisadeState.Built;
-        string key = $"{d.Palisade}|{Math.Round(done, 2)}|{d.Towers}|{(line == null ? "" : string.Join(';', line))}|{timber}|{Math.Round(stone, 2)}|{Math.Round(city, 2)}|{d.Gatehouse}|{d.Moat}|{d.Barracks}|{d.CityWall}";
+        string key = $"{town.City.WallVersion}|{d.Palisade}|{Math.Round(done, 2)}|{d.Towers}|{(line == null ? "" : string.Join(';', line))}|{timber}|{Math.Round(stone, 2)}|{Math.Round(city, 2)}|{d.Gatehouse}|{d.Moat}|{d.Barracks}|{d.CityWall}";
         if (key == _wallKey) return;
         _wallKey = key;
         var k = new MeshKit();
@@ -2004,9 +1892,12 @@ public partial class TownView(MapView map) : Node3D
             {
                 // Sharpened stakes all round, raised in order so a rising wall reads as progress.
                 int stakes = (int)(perim / 0.13f), shown = (int)(stakes * Mathf.Clamp(done, 0, 1));
+                var gates = GatePoints(town, 0);
                 for (int i = 0; i < shown; i++)
                 {
                     var p = Along(line, (float)i / stakes * perim);
+                    // The stakes leave a way through at each gate.
+                    if (gates.Any(g => g.DistanceTo(p) < 0.36f)) continue;
                     float sh = 0.32f + Geo.Hash(i) * 0.06f;
                     var col = i % 2 == 0 ? Palette.Timber : new Color("8a6239");
                     float g = Ground(p) - 0.05f;
@@ -2028,8 +1919,8 @@ public partial class TownView(MapView map) : Node3D
             }
         }
         bool gatehouse = d.Gatehouse == PalisadeState.Built;
-        if (stone > 0) StoneRing(k, RingLine(town, 0), stone, 0.24f, 0.8f, 0.5f, 1, 12, WallStone(Slate, 0.82f), gatehouse || d.CityWall == PalisadeState.Built);
-        if (city > 0) StoneRing(k, RingLine(town, 1), city, 0.3f, 1.05f, 0.62f, 2, 20, WallStone(new Color("9b3d2a"), 0.72f), gatehouse);
+        if (stone > 0) StoneRing(k, RingLine(town, 0), stone, 0.24f, 0.8f, 0.5f, 1, 12, WallStone(Slate, 0.82f), gatehouse || d.CityWall == PalisadeState.Built, GatePoints(town, 0).Skip(1).ToArray());
+        if (city > 0) StoneRing(k, RingLine(town, 1), city, 0.3f, 1.05f, 0.62f, 2, 20, WallStone(new Color("9b3d2a"), 0.72f), gatehouse, GatePoints(town, 1).Skip(1).ToArray());
         Ramparts(k, town, line);
         k.Build(_walls.Mesh as ArrayMesh ?? (ArrayMesh)(_walls.Mesh = new ArrayMesh()));
     }
@@ -2064,22 +1955,29 @@ public partial class TownView(MapView map) : Node3D
         var c = new Vector2(Geo.Margin + (float)Town.Center, Geo.Margin + (float)Town.Center);
         const int N = 96;
         var loop = new Vector2[N];
+        // From the main gate (the south road, until the player puts one elsewhere), then round clockwise as seen from above.
+        var gates = WallLines.Gates(town, ring);
+        double a0 = gates.Count > 0 ? gates[0] : Math.PI / 2;
         for (int i = 0; i < N; i++)
         {
-            // South (+y) first, then round clockwise as seen from above.
-            double a = Math.PI / 2 + i * Math.PI * 2 / N;
+            double a = a0 + i * Math.PI * 2 / N;
             float r = (float)City.Wall(town, ring, a);
             loop[i] = c + new Vector2((float)Math.Cos(a), (float)Math.Sin(a)) * r;
         }
         return loop;
     }
 
+    /// <summary>Where a ring's gates stand on the map, the main gate first.</summary>
+    public static Vector2[] GatePoints(Town town, int ring) =>
+        [.. WallLines.Gates(town, ring).Select(g => WallLines.Point(town, ring, g)).Select(p => new Vector2(Geo.Margin + (float)p.X, Geo.Margin + (float)p.Y))];
+
     /// <summary>
-    /// A stone curtain wall along a closed loop that starts at its gate, towers spaced round it,
-    /// and a gatehouse where the south road leaves. Raised round the loop as the work goes on.
+    /// A stone curtain wall along a closed loop that starts at its main gate, towers spaced round it,
+    /// and a gatehouse where the road leaves; timber gates in the gaps left at the other gates. Raised round the loop as the work goes on.
     /// </summary>
-    private void StoneRing(MeshKit k, Vector2[] loop, float done, float thick, float high, float tower, int mids, int towers, Func<Color, Color> tint, bool gatehouse = true)
+    private void StoneRing(MeshKit k, Vector2[] loop, float done, float thick, float high, float tower, int mids, int towers, Func<Color, Color> tint, bool gatehouse = true, Vector2[]? others = null)
     {
+        others ??= [];
         float perim = Perimeter(loop), reach = done * perim + 0.01f, gap = tower * 0.75f;
         // Wall sections, leaving the gateway open at the loop's start.
         const float Seg = 0.5f;
@@ -2093,6 +1991,7 @@ public partial class TownView(MapView map) : Node3D
             var a = Along(loop, i * step);
             var b = Along(loop, (i + 1) * step);
             var p = (a + b) / 2;
+            if (others.Any(o => o.DistanceTo(p) < gap)) continue;
             var dir = b - a;
             float yaw = Mathf.Atan2(dir.X, dir.Y);
             var basis = Basis.FromEuler(new Vector3(0, yaw, 0)) * Basis.FromScale(new Vector3(thick / 0.92f, high / 1.31f, dir.Length() * 1.04f));
@@ -2109,8 +2008,21 @@ public partial class TownView(MapView map) : Node3D
             TowerStack(k, 0, 0, tower, stack, tint);
             k.Pop();
         }
-        // The gatehouse on the south road: two taller towers, a portcullis and the arch over it; until it is built, timber gates.
+        // The gatehouse on the main road: two taller towers, a portcullis and the arch over it; until it is built, timber gates.
         if (reach < perim) return;
+        // The other gates: timber gates between a pair of towers.
+        foreach (var o in others)
+        {
+            var outward = (o - Geo.Center).Normalized();
+            TimberGate(k, o, outward);
+            foreach (float s in new[] { -1f, 1f })
+            {
+                var at = o + new Vector2(outward.Y, -outward.X) * s * (gap + tower * 0.35f);
+                k.Push(MeshKit.At(at.X, Ground(at), at.Y));
+                TowerStack(k, 0, 0, tower * 0.85f, stack, tint);
+                k.Pop();
+            }
+        }
         if (!gatehouse)
         {
             TimberGate(k, loop[0], (loop[0] - Geo.Center).Normalized());

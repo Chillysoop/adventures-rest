@@ -143,6 +143,8 @@ public sealed record CrisisRules
     public CrisisClashRules Clash { get; init; } = new();
     public VengeanceRules Vengeance { get; init; } = new();
     public InfiltrationRules Infiltration { get; init; } = new();
+    public LurkerRules Lurkers { get; init; } = new();
+    public FireRules Fire { get; init; } = new();
     public IReadOnlyDictionary<string, BlowText> Blows { get; init; } = new Dictionary<string, BlowText>();
     public IReadOnlyDictionary<string, CrisisKindDef> Kinds { get; init; } = new Dictionary<string, CrisisKindDef>();
     public CrisisEndText Ended { get; init; } = new();
@@ -305,7 +307,7 @@ public static class Crises
             if (town.Saga.Act < r.MinAct && !m.BigBad) continue;
             var last = book.All.Where(c => c.MenaceId == m.Id).Select(c => c.EndedDay ?? town.Day).DefaultIfEmpty(-r.CooldownDays).Max();
             if (town.Day - last < r.CooldownDays) continue;
-            if (book.Ripeness[m.Id] >= r.RipenDays || m.BigBad) Begin(town, m);
+            if (book.Ripeness[m.Id] >= r.RipenDays * Storyteller.Of(town).Ripen || m.BigBad) Begin(town, m);
         }
         Pressure(town);
     }
@@ -417,9 +419,10 @@ public static class Crises
             }
         }
         double raiders = m.Power * Rules(town).StrikeShare * sv.Strength;
-        bool landed = kind == Blows.Raid ? Menaces.Raid(town, m, raiders) : Blows.Strike(town, kind, By(town, m), raiders, sv.Strength);
-        if (landed) c.BlowsLanded++;
-        else c.BlowsStopped++;
+        // An agent sent into town reports back when it has struck (or been caught).
+        bool? landed = kind == Blows.Raid ? Menaces.Raid(town, m, raiders) : Blows.Strike(town, kind, By(town, m), raiders, sv.Strength, crisis: c.Id);
+        if (landed == true) c.BlowsLanded++;
+        else if (landed == false) c.BlowsStopped++;
     }
 
     /// <summary>The crisis comes to a head: its blows fall all at once and its host, swollen by every other crisis under way, marches.</summary>

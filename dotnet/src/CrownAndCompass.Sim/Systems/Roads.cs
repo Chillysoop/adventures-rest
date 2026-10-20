@@ -338,7 +338,21 @@ public static class Roads
             cur = (w.X, w.Y);
         }
         if (home) path.Add(new Waypoint { X = 0, Y = 0, Way = "gate" });
-        return path;
+        return (mind.Ways & Ways.Sheer) != 0 ? path : RoundCliffs(town, from, path);
+    }
+
+    /// <summary>The road bent round any plateau near the town (<see cref="Cliffs"/>) a stretch would climb over.</summary>
+    private static List<Waypoint> RoundCliffs(Town town, (double X, double Y) from, List<Waypoint> path)
+    {
+        var outp = new List<Waypoint>(path.Count);
+        var cur = from;
+        foreach (var w in path)
+        {
+            foreach (var (x, y) in Passage.RoundCliffs(town, cur, (w.X, w.Y))) outp.Add(new Waypoint { X = x, Y = y });
+            outp.Add(w);
+            cur = (w.X, w.Y);
+        }
+        return outp;
     }
 
     /// <summary>One stretch of a road, from one spot to the next with no river between: round or through the hard country on the way.</summary>
@@ -566,8 +580,8 @@ public static class Roads
     /// <summary>Plan the road out for a party leaving town now, and when it will reach the site.</summary>
     internal static void Depart(Town town, Party party, IReadOnlyList<Agent> members, SiteState site, Bounty? bounty)
     {
-        var mind = Mind(town, members, Hurry(town, bounty, site), false);
         var spot = World.Spot(town, site);
+        var mind = Passage.Board(town, party, Mind(town, members, Hurry(town, bounty, site), false), party.Start, spot);
         party.Out = Plan(town, party.Start, spot, mind, town.Rng, party.Said);
         double outHours = Hours(town, party.Start, party.Out);
         double arrive = Finish(town.Content, party.DepartTick, outHours);
@@ -675,6 +689,8 @@ public static class Roads
         if (party.Edge != 0) v.Hearten(party.Edge);
         if (party.BountyId is int tb && town.Bounties[tb - 1].Terms != "slay") v.Terms = Terms.Of(town, town.Bounties[tb - 1]);
         v.Log($"{Expedition.ListNames(members.Select(m => m.GivenName).ToList())} set out for {site.Def.Name}.");
+        v.Mark("setout");
+        v.Speak("setout");
         foreach (var line in party.Said) v.Log(line);
         Walk(town, v, party.Start, party.Out, party.DepartTick);
 
@@ -707,7 +723,7 @@ public static class Roads
             // Home again, choosing the roads afresh: a hurt party takes no chances.
             bool hurt = v.HpFraction() < 0.6 || v.Fallen > 0;
             var said = new List<string>();
-            party.Home = Plan(town, spot, (0, 0), Mind(town, members, false, hurt), town.Rng, said);
+            party.Home = Plan(town, spot, (0, 0), Passage.Aboard(town, party, Mind(town, members, false, hurt)), town.Rng, said);
             foreach (var line in said) v.Log(line);
             Walk(town, v, spot, party.Home, party.LeaveTick);
             if (v.Wiped) outcome = ExpeditionOutcome.Wiped;
