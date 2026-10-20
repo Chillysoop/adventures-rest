@@ -73,6 +73,9 @@ public sealed class Options
 
     /// <summary>--house: select the house on the most pleasant street, for screenshots of the inspector.</summary>
     public bool House;
+
+    /// <summary>--crowded [kind] selects the place (of a kind: tavern, holy, bath...) that turned the most townsfolk away yesterday, for a shot of the crowd at its door.</summary>
+    public string? Crowded;
     /// <summary>Aim the camera at the building going up with the most hands on it (<c>--rising</c>), for a shot of the builders.</summary>
     public bool Rising;
     /// <summary>With <c>--at</c>: open that building's inspector (<c>--card</c>), for a shot of a monument's parts.</summary>
@@ -164,6 +167,7 @@ public sealed class Options
                 case "--wall": o.Wall = int.Parse(Next()); break;
                 case "--strike": o.Strike = true; break;
                 case "--house": o.House = true; break;
+                case "--crowded": o.Crowded = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
                 case "--rising": o.Rising = true; break;
                 case "--card": o.Card = true; break;
                 case "--alert": o.Alert = int.Parse(Next()); break;
