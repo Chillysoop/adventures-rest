@@ -54,7 +54,7 @@ public partial class Main
             var am = Menaces.AmbitionOf(t, dm);
             var y = t.Content.Saga.Yoke;
             int days = dm.DemandDueTick is int due ? (int)Math.Ceiling((due - t.Tick) / 24.0) : 0;
-            p.Card($"{Tag("A DEMAND FOR FEALTY", Ui.Accent)}\n[b]{Ui.Esc(Ui.Cap(dm.Name))}[/b] wants {Ui.Esc(t.Name)} as its vassal: {Math.Round(y.Share * 100)}% of the treasury every {Ui.Days(y.EveryDays)}, and its raiders stay away.\n{Ui.C(Ui.Ink2, $"[font_size=12]Refuse and its host marches on the walls. Say nothing for {Ui.Days(Math.Max(1, days))} and that is a refusal.[/font_size]")}", Ui.Accent);
+            FoeCard(p, [dm], $"{Tag("A DEMAND FOR FEALTY", Ui.Accent)}\n[b]{Ui.Esc(Ui.Cap(dm.Name))}[/b] wants {Ui.Esc(t.Name)} as its vassal: {Math.Round(y.Share * 100)}% of the treasury every {Ui.Days(y.EveryDays)}, and its raiders stay away.\n{Ui.C(Ui.Ink2, $"[font_size=12]Refuse and its host marches on the walls. Say nothing for {Ui.Days(Math.Max(1, days))} and that is a refusal.[/font_size]")}", Ui.Accent);
             int id = dm.Id;
             p.Buttons(("Bend the knee", true, false, () => Act(() => _sim.AnswerDemand(id, true))), ("Refuse", true, true, () => Act(() => _sim.AnswerDemand(id, false))));
         }
@@ -63,13 +63,13 @@ public partial class Main
         if (big is { Alive: true })
         {
             string march = big.ArrivalTick is int at && at > t.Tick ? $"\n{Ui.C(Ui.Bad, $"[b]Its host reaches the walls in {Ui.Days((int)Math.Ceiling((at - t.Tick) / 24.0))}.[/b]")}" : "";
-            p.Card($"{Tag("THE BIG BAD", Ui.Bad)}\n[font_size=16][b]{Ui.Esc(Ui.Cap(big.Name))}[/b][/font_size]  {Tag($"level {big.Level}")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Seat(t, big)} {(big.Marches == 0 ? "It has not marched on the town yet." : $"It has marched on the town {Times(big.Marches)}.")} Kill it to end the Long Night.[/font_size]")}{march}", Ui.Bad);
+            FoeCard(p, [big], $"{Tag("THE BIG BAD", Ui.Bad)}\n[font_size=16][b]{Ui.Esc(Ui.Cap(big.Name))}[/b][/font_size]  {Tag($"level {big.Level}")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Seat(t, big)} {(big.Marches == 0 ? "It has not marched on the town yet." : $"It has marched on the town {Times(big.Marches)}.")} Kill it to end the Long Night.[/font_size]")}{march}", Ui.Bad);
         }
         if (s.YokeId is int yid && s.Menaces[yid - 1] is { Alive: true } yoke)
         {
             var y = t.Content.Saga.Yoke;
             string missed = s.MissedTribute > 0 ? $" Tribute missed {Times(s.MissedTribute)} of {y.MissedToMarch} before it marches." : "";
-            p.Card($"{Tag("UNDER THE YOKE", Ui.Accent)}\n[b]{Ui.Esc(Ui.Cap(yoke.Name))}[/b] takes {Math.Round(y.Share * 100)}% of the treasury every {Ui.Days(y.EveryDays)}.{missed}\n{Ui.C(Ui.Ink2, "[font_size=12]Kill its leader to break the yoke. The walls break a second time, and the town falls.[/font_size]")}", Ui.Accent);
+            FoeCard(p, [yoke], $"{Tag("UNDER THE YOKE", Ui.Accent)}\n[b]{Ui.Esc(Ui.Cap(yoke.Name))}[/b] takes {Math.Round(y.Share * 100)}% of the treasury every {Ui.Days(y.EveryDays)}.{missed}\n{Ui.C(Ui.Ink2, "[font_size=12]Kill its leader to break the yoke. The walls break a second time, and the town falls.[/font_size]")}", Ui.Accent);
         }
 
         RenderCrises(p, t);
@@ -92,7 +92,7 @@ public partial class Main
             var (word, color) = MenaceStages[m.Stage];
             string march = m.ArrivalTick is int at && at > t.Tick ? "  " + Tag($"marching, {Ui.Days((int)Math.Ceiling((at - t.Tick) / 24.0))} out", Ui.Bad) : "";
             string held = m.Holdings.Count > 0 ? $" It holds {m.Holdings.Count} more {(m.Holdings.Count == 1 ? "lair" : "lairs")}." : "";
-            p.Card($"{Ui.KindIcon(m.Kind, 20)}[b]{Ui.Esc(Ui.Cap(m.Name))}[/b]  {Tag(word, color)}  {Tag($"level {m.Level}")}{march}\n{Leader(m)}{Tag(Menaces.CunningOf(t, m).Name)}  {Tag(Menaces.AmbitionOf(t, m).Name)}{Heirs(t, m)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Annals.Motive(t, m))} {Ui.Esc(Wants(t, m))} {Seat(t, m)}{held}[/font_size]")}{Remembers(t, m)}{LastHeard(t, m)}{Plan(t, m)}{Assets(t, m)}", color);
+            FoeCard(p, [m], $"{Ui.KindIcon(m.Kind, 20)}[b]{Ui.Esc(Ui.Cap(m.Name))}[/b]  {Tag(word, color)}  {Tag($"level {m.Level}")}{march}\n{Leader(m)}{Tag(Menaces.CunningOf(t, m).Name)}  {Tag(Menaces.AmbitionOf(t, m).Name)}{Heirs(t, m)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Annals.Motive(t, m))} {Ui.Esc(Wants(t, m))} {Seat(t, m)}{held}[/font_size]")}{Remembers(t, m)}{LastHeard(t, m)}{Plan(t, m)}{Assets(t, m)}", color);
         }
         p.Note("A threat grows while nobody clears its seat, as far as its wits allow: a beast only hunts, a dull band takes a valley and stops, a cunning or masterful leader builds a domain and can become the big bad. What it wants decides what it does to the town. Clearing the seat breaks it, and it falls back to a lair it holds.");
 
@@ -133,14 +133,14 @@ public partial class Main
             };
             string when = c.Phase == CrisisPhase.Marching ? $"It reaches the walls in {Ui.Days(Math.Max(1, days))}." : $"It culminates in about {Ui.Days(days)}, with its host at the walls.";
             string blows = c.BlowsLanded + c.BlowsStopped == 0 ? "" : $" Blows so far: {c.BlowsLanded} landed, {c.BlowsStopped} stopped.";
-            p.Card($"{Tag($"{sv.Name.ToUpperInvariant()} CRISIS", color)}  {Tag(phase)}\n[font_size=16][b]{Ui.Esc(Ui.Cap(Crises.Title(t, c)))}[/b][/font_size] of {Ui.Esc(m.Name)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Crises.KindOf(t, m).What)} {when}{blows} Break its seat first and the crisis dies with it. {Seat(t, m)}[/font_size]")}", color);
+            FoeCard(p, [m], $"{Tag($"{sv.Name.ToUpperInvariant()} CRISIS", color)}  {Tag(phase)}\n[font_size=16][b]{Ui.Esc(Ui.Cap(Crises.Title(t, c)))}[/b][/font_size] of {Ui.Esc(m.Name)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Crises.KindOf(t, m).What)} {when}{blows} Break its seat first and the crisis dies with it. {Seat(t, m)}[/font_size]")}", color);
         }
         foreach (var x in clashes)
         {
             var a = t.Saga.Menaces[x.A - 1];
             var b = t.Saga.Menaces[x.B - 1];
             int id = x.Id, aid = a.Id, bid = b.Id;
-            p.Card($"{Tag("ENEMIES CLASH", Ui.Accent)}\n[b]{Ui.Esc(Ui.Cap(a.Name))}[/b] and [b]{Ui.Esc(b.Name)}[/b] will meet in battle in {Ui.Esc(x.Where)} in {Ui.Days(Math.Max(1, x.Day - t.Day))}.\n{Ui.C(Ui.Ink2, "[font_size=12]Ride out with the heroes at home and part of the watch and fall on one of them while it fights the other. Some of the watch may not come back, and the one you strike will want revenge; the other holds its hand for a while. Say nothing and the town keeps behind its walls.[/font_size]")}", Ui.Accent);
+            FoeCard(p, [a, b], $"{Tag("ENEMIES CLASH", Ui.Accent)}\n[b]{Ui.Esc(Ui.Cap(a.Name))}[/b] and [b]{Ui.Esc(b.Name)}[/b] will meet in battle in {Ui.Esc(x.Where)} in {Ui.Days(Math.Max(1, x.Day - t.Day))}.\n{Ui.C(Ui.Ink2, "[font_size=12]Ride out with the heroes at home and part of the watch and fall on one of them while it fights the other. Some of the watch may not come back, and the one you strike will want revenge; the other holds its hand for a while. Say nothing and the town keeps behind its walls.[/font_size]")}", Ui.Accent);
             p.Buttons(($"Strike {Short(a)}", true, false, () => Act(() => _sim.JoinClash(id, aid))), ($"Strike {Short(b)}", true, false, () => Act(() => _sim.JoinClash(id, bid))), ("Keep behind the walls", true, true, () => Act(() => _sim.JoinClash(id, 0))));
         }
         foreach (var g in grudges)
@@ -150,6 +150,39 @@ public partial class Main
             string who = marked.Count == 0 ? "" : $" It has marked {Ui.Esc(names)} for death.";
             p.Row($"{Tag("Vengeance", Ui.Bad)} [b]{Ui.Esc(Ui.Cap(g.Name))}[/b] has sworn revenge on {Ui.Esc(t.Name)}.{who}\n{Ui.C(Ui.Ink2, "[font_size=12]Its agents come for marked heroes in town first, then councillors, houses, the treasury and the walls. A strong watch catches them; the grudge cools in time, and dies with its master.[/font_size]")}");
         }
+    }
+
+    /// <summary>A card with the enemy's portrait (two, for a clash) beside the text and its threat bar under it.</summary>
+    private void FoeCard(Pane p, Menace[] foes, string bbcode, Color border)
+    {
+        var t = _sim.Town;
+        var threats = foes.Select(m => m.Alive ? Assess.Threat(t, m).Id : "").ToList();
+        p.Add($"foe{string.Join(",", foes.Select(m => m.Id))}|{string.Join(",", threats)}|{foes.Count(m => m.BigBad)}{bbcode}{border}", () =>
+        {
+            var panel = new PanelContainer();
+            panel.AddThemeStyleboxOverride("panel", Ui.Box(Ui.Panel2, border, 10, 1, 12, 10));
+            var h = new HBoxContainer();
+            h.AddThemeConstantOverride("separation", 12);
+            var faces = new VBoxContainer();
+            faces.AddThemeConstantOverride("separation", 6);
+            foreach (var m in foes) faces.AddChild(Foes.Of(t, m, foes.Length > 1 ? 48 : 64));
+            h.AddChild(faces);
+            var v = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+            v.AddThemeConstantOverride("separation", 6);
+            v.AddChild(Ui.Rich(bbcode));
+            // The threat bars right under the heading line, where the eye lands first.
+            int at = 1;
+            foreach (var m in foes.Where(m => m.Alive))
+            {
+                var bar = Foes.Threat(t, m);
+                if (foes.Length > 1) bar.AddChild(Ui.Label(Short(m), Ui.Ink2, Ui.Medium, 11));
+                v.AddChild(bar);
+                v.MoveChild(bar, at++ - 1);
+            }
+            h.AddChild(v);
+            panel.AddChild(h);
+            return panel;
+        });
     }
 
     /// <summary>Who leads it, and their right hand.</summary>
