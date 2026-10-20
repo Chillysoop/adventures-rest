@@ -158,6 +158,7 @@ public static class Sightings
     {
         Host => s.Foe,
         Dead => "the walking dead",
+        Flight => s.Count > 0 ? $"about {s.Count} {s.Foe}, heading home" : $"{s.Foe}, heading home",
         _ => s.Count > 0 ? $"about {s.Count} {s.Foe}" : s.Foe,
     };
 }
