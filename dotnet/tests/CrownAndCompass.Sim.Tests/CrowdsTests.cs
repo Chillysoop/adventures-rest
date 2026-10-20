@@ -95,7 +95,7 @@ public class CrowdsTests
     public void NoPlaceEverHoldsMoreThanItHasRoomFor(int seed)
     {
         var sim = new Simulation(new SimulationOptions { Seed = seed });
-        bool visited = false, praying = false;
+        bool visited = false, praying = false, venues = false;
         for (int h = 0; h < 24 * 150; h++)
         {
             sim.Step();
@@ -104,9 +104,11 @@ public class CrowdsTests
             foreach (var b in t.Buildings.Where(b => b.Def.Capacity > 0 && b.Complete))
                 Assert.True(Crowds.Inside(t, b) <= b.Def.Capacity, $"{b.Name} holds {Crowds.Inside(t, b)} of {b.Def.Capacity}");
             visited |= t.Agents.Any(a => a.Activity == Activity.Visiting);
+            venues |= Crowds.Places(t).Keys.Any(k => k != Crowds.Tavern && k != Crowds.Holy);
             praying |= t.Agents.Any(a => a.Activity == Activity.Praying);
         }
-        Assert.True(visited);
+        // Townsfolk go out once there is a market hall, bathhouse or the like to go to.
+        Assert.Equal(venues, visited);
         Assert.True(praying);
     }
 }
