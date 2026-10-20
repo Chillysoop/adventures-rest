@@ -114,6 +114,13 @@ void fragment() {
 	float canopy = forest * far * smoothstep(0.35, 0.65, nz2.r * 0.6 + nz3.b * 0.4 + forest * 0.3);
 	col = mix(col, mix(vec3(0.17, 0.27, 0.15), vec3(0.27, 0.40, 0.21), nz3.g), clamp(canopy * 1.4, 0.0, 0.9));
 
+	// Painted: saturated meadow in broad patches of deep and sunny green.
+	if (toon > 0.0) {
+		float gr = greenness(col);
+		float patch_ = smoothstep(0.3, 0.7, nz.g * 0.65 + nz2.r * 0.35);
+		vec3 rich = mix(vec3(luma(col)), col, 1.25) * mix(vec3(0.74, 0.86, 0.80), vec3(1.04, 1.03, 0.86), patch_);
+		col = mix(col, rich, toon * clamp(gr * 1.5, 0.0, 1.0));
+	}
 	// The season: grass turns straw in autumn and fresh in spring; winter lays patchy snow over all but steep rock and water.
 	col = season_grass(col);
 	vec3 turned = mix(vec3(0.62, 0.30, 0.13), vec3(0.82, 0.60, 0.20), nz3.g) * (0.75 + 0.3 * nz2.r);
