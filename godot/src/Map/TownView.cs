@@ -293,6 +293,23 @@ public partial class TownView(MapView map) : Node3D
             case "planar_gate": PlanarGate(kit, v); break;
             case "hall_of_heroes": HallOfHeroes(kit, v); break;
             case "dragon_eyrie": DragonEyrie(kit, v); break;
+            case "temple_nave": TempleNave(kit, v); break;
+            case "temple_bell_tower": TempleBellTower(kit); break;
+            case "temple_almshouse": Almshouse(kit, v); break;
+            case "temple_crypt": Crypt(kit); break;
+            case "temple_cloister": Cloister(kit); break;
+            case "temple_spire": Spire(kit, Slate); break;
+            case "keep_curtain_wall": CurtainWall(kit); break;
+            case "keep_chapel": CastleChapel(kit, v); break;
+            case "keep_gatehouse": CastleGatehouse(kit); break;
+            case "keep_great_hall": GreatHall(kit, v); break;
+            case "keep_barracks_wing": Barracks(kit, v); break;
+            case "keep_high_tower": HighTower(kit); break;
+            case "hall_bell_tower": HallBellTower(kit); break;
+            case "hall_council_chamber": Courthouse(kit, v); break;
+            case "hall_counting_house": Guildhall(kit, v); break;
+            case "hall_archive": Library(kit, v); break;
+            case "hall_banner_court": BannerCourt(kit, v); break;
             default: House(kit, v); break;
         }
     }

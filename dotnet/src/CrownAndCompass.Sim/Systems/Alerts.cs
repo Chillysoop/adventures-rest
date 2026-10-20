@@ -81,14 +81,15 @@ public static class Alerts
     public static readonly AlertKind Loot = new("loot", "Loot for sale", "gold", AlertLevel.Decision, AlertWindow.Armory);
     public static readonly AlertKind Gifts = new("gifts", "Arms to give", "heroes", AlertLevel.Minor, AlertWindow.Armory);
     public static readonly AlertKind Outpost = new("outpost", "Land to hold", "warband", AlertLevel.Minor, AlertWindow.None);
+    public static readonly AlertKind Stalled = new("stalled", "Building stalled", "gold", AlertLevel.Decision, AlertWindow.None);
 
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Sighted, Captives, Doom, Crisis, Fear, Hunger, Coffers, Underfunded, Unrest, Hostile, Motion, Fealty, Clash, Traitor, Plot, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Bastion, Institution, Heroes, Neighbour, Loot, Work, Settlers, Below, Scholars, Trade, Gifts, Outpost, Housing];
+        [Siege, Sighted, Captives, Doom, Crisis, Fear, Hunger, Coffers, Underfunded, Unrest, Hostile, Motion, Fealty, Clash, Traitor, Plot, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Bastion, Institution, Heroes, Neighbour, Loot, Stalled, Work, Settlers, Below, Scholars, Trade, Gifts, Outpost, Housing];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
-    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Hostility, Winter, Growth, Routes, Region, Undercity, Study, Loyalty, Armoury, Homes, Keepers, Outposts];
+    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Hostility, Winter, Growth, Routes, Region, Undercity, Study, Loyalty, Armoury, Homes, Sites, Keepers, Outposts];
 
     public static List<Alert> Standing(Town town) => Rules.SelectMany(r => r(town)).ToList();
 
@@ -340,6 +341,21 @@ public static class Alerts
                 .Select(p => p.Label.ToLowerInvariant()).ToList();
             string why = worst.Count == 0 ? "" : $" Most of all: {string.Join(" and ", worst)}.";
             yield return new("settlers", Settlers, "Settlers stay away", $"Few newcomers will come while things stand as they are.{why} The City window shows every reason.");
+        }
+    }
+
+    /// <summary>A council site standing idle for want of timber or stone the market hasn't got.</summary>
+    private static IEnumerable<Alert> Sites(Town t)
+    {
+        foreach (var b in t.Buildings)
+        {
+            if (!Construction.Stalled(t, b)) continue;
+            var (timber, stone) = Construction.Wanting(b);
+            string what = timber > 0 && stone > 0 ? "timber and stone" : stone > 0 ? "stone" : "timber";
+            string from = stone > 0 && !t.Buildings.Any(q => q.Complete && q.Def.Id == "quarry") ? "There is no quarry: zone industry for one, or" :
+                timber > 0 && !t.Buildings.Any(q => q.Complete && q.Def.Id == "lumber_camp") ? "There is no lumber camp: zone industry for one, or" : "Wait for the market to fill, or";
+            yield return new($"stalled:{b.Id}", Stalled, $"{Cap(b.Name)} waits for {what}",
+                $"The builders stand idle: the market has no {what} left. {from} send for it by caravan from the site ({Js.Str(Construction.CaravanCost(t, b))}g).", BuildingId: b.Id);
         }
     }
 

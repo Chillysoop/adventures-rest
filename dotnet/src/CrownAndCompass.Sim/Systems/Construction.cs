@@ -53,7 +53,11 @@ public static class Construction
     /// <summary>Whether the site's builders have built up to what has been carried onto it, so the next hour goes on hauling.</summary>
     public static bool Short(Town town, Building b) => b.IsSite && b.Hauled < 1 && b.BuildProgress >= Ready(town, b) - 1e-9;
 
-    /// <summary>An hour's hauling onto a site by someone of the given strength modifier (day labourers count as average).</summary>
+    /// <summary>
+    /// An hour's hauling onto a site by someone of the given strength modifier (day labourers count as average). A council site
+    /// that <see cref="Building.Draws"/> its materials takes them off the market's stock, paying for each load as it goes; when
+    /// the market has none (or a site put first is waiting on them) the haulers stand idle and the site stalls.
+    /// </summary>
     public static void Haul(Town town, Building b, int strength = 0)
     {
         double loads = Materials(b.Def);
@@ -62,9 +66,97 @@ public static class Construction
             b.Hauled = 1;
             return;
         }
-        double carry = Rules(town).Load * Math.Max(0.5, 1 + 0.1 * strength);
+        double carry = Math.Min(Rules(town).Load * Math.Max(0.5, 1 + 0.1 * strength), (1 - b.Hauled) * loads);
+        if (b.Draws)
+        {
+            carry = Draw(town, b, carry, loads);
+            if (carry <= 0)
+            {
+                if (b.StalledSince < 0) b.StalledSince = town.Tick;
+                return;
+            }
+            b.StalledSince = -1;
+        }
         b.Hauled = Math.Min(1, b.Hauled + carry / loads);
     }
+
+    /// <summary>Loads a drawing site gets off the market this hour, its timber and stone in proportion, paid from the treasury.</summary>
+    private static double Draw(Town town, Building b, double carry, double loads)
+    {
+        if (!b.Priority && Waiting(town, b)) return 0;
+        double got = 0, cost = 0;
+        foreach (var (g, need) in new[] { (Good.Timber, Math.Max(0, b.Def.Timber)), (Good.Stone, Math.Max(0, b.Def.Stone)) })
+        {
+            if (need <= 0) continue;
+            var (qty, paid) = town.Market.Take(g, carry * need / loads);
+            got += qty;
+            cost += paid;
+        }
+        if (cost > 0) town.Book(TreasuryAccount.Works, -cost);
+        return got;
+    }
+
+    /// <summary>Whether a site put first is short of materials, so the others leave the market's stock to it.</summary>
+    private static bool Waiting(Town town, Building except)
+    {
+        foreach (var o in town.Buildings)
+            if (o.Priority && o.Draws && o.IsSite && o.Hauled < 1 && o.Id != except.Id) return true;
+        return false;
+    }
+
+    /// <summary>A council site that has stood waiting on timber or stone for a few hours.</summary>
+    public static bool Stalled(Town town, Building b) => b.IsSite && b.Draws && b.StalledSince >= 0 && town.Tick - b.StalledSince >= Rules(town).StallHours;
+
+    /// <summary>The timber and stone a site still needs carried onto it.</summary>
+    public static (double Timber, double Stone) Wanting(Building b) =>
+        (Math.Max(0, b.Def.Timber) * (1 - b.Hauled), Math.Max(0, b.Def.Stone) * (1 - b.Hauled));
+
+    /// <summary>What a caravan would charge to bring a stalled site everything it still needs, at the import premium.</summary>
+    public static double CaravanCost(Town town, Building b)
+    {
+        var (timber, stone) = Wanting(b);
+        var m = town.Market;
+        double premium = m.ImportPremium > 0 ? m.ImportPremium : 3;
+        return Js.Round(timber * m.BasePrice(Good.Timber) * premium + stone * m.BasePrice(Good.Stone) * premium);
+    }
+
+    /// <summary>Why the council can't send for a site's materials, or null when it can.</summary>
+    public static string? CaravanBlocked(Town town, Building b)
+    {
+        if (!b.IsSite || !b.Draws || b.Hauled >= 1) return "it has its materials";
+        if (town.Treasury < CaravanCost(town, b)) return "not enough gold";
+        return null;
+    }
+
+    /// <summary>Send a caravan for everything the site still needs: dear, but it comes straight to the site and the work goes on.</summary>
+    public static bool SendCaravan(Town town, Building b)
+    {
+        if (CaravanBlocked(town, b) != null) return false;
+        double cost = CaravanCost(town, b);
+        town.Book(TreasuryAccount.Works, -cost);
+        b.Hauled = 1;
+        b.StalledSince = -1;
+        town.Log(LedgerCategory.Construction, Importance.Notable, $"A caravan brings timber and stone for {b.Name}, for {Js.Str(cost)} gold, and the builders go back to work.");
+        return true;
+    }
+
+    /// <summary>The stand-in mayor sends for the materials of a council site that has stalled a day, if the treasury can spare it.</summary>
+    public static void Daily(Town town)
+    {
+        foreach (var b in town.Buildings)
+            if (Stalled(town, b) && town.Tick - b.StalledSince >= 24 && town.Treasury > CaravanCost(town, b) + 300) SendCaravan(town, b);
+    }
+
+    /// <summary>Put a site first, or back in line.</summary>
+    public static bool Prioritise(Town town, Building b, bool first)
+    {
+        if (!b.IsSite) return false;
+        b.Priority = first;
+        return true;
+    }
+
+    /// <summary>Sites in the order builders look for work at them: those put first, then by id.</summary>
+    public static IEnumerable<Building> Sites(Town town) => town.Buildings.Where(b => b.IsSite).OrderByDescending(b => b.Priority).ThenBy(b => b.Id);
 
     /// <summary>
     /// Where a site's materials come from: the nearest lumber camp or quarry that stands (stone first for a building that is
@@ -103,4 +195,7 @@ public sealed record ConstructionRules
     public int Most { get; init; } = 40;
     public double Footings { get; init; } = 0.1;
     public double Load { get; init; } = 3;
+
+    /// <summary>Hours a council site may wait on timber or stone before it counts as stalled.</summary>
+    public int StallHours { get; init; } = 6;
 }

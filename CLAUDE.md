@@ -59,6 +59,13 @@
   can't rise past its footings until builders haul its timber and stone (`Building.Hauled`, `Activity.Hauling`); labour budgets
   use `Construction.Hours`. The client draws sites rising in six steps with a materials pile, haulers carrying loads, and a hired
   hand at sites nobody in town works (`--rising` aims at one).
+- Monuments (`Systems/Monuments.cs`, parts in buildings.json with `partOf`, `after`, `favour`): the town hall, temple and keep
+  grow by parts, each its own civic building beside the core (`Building.ParentId`) with its own bonuses and a daily `favour`
+  with the god (`"god"`) or a faction (`"faction:id"`, negative for a rival). `Building.Grow` lets the council add the cheapest
+  next part from spare gold; `AddAllParts` builds big at once. Council sites (`Building.Draws`) take their timber and stone off
+  the market's stock as hauled and stall when it's out (`Construction.Stalled`, the `stalled` alert, `SendCaravan`);
+  `Building.Priority` sends builders and materials to a site first. Client: `Map/MonumentMeshes.cs`, the card in `Panels.cs`
+  (`--at temple --card` shows it).
 - Wards (city.json `wards`, `unsettled`, `rings`): never laid out by hand. The charter opens rings (`City.RingOpen`); a quarter
   (ring + side) with `founding` finished buildings becomes the ring's ward its buildings draw most (`WardDef.Draws`, `City.Form`,
   `CityState.Sectors`). The map outlines a ward round its own buildings. `City.Migrate` maps old saves' wards to their quarters.
