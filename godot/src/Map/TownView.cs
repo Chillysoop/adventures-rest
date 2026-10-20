@@ -285,6 +285,7 @@ public partial class TownView(MapView map) : Node3D
             case "artificers_foundry": ArtificersFoundry(kit, v); break;
             case "undercity_gate": UndercityGate(kit, v); break;
             case "griffon_roost": GriffonRoost(kit, v); break;
+            case "sky_dock": SkyDock(kit, v); break;
             case "fey_market": FeyMarket(kit, v); break;
             case "monster_sanctuary": MonsterSanctuary(kit, v); break;
             case "auction_house": AuctionHouse(kit, v); break;
@@ -1993,7 +1994,7 @@ public partial class TownView(MapView map) : Node3D
         float city = Progress(town, d.CityWall, d.CityWallReadyTick, e.CityWall.Days);
         // Once the stone walls stand, the timber palisade and its towers come down.
         bool timber = d.StoneWall != PalisadeState.Built;
-        string key = $"{d.Palisade}|{Math.Round(done, 2)}|{d.Towers}|{(line == null ? "" : string.Join(';', line))}|{timber}|{Math.Round(stone, 2)}|{Math.Round(city, 2)}|{d.Gatehouse}|{d.Moat}|{d.Barracks}|{d.CityWall}";
+        string key = $"{town.City.WallVersion}|{d.Palisade}|{Math.Round(done, 2)}|{d.Towers}|{(line == null ? "" : string.Join(';', line))}|{timber}|{Math.Round(stone, 2)}|{Math.Round(city, 2)}|{d.Gatehouse}|{d.Moat}|{d.Barracks}|{d.CityWall}";
         if (key == _wallKey) return;
         _wallKey = key;
         var k = new MeshKit();
@@ -2004,9 +2005,12 @@ public partial class TownView(MapView map) : Node3D
             {
                 // Sharpened stakes all round, raised in order so a rising wall reads as progress.
                 int stakes = (int)(perim / 0.13f), shown = (int)(stakes * Mathf.Clamp(done, 0, 1));
+                var gates = GatePoints(town, 0);
                 for (int i = 0; i < shown; i++)
                 {
                     var p = Along(line, (float)i / stakes * perim);
+                    // The stakes leave a way through at each gate.
+                    if (gates.Any(g => g.DistanceTo(p) < 0.36f)) continue;
                     float sh = 0.32f + Geo.Hash(i) * 0.06f;
                     var col = i % 2 == 0 ? Palette.Timber : new Color("8a6239");
                     float g = Ground(p) - 0.05f;
@@ -2028,8 +2032,8 @@ public partial class TownView(MapView map) : Node3D
             }
         }
         bool gatehouse = d.Gatehouse == PalisadeState.Built;
-        if (stone > 0) StoneRing(k, RingLine(town, 0), stone, 0.24f, 0.8f, 0.5f, 1, 12, WallStone(Slate, 0.82f), gatehouse || d.CityWall == PalisadeState.Built);
-        if (city > 0) StoneRing(k, RingLine(town, 1), city, 0.3f, 1.05f, 0.62f, 2, 20, WallStone(new Color("9b3d2a"), 0.72f), gatehouse);
+        if (stone > 0) StoneRing(k, RingLine(town, 0), stone, 0.24f, 0.8f, 0.5f, 1, 12, WallStone(Slate, 0.82f), gatehouse || d.CityWall == PalisadeState.Built, GatePoints(town, 0).Skip(1).ToArray());
+        if (city > 0) StoneRing(k, RingLine(town, 1), city, 0.3f, 1.05f, 0.62f, 2, 20, WallStone(new Color("9b3d2a"), 0.72f), gatehouse, GatePoints(town, 1).Skip(1).ToArray());
         Ramparts(k, town, line);
         k.Build(_walls.Mesh as ArrayMesh ?? (ArrayMesh)(_walls.Mesh = new ArrayMesh()));
     }
@@ -2064,22 +2068,29 @@ public partial class TownView(MapView map) : Node3D
         var c = new Vector2(Geo.Margin + (float)Town.Center, Geo.Margin + (float)Town.Center);
         const int N = 96;
         var loop = new Vector2[N];
+        // From the main gate (the south road, until the player puts one elsewhere), then round clockwise as seen from above.
+        var gates = WallLines.Gates(town, ring);
+        double a0 = gates.Count > 0 ? gates[0] : Math.PI / 2;
         for (int i = 0; i < N; i++)
         {
-            // South (+y) first, then round clockwise as seen from above.
-            double a = Math.PI / 2 + i * Math.PI * 2 / N;
+            double a = a0 + i * Math.PI * 2 / N;
             float r = (float)City.Wall(town, ring, a);
             loop[i] = c + new Vector2((float)Math.Cos(a), (float)Math.Sin(a)) * r;
         }
         return loop;
     }
 
+    /// <summary>Where a ring's gates stand on the map, the main gate first.</summary>
+    public static Vector2[] GatePoints(Town town, int ring) =>
+        [.. WallLines.Gates(town, ring).Select(g => WallLines.Point(town, ring, g)).Select(p => new Vector2(Geo.Margin + (float)p.X, Geo.Margin + (float)p.Y))];
+
     /// <summary>
-    /// A stone curtain wall along a closed loop that starts at its gate, towers spaced round it,
-    /// and a gatehouse where the south road leaves. Raised round the loop as the work goes on.
+    /// A stone curtain wall along a closed loop that starts at its main gate, towers spaced round it,
+    /// and a gatehouse where the road leaves; timber gates in the gaps left at the other gates. Raised round the loop as the work goes on.
     /// </summary>
-    private void StoneRing(MeshKit k, Vector2[] loop, float done, float thick, float high, float tower, int mids, int towers, Func<Color, Color> tint, bool gatehouse = true)
+    private void StoneRing(MeshKit k, Vector2[] loop, float done, float thick, float high, float tower, int mids, int towers, Func<Color, Color> tint, bool gatehouse = true, Vector2[]? others = null)
     {
+        others ??= [];
         float perim = Perimeter(loop), reach = done * perim + 0.01f, gap = tower * 0.75f;
         // Wall sections, leaving the gateway open at the loop's start.
         const float Seg = 0.5f;
@@ -2093,6 +2104,7 @@ public partial class TownView(MapView map) : Node3D
             var a = Along(loop, i * step);
             var b = Along(loop, (i + 1) * step);
             var p = (a + b) / 2;
+            if (others.Any(o => o.DistanceTo(p) < gap)) continue;
             var dir = b - a;
             float yaw = Mathf.Atan2(dir.X, dir.Y);
             var basis = Basis.FromEuler(new Vector3(0, yaw, 0)) * Basis.FromScale(new Vector3(thick / 0.92f, high / 1.31f, dir.Length() * 1.04f));
@@ -2109,8 +2121,21 @@ public partial class TownView(MapView map) : Node3D
             TowerStack(k, 0, 0, tower, stack, tint);
             k.Pop();
         }
-        // The gatehouse on the south road: two taller towers, a portcullis and the arch over it; until it is built, timber gates.
+        // The gatehouse on the main road: two taller towers, a portcullis and the arch over it; until it is built, timber gates.
         if (reach < perim) return;
+        // The other gates: timber gates between a pair of towers.
+        foreach (var o in others)
+        {
+            var outward = (o - Geo.Center).Normalized();
+            TimberGate(k, o, outward);
+            foreach (float s in new[] { -1f, 1f })
+            {
+                var at = o + new Vector2(outward.Y, -outward.X) * s * (gap + tower * 0.35f);
+                k.Push(MeshKit.At(at.X, Ground(at), at.Y));
+                TowerStack(k, 0, 0, tower * 0.85f, stack, tint);
+                k.Pop();
+            }
+        }
         if (!gatehouse)
         {
             TimberGate(k, loop[0], (loop[0] - Geo.Center).Normalized());

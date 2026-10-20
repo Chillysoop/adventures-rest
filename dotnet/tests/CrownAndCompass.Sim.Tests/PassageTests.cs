@@ -258,5 +258,34 @@ public class PassageTests
         Passage.Daily(t);
         Assert.Equal("horse", h.Hero.Mount);
     }
-}
 
+    [Fact]
+    public void TheSkyDocksAirshipCarriesOneCompanyAtATimeOverTheRiver()
+    {
+        var sim = new Simulation(new SimulationOptions { Seed = 1 });
+        var t = sim.Town;
+        var east = (3.0, -2.5);
+        Party Company(string name) => new() { Name = name, Members = [], SiteId = t.Sites[0].Def.Id };
+        var walk = new RouteMind(1, 1, 3, "Ada", null, false, false);
+        Assert.Equal(walk, Passage.Board(t, Company("the Lanterns"), walk, (0, 0), east));
+        var d = t.Content.Building("sky_dock");
+        var dock = t.AddBuilding(d, Planning.CivicLot(t, d)!, null, "the Sky Dock", true);
+        sim.RunDays(1);
+        Assert.NotNull(Institutions.Find(t, "sky-dock"));
+        Assert.Equal(1, Passage.AirshipsFree(t));
+        // A road that meets the river takes the ship, and the ship crosses where it likes.
+        var first = Company("the Lanterns");
+        var mind = Passage.Board(t, first, walk, (0, 0), east);
+        Assert.True(first.Airship);
+        Assert.Equal(Ways.River | Ways.Water | Ways.Sheer, mind.Ways & (Ways.River | Ways.Water | Ways.Sheer));
+        Assert.DoesNotContain(Roads.Plan(t, (0, 0), east, mind, new Rng(1), []), w => w.Way is "ford" or "bridge");
+        t.Parties.Add(first);
+        // It's out, so the next company walks; once the first is home it's free again.
+        var second = Company("the Thorns");
+        Assert.Equal(walk, Passage.Board(t, second, walk, (0, 0), east));
+        Assert.False(second.Airship);
+        first.Returned = true;
+        Assert.Equal(1, Passage.AirshipsFree(t));
+        Assert.Contains("airship", string.Join(" ", Institutions.Describe(t, t.Content.Institutions.Def("sky-dock")!.Service)));
+    }
+}

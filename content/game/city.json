@@ -5,6 +5,7 @@
   "growth": { "reach": 1, "offStreet": 0.5, "yard": 1, "shuffle": 0.8, "hall": 0.05, "turn": 0.3 },
   "paving": { "tier": "town", "perDay": 0.6, "stone": 2, "gold": 6, "reserve": 500, "comfort": 0.03, "reach": 2 },
   "construction": { "crews": 2, "residents": 25, "most": 40, "footings": 0.1, "load": 3 },
+  "wallLines": { "least": 5, "margin": 2, "apart": 3, "clear": 0.4, "snap": 2.5, "gateApart": 4, "most": 4, "gateCost": 60 },
   "wallStrip": { "inside": 0.9, "outside": 1.6 },
   "goods": {
     "Food": 1.0, "Timber": 1.5, "Tools": 4.0, "Ale": 1.2, "Stone": 1.8, "Wool": 1.2,

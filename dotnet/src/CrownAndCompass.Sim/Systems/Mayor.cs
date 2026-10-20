@@ -107,6 +107,7 @@ public static class Mayor
         {
             var work = next.Walls == "CityWall" ? DefenseWork.CityWall : DefenseWork.StoneWall;
             if (work == DefenseWork.CityWall && town.Defenses.StoneWall == PalisadeState.None) work = DefenseWork.StoneWall;
+            if (town.Treasury >= Threat.BuildCost(town, work) + 250) WallLines.EnsureGate(town, WallLines.RingOf(work));
             if (Threat.BuildBlocked(town, work) == null && town.Treasury >= Threat.BuildCost(town, work) + 250) Threat.Build(town, work);
         }
         if (town.Buildings.Any(b => b.IsSite && (Planning.IsGovernment(town, b.Def) || (b.OwnerId == null && b.Def.IsBusiness)))) return;
