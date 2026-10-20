@@ -24,6 +24,10 @@ public sealed class Options
     /// <summary>With --autoplay, leave companies' reports unbought for the player (screenshots of the companies window).</summary>
     public bool KeepReports;
 
+    /// <summary>For roster shots (--roster ready|offer): the company picked in the roster, and the answer to the job offered it.</summary>
+    public string? RosterPick;
+    public (string Company, string Site, JobAnswer Answer)? RosterAnswer;
+
     /// <summary>With --autoplay, the stand-in leaves the armory to the player: stock and offers wait (--keep-armory).</summary>
     public bool KeepArmory;
 
@@ -186,7 +190,7 @@ public sealed class Options
                 case "--advance": o.Advances.Add(Next()); break;
                 case "--inspiration": o.Inspiration = int.Parse(Next()); break;
                 case "--decor-at": o.DecorAt = Next().Split(',').Select(v => double.Parse(v, System.Globalization.CultureInfo.InvariantCulture)).ToArray(); break;
-                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--stock" or "--pact" or "--buy" or "--call" or "--flag" or "--wait" or "--works":
+                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--stock" or "--pact" or "--buy" or "--call" or "--flag" or "--wait" or "--works" or "--roster":
                     o.Script.Add((args[i][2..], Next()));
                     break;
             }
@@ -269,6 +273,22 @@ public sealed class Options
                     // Swear the friendliest company ("best"), or the one named, to a loot pact.
                     string? company = arg == "best" ? Intel.MembersByCompany(t).Select(x => x.Name).FirstOrDefault() : arg;
                     if (company != null) sim.OfferPact(company);
+                    break;
+                case "roster":
+                    // Wait (up to 40 days) for a company with three heroes fit to ride and pick it (healing those in town if
+                    // none is), and with "offer", offer it the job it leans toward most at half again the asking.
+                    for (int h = 0; h < 40 * SimTime.HoursPerDay && !Roster.Companies(t).Any(e => e.Ready >= 3 && e.Road == null); h++) sim.Step();
+                    var best = Roster.Companies(t).OrderByDescending(e => e.Ready).ThenByDescending(e => e.Members.Count(m => !m.IsAway)).ThenByDescending(e => e.Relation).FirstOrDefault();
+                    if (best == null) break;
+                    if (best.Ready == 0)
+                        foreach (var m in best.Members.Where(m => !m.IsAway)) m.Hero!.Hp = m.Hero.MaxHp;
+                    RosterPick = best.Name;
+                    if (arg != "offer") break;
+                    t.Treasury = Math.Max(t.Treasury, 3000);
+                    var job = t.Sites.Where(s => s.Known != SiteKnowledge.Unheard && !s.ThoughtCleared)
+                        .Select(s => Roster.Weigh(t, best.Name, s.Def.Id, Js.Round(Terms.Suggested(t, s, t.Content.Bounties.Term("slay")) * 1.5)))
+                        .Where(v => v.Blocked == null).OrderByDescending(v => v.Score).ThenBy(v => v.Site!.Def.Id, StringComparer.Ordinal).FirstOrDefault();
+                    if (job != null && sim.OfferJob(best.Name, job.Site!.Def.Id, job.Reward) is { } answer) RosterAnswer = (best.Name, job.Site.Def.Name, answer);
                     break;
                 case "relic":
                     // For showing a late-game moment quickly: a party has just brought a relic home.

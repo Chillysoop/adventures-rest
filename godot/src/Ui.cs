@@ -545,6 +545,93 @@ public sealed class Pane
         });
     }
 
+    /// <summary>A labelled drop-down: picking an option calls <paramref name="pick"/> with its index.</summary>
+    public void Choice(string label, IReadOnlyList<string> options, int selected, Action<int> pick) =>
+        Add($"o{label}|{string.Join("|", options)}|{selected}", () =>
+        {
+            var h = new HBoxContainer();
+            h.AddThemeConstantOverride("separation", 8);
+            h.AddChild(Ui.Label(label, Ui.Ink2, null, 13));
+            var o = new OptionButton();
+            foreach (var x in options) o.AddItem(x);
+            o.Selected = selected;
+            o.ItemSelected += i => pick((int)i);
+            h.AddChild(o);
+            return h;
+        });
+
+    /// <summary>
+    /// A table, database style: a header of columns that sort when clicked (the sorted one marked), and rows of
+    /// rich-text cells that select when clicked (the selected one lit). Widths are each column's in pixels; the
+    /// first column takes what is left.
+    /// </summary>
+    public void Table(IReadOnlyList<string> headers, IReadOnlyList<int> widths, IReadOnlyList<string[]> rows, int sorted, bool descending, int selected,
+        Action<int> sort, Action<int> pick)
+    {
+        var sig = new StringBuilder("T").Append(string.Join("|", headers)).Append(sorted).Append(descending).Append(selected);
+        foreach (var r in rows) sig.Append('\u001e').Append(string.Join("|", r));
+        Add(sig.ToString(), () =>
+        {
+            var v = new VBoxContainer();
+            v.AddThemeConstantOverride("separation", 0);
+            var head = new HBoxContainer();
+            head.AddThemeConstantOverride("separation", 4);
+            for (int i = 0; i < headers.Count; i++)
+            {
+                int col = i;
+                var b = new Button
+                {
+                    Text = headers[i] + (i == sorted ? (descending ? " ▼" : " ▲") : ""),
+                    Flat = true,
+                    Alignment = i == 0 ? HorizontalAlignment.Left : HorizontalAlignment.Center,
+                    CustomMinimumSize = new Vector2(i == 0 ? 0 : widths[i], 26),
+                    SizeFlagsHorizontal = i == 0 ? Control.SizeFlags.ExpandFill : Control.SizeFlags.ShrinkBegin,
+                    TooltipText = $"Sort by {headers[i].ToLowerInvariant()}",
+                };
+                b.AddThemeFontSizeOverride("font_size", 12);
+                b.AddThemeColorOverride("font_color", i == sorted ? Ui.Gold : Ui.Ink2);
+                b.Pressed += () => sort(col);
+                head.AddChild(b);
+            }
+            v.AddChild(head);
+            v.AddChild(new ColorRect { Color = Ui.Line, CustomMinimumSize = new Vector2(0, 1) });
+            for (int r = 0; r < rows.Count; r++)
+            {
+                int row = r;
+                var lit = Ui.Box(Ui.Panel2, Ui.Gold, 4, 1, 6, 4);
+                var plain = Ui.Flat(new Color(0, 0, 0, 0), 6, 4);
+                var hover = Ui.Flat(new Color(Ui.Panel2, 0.6f), 6, 4);
+                var line = new PanelContainer { MouseFilter = Control.MouseFilterEnum.Stop, MouseDefaultCursorShape = Control.CursorShape.PointingHand };
+                line.AddThemeStyleboxOverride("panel", r == selected ? lit : plain);
+                if (r != selected)
+                {
+                    line.MouseEntered += () => line.AddThemeStyleboxOverride("panel", hover);
+                    line.MouseExited += () => line.AddThemeStyleboxOverride("panel", plain);
+                }
+                line.GuiInput += e =>
+                {
+                    if (e is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left }) pick(row);
+                };
+                var cells = new HBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+                cells.AddThemeConstantOverride("separation", 4);
+                for (int i = 0; i < headers.Count && i < rows[r].Length; i++)
+                {
+                    var c = Ui.Rich(i == 0 ? rows[r][i] : $"[center]{rows[r][i]}[/center]", 13);
+                    c.MouseFilter = Control.MouseFilterEnum.Ignore;
+                    c.AutowrapMode = i == 0 ? TextServer.AutowrapMode.WordSmart : TextServer.AutowrapMode.Off;
+                    c.CustomMinimumSize = new Vector2(i == 0 ? 0 : widths[i], 0);
+                    c.SizeFlagsHorizontal = i == 0 ? Control.SizeFlags.ExpandFill : Control.SizeFlags.ShrinkBegin;
+                    c.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+                    cells.AddChild(c);
+                }
+                line.AddChild(cells);
+                v.AddChild(line);
+                v.AddChild(new ColorRect { Color = new Color(Ui.Line, 0.5f), CustomMinimumSize = new Vector2(0, 1) });
+            }
+            return v;
+        });
+    }
+
     /// <summary>A labelled meter, 0 to 100.</summary>
     public void Meter(string label, double value, string figure, bool bad = false) =>
         Add($"m{label}{Math.Round(value)}{figure}{bad}", () =>

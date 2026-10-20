@@ -259,6 +259,10 @@ public sealed class Simulation
     public string? SendWord(int partyId, bool recall = false) => Knowledge.Send(Town, partyId, recall);
 
     /// <summary>Buy a company's report of a trip the council didn't pay for: at their asking price, or haggled down.</summary>
+    /// <summary>Offer one company a job by name; it takes it and marches at once, or turns it down. Null when it can't be offered.</summary>
+    public JobAnswer? OfferJob(string company, string siteId, double reward, string terms = "slay", bool lootToTown = false) =>
+        Roster.Offer(Town, company, siteId, reward, terms, lootToTown);
+
     public IntelDeal? BuyIntel(int partyId, bool haggle = false) => Intel.Buy(Town, partyId, haggle);
 
     /// <summary>Answer a company asking leave to raise a bastion: grant it (they buy the land), gift them the land, or refuse.</summary>

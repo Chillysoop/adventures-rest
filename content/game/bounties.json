@@ -1,6 +1,7 @@
 {
   "temper": 0.25,
   "pay": { "perTier": 50, "perTierSq": 30, "perTierCube": 6, "wealthFree": 2000, "wealthPer": 10000, "wealthCap": 2, "heroLevel": 0.04 },
+  "offers": { "asked": 0.1, "relation": 0.004, "danger": 0.8, "petty": 0.15, "pettyFame": 2, "pettyTier": 1, "accept": 0.6, "spread": 0.4, "eager": 0.8, "willing": 0.65, "unsure": 0.5, "reluctant": 0.4, "insult": 0.6, "insultDealings": -3, "acceptDealings": 2, "maxRiders": 4 },
   "errands": [
     { "id": "ward", "name": "a warding on the walls", "text": "pale sigils are chalked on every gate, and the townsfolk sleep easier.", "dread": -6 },
     { "id": "rain", "name": "rain on the fields", "text": "a soft rain falls on the fields for three days, and the granaries fill.", "food": 80 },
