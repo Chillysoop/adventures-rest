@@ -209,7 +209,7 @@ public sealed class Options
                 case "--advance": o.Advances.Add(Next()); break;
                 case "--inspiration": o.Inspiration = int.Parse(Next()); break;
                 case "--decor-at": o.DecorAt = Next().Split(',').Select(v => double.Parse(v, System.Globalization.CultureInfo.InvariantCulture)).ToArray(); break;
-                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--stock" or "--pact" or "--buy" or "--call" or "--flag" or "--wait" or "--works" or "--roster" or "--spot" or "--draw-wall" or "--gate":
+                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--stock" or "--pact" or "--buy" or "--call" or "--flag" or "--wait" or "--works" or "--roster" or "--spot" or "--draw-wall" or "--gate" or "--raise":
                     o.Script.Add((args[i][2..], Next()));
                     break;
             }
@@ -242,6 +242,11 @@ public sealed class Options
                     break;
                 case "build":
                     sim.BuildDefense(arg == "tower" ? DefenseWork.Tower : DefenseWork.Palisade);
+                    break;
+                case "raise":
+                    // For shots: a civic building finished at once on the lot the council would give it.
+                    var rd = t.Content.Building(arg);
+                    if (Planning.CivicLot(t, rd) is { } rlot) t.AddBuilding(rd, rlot, null, rd.Name, true);
                     break;
                 case "works":
                     // For shots of the walls: raise them at once, the stone and (with "all") every work that goes on it.

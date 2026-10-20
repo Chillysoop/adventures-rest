@@ -960,6 +960,57 @@
       ]
     },
     {
+      "id": "sky-dock",
+      "name": "the Sky Dock",
+      "building": "sky_dock",
+      "tier": "city",
+      "title": "Dockmaster",
+      "blurb": "A mooring mast, a gasbag shed and a crew of gnome riggers who keep the town's airship flying. One company at a time sails out in it, straight over whatever water or mountain stands in the way, and is carried home again.",
+      "service": {
+        "airship": 1,
+        "arrivals": 0.004,
+        "mood": 0.05
+      },
+      "choice": {
+        "label": "who the airship sails for first",
+        "text": "There is only one airship, and the riggers need the council to say what it is for between voyages.",
+        "options": [
+          {
+            "id": "companies",
+            "name": "the companies",
+            "text": "The airship waits on the companies' word: the hall fills with heroes who want a ride.",
+            "service": { "heroes": 1 }
+          },
+          {
+            "id": "lookout",
+            "name": "a lookout over the town",
+            "text": "Between voyages it rides at anchor high over the walls: raiders are seen a day before they come.",
+            "service": { "defence": 2, "dread": -0.01 }
+          },
+          {
+            "id": "fares",
+            "name": "paying passengers",
+            "text": "Merchants and pilgrims pay well to fly over the mountains: the dock pays its own way.",
+            "service": { "gold": 3 }
+          }
+        ]
+      },
+      "keepers": [
+        {
+          "name": "Pell Quickwhistle",
+          "text": "A gnome rigger who lost two airships and a brother to storms and still sails into every one he sees, singing."
+        },
+        {
+          "name": "Agathe Roul",
+          "text": "Once a river pilot, she flies the airship like a barge: slowly, carefully and swearing at anything in the way."
+        },
+        {
+          "name": "Jorvin Tallow",
+          "text": "He built his first gasbag from a hundred sewn pig bladders. The town still tells the story; he tells it differently."
+        }
+      ]
+    },
+    {
       "id": "monster-sanctuary",
       "name": "the Monster Sanctuary",
       "building": "monster_sanctuary",
@@ -1948,6 +1999,63 @@
     }
   ],
   "requests": [
+    {
+      "id": "dock-gale",
+      "title": "A gale at the mast",
+      "stakes": "medium",
+      "source": "town",
+      "needs": ["institution:sky-dock"],
+      "minDay": 40,
+      "repeatDays": 200,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A gale is coming down off the hills, and the airship is tugging at the mast like a hooked fish. {keeper} wants every spare hand on the ropes, and the guildsmen want their apprentices back at their benches.",
+          "options": [
+            {
+              "label": "Send the apprentices to the ropes",
+              "skill": "athletics",
+              "dc": 13,
+              "success": {
+                "text": "Forty apprentices haul the airship down to its cradle and sit on the ropes until dawn. The riggers buy them all a drink.",
+                "effects": { "goodwill": 4, "mandate": 1 }
+              },
+              "failure": {
+                "text": "A rope parts and the ship drags across three roofs before it is caught. The guildsmen send the council the bill.",
+                "effects": { "gold": -60, "goodwill": -1 }
+              }
+            },
+            {
+              "label": "Let {keeperName} fly it out of the storm",
+              "skill": "survival",
+              "dc": 15,
+              "prefer": 0.05,
+              "success": {
+                "text": "The airship cuts loose and rides the gale over the hills, coming home at noon with a story the riggers will tell for years.",
+                "effects": { "goodwill": 6, "tension": -1 }
+              },
+              "failure": {
+                "text": "The airship comes home two days later, half its gasbag in tatters and its crew thinner. Patching it costs a fortune.",
+                "effects": { "gold": -120, "goodwill": -2 }
+              }
+            },
+            {
+              "label": "Pay the guilds for their time",
+              "cost": 60,
+              "success": {
+                "text": "The guilds lend their apprentices for coin and the ship is held through the night.",
+                "effects": { "goodwill": 1 }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The gale tears the gasbag shed off its posts, and the riggers spend a month rebuilding it.",
+        "effects": { "gold": -40, "goodwill": -2 }
+      }
+    },
     {
       "id": "pilgrims-at-the-gate",
       "title": "Pilgrims at {institution}",

@@ -92,6 +92,8 @@
   river and its fords and bridges come from the sim (`Passage.River`, `Crossings`); roads.json kinds with a `barrier` are
   skirted unless the party has the way across (mounts, spells, items in passage.json; `Passage.Abilities`). Townsfolk
   only swim the moat or climb the wall when fleeing a raid next to them (`Passage.Fleeing`), never to get to work.
+  The Sky Dock institution (`sky-dock`, service `airship`) lends a company its airship when its road meets what it
+  can't cross (`Passage.Board`, `Party.Airship`), one company at a time; trade runs build on the same ship.
 - Decorations (`content/game/decor.json`, `Systems/Decor.cs`, client `Map/Decorator.cs`, `Map/DecorView.cs`): free positions in
   tiles from the town's corner and any angle (radians, model front +Z turned by it). Every piece needs a small effect in
   another system, capped in decor.json. Pieces claim plan cells (`Decor.Cells`, `LandPlan.Decor`): `Land.Fits` and lanes go
