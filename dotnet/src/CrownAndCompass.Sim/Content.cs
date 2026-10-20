@@ -711,6 +711,38 @@ public sealed record LairRules
     /// <summary>Raiders wait for a day when at least this share of the heroes' levels is away.</summary>
     public double SoftShare { get; init; } = 0.5;
     public int MaxWaitDays { get; init; } = 3;
+
+    /// <summary>How a raiding lair picks its night, by weight, rolled when it first acts; the dead keep their own.</summary>
+    public IReadOnlyDictionary<string, LairHabit> Habits { get; init; } = new Dictionary<string, LairHabit>();
+    public string UndeadHabit { get; init; } = "";
+
+    /// <summary>Days in a moon, and the dark days at its end when the moon-bound come.</summary>
+    public int MoonDays { get; init; } = 28;
+    public int DarkDays { get; init; } = 3;
+
+    /// <summary>No lair raids within this many days of another's raid: they keep no common calendar.</summary>
+    public int StaggerDays { get; init; } = 3;
+
+    /// <summary>Hours between a band being seen on its way and falling on its mark (<see cref="Systems.Sightings"/>).</summary>
+    public int BandHours { get; init; } = 24;
+
+    /// <summary>A bold tribe's bands are this much bigger.</summary>
+    public double BoldBand { get; init; } = 1.3;
+
+    /// <summary>Each time the town turns a band back, the next is this much bigger, up to so many times.</summary>
+    public double RebuffBand { get; init; } = 0.25;
+    public int MaxRebuffs { get; init; } = 4;
+
+    /// <summary>A threat that comes to nothing this many times running comes back worse, with this much more strength.</summary>
+    public int EscalateAt { get; init; } = 3;
+    public double EscalateStrength { get; init; } = 25;
+}
+
+/// <summary>A lair's way of choosing its night, and what its card says about it.</summary>
+public sealed record LairHabit
+{
+    public double Weight { get; init; } = 1;
+    public string Text { get; init; } = "";
 }
 
 /// <summary>A magic item as loot: which library slots a delve's hoard can hold, and what each grants.</summary>

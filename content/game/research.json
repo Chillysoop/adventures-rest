@@ -185,6 +185,22 @@
       }
     },
     {
+      "id": "slate-and-lime",
+      "name": "Slate and lime",
+      "field": "crafts",
+      "rank": 2,
+      "text": "Slate roofs, lime-washed timbers and buckets at every corner: a set fire smoulders and goes out. Stone buildings never burn at all.",
+      "sparks": [
+        "tier:town",
+        "building:quarry",
+        "craft:quarrier:2"
+      ],
+      "requires": [
+        "tier:town"
+      ],
+      "fireproof": 0.6
+    },
+    {
       "id": "deep-delving",
       "name": "Deep delving",
       "field": "crafts",
@@ -565,6 +581,7 @@
       "requires": [
         "circle:3"
       ],
+      "fireproof": 0.3,
       "ward": 0.3,
       "defence": 10
     },

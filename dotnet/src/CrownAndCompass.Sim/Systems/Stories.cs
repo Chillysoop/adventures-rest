@@ -16,6 +16,9 @@ public sealed record StoryRules
     /// <summary>A failed check this close to the DC is a success at a cost, where the option has one.</summary>
     public int PartialMargin { get; init; } = 3;
 
+    /// <summary>Added to every check's DC in each act of the campaign: the stakes rise as the mayor grows.</summary>
+    public int[] ActDc { get; init; } = [];
+
     /// <summary>Low, medium and high stakes: days to answer and the mayor's XP for seeing one through.</summary>
     public List<StakesDef> Stakes { get; init; } = [];
 
@@ -381,7 +384,7 @@ public static class Stories
     /// precedent:id (1 sets it, -1 forgets it) and calling:id (1: the story's hero takes it up, -1: it ends).
     /// </summary>
     public static readonly string[] EffectKeys =
-        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "esteem", "heroXp", "personal", "dismiss", "edge", "swell", "partyHurt", "rest", "slots", "loot", "partyLoyalty", "turnBack", "fine", "jail", "taint", "infamy", "exile", "goodwill", "goodwill2", "prosperity", "security", "contact", "band", "moves", "stir", "book", "lore", "recover"];
+        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "grudge", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "esteem", "heroXp", "personal", "dismiss", "edge", "swell", "partyHurt", "rest", "slots", "loot", "partyLoyalty", "turnBack", "fine", "jail", "taint", "infamy", "exile", "goodwill", "goodwill2", "prosperity", "security", "contact", "band", "moves", "stir", "book", "lore", "recover"];
 
     /// <summary>
     /// Every need a story or option can name; besides these, precedent:id, decree:id, season:id and
@@ -1010,8 +1013,15 @@ public static class Stories
     }
 
     /// <summary>The chance the check succeeds, with advantage if it has it and an inspired reroll if one is asked for and in hand.</summary>
+    /// <summary>An option's DC in the town's act: harder each act (stories.json actDc), so a seasoned mayor still sweats.</summary>
+    public static int DcOf(Town town, StoryOption o)
+    {
+        var a = Rules(town).ActDc;
+        return o.Dc + (a.Length == 0 ? 0 : a[Math.Clamp(town.Saga.Act, 0, a.Length - 1)]);
+    }
+
     public static double Chance(Town town, Story s, StoryOption o, bool inspired = false) =>
-        !o.Rolls ? 1 : Sheet.Chance(town, o.Skill, o.Ability, o.Dc, Advantage(town, s, o) != "", inspired, Sendings.HelpTotal(town, s, o));
+        !o.Rolls ? 1 : Sheet.Chance(town, o.Skill, o.Ability, DcOf(town, o), Advantage(town, s, o) != "", inspired, Sendings.HelpTotal(town, s, o));
 
     /// <summary>
     /// The mayor's answer to a story's current stage: option by index, with inspiration spent to reroll
@@ -1030,13 +1040,13 @@ public static class Stories
         StoryOutcome outcome;
         if (!o.Rolls)
         {
-            beat = new StoryBeat { Tick = town.Tick, Skill = o.Skill != "" ? o.Skill : o.Ability, Dc = o.Dc, Result = StoryResult.Certain };
+            beat = new StoryBeat { Tick = town.Tick, Skill = o.Skill != "" ? o.Skill : o.Ability, Dc = DcOf(town, o), Result = StoryResult.Certain };
             outcome = o.Success;
         }
         else
         {
             var help = Sendings.Helpers(town, s, o);
-            beat = Sheet.Roll(town, o.Skill, o.Ability, o.Dc, Advantage(town, s, o), inspired, o.Partial != null, help.Sum(h => h.Bonus));
+            beat = Sheet.Roll(town, o.Skill, o.Ability, DcOf(town, o), Advantage(town, s, o), inspired, o.Partial != null, help.Sum(h => h.Bonus));
             beat.Helpers = string.Join(", ", help.Select(h => $"{h.Name} {(h.Bonus >= 0 ? "+" : "−")}{Math.Abs(h.Bonus)}"));
             outcome = beat.Result switch
             {
@@ -1176,6 +1186,14 @@ public static class Stories
                     // A fraction: -0.1 takes a tenth of the foe's strength.
                     if (s.MenaceId is int mid && town.Saga.Menaces[mid - 1] is { Alive: true } m) m.Power = Math.Max(1, m.Power * (1 + v));
                     else if (s.Warband) town.Enemy.Strength = Math.Max(1, town.Enemy.Strength * (1 + v));
+                    break;
+                case "grudge":
+                    // The foe will remember this: its grudge heats (crises.json vengeance.heat "envoy"), scaled by the value.
+                    if (v > 0 && s.MenaceId is int gm && town.Saga.Menaces[gm - 1] is { Alive: true } gmm)
+                    {
+                        Menaces.Remember(gmm, town.Content.Crises.Vengeance.Deeds.GetValueOrDefault("envoy", ""));
+                        Vengeance.Wrong(town, gmm, "envoy");
+                    }
                     break;
                 case "delay":
                     // Hours added to (or taken from) the foe's march.

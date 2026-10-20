@@ -92,17 +92,67 @@ public static class Lairs
         if (s.Known == SiteKnowledge.Unheard) Rumors.Hear(town, s, Rumors.Occupants(town.Content, s.Def), s.Def.Tier, 40);
     }
 
-    /// <summary>One of the three farms or camps farthest from the town hall.</summary>
+    /// <summary>One of the three farms or camps farthest from the town hall that no flag's guards cover: raiders who were turned back go round.</summary>
     private static Building? Outlying(Town town)
     {
-        var edge = town.Buildings
+        var far = town.Buildings
             .Where(b => b.Complete && (b.Def.Zone == Zone.Farmland || b.Def.Id == "lumber_camp"))
             .OrderByDescending(b => Threat.Distance(town, b.LotId))
             .ThenBy(b => b.Id)
-            .Take(3)
+            .Take(6)
             .ToList();
+        var edge = Garrison.Unguarded(town, far).Take(3).ToList();
         return edge.Count == 0 ? null : edge[town.Rng.Range(0, edge.Count)];
     }
+
+    // Habits -------------------------------------------------------------------------------------
+
+    /// <summary>How the lair picks its night (lairs.json habits): rolled the first time it is asked, the dead always moon-bound.</summary>
+    public static string Habit(Town town, SiteState s)
+    {
+        var r = Rules(town);
+        if (s.Def.Kind == "undead") return r.UndeadHabit;
+        if (s.Def.Kind != "tribe") return "";
+        if (s.Habit != "" && r.Habits.ContainsKey(s.Habit)) return s.Habit;
+        var habits = r.Habits.OrderBy(kv => kv.Key, StringComparer.Ordinal).ToList();
+        if (habits.Count == 0) return "";
+        double roll = town.Rng.Next() * habits.Sum(kv => kv.Value.Weight);
+        s.Habit = habits[^1].Key;
+        foreach (var (k, h) in habits)
+        {
+            roll -= h.Weight;
+            if (roll < 0)
+            {
+                s.Habit = k;
+                break;
+            }
+        }
+        return s.Habit;
+    }
+
+    /// <summary>What the town knows of the lair's habit, for its card; empty until the town has heard of the place.</summary>
+    public static string HabitText(Town town, SiteState s)
+    {
+        if (s.Known == SiteKnowledge.Unheard || s.Cleared) return "";
+        string id = s.Def.Kind == "undead" ? Rules(town).UndeadHabit : s.Habit;
+        return Rules(town).Habits.GetValueOrDefault(id)?.Text ?? "";
+    }
+
+    /// <summary>The dark of the moon, when the moon-bound come.</summary>
+    public static bool Dark(Town town) => town.Day % Rules(town).MoonDays >= Rules(town).MoonDays - Rules(town).DarkDays;
+
+    /// <summary>Put the lair's next act off to the next dark of the moon.</summary>
+    private static void UntilDark(Town town, SiteState s)
+    {
+        var r = Rules(town);
+        int wait = r.MoonDays - r.DarkDays - town.Day % r.MoonDays;
+        if (wait <= 0) wait += r.MoonDays;
+        s.NextActTick = town.Tick + wait * SimTime.HoursPerDay;
+    }
+
+    /// <summary>Another lair raided within the last few days: this one keeps its own calendar and waits.</summary>
+    private static bool Staggered(Town town, SiteState s) =>
+        town.Sites.Any(o => o != s && o.LastRaidDay is int d && town.Day - d < Rules(town).StaggerDays);
 
     private static string From(SiteState s) => s.Known == SiteKnowledge.Unheard ? $"from somewhere past the hills ({s.Def.Name}, the survivors say)" : $"from {s.Def.Name}";
 
@@ -117,17 +167,30 @@ public static class Lairs
         if (farm == null) return false;
         double taken = Math.Floor(farm.Stock.Get(Good.Food, 0) * Math.Min(0.6, s.Strength / 150));
         farm.Stock[Good.Food] = farm.Stock.Get(Good.Food, 0) - taken;
-        town.Log(LedgerCategory.War, Importance.Notable, $"{Cap(Rumors.Occupants(town.Content, s.Def))} {From(s)} hunt the edges of {farm.Name} by night and carry off {Js.Str(taken)} food.");
+        string who = Cap(Rumors.Occupants(town.Content, s.Def));
+        // Fed often enough, they lose their fear of people.
+        if (++s.Stirs >= Rules(town).EscalateAt && farm.Workers.Select(town.Agent).Where(a => !a.Departed).OrderBy(a => a.Id).FirstOrDefault() is { } herder && !Garrison.Covered(town, farm))
+        {
+            s.Stirs = 0;
+            Threat.Kill(town, herder);
+            town.Log(LedgerCategory.War, Importance.Major, $"{who} {From(s)} have grown bold on {town.Name}'s herds. This time they take {herder.Name} at the edge of {farm.Name} as well, and {Js.Str(taken)} food.", [herder.Id]);
+            town.Tension += 12;
+            return true;
+        }
+        town.Log(LedgerCategory.War, Importance.Notable, $"{who} {From(s)} hunt the edges of {farm.Name} by night and carry off {Js.Str(taken)} food.{(s.Stirs == Rules(town).EscalateAt - 1 ? " They come closer each time." : "")}");
         return true;
     }
 
-    // Tribe: raids timed for when the heroes are away, or tribute to stay home.
+    // Tribe: each picks its night its own way (a habit), is seen on the road the day before, and falls on its mark the next night.
     private static bool TribeActs(Town town, SiteState s, bool autoMayor)
     {
         var r = Rules(town);
         var rng = town.Rng;
+        if (s.BandTarget is int bid) return Arrive(town, s, bid);
+        string habit = Habit(town, s);
         double demand = Js.Round(s.Strength * r.Tribute.PerStrength);
-        if (s.Strength >= 50 && s.Known != SiteKnowledge.Unheard && rng.Chance(0.4))
+        bool asks = s.Known != SiteKnowledge.Unheard && (habit == "tribute" ? !s.Refused : s.Strength >= 50 && rng.Chance(0.4));
+        if (asks)
         {
             if (autoMayor && town.Treasury >= demand * r.Tribute.PayIfTreasuryOver)
             {
@@ -137,64 +200,128 @@ public static class Lairs
                 return true;
             }
             town.Log(LedgerCategory.War, Importance.Major, $"Envoys from {s.Def.Name} demand {Js.Str(demand)} gold to leave {town.Name} be. The council sends them away empty-handed.");
+            s.Refused = true;
             s.NextActTick = town.Tick + 2 * SimTime.HoursPerDay;
             return false;
         }
-        // Raiders wait for a night when the heroes are out on the road.
-        if (AwayShare(town) < r.SoftShare && s.Waited < r.MaxWaitDays)
+        switch (habit)
         {
-            s.Waited++;
-            s.NextActTick = town.Tick + SimTime.HoursPerDay;
-            if (s.Waited == 1) town.Log(LedgerCategory.War, Importance.Notable, $"Woodcutters see watchers on the ridge toward {(s.Known == SiteKnowledge.Unheard ? "the hills" : s.Def.Name)}, counting the heroes at the gate.");
+            case "newmoon" when !Dark(town):
+                UntilDark(town, s);
+                return false;
+            case "watchers" or "" when AwayShare(town) < r.SoftShare && s.Waited < r.MaxWaitDays:
+                // Raiders wait for a night when the heroes are out on the road.
+                s.Waited++;
+                s.NextActTick = town.Tick + SimTime.HoursPerDay;
+                if (s.Waited == 1) town.Log(LedgerCategory.War, Importance.Notable, $"Woodcutters see watchers on the ridge toward {(s.Known == SiteKnowledge.Unheard ? "the hills" : s.Def.Name)}, counting the heroes at the gate.");
+                return false;
+        }
+        if (Staggered(town, s))
+        {
+            s.NextActTick = town.Tick + rng.Range(1, r.StaggerDays + 1) * SimTime.HoursPerDay;
             return false;
         }
         s.Waited = 0;
         var target = Outlying(town);
-        string where = target?.Name ?? "the outlying fields";
-        double raiders = Math.Max(3, Js.Round(s.Strength * 0.3 * (0.7 + rng.Next() * 0.6)));
+        double raiders = Math.Max(3, Js.Round(s.Strength * 0.3 * (0.7 + rng.Next() * 0.6) * (habit == "bold" ? r.BoldBand : 1) * (1 + r.RebuffBand * Math.Min(r.MaxRebuffs, s.Rebuffs))));
         // A band that can't win stays home and waits for a better night.
-        if (!Threat.WorthRaiding(town, target, raiders)) return true;
-        double local = Threat.LocalDefense(town);
+        if (target == null || !Threat.WorthRaiding(town, target, raiders)) return true;
+        // Someone sees them coming: the town has a night to plant a flag over the mark.
+        s.BandTarget = target.Id;
+        s.BandSize = raiders;
+        s.LastRaidDay = town.Day;
+        s.NextActTick = town.Tick + r.BandHours;
+        string who = Rumors.Occupants(town.Content, s.Def);
+        string bigger = s.Rebuffs > 0 ? " More of them than last time." : "";
+        Sightings.Report(town, Key(s), Sightings.Band, who, (int)raiders, s.Def.Id, target.Id, Garrison.SectionAt(town, town.Lot(target.LotId).X, town.Lot(target.LotId).Y), 0.5, r.BandHours + 6,
+            $"runs in with news: about {Js.Str(raiders)} {who} coming down {From(s)} toward {target.Name}. They will be there by nightfall.{bigger}");
+        return false;
+    }
+
+    /// <summary>The key of a lair's sightings.</summary>
+    public static string Key(SiteState s) => $"site:{s.Def.Id}";
+
+    /// <summary>The band seen on the road falls on its mark, unless the town made it not worth the try.</summary>
+    private static bool Arrive(Town town, SiteState s, int targetId)
+    {
+        var r = Rules(town);
+        var rng = town.Rng;
+        s.BandTarget = null;
+        s.LastRaidDay = town.Day;
+        Sightings.Clear(town, Key(s));
+        double raiders = s.BandSize;
+        var target = town.Buildings.FirstOrDefault(b => b.Id == targetId && b.Complete) ?? Outlying(town);
+        string where = target?.Name ?? "the outlying fields";
+        string who = Rumors.Occupants(town.Content, s.Def);
+        // The flags went up in time: they see the guards and melt away, and come back with more.
+        if (target == null || !Threat.WorthRaiding(town, target, raiders))
+        {
+            s.Rebuffs++;
+            town.Log(LedgerCategory.War, Importance.Notable, $"The {who} {From(s)} see the watch waiting at {where} and melt back into the dark without a fight. They will be back, and more of them.");
+            town.Tension += 2;
+            return true;
+        }
+        double local = Threat.LocalDefense(town) * Garrison.FlagFactor(town, target);
         var party = AwayParty(town);
         string timing = party != null && AwayShare(town) >= r.SoftShare ? $", while the {party.Name} are away" : "";
         if (local >= raiders)
         {
             s.Strength = Math.Max(0, s.Strength - raiders);
+            s.Rebuffs++;
             town.Log(LedgerCategory.War, Importance.Notable, $"Some {Js.Str(raiders)} raiders {From(s)} fall on {where}{timing}, and the watch drives them off.");
             town.Tension += 5;
             return true;
         }
+        s.Rebuffs = 0;
+        s.Refused = false;
         string text = $"Some {Js.Str(raiders)} raiders {From(s)} fall on {where} in the night{timing}";
-        if (target != null)
-        {
-            double loot = Math.Floor(target.Cash * 0.4);
-            target.Cash -= loot;
-            target.Stock[Good.Food] = Math.Floor(target.Stock.Get(Good.Food, 0) * 0.5);
-            text += loot > 0 ? $", carrying off food and {Js.Str(loot)} gold" : ", carrying off food";
-        }
-        text += Captives.Take(town, s, target);
+        double loot = Math.Floor(target.Cash * 0.4);
+        target.Cash -= loot;
+        target.Stock[Good.Food] = Math.Floor(target.Stock.Get(Good.Food, 0) * 0.5);
+        text += loot > 0 ? $", carrying off food and {Js.Str(loot)} gold" : ", carrying off food";
+        string taken = Captives.Take(town, s, target);
+        text += taken;
         town.Log(LedgerCategory.War, Importance.Major, $"{text}.");
+        // Seen going home, with whatever they took.
+        Sightings.Report(town, Key(s), Sightings.Flight, who, (int)raiders, s.Def.Id, target.Id, null, 0.25, SimTime.HoursPerDay, "");
         town.Tension += 15;
         town.Mandate = Math.Max(0, town.Mandate - 2);
         return true;
     }
 
-    // Undead: the dead walk into the fields; strong enough, they kill, unless the god's light holds them.
+    // Undead: the dead walk into the fields in the dark of the moon; strong enough, they kill, unless the god's light holds them.
+    // Walks that come to nothing build: the third time, the barrow empties.
     private static bool Walk(Town town, SiteState s)
     {
         var r = Rules(town);
         var rng = town.Rng;
+        if (Habit(town, s) == "newmoon" && !Dark(town))
+        {
+            UntilDark(town, s);
+            return false;
+        }
         var target = Outlying(town);
         string where = target?.Name ?? "the fields";
-        if (s.Strength < r.UndeadKillAt || !Threat.WorthRaiding(town, target, s.Strength * 0.3))
+        bool surge = s.Stirs + 1 >= r.EscalateAt && target != null;
+        string whence = s.Known == SiteKnowledge.Unheard ? "coming from somewhere past the hills" : $"from the direction of {s.Def.Name}";
+        if (!surge && (s.Strength < r.UndeadKillAt || !Threat.WorthRaiding(town, target, s.Strength * 0.3)))
         {
-            town.Log(LedgerCategory.War, Importance.Notable, $"Shapes that should be in the ground are seen walking at the edge of {where}, {(s.Known == SiteKnowledge.Unheard ? "coming from somewhere past the hills" : $"from the direction of {s.Def.Name}")}. No one sleeps well.");
+            s.Stirs++;
+            string worse = s.Stirs == r.EscalateAt - 1 ? " Each time there are more of them." : "";
+            Sightings.Report(town, Key(s), Sightings.Dead, "the dead", 0, s.Def.Id, target?.Id, null, 0.75, SimTime.HoursPerDay,
+                $"swears to it: shapes that should be in the ground are walking at the edge of {where}, {whence}. No one sleeps well.{worse}");
             town.Tension += 6;
             return true;
         }
+        if (surge)
+        {
+            s.Strength = Math.Min(r.MaxStrength, s.Strength + r.EscalateStrength);
+            town.Log(LedgerCategory.War, Importance.Major, $"This time it is no warning. {(s.Known == SiteKnowledge.Unheard ? "Something past the hills" : s.Def.Name)} empties, and the dead come for {where} in force.");
+        }
+        s.Stirs = 0;
         double ward = Shrines.Temple(town) != null ? r.WardTemple : Shrines.Shrine(town) != null ? r.WardShrine : 0;
         var holy = Shrines.HolyPlace(town);
-        if (holy != null && rng.Chance(ward))
+        if (holy != null && rng.Chance(surge ? ward * 0.5 : ward))
         {
             town.Log(LedgerCategory.War, Importance.Notable, $"The dead walk {From(s)} as far as {where}, and turn back at the lamps of {holy.Name}.");
             town.Tension += 3;
@@ -202,10 +329,17 @@ public static class Lairs
         }
         var workers = target!.Workers.Select(town.Agent).Where(a => !a.Departed).OrderBy(a => a.Id).ToList();
         if (workers.Count == 0) return false;
-        var v = workers[rng.Range(0, workers.Count)];
-        Threat.Kill(town, v);
-        town.Log(LedgerCategory.War, Importance.Major, $"The dead walk {From(s)} into {where}. {v.Name} is found at dawn, cold and grey.", [v.Id]);
-        town.Tension += 15;
+        int n = surge ? Math.Min(workers.Count, 2) : 1;
+        var dead = new List<Agent>();
+        for (int i = 0; i < n; i++)
+        {
+            int k = rng.Range(0, workers.Count);
+            dead.Add(workers[k]);
+            workers.RemoveAt(k);
+        }
+        foreach (var v in dead) Threat.Kill(town, v);
+        town.Log(LedgerCategory.War, Importance.Major, $"The dead walk {From(s)} into {where}. {Expedition.ListNames(dead.Select(v => v.Name).ToList())} {(dead.Count == 1 ? "is" : "are")} found at dawn, cold and grey.", dead.Select(v => v.Id).ToList());
+        town.Tension += 15 * dead.Count;
         return true;
     }
 
@@ -269,6 +403,8 @@ public static class Lairs
         int kills = result.Kills.Values.Sum();
         s.Strength = Math.Max(0, s.Strength - kills * r.RetreatLossPerKill);
         if (result.Outcome != ExpeditionOutcome.Cleared) return;
+        s.BandTarget = null;
+        Sightings.Clear(town, Key(s));
         int wait = town.Rng.Range(r.ResettleDays[0], r.ResettleDays[1] + 1);
         // Folk driven out rather than slain come back sooner.
         if (result.Driven) wait = Math.Max(1, (int)Math.Round(wait * town.Content.Bounties.Term("drive").Resettle));
@@ -320,6 +456,10 @@ public static class Lairs
         s.ResettleTick = null;
         s.Strength = r.StartStrength;
         s.Waited = 0;
+        s.Habit = "";
+        s.Rebuffs = 0;
+        s.Stirs = 0;
+        s.Refused = false;
         Next(town, s);
         // Nothing fits: the old occupants' kin come back.
         if (leaders.Count == 0) return;

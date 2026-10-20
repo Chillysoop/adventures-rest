@@ -71,6 +71,9 @@ public sealed record DreadRules
     public int[] Refugees { get; init; } = [2, 4];
     public double AbandonAt { get; init; } = 95;
     public int AbandonDays { get; init; } = 30;
+
+    /// <summary>Dread at which the alert strip warns that the town may give up (<see cref="Alerts"/>).</summary>
+    public double WarnAt { get; init; } = 80;
     public string Flight { get; init; } = "";
     public string Desert { get; init; } = "";
     public string RefugeesText { get; init; } = "";
@@ -190,6 +193,9 @@ public sealed class SagaState
 
     /// <summary>Days in a row with no living menace and no crisis (<see cref="Saga.Lull"/>).</summary>
     public int QuietDays { get; set; }
+
+    /// <summary>The last Ledger entry read for news of the menaces (<see cref="Menaces.Track"/>).</summary>
+    public int HeardUpTo { get; set; }
 
     /// <summary>Day each act opened, in order.</summary>
     public List<int> ActDays { get; } = [1];
@@ -619,6 +625,15 @@ public static class Saga
     }
 
     /// <summary>A menace is gone: hope returns a little.</summary>
+    /// <summary>Days before the town gives up on fear, while dread sits at the line; null while it is below.</summary>
+    public static int? AbandonIn(Town town) => town.Saga.Dread >= Rules(town).Dread.AbandonAt ? Math.Max(1, Rules(town).Dread.AbandonDays - town.Saga.AbandonDays) : null;
+
+    /// <summary>The living menace that frightens the town most, if any is known.</summary>
+    public static Menace? WorstFear(Town town) => town.Saga.Menaces
+        .Where(m => m.Alive && (m.Named || m.Stage >= MenaceStage.Dominion))
+        .OrderByDescending(m => (int)m.Stage).ThenByDescending(m => m.Power).ThenBy(m => m.Id)
+        .FirstOrDefault();
+
     internal static void Relief(Town town) => town.Saga.Scars = Math.Max(0, town.Saga.Scars - Rules(town).Dread.MenaceDestroyed);
 
     internal static void Scar(Town town, double amount) => town.Saga.Scars += amount;

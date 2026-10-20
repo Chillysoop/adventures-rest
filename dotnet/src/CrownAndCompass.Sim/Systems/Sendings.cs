@@ -15,6 +15,9 @@ public sealed record SendingRules
     /// <summary>Hours the mayor has to answer before the party does as it thinks best.</summary>
     public int DueHours { get; init; } = 36;
 
+    /// <summary>From this act on, only high-stakes sendings stop the clock; the rest wait on the alert strip.</summary>
+    public int QuietFromAct { get; init; } = 99;
+
     /// <summary>Share of the party's best hand at a check that it adds to the mayor's roll (rounded down): help over the stone, not the hero rolling.</summary>
     public double PartyShare { get; init; } = 0.5;
 
@@ -71,6 +74,9 @@ public static class Sendings
 
     /// <summary>Sendings waiting on the mayor now, oldest first.</summary>
     public static List<Story> Waiting(Town town) => Stories.Pending(town).Where(s => Is(town, s)).ToList();
+
+    /// <summary>Whether a sending stops the clock until it is answered: all of them early on, only high stakes once the campaign is well along.</summary>
+    public static bool Pauses(Town town, Story s) => town.Saga.Act < Rules(town).QuietFromAct || Stories.DefOf(town, s).Stakes == "high";
 
     /// <summary>The party a story is bound to, while it is still out.</summary>
     public static Party? PartyOf(Town town, Story s) =>

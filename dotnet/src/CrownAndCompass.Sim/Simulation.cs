@@ -141,6 +141,8 @@ public sealed class Simulation
         Saga.Daily(t, Options.AutoMayor);
         Crises.Daily(t, Options.AutoMayor && Options.AutoDefense);
         Vengeance.Daily(t);
+        Sightings.Daily(t);
+        Menaces.Track(t);
         Infiltration.Daily(t);
         Turning.Daily(t);
         Legacies.Daily(t, Options.AutoMayor);

@@ -17,6 +17,7 @@
   "standingPerCaravan": 0.8,
   "raid": 0.03,
   "raidPerMenace": 0.06,
+  "waylayFeeds": 0.04,
   "wagons": 4,
   "wagonLoad": 0.75,
   "wagonCost": [200, 450, 900]

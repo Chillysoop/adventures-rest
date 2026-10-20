@@ -316,7 +316,7 @@ public static class Threat
         // They may drag the hands off to their war camp, to be rescued in time or lost.
         var camp = town.Sites.FirstOrDefault(x => x.Def.Id == e.Outpost.Id);
         text += Captives.Take(town, camp, target);
-        if (rng.Chance(town.Content.Enemy.Defense.RaidBurn))
+        if (rng.Chance(town.Content.Enemy.Defense.RaidBurn) && Blows.Burns(target))
         {
             Blows.Wreck(town, target, 0.4 + rng.Next() * 0.3);
             text += $". They fire {target.Name} as they go";

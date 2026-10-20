@@ -744,6 +744,7 @@ public partial class Main
             bool cleared = sight == Sight.Live ? s.Cleared : report?.Outcome == ExpeditionOutcome.Cleared;
             p.Text(cleared ? "Cleared. The road is safe." : $"Still dangerous. {s.Attempts} {(s.Attempts == 1 ? "party has" : "parties have")} tried.");
             if (s.Def.Boss.Kind == "combat") p.Text($"Its master: {Ui.Esc(s.Def.Boss.Text)}.");
+            if ((s.Habit != "" || s.Def.Kind == "undead") && Lairs.HabitText(t, s) is { Length: > 0 } habit) p.Text($"{Tag("Habit", Ui.Gold)} {Ui.Esc(habit)}");
         }
         if (sight == Sight.Live && live != null)
         {

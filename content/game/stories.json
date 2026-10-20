@@ -4,6 +4,7 @@
   "chance": 0.3,
   "maxOpen": 2,
   "partialMargin": 3,
+  "actDc": [0, 2, 4, 6],
   "stakes": [
     { "id": "low", "name": "low", "dueDays": 3, "xp": 30 },
     { "id": "medium", "name": "rising", "dueDays": 4, "xp": 60 },
@@ -356,7 +357,7 @@
             },
             {
               "label": "Send them off with a warning", "tags": ["valor"], "skill": "intimidation", "dc": 15,
-              "success": { "text": "The envoy goes white and spurs away. The town watches from the walls, and cheers.", "effects": { "dread": -4, "mandate": 3 } },
+              "success": { "text": "The envoy goes white and spurs away. The town watches from the walls, and cheers. Out in the hills, {menace} gathers more spears: next time it will not send a rider.", "effects": { "dread": -4, "mandate": 3, "foePower": 0.08, "grudge": 1 } },
               "failure": { "text": "The envoy laughs and spits in the ford.", "effects": { "dread": 3, "mandate": -2 } }
             }
           ]

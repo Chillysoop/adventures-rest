@@ -65,6 +65,9 @@ public sealed record CrisisClashRules
 
     /// <summary>How many rings apart their seats can be and still meet.</summary>
     public int Reach { get; init; } = 1;
+
+    /// <summary>Chance, each time the clock comes round with no crisis to fight over, that two other rising powers feud over land.</summary>
+    public double FeudChance { get; init; } = 0;
     public double LoserLoss { get; init; } = 0.6;
     public double WinnerLoss { get; init; } = 0.25;
     public double Absorb { get; init; } = 2.5;
@@ -134,6 +137,9 @@ public sealed record CrisisRules
     /// <summary>The walls' strength while saboteurs' damage stands, and for how long.</summary>
     public double WallsWeak { get; init; } = 0.8;
     public int WallsWeakDays { get; init; } = 20;
+
+    /// <summary>Chance a fire the watch would have caught still takes: nobody can watch every roof.</summary>
+    public double ArsonSlips { get; init; } = 0;
     public CrisisClashRules Clash { get; init; } = new();
     public VengeanceRules Vengeance { get; init; } = new();
     public InfiltrationRules Infiltration { get; init; } = new();
@@ -548,8 +554,10 @@ public static class Crises
         // An enemy in crisis runs into any other power on the march: they settle who rules the land.
         var crisis = Active(town).Where(c => c.Phase != CrisisPhase.Marching).Select(c => MenaceOf(town, c)).Where(m => m.Alive && m.ArrivalTick == null).OrderBy(m => m.Id).ToList();
         var hosts = Menaces.Alive(town).Where(m => m.Origin != Menaces.FromWarband && m.ArrivalTick == null && (m.Stage >= MenaceStage.Rising || m.BigBad)).OrderBy(m => m.Id).ToList();
-        foreach (var a in crisis)
-            foreach (var b in hosts.Where(b => b != a && !(crisis.Contains(b) && b.Id < a.Id)))
+        // Without a crisis to fight over, two rising powers may still feud over land.
+        var starters = crisis.Count > 0 || !town.Rng.Chance(cr.FeudChance) ? crisis : hosts;
+        foreach (var a in starters)
+            foreach (var b in hosts.Where(b => b != a && !(starters.Contains(b) && b.Id < a.Id)))
             {
                 if (Pact(town, a, b) || book.Clashes.Any(x => !x.Done && (x.A == a.Id || x.B == a.Id || x.A == b.Id || x.B == b.Id))) continue;
                 var sa = Quests.Site(town, a.SeatId);
