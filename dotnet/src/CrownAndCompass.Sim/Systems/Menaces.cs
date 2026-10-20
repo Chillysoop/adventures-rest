@@ -19,6 +19,12 @@ public sealed record MenaceKindDef
     public IReadOnlyList<string> StrikeDark { get; init; } = [];
     public string Raze { get; init; } = "";
     public string Slain { get; init; } = "";
+
+    /// <summary>What it did before the town heard its name, told when it rises: {leader}, {seat}, {region}.</summary>
+    public IReadOnlyList<string> Done { get; init; } = [];
+
+    /// <summary>Portents of what it means to do, told when a plan the town knows of is half done: {leader}, {plan}.</summary>
+    public IReadOnlyList<string> Doom { get; init; } = [];
 }
 
 /// <summary>
@@ -399,7 +405,7 @@ public static class Menaces
     private static string PickAmbition(Town town, string kind, string cunning, string lineage = "")
     {
         var heirs = Annals.Lineage(town.Content.History, lineage)?.Ambitions;
-        double Weight(MenaceAmbitionDef a) => a.Weight * (heirs != null && heirs.TryGetValue(a.Id, out double x) ? x : 1);
+        double Weight(MenaceAmbitionDef a) => a.Weight * (heirs != null && heirs.TryGetValue(a.Id, out double x) ? x : 1) * Character.Ambition(town, kind, a.Id);
         int rank = CunningRank(town, cunning);
         var fit = Rules(town).Ambitions
             .Where(a => a.Kinds.Count == 0 || a.Kinds.Contains(kind))
@@ -497,8 +503,15 @@ public static class Menaces
         string text = Saga.Grim(town) && m.Def.RiseDark != "" ? m.Def.RiseDark : m.Def.Rise;
         string motive = Annals.Motive(town, m);
         string legend = m.Legend == "" ? "" : " " + m.Legend;
-        town.Log(LedgerCategory.War, Importance.Major, Saga.Fill(town, text, m) + legend + (motive == "" ? "" : " " + motive));
+        string done = Done(town, m) is string d ? " " + d : "";
+        // The first of its kind the town hears of tells what its kind is like in this age.
+        string temper = Character.TemperOf(town, m.Kind) is { Text: not "" } tm && !town.Saga.Menaces.Any(x => x != m && x.Kind == m.Kind && x.Named) ? " " + tm.Text : "";
+        town.Log(LedgerCategory.War, Importance.Major, Saga.Fill(town, text, m) + done + legend + (motive == "" ? "" : " " + motive) + temper);
     }
+
+    /// <summary>The deed it is known for from before the town heard its name, if its kind tells one.</summary>
+    public static string? Done(Town town, Menace m) =>
+        m.Def.Done.Count == 0 ? null : Saga.Cap(Saga.Fill(town, m.Def.Done[m.Id % m.Def.Done.Count], m));
 
     /// <summary>Word of what holds the seat now: the town's belief catches up with the menace's level.</summary>
     private static void Spread(Town town, Menace m, SiteState seat, int trust)
@@ -883,7 +896,7 @@ public static class Menaces
         var rng = town.Rng;
         double far = 1 + 0.25 * Math.Max(0, seat.Def.Distance - 1);
         // A menace in its season strikes more often; one out of it keeps to its lair.
-        m.NextStrikeTick = town.Tick + (int)Math.Round(rng.Range(r.StrikeEveryDays[0], r.StrikeEveryDays[1] + 1) * far * Storyteller.StrikeEvery(town) / Seasons.Activity(town, m.Kind)) * SimTime.HoursPerDay;
+        m.NextStrikeTick = town.Tick + (int)Math.Round(rng.Range(r.StrikeEveryDays[0], r.StrikeEveryDays[1] + 1) * far * Storyteller.StrikeEvery(town) * Character.Strike(town, m) / Seasons.Activity(town, m.Kind)) * SimTime.HoursPerDay;
         var am = AmbitionOf(town, m);
         // Left alone, a menace that only holds its land keeps to it.
         if (am.Id == "territory" && town.Tick >= m.ProvokedUntilTick) return;
@@ -1354,6 +1367,16 @@ public static class Menaces
             seat.Cleared = false;
             seat.Def = seat.Def with { Tier = Math.Max(1, seat.Def.Tier - r.BrokenLevels) };
             seat.QuietUntil = town.Tick + r.FesterDays * SimTime.HoursPerDay;
+            return;
+        }
+        if (refuge == null && Plots.Undying(town, m, seat) is { } vessel)
+        {
+            // It cannot die while what holds its soul is hidden: it gathers itself again where that lies.
+            Plots.Reform(town, m, seat, vessel);
+            Seat(town, m, vessel);
+            m.Power *= r.SeatBroken;
+            m.Stage = StageFor(town, m);
+            m.SeenAttempts = vessel.Attempts;
             return;
         }
         if (refuge == null)

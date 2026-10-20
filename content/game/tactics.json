@@ -1,0 +1,85 @@
+{
+  "_doc": "How each kind of foe fights in a delve (Systems/Tactics.cs). A foe takes the first entry whose words appear in its id or whose types include its creature type. flee: below this share of its hp it breaks and runs (out of the fight). cover: extra AC for the first coverRounds rounds. pack: +1 to hit per other living packmate, up to pack. Bosses add signature (an attack on every standing hero in round 2, a Dex save halves it), minions (more of its kind join in round 3) and pride (a hero with the gift of the gab can goad it into talking, and the party gets a free round).",
+  "tactics": [
+    {
+      "id": "skulkers",
+      "words": ["goblin", "kobold", "hobgoblin", "bugbear"],
+      "flee": 0.5,
+      "cover": 2,
+      "coverRounds": 2,
+      "fled": "The {foes} that are left break and scatter into the dark, shooting back over their shoulders.",
+      "signature": "{boss} screams for the warren, and arrows rattle out of every crack in the walls",
+      "minions": "goblin",
+      "minionCount": [2, 3],
+      "called": "{boss} blows a horn, and {n} more goblins pour in from the side tunnels."
+    },
+    {
+      "id": "brutes",
+      "words": ["orc", "ogre", "troll", "gnoll"],
+      "flee": 0.15,
+      "fled": "The last of the {foes} bellow and run, leaving their dead.",
+      "signature": "{boss} roars and swings in a great circle through the whole party"
+    },
+    {
+      "id": "outlaws",
+      "words": ["bandit", "thug", "brigand", "corsair", "pirate", "scout"],
+      "flee": 0.4,
+      "cover": 1,
+      "coverRounds": 1,
+      "fled": "The {foes} have had enough; they throw down a purse and run.",
+      "minions": "bandit",
+      "minionCount": [1, 3],
+      "called": "{boss} whistles, and {n} more cutthroats drop from the rafters."
+    },
+    {
+      "id": "pack",
+      "words": ["wolf", "hyena", "jackal", "hound", "worg"],
+      "pack": 2,
+      "flee": 0.25,
+      "fled": "The {foes} that are left slink off with their tails down.",
+      "signature": "{boss} and the whole pack come in at once from every side"
+    },
+    {
+      "id": "webs",
+      "words": ["spider", "ettercap"],
+      "cover": 2,
+      "coverRounds": 1,
+      "signature": "{boss} looses a net of sticky web across the passage"
+    },
+    {
+      "id": "dead",
+      "types": ["undead"],
+      "signature": "{boss} breathes out the cold of the grave, and the torches gutter",
+      "minions": "skeleton",
+      "minionCount": [2, 4],
+      "called": "{boss} speaks a word, and {n} skeletons claw their way up through the floor."
+    },
+    {
+      "id": "wyrm",
+      "types": ["dragon"],
+      "signature": "{boss} draws a long breath and fills the cave with fire",
+      "pride": 14,
+      "goaded": "{hero} calls out praise for {boss}'s hoard and its terrible beauty. The wyrm cannot help but answer, and while it gloats the party closes in."
+    },
+    {
+      "id": "fiends",
+      "types": ["fiend"],
+      "signature": "{boss} opens a mouth too wide and spits hellfire",
+      "minions": "imp",
+      "minionCount": [2, 3],
+      "called": "The air splits, and {n} imps tumble through, cackling."
+    },
+    {
+      "id": "giants",
+      "types": ["giant"],
+      "flee": 0.1,
+      "fled": "The {foes} stumble off, shaking the ground.",
+      "signature": "{boss} hurls a boulder that bowls through the party"
+    },
+    {
+      "id": "crystal",
+      "words": ["crystalback"],
+      "signature": "{boss} rattles its spines and they burst, showering the party with violet shards"
+    }
+  ]
+}

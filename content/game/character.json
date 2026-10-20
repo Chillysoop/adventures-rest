@@ -1,0 +1,786 @@
+{
+  "settlement": {
+    "names": {
+      "might": "Military",
+      "wealth": "Wealth",
+      "diplomacy": "Diplomacy",
+      "health": "Public Health",
+      "lore": "Education",
+      "faith": "Faith"
+    },
+    "peoples": {
+      "villagers": {
+        "bonus": {
+          "health": -1,
+          "faith": 1
+        }
+      },
+      "halflings": {
+        "names": {
+          "lore": "Cookery"
+        },
+        "bonus": {
+          "health": 2,
+          "might": -2,
+          "diplomacy": 1
+        }
+      },
+      "dwarves": {
+        "names": {
+          "lore": "Craft",
+          "faith": "Ancestors"
+        },
+        "bonus": {
+          "might": 2,
+          "health": 1,
+          "diplomacy": -2
+        }
+      },
+      "elves": {
+        "names": {
+          "lore": "Memory",
+          "faith": "Old Song"
+        },
+        "bonus": {
+          "lore": 3,
+          "diplomacy": -2
+        }
+      },
+      "gnomes": {
+        "names": {
+          "lore": "Tinkering"
+        },
+        "bonus": {
+          "lore": 3,
+          "might": -2
+        }
+      },
+      "lizardfolk": {
+        "names": {
+          "lore": "Cunning",
+          "health": "Hardiness",
+          "diplomacy": "Patience"
+        },
+        "bonus": {
+          "health": 3,
+          "lore": -2,
+          "diplomacy": -1
+        }
+      },
+      "templars": {
+        "names": {
+          "faith": "Zeal",
+          "lore": "Scripture"
+        },
+        "bonus": {
+          "faith": 4,
+          "diplomacy": -2
+        }
+      },
+      "freeport": {
+        "names": {
+          "diplomacy": "Trade",
+          "lore": "Seacraft"
+        },
+        "bonus": {
+          "diplomacy": 3,
+          "faith": -2
+        }
+      },
+      "frostsworn": {
+        "names": {
+          "health": "Endurance",
+          "lore": "Sagas"
+        },
+        "bonus": {
+          "health": 2,
+          "might": 1,
+          "lore": -1
+        }
+      },
+      "oasis": {
+        "names": {
+          "health": "Water",
+          "lore": "Star Lore"
+        },
+        "bonus": {
+          "diplomacy": 2,
+          "lore": 1,
+          "might": -1
+        }
+      },
+      "catfolk": {
+        "names": {
+          "lore": "Secrets",
+          "diplomacy": "Charm"
+        },
+        "bonus": {
+          "diplomacy": 2,
+          "lore": 1,
+          "might": -1
+        }
+      },
+      "birdfolk": {
+        "names": {
+          "lore": "Sky Lore",
+          "might": "Wings"
+        },
+        "bonus": {
+          "lore": 2,
+          "diplomacy": -2,
+          "health": 1
+        }
+      },
+      "hollow-legion": {
+        "names": {
+          "health": "Upkeep",
+          "faith": "Oath",
+          "diplomacy": "Patience",
+          "wealth": "Relics"
+        },
+        "bonus": {
+          "might": 3,
+          "faith": 4,
+          "diplomacy": -3,
+          "health": 2
+        }
+      }
+    },
+    "tempers": {
+      "generous": {
+        "diplomacy": 2
+      },
+      "shrewd": {
+        "diplomacy": 1
+      },
+      "wary": {
+        "diplomacy": -3,
+        "might": 1
+      },
+      "proud": {
+        "diplomacy": -2
+      },
+      "devout": {
+        "faith": 3
+      },
+      "timid": {
+        "might": -2
+      },
+      "puppet": {
+        "diplomacy": -4
+      }
+    },
+    "diplomacy": 0.04,
+    "health": 0.06,
+    "illness": [
+      "fever",
+      "blight",
+      "hard-winter",
+      "flood"
+    ],
+    "faith": 0.04,
+    "lore": 0.01,
+    "warded": 0.5,
+    "sizes": [
+      {
+        "id": "hamlet",
+        "name": "hamlet",
+        "weight": 2,
+        "scores": {
+          "might": -1,
+          "wealth": -1
+        }
+      },
+      {
+        "id": "village",
+        "name": "village",
+        "weight": 4
+      },
+      {
+        "id": "market-town",
+        "name": "market town",
+        "weight": 2,
+        "scores": {
+          "wealth": 1,
+          "diplomacy": 1,
+          "health": -1
+        }
+      },
+      {
+        "id": "walled-town",
+        "name": "walled town",
+        "weight": 1,
+        "scores": {
+          "might": 2,
+          "wealth": 1
+        }
+      }
+    ],
+    "customs": [
+      {
+        "id": "door-mirrors",
+        "name": "a mirror by every door",
+        "text": "A mirror hangs beside every door in {S}, so a guest who casts no reflection is known on the step.",
+        "scores": {
+          "faith": 1
+        },
+        "wards": [
+          "schemers",
+          "undead"
+        ]
+      },
+      {
+        "id": "bone-status",
+        "name": "bones worn as rank",
+        "text": "In {S} the bones of beasts a person has killed are worn at the throat, and the elders rattle when they walk.",
+        "scores": {
+          "might": 1,
+          "diplomacy": -1
+        }
+      },
+      {
+        "id": "salt-lines",
+        "name": "salt across the threshold",
+        "text": "Every threshold in {S} is crossed by a line of salt, renewed at each new moon.",
+        "scores": {
+          "faith": 1,
+          "wealth": -1
+        },
+        "wards": [
+          "cult",
+          "undead"
+        ]
+      },
+      {
+        "id": "guest-bread",
+        "name": "guest-bread",
+        "text": "No stranger leaves {S} without bread from the oldest hearth; refusing it is an insult nobody forgets.",
+        "scores": {
+          "diplomacy": 2
+        }
+      },
+      {
+        "id": "name-silence",
+        "name": "the unspoken dead",
+        "text": "The folk of {S} never speak the names of their dead, lest the dead think themselves called.",
+        "scores": {
+          "faith": 1,
+          "lore": -1
+        },
+        "wards": [
+          "undead"
+        ]
+      },
+      {
+        "id": "bell-curfew",
+        "name": "the curfew bell",
+        "text": "A bell rings at dusk in {S}, and after it nobody opens a door to anyone, kin or not.",
+        "scores": {
+          "might": 1,
+          "diplomacy": -1
+        },
+        "wards": [
+          "schemers",
+          "beasts"
+        ]
+      },
+      {
+        "id": "boiled-water",
+        "name": "boiled water",
+        "text": "Every drop drunk in {S} is boiled first, an old rule from a fever nobody now remembers.",
+        "scores": {
+          "health": 3
+        }
+      },
+      {
+        "id": "story-debts",
+        "name": "debts paid in tales",
+        "text": "In {S} small debts are paid with a good story told at the well, and a dull one doubles what is owed.",
+        "scores": {
+          "lore": 2,
+          "wealth": -1
+        }
+      },
+      {
+        "id": "hearth-oaths",
+        "name": "oaths sworn on the hearth",
+        "text": "Bargains in {S} are sworn over a shared fire, and an oathbreaker's hearth is put out for a year.",
+        "scores": {
+          "diplomacy": 1,
+          "faith": 1
+        }
+      },
+      {
+        "id": "iron-charms",
+        "name": "iron at the cradle",
+        "text": "Every cradle in {S} has a nail of cold iron under it, against those who steal children for the courts under the hill.",
+        "scores": {
+          "faith": 1
+        },
+        "wards": [
+          "schemers"
+        ]
+      },
+      {
+        "id": "masked-feasts",
+        "name": "masked feast days",
+        "text": "On feast days the folk of {S} go masked, and a mask may say what a face may not.",
+        "scores": {
+          "diplomacy": 1,
+          "lore": 1
+        }
+      },
+      {
+        "id": "weapon-at-table",
+        "name": "blades on the table",
+        "text": "In {S} everyone eats with their blade laid on the table, point toward themselves, as a promise of peace.",
+        "scores": {
+          "might": 2,
+          "diplomacy": -1
+        }
+      },
+      {
+        "id": "lantern-graves",
+        "name": "lanterns on the graves",
+        "text": "Lanterns burn on the graves of {S} every night, kept by whoever's turn it is.",
+        "scores": {
+          "faith": 2,
+          "wealth": -1
+        },
+        "wards": [
+          "undead"
+        ]
+      },
+      {
+        "id": "wells-sung",
+        "name": "the singing of the wells",
+        "text": "The wells of {S} are sung to each morning; the folk swear the water stays sweeter for it.",
+        "scores": {
+          "health": 1,
+          "faith": 1
+        }
+      },
+      {
+        "id": "fostering",
+        "name": "children fostered abroad",
+        "text": "Every child of {S} spends a year fostered with another people before they come of age.",
+        "scores": {
+          "diplomacy": 2,
+          "lore": 1,
+          "might": -1
+        }
+      },
+      {
+        "id": "birth-coin",
+        "name": "coin buried at birth",
+        "text": "In {S} a coin is buried under the floor for each child born, dug up only for their wedding or their burial.",
+        "scores": {
+          "wealth": 1,
+          "diplomacy": -1
+        }
+      }
+    ],
+    "purposes": [
+      {
+        "id": "forestry",
+        "name": "forestry",
+        "text": "{S} lives by the axe: its timber floats downriver to half the valley.",
+        "scores": {
+          "wealth": 1
+        },
+        "good": "Timber",
+        "peoples": [
+          "villagers",
+          "elves",
+          "frostsworn",
+          "halflings"
+        ]
+      },
+      {
+        "id": "quarrying",
+        "name": "quarrying",
+        "text": "{S} sits on good stone and a seam of ore beneath it, and its folk go grey with the dust.",
+        "scores": {
+          "wealth": 2,
+          "health": -2
+        },
+        "good": "Stone",
+        "peoples": [
+          "dwarves",
+          "gnomes",
+          "frostsworn",
+          "villagers"
+        ]
+      },
+      {
+        "id": "herding",
+        "name": "herding",
+        "text": "{S} keeps the great flocks of the upland grass, and every road there smells of sheep.",
+        "scores": {
+          "health": 1
+        },
+        "good": "Wool",
+        "peoples": [
+          "villagers",
+          "halflings",
+          "frostsworn",
+          "oasis"
+        ]
+      },
+      {
+        "id": "granary",
+        "name": "farming",
+        "text": "{S} is a granary town: in a good year its carts feed folk three valleys over.",
+        "scores": {
+          "wealth": 1,
+          "health": 1
+        },
+        "good": "Food",
+        "peoples": [
+          "villagers",
+          "halflings",
+          "lizardfolk"
+        ]
+      },
+      {
+        "id": "crossing",
+        "name": "the crossing",
+        "text": "{S} keeps the only safe crossing for days in either direction, and lives on the tolls.",
+        "scores": {
+          "wealth": 2,
+          "diplomacy": 1
+        },
+        "peoples": [
+          "villagers",
+          "freeport",
+          "lizardfolk",
+          "oasis"
+        ]
+      },
+      {
+        "id": "relic-guard",
+        "name": "guarding a relic",
+        "text": "{S} was founded to keep watch over something sealed beneath its oldest stone, and it has never once let a stranger near it.",
+        "scores": {
+          "faith": 3,
+          "might": 1,
+          "diplomacy": -2
+        }
+      },
+      {
+        "id": "pilgrim-rest",
+        "name": "the pilgrims' road",
+        "text": "{S} feeds and beds the pilgrims who walk to the old shrines, and asks only a prayer in return.",
+        "scores": {
+          "faith": 2,
+          "diplomacy": 1
+        },
+        "good": "Herbs",
+        "peoples": [
+          "templars",
+          "villagers",
+          "oasis",
+          "halflings"
+        ]
+      },
+      {
+        "id": "smithing",
+        "name": "the forges",
+        "text": "The forges of {S} never go cold, and their steel is asked for by name.",
+        "scores": {
+          "might": 1,
+          "wealth": 1
+        },
+        "good": "Tools",
+        "peoples": [
+          "dwarves",
+          "gnomes",
+          "frostsworn"
+        ]
+      },
+      {
+        "id": "fishery",
+        "name": "fishing",
+        "text": "{S} lives off the water, and its nets come home full more often than not.",
+        "scores": {
+          "health": 1
+        },
+        "good": "Food",
+        "peoples": [
+          "freeport",
+          "lizardfolk",
+          "villagers"
+        ]
+      },
+      {
+        "id": "scholars",
+        "name": "learning",
+        "text": "{S} keeps an old library and a school around it, and its children argue with travellers for sport.",
+        "scores": {
+          "lore": 3,
+          "might": -1
+        },
+        "good": "Books",
+        "peoples": [
+          "elves",
+          "gnomes",
+          "templars",
+          "oasis"
+        ]
+      },
+      {
+        "id": "weaving",
+        "name": "weaving",
+        "text": "Every house in {S} has a loom, and their dyed cloth fetches silver in the far markets.",
+        "scores": {
+          "wealth": 1,
+          "diplomacy": 1
+        },
+        "good": "Cloth",
+        "peoples": [
+          "villagers",
+          "halflings",
+          "elves",
+          "oasis"
+        ]
+      },
+      {
+        "id": "brewing",
+        "name": "brewing",
+        "text": "{S} brews an ale worth the walk, and its folk will tell you so before you've sat down.",
+        "scores": {
+          "diplomacy": 1,
+          "health": -1
+        },
+        "good": "Ale",
+        "peoples": [
+          "halflings",
+          "dwarves",
+          "villagers"
+        ]
+      },
+      {
+        "id": "border-watch",
+        "name": "the border watch",
+        "text": "{S} was built as a watch post on the old border, and still musters every soul who can draw a bow.",
+        "scores": {
+          "might": 3,
+          "wealth": -1
+        },
+        "peoples": [
+          "frostsworn",
+          "dwarves",
+          "templars",
+          "villagers"
+        ]
+      },
+      {
+        "id": "caravanserai",
+        "name": "the caravan stop",
+        "text": "{S} is a caravan stop with more beds than people, and hears the news of every road.",
+        "scores": {
+          "wealth": 1,
+          "diplomacy": 2
+        },
+        "peoples": [
+          "oasis",
+          "freeport",
+          "villagers"
+        ]
+      }
+    ],
+    "secrets": [
+      {
+        "id": "buried-hoard",
+        "text": "under the elder's hearth in {S} lies a strongbox of old royal coin, which they have never declared to anyone"
+      },
+      {
+        "id": "sealed-cellar",
+        "text": "the cellar beneath the oldest house in {S} is bricked up, and the elders take turns to listen at it at night"
+      },
+      {
+        "id": "changeling",
+        "text": "the folk of {S} are quite sure one of their children is not their own, and have quietly agreed never to say which"
+      },
+      {
+        "id": "debt-to-dark",
+        "text": "{S} lived through a bad winter two generations back by making a bargain it has never finished paying"
+      },
+      {
+        "id": "false-heir",
+        "text": "the ruling family of {S} are not who they claim; the true line died out and nobody wanted the fuss"
+      },
+      {
+        "id": "smugglers",
+        "text": "half of {S}'s wealth comes in by night along a goat track the toll-men have never found"
+      },
+      {
+        "id": "drowned-chapel",
+        "text": "a chapel lies drowned under the millpond at {S}, and on still nights its bell can be heard"
+      },
+      {
+        "id": "fled-soldiers",
+        "text": "the founders of {S} were deserters from a war they lost, and the old banners are hidden in the thatch"
+      },
+      {
+        "id": "poisoned-well",
+        "text": "one well in {S} is never drawn from, and nobody will tell a stranger which"
+      },
+      {
+        "id": "spy",
+        "text": "the town's own envoys to {S} are reported to someone; the elder knows who, and is afraid to say"
+      },
+      {
+        "id": "seal",
+        "text": "what {S} guards beneath its oldest stone is not holy: it is a seal, and something on the far side still pushes",
+        "purpose": "relic-guard"
+      },
+      {
+        "id": "star-map",
+        "text": "the elders of {S} keep a map, drawn on a hide, of a road that runs between the stars"
+      }
+    ],
+    "proverbs": {
+      "villagers": [
+        "Plant before you pray, and pray before you harvest.",
+        "A fence mended in summer saves a cow in winter.",
+        "Never trust a well that has never run dry."
+      ],
+      "halflings": [
+        "A full pantry has no enemies.",
+        "The second breakfast is for the wise; the first is only for the hungry.",
+        "Count the spoons after the guest goes, not before."
+      ],
+      "dwarves": [
+        "Stone remembers what the miner forgets.",
+        "A debt is a seam: it runs deeper than you think.",
+        "Strike once, and listen twice."
+      ],
+      "elves": [
+        "A tree does not hurry, and is never late.",
+        "What the river carries away, the sea gives back to someone else.",
+        "Speak to the young as if they will outlive you; they will."
+      ],
+      "gnomes": [
+        "If it ticks, it can be fixed; if it hums, step back.",
+        "Every good idea explodes at least once.",
+        "Ask the cog, not the clock."
+      ],
+      "lizardfolk": [
+        "The marsh is patient; be the marsh.",
+        "Warm stone, full belly, short talk.",
+        "Whoever moves first is the one who is eaten."
+      ],
+      "templars": [
+        "The lamp does not argue with the dark; it is simply lit.",
+        "Kneel to the gods and stand to everyone else.",
+        "A vow half kept is a door half barred."
+      ],
+      "freeport": [
+        "Every tide is somebody's fortune.",
+        "Sell the map, keep the compass.",
+        "A friend in port is worth two at sea."
+      ],
+      "frostsworn": [
+        "The cold is honest; it kills you to your face.",
+        "Feed the fire before you feed your pride.",
+        "A long winter makes short arguments."
+      ],
+      "oasis": [
+        "Water is a guest; never make it wait.",
+        "The dune that hides the road also hides the thief.",
+        "Count the stars, not the coins; there are more of them."
+      ],
+      "catfolk": [
+        "Every door is open to someone who waits long enough.",
+        "A secret kept is a coin in the pocket; a secret sold is two.",
+        "Land on your feet, then decide whose fault it was."
+      ],
+      "birdfolk": [
+        "From high enough, every road is short.",
+        "The nest is only as safe as the cliff.",
+        "Sing before the storm, not during it."
+      ],
+      "hollow-legion": [
+        "The oath does not sleep.",
+        "Rust is patience made visible.",
+        "A king who does not return is still a king."
+      ]
+    },
+    "proverb": "As they say in {S}, \"{proverb}\""
+  },
+  "menace": {
+    "names": {
+      "might": "Might",
+      "wits": "Cunning",
+      "reach": "Reach",
+      "dread": "Dread",
+      "will": "Discipline",
+      "wealth": "Wealth"
+    },
+    "kinds": {
+      "tribe": {
+        "names": {
+          "reach": "Numbers",
+          "dread": "Ferocity",
+          "wealth": "Plunder"
+        }
+      },
+      "undead": {
+        "names": {
+          "wits": "Malice",
+          "reach": "Legion",
+          "will": "Hunger",
+          "wealth": "Grave Goods"
+        }
+      },
+      "schemers": {
+        "names": {
+          "reach": "Influence",
+          "dread": "Fear",
+          "will": "Patience",
+          "wealth": "Coffers"
+        }
+      },
+      "dragon": {
+        "names": {
+          "reach": "Domain",
+          "dread": "Terror",
+          "will": "Pride",
+          "wealth": "Hoard"
+        }
+      },
+      "beasts": {
+        "names": {
+          "wits": "Instinct",
+          "reach": "Range",
+          "dread": "Terror",
+          "will": "Hunger",
+          "wealth": "Spoils"
+        }
+      },
+      "rivals": {
+        "names": {
+          "reach": "Contacts",
+          "dread": "Infamy",
+          "wealth": "Purse"
+        }
+      },
+      "cult": {
+        "names": {
+          "wits": "Secrets",
+          "reach": "Flock",
+          "will": "Fervour",
+          "wealth": "Offerings"
+        }
+      }
+    },
+    "wits": {
+      "mindless": 3,
+      "crafty": 7,
+      "cunning": 12,
+      "mastermind": 16
+    },
+    "will": 0.03
+  }
+}

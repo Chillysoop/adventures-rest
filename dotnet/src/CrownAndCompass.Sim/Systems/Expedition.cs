@@ -101,6 +101,9 @@ public static class Expedition
     {
         public MonsterDef Def { get; } = def;
         public int Hp { get; set; } = def.Hp;
+
+        /// <summary>How its kind fights (<see cref="Tactics"/>).</summary>
+        public TacticDef? Tactic { get; init; }
     }
 
     private sealed record Check(Combatant Who, int Roll, int Total, string With = "")
@@ -415,12 +418,14 @@ public static class Expedition
             int n = rng.Range(e.Count[0], e.Count[1] + 1);
             // Fewer foes than drawn never empties a fight that had any.
             if (!def.Boss) n = Math.Max(Math.Min(n, 1), n + Swell);
-            for (int i = 0; i < n; i++) foes.Add(new Foe(def));
+            var tactic = Tactics.Of(_content, def);
+            for (int i = 0; i < n; i++) foes.Add(new Foe(def) { Tactic = tactic });
             if (!string.IsNullOrEmpty(e.Escort) && e.EscortCount != null)
             {
                 var ed = _content.Monster(e.Escort);
+                var et = Tactics.Of(_content, ed);
                 int en = rng.Range(e.EscortCount[0], e.EscortCount[1] + 1);
-                for (int i = 0; i < en; i++) foes.Add(new Foe(ed));
+                for (int i = 0; i < en; i++) foes.Add(new Foe(ed) { Tactic = et });
             }
             string label = n == 1 ? (def.Named ? def.Name : $"{Article(def.Name)} {def.Name}") : $"{n} {def.Plural}";
             if (def.Id != "mimic") Log($"{Cap(e.Text)}: {label}{(foes.Count > n ? $", with {foes.Count - n} more at its side" : "")}.");
@@ -430,13 +435,16 @@ public static class Expedition
             int totalXp = foes.Sum(f => f.Def.Xp);
             int round = 0;
             bool monstersFirst = surprised;
+            if (def.Boss && Goad(foes[0])) HeroesAct(foes, 0);
             while (round < 20)
             {
                 round++;
                 if (!monstersFirst) HeroesAct(foes, round);
                 monstersFirst = false;
                 if (foes.All(f => f.Hp <= 0)) break;
-                MonstersAct(foes);
+                if (Scatter(foes)) break;
+                if (def.Boss) BossMoves(foes, round);
+                MonstersAct(foes, round);
                 if (Standing.Count == 0) break;
                 if (foes.Any(f => f.Hp > 0) && BreakOff(def.Boss))
                 {
@@ -588,7 +596,7 @@ public static class Expedition
                     }
                     continue;
                 }
-                if (roll == 20 || roll + atk >= target.Def.Ac)
+                if (roll == 20 || roll + atk >= target.Def.Ac + Cover(target, round))
                 {
                     int dmg = Gear.Damage(_content, rng, c.Agent, roll == 20);
                     if (s.Cls.Sneak && Standing.Count > 1) dmg += rng.Roll((int)Math.Ceiling(s.Level / 2.0), 6);
@@ -624,11 +632,76 @@ public static class Expedition
             if (n > 0) Kills[c.Agent.Id] = Kills.Get(c.Agent.Id, 0) + n;
         }
 
-        private void MonstersAct(List<Foe> foes)
+        /// <summary>Cover a foe's kind fights from in the first rounds.</summary>
+        private static int Cover(Foe f, int round) => f.Tactic is { Cover: > 0 } t && round <= t.CoverRounds ? t.Cover : 0;
+
+        /// <summary>A pack hunter hits harder with its packmates still standing.</summary>
+        private static int Pack(Foe f, List<Foe> foes) =>
+            f.Tactic is { Pack: > 0 } t ? Math.Min(t.Pack, foes.Count(o => o != f && o.Hp > 0 && o.Tactic == t)) : 0;
+
+        /// <summary>
+        /// Foes that run when hurt break once the fight has turned: what is left of them is under the share
+        /// of their strength their kind will stand, and no boss holds them. Returns whether the field is clear.
+        /// </summary>
+        private bool Scatter(List<Foe> foes)
+        {
+            var living = foes.Where(f => f.Hp > 0).ToList();
+            if (living.Count == 0 || living.Any(f => f.Def.Boss)) return false;
+            var t = living[0].Tactic;
+            if (t is not { Flee: > 0 } || living.Any(f => f.Tactic != t)) return false;
+            var kin = foes.Where(f => f.Tactic == t).ToList();
+            double left = kin.Sum(f => Math.Max(0, f.Hp)) / (double)Math.Max(1, kin.Sum(f => f.Def.Hp));
+            if (left >= t.Flee) return false;
+            foreach (var f in living) f.Hp = 0;
+            if (t.Fled != "") Log(Cap(t.Fled.Replace("{foes}", living.Count == 1 ? living[0].Def.Name : living[0].Def.Plural)));
+            return true;
+        }
+
+        /// <summary>A proud boss can be goaded into talking by the party's best talker, and the party closes in for free.</summary>
+        private bool Goad(Foe boss)
+        {
+            if (boss.Tactic is not { Pride: > 0 } t) return false;
+            var face = Standing.OrderByDescending(c => c.Agent.Abilities.Cha).ThenBy(c => c.Agent.Id).FirstOrDefault();
+            if (face == null || face.Agent.Abilities.Cha < t.Pride) return false;
+            if (_rng.D20() + Rng.Modifier(face.Agent.Abilities.Cha) < t.Pride) return false;
+            Log(t.Goaded.Replace("{hero}", face.Agent.GivenName).Replace("{boss}", The(boss.Def)));
+            return true;
+        }
+
+        /// <summary>A boss's signature attack on the whole party in round 2, and its minions called in round 3.</summary>
+        private void BossMoves(List<Foe> foes, int round)
+        {
+            var boss = foes.FirstOrDefault(f => f.Def.Boss && f.Hp > 0);
+            if (boss?.Tactic is not { } t) return;
+            if (round == 2 && t.Signature != "")
+            {
+                var downed = new List<string>();
+                foreach (var c in Standing)
+                {
+                    int dmg = Math.Max(1, boss.Def.Dice.Roll(_rng, false));
+                    // A quick hero dodges half of it.
+                    if (_rng.D20() + Rng.Modifier(c.Agent.Abilities.Dex) >= 10 + boss.Def.Attack / 2) dmg /= 2;
+                    Hurt(c, Math.Max(1, dmg));
+                    if (c.Down) downed.Add(c.Agent.GivenName);
+                }
+                Log($"{Cap(t.Signature.Replace("{boss}", The(boss.Def)))}{(downed.Count > 0 ? $". {ListNames(downed)} {(downed.Count == 1 ? "goes" : "go")} down" : "")}.");
+            }
+            if (round == 3 && t.Minions != "")
+            {
+                var m = _content.Monster(t.Minions);
+                int n = _rng.Range(t.MinionCount[0], t.MinionCount[1] + 1);
+                var mt = Tactics.Of(_content, m);
+                for (int i = 0; i < n; i++) foes.Add(new Foe(m) { Tactic = mt });
+                if (t.Called != "") Log(Cap(t.Called.Replace("{boss}", The(boss.Def)).Replace("{n}", n.ToString())));
+            }
+        }
+
+        private void MonstersAct(List<Foe> foes, int round)
         {
             var rng = _rng;
-            foreach (var f in foes)
+            foreach (var f in foes.ToList())
             {
+                int pack = Pack(f, foes);
                 for (int k = 0; k < Math.Max(1, f.Def.Attacks); k++)
                 {
                     if (f.Hp <= 0) break;
@@ -637,7 +710,7 @@ public static class Expedition
                     var t = rng.Pick(targets);
                     int roll = rng.D20();
                     if (roll == 1) continue;
-                    if (roll == 20 || roll + f.Def.Attack >= t.Ac)
+                    if (roll == 20 || roll + f.Def.Attack + pack >= t.Ac)
                     {
                         int dmg = Math.Max(1, f.Def.Dice.Roll(rng, roll == 20));
                         Hurt(t, dmg);

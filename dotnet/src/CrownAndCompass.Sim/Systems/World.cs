@@ -510,6 +510,8 @@ public static class World
     public static void Shift(Town town, Settlement s, double delta)
     {
         if (s.Razed) return;
+        // A diplomatic people warms faster to a good turn; a closed one is slower to.
+        if (delta > 0) delta *= Character.Diplomacy(town, s);
         s.Standing = Math.Clamp(s.Standing + delta, -100, 100);
         if (s.Allied || s.Standing < town.Content.World.Standing.Ally) return;
         s.Allied = true;
@@ -521,6 +523,7 @@ public static class World
             (b.Text != "" ? $" From now on, {b.Text.Replace("{S}", s.Name)}" : "") +
             (b.Troops > 0 ? $"{(b.Text != "" ? ", and" : " They pledge")} their warriors will come if the walls are ever attacked." : "."));
         Annals.Allied(town, s);
+        Character.Allied(town, s);
         if (b.Maps) Reveal(town, town.Regions[s.RegionId], $"{Cap(s.People)} share their maps", town.Content.World.Standing.MapTrust);
     }
 
