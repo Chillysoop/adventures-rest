@@ -1,3 +1,4 @@
+using CrownAndCompass.Sim.Systems;
 using Godot;
 
 namespace CrownAndCompass.Client.Map;
@@ -102,6 +103,54 @@ public partial class WorldView : Node3D
                 BuildTrees(cx, cy);
                 BuildScatter(cx, cy);
             }
+        BuildCliffs();
+    }
+
+    /// <summary>
+    /// Rock along every plateau's cliff (the sim's <see cref="Cliffs"/>): stacked faceted columns standing in the face from its foot
+    /// to its top, and fallen stones at the foot, left open where a ramp comes down. The heightmap gives the rise; this gives it a face.
+    /// </summary>
+    private void BuildCliffs()
+    {
+        var town = Gen.Town;
+        var rules = town.Content.Passage.Cliffs;
+        var kit = new MeshKit();
+        Color[] stones = [new("8c8172"), new("a39785"), new("74695d"), new("968a77")];
+        int seed = 0;
+        foreach (var (p, b) in Cliffs.Of(town).Zip(Cliffs.Barriers(town)))
+        {
+            var loop = b.Loop;
+            float len = 0;
+            for (int i = 0; i < loop.Length; i++) len += (float)Math.Sqrt(Math.Pow(loop[(i + 1) % loop.Length].X - loop[i].X, 2) + Math.Pow(loop[(i + 1) % loop.Length].Y - loop[i].Y, 2));
+            int n = (int)(len / 0.95f);
+            for (int k = 0; k < n; k++)
+            {
+                seed++;
+                double a = k * Math.PI * 2 / n;
+                double cx = Math.Cos(a), cy = Math.Sin(a), e = p.EdgeAt(a);
+                // Open where a ramp comes down.
+                bool ramp = p.Ramps.Any(r => Math.Abs(Math.Sin(a - r)) * e < rules.RampWidth + 0.5 && Math.Cos(a - r) > 0);
+                if (ramp) continue;
+                var at = new Vector2((float)(p.X + cx * (e + 0.1)) + Geo.Margin, (float)(p.Y + cy * (e + 0.1)) + Geo.Margin);
+                var foot = new Vector2((float)(p.X + cx * (e + rules.Face)) + Geo.Margin, (float)(p.Y + cy * (e + rules.Face)) + Geo.Margin);
+                float baseY = Gen.HeightAt(foot.X, foot.Y) - 0.3f, top = Gen.HeightAt((float)(p.X + cx * (e - 1)) + Geo.Margin, (float)(p.Y + cy * (e - 1)) + Geo.Margin);
+                float high = Mathf.Max(0.6f, top - baseY), j = Geo.Hash(seed * 7 + 1);
+                var col = stones[(int)(Geo.Hash(seed * 7 + 2) * stones.Length) % stones.Length];
+                // A column in two stacked blocks, the upper set back a little, its crown just under the grass of the top.
+                float r = 0.5f + j * 0.5f;
+                kit.Blob(new Vector3(at.X, baseY + high * 0.3f, at.Y), new Vector3(r * 1.15f, high * 0.36f, r), col, 0.3f, seed, col.Darkened(0.2f));
+                var up = at - new Vector2((float)cx, (float)cy) * 0.22f;
+                kit.Blob(new Vector3(up.X, baseY + high * 0.68f, up.Y), new Vector3(r * 0.95f, high * 0.26f, r * 0.85f), col.Lightened(0.08f), 0.3f, seed + 1, col.Darkened(0.15f));
+                if (Geo.Hash(seed * 7 + 3) < 0.45f)
+                {
+                    var fall = foot + new Vector2((float)cx, (float)cy) * (0.3f + Geo.Hash(seed * 7 + 4) * 0.8f) + new Vector2((float)-cy, (float)cx) * (Geo.Hash(seed * 7 + 5) - 0.5f);
+                    float s = 0.18f + Geo.Hash(seed * 7 + 6) * 0.25f;
+                    kit.Blob(new Vector3(fall.X, Gen.HeightAt(fall.X, fall.Y) + s * 0.5f, fall.Y), new Vector3(s, s * 0.8f, s), col.Darkened(0.05f), 0.4f, seed + 2);
+                }
+            }
+        }
+        if (kit.Triangles == 0) return;
+        AddChild(new MeshInstance3D { Mesh = kit.Build(), MaterialOverride = Mats.Props });
     }
 
     private void BuildTextures()

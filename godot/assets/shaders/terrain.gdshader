@@ -103,6 +103,8 @@ void fragment() {
 	float h = wpos.y;
 	float slope = 1.0 - normalize(wnrm).y;
 	vec3 rock = mix(vec3(0.50, 0.47, 0.42), vec3(0.62, 0.58, 0.52), nz2.r) * (0.9 + 0.15 * nz3.g);
+	// Painted: cliff faces in warm strata, darker toward their foot.
+	rock = mix(rock, rock * vec3(1.04, 0.98, 0.9) * (0.86 + 0.18 * step(0.5, fract(h * 1.1 + nz2.r * 0.6))) * mix(0.8, 1.05, fract(h)), toon);
 	col = mix(col, rock, smoothstep(0.22, 0.42, slope + (nz2.g - 0.5) * 0.15));
 	col = mix(col, vec3(0.93, 0.94, 0.96), smoothstep(27.0, 33.0, h + (nz2.b - 0.5) * 6.0) * smoothstep(0.5, 0.3, slope));
 	col = mix(col, vec3(0.80, 0.73, 0.55), smoothstep(0.9, 0.25, h) * (1.0 - smoothstep(-0.3, -0.9, h)));

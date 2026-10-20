@@ -62,6 +62,9 @@ public sealed class WorldGen
 
     /// <summary>The sim's hard country (<see cref="Roads"/>), raised out of the ground here so the roads bend round what you see.</summary>
     private readonly Feature[] _features;
+    private readonly Town _town;
+
+    public Town Town => _town;
 
     public WorldGen(int seed, Geo geo, Town town, float treeScale = 1)
     {
@@ -69,6 +72,7 @@ public sealed class WorldGen
         _n1 = new Noise(seed * 31 + 7);
         _n2 = new Noise(seed * 57 + 11);
         _n3 = new Noise(seed * 91 + 23);
+        _town = town;
         _features = town.Terrain.ToArray();
         River = Passage.River(town).Select(Geo.FromDays).ToArray();
         TraceRiver();
@@ -325,6 +329,8 @@ public sealed class WorldGen
                 float town = TownHeight + (float)Sim.Systems.Hills.Height(townSeed, x - Geo.Margin, y - Geo.Margin);
                 h = Mathf.Lerp(town, Mathf.Max(h, d < Geo.Clearing + 30 ? 1.2f : h), flat);
                 h = FeatureHeight(p, h);
+                // Plateaus and their cliffs in the near wilds (the sim's Cliffs: walkers go round them or up the ramps).
+                h += (float)Sim.Systems.Cliffs.Height(_town, x - Geo.Margin, y - Geo.Margin);
                 float dr = _riverDist[y * (N + 1) + x];
                 // Shallow at the fords, stones showing through; deep in the channel everywhere else.
                 if (dr < 6) h = Mathf.Min(h, Mathf.Lerp(Mathf.Lerp(-1.1f, -0.12f, FordAt(p)), h, Mathf.SmoothStep(0.6f, 5.5f, dr)));

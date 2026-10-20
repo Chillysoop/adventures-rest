@@ -28,11 +28,18 @@ public static class Models
     private static Dictionary<string, Model> Load()
     {
         var all = new Dictionary<string, Model>();
-        using var f = Godot.FileAccess.Open("res://assets/models/kenney.bin", Godot.FileAccess.ModeFlags.Read);
-        if (f == null) return all;
+        // Kenney's kits, then our own models made in Blender (tools/blender_houses.py), in the same layout.
+        foreach (var file in new[] { "res://assets/models/kenney.bin", "res://assets/models/crafted.bin" }) Read(file, all);
+        return all;
+    }
+
+    private static void Read(string file, Dictionary<string, Model> all)
+    {
+        using var f = Godot.FileAccess.Open(file, Godot.FileAccess.ModeFlags.Read);
+        if (f == null) return;
         var bytes = f.GetBuffer((long)f.GetLength());
         using var r = new BinaryReader(new MemoryStream(bytes));
-        if (new string(r.ReadChars(4)) != "KNY1") return all;
+        if (new string(r.ReadChars(4)) != "KNY1") return;
         int count = (int)r.ReadUInt32();
         for (int i = 0; i < count; i++)
         {
@@ -48,6 +55,5 @@ public static class Models
             }
             all[name] = new Model(verts, colors);
         }
-        return all;
     }
 }

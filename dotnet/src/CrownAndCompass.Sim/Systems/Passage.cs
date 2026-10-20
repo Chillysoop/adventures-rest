@@ -141,6 +141,7 @@ public sealed record PassageRules
     public WallPassRules Walls { get; init; } = new();
     public FleeRules Flee { get; init; } = new();
     public RiverRules River { get; init; } = new();
+    public CliffRules Cliffs { get; init; } = new();
     public IReadOnlyList<CrossSpellDef> Spells { get; init; } = [];
     public IReadOnlyList<CrossItemDef> Items { get; init; } = [];
     public IReadOnlyList<MountDef> Mounts { get; init; } = [];
@@ -194,6 +195,8 @@ public static class Passage
     {
         public string Key = "";
         public List<Barrier> Barriers = [];
+        public List<Barrier>? Obstacles;
+        public string? ObstaclesKey;
         public bool[]? Mask;
         public List<(double X, double Y)>? River;
         public List<Crossing>? Crossings;
@@ -228,6 +231,21 @@ public static class Passage
             c.Barriers.Add(Ring(town, 0, stone ? "stone" : "palisade", stone && d.Moat == PalisadeState.Built ? w.Moat : w.Wall));
         if (d.CityWall == PalisadeState.Built) c.Barriers.Add(Ring(town, 1, "city", w.Wall));
         return c.Barriers;
+    }
+
+    /// <summary>Everything a walker must go round or through by its openings: the town's barriers, then the cliffs (<see cref="Cliffs"/>).</summary>
+    public static IReadOnlyList<Barrier> Obstacles(Town town)
+    {
+        var walls = Barriers(town);
+        var cliffs = Cliffs.Barriers(town);
+        if (cliffs.Count == 0) return walls;
+        var c = Store(town);
+        if (c.ObstaclesKey != c.Key || c.Obstacles == null)
+        {
+            c.Obstacles = [.. walls, .. cliffs];
+            c.ObstaclesKey = c.Key;
+        }
+        return c.Obstacles;
     }
 
     /// <summary>A wall round a ring, along the line its stones follow (<see cref="City.Wall"/>), its gate on the south road.</summary>
@@ -268,7 +286,7 @@ public static class Passage
     }
 
     /// <summary>A closed loop moved out by <paramref name="d"/> tiles, every edge parallel to its own (mitred corners).</summary>
-    private static (double X, double Y)[] Offset((double X, double Y)[] loop, double d)
+    public static (double X, double Y)[] Offset((double X, double Y)[] loop, double d)
     {
         int n = loop.Length;
         double area = 0;
@@ -296,7 +314,7 @@ public static class Passage
     /// <summary>A target on a wall or in its moat (a doorstep facing it), moved just clear of it, on its own side.</summary>
     public static (double X, double Y) Clear(Town town, (double X, double Y) p)
     {
-        foreach (var b in Barriers(town))
+        foreach (var b in Obstacles(town))
         {
             if (!OnBarrier(b, p) || b.Openings.Any(o => SegDist(p, o.In, o.Out) < 0.35)) continue;
             bool inside = Inside(b.Loop, p.X, p.Y);
@@ -390,7 +408,7 @@ public static class Passage
     /// </summary>
     public static (double X, double Y) Next(Town town, (double X, double Y) from, (double X, double Y) to, bool desperate = false)
     {
-        var all = Barriers(town);
+        var all = Obstacles(town);
         if (desperate || all.Count == 0) return to;
         to = Clear(town, to);
         // A doorstep on the bridge or in the gateway itself: reach that opening's end on this side, then walk along it.
@@ -490,7 +508,10 @@ public static class Passage
             pick = v;
         }
         // Pushed a hair outward, so the next look from there sees past the corner.
-        double dx = pick.X - Town.Center, dy = pick.Y - Town.Center, len = Math.Sqrt(dx * dx + dy * dy);
+        // Away from the loop's middle: the town's for its walls, the plateau's own for a cliff.
+        double mx = Town.Center, my = Town.Center;
+        if (b.Kind == "cliff") (mx, my) = (b.Loop.Average(v => v.X), b.Loop.Average(v => v.Y));
+        double dx = pick.X - mx, dy = pick.Y - my, len = Math.Sqrt(dx * dx + dy * dy);
         return len < 1e-9 ? pick : (pick.X + dx / len * 0.05, pick.Y + dy / len * 0.05);
     }
 
@@ -711,9 +732,47 @@ public static class Passage
         return outp;
     }
 
-    /// <summary>The way from one spot of the wilds to another for someone who can't swim the river: by its crossings.</summary>
-    public static List<(double X, double Y)> Road(Town town, (double X, double Y) from, (double X, double Y) to) =>
-        [from, .. Ford(town, from, [new Waypoint { X = to.X, Y = to.Y }]).Select(w => (w.X, w.Y))];
+    /// <summary>The way from one spot of the wilds to another for someone who can't swim the river or climb: by its crossings, round the cliffs.</summary>
+    public static List<(double X, double Y)> Road(Town town, (double X, double Y) from, (double X, double Y) to)
+    {
+        var way = new List<(double X, double Y)> { from };
+        foreach (var w in Ford(town, from, [new Waypoint { X = to.X, Y = to.Y }]))
+        {
+            way.AddRange(RoundCliffs(town, way[^1], (w.X, w.Y)));
+            way.Add((w.X, w.Y));
+        }
+        return way;
+    }
+
+    /// <summary>A spot in day units in tiles from the town's corner: the inverse of <see cref="ToDays"/>.</summary>
+    public static (double X, double Y) FromDays(double x, double y)
+    {
+        double r = Math.Sqrt(x * x + y * y);
+        if (r < 1e-9) return (Town.Center, Town.Center);
+        double t = DayRadius(r);
+        return (Town.Center + x / r * t, Town.Center + y / r * t);
+    }
+
+    /// <summary>
+    /// The corners, in day units, of the way round any plateau (<see cref="Cliffs"/>) standing across the straight way from a to b,
+    /// for those who can't climb; empty when nothing is in the way. A road goes round a plateau, not up and over it.
+    /// </summary>
+    public static List<(double X, double Y)> RoundCliffs(Town town, (double X, double Y) a, (double X, double Y) b)
+    {
+        var corners = new List<(double X, double Y)>();
+        var cliffs = Cliffs.Barriers(town);
+        if (cliffs.Count == 0) return corners;
+        var cur = FromDays(a.X, a.Y);
+        var end = FromDays(b.X, b.Y);
+        for (int guard = 0; guard < 24; guard++)
+        {
+            var next = Skirt(cliffs, cur, end);
+            if (Dist(next, end) < 1e-9 || Dist(next, cur) < 1e-9) break;
+            corners.Add(ToDays(next.X, next.Y));
+            cur = next;
+        }
+        return corners;
+    }
 
     private static string? Line(Town town, string key) =>
         Rules(town).Texts.TryGetValue(key, out var lines) && lines.Count > 0 ? lines[(int)(Hash(town.Seed, town.Tick) * lines.Count) % lines.Count] : null;
