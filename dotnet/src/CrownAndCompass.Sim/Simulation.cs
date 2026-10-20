@@ -110,6 +110,8 @@ public sealed class Simulation
         Merchants.Daily(t);
         City.Daily(t, Options.AutoMayor && Options.AutoPlanning);
         GrandWorks.Daily(t, Options.AutoMayor && Options.AutoPlanning);
+        Monuments.Daily(t);
+        if (Options.AutoMayor && Options.AutoPlanning) Construction.Daily(t);
         Streets.Wear(t);
         Property.Daily(t);
         Population.DailyDepartures(t);
@@ -298,8 +300,6 @@ public sealed class Simulation
     /// <summary>Claim the next charter (hamlet, village, town...) once the town has earned it.</summary>
     public bool RaiseCharter() => City.RaiseCharter(Town);
 
-    /// <summary>Survey a ward and lay out its streets, opening its ground to zoning.</summary>
-
     /// <summary>
     /// Paint a brush stroke of a zone over open ground in open wards (Zone.None clears it): dabs in tiles from the town's corner.
     /// Homes and shops take a density (0 low, 1 medium, 2 high, as the charter allows), and land of the zone already built on takes it too. Returns cells changed.
@@ -309,6 +309,27 @@ public sealed class Simulation
 
     /// <summary>Place a government building, charter house or town-owned business at a point and heading (null faces the nearest lane), paid from the treasury.</summary>
     public Building? Place(string buildingId, double x, double y, double? yaw = null) => Planning.Place(Town, buildingId, x, y, yaw);
+
+    /// <summary>Add a part to a monument (temple, keep, town hall): a nave, a bell tower, a curtain wall.</summary>
+    public Building? AddPart(int monumentId, string partId) => Monuments.Add(Town, Town.Building(monumentId), partId);
+
+    /// <summary>Add every part a monument can take now, as far as the gold goes. Returns how many were begun.</summary>
+    public int AddAllParts(int monumentId) => Monuments.AddAll(Town, Town.Building(monumentId));
+
+    /// <summary>Whether the council grows a monument a part at a time on its own, from gold it can spare.</summary>
+    public bool GrowMonument(int monumentId, bool grow)
+    {
+        var b = Town.Building(monumentId);
+        if (!Monuments.IsMonument(Town, b.Def)) return false;
+        b.Grow = grow;
+        return true;
+    }
+
+    /// <summary>Put a building site ahead of the others for builders and materials, or back in line.</summary>
+    public bool PrioritiseSite(int buildingId, bool first) => Construction.Prioritise(Town, Town.Building(buildingId), first);
+
+    /// <summary>Send a caravan for the timber and stone a stalled site is waiting on, at the import premium.</summary>
+    public bool SendCaravan(int buildingId) => Construction.SendCaravan(Town, Town.Building(buildingId));
 
     /// <summary>Knight a hero of renown: Ser, a stipend and an oath to the town.</summary>
     public bool Knight(int heroId) => Loyalty.Knight(Town, Town.Agent(heroId));

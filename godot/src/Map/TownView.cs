@@ -226,6 +226,7 @@ public partial class TownView(MapView map) : Node3D
             case "temple": Temple(kit, v); break;
             case "general_store": Store(kit, v); break;
             case "granary": Granary(kit, v); break;
+            case "builders_yard": BuildersYard(kit, v); break;
             case "watch_house": WatchHouse(kit, v); break;
             case "timber_house": TimberHouse(kit, v); break;
             case "townhouse": Townhouse(kit, v); break;
@@ -293,6 +294,23 @@ public partial class TownView(MapView map) : Node3D
             case "planar_gate": PlanarGate(kit, v); break;
             case "hall_of_heroes": HallOfHeroes(kit, v); break;
             case "dragon_eyrie": DragonEyrie(kit, v); break;
+            case "temple_nave": TempleNave(kit, v); break;
+            case "temple_bell_tower": TempleBellTower(kit); break;
+            case "temple_almshouse": Almshouse(kit, v); break;
+            case "temple_crypt": Crypt(kit); break;
+            case "temple_cloister": Cloister(kit); break;
+            case "temple_spire": Spire(kit, Slate); break;
+            case "keep_curtain_wall": CurtainWall(kit); break;
+            case "keep_chapel": CastleChapel(kit, v); break;
+            case "keep_gatehouse": CastleGatehouse(kit); break;
+            case "keep_great_hall": GreatHall(kit, v); break;
+            case "keep_barracks_wing": Barracks(kit, v); break;
+            case "keep_high_tower": HighTower(kit); break;
+            case "hall_bell_tower": HallBellTower(kit); break;
+            case "hall_council_chamber": Courthouse(kit, v); break;
+            case "hall_counting_house": Guildhall(kit, v); break;
+            case "hall_archive": Library(kit, v); break;
+            case "hall_banner_court": BannerCourt(kit, v); break;
             default: House(kit, v); break;
         }
     }
@@ -415,6 +433,29 @@ public partial class TownView(MapView map) : Node3D
         k.Pop();
         k.Pop();
         k.Add("town/cart", MeshKit.At(0.4f, 0, 0.44f, 0.3f, 0.45f));
+    }
+
+    private static void BuildersYard(MeshKit k, int v)
+    {
+        // An open-fronted workshop, a stack of sawn timber, dressed stone and a hoisting frame.
+        k.Box(new Vector3(0, 0, 0), new Vector3(0.96f, 0.03f, 0.96f), new Color("7d6a50"), new Color("948063"));
+        k.Push(MeshKit.At(-0.22f, 0.03f, -0.22f, 0, Fit(2, 1, 0.5f)));
+        Walls(k, 2, 1, 0, false, v + 97, true);
+        k.Push(MeshKit.At(0, 1, 0));
+        k.Gable(0, 2, 1, 0.6f, new Color("7a5232"), Palette.Plaster, 0.1f);
+        k.Pop();
+        k.Pop();
+        k.Add("nature/log_stackLarge", MeshKit.At(0.3f, 0.03f, -0.25f, 0.1f, 0.7f));
+        for (int i = 0; i < 3; i++)
+            k.Box(new Vector3(-0.3f + i * 0.16f, 0.03f, 0.28f), new Vector3(0.07f, 0.07f, 0.07f), Palette.Stone);
+        k.Box(new Vector3(-0.22f, 0.1f, 0.28f), new Vector3(0.07f, 0.07f, 0.07f), Palette.Stone);
+        // The hoist: two posts and a beam with a hanging block.
+        var wood = new Color("6a4a2e");
+        k.Box(new Vector3(0.22f, 0.03f, 0.3f), new Vector3(0.025f, 0.42f, 0.025f), wood);
+        k.Box(new Vector3(0.42f, 0.03f, 0.3f), new Vector3(0.025f, 0.42f, 0.025f), wood);
+        k.Box(new Vector3(0.32f, 0.44f, 0.3f), new Vector3(0.23f, 0.02f, 0.03f), wood);
+        k.Box(new Vector3(0.32f, 0.22f, 0.3f), new Vector3(0.05f, 0.05f, 0.05f), Palette.Stone);
+        k.Add("town/cart", MeshKit.At(0.05f, 0.03f, 0.05f, 0.8f, 0.25f));
     }
 
     private static void WatchHouse(MeshKit k, int v)

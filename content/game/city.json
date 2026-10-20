@@ -63,13 +63,14 @@
   "rings": ["thorp", "village", "town"],
   "founding": 4,
   "fit": 0.2,
+  "nearReach": 8,
   "housing": [
     { "id": "house", "next": "timber_house", "tax": 0.2 },
-    { "id": "timber_house", "next": "townhouse", "tax": 0.35, "goods": { "Cloth": 0.05 }, "services": ["tavern", "shrine"] },
-    { "id": "townhouse", "next": "manor", "dense": "tall_house", "tax": 0.6, "goods": { "Cloth": 0.05, "Furniture": 0.03, "Potions": 0.02 }, "services": ["tavern", "shrine", "market", "bath"] },
-    { "id": "manor", "tax": 1.5, "goods": { "Cloth": 0.06, "Furniture": 0.04, "Potions": 0.02, "Wine": 0.06, "Books": 0.02 }, "services": ["tavern", "shrine", "market", "bath", "theatre", "learning"] },
+    { "id": "timber_house", "next": "townhouse", "tax": 0.35, "goods": { "Cloth": 0.05 }, "services": ["tavern", "shrine"], "near": ["tavern"], "foods": 1 },
+    { "id": "townhouse", "next": "manor", "dense": "tall_house", "tax": 0.6, "goods": { "Cloth": 0.05, "Furniture": 0.03, "Potions": 0.02 }, "services": ["tavern", "shrine", "market", "bath"], "near": ["tavern", "shrine"], "foods": 2 },
+    { "id": "manor", "tax": 1.5, "goods": { "Cloth": 0.06, "Furniture": 0.04, "Potions": 0.02, "Wine": 0.06, "Books": 0.02 }, "services": ["tavern", "shrine", "market", "bath", "theatre", "learning"], "near": ["shrine", "market"], "foods": 3, "beauty": 0.01 },
     { "id": "tenement", "tax": 0.15 },
-    { "id": "tall_house", "tax": 0.45, "goods": { "Cloth": 0.05, "Furniture": 0.02 }, "services": ["tavern", "shrine", "market"] }
+    { "id": "tall_house", "tax": 0.45, "goods": { "Cloth": 0.05, "Furniture": 0.02 }, "services": ["tavern", "shrine", "market"], "near": ["tavern", "shrine"], "foods": 2 }
   ],
   "densities": [
     { "id": "low", "name": "Low", "tier": "thorp", "lane": 1, "land": 1.0, "mood": 0,

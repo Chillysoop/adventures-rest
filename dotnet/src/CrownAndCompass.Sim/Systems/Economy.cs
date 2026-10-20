@@ -17,9 +17,13 @@ public static class Economy
             // The last few hours of a site get finished on credit if its budget has run dry.
             if (workHours && b.IsSite && b.Workers.Count == 0 && (b.LaborBudget >= Brain.ConstructionWage || Construction.HoursLeft(town, b) <= 4))
             {
-                if (Construction.Short(town, b)) Construction.Haul(town, b);
-                else b.Raise(town, Seasons.Build(town) * Decrees.Build(town) * Institutions.Build(town));
-                b.LaborBudget = Math.Max(0, b.LaborBudget - Brain.ConstructionWage);
+                // A site put first takes on two hired hands.
+                for (int hand = b.Priority ? 2 : 1; hand > 0 && b.IsSite; hand--)
+                {
+                    if (Construction.Short(town, b)) Construction.Haul(town, b);
+                    else b.Raise(town, Seasons.Build(town) * Decrees.Build(town) * Institutions.Build(town));
+                    b.LaborBudget = Math.Max(0, b.LaborBudget - Brain.ConstructionWage);
+                }
                 continue;
             }
             if (!b.Complete || b.Closed || b.ForSale || b.Def.Produces.Count == 0) continue;
@@ -151,7 +155,7 @@ public static class Economy
                 .OrderByDescending(b => b.Def.Wage)
                 .ThenBy(b => b.Id)
                 .FirstOrDefault()
-                ?? town.Buildings.FirstOrDefault(b => b.IsSite && b.Workers.Count < 3 && b.LaborBudget >= Brain.ConstructionWage);
+                ?? Construction.Sites(town).FirstOrDefault(b => b.Workers.Count < 3 && b.LaborBudget >= Brain.ConstructionWage);
             if (job == null) break;
             Population.Remove(hall.Workers, id);
             town.Agent(id).JobId = job.Id;
@@ -409,8 +413,8 @@ public static class Economy
                 .ThenByDescending(b => b.Def.Wage)
                 .ThenBy(b => b.Id)
                 .FirstOrDefault();
-            job ??= town.Buildings.FirstOrDefault(
-                b => b.IsSite && b.Workers.Count < 3 && (b.LaborBudget >= Brain.ConstructionWage || b.OwnerId == a.Id));
+            job ??= Construction.Sites(town).FirstOrDefault(
+                b => b.Workers.Count < 3 && (b.LaborBudget >= Brain.ConstructionWage || b.OwnerId == a.Id));
             // The road crews take whoever is left.
             job ??= town.Buildings.FirstOrDefault(b => b.Crew > 0 && b.OpenJobs > 0);
             if (job == null) continue;
