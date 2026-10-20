@@ -145,8 +145,10 @@ public partial class Main
         var pill = new PanelContainer { MouseFilter = MouseFilterEnum.Ignore, SizeFlagsHorizontal = SizeFlags.ShrinkCenter };
         pill.AddThemeStyleboxOverride("panel", Ui.Flat(new Color(0.08f, 0.06f, 0.04f, 0.8f), 12, 4, 99));
         pill.AddChild(_pausedPill);
-        // Under the alert strip, centred.
-        BuildAlerts().AddChild(pill);
+        // Under the alert strip, centred, with the siege banner below it.
+        var col = BuildAlerts();
+        col.AddChild(pill);
+        BuildSiegeBanner(col);
     }
 
     // ---------- Management windows ----------

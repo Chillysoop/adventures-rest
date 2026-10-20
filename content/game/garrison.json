@@ -46,10 +46,10 @@
     "tier": "town"
   },
   "battle": {
+    "dawn": 6,
     "hours": 6,
-    "march": 0.12,
-    "waves": 0.58,
-    "sally": 0.2,
+    "waves": 0.62,
+    "sally": 0.24,
     "keep": 4
   }
 }

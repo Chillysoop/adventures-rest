@@ -34,6 +34,10 @@ public partial class MapView : Control
 
     /// <summary>Fraction of the current hour already elapsed, for smooth marching between steps.</summary>
     public float HourFraction { get; set; }
+
+    /// <summary>Torches and burning roofs while a siege plays out (0 to 1), which lift the dark a little (<see cref="Crowd"/>).</summary>
+    public float Firelight { get; set; }
+    private float _fire;
     /// <summary>Game hours per real second (0 while paused); sets how briskly figures walk.</summary>
     public float TimeScale { get; set; } = 1;
 
@@ -204,6 +208,13 @@ public partial class MapView : Control
 
     public void Rotate(int dir) => _goalYaw += dir * Mathf.Pi / 2;
 
+    /// <summary>Turn the camera by quarter turns until it stands nearest the given side of what it looks at.</summary>
+    public void Face(Vector2 side)
+    {
+        float want = Mathf.Round(Mathf.Atan2(side.X, side.Y) / (Mathf.Pi / 2)) * (Mathf.Pi / 2);
+        _goalYaw += Mathf.Wrap(want - _goalYaw, -Mathf.Pi, Mathf.Pi);
+    }
+
     /// <summary>Fly the camera to a world point, as the Ledger's links and the minimap do.</summary>
     /// <summary>Pull the camera back (factor above 1) or in, and turn it by yaw radians, keeping its target.</summary>
     public void Drift(float factor, float yaw)
@@ -319,7 +330,8 @@ public partial class MapView : Control
 
     private void UpdateLight(Town town)
     {
-        float night = Geo.Nightness(town, HourFraction);
+        _fire += (Firelight - _fire) * 0.05f;
+        float night = Geo.Nightness(town, HourFraction) * (1 - 0.6f * _fire);
         float dusk = Mathf.Clamp(1 - Mathf.Abs(night - 0.45f) * 2.5f, 0, 1);
         Mats.SetAll("night", night);
         float hour = (town.Tick % SimTime.HoursPerDay) + HourFraction;
@@ -332,7 +344,7 @@ public partial class MapView : Control
         var moon = new Color("8fa8e8");
         _sun.LightColor = day.Lerp(evening, dusk).Lerp(moon, night);
         _sun.LightEnergy = Mathf.Lerp(1.45f, 0.32f, night);
-        _env.AmbientLightColor = new Color("a4b4c6").Lerp(new Color("4a5a88"), night);
+        _env.AmbientLightColor = new Color("a4b4c6").Lerp(new Color("4a5a88"), night).Lerp(new Color("c08060"), _fire * night * 0.5f);
         _env.AmbientLightEnergy = Mathf.Lerp(0.48f, 0.4f, night);
         var haze = new Color("c4cfd2").Lerp(new Color("e2b896"), dusk * 0.6f).Lerp(new Color("1c2236"), night);
         _env.BackgroundColor = haze;

@@ -3,13 +3,18 @@ namespace CrownAndCompass.Sim.Systems;
 /// <summary>How a siege is played back on the map after it is fought (garrison.json <c>battle</c>).</summary>
 public sealed record BattleRules
 {
-    /// <summary>In-game hours the map takes to play a siege back, from the hour it was fought.</summary>
+    /// <summary>
+    /// The hour the assault goes in. A host reaches the walls in the night (when the siege is settled) and camps before them
+    /// until then, so the map plays the fight by daylight.
+    /// </summary>
+    public int Dawn { get; init; } = 6;
+
+    /// <summary>In-game hours the assault takes to play back, from dawn.</summary>
     public double Hours { get; init; } = 6;
 
-    /// <summary>Shares of the playback: the host marching up to the walls, its waves, then the champions' sally; the rest is the ending.</summary>
-    public double March { get; init; } = 0.12;
-    public double Waves { get; init; } = 0.58;
-    public double Sally { get; init; } = 0.2;
+    /// <summary>Shares of the assault: its waves, then the champions' sally; the rest is the ending.</summary>
+    public double Waves { get; init; } = 0.62;
+    public double Sally { get; init; } = 0.24;
 
     /// <summary>Sieges kept for the map to play back, newest last.</summary>
     public int Keep { get; init; } = 4;
@@ -121,6 +126,13 @@ public static class Battles
     public static void Wave(Battle b, int section, double size, bool breached) =>
         b.Waves.Add(new BattleWave { Section = section, Size = (int)Js.Round(size), Breached = breached });
 
+    /// <summary>When the assault goes in: the next dawn after the host reaches the walls (or at once, if it came by day).</summary>
+    public static int Assault(Town town, Battle b)
+    {
+        int hour = SimTime.HourOf(b.Tick);
+        return hour < Rules(town).Dawn ? b.Tick - hour + Rules(town).Dawn : b.Tick;
+    }
+
     /// <summary>The siege being played back at a moment (a tick with the hour's fraction), the newest if two overlap.</summary>
     public static Battle? Playing(Town town, double at)
     {
@@ -128,18 +140,21 @@ public static class Battles
         for (int i = town.Battles.Count - 1; i >= 0; i--)
         {
             var b = town.Battles[i];
-            if (at >= b.Tick && at < b.Tick + hours) return b;
+            if (at >= b.Tick && at < Assault(town, b) + hours) return b;
         }
         return null;
     }
 
-    /// <summary>Where a siege's playback is at a moment: its phase, the wave (0-based) while the waves come on, and how far through that stretch.</summary>
+    /// <summary>
+    /// Where a siege's playback is at a moment: its phase (the host coming up and camping until dawn, its waves, the sally,
+    /// the end), the wave (0-based) while the waves come on, and how far through that stretch.
+    /// </summary>
     public static (BattlePhase Phase, int Wave, double U) At(Town town, Battle b, double at)
     {
         var r = Rules(town);
-        double f = Math.Clamp((at - b.Tick) / r.Hours, 0, 1);
-        if (f < r.March) return (BattlePhase.March, 0, f / r.March);
-        f -= r.March;
+        int dawn = Assault(town, b);
+        if (at < dawn) return (BattlePhase.March, 0, Math.Clamp((at - b.Tick) / Math.Max(1, dawn - b.Tick), 0, 1));
+        double f = Math.Clamp((at - dawn) / r.Hours, 0, 1);
         if (f < r.Waves && b.Waves.Count > 0)
         {
             double each = r.Waves / b.Waves.Count;
@@ -149,7 +164,7 @@ public static class Battles
         f -= r.Waves;
         if (f < r.Sally) return (BattlePhase.Sally, Math.Max(0, b.Waves.Count - 1), f / r.Sally);
         f -= r.Sally;
-        return (BattlePhase.End, Math.Max(0, b.Waves.Count - 1), Math.Clamp(f / Math.Max(1e-6, 1 - r.March - r.Waves - r.Sally), 0, 1));
+        return (BattlePhase.End, Math.Max(0, b.Waves.Count - 1), Math.Clamp(f / Math.Max(1e-6, 1 - r.Waves - r.Sally), 0, 1));
     }
 
     /// <summary>What the map's banner says while a siege plays back: "Siege at the north wall · wave 2 of 3".</summary>
@@ -159,7 +174,7 @@ public static class Battles
         string where = Garrison.Place(town, b.Approach);
         return phase switch
         {
-            BattlePhase.March => $"{Saga.Cap(b.Name)} comes at the {where}",
+            BattlePhase.March => $"{Saga.Cap(b.Name)} camps before the {where} · the assault comes at dawn",
             BattlePhase.Waves => $"Siege at the {Garrison.Place(town, b.Waves[wave].Section)} · wave {wave + 1} of {b.Waves.Count}",
             BattlePhase.Sally when b.Lost => $"The walls are breached · {b.Leader} is in the streets",
             BattlePhase.Sally when b.Champions.Count > 0 => $"The heroes sally out to meet {b.Leader}",

@@ -44,16 +44,20 @@ public class BattlesTests
         var t = sim.Town;
         var b = t.Battles[^1];
         double hours = t.Content.Garrison.Battle.Hours;
+        // Fought at midnight, the host camps till dawn and the assault plays by daylight.
+        int dawn = Battles.Assault(t, b);
+        Assert.Equal(t.Content.Garrison.Battle.Dawn, SimTime.HourOf(dawn));
         Assert.Same(b, Battles.Playing(t, b.Tick + 0.5));
-        Assert.Null(Battles.Playing(t, b.Tick + hours + 0.1));
+        Assert.Same(b, Battles.Playing(t, dawn + hours - 0.1));
+        Assert.Null(Battles.Playing(t, dawn + hours + 0.1));
         Assert.Null(Battles.Playing(t, b.Tick - 0.5));
-        var phases = Enumerable.Range(0, 60).Select(i => Battles.At(t, b, b.Tick + hours * i / 60.0).Phase).ToList();
-        Assert.Equal([BattlePhase.March, BattlePhase.Waves, BattlePhase.Sally, BattlePhase.End], phases.Distinct());
+        Assert.Equal(BattlePhase.March, Battles.At(t, b, dawn - 0.5).Phase);
+        var phases = Enumerable.Range(0, 60).Select(i => Battles.At(t, b, dawn + hours * i / 60.0).Phase).ToList();
+        Assert.Equal([BattlePhase.Waves, BattlePhase.Sally, BattlePhase.End], phases.Distinct());
         // Every wave gets its turn, in order.
-        var waves = Enumerable.Range(0, 60).Select(i => Battles.At(t, b, b.Tick + hours * i / 60.0)).Where(p => p.Phase == BattlePhase.Waves).Select(p => p.Wave).Distinct().ToList();
+        var waves = Enumerable.Range(0, 60).Select(i => Battles.At(t, b, dawn + hours * i / 60.0)).Where(p => p.Phase == BattlePhase.Waves).Select(p => p.Wave).Distinct().ToList();
         Assert.Equal(Enumerable.Range(0, b.Waves.Count), waves);
-        string head = Battles.Headline(t, b, b.Tick + hours * (t.Content.Garrison.Battle.March + 0.01));
-        Assert.Contains("wave 1 of", head);
+        Assert.Contains("wave 1 of", Battles.Headline(t, b, dawn + 0.1));
     }
 
     [Fact]

@@ -217,6 +217,7 @@
       "until": "call",
       "teaches": ["command:CallToArms"]
     },
+    {"id": "siege-watch", "title": "Watch the siege", "text": "A host at the walls camps before them through the night and storms them at dawn. The banner under the alert strip follows the fight wave by wave: click it to see the stretch of wall under attack, the ram at the gate and the archers on the walls. Where a wave breaks through, roofs by the breach catch fire. If the walls hold, the heroes at home sally out to meet the enemy leader. What wins it is what you did before the host came: walls and towers, the watch called to the side it attacks, heroes kept home.", "point": "siege", "when": "count:Battles", "teaches": []},
     {
       "id": "quick-orders",
       "title": "Quick orders",
