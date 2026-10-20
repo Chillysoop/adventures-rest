@@ -69,6 +69,10 @@
   the market's stock as hauled and stall when it's out (`Construction.Stalled`, the `stalled` alert, `SendCaravan`);
   `Building.Priority` sends builders and materials to a site first. Client: `Map/MonumentMeshes.cs`, the card in `Panels.cs`
   (`--at temple --card` shows it).
+- Paving (`Systems/Paving.cs`, city.json `paving`): no player-laid paving. From the `tier` charter the masons cobble streets
+  on their own, nearest the centre first, `perDay` tiles from the market's stone stock (never imported) and the treasury above
+  `reserve` (`Street.Cobbled`, `FromEnd`). Houses near cobbles gain `comfort`; the client draws them from the ground texture's blue
+  channel.
 - Wards (city.json `wards`, `unsettled`, `rings`): never laid out by hand. The charter opens rings (`City.RingOpen`); a quarter
   (ring + side) with `founding` finished buildings becomes the ring's ward its buildings draw most (`WardDef.Draws`, `City.Form`,
   `CityState.Sectors`). The map outlines a ward round its own buildings. `City.Migrate` maps old saves' wards to their quarters.
