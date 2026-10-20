@@ -76,6 +76,8 @@ public sealed class Options
     public string? Crowded;
     /// <summary>Aim the camera at the building going up with the most hands on it (<c>--rising</c>), for a shot of the builders.</summary>
     public bool Rising;
+    /// <summary>With <c>--at</c>: open that building's inspector (<c>--card</c>), for a shot of a monument's parts.</summary>
+    public bool Card;
     /// <summary>For screenshots: click the alert at this position in the strip (0 is the first) once it shows.</summary>
     public int? Alert;
     /// <summary>For screenshots: show the hover summary of the alert icon at this position.</summary>
@@ -165,6 +167,7 @@ public sealed class Options
                 case "--house": o.House = true; break;
                 case "--crowded": o.Crowded = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
                 case "--rising": o.Rising = true; break;
+                case "--card": o.Card = true; break;
                 case "--alert": o.Alert = int.Parse(Next()); break;
                 case "--alert-hover": o.AlertHover = int.Parse(Next()); break;
                 case "--no-pause": o.NoPause = true; break;

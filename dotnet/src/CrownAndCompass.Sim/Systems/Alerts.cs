@@ -82,14 +82,15 @@ public static class Alerts
     public static readonly AlertKind Loot = new("loot", "Loot for sale", "gold", AlertLevel.Decision, AlertWindow.Armory);
     public static readonly AlertKind Gifts = new("gifts", "Arms to give", "heroes", AlertLevel.Minor, AlertWindow.Armory);
     public static readonly AlertKind Outpost = new("outpost", "Land to hold", "warband", AlertLevel.Minor, AlertWindow.None);
+    public static readonly AlertKind Stalled = new("stalled", "Building stalled", "gold", AlertLevel.Decision, AlertWindow.None);
 
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Sighted, Captives, Doom, Crisis, Fear, Hunger, Coffers, Underfunded, Unrest, Hostile, Motion, Fealty, Clash, Traitor, Plot, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Bastion, Institution, Heroes, Neighbour, Loot, Work, Settlers, Below, Scholars, Trade, Gifts, Outpost, Housing, Crowded];
+        [Siege, Sighted, Captives, Doom, Crisis, Fear, Hunger, Coffers, Underfunded, Unrest, Hostile, Motion, Fealty, Clash, Traitor, Plot, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Bastion, Institution, Heroes, Neighbour, Loot, Stalled, Work, Settlers, Below, Scholars, Trade, Gifts, Outpost, Housing, Crowded];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
-    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Hostility, Winter, Growth, Routes, Region, Undercity, Study, Loyalty, Armoury, Homes, Crowds, Keepers, Outposts];
+    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Hostility, Winter, Growth, Routes, Region, Undercity, Study, Loyalty, Armoury, Homes, Sites, Crowds, Keepers, Outposts];
 
     public static List<Alert> Standing(Town town) => Rules.SelectMany(r => r(town)).ToList();
 
@@ -327,22 +328,32 @@ public static class Alerts
             string what = t.Content.Crowds.Names.TryGetValue(kind, out var n) ? n : kind;
             string service = busiest.Def.Serves.Keys.Order(StringComparer.Ordinal).FirstOrDefault() ?? kind;
             string? fix;
+            var aim = busiest;
             if (busiest.Def.IsBusiness && !busiest.Def.Civic && !busiest.Def.Holy)
                 fix = $"Townsfolk open another {busiest.Def.Name.ToLowerInvariant()} where there is commercial land: paint some from the Build bar (B) near the crowd.";
-            else
+            else if (kind == Systems.Crowds.Holy)
             {
-                // A house of the gods grows into the temple, then the cathedral; a civic hall into another of its kind.
-                var room = (kind == Systems.Crowds.Holy ? [t.Content.Shrines.Temple, "cathedral"] : new[] { busiest.Def.Id })
-                    .Select(id => t.Content.Building(id))
-                    .FirstOrDefault(d => Planning.Blocked(t, d) is null or "not enough gold");
-                fix = room == null ? null
-                    : room.Id == t.Content.Shrines.Temple ? "Build the temple from the Faith window: it holds many more."
-                    : $"Raise {(t.Buildings.Any(b => b.Def.Id == room.Id) ? "another" : "a")} {room.Name.ToLowerInvariant()} from the Build bar (B).";
+                // Houses of the gods grow into the temple, its nave, then the cathedral.
+                var temple = Shrines.Temple(t);
+                var nave = t.Content.Buildings.FirstOrDefault(d => d.PartOf == t.Content.Shrines.Temple && d.Capacity > 0);
+                var cathedral = t.Content.Buildings.FirstOrDefault(d => d.Id == "cathedral");
+                if (temple == null)
+                    fix = Shrines.TempleBlocked(t) is null or "not enough gold" ? "Build the temple from the Faith window: it holds many more." : null;
+                else if (nave != null && Monuments.Blocked(t, temple, nave) is null or "not enough gold")
+                {
+                    fix = $"Add the {nave.Name.ToLowerInvariant()} to {temple.Name}: select the temple to build onto it.";
+                    aim = temple;
+                }
+                else fix = cathedral != null && Planning.Blocked(t, cathedral) is null or "not enough gold" ? "Raise the cathedral from the Build bar (B)." : null;
             }
+            else
+                fix = Planning.Blocked(t, busiest.Def) is null or "not enough gold"
+                    ? $"Raise another {busiest.Def.Name.ToLowerInvariant()} from the Build bar (B)."
+                    : null;
             if (fix == null) continue;
             yield return new($"crowded:{kind}", Crowded, $"{what} full",
                 $"{away} townsfolk found {what.ToLowerInvariant()} full yesterday and had to think again, and the houses that want {City.ServiceName(t, service)} grow slower. {fix}",
-                BuildingId: busiest.Id);
+                BuildingId: aim.Id);
         }
     }
 
@@ -368,6 +379,21 @@ public static class Alerts
                 .Select(p => p.Label.ToLowerInvariant()).ToList();
             string why = worst.Count == 0 ? "" : $" Most of all: {string.Join(" and ", worst)}.";
             yield return new("settlers", Settlers, "Settlers stay away", $"Few newcomers will come while things stand as they are.{why} The City window shows every reason.");
+        }
+    }
+
+    /// <summary>A council site standing idle for want of timber or stone the market hasn't got.</summary>
+    private static IEnumerable<Alert> Sites(Town t)
+    {
+        foreach (var b in t.Buildings)
+        {
+            if (!Construction.Stalled(t, b)) continue;
+            var (timber, stone) = Construction.Wanting(b);
+            string what = timber > 0 && stone > 0 ? "timber and stone" : stone > 0 ? "stone" : "timber";
+            string from = stone > 0 && !t.Buildings.Any(q => q.Complete && q.Def.Id == "quarry") ? "There is no quarry: zone industry for one, or" :
+                timber > 0 && !t.Buildings.Any(q => q.Complete && q.Def.Id == "lumber_camp") ? "There is no lumber camp: zone industry for one, or" : "Wait for the market to fill, or";
+            yield return new($"stalled:{b.Id}", Stalled, $"{Cap(b.Name)} waits for {what}",
+                $"The builders stand idle: the market has no {what} left. {from} send for it by caravan from the site ({Js.Str(Construction.CaravanCost(t, b))}g).", BuildingId: b.Id);
         }
     }
 

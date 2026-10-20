@@ -18,6 +18,7 @@ public static class Mayor
             KeepZoned(town, Zone.Commercial, 1 + scale, false);
             KeepZoned(town, Zone.Industry, 1 + scale, true);
             KeepFields(town, 1 + scale);
+            RaiseYards(town);
             RaiseWorks(town, defend);
             RaiseInstitutions(town);
             RaiseServices(town);
@@ -69,6 +70,17 @@ public static class Mayor
             sown++;
         }
         KeepZoned(town, Zone.Farmland, minVacant, true, Farming.Code(town, Farming.Next(town)?.Id ?? "wheat"));
+    }
+
+    /// <summary>Another builders' yard when the town has outgrown its crews, so homes and shops don't queue for builders.</summary>
+    private static void RaiseYards(Town town)
+    {
+        if (Construction.Crews(town) >= Construction.Wanted(town)) return;
+        if (town.Buildings.Any(b => b.IsSite && b.Def.Crews > 0)) return;
+        var d = town.Content.Building("builders_yard");
+        if (Planning.Blocked(town, d) != null || town.Treasury < Planning.Cost(town, d) + 60) return;
+        var lot = Planning.CivicLot(town, d);
+        if (lot != null) Planning.Place(town, d.Id, lot);
     }
 
     /// <summary>A granary once the town is a village, a watch house once it keeps a watch, and an adventurers' hall once heroes come and go.</summary>

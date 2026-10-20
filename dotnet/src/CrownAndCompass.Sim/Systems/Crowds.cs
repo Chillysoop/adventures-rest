@@ -54,9 +54,15 @@ public static class Crowds
 
     private static CrowdRules Rules(Town town) => town.Content.Crowds;
 
-    /// <summary>What kind of outing a building is for: a tavern, a house of the gods, or the service it serves; null when it takes no visitors.</summary>
+    /// <summary>What kind of outing a building is for: a tavern, a place to pray (a house of the gods, a temple's nave, the cathedral), or the service it serves; null when it takes no visitors.</summary>
     public static string? Kind(BuildingDef d) =>
-        d.Capacity <= 0 ? null : d.Venue ? Tavern : d.Holy ? Holy : d.Serves.Count > 0 ? d.Serves.Keys.Order(StringComparer.Ordinal).First() : null;
+        d.Capacity <= 0 ? null
+        : d.Venue ? Tavern
+        : d.Holy || d.Serves.ContainsKey(Worship) ? Holy
+        : d.Serves.Count > 0 ? d.Serves.Keys.Order(StringComparer.Ordinal).First() : null;
+
+    /// <summary>The house service places of prayer give.</summary>
+    public const string Worship = "shrine";
 
     public static bool Outing(Activity act) => act is Activity.Drinking or Activity.Praying or Activity.Visiting;
 

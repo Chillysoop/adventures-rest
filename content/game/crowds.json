@@ -16,6 +16,6 @@
   "alertTurnedAway": 8,
   "names": {
     "tavern": "Taverns", "holy": "Houses of the gods", "bath": "Bathhouses", "theatre": "Theatres",
-    "market": "Market halls", "learning": "Libraries", "spectacle": "The arena", "shrine": "The cathedral"
+    "market": "Market halls", "learning": "Libraries", "spectacle": "The arena"
   }
 }

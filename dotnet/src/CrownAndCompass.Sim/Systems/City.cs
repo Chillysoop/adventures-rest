@@ -123,6 +123,15 @@ public sealed record HousingDef
 
     /// <summary>Hearth tax each resident pays the treasury a day at the town's usual tax rate; grander houses pay more.</summary>
     public double Tax { get; init; }
+
+    /// <summary>Services a house must have within <see cref="CityRules.NearReach"/> tiles before it can grow into this one.</summary>
+    public IReadOnlyList<string> Near { get; init; } = [];
+
+    /// <summary>Kinds of food the town must grow or catch (farms, orchards, fisheries...) before a house grows into this one.</summary>
+    public int Foods { get; init; }
+
+    /// <summary>The least appeal (decorations, gardens) a house's street must have before it grows into this one.</summary>
+    public double Beauty { get; init; }
 }
 
 /// <summary>Desire paths (city.json "paths"): wear per walk, how much a day's walks can wear, what's left of wear by the next day, and the wear that makes a lane.</summary>
@@ -211,6 +220,9 @@ public sealed record CityRules
     /// <summary>Days a house can go wanting (below DowngradeBelow) before it falls back a step.</summary>
     public int DowngradeDays { get; init; } = 10;
     public double UpgradeAt { get; init; } = 0.85;
+
+    /// <summary>How near, in tiles, the services a grander house needs must stand (<see cref="HousingDef.Near"/>).</summary>
+    public double NearReach { get; init; } = 8;
     public double DowngradeBelow { get; init; } = 0.4;
 
     /// <summary>Mood a fully content household carries; a wanting one loses as much.</summary>
@@ -803,9 +815,55 @@ public static class City
         // The town's own houses are let to those who can't build: they grow roomier, never grand.
         if (house.OwnerId == null && next.Wards.Count > 0) return "the town lets its houses to working folk, not as manors";
         var nh = Housing(town, next.Id);
+        if (nh != null && NeedsBlocked(town, house, nh) is { } need) return need;
         if (nh != null && Prospect(town, house, nh) < town.Content.City.UpgradeAt) return "the town can't yet give a bigger house what it wants";
         return null;
     }
+
+    /// <summary>What the house's own street lacks for the next storey: services near it, food variety in town, some beauty; or null.</summary>
+    public static string? NeedsBlocked(Town town, Building house, HousingDef next)
+    {
+        double reach = town.Content.City.NearReach;
+        var lot = town.Lot(house.LotId);
+        foreach (string s in next.Near)
+            if (!Near(town, lot, s, reach)) return $"needs {Agent.Article(ServiceName(s))} {ServiceName(s)} within {Js.Str(reach)} tiles";
+        if (next.Foods > 0 && FoodKinds(town) is int kinds && kinds < next.Foods)
+            return $"needs {next.Foods} kinds of food grown in town (there {(kinds == 1 ? "is" : "are")} {kinds}): farms, orchards, root fields, fisheries";
+        if (next.Beauty > 0 && Decor.AppealOf(town, house) < next.Beauty) return "needs something pleasant on its street: trees, a fountain, a garden";
+        return null;
+    }
+
+    /// <summary>Whether a standing building giving the service is within reach of the lot.</summary>
+    public static bool Near(Town town, Lot lot, string service, double reach)
+    {
+        foreach (var b in town.Buildings)
+        {
+            if (!b.Complete || !b.Def.Serves.ContainsKey(service)) continue;
+            var l = town.Lot(b.LotId);
+            if ((l.X - lot.X) * (l.X - lot.X) + (l.Y - lot.Y) * (l.Y - lot.Y) <= reach * reach) return true;
+        }
+        return false;
+    }
+
+    /// <summary>Kinds of food the town grows or catches: each sort of farm, orchard or fishery standing counts once.</summary>
+    public static int FoodKinds(Town town)
+    {
+        var kinds = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var b in town.Buildings)
+            if (b.Complete && b.Def.Produces.Any(p => p.Key == Good.Food)) kinds.Add(b.Def.Id);
+        return kinds.Count;
+    }
+
+    private static string ServiceName(string service) => service switch
+    {
+        "shrine" => "shrine",
+        "market" => "market",
+        "tavern" => "tavern",
+        "bath" => "bathhouse",
+        "theatre" => "theatre",
+        "learning" => "library",
+        _ => service,
+    };
 
     public static double UpgradeCost(Town town, BuildingDef next) =>
         Js.Round(next.Cost * 0.6 + town.Market.Quote(Good.Timber, next.Timber) + town.Market.Quote(Good.Stone, next.Stone));
