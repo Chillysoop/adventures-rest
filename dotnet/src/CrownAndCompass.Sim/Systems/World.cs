@@ -255,6 +255,29 @@ public static class World
         // Last, so the country between the sites never shifts the regions and sites a seed makes.
         Roads.Generate(town, rng);
         PlaceFoes(town, used);
+        PlaceIsles(town, used);
+    }
+
+    /// <summary>
+    /// A few far sites in high country float: the rock they stand on has torn loose and drifts above the clouds, and only
+    /// a company that can fly, or the sky dock's airship, gets there. On their own dice, so nothing else shifts.
+    /// </summary>
+    private static void PlaceIsles(Town town, HashSet<string> used)
+    {
+        var r = town.Content.World.Isles;
+        var rng = new Rng(town.Seed * 6007 + 4241);
+        var pool = town.Sites
+            .Where(s => s.Generated && !s.Def.Aloft && s.Def.Foe == "" && s.RegionId is int rid
+                && town.Regions[rid].Ring >= r.Rings[0] && town.Regions[rid].Ring <= r.Rings[^1] && r.Themes.Contains(town.Regions[rid].Theme.Id))
+            .OrderBy(s => s.Def.Id, StringComparer.Ordinal)
+            .ToList();
+        for (int i = 0; i < r.Count && pool.Count > 0; i++)
+        {
+            var site = pool[rng.Range(0, pool.Count)];
+            pool.Remove(site);
+            used.Remove(site.Def.Name);
+            site.Def = site.Def with { Aloft = true, Name = r.Names.Count > 0 ? Fill(rng, town.Regions[site.RegionId!.Value].Theme, r.Names, used) : site.Def.Name };
+        }
     }
 
     /// <summary>
@@ -286,6 +309,7 @@ public static class World
                 Name = name,
                 Kind = f.Kind,
                 Foe = f.Id,
+                Aloft = f.Aloft,
                 Boss = new EncounterDef
                 {
                     Kind = "combat",

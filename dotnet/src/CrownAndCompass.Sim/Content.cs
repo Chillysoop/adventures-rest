@@ -330,6 +330,9 @@ public sealed record SiteDef
 
     /// <summary>The signature foe (foes.json) that holds it, or empty.</summary>
     public string Foe { get; init; } = "";
+
+    /// <summary>A floating isle: only a company that can fly, or rides the sky dock's airship, gets there.</summary>
+    public bool Aloft { get; init; }
 }
 
 /// <summary>Town-wide economic rules.</summary>
@@ -817,6 +820,9 @@ public sealed record FoeDef
 
     /// <summary>It calls up the raiders who fell at the town to walk again in its next walk.</summary>
     public bool Raises { get; init; }
+
+    /// <summary>Its seat is lifted into the sky as a floating isle (<see cref="SiteDef.Aloft"/>).</summary>
+    public bool Aloft { get; init; }
 }
 
 public sealed record FoeRules
@@ -1218,6 +1224,16 @@ public sealed record WorldRules
     public IntelRules Intel { get; init; } = new();
     public IReadOnlyList<PeopleDef> Peoples { get; init; } = [];
     public IReadOnlyList<ThemeDef> Themes { get; init; } = [];
+    public IsleRules Isles { get; init; } = new();
+}
+
+/// <summary>Floating isles in the far wilds (world.json "isles"), reached only by air.</summary>
+public sealed record IsleRules
+{
+    public int Count { get; init; }
+    public int[] Rings { get; init; } = [3, 4];
+    public IReadOnlyList<string> Themes { get; init; } = [];
+    public IReadOnlyList<string> Names { get; init; } = [];
 }
 
 /// <summary>

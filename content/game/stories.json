@@ -234,7 +234,7 @@
               "success": { "text": "The mayor walks out alone with it. The dragon takes her child, looks at the mayor for a long moment, and flies away without burning anything.", "effects": { "egg": 3, "dread": -3, "mandate": -1 } }
             },
             {
-              "label": "Hide it deep and wait her out", "tags": ["cunning"], "skill": "stealth", "dc": 16,
+              "label": "Hide it deep and wait her out", "tags": ["caution"], "skill": "stealth", "dc": 16,
               "success": { "text": "Wet sacking, cold iron and a cellar under the cellar: by dusk she gives up the scent and goes.", "effects": { "mandate": 2 } },
               "failure": { "text": "She finds it. She takes it, and she burns the street it was under on her way out.", "effects": { "egg": 4, "people": -2, "dread": 4 } }
             },

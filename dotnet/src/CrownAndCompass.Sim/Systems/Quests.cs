@@ -521,6 +521,7 @@ public static class Quests
             }
             // Heroes won't walk into a site they can't handle; the bounty waits for a stronger company.
             if (levels < 3 * tier || members.Count < 3) continue;
+            if (!Passage.CanReach(town, members, s)) continue;
 
             var party = Launch(town, members, s, bounty);
             town.Log(

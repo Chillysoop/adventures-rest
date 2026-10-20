@@ -349,8 +349,10 @@ public static class Roads
         var stretches = (mind.Ways & Ways.River) != 0 ? [new Waypoint { X = goal.X, Y = goal.Y }] : Passage.Ford(town, cur, [new Waypoint { X = goal.X, Y = goal.Y }], said);
         foreach (var w in stretches)
         {
-            path.AddRange(Stretch(town, cur, (w.X, w.Y), mind, rng, said));
-            path[^1] = w;
+            var leg = Stretch(town, cur, (w.X, w.Y), mind, rng, said);
+            leg[^1] = w;
+            // Going round hard country can bend the road back over the river: those legs take a crossing too.
+            path.AddRange((mind.Ways & Ways.River) != 0 ? leg : Passage.Ford(town, cur, leg, said));
             cur = (w.X, w.Y);
         }
         if (home) path.Add(new Waypoint { X = 0, Y = 0, Way = "gate" });
@@ -599,7 +601,7 @@ public static class Roads
     internal static void Depart(Town town, Party party, IReadOnlyList<Agent> members, SiteState site, Bounty? bounty)
     {
         var spot = World.Spot(town, site);
-        var mind = Passage.Board(town, party, Mind(town, members, Hurry(town, bounty, site), false), party.Start, spot);
+        var mind = Passage.Board(town, party, Mind(town, members, Hurry(town, bounty, site), false), party.Start, spot, site.Def.Aloft);
         party.Out = Plan(town, party.Start, spot, mind, town.Rng, party.Said);
         double outHours = Hours(town, party.Start, party.Out);
         double arrive = Finish(town.Content, party.DepartTick, outHours);

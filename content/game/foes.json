@@ -28,7 +28,7 @@
     { "id": "forge-giants", "monster": "fire-giant", "escort": "hell-hound", "escortCount": [1, 2], "kind": "tribe", "rings": [3, 4],
       "themes": ["cinderwastes", "highpeaks"], "names": ["the Giants' Forge", "the {A} Foundry", "the Anvil Hall"],
       "text": "a fire giant at a forge the size of a house, hammering out a sword for a war that has not started yet" },
-    { "id": "cloud-lords", "monster": "cloud-giant", "escort": "griffon", "escortCount": [1, 2], "kind": "tribe", "rings": [3, 4],
+    { "id": "cloud-lords", "monster": "cloud-giant", "escort": "griffon", "escortCount": [1, 2], "kind": "tribe", "rings": [3, 4], "aloft": true,
       "themes": ["highpeaks", "feyfringe", "rimefell"], "names": ["the Castle in the Clouds", "the {A} Sky-Keep", "the Cloud Lord's Hall"],
       "text": "a cloud giant lord on a throne of mist, who has been expecting them and finds them small" },
     { "id": "storm-kings", "monster": "storm-giant", "escort": "", "escortCount": [0, 0], "kind": "tribe", "rings": [4, 4],

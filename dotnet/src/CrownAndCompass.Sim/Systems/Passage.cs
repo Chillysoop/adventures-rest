@@ -951,11 +951,12 @@ public static class Passage
     /// A company setting out whose road meets water or heights it can't cross on its own takes a free airship from the
     /// sky dock, out and home again; the mind it plans with then crosses what the ship does.
     /// </summary>
-    public static RouteMind Board(Town town, Party party, RouteMind mind, (double X, double Y) from, (double X, double Y) to)
+    public static RouteMind Board(Town town, Party party, RouteMind mind, (double X, double Y) from, (double X, double Y) to, bool aloft = false)
     {
         var r = Rules(town).Airship;
         var ship = Parse(r.Ways);
-        if (ship == Ways.None || (Meets(town, from, to) & ~mind.Ways) == Ways.None || AirshipsFree(town) <= 0) return mind;
+        var meets = Meets(town, from, to) | (aloft ? Ways.Air : Ways.None);
+        if (ship == Ways.None || (meets & ~mind.Ways) == Ways.None || AirshipsFree(town) <= 0) return mind;
         party.Airship = true;
         if (r.Text.Count > 0)
         {
@@ -964,6 +965,10 @@ public static class Passage
         }
         return Aboard(town, party, mind);
     }
+
+    /// <summary>A floating isle needs every member to fly (a mount, a spell or an item), or a free airship to carry them.</summary>
+    public static bool CanReach(Town town, IReadOnlyList<Agent> members, SiteState site) =>
+        !site.Def.Aloft || (Abilities(town, members) & Ways.Air) != 0 || (Parse(Rules(town).Airship.Ways) & Ways.Air) != 0 && AirshipsFree(town) > 0;
 
     /// <summary>The mind of a company with an airship under it: it crosses what the ship does.</summary>
     public static RouteMind Aboard(Town town, Party party, RouteMind mind)

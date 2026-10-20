@@ -41,6 +41,8 @@ public class CrisesTests
         var t = sim.Town;
         t.Saga.Act = 2;
         m.Cunning = "cunning";
+        // A would-be overlord could take the town's oath instead, and a power the town serves begins no crisis.
+        m.Ambition = "conquest";
         m.Power = t.Content.Saga.Menaces.Stages.Power + 10;
         // Most of the way ripe already, so the council's bounties don't get to its seat first.
         t.Crises.Ripeness[m.Id] = t.Content.Crises.RipenDays - 5;

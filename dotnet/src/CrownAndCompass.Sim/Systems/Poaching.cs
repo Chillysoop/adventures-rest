@@ -60,7 +60,7 @@ public static class Poaching
         var job = town.Bounties
             .Where(b => b.Status == BountyStatus.Open && b.SiteId != camp.Def.Id)
             .Select(b => (b, s: Quests.Site(town, b.SiteId)))
-            .Where(x => x.s is { Cleared: false } && World.LevelOf(x.s) <= r.MaxLevel && x.s.Def.Foe == "" && Lone(town, x.s))
+            .Where(x => x.s is { Cleared: false } && World.LevelOf(x.s) <= r.MaxLevel && x.s.Def.Foe == "" && !x.s.Def.Aloft && Lone(town, x.s))
             .OrderByDescending(x => x.b.Reward)
             .ThenBy(x => x.b.PostedTick)
             .ThenBy(x => x.b.Id)

@@ -427,5 +427,12 @@
         "treasure": ["a fey lord's gifts, half of them real", "gold that has not yet turned to leaves"],
         "boss": ["the court's cruel champion", "whatever rules the hollow hill"]
       } }
-  ]
+  ],
+  "isles": {
+    "_doc": "Floating isles (World.PlaceIsles): far sites in high country torn loose and drifting above the clouds. Only a company that can fly, or rides the sky dock's airship, gets there.",
+    "count": 2,
+    "rings": [3, 4],
+    "themes": ["highpeaks", "feyfringe", "rimefell", "cinderwastes"],
+    "names": ["the Drifting Isle of {A}", "the {A} Skyrock", "the Isle of {B}", "the Hanging Rock of {A}"]
+  }
 }

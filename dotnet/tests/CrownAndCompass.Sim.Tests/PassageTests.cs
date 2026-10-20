@@ -208,7 +208,12 @@ public class PassageTests
         var t = sim.Town;
         var heroes = t.Heroes.Take(3).ToList();
         Assert.Equal(3, heroes.Count);
-        foreach (var h in heroes) h.Hero!.Mount = "";
+        // On foot and empty-handed: no flying carpet or winged boots of their own.
+        foreach (var h in heroes)
+        {
+            h.Hero!.Mount = "";
+            foreach (var k in h.Hero.Magic.Select(e => e.Key).ToList()) h.Hero.Magic.Remove(k);
+        }
         Assert.Equal(Ways.None, Passage.Abilities(t, heroes) & Ways.Sheer);
         // One on a griffon is not enough; all of them on griffons go anywhere.
         heroes[0].Hero!.Mount = "griffon";
