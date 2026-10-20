@@ -211,7 +211,7 @@ public sealed class Options
                 case "--advance": o.Advances.Add(Next()); break;
                 case "--inspiration": o.Inspiration = int.Parse(Next()); break;
                 case "--decor-at": o.DecorAt = Next().Split(',').Select(v => double.Parse(v, System.Globalization.CultureInfo.InvariantCulture)).ToArray(); break;
-                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--stock" or "--pact" or "--buy" or "--call" or "--flag" or "--wait" or "--works" or "--roster" or "--spot":
+                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--stock" or "--pact" or "--buy" or "--call" or "--flag" or "--wait" or "--works" or "--roster" or "--spot" or "--draw-wall" or "--gate":
                     o.Script.Add((args[i][2..], Next()));
                     break;
             }
@@ -258,6 +258,17 @@ public sealed class Options
                         d.Towers = Garrison.MaxTowers(t);
                     }
                     Garrison.Sync(t);
+                    break;
+                case "draw-wall" or "gate":
+                    // For shots of drawn walls: --draw-wall 0:x,y;x,y;... draws ring 0 through corners given in tiles from the town's centre,
+                    // --gate 0:x,y puts a gate on its line nearest a point (the same offsets).
+                    var (ringPart, ptsPart) = (arg[..arg.IndexOf(':')], arg[(arg.IndexOf(':') + 1)..]);
+                    var pts = ptsPart.Split(';').Select(xy => xy.Split(',').Select(v => double.Parse(v, System.Globalization.CultureInfo.InvariantCulture)).ToArray())
+                        .Select(v => (Town.Center + v[0], Town.Center + v[1])).ToList();
+                    int wr = int.Parse(ringPart);
+                    if (verb == "draw-wall") t.Treasury += 400;
+                    string? why = verb == "draw-wall" ? sim.DrawWall(wr, pts) : sim.PlaceGate(wr, pts[0].Item1, pts[0].Item2);
+                    if (why != null) Godot.GD.Print($"--{verb} {arg}: {why}");
                     break;
                 case "call":
                     if (arg.StartsWith("tower:", StringComparison.Ordinal)) sim.CallToArms(PostKind.Tower, int.Parse(arg[6..]));

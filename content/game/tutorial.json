@@ -214,6 +214,7 @@
       "until": "tab:War",
       "teaches": ["tab:War", "command:BuildDefense"]
     },
+    {"id": "draw-walls", "title": "Draw your walls", "text": "You decide where the walls run. Pick the palisade, stone walls or city wall on the build bar and click round the town to draw the line: each click is a corner, and a click back on the first corner closes it. The line must go right round the town hall and can't run through a building. Then click on the line to place a gate (every wall needs at least one, and up to four). The masons start once the wall has a gate, and the wall rises as the market has its timber and stone. Buildings never go up across a wall's line.", "when": "day:30", "teaches": ["command:DrawWall", "command:PlaceGate", "command:RemoveGate", "key:Enter", "key:KpEnter", "key:Backspace"]},
     {
       "id": "guard-flags",
       "title": "Post the guard",
