@@ -141,6 +141,12 @@ public partial class Main : Control
             var lot = _sim.Town.Lot(house.LotId);
             _map.LookAt(new Vector2(Map.Geo.Margin + (float)lot.X, Map.Geo.Margin + (float)lot.Y), 7);
         }
+        if (_opts.Crowded is string crowd && _sim.Town.Buildings.Where(b => b.Complete && b.Def.Capacity > 0 && (crowd == "" || Crowds.Kind(b.Def) == crowd)).OrderByDescending(b => b.TurnedAwayLast).ThenByDescending(b => Crowds.Inside(_sim.Town, b)).ThenBy(b => b.Id).FirstOrDefault() is Building crowded)
+        {
+            Select(Selection.Building(crowded.Id));
+            var lot = _sim.Town.Lot(crowded.LotId);
+            _map.LookAt(new Vector2(Map.Geo.Margin + (float)lot.X, Map.Geo.Margin + (float)lot.Y), _opts.Cam ?? 7);
+        }
         // News from a fast-forward is in the Ledger; don't greet the player with a stale feed.
         ClearFeed();
         if (_opts.Tutorial is string step) StartTutorial(step == "start" ? null : step);

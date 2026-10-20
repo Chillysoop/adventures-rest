@@ -722,6 +722,15 @@ public partial class Main
         p.Text(state);
         if (b.Def.Jobs > 0) p.Text($"Workers ({b.Workers.Count}/{b.Def.Jobs}): {People(b.Workers)}\nCash {Math.Floor(b.Cash)}g");
         if (b.Def.Housing > 0) p.Text($"Residents ({b.Residents.Count}/{b.Def.Housing}): {People(b.Residents)}");
+        if (b.Def.Capacity > 0 && b.Complete)
+        {
+            int inside = Crowds.Inside(t, b);
+            string now = $"Visitors {inside}/{b.Def.Capacity}" + (inside >= b.Def.Capacity ? Ui.C(Ui.Bad, " · full") : "");
+            string last = b.TurnedAwayLast > 0
+                ? Ui.C(Ui.Bad, $"Yesterday it filled to {b.PeakLast} and turned townsfolk away {b.TurnedAwayLast} times; they went elsewhere or home. Another of its kind nearby would take the crowd.")
+                : $"Busiest yesterday: {b.PeakLast}/{b.Def.Capacity}.";
+            p.Text($"{now}\n{last}");
+        }
         if (b.Def.Housing > 0 && Decor.Comfort(t, b) is double comfort && Math.Abs(comfort) >= 0.005)
             p.Text(comfort > 0
                 ? Ui.C(Ui.Good, $"A pleasant street: the household is {Math.Round(comfort * 100)}% more content, so the house grows sooner.")
