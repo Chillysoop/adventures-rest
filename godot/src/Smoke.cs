@@ -5,7 +5,7 @@ using Godot;
 namespace CrownAndCompass.Client;
 
 /// <summary>
-/// With --smoke: the merge gate's play-through of a build (<c>scripts/gate.ts</c>). From the main menu it
+/// With --smoke: the merge gate's play-through of a build (<c>scripts/gate.ts</c>). From the main menu (and its choice of storytellers) it
 /// starts a new town, plays on at top speed, opens every window, the build bar, the campaign map, a wall and a guard flag and the
 /// game menu, saves and loads, starts the tutorial, opens the History and the glossary with a pinned keyword card, steps into a story event, answers a party's sending and opens the tourney card with a bet on it, a few frames apart so each one draws. It prints
 /// <c>SMOKE OK</c> and quits with 0, or <c>SMOKE FAIL</c> and 1; the gate also fails on any engine error.
@@ -44,6 +44,9 @@ public partial class Main
         {
             case 0:
                 if (!_title.Visible) throw new InvalidOperationException("the main menu is not showing");
+                // New game asks for a storyteller first.
+                PickStoryteller(false);
+                if (!_tellers.Visible || _titleMenu.Visible) throw new InvalidOperationException("the storytellers are not showing");
                 return 10;
             case 1:
                 // What the main menu's New game does, with the stand-in mayor playing so later systems come into play.

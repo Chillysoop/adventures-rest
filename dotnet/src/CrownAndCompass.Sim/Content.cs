@@ -1307,6 +1307,12 @@ public sealed class Content
     /// <summary>How many fit in a tavern, shrine or bathhouse at once, and what the townsfolk do when it is full (content/game/crowds.json).</summary>
     public CrowdRules Crowds { get; init; } = new();
 
+    /// <summary>Townsfolk's inspirations and breaks (content/game/moods.json).</summary>
+    public MoodRules Moods { get; init; } = new();
+
+    /// <summary>The storytellers a town can be founded under, the game's difficulty (content/game/storytellers.json).</summary>
+    public StorytellerRules Storytellers { get; init; } = new();
+
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
 
@@ -1479,6 +1485,8 @@ public sealed class Content
             Crises = Parse<CrisisRules>("crises.json"),
             Tourney = Parse<TourneyRules>("tournaments.json"),
             Crowds = Parse<CrowdRules>("crowds.json"),
+            Moods = Parse<MoodRules>("moods.json"),
+            Storytellers = Parse<StorytellerRules>("storytellers.json"),
         };
     }
 

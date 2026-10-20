@@ -681,6 +681,7 @@ public partial class Main
             InspectLoyalty(p, t, a, hs);
         }
         p.Text($"{Ui.Esc(status)} · {Math.Floor(a.Gold)} gold · mood {Math.Round(a.LastDayMood)}");
+        InspectMoods(p, t, a);
         p.Text($"Lives at {Ui.Esc(home)}; {(a.Hero != null ? "lives by bounties" : $"works at {Ui.Esc(job)}")}.");
         if (a.SpouseId is int sp) p.Text($"Married to {AgentLink(t.Agent(sp))}");
         InspectSheet(p, t, a);
@@ -694,6 +695,27 @@ public partial class Main
             p.Heading("Story so far");
             foreach (var e in history) p.Text($"{Ui.C(Ui.Ink2, $"[font_size=11]Day {e.Tick / 24 + 1}[/font_size]")}  {LinkNames(e)}", 13);
         }
+    }
+
+    /// <summary>The inspiration or break gripping them now, and what the last few came to.</summary>
+    private static void InspectMoods(Pane p, Town t, Agent a)
+    {
+        if (Moods.Episode(t, a) is { } d)
+        {
+            bool inspired = Moods.IsInspiration(t, d);
+            int hours = Math.Max(1, a.EpisodeUntil - t.Tick);
+            string left = hours >= 24 ? $"{(hours + 12) / 24} more day{((hours + 12) / 24 == 1 ? "" : "s")}" : $"{hours} more hour{(hours == 1 ? "" : "s")}";
+            p.Text($"{Tag(inspired ? "Inspired" : "Breaking", inspired ? Ui.Gold : Ui.Bad)} {Ui.C(inspired ? Ui.Gold : Ui.Bad, Ui.Esc(d.Name))} {Ui.C(Ui.Ink2, $"[font_size=12]· {left}[/font_size]")}", 13);
+        }
+        else if (!a.IsHero && !a.Departed)
+        {
+            var r = t.Content.Moods;
+            string streak = a.HighDays > 0 ? $"in high spirits {a.HighDays} day{(a.HighDays == 1 ? "" : "s")} running: an inspiration may strike from day {r.HighDays}"
+                : a.LowDays > 0 ? $"low {a.LowDays} day{(a.LowDays == 1 ? "" : "s")} running: past day {r.LowDays} they may break" : "";
+            if (streak != "") p.Text(Ui.C(a.LowDays > 0 ? Ui.Bad : Ui.Ink2, $"[font_size=12]{Ui.Cap(streak)}[/font_size]"), 13);
+        }
+        if (a.Moments.Count > 0)
+            p.Text(Ui.C(Ui.Ink2, $"[font_size=12]{string.Join("\n", a.Moments.AsEnumerable().Reverse().Select(m => Ui.Esc(m)))}[/font_size]"), 13);
     }
 
     /// <summary>Fame and infamy: what the world calls them, and what their name does for them.</summary>

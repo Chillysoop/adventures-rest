@@ -4,6 +4,7 @@
 //        [--hand-council]   (the council leaves taxes to a mayor who never touches them, as a hands-off player would)
 //        [--legends file.json]   (foes and heroes of earlier runs may come back; this run's are added to the file)
 //        [--summary]   (print only one JSON line on how the campaign stands, for scripts/gate.ts)
+//        [--storyteller steady|rising|chaotic]   (who tells the campaign: the difficulty; rising is the default)
 // Prints exactly what `npm run sim` prints for the same arguments.
 
 using System.Globalization;
@@ -23,6 +24,7 @@ string? save = null;
 string? legends = null;
 bool summary = false;
 bool handTaxes = false;
+string storyteller = "rising";
 
 static int Number(string[] args, ref int i) => i + 1 < args.Length ? int.Parse(args[++i], CultureInfo.InvariantCulture) : 0;
 
@@ -63,6 +65,14 @@ for (int i = 0; i < args.Length; i++)
         case "--summary":
             summary = true;
             break;
+        case "--storyteller":
+            storyteller = i + 1 < args.Length ? args[++i] : storyteller;
+            if (Storyteller.Def(Content.Default(), storyteller) == null)
+            {
+                Console.Error.WriteLine($"Unknown storyteller {storyteller}: one of {string.Join(", ", Content.Default().Storytellers.Storytellers.Select(s => s.Id))}");
+                return 1;
+            }
+            break;
         case "--people":
             people = Number(args, ref i);
             break;
@@ -73,7 +83,7 @@ for (int i = 0; i < args.Length; i++)
 }
 
 var past = legends != null && File.Exists(legends) ? Legends.Read(File.ReadAllText(legends)) : [];
-var sim = load != null ? SaveGame.ReadFile(load, out _) : new Simulation(new SimulationOptions { Seed = seed, Legends = past, AutoCouncil = !handTaxes });
+var sim = load != null ? SaveGame.ReadFile(load, out _) : new Simulation(new SimulationOptions { Seed = seed, Legends = past, AutoCouncil = !handTaxes, Storyteller = storyteller });
 var town = sim.Town;
 seed = town.Seed;
 var minImportance = all ? Importance.Routine : Importance.Notable;
@@ -108,6 +118,8 @@ Print(
     town.Outcome != null
         ? $"{Saga.EndTitle(town)}: {town.Saga.EndText}"
         : $"The warband stands at {Js.Str(Js.Round(town.Enemy.Strength))} ({town.Enemy.Stage.Name()}); {town.Enemy.Raids} raids, {town.Enemy.Sieges} sieges so far.");
+var teller = Storyteller.Of(town);
+Print($"Told by {teller.Name} ({teller.Title}): {town.Enemy.Raids} raids and {town.Enemy.Sieges} sieges by the warband; {town.Moods.Inspirations} inspirations and {town.Moods.Breaks} breaks among the townsfolk.");
 if (Saga.Summary(town) != "") Print(Saga.Summary(town));
 Print($"A {City.Tier(town).Name.ToLowerInvariant()} of about {City.Souls(town)} souls; wards: {string.Join(", ", town.City.OpenWards.Select(w => City.Ward(town, w).Name))}.");
 Print("Treasury books, all time: " + string.Join(", ", town.Accounts.OrderBy(kv => kv.Value).Select(kv => $"{kv.Key} {Js.ToFixed(kv.Value, 0)}")));

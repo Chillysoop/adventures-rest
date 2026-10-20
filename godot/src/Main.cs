@@ -146,6 +146,7 @@ public partial class Main : Control
         }
         if (_opts.Folk && _sim.Town.Workers.Where(a => !a.IsAway).OrderByDescending(a => a.Practice).ThenBy(a => a.Id).FirstOrDefault() is Agent folk)
             Select(Selection.Agent(folk.Id));
+        if (_opts.Episode is string episode) StageEpisode(episode);
         if (_opts.House && _sim.Town.Buildings.Where(b => b.Complete && b.Def.Housing > 0).OrderByDescending(b => Decor.Comfort(_sim.Town, b)).ThenBy(b => b.Id).FirstOrDefault() is Building house)
         {
             Select(Selection.Building(house.Id));
@@ -182,6 +183,7 @@ public partial class Main : Control
         }
         if (_opts.Menu) OpenMenu();
         if (plain || _opts.Title || _opts.Smoke) ShowTitle();
+        if (_opts.Storytellers) PickStoryteller(false);
         if (_opts.History is string power) OpenHistory(power == "" ? null : power);
         if (_opts.Glossary is string entry) OpenGlossary(entry == "" ? null : entry);
         for (int i = 0; i < _opts.Keywords.Count; i++)
@@ -190,6 +192,35 @@ public partial class Main : Control
             Pin(_opts.Keywords[i]);
             _kwPinned[^1].Position = at;
         }
+    }
+
+    /// <summary>
+    /// For a shot of an inspiration or a break: the first townsperson out in front of a building with a few others about,
+    /// struck with it now, the camera on them and their inspector open.
+    /// </summary>
+    private void StageEpisode(string id)
+    {
+        var t = _sim.Town;
+        var d = t.Content.Moods.Of(id);
+        if (d == null) return;
+        bool inspiration = Moods.IsInspiration(t, d);
+        // Someone whose trade fits, if anyone, out where they can be seen.
+        var who = t.Workers
+            .Where(a => !a.IsAway && a.Age >= 18 && a.LocationId != null && a.Activity is not Activity.Sleeping && a.Episode == "")
+            .OrderByDescending(a => d.Professions.Contains(a.JobId is int j && t.Building(j).Def.Profession is string p ? p : a.Profession) ? 1 : 0)
+            .ThenByDescending(a => d.Effect == "bender" ? (a.Activity == Activity.Drinking ? 1 : 0) : a.Activity == Activity.Working ? 1 : 0)
+            .ThenBy(a => a.Id)
+            .FirstOrDefault();
+        if (who == null || !(inspiration ? Moods.Inspire(t, who, id) : Moods.Break(t, who, id))) return;
+        // Take them where the episode keeps them, so the shot finds them there.
+        if (Moods.Holds(t, who) is Activity.Drinking && t.Taverns.Count > 0)
+        {
+            who.Activity = Activity.Drinking;
+            who.LocationId = t.Taverns.OrderBy(b => b.Id).First().Id;
+        }
+        if (who.LocationId is int at)
+            _map.LookAt(Map.Geo.LotPos(t.Lot(t.Building(at).LotId)), _opts.Cam ?? 9);
+        Select(Selection.Agent(who.Id));
     }
 
     /// <summary>A story for a scripted shot; a sending comes from the first party out on a bounty that it fits.</summary>
@@ -257,12 +288,12 @@ public partial class Main : Control
 
     // ---------- Game ----------
 
-    private void NewTown(int seed, bool autoplay = false)
+    private void NewTown(int seed, bool autoplay = false, string? storyteller = null)
     {
         RememberLegends();
         // With --autoplay the stand-in mayor keeps playing, for demos and screenshots; only a player's towns meet old legends.
         var legends = autoplay ? [] : ProfileLegends();
-        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoArmory = autoplay && !_opts.KeepArmory, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay && _opts.Tax == null, AutoHonours = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay, AutoStories = autoplay, AutoExplore = autoplay && !_opts.Find, Legends = legends }));
+        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoArmory = autoplay && !_opts.KeepArmory, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay && _opts.Tax == null, AutoHonours = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay, AutoStories = autoplay, AutoExplore = autoplay && !_opts.Find, Legends = legends, Storyteller = storyteller ?? _opts.Storyteller ?? "rising" }));
     }
 
     /// <summary>Show a town: a new one, or one loaded from a save.</summary>

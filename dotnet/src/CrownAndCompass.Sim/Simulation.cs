@@ -60,6 +60,9 @@ public sealed record SimulationOptions
     /// <summary>Run the campaign arc (acts, festering menaces, dread); off, the Last Stand ends the game.</summary>
     public bool Saga { get; init; } = true;
 
+    /// <summary>Who tells the campaign: "steady", "rising" (the default) or "chaotic" (content/game/storytellers.json).</summary>
+    public string Storyteller { get; init; } = "rising";
+
     /// <summary>Foes and heroes from the player's earlier campaigns, who may come back (<see cref="Systems.Legends"/>).</summary>
     public IReadOnlyList<Legend> Legends { get; init; } = [];
 }
@@ -78,6 +81,7 @@ public sealed class Simulation
     {
         Options = options ?? new SimulationOptions();
         Town = new Town(content ?? Content.Default(), Options.Seed);
+        Town.Storyteller = Systems.Storyteller.Def(Town.Content, Options.Storyteller)?.Id ?? Town.Content.Storytellers.Default;
         Town.Saga.Enabled = Options.Saga && Options.Enemy;
         Town.Saga.Legends.AddRange(Options.Legends.Where(l => l.Seed != Options.Seed));
         Charter();
@@ -125,6 +129,7 @@ public sealed class Simulation
         Population.DailyArrivals(t);
         if (Options.AutoMayor) Mayor.Daily(t, Options.AutoPlanning, Options.AutoDefense);
         Social.Daily(t);
+        Moods.Daily(t);
         Council.Daily(t, Options.AutoCouncil);
         double pace = Director.Daily(t);
         Threat.Daily(t, pace, Options.AutoMayor && Options.AutoDefense, Options.Enemy);

@@ -541,6 +541,12 @@ public sealed class Town
     /// <summary>The yearly tourney: this year's draw, heats and bets, and past champions (<see cref="Systems.Tournaments"/>).</summary>
     public Systems.TourneyState Tourney { get; } = new();
 
+    /// <summary>Townsfolk's inspirations and breaks: when the Ledger last told of one (<see cref="Systems.Moods"/>).</summary>
+    public Systems.MoodState Moods { get; } = new();
+
+    /// <summary>The storyteller the town was founded under (storytellers.json id); null in a save from before there were any (<see cref="Systems.Storyteller"/>).</summary>
+    public string? Storyteller { get; set; }
+
     /// <summary>The mayor's character sheet and the story events open and past (<see cref="Systems.Stories"/>).</summary>
     public Systems.StoryState Stories => _stories ??= new Systems.StoryState { Mayor = Systems.Stories.NewMayor(this) };
     // Made on first use, so a save from before stories existed gets a mayor too.
