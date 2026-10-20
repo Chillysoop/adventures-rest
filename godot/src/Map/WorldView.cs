@@ -18,7 +18,11 @@ public static class Mats
 
     public static void SetAll(string param, Variant v)
     {
-        foreach (var m in All) m.SetShaderParameter(param, v);
+        foreach (var m in All)
+        {
+            m.SetShaderParameter(param, v);
+            if (m.NextPass is ShaderMaterial pass) pass.SetShaderParameter(param, v);
+        }
     }
 
     /// <summary>A seamless RGBA noise texture, each channel a different scale, for painterly variation.</summary>
