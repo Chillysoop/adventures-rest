@@ -92,6 +92,8 @@ public sealed class Options
     public int TourneyDay;
     /// <summary>--secrets: put a motion before the council and hand the mayor a secret on each councillor, with the Council window open, for a shot of pressing a vote.</summary>
     public bool Secrets;
+    /// <summary>--guilds [strike]: open the Council window on its guilds; with strike, the first guild walks out, for a shot of a strike.</summary>
+    public string? Guilds;
     /// <summary>--tourney-plain: the shot of the lists without the card over it.</summary>
     public bool TourneyCard = true;
     /// <summary>With <c>--at</c>: open that building's inspector (<c>--card</c>), for a shot of a monument's parts.</summary>
@@ -197,6 +199,7 @@ public sealed class Options
                 case "--tourney-day": o.TourneyDay = int.Parse(Next()); break;
                 case "--tourney-plain": o.TourneyCard = false; break;
                 case "--secrets": o.Secrets = true; break;
+                case "--guilds": o.Guilds = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
                 case "--alert": o.Alert = int.Parse(Next()); break;
                 case "--alert-hover": o.AlertHover = int.Parse(Next()); break;
                 case "--no-pause": o.NoPause = true; break;

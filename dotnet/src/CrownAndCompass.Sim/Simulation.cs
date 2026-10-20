@@ -161,6 +161,7 @@ public sealed class Simulation
         Broadsheet.Daily(t, Options.AutoMayor && Options.AutoStories);
         Loyalty.Daily(t, Options.AutoMayor && Options.AutoHonours);
         Secrets.Daily(t, Options.AutoMayor && Options.AutoCouncil);
+        Guilds.Daily(t, Options.AutoMayor && Options.AutoCouncil);
         Notoriety.Daily(t);
         Passage.Daily(t);
         Decor.Daily(t);
@@ -283,6 +284,15 @@ public sealed class Simulation
 
     /// <summary>Make a councillor's secret public, costing them their seat.</summary>
     public bool ExposeCouncillor(int agentId) => Secrets.Expose(Town, agentId);
+
+    /// <summary>Give a trade guild what its master asked for: a festival, lower taxes, more watchmen, a monument's next part.</summary>
+    public bool MeetGuildDemand(string guildId) => Guilds.Meet(Town, guildId);
+
+    /// <summary>Pay a trade guild to drop its demand or call off its strike.</summary>
+    public bool PayOffGuild(string guildId) => Guilds.PayOff(Town, guildId);
+
+    /// <summary>Send the watch to break a guild's strike, at a cost in Mandate.</summary>
+    public bool BreakStrike(string guildId) => Guilds.Break(Town, guildId);
 
     /// <summary>Answer a menace's demand for fealty: bend the knee and pay tribute, or refuse and face its host.</summary>
     public bool AnswerDemand(int menaceId, bool submit) => Menaces.Answer(Town, menaceId, submit);

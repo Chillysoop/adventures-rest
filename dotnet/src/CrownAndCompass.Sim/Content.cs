@@ -1278,6 +1278,8 @@ public sealed class Content
     public ClockworkRules Clockwork { get; init; } = new();
     /// <summary>The tax rate and the unrest of underfunded services (content/game/taxes.json).</summary>
     public TaxRules Taxes { get; init; } = new();
+    /// <summary>Trade guilds, their demands and their strikes (content/game/guilds.json).</summary>
+    public GuildRules Guilds { get; init; } = new();
     /// <summary>The top bar's month and when a trend counts as trouble (content/game/trends.json).</summary>
     public TrendRules Trends { get; init; } = new();
     public MerchantRules Merchants { get; init; } = new();
@@ -1462,6 +1464,7 @@ public sealed class Content
             Broadsheet = Parse<BroadsheetRules>("broadsheet.json"),
             Clockwork = Parse<ClockworkRules>("clockwork.json"),
             Taxes = Parse<TaxRules>("taxes.json"),
+            Guilds = Parse<GuildRules>("guilds.json"),
             Trends = Parse<TrendRules>("trends.json"),
             Merchants = Parse<MerchantRules>("merchants.json"),
             Wards = Parse<WardRules>("wards.json"),

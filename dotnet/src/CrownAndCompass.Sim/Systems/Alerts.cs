@@ -87,15 +87,17 @@ public static class Alerts
     public static readonly AlertKind Stalled = new("stalled", "Building stalled", "gold", AlertLevel.Decision, AlertWindow.None);
     public static readonly AlertKind Lurker = new("lurker", "A stranger watching", "suspicion", AlertLevel.Urgent, AlertWindow.None);
     public static readonly AlertKind Tourney = new("tourney", "The tourney", "favour", AlertLevel.Decision, AlertWindow.Tourney);
+    public static readonly AlertKind Strike = new("strike", "A guild on strike", "population", AlertLevel.Urgent, AlertWindow.Council);
+    public static readonly AlertKind Guild = new("guild", "Guild demands", "favour", AlertLevel.Decision, AlertWindow.Council);
     public static readonly AlertKind Wager = new("wager", "Tourney bets", "gold", AlertLevel.Minor, AlertWindow.Tourney);
 
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Sighted, Lurker, Captives, Doom, Crisis, Fear, Hunger, Coffers, Underfunded, Unrest, Hostile, Motion, Fealty, Clash, Traitor, Plot, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Heroes, Honours, Neighbour, Loot, Stalled, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Outpost, Housing, Crowded];
+        [Siege, Sighted, Lurker, Captives, Doom, Crisis, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Fealty, Clash, Traitor, Plot, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Heroes, Honours, Neighbour, Loot, Stalled, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Outpost, Housing, Crowded];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
-    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Hostility, Winter, Growth, Routes, Region, Undercity, Study, Loyalty, Armoury, Homes, Sites, Crowds, Keepers, Outposts, Lists];
+    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Undercity, Study, Loyalty, Armoury, Homes, Sites, Crowds, Keepers, Outposts, Lists];
 
     public static List<Alert> Standing(Town town) => Rules.SelectMany(r => r(town)).ToList();
 
@@ -224,6 +226,24 @@ public static class Alerts
         }
         if (t.Mandate < 30)
             yield return new("mandate", Unrest, "The town is turning on you", $"Mandate {Math.Round(t.Mandate)}. Below this the council stops listening.");
+    }
+
+    /// <summary>A trade guild on strike, or pressing a demand with a deadline.</summary>
+    private static IEnumerable<Alert> Trades(Town t)
+    {
+        var r = Guilds.Rules(t);
+        foreach (var g in t.Guilds)
+        {
+            string name = Cap(Guilds.Name(t, g));
+            if (Guilds.OnStrike(t, g))
+                yield return new($"strike:{g.Id}", Strike, $"{name} on strike for {Days(g.StrikeUntil - t.Day)}",
+                    $"Its workers have downed tools. In the Council window pay it off ({Js.Str(Guilds.PayCost(t, g))}g) or send the watch to break the strike (costs {Js.Str(r.BreakMandate)} Mandate).",
+                    AgentId: g.MasterId);
+            else if (Guilds.Want(t, g) is { } w)
+                yield return new($"guild:{g.Id}:{g.Due}", Guild, $"{name} wants {Guilds.WantText(t, g, w)}",
+                    $"The guild gives you {Days(Math.Max(1, g.Due - t.Day))}. Meet it from the Council window or it takes it ill{(g.Standing - r.Lapsed <= r.StrikeAt ? " and strikes" : "")}.",
+                    AgentId: g.MasterId);
+        }
     }
 
     private static IEnumerable<Alert> Hostility(Town t)

@@ -449,6 +449,15 @@
       "teaches": ["command:DigIntoCouncillor", "command:PressCouncillor", "command:ExposeCouncillor"]
     },
     {
+      "id": "guilds",
+      "title": "The trade guilds",
+      "text": "Enough workers in one trade have formed a [b]guild[/b]: builders, smiths, brewers, farmers or shopkeepers, with a master who leans on one councillor's vote. Now and then the master brings a demand with a deadline: a festival, lower taxes, more watchmen, a new part on a monument, land zoned for the trade. In [b]Council[/b], [b]Meet it[/b] and the guild warms to you and to its councillor; [b]Pay them off[/b] to make it go away. Ignore it, raise taxes or veto what they want and they sour, and at the bottom they [b]strike[/b]: their workers down tools for days. Pay them off, or [b]Break the strike[/b] with the watch, which costs Mandate.",
+      "when": "count:Guilds",
+      "point": "tab:Council",
+      "until": "tab:Council",
+      "teaches": ["command:MeetGuildDemand", "command:PayOffGuild", "command:BreakStrike"]
+    },
+    {
       "id": "honours",
       "title": "Honours are yours to give",
       "text": "When a loyal knight holds no land, or the town has no champion, the strip says so. Click it: a cleared site can be granted to the knight, who holds it with their own retainers and lives on its rents, and the champion stands first on the walls. The council moves knighthoods itself; sign them in [b]Council[/b].",

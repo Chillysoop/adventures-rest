@@ -314,6 +314,7 @@ public static class TreasuryAccount
     public const string Region = "The region";
     public const string Institutions = "Institutions";
     public const string Tourney = "Tourney";
+    public const string Guilds = "Guilds";
 }
 
 /// <summary>How the campaign ended.</summary>
@@ -424,6 +425,9 @@ public sealed class Town
 
     /// <summary>What the mayor has looked for, and found, in councillors' pasts (<see cref="Systems.Secrets"/>).</summary>
     public List<Systems.Secret> Secrets { get; } = [];
+
+    /// <summary>The trade guilds that have formed, in the order they formed (<see cref="Systems.Guilds"/>).</summary>
+    public List<Systems.Guild> Guilds { get; } = [];
 
     /// <summary>Mirrors hidden at sites, oldest first; smashed ones stay with SmashedTick set.</summary>
     public List<Mirror> Mirrors { get; } = [];

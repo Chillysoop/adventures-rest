@@ -1,0 +1,121 @@
+{
+  "population": 45,
+  "start": 60,
+  "rest": 55,
+  "drift": 0.015,
+  "dues": 0.25,
+  "duesFloor": 10,
+  "backing": 30,
+  "pleased": 70,
+  "angry": 30,
+  "loyalty": 0.4,
+  "firstDemand": 6,
+  "stagger": 5,
+  "demandGap": 24,
+  "demandDays": 8,
+  "met": 25,
+  "lapsed": 25,
+  "sided": 5,
+  "crossed": 10,
+  "chipIn": 0.5,
+  "payPerMember": 8,
+  "paidOff": 15,
+  "strikeAt": 10,
+  "strikeDays": 5,
+  "afterStrike": 40,
+  "breakWatch": 4,
+  "breakMandate": 6,
+  "broken": 25,
+  "brokenLoyalty": 10,
+  "lines": {
+    "founded": "The {trade} of {town} found {name}, meeting at {hall}. They choose {master} as guild master{backing}.",
+     "backing": ", and the guild will lean on {councillor} the {seat} at the council",
+    "master": "{name} has a new guild master: {master}, who works at {hall}.",
+    "backs": "{name} takes {councillor} the {seat} to dinner. The guild will back them at the council.",
+    "demand": "{master}, master of {name}, comes to the town hall: the guild wants {want}, and gives the mayor {days} days.",
+    "met": "{name} has what it asked for. {master} thanks the mayor before the whole guild.",
+    "lapsed": "The days {name} gave the mayor run out without {want}. {master} tells the guild the town hall does not listen.",
+    "crossed": "{name} takes it ill that the mayor {ruling}.",
+    "strike": "{name} goes on strike: from {hall} to the last {member}, its people down tools until the town hall listens. {master} speaks for them.",
+    "ends": "The strike of {name} ends. Its people go back to work for want of wages, sullen.",
+    "paid": "The mayor pays {name} {gold} gold to drop the matter. {master} counts it twice.",
+    "broken": "The watch breaks the strike of {name}: {master}'s pickets are pulled from the doors of {hall} and the guild is sent back to work. The town remembers it."
+  },
+  "guilds": [
+    {
+      "id": "masons",
+      "name": "the Company of Masons and Wrights",
+      "trade": "builders, quarriers, woodcutters and carpenters",
+      "member": "hod-carrier",
+      "trades": ["builders_yard", "quarry", "lumber_camp", "carpenter"],
+      "seat": "speaker",
+      "members": 5,
+      "motions": { "build_homes": 1, "raise_tax": -0.5, "lower_tax": 0.5 },
+      "strike": "Scaffolds stand empty and no stone or timber reaches the sites.",
+      "wants": [
+        { "kind": "part", "text": "a new part raised on {monument}" },
+        { "kind": "zone", "zone": "Residential", "amount": 3, "text": "land zoned for {amount} more houses" }
+      ]
+    },
+    {
+      "id": "smiths",
+      "name": "the Hammer and Tongs",
+      "trade": "smiths",
+      "member": "apprentice",
+      "trades": ["forge", "bastion_smithy"],
+      "seat": "captain",
+      "members": 3,
+      "motions": { "hire_watch": 1, "dismiss_watch": -1, "knight": 0.5, "raise_tax": -0.5 },
+      "strike": "The forges go cold and no tools reach the market.",
+      "wants": [
+        { "kind": "watch", "amount": 2, "text": "{amount} more watchmen, armed from their forges" },
+        { "kind": "tax", "amount": 0.02, "text": "taxes cut to {target}" }
+      ]
+    },
+    {
+      "id": "brewers",
+      "name": "the Fellowship of Brewers and Innkeepers",
+      "trade": "brewers, hop-growers, vintners and innkeepers",
+      "member": "potboy",
+      "trades": ["brewery", "hop_yard", "vineyard", "tavern", "bathhouse"],
+      "seat": "speaker",
+      "members": 4,
+      "motions": { "festival": 1, "raise_tax": -1, "lower_tax": 0.5 },
+      "strike": "The taps run dry and the taverns bar their doors.",
+      "wants": [
+        { "kind": "festival", "text": "a feast day for the town, the ale bought on the council's coin" },
+        { "kind": "tax", "amount": 0.02, "text": "taxes cut to {target}" }
+      ]
+    },
+    {
+      "id": "tillers",
+      "name": "the Tillers' and Millers' Guild",
+      "trade": "farmers, shepherds, herb-growers and fishers",
+      "member": "farmhand",
+      "trades": ["farm", "root_farm", "orchard", "sheepfold", "herb_garden", "fishery"],
+      "seat": "steward",
+      "members": 6,
+      "motions": { "raise_tax": -1, "lower_tax": 1, "build_homes": -0.3 },
+      "strike": "The fields go untended and the carts stop coming to market.",
+      "wants": [
+        { "kind": "zone", "zone": "Farmland", "amount": 2, "text": "land zoned for {amount} more fields" },
+        { "kind": "tax", "amount": 0.02, "text": "taxes cut to {target}" }
+      ]
+    },
+    {
+      "id": "drapers",
+      "name": "the Drapers' and Chandlers' Company",
+      "trade": "weavers, shopkeepers, apothecaries and scribes",
+      "member": "shop-boy",
+      "trades": ["weaver", "general_store", "apothecary", "scriptorium"],
+      "seat": "steward",
+      "members": 4,
+      "motions": { "raise_tax": -1, "lower_tax": 1, "festival": 0.5 },
+      "strike": "Shutters stay down along the market and the looms stand still.",
+      "wants": [
+        { "kind": "tax", "amount": 0.02, "text": "taxes cut to {target}" },
+        { "kind": "festival", "text": "a market fair, paid for by the council" }
+      ]
+    }
+  ]
+}
