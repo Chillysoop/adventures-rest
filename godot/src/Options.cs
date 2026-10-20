@@ -79,6 +79,9 @@ public sealed class Options
     /// <summary>--folk: select the most practised townsperson, for a look at their character sheet.</summary>
     public bool Folk;
 
+    /// <summary>--skirmish [gear]: the town's heroes, one of each class, fight a ring of raiders by the square (for shots); "gear" hands them famous magic arms first.</summary>
+    public string? Skirmish;
+
     /// <summary>--rolls: look into the busiest tavern and replay its latest skill checks as dice over people's heads.</summary>
     public bool Rolls;
 
@@ -209,6 +212,7 @@ public sealed class Options
                 case "--tutorial": o.Tutorial = Next(); break;
                 case "--hero": o.Hero = true; break;
                 case "--folk": o.Folk = true; break;
+                case "--skirmish": o.Skirmish = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
                 case "--rolls": o.Rolls = true; break;
                 case "--wall": o.Wall = int.Parse(Next()); break;
                 case "--strike": o.Strike = true; break;

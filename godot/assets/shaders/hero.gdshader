@@ -1,0 +1,90 @@
+shader_type spatial;
+render_mode diffuse_lambert_wrap;
+
+#include "res://assets/shaders/common.gdshaderinc"
+#include "res://assets/shaders/rig.gdshaderinc"
+
+// Heroes: chunky figures in bright gear (see Heroes.cs). Vertex alpha flags as MeshKit.Flag; the instance
+// carries indices into the palette (skin, class trim, weapon and armour enchantment), a sparkle tier and a
+// hit flash, and the animation (rig.gdshaderinc). Palette alpha is the enchantment's style.
+uniform vec4 palette[32];
+
+varying vec3 wpos;
+varying vec3 lpos;
+varying vec3 skin;
+varying vec3 trim;
+varying vec4 wglow;
+varying vec4 aglow;
+varying float sparkle;
+varying float flash;
+
+void vertex() {
+	float r = INSTANCE_CUSTOM.r + 0.5, b = INSTANCE_CUSTOM.b + 0.5;
+	skin = palette[int(mod(r, 32.0))].rgb;
+	trim = palette[int(r / 32.0)].rgb;
+	wglow = palette[int(mod(b, 32.0))];
+	aglow = palette[int(b / 32.0)];
+	sparkle = floor(INSTANCE_CUSTOM.g + 0.001);
+	flash = INSTANCE_CUSTOM.g - sparkle;
+	lpos = VERTEX;
+	rig(VERTEX, NORMAL, UV.x, INSTANCE_CUSTOM.a, flash);
+	wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	VERTEX *= 1.0 - strategic;
+	if (hidden_by_fog(wpos.xz)) VERTEX = vec3(0.0);
+}
+
+float hash3(vec3 p) { return fract(sin(dot(p, vec3(12.9898, 78.233, 37.719))) * 43758.5453); }
+
+void fragment() {
+	vec3 c = COLOR.rgb;
+	float a = COLOR.a;
+	vec3 emit = vec3(0.0);
+	float rough = 0.9;
+	vec3 wn = normalize((INV_VIEW_MATRIX * vec4(NORMAL, 0.0)).xyz);
+	if (abs(a - 0.45) < 0.04) c = skin;
+	else if (abs(a - 0.15) < 0.04) c = trim * c;
+	else if (abs(a - 0.7) < 0.04 || abs(a - 0.92) < 0.04) {
+		// Polished metal: a bright facet that catches the sun, and now and then a glint that twinkles.
+		rough = 0.3;
+		float facet = hash3(floor(wn * 6.0) + floor(lpos * 40.0));
+		float tw = step(0.985 - sparkle * 0.012, hash3(floor(wn * 6.0) + floor(TIME * 5.0 + facet * 7.0)));
+		emit += c * tw * (1.6 + sparkle * 0.8) * (1.0 - night * 0.5);
+		emit += c * sparkle * 0.06;
+		// Enchanted armour glows along its plates in its colour.
+		if (aglow.a > 0.5 && a < 0.8) emit += aglow.rgb * (0.35 + 0.2 * sin(TIME * 2.0 + wpos.x));
+		if (a > 0.8) {
+			if (wglow.a > 0.5) {
+				float fl = wglow.a > 1.5 && wglow.a < 2.5 ? 0.75 + 0.35 * sin(TIME * 23.0 + lpos.y * 60.0) : 0.85 + 0.25 * sin(TIME * 3.0);
+				c = mix(c, wglow.rgb, 0.7);
+				emit += wglow.rgb * 2.2 * fl;
+			}
+		}
+	} else if (abs(a - 0.3) < 0.04) {
+		emit = c * (1.2 + 0.25 * sin(TIME * 7.0 + wpos.x));
+	} else if (abs(a - 0.8) < 0.04) {
+		// A focus, an orb, a holy symbol: lit from inside.
+		emit = c * (1.1 + 0.4 * sin(TIME * 2.5 + wpos.z));
+	}
+	float grain = texture(noise_tex, wpos.xz * 2.3 + vec2(wpos.y * 1.9)).r;
+	c = mix(c, mix(vec3(luma(c)), c, 1.25) * (0.94 + 0.12 * grain), toon);
+	// The heroic halo: a rim in the class colour, so a hero stands out of any crowd.
+	float fres = pow(1.0 - clamp(dot(NORMAL, VIEW), 0.0, 1.0), 3.0);
+	emit += fres * mix(vec3(1.0, 0.9, 0.7), trim, 0.6) * (0.35 + 0.3 * night) * (1.0 - strategic);
+	c = mix(c, vec3(1.0), flash * 0.8);
+	emit += flash * vec3(1.6, 1.3, 1.0);
+	float cloud;
+	c = apply_fog(c, wpos.xz, TIME, cloud);
+	emit *= 1.0 - cloud;
+	ALBEDO = to_linear(c);
+	EMISSION = to_linear(emit);
+	ROUGHNESS = rough;
+}
+
+void light() {
+	DIFFUSE_LIGHT += LIGHT_COLOR * cel(dot(NORMAL, LIGHT), ATTENUATION, 0.9) / PI;
+	// Metal (low roughness) throws back a hard highlight, cel-banded like the rest.
+	if (ROUGHNESS < 0.5) {
+		float s = pow(max(dot(reflect(-LIGHT, NORMAL), VIEW), 0.0), 18.0);
+		SPECULAR_LIGHT += LIGHT_COLOR * smoothstep(0.35, 0.45, s) * ATTENUATION * 1.4;
+	}
+}

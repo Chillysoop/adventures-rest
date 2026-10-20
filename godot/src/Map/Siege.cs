@@ -259,8 +259,6 @@ public partial class Crowd
             int id = b.Champions[k];
             if (id < 1 || id > town.Agents.Count) continue;
             var a = town.Agent(id);
-            var body = Palette.ClassColor(a.Hero?.Cls.Id ?? "");
-            var skin = Palette.RaceColor(a.Race);
             float ang = k * Mathf.Tau / Math.Max(1, n) + 0.5f;
             var ring = new Vector2(Mathf.Cos(ang), Mathf.Sin(ang));
             if (_phase == BattlePhase.Sally && _u < 0.45f)
@@ -269,15 +267,19 @@ public partial class Crowd
                 float s = Ease(_u / 0.45f) - k / 2 * 0.03f;
                 var (pos, dir) = Along(l.Sally, Mathf.Max(0, s));
                 var side = new Vector2(dir.Y, -dir.X) * ((k % 2) - 0.5f) * 0.3f;
-                Put(gen.At(pos + side, Mathf.Abs(Mathf.Sin(now * 9 + k)) * 0.03f), Mathf.Atan2(dir.X, dir.Y), body, skin, 1.15f);
+                Heroes.Put(a, gen.At(pos + side), Mathf.Atan2(dir.X, dir.Y), Heroes.Act.Walk, now * 1.9f + k * 0.31f, 0, 1.15f);
                 continue;
             }
             bool fell = b.ChampionsFell.Contains(id);
-            float r = 0.62f - 0.18f * Mathf.Max(0, Mathf.Sin(now * 5 + k * 1.9f));
-            var spot = l.Duel + ring * (fell && _phase == BattlePhase.End ? 0.7f : r);
             float face = Mathf.Atan2(-ring.X, -ring.Y);
-            if (fell && _phase == BattlePhase.End) PutFallen(gen.At(spot), face, body, skin, 1.15f);
-            else Put(gen.At(spot, _phase == BattlePhase.Sally ? Mathf.Max(0, Mathf.Sin(now * 7 + k)) * 0.04f : 0), face, body, skin, 1.15f);
+            if (fell && _phase == BattlePhase.End)
+            {
+                var spot = gen.At(l.Duel + ring * 0.7f) + new Vector3(0, 0.03f, 0);
+                var basis = Basis.FromEuler(new Vector3(0, face, 0)) * Basis.FromEuler(new Vector3(-Mathf.Pi / 2, 0, 0));
+                Heroes.Put(a, new Transform3D(basis.Scaled(new Vector3(1.15f, 1.15f, 1.15f)), spot), Heroes.Act.Idle, 0);
+            }
+            else if (_phase == BattlePhase.Sally) Fight(a, l.Duel + ring * Heroes.Reach(a), gen.At(l.Duel, 0.35f), now, 1.15f);
+            else Heroes.Put(a, gen.At(l.Duel + ring * 0.62f), face, Heroes.Act.Cheer, now * 0.8f + k * 0.4f, 0, 1.15f);
         }
     }
 

@@ -421,6 +421,13 @@ public partial class MapView : Control
             m.NextPass = pass;
             _inks.Add(pass);
         }
+        // Heroes get the ink too, following their rig, so they stand out like the buildings do.
+        var heroInk = new ShaderMaterial { Shader = ink };
+        heroInk.SetShaderParameter("noise_tex", Mats.Hero.GetShaderParameter("noise_tex"));
+        heroInk.SetShaderParameter("rigged", 1.0f);
+        heroInk.SetShaderParameter("width", 0.0022f);
+        Mats.Hero.NextPass = heroInk;
+        _inks.Add(heroInk);
     }
 
     private void PaintLight(float night)
