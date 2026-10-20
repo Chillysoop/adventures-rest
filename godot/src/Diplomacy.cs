@@ -26,11 +26,11 @@ public partial class Main
         Color Shade(double v) => v >= 45 ? Ui.Good : v >= 25 ? Ui.Gold : Ui.Bad;
         string ruler = s.Reign != null ? Reigns.Describe(t, s) : $"{s.Leader}, their {lead.Title}";
         string lines = $"[font_size=12]Led by {Ui.C(Reigns.Puppet(s) ? Ui.Bad : Ui.Ink, Ui.Esc(ruler))} · prosperity {Ui.C(Shade(s.Prosperity), Level(s.Prosperity))} · security {Ui.C(Shade(s.Security), Level(s.Security))}";
-        if (s.Reign != null && !Reigns.Puppet(s))
+        if (s.Reign != null)
         {
-            var temper = Reigns.TemperOf(t, s);
+            string temper = Reigns.Puppet(s) ? "" : Ui.Cap(Reigns.TemperOf(t, s).Text) + ".";
             string was = Reigns.Succession(t, s);
-            lines += "\n" + Ui.C(Ui.Ink2, $"{Ui.Esc(Ui.Cap(temper.Text))}.{(was != "" ? $" {Ui.Esc(was)}." : "")}");
+            if (temper != "" || was != "") lines += "\n" + Ui.C(Ui.Ink2, Ui.Esc($"{temper}{(temper != "" && was != "" ? " " : "")}{(was != "" ? was + "." : "")}"));
         }
         if (Shadows.Shadowed(s) && Shadows.Over(t, s) is { } dark)
         {
@@ -81,7 +81,7 @@ public partial class Main
         var w = t.Content.World.Standing;
         var tr = t.Content.Trade;
         p.Begin();
-        var known = t.Settlements.Where(s => t.Regions[s.RegionId].Known).OrderBy(s => s.Razed).ThenByDescending(s => s.Allied).ThenByDescending(s => s.Standing).ThenBy(s => s.Id).ToList();
+        var known = t.Settlements.Where(s => t.Regions[s.RegionId].Known).OrderBy(s => s.Razed).ThenByDescending(s => Shadows.Shadowed(s)).ThenByDescending(s => s.Allied).ThenByDescending(s => s.Standing).ThenBy(s => s.Id).ToList();
         int allies = known.Count(s => s.Allied);
         var open = Trade.Open(t).OrderBy(r => r.Id).ToList();
         p.Card($"[font_size=17][b]{known.Count} {(known.Count == 1 ? "people" : "peoples")} known[/b][/font_size]\n" +
