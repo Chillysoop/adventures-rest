@@ -214,7 +214,7 @@ public static class Brain
         // Their local, though a keeper they like is worth a longer walk (and one they don't, a shorter); on to the next if it is full.
         var from = Crowds.From(town, a);
         double keeper = town.Content.Crowds.Keeper;
-        var tavern = Crowds.Enter(town, a, Crowds.PlacesOf(town, Crowds.Tavern), t => Crowds.Distance(town, t, from) - OpinionOfOwner(a, t) * keeper);
+        var tavern = Crowds.Enter(town, a, Crowds.PlacesOf(town, Crowds.Tavern), t => Crowds.Distance(town, t, from) - OpinionOfOwner(a, t) * keeper - Taverns.Draw(town, a, t));
         if (tavern == null) return false;
 
         if (tavern.StockOf(Good.Ale) < 1)
@@ -226,7 +226,7 @@ public static class Brain
                 tavern.AddStock(Good.Ale, Math.Floor(restock));
             }
         }
-        double price = Js.Round(town.Market.Price(Good.Ale) * AleMarkup * 10) / 10;
+        double price = Js.Round(town.Market.Price(Good.Ale) * AleMarkup * Taverns.Ale(town, tavern) * 10) / 10;
         if (tavern.StockOf(Good.Ale) >= 1 && a.Gold >= price)
         {
             tavern.AddStock(Good.Ale, -1);
@@ -237,7 +237,7 @@ public static class Brain
             tavern.RevenueToday += price;
             a.Drinks++;
         }
-        a.Loneliness = Math.Max(0, a.Loneliness - 8);
+        a.Loneliness = Math.Max(0, a.Loneliness - 8 - Taverns.Warm(town, tavern));
         return true;
     }
 

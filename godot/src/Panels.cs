@@ -296,7 +296,6 @@ public partial class Main
             string names = string.Join(", ", c.Captives.Select(id => t.Agent(id).Name));
             p.Card($"[b]Held at {SiteLink(held.Def)}[/b]  {Tag($"{left} {(left == 1 ? "day" : "days")} left", Ui.Bad)}\n[font_size=12]{Ui.Esc(names)}. Post a [b]Rescue[/b] on {Ui.Esc(held.Def.Name)} before the days run out, or clear it.[/font_size]", Ui.Bad);
         }
-        var scryer = Knowledge.Scryers(t).FirstOrDefault();
         bool freeScry = Watch.FreeScryingsLeft(t) > 0;
         bool canScout = Watch.Watchers(t).Count > 0;
         // Threats first: a site an alert names (a war camp, a crisis's seat) or the warband's camp, then the rest of the
@@ -329,9 +328,9 @@ public partial class Main
             }
             if (!s.ThoughtCleared && Watch.LiveOf(t, s) == null)
             {
-                double cost = Knowledge.ScryCost(t, s.Def);
+                var ask = Knowledge.ScryOffer(t, s.Def);
                 string sid = s.Def.Id;
-                buttons.Add((freeScry ? "Scry free" : $"Scry {Math.Round(cost)}g", freeScry || scryer != null && t.Treasury >= cost, false, () => Act(() => _sim.CommissionScrying(sid))));
+                buttons.Add((freeScry ? "Scry free" : ask != null ? $"Scry {Knowledge.ScryWords(ask)}" : "Scry", freeScry || ask != null && t.Treasury >= ask.Cost, false, () => Act(() => _sim.CommissionScrying(sid))));
                 if (Watch.ScoutAt(t, sid) == null) buttons.Add(("Scout", canScout, false, () => Act(() => _sim.PostScout(sid))));
             }
             int bt = Math.Clamp(s.BelievedTier, 1, 3);
@@ -349,8 +348,8 @@ public partial class Main
         }
         p.Note(freeScry
             ? $"Scrying: the Scrying Pool will show one site live for {t.Content.Knowledge.ScryHours} hours today, free."
-            : scryer != null
-                ? $"Scrying: {scryer.Name} the {scryer.Hero!.Cls.Name} will show you a site live for {t.Content.Knowledge.ScryHours} hours."
+            : Knowledge.Scryers(t).FirstOrDefault() is { } scryer
+                ? $"Scrying: {scryer.Name} the {scryer.Hero!.Cls.Name} and the town's other casters will show you a site live for {t.Content.Knowledge.ScryHours} hours. Those fond of the town ask nothing, most want gold, sour ones a favour."
                 : $"Scrying needs a {ScryClasses(t)} of level {t.Content.Knowledge.ScryMinLevel} or more in town.");
         p.Note(canScout
             ? $"Scouting: {Watch.Watchers(t)[0].Name} the {Watch.Watchers(t)[0].Hero!.Cls.Name} will watch a site from cover for up to {Ui.Days(t.Content.Knowledge.Scouts.WatchDays)}, {t.Content.Knowledge.Scouts.WagePerDay}g a day."
@@ -981,10 +980,16 @@ public partial class Main
         if (live == null)
         {
             bool free = Watch.FreeScryingsLeft(t) > 0;
-            double cost = Knowledge.ScryCost(t, s.Def);
-            var scryer = Knowledge.Scryers(t).FirstOrDefault();
-            p.Buttons((free ? "Scry it free, from the pool" : $"Commission a scrying, {Math.Round(cost)}g", free || scryer != null && t.Treasury >= cost, true, () => Act(() => _sim.CommissionScrying(sid))));
-            p.Note(free ? $"The Scrying Pool shows it for {t.Content.Knowledge.ScryHours} hours." : scryer != null ? $"{scryer.Name} would cast it, for {t.Content.Knowledge.ScryHours} hours." : $"Needs a {ScryClasses(t)} of level {t.Content.Knowledge.ScryMinLevel} or more in town.");
+            var ask = Knowledge.ScryOffer(t, s.Def);
+            p.Buttons((free ? "Scry it free, from the pool" : ask != null ? $"Commission a scrying, {Knowledge.ScryWords(ask)}" : "Commission a scrying", free || ask != null && t.Treasury >= ask.Cost, true, () => Act(() => _sim.CommissionScrying(sid))));
+            string why = ask?.Kind switch
+            {
+                "free" => " They are fond enough of the town to ask nothing.",
+                "favour" => " They want no gold, but the town will owe them, and they will call it in.",
+                "gold" => " Casters who love the town scry for free; sour ones ask favours.",
+                _ => "",
+            };
+            p.Note(free ? $"The Scrying Pool shows it for {t.Content.Knowledge.ScryHours} hours." : ask != null ? $"{ask.Caster.Name} would cast it, for {t.Content.Knowledge.ScryHours} hours.{why}" : Knowledge.Scryers(t).Count > 0 ? "The casters in town are owed too many favours to scry again on credit." : $"Needs a {ScryClasses(t)} of level {t.Content.Knowledge.ScryMinLevel} or more in town.");
         }
         if (scout != null && live != LiveSource.Scout)
             p.Note($"{t.Agent(scout.HeroId).Name} is {(t.Tick < scout.ArriveTick ? "on the way to watch it" : "on the way home")}.");

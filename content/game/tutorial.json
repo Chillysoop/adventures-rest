@@ -513,8 +513,8 @@
     },
     {
       "id": "union",
-      "title": "Guilds and mages",
-      "text": "Your guilds have banded together as a [b]union[/b], and they resent the town's mages: every spell cast for wages is bread out of a worker's mouth. The bar in [b]Council[/b] shows who has your ear. Funding research, the wizards' library and [b]hedge mages[/b] (townsfolk who teach themselves a trade spell) pull it toward the mages; the guilds pull it back. Keep it in the green middle and both work together. Let it lean and the slighted side sours, and too far it acts: the union marches and every guild strikes, or the mages walk out. [b]Hear[/b] a side out for gold, or [b]side[/b] with one for a season if you are ready for the other's anger.",
+      "title": "The movement and the mages",
+      "text": "Working townsfolk have banded together as [b]the Common Cause[/b]: guild hands and others, and even a few hedge mages, since magic users work the trades too. They want magic to serve the workers, not undercut them. The bar in [b]Council[/b] shows who has your ear. Funding research, the wizards' library and [b]hedge mages[/b] outside the movement pull it toward the mages; the movement's numbers and the guilds pull it back, and every hedge mage who joins widens the green middle. Keep it there and both work together. Let it lean and the slighted side sours, and too far it acts: the movement marches and every guild strikes, or the mages walk out. [b]Hear[/b] a side out for gold, or [b]side[/b] with one for a season if you are ready for the other's anger.",
       "when": "alert:union",
       "point": "tab:Council",
       "until": "tab:Council",

@@ -420,6 +420,9 @@ public sealed class Town
     /// <summary>Stone circles companies woke for the town, oldest first (<see cref="Systems.Circles"/>).</summary>
     public List<Systems.StoneCircle> Circles { get; } = [];
 
+    /// <summary>Townsfolk killed by drunken heroes in tavern brawls, and whether their kin were paid (<see cref="Systems.Taverns"/>).</summary>
+    public List<Systems.BloodDebt> BloodDebts { get; } = [];
+
     /// <summary>Scouts posted to watch sites, oldest first.</summary>
     public List<Scout> Scouts { get; } = [];
 

@@ -309,7 +309,7 @@ public static class Skills
             int bb = Bonus(town, p, c.Skill);
             if (bb > bonus) (best, bonus) = (p, bb);
         }
-        var chk = Roll(town, best!, c.Skill, c.Dc, "perform", null, tavern.Id);
+        var chk = Roll(town, best!, c.Skill, c.Dc, "perform", null, tavern.Id, Taverns.Perform(town, tavern));
         if (!chk.Success && !chk.Fumble) return;
         double mood = chk.Fumble ? c.FumbleMood : chk.Critical ? 2 * c.Mood : c.Mood;
         double tips = 0;
@@ -361,7 +361,7 @@ public static class Skills
         var staff = tavern.OwnerId is int o ? tavern.Workers.Append(o) : tavern.Workers;
         var keep = staff.Distinct().Select(town.Agent).Where(w => !w.Departed && w.Id != brawler.Id && w.LocationId == tavern.Id).OrderBy(w => w.Id).FirstOrDefault();
         if (keep == null) return false;
-        var chk = Roll(town, keep, c.Skill, c.Dc, "calm", brawler.Id, tavern.Id);
+        var chk = Roll(town, keep, c.Skill, c.Dc, "calm", brawler.Id, tavern.Id, Taverns.Calm(town, tavern));
         if (!chk.Success) return false;
         brawler.Activity = Activity.Relaxing;
         brawler.LocationId = brawler.HomeId;

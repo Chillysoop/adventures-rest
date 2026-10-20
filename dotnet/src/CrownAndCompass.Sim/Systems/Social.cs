@@ -48,6 +48,7 @@ public static class Social
             }
             Skills.Perform(town, tavern, patrons);
             Skills.Pickpocket(town, tavern, patrons);
+            Taverns.Hour(town, tavern, patrons);
         }
     }
 
@@ -59,7 +60,7 @@ public static class Social
 
         // Persuasion: the ale, their nature and what the listener already thinks of them all count.
         var talk = Skills.Roll(town, p, town.Content.Skills.Check("talk").Skill, 9, "talk", q.Id, tavern.Id,
-            (p.Has(Trait.Gregarious) ? 2 : 0) - (p.Has(Trait.Shy) ? 2 : 0) - (p.Drinks >= 3 ? 2 : 0) + before / 25);
+            (p.Has(Trait.Gregarious) ? 2 : 0) - (p.Has(Trait.Shy) ? 2 : 0) - (p.Drinks >= 3 ? 2 : 0) + before / 25 + Taverns.Talk(town, tavern, p));
         int roll = talk.Die;
         int total = talk.Total;
 
@@ -80,7 +81,7 @@ public static class Social
                 [p.Id, q.Id]);
 
         // Brawl.
-        if (after <= RivalThreshold && (q.Has(Trait.HotTempered) || q.Drinks >= 3) && rng.Chance(0.35))
+        if (after <= RivalThreshold && (q.Has(Trait.HotTempered) || q.Drinks >= 3) && rng.Chance(Math.Min(1, 0.35 * Taverns.Brawl(town, tavern, q))))
         {
             if (Skills.Calm(town, tavern, q)) return;
             if (town.Watch > 0 && rng.Chance(Council.WatchStrength(town)))
@@ -151,6 +152,7 @@ public static class Social
             $"{loser.GivenName} pays {Js.ToFixed(paid, 0)} gold for the broken chairs." +
             (healer != null ? $" {healer.Name} sees to the bruises." : ""),
             [attacker.Id, target.Id]);
+        Taverns.Bloodshed(town, tavern, winner, loser, wr);
     }
 
     private static void Marry(Town town, Agent p, Agent q)

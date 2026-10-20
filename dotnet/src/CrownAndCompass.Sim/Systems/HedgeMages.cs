@@ -44,7 +44,7 @@ public sealed record HedgeRules
 /// the Mage Tower): once the library is strong enough, now and then the sharpest townsperson in a trade that has a
 /// spell (builders, field hands, fishers, smiths, woodcutters, brewers, weavers, apothecaries, and the temple's
 /// grave-speakers who help the watch) teaches themselves a little magic for their work. They are still townsfolk:
-/// they keep their trade and make it better, add a little lore, and the guilds resent them (<see cref="Union"/>).
+/// they keep their trade and make it better, add a little lore, and the movement resents those outside it, though some join it (<see cref="Union"/>).
 /// No dice: who learns is the sharpest mind, ties by id.
 /// </summary>
 public static class HedgeMages
@@ -82,12 +82,14 @@ public static class HedgeMages
     {
         var r = Rules(town);
         if (r.Trades.Count == 0 || r.Every <= 0 || town.Day % r.Every != 0 || Research.Power(town) < r.Power) return;
-        if (Union.Banned(town) || All(town).Count >= Cap(town)) return;
+        if (All(town).Count >= Cap(town)) return;
         Agent? pick = null;
         int best = r.MinScore - 1;
         foreach (var a in town.Residents)
         {
             if (a.Hero != null || a.HedgeSpell != "" || a.JobId is not int j || r.Trade(town.Building(j).Def.Id) == null) continue;
+            // While the movement has hedge magic banned, only its own members may take it up.
+            if (Union.Banned(town) && !Union.Joined(town, a, asMage: true)) continue;
             int mind = Math.Max(a.Abilities.Int, a.Abilities.Wis);
             if (mind > best) (pick, best) = (a, mind);
         }
@@ -106,10 +108,10 @@ public static class HedgeMages
         town.Log(LedgerCategory.Social, Importance.Notable, Saga.Sentences(line), [pick.Id]);
     }
 
-    /// <summary>Every hedge mage forgets their spell (the union had it banned).</summary>
+    /// <summary>Every hedge mage outside the movement puts their spell away (the movement had it banned).</summary>
     public static int Forget(Town town)
     {
-        var all = All(town);
+        var all = All(town).Where(a => !Union.Joined(town, a)).ToList();
         foreach (var a in all) a.HedgeSpell = "";
         return all.Count;
     }

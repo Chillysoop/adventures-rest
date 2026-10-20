@@ -15,11 +15,14 @@ public class UnionTests
     }
 
     [Fact]
-    public void TheUnionFormsOnceTwoGuildsHaveAndTheStandInNeverSeesIt()
+    public void TheMovementFormsFromWorkersInAndOutOfTheGuildsAndTheStandInNeverSeesIt()
     {
         var (_, t) = Town();
-        Assert.True(t.Guilds.Count >= Union.Rules(t).Guilds);
-        Assert.Contains(t.Ledger.Entries, e => e.Text.Contains("union", StringComparison.OrdinalIgnoreCase));
+        var members = Union.Members(t);
+        Assert.True(members.Count >= Union.Rules(t).Founding);
+        // Not only the guilds: workers outside their trades join too.
+        Assert.Contains(members, a => !Guilds.InTrade(t, a));
+        Assert.Contains(t.Ledger.Entries, e => e.Text.Contains(Union.Rules(t).Name, StringComparison.Ordinal));
         var auto = new Simulation(new SimulationOptions { Seed = 1, Enemy = false });
         auto.RunDays(150);
         Assert.False(auto.Town.Union.Formed);
@@ -71,13 +74,19 @@ public class UnionTests
     }
 
     [Fact]
-    public void SidingWithTheGuildsBansHedgeMagicAndLeavesAGrudge()
+    public void SidingWithTheMovementBansHedgeMagicOutsideItAndLeavesAGrudge()
     {
         var (sim, t) = Town();
-        var townsman = t.Residents.First(a => a.Hero == null);
-        townsman.HedgeSpell = "farm";
-        Assert.True(sim.TakeSide("guilds"));
-        Assert.Equal("", townsman.HedgeSpell);
+        var outside = t.Residents.First(a => a.Hero == null && a.JobId != null && !Union.Joined(t, a, asMage: true));
+        var inside = t.Residents.First(a => a.Hero == null && a.JobId != null && Union.Joined(t, a, asMage: true));
+        outside.HedgeSpell = "farm";
+        inside.HedgeSpell = "farm";
+        // A hedge mage in the movement widens the middle.
+        Assert.True(Union.Concord(t) > Union.Rules(t).Concord);
+        Assert.True(sim.TakeSide("union"));
+        Assert.Equal("", outside.HedgeSpell);
+        // Magic users can be in the movement too: they keep their spell.
+        Assert.Equal("farm", inside.HedgeSpell);
         Assert.True(Union.Banned(t));
         Assert.Equal(Union.Rules(t).GuildsLore, Union.LoreFactor(t), 6);
         Assert.False(sim.TakeSide("mages"));

@@ -316,10 +316,10 @@ public sealed class Simulation
     /// <summary>Send the watch to break a guild's strike, at a cost in Mandate.</summary>
     public bool BreakStrike(string guildId) => Guilds.Break(Town, guildId);
 
-    /// <summary>Hear one side of the town's trades out with gold: "guilds" (the union) or "mages".</summary>
+    /// <summary>Hear one side out with gold: "union" (the Common Cause, the workers' movement) or "mages".</summary>
     public bool HearUnion(string side) => Union.Hear(Town, side);
 
-    /// <summary>Take a side outright between the guilds and the mages ("guilds" or "mages") for a season, and face the other's anger.</summary>
+    /// <summary>Take a side outright between the Common Cause and the mages ("union" or "mages") for a season, and face the other's anger.</summary>
     public bool TakeSide(string side) => Union.Side(Town, side);
 
     /// <summary>Answer a menace's demand for fealty: bend the knee and pay tribute, or refuse and face its host.</summary>

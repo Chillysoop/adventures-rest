@@ -261,7 +261,7 @@ public static class Factions
     public static double WatchFactor(Town town)
     {
         var r = Rules(town);
-        double f = 1 + Faith.WatchBonus(town) + HedgeMages.Watch(town);
+        double f = 1 + Faith.WatchBonus(town) + HedgeMages.Watch(town) + Taverns.Watch(town);
         var wardens = Find(town, "dawn-wardens");
         if (wardens is { Active: true }) f += r.WardenWatch;
         var hand = Find(town, "quiet-hand");

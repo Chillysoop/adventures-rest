@@ -243,6 +243,9 @@ public sealed class HeroSheet
     /// <summary>Broke a pact once: no patron claims them again unasked.</summary>
     public bool PactRefused { get; set; }
 
+    /// <summary>Favours the town owes this caster for scryings they cast on credit (<see cref="Systems.Knowledge.ScryOffer"/>).</summary>
+    public int Owed { get; set; }
+
     /// <summary>The familiar their patron sent ("a cinder imp"), "" for none.</summary>
     public string Familiar { get; set; } = "";
 

@@ -559,6 +559,13 @@ public sealed record KnowledgeRules
     public double ScryBaseCost { get; init; } = 30;
     public double ScryCostPerDay { get; init; } = 15;
     public int ScryHours { get; init; } = 12;
+
+    /// <summary>A caster this loyal (or who admires the town) scries for nothing; one below FavourLoyalty wants a favour instead of gold.</summary>
+    public double ScryFreeLoyalty { get; init; } = 75;
+    public double ScryFavourLoyalty { get; init; } = 35;
+
+    /// <summary>Favours owed before a caster stops scrying on credit.</summary>
+    public int ScryMaxOwed { get; init; } = 2;
     public int SlotsPerCaster { get; init; } = 1;
     public int SlotsPerTwoLevels { get; init; } = 1;
     public ScoutRules Scouts { get; init; } = new();
@@ -1292,6 +1299,7 @@ public sealed class Content
 
     /// <summary>Patrons beyond the world and their pacts with heroes (content/game/patrons.json).</summary>
     public PatronRules Patrons { get; init; } = new();
+    public Systems.TavernRules Taverns { get; init; } = new();
     /// <summary>The top bar's month and when a trend counts as trouble (content/game/trends.json).</summary>
     public TrendRules Trends { get; init; } = new();
     public MerchantRules Merchants { get; init; } = new();
@@ -1487,6 +1495,7 @@ public sealed class Content
             Taxes = Parse<TaxRules>("taxes.json"),
             Guilds = Parse<GuildRules>("guilds.json"),
             Patrons = Parse<PatronRules>("patrons.json"),
+            Taverns = Parse<Systems.TavernRules>("taverns.json"),
             Trends = Parse<TrendRules>("trends.json"),
             Merchants = Parse<MerchantRules>("merchants.json"),
             Wards = Parse<WardRules>("wards.json"),

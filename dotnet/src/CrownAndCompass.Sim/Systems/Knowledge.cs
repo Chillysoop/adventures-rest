@@ -3,6 +3,9 @@ namespace CrownAndCompass.Sim.Systems;
 /// <summary>A commissioned scrying: live sight of one site until EndTick.</summary>
 public sealed record Scrying(string SiteId, int CasterId, int StartTick, int EndTick);
 
+/// <summary>What a caster asks to scry a site: Kind "free", "gold" (Cost) or "favour" (owed until a story calls it in).</summary>
+public sealed record ScryAsk(Agent Caster, string Kind, double Cost);
+
 /// <summary>Where a party is on its trip, as the town would reckon it from the calendar.</summary>
 public enum Leg
 {
@@ -41,12 +44,43 @@ public static class Knowledge
     public static double ScryCost(Town town, SiteDef site) =>
         Js.Round((town.Content.Knowledge.ScryBaseCost + town.Content.Knowledge.ScryCostPerDay * site.Distance) * (1 - Research.Scry(town)));
 
+    /// <summary>
+    /// What scrying a site would take, from the caster who asks least: a loyal caster (or one who admires the town)
+    /// does it for nothing, most want gold, and a sour one wants a favour instead, until they are owed too many.
+    /// Null when nobody in town can.
+    /// </summary>
+    public static ScryAsk? ScryOffer(Town town, SiteDef site)
+    {
+        var k = town.Content.Knowledge;
+        double cost = ScryCost(town, site);
+        ScryAsk? best = null;
+        int Rank(string kind) => kind switch { "free" => 0, "gold" => 1, _ => 2 };
+        foreach (var a in Scryers(town))
+        {
+            var h = a.Hero!;
+            string kind = h.Loyalty >= k.ScryFreeLoyalty || Regard.Admirer(town, a) ? "free"
+                : h.Loyalty < k.ScryFavourLoyalty ? (h.Owed < k.ScryMaxOwed ? "favour" : "")
+                : "gold";
+            if (kind == "") continue;
+            if (best == null || Rank(kind) < Rank(best.Kind)) best = new ScryAsk(a, kind, kind == "gold" ? cost : 0);
+        }
+        return best;
+    }
+
+    /// <summary>"Scry 45g", "Scry free (Mira)", "Scry for a favour": the offer in a button's words.</summary>
+    public static string ScryWords(ScryAsk ask) => ask.Kind switch
+    {
+        "free" => $"free, by {ask.Caster.GivenName}",
+        "favour" => $"for a favour to {ask.Caster.GivenName}",
+        _ => $"{Js.Str(Js.Round(ask.Cost))}g",
+    };
+
     public static Scrying? ActiveScrying(Town town, string siteId) =>
         town.Scryings.LastOrDefault(s => s.SiteId == siteId && town.Tick >= s.StartTick && town.Tick < s.EndTick);
 
     /// <summary>
-    /// Scry a site: free from the Scrying Pool while it has a scrying left today, otherwise paid to the
-    /// strongest caster in town. Null when nobody can or the treasury is short.
+    /// Scry a site: free from the Scrying Pool while it has a scrying left today, otherwise from the caster who
+    /// asks least (<see cref="ScryOffer"/>). Null when nobody can or the treasury is short.
     /// </summary>
     public static Scrying? CommissionScrying(Town town, string siteId)
     {
@@ -62,19 +96,23 @@ public static class Knowledge
             town.Log(LedgerCategory.Quest, Importance.Notable, $"The water in the Scrying Pool stills and shows {site.Def.Name}. For {hours} hours the town can watch it.");
             return free;
         }
-        var caster = Scryers(town).FirstOrDefault();
-        double cost = ScryCost(town, site.Def);
-        if (caster == null || town.Treasury < cost) return null;
-
-        town.Book(TreasuryAccount.Scrying, -cost);
-        caster.Gold += cost;
+        if (ScryOffer(town, site.Def) is not { } ask || town.Treasury < ask.Cost) return null;
+        var caster = ask.Caster;
+        if (ask.Cost > 0)
+        {
+            town.Book(TreasuryAccount.Scrying, -ask.Cost);
+            caster.Gold += ask.Cost;
+        }
+        if (ask.Kind == "favour") caster.Hero!.Owed++;
         var scry = new Scrying(siteId, caster.Id, town.Tick, town.Tick + hours * SimTime.HoursPerDay / 24);
         town.Scryings.Add(scry);
-        town.Log(
-            LedgerCategory.Quest,
-            Importance.Notable,
-            $"{caster.Name} the {caster.Hero!.Cls.Name} takes {Js.Str(Js.Round(cost))} gold to scry {site.Def.Name}. For {hours} hours the town can watch it.",
-            [caster.Id]);
+        string how = ask.Kind switch
+        {
+            "free" => $"scries {site.Def.Name} for nothing, as a friend of the town",
+            "favour" => $"scries {site.Def.Name}, and wants no gold for it: the town will owe {(caster.Hero!.Owed == 1 ? "a favour" : $"{caster.Hero.Owed} favours")} instead",
+            _ => $"takes {Js.Str(Js.Round(ask.Cost))} gold to scry {site.Def.Name}",
+        };
+        town.Log(LedgerCategory.Quest, Importance.Notable, $"{caster.Name} the {caster.Hero!.Cls.Name} {how}. For {hours} hours the town can watch it.", [caster.Id]);
         return scry;
     }
 

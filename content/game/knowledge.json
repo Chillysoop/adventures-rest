@@ -5,6 +5,10 @@
   "scryBaseCost": 30,
   "scryCostPerDay": 15,
   "scryHours": 12,
+  "_scryAsks": "What a caster asks to scry depends on their standing with the town: loyalty scryFreeLoyalty or more (or admiring the town) and they do it for nothing; below scryFavourLoyalty they want a favour instead of gold, owed until a story calls it in (need owed), and they stop at scryMaxOwed.",
+  "scryFreeLoyalty": 75,
+  "scryFavourLoyalty": 35,
+  "scryMaxOwed": 2,
   "slotsPerCaster": 1,
   "slotsPerTwoLevels": 1,
   "scouts": {

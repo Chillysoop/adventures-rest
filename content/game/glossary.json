@@ -162,6 +162,64 @@
     { "id": "act", "term": "Acts", "category": "world", "aliases": ["act"], "text": "The saga's chapters: Points of Light, The Wider Wilds, Lords of the Land and The Long Night. Each act opens wider and deadlier land." },
     { "id": "legend", "term": "Legends", "category": "world", "aliases": ["legend"], "text": "Famous heroes and foes of your earlier towns. They can turn up again in a new campaign." },
     { "id": "alert", "term": "Alerts", "category": "town", "aliases": ["alert"], "text": "Icons along the top when something needs you: red is urgent, gold waits on your decision. Hover for a summary, click to go and answer it, right-click to dismiss." },
-    { "id": "ledger", "term": "Ledger", "category": "town", "text": "The record of everything that happens in town, from brawls to weddings to dragons." }
+    { "id": "ledger", "term": "Ledger", "category": "town", "text": "The record of everything that happens in town, from brawls to weddings to dragons." },
+    {
+      "id": "patron",
+      "term": "Patron",
+      "category": "world",
+      "icon": "face-warlock-hood",
+      "aliases": [
+        "patrons",
+        "sworn"
+      ],
+      "text": "A power from beyond the world that swears heroes to it: the Hollow Prince (blood), the Thistle Queen (songs and kept oaths), the Ninth Mask (secrets) and the Gilded Wager (great risks). Every warlock comes to town sworn to one, with a familiar it sent; stories let a patron court other heroes. A sworn hero's favour runs from −5 to +5 as the patron judges what they did: it lends them attack, armour or skill, and turns against them below zero. At +5 the patron sends a gift; at −5 it takes its price. Pleased enough, a patron presses its own design on the town."
+    },
+    {
+      "id": "veiled-room",
+      "term": "Veiled room",
+      "category": "rules",
+      "icon": "d20",
+      "aliases": [
+        "death saves",
+        "death save"
+      ],
+      "text": "Where a hero at 0 hit points wakes when no friend can reach them with a spell, a potion or a bandage. A voice asks three questions: three rolls of 10 or more and they walk back into their body, three failures and the door closes. A natural 20 brings them straight back. As the door closes a patron may offer a costly way out: they live, owe it favour and carry a dark gift."
+    },
+    {
+      "id": "hedge-mage",
+      "term": "Hedge mage",
+      "category": "people",
+      "icon": "lore",
+      "aliases": [
+        "hedge mages",
+        "builder-mage",
+        "field-witch",
+        "fisher-mage"
+      ],
+      "text": "A townsperson who taught themselves one spell for their trade once the library grew strong: a builder-mage raises sites faster, a field-witch or fisher-mage brings in more, a grave-speaker helps the watch. The bottom rung of the town's magic, below the library's wizards and the archmage of the Mage Tower. The guilds resent them."
+    },
+    {
+      "id": "union",
+      "term": "The Common Cause",
+      "category": "council",
+      "icon": "tab-council",
+      "aliases": [
+        "the union",
+        "union",
+        "the movement"
+      ],
+      "text": "A movement of working townsfolk, many from the guilds and many not, and some hedge mages too: nobody is all one side. A bar in the Council window shows whether it or the town's mages have the town hall's ear: research funding, the wizards' library and hedge mages outside the movement pull it toward the mages; the movement's numbers and the guilds pull it back, and each hedge mage in the movement widens the middle. In the green middle both work together; let it lean and the slighted side sours, and too far the movement marches with every guild on strike, or the mages walk out. Hear a side out for gold, or take a side for a season and face the other's grudge."
+    },
+    {
+      "id": "stone-circle",
+      "term": "Stone circle",
+      "category": "world",
+      "icon": "lore",
+      "aliases": [
+        "stone circles",
+        "standing stones"
+      ],
+      "text": "A ring of rune-cut stones out in the wilds. Explorers can read the runes and wake one; from then on the library's mages draw lore from it every day. Cults hold their rites at the stones too, which brings their dark gods more favour unless the council funds research so the mages keep watch."
+    }
   ]
 }

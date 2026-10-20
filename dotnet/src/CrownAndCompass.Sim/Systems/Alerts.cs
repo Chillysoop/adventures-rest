@@ -267,13 +267,14 @@ public static class Alerts
                     $"The guild gives you {Days(Math.Max(1, g.Due - t.Day))}. Meet it from the Council window or it takes it ill{(g.Standing - r.Lapsed <= r.StrikeAt ? " and strikes" : "")}.",
                     AgentId: g.MasterId);
         }
-        // The guilds and the mages out of balance: hear the slighted side out before it acts.
+        // The Common Cause and the mages out of balance: hear the slighted side out before it acts.
         var ur = Union.Rules(t);
         if (t.Union.Formed && !Union.Sided(t) && Math.Abs(t.Union.Bar) >= ur.Lean)
         {
             bool mages = t.Union.Bar > 0;
-            yield return new("union", Balance, mages ? "The guilds feel slighted by the mages" : "The mages feel slighted by the guilds",
-                $"{Union.Mood(t)}. In the Council window hear the {(mages ? "guilds" : "mages")} out ({Js.Str(Union.HearCost(t))}g), or ease off what pulls it {(mages ? "toward the mages (research funding, hedge mages)" : "toward the guilds")}.");
+            string cause = Stories.Cap(ur.Name);
+            yield return new("union", Balance, mages ? $"{cause} feels slighted by the mages" : $"The mages feel slighted by {ur.Name}",
+                $"{Union.Mood(t)}. In the Council window hear {(mages ? "the movement" : "the mages")} out ({Js.Str(Union.HearCost(t))}g), or ease off what pulls it {(mages ? "toward the mages (research funding, hedge mages outside the movement)" : "toward the movement")}.");
         }
     }
 
