@@ -423,6 +423,23 @@
       "teaches": ["command:AccuseCouncillor"]
     },
     {
+      "id": "secrets",
+      "title": "Councillors' secrets",
+      "text": "Most councillors hide something: debts, a lover, wagons that pass the gate unsearched. In [b]Council[/b], [b]Dig[/b] beside a seat pays your people to find out; you roll Investigation, and more watchmen make it easier. Botch it and the councillor hears you were asking. A secret in hand is spent once: [b]press[/b] them to vote your way on the motion before the council, so you carry it without a decree, or [b]expose[/b] them and they lose the seat. Either way they won't forgive you, and pressing someone can leak.",
+      "when": "count:Motions",
+      "point": "tab:Council",
+      "until": "tab:Council",
+      "teaches": ["command:DigIntoCouncillor", "command:PressCouncillor", "command:ExposeCouncillor"]
+    },
+    {
+      "id": "honours",
+      "title": "Honours are yours to give",
+      "text": "When a loyal knight holds no land, or the town has no champion, the strip says so. Click it: a cleared site can be granted to the knight, who holds it with their own retainers and lives on its rents, and the champion stands first on the walls. The council moves knighthoods itself; sign them in [b]Council[/b].",
+      "when": "alert:honours",
+      "point": "alerts",
+      "until": "alert"
+    },
+    {
       "id": "notoriety",
       "title": "Fame and infamy",
       "text": "Heroes and companies make names for themselves. Clearing ruins, answering villages and holding the walls earn [b]renown[/b], and the bards give the famous an epithet. Brawls, theft, desertion and treachery earn [b]infamy[/b]. Click a hero to see their name: famous heroes draw others to town and frighten the foe, but they want more for a bounty and other towns court them unless you honour them. The council won't knight the notorious, and their past tends to catch up with them. [b]Companies[/b] shows each company's name abroad.",

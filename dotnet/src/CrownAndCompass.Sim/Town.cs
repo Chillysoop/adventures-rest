@@ -398,6 +398,9 @@ public sealed class Town
     public List<Systems.Lurker> Lurkers { get; } = [];
     public int LurkerCount { get; set; }
 
+    /// <summary>What the mayor has looked for, and found, in councillors' pasts (<see cref="Systems.Secrets"/>).</summary>
+    public List<Systems.Secret> Secrets { get; } = [];
+
     /// <summary>Mirrors hidden at sites, oldest first; smashed ones stay with SmashedTick set.</summary>
     public List<Mirror> Mirrors { get; } = [];
 

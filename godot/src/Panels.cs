@@ -165,6 +165,16 @@ public partial class Main
             int id = pending.Id;
             p.Buttons(($"Sign{Decree(true)}", true, true, () => Act(() => _sim.DecideMotion(id, true))), ($"Veto{Decree(false)}", true, false, () => Act(() => _sim.DecideMotion(id, false))));
             p.Note("Going against the council's majority is a decree: it costs Mandate and angers the councillors you overrule.");
+            // A secret in hand swings a councillor's vote, so the mayor can carry the hall without a decree.
+            var levers = pending.Votes
+                .Where(v => v.Seat != pending.Proposer && t.Seats.First(x => x.Def.Id == v.Seat).HolderId is int h && Secrets.Held(t, h) != null)
+                .Select(v => (v, h: t.Seats.First(x => x.Def.Id == v.Seat).HolderId!.Value))
+                .ToList();
+            if (levers.Count > 0)
+            {
+                p.Buttons([.. levers.Select(l => ($"Press {t.Agent(l.h).GivenName} to vote {(l.v.Yes ? "nay" : "aye")}", true, false, (Action)(() => Act(() => _sim.PressCouncillor(l.h, !l.v.Yes)))))]);
+                p.Note($"You know what they hide. Pressing them spends it: they vote your way, never forgive it, and {Math.Round(t.Content.Council.Secrets.Scandal * 100)}% of the time word gets out.");
+            }
         }
         foreach (var (mole, a, b) in Infiltration.Whispered(t))
         {
@@ -184,6 +194,7 @@ public partial class Main
             string mood = s.Loyalty >= 60 ? "Loyal" : s.Loyalty >= 25 ? "Wary" : "Disloyal";
             int skill = Council.Competence(t, s);
             p.Row($"[b]{Ui.Esc(s.Def.Title)}[/b]  {Tag(mood, s.Loyalty < 25 ? Ui.Bad : s.Loyalty >= 60 ? Ui.Good : Ui.Ink2)}\n{AgentLink(a)} {Ui.C(Ui.Ink2, $"[font_size=12]· {a.Race} {a.Profession} · skill {(skill >= 0 ? "+" : "")}{skill} · loyalty {Math.Round(s.Loyalty)}\nMinds {Ui.Esc(s.Def.Portfolio)}. Wants {Ui.Esc(s.Def.Agenda)}.[/font_size]")}");
+            RenderSecret(p, t, a);
         }
         var history = t.Motions.Where(m => m.Status != MotionStatus.Pending).TakeLast(8).Reverse().ToList();
         if (history.Count > 0)
@@ -193,6 +204,30 @@ public partial class Main
                 p.Text($"{Ui.C(Ui.Ink2, $"[font_size=11]Day {m.ProposedTick / 24 + 1}[/font_size]")}  {Ui.Esc(Ui.Cap(m.Text))}  {Tag(m.Status == MotionStatus.Passed ? $"passed{(m.Decree ? " by decree" : "")}" : $"failed{(m.Decree ? " by decree" : "")}", m.Status == MotionStatus.Passed ? Ui.Good : Ui.Bad)}", 13);
         }
         p.Commit();
+    }
+
+    /// <summary>What the mayor knows about a councillor, and the levers it gives: dig for a secret, then press them on the vote or expose them.</summary>
+    private void RenderSecret(Pane p, Town t, Agent a)
+    {
+        var r = t.Content.Council.Secrets;
+        int id = a.Id;
+        var known = Secrets.Of(t, id);
+        if (Secrets.Held(t, id) is { } held)
+        {
+            p.Text($"{Tag("Secret", Ui.Gold)} {Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Ui.Cap(Secrets.Describe(t, held)))}. Press them on a vote before the council, or expose them and they lose the seat.[/font_size]")}", 12);
+            p.Buttons(("Expose them", true, false, () => Act(() => _sim.ExposeCouncillor(id))));
+            return;
+        }
+        if (known is { Known: true })
+        {
+            p.Text(Ui.C(Ui.Ink2, known.Kind == "" ? "[font_size=12]Your people found nothing to hold over them.[/font_size]" : "[font_size=12]You have spent what you knew about them.[/font_size]"), 12);
+            return;
+        }
+        string? why = Secrets.DigBlocked(t, id);
+        int dc = Secrets.Dc(t);
+        double odds = Sheet.Chance(t, "investigation", "", dc, false, false);
+        p.Buttons(($"Dig into their past, {Js.Str(r.DigCost)}g · {Math.Round(odds * 100)}%", why == null, false, () => Act(() => _sim.DigIntoCouncillor(id))));
+        if (why != null && why != "only a councillor") p.Note(Ui.Cap(why) + ".");
     }
 
     /// <summary>The tax rate the mayor sets, and what the town's services cost against what it takes in.</summary>

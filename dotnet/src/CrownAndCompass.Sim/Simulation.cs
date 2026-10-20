@@ -48,6 +48,9 @@ public sealed record SimulationOptions
     /// <summary>Whether the warband exists at all (sandbox and some tests turn it off).</summary>
     public bool Enemy { get; init; } = true;
 
+    /// <summary>Let the stand-in mayor hand out purses, fiefs and the championship; off, they come to the player as choices.</summary>
+    public bool AutoHonours { get; init; } = true;
+
     /// <summary>Let the stand-in mayor answer story events; off when a player steps into them.</summary>
     public bool AutoStories { get; init; } = true;
 
@@ -156,7 +159,8 @@ public sealed class Simulation
         Regard.Daily(t);
         Wards.Daily(t);
         Broadsheet.Daily(t, Options.AutoMayor && Options.AutoStories);
-        Loyalty.Daily(t, Options.AutoMayor);
+        Loyalty.Daily(t, Options.AutoMayor && Options.AutoHonours);
+        Secrets.Daily(t, Options.AutoMayor && Options.AutoCouncil);
         Notoriety.Daily(t);
         Passage.Daily(t);
         Decor.Daily(t);
@@ -261,6 +265,15 @@ public sealed class Simulation
 
     /// <summary>Name a councillor the taverns whisper about as a foe's servant.</summary>
     public bool AccuseCouncillor(int agentId) => Infiltration.Accuse(Town, agentId);
+
+    /// <summary>Pay to have a councillor's past looked into: a d20 check, helped by the watch.</summary>
+    public bool DigIntoCouncillor(int agentId) => Secrets.Dig(Town, agentId);
+
+    /// <summary>Spend a councillor's secret to have them vote aye or nay on the motion before the council.</summary>
+    public bool PressCouncillor(int agentId, bool yes) => Secrets.Press(Town, agentId, yes);
+
+    /// <summary>Make a councillor's secret public, costing them their seat.</summary>
+    public bool ExposeCouncillor(int agentId) => Secrets.Expose(Town, agentId);
 
     /// <summary>Answer a menace's demand for fealty: bend the knee and pay tribute, or refuse and face its host.</summary>
     public bool AnswerDemand(int menaceId, bool submit) => Menaces.Answer(Town, menaceId, submit);

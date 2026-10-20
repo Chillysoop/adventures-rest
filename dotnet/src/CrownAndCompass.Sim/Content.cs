@@ -416,6 +416,9 @@ public sealed record CouncilRules
     public int MotionGapDays { get; init; }
     public double DecreeMandate { get; init; }
     public double StartingMandate { get; init; }
+
+    /// <summary>Councillors' secrets: digging for them, and spending them (<see cref="Systems.Secrets"/>).</summary>
+    public Systems.SecretRules Secrets { get; init; } = new();
 }
 
 public sealed record EnemyStages

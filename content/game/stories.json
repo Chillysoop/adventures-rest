@@ -37,6 +37,7 @@
     "refuse": { "skill": "intimidation", "dc": 13, "gain": 0.05, "success": "The answer gives the foe pause; some of its followers slip away.", "failure": "" },
     "envoy": { "skill": "persuasion", "dc": 12, "gain": 4, "success": "The mayor's own letter goes down well (+4 standing).", "failure": "" },
     "crackdown": { "skill": "intimidation", "dc": 12, "gain": 1, "success": "The mayor faces the crooks down in person (+1 Mandate).", "failure": "" },
+    "dig": { "skill": "investigation", "dc": 13, "gain": 0, "success": "", "failure": "" },
     "haggle": { "skill": "persuasion", "dc": 12, "gain": 0, "success": "", "failure": "" }
   },
   "array": [15, 14, 13, 12, 10, 8],
