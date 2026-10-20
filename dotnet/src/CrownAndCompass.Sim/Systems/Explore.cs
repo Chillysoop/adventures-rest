@@ -45,6 +45,11 @@ public sealed record CommissionRules
     public int MaxHeroes { get; init; } = 4;
     public int AutoEveryDays { get; init; } = 10;
     public double AutoReserve { get; init; } = 150;
+
+    /// <summary>A spot the mayor marks on the map: days the company looks round it, how far round it (days of march), and how many may be out at once.</summary>
+    public int SpotDays { get; init; } = 1;
+    public double SpotRadius { get; init; } = 0.35;
+    public int MaxSpots { get; init; } = 3;
 }
 
 public sealed record ExploreRewards
@@ -115,6 +120,10 @@ public sealed class Commission
     public int ExpiresTick { get; init; }
     public BountyStatus Status { get; set; } = BountyStatus.Open;
     public int? SurveyId { get; set; }
+
+    /// <summary>A spot the mayor marked on the map (days of march east and south of the town), for a company to go and look at.</summary>
+    public double? SpotX { get; init; }
+    public double? SpotY { get; init; }
 }
 
 public enum SurveyPhase
@@ -154,6 +163,10 @@ public sealed class Survey
     public List<int> Members { get; } = [];
     public int RegionId { get; init; }
     public int? CommissionId { get; init; }
+
+    /// <summary>The marked spot it was sent to look at, if it was sent to one rather than to explore a whole region.</summary>
+    public double? SpotX { get; init; }
+    public double? SpotY { get; init; }
     public int DepartTick { get; init; }
     public SurveyPhase Phase { get; set; }
     public List<SurveyLeg> Legs { get; } = [];
@@ -264,7 +277,79 @@ public static class Explore
 
     /// <summary>Regions a company could be sent to explore: heard of, and not being explored already.</summary>
     public static bool CanCommission(Town town, int regionId) =>
-        regionId >= 0 && regionId < town.Regions.Count && town.Regions[regionId].Known && !town.Commissions.Any(c => c.RegionId == regionId && Active(c));
+        regionId >= 0 && regionId < town.Regions.Count && town.Regions[regionId].Known && !town.Commissions.Any(c => c.RegionId == regionId && c.SpotX == null && Active(c));
+
+    /// <summary>Spots marked for a company to look at that nobody has finished with yet.</summary>
+    public static List<Commission> Spots(Town town) => town.Commissions.Where(c => c.SpotX != null && Active(c)).OrderBy(c => c.Id).ToList();
+
+    /// <summary>The region a spot lies in: the ring nearest its distance, then the region of that ring nearest its bearing.</summary>
+    public static Region? RegionAt(Town town, double x, double y)
+    {
+        if (town.Regions.Count == 0) return null;
+        double d = Js.Hypot(x, y);
+        double bearing = (Math.Atan2(x, -y) * 180 / Math.PI + 360) % 360;
+        double Off(Region r)
+        {
+            double a = Math.Abs(r.Bearing - bearing) % 360;
+            return Math.Min(a, 360 - a);
+        }
+        int ring = town.Regions.OrderBy(r => Math.Abs(r.Days - d)).ThenBy(r => r.Ring).First().Ring;
+        return town.Regions.Where(r => r.Ring == ring).OrderBy(Off).ThenBy(r => r.Id).First();
+    }
+
+    /// <summary>Why a company can't be sent to look at this spot, or null when it can.</summary>
+    public static string? SpotBlocked(Town town, double x, double y)
+    {
+        var rules = Rules(town).Commission;
+        double d = Js.Hypot(x, y);
+        if (d < rules.SpotRadius) return "that is the town itself";
+        if (town.Regions.Count == 0 || d > town.Regions.Max(r => r.Days) + 1) return "too far for any company to walk";
+        if (Spots(town).Count >= rules.MaxSpots) return $"{rules.MaxSpots} spots are marked already";
+        if (Spots(town).Any(c => Js.Hypot(c.SpotX!.Value - x, c.SpotY!.Value - y) < rules.SpotRadius)) return "a company is already asked to look there";
+        if (town.Treasury < SpotReward(town, x, y)) return "not enough gold";
+        return null;
+    }
+
+    /// <summary>What the council offers for a look at a spot: what exploring its region would pay.</summary>
+    public static double SpotReward(Town town, double x, double y) => RegionAt(town, x, y) is { } r ? SuggestedReward(town, r) : 0;
+
+    /// <summary>
+    /// Mark a spot on the map for a company to go and look at: like a commission to explore a region, but the company walks
+    /// straight there, looks round it for a day, and comes home to say what it saw. It may be a spot nobody has heard of.
+    /// </summary>
+    public static Commission? PostSpot(Town town, double x, double y, double? reward = null)
+    {
+        if (SpotBlocked(town, x, y) != null) return null;
+        var region = RegionAt(town, x, y)!;
+        double pay = reward ?? SpotReward(town, x, y);
+        if (pay <= 0 || town.Treasury < pay) return null;
+        town.Book(TreasuryAccount.Exploring, -pay);
+        var c = new Commission
+        {
+            Id = town.Commissions.Count + 1,
+            RegionId = region.Id,
+            Reward = pay,
+            PostedTick = town.Tick,
+            ExpiresTick = town.Tick + Rules(town).Commission.Days * SimTime.HoursPerDay,
+            SpotX = x,
+            SpotY = y,
+        };
+        town.Commissions.Add(c);
+        town.Log(LedgerCategory.Town, Importance.Notable, $"The council marks a spot {Bearing(x, y)} on the map, {Js.Str(Js.Round(Js.Hypot(x, y) * 10) / 10)} days out{(region.Known ? $" in {region.Name}" : "")}, and offers {Js.Str(pay)} gold to any company that will go and see what is there.");
+        return c;
+    }
+
+    /// <summary>"to the north-east": the compass point a spot lies toward from the town.</summary>
+    public static string Bearing(double x, double y)
+    {
+        string[] points = ["north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"];
+        double b = (Math.Atan2(x, -y) * 180 / Math.PI + 360) % 360;
+        return "to the " + points[(int)Math.Round(b / 45) % 8];
+    }
+
+    /// <summary>Where a commission sends a company: its marked spot, or its region's name.</summary>
+    private static string Goal(Town town, Commission c) =>
+        c.SpotX is double x && c.SpotY is double y ? $"the spot the council marked {Bearing(x, y)}" : town.Regions[c.RegionId].Name;
 
     /// <summary>The player's lever: pay a company to explore a region. The reward is held from the treasury until they come home.</summary>
     public static Commission? Post(Town town, int regionId, double? reward = null)
@@ -297,7 +382,7 @@ public static class Explore
             if (c.Status != BountyStatus.Open || town.Tick < c.ExpiresTick) continue;
             c.Status = BountyStatus.Expired;
             town.Book(TreasuryAccount.Exploring, c.Reward);
-            town.Log(LedgerCategory.Town, Importance.Routine, $"No company will go and explore {town.Regions[c.RegionId].Name}; the council withdraws the offer.");
+            town.Log(LedgerCategory.Town, Importance.Routine, $"No company will go and look at {Goal(town, c)}; the council withdraws the offer.");
         }
         Invited(town);
         if (autoMayor) AutoPost(town);
@@ -391,13 +476,15 @@ public static class Explore
             Name = name,
             RegionId = region.Id,
             CommissionId = c.Id,
+            SpotX = c.SpotX,
+            SpotY = c.SpotY,
             DepartTick = town.Tick,
             Phase = SurveyPhase.Outbound,
         };
         s.Members.AddRange(members.Select(m => m.Id));
         c.Status = BountyStatus.Taken;
         c.SurveyId = s.Id;
-        var entry = Entry(town, region);
+        var entry = c.SpotX is double sx && c.SpotY is double sy ? (sx, sy) : Entry(town, region);
         var said = new List<string>();
         var route = Roads.Plan(town, (0, 0), entry, Roads.Mind(town, members, false, false), town.Rng, said);
         s.Legs.Add(new SurveyLeg { FromX = 0, FromY = 0, Route = route, Start = town.Tick, Kind = "out" });
@@ -413,7 +500,7 @@ public static class Explore
         town.Log(
             LedgerCategory.Quest,
             Importance.Notable,
-            $"The {name} ({string.Join(", ", members.Select(m => $"{m.GivenName} the {m.Hero!.Cls.Name}"))}) take the council's coin to explore {region.Name}, and march out at dawn{(Sends(town, s) ? "" : " with a cage of homing birds, since none of them can cast a sending")}.",
+            $"The {name} ({string.Join(", ", members.Select(m => $"{m.GivenName} the {m.Hero!.Cls.Name}"))}) take the council's coin to {(c.SpotX == null ? "explore " : "look at ")}{Goal(town, c)}, and march out at dawn{(Sends(town, s) ? "" : " with a cage of homing birds, since none of them can cast a sending")}.",
             s.Members);
     }
 
@@ -531,6 +618,13 @@ public static class Explore
     {
         var region = town.Regions[s.RegionId];
         var rng = town.Rng;
+        if (s.SpotX is double sx && s.SpotY is double sy)
+        {
+            // Sent to a marked spot: they cast about it rather than wander the whole region.
+            double ra = rng.Next() * 2 * Math.PI;
+            double rr = Rules(town).Commission.SpotRadius * (0.4 + rng.Next() * 0.6);
+            return (sx + rr * Math.Cos(ra), sy + rr * Math.Sin(ra));
+        }
         var unfound = region.SiteIds.Select(id => Quests.Site(town, id)!).Where(x => !x.Found && !x.Cleared).ToList();
         if (unfound.Count > 0 && rng.Chance(0.55))
         {
@@ -585,8 +679,10 @@ public static class Explore
         if (s.Phase == SurveyPhase.Outbound)
         {
             s.Phase = SurveyPhase.Exploring;
-            s.ExploreUntil = town.Tick + Rules(town).ExploreDays * SimTime.HoursPerDay;
-            s.Journal.Add($"They reach {town.Regions[s.RegionId].Name}.");
+            s.ExploreUntil = town.Tick + (s.SpotX == null ? Rules(town).ExploreDays : Rules(town).Commission.SpotDays) * SimTime.HoursPerDay;
+            s.Journal.Add(s.SpotX == null ? $"They reach {town.Regions[s.RegionId].Name}." : "They reach the spot the council marked, and cast about it.");
+            // Out there, they learn the name of the country the spot lies in.
+            town.Regions[s.RegionId].Known = true;
         }
         if (s.Escorting || town.Tick >= s.ExploreUntil || Hp(town, s) < Rules(town).HomeHp) GoHome(town, s);
         else March(town, s, Next(town, s), "wander");

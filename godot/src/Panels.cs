@@ -352,14 +352,16 @@ public partial class Main
     private void RenderExplore(Pane p, Town t)
     {
         p.Heading("Exploring");
-        p.Note("Nothing goes on the map by itself. Travellers and allies tell of places; to find them for certain, pay a company to explore a region. They send word of what they find and wait for yours.");
+        p.Note("Nothing goes on the map by itself. Travellers and allies tell of places; to find them for certain, pay a company to explore a region, or press [b]Scout[/b] over the corner map and mark a spot for them to look at. They send word of what they find and wait for yours.");
         foreach (var s in t.Surveys.Where(Explore.Out).OrderBy(x => x.Id))
         {
             var region = t.Regions[s.RegionId];
             var at = s.AtFind is int fid ? Explore.FindOf(t, fid) : null;
             string state = s.Phase switch
             {
+                SurveyPhase.Outbound when s.SpotX is double sx && s.SpotY is double sy => $"On the road to the spot you marked {Explore.Bearing(sx, sy)}",
                 SurveyPhase.Outbound => $"On the road to {Ui.Esc(region.Name)}",
+                SurveyPhase.Exploring when s.SpotX != null && !s.Escorting => $"Looking round the spot you marked in {Ui.Esc(region.Name)}",
                 SurveyPhase.Exploring => s.Escorting ? "Walking a caravan home" : $"Exploring {Ui.Esc(region.Name)}, {Ui.Days(Math.Max(1, (int)Math.Ceiling((s.ExploreUntil - t.Tick) / 24.0)))} left",
                 SurveyPhase.Waiting when at != null => t.Tick >= at.ReportTick ? $"Waiting for word at {Ui.Esc(Explore.Title(t, at))}" : $"Stopped in {Ui.Esc(region.Name)}; a bird is on its way",
                 SurveyPhase.Investigating when at != null && Explore.NextChapter(t, at) is { } ch => $"Investigating {Ui.Esc(Explore.Title(t, at))}: {Ui.Esc(ch.Title.ToLowerInvariant())}",
@@ -376,7 +378,12 @@ public partial class Main
             p.Row($"[b]The {Ui.Esc(s.Name)}[/b]  {Tag(finds == 1 ? "1 find" : $"{finds} finds", new Color("8cc084"))}\n{state} · {members}", buttons.ToArray());
         }
         foreach (var c in t.Commissions.Where(c => c.Status == BountyStatus.Open))
-            p.Row($"{Ui.Esc(t.Regions[c.RegionId].Name)}  {Tag($"Offer posted: {Math.Round(c.Reward)}g", Ui.Gold)}\n{Ui.C(Ui.Ink2, "[font_size=12]Waiting for a company to take it.[/font_size]")}");
+        {
+            string what = c.SpotX is double sx && c.SpotY is double sy
+                ? $"Spot marked {Explore.Bearing(sx, sy)}, {Js.Hypot(sx, sy):0.0} days out"
+                : Ui.Esc(t.Regions[c.RegionId].Name);
+            p.Row($"{what}  {Tag($"Offer posted: {Math.Round(c.Reward)}g", Ui.Gold)}\n{Ui.C(Ui.Ink2, "[font_size=12]Waiting for a company to take it.[/font_size]")}");
+        }
         int strongest = t.Heroes.Select(h => h.Hero!.Level).DefaultIfEmpty(1).Max();
         foreach (var r in t.Regions.Where(r => r.Known && Explore.CanCommission(t, r.Id)).OrderBy(r => r.Ring).ThenBy(r => r.Id))
         {

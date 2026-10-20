@@ -71,6 +71,18 @@ public sealed class Geo
 
     public static Vector2 FromDays((double X, double Y) p) => FromDays(p.X, p.Y);
 
+    /// <summary>A spot on the map in the sim's day units: the inverse of <see cref="FromDays(double, double)"/>.</summary>
+    public static (double X, double Y) ToDays(Vector2 w)
+    {
+        var d = w - Center;
+        float r = d.Length();
+        if (r < 1e-4f) return (0, 0);
+        // DayRadius eases in over the first 0.3 days, then grows a day's march per TilesPerDay.
+        float ease = DayRadius(0.3);
+        double days = r >= ease ? 0.3 + (r - ease) / TilesPerDay : r / (TilesPerDay + Reach0 / 0.3f);
+        return (d.X / r * days, d.Y / r * days);
+    }
+
     /// <summary>
     /// The town's settled radius (for its lamplight), and every site's pin where the sim puts it: on its
     /// region's bearing, a day's march out per day of travel. Returns true when a pin moved enough to

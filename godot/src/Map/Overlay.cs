@@ -27,6 +27,7 @@ public partial class Overlay(MapView map) : Control
         DrawParties(town);
         DrawWarband(town);
         DrawSightings(town);
+        DrawSpots(town);
         DrawMarkers();
         DrawSelection(town);
     }
@@ -418,6 +419,26 @@ public partial class Overlay(MapView map) : Control
             default:
                 for (int i = 0; i < 3; i++) ci.DrawRect(new Rect2(P(-5.5f, -5 + i * 4), new Vector2(i == 2 ? 7 : 11, 1.8f) * s), col);
                 break;
+        }
+    }
+
+    /// <summary>Spots the mayor marked for a company to look at: a dashed gold ring round the ground, a spyglass pin, and who is on it.</summary>
+    private void DrawSpots(Town town)
+    {
+        foreach (var c in Explore.Spots(town))
+        {
+            var p = Geo.FromDays(c.SpotX!.Value, c.SpotY!.Value);
+            if (!map.OnScreen(map.Gen.At(p, 3), out var at)) continue;
+            // The ring is as wide as the ground they will cast about, measured on screen.
+            float reach = Geo.TilesPerDay * (float)town.Content.Explore.Commission.SpotRadius;
+            float r = map.OnScreen(map.Gen.At(p + new Vector2(reach, 0), 3), out var edge) ? Mathf.Clamp(at.DistanceTo(edge), 14, 400) : 30;
+            for (int i = 0; i < 24; i += 2) DrawArc(at, r, i * Mathf.Tau / 24, (i + 1) * Mathf.Tau / 24, 4, new Color(Palette.Gold, 0.9f), 2.5f, true);
+            DrawColoredPolygon([at, at + new Vector2(-8, -16), at + new Vector2(8, -16)], Palette.Gold.Darkened(0.3f));
+            Disc(at - new Vector2(0, 22), 11, new Color("3a3226"), Palette.Gold, 2.5f);
+            MarkerGlyph(this, MarkerKind.Scout, at - new Vector2(0, 22), 1, Cream);
+            var s = c.SurveyId is int sid ? Explore.Survey(town, sid) : null;
+            string label = s == null ? $"Look here · {Math.Round(c.Reward)}g" : s.Phase == SurveyPhase.Outbound ? $"The {s.Name}, on the way" : $"The {s.Name}, looking";
+            Text(at + new Vector2(0, 18), label, Ui.Bold, 13, Palette.Gold);
         }
     }
 
