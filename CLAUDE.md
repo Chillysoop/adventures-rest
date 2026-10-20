@@ -113,7 +113,8 @@
   aim it; `--bench` checks the performance budget in the GDD). Exports go to `godot/build/` (ignored).
 - Tutorial: `content/game/tutorial.json` teaches every player-facing feature, and `TutorialTests` fails when a player
   command on `Simulation`, a dock tab (`Tab` in `godot/src/Main.cs`) or a client hotkey has no step whose `teaches` lists
-  it (`command:PostBounty`, `tab:War`, `key:B`). So a PR adding a feature adds or updates its step in the same PR. A step
+  it (`command:PostBounty`, `tab:War`, `key:B`). So a PR adding a feature adds or updates its step in the same PR. The tour is the steps up to `done` (at most 25, `Tutorial.TourMost`); a new feature appends its step after
+  `done` as a tip with a `when`, never into the tour (TutorialTests checks both). A step
   can outline part of the HUD (`point`), wait for the player (`until`: a client event, `tab:X`, or `count:<any Town
   list>`) and hold back until it is relevant (`when`: `count:X`, `day:N`, `alert:<key>`), so new systems rarely need
   client code (`godot/src/Guide.cs`). Keep step ids stable: players who finished the tutorial are shown steps with new

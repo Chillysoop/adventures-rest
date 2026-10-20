@@ -122,6 +122,16 @@ public static class Tutorial
             if (!KnownUntil(s.Until, town, tabs)) problems.Add($"step \"{s.Id}\" waits until \"{s.Until}\", which the client does not know");
             if (!KnownWhen(s.When, town)) problems.Add($"step \"{s.Id}\" has an unknown \"when\": \"{s.When}\"");
         }
+        // The tour ends at "done"; everything after it is a tip that waits for the moment it matters.
+        int end = book.Steps.FindIndex(s => s.Id == "done");
+        if (end < 0) problems.Add("the tour needs a closing step with id \"done\"");
+        else if (end + 1 > TourMost) problems.Add($"the tour runs {end + 1} steps, over {TourMost}: add new features after \"done\" as tips with a \"when\"");
+        else
+            foreach (var s in book.Steps.Skip(end + 1).Where(s => s.When == ""))
+                problems.Add($"tip \"{s.Id}\" comes after the tour (\"done\") but has no \"when\": give it the alert:, count: or day: that makes it matter");
         return problems;
     }
+
+    /// <summary>The most steps the tour (up to "done") may hold.</summary>
+    public const int TourMost = 25;
 }
