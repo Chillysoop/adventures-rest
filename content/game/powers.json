@@ -112,12 +112,12 @@
     "tributeBelow": -25, "tribute": 2, "tributeFavour": 15,
     "spurned": 10, "declined": 3,
     "alliance": "An envoy of {name} rides in under a flag of truce. {leader}, {title}, offers {town} an alliance for {price}, less than they ask of most: {boon}. The envoy waits {answer} days for an answer.",
-    "pact": "An envoy of {name} comes to the town hall with a sealed letter from {leader}. For {price}, {name} will take no enemy's gold while the pact holds. The envoy waits {answer} days for an answer.",
+    "pact": "An envoy of {name} comes to the town hall with a sealed letter from {leader}. For {price}, {name} will swear a truce: it takes no enemy's gold while the truce holds. The envoy waits {answer} days for an answer.",
     "demand": "An envoy of {name} stands in the square and reads out {leader}'s demand: tribute of {price}, or {town} will learn what it costs to slight {name}. The envoy waits {answer} days.",
     "accepted": "{town} gives the envoy of {name} {price}, and {leader} keeps the bargain: {terms}.",
     "refused": "The council sends the envoy of {name} home with nothing.",
     "lapsed": "The envoy of {name} waited in vain for an answer and rode home.",
-    "pactEnds": "The pact with {name} has run out. Its door is open to any enemy's gold again.",
+    "pactEnds": "The truce with {name} has run out. Its door is open to any enemy's gold again.",
     "bandwagon": "Word is that {backers} already march with {enemy}, which makes the offer look the safer."
   },
   "text": {
