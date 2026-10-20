@@ -447,7 +447,7 @@ public static class Powers
     public static string BoonText(Town town, PowerDef d) => d.Ally.Text;
 
     public static string BaneText(Town town, PowerState p) =>
-        Def(town, p.Id).Enemy.Text.Replace("{enemy}", Patron(town, p)?.Name ?? Suitor(town, p)?.Name ?? "the enemy that buys it");
+        Def(town, p.Id).Enemy.Text.Replace("{enemy}", Patron(town, p)?.Name ?? Suitor(town, p)?.Name ?? "its new master");
 
     // What they bring ----------------------------------------------------------------------------
 
