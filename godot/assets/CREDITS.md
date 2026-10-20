@@ -14,9 +14,10 @@ All three are CC0 (licence files in `models/LICENSE-kenney-*.txt`). Credit is no
 
 ## Third party (CC BY 3.0)
 
-- **game-icons.net** (Lorc, Delapouite and contributors) — the goods, enemy-kind, dock and glossary icons in `icons/`
-  written by `scripts/icons.ts` (food, timber, tools, ale, stone, wool, cloth, furniture, herbs, potions, wine, books,
-  tribe, undead, schemers, beasts, dragon, cult, rivals, tab-*, glossary). https://game-icons.net, licence
+- **game-icons.net** (Lorc, Delapouite and contributors) — the goods, enemy-kind, stakes, dock and glossary icons and the
+  enemy portrait faces in `icons/` written by `scripts/icons.ts` (food, timber, tools, ale, stone, wool, cloth, furniture,
+  herbs, potions, wine, books, tribe, undead, schemers, beasts, dragon, cult, rivals, dread, unrest, standing, threat,
+  lore, decree, face-*, tab-*, glossary). https://game-icons.net, licence
   https://creativecommons.org/licenses/by/3.0/. Recoloured and outlined for the game.
 
 ## Made for this game
