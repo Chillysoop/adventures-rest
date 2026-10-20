@@ -5,8 +5,8 @@ using Godot;
 namespace CrownAndCompass.Client;
 
 /// <summary>
-/// The companies window: every adventuring company in town, what it thinks of the town and why, and
-/// the reports companies brought home from trips the council didn't pay for, to buy or haggle over.
+/// The companies window: the roster of adventuring companies and heroes (<see cref="RenderRoster"/>), the
+/// bastions, and the reports companies brought home from trips the council didn't pay for, to buy or haggle over.
 /// </summary>
 public partial class Main
 {
@@ -23,8 +23,7 @@ public partial class Main
         var t = _sim.Town;
         var r = t.Content.World.Intel;
         p.Begin();
-        p.Note("Only a party out on a council bounty reports to the town hall. A company out on its own account keeps what it saw: its road stays in the fog until the council buys the report.");
-
+        RenderRoster(p, t);
         RenderBastions(p, t);
 
         p.Heading("Reports for sale");
@@ -57,38 +56,9 @@ public partial class Main
         }
         int stale = sale.Count - worth.Count;
         if (stale > 0) p.Note($"{stale} more {(stale == 1 ? "report covers" : "reports cover")} ground the town already knows, so nothing in them is worth buying.");
+        p.Note("Only a party out on a council job reports to the town hall. A company out on its own account keeps what it saw: its road stays in the fog until the council buys the report.");
         p.Note($"Haggling saves gold but sours the company, and one that turns an offer down won't talk for {Ui.Days(r.SulkDays)}. Companies below {Js.Str(r.RefuseBelow)} won't sell to the council at all.");
 
-        p.Heading("Companies");
-        var names = Intel.MembersByCompany(t);
-        if (names.Count == 0) p.Note("No company has formed yet. Heroes band together when they first set out.");
-        foreach (var (name, members) in names)
-        {
-            var c = Intel.Find(t, name);
-            double rel = Intel.Relation(t, name, members);
-            double loyalty = Js.Sum(members, m => m.Hero!.Loyalty) / members.Count;
-            var (word, color) = RelationWord(rel, r.RefuseBelow);
-            var road = t.Parties.FirstOrDefault(x => !x.Returned && x.Name == name);
-            string where = road != null ? $"On the road to {SiteLink(Quests.Site(t, road.SiteId)!.Def)}{(road.BountyId != null && Intel.Commissioned(t, road) ? ", on the council's bounty" : ", on their own account")}"
-                : members.All(m => m.IsAway) ? "Out of town" : "In town";
-            string roster = string.Join(", ", members.Select(m => $"{AgentLink(m, m.GivenName)} {Ui.C(Ui.Ink2, $"{Ui.Esc(m.Hero!.Cls.Name)} {m.Hero.Level}")}"));
-            var record = new List<string>();
-            if (c != null)
-            {
-                if (c.Bounties > 0) record.Add($"{c.Bounties} council {(c.Bounties == 1 ? "bounty" : "bounties")} done");
-                if (c.ReportsSold > 0) record.Add($"{c.ReportsSold} {(c.ReportsSold == 1 ? "report" : "reports")} sold for {Js.Str(Js.Round(c.GoldPaid))}g");
-                if (c.Refusals > 0) record.Add($"{c.Refusals} {(c.Refusals == 1 ? "offer" : "offers")} turned down");
-            }
-            string fame = c == null ? "" : (c.Renown > 0 ? "  " + Tag(Notoriety.FameName(t, c.Renown), Notoriety.FameTier(t, c) >= 2 ? Ui.Gold : Ui.Ink2) : "")
-                + (c.Infamy > 0 && Notoriety.InfamyTier(t, c) > 0 ? "  " + Tag(Notoriety.InfamyName(t, c.Infamy), Ui.Bad) : "");
-            if (c != null && (c.Renown > 0 || c.Infamy > 0)) record.Insert(0, $"renown {c.Renown}{(c.Infamy > 0 ? $", infamy {c.Infamy}" : "")}");
-            string sulk = c?.SulkUntil is int until && t.Tick < until ? "  " + Tag("Sore", Ui.Bad) : "";
-            string held = t.Parties.Count(x => x.Name == name && worth.Contains(x)) is int n && n > 0 ? "  " + Tag($"{n} {(n == 1 ? "report" : "reports")} to sell", Ui.Gold) : "";
-            p.Row($"[b]The {Ui.Esc(name)}[/b]  {Tag(word, color)}{fame}{sulk}{held}\n{Ui.C(Ui.Ink2, $"[font_size=12]{where}[/font_size]")}\n[font_size=13]{roster}[/font_size]" +
-                  $"\n{Ui.C(Ui.Ink2, $"[font_size=12]Members' loyalty {Math.Round(loyalty)} · dealings with the council {(c == null || Math.Abs(c.Dealings) < 0.5 ? "none yet" : (c.Dealings > 0 ? "+" : "−") + Math.Round(Math.Abs(c.Dealings)))}{(record.Count > 0 ? " · " + string.Join(" · ", record) : "")}[/font_size]")}");
-            p.Meter("Relation", rel, Js.Str(Math.Round(rel)), rel < r.RefuseBelow);
-        }
-        p.Note("Relation is the members' loyalty plus how the council has dealt with the company: council bounties and fair prices raise it, haggling and insulting offers lower it. Friends sell their reports cheap. A famous company asks more for its reports; an infamous one takes what it can get.");
         p.Commit();
     }
 

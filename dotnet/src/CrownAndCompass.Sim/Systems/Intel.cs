@@ -24,6 +24,26 @@ public sealed class CompanyState
     public double PactFee { get; set; }
     public int PactDay { get; set; }
     public int Handed { get; set; }
+
+    /// <summary>Good deeds to the company's name (ruins cleared, pleas answered, captives freed, the walls held), and the latest of them (<see cref="Notoriety.Record"/>).</summary>
+    public int GoodDeeds { get; set; }
+    public List<DeedNote> Deeds { get; } = [];
+
+    /// <summary>Jobs the council offered the company by name (<see cref="Roster"/>), taken and turned down.</summary>
+    public int Offers { get; set; }
+    public int Declined { get; set; }
+
+    /// <summary>The last job they turned down: no asking again today for the same place unless the pay goes up.</summary>
+    public string DeclinedSite { get; set; } = "";
+    public double DeclinedReward { get; set; }
+    public int DeclinedDay { get; set; } = -1;
+}
+
+/// <summary>A good deed on a company's record.</summary>
+public sealed class DeedNote
+{
+    public int Day { get; init; }
+    public string What { get; init; } = "";
 }
 
 /// <summary>What the council answered a company's asking price with.</summary>
