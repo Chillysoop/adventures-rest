@@ -58,7 +58,10 @@
   them wear lanes (`Streets.Wear`). The townsfolk's builds on painted land wait for a free crew (`Construction.Room`), and a site
   can't rise past its footings until builders haul its timber and stone (`Building.Hauled`, `Activity.Hauling`); labour budgets
   use `Construction.Hours`. The client draws sites rising in six steps with a materials pile, haulers carrying loads, and a hired
-  hand at sites nobody in town works (`--rising` aims at one).
+  hand at sites nobody in town works (`--rising` aims at one). Crews come from builders' yards (`BuildingDef.Crews`,
+  `Construction.Crews`; the stand-in mayor adds one below `Construction.Wanted`), whose builders work the nearest site
+  (`Construction.SiteFor`). A house grows a storey only with `HousingDef.Near` services within `nearReach`, `Foods` kinds of
+  food and `Beauty` appeal (`City.NeedsBlocked`).
 - Monuments (`Systems/Monuments.cs`, parts in buildings.json with `partOf`, `after`, `favour`): the town hall, temple and keep
   grow by parts, each its own civic building beside the core (`Building.ParentId`) with its own bonuses and a daily `favour`
   with the god (`"god"`) or a faction (`"faction:id"`, negative for a rival). `Building.Grow` lets the council add the cheapest

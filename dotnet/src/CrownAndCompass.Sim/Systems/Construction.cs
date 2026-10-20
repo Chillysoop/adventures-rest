@@ -15,11 +15,41 @@ public static class Construction
     public static bool Zoned(Town town, Building b) =>
         Planning.Paintable.Contains(b.Def.Zone) && !b.Def.Bastion && !b.Def.IsGrand && !Planning.IsGovernment(town, b.Def);
 
-    /// <summary>How many of the townsfolk's builds the town's crews can have under way at once: more as the town grows.</summary>
+    /// <summary>How many of the townsfolk's builds the town's crews can have under way at once: the hall's own, and each builders' yard's.</summary>
     public static int Crews(Town town)
     {
         var r = Rules(town);
+        int n = r.Crews;
+        foreach (var b in town.Buildings)
+            if (b.Complete && b.Def.Crews > 0) n += b.Def.Crews;
+        return Math.Min(r.Most, n);
+    }
+
+    /// <summary>The crews a town of this size keeps busy: below it, builds queue for want of builders and the council wants another yard.</summary>
+    public static int Wanted(Town town)
+    {
+        var r = Rules(town);
         return Math.Min(r.Most, r.Crews + town.Population / Math.Max(1, r.Residents));
+    }
+
+    /// <summary>Where a builders' yard's builder goes this hour: a site put first, else the nearest one with work to do.</summary>
+    public static Building? SiteFor(Town town, Building yard)
+    {
+        var at = town.Lot(yard.LotId);
+        Building? best = null;
+        double bestD = double.MaxValue;
+        foreach (var b in town.Buildings)
+        {
+            if (!b.IsSite || b.Def.Bastion || Stalled(town, b) || (b.Def.IsGrand && GrandWorks.Waiting(b))) continue;
+            var l = town.Lot(b.LotId);
+            double d = (l.X - at.X) * (l.X - at.X) + (l.Y - at.Y) * (l.Y - at.Y) - (b.Priority ? 1e6 : 0);
+            if (d < bestD)
+            {
+                bestD = d;
+                best = b;
+            }
+        }
+        return best;
     }
 
     /// <summary>The townsfolk's builds under way.</summary>
@@ -184,8 +214,8 @@ public static class Construction
 }
 
 /// <summary>
-/// Building rules (city.json "construction"): <see cref="Crews"/> crews to begin with and one more per <see cref="Residents"/>
-/// residents, up to <see cref="Most"/>; the share of a build its footings take before any materials are needed
+/// Building rules (city.json "construction"): <see cref="Crews"/> crews the hall keeps, more from each builders' yard, up to
+/// <see cref="Most"/>, and the council wants one crew more per <see cref="Residents"/> residents; the share of a build its footings take before any materials are needed
 /// (<see cref="Footings"/>); and the loads of timber or stone a builder carries onto a site in an hour (<see cref="Load"/>).
 /// </summary>
 public sealed record ConstructionRules

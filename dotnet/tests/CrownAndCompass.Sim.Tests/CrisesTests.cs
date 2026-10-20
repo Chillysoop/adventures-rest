@@ -112,7 +112,8 @@ public class CrisesTests
         int entries = t.Ledger.Entries.Count;
         for (int d = 0; d < 30 && g.Heat >= t.Content.Crises.Vengeance.StrikeAt; d++) sim.RunDays(1);
         Assert.True(g.Heat < t.Content.Crises.Vengeance.StrikeAt);
-        Assert.Contains(t.Ledger.Entries.Skip(entries), e => e.Text.Contains(m.Name, StringComparison.Ordinal) || e.Text.Contains(m.Leader, StringComparison.Ordinal));
+        Assert.Contains(t.Ledger.Entries.Skip(entries), e => e.Text.Contains(m.Name, StringComparison.Ordinal) || e.Text.Contains(m.Leader, StringComparison.Ordinal) ||
+            e.Text.Contains(m.SeatName, StringComparison.Ordinal));
     }
 
     private static (Simulation Sim, Grudge G) Plotting()

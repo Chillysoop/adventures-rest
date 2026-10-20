@@ -128,6 +128,9 @@ public sealed record BuildingDef
     /// <summary>A grand work's stages, funded one after another; its build hours are theirs summed (<see cref="Systems.GrandWorks"/>).</summary>
     public IReadOnlyList<WorkStage> Stages { get; init; } = [];
 
+    /// <summary>A builders' yard: building crews it adds, so more of the townsfolk's builds can be under way at once (<see cref="Systems.Construction.Crews"/>).</summary>
+    public int Crews { get; init; }
+
     /// <summary>A monument's part: the building it grows from (temple, keep, town hall), raised beside it (<see cref="Systems.Monuments"/>).</summary>
     public string PartOf { get; init; } = "";
 

@@ -721,6 +721,8 @@ public partial class Main
             p.Text(comfort > 0
                 ? Ui.C(Ui.Good, $"A pleasant street: the household is {Math.Round(comfort * 100)}% more content, so the house grows sooner.")
                 : Ui.C(Ui.Bad, $"A grim street: the household is {Math.Round(-comfort * 100)}% less content."));
+        if (b.Def.Housing > 0 && b.Complete && City.UpgradeBlocked(t, b) is { } stuck && !stuck.StartsWith("it is as grand"))
+            p.Note($"To grow a storey: {stuck}.");
         if (t.Content.Merchants.Shops.Contains(b.Def.Id) && !b.IsSite)
         {
             var shelf = Merchants.Wares(t, b).Select(w => t.Content.Library.Item(w.ItemId)).OfType<LibItem>().ToList();
@@ -730,6 +732,8 @@ public partial class Main
         if (here.Count > 0) p.Text($"Here now: {string.Join(", ", here.Select(a => AgentLink(a)))}");
         if (b.IsSite) SiteCard(p, t, b);
         if (b.ParentId is int core) p.Text(Ui.C(Ui.Ink2, $"Part of {Ui.Esc(t.Building(core).Name)}."));
+        if (b.Def.Crews > 0 && b.Complete)
+            p.Text(Ui.C(Ui.Ink2, $"Puts {b.Def.Crews} more crews to work. The town has {Construction.Crews(t)} crews; a town its size keeps {Construction.Wanted(t)} busy."));
         if (Monuments.IsMonument(t, b.Def)) MonumentCard(p, t, b);
     }
 

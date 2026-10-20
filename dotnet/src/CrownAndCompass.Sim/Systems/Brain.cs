@@ -182,6 +182,24 @@ public static class Brain
                 a.Gold += pay;
             }
         }
+        else if (b.Def.Crews > 0)
+        {
+            // A builders' yard's builders go out to the sites, on the treasury's wage.
+            town.Book(TreasuryAccount.Works, -b.Def.Wage);
+            a.Gold += b.Def.Wage;
+            if (Construction.SiteFor(town, b) is not { } site) return;
+            a.LocationId = site.Id;
+            if (Construction.Short(town, site))
+            {
+                a.Activity = Activity.Hauling;
+                Construction.Haul(town, site, Rng.Modifier(a.Abilities.Str));
+            }
+            else
+            {
+                a.Activity = Activity.Building;
+                site.Raise(town, Math.Max(0.5, 1 + 0.1 * Rng.Modifier(a.Abilities.Str)) * Seasons.Build(town) * Decrees.Build(town) * Institutions.Build(town));
+            }
+        }
         else if (b.OwnerId != a.Id)
         {
             // Wages are paid by the hour out of the business account, which may go into debt.
