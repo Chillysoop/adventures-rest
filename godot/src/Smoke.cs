@@ -103,9 +103,13 @@ public partial class Main
                 return 10;
             case 21:
                 CloseHistory();
-                // Each dock group's list, then the glossary with a keyword's card pinned over it.
-                for (int g = 0; g < Groups.Length; g++) OpenPicker(g);
-                ClosePicker();
+                // Each tray drawer, then the glossary with a keyword's card pinned over it.
+                foreach (var d in Trays)
+                {
+                    OpenTray(d.Id);
+                    RenderTray();
+                }
+                CloseTray();
                 OpenGlossary("mandate");
                 Pin("warband");
                 if (_kwPinned.Count == 0) throw new InvalidOperationException("the keyword card did not pin");

@@ -32,22 +32,29 @@
     {
       "id": "resources",
       "title": "The town at a glance",
-      "text": "Along the top: people, heroes, the treasury, the price of bread, your [b]Mandate[/b] (how much the townsfolk back you) and the homeless. Hover any of them for more. Keep bread cheap and Mandate high.",
+      "text": "Along the top: households, heroes, the treasury, food, your [b]Mandate[/b] (how much the townsfolk back you), unrest and homes. Beside each is where it is heading over the last month, like [b]+212/mo[/b] in the treasury, and a red outline means it is heading for trouble. [b]Hover[/b] one for its month in full: where the gold came from and went, and when it runs out. Click one to open the window that fixes it.",
       "point": "topbar",
       "teaches": []
     },
     {
       "id": "keywords",
       "title": "Gold words",
-      "text": "Words in gold, like Mandate or the warband, are keywords. [b]Hover[/b] one anywhere for a card that explains it, and [b]click[/b] it to pin the card so it stays while you read on; drag a pinned card by its title, close it with its cross. The book at the top right, or [b]F1[/b], opens the whole glossary. Try hovering a figure on the top bar and clicking it.",
+      "text": "Words in gold, like Mandate or the warband, are keywords. [b]Hover[/b] one anywhere for a card that explains it, and [b]click[/b] it to pin the card so it stays while you read on; drag a pinned card by its title, close it with its cross. The book at the top right, or [b]F1[/b], opens the whole glossary. Try hovering one in this card and clicking it.",
       "point": "glossary",
       "until": "pin",
       "teaches": ["key:F1"]
     },
     {
+      "id": "rail",
+      "title": "Every window, one click",
+      "text": "Every window has a button on the rail down the left: hover one for its name. A [b]badge[/b] counts what waits for you there, red when it is urgent and gold for a decision. [b]Shift[/b] and a number opens the ten you'll use most: Shift+1 Bounties, Shift+2 Council, Shift+3 War, Shift+4 Campaign, Shift+5 City, on to Shift+0 for the Ledger.",
+      "point": "rail",
+      "teaches": ["key:Key9"]
+    },
+    {
       "id": "ledger",
       "title": "The Ledger",
-      "text": "Everything that happens in town is written in the Ledger, from brawls to weddings to dragons. Open [b]Town[/b] on the dock, then the [b]Ledger[/b].",
+      "text": "Everything that happens in town is written in the Ledger, from brawls to weddings to dragons. Open the [b]Ledger[/b] from the rail down the left.",
       "point": "tab:Ledger",
       "until": "tab:Ledger",
       "teaches": ["tab:Ledger"]
@@ -125,6 +132,13 @@
       "point": "tab:Bounties",
       "until": "count:Bounties",
       "teaches": ["tab:Bounties", "command:PostBounty", "command:HoldSite"]
+    },
+    {
+      "id": "tray",
+      "title": "The action tray",
+      "text": "On the right edge sit the four things a mayor answers most: the [b]bounty board[/b], the [b]council[/b], [b]events[/b] and the [b]war[/b], each with a count of what waits. Click one and it slides out over the map, so you can post a bounty, sign a motion or answer a story without opening a window. Click it again to fold it away.",
+      "point": "tray",
+      "teaches": []
     },
     {
       "id": "explore",
