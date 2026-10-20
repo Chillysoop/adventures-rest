@@ -145,9 +145,10 @@ public partial class Main
 
     private Control FindRow(Find f, FindChoice c, int index)
     {
-        string sub = c.Detail + (c.Chance < 1 ? $" · {Math.Round(c.Chance * 100)}%" : "");
+        string sub = c.Detail;
         if (c.Blocked != null) sub = $"{Ui.Cap(c.Blocked)}.";
-        var row = new Button { Disabled = c.Blocked != null, FocusMode = FocusModeEnum.None, CustomMinimumSize = new Vector2(0, 54), MouseDefaultCursorShape = CursorShape.PointingHand };
+        bool odds = c.Chance < 1 && c.Blocked == null;
+        var row = new Button { Disabled = c.Blocked != null, FocusMode = FocusModeEnum.None, CustomMinimumSize = new Vector2(0, odds ? 76 : 54), MouseDefaultCursorShape = CursorShape.PointingHand };
         var normal = Ui.Box(new Color(Ui.Panel2, 0.9f), Ui.Line, 8, 1, 14, 8);
         var hover = Ui.Box(new Color(new Color("8cc084"), 0.14f), new Color("8cc084"), 8, 1, 14, 8);
         hover.BorderWidthLeft = 4;
@@ -167,6 +168,20 @@ public partial class Main
         subl.MouseFilter = MouseFilterEnum.Ignore;
         v.AddChild(subl);
         row.AddChild(v);
+        if (odds)
+        {
+            // The odds as a coloured bar and a coloured edge, as on story cards.
+            var band = Assess.Odds(_sim.Town, c.Chance);
+            var color = Foes.Better(band);
+            v.AddChild(Foes.Bar("Odds", band.Step + 1, band.Steps, $"{band.Name} · {Math.Round(c.Chance * 100)}%", color, width: 60));
+            var edge = new ColorRect { Color = color, MouseFilter = MouseFilterEnum.Ignore };
+            row.AddChild(edge);
+            edge.SetAnchorsAndOffsetsPreset(LayoutPreset.LeftWide);
+            edge.OffsetLeft = 1;
+            edge.OffsetRight = 5;
+            edge.OffsetTop = 8;
+            edge.OffsetBottom = -8;
+        }
         int id = f.Id;
         string act = c.Act;
         row.Pressed += () => OrderFind(id, act);

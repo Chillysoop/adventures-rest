@@ -323,7 +323,15 @@ public partial class Main
             tip.AutowrapMode = TextServer.AutowrapMode.WordSmart;
             tip.CustomMinimumSize = new Vector2(300, 0);
             item.AddChild(tip);
-            _alertTipBox.AddChild(item);
+            if (AlertFace(a, 40) is { } face)
+            {
+                var line = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
+                line.AddThemeConstantOverride("separation", 10);
+                line.AddChild(face);
+                line.AddChild(item);
+                _alertTipBox.AddChild(line);
+            }
+            else _alertTipBox.AddChild(item);
         }
         if (items.Count > 5) _alertTipBox.AddChild(Ui.Label($"…and {items.Count - 5} more", Ui.Ink2, Ui.Body, 12));
         string hint = items.Count == 1
@@ -349,7 +357,16 @@ public partial class Main
             row.MouseExited += () => row.AddThemeStyleboxOverride("panel", normal);
             var label = Ui.Label(a.Text, Ui.Ink, Ui.Medium, 13);
             label.MouseFilter = MouseFilterEnum.Ignore;
-            row.AddChild(label);
+            if (AlertFace(a, 28) is { } face)
+            {
+                var line = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
+                line.AddThemeConstantOverride("separation", 8);
+                line.AddChild(face);
+                label.SizeFlagsVertical = SizeFlags.ShrinkCenter;
+                line.AddChild(label);
+                row.AddChild(line);
+            }
+            else row.AddChild(label);
             row.GuiInput += ev =>
             {
                 if (ev is not InputEventMouseButton { Pressed: true } mb) return;
@@ -363,6 +380,20 @@ public partial class Main
         _alertListBox.AddChild(Ui.Label("Click to go there · right-click to dismiss", new Color(Ui.Ink2, 0.75f), Ui.Body, 11));
         _listAnchor = chip;
         PlaceAlertPopup(_alertList, chip);
+    }
+
+    /// <summary>The portrait of the enemy or the site an alert is about, if it is about one.</summary>
+    private Portrait? AlertFace(Alert a, float size)
+    {
+        var t = _sim.Town;
+        if (a.StoryId is int sid && Stories.Find(t, sid) is { } st)
+        {
+            if (st.MenaceId is int mid && mid >= 1 && mid <= t.Saga.Menaces.Count) return Foes.Of(t, t.Saga.Menaces[mid - 1], size);
+            if (st.Warband) return Foes.Warband(t, size);
+            return null;
+        }
+        if (a.Kind.Id is "siege" or "sighted" && a.SiteId == null) return Foes.Warband(t, size);
+        return a.SiteId is string site && Quests.Site(t, site) is { Known: not SiteKnowledge.Unheard } s ? Foes.Of(t, s, size) : null;
     }
 
     private static Control AlertHeading(AlertKind kind, int count)
