@@ -127,20 +127,48 @@
       "ambush": 0.3,
       "habitats": ["arctic", "mountain"],
       "ambushText": ["white shapes rise out of the snow", "a hunter of the ice has been following them"]
+    },
+    {
+      "id": "lake",
+      "name": "lake",
+      "through": "over",
+      "barrier": "water",
+      "names": ["{A} Mere", "Lake {A}", "the {A}water", "the {A} Lough"],
+      "words": ["Glass", "Still", "Long", "Grey", "Moon", "Deep", "Silver", "Mist", "Cold", "Heron"],
+      "slow": 1.0,
+      "danger": 0.6,
+      "hazard": { "skill": "hazard", "dc": 12, "die": 6, "text": ["a squall sweeps the open water", "the cold off the water in their bones"] },
+      "ambush": 0.2,
+      "habitats": ["coast", "swamp", "grassland"],
+      "ambushText": ["something long and pale rises under them", "the water's own guardian does not like trespassers"]
+    },
+    {
+      "id": "peaks",
+      "name": "peaks",
+      "through": "over",
+      "barrier": "sheer",
+      "names": ["the {A} Teeth", "Mount {A}", "the {A} Horns", "the {A} Spires"],
+      "words": ["Giant's", "Storm", "Wyrm", "Iron", "Grey", "Thunder", "Widow's", "Eagle", "Frost", "Cloud"],
+      "slow": 1.0,
+      "danger": 0.9,
+      "hazard": { "skill": "hazard", "dc": 13, "die": 8, "text": ["winds off the summits that throw them about", "thin air and a long way to fall"] },
+      "ambush": 0.3,
+      "habitats": ["mountain"],
+      "ambushText": ["something nests on the summits and comes down for them", "rocs wheel above the peaks"]
     }
   ],
   "themes": {
-    "greenmarch": ["tangle", "gorge", "barrows"],
+    "greenmarch": ["tangle", "gorge", "barrows", "lake"],
     "thornwood": ["tangle", "tangle", "mire"],
-    "highpeaks": ["ridge", "ridge", "gorge"],
-    "deeproads": ["gorge", "ridge"],
+    "highpeaks": ["ridge", "ridge", "gorge", "peaks"],
+    "deeproads": ["gorge", "ridge", "peaks"],
     "crownruins": ["barrows", "tangle", "gorge"],
     "ashenbarrows": ["barrows", "barrows", "mire"],
-    "mirefen": ["mire", "mire", "tangle"],
-    "saltreach": ["mire", "gorge"],
-    "rimefell": ["icefield", "ridge"],
+    "mirefen": ["mire", "mire", "tangle", "lake"],
+    "saltreach": ["mire", "gorge", "lake"],
+    "rimefell": ["icefield", "ridge", "peaks"],
     "duneglass": ["waste", "waste", "gorge"],
     "cinderwastes": ["waste", "ridge"],
-    "feyfringe": ["tangle", "mire"]
+    "feyfringe": ["tangle", "mire", "lake"]
   }
 }

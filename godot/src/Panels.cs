@@ -624,6 +624,11 @@ public partial class Main
             string role = cls.Role == "" ? "" : $"{Ui.Cap(cls.Role)}{(cls.Magic != "" ? $", {cls.Magic} caster" : "")}";
             p.Text(Ui.C(Ui.Ink2, $"{Ui.Esc(role)}{(spells.Count > 0 ? $" · casts {Ui.Esc(string.Join(", ", spells))}" : "")}"), 13);
             p.Text($"Fights with {Ui.Esc(Gear.Describe(hs))} · AC {Gear.Ac(t.Content, a)} · attack +{Gear.Attack(t.Content, a)}{(hs.Stone ? " · carries a town sending stone" : "")}", 13);
+            var (alone, carries) = Passage.Of(t, a);
+            string mount = hs.Mount != "" && t.Content.Passage.Mount(hs.Mount) is { } md ? $"Rides a {md.Name}" : "";
+            string crosses = Passage.Describe(alone), party = Passage.Describe(carries & ~alone) is var more && more != "" ? $"; carries the whole party over {more}" : "";
+            if (mount != "" || crosses != "" || party != "")
+                p.Text(Ui.C(Ui.Ink2, Ui.Esc($"{mount}{(mount != "" && crosses != "" ? " · " : "")}{(crosses != "" ? $"can cross {crosses}" : "")}{party}")), 13);
             InspectNotoriety(p, t, a, hs);
             InspectLoyalty(p, t, a, hs);
         }
@@ -721,6 +726,8 @@ public partial class Main
             p.Text(comfort > 0
                 ? Ui.C(Ui.Good, $"A pleasant street: the household is {Math.Round(comfort * 100)}% more content, so the house grows sooner.")
                 : Ui.C(Ui.Bad, $"A grim street: the household is {Math.Round(-comfort * 100)}% less content."));
+        if (b.Def.Housing > 0 && b.Complete && City.UpgradeBlocked(t, b) is { } stuck && !stuck.StartsWith("it is as grand"))
+            p.Note($"To grow a storey: {stuck}.");
         if (t.Content.Merchants.Shops.Contains(b.Def.Id) && !b.IsSite)
         {
             var shelf = Merchants.Wares(t, b).Select(w => t.Content.Library.Item(w.ItemId)).OfType<LibItem>().ToList();
@@ -728,6 +735,58 @@ public partial class Main
                 (shelf.Count == 0 ? "Nothing second-hand on the shelf." : $"On the shelf: {string.Join(", ", shelf.Select(i => $"{Ui.Esc(i.Name)} ({Js.Str(Math.Ceiling(i.ValueGp * t.Content.Merchants.Resale))}g)"))}."));
         }
         if (here.Count > 0) p.Text($"Here now: {string.Join(", ", here.Select(a => AgentLink(a)))}");
+        if (b.IsSite) SiteCard(p, t, b);
+        if (b.ParentId is int core) p.Text(Ui.C(Ui.Ink2, $"Part of {Ui.Esc(t.Building(core).Name)}."));
+        if (b.Def.Crews > 0 && b.Complete)
+            p.Text(Ui.C(Ui.Ink2, $"Puts {b.Def.Crews} more crews to work. The town has {Construction.Crews(t)} crews; a town its size keeps {Construction.Wanted(t)} busy."));
+        if (Monuments.IsMonument(t, b.Def)) MonumentCard(p, t, b);
+    }
+
+    /// <summary>A building site: what it waits on, and the player's say over it.</summary>
+    private void SiteCard(Pane p, Town t, Building b)
+    {
+        int id = b.Id;
+        if (Construction.Stalled(t, b))
+        {
+            var (timber, stone) = Construction.Wanting(b);
+            string what = timber > 0 && stone > 0 ? "timber and stone" : stone > 0 ? "stone" : "timber";
+            p.Text(Ui.C(Ui.Bad, $"Stalled: the builders wait for {what}, and the market has none."));
+            double cost = Construction.CaravanCost(t, b);
+            p.Buttons(($"Send for it by caravan, {Js.Str(cost)}g", Construction.CaravanBlocked(t, b) == null, true, () => Act(() => _sim.SendCaravan(id))));
+        }
+        else if (b.Hauled < 1 && b.BuildProgress >= Construction.Ready(t, b) - 1e-9)
+            p.Text("The footings are in; builders are carrying timber and stone onto the site.");
+        p.Buttons((b.Priority ? "Back in line" : "Put this site first", true, !b.Priority, () => Act(() => _sim.PrioritiseSite(id, !b.Priority))));
+        p.Note(b.Priority ? "Builders and the market's timber and stone go here before any other site." : "Sends builders and materials here ahead of every other site.");
+    }
+
+    /// <summary>A monument's parts: what stands, what is rising, and what the council could add next.</summary>
+    private void MonumentCard(Pane p, Town t, Building b)
+    {
+        int id = b.Id;
+        p.Heading("Its parts");
+        foreach (var part in Monuments.PartsOf(t, b.Def))
+        {
+            var built = Monuments.Part(t, b, part.Id);
+            string gives = Monuments.Gives(t, part);
+            if (built != null)
+            {
+                string state = built.Complete ? Ui.C(Ui.Good, "standing") : $"rising, {Math.Floor(100 * built.BuildProgress / part.BuildHours)}%";
+                p.Text($"[b]{Ui.Esc(part.Name)}[/b] · {state}\n{Ui.C(Ui.Ink2, Ui.Esc(Ui.Cap(gives)))}");
+                continue;
+            }
+            string? no = Monuments.Blocked(t, b, part);
+            string pid = part.Id;
+            p.Text($"[b]{Ui.Esc(part.Name)}[/b] · {Js.Str(Monuments.Cost(t, part))}g\n{Ui.C(Ui.Ink2, Ui.Esc(Ui.Cap(gives)))}");
+            if (no == null) p.Buttons(($"Add the {part.Name.ToLowerInvariant()}", true, false, () => Act(() => _sim.AddPart(id, pid))));
+            else p.Note(Ui.Cap(no) + ".");
+        }
+        p.Buttons(
+            ("Build it all now", Monuments.PartsOf(t, b.Def).Any(d => Monuments.Blocked(t, b, d) == null), false, () => Act(() => _sim.AddAllParts(id))),
+            (b.Grow ? "Stop growing it" : "Grow on its own", true, !b.Grow, () => Act(() => _sim.GrowMonument(id, !b.Grow))));
+        p.Note(b.Grow
+            ? "The council adds the next part on its own whenever it can spare the gold."
+            : "Every part at once can empty the treasury, and the market's timber and stone with it.");
     }
 
     private void InspectSite(Pane p, Town t, SiteState s)

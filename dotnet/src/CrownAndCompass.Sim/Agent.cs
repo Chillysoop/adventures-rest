@@ -176,6 +176,9 @@ public sealed class HeroSheet
     public int Expeditions { get; set; }
     public string? PartyName { get; set; }
 
+    /// <summary>The mount the hero rides (<see cref="Systems.MountDef"/> id), or "" on foot.</summary>
+    public string Mount { get; set; } = "";
+
     /// <summary>Tick the hero is due back from an expedition, or null when in town.</summary>
     public int? AwayUntil { get; set; }
 

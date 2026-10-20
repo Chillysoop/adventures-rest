@@ -52,7 +52,13 @@ public sealed class WorldGen
     public int TreeCount { get; private set; }
 
     private readonly Noise _n1, _n2, _n3;
-    private readonly float _riverPhase;
+
+    /// <summary>The river's course on the map (the sim's, <see cref="Passage.River"/>), and each vertex's distance from it in tiles.</summary>
+    public readonly Vector2[] River;
+    private readonly float[] _riverDist = new float[(N + 1) * (N + 1)];
+
+    /// <summary>Its fords and bridges on the map, and which way the water runs there.</summary>
+    public readonly List<(Crossing Crossing, Vector2 At, Vector2 Flow)> Crossings = [];
 
     /// <summary>The sim's hard country (<see cref="Roads"/>), raised out of the ground here so the roads bend round what you see.</summary>
     private readonly Feature[] _features;
@@ -63,8 +69,18 @@ public sealed class WorldGen
         _n1 = new Noise(seed * 31 + 7);
         _n2 = new Noise(seed * 57 + 11);
         _n3 = new Noise(seed * 91 + 23);
-        _riverPhase = Geo.Hash(seed * 13 + 5) * 6.28f;
         _features = town.Terrain.ToArray();
+        River = Passage.River(town).Select(Geo.FromDays).ToArray();
+        TraceRiver();
+        foreach (var c in Passage.Crossings(town))
+        {
+            var at = Geo.FromDays(c.X, c.Y);
+            int i = 0;
+            for (int k = 1; k < River.Length; k++)
+                if (River[k].DistanceSquaredTo(at) < River[i].DistanceSquaredTo(at)) i = k;
+            var flow = (River[Math.Min(River.Length - 1, i + 1)] - River[Math.Max(0, i - 1)]).Normalized();
+            Crossings.Add((c, at, flow));
+        }
         BuildTerritories(geo, town);
         BuildHeight(town.Seed);
         BuildForest(geo, treeScale);
@@ -144,7 +160,7 @@ public sealed class WorldGen
 
     public static Biome? FeatureBiome(string kind) => kind switch
     {
-        "ridge" or "icefield" => Biome.Crags,
+        "ridge" or "icefield" or "peaks" => Biome.Crags,
         "mire" => Biome.Marsh,
         "tangle" => Biome.Woodland,
         "barrows" or "waste" => Biome.Heath,
@@ -199,6 +215,12 @@ public sealed class WorldGen
                 float core = 1 - Mathf.SmoothStep(0.15f, 0.55f, (float)(Math.Abs(r - mid) / Math.Max(0.05, half)));
                 return Mathf.Lerp(h, -1.4f, core * k) + k * (1 - core) * 3;
             }
+            case "lake":
+                // Open water with a shelving shore: deep enough that nobody wades it.
+                return Mathf.Lerp(h, -1.6f + _n1.Fbm(p.X / 18, p.Y / 18, 2) * 0.4f, Mathf.SmoothStep(0, 0.6f, k));
+            case "peaks":
+                // Sheer summits: cliffs no road climbs.
+                return h + Mathf.SmoothStep(0, 1, k) * (26 + 48 * Mathf.Pow(_n2.Ridge(p.X / 30 + f.Id, p.Y / 30, 4), 1.1f));
             case "barrows":
                 return h + k * 1.2f * Mathf.Max(0, _n1.Get(p.X / 6, p.Y / 6));
             case "waste":
@@ -215,7 +237,7 @@ public sealed class WorldGen
         return f.Kind.Id switch
         {
             "tangle" => bias + 0.75f * k,
-            "ridge" or "icefield" or "waste" => Mathf.Lerp(bias, -1, k),
+            "ridge" or "icefield" or "waste" or "peaks" or "lake" => Mathf.Lerp(bias, -1, k),
             "mire" => Mathf.Lerp(bias, -0.05f, k),
             "barrows" => Mathf.Lerp(bias, -0.5f, k),
             _ => bias,
@@ -235,19 +257,44 @@ public sealed class WorldGen
 
     // ---------- Height ----------
 
-    /// <summary>The river's centre line as x for a given y: straight past the town, meandering further out.</summary>
-    public float RiverX(float y)
+    /// <summary>Each vertex's distance from the river, out to a few tiles (beyond that it is far enough not to matter).</summary>
+    private void TraceRiver()
     {
-        // Straight past the Riverside ward on the town's east edge, wandering once clear of it.
-        float far = Mathf.SmoothStep(Geo.Grid / 2 + 8, 280, Mathf.Abs(y - Geo.Center.Y));
-        return Geo.Center.X + Geo.Grid / 2 + 3 + far * (Mathf.Sin(y * 0.011f + _riverPhase) * 46 + Mathf.Sin(y * 0.033f + _riverPhase * 2) * 12);
+        Array.Fill(_riverDist, 99f);
+        const float Reach = 8;
+        for (int k = 1; k < River.Length; k++)
+        {
+            Vector2 a = River[k - 1], b = River[k];
+            int x0 = Math.Max(0, (int)(Mathf.Min(a.X, b.X) - Reach)), x1 = Math.Min(N, (int)(Mathf.Max(a.X, b.X) + Reach) + 1);
+            int y0 = Math.Max(0, (int)(Mathf.Min(a.Y, b.Y) - Reach)), y1 = Math.Min(N, (int)(Mathf.Max(a.Y, b.Y) + Reach) + 1);
+            var ab = b - a;
+            float l2 = Mathf.Max(1e-6f, ab.LengthSquared());
+            for (int y = y0; y <= y1; y++)
+                for (int x = x0; x <= x1; x++)
+                {
+                    var p = new Vector2(x, y);
+                    float t = Mathf.Clamp((p - a).Dot(ab) / l2, 0, 1);
+                    float d = p.DistanceTo(a + ab * t);
+                    int i = y * (N + 1) + x;
+                    if (d < _riverDist[i]) _riverDist[i] = d;
+                }
+        }
     }
 
+    /// <summary>Distance from the river in tiles at a point (99 when far from it).</summary>
     public float RiverDistance(Vector2 p)
     {
-        float x = RiverX(p.Y);
-        float slope = (RiverX(p.Y + 1) - RiverX(p.Y - 1)) / 2;
-        return Mathf.Abs(p.X - x) / Mathf.Sqrt(1 + slope * slope);
+        int x = Mathf.Clamp((int)Mathf.Round(p.X), 0, N), y = Mathf.Clamp((int)Mathf.Round(p.Y), 0, N);
+        return _riverDist[y * (N + 1) + x];
+    }
+
+    /// <summary>How shallow the river runs at a point: 1 at a ford's stones, 0 in the deep channel.</summary>
+    private float FordAt(Vector2 p)
+    {
+        float best = 0;
+        foreach (var (c, at, _) in Crossings)
+            if (c.Kind == "ford") best = Mathf.Max(best, 1 - Mathf.SmoothStep(1.5f, 3.5f, p.DistanceTo(at)));
+        return best;
     }
 
     private float RawHeight(float x, float y)
@@ -256,6 +303,8 @@ public sealed class WorldGen
         float chain = Mathf.SmoothStep(0.25f, 0.65f, _n3.Fbm(x / 320 + 40, y / 320, 3));
         if (chain > 0) h += chain * Mathf.Pow(_n2.Ridge(x / 150, y / 150, 4), 2) * 52;
         h += _n2.Get(x / 23, y / 23) * 0.8f;
+        // No pond or lake the roads don't know of: open water is the sim's (its lakes and the river) or the sea at the world's end.
+        h = Mathf.Max(h, 0.6f);
         // The land falls away near the map's edge so the world ends in sea, not a cliff.
         float edge = Mathf.Min(Mathf.Min(x, y), Mathf.Min(N - x, N - y));
         h = Mathf.Lerp(-3, h, Mathf.SmoothStep(0, 40, edge));
@@ -276,8 +325,9 @@ public sealed class WorldGen
                 float town = TownHeight + (float)Sim.Systems.Hills.Height(townSeed, x - Geo.Margin, y - Geo.Margin);
                 h = Mathf.Lerp(town, Mathf.Max(h, d < Geo.Clearing + 30 ? 1.2f : h), flat);
                 h = FeatureHeight(p, h);
-                float dr = RiverDistance(p);
-                h = Mathf.Min(h, Mathf.Lerp(-1.1f, h, Mathf.SmoothStep(0.6f, 5.5f, dr)));
+                float dr = _riverDist[y * (N + 1) + x];
+                // Shallow at the fords, stones showing through; deep in the channel everywhere else.
+                if (dr < 6) h = Mathf.Min(h, Mathf.Lerp(Mathf.Lerp(-1.1f, -0.12f, FordAt(p)), h, Mathf.SmoothStep(0.6f, 5.5f, dr)));
                 Height[y * (N + 1) + x] = h;
             }
     }

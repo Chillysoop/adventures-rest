@@ -463,6 +463,10 @@
       "until": "sown",
       "teaches": []
     },
+    {"id": "monuments", "title": "Monuments that grow", "text": "The town hall, the temple and the keep start small and grow by the parts you add: a bell tower, a nave, a curtain wall, a great hall. Click the building to see its parts, what each gives and what it costs. [b]Add[/b] one, or [b]Build it all now[/b] if you're bold: every part at once can empty the treasury and the market's timber and stone. Leave [b]Grow on its own[/b] ticked and the council adds the next part whenever it can spare the gold.", "when": "day:20", "teaches": ["command:AddPart", "command:AddAllParts", "command:GrowMonument"]},
+    {"id": "site-first", "title": "Building sites", "text": "Click a building site to see how far along it is. [b]Put this site first[/b] sends builders and the market's timber and stone to it ahead of the others. The council's sites carry their timber and stone off the market as they go: if the market runs out, the builders stand idle and an alert says so. Build a lumber camp or quarry, or send for a caravan from the site, which is dear but quick.", "when": "day:12", "teaches": ["command:PrioritiseSite", "command:SendCaravan"]},
+    {"id": "builders", "title": "Builders and homes", "text": "Each builders' yard puts three more crews to work, so more homes, shops and works can go up at once. Build one from the government buildings when the town's sites queue for builders. Homes grow a storey only when what folk need is close by: a tavern, a shrine, a market, food of several kinds, something pleasant on the street. Click a house to see what it waits for.", "when": "day:15", "teaches": []},
+    {"id": "cobbles", "title": "Cobbled streets", "text": "Once the town is chartered a town, its masons pave the streets with stone on their own: the square first, then street by street outward from the centre, as the market has stone and the treasury can spare the gold. Families on a cobbled street are a little happier. Keep a quarry working and they'll get further.", "when": "day:120", "teaches": []},
     {
       "id": "grand-works",
       "title": "Grand works",

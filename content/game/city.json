@@ -3,6 +3,7 @@
   "exportShare": 0.75,
   "paths": { "wearPerTrip": 0.02, "mostTrips": 20, "fade": 0.97, "lay": 1.2 },
   "growth": { "reach": 1, "offStreet": 0.5, "yard": 1, "shuffle": 0.8, "hall": 0.05, "turn": 0.3 },
+  "paving": { "tier": "town", "perDay": 0.6, "stone": 2, "gold": 6, "reserve": 500, "comfort": 0.03, "reach": 2 },
   "construction": { "crews": 2, "residents": 25, "most": 40, "footings": 0.1, "load": 3 },
   "wallStrip": { "inside": 0.9, "outside": 1.6 },
   "goods": {
@@ -15,9 +16,9 @@
     { "id": "hamlet", "name": "Hamlet", "residents": 30, "requires": ["tavern"], "cost": 60,
       "blurb": "Enough hearths to call it a place. Quarries and sheepfolds can open." },
     { "id": "village", "name": "Village", "residents": 90, "requires": ["granary", "general_store"], "cost": 200,
-      "blurb": "A market green and a grain store. The land round the old town opens, where new wards grow, weavers and carpenters set up, and cottages grow into timber houses." },
+      "blurb": "A market green and a grain store. New wards can grow round the old town, weavers and carpenters set up, and cottages grow into timber houses." },
     { "id": "town", "name": "Town", "residents": 220, "heroes": 14, "requires": ["market_hall", "temple", "watch_house"], "cost": 600,
-      "blurb": "A chartered market town. The land beyond the old town's edge opens, where the Temple Ward and the riverside can grow, stone walls can ring the old town, and land can be zoned medium density, where timber houses become stone townhouses." },
+      "blurb": "A chartered market town. The Temple Ward and the riverside can grow beyond the old town's edge, stone walls can ring the old town, and land can be zoned medium density, where timber houses become stone townhouses." },
     { "id": "large_town", "name": "Large Town", "residents": 450, "heroes": 16, "requires": ["courthouse", "bathhouse"], "walls": "StoneWall", "cost": 1400,
       "blurb": "Magistrates, guild money and stone walls. Castle Hill and the Field Ward can grow, vineyards, scriptoria, theatres and libraries follow, and the crowded old town can be zoned high density, where tall houses rise wall to wall." },
     { "id": "city", "name": "City", "residents": 800, "heroes": 18, "requires": ["library", "barracks", "theatre"], "cost": 3000,
@@ -60,16 +61,17 @@
     { "id": "outskirts", "name": "the outskirts", "ring": 2, "tier": "town", "unsettled": true, "rent": 0.75, "land": 0.7, "mood": -1, "outer": true, "densest": 1,
       "blurb": "Ground beyond the walls. Whatever is built here first decides what quarter it grows into." }
   ],
-  "rings": ["thorp", "village", "town"],
+  "rings": ["thorp", "thorp", "thorp"],
   "founding": 4,
   "fit": 0.2,
+  "nearReach": 8,
   "housing": [
     { "id": "house", "next": "timber_house", "tax": 0.2 },
-    { "id": "timber_house", "next": "townhouse", "tax": 0.35, "goods": { "Cloth": 0.05 }, "services": ["tavern", "shrine"] },
-    { "id": "townhouse", "next": "manor", "dense": "tall_house", "tax": 0.6, "goods": { "Cloth": 0.05, "Furniture": 0.03, "Potions": 0.02 }, "services": ["tavern", "shrine", "market", "bath"] },
-    { "id": "manor", "tax": 1.5, "goods": { "Cloth": 0.06, "Furniture": 0.04, "Potions": 0.02, "Wine": 0.06, "Books": 0.02 }, "services": ["tavern", "shrine", "market", "bath", "theatre", "learning"] },
+    { "id": "timber_house", "next": "townhouse", "tax": 0.35, "goods": { "Cloth": 0.05 }, "services": ["tavern", "shrine"], "near": ["tavern"], "foods": 1 },
+    { "id": "townhouse", "next": "manor", "dense": "tall_house", "tax": 0.6, "goods": { "Cloth": 0.05, "Furniture": 0.03, "Potions": 0.02 }, "services": ["tavern", "shrine", "market", "bath"], "near": ["tavern", "shrine"], "foods": 2 },
+    { "id": "manor", "tax": 1.5, "goods": { "Cloth": 0.06, "Furniture": 0.04, "Potions": 0.02, "Wine": 0.06, "Books": 0.02 }, "services": ["tavern", "shrine", "market", "bath", "theatre", "learning"], "near": ["shrine", "market"], "foods": 3, "beauty": 0.01 },
     { "id": "tenement", "tax": 0.15 },
-    { "id": "tall_house", "tax": 0.45, "goods": { "Cloth": 0.05, "Furniture": 0.02 }, "services": ["tavern", "shrine", "market"] }
+    { "id": "tall_house", "tax": 0.45, "goods": { "Cloth": 0.05, "Furniture": 0.02 }, "services": ["tavern", "shrine", "market"], "near": ["tavern", "shrine"], "foods": 2 }
   ],
   "densities": [
     { "id": "low", "name": "Low", "tier": "thorp", "lane": 1, "land": 1.0, "mood": 0,

@@ -10,6 +10,13 @@ public sealed class Sprite
     public float Yaw;
     public bool Walking;
     public bool Visible;
+
+    /// <summary>Where they head next on the way to <see cref="For"/>: a gate, the moat's bridge, round a wall (<see cref="Passage.Next"/>).</summary>
+    public Vector2? Via;
+    public Vector2 For;
+
+    /// <summary>Running for their life: straight through the moat and over the wall (<see cref="Passage.Fleeing"/>).</summary>
+    public bool Fleeing;
 }
 
 /// <summary>
@@ -30,6 +37,8 @@ public sealed class AgentPositions(MapView map)
 
     private Vector2? Target(Town town, Agent a)
     {
+        // Raiders at the door: run for the hall, whatever the hour.
+        if (Passage.Fleeing(town, a)) return Geo.Center + new Vector2(Geo.Hash(a.Id * 13 + 1) - 0.5f, Geo.Hash(a.Id * 13 + 2) - 0.5f) * 3;
         if (a.Departed || a.Dead || a.IsAway || a.Activity == Activity.Sleeping) return null;
         float j1 = Geo.Hash(a.Id * 13 + 1), j2 = Geo.Hash(a.Id * 13 + 2);
         if (a.LocationId is int loc)
@@ -96,17 +105,36 @@ public sealed class AgentPositions(MapView map)
     {
         var town = map.Sim.Town;
         float pace = timeScale <= 0 ? 0 : Pace * Mathf.Sqrt(timeScale);
-        foreach (var a in town.Agents) Move(Sprites, a.Id, Target(town, a), pace, dt);
+        foreach (var a in town.Agents)
+        {
+            var tgt = Target(town, a);
+            // Woken by raiders: they come running out of their own door.
+            if (tgt != null && Passage.Fleeing(town, a) && (!Sprites.TryGetValue(a.Id, out var was) || !was.Visible) && (a.LocationId ?? a.HomeId) is int door)
+                Sprites[a.Id] = new Sprite { P = Front(town.Lot(town.Building(door).LotId), 0.5f, 0.5f), Visible = true, Fleeing = true };
+            if (Sprites.TryGetValue(a.Id, out var s)) s.Fleeing = tgt != null && Passage.Fleeing(town, a);
+            Move(town, Sprites, a.Id, tgt, pace, dt);
+        }
         foreach (var b in town.Buildings)
         {
             if (!b.IsSite && !Labourers.ContainsKey(b.Id)) continue;
             var (working, hauling) = Hand(town, b);
             Vector2? tgt = !working ? null : hauling && !Carrying(b) ? Yard(town, b) : Front(town.Lot(b.LotId), Geo.Hash(b.Id * 7 + 1), Geo.Hash(b.Id * 7 + 2));
-            Move(Labourers, b.Id, tgt, pace, dt);
+            Move(town, Labourers, b.Id, tgt, pace, dt);
         }
     }
 
-    private static void Move(Dictionary<int, Sprite> sprites, int id, Vector2? tgt, float pace, float dt)
+    /// <summary>The next point on the way to a target: by the gates and bridges, never through a wall or the moat but to flee.</summary>
+    private static Vector2 Way(Town town, Sprite s, Vector2 goal)
+    {
+        if (s.Via is Vector2 via && s.For.DistanceSquaredTo(goal) < 1e-4f && s.P.DistanceSquaredTo(via) > 0.0025f) return via;
+        var m = new Vector2(Geo.Margin, Geo.Margin);
+        var (x, y) = Passage.Next(town, (s.P.X - m.X, s.P.Y - m.Y), (goal.X - m.X, goal.Y - m.Y), s.Fleeing);
+        s.For = goal;
+        s.Via = new Vector2((float)x, (float)y) + m;
+        return s.Via.Value;
+    }
+
+    private static void Move(Town town, Dictionary<int, Sprite> sprites, int id, Vector2? tgt, float pace, float dt)
     {
         sprites.TryGetValue(id, out var s);
         if (tgt == null)
@@ -116,14 +144,20 @@ public sealed class AgentPositions(MapView map)
         }
         if (s == null) sprites[id] = s = new Sprite { P = tgt.Value, Yaw = Geo.Hash(id) * Mathf.Tau };
         // Someone who reappears (back from the road, awake again) starts where they are meant to be.
-        if (!s.Visible) s.P = tgt.Value;
+        if (!s.Visible)
+        {
+            s.P = tgt.Value;
+            s.Via = null;
+        }
         s.Visible = true;
-        var to = tgt.Value - s.P;
+        var aim = Way(town, s, tgt.Value);
+        var to = aim - s.P;
         float dist = to.Length();
         float step = Mathf.Max(pace, pace > 0 ? dist / 2.5f : 0) * dt;
         s.Walking = dist > 0.02f && step > 0;
         if (!s.Walking) return;
-        if (dist > 30 || step >= dist) s.P = tgt.Value;
+        if (dist > 30) s.P = tgt.Value;
+        else if (step >= dist) s.P = aim;
         else s.P += to / dist * step;
         float want = Mathf.Atan2(to.X, to.Y);
         s.Yaw += Mathf.Clamp(Mathf.Wrap(want - s.Yaw, -Mathf.Pi, Mathf.Pi), -TurnRate * dt, TurnRate * dt);
@@ -290,6 +324,8 @@ public partial class Crowd(MapView map) : Node3D
                 float bob = s.Walking ? Mathf.Abs(Mathf.Sin(now * 8 + a.Id)) * 0.02f
                     : a.Activity == Activity.Building ? Mathf.Max(0, Mathf.Sin(now * 6 + a.Id)) * 0.025f : 0;
                 var p = gen.At(s.P, bob);
+                // Swimming the moat to get away: up to the shoulders in it.
+                if (s.Fleeing && Swimming(town, s.P)) p.Y -= 0.14f;
                 var body = a.Hero != null ? Palette.ClassColor(a.Hero.Cls.Id) : Tunics[a.Id % Tunics.Length];
                 Put(p, s.Yaw, body, Palette.RaceColor(a.Race));
                 if (People.Loaded(town, a) == true && a.LocationId is int site) loads.Add((p, s.Yaw, town.Building(site).Def.Stone > town.Building(site).Def.Timber));
@@ -396,8 +432,9 @@ public partial class Crowd(MapView map) : Node3D
             float total = town.Content.Enemy.MarchDays * SimTime.HoursPerDay;
             float t = Mathf.Clamp(1 - (arrival - town.Tick - map.HourFraction) / total, 0, 1);
             var from = map.Geo.Pins.TryGetValue(town.Content.Enemy.Outpost.Id, out var camp) ? camp : Geo.Center + new Vector2(60, -60);
-            var pos = from + (Geo.Center - from) * t * 0.85f;
-            var dir = (Geo.Center - from).Normalized();
+            // They march by the fords and bridges like anyone else on foot.
+            var road = Passage.Road(town, Geo.ToDays(from), (0, 0)).Select(Geo.FromDays).ToArray();
+            var (pos, dir) = Along(road, t * 0.85f);
             int n = Math.Min(160, (int)Math.Round(en.Strength / 3));
             for (int i = 0; i < n; i++)
             {
@@ -501,6 +538,31 @@ public partial class Crowd(MapView map) : Node3D
         var ahead = AlongArc(arc, Mathf.Clamp(u + (Mathf.Cos(now * speed * Mathf.Tau + g.Id * 1.7f) >= 0 ? 0.02f : -0.02f), 0, 1));
         var d = ahead - at2;
         return (at2, walk.Height, d.LengthSquared() > 1e-6f ? Mathf.Atan2(d.X, d.Y) : Out(at2));
+    }
+
+    /// <summary>Whether a point is in the moat's water (outside a wall, short of its far bank).</summary>
+    private static bool Swimming(Town town, Vector2 p)
+    {
+        var q = (p.X - Geo.Margin, (double)p.Y - Geo.Margin);
+        foreach (var b in Passage.Barriers(town))
+            if (b.Reach > b.Foot && !Passage.Inside(b.Loop, q.Item1, q.Item2) && Passage.OnBarrier(b, q)) return true;
+        return false;
+    }
+
+    /// <summary>A point a share of the way along a road, and which way it runs there.</summary>
+    private static (Vector2 Pos, Vector2 Dir) Along(Vector2[] road, float share)
+    {
+        float total = 0;
+        for (int i = 1; i < road.Length; i++) total += road[i].DistanceTo(road[i - 1]);
+        float want = total * Mathf.Clamp(share, 0, 1);
+        for (int i = 1; i < road.Length; i++)
+        {
+            float len = road[i].DistanceTo(road[i - 1]);
+            if (want <= len || i == road.Length - 1)
+                return (road[i - 1] + (road[i] - road[i - 1]) * (len > 0 ? Mathf.Min(1, want / len) : 0), (road[i] - road[i - 1]).Normalized());
+            want -= len;
+        }
+        return (road[0], Vector2.Down);
     }
 
     /// <summary>A point a share of the way along a polyline.</summary>

@@ -112,13 +112,20 @@ public class CrisesTests
         int entries = t.Ledger.Entries.Count;
         for (int d = 0; d < 30 && g.Heat >= t.Content.Crises.Vengeance.StrikeAt; d++) sim.RunDays(1);
         Assert.True(g.Heat < t.Content.Crises.Vengeance.StrikeAt);
-        Assert.Contains(t.Ledger.Entries.Skip(entries), e => e.Text.Contains(m.Name, StringComparison.Ordinal) || e.Text.Contains(m.Leader, StringComparison.Ordinal));
+        Assert.Contains(t.Ledger.Entries.Skip(entries), e => e.Text.Contains(m.Name, StringComparison.Ordinal) || e.Text.Contains(m.Leader, StringComparison.Ordinal) ||
+            e.Text.Contains(m.SeatName, StringComparison.Ordinal));
     }
 
     private static (Simulation Sim, Grudge G) Plotting()
     {
+        // A council of three at least: the traitor, the one they frame, and one more to frame next.
         var sim = new Simulation(new SimulationOptions { Seed = 4 });
         sim.RunDays(60);
+        for (int seed = 5; sim.Town.Seats.Count(s => s.HolderId != null) < 3 && seed < 12; seed++)
+        {
+            sim = new Simulation(new SimulationOptions { Seed = seed });
+            sim.RunDays(60);
+        }
         var t = sim.Town;
         var m = Menaces.Seed(t, [2, 3])!;
         var g = new Grudge { Foe = Vengeance.Key(m), Name = m.Name, Leader = m.Leader, Seat = m.SeatName, Kind = "undead", Wits = "mastermind", Cunning = 1.6 };
