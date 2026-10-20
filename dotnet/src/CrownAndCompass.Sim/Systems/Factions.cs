@@ -562,13 +562,26 @@ public static class Factions
             double fine = Math.Min(Math.Floor(Math.Max(0, agent.Gold)), r.Fine);
             agent.Gold -= fine;
             if (fine > 0) town.Book(TreasuryAccount.Fines, fine);
-            f.Caught[agent.Id] = f.Caught.Get(agent.Id, 0) + 1;
+            int times = f.Caught.Get(agent.Id, 0) + 1;
+            f.Caught[agent.Id] = times;
             string caught = kind switch
             {
                 0 => $"The watch catches {agent.Name} passing gold to a clerk of the counting-house (d20 {roll})",
                 1 => $"The watch catches {agent.Name} behind {hall!.Name} at night with a tinderbox and a grudge (d20 {roll})",
                 _ => $"The watch catches {agent.Name} with a knife at the mayor's door before dawn (d20 {roll})",
             };
+            // A knife at the mayor's door, or a member caught as often as a thief would be, is run out of town, not
+            // fined and let back to try again the next night.
+            if (kind == 2 || times >= r.CaughtToExile)
+            {
+                Population.Depart(town, agent);
+                town.Log(
+                    LedgerCategory.Faction,
+                    Importance.Notable,
+                    $"{caught}. The council has {agent.GivenName} run out of {town.Name}, swearing {f.Name} will not forget the raid.",
+                    [agent.Id]);
+                return;
+            }
             town.Log(
                 LedgerCategory.Faction,
                 Importance.Notable,

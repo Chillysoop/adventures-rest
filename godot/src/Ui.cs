@@ -475,6 +475,7 @@ public sealed class Pane
             var m = new MarginContainer();
             m.AddThemeConstantOverride("margin_top", 12);
             m.AddChild(l);
+            m.SetMeta("heading", text);
             return m;
         });
 
