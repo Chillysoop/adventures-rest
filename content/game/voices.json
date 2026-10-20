@@ -1,0 +1,123 @@
+{
+  "_doc": "What heroes say on the road and in the dark, by voice: a hero speaks with the first of their traits (then their temper) that has lines for the moment, or 'any'. {name} is the speaker, {who} the hero it is about, {nick} their nickname, {site} the place. Lines are picked without dice, so they never change how a delve goes.",
+  "moments": {
+    "setout": { "by": "any", "chance": 0.6, "lines": {
+      "hottempered": ["\"Last one to the {site} buys the ale,\" {name} says, already walking.", "{name} wants to march through the night. Nobody else does."],
+      "shy": ["{name} checks the straps on every pack twice and says nothing at all.", "{name} walks at the back, where nobody will ask them anything."],
+      "greedy": ["\"They say there's a hoard in the {site},\" {name} says, for the fourth time today.", "{name} has already counted the bounty out loud, split four ways and then three."],
+      "generous": ["{name} shares out the last of the honey cakes before the gate is out of sight.", "{name} gives their good cloak to a beggar at the gate and walks out cold."],
+      "gregarious": ["{name} sings the whole first mile, badly, and makes the others join the chorus.", "{name} tells the one about the dwarf and the mule again. It gets a laugh again."],
+      "ambitious": ["\"They'll be singing about this one,\" {name} promises.", "{name} has already decided what the bards will call it."],
+      "lazy": ["{name} asks, twice, whether there's a shorter road.", "{name} is the last to the gate, still chewing breakfast."],
+      "romantic": ["{name} waves at someone in a window long after the gate closes behind them."],
+      "pious": ["{name} touches the shrine by the gate and asks for a safe road."],
+      "bold": ["\"Whatever's in there, it's never met us,\" {name} says."],
+      "any": ["\"Right,\" says {name}. \"The {site}. Let's be about it.\""]
+    } },
+    "boss": { "by": "any", "chance": 0.75, "lines": {
+      "hottempered": ["\"Mine,\" {name} growls, and charges before anyone can stop them.", "{name} doesn't wait for a plan."],
+      "shy": ["{name} goes very quiet and finds a spot behind the others."],
+      "greedy": ["\"Look behind it. Look at the gold,\" {name} whispers."],
+      "ambitious": ["\"This is the one they'll sing about,\" {name} says, and draws."],
+      "lazy": ["\"Can we not just leave it here?\" {name} asks. Nobody answers."],
+      "gregarious": ["{name} shouts a greeting at it, which nobody else thinks was wise."],
+      "pious": ["{name} speaks a prayer into the dark before the first blow."],
+      "merciful": ["\"Last chance to walk away,\" {name} calls to it. It doesn't."],
+      "ruthless": ["\"No quarter,\" says {name}. \"Not for this one.\""],
+      "bold": ["{name} steps out in front of the others."],
+      "any": ["{name} breathes out slowly. \"Here we go.\""]
+    } },
+    "crit": { "by": "other", "chance": 0.45, "lines": {
+      "gregarious": ["\"Did you SEE that?\" {name} shouts.", "{name} whoops loud enough to wake the whole place."],
+      "hottempered": ["\"Leave some for me!\" {name} yells at {who}."],
+      "shy": ["{name} gives {who} a small, stunned nod."],
+      "greedy": ["\"Do that again and I'll stand you a drink,\" {name} tells {who}."],
+      "any": ["\"Nice,\" says {name}.", "{name} claps {who} on the shoulder."]
+    } },
+    "fumble": { "by": "other", "chance": 0.7, "lines": {
+      "gregarious": ["{name} laughs until they have to sit down.", "\"I'm telling everyone about that,\" {name} says. They will."],
+      "hottempered": ["\"Pay attention!\" {name} snaps at {who}."],
+      "generous": ["{name} helps {who} pick it back up and says nothing about it."],
+      "any": ["{name} pretends not to have seen that.", "{name} winces for {who}."]
+    } },
+    "down": { "by": "other", "chance": 0.6, "lines": {
+      "hottempered": ["\"{who}!\" {name} roars, and goes at the thing twice as hard.", "{name} sees {who} fall and stops thinking at all."],
+      "shy": ["{name} goes white and stands over {who} without a word."],
+      "gregarious": ["\"Stay with me, {who}. Stay with me.\""],
+      "generous": ["{name} drops everything and runs to {who}."],
+      "greedy": ["{name} grabs {who}'s purse before anyone else can. To keep it safe, they say."],
+      "any": ["\"{who}'s down!\" {name} shouts."]
+    } },
+    "retreat": { "by": "any", "chance": 0.6, "lines": {
+      "hottempered": ["{name} has to be dragged away, still swearing at it."],
+      "ambitious": ["\"We'll be back,\" {name} says, mostly to the dark.", "{name} looks back the whole way out."],
+      "lazy": ["\"Told you we should've stayed home,\" {name} pants."],
+      "shy": ["{name} is first through the door, and doesn't apologise for it."],
+      "any": ["\"Go, go, go!\" {name} shouts."]
+    } },
+    "victory": { "by": "any", "chance": 0.12, "lines": {
+      "gregarious": ["{name} starts a victory song before the last one has stopped twitching."],
+      "greedy": ["{name} is already going through their pockets."],
+      "ambitious": ["\"Was that it?\" {name} asks."],
+      "lazy": ["{name} sits down right where they are and refuses to move for a while."],
+      "pious": ["{name} says a word for the dead, theirs and the enemy's."],
+      "any": ["{name} wipes their blade and breathes again."]
+    } },
+    "treasure": { "by": "any", "chance": 0.4, "lines": {
+      "greedy": ["{name} bites every coin to be sure.", "\"Right. Nobody touch anything,\" says {name}, touching everything."],
+      "generous": ["{name} sets a share aside for the folk back home."],
+      "gregarious": ["{name} is already planning the round they'll buy with it."],
+      "any": ["{name} whistles low."]
+    } },
+    "death": { "by": "other", "chance": 1.0, "lines": {
+      "hottempered": ["{name} doesn't cry. {name} goes back in alone, and has to be pulled out again.", "{name} breaks their sword on the wall and doesn't say why."],
+      "shy": ["{name} sits with {who} a long time and says nothing at all.", "{name} closes {who}'s eyes and keeps their ring."],
+      "gregarious": ["{name} tries to tell the one about the mule, the way {who} told it, and can't finish.", "{name} talks to {who} the whole way home, as if they were listening."],
+      "generous": ["{name} wraps {who} in their own good cloak for the road home."],
+      "greedy": ["{name} doesn't take {who}'s purse. That is how the others know how bad it is."],
+      "pious": ["{name} says the words for the dead over {who}, and gets them all right."],
+      "any": ["{name} carries {who} the whole way home and won't let anyone help."]
+    } }
+  },
+  "variants": {
+    "potion": ["{name} gulps a {potion} (+{hp} hp).", "{name} knocks back a {potion} between blows (+{hp} hp).", "{name} drains a {potion} and spits out the cork (+{hp} hp).", "{name} downs a {potion}, gasping (+{hp} hp)."],
+    "over": ["The fight is over in {rounds}.", "It takes {rounds}, and then it's quiet.", "{Rounds} of blood and noise, then nothing.", "In {rounds} it's done."]
+  },
+  "jokes": {
+    "fumble": { "after": 2, "names": ["Butterfingers", "Clatter", "Oops"], "named": "The {party} have started calling {name} \"{nick}\". {name} has stopped pretending to mind.", "tease": ["\"Hold on to it this time, {nick},\" {name} says.", "\"Again, {nick}?\" {name} groans, grinning.", "Somebody shouts \"{nick}!\" and everyone but {who} laughs."] },
+    "down": { "after": 3, "names": ["Lucky", "Cat", "Stubborn"], "named": "Knocked flat so often and still breathing, {name} is \"{nick}\" to the {party} now.", "tease": ["\"Up you get, {nick},\" {name} says. \"You've done this before.\"", "\"{nick}'s having a lie-down again,\" {name} reports."] },
+    "crit": { "after": 3, "names": ["Deadeye", "Old Reliable", "the Hammer"], "named": "After one perfect blow too many, the {party} call {name} \"{nick}\".", "tease": ["\"That's {nick} for you,\" {name} says.", "\"Show-off,\" {name} mutters at {nick}."] },
+    "potion": { "after": 3, "names": ["Tippler", "Thirsty", "the Bottle"], "named": "{name} drinks more healing potions than anyone alive, and the {party} have started calling them \"{nick}\".", "tease": ["\"Easy, {nick}, save some for the rest of us,\" {name} says."] }
+  },
+  "vowPull": 0.4,
+  "table": {
+    "cheer": ["{names} cheer.", "{names} bang the table and cheer.", "{names} whoop."],
+    "groan": ["{names} groan.", "{names} put their heads in their hands.", "{names} wince."],
+    "told": ["{names} look like they knew it.", "{names} mutter \"told you\"."],
+    "sour": ["{names} grumble anyway.", "{names} don't clap."]
+  },
+  "funeral": {
+    "places": ["{place}", "the graveyard behind {place}"],
+    "nowhere": "the hillside above the town",
+    "rite": "At {place}, {town} buries {name}{epithet}.",
+    "wake": "There is nobody to bury. {town} holds a wake at the tavern for {name}, and {speaker} pours one out for {them}.",
+    "words": {
+      "hottempered": ["\"{who} never once waited for the plan,\" {name} says. \"I hope wherever they are, nobody makes them.\"", "\"Whatever did this, I'll find it,\" is all {name} says, and walks out before the last hymn."],
+      "shy": ["\"{who} was my friend,\" {name} says. Then nothing more, and nobody needs more.", "{name} leaves something small on the grave and won't say what it was."],
+      "gregarious": ["\"{who} owed me four silver and a song. I'll take the song.\" And {name} sings it.", "{name} tells the story of the night {who} fell in the river, and the whole room laughs and cries at once."],
+      "generous": ["\"{who} gave away everything they had,\" {name} says. \"Even this, in the end.\"", "{name} pays for the stone out of their own purse."],
+      "greedy": ["\"{who} never stood a round in their life,\" {name} says. \"I'd stand them every one now.\"", "{name} counts {who}'s share of the last job onto the grave, coin by coin, and leaves it there."],
+      "ambitious": ["\"{who} wanted the bards to know their name,\" {name} says. \"I'll see they do.\"", "\"They'll sing about {who},\" {name} promises. \"I'll make them.\""],
+      "lazy": ["\"{who} always took the first watch so I wouldn't have to,\" {name} says, and can't go on."],
+      "romantic": ["{name} reads a letter {who} never sent, and nobody asks who it was for."],
+      "pious": ["\"{who} walked the road the gods set them,\" {name} says, \"all the way to the end.\"", "{name} says the old words over {who}, and gets every one of them right."],
+      "merciful": ["\"{who} would have spared the thing that killed them,\" {name} says. \"That's who they were.\""],
+      "bold": ["\"{who} went first. Always first,\" {name} says. \"Somebody has to now.\""],
+      "any": ["\"{who} kept watch for us every night,\" {name} says. \"Rest now. We'll keep it.\"", "\"Safe road, {who},\" {name} says, and that is all."]
+    },
+    "vow": "{speaker} swears on {name}'s grave to see {site} cleared.",
+    "vowWake": "{speaker} swears on {name}'s memory to see {site} cleared.",
+    "kept": "{speaker} stands at {name}'s grave and tells them {site} is cleared. The vow is kept.",
+    "keptBy": "Word comes that {site} has fallen to others. {speaker} goes to {name}'s grave all the same, and lets the vow go."
+  }
+}

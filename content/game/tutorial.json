@@ -511,6 +511,13 @@
       "teaches": []
     },
     {
+      "id": "tales",
+      "title": "Tales at the tavern",
+      "text": "When a company comes home from a delve worth telling, the tavern tells it: a card walks you through it room by room, with the heroes' own words and their dice. [b]Skip[/b] jumps to the big moment, and every chronicle in the Ledger has a [b]Hear the tale[/b] link. Loading a game, and each new season, opens with what happened last time ([b]Enter[/b] carries on).",
+      "when": "count:Chronicles",
+      "teaches": ["key:Enter"]
+    },
+    {
       "id": "history",
       "title": "The old world",
       "text": "Every ruin in the wilds is left over from an older age. [b]History[/b] in the game menu (Esc) shows the empires, peoples and wars before your town, and the Ledger tells each region's old story when a party first gets there.",

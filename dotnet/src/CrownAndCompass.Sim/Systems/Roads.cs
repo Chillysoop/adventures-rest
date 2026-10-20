@@ -689,6 +689,8 @@ public static class Roads
         if (party.Edge != 0) v.Hearten(party.Edge);
         if (party.BountyId is int tb && town.Bounties[tb - 1].Terms != "slay") v.Terms = Terms.Of(town, town.Bounties[tb - 1]);
         v.Log($"{Expedition.ListNames(members.Select(m => m.GivenName).ToList())} set out for {site.Def.Name}.");
+        v.Mark("setout");
+        v.Speak("setout");
         foreach (var line in party.Said) v.Log(line);
         Walk(town, v, party.Start, party.Out, party.DepartTick);
 

@@ -495,7 +495,7 @@ public partial class DiceRoll : Control
 
     private void DrawChip(Rect2 r, string text, int size, Color color, float k, bool strong = false)
     {
-        DrawStyleBox(Ui.Box(new Color(strong ? new Color(color, 0.2f) : Ui.Panel2, k), new Color(strong ? color : Ui.Line, k), 8, 1), r);
+        DrawStyleBox(Ui.Box(strong ? new Color(color, 0.2f * k) : new Color(Ui.Panel2, k), new Color(strong ? color : Ui.Line, k), 8, 1), r);
         var ts = Ui.Bold.GetStringSize(text, HorizontalAlignment.Left, -1, size);
         DrawString(Ui.Bold, new Vector2(r.Position.X + (r.Size.X - ts.X) / 2, r.Position.Y + r.Size.Y / 2 + Ui.Bold.GetAscent(size) * 0.36f), text, HorizontalAlignment.Left, -1, size, new Color(color, k));
     }

@@ -1264,6 +1264,9 @@ public sealed class Content
 
     /// <summary>Heroes' tempers and what they think of the mayor's choices (content/game/regard.json).</summary>
     public RegardRules Regard { get; init; } = new();
+
+    /// <summary>What heroes say in the dark, at the table and over the graves of the fallen (content/game/voices.json).</summary>
+    public VoiceRules Voices { get; init; } = new();
     /// <summary>Exploring companies and what they find (content/game/explore.json).</summary>
     public ExploreRules Explore { get; init; } = new();
     /// <summary>The town guard's posts and the wall works past the stone walls (content/game/garrison.json).</summary>
@@ -1451,6 +1454,7 @@ public sealed class Content
             Bastions = Parse<BastionRules>("bastions.json"),
             Mercenaries = Parse<MercRules>("mercenaries.json"),
             Regard = Parse<RegardRules>("regard.json"),
+            Voices = Parse<VoiceRules>("voices.json"),
             Explore = Parse<ExploreRules>("explore.json"),
             Garrison = Parse<GarrisonRules>("garrison.json"),
             Bounties = Parse<BountyRules>("bounties.json"),
