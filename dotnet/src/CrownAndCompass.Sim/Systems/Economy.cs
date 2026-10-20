@@ -57,7 +57,7 @@ public static class Economy
             b.AddStock(good, -need);
         }
 
-        double yield = Decor.Yield(town, b) * Skills.Yield(b);
+        double yield = Decor.Yield(town, b) * Skills.Yield(b) * (b.Def.Zone == Zone.Farmland ? Powers.Harvest(town) : 1);
         foreach (var (good, qty) in b.Def.Produces)
         {
             double revenue = town.Market.Sell(good, qty * rate * yield * Farming.Yield(town, b, good) * Decrees.Yield(town, good) * Institutions.Yield(town, good));

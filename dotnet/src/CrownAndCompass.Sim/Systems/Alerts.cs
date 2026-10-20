@@ -66,6 +66,7 @@ public static class Alerts
     public static readonly AlertKind Below = new("below", "Stirring below", "warband", AlertLevel.Decision, AlertWindow.City);
     public static readonly AlertKind Trade = new("trade", "Trade routes", "gold", AlertLevel.Minor, AlertWindow.Diplomacy);
     public static readonly AlertKind Courted = new("courted", "Powers courted", "rivals", AlertLevel.Decision, AlertWindow.Diplomacy);
+    public static readonly AlertKind Envoy = new("envoy", "Envoys waiting", "standing", AlertLevel.Decision, AlertWindow.Diplomacy);
     public static readonly AlertKind Neighbour = new("neighbour", "Neighbours in trouble", "favour", AlertLevel.Decision, AlertWindow.Diplomacy);
     public static readonly AlertKind Shadow = new("shadow", "Villages in shadow", "warband", AlertLevel.Decision, AlertWindow.Diplomacy);
     public static readonly AlertKind Plot = new("plot", "Villains' plans", "warband", AlertLevel.Decision, AlertWindow.Campaign);
@@ -96,7 +97,7 @@ public static class Alerts
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Sighted, Lurker, Captives, Doom, Crisis, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Fealty, Clash, Traitor, Plot, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Heroes, Honours, Courted, Neighbour, Shadow, Loot, Stalled, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Outpost, Housing, Crowded];
+        [Siege, Sighted, Lurker, Captives, Doom, Crisis, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Fealty, Clash, Traitor, Plot, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Loot, Stalled, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Outpost, Housing, Crowded];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
     public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Crowds, Keepers, Outposts, Lists];
@@ -108,6 +109,9 @@ public static class Alerts
     /// <summary>An enemy's envoys at a minor power's door: outbid them with gifts before it answers.</summary>
     private static IEnumerable<Alert> Courting(Town t)
     {
+        foreach (var p in t.Powers.Where(p => p.Envoy != "").OrderBy(p => p.Id, StringComparer.Ordinal))
+            yield return new($"envoy:{p.Id}", Envoy, $"Envoy from {Powers.Name(t, p)}",
+                $"{Cap(Powers.Name(t, p))} {Powers.EnvoyText(t, p)}. Answer in the Diplomacy window within {Days(Math.Max(1, p.EnvoyUntil - t.Day))}.");
         foreach (var p in t.Powers.Where(p => p.CourtedBy != null).OrderBy(p => p.Id, StringComparer.Ordinal))
         {
             var m = Powers.Suitor(t, p);
