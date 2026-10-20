@@ -67,7 +67,7 @@ public static class Shrines
         var god = Faith.TempleChoice(town);
         var b = town.AddBuilding(def, lot, null, "", false);
         Faith.Dedicate(town, b, god);
-        b.LaborBudget = def.BuildHours * Brain.ConstructionWage;
+        b.LaborBudget = Construction.Hours(town, def) * Brain.ConstructionWage;
         // The shrine's offerings go to the new house.
         var shrine = Shrine(town);
         if (shrine != null)

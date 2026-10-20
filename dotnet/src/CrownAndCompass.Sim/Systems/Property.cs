@@ -245,6 +245,8 @@ public static class Property
     {
         // Short of the build itself, no lot is cheap enough: don't go looking.
         if (a.Gold < def.Cost + Planning.Materials(town, def)) return false;
+        // Every crew busy: the family waits its turn.
+        if (!Construction.Room(town)) return false;
         var lot = FindLot(town, def);
         if (lot == null)
         {
@@ -260,7 +262,7 @@ public static class Property
         a.Gold -= def.Cost;
 
         var site = town.AddBuilding(def, lot, a.Id, NameFor(town, def, a), false);
-        site.LaborBudget = def.BuildHours * Brain.ConstructionWage;
+        site.LaborBudget = Construction.Hours(town, def) * Brain.ConstructionWage;
 
         string what = def.Housing > 0 ? (rental ? $"a {def.Name.ToLowerInvariant()} to let" : "a home for the family") : site.Name;
         town.Log(

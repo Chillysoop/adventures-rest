@@ -299,7 +299,6 @@ public sealed class Simulation
     public bool RaiseCharter() => City.RaiseCharter(Town);
 
     /// <summary>Survey a ward and lay out its streets, opening its ground to zoning.</summary>
-    public bool OpenWard(string wardId) => City.OpenWard(Town, wardId);
 
     /// <summary>
     /// Paint a brush stroke of a zone over open ground in open wards (Zone.None clears it): dabs in tiles from the town's corner.

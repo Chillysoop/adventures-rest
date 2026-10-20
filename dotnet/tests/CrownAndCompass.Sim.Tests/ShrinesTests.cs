@@ -34,12 +34,12 @@ public class ShrinesTests
     [Fact]
     public void CivicWorksFindRoomWhenTheZonesCoverTheOldTown()
     {
-        // Seed 1 paints every open cell of the old town with homes and shops by day 60, long before a second ward opens:
+        // Seed 1 paints every open cell of the old town with homes and shops by day 60, long before the land round it opens:
         // the temple and the village's civic works still find room on plots nobody has built on yet.
         var sim = new Simulation(new SimulationOptions { Seed = 1 });
         sim.RunDays(70);
         var t = sim.Town;
-        Assert.Single(t.City.OpenWards);
+        Assert.False(City.RingOpen(t, 1));
         // Raised already, or (when the treasury hasn't had the gold yet) still with room to go.
         Assert.True(t.Buildings.Any(b => b.Def.Id == "temple") || Planning.CivicLot(t, t.Content.Building("temple")) != null);
         foreach (var id in new[] { "watch_house", "granary", "market_hall" })

@@ -71,6 +71,8 @@ public sealed class Options
 
     /// <summary>--house: select the house on the most pleasant street, for screenshots of the inspector.</summary>
     public bool House;
+    /// <summary>Aim the camera at the building going up with the most hands on it (<c>--rising</c>), for a shot of the builders.</summary>
+    public bool Rising;
     /// <summary>For screenshots: click the alert at this position in the strip (0 is the first) once it shows.</summary>
     public int? Alert;
     /// <summary>For screenshots: show the hover summary of the alert icon at this position.</summary>
@@ -158,6 +160,7 @@ public sealed class Options
                 case "--wall": o.Wall = int.Parse(Next()); break;
                 case "--strike": o.Strike = true; break;
                 case "--house": o.House = true; break;
+                case "--rising": o.Rising = true; break;
                 case "--alert": o.Alert = int.Parse(Next()); break;
                 case "--alert-hover": o.AlertHover = int.Parse(Next()); break;
                 case "--no-pause": o.NoPause = true; break;

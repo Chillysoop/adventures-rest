@@ -217,7 +217,7 @@ public static class Watch
         town.Book(TreasuryAccount.Sight, -WorkCost(town, w));
         town.Market.Buy(Good.Timber, def.Timber);
         var b = town.AddBuilding(def, lot, null, $"the {def.Name}", false);
-        b.LaborBudget = def.BuildHours * Brain.ConstructionWage;
+        b.LaborBudget = Construction.Hours(town, def) * Brain.ConstructionWage;
         var relic = town.Content.Library.Item(w.Relic);
         town.Log(
             LedgerCategory.Town,

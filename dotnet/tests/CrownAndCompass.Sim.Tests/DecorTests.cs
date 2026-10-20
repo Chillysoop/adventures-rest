@@ -192,7 +192,7 @@ public class DecorTests
         Assert.True(sim.ClearDecoration(bench.Id));
         Assert.True(Land.Fits(t, bx, by, w, d, 0, null));
         // Nothing goes on a street.
-        var lane = t.Plan.Streets.First(r => !r.Square);
+        var lane = t.Plan.Streets.First();
         Assert.Equal("that's the street", Decor.SpotBlocked(t, Decor.Rules(t).Piece("lamp"), lane.Points[0], lane.Points[1]));
     }
 

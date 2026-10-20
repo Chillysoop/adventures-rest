@@ -7,8 +7,8 @@ namespace CrownAndCompass.Client;
 
 /// <summary>
 /// The city window: what the town is (thorp to great city), what the next charter asks for, the
-/// wards that can be laid out, and how the houses fare (the goods and services that let them grow
-/// a storey). Charters and wards are the player's to claim; everything else here is read-only.
+/// wards the town has grown, and how the houses fare (the goods and services that let them grow
+/// a storey). Charters are the player's to claim; everything else here is read-only.
 /// </summary>
 public partial class Main
 {
@@ -55,14 +55,13 @@ public partial class Main
         else p.Note("The greatest charter there is. From here the city only grows richer and its houses grander.");
 
         p.Heading("Wards");
-        foreach (var w in t.Content.City.Wards)
+        p.Note("Wards aren't laid out ahead. Once a few buildings stand in a quarter round the old town, it grows into the ward that suits what was built there first.");
+        foreach (var id0 in t.City.OpenWards)
         {
-            bool open = t.City.OpenWards.Contains(w.Id);
-            string? why = City.WardBlocked(t, w.Id);
-            string where = w.Ring == 0 ? "the heart of town" : $"{(w.Outer ? "outer" : "inner")} {w.Side}";
-            string status = open ? Tag("laid out", Ui.Good) : City.Reached(t, w.Tier) ? Tag($"{w.Cost:N0}g") : Tag($"needs {City.TierName(t, w.Tier).ToLowerInvariant()}");
+            var w = City.Ward(t, id0);
+            string where = w.Ring == 0 ? "the heart of town" : City.SectorOf(t, w.Id) is var (_, side) ? $"{(w.Outer ? "outside the walls" : "round the old town")}, {side}" : "";
             string favour = w.Favours != Zone.None ? $" Favours {Planning.ZoneName(w.Favours)}." : "";
-            string text = $"[b]{Ui.Esc(w.Name)}[/b]  {status}  {Ui.C(Ui.Ink2, $"[font_size=11]{where}[/font_size]")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(w.Blurb)}{favour}[/font_size]")}";
+            string text = $"[b]{Ui.Esc(w.Name)}[/b]  {Ui.C(Ui.Ink2, $"[font_size=11]{where}[/font_size]")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(w.Blurb)}{favour}[/font_size]")}";
             if (t.Content.Wards.Of(w.Id) is { } temper)
             {
                 // Who speaks for the ward, what it cares about, and how it feels about the mayor now.
@@ -70,11 +69,21 @@ public partial class Main
                 var fc = f >= 15 ? Ui.Good : f <= -15 ? Ui.Bad : Ui.Ink2;
                 string cares = Regard.Describe(t, new TemperDef { Likes = temper.Likes, Dislikes = temper.Dislikes });
                 text += $"\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Ui.Cap(temper.Voice))} {Ui.Esc(cares.Replace("; dislikes ", "; they dislike ").Replace("likes ", "like "))}.[/font_size]")}";
-                if (open) text += $" {Ui.C(fc, $"[font_size=12]{Ui.Cap(Wards.Describe(f))} ({(f >= 0 ? "+" : "−")}{Math.Abs(Math.Round(f))}).[/font_size]")}";
+                text += $" {Ui.C(fc, $"[font_size=12]{Ui.Cap(Wards.Describe(f))} ({(f >= 0 ? "+" : "−")}{Math.Abs(Math.Round(f))}).[/font_size]")}";
             }
             var id = w.Id;
-            if (open) p.Row(text, ("Show", true, false, () => LookAtWard(id)));
-            else p.Row(text, ("Show", true, false, () => LookAtWard(id)), ("Lay out", why == null, true, () => { _sim.OpenWard(id); _dirty = true; }));
+            p.Row(text, ("Show", true, false, () => LookAtWard(id)));
+        }
+        var yet = t.Content.City.Wards.Where(w => !t.City.OpenWards.Contains(w.Id)).ToList();
+        if (yet.Count > 0)
+        {
+            p.Text("[b]Wards that could still grow[/b]", 13);
+            foreach (var w in yet)
+            {
+                string draws = string.Join(", ", w.Draws.OrderByDescending(d => d.Value).ThenBy(d => d.Key, StringComparer.Ordinal).Select(d => DrawName(t, d.Key)));
+                string when = !City.Reached(t, w.Tier) ? $"once the town is a {City.TierName(t, w.Tier).ToLowerInvariant()}" : !City.RingOpen(t, w.Ring) ? $"once the land {(w.Outer ? "beyond the walls" : "round the old town")} opens" : "now";
+                p.Text($"{Ui.Esc(w.Name)}  {Ui.C(Ui.Ink2, $"[font_size=12]{(w.Outer ? "outside the walls" : "round the old town")}, where you build mostly {Ui.Esc(draws)}; can grow {when}.[/font_size]")}", 13);
+            }
         }
 
         RenderDensity(p, t);
@@ -261,6 +270,18 @@ public partial class Main
         OpenPlan("Government", id, null);
         _dirty = true;
     }
+
+    /// <summary>What a ward draws on, as the City window names it.</summary>
+    private static string DrawName(Town t, string key) => key switch
+    {
+        "Holy" => "shrines and temples",
+        "Fine" => "fine houses",
+        "Residential" => "homes",
+        "Commercial" => "shops",
+        "Industry" => "workshops",
+        "Farmland" => "farms",
+        _ => t.Content.Buildings.FirstOrDefault(b => b.Id == key) is { } d ? d.Name.ToLowerInvariant() + "s" : key,
+    };
 
     private void LookAtWard(string wardId)
     {

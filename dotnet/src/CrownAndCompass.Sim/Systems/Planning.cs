@@ -172,7 +172,7 @@ public static class Planning
         town.Book(d.Id == "house" ? TreasuryAccount.CharterHouses : TreasuryAccount.Works, -cost);
         BuyMaterials(town, d);
         var site = town.AddBuilding(d, lot, null, name, false);
-        site.LaborBudget = d.BuildHours * Brain.ConstructionWage;
+        site.LaborBudget = Construction.Hours(town, d) * Brain.ConstructionWage;
         if (d.IsBusiness) site.Cash = StartingCash;
         town.Log(
             LedgerCategory.Town,

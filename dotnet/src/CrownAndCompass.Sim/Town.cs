@@ -39,6 +39,9 @@ public sealed class Building(int id, BuildingDef def, int lotId)
     public int? OwnerId { get; set; }
     public double BuildProgress { get; set; }
 
+    /// <summary>A site: the share of its timber and stone carried onto it so far (<see cref="Systems.Construction"/>).</summary>
+    public double Hauled { get; set; } = 1;
+
     /// <summary>Set once the completion has been handled (workers released, owner moved in).</summary>
     public bool Opened { get; set; }
 
@@ -82,6 +85,10 @@ public sealed class Building(int id, BuildingDef def, int lotId)
 
     /// <summary>Builders' work on a site, stopping at the funded stage.</summary>
     public void Raise(double hours) => BuildProgress = Math.Min(BuildProgress + hours, Math.Max(BuildProgress, Funded));
+
+    /// <summary>As <see cref="Raise(double)"/>, no further than the materials carried onto the site allow.</summary>
+    public void Raise(Town town, double hours) =>
+        BuildProgress = Math.Min(BuildProgress + hours, Math.Max(BuildProgress, Math.Min(Funded, Systems.Construction.Ready(town, this))));
 
     public bool Complete => BuildProgress >= Def.BuildHours;
     public bool IsSite => !Complete;
@@ -542,6 +549,7 @@ public sealed class Town
             OwnerId = ownerId,
             Name = name,
             BuildProgress = complete ? def.BuildHours : 0,
+            Hauled = Systems.Construction.Start(def, complete),
             Opened = complete,
         };
         Buildings.Add(b);

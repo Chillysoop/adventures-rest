@@ -155,7 +155,7 @@ public static class Mayor
         int homeless = town.Workers.Count(a => a.HomeId == null);
         // One house at a time, more while many sleep rough.
         int building = town.Buildings.Count(b => b.IsSite && b.OwnerId == null && b.Def.Housing > 0);
-        if (homeless < minHomeless || building > homeless / 12) return false;
+        if (homeless < minHomeless || building > homeless / 12 || !Construction.Room(town)) return false;
 
         var house = town.Content.Building("house");
         var lot = Land.FindCheapest(town, house, house.Zone);
@@ -166,7 +166,7 @@ public static class Mayor
         town.Book(TreasuryAccount.CharterHouses, -cost);
         Planning.BuyMaterials(town, house);
         var site = town.AddBuilding(house, lot, null, Property.NameFor(town, house, null), false);
-        site.LaborBudget = house.BuildHours * Brain.ConstructionWage;
+        site.LaborBudget = Construction.Hours(town, house) * Brain.ConstructionWage;
         town.Log(LedgerCategory.Town, Importance.Routine, $"With {homeless} people sleeping rough, the council commissions {site.Name}.");
         return true;
     }

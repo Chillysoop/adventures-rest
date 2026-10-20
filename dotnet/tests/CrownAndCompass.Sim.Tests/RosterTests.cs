@@ -86,7 +86,7 @@ public class RosterTests
         var (sim, name, site) = Ready();
         var t = sim.Town;
         t.Treasury = 20000;
-        double mean = Math.Max(1, Js.Round(0.1 * Terms.Suggested(t, site, t.Content.Bounties.Term("slay"))));
+        double mean = Math.Max(1, Js.Round(0.02 * Terms.Suggested(t, site, t.Content.Bounties.Term("slay"))));
         var view = Roster.Weigh(t, name, site.Def.Id, mean);
         Assert.Null(view.Blocked);
         Assert.Equal(Leaning.Unwilling, view.Leaning);

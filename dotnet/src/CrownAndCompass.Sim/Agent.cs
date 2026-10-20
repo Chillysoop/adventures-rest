@@ -32,6 +32,9 @@ public enum Activity
     Relaxing,
     Wandering,
     Praying,
+
+    /// <summary>Carrying timber or stone onto a building site (<see cref="Systems.Construction"/>).</summary>
+    Hauling,
 }
 
 public static class TraitOrder

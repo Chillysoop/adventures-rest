@@ -137,7 +137,15 @@ public partial class TownView(MapView map) : Node3D
     {
         // A grand work rises in plain sight: its own shape, taller with every stage, in scaffold.
         if (b.IsSite && b.Def.IsGrand) return $"grand:{Math.Min(7, (int)(b.BuildProgress / b.Def.BuildHours * 8))}:{b.Def.Id}";
-        if (b.IsSite) return $"site:{Math.Min(3, (int)(b.BuildProgress / b.Def.BuildHours * 4))}";
+        // Any other site comes together in six steps: staked out, footings, then its own walls rising inside the scaffold,
+        // beside a pile of the timber and stone carried onto it and not yet built in.
+        if (b.IsSite)
+        {
+            double done = b.BuildProgress / b.Def.BuildHours;
+            double left = b.Hauled - Math.Max(0, (done - 0.1) / 0.9);
+            int pile = b.Hauled >= 1 && done >= 0.98 ? 0 : left > 0.3 ? 2 : left > 0.04 ? 1 : 0;
+            return $"rise:{Math.Min(5, (int)(done * 6))}:{pile}{(b.Def.Stone > b.Def.Timber ? "s" : "t")}:{b.Def.Id}";
+        }
         return $"{b.Def.Id}:{b.Id % 4}";
     }
 
@@ -193,6 +201,7 @@ public partial class TownView(MapView map) : Node3D
         var parts = key.Split(':');
         int v = parts.Length > 1 ? int.Parse(parts[1]) : 0;
         if (parts[0] == "grand") Rising(kit, parts[2], v);
+        else if (parts[0] == "rise") Site(kit, parts[3], v, parts[2][0] - '0', parts[2][1] == 's');
         else Draw(kit, parts[0], v);
         return _meshes[key] = kit.Build();
     }
@@ -201,7 +210,6 @@ public partial class TownView(MapView map) : Node3D
     {
         switch (id)
         {
-            case "site": Construction(kit, v); break;
             case "sign": kit.Add("nature/sign", MeshKit.At(0, 0, 0, 0, 0.7f)); break;
             case "tavern": Tavern(kit, v); break;
             case "town_hall": Hall(kit, v); break;
@@ -617,19 +625,51 @@ public partial class TownView(MapView map) : Node3D
         k.Pop();
     }
 
-    private static void Construction(MeshKit k, int stage)
+    /// <summary>
+    /// A building going up (<see cref="MeshKey"/>): staked out with string (stage 0), stone footings and corner posts (1), then
+    /// its own shape rising inside a timber scaffold from stage 2 on, with the materials carried in but not yet used piled
+    /// at the front corner (none, some, plenty; stone or timber).
+    /// </summary>
+    private static void Site(MeshKit k, string id, int stage, int pile, bool stone)
     {
-        // A footing, then a timber frame that rises with progress, wrapped in scaffold.
-        k.Box(new Vector3(0, 0, 0), new Vector3(0.72f, 0.05f, 0.5f), Palette.Stone);
-        float h = 0.12f + stage * 0.1f;
-        foreach (var (x, z) in new[] { (-0.33f, -0.22f), (0.33f, -0.22f), (-0.33f, 0.22f), (0.33f, 0.22f), (0, -0.22f), (0, 0.22f) })
-            k.Box(new Vector3(x, 0.05f, z), new Vector3(0.04f, h, 0.04f), Palette.Timber);
-        k.Box(new Vector3(0, 0.05f + h, -0.22f), new Vector3(0.7f, 0.035f, 0.035f), Palette.Timber);
-        k.Box(new Vector3(0, 0.05f + h, 0.22f), new Vector3(0.7f, 0.035f, 0.035f), Palette.Timber);
-        if (stage >= 2)
-            for (int i = 0; i < 3; i++) k.Box(new Vector3(-0.2f + i * 0.2f, 0.05f, -0.21f), new Vector3(0.18f, h * 0.7f, 0.02f), new Color("c8ab7e"));
-        k.Add("nature/log_stack", MeshKit.At(0.4f, 0, 0.36f, Mathf.Pi / 2, 0.6f));
-        k.Add("town/planks", MeshKit.At(-0.35f, 0, 0.38f, 0.2f, 0.25f));
+        k.Box(Vector3.Zero, new Vector3(0.9f, 0.015f, 0.9f), Palette.Dirt.Darkened(0.1f));
+        const float hx = 0.43f, hz = 0.43f;
+        (float X, float Z)[] corners = [(-hx, -hz), (hx, -hz), (hx, hz), (-hx, hz)];
+        if (stage == 0)
+        {
+            foreach (var (x, z) in corners) k.Box(new Vector3(x, 0, z), new Vector3(0.022f, 0.12f, 0.022f), Palette.Timber);
+            for (int i = 0; i < 4; i++)
+            {
+                var (ax, az) = corners[i];
+                var (bx, bz) = corners[(i + 1) % 4];
+                k.Box(new Vector3((ax + bx) / 2, 0.09f, (az + bz) / 2), new Vector3(Math.Abs(bx - ax) + 0.006f, 0.006f, Math.Abs(bz - az) + 0.006f), new Color("efe6cc"));
+            }
+        }
+        else if (stage == 1)
+        {
+            k.Box(new Vector3(0, 0, 0), new Vector3(hx * 2, 0.05f, hz * 2), Palette.Stone, Palette.Stone.Lightened(0.15f));
+            foreach (var (x, z) in corners) k.Box(new Vector3(x * 0.9f, 0.05f, z * 0.9f), new Vector3(0.035f, 0.22f, 0.035f), Palette.Timber);
+        }
+        else
+        {
+            float f = (stage - 1) / 4.5f;
+            k.Push(new Transform3D(Basis.FromScale(new Vector3(1, f, 1)), Vector3.Zero));
+            Draw(k, id, 0);
+            k.Pop();
+            // Scaffold poles a little above the walls, with a plank walk at each storey.
+            float h = 0.2f + 0.75f * f;
+            for (int i = 0; i <= 2; i++)
+                foreach (float z in new[] { -hz - 0.03f, hz + 0.03f })
+                    k.Box(new Vector3(-hx + i * hx, 0, z), new Vector3(0.016f, h, 0.016f), Palette.Timber);
+            for (float y = 0.15f; y < h; y += 0.2f)
+                foreach (float z in new[] { -hz - 0.03f, hz + 0.03f }) k.Box(new Vector3(0, y, z), new Vector3(hx * 2, 0.01f, 0.045f), new Color("c8ab7e"));
+        }
+        // The materials pile, at the front corner where the haulers drop their loads.
+        for (int i = 0; i < pile; i++)
+        {
+            if (stone) k.Box(new Vector3(hx - 0.06f - i * 0.11f, 0, hz + 0.1f), new Vector3(0.1f, 0.05f + 0.02f * i, 0.08f), Palette.Stone, Palette.Stone.Lightened(0.15f));
+            else k.Add(i == 0 ? "town/planks" : "nature/log_stack", MeshKit.At(hx - 0.08f - i * 0.18f, 0, hz + 0.12f, Mathf.Pi / 2, i == 0 ? 0.25f : 0.45f));
+        }
     }
 
     // ---------- City buildings ----------
