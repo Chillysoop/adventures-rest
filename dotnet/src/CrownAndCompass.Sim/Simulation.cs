@@ -220,6 +220,9 @@ public sealed class Simulation
     /// <summary>Send coin and goods to see a settlement through its trouble.</summary>
     public bool AidSettlement(int settlementId) => Neighbours.Aid(Town, settlementId);
 
+    /// <summary>Send a hero (the best speaker free, unless one is named) to rally a settlement under an enemy's shadow.</summary>
+    public bool RallySettlement(int settlementId, int? heroId = null) => Shadows.Rally(Town, settlementId, heroId);
+
     /// <summary>Pay for a shared improvement (a watchtower, a bridge, a waystation) at a settlement.</summary>
     public bool FundProject(int settlementId, string projectId) => Neighbours.Fund(Town, settlementId, projectId);
 

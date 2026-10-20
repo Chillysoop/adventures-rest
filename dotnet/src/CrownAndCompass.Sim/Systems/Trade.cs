@@ -125,7 +125,7 @@ public static class Trade
 
     public static double Load(Town town, Settlement s, TradeRoute? route = null) =>
         (Rules(town).Load + Rules(town).LoadPerHundred * town.Population / 100.0) * (s.Allied ? Rules(town).AllyLoad : 1)
-        * (1 + Rules(town).WagonLoad * ((route?.Wagons ?? 1) - 1));
+        * (1 + Rules(town).WagonLoad * ((route?.Wagons ?? 1) - 1)) * Reigns.Trade(town, s) * Shadows.TradeShare(town, s);
 
     /// <summary>Gold to add the next wagon to a route's caravan, or null when it runs all it can.</summary>
     public static double? WagonCost(Town town, TradeRoute route) =>
@@ -150,6 +150,7 @@ public static class Trade
         if (s.Razed) return "they are gone";
         if (!town.Regions[s.RegionId].Known) return "the town hasn't heard of them";
         if (s.Kin.Trade.Offers.Count == 0) return "they have nothing to sell";
+        if (Shadows.Paying(s)) return "they pay tribute to an enemy and dare not trade";
         if (Open(town).Any(x => x.SettlementId == s.Id)) return "a route already runs there";
         if (s.Standing < r.MinStanding) return $"they won't trade below {Js.Str(r.MinStanding)} standing";
         if (Open(town).Count() >= Cap(town)) return Cap(town) == 0 ? "the town needs a hamlet's charter first" : "the town runs all the routes its charter allows";

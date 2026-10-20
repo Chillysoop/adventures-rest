@@ -66,6 +66,7 @@ public static class Alerts
     public static readonly AlertKind Below = new("below", "Stirring below", "warband", AlertLevel.Decision, AlertWindow.City);
     public static readonly AlertKind Trade = new("trade", "Trade routes", "gold", AlertLevel.Minor, AlertWindow.Diplomacy);
     public static readonly AlertKind Neighbour = new("neighbour", "Neighbours in trouble", "favour", AlertLevel.Decision, AlertWindow.Diplomacy);
+    public static readonly AlertKind Shadow = new("shadow", "Villages in shadow", "warband", AlertLevel.Decision, AlertWindow.Diplomacy);
     public static readonly AlertKind Plot = new("plot", "Villains' plans", "warband", AlertLevel.Decision, AlertWindow.Campaign);
     public static readonly AlertKind Charter = new("charter", "Charters", "favour", AlertLevel.Decision, AlertWindow.City);
     public static readonly AlertKind GrandWork = new("grandwork", "Grand works", "gold", AlertLevel.Decision, AlertWindow.City);
@@ -94,7 +95,7 @@ public static class Alerts
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Sighted, Lurker, Captives, Doom, Crisis, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Fealty, Clash, Traitor, Plot, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Heroes, Honours, Neighbour, Loot, Stalled, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Outpost, Housing, Crowded];
+        [Siege, Sighted, Lurker, Captives, Doom, Crisis, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Fealty, Clash, Traitor, Plot, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Heroes, Honours, Neighbour, Shadow, Loot, Stalled, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Outpost, Housing, Crowded];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
     public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Undercity, Study, Loyalty, Armoury, Homes, Sites, Crowds, Keepers, Outposts, Lists];
@@ -316,6 +317,15 @@ public static class Alerts
         foreach (var s in t.Settlements.Where(x => x.Standing >= 10 && x.Trouble is { Severity: >= 40 } && Neighbours.AidRefused(t, x) == null).OrderBy(x => x.Id))
             yield return new($"neighbour:{s.Id}", Neighbour, $"{s.Name} needs help",
                 $"{Cap(s.People)} face {Neighbours.TroubleOf(t, s)!.Name}. Send aid from the Diplomacy window before it does its worst; they will remember who helped.");
+        // A people paying an enemy tribute (or ruled by its creature): one to win back.
+        foreach (var s in t.Settlements.Where(x => Shadows.Paying(x) && t.Regions[x.RegionId].Known).OrderBy(x => x.Id))
+        {
+            if (Shadows.Over(t, s) is not { } m) continue;
+            string source = s.Shadow!.SourceId is string sid && Quests.Site(t, sid) is { } site ? $" or clear {site.Def.Name}" : "";
+            yield return new($"shadow:{s.Id}", Shadow, $"{s.Name} pays {m.Name}",
+                $"{Cap(s.People)} send tribute to {m.Name} and no longer trade with the town. Send a hero to rally them or an envoy from the Diplomacy window{source} to win them back.",
+                SiteId: s.Shadow.SourceId);
+        }
         foreach (var m in Plots.Looming(t))
         {
             var p = m.Plan!;

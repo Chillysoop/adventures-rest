@@ -174,10 +174,24 @@ public partial class Overlay(MapView map) : Control
         foreach (var st in town.Settlements)
         {
             if (!st.Met || !map.OnScreen(map.Gen.At(Geo.SettlementPin(town, st), 3), out var at)) continue;
-            Disc(at, 12, st.Razed ? new Color("4a4440") : st.Allied ? new Color("3c6a4a") : new Color("4a5a6a"), st.Allied ? Palette.Gold : Cream, 2);
-            DrawColoredPolygon([at + new Vector2(-7, 5), at + new Vector2(-7, -1), at + new Vector2(0, -7), at + new Vector2(7, -1), at + new Vector2(7, 5)], Cream);
+            // An enemy's shadow over it: a dark pall round the pin, deeper as its grip tightens, and a violet rim.
+            bool dark = Shadows.Shadowed(st);
+            if (dark)
+            {
+                float depth = (float)Math.Clamp(st.Shadow!.Depth / 100, 0.2, 1);
+                DrawCircle(at, 44 + 30 * depth, new Color(0.06f, 0.02f, 0.1f, 0.22f + 0.2f * depth));
+                DrawCircle(at, 32 + 16 * depth, new Color(0.06f, 0.02f, 0.1f, 0.3f + 0.25f * depth));
+                DrawCircle(at, 20 + 6 * depth, new Color(0.1f, 0.03f, 0.14f, 0.5f));
+            }
+            Disc(at, 12, st.Razed ? new Color("4a4440") : dark ? new Color("2e2438") : st.Allied ? new Color("3c6a4a") : new Color("4a5a6a"), dark ? new Color("9a6ad0") : st.Allied ? Palette.Gold : Cream, dark ? 3 : 2);
+            DrawColoredPolygon([at + new Vector2(-7, 5), at + new Vector2(-7, -1), at + new Vector2(0, -7), at + new Vector2(7, -1), at + new Vector2(7, 5)], dark ? new Color("a898b8") : Cream);
             DrawRect(new Rect2(at.X - 1.5f, at.Y, 3, 5), InkC);
             Text(at + new Vector2(0, 28), st.Name, Ui.Display, 13, Cream);
+            if (dark && Shadows.Over(town, st) is { } m)
+            {
+                string what = st.Shadow!.Form switch { "dread" => "In dread of", "tribute" => "Pays tribute to", "cult" => "Sings the hymns of", _ => "Ruled for" };
+                Text(at + new Vector2(0, 43), $"{what} {m.Name}", Ui.Medium, 12, new Color("dcc4ff"), 4);
+            }
         }
         foreach (var f in town.Finds)
         {

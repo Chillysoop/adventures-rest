@@ -90,7 +90,7 @@ public partial class Minimap(MapView map) : Control
             DrawCircle(p, 2.4f, bounty ? Ui.Gold : site.Cleared ? Ui.Good : Ui.Ink);
         }
         foreach (var st in town.Settlements)
-            if (st.Met) DrawRect(new Rect2(ToMini(Geo.SettlementPin(town, st)) - new Vector2(2.5f, 2.5f), new Vector2(5, 5)), st.Allied ? Ui.Good : new Color("8fb0d0"));
+            if (st.Met) DrawRect(new Rect2(ToMini(Geo.SettlementPin(town, st)) - new Vector2(2.5f, 2.5f), new Vector2(5, 5)), Shadows.Shadowed(st) ? new Color("9a6ad0") : st.Allied ? Ui.Good : new Color("8fb0d0"));
         foreach (var f in town.Finds)
             if (f.Known && town.Tick >= f.ReportTick && f.Kind is "font" or "ruin") DrawCircle(ToMini(Geo.FromDays(f.X, f.Y)), 2.2f, f.Kind == "font" ? new Color("b8a0ff") : new Color("c8b89a"));
         foreach (var s in town.Surveys)
