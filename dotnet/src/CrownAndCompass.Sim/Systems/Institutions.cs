@@ -78,6 +78,9 @@ public sealed record ServiceDef : DecreeDef
     /// <summary>More trade routes the charter allows.</summary>
     public double Routes { get; init; }
 
+    /// <summary>Airships that carry a company over rivers, lakes and peaks (<see cref="Passage.Board"/>).</summary>
+    public double Airship { get; init; }
+
     /// <summary>Share taken off the stir the undercity gathers each day.</summary>
     public double Hush { get; init; }
 
@@ -276,6 +279,13 @@ public static class Institutions
     public static double Arrivals(Town town) => town.Institutions.Count == 0 ? 0 : Sum(town, d => d.Arrivals);
     public static double Defence(Town town) => town.Institutions.Count == 0 ? 0 : Sum(town, d => d.Defence);
     public static int Heroes(Town town) => town.Institutions.Count == 0 ? 0 : (int)Math.Floor(Sum(town, d => d.Heroes) + 0.05);
+    /// <summary>Airships the town can send a company off in: one as soon as the dock flies any at all.</summary>
+    public static int Airships(Town town)
+    {
+        double n = town.Institutions.Count == 0 ? 0 : Sum(town, d => d.Airship);
+        return n < 0.05 ? 0 : Math.Max(1, (int)Math.Floor(n + 0.05));
+    }
+
     public static int Routes(Town town) => town.Institutions.Count == 0 ? 0 : (int)Math.Floor(Sum(town, d => d.Routes) + 0.05);
 
     /// <summary>Share off the chance a caravan is waylaid, at most a half.</summary>
@@ -478,6 +488,7 @@ public static class Institutions
         string N(double v, int places = 0) => Js.ToFixed(Math.Abs(v * k), places);
         if (d.Heroes > 0) said.Add($"room for {Js.Str(Math.Max(1, Math.Floor(d.Heroes * k + 0.05)))} more {(d.Heroes * k >= 1.95 ? "heroes" : "hero")}");
         if (d.Routes > 0) said.Add("one more trade route");
+        if (d.Airship > 0) said.Add("an airship that carries a company over rivers, lakes and peaks");
         if (d.Defence != 0) said.Add($"{(d.Defence > 0 ? "+" : "−")}{N(d.Defence)} defence on the walls");
         if (d.Heal > 0) said.Add($"heroes heal {N(d.Heal * 100)}% more a night");
         if (d.Escort > 0) said.Add($"{N(d.Escort * 100)}% fewer caravans waylaid");
