@@ -12,6 +12,9 @@ public sealed record DeedKind
 {
     public List<string> Epithets { get; init; } = [];
     public string Text { get; init; } = "";
+
+    /// <summary>How the deed goes on the hero's company's record ("{hero} cut down raiders before the walls"); "" keeps it off.</summary>
+    public string Record { get; init; } = "";
 }
 
 public sealed record FameDeeds
@@ -150,6 +153,8 @@ public static class Notoriety
         int fameBefore = FameTier(town, s), infamyBefore = InfamyTier(town, s);
         s.Renown += Math.Max(0, fame);
         s.Infamy += Math.Max(0, infamy);
+        if (fame > 0 && s.PartyName != null && r.Deeds.TryGetValue(kind, out var good) && good.Record != "")
+            Record(town, s.PartyName, good.Record.Replace("{hero}", a.GivenName));
         if (infamy > 0 && s.PartyName != null)
         {
             int share = (int)Math.Ceiling(infamy * r.CompanyShare);
@@ -182,10 +187,22 @@ public static class Notoriety
         c.Infamy += Math.Max(0, infamy);
     }
 
+    /// <summary>Put a good deed on a company's record; the same deed twice in a day counts once.</summary>
+    public static void Record(Town town, string company, string what)
+    {
+        var c = Intel.Company(town, company);
+        if (c.Deeds.Count > 0 && c.Deeds[^1].Day == town.Day && c.Deeds[^1].What == what) return;
+        c.GoodDeeds++;
+        c.Deeds.Add(new DeedNote { Day = town.Day, What = what });
+        if (c.Deeds.Count > 12) c.Deeds.RemoveAt(0);
+    }
+
     /// <summary>Survivors of a party home from a cleared site: each earns fame by the site's tier, and so does the company.</summary>
     public static void Cleared(Town town, Party party, IReadOnlyList<Agent> survivors, int tier, bool plea)
     {
         var r = Rules(town);
+        string site = Quests.Site(town, party.SiteId)?.Def.Name ?? "a place in the wilds";
+        Record(town, party.Name, plea ? $"answered a village's plea at {site}" : $"cleared {site}");
         int fame = 2 * tier + (plea ? r.FameDeeds.Plea : 0);
         foreach (var m in survivors) Deed(town, m, plea ? "plea" : "clear", fame);
         CompanyDeed(town, party.Name, fame);
