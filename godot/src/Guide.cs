@@ -225,6 +225,7 @@ public partial class Main
             "tray" => _trayColumn,
             _ when point.StartsWith("tray:", StringComparison.Ordinal) && _trayButtons.TryGetValue(point[5..], out var tb) => _trayOpen == point[5..] ? _drawer : tb.Button,
             "siege" => _siegeBanner,
+            "goals" => _goalsCard,
             _ when point.StartsWith("tab:", StringComparison.Ordinal) && Enum.TryParse<Tab>(point[4..], out var tab) && _tabButtons.TryGetValue(tab, out var b) => TabAnchor(tab, b),
             _ => null,
         };

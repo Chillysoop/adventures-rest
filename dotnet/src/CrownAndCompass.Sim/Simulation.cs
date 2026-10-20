@@ -85,6 +85,7 @@ public sealed class Simulation
         Town.Saga.Enabled = Options.Saga && Options.Enemy;
         Town.Saga.Legends.AddRange(Options.Legends.Where(l => l.Seed != Options.Seed));
         Charter();
+        Goals.Begin(Town);
     }
 
     public void Step()
@@ -99,6 +100,7 @@ public sealed class Simulation
         Explore.Hourly(t, Options.AutoMayor && Options.AutoBounties && Options.AutoExplore);
         Lurkers.Hourly(t);
         Tournaments.Hourly(t);
+        Goals.Hourly(t);
         t.Tick++;
         if (t.Hour == 0) DailyTick();
     }

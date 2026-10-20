@@ -543,6 +543,7 @@ public partial class Main : Control
         SyncMarkers();
         SyncOrders();
         SyncGuide();
+        SyncGoals();
         SyncStories(delta);
         SyncFinds();
         SyncTourney();

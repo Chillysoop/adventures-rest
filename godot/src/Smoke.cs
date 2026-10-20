@@ -51,6 +51,9 @@ public partial class Main
             case 1:
                 // What the main menu's New game does, with the stand-in mayor playing so later systems come into play.
                 StartTown(tutorial: false, _opts.Seed ?? 1, autoplay: true);
+                // A new town shows its charter goals (gone by the time the smoke run has played on).
+                SyncGoals();
+                if (Goals.Open(_sim.Town).Count == 0 || _goalsRows.GetChildCount() == 0) throw new InvalidOperationException("the charter goals card is empty in a new town");
                 _sim.RunDays(_opts.SmokeDays);
                 SetSpeed(Speeds.Length - 1);
                 return 90;
