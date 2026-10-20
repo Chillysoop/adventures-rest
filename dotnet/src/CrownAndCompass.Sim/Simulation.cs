@@ -143,7 +143,7 @@ public sealed class Simulation
         Factions.Daily(t, Options.AutoMayor);
         Saga.Daily(t, Options.AutoMayor);
         Crises.Daily(t, Options.AutoMayor && Options.AutoDefense);
-        Powers.Daily(t, Options.AutoMayor && Options.AutoDefense);
+        Powers.Daily(t);
         Vengeance.Daily(t);
         Sightings.Daily(t);
         Menaces.Track(t);
