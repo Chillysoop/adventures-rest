@@ -142,7 +142,8 @@ public partial class Main
 
         var foot = new HBoxContainer();
         foot.AddThemeConstantOverride("separation", 10);
-        if (m.Inspiration > 0)
+        // Inspiration only rerolls a check, so it is offered only when some choice here rolls.
+        if (m.Inspiration > 0 && stage.Options.Any(o => o.Rolls))
         {
             var inspire = new CheckBox { Text = $"Reroll with Inspiration if it fails ({m.Inspiration} left)", ButtonPressed = _inspire, FocusMode = FocusModeEnum.None, TooltipText = "If the d20 misses, spend one Inspiration to throw it again. It is only spent on a miss. Running the town well and natural 20s earn it." };
             inspire.Toggled += on =>

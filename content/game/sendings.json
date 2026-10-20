@@ -97,7 +97,7 @@
               "success": { "text": "The scout goes ahead, and the way is clear.", "effects": { "edge": 1 } },
               "failure": { "text": "It bolts at the first turning and raises the alarm.", "effects": { "swell": 1 } } },
             { "label": "Go in by the front as planned", "prefer": -0.5,
-              "success": { "text": "They leave the scout tied to a tree, with water, and go in the honest way.", "effects": {} } }
+              "success": { "text": "They leave the scout tied to a tree, with water, and go in the honest way.", "effects": { "partyLoyalty": -1 } } }
           ]
         }
       ],
@@ -162,7 +162,7 @@
               "success": { "text": "The library has the same delver's notes, and they match. The {party} know {site} before they reach it, for nothing.", "effects": { "edge": 2 } },
               "failure": { "text": "Nothing in the library matches. They pass on it.", "effects": {} } },
             { "label": "Pass on it", "prefer": -0.5,
-              "success": { "text": "They leave the pedlar to his next fool.", "effects": {} } }
+              "success": { "text": "They leave the pedlar to his next fool.", "effects": { "partyLoyalty": -1 } } }
           ]
         },
         {
@@ -172,8 +172,9 @@
             { "label": "Work out which half is true", "skill": "investigation", "dc": 18,
               "success": { "text": "The odd door is real, and it goes round the worst of the halls.", "effects": { "edge": 1, "swell": -1 } },
               "failure": { "text": "The door is a fake, and the halls behind it are full.", "effects": { "swell": 1 } } },
-            { "label": "Trust the half that fits", "prefer": -0.45,
-              "success": { "text": "They use what fits and ignore the rest.", "effects": { "edge": 1 } } }
+            { "label": "Trust the half that fits", "skill": "survival", "dc": 15, "prefer": -0.45,
+              "success": { "text": "They use what fits and ignore the rest.", "effects": { "edge": 1 } },
+              "failure": { "text": "The half that fitted was the false half. They lose a day and some blood finding out.", "effects": { "partyHurt": 2 } } }
           ]
         }
       ],
@@ -264,15 +265,17 @@
           "id": "start",
           "text": "{hero} sends from the road home: \"{site} is done. We found folk chained in the cellars, and a chest of coin. We can't carry both through the hills.\"",
           "options": [
-            { "label": "Bring the captives home",
-              "success": { "text": "The {party} carry the captives home. Most of them stay in {town}.", "effects": { "people": 4, "mandate": 4, "renown": 2, "partyLoyalty": 4 } } },
+            { "label": "Bring the captives home", "skill": "athletics", "dc": 17,
+              "success": { "text": "The {party} carry the captives home. Most of them stay in {town}.", "effects": { "people": 4, "mandate": 4, "renown": 2, "partyLoyalty": 4 } },
+              "failure": { "text": "Not all of them make it. The ones who do walk in thin and silent, and the party comes home bloodied from guarding them.", "effects": { "people": 2, "mandate": 2, "partyHurt": 3, "partyLoyalty": 1 } } },
             { "label": "Bring the gold", "prefer": -0.2,
               "success": { "text": "They bring the chest. The captives walk on their own, slowly, and some of them don't make it.", "effects": { "loot": 90, "mandate": -3 } } },
             { "label": "Carry both, somehow", "skill": "athletics", "dc": 21,
               "success": { "text": "They build a litter and carry both, a mile at a time. {town} cheers them in.", "effects": { "people": 4, "loot": 90, "mandate": 3, "renown": 2 } },
               "failure": { "text": "They try, and the hills punish them for it. The captives make it; most of the coin doesn't.", "effects": { "people": 3, "loot": 20, "partyHurt": 6 } } },
-            { "label": "Send the hall's wagon to meet them", "needs": ["building:adventurers_hall"], "cost": 30,
-              "success": { "text": "The hall's wagon meets them at the ford. Captives and coin both come home.", "effects": { "people": 4, "loot": 90, "mandate": 3, "renown": 2 } } }
+            { "label": "Send the hall's wagon to meet them", "skill": "survival", "dc": 15, "needs": ["building:adventurers_hall"], "cost": 30,
+              "success": { "text": "The hall's wagon meets them at the ford. Captives and coin both come home.", "effects": { "people": 4, "loot": 90, "mandate": 3, "renown": 2 } },
+              "failure": { "text": "The wagon misses them on the road. They bring the captives, and leave the gold for whoever comes next.", "effects": { "people": 4, "mandate": 3, "renown": 1 } } }
           ]
         }
       ],
@@ -299,8 +302,9 @@
             { "label": "Destroy it", "skill": "religion", "dc": 20,
               "success": { "text": "Holy water and a hot forge on the road. It screams as it breaks.", "effects": { "dread": -3, "favour": 2, "renown": 2 } },
               "failure": { "text": "It won't break. They bury it deep and mark the place.", "effects": { "dread": 1 } } },
-            { "label": "Seal it in the hall's vault", "needs": ["building:adventurers_hall"],
-              "success": { "text": "Sealed and chained in the hall's vault. Collectors in three cities write to ask the price.", "effects": { "gold": 80, "renown": 2 } } },
+            { "label": "Seal it in the hall's vault", "skill": "arcana", "dc": 15, "needs": ["building:adventurers_hall"],
+              "success": { "text": "Sealed and chained in the hall's vault. Collectors in three cities write to ask the price.", "effects": { "gold": 80, "renown": 2 } },
+              "failure": { "text": "The vault's wards strain against it, and something whispers in the hall at night. The hall still pays for it, in fear.", "effects": { "renown": 1, "dread": 1 } } },
             { "label": "Let {heroName} carry it", "skill": "insight", "dc": 20, "prefer": -0.3,
               "success": { "text": "{heroName} masters it. The blade goes quiet and cuts true.", "effects": { "renown": 3, "loyalty": 4 } },
               "failure": { "text": "{heroName} carries it home, and listens to it more each night.", "effects": { "renown": 2, "loyalty": -12, "dread": 2 } } }
@@ -358,7 +362,7 @@
               "success": { "text": "The ward holds through the first fight.", "effects": { "slots": 1, "edge": 2 } },
               "failure": { "text": "The ward fizzles and the spell is gone.", "effects": { "slots": 1 } } },
             { "label": "Keep the spell", "prefer": -0.4,
-              "success": { "text": "They keep it for the fight.", "effects": {} } }
+              "success": { "text": "They keep it for the fight.", "effects": { "partyHurt": 1 } } }
           ]
         }
       ],
