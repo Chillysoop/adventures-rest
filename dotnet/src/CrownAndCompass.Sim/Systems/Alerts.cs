@@ -26,6 +26,7 @@ public enum AlertWindow
     Library,
     Armory,
     Institutions,
+    Tourney,
 }
 
 /// <summary>A group of alerts: one icon on the strip, with a count and a hover list of what is in it.</summary>
@@ -82,14 +83,16 @@ public static class Alerts
     public static readonly AlertKind Gifts = new("gifts", "Arms to give", "heroes", AlertLevel.Minor, AlertWindow.Armory);
     public static readonly AlertKind Outpost = new("outpost", "Land to hold", "warband", AlertLevel.Minor, AlertWindow.None);
     public static readonly AlertKind Stalled = new("stalled", "Building stalled", "gold", AlertLevel.Decision, AlertWindow.None);
+    public static readonly AlertKind Tourney = new("tourney", "The tourney", "favour", AlertLevel.Decision, AlertWindow.Tourney);
+    public static readonly AlertKind Wager = new("wager", "Tourney bets", "gold", AlertLevel.Minor, AlertWindow.Tourney);
 
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Sighted, Captives, Doom, Crisis, Fear, Hunger, Coffers, Underfunded, Unrest, Hostile, Motion, Fealty, Clash, Traitor, Plot, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Bastion, Institution, Heroes, Neighbour, Loot, Stalled, Work, Settlers, Below, Scholars, Trade, Gifts, Outpost, Housing];
+        [Siege, Sighted, Captives, Doom, Crisis, Fear, Hunger, Coffers, Underfunded, Unrest, Hostile, Motion, Fealty, Clash, Traitor, Plot, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Heroes, Neighbour, Loot, Stalled, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Outpost, Housing];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
-    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Hostility, Winter, Growth, Routes, Region, Undercity, Study, Loyalty, Armoury, Homes, Sites, Keepers, Outposts];
+    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Hostility, Winter, Growth, Routes, Region, Undercity, Study, Loyalty, Armoury, Homes, Sites, Keepers, Outposts, Lists];
 
     public static List<Alert> Standing(Town town) => Rules.SelectMany(r => r(town)).ToList();
 
@@ -388,4 +391,19 @@ public static class Alerts
     private const double StalledAppeal = 0.15;
 
     private static string Cap(string s) => s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
+
+    /// <summary>The council's tourney waits on the mayor's purse; once it is on, the next event still open to a stake.</summary>
+    private static IEnumerable<Alert> Lists(Town t)
+    {
+        var st = t.Tourney;
+        if (st.Stage == TourneyStage.Proposed)
+        {
+            int days = Math.Max(1, st.OpenDay - t.Day);
+            yield return new("tourney:fund", Tourney, $"Fund the tourney ({Days(days)})",
+                $"The council has proposed the year's tourney. Pay for it modest, grand or legendary, or let it go and disappoint the town. Left unanswered, the council holds a modest one if the treasury can bear it.");
+        }
+        else if (st.Stage == TourneyStage.Running && st.Events.Select((e, i) => (e, i)).FirstOrDefault(x => !x.e.Started && x.e.Day <= t.Day + 1 && Tournaments.BetBlocked(t, x.e) == null) is ({ } next, int index))
+            yield return new($"tourney:bet:{index}", Wager, $"Bet on {Tournaments.DefOf(t, next).Name}",
+                $"{Cap(Tournaments.DefOf(t, next).Name)} is ridden {(next.Day == t.Day ? "today" : "tomorrow")}. Open the tourney card to see the draw and the odds, and stake the treasury's gold on a rider if you like.");
+    }
 }

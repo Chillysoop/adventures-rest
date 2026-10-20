@@ -90,6 +90,7 @@ public sealed class Simulation
         Roads.Hourly(t);
         Sendings.Hourly(t, Options.AutoMayor && Options.AutoStories);
         Explore.Hourly(t, Options.AutoMayor && Options.AutoBounties && Options.AutoExplore);
+        Tournaments.Hourly(t);
         t.Tick++;
         if (t.Hour == 0) DailyTick();
     }
@@ -104,6 +105,7 @@ public sealed class Simulation
     {
         var t = Town;
         Brain.Daily(t);
+        Tournaments.Daily(t, Options.AutoMayor && Options.AutoStories);
         Seasons.Daily(t);
         Economy.Daily(t);
         Skills.Daily(t);
@@ -354,6 +356,15 @@ public sealed class Simulation
 
     /// <summary>Buy grain off the traders for the winter stores (autumn and winter).</summary>
     public bool LayInStores() => Seasons.LayIn(Town);
+
+    /// <summary>Pay for the year's tourney at a level: 0 modest, 1 grand, 2 legendary.</summary>
+    public bool FundTourney(int level) => Tournaments.Fund(Town, level);
+
+    /// <summary>Let the year's tourney go (the town is let down).</summary>
+    public bool SkipTourney() => Tournaments.Skip(Town);
+
+    /// <summary>Stake treasury gold on one rider in one of the tourney's events, before its first heat.</summary>
+    public bool PlaceBet(int eventIndex, int entrantId, double stake) => Tournaments.Bet(Town, eventIndex, entrantId, stake);
 
     /// <summary>Clear a decoration away for half its price back.</summary>
     public bool ClearDecoration(int decorationId) => Decor.Remove(Town, decorationId);

@@ -297,7 +297,7 @@ public static class Seasons
         double festival = Festival(town) && s.Festival != null ? s.Festival.Tourists : 1;
         // Gardens, fountains and statues the settlers come for draw visitors too.
         double appeal = Decor.Draw(town) / Math.Max(0.01, Decor.Rules(town).DrawCap);
-        double n = City.Souls(town) * r.PerSoul * s.Tourists * festival * (1 + r.TierBonus * town.City.Tier + r.Appeal * appeal);
+        double n = City.Souls(town) * r.PerSoul * s.Tourists * festival * Tournaments.Tourists(town) * (1 + r.TierBonus * town.City.Tier + r.Appeal * appeal);
         st.Tourists = (int)Math.Floor(n);
         st.TouristGold = 0;
         if (st.Tourists == 0) return;

@@ -75,6 +75,7 @@ public partial class Main : Control
         BuildGuide();
         BuildStory();
         BuildFind();
+        BuildTourney();
         BuildKeywords();
         _map.TreeScale = _opts.Trees;
         Map.Fog.RevealAll = _opts.Reveal;
@@ -94,6 +95,7 @@ public partial class Main : Control
         else if (_opts.Day > 0) _sim.RunDays(_opts.Day);
         if (_opts.Hour > 0) for (int i = 0; i < _opts.Hour; i++) _sim.Step();
         _opts.ApplyScript(_sim);
+        if (_opts.Tourney is int tourney) StageTourney(tourney);
         _rosterPick = _opts.RosterPick ?? _rosterPick;
         _offerAnswer = _opts.RosterAnswer ?? _offerAnswer;
         // Stories the script's hours brought are the stand-in mayor's, not cards to greet the shot with.
@@ -452,6 +454,7 @@ public partial class Main : Control
         SyncGuide();
         SyncStories(delta);
         SyncFinds();
+        SyncTourney();
         SyncKeywords(delta);
         SyncChecks();
         SyncTownRolls();

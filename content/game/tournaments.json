@@ -1,0 +1,91 @@
+{
+  "_doc": "The yearly tourney. Once the town holds the 'tier' charter, the council proposes it on day 'proposeDay' of the 'season'; the lists open on day 'openDay' of it, one event a day. The mayor funds it at a level (cost = gold x (1 + population / perPeople) + wealth x treasury, purses included) or skips it (mandate and a sulk). Each level sets how many ride in each event (half at most from the town's heroes whose class fits, the rest champions of the neighbouring settlements), the crowd it draws (visitors times 'tourists', each paying 'gate' gold at the lists), the mood on tourney days and the renown the winner and the runner-up earn. An arena (or the Grand Arena institution) makes all of it 'arena.scale' bigger. A heat is the event's rounds, each an opposed d20 + ability modifier + proficiency (half for a class that doesn't fit, and 'home' more for the town's own heroes, cheered on by the crowd); most rounds won takes it, ties ride again on the first round's ability. 'cast' is the class's own casting ability. Betting: one stake an event, at fair odds less the bookmakers' 'edge', before its first heat.",
+  "season": "summer",
+  "proposeDay": 6,
+  "openDay": 16,
+  "leadDays": 3,
+  "tier": "village",
+  "startHour": 9,
+  "endHour": 18,
+  "perPeople": 400,
+  "levels": [
+    { "id": "modest", "name": "Modest", "gold": 120, "wealth": 0.03, "entrants": 4, "tourists": 2.0, "mood": 3, "renown": [5, 2], "purse": 30, "text": "A field outside the gate, a rope for a barrier and a barrel of ale for the winners." },
+    { "id": "grand", "name": "Grand", "gold": 300, "wealth": 0.07, "entrants": 8, "tourists": 3.5, "mood": 5, "renown": [9, 4], "purse": 90, "text": "Painted lists, a stand for the gentry, heralds and a purse worth riding for." },
+    { "id": "legendary", "name": "Legendary", "gold": 700, "wealth": 0.14, "entrants": 8, "tourists": 6.0, "mood": 8, "renown": [16, 7], "purse": 250, "text": "Silk pavilions, minstrels from three realms and a purse that brings champions from every hold in the wilds." }
+  ],
+  "skip": { "mandate": 3, "mood": -2, "days": 6 },
+  "defaultReserve": 300,
+  "arena": { "scale": 1.35 },
+  "gate": 0.5,
+  "home": 1,
+  "grounds": { "w": 20, "d": 10, "reach": 16 },
+  "events": [
+    {
+      "id": "joust", "name": "the Joust", "deed": "joust",
+      "classes": ["fighter", "paladin", "barbarian", "warden"],
+      "rounds": [
+        { "ability": "str", "text": "first pass" },
+        { "ability": "str", "text": "second pass" },
+        { "ability": "con", "text": "keeps the saddle" }
+      ],
+      "win": "{winner} unhorses {loser}",
+      "blurb": "Lances couched, two riders thunder down the tilt. Strength breaks lances; the hardy stay in the saddle."
+    },
+    {
+      "id": "archery", "name": "the Archery", "deed": "archery",
+      "classes": ["ranger", "rogue", "fighter", "monk"],
+      "rounds": [
+        { "ability": "dex", "text": "the near butts" },
+        { "ability": "dex", "text": "the far butts" },
+        { "ability": "wis", "text": "the willow wand" }
+      ],
+      "win": "{winner} outshoots {loser}",
+      "blurb": "Three ends at the butts and a last arrow at a peeled willow wand. A steady hand and a calm eye win it."
+    },
+    {
+      "id": "duel", "name": "the Wizards' Duel", "deed": "duel",
+      "classes": ["wizard", "sorcerer", "warlock", "bard", "cleric", "druid", "hedge-witch", "reliquarian"],
+      "rounds": [
+        { "ability": "cast", "text": "the opening bolt" },
+        { "ability": "cast", "text": "the counterspell" },
+        { "ability": "con", "text": "holds the ward" }
+      ],
+      "win": "{winner} breaks {loser}'s ward",
+      "blurb": "Inside a ring of chalk and wardstones, two casters trade harmless fire until one ward fails. Each casts with their own art."
+    },
+    {
+      "id": "race", "name": "the Race", "deed": "race",
+      "classes": ["monk", "rogue", "ranger", "barbarian", "cartographer"],
+      "rounds": [
+        { "ability": "dex", "text": "the start" },
+        { "ability": "con", "text": "the long stretch" },
+        { "ability": "dex", "text": "the finish" }
+      ],
+      "win": "{winner} beats {loser} to the post",
+      "blurb": "Twice round the walls on foot. Quick feet at the start and finish, wind for the long stretch."
+    }
+  ],
+  "champions": {
+    "levelBelow": 2,
+    "levelAbove": 1,
+    "invited": 1,
+    "win": 4,
+    "wanderer": "the open road"
+  },
+  "betting": {
+    "edge": 0.05,
+    "min": 10,
+    "maxShare": 0.25,
+    "stakes": [25, 100, 250, 500]
+  },
+  "standIn": {
+    "reserve": 400,
+    "grand": 3500,
+    "legendary": 12000,
+    "betChance": 0.15,
+    "betFloor": 0.4,
+    "betReserve": 3000,
+    "betShare": 0.01,
+    "betMax": 150
+  }
+}
