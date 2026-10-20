@@ -2175,6 +2175,35 @@ public partial class TownView(MapView map) : Node3D
             mi.Visible = sight != Sight.Rumoured;
             mi.Position = map.Gen.At(pin, -0.05f);
         }
+        // The river's bridges, where roads cross it (its fords are shallows in the water itself).
+        var gen = map.Gen;
+        for (int i = 0; i < gen.Crossings.Count; i++)
+        {
+            var (c, at, flow) = gen.Crossings[i];
+            string id = $"crossing:{i}";
+            if (c.Kind != "bridge" || _landmarks.ContainsKey(id)) continue;
+            var across = new Vector2(-flow.Y, flow.X);
+            float deck = Mathf.Max(gen.SurfaceAt(at.X + across.X * 4.6f, at.Y + across.Y * 4.6f), gen.SurfaceAt(at.X - across.X * 4.6f, at.Y - across.Y * 4.6f)) + 0.1f;
+            var mi = new MeshInstance3D { Mesh = Bridge(deck, i == 0), MaterialOverride = Mats.Props };
+            AddChild(mi);
+            _landmarks[id] = mi;
+            mi.Position = new Vector3(at.X, 0, at.Y);
+            mi.Rotation = new Vector3(0, Mathf.Atan2(across.X, across.Y), 0);
+        }
+    }
+
+    /// <summary>A bridge over the river, its deck at <paramref name="deck"/>: the town's of timber on stone piers, the old ones all stone.</summary>
+    private static ArrayMesh Bridge(float deck, bool timber)
+    {
+        var k = new MeshKit();
+        var stone = new Color("8a8478");
+        var wood = Palette.Timber;
+        k.Box(new Vector3(0, deck - 0.16f, 0), new Vector3(1.15f, 0.16f, 9.6f), timber ? wood : stone, timber ? new Color("8a6239") : new Color("9a9488"));
+        foreach (float x in new[] { -0.55f, 0.55f }) k.Box(new Vector3(x, deck, 0), new Vector3(0.08f, timber ? 0.14f : 0.2f, 9.6f), timber ? Palette.DarkTimber : stone);
+        foreach (float z in new[] { -2.4f, -0.8f, 0.8f, 2.4f }) k.Box(new Vector3(0, -1.4f, z), new Vector3(1.0f, deck + 1.25f, 0.5f), stone, stone);
+        // Abutments down into each bank, so the deck meets the ground instead of floating over it.
+        foreach (float z in new[] { -4.2f, 4.2f }) k.Box(new Vector3(0, -1.4f, z), new Vector3(1.3f, deck + 1.25f, 1.6f), stone, stone);
+        return k.Build();
     }
 
     /// <summary>A hash of a site id that is the same on every run (string.GetHashCode is not).</summary>

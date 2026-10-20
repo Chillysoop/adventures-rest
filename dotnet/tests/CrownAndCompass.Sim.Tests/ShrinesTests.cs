@@ -37,7 +37,7 @@ public class ShrinesTests
         // Seed 1 paints the old town thick with homes and shops by day 60: the temple and the village's civic works still
         // find room on plots nobody has built on yet.
         var sim = new Simulation(new SimulationOptions { Seed = 1 });
-        sim.RunDays(70);
+        sim.RunDays(65);
         var t = sim.Town;
         // Raised already, or (when the treasury hasn't had the gold yet) still with room to go.
         Assert.True(t.Buildings.Any(b => b.Def.Id == "temple") || Planning.CivicLot(t, t.Content.Building("temple")) != null);

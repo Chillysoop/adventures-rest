@@ -1046,6 +1046,7 @@ public static class Menaces
         // Nothing beyond the walls it could take tonight: it does not waste its warriors.
         if (!Threat.WorthRaiding(town, where, raiders)) return false;
         string place = where!.Name;
+        Passage.Alarm(town, where);
         if (Threat.LocalDefense(town) * Garrison.FlagFactor(town, where) >= raiders)
         {
             m.Power = Math.Max(0, m.Power - raiders * r.RepelLoss);
@@ -1193,7 +1194,7 @@ public static class Menaces
             double wave = (army / (3 - w + 1)) * (0.8 + rng.Next() * 0.4);
             int at = Garrison.WaveSection(town, m.Approach, w);
             double hold = (def / (3 - w + 1)) * (0.8 + rng.Next() * 0.4) * Garrison.SectionFactor(town, at);
-            double wading = Garrison.Wade(town, wave);
+            double wading = Garrison.Wade(town, wave, Passage.Fliers(town, m.Kind));
             if (hold >= wading)
             {
                 def -= wading * 0.15;
