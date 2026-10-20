@@ -493,6 +493,39 @@
       "defence": 20
     },
     {
+      "id": "bombards",
+      "name": "Bombards",
+      "field": "war",
+      "rank": 3,
+      "text": "Black powder and bronze barrels: a cannon on every tower of the wall and one over the main gate. Hosts that come at the wall lose men before they reach it, and war-wagons are smashed on the road.",
+      "sparks": [
+        "known:siegecraft",
+        "folk:dwarf:10",
+        "partner:dwarves"
+      ],
+      "requires": [
+        "known:siegecraft"
+      ],
+      "cannons": 1
+    },
+    {
+      "id": "arcane-batteries",
+      "name": "Arcane batteries",
+      "field": "arcana",
+      "rank": 4,
+      "text": "The Foundry's crystals in the breeches: the tower guns fire piercing bolts at giants and dragons, blast shells into packed hosts, and a flame at swarms that burns what it touches and nothing else.",
+      "sparks": [
+        "building:artificers_foundry",
+        "known:bombards"
+      ],
+      "requires": [
+        "known:bombards",
+        "building:artificers_foundry",
+        "circle:3"
+      ],
+      "cannons": 2
+    },
+    {
       "id": "monster-lore",
       "name": "Monster lore",
       "field": "war",

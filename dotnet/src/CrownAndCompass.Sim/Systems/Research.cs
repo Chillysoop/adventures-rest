@@ -39,6 +39,9 @@ public sealed record DiscoveryDef : DecreeDef
 
     /// <summary>The share off the cost of a scrying.</summary>
     public double Scry { get; init; }
+
+    /// <summary>Tower guns it brings (<see cref="Cannons"/>): 1 bombards, 2 arcane guns.</summary>
+    public int Cannons { get; init; }
 }
 
 public sealed record FundingDef

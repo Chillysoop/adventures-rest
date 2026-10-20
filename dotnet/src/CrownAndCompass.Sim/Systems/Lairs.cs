@@ -60,7 +60,7 @@ public static class Lairs
             var kind = r.Kinds.GetValueOrDefault(s.Def.Kind);
             s.Strength = Math.Min(r.MaxStrength, s.Strength + (kind?.Growth ?? 0.5));
             // The far wilds trouble their own country (World's pleas), not the town.
-            if (s.Generated && s.Def.Distance > 1) continue;
+            if (s.Generated && s.Def.Distance > (town.Content.Foes.Of(s.Def.Foe)?.Reach ?? 1)) continue;
             if (s.Strength >= r.ActAt && town.Tick >= s.NextActTick) Act(town, s, autoMayor);
         }
         Thralls(town);
@@ -273,6 +273,7 @@ public static class Lairs
         {
             s.Strength = Math.Max(0, s.Strength - raiders);
             s.Rebuffs++;
+            town.FallenRaiders += raiders;
             town.Log(LedgerCategory.War, Importance.Notable, $"Some {Js.Str(raiders)} raiders {From(s)} fall on {where}{timing}, and the watch drives them off.");
             town.Tension += 5;
             return true;
@@ -305,6 +306,7 @@ public static class Lairs
             UntilDark(town, s);
             return false;
         }
+        Raise(town, s);
         var target = Outlying(town);
         string where = target?.Name ?? "the fields";
         bool surge = s.Stirs + 1 >= r.EscalateAt && target != null;
@@ -346,6 +348,18 @@ public static class Lairs
         town.Log(LedgerCategory.War, Importance.Major, $"The dead walk {From(s)} into {where}. {Expedition.ListNames(dead.Select(v => v.Name).ToList())} {(dead.Count == 1 ? "is" : "are")} found at dawn, cold and grey.", dead.Select(v => v.Id).ToList());
         town.Tension += 15 * dead.Count;
         return true;
+    }
+
+    /// <summary>A spirit-caller's walk brings back the raiders who fell at the town since its last.</summary>
+    private static void Raise(Town town, SiteState s)
+    {
+        var rules = town.Content.Foes;
+        if (town.Content.Foes.Of(s.Def.Foe) is not { Raises: true } || town.FallenRaiders < 1) return;
+        double gain = Math.Min(rules.RaiseMax, Js.Round(town.FallenRaiders * rules.Raise));
+        int risen = (int)town.FallenRaiders;
+        town.FallenRaiders = 0;
+        s.Strength = Math.Min(Rules(town).MaxStrength, s.Strength + gain);
+        town.Log(LedgerCategory.War, Importance.Notable, rules.RaiseText.Replace("{site}", s.Def.Name).Replace("{n}", Js.Str(risen)).Replace("{town}", town.Name));
     }
 
     // Schemers: a whisper at the well, and a resident steals for them.

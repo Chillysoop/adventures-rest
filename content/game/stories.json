@@ -172,6 +172,31 @@
       "ignored": { "text": "He leaves on the morning cart with a purse full of {town}'s coin.", "effects": { "mandate": -2 } }
     },
     {
+      "id": "dark-ranger", "title": "The dark ranger", "stakes": "high", "source": "ranger",
+      "needs": ["ranger"], "weight": 0,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A ranger in a black cloak has been taking the town's bounties before its heroes can, and keeping the gold. The companies in the tavern want her gone; the merchants say the jobs got done. The council wants the mayor's word.",
+          "options": [
+            {
+              "label": "Buy her bow: she rides for the town", "tags": ["coin", "freedom"], "prefer": 0.3,
+              "success": { "text": "A purse changes hands at the edge of the woods.", "effects": { "ranger": 1, "mandate": 1 } }
+            },
+            {
+              "label": "Let her hunt, for half the reward", "tags": ["caution", "coin"],
+              "success": { "text": "Word goes out to the camp in the trees.", "effects": { "ranger": 2, "tension": 2 } }
+            },
+            {
+              "label": "Hunt her down", "tags": ["valor", "order"],
+              "success": { "text": "The companies cheer, and start sharpening.", "effects": { "ranger": 3, "mandate": 1 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "Nobody decides, so she goes on taking the town's work and its gold.", "effects": { "ranger": 2, "mandate": -1 } }
+    },
+    {
       "id": "dragon-egg", "title": "A dragon's egg", "stakes": "high", "source": "egg",
       "needs": ["egg"], "weight": 0,
       "stages": [

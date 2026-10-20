@@ -434,7 +434,10 @@ public static class Menaces
         };
         Seat(town, m, seat);
         m.Cunning = cunning ?? CunningFor(town, IntOf(town, seat.Def.Boss.Monster));
-        m.Lineage = lineage ?? Annals.ForMenace(town.Content.History, kind, World.RegionOf(town, seat)?.Theme.Id)?.Id ?? "";
+        m.Lineage = lineage ?? Annals.ForMenace(town.Content.History, kind, World.RegionOf(town, seat)?.Theme.Id, seat.Def.Foe)?.Id ?? "";
+        // A signature foe's master goes by its lineage's names (picked by the seat, not dice, so the stream holds).
+        if (leader == null && Annals.Lineage(town.Content.History, m.Lineage) is { Leaders.Count: > 0 } heirs)
+            m.Leader = heirs.Leaders[(int)(Voices.Hash(seat.Def.Id) % (uint)heirs.Leaders.Count)];
         m.Ambition = PickAmbition(town, kind, m.Cunning, m.Lineage);
         m.BaseLevel = World.LevelOf(seat);
         m.BornLevel = m.BaseLevel;
@@ -1205,11 +1208,16 @@ public static class Menaces
         lines.Add($"{Saga.Cap(m.Name)}, some {Js.Str(Js.Round(army))} strong, comes against {town.Name}. The defenders muster {Js.Str(Js.Round(startDef))} strong.");
         var record = Battles.Begin(town, $"menace:{m.Id}", m.Kind, m.Name, m.Def.People, m.Leader, m.Approach, army, startDef);
         def = Math.Max(0, def - Loyalty.Betray(town, m.Name, m, lines));
+        string foe = Quests.Site(town, m.SeatId)?.Def.Foe ?? "";
+        double gate = Cannons.Wagons(town, m.Kind, m.Marches - 1, Garrison.WaveSection(town, m.Approach, 1), lines);
         for (int w = 1; w <= 3 && breaches < 2; w++)
         {
             double wave = (army / (3 - w + 1)) * (0.8 + rng.Next() * 0.4);
             int at = Garrison.WaveSection(town, m.Approach, w);
-            double hold = (def / (3 - w + 1)) * (0.8 + rng.Next() * 0.4) * Garrison.SectionFactor(town, at);
+            double hold = (def / (3 - w + 1)) * (0.8 + rng.Next() * 0.4) * Garrison.SectionFactor(town, at) * gate;
+            double shot = Cannons.Volley(town, m.Kind, foe, wave, w, lines);
+            army -= wave - shot;
+            wave = shot;
             double wading = Garrison.Wade(town, wave, Passage.Fliers(town, m.Kind));
             if (hold >= wading)
             {

@@ -172,6 +172,7 @@ public sealed class Simulation
         Notoriety.Daily(t);
         Heraldry.Daily(t);
         Eggs.Daily(t);
+        Poaching.Daily(t);
         Passage.Daily(t);
         Decor.Daily(t);
         Stories.Daily(t, Options.AutoMayor && Options.AutoStories);
