@@ -69,6 +69,12 @@ public sealed class Options
     /// <summary>--wall N: select a section of the outer wall (0 is the gate) in the inspector, for shots of the call to arms.</summary>
     public int? Wall { get; private set; }
 
+    /// <summary>
+    /// --siege H: run on to the next siege and stop H hours after the host reaches the walls (8 by default: it camps through
+    /// the night and the assault goes in at dawn, 6 hours in), the camera on the walls.
+    /// </summary>
+    public float? Siege;
+
     /// <summary>--house: select the house on the most pleasant street, for screenshots of the inspector.</summary>
     public bool House;
     /// <summary>Aim the camera at the building going up with the most hands on it (<c>--rising</c>), for a shot of the builders.</summary>
@@ -174,6 +180,7 @@ public sealed class Options
                 case "--strike": o.Strike = true; break;
                 case "--house": o.House = true; break;
                 case "--rising": o.Rising = true; break;
+                case "--siege": o.Siege = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture) : 8; break;
                 case "--card": o.Card = true; break;
                 case "--tourney": o.Tourney = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? int.Parse(Next()) : 1; break;
                 case "--tourney-hour": o.TourneyHour = int.Parse(Next()); break;

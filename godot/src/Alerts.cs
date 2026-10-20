@@ -145,6 +145,12 @@ public partial class Main
     private void GoTo(LedgerEntry e)
     {
         var t = _sim.Town;
+        // A siege's news looks at the walls, where the map plays it out.
+        if (e.Importance == Importance.Major && SiegeOf(e) is { } siege)
+        {
+            ShowSiege(siege);
+            return;
+        }
         Tab? tab = e.Category switch
         {
             LedgerCategory.War => Tab.War,

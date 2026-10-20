@@ -94,6 +94,7 @@ public partial class Main : Control
         }
         else if (_opts.Day > 0) _sim.RunDays(_opts.Day);
         if (_opts.Hour > 0) for (int i = 0; i < _opts.Hour; i++) _sim.Step();
+        if (_opts.Siege is float siegeHours) SiegeShot(siegeHours);
         _opts.ApplyScript(_sim);
         if (_opts.Tourney is int tourney) StageTourney(tourney);
         if (_opts.Secrets) StageSecrets();
@@ -286,6 +287,7 @@ public partial class Main : Control
     private void OnLedger(LedgerEntry e)
     {
         if (Newsworthy(e)) Feed(e);
+        SiegeNews(e);
         // Real time with pause: the war's turning points stop the clock so the player can react.
         if (e.Category == LedgerCategory.War && e.Importance == Importance.Major && _speed > 0 && !_opts.NoPause) SetSpeed(0);
         if (_sim.Town.Outcome != null && !_endShown) CallDeferred(MethodName.ShowEnd);
@@ -472,6 +474,7 @@ public partial class Main : Control
         SyncKeywords(delta);
         SyncChecks();
         SyncTownRolls();
+        SyncSiege();
         if (_title.Visible) _map.Drift(1, (float)delta * 0.035f);
         if (_dirty)
         {

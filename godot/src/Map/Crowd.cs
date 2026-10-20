@@ -205,7 +205,8 @@ public partial class Crowd(MapView map) : Node3D
         kit.Clear();
         Load(kit);
         _loads.Multimesh.Mesh = kit.Build();
-        foreach (var m in new[] { _folk, _heroes, _orcs, _banners, _guards, _loads }) AddChild(m);
+        BuildSiege(kit, _ram, _ladders, _arrows, _flames, _smoke);
+        foreach (var m in new[] { _folk, _heroes, _orcs, _banners, _guards, _loads, _ram, _ladders, _arrows, _flames, _smoke }) AddChild(m);
     }
 
     /// <summary>A little person: tunic (tinted per instance), head and hands (skin from instance data), a hood or hat.</summary>
@@ -265,11 +266,14 @@ public partial class Crowd(MapView map) : Node3D
     private static void Orc(MeshKit k)
     {
         k.Push(MeshKit.At(0, 0, 0, 0, 1.6f));
-        var skin = new Color("6f8f4a");
+        // The skin comes from the instance, so one figure serves every host (orc green by default).
+        var skin = new Color(1, 1, 1, MeshKit.Flag.Skin);
         k.Frustum(new Vector3(-0.03f, 0, 0), 0.024f, 0.024f, 0.07f, 4, new Color("3a2a20"));
         k.Frustum(new Vector3(0.03f, 0, 0), 0.024f, 0.024f, 0.07f, 4, new Color("3a2a20"));
         k.Frustum(new Vector3(0, 0.06f, 0), 0.075f, 0.065f, 0.12f, 6, Colors.White);
-        k.Blob(new Vector3(0, 0.215f, 0.01f), new Vector3(0.05f, 0.048f, 0.05f), skin);
+        k.Blob(new Vector3(0, 0.21f, 0.01f), new Vector3(0.046f, 0.045f, 0.046f), skin);
+        // A dark iron cap, so from above a host reads as helmets, not shrubs.
+        k.Frustum(new Vector3(0, 0.226f, 0.005f), 0.05f, 0.022f, 0.045f, 6, new Color("3a3634"), new Color("5a5450"));
         k.Blob(new Vector3(-0.08f, 0.15f, 0), new Vector3(0.03f, 0.025f, 0.03f), new Color("5a4a3a"));
         k.Blob(new Vector3(0.08f, 0.15f, 0), new Vector3(0.03f, 0.025f, 0.03f), new Color("5a4a3a"));
         k.Box(new Vector3(0.1f, 0.05f, 0.03f), new Vector3(0.02f, 0.2f, 0.02f), new Color("5a4030"));
@@ -312,6 +316,7 @@ public partial class Crowd(MapView map) : Node3D
         bool close = map.Distance < 260;
         Visible = close;
         if (!close) return;
+        SiegeNow(town);
 
         // Townsfolk in one batch, heroes in another; haulers' loads in their own.
         var loads = new List<(Vector3 P, float Yaw, bool Stone)>();
@@ -319,7 +324,7 @@ public partial class Crowd(MapView map) : Node3D
         {
             foreach (var a in town.Agents)
             {
-                if ((a.Hero != null) != heroes || !People.Sprites.TryGetValue(a.Id, out var s) || !s.Visible) continue;
+                if ((a.Hero != null) != heroes || !People.Sprites.TryGetValue(a.Id, out var s) || !s.Visible || (heroes && Sallying(a.Id))) continue;
                 // Builders at a site rise and stoop to the hammer; everyone else bobs as they walk.
                 float bob = s.Walking ? Mathf.Abs(Mathf.Sin(now * 8 + a.Id)) * 0.02f
                     : a.Activity == Activity.Building ? Mathf.Max(0, Mathf.Sin(now * 6 + a.Id)) * 0.025f : 0;
@@ -423,9 +428,11 @@ public partial class Crowd(MapView map) : Node3D
         }
         ListsRiders(town, now);
         ListsBanners(town, now);
+        SiegeHeroes(town, now);
         Flush(_heroes);
         PutHorses();
         Guards(town, now, banners);
+        SiegeBanners(banners);
         foreach (var (bp, yaw, col) in banners) Put(bp, yaw + Mathf.Pi / 2, col, Colors.White, 2.2f);
         PutPennons();
         Flush(_banners);
@@ -446,16 +453,18 @@ public partial class Crowd(MapView map) : Node3D
                 var o = new Vector2((Geo.Hash(i * 5 + 1) - 0.5f) * 7, (Geo.Hash(i * 5 + 2) - 0.5f) * 5);
                 if (map.Fog.AlphaAt(pos + o) >= Fog.SightAlpha) continue;
                 float bob = Mathf.Abs(Mathf.Sin(now * 8 + i)) * 0.03f;
-                Put(gen.At(pos + o, bob), Mathf.Atan2(dir.X, dir.Y), i % 7 == 0 ? new Color("4a2018") : new Color("6a3a2a"), Colors.White, 1.1f);
+                Put(gen.At(pos + o, bob), Mathf.Atan2(dir.X, dir.Y), i % 7 == 0 ? new Color("4a2018") : new Color("6a3a2a"), OrcSkin, 1.1f);
             }
         }
+        SiegeHost(town, now);
         Flush(_orcs);
+        SiegeProps(town, now);
     }
 
     /// <summary>Where each guard stands on the map this frame, for picking them out with the mouse.</summary>
     public readonly Dictionary<int, Vector2> GuardSpots = [];
 
-    private static readonly Color Tabard = new("8a2a24");
+    private static readonly Color Tabard = new("8a2a24"), OrcSkin = new("6b7a4e");
 
     /// <summary>
     /// The town watch: pacing their beat along the wall walk, standing their posts on a called stretch, a tower top or
@@ -496,6 +505,7 @@ public partial class Crowd(MapView map) : Node3D
             GuardSpots[g.Id] = p;
             Put(gen.At(p, lift), yaw, Tabard, Palette.RaceColor("human"), 1.05f);
         }
+        SiegeDefenders();
         Flush(_guards);
         foreach (var post in town.Garrison.Posts)
         {

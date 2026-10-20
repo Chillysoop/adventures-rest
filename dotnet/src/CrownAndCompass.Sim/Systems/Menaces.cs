@@ -1189,6 +1189,7 @@ public static class Menaces
         army = Crises.Converge(town, m, army, lines);
         if (army <= 0) return;
         lines.Add($"{Saga.Cap(m.Name)}, some {Js.Str(Js.Round(army))} strong, comes against {town.Name}. The defenders muster {Js.Str(Js.Round(startDef))} strong.");
+        var record = Battles.Begin(town, $"menace:{m.Id}", m.Kind, m.Name, m.Def.People, m.Leader, m.Approach, army, startDef);
         def = Math.Max(0, def - Loyalty.Betray(town, m.Name, m, lines));
         for (int w = 1; w <= 3 && breaches < 2; w++)
         {
@@ -1200,6 +1201,7 @@ public static class Menaces
             {
                 def -= wading * 0.15;
                 army -= wave;
+                Battles.Wave(record, at, wave, false);
                 lines.Add($"Wave {w}: the {m.Def.People} of {m.Leader} hit the {Garrison.Place(town, at)} and break against it.");
             }
             else
@@ -1207,6 +1209,7 @@ public static class Menaces
                 def -= wading * 0.35;
                 army -= wave * 0.5;
                 breaches++;
+                Battles.Wave(record, at, wave, true);
                 lines.Add($"Wave {w}: the {m.Def.People} of {m.Leader} breach the {Garrison.Place(town, at)}. Fighting spills into the streets.");
             }
         }
@@ -1224,13 +1227,16 @@ public static class Menaces
             dead.Add(v);
         }
         if (dead.Count > 0) lines.Add($"{Expedition.ListNames(dead.Select(a => a.Name).ToList())} {(dead.Count == 1 ? "falls" : "fall")} on the walls.");
+        record.Fallen.AddRange(dead.Select(a => a.Id));
         town.Watch = Math.Max(0, town.Watch - breaches * 2);
         town.Tension += 60 + dead.Count * 5;
 
         if (breaches >= 2)
         {
+            record.End = BattleEnd.Fell;
             if (Saga.Sack(town, m, lines))
             {
+                record.End = BattleEnd.Sacked;
                 Chronicle(town, lines, ExpeditionOutcome.Wiped, []);
                 town.Log(LedgerCategory.War, Importance.Major, $"{town.Name} is sacked by {m.Name}. (Chronicle {town.Chronicles.Count})", dead.Select(a => a.Id).ToList());
                 return;
@@ -1253,6 +1259,8 @@ public static class Menaces
             lines.Add($"The walls hold. {m.Leader} comes to the breach, and {Expedition.ListNames(champions.Select(a => a.GivenName).ToList())} go out to meet them.");
             var battle = new SiteDef { Id = "assault", Name = "the walls", Tier = 0, Distance = 0, Encounters = [], Boss = seat.Def.Boss, Loot = [0, 0] };
             var result = Expedition.Run(rng, town.Content, battle, champions);
+            record.Champions.AddRange(champions.Select(c => c.Id));
+            record.ChampionsFell.AddRange(result.Dead.Order());
             lines.AddRange(result.Lines.Skip(1).Where(l =>
                 !l.StartsWith("At last", StringComparison.Ordinal) &&
                 !l.Contains("is cleared. The hoard", StringComparison.Ordinal) &&
@@ -1274,6 +1282,7 @@ public static class Menaces
         else lines.Add($"The walls hold, but no hero is in town to face {m.Leader}.");
 
         Chronicle(town, lines, slain ? ExpeditionOutcome.Cleared : ExpeditionOutcome.Retreated, champions);
+        record.End = !slain ? (record.Champions.Count > 0 ? BattleEnd.Repelled : BattleEnd.Held) : m.BigBad && seat != null && MayEscape(town) ? BattleEnd.Carried : BattleEnd.Slain;
         if (slain && m.BigBad && seat != null && MayEscape(town))
         {
             // Beaten at the walls, the big bad is carried off the field and back to its seat to heal.

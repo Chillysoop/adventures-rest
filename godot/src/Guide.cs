@@ -222,6 +222,7 @@ public partial class Main
             "window" => _window,
             "inspector" => _inspector,
             "dock" => _dock,
+            "siege" => _siegeBanner,
             _ when point.StartsWith("tab:", StringComparison.Ordinal) && Enum.TryParse<Tab>(point[4..], out var tab) && _tabButtons.TryGetValue(tab, out var b) => TabAnchor(tab, b),
             _ => null,
         };
