@@ -409,7 +409,7 @@ public static class Faith
             town.Market.Buy(Good.Timber, def.Timber);
             town.Faiths.Funds[god.Id] = fund - cost;
             var b = town.AddBuilding(def, lot, null, "", false);
-            b.LaborBudget = def.BuildHours * Brain.ConstructionWage;
+            b.LaborBudget = Construction.Hours(town, def) * Brain.ConstructionWage;
             Dedicate(town, b, god);
             town.Log(
                 LedgerCategory.Faith,

@@ -164,8 +164,17 @@ public static class Brain
         a.LocationId = b.Id;
         if (b.IsSite)
         {
-            a.Activity = Activity.Building;
-            b.Raise(Math.Max(0.5, 1 + 0.1 * Rng.Modifier(a.Abilities.Str)) * Seasons.Build(town) * Decrees.Build(town) * Institutions.Build(town));
+            // Out of materials: the hour goes on carrying more onto the site.
+            if (Construction.Short(town, b))
+            {
+                a.Activity = Activity.Hauling;
+                Construction.Haul(town, b, Rng.Modifier(a.Abilities.Str));
+            }
+            else
+            {
+                a.Activity = Activity.Building;
+                b.Raise(town, Math.Max(0.5, 1 + 0.1 * Rng.Modifier(a.Abilities.Str)) * Seasons.Build(town) * Decrees.Build(town) * Institutions.Build(town));
+            }
             if (b.OwnerId != a.Id)
             {
                 double pay = Math.Min(ConstructionWage, b.LaborBudget);

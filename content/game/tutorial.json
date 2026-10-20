@@ -421,10 +421,10 @@
     {
       "id": "wards",
       "title": "New wards",
-      "text": "A new charter lets you lay out a new ward in the [b]City[/b] window. Each ward has its own character: the Market Ward favours shops, the Trades Ward workshops, Castle Hill holds the manors. Land outside the wards you have laid out can't be zoned.",
+      "text": "A new charter opens more land round the old town to zoning. Wards aren't drawn ahead: once a few buildings stand in a quarter, it grows into a ward that suits them. Shops make a Market Ward, workshops a Trades Ward, shrines a Temple Ward, fine houses Castle Hill. See your wards in the [b]City[/b] window.",
       "point": "tab:City",
       "when": "alert:charter",
-      "teaches": ["command:OpenWard"]
+      "teaches": []
     },
     {
       "id": "density",

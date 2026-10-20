@@ -224,13 +224,13 @@ public partial class Planner(MapView map) : Control
     private void Ground(Town town, BuildingDef def)
     {
         int n = (int)(Town.Grid / Sample);
-        if (_ground is not { } g || g.Id != def.Id || g.Version != town.Plan.Version || g.Wards != town.City.OpenWards.Count)
+        if (_ground is not { } g || g.Id != def.Id || g.Version != town.Plan.Version || g.Wards != town.City.Tier)
         {
             var fits = new bool[n * n];
             for (int y = 0; y < n; y++)
                 for (int x = 0; x < n; x++)
                     fits[y * n + x] = Land.At(town, def, (x + 0.5) * Sample, (y + 0.5) * Sample) != null;
-            _ground = g = (def.Id, town.Plan.Version, town.City.OpenWards.Count, fits);
+            _ground = g = (def.Id, town.Plan.Version, town.City.Tier, fits);
         }
         var green = new Color(0.45f, 0.9f, 0.4f, 0.13f);
         for (int y = 0; y < n; y++)
@@ -249,97 +249,62 @@ public partial class Planner(MapView map) : Control
         }
     }
 
-    /// <summary>Ward borders, closed wards shaded, and each ward's name at its middle: grey with the charter it waits for until it is laid out.</summary>
+    /// <summary>
+    /// The wards as they have grown, not as a plan: each formed ward outlined round its own buildings with its name at their
+    /// middle (unsettled ground shows nothing), and the line past which the charter doesn't yet let the town zone.
+    /// </summary>
     private void Wards(Town town)
     {
-        var border = new Color("f6eedb", 0.55f);
-        var shade = new Color(0.05f, 0.04f, 0.03f, 0.38f);
-        double c = Town.Center;
-        // The borders are curves (City.Edge, City.Split), drawn from them rather than from cells so they never stair-step.
-        Vector2 At(double a, double r) => new((float)(c + Math.Cos(a) * r), (float)(c + Math.Sin(a) * r));
-        // The town's square edge along a heading: where the outer ring ends.
-        double Rim(double a) => c / Math.Max(Math.Abs(Math.Cos(a)), Math.Abs(Math.Sin(a)));
-        double Inner(int ring, double a) => ring == 0 ? 0 : City.Edge(town, ring - 1, a);
-        double Outer(int ring, double a) => ring == 2 ? Rim(a) : City.Edge(town, ring, a);
-        const int Steps = 24;
-        foreach (var w in town.Content.City.Wards)
+        var border = new Color("f6eedb", 0.45f);
+        foreach (var id in town.City.OpenWards)
         {
-            bool open = town.City.OpenWards.Contains(w.Id);
-            var poly = new List<Vector2>();
-            Vector2 mid;
-            if (w.Ring == 0)
-            {
-                for (int i = 0; i < Steps * 4; i++) poly.Add(At(i * Math.PI * 2 / (Steps * 4), City.Edge(town, 0, i * Math.PI * 2 / (Steps * 4))));
-                mid = new Vector2((float)c, (float)c);
-            }
-            else
-            {
-                int j = Array.IndexOf(Sides, w.Side);
-                if (j < 0) continue;
-                // A side lies between border j and border j + 1, round from east|south (City.Side); east wraps past a full turn.
-                double SplitAt(int i, double r) => City.Split(town, i % 4, r) + (i >= 4 ? Math.PI * 2 : 0);
-                // Where a border crosses a ring's edge (the edge's own wobble moves it a little: twice round settles it).
-                double Cross(int i, Func<double, double> edge) => SplitAt(i, edge(SplitAt(i, edge(SplitAt(i, 0)))));
-                Func<double, double> inner = a => Inner(w.Ring, a), outer = a => Outer(w.Ring, a);
-                double a0 = Cross(j, inner), a1 = Cross(j + 1, inner), b0 = Cross(j, outer), b1 = Cross(j + 1, outer);
-                for (int i = 0; i <= Steps; i++)
-                {
-                    double a = a0 + (a1 - a0) * i / Steps;
-                    poly.Add(At(a, inner(a)));
-                }
-                // Out along the far border, back round the outer edge, and in along the near one.
-                for (int i = 1; i < 6; i++)
-                {
-                    double r = inner(a1) + (outer(b1) - inner(a1)) * i / 6;
-                    poly.Add(At(SplitAt(j + 1, r), r));
-                }
-                for (int i = Steps; i >= 0; i--)
-                {
-                    double a = b0 + (b1 - b0) * i / Steps;
-                    poly.Add(At(a, outer(a)));
-                }
-                for (int i = 5; i >= 1; i--)
-                {
-                    double r = inner(a0) + (outer(b0) - inner(a0)) * i / 6;
-                    poly.Add(At(SplitAt(j, r), r));
-                }
-                double am = (a0 + a1) / 2, rm = (Inner(w.Ring, am) + Outer(w.Ring, am)) / 2;
-                mid = At(am, rm);
-            }
-            var screen = poly.Select(Screen).ToArray();
-            // Closed land shaded a strip of small quads at a time: a whole curved ward seen in perspective can defeat triangulation.
-            if (!open && w.Ring > 0)
-                for (int i = 0; i < Steps; i++)
-                {
-                    // Inner points run 0..Steps; the outer edge runs back from Steps + 6 (see the order above).
-                    int o = Steps + 6 + Steps - i;
-                    Vector2[] quad = [screen[i], screen[i + 1], screen[o - 1], screen[o]];
-                    // Past the horizon the projection folds a quad over or squeezes it flat: nothing to shade there, and Godot can't triangulate it.
-                    if (Convex(quad)) DrawColoredPolygon(quad, shade);
-                }
+            var pts = new List<Vector2>();
+            foreach (var lot in town.Lots)
+                if (lot.BuildingId != null && City.WardOf(town, lot).Id == id)
+                    foreach (var c in Geo.LotCorners(lot, 0.35f)) pts.Add(c - new Vector2(Geo.Margin, Geo.Margin));
+            if (pts.Count < 3) continue;
+            var hull = Hull(pts);
+            var screen = hull.Select(Screen).ToArray();
             DrawPolyline([.. screen, screen[0]], border, 2, true);
-            string sub = open ? "" : City.Reached(town, w.Tier) ? $"ready to lay out · {w.Cost:N0}g" : $"needs a {City.TierName(town, w.Tier).ToLowerInvariant()}";
-            var at = map.ToScreen(FromTown(mid.X, mid.Y), 0.6f);
-            Label(at, w.Name.ToUpperInvariant(), 13, open ? new Color("f6eedb") : new Color("cfc6b4", 0.8f));
-            if (sub != "") Label(at + new Vector2(0, 16), sub, 11, new Color("cfc6b4", 0.8f));
+            var mid = new Vector2(hull.Average(p => p.X), hull.Average(p => p.Y));
+            Label(map.ToScreen(FromTown(mid.X, mid.Y), 0.6f), City.Ward(town, id).Name.ToUpperInvariant(), 13, new Color("f6eedb"));
         }
+        // The charter's reach: zoning stops at the edge of the last ring it opens.
+        int ring = 0;
+        while (ring < City.WallRings && City.RingOpen(town, ring + 1)) ring++;
+        if (ring >= City.WallRings) return;
+        double c0 = Town.Center;
+        const int Steps = 96;
+        var line = new Vector2[Steps + 1];
+        for (int i = 0; i <= Steps; i++)
+        {
+            double a = i * Math.PI * 2 / Steps, r = City.Edge(town, ring, a);
+            line[i] = Screen(new Vector2((float)(c0 + Math.Cos(a) * r), (float)(c0 + Math.Sin(a) * r)));
+        }
+        var dim = new Color("cfc6b4", 0.5f);
+        for (int i = 0; i < Steps; i += 2) DrawLine(line[i], line[i + 1], dim, 2, true);
+        double la = Math.PI * 0.25, lr = City.Edge(town, ring, la) + 1.2;
+        Label(map.ToScreen(FromTown(c0 + Math.Cos(la) * lr, c0 + Math.Sin(la) * lr), 0.6f),
+            $"more land to zone once the town is a {City.TierName(town, City.RingTier(town, ring + 1)).ToLowerInvariant()}", 11, new Color("cfc6b4", 0.85f));
     }
 
-    private static readonly string[] Sides = ["south", "west", "north", "east"];
-
-    /// <summary>Whether a quad on screen turns the same way at every corner, with some area to it.</summary>
-    private static bool Convex(Vector2[] q)
+    /// <summary>The convex hull of points, anticlockwise (Andrew's monotone chain).</summary>
+    private static List<Vector2> Hull(List<Vector2> pts)
     {
-        int sign = 0;
-        for (int i = 0; i < q.Length; i++)
+        var p = pts.OrderBy(v => v.X).ThenBy(v => v.Y).ToList();
+        var h = new List<Vector2>();
+        for (int pass = 0; pass < 2; pass++)
         {
-            float cross = (q[(i + 1) % q.Length] - q[i]).Cross(q[(i + 2) % q.Length] - q[(i + 1) % q.Length]);
-            if (!float.IsFinite(cross) || Mathf.Abs(cross) < 0.5f) return false;
-            int s = Math.Sign(cross);
-            if (sign != 0 && s != sign) return false;
-            sign = s;
+            int start = h.Count;
+            foreach (var v in p)
+            {
+                while (h.Count >= start + 2 && (h[^1] - h[^2]).Cross(v - h[^2]) <= 0) h.RemoveAt(h.Count - 1);
+                h.Add(v);
+            }
+            h.RemoveAt(h.Count - 1);
+            p.Reverse();
         }
-        return true;
+        return h;
     }
 
     private void Label(Vector2 at, string text, int size, Color c)

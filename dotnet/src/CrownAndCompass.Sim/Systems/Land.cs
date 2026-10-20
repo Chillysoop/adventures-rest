@@ -2,9 +2,9 @@ namespace CrownAndCompass.Sim.Systems;
 
 /// <summary>
 /// The town's land, after Foundation: the player paints zones with a round brush on a fine raster
-/// (<see cref="Res"/> cells to a tile), streets grow out to the paint on their own (<see cref="Streets"/>), and
-/// every new building finds its own spot inside the paint fronting on a street, with a lane of open
-/// ground between it and its neighbours. A lot is the patch one building stands on; it exists only once something is built there.
+/// (<see cref="Res"/> cells to a tile), and every new building finds its own spot inside the paint, on a street
+/// or beside what is already built, nearest the built town first, with a lane of open ground between it and its
+/// neighbours. Painting lays no streets: they wear in along the feet going to the new buildings (<see cref="Streets"/>). A lot is the patch one building stands on; it exists only once something is built there.
 /// </summary>
 public static class Land
 {
@@ -74,7 +74,7 @@ public static class Land
                     // A company's bastion grounds take no paint.
                     if (zone != Zone.None && plan.Grounds[i] != 0) continue;
                     if (!overwrite && plan.Zones[i] != (byte)Zone.None) continue;
-                    // Only ground in a ward the town has laid out takes paint.
+                    // Only ground in a ring the town's charter reaches takes paint.
                     if (zone != Zone.None && !Open(town, i)) continue;
                     // Unpainted ground with a decoration on it is a garden, and stays one.
                     if (zone != Zone.None && plan.Zones[i] == (byte)Zone.None && gardens != null && gardens[i]) continue;
@@ -88,13 +88,11 @@ public static class Land
         {
             plan.Changed();
             plan.Painted++;
-            // New paint far from any street gets one.
-            if (zone != Zone.None) Streets.Serve(town);
         }
         return n;
     }
 
-    /// <summary>Unpainted, unbuilt cells in the wards the town has laid out.</summary>
+    /// <summary>Unpainted, unbuilt cells in the rings the town's charter reaches.</summary>
     public static int OpenGround(Town town)
     {
         var plan = town.Plan;
@@ -444,11 +442,11 @@ public static class Land
     /// <summary>The cells decorations stand on (null when there are none): the brush leaves those unpainted as gardens.</summary>
     private static bool[]? Gardens(Town town) => Decor.Cells(town);
 
-    /// <summary>Whether a cell lies in a ward the town has laid out (<see cref="City.IsOpen(Town, double, double)"/> at its middle).</summary>
-    public static bool Open(Town town, int i) => town.City.OpenWards.Contains(WardAt(town, i).Id);
+    /// <summary>Whether a cell lies in a ring the town's charter reaches (<see cref="City.IsOpen(Town, double, double)"/> at its middle).</summary>
+    public static bool Open(Town town, int i) => City.RingOpen(town, WardAt(town, i).Ring);
 
     /// <summary>
-    /// Zone a round patch of open ground, centred on the open cell in a laid-out ward with the lowest
+    /// Zone a round patch of open ground, centred on the open cell in a ring the charter reaches with the lowest
     /// <paramref name="key"/> (x, y, distance from the hall; null passes the cell over). Returns false when there's no room.
     /// </summary>
     public static bool PaintPatch(Town town, Zone zone, double radius, Func<double, double, double, double?> key, byte crop = 0)
@@ -525,6 +523,13 @@ public sealed class LandPlan
 
     [field: NotSaved]
     public Dictionary<(int, Zone?), List<(double Score, double X, double Y, double Yaw)>> Fronts { get; } = [];
+
+    /// <summary>Street fronts and growth spots together, per footprint depth and zone, for <see cref="GrowthSeen"/> (<see cref="Streets.Fronts"/>).</summary>
+    [field: NotSaved]
+    public Dictionary<(int, Zone), List<(double Score, double X, double Y, double Yaw)>> Growth { get; } = [];
+
+    [field: NotSaved]
+    public int GrowthSeen { get; set; } = -1;
 
     /// <summary>The ward each cell lies in (<see cref="Land.WardAt"/>).</summary>
     [field: NotSaved]

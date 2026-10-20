@@ -2,11 +2,10 @@ namespace CrownAndCompass.Sim.Systems;
 
 /// <summary>
 /// The town's streets, after Foundation: never drawn by the player, they wear in where people need
-/// to go. The charter leaves an open square before the hall. Whenever painted land lies too far from
-/// any street, a lane is worn from the middle of that land to the nearest street by the easiest way
-/// on foot (round hills, between buildings, with a little wander), and on to a second street when that
-/// saves a long way round, so the lanes knit into a web rather than spokes.
-/// Buildings front onto the streets (<see cref="Land"/>).
+/// to go. The charter leaves an open square before the hall. Painting lays no streets: houses grow in beside
+/// what is built (<see cref="Growth"/>), and the feet going to them wear paths that become lanes (<see cref="Wear"/>),
+/// by the easiest way on foot (round hills, between buildings, with a little wander).
+/// Buildings front onto the streets where they can (<see cref="Land"/>).
 /// </summary>
 public static class Streets
 {
@@ -114,8 +113,9 @@ public static class Streets
     private static readonly double[] Yards = [0, 0.3, 0.6, 0.9, 1.2];
 
     /// <summary>
-    /// <see cref="Frontage"/> best first, kept until a street is laid or paint changes: claiming a lot only takes spots,
-    /// which <see cref="Land.Fits"/> turns down, so the list stays true otherwise.
+    /// Where a building d cells deep could go in the zone, best first: spots fronting a street (<see cref="Frontage"/>, kept until
+    /// a street is laid or paint changes) and, for a painted zone, spots off the streets beside what is already built
+    /// (<see cref="Growth"/>), nearest the built town first. Kept until the plan changes.
     /// </summary>
     public static List<(double Score, double X, double Y, double Yaw)> Fronts(Town town, int d, Zone? zone)
     {
@@ -128,7 +128,105 @@ public static class Streets
         }
         if (!plan.Fronts.TryGetValue((d, zone), out var list))
             plan.Fronts[(d, zone)] = list = [.. Frontage(town, d, zone).OrderBy(c => c.Score).ThenBy(c => c.X).ThenBy(c => c.Y)];
-        return list;
+        if (zone is not Zone z || !Planning.Paintable.Contains(z)) return list;
+        if (plan.GrowthSeen != plan.Version)
+        {
+            plan.Growth.Clear();
+            plan.GrowthSeen = plan.Version;
+        }
+        if (!plan.Growth.TryGetValue((d, z), out var all))
+        {
+            // Both lists are sorted: merge them.
+            var grow = Growth(town, d, z);
+            all = new List<(double Score, double X, double Y, double Yaw)>(list.Count + grow.Count);
+            int i = 0, j = 0;
+            while (i < list.Count || j < grow.Count)
+                all.Add(j >= grow.Count || (i < list.Count && list[i].Score <= grow[j].Score) ? list[i++] : grow[j++]);
+            plan.Growth[(d, z)] = all;
+        }
+        return all;
+    }
+
+    /// <summary>
+    /// Spots off the streets in the zone's open paint where a building d cells deep could stand, the way a town grows when nobody
+    /// lays streets for it: nearest what is already built (or a street) first, so a zone fills in from the side the town is on
+    /// and spreads on from each new building. A building faces the street when one is near, else the building it grows beside;
+    /// the feet going to it wear the lane in later (<see cref="Wear"/>).
+    /// </summary>
+    public static List<(double Score, double X, double Y, double Yaw)> Growth(Town town, int d, Zone zone)
+    {
+        var plan = town.Plan;
+        var rules = town.Content.City.Growth;
+        int n = Land.Size;
+        var (field, near) = Built(plan);
+        var spots = new List<(double Score, double X, double Y, double Yaw)>();
+        // A spot's middle sits this far (cells) from the nearest wall or street at the least: half the building and a lane.
+        double least = d / 2.0 + 1;
+        for (int cy = 1; cy < n - 1; cy += 2)
+            for (int cx = 1 + (cy / 2 % 2); cx < n - 1; cx += 2)
+            {
+                int i = cy * n + cx;
+                if (plan.Zones[i] != (byte)zone || plan.Taken[i] != 0 || plan.Paved[i] != 0 || field[i] < least) continue;
+                double x = (cx + 0.5 + (Land.Jitter(i * 5 + 1) - 0.5) * 0.9) / Land.Res, y = (cy + 0.5 + (Land.Jitter(i * 5 + 2) - 0.5) * 0.9) / Land.Res;
+                // Facing what it grows beside: the street if that is what's nearest, else the neighbour's door side.
+                int k = near[i];
+                double yaw = plan.Paved[k] != 0 && Nearest(town, x, y) is { } st && st.D > 1e-6
+                    ? Land.FaceToward(x, y, st.X, st.Y)
+                    : Land.FaceToward(x, y, (k % n + 0.5) / Land.Res, (k / n + 0.5) / Land.Res);
+                yaw += (Land.Jitter(i * 5 + 3) - 0.5) * rules.Turn;
+                double dist = Math.Sqrt((x - Town.Center) * (x - Town.Center) + (y - Town.Center) * (y - Town.Center));
+                double score = (field[i] - least) / Land.Res * rules.Reach + rules.OffStreet + Land.Jitter(i * 5 + 4) * rules.Shuffle + dist * rules.Hall;
+                spots.Add((score, x, y, yaw));
+            }
+        return [.. spots.OrderBy(c => c.Score).ThenBy(c => c.X).ThenBy(c => c.Y)];
+    }
+
+    /// <summary>Distance in cells from every cell to the nearest built or paved one, and which cell that is (a two-pass chamfer).</summary>
+    private static (float[] Dist, int[] Near) Built(LandPlan plan)
+    {
+        int n = Land.Size;
+        var f = new float[n * n];
+        var near = new int[n * n];
+        for (int i = 0; i < f.Length; i++)
+        {
+            bool seed = plan.Paved[i] != 0 || plan.Taken[i] > 0;
+            f[i] = seed ? 0 : 1e6f;
+            near[i] = seed ? i : 0;
+        }
+        const float a = 1, b = 1.4142f;
+        void Try(int i, int j, float step)
+        {
+            if (f[j] + step < f[i])
+            {
+                f[i] = f[j] + step;
+                near[i] = near[j];
+            }
+        }
+        for (int y = 0; y < n; y++)
+            for (int x = 0; x < n; x++)
+            {
+                int i = y * n + x;
+                if (x > 0) Try(i, i - 1, a);
+                if (y > 0)
+                {
+                    Try(i, i - n, a);
+                    if (x > 0) Try(i, i - n - 1, b);
+                    if (x < n - 1) Try(i, i - n + 1, b);
+                }
+            }
+        for (int y = n - 1; y >= 0; y--)
+            for (int x = n - 1; x >= 0; x--)
+            {
+                int i = y * n + x;
+                if (x < n - 1) Try(i, i + 1, a);
+                if (y < n - 1)
+                {
+                    Try(i, i + n, a);
+                    if (x < n - 1) Try(i, i + n + 1, b);
+                    if (x > 0) Try(i, i + n - 1, b);
+                }
+            }
+        return (f, near);
     }
 
     /// <summary>Spots along the streets where a building d cells deep could front on one: centre, heading, and a score (nearer the hall first).</summary>
@@ -137,6 +235,8 @@ public static class Streets
         var plan = town.Plan;
         var spots = new List<(double, double, double, double)>();
         const double step = 0.3;
+        var rules = town.Content.City.Growth;
+        bool grows = zone is Zone g && Planning.Paintable.Contains(g);
         foreach (var r in plan.Streets)
             for (int s = 0; s + 3 < r.Points.Length; s += 2)
             {
@@ -161,87 +261,13 @@ public static class Streets
                             if (zone is Zone z ? plan.Zones[i] != (byte)z : plan.Zones[i] is not ((byte)Zone.None or (byte)Zone.Civic)) continue;
                             double dist = Math.Sqrt((x - Town.Center) * (x - Town.Center) + (y - Town.Center) * (y - Town.Center));
                             double yaw = Math.Atan2(nx, -ny) + (Land.Jitter(key * 3 + 2) - 0.5) * 0.14;
-                            spots.Add((dist + Land.Jitter(key) * 1.2 + Yards[yard] * 2, x, y, yaw));
+                            // Painted zones fill from the built town outward (see Growth); the council's works and bastions keep near the hall.
+                            spots.Add(grows
+                                ? (Land.Jitter(key) * rules.Shuffle + Yards[yard] * rules.Yard + dist * rules.Hall, x, y, yaw)
+                                : (dist + Land.Jitter(key) * 1.2 + Yards[yard] * 2, x, y, yaw));
                         }
             }
         return spots;
-    }
-
-    // Wearing in new lanes -------------------------------------------------------------------------
-
-    /// <summary>
-    /// Wear lanes out to painted land that no street reaches yet, as many as it takes (up to <paramref name="max"/>).
-    /// Returns how many were laid.
-    /// </summary>
-    public static int Serve(Town town, int max = 16)
-    {
-        var plan = town.Plan;
-        Decor.Cells(town);
-        if (plan.Streets.Count == 0) return 0;
-        var skip = new HashSet<int>();
-        var gap = new double[8];
-        foreach (var z in Planning.Paintable) gap[(int)z] = Gap(town, z);
-        int laid = 0, n = Land.Size;
-        for (int tries = 0; tries < max * 2 && laid < max; tries++)
-        {
-            var field = Field(plan);
-            // Painted ground far enough from every street to hold a lane with buildings along it, and how much of it lies around each cell.
-            var sum = new int[(n + 1) * (n + 1)];
-            for (int y = 0; y < n; y++)
-                for (int x = 0; x < n; x++)
-                {
-                    int i = y * n + x;
-                    byte z = plan.Zones[i];
-                    int u = z is (byte)Zone.None or (byte)Zone.Civic || plan.Taken[i] != 0 || plan.Paved[i] != 0 || field[i] < gap[z] ? 0 : 1;
-                    sum[(y + 1) * (n + 1) + x + 1] = u + sum[y * (n + 1) + x + 1] + sum[(y + 1) * (n + 1) + x] - sum[y * (n + 1) + x];
-                }
-            int Around(int x, int y, int r)
-            {
-                int x0 = Math.Max(0, x - r), y0 = Math.Max(0, y - r), x1 = Math.Min(n, x + r + 1), y1 = Math.Min(n, y + r + 1);
-                return sum[y1 * (n + 1) + x1] - sum[y0 * (n + 1) + x1] - sum[y1 * (n + 1) + x0] + sum[y0 * (n + 1) + x0];
-            }
-            int target = -1;
-            double best = double.MinValue;
-            for (int i = 0; i < field.Length; i++)
-            {
-                int x = i % n, y = i / n;
-                if (Around(x, y, 0) == 0 || skip.Contains(i) || Around(x, y, 2) < 10) continue;
-                // The middle of the widest stretch first, so each lane splits what's left.
-                double k = field[i] + Land.Jitter(i) * 4;
-                if (k > best)
-                {
-                    best = k;
-                    target = i;
-                }
-            }
-            if (target < 0) break;
-            var path = Route(town, field, target, null);
-            if (path == null)
-            {
-                // No way there: leave this bit of paint be.
-                for (int cy = target / n - Land.Res; cy <= target / n + Land.Res; cy++)
-                    for (int cx = target % n - Land.Res; cx <= target % n + Land.Res; cx++)
-                        if (cx >= 0 && cy >= 0 && cx < n && cy < n) skip.Add(cy * n + cx);
-                continue;
-            }
-            var before = (byte[])plan.Paved.Clone();
-            Lay(town, Smooth(town, path));
-            laid++;
-            // On through to another street, if that's a short way and saves going round: lanes knit into a web.
-            int join = path[^1];
-            double jx = (join % n + 0.5) / Land.Res, jy = (join / n + 0.5) / Land.Res;
-            var on = Land.Jitter(target * 5 + 3) > 0.5 ? null : Route(town, Field(plan), target, c =>
-            {
-                double x = (c % n + 0.5) / Land.Res - jx, y = (c / n + 0.5) / Land.Res - jy;
-                return before[c] != 0 && x * x + y * y > 16;
-            }, 9);
-            if (on != null && on.Count > 4)
-            {
-                Lay(town, Smooth(town, on));
-                laid++;
-            }
-        }
-        return laid;
     }
 
     // Desire paths -------------------------------------------------------------------------------
@@ -343,18 +369,6 @@ public static class Streets
             Lay(town, Smooth(town, path));
             town.Log(LedgerCategory.Town, Importance.Routine, $"Feet have worn a lane to {b.Name}.");
         }
-    }
-
-    /// <summary>
-    /// How far (in cells, from a street's edge) paint must lie before it wants a lane: past the backs of
-    /// the zone's deepest buildings, with room for half a lane and a lane's verge beyond.
-    /// </summary>
-    private static double Gap(Town town, Zone zone)
-    {
-        int d = 3;
-        foreach (var b in town.Content.Buildings)
-            if (b.Zone == zone && b.Buildable && b.Wards.Count == 0) d = Math.Max(d, Land.Footprint(b).D);
-        return (Verge + d / (double)Land.Res + Width / 2) * Land.Res + 1.5;
     }
 
     /// <summary>Distance in cells from every cell to the nearest paved one (a two-pass chamfer).</summary>
