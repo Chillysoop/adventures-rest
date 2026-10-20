@@ -133,12 +133,12 @@ void fragment() {
 		// Cobbles the masons have laid: rounded stones in staggered rows, dark mortar between.
 		float cob = smoothstep(0.35, 0.6, tw.b);
 		if (cob > 0.0) {
-			vec2 cq = p * 7.0;
+			vec2 cq = p * vec2(9.0, 12.0);
 			cq.x += step(1.0, mod(floor(cq.y), 2.0)) * 0.5;
 			vec2 cf = fract(cq) - 0.5;
-			float stone = 1.0 - smoothstep(0.32, 0.46, max(abs(cf.x), abs(cf.y)) + (nz3.g - 0.5) * 0.08);
-			vec3 cobc = mix(vec3(0.50, 0.49, 0.47), vec3(0.62, 0.60, 0.56), fract(sin(dot(floor(cq), vec2(12.9898, 78.233))) * 43758.5453));
-			vec3 mortar = vec3(0.30, 0.28, 0.25);
+			float stone = 1.0 - smoothstep(0.36, 0.5, length(cf * vec2(0.9, 1.0)) + (nz3.g - 0.5) * 0.1);
+			vec3 cobc = mix(vec3(0.58, 0.56, 0.52), vec3(0.72, 0.69, 0.63), fract(sin(dot(floor(cq), vec2(12.9898, 78.233))) * 43758.5453));
+			vec3 mortar = vec3(0.42, 0.39, 0.34);
 			col = mix(col, mix(mortar, cobc, stone), cob);
 		}
 		vec4 z = texture(zones_tex, tuv);
