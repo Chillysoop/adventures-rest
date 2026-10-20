@@ -229,6 +229,9 @@ public sealed class Simulation
 
     public bool AddWagon(int routeId) => Trade.AddWagon(Town, routeId);
 
+    /// <summary>Send the sky dock's airship on a trade run: cargo out to a settlement's market, gold and their goods home.</summary>
+    public bool SendSkyship(int settlementId, Good cargo) => Skyship.Send(Town, settlementId, cargo) != null;
+
     /// <summary>Raise a memorial to a hero in the hall of heroes.</summary>
     public bool RaiseMemorial(int heroId) => Legacies.RaiseMemorial(Town, heroId);
 
