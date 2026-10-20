@@ -279,6 +279,8 @@ public static class Roads
     public static RouteMind Mind(Town town, IReadOnlyList<Agent> members, bool hurry, bool wounded)
     {
         var c = town.Content.Roads.Choice;
+        // A company with nobody left standing still has a road home to draw, if no one to choose it.
+        if (members.Count == 0) return new RouteMind(c.TimeWeight, c.RiskWeight, 1, "", null, hurry, wounded);
         var leader = members[0];
         bool BoldOne(Agent a) => a.Has(Trait.Ambitious) || a.Has(Trait.HotTempered);
         var bold = members.FirstOrDefault(BoldOne);

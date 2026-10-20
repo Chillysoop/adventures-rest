@@ -41,6 +41,9 @@ public sealed class AgentPositions(MapView map)
         if (Passage.Fleeing(town, a)) return Geo.Center + new Vector2(Geo.Hash(a.Id * 13 + 1) - 0.5f, Geo.Hash(a.Id * 13 + 2) - 0.5f) * 3;
         if (a.Departed || a.Dead || a.IsAway || a.Activity == Activity.Sleeping) return null;
         float j1 = Geo.Hash(a.Id * 13 + 1), j2 = Geo.Hash(a.Id * 13 + 2);
+        // Turned away at a full door: they walk up to it first, then go on to wherever they thought of instead.
+        if (a.TurnedFrom is int full && map.HourFraction < 0.4f)
+            return Front(town.Lot(town.Building(full).LotId), j1, j2) + new Vector2(j1 - 0.5f, j2 - 0.5f) * 0.6f;
         if (a.LocationId is int loc)
         {
             // A hauler walks to the lumber camp or quarry (or the market at the square) and back with a load, twice an hour.
