@@ -336,7 +336,11 @@ public partial class Main
             }
             int bt = Math.Clamp(s.BelievedTier, 1, 3);
             string tier = new string('◆', bt) + new string('◇', 3 - bt);
-            string word = s.Known == SiteKnowledge.Rumoured && !s.ThoughtCleared
+            // A seat the Campaign window names reads as that, not as the rumour the town first heard of the place.
+            var seated = s.ThoughtCleared ? null : t.Saga.Menaces.FirstOrDefault(m => m.Alive && m.SeatId == s.Def.Id);
+            string word = seated != null
+                ? Ui.C(Ui.Bad, $" [font_size=11]seat of {Ui.Esc(seated.Name)}{(seated.BigBad ? ", the big bad" : "")}{(s.Def.Tier > 0 ? $", tier {s.Def.Tier}" : "")}[/font_size]")
+                : s.Known == SiteKnowledge.Rumoured && !s.ThoughtCleared
                 ? Ui.C(Ui.Ink2, $" [font_size=11]rumour: {Ui.Esc(s.Believed)} ({Rumors.Trust(s.Trust)})[/font_size]")
                 : "";
             // Its face and how hard it looks for the town's heroes, both from what the town believes is there.

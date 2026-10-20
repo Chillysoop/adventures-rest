@@ -29,6 +29,9 @@
   "motionGapDays": 3,
   "decreeMandate": 8,
   "startingMandate": 60,
+  "mandateRest": 50,
+  "mandateEase": 0.02,
+  "startingWatch": 2,
   "secrets": {
     "chance": 0.6,
     "kinds": [
