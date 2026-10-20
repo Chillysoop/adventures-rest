@@ -352,6 +352,15 @@
       "teaches": ["command:AidSettlement", "command:FundProject"]
     },
     {
+      "id": "shadows",
+      "title": "A village in shadow",
+      "text": "A risen enemy casts a [b]shadow[/b] over the settlements near it: first dread, then [b]tribute[/b] (they stop trading with you, and families slip away to your town), and at last a cult or a puppet on their seat. The campaign map shows them darkened. Win them back in [b]Diplomacy[/b]: send a hero to [b]rally[/b] them, send an envoy, or post a bounty on the enemy's site nearest them. Their rulers change too: old age, a fever, a knife in the dark, and each heir has a temperament of their own.",
+      "when": "alert:shadow",
+      "point": "tab:Diplomacy",
+      "until": "tab:Diplomacy",
+      "teaches": ["command:RallySettlement"]
+    },
+    {
       "id": "plots",
       "title": "What villains are planning",
       "text": "A menace with a name is always working toward something: seizing a road, sending tithe-takers, gathering for a raid. Scrying its seat, or a friend in a nearby settlement, tells you its plan, and the [b]Campaign[/b] window shows it with the war chests, camps and hoards its strength rests on. Clear the holding where one is kept and the town takes it, and the plan is set back. A safe settlement, with a watchtower and a strong band, can turn a plan away on its own.",

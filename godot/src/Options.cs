@@ -106,6 +106,9 @@ public sealed class Options
     public Godot.Vector2? Look;
     public bool StrategicView;
 
+    /// <summary>--shadowed: aim the camera at a settlement under an enemy's shadow (with --cam, for screenshots).</summary>
+    public bool Shadowed;
+
     /// <summary>--lens room|work|growth|appeal|danger: open the info lens on that view (for screenshots).</summary>
     public string? Lens;
     public int Yaw;
@@ -209,6 +212,7 @@ public sealed class Options
                     o.Look = new Godot.Vector2(float.Parse(xy[0], System.Globalization.CultureInfo.InvariantCulture), float.Parse(xy[1], System.Globalization.CultureInfo.InvariantCulture));
                     break;
                 case "--strategic": o.StrategicView = true; break;
+                case "--shadowed": o.Shadowed = true; break;
                 case "--lens": o.Lens = Next(); break;
                 case "--marker":
                     var mk = Next().Split(',', 4);

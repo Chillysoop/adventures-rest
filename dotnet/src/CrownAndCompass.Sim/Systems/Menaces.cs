@@ -821,6 +821,7 @@ public static class Menaces
         s.Standing = Math.Max(-100, Math.Min(s.Standing, 0) - Rules(town).SettlementHit);
         s.Allied = false;
         m.Power += Rules(town).FailedDelve;
+        Shadows.Sway(town, m, s);
         if (cu.Domain != "" && (m.Named || town.Regions[s.RegionId].Known))
             town.Log(LedgerCategory.Rumor, Importance.Notable, Saga.Cap(Saga.Fill(town, cu.Domain, m).Replace("{settlement}", s.Name)));
     }
@@ -990,6 +991,7 @@ public static class Menaces
         s.Standing = Math.Max(-100, s.Standing - r.SettlementHit);
         if (s.Allied && s.Standing < 0) s.Allied = false;
         if (known) town.Log(LedgerCategory.War, Importance.Notable, $"Runners from {s.Name} say {m.Name} has fallen on {s.People}. They ask why {town.Name}'s heroes did not come.");
+        Reigns.Struck(town, s, m);
     }
 
     /// <summary>Very hostile: the big bad, an enemy in crisis, or one that wants the town's walls or its flesh. Only these burn what they raid.</summary>

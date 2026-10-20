@@ -70,6 +70,12 @@ public sealed class Settlement
     /// <summary>The day it last sent relief to the town.</summary>
     public int ReliefDay { get; set; } = -999;
 
+    /// <summary>Its ruler's temperament, age and reign (<see cref="Reigns"/>); null until first looked at.</summary>
+    public Reign? Reign { get; set; }
+
+    /// <summary>An enemy's shadow over it (<see cref="Shadows"/>), if one lies there.</summary>
+    public SettlementShadow? Shadow { get; set; }
+
     /// <summary>"the dwarves of Ironhold".</summary>
     public string People => Kin.Name.Replace("{S}", Name);
 }
@@ -380,7 +386,7 @@ public static class World
         foreach (var s in town.Settlements)
         {
             // Feelings cool or warm back toward where they started.
-            double d = s.Kin.Start - s.Standing;
+            double d = s.Kin.Start + Reigns.Standing(town, s) - s.Standing;
             if (!s.Allied && !s.Razed) s.Standing += Math.Sign(d) * Math.Min(Math.Abs(d), w.Standing.Drift);
         }
         LapsePleas(town);
@@ -417,7 +423,7 @@ public static class World
             var site = town.Sites
                 .Where(x => !x.Cleared && LevelOf(x) <= strongest + 1 && x.RegionId is int rid && town.Regions[rid].Ring == region.Ring && town.Regions[rid].Known)
                 .Where(x => !town.Pleas.Any(p => p.SiteId == x.Def.Id && p.Status is PleaStatus.Open or PleaStatus.Taken))
-                .OrderBy(x => x.Def.Id == s.Trouble?.SiteId ? 0 : 1)
+                .OrderBy(x => x.Def.Id == s.Trouble?.SiteId || (Shadows.Shadowed(s) && x.Def.Id == s.Shadow!.SourceId) ? 0 : 1)
                 .ThenBy(x => x.RegionId == region.Id ? 0 : 1)
                 .ThenBy(x => x.Def.Tier)
                 .ThenBy(x => x.Def.Id, StringComparer.Ordinal)
@@ -431,9 +437,9 @@ public static class World
     internal static Plea? Plead(Town town, Settlement s, SiteState site, double bonus)
     {
         var rules = town.Content.World.Standing;
-        if (s.Razed || !town.Regions[s.RegionId].Known) return null;
+        if (s.Razed || !town.Regions[s.RegionId].Known || Reigns.Plea(town, s) <= 0) return null;
         if (town.Pleas.Any(p => p.SiteId == site.Def.Id && p.Status is PleaStatus.Open or PleaStatus.Taken)) return null;
-        double reward = Js.Round(rules.PleaRewardPerLevel * LevelOf(site) * (s.Allied ? 1.5 : 1) * bonus);
+        double reward = Js.Round(rules.PleaRewardPerLevel * LevelOf(site) * (s.Allied ? 1.5 : 1) * bonus * Reigns.Plea(town, s));
         Tell(town, site, rules.PleaTrust, $"a runner from {s.Name}");
         var plea = new Plea
         {
@@ -456,7 +462,8 @@ public static class World
     {
         foreach (var s in town.Settlements)
         {
-            if (!s.Allied) continue;
+            // A people paying an enemy tribute has nothing left to send.
+            if (!s.Allied || Shadows.Paying(s)) continue;
             var b = s.Kin.Boon;
             if (b.Good is Good g && b.Qty > 0) town.Market.Seed(g, b.Qty * Neighbours.BoonShare(town, s));
             if (b.HeroChance <= 0 || b.Classes.Count == 0 || s.Kin.Race == "") continue;
@@ -495,6 +502,7 @@ public static class World
         s.Envoys++;
         town.Log(LedgerCategory.Town, Importance.Routine, $"The council sends an envoy with {Js.Str(rules.EnvoyCost)} gold of gifts to {s.People}.");
         Shift(town, s, gain + Sheet.Gain(town, "envoy", Sheet.Decide(town, "envoy")));
+        Shadows.Envoy(town, s);
         return true;
     }
 

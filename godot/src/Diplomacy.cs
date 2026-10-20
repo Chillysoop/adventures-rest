@@ -24,7 +24,29 @@ public partial class Main
         var lead = Neighbours.LeaderOf(t, s);
         string Level(double v) => v >= 70 ? "high" : v >= 45 ? "fair" : v >= 25 ? "low" : "dire";
         Color Shade(double v) => v >= 45 ? Ui.Good : v >= 25 ? Ui.Gold : Ui.Bad;
-        string lines = $"[font_size=12]Led by {Ui.Esc(s.Leader)}, their {Ui.Esc(lead.Title)} · prosperity {Ui.C(Shade(s.Prosperity), Level(s.Prosperity))} · security {Ui.C(Shade(s.Security), Level(s.Security))}";
+        string ruler = s.Reign != null ? Reigns.Describe(t, s) : $"{s.Leader}, their {lead.Title}";
+        string lines = $"[font_size=12]Led by {Ui.C(Reigns.Puppet(s) ? Ui.Bad : Ui.Ink, Ui.Esc(ruler))} · prosperity {Ui.C(Shade(s.Prosperity), Level(s.Prosperity))} · security {Ui.C(Shade(s.Security), Level(s.Security))}";
+        if (s.Reign != null && !Reigns.Puppet(s))
+        {
+            var temper = Reigns.TemperOf(t, s);
+            string was = Reigns.Succession(t, s);
+            lines += "\n" + Ui.C(Ui.Ink2, $"{Ui.Esc(Ui.Cap(temper.Text))}.{(was != "" ? $" {Ui.Esc(was)}." : "")}");
+        }
+        if (Shadows.Shadowed(s) && Shadows.Over(t, s) is { } dark)
+        {
+            var sh = s.Shadow!;
+            string form = sh.Form switch
+            {
+                "dread" => "lives in dread of",
+                "tribute" => "pays tribute to",
+                "cult" => "sings the hymns of",
+                _ => "is ruled for",
+            };
+            string from = sh.SourceId is string src && Quests.Site(t, src) is { } srcSite ? $"; clear {Ui.Esc(srcSite.Def.Name)} to loosen its grip" : "";
+            lines += "\n" + Ui.C(sh.Form == "dread" ? Ui.Gold : Ui.Bad, $"In shadow: {Ui.Esc(s.Name)} {form} {Ui.Esc(dark.Name)} ({Math.Round(sh.Depth)}% deep){from}.");
+            if (sh.RallyHeroId is int hid)
+                lines += "\n" + Ui.C(Ui.Ink2, $"{Ui.Esc(t.Agent(hid).GivenName)} is {(sh.Rallied ? "on the way home" : "on the way to rally them")}.");
+        }
         if (s.Band is { } b)
             lines += b.Members > 0
                 ? $"\n{Ui.Esc(Ui.Cap(b.Name))}: {b.Members} strong, level {b.Level}, {b.Wins} {(b.Wins == 1 ? "win" : "wins")}{(b.Home ? "" : ", out on a job")}"
@@ -108,7 +130,9 @@ public partial class Main
             }
             head += "\n" + Life(t, s);
             var buttons = new List<(string, bool, bool, Action)>();
-            if (!s.Allied) buttons.Add(($"Envoy · {Js.Str(w.EnvoyCost)}g", t.Treasury >= w.EnvoyCost, false, () => Act(() => _sim.SendEnvoy(id))));
+            if (!s.Allied || Shadows.Shadowed(s)) buttons.Add(($"Envoy · {Js.Str(w.EnvoyCost)}g", t.Treasury >= w.EnvoyCost, false, () => Act(() => _sim.SendEnvoy(id))));
+            if (Shadows.Shadowed(s))
+                buttons.Add((Shadows.Rallier(t) is { } speaker && s.Shadow!.RallyHeroId == null ? $"Send {speaker.GivenName} to rally them" : "Rally", Shadows.RallyRefused(t, s) == null, true, () => Act(() => _sim.RallySettlement(id))));
             if (Neighbours.TroubleOf(t, s) is { Kind: "need", Aid: { } aid })
                 buttons.Add(($"Aid · {Js.Str(aid.Gold)}g, {Js.Str(aid.Qty)} {aid.Good.ToString().ToLowerInvariant()}", Neighbours.AidRefused(t, s) == null, true, () => Act(() => _sim.AidSettlement(id))));
             if (!open.Any(r => r.SettlementId == s.Id) && trade.Offers.Count > 0)
@@ -132,6 +156,7 @@ public partial class Main
             p.Row(Cast(t, s));
         }
         p.Note("Each settlement has its own leader, its own band of adventurers and its own troubles. Aid meets a need; a project there lasts (a watchtower keeps it safe, a bridge or patrol keeps its road open, a waystation lets your parties rest). The people you help remember it.");
+        p.Note("Rulers age, die and are overthrown, and each heir has a temperament of their own that warms or cools relations. A risen enemy's shadow spreads over the settlements near it: dread, then tribute (no trade, families fleeing to you), then a cult or a puppet ruler. Clear its site nearest them, send an envoy, or send a hero to rally them.");
         p.Note($"Envoys carry gifts, and each one pleases a little less than the last. Clearing trouble near a people, answering their pleas and every caravan that gets through all raise standing. At {Js.Str(w.Ally)} they ally with the town.");
         p.Commit();
     }
