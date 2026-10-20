@@ -158,6 +158,8 @@ public partial class TownView(MapView map) : Node3D
             var c = Geo.LotPos(lot);
             var p = new Vector3(c.X, Floor(lot), c.Y);
             string key = MeshKey(b);
+            // The mast stands empty while the airship is off (or flying out or in: see Sky).
+            if (key.StartsWith("sky_dock:", StringComparison.Ordinal) && !SkyMoored(town)) key = "sky_dock_away:" + key[9..];
             if (!groups.TryGetValue(key, out var list)) groups[key] = list = [];
             // Every building faces the way its lot was sited (toward the hall, or as the player turned it),
             // scaled from the one-tile models to its footprint.
@@ -286,6 +288,7 @@ public partial class TownView(MapView map) : Node3D
             case "undercity_gate": UndercityGate(kit, v); break;
             case "griffon_roost": GriffonRoost(kit, v); break;
             case "sky_dock": SkyDock(kit, v); break;
+            case "sky_dock_away": SkyDock(kit, v, false); break;
             case "fey_market": FeyMarket(kit, v); break;
             case "monster_sanctuary": MonsterSanctuary(kit, v); break;
             case "auction_house": AuctionHouse(kit, v); break;

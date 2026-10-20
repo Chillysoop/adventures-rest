@@ -343,6 +343,15 @@
       "teaches": ["command:AddWagon"]
     },
     {
+      "id": "sky-trade",
+      "title": "Merchant of the skies",
+      "text": "The [b]Sky Dock[/b]'s airship can trade as well as carry companies. In [b]Diplomacy[/b], under [b]The airship[/b], pick a people and a good the town can spare and [b]send[/b] it: it flies straight over rivers, lakes and mountains in half the days a caravan takes, needs no trade route, and moors anywhere the people aren't hostile. Every people pays its own price, more far out and for what they want, and less the more you have sold them lately, so spread your cargoes around. It comes home with the gold and a hold of their cheap goods the town is short of. Storms can hold it back and flying hosts can set on it. While it is out trading it carries no company, and while it carries a company it can't trade.",
+      "when": "airships",
+      "point": "tab:Diplomacy",
+      "until": "tab:Diplomacy",
+      "teaches": ["command:SendSkyship"]
+    },
+    {
       "id": "neighbours",
       "title": "Neighbours with lives of their own",
       "text": "Every settlement in [b]Diplomacy[/b] has a leader, its own small band of adventurers, and troubles: missing hunters, a broken mill, a fever. Its band goes after what it can and asks your heroes for help when it fails. Send [b]aid[/b] to meet a need, or pay for a [b]project[/b] there that lasts: a watchtower, a bridge, a waystation where your parties rest. The people you help remember it and come back with favours, and friends send relief when a host marches on you.",

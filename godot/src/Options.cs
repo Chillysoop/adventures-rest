@@ -235,7 +235,7 @@ public sealed class Options
                 case "--advance": o.Advances.Add(Next()); break;
                 case "--inspiration": o.Inspiration = int.Parse(Next()); break;
                 case "--decor-at": o.DecorAt = Next().Split(',').Select(v => double.Parse(v, System.Globalization.CultureInfo.InvariantCulture)).ToArray(); break;
-                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--stock" or "--pact" or "--buy" or "--call" or "--flag" or "--wait" or "--works" or "--roster" or "--spot" or "--draw-wall" or "--gate" or "--raise":
+                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--stock" or "--pact" or "--buy" or "--call" or "--flag" or "--wait" or "--works" or "--roster" or "--spot" or "--draw-wall" or "--gate" or "--raise" or "--skyrun":
                     o.Script.Add((args[i][2..], Next()));
                     break;
             }
@@ -273,6 +273,18 @@ public sealed class Options
                     // For shots: a civic building finished at once on the lot the council would give it.
                     var rd = t.Content.Building(arg);
                     if (Planning.CivicLot(t, rd) is { } rlot) t.AddBuilding(rd, rlot, null, rd.Name, true);
+                    break;
+                case "skyrun":
+                    // For shots of the sky dock: send the airship on its best paying run ("best") or to a settlement by name,
+                    // with the hold stocked from the market's target if the town has nothing to spare.
+                    var ports = Skyship.Ports(t).Where(s => arg == "best" || s.Name == arg).ToList();
+                    foreach (var g in Goods.All.Where(g => Skyship.Spare(t, g) < t.Content.Trade.Sky.MinCargo && t.Market.Target(g) > 0).Take(3))
+                        t.Market.Seed(g, t.Market.Target(g));
+                    t.Treasury += 500;
+                    var pick = ports.SelectMany(s => Goods.All.Where(g => Skyship.Refuse(t, s, g) == null).Select(g => (S: s, G: g)))
+                        .OrderByDescending(x => Skyship.Profit(t, x.S, x.G)).FirstOrDefault();
+                    if (pick.S != null) sim.SendSkyship(pick.S.Id, pick.G);
+                    else Godot.GD.Print($"--skyrun {arg}: nowhere to fly");
                     break;
                 case "works":
                     // For shots of the walls: raise them at once, the stone and (with "all") every work that goes on it.
