@@ -24,7 +24,7 @@ public class ExploreTests
     [Fact]
     public void PlayerOrdersTheNextChapter()
     {
-        var sim = new Simulation(new SimulationOptions { Seed = 3, AutoBounties = true, AutoCouncil = true, AutoDefense = true, AutoPlanning = true, AutoExplore = false });
+        var sim = new Simulation(new SimulationOptions { Seed = 7, AutoBounties = true, AutoCouncil = true, AutoDefense = true, AutoPlanning = true, AutoExplore = false });
         Find? waiting = null;
         for (int h = 0; h < 24 * 300 && waiting == null; h++)
         {
@@ -56,7 +56,7 @@ public class ExploreTests
     [Fact]
     public void CompanyLooksAtAMarkedSpot()
     {
-        var sim = new Simulation(new SimulationOptions { Seed = 3, AutoBounties = true, AutoCouncil = true, AutoDefense = true, AutoPlanning = true, AutoExplore = false });
+        var sim = new Simulation(new SimulationOptions { Seed = 7, AutoBounties = true, AutoCouncil = true, AutoDefense = true, AutoPlanning = true, AutoExplore = false });
         sim.RunDays(40);
         var t = sim.Town;
         t.Book(TreasuryAccount.Exploring, 500);

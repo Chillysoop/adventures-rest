@@ -84,13 +84,14 @@ public static class Cannons
     /// War-wagons roll at the gate before the first wave: the guns and a sally of the heroes at home try to stop them.
     /// Returns the share of the wall's hold left at the gate (1 when none got through).
     /// </summary>
-    public static double Wagons(Town town, string kind, int attempts, int gate, List<string> lines)
+    public static double Wagons(Town town, string kind, int attempts, int gate, List<string> lines, Battle? record = null)
     {
         var w = Rules(town).Wagons;
         var d = town.Defenses;
         bool gated = d.Palisade == PalisadeState.Built || d.StoneWall == PalisadeState.Built || d.CityWall == PalisadeState.Built;
         if (!gated || !w.Kinds.Contains(kind) || attempts < w.After) return 1;
         int n = Math.Min(w.Most, 1 + attempts - w.After);
+        if (record != null) record.Wagons = n;
         var rng = town.Rng;
         string place = Garrison.Place(town, gate);
         lines.Add(Text(w, "come", n).Replace("{gate}", place));
@@ -115,6 +116,7 @@ public static class Cannons
             n -= fired;
         }
         if (n <= 0) return 1;
+        if (record != null) record.WagonsThrough = n;
         lines.Add(Text(w, "ram", n).Replace("{gate}", place));
         return Math.Max(0.2, 1 - w.Ram * n);
     }

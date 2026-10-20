@@ -18,6 +18,10 @@ public sealed class Feature
     public double Arc { get; init; }
     public double Inner { get; init; }
     public double Outer { get; init; }
+
+    /// <summary>A gorge's rope bridge: "" none, "rope", "cut" by raiders, or rebuilt in "stone" (<see cref="Bridges"/>).</summary>
+    public string Bridge { get; set; } = "";
+    public string BridgeName { get; set; } = "";
 }
 
 /// <summary>A turn in a party's road, in day units from the town (x east, y south); <see cref="Way"/> is how they walked the stretch that ends here.</summary>
@@ -410,7 +414,7 @@ public static class Roads
             bool forced = Clip(inner, cur, cur) != null || Contains(next, cur.X, cur.Y, rules.Margin) || Contains(next, goal.X, goal.Y, rules.Margin);
             var around = forced ? [] : Around(hull, cur, goal);
             // A lake or sheer heights: nobody walks over. Those who can fly, walk on water or climb go straight across; the rest go round.
-            var needs = Passage.Needs(next.Kind);
+            var needs = Bridges.Needs(next);
             if (needs != Ways.None)
             {
                 // In the hollow before it (inside its hull, not in it): back off toward the town first, then round.

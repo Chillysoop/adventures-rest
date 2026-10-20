@@ -302,7 +302,7 @@ public static class Institutions
     public static int Calling(Town town, string cls) => town.Institutions.Count == 0 ? 0 : (int)Math.Round(Sum(town, d => d.Calling.GetValueOrDefault(cls)));
 
     /// <summary>Hours sooner than the fields the town's riders in the sky see a raid coming: at most two days.</summary>
-    public static int SkyWatch(Town town) => town.Institutions.Count == 0 ? 0 : (int)Math.Clamp(Math.Round(Sum(town, d => d.SkyWatch)), 0, 48);
+    public static int SkyWatch(Town town) => (int)Math.Clamp(Math.Round((town.Institutions.Count == 0 ? 0 : Sum(town, d => d.SkyWatch)) + Ruins.SkyWatch(town)), 0, 48);
 
     public static int Routes(Town town) => town.Institutions.Count == 0 ? 0 : (int)Math.Floor(Sum(town, d => d.Routes) + 0.05);
 

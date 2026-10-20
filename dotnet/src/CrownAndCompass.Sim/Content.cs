@@ -333,6 +333,9 @@ public sealed record SiteDef
 
     /// <summary>A floating isle: only a company that can fly, or rides the sky dock's airship, gets there.</summary>
     public bool Aloft { get; init; }
+
+    /// <summary>The old work it is the ruin of (world.json "ruins"), which the town can restore once it is cleared.</summary>
+    public string Ruin { get; init; } = "";
 }
 
 /// <summary>Town-wide economic rules.</summary>
@@ -1136,6 +1139,9 @@ public sealed record CampRules
 /// <summary>Roads, rests and the country between the town and its sites (content/game/roads.json).</summary>
 public sealed record RoadRules
 {
+    /// <summary>Rope bridges over gorges, cut by raiders and rebuilt in stone (<see cref="Systems.Bridges"/>).</summary>
+    public Systems.BridgeRules Bridges { get; init; } = new();
+
     /// <summary>Hours a party marches a day; a day's march is one day of distance on open ground.</summary>
     public int MarchHours { get; init; } = 10;
     public int Dawn { get; init; } = 6;
@@ -1225,6 +1231,7 @@ public sealed record WorldRules
     public IReadOnlyList<PeopleDef> Peoples { get; init; } = [];
     public IReadOnlyList<ThemeDef> Themes { get; init; } = [];
     public IsleRules Isles { get; init; } = new();
+    public Systems.RuinRules Ruins { get; init; } = new();
 }
 
 /// <summary>Floating isles in the far wilds (world.json "isles"), reached only by air.</summary>

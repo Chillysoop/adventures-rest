@@ -68,6 +68,9 @@ public sealed class SiteState(SiteDef def)
     /// <summary>The town keeps an outpost here: nothing resettles it, and the town sees it live.</summary>
     public bool Held { get; set; }
 
+    /// <summary>A ruin the town restored once it was cleared (<see cref="Ruins"/>): it serves the town and is never resettled.</summary>
+    public bool Restored { get; set; }
+
     /// <summary>How it picks its night (lairs.json habits); empty until it first acts.</summary>
     public string Habit { get; set; } = "";
 

@@ -75,6 +75,7 @@ public partial class Main
         }
 
         RenderCrises(p, t);
+        RenderRoads(p, t);
 
         p.Heading("Dread");
         var tone = Tones[s.Tone];
@@ -109,6 +110,41 @@ public partial class Main
             }
         }
         p.Commit();
+    }
+
+    /// <summary>Rope bridges raiders cut, ruins the companies cleared, and the dark ranger taking the town's bounties.</summary>
+    private void RenderRoads(Pane p, Town t)
+    {
+        var cut = Bridges.CutBridges(t).OrderBy(f => f.Id).ToList();
+        var ruins = Ruins.Restorable(t).ToList();
+        var camp = Poaching.Camp(t);
+        bool ranger = camp != null && t.Ranger is { Poached: > 0 };
+        if (cut.Count == 0 && ruins.Count == 0 && !ranger) return;
+        p.Heading("Roads and ruins");
+        double stone = t.Content.Roads.Bridges.Stone;
+        foreach (var f in cut)
+        {
+            int id = f.Id;
+            p.Card($"[b]{Ui.Esc(Ui.Cap(Bridges.Name(f)))}[/b]  {Tag("cut", Ui.Bad)}\n{Ui.C(Ui.Ink2, $"[font_size=12]It hangs from one side of {Ui.Esc(f.Name)}. Companies go the long way round until it is rebuilt. A stone bridge can never be cut.[/font_size]")}");
+            p.Buttons(($"Rebuild in stone, {Js.Str(stone)}g", t.Treasury >= stone, true, () => Act(() => _sim.RebuildBridge(id))));
+        }
+        foreach (var s in ruins)
+        {
+            if (Ruins.Of(t, s) is not { } k) continue;
+            string sid = s.Def.Id;
+            p.Card($"[b]{Ui.Esc(Ui.Cap(s.Def.Name))}[/b]  {Tag("cleared", Ui.Good)}\n{Ui.C(Ui.Ink2, $"[font_size=12]Restored, it {Ui.Esc(k.Gives)}.[/font_size]")}");
+            p.Buttons(($"Restore it, {Js.Str(k.Cost)}g", t.Treasury >= k.Cost, true, () => Act(() => _sim.RestoreRuin(sid))));
+        }
+        if (ranger)
+        {
+            string dealt = t.Ranger!.Dealt switch
+            {
+                "tolerated" => "The council lets her hunt the town's bounties for half the reward.",
+                "hunted" => $"The council has put her camp, {Ui.Esc(camp!.Def.Name)}, on the bounty map. Post a bounty on it to be rid of her.",
+                _ => "The council has not yet decided what to do about her.",
+            };
+            p.Card($"{Ui.KindIcon("rivals", 20)}[b]{Ui.Esc(Poaching.Name(t))}[/b], the dark ranger  {Tag($"{t.Ranger.Poached} {(t.Ranger.Poached == 1 ? "bounty" : "bounties")} taken", Ui.Accent)}\n{Ui.C(Ui.Ink2, $"[font_size=12]She rides out of {Ui.Esc(camp!.Def.Name)} and takes the town's open bounties before its heroes can. {dealt}[/font_size]")}");
+        }
     }
 
     private static readonly Dictionary<string, Color> Severities = new() { ["lesser"] = Ui.Gold, ["great"] = Ui.Accent, ["dire"] = Ui.Bad };

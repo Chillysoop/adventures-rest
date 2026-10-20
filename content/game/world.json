@@ -434,5 +434,23 @@
     "rings": [3, 4],
     "themes": ["highpeaks", "feyfringe", "rimefell", "cinderwastes"],
     "names": ["the Drifting Isle of {A}", "the {A} Skyrock", "the Isle of {B}", "the Hanging Rock of {A}"]
+  },
+  "ruins": {
+    "_doc": "Old works near the town fallen to ruin (Systems/Ruins.cs): a lair like any other until cleared, then restored for 'cost' gold to serve for good. {A} a word of the country, {B} a name.",
+    "count": 3,
+    "ring": 1,
+    "autoAt": 3,
+    "kinds": [
+      { "id": "aqueduct", "names": ["the {A} Aqueduct", "the Broken Arches of {B}"], "cost": 260, "mood": 0.04, "gives": "brings clean water down to the wells again, and the townsfolk are happier for it",
+        "text": "Masons and well-diggers set the old arches of {site} running again. Clean water comes down to the town's wells." },
+      { "id": "gatehouse", "names": ["the {A} Gatehouse", "the Old Gate of {B}"], "cost": 220, "defence": 15, "gives": "guards the road in, and the town's defence rises",
+        "text": "The council puts doors back on {site} and a watch in its towers. Nothing comes up the road unseen." },
+      { "id": "watchtower", "names": ["the {A} Watchtower", "{B}'s Tower"], "cost": 160, "skyWatch": 12, "gives": "keeps watch over the hills, and raiders are seen half a day sooner",
+        "text": "A lamp burns again at the top of {site}. Its watchers will see raiders coming half a day sooner." },
+      { "id": "star-fort", "names": ["the {A} Star Fort", "the Green Fort of {B}"], "cost": 340, "defence": 25, "gives": "stands as a bastion before the town, and the town's defence rises",
+        "text": "Ivy comes down off the bastions of {site}, and guns and a garrison go up. The old star fort guards the town again." },
+      { "id": "ivy-tower", "names": ["the {A} Tower", "the Ivy Tower of {B}"], "cost": 180, "skyWatch": 6, "defence": 5, "gives": "gives a timber lookout over the passes, and a little warning and defence",
+        "text": "Carpenters roof {site} in fresh timber and a lookout climbs to the top. It watches the passes for the town." }
+    ]
   }
 }

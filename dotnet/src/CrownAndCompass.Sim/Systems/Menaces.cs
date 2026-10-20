@@ -1209,7 +1209,7 @@ public static class Menaces
         var record = Battles.Begin(town, $"menace:{m.Id}", m.Kind, m.Name, m.Def.People, m.Leader, m.Approach, army, startDef);
         def = Math.Max(0, def - Loyalty.Betray(town, m.Name, m, lines));
         string foe = Quests.Site(town, m.SeatId)?.Def.Foe ?? "";
-        double gate = Cannons.Wagons(town, m.Kind, m.Marches - 1, Garrison.WaveSection(town, m.Approach, 1), lines);
+        double gate = Cannons.Wagons(town, m.Kind, m.Marches - 1, Garrison.WaveSection(town, m.Approach, 1), lines, record);
         for (int w = 1; w <= 3 && breaches < 2; w++)
         {
             double wave = (army / (3 - w + 1)) * (0.8 + rng.Next() * 0.4);

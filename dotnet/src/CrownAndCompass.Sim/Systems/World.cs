@@ -254,8 +254,10 @@ public static class World
 
         // Last, so the country between the sites never shifts the regions and sites a seed makes.
         Roads.Generate(town, rng);
+        Bridges.Span(town);
         PlaceFoes(town, used);
         PlaceIsles(town, used);
+        Ruins.Place(town, used, Fill);
     }
 
     /// <summary>

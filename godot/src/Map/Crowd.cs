@@ -334,7 +334,7 @@ public partial class Crowd(MapView map) : Node3D
                 var p = gen.At(s.P, bob);
                 // Swimming the moat to get away: up to the shoulders in it.
                 if (s.Fleeing && Swimming(town, s.P)) p.Y -= 0.14f;
-                var body = a.Hero != null ? Palette.ClassColor(a.Hero.Cls.Id) : Tunics[a.Id % Tunics.Length];
+                var body = a.Hero != null ? Palette.HeroColor(town, a) : Tunics[a.Id % Tunics.Length];
                 Put(p, s.Yaw, body, Palette.RaceColor(a.Race));
                 if (People.Loaded(town, a) == true && a.LocationId is int site) loads.Add((p, s.Yaw, town.Building(site).Def.Stone > town.Building(site).Def.Timber));
             }
@@ -384,12 +384,12 @@ public partial class Crowd(MapView map) : Node3D
                     // Sitting round the fire, facing it.
                     float ang = i * Mathf.Tau / p.Members.Count + 0.4f;
                     var ring = new Vector2(Mathf.Cos(ang), Mathf.Sin(ang)) * 0.55f;
-                    Put(gen.At(pos + ring), Mathf.Atan2(-ring.X, -ring.Y), Palette.ClassColor(a.Hero?.Cls.Id ?? ""), Palette.RaceColor(a.Race), 1.1f);
+                    Put(gen.At(pos + ring), Mathf.Atan2(-ring.X, -ring.Y), Palette.HeroColor(town, a), Palette.RaceColor(a.Race), 1.1f);
                     continue;
                 }
                 var off = -dir * (0.35f + i / 2 * 0.32f) + side * ((i % 2) - 0.5f) * 0.3f;
                 float bob = Mathf.Abs(Mathf.Sin(now * 9 + i * 1.7f)) * 0.03f;
-                Put(gen.At(pos + off, bob), yaw, Palette.ClassColor(a.Hero?.Cls.Id ?? ""), Palette.RaceColor(a.Race), 1.1f);
+                Put(gen.At(pos + off, bob), yaw, Palette.HeroColor(town, a), Palette.RaceColor(a.Race), 1.1f);
             }
             banners.Add((gen.At(stopped ? pos + side * 0.9f : pos), yaw, Palette.Gold));
         }
@@ -411,12 +411,12 @@ public partial class Crowd(MapView map) : Node3D
                 {
                     float ang = i * Mathf.Tau / members.Count + 0.4f;
                     var ring = new Vector2(Mathf.Cos(ang), Mathf.Sin(ang)) * 0.55f;
-                    Put(gen.At(pos + ring), Mathf.Atan2(-ring.X, -ring.Y), Palette.ClassColor(a.Hero?.Cls.Id ?? ""), Palette.RaceColor(a.Race), 1.1f);
+                    Put(gen.At(pos + ring), Mathf.Atan2(-ring.X, -ring.Y), Palette.HeroColor(town, a), Palette.RaceColor(a.Race), 1.1f);
                     continue;
                 }
                 var off = -dir * (0.35f + i / 2 * 0.32f) + side * ((i % 2) - 0.5f) * 0.3f;
                 float bob = Mathf.Abs(Mathf.Sin(now * 9 + i * 1.7f)) * 0.03f;
-                Put(gen.At(pos + off, bob), yaw, Palette.ClassColor(a.Hero?.Cls.Id ?? ""), Palette.RaceColor(a.Race), 1.1f);
+                Put(gen.At(pos + off, bob), yaw, Palette.HeroColor(town, a), Palette.RaceColor(a.Race), 1.1f);
             }
             banners.Add((gen.At(moving ? pos : pos + side * 0.9f), yaw, new Color("4f8a4a")));
         }
