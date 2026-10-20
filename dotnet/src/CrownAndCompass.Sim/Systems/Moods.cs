@@ -140,6 +140,13 @@ public static class Moods
 
     public static bool IsInspiration(Town town, MoodDef d) => Rules(town).Inspirations.Contains(d);
 
+    /// <summary>
+    /// The dice for one person's moods today: seeded from the town's seed, the hour and the person, so they are as
+    /// deterministic as the town's own (and need no saving), but rolling them leaves the town's stream where it was. A
+    /// campaign plays the same with or without the townsfolk's moods until one of them actually does something.
+    /// </summary>
+    private static Rng Dice(Town town, Agent a) => new(unchecked(town.Seed * 7919 + town.Tick * 104729 + a.Id * 31 + a.Moments.Count * 7 + 13));
+
     /// <summary>Mood a ward's feast gives its households this hour.</summary>
     public static double Feast(Town town, string wardId)
     {
@@ -192,11 +199,13 @@ public static class Moods
             if (a.Departed || a.Age < 18 || a.Episode != "" || town.Day - a.EpisodeDay < r.Cooldown) continue;
             if (a.HighDays >= r.HighDays && inspired < r.PerDay)
             {
-                if (town.Rng.Chance(r.Inspire * well * (1 - unrest) * st.Inspire * TraitFactor(a, r.InspireTraits)) && Inspire(town, a)) inspired++;
+                var dice = Dice(town, a);
+                if (dice.Chance(r.Inspire * well * (1 - unrest) * st.Inspire * TraitFactor(a, r.InspireTraits)) && Inspire(town, a, null, dice)) inspired++;
             }
             else if (a.LowDays >= r.LowDays && broke < r.PerDay)
             {
-                if (town.Rng.Chance(r.Break / well * (1 + unrest) * st.Breaks * TraitFactor(a, r.BreakTraits)) && Break(town, a)) broke++;
+                var dice = Dice(town, a);
+                if (dice.Chance(r.Break / well * (1 + unrest) * st.Breaks * TraitFactor(a, r.BreakTraits)) && Break(town, a, null, dice)) broke++;
             }
         }
     }
@@ -208,16 +217,17 @@ public static class Moods
         a.JobId is int j && town.Building(j).Def.Profession is string p ? p : a.Profession;
 
     /// <summary>Strike them with the inspiration that fits their trade (good cheer if nothing else does). Tests call it directly.</summary>
-    public static bool Inspire(Town town, Agent a, string? id = null)
+    public static bool Inspire(Town town, Agent a, string? id = null, Rng? dice = null)
     {
         var r = Rules(town);
+        dice ??= Dice(town, a);
         string trade = Trade(town, a);
         var fits = id != null
             ? r.Inspirations.Where(d => d.Id == id).ToList()
             : r.Inspirations.Where(d => d.Professions.Contains(trade)).ToList();
         foreach (var d in fits.Concat(r.Inspirations.Where(d => d.Professions.Count == 0)))
         {
-            var said = Apply(town, a, d);
+            var said = Apply(town, a, d, dice);
             if (said == null) continue;
             Begin(town, a, d, said.Value.Moment);
             // News a few days apart, and never the same kind twice running: the rest go to the full Ledger.
@@ -235,7 +245,7 @@ public static class Moods
     }
 
     /// <summary>Do what the inspiration does; the moment and the Ledger's line, or null if it can't here.</summary>
-    private static (string Moment, string Text)? Apply(Town town, Agent a, MoodDef d)
+    private static (string Moment, string Text)? Apply(Town town, Agent a, MoodDef d, Rng dice)
     {
         var work = a.JobId is int j ? town.Building(j) : null;
         string ward = Ward(town, a) is { } w ? City.Ward(town, w).Name : town.Name;
@@ -246,7 +256,7 @@ public static class Moods
             {
                 var it = town.Content.Library.Item(Skills.Practised(town, a) >= town.Content.Skills.Townsfolk.PracticeMax && d.Master != "" ? d.Master : d.Item);
                 if (it == null || work == null) return null;
-                string blade = BladeName(town);
+                string blade = BladeName(town, dice);
                 town.Moods.Blades.Add(blade);
                 var s = Armory.Add(town, it, $"forged by {a.Name} in a fit of inspiration");
                 s.Name = blade;
@@ -266,7 +276,7 @@ public static class Moods
                 var (x, y) = Decor.PosOf(town, work);
                 if (Decor.Blocked(town, def) != null || Decor.Spot(town, def, x, y, spareLand: true, within: 3) is not (double px, double py)) return null;
                 double cost = Decor.Cost(town, def);
-                if (Decor.Place(town, def.Id, px, py, town.Rng.Next() * Math.PI * 2, quiet: true) == null) return null;
+                if (Decor.Place(town, def.Id, px, py, dice.Next() * Math.PI * 2, quiet: true) == null) return null;
                 // The mason gives the work; the town pays nothing.
                 town.Book(TreasuryAccount.Decorations, cost);
                 break;
@@ -311,15 +321,15 @@ public static class Moods
     }
 
     /// <summary>A name for a forged blade that no other in town has.</summary>
-    private static string BladeName(Town town)
+    private static string BladeName(Town town, Rng dice)
     {
         var b = Rules(town).Blade;
         for (int i = 0; i < 20; i++)
         {
-            string name = town.Rng.Pick(b.First) + town.Rng.Pick(b.Last);
+            string name = dice.Pick(b.First) + dice.Pick(b.Last);
             if (!town.Moods.Blades.Contains(name)) return name;
         }
-        return $"{town.Rng.Pick(b.First)}{town.Rng.Pick(b.Last)} the {Ordinal(town.Moods.Blades.Count + 1)}";
+        return $"{dice.Pick(b.First)}{dice.Pick(b.Last)} the {Ordinal(town.Moods.Blades.Count + 1)}";
     }
 
     private static string Ordinal(int n) => n switch { 2 => "Second", 3 => "Third", 4 => "Fourth", 5 => "Fifth", _ => $"{n}th" };
@@ -327,13 +337,14 @@ public static class Moods
     // Breaks -------------------------------------------------------------------------------------
 
     /// <summary>Break them, weighing the breaks that can happen here by their traits. Tests call it directly with an id.</summary>
-    public static bool Break(Town town, Agent a, string? id = null)
+    public static bool Break(Town town, Agent a, string? id = null, Rng? dice = null)
     {
         var r = Rules(town);
+        dice ??= Dice(town, a);
         var fits = r.Breaks.Where(d => (id == null || d.Id == id) && Can(town, a, d)).ToList();
         if (fits.Count == 0) return false;
         double total = Js.Sum(fits, d => d.Weight * TraitFactor(a, d.Traits));
-        double roll = town.Rng.Next() * total;
+        double roll = dice.Next() * total;
         var pick = fits[^1];
         foreach (var d in fits)
         {
@@ -344,7 +355,7 @@ public static class Moods
                 break;
             }
         }
-        var said = Snap(town, a, pick);
+        var said = Snap(town, a, pick, dice);
         if (said == null) return false;
         Begin(town, a, pick, said.Value.Moment);
         town.Moods.Breaks++;
@@ -367,9 +378,8 @@ public static class Moods
         _ => false,
     };
 
-    private static (string Moment, string Text)? Snap(Town town, Agent a, MoodDef d)
+    private static (string Moment, string Text)? Snap(Town town, Agent a, MoodDef d, Rng rng)
     {
-        var rng = town.Rng;
         var work = a.JobId is int j ? town.Building(j) : null;
         var home = a.HomeId is int h ? town.Building(h) : null;
         var vars = new List<(string, string)>
@@ -398,9 +408,9 @@ public static class Moods
                 double gold = rng.Range(d.Gold[0], d.Gold[1] + 1);
                 var spoiled = b.Stock.Keys.Where(g => b.StockOf(g) >= 2).OrderByDescending(g => b.StockOf(g)).ThenBy(g => g).FirstOrDefault();
                 string damage;
-                if (b.Stock.Count > 0 && b.StockOf(spoiled) >= 2 && d.Stock > 0)
+                double lost = b.Stock.Count > 0 ? Math.Floor(b.StockOf(spoiled) * d.Stock) : 0;
+                if (lost >= 1)
                 {
-                    double lost = Math.Floor(b.StockOf(spoiled) * d.Stock);
                     b.AddStock(spoiled, -lost);
                     damage = $"{Js.Str(lost)} {spoiled.ToString().ToLowerInvariant()} ruined and {Js.Str(gold)} gold of broken tools";
                 }

@@ -98,6 +98,7 @@
   kept as `Town.Storyteller`; CLI and client `--storyteller id`). Pacing code multiplies its levers by `Storyteller.*`; Rising is all 1s
   with no swing and must roll nothing, so gate sweeps stay put. Moods (`content/game/moods.json`, `Systems/Moods.cs`): townsfolk high for
   days get a trade inspiration, low ones break (`Agent.Episode`, shown as street bubbles and in the inspector; `--episode id` stages one).
+  Their rolls use `Moods.Dice` (seeded from seed, tick and person), not `Town.Rng`, so moods never shift the main stream.
 - Decorations (`content/game/decor.json`, `Systems/Decor.cs`, client `Map/Decorator.cs`, `Map/DecorView.cs`): free positions in
   tiles from the town's corner and any angle (radians, model front +Z turned by it). Every piece needs a small effect in
   another system, capped in decor.json. Pieces claim plan cells (`Decor.Cells`, `LandPlan.Decor`): `Land.Fits` and lanes go
