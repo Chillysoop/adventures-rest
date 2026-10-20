@@ -402,6 +402,7 @@ public partial class Main : Control
         else if (k.Keycode == Key.Escape && _map.Flagging) ToggleFlag();
         else if (k.Keycode == Key.Escape && _map.Scouting) ToggleScouting();
         else if (k.Keycode == Key.Escape && _strikePanel.Visible) ShowStrike(false);
+        else if (k.Keycode is Key.Enter or Key.KpEnter or Key.Backspace && _map.Planner.WallKey(k.Keycode)) { }
         else if (k.Keycode == Key.Escape && _map.Planner.Active) _map.Planner.Pick(null);
         else if (k.Keycode is Key.Bracketleft or Key.Bracketright && _map.Planner.Tool?.Zone != null) _map.Planner.Resize(k.Keycode == Key.Bracketright ? 1.15f : 1 / 1.15f);
         else if (k.Keycode == Key.Escape && _map.Decorator.Active) _map.Decorator.Pick(null);

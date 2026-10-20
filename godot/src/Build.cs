@@ -21,7 +21,7 @@ public partial class Main
     }
 
     /// <summary>One button on the bar: a zone to paint, a building to place, or a defense to order.</summary>
-    private sealed record BuildItem(string Label, Zone? Zone = null, string? Building = null, DefenseWork? Defense = null, int Density = 0, string? Crop = null);
+    private sealed record BuildItem(string Label, Zone? Zone = null, string? Building = null, DefenseWork? Defense = null, int Density = 0, string? Crop = null, bool Gate = false);
 
     private PanelContainer _buildBar = null!;
     private HFlowContainer _buildItems = null!;
@@ -48,7 +48,15 @@ public partial class Main
         new("Palisade", Defense: DefenseWork.Palisade), new("Watchtower", Defense: DefenseWork.Tower),
         new("Stone Walls", Defense: DefenseWork.StoneWall), new("Gatehouse", Defense: DefenseWork.Gatehouse),
         new("Moat", Defense: DefenseWork.Moat), new("Wall Barracks", Defense: DefenseWork.Barracks), new("City Wall", Defense: DefenseWork.CityWall),
+        new("Wall Gate", Gate: true),
     ];
+
+    /// <summary>The wall a gate goes on now: the city wall once it is going up, else the old town's.</summary>
+    private int GateRing() => WallLines.Begun(_sim.Town, 1) ? 1 : 0;
+
+    /// <summary>A wall not yet begun is drawn first (then given a gate, which starts the work); other works are ordered at once.</summary>
+    private bool DrawsFirst(DefenseWork d) => Threat.IsWall(d) && !WallLines.Begun(_sim.Town, WallLines.RingOf(d))
+        && (d != DefenseWork.StoneWall || _sim.Town.Defenses.Palisade == PalisadeState.None);
 
     /// <summary>The bar's buttons, from the content: everything the town could ever place, in the order the charters open it.</summary>
     private BuildItem[] BuildItems(BuildGroup g)
@@ -162,7 +170,7 @@ public partial class Main
         }
         foreach (var item in BuildItems(g))
         {
-            var b = new Button { ToggleMode = item.Defense == null, FocusMode = FocusModeEnum.None, CustomMinimumSize = new Vector2(112, 58), ClipText = true };
+            var b = new Button { ToggleMode = item.Defense == null || Threat.IsWall(item.Defense.Value), FocusMode = FocusModeEnum.None, CustomMinimumSize = new Vector2(112, 58), ClipText = true };
             b.AddThemeFontSizeOverride("font_size", 12);
             if (item.Zone is Zone z)
             {
@@ -180,9 +188,21 @@ public partial class Main
 
     private void PressBuild(BuildItem item, Button b)
     {
+        if (item.Gate)
+        {
+            _map.Planner.Pick(b.ButtonPressed ? new Planner.PlanTool(null, null) { Gate = GateRing() } : null);
+            return;
+        }
         if (item.Defense is DefenseWork d)
         {
-            _sim.BuildDefense(d);
+            if (DrawsFirst(d))
+            {
+                _map.Planner.Pick(b.ButtonPressed ? new Planner.PlanTool(null, null) { Wall = WallLines.RingOf(d), Work = d } : null);
+                return;
+            }
+            b.SetPressedNoSignal(false);
+            if (!_sim.BuildDefense(d) && Threat.BuildBlocked(_sim.Town, d) is { } why && why.StartsWith("needs a gate"))
+                _map.Planner.Pick(new Planner.PlanTool(null, null) { Gate = WallLines.RingOf(d), Work = d });
             _dirty = true;
             return;
         }
@@ -193,7 +213,9 @@ public partial class Main
     {
         var tool = _map.Planner.Tool;
         foreach (var (item, b) in _buildButtons)
-            if (b.ToggleMode) b.SetPressedNoSignal(tool != null && tool.Zone == item.Zone && tool.Building == item.Building && tool.Density == item.Density && tool.Crop == item.Crop);
+            if (b.ToggleMode) b.SetPressedNoSignal(tool != null && (item.Gate ? tool.Gate != null && tool.Work == null
+                : item.Defense is DefenseWork dw ? tool.Work == dw
+                : tool.Wall == null && tool.Gate == null && tool.Zone == item.Zone && tool.Building == item.Building && tool.Density == item.Density && tool.Crop == item.Crop));
     }
 
     /// <summary>Costs, open land and what blocks each item, refreshed as the town changes.</summary>
@@ -233,10 +255,19 @@ public partial class Main
                     tip = $"{Ui.Cap(dd.Name.ToLowerInvariant())}-density {Planning.ZoneName(z)}: {dd.Blurb} Painting over built {Planning.ZoneName(z)} land changes its density too.";
                 }
             }
+            else if (item.Gate)
+            {
+                int ring = GateRing();
+                why = WallLines.Gates(town, ring).Count >= town.Content.City.WallLines.Most ? $"a wall has at most {town.Content.City.WallLines.Most} gates" : null;
+                line = why ?? (WallLines.GateCost(town, ring) is > 0 and var gc ? $"{Js.Str(gc)}g" : "mark on the line");
+                tip = "A gate in the wall, snapped onto its line where you click. Every wall needs at least one, and up to four: the townsfolk and the watch go in and out by them, and raiders try them first.";
+            }
             else if (item.Defense is DefenseWork d)
             {
                 why = Threat.BuildBlocked(town, d);
-                line = why ?? $"{Threat.BuildCost(town, d)}g";
+                // A wall waiting only for its line and gate is drawn, not blocked.
+                if (why != null && why.StartsWith("needs a gate")) why = null;
+                line = why ?? (DrawsFirst(d) ? $"draw · {Threat.BuildCost(town, d)}g" : $"{Threat.BuildCost(town, d)}g");
                 tip = d switch
                 {
                     DefenseWork.Palisade => "A wall of stakes around the town. Raiders and the warband break on it.",
@@ -268,6 +299,8 @@ public partial class Main
             { Zone: Zone.Farmland, Crop: string c } => $"Sow fields with {(Farming.Crop(town, c)?.Name ?? c).ToLowerInvariant()}, out beyond the houses where the farmers live; painting over open fields of another crop resows them (other zones stay as they are: clear them first to repaint). Right-click puts the tool down.",
             { Zone: Zone z, Density: > 0 } t => $"Paint {Density.Name(town, t.Density).ToLowerInvariant()}-density {Planning.ZoneName(z)} land, on open ground or over built {Planning.ZoneName(z)} streets to let them grow taller (other zones stay as they are: clear them first to repaint). Faint outlines show where buildings will fit. [ ] or Shift+wheel sizes the brush. Right-click puts the tool down.",
             { Zone: Zone z } => $"Paint {Planning.ZoneName(z)} land on open ground (other zones stay as they are: clear them first to repaint). Faint outlines show where buildings will fit. [ ] or Shift+wheel sizes the brush. Right-click puts the tool down.",
+            { Wall: int } => "Draw the wall: click corners round the town and click the first again to close it, or Enter to keep the line shown. It must ring the town hall and miss every building. Backspace takes back a corner; right-click puts the tool down.",
+            { Gate: int } => "Click on the wall's line to place a gate (every wall needs one, up to four). The masons start once the wall has a gate. Right-click when done.",
             { Building: string id } => $"Click to place the {town.Content.Building(id).Name.ToLowerInvariant()} facing the nearest lane, or drag to turn it any way (Shift+wheel turns it too). Green ground takes it; a click near it settles on the nearest spot that fits. Right-click puts the tool down.",
             _ => GroupHints[_buildGroup],
         };
