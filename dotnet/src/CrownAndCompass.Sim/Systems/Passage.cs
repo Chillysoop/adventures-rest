@@ -206,7 +206,7 @@ public static class Passage
     private static string Key(Town town)
     {
         var d = town.Defenses;
-        return $"{d.Palisade}|{d.StoneWall}|{d.CityWall}|{d.Moat}|{d.Gatehouse}";
+        return $"{d.Palisade}|{d.StoneWall}|{d.CityWall}|{d.Moat}|{d.Gatehouse}|{town.City.WallVersion}";
     }
 
     /// <summary>
@@ -252,12 +252,19 @@ public static class Passage
             var (bx, by) = loop[(i + 1) % N];
             area += ax * by - bx * ay;
         }
-        var (gx, gy) = loop[0];
-        double ox = gx - Town.Center, oy = gy - Town.Center, len = Math.Sqrt(ox * ox + oy * oy);
-        (ox, oy) = (ox / len, oy / len);
-        string gate = kind == "palisade" ? "gate" : town.Defenses.Gatehouse == PalisadeState.Built && ring == 0 ? "gatehouse" : "gate";
-        var opening = new Opening(reach > w.Wall ? "bridge" : gate, (gx - ox * w.GateIn, gy - oy * w.GateIn), (gx + ox * (reach + w.GateOut), gy + oy * (reach + w.GateOut)));
-        return new Barrier(kind, loop, edge, outer, [opening], Math.Abs(area) / 2) { Reach = reach, Foot = w.Wall, Round = w.Round };
+        // Its gates, where the player put them on the line (the main gate first, which the gatehouse stands over).
+        var heads = WallLines.Gates(town, ring);
+        if (heads.Count == 0) heads = [Math.PI / 2];
+        var openings = new List<Opening>();
+        for (int g = 0; g < heads.Count; g++)
+        {
+            var (gx, gy) = WallLines.Point(town, ring, heads[g]);
+            double ox = gx - Town.Center, oy = gy - Town.Center, len = Math.Sqrt(ox * ox + oy * oy);
+            (ox, oy) = (ox / len, oy / len);
+            string gate = kind == "palisade" ? "gate" : g == 0 && town.Defenses.Gatehouse == PalisadeState.Built && ring == 0 ? "gatehouse" : "gate";
+            openings.Add(new Opening(reach > w.Wall ? "bridge" : gate, (gx - ox * w.GateIn, gy - oy * w.GateIn), (gx + ox * (reach + w.GateOut), gy + oy * (reach + w.GateOut))));
+        }
+        return new Barrier(kind, loop, edge, outer, openings, Math.Abs(area) / 2) { Reach = reach, Foot = w.Wall, Round = w.Round };
     }
 
     /// <summary>A closed loop moved out by <paramref name="d"/> tiles, every edge parallel to its own (mitred corners).</summary>

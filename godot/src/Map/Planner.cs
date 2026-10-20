@@ -15,7 +15,13 @@ namespace CrownAndCompass.Client.Map;
 public partial class Planner(MapView map) : Control
 {
     /// <summary>A zone to paint (Zone.None clears land) at a density (homes and shops only) or sown with a crop (farmland), or a building to place, by content id.</summary>
-    public sealed record PlanTool(Zone? Zone, string? Building, int Density = 0, string? Crop = null);
+    public sealed record PlanTool(Zone? Zone, string? Building, int Density = 0, string? Crop = null)
+    {
+        /// <summary>A wall's line to draw corner by corner (its ring), or a gate to snap onto it; the work to start once it has a gate.</summary>
+        public int? Wall { get; init; }
+        public int? Gate { get; init; }
+        public DefenseWork? Work { get; init; }
+    }
 
     public PlanTool? Tool { get; private set; }
 
@@ -33,6 +39,9 @@ public partial class Planner(MapView map) : Control
 
     private Vector2? _hover, _press;
 
+    /// <summary>The corners of the wall being drawn, in town tiles.</summary>
+    private readonly List<Vector2> _corners = [];
+
     /// <summary>The heading a building ghost is turned to, or null to face the nearest lane.</summary>
     private float? _yaw;
 
@@ -42,6 +51,7 @@ public partial class Planner(MapView map) : Control
     {
         Tool = tool;
         _stroke.Clear();
+        _corners.Clear();
         _press = null;
         _yaw = null;
         QueueRedraw();
@@ -118,6 +128,26 @@ public partial class Planner(MapView map) : Control
     public void Release(Vector2 w)
     {
         var town = map.Sim.Town;
+        if (Tool is { Wall: int ring })
+        {
+            var at = ToTown(w);
+            // Back on the first corner closes the loop.
+            if (_corners.Count >= 3 && at.DistanceTo(_corners[0]) < 0.9f) CloseWall(ring);
+            else _corners.Add(at);
+            QueueRedraw();
+            return;
+        }
+        if (Tool is { Gate: int gr })
+        {
+            var at = ToTown(w);
+            if (map.Sim.PlaceGate(gr, at.X, at.Y) is { } no) Said?.Invoke($"No gate there: {no}.");
+            else if (Tool.Work is DefenseWork work && !WallLines.Begun(town, gr) && map.Sim.BuildDefense(work))
+                Said?.Invoke($"The gate is marked and work begins on {WallLines.WallName(town, gr)}. Click the line again for more gates; right-click when done.");
+            else Said?.Invoke("A gate is marked on the wall. Right-click when done.");
+            Changed?.Invoke();
+            QueueRedraw();
+            return;
+        }
         if (Tool is { Zone: Zone z } && _stroke.Count > 0)
         {
             Dab(ToTown(w));
@@ -140,6 +170,43 @@ public partial class Planner(MapView map) : Control
             _yaw = null;
         }
         QueueRedraw();
+    }
+
+    /// <summary>Lays the drawn loop as the wall's line, then hands over to placing its gates.</summary>
+    private void CloseWall(int ring)
+    {
+        if (map.Sim.DrawWall(ring, _corners.Select(c => ((double)c.X, (double)c.Y))) is { } why)
+        {
+            Said?.Invoke($"The wall can't run there: {why}.");
+            return;
+        }
+        Said?.Invoke("The line is marked. Now click on it to place a gate: every wall needs one.");
+        GateNext(ring);
+    }
+
+    private void GateNext(int ring)
+    {
+        var work = Tool?.Work;
+        Pick(new PlanTool(null, null) { Gate = ring, Work = work });
+    }
+
+    /// <summary>Enter closes the wall being drawn (or keeps the line already there and goes on to its gates); Backspace takes back a corner.</summary>
+    public bool WallKey(Key k)
+    {
+        if (Tool is not { Wall: int ring }) return false;
+        if (k is Godot.Key.Enter or Godot.Key.KpEnter)
+        {
+            if (_corners.Count >= 3) CloseWall(ring);
+            else GateNext(ring);
+            return true;
+        }
+        if (k == Godot.Key.Backspace && _corners.Count > 0)
+        {
+            _corners.RemoveAt(_corners.Count - 1);
+            QueueRedraw();
+            return true;
+        }
+        return false;
     }
 
     /// <summary>Shift+wheel sizes the brush or turns the ghost; [ and ] size the brush. Returns whether it was used.</summary>
@@ -166,6 +233,11 @@ public partial class Planner(MapView map) : Control
         if (Tool == null || map.Sim == null || _hover is not Vector2 h) return;
         var town = map.Sim.Town;
         Wards(town);
+        if (Tool.Wall is int wr || Tool.Gate is int)
+        {
+            WallTool(town, h);
+            return;
+        }
         if (Tool.Zone is Zone z)
         {
             var c = z == Zone.None ? new Color(0.95f, 0.9f, 0.8f) : ToolColor(town, Tool);
@@ -202,6 +274,54 @@ public partial class Planner(MapView map) : Control
             DrawStringOutline(Ui.Bold, s - new Vector2(lw / 2, 0), label, HorizontalAlignment.Left, -1, 13, 4, new Color(0.08f, 0.06f, 0.04f, 0.85f));
             DrawString(Ui.Bold, s - new Vector2(lw / 2, 0), label, HorizontalAlignment.Left, -1, 13, new Color("f6eedb"));
         }
+    }
+
+    /// <summary>The wall's line as it stands now (dashed), its gates, and the corners being drawn or the gate a click would place.</summary>
+    private void WallTool(Town town, Vector2 h)
+    {
+        int ring = Tool!.Wall ?? Tool.Gate ?? 0;
+        var stone = new Color("e8dcc0");
+        const int Steps = 96;
+        var line = new Vector2[Steps + 1];
+        for (int i = 0; i <= Steps; i++)
+        {
+            var (x, y) = WallLines.Point(town, ring, WallLines.Heading(i % Steps));
+            line[i] = Screen(new Vector2((float)x, (float)y));
+        }
+        var dim = new Color(stone, Tool.Wall != null ? 0.45f : 0.9f);
+        for (int i = 0; i < Steps; i += 2) DrawLine(line[i], line[i + 1], dim, Tool.Wall != null ? 2 : 3, true);
+        foreach (double g in WallLines.Gates(town, ring)) GateMark(town, ring, g, new Color("e8b04a"));
+        if (Tool.Wall != null)
+        {
+            var red = new Color(0.9f, 0.3f, 0.25f);
+            var pts = _corners.Select(Screen).ToList();
+            pts.Add(Screen(h));
+            var c = _corners.Count >= 3 && WallLines.DrawBlocked(town, ring, [.. _corners.Select(v => ((double)v.X, (double)v.Y)), (h.X, h.Y)]) != null ? red : stone;
+            if (pts.Count >= 2) DrawPolyline([.. pts], c, 3, true);
+            foreach (var p in _corners) DrawCircle(Screen(p), 5, c);
+            if (_corners.Count > 0) DrawArc(Screen(_corners[0]), 10, 0, Mathf.Tau, 24, new Color("f6eedb"), 2, true);
+            string hint = _corners.Count == 0 ? "Click round the town to draw the wall · Enter keeps the line shown"
+                : _corners.Count < 3 ? "Keep clicking corners · Backspace takes one back"
+                : "Click the first corner (or Enter) to close the wall";
+            Label(map.ToScreen(FromTown(h.X, h.Y), 0.7f) + new Vector2(0, -16), hint, 12, new Color("f6eedb"));
+            return;
+        }
+        double a = Math.Atan2(h.Y - Town.Center, h.X - Town.Center);
+        string? why = WallLines.GateBlocked(town, ring, h.X, h.Y);
+        GateMark(town, ring, a, why == null ? new Color(0.45f, 0.9f, 0.4f) : new Color(0.9f, 0.3f, 0.25f));
+        double cost = WallLines.GateCost(town, ring);
+        Label(map.ToScreen(FromTown(h.X, h.Y), 0.7f) + new Vector2(0, -16), why == null ? cost > 0 ? $"Gate · {Js.Str(cost)}g" : "Gate" : Ui.Cap(why), 12, new Color("f6eedb"));
+    }
+
+    private void GateMark(Town town, int ring, double angle, Color c)
+    {
+        var (x, y) = WallLines.Point(town, ring, angle);
+        var p = new Vector2((float)x, (float)y);
+        var out1 = new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle)) * 0.7f;
+        var side = new Vector2(-out1.Y, out1.X);
+        Vector2[] q = [Screen(p - out1 - side), Screen(p - out1 + side), Screen(p + out1 + side), Screen(p + out1 - side)];
+        DrawColoredPolygon(q, new Color(c, 0.55f));
+        DrawPolyline([.. q, q[0]], c, 2, true);
     }
 
     private (Zone Zone, int Version, List<Lot> Lots)? _plots;
