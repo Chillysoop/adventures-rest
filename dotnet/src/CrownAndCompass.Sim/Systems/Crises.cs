@@ -307,7 +307,7 @@ public static class Crises
             if (town.Saga.Act < r.MinAct && !m.BigBad) continue;
             var last = book.All.Where(c => c.MenaceId == m.Id).Select(c => c.EndedDay ?? town.Day).DefaultIfEmpty(-r.CooldownDays).Max();
             if (town.Day - last < r.CooldownDays) continue;
-            if (book.Ripeness[m.Id] >= r.RipenDays || m.BigBad) Begin(town, m);
+            if (book.Ripeness[m.Id] >= r.RipenDays * Storyteller.Of(town).Ripen || m.BigBad) Begin(town, m);
         }
         Pressure(town);
     }

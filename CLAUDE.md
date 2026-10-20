@@ -82,6 +82,10 @@
   river and its fords and bridges come from the sim (`Passage.River`, `Crossings`); roads.json kinds with a `barrier` are
   skirted unless the party has the way across (mounts, spells, items in passage.json; `Passage.Abilities`). Townsfolk
   only swim the moat or climb the wall when fleeing a raid next to them (`Passage.Fleeing`), never to get to work.
+- Storytellers (`content/game/storytellers.json`, `Systems/Storyteller.cs`): the difficulty, chosen on New game (`SimulationOptions.Storyteller`,
+  kept as `Town.Storyteller`; CLI and client `--storyteller id`). Pacing code multiplies its levers by `Storyteller.*`; Rising is all 1s
+  with no swing and must roll nothing, so gate sweeps stay put. Moods (`content/game/moods.json`, `Systems/Moods.cs`): townsfolk high for
+  days get a trade inspiration, low ones break (`Agent.Episode`, shown as street bubbles and in the inspector; `--episode id` stages one).
 - Decorations (`content/game/decor.json`, `Systems/Decor.cs`, client `Map/Decorator.cs`, `Map/DecorView.cs`): free positions in
   tiles from the town's corner and any angle (radians, model front +Z turned by it). Every piece needs a small effect in
   another system, capped in decor.json. Pieces claim plan cells (`Decor.Cells`, `LandPlan.Decor`): `Land.Fits` and lanes go

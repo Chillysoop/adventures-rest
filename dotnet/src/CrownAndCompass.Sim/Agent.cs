@@ -122,6 +122,9 @@ public sealed class HeroSheet
     /// <summary>Magic gear worn, by slot (weapon, armor, shield, trinket).</summary>
     public OrderedMap<string, LibItem> Magic { get; } = new();
 
+    /// <summary>Names townsfolk gave the gear they forged, by the slot it is worn in (<see cref="Systems.Moods"/>).</summary>
+    public OrderedMap<string, string> Named { get; } = new();
+
     /// <summary>Names of the magic gear worn, in slot order.</summary>
     public List<string> Items { get; } = [];
 
@@ -269,6 +272,20 @@ public sealed class Agent
     public int MoodSamples { get; set; }
     public double LastDayMood { get; set; } = 70;
     public int MiserableDays { get; set; }
+
+    /// <summary>Days in a row their mood has been high, or low, enough to be struck by an inspiration or a break (<see cref="Systems.Moods"/>).</summary>
+    public int HighDays { get; set; }
+    public int LowDays { get; set; }
+
+    /// <summary>The inspiration or break they are in the grip of (a moods.json id), "" for none, and the tick it passes.</summary>
+    public string Episode { get; set; } = "";
+    public int EpisodeUntil { get; set; }
+
+    /// <summary>The day their last inspiration or break came; none comes again too soon.</summary>
+    public int EpisodeDay { get; set; } = -999;
+
+    /// <summary>What their inspirations and breaks came to, oldest first, for the inspector ("day 34: forged Emberfang").</summary>
+    public List<string> Moments { get; } = [];
     public int DaysUnemployed { get; set; }
     public int DaysHomeless { get; set; }
     public int RentArrears { get; set; }

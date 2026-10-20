@@ -113,6 +113,12 @@ public sealed class StockItem
 
     /// <summary>"the Iron Wolves' hoard", "a caravan from Highfold", "handed back by Bryn".</summary>
     public string From { get; init; } = "";
+
+    /// <summary>The name a townsperson gave the blade they forged (<see cref="Systems.Moods"/>), "" for none.</summary>
+    public string Name { get; set; } = "";
+
+    /// <summary>"Emberfang, a +1 weapon", or the item's own name.</summary>
+    public string Title => Name != "" ? $"{Name}, {Gear.Plainly(Item)}" : Gear.Plainly(Item);
 }
 
 /// <summary>Something offered to the town for gold: a hero's spare loot, or a caravan's wares.</summary>
@@ -250,12 +256,18 @@ public static class Armory
         }
         else
         {
+            string slot = Gear.SlotOf(it), oldName = s.Named.Get(slot, "");
             var old = Gear.Fit(town, a, it);
-            what = $"the {Gear.Label(s, it)}";
+            if (stock.Name != "")
+            {
+                s.Named[slot] = stock.Name;
+                Gear.Relist(s);
+            }
+            what = stock.Name != "" ? Gear.Label(s, it) : $"the {Gear.Label(s, it)}";
             if (old != null)
             {
-                Add(town, old, $"handed back by {a.GivenName}");
-                what += $", and hands the {Gear.Plainly(old)} back to the armory";
+                Add(town, old, $"handed back by {a.GivenName}").Name = oldName;
+                what += $", and hands the {(oldName != "" ? oldName : Gear.Plainly(old))} back to the armory";
             }
         }
         double pay = Math.Min(r.Gift.PayCap, Gear.SellValue(town, it) * r.Gift.Pay);

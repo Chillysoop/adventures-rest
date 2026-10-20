@@ -704,7 +704,7 @@ public static class Menaces
         var r = Rules(town);
         var cu = CunningOf(town, m);
         var am = AmbitionOf(town, m);
-        double g = r.Growth * cu.Growth * am.Growth * (seat.Known != SiteKnowledge.Unheard ? 1 : r.UnknownGrowth) * (1 + m.Holdings.Count * r.HoldingGrowth) * Plots.Growth(town, m) * Saga.Pace(town) * Seasons.Activity(town, m.Kind);
+        double g = r.Growth * cu.Growth * am.Growth * (seat.Known != SiteKnowledge.Unheard ? 1 : r.UnknownGrowth) * (1 + m.Holdings.Count * r.HoldingGrowth) * Plots.Growth(town, m) * Saga.Pace(town) * Storyteller.MenaceGrowth(town) * Seasons.Activity(town, m.Kind);
         if (m.FactionId != null && Factions.Find(town, m.FactionId) is FactionState f && f.Active) g += f.Members.Count * 0.1;
         // Every party that went for it and came back without finishing it makes it bolder, and a proud one angry.
         if (seat.Attempts > m.SeenAttempts)
@@ -882,7 +882,7 @@ public static class Menaces
         var rng = town.Rng;
         double far = 1 + 0.25 * Math.Max(0, seat.Def.Distance - 1);
         // A menace in its season strikes more often; one out of it keeps to its lair.
-        m.NextStrikeTick = town.Tick + (int)Math.Round(rng.Range(r.StrikeEveryDays[0], r.StrikeEveryDays[1] + 1) * far / Seasons.Activity(town, m.Kind)) * SimTime.HoursPerDay;
+        m.NextStrikeTick = town.Tick + (int)Math.Round(rng.Range(r.StrikeEveryDays[0], r.StrikeEveryDays[1] + 1) * far * Storyteller.StrikeEvery(town) / Seasons.Activity(town, m.Kind)) * SimTime.HoursPerDay;
         var am = AmbitionOf(town, m);
         // Left alone, a menace that only holds its land keeps to it.
         if (am.Id == "territory" && town.Tick >= m.ProvokedUntilTick) return;

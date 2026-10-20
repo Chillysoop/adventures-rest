@@ -31,6 +31,8 @@ public partial class Main
         var s = t.Saga;
         var acts = t.Content.Saga.Acts;
         p.Begin();
+        var teller = Storyteller.Of(t);
+        p.Text($"{Tag(teller.Title, Ui.Ink2)} Told by [b]{Ui.Esc(teller.Name)}[/b]\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(teller.Character)}[/font_size]")}", 13);
         if (!s.Enabled || acts.Count == 0)
         {
             p.Note("This town plays the short campaign: it ends at the Last Stand.");

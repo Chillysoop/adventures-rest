@@ -1293,6 +1293,12 @@ public sealed class Content
     /// <summary>The yearly tourney: its events, levels, champions and betting (content/game/tournaments.json).</summary>
     public TourneyRules Tourney { get; init; } = new();
 
+    /// <summary>Townsfolk's inspirations and breaks (content/game/moods.json).</summary>
+    public MoodRules Moods { get; init; } = new();
+
+    /// <summary>The storytellers a town can be founded under, the game's difficulty (content/game/storytellers.json).</summary>
+    public StorytellerRules Storytellers { get; init; } = new();
+
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
 
@@ -1461,6 +1467,8 @@ public sealed class Content
             Skills = Parse<SkillRules>("skills.json"),
             Crises = Parse<CrisisRules>("crises.json"),
             Tourney = Parse<TourneyRules>("tournaments.json"),
+            Moods = Parse<MoodRules>("moods.json"),
+            Storytellers = Parse<StorytellerRules>("storytellers.json"),
         };
     }
 

@@ -55,6 +55,9 @@ public static class Brain
         // Sleep is sticky: once down for the night, stay down until rested or morning.
         if (a.Activity == Activity.Sleeping && a.Fatigue > 5 && (night || a.Fatigue > 40)) return Activity.Sleeping;
 
+        // A break holds them: on a bender they drink the waking hours away, sulking they stay in (Moods).
+        if (a.Episode != "" && !night && a.Fatigue < 90 && a.Hunger < 70 && Moods.Holds(town, a) is Activity held) return held;
+
         double sleep = (a.Fatigue / 100) * (night ? 2.0 : hour >= 21 ? 1.0 : 0.3) + (a.Fatigue > 90 ? 1 : 0);
 
         bool canEat = a.Gold >= town.Market.Quote(Good.Food, 1);

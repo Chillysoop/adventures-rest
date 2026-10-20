@@ -1,0 +1,117 @@
+{
+  "high": 82,
+  "highDays": 4,
+  "low": 52,
+  "lowDays": 2,
+  "inspire": 0.0016,
+  "break": 0.05,
+  "mandatePivot": 60,
+  "mandatePer": 0.015,
+  "unrestPer": 0.01,
+  "cooldown": 30,
+  "perDay": 1,
+  "notableGap": 5,
+  "keep": 4,
+  "showHours": 14,
+  "inspireTraits": { "Ambitious": 1.5, "Generous": 1.2, "Lazy": 0.5 },
+  "breakTraits": { "HotTempered": 1.4, "Shy": 1.2, "Generous": 0.8 },
+  "blade": {
+    "first": ["Ember", "Frost", "Thorn", "Dawn", "Grief", "Oath", "Wolf", "Storm", "Ash", "Briar", "Iron", "Raven", "Kestrel", "Hearth", "Morrow", "Gloam", "Wren", "Cinder"],
+    "last": ["fang", "brand", "song", "bite", "edge", "wake", "tooth", "call", "mourn", "ward", "thorn", "sting"]
+  },
+  "inspirations": [
+    {
+      "id": "forge", "name": "Forging a blade", "effect": "blade", "professions": ["smith"],
+      "item": "weapon-1", "master": "weapon-2", "hours": 18,
+      "emote": ["The steel sings today!", "Hotter! Hotter!", "This one will have a name."],
+      "moment": "forged {blade}, now in the town armory",
+      "text": "{name} works the forge at {work} through the night, singing to the steel. At dawn {given} lays a blade on the town hall's table like no other in {town}, and names it {blade}. It goes to the town armory."
+    },
+    {
+      "id": "feast", "name": "Throwing a feast", "effect": "feast", "professions": ["barkeep", "brewer", "vintner"],
+      "mood": 6, "days": 3, "hours": 12,
+      "emote": ["Eat! Drink! It's on me!", "Bring out the good barrel!", "Everyone's welcome tonight!"],
+      "moment": "threw a feast for {ward}",
+      "text": "{name} rolls the good barrels out of {work} and lays tables down the street: a feast for all of {ward}, for no reason but joy. The ward will be talking of it for days."
+    },
+    {
+      "id": "flourish", "name": "Carving a flourish", "effect": "decor", "professions": ["builder", "quarrier", "carpenter", "laborer"],
+      "decor": "column", "hours": 14,
+      "emote": ["A little higher on the left...", "Stone wants to be beautiful.", "Nobody asked. I'm doing it anyway."],
+      "moment": "carved a column near {work}",
+      "text": "Nobody asked {name} to, but {given} spends the day carving a fine column of stone and setting it up by {work}. The street is the prettier for it."
+    },
+    {
+      "id": "song", "name": "Writing a song", "effect": "song", "professions": ["player", "herald", "acolyte"],
+      "mandate": 3, "loyalty": 8, "hours": 14,
+      "emote": ["♪ A new one, hear me out! ♪", "♪ Sing it with me! ♪", "♪ Of heroes who never turned back! ♪"],
+      "moment": "wrote a song of {hero}",
+      "text": "{name} has written a new song, of {hero} and {town}, and by evening every tavern is singing it. The mayor's standing rises, and {hero} stands a little taller."
+    },
+    {
+      "id": "insight", "name": "A flash of insight", "effect": "insight", "professions": ["scribe", "alchemist", "cartographer", "herbalist", "priest"],
+      "loreDays": 6, "hours": 12,
+      "emote": ["Of course! It was there all along!", "Fetch me ink, quickly!", "Eureka!"],
+      "moment": "had a flash of insight into {study}",
+      "text": "{name} bursts out of {work} with ink to the elbows: a flash of insight into {study}. The scholars are days nearer to it."
+    },
+    {
+      "id": "harvest", "name": "A bumper harvest", "effect": "harvest", "professions": ["farmer", "shepherd", "fisher", "gardener"],
+      "good": "Food", "qty": 30, "hours": 14,
+      "emote": ["Never seen the like!", "Fetch more baskets!", "The earth loves us this year."],
+      "moment": "brought in a bumper crop",
+      "text": "{name} works from first light to last and brings in a crop at {work} the like of which nobody remembers: {qty} loads of food to the market."
+    },
+    {
+      "id": "felling", "name": "A great felling", "effect": "harvest", "professions": ["woodcutter"],
+      "good": "Timber", "qty": 20, "hours": 14,
+      "emote": ["Timber!", "One more before supper!", "Mind your heads!"],
+      "moment": "felled a forest's worth of timber",
+      "text": "{name} takes to the woods like a giant and comes back with {qty} loads of timber for the yards."
+    },
+    {
+      "id": "zeal", "name": "Full of good cheer", "effect": "zeal", "professions": [],
+      "mandate": 1, "lonely": 40, "hours": 10,
+      "emote": ["What a day to be alive!", "Good morning, neighbour!", "Mayor's doing all right, I say."],
+      "moment": "spent a day spreading good cheer",
+      "text": "{name} is full of good cheer today, and greets everyone in the street by name. Some of it rubs off."
+    }
+  ],
+  "breaks": [
+    {
+      "id": "bender", "name": "On a bender", "effect": "bender", "weight": 1, "traits": { "Gregarious": 2, "Shy": 0.5 },
+      "days": 2, "ale": 6,
+      "emote": ["Another! And one for the dog!", "I'm not drunk, you're drunk.", "Why would I go to work?"],
+      "moment": "went on a two-day bender",
+      "text": "{name} has had a bellyful of everything and goes on a bender at {tavern}{instead}. {given} drinks the cellar low and shows no sign of leaving."
+    },
+    {
+      "id": "tantrum", "name": "In a rage", "effect": "tantrum", "weight": 1, "traits": { "HotTempered": 3 },
+      "gold": [5, 18], "stock": 0.3, "hours": 10,
+      "emote": ["ENOUGH!", "I can't stand another day!", "Who keeps moving my things?!"],
+      "moment": "smashed up {work} in a rage",
+      "text": "Something snaps in {name}. {given} smashes up {work}: {damage}. It takes the rest of the day to calm {given} down."
+    },
+    {
+      "id": "brawl", "name": "Spoiling for a fight", "effect": "brawl", "weight": 0.6, "traits": { "HotTempered": 3, "Shy": 0.2 },
+      "hours": 10,
+      "emote": ["Say that again!", "Outside. Now."],
+      "moment": "started a brawl at {tavern}",
+      "text": ""
+    },
+    {
+      "id": "sulk", "name": "Sulking at home", "effect": "sulk", "weight": 1, "traits": { "Shy": 2, "Lazy": 2 },
+      "days": 2,
+      "emote": ["Leave me be.", "What's the point?", "I'm not coming out."],
+      "moment": "shut themselves away for two days",
+      "text": "{name} shuts the door of {home} and won't come out for a day or two{short}."
+    },
+    {
+      "id": "walkout", "name": "Walking out", "effect": "walkout", "weight": 0.5, "traits": { "Ambitious": 1.5 },
+      "minDays": 6, "hours": 6,
+      "emote": ["I'm done with this place."],
+      "moment": "walked out of town",
+      "text": "{name} has had enough. {given} drops {tools} in the street and walks out of {town} without a word{with}."
+    }
+  ]
+}

@@ -268,8 +268,8 @@ public static class Threat
         var rng = town.Rng;
         en.Raids++;
         en.RaidWaited = 0;
-        en.NextRaidTick = town.Tick + (int)Math.Round(rng.Range(e.RaidEveryDays[0], e.RaidEveryDays[1] + 1) / Seasons.Warband(town)) * SimTime.HoursPerDay;
-        double raiders = Math.Max(4, Js.Round(en.Strength * e.RaidShare * (0.7 + rng.Next() * 0.6)));
+        en.NextRaidTick = town.Tick + (int)Math.Round(rng.Range(e.RaidEveryDays[0], e.RaidEveryDays[1] + 1) * Storyteller.RaidEvery(town) / Seasons.Warband(town)) * SimTime.HoursPerDay;
+        double raiders = Math.Max(4, Js.Round(en.Strength * e.RaidShare * (0.7 + rng.Next() * 0.6) * Storyteller.RaidStrength(town)));
         var home = town.Heroes.Where(a => !a.IsAway).ToList();
         double local = LocalDefense(town);
         var party = Lairs.AwayParty(town);

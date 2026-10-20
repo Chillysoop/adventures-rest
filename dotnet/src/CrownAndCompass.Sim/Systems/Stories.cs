@@ -567,7 +567,7 @@ public static class Stories
         if (autoMayor)
             foreach (var s in Pending(town)) StandIn(town, s);
         if (r.Stories.Count == 0 || town.Day < Math.Max(r.FirstDay, st.NextDay) || st.Open.Count(s => !Sendings.Is(town, s)) >= r.MaxOpen || town.Outcome != null) return;
-        if (!town.Rng.Chance(r.Chance)) return;
+        if (!town.Rng.Chance(r.Chance * Storyteller.Of(town).Stories)) return;
         var open = st.Open.Select(s => s.Def).ToHashSet();
         var fits = new List<(StoryDef Def, Story Bound)>();
         foreach (var d in r.Stories)

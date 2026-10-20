@@ -38,7 +38,7 @@ public partial class Main
             string who = takers.Count == 0 ? "No hero in town has a use for it now."
                 : Sim.Systems.Armory.IsStone(t, s.Item) ? (CanSend(t, takers[0].Hero) ? "Every company in town can already send word." : (takers[0].Hero.Hero!.PartyName is string n ? $"The {n} have no caster to send word." : $"{takers[0].Hero.GivenName} has no caster to send word."))
                 : $"Best for {takers[0].Hero.GivenName} the {takers[0].Hero.Hero!.Cls.Name} (+{takers[0].Use}){(takers.Count > 1 ? $", {takers.Count - 1} more could use it" : "")}.";
-            p.Row($"[b]{Ui.Esc(Gear.Plainly(s.Item))}[/b] {Stars(s.Item)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Ui.Cap(s.From))}, day {s.Day}[/font_size]")}\n[font_size=12]{Ui.Esc(who)}[/font_size]", buttons.ToArray());
+            p.Row($"[b]{Ui.Esc(s.Title)}[/b] {Stars(s.Item)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Ui.Cap(s.From))}, day {s.Day}[/font_size]")}\n[font_size=12]{Ui.Esc(who)}[/font_size]", buttons.ToArray());
         }
 
         p.Heading("Offered to the town");

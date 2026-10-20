@@ -23,18 +23,21 @@ public static class Director
         if (!Threat.IsActive(town)) return 0;
 
         town.QuietDays = town.Tension < 10 ? town.QuietDays + 1 : 0;
+        // The storyteller sets how hard the Director leans: a gentle one lets the town breathe longer after a blow.
+        var st = Storyteller.Of(town);
         double pace = 1;
-        if (town.Tension > 40) pace = 0.5;
+        if (town.Tension > 40) pace = st.Breather;
         else if (town.QuietDays > 10) pace = 1.5;
         // Every campaign reaches its climax: past Act I's climax day the warband gathers in earnest.
         pace = Math.Max(pace, Saga.WarbandPressure(town));
 
-        if (town.Tension > 45 && town.Rng.Chance(0.25)) SendHelp(town);
+        if (town.Tension > st.HelpTension && town.Rng.Chance(st.Help)) SendHelp(town);
         else if (town.QuietDays > 12 && town.Rng.Chance(0.2)) SendStranger(town);
-        return pace;
+        Storyteller.Daily(town);
+        return pace * Storyteller.Pace(town);
     }
 
-    private static void SendHelp(Town town)
+    internal static void SendHelp(Town town)
     {
         if (town.Taverns.Count == 0) return;
         var cls = town.Content.Classes[town.Rng.Range(0, town.Content.Classes.Count)];
@@ -48,7 +51,7 @@ public static class Director
     }
 
     /// <summary>A hooded stranger pays for a bounty on the warband's camp, or on whatever threat is nearest.</summary>
-    private static void SendStranger(Town town)
+    internal static void SendStranger(Town town)
     {
         var camp = town.Sites.FirstOrDefault(s => s.Def.Id == town.Content.Enemy.Outpost.Id && !s.Cleared);
         var target = camp ?? town.Sites.Where(s => !s.Cleared).OrderBy(s => s.Def.Tier).ThenBy(s => s.Def.Id, StringComparer.Ordinal).FirstOrDefault();

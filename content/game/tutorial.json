@@ -497,6 +497,13 @@
       ]
     },
     {
+      "id": "moods",
+      "title": "Inspirations and breaks",
+      "text": "Your townsfolk have moods. Someone in high spirits for days may be [b]inspired[/b]: a smith forges a named blade for the armory, a barkeep throws a feast for the ward, a mason carves a column, a farmer brings in a bumper crop. Someone low for days may [b]break[/b]: a bender at the tavern, a tantrum, a brawl, sulking at home, or walking out of town for good. You'll see it over their heads, gold or grey, and in their inspector. Keep your Mandate up and the town fed and housed, and you'll see far more of the first than the second.",
+      "when": "day:25",
+      "teaches": []
+    },
+    {
       "id": "grand-works",
       "title": "Grand works",
       "text": "A rich town can raise grand works: a clock tower, an aqueduct, a great gatehouse, a mage tower, royal gardens, and in a great city a colossus and three wonders (a cathedral, a palace and a citadel), unlocked charter by charter. A treasury that sits on more than 15,000 gold costs a little each day to keep, so a rich city does best to build. Begin one under [b]Grand works[/b] in the [b]City[/b] window and set it down like any government building. It rises over seasons, drawing gold and goods for each stage as the last is done, and helps the whole town for good once it stands.",
