@@ -114,6 +114,9 @@ public sealed record GuildRules
     public double BrokenLoyalty { get; init; } = 10;
 
     public GuildLines Lines { get; init; } = new();
+
+    /// <summary>The guilds banded together against the mages (<see cref="Systems.Union"/>).</summary>
+    public UnionRules Union { get; init; } = new();
     public IReadOnlyList<GuildDef> Guilds { get; init; } = [];
 }
 

@@ -150,6 +150,10 @@
     {"id": "bg-relic-peddler", "power": "caldor", "subjects": ["background:relic-peddler"], "title": "relic peddler", "motive": "sold Caldor's relics, some of them real", "traits": ["Greedy"], "classes": ["reliquarian", "bard", "rogue", "wizard"]},
     {"id": "bg-toll-collector", "power": "crown-marches", "subjects": ["background:toll-collector"], "title": "toll collector", "motive": "sat at a marcher lord's bridge gate", "traits": ["Greedy"], "classes": ["fighter", "rogue", "paladin"]},
     {"id": "bg-turncoat-raider", "power": "warrens", "subjects": ["background:turncoat-raider"], "title": "turncoat raider", "motive": "rode with a Warren warband until they could not stomach it", "traits": ["HotTempered"], "classes": ["barbarian", "fighter", "ranger"]},
-    {"id": "bg-wall-mason", "power": "smith-holds", "subjects": ["background:wall-mason"], "title": "wall mason", "motive": "laid stone the way the Smith-King's masons taught", "traits": ["Generous"], "classes": ["fighter", "warden", "paladin", "monk"]}
+    {"id": "bg-wall-mason", "power": "smith-holds", "subjects": ["background:wall-mason"], "title": "wall mason", "motive": "laid stone the way the Smith-King's masons taught", "traits": ["Generous"], "classes": ["fighter", "warden", "paladin", "monk"]},
+    {"id": "patron-hollow-prince", "power": "caldor", "subjects": ["patron:hollow-prince"], "title": "the thing Caldor's last court-mages called up in the Long Night", "motive": "It wants the souls Caldor's court-mages promised it, and every soul spilled since in its name."},
+    {"id": "patron-thistle-queen", "power": "first-leaves", "subjects": ["patron:thistle-queen"], "title": "a queen of the Court of First Leaves' twilight glades", "motive": "She wants the bargains the Court broke kept at last, and a champion whose name is sung in mortal towns."},
+    {"id": "patron-ninth-mask", "power": "ashkaar", "subjects": ["patron:ninth-mask"], "title": "the star the ninth god-king of Ashkaar bargained with", "motive": "It wants the secret the ninth god-king died before telling spoken aloud by mortal lips."},
+    {"id": "patron-gilded-wager", "power": "free-ports", "subjects": ["patron:gilded-wager"], "title": "a fallen star-angel of the Free Ports' dice halls", "motive": "It wants to win one wager against fate itself, and plays every mortal it meets as a stake."}
   ]
 }

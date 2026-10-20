@@ -627,6 +627,7 @@ public static class Quests
             }
             var result = party.Result!;
             result.Apply(members);
+            Patrons.Home(town, result);
 
             var chronicle = new Chronicle(
                 town.Chronicles.Count + 1,

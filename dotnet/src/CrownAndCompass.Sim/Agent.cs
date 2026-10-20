@@ -232,6 +232,20 @@ public sealed class HeroSheet
     public string? Vow { get; set; }
     public string VowFor { get; set; } = "";
 
+    /// <summary>The patron they are sworn to (a patrons.json id), "" for none, and its favour, -5 to +5 (<see cref="Systems.Patrons"/>).</summary>
+    public string Patron { get; set; } = "";
+    public int Favour { get; set; }
+
+    /// <summary>The day the patron last judged them, and what its deeds stood at then.</summary>
+    public int PactJudged { get; set; }
+    public OrderedMap<string, double> PactMarks { get; } = new();
+
+    /// <summary>Broke a pact once: no patron claims them again unasked.</summary>
+    public bool PactRefused { get; set; }
+
+    /// <summary>The familiar their patron sent ("a cinder imp"), "" for none.</summary>
+    public string Familiar { get; set; } = "";
+
     /// <summary>Where each magic item they carry came from, by item id ("Taken from King-under-Turf on day 51...").</summary>
     public OrderedMap<string, string> ItemTales { get; } = new();
 }
@@ -277,6 +291,9 @@ public sealed class Agent
     public int? JobId { get; set; }
     public int? SpouseId { get; set; }
     public int? CourtingId { get; set; }
+
+    /// <summary>The workplace whose trade spell they taught themselves (<see cref="Systems.HedgeMages"/>), "" for none.</summary>
+    public string HedgeSpell { get; set; } = "";
 
     /// <summary>Successes at their trade's skills, which slowly make them better at it (<see cref="Systems.Skills"/>).</summary>
     public int Practice { get; set; }

@@ -686,6 +686,8 @@ public partial class Main
         string lives = a.HomeId == null && a.Hero?.Lodging != true ? "Sleeps rough" : $"Lives at {Ui.Esc(home)}";
         string works = a.Hero != null ? "lives by bounties" : a.JobId == null ? "out of work" : $"works at {Ui.Esc(job)}";
         p.Text($"{lives}; {works}.");
+        if (a.HedgeSpell != "" && t.Content.Research.Hedge.Trade(a.HedgeSpell) is { } hedge)
+            p.Text($"{Tag(Ui.Cap(hedge.Name), Ui.Gold)} {Ui.C(Ui.Ink2, $"[font_size=12]Hedge mage: {Ui.Esc(hedge.Spell)}{(HedgeMages.Working(t, a) == null ? ", though not at their own trade now" : "")}.[/font_size]")}", 13);
         if (a.SpouseId is int sp) p.Text($"Married to {AgentLink(t.Agent(sp))}");
         InspectSheet(p, t, a);
         var friends = a.Opinions.Where(kv => kv.Value >= 40).OrderBy(kv => kv.Key).Select(kv => AgentLink(t.Agent(kv.Key))).ToList();
@@ -762,6 +764,7 @@ public partial class Main
             if (hs.Copied > 0) kit.Add($"{hs.Copied} copied into the spellbook");
             p.Text(Ui.C(Ui.Ink2, "Carries " + string.Join(", ", kit) + "."), 13);
         }
+        InspectPact(p, t, hs);
         if (hs.Taint > 0)
             p.Text(Ui.C(Ui.Bad, hs.Taint == 1 ? "Took a gift from the dark. Their shadow is slow to follow them." : $"Took {hs.Taint} gifts from the dark. They are not sleeping well."), 13);
         if (Regard.TemperOf(t, a) is TemperDef temper)
@@ -783,6 +786,23 @@ public partial class Main
             (hs.Champion ? "Champion" : "Name champion", champion == null, false, () => Act(() => _sim.NameChampion(id))),
             ($"Send a purse, {Js.Str(purse)}g", t.Treasury >= purse, false, () => Act(() => _sim.RewardHero(id, purse))));
         if (knight != null && !hs.Knight) p.Note($"Knighthood: {knight}.");
+    }
+
+    /// <summary>The patron they are sworn to, its favour from −5 to +5 and what that lends them, and their familiar.</summary>
+    private static void InspectPact(Pane p, Town t, HeroSheet hs)
+    {
+        if (Patrons.Of(t.Content, hs) is not { } pd) return;
+        var r = t.Content.Patrons;
+        var color = hs.Favour >= 3 ? Ui.Good : hs.Favour <= -3 ? Ui.Bad : Ui.Ink2;
+        var boons = new List<string>();
+        foreach (var kind in new[] { "attack", "ac", "skill" })
+        {
+            int b = Patrons.Boon(t.Content, hs, kind);
+            if (b != 0) boons.Add($"{(kind == "ac" ? "AC" : kind)} {(b > 0 ? "+" : "−")}{Math.Abs(b)}");
+        }
+        string next = hs.Favour >= r.Max - 1 ? "one more good turn brings its gift" : hs.Favour <= r.Min + 1 ? "one more failing and it takes its price" : $"it judges them every {r.JudgeEvery} days";
+        string familiar = hs.Familiar != "" ? $" Their familiar is {hs.Familiar}." : "";
+        p.Text($"{Tag($"Pact: {Ui.Cap(pd.Name)}", Ui.Ink2)} {Ui.C(color, $"favour {Patrons.Favour(hs.Favour)}")}{(boons.Count > 0 ? Ui.C(Ui.Ink2, $" · {string.Join(", ", boons)}") : "")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Ui.Cap(pd.Title))}. It wants {Ui.Esc(pd.Wants)}; {next}.{Ui.Esc(familiar)}[/font_size]")}", 13);
     }
 
     private void InspectBuilding(Pane p, Town t, Building b)

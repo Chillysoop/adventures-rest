@@ -79,6 +79,9 @@ public sealed record ResearchRules
     public double[] Gold { get; init; } = [];
 
     public List<InstitutionLore> Institutions { get; init; } = [];
+
+    /// <summary>Townsfolk who teach themselves a trade spell (<see cref="HedgeMages"/>).</summary>
+    public HedgeRules Hedge { get; init; } = new();
     public Dictionary<string, double> Scholars { get; init; } = [];
     /// <summary>Lore a day the town hall's clerks gather, whatever else the town has.</summary>
     public double BaseLore { get; init; } = 0.5;
@@ -243,6 +246,9 @@ public static class Research
                 learned++;
             }
         if (learned > 0) list.Add(($"{learned} learned townsfolk", scholars));
+        int hedge = HedgeMages.All(town).Count;
+        if (hedge > 0) list.Add(($"{hedge} hedge {(hedge == 1 ? "mage" : "mages")}", hedge * r.Hedge.Lore));
+        if (Circles.Lore(town) is (string why, double lore) && lore > 0) list.Add((why, lore));
         double wiz = 0, cast = 0;
         foreach (var a in town.Heroes.Where(a => !a.IsAway))
         {
@@ -259,7 +265,7 @@ public static class Research
     }
 
     public static double Lore(Town town) =>
-        Js.Sum(Sources(town), s => s.Lore) * Rules(town).Funding[town.Research.Funding].Lore;
+        Js.Sum(Sources(town), s => s.Lore) * Rules(town).Funding[town.Research.Funding].Lore * Union.LoreFactor(town);
 
     private static string Name(Town town, string building) =>
         town.Content.Buildings.FirstOrDefault(b => b.Id == building)?.Name.ToLowerInvariant() ?? building;

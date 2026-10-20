@@ -148,6 +148,7 @@ public sealed class Simulation
         Watch.Daily(t, Options.AutoMayor && Options.AutoBounties);
         Undercity.Daily(t, Options.AutoMayor);
         Research.Daily(t, Options.AutoMayor);
+        HedgeMages.Daily(t);
         Lairs.Daily(t, Options.AutoMayor, Options.AutoDefense);
         Rumors.Daily(t);
         Shrines.Daily(t, Options.AutoMayor);
@@ -169,6 +170,8 @@ public sealed class Simulation
         Loyalty.Daily(t, Options.AutoMayor && Options.AutoHonours);
         Secrets.Daily(t, Options.AutoMayor && Options.AutoCouncil);
         Guilds.Daily(t, Options.AutoMayor && Options.AutoCouncil);
+        Union.Daily(t, Options.AutoMayor && Options.AutoCouncil);
+        Patrons.Daily(t);
         Notoriety.Daily(t);
         Passage.Daily(t);
         Decor.Daily(t);
@@ -312,6 +315,12 @@ public sealed class Simulation
 
     /// <summary>Send the watch to break a guild's strike, at a cost in Mandate.</summary>
     public bool BreakStrike(string guildId) => Guilds.Break(Town, guildId);
+
+    /// <summary>Hear one side of the town's trades out with gold: "guilds" (the union) or "mages".</summary>
+    public bool HearUnion(string side) => Union.Hear(Town, side);
+
+    /// <summary>Take a side outright between the guilds and the mages ("guilds" or "mages") for a season, and face the other's anger.</summary>
+    public bool TakeSide(string side) => Union.Side(Town, side);
 
     /// <summary>Answer a menace's demand for fealty: bend the knee and pay tribute, or refuse and face its host.</summary>
     public bool AnswerDemand(int menaceId, bool submit) => Menaces.Answer(Town, menaceId, submit);

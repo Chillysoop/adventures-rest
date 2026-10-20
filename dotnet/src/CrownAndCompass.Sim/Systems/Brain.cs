@@ -174,7 +174,7 @@ public static class Brain
             else
             {
                 a.Activity = Activity.Building;
-                b.Raise(town, Math.Max(0.5, 1 + 0.1 * Rng.Modifier(a.Abilities.Str)) * Seasons.Build(town) * Decrees.Build(town) * Institutions.Build(town));
+                b.Raise(town, Math.Max(0.5, 1 + 0.1 * Rng.Modifier(a.Abilities.Str)) * Seasons.Build(town) * Decrees.Build(town) * Institutions.Build(town) * HedgeMages.Build(town, a));
             }
             if (b.OwnerId != a.Id)
             {

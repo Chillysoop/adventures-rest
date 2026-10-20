@@ -282,7 +282,7 @@ public static class Skills
             if (best == null) continue;
             var chk = Roll(town, best, skill, c.Dc, "craft", null, b.Id);
             double f = chk.Critical ? c.Critical : chk.Fumble ? c.Fumble : chk.Success ? c.Success : c.Failure;
-            b.KnackPct = (int)Math.Round((f - 1) * 100);
+            b.KnackPct = (int)Math.Round((f - 1 + HedgeMages.Yield(town, b)) * 100);
         }
     }
 

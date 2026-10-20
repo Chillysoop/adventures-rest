@@ -29,6 +29,7 @@ public class LoreTests
         foreach (var m in C.Mercenaries.Companies) HasLineage("mercenary:" + m.Id);
         foreach (var i in C.Institutions.Institutions) HasLineage("institution:" + i.Id);
         foreach (var g in C.Guilds.Guilds) HasLineage("guild:" + g.Id);
+        foreach (var p in C.Patrons.Patrons) HasLineage("patron:" + p.Id);
     }
 
     [Fact]
@@ -57,6 +58,7 @@ public class LoreTests
                     "mercenary" => C.Mercenaries.Companies.Any(m => m.Id == parts[1]),
                     "institution" => C.Institutions.Def(parts[1]) != null,
                     "guild" => C.Guilds.Guilds.Any(g => g.Id == parts[1]),
+                    "patron" => C.Patrons.Patron(parts[1]) != null,
                     _ => false,
                 };
                 Assert.True(real, $"{l.Id}: {s} is not in the game");

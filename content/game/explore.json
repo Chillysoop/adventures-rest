@@ -9,6 +9,14 @@
   "birdHours": 10,
   "clueBonus": 2,
   "homeHp": 0.45,
+  "circles": {
+    "_doc": "Rune-lit stone circles (Systems/Circles.cs): each one woken gives the library lore a day; cults' rites there bring their gods rite more favour unless research is funded at wardFunding or more.",
+    "lore": 1.5,
+    "rite": 0.5,
+    "wardFunding": 1,
+    "names": ["the Nine Maidens", "the Whispering Ring", "the Hollow Crown of Stones", "the Grey Wedding", "the Dancers", "the Lamp Stones", "the Old Moot"],
+    "claimed": "{circle} is woken, and the runes of its stones burn faint blue every night now. {town}'s mages say they can feel it from the library."
+  },
   "kinds": [
     {
       "id": "lair",
@@ -103,9 +111,60 @@
           "failure": "Something was left to guard it." }
       ],
       "options": [ { "act": "onward", "label": "Mark it and keep exploring" } ]
+    },
+    {
+     "id": "circle",
+     "name": "Stone circle",
+     "found": "{leader} sends word: \"In {region} we have come on {sign} The stones are cut with runes we cannot read, and they hum when the wind drops.\"",
+     "signs": [
+      "a ring of standing stones on a bare hilltop.",
+      "nine grey stones in a ring, each taller than a man.",
+      "a circle of black stones half sunk in a bog.",
+      "a ring of white stones where no grass grows.",
+      "a horseshoe of stones round a split altar."
+     ],
+     "chapters": [
+      {
+       "title": "Read the runes",
+       "text": "The best scholar among them copies the runes and tries to make sense of them.",
+       "hours": 8,
+       "skill": "arcana",
+       "dc": 12,
+       "risk": "time",
+       "success": "The runes are a lock, and they name the key: a word spoken at dusk in the middle of the ring.",
+       "failure": "The runes swim in the eye. A day goes by copying them out again."
+      },
+      {
+       "title": "Find who else comes here",
+       "text": "They look for signs of who has used the stones lately.",
+       "hours": 8,
+       "skill": "survival",
+       "dc": 13,
+       "risk": "fight",
+       "success": "Old ash, a dropped knife, a scrap of grave-cloth: a cult has been using the ring. They do not come back while the company watches.",
+       "failure": "Whoever uses the stones comes back while the company is still there."
+      },
+      {
+       "title": "Wake the stones",
+       "text": "At dusk the bravest of them stands in the ring and speaks the word.",
+       "hours": 10,
+       "skill": "arcana",
+       "dc": 15,
+       "risk": "wound",
+       "reward": "circle",
+       "success": "The runes catch light one by one until the whole ring glows. Something in it turns toward the town, and stays turned.",
+       "failure": "The stones throw them out of the ring like a doll."
+      }
+     ],
+     "options": [
+      {
+       "act": "onward",
+       "label": "Mark it and keep exploring"
+      }
+     ]
     }
   ],
-  "weights": { "company": 3, "caravan": 3, "font": 1.5, "ruin": 2 },
+  "weights": { "company": 3, "caravan": 3, "font": 1.5, "circle": 1, "ruin": 2 },
   "rewards": { "weakness": 0.6, "friends": 18, "parley": 8, "offend": -6, "mapsTrust": 75, "inviteDays": 4, "escortGold": 30, "escortFood": 40, "bargain": 25, "attuneXp": 150, "vaultGold": 120 },
   "texts": {
     "onward": "They mark it on their map and push on into {region}.",

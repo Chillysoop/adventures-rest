@@ -42,6 +42,9 @@ public sealed record ExpeditionResult(
     /// <summary>Mishaps and feats that may grow into running jokes (<see cref="Voices"/>).</summary>
     public IReadOnlyList<Gag> Gags { get; init; } = [];
 
+    /// <summary>Heroes bought back from the veiled room, and the patron each now owes.</summary>
+    public OrderedMap<int, string> Bargains { get; init; } = new();
+
     /// <summary>Put the heroes' hit points and potions where they ended up.</summary>
     public void Apply(IEnumerable<Agent> heroes)
     {
@@ -155,6 +158,9 @@ public static class Expedition
         public readonly List<Gag> Gags = [];
         internal readonly List<Combatant> Party;
         public readonly OrderedMap<int, int> Kills = new();
+
+        /// <summary>Heroes bought back from the veiled room, and the patron they owe (<see cref="Patrons"/>).</summary>
+        public readonly OrderedMap<int, string> Bargains = new();
         public int Gold;
         public int Swell;
         public int Xp;
@@ -688,6 +694,10 @@ public static class Expedition
                     continue;
                 }
                 if (FirstAid(c)) continue;
+                // Nobody could reach them: they wake in the veiled room and answer its three questions (death saves).
+                var veil = _content.Patrons.Veil;
+                string name = c.Agent.GivenName;
+                if (veil.Wake != "") Log(veil.Wake.Replace("{name}", name));
                 int ok = 0;
                 int fail = 0;
                 var rolls = new List<int>();
@@ -700,10 +710,26 @@ public static class Expedition
                     else if (r >= 10) ok++;
                     else fail++;
                 }
+                string said = string.Join(", ", rolls);
                 if (fail >= 3)
                 {
+                    // Before the door closes, a patron may offer a costly way back.
+                    if (Patrons.Offer(_content, _rng, c.Sheet) is { } patron)
+                    {
+                        Log(veil.Fail.Replace("{name}", name).Replace("{rolls}", said) + " " + veil.Offer.Replace("{name}", name).Replace("{patron}", patron.Name));
+                        if (!c.Sheet.Cls.Healer || c.Sheet.Patron == patron.Id)
+                        {
+                            c.Down = false;
+                            c.Hp = 1;
+                            Bargains[c.Agent.Id] = patron.Id;
+                            Log(veil.Take.Replace("{name}", name).Replace("{patron}", patron.Name));
+                            Mark("bargain", c, rolls[^1]);
+                            continue;
+                        }
+                        Log(veil.Refuse.Replace("{name}", name).Replace("{patron}", patron.Name));
+                    }
                     c.Dead = true;
-                    Log($"{c.Agent.GivenName} fails their death saves ({string.Join(", ", rolls)}) and dies.");
+                    Log($"{name} fails their death saves ({said}) and dies.");
                     Mark("death", c, rolls[^1]);
                     Speak("death", c);
                 }
@@ -711,7 +737,7 @@ public static class Expedition
                 {
                     c.Down = false;
                     c.Hp = 1;
-                    Log($"{c.Agent.GivenName} pulls through on death saves ({string.Join(", ", rolls)}).");
+                    Log(veil.Pass != "" ? veil.Pass.Replace("{name}", name).Replace("{rolls}", said) : $"{name} pulls through on death saves ({said}).");
                     Mark("saved", c, rolls[^1]);
                 }
             }
@@ -1139,6 +1165,7 @@ public static class Expedition
                 GoalMet = GoalMet,
                 Beats = Beats.ToList(),
                 Gags = Gags.ToList(),
+                Bargains = Bargains,
             };
         }
     }

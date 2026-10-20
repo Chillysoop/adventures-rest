@@ -512,6 +512,15 @@
       "teaches": ["command:MeetGuildDemand", "command:PayOffGuild", "command:BreakStrike"]
     },
     {
+      "id": "union",
+      "title": "Guilds and mages",
+      "text": "Your guilds have banded together as a [b]union[/b], and they resent the town's mages: every spell cast for wages is bread out of a worker's mouth. The bar in [b]Council[/b] shows who has your ear. Funding research, the wizards' library and [b]hedge mages[/b] (townsfolk who teach themselves a trade spell) pull it toward the mages; the guilds pull it back. Keep it in the green middle and both work together. Let it lean and the slighted side sours, and too far it acts: the union marches and every guild strikes, or the mages walk out. [b]Hear[/b] a side out for gold, or [b]side[/b] with one for a season if you are ready for the other's anger.",
+      "when": "alert:union",
+      "point": "tab:Council",
+      "until": "tab:Council",
+      "teaches": ["command:HearUnion", "command:TakeSide"]
+    },
+    {
       "id": "honours",
       "title": "Honours are yours to give",
       "text": "When a loyal knight holds no land, or the town has no champion, the strip says so. Click it: a cleared site can be granted to the knight, who holds it with their own retainers and lives on its rents, and the champion stands first on the walls. The council moves knighthoods itself; sign them in [b]Council[/b].",

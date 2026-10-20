@@ -15,6 +15,7 @@ public partial class Main
             p.Note($"Once {r.Population} households live here and enough workers share a trade, they form a guild that leans on a councillor and makes demands of you.");
             return;
         }
+        RenderUnion(p, t);
         foreach (var g in t.Guilds)
         {
             var d = Guilds.Def(t, g);
@@ -47,6 +48,40 @@ public partial class Main
                 ($"Pay them off, {Js.Str(Guilds.PayCost(t, g))}g", Guilds.PayBlocked(t, g) == null, false, () => Act(() => _sim.PayOffGuild(id))));
             if (why != null) p.Note(Ui.Cap(why) + ".");
         }
+    }
+
+    /// <summary>The guilds against the mages: where the bar stands, what pulls it, and the levers to hear a side or take one.</summary>
+    private void RenderUnion(Pane p, Town t)
+    {
+        var u = t.Union;
+        var r = Union.Rules(t);
+        if (!u.Formed)
+        {
+            p.Note($"Once {r.Guilds} guilds have formed they band together as a union against the town's mages, and you will have to keep the two in balance.");
+            return;
+        }
+        string mood = Union.Mood(t);
+        var color = Union.Sided(t) || Math.Abs(u.Bar) >= r.Breaking ? Ui.Bad : Math.Abs(u.Bar) >= r.Lean ? Ui.Gold : Math.Abs(u.Bar) <= r.Concord ? Ui.Good : Ui.Ink2;
+        string effect = Union.Sided(t) ? (u.Side == "guilds" ? $"Hedge magic is banned and the library's lore is halved for {Ui.Days(u.SideUntil - t.Day)}." : $"Magic is welcome in every trade, the library works a quarter faster, and the guilds are furious, for {Ui.Days(u.SideUntil - t.Day)}.")
+            : Math.Abs(u.Bar) <= r.Concord ? "Both sides work together: the library learns faster and the guilds warm to you."
+            : u.Bar >= r.Breaking ? "The union will march and every guild will strike together."
+            : u.Bar <= -r.Breaking ? "The mages will walk out, and a wizard may leave town."
+            : u.Bar >= r.Lean ? "Every guild's temper sours by the day."
+            : u.Bar <= -r.Lean ? "The library's studies slow."
+            : "Keep it in the green middle to keep both sides working.";
+        p.Row($"[b]The union and the mages[/b]  {Tag(mood, color)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(effect)}[/font_size]")}");
+        p.Balance("Guilds", "Mages", u.Bar, r.Concord, r.Lean, r.Breaking);
+        var pulls = Union.Pulls(t).OrderByDescending(x => Math.Abs(x.Pull)).Take(6).Select(x => $"{x.Why} {(x.Pull > 0 ? "→ mages" : "→ guilds")} {Math.Round(Math.Abs(x.Pull))}");
+        p.Text(Ui.C(Ui.Ink2, $"[font_size=12]Pulling it: {Ui.Esc(string.Join(" · ", pulls))}.[/font_size]"), 12);
+        string? hear = Union.HearBlocked(t), side = Union.SideBlocked(t);
+        double cost = Union.HearCost(t);
+        p.Buttons(
+            ($"Hear the guilds, {Js.Str(cost)}g", hear == null, false, () => Act(() => _sim.HearUnion("guilds"))),
+            ($"Hear the mages, {Js.Str(cost)}g", hear == null, false, () => Act(() => _sim.HearUnion("mages"))));
+        p.Buttons(
+            ("Side with the guilds", side == null, false, () => Act(() => _sim.TakeSide("guilds"))),
+            ("Side with the mages", side == null, false, () => Act(() => _sim.TakeSide("mages"))));
+        if (side == null) p.Note($"Taking a side holds for {Ui.Days(r.SideDays)} and the other side never quite forgets.");
     }
 
     /// <summary>
