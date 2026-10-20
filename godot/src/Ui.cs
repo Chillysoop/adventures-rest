@@ -493,9 +493,16 @@ public sealed class Pane
         });
 
     /// <summary>A row: text on the left, optional buttons on the right, a rule beneath.</summary>
-    public void Row(string bbcode, params (string Label, bool Enabled, bool Primary, Action Press)[] buttons)
+    public void Row(string bbcode, params (string Label, bool Enabled, bool Primary, Action Press)[] buttons) => Row(bbcode, null, buttons);
+
+    /// <summary>
+    /// A row with a picture before the text and a line of controls under it (a portrait and its danger bar);
+    /// <paramref name="look"/> is their part of the signature, so they are rebuilt when it changes.
+    /// </summary>
+    public void Row(string bbcode, (string Sig, Func<Control>? Lead, Func<Control>? Under)? look, params (string Label, bool Enabled, bool Primary, Action Press)[] buttons)
     {
         var sig = new StringBuilder("r").Append(bbcode);
+        if (look is { } lk) sig.Append('|').Append(lk.Sig);
         foreach (var b in buttons) sig.Append('|').Append(b.Label).Append(b.Enabled).Append(b.Primary);
         Add(sig.ToString(), () =>
         {
@@ -505,12 +512,25 @@ public sealed class Pane
             bool below = buttons.Length > 2;
             Container h = below ? new HFlowContainer() : new HBoxContainer();
             h.AddThemeConstantOverride(below ? "h_separation" : "separation", 8);
+            Control text = Ui.Rich(bbcode);
+            if (look is { } l && (l.Lead != null || l.Under != null))
+            {
+                var box = new HBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+                box.AddThemeConstantOverride("separation", 10);
+                if (l.Lead != null) box.AddChild(l.Lead());
+                var col = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, SizeFlagsVertical = Control.SizeFlags.ShrinkCenter };
+                col.AddThemeConstantOverride("separation", 4);
+                col.AddChild(text);
+                if (l.Under != null) col.AddChild(l.Under());
+                box.AddChild(col);
+                text = box;
+            }
             if (below)
             {
                 h.AddThemeConstantOverride("v_separation", 6);
-                v.AddChild(Ui.Rich(bbcode));
+                v.AddChild(text);
             }
-            else h.AddChild(Ui.Rich(bbcode));
+            else h.AddChild(text);
             foreach (var b in buttons)
             {
                 var btn = new Button { Text = b.Label, Disabled = !b.Enabled, SizeFlagsVertical = Control.SizeFlags.ShrinkCenter, ThemeTypeVariation = b.Primary ? "Post" : "" };

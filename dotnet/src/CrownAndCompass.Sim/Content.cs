@@ -1259,6 +1259,9 @@ public sealed class Content
     /// <summary>Fame and infamy for heroes and companies (content/game/notoriety.json).</summary>
     public NotorietyRules Notoriety { get; init; } = new();
 
+    /// <summary>The ladders the client's odds, threat and stakes bars read (content/game/assess.json).</summary>
+    public AssessRules Assess { get; init; } = new();
+
     /// <summary>Townsfolk and heroes' skills and everyday checks (content/game/skills.json).</summary>
     public SkillRules Skills { get; init; } = new();
 
@@ -1428,6 +1431,7 @@ public sealed class Content
             Merchants = Parse<MerchantRules>("merchants.json"),
             Wards = Parse<WardRules>("wards.json"),
             Notoriety = Parse<NotorietyRules>("notoriety.json"),
+            Assess = Parse<AssessRules>("assess.json"),
             Skills = Parse<SkillRules>("skills.json"),
             Crises = Parse<CrisisRules>("crises.json"),
         };

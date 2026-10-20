@@ -41,6 +41,13 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["dragon", "dragon-head", "#e8673f"],
   ["cult", "cultist", "#d0566a"],
   ["rivals", "duel", "#d9b25a"],
+  // What a story choice puts at stake (content/game/assess.json icons) beside the goods and town icons above
+  ["dread", "terror", "#b28ad8"],
+  ["unrest", "fist", "#e07a5f"],
+  ["standing", "shaking-hands", "#7fb0d4"],
+  ["threat", "crossed-swords", "#ef7f6f"],
+  ["lore", "scroll-unfurled", "#d8c08a"],
+  ["decree", "scroll-quill", "#cfc6b0"],
   // Dock windows, the build bar and the menu
   ["tab-city", "castle", mono],
   ["tab-ledger", "notebook", mono],
@@ -63,6 +70,20 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["order-guard", "flying-flag", mono],
   ["order-strike", "sword-brandish", mono],
   ["order-scout", "spyglass", mono],
+  // Enemy portraits (godot/src/Portrait.cs draws them on a medallion tinted by the enemy's kind)
+  ...[
+    "orc-head", "ogre", "troll", "goblin-head", "brutal-helm", "horned-helm", "giant",
+    "shambling-zombie", "death-skull", "vampire-dracula", "floating-ghost", "crowned-skull", "dread-skull",
+    "hooded-assassin", "hooded-figure", "spy", "domino-mask", "iron-mask", "witch-face", "frog",
+    "wolf-head", "bear-head", "direwolf", "spider-face", "boar", "harpy", "rat", "evil-bat", "snake", "scorpion", "werewolf",
+    "dragon-head", "spiked-dragon-head", "wyvern", "sea-dragon", "hydra",
+    "cultist", "warlock-hood", "tentacles-skull", "devil-mask", "all-seeing-eye", "imp",
+    "black-knight-helm", "visored-helm", "bandit", "overlord-helm", "crested-helmet",
+    "minotaur", "gargoyle", "golem-head", "cyclops", "kraken-tentacle", "goo-skull", "mimic-chest", "help", "crown",
+    "barn-owl", "eagle-head", "raven", "amber-mosquito", "crab", "shark-jaws", "fish-monster", "lizardman", "evil-tree", "fairy",
+    "dwarf-face", "woman-elf-face", "mermaid", "centaur", "worm-mouth", "flying-beetle", "wasp-sting", "vulture", "horse-head",
+    "unicorn", "greek-sphinx", "medusa-head", "hyena-head", "lion", "tiger-head", "saber-toothed-cat-head", "fire",
+  ].map((g): [string, string, string] => [`face-${g}`, g, mono]),
 ];
 
 for (const [name, glyph, tint] of icons) {
@@ -71,7 +92,8 @@ for (const [name, glyph, tint] of icons) {
   const paths = body.replaceAll(`fill="currentColor"`, "");
   const svg =
     tint === mono
-      ? `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 512 512"><g fill="#ffffff">${paths}</g></svg>\n`
+      ? // Portraits are drawn large, so they are imported at twice the size.
+        `<svg xmlns="http://www.w3.org/2000/svg" width="${name.startsWith("face-") ? 128 : 64}" height="${name.startsWith("face-") ? 128 : 64}" viewBox="0 0 512 512"><g fill="#ffffff">${paths}</g></svg>\n`
       : // The outline first, then the glyph over it: a dark rim like the drawn icons, without paint-order.
         `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="-16 -16 544 544"><g fill="#1d1712" stroke="#1d1712" stroke-width="34" stroke-linejoin="round">${paths}</g><g fill="${tint}">${paths}</g></svg>\n`;
   writeFileSync(join(out, `${name}.svg`), svg);
