@@ -50,8 +50,9 @@ public class TacticsTests
     {
         // Run many delves against goblin warrens and dragon lairs: they finish, and the tactics show in the logs.
         var sim = new Simulation(new SimulationOptions { Seed = 7 });
-        sim.RunDays(2);
+        sim.RunDays(40);
         var heroes = sim.Town.Heroes.Take(4).ToList();
+        Assert.NotEmpty(heroes);
         var lair = C.Sites.First(s => s.Boss.Monster == "goblin_boss");
         bool scattered = false, called = false;
         for (int seed = 1; seed <= 40; seed++)

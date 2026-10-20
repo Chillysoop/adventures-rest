@@ -117,7 +117,7 @@ public class CrisesTests
             e.Text.Contains(m.SeatName, StringComparison.Ordinal)) || t.Moles.Any(x => x.Foe == g.Foe) || t.Lurkers.Any(l => l.Leader == m.Leader || l.By == m.Name));
     }
 
-    private static (Simulation Sim, Grudge G) Plotting()
+    private static (Simulation Sim, Grudge G) Plotting(string kind = "undead")
     {
         // A council of three at least: the traitor, the one they frame, and one more to frame next.
         var sim = new Simulation(new SimulationOptions { Seed = 4 });
@@ -129,7 +129,7 @@ public class CrisesTests
         }
         var t = sim.Town;
         var m = Menaces.Seed(t, [2, 3])!;
-        var g = new Grudge { Foe = Vengeance.Key(m), Name = m.Name, Leader = m.Leader, Seat = m.SeatName, Kind = "undead", Wits = "mastermind", Cunning = 1.6 };
+        var g = new Grudge { Foe = Vengeance.Key(m), Name = m.Name, Leader = m.Leader, Seat = m.SeatName, Kind = kind, Wits = "mastermind", Cunning = 1.6 };
         t.Grudges.Add(g);
         t.Watch = 0;
         Assert.True(t.Seats.Count(s => s.HolderId != null) >= 2);
@@ -158,7 +158,7 @@ public class CrisesTests
     [Fact]
     public void NamingTheTraitorDrivesThemOutAndNamingTheWrongOneCostsTheMayor()
     {
-        var (sim, g) = Plotting();
+        var (sim, g) = Plotting("rivals");
         var t = sim.Town;
         for (int i = 0; i < 50 && t.Moles.Count == 0; i++) Infiltration.Try(t, g);
         var mole = t.Moles[0];
@@ -184,7 +184,7 @@ public class CrisesTests
     [Fact]
     public void LeftAloneTheWatchFindsTheProof()
     {
-        var (sim, g) = Plotting();
+        var (sim, g) = Plotting("rivals");
         var t = sim.Town;
         for (int i = 0; i < 50 && t.Moles.Count == 0; i++) Infiltration.Try(t, g);
         var mole = t.Moles[0];
@@ -192,5 +192,42 @@ public class CrisesTests
         sim.RunDays(1);
         Assert.Empty(t.Moles);
         Assert.Contains(t.Ledger.Entries, e => e.Text.Contains("the proof", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void ACharmedCouncillorIsFreedAndKeepsTheSeat()
+    {
+        var (sim, g) = Plotting("undead");
+        var t = sim.Town;
+        for (int i = 0; i < 50 && t.Moles.Count == 0; i++) Infiltration.Try(t, g);
+        var mole = Assert.Single(t.Moles);
+        Assert.True(mole.Charmed);
+        var seat = t.Seats.First(s => s.HolderId == mole.AgentId);
+        mole.Suspicion = t.Content.Crises.Infiltration.Proof - 0.01;
+        Infiltration.Daily(t);
+        Assert.Empty(t.Moles);
+        Assert.Equal(mole.AgentId, seat.HolderId);
+        Assert.False(t.Agent(mole.AgentId).Departed);
+        Assert.Contains(t.Ledger.Entries, e => e.Text.Contains("charm on", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void AWardedChamberTurnsMostCharmsAway()
+    {
+        int open = 0, warded = 0;
+        for (int round = 0; round < 2; round++)
+        {
+            var (sim, g) = Plotting("undead");
+            var t = sim.Town;
+            if (round == 1) t.Stories.Decrees["warded-chamber"] = t.Day;
+            Assert.Equal(round == 1, Infiltration.Warded(t));
+            for (int i = 0; i < 40; i++)
+            {
+                t.Moles.Clear();
+                Infiltration.Try(t, g);
+                if (t.Moles.Count > 0) { if (round == 0) open++; else warded++; }
+            }
+        }
+        Assert.True(warded < open, $"warded {warded} vs open {open}");
     }
 }

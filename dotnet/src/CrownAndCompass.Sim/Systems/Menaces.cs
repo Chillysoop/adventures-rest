@@ -494,7 +494,7 @@ public static class Menaces
     }
 
     /// <summary>The town hears the menace's name: its seat and region go on the map.</summary>
-    internal static void Announce(Town town, Menace m, SiteState seat)
+    public static void Announce(Town town, Menace m, SiteState seat)
     {
         m.Named = true;
         var region = World.RegionOf(town, seat);

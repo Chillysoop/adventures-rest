@@ -91,4 +91,19 @@ public class LivingFoesTests
                 }
         }
     }
+
+    [Fact]
+    public void TheHorrorUnderTheTownChangesFromGameToGameAndIsSometimesNotThere()
+    {
+        var seen = new HashSet<string>();
+        for (int seed = 1; seed <= 40; seed++)
+        {
+            var t = new Simulation(new SimulationOptions { Seed = seed }).Town;
+            string v = Stories.Variant(t, "horror");
+            Assert.Equal(v, Stories.Variant(t, "horror"));
+            seen.Add(v);
+        }
+        Assert.Contains("none", seen);
+        Assert.True(seen.Count >= 3, string.Join(",", seen));
+    }
 }
