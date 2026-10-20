@@ -285,6 +285,7 @@ public partial class TownView(MapView map) : Node3D
             case "artificers_foundry": ArtificersFoundry(kit, v); break;
             case "undercity_gate": UndercityGate(kit, v); break;
             case "griffon_roost": GriffonRoost(kit, v); break;
+            case "sky_dock": SkyDock(kit, v); break;
             case "fey_market": FeyMarket(kit, v); break;
             case "monster_sanctuary": MonsterSanctuary(kit, v); break;
             case "auction_house": AuctionHouse(kit, v); break;

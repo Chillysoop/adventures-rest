@@ -39,6 +39,11 @@
     { "id": "griffon", "name": "griffon", "ways": ["river", "water", "sheer"], "price": 900, "buyAt": 1800, "level": 9, "institution": "griffon-roost",
       "text": ["{hero} buys a griffon from the Roost. The Roostmaster spends a week teaching them to stay on it; the griffon spends it deciding whether to let them.", "{hero} rides a griffon now, and the river, the lakes and the mountains are no longer in the way."] }
   ],
+  "airship": {
+    "name": "the town's airship",
+    "ways": ["river", "water", "sheer"],
+    "text": ["{party} go aboard {ship} at the Sky Dock and sail out over everything that stands in the way.", "The riggers cast off and {ship} lifts {party} over the rooftops, bound straight for their job."]
+  },
   "fliers": { "dragon": 1.0, "schemers": 0.35, "beasts": 0.2, "cult": 0.1 },
   "texts": {
     "over": ["There is no road across {name}, but they go straight over it, thanks to {carrier}.", "Where everyone else goes round {name}, they cross it by {carrier}."],
