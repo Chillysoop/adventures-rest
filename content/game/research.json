@@ -804,6 +804,314 @@
       "arrivals": 0.15,
       "gold": 40,
       "defence": 40
+    },
+    {
+      "id": "war-drums",
+      "name": "War-drums of the Tide",
+      "field": "war",
+      "rank": 3,
+      "text": "The orc hosts' drum-calls, learned the hard way: sallies move as one, and raiders hear the town coming.",
+      "sparks": [
+        "broken:red-tide",
+        "broken:warren-clans"
+      ],
+      "defence": 12,
+      "mood": 0.1
+    },
+    {
+      "id": "stoneking-masonry",
+      "name": "Stoneking masonry",
+      "field": "crafts",
+      "rank": 4,
+      "text": "How the giant kings cut whole mountains: interlocking blocks no ram can shift.",
+      "sparks": [
+        "foe:stoneking-giants",
+        "slain:giant:3"
+      ],
+      "requires": [
+        "known:slate-and-lime"
+      ],
+      "build": 0.1,
+      "defence": 8
+    },
+    {
+      "id": "rime-forging",
+      "name": "Rime-forging",
+      "field": "crafts",
+      "rank": 3,
+      "text": "Frost-giant cold-iron and ice-cellars: the winter stores keep, the steel holds an edge.",
+      "sparks": [
+        "foe:rime-giants",
+        "met:frostsworn"
+      ],
+      "yields": {
+        "Food": 1.08,
+        "Tools": 1.08
+      }
+    },
+    {
+      "id": "grave-bells",
+      "name": "Grave-bell liturgy",
+      "field": "healing",
+      "rank": 3,
+      "text": "Bells cast with grave-dirt and the names of the dead: the restless lie down, and the living sleep.",
+      "sparks": [
+        "foe:ninefold-dead",
+        "slain:undead:4"
+      ],
+      "ward": 0.1,
+      "mood": 0.2
+    },
+    {
+      "id": "coil-antivenoms",
+      "name": "Coil antivenoms",
+      "field": "healing",
+      "rank": 3,
+      "text": "The serpent-priests' poisons, turned: a cure for every bite and a remedy for every fever of the fens.",
+      "sparks": [
+        "foe:coil-whisperers",
+        "met:lizardfolk"
+      ],
+      "yields": {
+        "Potions": 1.15,
+        "Herbs": 1.1
+      }
+    },
+    {
+      "id": "drowned-charts",
+      "name": "Drowned charts",
+      "field": "trade",
+      "rank": 3,
+      "text": "Soundings and safe channels from the drowned and the corsairs: caravans and ships go where they used to wreck.",
+      "sparks": [
+        "foe:drowned",
+        "foe:corsairs"
+      ],
+      "gold": 4
+    },
+    {
+      "id": "fey-courtesy",
+      "name": "Fey courtesy",
+      "field": "lore",
+      "rank": 3,
+      "text": "Which name never to give, which cup never to drink: the hollow court's games turn to bargains.",
+      "sparks": [
+        "foe:hollow-court",
+        "slain:fey:3"
+      ],
+      "mood": 0.3
+    },
+    {
+      "id": "counter-hymns",
+      "name": "Counter-hymns",
+      "field": "lore",
+      "rank": 3,
+      "text": "The choir's song sung backwards in every temple: the dread it spreads finds no purchase.",
+      "sparks": [
+        "foe:hollow-choir",
+        "broken:hollow-choir"
+      ],
+      "mood": 0.3,
+      "tension": -0.05
+    },
+    {
+      "id": "brimstone-alchemy",
+      "name": "Brimstone alchemy",
+      "field": "healing",
+      "rank": 4,
+      "text": "The regents' ash and sulphur, mastered: stronger draughts, and fire-pots for the walls.",
+      "sparks": [
+        "foe:ash-regents",
+        "slain:fiend:3"
+      ],
+      "requires": [
+        "known:distillation"
+      ],
+      "yields": {
+        "Potions": 1.2
+      },
+      "defence": 6
+    },
+    {
+      "id": "heraldic-law",
+      "name": "Heraldic law",
+      "field": "lore",
+      "rank": 3,
+      "text": "Every claim, every bloodline, written down and sealed: no pretender's word unsettles the town again.",
+      "sparks": [
+        "broken:marcher-pretender",
+        "foe:marcher-pretender"
+      ],
+      "tension": -0.1,
+      "mood": 0.1
+    },
+    {
+      "id": "rootspeech",
+      "name": "Rootspeech",
+      "field": "husbandry",
+      "rank": 3,
+      "text": "What the old wild says through its roots: where to sow, when the blight is coming.",
+      "sparks": [
+        "foe:elder-wild",
+        "building:druid_grove"
+      ],
+      "yields": {
+        "Food": 1.1
+      }
+    },
+    {
+      "id": "lower-court-contracts",
+      "name": "Lower-court contracts",
+      "field": "lore",
+      "rank": 3,
+      "text": "Clause by clause, how the lower courts write a bargain, and where the loopholes are.",
+      "sparks": [
+        "foe:broken-pact",
+        "slain:fiend:2"
+      ],
+      "gold": 5,
+      "lore": 0.5
+    },
+    {
+      "id": "door-sealing",
+      "name": "Door-sealing",
+      "field": "war",
+      "rank": 4,
+      "text": "Seals and wardings from the last door: what lies under the streets stays there.",
+      "sparks": [
+        "foe:last-door",
+        "known:grave-wards"
+      ],
+      "ward": 0.3
+    },
+    {
+      "id": "vermilion-wards",
+      "name": "Vermilion wards",
+      "field": "arcana",
+      "rank": 3,
+      "text": "The Conclave's red sigils on every gate: hexes slide off and walls stand harder.",
+      "sparks": [
+        "ally:vermilion-conclave"
+      ],
+      "requires": [
+        "circle:3"
+      ],
+      "defence": 15,
+      "lore": 1
+    },
+    {
+      "id": "lantern-code",
+      "name": "Lantern code",
+      "field": "war",
+      "rank": 3,
+      "text": "The Lanternbearers' shuttered signals from hill to hill: every blow is seen coming.",
+      "sparks": [
+        "ally:lanternbearers"
+      ],
+      "defence": 8,
+      "scry": 0.1
+    },
+    {
+      "id": "false-books",
+      "name": "False books",
+      "field": "trade",
+      "rank": 3,
+      "text": "Two ledgers for every coffer, the Black Ledger's way: richer, and whispered about.",
+      "sparks": [
+        "ally:black-ledger"
+      ],
+      "gold": 10,
+      "tension": 0.05
+    },
+    {
+      "id": "quiet-poisons",
+      "name": "Quiet poisons",
+      "field": "war",
+      "rank": 3,
+      "text": "The Silent Knife's craft in the watch's hands: a knife in the dark answered with one.",
+      "sparks": [
+        "ally:silent-knife"
+      ],
+      "defence": 10
+    },
+    {
+      "id": "ember-firebrands",
+      "name": "Ember firebrands",
+      "field": "war",
+      "rank": 4,
+      "text": "Dragonfire caught in clay, a gift of the Ember Court: hurled from the walls, it stops a host cold.",
+      "sparks": [
+        "ally:ember-court",
+        "slain:dragon"
+      ],
+      "defence": 15,
+      "fireproof": 0.1
+    },
+    {
+      "id": "bottled-weather",
+      "name": "Bottled weather",
+      "field": "husbandry",
+      "rank": 3,
+      "text": "A hag's jar of rain and one of sun: the bad season is uncorked somewhere else.",
+      "sparks": [
+        "ally:mire-grandmothers"
+      ],
+      "yields": {
+        "Food": 1.1,
+        "Wool": 1.1
+      }
+    },
+    {
+      "id": "beacon-chain",
+      "name": "Beacon chain",
+      "field": "war",
+      "rank": 3,
+      "text": "A fire on every hill from here to the League's cities: help rides out the same night.",
+      "sparks": [
+        "ally:crown-league"
+      ],
+      "defence": 10
+    },
+    {
+      "id": "lamplight-lenses",
+      "name": "Lamplight lenses",
+      "field": "crafts",
+      "rank": 3,
+      "text": "Ground crystal from the deep workings: light in the mines, sharper eyes in the scrying bowl.",
+      "sparks": [
+        "met:gnomes",
+        "folk:gnome:8"
+      ],
+      "yields": {
+        "Tools": 1.1,
+        "Stone": 1.1
+      },
+      "scry": 0.1
+    },
+    {
+      "id": "longship-lines",
+      "name": "Longship lines",
+      "field": "trade",
+      "rank": 3,
+      "text": "Clinker hulls and the jarls' star-paths: longer runs, fewer wrecks.",
+      "sparks": [
+        "met:frostsworn"
+      ],
+      "gold": 6
+    },
+    {
+      "id": "deep-wells",
+      "name": "Deep wells",
+      "field": "husbandry",
+      "rank": 3,
+      "text": "The oasis heirs' wells and cisterns: no siege or drought makes the town thirst.",
+      "sparks": [
+        "met:oasis"
+      ],
+      "yields": {
+        "Food": 1.05
+      },
+      "mood": 0.2
     }
   ]
 }
