@@ -323,8 +323,9 @@ public static class Streets
         int n = Land.Size, w = (int)Math.Round(rules.Width * Land.Res), d = (int)Math.Round(rules.Depth * Land.Res);
         double best = double.MaxValue;
         (double X, double Y, double Yaw, double SX, double SY)? pick = null;
-        for (int cy = 2; cy < n - 2; cy += 2)
-            for (int cx = 2; cx < n - 2; cx += 2)
+        var (bx0, by0, bx1, by1) = Land.Bounds(plan, 0);
+        for (int cy = Math.Max(2, by0); cy <= Math.Min(n - 3, by1); cy += 2)
+            for (int cx = Math.Max(2, bx0); cx <= Math.Min(n - 3, bx1); cx += 2)
             {
                 int i = cy * n + cx;
                 if (plan.Zones[i] != (byte)Zone.Commercial || plan.Taken[i] != 0 || plan.Paved[i] != 0) continue;
@@ -348,10 +349,10 @@ public static class Streets
         for (int k = 0; k < corners.Length; k++) (pts[k * 2], pts[k * 2 + 1]) = (p.X + sx * corners[k].U + fx * corners[k].V, p.Y + sy * corners[k].U + fy * corners[k].V);
         var road = new Street { Id = plan.Streets.Count, Points = pts, Square = true, Market = true };
         plan.Streets.Add(road);
-        for (int i = 0; i < plan.Paved.Length; i++)
+        foreach (int i in Land.Cells(p.X, p.Y, w, d, p.Yaw, 1))
         {
+            if (i < 0) continue;
             double x = (i % n + 0.5) / Land.Res, y = (i / n + 0.5) / Land.Res;
-            if (Math.Abs(x - p.X) > hw + hd || Math.Abs(y - p.Y) > hw + hd) continue;
             if (Inside(pts, x, y) && plan.Taken[i] == 0) plan.Paved[i] = 1;
         }
         for (int k = 0; k + 3 < pts.Length; k += 2) Stamp(plan, pts[k], pts[k + 1], pts[k + 2], pts[k + 3]);
@@ -416,8 +417,9 @@ public static class Streets
             var (built, _) = Built(plan);
             int start = -1;
             double best = double.MaxValue;
-            for (int cy = 2; cy < n - 2; cy++)
-                for (int cx = 2; cx < n - 2; cx++)
+            var (bx0, by0, bx1, by1) = Land.Bounds(plan, 0);
+            for (int cy = Math.Max(2, by0); cy <= Math.Min(n - 3, by1); cy++)
+                for (int cx = Math.Max(2, bx0); cx <= Math.Min(n - 3, bx1); cx++)
                 {
                     int i = cy * n + cx;
                     if (plan.Zones[i] != (byte)Zone.Residential || plan.Taken[i] != 0 || plan.Paved[i] != 0) continue;
