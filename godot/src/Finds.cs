@@ -6,7 +6,8 @@ namespace CrownAndCompass.Client;
 
 /// <summary>
 /// Explorers' reports (<see cref="Explore"/>). When a company out exploring finds something it sends word
-/// and waits; the report pops up as a card and pauses the clock. The card tells the find's story so far
+/// and waits; the first report, the last chapter and a step gone wrong pop up as a card and pause the clock
+/// (Settings.cs), while routine steps wait on the alert strip. The card tells the find's story so far
 /// (the first sighting, each chapter investigated, each roll), and offers what can be done: investigate
 /// further a chapter at a time, go in, deal with it as its kind allows, keep exploring, or come home.
 /// A check the company rolls throws the die on the card, like a story's.
@@ -58,19 +59,29 @@ public partial class Main
         _dirty = true;
     }
 
-    /// <summary>A report waiting on the mayor pops up on its own and stops the clock.</summary>
+    /// <summary>
+    /// A find's first report, its last chapter and a step gone wrong pop up on their own and stop the clock
+    /// (the "discoveries" setting). A step that went well with more to learn is routine: it waits on the
+    /// alert strip, and left alone the leader carries on.
+    /// </summary>
     private void SyncFinds()
     {
         if (_find.Visible && _findId is int open && Explore.FindOf(_sim.Town, open) is { } shown && (shown.State != FindState.Open || _sim.Town.Tick < shown.ReportTick) && _findBeat == null)
             CloseFind();
-        if (_title.Visible || _menu.Visible || _story.Visible || _find.Visible) return;
+        if (_title.Visible || _menu.Visible || _settings.Visible || _story.Visible || _find.Visible) return;
         var next = Explore.Waiting(_sim.Town).FirstOrDefault(f => _findSeen.GetValueOrDefault(f.Id, -1) < f.Log.Count);
         if (next == null) return;
         _findSeen[next.Id] = next.Log.Count;
-        if (_opts.Smoke) return;
+        if (_opts.Smoke || !FindMilestone(next)) return;
         OpenFind(next.Id);
-        if (_speed > 0 && !_opts.NoPause) SetSpeed(0);
+        StopClock("discoveries");
     }
+
+    /// <summary>Whether a find's report is one the mayor must see: the first, the last chapter done, or a step gone wrong.</summary>
+    private bool FindMilestone(Find f) =>
+        (f.Chapter == 0 && f.Clues == 0)
+        || Explore.NextChapter(_sim.Town, f) == null
+        || (f.Beat is { } b && !Sheet.Succeeded(b));
 
     private void RenderFind(Find f)
     {

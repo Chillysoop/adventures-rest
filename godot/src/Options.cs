@@ -63,6 +63,9 @@ public sealed class Options
     /// <summary>--title shows the main menu; --tutorial start|step-id runs the tutorial from there (screenshots).</summary>
     public bool Title;
 
+    /// <summary>--settings opens the Settings window (screenshots).</summary>
+    public bool Settings;
+
     /// <summary>--storyteller id: who tells a new town's story; --storytellers opens the main menu's choice of them.</summary>
     public string? Storyteller;
     public bool Storytellers;
@@ -207,6 +210,7 @@ public sealed class Options
                 case "--load": o.Load = Next(); break;
                 case "--menu": o.Menu = true; break;
                 case "--title": o.Title = true; break;
+                case "--settings": o.Settings = true; break;
                 case "--storyteller": o.Storyteller = Next(); break;
                 case "--storytellers": o.Storytellers = o.Title = true; break;
                 case "--episode": o.Episode = Next(); break;
