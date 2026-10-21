@@ -403,10 +403,11 @@ public static partial class Ui
     /// <summary>An icon inline in rich text.</summary>
     public static string Img(string name, int size = 15) => $"[img={size}x{size} valign=center]res://assets/icons/{name}.svg[/img]";
 
-    private static readonly System.Text.RegularExpressions.Regex Coins = new(@"(?<![\w#=])(\d[\d,]*(?:\.\d+)?)(g\b| gold\b)", System.Text.RegularExpressions.RegexOptions.Compiled);
+    // A tag first, so sums inside one (a [hint=...] tooltip) are left alone.
+    private static readonly System.Text.RegularExpressions.Regex Coins = new(@"\[[^\]]*\]|(?<![\w#=])(\d[\d,]*(?:\.\d+)?)(g\b| gold\b)", System.Text.RegularExpressions.RegexOptions.Compiled);
 
     /// <summary>Put the gold icon before every sum of money in a piece of rich text: "120g" and "120 gold".</summary>
-    public static string Coined(string bbcode) => Coins.Replace(bbcode, m => $"{Img("gold", 14)}{m.Groups[1].Value}{(m.Groups[2].Value == "g" ? "" : " gold")}");
+    public static string Coined(string bbcode) => Coins.Replace(bbcode, m => !m.Groups[1].Success ? m.Value : $"{Img("gold", 14)}{m.Groups[1].Value}{(m.Groups[2].Value == "g" ? "" : " gold")}");
 
     /// <summary>A button label with its sum of money shown with the gold icon instead of a "g".</summary>
     public static void GoldButton(Button b)
