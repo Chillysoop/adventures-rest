@@ -17,11 +17,21 @@ public sealed class MeshKit
         public const float Ember = 0.3f;
         public const float Magic = 0.8f;
         public const float Skin = 0.45f;
+
+        /// <summary>Heroes only (hero.gdshader): cloth in the class colour, polished metal that glints, an edge that glows when the gear is enchanted.</summary>
+        public const float Trim = 0.15f;
+        public const float Metal = 0.7f;
+        public const float Rune = 0.92f;
     }
 
     private readonly List<Vector3> _v = [];
     private readonly List<Vector3> _n = [];
     private readonly List<Color> _c = [];
+    private readonly List<Vector2> _uv = [];
+
+    /// <summary>The rig part the next triangles belong to (a hero's arm, leg, head...; see rig.gdshaderinc), written to UV.x.</summary>
+    public float Part;
+    private bool _rigged;
     private readonly Stack<Transform3D> _stack = new();
     public Transform3D Xf = Transform3D.Identity;
 
@@ -53,7 +63,9 @@ public sealed class MeshKit
         {
             _n.Add(n);
             _c.Add(col);
+            _uv.Add(new Vector2(Part, 0));
         }
+        _rigged |= Part != 0;
     }
 
     public void Quad(Vector3 a, Vector3 b, Vector3 c, Vector3 d, Color col)
@@ -207,6 +219,7 @@ public sealed class MeshKit
         arrays[(int)Mesh.ArrayType.Vertex] = _v.ToArray();
         arrays[(int)Mesh.ArrayType.Normal] = _n.ToArray();
         arrays[(int)Mesh.ArrayType.Color] = _c.ToArray();
+        if (_rigged) arrays[(int)Mesh.ArrayType.TexUV] = _uv.ToArray();
         mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays);
         return mesh;
     }
@@ -216,6 +229,9 @@ public sealed class MeshKit
         _v.Clear();
         _n.Clear();
         _c.Clear();
+        _uv.Clear();
+        Part = 0;
+        _rigged = false;
         Xf = Transform3D.Identity;
         _stack.Clear();
     }
