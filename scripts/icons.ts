@@ -75,6 +75,7 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["ui-search", "magnifying-glass", "#cfc6b0"],
   ["ui-faction", "tattered-banner", "#d9b25a"],
   ["ui-bag", "swap-bag", "#c08550"],
+  ["ui-heart", "hearts", "#e07aa0"],
   // The gods (content/original/deities.json): god-<id>, one glyph after each holy symbol
   ["god-anvil-father", "anvil-impact", "#d9a05a"],
   ["god-aurel", "open-palm", "#e8d27a"],

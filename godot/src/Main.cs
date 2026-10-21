@@ -707,15 +707,36 @@ public partial class Main : Control
                 LedgerCategory.Construction or LedgerCategory.Property => Ui.Good,
                 _ => Ui.Ink2,
             };
-            sb.Append(Ui.C(Ui.Ink2, $"[font_size=12]Day {day} · {e.Tick % 24:00}:00[/font_size]"))
-                .Append("  ")
-                .Append(Ui.C(catColor, $"[font_size=11][b]{e.Category.ToString().ToUpperInvariant()}[/b][/font_size]"))
-                .Append('\n');
+            // One line an entry: the category's icon (its name on hover), the news, the day dimmed after it.
             string text = LinkNames(e);
-            sb.Append(e.Importance == Importance.Major ? $"{Ui.C(Ui.Gold, "◆")} [b]{text}[/b]" : text).Append("\n[font_size=6] [/font_size]\n");
+            sb.Append(Ui.Tip(Ui.Img(LedgerIcon(e.Category), 16), e.Category.ToString())).Append(' ')
+                .Append(e.Importance == Importance.Major ? Ui.C(catColor == Ui.Ink2 ? Ui.Gold : catColor, $"[b]{text}[/b]") : text)
+                .Append("  ").Append(Ui.Dim($"[font_size=11]day {day}, {e.Tick % 24:00}:00[/font_size]"))
+                .Append("\n[font_size=6] [/font_size]\n");
         }
         Ui.SetRich(_ledgerText, sb.ToString());
     }
+
+    private static string LedgerIcon(LedgerCategory c) => c switch
+    {
+        LedgerCategory.Arrival => "population",
+        LedgerCategory.Departure => "ui-road",
+        LedgerCategory.Property => "ui-house",
+        LedgerCategory.Construction => "tools",
+        LedgerCategory.Business => "gold",
+        LedgerCategory.Social => "ale",
+        LedgerCategory.Brawl => "ui-wound",
+        LedgerCategory.Romance => "ui-heart",
+        LedgerCategory.Hardship => "ui-warn",
+        LedgerCategory.Quest => "compass",
+        LedgerCategory.Council => "decree",
+        LedgerCategory.War => "threat",
+        LedgerCategory.Town => "mandate",
+        LedgerCategory.Rumor => "ui-eye",
+        LedgerCategory.Faith => "ui-holy",
+        LedgerCategory.Faction => "ui-faction",
+        _ => "d20",
+    };
 
     /// <summary>Turn the names of agents an entry mentions into links that open the inspector.</summary>
     private string LinkNames(LedgerEntry e)

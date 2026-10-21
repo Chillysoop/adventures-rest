@@ -46,7 +46,7 @@ All from game-icons.net (CC BY 3.0, credited), listed in `scripts/icons.ts`:
 - goods and enemy kinds (tinted), `face-*` portraits, `tab-*`/`order-*` (white, the theme tints them);
 - `ui-*` coloured glyphs for common ideas: `ui-info`, `ui-time`, `ui-day`, `ui-yes`, `ui-no`, `ui-warn`, `ui-road`,
   `ui-heal`, `ui-wound`, `ui-up`, `ui-lock`, `ui-star`, `ui-renown`, `ui-person`, `ui-house`, `ui-trade`, `ui-shrine`,
-  `ui-holy`, `ui-follower`, `ui-miracle`, `ui-eye`, `ui-skull`, `ui-shield`, `ui-search`, `ui-faction`, `ui-bag`;
+  `ui-holy`, `ui-follower`, `ui-miracle`, `ui-eye`, `ui-skull`, `ui-shield`, `ui-search`, `ui-faction`, `ui-bag`, `ui-heart`;
 - `god-<id>` for every god in `content/original/deities.json`.
 
 To add one: a line in `scripts/icons.ts` (in its own block per feature, to keep merges clean), `node scripts/icons.ts`,
