@@ -195,6 +195,8 @@ public partial class Main
             case 31:
             {
                 // The tourney card: a grand tourney put on today, a stake on the first event, and its first heats ridden.
+                // Staged the hour before the heats start, so they are ridden whatever hour the play-through got here at.
+                for (int h = 0; h < 24 && _sim.Town.Hour != Tournaments.Rules(_sim.Town).StartHour - 1; h++) _sim.Step();
                 if (!Tournaments.Stage(_sim.Town, 1)) throw new InvalidOperationException("the tourney would not stage");
                 // A stake on the first event not yet under way (today's may have begun, by the hour), from a treasury that can spare it.
                 _sim.Town.Treasury = Math.Max(_sim.Town.Treasury, 5000);
