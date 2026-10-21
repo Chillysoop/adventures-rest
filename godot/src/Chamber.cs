@@ -46,6 +46,7 @@ public partial class Chamber : Control
         MouseFilter = MouseFilterEnum.Stop;
         ClipContents = true;
         SetMeta("keep", true);
+        TooltipText = "seat";
 
         var box = new SubViewportContainer { Stretch = true, MouseFilter = MouseFilterEnum.Ignore };
         box.SetAnchorsPreset(LayoutPreset.FullRect);
