@@ -5,6 +5,8 @@
 //        [--legends file.json]   (foes and heroes of earlier runs may come back; this run's are added to the file)
 //        [--summary]   (print only one JSON line on how the campaign stands, for scripts/gate.ts)
 //        [--storyteller steady|rising|chaotic]   (who tells the campaign: the difficulty; rising is the default)
+//        [--endless]   (a win closes an era; only a fall ends the campaign)   [--boons id:rank,...]   (found the town with boons)
+//        [--roads]   (print every road to victory's terms each month)   [--claim]   (claim the first road whose terms hold, as a player might)   [--roads-off a,b]   (close these roads; "all" for every one but slay)
 // Prints exactly what `npm run sim` prints for the same arguments.
 
 using System.Globalization;
@@ -25,6 +27,11 @@ string? legends = null;
 bool summary = false;
 bool handTaxes = false;
 string storyteller = "rising";
+bool roads = false;
+bool claim = false;
+bool endless = false;
+var boons = new List<string>();
+var roadsOff = new List<string>();
 
 static int Number(string[] args, ref int i) => i + 1 < args.Length ? int.Parse(args[++i], CultureInfo.InvariantCulture) : 0;
 
@@ -73,6 +80,22 @@ for (int i = 0; i < args.Length; i++)
                 return 1;
             }
             break;
+        case "--roads":
+            roads = true;
+            break;
+        case "--endless":
+            endless = true;
+            break;
+        case "--boons":
+            boons.AddRange((i + 1 < args.Length ? args[++i] : "").Split(',', StringSplitOptions.RemoveEmptyEntries));
+            break;
+        case "--claim":
+            claim = true;
+            break;
+        case "--roads-off":
+            string off = i + 1 < args.Length ? args[++i] : "";
+            roadsOff.AddRange(off == "all" ? Content.Default().Victory.Roads.Select(r => r.Id) : off.Split(','));
+            break;
         case "--people":
             people = Number(args, ref i);
             break;
@@ -83,7 +106,7 @@ for (int i = 0; i < args.Length; i++)
 }
 
 var past = legends != null && File.Exists(legends) ? Legends.Read(File.ReadAllText(legends)) : [];
-var sim = load != null ? SaveGame.ReadFile(load, out _) : new Simulation(new SimulationOptions { Seed = seed, Legends = past, AutoCouncil = !handTaxes, Storyteller = storyteller });
+var sim = load != null ? SaveGame.ReadFile(load, out _) : new Simulation(new SimulationOptions { Seed = seed, Legends = past, AutoCouncil = !handTaxes, Storyteller = storyteller, RoadsOff = roadsOff, Endless = endless, Boons = boons });
 var town = sim.Town;
 seed = town.Seed;
 var minImportance = all ? Importance.Routine : Importance.Notable;
@@ -99,6 +122,7 @@ town.Ledger.OnWrite(e =>
 for (int d = 0; d < days && town.Outcome == null; d++)
 {
     sim.RunDays(1);
+    if (claim && Victory.Claimed(town) == null && Victory.Roads(town).FirstOrDefault(r => Victory.ClaimBlocked(town, r.Id) == null) is { } open) sim.ClaimRoad(open.Id);
     var s = sim.History[^1];
     if (stats || s.Day % 10 == 0)
     {
@@ -108,6 +132,9 @@ for (int d = 0; d < days && town.Outcome == null; d++)
             $"mood {Js.ToFixed(s.AverageMood, 0)}, avg purse {Js.ToFixed(s.AverageGold, 0)}g, " +
             $"tax {Js.ToFixed(town.TaxRate * 100, 0)}%, income {Js.ToFixed(Taxes.Income(town), 0)}/services {Js.ToFixed(Taxes.Services(town), 0)}, unrest {Js.ToFixed(town.Taxes.Unrest, 0)}");
     }
+    if (roads && s.Day % 30 == 0)
+        Print($"  -- roads, day {s.Day}{(Victory.Ready(town) ? " (big bad crowned)" : "")}: " + string.Join("; ", town.Content.Victory.Roads.Select(r =>
+            $"{r.Id} {Js.ToFixed(Victory.Progress(town, r) * 100, 0)}% [{string.Join(", ", Victory.Terms(town, r).Select(t => $"{t.Label} {Js.Str(t.Have)}/{Js.Str(t.Need)}"))}]")) + (Victory.Claimed(town) is { } claimed ? $"; claimed {claimed.Id}, {Victory.DaysLeft(town)} days left" : ""));
 }
 
 Print();
@@ -116,11 +143,12 @@ var final = sim.Snapshot();
 Print($"Population {final.Population} ({town.Agents.Count(a => a.Departed)} have left), treasury {Js.ToFixed(final.Treasury, 0)} gold.");
 Print(
     town.Outcome != null
-        ? $"{Saga.EndTitle(town)}: {town.Saga.EndText}"
+        ? $"{Saga.EndTitle(town)}: {town.Saga.EndText}" + (Victory.Won(town) is { } road ? $" (won by {road.Name})" : "")
         : $"The warband stands at {Js.Str(Js.Round(town.Enemy.Strength))} ({town.Enemy.Stage.Name()}); {town.Enemy.Raids} raids, {town.Enemy.Sieges} sieges so far.");
 var teller = Storyteller.Of(town);
 Print($"Told by {teller.Name} ({teller.Title}): {town.Enemy.Raids} raids and {town.Enemy.Sieges} sieges by the warband; {town.Moods.Inspirations} inspirations and {town.Moods.Breaks} breaks among the townsfolk.");
 if (Saga.Summary(town) != "") Print(Saga.Summary(town));
+if (Endless.On(town)) Print($"Endless: era {Endless.EraNumber(town)}; " + string.Join("; ", town.Saga.Endless.Eras.Select(e => $"era {e.Number} ended day {e.Day} by {e.Road} against {e.Foe}")));
 Print($"A {City.Tier(town).Name.ToLowerInvariant()} of about {City.Souls(town)} souls; wards: {string.Join(", ", town.City.OpenWards.Select(w => City.Ward(town, w).Name))}.");
 Print("Treasury books, all time: " + string.Join(", ", town.Accounts.OrderBy(kv => kv.Value).Select(kv => $"{kv.Key} {Js.ToFixed(kv.Value, 0)}")));
 Print("Vacant zoned lots: " + string.Join(", ", Planning.Paintable.Select(z => $"{z} {Planning.VacantZoned(town, z)}")) + $"; unpainted open ground {Land.OpenGround(town) / (Land.Res * Land.Res)} tiles");

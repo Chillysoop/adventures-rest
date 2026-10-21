@@ -448,8 +448,9 @@ public static class Quests
             .Where(s => s.Known != SiteKnowledge.Unheard && !s.ThoughtCleared && s.Trust >= 50)
             // The undercity only once it stirs: the war on the surface comes first.
             .Where(s => !Undercity.IsUnder(town, s) || Undercity.Stirring(town, s))
-            // The trouble near town, which feeds the warband, comes before the far wilds.
-            .OrderBy(s => s.Generated)
+            // The big bad's quest comes first (DarkQuests); then the trouble near town, which feeds the warband, before the far wilds.
+            .OrderBy(s => DarkQuests.Sought(town, s) ? 0 : 1)
+            .ThenBy(s => s.Generated)
             .ThenBy(s => s.BelievedTier)
             .ThenBy(s => s.Attempts)
             .FirstOrDefault();

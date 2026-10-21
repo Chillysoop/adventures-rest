@@ -20,6 +20,8 @@
   ],
   "texts": {
     "formed": "{master} raises a company of its own to ride the roads for it: {company}, led by {leader} the {title}. Where your heroes go, they will go too.",
+    "quest": "Word on the roads: {company} ride for {site} to fetch what {master} seeks there. They will be there in {days}. Get there first, or meet them on the road.",
+    "seized": "{company} reach {site} first and carry off what {Master} sought there.",
     "sets": "Word on the roads: {company} ride for {site}. They will be there in {days}.",
     "late": "{company} reach {site} and find it cleared. They ride home with nothing for {master}.",
     "beaten": "{company} reach {site} and find the {party} already there. They turn their horses and ride on.",

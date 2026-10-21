@@ -147,7 +147,33 @@ public static class DarkCompany
             if (town.Tick >= c.ArriveTick) Arrive(town, master);
             return;
         }
-        if (town.Tick >= c.NextTick) SetOut(town);
+        // Its master's quest comes before any hoard: it rides to fetch what the big bad seeks.
+        if (DarkQuests.Current(town) is { } q && Quests.Site(town, q.SiteId) is { Cleared: false } qs) RideFor(town, master, q, qs);
+        else if (town.Tick >= c.NextTick) SetOut(town);
+    }
+
+    /// <summary>The big bad's company scatters (its master fell or a new era began); a new one is raised in time.</summary>
+    public static void Scatter(Town town)
+    {
+        var c = town.DarkCompany;
+        c.Riding = false;
+        c.Target = "";
+        c.NextTick = -1;
+    }
+
+    /// <summary>The errand it rides on is its master's quest.</summary>
+    public static bool OnQuest(Town town) => Out(town) && DarkQuests.Current(town)?.SiteId == town.DarkCompany.Target;
+
+    /// <summary>Off to the site of its master's quest, to be there before the quest is due.</summary>
+    private static void RideFor(Town town, Menace master, DarkQuest q, SiteState site)
+    {
+        var c = town.DarkCompany;
+        int days = Math.Max(1, Math.Min(Math.Max(2, site.Def.Distance), q.DueDay - town.Day - 1));
+        c.Target = site.Def.Id;
+        c.SetOutTick = town.Tick;
+        c.ArriveTick = town.Tick + days * SimTime.HoursPerDay;
+        c.Ambush = null;
+        town.Log(LedgerCategory.War, Importance.Notable, Fill(town, Text(town, "quest"), master).Replace("{site}", site.Def.Name).Replace("{days}", days == 1 ? "a day" : $"{days} days"));
     }
 
     private static void Raise(Town town, Menace master)
@@ -231,6 +257,17 @@ public static class DarkCompany
         {
             text = Text(town, "beaten").Replace("{party}", first.Name);
             c.Lost++;
+        }
+        else if (DarkQuests.Current(town) is { } q && q.SiteId == site.Def.Id)
+        {
+            // It fetches what its master sought: the quest is done now, not on its day.
+            c.Robbed++;
+            text = Text(town, "seized");
+            town.Log(LedgerCategory.War, Importance.Major, Fill(town, text, master).Replace("{site}", site.Def.Name));
+            DarkQuests.Finish(town, master, q);
+            c.Target = "";
+            c.NextTick = town.Tick + Dice(town, 5).Range(r.Every[0], r.Every[^1] + 1) * SimTime.HoursPerDay;
+            return;
         }
         else
         {
@@ -358,9 +395,12 @@ public static class DarkCompany
             return;
         }
         foreach (var h in living) Notoriety.Deed(town, h, "story", 4);
+        // Cut down on its way to fetch the big bad's prize: the quest fails with it.
+        bool quest = DarkQuests.Current(town) is { } q && q.SiteId == site.Def.Id;
         master.Power = Math.Max(0, master.Power * (1 - r.Loss));
         town.Log(LedgerCategory.War, Importance.Major, Fill(town, Text(town, "won"), master).Replace("{heroes}", names).Replace("{site}", site.Def.Name) + $" (Chronicle {town.Chronicles.Count})", amb.HeroIds);
         Records.Pin(town, "victory", c.Name);
+        if (quest) DarkQuests.Foil(town, master, DarkQuests.Current(town)!, null);
         if (Leader(town) is { } leader && Role(town, leader.Role) is { } lr && Dice(town, 31).Chance(r.Turn)
             && town.Content.Classes.FirstOrDefault(x => x.Id == lr.Cls) is { } cls)
         {

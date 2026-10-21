@@ -12,8 +12,8 @@ public class DarkCompanyTests
         var t = sim.Town;
         if (Saga.BigBad(t) is not { Alive: true })
         {
-            var top = t.Saga.Menaces.Where(m => m.Alive && Menaces.CanCrown(t, m)).OrderByDescending(m => m.Power).ThenBy(m => m.Id).FirstOrDefault()
-                ?? Menaces.Awaken(t, t.Content.Saga.Finale.Fallback[0])!;
+            // The old wyrm: far past what the town's heroes can slay this early, so it lives through the test.
+            var top = Menaces.Awaken(t, t.Content.Saga.Finale.Fallback[0])!;
             t.Saga.BigBadId = top.Id;
             t.Saga.CrownDay = t.Day;
             // It bides its time in its seat rather than riding on the town at once.
@@ -130,5 +130,28 @@ public class DarkCompanyTests
         Assert.Equal(a.Town.DarkCompany.Target, b.Town.DarkCompany.Target);
         Assert.Equal(a.Town.DarkCompany.Name, b.Town.DarkCompany.Name);
         Assert.Equal(a.Town.Treasury, b.Town.Treasury);
+    }
+
+    [Fact]
+    public void ItRidesForItsMastersQuestAndFetchingItFinishesTheQuest()
+    {
+        foreach (int seed in new[] { 2, 3, 5 })
+        {
+            var sim = Crowned(seed);
+            var t = sim.Town;
+            RunUntil(sim, () => DarkQuests.Current(t) != null && DarkCompany.OnQuest(t), 120);
+            if (!DarkCompany.OnQuest(t)) continue;
+            var q = DarkQuests.Current(t)!;
+            Assert.Equal(q.SiteId, t.DarkCompany.Target);
+            Assert.True(t.DarkCompany.ArriveTick < q.DueDay * SimTime.HoursPerDay);
+            foreach (var p in t.Parties.Where(p => p.SiteId == q.SiteId)) p.ArriveTick = int.MaxValue;
+            int done = DarkQuests.State(t).Past.Count;
+            t.DarkCompany.ArriveTick = t.Tick + 1;
+            sim.RunDays(1);
+            Assert.Equal(done + 1, DarkQuests.State(t).Past.Count);
+            Assert.False(DarkQuests.State(t).Past[^1].Foiled);
+            return;
+        }
+        Assert.Fail("no seed sent the company on its master's quest");
     }
 }
