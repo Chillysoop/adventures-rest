@@ -8,7 +8,7 @@ namespace CrownAndCompass.Client;
 /// The bounty board, in its window and in the tray's drawer. It opens on who can ride today (each company ready in
 /// town, and the free heroes), then the threats, one compact row each: the foe's face, what's posted, a coloured
 /// pill per crew for how hard the place looks for those very heroes (click one to offer them the job by name), and
-/// icon buttons whose tooltips say what they cost and do. The road, exploring, eyes in the wilds and the books fold
+/// icon buttons whose tooltips say what they cost and do. The road, exploring and eyes in the wilds fold
 /// away beneath, so the board itself never needs scrolling to.
 /// </summary>
 public partial class Main
@@ -36,13 +36,6 @@ public partial class Main
         if (Fold(p, "explore", "Exploring", out_ > 0 ? $"{out_} out" : "", "Pay a company to explore a region and find what's there.\nOr press Scout over the corner map to mark a spot for them.")) RenderExplore(p, t);
         int eyes = t.Scouts.Count(x => x.Out) + t.Mirrors.Count(m => m.Intact);
         if (Fold(p, "eyes", "Eyes in the wilds", eyes > 0 ? eyes.ToString() : "", "Scouts, hidden mirrors and the works that let the town see sites live.")) RenderEyes(p, t);
-        var books = t.AccountsYesterday.Where(kv => Math.Abs(kv.Value) >= 0.5).OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key, StringComparer.Ordinal).ToList();
-        if (books.Count > 0)
-        {
-            double net = books.Sum(kv => kv.Value);
-            if (Fold(p, "books", "Yesterday's books", Sign(net), "What came in and went out of the treasury yesterday.", net >= 0 ? Ui.Good : Ui.Bad))
-                p.Card(string.Join("\n", books.Select(kv => $"{Ui.Esc(kv.Key)}   {Ui.C(kv.Value >= 0 ? Ui.Good : Ui.Bad, $"[b]{Sign(kv.Value)}[/b]")}")) + $"\n[b]Net[/b]   {Ui.C(net >= 0 ? Ui.Good : Ui.Bad, $"[b]{Sign(net)}[/b]")}");
-        }
         p.Commit();
     }
 
