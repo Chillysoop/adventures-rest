@@ -117,6 +117,7 @@ public partial class Main
         p.Heading("Town guard");
         int housed = Garrison.Housed(t);
         p.Row($"[b]Watch[/b]  {Tag($"{t.Watch} watchmen")}{(housed > 0 ? "  " + Tag($"{housed} live in the walls", Ui.Good) : "")}\n{Ui.C(Ui.Ink2, $"[font_size=12]Hired through the Captain's motions in the Council. {Math.Round(Garrison.Wages(t))}g a day in wages.[/font_size]")}");
+        RenderHeroGuard(p, t);
         string? flagWhy = Garrison.FlagBlocked(t, Town.Center, Town.Center);
         p.Row($"[b]Guard flag[/b]  {Tag($"{_flagGuards} {(_flagGuards == 1 ? "guard" : "guards")}")}\n{Ui.C(Ui.Ink2, $"[font_size=12]Plant it anywhere ([b]G[/b]): the nearest guards go and stand there. Raiders shy away from what they cover, and what they cover holds better.[/font_size]")}",
             ("−", _flagGuards > 1, false, () => Act(() => _flagGuards--)),
@@ -136,6 +137,45 @@ public partial class Main
         }
         if (Garrison.Walled(t)) p.Note("Click any stretch of wall, a tower or the gate to call the watch to arms there. When a host marches, the scouts say which side it comes at.");
         else p.Note("Once the palisade stands, the watch walks it, and you can call them to arms on any stretch of it.");
+    }
+
+    /// <summary>Heroes posted to guard the town: who stands where, what they add, and a drop-down to post more.</summary>
+    private void RenderHeroGuard(Pane p, Town t)
+    {
+        var walls = Garrison.OnDuty(t, HeroDuty.Walls);
+        var streets = Garrison.OnDuty(t, HeroDuty.Streets);
+        p.Row($"{Ui.Img("order-defend")} [b]Walls[/b]  {Tag($"{walls.Count}")}  {Ui.C(Ui.Good, $"+{Js.Str(Math.Round(Garrison.DutyDefense(t)))} defence")}\n" +
+              $"{Ui.Img("order-guard")} [b]Streets[/b]  {Tag($"{streets.Count}")}  {Ui.C(Ui.Good, $"+{Js.Str(Math.Round(Garrison.StreetWatch(t) * 100))}% watch")}\n" +
+              Ui.C(Ui.Ink2, $"[font_size=12]Heroes on guard stay home, take no bounties · {Js.Str(Math.Round(Garrison.DutyWages(t)))}g a day[/font_size]"));
+        foreach (var h in Garrison.Defenders(t))
+        {
+            int hid = h.Id;
+            var s = h.Hero!;
+            var other = s.Duty == HeroDuty.Walls ? HeroDuty.Streets : HeroDuty.Walls;
+            p.Row($"{DutyIcon(h, 15)}{AgentLink(h)} {Ui.C(Ui.Ink2, $"{Ui.Esc(Ui.Cap(s.Cls.Name))} {s.Level}{(s.Magic.Count > 0 ? $" · {s.Magic.Count} magic" : "")}")}",
+                (other == HeroDuty.Walls ? "To walls" : "To streets", true, false, () => Act(() => _sim.SetDuty(hid, other))),
+                ("Stand down", true, false, () => Act(() => _sim.SetDuty(hid, HeroDuty.None))));
+        }
+        // Heroes in town not on guard, best first, for the two drop-downs.
+        var free = t.Heroes.Where(h => h.Hero!.Duty == HeroDuty.None && Garrison.DutyBlocked(t, h, HeroDuty.Walls) == null)
+            .OrderByDescending(h => h.Hero!.Level).ThenBy(h => h.Id).ToList();
+        var items = free.Select(h => ("", $"{h.GivenName} · {Ui.Cap(h.Hero!.Cls.Name)} {h.Hero.Level} · {Js.Str(Garrison.Wage(t, h))}g/day")).ToList();
+        var ids = free.Select(h => h.Id).ToList();
+        var guard = Garrison.Defenders(t);
+        var guardIds = guard.Select(h => h.Id).ToList();
+        p.Menus(
+            ("Post to walls", "order-defend", items, i => Act(() =>
+            {
+                _sim.SetDuty(ids[i], HeroDuty.Walls);
+                GuideEvent("duty");
+            })),
+            ("Post to streets", "order-guard", items, i => Act(() =>
+            {
+                _sim.SetDuty(ids[i], HeroDuty.Streets);
+                GuideEvent("duty");
+            })));
+        if (guard.Count > 0)
+            p.Buttons(($"Arm the guard from the armory", guard.Any(h => Sim.Systems.Armory.BestFor(t, h) != null), true, () => Act(() => _sim.Arm(guardIds))));
     }
 
     private void ShowPost(GuardPost post)
