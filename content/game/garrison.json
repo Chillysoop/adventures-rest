@@ -51,5 +51,6 @@
     "waves": 0.62,
     "sally": 0.24,
     "keep": 4
-  }
+  },
+  "duty": { "wage": 3, "wagePerLevel": 1, "wallsPerLevel": 2, "wallsPerTier": 3, "streetsPerLevel": 0.015, "streetsPerTier": 0.01, "streetsCap": 0.3, "unpaid": -8 }
 }

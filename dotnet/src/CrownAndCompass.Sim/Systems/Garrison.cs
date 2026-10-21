@@ -61,6 +61,37 @@ public sealed record GarrisonRules
 
     /// <summary>How the map plays a siege back (<see cref="Battles"/>).</summary>
     public BattleRules Battle { get; init; } = new();
+
+    /// <summary>Heroes the mayor posts to guard the town (<see cref="HeroDuty"/>).</summary>
+    public DutyRules Duty { get; init; } = new();
+}
+
+/// <summary>What a hero on guard duty costs and does (garrison.json "duty").</summary>
+public sealed record DutyRules
+{
+    /// <summary>The daily wage: a base, and more for each level.</summary>
+    public double Wage { get; init; } = 3;
+    public double WagePerLevel { get; init; } = 1;
+
+    /// <summary>Strength at the walls for each level of a hero posted there, and for each tier of magic they wear.</summary>
+    public double WallsPerLevel { get; init; } = 2;
+    public double WallsPerTier { get; init; } = 3;
+
+    /// <summary>What a hero on the streets adds to the watch's eye (<see cref="Council.WatchStrength"/>), by level and gear, and the most they all add.</summary>
+    public double StreetsPerLevel { get; init; } = 0.015;
+    public double StreetsPerTier { get; init; } = 0.01;
+    public double StreetsCap { get; init; } = 0.3;
+
+    /// <summary>Loyalty a hero loses when the town can't pay the wage and they walk off duty.</summary>
+    public double Unpaid { get; init; } = -8;
+}
+
+/// <summary>A hero's post at home: on the walls against what comes from outside, or on the streets against what works within.</summary>
+public enum HeroDuty
+{
+    None,
+    Walls,
+    Streets,
 }
 
 /// <summary>Where a guard can be sent: a wall section, a tower, the gate, or a flag the player planted.</summary>
@@ -524,9 +555,101 @@ public static class Garrison
         return sides;
     }
 
+    // Heroes on guard duty -----------------------------------------------------------------
+
+    /// <summary>Heroes at home on the duty, by id.</summary>
+    public static List<Agent> OnDuty(Town town, HeroDuty duty) =>
+        town.Heroes.Where(a => a.Hero!.Duty == duty && !a.IsAway).OrderBy(a => a.Id).ToList();
+
+    /// <summary>Every hero posted, walls first.</summary>
+    public static List<Agent> Defenders(Town town) => [.. OnDuty(town, HeroDuty.Walls), .. OnDuty(town, HeroDuty.Streets)];
+
+    public static double Wage(Town town, Agent a) => Rules(town).Duty.Wage + Rules(town).Duty.WagePerLevel * a.Hero!.Level;
+
+    public static double DutyWages(Town town) => town.Heroes.Where(a => a.Hero!.Duty != HeroDuty.None).Sum(a => Wage(town, a));
+
+    private static int GearTiers(Agent a) => a.Hero!.Magic.Values.Sum(i => i.Tier);
+
+    /// <summary>Strength the heroes on the walls add, their levels and the magic they wear.</summary>
+    public static double DutyDefense(Town town)
+    {
+        var r = Rules(town).Duty;
+        double d = 0;
+        foreach (var a in OnDuty(town, HeroDuty.Walls)) d += a.Hero!.Level * r.WallsPerLevel + GearTiers(a) * r.WallsPerTier;
+        return d;
+    }
+
+    /// <summary>What the heroes on the streets add to the watch's eye for spies, knives, thieves and fire-raisers.</summary>
+    public static double StreetWatch(Town town)
+    {
+        var r = Rules(town).Duty;
+        double w = 0;
+        foreach (var a in OnDuty(town, HeroDuty.Streets)) w += a.Hero!.Level * r.StreetsPerLevel + GearTiers(a) * r.StreetsPerTier;
+        return Math.Min(r.StreetsCap, w);
+    }
+
+    /// <summary>Why the hero can't take the post now, or null.</summary>
+    public static string? DutyBlocked(Town town, Agent a, HeroDuty duty)
+    {
+        var s = a.Hero;
+        if (s == null || a.Dead || a.Departed) return "gone";
+        if (s.Duty == duty) return duty == HeroDuty.None ? "not on duty" : "already there";
+        if (duty == HeroDuty.None) return null;
+        if (a.IsAway) return "out of town";
+        if (s.JailedUntil != null) return "in the cells";
+        if (town.Treasury < Wage(town, a)) return "no gold for the wage";
+        return null;
+    }
+
+    /// <summary>
+    /// Post a hero to guard the town, or stand them down. A posted hero stays home on a daily wage and takes no
+    /// bounties: on the walls they stand with the watch against raids and sieges and meet the warlord first; on
+    /// the streets they help the watch catch spies, turned councillors, knives in the night, thieves and fire-raisers.
+    /// </summary>
+    public static bool SetDuty(Town town, int heroId, HeroDuty duty)
+    {
+        if (heroId < 1 || heroId > town.Agents.Count) return false;
+        var a = town.Agent(heroId);
+        if (DutyBlocked(town, a, duty) != null) return false;
+        a.Hero!.Duty = duty;
+        town.Log(LedgerCategory.War, Importance.Routine, duty switch
+        {
+            HeroDuty.Walls => $"{a.Name} takes a post on the walls of {town.Name}, for {Js.Str(Wage(town, a))} gold a day.",
+            HeroDuty.Streets => $"{a.Name} walks the streets of {town.Name} with the watch, for {Js.Str(Wage(town, a))} gold a day.",
+            _ => $"{a.Name} stands down from guard duty, free to take bounties again.",
+        }, [a.Id]);
+        return true;
+    }
+
+    /// <summary>The day's wages for heroes on duty; one the town can't pay walks off, and minds.</summary>
+    private static void PayDuty(Town town)
+    {
+        foreach (var a in town.Heroes.Where(a => a.Hero!.Duty != HeroDuty.None).OrderBy(a => a.Id).ToList())
+        {
+            var s = a.Hero!;
+            if (a.Dead || a.Departed)
+            {
+                s.Duty = HeroDuty.None;
+                continue;
+            }
+            double wage = Wage(town, a);
+            if (town.Treasury < wage)
+            {
+                s.Duty = HeroDuty.None;
+                Loyalty.Sway(a, Rules(town).Duty.Unpaid);
+                town.Log(LedgerCategory.War, Importance.Notable, $"With no gold for their wage, {a.Name} walks off guard duty.", [a.Id]);
+                continue;
+            }
+            town.Book(TreasuryAccount.Watch, -wage);
+            a.Gold += wage;
+            s.Pay += wage;
+        }
+    }
+
     public static void Daily(Town town, bool auto)
     {
         Sync(town);
+        PayDuty(town);
         if (!auto) return;
         // The stand-in mayor mans the side a host comes from and the gate, and stands them down once it is over.
         var sides = Threatened(town);
