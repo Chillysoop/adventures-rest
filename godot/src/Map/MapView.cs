@@ -79,6 +79,12 @@ public partial class MapView : Control
     /// <summary>The player clicked the map with the scout's mark in hand.</summary>
     public event Action<Vector2>? SpotMarked;
     public bool Strategic { get; private set; }
+
+    /// <summary>The point of the map the camera looks at.</summary>
+    public Vector2 Target => _target;
+
+    /// <summary>The land under the town and the wilds (<see cref="WorldView"/>).</summary>
+    public WorldView Lands => _world;
     private float _strategic;
 
     private SubViewportContainer _box = null!;
@@ -278,6 +284,7 @@ public partial class MapView : Control
         }
         _decor.Refresh();
         _town.Sky(dt);
+        _town.Weather(dt);
         _town.Fliers(dt);
         _crowd.Advance(dt);
         _lurkers.Advance();

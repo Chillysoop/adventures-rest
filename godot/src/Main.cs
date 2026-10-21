@@ -126,6 +126,20 @@ public partial class Main : Control
             // --wonder quay: the harbour's quay on the shore of a town on the sea.
             else if (wk == "quay" && _sim.Town.Terrain.FirstOrDefault(f => f.Kind.Boats) is { } sea)
                 _opts.Look ??= Map.Geo.FromDays((sea.Inner + 0.05) * Math.Sin(sea.Bearing * Math.PI / 180), -(sea.Inner + 0.05) * Math.Cos(sea.Bearing * Math.PI / 180));
+            // --wonder home:trees: the first people met whose home looks like that (marked met for the shot).
+            else if (wk.StartsWith("home:") && _sim.Town.Settlements.FirstOrDefault(s => Map.TownView.SettlementLook(_sim.Town, s) == wk[5..]) is { } home)
+            {
+                home.Met = true;
+                _opts.Look ??= Map.Geo.SettlementPin(_sim.Town, home);
+            }
+            // --wonder falls: the first plateau's waterfall side; --wonder lift: a cliff-top town's tallest face.
+            else if (wk == "falls" && Cliffs.Of(_sim.Town).FirstOrDefault() is { } plateau)
+                _opts.Look ??= new Vector2((float)plateau.X + Map.Geo.Margin, (float)plateau.Y + Map.Geo.Margin);
+            // --wonder bridge: the town's own bridge over the river (its bridge ward once a town).
+            else if (wk == "bridge" && _map.Gen.Crossings.Count > 0)
+                _opts.Look ??= _map.Gen.Crossings[0].At;
+            else if (wk == "lift" && _map.Lands.SiteFaces.OrderByDescending(f => f.High).FirstOrDefault() is { High: > 0 } face)
+                _opts.Look ??= face.Top;
             else if (_sim.Town.Terrain.FirstOrDefault(f => f.Kind.Wonder?.Kind == wk) is { } wf)
             {
                 _opts.Look ??= Map.Geo.FromDays((wf.Inner + wf.Outer) / 2 * Math.Sin(wf.Bearing * Math.PI / 180), -(wf.Inner + wf.Outer) / 2 * Math.Cos(wf.Bearing * Math.PI / 180));

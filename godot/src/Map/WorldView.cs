@@ -16,11 +16,19 @@ public static class Mats
     public static readonly ShaderMaterial Hero = Make("hero");
     public static readonly ShaderMaterial Aura = Make("aura");
     public static readonly ShaderMaterial Effects = Make("fx");
-    public static readonly ShaderMaterial[] All = [Terrain, Water, Props, People, Foliage, Hero, Aura, Effects];
+
+    /// <summary>Mist banks and falling water (<see cref="TownView"/> scenery): soft sheets, one shader, two modes.</summary>
+    public static readonly ShaderMaterial Mist = Make("veil");
+    public static readonly ShaderMaterial Falls = Make("veil");
+    public static readonly ShaderMaterial[] All = [Terrain, Water, Props, People, Foliage, Hero, Aura, Effects, Mist, Falls];
 
     private static ShaderMaterial Make(string name) => new() { Shader = GD.Load<Shader>($"res://assets/shaders/{name}.gdshader") };
 
-    static Mats() => People.SetShaderParameter("hide_in_strategic", 1.0);
+    static Mats()
+    {
+        People.SetShaderParameter("hide_in_strategic", 1.0);
+        Falls.SetShaderParameter("mode", 1.0);
+    }
 
     public static void SetAll(string param, Variant v)
     {
@@ -116,8 +124,15 @@ public partial class WorldView : Node3D
     /// Rock faces where the town's founding site drops away (<see cref="Sim.Systems.Founding"/>): round a crag, a plateau or a
     /// ledge, wherever the ground falls steeply out from the town, and none down a ramp or a gentle slope.
     /// </summary>
+    /// <summary>A stretch of the founding site's cliff: its top and foot on the map, the way out, and how far it drops.</summary>
+    public readonly record struct Face(Vector2 Top, Vector2 Foot, Vector2 Dir, float High);
+
+    /// <summary>The founding site's cliff faces, found once (<see cref="BuildSiteCliff"/>); waterfalls and lift baskets go on them.</summary>
+    public List<Face> SiteFaces { get; } = [];
+
     private void BuildSiteCliff()
     {
+        SiteFaces.Clear();
         if (Gen.Town.Founding == null) return;
         var kit = new MeshKit();
         Color[] stones = [new("8c8172"), new("a39785"), new("74695d"), new("968a77")];
@@ -143,6 +158,7 @@ public partial class WorldView : Node3D
             var top = Geo.Center + dir * at;
             var foot = Geo.Center + dir * (at + 3);
             float baseY = Gen.HeightAt(foot.X, foot.Y) - 0.3f, high = Gen.HeightAt(top.X, top.Y) - baseY;
+            SiteFaces.Add(new Face(top, foot, dir, high));
             var mid = Geo.Center + dir * (at + 1.6f);
             int seed = 9001 + k;
             var col = stones[(int)(Geo.Hash(seed * 7 + 2) * stones.Length) % stones.Length];

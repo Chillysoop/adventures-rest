@@ -112,6 +112,7 @@ public partial class TownView(MapView map) : Node3D
         _batches.Clear();
         foreach (var l in _landmarks.Values) l.QueueFree();
         _landmarks.Clear();
+        ResetScenery();
         _groundKey = _wallKey = _buildKey = "";
         _zoneVersion = -1;
     }
@@ -2111,16 +2112,21 @@ public partial class TownView(MapView map) : Node3D
         RopeBridges(town);
         Wonders(town);
         Ships(town);
+        Scenery(town);
         // The river's bridges, where roads cross it (its fords are shallows in the water itself).
         var gen = map.Gen;
         for (int i = 0; i < gen.Crossings.Count; i++)
         {
             var (c, at, flow) = gen.Crossings[i];
             string id = $"crossing:{i}";
-            if (c.Kind != "bridge" || _landmarks.ContainsKey(id)) continue;
+            // The town's own bridge grows a ward of houses once it is a town.
+            string state = i == 0 && City.Reached(town, BridgeWardTier) ? "ward" : "plain";
+            if (c.Kind != "bridge" || _landmarks.TryGetValue(id, out var was) && (string)was.GetMeta("kind") == state) continue;
+            _landmarks.GetValueOrDefault(id)?.QueueFree();
             var across = new Vector2(-flow.Y, flow.X);
             float deck = Mathf.Max(gen.SurfaceAt(at.X + across.X * 4.6f, at.Y + across.Y * 4.6f), gen.SurfaceAt(at.X - across.X * 4.6f, at.Y - across.Y * 4.6f)) + 0.1f;
-            var mi = new MeshInstance3D { Mesh = Bridge(deck, i == 0), MaterialOverride = Mats.Props };
+            var mi = new MeshInstance3D { Mesh = Bridge(deck, i == 0, state == "ward"), MaterialOverride = Mats.Props };
+            mi.SetMeta("kind", state);
             AddChild(mi);
             _landmarks[id] = mi;
             mi.Position = new Vector3(at.X, 0, at.Y);
@@ -2444,7 +2450,7 @@ public partial class TownView(MapView map) : Node3D
     }
 
     /// <summary>A bridge over the river, its deck at <paramref name="deck"/>: the town's of timber on stone piers, the old ones all stone.</summary>
-    private static ArrayMesh Bridge(float deck, bool timber)
+    private static ArrayMesh Bridge(float deck, bool timber, bool ward = false)
     {
         var k = new MeshKit();
         var stone = new Color("8a8478");
@@ -2454,6 +2460,7 @@ public partial class TownView(MapView map) : Node3D
         foreach (float z in new[] { -2.4f, -0.8f, 0.8f, 2.4f }) k.Box(new Vector3(0, -1.4f, z), new Vector3(1.0f, deck + 1.25f, 0.5f), stone, stone);
         // Abutments down into each bank, so the deck meets the ground instead of floating over it.
         foreach (float z in new[] { -4.2f, 4.2f }) k.Box(new Vector3(0, -1.4f, z), new Vector3(1.3f, deck + 1.25f, 1.6f), stone, stone);
+        if (ward) BridgeHouses(k, deck);
         return k.Build();
     }
 
