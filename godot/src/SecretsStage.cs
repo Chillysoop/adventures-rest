@@ -38,6 +38,7 @@ public partial class Main
             t.Secrets.RemoveAll(x => x.AgentId == id);
             t.Secrets.Add(new Secret { AgentId = id, Kind = kinds[k++ % kinds.Length], Known = true });
         }
+        _councilSeat = 1;
         SetTab(Tab.Council);
     }
 }
