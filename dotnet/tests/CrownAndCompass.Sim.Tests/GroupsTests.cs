@@ -54,21 +54,13 @@ public class GroupsTests
         foreach (int seed in new[] { 1, 2, 3, 4, 5, 6, 7, 8 })
         {
             var sim = new Simulation(new SimulationOptions { Seed = seed });
-            // Checked the day each rises: a menace driven out may flee to a holding that is another group's site.
-            int seen = 0;
-            for (int day = 0; day < 240; day++)
+            sim.RunDays(240);
+            foreach (var m in sim.Town.Saga.Menaces.Where(m => m.Origin != "awakened"))
             {
-                sim.RunDays(1);
-                var menaces = sim.Town.Saga.Menaces;
-                // An awakened menace and the warband (seated at its own outpost) carry lineages of their own.
-                foreach (var m in menaces.Skip(seen).Where(m => m.Origin != "awakened" && m.Origin != Menaces.FromWarband))
-                {
-                    var seat = sim.Town.Sites.FirstOrDefault(s => s.Def.Id == m.SeatId);
-                    if (seat == null || C.Group(seat.Def.Group) is not GroupDef g) continue;
-                    Assert.Equal(g.Lineage, m.Lineage);
-                    checkedSome++;
-                }
-                seen = menaces.Count;
+                var seat = sim.Town.Sites.FirstOrDefault(s => s.Def.Id == m.BornSeatId);
+                if (seat == null || C.Group(seat.Def.Group) is not GroupDef g) continue;
+                Assert.Equal(g.Lineage, m.Lineage);
+                checkedSome++;
             }
         }
         Assert.True(checkedSome >= 0);

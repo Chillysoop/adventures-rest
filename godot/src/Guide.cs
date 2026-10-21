@@ -193,7 +193,8 @@ public partial class Main
         int tour = Book.Steps.FindIndex(x => x.Id == "done") is int d and >= 0 ? d + 1 : Book.Steps.Count;
         _guideCount.Text = _guideNew ? $"NEW IN THIS BUILD · {left} LEFT" : i < tour ? $"TUTORIAL · {i + 1} OF {tour}" : "TIP";
         _guideTitle.Text = s.Title;
-        Ui.SetRich(_guideText, s.Text);
+        // A sentence a line, so a step can be skimmed.
+        Ui.SetRich(_guideText, Ui.Points(s.Text));
         // A step whose action the player already took on their own ("count:Surveys" with a survey out) only
         // needs reading: it would otherwise wait for a second one and hold back every step after it.
         bool already = s.Until.StartsWith("count:", StringComparison.Ordinal) && _stepBase > 0;

@@ -165,86 +165,100 @@ public partial class Main
     {
         var r = Trends.Rules(t);
         var days = t.Trends.Days;
-        string Head(string s) => $"[font_size=15][b]{s}[/b][/font_size]";
-        string Dim(string s) => Ui.C(Ui.Ink2, s);
-        string Advice(string s) => "\n" + Ui.C(Ui.Gold, s);
-        string span = days.Count >= r.Days ? "the last 30 days" : $"the {days.Count} {(days.Count == 1 ? "day" : "days")} so far, at that pace for a month";
+        string Head(string icon, string s) => Ui.Head(s, icon);
+        string Dim(string s) => Ui.Dim(s);
+        string Point(string icon, string s) => "\n" + Ui.Bullet(s, icon);
+        string Advice(string s) => "\n" + Ui.Bullet(Ui.C(Ui.Gold, s), "ui-star");
+        string span = days.Count >= r.Days ? "30 days" : $"{days.Count} {(days.Count == 1 ? "day" : "days")} (paced to a month)";
+        string Line(string acc, double amt, string note = "") => $"[cell expand=1]{Ui.Esc(acc)}{note}[/cell][cell]{Ui.Signed(amt)}[/cell]";
         switch (st.Key)
         {
             case "Treasury":
             {
                 double net = Trends.Net(t);
                 var sb = new System.Text.StringBuilder();
-                sb.Append(Head(net >= 0 ? $"Treasury: earning {Math.Round(net):N0} gold a month" : $"Treasury: losing {Math.Abs(Math.Round(net)):N0} gold a month"));
-                sb.Append('\n').Append(Dim(Trends.Runway(t) is double run
-                    ? run < 1 ? "The coffers are empty." : $"At this rate the coffers are empty in about {Ui.Days((int)run)}."
-                    : $"{Math.Floor(t.Treasury):N0} gold in hand, and growing."));
+                sb.Append(Head("gold", $"Treasury  {Ui.Signed(net)}{Dim("/mo")}"));
+                sb.Append(Point("ui-time", Trends.Runway(t) is double run
+                    ? run < 1 ? Ui.C(Ui.Bad, "Empty") : $"Empty in {Ui.C(Ui.Bad, $"[b]{Ui.Days((int)run)}[/b]")}"
+                    : $"{Math.Floor(t.Treasury):N0} in hand, growing"));
+                string Rate(string acc) => acc == TreasuryAccount.SalesTax || acc == TreasuryAccount.HearthTax ? Dim($" {Math.Round(t.TaxRate * 100)}%") : "";
                 var books = Trends.Books(t);
                 if (books.Count > 0)
                 {
-                    sb.Append("\n\n");
+                    sb.Append($"\n\n{Ui.Head($"Month ({span})", "ui-day", Ui.KeywordColor, 13)}\n[table=2]");
                     var shown = books.Count > 9 ? books.Take(5).Concat(books.TakeLast(4)).ToList() : books;
-                    foreach (var (acc, amt) in shown)
-                        sb.Append($"{Ui.Esc(acc)}{(acc == TreasuryAccount.SalesTax || acc == TreasuryAccount.HearthTax ? Dim($" (rate {Math.Round(t.TaxRate * 100)}%)") : "")}   {Ui.C(amt >= 0 ? Ui.Good : Ui.Bad, $"[b]{(amt >= 0 ? "+" : "−")}{Math.Abs(amt):N0}[/b]")}\n");
-                    if (shown.Count < books.Count) sb.Append(Dim($"and {books.Count - shown.Count} smaller\n"));
-                    sb.Append($"[b]Net over {span}[/b]   {Ui.C(net >= 0 ? Ui.Good : Ui.Bad, $"[b]{(net >= 0 ? "+" : "−")}{Math.Abs(Math.Round(net)):N0}[/b]")}");
+                    foreach (var (acc, amt) in shown) sb.Append(Line(acc, amt, Rate(acc)));
+                    if (shown.Count < books.Count) sb.Append($"[cell]{Dim($"+{books.Count - shown.Count} smaller")}[/cell][cell][/cell]");
+                    sb.Append($"[cell][b]Net[/b][/cell][cell]{Ui.Signed(net)}[/cell][/table]");
+                }
+                // Yesterday's books, by account: what the day actually brought in and paid out.
+                var yesterday = t.AccountsYesterday.Where(kv => Math.Abs(kv.Value) >= 0.5).OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key, StringComparer.Ordinal).ToList();
+                if (yesterday.Count > 0)
+                {
+                    sb.Append($"\n\n{Ui.Head("Yesterday", "ui-time", Ui.KeywordColor, 13)}\n[table=2]");
+                    var top = yesterday.Count > 9 ? yesterday.Take(5).Concat(yesterday.TakeLast(4)).ToList() : yesterday;
+                    foreach (var kv in top) sb.Append(Line(kv.Key, kv.Value, Rate(kv.Key)));
+                    if (top.Count < yesterday.Count) sb.Append($"[cell]{Dim($"+{yesterday.Count - top.Count} smaller")}[/cell][cell][/cell]");
+                    sb.Append($"[cell][b]Net[/b][/cell][cell]{Ui.Signed(yesterday.Sum(kv => kv.Value))}[/cell][/table]");
                 }
                 if (net < 0)
                 {
                     var worst = books.LastOrDefault();
-                    sb.Append(Advice(worst.Account == TreasuryAccount.Bounties ? "Post fewer or cheaper bounties, or raise taxes in the Council." : "Raise taxes in the Council, or open trade routes in Diplomacy."));
+                    sb.Append(Advice(worst.Account == TreasuryAccount.Bounties ? "Fewer or cheaper bounties, or raise taxes" : "Raise taxes (Council) or open trade (Diplomacy)"));
                 }
-                else sb.Append(Advice("Click to open the Council and its taxes."));
+                else sb.Append(Advice("Click: Council and taxes"));
                 return (sb.ToString(), days.Select(d => (float)d.Treasury).ToList(), net >= 0 ? Ui.Good : Ui.Bad);
             }
             case "Food":
             {
                 double eaten = Trends.Eaten(t), imported = Trends.Imported(t);
-                string text = Head(Trends.FoodDays(t) is double fd ? $"Food: {fd:N0} days of bread in store" : "Food: the market's stores")
-                    + "\n" + Dim($"{Math.Round(t.Market.Stock(Good.Food)):N0} loads in the market; the town eats about {Math.Round(eaten):N0} a day.")
-                    + (imported >= 1 ? "\n" + Ui.C(Ui.Bad, $"The caravans are bringing in {Math.Round(imported):N0} loads a day at a steep price: the farms can't keep up.") : "")
-                    + "\n" + Dim($"A loaf costs {t.Market.Price(Good.Food):0.00} gold.")
-                    + Advice(Trends.FoodTrouble(t) ? "Paint more farmland (B), or lay in winter stores from the City window." : "Click to open the City window and its winter stores.");
+                string text = Head("bread", Trends.FoodDays(t) is double fd ? $"Food  {fd:N0} days" : "Food")
+                    + Point("food", $"{Math.Round(t.Market.Stock(Good.Food)):N0} in store, {Math.Round(eaten):N0} eaten a day")
+                    + (imported >= 1 ? Point("ui-warn", Ui.C(Ui.Bad, $"Importing {Math.Round(imported):N0} a day, dear: farms can't keep up")) : "")
+                    + Point("gold", $"Loaf {t.Market.Price(Good.Food):0.00}")
+                    + Advice(Trends.FoodTrouble(t) ? "Paint farmland (B) or lay in stores (City)" : "Click: City and winter stores");
                 return (text, days.Select(d => (float)d.Food).ToList(), Trends.FoodTrouble(t) ? Ui.Bad : Ui.Good);
             }
             case "Households":
             {
                 double pop = Trends.Change(t, d => d.Households);
-                string text = Head($"Households: {(pop >= 0 ? "+" : "−")}{Math.Abs(Math.Round(pop)):N0} a month")
-                    + "\n" + Dim($"{t.Population:N0} households, about {City.Souls(t):N0} souls. {(days.Count > 0 && days[^1].Homeless > 0 ? $"{days[^1].Homeless} without a roof." : "Everyone has a roof.")}")
-                    + Advice(pop < 0 ? "Families are leaving: the City window shows what keeps settlers away." : "Click to open the City window and its next charter.");
+                string text = Head("population", $"Households  {Ui.Signed(pop)}{Dim("/mo")}")
+                    + Point("ui-person", $"{t.Population:N0} households, ~{City.Souls(t):N0} souls")
+                    + Point("ui-house", days.Count > 0 && days[^1].Homeless > 0 ? Ui.C(Ui.Bad, $"{days[^1].Homeless} homeless") : "Everyone housed")
+                    + Advice(pop < 0 ? "Families leaving: see City" : "Click: City and next charter");
                 return (text, days.Select(d => (float)d.Households).ToList(), pop >= 0 ? Ui.Good : Ui.Bad);
             }
             case "Mandate":
             {
                 double m = Trends.Change(t, d => d.Mandate);
-                string text = Head($"Mandate: {Math.Round(t.Mandate)} of 100, {(Math.Abs(m) < 1 ? "steady" : $"{(m >= 0 ? "+" : "−")}{Math.Abs(Math.Round(m))} a month")}")
-                    + "\n" + Dim("How far the townsfolk back you. It follows their mood, and falls with hunger, high taxes, unrest and decrees.")
-                    + Advice(Trends.MandateTrouble(t) ? "It is falling: lower taxes, sign the motions the town wants, or feed it." : "Click to open the Council.");
+                string text = Head("mandate", $"Mandate  {Math.Round(t.Mandate)}{Dim("/100")}  {(Math.Abs(m) < 1 ? Dim("steady") : Ui.Signed(m) + Dim("/mo"))}")
+                    + Point("ui-info", Ui.Tip(Dim("How far the town backs you"), "It follows the townsfolk's mood, and falls with hunger, high taxes, unrest and decrees."))
+                    + Advice(Trends.MandateTrouble(t) ? "Falling: lower taxes, sign wanted motions, feed the town" : "Click: Council");
                 return (text, days.Select(d => (float)d.Mandate).ToList(), m >= 0 ? Ui.Good : Ui.Bad);
             }
             case "Unrest":
             {
                 double income = Taxes.Income(t), services = Taxes.Services(t);
-                string text = Head($"Unrest: {Math.Round(t.Taxes.Unrest)} of 100")
-                    + "\n" + Dim($"Services cost {services:N0}g a day; taxes, rents and trade bring {income:N0}g.")
-                    + (Taxes.Funding(t) < 1 ? "\n" + Ui.C(Ui.Bad, "Services go short, so unrest climbs.") : "")
-                    + Advice(Taxes.Funding(t) < 1 || t.Taxes.Unrest >= 1 ? "Raise taxes in the Council, or find more income." : "The town's services are paid for.");
+                string text = Head("suspicion", $"Unrest  {Math.Round(t.Taxes.Unrest)}{Dim("/100")}")
+                    + Point("ui-no", $"Services {Ui.C(Ui.Bad, $"[b]{services:N0}g[/b]")}{Dim("/day")}")
+                    + Point("ui-yes", $"Income {Ui.C(Ui.Good, $"[b]{income:N0}g[/b]")}{Dim("/day")}")
+                    + (Taxes.Funding(t) < 1 ? Point("ui-warn", Ui.C(Ui.Bad, "Services short: unrest climbs")) : "")
+                    + Advice(Taxes.Funding(t) < 1 || t.Taxes.Unrest >= 1 ? "Raise taxes (Council) or find income" : "Services paid for");
                 return (text, days.Select(d => (float)d.Unrest).ToList(), Ui.Bad);
             }
             case "Homes":
             {
                 int homeless = t.Workers.Count(a => a.HomeId == null);
                 int plots = Planning.VacantZoned(t, Zone.Residential);
-                string text = Head(homeless > 0 ? $"Homes: {homeless} homeless" : $"Homes: {plots} residential {(plots == 1 ? "plot" : "plots")} free")
-                    + "\n" + Dim("Townsfolk build their own homes on residential land.")
-                    + Advice(homeless > 0 || plots == 0 ? "Paint more residential land from the Build bar (B)." : "Room to grow.");
+                string text = Head("homeless", homeless > 0 ? $"Homes  {Ui.C(Ui.Bad, $"{homeless} homeless")}" : $"Homes  {plots} {(plots == 1 ? "plot" : "plots")} free")
+                    + Point("ui-house", Dim("Townsfolk build on residential land"))
+                    + Advice(homeless > 0 || plots == 0 ? "Paint residential land (B)" : "Room to grow");
                 return (text, days.Select(d => (float)d.Homeless).ToList(), Ui.Bad);
             }
             default:
             {
                 int away = t.Heroes.Count(a => a.IsAway);
-                return (Head($"Heroes: {t.Heroes.Count}") + "\n" + Dim($"{t.Heroes.Count - away} in town, {away} on the road.") + Advice("Click to open the bounty board."), [], Ui.Gold);
+                return (Head("heroes", $"Heroes  {t.Heroes.Count}") + Point("ui-house", $"{t.Heroes.Count - away} in town") + Point("ui-road", $"{away} on the road") + Advice("Click: bounty board"), [], Ui.Gold);
             }
         }
     }

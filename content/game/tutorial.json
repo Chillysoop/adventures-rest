@@ -504,6 +504,22 @@
       "teaches": []
     },
     {
+      "id": "favours-feuds",
+      "title": "Favours and feuds",
+      "text": "The minor powers also ask [b]favours[/b]: clear a lair they name, see an enemy destroyed, or open a new trade route. [b]Promise[/b] it and you have three months; keep your word for their friendship and a purse of gold, break it and they remember. Powers [b]feud[/b] with each other too. While a feud burns, the other side holds your alliance against you, and the dark ones strike at your town. Your ally will ask for gold to win the feud: pay, and its foe sues for peace.",
+      "when": "day:150",
+      "point": "tab:Diplomacy",
+      "teaches": []
+    },
+    {
+      "id": "first-contact",
+      "title": "First contact",
+      "text": "Powers and peoples stay unknown until you meet them. When one comes calling, a [b]first contact[/b] scene opens: your answers and rolls set where you start.\n\n• The bar under each name in [b]Diplomacy[/b] shows where they stand\n• Unmet ones can't trade, ally or be courted by you",
+      "when": "count:Discovered",
+      "point": "tab:Diplomacy",
+      "teaches": []
+    },
+    {
       "id": "wagons",
       "title": "Bigger caravans",
       "text": "Goods your town makes beyond what it needs earn nothing sitting in the market: the evening carters clear them away. A [b]trade route[/b] turns that surplus into gold. In [b]Diplomacy[/b], [b]Add a wagon[/b] to a route and its caravan carries more out on every run, up to four wagons. A bigger charter lets you run more routes, too.",
@@ -768,6 +784,7 @@
       "teaches": []
     },
     {"id": "watchtowers", "title": "Watchtowers", "text": "Build a [b]Watchtower[/b] (Government) to see the wilds live.\n• Sees farther as the town grows\n• One per 100 residents\n• Past its sight, the fog stays", "point": "buildbar", "when": "day:12", "teaches": []},
+    {"id": "rail-notices", "title": "Notices", "text": "Something new for you? A tile slides out beside its window.\n• Click: go there\n• Right-click: tuck it away\n• Red: urgent · Gold: your call", "point": "rail", "when": "day:4", "teaches": []},
     {"id": "scry-word", "title": "Scry the fight", "text": "A party that sent word is fighting out of sight: the strip offers a [b]scry[/b].\n• Each caster scries once every 2 days\n• Loyal casters: free\n• Others: gold\n• Disaffected: a favour", "point": "alerts", "when": "alert:scry", "teaches": []}
   ],
   "untaught": {}

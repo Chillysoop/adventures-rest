@@ -112,6 +112,9 @@
       "text": "You learned the trade on the wharves of the Free Ports, and you still know who to ask. You have advantage on checks in stories of the factions."
     }
   ],
+  "variants": [
+    {"id": "horror", "options": [{"id": "none", "weight": 2}, {"id": "choir", "weight": 2}, {"id": "hoax", "weight": 1}, {"id": "drowned", "weight": 1}]}
+  ],
   "stories": [
     {
       "id": "tavern-brawl", "title": "A brawl at {tavern}", "stakes": "low", "source": "tavern",
@@ -5550,6 +5553,896 @@
       }
     },
     {
+      "id": "horror-records",
+      "title": "Gaps in the rolls",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "!variant:horror:none",
+        "!precedent:horror-noticed"
+      ],
+      "minDay": 70,
+      "minPopulation": 100,
+      "repeatDays": 2000,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The town clerk brings the mayor the hearth-tax rolls with a frown. Four households paid last spring that nobody in town remembers: not the neighbours, not the priest, not the families on either side. The names are in the clerk's own hand.",
+          "options": [
+            {
+              "label": "Have the clerks go through every roll",
+              "tags": [
+                "caution"
+              ],
+              "skill": "investigation",
+              "dc": 13,
+              "success": {
+                "text": "Three nights by lamplight turn up eleven more. Every one of them lived near the old cellars by the river. The clerk has started sleeping at the town hall.",
+                "effects": {
+                  "mandate": 1,
+                  "precedent:horror-noticed": 1
+                }
+              },
+              "failure": {
+                "text": "The clerks find nothing more, and by the end of the week the clerk is no longer sure the names were ever there.",
+                "effects": {
+                  "mandate": -1
+                }
+              }
+            },
+            {
+              "label": "Pay a scholar to look into it",
+              "tags": [
+                "coin"
+              ],
+              "cost": 40,
+              "success": {
+                "text": "The scholar comes back pale. The missing households are real, she says, and so is something about how the town forgets them.",
+                "effects": {
+                  "precedent:horror-noticed": 1
+                }
+              }
+            },
+            {
+              "label": "A clerk's error. Let it lie",
+              "tags": [
+                "caution"
+              ],
+              "success": {
+                "text": "The rolls are corrected. Nobody misses the names.",
+                "effects": {}
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "Nobody does anything about the rolls, and nobody remembers why it seemed to matter.",
+        "effects": {}
+      }
+    },
+    {
+      "id": "horror-mirror",
+      "title": "The mirror that remembers",
+      "stakes": "high",
+      "source": "town",
+      "needs": [
+        "variant:horror:choir",
+        "precedent:horror-noticed",
+        "!precedent:horror-found",
+        "hero"
+      ],
+      "minDay": 80,
+      "repeatDays": 60,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A glassmaker in the river ward has covered every mirror in her shop. In them, she says, a girl walks past who is not in the room, and the girl is her own daughter. She has no daughter. {hero} has offered to go down into the cellars the reflection keeps walking toward.",
+          "options": [
+            {
+              "label": "Send {hero} into the cellars",
+              "tags": [
+                "valor"
+              ],
+              "skill": "stealth",
+              "dc": 14,
+              "success": {
+                "text": "Under the oldest cellar {hero} finds a stair that is not on any plan, and at the bottom of it, singing. {hero} comes back up with a child's shoe and can no longer stop humming.",
+                "effects": {
+                  "precedent:horror-found": 1,
+                  "renown": 2
+                }
+              },
+              "partial": {
+                "text": "{hero} finds the hidden stair and hears the singing, and comes back up white and bleeding from the ears.",
+                "effects": {
+                  "precedent:horror-found": 1,
+                  "wound": 6
+                }
+              },
+              "failure": {
+                "text": "{hero} comes back up an hour later with no memory of going down, and an empty bed in the glassmaker's house is now just an empty bed.",
+                "effects": {
+                  "people": -2,
+                  "dread": 3
+                }
+              }
+            },
+            {
+              "label": "Have the temple bless every mirror in the ward",
+              "tags": [
+                "faith"
+              ],
+              "skill": "religion",
+              "dc": 13,
+              "success": {
+                "text": "The priests bless the glass and the reflections stop. Under the blessing a faint line of frost leads to an old cellar door.",
+                "effects": {
+                  "precedent:horror-found": 1,
+                  "favour": 2
+                }
+              },
+              "failure": {
+                "text": "The blessing does nothing. The glassmaker breaks every mirror she owns and leaves town.",
+                "effects": {
+                  "people": -1,
+                  "dread": 2
+                }
+              }
+            },
+            {
+              "label": "Cover the mirrors and say nothing",
+              "tags": [
+                "caution"
+              ],
+              "success": {
+                "text": "The mirrors are covered. A month from now, two more households will be names nobody remembers.",
+                "effects": {
+                  "people": -3
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "By the time anyone thinks to act, the glassmaker has forgotten why she covered the mirrors.",
+        "effects": {
+          "people": -3,
+          "dread": 2
+        }
+      }
+    },
+    {
+      "id": "horror-song",
+      "title": "The choir under the town",
+      "stakes": "high",
+      "source": "town",
+      "needs": [
+        "variant:horror:choir",
+        "precedent:horror-found",
+        "!precedent:horror-ended",
+        "hero"
+      ],
+      "minDay": 90,
+      "repeatDays": 45,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Below the river ward, in a vault older than the town, something sings. Everyone who hears it long enough is forgotten by everyone who loved them, and walks down to join the choir. {hero} says they can find the singer and stop it.",
+          "options": [
+            {
+              "label": "Send {hero} down to end it",
+              "tags": [
+                "valor"
+              ],
+              "skill": "arcana",
+              "dc": 15,
+              "success": {
+                "text": "{hero} finds the singer, a thing like a wedding veil full of mouths, and cuts it apart in the dark. Up in the town, people start weeping for names they had forgotten, and some of the forgotten walk back up the stair.",
+                "effects": {
+                  "precedent:horror-ended": 1,
+                  "people": 6,
+                  "dread": -8,
+                  "renown": 6,
+                  "heroXp": 150
+                }
+              },
+              "partial": {
+                "text": "{hero} kills it, but the vault comes down on the way out, and {hero} is carried home on a door.",
+                "effects": {
+                  "precedent:horror-ended": 1,
+                  "people": 3,
+                  "dread": -5,
+                  "wound": 10
+                }
+              },
+              "failure": {
+                "text": "{hero} does not come back up. The singing gets louder for a week, then softer, as if it had eaten well.",
+                "effects": {
+                  "wound": 20,
+                  "people": -4,
+                  "dread": 6
+                }
+              }
+            },
+            {
+              "label": "Wall the vault and bless the stones",
+              "tags": [
+                "faith",
+                "caution"
+              ],
+              "success": {
+                "text": "Masons and priests seal the vault under a slab of consecrated stone. The singing stops, or at least nobody can hear it now.",
+                "effects": {
+                  "precedent:horror-ended": 1,
+                  "dread": -3,
+                  "gold": -80
+                }
+              }
+            },
+            {
+              "label": "Leave it an offering, as the old folk did",
+              "tags": [
+                "coin"
+              ],
+              "success": {
+                "text": "A cart of grain and a cask of wine go down the stair every new moon. The singing is quieter, and the town tries not to think about why.",
+                "effects": {
+                  "precedent:horror-ended": 1,
+                  "food": -30,
+                  "mandate": -3
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "While the council argues, the choir gains another voice.",
+        "effects": {
+          "people": -3,
+          "dread": 4
+        }
+      }
+    },
+    {
+      "id": "horror-hoax",
+      "title": "The clerk's ledger",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "variant:horror:hoax",
+        "precedent:horror-noticed",
+        "!precedent:horror-ended"
+      ],
+      "minDay": 90,
+      "repeatDays": 45,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The forgotten households were never forgotten, because they never lived. The deputy clerk invented them, collected their tax, and spent it on a house in the next valley. Half the town had been whispering about a curse.",
+          "options": [
+            {
+              "label": "Make an example of the clerk",
+              "tags": [
+                "order",
+                "harsh"
+              ],
+              "success": {
+                "text": "The clerk is put in the stocks, the money is found under a floorboard, and the town laughs at itself for a week.",
+                "effects": {
+                  "gold": 60,
+                  "mandate": 2,
+                  "precedent:horror-ended": 1
+                }
+              }
+            },
+            {
+              "label": "Take the money back quietly",
+              "tags": [
+                "mercy"
+              ],
+              "success": {
+                "text": "The clerk pays back every coin and leaves town before dawn. The curse stories take longer to die.",
+                "effects": {
+                  "gold": 40,
+                  "mandate": 1,
+                  "precedent:horror-ended": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The clerk is gone before anyone acts, with the money.",
+        "effects": {
+          "mandate": -1,
+          "precedent:horror-ended": 1
+        }
+      }
+    },
+    {
+      "id": "horror-well",
+      "title": "What drinks at the old cistern",
+      "stakes": "high",
+      "source": "town",
+      "needs": [
+        "variant:horror:drowned",
+        "precedent:horror-noticed",
+        "!precedent:horror-ended",
+        "hero"
+      ],
+      "minDay": 90,
+      "repeatDays": 45,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The forgotten households all drew their water from the old cistern under the market, the one Caldor's engineers built. A boy who drank there at night says a lady in the water asked him his name, and he can't remember telling her, or what his name was.",
+          "options": [
+            {
+              "label": "Send {hero} into the cistern",
+              "tags": [
+                "valor"
+              ],
+              "skill": "athletics",
+              "dc": 14,
+              "success": {
+                "text": "{hero} wades into the dark and finds her: a drowned thing in a court dress, wearing a crown of names. {hero} drags her into the lamplight, and she comes apart like wet paper. The boy remembers his name.",
+                "effects": {
+                  "precedent:horror-ended": 1,
+                  "people": 4,
+                  "dread": -6,
+                  "renown": 5
+                }
+              },
+              "failure": {
+                "text": "{hero} is pulled under and dragged out half-drowned, and the lady in the water now knows {hero}'s name.",
+                "effects": {
+                  "wound": 12,
+                  "dread": 4
+                }
+              }
+            },
+            {
+              "label": "Brick up the cistern",
+              "tags": [
+                "caution"
+              ],
+              "success": {
+                "text": "The cistern is filled with rubble and the market loses its old well. Nobody else forgets anyone.",
+                "effects": {
+                  "precedent:horror-ended": 1,
+                  "gold": -60,
+                  "mandate": -1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "Another household draws water at night.",
+        "effects": {
+          "people": -2,
+          "dread": 3
+        }
+      }
+    },
+    {
+      "id": "grey-bounty",
+      "title": "Not monsters",
+      "stakes": "medium",
+      "source": "road",
+      "needs": [
+        "site",
+        "!precedent:grey-sided"
+      ],
+      "minDay": 40,
+      "repeatDays": 2000,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The scouts sent to look at {site} come back uneasy. The \"monsters\" the farmers want killed are families of goblins, with children, half-starved and fleeing something worse out in the deep country. The farmers who posted the bounty want them gone all the same.",
+          "options": [
+            {
+              "label": "Take them in",
+              "tags": [
+                "mercy",
+                "generous"
+              ],
+              "prefer": 0.1,
+              "success": {
+                "text": "The goblin families come to the town under a flag of truce. The farmers spit, the children stare, and the newcomers set to work in the tanneries nobody else wants.",
+                "effects": {
+                  "settle": 1,
+                  "people": 4,
+                  "mandate": -2,
+                  "tension": 4,
+                  "precedent:grey-sided": 1,
+                  "precedent:grey-sheltered": 1
+                }
+              }
+            },
+            {
+              "label": "Let them stay where they are, under watch",
+              "tags": [
+                "mercy"
+              ],
+              "skill": "persuasion",
+              "dc": 14,
+              "success": {
+                "text": "You talk the farmers round: the goblins keep to the hollow, trade mushrooms for bread, and the bounty is torn up.",
+                "effects": {
+                  "settle": 1,
+                  "mandate": 1,
+                  "precedent:grey-sided": 1,
+                  "precedent:grey-sheltered": 1
+                }
+              },
+              "failure": {
+                "text": "The farmers won't hear it. They go out with torches the same night.",
+                "effects": {
+                  "settle": 1,
+                  "dread": 2,
+                  "mandate": -1,
+                  "precedent:grey-sided": 1,
+                  "precedent:grey-driven": 1
+                }
+              }
+            },
+            {
+              "label": "Drive them off",
+              "tags": [
+                "harsh",
+                "order"
+              ],
+              "success": {
+                "text": "Heroes drive the families out of {site} and into the hills. The farmers cheer. Nobody asks what the goblins were running from.",
+                "effects": {
+                  "settle": 1,
+                  "mandate": 2,
+                  "precedent:grey-sided": 1,
+                  "precedent:grey-driven": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "While the council talks, the farmers settle it themselves, with torches.",
+        "effects": {
+          "settle": 1,
+          "dread": 2,
+          "mandate": -1,
+          "precedent:grey-sided": 1,
+          "precedent:grey-driven": 1
+        }
+      }
+    },
+    {
+      "id": "grey-repaid",
+      "title": "The goblins remember",
+      "stakes": "medium",
+      "source": "war",
+      "needs": [
+        "precedent:grey-sheltered",
+        "menace"
+      ],
+      "minDay": 100,
+      "repeatDays": 2000,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A goblin child from the families the town took in runs to the gate at dusk: her uncle saw {menace}'s raiders gathering in the hills, and the goblins want the town to know first.",
+          "options": [
+            {
+              "label": "Thank them, and man the walls",
+              "tags": [
+                "order"
+              ],
+              "success": {
+                "text": "The raiders find the walls manned and the gates barred, and turn away cursing. In the goblin lanes, they are already telling the story.",
+                "effects": {
+                  "dread": -4,
+                  "mandate": 3,
+                  "foePower": -0.05
+                }
+              }
+            },
+            {
+              "label": "Send them back out to watch the hills",
+              "tags": [
+                "caution"
+              ],
+              "success": {
+                "text": "The goblins watch the hills for the town from now on, and bring word every week.",
+                "effects": {
+                  "dread": -3,
+                  "mandate": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "Nobody listens to a goblin child at the gate. The raiders come anyway.",
+        "effects": {
+          "dread": 3
+        }
+      }
+    },
+    {
+      "id": "grey-grudge",
+      "title": "The families you drove out",
+      "stakes": "medium",
+      "source": "war",
+      "needs": [
+        "precedent:grey-driven",
+        "menace"
+      ],
+      "minDay": 100,
+      "repeatDays": 2000,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The goblin families driven out of their hollow have found someone to take them in: {menace}. Their scouts know the town's farms, its paths and its weak walls.",
+          "options": [
+            {
+              "label": "Send an envoy to win them back",
+              "tags": [
+                "mercy"
+              ],
+              "skill": "persuasion",
+              "dc": 15,
+              "success": {
+                "text": "The envoy goes out with bread and an apology. Half the families come back; the rest stay with {menace}, but stop guiding its raids.",
+                "effects": {
+                  "foePower": -0.05,
+                  "mandate": 1
+                }
+              },
+              "failure": {
+                "text": "The envoy comes back with an arrow in his hat.",
+                "effects": {
+                  "foePower": 0.08,
+                  "dread": 2
+                }
+              }
+            },
+            {
+              "label": "Double the watch on the farms",
+              "tags": [
+                "order"
+              ],
+              "success": {
+                "text": "The watch walks the farm lanes every night. The raids find nothing, and the farmers grumble at the cost.",
+                "effects": {
+                  "gold": -40,
+                  "dread": -1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "{menace} knows the town's back ways now.",
+        "effects": {
+          "foePower": 0.1,
+          "dread": 3
+        }
+      }
+    },
+    {
+      "id": "chamber-wards",
+      "title": "No wards on the chamber",
+      "stakes": "medium",
+      "source": "council",
+      "needs": [
+        "class:wizard",
+        "!calling:chamber-warder",
+        "!decree:warded-chamber"
+      ],
+      "minDay": 60,
+      "repeatDays": 300,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} walks the council chamber with a lit candle and a frown. There is not one ward on these walls, they say: anyone who can whisper a charm can sit outside the window and decide the town's votes. The old powers of the land know it.",
+          "options": [
+            {
+              "label": "Make {hero} the chamber's warder",
+              "tags": [
+                "caution"
+              ],
+              "success": {
+                "text": "{hero} carves sigils into the lintels and hangs bells that ring for no wind. Any charm laid on a councillor now has to get past {hero} first.",
+                "effects": {
+                  "calling:chamber-warder": 1,
+                  "mandate": 1
+                }
+              }
+            },
+            {
+              "label": "Pay for wards to be laid once",
+              "tags": [
+                "coin"
+              ],
+              "cost": 60,
+              "success": {
+                "text": "{hero} lays the wards for a fee. They will hold for a season or so.",
+                "effects": {
+                  "decree:warded-chamber": 0
+                }
+              }
+            },
+            {
+              "label": "Councillors can mind their own heads",
+              "tags": [
+                "freedom"
+              ],
+              "success": {
+                "text": "The candle gutters. {hero} shrugs and goes back to the tavern.",
+                "effects": {}
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The chamber stays as it is: walls, benches and nothing else.",
+        "effects": {}
+      }
+    },
+    {
+      "id": "truth-seer",
+      "title": "A seer for the council",
+      "stakes": "medium",
+      "source": "council",
+      "needs": [
+        "class:cleric",
+        "!calling:truth-seer"
+      ],
+      "minDay": 60,
+      "repeatDays": 300,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} asks for a seat by the council door. Their god lets them hear a lie as a sour note, they say, and in a town the dark powers have started to notice, someone ought to be listening.",
+          "options": [
+            {
+              "label": "Give {hero} the seat by the door",
+              "tags": [
+                "faith",
+                "order"
+              ],
+              "success": {
+                "text": "{hero} sits by the door through every session. Twice in the first month a councillor stops in the middle of a speech and sits down again.",
+                "effects": {
+                  "calling:truth-seer": 1,
+                  "mandate": 1
+                }
+              }
+            },
+            {
+              "label": "The council is not on trial",
+              "tags": [
+                "freedom"
+              ],
+              "success": {
+                "text": "{hero} bows and leaves. The councillors are relieved, and some of them more relieved than others.",
+                "effects": {
+                  "mandate": -1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "Nobody answers {hero}, and the seat by the door stays empty.",
+        "effects": {}
+      }
+    },
+    {
+      "id": "hero-struck",
+      "title": "The children's champion",
+      "stakes": "low",
+      "source": "heroes",
+      "needs": [
+        "famous"
+      ],
+      "minDay": 30,
+      "repeatDays": 200,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Half the children of the lanes follow {hero} about with wooden swords and pot-lid shields, and the other half are the monsters. Their parents are torn between pride and worry: some of the bigger ones talk about going out to find a real lair.",
+          "options": [
+            {
+              "label": "Have {hero} teach them to hold a stick properly",
+              "tags": [
+                "generous"
+              ],
+              "success": {
+                "text": "{hero} drills them on the green at dawn. The children are proud, the parents are pleased, and the watch has a dozen new recruits waiting to grow up.",
+                "effects": {
+                  "renown": 2,
+                  "mandate": 2,
+                  "precedent:hero-struck": 1
+                }
+              }
+            },
+            {
+              "label": "Have {hero} tell them how it really is",
+              "tags": [
+                "caution"
+              ],
+              "success": {
+                "text": "{hero} sits them down and tells them about the friends who didn't come home. The game goes quiet for a few days.",
+                "effects": {
+                  "tension": -2
+                }
+              }
+            },
+            {
+              "label": "Let them play",
+              "tags": [
+                "freedom"
+              ],
+              "success": {
+                "text": "The children play heroes and monsters until dark, and the bravest of them start looking at the hills.",
+                "effects": {
+                  "precedent:hero-struck": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The game goes on, and the bravest of them start looking at the hills.",
+        "effects": {
+          "precedent:hero-struck": 1
+        }
+      }
+    },
+    {
+      "id": "child-missing",
+      "title": "Gone to find a lair",
+      "stakes": "high",
+      "source": "heroes",
+      "needs": [
+        "precedent:hero-struck",
+        "famous"
+      ],
+      "minDay": 60,
+      "repeatDays": 120,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A miller's boy is missing. His friends say he went out before dawn with a kitchen knife and a sack, to find a monster to kill like {hero} does. His mother is at the town hall. {hero} is already pulling on their boots.",
+          "options": [
+            {
+              "label": "Send {hero} after him",
+              "tags": [
+                "valor"
+              ],
+              "skill": "survival",
+              "dc": 13,
+              "success": {
+                "text": "{hero} tracks the boy to a wolf den in the hills and carries him home over one shoulder, both of them muddy and the boy grinning. He is going to be impossible for a year.",
+                "effects": {
+                  "renown": 4,
+                  "mandate": 3,
+                  "people": 1
+                }
+              },
+              "partial": {
+                "text": "{hero} finds the boy treed by wolves and gets him down, at the cost of a bad bite.",
+                "effects": {
+                  "renown": 3,
+                  "mandate": 2,
+                  "wound": 6
+                }
+              },
+              "failure": {
+                "text": "{hero} finds the knife and the sack, and nothing else. The mill is silent for a long time.",
+                "effects": {
+                  "mandate": -3,
+                  "dread": 4,
+                  "loyalty": -5
+                }
+              }
+            },
+            {
+              "label": "Turn out the watch and the whole lane",
+              "tags": [
+                "order"
+              ],
+              "success": {
+                "text": "Torches go up and down the hills all night. They find him at dawn, asleep in a hollow tree, cold and furious that nobody let him finish.",
+                "effects": {
+                  "mandate": 2,
+                  "gold": -20
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "By the time anyone goes looking, the trail is cold.",
+        "effects": {
+          "mandate": -3,
+          "dread": 3
+        }
+      }
+    },
+    {
+      "id": "child-stowaway",
+      "title": "A stowaway with the company",
+      "stakes": "medium",
+      "source": "heroes",
+      "needs": [
+        "party",
+        "precedent:hero-struck"
+      ],
+      "minDay": 60,
+      "repeatDays": 150,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Word comes by sending stone: {party} found a girl from the town hidden in their supply wagon, half a day out. She wants to be a hero. She has brought a sword that is mostly rust.",
+          "options": [
+            {
+              "label": "Send her home with an escort",
+              "tags": [
+                "caution"
+              ],
+              "success": {
+                "text": "One of the company walks her back to the gate, and she gives the watch a full report of the adventure.",
+                "effects": {
+                  "mandate": 1
+                }
+              }
+            },
+            {
+              "label": "Let her carry the packs and learn",
+              "tags": [
+                "freedom"
+              ],
+              "skill": "persuasion",
+              "dc": 12,
+              "success": {
+                "text": "She carries packs, cooks badly and keeps watch better than anyone. She comes home a squire with a story she will tell until she is old.",
+                "effects": {
+                  "renown": 2,
+                  "mandate": 1
+                }
+              },
+              "failure": {
+                "text": "She wanders off after a glowing light on the second night, and the company spends a day getting her back.",
+                "effects": {
+                  "partyHurt": 0.1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The company makes its own choice, and her mother has words with the mayor.",
+        "effects": {
+          "mandate": -1
+        }
+      }
+    },
+    {
       "id": "patron-courts",
       "title": "{patron} comes courting",
       "stakes": "medium",
@@ -6838,7 +7731,8 @@
     {"id": "levy", "name": "The levy", "days": 30, "build": -0.2, "mood": -1, "tension": -0.3, "text": "Every able hand drills on the green at dawn. The building sites stand half empty."},
     {"id": "merchants-wary", "name": "Merchants keep away", "days": 90, "arrivals": -0.06, "gold": -1, "text": "Word went round the trading houses that this town seizes grain. Caravans take the long road."},
     {"id": "newcomers-quarter", "name": "A quarter for the newcomers", "days": 120, "mood": 1, "arrivals": 0.05, "text": "The refugees have a quarter and a voice of their own, and their cousins are coming up the road."},
-    {"id": "hard-winter-ration", "name": "Winter rationing", "days": 30, "mood": -2, "tension": 0.2, "text": "Every household draws a measured share from the common stores until the thaw."}
+    {"id": "hard-winter-ration", "name": "Winter rationing", "days": 30, "mood": -2, "tension": 0.2, "text": "Every household draws a measured share from the common stores until the thaw."},
+    {"id": "warded-chamber", "name": "Wards on the council chamber", "days": 120, "gold": -0.5, "text": "Sigils on the lintels and bells that ring for no wind. A charm laid on a councillor is caught at the door."}
   ],
   "precedents": [
     {"id": "open-gates", "text": "The gates were opened to the refugees, and the town took them in."},
@@ -6857,9 +7751,18 @@
     {"id": "gifts-forbidden", "text": "The mayor forbade the town's heroes to take gifts from the dark powers."},
     {"id": "fey-bargain", "text": "The mayor let a stranger in a green coat sweeten the wells.", "after": 40},
     {"id": "signed-clause", "text": "The mayor signed a smiling notary's contract without reading the small print.", "after": 60},
-    {"id": "crone-apples", "text": "The mayor took a crone's apples to cure the fever.", "after": 30}
+    {"id": "crone-apples", "text": "The mayor took a crone's apples to cure the fever.", "after": 30},
+    {"id": "horror-noticed", "text": "The town found households in its rolls that nobody remembers.", "after": 15},
+    {"id": "horror-found", "text": "Heroes found the way down to what makes the town forget.", "after": 10},
+    {"id": "horror-ended", "text": "The town dealt with what made it forget its own."},
+    {"id": "grey-sided", "text": "The mayor chose a side between farmers and the goblin families in their hollow."},
+    {"id": "grey-sheltered", "text": "The town sheltered goblin families the farmers wanted dead.", "after": 40},
+    {"id": "grey-driven", "text": "The town drove starving goblin families out into the hills.", "after": 40},
+    {"id": "hero-struck", "text": "The children of the lanes play at being the town's heroes.", "after": 20}
   ],
   "callings": [
+    {"id": "chamber-warder", "class": "wizard", "name": "Warder of the chamber", "gold": -1, "text": "Keeps wards on the council chamber. A charm laid on a councillor is caught at the door."},
+    {"id": "truth-seer", "class": "cleric", "name": "Truth-seer to the council", "gold": -1, "tension": -0.05, "text": "Sits by the council door and hears every lie as a sour note. A foe's servant on the council is found out far sooner."},
     {"id": "towns-bard", "class": "bard", "name": "The town's bard", "mood": 1, "arrivals": 0.03, "gold": -1, "text": "Plays the tavern every night. Spirits rise, and the road hears of it."},
     {"id": "oath-shield", "class": "paladin", "name": "Oath of the Shield", "defence": 10, "tension": -0.2, "loyalty": 8, "text": "Sworn to the walls. Stronger at the gate, steadier in the lanes."},
     {"id": "oath-mercy", "class": "paladin", "name": "Oath of Mercy", "mood": 0.7, "arrivals": 0.03, "favour": 0.05, "loyalty": 8, "text": "Sworn to the weak. The poor lanes are kinder, and the gods notice."},

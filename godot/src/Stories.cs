@@ -114,14 +114,14 @@ public partial class Main
         head.AddChild(new TextureRect { Texture = Ui.Icon("d20"), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2(30, 30), SizeFlagsVertical = SizeFlags.ShrinkCenter });
         bool sending = Sendings.Is(d);
         head.AddChild(Ui.Label(word, color, Ui.Bold, 11));
-        head.AddChild(Ui.Label("·  " + (sending ? "SENDING STONE" : d.Source == Stories.LostSource ? "THE FALLEN" : d.Source.ToUpperInvariant()), sending ? Ui.Accent : Ui.Ink2, Ui.Bold, 11));
+        head.AddChild(Ui.Label("·  " + (sending ? "SENDING STONE" : d.Source == Stories.LostSource ? "THE FALLEN" : d.Source == Powers.ContactSource ? "FIRST CONTACT" : d.Source.ToUpperInvariant()), sending ? Ui.Accent : Ui.Ink2, Ui.Bold, 11));
         var spacer = new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         head.AddChild(spacer);
-        if (sending && !s.Done && Sendings.Pauses(t, s)) head.AddChild(Ui.Label("Game paused until you answer", Ui.Ink2, Ui.Medium, 11));
+        if (sending && !s.Done && Sendings.Pauses(t, s)) head.AddChild(Ui.Label("❚❚ Paused", Ui.Ink2, Ui.Medium, 11));
         else if (!s.Done)
         {
             int days = Math.Max(1, (int)Math.Ceiling((s.DueTick - t.Tick) / 24.0));
-            head.AddChild(Ui.Label($"Runs its course in {Ui.Days(days)}", Ui.Ink2, Ui.Medium, 11));
+            head.AddChild(Ui.IconChip("ui-time", Ui.Days(days), Ui.Ink2, "Runs its course, then lapses", 14));
         }
         _storyBox.AddChild(head);
 
@@ -147,7 +147,8 @@ public partial class Main
         // Inspiration only rerolls a check, so it is offered only when some choice here rolls.
         if (m.Inspiration > 0 && stage.Options.Any(o => o.Rolls))
         {
-            var inspire = new CheckBox { Text = $"Reroll with Inspiration if it fails ({m.Inspiration} left)", ButtonPressed = _inspire, FocusMode = FocusModeEnum.None, TooltipText = "If the d20 misses, spend one Inspiration to throw it again. It is only spent on a miss. Running the town well and natural 20s earn it." };
+            var inspire = new CheckBox { Text = $"Reroll a miss  ✦{m.Inspiration}", Icon = Ui.Icon("ui-star"), ExpandIcon = false, ButtonPressed = _inspire, FocusMode = FocusModeEnum.None, TooltipText = "If the d20 misses, spend one Inspiration to throw it again. It is only spent on a miss. Running the town well and natural 20s earn it." };
+            inspire.AddThemeConstantOverride("icon_max_width", 18);
             inspire.Toggled += on =>
             {
                 _inspire = on;
@@ -155,8 +156,8 @@ public partial class Main
             };
             foot.AddChild(inspire);
         }
-        string withParty = Sendings.PartyOf(t, s) is { } party ? $", with the {Ui.Esc(party.Name)} on the stone" : "";
-        var who = Ui.Rich(Ui.C(Ui.Ink2, $"[font_size=12]Rolling as [url=mayor]{Ui.C(Ui.Accent, Ui.Esc(m.Name))}[/url], level {m.Level} {Ui.Esc(Stories.Title(t).ToLowerInvariant())}{withParty}[/font_size]"), 12);
+        string withParty = Sendings.PartyOf(t, s) is { } party ? $"  {Ui.Img("ui-eye", 13)} {Ui.Esc(party.Name)}" : "";
+        var who = Ui.Rich(Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Img("tab-mayor", 14)} [url=mayor]{Ui.C(Ui.Accent, Ui.Esc(m.Name))}[/url] {Ui.Dim($"lv {m.Level}")}{withParty}[/font_size]"), 12);
         who.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         who.SizeFlagsVertical = SizeFlags.ShrinkCenter;
         foot.AddChild(who);
@@ -225,19 +226,24 @@ public partial class Main
     {
         var t = _sim.Town;
         string? blocked = Stories.Blocked(t, s, o);
-        string sub;
-        if (!o.Rolls) sub = o.Cost > 0 ? $"A sure thing · costs {Js.Str(o.Cost)}g" : "A sure thing";
+        // The roll as one figure against the DC; where the bonus comes from is on hover.
+        string sub, breakdown = "";
+        string cost = o.Cost > 0 ? $"  {Ui.Chip("gold", Js.Str(o.Cost), Ui.Gold, "Costs")}" : "";
+        if (!o.Rolls) sub = $"{Ui.Img("ui-yes", 14)} {Ui.Dim("Sure thing")}{cost}";
         else
         {
             var (mod, prof, ab) = Stories.Bonus(t, o.Skill, o.Ability);
             string name = o.Skill != "" ? t.Content.Stories.Skill(o.Skill)?.Name ?? o.Skill : ab.ToUpperInvariant();
             int bonus = mod + prof;
             string adv = Stories.Advantage(t, s, o);
-            string help = string.Concat(Sendings.Helpers(t, s, o).Select(h => $" + {h.Name} {(h.Bonus >= 0 ? "+" : "−")}{Math.Abs(h.Bonus)}"));
-            sub = $"{name} {(bonus >= 0 ? "+" : "−")}{Math.Abs(bonus)} ({ab.ToUpperInvariant()}{Edge(o.Skill)}){help} vs DC {Stories.DcOf(t, o)}"
-                + (adv != "" ? $" · advantage: {adv}" : "") + (o.Cost > 0 ? $" · costs {Js.Str(o.Cost)}g" : "");
+            var helpers = Sendings.Helpers(t, s, o);
+            int total = bonus + helpers.Sum(h => h.Bonus);
+            string help = string.Concat(helpers.Select(h => $" + {h.Name} {(h.Bonus >= 0 ? "+" : "−")}{Math.Abs(h.Bonus)}"));
+            breakdown = $"{name} {(bonus >= 0 ? "+" : "−")}{Math.Abs(bonus)} ({ab.ToUpperInvariant()}{Edge(o.Skill)}){help}" + (adv != "" ? $"\nAdvantage: {adv}" : "");
+            sub = $"{Ui.Img("d20", 15)} {Ui.C(Ui.Ink, $"[b]{name} {(total >= 0 ? "+" : "−")}{Math.Abs(total)}[/b]")} {Ui.Dim("vs")} {Ui.C(Ui.Ink, $"[b]DC {Stories.DcOf(t, o)}[/b]")}"
+                + (adv != "" ? $"  {Ui.Img("ui-up", 14)} {Ui.C(Ui.Good, "[b]advantage[/b]")}" : "") + cost;
         }
-        if (blocked != null) sub = $"{Ui.Cap(blocked)}.";
+        if (blocked != null) sub = $"{Ui.Img("ui-lock", 14)} {Ui.Dim(Ui.Esc(Ui.Cap(blocked)))}";
         // The heroes in town who would like or resent the choice, by their tempers.
         // So do the wards, each by what it cares about.
         var (pleased, angered) = Regard.Reactions(t, o.Tags);
@@ -252,8 +258,8 @@ public partial class Main
             return string.Join(", ", all);
         }
         var feel = new List<string>();
-        if (pleased.Count + wardsPleased.Count > 0) feel.Add(Ui.C(Ui.Good, $"Pleases {Ui.Esc(Who(pleased, wardsPleased))}"));
-        if (angered.Count + wardsAngered.Count > 0) feel.Add(Ui.C(Ui.Bad, $"Angers {Ui.Esc(Who(angered, wardsAngered))}"));
+        if (pleased.Count + wardsPleased.Count > 0) feel.Add($"{Ui.Img("ui-yes", 13)} {Ui.C(Ui.Good, Ui.Esc(Who(pleased, wardsPleased)))}");
+        if (angered.Count + wardsAngered.Count > 0) feel.Add($"{Ui.Img("ui-no", 13)} {Ui.C(Ui.Bad, Ui.Esc(Who(angered, wardsAngered)))}");
         double chance = Stories.Chance(t, s, o, _inspire);
         var odds = Assess.Odds(t, chance);
         var oddsColor = blocked != null ? Ui.Ink2 : Foes.Better(odds);
@@ -273,7 +279,7 @@ public partial class Main
         var label = Ui.Label($"{index + 1}.  {Stories.Fill(t, s, o.Label)}", blocked != null ? Ui.Ink2 : Ui.Ink, Ui.Medium, 15);
         label.MouseFilter = MouseFilterEnum.Ignore;
         v.AddChild(label);
-        var subl = Ui.Rich(Ui.Coined(Ui.C(Ui.Ink2, Ui.Esc(sub))), 12);
+        var subl = Ui.Rich(sub, 12);
         subl.MouseFilter = MouseFilterEnum.Ignore;
         v.AddChild(subl);
         if (feel.Count > 0)
@@ -286,7 +292,7 @@ public partial class Main
         {
             v.AddChild(Gauges(o, chance, odds, oddsColor));
             var touched = Assess.Impact(t, o).Touches.Select(w => w.Name).Distinct().ToList();
-            if (touched.Count > 0) row.TooltipText = $"What is at stake: {string.Join(", ", touched)}. Which way each goes depends on the roll.";
+            row.TooltipText = string.Join("\n", new[] { breakdown, touched.Count > 0 ? $"At stake: {string.Join(", ", touched)} (which way depends on the roll)" : "", feel.Count > 0 ? "Pleases / angers the heroes and wards named" : "" }.Where(x => x != ""));
         }
         row.AddChild(v);
         // The odds' colour down the left edge: green for a safe bet, red for a long shot.
@@ -403,10 +409,10 @@ public partial class Main
         p.Begin();
         int? next = Stories.NextLevelXp(t);
         int from = r.Levels.Count >= m.Level ? r.Levels[m.Level - 1] : 0;
-        p.Card($"[font_size=19][b]{Ui.Esc(m.Name)}[/b][/font_size]\n{Ui.C(Ui.Ink2, $"Level {m.Level} {Ui.Esc(Stories.Title(t).ToLowerInvariant())} of {Ui.Esc(t.Name)} · {Ui.Esc(bg.Name.ToLowerInvariant())}")}", Ui.Gold);
+        p.Card($"{Ui.Head(Ui.Esc(m.Name), "tab-mayor", Ui.Ink, 19)}\n{Ui.Chips(Ui.Chip("ui-star", $"Level {m.Level}", Ui.Gold), Ui.Dim($"{Ui.Esc(Stories.Title(t))} · {Ui.Esc(bg.Name)}"))}", Ui.Gold);
         if (next is int n) p.Meter("Experience", 100.0 * (m.Xp - from) / Math.Max(1, n - from), $"{m.Xp}/{n}");
         else p.Meter("Experience", 100, $"{m.Xp}");
-        p.Note("You gain experience by seeing stories through. Each level lets you choose how you grow, and raises your proficiency bonus every four levels.");
+        p.Note("Stories you see through give experience. Each level lets you choose how you grow, and raises your proficiency bonus every four levels.");
         if (Sheet.Pending(t) > 0) LevelUp(p);
 
         p.Heading("Abilities");
@@ -416,37 +422,37 @@ public partial class Main
         int prof = Stories.ProficiencyBonus(m.Level);
         int max = Sheet.InspirationMax(t);
         string pips = new string('●', Math.Min(m.Inspiration, max)) + new string('○', Math.Max(0, max - m.Inspiration));
-        p.Text($"{Tag($"Proficiency +{prof}", Ui.Ink)}   {Tag($"Inspiration {pips}", m.Inspiration > 0 ? Ui.Gold : Ui.Ink2)}   {Ui.C(Ui.Ink2, $"[font_size=12]{m.Successes} won, {m.Failures} lost[/font_size]")}", 13);
+        p.Text(Ui.Chips(Ui.Chip("ui-up", $"+{prof}", Ui.Ink, "Proficiency bonus"), Ui.Chip("ui-star", pips, m.Inspiration > 0 ? Ui.Gold : Ui.Ink2, "Inspiration"), Ui.Chip("ui-yes", $"{m.Successes}", Ui.Good, "Stories won"), Ui.Chip("ui-no", $"{m.Failures}", Ui.Bad, "Stories lost")), 13);
 
         p.Heading("Inspiration");
-        p.Note($"Spend one to reroll a failed d20 in a story. You hold up to {max}. Natural 20s earn it, and so does running the town well:");
+        p.Note($"Rerolls a failed d20 in a story. You hold up to {max}; natural 20s earn it, and so do these deeds.");
         foreach (var d in r.Deeds)
         {
             var (have, need) = Sheet.Progress(t, d);
             string unit = d.Id == "content" ? $"days at {Js.Str(d.Threshold)}+ Mandate" : "";
-            p.Text($"{Ui.C(Ui.Gold, "✦")} {Ui.Esc(d.Name)}  {Ui.C(Ui.Ink2, $"[font_size=12]{(need > 1 ? $"{Math.Max(0, have)} of {need}{(unit != "" ? " " + unit : "")}" : "each one")}[/font_size]")}", 13);
+            p.Text($"{Ui.Img("ui-star", 14)} {Ui.Esc(d.Name)}  {(need > 1 ? Ui.Tip(Ui.C(Ui.Gold, $"[b]{Math.Max(0, have)}/{need}[/b]"), unit) : Ui.Dim("[font_size=12]each[/font_size]"))}", 13);
         }
         var feats = Sheet.Feats(t);
         if (feats.Count > 0)
         {
             p.Heading("Feats");
-            foreach (var f in feats) p.Text($"[b]{Ui.Esc(f.Name)}[/b]  {Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(f.Text)}[/font_size]")}", 13);
+            foreach (var f in feats) p.Text(Ui.Bullet(Ui.Tip($"[b]{Ui.Esc(f.Name)}[/b] {Ui.Img("ui-info", 12)}", f.Text), "ui-star"), 13);
         }
 
         p.Heading("Background");
         if (Stories.CanChooseBackground(t))
         {
-            p.Note("Who were you before the charter? Your background sets your abilities, your two trained skills, and the kind of story you have advantage in. You can choose until you first step into a story.");
+            p.Note("Who were you before the charter? It sets your abilities, two trained skills, and the stories you have advantage in. Choose until you first step into a story.");
             foreach (var b in r.Backgrounds)
             {
                 var skills = string.Join(", ", b.Skills.Select(k => r.Skill(k)?.Name ?? k));
                 string id = b.Ref;
                 bool current = b.Ref == m.Background;
-                p.Row($"[b]{Ui.Esc(b.Name)}[/b]{(current ? "  " + Tag("now", Ui.Gold) : "")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(skills)} · best at {Ui.Esc(string.Join(", ", b.Abilities.Take(2).Select(x => x.ToUpperInvariant())))}. {Ui.Esc(b.Text)}[/font_size]")}",
+                p.Row($"{Ui.Tip($"[b]{Ui.Esc(b.Name)}[/b] {Ui.Img("ui-info", 12)}", b.Text)}{(current ? "  " + Tag("now", Ui.Gold) : "")}\n[font_size=12]{Ui.Chips(Ui.Chip("d20", Ui.Esc(skills), Ui.Ink2, "Trained skills"), Ui.Chip("ui-up", string.Join(" ", b.Abilities.Take(2).Select(x => x.ToUpperInvariant())), Ui.Gold, "Best abilities"))}[/font_size]",
                     ("Choose", true, current, () => Act(() => _sim.ChooseBackground(id))));
             }
         }
-        else p.Text($"[b]{Ui.Esc(bg.Name)}[/b]  {Tag(bg.Feature, Ui.Gold)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(bg.Text)}[/font_size]")}", 13);
+        else p.Text($"{Ui.Tip($"[b]{Ui.Esc(bg.Name)}[/b] {Ui.Img("ui-info", 12)}", bg.Text)}  {Tag(bg.Feature, Ui.Gold)}", 13);
 
         p.Heading("Skills");
         var lines = r.Skills.Select(sk =>
@@ -479,14 +485,14 @@ public partial class Main
             var (word, color) = StakesLook(d.Stakes);
             int days = Math.Max(1, (int)Math.Ceiling((s.DueTick - t.Tick) / 24.0));
             int id = s.Id;
-            p.Row($"[b]{Ui.Esc(Stories.Fill(t, s, d.Title))}[/b]\n{Tag(word, color)} {Ui.C(Ui.Ink2, $"[font_size=12]· runs its course in {Ui.Days(days)}[/font_size]")}", ("Step in", true, true, () => OpenStory(id)));
+            p.Row($"[b]{Ui.Esc(Stories.Fill(t, s, d.Title))}[/b]\n{Tag(word, color)}  {Ui.Chip("ui-time", Ui.Days(days), Ui.Ink2, "Runs its course, then lapses", 14)}", ("Step in", true, true, () => OpenStory(id)));
         }
         var decrees = Decrees.Active(t).ToList();
         if (decrees.Count > 0)
         {
             p.Heading("Decrees in force");
             foreach (var d in decrees)
-                p.Text($"[b]{Ui.Esc(d.Name)}[/b]  {Tag(Ui.Days(Decrees.DaysLeft(t, d.Id)) + " left", Ui.Ink2)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(d.Text)}[/font_size]")}", 13);
+                p.Text($"{Ui.Img("decree", 15)} {Ui.Tip($"[b]{Ui.Esc(d.Name)}[/b] {Ui.Img("ui-info", 12)}", d.Text)}  {Ui.Chip("ui-time", Ui.Days(Decrees.DaysLeft(t, d.Id)), Ui.Ink2, "Left", 14)}", 13);
         }
         var called = Callings.Holders(t).ToList();
         if (called.Count > 0)
@@ -494,7 +500,7 @@ public partial class Main
             p.Heading("Callings");
             p.Note("Parts heroes have taken up in the town through the stories of their class. Each lasts while its hero stays and stays loyal.");
             foreach (var (hero, c) in called)
-                p.Text($"[b]{Ui.Esc(c.Name)}[/b]  {AgentLink(hero)} {Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(hero.Hero!.Cls.Name.ToLowerInvariant())}[/font_size]")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(c.Text)}[/font_size]")}", 13);
+                p.Text($"{Ui.Img("ui-renown", 15)} {Ui.Tip($"[b]{Ui.Esc(c.Name)}[/b] {Ui.Img("ui-info", 12)}", c.Text)}  {AgentLink(hero)} {Ui.Dim($"[font_size=12]{Ui.Esc(hero.Hero!.Cls.Name.ToLowerInvariant())}[/font_size]")}", 13);
         }
         var remembered = t.Stories.Precedents.Keys.Select(id => r.Precedent(id)).OfType<PrecedentDef>().ToList();
         if (remembered.Count > 0)
@@ -513,7 +519,7 @@ public partial class Main
                 var b = s.Beats[^1];
                 var color = b.Result switch { StoryResult.Critical or StoryResult.Success or StoryResult.Certain => Ui.Good, StoryResult.Partial => Ui.Gold, StoryResult.Ignored => Ui.Ink2, _ => Ui.Bad };
                 string what = b.Result == StoryResult.Ignored ? "let it be" : b.Result == StoryResult.Certain ? "settled" : Stories.Word(b.Result);
-                p.Text($"{Ui.C(Ui.Ink2, $"[font_size=11]Day {b.Tick / 24 + 1}[/font_size]")}  {Ui.Esc(Stories.Fill(t, s, Stories.DefOf(t, s).Title))}  {Tag(what, color)}", 13);
+                p.Text($"{Ui.Img(color == Ui.Good ? "ui-yes" : color == Ui.Bad ? "ui-no" : "ui-day", 14)} {Ui.Esc(Stories.Fill(t, s, Stories.DefOf(t, s).Title))}  {Tag(what, color)}  {Ui.Dim($"[font_size=11]day {b.Tick / 24 + 1}[/font_size]")}", 13);
             }
         }
         p.Commit();

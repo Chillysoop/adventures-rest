@@ -1182,6 +1182,12 @@ public static class Explore
     {
         var ch = NextChapter(town, f)!;
         var members = Living(town, s);
+        // All of them fell (in a raid, a duel, a plague) while they dug: nobody is left to finish it.
+        if (members.Count == 0)
+        {
+            Lost(town, s);
+            return;
+        }
         var (beat, who) = Roll(town, members, ch.Skill, Dc(town, f, ch));
         f.Beat = beat;
         s.ResumeTick = null;

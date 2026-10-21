@@ -7,6 +7,8 @@
   project. The owner never opens GitHub, an engine or any other tool: show progress as summaries, Ledgers, screenshots and playable builds.
 - Decided: real time with pause on top of a daily strategic tick.
 - Priorities: low-cost scalability, efficiency, speed, quality, style.
+- Future expansion (not built): the underdark and other planes (fey, hells, space) as separate giant map layers
+  reached by ancient portals found on the map or portals the player builds late and must guard. See `docs/map-layers.md`; don't hard-wire "one map".
 
 ## Working here
 
@@ -45,7 +47,8 @@
   `godot/src/ClockStops.cs` (`ClockStops.All`: id, label, tip, default) and its site calls `Main.StopClock("id")`; the
   player toggles each in Settings (`godot/src/Settings.cs`, profile section `settings`). Only menus, the title and the end screen pause directly.
 - Alerts (the Paradox-style icon strip): raise one from the sim by adding a kind and a rule in `Systems/Alerts.cs`
-  (rules read the town, never write or roll dice; an alert lasts while its rule names it). Each alert is one action for the player; news goes to the Ledger, not the strip.
+  (rules read the town, never write or roll dice; an alert lasts while its rule names it). Each alert is one action for the player; news goes to the Ledger, not the strip. A new urgent or decision alert also slides a tile out of its window's rail button
+  (`godot/src/RailNotices.cs`, `--notices F` replays the standing ones for shots); it reads the same alerts, so add nothing there.
 - Institutions (`content/game/institutions.json`, `Systems/Institutions.cs`, client `godot/src/Institutions.cs`): a
   civic building with a keeper, a daily service (a `DecreeDef` plus defence, heroes, healing, escorts, routes, faction
   standing), patronage levels, one mayor's choice and fixtures stories leave. Requests are ordinary stories in the same
@@ -65,6 +68,12 @@
   `Construction.Crews`; the stand-in mayor adds one below `Construction.Wanted`), whose builders work the nearest site
   (`Construction.SiteFor`). A house grows a storey only with `HousingDef.Near` services within `nearReach`, `Foods` kinds of
   food and `Beauty` appeal (`City.NeedsBlocked`).
+- Zone layouts (city.json `markets`, `closes`): each zone grows its own way. Shops: `Streets.Markets` lays a rectangular
+  market square (`Street.Market`) in shop paint with a straight high street to the nearest street, once the town keeps
+  `shopsEach` shops per square; shops front its rim first, a side all facing one way. Homes: `Streets.Closes` lays a wandering
+  side lane (`Street.Close`, never paved) from the deepest open home paint. Fields are client-side (`TownView.Fields`): each
+  farm works the farmland nearest it in rows the way it faces, hedgerows on the bounds, a farmstead only on the oldest farm per
+  2.6 tiles. The zone brush shows paint only, never outlines of buildings to come. `--zone farmland|commercial|residential|square` aims shots.
 - Monuments (`Systems/Monuments.cs`, parts in buildings.json with `partOf`, `after`, `favour`): the town hall, temple and keep
   grow by parts, each its own civic building beside the core (`Building.ParentId`) with its own bonuses and a daily `favour`
   with the god (`"god"`) or a faction (`"faction:id"`, negative for a rival). `Building.Grow` lets the council add the cheapest
@@ -107,6 +116,9 @@
   another system, capped in decor.json. Pieces claim plan cells (`Decor.Cells`, `LandPlan.Decor`): `Land.Fits` and lanes go
   round them, and they never stand on a lane. Appeal adds to house contentment (`Decor.Comfort`) and to ward land prices
   (`Decor.Prestige`). `--beautify D` dresses a town for screenshots; `--decor oak --decor-at x,y,a` shows the tool.
+- UI text (`docs/ui-text.md`, kit in `godot/src/UiKit.cs`): Conner wants little text. Icon before word (`Ui.Chip`), one point a
+  line (`Ui.Bullets`), explanations in hovers (`Ui.Tip`, `Ui.Brief`; `Pane.Note` briefs itself), colour by meaning, short labels.
+  Every pane heading has an icon (`Ui.HeadingIcons`); every god has `god-<id>`. New icons go in `scripts/icons.ts`.
 - Menus: every window is one click on the left rail (`godot/src/Dock.cs`, `Groups`/`Blurbs`, Shift+number `QuickTabs`); its
   badges count the alerts whose `AlertWindow` it answers, so a new alert badges its window for free. The action tray on the
   right (`godot/src/Tray.cs`: Bounties, Council, Events, War) slides out a drawer to act without a window. The top bar's

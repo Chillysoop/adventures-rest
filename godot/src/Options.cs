@@ -107,6 +107,9 @@ public sealed class Options
     public string? Crowded;
     /// <summary>Aim the camera at the building going up with the most hands on it (<c>--rising</c>), for a shot of the builders.</summary>
     public bool Rising;
+
+    /// <summary>--zone aims the camera at the thickest cluster of a zone's buildings (farmland, commercial, residential).</summary>
+    public string? Zone;
     /// <summary>--tourney N: put on a tourney of level N (0 modest to 2 legendary), stake on its second event and ride to that day's --tourney-hour, card open over the lists.</summary>
     public int? Tourney;
     public int TourneyHour = 13;
@@ -123,6 +126,8 @@ public sealed class Options
     public int? Alert;
     /// <summary>For screenshots: show the hover summary of the alert icon at this position.</summary>
     public int? AlertHover;
+    /// <summary>--notices F: at frame F, treat the urgent and decision alerts standing then as just arrived, so their rail tiles slide out.</summary>
+    public int? Notices;
 
     /// <summary>Camera distance in tiles and an optional point to look at (--cam 40 --look 512,480), and the strategic view.</summary>
     public float? Cam;
@@ -227,6 +232,7 @@ public sealed class Options
                 case "--house": o.House = true; break;
                 case "--crowded": o.Crowded = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
                 case "--rising": o.Rising = true; break;
+                case "--zone": o.Zone = Next(); break;
                 case "--siege": o.Siege = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture) : 8; break;
                 case "--card": o.Card = true; break;
                 case "--tourney": o.Tourney = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? int.Parse(Next()) : 1; break;
@@ -237,6 +243,7 @@ public sealed class Options
                 case "--guilds": o.Guilds = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
                 case "--alert": o.Alert = int.Parse(Next()); break;
                 case "--alert-hover": o.AlertHover = int.Parse(Next()); break;
+                case "--notices": o.Notices = int.Parse(Next()); break;
                 case "--no-pause": o.NoPause = true; break;
                 case "--keep-reports": o.KeepReports = true; break;
                 case "--keep-armory": o.KeepArmory = true; break;

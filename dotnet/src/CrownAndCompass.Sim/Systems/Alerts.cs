@@ -353,7 +353,7 @@ public static class Alerts
             yield return new($"neighbour:{s.Id}", Neighbour, $"{s.Name} needs help",
                 $"{Cap(s.People)} face {Neighbours.TroubleOf(t, s)!.Name}. Send aid from the Diplomacy window before it does its worst; they will remember who helped.");
         // A people paying an enemy tribute (or ruled by its creature): one to win back.
-        foreach (var s in t.Settlements.Where(x => Shadows.Paying(x) && t.Regions[x.RegionId].Known).OrderBy(x => x.Id))
+        foreach (var s in t.Settlements.Where(x => Shadows.Paying(x) && Neighbours.Known(t, x)).OrderBy(x => x.Id))
         {
             if (Shadows.Over(t, s) is not { } m) continue;
             string source = s.Shadow!.SourceId is string sid && Quests.Site(t, sid) is { } site ? $" or clear {site.Def.Name}" : "";

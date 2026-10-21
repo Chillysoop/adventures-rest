@@ -5,7 +5,7 @@ using Godot;
 namespace CrownAndCompass.Client;
 
 /// <summary>The parchment-and-lamplight look shared with the web build: colours, fonts and the theme.</summary>
-public static class Ui
+public static partial class Ui
 {
     public static readonly Color Bg = new("17140f");
     public static readonly Color Panel = new("211d17");
@@ -177,6 +177,7 @@ public static class Ui
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             MetaUnderlined = false,
+            HintUnderlined = false,
         };
         r.Text = Dress(bbcode, skip);
         if (size != 14)
@@ -295,6 +296,13 @@ public static class Ui
                 int close = bbcode.IndexOf(']', i);
                 if (close < 0) { sb.Append(bbcode, i, bbcode.Length - i); break; }
                 string tag = bbcode.Substring(i, close - i + 1);
+                // [nk]...[/nk] (Ui.Plainly) keeps its words unlinked and is dropped here.
+                if (tag is "[nk]" or "[/nk]")
+                {
+                    depth = Math.Max(0, depth + (tag == "[nk]" ? 1 : -1));
+                    i = close + 1;
+                    continue;
+                }
                 if (tag.StartsWith("[url", StringComparison.Ordinal) || tag.StartsWith("[img", StringComparison.Ordinal)) depth++;
                 else if (tag is "[/url]" or "[/img]") depth = Math.Max(0, depth - 1);
                 sb.Append(tag);
@@ -395,7 +403,8 @@ public static class Ui
     /// <summary>An icon inline in rich text.</summary>
     public static string Img(string name, int size = 15) => $"[img={size}x{size} valign=center]res://assets/icons/{name}.svg[/img]";
 
-    private static readonly System.Text.RegularExpressions.Regex Coins = new(@"(?<![\w#=])(\d[\d,]*(?:\.\d+)?)(g\b| gold\b)", System.Text.RegularExpressions.RegexOptions.Compiled);
+    // A tag first, so sums inside one (a [hint=...] tooltip) are left alone.
+    private static readonly System.Text.RegularExpressions.Regex Coins = new(@"\[[^\]]*\]|(?<![\w#=])(\d[\d,]*(?:\.\d+)?)(g\b| gold\b)", System.Text.RegularExpressions.RegexOptions.Compiled);
 
     /// <summary>Gold at which the player sees platinum instead (ten gold a piece).</summary>
     public const double PlatinumFrom = 1000;
@@ -415,6 +424,7 @@ public static class Ui
     /// <summary>Put the coin before every sum of money in a piece of rich text ("120g", "120 gold"), as gold or platinum.</summary>
     public static string Coined(string bbcode) => Coins.Replace(bbcode, m =>
     {
+        if (!m.Groups[1].Success) return m.Value;
         if (!double.TryParse(m.Groups[1].Value.Replace(",", ""), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double v))
             return $"{Img("gold", 14)}{m.Groups[1].Value}{(m.Groups[2].Value == "g" ? "" : " gold")}";
         var (icon, figure, plat) = Money(v);
@@ -517,21 +527,34 @@ public sealed class Pane
 
     // ---- Building blocks ----
 
-    public void Heading(string text) =>
-        Add("h" + text, () =>
+    /// <summary>A section's heading: its icon (<paramref name="icon"/>, or the kit's for that heading) and the words in gold.</summary>
+    public void Heading(string text, string? icon = null) =>
+        Add("h" + text + icon, () =>
         {
-            var l = Ui.Label(text.ToUpperInvariant(), Ui.Ink2, Ui.Bold, 12);
+            var h = new HBoxContainer();
+            h.AddThemeConstantOverride("separation", 6);
+            if ((icon ?? Ui.HeadingIcon(text)) is string i) h.AddChild(Ui.IconRect(i, 17));
+            var l = Ui.Label(text.ToUpperInvariant(), Ui.KeywordColor, Ui.Bold, 12);
             l.AddThemeConstantOverride("line_spacing", 0);
+            l.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+            h.AddChild(l);
             var m = new MarginContainer();
             m.AddThemeConstantOverride("margin_top", 12);
-            m.AddChild(l);
+            m.AddChild(h);
             m.SetMeta("heading", text);
             return m;
         });
 
     public void Text(string bbcode, int size = 14) => Add("t" + size + bbcode, () => Ui.Rich(bbcode, size));
 
-    public void Note(string text) => Text(Ui.C(Ui.Ink2, text), 13);
+    /// <summary>A dim note: its first sentence, the rest behind an info mark (<see cref="Ui.Brief"/>).</summary>
+    public void Note(string text) => Text(Ui.C(Ui.Ink2, Ui.Brief(text)), 13);
+
+    /// <summary>A list, one point a line, each with an icon or a gold dot.</summary>
+    public void Bullets(IEnumerable<string> points, string? icon = null) => Text(Ui.Bullets(points, icon));
+
+    /// <summary>A line of icon chips (<see cref="Ui.Chip"/>).</summary>
+    public void Chips(params string[] chips) => Text(Ui.Chips(chips));
 
     /// <summary>A card with a tinted background, for summaries at the top of a pane.</summary>
     public void Card(string bbcode, Color? border = null) =>

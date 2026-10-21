@@ -43,6 +43,9 @@ public sealed record StoryRules
     /// <summary>What the town remembers the mayor deciding, which later stories turn on.</summary>
     public List<PrecedentDef> Precedents { get; init; } = [];
 
+    /// <summary>Things a campaign rolls once from its seed (what lies under the town, if anything), which stories need as variant:id:option.</summary>
+    public List<StoryVariantDef> Variants { get; init; } = [];
+
     /// <summary>Lasting parts heroes take up in the town through the stories of their class (<see cref="Callings"/>).</summary>
     public List<CallingDef> Callings { get; init; } = [];
 
@@ -73,6 +76,19 @@ public sealed record StoryRules
 }
 
 /// <summary>Something the town remembers: a gate opened or closed, a pact made, a witch burned or sheltered.</summary>
+/// <summary>One thing a campaign rolls from its seed: its options and how likely each is.</summary>
+public sealed record StoryVariantDef
+{
+    public string Id { get; init; } = "";
+    public List<StoryVariantOption> Options { get; init; } = [];
+}
+
+public sealed record StoryVariantOption
+{
+    public string Id { get; init; } = "";
+    public double Weight { get; init; } = 1;
+}
+
 public sealed record PrecedentDef
 {
     public string Id { get; init; } = "";
@@ -315,6 +331,8 @@ public sealed class Story
 
     /// <summary>The patron the story is about (<see cref="Patrons"/>).</summary>
     public string? Patron { get; set; }
+    /// <summary>The minor power (<see cref="Powers"/>) a first-contact scene is about.</summary>
+    public string? Minor { get; set; }
 
     /// <summary>The townsperson who brought a petition, and the ward it is about.</summary>
     public int? PetitionerId { get; set; }
@@ -386,11 +404,30 @@ public static class Stories
     private static StoryRules Rules(Town town) => town.Content.Stories;
 
     /// <summary>
+    /// What this campaign rolled for a variant ("horror": none, choir, hoax...): a pure function of the seed, so
+    /// the town's dice never move and a new game may hold something different, or nothing at all.
+    /// </summary>
+    public static string Variant(Town town, string id)
+    {
+        var def = Rules(town).Variants.FirstOrDefault(v => v.Id == id);
+        if (def == null || def.Options.Count == 0) return "";
+        int salt = 17;
+        foreach (char ch in id) salt = unchecked(salt * 31 + ch);
+        double roll = new Rng(unchecked(town.Seed * 389 + salt)).Next() * def.Options.Sum(o => o.Weight);
+        foreach (var o in def.Options)
+        {
+            roll -= o.Weight;
+            if (roll < 0) return o.Id;
+        }
+        return def.Options[^1].Id;
+    }
+
+    /// <summary>
     /// Every effect an outcome can have, in the order they apply; then decree:id (days, or -1 to repeal),
     /// precedent:id (1 sets it, -1 forgets it) and calling:id (1: the story's hero takes it up, -1: it ends).
     /// </summary>
     public static readonly string[] EffectKeys =
-        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "grudge", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "esteem", "heroXp", "personal", "dismiss", "edge", "swell", "partyHurt", "rest", "slots", "loot", "partyLoyalty", "turnBack", "fine", "jail", "taint", "infamy", "exile", "goodwill", "goodwill2", "prosperity", "security", "contact", "band", "moves", "stir", "book", "lore", "recover", "egg", "ranger", "pact", "pactFavour", "weregild", "owed", "curse"];
+        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "grudge", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "esteem", "heroXp", "personal", "dismiss", "edge", "swell", "partyHurt", "rest", "slots", "loot", "partyLoyalty", "turnBack", "fine", "jail", "taint", "infamy", "exile", "goodwill", "goodwill2", "prosperity", "security", "contact", "band", "moves", "stir", "book", "lore", "recover", "minor", "egg", "ranger", "settle", "pact", "pactFavour", "weregild", "owed", "curse"];
 
     /// <summary>
     /// Every need a story or option can name; besides these, precedent:id, decree:id, season:id and
@@ -400,7 +437,7 @@ public static class Stories
     /// chapter) and below:level (binds that undercity level while it is open and not cleared).
     /// </summary>
     public static readonly string[] Needs =
-        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "settlement", "route", "courted", "veteran", "fallen", "admirer", "aggrieved", "abroad", "homeward", "victorious", "lawbreaker", "famous", "infamous", "trouble", "contact", "band", "forge", "below", "library", "scholars", "remains", "egg", "eggHeld", "ranger", "sworn", "pactless", "bloodied", "owed", "cursed"];
+        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "settlement", "route", "courted", "veteran", "fallen", "admirer", "aggrieved", "abroad", "homeward", "victorious", "lawbreaker", "famous", "infamous", "trouble", "contact", "band", "forge", "below", "library", "scholars", "remains", "minor", "egg", "eggHeld", "ranger", "sworn", "pactless", "bloodied", "owed", "cursed"];
 
     private static readonly string[] Prefixed = ["precedent:", "decree:", "season:"];
 
@@ -426,6 +463,11 @@ public static class Stories
         if (need.StartsWith("below:", StringComparison.Ordinal)) return c.Undercity.Level(need[6..]) != null;
         if (need.StartsWith("patron:", StringComparison.Ordinal)) return c.Patrons.Patron(need[7..]) != null;
         if (need.StartsWith("keeper:", StringComparison.Ordinal)) return c.Taverns.Past(need[7..]) != null;
+        if (n.StartsWith("variant:", StringComparison.Ordinal))
+        {
+            var parts = n[8..].Split(':');
+            return parts.Length == 2 && c.Stories.Variants.FirstOrDefault(v => v.Id == parts[0]) is { } vd && vd.Options.Any(o => o.Id == parts[1]);
+        }
         return false;
     }
 
@@ -574,14 +616,14 @@ public static class Stories
             if (town.Tick >= s.DueTick) Lapse(town, s);
         if (autoMayor)
             foreach (var s in Pending(town)) StandIn(town, s);
-        if (r.Stories.Count == 0 || town.Day < Math.Max(r.FirstDay, st.NextDay) || st.Open.Count(s => !Sendings.Is(town, s)) >= r.MaxOpen || town.Outcome != null) return;
+        if (r.Stories.Count == 0 || town.Day < Math.Max(r.FirstDay, st.NextDay) || st.Open.Count(s => !Sendings.Is(town, s) && DefOf(town, s).Source != Powers.ContactSource) >= r.MaxOpen || town.Outcome != null) return;
         if (!town.Rng.Chance(r.Chance * Storyteller.Of(town).Stories)) return;
         var open = st.Open.Select(s => s.Def).ToHashSet();
         var fits = new List<(StoryDef Def, Story Bound)>();
         foreach (var d in r.Stories)
         {
             // Sendings come from parties on the road (Sendings.Hourly), and word of a lost company from its wipe (Lost), not the town.
-            if (Sendings.Is(d) || d.Source == LostSource || d.Source == Eggs.Source || d.Source == Poaching.Source) continue;
+            if (Sendings.Is(d) || d.Source == LostSource || d.Source == Powers.ContactSource || d.Source == Eggs.Source || d.Source == Poaching.Source) continue;
             if (open.Contains(d.Id) || town.Day < d.MinDay || town.Population < d.MinPopulation) continue;
             if (st.LastDay.Get(d.Id, -9999) + d.RepeatDays > town.Day) continue;
             if (Bind(town, d) is { } bound) fits.Add((d, bound));
@@ -610,6 +652,17 @@ public static class Stories
         var d = Rules(town).Story(defId);
         if (d == null || Bind(town, d) is not { } bound) return null;
         return Begin(town, d, bound);
+    }
+
+    /// <summary>A power met for the first time: its first-contact scene, bound to it (<see cref="Powers.Introduce"/>).</summary>
+    public static Story? Contact(Town town, StoryDef d, Story seed)
+    {
+        if (BindFrom(town, d, seed) is not { } bound) return null;
+        // A meeting comes on its own day: it holds back none of the town's own stories.
+        int next = town.Stories.NextDay;
+        var story = Begin(town, d, bound);
+        town.Stories.NextDay = next;
+        return story;
     }
 
     /// <summary>A card about a place: opens with the site bound, so its effects (reveal) land there.</summary>
@@ -829,11 +882,14 @@ public static class Stories
                 s.Ward = wards.Count == 0 ? null : wards[town.Rng.Range(0, wards.Count)];
                 return s.Ward != null;
             }
+            case "minor":
+                // Only ever bound by the first meeting that opens the scene (Powers.Introduce).
+                return s.Minor is string minorId && Powers.Find(town, minorId) != null;
             case "settlement":
             case "route":
             case "courted":
             {
-                bool Fits(Settlement x) => !x.Razed && town.Regions[x.RegionId].Known && need switch
+                bool Fits(Settlement x) => !x.Razed && Neighbours.Known(town, x) && need switch
                 {
                     "route" => Trade.Open(town).Any(r => r.SettlementId == x.Id),
                     "courted" => !x.Allied && x.Standing >= 25,
@@ -849,7 +905,7 @@ public static class Stories
             case "band":
             case "forge":
             {
-                bool Fits(Settlement x) => !x.Razed && town.Regions[x.RegionId].Known && x.Standing > -20 && need switch
+                bool Fits(Settlement x) => !x.Razed && Neighbours.Known(town, x) && x.Standing > -20 && need switch
                 {
                     "trouble" => x.Trouble != null,
                     "band" => x.Band is { Home: true, Members: > 0 },
@@ -863,7 +919,7 @@ public static class Stories
             }
             case "contact":
             {
-                bool Fits(Contact c) => !c.Gone && c.Memories.Count > 0 && c.Regard >= 40 && town.Settlements[c.SettlementId] is { Razed: false } cs && town.Regions[cs.RegionId].Known;
+                bool Fits(Contact c) => !c.Gone && c.Memories.Count > 0 && c.Regard >= 40 && town.Settlements[c.SettlementId] is { Razed: false } cs && Neighbours.Known(town, cs);
                 if (s.ContactId is int cid) return Neighbours.ContactById(town, cid) is { } bound && Fits(bound);
                 if (!bind) return false;
                 var c = Pick(town.Neighbours.Cast.Where(Fits).OrderBy(x => x.Id).ToList());
@@ -1048,6 +1104,11 @@ public static class Stories
                 }
                 else if (n.StartsWith("building:", StringComparison.Ordinal)) holds = town.Buildings.Any(b => b.Def.Id == n[9..] && b.Complete && !b.Closed);
                 else if (n.StartsWith("known:", StringComparison.Ordinal)) holds = Research.IsKnown(town, n[6..]);
+                else if (n.StartsWith("variant:", StringComparison.Ordinal))
+                {
+                    var parts = n[8..].Split(':');
+                    holds = Variant(town, parts[0]) == parts[1];
+                }
                 else if (n.StartsWith("calling:", StringComparison.Ordinal))
                 {
                     // A calling held binds the hero who holds it.
@@ -1298,6 +1359,13 @@ public static class Stories
                 case "festival":
                     town.FestivalDays += (int)v;
                     break;
+                case "minor":
+                    if (s.Minor is string minor && Powers.Find(town, minor) is { } mp)
+                    {
+                        Powers.Sway(town, mp, v);
+                        if (v != 0) said.Add($"{Saga.Sentences(Powers.Name(town, Powers.Def(town, minor)))}'s standing {(v > 0 ? "+" : "−")}{Js.Str(Math.Abs(v))}");
+                    }
+                    break;
                 case "reveal":
                     if (s.SiteId is string site && Quests.Site(town, site) is { } ss)
                         Rumors.Hear(town, ss, Rumors.Occupants(town.Content, ss.Def), ss.Def.Tier, 70);
@@ -1356,6 +1424,11 @@ public static class Stories
                 case "recover":
                     if (v > 0 && s.SiteId is string lostAt && Remains.Post(town, lostAt) is { } rb)
                         said.Add($"a bounty of {Js.Str(rb.Reward)} gold to bring the fallen home");
+                    break;
+                case "settle":
+                    // Whatever was at the site is gone without a fight: moved on, taken in or driven off.
+                    if (v > 0 && s.SiteId is string settleSite && Quests.Site(town, settleSite) is { Cleared: false } calm && Menaces.At(town, settleSite) == null)
+                        Neighbours.Clear(town, calm);
                     break;
                 case "memorial":
                     if (v > 0 && s.FallenId is int mf && Legacies.Of(town, mf) is { Memorial: false } ml)
@@ -1647,6 +1720,9 @@ public static class Stories
         Put("{site}", () => s.SiteId is string id && Quests.Site(town, id) is { } site ? site.Def.Name : "the ruin");
         Put("{party}", () => s.PartyId is int p && town.Parties.FirstOrDefault(x => x.Id == p) is { } party ? party.Name : "the party");
         Put("{power}", () => s.Power is string pid && town.Content.History.Powers.FirstOrDefault(p => p.Id == pid) is { } pw ? pw.Name : "an old power");
+        Put("{minor}", () => s.Minor is string mn ? Powers.Name(town, Powers.Def(town, mn)) : "a power");
+        Put("{minorLeader}", () => s.Minor is string ml ? Powers.Def(town, ml).Leader : "its leader");
+        Put("{minorTitle}", () => s.Minor is string mt ? Powers.Def(town, mt).Title : "its leader");
         Put("{god}", () => Faith.Prose(Faith.TempleGod(town) ?? Faith.CharterGod(town)));
         Put("{petitioner}", () => s.PetitionerId is int p ? town.Agent(p).Name : "a townsman");
         Put("{petitionerName}", () => s.PetitionerId is int p ? town.Agent(p).GivenName : "the petitioner");
