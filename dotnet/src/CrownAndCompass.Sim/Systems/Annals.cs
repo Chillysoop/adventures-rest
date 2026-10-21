@@ -119,6 +119,9 @@ public sealed record HistoryLineage
 
     /// <summary>Menaces only: how much likelier each ambition is for its heirs.</summary>
     public Dictionary<string, double> Ambitions { get; init; } = [];
+
+    /// <summary>Signature foes only (subject "foe:id"): the names its masters go by.</summary>
+    public IReadOnlyList<string> Leaders { get; init; } = [];
 }
 
 public sealed record HistoryEvent
@@ -186,8 +189,9 @@ public static class Annals
     public static HistoryLineage? Lineage(HistoryRules h, string id) => h.Lineages.FirstOrDefault(l => l.Id == id);
 
     /// <summary>A menace's lineage: its kind's heirs of the region its seat lies in, else its kind's own.</summary>
-    public static HistoryLineage? ForMenace(HistoryRules h, string kind, string? theme)
+    public static HistoryLineage? ForMenace(HistoryRules h, string kind, string? theme, string foe = "")
     {
+        if (foe != "" && LineageOf(h, "foe:" + foe) is HistoryLineage own) return own;
         var heirs = h.Lineages.Where(l => l.Subjects.Contains("menace:" + kind)).ToList();
         return heirs.FirstOrDefault(l => theme != null && l.Themes.Contains(theme)) ?? heirs.FirstOrDefault(l => l.Themes.Count == 0);
     }

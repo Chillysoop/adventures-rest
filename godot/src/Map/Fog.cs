@@ -31,8 +31,9 @@ public sealed class Fog
 {
     public const float X0 = 0;
     public const float Span = Geo.World;
-    private const int PerTile = 1;
-    public const int N = (int)Span * PerTile;
+    // Half a pixel a tile: the fog is soft-edged, and a 2048-tile world at full size would cost four times the repaint.
+    private const float PerTile = 0.5f;
+    public const int N = (int)(Span * PerTile);
 
     /// <summary>A report older than this shows as a "last seen" ghost.</summary>
     public const int StaleDays = 30;

@@ -46,7 +46,7 @@ public class TutorialTests
     {
         var book = Tutorial.Default() with { Steps = Tutorial.Default().Steps.Where(s => s.Id != "war").ToList() };
         var problems = Tutorial.Problems(book, ClientTabs(), ClientKeys());
-        Assert.Contains(problems, p => p.StartsWith("tab:War "));
+        Assert.Contains(problems, p => p.StartsWith("tab:Defence "));
         Assert.Contains(problems, p => p.StartsWith("command:BuildDefense "));
     }
 

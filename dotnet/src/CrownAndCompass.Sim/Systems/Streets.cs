@@ -162,8 +162,14 @@ public static class Streets
         var spots = new List<(double Score, double X, double Y, double Yaw)>();
         // A spot's middle sits this far (cells) from the nearest wall or street at the least: half the building and a lane.
         double least = d / 2.0 + 1;
-        for (int cy = 1; cy < n - 1; cy += 2)
-            for (int cx = 1 + (cy / 2 % 2); cx < n - 1; cx += 2)
+        // Zoned cells all lie in the box round the town's ground; the walk keeps the full grid's stride so spots stay put.
+        var (bx0, by0, bx1, by1) = Land.Bounds(plan, 0);
+        for (int cy = Math.Max(1, by0 - 1); cy < Math.Min(n - 1, by1 + 2); cy++)
+        {
+            if (cy % 2 == 0) continue;
+            int first = 1 + (cy / 2 % 2);
+            int from = Math.Max(first, bx0 - 1 + Math.Abs((bx0 - 1 - first) % 2));
+            for (int cx = from; cx < Math.Min(n - 1, bx1 + 2); cx += 2)
             {
                 int i = cy * n + cx;
                 if (plan.Zones[i] != (byte)zone || plan.Taken[i] != 0 || plan.Paved[i] != 0 || field[i] < least) continue;
@@ -178,21 +184,33 @@ public static class Streets
                 double score = (field[i] - least) / Land.Res * rules.Reach + rules.OffStreet + Land.Jitter(i * 5 + 4) * rules.Shuffle + dist * rules.Hall;
                 spots.Add((score, x, y, yaw));
             }
+        }
         return [.. spots.OrderBy(c => c.Score).ThenBy(c => c.X).ThenBy(c => c.Y)];
     }
 
-    /// <summary>Distance in cells from every cell to the nearest built or paved one, and which cell that is (a two-pass chamfer).</summary>
+    /// <summary>
+    /// Distance in cells from every cell to the nearest built or paved one, and which cell that is (a two-pass chamfer), kept for the
+    /// plan's <see cref="LandPlan.Version"/>. Only the box round the town's ground (<see cref="Land.Bounds"/>) is worked out: farther
+    /// cells read as far from anything, which is what they are.
+    /// </summary>
     private static (float[] Dist, int[] Near) Built(LandPlan plan)
     {
+        if (plan.BuiltSeen == plan.Version && plan.BuiltDist is { } kept && plan.BuiltNear is { } keptNear) return (kept, keptNear);
         int n = Land.Size;
         var f = new float[n * n];
         var near = new int[n * n];
-        for (int i = 0; i < f.Length; i++)
-        {
-            bool seed = plan.Paved[i] != 0 || plan.Taken[i] > 0;
-            f[i] = seed ? 0 : 1e6f;
-            near[i] = seed ? i : 0;
-        }
+        Array.Fill(f, 1e6f);
+        var (x0, y0, x1, y1) = Land.Bounds(plan, 8);
+        for (int y = y0; y <= y1; y++)
+            for (int x = x0; x <= x1; x++)
+            {
+                int i = y * n + x;
+                if (plan.Paved[i] != 0 || plan.Taken[i] > 0)
+                {
+                    f[i] = 0;
+                    near[i] = i;
+                }
+            }
         const float a = 1, b = 1.4142f;
         void Try(int i, int j, float step)
         {
@@ -202,30 +220,33 @@ public static class Streets
                 near[i] = near[j];
             }
         }
-        for (int y = 0; y < n; y++)
-            for (int x = 0; x < n; x++)
+        for (int y = y0; y <= y1; y++)
+            for (int x = x0; x <= x1; x++)
             {
                 int i = y * n + x;
-                if (x > 0) Try(i, i - 1, a);
-                if (y > 0)
+                if (x > x0) Try(i, i - 1, a);
+                if (y > y0)
                 {
                     Try(i, i - n, a);
-                    if (x > 0) Try(i, i - n - 1, b);
-                    if (x < n - 1) Try(i, i - n + 1, b);
+                    if (x > x0) Try(i, i - n - 1, b);
+                    if (x < x1) Try(i, i - n + 1, b);
                 }
             }
-        for (int y = n - 1; y >= 0; y--)
-            for (int x = n - 1; x >= 0; x--)
+        for (int y = y1; y >= y0; y--)
+            for (int x = x1; x >= x0; x--)
             {
                 int i = y * n + x;
-                if (x < n - 1) Try(i, i + 1, a);
-                if (y < n - 1)
+                if (x < x1) Try(i, i + 1, a);
+                if (y < y1)
                 {
                     Try(i, i + n, a);
-                    if (x < n - 1) Try(i, i + n + 1, b);
-                    if (x > 0) Try(i, i + n - 1, b);
+                    if (x < x1) Try(i, i + n + 1, b);
+                    if (x > x0) Try(i, i + n - 1, b);
                 }
             }
+        plan.BuiltDist = f;
+        plan.BuiltNear = near;
+        plan.BuiltSeen = plan.Version;
         return (f, near);
     }
 
@@ -338,6 +359,7 @@ public static class Streets
             if (worn[i] != 0) worn[i] = worn[i] < 0.02f ? 0 : worn[i] * (float)rules.Fade;
         if (plan.Streets.Count == 0) return;
         int n = Land.Size;
+        float[]? field = null;
         foreach (var b in town.Buildings)
         {
             if (b.Trips == 0) continue;
@@ -353,7 +375,7 @@ public static class Streets
                 int cx = (int)(x * Land.Res), cy = (int)(y * Land.Res);
                 if (cx >= 1 && cy >= 1 && cx < n - 1 && cy < n - 1 && !Blocked(plan, cx, cy)) start = cy * n + cx;
             }
-            if (start < 0 || Route(town, Field(plan), start, null, 24, worn, (ox * Land.Res, oy * Land.Res)) is not { Count: > 1 } path) continue;
+            if (start < 0 || Route(town, field ??= Field(plan), start, null, 24, worn, (ox * Land.Res, oy * Land.Res)) is not { Count: > 1 } path) continue;
             float add = (float)(Math.Min(trips, rules.MostTrips) * rules.WearPerTrip);
             double sum = 0;
             int count = 0;
@@ -367,42 +389,47 @@ public static class Streets
             if (count == 0 || sum / count < rules.Lay) continue;
             foreach (int c in path) worn[c] = 0;
             Lay(town, Smooth(town, path));
+            field = null;
             town.Log(LedgerCategory.Town, Importance.Routine, $"Feet have worn a lane to {b.Name}.");
         }
     }
 
-    /// <summary>Distance in cells from every cell to the nearest paved one (a two-pass chamfer).</summary>
+    /// <summary>Distance in cells from every cell to the nearest paved one (a two-pass chamfer), worked out in the box round the town's ground.</summary>
     public static float[] Field(LandPlan plan)
     {
         int n = Land.Size;
         var f = new float[n * n];
-        for (int i = 0; i < f.Length; i++) f[i] = plan.Paved[i] != 0 ? 0 : 1e6f;
+        Array.Fill(f, 1e6f);
+        var (x0, y0, x1, y1) = Land.Bounds(plan, 8);
+        for (int y = y0; y <= y1; y++)
+            for (int x = x0; x <= x1; x++)
+                if (plan.Paved[y * n + x] != 0) f[y * n + x] = 0;
         const float a = 1, b = 1.4142f;
-        for (int y = 0; y < n; y++)
-            for (int x = 0; x < n; x++)
+        for (int y = y0; y <= y1; y++)
+            for (int x = x0; x <= x1; x++)
             {
                 int i = y * n + x;
                 float v = f[i];
-                if (x > 0) v = Math.Min(v, f[i - 1] + a);
-                if (y > 0)
+                if (x > x0) v = Math.Min(v, f[i - 1] + a);
+                if (y > y0)
                 {
                     v = Math.Min(v, f[i - n] + a);
-                    if (x > 0) v = Math.Min(v, f[i - n - 1] + b);
-                    if (x < n - 1) v = Math.Min(v, f[i - n + 1] + b);
+                    if (x > x0) v = Math.Min(v, f[i - n - 1] + b);
+                    if (x < x1) v = Math.Min(v, f[i - n + 1] + b);
                 }
                 f[i] = v;
             }
-        for (int y = n - 1; y >= 0; y--)
-            for (int x = n - 1; x >= 0; x--)
+        for (int y = y1; y >= y0; y--)
+            for (int x = x1; x >= x0; x--)
             {
                 int i = y * n + x;
                 float v = f[i];
-                if (x < n - 1) v = Math.Min(v, f[i + 1] + a);
-                if (y < n - 1)
+                if (x < x1) v = Math.Min(v, f[i + 1] + a);
+                if (y < y1)
                 {
                     v = Math.Min(v, f[i + n] + a);
-                    if (x < n - 1) v = Math.Min(v, f[i + n + 1] + b);
-                    if (x > 0) v = Math.Min(v, f[i + n - 1] + b);
+                    if (x < x1) v = Math.Min(v, f[i + n + 1] + b);
+                    if (x > x0) v = Math.Min(v, f[i + n - 1] + b);
                 }
                 f[i] = v;
             }
@@ -426,60 +453,81 @@ public static class Streets
         var heights = Hills.Grid(town);
         // No lane through a standing wall or its moat: feet go by the gate.
         var walls = Passage.Mask(town);
-        var cost = new double[n * n];
-        Array.Fill(cost, double.MaxValue);
-        var from = new int[n * n];
-        var queue = new PriorityQueue<int, (double, int)>();
-        cost[start] = 0;
-        queue.Enqueue(start, (0, start));
-        double limit = most * Land.Res * 2.2, bestTotal = double.MaxValue;
-        int best = -1;
-        while (queue.TryDequeue(out int i, out var pri))
+        // Scratch kept per thread and put back as it was after each search, so a big plan costs no allocation per lane.
+        if (_cost?.Length != n * n)
         {
-            if (pri.Item1 > cost[i]) continue;
-            // Every street further along costs more than the best met so far, however it lies.
-            if (pri.Item1 > limit || pri.Item1 > bestTotal) break;
-            int x = i % n, y = i / n;
-            if (plan.Paved[i] != 0 && i != start && (goal == null || goal(i)))
-            {
-                double total = pri.Item1;
-                if (toward is { } t) total += Math.Sqrt((x + 0.5 - t.X) * (x + 0.5 - t.X) + (y + 0.5 - t.Y) * (y + 0.5 - t.Y)) * 0.6;
-                if (total < bestTotal)
-                {
-                    bestTotal = total;
-                    best = i;
-                }
-                if (toward == null) break;
-                continue;
-            }
-            foreach (var (dx, dy, len) in Steps)
-            {
-                int nx = x + dx, ny = y + dy;
-                if (nx < 1 || ny < 1 || nx >= n - 1 || ny >= n - 1) continue;
-                int j = ny * n + nx;
-                if (Blocked(plan, nx, ny) || (walls != null && walls[j])) continue;
-                double grade = Math.Abs(heights[j] - heights[i]) * Land.Res / len;
-                double step = len * (1 + 30 * grade * grade + Land.Jitter(j) * 0.9);
-                // A lane keeps its distance from the street it would run beside, then meets it square on.
-                if (plan.Paved[j] == 0 && field[j] < 6) step *= 1 + (6 - field[j]) * 0.35;
-                if (!Land.Open(town, j)) step *= 3;
-                if (worn != null && worn[j] > 0) step *= 1 - 0.6 * Math.Min(1, worn[j] / town.Content.City.Paths.Lay);
-                double c = cost[i] + step;
-                if (c < cost[j])
-                {
-                    cost[j] = c;
-                    from[j] = i;
-                    queue.Enqueue(j, (c, j));
-                }
-            }
+            _cost = new double[n * n];
+            Array.Fill(_cost, double.MaxValue);
+            _from = new int[n * n];
         }
-        if (best < 0) return null;
-        var path = new List<int>();
-        for (int c = best; c != start; c = from[c]) path.Add(c);
-        path.Add(start);
-        path.Reverse();
-        return path;
+        var cost = _cost;
+        var from = _from!;
+        var touched = _touched ??= [];
+        touched.Clear();
+        try
+        {
+            var queue = new PriorityQueue<int, (double, int)>();
+            cost[start] = 0;
+            touched.Add(start);
+            queue.Enqueue(start, (0, start));
+            double limit = most * Land.Res * 2.2, bestTotal = double.MaxValue;
+            int best = -1;
+            while (queue.TryDequeue(out int i, out var pri))
+            {
+                if (pri.Item1 > cost[i]) continue;
+                // Every street further along costs more than the best met so far, however it lies.
+                if (pri.Item1 > limit || pri.Item1 > bestTotal) break;
+                int x = i % n, y = i / n;
+                if (plan.Paved[i] != 0 && i != start && (goal == null || goal(i)))
+                {
+                    double total = pri.Item1;
+                    if (toward is { } t) total += Math.Sqrt((x + 0.5 - t.X) * (x + 0.5 - t.X) + (y + 0.5 - t.Y) * (y + 0.5 - t.Y)) * 0.6;
+                    if (total < bestTotal)
+                    {
+                        bestTotal = total;
+                        best = i;
+                    }
+                    if (toward == null) break;
+                    continue;
+                }
+                foreach (var (dx, dy, len) in Steps)
+                {
+                    int nx = x + dx, ny = y + dy;
+                    if (nx < 1 || ny < 1 || nx >= n - 1 || ny >= n - 1) continue;
+                    int j = ny * n + nx;
+                    if (Blocked(plan, nx, ny) || (walls != null && walls[j])) continue;
+                    double grade = Math.Abs(heights[j] - heights[i]) * Land.Res / len;
+                    double step = len * (1 + 30 * grade * grade + Land.Jitter(j) * 0.9);
+                    // A lane keeps its distance from the street it would run beside, then meets it square on.
+                    if (plan.Paved[j] == 0 && field[j] < 6) step *= 1 + (6 - field[j]) * 0.35;
+                    if (!Land.Open(town, j)) step *= 3;
+                    if (worn != null && worn[j] > 0) step *= 1 - 0.6 * Math.Min(1, worn[j] / town.Content.City.Paths.Lay);
+                    double c = cost[i] + step;
+                    if (c < cost[j])
+                    {
+                        if (cost[j] == double.MaxValue) touched.Add(j);
+                        cost[j] = c;
+                        from[j] = i;
+                        queue.Enqueue(j, (c, j));
+                    }
+                }
+            }
+            if (best < 0) return null;
+            var path = new List<int>();
+            for (int c = best; c != start; c = from[c]) path.Add(c);
+            path.Add(start);
+            path.Reverse();
+            return path;
+        }
+        finally
+        {
+            foreach (int c in touched) cost[c] = double.MaxValue;
+        }
     }
+
+    [ThreadStatic] private static double[]? _cost;
+    [ThreadStatic] private static int[]? _from;
+    [ThreadStatic] private static List<int>? _touched;
 
     /// <summary>Whether a lane can't pass through this cell: a building on it or right beside it, or a decoration on it.</summary>
     private static bool Blocked(LandPlan plan, int x, int y)

@@ -189,7 +189,7 @@ public static class Moods
             if (town.Tick >= ms.Feasts[w]) ms.Feasts.Remove(w);
         if (r.Inspirations.Count == 0 || town.Outcome != null) return;
         var st = Storyteller.Of(town);
-        double well = WellRun(town), unrest = Math.Clamp(town.Taxes.Unrest * r.UnrestPer, 0, 1);
+        double well = WellRun(town), unrest = Math.Clamp(town.Taxes.Unrest * r.UnrestPer, 0, 1), calm = Institutions.Calm(town);
         int inspired = 0, broke = 0;
         foreach (var a in town.Workers)
         {
@@ -205,7 +205,7 @@ public static class Moods
             else if (a.LowDays >= r.LowDays && broke < r.PerDay)
             {
                 var dice = Dice(town, a);
-                if (dice.Chance(r.Break / well * (1 + unrest) * st.Breaks * TraitFactor(a, r.BreakTraits)) && Break(town, a, null, dice)) broke++;
+                if (dice.Chance(r.Break / well * (1 + unrest) * st.Breaks * TraitFactor(a, r.BreakTraits) * (1 - calm)) && Break(town, a, null, dice)) broke++;
             }
         }
     }

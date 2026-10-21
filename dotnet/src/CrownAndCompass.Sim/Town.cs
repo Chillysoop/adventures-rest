@@ -329,7 +329,7 @@ public enum Outcome
 public sealed class Town
 {
     /// <summary>Tiles on a side: the old town in the middle, then the walled ring, then the outer wards (<see cref="Systems.City"/>).</summary>
-    public const int Grid = 48;
+    public const int Grid = 96;
 
     public string Name { get; } = "Briarford";
     public int Seed { get; }
@@ -388,6 +388,16 @@ public sealed class Town
 
     /// <summary>Heroes' recent level-ups and magic items, for the client's cards (<see cref="Systems.Moments"/>).</summary>
     public List<HeroMoment> Moments { get; } = [];
+
+    /// <summary>The dragon's egg the town holds, or the dragon it hatched (<see cref="Systems.Eggs"/>).</summary>
+    public Systems.DragonEgg? Egg { get; set; }
+
+    /// <summary>Raiders who fell at the town since a spirit-caller last called them up (foes.json).</summary>
+    public double FallenRaiders { get; set; }
+
+    /// <summary>The rival dark ranger's dealings with the town, once she has started taking its bounties.</summary>
+    public Systems.RangerState? Ranger { get; set; }
+
     public List<Seat> Seats { get; } = [];
     public List<Motion> Motions { get; } = [];
 
@@ -673,6 +683,11 @@ public sealed class Town
     internal Dictionary<int, int>? Present;
     [NotSaved]
     internal int? PresentWasAt;
+    /// <summary>The decree and institution yield of each good, worked out once an hour (<see cref="Systems.Economy"/>).</summary>
+    [NotSaved]
+    internal double[]? HourYields;
+    [NotSaved]
+    internal int HourYieldsAt = -1;
 
     public List<Building> Taverns => Buildings.Where(b => b.Complete && b.Def.Venue && !b.Closed && !b.ForSale).ToList();
 

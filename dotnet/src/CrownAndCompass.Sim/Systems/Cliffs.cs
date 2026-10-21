@@ -6,7 +6,7 @@ public sealed record CliffRules
     public int Count { get; init; } = 4;
 
     /// <summary>Tiles from the hall to a plateau's middle, least and most.</summary>
-    public double[] Distance { get; init; } = [32, 48];
+    public double[] Distance { get; init; } = [66, 90];
 
     /// <summary>A plateau's radius in tiles, least and most.</summary>
     public double[] Radius { get; init; } = [5, 9];

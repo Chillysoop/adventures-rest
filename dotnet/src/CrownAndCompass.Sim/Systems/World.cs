@@ -216,6 +216,8 @@ public static class World
 
         PlaceAuthoredSites(town);
 
+        // Each lair-holder rules one lair in the world while the library has others of the country left.
+        var holders = new HashSet<string>(StringComparer.Ordinal);
         foreach (var region in town.Regions)
         {
             var rd = w.Rings[region.Ring];
@@ -227,7 +229,9 @@ public static class World
                 // Deeper into the region, harder sites: spread the ring's band across them.
                 int level = count == 1 ? rng.Range(lo, hi + 1) : lo + (int)Math.Round((hi - lo) * (double)i / (count - 1));
                 var kind = rng.Pick(region.Theme.Sites);
-                var def = BuildSite(town.Content, rng, region, kind, level, $"{region.Theme.Id}-{region.Id}-{i}", Fill(rng, region.Theme, kind.Names, used));
+                var group = PickGroup(town.Content, rng, region.Theme, level);
+                if (group != null) kind = new SiteKindDef { Names = group.Names, Habitats = group.Habitats, Deck = group.Deck };
+                var def = BuildSite(town.Content, rng, region, kind, level, $"{region.Theme.Id}-{region.Id}-{i}", Fill(rng, region.Theme, kind.Names, used), holders, group);
                 town.Sites.Add(new SiteState(def) { RegionId = region.Id, Generated = true });
                 region.SiteIds.Add(def.Id);
             }
@@ -254,6 +258,76 @@ public static class World
 
         // Last, so the country between the sites never shifts the regions and sites a seed makes.
         Roads.Generate(town, rng);
+        Bridges.Span(town);
+        PlaceFoes(town, used);
+        PlaceIsles(town, used);
+        Ruins.Place(town, used, Fill);
+    }
+
+    /// <summary>
+    /// A few far sites in high country float: the rock they stand on has torn loose and drifts above the clouds, and only
+    /// a company that can fly, or the sky dock's airship, gets there. On their own dice, so nothing else shifts.
+    /// </summary>
+    private static void PlaceIsles(Town town, HashSet<string> used)
+    {
+        var r = town.Content.World.Isles;
+        var rng = new Rng(town.Seed * 6007 + 4241);
+        var pool = town.Sites
+            .Where(s => s.Generated && !s.Def.Aloft && s.Def.Foe == "" && s.RegionId is int rid
+                && town.Regions[rid].Ring >= r.Rings[0] && town.Regions[rid].Ring <= r.Rings[^1] && r.Themes.Contains(town.Regions[rid].Theme.Id))
+            .OrderBy(s => s.Def.Id, StringComparer.Ordinal)
+            .ToList();
+        for (int i = 0; i < r.Count && pool.Count > 0; i++)
+        {
+            var site = pool[rng.Range(0, pool.Count)];
+            pool.Remove(site);
+            used.Remove(site.Def.Name);
+            site.Def = site.Def with { Aloft = true, Name = r.Names.Count > 0 ? Fill(rng, town.Regions[site.RegionId!.Value].Theme, r.Names, used) : site.Def.Name };
+        }
+    }
+
+    /// <summary>
+    /// Each signature foe takes over one site in country it likes, in its rings (on its own dice, so the rest of the
+    /// world a seed makes is unchanged): its master and escort replace the library's pick, and the site its name. A site a
+    /// ready-made group (groups.json) holds stays theirs.
+    /// </summary>
+    private static void PlaceFoes(Town town, HashSet<string> used)
+    {
+        var rng = new Rng(town.Seed * 4099 + 31337);
+        var taken = new HashSet<string>();
+        foreach (var f in town.Content.Foes.Foes)
+        {
+            if (town.Content.Library.Monster(f.Monster) is not { } boss) continue;
+            var pool = town.Sites
+                .Where(s => s.Generated && s.Def.Group == "" && !taken.Contains(s.Def.Id) && s.RegionId is int rid && town.Regions[rid].Ring >= f.Rings[0] && town.Regions[rid].Ring <= f.Rings[^1])
+                .OrderBy(s => Math.Max(0, f.Themes.ToList().IndexOf(town.Regions[s.RegionId!.Value].Theme.Id)) + (f.Themes.Contains(town.Regions[s.RegionId!.Value].Theme.Id) ? 0 : 100))
+                .ThenBy(s => Math.Abs(s.Def.Tier - Math.Max(1, (int)Math.Round(boss.Cr))))
+                .ThenBy(s => s.Def.Id, StringComparer.Ordinal)
+                .Take(3)
+                .ToList();
+            if (pool.Count == 0) continue;
+            var site = rng.Pick(pool);
+            taken.Add(site.Def.Id);
+            var region = town.Regions[site.RegionId!.Value];
+            string name = f.Names.Count > 0 ? Fill(rng, region.Theme, f.Names, used) : site.Def.Name;
+            used.Remove(site.Def.Name);
+            site.Def = site.Def with
+            {
+                Name = name,
+                Kind = f.Kind,
+                Foe = f.Id,
+                Aloft = f.Aloft,
+                Boss = new EncounterDef
+                {
+                    Kind = "combat",
+                    Monster = town.Content.BossOf(boss.Id).Id,
+                    Count = [1, 1],
+                    Escort = f.Escort != "" && town.Content.Library.Monster(f.Escort) != null ? f.Escort : null,
+                    EscortCount = f.Escort != "" && f.EscortCount[^1] > 0 ? f.EscortCount : null,
+                    Text = f.Text != "" ? f.Text : site.Def.Boss.Text,
+                },
+            };
+        }
     }
 
     private static ThemeDef WeightedTheme(Rng rng, IReadOnlyList<ThemeDef> themes)
@@ -302,7 +376,25 @@ public static class World
     }
 
     /// <summary>Build a site for parties of the given level from the library's creatures of its country.</summary>
-    public static SiteDef BuildSite(Content content, Rng rng, Region region, SiteKindDef kind, int level, string id, string name)
+    /// <summary>
+    /// Now and then a site goes to a ready-made enemy group (groups.json) of the theme instead, when one of its
+    /// bosses suits the level. Themes with no fitting group roll nothing.
+    /// </summary>
+    public static GroupDef? PickGroup(Content content, Rng rng, ThemeDef theme, int level)
+    {
+        var fits = content.Groups.Groups.Where(g => g.Themes.Contains(theme.Id) && GroupBosses(content, g, level).Count > 0).ToList();
+        if (fits.Count == 0 || !rng.Chance(content.Groups.Chance)) return null;
+        return rng.Pick(fits);
+    }
+
+    /// <summary>A group's bosses about as strong as a party of this level.</summary>
+    public static List<LibMonster> GroupBosses(Content content, GroupDef g, int level)
+    {
+        double lo = Math.Max(0.5, level * 0.75) - 1, hi = Math.Max(1, level) + 1;
+        return content.Library.Monsters.Where(m => g.Bosses.Contains(m.Id) && m.Damage != null && m.Cr >= lo && m.Cr <= hi).ToList();
+    }
+
+    public static SiteDef BuildSite(Content content, Rng rng, Region region, SiteKindDef kind, int level, string id, string name, HashSet<string>? holders = null, GroupDef? group = null)
     {
         var w = content.World;
         var theme = region.Theme;
@@ -311,10 +403,12 @@ public static class World
         int budget = w.Budget.Length == 0 ? 100 * level : w.Budget[Math.Min(level, w.Budget.Length) - 1];
         double hoard = w.HoardPerLevel * Math.Pow(level, 1.5);
         int[] Gold(double lo, double hi) => [(int)Math.Round(hoard * lo), (int)Math.Round(hoard * hi)];
-        string Text(string k) => theme.Texts.TryGetValue(k, out var lines) && lines.Count > 0 ? rng.Pick(lines) : k;
+        string Text(string k) =>
+            group != null && group.Texts.TryGetValue(k, out var own) && own.Count > 0 ? rng.Pick(own)
+            : theme.Texts.TryGetValue(k, out var lines) && lines.Count > 0 ? rng.Pick(lines) : k;
 
         var habitats = kind.Habitats.Count > 0 ? kind.Habitats.ToList() : theme.Habitats.ToList();
-        var probe = new SiteDef { Id = id, Name = name, Boss = new EncounterDef { Kind = "combat" }, Habitats = habitats };
+        var probe = new SiteDef { Id = id, Name = name, Boss = new EncounterDef { Kind = "combat" }, Habitats = habitats, Group = group?.Id ?? "" };
         if (content.Wanderers(probe, [crLo, crHi]).Count == 0)
         {
             habitats = habitats.Concat(theme.Habitats).Distinct().ToList();
@@ -338,7 +432,7 @@ public static class World
         // The boss: a creature of this country about as strong as the party, with lesser ones at its side.
         double bLo = Math.Max(0.5, level * 0.75);
         double bHi = Math.Max(1, level);
-        List<LibMonster> bosses = [];
+        List<LibMonster> bosses = group != null ? GroupBosses(content, group, level) : [];
         for (int widen = 0; widen < 12 && bosses.Count == 0; widen++)
         {
             bosses = content.Library.Monsters
@@ -351,7 +445,11 @@ public static class World
             bosses = content.Library.Monsters.Where(m => m.Damage != null && m.Band != "" && !m.Alignment.Contains("good") && m.Cr >= 0.5 && m.Cr <= Math.Max(1, level)).ToList();
         // Lair-holders first: the library marks some creatures as bosses.
         var marked = bosses.Where(m => m.Boss).ToList();
-        var boss = rng.Pick(marked.Count > 0 && rng.Chance(0.5) ? marked : bosses);
+        var from = marked.Count > 0 && rng.Chance(0.5) ? marked : bosses;
+        // One that holds no other lair yet, when the country has one.
+        if (holders != null && from.Where(m => !holders.Contains(m.Id)).ToList() is { Count: > 0 } fresh) from = fresh;
+        var boss = rng.Pick(from);
+        holders?.Add(boss.Id);
         var escorts = content.Wanderers(probe, [crLo, Math.Max(crLo, Math.Min(crHi, boss.Cr / 2))]).Where(m => m.Id != boss.Id).ToList();
         var bossEnc = new EncounterDef
         {
@@ -369,6 +467,7 @@ public static class World
             Name = name,
             Tier = level,
             Kind = Lairs.KindOf(boss.Type, ""),
+            Group = group?.Id ?? "",
             Distance = region.Days,
             Encounters = deck,
             Boss = bossEnc,

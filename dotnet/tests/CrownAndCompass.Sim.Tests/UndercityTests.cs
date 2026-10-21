@@ -42,13 +42,14 @@ public class UndercityTests
         Assert.True(Undercity.Rate(t, l) > 0);
         l.Stir = r.WarnAt;
         Assert.Contains(Alerts.Standing(t), a => a.Key == "below:cellars");
-        int folk = t.Residents.Count(a => a.Hero == null);
+        var folk = t.Residents.Where(a => a.Hero == null).Select(a => a.Id).ToList();
         double mandate = t.Mandate;
         l.Stir = r.RiseAt - 0.01;
         sim.RunDays(1);
         Assert.Equal(1, l.Rose);
         Assert.Equal(r.RiseAfter, l.Stir);
-        Assert.True(t.Residents.Count(a => a.Hero == null) < folk);
+        // Some of the townsfolk who were there are gone (newcomers that day can make up the count).
+        Assert.Contains(folk, id => t.Agent(id).Dead);
         Assert.True(t.Mandate < mandate);
         Assert.Contains(t.Ledger.Entries, e => e.Importance == Importance.Major && e.Text.Contains("the Old Cellars"));
     }
@@ -107,8 +108,14 @@ public class UndercityTests
         var l = t.Undercity[0];
         t.Treasury += 2000;
         for (int i = 0; i < 3; i++) Quests.CreateHero(t, t.Content.Classes[i], 4);
-        Assert.NotNull(sim.PostBounty(Undercity.Def(t, l).Site.Id, 300));
-        for (int i = 0; i < 90 && l.Cleared == 0; i++) sim.RunDays(1);
+        string site = Undercity.Def(t, l).Site.Id;
+        Assert.NotNull(sim.PostBounty(site, 300));
+        for (int i = 0; i < 90 && l.Cleared == 0; i++)
+        {
+            // A party that limps back empty-handed may try again on a fresh bounty.
+            if (!t.Bounties.Any(b => b.SiteId == site && b.Status is BountyStatus.Open or BountyStatus.Taken)) sim.PostBounty(site, 300);
+            sim.RunDays(1);
+        }
         Assert.Equal(1, l.Cleared);
     }
 
