@@ -124,8 +124,11 @@ public class PowersTests
         var (sim, m) = Seeded();
         var t = sim.Town;
         m.Power = 400;
+        // A mindless thing offers nothing, however many march with it.
+        m.Cunning = "cunning";
         double alone = Powers.OfferOf(t, m);
-        var p = Powers.Find(t, "black-ledger")!;
+        // One that isn't marching with it already.
+        var p = t.Powers.First(x => !(x.Side == PowerSide.Enemy && x.MenaceId == m.Id));
         p.Side = PowerSide.Enemy;
         p.MenaceId = m.Id;
         Assert.True(Powers.OfferOf(t, m) > alone);

@@ -51,6 +51,8 @@ public class LivingEnemiesTests
         var t = sim.Town;
         sim.RunDays(40);
         var by = new Culprit("the cult", "a hooded man", "the Pit");
+        // Everyone home to guard it, whoever was out exploring that night.
+        foreach (var h in t.Heroes) h.Hero!.AwayUntil = null;
         var timber = t.Buildings.Where(b => b.Complete && !b.Def.IsGrand && b.Def.Zone is Zone.Residential or Zone.Commercial or Zone.Industry or Zone.Farmland).ToList();
         Assert.NotEmpty(timber);
         int landed = 0;
