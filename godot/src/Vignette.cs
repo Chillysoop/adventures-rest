@@ -153,13 +153,13 @@ public partial class Vignette : Control
         Color field = new(d.Field), charge = new(d.Charge);
         foreach (int side in new[] { -1, 1 })
         {
-            var b = new Vector3(side * 1.05f * Tall, 0, -1.1f * Tall);
+            var b = new Vector3(side * 1.75f * Tall, 0, -1.5f * Tall);
             float bw = 0.3f * Tall, top = 2.15f * Tall, low = 1.05f * Tall, z = 0.05f;
             k.Push(MeshKit.At(b.X, 0, b.Z, -side * 0.25f));
             k.Frustum(Vector3.Zero, 0.035f, 0.03f, 2.3f * Tall, 6, new Color("3a2a1c"));
             k.Blob(new Vector3(0, 2.32f * Tall, 0), new Vector3(0.06f, 0.08f, 0.06f), new Color("c9a24a") with { A = MeshKit.Flag.Metal });
             k.Box(new Vector3(0, top, z), new Vector3(2 * bw + 0.12f, 0.035f, 0.05f), new Color("c9a24a") with { A = MeshKit.Flag.Metal });
-            var cloth = field.Darkened(0.05f);
+            var cloth = field.Lightened(0.12f);
             k.Box(new Vector3(0, low, z), new Vector3(2 * bw, top - low, 0.03f), cloth);
             k.Box(new Vector3(0, top - 0.42f * Tall, z + 0.01f), new Vector3(2 * bw + 0.01f, 0.12f * Tall, 0.035f), charge);
             // Points hanging from its foot, like a war-banner's tails.

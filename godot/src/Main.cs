@@ -452,6 +452,12 @@ public partial class Main : Control
             GetViewport().SetInputAsHandled();
             return;
         }
+        if (_intro.Visible && k.Keycode is Key.Escape or Key.Enter or Key.Space)
+        {
+            CloseIntro();
+            GetViewport().SetInputAsHandled();
+            return;
+        }
         if (_find.Visible && k.Keycode == Key.Escape)
         {
             CloseFind();
@@ -593,9 +599,10 @@ public partial class Main : Control
         SyncOrders();
         SyncGuide();
         SyncGoals();
+        // A first meeting's picture comes before any scene or report it brought.
+        SyncIntros();
         SyncStories(delta);
         SyncFinds();
-        SyncIntros();
         SyncClockStops();
         SyncTourney();
         SyncTales(delta);

@@ -82,7 +82,7 @@ public partial class Main
         // so it neither takes a dead click nor holds back the stories behind it.
         if (_story.Visible && _beat == null && _storyId is int open && Stories.Find(_sim.Town, open) is not { Done: false }) CloseStory();
         // One card at a time: a discovery's report on screen is answered first.
-        if (_story.Visible || _find.Visible) return;
+        if (_story.Visible || _find.Visible || _intro.Visible) return;
         // Quiet sendings (late in the campaign, not high stakes) wait on the alert strip rather than popping up.
         var next = Stories.Pending(_sim.Town).FirstOrDefault(s => s.Id > _storySeen && (!Sendings.Is(_sim.Town, s) || (!holdSendings && Sendings.Pauses(_sim.Town, s))));
         if (next == null) return;
