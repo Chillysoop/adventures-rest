@@ -41,6 +41,9 @@
   `Epithet`) and companies (`CompanyState.Renown`, `Infamy`) earn fame or infamy through `Notoriety.Deed`/`CompanyDeed`;
   new deeds that should make a name call those rather than adding to `Renown` directly. Stories bind them with the
   `famous`/`infamous` needs.
+- Clock stops: nothing calls `SetSpeed(0)` for an event. Each kind of event that may stop the clock is one line in
+  `godot/src/ClockStops.cs` (`ClockStops.All`: id, label, tip, default) and its site calls `Main.StopClock("id")`; the
+  player toggles each in Settings (`godot/src/Settings.cs`, profile section `settings`). Only menus, the title and the end screen pause directly.
 - Alerts (the Paradox-style icon strip): raise one from the sim by adding a kind and a rule in `Systems/Alerts.cs`
   (rules read the town, never write or roll dice; an alert lasts while its rule names it). Each alert is one action for the player; news goes to the Ledger, not the strip.
 - Institutions (`content/game/institutions.json`, `Systems/Institutions.cs`, client `godot/src/Institutions.cs`): a
