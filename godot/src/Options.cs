@@ -73,6 +73,10 @@ public sealed class Options
     /// <summary>--mayor-sheet: the Mayor window on its full character sheet.</summary>
     public bool MayorSheet;
 
+    /// <summary>--hardcore: new towns are Hardcore (the mayor dies, the town is lost); --mayor-fallen kills the mayor for shots.</summary>
+    public bool Hardcore;
+    public bool MayorFallen;
+
     /// <summary>--episode id: strike a townsperson out on the streets with that inspiration or break, look at them and open their inspector.</summary>
     public string? Episode;
 
@@ -220,6 +224,8 @@ public sealed class Options
                 case "--storytellers": o.Storytellers = o.Title = true; break;
                 case "--new-mayor": o.NewMayor = o.Title = true; break;
                 case "--mayor-sheet": o.MayorSheet = true; o.Tab = "Mayor"; break;
+                case "--hardcore": o.Hardcore = true; break;
+                case "--mayor-fallen": o.MayorFallen = true; o.Tab = "Mayor"; break;
                 case "--episode": o.Episode = Next(); break;
                 case "--history": o.History = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
                 case "--glossary": o.Glossary = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;

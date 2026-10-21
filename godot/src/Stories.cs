@@ -428,6 +428,12 @@ public partial class Main
         var t = _sim.Town;
         var r = t.Content.Stories;
         var m = t.Stories.Mayor;
+        if (Mayoralty.Dead(t))
+        {
+            MayorFallen(p);
+            return;
+        }
+        MayorLife(p);
         int? next = Stories.NextLevelXp(t);
         int from = r.Levels.Count >= m.Level ? r.Levels[m.Level - 1] : 0;
         if (next is int n) p.Meter("XP", 100.0 * (m.Xp - from) / Math.Max(1, n - from), $"{m.Xp}/{n}");
@@ -460,6 +466,57 @@ public partial class Main
             p.Heading("Callings");
             foreach (var (hero, c) in called)
                 p.Text($"[b]{Ui.Esc(c.Name)}[/b]  {AgentLink(hero)} {Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(hero.Hero!.Cls.Name.ToLowerInvariant())}[/font_size]")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(c.Text)}[/font_size]")}", 13);
+        }
+    }
+
+    /// <summary>The mayor's health and where they spend their days.</summary>
+    private void MayorLife(Pane p)
+    {
+        var t = _sim.Town;
+        int hp = Mayoralty.Hp(t), max = Mayoralty.MaxHp(t);
+        p.Meter("HP", 100.0 * hp / Math.Max(1, max), $"{hp}/{max}", hp * 2 < max);
+        if (t.Mayoralty.Hardcore) p.Note($"{Ui.Img("face-death-skull", 12)} Hardcore: if the mayor dies, the town is lost.");
+        if (Mayoralty.Away(t) && t.Mayoralty.PartyId is int pid)
+            p.Note($"{Ui.Img("compass", 12)} Riding with the {Ui.Esc(t.Parties[pid - 1].Name)}");
+        var stances = t.Content.Mayoralty.Stances;
+        string now = Mayoralty.Stance(t).Id;
+        p.Buttons(stances.Select(st =>
+        {
+            string id = st.Id;
+            return (st.Name, true, id == now, (Action)(() => Act(() => _sim.SetMayorStance(id))));
+        }).ToArray());
+        var cur = Mayoralty.Stance(t);
+        var chips = new List<string>();
+        if (cur.Id == "keep") chips.Add($"{Ui.Img("defence", 12)} safe");
+        if (cur.Mandate > 0) chips.Add($"{Ui.Img("mandate", 12)} +{Js.Str(cur.Mandate)}/day");
+        if (cur.Loyalty > 0) chips.Add($"{Ui.Img("heroes", 12)} +{Js.Str(cur.Loyalty)} loyalty");
+        if (cur.Edge > 0) chips.Add($"{Ui.Img("d20", 12)} +{cur.Edge} company checks · XP");
+        if (cur.Id != "keep") chips.Add($"{Ui.Img("warband", 12)} danger");
+        p.Text(Ui.C(Ui.Ink2, $"[font_size=12]{string.Join("   ", chips)}[/font_size]"), 13);
+    }
+
+    /// <summary>The mayor is dead: raise them at the temple, or name a successor.</summary>
+    private void MayorFallen(Pane p)
+    {
+        var t = _sim.Town;
+        var s = t.Mayoralty;
+        int days = Math.Max(1, t.Content.Mayoralty.DecideDays - (t.Day - (s.FallenDay ?? t.Day)));
+        p.Card($"{Ui.Img("face-death-skull", 16)} [b]Mayor {Ui.Esc(t.Stories.Mayor.Name)} is dead[/b]\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(s.Cause)} · council decides in {Ui.Days(days)}[/font_size]")}", Ui.Bad);
+        if (s.Hardcore) return;
+        string? refused = Mayoralty.RaiseRefused(t);
+        p.Row($"{Ui.Img("tab-faith", 14)} [b]Raise at the temple[/b]  {Ui.Coined($"{Js.Str(Mayoralty.RaiseCost(t))}g")}" + (refused != null ? $"\n{Ui.C(Ui.Bad, $"[font_size=12]{Ui.Esc(refused)}[/font_size]")}" : ""),
+            ("Raise", refused == null, true, () => Act(() => _sim.RaiseMayor())));
+        p.Heading("Or name a new mayor");
+        var r = t.Content.Stories;
+        var options = Mayoralty.Candidates(t);
+        for (int i = 0; i < options.Count; i++)
+        {
+            var c = options[i];
+            var bg = r.Background(c.Background);
+            var a = Stories.Deal(r, c.Background, c.Scores);
+            string best = string.Join(" ", new[] { "str", "dex", "con", "int", "wis", "cha" }.OrderByDescending(k => a[k]).ThenBy(k => k, StringComparer.Ordinal).Take(2).Select(k => $"{k.ToUpperInvariant()} {a[k]}"));
+            int k2 = i;
+            p.Row($"[b]{Ui.Esc(c.Name)}[/b]\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(bg.Name)} · {best}[/font_size]")}", ("Name mayor", true, i == 0, () => Act(() => _sim.NameSuccessor(k2))));
         }
     }
 

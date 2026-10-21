@@ -181,8 +181,14 @@ public partial class Main
             case 26:
                 if (_story.Visible && (_beat == null || _beatResult is not { Visible: true })) throw new InvalidOperationException("the sending's roll did not land");
                 CloseStory();
-                return 5;
+                // The mayor out in the streets, then dead: the fallen card with the temple and the council's candidates.
+                if (!_sim.SetMayorStance("town")) throw new InvalidOperationException("the mayor would not walk the streets");
+                Mayoralty.Wound(_sim.Town, 9999, "a smoke test");
+                if (!Mayoralty.Dead(_sim.Town)) throw new InvalidOperationException("the mayor did not die");
+                _dirty = true;
+                return 10;
             case 27:
+                if (Mayoralty.Dead(_sim.Town) && !_sim.NameSuccessor(0)) throw new InvalidOperationException("no successor was named");
                 // An explorers' report card, as one pops up, with the company's latest roll if it has one.
                 if (_sim.Town.Finds.LastOrDefault() is { } find) OpenFind(find.Id, find.Beat);
                 return 70;

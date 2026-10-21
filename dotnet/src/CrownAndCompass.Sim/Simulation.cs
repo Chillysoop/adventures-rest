@@ -68,6 +68,9 @@ public sealed record SimulationOptions
 
     /// <summary>The mayor the player rolled and shaped on New game; null for one named after the seed, on the standard array.</summary>
     public MayorRoll? Mayor { get; init; }
+
+    /// <summary>Hardcore: the mayor's death ends the campaign (<see cref="Systems.Mayoralty"/>).</summary>
+    public bool Hardcore { get; init; }
 }
 
 /// <summary>
@@ -159,6 +162,7 @@ public sealed class Simulation
         Shrines.Daily(t, Options.AutoMayor);
         Faith.Daily(t);
         Regalia.Daily(t, Options.AutoMayor && Options.AutoArmory);
+        Mayoralty.Daily(t, Options.AutoMayor && Options.AutoStories);
         Factions.Daily(t, Options.AutoMayor);
         Saga.Daily(t, Options.AutoMayor);
         Crises.Daily(t, Options.AutoMayor && Options.AutoDefense);
@@ -456,6 +460,15 @@ public sealed class Simulation
     /// <summary>Have the town's craftsmen make a piece of regalia for the treasury's gold, into the armory.</summary>
     public bool CommissionRegalia(string itemId) => Regalia.Commission(Town, itemId) != null;
 
+    /// <summary>Where the mayor spends their days: "keep" (safe in the hall), "town" (the streets) or "ride" (with the next company out).</summary>
+    public bool SetMayorStance(string stance) => Mayoralty.SetStance(Town, stance);
+
+    /// <summary>Have the temple's priests raise the dead mayor, paid from the treasury.</summary>
+    public bool RaiseMayor() => Mayoralty.RaiseMayor(Town);
+
+    /// <summary>Name one of the council's candidates mayor in the dead one's place.</summary>
+    public bool NameSuccessor(int candidate) => Mayoralty.NameSuccessor(Town, candidate);
+
     /// <summary>Spend the mayor's next level on an advance: "ability:str,cha", "feat:lucky", "skill:arcana" or "expertise:persuasion".</summary>
     public bool AdvanceMayor(string advance) => Sheet.Advance(Town, advance);
 
@@ -526,6 +539,7 @@ public sealed class Simulation
         Powers.Init(t);
         Armory.Init(t);
         Regalia.Init(t);
+        Mayoralty.Init(t, Options.Hardcore);
 
         if (Options.AutoMayor && Options.AutoPlanning) Mayor.Daily(t);
         else

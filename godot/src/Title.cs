@@ -25,6 +25,9 @@ public partial class Main
     /// <summary>The mayor rolled for the new town: rerolled with a new seed, the background picked on it.</summary>
     private MayorRoll _mayorRoll = new();
 
+    /// <summary>New game's Hardcore toggle: the mayor's death ends the campaign.</summary>
+    private bool _hardcore;
+
     private void BuildTitle()
     {
         _title = new Control { Visible = false, MouseFilter = MouseFilterEnum.Stop };
@@ -109,6 +112,7 @@ public partial class Main
     private void PickMayor(string storyteller)
     {
         _tellerPick = storyteller;
+        _hardcore = _opts.Hardcore;
         _mayorRoll = Stories.RollMayor(Sim.Content.Default(), (int)(GD.Randi() & 0x7fffffff));
         _tellers.Visible = false;
         _titleMenu.Visible = false;
@@ -172,8 +176,14 @@ public partial class Main
         var about = Ui.Rich($"{skills}\n{Ui.C(Ui.Gold, "▲")} {string.Join(" ", bg.Abilities.Take(2).Select(a => a.ToUpperInvariant()))}   {Ui.Img("d20", 13)} {Ui.C(Ui.Ink2, $"advantage in {Ui.Esc(bg.Favoured)} stories")}", 13);
         about.CustomMinimumSize = new Vector2(520, 0);
         col.AddChild(about);
-        col.AddChild(new Control { CustomMinimumSize = new Vector2(0, 8) });
-        TitleButton(col, "Begin", "Sign the charter and start the town", primary: true, () => StartTown(_tellTutorial, storyteller: _tellerPick, mayor: _mayorRoll));
+        col.AddChild(new Control { CustomMinimumSize = new Vector2(0, 4) });
+        var hard = new CheckButton { Text = "Hardcore", ButtonPressed = _hardcore, TooltipText = "Your mayor dies, you lose. No raising, no successor.", FocusMode = FocusModeEnum.None, SizeFlagsHorizontal = SizeFlags.ShrinkBegin };
+        hard.Icon = Ui.Icon("face-death-skull");
+        hard.AddThemeConstantOverride("icon_max_width", 22);
+        hard.Toggled += on => _hardcore = on;
+        col.AddChild(hard);
+        col.AddChild(new Control { CustomMinimumSize = new Vector2(0, 4) });
+        TitleButton(col, "Begin", "Sign the charter and start the town", primary: true, () => StartTown(_tellTutorial, storyteller: _tellerPick, mayor: _mayorRoll, hardcore: _hardcore));
         TitleButton(col, "Back", "Back to the storytellers", primary: false, () => PickStoryteller(_tellTutorial));
     }
 
@@ -235,9 +245,9 @@ public partial class Main
         SetSpeed(1);
     }
 
-    private void StartTown(bool tutorial, int? seed = null, bool autoplay = false, string? storyteller = null, MayorRoll? mayor = null)
+    private void StartTown(bool tutorial, int? seed = null, bool autoplay = false, string? storyteller = null, MayorRoll? mayor = null, bool hardcore = false)
     {
-        NewTown(seed ?? (int)(GD.Randi() % 9999) + 1, autoplay, storyteller, mayor);
+        NewTown(seed ?? (int)(GD.Randi() % 9999) + 1, autoplay, storyteller, mayor, hardcore);
         // Begin at first light rather than in the dark of the first midnight.
         for (int i = 0; i < 7; i++) _sim.Step();
         HideTitle();

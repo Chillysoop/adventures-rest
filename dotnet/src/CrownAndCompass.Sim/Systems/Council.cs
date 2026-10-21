@@ -222,7 +222,7 @@ public static class Council
         var res = town.Residents;
         double mood = res.Count > 0 ? Js.Sum(res, a => a.LastDayMood) / res.Count : 65;
         var speaker = FindSeat(town, SeatId.Speaker);
-        double drift = (mood - 70) * 0.04 + Planning.Mandate(town) * 0.05 + Decor.Mandate(town) + Regalia.Mandate(town);
+        double drift = (mood - 70) * 0.04 + Planning.Mandate(town) * 0.05 + Decor.Mandate(town) + Regalia.Mandate(town) + Mayoralty.Mandate(town);
         if (speaker != null && speaker.HolderId != null) drift += speaker.Loyalty >= LowLoyalty ? 0.15 * Competence(town, speaker) : -0.5;
         // Goodwill fades: a mandate above its rest has to be kept earned.
         var rules = town.Content.Council;

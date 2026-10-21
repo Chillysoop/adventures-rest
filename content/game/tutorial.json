@@ -746,6 +746,24 @@
       "when": "day:12",
       "until": "tab:Mayor",
       "teaches": ["command:WearRegalia", "command:TakeOffRegalia", "command:CommissionRegalia"]
+    },
+    {
+      "id": "mayor-life",
+      "title": "Where your mayor goes",
+      "text": "Your mayor is a person in the town, with hit points. In [b]Mayor[/b] pick their days:\n• [b]Stay in the hall[/b]: safe\n• [b]Walk the streets[/b]: Mandate and loyalty, but knives and breaches reach you\n• [b]Ride with a company[/b]: an edge for the company and XP, and its dangers",
+      "point": "tab:Mayor",
+      "when": "day:16",
+      "until": "tab:Mayor",
+      "teaches": ["command:SetMayorStance"]
+    },
+    {
+      "id": "mayor-fallen",
+      "title": "Your mayor is dead",
+      "text": "In [b]Mayor[/b]:\n• [b]Raise[/b] them at the temple, if the body came home and you can pay\n• Or [b]name a new mayor[/b] from the council's three\nWait too long and the council chooses. Mandate falls every day without a mayor.",
+      "point": "tab:Mayor",
+      "when": "alert:fallen",
+      "until": "tab:Mayor",
+      "teaches": ["command:RaiseMayor", "command:NameSuccessor"]
     }
   ],
   "untaught": {}

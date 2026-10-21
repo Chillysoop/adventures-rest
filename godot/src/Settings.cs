@@ -19,7 +19,7 @@ public partial class Main
     private VBoxContainer _settingsRows = null!;
 
     /// <summary>What the clock watch saw last, so only something new stops it.</summary>
-    private int _clockTick = -1, _deadHeroes = -1, _crisisMark = -1, _motionSeen = -1;
+    private int _clockTick = -1, _deadHeroes = -1, _crisisMark = -1, _motionSeen = -1, _mayorDown = -1;
 
     /// <summary>Whether events of this kind (a <see cref="ClockStops.All"/> id) stop the clock: the player's toggle, else the table's default.</summary>
     public bool ShouldStop(string id) => _clockStops.TryGetValue(id, out bool on) ? on : ClockStops.Of(id).Default;
@@ -129,7 +129,7 @@ public partial class Main
     /// <summary>Start the clock watch afresh on a new or loaded town, so what it already holds stops nothing.</summary>
     private void ResetClockWatch()
     {
-        _clockTick = _deadHeroes = _crisisMark = -1;
+        _clockTick = _deadHeroes = _crisisMark = _mayorDown = -1;
         _motionSeen = _sim.Town.Motions.Count == 0 ? -1 : _sim.Town.Motions.Max(m => m.Id);
     }
 
@@ -142,6 +142,9 @@ public partial class Main
         int dead = t.Agents.Count(a => a.Hero != null && a.Dead);
         if (_deadHeroes >= 0 && dead > _deadHeroes) StopClock("deaths");
         _deadHeroes = dead;
+        int down = Mayoralty.Dead(t) ? 1 : 0;
+        if (_mayorDown == 0 && down == 1) StopClock("mayor");
+        _mayorDown = down;
         // Phases only move on and crises only end, so the sum rises at every turn of one.
         int mark = t.Crises.All.Sum(c => 1 + (int)c.Phase + (c.EndedDay != null ? 1 : 0));
         if (_crisisMark >= 0 && mark > _crisisMark) StopClock("crises");

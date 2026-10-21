@@ -170,16 +170,25 @@ public static class Blows
         // One the foe has sworn to kill (or its agent has been watching), if they are in town.
         var victim = mark is { Dead: false, Departed: false } && !mark.IsAway ? mark : Victim(town);
         if (victim == null) return false;
-        string who = Who(town, victim);
+        // A mayor out in the streets may be the one the knife is for (their own dice: the stream is untouched).
+        bool mayor = mark == null && Mayoralty.Marked(town);
+        string who = mayor ? $"Mayor {town.Stories.Mayor.Name}" : Who(town, victim);
         var t = Text(town, Assassinate);
         // A seasoned hero is hard to knife in the dark.
-        double guard = Council.WatchStrength(town) / Math.Max(0.5, cunning) + (victim.Hero is { } hs ? hs.Level * 0.04 : 0);
+        double guard = Council.WatchStrength(town) / Math.Max(0.5, cunning) + (mayor ? town.Stories.Mayor.Level * 0.04 : victim.Hero is { } hs ? hs.Level * 0.04 : 0);
         if (rng.Chance(Math.Min(0.9, guard)))
         {
-            var g = Guard(town, victim);
-            town.Log(LedgerCategory.War, Importance.Notable, Saga.Sentences(Fill(town, t.Stopped, by).Replace("{victim}", who).Replace("{guard}", g.Name)), [victim.Id]);
+            var g = Guard(town, mayor ? null : victim);
+            town.Log(LedgerCategory.War, Importance.Notable, Saga.Sentences(Fill(town, t.Stopped, by).Replace("{victim}", who).Replace("{guard}", g.Name)), mayor ? [] : [victim.Id]);
             town.Tension += 6;
             return false;
+        }
+        if (mayor)
+        {
+            town.Log(LedgerCategory.War, Importance.Major, Saga.Sentences($"An assassin of {by.Name} steps out of the crowd at {who}."));
+            Mayoralty.Knifed(town, by);
+            town.Tension += 20;
+            return true;
         }
         Threat.Kill(town, victim);
         town.Log(LedgerCategory.War, Importance.Major, Saga.Sentences(Fill(town, t.Landed, by).Replace("{victim}", who)), [victim.Id]);

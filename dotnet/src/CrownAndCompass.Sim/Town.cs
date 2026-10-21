@@ -529,6 +529,9 @@ public sealed class Town
     /// <summary>The mayor's regalia: what they wear in each slot, and the banner's boons on companies out (<see cref="Systems.Regalia"/>).</summary>
     public RegaliaState Regalia { get; } = new();
 
+    /// <summary>The mayor as a living person: where they spend their days, their wounds, death and successors (<see cref="Systems.Mayoralty"/>).</summary>
+    public MayoraltyState Mayoralty { get; } = new();
+
     /// <summary>The alchemy bench: monster parts in store, potions on the shelf and the town's recipe book (<see cref="Systems.Alchemy"/>).</summary>
     public AlchemyState Alchemy { get; } = new();
 
