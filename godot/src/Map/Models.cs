@@ -3,8 +3,9 @@ using Godot;
 namespace CrownAndCompass.Client.Map;
 
 /// <summary>One baked model: triangles and a colour (with a window flag) per triangle.</summary>
-public sealed class Model(Vector3[] verts, Color[] colors)
+public sealed class Model(string name, Vector3[] verts, Color[] colors)
 {
+    public readonly string Name = name;
     public readonly Vector3[] Verts = verts;
     public readonly Color[] Colors = colors;
     public int Triangles => Colors.Length;
@@ -53,7 +54,7 @@ public static class Models
                 byte cr = r.ReadByte(), cg = r.ReadByte(), cb = r.ReadByte(), flag = r.ReadByte();
                 colors[t] = new Color(cr / 255f, cg / 255f, cb / 255f, flag == 1 ? MeshKit.Flag.Window : MeshKit.Flag.Plain);
             }
-            all[name] = new Model(verts, colors);
+            all[name] = new Model(name, verts, colors);
         }
     }
 }
