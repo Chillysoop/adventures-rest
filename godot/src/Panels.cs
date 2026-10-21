@@ -334,7 +334,6 @@ public partial class Main
             string names = string.Join(", ", c.Captives.Select(id => t.Agent(id).Name));
             p.Card($"[b]Held at {SiteLink(held.Def)}[/b]  {Tag($"{left} {(left == 1 ? "day" : "days")} left", Ui.Bad)}\n[font_size=12]{Ui.Esc(names)}. Post a [b]Rescue[/b] on {Ui.Esc(held.Def.Name)} before the days run out, or clear it.[/font_size]", Ui.Bad);
         }
-        var scryer = Knowledge.Scryers(t).FirstOrDefault();
         bool freeScry = Watch.FreeScryingsLeft(t) > 0;
         bool canScout = Watch.Watchers(t).Count > 0;
         // Threats first: a site an alert names (a war camp, a crisis's seat) or the warband's camp, then the rest of the
@@ -367,9 +366,10 @@ public partial class Main
             }
             if (!s.ThoughtCleared && Watch.LiveOf(t, s) == null)
             {
-                double cost = Knowledge.ScryCost(t, s.Def);
                 string sid = s.Def.Id;
-                buttons.Add((freeScry ? "Scry free" : $"Scry {Math.Round(cost)}g", freeScry || scryer != null && t.Treasury >= cost, false, () => Act(() => _sim.CommissionScrying(sid))));
+                var offer = Knowledge.Offers(t, s.Def).FirstOrDefault();
+                string label = freeScry || offer?.Price == ScryPrice.Free ? "Scry free" : offer?.Price == ScryPrice.Favour ? "Scry (a favour)" : $"Scry {Math.Round(offer?.Gold ?? Knowledge.ScryCost(t, s.Def))}g";
+                buttons.Add((label, freeScry || offer != null && t.Treasury >= offer.Gold, false, () => Act(() => _sim.CommissionScrying(sid))));
                 if (Watch.ScoutAt(t, sid) == null) buttons.Add(("Scout", canScout, false, () => Act(() => _sim.PostScout(sid))));
             }
             int bt = Math.Clamp(s.BelievedTier, 1, 3);
@@ -391,8 +391,8 @@ public partial class Main
         }
         p.Note(freeScry
             ? $"Scrying: the Scrying Pool will show one site live for {t.Content.Knowledge.ScryHours} hours today, free."
-            : scryer != null
-                ? $"Scrying: {scryer.Name} the {scryer.Hero!.Cls.Name} will show you a site live for {t.Content.Knowledge.ScryHours} hours."
+            : Knowledge.Scryers(t).Count is var casters and > 0
+                ? $"{Ui.Img("face-all-seeing-eye")} Scrying: {Knowledge.Rested(t).Count}/{casters} ready · {t.Content.Knowledge.ScryHours}h"
                 : $"Scrying needs a {ScryClasses(t)} of level {t.Content.Knowledge.ScryMinLevel} or more in town.");
         p.Note(canScout
             ? $"Scouting: {Watch.Watchers(t)[0].Name} the {Watch.Watchers(t)[0].Hero!.Cls.Name} will watch a site from cover for up to {Ui.Days(t.Content.Knowledge.Scouts.WatchDays)}, {t.Content.Knowledge.Scouts.WagePerDay}g a day."
@@ -930,6 +930,7 @@ public partial class Main
             Sight.Live when live == LiveSource.Outpost && Loyalty.Lord(t, s.Def.Id) is Agent lord => Ui.C(Ui.Good, $"[b]Held[/b] by the retainers of {Ui.Esc(Loyalty.Styled(t, lord))}. Nothing moves back in."),
             Sight.Live when live == LiveSource.Outpost => Ui.C(Ui.Good, $"[b]Held[/b] by a garrison of the watch, {Js.Str(t.Content.Lairs.Outpost.Upkeep)}g a day. Nothing moves back in."),
             Sight.Live when live == LiveSource.Spire => Ui.C(Ui.Gold, "[b]In the Spire's sight[/b], day and night."),
+            Sight.Live when live == LiveSource.Tower && Watch.TowerOver(t, s) is { } tower => Ui.C(Ui.Gold, $"[b]In sight[/b] of {Ui.Esc(tower.Name)}, day and night."),
             Sight.Live => "In sight of the town.",
             Sight.Scouted when report != null => t.Day - report.Day > Fog.StaleDays
                 ? $"Last seen on day {report.Day}, in a report {t.Day - report.Day} days old. Things may have changed."
@@ -1002,11 +1003,20 @@ public partial class Main
         p.Heading("Eyes on it");
         if (live == null)
         {
-            bool free = Watch.FreeScryingsLeft(t) > 0;
-            double cost = Knowledge.ScryCost(t, s.Def);
-            var scryer = Knowledge.Scryers(t).FirstOrDefault();
-            p.Buttons((free ? "Scry it free, from the pool" : $"Commission a scrying, {Math.Round(cost)}g", free || scryer != null && t.Treasury >= cost, true, () => Act(() => _sim.CommissionScrying(sid))));
-            p.Note(free ? $"The Scrying Pool shows it for {t.Content.Knowledge.ScryHours} hours." : scryer != null ? $"{scryer.Name} would cast it, for {t.Content.Knowledge.ScryHours} hours." : $"Needs a {ScryClasses(t)} of level {t.Content.Knowledge.ScryMinLevel} or more in town.");
+            var k = t.Content.Knowledge;
+            var buttons = new List<(string, bool, bool, Action)>();
+            if (Watch.FreeScryingsLeft(t) > 0) buttons.Add(("Scry it free, from the pool", true, true, () => Act(() => _sim.CommissionScrying(sid))));
+            // Every rested caster says what they want for it: the loyal nothing, others gold, the disaffected a favour.
+            foreach (var o in Knowledge.Offers(t, s.Def).Take(4))
+            {
+                int id = o.Caster.Id;
+                string terms = o.Price switch { ScryPrice.Free => "free", ScryPrice.Gold => $"{Math.Round(o.Gold)}g", _ => "as a favour" };
+                buttons.Add(($"{o.Caster.GivenName}: {terms}", t.Treasury >= o.Gold, buttons.Count == 0, () => Act(() => _sim.CommissionScrying(sid, id))));
+            }
+            if (buttons.Count > 0) p.Buttons([.. buttons]);
+            int casters = Knowledge.Scryers(t).Count, rested = Knowledge.Rested(t).Count;
+            p.Note(casters == 0 && buttons.Count == 0 ? $"Needs a {ScryClasses(t)} of level {k.ScryMinLevel} or more in town."
+                : $"{Ui.Img("face-all-seeing-eye")} {rested}/{casters} ready · {k.ScryHours}h · rest {Ui.Days(k.ScryRestDays)}\n{Ui.Img("standing")} loyal free · {Ui.Img("gold")} others gold · {Ui.Img("favour")} disaffected a favour");
         }
         if (scout != null && live != LiveSource.Scout)
             p.Note($"{t.Agent(scout.HeroId).Name} is {(t.Tick < scout.ArriveTick ? "on the way to watch it" : "on the way home")}.");

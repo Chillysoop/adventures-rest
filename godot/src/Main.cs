@@ -101,6 +101,12 @@ public partial class Main : Control
         if (_opts.Hour > 0) for (int i = 0; i < _opts.Hour; i++) _sim.Step();
         if (_opts.Siege is float siegeHours) SiegeShot(siegeHours);
         if (_opts.Skirmish is string skirmish) StageSkirmish(skirmish.Split(','));
+        if (_opts.Delve && _sim.Town.Parties.FirstOrDefault(p => !p.Returned) is { } delving && _map.Geo.Pins.TryGetValue(delving.SiteId, out var dpin))
+        {
+            _map.Crowd.StageDelve = true;
+            _opts.Look ??= dpin;
+            _opts.Cam ??= 8;
+        }
         _opts.ApplyScript(_sim);
         if (_opts.Tourney is int tourney) StageTourney(tourney);
         if (_opts.Secrets) StageSecrets();
