@@ -42,13 +42,14 @@ public class UndercityTests
         Assert.True(Undercity.Rate(t, l) > 0);
         l.Stir = r.WarnAt;
         Assert.Contains(Alerts.Standing(t), a => a.Key == "below:cellars");
-        int folk = t.Residents.Count(a => a.Hero == null);
+        var folk = t.Residents.Where(a => a.Hero == null).Select(a => a.Id).ToList();
         double mandate = t.Mandate;
         l.Stir = r.RiseAt - 0.01;
         sim.RunDays(1);
         Assert.Equal(1, l.Rose);
         Assert.Equal(r.RiseAfter, l.Stir);
-        Assert.True(t.Residents.Count(a => a.Hero == null) < folk);
+        // Some of the townsfolk who were there are gone (newcomers that day can make up the count).
+        Assert.Contains(folk, id => t.Agent(id).Dead);
         Assert.True(t.Mandate < mandate);
         Assert.Contains(t.Ledger.Entries, e => e.Importance == Importance.Major && e.Text.Contains("the Old Cellars"));
     }

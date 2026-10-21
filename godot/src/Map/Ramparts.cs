@@ -121,6 +121,7 @@ public partial class TownView
             foreach (var g in gatePoints.Length > 0 ? gatePoints : [gate]) TimberGate(k, g, (g - Geo.Center).Normalized());
             return;
         }
+        int guns = Cannons.Rank(town);
         // The towers the town built, taller than the wall's own and flying its banner, with lit windows where the watch sleeps.
         var tint = WallStone(d.CityWall == PalisadeState.Built ? new Color("9b3d2a") : Slate, 0.8f);
         // Open fighting tops, so the watch can be seen up there when a tower is called to arms.
@@ -131,7 +132,9 @@ public partial class TownView
             TowerStack(k, 0, 0, towerTop / 3.03f, stack, tint);
             k.Pop();
             k.Add("castle/flag-pennant", MeshKit.At(c.X, Ground(c) + towerTop + 0.1f, c.Y, 0, 0.3f), Palette.Kenney(new Color("2f5f9a")));
+            if (guns > 0) Cannon(k, c, Ground(c) + towerTop - 0.02f, guns > 1);
         }
+        if (guns > 0 && Cannons.Guns(town) > 0) Cannon(k, gate, Ground(gate) + height + 0.02f, guns > 1);
         if (d.Moat == PalisadeState.Built)
         {
             Ribbon(k, loop, 0.95f, 0.9f, 0.07f, new Color("3d6f7a"), true);
@@ -207,6 +210,21 @@ public partial class TownView
         k.Box(Vector3.Zero, new Vector3(0.05f, 0.07f, 0.8f), Palette.Timber);
         k.Pop();
         k.Add("castle/flag-pennant", MeshKit.At(at.X + side.X * 0.32f, g + 0.62f, at.Y + side.Y * 0.32f, 0, 0.22f), Palette.Kenney(new Color("b8322a")));
+    }
+
+    /// <summary>A gun on a tower top or over the gate, its muzzle to the country: bronze bombards, or an arcane gun with a blue crystal in its breech.</summary>
+    private static void Cannon(MeshKit k, Vector2 at, float y, bool arcane)
+    {
+        var out2 = (at - Geo.Center).Normalized();
+        float yaw = Mathf.Atan2(out2.X, out2.Y);
+        var barrel = arcane ? new Color("3c4656") : new Color("a8763a");
+        k.Push(new Transform3D(Basis.FromEuler(new Vector3(0, yaw, 0)), new Vector3(at.X, y, at.Y)));
+        k.Box(new Vector3(0, 0, 0), new Vector3(0.16f, 0.05f, 0.2f), Palette.DarkTimber);
+        k.Push(new Transform3D(Basis.FromEuler(new Vector3(Mathf.Pi / 2 - 0.12f, 0, 0)), new Vector3(0, 0.09f, -0.06f)));
+        k.Frustum(Vector3.Zero, 0.045f, 0.035f, 0.3f, 8, barrel, barrel.Darkened(0.4f));
+        k.Pop();
+        if (arcane) k.Blob(new Vector3(0, 0.1f, -0.08f), new Vector3(0.04f, 0.05f, 0.04f), new Color("7fd4ff"));
+        k.Pop();
     }
 
     /// <summary>The wall section, tower or gate nearest a point of the map, if the point is on the wall.</summary>

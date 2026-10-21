@@ -366,7 +366,7 @@ public partial class Main
         s.BorderWidthLeft = 3;
         s.BorderWidthTop = 1;
         card.AddThemeStyleboxOverride("panel", s);
-        string kind = m.Kind == Moments.Item ? "MAGIC ITEM" : "LEVEL UP";
+        string kind = m.Kind == Moments.Item ? "MAGIC ITEM" : m.Kind == Moments.Mount ? "NEW MOUNT" : "LEVEL UP";
         string gains = string.Join("\n", m.Gains.Select(g => $"{Ui.C(Ui.Gold, "✦")} {Ui.Esc(g)}"));
         var text = Ui.Rich($"{Ui.C(Ui.Gold, $"[font_size=11][b]{kind}[/b][/font_size]")}  {Ui.C(Ui.Ink2, $"[font_size=11]{Ui.Esc(a.Hero?.Cls.Name ?? "")}[/font_size]")}\n[font_size=15][b]{Ui.Esc(m.Title)}[/b][/font_size]\n[font_size=13]{gains}[/font_size]" + (m.Text != "" ? $"\n{Ui.C(Ui.Ink2, $"[font_size=12][i]{Ui.Esc(m.Text)}[/i][/font_size]")}" : ""));
         text.CustomMinimumSize = new Vector2(300, 0);

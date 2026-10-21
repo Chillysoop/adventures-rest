@@ -30,7 +30,8 @@
     "palisade": 1.5,
     "stoneWall": 2.0,
     "cityWall": 2.6,
-    "perTower": 0.15
+    "perTower": 0.15,
+    "skyWatch": 0.5
   },
   "palisade": {
     "cost": 300,

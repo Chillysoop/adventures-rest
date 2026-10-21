@@ -258,6 +258,76 @@ public static class World
 
         // Last, so the country between the sites never shifts the regions and sites a seed makes.
         Roads.Generate(town, rng);
+        Bridges.Span(town);
+        PlaceFoes(town, used);
+        PlaceIsles(town, used);
+        Ruins.Place(town, used, Fill);
+    }
+
+    /// <summary>
+    /// A few far sites in high country float: the rock they stand on has torn loose and drifts above the clouds, and only
+    /// a company that can fly, or the sky dock's airship, gets there. On their own dice, so nothing else shifts.
+    /// </summary>
+    private static void PlaceIsles(Town town, HashSet<string> used)
+    {
+        var r = town.Content.World.Isles;
+        var rng = new Rng(town.Seed * 6007 + 4241);
+        var pool = town.Sites
+            .Where(s => s.Generated && !s.Def.Aloft && s.Def.Foe == "" && s.RegionId is int rid
+                && town.Regions[rid].Ring >= r.Rings[0] && town.Regions[rid].Ring <= r.Rings[^1] && r.Themes.Contains(town.Regions[rid].Theme.Id))
+            .OrderBy(s => s.Def.Id, StringComparer.Ordinal)
+            .ToList();
+        for (int i = 0; i < r.Count && pool.Count > 0; i++)
+        {
+            var site = pool[rng.Range(0, pool.Count)];
+            pool.Remove(site);
+            used.Remove(site.Def.Name);
+            site.Def = site.Def with { Aloft = true, Name = r.Names.Count > 0 ? Fill(rng, town.Regions[site.RegionId!.Value].Theme, r.Names, used) : site.Def.Name };
+        }
+    }
+
+    /// <summary>
+    /// Each signature foe takes over one site in country it likes, in its rings (on its own dice, so the rest of the
+    /// world a seed makes is unchanged): its master and escort replace the library's pick, and the site its name. A site a
+    /// ready-made group (groups.json) holds stays theirs.
+    /// </summary>
+    private static void PlaceFoes(Town town, HashSet<string> used)
+    {
+        var rng = new Rng(town.Seed * 4099 + 31337);
+        var taken = new HashSet<string>();
+        foreach (var f in town.Content.Foes.Foes)
+        {
+            if (town.Content.Library.Monster(f.Monster) is not { } boss) continue;
+            var pool = town.Sites
+                .Where(s => s.Generated && s.Def.Group == "" && !taken.Contains(s.Def.Id) && s.RegionId is int rid && town.Regions[rid].Ring >= f.Rings[0] && town.Regions[rid].Ring <= f.Rings[^1])
+                .OrderBy(s => Math.Max(0, f.Themes.ToList().IndexOf(town.Regions[s.RegionId!.Value].Theme.Id)) + (f.Themes.Contains(town.Regions[s.RegionId!.Value].Theme.Id) ? 0 : 100))
+                .ThenBy(s => Math.Abs(s.Def.Tier - Math.Max(1, (int)Math.Round(boss.Cr))))
+                .ThenBy(s => s.Def.Id, StringComparer.Ordinal)
+                .Take(3)
+                .ToList();
+            if (pool.Count == 0) continue;
+            var site = rng.Pick(pool);
+            taken.Add(site.Def.Id);
+            var region = town.Regions[site.RegionId!.Value];
+            string name = f.Names.Count > 0 ? Fill(rng, region.Theme, f.Names, used) : site.Def.Name;
+            used.Remove(site.Def.Name);
+            site.Def = site.Def with
+            {
+                Name = name,
+                Kind = f.Kind,
+                Foe = f.Id,
+                Aloft = f.Aloft,
+                Boss = new EncounterDef
+                {
+                    Kind = "combat",
+                    Monster = town.Content.BossOf(boss.Id).Id,
+                    Count = [1, 1],
+                    Escort = f.Escort != "" && town.Content.Library.Monster(f.Escort) != null ? f.Escort : null,
+                    EscortCount = f.Escort != "" && f.EscortCount[^1] > 0 ? f.EscortCount : null,
+                    Text = f.Text != "" ? f.Text : site.Def.Boss.Text,
+                },
+            };
+        }
     }
 
     private static ThemeDef WeightedTheme(Rng rng, IReadOnlyList<ThemeDef> themes)
