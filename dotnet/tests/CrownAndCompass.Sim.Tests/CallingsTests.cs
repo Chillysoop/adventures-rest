@@ -41,7 +41,8 @@ public class CallingsTests
         int at = Stories.StageOf(t, s).Options.FindIndex(o => o.Label.StartsWith("Swear the Oath of the Shield", StringComparison.Ordinal));
         var hero = t.Agent(s.HeroId.Value);
         double defence = Callings.Defence(t);
-        Assert.Equal(StoryResult.Certain, Stories.Resolve(t, s.Id, at)!.Result);
+        // The oath is a roll now, but sworn either way: a poor showing only costs loyalty.
+        Assert.NotNull(Stories.Resolve(t, s.Id, at));
         Assert.Equal("oath-shield", Callings.Of(t, hero)?.Id);
         Assert.True(Callings.Defence(t) > defence);
         Assert.Contains(Loyalty.Factors(t, hero), f => f.Why == "oath of the shield");
