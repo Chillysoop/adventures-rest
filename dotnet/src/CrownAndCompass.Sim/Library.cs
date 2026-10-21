@@ -48,6 +48,21 @@ public sealed record LibMonster
     public IReadOnlyList<string> Habitats { get; init; } = [];
     public string Band { get; init; } = "";
     public bool Boss { get; init; }
+
+    /// <summary>The stat block's body: size (tiny to gargantuan), speeds other than walking, strength, dexterity,
+    /// armour, the names of its traits and of its attacks (best first as listed). <see cref="Systems.Bestiary"/> reads
+    /// them for how it looks, moves and fights.</summary>
+    public string Size { get; init; } = "medium";
+    public int Fly { get; init; }
+    public int Swim { get; init; }
+    public int Burrow { get; init; }
+    public int Climb { get; init; }
+    public bool Hover { get; init; }
+    public int Str { get; init; } = 10;
+    public int Dex { get; init; } = 10;
+    public string ArmorNote { get; init; } = "";
+    public IReadOnlyList<string> Traits { get; init; } = [];
+    public IReadOnlyList<string> Strikes { get; init; } = [];
 }
 
 public sealed record LibClass
@@ -382,10 +397,12 @@ public sealed class Library
         string weapon = "";
         double best = -1;
         int attacks = 1;
+        var strikes = new List<string>();
         if (e.TryGetProperty("actions", out var actions) && actions.ValueKind == JsonValueKind.Array)
         {
             foreach (var a in actions.EnumerateArray())
             {
+                if (a.TryGetProperty("attacks", out var any) && any.ValueKind == JsonValueKind.Array && any.GetArrayLength() > 0) strikes.Add(Str(a, "name").Trim());
                 if (Str(a, "name").StartsWith("Multiattack", StringComparison.Ordinal))
                 {
                     var m = Multiattack.Match(Str(a, "text"));
@@ -424,6 +441,19 @@ public sealed class Library
             Habitats = Strings(e, "habitats"),
             Band = hasRt ? Str(rt, "band") : "",
             Boss = hasRt && Flag(rt, "boss"),
+            Size = Str(e, "size") is { Length: > 0 } size ? size : "medium",
+            Fly = e.TryGetProperty("speed", out var sp) && sp.ValueKind == JsonValueKind.Object ? (int)Num(sp, "fly") : 0,
+            Swim = sp.ValueKind == JsonValueKind.Object ? (int)Num(sp, "swim") : 0,
+            Burrow = sp.ValueKind == JsonValueKind.Object ? (int)Num(sp, "burrow") : 0,
+            Climb = sp.ValueKind == JsonValueKind.Object ? (int)Num(sp, "climb") : 0,
+            Hover = sp.ValueKind == JsonValueKind.Object && sp.TryGetProperty("hover", out var hv) && hv.ValueKind is JsonValueKind.True or JsonValueKind.Number,
+            Str = ab.ValueKind == JsonValueKind.Object && Num(ab, "str") > 0 ? (int)Num(ab, "str") : 10,
+            Dex = ab.ValueKind == JsonValueKind.Object && Num(ab, "dex") > 0 ? (int)Num(ab, "dex") : 10,
+            ArmorNote = Str(e, "armorNote"),
+            Traits = e.TryGetProperty("traits", out var ts) && ts.ValueKind == JsonValueKind.Array
+                ? ts.EnumerateArray().Where(t => t.ValueKind == JsonValueKind.Object).Select(t => Str(t, "name").Trim()).Where(n => n != "").ToList()
+                : [],
+            Strikes = strikes,
         };
     }
 

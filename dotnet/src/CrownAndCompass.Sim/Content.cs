@@ -1537,6 +1537,7 @@ public sealed class Content
     public StorytellerRules Storytellers { get; init; } = new();
     public Systems.CharacterRules Character { get; init; } = new();
     public Systems.TacticRules Tactics { get; init; } = new();
+    public Systems.BestiaryRules Bestiary { get; init; } = new();
 
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
@@ -1739,6 +1740,7 @@ public sealed class Content
             Storytellers = Parse<StorytellerRules>("storytellers.json"),
             Character = Parse<CharacterRules>("character.json"),
             Tactics = Parse<TacticRules>("tactics.json"),
+            Bestiary = Parse<Systems.BestiaryRules>("bestiary.json"),
         };
     }
 
