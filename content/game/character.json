@@ -773,6 +773,15 @@
           "will": "Fervour",
           "wealth": "Offerings"
         }
+      },
+      "fiends": {
+        "names": {
+          "wits": "Guile",
+          "reach": "Doorways",
+          "dread": "Terror",
+          "will": "Hunger",
+          "wealth": "Bargains"
+        }
       }
     },
     "wits": {

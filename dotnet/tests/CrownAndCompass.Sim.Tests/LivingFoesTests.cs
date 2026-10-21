@@ -106,4 +106,71 @@ public class LivingFoesTests
         Assert.Contains("none", seen);
         Assert.True(seen.Count >= 3, string.Join(",", seen));
     }
+
+    [Fact]
+    public void SomeLateCampaignsOpenABurningDoorwayAndItsImpsMakeMischief()
+    {
+        int opened = 0, never = 0;
+        for (int seed = 1; seed <= 20; seed++)
+        {
+            var t = new Simulation(new SimulationOptions { Seed = seed, AutoMayor = false }).Town;
+            while (t.Saga.ActDays.Count < 3) t.Saga.ActDays.Add(t.Day);
+            if (Menaces.DoorwayDay(t) == null) never++;
+            else opened++;
+        }
+        Assert.True(opened > 0 && never > 0, $"opened {opened}, never {never}");
+
+        for (int seed = 1; ; seed++)
+        {
+            var sim = new Simulation(new SimulationOptions { Seed = seed, AutoMayor = false });
+            var t = sim.Town;
+            sim.RunDays(2);
+            t.Saga.Act = 2;
+            while (t.Saga.ActDays.Count < 3) t.Saga.ActDays.Add(t.Day);
+            if (Menaces.DoorwayDay(t) is not int day) continue;
+            t.Saga.ActDays[2] -= day - t.Day;
+            Menaces.Daily(t, false);
+            var m = Assert.Single(t.Saga.Menaces, x => x.Origin == Menaces.FromDoorway);
+            Assert.Equal("fiends", m.Kind);
+            Assert.True(m.Named);
+            Menaces.Daily(t, false);
+            Assert.Single(t.Saga.Menaces, x => x.Origin == Menaces.FromDoorway);
+            break;
+        }
+    }
+
+    [Fact]
+    public void EveryLeaderHasACaseAndTheTruthComesOutWhenAHoldingFalls()
+    {
+        var (sim, m) = Rise("tribe");
+        var t = sim.Town;
+        m.Named = true;
+        Assert.NotNull(Menaces.Case(t, m));
+        Assert.Null(Menaces.Truth(t, m));
+        var holding = Menaces.TakeHolding(t, m);
+        Assert.NotNull(holding);
+        holding!.Cleared = true;
+        Menaces.Daily(t, false);
+        Assert.NotNull(Menaces.Truth(t, m));
+        Assert.Contains(t.Ledger.Entries, e => e.Text.Contains(Menaces.Truth(t, m)!));
+        foreach (var kind in t.Content.Saga.Menaces.Kinds.Keys)
+            Assert.True(t.Content.Saga.Menaces.Cases.Kinds.ContainsKey(kind), $"{kind} has no case");
+    }
+
+    [Fact]
+    public void ARisingPowerPushesTheWeakerFoeNearItAndRefugeesCome()
+    {
+        var (sim, big) = Rise("dragon");
+        var t = sim.Town;
+        var small = Menaces.Rise(t, "beasts", "Old Tusk", 2, "act")!;
+        small.Stage = MenaceStage.Rising;
+        small.NextStrikeTick = t.Tick + 1000;
+        big.Power = small.Power + 500;
+        int folk = t.Agents.Count(a => !a.Dead && !a.Departed);
+        int before = t.Ledger.Entries.Count;
+        typeof(Menaces).GetMethod("Chain", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!.Invoke(null, [t, big]);
+        Assert.True(small.NextStrikeTick <= t.Tick);
+        Assert.Contains(t.Ledger.Entries.Skip(before), e => e.Text.Contains("Driven from"));
+        Assert.True(t.Agents.Count(a => !a.Dead && !a.Departed) > folk);
+    }
 }

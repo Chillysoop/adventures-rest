@@ -215,6 +215,10 @@ public partial class Main
         string line = $"[font_size=12]{string.Join("  ", Character.Sheet(t, m).Select(ScoreTag))}[/font_size]\n";
         if (Character.TemperOf(t, m.Kind) is { Text: not "" } tm) line += Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(tm.Text)}[/font_size]\n");
         if (Menaces.Done(t, m) is string done) line += $"[font_size=12]{Tag("Done")} {Ui.C(Ui.Ink2, Ui.Esc(done))}[/font_size]\n";
+        if (Menaces.Case(t, m) is string said) line += $"[font_size=12]{Tag("Its case")} {Ui.C(Ui.Ink2, Ui.Esc(said))}[/font_size]\n";
+        line += Menaces.Truth(t, m) is string truth
+            ? $"[font_size=12]{Tag("The truth")} {Ui.C(Ui.Ink2, Ui.Esc(truth))}[/font_size]\n"
+            : m.Named ? Ui.C(Ui.Ink2, "[font_size=12][i]There is more to it. Take one of its holdings to learn the truth.[/i][/font_size]\n") : "";
         return line;
     }
 
