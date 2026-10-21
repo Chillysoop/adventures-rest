@@ -493,6 +493,9 @@ public sealed class Town
     /// <summary>Days of festival left.</summary>
     public int FestivalDays { get; set; }
 
+    /// <summary>Tick the last festival began, by motion or by the mayor's own word, or null before the first.</summary>
+    public int? FestivalTick { get; set; }
+
     public EnemyState Enemy { get; } = new();
 
     /// <summary>The campaign arc: its acts, the menaces abroad, and the town's dread (<see cref="Systems.Saga"/>).</summary>
@@ -510,6 +513,9 @@ public sealed class Town
 
     /// <summary>Trees, benches, lamps, statues: the set dressing the player has placed (<see cref="Systems.Decor"/>).</summary>
     public DecorState Decor { get; } = new();
+
+    /// <summary>The charter goals met in the first days (<see cref="Systems.Goals"/>).</summary>
+    public Systems.GoalsState Goals { get; } = new();
 
     /// <summary>The turning year: festival days and the visitors (<see cref="Systems.Seasons"/>).</summary>
     public SeasonState Seasons { get; } = new();
