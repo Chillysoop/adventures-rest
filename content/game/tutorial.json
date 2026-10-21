@@ -111,11 +111,11 @@
     {
       "id": "decorate",
       "title": "Dress the town",
-      "text": "The build bar's [b]Decor[/b] tab has trees, benches, lamps, fountains, statues and more. Set them anywhere at any angle: click to place, drag to aim, and [b]R[/b] or Shift+wheel turns the piece. Drag fences and hedges into rows, paint trees and flowers, and clear pieces for half their price back. Every piece helps a little: benches rest the neighbours, lamps help the watch, stalls lift trade, statues win favour and loyalty, and houses on a pleasant street grow a storey sooner. Builders and lanes go round what you set down.",
+      "text": "The build bar's [b]Decor[/b] tab has trees, benches, lamps, fountains, statues and more. Set them anywhere at any angle: click to place, drag to aim, and [b]R[/b] or Shift+wheel turns the piece. The build bar tucks away while a piece is in hand and comes back once it is down; hold [b]Shift[/b] to place several. Drag fences and hedges into rows, paint trees and flowers, and clear pieces for half their price back. Every piece helps a little: benches rest the neighbours, lamps help the watch, stalls lift trade, statues win favour and loyalty, and houses on a pleasant street grow a storey sooner. Builders and lanes go round what you set down.",
       "when": "day:10",
       "point": "buildbar",
       "until": "decorated",
-      "teaches": ["command:Decorate", "command:ClearDecoration", "key:R"]
+      "teaches": ["command:Decorate", "command:ClearDecoration", "key:R", "key:Shift"]
     },
     {
       "id": "lens",
