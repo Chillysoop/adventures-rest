@@ -54,8 +54,14 @@ public class GroupsTests
         foreach (int seed in new[] { 1, 2, 3, 4, 5, 6, 7, 8 })
         {
             var sim = new Simulation(new SimulationOptions { Seed = seed });
-            sim.RunDays(240);
-            foreach (var m in sim.Town.Saga.Menaces.Where(m => m.Origin != "awakened"))
+            // Where each menace rose: a broken one flees to a holding, maybe a group's site, and keeps its own lineage.
+            var born = new Dictionary<int, string>();
+            for (int d = 0; d < 240; d++)
+            {
+                sim.RunDays(1);
+                foreach (var m in sim.Town.Saga.Menaces) born.TryAdd(m.Id, m.SeatId);
+            }
+            foreach (var m in sim.Town.Saga.Menaces.Where(m => m.Origin != "awakened" && born[m.Id] == m.SeatId))
             {
                 var seat = sim.Town.Sites.FirstOrDefault(s => s.Def.Id == m.SeatId);
                 if (seat == null || C.Group(seat.Def.Group) is not GroupDef g) continue;
