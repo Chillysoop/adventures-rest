@@ -196,4 +196,62 @@ public class PowersTests
         Assert.Equal(0.75, Powers.Harvest(t), 3);
         Assert.True(t.Content.Powers.Powers.Single(d => d.Id == "mire-grandmothers").Strange.All(x => x.Text != "" && x.Paid != ""));
     }
+
+    [Fact]
+    public void AFavourKeptBuysFriendshipAndGoldAndABrokenOneIsRemembered()
+    {
+        var (sim, m) = Seeded();
+        var t = sim.Town;
+        var knife = Powers.Find(t, "silent-knife")!;
+        knife.Envoy = "favour";
+        knife.Task = "slay";
+        knife.TaskMenace = m.Id;
+        knife.EnvoyUntil = t.Day + 5;
+        Assert.Contains("asks a favour", Powers.EnvoyText(t, knife));
+        Assert.True(sim.AnswerEnvoy("silent-knife", true));
+        Assert.True(knife.TaskTaken);
+        Assert.False(Powers.TaskDone(t, knife));
+        double favour = knife.Favour, gold = t.Treasury;
+        m.EndedDay = t.Day;
+        sim.RunDays(1);
+        Assert.False(knife.TaskTaken);
+        Assert.True(knife.Favour > favour + 10);
+        Assert.Contains(t.Ledger.Entries, e => e.Text.Contains("the favour is done"));
+
+        var hags = Powers.Find(t, "mire-grandmothers")!;
+        hags.Task = "route";
+        hags.TaskCount = 99;
+        hags.TaskTaken = true;
+        hags.TaskUntil = t.Day + 1;
+        favour = hags.Favour;
+        sim.RunDays(2);
+        Assert.False(hags.TaskTaken);
+        Assert.True(hags.Favour < favour - 5);
+    }
+
+    [Fact]
+    public void AFeudTurnsTheFoeOfTheTownsAllyAgainstItUntilTheTownPaysForTheWin()
+    {
+        var (sim, _) = Seeded();
+        var t = sim.Town;
+        var r = t.Content.Powers.Feuds;
+        Assert.NotEmpty(r.Pairs);
+        foreach (var f in r.Pairs) Assert.True(Powers.Find(t, f.A) != null && Powers.Find(t, f.B) != null && f.Why != "", $"{f.A}/{f.B}");
+        var league = Powers.Find(t, "crown-league")!;
+        var ledger = Powers.Find(t, "black-ledger")!;
+        league.Side = PowerSide.Town;
+        foreach (var p in t.Powers) p.NextFeudDay = p.Id == "crown-league" ? 0 : 99999;
+        double before = Powers.Target(t, ledger);
+        sim.RunDays(r.From - t.Day + 1);
+        Assert.Equal("black-ledger", league.FeudWith);
+        Assert.Equal("crown-league", ledger.FeudWith);
+        Assert.True(Powers.Target(t, ledger) < before - r.Hit / 2);
+        Assert.Equal("aid", league.Envoy);
+        t.Treasury = 10000;
+        double ledgerFavour = ledger.Favour;
+        Assert.True(sim.AnswerEnvoy("crown-league", true));
+        Assert.Equal("", league.FeudWith);
+        Assert.Equal("", ledger.FeudWith);
+        Assert.True(ledger.Favour < ledgerFavour);
+    }
 }

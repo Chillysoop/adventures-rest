@@ -1,5 +1,5 @@
 {
-  "_doc": "Minor powers (Systems/Powers.cs): strong outside factions with a leader, a goal and a price, who side with the town or with one of its enemies. Standing settles toward base plus each liked signal (0-1, see Powers.Signal) times its weight, plus the favour the town's gifts bought (which fades by favourFade a day). At allyAt the town can pay price and then tithe a day for the ally boon; a town ally whose standing falls below leaveBelow, or whose tithe goes unpaid lapseDays, walks away. Allying angers its rivals by rivalHit. From courtFrom on, every courtEvery days the strongest risen enemy whose wits allow it courts one power that serves (serves 'any', the enemy's kind not in shuns): its offer is its power times its wits (cunning) times offerPerPower; if that beats the power's standing (plus allyResist when it is the town's ally) word comes through a witness and the town has noticeDays to raise standing past the offer with gifts (giftCost gold, giftFavour favour, each gift worth giftFalloff less than the last until they fade). Otherwise it joins that enemy: it arms it daily, skims the treasury, strikes with a Blows kind every strikeEvery days and adds host to the enemy's army at the walls. It goes back to neutral (standing reset to freedFavour favour) when that enemy dies, or comes back to the town early once standing reaches winBack. Each enemy takes at most perEnemy powers, and every power already marching with it adds bandwagon to its next offer. Envoys: from envoys.from, every envoys.every days the power with the most pressing case sends the town one (evil powers below tributeBelow demand tribute of gift x tribute, powers within allianceWithin of allyAt offer an alliance at price x allianceDiscount, others at pactAt or better that could serve an enemy offer a pact for gift x pactPrice: no enemy can buy them for pactDays). The town has answerDays to answer; refusing costs declined favour (spurned for a demand), and a lapsed answer is a refusal. A power with strange prices asks one instead of gold with strangeChance: name (a townsperson departs), harvest (farms yield amount less for days), voice (amount Mandate). Every power needs a library faction (ref) and a faction lineage in history.json.",
+  "_doc": "Minor powers (Systems/Powers.cs): strong outside factions with a leader, a goal and a price, who side with the town or with one of its enemies. Standing settles toward base plus each liked signal (0-1, see Powers.Signal) times its weight, plus the favour the town's gifts bought (which fades by favourFade a day). At allyAt the town can pay price and then tithe a day for the ally boon; a town ally whose standing falls below leaveBelow, or whose tithe goes unpaid lapseDays, walks away. Allying angers its rivals by rivalHit. From courtFrom on, every courtEvery days the strongest risen enemy whose wits allow it courts one power that serves (serves 'any', the enemy's kind not in shuns): its offer is its power times its wits (cunning) times offerPerPower; if that beats the power's standing (plus allyResist when it is the town's ally) word comes through a witness and the town has noticeDays to raise standing past the offer with gifts (giftCost gold, giftFavour favour, each gift worth giftFalloff less than the last until they fade). Otherwise it joins that enemy: it arms it daily, skims the treasury, strikes with a Blows kind every strikeEvery days and adds host to the enemy's army at the walls. It goes back to neutral (standing reset to freedFavour favour) when that enemy dies, or comes back to the town early once standing reaches winBack. Each enemy takes at most perEnemy powers, and every power already marching with it adds bandwagon to its next offer. Envoys: from envoys.from, every envoys.every days the power with the most pressing case sends the town one (evil powers below tributeBelow demand tribute of gift x tribute, powers within allianceWithin of allyAt offer an alliance at price x allianceDiscount, others at pactAt or better that could serve an enemy offer a pact for gift x pactPrice: no enemy can buy them for pactDays). The town has answerDays to answer; refusing costs declined favour (spurned for a demand), and a lapsed answer is a refusal. Favours (favours): powers with asks offer to be done a favour (clear a known lair up to maxTier, see the worst enemy dead, open one more trade route); a promise has days to keep, done pays done favour and gift x gold, broken costs failed. Feuds (feuds): from feuds.from every feuds.every days the pair rested longest feuds for days; the side whose foe is the town ally holds hit against the town and, if evil with a strike, strikes every strikeEvery; the ally sends an aid envoy for gift x aid gold that wins the feud (aidFavour to it, lost from its foe; refusing costs spurned). A power with strange prices asks one instead of gold with strangeChance: name (a townsperson departs), harvest (farms yield amount less for days), voice (amount Mandate). Every power needs a library faction (ref) and a faction lineage in history.json.",
   "courtFrom": 60,
   "courtEvery": 45,
   "noticeDays": 8,
@@ -21,7 +21,7 @@
   "warnText": "{witness} brings the watch word from {name} just in time: {by} had people in the town tonight, and they are taken before they can strike.",
   "powers": [
     {
-      "id": "black-ledger", "ref": "black-ledger", "face": "bandit", "title": "Factor-General", "leader": "Corvane Mardt",
+      "id": "black-ledger", "ref": "black-ledger", "asks": ["route", "clear"], "face": "bandit", "title": "Factor-General", "leader": "Corvane Mardt",
       "goal": "wants every road on the frontier to pay the Ledger a toll, and every debt collected",
       "seat": "its counting-house in the Free Ports",
       "witness": "a Ledger factor drinking in the tavern",
@@ -32,7 +32,7 @@
       "enemy": { "arm": 0.6, "skim": 4, "host": 35, "strike": "treasury", "strikeEvery": 50, "text": "Ledger arms for {enemy}, and smugglers skimming the treasury" }
     },
     {
-      "id": "silent-knife", "ref": "silent-knife", "face": "hooded-assassin", "title": "guildmaster", "leader": "the Mask Who Waits",
+      "id": "silent-knife", "ref": "silent-knife", "asks": ["slay"], "face": "hooded-assassin", "title": "guildmaster", "leader": "the Mask Who Waits",
       "goal": "wants contracts, gold, and no one asking where it sleeps",
       "seat": "no hall anyone can find",
       "witness": "a frightened go-between who wants it known he had no part",
@@ -44,7 +44,7 @@
       "contractText": "Word comes by a nameless boy with a black ribbon: one of {enemyLeader}'s captains was found in the morning with a dagger that casts no shadow. {enemy} is the weaker for it."
     },
     {
-      "id": "lanternbearers", "ref": "lanternbearers", "face": "spy", "title": "Lamplighter", "leader": "Wren Halloway",
+      "id": "lanternbearers", "ref": "lanternbearers", "asks": ["slay", "clear"], "face": "spy", "title": "Lamplighter", "leader": "Wren Halloway",
       "goal": "wants no tyrant, cult or fiend to rule the frontier",
       "seat": "nowhere, and every inn with a lantern in the window",
       "witness": "a travelling singer with a lantern pin inside her collar",
@@ -55,7 +55,7 @@
       "enemy": { "text": "nothing: it never serves the town's enemies" }
     },
     {
-      "id": "crown-league", "ref": "crown-league", "face": "crown", "title": "League Marshal", "leader": "Marshal Edrith Vane",
+      "id": "crown-league", "ref": "crown-league", "asks": ["clear", "slay"], "face": "crown", "title": "League Marshal", "leader": "Marshal Edrith Vane",
       "goal": "wants every town on the frontier walled, garrisoned and sworn to answer the beacons",
       "seat": "the beacon-tower at Harrowgate",
       "witness": "a League herald in a ring-of-towers tabard",
@@ -66,7 +66,7 @@
       "enemy": { "text": "nothing: it never serves the town's enemies" }
     },
     {
-      "id": "vermilion-conclave", "ref": "vermilion-conclave", "face": "warlock-hood", "title": "Scarlet Archmagister", "leader": "Archmagister Seraphel Quill",
+      "id": "vermilion-conclave", "ref": "vermilion-conclave", "asks": ["clear"], "face": "warlock-hood", "title": "Scarlet Archmagister", "leader": "Archmagister Seraphel Quill",
       "goal": "wants an enclave in every rich town, and first claim on every relic dug out of the wilds",
       "seat": "the Vermilion Spire on the old Caldor road",
       "witness": "an apprentice who ran from the Spire",
@@ -77,7 +77,7 @@
       "enemy": { "arm": 0.4, "host": 55, "strike": "stores", "strikeEvery": 55, "text": "war-mages marching with {enemy}, and curses on the town's stores" }
     },
     {
-      "id": "ember-court", "ref": "ember-court", "face": "dragon-head", "title": "Ember Queen", "leader": "Ysmeralt, last daughter of Vermithrax",
+      "id": "ember-court", "ref": "ember-court", "asks": ["slay"], "face": "dragon-head", "title": "Ember Queen", "leader": "Ysmeralt, last daughter of Vermithrax",
       "goal": "wants a hoard worthy of her father, and every lesser wyrm gone from her sky",
       "seat": "the Ember Court in the smoking peaks",
       "witness": "a kobold who fled the Court with singed scales",
@@ -88,7 +88,7 @@
       "enemy": { "arm": 0.5, "host": 160, "strike": "burn", "strikeEvery": 40, "text": "the Ember Queen flying with {enemy}'s host, and fire on the roofs" }
     },
     {
-      "id": "mire-grandmothers", "ref": "mire-grandmothers", "face": "witch-face", "title": "eldest of the coven", "leader": "Granny Wormwood",
+      "id": "mire-grandmothers", "ref": "mire-grandmothers", "asks": ["clear"], "face": "witch-face", "title": "eldest of the coven", "leader": "Granny Wormwood",
       "goal": "wants bargains struck and favours owed, and a town afraid enough to come asking",
       "seat": "a stilt-house in the drowned fens",
       "witness": "a hedge-witch who will not say how she knows",
@@ -119,6 +119,38 @@
     "lapsed": "The envoy of {name} waited in vain for an answer and rode home.",
     "pactEnds": "The truce with {name} has run out. Its door is open to any enemy's gold again.",
     "bandwagon": "Word is that {backers} already march with {enemy}, which makes the offer look the safer."
+  },
+  "favours": {
+    "days": 90, "maxTier": 3, "done": 25, "gold": 1, "failed": 8,
+    "ask": {
+        "clear": "An envoy of {name} brings a favour {leader} would have of {town}: {task}. {name} will not forget a friend who does it. The envoy waits {answer} days for an answer.",
+        "slay": "An envoy of {name} comes with a request from {leader}: {task}. Do it, and {name} will count {town} a friend. The envoy waits {answer} days for an answer.",
+        "route": "An envoy of {name} asks a favour of {town}: {task}, so that more coin moves on the roads. The envoy waits {answer} days for an answer."
+    },
+    "task": {
+        "clear": "{town} gives the envoy of {name} its word: it will {task} within {days} days.",
+        "slay": "{town} gives the envoy of {name} its word: it will {task} within {days} days.",
+        "route": "{town} gives the envoy of {name} its word: it will {task} within {days} days."
+    },
+    "kept": "{town} has done what {leader} asked: the favour is done, and {name} sends {gold} gold with its thanks.",
+    "broken": "{leader} hears that {town} did not do as it promised. {name} will remember the broken word."
+  },
+  "feuds": {
+    "from": 120, "every": 70, "days": 60, "rest": 200,
+    "hit": 25, "strikeEvery": 30,
+    "aid": 2, "aidFavour": 20, "lost": 20, "spurned": 15,
+    "pairs": [
+      { "a": "lanternbearers", "b": "silent-knife", "why": "a Lanternbearer singer found dead with a shadowless dagger in her back" },
+      { "a": "crown-league", "b": "black-ledger", "why": "the Ledger's tolls on the League's beacon roads" },
+      { "a": "vermilion-conclave", "b": "mire-grandmothers", "why": "a book of names the Conclave stole out of the drowned fens" },
+      { "a": "ember-court", "b": "vermilion-conclave", "why": "a dragon's egg the Conclave keeps under its Spire" },
+      { "a": "lanternbearers", "b": "black-ledger", "why": "a Lanternbearer who found out what the Ledger smuggles" }
+    ],
+    "begins": "{witness} brings word of a feud: {name} and {foe} are at each other's throats over {why}.",
+    "callToArms": "{leader} sends to {town}, ally to ally: the war with {foe} goes hard, and {price} would end it. Refuse, and {leader} will remember who stood aside.",
+    "won": "With {town}'s gold behind it, {leader} drives off {foe}. {foeLeader} sues for peace, and {foe} will remember who paid for it.",
+    "ends": "The feud between {name} and {foe} cools, for now.",
+    "strikes": "{leader} sends agents against {town} for keeping company with {foe}."
   },
   "text": {
     "courted": "{witness} says envoys of {enemy} have been seen at {seat}, offering {name} gold and promises. An answer is due in {days} days.",
