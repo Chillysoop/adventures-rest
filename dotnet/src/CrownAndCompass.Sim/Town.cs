@@ -600,7 +600,13 @@ public sealed class Town
     // Made on first use, so a save from before stories existed gets a mayor too.
     private Systems.StoryState? _stories;
 
-    /// <summary>How the campaign ended: the big bad slain, or the town fallen.</summary>
+    /// <summary>The roads to victory open in this campaign and how long each has held (<see cref="Systems.Victory"/>).</summary>
+    public Systems.VictoryState Victory { get; } = new();
+
+    /// <summary>Boons from the player's earlier wins the town was founded with, by id, at their rank (<see cref="Systems.Boons"/>).</summary>
+    public OrderedMap<string, int> Boons { get; } = new();
+
+    /// <summary>How the campaign ended: won by one of the roads (<see cref="Systems.Victory"/>), or the town fallen.</summary>
     public Outcome? Outcome { get; set; }
 
     /// <summary>The Director's read of recent drama; it decays each day.</summary>

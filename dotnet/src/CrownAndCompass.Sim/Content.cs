@@ -1552,6 +1552,18 @@ public sealed class Content
     public Systems.CharacterRules Character { get; init; } = new();
     public Systems.TacticRules Tactics { get; init; } = new();
 
+    /// <summary>The roads to victory and what each needs (content/game/victory.json).</summary>
+    public Systems.VictoryRules Victory { get; init; } = new();
+
+    /// <summary>The big bad's own quests and what they give it (content/game/darkquests.json).</summary>
+    public Systems.DarkQuestRules DarkQuests { get; init; } = new();
+
+    /// <summary>Boons won campaigns leave for the next, and how a win is graded (content/game/boons.json).</summary>
+    public Systems.BoonRules Boons { get; init; } = new();
+
+    /// <summary>Endless mode: the heralds of each new era and the complications they bring (content/game/endless.json).</summary>
+    public Systems.EndlessRules Endless { get; init; } = new();
+
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
 
@@ -1756,6 +1768,10 @@ public sealed class Content
             Crowds = Parse<CrowdRules>("crowds.json"),
             Moods = Parse<MoodRules>("moods.json"),
             Storytellers = Parse<StorytellerRules>("storytellers.json"),
+            Victory = Parse<Systems.VictoryRules>("victory.json"),
+            DarkQuests = Parse<Systems.DarkQuestRules>("darkquests.json"),
+            Boons = Parse<Systems.BoonRules>("boons.json"),
+            Endless = Parse<Systems.EndlessRules>("endless.json"),
             Character = Parse<CharacterRules>("character.json"),
             Tactics = Parse<TacticRules>("tactics.json"),
         };

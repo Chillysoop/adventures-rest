@@ -98,7 +98,7 @@ public class LoreTests
             foreach (var theme in heirs.SelectMany(l => l.Themes).GroupBy(t => t))
                 Assert.True(theme.Count() == 1, $"{kind} has two lineages in {theme.Key}");
         }
-        foreach (var foe in C.Saga.Finale.Fallback)
+        foreach (var foe in C.Saga.Finale.Fallback.Concat(C.Endless.Heralds))
             Assert.True(Annals.Lineage(H, foe.Lineage)?.Subjects.Contains("menace:" + foe.Kind) == true, $"{foe.Leader} has no {foe.Kind} lineage");
     }
 
