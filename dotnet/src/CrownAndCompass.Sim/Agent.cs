@@ -47,6 +47,9 @@ public enum Activity
 
     /// <summary>A soldier on the walls or standing guard at the hall.</summary>
     Guarding,
+
+    /// <summary>Out on the road with the host (<see cref="Systems.Field"/>).</summary>
+    Marching,
 }
 
 public static class TraitOrder

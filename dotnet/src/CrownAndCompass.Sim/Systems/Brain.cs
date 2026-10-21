@@ -45,6 +45,9 @@ public static class Brain
         bool night = IsNight(hour);
         var rng = town.Rng;
 
+        // Out with the host, a soldier marches day and night.
+        if (Field.Afield(town, a)) return Activity.Working;
+
         // Sleep is sticky: once down for the night, stay down until rested or morning.
         if (a.Activity == Activity.Sleeping && a.Fatigue > 5 && (night || a.Fatigue > 40)) return Activity.Sleeping;
 

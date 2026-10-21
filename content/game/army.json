@@ -60,6 +60,41 @@
     "turnPerDepth": 0.012,
     "again": 20
   },
+  "field": {
+    "leastHours": 12,
+    "meetShare": 0.5,
+    "rounds": 4,
+    "bite": 0.5,
+    "break": 0.45,
+    "lethal": 0.5,
+    "low": 0.75,
+    "high": 1.25,
+    "drilled": 4,
+    "led": 20,
+    "allyBonus": 2,
+    "muddled": 0.6,
+    "beats": 1.25,
+    "bane": 1.4,
+    "unreached": 0.6,
+    "heroLevel": 6,
+    "foeRoles": { "warband": "foot", "tribe": "foot", "undead": "foot", "schemers": "foot", "rivals": "foot", "cult": "foot", "beasts": "beast", "dragon": "flier" },
+    "orders": [
+      { "id": "hold", "name": "Hold the line", "dc": 8, "give": 0.85, "take": 0.75, "blurb": "Stand and take them: easy to keep, slow to win" },
+      { "id": "advance", "name": "Advance", "dc": 11, "give": 1, "take": 1, "blurb": "Close and fight it out" },
+      { "id": "flank", "name": "Flank", "dc": 14, "give": 1, "take": 0.95, "favours": ["horse", "beast", "flier"], "favour": 1.5, "blurb": "Riders round the side: hard to pull off, deadly when it works" },
+      { "id": "charge", "name": "Charge", "dc": 12, "give": 1.15, "take": 1.2, "favours": ["horse", "beast", "foot"], "favour": 1.5, "first": true, "blurb": "All in at once: a hammer blow, and costly" }
+    ],
+    "goals": [
+      { "id": "leader", "name": "Kill the leader", "dc": 0, "rattle": 0.3, "blurb": "cuts through to the foe's leader" },
+      { "id": "banner", "name": "Take the banner", "dc": 15, "rattle": 0.15, "blurb": "tears down the foe's banner, and its ranks waver." },
+      { "id": "flank", "name": "Turn the flank", "dc": 14, "give": 1.2, "blurb": "turns the foe's flank, and the line drives in." },
+      { "id": "shield", "name": "Hold the centre", "dc": 12, "take": 0.8, "blurb": "holds the centre of the line, and the blows go wide." }
+    ],
+    "keep": 3,
+    "hours": 5,
+    "wonMandate": 8,
+    "lostMandate": -6
+  },
   "units": [
     { "id": "levy", "name": "Levy", "one": "levy", "role": "foot", "strength": 1.4, "walls": 1.0, "field": 0.7, "patrol": 0.5, "guard": 0.5, "wage": 0, "drill": 30, "colour": "8c7a5a",
       "blurb": "Townsfolk called from their trades with a spear, a cap and a week of drill." },

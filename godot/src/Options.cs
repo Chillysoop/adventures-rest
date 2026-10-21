@@ -416,6 +416,34 @@ public sealed class Options
                         AllyCalls.Hourly(t);
                         break;
                     }
+                    if (parts[0] == "road")
+                    {
+                        // "road[:strength]" puts the warband on the road two days out, every regiment picked to march.
+                        foreach (var reg0 in t.Army.Regiments) sim.SetMarches(reg0.Id, true);
+                        t.Enemy.Stage = ThreatStage.Marching;
+                        t.Enemy.Strength = parts.Length > 1 ? double.Parse(parts[1], System.Globalization.CultureInfo.InvariantCulture) : 120;
+                        t.Enemy.ArrivalTick = t.Tick + 48;
+                        if (Field.FreeHeroes(t).FirstOrDefault() is { } champ0) sim.SetFieldGoal(champ0.Id, "leader");
+                        break;
+                    }
+                    if (parts[0] == "field")
+                    {
+                        // "field[:order[:u[:foe]]]" puts the warband on the road (by default four fifths of the host), marches every
+                        // regiment with the best free hero after its leader, fights it now and holds the playback at u.
+                        foreach (var reg0 in t.Army.Regiments) sim.SetMarches(reg0.Id, true);
+                        double host = Field.HostWorth(t, Field.Marching(t), [], []);
+                        t.Enemy.Stage = ThreatStage.Marching;
+                        t.Enemy.Strength = parts.Length > 3 ? double.Parse(parts[3], System.Globalization.CultureInfo.InvariantCulture) : Math.Max(40, host * 0.8);
+                        t.Enemy.ArrivalTick = t.Tick + 48;
+                        if (Field.FreeHeroes(t).FirstOrDefault() is { } champ) sim.SetFieldGoal(champ.Id, "leader");
+                        if (sim.MarchOut("warband", parts.Length > 1 ? parts[1] : "advance") is { } sortie)
+                        {
+                            sortie.MeetTick = t.Tick;
+                            Field.Hourly(t);
+                        }
+                        Map.Crowd.FieldU = parts.Length > 2 ? float.Parse(parts[2], System.Globalization.CultureInfo.InvariantCulture) : 0.5f;
+                        break;
+                    }
                     if (parts[0] == "levy")
                     {
                         sim.SetServiceLaw(ServiceLaw.Conscription);

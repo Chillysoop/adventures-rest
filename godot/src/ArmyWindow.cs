@@ -36,6 +36,8 @@ public partial class Main
                $"{Ui.Img("post-patrol", 16)} [b]+{Pct(Army.StreetWatch(t))}[/b]    {Ui.Img("post-guard", 16)} [b]{Pct(Army.Bodyguard(t))}[/b]    {Ui.Img("gold", 16)} [b]{Math.Round(Army.Wages(t))}[/b]/day\n" +
                Ui.C(Ui.Ink2, "[font_size=12]Soldiers · at the walls · guard's eye · mayor's guard · wages[/font_size]"));
 
+        RenderField(p, t);
+
         p.Heading("Regiments");
         if (regiments.Count == 0) p.Note("None yet. Raise one below, or call the levy.");
         foreach (var r in regiments) RegimentRow(p, t, r);

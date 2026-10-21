@@ -85,6 +85,9 @@ public sealed class AllyCall
 
     /// <summary>Already in the enemy's pocket: they march, and go over to the foe at the walls. Hidden from the client.</summary>
     public bool Turncoat { get; set; }
+
+    /// <summary>Picked to march out with the town's host.</summary>
+    public bool Marches { get; set; }
 }
 
 /// <summary>
@@ -271,7 +274,7 @@ public static class AllyCalls
     public static double Defense(Town town)
     {
         double d = 0;
-        foreach (var c in town.Army.Calls) if (c.State == CallState.Arrived) d += c.Strength;
+        foreach (var c in town.Army.Calls) if (c.State == CallState.Arrived && town.Army.Sortie?.Allies.Contains(c.Id) != true) d += c.Strength;
         return d;
     }
 
@@ -282,7 +285,7 @@ public static class AllyCalls
     public static double Betray(Town town, string foe, List<string> lines)
     {
         double went = 0;
-        foreach (var c in town.Army.Calls.Where(c => c.State == CallState.Arrived && c.Turncoat).OrderBy(c => c.Id))
+        foreach (var c in town.Army.Calls.Where(c => c.State == CallState.Arrived && c.Turncoat && town.Army.Sortie?.Allies.Contains(c.Id) != true).OrderBy(c => c.Id))
         {
             var s = Of(town, c);
             went += c.Strength;
@@ -330,7 +333,7 @@ public static class AllyCalls
         bool danger = town.Enemy.Stage == ThreatStage.Marching || town.Saga.Menaces.Any(m => m.Alive && m.ArrivalTick != null);
         foreach (var c in town.Army.Calls.Where(c => c.State == CallState.Arrived).OrderBy(c => c.Id))
         {
-            if (danger) c.LeaveDay = Math.Max(c.LeaveDay, town.Day + 1);
+            if (danger || town.Army.Sortie?.Allies.Contains(c.Id) == true) c.LeaveDay = Math.Max(c.LeaveDay, town.Day + 1);
             if (town.Day < c.LeaveDay && c.Strength > 0) continue;
             c.State = CallState.Home;
             town.Log(LedgerCategory.War, Importance.Notable, $"The host of {Of(town, c).People} strikes its camp and marches home.");

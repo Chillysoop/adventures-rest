@@ -102,6 +102,7 @@ public sealed class Simulation
         Tournaments.Hourly(t);
         Goals.Hourly(t);
         AllyCalls.Hourly(t);
+        Field.Hourly(t);
         t.Tick++;
         if (t.Hour == 0) DailyTick();
     }
@@ -521,6 +522,24 @@ public sealed class Simulation
 
     /// <summary>Let a holdout ally keep its host.</summary>
     public bool LetAllyGo(int callId) => AllyCalls.LetGo(Town, callId);
+
+    /// <summary>Pick a regiment to march out with the host, or to stay on the walls.</summary>
+    public bool SetMarches(int regimentId, bool marches) => Field.SetMarches(Town, regimentId, marches);
+
+    /// <summary>Pick an allied host camped at the gate to march out with the town's host.</summary>
+    public bool SetAllyMarches(int callId, bool marches) => Field.SetAllyMarches(Town, callId, marches);
+
+    /// <summary>Give a hero a goal on the field ("leader", "banner", "flank", "shield"), or "" to keep them home.</summary>
+    public bool SetFieldGoal(int heroId, string goal) => Field.SetGoal(Town, heroId, goal);
+
+    /// <summary>March the host out to meet a foe on the road ("warband" or "menace:id") under an order.</summary>
+    public Sortie? MarchOut(string foe, string order) => Field.MarchOut(Town, foe, order);
+
+    /// <summary>Change the host's order before it meets the foe.</summary>
+    public bool SetFieldOrder(string order) => Field.SetOrder(Town, order);
+
+    /// <summary>Call the host home before it meets the foe.</summary>
+    public bool RecallHost() => Field.Recall(Town);
 
     public DayStats Snapshot()
     {

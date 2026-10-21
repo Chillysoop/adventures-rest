@@ -153,6 +153,7 @@ public sealed record ArmyRules
     public CommandRules Command { get; init; } = new();
     public LevyRules Levy { get; init; } = new();
     public AllyRules Allies { get; init; } = new();
+    public FieldRules Field { get; init; } = new();
     public IReadOnlyList<UnitDef> Units { get; init; } = [];
 }
 
@@ -209,6 +210,9 @@ public sealed class Regiment
 
     /// <summary>Soldiers it has lost in the town's fights.</summary>
     public int Fallen { get; set; }
+
+    /// <summary>Picked to march out with the host (the rest stay on the walls).</summary>
+    public bool Marches { get; set; }
 }
 
 /// <summary>The army's state: its regiments and the levy laws.</summary>
@@ -225,6 +229,12 @@ public sealed class ArmyState
     /// <summary>Calls to arms sent to allies, and the hosts they bring.</summary>
     public List<AllyCall> Calls { get; } = [];
     public int NextCall { get; set; } = 1;
+
+    /// <summary>The host out in the field, the goals heroes will take when it marches, and the field battles fought.</summary>
+    public Sortie? Sortie { get; set; }
+    public List<HeroGoal> Goals { get; } = [];
+    public List<FieldBattle> Fields { get; } = [];
+    public int NextField { get; set; } = 1;
 
     [NotSaved] internal List<Building>? Rounds;
     [NotSaved] internal int RoundsDay = -1;
@@ -311,7 +321,7 @@ public static class Army
     public static double Defense(Town town)
     {
         double d = 0;
-        foreach (var r in town.Army.Regiments) d += AtWalls(town, r);
+        foreach (var r in town.Army.Regiments) if (!Field.Away(town, r)) d += AtWalls(town, r);
         return d;
     }
 
@@ -319,7 +329,7 @@ public static class Army
     public static double RaidDefense(Town town)
     {
         double d = 0;
-        foreach (var r in town.Army.Regiments) d += Strength(town, r) * Post(town, r.Post).Raid * Unit(town, r).Patrol;
+        foreach (var r in town.Army.Regiments) if (!Field.Away(town, r)) d += Strength(town, r) * Post(town, r.Post).Raid * Unit(town, r).Patrol;
         return d;
     }
 
@@ -328,7 +338,7 @@ public static class Army
     {
         var p = Rules(town).Posts.Patrol;
         double w = 0;
-        foreach (var r in town.Army.Regiments.Where(r => r.Post == ArmyPost.Patrol))
+        foreach (var r in town.Army.Regiments.Where(r => r.Post == ArmyPost.Patrol && !Field.Away(town, r)))
             w += r.Soldiers.Count * p.Watch * Unit(town, r).Patrol * (Rules(town).DrillFloor + (1 - Rules(town).DrillFloor) * r.Drill);
         return Math.Min(p.WatchCap, w);
     }
@@ -338,7 +348,7 @@ public static class Army
     {
         var g = Rules(town).Posts.Guard;
         double w = 0;
-        foreach (var r in town.Army.Regiments.Where(r => r.Post == ArmyPost.Guard))
+        foreach (var r in town.Army.Regiments.Where(r => r.Post == ArmyPost.Guard && !Field.Away(town, r)))
             w += r.Soldiers.Count * g.Bodyguard * Unit(town, r).Guard;
         return Math.Min(g.BodyguardCap, w);
     }
@@ -758,6 +768,13 @@ public static class Army
         var r = Of(town, a);
         if (r == null) return;
         var hall = Economy.Hall(town);
+        if (Field.Away(town, r))
+        {
+            // Out on the road with the host.
+            a.Activity = Activity.Marching;
+            a.LocationId = r.HallId ?? hall?.Id;
+            return;
+        }
         switch (r.Post)
         {
             case ArmyPost.Patrol:
@@ -804,17 +821,26 @@ public static class Army
         double share = Math.Min(0.9, lost / defence) * Rules(town).Losses;
         foreach (var r in town.Army.Regiments.OrderBy(r => r.Id).ToList())
         {
+            if (Field.Away(town, r)) continue;
             var u = Unit(town, r);
             double w = share * Post(town, r.Post).Siege * (1 - u.Mend);
             int n = (int)Math.Floor(r.Soldiers.Count * w + town.Rng.Next());
-            for (int i = 0; i < n && r.Soldiers.Count > 0; i++)
-            {
-                var a = town.Agent(r.Soldiers[town.Rng.Range(0, r.Soldiers.Count)]);
-                Release(town, r, a.Id);
-                Threat.Kill(town, a);
-                r.Fallen++;
-                dead.Add(a);
-            }
+            dead.AddRange(Fall(town, r, n));
+        }
+        return dead;
+    }
+
+    /// <summary>Soldiers of a regiment, picked by the dice, fall.</summary>
+    public static List<Agent> Fall(Town town, Regiment r, int n)
+    {
+        var dead = new List<Agent>();
+        for (int i = 0; i < n && r.Soldiers.Count > 0; i++)
+        {
+            var a = town.Agent(r.Soldiers[town.Rng.Range(0, r.Soldiers.Count)]);
+            Release(town, r, a.Id);
+            Threat.Kill(town, a);
+            r.Fallen++;
+            dead.Add(a);
         }
         return dead;
     }

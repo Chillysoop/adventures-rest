@@ -389,7 +389,7 @@ public partial class Crowd(MapView map) : Node3D
         {
             foreach (var a in town.Agents)
             {
-                if ((a.Hero != null) != heroes || !People.Sprites.TryGetValue(a.Id, out var s) || !s.Visible || (heroes && (Sallying(a.Id) || Skirmishing(a.Id)))) continue;
+                if ((a.Hero != null) != heroes || !People.Sprites.TryGetValue(a.Id, out var s) || !s.Visible || (heroes && (Sallying(a.Id) || Skirmishing(a.Id))) || a.Activity == Activity.Marching || a.Hero?.Duty == HeroDuty.Field) continue;
                 // Builders at a site rise and stoop to the hammer; everyone else bobs as they walk.
                 float bob = s.Walking ? Mathf.Abs(Mathf.Sin(now * 8 + a.Id)) * 0.02f
                     : a.Activity == Activity.Building ? Mathf.Max(0, Mathf.Sin(now * 6 + a.Id)) * 0.025f : 0;
@@ -585,6 +585,7 @@ public partial class Crowd(MapView map) : Node3D
         }
         Regiments(town, now);
         Hosts(town, now, banners);
+        FieldPlay(town, now, banners);
         SiegeDefenders();
         Flush(_guards);
         foreach (var post in town.Garrison.Posts)
