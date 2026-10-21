@@ -160,6 +160,7 @@ public sealed class Simulation
         Faith.Daily(t);
         Factions.Daily(t, Options.AutoMayor);
         Saga.Daily(t, Options.AutoMayor);
+        DarkQuests.Daily(t);
         Crises.Daily(t, Options.AutoMayor && Options.AutoDefense);
         Powers.Daily(t);
         Vengeance.Daily(t);

@@ -1184,7 +1184,9 @@ public static class Menaces
         // The big bad gathers a greater host for every march: the finale's doom clock.
         if (m.BigBad)
         {
-            double d = Threat.Defense(town, allies: false), more = f.MarchGrowth * m.Marches;
+            // Its own quests (DarkQuests) make every host larger and each march grow faster.
+            var dq = town.Saga.DarkQuests;
+            double d = Threat.Defense(town, allies: false), more = (f.MarchGrowth + dq.Growth) * m.Marches + dq.Host;
             m.Power = Math.Clamp(m.Power, d * (f.MarchArmy[0] + more), d * (f.MarchArmy[^1] + more));
         }
         m.Marches++;
@@ -1454,7 +1456,7 @@ public static class Menaces
     private static bool MayEscape(Town town)
     {
         var f = town.Content.Saga.Finale;
-        return town.Saga.BigBadEscapes < f.Escapes || town.Day < town.Saga.CrownDay + f.MinDays;
+        return town.Saga.BigBadEscapes < f.Escapes + town.Saga.DarkQuests.Escapes || town.Day < town.Saga.CrownDay + f.MinDays;
     }
 
     /// <summary>The menace is finished. Its holdings go back to being ordinary lairs.</summary>

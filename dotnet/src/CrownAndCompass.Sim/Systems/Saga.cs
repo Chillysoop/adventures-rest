@@ -223,6 +223,9 @@ public sealed class SagaState
     /// <summary>Times the big bad has been driven from its seat and got away.</summary>
     public int BigBadEscapes { get; set; }
 
+    /// <summary>The big bad's own quests: under way, done and foiled (<see cref="Systems.DarkQuests"/>).</summary>
+    public DarkQuestState DarkQuests { get; } = new();
+
     /// <summary>The menace whose yoke the town is under after a sack, and whether it has stopped waiting for tribute.</summary>
     public int? YokeId { get; set; }
     public bool Defied { get; set; }

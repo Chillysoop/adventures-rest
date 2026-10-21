@@ -1529,6 +1529,9 @@ public sealed class Content
     /// <summary>The roads to victory and what each needs (content/game/victory.json).</summary>
     public Systems.VictoryRules Victory { get; init; } = new();
 
+    /// <summary>The big bad's own quests and what they give it (content/game/darkquests.json).</summary>
+    public Systems.DarkQuestRules DarkQuests { get; init; } = new();
+
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
 
@@ -1725,6 +1728,7 @@ public sealed class Content
             Moods = Parse<MoodRules>("moods.json"),
             Storytellers = Parse<StorytellerRules>("storytellers.json"),
             Victory = Parse<Systems.VictoryRules>("victory.json"),
+            DarkQuests = Parse<Systems.DarkQuestRules>("darkquests.json"),
         };
     }
 

@@ -66,7 +66,7 @@ public partial class Main
         if (big is { Alive: true })
         {
             string march = big.ArrivalTick is int at && at > t.Tick ? $"\n{Ui.C(Ui.Bad, $"[b]Its host reaches the walls in {Ui.Days((int)Math.Ceiling((at - t.Tick) / 24.0))}.[/b]")}" : "";
-            FoeCard(p, [big], $"{Tag("THE BIG BAD", Ui.Bad)}\n[font_size=16][b]{Ui.Esc(Ui.Cap(big.Name))}[/b][/font_size]  {Tag($"level {big.Level}")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Seat(t, big)} {(big.Marches == 0 ? "It has not marched on the town yet." : $"It has marched on the town {Times(big.Marches)}.")} Kill it to end the Long Night.[/font_size]")}{march}", Ui.Bad);
+            FoeCard(p, [big], $"{Tag("THE BIG BAD", Ui.Bad)}\n[font_size=16][b]{Ui.Esc(Ui.Cap(big.Name))}[/b][/font_size]  {Tag($"level {big.Level}")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Seat(t, big)} {(big.Marches == 0 ? "It has not marched on the town yet." : $"It has marched on the town {Times(big.Marches)}.")} Kill it to end the Long Night.[/font_size]")}{march}{DarkQuestLines(t)}", Ui.Bad);
         }
         if (s.YokeId is int yid && s.Menaces[yid - 1] is { Alive: true } yoke)
         {
@@ -111,6 +111,18 @@ public partial class Main
             }
         }
         p.Commit();
+    }
+
+    /// <summary>The big bad's quests on its card: the one under way (with its site and days left), and the ones done or foiled.</summary>
+    private static string DarkQuestLines(Town t)
+    {
+        var st = DarkQuests.State(t);
+        string text = "";
+        if (DarkQuests.Current(t) is { } q && Quests.Site(t, q.SiteId) is { } site)
+            text += $"\n{Ui.Img("threat", 14)} {Tag("QUEST", Ui.Bad)} {Ui.Esc(Ui.Cap(q.Thing))} · [url=site:{site.Def.Id}]{Ui.C(Ui.Accent, Ui.Esc(site.Def.Name))}[/url] · {Tag(Ui.Days(DarkQuests.DaysLeft(t)), Ui.Bad)}";
+        if (st.Past.Count > 0)
+            text += "\n" + string.Join("  ", st.Past.Select(x => Tag($"{(x.Foiled ? "✓" : "✗")} {Ui.Esc(Ui.Cap(x.Thing))}", x.Foiled ? Ui.Good : Ui.Bad)));
+        return text;
     }
 
     /// <summary>Roads to victory: one card per road, its terms as chips (green once met), and Claim once they all hold.</summary>

@@ -1,0 +1,76 @@
+{
+  "_doc": "The big bad's own quests (Systems/DarkQuests.cs). Once crowned it seeks, one at a time, things that make it far stronger; each happens at a site in the wilds, and heroes who clear that site first foil it (the prize goes to the town hall). first/every: days before the first quest and between quests; most: quests per campaign; days: how long one takes. Gains: host (share added to every march's host), growth (added to how much each march grows), escapes (defeats it survives), sway (settlements turned against the town), pact (minor powers bound to it), dread. Text: {leader}, {name}, {site}, {thing}, {town}.",
+  "first": [15, 30],
+  "every": [20, 35],
+  "most": 3,
+  "days": [40, 55],
+  "below": 1,
+  "trust": 70,
+  "foilPower": 0.15,
+  "quests": [
+    {
+      "id": "relic", "kinds": [],
+      "things": ["the Crown of Ash", "the Black Grail", "the Spear of Unmaking", "the Mirror of Nine Sorrows"],
+      "text": "{leader} seeks {thing}, lost in {site}.",
+      "done": "{leader} has {thing}. Every host {name} sends now comes on stronger.",
+      "foiled": "{town}'s heroes reach {site} first and carry {thing} home. {leader} will not have it.",
+      "gain": { "host": 0.25 }
+    },
+    {
+      "id": "legion", "kinds": ["tribe", "rivals", "beasts"],
+      "things": ["the hill clans", "the war-beasts of the deep woods", "every sellsword between the rivers"],
+      "text": "{leader} gathers {thing} at {site}.",
+      "done": "{thing} answer {leader}'s call at {site}. Each march of {name} will be greater than the last.",
+      "foiled": "{town}'s heroes scatter the gathering at {site}. {thing} go home.",
+      "gain": { "growth": 0.12 }
+    },
+    {
+      "id": "rite", "kinds": ["undead", "cult"],
+      "things": ["the Rite of the Unquiet Fields", "the Long Vigil", "the Black Liturgy"],
+      "text": "{leader} works {thing} at {site}, to raise the dead of every field.",
+      "done": "{thing} is done. The dead of every battlefield rise for {name}, and {town} sleeps badly.",
+      "foiled": "{town}'s heroes break the circle at {site} before {thing} is done.",
+      "gain": { "growth": 0.1, "dread": 12 }
+    },
+    {
+      "id": "hoard", "kinds": ["dragon"],
+      "things": ["the hoard of the Old Queen", "the gold of a drowned kingdom"],
+      "text": "{leader} hunts {thing}, buried under {site}.",
+      "done": "{leader} lies on {thing} now. Its wounds close in the gold, and it will take more than one defeat to end it.",
+      "foiled": "{town}'s heroes dig {thing} out of {site} first. It is the town's now.",
+      "gain": { "host": 0.15, "escapes": 1 }
+    },
+    {
+      "id": "heart", "kinds": ["undead", "cult", "schemers"],
+      "things": ["its heart in a jar", "a soul-vessel of black glass", "a second name, written in blood"],
+      "text": "{leader} hides {thing} in {site}, so that death cannot keep it.",
+      "done": "{thing} is hidden where nobody will find it. {name} will not die easily now.",
+      "foiled": "{town}'s heroes find {thing} in {site} and smash it.",
+      "gain": { "escapes": 1 }
+    },
+    {
+      "id": "brood", "kinds": ["beasts", "dragon"],
+      "things": ["its brood", "a clutch of great eggs", "a new litter of horrors"],
+      "text": "{leader} drives its kind to {site} to raise {thing}.",
+      "done": "{thing} hatch and grow at {site}. {name}'s hosts swarm thicker every season.",
+      "foiled": "{town}'s heroes burn out {site} before {thing} come to anything.",
+      "gain": { "host": 0.1, "growth": 0.08 }
+    },
+    {
+      "id": "pact", "kinds": ["schemers", "cult", "undead", "dragon"],
+      "things": ["a pact of shadows", "a bargain sealed in ash"],
+      "text": "{leader}'s envoys meet a great power at {site} to strike {thing}.",
+      "done": "{thing} is struck at {site}. A great power now stands with {name}.",
+      "foiled": "{town}'s heroes break up the meeting at {site}. No pact is struck.",
+      "gain": { "pact": 1 }
+    },
+    {
+      "id": "sway", "kinds": ["schemers", "rivals", "tribe"],
+      "things": ["the lords of the far valleys", "the free towns of the hills"],
+      "text": "{leader} meets {thing} at {site} with gold and threats.",
+      "done": "{thing} bend the knee to {name}. Its banner flies over halls that were {town}'s friends.",
+      "foiled": "{town}'s heroes are at {site} before the lords arrive. {thing} stay free.",
+      "gain": { "sway": 2 }
+    }
+  ]
+}
