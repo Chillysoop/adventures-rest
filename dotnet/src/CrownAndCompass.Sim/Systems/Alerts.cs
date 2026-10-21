@@ -328,10 +328,8 @@ public static class Alerts
         if (t.Research.Study != null) yield break;
         var open = Research.Open(t);
         if (open.Count == 0) yield break;
-        // Only once the town can pay for one: a study it can't afford isn't an action yet.
-        if (!open.Any(d => (t.Research.Progress.ContainsKey(d.Id) ? 0 : Research.Commission(t, d)) <= t.Treasury)) yield break;
         yield return new("scholars", Scholars, "The scholars are idle",
-            $"{open.Count} {(open.Count == 1 ? "discovery is" : "discoveries are")} ready to study, {open[0].Name.ToLowerInvariant()} the cheapest. Set the scholars to work in the Library window.");
+            $"{open.Count} {(open.Count == 1 ? "discovery is" : "discoveries are")} ready to study, {open[0].Name.ToLowerInvariant()} the quickest. Set the scholars to work in the Library window.");
     }
 
     /// <summary>A friend in the wilds whose need the town can meet now, and a villain's plan close to done.</summary>

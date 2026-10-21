@@ -13,7 +13,7 @@ public sealed record DiscoveryDef : DecreeDef
     /// <summary>1 to 5: sets the lore it takes and the gold to commission it.</summary>
     public int Rank { get; init; } = 1;
 
-    /// <summary>Any one of these reveals it: craft:profession:n, folk:race:n, partner:people, building:id, book:school:circle, books:n, wizard:level, known:id, tier:charter.</summary>
+    /// <summary>Any one of these, held for a while, reveals it (<see cref="Sparks"/>): newcomers, trade, buildings, books and wizards, the wilds (found:, slain:, cleared:, delves:), allies, what is known.</summary>
     public List<string> Sparks { get; init; } = [];
 
     /// <summary>All of these must hold to study it (same tokens, plus circle:n, the library's highest spell circle).</summary>
@@ -39,6 +39,15 @@ public sealed record DiscoveryDef : DecreeDef
 
     /// <summary>The share off the cost of a scrying.</summary>
     public double Scry { get; init; }
+}
+
+public sealed record InsightRules
+{
+    public double Cleared { get; init; } = 20;
+    public double Find { get; init; } = 25;
+    public double Book { get; init; } = 12;
+    public double Newcomer { get; init; } = 15;
+    public double Wizard { get; init; } = 4;
 }
 
 public sealed record FundingDef
@@ -74,9 +83,18 @@ public sealed record ResearchRules
     /// <summary>Funding costs this much more for each charter past the first.</summary>
     public double FundingPerTier { get; init; } = 0.5;
 
-    /// <summary>Lore and commission gold by rank (index 1 to 5).</summary>
+    /// <summary>Lore each discovery takes by rank (index 1 to 5).</summary>
     public double[] Lore { get; init; } = [];
-    public double[] Gold { get; init; } = [];
+
+    /// <summary>Days a spark must hold before the idea takes shape, by rank (index 1 to 5).</summary>
+    public int[] Brew { get; init; } = [];
+
+    /// <summary>Lore a find brings the scholars: per tier of a site a company cleared, per explorers' find, per circle of a new
+    /// spellbook, per learned newcomer, per level of a wizard the library draws.</summary>
+    public InsightRules Insight { get; init; } = new();
+
+    /// <summary>Notes kept in the Library's feed.</summary>
+    public int FeedKept { get; init; } = 40;
 
     public List<InstitutionLore> Institutions { get; init; } = [];
     public Dictionary<string, double> Scholars { get; init; } = [];
@@ -123,6 +141,25 @@ public sealed class Spellbook
     public string From { get; init; } = "";
 }
 
+/// <summary>An idea taking shape: a spark has held this many days (<see cref="ResearchRules.Brew"/>).</summary>
+public sealed class Lead
+{
+    public int Days { get; set; }
+    public string Why { get; set; } = "";
+    public string Icon { get; set; } = "";
+}
+
+/// <summary>One line of the Library's feed: an idea that took shape, a find that moved the scholars, a book, a discovery.</summary>
+public sealed class ResearchNote
+{
+    public int Day { get; init; }
+    public string Icon { get; init; } = "";
+    public string Text { get; init; } = "";
+
+    /// <summary>Lore it brought, if any.</summary>
+    public double Lore { get; init; }
+}
+
 /// <summary>The library, its books and what the scholars are working on.</summary>
 public sealed class ResearchState
 {
@@ -138,6 +175,26 @@ public sealed class ResearchState
     public OrderedMap<string, double> Progress { get; } = new();
 
     public string? Study { get; set; }
+
+    /// <summary>The icon of the source that revealed each discovery (<see cref="Sparks"/>).</summary>
+    public OrderedMap<string, string> RevealIcon { get; } = new();
+
+    /// <summary>Ideas taking shape: discoveries whose spark holds, not yet revealed.</summary>
+    public OrderedMap<string, Lead> Leads { get; } = new();
+
+    /// <summary>Lore from finds that came in while the scholars had nothing to work on, for the next study.</summary>
+    public double Notes { get; set; }
+
+    /// <summary>Why the library's ideas appear and what moved the scholars, newest last.</summary>
+    public List<ResearchNote> Feed { get; } = [];
+
+    /// <summary>Creatures of each type the town's companies have brought down at a cleared site, and the latest who did.</summary>
+    public OrderedMap<string, int> Slain { get; } = new();
+    public OrderedMap<string, string> Slayers { get; } = new();
+
+    /// <summary>The last explorers' find and the last townsperson looked over for what they brought the scholars.</summary>
+    public int LastFind { get; set; }
+    public int LastAgent { get; set; }
 
     /// <summary>Index into the funding levels.</summary>
     public int Funding { get; set; }
@@ -177,7 +234,7 @@ public static class Research
 
     public static double LoreCost(Town town, DiscoveryDef d) => Rules(town).Lore[Math.Clamp(d.Rank, 1, Rules(town).Lore.Length - 1)];
 
-    public static double Commission(Town town, DiscoveryDef d) => Rules(town).Gold[Math.Clamp(d.Rank, 1, Rules(town).Gold.Length - 1)];
+    public static int BrewDays(Town town, DiscoveryDef d) => Rules(town).Brew.Length == 0 ? 0 : Rules(town).Brew[Math.Clamp(d.Rank, 1, Rules(town).Brew.Length - 1)];
 
     public static double FundingCost(Town town, int level) =>
         Js.Round(Rules(town).Funding[level].Gold * (1 + Rules(town).FundingPerTier * town.City.Tier));
@@ -266,54 +323,11 @@ public static class Research
 
     // Sparks and requirements ------------------------------------------------------------------------
 
-    /// <summary>Whether a spark or requirement holds, and the words for it ("your 3 smiths").</summary>
+    /// <summary>Whether a spark or requirement holds, and the words for it ("Brunhild, a dwarf smith").</summary>
     public static (bool Holds, string Why) Check(Town town, string token)
     {
-        var p = token.Split(':');
-        int N(int i) => p.Length > i && int.TryParse(p[i], out int n) ? n : 1;
-        switch (p[0])
-        {
-            case "craft":
-            {
-                int n = town.Residents.Count(a => a.Profession == p[1]);
-                return (n >= N(2), $"{n} {Plural(p[1], n)} in town");
-            }
-            case "folk":
-            {
-                int n = town.Residents.Count(a => a.Race == p[1]);
-                return (n >= N(2), $"{n} {p[1]} {(n == 1 ? "neighbour" : "neighbours")}");
-            }
-            case "partner":
-            {
-                var s = Trade.Open(town).Select(r => town.Settlements[r.SettlementId]).FirstOrDefault(s => s.Kin.Id == p[1]);
-                return (s != null, s != null ? $"the caravans to {s.Name}" : $"trade with {p[1]}");
-            }
-            case "building":
-            {
-                bool has = town.Buildings.Any(b => b.Def.Id == p[1] && b.Complete);
-                return (has, $"the town's {Name(town, p[1])}");
-            }
-            case "book":
-            {
-                var b = town.Research.Books.Where(b => b.School == p[1] && b.Circle >= N(2)).OrderBy(b => b.Id).FirstOrDefault();
-                return (b != null, b != null ? b.Name : $"a book of {p[1]} of the {Ordinal(N(2))} circle");
-            }
-            case "books":
-                return (town.Research.Books.Count >= N(1), "the library's books");
-            case "wizard":
-            {
-                var w = town.Heroes.Where(a => IsWizard(a) && a.Hero!.Level >= N(1)).OrderBy(a => a.Id).FirstOrDefault();
-                return (w != null, w != null ? $"{w.Name} the wizard" : $"a wizard of level {N(1)}");
-            }
-            case "known":
-                return (IsKnown(town, p[1]), Rules(town).Discovery(p[1])?.Name.ToLowerInvariant() ?? p[1]);
-            case "tier":
-                return (City.Reached(town, p[1]), $"the charter of a {City.TierName(town, p[1]).ToLowerInvariant()}");
-            case "circle":
-                return (Circle(town) >= N(1), $"wizards who can cast the {Ordinal(N(1))} circle");
-            default:
-                return (false, token);
-        }
+        var sp = Sparks.Check(town, token);
+        return (sp.Holds, sp.Why);
     }
 
     /// <summary>The requirements still missing for a revealed discovery.</summary>
@@ -329,22 +343,39 @@ public static class Research
 
     // Commands ---------------------------------------------------------------------------------------
 
-    /// <summary>Set the scholars on a discovery. The first time pays its commission; progress is kept if they switch.</summary>
+    /// <summary>
+    /// Set the scholars on a discovery. Gold can't buy it: they work from what the town has (scholars, books, mages,
+    /// finds), and notes banked while they were idle go into it. Progress is kept if they switch.
+    /// </summary>
     public static bool Study(Town town, string id)
     {
         var d = Rules(town).Discovery(id);
         if (d == null || !Available(town, d) || town.Research.Study == id) return false;
         var st = town.Research;
-        if (!st.Progress.ContainsKey(id))
-        {
-            double cost = Commission(town, d);
-            if (town.Treasury < cost) return false;
-            town.Book(TreasuryAccount.Research, -cost);
-            st.Progress[id] = 0;
-        }
+        st.Progress[id] = st.Progress.Get(id, 0) + st.Notes;
+        st.Notes = 0;
         st.Study = id;
         town.Log(LedgerCategory.Town, Importance.Routine, $"The scholars of {town.Name} set to work on {Lower(d.Name)}.");
         return true;
+    }
+
+    /// <summary>Lore a find brings: into what the scholars are working on, or banked as notes for the next study.</summary>
+    public static void Insight(Town town, string icon, string text, double lore)
+    {
+        var st = town.Research;
+        if (lore <= 0) return;
+        if (st.Study is string id) st.Progress[id] = st.Progress.Get(id, 0) + lore;
+        else st.Notes += lore;
+        Note(town, icon, text, lore);
+    }
+
+    /// <summary>A line for the Library's feed.</summary>
+    public static void Note(Town town, string icon, string text, double lore = 0)
+    {
+        var feed = town.Research.Feed;
+        feed.Add(new ResearchNote { Day = town.Day, Icon = icon, Text = text, Lore = Js.Round(lore) });
+        int kept = Rules(town).FeedKept;
+        if (feed.Count > kept) feed.RemoveRange(0, feed.Count - kept);
     }
 
     /// <summary>How much the council pays its scholars each day.</summary>
@@ -366,6 +397,7 @@ public static class Research
         var r = Rules(town);
         var st = town.Research;
         Gather(town);
+        Learn(town);
         Reveal(town);
 
         // The stipend, and what known discoveries pay or cost.
@@ -410,6 +442,7 @@ public static class Research
         st.Progress.Remove(d.Id);
         st.Study = null;
         string what = d.Field == "arcana" ? $"The wizards of {town.Name} cast {Lower(d.Name)} for the first time" : $"{town.Name}'s scholars master {Lower(d.Name)}";
+        Note(town, Sparks.Known, d.Name);
         town.Log(LedgerCategory.Town, d.Rank >= 4 ? Importance.Major : Importance.Notable, $"{what}. {d.Text}");
     }
 
@@ -422,6 +455,13 @@ public static class Research
         {
             st.LastParty = party.Id;
             if (party.Result?.Outcome != ExpeditionOutcome.Cleared || Quests.Site(town, party.SiteId) is not { } site) continue;
+            string type = Sparks.CreatureType(town, site.Def.Boss.Monster);
+            if (type.Length > 0)
+            {
+                st.Slain[type] = st.Slain.Get(type, 0) + 1;
+                st.Slayers[type] = $"{party.Name} at {site.Def.Name}";
+            }
+            Insight(town, type.Length > 0 ? Sparks.Slain : Sparks.Wilds, $"{party.Name}'s notes from {site.Def.Name}", r.Insight.Cleared * Math.Max(1, site.Def.Tier));
             if (!town.Rng.Chance(r.BookFromDelve + r.BookFromDelvePerTier * site.Def.Tier)) continue;
             int circle = Math.Clamp(site.Def.Tier * 2 - 1 + town.Rng.Range(0, 2), 1, 9);
             Add(town, circle, $"brought up from {site.Def.Name} by {party.Name}");
@@ -463,6 +503,7 @@ public static class Research
             From = from,
         };
         st.Books.Add(book);
+        Insight(town, Sparks.Book, Cap(book.Name), r.Insight.Book * book.Circle);
         town.Log(LedgerCategory.Town, book.Circle >= 5 ? Importance.Notable : Importance.Routine,
             $"A spellbook for the library: {book.Name}, {from}.");
         return book;
@@ -473,22 +514,61 @@ public static class Research
     private static string BookName(Town town, string school, int circle) =>
         $"a grimoire of {school} of the {Ordinal(circle)} circle, in {town.Rng.Pick(Bindings)}";
 
-    /// <summary>Reveal what the town has the makings of.</summary>
+    /// <summary>
+    /// What the town has the makings of takes shape over days: a spark that holds starts a lead, and once it has held
+    /// <see cref="BrewDays"/> the idea is revealed, naming who or what sparked it.
+    /// </summary>
     private static void Reveal(Town town)
     {
         var st = town.Research;
         foreach (var d in Rules(town).Discoveries)
         {
             if (st.Revealed.ContainsKey(d.Id)) continue;
-            foreach (var spark in d.Sparks)
+            Spark? lit = null;
+            foreach (var token in d.Sparks)
             {
-                var (holds, why) = Check(town, spark);
-                if (!holds) continue;
-                st.Revealed[d.Id] = why;
-                town.Log(LedgerCategory.Town, d.Rank >= 3 ? Importance.Notable : Importance.Routine,
-                    $"An idea takes hold in {town.Name}, thanks to {why}: {Lower(d.Name)}. {d.Text}");
-                break;
+                var sp = Sparks.Check(town, token);
+                if (sp.Holds)
+                {
+                    lit = sp;
+                    break;
+                }
             }
+            if (lit is not { } spark) continue;
+            if (!st.Leads.TryGetValue(d.Id, out var lead))
+            {
+                lead = new Lead();
+                st.Leads[d.Id] = lead;
+            }
+            lead.Days++;
+            lead.Why = spark.Why;
+            lead.Icon = spark.Icon;
+            if (lead.Days < BrewDays(town, d)) continue;
+            st.Leads.Remove(d.Id);
+            st.Revealed[d.Id] = spark.Why;
+            st.RevealIcon[d.Id] = spark.Icon;
+            Note(town, spark.Icon, $"{Cap(spark.Why)}: {Lower(d.Name)}");
+            town.Log(LedgerCategory.Town, d.Rank >= 3 ? Importance.Notable : Importance.Routine,
+                $"An idea takes hold in {town.Name}, thanks to {spark.Why}: {Lower(d.Name)}. {d.Text}");
+        }
+    }
+
+    /// <summary>What explorers' finds and learned newcomers bring the scholars.</summary>
+    private static void Learn(Town town)
+    {
+        var r = Rules(town);
+        var st = town.Research;
+        foreach (var f in town.Finds.Where(f => f.Id > st.LastFind && f.Known).OrderBy(f => f.Id).ToList())
+        {
+            st.LastFind = f.Id;
+            Insight(town, Sparks.Wilds, $"explorers' word of {Explore.What(town, f)}", r.Insight.Find);
+        }
+        bool first = st.LastAgent == 0;
+        foreach (var a in town.Residents.Where(a => a.Id > st.LastAgent).OrderBy(a => a.Id).ToList())
+        {
+            st.LastAgent = a.Id;
+            if (first || a.Hero != null || !r.Scholars.ContainsKey(a.Profession)) continue;
+            Insight(town, Sparks.Newcomer, $"{a.Name}, a newly come {a.Profession}", r.Insight.Newcomer);
         }
     }
 
@@ -507,6 +587,7 @@ public static class Research
         var a = Quests.CreateHero(town, cls, level);
         st.Drawn.Add(a.Id);
         st.NextJoinDay = town.Day + r.JoinEvery;
+        Insight(town, Sparks.Magic, $"{a.Name}, a wizard of level {level}", r.Insight.Wizard * level);
         town.Log(LedgerCategory.Arrival, Importance.Notable,
             $"{a.Describe()} comes to {town.Name} to read in {Rank(town).Name}, and stays. ({a.TraitList()})", [a.Id]);
     }
@@ -519,7 +600,7 @@ public static class Research
         if (want != st.Funding) Fund(town, want);
         if (st.Study == null)
         {
-            var next = Open(town).Where(d => st.Progress.ContainsKey(d.Id) || town.Treasury >= Commission(town, d) + r.StandInReserve).FirstOrDefault();
+            var next = Open(town).FirstOrDefault();
             if (next != null) Study(town, next.Id);
         }
     }
@@ -530,7 +611,7 @@ public static class Research
         _ => $"{n}th",
     };
 
-    private static string Plural(string s, int n) => n == 1 ? s : s.EndsWith('y') ? s[..^1] + "ies" : s + "s";
+    private static string Cap(string s) => s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
 
     private static string Lower(string s) => s.Length == 0 ? s : char.ToLowerInvariant(s[0]) + s[1..];
 }
