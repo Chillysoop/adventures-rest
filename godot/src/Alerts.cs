@@ -198,6 +198,7 @@ public partial class Main
             _alertSig = sig;
             RebuildAlerts(shown);
         }
+        SyncNotices(shown, delta);
 
         // Popups follow their icon as the strip re-centres.
         if (_alertTip.Visible && IsInstanceValid(_tipAnchor)) PlaceAlertPopup(_alertTip, _tipAnchor!);
@@ -468,5 +469,6 @@ public partial class Main
         _alertBorn.Clear();
         _alertSig = "";
         CloseAlertList();
+        ClearNotices();
     }
 }
