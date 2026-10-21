@@ -288,6 +288,8 @@ public partial class Main
             else
             {
                 var def = town.Content.Building(item.Building!);
+                // An institution's building stays off the bar until the town has heard of it.
+                b.Visible = !Institutions.Hidden(town, def.Id);
                 why = Planning.Blocked(town, def);
                 line = why ?? $"{Planning.Cost(town, def)}g";
                 tip = def.Blurb != "" ? def.Blurb : BuildTip(town, def);
