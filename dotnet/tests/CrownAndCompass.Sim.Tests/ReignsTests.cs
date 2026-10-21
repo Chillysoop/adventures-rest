@@ -27,6 +27,7 @@ public class ReignsTests
         var t = sim.Town;
         var s = t.Settlements.First(x => !x.Razed);
         t.Regions[s.RegionId].Known = true;
+        Discovery.Meet(t, Neighbours.Key(s), Discovery.Met);
         string old = s.Leader;
         string temper = s.Reign!.Temperament;
         int before = t.Ledger.Entries.Count;
@@ -61,6 +62,7 @@ public class ReignsTests
             m.Cunning = "mastermind";
             m.Named = true;
             t.Regions[s.RegionId].Known = true;
+            Discovery.Meet(t, Neighbours.Key(s), Discovery.Met);
             return (sim, m, s);
         }
         throw new InvalidOperationException("no seed puts a menace near a settlement");
