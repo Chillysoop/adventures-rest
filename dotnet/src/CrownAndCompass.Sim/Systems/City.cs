@@ -68,6 +68,9 @@ public sealed record WardDef
     /// <summary>The densest the stand-in mayor zones it (the lords of Castle Hill keep their gardens, and the outer wards their sprawl).</summary>
     public int Densest { get; init; } = 2;
     public string Blurb { get; init; } = "";
+
+    /// <summary>Lore the ward's scholars and mages add to the library's a day once it has formed (the magic quarter).</summary>
+    public double Lore { get; init; }
 }
 
 /// <summary>
@@ -160,6 +163,43 @@ public sealed record GrowthRules
 }
 
 /// <summary>
+/// Market squares (city.json "markets"): where shops are painted with room and no square lies within <see cref="Spacing"/>
+/// tiles, the market grows a square <see cref="Width"/> by <see cref="Depth"/> tiles, turned square to the nearest street within
+/// <see cref="Reach"/> and joined to it by a straight high street. Shops front a square's rim first (<see cref="Pull"/> off
+/// their score), all along a side facing the same way. Needs <see cref="Least"/> open cells of shop paint.
+/// </summary>
+public sealed record MarketRules
+{
+    public double Spacing { get; init; } = 6;
+    public double Width { get; init; } = 2.2;
+    public double Depth { get; init; } = 1.6;
+    public double Reach { get; init; } = 4;
+    public double Pull { get; init; } = 3;
+    public int Least { get; init; } = 100;
+
+    /// <summary>Shops the town keeps for each market square: a new square waits until it has this many for every square, the new one too.</summary>
+    public int ShopsEach { get; init; } = 6;
+
+    /// <summary>Cells round a new square that open unpainted ground is painted for shops.</summary>
+    public int Rim { get; init; } = 6;
+
+    /// <summary>Score added to a shop's spot off the streets, so shops wait for a square's or a street's front.</summary>
+    public double OffStreet { get; init; } = 1.5;
+}
+
+/// <summary>
+/// Side lanes in homes' paint (city.json "closes"): once a day, the open home paint deepest from any street (at least
+/// <see cref="Deep"/> tiles, two rows of houses) and within <see cref="Near"/> tiles of what's built gets a lane, wandering
+/// to the nearest street the way feet would go, so homes grow along many lanes and not as a sprawl of yards.
+/// </summary>
+public sealed record CloseRules
+{
+    public double Deep { get; init; } = 2.4;
+    public double Near { get; init; } = 2.5;
+    public int PerDay { get; init; } = 1;
+}
+
+/// <summary>
 /// The strip along each wall line (city.json "wallStrip") that nothing is built on, in tiles inside and outside the line:
 /// room for the widest the wall grows (stone, towers, the barracks behind it, the moat and its banks), so a palisade can
 /// be raised and upgraded in place without a building in its way.
@@ -207,6 +247,12 @@ public sealed record CityRules
 
     /// <summary>How painted zones fill in from the built town outward.</summary>
     public GrowthRules Growth { get; init; } = new();
+
+    /// <summary>Market squares in the shops' paint.</summary>
+    public MarketRules Markets { get; init; } = new();
+
+    /// <summary>Side lanes in the homes' paint.</summary>
+    public CloseRules Closes { get; init; } = new();
 
     /// <summary>How many builds go up at once, and how materials reach them.</summary>
     public ConstructionRules Construction { get; init; } = new();
@@ -535,7 +581,8 @@ public static class City
         var map = new Dictionary<string, List<Building>>();
         foreach (var b in town.Buildings)
         {
-            if (!b.Complete || b.Def.Civic && !b.Def.Holy) continue;
+            // Civic works count only where a ward wants them (the library and the mage tower for the magic quarter).
+            if (!b.Complete || b.Def.Civic && !b.Def.Holy && !town.Content.City.Wards.Any(w => w.Draws.ContainsKey(b.Def.Id))) continue;
             var lot = town.Lot(b.LotId);
             int ring = Ring(town, lot.X, lot.Y);
             if (ring == 0) continue;
@@ -552,6 +599,7 @@ public static class City
         double d = w.Draws.TryGetValue(b.Def.Zone.ToString(), out double z) ? z : 0;
         if (w.Draws.TryGetValue(b.Def.Id, out double own)) d += own;
         if (b.Def.Holy && w.Draws.TryGetValue("Holy", out double holy)) d += holy;
+        if (w.Draws.TryGetValue("Arcane", out double arcane) && b.Workers.Any(id => town.Agent(id).HedgeSpell != "")) d += arcane;
         if (b.Def.Housing > 0 && b.Def.Id != "house" && w.Draws.TryGetValue("Fine", out double fine)) d += fine;
         return d;
     }

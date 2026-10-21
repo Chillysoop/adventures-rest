@@ -8,6 +8,35 @@
     { "id": "sight", "name": "a scrying of the wilds", "text": "the mages spend a night over their mirrors and send the council word of places nobody had heard of.", "reveal": 2 },
     { "id": "cure", "name": "a cure for the lanes", "text": "a mage walks the poor lanes with a censer, and the coughing stops.", "mandate": 3 }
   ],
+  "plots": [
+    { "id": "pens", "name": "the Long Night at the Pens", "terms": ["rescue"], "when": "captives", "renown": 2, "pitch": "someone's sons and daughters are in those pens. Get in, get them out, and do not wake the place." },
+    { "id": "vault", "name": "the Vault Job", "terms": ["fetch"], "when": "item", "renown": 2, "pitch": "a crew, a plan, a vault no one has ever opened, and one night to do it." },
+    { "id": "home", "name": "Bring Them Home", "terms": ["recover"], "when": "fallen", "renown": 2, "pitch": "they marched out and never came back. Somebody has to bring their bones to their mothers." },
+    { "id": "silent", "name": "the Quiet Graves", "terms": ["slay", "drive"], "when": "undead", "renown": 2, "pitch": "the old village has gone silent, and the dead no longer stay where they were put. Find out why." },
+    { "id": "champion", "name": "the Fallen Champion", "terms": ["slay", "parley"], "when": "named", "renown": 2, "pitch": "once someone's hero, now someone's nightmare. Talk them down or cut them down." },
+    { "id": "beast", "name": "the Hunt for the Great Beast", "terms": ["slay", "drive"], "when": "beast", "renown": 1, "pitch": "something huge has been taking cattle, then shepherds. Track it to its den and end it." },
+    { "id": "line", "name": "Hold the Line", "terms": [], "when": "camp", "renown": 3, "pitch": "a handful of blades against a horde, before it falls on the farms. Every song worth singing starts this way." },
+    { "id": "words", "name": "Words Before Swords", "terms": ["parley"], "when": "any", "renown": 1, "pitch": "send the silver tongues first. Blood is for when talk fails." }
+  ],
+  "ways": [
+    { "kind": "hazard", "classes": ["wizard", "sorcerer"], "minLevel": 5, "line": "{text}: {name} the {class} casts a spell of flight and floats the party over it, no roll needed." },
+    { "kind": "hazard", "classes": ["druid"], "minLevel": 5, "line": "{text}: {name} the {class} asks the stone and the wind to let them by, and they do." },
+    { "kind": "trap", "classes": ["wizard", "reliquarian"], "minLevel": 3, "line": "{text}: {name} the {class} sends an unseen servant ahead, and it sets the trap off for them." },
+    { "kind": "puzzle", "classes": ["wizard", "reliquarian", "cleric"], "minLevel": 5, "line": "{text}: {name} the {class} reads the answer in a divination and walks straight to it." },
+    { "kind": "parley", "classes": ["bard", "sorcerer"], "minLevel": 5, "line": "{text}: {name} the {class} weaves a charm into a few kind words, and the path opens." },
+    { "kind": "combat", "classes": ["bard", "sorcerer", "warlock"], "minLevel": 7, "line": "{name} the {class} charms the guards at {text} into waving the party through without a blow." }
+  ],
+  "heist": {
+    "_doc": "Quiet jobs (terms with heist: fetch, rescue). Before each room the party's quietest tries to slip past (DC sneakDc + perTier a tier); a failure fights the room and raises the alarm, and at alarmMax the place wakes (wake more foes in every room after) and nobody slips past anything. The hoard on a fetch sits in a vault of layers[tier-1] locks, wards and hidden catches (kinds, in turn) at layerDc + perTier a tier, sharing the same alarm: at alarmMax inside the vault they run with bolted of the gold and no treasure.",
+    "alarmMax": 3,
+    "sneakDc": 10,
+    "layerDc": 11,
+    "perTier": 2,
+    "wake": 1,
+    "layers": [1, 1, 2, 2, 3],
+    "kinds": ["trap", "puzzle", "perception"],
+    "bolted": 0.5
+  },
   "terms": [
     {
       "id": "slay", "name": "Slay", "verb": "clear",
@@ -26,13 +55,13 @@
     },
     {
       "id": "rescue", "name": "Rescue", "verb": "rescue the captives held at",
-      "text": "Fight in far enough to cut the captives loose, then get them home. The place itself is left standing.",
-      "pay": 1, "tags": ["valor", "mercy"], "rooms": 0.5, "captives": true
+      "text": "Slip in far enough to cut the captives loose, then get them home. Every room they cannot sneak past is a fight and raises the alarm. The place itself is left standing.",
+      "pay": 1, "tags": ["valor", "mercy"], "rooms": 0.5, "captives": true, "heist": true
     },
     {
       "id": "fetch", "name": "Fetch", "verb": "steal the best of the hoard from",
-      "text": "Get in, take the best thing in the hoard for the town, get out. The place is left standing.",
-      "pay": 0.8, "tags": ["coin", "guile"], "rooms": 0.5, "loot": 0.4, "item": true
+      "text": "Get in quietly, past the vault's locks and wards, take the best thing in the hoard for the town, get out. Every slip raises the alarm, and if it gets to the top inside the vault they run with half the gold and no treasure.",
+      "pay": 0.8, "tags": ["coin", "guile"], "rooms": 0.5, "loot": 0.4, "item": true, "heist": true
     },
     {
       "id": "recover", "name": "Recover", "verb": "bring home the fallen company lost at",

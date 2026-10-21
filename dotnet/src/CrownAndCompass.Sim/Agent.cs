@@ -38,6 +38,18 @@ public enum Activity
 
     /// <summary>Out at a bathhouse, theatre, market hall, library or the arena (<see cref="Systems.Crowds"/>).</summary>
     Visiting,
+
+    /// <summary>A soldier at drill in their hall (<see cref="Systems.Army"/>).</summary>
+    Drilling,
+
+    /// <summary>A soldier walking the town guard's round.</summary>
+    Patrolling,
+
+    /// <summary>A soldier on the walls or standing guard at the hall.</summary>
+    Guarding,
+
+    /// <summary>Out on the road with the host (<see cref="Systems.Field"/>).</summary>
+    Marching,
 }
 
 public static class TraitOrder
@@ -241,6 +253,31 @@ public sealed class HeroSheet
     public string? Vow { get; set; }
     public string VowFor { get; set; } = "";
 
+    /// <summary>The patron they are sworn to (a patrons.json id), "" for none, and its favour, -5 to +5 (<see cref="Systems.Patrons"/>).</summary>
+    public string Patron { get; set; } = "";
+    public int Favour { get; set; }
+
+    /// <summary>The day the patron last judged them, and what its deeds stood at then.</summary>
+    public int PactJudged { get; set; }
+    public OrderedMap<string, double> PactMarks { get; } = new();
+
+    /// <summary>Broke a pact once: no patron claims them again unasked.</summary>
+    public bool PactRefused { get; set; }
+
+    /// <summary>Favours the town owes this caster for scryings they cast on credit (<see cref="Systems.Knowledge.ScryOffer"/>).</summary>
+    public int Owed { get; set; }
+
+    /// <summary>The curse on their magic weapon, "" for none (<see cref="Systems.Curses"/>).</summary>
+    public string Curse { get; set; } = "";
+
+    /// <summary>Their own house and land in town, "" until they buy one; a business they hold a stake in, and what they put in (<see cref="Systems.Downtime"/>).</summary>
+    public string Holding { get; set; } = "";
+    public int? StakeId { get; set; }
+    public double Stake { get; set; }
+
+    /// <summary>The familiar their patron sent ("a cinder imp"), "" for none.</summary>
+    public string Familiar { get; set; } = "";
+
     /// <summary>Where each magic item they carry came from, by item id ("Taken from King-under-Turf on day 51...").</summary>
     public OrderedMap<string, string> ItemTales { get; } = new();
 }
@@ -284,8 +321,14 @@ public sealed class Agent
 
     public int? HomeId { get; set; }
     public int? JobId { get; set; }
+
+    /// <summary>The town regiment they serve in (<see cref="Systems.Army"/>); a standing soldier's job is their hall.</summary>
+    public int? RegimentId { get; set; }
     public int? SpouseId { get; set; }
     public int? CourtingId { get; set; }
+
+    /// <summary>The workplace whose trade spell they taught themselves (<see cref="Systems.HedgeMages"/>), "" for none.</summary>
+    public string HedgeSpell { get; set; } = "";
 
     /// <summary>Successes at their trade's skills, which slowly make them better at it (<see cref="Systems.Skills"/>).</summary>
     public int Practice { get; set; }
