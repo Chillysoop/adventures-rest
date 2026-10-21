@@ -297,6 +297,33 @@
         "graves": 2
       },
       "founded": "Someone has scratched a sewn-shut mouth into the door of the burying ground. Old women make signs against it and will not say why. The sewn mouth was the mark of King Maudren's court singers, twelve centuries ago."
+    },
+    {
+      "ref": "ash-inquisitors",
+      "population": 60,
+      "founders": 2,
+      "minScore": 4,
+      "recruit": {
+        "classes": {
+          "paladin": 3,
+          "fighter": 1,
+          "cleric": 2
+        },
+        "faiths": {
+          "iron-crown": 3,
+          "even-scale": 2
+        },
+        "traits": {
+          "HotTempered": 2
+        },
+        "bereaved": 2,
+        "miserable": 1
+      },
+      "actions": {
+        "accuse": 3,
+        "patrol": 1
+      },
+      "founded": "{names} nail the old Ash Writ to the door of {den} and declare a chapter of {name} in {town}: every witch in the town will answer for it, as they answered after Maudren's bargain."
     }
   ],
   "smuggleTake": 8,
@@ -316,7 +343,8 @@
     "racket": 4,
     "vigilance": 10,
     "whisper": 6,
-    "theft": 3
+    "theft": 3,
+    "accuse": 8
   },
   "theftMinCash": 30,
   "maxDues": 2,
@@ -331,7 +359,27 @@
     "chance": 0.2,
     "share": 0.03,
     "cap": 300,
-    "fire": [40, 120],
+    "fire": [
+      40,
+      120
+    ],
     "threat": 3
+  },
+  "accuse": {
+    "classes": [
+      "wizard",
+      "sorcerer",
+      "warlock",
+      "druid"
+    ],
+    "kinds": [
+      "arcane",
+      "coven",
+      "circle",
+      "magocracy"
+    ],
+    "loyalty": 8,
+    "misery": 3,
+    "heat": 10
   }
 }
