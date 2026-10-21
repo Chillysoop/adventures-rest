@@ -95,6 +95,9 @@ public static class Expedition
 
         /// <summary>Been out often enough to keep their head when a friend falls.</summary>
         public bool Veteran { get; init; }
+
+        /// <summary>Hit points of the beast they ride that fights beside them (a snow bear), taken before their own.</summary>
+        public int Beast { get; set; }
     }
 
     private sealed class Foe(MonsterDef def)
@@ -196,7 +199,7 @@ public static class Expedition
             _rng = rng;
             _content = content;
             _site = site;
-            Party = heroes.Select(agent => new Combatant(agent) { Ac = Gear.Ac(content, agent) + Alchemy.WardAc(content, agent.Hero!, site), Attack = Gear.Attack(content, agent), Skill = Gear.Skill(content, agent.Hero!), Veteran = agent.Hero!.Expeditions >= content.World.Companies.Veteran }).ToList();
+            Party = heroes.Select(agent => new Combatant(agent) { Ac = Gear.Ac(content, agent) + Alchemy.WardAc(content, agent.Hero!, site), Attack = Gear.Attack(content, agent), Skill = Gear.Skill(content, agent.Hero!), Veteran = agent.Hero!.Expeditions >= content.World.Companies.Veteran, Beast = content.Passage.Mount(agent.Hero.Mount)?.Fights ?? 0 }).ToList();
             // Greenhorns with nobody seasoned among them lose their nerve sooner.
             if (Party.Any(c => c.Sheet.Expeditions == 0) && !Party.Any(c => c.Veteran)) _caution = content.Roads.Retreat.GreenCaution;
         }
@@ -288,7 +291,9 @@ public static class Expedition
 
         private static void Hurt(Combatant c, int dmg)
         {
-            c.Hp -= dmg;
+            int soak = Math.Min(c.Beast, dmg);
+            c.Beast -= soak;
+            c.Hp -= dmg - soak;
             if (c.Hp <= 0)
             {
                 c.Hp = 0;

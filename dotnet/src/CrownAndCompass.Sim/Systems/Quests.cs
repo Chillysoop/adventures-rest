@@ -68,6 +68,9 @@ public sealed class SiteState(SiteDef def)
     /// <summary>The town keeps an outpost here: nothing resettles it, and the town sees it live.</summary>
     public bool Held { get; set; }
 
+    /// <summary>A ruin the town restored once it was cleared (<see cref="Ruins"/>): it serves the town and is never resettled.</summary>
+    public bool Restored { get; set; }
+
     /// <summary>How it picks its night (lairs.json habits); empty until it first acts.</summary>
     public string Habit { get; set; } = "";
 
@@ -350,12 +353,13 @@ public static class Quests
     internal static ClassDef PickClass(Town town)
     {
         var classes = town.Content.Classes;
-        int total = classes.Sum(c => c.Weight);
+        int W(ClassDef c) => c.Weight + Institutions.Calling(town, c.Id);
+        int total = classes.Sum(W);
         int roll = town.Rng.Range(0, total);
         foreach (var c in classes)
         {
-            if (roll < c.Weight) return c;
-            roll -= c.Weight;
+            if (roll < W(c)) return c;
+            roll -= W(c);
         }
         return classes[0];
     }
@@ -520,6 +524,7 @@ public static class Quests
             }
             // Heroes won't walk into a site they can't handle; the bounty waits for a stronger company.
             if (levels < 3 * tier || members.Count < 3) continue;
+            if (!Passage.CanReach(town, members, s)) continue;
 
             var party = Launch(town, members, s, bounty);
             town.Log(
@@ -671,6 +676,7 @@ public static class Quests
                 foreach (var other in town.Residents) if (other.OpinionOf(id) >= 40) other.Loneliness = Math.Min(100, other.Loneliness + 30);
             }
 
+            if (result.Outcome != ExpeditionOutcome.Wiped) Heraldry.Home(town, party.Name, result.Dead.Count > 0 || result.Kills.Count > 0 && survivors.Any(m => m.Hero!.Hp < m.Hero.MaxHp / 2));
             if (result.Outcome == ExpeditionOutcome.Wiped) party.Withheld = false;
             party.SawCleared = result.Outcome == ExpeditionOutcome.Cleared;
             if (result.Outcome != ExpeditionOutcome.Wiped && !party.Withheld) Rumors.Confirm(town, s, $"the {party.Name}");
@@ -712,6 +718,7 @@ public static class Quests
             pay += World.AfterDelve(town, party, s, result.Outcome) + party.Bonus;
             Alchemy.Homecoming(town, party, s.Def, result.Outcome, survivors);
             if (result.Outcome == ExpeditionOutcome.Cleared && survivors.Count > 0) Notoriety.Cleared(town, party, survivors, s.Def.Tier, party.PleaId != null);
+            if (result.Outcome == ExpeditionOutcome.Cleared && survivors.Count > 0) Eggs.Found(town, party, s);
             if (survivors.Count > 0)
             {
                 double share = pay / survivors.Count;

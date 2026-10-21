@@ -46,6 +46,7 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["unrest", "fist", "#e07a5f"],
   ["standing", "shaking-hands", "#7fb0d4"],
   ["threat", "crossed-swords", "#ef7f6f"],
+  ["foe-unseen", "fog", "#a9a294"],
   ["lore", "scroll-unfurled", "#d8c08a"],
   ["decree", "scroll-quill", "#cfc6b0"],
   // Institutions (content/game/institutions.json "icon")
@@ -76,6 +77,7 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["tab-city", "castle", mono],
   ["tab-ledger", "notebook", mono],
   ["tab-war", "crossed-swords", mono],
+  ["tab-defence", "guarded-tower", mono],
   ["tab-council", "gavel", mono],
   ["tab-bounties", "scroll-unfurled", mono],
   ["tab-companies", "knight-banner", mono],

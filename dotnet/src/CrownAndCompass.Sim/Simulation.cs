@@ -174,6 +174,11 @@ public sealed class Simulation
         Guilds.Daily(t, Options.AutoMayor && Options.AutoCouncil);
         Notoriety.Daily(t);
         Notables.Daily(t);
+        Heraldry.Daily(t);
+        Eggs.Daily(t);
+        Poaching.Daily(t);
+        Bridges.Daily(t, Options.AutoMayor);
+        Ruins.Daily(t, Options.AutoMayor);
         Passage.Daily(t);
         Decor.Daily(t);
         Stories.Daily(t, Options.AutoMayor && Options.AutoStories);
@@ -402,6 +407,12 @@ public sealed class Simulation
 
     /// <summary>Send a caravan for the timber and stone a stalled site is waiting on, at the import premium.</summary>
     public bool SendCaravan(int buildingId) => Construction.SendCaravan(Town, Town.Building(buildingId));
+
+    /// <summary>Rebuild a rope bridge raiders cut, in stone that can't be cut again.</summary>
+    public bool RebuildBridge(int featureId) => Bridges.Rebuild(Town, featureId);
+
+    /// <summary>Restore a cleared ruin (an aqueduct, a gatehouse, a watchtower, a star fort) to serve the town.</summary>
+    public bool RestoreRuin(string siteId) => Ruins.Restore(Town, siteId);
 
     /// <summary>Knight a hero of renown: Ser, a stipend and an oath to the town.</summary>
     public bool Knight(int heroId) => Loyalty.Knight(Town, Town.Agent(heroId));

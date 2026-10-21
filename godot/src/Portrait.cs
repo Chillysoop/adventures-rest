@@ -112,6 +112,7 @@ public static class Foes
     /// <summary>Words in what a site is believed to hold, and the face that shows them; the first match wins.</summary>
     private static readonly (string Word, string Face)[] Creatures =
     [
+        ("gnoll", "hyena-head"), ("hell hound", "direwolf"), ("spirit-caller", "hooded-figure"), ("spirit caller", "hooded-figure"), ("dark ranger", "hooded-assassin"),
         ("hobgoblin", "goblin-head"), ("goblin", "goblin-head"), ("kobold", "goblin-head"), ("orc", "orc-head"), ("ogre", "ogre"),
         ("troll", "troll"), ("giant", "giant"), ("cyclops", "cyclops"), ("minotaur", "minotaur"),
         ("skeleton", "death-skull"), ("lich", "crowned-skull"), ("zombie", "shambling-zombie"), ("ghoul", "shambling-zombie"),

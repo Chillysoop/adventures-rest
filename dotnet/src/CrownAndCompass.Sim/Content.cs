@@ -328,6 +328,15 @@ public sealed record SiteDef
     /// <summary>Known to the town from the charter (the local menace); every other site starts as tavern talk at best.</summary>
     public bool Known { get; init; }
 
+    /// <summary>The signature foe (foes.json) that holds it, or empty.</summary>
+    public string Foe { get; init; } = "";
+
+    /// <summary>A floating isle: only a company that can fly, or rides the sky dock's airship, gets there.</summary>
+    public bool Aloft { get; init; }
+
+    /// <summary>The old work it is the ruin of (world.json "ruins"), which the town can restore once it is cleared.</summary>
+    public string Ruin { get; init; } = "";
+
     /// <summary>The ready-made enemy group holding it (groups.json), or "": its foes, boss and lineage come from the group.</summary>
     public string Group { get; init; } = "";
 }
@@ -467,6 +476,9 @@ public sealed record EnemyDefense
     /// <summary>Chances a raid that gets through kills someone, and (for a very hostile foe) burns what it hit.</summary>
     public double RaidKill { get; init; } = 0.15;
     public double RaidBurn { get; init; } = 0.25;
+
+    /// <summary>How much more the watch can do against a raid a full two-day sky watch saw coming (<see cref="Systems.Institutions.SkyWatch"/>).</summary>
+    public double SkyWatch { get; init; } = 0.5;
 }
 
 public sealed record WorkSpec
@@ -872,6 +884,48 @@ public sealed record GroupRules
 }
 
 /// <summary>A kind of adventure site a region theme can hold: how it is named and what its deck is made of.</summary>
+/// <summary>A signature foe: one site in fitting country given over to this master (content/game/foes.json).</summary>
+public sealed record FoeDef
+{
+    public string Id { get; init; } = "";
+    public string Monster { get; init; } = "";
+    public string Escort { get; init; } = "";
+    public int[] EscortCount { get; init; } = [1, 2];
+
+    /// <summary>The lair kind it behaves as (tribe raids, beasts hunt, undead walk, rivals toll).</summary>
+    public string Kind { get; init; } = "tribe";
+
+    /// <summary>Nearest and farthest ring it may hold (0 near), and the country it likes, best first.</summary>
+    public int[] Rings { get; init; } = [0, 4];
+    public IReadOnlyList<string> Themes { get; init; } = [];
+    public IReadOnlyList<string> Names { get; init; } = [];
+    public string Text { get; init; } = "";
+
+    /// <summary>Days of road its lair's raids reach the town from (ordinary lairs: 1).</summary>
+    public int Reach { get; init; } = 1;
+
+    /// <summary>It calls up the raiders who fell at the town to walk again in its next walk.</summary>
+    public bool Raises { get; init; }
+
+    /// <summary>Its seat is lifted into the sky as a floating isle (<see cref="SiteDef.Aloft"/>).</summary>
+    public bool Aloft { get; init; }
+}
+
+public sealed record FoeRules
+{
+    public IReadOnlyList<FoeDef> Foes { get; init; } = [];
+
+    /// <summary>Lair strength a raising foe gains for each raider who fell at the town, and the most at once.</summary>
+    public double Raise { get; init; } = 0.5;
+    public double RaiseMax { get; init; } = 25;
+    public string RaiseText { get; init; } = "";
+
+    /// <summary>The rival dark ranger who takes the town's bounties (<see cref="Systems.Poaching"/>).</summary>
+    public Systems.PoachingRules Poaching { get; init; } = new();
+
+    public FoeDef? Of(string id) => id == "" ? null : Foes.FirstOrDefault(f => f.Id == id);
+}
+
 public sealed record SiteKindDef
 {
     /// <summary>Name patterns; {A} takes one of the theme's words and {B} one of its names.</summary>
@@ -934,6 +988,9 @@ public sealed record BoonDef
     /// <summary>They share their maps: every region next to theirs becomes known.</summary>
     public bool Maps { get; init; }
     public string Text { get; init; } = "";
+
+    /// <summary>Hard country (by kind) an ally's guides take the town's companies through faster and safer: share of its slowness taken off.</summary>
+    public IReadOnlyDictionary<string, double> Guides { get; init; } = new Dictionary<string, double>();
 }
 
 /// <summary>A people with settlements out in the wilds: dwarves, elves, villagers...</summary>
@@ -1199,6 +1256,9 @@ public sealed record RangeRules
 
 public sealed record RoadRules
 {
+    /// <summary>Rope bridges over gorges, cut by raiders and rebuilt in stone (<see cref="Systems.Bridges"/>).</summary>
+    public Systems.BridgeRules Bridges { get; init; } = new();
+
     /// <summary>Hours a party marches a day; a day's march is one day of distance on open ground.</summary>
     public int MarchHours { get; init; } = 10;
     public int Dawn { get; init; } = 6;
@@ -1290,6 +1350,17 @@ public sealed record WorldRules
     public IntelRules Intel { get; init; } = new();
     public IReadOnlyList<PeopleDef> Peoples { get; init; } = [];
     public IReadOnlyList<ThemeDef> Themes { get; init; } = [];
+    public IsleRules Isles { get; init; } = new();
+    public Systems.RuinRules Ruins { get; init; } = new();
+}
+
+/// <summary>Floating isles in the far wilds (world.json "isles"), reached only by air.</summary>
+public sealed record IsleRules
+{
+    public int Count { get; init; }
+    public int[] Rings { get; init; } = [3, 4];
+    public IReadOnlyList<string> Themes { get; init; } = [];
+    public IReadOnlyList<string> Names { get; init; } = [];
 }
 
 /// <summary>
@@ -1418,6 +1489,18 @@ public sealed class Content
     public NotorietyRules Notoriety { get; init; } = new();
     /// <summary>Notable townsfolk and the information network (content/game/notables.json).</summary>
     public NotableRules Notables { get; init; } = new();
+
+    /// <summary>Signature foes placed in the wilds (content/game/foes.json).</summary>
+    public FoeRules Foes { get; init; } = new();
+
+    /// <summary>Tower cannons and war-wagons (content/game/cannons.json).</summary>
+    public Systems.CannonRules Cannons { get; init; } = new();
+
+    /// <summary>Dragon eggs, hatching and the town's own dragon (content/game/eggs.json).</summary>
+    public EggRules Eggs { get; init; } = new();
+
+    /// <summary>Companies' arms and how their colours wear (content/game/heraldry.json).</summary>
+    public HeraldryRules Heraldry { get; init; } = new();
 
     /// <summary>The charter goals of a new town's first days (content/game/goals.json).</summary>
     public Systems.GoalRules Goals { get; init; } = new();
@@ -1630,6 +1713,10 @@ public sealed class Content
             Notables = Parse<NotableRules>("notables.json"),
             Goals = Parse<Systems.GoalRules>("goals.json"),
             Passage = Parse<PassageRules>("passage.json"),
+            Heraldry = Parse<HeraldryRules>("heraldry.json"),
+            Eggs = Parse<EggRules>("eggs.json"),
+            Foes = Parse<FoeRules>("foes.json"),
+            Cannons = Parse<Systems.CannonRules>("cannons.json"),
             Assess = Parse<AssessRules>("assess.json"),
             Skills = Parse<SkillRules>("skills.json"),
             Crises = Parse<CrisisRules>("crises.json"),
