@@ -42,6 +42,8 @@ public class CrisesTests
         t.Saga.Act = 2;
         m.Cunning = "cunning";
         m.Power = t.Content.Saga.Menaces.Stages.Power + 10;
+        // No herald to kneel to: a town under its yoke owes it tribute, not a crisis.
+        m.Refused = true;
         // Most of the way ripe already, so the council's bounties don't get to its seat first.
         t.Crises.Ripeness[m.Id] = t.Content.Crises.RipenDays - 5;
         var crisis = (Crisis?)null;

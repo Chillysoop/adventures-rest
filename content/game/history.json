@@ -8,14 +8,14 @@
   "ally": "{People} remember the old days: {history}",
   "lanes": [
     { "id": "north", "name": "The frozen north", "themes": ["rimefell"] },
-    { "id": "peaks", "name": "The high peaks", "themes": ["highpeaks"] },
-    { "id": "cinders", "name": "The cinder wastes", "themes": ["cinderwastes"] },
+    { "id": "peaks", "name": "The high peaks", "themes": ["highpeaks", "titanfield"] },
+    { "id": "cinders", "name": "The cinder wastes", "themes": ["cinderwastes", "hellbreach"] },
     { "id": "deeps", "name": "The deeps", "themes": ["deeproads"] },
     { "id": "woods", "name": "The forests", "themes": ["thornwood", "feyfringe"] },
-    { "id": "heart", "name": "The river heartland", "themes": ["greenmarch", "crownruins", "ashenbarrows"] },
-    { "id": "coast", "name": "The coast", "themes": ["saltreach"] },
+    { "id": "heart", "name": "The river heartland", "themes": ["greenmarch", "crownruins", "ashenbarrows", "spellscar"] },
+    { "id": "coast", "name": "The coast", "themes": ["saltreach", "drownedempire", "stormcoast"] },
     { "id": "fens", "name": "The fens", "themes": ["mirefen"] },
-    { "id": "sands", "name": "The southern sands", "themes": ["duneglass"] }
+    { "id": "sands", "name": "The southern sands", "themes": ["duneglass", "kingsbones"] }
   ],
   "ages": [
     { "id": "making", "name": "The Age of Making", "from": -8000, "to": -6000, "weight": 1, "text": "Haldor struck the first mountains on his anvil, Sylvaine grew the first forests in the silence after, and the Stormmother poured the seas. Ysolde opened her book and began to write down every true thing. The first peoples woke where their makers had worked: giants on the high places, elves under the trees, dwarves inside the stone." },
