@@ -99,6 +99,33 @@ public class SagaTests(LongCampaign campaign) : IClassFixture<LongCampaign>
     }
 
     [Fact]
+    public void TheWarbandCrownedBigBadEscapesItsBurnedCampToo()
+    {
+        var sim = new Simulation(new SimulationOptions { Seed = 4, AutoMayor = false, FreeCompanies = false });
+        var t = sim.Town;
+        sim.RunDays(1);
+        var f = t.Content.Saga.Finale;
+        var band = Menaces.Warband(t);
+        band.BigBad = true;
+        t.Saga.CrownDay = t.Day;
+        Threat.WarlordInCamp(t);
+        var camp = Quests.Site(t, band.SeatId)!;
+        for (int i = 0; i < f.Escapes + 1; i++)
+        {
+            camp.Cleared = true;
+            Menaces.Daily(t, false);
+            Assert.True(band.Alive);
+            Assert.False(camp.Cleared);
+        }
+        Assert.Equal(f.Escapes + 1, t.Saga.BigBadEscapes);
+
+        t.Saga.CrownDay = t.Day - f.MinDays;
+        camp.Cleared = true;
+        Menaces.Daily(t, false);
+        Assert.False(band.Alive);
+    }
+
+    [Fact]
     public void AKnownLairLeftAloneFestersAndRises()
     {
         // Nobody goes out: every lair the town hears of is left alone. Which lair festers first depends on the
