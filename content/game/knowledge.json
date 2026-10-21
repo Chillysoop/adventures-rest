@@ -5,10 +5,6 @@
   "scryBaseCost": 30,
   "scryCostPerDay": 15,
   "scryHours": 12,
-  "_scryAsks": "What a caster asks to scry depends on their standing with the town: loyalty scryFreeLoyalty or more (or admiring the town) and they do it for nothing; below scryFavourLoyalty they want a favour instead of gold, owed until a story calls it in (need owed), and they stop at scryMaxOwed.",
-  "scryFreeLoyalty": 75,
-  "scryFavourLoyalty": 35,
-  "scryMaxOwed": 2,
   "slotsPerCaster": 1,
   "slotsPerTwoLevels": 1,
   "scouts": {
@@ -25,6 +21,9 @@
     "cost": 400,
     "smashPerTier": 0.015
   },
+  "scryRestDays": 2,
+  "scryPrice": { "free": 70, "favour": 40, "favourLoyalty": 6 },
+  "watchtowers": { "building": "watchtower", "sight": 30, "sightPerHundred": 4, "mostSight": 70, "residentsEach": 100 },
   "works": [
     { "building": "scrying_pool", "relic": "far-seeing-basin", "population": 30, "scryings": 1 },
     { "building": "sleepless_spire", "relic": "eye-of-the-sleepless-spire", "population": 55, "reach": 2 }

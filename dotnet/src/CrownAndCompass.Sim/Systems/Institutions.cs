@@ -113,6 +113,15 @@ public sealed record InstitutionDef
     /// <summary>What its keeper is called: "High Priestess", "Hallmaster".</summary>
     public string Title { get; init; } = "";
     public string Blurb { get; init; } = "";
+
+    /// <summary>The icon in godot/assets/icons (scripts/icons.ts) its card and slot show.</summary>
+    public string Icon { get; init; } = "";
+
+    /// <summary>
+    /// Any one of these reveals it before the charter does (<see cref="Research.Check"/>'s tokens: craft:priest:2,
+    /// hero:paladin, heroes:n, routes:n, delves:n, building:id, folk:elf:3...). Until then the window shows a blank slot.
+    /// </summary>
+    public List<string> Sparks { get; init; } = [];
     public ServiceDef Service { get; init; } = new();
 
     /// <summary>The choice the mayor makes about it: which god's temple gets the land, the tavern's style, the order's oath.</summary>
@@ -315,6 +324,41 @@ public static class Institutions
         return f;
     }
 
+    // ---------- Discovery ----------
+
+    /// <summary>Whether the town knows of this institution yet: a spark held, the charter allows its building, or it opened.</summary>
+    public static bool Seen(Town town, string id) => town.InstitutionsSeen.ContainsKey(id);
+
+    /// <summary>A build bar item for an institution's own building the town hasn't discovered yet, which the bar keeps hidden.</summary>
+    public static bool Hidden(Town town, string buildingId) =>
+        Rules(town).Institutions.Any(d => !d.Adopt && d.Building == buildingId && !Seen(town, d.Id));
+
+    /// <summary>The charter that lets it rise: its building's tier, or the tier an adopted one forms at.</summary>
+    public static string Charter(Town town, InstitutionDef d) =>
+        town.Content.Buildings.FirstOrDefault(b => b.Id == d.Building) is { Tier: not "" } bd && !d.Adopt ? bd.Tier : d.Tier;
+
+    /// <summary>Learn of the institutions the town now has the makings of, and what showed the way.</summary>
+    private static void Reveal(Town town)
+    {
+        foreach (var d in Rules(town).Institutions)
+        {
+            if (Seen(town, d.Id)) continue;
+            string? why = null;
+            foreach (var spark in d.Sparks)
+            {
+                var (holds, w) = Research.Check(town, spark);
+                if (holds) { why = w; break; }
+            }
+            string tier = Charter(town, d);
+            if (why == null && tier != "" && City.Reached(town, tier)) why = $"the charter of a {City.TierName(town, tier).ToLowerInvariant()}";
+            if (why == null && Find(town, d.Id) != null) why = "its opening";
+            if (why == null) continue;
+            town.InstitutionsSeen[d.Id] = why;
+            if (Find(town, d.Id) == null)
+                town.Log(LedgerCategory.Town, Importance.Notable, $"Talk of {d.Name}, thanks to {why}.");
+        }
+    }
+
     // ---------- Founding ----------
 
     /// <summary>Daily: institutions open in new buildings, shut when theirs close, charge their funding, move the town, and drift in regard.</summary>
@@ -322,6 +366,7 @@ public static class Institutions
     {
         var r = Rules(town);
         if (r.Institutions.Count == 0) return;
+        Reveal(town);
         Found(town);
         foreach (var s in town.Institutions)
         {
@@ -363,6 +408,7 @@ public static class Institutions
                 Regard = Rules(town).StartRegard,
             };
             town.Institutions.Add(s);
+            if (!Seen(town, d.Id)) town.InstitutionsSeen[d.Id] = "its opening";
             var k = Keeper(town, s);
             town.Log(LedgerCategory.Town, Importance.Major,
                 $"{Cap(d.Name)} opens its doors{(d.Adopt ? $" at {b.Name}" : "")}, with {KeeperName(town, s)} in charge. {k.Text}{(d.Choice != null ? $" The council must decide {Lower(d.Choice.Label)}." : "")}");
@@ -482,31 +528,37 @@ public static class Institutions
     }
 
     /// <summary>What a service does, in short phrases for the Institutions window, at a strength (1 is modest funding).</summary>
-    public static List<string> Describe(Town town, ServiceDef d, double k = 1)
+    public static List<string> Describe(Town town, ServiceDef d, double k = 1) => Lines(town, d, k).Select(l => l.Text).ToList();
+
+    /// <summary>
+    /// The same phrases with an icon each (godot/assets/icons) and whether they help the town, so the window can
+    /// show them as coloured bullets.
+    /// </summary>
+    public static List<(string Icon, string Text, bool Good)> Lines(Town town, ServiceDef d, double k = 1)
     {
-        var said = new List<string>();
+        var said = new List<(string, string, bool)>();
         string N(double v, int places = 0) => Js.ToFixed(Math.Abs(v * k), places);
-        if (d.Heroes > 0) said.Add($"room for {Js.Str(Math.Max(1, Math.Floor(d.Heroes * k + 0.05)))} more {(d.Heroes * k >= 1.95 ? "heroes" : "hero")}");
-        if (d.Routes > 0) said.Add("one more trade route");
-        if (d.Airship > 0) said.Add("an airship that carries a company over rivers, lakes and peaks");
-        if (d.Defence != 0) said.Add($"{(d.Defence > 0 ? "+" : "−")}{N(d.Defence)} defence on the walls");
-        if (d.Heal > 0) said.Add($"heroes heal {N(d.Heal * 100)}% more a night");
-        if (d.Escort > 0) said.Add($"{N(d.Escort * 100)}% fewer caravans waylaid");
-        if (d.Hush != 0) said.Add($"the undercity stirs {N(d.Hush * 100)}% {(d.Hush > 0 ? "slower" : "faster")}");
+        if (d.Heroes > 0) said.Add(("heroes", $"room for {Js.Str(Math.Max(1, Math.Floor(d.Heroes * k + 0.05)))} more {(d.Heroes * k >= 1.95 ? "heroes" : "hero")}", true));
+        if (d.Routes > 0) said.Add(("standing", "one more trade route", true));
+        if (d.Airship > 0) said.Add(("tab-campaign", "an airship that carries a company over rivers, lakes and peaks", true));
+        if (d.Defence != 0) said.Add(("defence", $"{(d.Defence > 0 ? "+" : "−")}{N(d.Defence)} defence on the walls", d.Defence > 0));
+        if (d.Heal > 0) said.Add(("potions", $"heroes heal {N(d.Heal * 100)}% more a night", true));
+        if (d.Escort > 0) said.Add(("threat", $"{N(d.Escort * 100)}% fewer caravans waylaid", true));
+        if (d.Hush != 0) said.Add(("undead", $"the undercity stirs {N(d.Hush * 100)}% {(d.Hush > 0 ? "slower" : "faster")}", d.Hush > 0));
         foreach (var (g, y) in d.Yields.OrderBy(y => y.Key, StringComparer.Ordinal))
-            said.Add($"{(y >= 1 ? "+" : "−")}{Js.ToFixed(Math.Abs((y - 1) * k * 100), 0)}% {g.ToLowerInvariant()}");
-        if (d.Build != 0) said.Add($"builders {N(d.Build * 100)}% {(d.Build > 0 ? "faster" : "slower")}");
-        if (d.Mood != 0) said.Add(d.Mood > 0 ? $"+{N(d.Mood, 1)} mood" : $"−{N(d.Mood, 1)} mood");
-        if (d.Arrivals != 0) said.Add(d.Arrivals > 0 ? "draws settlers" : "puts settlers off");
-        if (d.Gold != 0) said.Add($"{(d.Gold > 0 ? "+" : "−")}{N(d.Gold, 1)} gold a day");
-        if (d.Tension != 0) said.Add(d.Tension < 0 ? "calmer streets" : "rowdier streets");
-        if (d.Dread < 0) said.Add("eases dread");
-        if (d.Favour > 0) said.Add("the gods' favour");
+            said.Add((g.ToLowerInvariant(), $"{(y >= 1 ? "+" : "−")}{Js.ToFixed(Math.Abs((y - 1) * k * 100), 0)}% {g.ToLowerInvariant()}", y >= 1));
+        if (d.Build != 0) said.Add(("tools", $"builders {N(d.Build * 100)}% {(d.Build > 0 ? "faster" : "slower")}", d.Build > 0));
+        if (d.Mood != 0) said.Add(("population", d.Mood > 0 ? $"+{N(d.Mood, 1)} mood" : $"−{N(d.Mood, 1)} mood", d.Mood > 0));
+        if (d.Arrivals != 0) said.Add(("homeless", d.Arrivals > 0 ? "draws settlers" : "puts settlers off", d.Arrivals > 0));
+        if (d.Gold != 0) said.Add(("gold", $"{(d.Gold > 0 ? "+" : "−")}{N(d.Gold, 1)} gold a day", d.Gold > 0));
+        if (d.Tension != 0) said.Add(("unrest", d.Tension < 0 ? "calmer streets" : "rowdier streets", d.Tension < 0));
+        if (d.Dread < 0) said.Add(("dread", "eases dread", true));
+        if (d.Favour > 0) said.Add(("favour", "the gods' favour", true));
         if (d.Faction != "" && town.Content.Factions.Factions.FirstOrDefault(f => f.Ref == d.Faction) is { } fd)
         {
             string name = town.Content.Library.Faction(fd.Ref)?.Name ?? fd.Ref;
-            if (d.Standing != 0) said.Add($"{(d.Standing > 0 ? "warms" : "cools")} {name}");
-            if (d.FactionHeat < 0) said.Add($"keeps {name} out of sight");
+            if (d.Standing != 0) said.Add(("standing", $"{(d.Standing > 0 ? "warms" : "cools")} {name}", d.Standing > 0));
+            if (d.FactionHeat < 0) said.Add(("suspicion", $"keeps {name} out of sight", true));
         }
         return said;
     }
@@ -549,7 +601,7 @@ public static class Institutions
             if (want != s.Patronage) Fund(town, d.Id, want);
         }
         if (town.Buildings.Any(b => b.IsSite && For(town, b.Def.Id) is { Adopt: false })) return;
-        foreach (var d in r.Institutions.Where(d => !d.Adopt && Find(town, d.Id) == null))
+        foreach (var d in r.Institutions.Where(d => !d.Adopt && Seen(town, d.Id) && Find(town, d.Id) == null))
         {
             var bd = town.Content.Buildings.FirstOrDefault(b => b.Id == d.Building);
             if (bd == null || Planning.Blocked(town, bd) != null) continue;

@@ -136,46 +136,95 @@ public partial class Main
 
     // ---------- Council ----------
 
+    private Chamber? _chamber;
+
+    /// <summary>The seat picked in the chamber (its index in <see cref="Town.Seats"/>), or -1.</summary>
+    private int _councilSeat = -1;
+
     private void RenderCouncil()
     {
         var p = _panes[Tab.Council];
         var t = _sim.Town;
         p.Begin();
-        string facts = $"{Tag($"Tax {Math.Round(t.TaxRate * 100)}%", Ui.Ink)}   {Tag($"Watch {t.Watch}", Ui.Ink)}{(t.FestivalDays > 0 ? "   " + Tag("Festival!", Ui.Gold) : "")}";
+        ShowChamber(p, t);
+        RenderCouncillor(p, t);
+        RenderMotion(p, t);
         p.Meter("Mandate", t.Mandate, $"{Math.Round(t.Mandate)}", t.Mandate < 30);
-        p.Note("The townsfolk's approval of you. It follows their mood, fades back toward 50 unless you keep earning it, and falls when you rule by decree. A popular mayor draws settlers.");
-        p.Text(facts, 12);
+        p.Note("Fades back toward 50 unless you keep earning it.");
+        p.Text($"{Tag($"Tax {Math.Round(t.TaxRate * 100)}%", Ui.Ink)}   {Tag($"Watch {t.Watch}", Ui.Ink)}{(t.FestivalDays > 0 ? "   " + Tag("Festival!", Ui.Gold) : "")}", 12);
         RenderTaxes(p, t);
         var festive = Council.FestivalBlocked(t);
         p.Buttons(($"Hold a festival · {Js.Str(Council.FestivalCost(t))}g", festive == null, false, () => Act(() => _sim.HoldFestival())));
         p.Note(festive == null
             ? $"Mood up for {t.Content.Council.FestivalDays} days · Mandate +{Js.Str(t.Content.Council.FestivalMandate)}"
             : Ui.Cap(festive));
-        RenderMotion(p, t);
-        p.Heading("Seats");
-        foreach (var s in t.Seats)
-        {
-            if (s.HolderId is not int holder)
-            {
-                p.Row($"{Ui.C(Ui.Ink2, $"[b]{Ui.Esc(s.Def.Title)}[/b]")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{(t.Population < s.Def.UnlockPopulation ? $"Opens when {s.Def.UnlockPopulation} households live here" : "Vacant, to be filled tomorrow")}[/font_size]")}");
-                continue;
-            }
-            var a = t.Agent(holder);
-            string mood = s.Loyalty >= 60 ? "Loyal" : s.Loyalty >= 25 ? "Wary" : "Disloyal";
-            int skill = Council.Competence(t, s);
-            p.Row($"[b]{Ui.Esc(s.Def.Title)}[/b]  {Tag(mood, s.Loyalty < 25 ? Ui.Bad : s.Loyalty >= 60 ? Ui.Good : Ui.Ink2)}\n{AgentLink(a)} {Ui.C(Ui.Ink2, $"[font_size=12]· {a.Race} {a.Profession} · skill {(skill >= 0 ? "+" : "")}{skill} · loyalty {Math.Round(s.Loyalty)}\nMinds {Ui.Esc(s.Def.Portfolio)}. Wants {Ui.Esc(s.Def.Agenda)}.[/font_size]")}");
-            RenderSecret(p, t, a);
-        }
         RenderGuilds(p, t);
         RenderLaws(p, t);
         var history = t.Motions.Where(m => m.Status != MotionStatus.Pending).TakeLast(8).Reverse().ToList();
         if (history.Count > 0)
         {
             p.Heading("Past motions");
-            foreach (var m in history)
-                p.Text($"{Ui.C(Ui.Ink2, $"[font_size=11]Day {m.ProposedTick / 24 + 1}[/font_size]")}  {Ui.Esc(Ui.Cap(m.Text))}  {Tag(m.Status == MotionStatus.Passed ? $"passed{(m.Decree ? " by decree" : "")}" : $"failed{(m.Decree ? " by decree" : "")}", m.Status == MotionStatus.Passed ? Ui.Good : Ui.Bad)}", 13);
+            p.Text(string.Join("\n", history.Select(m =>
+                $"{Ui.Img(m.Status == MotionStatus.Passed ? "vote-aye" : "vote-nay", 14)} {Ui.Esc(Ui.Cap(m.Text))}{(m.Decree ? " " + Ui.Img("decree", 13) : "")}  {Ui.C(Ui.Ink2, $"[font_size=11]day {m.ProposedTick / 24 + 1}[/font_size]")}")), 13);
         }
         p.Commit();
+    }
+
+    /// <summary>The hall at the head of the window: every seat, who holds it, how loyal they are and how they vote.</summary>
+    private void ShowChamber(Pane p, Town t)
+    {
+        if (_chamber == null)
+        {
+            _chamber = new Chamber();
+            _chamber.Picked = i =>
+            {
+                _councilSeat = _councilSeat == i ? -1 : i;
+                _dirty = true;
+            };
+        }
+        var pending = Council.PendingMotion(t);
+        var suspects = Infiltration.Whispered(t).SelectMany(w => new[] { w.A.Id, w.B.Id }).ToHashSet();
+        var seats = t.Seats.Select(s =>
+        {
+            bool locked = t.Population < s.Def.UnlockPopulation;
+            if (s.HolderId is not int id)
+                return new Chamber.SeatView(s.Def.Id, s.Def.Title, s.Def.Ability, null, "", "", 0, locked, s.Def.UnlockPopulation, null, false, false, false,
+                    locked ? $"{s.Def.Title}\nOpens at {s.Def.UnlockPopulation} households" : $"{s.Def.Title}\nEmpty: filled tomorrow");
+            var a = t.Agent(id);
+            var vote = pending?.Votes.FirstOrDefault(v => v.Seat == s.Def.Id);
+            int skill = Council.Competence(t, s);
+            return new Chamber.SeatView(s.Def.Id, s.Def.Title, s.Def.Ability, id, a.GivenName, a.Race, s.Loyalty, false, 0, vote?.Yes,
+                pending?.ProposerId == id, Secrets.Held(t, id) != null, suspects.Contains(id),
+                $"{s.Def.Title}: {a.Name}\n{Ui.Cap(a.Race)} {a.Profession}\n{LoyaltyWord(s.Loyalty)} {Math.Round(s.Loyalty)} · skill {(skill >= 0 ? "+" : "")}{skill}\nClick for their card");
+        }).ToList();
+        if (_councilSeat >= seats.Count) _councilSeat = -1;
+        _chamber.Selected = _councilSeat;
+        _chamber.Show(seats);
+        p.Add("chamber", () => _chamber);
+    }
+
+    private static string LoyaltyWord(double loyalty) => loyalty >= 60 ? "Loyal" : loyalty >= 25 ? "Wary" : "Disloyal";
+
+    /// <summary>The card of the councillor picked in the chamber: who they are, what they mind and want, and the levers on them.</summary>
+    private void RenderCouncillor(Pane p, Town t)
+    {
+        if (_councilSeat < 0) return;
+        var s = t.Seats[_councilSeat];
+        string colour = Ui.Hex(Chamber.SeatColour(s.Def.Id, s.Def.Ability));
+        string title = $"[color={colour}][b]{Ui.Esc(s.Def.Title)}[/b][/color]";
+        if (s.HolderId is not int holder)
+        {
+            p.Card(t.Population < s.Def.UnlockPopulation
+                ? $"{title}\n{Ui.Img("seat-locked")} Opens at {Ui.Img("population")} {s.Def.UnlockPopulation} households"
+                : $"{title}\n{Ui.C(Ui.Ink2, "Empty: filled tomorrow")}", Chamber.SeatColour(s.Def.Id, s.Def.Ability));
+            return;
+        }
+        var a = t.Agent(holder);
+        int skill = Council.Competence(t, s);
+        p.Card($"{title}  {AgentLink(a)}  {Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Ui.Cap(a.Race))} {Ui.Esc(a.Profession)}[/font_size]")}\n"
+            + $"{Ui.Img(Chamber.LoyalIcon(s.Loyalty))} {Tag($"{LoyaltyWord(s.Loyalty)} {Math.Round(s.Loyalty)}", Chamber.Loyal(s.Loyalty))}    {Ui.Img("skill")} {Tag($"{(skill >= 0 ? "+" : "")}{skill}", Ui.Ink)}\n"
+            + $"[font_size=12]• Minds {Ui.Esc(s.Def.Portfolio)}\n• Wants {Ui.Esc(s.Def.Agenda)}[/font_size]", Chamber.SeatColour(s.Def.Id, s.Def.Ability));
+        RenderSecret(p, t, a);
     }
 
     /// <summary>The motion before the council, and any traitor the taverns whisper of: the council window's and the tray's.</summary>
@@ -183,23 +232,25 @@ public partial class Main
     {
         var pending = Council.PendingMotion(t);
         p.Heading("Before the council");
-        if (pending == null) p.Note("No motion before the council. Councillors bring one when their portfolio needs it.");
+        if (pending == null) p.Note("No motion. Councillors bring one when their portfolio needs it.");
         else
         {
             int yes = pending.Votes.Count(v => v.Yes), no = pending.Votes.Count - yes;
             bool? majority = yes == no ? null : yes > no;
             int hoursLeft = pending.DeadlineTick - t.Tick;
-            var votes = string.Join("\n", pending.Votes.Select(v =>
-            {
-                var seat = t.Seats.First(x => x.Def.Id == v.Seat);
-                return $"{Ui.Esc(seat.Def.Title)}   {Ui.C(v.Yes ? Ui.Good : Ui.Bad, v.Yes ? "[b]Aye[/b]" : "[b]Nay[/b]")}";
-            }));
             string Decree(bool signIt) => majority != null && majority != signIt ? " (decree)" : "";
             int days = (int)Math.Ceiling(hoursLeft / 24.0);
-            p.Card($"[b]{Ui.Esc(Ui.Cap(pending.Text))}.[/b]\n{Ui.C(Ui.Ink2, $"Moved by {AgentLink(t.Agent(pending.ProposerId))}. {(pending.Cost > 0 ? $"Costs {pending.Cost}g. " : "")}If you say nothing in {days} {(hoursLeft > 24 ? "days" : "day")}, the council's vote stands.")}\n{votes}", Ui.Gold);
+            var names = string.Join("   ", pending.Votes.Select(v =>
+            {
+                var seat = t.Seats.First(x => x.Def.Id == v.Seat);
+                string who = seat.HolderId is int h ? t.Agent(h).GivenName : seat.Def.Title;
+                return $"{Ui.Img(v.Yes ? "vote-aye" : "vote-nay", 14)} {Ui.Esc(who)}";
+            }));
+            p.Card($"{Ui.Img("tab-council", 16)} [b]{Ui.Esc(Ui.Cap(pending.Text))}[/b]\n"
+                + $"[font_size=12]{Ui.Img("decree", 14)} {AgentLink(t.Agent(pending.ProposerId))}{(pending.Cost > 0 ? $"   {pending.Cost}g" : "")}   {Ui.Img("deadline", 14)} {Ui.Days(days)}\n{names}[/font_size]", Ui.Gold);
             int id = pending.Id;
             p.Buttons(($"Sign{Decree(true)}", true, true, () => Act(() => _sim.DecideMotion(id, true))), ($"Veto{Decree(false)}", true, false, () => Act(() => _sim.DecideMotion(id, false))));
-            p.Note("Going against the council's majority is a decree: it costs Mandate and angers the councillors you overrule.");
+            if (majority != null) p.Note($"Silence lets the vote stand. A decree against the majority costs Mandate and angers the councillors overruled.");
             // A secret in hand swings a councillor's vote, so the mayor can carry the hall without a decree.
             var levers = pending.Votes
                 .Where(v => v.Seat != pending.Proposer && t.Seats.First(x => x.Def.Id == v.Seat).HolderId is int h && Secrets.Held(t, h) != null)
@@ -208,12 +259,12 @@ public partial class Main
             if (levers.Count > 0)
             {
                 p.Buttons([.. levers.Select(l => ($"Press {t.Agent(l.h).GivenName} to vote {(l.v.Yes ? "nay" : "aye")}", true, false, (Action)(() => Act(() => _sim.PressCouncillor(l.h, !l.v.Yes)))))]);
-                p.Note($"You know what they hide. Pressing them spends it: they vote your way, never forgive it, and {Math.Round(t.Content.Council.Secrets.Scandal * 100)}% of the time word gets out.");
+                p.Note($"{Ui.Img("press", 13)} Spends the secret: they vote your way, never forgive it, {Math.Round(t.Content.Council.Secrets.Scandal * 100)}% chance word gets out.");
             }
         }
         foreach (var (mole, a, b) in Infiltration.Whispered(t))
         {
-            p.Card($"[b]A traitor on the council[/b]\n{Ui.C(Ui.Ink2, $"The taverns say {AgentLink(a)} or {AgentLink(b)} serves {Ui.Esc(mole.By)}. Name the traitor and they flee; name an honest councillor and they resign, and the council resents it. Wait, and the watch finds the proof while the traitor goes on working.")}", Ui.Bad);
+            p.Card($"{Ui.Img("traitor", 16)} [b]A traitor on the council[/b]\n[font_size=12]• {AgentLink(a)} or {AgentLink(b)} serves {Ui.Esc(mole.By)}\n• Name the traitor: they flee\n• Name the wrong one: they resign, the council resents it\n• Wait: the watch finds proof, the traitor keeps working[/font_size]", Ui.Bad);
             int ia = a.Id, ib = b.Id;
             p.Buttons(($"Name {a.GivenName}", true, false, () => Act(() => _sim.AccuseCouncillor(ia))), ($"Name {b.GivenName}", true, false, () => Act(() => _sim.AccuseCouncillor(ib))));
         }
@@ -227,13 +278,13 @@ public partial class Main
         var known = Secrets.Of(t, id);
         if (Secrets.Held(t, id) is { } held)
         {
-            p.Text($"{Tag("Secret", Ui.Gold)} {Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Ui.Cap(Secrets.Describe(t, held)))}. Press them on a vote before the council, or expose them and they lose the seat.[/font_size]")}", 12);
+            p.Text($"{Ui.Img("secret")} {Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Ui.Cap(Secrets.Describe(t, held)))}.\n• Press them on a vote\n• Expose them: they lose the seat[/font_size]")}", 12);
             p.Buttons(("Expose them", true, false, () => Act(() => _sim.ExposeCouncillor(id))));
             return;
         }
         if (known is { Known: true })
         {
-            p.Text(Ui.C(Ui.Ink2, known.Kind == "" ? "[font_size=12]Your people found nothing to hold over them.[/font_size]" : "[font_size=12]You have spent what you knew about them.[/font_size]"), 12);
+            p.Text(Ui.C(Ui.Ink2, known.Kind == "" ? "[font_size=12]Nothing to hold over them.[/font_size]" : "[font_size=12]You have spent what you knew.[/font_size]"), 12);
             return;
         }
         string? why = Secrets.DigBlocked(t, id);
@@ -300,260 +351,6 @@ public partial class Main
         Add("mandate", x.Mandate, x.Mandate > 0);
         Add("heroes", x.Loyalty, x.Loyalty > 0, " loyalty");
         return parts.Count == 0 ? Ui.C(Ui.Ink2, "No other effect") : string.Join("   ", parts);
-    }
-
-    // ---------- Bounties and the road ----------
-
-    private void RenderBounties()
-    {
-        var p = _panes[Tab.Bounties];
-        var t = _sim.Town;
-        p.Begin();
-        p.Note("You are the mayor. Post bounties from the treasury; heroes at the tavern form parties and take them on. Once a party leaves the town's light you will not see it again until it comes home to report.");
-        int idle = t.Heroes.Count(a => !a.IsAway);
-        p.Note(t.Taverns.Count == 0
-            ? "Heroes need a tavern before they will come to town."
-            : $"{idle} {(idle == 1 ? "hero is" : "heroes are")} in town. Parties need at least three, and tougher sites want higher levels.");
-
-        RenderRoad(p, t);
-
-        RenderExplore(p, t);
-        RenderEyes(p, t);
-
-        p.Heading("Bounty board");
-        // How the job is to be done: the terms every Post button below uses.
-        var chosen = t.Content.Bounties.Term(_terms);
-        p.Buttons(t.Content.Bounties.Terms.Select(term => (term.Name, true, term.Id == chosen.Id, (Action)(() => Act(() => _terms = term.Id)))).ToArray());
-        var (pleased, angered) = Regard.Reactions(t, chosen.Tags);
-        string Who(List<Agent> heroes) => string.Join(", ", heroes.Take(4).Select(h => h.GivenName)) + (heroes.Count > 4 ? $" +{heroes.Count - 4}" : "");
-        var feel = new List<string>();
-        if (pleased.Count > 0) feel.Add(Ui.C(Ui.Good, $"Pleases {Ui.Esc(Who(pleased))}"));
-        if (angered.Count > 0) feel.Add(Ui.C(Ui.Bad, $"Angers {Ui.Esc(Who(angered))}"));
-        p.Note($"[b]{Ui.Esc(chosen.Name)}:[/b] {Ui.Esc(chosen.Text)}{(feel.Count > 0 ? "\n" + string.Join("  ·  ", feel) : "")}");
-        foreach (var c in Captives.Held(t).OrderBy(c => c.Id))
-        {
-            if (Quests.Site(t, c.SiteId) is not SiteState held) continue;
-            int left = Math.Max(1, (int)Math.Ceiling((c.DueTick - t.Tick) / 24.0));
-            string names = string.Join(", ", c.Captives.Select(id => t.Agent(id).Name));
-            p.Card($"[b]Held at {SiteLink(held.Def)}[/b]  {Tag($"{left} {(left == 1 ? "day" : "days")} left", Ui.Bad)}\n[font_size=12]{Ui.Esc(names)}. Post a [b]Rescue[/b] on {Ui.Esc(held.Def.Name)} before the days run out, or clear it.[/font_size]", Ui.Bad);
-        }
-        bool freeScry = Watch.FreeScryingsLeft(t) > 0;
-        bool canScout = Watch.Watchers(t).Count > 0;
-        // Threats first: a site an alert names (a war camp, a crisis's seat) or the warband's camp, then the rest of the
-        // open country, with cleared places last.
-        var named = Alerts.Standing(t).Where(a => a.SiteId != null).Select(a => a.SiteId!).ToHashSet();
-        int Rank(SiteState s) => s.ThoughtCleared ? 2 : named.Contains(s.Def.Id) || s.Def.Id == t.Content.Enemy.Outpost.Id ? 0 : 1;
-        foreach (var s in t.Sites.OrderBy(Rank))
-        {
-            // The board only lists what the town has heard of.
-            if (s.Known == SiteKnowledge.Unheard) continue;
-            var live = t.Bounties.FirstOrDefault(b => b.SiteId == s.Def.Id && b.Status is BountyStatus.Open or BountyStatus.Taken);
-            var party = live?.PartyId is int pid ? t.Parties.FirstOrDefault(x => x.Id == pid) : null;
-            int reward = (int)Terms.Suggested(t, s, chosen);
-            string status;
-            var buttons = new List<(string, bool, bool, Action)>();
-            if (s.ThoughtCleared) status = Tag("Cleared", Ui.Good);
-            else if (party != null && !party.Returned) status = Tag($"{Ui.Esc(party.Name)} on the road", Ui.Gold);
-            else if (live != null && live.Errand != "" && t.Content.Bounties.Errands.FirstOrDefault(x => x.Id == live.Errand) is { } boon)
-                status = Tag($"Mages' errand: {Math.Round(live.Reward)}g and {boon.Name}", Ui.Gold);
-            else if (live != null) status = Tag($"{(live.Terms == "slay" ? "Bounty" : Terms.Of(t, live).Name)} posted: {Math.Round(live.Reward)}g{(live.LootToTown ? ", loot to the town" : "")}", Ui.Gold)
-                + (t.Content.Bounties.Plots.FirstOrDefault(x => x.Id == live.Plot) is { } plot ? Ui.C(Ui.Ink2, $" [font_size=11]{Ui.Esc(Ui.Cap(plot.Name))}[/font_size]") : "");
-            else
-            {
-                status = s.Attempts > 0 ? Tag($"{s.Attempts} failed {(s.Attempts == 1 ? "attempt" : "attempts")}", Ui.Bad) : Tag("Unexplored");
-                string sid = s.Def.Id;
-                string terms = chosen.Id;
-                bool fits = Terms.Blocked(t, s, chosen) == null;
-                if (fits) buttons.Add(($"{chosen.Name} · {reward}g", t.Treasury >= reward, true, () => Act(() => _sim.PostBounty(sid, reward, terms))));
-                double withLoot = Sim.Systems.Armory.TermsReward(t, reward);
-                if (fits && !chosen.Item) buttons.Add(($"{Js.Str(withLoot)}g, loot to us", t.Treasury >= withLoot, false, () => Act(() => _sim.PostBounty(sid, withLoot, terms, lootToTown: true))));
-            }
-            if (!s.ThoughtCleared && Watch.LiveOf(t, s) == null)
-            {
-                var ask = Knowledge.ScryOffer(t, s.Def);
-                string sid = s.Def.Id;
-                buttons.Add((freeScry ? "Scry free" : ask != null ? $"Scry {Knowledge.ScryWords(ask)}" : "Scry", freeScry || ask != null && t.Treasury >= ask.Cost, false, () => Act(() => _sim.CommissionScrying(sid))));
-                if (Watch.ScoutAt(t, sid) == null) buttons.Add(("Scout", canScout, false, () => Act(() => _sim.PostScout(sid))));
-            }
-            int bt = Math.Clamp(s.BelievedTier, 1, 3);
-            string tier = new string('◆', bt) + new string('◇', 3 - bt);
-            // A seat the Campaign window names reads as that, not as the rumour the town first heard of the place.
-            var seated = s.ThoughtCleared ? null : t.Saga.Menaces.FirstOrDefault(m => m.Alive && m.SeatId == s.Def.Id);
-            string word = seated != null
-                ? Ui.C(Ui.Bad, $" [font_size=11]seat of {Ui.Esc(seated.Name)}{(seated.BigBad ? ", the big bad" : "")}{(s.Def.Tier > 0 ? $", tier {s.Def.Tier}" : "")}[/font_size]")
-                : s.Known == SiteKnowledge.Rumoured && !s.ThoughtCleared
-                ? Ui.C(Ui.Ink2, $" [font_size=11]rumour: {Ui.Esc(s.Believed)} ({Rumors.Trust(s.Trust)})[/font_size]")
-                : "";
-            // Its face and how hard it looks for the town's heroes, both from what the town believes is there.
-            var danger = Assess.Danger(t, s);
-            var site = s;
-            string look = $"{Foes.CreatureFace(s.Believed, s.Def.Kind)}{s.Known}{s.ThoughtCleared}{danger.Id}";
-            p.Row($"{SiteLink(s.Def)} {Ui.C(Ui.Gold, $"[font_size=11]{tier}[/font_size]")}{word}\n{status}",
-                (look, () => Foes.Of(t, site, 44), s.ThoughtCleared ? null : () => Foes.Bar("Danger", danger, Foes.Worse(danger), "How hard it looks for the heroes on the town's books, from what the town believes is there. A rumour can be wrong.")),
-                buttons.ToArray());
-        }
-        p.Note(freeScry
-            ? $"Scrying: the Scrying Pool will show one site live for {t.Content.Knowledge.ScryHours} hours today, free."
-            : Knowledge.Scryers(t).FirstOrDefault() is { } scryer
-                ? $"Scrying: {scryer.Name} the {scryer.Hero!.Cls.Name} and the town's other casters will show you a site live for {t.Content.Knowledge.ScryHours} hours. Those fond of the town ask nothing, most want gold, sour ones a favour."
-                : $"Scrying needs a {ScryClasses(t)} of level {t.Content.Knowledge.ScryMinLevel} or more in town.");
-        p.Note(canScout
-            ? $"Scouting: {Watch.Watchers(t)[0].Name} the {Watch.Watchers(t)[0].Hero!.Cls.Name} will watch a site from cover for up to {Ui.Days(t.Content.Knowledge.Scouts.WatchDays)}, {t.Content.Knowledge.Scouts.WagePerDay}g a day."
-            : "Scouting needs a ranger, rogue, monk or cartographer in town and rested.");
-
-        var books = t.AccountsYesterday.Where(kv => Math.Abs(kv.Value) >= 0.5).OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key, StringComparer.Ordinal).ToList();
-        if (books.Count > 0)
-        {
-            double net = books.Sum(kv => kv.Value);
-            p.Heading("Yesterday's books");
-            p.Card(string.Join("\n", books.Select(kv => $"{Ui.Esc(kv.Key)}   {Ui.C(kv.Value >= 0 ? Ui.Good : Ui.Bad, $"[b]{Sign(kv.Value)}[/b]")}")) + $"\n[b]Net[/b]   {Ui.C(net >= 0 ? Ui.Good : Ui.Bad, $"[b]{Sign(net)}[/b]")}");
-        }
-        p.Commit();
-    }
-
-    /// <summary>Parties out on the road, with their sendings: the bounty board's and the tray's.</summary>
-    private void RenderRoad(Pane p, Town t)
-    {
-        var road = t.Parties.Where(x => !x.Returned).ToList();
-        if (road.Count > 0)
-        {
-            p.Heading("On the road");
-            foreach (var party in road)
-            {
-                var site = Quests.Site(t, party.SiteId)!;
-                int gone = (t.Tick - party.DepartTick) / 24;
-                int due = SimTime.DayOf(party.ReturnTick);
-                int slots = Knowledge.SlotsLeft(t, party);
-                string members = string.Join(", ", party.Members.Select(id => AgentLink(t.Agent(id), t.Agent(id).GivenName)));
-                string where = party.RecalledTick != null ? "Called home" : $"Gone {Ui.Days(gone)} to {SiteLink(site.Def)}";
-                string slotNote = slots == 0
-                    ? Ui.C(Ui.Ink2, Knowledge.Slots(t, party) == 0 ? "No caster and no sending stone with them: no way to send word." : "No spell slots or stone sendings left.")
-                    : Ui.C(Ui.Ink2, Sim.Systems.Armory.Carries(t, party)
-                        ? $"They carry one of the town's sending stones: {slots} {(slots == 1 ? "sending" : "sendings")} left."
-                        : $"{slots} spell {(slots == 1 ? "slot" : "slots")} for sendings. Each one costs a slot{(party.Members.Any(id => t.Agent(id).Hero!.Cls.Healer) ? ", and a healer's slot is a heal they won't have in the dungeon" : "")}.");
-                int id = party.Id;
-                p.Card($"[b]The {Ui.Esc(party.Name)}[/b]  {Tag($"due back day {due}", Ui.Gold)}\n{where} · {members}\n[font_size=12]{slotNote}[/font_size]");
-                if (Knowledge.Slots(t, party) > 0)
-                    p.Buttons(
-                        ("Ask for word", slots > 0, false, () => Act(() => _sim.SendWord(id))),
-                        ("Call them home", slots > 0 && Knowledge.CanRecall(t, party), false, () => Act(() => _sim.SendWord(id, recall: true))));
-            }
-        }
-    }
-
-    /// <summary>Companies out exploring, the council's open offers, and the country a company could be sent to.</summary>
-    private void RenderExplore(Pane p, Town t)
-    {
-        p.Heading("Exploring");
-        p.Note("Nothing goes on the map by itself. Travellers and allies tell of places; to find them for certain, pay a company to explore a region, or press [b]Scout[/b] over the corner map and mark a spot for them to look at. They send word of what they find and wait for yours.");
-        foreach (var s in t.Surveys.Where(Explore.Out).OrderBy(x => x.Id))
-        {
-            var region = t.Regions[s.RegionId];
-            var at = s.AtFind is int fid ? Explore.FindOf(t, fid) : null;
-            string state = s.Phase switch
-            {
-                SurveyPhase.Outbound when s.SpotX is double sx && s.SpotY is double sy => $"On the road to the spot you marked {Explore.Bearing(sx, sy)}",
-                SurveyPhase.Outbound => $"On the road to {Ui.Esc(region.Name)}",
-                SurveyPhase.Exploring when s.SpotX != null && !s.Escorting => $"Looking round the spot you marked in {Ui.Esc(region.Name)}",
-                SurveyPhase.Exploring => s.Escorting ? "Walking a caravan home" : $"Exploring {Ui.Esc(region.Name)}, {Ui.Days(Math.Max(1, (int)Math.Ceiling((s.ExploreUntil - t.Tick) / 24.0)))} left",
-                SurveyPhase.Waiting when at != null => t.Tick >= at.ReportTick ? $"Waiting for word at {Ui.Esc(Explore.Title(t, at))}" : $"Stopped in {Ui.Esc(region.Name)}; a bird is on its way",
-                SurveyPhase.Investigating when at != null && Explore.NextChapter(t, at) is { } ch => $"Investigating {Ui.Esc(Explore.Title(t, at))}: {Ui.Esc(ch.Title.ToLowerInvariant())}",
-                _ => "Coming home",
-            };
-            string members = string.Join(", ", s.Members.Select(t.Agent).Where(a => !a.Dead).Select(a => AgentLink(a, a.GivenName)));
-            int finds = s.Finds.Count(id => Explore.FindOf(t, id)!.Known);
-            var buttons = new List<(string, bool, bool, Action)>();
-            if (at is { State: FindState.Open } && t.Tick >= at.ReportTick)
-            {
-                int id = at.Id;
-                buttons.Add(("Read their report", true, true, () => OpenFind(id)));
-            }
-            p.Row($"[b]The {Ui.Esc(s.Name)}[/b]  {Tag(finds == 1 ? "1 find" : $"{finds} finds", new Color("8cc084"))}\n{state} · {members}", buttons.ToArray());
-        }
-        foreach (var c in t.Commissions.Where(c => c.Status == BountyStatus.Open))
-        {
-            string what = c.SpotX is double sx && c.SpotY is double sy
-                ? $"Spot marked {Explore.Bearing(sx, sy)}, {Js.Hypot(sx, sy):0.0} days out"
-                : Ui.Esc(t.Regions[c.RegionId].Name);
-            p.Row($"{what}  {Tag($"Offer posted: {Math.Round(c.Reward)}g", Ui.Gold)}\n{Ui.C(Ui.Ink2, "[font_size=12]Waiting for a company to take it.[/font_size]")}");
-        }
-        int strongest = t.Heroes.Select(h => h.Hero!.Level).DefaultIfEmpty(1).Max();
-        foreach (var r in t.Regions.Where(r => r.Known && Explore.CanCommission(t, r.Id)).OrderBy(r => r.Ring).ThenBy(r => r.Id))
-        {
-            int heard = r.SiteIds.Count(id => Quests.Site(t, id)!.Known != SiteKnowledge.Unheard);
-            int found = r.SiteIds.Count(id => Quests.Site(t, id)!.Found);
-            int reward = (int)Math.Round(Explore.SuggestedReward(t, r));
-            string what = !r.Visited ? "Never explored" : found == 0 ? "Explored, nothing found" : $"{found} {(found == 1 ? "place" : "places")} found";
-            string danger = r.Levels[0] > strongest + 1 ? Ui.C(Ui.Bad, " · too dangerous for the town's heroes yet") : "";
-            int rid = r.Id;
-            p.Row($"{Ui.Esc(r.Name)} {Ui.C(Ui.Ink2, $"[font_size=11]{Ui.Esc(r.Theme.Name)}, {Ui.Days(r.Days)} out[/font_size]")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{what}{(heard > found ? $", {heard - found} more heard of" : "")}[/font_size]")}{danger}",
-                ($"Explore {reward}g", t.Treasury >= reward, false, () => Act(() => _sim.PostSurvey(rid, reward))));
-        }
-    }
-
-    private static string ScryClasses(Town t) =>
-        string.Join(" or ", t.Content.Library.Spell(t.Content.Knowledge.ScrySpell)?.Classes ?? []);
-
-    /// <summary>Scouts in the field, mirrors at sites, and the works that see for the town.</summary>
-    private void RenderEyes(Pane p, Town t)
-    {
-        var scouts = t.Scouts.Where(x => x.Out).ToList();
-        var mirrors = t.Mirrors.Where(m => m.Intact).ToList();
-        p.Heading("Eyes in the wilds");
-        foreach (var sc in scouts)
-        {
-            var hero = t.Agent(sc.HeroId);
-            var site = Quests.Site(t, sc.SiteId)!;
-            string state = sc.Mirror
-                ? (t.Tick < sc.ArriveTick ? $"carrying a mirror to {SiteLink(site.Def)}" : $"back from hiding a mirror at {SiteLink(site.Def)}")
-                : t.Tick < sc.ArriveTick ? $"on the way to {SiteLink(site.Def)}"
-                : t.Tick < sc.LeaveTick ? $"watching {SiteLink(site.Def)}, rations for {Ui.Days((int)Math.Ceiling((sc.LeaveTick - t.Tick) / 24.0))}"
-                : $"coming home from {SiteLink(site.Def)}";
-            int id = sc.Id;
-            bool canRecall = !sc.Mirror && t.Tick < sc.LeaveTick;
-            p.Row($"{AgentLink(hero)} the {Ui.Esc(hero.Hero!.Cls.Name)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{state}[/font_size]")}",
-                canRecall ? [("Call home", true, false, () => Act(() => _sim.RecallScout(id)))] : []);
-        }
-        foreach (var m in mirrors)
-        {
-            var site = Quests.Site(t, m.SiteId)!;
-            p.Row($"Mirror at {SiteLink(site.Def)}  {Tag("live", Ui.Good)}\n{Ui.C(Ui.Ink2, $"[font_size=12]Hidden on day {SimTime.DayOf(m.PlacedTick)}. It shows the site until someone there finds it.[/font_size]")}");
-        }
-        foreach (var w in t.Content.Knowledge.Works)
-        {
-            var def = t.Content.Building(w.Building);
-            var relic = t.Content.Library.Item(w.Relic);
-            var b = Watch.WorkBuilding(t, w);
-            string what = w.Reach > 0
-                ? $"Shows every site within {Ui.Days(w.Reach)} of town live, always."
-                : $"{(w.Scryings == 1 ? "One free scrying" : $"{w.Scryings} free scryings")} a day.";
-            string head = $"[b]{Ui.Esc(def.Name)}[/b]{(relic != null ? Ui.C(Ui.Ink2, $" · houses {Ui.Esc(Library.A(relic.Name))}") : "")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{what}[/font_size]")}";
-            if (Watch.HasWork(t, w))
-                p.Row($"{head}  {Tag(t.Relics.Contains(w.Relic) && b?.Complete != true ? "Relic in the hall" : "Built", Ui.Good)}");
-            else if (b != null)
-                p.Row($"{head}  {Tag($"Building, {Math.Floor(100 * b.BuildProgress / b.Def.BuildHours)}%", Ui.Gold)}");
-            else if (t.Population < w.Population)
-                p.Row($"{head}  {Tag($"Needs {w.Population} residents")}");
-            else
-            {
-                double cost = Watch.WorkCost(t, w);
-                string bid = w.Building;
-                p.Row(head, ($"Build {Math.Round(cost)}g", t.Treasury >= cost, true, () => Act(() => _sim.BuildSightWork(bid))));
-            }
-        }
-        // The town's first institution: a temple to its god, once there are people enough to fill it.
-        var temple = t.Buildings.FirstOrDefault(b => b.Def.Id == t.Content.Shrines.Temple);
-        string thead = $"[b]Temple of {Ui.Esc(Faith.TempleGod(t) is { } tg ? Faith.Prose(tg) : t.Content.Shrines.Deity)}[/b]\n{Ui.C(Ui.Ink2, $"[font_size=12]Heals heroes, raises the fallen, keeps holy days and pays its own bounties. {Shrines.Followers(t).Count} {Ui.Esc(t.Content.Shrines.Devout)} in town.[/font_size]")}";
-        if (temple?.Complete == true) p.Row($"{thead}  {Tag($"Built · coffers {Math.Round(temple.Cash)}g", Ui.Good)}");
-        else if (temple != null) p.Row($"{thead}  {Tag($"Building, {Math.Floor(100 * temple.BuildProgress / temple.Def.BuildHours)}%", Ui.Gold)}");
-        else if (t.Population < t.Content.Shrines.TemplePopulation) p.Row($"{thead}  {Tag($"Needs {t.Content.Shrines.TemplePopulation} residents")}");
-        else
-        {
-            double tcost = Shrines.TempleCost(t);
-            p.Row(thead, ($"Build {Math.Round(tcost)}g", t.Treasury >= tcost, true, () => Act(() => _sim.BuildTemple())));
-        }
-        if (scouts.Count == 0 && mirrors.Count == 0)
-            p.Note("Post a scout to watch a site from cover, or hide a mirror there (from the site's page) for a view that lasts.");
     }
 
     // ---------- Faith and factions ----------
@@ -737,7 +534,6 @@ public partial class Main
         if (a.SpouseId is int sp) p.Text($"Married to {AgentLink(t.Agent(sp))}");
         if (Taverns.Persona(t, a) is { } persona)
             p.Text(Ui.C(Ui.Ink2, $"[font_size=12]In their cups: {Ui.Esc(persona.Name)}{(Taverns.Drunk(t, a) != null ? ", and it shows tonight" : "")}.[/font_size]"), 12);
-        if (a.Hero is { Owed: > 0 } owedHs) p.Text(Ui.C(Ui.Gold, $"[font_size=12]Owed {owedHs.Owed} scrying {(owedHs.Owed == 1 ? "favour" : "favours")}[/font_size]"), 12);
         if (a.Hero != null && Taverns.Owing(t, a) is { } blood) p.Text(Ui.C(Ui.Bad, $"[font_size=12]Owes blood money for {Ui.Esc(blood.Victim)}.[/font_size]"), 12);
         InspectSheet(p, t, a);
         var friends = a.Opinions.Where(kv => kv.Value >= 40).OrderBy(kv => kv.Key).Select(kv => AgentLink(t.Agent(kv.Key))).ToList();
@@ -796,6 +592,7 @@ public partial class Main
         if (hs.Knight) honours.Add(Tag("Knight", Ui.Gold));
         if (hs.FiefId != null && Quests.Site(t, hs.FiefId) is SiteState land) honours.Add(Tag($"Holds {Ui.Esc(land.Def.Name)}", Ui.Gold));
         if (hs.Champion) honours.Add(Tag($"Champion of {t.Name}", Ui.Gold));
+        if (hs.Duty != HeroDuty.None) honours.Add(DutyIcon(a, 15) + Tag(hs.Duty == HeroDuty.Walls ? "On the walls" : "On the streets", Ui.Good));
         if (Callings.Of(t, a) is CallingDef calling) honours.Add(Tag(calling.Name, Ui.Good));
         if (honours.Count > 0) p.Text(string.Join("  ", honours));
         var lr = t.Content.Loyalty;
@@ -837,6 +634,15 @@ public partial class Main
             (hs.Champion ? "Champion" : "Name champion", champion == null, false, () => Act(() => _sim.NameChampion(id))),
             ($"Send a purse, {Js.Str(purse)}g", t.Treasury >= purse, false, () => Act(() => _sim.RewardHero(id, purse))));
         if (knight != null && !hs.Knight) p.Note($"Knighthood: {knight}.");
+        // Guard duty and the armory's best for them, one click each.
+        var best = Sim.Systems.Armory.BestFor(t, a);
+        var duty = new List<(string, bool, bool, Action)>();
+        if (hs.Duty != HeroDuty.Walls) duty.Add(("Post to walls", Garrison.DutyBlocked(t, a, HeroDuty.Walls) == null, false, () => Act(() => { _sim.SetDuty(id, HeroDuty.Walls); GuideEvent("duty"); })));
+        if (hs.Duty != HeroDuty.Streets) duty.Add(("Post to streets", Garrison.DutyBlocked(t, a, HeroDuty.Streets) == null, false, () => Act(() => { _sim.SetDuty(id, HeroDuty.Streets); GuideEvent("duty"); })));
+        if (hs.Duty != HeroDuty.None) duty.Add(("Stand down", true, false, () => Act(() => _sim.SetDuty(id, HeroDuty.None))));
+        duty.Add((best != null ? $"Arm: {(best.Name != "" ? best.Name : Gear.Plainly(best.Item))}" : "Arm", best != null, best != null, () => Act(() => _sim.Arm([id]))));
+        p.Buttons(duty.ToArray());
+        if (!a.IsAway) p.Note($"Guard duty: {Js.Str(Garrison.Wage(t, a))}g a day, no bounties.");
     }
 
     /// <summary>The patron they are sworn to, its favour from −5 to +5 and what that lends them, and their familiar.</summary>
@@ -994,6 +800,7 @@ public partial class Main
             Sight.Live when live == LiveSource.Outpost && Loyalty.Lord(t, s.Def.Id) is Agent lord => Ui.C(Ui.Good, $"[b]Held[/b] by the retainers of {Ui.Esc(Loyalty.Styled(t, lord))}. Nothing moves back in."),
             Sight.Live when live == LiveSource.Outpost => Ui.C(Ui.Good, $"[b]Held[/b] by a garrison of the watch, {Js.Str(t.Content.Lairs.Outpost.Upkeep)}g a day. Nothing moves back in."),
             Sight.Live when live == LiveSource.Spire => Ui.C(Ui.Gold, "[b]In the Spire's sight[/b], day and night."),
+            Sight.Live when live == LiveSource.Tower && Watch.TowerOver(t, s) is { } tower => Ui.C(Ui.Gold, $"[b]In sight[/b] of {Ui.Esc(tower.Name)}, day and night."),
             Sight.Live => "In sight of the town.",
             Sight.Scouted when report != null => t.Day - report.Day > Fog.StaleDays
                 ? $"Last seen on day {report.Day}, in a report {t.Day - report.Day} days old. Things may have changed."
@@ -1066,17 +873,20 @@ public partial class Main
         p.Heading("Eyes on it");
         if (live == null)
         {
-            bool free = Watch.FreeScryingsLeft(t) > 0;
-            var ask = Knowledge.ScryOffer(t, s.Def);
-            p.Buttons((free ? "Scry it free, from the pool" : ask != null ? $"Commission a scrying, {Knowledge.ScryWords(ask)}" : "Commission a scrying", free || ask != null && t.Treasury >= ask.Cost, true, () => Act(() => _sim.CommissionScrying(sid))));
-            string why = ask?.Kind switch
+            var k = t.Content.Knowledge;
+            var buttons = new List<(string, bool, bool, Action)>();
+            if (Watch.FreeScryingsLeft(t) > 0) buttons.Add(("Scry it free, from the pool", true, true, () => Act(() => _sim.CommissionScrying(sid))));
+            // Every rested caster says what they want for it: the loyal nothing, others gold, the disaffected a favour.
+            foreach (var o in Knowledge.Offers(t, s.Def).Take(4))
             {
-                "free" => " They are fond enough of the town to ask nothing.",
-                "favour" => " They want no gold, but the town will owe them, and they will call it in.",
-                "gold" => " Casters who love the town scry for free; sour ones ask favours.",
-                _ => "",
-            };
-            p.Note(free ? $"The Scrying Pool shows it for {t.Content.Knowledge.ScryHours} hours." : ask != null ? $"{ask.Caster.Name} would cast it, for {t.Content.Knowledge.ScryHours} hours.{why}" : Knowledge.Scryers(t).Count > 0 ? "The casters in town are owed too many favours to scry again on credit." : $"Needs a {ScryClasses(t)} of level {t.Content.Knowledge.ScryMinLevel} or more in town.");
+                int id = o.Caster.Id;
+                string terms = o.Price switch { ScryPrice.Free => "free", ScryPrice.Gold => $"{Math.Round(o.Gold)}g", _ => "as a favour" };
+                buttons.Add(($"{o.Caster.GivenName}: {terms}", t.Treasury >= o.Gold, buttons.Count == 0, () => Act(() => _sim.CommissionScrying(sid, id))));
+            }
+            if (buttons.Count > 0) p.Buttons([.. buttons]);
+            int casters = Knowledge.Scryers(t).Count, rested = Knowledge.Rested(t).Count;
+            p.Note(casters == 0 && buttons.Count == 0 ? $"Needs a {ScryClasses(t)} of level {k.ScryMinLevel} or more in town."
+                : $"{Ui.Img("face-all-seeing-eye")} {rested}/{casters} ready · {k.ScryHours}h · rest {Ui.Days(k.ScryRestDays)}\n{Ui.Img("standing")} loyal free · {Ui.Img("gold")} others gold · {Ui.Img("favour")} disaffected a favour");
         }
         if (scout != null && live != LiveSource.Scout)
             p.Note($"{t.Agent(scout.HeroId).Name} is {(t.Tick < scout.ArriveTick ? "on the way to watch it" : "on the way home")}.");

@@ -48,6 +48,12 @@ public sealed record JobView(
     Leaning Leaning,
     string? Blocked);
 
+/// <summary>
+/// A band of heroes that could ride today: a company with the free heroes who would make it up to three, or (with no
+/// name) the free heroes on their own. <see cref="Offerable"/> is whether the company will hear a job by name.
+/// </summary>
+public sealed record Crew(string Name, List<Agent> Riders, bool Offerable);
+
 /// <summary>A company's answer to a job offered by name.</summary>
 public sealed record JobAnswer(bool Accepted, string Why, Party? Party);
 
@@ -112,6 +118,32 @@ public static class Roster
         if (s.Magic.Values.OrderByDescending(i => i.Tier).ThenBy(i => i.Id, StringComparer.Ordinal).FirstOrDefault() is { } item)
             powers.Add(Gear.Label(s, item));
         return powers.Take(3).ToList();
+    }
+
+    /// <summary>
+    /// Who could ride on a job today: each company in town with someone fit to ride (made up to three with the
+    /// strongest free heroes, as an offer would), then the free heroes on their own if three of them could go.
+    /// Reads the town only.
+    /// </summary>
+    public static List<Crew> Crews(Town town)
+    {
+        var r = Rules(town);
+        var free = town.Heroes
+            .Where(h => h.Hero!.PartyName == null && Quests.Available(h))
+            .OrderByDescending(h => h.Hero!.Level)
+            .ThenBy(h => h.Id)
+            .ToList();
+        var crews = new List<Crew>();
+        foreach (var (name, members) in Intel.MembersByCompany(town))
+        {
+            if (town.Parties.Any(p => !p.Returned && p.Name == name)) continue;
+            var riders = members.Where(Quests.Available).Take(r.MaxRiders).ToList();
+            if (riders.Count == 0) continue;
+            riders.AddRange(free.Take(Math.Max(0, 3 - riders.Count)));
+            if (riders.Count >= 3) crews.Add(new Crew(name, riders, Unavailable(town, name) == null));
+        }
+        if (free.Count >= 3) crews.Add(new Crew("", free.Take(r.MaxRiders).ToList(), false));
+        return crews;
     }
 
     /// <summary>A hero's weight in a fight, as the roster counts it: their level and each piece of magic gear they wear.</summary>

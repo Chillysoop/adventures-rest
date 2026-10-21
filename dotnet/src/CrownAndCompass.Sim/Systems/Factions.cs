@@ -78,9 +78,29 @@ public sealed record VendettaRules
     public double Threat { get; init; } = 3;
 }
 
+/// <summary>Witch hunters naming a caster before the town (the "accuse" agenda item).</summary>
+public sealed record AccuseRules
+{
+    /// <summary>Hero classes the hunters call witches.</summary>
+    public IReadOnlyList<string> Classes { get; init; } = [];
+
+    /// <summary>Faction kinds whose members they call witches (arcane orders, covens, druid circles).</summary>
+    public IReadOnlyList<string> Kinds { get; init; } = [];
+
+    /// <summary>Loyalty an accused hero loses.</summary>
+    public double Loyalty { get; init; } = 8;
+
+    /// <summary>Miserable days an accused townsperson gains.</summary>
+    public int Misery { get; init; } = 3;
+
+    /// <summary>Heat the accused's own faction takes.</summary>
+    public double Heat { get; init; } = 10;
+}
+
 /// <summary>Numbers shared by every faction (content/game/factions.json).</summary>
 public sealed record FactionRules
 {
+    public AccuseRules Accuse { get; init; } = new();
     public int MaxPerAgent { get; init; } = 2;
     /// <summary>Daily dues, as a percentage of a member's purse, up to MaxDues gold.</summary>
     public double Dues { get; init; } = 1;
@@ -508,6 +528,7 @@ public static class Factions
             case "protest": Protest(town, f); break;
             case "rite": Rite(town, f); break;
             case "graves": Graves(town, f); break;
+            case "accuse": Accuse(town, f); break;
         }
     }
 
@@ -840,7 +861,7 @@ public static class Factions
             .ThenBy(s => s.Def.Distance)
             .ThenBy(s => s.Def.Id, StringComparer.Ordinal)
             .FirstOrDefault();
-        if (site == null || Knowledge.Scryers(town).Count == 0) return;
+        if (site == null || Knowledge.Rested(town).Count == 0) return;
         double cost = Knowledge.ScryCost(town, site.Def);
         if (Coffers(town, f) < cost) return;
         // The order pays the caster through the town's books, so the scrying is the town's to watch.
@@ -941,6 +962,34 @@ public static class Factions
         f.Heat = Math.Min(100, f.Heat + r.GraveHeat);
         town.Log(LedgerCategory.Faction, Importance.Notable, "Two graves in the burying ground are found dug open at dawn, and the bodies are gone.");
         CheckExposure(town, f);
+    }
+
+    /// <summary>
+    /// Witch hunters name a caster before the town: a hero of a casting class or a member of a coven,
+    /// circle or arcane order. A hero's loyalty to the town sours, a townsperson is miserable for days,
+    /// and the accused's order draws the watch's eye. Cracking down on the hunters is the mayor's answer.
+    /// </summary>
+    private static void Accuse(Town town, FactionState f)
+    {
+        var r = Rules(town).Accuse;
+        var orders = town.Factions.Where(x => x.Active && r.Kinds.Contains(x.Lore.Kind)).ToList();
+        var accused = town.Residents
+            .Where(a => !f.Members.Contains(a.Id))
+            .Where(a => (a.Hero != null && r.Classes.Contains(a.Hero.Cls.Id)) || orders.Any(o => o.Members.Contains(a.Id)))
+            .OrderBy(a => a.Id)
+            .ToList();
+        var hunter = Best(town, f, Ability.Wis);
+        if (accused.Count == 0 || hunter == null)
+        {
+            Patrol(town, f);
+            return;
+        }
+        var a = accused[town.Rng.Range(0, accused.Count)];
+        if (a.Hero != null) Loyalty.Sway(a, -r.Loyalty);
+        else a.MiserableDays += r.Misery;
+        foreach (var o in orders.Where(o => o.Members.Contains(a.Id))) o.Heat = Math.Min(100, o.Heat + r.Heat);
+        f.Standing -= 1;
+        town.Log(LedgerCategory.Faction, Importance.Notable, $"{hunter.Name} of {f.Name} stands in the square and names {a.Name} a witch. The crowd mutters; {a.Name} is not served at the market that day.", [hunter.Id, a.Id]);
     }
 
     /// <summary>The Hollow King answers his choir: the dead walk to a crypt near town, a new site to clear. Returns the Ledger line.</summary>

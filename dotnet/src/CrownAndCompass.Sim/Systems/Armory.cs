@@ -281,6 +281,52 @@ public static class Armory
         return true;
     }
 
+    /// <summary>
+    /// Arm a group in one go (a hero, a company, the heroes on guard duty): while the armory holds something one of
+    /// them would gain from, the best such gift is made. A sending stone goes only to one whose company can't send word.
+    /// Returns how many gifts were made.
+    /// </summary>
+    public static int Arm(Town town, IEnumerable<int> heroIds)
+    {
+        var heroes = heroIds.Where(id => id >= 1 && id <= town.Agents.Count).Distinct().Order().Select(town.Agent).ToList();
+        int given = 0;
+        // Each gift leaves its hero strictly better armed, so this ends; the cap only guards against a surprise.
+        for (int round = 0; round < 64; round++)
+        {
+            StockItem? best = null;
+            Agent? to = null;
+            int most = 0;
+            foreach (var s in town.Armory.Stock.OrderBy(x => x.Id))
+                foreach (var h in heroes)
+                {
+                    if (Refuse(town, h, s.Item) != null) continue;
+                    if (IsStone(town, s.Item) && CompanySends(town, h)) continue;
+                    int use = Use(town, h, s.Item);
+                    if (use > most)
+                    {
+                        (best, to, most) = (s, h, use);
+                    }
+                }
+            if (best == null || !Gift(town, best.Id, to!.Id)) break;
+            given++;
+        }
+        return given;
+    }
+
+    /// <summary>The armory's best gift for a hero now (what <see cref="Arm"/> would hand them first), or null.</summary>
+    public static StockItem? BestFor(Town town, Agent a)
+    {
+        StockItem? best = null;
+        int most = 0;
+        foreach (var s in town.Armory.Stock.OrderBy(x => x.Id))
+        {
+            if (Refuse(town, a, s.Item) != null || (IsStone(town, s.Item) && CompanySends(town, a))) continue;
+            int use = Use(town, a, s.Item);
+            if (use > most) (best, most) = (s, use);
+        }
+        return best;
+    }
+
     // Selling off ---------------------------------------------------------------------------------
 
     public static double SellValue(Town town, LibItem it) => IsStone(town, it) ? Math.Floor(Rules(town).Caravan.StonePrice / 2) : Gear.SellValue(town, it);

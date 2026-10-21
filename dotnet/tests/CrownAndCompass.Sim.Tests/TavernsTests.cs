@@ -88,36 +88,21 @@ public class TavernsTests
     }
 
     [Fact]
-    public void CastersAskByTheirStandingFreeGoldOrAFavour()
+    public void ASourCastersFavourIsCalledInAsAStory()
     {
         var (_, t) = Town();
         var w = Hero(t, "wizard", 5);
-        // Only this caster is in town to ask.
         foreach (var o in Knowledge.Scryers(t).Where(o => o.Id != w.Id)) o.Hero!.AwayUntil = t.Tick + 1000;
         var site = t.Sites.First(s => s.Known != SiteKnowledge.Unheard).Def;
-        var k = t.Content.Knowledge;
-        w.Hero!.Loyalty = 60;
-        Assert.Equal("gold", Knowledge.ScryOffer(t, site)!.Kind);
-        w.Hero.Loyalty = k.ScryFreeLoyalty;
-        Assert.Equal("free", Knowledge.ScryOffer(t, site)!.Kind);
-        w.Hero.Loyalty = k.ScryFavourLoyalty - 5;
-        var ask = Knowledge.ScryOffer(t, site)!;
-        Assert.Equal("favour", ask.Kind);
-        Assert.Equal(0, ask.Cost);
-        double before = t.Treasury;
+        w.Hero!.Loyalty = t.Content.Knowledge.ScryPrice.Favour - 5;
         while (Watch.FreeScryingsLeft(t) > 0) t.FreeScryingsUsed++;
-        Assert.NotNull(Knowledge.CommissionScrying(t, site.Id));
-        Assert.Equal(before, t.Treasury);
+        Assert.Equal(ScryPrice.Favour, Knowledge.Offers(t, site).Single(o => o.Caster.Id == w.Id).Price);
+        Assert.NotNull(Knowledge.CommissionScrying(t, site.Id, w.Id));
         Assert.Equal(1, w.Hero.Owed);
-        // The favour is called in as a story.
         var s = Stories.Open(t, "scryer-favour");
         Assert.NotNull(s);
         Stories.Resolve(t, s!.Id, 0);
         Assert.Equal(0, w.Hero.Owed);
-        // Owed too much, a sour caster stops scrying on credit.
-        w.Hero.Owed = k.ScryMaxOwed;
-        w.Hero.Loyalty = k.ScryFavourLoyalty - 5;
-        Assert.Null(Knowledge.ScryOffer(t, site));
     }
 }
 

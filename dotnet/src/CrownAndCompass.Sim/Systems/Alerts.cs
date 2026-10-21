@@ -94,14 +94,15 @@ public static class Alerts
     public static readonly AlertKind Guild = new("guild", "Guild demands", "favour", AlertLevel.Decision, AlertWindow.Council);
     public static readonly AlertKind Balance = new("union", "Guilds and mages", "favour", AlertLevel.Decision, AlertWindow.Council);
     public static readonly AlertKind Wager = new("wager", "Tourney bets", "gold", AlertLevel.Minor, AlertWindow.Tourney);
+    public static readonly AlertKind Scry = new("scry", "Scry the fight", "compass", AlertLevel.Decision, AlertWindow.None);
 
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Sighted, Lurker, Captives, Doom, Crisis, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Balance, Fealty, Clash, Traitor, Plot, Stores, Story, Explorers, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Loot, Stalled, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Outpost, Housing, Crowded];
+        [Siege, Sighted, Lurker, Captives, Doom, Crisis, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Balance, Fealty, Clash, Traitor, Plot, Stores, Story, Scry, Explorers, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Loot, Stalled, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Outpost, Housing, Crowded];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
-    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Crowds, Keepers, Outposts, Lists];
+    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Word, Crowds, Keepers, Outposts, Lists];
 
     public static List<Alert> Standing(Town town) => Rules.SelectMany(r => r(town)).ToList();
 
@@ -132,7 +133,7 @@ public static class Alerts
         }
         else if (t.Enemy.Stage == ThreatStage.Raids)
             yield return new("raids", Siege, "Raiders by night", "The warband raids the town when its heroes are away. Build walls, hire the watch, clear the war camp.");
-        foreach (var m in t.Saga.Menaces.Where(m => m.Alive && m.Named && m.ArrivalTick is int).OrderBy(m => m.Id))
+        foreach (var m in t.Saga.Menaces.Where(m => m.Alive && Discovery.Known(t, m) && m.ArrivalTick is int).OrderBy(m => m.Id))
         {
             int days = Math.Max(1, (int)Math.Ceiling((m.ArrivalTick!.Value - t.Tick) / 24.0));
             yield return new($"menace:{m.Id}", Siege, $"{Cap(m.Name)} in {Days(days)}", $"The host of {m.Name} marches from {m.SeatName} on the {Garrison.Place(t, m.Approach)}. Call the watch to arms there and the heroes home.", AtTown: true, Wall: m.Approach);
@@ -338,10 +339,8 @@ public static class Alerts
         if (t.Research.Study != null) yield break;
         var open = Research.Open(t);
         if (open.Count == 0) yield break;
-        // Only once the town can pay for one: a study it can't afford isn't an action yet.
-        if (!open.Any(d => (t.Research.Progress.ContainsKey(d.Id) ? 0 : Research.Commission(t, d)) <= t.Treasury)) yield break;
         yield return new("scholars", Scholars, "The scholars are idle",
-            $"{open.Count} {(open.Count == 1 ? "discovery is" : "discoveries are")} ready to study, {open[0].Name.ToLowerInvariant()} the cheapest. Set the scholars to work in the Library window.");
+            $"{open.Count} {(open.Count == 1 ? "discovery is" : "discoveries are")} ready to study, {open[0].Name.ToLowerInvariant()} the quickest. Set the scholars to work in the Library window.");
     }
 
     /// <summary>A friend in the wilds whose need the town can meet now, and a villain's plan close to done.</summary>
@@ -475,6 +474,19 @@ public static class Alerts
                 timber > 0 && !t.Buildings.Any(q => q.Complete && q.Def.Id == "lumber_camp") ? "There is no lumber camp: zone industry for one, or" : "Wait for the market to fill, or";
             yield return new($"stalled:{b.Id}", Stalled, $"{Cap(b.Name)} waits for {what}",
                 $"The builders stand idle: the market has no {what} left. {from} send for it by caravan from the site ({Js.Str(Construction.CaravanCost(t, b))}g).", BuildingId: b.Id);
+        }
+    }
+
+    /// <summary>A party that sent word home is in the fight now, out of sight: a scrying would show it.</summary>
+    private static IEnumerable<Alert> Word(Town t)
+    {
+        int ready = Knowledge.Ready(t);
+        if (ready == 0) yield break;
+        foreach (var p in t.Parties.Where(p => !p.Returned && p.Asked > 0 && p.RecalledTick == null).OrderBy(p => p.Id))
+        {
+            if (Knowledge.LegOf(t, p) != Leg.AtSite || Quests.Site(t, p.SiteId) is not { } site || Watch.LiveOf(t, site) != null) continue;
+            yield return new($"scry:{p.Id}", Scry, $"The {p.Name} go into {site.Def.Name}",
+                $"Fighting out of sight. Scry to watch · {ready} ready", SiteId: site.Def.Id);
         }
     }
 

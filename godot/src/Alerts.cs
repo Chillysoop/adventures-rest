@@ -429,10 +429,12 @@ public partial class Main
         _alertList.Visible = false;
     }
 
-    /// <summary>A click anywhere outside the open list closes it.</summary>
+    /// <summary>A click anywhere outside the open list (or the build bar) closes it.</summary>
     public override void _Input(InputEvent e)
     {
-        if (_openKind == null || e is not InputEventMouseButton { Pressed: true } mb) return;
+        if (e is not InputEventMouseButton { Pressed: true } mb) return;
+        ClickOffBuildBar(mb);
+        if (_openKind == null) return;
         var p = mb.Position;
         if (_alertList.GetGlobalRect().HasPoint(p) || _alertRow.GetGlobalRect().HasPoint(p)) return;
         CloseAlertList();
