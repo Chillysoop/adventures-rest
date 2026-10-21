@@ -327,8 +327,8 @@ public sealed class Simulation
     /// <summary>Answer a menace's demand for fealty: bend the knee and pay tribute, or refuse and face its host.</summary>
     public bool AnswerDemand(int menaceId, bool submit) => Menaces.Answer(Town, menaceId, submit);
 
-    /// <summary>Pay a caster in town to scry a site, showing it live for a few hours.</summary>
-    public Scrying? CommissionScrying(string siteId) => Knowledge.CommissionScrying(Town, siteId);
+    /// <summary>Scry a site live for a few hours: the Scrying Pool if it has one left, else a rested caster (the named one) on their terms: free, gold or a favour.</summary>
+    public Scrying? CommissionScrying(string siteId, int? casterId = null) => Knowledge.CommissionScrying(Town, siteId, casterId);
 
     /// <summary>Mark a spot in the wilds (days of march east and south of the town) and pay a company to go and look at it.</summary>
     public Commission? MarkSpot(double x, double y, double? reward = null) => Explore.PostSpot(Town, x, y, reward);
