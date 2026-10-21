@@ -29,6 +29,7 @@ public partial class Main
         [Tab.City] = "The city",
         [Tab.Ledger] = "Ledger",
         [Tab.War] = "War",
+        [Tab.Defence] = "Defence",
         [Tab.Council] = "Council",
         [Tab.Bounties] = "Bounties and the road",
         [Tab.Companies] = "Adventurers' roster",
@@ -110,7 +111,7 @@ public partial class Main
         _clock.MouseFilter = MouseFilterEnum.Pass;
         bar.AddChild(_clock);
         _threatPill = new PanelContainer { SizeFlagsVertical = SizeFlags.ShrinkCenter };
-        Ui.KeywordOn(_threatPill, "warband", () => Stages[_sim.Town.Enemy.Stage].Text);
+        Ui.KeywordOn(_threatPill, "warband", () => Stages[SeenStage(_sim.Town)].Text);
         _threat = Ui.Label("QUIET", Ui.Ink, Ui.Bold, 11);
         _threatPill.AddChild(_threat);
         bar.AddChild(_threatPill);
