@@ -25,7 +25,7 @@
       "gain": { "growth": 0.12 }
     },
     {
-      "id": "rite", "kinds": ["undead", "cult"],
+      "id": "rite", "kinds": ["undead", "cult", "fiends"],
       "things": ["the Rite of the Unquiet Fields", "the Long Vigil", "the Black Liturgy"],
       "text": "{leader} works {thing} at {site}, to raise the dead of every field.",
       "done": "{thing} is done. The dead of every battlefield rise for {name}, and {town} sleeps badly.",
@@ -41,7 +41,7 @@
       "gain": { "host": 0.15, "escapes": 1 }
     },
     {
-      "id": "heart", "kinds": ["undead", "cult", "schemers"],
+      "id": "heart", "kinds": ["undead", "cult", "schemers", "fiends"],
       "things": ["its heart in a jar", "a soul-vessel of black glass", "a second name, written in blood"],
       "text": "{leader} hides {thing} in {site}, so that death cannot keep it.",
       "done": "{thing} is hidden where nobody will find it. {name} will not die easily now.",
@@ -57,7 +57,7 @@
       "gain": { "host": 0.1, "growth": 0.08 }
     },
     {
-      "id": "pact", "kinds": ["schemers", "cult", "undead", "dragon"],
+      "id": "pact", "kinds": ["schemers", "cult", "undead", "dragon", "fiends"],
       "things": ["a pact of shadows", "a bargain sealed in ash"],
       "text": "{leader}'s envoys meet a great power at {site} to strike {thing}.",
       "done": "{thing} is struck at {site}. A great power now stands with {name}.",
