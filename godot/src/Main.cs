@@ -504,6 +504,7 @@ public partial class Main : Control
         else if (k.Keycode == Key.Escape && _drawer.Visible) CloseTray();
         else if (k.Keycode == Key.Escape && _inspector.Visible) Select(null);
         else if (k.Keycode == Key.Escape && _window.Visible) CloseWindow();
+        else if (k.Keycode == Key.Escape && _buildBar.Visible) ToggleBuildBar();
         else if (k.Keycode is Key.Q or Key.E)
         {
             _map.Rotate(k.Keycode == Key.Q ? -1 : 1);
@@ -516,12 +517,37 @@ public partial class Main : Control
         GetViewport().SetInputAsHandled();
     }
 
+    private string? _scrollHeading;
+    private int _scrollTries;
+
+    /// <summary>Scroll the open window to one of its headings once the pane has laid it out.</summary>
+    private void ScrollToHeading(string heading)
+    {
+        _scrollHeading = heading;
+        _scrollTries = 30;
+    }
+
+    private void SyncScrollTo()
+    {
+        if (_scrollHeading == null) return;
+        if (--_scrollTries < 0 || !_window.Visible || _windowTab is not Tab wt || !_scrolls.TryGetValue(wt, out var sc))
+        {
+            _scrollHeading = null;
+            return;
+        }
+        var head = _panes[wt].Box.GetChildren().OfType<Control>().FirstOrDefault(c => c.HasMeta("heading") && (string)c.GetMeta("heading") == _scrollHeading);
+        if (head == null || head.Position.Y <= 0) return;
+        sc.ScrollVertical = (int)head.Position.Y;
+        _scrollHeading = null;
+    }
+
     public override void _Process(double delta)
     {
         double dt = Math.Min(0.1, delta);
         // --scroll F: hold the open window scrolled to that share of its length (for screenshots).
         if (_opts.Scroll is float sf && _window.Visible && _windowTab is Tab wt && _scrolls.TryGetValue(wt, out var sc))
             sc.ScrollVertical = (int)(sf * Math.Max(0, sc.GetVScrollBar().MaxValue - sc.Size.Y));
+        SyncScrollTo();
         TickLens(dt);
         _acc += dt * Speeds[_speed];
         int steps = 0;

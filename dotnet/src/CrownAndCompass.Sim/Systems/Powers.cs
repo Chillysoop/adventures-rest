@@ -72,6 +72,59 @@ public sealed record PowerDef
     public PowerBoonDef Ally { get; init; } = new();
     public PowerBaneDef Enemy { get; init; } = new();
     public string ContractText { get; init; } = "";
+
+    /// <summary>Strange prices its envoys may ask instead of gold, and the chance they do.</summary>
+    public IReadOnlyList<StrangePriceDef> Strange { get; init; } = [];
+    public double StrangeChance { get; init; }
+}
+
+/// <summary>
+/// A price that isn't gold: "name" (a townsperson walks off to it and is never seen again), "harvest" (the farms
+/// yield <see cref="Amount"/> less for <see cref="Days"/>), "voice" (the mayor loses <see cref="Amount"/> Mandate).
+/// </summary>
+public sealed record StrangePriceDef
+{
+    public required string Id { get; init; }
+    public string Kind { get; init; } = "";
+    public double Amount { get; init; }
+    public int Days { get; init; }
+
+    /// <summary>The price as the envoy says it, and what the Ledger says when it is paid.</summary>
+    public string Text { get; init; } = "";
+    public string Paid { get; init; } = "";
+}
+
+/// <summary>
+/// Envoys the powers send the town (content/game/powers.json "envoys"): an alliance at a discount when a power
+/// likes the town nearly enough, a pact (it takes no enemy's gold for pactDays) when it is cordial, a demand for
+/// tribute when it is hostile. One comes every <see cref="Every"/> days from <see cref="From"/>; each waits
+/// <see cref="AnswerDays"/> for the town's answer.
+/// </summary>
+public sealed record PowerEnvoyRules
+{
+    public int From { get; init; } = 40;
+    public int Every { get; init; } = 25;
+    public int AnswerDays { get; init; } = 10;
+    public int Rest { get; init; } = 60;
+    public double AllianceWithin { get; init; } = 10;
+    public double AllianceDiscount { get; init; } = 0.7;
+    public double PactAt { get; init; } = -10;
+    public int PactDays { get; init; } = 120;
+    public double PactPrice { get; init; } = 1.5;
+    public double PactFavour { get; init; } = 5;
+    public double TributeBelow { get; init; } = -25;
+    public double Tribute { get; init; } = 2;
+    public double TributeFavour { get; init; } = 15;
+    public double Spurned { get; init; } = 10;
+    public double Declined { get; init; } = 3;
+    public string Alliance { get; init; } = "";
+    public string Pact { get; init; } = "";
+    public string Demand { get; init; } = "";
+    public string Accepted { get; init; } = "";
+    public string Refused { get; init; } = "";
+    public string Lapsed { get; init; } = "";
+    public string PactEnds { get; init; } = "";
+    public string Bandwagon { get; init; } = "";
 }
 
 public sealed record PowerTexts
@@ -96,6 +149,9 @@ public sealed record PowerRules
     public IReadOnlyDictionary<string, double> Cunning { get; init; } = new Dictionary<string, double>();
     public double AllyResist { get; init; } = 25;
     public int PerEnemy { get; init; } = 2;
+
+    /// <summary>How much more an enemy's envoys can offer for each power already marching with it.</summary>
+    public double Bandwagon { get; init; }
     public double Drift { get; init; } = 2;
     public double FavourFade { get; init; } = 0.25;
     public double GiftFavour { get; init; } = 12;
@@ -108,6 +164,7 @@ public sealed record PowerRules
     public double FreedFavour { get; init; } = -15;
     public string WarnText { get; init; } = "";
     public IReadOnlyList<PowerDef> Powers { get; init; } = [];
+    public PowerEnvoyRules Envoys { get; init; } = new();
     public PowerTexts Text { get; init; } = new();
 }
 
@@ -142,6 +199,22 @@ public sealed class PowerState
 
     /// <summary>The last thing heard of it, for its card.</summary>
     public string LastHeard { get; set; } = "";
+
+    /// <summary>Its envoy waiting on the town's answer: "alliance", "pact", "tribute" or "" for none.</summary>
+    public string Envoy { get; set; } = "";
+
+    /// <summary>The gold the envoy asks, or the strange price (its id) it asks instead.</summary>
+    public double EnvoyGold { get; set; }
+    public string EnvoyPrice { get; set; } = "";
+    public int EnvoyUntil { get; set; }
+    public int NextEnvoyDay { get; set; }
+
+    /// <summary>The last day of its pact with the town: until then it takes no enemy's gold.</summary>
+    public int PactUntil { get; set; }
+
+    /// <summary>A strange price still being paid, and its last day ("harvest").</summary>
+    public string Owed { get; set; } = "";
+    public int OwedUntil { get; set; }
 }
 
 /// <summary>
@@ -235,8 +308,13 @@ public static class Powers
                 case PowerSide.Enemy: Bane(town, p, d); break;
             }
             if (p.CourtedBy != null && town.Day >= p.DecideDay) Decide(town, p, d);
+            if (p.Envoy != "" && p.Side != PowerSide.Neutral) Done(town, p);
+            else if (p.Envoy != "" && town.Day >= p.EnvoyUntil) Lapse(town, p, d);
+            if (p.PactUntil == town.Day) News(town, p, Fill(town, r.Envoys.PactEnds, p, d), Importance.Notable);
+            if (p.Owed != "" && town.Day >= p.OwedUntil) p.Owed = "";
         }
         Court(town);
+        SendEnvoy(town);
     }
 
     private static string Fill(Town town, string text, PowerState p, PowerDef d, Menace? enemy = null) => Saga.Sentences(text
@@ -325,8 +403,9 @@ public static class Powers
     // Courting -----------------------------------------------------------------------------------
 
     /// <summary>What an enemy's envoys can offer a power, in standing: its power, times its wits.</summary>
+    /// <summary>Each power already marching with it makes the next one likelier to join: the bandwagon.</summary>
     public static double OfferOf(Town town, Menace m) =>
-        Js.Round(m.Power * Rules(town).Cunning.GetValueOrDefault(m.Cunning, 1) * Rules(town).OfferPerPower);
+        Js.Round(m.Power * Rules(town).Cunning.GetValueOrDefault(m.Cunning, 1) * Rules(town).OfferPerPower * (1 + Rules(town).Bandwagon * Backing(town, m).Count()));
 
     /// <summary>How far a power would hold out against an offer: its standing, and more if it is already the town's ally.</summary>
     public static double Resolve(Town town, PowerState p) => p.Standing + (p.Side == PowerSide.Town ? Rules(town).AllyResist : 0);
@@ -335,7 +414,7 @@ public static class Powers
     public static bool Buyable(Town town, PowerState p, Menace m)
     {
         var d = Def(town, p.Id);
-        return d.Serves == "any" && !d.Shuns.Contains(m.Kind) && p.Side != PowerSide.Enemy && p.CourtedBy == null;
+        return d.Serves == "any" && !d.Shuns.Contains(m.Kind) && p.Side != PowerSide.Enemy && p.CourtedBy == null && !Pacted(town, p);
     }
 
     /// <summary>Every courtEvery days the strongest risen enemy with the wits for it courts the power it could most easily buy.</summary>
@@ -357,7 +436,10 @@ public static class Powers
             p.CourtedBy = m.Id;
             p.Offer = offer;
             p.DecideDay = town.Day + r.NoticeDays;
-            News(town, p, Fill(town, r.Text.Courted, p, Def(town, p.Id), m));
+            string news = Fill(town, r.Text.Courted, p, Def(town, p.Id), m);
+            var backers = Backing(town, m).OrderBy(b => b.Id, StringComparer.Ordinal).Select(b => Name(town, b)).ToList();
+            if (backers.Count > 0) news += " " + Fill(town, r.Envoys.Bandwagon.Replace("{backers}", Expedition.ListNames(backers)), p, Def(town, p.Id), m);
+            News(town, p, news);
             return;
         }
     }
@@ -380,6 +462,200 @@ public static class Powers
         p.NextActDay = town.Day + Math.Max(5, d.Enemy.StrikeEvery / 2);
         p.Favour = Math.Min(p.Favour, 0);
         News(town, p, Fill(town, r.Text.Turned.Replace("{act}", d.Enemy.Text), p, d, m) + (wasAlly ? " It was the town's ally until today." : ""));
+    }
+
+    // Envoys ------------------------------------------------------------------------------------
+
+    /// <summary>Whether a pact with the town keeps it from taking any enemy's gold today.</summary>
+    public static bool Pacted(Town town, PowerState p) => p.PactUntil > town.Day;
+
+    /// <summary>What its envoy would come about today: an alliance, a pact, a demand for tribute, or nothing.</summary>
+    public static string EnvoyKind(Town town, PowerState p)
+    {
+        var e = Rules(town).Envoys;
+        var d = Def(town, p.Id);
+        if (p.Side != PowerSide.Neutral) return "";
+        if (p.Standing < e.TributeBelow) return d.Evil ? "tribute" : "";
+        if (p.Standing >= d.AllyAt - e.AllianceWithin) return "alliance";
+        if (p.Standing >= e.PactAt && d.Serves == "any" && !Pacted(town, p)) return "pact";
+        return "";
+    }
+
+    /// <summary>The gold an envoy of this kind asks.</summary>
+    public static double EnvoyAsk(Town town, PowerDef d, string kind)
+    {
+        var e = Rules(town).Envoys;
+        return Js.Round(kind switch
+        {
+            "alliance" => d.Price * e.AllianceDiscount,
+            "pact" => d.Gift * e.PactPrice,
+            "tribute" => d.Gift * e.Tribute,
+            _ => 0,
+        });
+    }
+
+    /// <summary>
+    /// Every few days one power sends the town an envoy: a demand from the most hostile first, then an alliance from
+    /// the friendliest, then a pact. The dice only choose whether a power with strange prices asks one.
+    /// </summary>
+    private static void SendEnvoy(Town town)
+    {
+        var e = Rules(town).Envoys;
+        if (town.Day < e.From || (town.Day - e.From) % Math.Max(1, e.Every) != 0) return;
+        var p = town.Powers
+            .Where(p => p.Envoy == "" && town.Day >= p.NextEnvoyDay && EnvoyKind(town, p) != "")
+            .OrderBy(p => EnvoyKind(town, p) switch { "tribute" => 0, "alliance" => 1, _ => 2 })
+            .ThenBy(p => EnvoyKind(town, p) == "tribute" ? p.Standing : -(p.Standing - Def(town, p.Id).AllyAt))
+            .ThenBy(p => p.Id, StringComparer.Ordinal)
+            .FirstOrDefault();
+        if (p == null) return;
+        var d = Def(town, p.Id);
+        string kind = EnvoyKind(town, p);
+        p.Envoy = kind;
+        p.EnvoyGold = EnvoyAsk(town, d, kind);
+        p.EnvoyPrice = kind != "tribute" && d.Strange.Count > 0 && town.Rng.Chance(d.StrangeChance) ? town.Rng.Pick(d.Strange).Id : "";
+        p.EnvoyUntil = town.Day + e.AnswerDays;
+        string text = kind switch { "alliance" => e.Alliance, "pact" => e.Pact, _ => e.Demand };
+        News(town, p, Fill(town, text.Replace("{price}", PriceText(town, p)).Replace("{boon}", d.Ally.Text).Replace("{answer}", e.AnswerDays.ToString()), p, d));
+    }
+
+    public static StrangePriceDef? Strange(Town town, PowerState p) =>
+        p.EnvoyPrice == "" ? null : Def(town, p.Id).Strange.FirstOrDefault(x => x.Id == p.EnvoyPrice);
+
+    /// <summary>What the envoy asks, as the town hears it: gold, or something stranger.</summary>
+    public static string PriceText(Town town, PowerState p) => Strange(town, p)?.Text ?? $"{Js.Str(p.EnvoyGold)} gold";
+
+    /// <summary>Why the town can't accept the envoy's terms now, or null if it can.</summary>
+    public static string? AnswerBlocked(Town town, PowerState p)
+    {
+        if (p.Envoy == "") return "no envoy";
+        if (Strange(town, p) is { } price)
+            return price.Kind == "name" && Named(town) == null ? "no one in town to give" : null;
+        return town.Treasury < p.EnvoyGold ? $"it asks {Js.Str(p.EnvoyGold)} gold" : null;
+    }
+
+    /// <summary>Who a "name" price takes: a grown townsperson who is no hero.</summary>
+    private static List<Agent> Nameable(Town town) =>
+        town.Residents.Where(a => !a.Dead && a.Hero == null && a.Age >= 16).OrderBy(a => a.Id).ToList();
+
+    private static Agent? Named(Town town) => Nameable(town).FirstOrDefault();
+
+    /// <summary>Pay a strange price, and say how it was paid.</summary>
+    private static void PayStrange(Town town, PowerState p, PowerDef d, StrangePriceDef price)
+    {
+        string person = "";
+        switch (price.Kind)
+        {
+            case "name":
+                var a = town.Rng.Pick(Nameable(town));
+                person = a.Name;
+                Population.Depart(town, a);
+                break;
+            case "harvest":
+                p.Owed = price.Id;
+                p.OwedUntil = town.Day + price.Days;
+                break;
+            case "voice":
+                town.Mandate = Math.Max(0, town.Mandate - price.Amount);
+                break;
+        }
+        if (price.Paid != "") News(town, p, Fill(town, price.Paid.Replace("{person}", person), p, d), Importance.Notable);
+    }
+
+    /// <summary>What the farms still bring in while a "harvest" price is being paid.</summary>
+    public static double Harvest(Town town)
+    {
+        double y = 1;
+        foreach (var p in town.Powers)
+            if (p.Owed != "" && Def(town, p.Id).Strange.FirstOrDefault(x => x.Id == p.Owed) is { Kind: "harvest" } h)
+                y *= 1 - h.Amount;
+        return y;
+    }
+
+    /// <summary>Answer a power's envoy: accept its terms and pay, or send it home.</summary>
+    public static bool Answer(Town town, string id, bool accept)
+    {
+        var p = Find(town, id);
+        if (p == null || p.Envoy == "") return false;
+        var d = Def(town, id);
+        var e = Rules(town).Envoys;
+        if (!accept)
+        {
+            Refuse(town, p, d, e.Refused);
+            return true;
+        }
+        if (AnswerBlocked(town, p) != null) return false;
+        string kind = p.Envoy;
+        string price = PriceText(town, p);
+        if (Strange(town, p) is { } strange) PayStrange(town, p, d, strange);
+        else town.Book(TreasuryAccount.Powers, -p.EnvoyGold);
+        switch (kind)
+        {
+            case "alliance":
+                p.Side = PowerSide.Town;
+                p.SideDay = town.Day;
+                p.Unpaid = 0;
+                break;
+            case "pact":
+                p.PactUntil = town.Day + e.PactDays;
+                p.Favour += e.PactFavour;
+                break;
+            case "tribute":
+                p.Favour += e.TributeFavour;
+                p.Standing = Math.Clamp(p.Standing + e.TributeFavour, -100, 100);
+                break;
+        }
+        // A power that has struck a bargain with the town sends the enemy's envoys home.
+        if (kind != "tribute" && Suitor(town, p) is { } m)
+        {
+            p.CourtedBy = null;
+            News(town, p, Fill(town, Rules(town).Text.Refused, p, d, m), Importance.Notable);
+        }
+        string terms = kind switch
+        {
+            "alliance" => $"an alliance: {d.Ally.Text}",
+            "pact" => $"a truce: {Name(town, d)} takes no enemy's gold for {Js.Str(e.PactDays)} days",
+            _ => "tribute",
+        };
+        Done(town, p);
+        News(town, p, Fill(town, e.Accepted.Replace("{terms}", terms).Replace("{price}", price), p, d));
+        return true;
+    }
+
+    private static void Lapse(Town town, PowerState p, PowerDef d) => Refuse(town, p, d, Rules(town).Envoys.Lapsed);
+
+    private static void Refuse(Town town, PowerState p, PowerDef d, string text)
+    {
+        var e = Rules(town).Envoys;
+        bool demand = p.Envoy == "tribute";
+        p.Favour -= demand ? e.Spurned : e.Declined;
+        Done(town, p);
+        News(town, p, Fill(town, text, p, d) + (demand ? $" {Capital(Name(town, d))} will remember it." : ""), demand ? Importance.Major : Importance.Notable);
+    }
+
+    private static string Capital(string name) => name.Length == 0 ? name : char.ToUpperInvariant(name[0]) + name[1..];
+
+    private static void Done(Town town, PowerState p)
+    {
+        p.Envoy = "";
+        p.EnvoyGold = 0;
+        p.EnvoyPrice = "";
+        p.NextEnvoyDay = town.Day + Rules(town).Envoys.Rest;
+    }
+
+    /// <summary>The envoy's terms for its card.</summary>
+    public static string EnvoyText(Town town, PowerState p)
+    {
+        var d = Def(town, p.Id);
+        var e = Rules(town).Envoys;
+        string price = PriceText(town, p);
+        return p.Envoy switch
+        {
+            "alliance" => $"offers an alliance for {price} (its price is {Js.Str(d.Price)} gold), then {Js.Str(d.Tithe)} gold a day",
+            "pact" => $"offers a truce for {price}: it takes no enemy's gold for {Js.Str(e.PactDays)} days",
+            "tribute" => $"demands tribute of {price}, or it will remember the slight",
+            _ => "",
+        };
     }
 
     // The player's levers ------------------------------------------------------------------------

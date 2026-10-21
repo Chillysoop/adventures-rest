@@ -110,7 +110,7 @@ public partial class Main
         b.AddThemeStyleboxOverride("normal", Castle.Button("normal", primary, 22, 8));
         b.AddThemeStyleboxOverride("hover", Castle.Button("hover", primary, 22, 8));
         b.AddThemeStyleboxOverride("pressed", Castle.Button("pressed", primary, 22, 8));
-        b.AddThemeStyleboxOverride("disabled", Castle.Button("disabled", primary, 22, 8));
+        b.AddThemeStyleboxOverride("disabled", Castle.Button("disabled", false, 22, 8));
         b.AddThemeColorOverride("font_color", Ui.Ink);
         b.AddThemeColorOverride("font_hover_color", Colors.White);
         b.AddThemeColorOverride("font_disabled_color", new Color(Ui.Ink2, 0.5f));
