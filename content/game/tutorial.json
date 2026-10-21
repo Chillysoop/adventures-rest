@@ -675,7 +675,7 @@
     {
       "id": "institutions",
       "title": "The town's institutions",
-      "text": "A town grows around its institutions: the temple district, an adventurers' hall, a druid grove, a grand bazaar, the famous tavern, and as it grows a gate over the undercity, a paladin chapterhouse, an alchemists' quarter, an artificers' foundry, a griffon roost, a fey market, the Delve over a giants' dungeon, a hall of heroes, a monster sanctuary, an auction house of uncertain lots, an embassy quarter, a dragon living by treaty, an oracle's observatory, a gatehouse to other planes, a bards' college and a grand arena. Each is run by a keeper with a name and a temper, does something for the whole town every day, and asks you for something now and then. In the [b]Institutions[/b] window, make each one's choice (which god the temple district honours, the tavern's style) and set how generously the council funds it: generous patronage buys more of its service and its keeper's goodwill. Raise the new ones from the Government build bar; the college and the arena form around the town's theatre and arena.",
+      "text": "Each [b]institution[/b] has a keeper, a daily service and requests now and then.\n• Make its choice\n• Fund it: generous buys more service and goodwill\n• Answer its keeper, or they sour",
       "point": "tab:Institutions",
       "when": "count:Institutions",
       "teaches": ["tab:Institutions", "command:FundInstitution", "command:ChooseInstitution"]
@@ -685,6 +685,14 @@
       "title": "On the road",
       "text": "Out on the road each hero takes a job: one [b]navigates[/b] hard country (Survival; a lost navigator costs hours), one [b]forages[/b] once the rations run out (hungry heroes fight worse), one [b]tracks[/b] a back way into the site, and the sharpest eyes keep watch while the best healer treats wounds on a rest. Everyday jobs are routine and never fail; avalanches, sandstorms and cliff climbs are not. The [b]On the road[/b] list in Bounties shows who does what. Out in the wilds are strange places too: wishing wells, dead-magic ground where no spell works, a bone ferryman who takes anyone over his water for a toll, oases (not all of them real) and old gateways that step a company days nearer, once someone answers the riddle or a friendly people tells the word.",
       "when": "count:Parties",
+        "teaches": []
+      },
+      {
+      "id": "institutions-discovery",
+      "title": "Institutions to discover",
+      "text": "The town starts knowing none of its [b]institutions[/b]: [b]0 of 23[/b].\nThey come to light from\n• heroes and folk who settle\n• crafts and trade\n• sites cleared\n• a bigger charter\nHeard-of ones show what they still need, then rise from the Government build bar.",
+      "point": "tab:Institutions",
+      "when": "count:InstitutionsSeen",
       "teaches": []
     },
     {
