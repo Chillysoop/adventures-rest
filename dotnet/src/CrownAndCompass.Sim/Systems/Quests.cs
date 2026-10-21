@@ -246,6 +246,9 @@ public static class Quests
     /// <summary>XP from the start of a level to the next.</summary>
     internal static int XpToNext(int level) => level >= XpLevels.Length ? 0 : XpLevels[level] - XpLevels[level - 1];
 
+    /// <summary>The XP a level starts at and the next one's, for a sheet's bar; null at the top level.</summary>
+    public static (int From, int To)? XpBand(int level) => level < 1 || level >= XpLevels.Length ? null : (XpLevels[level - 1], XpLevels[level]);
+
     private static readonly string[] PartyAdjectives = ["Ashen", "Iron", "Crimson", "Silver", "Gallows", "Lucky", "Broken", "Midnight", "Copper", "Wandering"];
     private static readonly string[] PartyNouns = ["Blades", "Lanterns", "Owls", "Shields", "Hounds", "Crows", "Compasses", "Wolves", "Pilgrims", "Daggers"];
 
