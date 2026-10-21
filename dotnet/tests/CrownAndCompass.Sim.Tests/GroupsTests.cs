@@ -55,7 +55,8 @@ public class GroupsTests
         {
             var sim = new Simulation(new SimulationOptions { Seed = seed });
             sim.RunDays(240);
-            foreach (var m in sim.Town.Saga.Menaces.Where(m => m.Origin != "awakened"))
+            // An awakened menace and the warband (seated at its own outpost) carry lineages of their own.
+            foreach (var m in sim.Town.Saga.Menaces.Where(m => m.Origin != "awakened" && m.Origin != Menaces.FromWarband))
             {
                 var seat = sim.Town.Sites.FirstOrDefault(s => s.Def.Id == m.SeatId);
                 if (seat == null || C.Group(seat.Def.Group) is not GroupDef g) continue;

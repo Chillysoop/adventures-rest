@@ -125,7 +125,8 @@ public static class Taverns
     public static TavernQuirk? Quirk(Town town, Building b)
     {
         var r = Rules(town);
-        if (r.Quirks.Count == 0 || !town.Taverns.Contains(b)) return null;
+        // Called for every drinker weighing every tavern, so it reads the building, not the town's tavern list.
+        if (r.Quirks.Count == 0 || !b.Def.Venue) return null;
         return r.Quirks[(int)(Voices.Hash("tavern-quirk", b.Id) % (uint)r.Quirks.Count)];
     }
 

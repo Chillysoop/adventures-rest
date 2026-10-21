@@ -51,7 +51,7 @@ public static class HedgeMages
 {
     public static HedgeRules Rules(Town town) => town.Content.Research.Hedge;
 
-    public static List<Agent> All(Town town) => town.Agents.Where(a => !a.Departed && a.HedgeSpell != "").OrderBy(a => a.Id).ToList();
+    public static List<Agent> All(Town town) => town.Agents.Where(a => a.HedgeSpell != "" && !a.Departed).OrderBy(a => a.Id).ToList();
 
     /// <summary>The spell a hedge mage works at their own workplace, or null.</summary>
     public static HedgeTrade? Working(Town town, Agent a) =>
