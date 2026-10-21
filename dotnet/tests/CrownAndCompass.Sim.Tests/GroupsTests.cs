@@ -63,7 +63,7 @@ public class GroupsTests
             }
             foreach (var m in sim.Town.Saga.Menaces.Where(m => m.Origin != "awakened" && born[m.Id] == m.SeatId))
             {
-                var seat = sim.Town.Sites.FirstOrDefault(s => s.Def.Id == m.SeatId);
+                var seat = sim.Town.Sites.FirstOrDefault(s => s.Def.Id == m.BornSeatId);
                 if (seat == null || C.Group(seat.Def.Group) is not GroupDef g) continue;
                 Assert.Equal(g.Lineage, m.Lineage);
                 checkedSome++;

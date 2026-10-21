@@ -170,7 +170,7 @@ public partial class Main
                 double cost = Mercenaries.CampaignCost(t, id);
                 p.Row(text, ($"Send {Ui.Cap(Mercenaries.Def(t, id).Name)} · {cost:N0}g", Mercenaries.MarchBlocked(t, id, mid) == null, true, () => Act(() => _sim.MarchMercenaries(id, mid))));
             }
-            else p.Row(text, ("Hire sellswords", true, false, () => OpenWindow(Tab.War)));
+            else p.Row(text, ("Hire sellswords", true, false, () => OpenWindow(Tab.Army)));
             shown++;
         }
         var slay = t.Content.Bounties.Term("slay");

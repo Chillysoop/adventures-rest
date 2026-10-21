@@ -1,0 +1,45 @@
+{
+  "_doc": "Taverns with a character (Systems/Taverns.cs). Every keeper has a past (picked by a stable hash of the keeper) with a perk: heroes (heroes drinking there gain value loyalty an hour), calm (value added to the keeper's roll to calm a brawl), ale (ale costs value times as much), perform (value added to songs there), watch (value added to the watch's strength), warm (value more loneliness eased a drink). Requests from a keeper are stories that need keeper:<past>. Every tavern has a quirk (by hash of the building) that draws its own crowd (townsfolk with one of its traits, or heroes) from draw tiles further, and changes talk (added to talk rolls), brawls (times the chance) and songs (added). Every drinker has a persona (by hash) that shows from at drinks on: talk added, brawls times; at most one persona line a tavern every personaEvery evening hours. Slang: each town says each plain word its own way (by hash of the town's name), in tavern talk and rumours only, never on prices. Blood: a drunk hero (drinks or more) who rolls a natural 20 in a brawl against a townsperson kills them chance per mille of the time; the kin want weregild (story need bloodied).",
+  "pasts": [
+    { "id": "adventurer", "name": "a retired adventurer", "story": "walked the far roads with a company of five and came home alone", "perk": "heroes", "value": 0.06, "perkText": "Heroes who drink here grow fonder of the town." },
+    { "id": "sergeant", "name": "an old watch sergeant", "story": "kept the peace on the river docks for twenty years", "perk": "calm", "value": 4, "perkText": "Brawls here are stopped more often." },
+    { "id": "smuggler", "name": "a former smuggler", "story": "ran brandy past the toll-keepers until the toll-keepers were paid to look away", "perk": "ale", "value": 0.85, "perkText": "Ale here is cheaper, and nobody asks where it came from." },
+    { "id": "minstrel", "name": "a minstrel who lost their voice", "story": "sang at a duke's court until a fever took their voice", "perk": "perform", "value": 3, "perkText": "Songs here go down better." },
+    { "id": "informer", "name": "a one-time informer", "story": "sold secrets to three crowns and was hanged by none of them", "perk": "watch", "value": 0.03, "perkText": "The keeper tells the watch what they hear." },
+    { "id": "widow", "name": "a kind-hearted widow", "story": "buried a husband and two sons and opened her doors to everyone else's", "perk": "warm", "value": 6, "perkText": "Nobody stays lonely here for long." }
+  ],
+  "quirks": [
+    { "id": "barge", "name": "built in a beached river barge", "text": "The floor still rolls a little, they swear.", "traits": ["Gregarious"], "draw": 10, "talk": 1 },
+    { "id": "cellar-pit", "name": "with a fighting pit in the cellar", "text": "Scores are settled downstairs, with fists, by the rules.", "traits": ["HotTempered"], "heroes": true, "draw": 12, "brawl": 1.6 },
+    { "id": "hush-house", "name": "where by old custom nobody raises their voice", "text": "Drinkers speak only in whispers, and a shout gets you thrown out.", "traits": ["Shy"], "draw": 12, "talk": -1, "brawl": 0.3 },
+    { "id": "singing-house", "name": "where every guest sings for their first drink", "text": "Nobody gets served until they have sung, however badly.", "traits": ["Gregarious", "Romantic"], "draw": 10, "perform": 3 },
+    { "id": "fortune-fire", "name": "with a fortune-teller by the fire", "text": "She reads cards for a copper, and she is right too often.", "traits": ["Romantic"], "draw": 12, "talk": 1 },
+    { "id": "shield-wall", "name": "hung with the broken shields of adventurers", "text": "Every shield on the wall has a story, and the keeper tells them all.", "heroes": true, "draw": 14 },
+    { "id": "dice-den", "name": "with dice games running all night", "text": "Fortunes change hands at the back table, and tempers with them.", "traits": ["Greedy", "Ambitious"], "draw": 12, "brawl": 1.3 }
+  ],
+  "personas": [
+    { "id": "weeper", "name": "a weeper", "at": 3, "talk": 1, "brawl": 0.5, "lines": ["{name} has had three ales and is weeping into the fourth about a dog they had as a child. Half of {tavern} is weeping with them.", "{name} tells {tavern} through their tears that they love every one of them, even the ones they don't."] },
+    { "id": "singer", "name": "a singer", "at": 3, "talk": 1, "brawl": 0.8, "lines": ["{name} climbs onto a table at {tavern} and sings every verse of a ballad nobody asked for.", "{name} is on their fourth ale and their ninth song. {tavern} has given up and joined in."] },
+    { "id": "philosopher", "name": "a philosopher", "at": 3, "talk": 0, "brawl": 0.7, "lines": ["{name} has worked out, over three ales, why the gods made {slang:the mayor}. Nobody at {tavern} can follow it.", "{name} corners a stranger at {tavern} to explain what a tavern really is."] },
+    { "id": "boaster", "name": "a boaster", "at": 3, "talk": -1, "brawl": 1.3, "lines": ["{name} tells {tavern} how they once wrestled a bear. The bear grows bigger with every ale.", "{name} swears to {tavern} they could out-fight any of {slang:the watch}, and offers to prove it."] },
+    { "id": "scrapper", "name": "a scrapper", "at": 3, "talk": -2, "brawl": 1.8, "lines": ["{name} is three ales in and looking at everyone at {tavern} as if they owe them money.", "{name} knocks over a stool at {tavern} and dares anyone to say something."] },
+    { "id": "sleeper", "name": "a sleeper", "at": 3, "talk": -1, "brawl": 0.3, "lines": ["{name} is asleep on the bar at {tavern}, snoring like a saw.", "{name} nods off mid-sentence at {tavern}, and the regulars stack mugs on their head."] },
+    { "id": "romantic", "name": "a moon-eyed lover", "at": 3, "talk": 2, "brawl": 0.6, "lines": ["{name} declares their love for the whole of {tavern}, one table at a time.", "{name} writes a poem on a beer-mat at {tavern} and gives it to the wrong person."] }
+  ],
+  "personaEvery": 10,
+  "slang": [
+    { "plain": "the watch", "words": ["the lanterns", "the long coats", "the brass", "the knockers"] },
+    { "plain": "the mayor", "words": ["the chain", "old seal", "the big chair", "his lordship upstairs"] },
+    { "plain": "adventurers", "words": ["road-dogs", "delvers", "blades", "torch-bearers"] },
+    { "plain": "goblins", "words": ["greenies", "sneaks", "little knives"] },
+    { "plain": "treasure", "words": ["shine", "the yellow", "glint"] },
+    { "plain": "dead", "words": ["under the turf", "gone to the ferryman", "cold"] }
+  ],
+  "blood": {
+    "drinks": 3,
+    "chance": 400,
+    "line": "The brawl at {tavern} ends wrong: {hero}, drunk, hits {victim} once too hard, and {victimName} does not get up. {kin} want blood money.",
+    "settled": "{kin} take the weregild for {victim}, and the matter is closed at the town hall.",
+    "feud": "{kin} swear a feud on {hero} for {victim}'s death. There will be no peace between them now."
+  }
+}

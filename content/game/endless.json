@@ -1,0 +1,38 @@
+{
+  "_doc": "Endless mode (Systems/Endless.cs, SimulationOptions.Endless). A win doesn't end the campaign: it closes an era. After restDays something worse arrives, a herald crowned the next big bad at its last foe's level plus levelUp (never below the finale's), and one complication strikes the town. Heralds are Saga fallback foes (kind, leader, lineage in history.json, text with {region}, {town}, {old} for the last big bad's leader). Complications: dread, mandate, gold (share of the treasury lost), empower (share every living menace grows), harvest (share the farms lose) for days.",
+  "restDays": [20, 40],
+  "levelUp": 2,
+  "heralds": [
+    {
+      "id": "rift", "kind": "cult", "leader": "the Voice Beyond the Rift", "lineage": "hollow-choir",
+      "text": "A rift tears open over {region}, and a hymn comes out of it. Whatever waits behind the grave's door has heard {town}'s victory bells and taken them for a knock."
+    },
+    {
+      "id": "behemoth", "kind": "beasts", "leader": "the Thunder-Behemoth", "lineage": "tyranny-broods",
+      "text": "The ground shakes from {region} to {town}'s walls. The last and greatest hound of the Wyrm-Tyranny has woken, the size of a hill, and it is hungry."
+    },
+    {
+      "id": "lich", "kind": "undead", "leader": "{old}", "lineage": "ninefold-dead",
+      "text": "{old} did not stay finished. It walks out of {region} with no heartbeat and a long memory, and it remembers {town}."
+    },
+    {
+      "id": "regent", "kind": "dragon", "leader": "Morgrevast, Regent of Ash", "lineage": "ash-regents",
+      "text": "Smoke on {region}: the eldest of the Ash Regents has come down from the peaks to claim a throne nobody else is strong enough to hold."
+    },
+    {
+      "id": "green", "kind": "beasts", "leader": "the Green Elder", "lineage": "elder-wild",
+      "text": "The trees of {region} march. The forest of the Elder Age has decided {town} has grown too large, and it means to take its fields back."
+    },
+    {
+      "id": "deep", "kind": "schemers", "leader": "the Choir in the Coil", "lineage": "coil-whisperers",
+      "text": "Something long sunk under {region} has bought its first councillor. The serpent-priests of the Coil are rising, and they have watched {town} grow rich."
+    }
+  ],
+  "complications": [
+    { "id": "moonfall", "text": "The night after, the moon cracks. A piece of it falls burning into the wilds and the whole land is afraid.", "dread": 20 },
+    { "id": "blight", "text": "A grey blight runs through the fields. Wheat rots on the stalk for the next season.", "harvest": 0.3, "days": 120 },
+    { "id": "dead-god", "text": "A dead god stirs in its grave. Every shrine goes cold for a night, and folk ask what the mayor did to deserve it.", "mandate": -15, "dread": 10 },
+    { "id": "wild-magic", "text": "Wild magic washes over the land. Every lair and lord in the wilds drinks it in and grows.", "empower": 0.4 },
+    { "id": "gold-curse", "text": "A curse on gold: coins in the treasury turn to lead overnight.", "gold": 0.3 }
+  ]
+}

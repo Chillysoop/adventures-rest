@@ -7,6 +7,8 @@
   project. The owner never opens GitHub, an engine or any other tool: show progress as summaries, Ledgers, screenshots and playable builds.
 - Decided: real time with pause on top of a daily strategic tick.
 - Priorities: low-cost scalability, efficiency, speed, quality, style.
+- Future expansion (not built): the underdark and other planes (fey, hells, space) as separate giant map layers
+  reached by ancient portals found on the map or portals the player builds late and must guard. See `docs/map-layers.md`; don't hard-wire "one map".
 
 ## Working here
 
@@ -66,6 +68,12 @@
   `Construction.Crews`; the stand-in mayor adds one below `Construction.Wanted`), whose builders work the nearest site
   (`Construction.SiteFor`). A house grows a storey only with `HousingDef.Near` services within `nearReach`, `Foods` kinds of
   food and `Beauty` appeal (`City.NeedsBlocked`).
+- Zone layouts (city.json `markets`, `closes`): each zone grows its own way. Shops: `Streets.Markets` lays a rectangular
+  market square (`Street.Market`) in shop paint with a straight high street to the nearest street, once the town keeps
+  `shopsEach` shops per square; shops front its rim first, a side all facing one way. Homes: `Streets.Closes` lays a wandering
+  side lane (`Street.Close`, never paved) from the deepest open home paint. Fields are client-side (`TownView.Fields`): each
+  farm works the farmland nearest it in rows the way it faces, hedgerows on the bounds, a farmstead only on the oldest farm per
+  2.6 tiles. The zone brush shows paint only, never outlines of buildings to come. `--zone farmland|commercial|residential|square` aims shots.
 - Monuments (`Systems/Monuments.cs`, parts in buildings.json with `partOf`, `after`, `favour`): the town hall, temple and keep
   grow by parts, each its own civic building beside the core (`Building.ParentId`) with its own bonuses and a daily `favour`
   with the god (`"god"`) or a faction (`"faction:id"`, negative for a rival). `Building.Grow` lets the council add the cheapest
@@ -108,6 +116,9 @@
   another system, capped in decor.json. Pieces claim plan cells (`Decor.Cells`, `LandPlan.Decor`): `Land.Fits` and lanes go
   round them, and they never stand on a lane. Appeal adds to house contentment (`Decor.Comfort`) and to ward land prices
   (`Decor.Prestige`). `--beautify D` dresses a town for screenshots; `--decor oak --decor-at x,y,a` shows the tool.
+- UI text (`docs/ui-text.md`, kit in `godot/src/UiKit.cs`): Conner wants little text. Icon before word (`Ui.Chip`), one point a
+  line (`Ui.Bullets`), explanations in hovers (`Ui.Tip`, `Ui.Brief`; `Pane.Note` briefs itself), colour by meaning, short labels.
+  Every pane heading has an icon (`Ui.HeadingIcons`); every god has `god-<id>`. New icons go in `scripts/icons.ts`.
 - Menus: every window is one click on the left rail (`godot/src/Dock.cs`, `Groups`/`Blurbs`, Shift+number `QuickTabs`); its
   badges count the alerts whose `AlertWindow` it answers, so a new alert badges its window for free. The action tray on the
   right (`godot/src/Tray.cs`: Bounties, Council, Events, War) slides out a drawer to act without a window. The top bar's
@@ -132,6 +143,11 @@
   witch hunters...) that hold sites of their own in the themes they name, with their own foes, bosses and a history.json lineage
   (subject `group:id`, or an existing enemy's lineage for a version of it). A cleared group site is retaken by its own bosses.
   Monster names: SRD/CC-BY or originals only; WotC-only creatures get an original name and look (report https://claude.ai/artifact/RLbN5w9GFQ976uamUqgPDw).
+- First meetings (`content/game/intros.json`, `Systems/Intros.cs`, client `godot/src/Intros.cs`, `Vignette.cs`): every history.json
+  lineage a town can meet (menace, foe, group, people, faction) has one line there: a scene, a host look, colours, a crest glyph
+  (`crest-<lineage>` from `scripts/icons.ts`) and a short line. The card stages the host live with the heroes' kit (creature bodies:
+  `Frame.Spider`, `Wyrm`, `Wraith`, `Crawler`, `Rat`) and shows once per lineage (`Intros.Due` over `Town.Discovered`; clock stop
+  `first-contact`). `IntrosTests` fails a lineage without one. Shots: `--intro <lineage>`.
 - Cliffs (`Systems/Cliffs.cs`, passage.json `cliffs`): plateaus in the near wilds past the plan, a pure function of the seed. Passage
   treats each as a barrier opened only at its ramps (`Passage.Obstacles`, `RoundCliffs` for roads); the client raises them
   (`WorldGen`) and faces them with rock (`WorldView.BuildCliffs`).

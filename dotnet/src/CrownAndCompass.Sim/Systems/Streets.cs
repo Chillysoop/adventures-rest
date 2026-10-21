@@ -181,7 +181,8 @@ public static class Streets
                     : Land.FaceToward(x, y, (k % n + 0.5) / Land.Res, (k / n + 0.5) / Land.Res);
                 yaw += (Land.Jitter(i * 5 + 3) - 0.5) * rules.Turn;
                 double dist = Math.Sqrt((x - Town.Center) * (x - Town.Center) + (y - Town.Center) * (y - Town.Center));
-                double score = (field[i] - least) / Land.Res * rules.Reach + rules.OffStreet + Land.Jitter(i * 5 + 4) * rules.Shuffle + dist * rules.Hall;
+                double score = (field[i] - least) / Land.Res * rules.Reach + rules.OffStreet + Land.Jitter(i * 5 + 4) * rules.Shuffle + dist * rules.Hall
+                    + (zone == Zone.Commercial ? town.Content.City.Markets.OffStreet : 0);
                 spots.Add((score, x, y, yaw));
             }
         }
@@ -258,16 +259,19 @@ public static class Streets
         const double step = 0.3;
         var rules = town.Content.City.Growth;
         bool grows = zone is Zone g && Planning.Paintable.Contains(g);
+        var markets = town.Content.City.Markets;
         foreach (var r in plan.Streets)
             for (int s = 0; s + 3 < r.Points.Length; s += 2)
             {
+                // Shops round a square stand shoulder to shoulder on its rim, each side's facing the same way.
+                bool square = r.Square && zone == Zone.Commercial;
                 double ax = r.Points[s], ay = r.Points[s + 1], bx = r.Points[s + 2], by = r.Points[s + 3];
                 double len = Math.Sqrt((bx - ax) * (bx - ax) + (by - ay) * (by - ay));
                 if (len < 1e-6) continue;
                 double ux = (bx - ax) / len, uy = (by - ay) / len;
                 for (int k = 0; k * step < len; k++)
                     for (int side = -1; side <= 1; side += 2)
-                        for (int yard = 0; yard < Yards.Length; yard++)
+                        for (int yard = 0; yard < (square ? 1 : Yards.Length); yard++)
                         {
                             int key = (((r.Id * 97 + s) * 211 + k) * 2 + (side + 1) / 2) * 8 + yard;
                             // Out from the street to the building's middle, behind a front yard if the verge is taken;
@@ -281,14 +285,153 @@ public static class Streets
                             if (plan.Taken[i] != 0 || plan.Paved[i] != 0) continue;
                             if (zone is Zone z ? plan.Zones[i] != (byte)z : plan.Zones[i] is not ((byte)Zone.None or (byte)Zone.Civic)) continue;
                             double dist = Math.Sqrt((x - Town.Center) * (x - Town.Center) + (y - Town.Center) * (y - Town.Center));
-                            double yaw = Math.Atan2(nx, -ny) + (Land.Jitter(key * 3 + 2) - 0.5) * 0.14;
+                            double yaw = Math.Atan2(nx, -ny) + (square ? 0 : (Land.Jitter(key * 3 + 2) - 0.5) * 0.14);
+                            if (square) (x, y) = (ax + ux * k * step + nx * Setback(d), ay + uy * k * step + ny * Setback(d));
                             // Painted zones fill from the built town outward (see Growth); the council's works and bastions keep near the hall.
                             spots.Add(grows
-                                ? (Land.Jitter(key) * rules.Shuffle + Yards[yard] * rules.Yard + dist * rules.Hall, x, y, yaw)
+                                ? (Land.Jitter(key) * rules.Shuffle + Yards[yard] * rules.Yard + dist * rules.Hall - (square ? markets.Pull : 0), x, y, yaw)
                                 : (dist + Land.Jitter(key) * 1.2 + Yards[yard] * 2, x, y, yaw));
                         }
             }
         return spots;
+    }
+
+    // Market squares and side lanes -----------------------------------------------------------------
+
+    /// <summary>The middle of a street's points (a square's centre).</summary>
+    private static (double X, double Y) Middle(Street r)
+    {
+        double x = 0, y = 0;
+        int m = r.Points.Length / 2;
+        for (int i = 0; i < m; i++) (x, y) = (x + r.Points[i * 2], y + r.Points[i * 2 + 1]);
+        return (x / m, y / m);
+    }
+
+    /// <summary>
+    /// Once a day: where shops are painted with room and no square lies near, the market grows a square of its own, a crisp
+    /// rectangle of trodden ground turned square to the nearest street and joined to it by a straight high street (unlike the
+    /// lanes homes wear, which wander). Shops then front its rim, each side's all facing the same way (<see cref="Frontage"/>).
+    /// </summary>
+    public static void Markets(Town town)
+    {
+        var rules = town.Content.City.Markets;
+        var plan = town.Plan;
+        if (plan.Streets.Count == 0 || Land.OpenCells(town, Zone.Commercial) < rules.Least) return;
+        // A new square only once the town keeps enough shops to line the ones it has.
+        if (town.Buildings.Count(b => b.Def.Zone == Zone.Commercial) < rules.ShopsEach * (plan.Streets.Count(r => r.Market) + 1)) return;
+        var squares = plan.Streets.Where(r => r.Square).Select(Middle).ToList();
+        int n = Land.Size, w = (int)Math.Round(rules.Width * Land.Res), d = (int)Math.Round(rules.Depth * Land.Res);
+        double best = double.MaxValue;
+        (double X, double Y, double Yaw, double SX, double SY)? pick = null;
+        var (bx0, by0, bx1, by1) = Land.Bounds(plan, 0);
+        for (int cy = Math.Max(2, by0); cy <= Math.Min(n - 3, by1); cy += 2)
+            for (int cx = Math.Max(2, bx0); cx <= Math.Min(n - 3, bx1); cx += 2)
+            {
+                int i = cy * n + cx;
+                if (plan.Zones[i] != (byte)Zone.Commercial || plan.Taken[i] != 0 || plan.Paved[i] != 0) continue;
+                double x = (cx + 0.5) / Land.Res, y = (cy + 0.5) / Land.Res;
+                if (squares.Any(q => (q.X - x) * (q.X - x) + (q.Y - y) * (q.Y - y) < rules.Spacing * rules.Spacing)) continue;
+                if (Nearest(town, x, y) is not { } st || st.D > rules.Reach || st.D < rules.Depth / 2 + 0.6) continue;
+                double dist = Math.Sqrt((x - Town.Center) * (x - Town.Center) + (y - Town.Center) * (y - Town.Center));
+                double score = dist + st.D * 0.5 + Land.Jitter(i * 3 + 11) * 1.5;
+                if (score >= best) continue;
+                // Its depth runs toward the street, so the high street meets its middle.
+                double yaw = Land.FaceToward(x, y, st.X, st.Y);
+                if (!Plaza(town, x, y, w, d, yaw, st.X, st.Y)) continue;
+                best = score;
+                pick = (x, y, yaw, st.X, st.Y);
+            }
+        if (pick is not { } p) return;
+        double fx = -Math.Sin(p.Yaw), fy = Math.Cos(p.Yaw), sx = Math.Cos(p.Yaw), sy = Math.Sin(p.Yaw);
+        double hw = w / 2.0 / Land.Res, hd = d / 2.0 / Land.Res;
+        (double U, double V)[] corners = [(-hw, -hd), (hw, -hd), (hw, hd), (-hw, hd), (-hw, -hd)];
+        var pts = new double[corners.Length * 2];
+        for (int k = 0; k < corners.Length; k++) (pts[k * 2], pts[k * 2 + 1]) = (p.X + sx * corners[k].U + fx * corners[k].V, p.Y + sy * corners[k].U + fy * corners[k].V);
+        var road = new Street { Id = plan.Streets.Count, Points = pts, Square = true, Market = true };
+        plan.Streets.Add(road);
+        foreach (int i in Land.Cells(p.X, p.Y, w, d, p.Yaw, 1))
+        {
+            if (i < 0) continue;
+            double x = (i % n + 0.5) / Land.Res, y = (i / n + 0.5) / Land.Res;
+            if (Inside(pts, x, y) && plan.Taken[i] == 0) plan.Paved[i] = 1;
+        }
+        for (int k = 0; k + 3 < pts.Length; k += 2) Stamp(plan, pts[k], pts[k + 1], pts[k + 2], pts[k + 3]);
+        // Its rim is the shops' to front: open unpainted ground a shop deep round it is painted for them.
+        var decor = Decor.Cells(town);
+        foreach (int i in Land.Cells(p.X, p.Y, w, d, p.Yaw, rules.Rim))
+            if (i >= 0 && plan.Zones[i] == (byte)Zone.None && plan.Taken[i] == 0 && plan.Paved[i] == 0 && plan.Grounds[i] == 0
+                && (decor == null || !decor[i]) && Land.Open(town, i))
+                plan.Zones[i] = (byte)Zone.Commercial;
+        plan.Painted++;
+        plan.Changed();
+        // The high street, ruler-straight from the square's front to the street.
+        double mx = p.X + fx * hd, my = p.Y + fy * hd;
+        if ((mx - p.SX) * (mx - p.SX) + (my - p.SY) * (my - p.SY) > 0.04) Lay(town, [mx, my, p.SX, p.SY]);
+        town.Log(LedgerCategory.Town, Importance.Routine, "The shopkeepers have gathered round a new market square.");
+    }
+
+    /// <summary>
+    /// Whether a square fits here: its ground and a margin round it open shop paint the charter reaches, off the wall strip and
+    /// decorations and not too steep (open shop paint or unpainted ground), near half its ring of shops' ground painted for shops, and the way to the street clear of buildings.
+    /// </summary>
+    private static bool Plaza(Town town, double x, double y, int w, int d, double yaw, double tx, double ty)
+    {
+        var plan = town.Plan;
+        var decor = Decor.Cells(town);
+        foreach (int i in Land.Cells(x, y, w, d, yaw, 1))
+            if (i < 0 || plan.Zones[i] is not ((byte)Zone.Commercial or (byte)Zone.None) || plan.Taken[i] != 0 || plan.Paved[i] != 0 || (decor != null && decor[i])
+                || plan.Grounds[i] != 0 || Land.OnWallStrip(town, i) || !Land.Open(town, i))
+                return false;
+        int ring = 0, shop = 0;
+        foreach (int i in Land.Cells(x, y, w, d, yaw, 4))
+        {
+            ring++;
+            if (i >= 0 && plan.Zones[i] == (byte)Zone.Commercial && plan.Taken[i] == 0) shop++;
+        }
+        if (shop * 20 < ring * 9) return false;
+        if (Hills.Span(town, x, y, w, d, yaw) > Hills.MaxSpan * 1.5) return false;
+        double len = Math.Sqrt((tx - x) * (tx - x) + (ty - y) * (ty - y));
+        for (double t = 0; t < len; t += 0.2)
+        {
+            int cx = (int)((x + (tx - x) * t / len) * Land.Res), cy = (int)((y + (ty - y) * t / len) * Land.Res);
+            if (cx < 1 || cy < 1 || cx >= Land.Size - 1 || cy >= Land.Size - 1) return false;
+            if (plan.Taken[cy * Land.Size + cx] != 0 || (Passage.Mask(town) is { } walls && walls[cy * Land.Size + cx])) return false;
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// Once a day: the open home paint deepest from any street, near what's built, gets a side lane wandering to the nearest
+    /// street, so homes grow along many lanes, close-packed, the way an old town's back streets run.
+    /// </summary>
+    public static void Closes(Town town)
+    {
+        var rules = town.Content.City.Closes;
+        var plan = town.Plan;
+        if (plan.Streets.Count == 0) return;
+        int n = Land.Size;
+        var walls = Passage.Mask(town);
+        for (int k = 0; k < rules.PerDay; k++)
+        {
+            var field = Field(plan);
+            var (built, _) = Built(plan);
+            int start = -1;
+            double best = double.MaxValue;
+            var (bx0, by0, bx1, by1) = Land.Bounds(plan, 0);
+            for (int cy = Math.Max(2, by0); cy <= Math.Min(n - 3, by1); cy++)
+                for (int cx = Math.Max(2, bx0); cx <= Math.Min(n - 3, bx1); cx++)
+                {
+                    int i = cy * n + cx;
+                    if (plan.Zones[i] != (byte)Zone.Residential || plan.Taken[i] != 0 || plan.Paved[i] != 0) continue;
+                    if (field[i] < rules.Deep * Land.Res || built[i] > rules.Near * Land.Res) continue;
+                    if (Blocked(plan, cx, cy) || (walls != null && walls[i]) || Land.OnWallStrip(town, i) || !Land.Open(town, i)) continue;
+                    double x = (cx + 0.5) / Land.Res, y = (cy + 0.5) / Land.Res;
+                    double score = Math.Sqrt((x - Town.Center) * (x - Town.Center) + (y - Town.Center) * (y - Town.Center)) + Land.Jitter(i * 3 + 7) * 1.5;
+                    if (score < best) (best, start) = (score, i);
+                }
+            if (start < 0 || Route(town, field, start, null, 12) is not { Count: > 1 } path) return;
+            Lay(town, Smooth(town, path)).Close = true;
+        }
     }
 
     // Desire paths -------------------------------------------------------------------------------
@@ -628,6 +771,12 @@ public sealed class Street
     public int Id { get; set; }
     public double[] Points { get; set; } = [];
     public bool Square { get; set; }
+
+    /// <summary>A side lane in homes' paint (<see cref="Streets.Closes"/>): it stays trodden earth, never paved.</summary>
+    public bool Close { get; set; }
+
+    /// <summary>A market square the shops grew round (<see cref="Streets.Markets"/>), flagged from the day it's laid.</summary>
+    public bool Market { get; set; }
 
     /// <summary>Tiles of it the masons have paved with stone (<see cref="Paving"/>), from the start or, if <see cref="FromEnd"/>, the end.</summary>
     public double Cobbled { get; set; }
