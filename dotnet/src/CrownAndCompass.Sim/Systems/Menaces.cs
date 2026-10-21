@@ -1164,7 +1164,7 @@ public static class Menaces
     public static void Track(Town town)
     {
         var entries = town.Ledger.Entries;
-        var known = town.Saga.Menaces.Where(m => m.Alive && (m.Named || m.Origin == FromWarband)).OrderBy(m => m.Id).ToList();
+        var known = Discovery.KnownMenaces(town);
         for (int i = Math.Max(0, town.Saga.HeardUpTo); i < entries.Count; i++)
         {
             var e = entries[i];
@@ -1200,6 +1200,7 @@ public static class Menaces
         // Nothing beyond the walls it could take tonight: it does not waste its warriors.
         if (!Threat.WorthRaiding(town, where, raiders)) return false;
         string place = where!.Name;
+        Discovery.Meet(town, m, Discovery.Attacked);
         Passage.Alarm(town, where);
         if (Threat.LocalDefense(town) * Garrison.FlagFactor(town, where) >= raiders)
         {

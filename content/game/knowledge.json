@@ -21,6 +21,9 @@
     "cost": 400,
     "smashPerTier": 0.015
   },
+  "scryRestDays": 2,
+  "scryPrice": { "free": 70, "favour": 40, "favourLoyalty": 6 },
+  "watchtowers": { "building": "watchtower", "sight": 30, "sightPerHundred": 4, "mostSight": 70, "residentsEach": 100 },
   "works": [
     { "building": "scrying_pool", "relic": "far-seeing-basin", "population": 30, "scryings": 1 },
     { "building": "sleepless_spire", "relic": "eye-of-the-sleepless-spire", "population": 55, "reach": 2 }

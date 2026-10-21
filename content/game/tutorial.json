@@ -673,10 +673,18 @@
     {
       "id": "institutions",
       "title": "The town's institutions",
-      "text": "A town grows around its institutions: the temple district, an adventurers' hall, a druid grove, a grand bazaar, the famous tavern, and as it grows a gate over the undercity, a paladin chapterhouse, an alchemists' quarter, an artificers' foundry, a griffon roost, a fey market, the Delve over a giants' dungeon, a hall of heroes, a monster sanctuary, an auction house of uncertain lots, an embassy quarter, a dragon living by treaty, an oracle's observatory, a gatehouse to other planes, a bards' college and a grand arena. Each is run by a keeper with a name and a temper, does something for the whole town every day, and asks you for something now and then. In the [b]Institutions[/b] window, make each one's choice (which god the temple district honours, the tavern's style) and set how generously the council funds it: generous patronage buys more of its service and its keeper's goodwill. Raise the new ones from the Government build bar; the college and the arena form around the town's theatre and arena.",
+      "text": "Each [b]institution[/b] has a keeper, a daily service and requests now and then.\n• Make its choice\n• Fund it: generous buys more service and goodwill\n• Answer its keeper, or they sour",
       "point": "tab:Institutions",
       "when": "count:Institutions",
       "teaches": ["tab:Institutions", "command:FundInstitution", "command:ChooseInstitution"]
+    },
+    {
+      "id": "institutions-discovery",
+      "title": "Institutions to discover",
+      "text": "The town starts knowing none of its [b]institutions[/b]: [b]0 of 23[/b].\nThey come to light from\n• heroes and folk who settle\n• crafts and trade\n• sites cleared\n• a bigger charter\nHeard-of ones show what they still need, then rise from the Government build bar.",
+      "point": "tab:Institutions",
+      "when": "count:InstitutionsSeen",
+      "teaches": []
     },
     {
       "id": "tales",
@@ -701,7 +709,9 @@
       "until": "dense",
       "when": "density",
       "teaches": []
-    }
+    },
+    {"id": "watchtowers", "title": "Watchtowers", "text": "Build a [b]Watchtower[/b] (Government) to see the wilds live.\n• Sees farther as the town grows\n• One per 100 residents\n• Past its sight, the fog stays", "point": "buildbar", "when": "day:12", "teaches": []},
+    {"id": "scry-word", "title": "Scry the fight", "text": "A party that sent word is fighting out of sight: the strip offers a [b]scry[/b].\n• Each caster scries once every 2 days\n• Loyal casters: free\n• Others: gold\n• Disaffected: a favour", "point": "alerts", "when": "alert:scry", "teaches": []}
   ],
   "untaught": {}
 }
