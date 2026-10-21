@@ -207,12 +207,13 @@ public partial class Main
                 int pick = Tournaments.Chances(_sim.Town, first).OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key).First().Key;
                 if (!_sim.PlaceBet(ev, pick, Tournaments.Rules(_sim.Town).Betting.Min)) throw new InvalidOperationException("the bet was refused");
                 OpenTourney();
-                for (int h = 0; h < 14; h++) _sim.Step();
+                // Until a heat is ridden: today's may be over by the hour, so tomorrow's event rides first.
+                for (int h = 0; h < 36 && (h < 14 || _sim.Town.Tourney.Events.All(e => e.Heats.Count == 0)); h++) _sim.Step();
                 _dirty = true;
                 return 40;
             }
             case 32:
-                if (!_tourney.Visible || _sim.Town.Tourney.Events[0].Heats.Count == 0) throw new InvalidOperationException("the tourney's heats did not show");
+                if (!_tourney.Visible || _sim.Town.Tourney.Events.All(e => e.Heats.Count == 0)) throw new InvalidOperationException("the tourney's heats did not show");
                 CloseTourney();
                 return 5;
             default:

@@ -434,7 +434,9 @@ public static class Menaces
         };
         Seat(town, m, seat);
         m.Cunning = cunning ?? CunningFor(town, IntOf(town, seat.Def.Boss.Monster));
-        m.Lineage = lineage ?? Annals.ForMenace(town.Content.History, kind, World.RegionOf(town, seat)?.Theme.Id)?.Id ?? "";
+        m.Lineage = lineage
+            ?? (town.Content.Group(seat.Def.Group) is GroupDef g && g.Lineage != "" ? g.Lineage : null)
+            ?? Annals.ForMenace(town.Content.History, kind, World.RegionOf(town, seat)?.Theme.Id)?.Id ?? "";
         m.Ambition = PickAmbition(town, kind, m.Cunning, m.Lineage);
         m.BaseLevel = World.LevelOf(seat);
         m.BornLevel = m.BaseLevel;
