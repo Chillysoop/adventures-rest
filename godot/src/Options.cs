@@ -123,6 +123,8 @@ public sealed class Options
     public int? Alert;
     /// <summary>For screenshots: show the hover summary of the alert icon at this position.</summary>
     public int? AlertHover;
+    /// <summary>--notices F: at frame F, treat the urgent and decision alerts standing then as just arrived, so their rail tiles slide out.</summary>
+    public int? Notices;
 
     /// <summary>Camera distance in tiles and an optional point to look at (--cam 40 --look 512,480), and the strategic view.</summary>
     public float? Cam;
@@ -237,6 +239,7 @@ public sealed class Options
                 case "--guilds": o.Guilds = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
                 case "--alert": o.Alert = int.Parse(Next()); break;
                 case "--alert-hover": o.AlertHover = int.Parse(Next()); break;
+                case "--notices": o.Notices = int.Parse(Next()); break;
                 case "--no-pause": o.NoPause = true; break;
                 case "--keep-reports": o.KeepReports = true; break;
                 case "--keep-armory": o.KeepArmory = true; break;
