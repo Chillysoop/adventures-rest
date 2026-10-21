@@ -11,39 +11,43 @@ public static class Hills
     /// <summary>Most a footprint's ground may rise from its lowest corner to its highest, in tiles of height.</summary>
     public const double MaxSpan = 0.45;
 
-    private sealed record Hill(double X, double Y, double H, double Rx, double Ry, double Angle);
+    private sealed record Hill(double X, double Y, double H, double Rx, double Ry, double Angle)
+    {
+        public double C { get; } = Math.Cos(Angle);
+        public double S { get; } = Math.Sin(Angle);
 
-    private static int _seed = int.MinValue;
-    private static Hill[] _hills = [];
-    private static readonly object Gate = new();
+        /// <summary>Past this many tiles in x or y the hill adds nothing (it fades out at three radii).</summary>
+        public double Reach { get; } = 3 * Math.Max(Rx, Ry);
+    }
+
+    private sealed record Set(int Seed, Hill[] Hills);
+
+    private static volatile Set _set = new(int.MinValue, []);
 
     private static Hill[] Of(int seed)
     {
-        lock (Gate)
+        var set = _set;
+        if (set.Seed == seed) return set.Hills;
+        var hills = new List<Hill>();
+        uint s = (uint)seed * 2654435761u + 0x9e3779b9u;
+        double Next()
         {
-            if (seed == _seed) return _hills;
-            var hills = new List<Hill>();
-            uint s = (uint)seed * 2654435761u + 0x9e3779b9u;
-            double Next()
-            {
-                s ^= s << 13;
-                s ^= s >> 17;
-                s ^= s << 5;
-                return (s & 0xffffff) / (double)0x1000000;
-            }
-            for (int i = 0; i < 40 && hills.Count < 9; i++)
-            {
-                double a = Next() * Math.PI * 2, d = 10 + Next() * 16;
-                double x = Town.Center + Math.Cos(a) * d, y = Town.Center + Math.Sin(a) * d;
-                if (hills.Any(h => Math.Abs(h.X - x) + Math.Abs(h.Y - y) < 5)) continue;
-                // Some round knolls, some long ridges.
-                double r = 2.6 + Next() * 3.6, stretch = Next() < 0.4 ? 1.8 + Next() : 1;
-                hills.Add(new Hill(x, y, 0.7 + Next() * 1.4, r * stretch, r, Next() * Math.PI));
-            }
-            _hills = [.. hills];
-            _seed = seed;
-            return _hills;
+            s ^= s << 13;
+            s ^= s >> 17;
+            s ^= s << 5;
+            return (s & 0xffffff) / (double)0x1000000;
         }
+        for (int i = 0; i < 40 && hills.Count < 9; i++)
+        {
+            double a = Next() * Math.PI * 2, d = 10 + Next() * 16;
+            double x = Town.Center + Math.Cos(a) * d, y = Town.Center + Math.Sin(a) * d;
+            if (hills.Any(h => Math.Abs(h.X - x) + Math.Abs(h.Y - y) < 5)) continue;
+            // Some round knolls, some long ridges.
+            double r = 2.6 + Next() * 3.6, stretch = Next() < 0.4 ? 1.8 + Next() : 1;
+            hills.Add(new Hill(x, y, 0.7 + Next() * 1.4, r * stretch, r, Next() * Math.PI));
+        }
+        _set = new Set(seed, [.. hills]);
+        return _set.Hills;
     }
 
     /// <summary>Ground height above the town's level at (x, y) in tiles.</summary>
@@ -54,8 +58,9 @@ public static class Hills
         double h = 0;
         foreach (var k in Of(seed))
         {
-            double dx = x - k.X, dy = y - k.Y, c = Math.Cos(k.Angle), s = Math.Sin(k.Angle);
-            double u = (dx * c + dy * s) / k.Rx, v = (-dx * s + dy * c) / k.Ry;
+            double dx = x - k.X, dy = y - k.Y;
+            if (Math.Abs(dx) > k.Reach || Math.Abs(dy) > k.Reach) continue;
+            double u = (dx * k.C + dy * k.S) / k.Rx, v = (-dx * k.S + dy * k.C) / k.Ry;
             double q = u * u + v * v;
             if (q < 9) h += k.H * Math.Exp(-q);
         }
