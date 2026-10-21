@@ -84,12 +84,18 @@ public sealed record FindKindDef
     public List<FindOptionDef> Options { get; init; } = [];
 }
 
-/// <summary>One step of investigating a find: hours spent, a party check against a DC, a risk if it fails, and a reward on the last.</summary>
+/// <summary>One step of investigating a find: time spent, a party check against a DC, a risk if it fails, and a reward on the last.</summary>
 public sealed record ChapterDef
 {
     public string Title { get; init; } = "";
     public string Text { get; init; } = "";
+
+    /// <summary>Game days the step takes (a look over a caravan is part of a day, reading a ruin's walls several); <see cref="Hours"/> when unset.</summary>
+    public double Days { get; init; }
     public int Hours { get; init; } = 8;
+
+    /// <summary>The hours the step takes.</summary>
+    public int Span => Days > 0 ? (int)Js.Round(Days * SimTime.HoursPerDay) : Hours;
     public string Skill { get; init; } = "";
     public int Dc { get; init; } = 12;
 
@@ -926,7 +932,7 @@ public static class Explore
         if (NextChapter(town, f) is { } ch)
         {
             string skill = SkillName(town, ch.Skill);
-            list.Add(new FindChoice("dig", $"Investigate further: {Lower(ch.Title)}", $"About {ch.Hours} hours. {skill} check, DC {Dc(town, f, ch)}{(f.Clues > 0 ? $" (easier for {f.Clues} {(f.Clues == 1 ? "try" : "tries")} already)" : "")}. {RiskText(ch.Risk)}", PartyChance(town, members, ch.Skill, Dc(town, f, ch)), null));
+            list.Add(new FindChoice("dig", $"Investigate further: {Lower(ch.Title)}", $"{SpanText(ch.Span)}. {skill} check, DC {Dc(town, f, ch)}{(f.Clues > 0 ? $" (easier for {f.Clues} {(f.Clues == 1 ? "try" : "tries")} already)" : "")}. {RiskText(ch.Risk)}", PartyChance(town, members, ch.Skill, Dc(town, f, ch)), null));
         }
         foreach (var o in Def(town, f).Options)
         {
@@ -959,6 +965,14 @@ public static class Explore
         int levels = members.Sum(m => m.Hero!.Level);
         string odds = f.Chapter == 0 ? "They do not know what is inside." : levels >= 3 * site.Def.Tier && members.Count >= 3 ? "They look strong enough for it." : "It looks like more than they can handle.";
         return $"They go in from where they stand. {odds}{(f.Chapter >= Def(town, f).Chapters.Count ? " They know its weakness." : "")}";
+    }
+
+    /// <summary>How long a step takes, as the company would put it: "About 8 hours", "About a day", "About 3 days".</summary>
+    public static string SpanText(int hours)
+    {
+        if (hours < 18) return $"About {hours} hours";
+        double days = Js.Round(hours / (double)SimTime.HoursPerDay * 2) / 2;
+        return days <= 1 ? "About a day" : $"About {Js.Str(days)} days";
     }
 
     private static string RiskText(string risk) => risk switch
@@ -1098,7 +1112,7 @@ public static class Explore
                 var ch = NextChapter(town, f)!;
                 f.State = FindState.Busy;
                 s.Phase = SurveyPhase.Investigating;
-                s.ResumeTick = town.Tick + ch.Hours;
+                s.ResumeTick = town.Tick + ch.Span;
                 f.Log.Add(Fill(town, f, ch.Text));
                 return;
             }
