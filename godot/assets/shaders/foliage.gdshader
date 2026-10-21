@@ -15,8 +15,9 @@ void vertex() {
 	wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	up = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz).y;
 	seed = fract(sin(dot(MODEL_MATRIX[3].xz, vec2(12.9898, 78.233))) * 43758.5453);
-	float sway = sin(TIME * 1.1 + wpos.x * 0.21 + wpos.z * 0.17) * 0.035 * max(VERTEX.y - 0.25, 0.0);
-	VERTEX.x += sway;
+	// Grass and flowers carry stalk wind (MeshKit.Sway); trees lean as a whole.
+	if (UV == vec2(0.0)) VERTEX.x += tree_sway(VERTEX, wpos, TIME);
+	else VERTEX = blow(VERTEX, UV, UV2, MODEL_MATRIX, TIME);
 	// Lit as if rounded: half the facet normal, half straight up, so crowns and blades read soft.
 	NORMAL = normalize(mix(NORMAL, vec3(0.0, 1.0, 0.0), 0.5));
 	VERTEX *= 1.0 - strategic;
