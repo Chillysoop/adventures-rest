@@ -212,15 +212,23 @@ public partial class Main
     /// <summary>The war in short: the enemy's stage, its strength against yours and the heroes at home.</summary>
     private void TrayWar(Pane p, Town t)
     {
-        var stage = Stages[t.Enemy.Stage];
-        string arrival = t.Enemy.Stage == ThreatStage.Marching && t.Enemy.ArrivalTick is int at
-            ? "\n" + Ui.C(Ui.Bad, $"[b]At the {Garrison.Place(t, t.Enemy.Approach)} in {Ui.Days((int)Math.Ceiling((at - t.Tick) / 24.0))}.[/b]")
-            : "";
-        p.Card($"{Ui.KindIcon("warband", 20)}[b]{Ui.Esc(Ui.Cap(t.Content.Enemy.Name))}[/b]  {Tag(stage.Label, stage.Level == 2 ? Ui.Bad : stage.Level == 1 ? Ui.Gold : Ui.Ink2)}\n[font_size=13]{stage.Text}[/font_size]{arrival}", stage.Level == 2 ? Ui.Bad : null);
-        double? est = Threat.EstimatedStrength(t);
         double def = Threat.Defense(t);
+        bool band = Threat.IsActive(t) && Discovery.Known(t, Discovery.Warband);
+        double? est = band ? Threat.EstimatedStrength(t) : null;
+        if (band)
+        {
+            var stage = Stages[t.Enemy.Stage];
+            string arrival = t.Enemy.Stage == ThreatStage.Marching && t.Enemy.ArrivalTick is int at
+                ? "\n" + Ui.C(Ui.Bad, $"[b]At the {Garrison.Place(t, t.Enemy.Approach)} in {Ui.Days((int)Math.Ceiling((at - t.Tick) / 24.0))}.[/b]")
+                : "";
+            p.Card($"{Ui.KindIcon("warband", 20)}[b]{Ui.Esc(Ui.Cap(t.Content.Enemy.Name))}[/b]  {Tag(stage.Label, stage.Level == 2 ? Ui.Bad : stage.Level == 1 ? Ui.Gold : Ui.Ink2)}\n[font_size=13]{stage.Text}[/font_size]{arrival}", stage.Level == 2 ? Ui.Bad : null);
+        }
+        var foes = Discovery.KnownMenaces(t).Where(m => m.Origin != Menaces.FromWarband).OrderByDescending(m => m.ArrivalTick != null).ThenByDescending(m => m.Power).ThenBy(m => m.Id).ToList();
+        foreach (var m in foes.Take(3))
+            p.Text($"{Ui.KindIcon(m.Kind, 16)}[b]{Ui.Esc(Ui.Cap(m.Name))}[/b]  {Tag(MenaceStages[m.Stage].Word, MenaceStages[m.Stage].Color)}{(m.ArrivalTick != null ? "  " + Tag("marching", Ui.Bad) : "")}", 13);
+        if (!band && foes.Count == 0) p.Text($"{Ui.Img("foe-unseen", 18)} {Ui.C(Ui.Ink2, "No foes known")}", 13);
         double scale = Math.Max(Math.Max(def, est ?? 0), 1);
-        if (Threat.IsActive(t) && est is double e) p.Meter("Warband", 100 * e / scale, $"~{Math.Round(e)}", true);
+        if (est is double e) p.Meter("Warband", 100 * e / scale, $"~{Math.Round(e)}", true);
         p.Meter("Your defence", 100 * def / scale, $"{Math.Round(def)}");
         int home = t.Heroes.Count(a => !a.IsAway);
         p.Text($"Heroes in town {Tag(home.ToString(), home == 0 ? Ui.Bad : Ui.Ink)}   The watch {Tag(t.Watch.ToString(), Ui.Ink)}", 13);
