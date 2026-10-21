@@ -102,6 +102,8 @@ public class TermsTests
         var site = Quests.Site(t, "goblin_warrens")!;
         site.Known = SiteKnowledge.Rumoured;
         t.Treasury += 1000;
+        // A story may already have posted one there.
+        t.Bounties.RemoveAll(x => x.SiteId == "goblin_warrens" && x.Status == BountyStatus.Open);
         var b = sim.PostBounty("goblin_warrens", 100, "fetch")!;
         b.Errand = "ward";
         t.Saga.Dread = 50;

@@ -193,6 +193,9 @@ public sealed class HeroSheet
 
     public bool Lodging { get; set; }
 
+    /// <summary>Sworn to the charter: the town hall keeps a bed for them, tavern or none.</summary>
+    public bool Sworn { get; set; }
+
     /// <summary>Healing potions from the general store, carried into the next delve.</summary>
     public int Potions { get; set; }
 
