@@ -283,11 +283,11 @@
     {
       "id": "decorate",
       "title": "Dress the town",
-      "text": "The build bar's [b]Decor[/b] tab has trees, benches, lamps, fountains, statues and more. Set them anywhere at any angle: click to place, drag to aim, and [b]R[/b] or Shift+wheel turns the piece. Drag fences and hedges into rows, paint trees and flowers, and clear pieces for half their price back. Every piece helps a little: benches rest the neighbours, lamps help the watch, stalls lift trade, statues win favour and loyalty, and houses on a pleasant street grow a storey sooner. Builders and lanes go round what you set down.",
+      "text": "The build bar's [b]Decor[/b] tab has trees, benches, lamps, fountains, statues and more. Set them anywhere at any angle: click to place, drag to aim, and [b]R[/b] or Shift+wheel turns the piece. The build bar tucks away while a piece is in hand and comes back once it is down; hold [b]Shift[/b] to place several. Drag fences and hedges into rows, paint trees and flowers, and clear pieces for half their price back. Every piece helps a little: benches rest the neighbours, lamps help the watch, stalls lift trade, statues win favour and loyalty, and houses on a pleasant street grow a storey sooner. Builders and lanes go round what you set down.",
       "point": "buildbar",
       "until": "decorated",
       "when": "day:22",
-      "teaches": ["command:Decorate", "command:ClearDecoration", "key:R"]
+      "teaches": ["command:Decorate", "command:ClearDecoration", "key:R", "key:Shift"]
     },
     {
       "id": "site-first",
@@ -363,7 +363,7 @@
       "point": "tab:Armory",
       "until": "tab:Armory",
       "when": "alert:gift",
-      "teaches": ["tab:Armory", "command:Gift", "command:BuyLoot", "command:SellStock", "command:OfferPact", "command:EndPact"]
+      "teaches": ["tab:Armory", "command:Gift", "command:Arm", "command:BuyLoot", "command:SellStock", "command:OfferPact", "command:EndPact"]
     },
     {
       "id": "alchemy",
@@ -471,6 +471,15 @@
       "point": "tab:Diplomacy",
       "until": "tab:Diplomacy",
       "teaches": ["command:AnswerEnvoy"]
+    },
+    {
+      "id": "guard-duty",
+      "title": "Heroes on guard",
+      "text": "Keep heroes home to guard the town. In the [b]War[/b] tab, or on a hero's sheet:\n• [b]Walls[/b]: stronger against raids and sieges; they meet the warlord first.\n• [b]Streets[/b]: the watch catches more spies, knives, thieves and fire-raisers.\nThey earn a daily wage and take no bounties. [b]Arm the guard[/b] hands them the armory's best in one click.",
+      "point": "tab:War",
+      "when": "day:20",
+      "until": "duty",
+      "teaches": ["command:SetDuty"]
     },
     {
       "id": "sellswords",
@@ -675,7 +684,7 @@
     {
       "id": "institutions",
       "title": "The town's institutions",
-      "text": "A town grows around its institutions: the temple district, an adventurers' hall, a druid grove, a grand bazaar, the famous tavern, and as it grows a gate over the undercity, a paladin chapterhouse, an alchemists' quarter, an artificers' foundry, a griffon roost, a fey market, the Delve over a giants' dungeon, a hall of heroes, a monster sanctuary, an auction house of uncertain lots, an embassy quarter, a dragon living by treaty, an oracle's observatory, a gatehouse to other planes, a bards' college and a grand arena. Each is run by a keeper with a name and a temper, does something for the whole town every day, and asks you for something now and then. In the [b]Institutions[/b] window, make each one's choice (which god the temple district honours, the tavern's style) and set how generously the council funds it: generous patronage buys more of its service and its keeper's goodwill. Raise the new ones from the Government build bar; the college and the arena form around the town's theatre and arena.",
+      "text": "Each [b]institution[/b] has a keeper, a daily service and requests now and then.\n• Make its choice\n• Fund it: generous buys more service and goodwill\n• Answer its keeper, or they sour",
       "point": "tab:Institutions",
       "when": "count:Institutions",
       "teaches": ["tab:Institutions", "command:FundInstitution", "command:ChooseInstitution"]
@@ -685,6 +694,14 @@
       "title": "On the road",
       "text": "Each hero on the road takes a job and rolls for it:\n• [b]Navigate[/b]: lost costs hours\n• [b]Forage[/b]: hungry heroes fight worse\n• [b]Track[/b]: a back way in\n• [b]Watch[/b] and [b]treat wounds[/b] at night\nEveryday jobs never fail; avalanches and sandstorms can. Watch for wells, dead-magic ground, ferrymen, oases and old gateways.",
       "when": "count:Parties",
+        "teaches": []
+      },
+      {
+      "id": "institutions-discovery",
+      "title": "Institutions to discover",
+      "text": "The town starts knowing none of its [b]institutions[/b].\nThey come to light from\n• heroes and folk who settle\n• crafts and trade\n• sites cleared\n• a bigger charter\nHeard-of ones show what they still need, then rise from the Government build bar.",
+      "point": "tab:Institutions",
+      "when": "count:InstitutionsSeen",
       "teaches": []
     },
     {
@@ -717,7 +734,17 @@
       "until": "dense",
       "when": "density",
       "teaches": []
-    }
+    },
+    {
+      "id": "board-riders",
+      "title": "Who can ride",
+      "text": "The [b]Bounty board[/b] opens on who is free to ride today.\n• Each threat has a coloured pill per company: green easy, red deadly, for those heroes\n• Click a pill to offer that company the job by name\n• Hover any button to see what it costs and does",
+      "point": "tab:Bounties",
+      "when": "count:Companies",
+      "teaches": []
+    },
+    {"id": "watchtowers", "title": "Watchtowers", "text": "Build a [b]Watchtower[/b] (Government) to see the wilds live.\n• Sees farther as the town grows\n• One per 100 residents\n• Past its sight, the fog stays", "point": "buildbar", "when": "day:12", "teaches": []},
+    {"id": "scry-word", "title": "Scry the fight", "text": "A party that sent word is fighting out of sight: the strip offers a [b]scry[/b].\n• Each caster scries once every 2 days\n• Loyal casters: free\n• Others: gold\n• Disaffected: a favour", "point": "alerts", "when": "alert:scry", "teaches": []}
   ],
   "untaught": {}
 }

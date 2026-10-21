@@ -170,9 +170,10 @@ public sealed class WorldGen
 
     public static Biome? FeatureBiome(string kind) => kind switch
     {
-        "ridge" or "icefield" or "peaks" => Biome.Crags,
+        "ridge" or "icefield" or "peaks" or "range" => Biome.Crags,
         "mire" => Biome.Marsh,
-        "tangle" => Biome.Woodland,
+        "tangle" or "beastland" => Biome.Woodland,
+        "monsterland" => Biome.Hills,
         "barrows" or "waste" => Biome.Heath,
         _ => null,
     };
@@ -232,10 +233,17 @@ public sealed class WorldGen
                 // Open water with a shelving shore: deep enough that nobody wades it.
                 return Mathf.Lerp(h, -1.6f + _n1.Fbm(p.X / 18, p.Y / 18, 2) * 0.4f, Mathf.SmoothStep(0, 0.6f, k));
             case "peaks":
+            case "range":
                 // Sheer summits: cliffs no road climbs.
                 return h + Mathf.SmoothStep(0, 1, k) * (26 + 48 * Mathf.Pow(_n2.Ridge(p.X / 30 + f.Id, p.Y / 30, 4), 1.1f));
             case "barrows":
                 return h + k * 1.2f * Mathf.Max(0, _n1.Get(p.X / 6, p.Y / 6));
+            case "beastland":
+                // Rolling wild country, long grass and thickets.
+                return h + k * 1.6f * Mathf.Max(0, _n2.Get(p.X / 16, p.Y / 16));
+            case "monsterland":
+                // Broken ground full of hollows and dens.
+                return h + k * (2.4f * Mathf.Abs(_n3.Get(p.X / 11, p.Y / 11)) - 0.8f);
             case "waste":
                 return Mathf.Lerp(h, Mathf.Max(h, 1.5f), k) + k * Mathf.Abs(_n3.Get(p.X / 9, p.Y / 9)) * 2;
             default:
@@ -250,7 +258,9 @@ public sealed class WorldGen
         return f.Kind.Id switch
         {
             "tangle" => bias + 0.75f * k,
-            "ridge" or "icefield" or "waste" or "peaks" or "lake" or "sea" => Mathf.Lerp(bias, -1, k),
+            "ridge" or "icefield" or "waste" or "peaks" or "range" or "lake" or "sea" => Mathf.Lerp(bias, -1, k),
+            "beastland" => bias + 0.3f * k,
+            "monsterland" => Mathf.Lerp(bias, -0.2f, k),
             "mire" => Mathf.Lerp(bias, -0.05f, k),
             "barrows" => Mathf.Lerp(bias, -0.5f, k),
             _ => bias,

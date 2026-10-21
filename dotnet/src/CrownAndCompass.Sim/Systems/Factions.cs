@@ -295,7 +295,8 @@ public static class Factions
         if (auto) Policy(town);
     }
 
-    private static void Prune(Town town, FactionState f)
+    /// <summary>Drops departed members; a faction left with nobody goes dormant.</summary>
+    internal static void Prune(Town town, FactionState f)
     {
         if (!f.Active) return;
         f.Members.RemoveAll(id => town.Agent(id).Departed);
@@ -840,7 +841,7 @@ public static class Factions
             .ThenBy(s => s.Def.Distance)
             .ThenBy(s => s.Def.Id, StringComparer.Ordinal)
             .FirstOrDefault();
-        if (site == null || Knowledge.Scryers(town).Count == 0) return;
+        if (site == null || Knowledge.Rested(town).Count == 0) return;
         double cost = Knowledge.ScryCost(town, site.Def);
         if (Coffers(town, f) < cost) return;
         // The order pays the caster through the town's books, so the scrying is the town's to watch.

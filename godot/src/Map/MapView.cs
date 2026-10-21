@@ -21,7 +21,7 @@ public sealed record Selection(string Kind, int Id = 0, string SiteId = "")
 
 /// <summary>
 /// The map: one live 3D world under a Northgard-style camera that zooms continuously from street
-/// level to the whole 1024-tile map, with icons and names drawn on top in screen space so they
+/// level to the whole 2048-tile map, with icons and names drawn on top in screen space so they
 /// stay readable at any zoom. M toggles the strategic view, the same live map drawn as an inked
 /// campaign map where markers can be placed. Pure presentation: it reads the simulation and never
 /// changes it.
@@ -110,7 +110,7 @@ public partial class MapView : Control
     private bool _first = true;
     private string _stateKey = "";
 
-    public const float MinDist = 3.5f, MaxDist = 1500;
+    public const float MinDist = 3.5f, MaxDist = 2900;
 
     /// <summary>Nearer than this the camera leans down toward the ground, to watch heroes fight at their own height.</summary>
     private const float HeroCam = 7;
@@ -494,8 +494,17 @@ public partial class MapView : Control
     private Marker? _grab;
     private Vector2 _grabOffset;
 
+    /// <summary>Set by the client when a click only closed a menu: the map ignores that press and its release.</summary>
+    public bool Swallow;
+
     public override void _GuiInput(InputEvent e)
     {
+        if (Swallow && e is InputEventMouseButton { ButtonIndex: MouseButton.Left or MouseButton.Right } sw)
+        {
+            if (!sw.Pressed) Swallow = false;
+            AcceptEvent();
+            return;
+        }
         if (Planner.Active && PlanInput(e)) return;
         if (Decorator.Active && DecorInput(e)) return;
         if (e is InputEventMouseButton mb)

@@ -35,6 +35,23 @@ public static class Economy
         }
     }
 
+    private static readonly int GoodKinds = Enum.GetValues<Good>().Length;
+
+    /// <summary>A good's town-wide yield from decrees (which 0) or institutions (1), the same for every workshop in an hour, so worked out once.</summary>
+    private static double TownYield(Town town, Good good, int which)
+    {
+        int n = GoodKinds;
+        if (town.HourYieldsAt != town.Tick || town.HourYields == null)
+        {
+            town.HourYields ??= new double[2 * n];
+            Array.Fill(town.HourYields, double.NaN);
+            town.HourYieldsAt = town.Tick;
+        }
+        ref double y = ref town.HourYields[which * n + (int)good];
+        if (double.IsNaN(y)) y = which == 0 ? Decrees.Yield(town, good) : Institutions.Yield(town, good);
+        return y;
+    }
+
     private static void Produce(Town town, Building b, Agent worker, double salesTax)
     {
         double rate = 1.0;
@@ -60,7 +77,7 @@ public static class Economy
         double yield = Decor.Yield(town, b) * Skills.Yield(b) * (b.Def.Zone == Zone.Farmland ? Powers.Harvest(town) : 1);
         foreach (var (good, qty) in b.Def.Produces)
         {
-            double revenue = town.Market.Sell(good, qty * rate * yield * Farming.Yield(town, b, good) * Decrees.Yield(town, good) * Institutions.Yield(town, good) * Founding.Yield(town, good));
+            double revenue = town.Market.Sell(good, qty * rate * yield * Farming.Yield(town, b, good) * TownYield(town, good, 0) * TownYield(town, good, 1) * Founding.Yield(town, good));
             double tax = revenue * salesTax;
             town.Book(TreasuryAccount.SalesTax, tax);
             b.Cash += revenue - tax;

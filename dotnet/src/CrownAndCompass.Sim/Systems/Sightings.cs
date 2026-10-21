@@ -75,6 +75,11 @@ public static class Sightings
             StartTick = old?.StartTick ?? town.Tick,
         };
         town.Sightings.Add(s);
+        if (key == Discovery.Warband || key.StartsWith("menace:", StringComparison.Ordinal))
+        {
+            if (key == Discovery.Warband) Discovery.Meet(town, key, Discovery.Sighted);
+            else if (int.TryParse(key.AsSpan(7), out int mid) && town.Saga.Menaces.FirstOrDefault(m => m.Id == mid) is { } m) Discovery.Meet(town, m, Discovery.Sighted);
+        }
         if (text != "") town.Log(LedgerCategory.War, importance, $"{Saga.Cap(s.Reporter)} {(s.Reporter.StartsWith("riders ", StringComparison.Ordinal) ? Plural(text) : text)}");
         return s;
     }

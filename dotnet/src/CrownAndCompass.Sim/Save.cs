@@ -34,7 +34,7 @@ public sealed class SaveException(string message, Exception? inner = null) : Exc
 public static class SaveGame
 {
     /// <summary>Bump when a change makes older saves unreadable; older versions are refused with a message.</summary>
-    public const int Version = 3;
+    public const int Version = 4;
 
     private static readonly byte[] Magic = "CROWN&COMPASS SAVE\n"u8.ToArray();
 
@@ -91,6 +91,7 @@ public static class SaveGame
             client = root.TryGetProperty("client", out var c) ? c.GetString() : null;
             var sim = (Simulation)new StateReader(ContentIndex.Of(content ?? Content.Default()), root).Read(typeof(Simulation));
             Systems.City.Migrate(sim.Town);
+            Systems.Discovery.Daily(sim.Town);
             return sim;
         }
         catch (Exception e) when (e is not SaveException)

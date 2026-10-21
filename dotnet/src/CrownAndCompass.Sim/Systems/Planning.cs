@@ -110,6 +110,7 @@ public static class Planning
         if (City.Locked(town, d) is { } locked) return locked;
         int count = town.Buildings.Count(b => b.Def.Id == d.Id);
         if (d.Max > 0 && count >= d.Max) return $"the town has {d.Max}";
+        if (Watch.TowerBlocked(town, d) is { } towers) return towers;
         if (town.Population < d.Population) return $"needs {d.Population} residents";
         if (town.Treasury < Cost(town, d)) return "not enough gold";
         return null;

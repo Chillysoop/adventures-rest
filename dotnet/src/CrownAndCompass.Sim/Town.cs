@@ -329,7 +329,7 @@ public enum Outcome
 public sealed class Town
 {
     /// <summary>Tiles on a side: the old town in the middle, then the walled ring, then the outer wards (<see cref="Systems.City"/>).</summary>
-    public const int Grid = 48;
+    public const int Grid = 96;
 
     public string Name { get; } = "Briarford";
     public int Seed { get; }
@@ -435,6 +435,9 @@ public sealed class Town
 
     /// <summary>Enemies on the move that someone saw and reported (<see cref="Systems.Sightings"/>), and how many reports there have been.</summary>
     public List<Systems.Sighting> Sightings { get; } = [];
+
+    /// <summary>Every foe and power the town has come across, in the order it met them (<see cref="Systems.Discovery"/>).</summary>
+    public List<Systems.Meeting> Discovered { get; } = [];
     public int SightingCount { get; set; }
 
     /// <summary>Enemies' agents loose in town, looking over what they mean to strike tonight (<see cref="Systems.Lurkers"/>).</summary>
@@ -564,6 +567,9 @@ public sealed class Town
     /// <summary>The city's institutions, in the order they opened (<see cref="Systems.Institutions"/>).</summary>
     public List<Systems.InstitutionState> Institutions { get; } = [];
 
+    /// <summary>The institutions the town has heard of, with what revealed each; the rest stay blank slots (<see cref="Systems.Institutions.Seen"/>).</summary>
+    public OrderedMap<string, string> InstitutionsSeen { get; } = new();
+
     /// <summary>The yearly tourney: this year's draw, heats and bets, and past champions (<see cref="Systems.Tournaments"/>).</summary>
     public Systems.TourneyState Tourney { get; } = new();
 
@@ -687,6 +693,11 @@ public sealed class Town
     internal Dictionary<int, int>? Present;
     [NotSaved]
     internal int? PresentWasAt;
+    /// <summary>The decree and institution yield of each good, worked out once an hour (<see cref="Systems.Economy"/>).</summary>
+    [NotSaved]
+    internal double[]? HourYields;
+    [NotSaved]
+    internal int HourYieldsAt = -1;
 
     public List<Building> Taverns => Buildings.Where(b => b.Complete && b.Def.Venue && !b.Closed && !b.ForSale).ToList();
 

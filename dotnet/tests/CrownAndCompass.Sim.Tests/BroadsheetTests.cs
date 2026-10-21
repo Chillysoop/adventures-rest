@@ -26,11 +26,18 @@ public class BroadsheetTests
     [Fact]
     public void APaidFrontPageWorksAndCanBeFoundOut()
     {
-        var sim = Player();
+        // A town with a hero at home, not off on a company's road where the issue could outlive them.
+        Simulation sim = null!;
+        Agent? hero = null;
+        for (int seed = 3; hero == null && seed < 12; seed++)
+        {
+            sim = new(new SimulationOptions { Seed = seed, AutoStories = false });
+            sim.RunDays(60);
+            hero = sim.Town.Heroes.FirstOrDefault(h => !h.IsAway && !h.Dead);
+        }
+        Assert.NotNull(hero);
         var t = sim.Town;
-        sim.RunDays(60);
         t.Treasury += 5000;
-        var hero = t.Heroes.First();
         int renown = hero.Hero!.Renown;
         double regard = hero.Hero.Regard;
         Assert.NotNull(sim.SlantBroadsheet("hero"));

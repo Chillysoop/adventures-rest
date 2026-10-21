@@ -162,7 +162,7 @@ public partial class Main
         {
             var s = h.Hero!;
             string temper = Regard.TemperOf(t, h)?.Name is string tn ? $" · {Ui.Esc(tn)}" : "";
-            string state = h.IsAway ? Ui.C(Ui.Gold, "Away") : Quests.Available(h) ? Ui.C(Ui.Good, "Ready") : s.JailedUntil != null ? Ui.C(Ui.Bad, "In jail") : Ui.C(Ui.Ink2, "Resting");
+            string state = h.IsAway ? Ui.C(Ui.Gold, "Away") : s.Duty != HeroDuty.None ? DutyIcon(h, 13) + Ui.C(Ui.Good, s.Duty == HeroDuty.Walls ? "Walls" : "Streets") : Quests.Available(h) ? Ui.C(Ui.Good, "Ready") : s.JailedUntil != null ? Ui.C(Ui.Bad, "In jail") : Ui.C(Ui.Ink2, "Resting");
             return new[]
             {
                 $"[b]{Ui.Esc(Notoriety.Known(h))}[/b]\n{Ui.C(Ui.Ink2, $"[font_size=11]{Ui.Esc(Ui.Cap(s.Cls.Name))}{temper}{(s.Magic.Count > 0 ? $" · {s.Magic.Count} magic" : "")}[/font_size]")}",
@@ -238,6 +238,12 @@ public partial class Main
         p.Card($"[b]The {Ui.Esc(e.Name)}[/b]  {Tag(word, color)}{sulk}{banner}\n{Ui.C(Ui.Ink2, $"[font_size=12]{where}[/font_size]")}\n[font_size=13]{members}[/font_size]" +
                (record.Count > 0 ? $"\n{Ui.C(Ui.Ink2, $"[font_size=12]{string.Join(" · ", record)}[/font_size]")}" : "") + deeds, Ui.Gold);
         p.Meter("Relation", e.Relation, Js.Str(Math.Round(e.Relation)), e.Relation < r.RefuseBelow);
+        var home = e.Members.Where(m => !m.IsAway).ToList();
+        if (home.Count > 0)
+        {
+            var ids = home.Select(m => m.Id).ToList();
+            p.Buttons(("Arm from the armory", home.Any(m => Sim.Systems.Armory.BestFor(t, m) != null), false, () => Act(() => _sim.Arm(ids))));
+        }
 
         p.Heading($"Offer the {e.Name} a job");
         if (_offerAnswer is { } last && last.Company == e.Name)
