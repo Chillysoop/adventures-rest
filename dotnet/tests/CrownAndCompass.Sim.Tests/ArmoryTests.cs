@@ -170,4 +170,45 @@ public class ArmoryTests
         Assert.True(Intel.Find(copy.Town, "Iron Wolves")!.Pact);
         Assert.Equal(t.Armory.NextId, copy.Town.Armory.NextId);
     }
+
+    [Fact]
+    public void ArmingAGroupHandsEachTheBestTheArmoryHolds()
+    {
+        var (sim, t) = NewTown();
+        var a = Hero(t, "fighter", 5);
+        var b = Hero(t, "fighter", 3);
+        t.Armory.Stock.Clear();
+        Armory.Add(t, Item(t, "weapon-1"), "a test");
+        Armory.Add(t, Item(t, "weapon-2"), "a test");
+        Assert.Equal(2, sim.Arm([a.Id, b.Id]));
+        // The +2 went first, to whoever gained most; the other took the +1; nothing is left that either would use.
+        Assert.Equal(new[] { "weapon-1", "weapon-2" }, new[] { a.Hero!.Magic["weapon"].Id, b.Hero!.Magic["weapon"].Id }.Order());
+        Assert.Null(Armory.BestFor(t, a));
+        Assert.Equal(0, sim.Arm([a.Id, b.Id]));
+    }
+
+    [Fact]
+    public void HeroesOnGuardStayHomeAndStrengthenTheTown()
+    {
+        var (sim, t) = NewTown();
+        t.Treasury = 1000;
+        var a = Hero(t, "fighter", 5);
+        var b = Hero(t, "rogue", 4);
+        double defense = Threat.Defense(t), watch = Council.WatchStrength(t);
+        Assert.True(sim.SetDuty(a.Id, HeroDuty.Walls));
+        Assert.True(sim.SetDuty(b.Id, HeroDuty.Streets));
+        Assert.False(Quests.Available(a));
+        Assert.True(Threat.Defense(t) > defense);
+        Assert.True(Council.WatchStrength(t) > watch || watch >= 0.85);
+        Assert.Equal([a.Id, b.Id], Garrison.Defenders(t).Select(h => h.Id));
+        // Their wage comes out of the treasury each day; one the town can't pay walks off.
+        double before = t.Treasury;
+        Garrison.Daily(t, false);
+        Assert.Equal(before - Garrison.Wage(t, a) - Garrison.Wage(t, b), t.Treasury, 6);
+        t.Treasury = 0;
+        Garrison.Daily(t, false);
+        Assert.Equal(HeroDuty.None, a.Hero!.Duty);
+        Assert.True(Quests.Available(a));
+        Assert.False(sim.SetDuty(a.Id, HeroDuty.Walls));
+    }
 }

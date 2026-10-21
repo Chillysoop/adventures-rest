@@ -104,6 +104,7 @@
     "tryAgain": ["Rested and healed, they go back in to finish what they started. {site} is ready for them this time.", "At first light they try again. The defenders have had time to prepare too."],
     "giveUp": ["Twice beaten, they know when the place is beyond them."]
   },
+  "ranges": { "_doc": "Mountain walls between the far rings, broken only at passes: at sites in their line and a few more (Roads.Ranges). Days but arc in degrees.", "kind": "range", "fromRing": 3, "perGap": [1, 2], "arc": [40, 90], "depth": [0.3, 0.45], "passes": [1, 2], "passHalf": 0.3, "least": 0.8 },
   "kinds": [
     {
       "id": "ridge",
@@ -236,20 +237,29 @@
     {"id": "boneyard", "name": "dragon bones", "through": "through", "names": ["the {A} Boneyard", "the Canyon of {B}'s Bones", "the {A} Ribs"], "words": ["Wyrm", "Old", "Great", "Red", "Sky", "Ash", "Sun"], "slow": 1.2, "danger": 0.5, "ambush": 0.4, "habitats": ["badlands", "desert", "hills", "tomb"], "hazard": {"skill": "hazard", "dc": 11, "die": 6, "text": ["ribs as tall as towers, and a wind that moans through them"]}, "ambushText": ["the bones of the lesser dead get up and come for them", "scavengers that nest in a dragon's skull"], "wonder": {"kind": "bones", "dc": 13, "skill": "nature", "gold": 25, "text": ["{name2} knows dragon bone from stone, and they cut away a fang worth {gold} gold.", "{name2} finds a scale the size of a shield among the ribs ({gold} gold)."], "missed": ["The bones are picked clean; whatever was worth taking went with older thieves."]}},
     {"id": "fairy-ring", "name": "fey ring", "through": "through", "names": ["the {A} Fairy Ring", "the Dancing Green of {B}", "the {A} Toadstools"], "words": ["Moon", "Toad", "Mushroom", "Twilight", "Dew", "Merry", "Glimmer"], "slow": 1.0, "danger": 0.2, "ambush": 0.1, "habitats": ["forest", "grassland"], "hazard": {"skill": "perception", "dc": 8, "die": 2, "text": ["a ring of white mushrooms, and music very faint"]}, "ambushText": ["the dancers do not like to be interrupted"], "wonder": {"kind": "ring", "dc": 13, "skill": "insight", "text": ["{name2} hears the music and will not let the others dance: they walk round the ring, rested just by its nearness.", "They lie down by {name}, and wake whole and rested as if they'd slept a week."], "missed": ["They dance. When they stop, their purses are lighter and their potions drunk, and nobody remembers giving anything away."]}},
     {"id": "oasis", "name": "oasis", "through": "by", "names": ["the {A} Oasis", "{B}'s Well", "the {A} Palms"], "words": ["Date", "Sweet", "Green", "Blue", "Jewel", "Shade", "Twin"], "slow": 1.0, "danger": 0.1, "ambush": 0.05, "habitats": ["desert"], "hazard": {"skill": "perception", "dc": 5, "die": 2, "text": ["palms and a pool of clean water"]}, "wonder": {"kind": "oasis", "themes": ["duneglass", "cinderwastes"], "text": ["They rest at {name}: shade, dates and clean water. Their skins are full again."]}},
-    {"id": "mirage", "name": "oasis", "through": "by", "names": ["the {A} Oasis", "{B}'s Well", "the {A} Palms"], "words": ["Date", "Sweet", "Green", "Blue", "Jewel", "Shade", "Twin"], "slow": 1.0, "danger": 0.1, "ambush": 0, "habitats": ["desert"], "hazard": {"skill": "perception", "dc": 5, "die": 2, "text": ["palms and a pool of clean water"]}, "wonder": {"kind": "mirage", "themes": ["duneglass", "cinderwastes"], "dc": 13, "skill": "perception", "monster": "glimmerpool", "text": ["{name2} sees the pool breathe, and they give {name} a wide berth. The bones round its edge are not all camels'."], "missed": ["The water is sweet and cold, right up until the pool opens its mouth."]}}
+    {"id": "mirage", "name": "oasis", "through": "by", "names": ["the {A} Oasis", "{B}'s Well", "the {A} Palms"], "words": ["Date", "Sweet", "Green", "Blue", "Jewel", "Shade", "Twin"], "slow": 1.0, "danger": 0.1, "ambush": 0, "habitats": ["desert"], "hazard": {"skill": "perception", "dc": 5, "die": 2, "text": ["palms and a pool of clean water"]}, "wonder": {"kind": "mirage", "themes": ["duneglass", "cinderwastes"], "dc": 13, "skill": "perception", "monster": "glimmerpool", "text": ["{name2} sees the pool breathe, and they give {name} a wide berth. The bones round its edge are not all camels'."], "missed": ["The water is sweet and cold, right up until the pool opens its mouth."]}},
+    {"id": "range", "name": "mountain wall", "through": "over", "barrier": "sheer", "names": ["the {A} Wall", "the {A} Spine", "the {A}teeth Range", "the {A} Barrier"], "words": ["Iron", "Grey", "Giant's", "Storm", "Dragon", "Black", "Frost", "Thunder", "Long", "Broken"], "slow": 1.0, "danger": 1.0, "hazard": {"skill": "hazard", "dc": 14, "die": 10, "text": ["a storm on the high wall that throws them against the rock", "a cornice gives way under the leader"]}, "ambush": 0.35, "habitats": ["mountain"], "ambushText": ["something that nests on the wall drops on them", "giants on the heights roll stones down the pass"]},
+    {"id": "beastland", "name": "hunting grounds", "through": "through", "wide": 1.7, "names": ["the {A} Hunting Grounds", "the {A} Run", "the {A} Wilds", "the {A}fang Range"], "words": ["Wolf", "Boar", "Bear", "Blood", "Howling", "Red", "Wild", "Savage", "Bone", "Antler"], "slow": 1.15, "danger": 1.8, "hazard": {"skill": "perception", "dc": 13, "die": 6, "text": ["fresh tracks bigger than a cart wheel", "a kill left out as bait"]}, "ambush": 0.8, "habitats": ["grassland", "forest", "hills"], "ambushText": ["the pack has been pacing them for a mile", "something big comes out of the long grass", "they walk straight into the beasts' feeding ground"]},
+    {"id": "monsterland", "name": "monster haunts", "through": "through", "wide": 1.5, "names": ["the {A} Haunts", "the {A} Lairlands", "the Maw of {A}", "the {A} Hollows"], "words": ["Hungry", "Black", "Gnawing", "Cursed", "Screaming", "Rotting", "Venom", "Bone", "Shadow", "Wyrm"], "slow": 1.2, "danger": 2.1, "hazard": {"skill": "perception", "dc": 14, "die": 8, "text": ["the bones of the last party to try it", "nests in every hollow"]}, "ambush": 0.85, "habitats": ["swamp", "caves", "mountain", "badlands", "ruins"], "ambushText": ["the hollow they camp in is somebody's lair", "a monster's brood boils out of the ground", "the ground itself opens its mouth"]}
   ],
   "themes": {
-    "greenmarch": ["tangle", "gorge", "barrows", "lake"],
-    "thornwood": ["tangle", "tangle", "mire"],
-    "highpeaks": ["ridge", "ridge", "gorge", "peaks"],
-    "deeproads": ["gorge", "ridge", "peaks"],
-    "crownruins": ["barrows", "tangle", "gorge"],
+    "greenmarch": ["tangle", "gorge", "barrows", "lake", "beastland", "beastland"],
+    "thornwood": ["tangle", "tangle", "mire", "beastland", "beastland"],
+    "highpeaks": ["ridge", "ridge", "gorge", "peaks", "monsterland"],
+    "deeproads": ["gorge", "ridge", "peaks", "monsterland"],
+    "crownruins": ["barrows", "tangle", "gorge", "monsterland"],
     "ashenbarrows": ["barrows", "barrows", "mire"],
-    "mirefen": ["mire", "mire", "tangle", "lake"],
-    "saltreach": ["mire", "gorge", "lake"],
-    "rimefell": ["icefield", "ridge", "peaks"],
-    "duneglass": ["waste", "waste", "gorge"],
-    "cinderwastes": ["waste", "ridge"],
-    "feyfringe": ["tangle", "mire", "lake"]
+    "mirefen": ["mire", "mire", "tangle", "lake", "monsterland"],
+    "saltreach": ["mire", "gorge", "lake", "beastland", "beastland"],
+    "rimefell": ["icefield", "ridge", "peaks", "beastland", "beastland"],
+    "duneglass": ["waste", "waste", "gorge", "monsterland"],
+    "cinderwastes": ["waste", "ridge", "monsterland"],
+    "feyfringe": ["tangle", "mire", "lake", "beastland"],
+    "drownedempire": ["mire", "lake", "monsterland", "gorge"],
+    "titanfield": ["barrows", "ridge", "beastland", "gorge", "beastland"],
+    "stormcoast": ["ridge", "peaks", "gorge", "beastland", "beastland"],
+    "kingsbones": ["waste", "barrows", "monsterland"],
+    "hellbreach": ["waste", "ridge", "monsterland", "monsterland"],
+    "spellscar": ["waste", "gorge", "barrows", "monsterland"]
   }
 }
