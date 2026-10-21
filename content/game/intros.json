@@ -1,0 +1,42 @@
+{
+  "_doc": "First meetings (Systems/Intros.cs, client godot/src/Intros.cs): the first time the town meets anyone of a lineage (history.json lineages: a menace, the warband, a people, a power or an enemy group), the client shows that lineage's picture, staged live with the heroes' kit, with its crest, a line and a little of its history. Scenes are the settings pictures are staged in; props are baked model names (godot/src/Map/Models.cs) scattered in a band near..far figure heights from the host. Crests are game-icons.net glyphs made into crest-<lineage> icons by scripts/icons.ts. IntrosTests fails a lineage of a menace, foe, group, people or faction without an intro.",
+  "scenes": [
+    {
+      "id": "warcamp", "sky": "2b1a1e", "horizon": "c0603a", "ground": "5a4630", "ground2": "3e3020", "light": "ffb27a", "rim": "ff5a2a", "air": "embers",
+      "props": [
+        { "model": "nature/tent_detailedOpen", "count": 3, "near": 2.2, "far": 4, "scale": 1.6, "tint": "8a3a2a" },
+        { "model": "nature/campfire_stones", "count": 1, "near": 1.2, "far": 1.4, "scale": 1.4 },
+        { "model": "nature/rock_largeA", "count": 4, "near": 3, "far": 6, "scale": 2 },
+        { "model": "nature/tree_pineTallA_detailed", "count": 6, "near": 4.5, "far": 8, "scale": 2.4, "tint": "3a3a2a" }
+      ]
+    },
+    {
+      "id": "spider-ruin", "sky": "120f1c", "horizon": "5a4a6a", "ground": "3a3830", "ground2": "26241e", "light": "b8a8ff", "rim": "9a5aff", "air": "spores",
+      "props": [
+        { "model": "nature/statue_column", "count": 4, "near": 1.8, "far": 4, "scale": 2.2, "tint": "4a4450" },
+        { "model": "nature/statue_head", "count": 1, "near": 2.6, "far": 3, "scale": 2.4, "tint": "4a4450" },
+        { "model": "nature/statue_obelisk", "count": 2, "near": 3, "far": 5, "scale": 2.6, "tint": "3a3440" },
+        { "model": "nature/tree_thin", "count": 6, "near": 3.5, "far": 7, "scale": 2.6, "tint": "2a2430" },
+        { "model": "nature/rock_smallA", "count": 6, "near": 1.4, "far": 4, "scale": 1.4 }
+      ]
+    },
+    {
+      "id": "fen", "sky": "1a2420", "horizon": "7a8a6a", "ground": "3a4a30", "ground2": "2a3a2a", "light": "d8e0b0", "rim": "8aff7a", "air": "mist",
+      "props": [
+        { "model": "nature/lily_large", "count": 6, "near": 1.4, "far": 4, "scale": 1.6 },
+        { "model": "nature/mushroom_redGroup", "count": 3, "near": 1.4, "far": 3, "scale": 1.4 },
+        { "model": "nature/tree_detailed_dark", "count": 5, "near": 3.5, "far": 7, "scale": 2.6, "tint": "3a4a3a" },
+        { "model": "nature/stump_old", "count": 3, "near": 2, "far": 4, "scale": 1.6, "tint": "3a3a2a" },
+        { "model": "nature/rock_smallB", "count": 4, "near": 1.4, "far": 3, "scale": 1.2, "tint": "4a5a3a" }
+      ]
+    }
+  ],
+  "intros": [
+    { "lineage": "red-tide", "crest": "war-axe", "field": "8f2d20", "charge": "e8c060", "scene": "warcamp", "host": "tribe", "count": 6, "chief": 1.35, "skin": "6a8a3a", "cloth": "8f2d20",
+      "line": "Orc hosts still marching to Ghorvak's war-drum." },
+    { "lineage": "silk-mother", "crest": "spider-alt", "field": "2a1a3a", "charge": "c8a8ff", "scene": "spider-ruin", "host": "beasts", "count": 5, "chief": 1.7, "skin": "3a2a3a", "cloth": "5a3a6a",
+      "line": "A spider goddess's temple, older than the dunes." },
+    { "lineage": "mire-grandmothers", "crest": "cauldron", "field": "2a3a2a", "charge": "b8e08a", "scene": "fen", "host": "witches", "count": 3, "chief": 1.15, "skin": "8a9a7a", "cloth": "3a4a3a",
+      "line": "Three old women in the fens who trade in names." }
+  ]
+}

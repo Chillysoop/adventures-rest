@@ -76,6 +76,7 @@ public partial class Main : Control
         BuildGuide();
         BuildStory();
         BuildFind();
+        BuildIntro();
         BuildTourney();
         BuildTale();
         BuildRecap();
@@ -159,6 +160,7 @@ public partial class Main : Control
         if (_opts.Folk && _sim.Town.Workers.Where(a => !a.IsAway).OrderByDescending(a => a.Practice).ThenBy(a => a.Id).FirstOrDefault() is Agent folk)
             Select(Selection.Agent(folk.Id));
         if (_opts.Episode is string episode) StageEpisode(episode);
+        if (_opts.Intro is string intro) StageIntro(intro);
         if (_opts.House && _sim.Town.Buildings.Where(b => b.Complete && b.Def.Housing > 0).OrderByDescending(b => Decor.Comfort(_sim.Town, b)).ThenBy(b => b.Id).FirstOrDefault() is Building house)
         {
             Select(Selection.Building(house.Id));
@@ -340,6 +342,9 @@ public partial class Main : Control
         _storySeen = sim.Town.Stories.All.Count;
         CloseFind();
         _findSeen.Clear();
+        CloseIntro();
+        _introSeen = -1;
+        _introQueue.Clear();
         ResetClockWatch();
         CloseTale();
         _recap.Visible = false;
@@ -589,6 +594,7 @@ public partial class Main : Control
         SyncGoals();
         SyncStories(delta);
         SyncFinds();
+        SyncIntros();
         SyncClockStops();
         SyncTourney();
         SyncTales(delta);

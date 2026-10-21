@@ -1503,6 +1503,9 @@ public sealed class Content
     /// <summary>Companies' arms and how their colours wear (content/game/heraldry.json).</summary>
     public HeraldryRules Heraldry { get; init; } = new();
 
+    /// <summary>Each faction's first-meeting picture and crest (content/game/intros.json).</summary>
+    public Systems.IntroRules Intros { get; init; } = new();
+
     /// <summary>The charter goals of a new town's first days (content/game/goals.json).</summary>
     public Systems.GoalRules Goals { get; init; } = new();
 
@@ -1717,6 +1720,7 @@ public sealed class Content
             Goals = Parse<Systems.GoalRules>("goals.json"),
             Passage = Parse<PassageRules>("passage.json"),
             Heraldry = Parse<HeraldryRules>("heraldry.json"),
+            Intros = Parse<Systems.IntroRules>("intros.json"),
             Eggs = Parse<EggRules>("eggs.json"),
             Foes = Parse<FoeRules>("foes.json"),
             Cannons = Parse<Systems.CannonRules>("cannons.json"),
