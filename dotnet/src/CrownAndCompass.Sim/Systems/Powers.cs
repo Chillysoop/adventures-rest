@@ -614,7 +614,7 @@ public static class Powers
         string terms = kind switch
         {
             "alliance" => $"an alliance: {d.Ally.Text}",
-            "pact" => $"a pact: {Name(town, d)} takes no enemy's gold for {Js.Str(e.PactDays)} days",
+            "pact" => $"a truce: {Name(town, d)} takes no enemy's gold for {Js.Str(e.PactDays)} days",
             _ => "tribute",
         };
         Done(town, p);
@@ -652,7 +652,7 @@ public static class Powers
         return p.Envoy switch
         {
             "alliance" => $"offers an alliance for {price} (its price is {Js.Str(d.Price)} gold), then {Js.Str(d.Tithe)} gold a day",
-            "pact" => $"offers a pact for {price}: it takes no enemy's gold for {Js.Str(e.PactDays)} days",
+            "pact" => $"offers a truce for {price}: it takes no enemy's gold for {Js.Str(e.PactDays)} days",
             "tribute" => $"demands tribute of {price}, or it will remember the slight",
             _ => "",
         };

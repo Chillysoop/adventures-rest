@@ -82,6 +82,9 @@ public sealed class Options
     /// <summary>--folk: select the most practised townsperson, for a look at their character sheet.</summary>
     public bool Folk;
 
+    /// <summary>--skirmish [gear][,kind]: the town's heroes, one of each class, fight a ring of raiders by the square (for shots); "gear" hands them famous magic arms a moment in; kind picks the foes (undead, cult, rivals, schemers, beasts, dragon; orcs by default).</summary>
+    public string? Skirmish;
+
     /// <summary>--rolls: look into the busiest tavern and replay its latest skill checks as dice over people's heads.</summary>
     public bool Rolls;
 
@@ -213,6 +216,7 @@ public sealed class Options
                 case "--tutorial": o.Tutorial = Next(); break;
                 case "--hero": o.Hero = true; break;
                 case "--folk": o.Folk = true; break;
+                case "--skirmish": o.Skirmish = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
                 case "--rolls": o.Rolls = true; break;
                 case "--wall": o.Wall = int.Parse(Next()); break;
                 case "--strike": o.Strike = true; break;
@@ -438,6 +442,8 @@ public sealed class Options
     /// <summary>Save a screenshot and quit once enough frames have drawn for the camera to settle.</summary>
     public void Capture(Node node, ref int frames)
     {
+        // A clip being recorded (--write-movie) with --clean hides the HUD from the start, not just for the last frame.
+        if (Screenshot != null && Clean && frames == 5 && Engine.GetWriteMoviePath() != "") HideHud(node.GetTree().Root);
         if (Screenshot == null || ++frames < Frames) return;
         if (Clean && frames == Frames) { HideHud(node.GetTree().Root); return; }
         var img = node.GetViewport().GetTexture().GetImage();
