@@ -92,6 +92,7 @@ public partial class Vignette : Control
     }
 
     private IntroScene _scene = new();
+    private float _back2 = 1;
     private int _seed;
 
     /// <summary>Stage a faction's picture: its scene, its host in its colours, the chief in front.</summary>
@@ -179,14 +180,17 @@ public partial class Vignette : Control
         var chief = LookOf(d.Host, true, cloth, skin) with { Legend = null };
         var rank = LookOf(d.Host, false, cloth, skin) with { Legend = null };
         // The chief at the front, the rest in a loose arc behind, turned a little towards the middle.
-        _figures.Add((chief, Vector3.Zero, 0, FigureScale * (float)d.Chief, Heroes.Act.Cheer, 0));
+        // Long-bodied creatures stand three-quarters on, so their length and wings show.
+        float turn = d.Host is "wyrms" or "rats" or "crawlers" ? 0.75f : 0;
+        _figures.Add((chief, Vector3.Zero, turn, FigureScale * (float)d.Chief, Heroes.Act.Cheer, 0));
+        _back2 = Mathf.Max(1, (float)d.Chief / 1.4f);
         int n = Math.Max(0, d.Count - 1);
         for (int i = 0; i < n; i++)
         {
             float t = n == 1 ? 0 : (float)i / (n - 1) * 2 - 1;
             float row = i % 2 == 0 ? 1 : 1.6f;
             var at = new Vector3(t * 1.25f * Tall * (row > 1 ? 1.15f : 1), 0, -row * 0.62f * Tall + Rand(i * 3) * 0.2f);
-            _figures.Add((rank, at, -t * 0.35f + (Rand(i * 7) - 0.5f) * 0.3f, FigureScale * (0.92f + Rand(i * 11) * 0.12f), Heroes.Act.Idle, Rand(i * 5)));
+            _figures.Add((rank, at, -t * 0.35f + (Rand(i * 7) - 0.5f) * 0.3f + (t < 0 ? turn : -turn), FigureScale * (0.92f + Rand(i * 11) * 0.12f), Heroes.Act.Idle, Rand(i * 5)));
         }
     }
 
@@ -196,6 +200,9 @@ public partial class Vignette : Control
         var trim = Heroes.Heraldic(cloth);
         Heroes.Look Folk(Frame f, Head h, Weapon w, OffHand o, Color? glow = null) =>
             new(f, h, w, o, chief, skin, trim, glow, 1, chief && glow != null, null, chief ? 1 : 0, Heroes.Act.Idle, glow ?? Colors.White, Trinket.None, null, null, null);
+        // Creatures wear the host's colour on their hide (the trim), and nothing in their hands.
+        Heroes.Look Beast(Frame f, Color? glow = null) =>
+            new(f, Head.None, Weapon.None, OffHand.None, false, skin, Heroes.Heraldic(cloth).Lerp(skin, 0.4f), null, 1, false, null, chief ? 1 : 0, Heroes.Act.Idle, glow ?? Colors.White, Trinket.None, null, null, null);
         return host switch
         {
             "folk" => chief ? Folk(Frame.Mail, Head.Circlet, Weapon.Sword, OffHand.Kite) : Folk(Frame.Leather, Head.Coif, Weapon.Spear, OffHand.None),
@@ -206,6 +213,11 @@ public partial class Vignette : Control
             "druids" => chief ? Folk(Frame.Robe, Head.Antlers, Weapon.Staff, OffHand.None, new Color("8aff5a")) : Folk(Frame.Leather, Head.Hood, Weapon.Bow, OffHand.None),
             "priests" => chief ? Folk(Frame.Robe, Head.Mitre, Weapon.Mace, OffHand.Book, new Color("ffe08a")) : Folk(Frame.Mail, Head.Coif, Weapon.Mace, OffHand.Round),
             "dwarves" => chief ? Folk(Frame.Plate, Head.HornedHelm, Weapon.Hammer, OffHand.Round) : Folk(Frame.Mail, Head.HornedHelm, Weapon.Axe, OffHand.Round),
+            "spiders" => Beast(Frame.Spider),
+            "wyrms" => Beast(Frame.Wyrm, new Color("ff7a1a")),
+            "wraiths" => Beast(Frame.Wraith, new Color("8ae0ff")),
+            "crawlers" => Beast(Frame.Crawler),
+            "rats" => Beast(Frame.Rat),
             _ => _heroes.FoeLook(host, chief, cloth, skin),
         };
     }
@@ -217,7 +229,8 @@ public partial class Vignette : Control
         // The camera eases in and drifts round a little, low, looking up at the chief.
         float ease = 1 - Mathf.Exp(-_now * 0.35f);
         float drift = Mathf.Sin(_now * 0.12f) * 0.12f;
-        float dist = Mathf.Lerp(3.5f, 2.9f, ease) * Tall;
+        // A towering chief takes the camera further back.
+        float dist = Mathf.Lerp(3.5f, 2.9f, ease) * Tall * _back2;
         var eye = new Vector3(Mathf.Sin(drift) * dist, 0.38f * Tall, Mathf.Cos(drift) * dist);
         _cam.LookAtFromPosition(eye, new Vector3(0, 0.95f * Tall, -0.5f * Tall), Vector3.Up);
         foreach (var (look, at, yaw, scale, act, phase) in _figures)

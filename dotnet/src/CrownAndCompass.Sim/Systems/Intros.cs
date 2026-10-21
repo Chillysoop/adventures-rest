@@ -44,7 +44,7 @@ public sealed record IntroDef
 
     public string Scene { get; init; } = "";
 
-    /// <summary>Who stands in the picture: a host look ("tribe", "undead", "cult", "rivals", "schemers", "beasts", "dragon", "folk"), and how many.</summary>
+    /// <summary>Who stands in the picture: a host look (<see cref="IntroRules.Hosts"/>), and how many.</summary>
     public string Host { get; init; } = "tribe";
     public int Count { get; init; } = 4;
 
@@ -61,6 +61,14 @@ public sealed record IntroDef
 
 public sealed record IntroRules
 {
+    /// <summary>The looks a host can take, as the client draws them (godot/src/Vignette.cs).</summary>
+    public static readonly string[] Hosts =
+    [
+        "tribe", "undead", "cult", "rivals", "schemers", "beasts", "dragon",
+        "folk", "knights", "mages", "witches", "merchants", "druids", "priests", "dwarves",
+        "spiders", "wyrms", "wraiths", "crawlers", "rats",
+    ];
+
     public IReadOnlyList<IntroScene> Scenes { get; init; } = [];
     public IReadOnlyList<IntroDef> Intros { get; init; } = [];
 }

@@ -54,6 +54,7 @@ public class IntrosTests
         foreach (var i in C.Intros.Intros)
         {
             Assert.True(Annals.Lineage(C.History, i.Lineage) != null, $"intro {i.Lineage} names no lineage in history.json");
+            Assert.True(IntroRules.Hosts.Contains(i.Host), $"intro {i.Lineage} has no host look {i.Host}");
             Assert.True(C.Intros.Scenes.Any(s => s.Id == i.Scene), $"intro {i.Lineage} has no scene {i.Scene}");
             Assert.True(File.Exists(Path.Combine(icons, $"crest-{i.Lineage}.svg")), $"no crest-{i.Lineage}.svg: run node scripts/icons.ts");
             Assert.True(i.Line != "" && i.Line.Length <= 70, $"intro {i.Lineage}'s line should be one short breath");
