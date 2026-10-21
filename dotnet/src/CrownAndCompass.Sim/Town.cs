@@ -329,7 +329,7 @@ public enum Outcome
 public sealed class Town
 {
     /// <summary>Tiles on a side: the old town in the middle, then the walled ring, then the outer wards (<see cref="Systems.City"/>).</summary>
-    public const int Grid = 48;
+    public const int Grid = 96;
 
     public string Name { get; } = "Briarford";
     public int Seed { get; }
