@@ -204,11 +204,13 @@ async function client(outDir: string) {
   const bin = join(outDir, "linux/CrownAndCompass.x86_64");
   exportBuild("Linux", bin);
   if (failed) return;
+  // A software-rendered smoke run on a small container can take longer than CI's: GATE_SMOKE_MINUTES raises the limit.
+  const smokeMs = Number(process.env.GATE_SMOKE_MINUTES ?? 15) * 60_000;
   const game = ["--rendering-driver", "opengl3", "--audio-driver", "Dummy", "--resolution", "960x540", "--", "--smoke", "--seed", "3"];
   const hasX = await run("sh", ["-c", "command -v xvfb-run"]);
   const r = hasX.code === 0
-    ? await run("xvfb-run", ["-a", bin, ...game], { timeoutMs: 15 * 60_000 })
-    : await run(bin, ["--headless", ...game.slice(4)], { timeoutMs: 15 * 60_000 });
+    ? await run("xvfb-run", ["-a", bin, ...game], { timeoutMs: smokeMs })
+    : await run(bin, ["--headless", ...game.slice(4)], { timeoutMs: smokeMs });
   const ok = /^SMOKE OK.*$/m.exec(r.out);
   const bad = r.out.split("\n").filter((l) => brokenLine.test(l) && !/audio|ALSA|PulseAudio/i.test(l));
   if (r.code !== 0 || !ok || bad.length) {
