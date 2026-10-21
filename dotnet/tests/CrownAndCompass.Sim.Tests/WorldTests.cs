@@ -51,7 +51,7 @@ public class WorldTests
             {
                 var theme = t.Regions[s.RegionId].Theme;
                 Assert.Contains(s.Kin.Id, theme.Peoples);
-                if (theme.Id == "highpeaks") Assert.Contains(s.Kin.Id, new[] { "dwarves", "gnomes" });
+                if (theme.Id == "highpeaks") Assert.Contains(s.Kin.Id, new[] { "dwarves", "gnomes", "birdfolk" });
                 if (theme.Id == "thornwood") Assert.Equal("elves", s.Kin.Id);
             }
         }

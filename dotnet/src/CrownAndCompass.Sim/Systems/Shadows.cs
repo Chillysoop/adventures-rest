@@ -233,7 +233,7 @@ public static class Shadows
                 if (sh.Form == "") sh.SinceDay = town.Day;
             }
             double rate = (r.PerDay + r.PerStage * Math.Max(0, (int)m.Stage - (int)MenaceStage.Rising)) * (1 + r.Security * (0.5 - s.Security / 100))
-                          / Math.Max(0.3, Reigns.Resolve(town, s));
+                          / Math.Max(0.3, Reigns.Resolve(town, s)) * Character.Shadow(town, s, m.Kind);
             sh.Depth = Math.Min(Math.Max(sh.Depth, Math.Min(Cap(town, m), sh.Depth + rate)), 100);
             if (Paying(s)) m.Power += r.TributePower;
         }

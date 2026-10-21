@@ -277,6 +277,9 @@ public sealed record MonsterDef
     public bool Boss { get; init; }
     public bool Undead { get; init; }
 
+    /// <summary>The library creature type (beast, undead, dragon...), for how it fights (<see cref="Systems.Tactics"/>).</summary>
+    public string Type { get; init; } = "";
+
     /// <summary>A named individual: no article before the name.</summary>
     public bool Named { get; init; }
 
@@ -1529,6 +1532,8 @@ public sealed class Content
 
     /// <summary>The storytellers a town can be founded under, the game's difficulty (content/game/storytellers.json).</summary>
     public StorytellerRules Storytellers { get; init; } = new();
+    public Systems.CharacterRules Character { get; init; } = new();
+    public Systems.TacticRules Tactics { get; init; } = new();
 
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
@@ -1601,6 +1606,7 @@ public sealed class Content
             Attacks = m.Attacks > 0 ? m.Attacks : lm.Attacks,
             Xp = m.Xp > 0 ? m.Xp : Library.XpForCr(lm.Cr),
             Undead = m.Undead || lm.Type == "undead",
+            Type = m.Type != "" ? m.Type : lm.Type,
         };
     }
 
@@ -1727,6 +1733,8 @@ public sealed class Content
             Crowds = Parse<CrowdRules>("crowds.json"),
             Moods = Parse<MoodRules>("moods.json"),
             Storytellers = Parse<StorytellerRules>("storytellers.json"),
+            Character = Parse<CharacterRules>("character.json"),
+            Tactics = Parse<TacticRules>("tactics.json"),
         };
     }
 

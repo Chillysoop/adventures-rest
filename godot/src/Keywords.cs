@@ -172,7 +172,7 @@ public partial class Main : IKeywordCards
 
         // Rich text that fits its content needs its width up front, or the card sizes itself to a one-word column.
         float inner = CardWidth - 36;
-        var text = Ui.Rich(e.Text, 14, skip: e.Id);
+        var text = Ui.Rich(Ui.Points(e.Text), 14, skip: e.Id);
         text.CustomMinimumSize = new Vector2(inner, 0);
         v.AddChild(text);
         if (extra is { Length: > 0 })
