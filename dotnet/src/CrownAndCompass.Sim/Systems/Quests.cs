@@ -407,7 +407,7 @@ public static class Quests
             var s = a.Hero!;
             if (s.AwayUntil != null) continue;
             // A bed at the company's bastion, or above the tavern.
-            bool home = Bastions.Lodges(town, a);
+            bool home = Bastions.Lodges(town, a) || s.Sworn;
             s.Lodging = home || (taverns.Count > 0 && a.Gold >= Lodging);
             if (s.Lodging && !home)
             {

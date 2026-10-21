@@ -85,6 +85,7 @@ public sealed class Simulation
         Town.Saga.Enabled = Options.Saga && Options.Enemy;
         Town.Saga.Legends.AddRange(Options.Legends.Where(l => l.Seed != Options.Seed));
         Charter();
+        Goals.Begin(Town);
     }
 
     public void Step()
@@ -99,6 +100,7 @@ public sealed class Simulation
         Explore.Hourly(t, Options.AutoMayor && Options.AutoBounties && Options.AutoExplore);
         Lurkers.Hourly(t);
         Tournaments.Hourly(t);
+        Goals.Hourly(t);
         t.Tick++;
         if (t.Hour == 0) DailyTick();
     }
@@ -270,6 +272,9 @@ public sealed class Simulation
 
     /// <summary>The player's other lever: sign or veto the motion before the council.</summary>
     public bool DecideMotion(int motionId, bool sign) => Council.Decide(Town, motionId, sign);
+
+    /// <summary>Call a festival on the mayor's own word: mood for a few days and a little Mandate, for gold.</summary>
+    public bool HoldFestival() => Council.HoldFestival(Town);
 
     /// <summary>Order a palisade or a watchtower.</summary>
     public bool BuildDefense(DefenseWork what) => Threat.Build(Town, what);
@@ -546,6 +551,15 @@ public sealed class Simulation
         // The shopkeeper comes on top of the wagon's settlers. The inn is left to the first entrepreneur
         // (an inn on day one drained the settlers' purses into ale before they had homes).
         for (int i = 2; i < Options.Settlers; i++) Population.CreateAgent(t);
+        // The charter pays a pair of watchmen and swears a knight to the town, so it can stand guard before it can build a watch house.
+        t.Watch = c.Council.StartingWatch;
+        Agent? knight = null;
+        if (c.Rules.CharterKnight != "")
+        {
+            knight = Quests.CreateHero(t, c.Classes.First(k => k.Id == c.Rules.CharterKnight), c.Rules.CharterKnightLevel);
+            knight.Hero!.Sworn = true;
+            knight.Hero.Lodging = true;
+        }
 
         t.Market.Seed(Good.Food, 150);
         t.Market.Seed(Good.Timber, 60);
@@ -558,8 +572,8 @@ public sealed class Simulation
         t.Log(
             LedgerCategory.Town,
             Importance.Major,
-            $"The charter is signed. {t.Population} settlers and a wagon arrive at the river ford that will become {t.Name}. {Annals.Founding(t)}",
-            t.Residents.Select(a => a.Id).ToList());
+            $"The charter is signed. {t.Population} settlers and a wagon arrive at the river ford that will become {t.Name}. {Annals.Founding(t)}{(knight != null ? $" {knight.Name}, a knight sworn to the charter, rides at the wagon's side, and two watchmen walk behind it." : "")}",
+            t.Residents.Select(a => a.Id).Concat(knight != null ? [knight.Id] : []).Distinct().ToList());
     }
 
     /// <summary>A founder's lot in the zone's patch, or, failing that, anywhere open (it takes the zone all the same).</summary>

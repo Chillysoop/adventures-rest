@@ -3,7 +3,7 @@
     {
       "id": "welcome",
       "title": "Welcome, Mayor",
-      "text": "Briarford is yours to grow. You don't command heroes here: you post bounties, set laws and build, and the townsfolk and adventurers choose for themselves. Follow the [b]gold outline[/b] and this card through the basics. You can end the tutorial any time.",
+      "text": "Briarford is yours to grow. You don't command heroes here: you post bounties, set laws and build, and the townsfolk and adventurers choose for themselves. Follow the [b]gold outline[/b] through a short tour of the basics; everything else is explained here the first time it matters. You can end the tutorial any time.",
       "teaches": []
     },
     {
@@ -24,7 +24,7 @@
     {
       "id": "inspect",
       "title": "Meet the townsfolk",
-      "text": "Click anyone walking the streets, or any building, to inspect them. Names in the Ledger and the news are links that do the same.",
+      "text": "Click anyone walking the streets, or any building, to inspect them. Names in the Ledger and the news are links that do the same. Everyone has a character sheet with abilities and skills, and their everyday moments are real [b]d20[/b] checks: the dice pop up over their heads.",
       "point": "inspector",
       "until": "select",
       "teaches": []
@@ -45,19 +45,12 @@
       "teaches": ["key:F1"]
     },
     {
-      "id": "rail",
-      "title": "Every window, one click",
-      "text": "Every window has a button on the rail down the left: hover one for its name. A [b]badge[/b] counts what waits for you there, red when it is urgent and gold for a decision. [b]Shift[/b] and a number opens the ten you'll use most: Shift+1 Bounties, Shift+2 Council, Shift+3 War, Shift+4 Campaign, Shift+5 City, on to Shift+0 for the Ledger.",
-      "point": "rail",
-      "teaches": ["key:Key9"]
-    },
-    {
       "id": "ledger",
-      "title": "The Ledger",
-      "text": "Everything that happens in town is written in the Ledger, from brawls to weddings to dragons. Open the [b]Ledger[/b] from the rail down the left.",
+      "title": "Every window, one click",
+      "text": "Every window has a button on the rail down the left: hover one for its name. A [b]badge[/b] counts what waits for you there, red when urgent and gold for a decision. [b]Shift[/b] and a number opens the ten you'll use most, from Shift+1 Bounties to Shift+0 for the Ledger. Open the [b]Ledger[/b] now: everything that happens in town is written there, from brawls to weddings to dragons.",
       "point": "tab:Ledger",
       "until": "tab:Ledger",
-      "teaches": ["tab:Ledger"]
+      "teaches": ["key:Key9", "tab:Ledger"]
     },
     {
       "id": "mayor",
@@ -68,20 +61,62 @@
       "teaches": ["tab:Mayor", "key:C", "command:ChooseBackground"]
     },
     {
-      "id": "build",
-      "title": "Zone the land",
-      "text": "Open the build bar with [b]Build[/b] or [b]B[/b]. You don't place houses: you paint zones, and the townsfolk build homes, farms and shops in them as they can afford to. Government buildings you place yourself: click to set one down, or drag to turn it any way. Green ground shows where it fits, and if your spot is too tight or too steep it settles on the nearest one that works.",
-      "point": "build",
-      "until": "build",
-      "teaches": ["key:B", "command:Place"]
-    },
-    {
       "id": "zone",
-      "title": "Paint a zone",
-      "text": "Pick a zone in the build bar, then brush across open ground near the town to paint it; [b][[/b] and [b]][/b] (or Shift+wheel) size the brush. Plot outlines show where the buildings will go; lanes wear in to the paint by themselves and the townsfolk build facing them. Homes keep people off the streets; farms keep bread cheap.",
+      "title": "Paint homes and shops",
+      "text": "Open the build bar with [b]Build[/b] or [b]B[/b]. You don't place houses: you paint zones, and the townsfolk build in them as they can afford to. Pick a zone and brush across open ground near the town; [b][[/b] and [b]][/b] (or Shift+wheel) size the brush. Paint [b]homes[/b] for settlers and [b]shops[/b] for trade: the first tavern goes up in a shop zone, and heroes only come to a town with a tavern. Government buildings you place yourself: click to set one down, drag to turn it.",
       "point": "buildbar",
       "until": "zoned",
-      "teaches": ["command:PaintZone", "key:Bracketleft", "key:Bracketright"]
+      "teaches": ["key:B", "command:Place", "command:PaintZone", "key:Bracketleft", "key:Bracketright"]
+    },
+    {
+      "id": "charter-goals",
+      "title": "Charter goals",
+      "text": "The card beside the rail lists the town's first [b]charter goals[/b]: paint land for homes, post a bounty, get a tavern built, and on to the hamlet charter. Three show at a time, each with its progress and a small reward of gold, mandate or a festival day. Meet one and the next appears.",
+      "point": "goals",
+      "when": "goals",
+      "teaches": []
+    },
+    {
+      "id": "heroes-arrive",
+      "title": "Heroes for hire",
+      "text": "Adventurers have come to town. They drink, train and wait for work. Click one to see their sheet: you can reward them, knight them, grant them a fief or name a champion, and loyal heroes stay when times turn dark.",
+      "until": "select:agent",
+      "when": "count:Heroes",
+      "teaches": ["command:RewardHero", "command:Knight", "command:GrantFief", "command:NameChampion"]
+    },
+    {
+      "id": "bounties",
+      "title": "Post a bounty",
+      "text": "Heroes only go where gold leads them. In [b]Bounties[/b] (or the [b]bounty board[/b] on the tray at the right edge), post a reward on a site in the wilds, and a company takes it up when they think they can win. Only bounties the council pays for lift the fog from the map.",
+      "point": "tab:Bounties",
+      "until": "count:Bounties",
+      "when": "count:Heroes",
+      "teaches": ["tab:Bounties", "command:PostBounty", "command:HoldSite"]
+    },
+    {
+      "id": "explore",
+      "title": "Send explorers",
+      "text": "The map only shows what someone has told the town. To find places for certain, open [b]Bounties[/b] and offer a company coin to [b]Explore[/b] a region. A company goes when it thinks the pay is worth the danger, so it may take a few days; once out, they report every lair, settlement and ruin they come on before doing anything about it.",
+      "point": "tab:Bounties",
+      "until": "next",
+      "when": "count:Heroes",
+      "teaches": ["command:PostSurvey"]
+    },
+    {
+      "id": "council",
+      "title": "The council",
+      "text": "Three councillors bring [b]motions[/b] for you to sign or veto, and you set [b]taxes[/b] and the watch here, or call a [b]festival[/b] when spirits need lifting. Mandate fades back toward the middle unless you keep earning it; a council that stops listening is how mayors fall. The council, events and the war also sit on the tray at the right edge, so you can answer them without opening a window.",
+      "point": "tab:Council",
+      "until": "tab:Council",
+      "teaches": ["tab:Council", "command:DecideMotion", "command:HoldFestival"]
+    },
+    {
+      "id": "alerts",
+      "title": "Alerts",
+      "text": "When something needs you, an icon appears along the top: red is urgent, gold waits on your decision, and the number counts alerts of that kind. [b]Hover[/b] for a summary, [b]click[/b] to go where you can answer it (or pick from the list), and [b]right-click[/b] to dismiss. Alerts clear once the problem is solved, and minor ones fade on their own.",
+      "point": "alerts",
+      "when": "alert:",
+      "teaches": []
     },
     {
       "id": "city",
@@ -92,148 +127,6 @@
       "teaches": ["tab:City", "command:RaiseCharter"]
     },
     {
-      "id": "council",
-      "title": "The council",
-      "text": "Three councillors bring motions for you to sign or veto, and you set taxes and the watch here. Signing what the town wants raises your Mandate; a council that stops listening is how mayors fall.",
-      "point": "tab:Council",
-      "until": "tab:Council",
-      "teaches": ["tab:Council", "command:DecideMotion"]
-    },
-    {
-      "id": "taxes",
-      "title": "Taxes and unrest",
-      "text": "You set the town's [b]taxes[/b] in [b]Council[/b]. Every household, hall and institution adds to what the town's services cost, so the rate that paid for a village won't pay for a city. When services cost more than taxes, rents and trade bring in, [b]unrest[/b] climbs: moods sour, your Mandate slips, settlers stay away, and at its worst workers down tools and march on the hall. Raise taxes a point at a time, or find more income: trade routes, wonders, institutions that pay their way.",
-      "when": "day:30",
-      "point": "tab:Council",
-      "until": "tab:Council",
-      "teaches": ["command:SetTax"]
-    },
-    {
-      "id": "decorate",
-      "title": "Dress the town",
-      "text": "The build bar's [b]Decor[/b] tab has trees, benches, lamps, fountains, statues and more. Set them anywhere at any angle: click to place, drag to aim, and [b]R[/b] or Shift+wheel turns the piece. Drag fences and hedges into rows, paint trees and flowers, and clear pieces for half their price back. Every piece helps a little: benches rest the neighbours, lamps help the watch, stalls lift trade, statues win favour and loyalty, and houses on a pleasant street grow a storey sooner. Builders and lanes go round what you set down.",
-      "when": "day:10",
-      "point": "buildbar",
-      "until": "decorated",
-      "teaches": ["command:Decorate", "command:ClearDecoration", "key:R"]
-    },
-    {
-      "id": "lens",
-      "title": "See the town at a glance",
-      "text": "Press [b]L[/b] or [b]Lens[/b] by the corner map to grey the town and colour one thing about it: [b]Room[/b] left on painted land, [b]Work[/b] (homes of the idle and places hiring), [b]Growth[/b] (houses ready for another storey, and what the rest wait on), [b]Appeal[/b] and [b]Danger[/b] (what raiders can reach). Hover a building to read why it is coloured so.",
-      "when": "day:14",
-      "point": "lens",
-      "until": "lens",
-      "teaches": ["key:L"]
-    },
-    {
-      "id": "heroes-arrive",
-      "title": "Heroes for hire",
-      "text": "Adventurers have come to town. They drink, train and wait for work. Click one to see their sheet: you can reward them, knight them, grant them a fief or name a champion, and loyal heroes stay when times turn dark.",
-      "when": "count:Heroes",
-      "until": "select:agent",
-      "teaches": ["command:RewardHero", "command:Knight", "command:GrantFief", "command:NameChampion"]
-    },
-    {
-      "id": "bounties",
-      "title": "Post a bounty",
-      "text": "Heroes only go where gold leads them. In [b]Bounties[/b], post a reward on a site in the wilds and a company will take it up when they think they can win. Only bounties the council pays for lift the fog from the map.",
-      "point": "tab:Bounties",
-      "until": "count:Bounties",
-      "teaches": ["tab:Bounties", "command:PostBounty", "command:HoldSite"]
-    },
-    {
-      "id": "tray",
-      "title": "The action tray",
-      "text": "On the right edge sit the four things a mayor answers most: the [b]bounty board[/b], the [b]council[/b], [b]events[/b] and the [b]war[/b], each with a count of what waits. Click one and it slides out over the map, so you can post a bounty, sign a motion or answer a story without opening a window. Click it again to fold it away.",
-      "point": "tray",
-      "teaches": []
-    },
-    {
-      "id": "explore",
-      "title": "Send explorers",
-      "text": "The map only shows what someone has told the town, and hearsay is only a rough ring where the teller said. To find places for certain, open [b]Bounties[/b] and pay a company to [b]Explore[/b] a region. They wander it, and every lair, settlement, caravan, rival company, magical font or old ruin they come on, they report before they do anything about it.",
-      "point": "tab:Bounties",
-      "until": "count:Surveys",
-      "teaches": ["command:PostSurvey"]
-    },
-    {
-      "id": "discoveries",
-      "title": "What the explorers found",
-      "text": "Explorers have sent word and are waiting for yours. [b]Investigate further[/b] works through a find a chapter at a time: hours of work and a d20 check for the company, a risk if it goes wrong and more learned when it goes right, until the last chapter pays off. Or have them go in, deal with it, keep exploring, or come home. If no word comes, their leader decides.",
-      "when": "alert:find",
-      "point": "alerts",
-      "until": "explorers",
-      "teaches": ["command:OrderExplorers"]
-    },
-    {
-      "id": "eyes",
-      "title": "Eyes on the wilds",
-      "text": "Once a party leaves town you lose sight of it in the fog. From [b]Bounties[/b] you can commission a scrying, post scouts, hide mirrors at a site, send word to a party or call it home, and later raise the Scrying Pool or the Sleepless Spire to see further.",
-      "when": "count:Parties",
-      "point": "tab:Bounties",
-      "teaches": ["command:CommissionScrying", "command:PostScout", "command:RecallScout", "command:PlantMirror", "command:SendWord", "command:BuildSightWork"]
-    },
-    {"id": "terms", "title": "Bounty terms", "text": "A bounty says how the job is to be done, not only where. Pick the terms at the top of the [b]Bounty board[/b]: [b]Slay[/b] clears a place for good; [b]Drive off[/b] is quicker and cheaper, but something moves back in sooner; [b]Talk down[/b] sends silver tongues to bargain with foes clever enough to listen; [b]Fetch[/b] steals the best of the hoard for the town. Heroes take jobs that suit their temper, and every hero judges the terms you post.", "point": "tab:Bounties", "when": "day:25", "teaches": []},
-    {"id": "sightings", "title": "Raiders sighted", "text": "Farmers, scouts and friendly towns bring word when they see enemies on the move. A red mark on the map shows where they were seen and which way they were heading. It is news, not a live view, and it fades as it goes stale. A band seen heading for a farm strikes that night: plant a guard flag over the farm ([b]G[/b]) and it may turn back, though it will come again with more. Each lair keeps its own habits (select a site to see its [b]Habit[/b]), and the [b]Campaign[/b] window shows every enemy leader, what they hold against your town and the last you heard of them.", "point": "alerts", "when": "alert:sighted", "teaches": []},
-    {"id": "fear", "title": "Fear", "text": "When fear climbs near the top, the alert strip warns you, and once it sits there the alert counts the days until the townsfolk give up on the town and the campaign is lost. Break the menace that frightens them most, win a fight, or fund the temples to lift spirits. Stone buildings never burn, and a discovery in the Library can fireproof the timber ones.", "point": "alerts", "when": "alert:fear", "teaches": []},
-    {"id": "crowded", "title": "Full to the doors", "text": "Taverns, shrines, bathhouses, theatres, market halls, libraries and the arena each hold so many at once. Townsfolk walk to the one they like, and if it is full they try the next one near, or go home and do something else, a little put out. Select a building to see how full it is and how many it turned away yesterday. Places that keep turning people away serve their houses less, so the houses grow slower: let another open nearby.", "point": "alerts", "when": "alert:crowded", "teaches": []},
-    {"id": "captives", "title": "Townsfolk taken", "text": "Raiders who get through can carry townsfolk off to their camp. They are held for a few days: post a [b]Rescue[/b] on the camp, or clear it, and they come home. If the days run out they are lost, and the town remembers it.", "point": "alerts", "when": "alert:captives", "teaches": []},
-    {"id": "broadsheet", "title": "The town broadsheet", "text": "Once the town is big enough a printer sets up, and every week an issue goes on sale with the week's news. Open the [b]Ledger[/b] and press [b]Broadsheet[/b] to read it. You can pay for the next front page: [b]Praise the mayor[/b] wins approval but can be found out if you lean on it, [b]Cry up a hero[/b] puts the selected hero on the front page, and [b]Name the guilds[/b] puts the town's secret societies under scrutiny. Heroes judge what you pay the paper to say.", "point": "tab:Ledger", "when": "day:35", "teaches": ["command:SlantBroadsheet"]},
-    {
-      "id": "companies",
-      "title": "Buy what others found",
-      "text": "Other adventuring companies roam the wilds too. In [b]Companies[/b] you can buy their reports to map ground you haven't paid to explore. Fresh news costs more, and so does a company that doesn't like you.",
-      "point": "tab:Companies",
-      "until": "tab:Companies",
-      "teaches": ["tab:Companies", "command:BuyIntel"]
-    },
-    {
-      "id": "roster",
-      "title": "Pick a company for the job",
-      "text": "[b]Companies[/b] opens on the roster: every adventuring company in town with its power, loyalty, missions done and good deeds. Click a column to sort by it, and filter by who is ready or which classes ride with them. Pick a company and offer it a job by name. It weighs the pay, its temper, what it thinks of the council and the danger against its strength, then takes the job and marches at once, or tells you why not.",
-      "point": "tab:Companies",
-      "until": "tab:Companies",
-      "when": "count:Companies",
-      "teaches": ["command:OfferJob"]
-    },
-    {
-      "id": "armory",
-      "title": "Arm your heroes",
-      "text": "The town hall keeps an [b]Armory[/b]. Give its magic arms, armour and charms to heroes in town to help them take on harder sites: they wear it at once, count it as pay and think better of you. A [b]sending stone[/b] lets a company with no caster send word home from the road. The armory fills from loot: post a bounty with [b]loot terms[/b] (a bigger reward, and the hoard's magic comes to the town), swear a company to a [b]loot pact[/b] for a finder's fee, or buy what heroes and caravans offer. Sell what nobody needs.",
-      "point": "tab:Armory",
-      "when": "day:15",
-      "until": "tab:Armory",
-      "teaches": ["tab:Armory", "command:Gift", "command:BuyLoot", "command:SellStock", "command:OfferPact", "command:EndPact"]
-    },
-    {
-      "id": "alchemy",
-      "title": "The alchemy bench",
-      "text": "An [b]Apothecary[/b] holds an alchemy bench. At the foot of the [b]Armory[/b] window, pick two or three ingredients and [b]Brew[/b]: herbs from the town's beds, and the monster parts companies bring home from the lairs they clear. Each lends a brew a little of a quality (mending, vigour, ember, rime, gloom, purity); a mix that reaches a recipe makes it, and the first batch gets the town's name in its recipe book. A mix that reaches nothing spoils.",
-      "point": "tab:Armory",
-      "when": "day:25",
-      "until": "tab:Armory",
-      "teaches": ["command:Brew"]
-    },
-    {
-      "id": "alchemy-shelf",
-      "title": "Potions on the shelf",
-      "text": "Your brews wait on the town's shelf. Heroes setting out take [b]healing draughts[/b] from it, a [b]ward[/b] makes them harder to hit at a lair of its kind, and a [b]fever-breaker[/b] pulls a townsperson back from a plague-bringer's night visit. Anything you have no use for sells: [b]Sell[/b] it from the shelf in the Armory window.",
-      "point": "tab:Armory",
-      "when": "count:Recipes",
-      "until": "tab:Armory",
-      "teaches": ["command:SellPotions"]
-    },
-    {
-      "id": "bastions",
-      "title": "A bastion of their own",
-      "text": "A company that has made its name asks the council for land on the edge of town to raise a [b]bastion[/b]: a keep where its heroes live, and facilities like a physic garden, a drill yard or a smithy. It hires townsfolk to staff them, so it brings jobs and pulls workers from poorer pay. Its sentries stand on the walls in a siege, and heroes with a bastion stay loyal. Answer in [b]Companies[/b]: grant the land, give it free, or refuse.",
-      "when": "count:BastionRequests",
-      "point": "tab:Companies",
-      "until": "tab:Companies",
-      "teaches": ["command:AnswerBastion"]
-    },
-    {
       "id": "war",
       "title": "Ready the walls",
       "text": "Something will come for Briarford sooner or later. [b]War[/b] shows the threat and the walls: start with a timber palisade and watchtowers, then raise stone walls, a gatehouse, a moat and barracks in the walls as the town grows. Builders keep a clear strip along the wall line so the stone, towers and moat have room later. Raiders strike when your heroes are away, so don't send everyone at once.",
@@ -241,59 +134,13 @@
       "until": "tab:War",
       "teaches": ["tab:War", "command:BuildDefense"]
     },
-    {"id": "draw-walls", "title": "Draw your walls", "text": "You decide where the walls run. Pick the palisade, stone walls or city wall on the build bar and click round the town to draw the line: each click is a corner, and a click back on the first corner closes it. The line must go right round the town hall and can't run through a building. Then click on the line to place a gate (every wall needs at least one, and up to four). The masons start once the wall has a gate, and the wall rises as the market has its timber and stone. Buildings never go up across a wall's line.", "when": "day:30", "teaches": ["command:DrawWall", "command:PlaceGate", "command:RemoveGate", "key:Enter", "key:KpEnter", "key:Backspace"]},
     {
       "id": "guard-flags",
       "title": "Post the guard",
       "text": "You don't steer the watch by hand: you give it orders. Press [b]G[/b] (or [b]Plant[/b] under Town guard in [b]War[/b]) and click anywhere to plant a flag; the nearest guards walk there and stand watch. Raiders shy away from what a flag covers, and what it covers holds better. Click a flag to stand it down. Try planting one by your farms.",
       "point": "tab:War",
-      "when": "day:12",
       "until": "flag",
       "teaches": ["key:G", "command:PlantFlag", "command:StandDown"]
-    },
-    {
-      "id": "lurker",
-      "title": "A stranger in the crowd",
-      "text": "Townsfolk have spotted someone who doesn't belong: an enemy's agent, looking over what they mean to burn, knife or spoil tonight. Click the alert to go there, find the [b]hooded figure[/b] drifting among the townsfolk, and click them to have the watch seize them before dark. Leave them, and the watch has to stop the blow when it falls.",
-      "when": "alert:lurker",
-      "point": "alerts",
-      "until": "seize",
-      "teaches": ["command:Seize"]
-    },
-    {
-      "id": "call-to-arms",
-      "title": "Call to arms",
-      "text": "A host is marching, and the scouts say which side it comes at. Click the alert, or that stretch of wall, and press [b]Call to arms[/b]: the nearest of the watch run up onto it. Every wall section, tower and the gate can be called. A stretch with more guards than its share holds better when a wave hits it; a manned tower adds its archers.",
-      "point": "inspector",
-      "when": "alert:march",
-      "until": "call",
-      "teaches": ["command:CallToArms"]
-    },
-    {"id": "siege-watch", "title": "Watch the siege", "text": "A host at the walls camps before them through the night and storms them at dawn. The banner under the alert strip follows the fight wave by wave: click it to see the stretch of wall under attack, the ram at the gate and the archers on the walls. Where a wave breaks through, roofs by the breach catch fire. If the walls hold, the heroes at home sally out to meet the enemy leader. What wins it is what you did before the host came: walls and towers, the watch called to the side it attacks, heroes kept home.", "point": "siege", "when": "count:Battles", "teaches": []},
-    {
-      "id": "quick-orders",
-      "title": "Quick orders",
-      "text": "The four buttons over the corner map are there when you need to move fast. [b]Defend[/b] sounds the horn on the gate and on whichever side a host is marching from; it glows red while a side is left bare, and pressed again it stands them down. [b]Guard[/b] picks up a guard flag, like [b]G[/b]. [b]Strike[/b] lists the threats you know of, each with a bounty to post or sellswords to send. [b]Scout[/b] marks a spot: click anywhere on the map, even deep in the fog, and the council offers a company coin to walk there and tell you what it finds.",
-      "point": "orders",
-      "when": "day:8",
-      "until": "orders",
-      "teaches": ["command:ManTheWalls", "command:MarkSpot"]
-    },
-    {
-      "id": "sellswords",
-      "title": "Sellswords",
-      "text": "Gold can buy an army too. Under [b]Sellswords[/b] in the [b]War[/b] tab, hire a mercenary company for a fee and a daily wage, and it stands on the walls with the watch. Once the town knows where a named menace sits, fund a campaign to march them against it. They can break its holds and even storm its seat, but only heroes can end the greatest foe. A company the treasury can't pay walks away.",
-      "point": "tab:War",
-      "when": "day:90",
-      "teaches": ["command:HireMercenaries", "command:MarchMercenaries", "command:DismissMercenaries"]
-    },
-    {
-      "id": "clockwork",
-      "title": "Clockwork wardens",
-      "text": "A city with a mage tower or a guildhall can build [b]clockwork wardens[/b] under the [b]War[/b] tab. They never sleep and can't be bribed, so they help the watch catch a schemer's agents even when its captain is crooked. But townsfolk don't like being watched by brass, and the Quiet Hand or a scheming foe may try to steal one. A mage tower keeps the keys safer.",
-      "point": "tab:War",
-      "when": "day:300",
-      "teaches": ["command:BuildWarden", "command:ScrapWarden"]
     },
     {
       "id": "faith",
@@ -304,60 +151,314 @@
       "teaches": ["tab:Faith", "command:BuildTemple", "command:SupportFaction", "command:CrackDown"]
     },
     {
-      "id": "alerts",
-      "title": "Alerts",
-      "text": "When something needs you, an icon appears along the top: red is urgent, gold waits on your decision, and the number counts alerts of that kind. [b]Hover[/b] for a summary, [b]click[/b] to go where you can answer it (or pick from the list), and [b]right-click[/b] to dismiss. Alerts clear once the problem is solved, and minor ones fade on their own.",
-      "when": "alert:",
+      "id": "campaign",
+      "title": "The long road",
+      "text": "[b]Campaign[/b] tracks the saga: the acts, the menaces that fester when left alone, and the big bad. [b]Chronicles[/b] keeps the tales of your heroes' expeditions.",
+      "point": "tab:Campaign",
+      "until": "tab:Campaign",
+      "teaches": ["tab:Campaign", "tab:Chronicles"]
+    },
+    {
+      "id": "campaign-map",
+      "title": "The campaign map",
+      "text": "Press [b]M[/b] or [b]Campaign map[/b] to see the same land as an inked map. Drop markers to plan, drag them to move them, and press [b]Delete[/b] to remove the one under the cursor.",
+      "point": "strategic",
+      "until": "strategic",
+      "teaches": ["key:M", "key:Delete"]
+    },
+    {
+      "id": "save",
+      "title": "Saving",
+      "text": "[b]Esc[/b] or [b]Menu[/b] opens the game menu with five save slots. The town autosaves every three days and when you quit. [b]F5[/b] quicksaves and [b]F9[/b] loads it. [b]History[/b] in the same menu tells of the empires and wars before your town.",
+      "point": "menu",
+      "teaches": ["key:Escape", "key:F5", "key:F9"]
+    },
+    {
+      "id": "done",
+      "title": "The town is yours",
+      "text": "That's the tour. From here, tips come one at a time when they matter: the first raid, the first story, the first guild. Good luck, Mayor.",
+      "teaches": []
+    },
+    {
+      "id": "discoveries",
+      "title": "What the explorers found",
+      "text": "Explorers have sent word and are waiting for yours. [b]Investigate further[/b] works through a find a chapter at a time: hours of work and a d20 check for the company, a risk if it goes wrong and more learned when it goes right, until the last chapter pays off. Or have them go in, deal with it, keep exploring, or come home. If no word comes, their leader decides.",
       "point": "alerts",
+      "until": "next",
+      "when": "alert:find",
+      "teaches": ["command:OrderExplorers"]
+    },
+    {
+      "id": "eyes",
+      "title": "Eyes on the wilds",
+      "text": "Once a party leaves town you lose sight of it in the fog. From [b]Bounties[/b] you can commission a scrying, post scouts, hide mirrors at a site, send word to a party or call it home, and later raise the Scrying Pool or the Sleepless Spire to see further.",
+      "point": "tab:Bounties",
+      "when": "count:Parties",
+      "teaches": ["command:CommissionScrying", "command:PostScout", "command:RecallScout", "command:PlantMirror", "command:SendWord", "command:BuildSightWork"]
+    },
+    {
+      "id": "sendings",
+      "title": "Word from the road",
+      "text": "A party on a bounty with a caster (or one of the town's sending stones) can reach you by sending and ask how to go on: pay the toll or bluff, trust the captured scout, bring home the captives or the gold. The game pauses until you answer. Each choice rolls your d20 plus your sheet, plus help from the party's best hand at it. Some quests go on over several sendings. An [b]Adventurers' Hall[/b] (Government) adds to every roll, unlocks choices of its own, and lets parties send word more often.",
+      "when": "count:Parties",
+      "teaches": []
+    },
+    {
+      "id": "terms",
+      "title": "Bounty terms",
+      "text": "A bounty says how the job is to be done, not only where. Pick the terms at the top of the [b]Bounty board[/b]: [b]Slay[/b] clears a place for good; [b]Drive off[/b] is quicker and cheaper, but something moves back in sooner; [b]Talk down[/b] sends silver tongues to bargain with foes clever enough to listen; [b]Fetch[/b] steals the best of the hoard for the town. Heroes take jobs that suit their temper, and every hero judges the terms you post.",
+      "point": "tab:Bounties",
+      "when": "day:25",
       "teaches": []
     },
     {
       "id": "stories",
       "title": "Step into a story",
-      "text": "Things happen in town that you can step into: a brawl at the inn, a hero packing to leave, an envoy from the enemy, a host on the march. A card pops up with your choices. Each is a [b]d20 roll[/b] of your own skill against a DC, and the card shows your odds. Pick one and roll. Choose [b]Later[/b] to leave it on the alert strip, but a story you leave alone runs its course without you. Running the town well earns [b]Inspiration[/b]: tick it on the card and a failed roll is thrown again.",
-      "when": "alert:story",
+      "text": "Things happen in town that you can step into: a brawl at the inn, a hero packing to leave, an envoy from the enemy. A card pops up with your choices. Each is a [b]d20 roll[/b] of your own skill against a DC: the [b]Odds[/b] bar is green and full for a near-certain thing, red and nearly empty for a long shot, and [b]Reward[/b] and [b]Risk[/b] show roughly what it could win or cost. Choose [b]Later[/b] to leave it on the alert strip, but a story you leave alone runs its course. Running the town well earns [b]Inspiration[/b]: tick it and a failed roll is thrown again.",
       "point": "alerts",
-      "until": "roll",
+      "until": "next",
+      "when": "alert:story",
       "teaches": ["command:ResolveStory"]
     },
-    {"id": "regard", "title": "Heroes judge your choices", "text": "Every hero has a temper: merciful, ruthless, pious, mercenary, lawful, free-spirited or bold. When you answer a story, each choice shows which heroes in town it would [b]please[/b] or [b]anger[/b]. What they think of you moves their loyalty, and it is shown when you select a hero. A hero who trusts you will ask for help with a personal quest of their own; one you keep angering will come to you with a grievance.", "point": "inspector", "when": "alert:story", "teaches": []},
-    {"id": "reading-bars", "title": "Read the bars", "text": "Every choice has a coloured edge and an [b]Odds[/b] bar: green and full for a near-certain thing, red and nearly empty for a long shot. [b]Reward[/b] and [b]Risk[/b] show roughly how much it could win or cost, and the small icons what it touches, not which way. Enemies and lairs wear a portrait ringed in the colour of their [b]Threat[/b] or [b]Danger[/b]: four red segments means it can take your walls or beat your heroes. The bars are the town's best guess, and a rumour can be wrong.", "point": "alerts", "when": "alert:story", "teaches": []},
-    {"id": "bargains", "title": "Law and strange bargains", "text": "Heroes break the law too: a brawl or a theft comes to you to [b]pardon[/b], [b]fine[/b] or [b]jail[/b], and the heroes watching judge it. Beware gifts from strangers, like sweet wells or a notary's purse: each carries a debt that falls due weeks later. A menace may offer a hero strength in a dream, and every dark gift taken makes them likelier to fall, unless you forbid it. Foes can change sides as well: a beaten leader may beg quarter or come over to the town, and heroes from your past towns' legends may turn up looking for work.", "point": "alerts", "when": "day:50", "teaches": []},
-    {"id": "ward-voices", "title": "Every ward has a voice", "text": "The wards judge your choices too. The stallholders of the Market Ward like profit, the temple wardens like mercy and the gods, the wharf crews like free hands. A choice shows which wards it pleases or angers alongside the heroes. A ward that warms to you is more content, so its houses grow sooner; one you sour grumbles. See how each ward feels in the [b]City[/b] window.", "point": "tab:City", "when": "day:60", "teaches": []},
     {
-      "id": "mayor-level",
-      "title": "Level up",
-      "text": "Seeing stories through gives you experience, and each level lets you choose how you grow on the [b]Mayor[/b] tab: learn a new skill or become expert in one, and at levels 4 and 8 raise your abilities or take a feat such as Lucky or Silver Tongue. Your sheet also rolls when you decide motions, answer demands, send envoys, crack down and haggle, so a better mayor gets a little more out of every decision.",
-      "when": "alert:levelup",
-      "point": "tab:Mayor",
-      "until": "tab:Mayor",
-      "teaches": ["command:AdvanceMayor"]
+      "id": "regard",
+      "title": "Heroes judge your choices",
+      "text": "Every hero has a temper: merciful, ruthless, pious, mercenary, lawful, free-spirited or bold. When you answer a story, each choice shows which heroes in town it would [b]please[/b] or [b]anger[/b]. What they think of you moves their loyalty, and it is shown when you select a hero. A hero who trusts you will ask for help with a personal quest of their own; one you keep angering will come to you with a grievance.",
+      "point": "inspector",
+      "when": "alert:story",
+      "teaches": []
+    },
+    {
+      "id": "companies",
+      "title": "Companies for hire",
+      "text": "Other adventuring companies roam the wilds too. [b]Companies[/b] opens on the roster: power, loyalty, missions and good deeds, sortable by column. Pick a company and offer it a job by name: it weighs the pay, its temper and the danger, then marches or tells you why not. You can also buy their reports to map ground you haven't paid to explore.",
+      "point": "tab:Companies",
+      "until": "tab:Companies",
+      "when": "count:Companies",
+      "teaches": ["tab:Companies", "command:BuyIntel", "command:OfferJob"]
+    },
+    {
+      "id": "taxes",
+      "title": "Taxes and unrest",
+      "text": "You set the town's [b]taxes[/b] in [b]Council[/b]. Every household, hall and institution adds to what the town's services cost, so the rate that paid for a village won't pay for a city. When services cost more than taxes, rents and trade bring in, [b]unrest[/b] climbs: moods sour, your Mandate slips, settlers stay away, and at its worst workers down tools and march on the hall. Raise taxes a point at a time, or find more income: trade routes, wonders, institutions that pay their way.",
+      "point": "tab:Council",
+      "until": "tab:Council",
+      "when": "alert:underfunded",
+      "teaches": ["command:SetTax"]
+    },
+    {
+      "id": "quick-orders",
+      "title": "Quick orders",
+      "text": "The four buttons over the corner map are there when you need to move fast. [b]Defend[/b] sounds the horn on the gate and on whichever side a host is marching from; it glows red while a side is left bare, and pressed again it stands them down. [b]Guard[/b] picks up a guard flag, like [b]G[/b]. [b]Strike[/b] lists the threats you know of, each with a bounty to post or sellswords to send. [b]Scout[/b] marks a spot: click anywhere on the map, even deep in the fog, and the council offers a company coin to walk there and tell you what it finds.",
+      "point": "orders",
+      "until": "orders",
+      "when": "day:12",
+      "teaches": ["command:ManTheWalls", "command:MarkSpot"]
+    },
+    {
+      "id": "builders",
+      "title": "Builders and homes",
+      "text": "Each builders' yard puts three more crews to work, so more homes, shops and works can go up at once. Build one from the government buildings when the town's sites queue for builders. Homes grow a storey only when what folk need is close by: a tavern, a shrine, a market, food of several kinds, something pleasant on the street. Click a house to see what it waits for.",
+      "when": "day:15",
+      "teaches": []
+    },
+    {
+      "id": "lens",
+      "title": "See the town at a glance",
+      "text": "Press [b]L[/b] or [b]Lens[/b] by the corner map to grey the town and colour one thing about it: [b]Room[/b] left on painted land, [b]Work[/b] (homes of the idle and places hiring), [b]Growth[/b] (houses ready for another storey, and what the rest wait on), [b]Appeal[/b] and [b]Danger[/b] (what raiders can reach). Hover a building to read why it is coloured so.",
+      "point": "lens",
+      "until": "lens",
+      "when": "day:18",
+      "teaches": ["key:L"]
+    },
+    {
+      "id": "crops",
+      "title": "Sow your fields",
+      "text": "Farmland is sown one crop at a time. The build bar has a brush for each: [b]Wheat[/b] for bread, [b]Root crops[/b] that keep the town fed through winter, [b]Barley & hops[/b] brewed into ale on the farm, [b]Orchards[/b] that bear fruit and cider at harvest, and [b]Pasture[/b], [b]Herb beds[/b] and [b]Vineyards[/b] as the charters open them. Only that crop's farm goes up in a field, and painting over open fields resows them. Each button says whether the town wants more of that farm.",
+      "point": "buildbar",
+      "until": "sown",
+      "when": "day:20",
+      "teaches": []
+    },
+    {
+      "id": "decorate",
+      "title": "Dress the town",
+      "text": "The build bar's [b]Decor[/b] tab has trees, benches, lamps, fountains, statues and more. Set them anywhere at any angle: click to place, drag to aim, and [b]R[/b] or Shift+wheel turns the piece. Drag fences and hedges into rows, paint trees and flowers, and clear pieces for half their price back. Every piece helps a little: benches rest the neighbours, lamps help the watch, stalls lift trade, statues win favour and loyalty, and houses on a pleasant street grow a storey sooner. Builders and lanes go round what you set down.",
+      "point": "buildbar",
+      "until": "decorated",
+      "when": "day:22",
+      "teaches": ["command:Decorate", "command:ClearDecoration", "key:R"]
+    },
+    {
+      "id": "site-first",
+      "title": "Building sites",
+      "text": "Click a building site to see how far along it is. [b]Put this site first[/b] sends builders and the market's timber and stone to it ahead of the others. The council's sites carry their timber and stone off the market as they go: if the market runs out, the builders stand idle and an alert says so. Build a lumber camp or quarry, or send for a caravan from the site, which is dear but quick.",
+      "when": "alert:stalled",
+      "teaches": ["command:PrioritiseSite", "command:SendCaravan"]
+    },
+    {
+      "id": "sightings",
+      "title": "Raiders sighted",
+      "text": "Farmers, scouts and friendly towns bring word when they see enemies on the move. A red mark on the map shows where they were seen and which way they were heading. It is news, not a live view, and it fades as it goes stale. A band seen heading for a farm strikes that night: plant a guard flag over the farm ([b]G[/b]) and it may turn back, though it will come again with more. Each lair keeps its own habits (select a site to see its [b]Habit[/b]), and the [b]Campaign[/b] window shows every enemy leader, what they hold against your town and the last you heard of them.",
+      "point": "alerts",
+      "when": "alert:sighted",
+      "teaches": []
+    },
+    {
+      "id": "lurker",
+      "title": "A stranger in the crowd",
+      "text": "Townsfolk have spotted someone who doesn't belong: an enemy's agent, looking over what they mean to burn, knife or spoil tonight. Click the alert to go there, find the [b]hooded figure[/b] drifting among the townsfolk, and click them to have the watch seize them before dark. Leave them, and the watch has to stop the blow when it falls.",
+      "point": "alerts",
+      "until": "next",
+      "when": "alert:lurker",
+      "teaches": ["command:Seize"]
+    },
+    {
+      "id": "call-to-arms",
+      "title": "Call to arms",
+      "text": "A host is marching, and the scouts say which side it comes at. Click the alert, or that stretch of wall, and press [b]Call to arms[/b]: the nearest of the watch run up onto it. Every wall section, tower and the gate can be called. A stretch with more guards than its share holds better when a wave hits it; a manned tower adds its archers.",
+      "point": "inspector",
+      "until": "next",
+      "when": "alert:march",
+      "teaches": ["command:CallToArms"]
+    },
+    {
+      "id": "siege-watch",
+      "title": "Watch the siege",
+      "text": "A host at the walls camps before them through the night and storms them at dawn. The banner under the alert strip follows the fight wave by wave: click it to see the stretch of wall under attack, the ram at the gate and the archers on the walls. Where a wave breaks through, roofs by the breach catch fire. If the walls hold, the heroes at home sally out to meet the enemy leader. What wins it is what you did before the host came: walls and towers, the watch called to the side it attacks, heroes kept home.",
+      "point": "siege",
+      "when": "count:Battles",
+      "teaches": []
+    },
+    {
+      "id": "captives",
+      "title": "Townsfolk taken",
+      "text": "Raiders who get through can carry townsfolk off to their camp. They are held for a few days: post a [b]Rescue[/b] on the camp, or clear it, and they come home. If the days run out they are lost, and the town remembers it.",
+      "point": "alerts",
+      "when": "alert:captives",
+      "teaches": []
+    },
+    {
+      "id": "fear",
+      "title": "Fear",
+      "text": "When fear climbs near the top, the alert strip warns you, and once it sits there the alert counts the days until the townsfolk give up on the town and the campaign is lost. Break the menace that frightens them most, win a fight, or fund the temples to lift spirits. Stone buildings never burn, and a discovery in the Library can fireproof the timber ones.",
+      "point": "alerts",
+      "when": "alert:fear",
+      "teaches": []
+    },
+    {
+      "id": "crowded",
+      "title": "Full to the doors",
+      "text": "Taverns, shrines, bathhouses, theatres, market halls, libraries and the arena each hold so many at once. Townsfolk walk to the one they like, and if it is full they try the next one near, or go home and do something else, a little put out. Select a building to see how full it is and how many it turned away yesterday. Places that keep turning people away serve their houses less, so the houses grow slower: let another open nearby.",
+      "point": "alerts",
+      "when": "alert:crowded",
+      "teaches": []
+    },
+    {
+      "id": "armory",
+      "title": "Arm your heroes",
+      "text": "The town hall keeps an [b]Armory[/b]. Give its magic arms, armour and charms to heroes in town to help them take on harder sites: they wear it at once, count it as pay and think better of you. A [b]sending stone[/b] lets a company with no caster send word home from the road. The armory fills from loot: post a bounty with [b]loot terms[/b] (a bigger reward, and the hoard's magic comes to the town), swear a company to a [b]loot pact[/b] for a finder's fee, or buy what heroes and caravans offer. Sell what nobody needs.",
+      "point": "tab:Armory",
+      "until": "tab:Armory",
+      "when": "alert:gift",
+      "teaches": ["tab:Armory", "command:Gift", "command:BuyLoot", "command:SellStock", "command:OfferPact", "command:EndPact"]
+    },
+    {
+      "id": "alchemy",
+      "title": "The alchemy bench",
+      "text": "An [b]Apothecary[/b] holds an alchemy bench. At the foot of the [b]Armory[/b] window, pick two or three ingredients and [b]Brew[/b]: herbs from the town's beds, and the monster parts companies bring home from the lairs they clear. Each lends a brew a little of a quality (mending, vigour, ember, rime, gloom, purity); a mix that reaches a recipe makes it, and the first batch gets the town's name in its recipe book. A mix that reaches nothing spoils.",
+      "point": "tab:Armory",
+      "until": "tab:Armory",
+      "when": "day:40",
+      "teaches": ["command:Brew"]
+    },
+    {
+      "id": "alchemy-shelf",
+      "title": "Potions on the shelf",
+      "text": "Your brews wait on the town's shelf. Heroes setting out take [b]healing draughts[/b] from it, a [b]ward[/b] makes them harder to hit at a lair of its kind, and a [b]fever-breaker[/b] pulls a townsperson back from a plague-bringer's night visit. Anything you have no use for sells: [b]Sell[/b] it from the shelf in the Armory window.",
+      "point": "tab:Armory",
+      "until": "tab:Armory",
+      "when": "count:Recipes",
+      "teaches": ["command:SellPotions"]
+    },
+    {
+      "id": "moods",
+      "title": "Inspirations and breaks",
+      "text": "Your townsfolk have moods. Someone in high spirits for days may be [b]inspired[/b]: a smith forges a named blade for the armory, a barkeep throws a feast for the ward, a mason carves a column, a farmer brings in a bumper crop. Someone low for days may [b]break[/b]: a bender at the tavern, a tantrum, a brawl, sulking at home, or walking out of town for good. You'll see it over their heads, gold or grey, and in their inspector. Keep your Mandate up and the town fed and housed, and you'll see far more of the first than the second.",
+      "when": "day:25",
+      "teaches": []
+    },
+    {
+      "id": "draw-walls",
+      "title": "Draw your walls",
+      "text": "You decide where the walls run. Pick the palisade, stone walls or city wall on the build bar and click round the town to draw the line: each click is a corner, and a click back on the first corner closes it. The line must go right round the town hall and can't run through a building. Then click on the line to place a gate (every wall needs at least one, and up to four). The masons start once the wall has a gate, and the wall rises as the market has its timber and stone. Buildings never go up across a wall's line.",
+      "when": "day:30",
+      "teaches": ["command:DrawWall", "command:PlaceGate", "command:RemoveGate", "key:Enter", "key:KpEnter", "key:Backspace"]
+    },
+    {
+      "id": "broadsheet",
+      "title": "The town broadsheet",
+      "text": "Once the town is big enough a printer sets up, and every week an issue goes on sale with the week's news. Open the [b]Ledger[/b] and press [b]Broadsheet[/b] to read it. You can pay for the next front page: [b]Praise the mayor[/b] wins approval but can be found out if you lean on it, [b]Cry up a hero[/b] puts the selected hero on the front page, and [b]Name the guilds[/b] puts the town's secret societies under scrutiny. Heroes judge what you pay the paper to say.",
+      "point": "tab:Ledger",
+      "when": "day:35",
+      "teaches": ["command:SlantBroadsheet"]
+    },
+    {
+      "id": "notoriety",
+      "title": "Fame and infamy",
+      "text": "Heroes and companies make names for themselves. Clearing ruins, answering villages and holding the walls earn [b]renown[/b], and the bards give the famous an epithet. Brawls, theft, desertion and treachery earn [b]infamy[/b]. Click a hero to see their name: famous heroes draw others to town and frighten the foe, but they want more for a bounty and other towns court them unless you honour them. The council won't knight the notorious, and their past tends to catch up with them. [b]Companies[/b] shows each company's name abroad.",
+      "point": "inspector",
+      "when": "day:35",
+      "teaches": []
+    },
+    {
+      "id": "monuments",
+      "title": "Monuments that grow",
+      "text": "The town hall, the temple and the keep start small and grow by the parts you add: a bell tower, a nave, a curtain wall, a great hall. Click the building to see its parts, what each gives and what it costs. [b]Add[/b] one, or [b]Build it all now[/b] if you're bold: every part at once can empty the treasury and the market's timber and stone. Leave [b]Grow on its own[/b] ticked and the council adds the next part whenever it can spare the gold.",
+      "when": "day:40",
+      "teaches": ["command:AddPart", "command:AddAllParts", "command:GrowMonument"]
+    },
+    {
+      "id": "seasons",
+      "title": "The turning year",
+      "text": "The clock shows the season. Summer brings visitors and war bands, autumn the harvest, and winter empty fields, snowbound roads and the hungry dead. Autumn's harvest fills the cellars and granaries for the winter: if the [b]Winter stores[/b] in the City window run short, lay in grain from the traders before the snow.",
+      "point": "clock",
+      "until": "tab:City",
+      "when": "day:45",
+      "teaches": ["command:LayInStores"]
+    },
+    {
+      "id": "bargains",
+      "title": "Law and strange bargains",
+      "text": "Heroes break the law too: a brawl or a theft comes to you to [b]pardon[/b], [b]fine[/b] or [b]jail[/b], and the heroes watching judge it. Beware gifts from strangers, like sweet wells or a notary's purse: each carries a debt that falls due weeks later. A menace may offer a hero strength in a dream, and every dark gift taken makes them likelier to fall, unless you forbid it. Foes can change sides as well: a beaten leader may beg quarter or come over to the town, and heroes from your past towns' legends may turn up looking for work.",
+      "point": "alerts",
+      "when": "day:50",
+      "teaches": []
+    },
+    {
+      "id": "ward-voices",
+      "title": "Every ward has a voice",
+      "text": "The wards judge your choices too. The stallholders of the Market Ward like profit, the temple wardens like mercy and the gods, the wharf crews like free hands. A choice shows which wards it pleases or angers alongside the heroes. A ward that warms to you is more content, so its houses grow sooner; one you sour grumbles. See how each ward feels in the [b]City[/b] window.",
+      "point": "tab:City",
+      "when": "day:60",
+      "teaches": []
     },
     {
       "id": "petitions",
       "title": "Petitions and hard choices",
       "text": "As the town grows, its people bring you [b]petitions[/b]: a moved boundary stone, a road deep in mud, a widow of the watch. Some of your answers put a [b]decree[/b] in force for a while, such as lifted tolls or a curfew, and some choices are hard ones the town remembers. Open [b]Mayor[/b] to see the decrees in force and what the town remembers. Later stories turn on them.",
-      "when": "day:70",
       "point": "tab:Mayor",
       "until": "tab:Mayor",
+      "when": "day:70",
       "teaches": []
-    },
-    {
-      "id": "diplomacy",
-      "title": "Diplomacy and trade",
-      "text": "Out in the wilds live other peoples: villages, dwarf holds, elf enclaves, free ports and oasis cities. Open [b]Diplomacy[/b] to see what each thinks of the town. Send an [b]envoy[/b] with gifts to win them over, and once they think well enough of you, open a [b]trade route[/b]: a caravan sells your surplus to them and brings back what you are short of. Every caravan that gets through warms them further, and at 60 they ally with the town. A bigger charter lets you run more routes.",
-      "when": "alert:trade",
-      "point": "tab:Diplomacy",
-      "until": "tab:Diplomacy",
-      "teaches": ["tab:Diplomacy", "command:SendEnvoy", "command:OpenTradeRoute", "command:CloseTradeRoute"]
     },
     {
       "id": "powers",
       "title": "Minor powers",
       "text": "Beyond the peoples of the wilds stand the [b]minor powers[/b]: the Black Ledger's smugglers, the Silent Knife's assassins, the Lanternbearers' spies, the Crown League's lords, the Vermilion Conclave's wizards, the Ember Court's dragon and the Mire Grandmothers' coven. Each has a leader, a goal and a price, and likes or hates what your town does. In [b]Diplomacy[/b], [b]Send gifts[/b] to raise their standing, then pay their price to [b]Ally[/b] with them for a daily tithe, or [b]Break[/b] with one you no longer want. Your enemies court them too: when word comes that an enemy's envoys are at a power's door, outbid them with gifts before it answers, or it will arm your enemy, strike at your town and march with its host.",
-      "when": "day:80",
       "point": "tab:Diplomacy",
       "until": "tab:Diplomacy",
+      "when": "day:80",
       "teaches": ["command:CourtPower", "command:AllyWithPower", "command:BreakWithPower"]
     },
     {
@@ -370,235 +471,196 @@
       "teaches": ["command:AnswerEnvoy"]
     },
     {
+      "id": "sellswords",
+      "title": "Sellswords",
+      "text": "Gold can buy an army too. Under [b]Sellswords[/b] in the [b]War[/b] tab, hire a mercenary company for a fee and a daily wage, and it stands on the walls with the watch. Once the town knows where a named menace sits, fund a campaign to march them against it. They can break its holds and even storm its seat, but only heroes can end the greatest foe. A company the treasury can't pay walks away.",
+      "point": "tab:War",
+      "when": "day:90",
+      "teaches": ["command:HireMercenaries", "command:MarchMercenaries", "command:DismissMercenaries"]
+    },
+    {
+      "id": "cobbles",
+      "title": "Cobbled streets",
+      "text": "Once the town is chartered a town, its masons pave the streets with stone on their own: the square first, then street by street outward from the centre, as the market has stone and the treasury can spare the gold. Families on a cobbled street are a little happier. Keep a quarry working and they'll get further.",
+      "when": "day:120",
+      "teaches": []
+    },
+    {
       "id": "wagons",
       "title": "Bigger caravans",
       "text": "Goods your town makes beyond what it needs earn nothing sitting in the market: the evening carters clear them away. A [b]trade route[/b] turns that surplus into gold. In [b]Diplomacy[/b], [b]Add a wagon[/b] to a route and its caravan carries more out on every run, up to four wagons. A bigger charter lets you run more routes, too.",
-      "when": "day:150",
       "point": "tab:Diplomacy",
       "until": "tab:Diplomacy",
+      "when": "day:150",
       "teaches": ["command:AddWagon"]
+    },
+    {
+      "id": "clockwork",
+      "title": "Clockwork wardens",
+      "text": "A city with a mage tower or a guildhall can build [b]clockwork wardens[/b] under the [b]War[/b] tab. They never sleep and can't be bribed, so they help the watch catch a schemer's agents even when its captain is crooked. But townsfolk don't like being watched by brass, and the Quiet Hand or a scheming foe may try to steal one. A mage tower keeps the keys safer.",
+      "point": "tab:War",
+      "when": "day:300",
+      "teaches": ["command:BuildWarden", "command:ScrapWarden"]
+    },
+    {
+      "id": "mayor-level",
+      "title": "Level up",
+      "text": "Seeing stories through gives you experience, and each level lets you choose how you grow on the [b]Mayor[/b] tab: learn a new skill or become expert in one, and at levels 4 and 8 raise your abilities or take a feat such as Lucky or Silver Tongue. Your sheet also rolls when you decide motions, answer demands, send envoys, crack down and haggle, so a better mayor gets a little more out of every decision.",
+      "point": "tab:Mayor",
+      "until": "tab:Mayor",
+      "when": "alert:levelup",
+      "teaches": ["command:AdvanceMayor"]
+    },
+    {
+      "id": "diplomacy",
+      "title": "Diplomacy and trade",
+      "text": "Out in the wilds live other peoples: villages, dwarf holds, elf enclaves, free ports and oasis cities. Open [b]Diplomacy[/b] to see what each thinks of the town. Send an [b]envoy[/b] with gifts to win them over, and once they think well enough of you, open a [b]trade route[/b]: a caravan sells your surplus to them and brings back what you are short of. Every caravan that gets through warms them further, and at 60 they ally with the town. A bigger charter lets you run more routes.",
+      "point": "tab:Diplomacy",
+      "until": "tab:Diplomacy",
+      "when": "alert:trade",
+      "teaches": ["tab:Diplomacy", "command:SendEnvoy", "command:OpenTradeRoute", "command:CloseTradeRoute"]
     },
     {
       "id": "sky-trade",
       "title": "Merchant of the skies",
       "text": "The [b]Sky Dock[/b]'s airship can trade as well as carry companies. In [b]Diplomacy[/b], under [b]The airship[/b], pick a people and a good the town can spare and [b]send[/b] it: it flies straight over rivers, lakes and mountains in half the days a caravan takes, needs no trade route, and moors anywhere the people aren't hostile. Every people pays its own price, more far out and for what they want, and less the more you have sold them lately, so spread your cargoes around. It comes home with the gold and a hold of their cheap goods the town is short of. Storms can hold it back and flying hosts can set on it. While it is out trading it carries no company, and while it carries a company it can't trade.",
-      "when": "airships",
       "point": "tab:Diplomacy",
       "until": "tab:Diplomacy",
+      "when": "airships",
       "teaches": ["command:SendSkyship"]
     },
     {
       "id": "neighbours",
       "title": "Neighbours with lives of their own",
       "text": "Every settlement in [b]Diplomacy[/b] has a leader, its own small band of adventurers, and troubles: missing hunters, a broken mill, a fever. Its band goes after what it can and asks your heroes for help when it fails. Send [b]aid[/b] to meet a need, or pay for a [b]project[/b] there that lasts: a watchtower, a bridge, a waystation where your parties rest. The people you help remember it and come back with favours, and friends send relief when a host marches on you.",
-      "when": "alert:neighbour",
       "point": "tab:Diplomacy",
       "until": "tab:Diplomacy",
+      "when": "alert:neighbour",
       "teaches": ["command:AidSettlement", "command:FundProject"]
     },
     {
       "id": "shadows",
       "title": "A village in shadow",
       "text": "A risen enemy casts a [b]shadow[/b] over the settlements near it: first dread, then [b]tribute[/b] (they stop trading with you, and families slip away to your town), and at last a cult or a puppet on their seat. The campaign map shows them darkened. Win them back in [b]Diplomacy[/b]: send a hero to [b]rally[/b] them, send an envoy, or post a bounty on the enemy's site nearest them. Their rulers change too: old age, a fever, a knife in the dark, and each heir has a temperament of their own.",
-      "when": "alert:shadow",
       "point": "tab:Diplomacy",
       "until": "tab:Diplomacy",
+      "when": "alert:shadow",
       "teaches": ["command:RallySettlement"]
     },
     {
       "id": "plots",
       "title": "What villains are planning",
       "text": "A menace with a name is always working toward something: seizing a road, sending tithe-takers, gathering for a raid. Scrying its seat, or a friend in a nearby settlement, tells you its plan, and the [b]Campaign[/b] window shows it with the war chests, camps and hoards its strength rests on. Clear the holding where one is kept and the town takes it, and the plan is set back. A safe settlement, with a watchtower and a strong band, can turn a plan away on its own.",
+      "point": "tab:Campaign",
+      "until": "tab:Campaign",
       "when": "alert:plot",
-      "point": "tab:Campaign",
-      "until": "tab:Campaign",
       "teaches": []
-    },
-    {
-      "id": "callings",
-      "title": "Heroes and their callings",
-      "text": "Every class of hero brings its own stories: a bard asks for the tavern's stage, a paladin offers to swear an oath, a rogue is courted by the thieves' guild, a warlock's patron makes an offer. Some answers give the hero a [b]calling[/b], a lasting part in the town that moves it every day while the hero stays loyal. [b]Mayor[/b] lists the callings held, and a hero's card shows theirs.",
-      "when": "count:Callings",
-      "point": "tab:Mayor",
-      "until": "tab:Mayor",
-      "teaches": []
-    },
-    {
-      "id": "legacies",
-      "title": "The hall of heroes",
-      "text": "A hero has fallen in the town's service. Open [b]Chronicles[/b] to find them in the [b]hall of heroes[/b]. Raise a [b]memorial[/b] and every hero in town stands a little more loyal. A seasoned hero's kin may come to take up their arms, carrying their best magic item. Old heroes a story lets retire stay on as masters of arms, and new heroes arrive better trained.",
-      "when": "count:Legacies",
-      "point": "tab:Chronicles",
-      "until": "tab:Chronicles",
-      "teaches": ["command:RaiseMemorial"]
-    },
-    {
-      "id": "undercity",
-      "title": "Under the streets",
-      "text": "Digging under the town has broken into its [b]undercity[/b]. Each new charter opens a deeper level: cellars, sewers, catacombs and worse. Left alone a level [b]stirs[/b], faster with secret factions at work, until something comes up into the streets at night. Open [b]City[/b] to send the watch down on [b]patrol[/b] for a little gold a day, or post a bounty: heroes can delve it with no road to walk, and a cleared level stays quiet for a season.",
-      "when": "count:Undercity",
-      "point": "tab:City",
-      "until": "tab:City",
-      "teaches": ["command:PatrolUndercity"]
-    },
-    {
-      "id": "library",
-      "title": "The library and its scholars",
-      "text": "Your scholars can study something new. Open [b]Library[/b]. Each town grows its own tree of discoveries: smiths, weavers and scribes, neighbours of other peoples, trade routes, temples and libraries each reveal ideas of their own. Pick one to [b]study[/b] (the first time pays its commission) and set how generously the council [b]funds[/b] the scholars. Spellbooks from delves and caravans make the library stronger, draw stronger wizards to town and open higher circles of town magic.",
-      "when": "alert:scholars",
-      "point": "tab:Library",
-      "until": "tab:Library",
-      "teaches": ["tab:Library", "command:StudyDiscovery", "command:FundResearch"]
-    },
-    {
-      "id": "campaign-map",
-      "title": "The campaign map",
-      "text": "Press [b]M[/b] or [b]Campaign map[/b] to see the same land as an inked map. Drop markers to plan, drag them to move them, and press [b]Delete[/b] to remove the one under the cursor.",
-      "point": "strategic",
-      "until": "strategic",
-      "teaches": ["key:M", "key:Delete"]
-    },
-    {
-      "id": "campaign",
-      "title": "The long road",
-      "text": "[b]Campaign[/b] tracks the saga: the acts, the menaces that fester when left alone, and the big bad. [b]Chronicles[/b] keeps the tales of your heroes' expeditions.",
-      "point": "tab:Campaign",
-      "until": "tab:Campaign",
-      "teaches": ["tab:Campaign", "tab:Chronicles"]
     },
     {
       "id": "fealty",
       "title": "A demand for fealty",
       "text": "Some enemies want your town kneeling, not burning. When their heralds come, open [b]Campaign[/b]: [b]Bend the knee[/b] and pay tribute while their raiders stay away, or [b]Refuse[/b] and face their host. Silence counts as a refusal.",
-      "when": "alert:demand",
       "point": "tab:Campaign",
       "until": "tab:Campaign",
+      "when": "alert:demand",
       "teaches": ["command:AnswerDemand"]
     },
     {
       "id": "crises",
       "title": "End-game crises",
       "text": "An enemy power left alone in the later acts begins its [b]crisis[/b]: the Great Horde, the Long Dark, Wyrmfire, the Night of Knives. The cleverer and stronger the enemy, the worse it is. A crisis burns houses, knifes councillors, fouls the stores and saps the walls, then ends with its whole host at the gates. Break its seat before then and the crisis dies with it. Crises overlap and feed each other, so leave several alone and they come thick and fast. When two enemies in crisis are about to fight, [b]Campaign[/b] lets you ride out and fall on one of them, or keep behind the walls.",
-      "when": "alert:doom",
       "point": "tab:Campaign",
       "until": "tab:Campaign",
+      "when": "alert:doom",
       "teaches": ["command:JoinClash"]
     },
     {
       "id": "traitor",
       "title": "A traitor on the council",
       "text": "A clever enemy with a grudge, a vampire, a coven or a wyrm in a man's shape, may win over a councillor instead of sending knives. Its servant votes against the watch and the knights, skims the treasury into its master's war chest, sends the watch home or slanders you. When the taverns start naming names, [b]Council[/b] shows the two suspects: name one before the council. Name the traitor and they flee; name an honest councillor and they resign in disgust. Wait, and the watch finds the proof in time.",
-      "when": "alert:traitor",
       "point": "tab:Council",
       "until": "tab:Council",
+      "when": "alert:traitor",
       "teaches": ["command:AccuseCouncillor"]
     },
     {
       "id": "secrets",
       "title": "Councillors' secrets",
       "text": "Most councillors hide something: debts, a lover, wagons that pass the gate unsearched. In [b]Council[/b], [b]Dig[/b] beside a seat pays your people to find out; you roll Investigation, and more watchmen make it easier. Botch it and the councillor hears you were asking. A secret in hand is spent once: [b]press[/b] them to vote your way on the motion before the council, so you carry it without a decree, or [b]expose[/b] them and they lose the seat. Either way they won't forgive you, and pressing someone can leak.",
-      "when": "count:Motions",
       "point": "tab:Council",
       "until": "tab:Council",
+      "when": "count:Motions",
       "teaches": ["command:DigIntoCouncillor", "command:PressCouncillor", "command:ExposeCouncillor"]
     },
     {
       "id": "guilds",
       "title": "The trade guilds",
       "text": "Enough workers in one trade have formed a [b]guild[/b]: builders, smiths, brewers, farmers or shopkeepers, with a master who leans on one councillor's vote. Now and then the master brings a demand with a deadline: a festival, lower taxes, more watchmen, a new part on a monument, land zoned for the trade. In [b]Council[/b], [b]Meet it[/b] and the guild warms to you and to its councillor; [b]Pay them off[/b] to make it go away. Ignore it, raise taxes or veto what they want and they sour, and at the bottom they [b]strike[/b]: their workers down tools for days. Pay them off, or [b]Break the strike[/b] with the watch, which costs Mandate.",
-      "when": "count:Guilds",
       "point": "tab:Council",
       "until": "tab:Council",
+      "when": "alert:guild",
       "teaches": ["command:MeetGuildDemand", "command:PayOffGuild", "command:BreakStrike"]
     },
     {
       "id": "honours",
       "title": "Honours are yours to give",
       "text": "When a loyal knight holds no land, or the town has no champion, the strip says so. Click it: a cleared site can be granted to the knight, who holds it with their own retainers and lives on its rents, and the champion stands first on the walls. The council moves knighthoods itself; sign them in [b]Council[/b].",
-      "when": "alert:honours",
       "point": "alerts",
-      "until": "alert"
-    },
-    {
-      "id": "notoriety",
-      "title": "Fame and infamy",
-      "text": "Heroes and companies make names for themselves. Clearing ruins, answering villages and holding the walls earn [b]renown[/b], and the bards give the famous an epithet. Brawls, theft, desertion and treachery earn [b]infamy[/b]. Click a hero to see their name: famous heroes draw others to town and frighten the foe, but they want more for a bounty and other towns court them unless you honour them. The council won't knight the notorious, and their past tends to catch up with them. [b]Companies[/b] shows each company's name abroad.",
-      "when": "day:35",
-      "point": "inspector",
+      "until": "next",
+      "when": "alert:honours",
       "teaches": []
     },
     {
-      "id": "skill-checks",
-      "title": "Everyone rolls",
-      "text": "Everyone in town has a character sheet: click anyone to see their abilities and all eighteen skills. Townsfolk are trained only in their trade (a shopkeeper in Persuasion and Insight, a smith in Athletics) and grow slowly better with practice; heroes are better at most things. Their everyday moments are real d20 checks: haggling over supplies or a second-hand sword, a day's work, a song at the tavern, a hand in a purse, a brawl, the barkeep or the watch stepping in. The dice pop up over their heads, and the sheet keeps their latest rolls.",
-      "when": "day:4",
-      "point": "inspector",
-      "until": "select:agent",
+      "id": "callings",
+      "title": "Heroes and their callings",
+      "text": "Every class of hero brings its own stories: a bard asks for the tavern's stage, a paladin offers to swear an oath, a rogue is courted by the thieves' guild, a warlock's patron makes an offer. Some answers give the hero a [b]calling[/b], a lasting part in the town that moves it every day while the hero stays loyal. [b]Mayor[/b] lists the callings held, and a hero's card shows theirs.",
+      "point": "tab:Mayor",
+      "until": "tab:Mayor",
+      "when": "count:Callings",
       "teaches": []
     },
     {
-      "id": "save",
-      "title": "Saving",
-      "text": "[b]Esc[/b] or [b]Menu[/b] opens the game menu with five save slots. The town autosaves every three days and when you quit. [b]F5[/b] quicksaves and [b]F9[/b] loads it.",
-      "point": "menu",
-      "teaches": ["key:Escape", "key:F5", "key:F9"]
+      "id": "legacies",
+      "title": "The hall of heroes",
+      "text": "A hero has fallen in the town's service. Open [b]Chronicles[/b] to find them in the [b]hall of heroes[/b]. Raise a [b]memorial[/b] and every hero in town stands a little more loyal. A seasoned hero's kin may come to take up their arms, carrying their best magic item. Old heroes a story lets retire stay on as masters of arms, and new heroes arrive better trained.",
+      "point": "tab:Chronicles",
+      "until": "tab:Chronicles",
+      "when": "count:Legacies",
+      "teaches": ["command:RaiseMemorial"]
     },
     {
-      "id": "seasons",
-      "title": "The turning year",
-      "text": "The clock shows the season. Summer brings visitors and war bands, autumn the harvest, and winter empty fields, snowbound roads and the hungry dead. Autumn's harvest fills the cellars and granaries for the winter: if the [b]Winter stores[/b] in the City window run short, lay in grain from the traders before the snow.",
-      "point": "clock",
-      "when": "day:45",
-      "until": "tab:City",
-      "teaches": ["command:LayInStores"]
+      "id": "bastions",
+      "title": "A bastion of their own",
+      "text": "A company that has made its name asks the council for land on the edge of town to raise a [b]bastion[/b]: a keep where its heroes live, and facilities like a physic garden, a drill yard or a smithy. It hires townsfolk to staff them, so it brings jobs and pulls workers from poorer pay. Its sentries stand on the walls in a siege, and heroes with a bastion stay loyal. Answer in [b]Companies[/b]: grant the land, give it free, or refuse.",
+      "point": "tab:Companies",
+      "until": "tab:Companies",
+      "when": "count:BastionRequests",
+      "teaches": ["command:AnswerBastion"]
     },
     {
-      "id": "wards",
-      "title": "New wards",
-      "text": "A new charter opens more land round the old town to zoning. Wards aren't drawn ahead: once a few buildings stand in a quarter, it grows into a ward that suits them. Shops make a Market Ward, workshops a Trades Ward, shrines a Temple Ward, fine houses Castle Hill. See your wards in the [b]City[/b] window.",
+      "id": "undercity",
+      "title": "Under the streets",
+      "text": "Digging under the town has broken into its [b]undercity[/b]. Each new charter opens a deeper level: cellars, sewers, catacombs and worse. Left alone a level [b]stirs[/b], faster with secret factions at work, until something comes up into the streets at night. Open [b]City[/b] to send the watch down on [b]patrol[/b] for a little gold a day, or post a bounty: heroes can delve it with no road to walk, and a cleared level stays quiet for a season.",
       "point": "tab:City",
-      "when": "alert:charter",
-      "teaches": []
+      "until": "tab:City",
+      "when": "count:Undercity",
+      "teaches": ["command:PatrolUndercity"]
     },
     {
-      "id": "density",
-      "title": "Build tall",
-      "text": "The town charter unlocks [b]medium density[/b] and the large town charter [b]high density[/b]. Pick [b]Res · Medium[/b] or [b]Res · High[/b] (or the Commercial ones) in the build bar and paint, even over streets that are already built. Houses there grow into stone townhouses, then into tall houses packed wall to wall like a walled city's old core. Dense land sells dearer and crowds its people a little, so let lower sprawl spread outside the walls.",
-      "point": "buildbar",
-      "when": "density",
-      "until": "dense",
-      "teaches": []
+      "id": "library",
+      "title": "The library and its scholars",
+      "text": "Your scholars can study something new. Open [b]Library[/b]. Each town grows its own tree of discoveries: smiths, weavers and scribes, neighbours of other peoples, trade routes, temples and libraries each reveal ideas of their own. Pick one to [b]study[/b] (the first time pays its commission) and set how generously the council [b]funds[/b] the scholars. Spellbooks from delves and caravans make the library stronger, draw stronger wizards to town and open higher circles of town magic.",
+      "point": "tab:Library",
+      "until": "tab:Library",
+      "when": "alert:scholars",
+      "teaches": ["tab:Library", "command:StudyDiscovery", "command:FundResearch"]
     },
-    {
-      "id": "crops",
-      "title": "Sow your fields",
-      "text": "Farmland is sown one crop at a time. The build bar has a brush for each: [b]Wheat[/b] for bread, [b]Root crops[/b] that keep the town fed through winter, [b]Barley & hops[/b] brewed into ale on the farm, [b]Orchards[/b] that bear fruit and cider at harvest, and [b]Pasture[/b], [b]Herb beds[/b] and [b]Vineyards[/b] as the charters open them. Only that crop's farm goes up in a field, and painting over open fields resows them. Each button says whether the town wants more of that farm.",
-      "point": "buildbar",
-      "when": "day:20",
-      "until": "sown",
-      "teaches": []
-    },
-    {"id": "monuments", "title": "Monuments that grow", "text": "The town hall, the temple and the keep start small and grow by the parts you add: a bell tower, a nave, a curtain wall, a great hall. Click the building to see its parts, what each gives and what it costs. [b]Add[/b] one, or [b]Build it all now[/b] if you're bold: every part at once can empty the treasury and the market's timber and stone. Leave [b]Grow on its own[/b] ticked and the council adds the next part whenever it can spare the gold.", "when": "day:20", "teaches": ["command:AddPart", "command:AddAllParts", "command:GrowMonument"]},
-    {"id": "site-first", "title": "Building sites", "text": "Click a building site to see how far along it is. [b]Put this site first[/b] sends builders and the market's timber and stone to it ahead of the others. The council's sites carry their timber and stone off the market as they go: if the market runs out, the builders stand idle and an alert says so. Build a lumber camp or quarry, or send for a caravan from the site, which is dear but quick.", "when": "day:12", "teaches": ["command:PrioritiseSite", "command:SendCaravan"]},
-    {"id": "builders", "title": "Builders and homes", "text": "Each builders' yard puts three more crews to work, so more homes, shops and works can go up at once. Build one from the government buildings when the town's sites queue for builders. Homes grow a storey only when what folk need is close by: a tavern, a shrine, a market, food of several kinds, something pleasant on the street. Click a house to see what it waits for.", "when": "day:15", "teaches": []},
-    {"id": "cobbles", "title": "Cobbled streets", "text": "Once the town is chartered a town, its masons pave the streets with stone on their own: the square first, then street by street outward from the centre, as the market has stone and the treasury can spare the gold. Families on a cobbled street are a little happier. Keep a quarry working and they'll get further.", "when": "day:120", "teaches": []},
     {
       "id": "tourney",
       "title": "The summer tourney",
       "text": "Each summer, once the town is a village, the council proposes a tourney: [b]the Joust[/b], [b]the Archery[/b], [b]the Wizards' Duel[/b] and [b]the Race[/b], one a day. Click its alert to open the tourney card, then fund it modest, grand or legendary (the richer the treasury, the dearer it is), or skip it and let the town down. The town's heroes ride where their class suits the event, against champions of the neighbouring settlements. Before an event's first heat you may stake treasury gold on one rider: the card shows each rider's odds and what a win pays. The heats are rolled on the d20 hour by hour while the game runs on; winners earn renown and epithets, and the crowds pay at the gate and spend in the shops. An arena makes it all bigger.",
       "when": "alert:tourney",
-      "teaches": [
-        "command:FundTourney",
-        "command:SkipTourney",
-        "command:PlaceBet"
-      ]
-    },
-    {
-      "id": "moods",
-      "title": "Inspirations and breaks",
-      "text": "Your townsfolk have moods. Someone in high spirits for days may be [b]inspired[/b]: a smith forges a named blade for the armory, a barkeep throws a feast for the ward, a mason carves a column, a farmer brings in a bumper crop. Someone low for days may [b]break[/b]: a bender at the tavern, a tantrum, a brawl, sulking at home, or walking out of town for good. You'll see it over their heads, gold or grey, and in their inspector. Keep your Mandate up and the town fed and housed, and you'll see far more of the first than the second.",
-      "when": "day:25",
-      "teaches": []
+      "teaches": ["command:FundTourney", "command:SkipTourney", "command:PlaceBet"]
     },
     {
       "id": "grand-works",
@@ -614,18 +676,7 @@
       "text": "A town grows around its institutions: the temple district, an adventurers' hall, a druid grove, a grand bazaar, the famous tavern, and as it grows a gate over the undercity, a paladin chapterhouse, an alchemists' quarter, an artificers' foundry, a griffon roost, a fey market, the Delve over a giants' dungeon, a hall of heroes, a monster sanctuary, an auction house of uncertain lots, an embassy quarter, a dragon living by treaty, an oracle's observatory, a gatehouse to other planes, a bards' college and a grand arena. Each is run by a keeper with a name and a temper, does something for the whole town every day, and asks you for something now and then. In the [b]Institutions[/b] window, make each one's choice (which god the temple district honours, the tavern's style) and set how generously the council funds it: generous patronage buys more of its service and its keeper's goodwill. Raise the new ones from the Government build bar; the college and the arena form around the town's theatre and arena.",
       "point": "tab:Institutions",
       "when": "count:Institutions",
-      "teaches": [
-        "tab:Institutions",
-        "command:FundInstitution",
-        "command:ChooseInstitution"
-      ]
-    },
-    {
-      "id": "sendings",
-      "title": "Word from the road",
-      "text": "A party on a bounty with a caster (or one of the town's sending stones) can reach you by sending and ask how to go on: pay the toll or bluff, trust the captured scout, bring home the captives or the gold. The game pauses until you answer. Each choice rolls your d20 plus your sheet, plus help from the party's best hand at it. Some quests go on over several sendings. An [b]Adventurers' Hall[/b] (Government) adds to every roll, unlocks choices of its own, and lets parties send word more often.",
-      "when": "count:Parties",
-      "teaches": []
+      "teaches": ["tab:Institutions", "command:FundInstitution", "command:ChooseInstitution"]
     },
     {
       "id": "tales",
@@ -635,16 +686,20 @@
       "teaches": ["key:Enter"]
     },
     {
-      "id": "history",
-      "title": "The old world",
-      "text": "Every ruin in the wilds is left over from an older age. [b]History[/b] in the game menu (Esc) shows the empires, peoples and wars before your town, and the Ledger tells each region's old story when a party first gets there.",
-      "point": "menu",
+      "id": "wards",
+      "title": "New wards",
+      "text": "A new charter opens more land round the old town to zoning. Wards aren't drawn ahead: once a few buildings stand in a quarter, it grows into a ward that suits them. Shops make a Market Ward, workshops a Trades Ward, shrines a Temple Ward, fine houses Castle Hill. See your wards in the [b]City[/b] window.",
+      "point": "tab:City",
+      "when": "alert:charter",
       "teaches": []
     },
     {
-      "id": "done",
-      "title": "The town is yours",
-      "text": "That's the basics. New tips will appear here as the town grows and as new features arrive in later builds. Good luck, Mayor.",
+      "id": "density",
+      "title": "Build tall",
+      "text": "The town charter unlocks [b]medium density[/b] and the large town charter [b]high density[/b]. Pick [b]Res · Medium[/b] or [b]Res · High[/b] (or the Commercial ones) in the build bar and paint, even over streets that are already built. Houses there grow into stone townhouses, then into tall houses packed wall to wall like a walled city's old core. Dense land sells dearer and crowds its people a little, so let lower sprawl spread outside the walls.",
+      "point": "buildbar",
+      "until": "dense",
+      "when": "density",
       "teaches": []
     },
     {"id": "ruins", "title": "Ruins to restore", "text": "Some of the lairs near town are the ruins of old works: an aqueduct, a gatehouse, a watchtower, a star fort. Once a company clears one, an alert says it can be restored. Click it on the map, or open the [b]Campaign[/b] window, and choose [b]Restore[/b]: for a little gold it serves the town for good, with clean water, defence or an early warning.", "when": "alert:ruin", "point": "alerts", "teaches": ["command:RestoreRuin"]},
