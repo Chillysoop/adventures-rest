@@ -86,7 +86,9 @@ public partial class Main
         history.Pressed += () => OpenHistory();
         var glossary = new Button { Text = "Glossary", TooltipText = "Every keyword in the game, explained (F1)" };
         glossary.Pressed += () => OpenGlossary();
-        foreach (var b in new[] { resume, quick, fresh, tutorial, history, glossary, title, quit }) actions.AddChild(b);
+        var settings = new Button { Text = "Settings", TooltipText = "Which events stop the clock" };
+        settings.Pressed += OpenSettings;
+        foreach (var b in new[] { resume, quick, fresh, tutorial, history, glossary, settings, title, quit }) actions.AddChild(b);
         v.AddChild(actions);
         _menuActions = actions;
         v.AddChild(new HSeparator());

@@ -9,7 +9,8 @@ namespace CrownAndCompass.Client;
 /// <summary>
 /// The player's profile (user://profile.json, next to the saves): what carries from one campaign to the
 /// next. Each feature keeps its own section; "legends" holds the foes and heroes of earlier towns, who
-/// may come back on the other side (<see cref="Turning"/>). Other sections are kept as they are.
+/// may come back on the other side (<see cref="Turning"/>); "settings" the player's choices in the Settings
+/// window (Settings.cs). Other sections are kept as they are.
 /// </summary>
 public partial class Main
 {
@@ -52,6 +53,22 @@ public partial class Main
         {
             var profile = ReadProfile();
             profile["legends"] = JsonNode.Parse(Legends.Write(Legends.Merge(ProfileLegends(), fresh)));
+            Directory.CreateDirectory(Path.GetDirectoryName(ProfilePath)!);
+            File.WriteAllText(ProfilePath, profile.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+        }
+        catch (IOException e)
+        {
+            GD.PushWarning($"Could not write the profile: {e.Message}");
+        }
+    }
+
+    /// <summary>Replace one section of the profile ("settings"...), keeping the others as they are.</summary>
+    private static void WriteProfileSection(string section, JsonNode value)
+    {
+        try
+        {
+            var profile = ReadProfile();
+            profile[section] = value;
             Directory.CreateDirectory(Path.GetDirectoryName(ProfilePath)!);
             File.WriteAllText(ProfilePath, profile.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
         }

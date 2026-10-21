@@ -7,7 +7,7 @@ namespace CrownAndCompass.Client;
 /// <summary>
 /// With --smoke: the merge gate's play-through of a build (<c>scripts/gate.ts</c>). From the main menu (and its choice of storytellers) it
 /// starts a new town, plays on at top speed, opens every window, the build bar, the campaign map, a wall and a guard flag and the
-/// game menu, saves and loads, starts the tutorial, opens the History and the glossary with a pinned keyword card, steps into a story event, answers a party's sending, opens the tourney card with a bet on it, opens the recap and a tavern tale, a few frames apart so each one draws. It prints
+/// game menu, saves and loads, starts the tutorial, opens the History, the Settings and the glossary with a pinned keyword card, steps into a story event, answers a party's sending, opens the tourney card with a bet on it, opens the recap and a tavern tale, a few frames apart so each one draws. It prints
 /// <c>SMOKE OK</c> and quits with 0, or <c>SMOKE FAIL</c> and 1; the gate also fails on any engine error.
 /// </summary>
 public partial class Main
@@ -110,8 +110,12 @@ public partial class Main
                 return 10;
             case 20:
                 OpenHistory(null);
+                // The Settings window over it, every clock-stop toggle drawn.
+                OpenSettings();
+                if (_settingsRows.GetChildCount() != ClockStops.All.Length) throw new InvalidOperationException("the settings did not draw every toggle");
                 return 10;
             case 21:
+                CloseSettings();
                 CloseHistory();
                 // Each tray drawer, then the glossary with a keyword's card pinned over it.
                 foreach (var d in Trays)
