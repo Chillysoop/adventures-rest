@@ -28,6 +28,9 @@ public sealed record RosterEntry(
     /// <summary>Where the company is: on the road, ready for work, resting its wounds, or out of town.</summary>
     public string State => Road != null ? "On the road" : Ready > 0 ? "Ready" : Members.All(m => m.IsAway) ? "Away" : "Resting";
 
+    /// <summary>"Heroes of the realm": the tier its best member has reached (<see cref="Roster.TierOf"/>).</summary>
+    public string Tier => Roster.TierOf(Members);
+
     public bool Has(string classOrRole) => Members.Any(m => m.Hero!.Cls.Id == classOrRole || m.Hero.Cls.Role == classOrRole);
 }
 
@@ -87,6 +90,34 @@ public static class Roster
             c?.Renown ?? 0,
             c?.Infamy ?? 0,
             town.Parties.FirstOrDefault(p => !p.Returned && p.Name == name));
+    }
+
+    /// <summary>
+    /// The tier a company has reached by its best member's level: local heroes (to 4), heroes of the realm (to 10),
+    /// masters of the realm (to 16), masters of the world. Many companies work at once across the tiers; the best of
+    /// them are the town's champions, who ride against each act's climax (<see cref="Saga"/>).
+    /// </summary>
+    public static string TierOf(IReadOnlyList<Agent> members)
+    {
+        int best = members.Count == 0 ? 0 : members.Max(m => m.Hero!.Level);
+        return best <= 4 ? "Local heroes" : best <= 10 ? "Heroes of the realm" : best <= 16 ? "Masters of the realm" : "Masters of the world";
+    }
+
+    /// <summary>A hero card's key powers, at most three: sneak attacks, their healing and area spells, their best skill
+    /// and the best magic they wear.</summary>
+    public static List<string> KeyPowers(Town town, Agent a)
+    {
+        var s = a.Hero!;
+        var cls = s.Cls;
+        var powers = new List<string>();
+        if (cls.Sneak) powers.Add("sneak attack");
+        if (cls.HealSpell != null) powers.Add(cls.HealSpell.Name);
+        if (cls.AreaSpell != null) powers.Add(cls.AreaSpell.Name);
+        if (cls.Skills.Count > 0 && cls.Skills.OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key, StringComparer.Ordinal).First() is { Value: > 1 } best)
+            powers.Add($"{best.Key} +{best.Value}");
+        if (s.Magic.Values.OrderByDescending(i => i.Tier).ThenBy(i => i.Id, StringComparer.Ordinal).FirstOrDefault() is { } item)
+            powers.Add(Gear.Label(s, item));
+        return powers.Take(3).ToList();
     }
 
     /// <summary>

@@ -72,9 +72,9 @@ public partial class Lens(MapView map) : Control
         var parts = new List<string>();
         foreach (var z in Planning.Paintable)
         {
-            var lots = Land.Plots(town, z, 120);
-            foreach (var l in lots) marks.Add(new Mark(l, Planner.ZoneColor(z), $"Room for a {Planning.ZoneName(z)} building"));
-            parts.Add($"{Planning.ZoneName(z)} {(lots.Count >= 120 ? "120+" : lots.Count.ToString())}");
+            // Counts only: no outlines of buildings that haven't grown yet.
+            int room = Land.OpenPlots(town, z, 120);
+            parts.Add($"{Planning.ZoneName(z)} {(room >= 120 ? "120+" : room.ToString())}");
         }
         return "Room on painted land: " + string.Join(", ", parts) + ". Paint more where a zone runs out.";
     }

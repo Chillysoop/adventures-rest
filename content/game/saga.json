@@ -274,7 +274,18 @@
           "{leader}'s fire falls on {where}. The family in the loft did not get out."
         ],
         "raze": "{people} are no more. {leader} burned {settlement} for refusing its tribute.",
-        "slain": "{leader} is slain, and its hoard is carried down from {seat} by cart. {region} sees no wings in the sky."
+        "slain": "{leader} is slain, and its hoard is carried down from {seat} by cart. {region} sees no wings in the sky.",
+        "done": [
+          "Old folk in {region} still tell how {leader} melted the bells of a whole valley's chapels into a single golden bed, forty winters ago.",
+          "They say {leader} once ate an army of the Crown League, horses and all, and kept its banners for a carpet.",
+          "In their grandparents' day {leader} took a mountain lord's daughter, his castle and his name, and nobody in {region} has used that name since.",
+          "Every map of {region} has a blank where {leader} burned the town that drew them."
+        ],
+        "doom": [
+          "Portents from {region}: cattle will not graze, and every hearth smokes black. If nobody stops {leader}, in {days} days it will have its way: {plan}",
+          "The drakes of {region} have gone quiet, the way birds do before a storm. {leader} is nearly ready. Word is that in {days} days {plan}",
+          "Herders in {region} say {leader} sleeps no longer and circles its own mountain at night, counting. Within {days} days, unless someone acts: {plan}"
+        ]
       },
       "beasts": {
         "types": [
@@ -386,6 +397,161 @@
         ],
         "raze": "{people} of {settlement} have taken the Hollow King's hymn. Their dead do not stay buried, and they say this is a mercy.",
         "slain": "{leader} falls silent, and the singing under the hill stops at last."
+      },
+      "fiends": {
+        "types": [
+          "fiend"
+        ],
+        "leaders": [
+          "Vashkaroth",
+          "the Smiling Guest",
+          "Maw-of-Embers",
+          "Ilthrenne the Kind",
+          "the Ninth Tenant"
+        ],
+        "titles": [
+          "a burning doorway",
+          "the Doorway at {seat}",
+          "the Court of {leader}",
+          "the Open Door",
+          "the House of the Last Door, opened"
+        ],
+        "people": "fiends",
+        "rise": "A doorway burns open at {seat}, a ring of fire in the empty air that does not go out. Something on the other side calls itself {leader}, and it is in no hurry.",
+        "riseDark": "A doorway burns open at {seat}. The grass round it is ash for a mile, and the farmers say the voice behind it already knows their names.",
+        "strike": [
+          "Imps from the doorway at {seat} get into the granary at {where}: the grain is soured and every cat in the lane has its tail tied in knots.",
+          "Imps steal every left boot in {where} overnight and leave a smell of brimstone and a note in bad handwriting.",
+          "A cloud of imps swarms the market at {where}, souring milk, snuffing lamps and laughing from the gutters until the priests ring them off."
+        ],
+        "strikeDark": [
+          "The doorway at {seat} flares, and a man at {where} who wished aloud for his debts to go away is found in the morning with no debts and no shadow.",
+          "Something tall walks out of the fire at {seat} and stands at the edge of {where} all night, smiling. In the morning three houses are empty."
+        ],
+        "raze": "{people} of {settlement} took {leader}'s bargain. Their wells run warm now, and nobody there sleeps.",
+        "slain": "The doorway at {seat} gutters and closes with a sound like a held breath let go. {leader} is gone back where it came from.",
+        "done": [
+          "The Last Door's brokers say {leader} has opened doorways before: one over a lake in the north that has been boiling ever since.",
+          "Old priests in {region} know the name {leader}. It bought a whole city's children in their grandparents' day, and paid in gold that turned to coal."
+        ],
+        "doom": [
+          "The doorway at {seat} is widening. The priests reckon that in {days} days {leader} will {plan}.",
+          "Imps chant a count under the eaves of {town}: {days}. On the last day, they sing, {leader} will {plan}."
+        ]
+      }
+    },
+    "doorways": {
+      "_doc": "Late in a campaign a burning doorway may open near the town (Menaces.Doorways): only in campaigns whose seed rolls under chance, from act fromAct, after a seeded number of days.",
+      "kind": "fiends",
+      "fromAct": 2,
+      "chance": 0.6,
+      "afterDays": [
+        10,
+        90
+      ],
+      "pests": 0.5,
+      "spoil": 0.08,
+      "spoilCap": 40,
+      "mischief": [
+        "Imps from the doorway at {seat} get into {town}'s granary overnight. {food} sacks of grain are soured, and every cat in the market has its tail tied in knots.",
+        "A cloud of imps from {seat} swarms {town}'s market, souring milk, snuffing lamps and laughing from the gutters. {food} measures of food are spoiled before the priests ring them off.",
+        "Imps sent by {leader} steal every left boot in {town} and leave {food} loaves full of brimstone in the bakers' ovens. Nobody is hurt, and nobody is amused."
+      ]
+    },
+    "chains": {
+      "_doc": "When a menace grows into its power, the weaker menace nearest it is pushed out and strikes at once, and folk fleeing both come to the town (Menaces.Chain).",
+      "pushed": "Driven from its hills by {by}, {name} comes down hungry and desperate.",
+      "refugees": [
+        2,
+        5
+      ],
+      "fled": "{n} folk fleeing {by} and {name} reach {town} with what they can carry, and ask to stay."
+    },
+    "cases": {
+      "_doc": "Each enemy leader has a case (what it says it wants, shown on its card) and a hidden truth, learned when heroes take one of its holdings (Menaces.Truth). One pair per kind is picked per menace.",
+      "found": "Among what the heroes carried out of {holding}: {truth}",
+      "dread": 3,
+      "kinds": {
+        "tribe": [
+          {
+            "case": "{leader} says the valleys were the clans' before the towns came, and only takes back what was stolen.",
+            "truth": "{leader} is not conquering. The clans are running from something in the high passes, and it is still coming."
+          },
+          {
+            "case": "{leader} says the town's walls are an insult to the old roads, and the roads must be open.",
+            "truth": "{leader} has promised its warriors a town to sack because it cannot feed them through another winter."
+          }
+        ],
+        "undead": [
+          {
+            "case": "{leader} says the dead were never asked whether they wished to rest.",
+            "truth": "{leader} remembers being a healer, and raises the dead because it cannot bear to lose anyone again."
+          },
+          {
+            "case": "{leader} says the living squander their years and the dead will not.",
+            "truth": "{leader} is bound to serve a crown long fallen, and would lie down gladly if anyone could break the oath."
+          }
+        ],
+        "schemers": [
+          {
+            "case": "{leader} says it only gives people what they ask for.",
+            "truth": "{leader} owes its own master a town's worth of souls by midwinter, and is running out of time."
+          },
+          {
+            "case": "{leader} says the council is corrupt, and it only shows the town its own face.",
+            "truth": "{leader} was once a councillor of a town like this one, and was hanged for a crime the mayor committed."
+          }
+        ],
+        "dragon": [
+          {
+            "case": "{leader} says all the land under its wings is its hoard, and a hoard is not stolen from.",
+            "truth": "{leader} is old and failing, and gathers gold because it is the only thing that keeps the cold out of its bones."
+          },
+          {
+            "case": "{leader} says it is the rightful queen of the sky and the town must pay its due.",
+            "truth": "{leader} lays a clutch in the spring, and every attack is to keep hunters far from its eggs."
+          }
+        ],
+        "beasts": [
+          {
+            "case": "The hunters say {leader} is a man-eater and nothing more.",
+            "truth": "{leader}'s hunting grounds were burned for farmland, and it is starving."
+          },
+          {
+            "case": "The herders say {leader} kills for sport.",
+            "truth": "{leader} is guarding a sick mate in its den, and strikes anything that comes near."
+          }
+        ],
+        "rivals": [
+          {
+            "case": "{leader} says it is only honest trade, and the town is too slow to compete.",
+            "truth": "{leader} is deep in debt to a moneylender in the Free Ports, who will take its company if it fails."
+          },
+          {
+            "case": "{leader} says the town stole its charter and it wants what it is owed.",
+            "truth": "{leader}'s charter was forged. It knows, and fears the day the town finds out."
+          }
+        ],
+        "cult": [
+          {
+            "case": "{leader} says the grave is a door, and it only wants to open it for those who suffer.",
+            "truth": "{leader} heard its dead child's voice from beyond, and will do anything to hear it again."
+          },
+          {
+            "case": "{leader} says the gods of the town are false and the hymn is the true prayer.",
+            "truth": "{leader} no longer believes. It keeps preaching because the choir would tear it apart if it stopped."
+          }
+        ],
+        "fiends": [
+          {
+            "case": "{leader} says it only offers bargains, and nobody is made to take them.",
+            "truth": "{leader} was summoned and bound by a wizard of the town long ago, and the doorway is the only way home it has."
+          },
+          {
+            "case": "{leader} says the town owes it a debt from its founding.",
+            "truth": "{leader} is right: the town's founders struck a bargain to survive their first winter, and never paid it."
+          }
+        ]
       }
     },
     "powerText": "{oldname} has become {name}. {leader} holds {seat} and {holdings} besides, and the lesser lairs of {region} answer the call.",
@@ -451,6 +617,7 @@
         "maxCunning": "crafty",
         "weight": 1,
         "kinds": [
+          "fiends",
           "beasts",
           "dragon"
         ],
@@ -474,6 +641,7 @@
         "minCunning": "crafty",
         "weight": 2,
         "kinds": [
+          "fiends",
           "tribe",
           "rivals",
           "undead",
@@ -526,6 +694,7 @@
         "minCunning": "cunning",
         "weight": 3,
         "kinds": [
+          "fiends",
           "schemers",
           "cult",
           "rivals"
@@ -556,6 +725,8 @@
       "learnRegard": 40,
       "warnDays": 8,
       "lieutenantChance": 0.4,
+      "loud": ["dragon"],
+      "reformed": "{leader} is destroyed at {seat}, but it does not end. Its {asset} still lies hidden, and what is left of it gathers again somewhere in {region}. Until the {asset} is found and broken, it cannot die.",
       "lieutenantKinds": [
         "tribe",
         "rivals",
@@ -639,6 +810,15 @@
             "dragon"
           ],
           "growth": 0.15
+        },
+        {
+          "id": "phylactery",
+          "name": "phylactery",
+          "kinds": ["undead"],
+          "growth": 0.05,
+          "minCunning": "mastermind",
+          "far": true,
+          "undying": true
         },
         {
           "id": "relic",

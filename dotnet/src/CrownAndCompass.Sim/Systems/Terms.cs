@@ -38,6 +38,58 @@ public sealed record TermDef
 
     /// <summary>Only where a company of the town's was wiped out: the party brings home their bones and their gear.</summary>
     public bool Fallen { get; init; }
+
+    /// <summary>A quiet job: the party sneaks past rooms rather than fighting them, and every slip raises the alarm (<see cref="HeistRules"/>).</summary>
+    public bool Heist { get; init; }
+}
+
+/// <summary>
+/// Heists and rescues (bounties.json "heist"): before each room the party's quietest tries to slip past (DC sneakDc plus
+/// perTier a tier); each failure fights the room and raises the alarm, and at alarmMax the whole place wakes (wake more
+/// foes in every room after). A hoard sits behind a vault of layers locks (by tier, at most the list's last), each a
+/// check of its kind (trap: locks, puzzle: wards, perception: the hidden catch) at layerDc plus perTier a tier, which
+/// shares the same alarm: a failed lock raises it, and at alarmMax inside the vault the door slams and they run with
+/// bolted of the gold and no treasure.
+/// </summary>
+/// <summary>
+/// A bounty told like a classic tale (bounties.json "plots"): the first plot whose terms and when fit the job names it
+/// in the posting and on the board, and the company that pulls it off earns renown for it. When: captives, item,
+/// fallen, undead (an undead master), named (a named master clever enough to scheme), beast (a master with no more
+/// wits than a beast), camp (the warband's camp), or any.
+/// </summary>
+public sealed record PlotDef
+{
+    public string Id { get; init; } = "";
+    public string Name { get; init; } = "";
+    public string Pitch { get; init; } = "";
+    public List<string> Terms { get; init; } = [];
+    public string When { get; init; } = "any";
+    public int Renown { get; init; } = 1;
+}
+
+/// <summary>
+/// A strong caster's own way past a kind of trouble on a delve (bounties.json "ways"): a hero of one of the classes at
+/// minLevel or more gets the party past a hazard, trap, puzzle or parley without the roll, or past a room of guards
+/// without the fight, once a delve; the report says how ({name}, {class}, {text}).
+/// </summary>
+public sealed record CasterWay
+{
+    public string Kind { get; init; } = "";
+    public List<string> Classes { get; init; } = [];
+    public int MinLevel { get; init; } = 5;
+    public string Line { get; init; } = "";
+}
+
+public sealed record HeistRules
+{
+    public int AlarmMax { get; init; } = 3;
+    public int SneakDc { get; init; } = 10;
+    public int LayerDc { get; init; } = 11;
+    public int PerTier { get; init; } = 2;
+    public int Wake { get; init; } = 1;
+    public List<int> Layers { get; init; } = [1, 1, 2, 2, 3];
+    public List<string> Kinds { get; init; } = ["trap", "puzzle", "perception"];
+    public double Bolted { get; init; } = 0.5;
 }
 
 public sealed record CaptiveRules
@@ -84,6 +136,9 @@ public sealed record BountyRules
     public CaptiveRules Captives { get; init; } = new();
     public BountyPay Pay { get; init; } = new();
     public OfferRules Offers { get; init; } = new();
+    public HeistRules Heist { get; init; } = new();
+    public List<CasterWay> Ways { get; init; } = [];
+    public List<PlotDef> Plots { get; init; } = [];
 
     public TermDef Term(string id) => Terms.FirstOrDefault(t => t.Id == id) ?? Terms.FirstOrDefault() ?? new TermDef { Id = "slay", Name = "Slay", Verb = "clear" };
 }
@@ -204,6 +259,24 @@ public static class Terms
     {
         double v = Regard.Moves(town, a, Of(town, b).Tags);
         return v > 0 ? Rules(town).Temper : v < 0 ? -Rules(town).Temper : 0;
+    }
+
+    /// <summary>The classic tale a job would be told as: the first plot in content order whose terms and when fit it.</summary>
+    public static PlotDef? PlotFor(Town town, SiteState s, TermDef term)
+    {
+        var boss = town.Content.Monster(s.Def.Boss.Monster);
+        bool Fits(string when) => when switch
+        {
+            "captives" => term.Captives,
+            "item" => term.Item,
+            "fallen" => term.Fallen,
+            "undead" => boss.Undead,
+            "named" => boss.Named && boss.Int >= 8,
+            "beast" => boss.Int <= 3,
+            "camp" => s.Def.Id == town.Content.Enemy.Outpost.Id,
+            _ => true,
+        };
+        return town.Content.Bounties.Plots.FirstOrDefault(p => (p.Terms.Count == 0 || p.Terms.Contains(term.Id)) && Fits(p.When));
     }
 }
 

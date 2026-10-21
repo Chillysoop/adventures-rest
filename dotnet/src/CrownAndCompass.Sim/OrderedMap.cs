@@ -24,6 +24,12 @@ public sealed class OrderedMap<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TV
         return true;
     }
 
+    public void Clear()
+    {
+        _keys.Clear();
+        _values.Clear();
+    }
+
     public TValue Get(TKey key, TValue fallback) => _values.TryGetValue(key, out var v) ? v : fallback;
 
     public TValue this[TKey key]

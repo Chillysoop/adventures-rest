@@ -169,7 +169,7 @@ public static class Rumors
             // Smoke over a ruin the town thought was done with: true if something really moved in.
             if (site.Cleared == truth) return;
             if (!truth) who = Mistaken(town, site, occupants);
-            text = Fill(rng.Pick(r.Resettled), source, site, who, tier, r);
+            text = Fill(town, rng.Pick(r.Resettled), source, site, who, tier, r);
             site.ThoughtCleared = false;
             site.Known = SiteKnowledge.Rumoured;
             Hear(town, site, who, Math.Max(1, site.BelievedTier), reliability);
@@ -183,21 +183,21 @@ public static class Rumors
                 // A false tale is off by one step either way, out in the far wilds too.
                 tier = Math.Max(1, tier + (rng.Chance(0.5) ? -1 : 1));
             }
-            text = Fill(rng.Pick(r.Place), source, site, who, tier, r);
+            text = Fill(town, rng.Pick(r.Place), source, site, who, tier, r);
             Hear(town, site, who, tier, reliability);
             importance = Importance.Notable;
         }
         else if (rng.Chance(0.5))
         {
             if (!truth) tier = Math.Max(1, tier + (rng.Chance(0.5) ? -1 : 1));
-            text = Fill(rng.Pick(r.Strength), source, site, site.Believed, tier, r);
+            text = Fill(town, rng.Pick(r.Strength), source, site, site.Believed, tier, r);
             who = "";
             Hear(town, site, site.Believed, tier, reliability);
         }
         else
         {
             if (!truth) who = Mistaken(town, site, occupants);
-            text = Fill(rng.Pick(r.Occupant), source, site, who, tier, r);
+            text = Fill(town, rng.Pick(r.Occupant), source, site, who, tier, r);
             Hear(town, site, who, site.BelievedTier, reliability);
         }
 
@@ -247,14 +247,15 @@ public static class Rumors
         return rumor;
     }
 
-    private static string Fill(string template, string source, SiteState site, string who, int tier, RumorRules r)
+    /// <summary>A rumour in the town's own words: its slang on everything said, never on the site's name.</summary>
+    private static string Fill(Town town, string template, string source, SiteState site, string who, int tier, RumorRules r)
     {
-        string text = template
+        string text = Taverns.Slang(town, template
             .Replace("{source}", source, StringComparison.Ordinal)
-            .Replace("{site}", site.Def.Name, StringComparison.Ordinal)
             .Replace("{who}", who, StringComparison.Ordinal)
             .Replace("{days}", Days(site.Def.Distance), StringComparison.Ordinal)
-            .Replace("{tier}", r.TierWords.Count > tier ? r.TierWords[tier] : $"no place for anyone under level {tier}", StringComparison.Ordinal);
+            .Replace("{tier}", r.TierWords.Count > tier ? r.TierWords[tier] : $"no place for anyone under level {tier}", StringComparison.Ordinal))
+            .Replace("{site}", site.Def.Name, StringComparison.Ordinal);
         return char.ToUpperInvariant(text[0]) + text[1..];
     }
 
