@@ -187,7 +187,7 @@ public partial class Main
         {
             var s = h.Hero!;
             string temper = Regard.TemperOf(t, h)?.Name is string tn ? $" · {Ui.Esc(tn)}" : "";
-            string state = h.IsAway ? Ui.C(Ui.Gold, "Away") : s.Duty != HeroDuty.None ? DutyIcon(h, 13) + Ui.C(Ui.Good, s.Duty == HeroDuty.Walls ? "Walls" : "Streets") : Quests.Available(h) ? Ui.C(Ui.Good, "Ready") : s.JailedUntil != null ? Ui.C(Ui.Bad, "In jail") : Ui.C(Ui.Ink2, "Resting");
+            string state = h.IsAway ? Ui.C(Ui.Gold, "Away") : s.Duty != HeroDuty.None ? DutyIcon(h, 13) + Ui.C(Ui.Good, s.Duty switch { HeroDuty.Walls => "Walls", HeroDuty.Streets => "Streets", _ => "Command" }) : Quests.Available(h) ? Ui.C(Ui.Good, "Ready") : s.JailedUntil != null ? Ui.C(Ui.Bad, "In jail") : Ui.C(Ui.Ink2, "Resting");
             return new[]
             {
                 $"[b]{Ui.Esc(Notoriety.Known(h))}[/b]\n{Ui.C(Ui.Ink2, $"[font_size=11]{Ui.Esc(Ui.Cap(s.Cls.Name))}{temper}{(s.Magic.Count > 0 ? $" · {s.Magic.Count} magic" : "")}[/font_size]")}",

@@ -132,7 +132,7 @@ public static class Threat
     {
         var d = town.Content.Enemy.Defense;
         int heroLevels = town.Heroes.Where(a => !a.IsAway).Sum(a => a.Hero!.Level);
-        double baseDefense = town.Watch * d.Watchman * Planning.WatchFactor(town) + heroLevels * d.HeroLevel + town.Workers.Count * d.MilitiaPerWorker + Faith.Defense(town) + Factions.Defense(town) + Callings.Defence(town) + Institutions.Defence(town) + Eggs.Defence(town) + Ruins.Defence(town) + Loyalty.Defense(town) + Notoriety.Defense(town) + Decor.Defense(town) + Mercenaries.Defense(town) + Powers.Defense(town) + Clockwork.Defense(town) + Bastions.Defense(town) + Research.Defense(town) + Garrison.DutyDefense(town) + (allies ? World.AllyTroops(town) : 0);
+        double baseDefense = town.Watch * d.Watchman * Planning.WatchFactor(town) + heroLevels * d.HeroLevel + town.Workers.Count * d.MilitiaPerWorker + Faith.Defense(town) + Factions.Defense(town) + Callings.Defence(town) + Institutions.Defence(town) + Eggs.Defence(town) + Ruins.Defence(town) + Loyalty.Defense(town) + Notoriety.Defense(town) + Decor.Defense(town) + Mercenaries.Defense(town) + Powers.Defense(town) + Clockwork.Defense(town) + Bastions.Defense(town) + Research.Defense(town) + Garrison.DutyDefense(town) + Army.Defense(town) + (allies ? World.AllyTroops(town) + AllyCalls.Defense(town) : 0);
         return baseDefense * Fortification(town);
     }
 
@@ -339,7 +339,7 @@ public static class Threat
     {
         var d = town.Content.Enemy.Defense;
         var home = town.Heroes.Where(a => !a.IsAway);
-        return (Garrison.NightWatch(town) * d.Watchman * Planning.WatchFactor(town) + home.Sum(a => a.Hero!.Level) * d.HeroLevel + Garrison.DutyDefense(town)) * Fortification(town) * (roll ? 0.7 + town.Rng.Next() * 0.6 : 1);
+        return (Garrison.NightWatch(town) * d.Watchman * Planning.WatchFactor(town) + home.Sum(a => a.Hero!.Level) * d.HeroLevel + Garrison.DutyDefense(town) + Army.RaidDefense(town)) * Fortification(town) * (roll ? 0.7 + town.Rng.Next() * 0.6 : 1);
     }
 
     /// <summary>Outside the walls (or there are none yet), or out in the fields: what raiders can reach.</summary>
@@ -393,6 +393,9 @@ public static class Threat
             (towers != 0 ? $" and {towers} {(towers == 1 ? "tower" : "towers")}." : "."));
         var record = Battles.Begin(town, "warband", "warband", e.Name, "orcs", e.Leader, en.Approach, en.Strength, startDef);
         def = Math.Max(0, def - Loyalty.Betray(town, e.Name, null, lines));
+        double went = AllyCalls.Betray(town, e.Name, lines);
+        def = Math.Max(0, def - went);
+        en.Strength += went;
         double gate = Cannons.Wagons(town, "warband", en.Sieges - 1, Garrison.WaveSection(town, en.Approach, 1), lines, record);
         for (int w = 1; w <= e.SiegeWaves && breaches < e.BreachesToFall; w++)
         {
@@ -421,9 +424,10 @@ public static class Threat
             }
         }
 
-        // Townsfolk who stood in the militia pay for it.
-        int fallen = (int)Math.Min(town.Workers.Count, Js.Round(((startDef - def) / Math.Max(1, Fortification(town))) / 12));
-        var dead = new List<Agent>();
+        // The army's soldiers stand in the front rank and fall first; the militia pays for the rest.
+        var dead = Army.Bloodied(town, startDef - def, startDef);
+        AllyCalls.Fought(town, breaches < e.BreachesToFall, (startDef - def) / Math.Max(1, startDef));
+        int fallen = (int)Math.Min(town.Workers.Count, Math.Max(0, Js.Round(((startDef - def) / Math.Max(1, Fortification(town))) / 12) - dead.Count));
         var workers = town.Workers;
         for (int i = 0; i < fallen; i++)
         {

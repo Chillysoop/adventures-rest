@@ -292,7 +292,7 @@ public sealed class Options
                 case "--advance": o.Advances.Add(Next()); break;
                 case "--inspiration": o.Inspiration = int.Parse(Next()); break;
                 case "--decor-at": o.DecorAt = Next().Split(',').Select(v => double.Parse(v, System.Globalization.CultureInfo.InvariantCulture)).ToArray(); break;
-                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--stock" or "--pact" or "--buy" or "--call" or "--flag" or "--wait" or "--works" or "--roster" or "--spot" or "--draw-wall" or "--gate" or "--raise" or "--skyrun" or "--duty":
+                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--stock" or "--pact" or "--buy" or "--call" or "--flag" or "--wait" or "--works" or "--roster" or "--spot" or "--draw-wall" or "--gate" or "--raise" or "--skyrun" or "--duty" or "--army":
                     o.Script.Add((args[i][2..], Next()));
                     break;
             }
@@ -405,6 +405,93 @@ public sealed class Options
                     t.Treasury += 200;
                     if (t.Heroes.Where(h => h.Hero!.Duty == HeroDuty.None && Garrison.DutyBlocked(t, h, duty) == null).OrderByDescending(h => h.Hero!.Level).ThenBy(h => h.Id).FirstOrDefault() is { } guardHero)
                         sim.SetDuty(guardHero.Id, duty);
+                    break;
+                case "army":
+                    // For army shots: "unit:size[:post[:drill]]" raises a full regiment (its hall built first if the town has none),
+                    // "levy:size" calls the levy, "allies" calls every people, "lead" puts the best free hero at the head of the first regiment.
+                    t.Treasury += 5000;
+                    var parts = arg.Split(':');
+                    if (parts[0] == "lead")
+                    {
+                        if (t.Army.Regiments.FirstOrDefault() is { } led && t.Heroes.Where(h => Army.CommandBlocked(t, led, h) == null).OrderByDescending(h => Army.Leadership(t, h)).ThenBy(h => h.Id).FirstOrDefault() is { } boss)
+                            sim.CommandRegiment(led.Id, boss.Id);
+                        break;
+                    }
+                    if (parts[0] == "allies")
+                    {
+                        // "allies" makes every known people a friend, calls them all and brings all but one host to the gate.
+                        foreach (var ally in t.Settlements) { ally.Allied = true; ally.Razed = false; ally.Standing = Math.Max(ally.Standing, 40); }
+                        foreach (var call in sim.CallAllies(t.Settlements.Select(x => x.Id))) call.AnswerTick = t.Tick;
+                        AllyCalls.Hourly(t);
+                        foreach (var call in t.Army.Calls.Where(c => c.State == CallState.Marching).Skip(1)) call.ArriveTick = t.Tick;
+                        AllyCalls.Hourly(t);
+                        break;
+                    }
+                    if (parts[0] == "conquer")
+                    {
+                        // "conquer" meets every people, takes the nearest settlement and holds it, then wins the next and leaves it waiting.
+                        foreach (var met in t.Settlements) met.Met = true;
+                        for (int k = 0; k < 2; k++)
+                        {
+                            foreach (var reg0 in t.Army.Regiments) sim.SetMarches(reg0.Id, !Conquest.Garrisoning(t, reg0));
+                            if (Conquest.Targets(t).FirstOrDefault() is not { } prey) break;
+                            prey.Prosperity = 0;
+                            if (sim.Attack(prey.Id, "advance") is null) break;
+                            while (t.Army.Sortie != null) sim.Step();
+                            if (k == 0 && t.Army.Pending.Contains(prey.Id))
+                            {
+                                sim.SettleConquest(prey.Id, ConquestChoice.Occupy);
+                                if (t.Army.Regiments.FirstOrDefault() is { } hold) sim.GarrisonSettlement(prey.Id, hold.Id);
+                            }
+                        }
+                        break;
+                    }
+                    if (parts[0] == "road")
+                    {
+                        // "road[:strength]" puts the warband on the road two days out, every regiment picked to march.
+                        foreach (var reg0 in t.Army.Regiments) sim.SetMarches(reg0.Id, true);
+                        t.Enemy.Stage = ThreatStage.Marching;
+                        t.Enemy.Strength = parts.Length > 1 ? double.Parse(parts[1], System.Globalization.CultureInfo.InvariantCulture) : 120;
+                        t.Enemy.ArrivalTick = t.Tick + 48;
+                        if (Field.FreeHeroes(t).FirstOrDefault() is { } champ0) sim.SetFieldGoal(champ0.Id, "leader");
+                        break;
+                    }
+                    if (parts[0] == "field")
+                    {
+                        // "field[:order[:u[:foe]]]" puts the warband on the road (by default four fifths of the host), marches every
+                        // regiment with the best free hero after its leader, fights it now and holds the playback at u.
+                        foreach (var reg0 in t.Army.Regiments) sim.SetMarches(reg0.Id, true);
+                        double host = Field.HostWorth(t, Field.Marching(t), [], []);
+                        t.Enemy.Stage = ThreatStage.Marching;
+                        t.Enemy.Strength = parts.Length > 3 ? double.Parse(parts[3], System.Globalization.CultureInfo.InvariantCulture) : Math.Max(40, host * 0.8);
+                        t.Enemy.ArrivalTick = t.Tick + 48;
+                        if (Field.FreeHeroes(t).FirstOrDefault() is { } champ) sim.SetFieldGoal(champ.Id, "leader");
+                        if (sim.MarchOut("warband", parts.Length > 1 ? parts[1] : "advance") is { } sortie)
+                        {
+                            sortie.MeetTick = t.Tick;
+                            Field.Hourly(t);
+                        }
+                        Map.Crowd.FieldU = parts.Length > 2 ? float.Parse(parts[2], System.Globalization.CultureInfo.InvariantCulture) : 0.5f;
+                        break;
+                    }
+                    if (parts[0] == "levy")
+                    {
+                        sim.SetServiceLaw(ServiceLaw.Conscription);
+                        sim.RaiseLevy(int.Parse(parts[1]));
+                        break;
+                    }
+                    var unit = Army.Unit(t, parts[0]);
+                    if (Army.Halls(t, unit).Count == 0)
+                    {
+                        var hd = t.Content.Building(unit.Halls[0]);
+                        if (Planning.CivicLot(t, hd) is { } hlot) t.AddBuilding(hd, hlot, null, hd.Name, true);
+                    }
+                    var post = parts.Length > 2 ? Enum.Parse<ArmyPost>(parts[2], true) : ArmyPost.Reserve;
+                    if (sim.RaiseRegiment(unit.Id, int.Parse(parts[1]), post) is { } reg)
+                    {
+                        Army.Fill(t, reg);
+                        reg.Drill = parts.Length > 3 ? double.Parse(parts[3], System.Globalization.CultureInfo.InvariantCulture) : 1;
+                    }
                     break;
                 case "stock":
                     // For armory shots: a find handed in under a pact.

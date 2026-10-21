@@ -28,6 +28,7 @@ public enum AlertWindow
     Armory,
     Institutions,
     Tourney,
+    Army,
 }
 
 /// <summary>A group of alerts: one icon on the strip, with a count and a hover list of what is in it.</summary>
@@ -88,6 +89,9 @@ public static class Alerts
     public static readonly AlertKind Loot = new("loot", "Loot for sale", "gold", AlertLevel.Decision, AlertWindow.Armory);
     public static readonly AlertKind Gifts = new("gifts", "Arms to give", "heroes", AlertLevel.Minor, AlertWindow.Armory);
     public static readonly AlertKind Outpost = new("outpost", "Land to hold", "warband", AlertLevel.Minor, AlertWindow.None);
+    public static readonly AlertKind Conquered = new("conquered", "A town to settle", "gold", AlertLevel.Decision, AlertWindow.Army);
+    public static readonly AlertKind WarAsk = new("warask", "An ally asks for war", "warband", AlertLevel.Minor, AlertWindow.Army);
+    public static readonly AlertKind Holdout = new("holdout", "An ally holds out", "gold", AlertLevel.Decision, AlertWindow.Army);
     public static readonly AlertKind Stalled = new("stalled", "Building stalled", "gold", AlertLevel.Decision, AlertWindow.None);
     public static readonly AlertKind Bridge = new("bridge", "Bridge cut", "gold", AlertLevel.Decision, AlertWindow.Campaign);
     public static readonly AlertKind Ruin = new("ruin", "Ruin to restore", "gold", AlertLevel.Decision, AlertWindow.Campaign);
@@ -108,7 +112,7 @@ public static class Alerts
         [Siege, Sighted, Lurker, Captives, Doom, Crisis, Sick, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Balance, Fealty, Clash, Traitor, Plot, Dark, Spent, Stores, Story, Scry, Explorers, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Loot, Stalled, Bridge, Ruin, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Outpost, Housing, Crowded];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
-    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Word, Crowds, Keepers, Outposts, Lists, Brought];
+    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Allies, Word, Crowds, Keepers, Outposts, Lists, Brought];
 
     public static List<Alert> Standing(Town town) => Rules.SelectMany(r => r(town)).ToList();
 
@@ -135,7 +139,7 @@ public static class Alerts
         if (t.Enemy.Stage == ThreatStage.Marching && t.Enemy.ArrivalTick is int at)
         {
             int days = Math.Max(1, (int)Math.Ceiling((at - t.Tick) / 24.0));
-            yield return new("march", Siege, $"Siege in {Days(days)}", $"The warband is marching on the {Garrison.Place(t, t.Enemy.Approach)}. Call the watch to arms there and keep heroes home.", AtTown: true, Wall: t.Enemy.Approach);
+            yield return new("march", Siege, $"Siege in {Days(days)}", $"The warband is marching on the {Garrison.Place(t, t.Enemy.Approach)}. Call the watch to arms there and keep heroes home, or march the army out to meet it.", AtTown: true, Wall: t.Enemy.Approach);
         }
         else if (t.Enemy.Stage == ThreatStage.Raids)
             yield return new("raids", Siege, "Raiders by night", "The warband raids the town when its heroes are away. Build walls, hire the watch, clear the war camp.");
@@ -506,6 +510,31 @@ public static class Alerts
         if (DarkCompany.Target(t) is { } site && t.DarkCompany.Ambush == null && DarkCompany.MeetTick(t) != null)
             yield return new("dark", Dark, $"{Cap(t.DarkCompany.Name)} ride for {site.Def.Name}",
                 $"They mean to rob its hoard for {Saga.BigBad(t)?.Leader}. Send a company there first, or ambush them on the road from the Campaign window.", SiteId: site.Def.Id);
+    }
+
+    /// <summary>An ally called to arms that will come only for gold or a harder word.</summary>
+    private static IEnumerable<Alert> Allies(Town t)
+    {
+        foreach (var c in t.Army.Calls)
+        {
+            if (c.State != CallState.Holdout) continue;
+            var s = AllyCalls.Of(t, c);
+            yield return new($"holdout:{c.Id}", Holdout, $"{Cap(s.People)} hold out",
+                $"They will send {Js.Str(c.Strength)} for {Js.Str(c.Price)}g. Pay, threaten (DC {AllyCalls.ThreatenDc(t, c)}) or let them be.");
+        }
+        foreach (int id in t.Army.Pending)
+        {
+            var s = t.Settlements.First(x => x.Id == id);
+            yield return new($"conquered:{id}", Conquered, $"{s.Name} is yours",
+                "Occupy it for tribute, pillage and burn it, cripple it, or spare it.");
+        }
+        foreach (var ask in t.Army.Asks)
+        {
+            var ally = t.Settlements.First(x => x.Id == ask.AllyId);
+            var foe = t.Settlements.First(x => x.Id == ask.TargetId);
+            yield return new($"warask:{ask.AllyId}:{ask.TargetId}", WarAsk, $"{Cap(ally.People)} want {foe.Name} struck",
+                $"March on {foe.People} by day {ask.UntilDay} and {ally.People} will remember it. Every other people will too.");
+        }
     }
 
     /// <summary>A party that sent word home is in the fight now, out of sight: a scrying would show it.</summary>

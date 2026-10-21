@@ -285,6 +285,9 @@ public partial class TownView(MapView map) : Node3D
             case "courthouse": Courthouse(kit, v); break;
             case "library": Library(kit, v); break;
             case "barracks": Barracks(kit, v); break;
+            case "drill_yard": DrillYard(kit, v); break;
+            case "archery_range": ArcheryRange(kit, v); break;
+            case "stables": Stables(kit, v); break;
             case "cathedral": Cathedral(kit); break;
             case "arena": Arena(kit, v); break;
             case "keep": Keep(kit); break;
@@ -1346,6 +1349,112 @@ public partial class TownView(MapView map) : Node3D
         for (int i = 0; i < 4; i++)
             k.Box(new Vector3(0.32f, 0, 0.12f + i * 0.065f), new Vector3(0.012f, 0.26f, 0.012f), i % 2 == 0 ? Palette.Timber : new Color("8a8a90"));
         k.Add("castle/flag-wide", MeshKit.At(0.38f, 0.6f, -0.4f, Mathf.Pi / 2, 0.4f), red);
+    }
+
+    /// <summary>A low timber fence round the edge of a yard, open at the front.</summary>
+    private static void YardFence(MeshKit k, Color wood, float gap = 0.18f)
+    {
+        k.Box(new Vector3(-0.47f, 0, 0), new Vector3(0.025f, 0.07f, 0.94f), wood);
+        k.Box(new Vector3(0.47f, 0, 0), new Vector3(0.025f, 0.07f, 0.94f), wood);
+        k.Box(new Vector3(0, 0, -0.47f), new Vector3(0.94f, 0.07f, 0.025f), wood);
+        float side = (0.94f - gap * 2) / 2;
+        k.Box(new Vector3(-0.47f + side / 2, 0, 0.47f), new Vector3(side, 0.07f, 0.025f), wood);
+        k.Box(new Vector3(0.47f - side / 2, 0, 0.47f), new Vector3(side, 0.07f, 0.025f), wood);
+        for (int i = 0; i < 5; i++)
+        {
+            float x = -0.47f + i * 0.235f;
+            k.Box(new Vector3(x, 0, -0.47f), new Vector3(0.035f, 0.1f, 0.035f), wood.Darkened(0.15f));
+        }
+    }
+
+    /// <summary>The drill yard: a beaten sand square with straw men to cut at, a rack of spears and shields, and a timber hall at the back under the town's red.</summary>
+    private static void DrillYard(MeshKit k, int v)
+    {
+        var wood = new Color("6a4a2e");
+        k.Box(new Vector3(0, 0, 0), new Vector3(0.96f, 0.012f, 0.96f), new Color("b8a07a"), new Color("c8b088"));
+        YardFence(k, wood);
+        // The hall: a long low timber house along the back.
+        k.Push(MeshKit.At(0, 0.012f, -0.33f, 0, Fit(3, 1, 0.8f)));
+        Walls(k, 3, 1, 0, false, v + 301, true);
+        k.Push(MeshKit.At(0, 1, 0));
+        k.Gable(0, 3, 1, 0.65f, new Color("7e4430"), Palette.Plaster, 0.12f);
+        k.Pop();
+        k.Pop();
+        // Straw men down the sides, a post and crossbar each.
+        var straw = new Color("d8b45a");
+        foreach (float x in new[] { -0.43f, 0.43f })
+            for (int i = 0; i < 2; i++)
+            {
+                var p = new Vector3(x, 0.012f, -0.12f + i * 0.14f);
+                k.Box(p, new Vector3(0.022f, 0.2f, 0.022f), Palette.Timber);
+                k.Box(p + new Vector3(0, 0.14f, 0), new Vector3(0.022f, 0.022f, 0.12f), Palette.Timber);
+                k.Blob(p + new Vector3(0, 0.12f, 0), new Vector3(0.035f, 0.06f, 0.035f), straw);
+                k.Blob(p + new Vector3(0, 0.22f, 0), new Vector3(0.03f, 0.03f, 0.03f), straw.Darkened(0.1f));
+            }
+        // A rack of spears and round shields by the hall door.
+        k.Box(new Vector3(0.28f, 0.17f, -0.15f), new Vector3(0.24f, 0.022f, 0.022f), Palette.DarkTimber);
+        for (int i = 0; i < 5; i++)
+            k.Box(new Vector3(0.18f + i * 0.05f, 0.012f, -0.15f), new Vector3(0.012f, 0.28f, 0.012f), i % 2 == 0 ? Palette.Timber : new Color("8a8a90"));
+        for (int i = 0; i < 2; i++)
+        {
+            k.Push(MeshKit.At(-0.2f + i * 0.09f, 0.06f, -0.16f, 0));
+            k.Frustum(Vector3.Zero, 0.04f, 0.04f, 0.01f, 8, new Color(i == 0 ? "7a2a22" : "2a4a7a"), new Color("9aa0a6"));
+            k.Pop();
+        }
+    }
+
+    /// <summary>The archery range: a long grass lane with straw butts and painted targets, a roofed shooting line at the back.</summary>
+    private static void ArcheryRange(MeshKit k, int v)
+    {
+        var wood = new Color("6a4a2e");
+        k.Box(new Vector3(0, 0, 0), new Vector3(0.96f, 0.01f, 0.96f), new Color("7e9a52"), new Color("8aa65c"));
+        k.Box(new Vector3(0, 0.01f, 0.05f), new Vector3(0.7f, 0.004f, 0.8f), new Color("a8a070"));
+        YardFence(k, wood);
+        // A roofed stand along the back: four posts and a shingle roof.
+        foreach (float x in new[] { -0.36f, -0.12f, 0.12f, 0.36f })
+            k.Box(new Vector3(x, 0.01f, -0.36f), new Vector3(0.03f, 0.22f, 0.03f), wood);
+        k.Box(new Vector3(0, 0.23f, -0.38f), new Vector3(0.8f, 0.03f, 0.18f), new Color("7a5232"));
+        k.Box(new Vector3(0, 0.01f, -0.42f), new Vector3(0.78f, 0.12f, 0.03f), wood.Darkened(0.1f));
+        // The butts: a straw bale with a painted face, three across the far end.
+        var straw = new Color("d8b45a");
+        for (int i = 0; i < 3; i++)
+        {
+            float x = -0.26f + i * 0.26f;
+            k.Box(new Vector3(x, 0.01f, 0.34f), new Vector3(0.14f, 0.12f, 0.08f), straw, straw.Lightened(0.1f));
+            k.Push(MeshKit.At(x, 0.13f, 0.3f, 0));
+            k.Push(new Transform3D(Basis.FromEuler(new Vector3(Mathf.Pi / 2, 0, 0)), Vector3.Zero));
+            k.Frustum(Vector3.Zero, 0.07f, 0.07f, 0.008f, 12, new Color("f0e8d0"));
+            k.Frustum(new Vector3(0, 0.002f, 0), 0.048f, 0.048f, 0.008f, 12, new Color("b8322a"));
+            k.Frustum(new Vector3(0, 0.004f, 0), 0.022f, 0.022f, 0.008f, 12, new Color("e8b93a"));
+            k.Pop();
+            k.Pop();
+            k.Box(new Vector3(x, 0.01f, 0.39f), new Vector3(0.02f, 0.2f, 0.02f), wood);
+        }
+        k.Add("castle/flag-wide", MeshKit.At(0.44f, 0.01f, -0.44f, Mathf.Pi / 2, 0.3f), Palette.Kenney(new Color("3a7a3a")));
+    }
+
+    /// <summary>The stables: a long timber stable with a hayloft along the back, a paddock rail, hay ricks and a water trough.</summary>
+    private static void Stables(MeshKit k, int v)
+    {
+        var wood = new Color("6a4a2e");
+        k.Box(new Vector3(0, 0, 0), new Vector3(0.96f, 0.012f, 0.96f), new Color("9a8a5a"), new Color("a89660"));
+        YardFence(k, wood, 0.14f);
+        k.Push(MeshKit.At(0, 0.012f, -0.3f, 0, Fit(3, 1, 0.86f)));
+        Walls(k, 3, 1, 0, false, v + 311, true);
+        k.Push(MeshKit.At(0, 1, 0));
+        k.Gable(0, 3, 1, 0.75f, new Color("6a5a3a"), new Color("8c6a44"), 0.14f);
+        k.Pop();
+        k.Pop();
+        // Stall doors along the front of the stable, each a dark half-door.
+        for (int i = 0; i < 4; i++)
+            k.Box(new Vector3(-0.3f + i * 0.2f, 0.012f, -0.13f), new Vector3(0.1f, 0.11f, 0.012f), Palette.DarkTimber);
+        var hay = new Color("d8b45a");
+        k.Blob(new Vector3(0.34f, 0.07f, 0.26f), new Vector3(0.09f, 0.08f, 0.08f), hay, 0.1f, v);
+        k.Blob(new Vector3(0.24f, 0.05f, 0.33f), new Vector3(0.06f, 0.05f, 0.06f), hay.Darkened(0.08f), 0.1f, v + 1);
+        // A trough.
+        k.Box(new Vector3(-0.3f, 0.012f, 0.28f), new Vector3(0.22f, 0.06f, 0.07f), wood);
+        k.Box(new Vector3(-0.3f, 0.07f, 0.28f), new Vector3(0.19f, 0.004f, 0.045f), new Color("4a7aa0"));
+        k.Add("castle/flag-wide", MeshKit.At(-0.44f, 0.012f, -0.44f, Mathf.Pi / 2, 0.3f), Palette.Kenney(new Color("8a5a2a")));
     }
 
     /// <summary>The cathedral: a tall nave and transept with an apse, twin spired towers at the west front and a spire at the crossing, all gilded at the top.</summary>

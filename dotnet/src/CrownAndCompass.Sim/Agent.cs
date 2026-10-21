@@ -38,6 +38,18 @@ public enum Activity
 
     /// <summary>Out at a bathhouse, theatre, market hall, library or the arena (<see cref="Systems.Crowds"/>).</summary>
     Visiting,
+
+    /// <summary>A soldier at drill in their hall (<see cref="Systems.Army"/>).</summary>
+    Drilling,
+
+    /// <summary>A soldier walking the town guard's round.</summary>
+    Patrolling,
+
+    /// <summary>A soldier on the walls or standing guard at the hall.</summary>
+    Guarding,
+
+    /// <summary>Out on the road with the host (<see cref="Systems.Field"/>).</summary>
+    Marching,
 }
 
 public static class TraitOrder
@@ -312,6 +324,9 @@ public sealed class Agent
 
     public int? HomeId { get; set; }
     public int? JobId { get; set; }
+
+    /// <summary>The town regiment they serve in (<see cref="Systems.Army"/>); a standing soldier's job is their hall.</summary>
+    public int? RegimentId { get; set; }
     public int? SpouseId { get; set; }
     public int? CourtingId { get; set; }
 
