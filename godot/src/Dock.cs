@@ -72,6 +72,7 @@ public partial class Main
         AlertWindow.Companies => Tab.Companies,
         AlertWindow.Armory => Tab.Armory,
         AlertWindow.Institutions => Tab.Institutions,
+        AlertWindow.Army => Tab.Army,
         _ => null,
     };
 

@@ -397,13 +397,23 @@ public sealed class Options
                     break;
                 case "army":
                     // For army shots: "unit:size[:post[:drill]]" raises a full regiment (its hall built first if the town has none),
-                    // "levy:size" calls the levy, "lead" puts the best free hero at the head of the first regiment.
+                    // "levy:size" calls the levy, "allies" calls every people, "lead" puts the best free hero at the head of the first regiment.
                     t.Treasury += 5000;
                     var parts = arg.Split(':');
                     if (parts[0] == "lead")
                     {
                         if (t.Army.Regiments.FirstOrDefault() is { } led && t.Heroes.Where(h => Army.CommandBlocked(t, led, h) == null).OrderByDescending(h => Army.Leadership(t, h)).ThenBy(h => h.Id).FirstOrDefault() is { } boss)
                             sim.CommandRegiment(led.Id, boss.Id);
+                        break;
+                    }
+                    if (parts[0] == "allies")
+                    {
+                        // "allies" makes every known people a friend, calls them all and brings all but one host to the gate.
+                        foreach (var ally in t.Settlements) { ally.Allied = true; ally.Razed = false; ally.Standing = Math.Max(ally.Standing, 40); }
+                        foreach (var call in sim.CallAllies(t.Settlements.Select(x => x.Id))) call.AnswerTick = t.Tick;
+                        AllyCalls.Hourly(t);
+                        foreach (var call in t.Army.Calls.Where(c => c.State == CallState.Marching).Skip(1)) call.ArriveTick = t.Tick;
+                        AllyCalls.Hourly(t);
                         break;
                     }
                     if (parts[0] == "levy")

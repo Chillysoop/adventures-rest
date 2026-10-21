@@ -28,6 +28,7 @@ public enum AlertWindow
     Armory,
     Institutions,
     Tourney,
+    Army,
 }
 
 /// <summary>A group of alerts: one icon on the strip, with a count and a hover list of what is in it.</summary>
@@ -88,6 +89,7 @@ public static class Alerts
     public static readonly AlertKind Loot = new("loot", "Loot for sale", "gold", AlertLevel.Decision, AlertWindow.Armory);
     public static readonly AlertKind Gifts = new("gifts", "Arms to give", "heroes", AlertLevel.Minor, AlertWindow.Armory);
     public static readonly AlertKind Outpost = new("outpost", "Land to hold", "warband", AlertLevel.Minor, AlertWindow.None);
+    public static readonly AlertKind Holdout = new("holdout", "An ally holds out", "gold", AlertLevel.Decision, AlertWindow.Army);
     public static readonly AlertKind Stalled = new("stalled", "Building stalled", "gold", AlertLevel.Decision, AlertWindow.None);
     public static readonly AlertKind Lurker = new("lurker", "A stranger watching", "suspicion", AlertLevel.Urgent, AlertWindow.None);
     public static readonly AlertKind Tourney = new("tourney", "The tourney", "favour", AlertLevel.Decision, AlertWindow.Tourney);
@@ -102,7 +104,7 @@ public static class Alerts
         [Siege, Sighted, Lurker, Captives, Doom, Crisis, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Fealty, Clash, Traitor, Plot, Stores, Story, Scry, Explorers, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Loot, Stalled, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Outpost, Housing, Crowded];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
-    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Word, Crowds, Keepers, Outposts, Lists];
+    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Allies, Word, Crowds, Keepers, Outposts, Lists];
 
     public static List<Alert> Standing(Town town) => Rules.SelectMany(r => r(town)).ToList();
 
@@ -465,6 +467,18 @@ public static class Alerts
                 timber > 0 && !t.Buildings.Any(q => q.Complete && q.Def.Id == "lumber_camp") ? "There is no lumber camp: zone industry for one, or" : "Wait for the market to fill, or";
             yield return new($"stalled:{b.Id}", Stalled, $"{Cap(b.Name)} waits for {what}",
                 $"The builders stand idle: the market has no {what} left. {from} send for it by caravan from the site ({Js.Str(Construction.CaravanCost(t, b))}g).", BuildingId: b.Id);
+        }
+    }
+
+    /// <summary>An ally called to arms that will come only for gold or a harder word.</summary>
+    private static IEnumerable<Alert> Allies(Town t)
+    {
+        foreach (var c in t.Army.Calls)
+        {
+            if (c.State != CallState.Holdout) continue;
+            var s = AllyCalls.Of(t, c);
+            yield return new($"holdout:{c.Id}", Holdout, $"{Cap(s.People)} hold out",
+                $"They will send {Js.Str(c.Strength)} for {Js.Str(c.Price)}g. Pay, threaten (DC {AllyCalls.ThreatenDc(t, c)}) or let them be.");
         }
     }
 

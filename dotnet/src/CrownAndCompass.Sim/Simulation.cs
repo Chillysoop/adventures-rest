@@ -101,6 +101,7 @@ public sealed class Simulation
         Lurkers.Hourly(t);
         Tournaments.Hourly(t);
         Goals.Hourly(t);
+        AllyCalls.Hourly(t);
         t.Tick++;
         if (t.Hour == 0) DailyTick();
     }
@@ -137,6 +138,7 @@ public sealed class Simulation
         Threat.Daily(t, pace, Options.AutoMayor && Options.AutoDefense, Options.Enemy);
         Garrison.Daily(t, Options.AutoMayor && Options.AutoDefense);
         Army.Daily(t);
+        AllyCalls.Daily(t);
         World.Daily(t, Options.AutoMayor);
         Trade.Daily(t, Options.AutoMayor);
         Armory.Daily(t, Options.AutoMayor && Options.AutoArmory);
@@ -496,6 +498,18 @@ public sealed class Simulation
 
     /// <summary>Whether the levy is paid a wage while it serves.</summary>
     public bool SetLevyPay(bool paid) => Army.SetLevyPay(Town, paid);
+
+    /// <summary>Send riders to the allies named, calling their hosts to the town.</summary>
+    public List<AllyCall> CallAllies(IEnumerable<int> settlementIds) => AllyCalls.Call(Town, settlementIds);
+
+    /// <summary>Pay a holdout ally's price for its host.</summary>
+    public bool BribeAlly(int callId) => AllyCalls.Bribe(Town, callId);
+
+    /// <summary>Threaten a holdout ally into marching (the mayor's Intimidation; standing lost either way).</summary>
+    public bool ThreatenAlly(int callId) => AllyCalls.Threaten(Town, callId);
+
+    /// <summary>Let a holdout ally keep its host.</summary>
+    public bool LetAllyGo(int callId) => AllyCalls.LetGo(Town, callId);
 
     public DayStats Snapshot()
     {

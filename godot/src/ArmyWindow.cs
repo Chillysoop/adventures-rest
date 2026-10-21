@@ -40,6 +40,9 @@ public partial class Main
         if (regiments.Count == 0) p.Note("None yet. Raise one below, or call the levy.");
         foreach (var r in regiments) RegimentRow(p, t, r);
 
+        RenderLevy(p, t);
+        RenderAllies(p, t);
+
         p.Heading("Raise");
         var units = t.Content.Army.Units.Where(u => !u.IsLevy).ToList();
         // Open ones first, then the ones a hall or an ally away, then the rest.
@@ -48,14 +51,7 @@ public partial class Main
         p.Add($"ug{_armyPick}|{string.Join(";", cards.Select(c => $"{c.u.Id}{c.Why}"))}", () => UnitGrid(t, cards));
         if (units.FirstOrDefault(u => u.Id == _armyPick) is { } pick) PickedUnit(p, t, pick);
 
-        RenderLevy(p, t);
         RenderSellswords(p, t);
-        double allies = World.AllyTroops(t);
-        if (allies > 0)
-        {
-            p.Heading("Allies");
-            p.Text($"{Ui.Img("act-offer", 15)} Pledged at the walls  {Tag($"+{Math.Round(allies)}", Ui.Good)}");
-        }
         p.Commit();
     }
 
@@ -194,5 +190,51 @@ public partial class Main
         p.Row($"{Ui.Img("unit-levy", 15)} [b]{room}[/b] would answer  ·  [b]{levy?.Soldiers.Count ?? 0}[/b] called  ·  cap {Army.LevyCap(t)}\n[font_size=12]{laws}\n{Ui.C(Ui.Ink2, "Called townsfolk leave their work while they serve.")}[/font_size]",
             ("Call 10", Army.LevyBlocked(t, Math.Min(10, Math.Max(1, room))) == null, true, () => Act(() => _sim.RaiseLevy(10))),
             ($"Call all ({room})", room > 0 && Army.LevyBlocked(t, room) == null, false, () => Act(() => _sim.RaiseLevy(room))));
+    }
+
+    /// <summary>The town's allies: what they pledge at the walls, and a call to arms for one or all of them.</summary>
+    private void RenderAllies(Pane p, Town t)
+    {
+        var allies = AllyCalls.Callable(t);
+        if (allies.Count == 0) return;
+        p.Heading("Allies");
+        double pledged = World.AllyTroops(t);
+        double camped = AllyCalls.Defense(t);
+        var open = allies.Where(s => AllyCalls.CallBlocked(t, s) == null).Select(s => s.Id).ToList();
+        p.Row($"{Ui.Img("act-offer", 15)} Pledged  {Tag($"+{Math.Round(pledged)}", Ui.Good)}    {Ui.Img("tab-army", 15)} Camped  {Tag($"+{Math.Round(camped)}", camped > 0 ? Ui.Good : Ui.Ink2)}",
+            ($"Call all ({open.Count})", open.Count > 0, true, () => Act(() => _sim.CallAllies(open))));
+        foreach (var s in allies)
+        {
+            var c = AllyCalls.Live(t, s);
+            string head = $"[b]{Ui.Esc(Ui.Cap(s.People))}[/b]  {Ui.Img("standing", 13)}{Tag(Js.Str(Js.Round(s.Standing)), s.Standing >= 30 ? Ui.Good : s.Standing < 0 ? Ui.Bad : Ui.Ink2)}";
+            string host = $"{Ui.Img("unit-swordsmen", 13)} {Js.Str(AllyCalls.Host(t, s))}  ·  {Ui.Img("compass", 13)} {AllyCalls.MarchDays(t, s)}d";
+            switch (c?.State)
+            {
+                case CallState.Asked:
+                    p.Row($"{head}\n[font_size=12]{host}  ·  {Ui.C(Ui.Ink2, "riders out")}[/font_size]");
+                    break;
+                case CallState.Holdout:
+                    int dc = AllyCalls.ThreatenDc(t, c);
+                    var call = c;
+                    p.Row($"{head}\n[font_size=12]{Ui.C(Ui.Gold, "Holding out")}  ·  {Ui.Img("gold", 13)} {Js.Str(c.Price)}  ·  {Ui.C(Ui.Ink2, $"threaten DC {dc}, costs standing")}[/font_size]",
+                        ($"Pay {Js.Str(c.Price)}", AllyCalls.BribeBlocked(t, c) == null, true, () => Act(() => _sim.BribeAlly(call.Id))),
+                        ("Threaten", true, false, () => Act(() => _sim.ThreatenAlly(call.Id))),
+                        ("Let go", true, false, () => Act(() => _sim.LetAllyGo(call.Id))));
+                    break;
+                case CallState.Marching:
+                    int days = (int)Math.Ceiling((c.ArriveTick - t.Tick) / (double)SimTime.HoursPerDay);
+                    p.Row($"{head}\n[font_size=12]{Ui.C(Ui.Good, $"Marching · {Js.Str(c.Strength)}")}  ·  {Ui.Img("compass", 13)} {days}d to go[/font_size]");
+                    break;
+                case CallState.Arrived:
+                    p.Row($"{head}\n[font_size=12]{Ui.C(Ui.Good, $"Camped at the gate · +{Js.Str(c.Strength)}")}  ·  home in {Math.Max(0, c.LeaveDay - t.Day)}d[/font_size]");
+                    break;
+                default:
+                    string? why = AllyCalls.CallBlocked(t, s);
+                    int id = s.Id;
+                    p.Row($"{head}\n[font_size=12]{host}  ·  {Ui.C(Ui.Ink2, $"{Pct(AllyCalls.ComeChance(t, s))} come")}{(why == null ? "" : $"  ·  {Ui.C(Ui.Ink2, why)}")}[/font_size]",
+                        ("Call", why == null, false, () => Act(() => _sim.CallAllies([id]))));
+                    break;
+            }
+        }
     }
 }

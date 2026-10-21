@@ -584,6 +584,7 @@ public partial class Crowd(MapView map) : Node3D
             Put(gen.At(p, lift), yaw, Tabard, Palette.RaceColor("human"), 1.05f);
         }
         Regiments(town, now);
+        Hosts(town, now, banners);
         SiegeDefenders();
         Flush(_guards);
         foreach (var post in town.Garrison.Posts)
@@ -642,6 +643,58 @@ public partial class Crowd(MapView map) : Node3D
         }
         _soldiers.Clear();
     }
+
+    /// <summary>
+    /// Allied hosts camped before the main gate: ranks in their people's colours under a banner, side by side when more
+    /// than one has come. A host that went over to the foe is gone from here with the treachery.
+    /// </summary>
+    private void Hosts(Town town, float now, List<(Vector3 P, float Yaw, Color C)> banners)
+    {
+        int n = 0;
+        foreach (var c in town.Army.Calls)
+        {
+            if (c.State != CallState.Arrived) continue;
+            var s = AllyCalls.Of(town, c);
+            var walk = map.TownView.Walk;
+            var gate = walk?.Gate ?? Geo.Center + Vector2.Down * (map.Geo.TownRadius + 1);
+            var o = gate - Geo.Center;
+            var outward = o.LengthSquared() > 1e-6f ? o.Normalized() : Vector2.Down;
+            var side = outward.Orthogonal();
+            // Hosts take turns either side of the road out.
+            float lane = (n % 2 == 0 ? 1 : -1) * (2.2f + n / 2 * 3.4f);
+            var at = gate + outward * 4.5f + side * lane;
+            float yaw = Mathf.Atan2(-outward.X, -outward.Y);
+            int count = (int)Math.Clamp(c.Strength / 3, 8, 48);
+            int cols = 8;
+            var body = HostColour(s);
+            var skin = Palette.RaceColor(s.Kin.Race);
+            for (int i = 0; i < count; i++)
+            {
+                int row = i / cols, col = i % cols;
+                var p = at + side * ((col - (cols - 1) / 2f) * 0.32f) + outward * (row * 0.34f);
+                p += new Vector2(Geo.Hash(c.Id * 131 + i) - 0.5f, Geo.Hash(c.Id * 71 + i) - 0.5f) * 0.08f;
+                float sway = Mathf.Sin(now * 1.3f + i) * 0.04f;
+                Put(map.Gen.At(p), yaw + sway, body, skin, 1.0f);
+            }
+            banners.Add((map.Gen.At(at - outward * 0.5f + side * 1.6f), Mathf.Sin(now * 0.7f + c.Id) * 0.4f, body.Lightened(0.15f)));
+            n++;
+        }
+    }
+
+    private static readonly Dictionary<string, Color> AllyColours = [];
+
+    /// <summary>A people's colours, from its kind of place, the same each time.</summary>
+    private static Color HostColour(Settlement s) =>
+        AllyColours.TryGetValue(s.Kin.Id, out var c) ? c : AllyColours[s.Kin.Id] = s.Kin.Kind switch
+        {
+            "hold" => new Color("5a6a7a"),
+            "enclave" => new Color("3f6b45"),
+            "shire" => new Color("8a7a3a"),
+            "burrow" => new Color("6a5a8a"),
+            "hall" => new Color("9a5a3a"),
+            "monastery" => new Color("c8c0a8"),
+            _ => Color.FromHsv(Geo.Hash(s.Kin.Id.Sum(ch => (int)ch)), 0.45f, 0.55f),
+        };
 
     /// <summary>Where a guard stands (or paces) once there, how high above the ground, and which way they face.</summary>
     private static (Vector2 Spot, float Lift, float Yaw) Stand(Town town, WallWalk? walk, Guard g, GuardPost? post, int rank, int of, float now)

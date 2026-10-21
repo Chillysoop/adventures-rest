@@ -152,6 +152,7 @@ public sealed record ArmyRules
     public PostRules Posts { get; init; } = new();
     public CommandRules Command { get; init; } = new();
     public LevyRules Levy { get; init; } = new();
+    public AllyRules Allies { get; init; } = new();
     public IReadOnlyList<UnitDef> Units { get; init; } = [];
 }
 
@@ -220,6 +221,10 @@ public sealed class ArmyState
 
     /// <summary>How many of each unit the town has raised, for the regiments' numbers.</summary>
     public OrderedMap<string, int> Raised { get; } = new();
+
+    /// <summary>Calls to arms sent to allies, and the hosts they bring.</summary>
+    public List<AllyCall> Calls { get; } = [];
+    public int NextCall { get; set; } = 1;
 
     [NotSaved] internal List<Building>? Rounds;
     [NotSaved] internal int RoundsDay = -1;
