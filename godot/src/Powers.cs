@@ -19,43 +19,66 @@ public partial class Main
         : p.Standing >= -30 ? ("Wary", Ui.Gold)
         : ("Hostile", Ui.Bad);
 
+    /// <summary>Its band on the standing bar, 1 (hostile) to 5 (allied); a power serving an enemy is hostile.</summary>
+    private static int PowerBand(PowerState p, PowerDef d) =>
+        p.Side == PowerSide.Town ? 5 : p.Side == PowerSide.Enemy ? 1 : p.Standing >= d.AllyAt ? 4 : p.Standing >= 0 ? 3 : p.Standing >= -30 ? 2 : 1;
+
+    /// <summary>The envoy's business in a few words.</summary>
+    private static string EnvoyLine(Town t, PowerState p)
+    {
+        string price = Powers.PriceText(t, p);
+        return p.Envoy switch
+        {
+            "alliance" => $"Offers alliance for {price}",
+            "pact" => $"Offers truce for {price}",
+            "tribute" => $"Demands {price}",
+            "favour" => $"Asks: {Powers.TaskText(t, p, "{task}")}",
+            "aid" => $"Asks {price} for its feud",
+            _ => "",
+        };
+    }
+
     private void RenderPowers(Pane p, Town t)
     {
         p.Heading("Minor powers");
-        foreach (var ps in t.Powers.OrderBy(x => x.Envoy != "" ? 0 : x.Side == PowerSide.Town ? 1 : x.CourtedBy != null ? 1 : x.Side == PowerSide.Enemy ? 2 : 3).ThenByDescending(x => x.Standing).ThenBy(x => x.Id, StringComparer.Ordinal))
+        int unmet = t.Powers.Count(x => !Powers.Met(t, x));
+        if (unmet == t.Powers.Count) p.Note("No powers met yet · they come calling as word of the town spreads.");
+        foreach (var ps in Powers.Known(t).OrderBy(x => x.Envoy != "" ? 0 : x.Side == PowerSide.Town ? 1 : x.CourtedBy != null ? 1 : x.Side == PowerSide.Enemy ? 2 : 3).ThenByDescending(x => x.Standing).ThenBy(x => x.Id, StringComparer.Ordinal))
         {
             var d = Powers.Def(t, ps.Id);
             var lore = t.Content.Library.Faction(d.Ref);
-            var (word, color) = PowerWord(t, ps, d);
+            var (word, _) = PowerWord(t, ps, d);
             string id = ps.Id;
             string name = Ui.Cap(Powers.Name(t, d));
-            string standing = $"{(ps.Standing >= 0 ? "+" : "−")}{Math.Abs(Math.Round(ps.Standing))}";
-            string text = $"[b]{Ui.Esc(name)}[/b]  {Tag(word, color)} {Ui.C(Ui.Ink2, $"[font_size=12]{standing}[/font_size]")}\n" +
-                          $"[font_size=13]Led by [b]{Ui.Esc(d.Leader)}[/b], {Ui.Esc(d.Title)}[/font_size]" +
+            // Who it is and what it wants go on hover; the row shows its side, its price and what needs an answer.
+            string about = $"Led by {d.Leader}, {d.Title}.\nIt {d.Goal}. From {d.Seat}." + (ps.LastHeard != "" ? $"\nLast heard: {ps.LastHeard}" : "");
+            string text = $"{Ui.Tip($"[b]{Ui.Esc(name)}[/b] {Ui.Img("ui-info", 12)}", about)}" +
                           (lore != null ? $"  {Tag(Ui.Cap(lore.Kind))}" : "") +
-                          $"\n{Ui.C(Ui.Ink2, $"[font_size=12]It {Ui.Esc(d.Goal)}. From {Ui.Esc(d.Seat)}.[/font_size]")}";
+                          $"\n[font_size=12]{Ui.Img("ui-person", 13)} {Ui.Esc(d.Leader)}[/font_size]";
+            // One short line per fact, each behind its icon.
+            void Line(string icon, Color c, string what) => text += $"\n[font_size=12]{Ui.Img(icon, 14)} {Ui.C(c, what)}[/font_size]";
+            int left(int day) => Math.Max(1, day - t.Day);
+            if (ps.Envoy != "") Line("standing", Ui.Gold, $"{Ui.Esc(EnvoyLine(t, ps))} · {Ui.Days(left(ps.EnvoyUntil))}");
             if (ps.Side == PowerSide.Town)
-                text += $"\n[font_size=12]{Ui.C(Ui.Good, $"Gives the town {Ui.Esc(Powers.BoonText(t, d))}.")} Tithe {Js.Str(d.Tithe)}g a day.[/font_size]";
+                text += $"\n[font_size=12]{Ui.Bullet(Ui.C(Ui.Good, Ui.Esc(Ui.Cap(Powers.BoonText(t, d)))), "ui-yes")}  {Ui.Chip("gold", $"−{Js.Str(d.Tithe)}/day", Ui.Bad, "Tithe")}[/font_size]";
             else if (ps.Side == PowerSide.Enemy && Powers.Patron(t, ps) is { } patron)
-                text += $"\n[font_size=12]{Ui.C(Ui.Bad, $"Serves {Ui.Esc(patron.Name)}: {Ui.Esc(Powers.BaneText(t, ps))}. Destroy {Ui.Esc(patron.Name)} to free it, or raise its standing to {Js.Str(t.Content.Powers.WinBack)} to win it back.")}[/font_size]";
+                text += $"\n[font_size=12]{Ui.Bullet(Ui.Tip(Ui.C(Ui.Bad, $"Serves {Ui.Esc(patron.Name)}: {Ui.Esc(Powers.BaneText(t, ps))}"), $"Destroy {patron.Name} to free it, or raise its standing to {Js.Str(t.Content.Powers.WinBack)} to win it back."), "ui-no")}[/font_size]";
             else
             {
-                text += $"\n[font_size=12]{Ui.C(Ui.Ink2, $"As an ally: {Ui.Esc(Powers.BoonText(t, d))}. Allies at {Js.Str(d.AllyAt)} for {Js.Str(d.Price)}g, then {Js.Str(d.Tithe)}g a day.")}[/font_size]";
+                text += $"\n[font_size=12]{Ui.Bullet(Ui.Esc(Ui.Cap(Powers.BoonText(t, d))), "ui-yes")}  {Ui.Chip("standing", $"{Js.Str(d.AllyAt)}", Ui.Ink2, "Allies at this standing")} {Ui.Chip("gold", $"{Js.Str(d.Price)} +{Js.Str(d.Tithe)}/day", Ui.Gold, "Price, then tithe")}[/font_size]";
                 if (d.Serves == "any")
-                    text += $"\n[font_size=12]{Ui.C(Ui.Ink2, $"If an enemy buys it: {Ui.Esc(Powers.BaneText(t, ps))}.")}[/font_size]";
+                    text += $"\n[font_size=12]{Ui.Bullet(Ui.Dim(Ui.Esc(Ui.Cap(Powers.BaneText(t, ps)))), "ui-no")} {Ui.Dim("if an enemy buys it")}[/font_size]";
             }
             if (Powers.Suitor(t, ps) is { } suitor)
             {
                 bool holds = Powers.Resolve(t, ps) >= ps.Offer;
-                text += $"\n[font_size=12]{Ui.C(holds ? Ui.Gold : Ui.Bad, $"{Ui.Esc(Ui.Cap(suitor.Name))} offers {Js.Str(ps.Offer)} against the town's {Js.Str(Js.Round(Powers.Resolve(t, ps)))}. It answers in {Ui.Days(Math.Max(0, ps.DecideDay - t.Day))}{(holds ? "; for now it would refuse." : ": send gifts to outbid them.")}")}[/font_size]";
+                Line("rivals", holds ? Ui.Gold : Ui.Bad, $"{Ui.Esc(Ui.Cap(suitor.Name))} bids {Js.Str(ps.Offer)} vs your {Js.Str(Js.Round(Powers.Resolve(t, ps)))} · {Ui.Days(left(ps.DecideDay))}");
             }
-            if (Powers.Pacted(t, ps))
-                text += $"\n[font_size=12]{Ui.C(Ui.Good, $"Truce: it takes no enemy's gold for {Ui.Days(ps.PactUntil - t.Day)} more.")}[/font_size]";
-            if (ps.Owed != "")
-                text += $"\n[font_size=12]{Ui.C(Ui.Bad, $"Still taking its price: the farms yield less for {Ui.Days(ps.OwedUntil - t.Day)}.")}[/font_size]";
-            if (ps.Envoy != "")
-                text += $"\n[font_size=12]{Ui.C(Ui.Gold, $"Its envoy {Ui.Esc(Powers.EnvoyText(t, ps))}. Answer within {Ui.Days(Math.Max(1, ps.EnvoyUntil - t.Day))}.")}[/font_size]";
-            if (ps.LastHeard != "") text += $"\n{Ui.C(Ui.Ink2, $"[font_size=11]Last heard: {Ui.Esc(ps.LastHeard)}[/font_size]")}";
+            if (ps.FeudWith != "" && Powers.Find(t, ps.FeudWith) is { } foe)
+                Line("rivals", Ui.Bad, $"Feud with {Ui.Esc(Powers.Name(t, foe))} · {Ui.Days(left(ps.FeudUntil))}");
+            if (ps.TaskTaken) Line("decree", Ui.Gold, $"Promised: {Ui.Esc(Powers.TaskText(t, ps, "{task}"))} · {Ui.Days(left(ps.TaskUntil))}");
+            if (Powers.Pacted(t, ps)) Line("defence", Ui.Good, $"Truce · {Ui.Days(left(ps.PactUntil))}");
+            if (ps.Owed != "") Line("food", Ui.Bad, $"Farms −25% · {Ui.Days(left(ps.OwedUntil))}");
 
             double gift = Powers.GiftCost(t, id);
             var buttons = new List<(string, bool, bool, Action)>
@@ -64,17 +87,21 @@ public partial class Main
             };
             if (ps.Envoy != "")
             {
-                string verb = ps.Envoy == "tribute" ? "Pay" : "Accept";
+                string verb = ps.Envoy switch { "tribute" => "Pay", "aid" => "Send aid", "favour" => "Promise", _ => "Accept" };
                 string price = Powers.Strange(t, ps) != null ? "strange price" : $"{Js.Str(ps.EnvoyGold)}g";
                 buttons.Insert(0, ("Refuse", true, false, () => Act(() => _sim.AnswerEnvoy(id, false))));
-                buttons.Insert(0, ($"{verb} · {price}", Powers.AnswerBlocked(t, ps) == null, true, () => Act(() => _sim.AnswerEnvoy(id, true))));
+                buttons.Insert(0, (ps.Envoy == "favour" ? verb : $"{verb} · {price}", Powers.AnswerBlocked(t, ps) == null, true, () => Act(() => _sim.AnswerEnvoy(id, true))));
             }
             if (ps.Side == PowerSide.Town) buttons.Add(("Break", true, false, () => Act(() => _sim.BreakWithPower(id))));
             else if (ps.Side == PowerSide.Neutral) buttons.Add(($"Ally · {Js.Str(d.Price)}g", Powers.AllyBlocked(t, id) == null, true, () => Act(() => _sim.AllyWithPower(id))));
             string face = d.Face;
             var ring = ps.Side == PowerSide.Town ? Ui.Good : ps.Side == PowerSide.Enemy ? Ui.Bad : ps.CourtedBy != null ? Ui.Gold : new Color("5a5347");
-            p.Row(text, ($"{face}{ring.ToHtml()}", () => new Portrait(56) { Glyph = face, Tint = d.Evil ? new Color("b5523b") : new Color("6f8fb5"), Ring = ring }, null), buttons.ToArray());
+            int band = PowerBand(ps, d);
+            double standing = ps.Standing;
+            p.Row(text, ($"{face}{ring.ToHtml()}{band}{word}{Math.Round(standing)}", () => new Portrait(56) { Glyph = face, Tint = d.Evil ? new Color("b5523b") : new Color("6f8fb5"), Ring = ring },
+                () => Foes.Standing(band, word, standing)), buttons.ToArray());
         }
-        p.Note("Each power likes and dislikes what the town does: the Ledger loves gold and trade, the Lanternbearers hate infamous heroes and dark allies, the League wants walls. Gifts buy favour that fades slowly, each one lately worth less. Allying with a power angers its rivals. Your clever enemies court the powers too; when one does, outbid it before the answer is due, and each power already with an enemy makes the next likelier to join it. Powers send envoys of their own: an alliance at a discount, a truce to take no enemy's gold, or a demand for tribute.");
+        if (unmet > 0 && unmet < t.Powers.Count) p.Note($"{Ui.Img("face-help", 14)} {unmet} more {(unmet == 1 ? "power" : "powers")} not yet met");
+        if (unmet < t.Powers.Count) p.Note("Gifts raise standing · allies anger rivals · outbid enemy bids before they answer.");
     }
 }

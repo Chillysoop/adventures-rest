@@ -38,9 +38,10 @@ public class AlertsTests
         var t = sim.Town;
         var draw = Population.Appeal(t);
         Assert.Equal(Math.Max(0.05, Math.Min(1.6, draw.Parts.Sum(p => p.Value))), draw.Total, 9);
-        t.TaxRate = 0.4;
+        // Steep enough to drown whatever else draws settlers on this day, however the campaign went.
+        t.TaxRate = 0.6;
         var a = Assert.Single(Alerts.Standing(t), a => a.Key == "settlers");
-        Assert.Contains("taxes at 40%", a.Tip);
+        Assert.Contains("taxes at 60%", a.Tip);
         Assert.Equal(AlertWindow.City, a.Kind.Window);
     }
 

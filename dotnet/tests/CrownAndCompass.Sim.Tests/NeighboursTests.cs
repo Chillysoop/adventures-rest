@@ -9,6 +9,7 @@ public class NeighboursTests
     {
         var s = t.Settlements.First(s => !s.Razed && (where == null || where(s)));
         t.Regions[s.RegionId].Known = true;
+        Discovery.Meet(t, Neighbours.Key(s), Discovery.Met);
         return s;
     }
 
