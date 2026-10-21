@@ -96,6 +96,21 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["order-guard", "flying-flag", mono],
   ["order-strike", "sword-brandish", mono],
   ["order-scout", "spyglass", mono],
+  // The bounty board's buttons: the terms of a job, then what else a row can do
+  ["act-slay", "broadsword", mono],
+  ["act-drive", "run", mono],
+  ["act-parley", "conversation", mono],
+  ["act-rescue", "breaking-chain", mono],
+  ["act-fetch", "knapsack", mono],
+  ["act-recover", "tombstone", mono],
+  ["act-loot", "open-treasure-chest", mono],
+  ["act-scry", "crystal-ball", mono],
+  ["act-scout", "spyglass", mono],
+  ["act-word", "envelope", mono],
+  ["act-recall", "return-arrow", mono],
+  ["act-offer", "shaking-hands", mono],
+  ["act-explore", "treasure-map", mono],
+  ["act-build", "claw-hammer", mono],
   // Enemy portraits (godot/src/Portrait.cs draws them on a medallion tinted by the enemy's kind)
   ...[
     "orc-head", "ogre", "troll", "goblin-head", "brutal-helm", "horned-helm", "giant",
