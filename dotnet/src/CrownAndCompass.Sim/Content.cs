@@ -1621,10 +1621,11 @@ public sealed class Content
         Converters = { new JsonStringEnumConverter() },
     };
 
-    private static Content? _default;
+    // Lazy so tests starting in parallel share one instance: saves resolve content by reference.
+    private static readonly Lazy<Content> _default = new(() => Load(ReadEmbedded));
 
     /// <summary>The bundled content, parsed once and shared (content is immutable).</summary>
-    public static Content Default() => _default ??= Load(ReadEmbedded);
+    public static Content Default() => _default.Value;
 
     /// <summary>Load content from a directory of JSON files laid out like the repo's content/game/.</summary>
     public static Content FromDirectory(string dir) => Load(name => File.ReadAllText(Path.Combine(dir, name)));
