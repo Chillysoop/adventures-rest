@@ -35,8 +35,24 @@ public class ExploreTests
         int chapter = waiting!.Chapter;
         Assert.True(sim.OrderExplorers(waiting.Id, "dig"));
         Assert.Equal(FindState.Busy, waiting.State);
-        for (int h = 0; h < 24 * 4 && waiting.State == FindState.Busy; h++) sim.Step();
+        // A step takes the days its chapter says, not hours.
+        var ch = Explore.Def(sim.Town, waiting).Chapters[chapter];
+        int started = sim.Town.Tick;
+        for (int h = 0; h < 24 * 8 && waiting.State == FindState.Busy; h++) sim.Step();
+        Assert.NotEqual(FindState.Busy, waiting.State);
+        Assert.True(sim.Town.Tick - started >= ch.Span);
         Assert.True(waiting.Chapter > chapter || waiting.Log.Count > 1);
+    }
+
+    /// <summary>Every chapter of every find is timed in days in explore.json, and the deep ones take longer than the quick ones.</summary>
+    [Fact]
+    public void ChaptersTakeDaysThatFitTheFind()
+    {
+        var rules = Content.Default().Explore;
+        Assert.All(rules.Kinds.SelectMany(k => k.Chapters), ch => Assert.True(ch.Days > 0, $"{ch.Title} has no days"));
+        double Total(string kind) => rules.Kind(kind)!.Chapters.Sum(c => c.Days);
+        Assert.True(Total("ruin") > Total("company"));
+        Assert.True(Total("lair") > Total("caravan"));
     }
 
     /// <summary>Saving with explorers in the field plays on exactly as the run that never stopped.</summary>

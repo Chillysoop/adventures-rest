@@ -353,6 +353,10 @@ public sealed record TownRules
     /// <summary>Open ground, in tiles, kept between any two buildings' footprints however they are turned.</summary>
     public double BuildingGap { get; init; }
 
+    /// <summary>The knight sworn to the charter, who rides with the first settlers (<see cref="Simulation"/> Charter); class id and level.</summary>
+    public string CharterKnight { get; init; } = "";
+    public int CharterKnightLevel { get; init; } = 1;
+
     /// <summary>Daily cost of keeping the town hall and council running.</summary>
     public double CivicUpkeep { get; init; }
 
@@ -414,10 +418,21 @@ public sealed record CouncilRules
     public double FestivalPerResident { get; init; }
     public int FestivalDays { get; init; }
     public double FestivalMood { get; init; }
+
+    /// <summary>Days between festivals, and the Mandate a festival the mayor calls on their own word earns.</summary>
+    public int FestivalGapDays { get; init; } = 20;
+    public double FestivalMandate { get; init; }
     public int MotionDays { get; init; }
     public int MotionGapDays { get; init; }
     public double DecreeMandate { get; init; }
     public double StartingMandate { get; init; }
+
+    /// <summary>Where Mandate settles with nothing done to earn more, and the share of the gap to it closed each day.</summary>
+    public double MandateRest { get; init; } = 50;
+    public double MandateEase { get; init; }
+
+    /// <summary>Watchmen the charter pays for from the first day.</summary>
+    public int StartingWatch { get; init; }
 
     /// <summary>Councillors' secrets: digging for them, and spending them (<see cref="Systems.Secrets"/>).</summary>
     public Systems.SecretRules Secrets { get; init; } = new();
@@ -1299,6 +1314,9 @@ public sealed class Content
     /// <summary>Fame and infamy for heroes and companies (content/game/notoriety.json).</summary>
     public NotorietyRules Notoriety { get; init; } = new();
 
+    /// <summary>The charter goals of a new town's first days (content/game/goals.json).</summary>
+    public Systems.GoalRules Goals { get; init; } = new();
+
     /// <summary>Walls, moats, the river and the ground nobody crosses on foot, and what crosses it anyway (content/game/passage.json).</summary>
     public PassageRules Passage { get; init; } = new();
 
@@ -1491,6 +1509,7 @@ public sealed class Content
             Merchants = Parse<MerchantRules>("merchants.json"),
             Wards = Parse<WardRules>("wards.json"),
             Notoriety = Parse<NotorietyRules>("notoriety.json"),
+            Goals = Parse<Systems.GoalRules>("goals.json"),
             Passage = Parse<PassageRules>("passage.json"),
             Assess = Parse<AssessRules>("assess.json"),
             Skills = Parse<SkillRules>("skills.json"),
