@@ -597,46 +597,14 @@ public partial class Main
         var t = _sim.Town;
         var r = t.Content.Stories;
         var m = t.Stories.Mayor;
-        var bg = r.Background(m.Background);
-        int? next = Stories.NextLevelXp(t);
-        int from = r.Levels.Count >= m.Level ? r.Levels[m.Level - 1] : 0;
-        if (next is int n) p.Meter("Experience", 100.0 * (m.Xp - from) / Math.Max(1, n - from), $"{m.Xp}/{n}");
-        else p.Meter("Experience", 100, $"{m.Xp}");
         if (Sheet.Pending(t) > 0) LevelUp(p);
+        var spec = MayorSheetSpec(t);
+        p.Add("sheet" + spec.Sig(), () => SheetView.Build(spec));
 
-        p.Heading("Abilities");
-        var a = Stories.Scores(t);
-        string sig = $"ab{a}";
-        p.Add(sig, () => AbilityRow(a));
-        int prof = Stories.ProficiencyBonus(m.Level);
-        int max = Sheet.InspirationMax(t);
-        p.Text(Ui.Chips(Ui.Chip("ui-up", $"+{prof}", Ui.Ink, "Proficiency bonus"), Ui.Chip("ui-yes", $"{m.Successes}", Ui.Good, "Stories won"), Ui.Chip("ui-no", $"{m.Failures}", Ui.Bad, "Stories lost")), 13);
-
-        p.Heading("Skills");
-        var lines = r.Skills.Select(sk =>
-        {
-            var (mod, pr, ab) = Stories.Bonus(t, sk.Id);
-            int bonus = mod + pr;
-            string dot = Stories.Expert(t, sk.Id) ? Ui.C(Ui.Gold, "◆") : Stories.Proficient(t, sk.Id) ? Ui.C(Ui.Gold, "●") : Ui.C(Ui.Line, "○");
-            return $"{dot} {(pr > 0 ? $"[b]{Ui.Esc(sk.Name)}[/b]" : Ui.Esc(sk.Name))} {Ui.C(Ui.Ink2, $"[font_size=11]{ab.ToUpperInvariant()}[/font_size]")}  [b]{(bonus >= 0 ? "+" : "−")}{Math.Abs(bonus)}[/b]";
-        }).ToList();
-        int half = (lines.Count + 1) / 2;
-        p.Add("sk" + string.Join("|", lines), () =>
-        {
-            var grid = new GridContainer { Columns = 2 };
-            grid.AddThemeConstantOverride("h_separation", 16);
-            grid.AddThemeConstantOverride("v_separation", 2);
-            for (int i = 0; i < half; i++)
-            {
-                grid.AddChild(SkillCell(lines[i]));
-                grid.AddChild(SkillCell(i + half < lines.Count ? lines[i + half] : ""));
-            }
-            return grid;
-        });
-
-        p.Heading("Background");
+        // Until the first story, the background can still be changed.
         if (Stories.CanChooseBackground(t) && !m.Chosen)
         {
+            p.Heading("Background");
             foreach (var b in r.Backgrounds)
             {
                 var skills = string.Join(", ", b.Skills.Select(k => r.Skill(k)?.Name ?? k));
@@ -646,42 +614,84 @@ public partial class Main
                     ("Choose", true, current, () => Act(() => _sim.ChooseBackground(id))));
             }
         }
-        else p.Text($"{Ui.Tip($"[b]{Ui.Esc(bg.Name)}[/b] {Ui.Img("ui-info", 12)}", bg.Text)}  {Tag(bg.Feature, Ui.Gold)}", 13);
+    }
 
-        var feats = Sheet.Feats(t);
-        if (feats.Count > 0)
+    /// <summary>The mayor's sheet in the same layout as every hero's (<see cref="SheetView"/>).</summary>
+    private SheetSpec MayorSheetSpec(Town t)
+    {
+        var r = t.Content.Stories;
+        var m = t.Stories.Mayor;
+        var bg = r.Background(m.Background);
+        int? next = Stories.NextLevelXp(t);
+        int from = r.Levels.Count >= m.Level ? r.Levels[m.Level - 1] : 0;
+        int prof = Stories.ProficiencyBonus(m.Level);
+        int max = Sheet.InspirationMax(t);
+        string pips = new string('●', Math.Min(m.Inspiration, max)) + new string('○', Math.Max(0, max - m.Inspiration));
+        int hp = Mayoralty.Hp(t), maxHp = Mayoralty.MaxHp(t);
+
+        var badge = new List<string> { Ui.Chip("ui-star", pips, m.Inspiration > 0 ? Ui.Gold : Ui.Ink2, "Inspiration: reroll a failed d20") };
+        badge.Add(Tag(bg.Feature, Ui.Gold));
+        if (t.Mayoralty.Hardcore) badge.Add(Ui.Chip("face-death-skull", "Hardcore", Ui.Bad, "If the mayor dies, the town is lost"));
+
+        var vitals = new List<SheetStat>
         {
-            p.Heading("Feats");
-            foreach (var f in feats) p.Text(Ui.Bullet(Ui.Tip($"[b]{Ui.Esc(f.Name)}[/b] {Ui.Img("ui-info", 12)}", f.Text), "ui-star"), 13);
-        }
+            new("ui-heart", "HIT POINTS", $"{hp}/{maxHp}", "", maxHp > 0 ? hp / (double)maxHp : 0),
+            new("d20", "PROFICIENCY", $"+{prof}", "Added to trained skills"),
+            new("ui-star", "INSPIRATION", $"{m.Inspiration}/{max}", "Rerolls a failed d20 in a story"),
+            new("ui-yes", "STORIES WON", m.Successes.ToString(), $"{m.Failures} lost"),
+        };
 
-        p.Heading($"Inspiration · up to {max}");
-        foreach (var d in r.Deeds)
+        var regalia = Regalia.Worn(t).Select(w => Line(t.Content.Regalia.Slot(w.Def.Slot)?.Icon ?? "regalia-chain", Ui.Esc(w.Piece.Item.Name), Ui.Gold)).ToList();
+        if (regalia.Count == 0) regalia.Add(Ui.Dim("None worn"));
+        var feats = Sheet.Feats(t).Select(f => Ui.Tip(Line("ui-star", $"[b]{Ui.Esc(f.Name)}[/b]"), f.Text)).ToList();
+        var deeds = r.Deeds.Select(d =>
         {
             var (have, need) = Sheet.Progress(t, d);
             string unit = d.Id == "content" ? $"days at {Js.Str(d.Threshold)}+ Mandate" : "";
-            p.Text($"{Ui.Img("ui-star", 14)} {Ui.Esc(d.Name)}  {(need > 1 ? Ui.Tip(Ui.C(Ui.Gold, $"[b]{Math.Max(0, have)}/{need}[/b]"), unit) : Ui.Dim("[font_size=12]each[/font_size]"))}", 13);
+            return Line("ui-star", $"{Ui.Esc(d.Name)}  {(need > 1 ? Ui.Tip(Ui.C(Ui.Gold, $"[b]{Math.Max(0, have)}/{need}[/b]"), unit) : Ui.Dim("each"))}");
+        }).ToList();
+
+        var story = new List<string> { Ui.Tip(Line("lore", $"[b]{Ui.Esc(bg.Name)}[/b]"), bg.Text) };
+        story.AddRange(t.Mayoralty.Past.Select(pm => Line("face-death-skull", $"{Ui.Esc(pm.Name)} {Ui.Dim($"level {pm.Level} · day {pm.From}-{pm.To} · {Ui.Esc(pm.Cause)}")}", Ui.Ink2)));
+        foreach (var pr in t.Stories.Precedents.Keys.Select(id => r.Precedent(id)).OfType<PrecedentDef>())
+            story.Add(Line("ui-day", $"{Ui.Esc(pr.Text)} {Ui.Dim($"day {t.Stories.Precedents[pr.Id]}")}"));
+        var record = new List<string>();
+        foreach (var s in t.Stories.All.Where(s => s.Done).OrderByDescending(s => s.Id).Take(8))
+        {
+            var b = s.Beats[^1];
+            var color = b.Result switch { StoryResult.Critical or StoryResult.Success or StoryResult.Certain => Ui.Good, StoryResult.Partial => Ui.Gold, StoryResult.Ignored => Ui.Ink2, _ => Ui.Bad };
+            string what = b.Result == StoryResult.Ignored ? "let it be" : b.Result == StoryResult.Certain ? "settled" : Stories.Word(b.Result);
+            record.Add($"{Ui.Img(color == Ui.Good ? "ui-yes" : color == Ui.Bad ? "ui-no" : "ui-day", 14)} {Ui.Esc(Stories.Fill(t, s, Stories.DefOf(t, s).Title))}  {Tag(what, color)}  {Ui.Dim($"[font_size=11]day {b.Tick / 24 + 1}[/font_size]")}");
         }
 
-        var remembered = t.Stories.Precedents.Keys.Select(id => r.Precedent(id)).OfType<PrecedentDef>().ToList();
-        if (remembered.Count > 0)
+        var right = new List<SheetSection> { new("Regalia", "regalia-chain", regalia) };
+        if (feats.Count > 0) right.Add(new("Feats", "ui-star", feats));
+        right.Add(new($"Inspiration · up to {max}", "ui-star", deeds));
+        var wide = new List<SheetSection> { new("Story", "lore", story) };
+        if (record.Count > 0) wide.Add(new("Deeds", "ui-day", record));
+
+        return new SheetSpec
         {
-            p.Heading("The town remembers");
-            foreach (var pr in remembered)
-                p.Text($"{Ui.C(Ui.Ink2, $"[font_size=11]Day {t.Stories.Precedents[pr.Id]}[/font_size]")}  {Ui.Esc(pr.Text)}", 13);
-        }
-        var past = t.Stories.All.Where(s => s.Done).OrderByDescending(s => s.Id).Take(8).ToList();
-        if (past.Count > 0)
-        {
-            p.Heading("Deeds");
-            foreach (var s in past)
+            Name = $"Mayor {m.Name}",
+            Subtitle = $"Level {m.Level} {Ui.Esc(Stories.Title(t).ToLowerInvariant())} · {Ui.Esc(bg.Name.ToLowerInvariant())}",
+            Badge = string.Join("  ", badge),
+            Glyph = "crown",
+            Tint = Ui.Gold,
+            Ring = Ui.Gold,
+            Crowned = true,
+            Xp = next is int n ? (m.Xp - from) / (double)Math.Max(1, n - from) : 1,
+            XpText = next is int n2 ? $"{m.Xp:#,0} / {n2:#,0} XP" : $"{m.Xp:#,0} XP",
+            Vitals = vitals,
+            Abilities = Stories.Scores(t),
+            Skills = r.Skills.Select(sk =>
             {
-                var b = s.Beats[^1];
-                var color = b.Result switch { StoryResult.Critical or StoryResult.Success or StoryResult.Certain => Ui.Good, StoryResult.Partial => Ui.Gold, StoryResult.Ignored => Ui.Ink2, _ => Ui.Bad };
-                string what = b.Result == StoryResult.Ignored ? "let it be" : b.Result == StoryResult.Certain ? "settled" : Stories.Word(b.Result);
-                p.Text($"{Ui.Img(color == Ui.Good ? "ui-yes" : color == Ui.Bad ? "ui-no" : "ui-day", 14)} {Ui.Esc(Stories.Fill(t, s, Stories.DefOf(t, s).Title))}  {Tag(what, color)}  {Ui.Dim($"[font_size=11]day {b.Tick / 24 + 1}[/font_size]")}", 13);
-            }
-        }
+                var (mod, pr, _) = Stories.Bonus(t, sk.Id);
+                return new SheetSkill(sk.Name, mod + pr, Stories.Proficient(t, sk.Id), Stories.Expert(t, sk.Id));
+            }).ToList(),
+            SkillsNote = $"● trained +{prof} · ◆ expert",
+            Right = right,
+            Wide = wide,
+        };
     }
 
     /// <summary>The first ability picked for a +1/+1 improvement, until the second is.</summary>
