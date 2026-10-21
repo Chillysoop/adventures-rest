@@ -615,6 +615,9 @@ public static class Army
             .ToList();
     }
 
+    /// <summary>Fill a regiment at once, past the day's pace (for staged scenes and tests).</summary>
+    public static void Fill(Town town, Regiment r) => Recruit(town, r, r.Wanted);
+
     /// <summary>Take recruits, as many as a day allows and the treasury and the market can arm.</summary>
     private static void Recruit(Town town, Regiment r, int? most = null)
     {

@@ -281,7 +281,7 @@ public sealed class Options
                 case "--advance": o.Advances.Add(Next()); break;
                 case "--inspiration": o.Inspiration = int.Parse(Next()); break;
                 case "--decor-at": o.DecorAt = Next().Split(',').Select(v => double.Parse(v, System.Globalization.CultureInfo.InvariantCulture)).ToArray(); break;
-                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--stock" or "--pact" or "--buy" or "--call" or "--flag" or "--wait" or "--works" or "--roster" or "--spot" or "--draw-wall" or "--gate" or "--raise" or "--skyrun" or "--duty":
+                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--stock" or "--pact" or "--buy" or "--call" or "--flag" or "--wait" or "--works" or "--roster" or "--spot" or "--draw-wall" or "--gate" or "--raise" or "--skyrun" or "--duty" or "--army":
                     o.Script.Add((args[i][2..], Next()));
                     break;
             }
@@ -394,6 +394,36 @@ public sealed class Options
                     t.Treasury += 200;
                     if (t.Heroes.Where(h => h.Hero!.Duty == HeroDuty.None && Garrison.DutyBlocked(t, h, duty) == null).OrderByDescending(h => h.Hero!.Level).ThenBy(h => h.Id).FirstOrDefault() is { } guardHero)
                         sim.SetDuty(guardHero.Id, duty);
+                    break;
+                case "army":
+                    // For army shots: "unit:size[:post[:drill]]" raises a full regiment (its hall built first if the town has none),
+                    // "levy:size" calls the levy, "lead" puts the best free hero at the head of the first regiment.
+                    t.Treasury += 5000;
+                    var parts = arg.Split(':');
+                    if (parts[0] == "lead")
+                    {
+                        if (t.Army.Regiments.FirstOrDefault() is { } led && t.Heroes.Where(h => Army.CommandBlocked(t, led, h) == null).OrderByDescending(h => Army.Leadership(t, h)).ThenBy(h => h.Id).FirstOrDefault() is { } boss)
+                            sim.CommandRegiment(led.Id, boss.Id);
+                        break;
+                    }
+                    if (parts[0] == "levy")
+                    {
+                        sim.SetServiceLaw(ServiceLaw.Conscription);
+                        sim.RaiseLevy(int.Parse(parts[1]));
+                        break;
+                    }
+                    var unit = Army.Unit(t, parts[0]);
+                    if (Army.Halls(t, unit).Count == 0)
+                    {
+                        var hd = t.Content.Building(unit.Halls[0]);
+                        if (Planning.CivicLot(t, hd) is { } hlot) t.AddBuilding(hd, hlot, null, hd.Name, true);
+                    }
+                    var post = parts.Length > 2 ? Enum.Parse<ArmyPost>(parts[2], true) : ArmyPost.Reserve;
+                    if (sim.RaiseRegiment(unit.Id, int.Parse(parts[1]), post) is { } reg)
+                    {
+                        Army.Fill(t, reg);
+                        reg.Drill = parts.Length > 3 ? double.Parse(parts[3], System.Globalization.CultureInfo.InvariantCulture) : 1;
+                    }
                     break;
                 case "stock":
                     // For armory shots: a find handed in under a pact.

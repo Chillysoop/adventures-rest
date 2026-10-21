@@ -21,6 +21,7 @@ public partial class Main : Control
         City,
         Ledger,
         War,
+        Army,
         Defence,
         Council,
         Bounties,
@@ -608,6 +609,7 @@ public partial class Main : Control
                     case Tab.City: RenderCity(); break;
                     case Tab.Ledger: RenderLedger(); break;
                     case Tab.War: RenderWar(); break;
+                    case Tab.Army: RenderArmy(); break;
                     case Tab.Defence: RenderDefence(); break;
                     case Tab.Council: RenderCouncil(); break;
                     case Tab.Bounties: RenderBounties(); break;

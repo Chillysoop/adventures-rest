@@ -44,6 +44,7 @@ public sealed class AgentPositions(MapView map)
         // Turned away at a full door: they walk up to it first, then go on to wherever they thought of instead.
         if (a.TurnedFrom is int full && map.HourFraction < 0.4f)
             return Front(town.Lot(town.Building(full).LotId), j1, j2) + new Vector2(j1 - 0.5f, j2 - 0.5f) * 0.6f;
+        if (a.RegimentId != null && Soldiering(town, a) is Vector2 post) return post;
         if (a.LocationId is int loc)
         {
             // A hauler walks to the lumber camp or quarry (or the market at the square) and back with a load, twice an hour.
@@ -96,6 +97,43 @@ public sealed class AgentPositions(MapView map)
 
     /// <summary>A hired hand's half of a haul: carrying a load in (true) or walking back for the next.</summary>
     public bool Carrying(Building site) => Mathf.PosMod(map.HourFraction * 2 + Geo.Hash(site.Id * 7 + 3), 1) >= 0.5f;
+
+    /// <summary>
+    /// Where a soldier stands at their post: in ranks in their hall's yard at drill, spread along the wall walk on the walls,
+    /// two ranks at the hall's door as the mayor's guard. Null for the guard's round, which walks building to building.
+    /// </summary>
+    private Vector2? Soldiering(Town town, Agent a)
+    {
+        if (Army.Of(town, a) is not { } r || a.Activity is not (Activity.Drilling or Activity.Guarding) || a.LocationId is not int loc) return null;
+        int rank = r.Soldiers.IndexOf(a.Id);
+        if (rank < 0) return null;
+        if (r.Post == ArmyPost.Walls && map.TownView.Walk is { } walk)
+        {
+            // Every stretch gets its share, the gate first.
+            var arc = walk.Sections[rank % walk.Sections.Length];
+            int along = rank / walk.Sections.Length, per = Math.Max(1, (r.Soldiers.Count + walk.Sections.Length - 1) / walk.Sections.Length);
+            return Crowd.AlongArc(arc, (along + 0.5f) / per * 0.8f + 0.1f);
+        }
+        var lot = town.Lot(town.Building(loc).LotId);
+        var f = Geo.LotFront(lot);
+        var side = new Vector2(f.Y, -f.X);
+        float w = lot.W / (float)Sim.Systems.Land.Res, d = lot.D / (float)Sim.Systems.Land.Res;
+        if (a.Activity == Activity.Drilling)
+        {
+            // Earlier regiments of the hall take the front ranks.
+            foreach (var other in town.Army.Regiments)
+            {
+                if (other == r) break;
+                if (other.HallId == r.HallId && other.Post == ArmyPost.Reserve) rank += other.Soldiers.Count;
+            }
+            int cols = Math.Max(3, (int)(w * 0.8f / 0.2f));
+            int row = rank / cols, col = rank % cols;
+            return Geo.LotPos(lot) + f * (d / 2 - 0.15f - row * 0.22f) + side * ((col - (cols - 1) / 2f) * 0.2f);
+        }
+        // The mayor's guard: two ranks either side of the door.
+        int half = (rank / 2) + 1;
+        return Geo.LotPos(lot) + f * (d / 2 + 0.25f + (rank % 4 >= 2 ? 0.25f : 0)) + side * ((rank % 2 == 0 ? 1 : -1) * (0.3f + 0.22f * (half / 2)));
+    }
 
     private Vector2 Front(Lot lot, float j1, float j2)
     {
@@ -363,6 +401,7 @@ public partial class Crowd(MapView map) : Node3D
                     var (act, u) = Heroes.Moving(a.Id, s.Walking, now);
                     Heroes.Put(a, p - new Vector3(0, bob, 0), s.Yaw, act, u);
                 }
+                else if (a.RegimentId != null && Army.Of(town, a) is { } reg) _soldiers.Add((a, reg, s, p));
                 else Put(p, s.Yaw, Tunics[a.Id % Tunics.Length], Palette.RaceColor(a.Race));
                 if (People.Loaded(town, a) == true && a.LocationId is int site) loads.Add((p, s.Yaw, town.Building(site).Def.Stone > town.Building(site).Def.Timber));
             }
@@ -467,8 +506,8 @@ public partial class Crowd(MapView map) : Node3D
         SiegeHeroes(town, now);
         SkirmishHeroes(now);
         Flush(_heroes);
-        PutHorses();
         Guards(town, now, banners);
+        PutHorses();
         SiegeBanners(banners);
         foreach (var (bp, yaw, col) in banners) Put(bp, yaw + Mathf.Pi / 2, col, Colors.White, 2.2f);
         PutPennons();
@@ -544,6 +583,7 @@ public partial class Crowd(MapView map) : Node3D
             GuardSpots[g.Id] = p;
             Put(gen.At(p, lift), yaw, Tabard, Palette.RaceColor("human"), 1.05f);
         }
+        Regiments(town, now);
         SiegeDefenders();
         Flush(_guards);
         foreach (var post in town.Garrison.Posts)
@@ -552,6 +592,55 @@ public partial class Crowd(MapView map) : Node3D
             var at = new Vector2(Geo.Margin + (float)post.X, Geo.Margin + (float)post.Y);
             banners.Add((gen.At(at), Mathf.Sin(now * 0.7f + post.Id) * 0.4f, new Color("b8322a")));
         }
+    }
+
+    /// <summary>The town's soldiers seen this frame, drawn with the watch in their units' colours.</summary>
+    private readonly List<(Agent A, Regiment R, Sprite S, Vector3 P)> _soldiers = [];
+
+    private static readonly Dictionary<string, Color> UnitColours = [];
+
+    private static Color UnitColour(UnitDef u) =>
+        UnitColours.TryGetValue(u.Id, out var c) ? c : UnitColours[u.Id] = new Color(u.Colour);
+
+    /// <summary>
+    /// The town's regiments: soldiers in their unit's tabard, at drill lunging in their ranks, up on the wall walk, at the
+    /// hall's door or on their round; horsemen in the saddle (and the Roost's riders on their griffons, coated gold).
+    /// </summary>
+    private void Regiments(Town town, float now)
+    {
+        var walk = map.TownView.Walk;
+        foreach (var (a, r, s, p0) in _soldiers)
+        {
+            var u = Army.Unit(town, r);
+            var p = p0;
+            float yaw = s.Yaw;
+            if (!s.Walking)
+            {
+                if (a.Activity == Activity.Drilling)
+                {
+                    // Facing the front of the yard, thrusting on the drillmaster's count.
+                    var lot = town.Lot(town.Building(a.LocationId!.Value).LotId);
+                    yaw = Geo.LotYaw(lot);
+                    var f = Geo.LotFront(lot);
+                    float lunge = Mathf.Max(0, Mathf.Sin(now * 3 + (a.Id % 3) * 0.2f)) * 0.05f;
+                    p += new Vector3(f.X, 0, f.Y) * lunge;
+                }
+                else if (r.Post == ArmyPost.Walls && walk != null)
+                {
+                    p.Y += walk.Height;
+                    var o = s.P - Geo.Center;
+                    yaw = Mathf.Atan2(o.X, o.Y);
+                }
+            }
+            bool mounted = u.Role is "horse" or "flier" or "beast";
+            if (mounted)
+            {
+                _mounts.Add((p, yaw, u.Role == "flier" ? new Color("c89a3a") : u.Role == "beast" ? new Color("5a4a3a") : new Color(a.Id % 3 == 0 ? "d8d0c0" : a.Id % 3 == 1 ? "5a3a24" : "2a1e14")));
+                p.Y += 0.15f;
+            }
+            Put(p, yaw, UnitColour(u), Palette.RaceColor(a.Race), 1.05f);
+        }
+        _soldiers.Clear();
     }
 
     /// <summary>Where a guard stands (or paces) once there, how high above the ground, and which way they face.</summary>
@@ -620,7 +709,7 @@ public partial class Crowd(MapView map) : Node3D
     }
 
     /// <summary>A point a share of the way along a polyline.</summary>
-    private static Vector2 AlongArc(Vector2[] arc, float u)
+    internal static Vector2 AlongArc(Vector2[] arc, float u)
     {
         if (arc.Length == 1) return arc[0];
         float f = Mathf.Clamp(u, 0, 1) * (arc.Length - 1);

@@ -37,7 +37,7 @@ public partial class Main
         if (!band && foes.Count == 0)
         {
             p.Card($"{Ui.Img("foe-unseen", 30)}  [font_size=17][b]No foes known[/b][/font_size]\n{Ui.C(Ui.Ink2, "[font_size=13]• Scouts and scrying find them\n• Witnesses and messengers bring word\n• Parties meet them on the road[/font_size]")}");
-            p.Buttons(("Defence", true, false, () => OpenWindow(Tab.Defence)), ("Bounty board", true, false, () => OpenWindow(Tab.Bounties)));
+            p.Buttons(("Army", true, false, () => OpenWindow(Tab.Army)), ("Defence", true, false, () => OpenWindow(Tab.Defence)), ("Bounty board", true, false, () => OpenWindow(Tab.Bounties)));
         }
         if (band) RenderWarband(p, t);
         if (foes.Count > 0)
@@ -55,8 +55,8 @@ public partial class Main
             }
         }
         p.Heading("Heroes");
-        p.Row($"[b]Heroes in town[/b]  {Tag(home.ToString(), home == 0 ? Ui.Bad : Ui.Ink)}\n{Ui.C(Ui.Ink2, "[font_size=12]Only heroes can kill a warlord at the walls.[/font_size]")}");
-        RenderSellswords(p, t);
+        p.Row($"[b]Heroes in town[/b]  {Tag(home.ToString(), home == 0 ? Ui.Bad : Ui.Ink)}\n{Ui.C(Ui.Ink2, "[font_size=12]Only heroes can kill a warlord at the walls.[/font_size]")}",
+            ("Army", true, false, () => OpenWindow(Tab.Army)));
         p.Commit();
     }
 
@@ -583,7 +583,7 @@ public partial class Main
         if (hs.Knight) honours.Add(Tag("Knight", Ui.Gold));
         if (hs.FiefId != null && Quests.Site(t, hs.FiefId) is SiteState land) honours.Add(Tag($"Holds {Ui.Esc(land.Def.Name)}", Ui.Gold));
         if (hs.Champion) honours.Add(Tag($"Champion of {t.Name}", Ui.Gold));
-        if (hs.Duty != HeroDuty.None) honours.Add(DutyIcon(a, 15) + Tag(hs.Duty == HeroDuty.Walls ? "On the walls" : "On the streets", Ui.Good));
+        if (hs.Duty != HeroDuty.None) honours.Add(DutyIcon(a, 15) + Tag(hs.Duty switch { HeroDuty.Walls => "On the walls", HeroDuty.Streets => "On the streets", _ => "In command" }, Ui.Good));
         if (Callings.Of(t, a) is CallingDef calling) honours.Add(Tag(calling.Name, Ui.Good));
         if (honours.Count > 0) p.Text(string.Join("  ", honours));
         var lr = t.Content.Loyalty;
