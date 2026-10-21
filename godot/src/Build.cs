@@ -254,6 +254,12 @@ public partial class Main
                     if (why != null) line = why.Replace($"{dd.Name.ToLowerInvariant()} density ", "");
                     tip = $"{Ui.Cap(dd.Name.ToLowerInvariant())}-density {Planning.ZoneName(z)}: {dd.Blurb} Painting over built {Planning.ZoneName(z)} land changes its density too.";
                 }
+                // Room on painted land nobody is building on: say what it waits for.
+                if (why == null && item.Crop == null && Property.Waiting(town, z) is { } wait)
+                {
+                    line = wait;
+                    tip += $" Not filling now: {wait}.";
+                }
             }
             else if (item.Gate)
             {

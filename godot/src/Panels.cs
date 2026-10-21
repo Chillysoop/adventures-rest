@@ -150,8 +150,14 @@ public partial class Main
         RenderCouncillor(p, t);
         RenderMotion(p, t);
         p.Meter("Mandate", t.Mandate, $"{Math.Round(t.Mandate)}", t.Mandate < 30);
+        p.Note("Fades back toward 50 unless you keep earning it.");
         p.Text($"{Tag($"Tax {Math.Round(t.TaxRate * 100)}%", Ui.Ink)}   {Tag($"Watch {t.Watch}", Ui.Ink)}{(t.FestivalDays > 0 ? "   " + Tag("Festival!", Ui.Gold) : "")}", 12);
         RenderTaxes(p, t);
+        var festive = Council.FestivalBlocked(t);
+        p.Buttons(($"Hold a festival · {Js.Str(Council.FestivalCost(t))}g", festive == null, false, () => Act(() => _sim.HoldFestival())));
+        p.Note(festive == null
+            ? $"Mood up for {t.Content.Council.FestivalDays} days · Mandate +{Js.Str(t.Content.Council.FestivalMandate)}"
+            : Ui.Cap(festive));
         RenderGuilds(p, t);
         var history = t.Motions.Where(m => m.Status != MotionStatus.Pending).TakeLast(8).Reverse().ToList();
         if (history.Count > 0)
@@ -386,7 +392,11 @@ public partial class Main
             }
             int bt = Math.Clamp(s.BelievedTier, 1, 3);
             string tier = new string('◆', bt) + new string('◇', 3 - bt);
-            string word = s.Known == SiteKnowledge.Rumoured && !s.ThoughtCleared
+            // A seat the Campaign window names reads as that, not as the rumour the town first heard of the place.
+            var seated = s.ThoughtCleared ? null : t.Saga.Menaces.FirstOrDefault(m => m.Alive && m.SeatId == s.Def.Id);
+            string word = seated != null
+                ? Ui.C(Ui.Bad, $" [font_size=11]seat of {Ui.Esc(seated.Name)}{(seated.BigBad ? ", the big bad" : "")}{(s.Def.Tier > 0 ? $", tier {s.Def.Tier}" : "")}[/font_size]")
+                : s.Known == SiteKnowledge.Rumoured && !s.ThoughtCleared
                 ? Ui.C(Ui.Ink2, $" [font_size=11]rumour: {Ui.Esc(s.Believed)} ({Rumors.Trust(s.Trust)})[/font_size]")
                 : "";
             // Its face and how hard it looks for the town's heroes, both from what the town believes is there.
