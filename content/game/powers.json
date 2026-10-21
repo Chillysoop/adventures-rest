@@ -106,7 +106,7 @@
       ]
     },
     {
-      "id": "rose-thieves", "ref": "rose-thieves", "face": "visored-helm", "title": "Knight-Robber of the Rose", "leader": "Dame Isolde Fernhallow",
+      "id": "rose-thieves", "ref": "rose-thieves", "meetDay": 60, "face": "visored-helm", "title": "Knight-Robber of the Rose", "leader": "Dame Isolde Fernhallow",
       "goal": "wants hoarders robbed and the takings handed out on the village greens",
       "seat": "a ruined chapel in the greenwood that every forester knows and none will name",
       "witness": "a charcoal-burner with a red rose pinned to his hat",
@@ -117,7 +117,7 @@
       "enemy": { "text": "nothing: they rob tyrants, not towns" }
     },
     {
-      "id": "foundling-purse", "ref": "foundling-purse", "face": "domino-mask", "title": "Matron of the Purse", "leader": "Mother Tansy",
+      "id": "foundling-purse", "ref": "foundling-purse", "meetDay": 35, "face": "domino-mask", "title": "Matron of the Purse", "leader": "Mother Tansy",
       "goal": "wants three orphanages fed, and every purse in reach a little lighter for it",
       "seat": "the back stair of the Harrowgate orphanage",
       "witness": "a barefoot boy who knows far more than a boy should",
@@ -128,7 +128,7 @@
       "enemy": { "skim": 3, "strike": "treasury", "strikeEvery": 60, "text": "little hands in the treasury for {enemy}, and the town's purses picked" }
     },
     {
-      "id": "skyhold-post", "ref": "skyhold-post", "face": "dwarf-face", "title": "Postmaster of the Skyhold", "leader": "Brannoc Featherhand",
+      "id": "skyhold-post", "ref": "skyhold-post", "meetDay": 85, "face": "dwarf-face", "title": "Postmaster of the Skyhold", "leader": "Brannoc Featherhand",
       "goal": "wants every road and pass carrying its letters, and every stamp paid",
       "seat": "the griffon eyries of the Skyhold, above the clouds",
       "witness": "a dwarven courier who lands in the square, stamps a letter and is gone",
@@ -1324,6 +1324,384 @@
           ],
           "ignored": {
             "text": "Nobody answers, and the riders go home.",
+            "effects": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "contact-rose-thieves",
+      "title": "A rose on the council table",
+      "stakes": "medium",
+      "source": "contact",
+      "needs": [
+        "minor"
+      ],
+      "repeatDays": 100000,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A red rose lies on the council table one morning, beside a purse taken from a tax-farmer two valleys over. A note: \"For the poor of {town}. With the compliments of the Rose.\"",
+          "options": [
+            {
+              "label": "Hand the purse out on the green",
+              "tags": [
+                "mercy",
+                "freedom"
+              ],
+              "success": {
+                "text": "The green fills. Somebody leaves a second rose at the gate that night: the Rose Thieves approve.",
+                "effects": {
+                  "minor": 15,
+                  "mandate": 2
+                },
+                "next": "terms"
+              }
+            },
+            {
+              "label": "Find the knight who left it",
+              "tags": [
+                "guile"
+              ],
+              "skill": "survival",
+              "dc": 13,
+              "success": {
+                "text": "A charcoal-burner with a rose in his hat takes your people to a ruined chapel. A visored knight bows to them.",
+                "effects": {
+                  "minor": 10
+                },
+                "next": "terms"
+              },
+              "failure": {
+                "text": "The trail ends at a stream. Whoever left the rose does not want finding yet.",
+                "effects": {
+                  "minor": 0
+                }
+              }
+            },
+            {
+              "label": "Return the purse to its owner",
+              "tags": [
+                "order"
+              ],
+              "success": {
+                "text": "The tax-farmer thanks you. The roses stop.",
+                "effects": {
+                  "minor": -15,
+                  "gold": 10
+                }
+              }
+            }
+          ],
+          "ignored": {
+            "text": "The rose wilts on the table, and nobody claims the purse.",
+            "effects": {
+              "minor": -5
+            }
+          }
+        },
+        {
+          "id": "terms",
+          "text": "The visored knight leans on her sword. \"Dame Isolde asks what {town} wants of the Rose.\"",
+          "options": [
+            {
+              "label": "Friendship",
+              "tags": [
+                "mercy"
+              ],
+              "skill": "persuasion",
+              "dc": 12,
+              "success": {
+                "text": "{minorLeader} sends back warm words: {town} will be remembered kindly.",
+                "effects": {
+                  "minor": 8
+                }
+              },
+              "failure": {
+                "text": "The words come out stiff, and {minor} takes them politely and no more.",
+                "effects": {
+                  "minor": 2
+                }
+              }
+            },
+            {
+              "label": "Seal it with a gift",
+              "tags": [
+                "coin"
+              ],
+              "cost": 40,
+              "success": {
+                "text": "The gift goes off to {minorLeader}. It is well received.",
+                "effects": {
+                  "minor": 12
+                }
+              }
+            },
+            {
+              "label": "Nothing yet",
+              "tags": [
+                "order"
+              ],
+              "success": {
+                "text": "{town} keeps its counsel, and {minor} will be back.",
+                "effects": {}
+              }
+            }
+          ],
+          "ignored": {
+            "text": "Nobody answers, and {minor}'s envoy goes home.",
+            "effects": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "contact-foundling-purse",
+      "title": "A boy who knows too much",
+      "stakes": "medium",
+      "source": "contact",
+      "needs": [
+        "minor"
+      ],
+      "repeatDays": 100000,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A barefoot boy waits at the town hall door and tells the clerk, word for word, what the council said behind closed doors last night. Then he asks for bread for his sisters at the orphanage.",
+          "options": [
+            {
+              "label": "Feed him and his sisters",
+              "tags": [
+                "mercy"
+              ],
+              "success": {
+                "text": "The boy eats, pockets an apple and says Mother Tansy will hear of it. The Foundling Purse has a friend here.",
+                "effects": {
+                  "minor": 15,
+                  "gold": -15
+                },
+                "next": "terms"
+              }
+            },
+            {
+              "label": "Ask who sent him",
+              "tags": [
+                "guile"
+              ],
+              "skill": "insight",
+              "dc": 13,
+              "success": {
+                "text": "He grins and names an orphanage on the back stair of Harrowgate. The Foundling Purse wanted to be found.",
+                "effects": {
+                  "minor": 10
+                },
+                "next": "terms"
+              },
+              "failure": {
+                "text": "He shrugs and is gone between one blink and the next. So is the clerk's purse.",
+                "effects": {
+                  "minor": -5,
+                  "gold": -10
+                }
+              }
+            },
+            {
+              "label": "Set the watch on him",
+              "tags": [
+                "order"
+              ],
+              "success": {
+                "text": "The watch chases him round three corners and loses him. Every street child in town now knows {town}'s face.",
+                "effects": {
+                  "minor": -15
+                }
+              }
+            }
+          ],
+          "ignored": {
+            "text": "The boy waits an hour, then goes. The clerk's purse goes with him.",
+            "effects": {
+              "minor": -5
+            }
+          }
+        },
+        {
+          "id": "terms",
+          "text": "The boy wipes his mouth. \"Mother says she'll want to know what you're after.\"",
+          "options": [
+            {
+              "label": "Friendship",
+              "tags": [
+                "mercy"
+              ],
+              "skill": "persuasion",
+              "dc": 12,
+              "success": {
+                "text": "{minorLeader} sends back warm words: {town} will be remembered kindly.",
+                "effects": {
+                  "minor": 8
+                }
+              },
+              "failure": {
+                "text": "The words come out stiff, and {minor} takes them politely and no more.",
+                "effects": {
+                  "minor": 2
+                }
+              }
+            },
+            {
+              "label": "Seal it with a gift",
+              "tags": [
+                "coin"
+              ],
+              "cost": 40,
+              "success": {
+                "text": "The gift goes off to {minorLeader}. It is well received.",
+                "effects": {
+                  "minor": 12
+                }
+              }
+            },
+            {
+              "label": "Nothing yet",
+              "tags": [
+                "order"
+              ],
+              "success": {
+                "text": "{town} keeps its counsel, and {minor} will be back.",
+                "effects": {}
+              }
+            }
+          ],
+          "ignored": {
+            "text": "Nobody answers, and {minor}'s envoy goes home.",
+            "effects": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "contact-skyhold-post",
+      "title": "A letter from the sky",
+      "stakes": "medium",
+      "source": "contact",
+      "needs": [
+        "minor"
+      ],
+      "repeatDays": 100000,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A griffon lands in the square, scattering the market. A dwarf in a postmaster's cap stamps a letter, hands it to the nearest guard and asks who pays the postage.",
+          "options": [
+            {
+              "label": "Pay the postage, and a tip",
+              "tags": [
+                "coin"
+              ],
+              "success": {
+                "text": "The dwarf tips her cap. \"The Skyhold remembers good payers.\"",
+                "effects": {
+                  "minor": 15,
+                  "gold": -20
+                },
+                "next": "terms"
+              }
+            },
+            {
+              "label": "Haggle over the stamp",
+              "tags": [
+                "guile",
+                "coin"
+              ],
+              "skill": "persuasion",
+              "dc": 13,
+              "success": {
+                "text": "She laughs and halves it. \"You'd make a postmaster.\"",
+                "effects": {
+                  "minor": 10,
+                  "gold": -5
+                },
+                "next": "terms"
+              },
+              "failure": {
+                "text": "She doubles it for the cheek, and you pay.",
+                "effects": {
+                  "minor": 0,
+                  "gold": -30
+                }
+              }
+            },
+            {
+              "label": "Refuse the letter",
+              "tags": [
+                "order"
+              ],
+              "success": {
+                "text": "The dwarf shrugs, takes it back and flies off. The letter, somebody says later, was a warning.",
+                "effects": {
+                  "minor": -15
+                }
+              }
+            }
+          ],
+          "ignored": {
+            "text": "Nobody pays. The griffon leaves with the letter.",
+            "effects": {
+              "minor": -5
+            }
+          }
+        },
+        {
+          "id": "terms",
+          "text": "The postmaster checks her ledger. \"Brannoc Featherhand will want to know what {town} would have of the Post.\"",
+          "options": [
+            {
+              "label": "Friendship",
+              "tags": [
+                "mercy"
+              ],
+              "skill": "persuasion",
+              "dc": 12,
+              "success": {
+                "text": "{minorLeader} sends back warm words: {town} will be remembered kindly.",
+                "effects": {
+                  "minor": 8
+                }
+              },
+              "failure": {
+                "text": "The words come out stiff, and {minor} takes them politely and no more.",
+                "effects": {
+                  "minor": 2
+                }
+              }
+            },
+            {
+              "label": "Seal it with a gift",
+              "tags": [
+                "coin"
+              ],
+              "cost": 40,
+              "success": {
+                "text": "The gift goes off to {minorLeader}. It is well received.",
+                "effects": {
+                  "minor": 12
+                }
+              }
+            },
+            {
+              "label": "Nothing yet",
+              "tags": [
+                "order"
+              ],
+              "success": {
+                "text": "{town} keeps its counsel, and {minor} will be back.",
+                "effects": {}
+              }
+            }
+          ],
+          "ignored": {
+            "text": "Nobody answers, and {minor}'s envoy goes home.",
             "effects": {}
           }
         }
