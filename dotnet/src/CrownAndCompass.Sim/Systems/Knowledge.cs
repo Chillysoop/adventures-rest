@@ -57,6 +57,7 @@ public static class Knowledge
         if (Watch.FreeScryingsLeft(town) > 0)
         {
             town.FreeScryingsUsed++;
+            Discovery.AtSite(town, siteId, Discovery.Scried);
             var free = new Scrying(siteId, 0, town.Tick, town.Tick + hours * SimTime.HoursPerDay / 24);
             town.Scryings.Add(free);
             town.Log(LedgerCategory.Quest, Importance.Notable, $"The water in the Scrying Pool stills and shows {site.Def.Name}. For {hours} hours the town can watch it.");
@@ -70,6 +71,7 @@ public static class Knowledge
         caster.Gold += cost;
         var scry = new Scrying(siteId, caster.Id, town.Tick, town.Tick + hours * SimTime.HoursPerDay / 24);
         town.Scryings.Add(scry);
+        Discovery.AtSite(town, siteId, Discovery.Scried);
         town.Log(
             LedgerCategory.Quest,
             Importance.Notable,
