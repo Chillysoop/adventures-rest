@@ -69,7 +69,7 @@ public static class Land
     /// <param name="overwrite">False leaves zoned land alone and paints only open ground.</param>
     /// <param name="density">How tightly the paint lets the zone be built (<see cref="Density"/>); built-on ground of the same zone takes it too, so an old street can be zoned to grow taller.</param>
     /// <param name="crop">Farmland only: the crop the fields are sown with (<see cref="Farming"/>, 0 for any); open fields of another crop are resown.</param>
-    public static int Brush(Town town, IEnumerable<(double X, double Y)> dabs, double radius, Zone zone, bool overwrite = true, int density = 0, byte crop = 0)
+    public static int Brush(Town town, IEnumerable<(double X, double Y)> dabs, double radius, Zone zone, bool overwrite = true, int density = 0, byte crop = 0, List<(int Cell, byte Zone, byte Density, byte Crop)>? undo = null)
     {
         var plan = town.Plan;
         int n = 0;
@@ -94,6 +94,7 @@ public static class Land
                         if (zone == Zone.None || plan.Zones[i] != (byte)zone || !Open(town, i)) continue;
                         bool resow = plan.Taken[i] == 0 && plan.Crops[i] != crop;
                         if (plan.Density[i] == dens && !resow) continue;
+                        undo?.Add((i, plan.Zones[i], plan.Density[i], plan.Crops[i]));
                         plan.Density[i] = dens;
                         if (resow) plan.Crops[i] = crop;
                         n++;
@@ -106,6 +107,7 @@ public static class Land
                     if (zone != Zone.None && !Open(town, i)) continue;
                     // Unpainted ground with a decoration on it is a garden, and stays one.
                     if (zone != Zone.None && plan.Zones[i] == (byte)Zone.None && gardens != null && gardens[i]) continue;
+                    undo?.Add((i, plan.Zones[i], plan.Density[i], plan.Crops[i]));
                     plan.Zones[i] = (byte)zone;
                     plan.Density[i] = dens;
                     plan.Crops[i] = crop;
@@ -438,6 +440,18 @@ public static class Land
             }
     }
 
+    /// <summary>A lot torn down: its cells are open ground again, still zoned unless the council's own (civic) land.</summary>
+    public static void Release(Town town, Lot lot)
+    {
+        town.Plan.Changed();
+        foreach (int i in Cells(lot.X, lot.Y, lot.W, lot.D, lot.Yaw))
+            if (i >= 0 && town.Plan.Taken[i] == lot.Id + 1)
+            {
+                town.Plan.Taken[i] = 0;
+                if (town.Plan.Zones[i] == (byte)Zone.Civic) town.Plan.Zones[i] = (byte)Zone.None;
+            }
+    }
+
     /// <summary>A fixed shuffle per cell, the same every run, so towns don't all grow alike in rings.</summary>
     public static double Jitter(int i)
     {
@@ -564,6 +578,10 @@ public sealed class LandPlan
     public Dictionary<Zone, int> Plots { get; } = [];
 
     /// <summary>Bumped whenever paint changes (<see cref="Streets.Fronts"/>).</summary>
+    /// <summary>The player's last brush stroke: each cell it changed and what the cell was before, for Ctrl+Z (<see cref="Planning.Undo"/>).</summary>
+    [field: NotSaved]
+    public List<(int Cell, byte Zone, byte Density, byte Crop)>? LastStroke { get; set; }
+
     [field: NotSaved]
     public int Painted { get; set; }
 

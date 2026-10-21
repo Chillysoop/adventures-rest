@@ -28,6 +28,9 @@ public partial class Planner(MapView map) : Control
     /// <summary>The plan changed (land zoned, a building placed, or the tool put down).</summary>
     public event Action? Changed;
 
+    /// <summary>The plan changed from outside the brush (undo, a building torn down): redraw it.</summary>
+    public void Touch() => Changed?.Invoke();
+
     /// <summary>A placement went through or didn't, in a line for the player.</summary>
     public event Action<string>? Said;
 
@@ -46,6 +49,9 @@ public partial class Planner(MapView map) : Control
     private float? _yaw;
 
     public bool Active => Tool != null;
+
+    /// <summary>A brush stroke is under way (the screen's edge doesn't pan the map out from under it).</summary>
+    public bool Painting => _stroke.Count > 0;
 
     public void Pick(PlanTool? tool)
     {
@@ -162,8 +168,14 @@ public partial class Planner(MapView map) : Control
             if (map.Sim.Place(id, at.X, at.Y, _yaw) is { } site)
             {
                 Said?.Invoke($"Builders are raising {site.Name}.");
-                // One commission per pick: the next costs more, and the bar shows why if it can't be had.
-                Pick(null);
+                // One commission per pick unless Shift is held: the next costs more, and the bar shows why if it can't be had.
+                if (!Input.IsKeyPressed(Key.Shift)) Pick(null);
+                else
+                {
+                    _yaw = null;
+                    Changed?.Invoke();
+                    QueueRedraw();
+                }
                 return;
             }
             Said?.Invoke($"The {def.Name.ToLowerInvariant()} can't go there: {why ?? "no room here"}.");

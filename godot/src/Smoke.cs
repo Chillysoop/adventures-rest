@@ -114,8 +114,10 @@ public partial class Main
             case 20:
                 OpenHistory(null);
                 // The Settings window over it, every clock-stop toggle drawn.
-                OpenSettings();
-                if (_settingsRows.GetChildCount() != ClockStops.All.Length) throw new InvalidOperationException("the settings did not draw every toggle");
+                // Every tab drawn, then the clock tab: a heading, every clock-stop toggle and a footnote.
+                foreach (var (tab, _, _) in SettingsTabs) OpenSettings(tab);
+                OpenSettings("clock");
+                if (_settingsRows.GetChildCount() != ClockStops.All.Length + 2) throw new InvalidOperationException("the settings did not draw every toggle");
                 return 10;
             case 21:
                 CloseSettings();

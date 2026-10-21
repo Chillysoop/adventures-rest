@@ -154,6 +154,7 @@ public partial class TownView(MapView map) : Node3D
         var groups = new SortedDictionary<string, List<(Vector3 P, float Yaw, float Scale)>>(StringComparer.Ordinal);
         foreach (var b in town.Buildings.OrderBy(b => b.Id))
         {
+            if (b.Razed) continue;
             var lot = town.Lot(b.LotId);
             var c = Geo.LotPos(lot);
             var p = new Vector3(c.X, Floor(lot), c.Y);

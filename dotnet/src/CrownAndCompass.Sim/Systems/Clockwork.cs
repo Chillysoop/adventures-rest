@@ -61,6 +61,7 @@ public static class Clockwork
     public static bool Build(Town town)
     {
         if (BuildBlocked(town) != null) return false;
+        if (Stewards.Intercept(town, "defence", new StewardAsk { Area = "defence", Kind = "warden", Title = $"Build a clockwork warden · {Js.Str(Rules(town).Cost)}g", Why = "• Never sleeps, never deserts\n• The treasury can spare it" })) return false;
         town.Book(TreasuryAccount.Clockwork, -Rules(town).Cost);
         town.Clockwork.Wardens++;
         town.Clockwork.Built++;

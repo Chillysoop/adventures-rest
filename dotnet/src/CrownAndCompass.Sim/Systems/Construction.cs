@@ -123,6 +123,7 @@ public static class Construction
             cost += paid;
         }
         if (cost > 0) town.Book(TreasuryAccount.Works, -cost);
+        b.Paid += cost;
         return got;
     }
 
@@ -164,6 +165,7 @@ public static class Construction
         if (CaravanBlocked(town, b) != null) return false;
         double cost = CaravanCost(town, b);
         town.Book(TreasuryAccount.Works, -cost);
+        if (b.Draws) b.Paid += cost;
         b.Hauled = 1;
         b.StalledSince = -1;
         town.Log(LedgerCategory.Construction, Importance.Notable, $"A caravan brings timber and stone for {b.Name}, for {Js.Str(cost)} gold, and the builders go back to work.");

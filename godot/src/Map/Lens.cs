@@ -92,6 +92,7 @@ public partial class Lens(MapView map) : Control
         int open = 0;
         foreach (var b in town.Buildings.OrderBy(b => b.Id))
         {
+            if (b.Razed) continue;
             if (b.OpenJobs > 0)
             {
                 open += b.OpenJobs;

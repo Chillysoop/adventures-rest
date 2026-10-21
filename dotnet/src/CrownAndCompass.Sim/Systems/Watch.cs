@@ -116,6 +116,7 @@ public static class Watch
     {
         var site = Quests.Site(town, siteId);
         if (site == null || site.Known == SiteKnowledge.Unheard || site.ThoughtCleared || ScoutAt(town, siteId) != null) return null;
+        if (Stewards.Intercept(town, "bounties", new StewardAsk { Area = "bounties", Kind = "scout", Title = $"Scout {site.Def.Name}", Why = "• A party is heading there\n• Eyes on it before they arrive", S1 = siteId })) return null;
         var hero = Watchers(town).FirstOrDefault();
         if (hero == null) return null;
         var s = Dispatch(town, hero, site, false);

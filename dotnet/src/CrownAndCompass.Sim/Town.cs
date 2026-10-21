@@ -59,6 +59,12 @@ public sealed class Building(int id, BuildingDef def, int lotId)
     /// <summary>A site the player put first: builders and the town's timber and stone go to it ahead of the others.</summary>
     public bool Priority { get; set; }
 
+    /// <summary>Torn down or called off by the council (<see cref="Systems.Planning.Raze"/>): neither built nor a site, gone from the map, its ground free.</summary>
+    public bool Razed { get; set; }
+
+    /// <summary>Gold the council has paid for it (the commission, then timber and stone as hauled), for a refund if it comes down.</summary>
+    public double Paid { get; set; }
+
     /// <summary>A council site waiting for timber or stone the market hasn't got: the tick it stalled, or -1.</summary>
     public int StalledSince { get; set; } = -1;
 
@@ -113,8 +119,8 @@ public sealed class Building(int id, BuildingDef def, int lotId)
     public void Raise(Town town, double hours) =>
         BuildProgress = Math.Min(BuildProgress + hours, Math.Max(BuildProgress, Math.Min(Funded, Systems.Construction.Ready(town, this))));
 
-    public bool Complete => BuildProgress >= Def.BuildHours;
-    public bool IsSite => !Complete;
+    public bool Complete => !Razed && BuildProgress >= Def.BuildHours;
+    public bool IsSite => !Razed && !Complete;
     /// <summary>The town hall's road crews: extra hands the treasury hires out of the town's upkeep.</summary>
     public int Crew { get; set; }
 
@@ -525,6 +531,9 @@ public sealed class Town
 
     /// <summary>The town armory: items to gift heroes, and loot offered to the town (<see cref="Systems.Armory"/>).</summary>
     public ArmoryState Armory { get; } = new();
+
+    /// <summary>Which areas of the town's business the player has handed to stewards, and what they ask (<see cref="Systems.Stewards"/>).</summary>
+    public Systems.StewardState Stewards { get; } = new();
 
     /// <summary>The alchemy bench: monster parts in store, potions on the shelf and the town's recipe book (<see cref="Systems.Alchemy"/>).</summary>
     public AlchemyState Alchemy { get; } = new();

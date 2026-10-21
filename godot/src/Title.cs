@@ -70,7 +70,7 @@ public partial class Main
         TitleButton(col, "Load a town", "Pick a save slot", primary: false, OpenLoad);
         TitleButton(col, "History of the world", "The ages, empires and peoples before your town", primary: false, () => OpenHistory());
         TitleButton(col, "Glossary", "Every keyword in the game, explained (F1)", primary: false, () => OpenGlossary());
-        TitleButton(col, "Settings", "Which events stop the clock", primary: false, OpenSettings);
+        TitleButton(col, "Settings", "Clock stops, autosave, camera, display, keys", primary: false, () => OpenSettings());
         TitleButton(col, "Quit", "Close the game", primary: false, () => GetTree().Quit());
 
         // Who tells the new town's story: one button each, with their character and what playing under them is like.
@@ -148,7 +148,8 @@ public partial class Main
         foreach (var c in _hiddenByTitle) c.Visible = true;
         _hiddenByTitle.Clear();
         _map.Recenter();
-        SetSpeed(1);
+        // A town opens paused, the clock waiting on the player (Space or a speed).
+        SetSpeed(0);
     }
 
     private void StartTown(bool tutorial, int? seed = null, bool autoplay = false, string? storyteller = null)

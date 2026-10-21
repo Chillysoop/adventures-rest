@@ -96,14 +96,27 @@ public sealed class Simulation
         Property.Hourly(t);
         Social.Hourly(t);
         Roads.Hourly(t);
-        Sendings.Hourly(t, Options.AutoMayor && Options.AutoStories);
-        Explore.Hourly(t, Options.AutoMayor && Options.AutoBounties && Options.AutoExplore);
+        Sendings.Hourly(t, Hand("stories"));
+        // Finds wait on the player under a steward who asks: only a steward left to it answers them.
+        Explore.Hourly(t, Stewards.Mode(t, Options, "bounties") == StewardMode.Steward && Stewards.Sub(t, Options, "bounties", Options.AutoExplore));
         Lurkers.Hourly(t);
         Tournaments.Hourly(t);
         Goals.Hourly(t);
         t.Tick++;
         if (t.Hour == 0) DailyTick();
     }
+
+    /// <summary>Whether the stand-in decides for an area: a steward acts or asks (<see cref="Stewards"/>).</summary>
+    private bool Hand(string area) => Stewards.Hand(Town, Options, area);
+
+    /// <summary>While the stand-in decides for an area whose steward asks first, its spending becomes asks.</summary>
+    private Stewards.Scope Asking(string area) => Stewards.For(Town, Options, area);
+
+    /// <summary>Hand an area of the town's business to a steward, have the steward ask first, or take it back.</summary>
+    public bool SetSteward(string area, StewardMode mode) => Stewards.Set(Town, area, mode);
+
+    /// <summary>Yes or no to what a steward asks.</summary>
+    public bool AnswerSteward(int askId, bool yes) => Stewards.Answer(Town, askId, yes);
 
     public void RunDays(int days)
     {
@@ -115,48 +128,59 @@ public sealed class Simulation
     {
         var t = Town;
         Brain.Daily(t);
-        Tournaments.Daily(t, Options.AutoMayor && Options.AutoStories);
+        Tournaments.Daily(t, Hand("stories"));
         Seasons.Daily(t);
         Economy.Daily(t);
         Skills.Daily(t);
         Merchants.Daily(t);
-        City.Daily(t, Options.AutoMayor && Options.AutoPlanning);
-        GrandWorks.Daily(t, Options.AutoMayor && Options.AutoPlanning);
+        City.Daily(t, Hand("planning"));
+        GrandWorks.Daily(t, Hand("planning"));
         Monuments.Daily(t);
-        if (Options.AutoMayor && Options.AutoPlanning) Construction.Daily(t);
+        if (Hand("planning")) Construction.Daily(t);
         Streets.Wear(t);
         Paving.Daily(t);
         Property.Daily(t);
         Population.DailyDepartures(t);
         Population.DailyArrivals(t);
-        if (Options.AutoMayor) Mayor.Daily(t, Options.AutoPlanning, Options.AutoDefense);
+        if (Options.AutoMayor)
+            using (Asking("defence"))
+                Mayor.Daily(t, Hand("planning"), Hand("defence"));
         Social.Daily(t);
         Moods.Daily(t);
-        Council.Daily(t, Options.AutoCouncil);
+        Council.Daily(t, Stewards.Mode(t, Options, "council") == StewardMode.Steward);
         double pace = Director.Daily(t);
-        Threat.Daily(t, pace, Options.AutoMayor && Options.AutoDefense, Options.Enemy);
-        Garrison.Daily(t, Options.AutoMayor && Options.AutoDefense);
+        using (Asking("defence"))
+        {
+            Threat.Daily(t, pace, Hand("defence"), Options.Enemy);
+            Garrison.Daily(t, Hand("defence"));
+        }
         World.Daily(t, Options.AutoMayor);
         Trade.Daily(t, Options.AutoMayor);
-        Armory.Daily(t, Options.AutoMayor && Options.AutoArmory);
-        Alchemy.Daily(t, Options.AutoMayor && Options.AutoArmory);
+        using (Asking("armory")) Armory.Daily(t, Hand("armory"));
+        Alchemy.Daily(t, Options.AutoMayor && Stewards.Mode(t, Options, "armory") == StewardMode.Steward);
         Neighbours.Daily(t, Options.AutoMayor);
-        Mercenaries.Daily(t, Options.AutoMayor && Options.AutoDefense);
-        Clockwork.Daily(t, Options.AutoMayor && Options.AutoDefense);
-        Quests.Daily(t, Options.AutoMayor && Options.AutoBounties, Options.FreeCompanies);
-        Explore.Daily(t, Options.AutoMayor && Options.AutoBounties);
-        Intel.Daily(t, Options.AutoMayor && Options.AutoBounties && Options.AutoIntel);
+        using (Asking("defence"))
+        {
+            Mercenaries.Daily(t, Hand("defence"));
+            Clockwork.Daily(t, Hand("defence"));
+        }
+        using (Asking("bounties"))
+        {
+            Quests.Daily(t, Hand("bounties"), Options.FreeCompanies);
+            Explore.Daily(t, Hand("bounties"));
+            Intel.Daily(t, Stewards.Sub(t, Options, "bounties", Options.AutoIntel));
+        }
         Bastions.Daily(t, Options.AutoMayor && Options.AutoBastions);
-        Watch.Daily(t, Options.AutoMayor && Options.AutoBounties);
+        using (Asking("bounties")) Watch.Daily(t, Hand("bounties"));
         Undercity.Daily(t, Options.AutoMayor);
         Research.Daily(t, Options.AutoMayor);
-        Lairs.Daily(t, Options.AutoMayor, Options.AutoDefense);
+        using (Asking("defence")) Lairs.Daily(t, Options.AutoMayor, Hand("defence"));
         Rumors.Daily(t);
         Shrines.Daily(t, Options.AutoMayor);
         Faith.Daily(t);
         Factions.Daily(t, Options.AutoMayor);
         Saga.Daily(t, Options.AutoMayor);
-        Crises.Daily(t, Options.AutoMayor && Options.AutoDefense);
+        using (Asking("defence")) Crises.Daily(t, Hand("defence"));
         Powers.Daily(t);
         Vengeance.Daily(t);
         Sightings.Daily(t);
@@ -165,18 +189,19 @@ public sealed class Simulation
         Infiltration.Daily(t);
         Turning.Daily(t);
         Legacies.Daily(t, Options.AutoMayor);
-        Institutions.Daily(t, Options.AutoMayor && Options.AutoPlanning);
+        Institutions.Daily(t, Hand("planning"));
         Regard.Daily(t);
         Wards.Daily(t);
-        Broadsheet.Daily(t, Options.AutoMayor && Options.AutoStories);
-        Loyalty.Daily(t, Options.AutoMayor && Options.AutoHonours);
-        Secrets.Daily(t, Options.AutoMayor && Options.AutoCouncil);
-        Guilds.Daily(t, Options.AutoMayor && Options.AutoCouncil);
+        Broadsheet.Daily(t, Hand("stories"));
+        using (Asking("honours")) Loyalty.Daily(t, Hand("honours"));
+        Secrets.Daily(t, Options.AutoMayor && Stewards.Mode(t, Options, "council") == StewardMode.Steward);
+        Guilds.Daily(t, Options.AutoMayor && Stewards.Mode(t, Options, "council") == StewardMode.Steward);
         Notoriety.Daily(t);
         Passage.Daily(t);
         Decor.Daily(t);
-        Stories.Daily(t, Options.AutoMayor && Options.AutoStories);
-        Sheet.Daily(t, Options.AutoMayor && Options.AutoStories);
+        Stories.Daily(t, Hand("stories"));
+        Sheet.Daily(t, Hand("stories"));
+        Stewards.Daily(t, Options);
         Economy.Daily(t, true);
         Taxes.Close(t);
         Trends.Close(t);
@@ -359,6 +384,9 @@ public sealed class Simulation
     /// <summary>Garrison a cleared site so nothing moves back in, and the town sees it live.</summary>
     public bool HoldSite(string siteId) => Lairs.Hold(Town, siteId);
 
+    /// <summary>Post (or call off) a standing patrol over a cleared site, to keep it clear (<see cref="Lairs.Patrol"/>).</summary>
+    public bool Patrol(string siteId, bool on) => Lairs.Patrol(Town, siteId, on);
+
     /// <summary>Endow a temple to the town's god once the town is big enough.</summary>
     public Building? BuildTemple() => Shrines.BuildTemple(Town);
 
@@ -382,6 +410,12 @@ public sealed class Simulation
     public Building? Place(string buildingId, double x, double y, double? yaw = null) => Planning.Place(Town, buildingId, x, y, yaw);
 
     /// <summary>Add a part to a monument (temple, keep, town hall): a nave, a bell tower, a curtain wall.</summary>
+    /// <summary>Tear down a town building, or call off a site, for part of its gold back (<see cref="Planning.Raze"/>).</summary>
+    public bool Raze(int buildingId) => Planning.Raze(Town, Town.Building(buildingId));
+
+    /// <summary>Take back the last brush stroke on ground still unbuilt; returns cells put back.</summary>
+    public int UndoPaint() => Planning.Undo(Town);
+
     public Building? AddPart(int monumentId, string partId) => Monuments.Add(Town, Town.Building(monumentId), partId);
 
     /// <summary>Add every part a monument can take now, as far as the gold goes. Returns how many were begun.</summary>

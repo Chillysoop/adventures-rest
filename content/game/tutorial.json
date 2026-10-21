@@ -9,17 +9,17 @@
     {
       "id": "time",
       "title": "Start the clock",
-      "text": "The town lives in real time, and you can pause whenever you like. Press [b]Space[/b] or a speed button to let time run. Keys [b]1[/b] to [b]4[/b] pick a speed. Big war news pauses the game for you.",
+      "text": "The town lives in real time, and you can pause whenever you like. Press [b]Space[/b] or a speed button to let time run.\n• [b]+[/b] / [b]−[/b] faster or slower\n• Big news stops the clock (Settings)",
       "point": "speeds",
       "until": "speed",
-      "teaches": ["key:Space", "key:Key1", "key:Key4"]
+      "teaches": ["key:Space", "key:Equal", "key:Minus", "key:KpAdd", "key:KpSubtract"]
     },
     {
       "id": "camera",
       "title": "Look around",
-      "text": "[b]Scroll[/b] to zoom and [b]drag[/b] to pan. [b]Q[/b] and [b]E[/b] turn the view. [b]Home[/b] or a double right-click brings you back to the town square. Try turning the view.",
+      "text": "[b]Scroll[/b] to zoom; [b]drag[/b], [b]WASD[/b] or the screen edge to pan. [b]Q[/b] and [b]E[/b] turn the view. [b]Home[/b] or a double right-click brings you back to the town square. Try turning the view.",
       "until": "rotate",
-      "teaches": ["key:Q", "key:E", "key:Home"]
+      "teaches": ["key:Q", "key:E", "key:Home", "key:W", "key:A", "key:S", "key:D", "key:Up", "key:Down", "key:Left", "key:Right"]
     },
     {
       "id": "inspect",
@@ -169,7 +169,7 @@
     {
       "id": "save",
       "title": "Saving",
-      "text": "[b]Esc[/b] or [b]Menu[/b] opens the game menu with five save slots. The town autosaves every three days and when you quit. [b]F5[/b] quicksaves and [b]F9[/b] loads it. [b]History[/b] in the same menu tells of the empires and wars before your town.",
+      "text": "[b]Esc[/b] or [b]Menu[/b] opens the game menu: name a save, or load one. The town autosaves every 7 days and when you quit. [b]F5[/b] quicksaves and [b]F9[/b] loads it. [b]History[/b] in the same menu tells of the empires and wars before your town.",
       "point": "menu",
       "teaches": ["key:Escape", "key:F5", "key:F9"]
     },
@@ -727,8 +727,51 @@
       "when": "count:Companies",
       "teaches": []
     },
-    {"id": "watchtowers", "title": "Watchtowers", "text": "Build a [b]Watchtower[/b] (Government) to see the wilds live.\n• Sees farther as the town grows\n• One per 100 residents\n• Past its sight, the fog stays", "point": "buildbar", "when": "day:12", "teaches": []},
-    {"id": "scry-word", "title": "Scry the fight", "text": "A party that sent word is fighting out of sight: the strip offers a [b]scry[/b].\n• Each caster scries once every 2 days\n• Loyal casters: free\n• Others: gold\n• Disaffected: a favour", "point": "alerts", "when": "alert:scry", "teaches": []}
+    {
+      "id": "watchtowers",
+      "title": "Watchtowers",
+      "text": "Build a [b]Watchtower[/b] (Government) to see the wilds live.\n• Sees farther as the town grows\n• One per 100 residents\n• Past its sight, the fog stays",
+      "point": "buildbar",
+      "when": "day:12",
+      "teaches": []
+    },
+    {
+      "id": "scry-word",
+      "title": "Scry the fight",
+      "text": "A party that sent word is fighting out of sight: the strip offers a [b]scry[/b].\n• Each caster scries once every 2 days\n• Loyal casters: free\n• Others: gold\n• Disaffected: a favour",
+      "point": "alerts",
+      "when": "alert:scry",
+      "teaches": []
+    },
+    {
+      "id": "getting-about",
+      "title": "Getting about",
+      "text": "• [b]Ctrl[/b]+1–0 pins what's selected; [b]1[/b]–[b]0[/b] flies back\n• [b]F[/b] follows who's selected\n• [b]Alt[/b]+Left or mouse back: where you were\n• [b]F11[/b] fullscreen · every key in Settings › Keys",
+      "when": "day:2",
+      "teaches": ["key:Ctrl", "key:F", "key:Alt", "key:F11"]
+    },
+    {
+      "id": "undo-tear-down",
+      "title": "Change your mind",
+      "text": "• [b]Ctrl[/b]+[b]Z[/b] takes back your last brush stroke\n• A site's card: [b]Call off[/b], all gold back if not begun\n• A building's card: [b]Tear down[/b] for a little back",
+      "when": "day:4",
+      "teaches": ["key:Z", "command:UndoPaint", "command:Raze"]
+    },
+    {
+      "id": "stewards",
+      "title": "Hand it to a steward",
+      "text": "Settings › [b]Stewards[/b]: for each area of business\n• [b]You[/b] handle it\n• A [b]steward[/b] does\n• Or the steward [b]asks you[/b]: a small ✔ / ✖ card, hover for why",
+      "when": "day:6",
+      "teaches": ["command:SetSteward", "command:AnswerSteward"]
+    },
+    {
+      "id": "patrols",
+      "title": "Keep it clear",
+      "text": "A cleared site won't stay clear: something moves back in.\n• [b]Patrol it[/b] from its card: a little gold a day\n• Your best hero at home drives off newcomers\n• Later, garrison an outpost to hold it for good",
+      "point": "alerts",
+      "when": "alert:patrol",
+      "teaches": ["command:Patrol"]
+    }
   ],
   "untaught": {}
 }

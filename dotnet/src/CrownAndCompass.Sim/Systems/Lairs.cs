@@ -53,7 +53,12 @@ public static class Lairs
                 {
                     if (Loyalty.Lord(town, s.Def.Id) == null) town.Book(TreasuryAccount.Outposts, -r.Outpost.Upkeep);
                 }
-                else if (s.ResettleTick != null && town.Tick >= s.ResettleTick) Resettle(town, s);
+                else if (s.Patrolled && !PayPatrol(town, s)) { }
+                else if (s.ResettleTick != null && town.Tick >= s.ResettleTick)
+                {
+                    if (s.Patrolled) Meet(town, s);
+                    else Resettle(town, s);
+                }
                 continue;
             }
             if (s.QuietUntil != null && town.Tick < s.QuietUntil) continue;
@@ -499,8 +504,10 @@ public static class Lairs
         var s = town.Sites.FirstOrDefault(x => x.Def.Id == siteId);
         if (s == null || HoldBlocked(town, s) != null) return false;
         var o = Rules(town).Outpost;
+        if (Stewards.Intercept(town, "defence", new StewardAsk { Area = "defence", Kind = "hold", Title = $"Garrison {s.Def.Name} · {Js.Str(o.Cost)}g", Why = "• Cleared, but something may move back in\n• An outpost keeps it clear", S1 = siteId })) return false;
         town.Book(TreasuryAccount.Outposts, -o.Cost);
         s.Held = true;
+        s.Patrolled = false;
         s.ResettleTick = null;
         town.Log(LedgerCategory.War, Importance.Notable, $"A garrison of the watch marches out to hold {s.Def.Name} for {town.Name}, at {Js.Str(o.Upkeep)} gold a day.");
         return true;
@@ -520,6 +527,93 @@ public static class Lairs
             .ThenBy(x => x.Def.Id, StringComparer.Ordinal)
             .FirstOrDefault();
     }
+
+    // Patrols ------------------------------------------------------------------------------------
+
+    public static double PatrolWage(Town town, SiteState s) => Rules(town).Patrol.Wage + Rules(town).Patrol.PerTier * s.Def.Tier;
+
+    public static string? PatrolBlocked(Town town, SiteState s)
+    {
+        var p = Rules(town).Patrol;
+        if (IsWarCamp(town, s) || Undercity.IsUnder(town, s)) return "no patrol rides there";
+        if (!s.Cleared || !s.ThoughtCleared) return "only a cleared site can be patrolled";
+        if (s.Held) return "the town holds it already";
+        if (s.Patrolled) return "already patrolled";
+        if (town.Sites.Count(x => x.Patrolled) >= p.Max) return $"the town can keep {p.Max} patrols";
+        if (town.Treasury < PatrolWage(town, s) * 5) return "not enough gold";
+        return null;
+    }
+
+    /// <summary>
+    /// Keep a cleared site clear with a standing patrol (or call it off): the step between clearing it with a bounty
+    /// and holding it with an outpost. It costs a little gold a day; when something tries to move back in, the best hero
+    /// at home rides out with the patrol and usually drives it off (<see cref="Meet"/>).
+    /// </summary>
+    public static bool Patrol(Town town, string siteId, bool on)
+    {
+        var s = town.Sites.FirstOrDefault(x => x.Def.Id == siteId);
+        if (s == null) return false;
+        if (!on)
+        {
+            if (!s.Patrolled) return false;
+            s.Patrolled = false;
+            town.Log(LedgerCategory.War, Importance.Routine, $"The council calls off the patrol over {s.Def.Name}.");
+            return true;
+        }
+        if (PatrolBlocked(town, s) != null) return false;
+        s.Patrolled = true;
+        // A site cleared long ago with no clock running gets one now, so the patrol has something to watch for.
+        s.ResettleTick ??= town.Tick + Rules(town).ResettleDays[1] * SimTime.HoursPerDay;
+        town.Log(LedgerCategory.War, Importance.Notable, $"The council posts a standing patrol over {s.Def.Name}, at {Js.Str(PatrolWage(town, s))} gold a day: riders keep it clear of whatever would move back in.");
+        return true;
+    }
+
+    /// <summary>The patrol's day wage; an empty treasury sends the riders home.</summary>
+    private static bool PayPatrol(Town town, SiteState s)
+    {
+        double wage = PatrolWage(town, s);
+        if (town.Treasury < wage)
+        {
+            s.Patrolled = false;
+            town.Log(LedgerCategory.War, Importance.Notable, $"The treasury can't pay the patrol over {s.Def.Name}, and the riders go home.");
+            return false;
+        }
+        town.Book(TreasuryAccount.Outposts, -wage);
+        return true;
+    }
+
+    /// <summary>Something tries to move into a patrolled site: the best hero at home rides with the patrol to meet it.</summary>
+    private static void Meet(Town town, SiteState s)
+    {
+        var p = Rules(town).Patrol;
+        var hero = town.Heroes.Where(a => !a.IsAway && !a.Dead).OrderByDescending(a => a.Hero!.Level).ThenBy(a => a.Id).FirstOrDefault();
+        double chance = hero == null ? p.Chance * 0.5 : Math.Clamp(p.Chance + p.PerLevel * (hero.Hero!.Level - 2 * s.Def.Tier), 0.15, 0.95);
+        if (town.Rng.Chance(chance))
+        {
+            var r = Rules(town);
+            s.ResettleTick = town.Tick + town.Rng.Range(r.ResettleDays[0], r.ResettleDays[1] + 1) * SimTime.HoursPerDay;
+            if (hero != null)
+            {
+                Quests.GainXp(town, hero, p.Xp);
+                Notoriety.Deed(town, hero, "patrol", 1);
+            }
+            town.Log(LedgerCategory.War, Importance.Notable, hero != null
+                ? $"On patrol, {hero.Name} meets something moving into {s.Def.Name} and drives it off. The site stays clear."
+                : $"The patrol meets something moving into {s.Def.Name} and drives it off. The site stays clear.", hero != null ? [hero.Id] : []);
+            return;
+        }
+        s.Patrolled = false;
+        Resettle(town, s);
+        town.Log(LedgerCategory.War, Importance.Major, $"The patrol could not hold {s.Def.Name}: something has moved back in. It wants clearing again.", hero != null ? [hero.Id] : []);
+    }
+
+    /// <summary>The cleared site the player might keep clear next: nearest first, one the treasury could pay a patrol for.</summary>
+    public static SiteState? WorthPatrolling(Town town) =>
+        town.Sites
+            .Where(x => !x.Patrolled && !x.Held && x.Cleared && x.ThoughtCleared && PatrolBlocked(town, x) == null)
+            .OrderBy(x => x.Def.Distance)
+            .ThenBy(x => x.Def.Id, StringComparer.Ordinal)
+            .FirstOrDefault();
 
     private static void AutoHold(Town town)
     {

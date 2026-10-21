@@ -68,6 +68,9 @@ public sealed class SiteState(SiteDef def)
     /// <summary>The town keeps an outpost here: nothing resettles it, and the town sees it live.</summary>
     public bool Held { get; set; }
 
+    /// <summary>The town pays a standing patrol to keep it clear: newcomers are met and, mostly, driven off (<see cref="Lairs.Patrol"/>).</summary>
+    public bool Patrolled { get; set; }
+
     /// <summary>How it picks its night (lairs.json habits); empty until it first acts.</summary>
     public string Habit { get; set; } = "";
 
@@ -268,6 +271,17 @@ public static class Quests
         double purse = funder?.Cash ?? town.Treasury;
         if (s == null || s.Known == SiteKnowledge.Unheard || s.ThoughtCleared || reward <= 0 || purse < reward) return null;
         if (town.Bounties.Any(b => b.SiteId == siteId && IsActive(b))) return null;
+        if (funder == null && Stewards.Intercept(town, "bounties", new StewardAsk
+            {
+                Area = "bounties",
+                Kind = "bounty",
+                Title = $"Bounty · {s.Def.Name} · {Js.Str(reward)}g",
+                Why = $"• {Stewards.Cap(s.Believed == "" ? "trouble, by report" : s.Believed)}\n• Tier {s.BelievedTier} · {s.Attempts} tries so far\n• Pay asked for its danger",
+                S1 = siteId,
+                S2 = terms,
+                I1 = lootToTown ? 1 : 0,
+                D1 = reward,
+            })) return null;
         var term = town.Content.Bounties.Term(terms);
         if (term.Id != terms || Systems.Terms.Blocked(town, s, term) != null) return null;
         if (funder != null) funder.Cash -= reward;

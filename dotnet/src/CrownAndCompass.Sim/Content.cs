@@ -739,6 +739,22 @@ public sealed record OutpostRules
     public int Max { get; init; } = 3;
 }
 
+/// <summary>A standing patrol over a cleared site: heroes ride it and meet whatever tries to move back in (<see cref="Systems.Lairs.Patrol"/>).</summary>
+public sealed record PatrolRules
+{
+    /// <summary>Gold a day, and more a day for each tier of the site.</summary>
+    public double Wage { get; init; } = 3;
+    public double PerTier { get; init; } = 2;
+
+    /// <summary>The patrol's odds of driving newcomers off, and how much each level of the best hero at home above twice the tier adds.</summary>
+    public double Chance { get; init; } = 0.6;
+    public double PerLevel { get; init; } = 0.07;
+
+    /// <summary>Experience for the hero who drives them off.</summary>
+    public int Xp { get; init; } = 60;
+    public int Max { get; init; } = 4;
+}
+
 /// <summary>Lairs: how sites grow, act by their kind, and are resettled (content/game/lairs.json).</summary>
 public sealed record LairRules
 {
@@ -773,6 +789,7 @@ public sealed record LairRules
     /// <summary>Challenge-rating range of a new occupant's leader, by tier.</summary>
     public double[][] BossCr { get; init; } = [];
     public OutpostRules Outpost { get; init; } = new();
+    public PatrolRules Patrol { get; init; } = new();
 
     /// <summary>Raiders wait for a day when at least this share of the heroes' levels is away.</summary>
     public double SoftShare { get; init; } = 0.5;

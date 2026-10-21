@@ -68,6 +68,7 @@ public partial class Main : Control
         Ui.Links = OnLink;
         BuildLayout();
         BuildMenu();
+        BuildAsk();
         BuildTitle();
         BuildHistory();
         BuildGlossary();
@@ -271,6 +272,20 @@ public partial class Main : Control
 
     private void OpenMarkerAt(int i) => OpenMarker(_map.Markers[i]);
 
+    /// <summary>The Ledger's kinds: every category falls in one.</summary>
+    private static readonly (string Id, string Icon, string Label, LedgerCategory[] Categories)[] LedgerKinds =
+    [
+        ("war", "tab-war", "War", [LedgerCategory.War]),
+        ("quests", "tab-bounties", "Quests", [LedgerCategory.Quest]),
+        ("council", "tab-council", "Council and factions", [LedgerCategory.Council, LedgerCategory.Faction]),
+        ("town", "tab-city", "Building and trade", [LedgerCategory.Construction, LedgerCategory.Property, LedgerCategory.Business, LedgerCategory.Town]),
+        ("people", "population", "Townsfolk", [LedgerCategory.Arrival, LedgerCategory.Departure, LedgerCategory.Social, LedgerCategory.Brawl, LedgerCategory.Romance, LedgerCategory.Hardship, LedgerCategory.Rumor, LedgerCategory.Story]),
+        ("faith", "tab-faith", "Faith", [LedgerCategory.Faith]),
+    ];
+
+    private string? _ledgerKind;
+    private string _ledgerSearch = "";
+
     private void BuildLedgerPane()
     {
         var box = _panes[Tab.Ledger].Box;
@@ -300,6 +315,31 @@ public partial class Main : Control
         };
         filters.AddChild(paper);
         box.AddChild(filters);
+        // Then by kind, one icon each, and a search over the words.
+        var kinds = new HBoxContainer();
+        kinds.AddThemeConstantOverride("separation", 4);
+        foreach (var (id, icon, label, _) in LedgerKinds)
+        {
+            var b = new Button { Icon = Ui.Icon(icon), ExpandIcon = false, ToggleMode = true, TooltipText = label, ThemeTypeVariation = "Speed", FocusMode = FocusModeEnum.None };
+            b.SetMeta("kind", id);
+            b.Pressed += () =>
+            {
+                _ledgerKind = _ledgerKind == id ? null : id;
+                foreach (var c in kinds.GetChildren().OfType<Button>()) c.ButtonPressed = (string)c.GetMeta("kind") == _ledgerKind;
+                _ledgerShown = -1;
+                _dirty = true;
+            };
+            kinds.AddChild(b);
+        }
+        var search = new LineEdit { PlaceholderText = "Search", SizeFlagsHorizontal = SizeFlags.ExpandFill, ClearButtonEnabled = true };
+        search.TextChanged += text =>
+        {
+            _ledgerSearch = text.Trim();
+            _ledgerShown = -1;
+            _dirty = true;
+        };
+        kinds.AddChild(search);
+        box.AddChild(kinds);
         _ledgerText = Ui.Rich("");
         box.AddChild(_ledgerText);
         BuildPaper(box);
@@ -322,6 +362,8 @@ public partial class Main : Control
         _seed = seed;
         _sim = sim;
         _lastAutosaveDay = sim.Town.Day;
+        _savedTick = sim.Town.Tick;
+        _back.Clear();
         _map.Planner.Pick(null);
         _map.Decorator.Pick(null);
         _map.Bind(_sim);
@@ -395,6 +437,8 @@ public partial class Main : Control
             _dirty = true;
             return;
         }
+        if (sel != null && sel != _map.Selection) Remember();
+        if (sel != _map.Selection && _map.Follow != null && _map.Follow != sel) _map.Follow = null;
         _map.Selection = sel;
         if (sel != null) GuideEvent($"select:{sel.Kind}");
         _inspector.Visible = sel != null;
@@ -408,13 +452,13 @@ public partial class Main : Control
         switch (parts[0])
         {
             case "agent":
-                Select(Selection.Agent(int.Parse(parts[1])));
+                FlyToCard(Selection.Agent(int.Parse(parts[1])));
                 break;
             case "site":
-                Select(Selection.Site(parts[1]));
+                FlyToCard(Selection.Site(parts[1]));
                 break;
             case "building":
-                Select(Selection.Building(int.Parse(parts[1])));
+                FlyToCard(Selection.Building(int.Parse(parts[1])));
                 break;
             case "mayor":
                 OpenWindow(Tab.Mayor);
@@ -433,6 +477,13 @@ public partial class Main : Control
     public override void _UnhandledKeyInput(InputEvent e)
     {
         if (e is not InputEventKey { Pressed: true, Echo: false } k) return;
+        if (_ask.Visible)
+        {
+            if (k.Keycode == Key.Escape) _ask.Visible = false;
+            else if (k.Keycode is Key.Enter or Key.KpEnter) _askYes.EmitSignal(BaseButton.SignalName.Pressed);
+            GetViewport().SetInputAsHandled();
+            return;
+        }
         if (_recap.Visible && k.Keycode is Key.Escape or Key.Enter or Key.Space)
         {
             _recap.Visible = false;
@@ -460,17 +511,18 @@ public partial class Main : Control
         }
         if (_settings.Visible)
         {
-            if (k.Keycode == Key.Escape) CloseSettings();
+            if (RebindKey(k)) { }
+            else if (k.Keycode == Key.Escape) CloseSettings();
             GetViewport().SetInputAsHandled();
             return;
         }
         if (_glossary.Visible)
         {
-            if (k.Keycode is Key.Escape or Key.F1) CloseGlossary();
+            if (k.Keycode == Key.Escape || Keys.Is(k, "glossary")) CloseGlossary();
             GetViewport().SetInputAsHandled();
             return;
         }
-        if (k.Keycode == Key.F1)
+        if (Keys.Is(k, "glossary"))
         {
             OpenGlossary();
             GetViewport().SetInputAsHandled();
@@ -498,36 +550,44 @@ public partial class Main : Control
             GetViewport().SetInputAsHandled();
             return;
         }
-        if (k.Keycode == Key.Space) PlayerSpeed(_speed == 0 ? _lastSpeed : 0);
-        else if (k.ShiftPressed && k.Keycode is >= Key.Key0 and <= Key.Key9) SetTab(QuickTabs[((int)(k.Keycode - Key.Key0) + 9) % 10]);
-        else if (k.Keycode is >= Key.Key1 and <= Key.Key4) PlayerSpeed((int)(k.Keycode - Key.Key0));
-        else if (k.Keycode == Key.Home) _map.Recenter();
-        else if (k.Keycode == Key.B) ToggleBuildBar();
-        else if (k.Keycode == Key.G) ToggleFlag();
+        int digit = k.Keycode is >= Key.Key0 and <= Key.Key9 ? ((int)(k.Keycode - Key.Key0) + 9) % 10 : -1;
+        if (Keys.Is(k, "pause")) PlayerSpeed(_speed == 0 ? _lastSpeed : 0);
+        else if (digit >= 0 && k.ShiftPressed && !k.CtrlPressed && !k.AltPressed) SetTab(QuickTabs[digit]);
+        else if (digit >= 0 && k.CtrlPressed && !k.ShiftPressed && !k.AltPressed) SetPin(digit);
+        else if (digit >= 0 && !k.CtrlPressed && !k.ShiftPressed && !k.AltPressed) GoToPin(digit);
+        else if (Keys.Is(k, "faster")) PlayerSpeed(Math.Min(Speeds.Length - 1, _speed + 1));
+        else if (Keys.Is(k, "slower")) PlayerSpeed(Math.Max(1, _speed - 1));
+        else if (Keys.Is(k, "home")) _map.Recenter();
+        else if (Keys.Is(k, "build")) ToggleBuildBar();
+        else if (Keys.Is(k, "flag")) ToggleFlag();
         else if (k.Keycode == Key.Escape && _map.Flagging) ToggleFlag();
         else if (k.Keycode == Key.Escape && _map.Scouting) ToggleScouting();
         else if (k.Keycode == Key.Escape && _strikePanel.Visible) ShowStrike(false);
-        else if (k.Keycode is Key.Enter or Key.KpEnter or Key.Backspace && _map.Planner.WallKey(k.Keycode)) { }
+        else if (k.Keycode is Key.Enter or Key.KpEnter or Key.Backspace && !k.AltPressed && _map.Planner.WallKey(k.Keycode)) { }
         else if (k.Keycode == Key.Escape && _map.Planner.Active) _map.Planner.Pick(null);
-        else if (k.Keycode is Key.Bracketleft or Key.Bracketright && _map.Planner.Tool?.Zone != null) _map.Planner.Resize(k.Keycode == Key.Bracketright ? 1.15f : 1 / 1.15f);
+        else if ((Keys.Is(k, "brush_smaller") || Keys.Is(k, "brush_bigger")) && _map.Planner.Tool?.Zone != null) _map.Planner.Resize(Keys.Is(k, "brush_bigger") ? 1.15f : 1 / 1.15f);
         else if (k.Keycode == Key.Escape && _map.Decorator.Active) _map.Decorator.Pick(null);
-        else if (k.Keycode == Key.R && _map.Decorator.Active) _map.Decorator.Turn(k.ShiftPressed ? -1 : 1);
-        else if (k.Keycode == Key.M) ToggleStrategic();
-        else if (k.Keycode == Key.L) ToggleLens();
+        else if (k.IsAction("turn") && _map.Decorator.Active) _map.Decorator.Turn(k.ShiftPressed ? -1 : 1);
+        else if (Keys.Is(k, "map")) ToggleStrategic();
+        else if (Keys.Is(k, "lens")) ToggleLens();
         else if (k.Keycode == Key.Escape && _map.Lens.On) _map.Lens.Show(false);
-        else if (k.Keycode == Key.C) SetTab(Tab.Mayor);
+        else if (Keys.Is(k, "mayor")) SetTab(Tab.Mayor);
         else if (k.Keycode == Key.Escape && _drawer.Visible) CloseTray();
         else if (k.Keycode == Key.Escape && _inspector.Visible) Select(null);
         else if (k.Keycode == Key.Escape && _window.Visible) CloseWindow();
         else if (k.Keycode == Key.Escape && _buildBar.Visible) ToggleBuildBar();
-        else if (k.Keycode is Key.Q or Key.E)
+        else if (Keys.Is(k, "rotate_left") || Keys.Is(k, "rotate_right"))
         {
-            _map.Rotate(k.Keycode == Key.Q ? -1 : 1);
+            _map.Rotate(Keys.Is(k, "rotate_left") ? -1 : 1);
             GuideEvent("rotate");
         }
+        else if (Keys.Is(k, "follow")) ToggleFollow();
+        else if (Keys.Is(k, "back")) GoBack();
+        else if (Keys.Is(k, "undo")) UndoPaint();
+        else if (Keys.Is(k, "fullscreen")) ToggleFullscreen();
         else if (k.Keycode == Key.Escape) OpenMenu();
-        else if (k.Keycode == Key.F5) Save("quick");
-        else if (k.Keycode == Key.F9) Load("quick");
+        else if (Keys.Is(k, "quicksave")) Save("quick");
+        else if (Keys.Is(k, "quickload")) AskLoad("quick");
         else return;
         GetViewport().SetInputAsHandled();
     }
@@ -559,6 +619,7 @@ public partial class Main : Control
     public override void _Process(double delta)
     {
         double dt = Math.Min(0.1, delta);
+        _map.KeysBusy = GetViewport().GuiGetFocusOwner() is LineEdit or TextEdit;
         // --scroll F: hold the open window scrolled to that share of its length (for screenshots).
         if (_opts.Scroll is float sf && _window.Visible && _windowTab is Tab wt && _scrolls.TryGetValue(wt, out var sc))
             sc.ScrollVertical = (int)(sf * Math.Max(0, sc.GetVScrollBar().MaxValue - sc.Size.Y));
@@ -597,6 +658,7 @@ public partial class Main : Control
         SyncChecks();
         SyncTownRolls();
         SyncSiege();
+        SyncAsks();
         if (_title.Visible) _map.Drift(1, (float)delta * 0.035f);
         if (_dirty)
         {
@@ -703,6 +765,8 @@ public partial class Main : Control
         {
             var e = entries[i];
             if (e.Importance < _ledgerFilter) continue;
+            if (_ledgerKind != null && !LedgerKinds.First(k => k.Id == _ledgerKind).Categories.Contains(e.Category)) continue;
+            if (_ledgerSearch != "" && !e.Text.Contains(_ledgerSearch, StringComparison.OrdinalIgnoreCase)) continue;
             n++;
             int day = e.Tick / SimTime.HoursPerDay + 1;
             var catColor = e.Category switch
@@ -720,6 +784,7 @@ public partial class Main : Control
             string text = LinkNames(e);
             sb.Append(e.Importance == Importance.Major ? $"{Ui.C(Ui.Gold, "◆")} [b]{text}[/b]" : text).Append("\n[font_size=6] [/font_size]\n");
         }
+        if (n == 0) sb.Append(Ui.C(Ui.Ink2, "Nothing matches."));
         Ui.SetRich(_ledgerText, sb.ToString());
     }
 
