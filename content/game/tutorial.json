@@ -646,6 +646,15 @@
       "title": "The town is yours",
       "text": "That's the basics. New tips will appear here as the town grows and as new features arrive in later builds. Good luck, Mayor.",
       "teaches": []
+    },
+    {
+      "id": "council-chamber",
+      "title": "The council chamber",
+      "text": "[b]Council[/b] opens on the chamber, your councillors at their seats.\n• Raised hand: aye. Thumbs down: nay.\n• Heart on the plate: loyalty.\n• Badges over heads: who moved it, secrets you hold, traitor talk.\n• Click a councillor for their card.",
+      "point": "tab:Council",
+      "until": "tab:Council",
+      "when": "day:3",
+      "teaches": []
     }
   ],
   "untaught": {}

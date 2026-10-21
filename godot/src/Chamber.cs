@@ -31,6 +31,7 @@ public partial class Chamber : Control
     private readonly Heroes _heroes = new();
     private readonly MeshInstance3D _room = new();
     private readonly ShaderMaterial _props;
+    private readonly OmniLight3D _spot = new() { LightColor = new Color("ffd890"), LightEnergy = 1.4f, OmniRange = 1.6f, Visible = false };
     private readonly Control _marks;
     private IReadOnlyList<SeatView> _seats = [];
     private string _roomSig = "";
@@ -101,6 +102,7 @@ public partial class Chamber : Control
         _vp.AddChild(_room);
         _heroes.OwnMaterials(noise);
         _vp.AddChild(_heroes);
+        _vp.AddChild(_spot);
 
         _marks = new Marks(this) { MouseFilter = MouseFilterEnum.Ignore };
         _marks.SetAnchorsPreset(LayoutPreset.FullRect);
@@ -117,6 +119,9 @@ public partial class Chamber : Control
             _roomSig = sig;
             BuildRoom();
         }
+        // A warm light over the councillor picked.
+        _spot.Visible = Selected >= 0 && Selected < seats.Count;
+        if (_spot.Visible) _spot.Position = SeatAt(Selected, seats.Count, SeatRadius) + new Vector3(0, 1.9f, 0.5f);
         _marks.QueueRedraw();
     }
 
@@ -363,7 +368,7 @@ public partial class Chamber : Control
             {
                 var s = c._seats[i];
                 var feet = c.OnScreen(SeatAt(i, n, SeatRadius));
-                var head = c.OnScreen(SeatAt(i, n, SeatRadius) + new Vector3(0, 1.32f, 0));
+                var head = c.OnScreen(SeatAt(i, n, SeatRadius) + new Vector3(0, Chamber.Scale * 0.52f, 0));
                 float h = Mathf.Max(feet.Y - head.Y, 30);
                 var box = new Rect2(head.X - h * 0.38f, head.Y - 6, h * 0.76f, h + 20);
                 c._hits.Add((box, i));
