@@ -1,4 +1,18 @@
 {
+  "bridges": {
+    "_doc": "Rope bridges over gorges (Systems/Bridges.cs): raiders of a live lair in the same country, out to ring 'ring', cut them now and then; the town rebuilds a cut one in stone for 'stone' gold.",
+    "kinds": ["gorge"],
+    "names": ["the {A} Rope Bridge", "the {A} Span", "the Swaying Bridge of {A}", "the {A} Ropes"],
+    "cut": 0.01,
+    "ring": 1,
+    "cutters": ["tribe", "rivals"],
+    "stone": 240,
+    "autoAt": 3,
+    "texts": {
+      "cut": "Raiders out of {site} cut {bridge} over {gorge}. It hangs from one side now, and companies must go round.",
+      "stone": "Masons rebuild {bridge} over {gorge} in stone. No raider will cut it again."
+    }
+  },
   "marchHours": 10,
   "dawn": 6,
   "noon": 11,

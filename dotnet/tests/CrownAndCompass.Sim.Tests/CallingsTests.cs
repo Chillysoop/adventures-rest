@@ -82,12 +82,14 @@ public class CallingsTests
         Assert.Null(Stories.Open(t, "rogue-guild"));
         hand.Active = true;
         hand.Members.Add(t.Workers.OrderBy(a => a.Id).First().Id);
-        var rogue = Hero(t, "rogue");
+        Hero(t, "rogue");
         Assert.Null(Stories.Open(t, "guild-favour"));
         var s = Stories.Open(t, "rogue-guild");
         Assert.NotNull(s);
         Assert.Equal("quiet-hand", s!.FactionId);
-        Assert.Equal(rogue.Id, s.HeroId);
+        // The town's own rogue, or the one just come (a town can have one by day 10).
+        var rogue = t.Agent(s.HeroId!.Value);
+        Assert.Equal("rogue", rogue.Hero!.Cls.Id);
         Stories.Resolve(t, s.Id, 0);
         Assert.Equal("guild-go-between", Callings.Of(t, rogue)?.Id);
 

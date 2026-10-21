@@ -1,0 +1,34 @@
+{
+  "_doc": "Dragon eggs (Systems/Eggs.cs): found in a dragon's lair or, rarely, a deep hoard. The mayor keeps it to hatch and raise, sells it, or gives it back; while the town holds it the mother may come for it. A dragon raised in town grows from a hatchling into the town's own, which guards the walls.",
+  "fromDragon": 0.5,
+  "fromHoard": 0.02,
+  "hoardTier": 5,
+  "hatchDays": 60,
+  "growDays": 300,
+  "mother": 0.006,
+  "motherAfter": 10,
+  "sell": 1500,
+  "hatchling": { "defence": 1, "dread": -0.005 },
+  "grown": { "defence": 4, "dread": -0.02, "mood": 0.05 },
+  "kinds": [
+    { "id": "red", "name": "red dragon", "hex": "9b2d20", "gems": "rubies", "names": ["Cinder", "Emberlash", "Scald", "Vermeil"] },
+    { "id": "blue", "name": "blue dragon", "hex": "2f5f9f", "gems": "sapphires", "names": ["Thunderhide", "Azuril", "Squall"] },
+    { "id": "green", "name": "green dragon", "hex": "2f6b3a", "gems": "emeralds", "names": ["Verdigris", "Thornscale", "Moss"] },
+    { "id": "black", "name": "black dragon", "hex": "2a2622", "gems": "jet", "names": ["Inkwell", "Sable", "Mirefang"] },
+    { "id": "white", "name": "white dragon", "hex": "dfe6ea", "gems": "moonstones", "names": ["Rime", "Hoarfrost", "Snowmote"] },
+    { "id": "brass", "name": "brass dragon", "hex": "c9a24a", "gems": "topaz", "names": ["Bellows", "Sandwhistle", "Gilt"] },
+    { "id": "bronze", "name": "bronze dragon", "hex": "9a6a32", "gems": "pearls", "names": ["Tidecaller", "Brazen", "Surf"] },
+    { "id": "copper", "name": "copper dragon", "hex": "b8643a", "gems": "carnelians", "names": ["Penny", "Riddlewing", "Patina"] },
+    { "id": "gold", "name": "gold dragon", "hex": "e2b84a", "gems": "diamonds", "names": ["Sovereign", "Aurel", "Dawnmane"] },
+    { "id": "silver", "name": "silver dragon", "hex": "c8ccd2", "gems": "opals", "names": ["Quill", "Argent", "Cloudmere"] }
+  ],
+  "texts": {
+    "found": "Among the {site} hoard the {party} find something warm: a {kind}'s egg the size of a barrel, its shell set with {gems}. They carry it home wrapped in their cloaks.",
+    "hatched": "In the keep's warm cellar the {kind}'s egg cracks at last, and a {kind} wyrmling the size of a hound climbs out, sneezes sparks and bites the first hand that reaches for it. The town names it {name}.",
+    "grown": "{name} the {kind} is grown: a dragon of {town} now, too big for the keep. It takes the old tower for its own and circles the walls at dusk, and raiders who see it turn round.",
+    "kept": "The egg goes down to the warmest cellar in the keep, with braziers kept lit round the clock.",
+    "sold": "The egg is sold, quietly, to a buyer who asks no questions and pays in gold.",
+    "returned": "The egg is carried back out into the wilds and left where its mother will find it.",
+    "lost": "The egg is gone, and the cellar is cold."
+  }
+}
