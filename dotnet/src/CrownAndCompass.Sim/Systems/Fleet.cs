@@ -19,6 +19,19 @@ public sealed record ShipDef
 
     /// <summary>The town tier it needs, if any.</summary>
     public string Tier { get; init; } = "";
+
+    /// <summary>"sea" for the harbour's ships, "sky" for the Sky Dock's airships (<see cref="Sky"/>).</summary>
+    public string Realm { get; init; } = "sea";
+
+    /// <summary>An airship's days of lift-crystal at a full charge, and gold a day to refill it.</summary>
+    public double Lift { get; init; }
+    public double Recharge { get; init; }
+
+    /// <summary>An airship's ballistae, its edge in the approach, the heroes it carries into a boarding, and the share of storms it climbs above.</summary>
+    public double Guns { get; init; }
+    public double Agility { get; init; }
+    public int Marines { get; init; }
+    public double Ceiling { get; init; }
 }
 
 public sealed record CorsairRules
@@ -97,6 +110,21 @@ public sealed class Ship
     public double Earned { get; set; }
     public double Fished { get; set; }
     public string LastLine { get; set; } = "";
+
+    /// <summary>An airship's lift-crystal left, in days aloft (<see cref="Sky"/>).</summary>
+    public double Lift { get; set; }
+
+    /// <summary>An airship out on a job.</summary>
+    public SkyFlight? Flight { get; set; }
+
+    /// <summary>Where an airship came down with its lift spent, and the day it did: it waits there for salvage.</summary>
+    public int? DownedRegion { get; set; }
+    public int DownedDay { get; set; }
+
+    /// <summary>Riggers out to a downed airship are due back with it on this day.</summary>
+    public int? SalvageDay { get; set; }
+    public int Fights { get; set; }
+    public int Won { get; set; }
 }
 
 public sealed class FleetState
@@ -117,7 +145,15 @@ public static class Fleet
 {
     public static FleetRules Rules(Town town) => town.Content.Sea;
 
-    public static ShipDef Def(Town town, Ship s) => Rules(town).Ship(s.Kind) ?? throw new KeyNotFoundException($"Unknown ship {s.Kind}");
+    public static ShipDef Def(Town town, Ship s) => Kind(town, s.Kind) ?? throw new KeyNotFoundException($"Unknown ship {s.Kind}");
+
+    /// <summary>A ship kind of either realm: the harbour's (sea.json) or the Sky Dock's (sky.json).</summary>
+    public static ShipDef? Kind(Town town, string kind) => Rules(town).Ship(kind) ?? town.Content.Sky.Ships.FirstOrDefault(d => d.Id == kind);
+
+    public static bool Aloft(Town town, Ship s) => Def(town, s).Realm == "sky";
+
+    /// <summary>The town's sea ships, in id order.</summary>
+    public static IEnumerable<Ship> AtSea(Town town) => town.Ships.Where(s => !Aloft(town, s)).OrderBy(s => s.Id);
 
     /// <summary>The town's harbour, standing: needed for any ship.</summary>
     public static Building? Harbour(Town town) => town.Buildings.FirstOrDefault(b => b.Def.Id == "harbour" && b.Complete && !b.Closed);
@@ -134,6 +170,7 @@ public static class Fleet
 
     public static string? BuildBlocked(Town town, string kind)
     {
+        if (Kind(town, kind) is { Realm: "sky" }) return Sky.BuildBlocked(town, kind);
         if (!Coastal(town)) return "the town isn't on the sea";
         if (Harbour(town) == null) return "needs a harbour";
         if (Rules(town).Ship(kind) is not { } d) return "no such ship";
@@ -149,7 +186,8 @@ public static class Fleet
     {
         if (!free && BuildBlocked(town, kind) != null) return null;
         var r = Rules(town);
-        var d = r.Ship(kind)!;
+        var d = Kind(town, kind)!;
+        bool sky = d.Realm == "sky";
         if (!free)
         {
             double cost = d.Cost + town.Market.Buy(Good.Timber, d.Timber);
@@ -158,13 +196,17 @@ public static class Fleet
         var st = town.FleetState;
         int id = st.NextId++;
         var used = town.Ships.Select(s => s.Name).ToHashSet();
-        var names = r.Names.Where(n => !used.Contains(n)).ToList();
+        var pool = sky ? town.Content.Sky.Names : r.Names;
+        var captains = sky ? town.Content.Sky.Captains : r.Captains;
+        var names = pool.Where(n => !used.Contains(n)).ToList();
         string name = names.Count > 0 ? names[(int)(World.Hash(town.Seed * 131 + id * 17 + 3) * names.Count)] : $"the {d.Name} {id + 1}";
-        string captain = r.Captains.Count > 0 ? r.Captains[(int)(World.Hash(town.Seed * 137 + id * 19 + 5) * r.Captains.Count)] : "the mate";
-        var ship = new Ship { Id = id, Kind = d.Id, Name = name, Captain = captain, Hull = d.Hull };
+        string captain = captains.Count > 0 ? captains[(int)(World.Hash(town.Seed * 137 + id * 19 + 5) * captains.Count)] : "the mate";
+        var ship = new Ship { Id = id, Kind = d.Id, Name = name, Captain = captain, Hull = d.Hull, Lift = d.Lift };
         town.Ships.Add(ship);
         town.Log(LedgerCategory.Town, Importance.Notable,
-            free ? $"The harbour's first boat, {name}, is pushed down the slip. {captain} will skipper her."
+            sky ? free ? $"The Sky Dock's first airship, {name}, rises on her mast. {captain} will fly her."
+                       : $"A new {d.Name}, {name}, is warped out of the gasbag shed, with {captain} for her captain."
+            : free ? $"The harbour's first boat, {name}, is pushed down the slip. {captain} will skipper her."
                  : $"A new {d.Name}, {name}, slides down the harbour slip, with {captain} for her captain.");
         return ship;
     }
@@ -176,12 +218,12 @@ public static class Fleet
     public static bool Repair(Town town, int shipId)
     {
         var s = town.Ships.FirstOrDefault(x => x.Id == shipId);
-        if (s == null || s.Out != null || s.Hull >= Def(town, s).Hull || Harbour(town) == null) return false;
+        if (s == null || s.Out != null || s.Flight != null || s.DownedRegion != null || s.Hull >= Def(town, s).Hull || (Aloft(town, s) ? Sky.Dock(town) : Harbour(town)) == null) return false;
         double cost = RepairCost(town, s);
         if (town.Treasury < cost) return false;
         town.Book(TreasuryAccount.Works, -cost);
         s.Hull = Def(town, s).Hull;
-        town.Log(LedgerCategory.Town, Importance.Routine, $"Shipwrights patch {s.Name}'s hull ({Js.Str(cost)} gold).");
+        town.Log(LedgerCategory.Town, Importance.Routine, $"{(Aloft(town, s) ? "Riggers" : "Shipwrights")} patch {s.Name}'s hull ({Js.Str(cost)} gold).");
         return true;
     }
 
@@ -215,6 +257,7 @@ public static class Fleet
     public static string? Refuse(Town town, Ship s, Settlement port, Good cargo)
     {
         var r = Rules(town);
+        if (Aloft(town, s)) return "an airship trades from the Sky Dock";
         if (Harbour(town) == null) return "needs a harbour";
         if (s.Out != null) return "at sea";
         if (Def(town, s).Hold <= 0) return "no hold";
@@ -270,7 +313,7 @@ public static class Fleet
             if (r.Ships.Count > 0) Build(town, r.Ships[0].Id, free: true);
         }
         bool winter = Seasons.Current(town).Id == "winter";
-        foreach (var s in town.Ships.OrderBy(s => s.Id).ToList())
+        foreach (var s in AtSea(town).ToList())
         {
             if (s.Out is { } v)
             {
@@ -364,7 +407,7 @@ public static class Fleet
         town.FleetState.NextRaidDay = town.Day + c.RaidEvery;
         var rng = Dice(town, 977);
         if (!rng.Chance(c.RaidChance)) return;
-        var moored = town.Ships.Where(s => s.Out == null && s.Hull > 0).OrderBy(s => s.Id).ToList();
+        var moored = AtSea(town).Where(s => s.Out == null && s.Hull > 0).ToList();
         double guard = town.Watch * c.WatchFight + Js.Sum(moored, s => Def(town, s).Fight + r.ProwessFight * (s.Prowess - 1));
         int die = rng.D20();
         if (die + guard >= 10 + c.RaidStrength + town.Day / 120.0)
@@ -388,13 +431,13 @@ public static class Fleet
     {
         var r = Rules(town);
         var st = town.FleetState;
-        foreach (var s in town.Ships.Where(s => s.Out == null && s.Hull < Def(town, s).Hull * r.PatchBelow).ToList())
+        foreach (var s in AtSea(town).Where(s => s.Out == null && s.Hull < Def(town, s).Hull * r.PatchBelow).ToList())
             if (town.Treasury > RepairCost(town, s) + 200) Repair(town, s.Id);
-        if (town.Ships.Count < 2 && r.Ships.Count > 1 && BuildBlocked(town, r.Ships[1].Id) == null && town.Treasury > Cost(town, r.Ships[1]) + 400)
+        if (AtSea(town).Count() < 2 && r.Ships.Count > 1 && BuildBlocked(town, r.Ships[1].Id) == null && town.Treasury > Cost(town, r.Ships[1]) + 400)
             Build(town, r.Ships[1].Id);
         if (town.Day < st.NextStandInDay) return;
         st.NextStandInDay = town.Day + r.StandInEvery;
-        var best = town.Ships.Where(s => s.Out == null).OrderBy(s => s.Id)
+        var best = AtSea(town).Where(s => s.Out == null)
             .SelectMany(s => Ports(town).SelectMany(p => Goods.All.Where(g => Refuse(town, s, p, g) == null).Select(g => (S: s, P: p, G: g, Gain: Profit(town, s, p, g)))))
             .Where(x => x.Gain >= r.StandInProfit)
             .OrderByDescending(x => x.Gain / Days(town, x.S, x.P)).ThenBy(x => x.S.Id).ThenBy(x => x.P.Id).ThenBy(x => x.G)

@@ -75,6 +75,9 @@ public sealed class SkyRun
 
     /// <summary>Storms have already held it back once.</summary>
     public bool Stormed { get; set; }
+
+    /// <summary>The airship flying it (<see cref="Sky"/>), or -1 for a run from before the town had a fleet.</summary>
+    public int ShipId { get; init; } = -1;
 }
 
 /// <summary>How much of a good the airship has sold into a people's market lately: the more, the less it fetches there.</summary>
@@ -115,6 +118,9 @@ public static class Skyship
     private static SkyState State(Town town) => town.Trade.Sky;
 
     public static bool Away(Town town) => State(town).Out != null;
+
+    /// <summary>Whether this airship is the one out on the merchant run.</summary>
+    public static bool Flying(Town town, int shipId) => State(town).Out?.ShipId == shipId;
 
     public static double Hold(Town town) => Math.Min(Rules(town).HoldMax, Rules(town).Hold + Rules(town).HoldPerHundred * town.Population / 100.0);
 
@@ -217,7 +223,9 @@ public static class Skyship
         st.Spent += cost;
         town.Market.Seed(cargo, -qty);
         int days = FlightDays(town, s);
-        st.Out = new SkyRun { Id = st.Runs + 1, SettlementId = s.Id, Cargo = cargo, Qty = qty, SetOutTick = town.Tick, BackDay = town.Day + days };
+        // The merchant run takes the best-gunned airship at the mast that isn't wanted elsewhere.
+        int ship = Sky.Ships(town).Where(x => Sky.Moored(town, x) && x.Lift >= 2).OrderByDescending(x => Fleet.Def(town, x).Hold).ThenBy(x => x.Id).FirstOrDefault()?.Id ?? -1;
+        st.Out = new SkyRun { Id = st.Runs + 1, SettlementId = s.Id, Cargo = cargo, Qty = qty, SetOutTick = town.Tick, BackDay = town.Day + days, ShipId = ship };
         town.Log(LedgerCategory.Town, Importance.Notable,
             $"{Cap(Name(town))} casts off from the Sky Dock with {Js.Str(Js.Round(qty))} {Lower(cargo)} in the hold, bound over everything for {s.Name} ({Js.Str(cost)} gold to fit out). It should be home in {days} days.");
         return st.Out;
@@ -295,6 +303,9 @@ public static class Skyship
         var region = town.Regions[s.RegionId];
         return Fliers(town, region).OrderByDescending(m => Passage.Fliers(town, m.Kind)).ThenByDescending(m => m.Power).ThenBy(m => m.Id).FirstOrDefault();
     }
+
+    /// <summary>Flying hosts living near a region (<see cref="Sky"/> meets them in the air).</summary>
+    public static IEnumerable<Menace> FliersNear(Town town, Region region) => Fliers(town, region);
 
     private static IEnumerable<Menace> Fliers(Town town, Region region) =>
         town.Saga.Menaces.Where(m => m.Alive && Passage.Fliers(town, m.Kind) > 0 && Quests.Site(town, m.SeatId) is { RegionId: int rid } && rid >= 0 && rid < town.Regions.Count

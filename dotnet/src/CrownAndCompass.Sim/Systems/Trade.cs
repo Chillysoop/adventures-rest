@@ -231,6 +231,7 @@ public static class Trade
         if (autoMayor) StandIn(town);
         Skyship.Daily(town, autoMayor);
         Fleet.Daily(town, autoMayor);
+        Sky.Daily(town, autoMayor);
     }
 
     private static void Caravan(Town town, TradeRoute route, Settlement s)

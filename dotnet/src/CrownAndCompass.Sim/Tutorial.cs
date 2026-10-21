@@ -65,7 +65,7 @@ public static class Tutorial
     /// <summary>
     /// A number read off the town for steps to watch: "count:Bounties" is the size of that list on
     /// <see cref="Town"/> (any public list works, so a new system needs no code here); "zoned" is the painted
-    /// ground not yet built on, "decorated" the decorations set down, "airships" the sky dock's ships, "goals" the charter goals still open. Null for a name that means nothing.
+    /// ground not yet built on, "decorated" the decorations set down, "airships" the sky dock's ships at the mast, "skyships" all of them, "goals" the charter goals still open. Null for a name that means nothing.
     /// </summary>
     public static int? Measure(Town t, string token)
     {
@@ -76,6 +76,7 @@ public static class Tutorial
         if (token == "dense") return t.Plan.Density.Count(d => d > 0);
         if (token == "sown") return t.Plan.Crops.Count(c => c > 1);
         if (token == "airships") return Systems.Institutions.Airships(t);
+        if (token == "skyships") return Systems.Sky.Ships(t).Count();
         // The town's regiments, and its finished training halls (Systems.Army).
         if (token == "regiments") return t.Army.Regiments.Count;
         if (token == "allies") return t.Settlements.Count(s => s.Allied && !s.Razed);

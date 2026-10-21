@@ -1600,6 +1600,9 @@ public sealed class Content
     /// <summary>The ships of a town on the sea (content/game/sea.json).</summary>
     public Systems.FleetRules Sea { get; init; } = new();
 
+    /// <summary>The town's airships, the winds and storms they fly through, and how they fight (content/game/sky.json).</summary>
+    public Systems.SkyFleetRules Sky { get; init; } = new();
+
     /// <summary>The storytellers a town can be founded under, the game's difficulty (content/game/storytellers.json).</summary>
     public StorytellerRules Storytellers { get; init; } = new();
     public Systems.CharacterRules Character { get; init; } = new();
@@ -1825,6 +1828,7 @@ public sealed class Content
             Storytellers = Parse<StorytellerRules>("storytellers.json"),
             Founding = Parse<Systems.FoundingRules>("founding.json"),
             Sea = Parse<Systems.FleetRules>("sea.json"),
+            Sky = Parse<Systems.SkyFleetRules>("sky.json"),
             Victory = Parse<Systems.VictoryRules>("victory.json"),
             DarkQuests = Parse<Systems.DarkQuestRules>("darkquests.json"),
             Boons = Parse<Systems.BoonRules>("boons.json"),

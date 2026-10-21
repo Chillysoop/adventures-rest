@@ -284,6 +284,7 @@ public partial class MapView : Control
         }
         _decor.Refresh();
         _town.Sky(dt);
+        _town.SkyFleet(dt);
         _town.Weather(dt);
         _town.Fliers(dt);
         _crowd.Advance(dt);

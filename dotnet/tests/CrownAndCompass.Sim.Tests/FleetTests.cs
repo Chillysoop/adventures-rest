@@ -30,6 +30,29 @@ public class FleetTests
     }
 
     [Fact]
+    public void ThePlayerBuildsTheHarbourAndTheSkyDockThemselves()
+    {
+        // Nothing raises either for a player: the build bar offers the harbour from the start on the sea, and the
+        // Sky Dock once the town hears of it; no ships until they stand.
+        var sim = new Simulation(new SimulationOptions { Seed = 3, Founding = "sea-cove", AutoMayor = false });
+        var t = sim.Town;
+        sim.RunDays(30);
+        Assert.DoesNotContain(t.Buildings, b => b.Def.Id is "harbour" or "sky_dock");
+        Assert.Empty(t.Ships);
+        Assert.False(Institutions.Hidden(t, "harbour"));
+        // Laid down, it's a site the builders raise like any other; the first boat comes when it opens.
+        var d = t.Content.Building("harbour");
+        var lot = Land.Find(t, d, null)!;
+        lot.Zone = Zone.Civic;
+        t.Treasury += 2000;
+        Planning.Place(t, d.Id, lot);
+        var site = Assert.Single(t.Buildings, b => b.Def.Id == "harbour");
+        Assert.True(site.IsSite);
+        sim.RunDays(1);
+        Assert.Empty(t.Ships);
+    }
+
+    [Fact]
     public void TheHarbourGivesAFirstBoatThatFishes()
     {
         var sim = Harboured();

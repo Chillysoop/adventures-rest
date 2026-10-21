@@ -744,6 +744,13 @@
       "teaches": ["command:BuildShip", "command:SendShip", "command:RepairShip"]
     },
     {
+      "id": "sky-fleet",
+      "title": "Your airships",
+      "text": "The Sky Dock's ships:\n• [b]Lift-crystal[/b]: charge it at the dock; run dry and the ship comes down\n• [b]Patrol[/b]: raiders seen sooner\n• [b]Scout[/b] a land, or [b]strike[/b] a lair before a company goes in\n• Fights: approach, ballistae, then boarding: take heroes as marines\n• Downed ships: send riggers to [b]salvage[/b] them",
+      "when": "skyships",
+      "teaches": ["command:FlyShip", "command:ChargeShip", "command:SalvageShip"]
+    },
+    {
       "id": "tales",
       "title": "Tales at the tavern",
       "text": "When a company comes home from a delve worth telling, the tavern tells it: a card walks you through it room by room, with the heroes' own words and their dice. [b]Skip[/b] jumps to the big moment, and every chronicle in the Ledger has a [b]Hear the tale[/b] link. Loading a game, and each new season, opens with what happened last time ([b]Enter[/b] carries on).",

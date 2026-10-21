@@ -605,6 +605,9 @@ public sealed class Town
     public List<Systems.Ship> Ships { get; } = [];
     public Systems.FleetState FleetState { get; } = new();
 
+    /// <summary>The airships' grant, the sky pirates' next raid and the last fights in the air (<see cref="Systems.Sky"/>).</summary>
+    public Systems.SkyFleetState SkyFleet { get; } = new();
+
     /// <summary>The mayor's character sheet and the story events open and past (<see cref="Systems.Stories"/>).</summary>
     public Systems.StoryState Stories => _stories ??= new Systems.StoryState { Mayor = Systems.Stories.NewMayor(this) };
     // Made on first use, so a save from before stories existed gets a mayor too.

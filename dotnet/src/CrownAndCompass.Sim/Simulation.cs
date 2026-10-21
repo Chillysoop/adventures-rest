@@ -299,8 +299,17 @@ public sealed class Simulation
     /// <summary>Send a ship on a trade run to a port along the coast with a cargo.</summary>
     public bool SendShip(int shipId, int settlementId, Good cargo) => Fleet.Send(Town, shipId, settlementId, cargo);
 
-    /// <summary>Patch a ship's hull at the harbour.</summary>
+    /// <summary>Patch a ship's hull at the harbour, or an airship's at the Sky Dock.</summary>
     public bool RepairShip(int shipId) => Fleet.Repair(Town, shipId);
+
+    /// <summary>Fly an airship on a job: "patrol" over the town, "scout" a region, or "strike" a lair there, with heroes aboard as marines.</summary>
+    public bool FlyShip(int shipId, string job, int regionId = -1, string siteId = "", IReadOnlyList<int>? marines = null) => Sky.Send(Town, shipId, job, regionId, siteId, marines);
+
+    /// <summary>Refill an airship's lift-crystal at the Sky Dock.</summary>
+    public bool ChargeShip(int shipId) => Sky.Charge(Town, shipId);
+
+    /// <summary>Send riggers with fresh crystal to an airship that came down in the wilds.</summary>
+    public bool SalvageShip(int shipId) => Sky.Salvage(Town, shipId);
 
     /// <summary>Raise a memorial to a hero in the hall of heroes.</summary>
     public bool RaiseMemorial(int heroId) => Legacies.RaiseMemorial(Town, heroId);
