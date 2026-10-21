@@ -208,7 +208,7 @@ public partial class Main
                 if (!_sim.PlaceBet(ev, pick, Tournaments.Rules(_sim.Town).Betting.Min)) throw new InvalidOperationException("the bet was refused");
                 OpenTourney();
                 // Until a heat is ridden: today's may be over by the hour, so tomorrow's event rides first.
-                for (int h = 0; h < 36 && _sim.Town.Tourney.Events.All(e => e.Heats.Count == 0); h++) _sim.Step();
+                for (int h = 0; h < 36 && (h < 14 || _sim.Town.Tourney.Events.All(e => e.Heats.Count == 0)); h++) _sim.Step();
                 _dirty = true;
                 return 40;
             }

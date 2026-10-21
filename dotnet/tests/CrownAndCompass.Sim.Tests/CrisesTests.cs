@@ -44,6 +44,8 @@ public class CrisesTests
         // A would-be overlord could take the town's oath instead, and a power the town serves begins no crisis.
         m.Ambition = "conquest";
         m.Power = t.Content.Saga.Menaces.Stages.Power + 10;
+        // No herald to kneel to: a town under its yoke owes it tribute, not a crisis.
+        m.Refused = true;
         // Most of the way ripe already, so the council's bounties don't get to its seat first.
         t.Crises.Ripeness[m.Id] = t.Content.Crises.RipenDays - 5;
         var crisis = (Crisis?)null;
