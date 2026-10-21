@@ -7,7 +7,8 @@ namespace CrownAndCompass.Client;
 /// <summary>
 /// The main menu the game opens on: a town turning slowly behind the title, and Continue, Start, Start
 /// with tutorial, Load and Quit. Starting a town first asks who will tell its story: the storytellers of
-/// content/game/storytellers.json, the game's difficulty. The game menu (Esc) can bring it back.
+/// content/game/storytellers.json, the game's difficulty; then where to found it, from the sites the new world offers
+/// (content/game/founding.json). The game menu (Esc) can bring it back.
 /// </summary>
 public partial class Main
 {
@@ -16,8 +17,9 @@ public partial class Main
     private Label _continueAbout = null!;
     private readonly List<Control> _hiddenByTitle = [];
     private bool _menuLoadOnly;
-    private VBoxContainer _titleMenu = null!, _tellers = null!;
+    private VBoxContainer _titleMenu = null!, _tellers = null!, _sites = null!;
     private bool _tellTutorial;
+    private string? _teller;
 
     private void BuildTitle()
     {
@@ -83,7 +85,7 @@ public partial class Main
         foreach (var st in rules.Storytellers)
         {
             string id = st.Id;
-            TitleButton(_tellers, $"{st.Title}  ·  {st.Name}", st.Text, primary: id == rules.Default, () => StartTown(_tellTutorial, storyteller: id));
+            TitleButton(_tellers, $"{st.Title}  ·  {st.Name}", st.Text, primary: id == rules.Default, () => PickSite(id));
             var about = Ui.Label($"{st.Character} {st.Text}", Ui.Ink2, Ui.Body, 13);
             about.AutowrapMode = TextServer.AutowrapMode.WordSmart;
             about.CustomMinimumSize = new Vector2(520, 0);
@@ -91,6 +93,41 @@ public partial class Main
             _tellers.AddChild(new Control { CustomMinimumSize = new Vector2(0, 6) });
         }
         TitleButton(_tellers, "Back", "Back to the main menu", primary: false, () => PickStoryteller(null));
+
+        // Where to found it: filled for the new world's seed when a storyteller is picked.
+        _sites = new VBoxContainer { Alignment = BoxContainer.AlignmentMode.Center, Visible = false };
+        _sites.AddThemeConstantOverride("separation", 6);
+        stack.AddChild(_sites);
+    }
+
+    /// <summary>
+    /// Where to found the town: the sites this seed's world offers, the river ford first. The ones not chosen stay on the
+    /// map, held by neighbours or foes.
+    /// </summary>
+    private void PickSite(string storyteller, int? seed = null)
+    {
+        _teller = storyteller;
+        int s = seed ?? _opts.Seed ?? (int)(GD.Randi() % 9999) + 1;
+        foreach (var c in _sites.GetChildren()) c.QueueFree();
+        _sites.AddChild(Ui.Label("Where do you found your town?", Ui.Ink, Ui.Display, 30));
+        _sites.AddChild(Ui.Label("The others stay on the map, held by neighbours or foes.", Ui.Ink2, Ui.Body, 13));
+        _sites.AddChild(new Control { CustomMinimumSize = new Vector2(0, 8) });
+        var preview = new Simulation(new SimulationOptions { Seed = s }).Town;
+        foreach (var site in Sim.Systems.Founding.Offered(preview))
+        {
+            string id = site.Def.Id;
+            // The name on the button, the story in its tooltip, and what it does as icon chips beneath.
+            TitleButton(_sites, site.Def.Name, $"{site.Def.Blurb}\n{Sim.Systems.Founding.Summary(site.Def)}", primary: id == preview.Content.Founding.Default, () => StartTown(_tellTutorial, s, storyteller: _teller, founding: id));
+            var chips = Sim.Systems.Founding.Effects(site.Def);
+            var row = Ui.Rich(chips.Count == 0 ? "[color=#b8a98a]no bonus, no drawback[/color]" : string.Join("   ", chips.Select(c => $"{Ui.Img(c.Icon, 16)} {c.Text}")));
+            row.FitContent = true;
+            row.CustomMinimumSize = new Vector2(520, 0);
+            _sites.AddChild(row);
+            _sites.AddChild(new Control { CustomMinimumSize = new Vector2(0, 2) });
+        }
+        TitleButton(_sites, "Back", "Back to the storytellers", primary: false, () => PickStoryteller(_tellTutorial));
+        _titleMenu.Visible = _tellers.Visible = false;
+        _sites.Visible = true;
     }
 
     /// <summary>Show the storytellers to start a town under (with or without the tutorial), or with null go back to the menu.</summary>
@@ -99,6 +136,7 @@ public partial class Main
         _tellTutorial = tutorial == true;
         _titleMenu.Visible = tutorial == null;
         _tellers.Visible = tutorial != null;
+        _sites.Visible = false;
     }
 
     private static Button TitleButton(VBoxContainer col, string text, string tip, bool primary, Action pressed)
@@ -150,9 +188,9 @@ public partial class Main
         SetSpeed(1);
     }
 
-    private void StartTown(bool tutorial, int? seed = null, bool autoplay = false, string? storyteller = null)
+    private void StartTown(bool tutorial, int? seed = null, bool autoplay = false, string? storyteller = null, string? founding = null)
     {
-        NewTown(seed ?? (int)(GD.Randi() % 9999) + 1, autoplay, storyteller);
+        NewTown(seed ?? (int)(GD.Randi() % 9999) + 1, autoplay, storyteller, founding);
         // Begin at first light rather than in the dark of the first midnight.
         for (int i = 0; i < 7; i++) _sim.Step();
         HideTitle();

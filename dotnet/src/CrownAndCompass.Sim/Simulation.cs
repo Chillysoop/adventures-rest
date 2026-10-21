@@ -63,6 +63,9 @@ public sealed record SimulationOptions
     /// <summary>Who tells the campaign: "steady", "rising" (the default) or "chaotic" (content/game/storytellers.json).</summary>
     public string Storyteller { get; init; } = "rising";
 
+    /// <summary>Where the town is founded: a founding.json id from <see cref="Systems.Founding.Offered"/>; "" for the river ford.</summary>
+    public string Founding { get; init; } = "";
+
     /// <summary>Foes and heroes from the player's earlier campaigns, who may come back (<see cref="Systems.Legends"/>).</summary>
     public IReadOnlyList<Legend> Legends { get; init; } = [];
 }
@@ -82,6 +85,7 @@ public sealed class Simulation
         Options = options ?? new SimulationOptions();
         Town = new Town(content ?? Content.Default(), Options.Seed);
         Town.Storyteller = Systems.Storyteller.Def(Town.Content, Options.Storyteller)?.Id ?? Town.Content.Storytellers.Default;
+        Town.Founding = Systems.Founding.Kind(Town.Content, Options.Founding) is { } site && site.Id != Town.Content.Founding.Default ? site.Id : null;
         Town.Saga.Enabled = Options.Saga && Options.Enemy;
         Town.Saga.Legends.AddRange(Options.Legends.Where(l => l.Seed != Options.Seed));
         Charter();
@@ -524,6 +528,7 @@ public sealed class Simulation
         for (int i = 0; i < 2; i++) t.AddBuilding(house, FreeLot(Zone.Residential, house), null, Property.NameFor(t, house, null), true);
 
         Shrines.RaiseShrine(t);
+        Founding.Charter(t);
 
         var farmer = Population.CreateAgent(t, new NewAgentOptions { Profession = "farmer", Gold = t.Rng.Range(10, 30) });
         var woodcutter = Population.CreateAgent(t, new NewAgentOptions { Profession = "woodcutter", Gold = t.Rng.Range(10, 30) });
@@ -559,7 +564,7 @@ public sealed class Simulation
         t.Log(
             LedgerCategory.Town,
             Importance.Major,
-            $"The charter is signed. {t.Population} settlers and a wagon arrive at the river ford that will become {t.Name}. {Annals.Founding(t)}",
+            $"The charter is signed. {t.Population} settlers and a wagon arrive at {Founding.At(t)} that will become {t.Name}. {Annals.Founding(t)}",
             t.Residents.Select(a => a.Id).ToList());
     }
 

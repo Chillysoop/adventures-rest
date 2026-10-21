@@ -202,6 +202,7 @@ public partial class Main : Control
         if (_opts.Menu) OpenMenu();
         if (plain || _opts.Title || _opts.Smoke) ShowTitle();
         if (_opts.Storytellers) PickStoryteller(false);
+        if (_opts.Sites) PickSite(_sim.Town.Storyteller ?? "rising", _opts.Seed);
         if (_opts.History is string power) OpenHistory(power == "" ? null : power);
         if (_opts.Glossary is string entry) OpenGlossary(entry == "" ? null : entry);
         for (int i = 0; i < _opts.Keywords.Count; i++)
@@ -306,12 +307,12 @@ public partial class Main : Control
 
     // ---------- Game ----------
 
-    private void NewTown(int seed, bool autoplay = false, string? storyteller = null)
+    private void NewTown(int seed, bool autoplay = false, string? storyteller = null, string? founding = null)
     {
         RememberLegends();
         // With --autoplay the stand-in mayor keeps playing, for demos and screenshots; only a player's towns meet old legends.
         var legends = autoplay ? [] : ProfileLegends();
-        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoArmory = autoplay && !_opts.KeepArmory, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay && _opts.Tax == null, AutoHonours = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay, AutoStories = autoplay, AutoExplore = autoplay && !_opts.Find, Legends = legends, Storyteller = storyteller ?? _opts.Storyteller ?? "rising" }));
+        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoArmory = autoplay && !_opts.KeepArmory, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay && _opts.Tax == null, AutoHonours = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay, AutoStories = autoplay, AutoExplore = autoplay && !_opts.Find, Legends = legends, Storyteller = storyteller ?? _opts.Storyteller ?? "rising", Founding = founding ?? _opts.Founding ?? "" }));
     }
 
     /// <summary>Show a town: a new one, or one loaded from a save.</summary>

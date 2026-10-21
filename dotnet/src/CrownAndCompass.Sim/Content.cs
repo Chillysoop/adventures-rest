@@ -1054,6 +1054,9 @@ public sealed record TerrainKindDef
 
     /// <summary>A strange place that bends the rules: a wishing well, dead-magic ground, a bone ferryman (<see cref="Systems.Wayfaring"/>).</summary>
     public Systems.WonderDef? Wonder { get; init; }
+
+    /// <summary>Open water the town's own boats take anyone over (the sea by a coastal town, <see cref="Systems.Founding"/>).</summary>
+    public bool Boats { get; init; }
 }
 
 public sealed record TerrainHazardDef
@@ -1433,6 +1436,9 @@ public sealed class Content
     /// <summary>Townsfolk's inspirations and breaks (content/game/moods.json).</summary>
     public MoodRules Moods { get; init; } = new();
 
+    /// <summary>Where a town can be founded, and what each site does for it (content/game/founding.json).</summary>
+    public Systems.FoundingRules Founding { get; init; } = new();
+
     /// <summary>The storytellers a town can be founded under, the game's difficulty (content/game/storytellers.json).</summary>
     public StorytellerRules Storytellers { get; init; } = new();
 
@@ -1616,6 +1622,7 @@ public sealed class Content
             Crowds = Parse<CrowdRules>("crowds.json"),
             Moods = Parse<MoodRules>("moods.json"),
             Storytellers = Parse<StorytellerRules>("storytellers.json"),
+            Founding = Parse<Systems.FoundingRules>("founding.json"),
         };
     }
 

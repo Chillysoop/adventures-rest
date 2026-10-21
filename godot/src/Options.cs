@@ -67,6 +67,10 @@ public sealed class Options
     public string? Storyteller;
     public bool Storytellers;
 
+    /// <summary>--founding id: where a new town is founded (founding.json); --sites shows New game's choice of sites.</summary>
+    public string? Founding;
+    public bool Sites;
+
     /// <summary>--episode id: strike a townsperson out on the streets with that inspiration or break, look at them and open their inspector.</summary>
     public string? Episode;
 
@@ -206,6 +210,8 @@ public sealed class Options
                 case "--title": o.Title = true; break;
                 case "--storyteller": o.Storyteller = Next(); break;
                 case "--storytellers": o.Storytellers = o.Title = true; break;
+                case "--founding": o.Founding = Next(); break;
+                case "--sites": o.Sites = o.Title = true; break;
                 case "--episode": o.Episode = Next(); break;
                 case "--history": o.History = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
                 case "--glossary": o.Glossary = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;

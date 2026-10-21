@@ -47,6 +47,9 @@ public partial class Main
                 // New game asks for a storyteller first.
                 PickStoryteller(false);
                 if (!_tellers.Visible || _titleMenu.Visible) throw new InvalidOperationException("the storytellers are not showing");
+                // Then where to found the town.
+                PickSite("rising", _opts.Seed ?? 1);
+                if (!_sites.Visible || _sites.GetChildCount() < 4) throw new InvalidOperationException("the founding sites are not showing");
                 return 10;
             case 1:
                 // What the main menu's New game does, with the stand-in mayor playing so later systems come into play.
