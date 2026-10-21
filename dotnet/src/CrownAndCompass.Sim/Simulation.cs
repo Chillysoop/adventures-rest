@@ -123,8 +123,11 @@ public sealed class Simulation
         City.Daily(t, Options.AutoMayor && Options.AutoPlanning);
         GrandWorks.Daily(t, Options.AutoMayor && Options.AutoPlanning);
         Monuments.Daily(t);
+        // Squares first, so the shops sited today front them.
+        Streets.Markets(t);
         if (Options.AutoMayor && Options.AutoPlanning) Construction.Daily(t);
         Streets.Wear(t);
+        Streets.Closes(t);
         Paving.Daily(t);
         Property.Daily(t);
         Population.DailyDepartures(t);
