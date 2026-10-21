@@ -51,7 +51,7 @@ public static class Mayor
         for (int i = 0; i < 12 && (Planning.VacantZoned(town, zone) < minVacant || extra-- > 0); i++)
         {
             field = Streets.Field(town.Plan);
-            if (!Land.PaintPatch(town, zone, zone == Zone.Farmland ? 2.4 : zone == Zone.Commercial ? 2.8 : 2.0, Key, crop)) break;
+            if (!Land.PaintPatch(town, zone, zone == Zone.Farmland ? 2.4 : 2.0, Key, crop)) break;
         }
     }
 
