@@ -545,6 +545,9 @@ public sealed class Town
     /// <summary>The city's institutions, in the order they opened (<see cref="Systems.Institutions"/>).</summary>
     public List<Systems.InstitutionState> Institutions { get; } = [];
 
+    /// <summary>The institutions the town has heard of, with what revealed each; the rest stay blank slots (<see cref="Systems.Institutions.Seen"/>).</summary>
+    public OrderedMap<string, string> InstitutionsSeen { get; } = new();
+
     /// <summary>The yearly tourney: this year's draw, heats and bets, and past champions (<see cref="Systems.Tournaments"/>).</summary>
     public Systems.TourneyState Tourney { get; } = new();
 
