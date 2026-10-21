@@ -414,6 +414,30 @@ public static class Ui
         b.ExpandIcon = false;
         b.AddThemeConstantOverride("icon_max_width", 16);
     }
+
+    /// <summary>A drop-down button: picking an entry (an icon name or "" and its text) calls <paramref name="pick"/> with its index.</summary>
+    public static MenuButton Menu(string label, string icon, IReadOnlyList<(string Icon, string Text)> items, Action<int> pick)
+    {
+        var m = new MenuButton { Text = label, Flat = false, Disabled = items.Count == 0, SizeFlagsVertical = Control.SizeFlags.ShrinkCenter, ThemeTypeVariation = "Button" };
+        if (icon != "")
+        {
+            m.Icon = Icon(icon);
+            m.ExpandIcon = false;
+            m.AddThemeConstantOverride("icon_max_width", 16);
+        }
+        var popup = m.GetPopup();
+        foreach (var (ic, text) in items)
+        {
+            if (ic != "")
+            {
+                popup.AddIconItem(Icon(ic), text);
+                popup.SetItemIconMaxWidth(popup.ItemCount - 1, 16);
+            }
+            else popup.AddItem(text);
+        }
+        popup.IndexPressed += i => pick((int)i);
+        return m;
+    }
 }
 
 /// <summary>The hover and pinned cards that explain keywords (Main implements it in Keywords.cs).</summary>
@@ -546,6 +570,21 @@ public sealed class Pane
             v.AddChild(h);
             v.AddChild(new ColorRect { Color = Ui.Line, CustomMinimumSize = new Vector2(0, 1) });
             return v;
+        });
+    }
+
+    /// <summary>A line of drop-down buttons (<see cref="Ui.Menu"/>), each with its icon, entries and what picking one does.</summary>
+    public void Menus(params (string Label, string Icon, IReadOnlyList<(string Icon, string Text)> Items, Action<int> Pick)[] menus)
+    {
+        var sig = new StringBuilder("m");
+        foreach (var x in menus) sig.Append('|').Append(x.Label).Append(x.Icon).Append(string.Join("/", x.Items.Select(i => i.Icon + i.Text)));
+        Add(sig.ToString(), () =>
+        {
+            var h = new HFlowContainer();
+            h.AddThemeConstantOverride("h_separation", 8);
+            h.AddThemeConstantOverride("v_separation", 6);
+            foreach (var x in menus) h.AddChild(Ui.Menu(x.Label, x.Icon, x.Items, x.Pick));
+            return h;
         });
     }
 

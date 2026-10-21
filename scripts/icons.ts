@@ -108,6 +108,14 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["press", "chained-heart", "#d0566a"],
   ["skill", "upgrade", "#7fb0d4"],
   ["deadline", "hourglass", "#d8c08a"],
+  // Armory items by kind (godot/src/Armory.cs), white so the window tints them by rarity
+  ["item-weapon", "broadsword", mono],
+  ["item-armor", "breastplate", mono],
+  ["item-shield", "round-shield", mono],
+  ["item-trinket", "gem-pendant", mono],
+  ["item-ring", "ring", mono],
+  ["item-wand", "orb-wand", mono],
+  ["item-stone", "rune-stone", mono],
   // The bounty board's buttons: the terms of a job, then what else a row can do
   ["act-slay", "broadsword", mono],
   ["act-drive", "run", mono],
