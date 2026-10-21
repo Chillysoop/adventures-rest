@@ -1,0 +1,254 @@
+{
+  "_doc": "First meetings (Systems/Intros.cs, client godot/src/Intros.cs): the first time the town meets anyone of a lineage (history.json lineages: a menace, the warband, a people, a power or an enemy group), the client shows that lineage's picture, staged live with the heroes' kit, with its crest, a line and a little of its history. Scenes are the settings pictures are staged in; props are baked model names (godot/src/Map/Models.cs) scattered in a band near..far figure heights from the host. Crests are game-icons.net glyphs made into crest-<lineage> icons by scripts/icons.ts. IntrosTests fails a lineage of a menace, foe, group, people or faction without an intro.",
+  "scenes": [
+    {
+      "id": "warcamp", "sky": "2b1a1e", "horizon": "c0603a", "ground": "5a4630", "ground2": "3e3020", "light": "ffb27a", "rim": "ff5a2a", "air": "embers", "props": [
+        {"model": "nature/tent_detailedOpen", "count": 3, "near": 2.2, "far": 4, "scale": 1.6, "tint": "8a3a2a"},
+        {"model": "nature/campfire_stones", "count": 1, "near": 1.2, "far": 1.4, "scale": 1.4},
+        {"model": "nature/rock_largeA", "count": 4, "near": 3, "far": 6, "scale": 2},
+        {"model": "nature/tree_pineTallA_detailed", "count": 6, "near": 4.5, "far": 8, "scale": 2.4, "tint": "3a3a2a"}
+      ]
+    },
+    {
+      "id": "spider-ruin", "sky": "120f1c", "horizon": "5a4a6a", "ground": "3a3830", "ground2": "26241e", "light": "b8a8ff", "rim": "9a5aff", "air": "spores", "props": [
+        {"model": "nature/statue_column", "count": 4, "near": 1.8, "far": 4, "scale": 2.2, "tint": "4a4450"},
+        {"model": "nature/statue_head", "count": 1, "near": 2.6, "far": 3, "scale": 2.4, "tint": "4a4450"},
+        {"model": "nature/statue_obelisk", "count": 2, "near": 3, "far": 5, "scale": 2.6, "tint": "3a3440"},
+        {"model": "nature/tree_thin", "count": 6, "near": 3.5, "far": 7, "scale": 2.6, "tint": "2a2430"},
+        {"model": "nature/rock_smallA", "count": 6, "near": 1.4, "far": 4, "scale": 1.4}
+      ]
+    },
+    {
+      "id": "fen", "sky": "1a2420", "horizon": "7a8a6a", "ground": "3a4a30", "ground2": "2a3a2a", "light": "d8e0b0", "rim": "8aff7a", "air": "mist", "props": [
+        {"model": "nature/lily_large", "count": 6, "near": 1.4, "far": 4, "scale": 1.6},
+        {"model": "nature/mushroom_redGroup", "count": 3, "near": 1.4, "far": 3, "scale": 1.4},
+        {"model": "nature/tree_detailed_dark", "count": 5, "near": 3.5, "far": 7, "scale": 2.6, "tint": "3a4a3a"},
+        {"model": "nature/stump_old", "count": 3, "near": 2, "far": 4, "scale": 1.6, "tint": "3a3a2a"},
+        {"model": "nature/rock_smallB", "count": 4, "near": 1.4, "far": 3, "scale": 1.2, "tint": "4a5a3a"}
+      ]
+    },
+    {
+      "id": "peaks", "sky": "1e2a3c", "horizon": "9aaabb", "ground": "6a6a62", "ground2": "4a4c4a", "light": "e8eeff", "rim": "8ab8ff", "air": "", "props": [
+        {"model": "nature/cliff_large_rock", "count": 3, "near": 4, "far": 7, "scale": 2.4, "tint": "5a5c62"},
+        {"model": "nature/rock_tallA", "count": 4, "near": 2.4, "far": 5, "scale": 2.2, "tint": "6a6a70"},
+        {"model": "nature/rock_largeB", "count": 4, "near": 1.8, "far": 4, "scale": 1.8, "tint": "5a5c60"},
+        {"model": "nature/tree_pineSmallA", "count": 5, "near": 3, "far": 6, "scale": 2, "tint": "3a4a3a"}
+      ]
+    },
+    {
+      "id": "forge", "sky": "1a1210", "horizon": "a04a20", "ground": "4a3a32", "ground2": "2a2220", "light": "ffb070", "rim": "ff6a1a", "air": "embers", "props": [
+        {"model": "nature/cliff_cave_rock", "count": 2, "near": 4, "far": 6, "scale": 2.4, "tint": "4a3a32"},
+        {"model": "nature/rock_tallB", "count": 4, "near": 2.4, "far": 5, "scale": 2.2, "tint": "3a302a"},
+        {"model": "nature/campfire_bricks", "count": 2, "near": 1.6, "far": 2.6, "scale": 1.6},
+        {"model": "castle/siege-ballista", "count": 1, "near": 2.6, "far": 3.2, "scale": 1.4},
+        {"model": "nature/log_stackLarge", "count": 2, "near": 2, "far": 3.5, "scale": 1.4}
+      ]
+    },
+    {
+      "id": "frozen", "sky": "2a3448", "horizon": "c8d8e8", "ground": "d8dee6", "ground2": "b0bcc8", "light": "f0f6ff", "rim": "9ad0ff", "air": "snow", "props": [
+        {"model": "nature/tree_pineTallB_detailed", "count": 7, "near": 3, "far": 7, "scale": 2.4, "tint": "c8d8e0"},
+        {"model": "nature/rock_largeC", "count": 4, "near": 2, "far": 5, "scale": 1.8, "tint": "a8b4c0"},
+        {"model": "nature/rock_tallC", "count": 3, "near": 3, "far": 6, "scale": 2.2, "tint": "b8c4d0"}
+      ]
+    },
+    {
+      "id": "crypt", "sky": "0e1218", "horizon": "4a5a6a", "ground": "3a3c3a", "ground2": "2a2c2c", "light": "a8c8ff", "rim": "5ac8ff", "air": "ash", "props": [
+        {"model": "castle/wall-half", "count": 3, "near": 2.4, "far": 4.5, "scale": 1.2, "tint": "5a5a5a"},
+        {"model": "castle/tower-base", "count": 1, "near": 4, "far": 5, "scale": 1.4, "tint": "4a4a4a"},
+        {"model": "nature/statue_column", "count": 3, "near": 1.8, "far": 4, "scale": 2.2, "tint": "5a5a60"},
+        {"model": "nature/tree_thin", "count": 5, "near": 3, "far": 7, "scale": 2.6, "tint": "2a2a2a"},
+        {"model": "nature/stone_tallA", "count": 4, "near": 1.4, "far": 3, "scale": 1.2, "tint": "6a6a6a"}
+      ]
+    },
+    {
+      "id": "dunes", "sky": "3a2a1a", "horizon": "f0c080", "ground": "d8b070", "ground2": "b88e50", "light": "fff0c0", "rim": "ffb040", "air": "ash", "props": [
+        {"model": "nature/statue_obelisk", "count": 2, "near": 2.4, "far": 4, "scale": 2.6, "tint": "c8a070"},
+        {"model": "nature/statue_column", "count": 3, "near": 2, "far": 4.5, "scale": 2.2, "tint": "d8b880"},
+        {"model": "nature/statue_head", "count": 1, "near": 3, "far": 3.5, "scale": 2.6, "tint": "c8a070"},
+        {"model": "nature/rock_largeA", "count": 3, "near": 3, "far": 6, "scale": 1.8, "tint": "c89860"}
+      ]
+    },
+    {
+      "id": "wildwood", "sky": "16241a", "horizon": "8ab878", "ground": "3a5a2a", "ground2": "2a4422", "light": "f0ffd0", "rim": "a8ff8a", "air": "spores", "props": [
+        {"model": "nature/tree_oak", "count": 4, "near": 2.4, "far": 5, "scale": 2.4},
+        {"model": "nature/tree_fat", "count": 3, "near": 3.5, "far": 6.5, "scale": 2.6},
+        {"model": "nature/mushroom_redGroup", "count": 3, "near": 1.2, "far": 2.6, "scale": 1.4},
+        {"model": "nature/plant_bushLarge", "count": 4, "near": 1.4, "far": 3.5, "scale": 1.6},
+        {"model": "nature/stump_round", "count": 2, "near": 1.6, "far": 3, "scale": 1.4}
+      ]
+    },
+    {
+      "id": "feywood", "sky": "1a1030", "horizon": "b08ad8", "ground": "2a3a3a", "ground2": "1e2a30", "light": "ffd8ff", "rim": "ff8ad0", "air": "spores", "props": [
+        {"model": "nature/tree_detailed", "count": 5, "near": 2.6, "far": 6, "scale": 2.6, "tint": "6a4a8a"},
+        {"model": "nature/mushroom_redGroup", "count": 5, "near": 1.2, "far": 3, "scale": 1.6, "tint": "d06ab8"},
+        {"model": "nature/statue_ring", "count": 1, "near": 2.4, "far": 2.8, "scale": 1.6},
+        {"model": "nature/flower_purpleA", "count": 6, "near": 1.2, "far": 3, "scale": 1.6},
+        {"model": "nature/tent_smallOpen", "count": 2, "near": 2.2, "far": 3.5, "scale": 1.6, "tint": "a03a8a"}
+      ]
+    },
+    {
+      "id": "harbour", "sky": "1a2a3a", "horizon": "d8a070", "ground": "7a6a54", "ground2": "5a4c3c", "light": "ffe8c0", "rim": "ffa860", "air": "", "props": [
+        {"model": "nature/bridge_wood", "count": 2, "near": 2.4, "far": 4, "scale": 1.6},
+        {"model": "town/cart", "count": 1, "near": 2, "far": 3, "scale": 1.2},
+        {"model": "town/stall-red", "count": 2, "near": 2.6, "far": 4, "scale": 1.2},
+        {"model": "town/lantern", "count": 3, "near": 1.6, "far": 3, "scale": 1.2},
+        {"model": "nature/rock_largeB", "count": 3, "near": 3, "far": 5, "scale": 1.8, "tint": "6a6a6a"}
+      ]
+    },
+    {
+      "id": "ashlands", "sky": "140a0a", "horizon": "a03a1a", "ground": "3a2a24", "ground2": "22181a", "light": "ffa060", "rim": "ff4a1a", "air": "embers", "props": [
+        {"model": "nature/rock_tallA", "count": 5, "near": 2.2, "far": 5.5, "scale": 2.4, "tint": "3a2a24"},
+        {"model": "nature/cliff_block_rock", "count": 2, "near": 4, "far": 6, "scale": 2.4, "tint": "2a2020"},
+        {"model": "nature/tree_thin", "count": 4, "near": 3, "far": 6, "scale": 2.4, "tint": "1a1414"},
+        {"model": "nature/campfire_logs", "count": 2, "near": 1.6, "far": 3, "scale": 1.4}
+      ]
+    },
+    {
+      "id": "marches", "sky": "2a3a5a", "horizon": "e8c890", "ground": "5a7a3a", "ground2": "4a6232", "light": "fff0d0", "rim": "ffd080", "air": "", "props": [
+        {"model": "castle/tower-square", "count": 1, "near": 4.5, "far": 5.5, "scale": 1.4},
+        {"model": "castle/wall", "count": 2, "near": 4, "far": 5, "scale": 1.2},
+        {"model": "nature/tree_default", "count": 4, "near": 3, "far": 6, "scale": 2.2},
+        {"model": "nature/fence_simple", "count": 3, "near": 1.6, "far": 3, "scale": 1.2},
+        {"model": "town/banner-red", "count": 2, "near": 2, "far": 3, "scale": 1.3}
+      ]
+    },
+    {
+      "id": "village", "sky": "2a3448", "horizon": "e8b888", "ground": "6a7a3a", "ground2": "526232", "light": "fff0d8", "rim": "ffc080", "air": "", "props": [
+        {"model": "cc/house", "count": 2, "near": 3.2, "far": 5, "scale": 0.7},
+        {"model": "cc/timber_house", "count": 1, "near": 4, "far": 5, "scale": 0.7},
+        {"model": "nature/crops_wheatStageB", "count": 4, "near": 1.6, "far": 3.5, "scale": 1.4},
+        {"model": "nature/fence_simple", "count": 3, "near": 1.6, "far": 3, "scale": 1.2},
+        {"model": "nature/tree_oak", "count": 3, "near": 4, "far": 7, "scale": 2.2}
+      ]
+    },
+    {
+      "id": "hollow-village", "sky": "141a20", "horizon": "6a7480", "ground": "4a5040", "ground2": "363c32", "light": "c8d0e0", "rim": "b0c8ff", "air": "mist", "props": [
+        {"model": "cc/house", "count": 2, "near": 3.2, "far": 5, "scale": 0.7, "tint": "5a6070"},
+        {"model": "cc/timber_house", "count": 1, "near": 4, "far": 5, "scale": 0.7, "tint": "5a6070"},
+        {"model": "nature/crops_wheatStageB", "count": 3, "near": 1.6, "far": 3.5, "scale": 1.4, "tint": "6a7060"},
+        {"model": "nature/fence_simple", "count": 3, "near": 1.6, "far": 3, "scale": 1.2, "tint": "4a4a4a"},
+        {"model": "nature/tree_thin", "count": 4, "near": 4, "far": 7, "scale": 2.4, "tint": "2a2a2a"}
+      ]
+    },
+    {
+      "id": "streets", "sky": "0e1220", "horizon": "4a4a6a", "ground": "4a4440", "ground2": "363230", "light": "ffd8a0", "rim": "ffb050", "air": "mist", "props": [
+        {"model": "cc/townhouse", "count": 2, "near": 3, "far": 5, "scale": 0.7, "tint": "4a4a5a"},
+        {"model": "cc/tall_house", "count": 1, "near": 4, "far": 5, "scale": 0.7, "tint": "4a4a5a"},
+        {"model": "town/lantern", "count": 4, "near": 1.4, "far": 3, "scale": 1.3},
+        {"model": "town/cart", "count": 1, "near": 2.2, "far": 3, "scale": 1.2, "tint": "5a4a3a"},
+        {"model": "town/wall-block", "count": 2, "near": 2.6, "far": 4, "scale": 1.2, "tint": "5a5a5a"}
+      ]
+    },
+    {
+      "id": "tunnels", "sky": "0a0c0a", "horizon": "3a4a3a", "ground": "3a3a32", "ground2": "2a2a24", "light": "c8ffb0", "rim": "8aff6a", "air": "spores", "props": [
+        {"model": "nature/cliff_cave_stone", "count": 3, "near": 3, "far": 6, "scale": 2.2, "tint": "4a4a44"},
+        {"model": "nature/rock_tallB", "count": 4, "near": 2, "far": 4.5, "scale": 2, "tint": "4a4a44"},
+        {"model": "nature/mushroom_redGroup", "count": 4, "near": 1.2, "far": 3, "scale": 1.4, "tint": "8ad06a"},
+        {"model": "nature/log", "count": 2, "near": 1.6, "far": 3, "scale": 1.2}
+      ]
+    },
+    {
+      "id": "skyhold", "sky": "3a5a8a", "horizon": "e8f0ff", "ground": "8a8a80", "ground2": "6a6c68", "light": "ffffff", "rim": "ffe8a0", "air": "mist", "props": [
+        {"model": "nature/rock_tallC", "count": 4, "near": 2.4, "far": 5, "scale": 2.4, "tint": "9a9a90"},
+        {"model": "castle/tower-hexagon-base", "count": 1, "near": 4.5, "far": 5.5, "scale": 1.4, "tint": "c8c8c0"},
+        {"model": "castle/flag-pennant", "count": 2, "near": 2.4, "far": 3.5, "scale": 1.3},
+        {"model": "nature/platform_stone", "count": 2, "near": 2, "far": 3.5, "scale": 1.4}
+      ]
+    },
+    {
+      "id": "steppe", "sky": "2a2018", "horizon": "e0a060", "ground": "8a7a48", "ground2": "6a5c38", "light": "ffe0a0", "rim": "ff9a40", "air": "ash", "props": [
+        {"model": "nature/tent_smallOpen", "count": 3, "near": 2.2, "far": 4, "scale": 1.6, "tint": "7a5a3a"},
+        {"model": "nature/statue_ring", "count": 1, "near": 3, "far": 3.5, "scale": 1.6},
+        {"model": "nature/campfire_logs", "count": 1, "near": 1.4, "far": 1.8, "scale": 1.4},
+        {"model": "nature/tree_plateau", "count": 3, "near": 4, "far": 7, "scale": 2.4},
+        {"model": "nature/rock_smallA", "count": 4, "near": 1.4, "far": 3, "scale": 1.4}
+      ]
+    },
+    {
+      "id": "arcane", "sky": "1a0e1e", "horizon": "b04a5a", "ground": "4a3a44", "ground2": "342a32", "light": "ffd0e0", "rim": "ff4a6a", "air": "spores", "props": [
+        {"model": "castle/tower-hexagon-base", "count": 1, "near": 4, "far": 5, "scale": 1.4, "tint": "6a4a5a"},
+        {"model": "castle/tower-hexagon-mid", "count": 1, "near": 4, "far": 5, "scale": 1.4, "tint": "6a4a5a"},
+        {"model": "nature/statue_obelisk", "count": 2, "near": 2.2, "far": 4, "scale": 2.2, "tint": "5a3a4a"},
+        {"model": "nature/statue_column", "count": 3, "near": 2, "far": 4, "scale": 2.2, "tint": "6a5a64"},
+        {"model": "nature/pot_large", "count": 2, "near": 1.4, "far": 2.4, "scale": 1.2, "tint": "8a3a4a"}
+      ]
+    },
+    {
+      "id": "shore", "sky": "0e1a24", "horizon": "5a8a9a", "ground": "6a6a58", "ground2": "4a5048", "light": "c8f0ff", "rim": "5ae0d0", "air": "mist", "props": [
+        {"model": "nature/rock_largeA", "count": 4, "near": 2.2, "far": 5, "scale": 1.8, "tint": "4a5a5a"},
+        {"model": "nature/lily_large", "count": 4, "near": 1.4, "far": 3, "scale": 1.6},
+        {"model": "nature/statue_column", "count": 2, "near": 3, "far": 5, "scale": 2.2, "tint": "4a6a6a"},
+        {"model": "nature/log_large", "count": 2, "near": 1.6, "far": 3, "scale": 1.4, "tint": "4a4a3a"}
+      ]
+    }
+  ],
+  "intros": [
+    {"lineage": "red-tide", "crest": "war-axe", "field": "8f2d20", "charge": "e8c060", "scene": "warcamp", "host": "tribe", "count": 6, "chief": 1.35, "skin": "6a8a3a", "cloth": "8f2d20", "line": "Orc hosts still marching to Ghorvak's war-drum."},
+    {"lineage": "warren-clans", "crest": "goblin-head", "field": "4a5a2a", "charge": "d8c060", "scene": "peaks", "host": "tribe", "count": 7, "chief": 1.1, "skin": "8aa04a", "cloth": "5a4a2a", "line": "Goblin clans that breed faster than the passes can feed."},
+    {"lineage": "stoneking-giants", "crest": "giant", "field": "5a5048", "charge": "d8c8a0", "scene": "peaks", "host": "tribe", "count": 3, "chief": 1.8, "skin": "9a8a70", "cloth": "5a5048", "line": "The last kin of the giant kings who carved the mountains."},
+    {"lineage": "rime-giants", "crest": "frozen-orb", "field": "2a4a6a", "charge": "e0f0ff", "scene": "frozen", "host": "tribe", "count": 3, "chief": 1.8, "skin": "a8c0d8", "cloth": "2a4a6a", "line": "Frost giants who say the ice is coming back."},
+    {"lineage": "hollow-court", "crest": "crowned-skull", "field": "2a2a3a", "charge": "b8c8e8", "scene": "crypt", "host": "undead", "count": 5, "chief": 1.3, "skin": "c8c8b8", "cloth": "3a3a4a", "line": "The dead of a fallen kingdom, still sworn to its crown."},
+    {"lineage": "ninefold-dead", "crest": "pharoah", "field": "5a3a1a", "charge": "f0c060", "scene": "dunes", "host": "undead", "count": 5, "chief": 1.3, "skin": "d8c8a0", "cloth": "8a6a2a", "line": "Ashkaar's dead, who kneel once in life and again after."},
+    {"lineage": "drowned", "crest": "drowning", "field": "1a3a3a", "charge": "8ae0d0", "scene": "shore", "host": "wraiths", "count": 5, "chief": 1.3, "skin": "8aa8a0", "cloth": "2a4a4a", "line": "The drowned saints of the Coil, wanting company."},
+    {"lineage": "last-door", "crest": "key", "field": "2a1a2a", "charge": "e0b060", "scene": "streets", "host": "schemers", "count": 4, "chief": 1.15, "skin": "c8a890", "cloth": "2a1a2a", "line": "Brokers of bargains: a wish now, a door opened later."},
+    {"lineage": "broken-pact", "crest": "broken-shield", "field": "2a4a2a", "charge": "c8e8a0", "scene": "feywood", "host": "schemers", "count": 4, "chief": 1.15, "skin": "c8d8b0", "cloth": "2a4a3a", "line": "Fey oathkeepers collecting on a debt the elves broke."},
+    {"lineage": "coil-whisperers", "crest": "snake-tongue", "field": "2a3a2a", "charge": "a8d880", "scene": "fen", "host": "schemers", "count": 4, "chief": 1.15, "skin": "a8b890", "cloth": "2a3a2a", "line": "Serpent-priests buying towns one councillor at a time."},
+    {"lineage": "tyranny-broods", "crest": "dragon-breath", "field": "4a2a1a", "charge": "e8803a", "scene": "ashlands", "host": "wyrms", "count": 4, "chief": 1.4, "skin": "6a4a30", "cloth": "4a2a1a", "line": "Monsters bred as a tyrant-dragon's hounds, still loose."},
+    {"lineage": "wyrm-blood", "crest": "dragon-head", "field": "6a1a1a", "charge": "f0a040", "scene": "ashlands", "host": "wyrms", "count": 3, "chief": 1.7, "skin": "3a2a2a", "cloth": "c89030", "line": "Dragon-blooded heirs of the Old Wyrm."},
+    {"lineage": "ash-regents", "crest": "spiked-dragon-head", "field": "3a2a2a", "charge": "d8a060", "scene": "ashlands", "host": "wyrms", "count": 3, "chief": 1.6, "skin": "6a5a4a", "cloth": "3a2a2a", "line": "Young wyrms ruling a throne that no longer stands."},
+    {"lineage": "elder-wild", "crest": "oak", "field": "2a3a1a", "charge": "a8d870", "scene": "wildwood", "host": "beasts", "count": 5, "chief": 1.5, "skin": "5a4a2a", "cloth": "2a3a1a", "line": "Beasts older than the fields, wanting the clearings back."},
+    {"lineage": "marcher-pretender", "crest": "crown", "field": "3a2a5a", "charge": "e8c860", "scene": "marches", "host": "rivals", "count": 5, "chief": 1.2, "skin": "d8b090", "cloth": "3a2a5a", "line": "A marcher house that would be king on the ford."},
+    {"lineage": "corsairs", "crest": "pirate-flag", "field": "1a1a2a", "charge": "e8e0d0", "scene": "harbour", "host": "rivals", "count": 5, "chief": 1.2, "skin": "c89870", "cloth": "2a2a3a", "line": "Free Port sea-raiders who tax any road a ship can reach."},
+    {"lineage": "caravan-princes", "crest": "camel-head", "field": "6a3a1a", "charge": "f0d080", "scene": "dunes", "host": "rivals", "count": 5, "chief": 1.2, "skin": "b88860", "cloth": "8a4a1a", "line": "A desert prince who owns wells, and so owns people."},
+    {"lineage": "gnoll-packs", "crest": "hyena-head", "field": "6a4a1a", "charge": "e0b060", "scene": "steppe", "host": "beasts", "count": 6, "chief": 1.3, "skin": "8a6a3a", "cloth": "6a4a1a", "line": "Hyena-men who still eat what the orcs leave."},
+    {"lineage": "ember-kennel", "crest": "hound", "field": "5a1a0a", "charge": "ff8a3a", "scene": "forge", "host": "beasts", "count": 5, "chief": 1.4, "skin": "3a2018", "cloth": "5a1a0a", "line": "Fire-cult kennel keepers who breed hounds from coals."},
+    {"lineage": "spirit-callers", "crest": "totem-mask", "field": "3a2a1a", "charge": "c8e0a0", "scene": "steppe", "host": "cult", "count": 4, "chief": 1.2, "skin": "a87858", "cloth": "4a3a2a", "line": "River-tribe priests who call their fallen back to fight."},
+    {"lineage": "black-bough", "crest": "bowman", "field": "1a2a1a", "charge": "a8b890", "scene": "wildwood", "host": "schemers", "count": 4, "chief": 1.15, "skin": "c8a080", "cloth": "2a3a2a", "line": "Old marcher wardens, now rangers for hire."},
+    {"lineage": "forge-giants", "crest": "anvil-impact", "field": "4a2a1a", "charge": "ff9a3a", "scene": "forge", "host": "tribe", "count": 3, "chief": 1.8, "skin": "6a4a3a", "cloth": "4a2a1a", "line": "Giants forging the weapons to retake the Smith-King's holds."},
+    {"lineage": "cloud-lords", "crest": "castle", "field": "3a4a6a", "charge": "f0f0ff", "scene": "skyhold", "host": "tribe", "count": 3, "chief": 1.8, "skin": "c8c0b0", "cloth": "3a4a6a", "line": "Giant lords who lifted their castles into the sky."},
+    {"lineage": "storm-kings", "crest": "lightning-storm", "field": "1a2a4a", "charge": "a8e0ff", "scene": "shore", "host": "tribe", "count": 3, "chief": 1.8, "skin": "8a9ab0", "cloth": "1a2a4a", "line": "The eldest giants, sleeping in the sea and the storms."},
+    {"lineage": "hollow-choir", "crest": "pipe-organ", "field": "2a1a2a", "charge": "c8b8e8", "scene": "crypt", "host": "cult", "count": 5, "chief": 1.2, "skin": "c8c0b0", "cloth": "3a2a3a", "line": "Choristers singing open the grave of the Hollow King."},
+    {"lineage": "last-door-fiends", "crest": "imp-laugh", "field": "3a0a0a", "charge": "ff6a3a", "scene": "ashlands", "host": "cult", "count": 5, "chief": 1.35, "skin": "8a2a1a", "cloth": "3a0a0a", "line": "Fiends come through Caldor's door to collect."},
+    {"lineage": "drain-court", "crest": "rat", "field": "2a2a1a", "charge": "b8c870", "scene": "tunnels", "host": "rats", "count": 6, "chief": 1.6, "skin": "5a5040", "cloth": "2a2a1a", "line": "A smugglers' court in the tunnels under every town."},
+    {"lineage": "borrowed-faces", "crest": "domino-mask", "field": "3a3a4a", "charge": "d8d0c0", "scene": "hollow-village", "host": "schemers", "count": 4, "chief": 1.15, "skin": "c8b8a8", "cloth": "4a4a5a", "line": "A village wearing faces that aren't its own."},
+    {"lineage": "white-pass", "crest": "mountain-road", "field": "3a5a7a", "charge": "f0f8ff", "scene": "frozen", "host": "beasts", "count": 5, "chief": 1.5, "skin": "d8e0e8", "cloth": "3a5a7a", "line": "Beasts set to keep the high passes, still keeping them."},
+    {"lineage": "chitter-hives", "crest": "ant", "field": "4a3a1a", "charge": "d8a050", "scene": "tunnels", "host": "crawlers", "count": 6, "chief": 1.8, "skin": "5a4020", "cloth": "4a3a1a", "line": "Hives woken by dwarven miners, eating their way up."},
+    {"lineage": "silk-mother", "crest": "spider-alt", "field": "2a1a3a", "charge": "c8a8ff", "scene": "spider-ruin", "host": "spiders", "count": 5, "chief": 2.0, "skin": "3a2a3a", "cloth": "5a3a6a", "line": "A spider goddess's temple, older than the dunes."},
+    {"lineage": "grey-pilgrims", "crest": "ringing-bell", "field": "3a3a3a", "charge": "c8c8b0", "scene": "hollow-village", "host": "undead", "count": 6, "chief": 1.2, "skin": "a8a898", "cloth": "5a5a50", "line": "A plague procession still ringing the Long Night's bells."},
+    {"lineage": "carnival-court", "crest": "jester-hat", "field": "4a1a4a", "charge": "f0c0f0", "scene": "feywood", "host": "schemers", "count": 5, "chief": 1.2, "skin": "d8c8d0", "cloth": "6a2a6a", "line": "A fey revel that takes a tithe of the merry."},
+    {"lineage": "false-lamp", "crest": "lantern-flame", "field": "3a2a1a", "charge": "f0c050", "scene": "village", "host": "priests", "count": 5, "chief": 1.2, "skin": "d8b090", "cloth": "5a4a2a", "line": "A church of a lamp the Lantern Mother never lit."},
+    {"lineage": "cage-merchants", "crest": "cage", "field": "4a2a1a", "charge": "d8b060", "scene": "dunes", "host": "merchants", "count": 4, "chief": 1.2, "skin": "b88860", "cloth": "6a3a1a", "line": "Monster sellers who loose the unsold on the road."},
+    {"lineage": "kraken-choir", "crest": "kraken-tentacle", "field": "0a2a3a", "charge": "5ae0d0", "scene": "shore", "host": "cult", "count": 5, "chief": 1.2, "skin": "6a9a9a", "cloth": "1a3a4a", "line": "Singers calling something up from under the drowned temples."},
+    {"lineage": "unfinished-works", "crest": "gears", "field": "3a3a2a", "charge": "d8b060", "scene": "tunnels", "host": "rivals", "count": 4, "chief": 1.3, "skin": "8a8a80", "cloth": "4a4a3a", "line": "A walled-up gnome workshop, opened again."},
+    {"lineage": "ash-writ", "crest": "torch", "field": "3a1a0a", "charge": "f08a3a", "scene": "village", "host": "knights", "count": 5, "chief": 1.2, "skin": "c8a080", "cloth": "3a2a1a", "line": "Witch hunters who hold every mage to be a door."},
+    {"lineage": "river-folk", "crest": "wheat", "field": "3a5a2a", "charge": "f0d070", "scene": "village", "host": "folk", "count": 5, "chief": 1.1, "skin": "d8a880", "cloth": "4a6a3a", "line": "River farmers, wanting a strong town between them and the hills."},
+    {"lineage": "march-halflings", "crest": "acorn", "field": "5a4a1a", "charge": "e8d080", "scene": "village", "host": "folk", "count": 5, "chief": 1.0, "skin": "e0b890", "cloth": "6a5a2a", "line": "Halflings of the Marches, who remember who fed them."},
+    {"lineage": "deep-realm", "crest": "dwarf-face", "field": "3a2a1a", "charge": "e8c060", "scene": "peaks", "host": "dwarves", "count": 5, "chief": 1.15, "skin": "c89070", "cloth": "5a3a2a", "line": "Dwarves who want their deep halls back."},
+    {"lineage": "first-leaves", "crest": "beech", "field": "1a3a2a", "charge": "d8f0a0", "scene": "wildwood", "host": "druids", "count": 5, "chief": 1.15, "skin": "e0d0b8", "cloth": "2a4a2a", "line": "The elves' old court, keepers of the forest."},
+    {"lineage": "deep-gnomes", "crest": "lantern-flame", "field": "2a2a3a", "charge": "a8d0ff", "scene": "tunnels", "host": "merchants", "count": 5, "chief": 1.0, "skin": "a8a8b0", "cloth": "3a3a4a", "line": "Gnomes who map every tunnel and sell every map."},
+    {"lineage": "fen-folk", "crest": "lizardman", "field": "2a3a1a", "charge": "b8d870", "scene": "fen", "host": "rivals", "count": 5, "chief": 1.15, "skin": "6a8a4a", "cloth": "3a4a2a", "line": "Lizardfolk, the drowned Coil's last servants."},
+    {"lineage": "dawn-templars", "crest": "sun", "field": "5a4a1a", "charge": "fff0a0", "scene": "crypt", "host": "knights", "count": 5, "chief": 1.2, "skin": "d8b090", "cloth": "e8e0c8", "line": "Keepers of the Dawn Gate, who keep the dead down."},
+    {"lineage": "free-port-folk", "crest": "anchor", "field": "1a3a5a", "charge": "f0e0b0", "scene": "harbour", "host": "merchants", "count": 5, "chief": 1.1, "skin": "c89870", "cloth": "2a4a6a", "line": "Free traders who want no crown over them."},
+    {"lineage": "frost-jarls", "crest": "viking-helmet", "field": "2a3a5a", "charge": "e0e8f0", "scene": "frozen", "host": "folk", "count": 5, "chief": 1.2, "skin": "e8c8b0", "cloth": "4a5a6a", "line": "The Frost-Sworn halls, honouring strength and refusing tribute."},
+    {"lineage": "sunpaw-clans", "crest": "cat", "field": "6a4a1a", "charge": "f0d080", "scene": "dunes", "host": "schemers", "count": 5, "chief": 1.15, "skin": "c8a060", "cloth": "8a5a2a", "line": "Tomb-cats of Ashkaar, selling the secrets of the sands."},
+    {"lineage": "kestrine-eyries", "crest": "feathered-wing", "field": "3a4a6a", "charge": "f0e0c0", "scene": "skyhold", "host": "druids", "count": 5, "chief": 1.1, "skin": "c8a070", "cloth": "4a5a7a", "line": "Bird-folk nesting in the giants' empty halls."},
+    {"lineage": "hollow-legion", "crest": "knight-banner", "field": "3a3a3a", "charge": "c8d8f0", "scene": "crypt", "host": "knights", "count": 5, "chief": 1.2, "skin": "a8a8a0", "cloth": "4a4a5a", "line": "Temple guards woken to keep an oath."},
+    {"lineage": "oasis-heirs", "crest": "palm-tree", "field": "1a4a4a", "charge": "f0d890", "scene": "dunes", "host": "merchants", "count": 5, "chief": 1.1, "skin": "c89060", "cloth": "2a6a6a", "line": "Caravan folk of the oasis cities, Ashkaar's grandchildren."},
+    {"lineage": "black-ledger", "crest": "open-book", "field": "1a1a1a", "charge": "d8b040", "scene": "streets", "host": "merchants", "count": 4, "chief": 1.15, "skin": "d8b090", "cloth": "2a2a2a", "line": "Moneylenders who want every debt in their book."},
+    {"lineage": "compass-lodge", "crest": "compass", "field": "2a3a5a", "charge": "e8d090", "scene": "marches", "host": "folk", "count": 5, "chief": 1.15, "skin": "d8b090", "cloth": "3a4a6a", "line": "Road-openers clearing Caldor's old roads for pay."},
+    {"lineage": "crown-league", "crest": "watchtower", "field": "2a2a6a", "charge": "f0d060", "scene": "marches", "host": "knights", "count": 5, "chief": 1.2, "skin": "d8b090", "cloth": "2a2a6a", "line": "A league of towns answering one another's beacons."},
+    {"lineage": "ash-inquisitors", "crest": "burning-book", "field": "3a1a1a", "charge": "f0a050", "scene": "village", "host": "priests", "count": 5, "chief": 1.2, "skin": "d8b090", "cloth": "4a2a2a", "line": "Inquisitors who make casters answer for Caldor's fall."},
+    {"lineage": "dawn-wardens", "crest": "sun", "field": "5a4a2a", "charge": "fff0b0", "scene": "crypt", "host": "knights", "count": 5, "chief": 1.2, "skin": "d8b090", "cloth": "f0e8d0", "line": "Knights of the Dawn Gate, sworn against the dead."},
+    {"lineage": "gilded-scale", "crest": "scales", "field": "5a4a0a", "charge": "f8e080", "scene": "harbour", "host": "merchants", "count": 5, "chief": 1.15, "skin": "d8b090", "cloth": "6a5a1a", "line": "The Free Port guilds: fair weight, fair price."},
+    {"lineage": "hollow-choir-faction", "crest": "pipe-organ", "field": "2a1a2a", "charge": "c8b8e8", "scene": "crypt", "host": "cult", "count": 4, "chief": 1.2, "skin": "c8c0b0", "cloth": "3a2a3a", "line": "Court singers of a dead king, wanting the grave opened."},
+    {"lineage": "lanternbearers", "crest": "lantern-flame", "field": "1a2a3a", "charge": "f0d890", "scene": "streets", "host": "schemers", "count": 4, "chief": 1.15, "skin": "d8b090", "cloth": "2a3a4a", "line": "Hidden servants of the Lantern Mother, against every tyrant."},
+    {"lineage": "quiet-hand", "crest": "hand", "field": "1a1a1a", "charge": "c8c8c8", "scene": "streets", "host": "schemers", "count": 5, "chief": 1.15, "skin": "c8a080", "cloth": "2a2a2a", "line": "Wharf-thieves who want a cut of everything."},
+    {"lineage": "silent-knife", "crest": "hooded-assassin", "field": "2a1a1a", "charge": "d0c0a0", "scene": "dunes", "host": "schemers", "count": 4, "chief": 1.15, "skin": "c8a070", "cloth": "2a1a1a", "line": "Mask-killers keeping Ashkaar's trade in quiet deaths."},
+    {"lineage": "thornward-circle", "crest": "thorny-vine", "field": "1a3a1a", "charge": "c8e890", "scene": "wildwood", "host": "druids", "count": 5, "chief": 1.15, "skin": "d8b090", "cloth": "2a4a2a", "line": "Druids keeping the old pact between field and forest."},
+    {"lineage": "unshut-book", "crest": "book-cover", "field": "3a2a4a", "charge": "e0c8f0", "scene": "arcane", "host": "mages", "count": 4, "chief": 1.15, "skin": "d8b090", "cloth": "4a3a5a", "line": "Scholars of everything Caldor forgot."},
+    {"lineage": "wolfsbane-company", "crest": "wolf-howl", "field": "3a3a2a", "charge": "d8d0b0", "scene": "marches", "host": "rivals", "count": 6, "chief": 1.2, "skin": "d8a880", "cloth": "4a4a3a", "line": "Veteran sellswords who broke the Red Tide."},
+    {"lineage": "ember-court", "crest": "dragon-head", "field": "6a1a0a", "charge": "f0b040", "scene": "ashlands", "host": "wyrms", "count": 3, "chief": 1.8, "skin": "2a1a1a", "cloth": "e8b040", "line": "The Old Wyrm's last daughter and her court."},
+    {"lineage": "mire-grandmothers", "crest": "cauldron", "field": "2a3a2a", "charge": "b8e08a", "scene": "fen", "host": "witches", "count": 3, "chief": 1.15, "skin": "8a9a7a", "cloth": "3a4a3a", "line": "Three old women in the fens who trade in names."},
+    {"lineage": "vermilion-conclave", "crest": "fire-ring", "field": "5a0a1a", "charge": "ff8a8a", "scene": "arcane", "host": "mages", "count": 5, "chief": 1.2, "skin": "d8b090", "cloth": "8a1a2a", "line": "Caldor's surviving court wizards, wanting a throne to stand behind."}
+  ]
+}
