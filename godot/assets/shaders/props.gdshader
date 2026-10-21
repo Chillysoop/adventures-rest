@@ -11,6 +11,7 @@ varying vec3 skin;
 varying float up;
 
 void vertex() {
+	VERTEX = blow(VERTEX, UV, UV2, MODEL_MATRIX, TIME);
 	wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	skin = INSTANCE_CUSTOM.rgb;
 	up = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz).y;

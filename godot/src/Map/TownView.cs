@@ -355,10 +355,48 @@ public partial class TownView(MapView map) : Node3D
             }
     }
 
+    /// <summary>How far standing crops bend in the wind, per unit of their height (MeshKit.Sway).</summary>
+    private const float CropSway = 0.7f;
+
+    /// <summary>Kenney's crops come untextured (white wheat, teal corn): ripe gold and leaf green, keeping their shading.</summary>
+    private static readonly Func<Color, Color> Wheat = c => new Color("d4ad4a") * (0.8f + 0.2f * c.Luminance);
+    private static readonly Func<Color, Color> Corn = c => new Color("6c9a36") * (0.8f + 0.2f * c.Luminance);
+
     private static void Chimney(MeshKit k, float x, float y, float z, bool smoke = false)
     {
         k.Box(new Vector3(x, y, z), new Vector3(0.22f, 0.9f, 0.22f), new Color("8a8070"), new Color("3a3430"));
-        if (smoke) k.Box(new Vector3(x, y + 0.9f, z), new Vector3(0.12f, 0.02f, 0.12f), new Color("ff8a3a", MeshKit.Flag.Ember));
+        if (!smoke) return;
+        k.Box(new Vector3(x, y + 0.9f, z), new Vector3(0.12f, 0.02f, 0.12f), new Color("ff8a3a", MeshKit.Flag.Ember));
+        Smoke(k, new Vector3(x, y + 0.98f, z), 0.1f, x + z);
+    }
+
+    private static readonly Color SmokeGrey = new("cfcac2", 0.9f);
+
+    /// <summary>Three puffs of smoke on a loop out of a chimney top (MeshKit.Puff), each a third of the way behind the last.</summary>
+    private static void Smoke(MeshKit k, Vector3 top, float r, float seed)
+    {
+        float start = Geo.Hash((int)(seed * 977));
+        for (int i = 0; i < 3; i++) k.Puff(top, r * (1 - i * 0.12f), start + i / 3f, SmokeGrey.Darkened(i * 0.05f));
+    }
+
+    /// <summary>Where the crafted homes' chimneys stand (x, z in model space; tools/blender_houses.py), topped by smoke at their highest point.</summary>
+    private static readonly Dictionary<string, Vector2[]> CraftedChimneys = new()
+    {
+        ["house"] = [new(0.23f, -0.1f)],
+        ["timber_house"] = [new(-0.27f, -0.12f)],
+        ["townhouse"] = [new(-0.121f, -0.21f), new(0.279f, -0.21f)],
+        ["tall_house"] = [new(-0.236f, -0.258f), new(0.064f, -0.258f), new(0.364f, -0.258f)],
+        ["tenement"] = [new(-0.26f, -0.15f), new(0.26f, -0.2f)],
+        ["manor"] = [new(-0.36f, -0.26f), new(0.36f, -0.26f)],
+    };
+
+    /// <summary>The top of a crafted chimney: the highest point of the model within a chimney's width of it.</summary>
+    private static Vector3 ChimneyTop(Model m, Vector2 at)
+    {
+        float top = 0;
+        foreach (var p in m.Verts)
+            if (new Vector2(p.X, p.Z).DistanceSquaredTo(at) < 0.0049f) top = Mathf.Max(top, p.Y);
+        return new Vector3(at.X, top + 0.03f, at.Y);
     }
 
     private static Color RoofOf(int v) => Palette.Roofs[v % Palette.Roofs.Length];
@@ -370,7 +408,10 @@ public partial class TownView(MapView map) : Node3D
     private static void Crafted(MeshKit k, string id, int v)
     {
         var roof = id == "manor" ? (v % 2 == 0 ? Slate : new Color("6e4a3a")) : RoofOf(v + (id == "house" ? 0 : 1));
-        k.Add("cc/" + id, MeshKit.At(0, 0, 0, 0, 1), RoofPaint(roof));
+        var model = Models.Get("cc/" + id);
+        k.Add(model, MeshKit.At(0, 0, 0, 0, 1), RoofPaint(roof));
+        if (CraftedChimneys.TryGetValue(id, out var chimneys))
+            for (int i = 0; i < chimneys.Length; i++) Smoke(k, ChimneyTop(model, chimneys[i]), 0.055f, v + i * 0.37f);
     }
 
     /// <summary>Repaints a crafted model's roof faces, baked as (1, 0, shade), in a roof colour at that shade.</summary>
@@ -565,9 +606,11 @@ public partial class TownView(MapView map) : Node3D
     {
         // Rows of wheat and a small barn.
         k.Box(new Vector3(0, 0.005f, 0), new Vector3(0.96f, 0.02f, 0.96f), new Color("7a5e3a"));
+        k.Sway = CropSway;
         for (int r = 0; r < 3; r++)
             for (int c = 0; c < 2; c++)
-                k.Add(v % 2 == 0 ? "nature/crops_wheatStageB" : "nature/crops_cornStageC", MeshKit.At(-0.3f + c * 0.3f, 0, -0.32f + r * 0.32f, 0, v % 2 == 0 ? 0.55f : 0.35f));
+                k.Add(v % 2 == 0 ? "nature/crops_wheatStageB" : "nature/crops_cornStageC", MeshKit.At(-0.3f + c * 0.3f, 0, -0.32f + r * 0.32f, 0, v % 2 == 0 ? 0.55f : 0.35f), v % 2 == 0 ? Wheat : Corn);
+        k.Sway = 0;
         k.Push(MeshKit.At(0.3f, 0, 0.12f, Mathf.Pi / 2, K * 0.75f));
         Walls(k, 2, 1, 0, false, v + 41, true);
         k.Push(MeshKit.At(0, 1, 0));
@@ -601,9 +644,11 @@ public partial class TownView(MapView map) : Node3D
     {
         // Tall hop poles strung with bines over a strip of barley, and an oast house with its cowled kiln.
         k.Box(new Vector3(0, 0.005f, 0), new Vector3(0.96f, 0.02f, 0.96f), new Color("8a7040"));
+        k.Sway = CropSway;
         for (int r = 0; r < 2; r++)
             for (int c = 0; c < 2; c++)
-                k.Add("nature/crops_wheatStageB", MeshKit.At(-0.32f + c * 0.26f, 0, 0.18f + r * 0.24f, 0, 0.45f));
+                k.Add("nature/crops_wheatStageB", MeshKit.At(-0.32f + c * 0.26f, 0, 0.18f + r * 0.24f, 0, 0.45f), Wheat);
+        k.Sway = 0;
         var bine = new Color("5a8a2e");
         for (int r = 0; r < 3; r++)
         {
