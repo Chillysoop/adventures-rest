@@ -50,6 +50,7 @@
     "tryAgain": ["Rested and healed, they go back in to finish what they started. {site} is ready for them this time.", "At first light they try again. The defenders have had time to prepare too."],
     "giveUp": ["Twice beaten, they know when the place is beyond them."]
   },
+  "ranges": { "_doc": "Mountain walls between the far rings, broken only at passes: at sites in their line and a few more (Roads.Ranges). Days but arc in degrees.", "kind": "range", "fromRing": 3, "perGap": [1, 2], "arc": [40, 90], "depth": [0.3, 0.45], "passes": [1, 2], "passHalf": 0.3, "least": 0.8 },
   "kinds": [
     {
       "id": "ridge",
@@ -169,20 +170,29 @@
       "ambush": 0.3,
       "habitats": ["mountain"],
       "ambushText": ["something nests on the summits and comes down for them", "rocs wheel above the peaks"]
-    }
+    },
+    {"id": "range", "name": "mountain wall", "through": "over", "barrier": "sheer", "names": ["the {A} Wall", "the {A} Spine", "the {A}teeth Range", "the {A} Barrier"], "words": ["Iron", "Grey", "Giant's", "Storm", "Dragon", "Black", "Frost", "Thunder", "Long", "Broken"], "slow": 1.0, "danger": 1.0, "hazard": {"skill": "hazard", "dc": 14, "die": 10, "text": ["a storm on the high wall that throws them against the rock", "a cornice gives way under the leader"]}, "ambush": 0.35, "habitats": ["mountain"], "ambushText": ["something that nests on the wall drops on them", "giants on the heights roll stones down the pass"]},
+    {"id": "beastland", "name": "hunting grounds", "through": "through", "wide": 1.7, "names": ["the {A} Hunting Grounds", "the {A} Run", "the {A} Wilds", "the {A}fang Range"], "words": ["Wolf", "Boar", "Bear", "Blood", "Howling", "Red", "Wild", "Savage", "Bone", "Antler"], "slow": 1.15, "danger": 1.8, "hazard": {"skill": "perception", "dc": 13, "die": 6, "text": ["fresh tracks bigger than a cart wheel", "a kill left out as bait"]}, "ambush": 0.8, "habitats": ["grassland", "forest", "hills"], "ambushText": ["the pack has been pacing them for a mile", "something big comes out of the long grass", "they walk straight into the beasts' feeding ground"]},
+    {"id": "monsterland", "name": "monster haunts", "through": "through", "wide": 1.5, "names": ["the {A} Haunts", "the {A} Lairlands", "the Maw of {A}", "the {A} Hollows"], "words": ["Hungry", "Black", "Gnawing", "Cursed", "Screaming", "Rotting", "Venom", "Bone", "Shadow", "Wyrm"], "slow": 1.2, "danger": 2.1, "hazard": {"skill": "perception", "dc": 14, "die": 8, "text": ["the bones of the last party to try it", "nests in every hollow"]}, "ambush": 0.85, "habitats": ["swamp", "caves", "mountain", "badlands", "ruins"], "ambushText": ["the hollow they camp in is somebody's lair", "a monster's brood boils out of the ground", "the ground itself opens its mouth"]}
   ],
   "themes": {
-    "greenmarch": ["tangle", "gorge", "barrows", "lake"],
-    "thornwood": ["tangle", "tangle", "mire"],
-    "highpeaks": ["ridge", "ridge", "gorge", "peaks"],
-    "deeproads": ["gorge", "ridge", "peaks"],
-    "crownruins": ["barrows", "tangle", "gorge"],
+    "greenmarch": ["tangle", "gorge", "barrows", "lake", "beastland", "beastland"],
+    "thornwood": ["tangle", "tangle", "mire", "beastland", "beastland"],
+    "highpeaks": ["ridge", "ridge", "gorge", "peaks", "monsterland"],
+    "deeproads": ["gorge", "ridge", "peaks", "monsterland"],
+    "crownruins": ["barrows", "tangle", "gorge", "monsterland"],
     "ashenbarrows": ["barrows", "barrows", "mire"],
-    "mirefen": ["mire", "mire", "tangle", "lake"],
-    "saltreach": ["mire", "gorge", "lake"],
-    "rimefell": ["icefield", "ridge", "peaks"],
-    "duneglass": ["waste", "waste", "gorge"],
-    "cinderwastes": ["waste", "ridge"],
-    "feyfringe": ["tangle", "mire", "lake"]
+    "mirefen": ["mire", "mire", "tangle", "lake", "monsterland"],
+    "saltreach": ["mire", "gorge", "lake", "beastland", "beastland"],
+    "rimefell": ["icefield", "ridge", "peaks", "beastland", "beastland"],
+    "duneglass": ["waste", "waste", "gorge", "monsterland"],
+    "cinderwastes": ["waste", "ridge", "monsterland"],
+    "feyfringe": ["tangle", "mire", "lake", "beastland"],
+    "drownedempire": ["mire", "lake", "monsterland", "gorge"],
+    "titanfield": ["barrows", "ridge", "beastland", "gorge", "beastland"],
+    "stormcoast": ["ridge", "peaks", "gorge", "beastland", "beastland"],
+    "kingsbones": ["waste", "barrows", "monsterland"],
+    "hellbreach": ["waste", "ridge", "monsterland", "monsterland"],
+    "spellscar": ["waste", "gorge", "barrows", "monsterland"]
   }
 }

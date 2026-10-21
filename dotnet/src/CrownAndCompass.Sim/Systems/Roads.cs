@@ -81,6 +81,7 @@ public static class Roads
         var rules = town.Content.Roads;
         var w = town.Content.World;
         var spots = town.Sites.Select(s => World.Spot(town, s)).ToList();
+        Ranges(town, rng, spots);
         foreach (var region in town.Regions)
         {
             if (!rules.Themes.TryGetValue(region.Theme.Id, out var ids) || ids.Count == 0) continue;
@@ -91,7 +92,7 @@ public static class Roads
                 if (kind == null) continue;
                 for (int tries = 0; tries < 10; tries++)
                 {
-                    double arc = region.Arc * (rules.Arc[0] + rng.Next() * (rules.Arc[^1] - rules.Arc[0]));
+                    double arc = Math.Min(region.Arc * 0.95, region.Arc * (rules.Arc[0] + rng.Next() * (rules.Arc[^1] - rules.Arc[0])) * kind.Wide);
                     double bearing = (region.Bearing + (rng.Next() - 0.5) * 0.8 * region.Arc + 360) % 360;
                     // The open ground along this arc between the sites that lie on it: hard country fills a gap.
                     var reaches = spots
@@ -126,6 +127,72 @@ public static class Roads
                     town.Terrain.Add(f);
                     break;
                 }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Mountain walls in the gaps between the far rings (<see cref="RangeRules"/>), each cut into stretches by its passes:
+    /// one wherever a site stands in its line, and a few more. A party on foot goes through a pass or the long way round.
+    /// </summary>
+    public static void Ranges(Town town, Rng rng, List<(double X, double Y)> spots)
+    {
+        var rr = town.Content.Roads.Ranges;
+        var kind = town.Content.Roads.Kinds.FirstOrDefault(k => k.Id == rr.Kind);
+        var rings = town.Content.World.Rings;
+        if (kind == null) return;
+        for (int ring = rr.FromRing; ring + 1 < rings.Count; ring++)
+        {
+            // The wall runs between the sites of this ring and the next.
+            double mid = (rings[ring].Days * 1.12 + 0.14 + rings[ring + 1].Days * 0.82) / 2;
+            int walls = rng.Range(rr.PerGap[0], rr.PerGap[^1] + 1);
+            for (int n = 0; n < walls; n++)
+            {
+                double span = rr.Arc[0] + rng.Next() * (rr.Arc[^1] - rr.Arc[0]);
+                double centre = rng.Next() * 360;
+                double depth = rr.Depth[0] + rng.Next() * (rr.Depth[^1] - rr.Depth[0]);
+                double inner = Js.Round((mid - depth / 2) * 100) / 100.0, outer = Js.Round((mid + depth / 2) * 100) / 100.0;
+                double half = rr.PassHalf / mid * 180 / Math.PI;
+                // Passes, as offsets in degrees from the wall's west end: at the sites in its line, then a few anywhere inside it.
+                var cuts = new List<double>();
+                foreach (var p in spots)
+                {
+                    double r = Math.Sqrt(p.X * p.X + p.Y * p.Y);
+                    if (r < inner - rr.PassHalf || r > outer + rr.PassHalf) continue;
+                    double off = AngleDiff(Math.Atan2(p.X, -p.Y) * 180 / Math.PI, centre) + span / 2;
+                    if (off > -half && off < span + half) cuts.Add(off);
+                }
+                int extra = rng.Range(rr.Passes[0], rr.Passes[^1] + 1);
+                for (int k = 0; k < extra; k++) cuts.Add(span * (0.15 + rng.Next() * 0.7));
+                cuts.Sort();
+                string name = Name(rng, kind);
+                double from = 0, least = rr.Least / mid * 180 / Math.PI;
+                var stretches = new List<Feature>();
+                foreach (double c in cuts.Append(span + half))
+                {
+                    double to = Math.Min(span, c - half);
+                    if (to - from >= least)
+                    {
+                        double bearing = (centre - span / 2 + (from + to) / 2 + 720) % 360;
+                        var region = town.Regions.Where(g => g.Ring == ring).OrderBy(g => Math.Abs(AngleDiff(g.Bearing, bearing))).ThenBy(g => g.Id).FirstOrDefault();
+                        stretches.Add(new Feature
+                        {
+                            Id = town.Terrain.Count + stretches.Count,
+                            Name = name,
+                            Kind = kind,
+                            RegionId = region?.Id ?? 0,
+                            Tier = TierAt(town, outer),
+                            Bearing = Js.Round(bearing * 10) / 10.0,
+                            Arc = Js.Round((to - from) * 10) / 10.0,
+                            Inner = inner,
+                            Outer = outer,
+                        });
+                    }
+                    from = Math.Max(from, c + half);
+                }
+                // A wall needs a pass to be a choke point, and must not stand on a site or across other hard country.
+                if (stretches.Count < 2 || stretches.Any(f => spots.Any(p => Contains(f, p.X, p.Y, 0.18)) || town.Terrain.Any(o => Overlaps(o, f)))) continue;
+                town.Terrain.AddRange(stretches);
             }
         }
     }
@@ -269,6 +336,18 @@ public static class Roads
         for (int v = from[1]; v > 0; v = from[v]) path.Add(nodes[v]);
         path.Reverse();
         return path;
+    }
+
+    /// <summary>Whether a way from <paramref name="start"/> by <paramref name="via"/> to <paramref name="end"/> meets the river anywhere.</summary>
+    private static bool Wades(Town town, P start, IEnumerable<P> via, P end)
+    {
+        var cur = start;
+        foreach (var p in via.Append(end))
+        {
+            if (Passage.MeetsRiver(town, (cur.X, cur.Y), (p.X, p.Y)) != null) return true;
+            cur = p;
+        }
+        return false;
     }
 
     private static double PathLength(P start, IEnumerable<P> via, P end)
@@ -448,6 +527,8 @@ public static class Roads
                 }
                 continue;
             }
+            // The way round would wade the river this stretch keeps to its own side of: through it is the only way.
+            if (!forced && around.Count > 0 && (mind.Ways & Ways.River) == 0 && Wades(town, cur, around, goal)) around = [];
             if (forced || around.Count == 0)
             {
                 path.Add(new Waypoint { X = entry.X, Y = entry.Y });

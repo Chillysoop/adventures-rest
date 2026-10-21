@@ -329,7 +329,7 @@ public enum Outcome
 public sealed class Town
 {
     /// <summary>Tiles on a side: the old town in the middle, then the walled ring, then the outer wards (<see cref="Systems.City"/>).</summary>
-    public const int Grid = 48;
+    public const int Grid = 96;
 
     public string Name { get; } = "Briarford";
     public int Seed { get; }
@@ -683,6 +683,11 @@ public sealed class Town
     internal Dictionary<int, int>? Present;
     [NotSaved]
     internal int? PresentWasAt;
+    /// <summary>The decree and institution yield of each good, worked out once an hour (<see cref="Systems.Economy"/>).</summary>
+    [NotSaved]
+    internal double[]? HourYields;
+    [NotSaved]
+    internal int HourYieldsAt = -1;
 
     public List<Building> Taverns => Buildings.Where(b => b.Complete && b.Def.Venue && !b.Closed && !b.ForSale).ToList();
 

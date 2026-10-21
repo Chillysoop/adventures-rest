@@ -1,7 +1,7 @@
 // Shared by every world shader: the fog of war, the strategic (inked map) view and the night.
 uniform sampler2D fog_tex : filter_linear, repeat_disable;
 uniform sampler2D noise_tex : filter_linear_mipmap, repeat_enable;
-uniform float world_size = 1024.0;
+uniform float world_size = 2048.0;
 uniform float night = 0.0;
 uniform float strategic = 0.0;
 // The painted look (MapView.Painted): banded cel light, rim, richer colour.

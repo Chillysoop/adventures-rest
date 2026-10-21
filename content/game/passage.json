@@ -2,7 +2,7 @@
   "walls": { "wall": 0.35, "moat": 1.6, "gateIn": 0.8, "gateOut": 0.8, "round": 0.4 },
   "cliffs": {
     "_doc": "Plateaus with sheer cliffs round the town (Systems/Cliffs.cs), in the near wilds past the town's plan. Tiles but for riverClear and siteClear (days). Walkers and roads go round them or up their ramps.",
-    "count": 4, "distance": [32, 48], "radius": [5, 9], "height": [3.2, 5], "face": 0.8,
+    "count": 4, "distance": [66, 90], "radius": [5, 9], "height": [3.2, 5], "face": 0.8,
     "rampWidth": 1.4, "rampLength": 6, "twoRamps": 7,
     "planClear": 1.5, "riverClear": 0.04, "siteClear": 0.04, "apart": 6, "roadArc": 0.45
   },

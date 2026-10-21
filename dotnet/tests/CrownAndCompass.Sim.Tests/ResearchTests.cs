@@ -34,7 +34,10 @@ public class ResearchTests
                     case "book": Assert.Contains(p[1], r.Schools); break;
                     case "known": Assert.NotNull(r.Discovery(p[1])); break;
                     case "tier": Assert.Contains(c.City.Tiers, x => x.Id == p[1]); break;
-                    case "books" or "wizard" or "circle": break;
+                    case "found": Assert.Contains(p[1], new[] { "lair", "settlement", "company", "caravan", "font", "ruin" }); break;
+                    case "slain": Assert.Contains(c.Library.Monsters, m => m.Type.Equals(p[1], StringComparison.OrdinalIgnoreCase)); break;
+                    case "ally": Assert.Contains(c.Powers.Powers, x => x.Id == p[1]); break;
+                    case "books" or "wizard" or "circle" or "routes" or "delves" or "cleared" or "heroes" or "hero": break;
                     default: Assert.Fail($"{d.Id}: unknown token {token}"); break;
                 }
             }
@@ -52,18 +55,28 @@ public class ResearchTests
         // Three shepherds spark hardy flocks.
         foreach (var a in t.Residents.Where(a => a.Hero == null).OrderBy(a => a.Id).Take(3)) a.Profession = "shepherd";
         sim.RunDays(1);
+        // The idea takes shape over days before it is revealed.
+        Assert.DoesNotContain("hardy-flocks", t.Research.Revealed.Keys);
+        Assert.Equal(1, t.Research.Leads["hardy-flocks"].Days);
+        sim.RunDays(Research.BrewDays(t, Research.Def(t, "hardy-flocks")) - 1);
         Assert.Contains("hardy-flocks", t.Research.Revealed.Keys);
+        Assert.DoesNotContain("hardy-flocks", t.Research.Leads.Keys);
         Assert.Contains("shepherds", t.Research.Revealed["hardy-flocks"]);
+        Assert.Equal(Sparks.Newcomer, t.Research.RevealIcon["hardy-flocks"]);
+        Assert.Contains(t.Research.Feed, n => n.Text.Contains("hardy flocks"));
 
+        // Gold can't buy a study: setting the scholars to it costs nothing.
         t.Treasury += 5000;
         double before = t.Treasury;
         Assert.True(sim.StudyDiscovery("hardy-flocks"));
         Assert.False(sim.StudyDiscovery("hardy-flocks"));
         Assert.False(sim.StudyDiscovery("the-great-working"));
-        Assert.Equal(before - Research.Commission(t, Research.Def(t, "hardy-flocks")), t.Treasury, 3);
+        Assert.Equal(before, t.Treasury, 3);
         Assert.True(sim.FundResearch(3));
         Assert.True(Research.Lore(t) > 0);
         double wool = Decrees.Yield(t, Good.Wool);
+        // A bare town's clerks alone are slow; a scholar's finds carry the work.
+        Research.Insight(t, Sparks.Book, "a test", Research.LoreCost(t, Research.Def(t, "hardy-flocks")) - 10);
         for (int d = 0; d < 600 && !Research.IsKnown(t, "hardy-flocks"); d++)
         {
             // The council spends freely; keep the scholars paid.
@@ -107,7 +120,7 @@ public class ResearchTests
         Assert.Equal(3, Research.Circle(t));
         Assert.Equal(3 + 5, Research.Power(t));
         // Plant growth needs a book of transmutation and the third circle; it is revealed by the book.
-        sim.RunDays(1);
+        sim.RunDays(Research.BrewDays(t, Research.Def(t, "plant-growth")));
         Assert.Contains("plant-growth", t.Research.Revealed.Keys);
         Assert.True(Research.Available(t, Research.Def(t, "plant-growth")));
         w.Hero!.Level = 3;
@@ -157,5 +170,44 @@ public class ResearchTests
         for (int d = 0; d < 60 && t.Research.Study == null && t.Research.Known.Count == 0; d++) sim.RunDays(1);
         Assert.True(t.Research.Funding > 0);
         Assert.True(t.Research.Study != null || t.Research.Known.Count > 0);
+    }
+
+    [Fact]
+    public void FindsInTheWildsMoveTheScholarsAndRevealIdeas()
+    {
+        var sim = Player();
+        var t = sim.Town;
+        sim.RunDays(1);
+        // Idle scholars bank the notes for their next study.
+        Research.Insight(t, Sparks.Wilds, "a test", 30);
+        Assert.Equal(30, t.Research.Notes, 6);
+        // A company that brings down the undead sparks grave wards, which takes shape over days.
+        t.Research.Slain["undead"] = 1;
+        t.Research.Slayers["undead"] = "the Grey Lanterns at the Barrow";
+        sim.RunDays(Research.BrewDays(t, Research.Def(t, "grave-wards")));
+        Assert.Equal("the Grey Lanterns at the Barrow", t.Research.Revealed["grave-wards"]);
+        Assert.Equal(Sparks.Slain, t.Research.RevealIcon["grave-wards"]);
+        Assert.True(sim.StudyDiscovery("grave-wards"));
+        Assert.Equal(0, t.Research.Notes);
+        Assert.True(t.Research.Progress["grave-wards"] >= 30);
+        // Insight goes straight into the study under way, and shows in the feed.
+        double had = t.Research.Progress["grave-wards"];
+        Research.Insight(t, Sparks.Book, "a book", 12);
+        Assert.Equal(had + 12, t.Research.Progress["grave-wards"], 6);
+        Assert.Equal(12, t.Research.Feed[^1].Lore);
+    }
+
+    [Fact]
+    public void SlainSparksCountWhatCompaniesBroughtDown()
+    {
+        var sim = Player();
+        var t = sim.Town;
+        sim.RunDays(1);
+        var site = t.Sites.First(s => Sparks.CreatureType(t, s.Def.Boss.Monster).Length > 0);
+        string type = Sparks.CreatureType(t, site.Def.Boss.Monster);
+        Assert.Equal(new Spark(false, $"a slain {type}", Sparks.Slain), Sparks.Check(t, $"slain:{type}"));
+        t.Research.Slain[type] = 1;
+        Assert.True(Sparks.Check(t, $"slain:{type}").Holds);
+        Assert.False(Sparks.Check(t, $"slain:{type}:2").Holds);
     }
 }
