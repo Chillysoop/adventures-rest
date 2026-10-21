@@ -340,6 +340,7 @@ public static class Watch
             if (!s.Arrived && town.Tick >= s.ArriveTick && s.LeaveTick >= s.ArriveTick)
             {
                 s.Arrived = true;
+                Discovery.AtSite(town, s.SiteId, Discovery.Scouted);
                 if (s.Mirror)
                 {
                     town.Mirrors.Add(new Mirror { SiteId = s.SiteId, PlacedTick = s.ArriveTick, PlacedBy = hero.Id });

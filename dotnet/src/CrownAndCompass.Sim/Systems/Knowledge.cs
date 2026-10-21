@@ -90,6 +90,7 @@ public static class Knowledge
         if (casterId == null && Watch.FreeScryingsLeft(town) > 0)
         {
             town.FreeScryingsUsed++;
+            Discovery.AtSite(town, siteId, Discovery.Scried);
             var free = new Scrying(siteId, 0, town.Tick, end);
             town.Scryings.Add(free);
             town.Log(LedgerCategory.Quest, Importance.Notable, $"The water in the Scrying Pool stills and shows {site.Def.Name}. For {hours} hours the town can watch it.");
@@ -108,6 +109,7 @@ public static class Knowledge
         if (offer.Price == ScryPrice.Favour) Loyalty.Sway(caster, -k.ScryPrice.FavourLoyalty);
         var scry = new Scrying(siteId, caster.Id, town.Tick, end);
         town.Scryings.Add(scry);
+        Discovery.AtSite(town, siteId, Discovery.Scried);
         string who = $"{caster.Name} the {caster.Hero.Cls.Name}";
         string terms = offer.Price switch
         {
