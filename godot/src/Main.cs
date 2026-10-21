@@ -586,6 +586,8 @@ public partial class Main : Control
         SyncOrders();
         SyncGuide();
         SyncGoals();
+        SyncGoalPointer(_clockReal >= _nextGoalPoint);
+        if (_clockReal >= _nextGoalPoint) _nextGoalPoint = _clockReal + 0.25;
         SyncStories(delta);
         SyncFinds();
         SyncClockStops();

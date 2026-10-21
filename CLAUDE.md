@@ -121,7 +121,9 @@
   can outline part of the HUD (`point`), wait for the player (`until`: a client event, `tab:X`, or `count:<any Town
   list>`) and hold back until it is relevant (`when`: `count:X`, `day:N`, `alert:<key>`), so new systems rarely need
   client code (`godot/src/Guide.cs`). Keep step ids stable: players who finished the tutorial are shown steps with new
-  ids as "New in this build". The main menu is `godot/src/Title.cs` (`--title`, `--tutorial start|<step-id>` for shots).
+  ids as "New in this build". Early-game direction is the charter goals (`content/game/goals.json`, `Systems/Goals.cs`):
+  each goal's `point` (any tutorial anchor, `tab:X`, `zone:<Zone>`, `place:<building>`) rings the button for the next goal with an
+  arrow whenever no tutorial step is showing (`SyncGoalPointer` in `godot/src/Guide.cs`). The main menu is `godot/src/Title.cs` (`--title`, `--tutorial start|<step-id>` for shots).
 - Look: the painted style is the default (`MapView.Painted`: cel bands in `light()` via `cel()` in common.gdshaderinc, ink outline
   `ink.gdshader` as the props/foliage next_pass, glow, haze; `--style classic` for the old look, `--clean` hides the HUD in shots).
   MeshKit faces must wind outward (the outline inks inside-out parts black). Homes are modelled in Blender from code

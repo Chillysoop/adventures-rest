@@ -44,6 +44,7 @@ public partial class Main
         ring.ShadowSize = 10;
         _outline.AddThemeStyleboxOverride("panel", ring);
         AddChild(_outline);
+        BuildGoalPointer();
 
         _guideCard = new PanelContainer { Visible = false, CustomMinimumSize = new Vector2(340, 0), ZIndex = 5 };
         _guideCard.AddThemeStyleboxOverride("panel", Castle.Oak(20, 16));
@@ -203,6 +204,74 @@ public partial class Main
         _guideNext.Disabled = false;
     }
 
+    // ---------- The goal pointer: the charter goal to work on next, and the button that does it ----------
+
+    private Panel _goalRing = null!;
+    private Label _goalArrow = null!;
+    private Control? _goalTarget;
+    private string _goalPoint = "";
+    private double _nextGoalPoint;
+
+    private void BuildGoalPointer()
+    {
+        _goalRing = new Panel { MouseFilter = MouseFilterEnum.Ignore, Visible = false, ZIndex = 5 };
+        var ring = Ui.Box(new Color(Ui.Gold, 0.04f), Ui.Gold, 10, 2);
+        ring.ShadowColor = new Color(Ui.Gold, 0.35f);
+        ring.ShadowSize = 8;
+        _goalRing.AddThemeStyleboxOverride("panel", ring);
+        AddChild(_goalRing);
+        _goalArrow = Ui.Label("▼", Ui.Gold, Ui.Bold, 22);
+        _goalArrow.MouseFilter = MouseFilterEnum.Ignore;
+        _goalArrow.Visible = false;
+        _goalArrow.ZIndex = 5;
+        _goalArrow.AddThemeConstantOverride("outline_size", 6);
+        _goalArrow.AddThemeColorOverride("font_outline_color", new Color(0, 0, 0, 0.7f));
+        AddChild(_goalArrow);
+    }
+
+    /// <summary>
+    /// Every frame, after the goals card: ring the button the next charter goal needs (the Build button, then the brush;
+    /// a dock tab) with a bobbing arrow beside it. It gives way to the tutorial, whose own outline would be a second
+    /// thing to look at, and to windows and menus.
+    /// </summary>
+    private void SyncGoalPointer(bool check)
+    {
+        bool tutorial = _guideCard.Visible || _outline.Visible;
+        if (check || _goalTarget == null)
+        {
+            var next = _goalsCard.Visible && !tutorial ? CrownAndCompass.Sim.Systems.Goals.Next(_sim.Town) : null;
+            _goalPoint = next?.Point ?? "";
+            _goalTarget = _goalPoint == "" ? null : GuideTarget(_goalPoint);
+        }
+        var target = _goalsCard.Visible && !tutorial && _goalTarget != null && _goalTarget.IsVisibleInTree() ? _goalTarget : null;
+        _goalRing.Visible = _goalArrow.Visible = target != null;
+        if (target == null) return;
+        var r = target.GetGlobalRect().Grow(4);
+        _goalRing.Position = r.Position;
+        _goalRing.Size = r.Size;
+        float pulse = (float)Math.Abs(Math.Sin(_clockReal * 2.6));
+        _goalRing.Modulate = new Color(1, 1, 1, 0.5f + 0.5f * pulse);
+        float bob = 4 + 6 * pulse;
+        var size = _goalArrow.GetMinimumSize();
+        // Rail tabs sit at the left edge: point at them from the right. Anything else: from above, or below near the top.
+        if (r.Position.X < RailWidth + Gap)
+        {
+            _goalArrow.Text = "◀";
+            _goalArrow.Position = new Vector2(r.End.X + bob, r.GetCenter().Y - size.Y / 2);
+        }
+        else if (r.Position.Y > size.Y + 16)
+        {
+            _goalArrow.Text = "▼";
+            _goalArrow.Position = new Vector2(r.GetCenter().X - size.X / 2, r.Position.Y - size.Y - bob);
+        }
+        else
+        {
+            _goalArrow.Text = "▲";
+            _goalArrow.Position = new Vector2(r.GetCenter().X - size.X / 2, r.End.Y + bob);
+        }
+        _goalArrow.ResetSize();
+    }
+
     private Control? GuideTarget(string point)
     {
         Control? c = point switch
@@ -228,6 +297,7 @@ public partial class Main
             _ when point.StartsWith("tray:", StringComparison.Ordinal) && _trayButtons.TryGetValue(point[5..], out var tb) => _trayOpen == point[5..] ? _drawer : tb.Button,
             "siege" => _siegeBanner,
             "goals" => _goalsCard,
+            _ when point.StartsWith("zone:", StringComparison.Ordinal) || point.StartsWith("place:", StringComparison.Ordinal) => BuildTarget(point),
             _ when point.StartsWith("tab:", StringComparison.Ordinal) && Enum.TryParse<Tab>(point[4..], out var tab) && _tabButtons.TryGetValue(tab, out var b) => TabAnchor(tab, b),
             _ => null,
         };

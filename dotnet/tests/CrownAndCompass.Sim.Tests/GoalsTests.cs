@@ -22,16 +22,41 @@ public class GoalsTests
             // Small: the stand-in mayor meets these too, and the sweep must not move.
             Assert.True(g.Gold <= 30 && g.Mandate <= 5 && g.Festival <= 2, $"goal {g.Id} pays too much");
         }
+        // Every goal with a button points at one that is on screen, and its icon exists.
+        var tabs = TutorialTests.ClientTabs();
+        var icons = Path.Combine(Repo(), "godot", "assets", "icons");
+        foreach (var g in rules.Goals)
+        {
+            Assert.True(PointKnown(t, g.Point, tabs), $"goal {g.Id} points at \"{g.Point}\", which is not on screen");
+            Assert.True(g.When == "" || Goals.Measure(t, g.When) != null, $"goal {g.Id} waits on \"{g.When}\", which means nothing");
+            Assert.True(g.Icon == "" || File.Exists(Path.Combine(icons, g.Icon + ".svg")), $"goal {g.Id} shows icon \"{g.Icon}\", which is not in godot/assets/icons");
+        }
+        Assert.Equal(rules.Goals[0].Id, Goals.Next(t)?.Id);
         // A new town starts with nothing met: the first goals are open and not yet done.
         Assert.Equal(rules.Goals.Take(rules.Shown).Select(g => g.Id), Goals.Open(t).Select(g => g.Id));
         Assert.All(Goals.Open(t), g => Assert.True(Goals.Progress(t, g).Now < g.Target, $"goal {g.Id} is met before the town has done anything"));
     }
+
+    private static string Repo([System.Runtime.CompilerServices.CallerFilePath] string here = "") =>
+        Path.GetFullPath(Path.Combine(Path.GetDirectoryName(here)!, "..", "..", ".."));
+
+    private static bool PointKnown(Town t, string point, List<string> tabs) =>
+        point == "" || Tutorial.Anchors.Contains(point)
+        || (point.StartsWith("tab:", StringComparison.Ordinal) && tabs.Contains(point[4..]))
+        || (point.StartsWith("zone:", StringComparison.Ordinal) && Enum.TryParse<Zone>(point[5..], out var z) && z != Zone.None)
+        || (point.StartsWith("place:", StringComparison.Ordinal) && t.Content.Buildings.Any(b => b.Id == point[6..] && b.Civic));
 
     [Fact]
     public void AGoalIsMetOncePaysOnceAndShowsTheNext()
     {
         var sim = Player();
         var t = sim.Town;
+        // The painting goals before it, as if met.
+        foreach (var g in t.Content.Goals.Goals.TakeWhile(g => g.Id != "first-bounty"))
+        {
+            t.Goals.Done.Add(g.Id);
+            t.Goals.DoneDay.Add(0);
+        }
         Goals.Hourly(t);
         Assert.DoesNotContain("first-bounty", t.Goals.Done);
         Assert.NotNull(sim.PostBounty("wolfwood", 40));
@@ -41,10 +66,10 @@ public class GoalsTests
         Assert.Contains("first-bounty", t.Goals.Done);
         var def = t.Content.Goals.Goals.First(g => g.Id == "first-bounty");
         Assert.Equal(Math.Min(100, mandate + def.Mandate), t.Mandate);
-        Assert.Single(t.Ledger.Entries, e => e.Text.StartsWith("Charter goal met: Post your first bounty", StringComparison.Ordinal));
+        Assert.Single(t.Ledger.Entries, e => e.Text.StartsWith("Charter goal met: Post a bounty", StringComparison.Ordinal));
         Assert.DoesNotContain(Goals.Open(t), g => g.Id == "first-bounty");
         Assert.Equal(t.Content.Goals.Shown, Goals.Open(t).Count);
-        Assert.Contains(Goals.Open(t), g => g.Id == t.Content.Goals.Goals[t.Content.Goals.Shown].Id);
+        Assert.Equal(t.Content.Goals.Goals.Where(g => !t.Goals.Done.Contains(g.Id)).Take(t.Content.Goals.Shown), Goals.Open(t));
 
         // Gold rewards go on the books under their own account, once.
         double gold = t.Treasury;

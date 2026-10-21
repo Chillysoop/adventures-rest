@@ -192,6 +192,23 @@ public partial class Main
         _map.Swallow = true;
     }
 
+    /// <summary>
+    /// Where to click next for a build-bar item ("zone:Residential", "place:watch_house"): the Build button while the bar is
+    /// shut, the item's group while another shows, then the item's own button. Null when the town can't build it yet.
+    /// </summary>
+    private Control? BuildTarget(string point)
+    {
+        bool zone = point.StartsWith("zone:", StringComparison.Ordinal);
+        string id = zone ? point[5..] : point[6..];
+        bool Is(BuildItem i) => zone ? i.Zone?.ToString() == id && i.Density == 0 : i.Building == id;
+        if (!_buildBar.Visible) return _buildToggle;
+        foreach (var (item, b) in _buildButtons)
+            if (Is(item)) return b;
+        foreach (var g in Enum.GetValues<BuildGroup>())
+            if (g != _buildGroup && BuildItems(g).Any(Is)) return _groupButtons[g];
+        return null;
+    }
+
     private void ShowBuildGroup(BuildGroup g)
     {
         _buildGroup = g;

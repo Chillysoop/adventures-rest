@@ -1,15 +1,19 @@
 {
-  "_doc": "The charter goals of a new town's first days (Systems/Goals.cs): an ordered list, `shown` open at a time. A goal is met when its measure reaches its target; it pays its small reward once (gold, mandate, festival days of good cheer) and the next one shows. A goal with `gain` counts only what is added after it shows. Measures: households, tier (0 thorp, 1 hamlet, 2 village), built:<building id>, painted:<Zone> (whole tiles of that zone, built on or not), watch (watchmen, a watch house counting as one), or any tutorial measure (count:<Town list>, zoned...). Past `lapse` days the list closes unfinished, quietly. Keep rewards small: the stand-in mayor meets these too.",
+  "_doc": "The charter goals of a new town's first days (Systems/Goals.cs): an ordered list, `shown` open at a time. A goal is met when its measure reaches its target; it pays its small reward once (gold, mandate, festival days of good cheer) and the next one shows. A goal with `gain` counts only what is added after it shows. Measures: households, tier (0 thorp, 1 hamlet, 2 village), built:<building id>, painted:<Zone> (whole tiles of that zone, built on or not), watch (watchmen, a watch house counting as one), decided (motions the mayor signed or vetoed), motions (waiting on the mayor), or any tutorial measure (count:<Town list>, zoned...). Past `lapse` days the list closes unfinished, quietly. Keep rewards small: the stand-in mayor meets these too. `point` is the button the card points at while the goal is the next one with a point (a tutorial anchor, tab:<Tab>, zone:<Zone> for that brush, place:<building>); `when` is a measure that must be above 0 before it points (motions: one is waiting); `icon` is from godot/assets/icons. Keep text to a few words.",
   "shown": 3,
   "lapse": 30,
   "goals": [
-    { "id": "paint-homes", "text": "Paint more land for homes", "label": "New home land (tiles)", "measure": "painted:Residential", "target": 8, "gain": true, "gold": 15 },
-    { "id": "first-bounty", "text": "Post your first bounty", "label": "Bounties", "measure": "count:Bounties", "target": 1, "mandate": 3 },
-    { "id": "tavern", "text": "Get a tavern built", "label": "Taverns", "measure": "built:tavern", "target": 1, "gold": 20 },
-    { "id": "households-20", "text": "Grow to 20 households", "label": "Households", "measure": "households", "target": 20, "festival": 1 },
-    { "id": "watch", "text": "Build a watch house", "label": "Watch houses", "measure": "built:watch_house", "target": 1, "mandate": 3 },
-    { "id": "hamlet", "text": "Raise the hamlet charter (30 households, a tavern, 60 gold)", "label": "Charter", "measure": "tier", "target": 1, "gold": 25 },
-    { "id": "granary", "text": "Raise a granary for the village charter", "label": "Granaries", "measure": "built:granary", "target": 1, "gold": 20 },
-    { "id": "households-45", "text": "Grow to 45 households", "label": "Households", "measure": "households", "target": 45, "mandate": 2, "festival": 1 }
+    { "id": "paint-homes", "icon": "population", "text": "Paint homes", "label": "Tiles", "measure": "painted:Residential", "target": 8, "gain": true, "gold": 15, "point": "zone:Residential" },
+    { "id": "paint-shops", "icon": "gold", "text": "Paint shops", "label": "Tiles", "measure": "painted:Commercial", "target": 4, "gain": true, "gold": 10, "point": "zone:Commercial" },
+    { "id": "sow-field", "icon": "bread", "text": "Sow a field", "label": "Tiles", "measure": "painted:Farmland", "target": 4, "gain": true, "gold": 10, "point": "zone:Farmland" },
+    { "id": "first-bounty", "icon": "tab-bounties", "text": "Post a bounty", "label": "Bounties", "measure": "count:Bounties", "target": 1, "mandate": 3, "point": "tab:Bounties" },
+    { "id": "council-motion", "icon": "tab-council", "text": "Sign or veto a motion", "label": "Motions", "measure": "decided", "target": 1, "mandate": 2, "point": "tab:Council", "when": "motions" },
+    { "id": "tavern", "icon": "ale", "text": "Get a tavern built", "label": "Taverns", "measure": "built:tavern", "target": 1, "gold": 20, "point": "zone:Commercial" },
+    { "id": "explore", "icon": "act-explore", "text": "Send explorers", "label": "Expeditions", "measure": "count:Commissions", "target": 1, "gold": 10, "point": "tab:Bounties" },
+    { "id": "households-20", "icon": "population", "text": "Grow to 20 households", "label": "Households", "measure": "households", "target": 20, "festival": 1 },
+    { "id": "watch", "icon": "defence", "text": "Build a watch house", "label": "Watch houses", "measure": "built:watch_house", "target": 1, "mandate": 3, "point": "place:watch_house" },
+    { "id": "hamlet", "icon": "mandate", "text": "Raise the hamlet charter", "label": "Charter", "measure": "tier", "target": 1, "gold": 25, "point": "tab:City" },
+    { "id": "granary", "icon": "food", "text": "Raise a granary", "label": "Granaries", "measure": "built:granary", "target": 1, "gold": 20, "point": "place:granary" },
+    { "id": "households-45", "icon": "population", "text": "Grow to 45 households", "label": "Households", "measure": "households", "target": 45, "mandate": 2, "festival": 1 }
   ]
 }
