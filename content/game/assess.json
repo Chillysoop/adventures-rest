@@ -64,6 +64,8 @@
     "owed": { "unit": 1, "sign": 1, "icon": "heroes", "name": "heroes" },
     "curse": { "unit": 1, "sign": 1, "icon": "heroes", "name": "heroes" },
     "weregild": { "unit": 1, "sign": 1, "icon": "unrest", "name": "unrest" },
+    "egg": { "unit": 1, "sign": 0, "icon": "lore", "name": "the egg" },
+    "ranger": { "unit": 1, "sign": 0, "icon": "heroes", "name": "the dark ranger" },
     "edge": { "unit": 1, "sign": 1, "icon": "heroes", "name": "the party" },
     "partyHurt": { "unit": 3, "sign": -1, "icon": "heroes", "name": "the party" },
     "rest": { "unit": 3, "sign": 1, "icon": "heroes", "name": "the party" },

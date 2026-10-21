@@ -100,7 +100,7 @@ public partial class Main
             };
             return new[]
             {
-                $"[b]The {Ui.Esc(e.Name)}[/b] {Ui.C(Ui.Gold, $"[font_size=11]{Ui.Esc(e.Tier)}[/font_size]")}\n{Ui.C(Ui.Ink2, $"[font_size=11]{makeup}[/font_size]")}",
+                $"{Shield(t, e.Name)}[b]The {Ui.Esc(e.Name)}[/b] {Ui.C(Ui.Gold, $"[font_size=11]{Ui.Esc(e.Tier)}[/font_size]")}\n{Ui.C(Ui.Ink2, $"[font_size=11]{makeup}[/font_size]")}",
                 $"{e.Ready}/{e.Members.Count}",
                 $"[b]{e.Power}[/b]",
                 Ui.C(e.Loyalty < 35 ? Ui.Bad : Ui.Ink, Js.Str(Math.Round(e.Loyalty))),
@@ -197,6 +197,14 @@ public partial class Main
     }
 
     /// <summary>The picked company: who rides with it, its record and latest deeds, and the jobs the council could offer it.</summary>
+    /// <summary>A company's arms as a small shield: its field colour, with its metal for the badge.</summary>
+    private static string Shield(Town t, string company, int size = 14)
+    {
+        if (t.Content.Heraldry.Tinctures.Count == 0) return "";
+        var a = Heraldry.Of(t.Content, company);
+        return $"[font_size={size}][color=#{a.Field.Hex.TrimStart('#')}]■[/color][/font_size][font_size={size - 4}][color=#{a.Metal.Hex.TrimStart('#')}]✦[/color][/font_size] ";
+    }
+
     private void RenderPick(Pane p, Town t, RosterEntry e)
     {
         var r = t.Content.World.Intel;
@@ -225,7 +233,9 @@ public partial class Main
         string deeds = c == null || c.Deeds.Count == 0 ? "" :
             "\n" + Ui.C(Ui.Ink2, "[font_size=12]Latest good deeds:[/font_size]") + "\n" +
             string.Join("\n", c.Deeds.AsEnumerable().Reverse().Take(4).Select(d => Ui.C(Ui.Good, $"[font_size=12]Day {d.Day}: {Ui.Esc(d.What)}[/font_size]")));
-        p.Card($"[b]The {Ui.Esc(e.Name)}[/b]  {Tag(word, color)}{sulk}\n{Ui.C(Ui.Ink2, $"[font_size=12]{where}[/font_size]")}\n[font_size=13]{members}[/font_size]" +
+        var arms = Heraldry.Of(t.Content, e.Name);
+        string banner = $"\n{Shield(t, e.Name, 18)}{Ui.C(Ui.Ink2, $"[font_size=12][i]{Ui.Esc(arms.Blazon)}[/i], {Ui.Esc(Heraldry.Worn(c?.Wear ?? 0))}[/font_size]")}";
+        p.Card($"[b]The {Ui.Esc(e.Name)}[/b]  {Tag(word, color)}{sulk}{banner}\n{Ui.C(Ui.Ink2, $"[font_size=12]{where}[/font_size]")}\n[font_size=13]{members}[/font_size]" +
                (record.Count > 0 ? $"\n{Ui.C(Ui.Ink2, $"[font_size=12]{string.Join(" · ", record)}[/font_size]")}" : "") + deeds, Ui.Gold);
         p.Meter("Relation", e.Relation, Js.Str(Math.Round(e.Relation)), e.Relation < r.RefuseBelow);
         var home = e.Members.Where(m => !m.IsAway).ToList();

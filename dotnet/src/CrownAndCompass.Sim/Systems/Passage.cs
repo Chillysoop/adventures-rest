@@ -16,6 +16,9 @@ public enum Ways
 
     /// <summary>Sheer heights: climbing them like a spider, or flying.</summary>
     Sheer = 4,
+
+    /// <summary>The open sky: only wings, a flying spell or an airship reach the isles that float above the wilds.</summary>
+    Air = 8,
 }
 
 /// <summary>
@@ -76,6 +79,39 @@ public sealed record MountDef
     /// <summary>A spell that calls it for free (a paladin's steed), or "".</summary>
     public string Spell { get; init; } = "";
     public IReadOnlyList<string> Text { get; init; } = [];
+
+    /// <summary>Classes it is sold to (an owl for those who work by night), or every class when empty.</summary>
+    public IReadOnlyList<string> Classes { get; init; } = [];
+
+    /// <summary>
+    /// A beast that chooses its rider and is never sold (a giant eagle): the daily chance one comes to the town, and the
+    /// renown a hero needs before it will look at them twice. It takes the most renowned, never one more feared than famed.
+    /// </summary>
+    public double Chooses { get; init; }
+    public double Renown { get; init; }
+
+    /// <summary>A wild beast only won by taming it out where it lives (<see cref="TameDef"/>), never bought.</summary>
+    public TameDef? Tame { get; init; }
+
+    /// <summary>Kinds of hard country it carries a rider through at an easy pace (a snow bear on the ice), and how much of the slowness it takes off.</summary>
+    public IReadOnlyList<string> Eases { get; init; } = [];
+    public double Ease { get; init; }
+
+    /// <summary>Hit points it adds to its rider's side in a fight, as a beast that fights beside them.</summary>
+    public int Fights { get; init; }
+}
+
+/// <summary>How a wild mount is won: met crossing its country, and calmed with an Animal Handling check or a spell.</summary>
+public sealed record TameDef
+{
+    public IReadOnlyList<string> Terrain { get; init; } = [];
+
+    /// <summary>Chance a crossing meets one, the check's DC, and the spells that win one over without a roll.</summary>
+    public double Meet { get; init; } = 0.35;
+    public int Dc { get; init; } = 15;
+    public IReadOnlyList<string> Spells { get; init; } = [];
+    public IReadOnlyList<string> Won { get; init; } = [];
+    public IReadOnlyList<string> Lost { get; init; } = [];
 }
 
 public sealed record RiverRules
@@ -658,6 +694,8 @@ public static class Passage
             {
                 k++;
                 y += dir * (r.Spacing[0] + Hash(town.Seed, 100 + k) * (r.Spacing[^1] - r.Spacing[0]));
+                // Never in the middle of a lake or a range of peaks the river runs through: on down the water past it.
+                while (Math.Abs(y) <= r.Length - 0.5 && town.Terrain.Any(f => f.Kind.Barrier != "" && Roads.Contains(f, At(y).X, At(y).Y, town.Content.Roads.Margin * 1.5))) y += dir * 0.04;
                 if (Math.Abs(y) > r.Length - 0.5) break;
                 var p = At(y);
                 bool ford = Hash(town.Seed, 200 + k) < r.Fords;
@@ -800,6 +838,7 @@ public static class Passage
                 "river" => Ways.River,
                 "water" => Ways.Water | Ways.River,
                 "sheer" => Ways.Sheer,
+                "air" => Ways.Air,
                 _ => Ways.None,
             };
         return w;
@@ -843,7 +882,7 @@ public static class Passage
     public static Ways Abilities(Town town, IReadOnlyList<Agent> members)
     {
         if (members.Count == 0) return Ways.None;
-        Ways all = Ways.River | Ways.Water | Ways.Sheer, carried = Ways.None;
+        Ways all = Ways.River | Ways.Water | Ways.Sheer | Ways.Air, carried = Ways.None;
         foreach (var m in members)
         {
             var (self, party) = Of(town, m);
@@ -877,6 +916,7 @@ public static class Passage
         if ((w & Ways.Water) != 0) bits.Add("rivers and lakes");
         else if ((w & Ways.River) != 0) bits.Add("rivers anywhere, not just at fords");
         if ((w & Ways.Sheer) != 0) bits.Add("sheer heights");
+        if ((w & Ways.Air) != 0) bits.Add("the open sky");
         return string.Join(", ", bits);
     }
 
@@ -885,6 +925,7 @@ public static class Passage
     {
         "water" => Ways.Water,
         "sheer" => Ways.Sheer,
+        "air" => Ways.Air,
         _ => Ways.None,
     };
 
@@ -915,11 +956,12 @@ public static class Passage
     /// A company setting out whose road meets water or heights it can't cross on its own takes a free airship from the
     /// sky dock, out and home again; the mind it plans with then crosses what the ship does.
     /// </summary>
-    public static RouteMind Board(Town town, Party party, RouteMind mind, (double X, double Y) from, (double X, double Y) to)
+    public static RouteMind Board(Town town, Party party, RouteMind mind, (double X, double Y) from, (double X, double Y) to, bool aloft = false)
     {
         var r = Rules(town).Airship;
         var ship = Parse(r.Ways);
-        if (ship == Ways.None || (Meets(town, from, to) & ~mind.Ways) == Ways.None || AirshipsFree(town) <= 0) return mind;
+        var meets = Meets(town, from, to) | (aloft ? Ways.Air : Ways.None);
+        if (ship == Ways.None || (meets & ~mind.Ways) == Ways.None || AirshipsFree(town) <= 0) return mind;
         party.Airship = true;
         if (r.Text.Count > 0)
         {
@@ -928,6 +970,10 @@ public static class Passage
         }
         return Aboard(town, party, mind);
     }
+
+    /// <summary>A floating isle needs every member to fly (a mount, a spell or an item), or a free airship to carry them.</summary>
+    public static bool CanReach(Town town, IReadOnlyList<Agent> members, SiteState site) =>
+        !site.Def.Aloft || (Abilities(town, members) & Ways.Air) != 0 || (Parse(Rules(town).Airship.Ways) & Ways.Air) != 0 && AirshipsFree(town) > 0;
 
     /// <summary>The mind of a company with an airship under it: it crosses what the ship does.</summary>
     public static RouteMind Aboard(Town town, Party party, RouteMind mind)
@@ -944,7 +990,8 @@ public static class Passage
 
     /// <summary>
     /// Once a day: heroes in town get mounts. A paladin calls a steed when they can cast for one; a hero rich enough buys a
-    /// riding horse, and a seasoned one a griffon where the Griffon Roost sells them. A hero keeps the best they have had.
+    /// riding horse, and a seasoned one a griffon (or an owl, for those who work by night) where the Griffon Roost sells them.
+    /// Now and then a giant eagle comes to the roost and chooses the most renowned hero. A hero keeps the best they have had.
     /// </summary>
     public static void Daily(Town town)
     {
@@ -958,7 +1005,8 @@ public static class Passage
             foreach (var m in r.Mounts.OrderByDescending(Rank).ThenBy(m => m.Id, StringComparer.Ordinal))
             {
                 if (Rank(m) <= haveRank) break;
-                if (h.Level < m.Level) continue;
+                if (h.Level < m.Level || m.Chooses > 0 || m.Tame != null) continue;
+                if (m.Classes.Count > 0 && !m.Classes.Contains(h.Cls.Id)) continue;
                 if (m.Institution != "" && (Institutions.Find(town, m.Institution) is not { } inst || inst.Shut)) continue;
                 bool called = false;
                 if (m.Spell != "")
@@ -973,15 +1021,93 @@ public static class Passage
                     a.Gold -= m.Price;
                     if (m.Institution != "" && Institutions.Find(town, m.Institution) is { BuildingId: int bid }) town.Building(bid).Cash += m.Price;
                 }
-                h.Mount = m.Id;
-                if (m.Text.Count > 0)
-                    town.Log(LedgerCategory.Quest, called || m.Ways.Contains("sheer") ? Importance.Notable : Importance.Routine,
-                        m.Text[(int)(Hash(town.Seed, a.Id * 31 + town.Day) * m.Text.Count) % m.Text.Count].Replace("{hero}", a.Name, StringComparison.Ordinal), [a.Id]);
+                Ride(town, a, m, called || m.Ways.Contains("sheer") ? Importance.Notable : Importance.Routine);
                 break;
             }
         }
+        foreach (var m in r.Mounts.Where(m => m.Chooses > 0).OrderBy(m => m.Id, StringComparer.Ordinal)) Choose(town, m);
     }
 
+    /// <summary>A hero takes a mount: theirs from now on, told in the Ledger (and on a card when it is one worth telling).</summary>
+    public static void Ride(Town town, Agent a, MountDef m, Importance importance, string? line = null)
+    {
+        a.Hero!.Mount = m.Id;
+        line ??= m.Text.Count > 0 ? m.Text[(int)(Hash(town.Seed, a.Id * 31 + town.Day) * m.Text.Count) % m.Text.Count] : "";
+        if (line == "") return;
+        line = line.Replace("{hero}", a.Name, StringComparison.Ordinal).Replace("{given}", a.GivenName, StringComparison.Ordinal);
+        town.Log(LedgerCategory.Quest, importance, line, [a.Id]);
+        if (importance >= Importance.Notable && m.Ways.Contains("air")) Moments.Mounted(town, a, m, line);
+    }
+
+    /// <summary>
+    /// A beast that picks its own rider (a giant eagle) comes to the roost on its day and looks the heroes over: it takes
+    /// the most renowned one it would carry, and none at all if nobody in town is famous enough or all are more feared.
+    /// </summary>
+    private static void Choose(Town town, MountDef m)
+    {
+        if (m.Institution != "" && (Institutions.Find(town, m.Institution) is not { } inst || inst.Shut)) return;
+        if (Hash(town.Seed, town.Day * 7919 + m.Id.Length * 104729) >= m.Chooses) return;
+        var rank = Rank(m);
+        var pick = town.Heroes
+            .Where(a => !a.IsAway && !a.Dead && !a.Departed && a.Hero!.Level >= m.Level && a.Hero.Renown >= m.Renown && a.Hero.Infamy < a.Hero.Renown)
+            .Where(a => a.Hero!.Mount == "" || Rules(town).Mount(a.Hero.Mount) is not { } had || Rank(had) < rank)
+            .OrderByDescending(a => a.Hero!.Renown)
+            .ThenBy(a => a.Id)
+            .FirstOrDefault();
+        if (pick != null) Ride(town, pick, m, Importance.Major);
+    }
+
+    /// <summary>
+    /// A party crossing a wild mount's country may meet one (a snow bear on the ice): whoever has none as good tries to win
+    /// it over, with a spell that charms beasts or an Animal Handling check. Rolls on the venture's dice. Returns the telling.
+    /// </summary>
+    public static List<string> Taming(Town town, Rng rng, IReadOnlyList<Agent> party, string terrain)
+    {
+        var said = new List<string>();
+        var lib = town.Content.Library;
+        foreach (var m in Rules(town).Mounts.Where(m => m.Tame != null && m.Tame.Terrain.Contains(terrain)).OrderBy(m => m.Id, StringComparer.Ordinal))
+        {
+            var t = m.Tame!;
+            if (!rng.Chance(t.Meet)) continue;
+            double rank = Rank(m);
+            foreach (var a in party.OrderBy(a => a.Id))
+            {
+                var h = a.Hero;
+                if (h == null || a.Dead || (h.Mount != "" && Rules(town).Mount(h.Mount) is { } had && Rank(had) >= rank)) continue;
+                string? spell = h.Cls.Magic == "" ? null : t.Spells.FirstOrDefault(id => lib.Spell(id) is { } sp && sp.Classes.Contains(h.Cls.Id) && h.Level >= SlotLevel(h.Cls.Magic, Math.Max(1, sp.Level)));
+                int roll = rng.D20();
+                bool won = spell != null || roll + Skills.Bonus(town, a, "animal-handling") >= t.Dc;
+                var lines = won ? t.Won : t.Lost;
+                if (lines.Count > 0)
+                    said.Add(rng.Pick(lines).Replace("{hero}", a.GivenName, StringComparison.Ordinal).Replace("{beast}", m.Name, StringComparison.Ordinal)
+                        .Replace("{how}", spell != null ? $"with {Library.Prose(lib.Spell(spell)!.Name)}" : $"with a slow hand and a steady voice (Animal Handling {roll + Skills.Bonus(town, a, "animal-handling")})", StringComparison.Ordinal));
+                if (won)
+                {
+                    h.Mount = m.Id;
+                    break;
+                }
+            }
+        }
+        return said;
+    }
+
+    /// <summary>How much of a hard country's slowness a party's mounts take off: the least any one of them gets, so none is left behind.</summary>
+    public static double Eased(Town town, IReadOnlyList<Agent> members, string terrain)
+    {
+        if (members.Count == 0) return 0;
+        double least = 1;
+        foreach (var a in members)
+        {
+            var m = a.Hero?.Mount is { Length: > 0 } id ? Rules(town).Mount(id) : null;
+            least = Math.Min(least, m != null && m.Eases.Contains(terrain) ? m.Ease : 0);
+        }
+        return least;
+    }
+
+    /// <summary>Hit points a hero's mount brings to a fight beside them.</summary>
+    public static int Fights(Town town, Agent a) => a.Hero?.Mount is { Length: > 0 } id && Rules(town).Mount(id) is { } m ? m.Fights : 0;
+
     /// <summary>How much a mount opens up: a flier above a swimmer above nothing.</summary>
-    private static double Rank(MountDef m) => (m.Ways.Contains("sheer") ? 4 : 0) + (m.Ways.Contains("water") ? 2 : 0) + (m.Ways.Contains("river") ? 1 : 0) + (m.Spell != "" ? 0.5 : 0);
+    public static double Rank(MountDef m) => (m.Ways.Contains("sheer") ? 4 : 0) + (m.Ways.Contains("water") ? 2 : 0) + (m.Ways.Contains("river") ? 1 : 0)
+        + (m.Spell != "" || m.Chooses > 0 ? 0.5 : 0) + (m.Eases.Count > 0 ? 0.25 : 0);
 }

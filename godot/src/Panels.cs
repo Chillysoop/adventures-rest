@@ -14,20 +14,62 @@ public partial class Main
 
     // ---------- War ----------
 
+    /// <summary>The warband as the town sees it: quiet until its scouts have been seen (<see cref="Discovery"/>).</summary>
+    private static ThreatStage SeenStage(Town t) => Discovery.Known(t, Discovery.Warband) ? t.Enemy.Stage : ThreatStage.Quiet;
+
+    /// <summary>The foes the town has met, and nothing it hasn't: the warband once seen, then every known menace.</summary>
     private void RenderWar()
     {
         var p = _panes[Tab.War];
         var t = _sim.Town;
+        bool band = Threat.IsActive(t) && Discovery.Known(t, Discovery.Warband);
+        var foes = Discovery.KnownMenaces(t)
+            .Where(m => m.Origin != Menaces.FromWarband)
+            .OrderByDescending(m => m.ArrivalTick != null)
+            .ThenByDescending(m => m.BigBad)
+            .ThenByDescending(m => m.Stage)
+            .ThenByDescending(m => m.Power)
+            .ThenBy(m => m.Id)
+            .ToList();
+        int home = t.Heroes.Count(a => !a.IsAway);
+
+        p.Begin();
+        if (!band && foes.Count == 0)
+        {
+            p.Card($"{Ui.Img("foe-unseen", 30)}  [font_size=17][b]No foes known[/b][/font_size]\n{Ui.C(Ui.Ink2, "[font_size=13]• Scouts and scrying find them\n• Witnesses and messengers bring word\n• Parties meet them on the road[/font_size]")}");
+            p.Buttons(("Defence", true, false, () => OpenWindow(Tab.Defence)), ("Bounty board", true, false, () => OpenWindow(Tab.Bounties)));
+        }
+        if (band) RenderWarband(p, t);
+        if (foes.Count > 0)
+        {
+            p.Heading("Known foes");
+            foreach (var m in foes)
+            {
+                var (word, color) = MenaceStages[m.Stage];
+                string march = m.ArrivalTick is int at && at > t.Tick ? "  " + Tag($"marching, {Ui.Days((int)Math.Ceiling((at - t.Tick) / 24.0))}", Ui.Bad) : "";
+                string big = m.BigBad ? Tag("big bad", Ui.Bad) + "  " : "";
+                var met = Discovery.Of(t, Discovery.Key(m));
+                string how = met != null ? $"{Ui.Esc(Ui.Cap(met.How))} day {met.Day}" : "";
+                string seat = Quests.Site(t, m.SeatId) is { Known: not SiteKnowledge.Unheard } ? $" · {Ui.Esc(m.SeatName)}" : "";
+                FoeCard(p, [m], $"{Ui.KindIcon(m.Kind, 20)}[b]{Ui.Esc(Ui.Cap(m.Name))}[/b]  {big}{Tag(word, color)}  {Tag($"level {m.Level}")}{march}\n{Ui.C(Ui.Ink2, $"[font_size=12]{how}{seat}[/font_size]")}", m.ArrivalTick != null ? Ui.Bad : color);
+            }
+        }
+        p.Heading("Heroes");
+        p.Row($"[b]Heroes in town[/b]  {Tag(home.ToString(), home == 0 ? Ui.Bad : Ui.Ink)}\n{Ui.C(Ui.Ink2, "[font_size=12]Only heroes can kill a warlord at the walls.[/font_size]")}");
+        RenderSellswords(p, t);
+        p.Commit();
+    }
+
+    /// <summary>The warband's card and its guessed strength against the town's.</summary>
+    private void RenderWarband(Pane p, Town t)
+    {
         var stage = Stages[t.Enemy.Stage];
         double? est = Threat.EstimatedStrength(t);
         double def = Threat.Defense(t);
         double scale = Math.Max(Math.Max(def, est ?? 0), 1);
         var camp = t.Sites.FirstOrDefault(s => s.Def.Id == t.Content.Enemy.Outpost.Id);
-        int home = t.Heroes.Count(a => !a.IsAway);
-
-        p.Begin();
         string arrival = t.Enemy.Stage == ThreatStage.Marching && t.Enemy.ArrivalTick is int at
-            ? "\n" + Ui.C(Ui.Bad, $"[b]They reach the {Garrison.Place(t, t.Enemy.Approach)} in {Ui.Days((int)Math.Ceiling((at - t.Tick) / 24.0))}. Call the watch to arms there; heroes in town will face the warlord.[/b]")
+            ? "\n" + Ui.C(Ui.Bad, $"[b]At the {Garrison.Place(t, t.Enemy.Approach)} in {Ui.Days((int)Math.Ceiling((at - t.Tick) / 24.0))}.[/b] Call the watch to arms there in Defence.")
             : "";
         var threat = Assess.WarbandThreat(t);
         string card = $"{Ui.KindIcon("warband", 22)}[font_size=17][b]{Ui.Esc(Ui.Cap(t.Content.Enemy.Name))}[/b][/font_size]\n{stage.Text}{arrival}";
@@ -46,25 +88,16 @@ public partial class Main
             panel.AddChild(h);
             return panel;
         });
-        p.Heading("Strength");
-        // A broken warband has no strength left to guess at.
-        if (Threat.IsActive(t) && est is double e) p.Meter("Warband", 100 * e / scale, $"~{Math.Round(e)}", true);
-        else if (Threat.IsActive(t)) p.Text($"{Ui.C(Ui.Ink2, "Warband")}    [i]Unknown. Nobody has seen it yet.[/i]", 13);
+        if (est is double e) p.Meter("Warband", 100 * e / scale, $"~{Math.Round(e)}", true);
         p.Meter("Your defence", 100 * def / scale, $"{Math.Round(def)}");
-        p.Note($"Defence counts the watch, heroes in town, a militia of townsfolk, and the walls (×{Threat.Fortification(t):0.00}).{(Threat.IsActive(t) ? " The warband grows while dungeons go uncleared." : "")}");
-        RenderGuard(p, t);
-        RenderWorks(p, t);
-        p.Heading("Heroes");
-        p.Row($"[b]Heroes in town[/b]  {Tag(home.ToString())}\n{Ui.C(Ui.Ink2, "[font_size=12]Only heroes can kill the warlord when he comes.[/font_size]")}");
-        if (camp != null && !camp.Cleared) p.Note("The war camp feeds the warband. Post a bounty on it in the Bounties tab to strike first.");
-        RenderSellswords(p, t);
-        RenderClockwork(p, t);
-        p.Commit();
+        if (camp != null && !camp.Cleared) p.Note("• The war camp feeds the warband: post a bounty on it");
     }
 
     /// <summary>Sellsword companies: hire one onto the walls, send it against a menace, or pay it off.</summary>
     private void RenderSellswords(Pane p, Town t)
     {
+        // None to hire yet and none hired: nothing to show.
+        if (t.Hires.Count == 0 && Mercenaries.Rules(t).Companies.All(c => c.Tier != "" && !City.Reached(t, c.Tier))) return;
         p.Heading("Sellswords");
         var targets = Mercenaries.Targets(t);
         foreach (var c in Mercenaries.Rules(t).Companies)
@@ -792,6 +825,8 @@ public partial class Main
         var live = Watch.LiveOf(t, s);
         var scout = Watch.ScoutAt(t, s.Def.Id);
         p.Text($"[font_size=19][b]{Ui.Esc(Ui.Cap(s.Def.Name))}[/b][/font_size]\n{Ui.C(Ui.Ink2, $"Tier {s.Def.Tier} · {(s.Def.Distance == 0 ? "under the town" : $"{Ui.Days(s.Def.Distance)} away")}")}");
+        if (s.Def.Aloft) p.Text(Ui.C(new Color("cfe3f0"), "[b]A floating isle[/b], drifting above the clouds. Only a company that can fly, or rides the sky dock's airship, can reach it."));
+        if (Ruins.Of(t, s) is { } ruin && !s.Restored) p.Text(Ui.C(Ui.Gold, $"[b]Ruins[/b] of old works. Cleared, the town can restore it for {Js.Str(ruin.Cost)}g, and it {Ui.Esc(ruin.Gives)}."));
         string seen = sight switch
         {
             Sight.Live when scry != null => Ui.C(new Color("b48cff"), $"[b]Scrying[/b] {(scry.CasterId == 0 ? "in the Scrying Pool" : $"by {Ui.Esc(t.Agent(scry.CasterId).Name)}")}, {scry.EndTick - t.Tick} hours left. You see it as it is now."),
@@ -846,6 +881,17 @@ public partial class Main
         string sid = s.Def.Id;
         if (s.Cleared)
         {
+            if (Ruins.Of(t, s) is { } old)
+            {
+                if (s.Restored)
+                {
+                    p.Text(Ui.C(Ui.Good, $"Restored. It {Ui.Esc(old.Gives)}."));
+                    return;
+                }
+                p.Heading("Restore it");
+                p.Buttons(($"Restore it, {Js.Str(old.Cost)}g", t.Treasury >= old.Cost, true, () => Act(() => _sim.RestoreRuin(sid))));
+                p.Note($"Masons put it back in order, and it {old.Gives}. Nothing moves back in.");
+            }
             if (Loyalty.Lord(t, s.Def.Id) is Agent lord)
             {
                 p.Text($"The land of {AgentLink(lord, Loyalty.Styled(t, lord))}, held by their own retainers.");

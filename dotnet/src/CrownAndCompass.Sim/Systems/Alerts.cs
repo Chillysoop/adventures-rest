@@ -14,6 +14,7 @@ public enum AlertWindow
     None,
     Ledger,
     War,
+    Defence,
     Council,
     Bounties,
     Faith,
@@ -47,8 +48,8 @@ public sealed record Alert(string Key, AlertKind Kind, string Text, string Tip, 
 /// </summary>
 public static class Alerts
 {
-    public static readonly AlertKind Siege = new("siege", "Under attack", "warband", AlertLevel.Urgent, AlertWindow.War);
-    public static readonly AlertKind Sighted = new("sighted", "Raiders sighted", "warband", AlertLevel.Urgent, AlertWindow.War);
+    public static readonly AlertKind Siege = new("siege", "Under attack", "warband", AlertLevel.Urgent, AlertWindow.Defence);
+    public static readonly AlertKind Sighted = new("sighted", "Raiders sighted", "warband", AlertLevel.Urgent, AlertWindow.Defence);
     public static readonly AlertKind Captives = new("captives", "Townsfolk taken", "heroes", AlertLevel.Urgent, AlertWindow.Bounties);
     public static readonly AlertKind Hunger = new("hunger", "Hunger", "bread", AlertLevel.Urgent, AlertWindow.Council);
     public static readonly AlertKind Coffers = new("coffers", "Empty coffers", "gold", AlertLevel.Urgent, AlertWindow.Council);
@@ -88,6 +89,8 @@ public static class Alerts
     public static readonly AlertKind Gifts = new("gifts", "Arms to give", "heroes", AlertLevel.Minor, AlertWindow.Armory);
     public static readonly AlertKind Outpost = new("outpost", "Land to hold", "warband", AlertLevel.Minor, AlertWindow.None);
     public static readonly AlertKind Stalled = new("stalled", "Building stalled", "gold", AlertLevel.Decision, AlertWindow.None);
+    public static readonly AlertKind Bridge = new("bridge", "Bridge cut", "gold", AlertLevel.Decision, AlertWindow.Campaign);
+    public static readonly AlertKind Ruin = new("ruin", "Ruin to restore", "gold", AlertLevel.Decision, AlertWindow.Campaign);
     public static readonly AlertKind Lurker = new("lurker", "A stranger watching", "suspicion", AlertLevel.Urgent, AlertWindow.None);
     public static readonly AlertKind Tourney = new("tourney", "The tourney", "favour", AlertLevel.Decision, AlertWindow.Tourney);
     public static readonly AlertKind Strike = new("strike", "A guild on strike", "population", AlertLevel.Urgent, AlertWindow.Council);
@@ -99,7 +102,7 @@ public static class Alerts
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Sighted, Lurker, Captives, Doom, Crisis, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Balance, Fealty, Clash, Traitor, Plot, Stores, Story, Scry, Explorers, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Loot, Stalled, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Outpost, Housing, Crowded];
+        [Siege, Sighted, Lurker, Captives, Doom, Crisis, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Balance, Fealty, Clash, Traitor, Plot, Stores, Story, Scry, Explorers, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Loot, Stalled, Bridge, Ruin, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Outpost, Housing, Crowded];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
     public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Word, Crowds, Keepers, Outposts, Lists];
@@ -459,9 +462,16 @@ public static class Alerts
         }
     }
 
-    /// <summary>A council site standing idle for want of timber or stone the market hasn't got.</summary>
+    /// <summary>A council site standing idle for want of timber or stone the market hasn't got; a rope bridge raiders cut.</summary>
     private static IEnumerable<Alert> Sites(Town t)
     {
+        foreach (var s in Ruins.Restorable(t))
+            if (Ruins.Of(t, s) is { } k && t.Treasury >= k.Cost)
+                yield return new($"ruin:{s.Def.Id}", Ruin, $"{Cap(s.Def.Name)} can be restored",
+                    $"The company cleared {s.Def.Name}. Restore it for {Js.Str(k.Cost)}g and it {k.Gives}. Restore it from its card on the map or the Campaign window.", SiteId: s.Def.Id);
+        foreach (var f in Bridges.CutBridges(t).OrderBy(f => f.Id))
+            yield return new($"bridge:{f.Id}", Bridge, $"{Cap(Bridges.Name(f))} is cut",
+                $"Raiders cut the rope bridge over {f.Name}, and companies must go the long way round. Rebuild it in stone from the Campaign window ({Js.Str(t.Content.Roads.Bridges.Stone)}g) and it can never be cut again.");
         if (t.Defenses.WallsShort >= t.Day - 1)
             yield return new("stalled:walls", Stalled, "The walls wait for timber and stone",
                 "The masons on the walls stand idle half the day: the market is short of timber and stone. Zone industry for a quarry and a lumber camp, or wait for the market to fill.");
