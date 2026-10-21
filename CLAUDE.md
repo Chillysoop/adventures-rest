@@ -130,6 +130,10 @@
   MeshKit faces must wind outward (the outline inks inside-out parts black). Homes are modelled in Blender from code
   (`tools/blender_houses.py`, Blender as a pip module: `python3 -m pip install bpy`) and baked to `models/crafted.bin` in the
   kenney.bin layout; roof faces bake as (255, 0, shade) and `TownView.RoofPaint` colours them.
+- Enemy groups (`content/game/groups.json`, `World.PickGroup`, `Content.Group`): ready-made foes (sewer infestation, frozen pass,
+  witch hunters...) that hold sites of their own in the themes they name, with their own foes, bosses and a history.json lineage
+  (subject `group:id`, or an existing enemy's lineage for a version of it). A cleared group site is retaken by its own bosses.
+  Monster names: SRD/CC-BY or originals only; WotC-only creatures get an original name and look (report https://claude.ai/artifact/RLbN5w9GFQ976uamUqgPDw).
 - Cliffs (`Systems/Cliffs.cs`, passage.json `cliffs`): plateaus in the near wilds past the plan, a pure function of the seed. Passage
   treats each as a barrier opened only at its ramps (`Passage.Obstacles`, `RoundCliffs` for roads); the client raises them
   (`WorldGen`) and faces them with rock (`WorldView.BuildCliffs`).
