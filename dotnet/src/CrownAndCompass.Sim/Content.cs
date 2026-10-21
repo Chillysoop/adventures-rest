@@ -622,6 +622,10 @@ public sealed record WatchtowerRules
     public double SightPerHundred { get; init; } = 4;
     public double MostSight { get; init; } = 70;
 
+    /// <summary>A tower on a hill sees farther: tiles per tile of ground under it, up to the most.</summary>
+    public double PerHeight { get; init; } = 4;
+    public double MostHeight { get; init; } = 12;
+
     /// <summary>The town may raise one tower for every this many residents (always one).</summary>
     public int ResidentsEach { get; init; } = 100;
 }

@@ -170,6 +170,8 @@ public partial class TownView(MapView map) : Node3D
             string key = MeshKey(b);
             // The mast stands empty while the airship is off (or flying out or in: see Sky).
             if (key.StartsWith("sky_dock:", StringComparison.Ordinal) && !SkyMoored(town)) key = "sky_dock_away:" + key[9..];
+            // A watchtower on a hill or on the town's high ground stands on a stone footing, its beacon seen for miles.
+            if (key.StartsWith("watchtower:", StringComparison.Ordinal) && (Founding.Sight(town) > 0 || Watch.TowerSight(town, b) - Watch.TowerSight(town) >= 3)) key = "watchtower:9";
             if (!groups.TryGetValue(key, out var list)) groups[key] = list = [];
             // Every building faces the way its lot was sited (toward the hall, or as the player turned it),
             // scaled from the one-tile models to its footprint.
@@ -240,7 +242,7 @@ public partial class TownView(MapView map) : Node3D
             case "granary": Granary(kit, v); break;
             case "builders_yard": BuildersYard(kit, v); break;
             case "watch_house": WatchHouse(kit, v); break;
-            case "watchtower": Watchtower(kit); break;
+            case "watchtower": Watchtower(kit, v == 9); break;
             case "timber_house" or "townhouse" or "manor" or "tenement" or "tall_house": Crafted(kit, id, v); break;
             case "quarry": Quarry(kit, v); break;
             case "sheepfold": Sheepfold(kit, v); break;
@@ -500,8 +502,18 @@ public partial class TownView(MapView map) : Node3D
         k.Add("castle/flag-pennant", MeshKit.At(0.33f, 0.92f, -0.3f, 0, 0.3f), Palette.Kenney(new Color("b8322a")));
     }
 
-    private static void Watchtower(MeshKit k)
+    private static void Watchtower(MeshKit k, bool peak)
     {
+        if (peak)
+        {
+            // A peak tower: a rough stone footing and a cairn, the lookout set on top.
+            var stone = new Color("8a8478");
+            k.Box(new Vector3(0, 0, 0), new Vector3(0.95f, 0.22f, 0.95f), stone);
+            k.Box(new Vector3(0, 0.22f, 0), new Vector3(0.78f, 0.16f, 0.78f), new Color("9a9488"));
+            k.Box(new Vector3(0.36f, 0.38f, 0.36f), new Vector3(0.12f, 0.1f, 0.12f), stone);
+            k.Box(new Vector3(-0.38f, 0.38f, 0.3f), new Vector3(0.09f, 0.08f, 0.09f), stone);
+            k.Push(MeshKit.At(0, 0.38f, 0));
+        }
         // A tall timber lookout on four splayed posts: braced, with a railed platform, a steep shingle roof and a beacon.
         var post = new Color("6b4a2e");
         var plank = new Color("8c6a44");
@@ -541,6 +553,11 @@ public partial class TownView(MapView map) : Node3D
         k.Box(new Vector3(0.08f, 0, foot + 0.05f), new Vector3(0.03f, top, 0.03f), plank);
         for (float y = 0.15f; y < top; y += 0.18f) k.Box(new Vector3(0, y, foot + 0.05f), new Vector3(0.16f, 0.025f, 0.03f), plank);
         k.Add("castle/flag-pennant", MeshKit.At(0, top + 0.86f, 0, 0, 0.3f), Palette.Kenney(new Color("b8322a")));
+        if (!peak) return;
+        // A signal fire on a pole above the roof.
+        k.Box(new Vector3(0.24f, top + 0.5f, 0.24f), new Vector3(0.03f, 0.55f, 0.03f), post);
+        k.Box(new Vector3(0.24f, top + 1.05f, 0.24f), new Vector3(0.12f, 0.08f, 0.12f), new Color("4a443e"), new Color("ffb04a", MeshKit.Flag.Ember));
+        k.Pop();
     }
 
     private static void Tavern(MeshKit k, int v)

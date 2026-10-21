@@ -144,6 +144,21 @@ public partial class Main : Control
             // --wonder bridge: the town's own bridge over the river (its bridge ward once a town).
             else if (wk == "bridge" && _map.Gen.Crossings.Count > 0)
                 _opts.Look ??= _map.Gen.Crossings[0].At;
+            // --wonder tower: a finished watchtower at the town's edge, on the highest ground near (then --at watchtower).
+            else if (wk == "tower")
+            {
+                _sim.Town.Treasury += 1000;
+                var spots = Enumerable.Range(0, 24 * 10).Select(i => (R: 8 + i / 24, A: i % 24 * Math.PI / 12))
+                    .Select(q => (X: Town.Center + q.R * Math.Cos(q.A), Y: Town.Center + q.R * Math.Sin(q.A)))
+                    .OrderByDescending(q => Hills.Height(_sim.Town, q.X, q.Y)).ThenBy(q => q.X).ThenBy(q => q.Y);
+                foreach (var (x, y) in spots)
+                    if (_sim.Place(_sim.Town.Content.Knowledge.Watchtowers.Building, x, y) is Building tw)
+                    {
+                        tw.BuildProgress = tw.Def.BuildHours;
+                        _opts.Look ??= Map.Geo.LotPos(_sim.Town.Lot(tw.LotId));
+                        break;
+                    }
+            }
             else if (wk == "lift" && _map.Lands.SiteFaces.OrderByDescending(f => f.High).FirstOrDefault() is { High: > 0 } face)
                 _opts.Look ??= face.Top;
             else if (_sim.Town.Terrain.FirstOrDefault(f => f.Kind.Wonder?.Kind == wk) is { } wf)

@@ -33,6 +33,9 @@ public sealed record FoundingDef
     public IReadOnlyDictionary<string, double> Yields { get; init; } = new Dictionary<string, double>();
     public int Watch { get; init; }
 
+    /// <summary>Tiles farther every watchtower sees from a town on high ground.</summary>
+    public double Sight { get; init; }
+
     /// <summary>"" none, "garrison" a manned keep at the charter, "ruin" an old keep to win back, "either" by the seed.</summary>
     public string Keep { get; init; } = "";
 
@@ -120,6 +123,7 @@ public static class Founding
         foreach (var (good, k) in def.Yields.OrderBy(y => y.Key, StringComparer.Ordinal))
             if (k != 1) chips.Add((good.ToLowerInvariant(), Pct(k - 1)));
         if (def.Sea != null) chips.Add(("compass", "boats"));
+        if (def.Sight > 0) chips.Add(("act-scry", $"+{Js.Str(def.Sight)} sight"));
         if (def.Keep != "") chips.Add(("tab-war", def.Keep == "garrison" ? "keep" : def.Keep == "ruin" ? "ruined keep" : "keep?"));
         return chips;
     }
@@ -145,6 +149,9 @@ public static class Founding
     public static double Defence(Town town) => town.Founding == null ? 0 : Of(town).Defence;
 
     /// <summary>What caravans earn, as a multiple.</summary>
+    /// <summary>Tiles farther the town's watchtowers see from its high ground.</summary>
+    public static double Sight(Town town) => town.Founding == null ? 0 : Of(town).Sight;
+
     public static double Trade(Town town) => town.Founding == null ? 1 : Of(town).Trade;
 
     /// <summary>What the land gives of a good, as a multiple.</summary>

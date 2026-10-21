@@ -250,11 +250,14 @@ public static class Watch
 
     private static WatchtowerRules Towers(Town town) => Rules(town).Watchtowers;
 
-    /// <summary>Tiles each watchtower sees around itself: wider as the town grows.</summary>
-    public static double TowerSight(Town town)
+    /// <summary>Tiles a watchtower sees around itself: wider as the town grows, from a high town, and from a hill (<paramref name="tower"/>).</summary>
+    public static double TowerSight(Town town, Building? tower = null)
     {
         var r = Towers(town);
-        return Math.Min(r.MostSight, r.Sight + r.SightPerHundred * town.Population / 100.0);
+        double sight = Math.Min(r.MostSight, r.Sight + r.SightPerHundred * town.Population / 100.0) + Founding.Sight(town);
+        if (tower == null) return sight;
+        var lot = town.Lot(tower.LotId);
+        return sight + Math.Min(r.MostHeight, r.PerHeight * Hills.Height(town, lot.X, lot.Y));
     }
 
     /// <summary>The finished, open watchtowers, in id order.</summary>
@@ -285,12 +288,11 @@ public static class Watch
     {
         var towers = Watchtowers(town);
         if (towers.Count == 0 || site.Def.Distance == 0) return null;
-        double reach = TowerSight(town);
         var (sx, sy) = SiteTiles(town, site);
         foreach (var b in towers)
         {
             var lot = town.Lot(b.LotId);
-            if (Js.Hypot(sx - lot.X, sy - lot.Y) <= reach) return b;
+            if (Js.Hypot(sx - lot.X, sy - lot.Y) <= TowerSight(town, b)) return b;
         }
         return null;
     }
