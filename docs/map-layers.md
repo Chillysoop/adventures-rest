@@ -9,7 +9,8 @@ Decided by Conner on 2026-10-21. Not built yet: this is expansion/DLC scope. Cur
   through space and hell").
 - The player can found and grow settlements in several layers at once (the surface city, expansion cities, then towns
   in the fey, the underdark and so on), and quest across all of them.
-- Travel between layers is through portals. Late-game research lets the player build their own portals in the starting
+- Travel between layers is through portals. Ancient portals are also found out on the map (sites to discover,
+  clear and hold, on the surface and inside other layers). Late-game research lets the player build their own portals in the starting
   city and in expansion cities. A portal is a way in for enemies too, so it has to be guarded by might (garrison,
   walls) and/or magic (wards).
 - This greatly widens the end game: new giant maps to quest and expand into after the surface is settled.

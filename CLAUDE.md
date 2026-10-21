@@ -8,7 +8,7 @@
 - Decided: real time with pause on top of a daily strategic tick.
 - Priorities: low-cost scalability, efficiency, speed, quality, style.
 - Future expansion (not built): the underdark and other planes (fey, hells, space) as separate giant map layers
-  reached by portals the player can build late and must guard. See `docs/map-layers.md`; don't hard-wire "one map".
+  reached by ancient portals found on the map or portals the player builds late and must guard. See `docs/map-layers.md`; don't hard-wire "one map".
 
 ## Working here
 
