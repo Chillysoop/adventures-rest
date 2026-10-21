@@ -209,6 +209,8 @@ public class PassageTests
         var sim = new Simulation(new SimulationOptions { Seed = 1 });
         sim.RunDays(30);
         var t = sim.Town;
+        // Three heroes to put on griffons: some towns take a while to draw a third.
+        while (t.Heroes.Count(h => (Passage.Abilities(t, [h]) & Ways.Sheer) == Ways.None) < 3 && t.Day < 200) sim.RunDays(5);
         foreach (var h in t.Heroes) h.Hero!.Mount = "";
         // Heroes who can't fly or climb a cliff on their own (no spell or item for it).
         var heroes = t.Heroes.Where(h => (Passage.Abilities(t, [h]) & Ways.Sheer) == Ways.None).Take(3).ToList();

@@ -51,7 +51,7 @@ public class WorldTests
             {
                 var theme = t.Regions[s.RegionId].Theme;
                 Assert.Contains(s.Kin.Id, theme.Peoples);
-                if (theme.Id == "highpeaks") Assert.Contains(s.Kin.Id, new[] { "dwarves", "gnomes" });
+                if (theme.Id == "highpeaks") Assert.Contains(s.Kin.Id, new[] { "dwarves", "gnomes", "birdfolk" });
                 if (theme.Id == "thornwood") Assert.Equal("elves", s.Kin.Id);
             }
         }
@@ -114,6 +114,7 @@ public class WorldTests
         var sim = new Simulation(new SimulationOptions { Seed = 3, AutoMayor = false });
         var t = sim.Town;
         var s = t.Settlements.First(x => t.Regions[x.RegionId].Known);
+        Discovery.Meet(t, Neighbours.Key(s), Discovery.Met);
         double before = Threat.Defense(t);
         t.Treasury = 10000;
         while (!s.Allied && s.Envoys < 100) Assert.True(sim.SendEnvoy(s.Id) || s.Allied);

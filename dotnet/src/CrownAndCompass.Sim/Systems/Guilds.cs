@@ -114,6 +114,9 @@ public sealed record GuildRules
     public double BrokenLoyalty { get; init; } = 10;
 
     public GuildLines Lines { get; init; } = new();
+
+    /// <summary>The guilds banded together against the mages (<see cref="Systems.Union"/>).</summary>
+    public UnionRules Union { get; init; } = new();
     public IReadOnlyList<GuildDef> Guilds { get; init; } = [];
 }
 
@@ -171,6 +174,9 @@ public static class Guilds
 
     private static List<Agent> Members(Town town, GuildDef d) =>
         town.Agents.Where(a => !a.Departed && a.Hero == null && a.JobId is int j && Trade(town, j) == d.Id).OrderBy(a => a.Id).ToList();
+
+    /// <summary>Whether a townsperson works one of the guilds' trades (formed or not).</summary>
+    public static bool InTrade(Town town, Agent a) => a.JobId is int j && Trade(town, j) != null;
 
     /// <summary>The guild whose trade a building is, or null.</summary>
     private static string? Trade(Town town, int buildingId)

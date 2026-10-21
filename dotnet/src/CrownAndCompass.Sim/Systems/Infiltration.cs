@@ -57,6 +57,23 @@ public sealed record InfiltrationRules
     public string Innocent { get; init; } = "";
     public IReadOnlyDictionary<string, string> Acts { get; init; } = new Dictionary<string, string>();
     public IReadOnlyDictionary<string, InfiltrationKindDef> Kinds { get; init; } = new Dictionary<string, InfiltrationKindDef>();
+
+    /// <summary>Foes that win a councillor by enchantment, not coin: a charmed councillor is a victim, freed when found out.</summary>
+    public IReadOnlyList<string> CharmKinds { get; init; } = [];
+
+    /// <summary>Decrees or callings that ward the chamber, and how much likelier they make a charm's failure.</summary>
+    public IReadOnlyList<string> Wards { get; init; } = [];
+    public double Warded { get; init; } = 3;
+
+    /// <summary>Callings that hear lies, and how much faster a servant's suspicion grows while one is held.</summary>
+    public IReadOnlyList<string> Seers { get; init; } = [];
+    public double Seen { get; init; } = 2;
+
+    /// <summary>A charm caught at the warded door: {victim}, {by}.</summary>
+    public string WardFlared { get; init; } = "";
+
+    /// <summary>A charmed councillor found out and freed, keeping the seat: {victim}, {by}, {seat}.</summary>
+    public string Freed { get; init; } = "";
 }
 
 /// <summary>A councillor secretly serving a foe.</summary>
@@ -74,6 +91,9 @@ public sealed class Mole
 
     /// <summary>The innocent councillor the taverns name alongside it, once they talk.</summary>
     public int? DecoyId { get; set; }
+
+    /// <summary>Won by enchantment, not coin: freed rather than driven out when found.</summary>
+    public bool Charmed { get; init; }
 }
 
 /// <summary>
@@ -103,6 +123,13 @@ public static class Infiltration
 
     private static Seat? SeatOf(Town town, int agentId) => town.Seats.FirstOrDefault(s => s.HolderId == agentId);
 
+    /// <summary>The council chamber is warded against charms (a decree in force or a warder in the calling).</summary>
+    public static bool Warded(Town town) =>
+        Rules(town).Wards.Any(w => Decrees.InForce(town, w) || Callings.Holder(town, w) != null);
+
+    /// <summary>Someone sits by the council door who hears lies.</summary>
+    public static bool Seen(Town town) => Rules(town).Seers.Any(w => Callings.Holder(town, w) != null);
+
     /// <summary>A grudge's strike spent winning over a councillor. Returns whether it tried.</summary>
     public static bool Try(Town town, Grudge g)
     {
@@ -120,9 +147,14 @@ public static class Infiltration
         var seat = marks[town.Rng.Chance(0.6) ? 0 : town.Rng.Range(0, marks.Count)];
         var victim = town.Agent(seat.HolderId!.Value);
         string name = $"{victim.Name}, the town's {seat.Def.Title.ToLowerInvariant()}";
-        if (town.Rng.Chance(Math.Min(0.9, r.Caught * Council.WatchStrength(town) / Math.Max(0.5, g.Cunning))))
+        bool charm = r.CharmKinds.Contains(g.Kind);
+        bool warded = charm && Warded(town);
+        double caught = r.Caught * Council.WatchStrength(town) / Math.Max(0.5, g.Cunning);
+        if (warded) caught = Math.Max(caught, 0.3) * r.Warded;
+        if (town.Rng.Chance(Math.Min(warded ? 0.95 : 0.9, caught)))
         {
-            town.Log(LedgerCategory.War, Importance.Notable, Saga.Sentences(k.Caught.Replace("{victim}", name)), [victim.Id]);
+            string text = warded && r.WardFlared != "" ? r.WardFlared.Replace("{victim}", name).Replace("{by}", g.Name) : k.Caught.Replace("{victim}", name);
+            town.Log(LedgerCategory.War, Importance.Notable, Saga.Sentences(text), [victim.Id]);
             return true;
         }
         town.Moles.Add(new Mole
@@ -133,6 +165,7 @@ public static class Infiltration
             By = g.Name,
             Since = town.Day,
             NextDay = town.Day + town.Rng.Range(r.EveryDays[0], r.EveryDays[^1] + 1),
+            Charmed = charm,
         });
         // A hint, not a proof: the Ledger doesn't say whose.
         town.Log(LedgerCategory.Council, Importance.Notable, Saga.Sentences(k.Turn.Replace("{victim}", name)), [victim.Id]);
@@ -152,7 +185,7 @@ public static class Infiltration
                 town.Moles.Remove(m);
                 continue;
             }
-            m.Suspicion += r.Daily * (0.5 + Council.WatchStrength(town));
+            m.Suspicion += r.Daily * (0.5 + Council.WatchStrength(town)) * (Seen(town) ? r.Seen : 1);
             if (m.DecoyId is int d && (SeatOf(town, d) == null || town.Agent(d).Dead || town.Agent(d).Departed)) m.DecoyId = null;
             if (m.DecoyId == null && m.Suspicion >= r.Whisper) Whisper(town, m);
             if (m.Suspicion >= r.Proof)
@@ -262,6 +295,14 @@ public static class Infiltration
     {
         var r = Rules(town);
         var a = town.Agent(m.AgentId);
+        if (m.Charmed && r.Freed != "")
+        {
+            // A charm broken: the councillor was a victim, and keeps the seat.
+            town.Log(LedgerCategory.Council, Importance.Major, Saga.Sentences(r.Freed.Replace("{victim}", a.Name).Replace("{by}", m.By).Replace("{seat}", seat.Def.Title.ToLowerInvariant())), [a.Id]);
+            town.Moles.Remove(m);
+            if (Vengeance.Of(town, m.Foe) is { } cg) cg.Heat += r.Unmasked.Heat;
+            return;
+        }
         town.Log(LedgerCategory.Council, Importance.Major, Saga.Sentences(text.Replace("{victim}", a.Name).Replace("{by}", m.By).Replace("{seat}", seat.Def.Title.ToLowerInvariant())), [a.Id]);
         seat.HolderId = null;
         town.Moles.Remove(m);

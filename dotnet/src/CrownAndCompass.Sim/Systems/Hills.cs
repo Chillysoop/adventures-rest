@@ -46,8 +46,10 @@ public static class Hills
             double r = 2.6 + Next() * 3.6, stretch = Next() < 0.4 ? 1.8 + Next() : 1;
             hills.Add(new Hill(x, y, 0.7 + Next() * 1.4, r * stretch, r, Next() * Math.PI));
         }
-        _set = new Set(seed, [.. hills]);
-        return _set.Hills;
+        // Return our own set: another town on another thread may swap the shared one in between.
+        set = new Set(seed, [.. hills]);
+        _set = set;
+        return set.Hills;
     }
 
     /// <summary>Ground height above the town's level at (x, y) in tiles.</summary>
