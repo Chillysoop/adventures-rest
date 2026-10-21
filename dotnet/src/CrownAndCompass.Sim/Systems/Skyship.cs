@@ -53,6 +53,11 @@ public sealed record SkyRules
     public double AmbushMax { get; init; } = 0.35;
     public double AmbushLoss { get; init; } = 0.5;
 
+    /// <summary>At a high tower (<see cref="Skyship.Moored"/>): days moored there, the extra the cargo fetches, and the share of the fliers' chance left.</summary>
+    public int TowerTurnaround { get; init; }
+    public double TowerPremium { get; init; } = 0.15;
+    public double TowerAmbush { get; init; } = 0.5;
+
     /// <summary>The stand-in mayor sends a run at most this often, when it clears StandInProfit gold.</summary>
     public int StandInEvery { get; init; } = 12;
     public double StandInProfit { get; init; } = 60;
@@ -115,7 +120,15 @@ public static class Skyship
 
     /// <summary>Days there and back by air: half the road and none of its mud or snow.</summary>
     public static int FlightDays(Town town, Settlement s) =>
-        Math.Max(2, 2 * (int)Math.Ceiling(town.Regions[s.RegionId].Days * Rules(town).Speed - 1e-9) + Rules(town).Turnaround);
+        Math.Max(2, 2 * (int)Math.Ceiling(town.Regions[s.RegionId].Days * Rules(town).Speed - 1e-9) + (Moored(town, s) ? Rules(town).TowerTurnaround : Rules(town).Turnaround));
+
+    /// <summary>
+    /// A people with a high tower the airship moors at (Q41): one the town paid for (a mooring tower project), or a town on a
+    /// ledge above the clouds that was there first (<see cref="Founding"/>). Long runs to them pay: quicker turnaround, a
+    /// better price, and the tower's guns keep fliers off.
+    /// </summary>
+    public static bool Moored(Town town, Settlement s) =>
+        s.Projects.Any(p => town.Content.Neighbours.Project(p)?.Mooring == true) || town.Regions[s.RegionId].Site == "cloud-ledge";
 
     public static double FitOut(Town town, Settlement s) => Rules(town).FitOut + Rules(town).FitOutPerDay * FlightDays(town, s);
 
@@ -136,7 +149,7 @@ public static class Skyship
     {
         var r = Rules(town);
         double p = town.Market.BasePrice(g) * (s.Kin.Trade.Wants.Contains(g) ? r.WantedPrice : r.SellPrice)
-            * (1 + r.FarPremium * town.Regions[s.RegionId].Ring) * Lean(town, s, g);
+            * (1 + r.FarPremium * town.Regions[s.RegionId].Ring + (Moored(town, s) ? r.TowerPremium : 0)) * Lean(town, s, g);
         return p / (1 + (GlutOf(town, s, g)?.Qty ?? 0) / r.Glut);
     }
 
@@ -291,7 +304,7 @@ public static class Skyship
     public static double AmbushChance(Town town, Settlement s)
     {
         var r = Rules(town);
-        return Math.Min(r.AmbushMax, r.Ambush * Js.Sum(Fliers(town, town.Regions[s.RegionId]), m => Passage.Fliers(town, m.Kind)));
+        return Math.Min(r.AmbushMax, r.Ambush * Js.Sum(Fliers(town, town.Regions[s.RegionId]), m => Passage.Fliers(town, m.Kind))) * (Moored(town, s) ? r.TowerAmbush : 1);
     }
 
     /// <summary>The stand-in mayor flies the town's richest surplus to whoever pays best for it, now and then, if it clears a profit.</summary>
