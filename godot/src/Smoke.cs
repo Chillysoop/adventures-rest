@@ -210,7 +210,8 @@ public partial class Main
                 return 40;
             }
             case 32:
-                if (!_tourney.Visible || _sim.Town.Tourney.Events[0].Heats.Count == 0) throw new InvalidOperationException("the tourney's heats did not show");
+                // Today's event may have ridden its hours before the tourney was staged, so any event's heats will do.
+                if (!_tourney.Visible || !_sim.Town.Tourney.Events.Any(e => e.Heats.Count > 0)) throw new InvalidOperationException("the tourney's heats did not show");
                 CloseTourney();
                 return 5;
             default:
