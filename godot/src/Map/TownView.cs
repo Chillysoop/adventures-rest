@@ -14,6 +14,15 @@ public static class Palette
     public static readonly Color Dirt = new("a88a5e");
     public static readonly Color[] Roofs = [new("a8885a"), new("9a4a36"), new("6e5238"), new("58626f"), new("7e4430")];
 
+    /// <summary>A hero's tabard: their company's field colour (dulled by the wear of its last ventures), or their class colour riding alone.</summary>
+    public static Color HeroColor(Town town, Agent a)
+    {
+        if (a.Hero is not { PartyName: { Length: > 0 } company } || town.Content.Heraldry.Tinctures.Count == 0) return ClassColor(a.Hero?.Cls.Id ?? "");
+        var field = new Color(Heraldry.Of(town.Content, company).Field.Hex);
+        double wear = Intel.Find(town, company)?.Wear ?? 0;
+        return field.Darkened((float)Math.Clamp(wear * 0.5, 0, 0.35));
+    }
+
     public static Color ClassColor(string cls) => cls switch
     {
         "fighter" => new("c0392b"),
@@ -288,6 +297,7 @@ public partial class TownView(MapView map) : Node3D
             case "artificers_foundry": ArtificersFoundry(kit, v); break;
             case "undercity_gate": UndercityGate(kit, v); break;
             case "griffon_roost": GriffonRoost(kit, v); break;
+            case "monastery": Monastery(kit, v); break;
             case "sky_dock": SkyDock(kit, v); break;
             case "sky_dock_away": SkyDock(kit, v, false); break;
             case "fey_market": FeyMarket(kit, v); break;
@@ -1934,7 +1944,7 @@ public partial class TownView(MapView map) : Node3D
         float city = Progress(town, d.CityWall, d.CityWallReadyTick, e.CityWall.Days);
         // Once the stone walls stand, the timber palisade and its towers come down.
         bool timber = d.StoneWall != PalisadeState.Built;
-        string key = $"{town.City.WallVersion}|{d.Palisade}|{Math.Round(done, 2)}|{d.Towers}|{(line == null ? "" : string.Join(';', line))}|{timber}|{Math.Round(stone, 2)}|{Math.Round(city, 2)}|{d.Gatehouse}|{d.Moat}|{d.Barracks}|{d.CityWall}";
+        string key = $"{town.City.WallVersion}|{d.Palisade}|{Math.Round(done, 2)}|{d.Towers}|{(line == null ? "" : string.Join(';', line))}|{timber}|{Math.Round(stone, 2)}|{Math.Round(city, 2)}|{d.Gatehouse}|{d.Moat}|{d.Barracks}|{d.CityWall}|{Cannons.Rank(town)}";
         if (key == _wallKey) return;
         _wallKey = key;
         var k = new MeshKit();
@@ -2109,6 +2119,8 @@ public partial class TownView(MapView map) : Node3D
     /// <summary>What a site looks like on the map, from its kind and habitat.</summary>
     public static string LandmarkKind(Town town, SiteDef def) =>
         def.Id == town.Content.Enemy.Outpost.Id ? "camp"
+        : def.Aloft ? "isle"
+        : def.Ruin != "" ? "old-" + def.Ruin
         : def.Habitats.FirstOrDefault() switch
         {
             "caves" or "underworld" => "cave",
@@ -2126,7 +2138,7 @@ public partial class TownView(MapView map) : Node3D
             if (!map.Geo.Pins.TryGetValue(site.Def.Id, out var pin)) continue;
             var sight = map.Fog.SightOf(site.Def.Id, pin);
             bool cleared = sight == Sight.Live ? site.Cleared : map.Fog.LastReport(site.Def.Id)?.Outcome == ExpeditionOutcome.Cleared;
-            string kind = LandmarkKind(town, site.Def) + (cleared ? ":cleared" : "");
+            string kind = LandmarkKind(town, site.Def) + (site.Restored ? ":restored" : cleared ? ":cleared" : "");
             string id = site.Def.Id;
             if (!_landmarks.TryGetValue(id, out var mi) || (string)mi.GetMeta("kind") != kind)
             {
@@ -2138,8 +2150,10 @@ public partial class TownView(MapView map) : Node3D
             }
             // Never seen, never drawn: a rumour is a name, not a place.
             mi.Visible = sight != Sight.Rumoured;
-            mi.Position = map.Gen.At(pin, -0.05f);
+            // A floating isle drifts high over its pin, bobbing a little.
+            mi.Position = map.Gen.At(pin, site.Def.Aloft ? 9 + 0.4f * Mathf.Sin((float)Time.GetTicksMsec() / 1600f + StableHash(id) % 7) : -0.05f);
         }
+        RopeBridges(town);
         // The river's bridges, where roads cross it (its fords are shallows in the water itself).
         var gen = map.Gen;
         for (int i = 0; i < gen.Crossings.Count; i++)
@@ -2155,6 +2169,71 @@ public partial class TownView(MapView map) : Node3D
             mi.Position = new Vector3(at.X, 0, at.Y);
             mi.Rotation = new Vector3(0, Mathf.Atan2(across.X, across.Y), 0);
         }
+    }
+
+    /// <summary>Each gorge's rope bridge where the roads cross it: swaying planks, a cut bridge hanging from one side, or rebuilt in stone.</summary>
+    private void RopeBridges(Town town)
+    {
+        var gen = map.Gen;
+        foreach (var f in town.Terrain)
+        {
+            if (f.Bridge == "") continue;
+            string id = $"gorge:{f.Id}";
+            if (_landmarks.TryGetValue(id, out var old) && (string)old.GetMeta("kind") == f.Bridge) continue;
+            old?.QueueFree();
+            double mid = (f.Inner + f.Outer) / 2, b = f.Bearing * Math.PI / 180;
+            var at = Geo.FromDays(mid * Math.Sin(b), -mid * Math.Cos(b));
+            var radial = (at - Geo.Center).Normalized();
+            float span = 9f;
+            float deck = Mathf.Max(gen.SurfaceAt(at.X + radial.X * span / 2, at.Y + radial.Y * span / 2), gen.SurfaceAt(at.X - radial.X * span / 2, at.Y - radial.Y * span / 2)) + 0.05f;
+            var mi = new MeshInstance3D { Mesh = GorgeBridge(f.Bridge, deck, span), MaterialOverride = Mats.Props };
+            mi.SetMeta("kind", f.Bridge);
+            AddChild(mi);
+            _landmarks[id] = mi;
+            mi.Position = new Vector3(at.X, 0, at.Y);
+            mi.Rotation = new Vector3(0, Mathf.Atan2(radial.X, radial.Y), 0);
+        }
+    }
+
+    /// <summary>A bridge along +Z over a gorge: rope and planks sagging in the middle, cut and hanging down one wall, or a stone arch.</summary>
+    private static ArrayMesh GorgeBridge(string state, float deck, float span)
+    {
+        var k = new MeshKit();
+        var plank = new Color("8a6239");
+        var rope = new Color("c8b48a");
+        if (state == Bridges.Stone)
+        {
+            var stone = new Color("9a9488");
+            k.Box(new Vector3(0, deck - 0.2f, 0), new Vector3(1.2f, 0.2f, span), stone, new Color("a8a294"));
+            foreach (float x in new[] { -0.56f, 0.56f }) k.Box(new Vector3(x, deck, 0), new Vector3(0.1f, 0.22f, span), stone);
+            k.Box(new Vector3(0, deck - 2.4f, 0), new Vector3(1.0f, 2.2f, span * 0.3f), stone, stone);
+            return k.Build();
+        }
+        int n = 24;
+        for (int i = 0; i < n; i++)
+        {
+            float u = (i + 0.5f) / n, z = (u - 0.5f) * span;
+            float sag = 0.9f * 4 * u * (1 - u);
+            var p = new Vector3(0, deck - sag, z);
+            if (state == Bridges.Cut)
+            {
+                // Hanging down the near wall from its last anchor.
+                if (u > 0.5f) continue;
+                p = new Vector3(0, deck - (0.5f - u) * span * 0.9f, -span / 2 + 0.15f);
+            }
+            k.Box(p, new Vector3(1.0f, 0.05f, span / n * 0.8f), plank);
+        }
+        foreach (float z in new[] { -span / 2, span / 2 })
+            foreach (float x in new[] { -0.55f, 0.55f })
+                k.Box(new Vector3(x, deck - 0.2f, z), new Vector3(0.1f, 1.0f, 0.1f), Palette.DarkTimber);
+        if (state != Bridges.Cut)
+            foreach (float x in new[] { -0.55f, 0.55f })
+                for (int i = 0; i < n; i++)
+                {
+                    float u = (i + 0.5f) / n;
+                    k.Box(new Vector3(x, deck + 0.5f - 0.9f * 4 * u * (1 - u), (u - 0.5f) * span), new Vector3(0.04f, 0.04f, span / n), rope);
+                }
+        return k.Build();
     }
 
     /// <summary>A bridge over the river, its deck at <paramref name="deck"/>: the town's of timber on stone piers, the old ones all stone.</summary>
@@ -2211,6 +2290,60 @@ public partial class TownView(MapView map) : Node3D
                     k.Add(i % 2 == 0 ? "nature/tree_detailed_dark" : "nature/tree_oak_dark", MeshKit.At(Mathf.Cos(a) * 4f, 0, Mathf.Sin(a) * 4f, a, 2.6f), WorldView.Foliage);
                 }
                 k.Add("nature/mushroom_redGroup", MeshKit.At(0.4f, 0, 0.3f, 0, 2.5f));
+                break;
+            case "isle":
+                // A torn-off crag adrift above the clouds: a jagged underside, grass on top, an old keep and a fall of water off its lip.
+                var rock = new Color("7a7468");
+                k.Frustum(new Vector3(0, -6.5f, 0), 0.4f, 4.6f, 6.5f, 9, rock, new Color("6f8a4a"));
+                k.Frustum(new Vector3(1.2f, -4.5f, 0.8f), 0.2f, 2.2f, 4.5f, 7, rock);
+                k.Add("castle/tower-square-base", MeshKit.At(-0.8f, 0, -0.6f, 0.3f, 2.4f), stone);
+                k.Add("castle/tower-square-mid-windows", MeshKit.At(-0.8f, 2.4f, -0.6f, 0.3f, 2.4f), stone);
+                k.Add("castle/tower-square-roof", MeshKit.At(-0.8f, 4.8f, -0.6f, 0.3f, 2.4f), stone);
+                k.Add("nature/tree_oak_dark", MeshKit.At(2.2f, 0, 1.4f, 0.5f, 2.2f), WorldView.Foliage);
+                k.Box(new Vector3(0, -6, 4.3f), new Vector3(0.6f, 6, 0.15f), new Color("cfe8f4"));
+                break;
+            case "old-aqueduct":
+                // A line of tall arches marching over the ground, broken in the middle until restored.
+                for (int i = 0; i < 6; i++)
+                {
+                    if (!kind.EndsWith(":restored") && i is 2 or 3) continue;
+                    float z = -5 + i * 2;
+                    foreach (float x in new[] { -0.6f, 0.6f }) k.Box(new Vector3(x, 0, z), new Vector3(0.4f, 3.2f, 0.5f), Palette.Stone);
+                    k.Box(new Vector3(0, 3.2f, z), new Vector3(1.6f, 0.5f, 2.0f), Palette.Stone);
+                    k.Box(new Vector3(0, 3.7f, z), new Vector3(0.5f, 0.04f, 2.0f), new Color("5a8ab0"));
+                }
+                break;
+            case "old-star-fort":
+                // A low star of earth-backed walls, green with ivy until restored, with a flag once garrisoned.
+                var ivy = kind.EndsWith(":restored") ? Palette.Stone : new Color("5f7a3a");
+                for (int i = 0; i < 4; i++)
+                {
+                    float a = i * Mathf.Tau / 4;
+                    k.Push(MeshKit.At(0, 0, 0, a, 1));
+                    k.Box(new Vector3(0, 0, 3.2f), new Vector3(5.0f, 1.0f, 0.6f), ivy);
+                    k.Box(new Vector3(2.9f, 0, 2.9f), new Vector3(1.6f, 1.0f, 1.6f), ivy);
+                    k.Pop();
+                }
+                k.Box(new Vector3(0, 0.02f, 0), new Vector3(5.6f, 0.04f, 5.6f), new Color("7aa04a"));
+                if (kind.EndsWith(":restored")) k.Add("castle/flag-pennant", MeshKit.At(0, 0, 0, 0, 3f), Palette.Kenney(new Color("2f5f9a")));
+                break;
+            case "old-watchtower" or "old-ivy-tower" or "old-gatehouse":
+                // A tall old tower; restored, it is roofed again with a timber top and flies the town's flag.
+                bool whole = kind.EndsWith(":restored");
+                k.Add("castle/tower-square-base", MeshKit.At(0, 0, 0, 0.2f, 2.2f), stone);
+                k.Add("castle/tower-square-mid-windows", MeshKit.At(0, 2.2f, 0, 0.2f, 2.2f), stone);
+                if (whole)
+                {
+                    k.Add("castle/tower-square-mid", MeshKit.At(0, 4.4f, 0, 0.2f, 2.2f), stone);
+                    k.Add("castle/tower-square-roof", MeshKit.At(0, 6.6f, 0, 0.2f, 2.2f), Palette.Kenney(new Color("7a5232")));
+                    k.Add("castle/flag-pennant", MeshKit.At(0, 8.6f, 0, 0, 2f), Palette.Kenney(new Color("2f5f9a")));
+                }
+                else k.Add("castle/rocks-large", MeshKit.At(-1.2f, 0, 2.2f, 0.7f, 1.6f), stone);
+                if (kind.StartsWith("old-gatehouse"))
+                {
+                    k.Add("castle/wall-half", MeshKit.At(2.3f, 0, 0, 0, 1.6f), stone);
+                    k.Add("castle/wall-half", MeshKit.At(-2.3f, 0, 0, 0, 1.6f), stone);
+                }
                 break;
             case "ruin":
                 // The stump of an old tower and its fallen walls.

@@ -83,6 +83,10 @@ public sealed class Battle
     public int Defenders { get; init; }
     public List<BattleWave> Waves { get; } = [];
 
+    /// <summary>War-wagons that rolled at the gate (<see cref="Cannons.Wagons"/>), and how many reached it.</summary>
+    public int Wagons { get; set; }
+    public int WagonsThrough { get; set; }
+
     /// <summary>Townsfolk who fell on the walls; the heroes who went out to meet the leader, and those of them who fell.</summary>
     public List<int> Fallen { get; } = [];
     public List<int> Champions { get; } = [];

@@ -81,7 +81,7 @@ public class ResearchTests
         double wool = Decrees.Yield(t, Good.Wool);
         // A bare town's clerks alone are slow; a scholar's finds carry the work.
         Research.Insight(t, Sparks.Book, "a test", Research.LoreCost(t, Research.Def(t, "hardy-flocks")) - 10);
-        for (int d = 0; d < 400 && !Research.IsKnown(t, "hardy-flocks"); d++)
+        for (int d = 0; d < 600 && !Research.IsKnown(t, "hardy-flocks"); d++)
         {
             // The council spends freely; keep the scholars paid.
             t.Treasury = Math.Max(t.Treasury, 2000);

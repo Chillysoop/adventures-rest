@@ -270,6 +270,36 @@ public partial class TownView
         k.Box(new Vector3(0.18f, 0, 0.3f), new Vector3(0.16f, 0.04f, 0.05f), Palette.Timber);
     }
 
+    /// <summary>The monastery: a long stone hall under a steep slate roof, a tall bell tower, a cloister garth, and a spring falling into a pool.</summary>
+    private static void Monastery(MeshKit k, int v)
+    {
+        var slate = new Color("4f5866");
+        k.Push(MeshKit.At(-0.1f, 0, -0.12f, 0, Fit(4, 2, 0.74f)));
+        Walls(k, 4, 2, 0, true, v + 511, true);
+        k.Push(MeshKit.At(0, 1, 0));
+        k.Gable(0, 4, 2, 1.2f, slate, Palette.Stone, 0.12f);
+        k.Pop();
+        k.Pop();
+        // The bell tower, tall and plain, with a pointed slate cap.
+        var stone = WallStone(slate, 0.95f);
+        k.Add("castle/tower-square-base", MeshKit.At(0.34f, 0, -0.26f, 0, 0.24f), stone);
+        k.Add("castle/tower-square-mid", MeshKit.At(0.34f, 0.24f, -0.26f, 0, 0.24f), stone);
+        k.Add("castle/tower-square-mid", MeshKit.At(0.34f, 0.48f, -0.26f, 0, 0.24f), stone);
+        k.Frustum(new Vector3(0.34f, 0.72f, -0.26f), 0.13f, 0, 0.22f, 4, slate, null, Mathf.Pi / 4);
+        // The cloister: a square garth of grass inside a low arcade, a well at its heart.
+        var garth = new Color("6f8a4a");
+        k.Box(new Vector3(-0.08f, 0.003f, 0.26f), new Vector3(0.46f, 0.01f, 0.34f), garth);
+        foreach (float x in new[] { -0.3f, 0.14f })
+            k.Box(new Vector3(x, 0, 0.26f), new Vector3(0.03f, 0.09f, 0.34f), Palette.Stone, slate);
+        k.Box(new Vector3(-0.08f, 0, 0.43f), new Vector3(0.47f, 0.09f, 0.03f), Palette.Stone, slate);
+        k.Frustum(new Vector3(-0.08f, 0, 0.26f), 0.035f, 0.035f, 0.04f, 8, Palette.Stone, new Color("3a5a78"));
+        // A spring off the hillside behind falls into a stone pool.
+        var water = new Color("8ec3e6");
+        k.Box(new Vector3(0.36f, 0, 0.3f), new Vector3(0.18f, 0.03f, 0.16f), Palette.Stone, new Color("4f86b0"));
+        k.Box(new Vector3(0.36f, 0.03f, 0.37f), new Vector3(0.04f, 0.2f, 0.012f), water);
+        k.Box(new Vector3(0.36f, 0.2f, 0.4f), new Vector3(0.1f, 0.05f, 0.06f), new Color("7a766c"));
+    }
+
     /// <summary>The sky dock: a tall mooring mast on a stone footing, a gasbag shed, and the town's airship riding at anchor when it's home.</summary>
     private static void SkyDock(MeshKit k, int v, bool moored = true)
     {
