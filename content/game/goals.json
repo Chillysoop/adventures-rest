@@ -7,7 +7,7 @@
     { "id": "first-bounty", "text": "Post your first bounty", "label": "Bounties", "measure": "count:Bounties", "target": 1, "mandate": 3 },
     { "id": "tavern", "text": "Get a tavern built", "label": "Taverns", "measure": "built:tavern", "target": 1, "gold": 20 },
     { "id": "households-20", "text": "Grow to 20 households", "label": "Households", "measure": "households", "target": 20, "festival": 1 },
-    { "id": "watch", "text": "Build a watch house or hire the watch", "label": "Watch", "measure": "watch", "target": 1, "mandate": 3 },
+    { "id": "watch", "text": "Build a watch house", "label": "Watch houses", "measure": "built:watch_house", "target": 1, "mandate": 3 },
     { "id": "hamlet", "text": "Raise the hamlet charter (30 households, a tavern, 60 gold)", "label": "Charter", "measure": "tier", "target": 1, "gold": 25 },
     { "id": "granary", "text": "Raise a granary for the village charter", "label": "Granaries", "measure": "built:granary", "target": 1, "gold": 20 },
     { "id": "households-45", "text": "Grow to 45 households", "label": "Households", "measure": "households", "target": 45, "mandate": 2, "festival": 1 }
