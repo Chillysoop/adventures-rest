@@ -18,9 +18,11 @@ varying vec3 wpos;
 varying float facing;
 
 void vertex() {
+	// The same wind as the mesh it outlines (blow(), tree_sway() in common.gdshaderinc).
 	if (rigged > 0.5) rig(VERTEX, NORMAL, UV.x, INSTANCE_CUSTOM.a, fract(INSTANCE_CUSTOM.g));
+	else if (sway > 0.5 && UV == vec2(0.0)) VERTEX.x += tree_sway(VERTEX, (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz, TIME);
+	else VERTEX = blow(VERTEX, UV, UV2, MODEL_MATRIX, TIME);
 	wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
-	if (sway > 0.5) VERTEX.x += sin(TIME * 1.1 + wpos.x * 0.21 + wpos.z * 0.17) * 0.035 * max(VERTEX.y - 0.25, 0.0);
 	vec3 cam = INV_VIEW_MATRIX[3].xyz;
 	float d = length(cam - wpos);
 	vec3 n = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
