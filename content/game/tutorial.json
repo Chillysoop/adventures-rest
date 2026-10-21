@@ -684,6 +684,14 @@
       "until": "dense",
       "when": "density",
       "teaches": []
+    },
+    {
+      "id": "charter-goals",
+      "title": "Charter goals",
+      "text": "The card beside the rail lists the town's first [b]charter goals[/b]: paint land for homes, post a bounty, get a tavern built, and on to the hamlet charter. Three show at a time, each with its progress and a small reward of gold, mandate or a festival day. Meet one and the next appears.",
+      "point": "goals",
+      "when": "goals",
+      "teaches": []
     }
   ],
   "untaught": {}

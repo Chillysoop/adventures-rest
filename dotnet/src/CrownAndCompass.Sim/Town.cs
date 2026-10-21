@@ -511,6 +511,9 @@ public sealed class Town
     /// <summary>Trees, benches, lamps, statues: the set dressing the player has placed (<see cref="Systems.Decor"/>).</summary>
     public DecorState Decor { get; } = new();
 
+    /// <summary>The charter goals met in the first days (<see cref="Systems.Goals"/>).</summary>
+    public Systems.GoalsState Goals { get; } = new();
+
     /// <summary>The turning year: festival days and the visitors (<see cref="Systems.Seasons"/>).</summary>
     public SeasonState Seasons { get; } = new();
 
