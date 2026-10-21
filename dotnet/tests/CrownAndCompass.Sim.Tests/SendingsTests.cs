@@ -69,6 +69,8 @@ public class SendingsTests
         Assert.Contains(s, Sendings.Waiting(t));
 
         var o = Stories.StageOf(t, s).Options[0];
+        // One hero in the party with a hand worth lending, whatever the seed rolled them.
+        t.Agent(party.Members.First(id => t.Agent(id) is { Dead: false, Hero: not null })).Abilities = new Abilities { Str = 18, Dex = 18, Con = 18, Int = 18, Wis = 18, Cha = 18 };
         var help = Sendings.Helpers(t, s, o);
         Assert.Single(help);
         Assert.Contains(help[0].Name, party.Members.Select(id => t.Agent(id).GivenName));
@@ -152,7 +154,8 @@ public class SendingsTests
         Assert.Equal(2, party.Edge);
         Assert.Equal(-1, party.Swell);
         while (!party.Resolved) sim.Step();
-        Assert.NotNull(party.Result);
+        // Into the delve, unless another company cleared the site first and the party found it empty.
+        Assert.True(party.Result != null || party.Empty && Quests.Site(t, party.SiteId)!.Cleared);
     }
 
     [Fact]

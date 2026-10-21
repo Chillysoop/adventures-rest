@@ -18,6 +18,10 @@ public sealed class Feature
     public double Arc { get; init; }
     public double Inner { get; init; }
     public double Outer { get; init; }
+
+    /// <summary>A gorge's rope bridge: "" none, "rope", "cut" by raiders, or rebuilt in "stone" (<see cref="Bridges"/>).</summary>
+    public string Bridge { get; set; } = "";
+    public string BridgeName { get; set; } = "";
 }
 
 /// <summary>A turn in a party's road, in day units from the town (x east, y south); <see cref="Way"/> is how they walked the stretch that ends here.</summary>
@@ -32,6 +36,9 @@ public sealed class Waypoint
 
     /// <summary>The ford or bridge the stretch ends at, for "ford" and "bridge" (<see cref="Passage.Crossings"/>).</summary>
     public string Crossing { get; init; } = "";
+
+    /// <summary>Share of the hard country's slowness the party's mounts take off on a "cross" (snow bears on the ice).</summary>
+    public double Ease { get; init; }
 }
 
 /// <summary>How a party weighs time against danger when the road forks.</summary>
@@ -42,6 +49,9 @@ public sealed record RouteMind(double TimeWeight, double RiskWeight, double Leve
 
     /// <summary>Who carries them over it, for the telling: "Mira's griffon", "on Oswin's carpet".</summary>
     public string Carrier { get; init; } = "";
+
+    /// <summary>Hard country (by kind) their mounts carry them through at an easier pace, and how much of its slowness that takes off.</summary>
+    public IReadOnlyDictionary<string, double> Eases { get; init; } = new Dictionary<string, double>();
 }
 
 public enum Pace
@@ -354,6 +364,15 @@ public static class Roads
 
     // ---- Planning ----
 
+    /// <summary>How much of a hard country's slowness the guides of an ally take off (the elves' paths through the deep wood).</summary>
+    public static double Guided(Town town, string kind)
+    {
+        double best = 0;
+        foreach (var s in town.Settlements)
+            if (s.Allied && !s.Razed && s.Kin.Boon.Guides.TryGetValue(kind, out var g)) best = Math.Max(best, g);
+        return best;
+    }
+
     /// <summary>What drives a party's choices on the road: who leads, how strong they are, how urgent and how hurt.</summary>
     public static RouteMind Mind(Town town, IReadOnlyList<Agent> members, bool hurry, bool wounded)
     {
@@ -371,6 +390,7 @@ public static class Roads
         {
             Ways = Passage.Abilities(town, members),
             Carrier = Passage.Carrier(town, members),
+            Eases = town.Content.Roads.Kinds.Select(k => (k.Id, E: Math.Max(Passage.Eased(town, members, k.Id), Guided(town, k.Id)))).Where(k => k.E > 0).ToDictionary(k => k.Id, k => k.E),
         };
     }
 
@@ -412,8 +432,10 @@ public static class Roads
         var stretches = (mind.Ways & Ways.River) != 0 ? [new Waypoint { X = goal.X, Y = goal.Y }] : Passage.Ford(town, cur, [new Waypoint { X = goal.X, Y = goal.Y }], said);
         foreach (var w in stretches)
         {
-            path.AddRange(Stretch(town, cur, (w.X, w.Y), mind, rng, said));
-            path[^1] = w;
+            var leg = Stretch(town, cur, (w.X, w.Y), mind, rng, said);
+            leg[^1] = w;
+            // Going round hard country can bend the road back over the river: those legs take a crossing too.
+            path.AddRange((mind.Ways & Ways.River) != 0 ? leg : Passage.Ford(town, cur, leg, said));
             cur = (w.X, w.Y);
         }
         if (home) path.Add(new Waypoint { X = 0, Y = 0, Way = "gate" });
@@ -471,7 +493,7 @@ public static class Roads
             bool forced = Clip(inner, cur, cur) != null || Contains(next, cur.X, cur.Y, rules.Margin) || Contains(next, goal.X, goal.Y, rules.Margin);
             var around = forced ? [] : Around(hull, cur, goal);
             // A lake or sheer heights: nobody walks over. Those who can fly, walk on water or climb go straight across; the rest go round.
-            var needs = Passage.Needs(next.Kind);
+            var needs = Bridges.Needs(next);
             if (needs != Ways.None)
             {
                 // In the hollow before it (inside its hull, not in it): back off toward the town first, then round.
@@ -510,12 +532,14 @@ public static class Roads
             if (forced || around.Count == 0)
             {
                 path.Add(new Waypoint { X = entry.X, Y = entry.Y });
-                path.Add(new Waypoint { X = exit.X, Y = exit.Y, Way = "cross", Feature = next });
+                path.Add(new Waypoint { X = exit.X, Y = exit.Y, Way = "cross", Feature = next, Ease = mind.Eases.GetValueOrDefault(next.Kind.Id) });
                 cur = exit;
                 continue;
             }
+            double ease = mind.Eases.GetValueOrDefault(next.Kind.Id);
+            crossLen -= through * (next.Kind.Slow - 1) * ease;
             double extra = PathLength(cur, around, goal) - crossLen;
-            double danger = next.Kind.Danger * Math.Clamp((next.Tier + 1.0) / (mind.Level + 1.0), 0.4, 2.5);
+            double danger = next.Kind.Danger * (1 - ease * 0.5) * Math.Clamp((next.Tier + 1.0) / (mind.Level + 1.0), 0.4, 2.5);
             double noise = (rng.Next() - 0.5) * rules.Choice.Noise;
             bool cross = extra > 0 && extra * mind.TimeWeight * 3 > danger * mind.RiskWeight + noise;
 
@@ -534,7 +558,7 @@ public static class Roads
             if (cross)
             {
                 path.Add(new Waypoint { X = entry.X, Y = entry.Y });
-                path.Add(new Waypoint { X = exit.X, Y = exit.Y, Way = "cross", Feature = next });
+                path.Add(new Waypoint { X = exit.X, Y = exit.Y, Way = "cross", Feature = next, Ease = ease });
                 cur = exit;
             }
             else
@@ -553,7 +577,7 @@ public static class Roads
     private static double LegHours(RoadRules rules, (double X, double Y) from, Waypoint to)
     {
         double len = Math.Sqrt((to.X - from.X) * (to.X - from.X) + (to.Y - from.Y) * (to.Y - from.Y));
-        return len * rules.MarchHours * (to.Way == "cross" && to.Feature != null ? to.Feature.Kind.Slow : 1);
+        return len * rules.MarchHours * (to.Way == "cross" && to.Feature != null ? 1 + (to.Feature.Kind.Slow - 1) * (1 - to.Ease) : 1);
     }
 
     /// <summary>Hours of marching the whole road takes, from <paramref name="from"/>.</summary>
@@ -662,7 +686,7 @@ public static class Roads
     internal static void Depart(Town town, Party party, IReadOnlyList<Agent> members, SiteState site, Bounty? bounty)
     {
         var spot = World.Spot(town, site);
-        var mind = Passage.Board(town, party, Mind(town, members, Hurry(town, bounty, site), false), party.Start, spot);
+        var mind = Passage.Board(town, party, Mind(town, members, Hurry(town, bounty, site), false), party.Start, spot, site.Def.Aloft);
         party.Out = Plan(town, party.Start, spot, mind, town.Rng, party.Said);
         double outHours = Hours(town, party.Start, party.Out);
         double arrive = Finish(town.Content, party.DepartTick, outHours);
@@ -715,7 +739,13 @@ public static class Roads
         foreach (var w in route)
         {
             double leg = LegHours(r, cur, w);
-            if (w.Way == "cross" && w.Feature is { } f) events.Add((h + leg / 2, 0, () => v.Cross(f.Kind, f.Name, f.Tier)));
+            if (w.Way == "cross" && w.Feature is { } f)
+                events.Add((h + leg / 2, 0, () =>
+                {
+                    v.Cross(f.Kind, f.Name, f.Tier);
+                    if (v.Wiped) return;
+                    foreach (var line in Passage.Taming(town, town.Rng, v.Party.Where(c => !c.Down).Select(c => c.Agent).ToList(), f.Kind.Id)) v.Log(line);
+                }));
             h += leg;
             cur = (w.X, w.Y);
         }
