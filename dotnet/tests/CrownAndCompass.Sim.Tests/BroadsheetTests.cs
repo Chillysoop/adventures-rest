@@ -30,7 +30,7 @@ public class BroadsheetTests
         var t = sim.Town;
         sim.RunDays(60);
         t.Treasury += 5000;
-        var hero = t.Heroes.First();
+        var hero = t.Heroes.Where(h => !h.Dead && h.Hero!.AwayUntil == null).OrderByDescending(h => h.Hero!.Level).ThenBy(h => h.Id).First();
         int renown = hero.Hero!.Renown;
         double regard = hero.Hero.Regard;
         Assert.NotNull(sim.SlantBroadsheet("hero"));
