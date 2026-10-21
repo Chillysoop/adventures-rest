@@ -407,7 +407,7 @@ public static class Streets
                     if (score < best) (best, start) = (score, i);
                 }
             if (start < 0 || Route(town, field, start, null, 12) is not { Count: > 1 } path) return;
-            Lay(town, Smooth(town, path));
+            Lay(town, Smooth(town, path)).Close = true;
         }
     }
 
@@ -721,6 +721,9 @@ public sealed class Street
     public int Id { get; set; }
     public double[] Points { get; set; } = [];
     public bool Square { get; set; }
+
+    /// <summary>A side lane in homes' paint (<see cref="Streets.Closes"/>): it stays trodden earth, never paved.</summary>
+    public bool Close { get; set; }
 
     /// <summary>A market square the shops grew round (<see cref="Streets.Markets"/>), flagged from the day it's laid.</summary>
     public bool Market { get; set; }
