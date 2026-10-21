@@ -29,6 +29,7 @@ public class LoreTests
         foreach (var m in C.Mercenaries.Companies) HasLineage("mercenary:" + m.Id);
         foreach (var i in C.Institutions.Institutions) HasLineage("institution:" + i.Id);
         foreach (var g in C.Guilds.Guilds) HasLineage("guild:" + g.Id);
+        foreach (var p in C.Patrons.Patrons) HasLineage("patron:" + p.Id);
         foreach (var f in C.Foes.Foes) HasLineage("foe:" + f.Id);
         // A ready-made enemy group is heir to its own lineage, or to the enemy it is a version of.
         foreach (var g in C.Groups.Groups)
@@ -65,6 +66,7 @@ public class LoreTests
                     "mercenary" => C.Mercenaries.Companies.Any(m => m.Id == parts[1]),
                     "institution" => C.Institutions.Def(parts[1]) != null,
                     "guild" => C.Guilds.Guilds.Any(g => g.Id == parts[1]),
+                    "patron" => C.Patrons.Patron(parts[1]) != null,
                     "foe" => C.Foes.Foes.Any(f => f.Id == parts[1]),
                     "group" => C.Group(parts[1]) is GroupDef g && g.Lineage == l.Id,
                     _ => false,

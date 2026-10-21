@@ -96,7 +96,7 @@ public partial class Main
             string die = c.Critical ? Ui.C(Ui.Gold, "[b]20[/b]") : c.Fumble ? Ui.C(Ui.Bad, "[b]1[/b]") : c.Die.ToString();
             string result = c.Success ? Ui.C(Ui.Good, "success") : Ui.C(Ui.Bad, "failure");
             string what = CheckKinds.GetValueOrDefault(c.Kind, c.Kind);
-            p.Text($"{Ui.C(Ui.Ink2, $"[font_size=11]Day {c.Tick / 24 + 1}, {c.Tick % 24:00}:00[/font_size]")}  {Ui.Esc(Skills.Name(t, c.Skill))}: d20 {die} {Skills.Sign(c.Bonus)} = {c.Total} vs {c.Dc}, {result} {Ui.C(Ui.Ink2, $"[font_size=11]· {Ui.Esc(what)}[/font_size]")}", 12);
+            p.Text($"{Ui.C(Ui.Ink2, $"[font_size=11]Day {c.Tick / 24 + 1}, {c.Tick % 24:00}:00[/font_size]")}  {Ui.Esc(Skills.Name(t, c.Skill))}: d20 {die} {Skills.Sign(c.Bonus)} = {c.Total} vs {c.Dc}, {result} {Ui.C(Ui.Ink2, $"[font_size=11]· {Ui.Esc(what)}{(c.Why != "" ? $": {Ui.Esc(c.Why)}" : "")}[/font_size]")}", 12);
         }
     }
 }

@@ -303,6 +303,7 @@ public static class TreasuryAccount
     public const string Stories = "Stories";
     public const string GrandWorks = "Grand works";
     public const string Mercenaries = "Mercenaries";
+    public const string Army = "Army";
     public const string Powers = "Minor powers";
     public const string Decrees = "Decrees";
     public const string Trade = "Trade";
@@ -427,6 +428,15 @@ public sealed class Town
     /// <summary>What exploring companies have come on, oldest first.</summary>
     public List<Systems.Find> Finds { get; } = [];
 
+    /// <summary>Stone circles companies woke for the town, oldest first (<see cref="Systems.Circles"/>).</summary>
+    public List<Systems.StoneCircle> Circles { get; } = [];
+
+    /// <summary>Townsfolk killed by drunken heroes in tavern brawls, and whether their kin were paid (<see cref="Systems.Taverns"/>).</summary>
+    public List<Systems.BloodDebt> BloodDebts { get; } = [];
+
+    /// <summary>The law book: the punishment the council has set for each crime, by crime id (<see cref="Systems.Laws"/>).</summary>
+    public Dictionary<string, string> Laws { get; } = new();
+
     /// <summary>Scouts posted to watch sites, oldest first.</summary>
     public List<Scout> Scouts { get; } = [];
 
@@ -435,6 +445,9 @@ public sealed class Town
 
     /// <summary>Every foe and power the town has come across, in the order it met them (<see cref="Systems.Discovery"/>).</summary>
     public List<Systems.Meeting> Discovered { get; } = [];
+
+    /// <summary>Whether the peoples are met one by one (<see cref="Systems.Neighbours.Know"/>); false in saves from before.</summary>
+    public bool PeoplesMet { get; set; }
     public int SightingCount { get; set; }
 
     /// <summary>Enemies' agents loose in town, looking over what they mean to strike tonight (<see cref="Systems.Lurkers"/>).</summary>
@@ -446,6 +459,9 @@ public sealed class Town
 
     /// <summary>The trade guilds that have formed, in the order they formed (<see cref="Systems.Guilds"/>).</summary>
     public List<Systems.Guild> Guilds { get; } = [];
+
+    /// <summary>Where the town stands between its guilds and its mages (<see cref="Systems.Union"/>).</summary>
+    public Systems.UnionState Union { get; } = new();
 
     /// <summary>Mirrors hidden at sites, oldest first; smashed ones stay with SmashedTick set.</summary>
     public List<Mirror> Mirrors { get; } = [];
@@ -473,6 +489,9 @@ public sealed class Town
 
     /// <summary>Sellsword companies under contract to the town (<see cref="Systems.Mercenaries"/>).</summary>
     public List<Hire> Hires { get; } = [];
+
+    /// <summary>The town's own regiments and the levy laws (<see cref="Systems.Army"/>).</summary>
+    public ArmyState Army { get; } = new();
 
     /// <summary>The minor powers and whose side each is on (<see cref="Systems.Powers"/>).</summary>
     public List<PowerState> Powers { get; } = [];

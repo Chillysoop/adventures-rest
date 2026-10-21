@@ -106,7 +106,12 @@ public static class Knowledge
             town.Book(TreasuryAccount.Scrying, -offer.Gold);
             caster.Gold += offer.Gold;
         }
-        if (offer.Price == ScryPrice.Favour) Loyalty.Sway(caster, -k.ScryPrice.FavourLoyalty);
+        if (offer.Price == ScryPrice.Favour)
+        {
+            Loyalty.Sway(caster, -k.ScryPrice.FavourLoyalty);
+            // The favour is called in later as a story (scryer-favour).
+            caster.Hero.Owed++;
+        }
         var scry = new Scrying(siteId, caster.Id, town.Tick, end);
         town.Scryings.Add(scry);
         Discovery.AtSite(town, siteId, Discovery.Scried);

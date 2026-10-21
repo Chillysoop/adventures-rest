@@ -46,7 +46,8 @@ public class FaithTests
         var sim = new Simulation(new SimulationOptions { Seed = seed });
         sim.RunDays(90);
         var t = sim.Town;
-        Assert.All(t.Residents, a => Assert.NotNull(a.Faith));
+        // Faith is settled once a day: anyone who came to town later in today's tick chooses tomorrow.
+        Assert.All(t.Residents.Where(a => a.ArrivedTick < t.Tick), a => Assert.NotNull(a.Faith));
         var kept = t.Residents.Where(a => a.Faith != "").Select(a => a.Faith).Distinct().ToList();
         Assert.True(kept.Count >= 4, $"only {kept.Count} gods kept");
         Assert.DoesNotContain(t.Residents, a => Faith.Of(t, a)?.Evil == true && !Factions.Of(t, a).Any());

@@ -83,18 +83,18 @@ public partial class Main
         var d = t.Defenses;
         string? why = Threat.BuildBlocked(t, w);
         double cost = Threat.BuildCost(t, w);
-        string head = $"[b]{WorkLabel(t, w)}[/b]";
-        string blurb = $"\n{Ui.C(Ui.Ink2, $"[font_size=12]{WorkBlurb(t, w)}[/font_size]")}";
+        // The work's name carries what it does on hover; the row keeps only its state and count.
+        string head = Ui.Tip($"{Ui.Img(w is DefenseWork.Palisade ? "timber" : w is DefenseWork.Moat ? "ui-shield" : "stone", 16)} [b]{WorkLabel(t, w)}[/b] {Ui.Img("ui-info", 12)}", Ui.Plain(WorkBlurb(t, w)));
         string count = w switch
         {
             DefenseWork.Tower => $"  {Tag($"{d.Towers}{(d.TowersBuilding.Count > 0 ? $" (+{d.TowersBuilding.Count} rising)" : "")} of {Garrison.MaxTowers(t)}", d.Towers >= Garrison.MaxTowers(t) ? Ui.Good : Ui.Ink2)}",
             DefenseWork.Barracks => $"  {Tag($"{d.Barracks}{(d.BarracksBuilding.Count > 0 ? $" (+{d.BarracksBuilding.Count} rising)" : "")} of {t.Content.Garrison.BarracksWork.Max}")}",
             _ => "",
         };
-        if (why is "built" or "dug") p.Row($"{head}  {Tag(Ui.Cap(why), Ui.Good)}{blurb}");
-        else if (why == "under way") p.Row($"{head}  {Tag("Rising", Ui.Gold)}{blurb}");
-        else if (why != null && why != "not enough gold") p.Row($"{head}{count}  {Tag(Ui.Cap(why))}{blurb}");
-        else p.Row($"{head}{count}{blurb}", ($"Build {Math.Round(cost)}g", why == null, true, () => Act(() => _sim.BuildDefense(w))));
+        if (why is "built" or "dug") p.Row($"{head}  {Tag(Ui.Cap(why), Ui.Good)}");
+        else if (why == "under way") p.Row($"{head}  {Tag("Rising", Ui.Gold)}");
+        else if (why != null && why != "not enough gold") p.Row($"{head}{count}  {Tag(Ui.Cap(why))}");
+        else p.Row($"{head}{count}", ($"Build {Math.Round(cost)}g", why == null, true, () => Act(() => _sim.BuildDefense(w))));
     }
 
     /// <summary>The town's own strength: the defence meter, the watch's orders, the walls and the wardens.</summary>
@@ -108,7 +108,8 @@ public partial class Main
         double scale = Math.Max(Math.Max(def, est ?? 0), 1);
         p.Meter("Your defence", 100 * def / scale, $"{Math.Round(def)}");
         if (est is double e) p.Meter("Warband", 100 * e / scale, $"~{Math.Round(e)}", true);
-        p.Note($"• Watch, heroes at home, militia\n• Walls ×{Threat.Fortification(t):0.00}");
+        p.Text(Ui.Tip(Ui.Chips(Ui.Chip("defence", "watch", Ui.Ink2), Ui.Chip("heroes", "heroes", Ui.Ink2), Ui.Chip("population", "militia", Ui.Ink2), Ui.Chip("stone", $"×{Threat.Fortification(t):0.00}", Ui.Gold, "Walls multiply it")),
+            $"Your defence counts the watch, heroes at home, a militia of townsfolk, and the walls.{(Threat.IsActive(t) ? " The warband grows while dungeons go uncleared." : "")}"), 12);
         RenderGuard(p, t);
         RenderWorks(p, t);
         RenderClockwork(p, t);
@@ -134,10 +135,10 @@ public partial class Main
         var g = t.Content.Garrison;
         p.Heading("Town guard");
         int housed = Garrison.Housed(t);
-        p.Row($"[b]Watch[/b]  {Tag($"{t.Watch} watchmen")}{(housed > 0 ? "  " + Tag($"{housed} live in the walls", Ui.Good) : "")}\n{Ui.C(Ui.Ink2, $"[font_size=12]Hired through the Captain's motions in the Council. {Math.Round(Garrison.Wages(t))}g a day in wages.[/font_size]")}");
+        p.Row($"[b]Watch[/b]  {Ui.Chips(Ui.Chip("defence", $"{t.Watch}", null, "Watchmen. Hired through the Captain's motions in the Council."), housed > 0 ? Ui.Chip("stone", $"{housed}", Ui.Good, "Live in the walls") : "", Ui.Chip("gold", $"−{Math.Round(Garrison.Wages(t))}/day", Ui.Bad, "Wages"))}");
         RenderHeroGuard(p, t);
         string? flagWhy = Garrison.FlagBlocked(t, Town.Center, Town.Center);
-        p.Row($"[b]Guard flag[/b]  {Tag($"{_flagGuards} {(_flagGuards == 1 ? "guard" : "guards")}")}\n{Ui.C(Ui.Ink2, $"[font_size=12]Plant it anywhere ([b]G[/b]): the nearest guards go and stand there. Raiders shy away from what they cover, and what they cover holds better.[/font_size]")}",
+        p.Row($"{Ui.Tip($"{Ui.Img("order-guard", 16)} [b]Guard flag[/b] {Ui.Dim("(G)")}", "Plant it anywhere: the nearest guards go and stand there. Raiders shy away from what they cover, and what they cover holds better.")}  {Ui.Chip("defence", $"{_flagGuards}", null, "Guards")}",
             ("−", _flagGuards > 1, false, () => Act(() => _flagGuards--)),
             ("+", _flagGuards < Math.Max(1, t.Watch), false, () => Act(() => _flagGuards++)),
             (_map.Flagging ? "Cancel" : "Plant", flagWhy == null || _map.Flagging, true, ToggleFlag));
@@ -153,7 +154,7 @@ public partial class Main
             string state = at == sent ? Tag($"{at} holding it", Ui.Good) : Tag($"{at} there, {sent - at} on the way", Ui.Gold);
             p.Row($"{Ui.Esc(what)}  {state}", ("Show", true, false, () => ShowPost(post)), ("Stand down", true, false, () => Act(() => _sim.StandDown(id))));
         }
-        if (Garrison.Walled(t)) p.Note("Click any stretch of wall, a tower or the gate to call the watch to arms there. When a host marches, the scouts say which side it comes at.");
+        if (Garrison.Walled(t)) p.Note("Click a wall, tower or gate to call the watch to arms there. When a host marches, the scouts say which side it comes at.");
         else p.Note("Once the palisade stands, the watch walks it, and you can call them to arms on any stretch of it.");
     }
 
@@ -162,9 +163,10 @@ public partial class Main
     {
         var walls = Garrison.OnDuty(t, HeroDuty.Walls);
         var streets = Garrison.OnDuty(t, HeroDuty.Streets);
-        p.Row($"{Ui.Img("order-defend")} [b]Walls[/b]  {Tag($"{walls.Count}")}  {Ui.C(Ui.Good, $"+{Js.Str(Math.Round(Garrison.DutyDefense(t)))} defence")}\n" +
-              $"{Ui.Img("order-guard")} [b]Streets[/b]  {Tag($"{streets.Count}")}  {Ui.C(Ui.Good, $"+{Js.Str(Math.Round(Garrison.StreetWatch(t) * 100))}% watch")}\n" +
-              Ui.C(Ui.Ink2, $"[font_size=12]Heroes on guard stay home, take no bounties · {Js.Str(Math.Round(Garrison.DutyWages(t)))}g a day[/font_size]"));
+        p.Row($"{Ui.Tip($"{Ui.Img("heroes", 16)} [b]Heroes on guard[/b]", "Heroes on guard stay home and take no bounties.")}  {Ui.Chips(
+            Ui.Chip("order-defend", $"{walls.Count}", null, "On the walls"), Ui.Chip("defence", $"+{Js.Str(Math.Round(Garrison.DutyDefense(t)))}", Ui.Good, "Defence"),
+            Ui.Chip("order-guard", $"{streets.Count}", null, "On the streets"), Ui.Chip("ui-eye", $"+{Js.Str(Math.Round(Garrison.StreetWatch(t) * 100))}%", Ui.Good, "Watch"),
+            Ui.Chip("gold", $"−{Js.Str(Math.Round(Garrison.DutyWages(t)))}/day", Ui.Bad, "Wages"))}");
         foreach (var h in Garrison.Defenders(t))
         {
             int hid = h.Id;

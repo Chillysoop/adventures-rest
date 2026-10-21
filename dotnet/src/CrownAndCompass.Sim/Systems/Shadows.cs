@@ -233,7 +233,7 @@ public static class Shadows
                 if (sh.Form == "") sh.SinceDay = town.Day;
             }
             double rate = (r.PerDay + r.PerStage * Math.Max(0, (int)m.Stage - (int)MenaceStage.Rising)) * (1 + r.Security * (0.5 - s.Security / 100))
-                          / Math.Max(0.3, Reigns.Resolve(town, s));
+                          / Math.Max(0.3, Reigns.Resolve(town, s)) * Character.Shadow(town, s, m.Kind);
             sh.Depth = Math.Min(Math.Max(sh.Depth, Math.Min(Cap(town, m), sh.Depth + rate)), 100);
             if (Paying(s)) m.Power += r.TributePower;
         }
@@ -328,7 +328,7 @@ public static class Shadows
     public static string? RallyRefused(Town town, Settlement s)
     {
         if (s.Razed) return "they are gone";
-        if (!town.Regions[s.RegionId].Known) return "the town hasn't heard of them";
+        if (!Neighbours.Known(town, s)) return "the town hasn't met them";
         if (!Shadowed(s)) return "no enemy's shadow lies on them";
         if (s.Shadow!.RallyHeroId is int id) return $"{town.Agent(id).GivenName} is already on the way";
         if (Rallier(town) == null) return "no hero in town is free to go";
@@ -428,7 +428,7 @@ public static class Shadows
         var w = town.Content.World.Standing;
         if (Threat.IsActive(town) || town.Day - town.LastEnvoyDay < r.AutoEveryDays || town.Treasury < w.EnvoyCost + r.AutoReserve) return;
         var s = town.Settlements
-            .Where(x => Paying(x) && !Reigns.Puppet(x) && town.Regions[x.RegionId].Known)
+            .Where(x => Paying(x) && !Reigns.Puppet(x) && Neighbours.Known(town, x))
             .OrderByDescending(x => x.Standing).ThenBy(x => x.Id)
             .FirstOrDefault();
         if (s != null) World.SendEnvoy(town, s.Id);

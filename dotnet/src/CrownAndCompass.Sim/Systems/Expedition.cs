@@ -42,6 +42,9 @@ public sealed record ExpeditionResult(
     /// <summary>Mishaps and feats that may grow into running jokes (<see cref="Voices"/>).</summary>
     public IReadOnlyList<Gag> Gags { get; init; } = [];
 
+    /// <summary>Heroes bought back from the veiled room, and the patron each now owes.</summary>
+    public OrderedMap<int, string> Bargains { get; init; } = new();
+
     /// <summary>Put the heroes' hit points and potions where they ended up.</summary>
     public void Apply(IEnumerable<Agent> heroes)
     {
@@ -104,6 +107,12 @@ public static class Expedition
     {
         public MonsterDef Def { get; } = def;
         public int Hp { get; set; } = def.Hp;
+
+        /// <summary>How its kind fights (<see cref="Tactics"/>).</summary>
+        public TacticDef? Tactic { get; init; }
+
+        /// <summary>The round it spent on a signature move or calling help, instead of attacking.</summary>
+        public int Spent { get; set; }
     }
 
     private sealed record Check(Combatant Who, int Roll, int Total, string With = "")
@@ -158,6 +167,9 @@ public static class Expedition
         public readonly List<Gag> Gags = [];
         internal readonly List<Combatant> Party;
         public readonly OrderedMap<int, int> Kills = new();
+
+        /// <summary>Heroes bought back from the veiled room, and the patron they owe (<see cref="Patrons"/>).</summary>
+        public readonly OrderedMap<int, string> Bargains = new();
         public int Gold;
         public int Swell;
         public int Xp;
@@ -192,6 +204,9 @@ public static class Expedition
         public bool Talked;
         public bool Driven;
         public bool GoalMet;
+
+        /// <summary>How far the alarm has risen on a heist or a rescue (<see cref="HeistRules"/>).</summary>
+        public int Alarm;
         public readonly List<ExpeditionItem> Items = [];
 
         public Venture(Rng rng, Content content, IReadOnlyList<Agent> heroes, SiteDef? site = null)
@@ -301,8 +316,35 @@ public static class Expedition
             }
         }
 
+        /// <summary>Kinds of trouble a caster has already solved their own way on this delve.</summary>
+        private readonly HashSet<string> _waysUsed = [];
+
+        /// <summary>
+        /// A strong caster in the party gets them past this their own way, without a roll (once a delve for each kind):
+        /// flies them over the gorge, sends an unseen servant at the trap, divines the riddle, charms the guards.
+        /// </summary>
+        private bool Way(EncounterDef e)
+        {
+            if (_waysUsed.Contains(e.Kind)) return false;
+            foreach (var w in _content.Bounties.Ways)
+            {
+                if (w.Kind != e.Kind) continue;
+                var who = Standing.Where(c => w.Classes.Contains(c.Sheet.Cls.Id) && c.Sheet.Level >= w.MinLevel).OrderByDescending(c => c.Sheet.Level).ThenBy(c => c.Agent.Id).FirstOrDefault();
+                if (who == null) continue;
+                _waysUsed.Add(e.Kind);
+                Log(Cap(w.Line.Replace("{name}", who.Agent.GivenName).Replace("{class}", who.Sheet.Cls.Name.ToLowerInvariant()).Replace("{text}", e.Text)));
+                Mark("way");
+                Xp += e.Kind == "combat" ? 50 : 25;
+                if (e.Kind == "parley") _skipNextCombat = true;
+                if (e.Kind is "puzzle" or "parley" && e.Gold.Length > 1) Gold += _rng.Range(e.Gold[0], e.Gold[1] + 1);
+                return true;
+            }
+            return false;
+        }
+
         public void Encounter(EncounterDef e)
         {
+            if (e.Kind is "hazard" or "trap" or "puzzle" or "parley" && Way(e)) return;
             switch (e.Kind)
             {
                 case "combat":
@@ -420,12 +462,14 @@ public static class Expedition
             int n = rng.Range(e.Count[0], e.Count[1] + 1);
             // Fewer foes than drawn never empties a fight that had any.
             if (!def.Boss) n = Math.Max(Math.Min(n, 1), n + Swell);
-            for (int i = 0; i < n; i++) foes.Add(new Foe(def));
+            var tactic = Tactics.Of(_content, def);
+            for (int i = 0; i < n; i++) foes.Add(new Foe(def) { Tactic = tactic });
             if (!string.IsNullOrEmpty(e.Escort) && e.EscortCount != null)
             {
                 var ed = _content.Monster(e.Escort);
+                var et = Tactics.Of(_content, ed);
                 int en = rng.Range(e.EscortCount[0], e.EscortCount[1] + 1);
-                for (int i = 0; i < en; i++) foes.Add(new Foe(ed));
+                for (int i = 0; i < en; i++) foes.Add(new Foe(ed) { Tactic = et });
             }
             string label = n == 1 ? (def.Named ? def.Name : $"{Article(def.Name)} {def.Name}") : $"{n} {def.Plural}";
             if (def.Id != "mimic") Log($"{Cap(e.Text)}: {label}{(foes.Count > n ? $", with {foes.Count - n} more at its side" : "")}.");
@@ -435,13 +479,16 @@ public static class Expedition
             int totalXp = foes.Sum(f => f.Def.Xp);
             int round = 0;
             bool monstersFirst = surprised;
+            if (def.Boss && Goad(foes[0])) HeroesAct(foes, 0);
             while (round < 20)
             {
                 round++;
                 if (!monstersFirst) HeroesAct(foes, round);
                 monstersFirst = false;
                 if (foes.All(f => f.Hp <= 0)) break;
-                MonstersAct(foes);
+                if (Scatter(foes)) break;
+                if (def.Boss) BossMoves(foes, round);
+                MonstersAct(foes, round);
                 if (Standing.Count == 0) break;
                 if (foes.Any(f => f.Hp > 0) && BreakOff(def.Boss))
                 {
@@ -593,7 +640,7 @@ public static class Expedition
                     }
                     continue;
                 }
-                if (roll == 20 || roll + atk >= target.Def.Ac)
+                if (roll == 20 || roll + atk >= target.Def.Ac + Cover(target, round))
                 {
                     int dmg = Gear.Damage(_content, rng, c.Agent, roll == 20);
                     if (s.Cls.Sneak && Standing.Count > 1) dmg += rng.Roll((int)Math.Ceiling(s.Level / 2.0), 6);
@@ -629,20 +676,87 @@ public static class Expedition
             if (n > 0) Kills[c.Agent.Id] = Kills.Get(c.Agent.Id, 0) + n;
         }
 
-        private void MonstersAct(List<Foe> foes)
+        /// <summary>Cover a foe's kind fights from in the first rounds.</summary>
+        private static int Cover(Foe f, int round) => f.Tactic is { Cover: > 0 } t && round <= t.CoverRounds ? t.Cover : 0;
+
+        /// <summary>A pack hunter hits harder with its packmates still standing.</summary>
+        private static int Pack(Foe f, List<Foe> foes) =>
+            f.Tactic is { Pack: > 0 } t ? Math.Min(t.Pack, foes.Count(o => o != f && o.Hp > 0 && o.Tactic == t)) : 0;
+
+        /// <summary>
+        /// Foes that run when hurt break once the fight has turned: what is left of them is under the share
+        /// of their strength their kind will stand, and no boss holds them. Returns whether the field is clear.
+        /// </summary>
+        private bool Scatter(List<Foe> foes)
+        {
+            var living = foes.Where(f => f.Hp > 0).ToList();
+            if (living.Count == 0 || living.Any(f => f.Def.Boss)) return false;
+            var t = living[0].Tactic;
+            if (t is not { Flee: > 0 } || living.Any(f => f.Tactic != t)) return false;
+            var kin = foes.Where(f => f.Tactic == t).ToList();
+            double left = kin.Sum(f => Math.Max(0, f.Hp)) / (double)Math.Max(1, kin.Sum(f => f.Def.Hp));
+            if (left >= t.Flee) return false;
+            foreach (var f in living) f.Hp = 0;
+            if (t.Fled != "") Log(Cap(t.Fled.Replace("{foes}", living.Count == 1 ? living[0].Def.Name : living[0].Def.Plural)));
+            return true;
+        }
+
+        /// <summary>A proud boss can be goaded into talking by the party's best talker, and the party closes in for free.</summary>
+        private bool Goad(Foe boss)
+        {
+            if (boss.Tactic is not { Pride: > 0 } t) return false;
+            var face = Standing.OrderByDescending(c => c.Agent.Abilities.Cha).ThenBy(c => c.Agent.Id).FirstOrDefault();
+            if (face == null || face.Agent.Abilities.Cha < t.Pride) return false;
+            if (_rng.D20() + Rng.Modifier(face.Agent.Abilities.Cha) < t.Pride) return false;
+            Log(t.Goaded.Replace("{hero}", face.Agent.GivenName).Replace("{boss}", The(boss.Def)));
+            return true;
+        }
+
+        /// <summary>A boss's signature attack on the whole party in round 2, and its minions called in round 3.</summary>
+        private void BossMoves(List<Foe> foes, int round)
+        {
+            var boss = foes.FirstOrDefault(f => f.Def.Boss && f.Hp > 0);
+            if (boss?.Tactic is not { } t) return;
+            if (round == 2 && t.Signature != "")
+            {
+                // It spends its round on it: half a blow to everyone, and a quick hero dodges it.
+                boss.Spent = round;
+                var downed = new List<string>();
+                foreach (var c in Standing)
+                {
+                    int dmg = Math.Max(1, boss.Def.Dice.Roll(_rng, false) / 2);
+                    if (_rng.D20() + Rng.Modifier(c.Agent.Abilities.Dex) >= 10 + boss.Def.Attack / 2) continue;
+                    Hurt(c, dmg);
+                    if (c.Down) downed.Add(c.Agent.GivenName);
+                }
+                Log($"{Cap(t.Signature.Replace("{boss}", The(boss.Def)))}{(downed.Count > 0 ? $". {ListNames(downed)} {(downed.Count == 1 ? "goes" : "go")} down" : "")}.");
+            }
+            if (round == 3 && t.Minions != "")
+            {
+                boss.Spent = round;
+                var m = _content.Monster(t.Minions);
+                int n = _rng.Range(t.MinionCount[0], t.MinionCount[1] + 1);
+                var mt = Tactics.Of(_content, m);
+                for (int i = 0; i < n; i++) foes.Add(new Foe(m) { Tactic = mt });
+                if (t.Called != "") Log(Cap(t.Called.Replace("{boss}", The(boss.Def)).Replace("{n}", n.ToString())));
+            }
+        }
+
+        private void MonstersAct(List<Foe> foes, int round)
         {
             var rng = _rng;
-            foreach (var f in foes)
+            foreach (var f in foes.ToList())
             {
+                int pack = Pack(f, foes);
                 for (int k = 0; k < Math.Max(1, f.Def.Attacks); k++)
                 {
-                    if (f.Hp <= 0) break;
+                    if (f.Hp <= 0 || f.Spent == round) break;
                     var targets = Standing;
                     if (targets.Count == 0) return;
                     var t = rng.Pick(targets);
                     int roll = rng.D20();
                     if (roll == 1) continue;
-                    if (roll == 20 || roll + f.Def.Attack >= t.Ac)
+                    if (roll == 20 || roll + f.Def.Attack + pack >= t.Ac)
                     {
                         int dmg = Math.Max(1, f.Def.Dice.Roll(rng, roll == 20));
                         Hurt(t, dmg);
@@ -693,6 +807,10 @@ public static class Expedition
                     continue;
                 }
                 if (FirstAid(c)) continue;
+                // Nobody could reach them: they wake in the veiled room and answer its three questions (death saves).
+                var veil = _content.Patrons.Veil;
+                string name = c.Agent.GivenName;
+                if (veil.Wake != "") Log(veil.Wake.Replace("{name}", name));
                 int ok = 0;
                 int fail = 0;
                 var rolls = new List<int>();
@@ -705,10 +823,26 @@ public static class Expedition
                     else if (r >= 10) ok++;
                     else fail++;
                 }
+                string said = string.Join(", ", rolls);
                 if (fail >= 3)
                 {
+                    // Before the door closes, a patron may offer a costly way back.
+                    if (Patrons.Offer(_content, _rng, c.Sheet) is { } patron)
+                    {
+                        Log(veil.Fail.Replace("{name}", name).Replace("{rolls}", said) + " " + veil.Offer.Replace("{name}", name).Replace("{patron}", patron.Name));
+                        if (!c.Sheet.Cls.Healer || c.Sheet.Patron == patron.Id)
+                        {
+                            c.Down = false;
+                            c.Hp = 1;
+                            Bargains[c.Agent.Id] = patron.Id;
+                            Log(veil.Take.Replace("{name}", name).Replace("{patron}", patron.Name));
+                            Mark("bargain", c, rolls[^1]);
+                            continue;
+                        }
+                        Log(veil.Refuse.Replace("{name}", name).Replace("{patron}", patron.Name));
+                    }
                     c.Dead = true;
-                    Log($"{c.Agent.GivenName} fails their death saves ({string.Join(", ", rolls)}) and dies.");
+                    Log($"{name} fails their death saves ({said}) and dies.");
                     Mark("death", c, rolls[^1]);
                     Speak("death", c);
                 }
@@ -716,7 +850,7 @@ public static class Expedition
                 {
                     c.Down = false;
                     c.Hp = 1;
-                    Log($"{c.Agent.GivenName} pulls through on death saves ({string.Join(", ", rolls)}).");
+                    Log(veil.Pass != "" ? veil.Pass.Replace("{name}", name).Replace("{rolls}", said) : $"{name} pulls through on death saves ({said}).");
                     Mark("saved", c, rolls[^1]);
                 }
             }
@@ -936,7 +1070,9 @@ public static class Expedition
                 if (boss) Log("At last, the heart of the place.");
                 Clock += 1;
                 bool won = true;
-                if (e.Kind == "combat") won = Combat(e, false);
+                if (!boss && e.Kind == "combat" && Terms is { Heist: true } && Sneak(site)) won = true;
+                else if (!boss && e.Kind == "combat" && Way(e)) won = true;
+                else if (e.Kind == "combat") won = Combat(e, false);
                 else Encounter(e);
                 MarkLost();
                 if (Wiped)
@@ -1031,6 +1167,13 @@ public static class Expedition
             }
             if (t.Item)
             {
+                if (t.Heist && !Vault(site))
+                {
+                    Gold -= loot - (int)(loot * _content.Bounties.Heist.Bolted);
+                    Log($"The vault door slams behind them and every bell in {site.Name} rings. They run with what is in their hands{(loot > 0 ? $" ({(int)(loot * _content.Bounties.Heist.Bolted)} gold)" : "")}, and the treasure stays behind.");
+                    Mark("goal");
+                    return ExpeditionOutcome.Retreated;
+                }
                 Log($"They find the hoard, take what they can carry{(loot > 0 ? $" ({loot} gold)" : "")} and get out of {site.Name} before the rest of it wakes.");
                 Mark("goal");
                 Treasure(site, true);
@@ -1042,6 +1185,62 @@ public static class Expedition
             Driven = true;
             SiteCleared = true;
             return ExpeditionOutcome.Cleared;
+        }
+
+        /// <summary>
+        /// Slip past a room on a quiet job: the party's best at it against the place, or fight it and raise the alarm.
+        /// Once the alarm is up the whole place is awake and nobody slips past anything. Returns whether they got by.
+        /// </summary>
+        private bool Sneak(SiteDef site)
+        {
+            var h = _content.Bounties.Heist;
+            if (Alarm >= h.AlarmMax) return false;
+            var check = BestCheck(SkillKind.Trap);
+            int dc = h.SneakDc + h.PerTier * Math.Max(1, site.Tier);
+            if (check.Total >= dc)
+            {
+                Log($"{check.Name} leads them past unseen (d20 {check.Roll}, {check.Total} vs DC {dc}); the alarm stays at {Alarm} of {h.AlarmMax}.");
+                Mark("sneak", check, dc);
+                return true;
+            }
+            Raise(site, $"{check.Name} kicks a pail in the dark (d20 {check.Roll}, {check.Total} vs DC {dc})");
+            return false;
+        }
+
+        /// <summary>The alarm goes up a step; at the top the whole place wakes, and more foes come to every room after.</summary>
+        private void Raise(SiteDef site, string why)
+        {
+            var h = _content.Bounties.Heist;
+            Alarm = Math.Min(h.AlarmMax, Alarm + 1);
+            if (Alarm >= h.AlarmMax)
+            {
+                Swell += h.Wake;
+                Log($"{why}, and the alarm goes up all through {site.Name}: every room ahead is awake now.");
+            }
+            else Log($"{why}. The alarm rises to {Alarm} of {h.AlarmMax}.");
+        }
+
+        /// <summary>The vault round a hoard: its locks, wards and hidden catches one after another, sharing the job's alarm. Returns whether they got in.</summary>
+        private bool Vault(SiteDef site)
+        {
+            var h = _content.Bounties.Heist;
+            int layers = h.Layers.Count == 0 ? 0 : h.Layers[Math.Clamp(site.Tier - 1, 0, h.Layers.Count - 1)];
+            int dc = h.LayerDc + h.PerTier * Math.Max(1, site.Tier);
+            for (int i = 0; i < layers; i++)
+            {
+                string kind = h.Kinds.Count == 0 ? SkillKind.Trap : h.Kinds[i % h.Kinds.Count];
+                string what = kind switch { SkillKind.Puzzle => "a ward", SkillKind.Perception => "a hidden catch", _ => "a lock" };
+                var check = BestCheck(kind);
+                if (check.Total >= dc)
+                {
+                    Log($"{check.Name} gets past {what} on the vault (d20 {check.Roll}, {check.Total} vs DC {dc}), {i + 1} of {layers}.");
+                    Mark("vault", check, dc);
+                    continue;
+                }
+                Raise(site, $"{check.Name} fumbles {what} on the vault (d20 {check.Roll}, {check.Total} vs DC {dc})");
+                if (Alarm >= h.AlarmMax) return false;
+            }
+            return true;
         }
 
         private void Hoard(SiteDef site)
@@ -1144,6 +1343,7 @@ public static class Expedition
                 GoalMet = GoalMet,
                 Beats = Beats.ToList(),
                 Gags = Gags.ToList(),
+                Bargains = Bargains,
             };
         }
     }

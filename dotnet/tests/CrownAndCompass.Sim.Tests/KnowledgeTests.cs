@@ -5,16 +5,17 @@ namespace CrownAndCompass.Sim.Tests;
 public class KnowledgeTests
 {
     /// <summary>Run a town until a party with a caster has just marched out.</summary>
-    private static (Simulation Sim, Party Party) PartyWithCaster()
+    private static (Simulation Sim, Party Party) PartyWithCaster(int first = 1)
     {
-        for (int seed = 1; seed <= 30; seed++)
+        for (int seed = first; seed <= 30; seed++)
         {
             var sim = new Simulation(new SimulationOptions { Seed = seed });
             for (int day = 0; day < 120; day++)
             {
                 sim.RunDays(1);
                 var t = sim.Town;
-                var p = t.Parties.FirstOrDefault(x => !x.Returned && x.DepartTick == t.Tick && Knowledge.Slots(t, x) > 0);
+                // Far enough out that it is still on the road a few hours on.
+                var p = t.Parties.FirstOrDefault(x => !x.Returned && x.DepartTick == t.Tick && Knowledge.Slots(t, x) > 0 && x.ArriveTick > t.Tick + 12);
                 if (p != null) return (sim, p);
             }
         }
@@ -37,11 +38,17 @@ public class KnowledgeTests
     [Fact]
     public void ARecalledPartyComesHomeWithoutAChronicleAndTheBountyReopens()
     {
+        // A party a word from the road has not already turned back.
         var (sim, party) = PartyWithCaster();
+        for (int i = 0; i < 9; i++) sim.Step();
+        while (party.RecalledTick != null)
+        {
+            (sim, party) = PartyWithCaster(sim.Options.Seed + 1);
+            for (int i = 0; i < 9; i++) sim.Step();
+        }
         var t = sim.Town;
         var site = Quests.Site(t, party.SiteId)!;
         int attempts = site.Attempts;
-        for (int i = 0; i < 9; i++) sim.Step();
         // Three hours on the road since dawn: they march the same three hours back.
         double walked = Roads.Marched(t.Content, party.DepartTick, t.Tick);
         Assert.True(walked > 0);

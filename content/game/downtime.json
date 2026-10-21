@@ -1,0 +1,20 @@
+{
+  "_doc": "Heroes' own lives between jobs (Systems/Downtime.cs). Once a week (by id) each hero in town with gold to spare does something with it, in this order: buys land and a house of their own (landCost plus landPerLevel a level, paid to the town; then they sleep there instead of the tavern, gain rootLoyalty once and rooted a day after), trains (trainPerLevel a level, for trainXp of their next level, at most trainMaxLevel), or buys a stake in a business in town (stake gold into its till, paying back dividend of it a day while the till has it). They can still be called up for any job.",
+  "keep": 40,
+  "landCost": 150,
+  "landPerLevel": 20,
+  "rootLoyalty": 5,
+  "rooted": 0.03,
+  "trainPerLevel": 20,
+  "trainXp": 0.12,
+  "trainMaxLevel": 19,
+  "stake": 120,
+  "dividend": 0.01,
+  "holdings": ["a farmstead past the mill", "a narrow house on the hill", "an old tower by the river", "a cottage with a walled garden", "a hunting lodge at the forest's edge", "a house over the bakery"],
+  "lines": {
+    "land": "{hero} buys {holding} for {cost} gold, and sleeps under their own roof between jobs.",
+    "train": "{hero} pays {cost} gold for a week's hard training with {trainer}.",
+    "stake": "{hero} buys a stake in {business} for {cost} gold."
+  },
+  "trainers": ["an old sword-master", "the watch's drill sergeant", "a retired duelist", "a scholar of the arcane", "a priest who once marched with the crusades"]
+}

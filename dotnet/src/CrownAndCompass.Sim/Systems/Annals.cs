@@ -28,6 +28,27 @@ public sealed record HistoryRules
 
     /// <summary>Where every menace kind, people, faction and hero background comes from (LoreTests checks each has one).</summary>
     public IReadOnlyList<HistoryLineage> Lineages { get; init; } = [];
+
+    /// <summary>The moods a menace kind can be in for a campaign (<see cref="Character.TemperOf(Town, string)"/>).</summary>
+    public IReadOnlyList<HistoryTemper> Tempers { get; init; } = [];
+}
+
+/// <summary>
+/// A menace kind's temper in one campaign, rolled from the seed: the same foes are warlike one game and
+/// sensible the next. It reweighs what they want, how often they strike, and their Discipline.
+/// </summary>
+public sealed record HistoryTemper
+{
+    public string Id { get; init; } = "";
+    public string Name { get; init; } = "";
+    public IReadOnlyList<string> Subjects { get; init; } = [];
+    public double Weight { get; init; } = 1;
+    public Dictionary<string, double> Ambitions { get; init; } = [];
+
+    /// <summary>Times the days between its strikes.</summary>
+    public double Strike { get; init; } = 1;
+    public int Will { get; init; }
+    public string Text { get; init; } = "";
 }
 
 /// <summary>A stretch of the world the timeline gives a column: the region themes that lie there now.</summary>

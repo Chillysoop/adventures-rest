@@ -1,6 +1,7 @@
 {
-  "_doc": "Minor powers (Systems/Powers.cs): strong outside factions with a leader, a goal and a price, who side with the town or with one of its enemies. Standing settles toward base plus each liked signal (0-1, see Powers.Signal) times its weight, plus the favour the town's gifts bought (which fades by favourFade a day). At allyAt the town can pay price and then tithe a day for the ally boon; a town ally whose standing falls below leaveBelow, or whose tithe goes unpaid lapseDays, walks away. Allying angers its rivals by rivalHit. From courtFrom on, every courtEvery days the strongest risen enemy whose wits allow it courts one power that serves (serves 'any', the enemy's kind not in shuns): its offer is its power times its wits (cunning) times offerPerPower; if that beats the power's standing (plus allyResist when it is the town's ally) word comes through a witness and the town has noticeDays to raise standing past the offer with gifts (giftCost gold, giftFavour favour, each gift worth giftFalloff less than the last until they fade). Otherwise it joins that enemy: it arms it daily, skims the treasury, strikes with a Blows kind every strikeEvery days and adds host to the enemy's army at the walls. It goes back to neutral (standing reset to freedFavour favour) when that enemy dies, or comes back to the town early once standing reaches winBack. Each enemy takes at most perEnemy powers, and every power already marching with it adds bandwagon to its next offer. Envoys: from envoys.from, every envoys.every days the power with the most pressing case sends the town one (evil powers below tributeBelow demand tribute of gift x tribute, powers within allianceWithin of allyAt offer an alliance at price x allianceDiscount, others at pactAt or better that could serve an enemy offer a pact for gift x pactPrice: no enemy can buy them for pactDays). The town has answerDays to answer; refusing costs declined favour (spurned for a demand), and a lapsed answer is a refusal. A power with strange prices asks one instead of gold with strangeChance: name (a townsperson departs), harvest (farms yield amount less for days), voice (amount Mandate). Every power needs a library faction (ref) and a faction lineage in history.json.",
+  "_doc": "Minor powers (Systems/Powers.cs): strong outside factions with a leader, a goal and a price, who side with the town or with one of its enemies. Standing settles toward base plus each liked signal (0-1, see Powers.Signal) times its weight, plus the favour the town's gifts bought (which fades by favourFade a day). At allyAt the town can pay price and then tithe a day for the ally boon; a town ally whose standing falls below leaveBelow, or whose tithe goes unpaid lapseDays, walks away. Allying angers its rivals by rivalHit. From courtFrom on, every courtEvery days the strongest risen enemy whose wits allow it courts one power that serves (serves 'any', the enemy's kind not in shuns): its offer is its power times its wits (cunning) times offerPerPower; if that beats the power's standing (plus allyResist when it is the town's ally) word comes through a witness and the town has noticeDays to raise standing past the offer with gifts (giftCost gold, giftFavour favour, each gift worth giftFalloff less than the last until they fade). Otherwise it joins that enemy: it arms it daily, skims the treasury, strikes with a Blows kind every strikeEvery days and adds host to the enemy's army at the walls. It goes back to neutral (standing reset to freedFavour favour) when that enemy dies, or comes back to the town early once standing reaches winBack. Each enemy takes at most perEnemy powers, and every power already marching with it adds bandwagon to its next offer. Envoys: from envoys.from, every envoys.every days the power with the most pressing case sends the town one (evil powers below tributeBelow demand tribute of gift x tribute, powers within allianceWithin of allyAt offer an alliance at price x allianceDiscount, others at pactAt or better that could serve an enemy offer a pact for gift x pactPrice: no enemy can buy them for pactDays). The town has answerDays to answer; refusing costs declined favour (spurned for a demand), and a lapsed answer is a refusal. Favours (favours): powers with asks offer to be done a favour (clear a known lair up to maxTier, see the worst enemy dead, open one more trade route); a promise has days to keep, done pays done favour and gift x gold, broken costs failed. Feuds (feuds): from feuds.from every feuds.every days the pair rested longest feuds for days; the side whose foe is the town ally holds hit against the town and, if evil with a strike, strikes every strikeEvery; the ally sends an aid envoy for gift x aid gold that wins the feud (aidFavour to it, lost from its foe; refusing costs spurned). A power with strange prices asks one instead of gold with strangeChance: name (a townsperson departs), harvest (farms yield amount less for days), voice (amount Mandate). Every power needs a library faction (ref) and a faction lineage in history.json.",
   "courtFrom": 60,
+  "_contactDoc": "First contact: the town knows no power at the start. Each is met on its meetDay (its people come calling), or earlier when the town hears an enemy courting it or an ally feuding with it. A first meeting opens its contact story (contacts, also \"contact-people\" for the peoples, met from world.json standing meetFrom every meetEvery days; source \"contact\", needs [\"minor\"]); the \"minor\" effect moves its standing and favour. Unmet powers send no envoys, take no gifts and can't be allied.",
   "courtEvery": 45,
   "noticeDays": 8,
   "offerPerPower": 0.14,
@@ -21,7 +22,7 @@
   "warnText": "{witness} brings the watch word from {name} just in time: {by} had people in the town tonight, and they are taken before they can strike.",
   "powers": [
     {
-      "id": "black-ledger", "ref": "black-ledger", "face": "bandit", "title": "Factor-General", "leader": "Corvane Mardt",
+      "id": "black-ledger", "ref": "black-ledger", "meetDay": 20, "asks": ["route", "clear"], "face": "bandit", "title": "Factor-General", "leader": "Corvane Mardt",
       "goal": "wants every road on the frontier to pay the Ledger a toll, and every debt collected",
       "seat": "its counting-house in the Free Ports",
       "witness": "a Ledger factor drinking in the tavern",
@@ -32,7 +33,7 @@
       "enemy": { "arm": 0.6, "skim": 4, "host": 35, "strike": "treasury", "strikeEvery": 50, "text": "Ledger arms for {enemy}, and smugglers skimming the treasury" }
     },
     {
-      "id": "silent-knife", "ref": "silent-knife", "face": "hooded-assassin", "title": "guildmaster", "leader": "the Mask Who Waits",
+      "id": "silent-knife", "ref": "silent-knife", "meetDay": 95, "asks": ["slay"], "face": "hooded-assassin", "title": "guildmaster", "leader": "the Mask Who Waits",
       "goal": "wants contracts, gold, and no one asking where it sleeps",
       "seat": "no hall anyone can find",
       "witness": "a frightened go-between who wants it known he had no part",
@@ -44,7 +45,7 @@
       "contractText": "Word comes by a nameless boy with a black ribbon: one of {enemyLeader}'s captains was found in the morning with a dagger that casts no shadow. {enemy} is the weaker for it."
     },
     {
-      "id": "lanternbearers", "ref": "lanternbearers", "face": "spy", "title": "Lamplighter", "leader": "Wren Halloway",
+      "id": "lanternbearers", "ref": "lanternbearers", "meetDay": 45, "asks": ["slay", "clear"], "face": "spy", "title": "Lamplighter", "leader": "Wren Halloway",
       "goal": "wants no tyrant, cult or fiend to rule the frontier",
       "seat": "nowhere, and every inn with a lantern in the window",
       "witness": "a travelling singer with a lantern pin inside her collar",
@@ -55,7 +56,7 @@
       "enemy": { "text": "nothing: it never serves the town's enemies" }
     },
     {
-      "id": "crown-league", "ref": "crown-league", "face": "crown", "title": "League Marshal", "leader": "Marshal Edrith Vane",
+      "id": "crown-league", "ref": "crown-league", "meetDay": 70, "asks": ["clear", "slay"], "face": "crown", "title": "League Marshal", "leader": "Marshal Edrith Vane",
       "goal": "wants every town on the frontier walled, garrisoned and sworn to answer the beacons",
       "seat": "the beacon-tower at Harrowgate",
       "witness": "a League herald in a ring-of-towers tabard",
@@ -66,7 +67,7 @@
       "enemy": { "text": "nothing: it never serves the town's enemies" }
     },
     {
-      "id": "vermilion-conclave", "ref": "vermilion-conclave", "face": "warlock-hood", "title": "Scarlet Archmagister", "leader": "Archmagister Seraphel Quill",
+      "id": "vermilion-conclave", "ref": "vermilion-conclave", "meetDay": 120, "asks": ["clear"], "face": "warlock-hood", "title": "Scarlet Archmagister", "leader": "Archmagister Seraphel Quill",
       "goal": "wants an enclave in every rich town, and first claim on every relic dug out of the wilds",
       "seat": "the Vermilion Spire on the old Caldor road",
       "witness": "an apprentice who ran from the Spire",
@@ -77,7 +78,7 @@
       "enemy": { "arm": 0.4, "host": 55, "strike": "stores", "strikeEvery": 55, "text": "war-mages marching with {enemy}, and curses on the town's stores" }
     },
     {
-      "id": "ember-court", "ref": "ember-court", "face": "dragon-head", "title": "Ember Queen", "leader": "Ysmeralt, last daughter of Vermithrax",
+      "id": "ember-court", "ref": "ember-court", "meetDay": 200, "asks": ["slay"], "face": "dragon-head", "title": "Ember Queen", "leader": "Ysmeralt, last daughter of Vermithrax",
       "goal": "wants a hoard worthy of her father, and every lesser wyrm gone from her sky",
       "seat": "the Ember Court in the smoking peaks",
       "witness": "a kobold who fled the Court with singed scales",
@@ -88,7 +89,7 @@
       "enemy": { "arm": 0.5, "host": 160, "strike": "burn", "strikeEvery": 40, "text": "the Ember Queen flying with {enemy}'s host, and fire on the roofs" }
     },
     {
-      "id": "mire-grandmothers", "ref": "mire-grandmothers", "face": "witch-face", "title": "eldest of the coven", "leader": "Granny Wormwood",
+      "id": "mire-grandmothers", "ref": "mire-grandmothers", "meetDay": 150, "asks": ["clear"], "face": "witch-face", "title": "eldest of the coven", "leader": "Granny Wormwood",
       "goal": "wants bargains struck and favours owed, and a town afraid enough to come asking",
       "seat": "a stilt-house in the drowned fens",
       "witness": "a hedge-witch who will not say how she knows",
@@ -103,6 +104,39 @@
         { "id": "a-good-year", "kind": "harvest", "amount": 0.25, "days": 360, "text": "a year of good harvests", "paid": "A grey hare is seen in every field at dawn. The farmers say the soil has gone tired: the Grandmothers are taking their year of good harvests." },
         { "id": "the-mayors-voice", "kind": "voice", "amount": 15, "text": "the mayor's voice, a little of it", "paid": "The mayor wakes hoarse and stays hoarse. At the council table the townsfolk lean in to hear, and some stop bothering. The Grandmothers keep what they took in a stoppered jar." }
       ]
+    },
+    {
+      "id": "rose-thieves", "ref": "rose-thieves", "meetDay": 60, "face": "visored-helm", "title": "Knight-Robber of the Rose", "leader": "Dame Isolde Fernhallow",
+      "goal": "wants hoarders robbed and the takings handed out on the village greens",
+      "seat": "a ruined chapel in the greenwood that every forester knows and none will name",
+      "witness": "a charcoal-burner with a red rose pinned to his hat",
+      "evil": false, "serves": "none", "shuns": [],
+      "base": 5, "likes": { "slain": 25, "wealth": -20, "dark": -30 },
+      "allyAt": 30, "price": 200, "tithe": 1, "gift": 40,
+      "ally": { "defence": 30, "income": 4, "text": "masked knights on the walls, and a share of what they take from the enemy's paymasters" },
+      "enemy": { "text": "nothing: they rob tyrants, not towns" }
+    },
+    {
+      "id": "foundling-purse", "ref": "foundling-purse", "meetDay": 35, "face": "domino-mask", "title": "Matron of the Purse", "leader": "Mother Tansy",
+      "goal": "wants three orphanages fed, and every purse in reach a little lighter for it",
+      "seat": "the back stair of the Harrowgate orphanage",
+      "witness": "a barefoot boy who knows far more than a boy should",
+      "evil": false, "serves": "any", "shuns": ["undead"],
+      "base": 0, "likes": { "growth": 25, "wealth": 15, "infamy": -20 },
+      "allyAt": 25, "price": 220, "tithe": 2, "gift": 40,
+      "ally": { "income": 3, "warn": 0.2, "text": "word from every street child in town, so a fifth of enemy agents' blows are stopped, and a cut of the take for the treasury" },
+      "enemy": { "skim": 3, "strike": "treasury", "strikeEvery": 60, "text": "little hands in the treasury for {enemy}, and the town's purses picked" }
+    },
+    {
+      "id": "skyhold-post", "ref": "skyhold-post", "meetDay": 85, "face": "dwarf-face", "title": "Postmaster of the Skyhold", "leader": "Brannoc Featherhand",
+      "goal": "wants every road and pass carrying its letters, and every stamp paid",
+      "seat": "the griffon eyries of the Skyhold, above the clouds",
+      "witness": "a dwarven courier who lands in the square, stamps a letter and is gone",
+      "evil": false, "serves": "any", "shuns": [],
+      "base": 10, "likes": { "routes": 35, "wealth": 10 },
+      "allyAt": 30, "price": 300, "tithe": 2, "gift": 45,
+      "ally": { "income": 5, "warn": 0.15, "text": "letters flown in from every road, so warnings come in time and the stamps pay the treasury" },
+      "enemy": { "arm": 0.25, "text": "{enemy}'s orders flown fast between its camps by griffon" }
     }
   ],
   "envoys": {
@@ -120,6 +154,38 @@
     "pactEnds": "The truce with {name} has run out. Its door is open to any enemy's gold again.",
     "bandwagon": "Word is that {backers} already march with {enemy}, which makes the offer look the safer."
   },
+  "favours": {
+    "days": 90, "maxTier": 3, "done": 25, "gold": 1, "failed": 8,
+    "ask": {
+        "clear": "An envoy of {name} brings a favour {leader} would have of {town}: {task}. {name} will not forget a friend who does it. The envoy waits {answer} days for an answer.",
+        "slay": "An envoy of {name} comes with a request from {leader}: {task}. Do it, and {name} will count {town} a friend. The envoy waits {answer} days for an answer.",
+        "route": "An envoy of {name} asks a favour of {town}: {task}, so that more coin moves on the roads. The envoy waits {answer} days for an answer."
+    },
+    "task": {
+        "clear": "{town} gives the envoy of {name} its word: it will {task} within {days} days.",
+        "slay": "{town} gives the envoy of {name} its word: it will {task} within {days} days.",
+        "route": "{town} gives the envoy of {name} its word: it will {task} within {days} days."
+    },
+    "kept": "{town} has done what {leader} asked: the favour is done, and {name} sends {gold} gold with its thanks.",
+    "broken": "{leader} hears that {town} did not do as it promised. {name} will remember the broken word."
+  },
+  "feuds": {
+    "from": 120, "every": 70, "days": 60, "rest": 200,
+    "hit": 25, "strikeEvery": 30,
+    "aid": 2, "aidFavour": 20, "lost": 20, "spurned": 15,
+    "pairs": [
+      { "a": "lanternbearers", "b": "silent-knife", "why": "a Lanternbearer singer found dead with a shadowless dagger in her back" },
+      { "a": "crown-league", "b": "black-ledger", "why": "the Ledger's tolls on the League's beacon roads" },
+      { "a": "vermilion-conclave", "b": "mire-grandmothers", "why": "a book of names the Conclave stole out of the drowned fens" },
+      { "a": "ember-court", "b": "vermilion-conclave", "why": "a dragon's egg the Conclave keeps under its Spire" },
+      { "a": "lanternbearers", "b": "black-ledger", "why": "a Lanternbearer who found out what the Ledger smuggles" }
+    ],
+    "begins": "{witness} brings word of a feud: {name} and {foe} are at each other's throats over {why}.",
+    "callToArms": "{leader} sends to {town}, ally to ally: the war with {foe} goes hard, and {price} would end it. Refuse, and {leader} will remember who stood aside.",
+    "won": "With {town}'s gold behind it, {leader} drives off {foe}. {foeLeader} sues for peace, and {foe} will remember who paid for it.",
+    "ends": "The feud between {name} and {foe} cools, for now.",
+    "strikes": "{leader} sends agents against {town} for keeping company with {foe}."
+  },
   "text": {
     "courted": "{witness} says envoys of {enemy} have been seen at {seat}, offering {name} gold and promises. An answer is due in {days} days.",
     "refused": "{witness} says {name} sent {enemy}'s envoys away empty-handed. {town} can breathe easier.",
@@ -130,5 +196,1516 @@
     "freed": "{witness} says {name} gave up {enemy}'s cause, with no one left to pay for it.",
     "wonBack": "{witness} says {name} turned their back on {enemy}. {town}'s gifts outweighed the enemy's gold.",
     "hexed": "The Grandmothers' hex lies on {enemy}: its warriors sicken in their camps."
-  }
+  },
+  "contacts":
+  [
+    {
+      "id": "contact-black-ledger",
+      "title": "A factor of the Black Ledger",
+      "stakes": "medium",
+      "source": "contact",
+      "needs": [
+        "minor"
+      ],
+      "repeatDays": 100000,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A factor in a silver-chained coat lays a ledger on your table. {minorLeader} would like {town}'s roads on its books.",
+          "options": [
+            {
+              "label": "Haggle over the toll",
+              "tags": [
+                "coin",
+                "guile"
+              ],
+              "skill": "persuasion",
+              "dc": 13,
+              "success": {
+                "text": "You settle on a toll that suits you both. The factor writes your name in black ink.",
+                "effects": {
+                  "minor": 15,
+                  "gold": 30
+                },
+                "next": "terms"
+              },
+              "failure": {
+                "text": "The factor smiles thinly and writes down a higher number.",
+                "effects": {
+                  "minor": -5
+                }
+              }
+            },
+            {
+              "label": "Read the small print",
+              "tags": [
+                "order"
+              ],
+              "skill": "investigation",
+              "dc": 12,
+              "success": {
+                "text": "You catch the clause that would have bled the town dry. The factor is impressed.",
+                "effects": {
+                  "minor": 10
+                },
+                "next": "terms"
+              },
+              "failure": {
+                "text": "The small print beats you, and the factor knows it.",
+                "effects": {
+                  "minor": 0
+                }
+              }
+            },
+            {
+              "label": "Show the factor the door",
+              "tags": [
+                "valor",
+                "order"
+              ],
+              "skill": "intimidation",
+              "dc": 14,
+              "success": {
+                "text": "The factor bows out. The Ledger will remember a town with a spine.",
+                "effects": {
+                  "minor": -5,
+                  "mandate": 2
+                }
+              },
+              "failure": {
+                "text": "The factor laughs at you, then leaves.",
+                "effects": {
+                  "minor": -15
+                }
+              }
+            }
+          ],
+          "ignored": {
+            "text": "The factor waits two days for an audience, then rides off and closes the book.",
+            "effects": {
+              "minor": -5
+            }
+          }
+        },
+        {
+          "id": "terms",
+          "text": "The factor closes the ledger. \"What would {town} have of the Ledger, then?\"",
+          "options": [
+            {
+              "label": "Friendship",
+              "tags": [
+                "mercy"
+              ],
+              "skill": "persuasion",
+              "dc": 12,
+              "success": {
+                "text": "{minorLeader} sends back warm words: {town} will be remembered kindly.",
+                "effects": {
+                  "minor": 8
+                }
+              },
+              "failure": {
+                "text": "The words come out stiff, and {minor} takes them politely and no more.",
+                "effects": {
+                  "minor": 2
+                }
+              }
+            },
+            {
+              "label": "Seal it with a gift",
+              "tags": [
+                "coin"
+              ],
+              "cost": 40,
+              "success": {
+                "text": "The gift goes off to {minorLeader}. It is well received.",
+                "effects": {
+                  "minor": 12
+                }
+              }
+            },
+            {
+              "label": "Nothing yet",
+              "tags": [
+                "order"
+              ],
+              "success": {
+                "text": "{town} keeps its counsel, and {minor} will be back.",
+                "effects": {}
+              }
+            }
+          ],
+          "ignored": {
+            "text": "Nobody answers, and {minor}'s envoy goes home.",
+            "effects": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "contact-silent-knife",
+      "title": "A note with a black ribbon",
+      "stakes": "medium",
+      "source": "contact",
+      "needs": [
+        "minor"
+      ],
+      "repeatDays": 100000,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A note with a black ribbon turns up on your pillow: the Silent Knife takes contracts in {town} now.",
+          "options": [
+            {
+              "label": "Send word you might have work",
+              "tags": [
+                "guile"
+              ],
+              "skill": "deception",
+              "dc": 14,
+              "success": {
+                "text": "A second note comes: the Knife will hear your offer when you have one.",
+                "effects": {
+                  "minor": 12
+                },
+                "next": "terms"
+              },
+              "failure": {
+                "text": "No answer comes, but the watch finds a dagger driven into your door.",
+                "effects": {
+                  "minor": -8
+                }
+              }
+            },
+            {
+              "label": "Double the guard",
+              "tags": [
+                "order",
+                "valor"
+              ],
+              "skill": "intimidation",
+              "dc": 13,
+              "success": {
+                "text": "The watch turns out in force. The Knife notes a town that is hard to scare.",
+                "effects": {
+                  "minor": -5,
+                  "mandate": 2
+                },
+                "next": "terms"
+              },
+              "failure": {
+                "text": "The extra guards see nothing at all, and the town feels watched.",
+                "effects": {
+                  "minor": -10,
+                  "mandate": -2
+                }
+              }
+            },
+            {
+              "label": "Burn the note and say nothing",
+              "tags": [
+                "mercy"
+              ],
+              "skill": "insight",
+              "dc": 12,
+              "success": {
+                "text": "You read the silence right: the Knife takes it as neither yes nor no.",
+                "effects": {
+                  "minor": 3
+                }
+              },
+              "failure": {
+                "text": "Your silence is taken as contempt.",
+                "effects": {
+                  "minor": -8
+                }
+              }
+            }
+          ],
+          "ignored": {
+            "text": "The note goes unanswered, and the Knife marks {town} as a town that would rather not know.",
+            "effects": {
+              "minor": -5
+            }
+          }
+        },
+        {
+          "id": "terms",
+          "text": "A second ribbon, red this time: the Knife asks what {town} wants of it.",
+          "options": [
+            {
+              "label": "Friendship",
+              "tags": [
+                "mercy"
+              ],
+              "skill": "persuasion",
+              "dc": 12,
+              "success": {
+                "text": "{minorLeader} sends back warm words: {town} will be remembered kindly.",
+                "effects": {
+                  "minor": 8
+                }
+              },
+              "failure": {
+                "text": "The words come out stiff, and {minor} takes them politely and no more.",
+                "effects": {
+                  "minor": 2
+                }
+              }
+            },
+            {
+              "label": "Seal it with a gift",
+              "tags": [
+                "coin"
+              ],
+              "cost": 40,
+              "success": {
+                "text": "The gift goes off to {minorLeader}. It is well received.",
+                "effects": {
+                  "minor": 12
+                }
+              }
+            },
+            {
+              "label": "Nothing yet",
+              "tags": [
+                "order"
+              ],
+              "success": {
+                "text": "{town} keeps its counsel, and {minor} will be back.",
+                "effects": {}
+              }
+            }
+          ],
+          "ignored": {
+            "text": "Nobody answers, and {minor}'s envoy goes home.",
+            "effects": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "contact-lanternbearers",
+      "title": "A singer with a lantern pin",
+      "stakes": "medium",
+      "source": "contact",
+      "needs": [
+        "minor"
+      ],
+      "repeatDays": 100000,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A travelling singer plays one song in the square and asks for you by name. She wears a lantern pin inside her collar.",
+          "options": [
+            {
+              "label": "Ask what she has seen",
+              "tags": [
+                "mercy"
+              ],
+              "skill": "insight",
+              "dc": 12,
+              "success": {
+                "text": "She tells you which roads are watched and by whom. The Lanternbearers have a friend here.",
+                "effects": {
+                  "minor": 15
+                },
+                "next": "terms"
+              },
+              "failure": {
+                "text": "She sings another song and tells you nothing.",
+                "effects": {
+                  "minor": 0
+                }
+              }
+            },
+            {
+              "label": "Offer her a room and a purse",
+              "tags": [
+                "coin",
+                "mercy"
+              ],
+              "success": {
+                "text": "She takes the room and leaves the purse. Word goes round the inns that {town} is a friend.",
+                "effects": {
+                  "minor": 12,
+                  "gold": -25
+                },
+                "next": "terms"
+              }
+            },
+            {
+              "label": "Have her watched",
+              "tags": [
+                "guile"
+              ],
+              "skill": "stealth",
+              "dc": 13,
+              "success": {
+                "text": "Your people follow her to a lantern-lit inn and learn the sign of the Lanternbearers.",
+                "effects": {
+                  "minor": 5
+                }
+              },
+              "failure": {
+                "text": "She spots them on the first corner and is gone by morning.",
+                "effects": {
+                  "minor": -10
+                }
+              }
+            }
+          ],
+          "ignored": {
+            "text": "She plays her one song, waits a day, and walks on.",
+            "effects": {
+              "minor": -5
+            }
+          }
+        },
+        {
+          "id": "terms",
+          "text": "The singer tunes her lute. \"The Lamplighter will want to know what you'd ask of us.\"",
+          "options": [
+            {
+              "label": "Friendship",
+              "tags": [
+                "mercy"
+              ],
+              "skill": "persuasion",
+              "dc": 12,
+              "success": {
+                "text": "{minorLeader} sends back warm words: {town} will be remembered kindly.",
+                "effects": {
+                  "minor": 8
+                }
+              },
+              "failure": {
+                "text": "The words come out stiff, and {minor} takes them politely and no more.",
+                "effects": {
+                  "minor": 2
+                }
+              }
+            },
+            {
+              "label": "Seal it with a gift",
+              "tags": [
+                "coin"
+              ],
+              "cost": 40,
+              "success": {
+                "text": "The gift goes off to {minorLeader}. It is well received.",
+                "effects": {
+                  "minor": 12
+                }
+              }
+            },
+            {
+              "label": "Nothing yet",
+              "tags": [
+                "order"
+              ],
+              "success": {
+                "text": "{town} keeps its counsel, and {minor} will be back.",
+                "effects": {}
+              }
+            }
+          ],
+          "ignored": {
+            "text": "Nobody answers, and {minor}'s envoy goes home.",
+            "effects": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "contact-crown-league",
+      "title": "A League herald",
+      "stakes": "medium",
+      "source": "contact",
+      "needs": [
+        "minor"
+      ],
+      "repeatDays": 100000,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A herald in a ring-of-towers tabard rides in and reads out the Crown League's charter: every frontier town should keep a wall and answer the beacons.",
+          "options": [
+            {
+              "label": "Swear to answer the beacons",
+              "tags": [
+                "order",
+                "valor"
+              ],
+              "skill": "persuasion",
+              "dc": 12,
+              "success": {
+                "text": "The herald writes {town} into the League's roll of beacon towns.",
+                "effects": {
+                  "minor": 15
+                },
+                "next": "terms"
+              },
+              "failure": {
+                "text": "The herald doubts you will keep your word.",
+                "effects": {
+                  "minor": 3
+                }
+              }
+            },
+            {
+              "label": "Show him the walls",
+              "tags": [
+                "order"
+              ],
+              "skill": "history",
+              "dc": 13,
+              "success": {
+                "text": "You walk the walls and talk about old sieges. The herald rides off impressed.",
+                "effects": {
+                  "minor": 12
+                },
+                "next": "terms"
+              },
+              "failure": {
+                "text": "He finds the gaps you hoped he wouldn't.",
+                "effects": {
+                  "minor": -5
+                }
+              }
+            },
+            {
+              "label": "Tell him to mind his own towns",
+              "tags": [
+                "valor"
+              ],
+              "skill": "intimidation",
+              "dc": 13,
+              "success": {
+                "text": "He bristles, but tells his marshal you are no one's vassal.",
+                "effects": {
+                  "minor": -3
+                }
+              },
+              "failure": {
+                "text": "He tells his marshal that {town} is rude and badly walled.",
+                "effects": {
+                  "minor": -12
+                }
+              }
+            }
+          ],
+          "ignored": {
+            "text": "The herald reads the charter to an empty square and rides on.",
+            "effects": {
+              "minor": -5
+            }
+          }
+        },
+        {
+          "id": "terms",
+          "text": "The herald rolls up the charter. \"What shall I tell the Marshal {town} wants of the League?\"",
+          "options": [
+            {
+              "label": "Friendship",
+              "tags": [
+                "mercy"
+              ],
+              "skill": "persuasion",
+              "dc": 12,
+              "success": {
+                "text": "{minorLeader} sends back warm words: {town} will be remembered kindly.",
+                "effects": {
+                  "minor": 8
+                }
+              },
+              "failure": {
+                "text": "The words come out stiff, and {minor} takes them politely and no more.",
+                "effects": {
+                  "minor": 2
+                }
+              }
+            },
+            {
+              "label": "Seal it with a gift",
+              "tags": [
+                "coin"
+              ],
+              "cost": 40,
+              "success": {
+                "text": "The gift goes off to {minorLeader}. It is well received.",
+                "effects": {
+                  "minor": 12
+                }
+              }
+            },
+            {
+              "label": "Nothing yet",
+              "tags": [
+                "order"
+              ],
+              "success": {
+                "text": "{town} keeps its counsel, and {minor} will be back.",
+                "effects": {}
+              }
+            }
+          ],
+          "ignored": {
+            "text": "Nobody answers, and {minor}'s envoy goes home.",
+            "effects": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "contact-vermilion-conclave",
+      "title": "An apprentice in scarlet",
+      "stakes": "medium",
+      "source": "contact",
+      "needs": [
+        "minor"
+      ],
+      "repeatDays": 100000,
+      "stages": [
+        {
+          "id": "start",
+          "text": "An apprentice in scarlet robes asks about relics found in the wilds. Archmagister Quill would pay well for first claim on them.",
+          "options": [
+            {
+              "label": "Talk magic with the apprentice",
+              "tags": [
+                "caution"
+              ],
+              "skill": "arcana",
+              "dc": 14,
+              "success": {
+                "text": "You hold your own, and the apprentice writes to the Spire about you.",
+                "effects": {
+                  "minor": 15
+                },
+                "next": "terms"
+              },
+              "failure": {
+                "text": "You get the words wrong, and the apprentice smirks.",
+                "effects": {
+                  "minor": -3
+                }
+              }
+            },
+            {
+              "label": "Promise first claim, for a price",
+              "tags": [
+                "coin"
+              ],
+              "skill": "persuasion",
+              "dc": 13,
+              "success": {
+                "text": "The Conclave agrees, and sends a down payment.",
+                "effects": {
+                  "minor": 10,
+                  "gold": 40
+                },
+                "next": "terms"
+              },
+              "failure": {
+                "text": "The apprentice offers far too little, and you both walk away.",
+                "effects": {
+                  "minor": -5
+                }
+              }
+            },
+            {
+              "label": "Say relics stay in {town}",
+              "tags": [
+                "order"
+              ],
+              "skill": "intimidation",
+              "dc": 13,
+              "success": {
+                "text": "The apprentice goes pale. The Conclave makes a note of it.",
+                "effects": {
+                  "minor": -5,
+                  "mandate": 2
+                }
+              },
+              "failure": {
+                "text": "The apprentice only laughs.",
+                "effects": {
+                  "minor": -10
+                }
+              }
+            }
+          ],
+          "ignored": {
+            "text": "The apprentice waits a week in the inn, then goes back to the Spire with nothing.",
+            "effects": {
+              "minor": -5
+            }
+          }
+        },
+        {
+          "id": "terms",
+          "text": "The apprentice bows. \"The Archmagister will ask what {town} wants of the Conclave.\"",
+          "options": [
+            {
+              "label": "Friendship",
+              "tags": [
+                "mercy"
+              ],
+              "skill": "persuasion",
+              "dc": 12,
+              "success": {
+                "text": "{minorLeader} sends back warm words: {town} will be remembered kindly.",
+                "effects": {
+                  "minor": 8
+                }
+              },
+              "failure": {
+                "text": "The words come out stiff, and {minor} takes them politely and no more.",
+                "effects": {
+                  "minor": 2
+                }
+              }
+            },
+            {
+              "label": "Seal it with a gift",
+              "tags": [
+                "coin"
+              ],
+              "cost": 40,
+              "success": {
+                "text": "The gift goes off to {minorLeader}. It is well received.",
+                "effects": {
+                  "minor": 12
+                }
+              }
+            },
+            {
+              "label": "Nothing yet",
+              "tags": [
+                "order"
+              ],
+              "success": {
+                "text": "{town} keeps its counsel, and {minor} will be back.",
+                "effects": {}
+              }
+            }
+          ],
+          "ignored": {
+            "text": "Nobody answers, and {minor}'s envoy goes home.",
+            "effects": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "contact-mire-grandmothers",
+      "title": "A crone at the well",
+      "stakes": "medium",
+      "source": "contact",
+      "needs": [
+        "minor"
+      ],
+      "repeatDays": 100000,
+      "stages": [
+        {
+          "id": "start",
+          "text": "An old woman at the well asks the mayor a riddle. The townsfolk cross the street to keep away from her.",
+          "options": [
+            {
+              "label": "Answer the riddle",
+              "tags": [
+                "caution"
+              ],
+              "ability": "wis",
+              "dc": 14,
+              "success": {
+                "text": "She cackles and says the Grandmothers will remember your name. You wish they wouldn't.",
+                "effects": {
+                  "minor": 15
+                },
+                "next": "terms"
+              },
+              "failure": {
+                "text": "Wrong answer. She keeps a lock of your hair for it.",
+                "effects": {
+                  "minor": -8,
+                  "mandate": -2
+                }
+              }
+            },
+            {
+              "label": "Offer her bread and salt",
+              "tags": [
+                "mercy",
+                "faith"
+              ],
+              "skill": "religion",
+              "dc": 12,
+              "success": {
+                "text": "She eats, bound by the old courtesy, and blesses the well.",
+                "effects": {
+                  "minor": 10
+                },
+                "next": "terms"
+              },
+              "failure": {
+                "text": "She spits out the salt. The well water tastes of the fens for a week.",
+                "effects": {
+                  "minor": -5,
+                  "food": -15
+                }
+              }
+            },
+            {
+              "label": "Have the watch run her off",
+              "tags": [
+                "valor",
+                "order"
+              ],
+              "skill": "intimidation",
+              "dc": 15,
+              "success": {
+                "text": "She goes, but she smiles as she goes.",
+                "effects": {
+                  "minor": -10,
+                  "mandate": 2
+                }
+              },
+              "failure": {
+                "text": "She's gone before the watch arrives, and the milk sours in every house.",
+                "effects": {
+                  "minor": -15,
+                  "food": -20
+                }
+              }
+            }
+          ],
+          "ignored": {
+            "text": "She asks her riddle three times, then walks into the mist.",
+            "effects": {
+              "minor": -5
+            }
+          }
+        },
+        {
+          "id": "terms",
+          "text": "The old woman laughs like a kettle. \"And what does the little town want of us, dearie?\"",
+          "options": [
+            {
+              "label": "Friendship",
+              "tags": [
+                "mercy"
+              ],
+              "skill": "persuasion",
+              "dc": 12,
+              "success": {
+                "text": "{minorLeader} sends back warm words: {town} will be remembered kindly.",
+                "effects": {
+                  "minor": 8
+                }
+              },
+              "failure": {
+                "text": "The words come out stiff, and {minor} takes them politely and no more.",
+                "effects": {
+                  "minor": 2
+                }
+              }
+            },
+            {
+              "label": "Seal it with a gift",
+              "tags": [
+                "coin"
+              ],
+              "cost": 40,
+              "success": {
+                "text": "The gift goes off to {minorLeader}. It is well received.",
+                "effects": {
+                  "minor": 12
+                }
+              }
+            },
+            {
+              "label": "Nothing yet",
+              "tags": [
+                "order"
+              ],
+              "success": {
+                "text": "{town} keeps its counsel, and {minor} will be back.",
+                "effects": {}
+              }
+            }
+          ],
+          "ignored": {
+            "text": "Nobody answers, and {minor}'s envoy goes home.",
+            "effects": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "contact-ember-court",
+      "title": "A kobold with singed scales",
+      "stakes": "medium",
+      "source": "contact",
+      "needs": [
+        "minor"
+      ],
+      "repeatDays": 100000,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A kobold with singed scales climbs the town hall steps. The Ember Queen wants to know who rules beneath her sky.",
+          "options": [
+            {
+              "label": "Answer with honour and a gift",
+              "tags": [
+                "coin",
+                "order"
+              ],
+              "skill": "persuasion",
+              "dc": 15,
+              "success": {
+                "text": "The kobold takes the gold and promises the Queen will hear of {town}'s courtesy.",
+                "effects": {
+                  "minor": 15,
+                  "gold": -60
+                },
+                "next": "terms"
+              },
+              "failure": {
+                "text": "The Queen thinks the gift a pittance.",
+                "effects": {
+                  "minor": -10,
+                  "gold": -60
+                }
+              }
+            },
+            {
+              "label": "Name the old wyrms you know of",
+              "tags": [
+                "caution"
+              ],
+              "skill": "history",
+              "dc": 14,
+              "success": {
+                "text": "The kobold hisses with glee. The Queen's rivals are the Queen's business.",
+                "effects": {
+                  "minor": 12
+                },
+                "next": "terms"
+              },
+              "failure": {
+                "text": "You name a wyrm she ate a century ago. The kobold is not amused.",
+                "effects": {
+                  "minor": -5
+                }
+              }
+            },
+            {
+              "label": "Say {town} answers to no dragon",
+              "tags": [
+                "valor"
+              ],
+              "skill": "intimidation",
+              "dc": 16,
+              "success": {
+                "text": "The kobold bows low. Defiance amuses the Queen, for now.",
+                "effects": {
+                  "minor": 5
+                }
+              },
+              "failure": {
+                "text": "The kobold runs. That night a shadow passes over the roofs.",
+                "effects": {
+                  "minor": -20,
+                  "dread": 5
+                }
+              }
+            }
+          ],
+          "ignored": {
+            "text": "The kobold waits on the steps until dark, then flies home on a smoking wind.",
+            "effects": {
+              "minor": -5
+            }
+          }
+        },
+        {
+          "id": "terms",
+          "text": "The kobold puffs up. \"Queen asks: what does {town} want of the Ember Court?\"",
+          "options": [
+            {
+              "label": "Friendship",
+              "tags": [
+                "mercy"
+              ],
+              "skill": "persuasion",
+              "dc": 12,
+              "success": {
+                "text": "{minorLeader} sends back warm words: {town} will be remembered kindly.",
+                "effects": {
+                  "minor": 8
+                }
+              },
+              "failure": {
+                "text": "The words come out stiff, and {minor} takes them politely and no more.",
+                "effects": {
+                  "minor": 2
+                }
+              }
+            },
+            {
+              "label": "Seal it with a gift",
+              "tags": [
+                "coin"
+              ],
+              "cost": 40,
+              "success": {
+                "text": "The gift goes off to {minorLeader}. It is well received.",
+                "effects": {
+                  "minor": 12
+                }
+              }
+            },
+            {
+              "label": "Nothing yet",
+              "tags": [
+                "order"
+              ],
+              "success": {
+                "text": "{town} keeps its counsel, and {minor} will be back.",
+                "effects": {}
+              }
+            }
+          ],
+          "ignored": {
+            "text": "Nobody answers, and {minor}'s envoy goes home.",
+            "effects": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "contact-people",
+      "title": "Riders from {settlement}",
+      "stakes": "medium",
+      "source": "contact",
+      "needs": [
+        "settlement"
+      ],
+      "repeatDays": 100000,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Riders from {settlement} come to the gate: {people}, sent by {leader} to see who has settled so near.",
+          "options": [
+            {
+              "label": "Feast them",
+              "tags": [
+                "mercy",
+                "coin"
+              ],
+              "cost": 30,
+              "success": {
+                "text": "The riders eat well and sing louder. They will tell {leader} the new town keeps a good table.",
+                "effects": {
+                  "regard": 12
+                },
+                "next": "terms"
+              }
+            },
+            {
+              "label": "Talk of the roads",
+              "tags": [
+                "order"
+              ],
+              "skill": "persuasion",
+              "dc": 12,
+              "success": {
+                "text": "You trade news of the roads, and the riders warm to you.",
+                "effects": {
+                  "regard": 10
+                },
+                "next": "terms"
+              },
+              "failure": {
+                "text": "The talk goes nowhere. The riders leave polite and no wiser.",
+                "effects": {
+                  "regard": -3
+                }
+              }
+            },
+            {
+              "label": "Keep them at the gate",
+              "tags": [
+                "valor",
+                "order"
+              ],
+              "skill": "intimidation",
+              "dc": 13,
+              "success": {
+                "text": "The riders see a town that guards its gate, and respect it, a little.",
+                "effects": {
+                  "regard": -3,
+                  "mandate": 1
+                }
+              },
+              "failure": {
+                "text": "The riders ride off muttering. {leader} will hear that the new town is rude.",
+                "effects": {
+                  "regard": -10
+                }
+              }
+            }
+          ],
+          "ignored": {
+            "text": "Nobody comes to the gate. The riders wait a day, then turn for home.",
+            "effects": {
+              "regard": -5
+            }
+          }
+        },
+        {
+          "id": "terms",
+          "text": "Before they ride home, the riders ask what {town} hopes for from {settlement}.",
+          "options": [
+            {
+              "label": "Friendship",
+              "tags": [
+                "mercy"
+              ],
+              "skill": "persuasion",
+              "dc": 12,
+              "success": {
+                "text": "They promise to carry warm words to {leader}.",
+                "effects": {
+                  "regard": 8
+                }
+              },
+              "failure": {
+                "text": "The words come out stiff, and the riders nod politely.",
+                "effects": {
+                  "regard": 2
+                }
+              }
+            },
+            {
+              "label": "Trade",
+              "tags": [
+                "coin"
+              ],
+              "skill": "insight",
+              "dc": 12,
+              "success": {
+                "text": "You guess what they are short of, and they buy a little of it on the spot.",
+                "effects": {
+                  "regard": 5,
+                  "gold": 25
+                }
+              },
+              "failure": {
+                "text": "You misjudge what they need, and nothing changes hands.",
+                "effects": {
+                  "regard": 0
+                }
+              }
+            },
+            {
+              "label": "Nothing yet",
+              "tags": [
+                "order"
+              ],
+              "success": {
+                "text": "{town} keeps its counsel, and the riders go home.",
+                "effects": {}
+              }
+            }
+          ],
+          "ignored": {
+            "text": "Nobody answers, and the riders go home.",
+            "effects": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "contact-rose-thieves",
+      "title": "A rose on the council table",
+      "stakes": "medium",
+      "source": "contact",
+      "needs": [
+        "minor"
+      ],
+      "repeatDays": 100000,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A red rose lies on the council table one morning, beside a purse taken from a tax-farmer two valleys over. A note: \"For the poor of {town}. With the compliments of the Rose.\"",
+          "options": [
+            {
+              "label": "Hand the purse out on the green",
+              "tags": [
+                "mercy",
+                "freedom"
+              ],
+              "success": {
+                "text": "The green fills. Somebody leaves a second rose at the gate that night: the Rose Thieves approve.",
+                "effects": {
+                  "minor": 15,
+                  "mandate": 2
+                },
+                "next": "terms"
+              }
+            },
+            {
+              "label": "Find the knight who left it",
+              "tags": [
+                "guile"
+              ],
+              "skill": "survival",
+              "dc": 13,
+              "success": {
+                "text": "A charcoal-burner with a rose in his hat takes your people to a ruined chapel. A visored knight bows to them.",
+                "effects": {
+                  "minor": 10
+                },
+                "next": "terms"
+              },
+              "failure": {
+                "text": "The trail ends at a stream. Whoever left the rose does not want finding yet.",
+                "effects": {
+                  "minor": 0
+                }
+              }
+            },
+            {
+              "label": "Return the purse to its owner",
+              "tags": [
+                "order"
+              ],
+              "success": {
+                "text": "The tax-farmer thanks you. The roses stop.",
+                "effects": {
+                  "minor": -15,
+                  "gold": 10
+                }
+              }
+            }
+          ],
+          "ignored": {
+            "text": "The rose wilts on the table, and nobody claims the purse.",
+            "effects": {
+              "minor": -5
+            }
+          }
+        },
+        {
+          "id": "terms",
+          "text": "The visored knight leans on her sword. \"Dame Isolde asks what {town} wants of the Rose.\"",
+          "options": [
+            {
+              "label": "Friendship",
+              "tags": [
+                "mercy"
+              ],
+              "skill": "persuasion",
+              "dc": 12,
+              "success": {
+                "text": "{minorLeader} sends back warm words: {town} will be remembered kindly.",
+                "effects": {
+                  "minor": 8
+                }
+              },
+              "failure": {
+                "text": "The words come out stiff, and {minor} takes them politely and no more.",
+                "effects": {
+                  "minor": 2
+                }
+              }
+            },
+            {
+              "label": "Seal it with a gift",
+              "tags": [
+                "coin"
+              ],
+              "cost": 40,
+              "success": {
+                "text": "The gift goes off to {minorLeader}. It is well received.",
+                "effects": {
+                  "minor": 12
+                }
+              }
+            },
+            {
+              "label": "Nothing yet",
+              "tags": [
+                "order"
+              ],
+              "success": {
+                "text": "{town} keeps its counsel, and {minor} will be back.",
+                "effects": {}
+              }
+            }
+          ],
+          "ignored": {
+            "text": "Nobody answers, and {minor}'s envoy goes home.",
+            "effects": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "contact-foundling-purse",
+      "title": "A boy who knows too much",
+      "stakes": "medium",
+      "source": "contact",
+      "needs": [
+        "minor"
+      ],
+      "repeatDays": 100000,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A barefoot boy waits at the town hall door and tells the clerk, word for word, what the council said behind closed doors last night. Then he asks for bread for his sisters at the orphanage.",
+          "options": [
+            {
+              "label": "Feed him and his sisters",
+              "tags": [
+                "mercy"
+              ],
+              "success": {
+                "text": "The boy eats, pockets an apple and says Mother Tansy will hear of it. The Foundling Purse has a friend here.",
+                "effects": {
+                  "minor": 15,
+                  "gold": -15
+                },
+                "next": "terms"
+              }
+            },
+            {
+              "label": "Ask who sent him",
+              "tags": [
+                "guile"
+              ],
+              "skill": "insight",
+              "dc": 13,
+              "success": {
+                "text": "He grins and names an orphanage on the back stair of Harrowgate. The Foundling Purse wanted to be found.",
+                "effects": {
+                  "minor": 10
+                },
+                "next": "terms"
+              },
+              "failure": {
+                "text": "He shrugs and is gone between one blink and the next. So is the clerk's purse.",
+                "effects": {
+                  "minor": -5,
+                  "gold": -10
+                }
+              }
+            },
+            {
+              "label": "Set the watch on him",
+              "tags": [
+                "order"
+              ],
+              "success": {
+                "text": "The watch chases him round three corners and loses him. Every street child in town now knows {town}'s face.",
+                "effects": {
+                  "minor": -15
+                }
+              }
+            }
+          ],
+          "ignored": {
+            "text": "The boy waits an hour, then goes. The clerk's purse goes with him.",
+            "effects": {
+              "minor": -5
+            }
+          }
+        },
+        {
+          "id": "terms",
+          "text": "The boy wipes his mouth. \"Mother says she'll want to know what you're after.\"",
+          "options": [
+            {
+              "label": "Friendship",
+              "tags": [
+                "mercy"
+              ],
+              "skill": "persuasion",
+              "dc": 12,
+              "success": {
+                "text": "{minorLeader} sends back warm words: {town} will be remembered kindly.",
+                "effects": {
+                  "minor": 8
+                }
+              },
+              "failure": {
+                "text": "The words come out stiff, and {minor} takes them politely and no more.",
+                "effects": {
+                  "minor": 2
+                }
+              }
+            },
+            {
+              "label": "Seal it with a gift",
+              "tags": [
+                "coin"
+              ],
+              "cost": 40,
+              "success": {
+                "text": "The gift goes off to {minorLeader}. It is well received.",
+                "effects": {
+                  "minor": 12
+                }
+              }
+            },
+            {
+              "label": "Nothing yet",
+              "tags": [
+                "order"
+              ],
+              "success": {
+                "text": "{town} keeps its counsel, and {minor} will be back.",
+                "effects": {}
+              }
+            }
+          ],
+          "ignored": {
+            "text": "Nobody answers, and {minor}'s envoy goes home.",
+            "effects": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "contact-skyhold-post",
+      "title": "A letter from the sky",
+      "stakes": "medium",
+      "source": "contact",
+      "needs": [
+        "minor"
+      ],
+      "repeatDays": 100000,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A griffon lands in the square, scattering the market. A dwarf in a postmaster's cap stamps a letter, hands it to the nearest guard and asks who pays the postage.",
+          "options": [
+            {
+              "label": "Pay the postage, and a tip",
+              "tags": [
+                "coin"
+              ],
+              "success": {
+                "text": "The dwarf tips her cap. \"The Skyhold remembers good payers.\"",
+                "effects": {
+                  "minor": 15,
+                  "gold": -20
+                },
+                "next": "terms"
+              }
+            },
+            {
+              "label": "Haggle over the stamp",
+              "tags": [
+                "guile",
+                "coin"
+              ],
+              "skill": "persuasion",
+              "dc": 13,
+              "success": {
+                "text": "She laughs and halves it. \"You'd make a postmaster.\"",
+                "effects": {
+                  "minor": 10,
+                  "gold": -5
+                },
+                "next": "terms"
+              },
+              "failure": {
+                "text": "She doubles it for the cheek, and you pay.",
+                "effects": {
+                  "minor": 0,
+                  "gold": -30
+                }
+              }
+            },
+            {
+              "label": "Refuse the letter",
+              "tags": [
+                "order"
+              ],
+              "success": {
+                "text": "The dwarf shrugs, takes it back and flies off. The letter, somebody says later, was a warning.",
+                "effects": {
+                  "minor": -15
+                }
+              }
+            }
+          ],
+          "ignored": {
+            "text": "Nobody pays. The griffon leaves with the letter.",
+            "effects": {
+              "minor": -5
+            }
+          }
+        },
+        {
+          "id": "terms",
+          "text": "The postmaster checks her ledger. \"Brannoc Featherhand will want to know what {town} would have of the Post.\"",
+          "options": [
+            {
+              "label": "Friendship",
+              "tags": [
+                "mercy"
+              ],
+              "skill": "persuasion",
+              "dc": 12,
+              "success": {
+                "text": "{minorLeader} sends back warm words: {town} will be remembered kindly.",
+                "effects": {
+                  "minor": 8
+                }
+              },
+              "failure": {
+                "text": "The words come out stiff, and {minor} takes them politely and no more.",
+                "effects": {
+                  "minor": 2
+                }
+              }
+            },
+            {
+              "label": "Seal it with a gift",
+              "tags": [
+                "coin"
+              ],
+              "cost": 40,
+              "success": {
+                "text": "The gift goes off to {minorLeader}. It is well received.",
+                "effects": {
+                  "minor": 12
+                }
+              }
+            },
+            {
+              "label": "Nothing yet",
+              "tags": [
+                "order"
+              ],
+              "success": {
+                "text": "{town} keeps its counsel, and {minor} will be back.",
+                "effects": {}
+              }
+            }
+          ],
+          "ignored": {
+            "text": "Nobody answers, and {minor}'s envoy goes home.",
+            "effects": {}
+          }
+        }
+      ]
+    }
+  ]
 }
