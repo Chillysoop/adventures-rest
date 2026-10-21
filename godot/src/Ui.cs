@@ -296,6 +296,13 @@ public static partial class Ui
                 int close = bbcode.IndexOf(']', i);
                 if (close < 0) { sb.Append(bbcode, i, bbcode.Length - i); break; }
                 string tag = bbcode.Substring(i, close - i + 1);
+                // [nk]...[/nk] (Ui.Plainly) keeps its words unlinked and is dropped here.
+                if (tag is "[nk]" or "[/nk]")
+                {
+                    depth = Math.Max(0, depth + (tag == "[nk]" ? 1 : -1));
+                    i = close + 1;
+                    continue;
+                }
                 if (tag.StartsWith("[url", StringComparison.Ordinal) || tag.StartsWith("[img", StringComparison.Ordinal)) depth++;
                 else if (tag is "[/url]" or "[/img]") depth = Math.Max(0, depth - 1);
                 sb.Append(tag);

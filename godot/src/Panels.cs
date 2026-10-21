@@ -27,7 +27,8 @@ public partial class Main
 
         p.Begin();
         string arrival = t.Enemy.Stage == ThreatStage.Marching && t.Enemy.ArrivalTick is int at
-            ? "\n" + Ui.C(Ui.Bad, $"[b]They reach the {Garrison.Place(t, t.Enemy.Approach)} in {Ui.Days((int)Math.Ceiling((at - t.Tick) / 24.0))}. Call the watch to arms there; heroes in town will face the warlord.[/b]")
+            ? "\n" + Ui.Bullet(Ui.C(Ui.Bad, $"[b]At the {Garrison.Place(t, t.Enemy.Approach)} in {Ui.Days((int)Math.Ceiling((at - t.Tick) / 24.0))}[/b]"), "ui-time")
+              + "\n" + Ui.Bullet(Ui.Tip(Ui.C(Ui.Gold, "Call the watch to arms there"), "Heroes in town will face the warlord."), "ui-star")
             : "";
         var threat = Assess.WarbandThreat(t);
         string card = $"{Ui.KindIcon("warband", 22)}[font_size=17][b]{Ui.Esc(Ui.Cap(t.Content.Enemy.Name))}[/b][/font_size]\n{stage.Text}{arrival}";
@@ -49,14 +50,14 @@ public partial class Main
         p.Heading("Strength");
         // A broken warband has no strength left to guess at.
         if (Threat.IsActive(t) && est is double e) p.Meter("Warband", 100 * e / scale, $"~{Math.Round(e)}", true);
-        else if (Threat.IsActive(t)) p.Text($"{Ui.C(Ui.Ink2, "Warband")}    [i]Unknown. Nobody has seen it yet.[/i]", 13);
+        else if (Threat.IsActive(t)) p.Text($"{Ui.Img("warband", 16)} {Ui.Dim("Warband: [i]unseen[/i]")}", 13);
         p.Meter("Your defence", 100 * def / scale, $"{Math.Round(def)}");
-        p.Note($"Defence counts the watch, heroes in town, a militia of townsfolk, and the walls (×{Threat.Fortification(t):0.00}).{(Threat.IsActive(t) ? " The warband grows while dungeons go uncleared." : "")}");
+        p.Text(Ui.Tip(Ui.Chips(Ui.Chip("defence", "watch", Ui.Ink2), Ui.Chip("heroes", "heroes", Ui.Ink2), Ui.Chip("population", "militia", Ui.Ink2), Ui.Chip("stone", $"×{Threat.Fortification(t):0.00}", Ui.Gold, "Walls multiply it")),
+            $"Your defence counts the watch, heroes in town, a militia of townsfolk, and the walls.{(Threat.IsActive(t) ? " The warband grows while dungeons go uncleared." : "")}"), 12);
         RenderGuard(p, t);
         RenderWorks(p, t);
         p.Heading("Heroes");
-        p.Row($"[b]Heroes in town[/b]  {Tag(home.ToString())}\n{Ui.C(Ui.Ink2, "[font_size=12]Only heroes can kill the warlord when he comes.[/font_size]")}");
-        if (camp != null && !camp.Cleared) p.Note("The war camp feeds the warband. Post a bounty on it in the Bounties tab to strike first.");
+        p.Row($"{Ui.Tip(Ui.Chip("heroes", $"{home} in town", Ui.Ink), "Only heroes can kill the warlord when he comes.")}{(camp != null && !camp.Cleared ? "\n" + Ui.Bullet(Ui.Tip(Ui.C(Ui.Gold, "Bounty the war camp to strike first"), "The war camp feeds the warband."), "threat") : "")}");
         RenderSellswords(p, t);
         RenderClockwork(p, t);
         p.Commit();
@@ -72,7 +73,7 @@ public partial class Main
             var h = Mercenaries.Hired(t, c.Id);
             string? why = Mercenaries.HireBlocked(t, c.Id);
             var id = c.Id;
-            string head = $"[b]{Ui.Esc(Ui.Cap(c.Name))}[/b]  {Tag($"strength {c.Strength:0}")}";
+            string head = $"{Ui.Tip($"[b]{Ui.Esc(Ui.Cap(c.Name))}[/b]", c.Blurb)}  {Ui.Chip("threat", $"{c.Strength:0}", Ui.Ink, "Strength")}";
             if (h == null)
             {
                 if (c.Tier != "" && !City.Reached(t, c.Tier))
@@ -80,7 +81,7 @@ public partial class Main
                     p.Row($"{head}  {Tag($"needs {City.TierName(t, c.Tier).ToLowerInvariant()}")}");
                     continue;
                 }
-                p.Row($"{head}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(c.Blurb)} {c.Fee:N0}g to sign, then {c.Wage:N0}g a day.[/font_size]")}",
+                p.Row($"{head}  {Ui.Chip("gold", $"{c.Wage:N0}/day", Ui.Gold, "Wage after signing")}",
                     ($"Hire · {c.Fee:N0}g", why == null, true, () => Act(() => _sim.HireMercenaries(id))));
                 continue;
             }
@@ -88,7 +89,7 @@ public partial class Main
             string where = h.ArriveTick is int at ? Tag($"marching on {foe?.SeatName ?? "the foe"}, {Ui.Days(Math.Max(1, (int)Math.Ceiling((at - t.Tick) / 24.0)))}", Ui.Gold)
                 : h.HomeTick is int home ? Tag($"coming home, {Ui.Days(Math.Max(1, (int)Math.Ceiling((home - t.Tick) / 24.0)))}", Ui.Gold)
                 : Tag("on the walls", Ui.Good);
-            p.Row($"{head}  {where}\n{Ui.C(Ui.Ink2, $"[font_size=12]{c.Wage:N0}g a day. Adds its strength to your defence while it is home.[/font_size]")}",
+            p.Row($"{head}  {where}  {Ui.Chip("gold", $"{c.Wage:N0}/day", Ui.Gold, "Wage. Adds its strength to your defence while it is home.")}",
                 ("Dismiss", !h.Away, false, () => Act(() => _sim.DismissMercenaries(id))));
             p.Meter("Fit to fight", 100 * h.Strength / c.Strength, $"{Math.Round(h.Strength)}", h.Strength < c.Strength * 0.5);
             if (h.Away) continue;
@@ -96,15 +97,15 @@ public partial class Main
             foreach (var m in targets.Take(4))
             {
                 int mid = m.Id;
-                string odds = h.Strength >= m.Power * t.Content.Mercenaries.StormRatio && !m.BigBad ? "they could storm its seat"
-                    : h.Strength >= m.Power ? "they should beat it in the field"
-                    : h.Strength >= m.Power * t.Content.Mercenaries.RoutBelow ? "a bloody, even fight" : "they would likely be routed";
-                p.Row($"{Ui.C(Ui.Ink2, $"[font_size=12]March on [b]{Ui.Esc(Ui.Cap(m.Name))}[/b] at {Ui.Esc(m.SeatName)}, about {Math.Round(m.Power / 10) * 10:0} strong: {odds}.[/font_size]")}",
+                var (odds, oc) = h.Strength >= m.Power * t.Content.Mercenaries.StormRatio && !m.BigBad ? ("could storm its seat", Ui.Good)
+                    : h.Strength >= m.Power ? ("should win", Ui.Good)
+                    : h.Strength >= m.Power * t.Content.Mercenaries.RoutBelow ? ("even fight", Ui.Gold) : ("likely routed", Ui.Bad);
+                p.Row($"[font_size=12]{Ui.KindIcon(m.Kind, 15)}[b]{Ui.Esc(Ui.Cap(m.Name))}[/b] {Ui.Dim($"at {Ui.Esc(m.SeatName)}")}  {Ui.Chip("threat", $"~{Math.Round(m.Power / 10) * 10:0}", Ui.Ink, "Its strength")}  {Ui.C(oc, $"[b]{odds}[/b]")}[/font_size]",
                     ($"March · {cost:N0}g", Mercenaries.MarchBlocked(t, c.Id, mid) == null, false, () => Act(() => _sim.MarchMercenaries(id, mid))));
             }
         }
         p.Note(targets.Count == 0
-            ? "Hired companies stand on the walls with the watch. Once the town knows where a named menace sits, you can send them against it."
+            ? "Hired companies stand on the walls with the watch. Once you know where a named menace sits, you can send them against it."
             : "A campaign costs a war chest of wages. Sellswords can break a menace's hold and its seat, but only heroes can end the greatest foe.");
     }
 
@@ -120,7 +121,13 @@ public partial class Main
             return;
         }
         string? why = Clockwork.BuildBlocked(t);
-        p.Row($"[b]On the walls[/b]  {Tag($"{c.Wardens} of {r.Max}", c.Wardens > 0 ? Ui.Good : Ui.Ink2)}{(c.Seized > 0 ? "  " + Tag($"{c.Seized} stolen", Ui.Bad) : "")}\n{Ui.C(Ui.Ink2, $"[font_size=12]Each adds {r.Strength:0} strength and helps the watch catch a schemer's agents, however crooked its captain. {r.Upkeep:0}g a day to wind. Townsfolk don't trust them (mood {Clockwork.Mood(t):0.0}), and the Quiet Hand or a scheming foe may steal one; a mage tower keeps the keys safer.{(why != null ? $" Can't build: {Ui.Esc(why)}." : "")}[/font_size]")}",
+        string wardens = Ui.Chips(
+            Ui.Chip("defence", $"{c.Wardens}/{r.Max}", c.Wardens > 0 ? Ui.Good : Ui.Ink2, "On the walls"),
+            c.Seized > 0 ? Ui.Chip("ui-no", $"{c.Seized} stolen", Ui.Bad) : "",
+            Ui.Chip("threat", $"+{r.Strength:0}", Ui.Good, "Strength each. Helps the watch catch a schemer's agents, however crooked its captain."),
+            Ui.Chip("gold", $"−{r.Upkeep:0}/day", Ui.Bad, "To wind each"),
+            Ui.Chip("mandate", $"{Clockwork.Mood(t):0.0}", Ui.Bad, "Townsfolk don't trust them. The Quiet Hand or a scheming foe may steal one; a mage tower keeps the keys safer."));
+        p.Row($"{wardens}{(why != null ? "\n" + Ui.Bullet(Ui.Dim(Ui.Esc(why)), "ui-lock") : "")}",
             ($"Build · {r.Cost:N0}g", why == null, true, () => Act(() => _sim.BuildWarden())),
             ("Scrap", c.Wardens > 0, false, () => Act(() => _sim.ScrapWarden())));
     }
@@ -356,13 +363,6 @@ public partial class Main
             ? $"Scouting: {Watch.Watchers(t)[0].Name} the {Watch.Watchers(t)[0].Hero!.Cls.Name} will watch a site from cover for up to {Ui.Days(t.Content.Knowledge.Scouts.WatchDays)}, {t.Content.Knowledge.Scouts.WagePerDay}g a day."
             : "Scouting needs a ranger, rogue, monk or cartographer in town and rested.");
 
-        var books = t.AccountsYesterday.Where(kv => Math.Abs(kv.Value) >= 0.5).OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key, StringComparer.Ordinal).ToList();
-        if (books.Count > 0)
-        {
-            double net = books.Sum(kv => kv.Value);
-            p.Heading("Yesterday's books");
-            p.Card(string.Join("\n", books.Select(kv => $"{Ui.Esc(kv.Key)}   {Ui.C(kv.Value >= 0 ? Ui.Good : Ui.Bad, $"[b]{Sign(kv.Value)}[/b]")}")) + $"\n[b]Net[/b]   {Ui.C(net >= 0 ? Ui.Good : Ui.Bad, $"[b]{Sign(net)}[/b]")}");
-        }
         p.Commit();
     }
 

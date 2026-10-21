@@ -317,8 +317,9 @@ public partial class Main
             var item = new VBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
             item.AddThemeConstantOverride("separation", 1);
             item.AddChild(Ui.Label(a.Text, Ui.Ink, Ui.Medium, 13));
-            var tip = Ui.Label(a.Tip, Ui.Ink2, Ui.Body, 12);
-            tip.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            // The tip a sentence a line, so it can be skimmed.
+            var tip = Ui.Rich(Ui.C(Ui.Ink2, Ui.Points(Ui.Esc(a.Tip))), 12);
+            tip.MouseFilter = MouseFilterEnum.Ignore;
             tip.CustomMinimumSize = new Vector2(300, 0);
             item.AddChild(tip);
             if (AlertFace(a, 40) is { } face)
@@ -333,8 +334,8 @@ public partial class Main
         }
         if (items.Count > 5) _alertTipBox.AddChild(Ui.Label($"…and {items.Count - 5} more", Ui.Ink2, Ui.Body, 12));
         string hint = items.Count == 1
-            ? kind.Level == AlertLevel.Minor ? "Click to go there · right-click to dismiss · fades on its own" : "Click to go there · right-click to dismiss"
-            : "Click for the list · right-click to dismiss all";
+            ? kind.Level == AlertLevel.Minor ? "Click: go there · Right-click: dismiss · fades" : "Click: go there · Right-click: dismiss"
+            : "Click: list · Right-click: dismiss all";
         _alertTipBox.AddChild(Ui.Label(hint, new Color(Ui.Ink2, 0.75f), Ui.Body, 11));
         _tipAnchor = chip;
         PlaceAlertPopup(_alertTip, chip);

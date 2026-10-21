@@ -28,7 +28,7 @@ public static partial class Ui
     /// The building block of a skimmable line; several go side by side with <see cref="Chips"/>.
     /// </summary>
     public static string Chip(string icon, string value, Color? color = null, string tip = "", int size = 16) =>
-        Tip($"{Img(icon, size)} {(color is Color c ? C(c, $"[b]{value}[/b]") : $"[b]{value}[/b]")}", tip);
+        Tip($"{Img(icon, size)} {Plainly(color is Color c ? C(c, $"[b]{value}[/b]") : $"[b]{value}[/b]")}", tip);
 
     /// <summary>Chips on one line, spaced apart.</summary>
     public static string Chips(params string[] chips) => string.Join("    ", chips.Where(c => c != ""));
@@ -37,9 +37,12 @@ public static partial class Ui
     public static string Signed(double n, string format = "N0") =>
         C(n >= 0 ? Good : Bad, $"[b]{(n >= 0 ? "+" : "−")}{Math.Abs(n).ToString(format)}[/b]");
 
-    /// <summary>A heading inside rich text: an icon, the words bold and a little larger, in a colour.</summary>
+    /// <summary>A heading inside rich text: an icon, the words bold and a little larger, in a colour. Goes through <see cref="Dress"/> (Rich, SetRich).</summary>
     public static string Head(string text, string? icon = null, Color? color = null, int size = 15) =>
-        $"[font_size={size}]{(icon != null ? Img(icon, size + 3) + " " : "")}{C(color ?? Ink, $"[b]{text}[/b]")}[/font_size]";
+        $"[font_size={size}]{(icon != null ? Img(icon, size + 3) + " " + Plainly(C(color ?? Ink, $"[b]{text}[/b]")) : C(color ?? Ink, $"[b]{text}[/b]"))}[/font_size]";
+
+    /// <summary>Words that stay plain in rich text: no glossary link (a heading that already wears its icon).</summary>
+    public static string Plainly(string bbcode) => $"[nk]{bbcode}[/nk]";
 
     /// <summary>One point of a list: an icon (or a coloured dot) before it.</summary>
     public static string Bullet(string bbcode, string? icon = null, Color? color = null) =>
@@ -48,6 +51,10 @@ public static partial class Ui
     /// <summary>A list, one point a line. Empty points are left out.</summary>
     public static string Bullets(IEnumerable<string> points, string? icon = null, Color? color = null) =>
         string.Join("\n", points.Where(p => p != "").Select(p => Bullet(p, icon, color)));
+
+    /// <summary>Prose as bullets, a sentence a point: for text written as sentences (alert tips, content blurbs).</summary>
+    public static string Points(string prose, string? icon = null, Color? color = null) =>
+        Bullets(System.Text.RegularExpressions.Regex.Split(prose.Trim(), @"(?<=[.!?;])\s+(?=[A-Z""])").Select(x => x.Trim().TrimEnd(';')), icon, color);
 
     /// <summary>
     /// Long prose cut to its first sentence, the rest in a hover behind an info mark. Use it for explanations that
@@ -177,7 +184,7 @@ public static partial class Ui
         ["Spellbooks"] = "books",
         ["Still to come"] = "ui-time",
         ["Story so far"] = "lore",
-        ["Strength"] = "defence",
+        ["Strength"] = "threat",
         ["Strike at a foe"] = "threat",
         ["Tavern talk"] = "ale",
         ["Taxes"] = "gold",
@@ -186,11 +193,11 @@ public static partial class Ui
         ["The scholars"] = "books",
         ["The town remembers"] = "ui-renown",
         ["Threats in the land"] = "threat",
-        ["Town guard"] = "defence",
+        ["Town guard"] = "order-guard",
         ["Trade routes"] = "ui-trade",
         ["Under the streets"] = "ui-skull",
         ["Waiting on you"] = "ui-warn",
-        ["Walls"] = "defence",
+        ["Walls"] = "stone",
         ["Wards"] = "ui-house",
         ["Why settlers come or don't"] = "population",
         ["Wizards in town"] = "books",
