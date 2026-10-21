@@ -6,7 +6,7 @@ using Godot;
 namespace CrownAndCompass.Client;
 
 /// <summary>
-/// The town guard and the walls: the War tab's orders and wall works, the inspector for a stretch of wall, a tower or a
+/// The town guard and the walls: the Defence tab's orders and wall works, the inspector for a stretch of wall, a tower or a
 /// guard flag, and the flag in hand (G). The player never steers a guard: they sound a call to arms on the wall or plant
 /// a flag, and the nearest of the watch go.
 /// </summary>
@@ -50,7 +50,7 @@ public partial class Main
     private static string SectionTitle(Town t, int section) =>
         section == 0 ? (t.Defenses.Gatehouse == PalisadeState.Built ? "The gatehouse" : "The south gate") : $"The {t.Content.Garrison.Sections[section]} wall";
 
-    // ---------- War tab ----------
+    // ---------- Defence tab ----------
 
     private static string WorkBlurb(Town t, DefenseWork w)
     {
@@ -95,6 +95,25 @@ public partial class Main
         else if (why == "under way") p.Row($"{head}  {Tag("Rising", Ui.Gold)}");
         else if (why != null && why != "not enough gold") p.Row($"{head}{count}  {Tag(Ui.Cap(why))}");
         else p.Row($"{head}{count}", ($"Build {Math.Round(cost)}g", why == null, true, () => Act(() => _sim.BuildDefense(w))));
+    }
+
+    /// <summary>The town's own strength: the defence meter, the watch's orders, the walls and the wardens.</summary>
+    private void RenderDefence()
+    {
+        var p = _panes[Tab.Defence];
+        var t = _sim.Town;
+        double def = Threat.Defense(t);
+        p.Begin();
+        double? est = Discovery.Known(t, Discovery.Warband) && Threat.IsActive(t) ? Threat.EstimatedStrength(t) : null;
+        double scale = Math.Max(Math.Max(def, est ?? 0), 1);
+        p.Meter("Your defence", 100 * def / scale, $"{Math.Round(def)}");
+        if (est is double e) p.Meter("Warband", 100 * e / scale, $"~{Math.Round(e)}", true);
+        p.Text(Ui.Tip(Ui.Chips(Ui.Chip("defence", "watch", Ui.Ink2), Ui.Chip("heroes", "heroes", Ui.Ink2), Ui.Chip("population", "militia", Ui.Ink2), Ui.Chip("stone", $"×{Threat.Fortification(t):0.00}", Ui.Gold, "Walls multiply it")),
+            $"Your defence counts the watch, heroes at home, a militia of townsfolk, and the walls.{(Threat.IsActive(t) ? " The warband grows while dungeons go uncleared." : "")}"), 12);
+        RenderGuard(p, t);
+        RenderWorks(p, t);
+        RenderClockwork(p, t);
+        p.Commit();
     }
 
     /// <summary>The wall works in the order the town climbs them: stakes, towers, stone, the gate and moat, barracks, the city wall.</summary>
