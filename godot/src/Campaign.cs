@@ -213,7 +213,6 @@ public partial class Main
     private static string Scores(Town t, Menace m)
     {
         string line = $"[font_size=12]{string.Join("   ", Character.Sheet(t, m).Select(ScoreTag))}";
-        if (Character.TemperOf(t, m.Kind) is { } tm) line += $"  {Tag(Ui.Cap(tm.Name))}";
         line += "[/font_size]\n";
         if (Menaces.Done(t, m) is string done) line += Bullet("Done", done);
         if (Menaces.Case(t, m) is string said) line += Bullet("Says", said);
