@@ -68,7 +68,7 @@ public partial class Main
     {
         if (_find.Visible && _findId is int open && Explore.FindOf(_sim.Town, open) is { } shown && (shown.State != FindState.Open || _sim.Town.Tick < shown.ReportTick) && _findBeat == null)
             CloseFind();
-        if (_title.Visible || _menu.Visible || _settings.Visible || _story.Visible || _find.Visible) return;
+        if (_title.Visible || _menu.Visible || _settings.Visible || _story.Visible || _find.Visible || _intro.Visible) return;
         var next = Explore.Waiting(_sim.Town).FirstOrDefault(f => _findSeen.GetValueOrDefault(f.Id, -1) < f.Log.Count);
         if (next == null) return;
         _findSeen[next.Id] = next.Log.Count;

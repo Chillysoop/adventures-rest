@@ -12,7 +12,7 @@ namespace CrownAndCompass.Client.Map;
 /// </summary>
 public static class HeroKit
 {
-    public enum Frame { Plate, Mail, Leather, Robe, Bare, Bones, Brute, Beast }
+    public enum Frame { Plate, Mail, Leather, Robe, Bare, Bones, Brute, Beast, Spider, Wyrm, Wraith, Crawler, Rat }
 
     public enum Head { GreatHelm, WingedHelm, HornedHelm, Hood, WizardHat, Cowl, Circlet, Mitre, Antlers, Feathered, Topknot, Sallet, WitchHat, Coif, Skull, Tusks, Lizard, None }
 
@@ -44,6 +44,11 @@ public static class HeroKit
         if (f == Frame.Beast)
         {
             Beast(k);
+            return;
+        }
+        if (f is Frame.Spider or Frame.Wyrm or Frame.Wraith or Frame.Crawler or Frame.Rat)
+        {
+            Creature(k, f);
             return;
         }
         if (f == Frame.Bones)
@@ -230,6 +235,142 @@ public static class HeroKit
                 k.Part = (side < 0) == (z > 0) ? LegR : LegL;
                 k.Frustum(new Vector3(side * 0.05f, 0, z), 0.018f, 0.024f, 0.17f, 4, Trim(0.6f));
             }
+        k.Part = 0;
+    }
+
+    /// <summary>A limb from a to b: a tapered post turned to run between them.</summary>
+    private static void Limb(MeshKit k, Vector3 a, Vector3 b, float r0, float r1, Color c, int sides = 4)
+    {
+        var up = b - a;
+        float len = up.Length();
+        var y = up / len;
+        var x = Mathf.Abs(y.Y) > 0.9f ? Vector3.Right : y.Cross(Vector3.Up).Normalized();
+        var z = x.Cross(y);
+        k.Push(new Transform3D(new Basis(x, y, z), a));
+        k.Frustum(Vector3.Zero, r0, r1, len, sides, c);
+        k.Pop();
+    }
+
+    /// <summary>
+    /// The creatures that aren't men or wolves, in the host's colour: a great spider, a wyrm on four legs with
+    /// wings, a hooded wraith that floats, a many-legged crawler of the hives, a giant rat.
+    /// </summary>
+    private static void Creature(MeshKit k, Frame f)
+    {
+        var hide = Trim(0.9f);
+        var dark = Trim(0.55f);
+        switch (f)
+        {
+            case Frame.Spider:
+                k.Blob(new Vector3(0, 0.2f, -0.13f), new Vector3(0.12f, 0.1f, 0.14f), hide, 0.12f, 3, dark);
+                k.Blob(new Vector3(0, 0.15f, 0.04f), new Vector3(0.07f, 0.055f, 0.07f), dark);
+                k.Blob(new Vector3(0, 0.15f, 0.11f), new Vector3(0.045f, 0.04f, 0.04f), dark);
+                // A ring of eyes and the fangs under them.
+                foreach (int side in new[] { -1, 1 })
+                {
+                    k.Box(new Vector3(side * 0.018f, 0.165f, 0.145f), new Vector3(0.012f, 0.012f, 0.01f), Glow("ff4a3a"));
+                    k.Box(new Vector3(side * 0.034f, 0.175f, 0.135f), new Vector3(0.008f, 0.008f, 0.008f), Glow("ff4a3a"));
+                    Limb(k, new Vector3(side * 0.015f, 0.13f, 0.14f), new Vector3(side * 0.01f, 0.09f, 0.16f), 0.008f, 0.002f, Hex("1a1410"));
+                }
+                // A band of the host's mark across the abdomen.
+                k.Blob(new Vector3(0, 0.29f, -0.14f), new Vector3(0.05f, 0.012f, 0.06f), Trim(1.1f));
+                foreach (int side in new[] { -1, 1 })
+                    for (int i = 0; i < 4; i++)
+                    {
+                        k.Part = (i % 2 == 0) == (side < 0) ? LegR : LegL;
+                        float z = 0.1f - i * 0.065f;
+                        var hip = new Vector3(side * 0.05f, 0.16f, z * 0.5f + 0.03f);
+                        var knee = new Vector3(side * 0.17f, 0.3f, z * 1.4f + 0.03f);
+                        var foot = new Vector3(side * 0.27f, 0, z * 2.1f + 0.03f);
+                        Limb(k, hip, knee, 0.014f, 0.011f, dark);
+                        Limb(k, knee, foot, 0.011f, 0.004f, dark);
+                    }
+                break;
+            case Frame.Wyrm:
+                k.Blob(new Vector3(0, 0.24f, -0.02f), new Vector3(0.1f, 0.1f, 0.18f), hide, 0.1f, 5, dark);
+                k.Blob(new Vector3(0, 0.22f, 0.02f), new Vector3(0.07f, 0.07f, 0.12f), Trim(1.15f));
+                // The neck rising to a horned head, the jaw a little open.
+                Limb(k, new Vector3(0, 0.27f, 0.12f), new Vector3(0, 0.42f, 0.2f), 0.05f, 0.035f, hide, 6);
+                k.Blob(new Vector3(0, 0.44f, 0.24f), new Vector3(0.045f, 0.04f, 0.07f), hide);
+                k.Blob(new Vector3(0, 0.415f, 0.28f), new Vector3(0.03f, 0.018f, 0.05f), dark);
+                foreach (int side in new[] { -1, 1 })
+                {
+                    Limb(k, new Vector3(side * 0.025f, 0.47f, 0.22f), new Vector3(side * 0.05f, 0.53f, 0.15f), 0.012f, 0.002f, Hex("e8dcc0"));
+                    k.Box(new Vector3(side * 0.025f, 0.455f, 0.29f), new Vector3(0.012f, 0.008f, 0.01f), Glow("ffc030"));
+                    // A wing folded half open over the back.
+                    var root = new Vector3(side * 0.07f, 0.31f, 0.04f);
+                    var tip = new Vector3(side * 0.3f, 0.5f, -0.12f);
+                    Limb(k, root, tip, 0.012f, 0.005f, dark);
+                    var low = new Vector3(side * 0.22f, 0.24f, -0.2f);
+                    k.Tri(root, tip, low, dark);
+                    k.Tri(root, low, tip, dark);
+                }
+                k.Push(new Transform3D(new Basis(Vector3.Right, -2.0f), new Vector3(0, 0.22f, -0.18f)));
+                k.Frustum(Vector3.Zero, 0.05f, 0.006f, 0.3f, 5, hide);
+                k.Pop();
+                foreach (int side in new[] { -1, 1 })
+                    foreach (float z in new[] { 0.1f, -0.12f })
+                    {
+                        k.Part = (side < 0) == (z > 0) ? LegR : LegL;
+                        Limb(k, new Vector3(side * 0.07f, 0.2f, z), new Vector3(side * 0.09f, 0, z + 0.02f), 0.03f, 0.022f, hide);
+                        k.Box(new Vector3(side * 0.09f, 0, z + 0.04f), new Vector3(0.05f, 0.02f, 0.05f), dark);
+                    }
+                break;
+            case Frame.Wraith:
+                // Robes that taper to nothing above the ground, a hood with no face but two eyes, long sleeves.
+                k.Frustum(new Vector3(0, 0.06f, 0), 0.02f, 0.1f, 0.24f, 7, Trim(0.5f));
+                k.Frustum(new Vector3(0, 0.3f, 0), 0.1f, 0.07f, 0.1f, 7, hide);
+                k.Blob(new Vector3(0, 0.44f, -0.005f), new Vector3(0.07f, 0.075f, 0.07f), hide);
+                k.Blob(new Vector3(0, 0.43f, 0.03f), new Vector3(0.05f, 0.055f, 0.04f), Hex("0a0808"));
+                foreach (int side in new[] { -1, 1 })
+                {
+                    k.Box(new Vector3(side * 0.02f, 0.44f, 0.065f), new Vector3(0.014f, 0.01f, 0.01f), Glow("8ae0ff"));
+                    k.Part = side < 0 ? ArmR : ArmL;
+                    Limb(k, new Vector3(side * 0.09f, 0.37f, 0), new Vector3(side * 0.13f, 0.2f, 0.03f), 0.03f, 0.04f, hide, 5);
+                    k.Blob(new Vector3(side * 0.13f, 0.19f, 0.03f), new Vector3(0.018f, 0.02f, 0.018f), Hex("d8e8f0"));
+                }
+                break;
+            case Frame.Crawler:
+                // A beetle-backed thing of the hives: segments, mandibles and six legs.
+                for (int i = 0; i < 3; i++)
+                    k.Blob(new Vector3(0, 0.15f + i * 0.01f, -0.12f + i * 0.1f), new Vector3(0.08f - i * 0.012f, 0.07f - i * 0.01f, 0.07f), i == 0 ? hide : dark);
+                k.Blob(new Vector3(0, 0.2f, -0.12f), new Vector3(0.06f, 0.02f, 0.06f), Trim(1.15f));
+                foreach (int side in new[] { -1, 1 })
+                {
+                    Limb(k, new Vector3(side * 0.02f, 0.16f, 0.12f), new Vector3(side * 0.005f, 0.14f, 0.2f), 0.012f, 0.003f, Hex("e8dcc0"));
+                    Limb(k, new Vector3(side * 0.02f, 0.21f, 0.1f), new Vector3(side * 0.06f, 0.33f, 0.16f), 0.005f, 0.002f, dark);
+                    k.Box(new Vector3(side * 0.03f, 0.19f, 0.135f), new Vector3(0.012f, 0.012f, 0.01f), Glow("c8ff6a"));
+                    for (int i = 0; i < 3; i++)
+                    {
+                        k.Part = (i % 2 == 0) == (side < 0) ? LegR : LegL;
+                        float z = 0.07f - i * 0.08f;
+                        var hip = new Vector3(side * 0.05f, 0.13f, z);
+                        var knee = new Vector3(side * 0.13f, 0.2f, z * 1.2f);
+                        Limb(k, hip, knee, 0.012f, 0.009f, dark);
+                        Limb(k, knee, new Vector3(side * 0.18f, 0, z * 1.5f), 0.009f, 0.003f, dark);
+                    }
+                }
+                break;
+            case Frame.Rat:
+                k.Blob(new Vector3(0, 0.15f, -0.02f), new Vector3(0.08f, 0.075f, 0.14f), hide, 0.2f, 7, dark);
+                k.Blob(new Vector3(0, 0.16f, 0.12f), new Vector3(0.045f, 0.045f, 0.06f), hide);
+                k.Push(new Transform3D(new Basis(Vector3.Right, Mathf.Pi / 2), new Vector3(0, 0.155f, 0.15f)));
+                k.Frustum(Vector3.Zero, 0.03f, 0.008f, 0.07f, 5, hide, Hex("d88a8a"));
+                k.Pop();
+                foreach (int side in new[] { -1, 1 })
+                {
+                    k.Blob(new Vector3(side * 0.035f, 0.21f, 0.1f), new Vector3(0.022f, 0.026f, 0.008f), Hex("c88a8a"));
+                    k.Box(new Vector3(side * 0.02f, 0.18f, 0.17f), new Vector3(0.01f, 0.01f, 0.01f), Glow("ff4a3a"));
+                }
+                Limb(k, new Vector3(0, 0.13f, -0.15f), new Vector3(0, 0.03f, -0.4f), 0.012f, 0.003f, Hex("c88a8a"));
+                foreach (int side in new[] { -1, 1 })
+                    foreach (float z in new[] { 0.07f, -0.09f })
+                    {
+                        k.Part = (side < 0) == (z > 0) ? LegR : LegL;
+                        Limb(k, new Vector3(side * 0.045f, 0.1f, z), new Vector3(side * 0.05f, 0, z + 0.02f), 0.016f, 0.01f, dark);
+                    }
+                break;
+        }
         k.Part = 0;
     }
 
