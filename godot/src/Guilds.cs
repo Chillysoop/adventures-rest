@@ -37,6 +37,7 @@ public partial class Main
                     ($"Pay them off, {Js.Str(Guilds.PayCost(t, g))}g", payWhy == null, true, () => Act(() => _sim.PayOffGuild(id))),
                     ($"Break the strike, −{Js.Str(r.BreakMandate)} Mandate", breakWhy == null, false, () => Act(() => _sim.BreakStrike(id))));
                 if (breakWhy != null) p.Note($"Breaking it {breakWhy}.");
+                RenderGuildTalk(p, t, g);
                 continue;
             }
             if (Guilds.Want(t, g) is not { } w) continue;
@@ -46,6 +47,7 @@ public partial class Main
             p.Buttons(
                 (w.Kind == "zone" ? "Meet it (paint the land)" : cost is > 0 ? $"Meet it, {Js.Str(cost.Value)}g" : "Meet it", why == null, true, () => Act(() => _sim.MeetGuildDemand(id))),
                 ($"Pay them off, {Js.Str(Guilds.PayCost(t, g))}g", Guilds.PayBlocked(t, g) == null, false, () => Act(() => _sim.PayOffGuild(id))));
+            RenderGuildTalk(p, t, g);
             if (why != null) p.Note(Ui.Cap(why) + ".");
         }
     }
@@ -98,5 +100,21 @@ public partial class Main
         if (strike && t.Guilds.OrderByDescending(g => Guilds.Members(t, g).Count).ThenBy(g => g.Id, StringComparer.Ordinal).FirstOrDefault() is { } walkout)
             Guilds.Strike(t, walkout);
         SetTab(Tab.Council);
+    }
+
+    /// <summary>Negotiate: sit down with the guild's master and talk the demand or strike away, by the approach the player picks.</summary>
+    private void RenderGuildTalk(Pane p, Town t, Guild g)
+    {
+        if (Guilds.TalkBlocked(t, g) is string why)
+        {
+            if (why != "nothing to settle") p.Note(Ui.Cap(why) + ".");
+            return;
+        }
+        string id = g.Id;
+        string master = g.MasterId is int m ? t.Agent(m).GivenName : "the guild";
+        var items = Odds.Approaches(t, a => Guilds.TalkDc(t, g, a),
+            a => $"{master}'s {(a.Against == "wis" ? "Wisdom" : "passive Insight")}, standing {Math.Round(g.Standing)}");
+        p.RollMenus(("Negotiate", "talk-persuade", $"Talk it over with {master}: one try, no gold. Choose how.", items,
+            i => Act(() => _sim.NegotiateGuild(id, Negotiation.Rules(t).Approaches[i].Id))));
     }
 }

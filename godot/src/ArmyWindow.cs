@@ -217,12 +217,15 @@ public partial class Main
                     p.Row($"{head}\n[font_size=12]{host}  ·  {Ui.C(Ui.Ink2, "riders out")}[/font_size]");
                     break;
                 case CallState.Holdout:
-                    int dc = AllyCalls.ThreatenDc(t, c);
                     var call = c;
-                    p.Row($"{head}\n[font_size=12]{Ui.C(Ui.Gold, "Holding out")}  ·  {Ui.Img("gold", 13)} {Js.Str(c.Price)}  ·  {Ui.C(Ui.Ink2, $"threaten DC {dc}, costs standing")}[/font_size]",
+                    var temper = AllyCalls.Ruler(t, s);
+                    p.Row($"{head}\n[font_size=12]{Ui.C(Ui.Gold, "Holding out")}  ·  {Ui.Img("gold", 13)} {Js.Str(c.Price)}  ·  {Ui.C(Ui.Ink2, $"ruler {temper.Name}")}[/font_size]",
                         ($"Pay {Js.Str(c.Price)}", AllyCalls.BribeBlocked(t, c) == null, true, () => Act(() => _sim.BribeAlly(call.Id))),
-                        ("Threaten", true, false, () => Act(() => _sim.ThreatenAlly(call.Id))),
                         ("Let go", true, false, () => Act(() => _sim.LetAllyGo(call.Id))));
+                    var items = Odds.Approaches(t, a => AllyCalls.NegotiateDc(t, call, a),
+                        a => $"their {temper.Name} ruler's {(a.Against == "wis" ? "Wisdom" : "Insight")}, standing {Js.Str(Js.Round(s.Standing))}");
+                    p.RollMenus(("Negotiate", "talk-persuade", "Talk them round: they march, or keep their host. Choose how.", items,
+                        i => Act(() => _sim.NegotiateAlly(call.Id, Negotiation.Rules(t).Approaches[i].Id))));
                     break;
                 case CallState.Marching:
                     int days = (int)Math.Ceiling((c.ArriveTick - t.Tick) / (double)SimTime.HoursPerDay);

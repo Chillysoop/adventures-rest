@@ -1,0 +1,16 @@
+{
+  "_doc": "Conditions on townsfolk and heroes (Systems/Conditions.cs), after the SRD 5.1 conditions they name (srd). Each is read off what the person is already going through, so nothing new is saved: exhausted from fatigue or hunger (the SRD's exhaustion also comes of going without food), frightened while raiders strike next to them (or in any break listed in fear), charmed while a foe's enchantment holds a councillor, inspired in an inspiration. edge is advantage (1) or disadvantage (-1) on the rolls named in on: checks (skill checks, contests) and saves (saving throws); advantage and disadvantage cancel, as in the SRD.",
+  "fatigue": 85,
+  "hunger": 90,
+  "fear": [],
+  "conditions": [
+    { "id": "exhausted", "name": "Exhausted", "srd": "exhaustion", "icon": "cond-exhausted", "edge": -1, "on": ["checks"],
+      "text": "Worn out or starving: disadvantage on checks until they sleep or eat." },
+    { "id": "frightened", "name": "Frightened", "srd": "frightened", "icon": "cond-frightened", "edge": -1, "on": ["checks", "saves"],
+      "text": "Raiders close by, or fear has hold of them: disadvantage on checks and saves." },
+    { "id": "charmed", "name": "Charmed", "srd": "charmed", "icon": "cond-charmed", "edge": -1, "on": ["saves"],
+      "text": "A foe's enchantment holds them: disadvantage on saves, and they vote as it wants." },
+    { "id": "inspired", "name": "Inspired", "srd": "", "icon": "cond-inspired", "edge": 1, "on": ["checks"],
+      "text": "Something has lit a fire in them: advantage on checks while it lasts." }
+  ]
+}

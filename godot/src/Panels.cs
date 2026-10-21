@@ -243,6 +243,13 @@ public partial class Main
         p.Add("chamber", () => _chamber);
     }
 
+    /// <summary>The chance of the mayor's light check on an everyday decision, for a button's label ("d20 65%").</summary>
+    private static string DecisionOdds(Town t, string decision)
+    {
+        if (!t.Content.Stories.Decisions.TryGetValue(decision, out var d)) return "";
+        return $"d20 {Odds.Pct(Sheet.Chance(t, d.Skill, "", d.Dc, Sheet.Helper(t, d.Skill) != null, false))}";
+    }
+
     private static string LoyaltyWord(double loyalty) => loyalty >= 60 ? "Loyal" : loyalty >= 25 ? "Wary" : "Disloyal";
 
     /// <summary>The card of the councillor picked in the chamber: who they are, what they mind and want, and the levers on them.</summary>
@@ -280,16 +287,37 @@ public partial class Main
             int hoursLeft = pending.DeadlineTick - t.Tick;
             string Decree(bool signIt) => majority != null && majority != signIt ? " (decree)" : "";
             int days = (int)Math.Ceiling(hoursLeft / 24.0);
+            // Each vote is a die: the councillor's d20 plus how they lean, against 11; the proposer votes aye.
             var names = string.Join("   ", pending.Votes.Select(v =>
             {
                 var seat = t.Seats.First(x => x.Def.Id == v.Seat);
                 string who = seat.HolderId is int h ? t.Agent(h).GivenName : seat.Def.Title;
-                return $"{Ui.Img(v.Yes ? "vote-aye" : "vote-nay", 14)} {Ui.Esc(who)}";
+                string roll = v.Seat == pending.Proposer ? "moved it" : v.Die == 0 ? "" : $"d20 {v.Die} {Odds.Sign(v.Lean)} lean = {v.Die + v.Lean} vs {Council.VoteDc}{(v.Die is 20 or 1 ? $" (natural {v.Die})" : "")}";
+                string swayed = v.Swayed ? " " + Ui.Img("talk-persuade", 12) : "";
+                return Ui.Tip($"{Ui.Img(v.Yes ? "vote-aye" : "vote-nay", 14)} {Ui.Esc(who)}{(v.Die > 0 && v.Seat != pending.Proposer ? $" {Ui.C(Ui.Ink2, $"{v.Die}{Odds.Sign(v.Lean)}")}" : "")}{swayed}",
+                    $"{who}: {(v.Yes ? "aye" : "nay")}{(roll != "" ? $"\n{roll}" : "")}{(v.Swayed ? "\nTalked round by the mayor" : "")}");
             }));
             p.Card($"{Ui.Img("tab-council", 16)} [b]{Ui.Esc(Ui.Cap(pending.Text))}[/b]\n"
                 + $"[font_size=12]{Ui.Img("decree", 14)} {AgentLink(t.Agent(pending.ProposerId))}{(pending.Cost > 0 ? $"   {pending.Cost}g" : "")}   {Ui.Img("deadline", 14)} {Ui.Days(days)}\n{names}[/font_size]", Ui.Gold);
             int id = pending.Id;
-            p.Buttons(($"Sign{Decree(true)}", true, true, () => Act(() => _sim.DecideMotion(id, true))), ($"Veto{Decree(false)}", true, false, () => Act(() => _sim.DecideMotion(id, false))));
+            string speech = Odds.Decision(t, "motion");
+            p.TipButtons(($"Sign{Decree(true)}", true, true, () => Act(() => _sim.DecideMotion(id, true)), speech), ($"Veto{Decree(false)}", true, false, () => Act(() => _sim.DecideMotion(id, false)), speech));
+            // One try a motion: take a councillor aside and turn their vote, by the approach the player picks.
+            var sway = pending.Votes
+                .Where(v => Council.SwayBlocked(t, pending, v.Seat) == null)
+                .Select(v =>
+                {
+                    var seat = Council.FindSeat(t, v.Seat)!;
+                    var who = t.Agent(seat.HolderId!.Value);
+                    string seatId = v.Seat;
+                    var items = Odds.Approaches(t, a => Council.SwayDc(t, seat, a), a => a.Against == "wis" ? $"their Wisdom, {LoyaltyWord(seat.Loyalty).ToLowerInvariant()} {Math.Round(seat.Loyalty)}" : $"their passive Insight, {LoyaltyWord(seat.Loyalty).ToLowerInvariant()} {Math.Round(seat.Loyalty)}");
+                    return ($"Sway {who.GivenName} to {(v.Yes ? "nay" : "aye")}", "talk-persuade", $"Take {who.GivenName} aside before the vote. One try a motion.",
+                        (IReadOnlyList<(string, string, string)>)items,
+                        (Action<int>)(i => Act(() => _sim.SwayCouncillor(id, seatId, Negotiation.Rules(t).Approaches[i].Id))));
+                })
+                .ToArray();
+            if (sway.Length > 0) p.RollMenus(sway);
+            else if (pending.SwayedSeat != "") p.Note("You have had your word with the council on this one.");
             if (majority != null) p.Note($"Silence lets the vote stand. A decree against the majority costs Mandate and angers the councillors overruled.");
             // A secret in hand swings a councillor's vote, so the mayor can carry the hall without a decree.
             var levers = pending.Votes
@@ -329,8 +357,8 @@ public partial class Main
         }
         string? why = Secrets.DigBlocked(t, id);
         int dc = Secrets.Dc(t);
-        double odds = Sheet.Chance(t, "investigation", "", dc, false, false);
-        p.Buttons(($"Dig into their past, {Js.Str(r.DigCost)}g · {Math.Round(odds * 100)}%", why == null, false, () => Act(() => _sim.DigIntoCouncillor(id))));
+        double odds = Sheet.Chance(t, "investigation", "", dc, Sheet.Helper(t, "investigation") != null, false);
+        p.TipButtons(($"Dig into their past, {Js.Str(r.DigCost)}g · {Math.Round(odds * 100)}%", why == null, false, () => Act(() => _sim.DigIntoCouncillor(id)), Odds.Decision(t, "dig", dc)));
         if (why != null && why != "only a councillor") p.Note(Ui.Cap(why) + ".");
     }
 
@@ -371,7 +399,46 @@ public partial class Main
             var choices = r.Punishments.Select(x => (x.Name, x.Id != now.Id, false, (Action)(() => Act(() => _sim.SetLaw(crime, x.Id))))).ToArray();
             p.Row($"[b]{Ui.Esc(c.Name)}[/b]  {Tag(now.Name, Ui.Gold)}\n[font_size=12]{LawMoves(now)}[/font_size]", choices);
         }
-        p.Note("Carried out each time the watch catches a hero.");
+        p.Note("Carried out each time the watch catches a hero and the court finds them guilty.");
+        RenderCourt(p, t);
+    }
+
+    /// <summary>
+    /// The court: no dice, the case against the accused (the captain's Investigation, the watch, witnesses) against the
+    /// tale they tell (their Deception). Truth magic the council may order, and the latest verdicts.
+    /// </summary>
+    private void RenderCourt(Pane p, Town t)
+    {
+        var r = Laws.Rules(t).Trial;
+        int evidence = Laws.Evidence(t, false, null);
+        var captain = Council.Holder(t, SeatId.Captain);
+        p.Text($"{Ui.Img("trial", 16)} [b]The court[/b]   {Ui.Chip("dig", $"{evidence}", Ui.Ink, $"The case against an accused: 10 + {(captain != null ? $"Captain {captain.GivenName}'s" : "the watch's")} Investigation + 1 for each {r.WatchPer} watchmen (up to {r.WatchMost}) + {r.Witnesses} for witnesses at a brawl. It must reach their tale (10 + their Deception). No dice.")}", 13);
+        foreach (var truth in r.Truth)
+        {
+            var spell = t.Content.Library.Spell(truth.Spell);
+            if (spell == null) continue;
+            string name = spell.Name, spellId = truth.Spell;
+            bool on = t.TrialMagic == truth.Spell;
+            string? why = Laws.TruthBlocked(t, truth);
+            var caster = Laws.Casters(t, truth.Spell).FirstOrDefault();
+            string effect = truth.Certain ? "no lie holds" : $"+{truth.Bonus} evidence";
+            string who = caster != null ? $"{Ui.Img("heroes", 13)} {AgentLink(caster)}" : Ui.C(Ui.Ink2, why ?? "");
+            p.Row($"{Ui.Img(truth.Icon, 15)} [b]{Ui.Esc(name)}[/b]  {(on ? Tag("In use", Ui.Good) : "")}\n[font_size=12]{Ui.Tip(Ui.C(Ui.Good, effect), truth.Text)}   {Ui.Img("gold", 13)} {Js.Str(truth.Fee)} a trial   {who}[/font_size]",
+                on ? ("Stop", true, false, (Action)(() => Act(() => _sim.SetTrialMagic("")))) : ("Use it", why == null, false, (Action)(() => Act(() => _sim.SetTrialMagic(spellId)))));
+        }
+        var recent = t.Trials.AsEnumerable().Reverse().Take(5).ToList();
+        if (recent.Count == 0)
+        {
+            p.Note("No trials yet.");
+            return;
+        }
+        p.Text(string.Join("\n", recent.Select(x =>
+        {
+            var a = t.Agent(x.AgentId);
+            string crime = Laws.Rules(t).Crimes.FirstOrDefault(c => c.Id == x.Crime)?.Name ?? x.Crime;
+            string magic = x.Magic != "" && Laws.Rules(t).Trial.Of(x.Magic) is { } tm ? " " + Ui.Img(tm.Icon, 13) : "";
+            return $"{Ui.Img(x.Guilty ? "ui-yes" : "ui-no", 13)} {AgentLink(a)} {Ui.C(Ui.Ink2, Ui.Esc(crime.ToLowerInvariant()))}  {Ui.Tip(Ui.C(x.Guilty ? Ui.Good : Ui.Bad, $"{x.Evidence} vs {x.Lies}"), $"Case {x.Evidence} against their tale {x.Lies}: {(x.Guilty ? "guilty" : "walked free")}")}{magic}  {Ui.C(Ui.Ink2, $"[font_size=11]day {x.Day}[/font_size]")}";
+        })), 12);
     }
 
     /// <summary>What one sentence moves: an icon and a number each.</summary>
@@ -460,7 +527,7 @@ public partial class Main
             double grant = rules.SupportPerStanding * 10;
             var actions = new List<(string, bool, bool, Action)>();
             // Crack down when it is turning on the town (a cult, a gang); support it when it serves.
-            actions.Add(($"Crack down {Math.Round(rules.CrackdownCost)}g", t.Treasury >= rules.CrackdownCost, true, () => Act(() => _sim.CrackDown(id))));
+            actions.Add(($"Crack down {Math.Round(rules.CrackdownCost)}g · {DecisionOdds(t, "crackdown")}", t.Treasury >= rules.CrackdownCost, true, () => Act(() => _sim.CrackDown(id))));
             if (f.Lore.Kind != "cult")
                 actions.Add(($"Support {Math.Round(grant)}g", t.Treasury >= grant, false, () => Act(() => _sim.SupportFaction(id, grant))));
             string chips = Ui.Chips(

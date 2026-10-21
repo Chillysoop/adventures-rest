@@ -1167,7 +1167,11 @@
       "{leader} walks out of {seat} alone and unarmed and kneels at {town}'s gate. Nobody knows what changed their heart. {Heirs} call it the worst betrayal in their history.{shape}",
       "A letter comes from {seat} in {leader}'s own hand: they are done with {name}, and they want to fight for {town}. They arrive the next morning, alone.{shape}"
     ],
-    "fall": 0.0001,
+    "fall": 0.0002,
+    "fallDc": 12,
+    "taintDc": 2,
+    "loyalFrom": 60,
+    "heldText": ["Something speaks to {hero} in a dream, and offers a great deal. They wake and refuse it ({roll}).", "{hero} sits up all night in the tavern, turning over a black thought. By morning it is gone ({roll})."],
     "fallDay": 90,
     "fallLevel": 3,
     "fallKinds": {

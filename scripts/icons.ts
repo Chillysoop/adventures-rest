@@ -158,6 +158,17 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["expose", "shouting", "#e07a5f"],
   ["press", "chained-heart", "#d0566a"],
   ["skill", "upgrade", "#7fb0d4"],
+  // Talking people round (negotiation.json approaches), the court (laws.json trial) and conditions (conditions.json)
+  ["talk-persuade", "conversation", "#8cc084"],
+  ["talk-intimidate", "fist", "#ef7f6f"],
+  ["talk-deceive", "domino-mask", "#a68ad8"],
+  ["trial", "scales", "#d8c08a"],
+  ["truth-thoughts", "psychic-waves", "#7fb0d4"],
+  ["truth-zone", "crystal-eye", "#e8d27a"],
+  ["cond-exhausted", "tired-eye", "#b8a98a"],
+  ["cond-frightened", "terror", "#c49ae0"],
+  ["cond-charmed", "charm", "#e07ab8"],
+  ["cond-inspired", "enlightenment", "#e8c45c"],
   ["deadline", "hourglass", "#d8c08a"],
   // Armory items by kind (godot/src/Armory.cs), white so the window tints them by rarity
   ["item-weapon", "broadsword", mono],

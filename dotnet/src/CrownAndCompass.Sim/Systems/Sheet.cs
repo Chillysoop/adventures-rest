@@ -79,6 +79,36 @@ public static class Sheet
         return beat;
     }
 
+    /// <summary>
+    /// Someone who lends the mayor a hand at a skill (the Help action): a councillor trained in it and loyal enough, the
+    /// most skilled first. Their help is advantage.
+    /// </summary>
+    public static Agent? Helper(Town town, string skill)
+    {
+        if (skill == "") return null;
+        double loyal = town.Content.Negotiation.Help;
+        Agent? best = null;
+        int bestBonus = int.MinValue;
+        foreach (var s in town.Seats)
+        {
+            if (s.HolderId is not int id || s.Loyalty < loyal) continue;
+            var a = town.Agent(id);
+            if (a.Departed || !Skills.Trained(town, a, skill)) continue;
+            int b = Skills.Bonus(town, a, skill);
+            if (b > bestBonus) (best, bestBonus) = (a, b);
+        }
+        return best;
+    }
+
+    /// <summary>Who helps, as the die's advantage reads ("Mira the Steward helps"), or "".</summary>
+    public static string HelpText(Town town, string skill)
+    {
+        var a = Helper(town, skill);
+        if (a == null) return "";
+        var seat = town.Seats.FirstOrDefault(s => s.HolderId == a.Id);
+        return seat != null ? $"{a.GivenName} the {seat.Def.Title} helps" : $"{a.GivenName} helps";
+    }
+
     public static bool Succeeded(StoryBeat b) => b.Result is StoryResult.Critical or StoryResult.Success or StoryResult.Certain;
 
     /// <summary>
@@ -89,7 +119,7 @@ public static class Sheet
     public static StoryBeat? Decide(Town town, string decision, int? dc = null)
     {
         if (!Rules(town).Decisions.TryGetValue(decision, out var d)) return null;
-        var beat = Roll(town, d.Skill, "", dc ?? d.Dc, "", false, false);
+        var beat = Roll(town, d.Skill, "", dc ?? d.Dc, HelpText(town, d.Skill), false, false);
         beat.Option = decision;
         bool ok = Succeeded(beat);
         beat.Text = ok ? d.Success : d.Failure;

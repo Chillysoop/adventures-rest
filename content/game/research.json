@@ -1,5 +1,28 @@
 {
-  "_doc": "Town magic and research (Systems/Research.cs, sparks in Systems/Sparks.cs). Ideas appear from the town and the world: each discovery has sparks (craft:<profession>:<n> and folk:<race>:<n> name the newcomers behind them, partner:<people>, routes:<n>, building:<id>, tier:<charter>, book:<school>:<circle>, books:<n>, wizard:<level>, circle:<n>, hero:<class>[:level], heroes:<n>, found:<find kind>[:n] an explorers' find, slain:<creature type>[:n] what companies brought down at cleared sites, cleared:<tier>, delves:<n>, ally:<power>, known:<id>); once one has held brew[rank] days the idea is revealed, so every run's tree differs and grows with what the town meets. Requires must all hold to study it. Gold can't buy a study: lore a day comes from institutions, learned townsfolk, casters, books and the library's keeper, and insight brings lumps of lore from cleared sites, explorers' finds, new spellbooks, learned newcomers and drawn wizards. Funding only greases it (its lore multiplier) and is the council's gold sink.",
+  "_doc": "Research goes in stages (stages): as a study's lore reaches each mark its lead scholar (the best at the skill among heroes at home and learned townsfolk; the town hall's clerks roll at +clerks) rolls the stage's skill, or its field's (fieldSkills), against stageDc + dcPerRank x rank + dcPerStage x stage; a miss loses setback of the lore, a natural 1 mishapSetback and a mishap, a natural 20 jumps stageCrit ahead, and the last stage is the breakthrough. Town magic and research (Systems/Research.cs, sparks in Systems/Sparks.cs). Ideas appear from the town and the world: each discovery has sparks (craft:<profession>:<n> and folk:<race>:<n> name the newcomers behind them, partner:<people>, routes:<n>, building:<id>, tier:<charter>, book:<school>:<circle>, books:<n>, wizard:<level>, circle:<n>, hero:<class>[:level], heroes:<n>, found:<find kind>[:n] an explorers' find, slain:<creature type>[:n] what companies brought down at cleared sites, cleared:<tier>, delves:<n>, ally:<power>, known:<id>); once one has held brew[rank] days the idea is revealed, so every run's tree differs and grows with what the town meets. Requires must all hold to study it. Gold can't buy a study: lore a day comes from institutions, learned townsfolk, casters, books and the library's keeper, and insight brings lumps of lore from cleared sites, explorers' finds, new spellbooks, learned newcomers and drawn wizards. Funding only greases it (its lore multiplier) and is the council's gold sink.",
+  "stages": [
+    { "at": 0.34, "name": "the first notes", "skill": "investigation" },
+    { "at": 0.67, "name": "a working theory", "skill": "" },
+    { "at": 1, "name": "the breakthrough", "skill": "" }
+  ],
+  "fieldSkills": { "arcana": "arcana", "crafts": "investigation", "healing": "medicine", "husbandry": "nature", "lore": "history", "trade": "history", "war": "history" },
+  "stageDc": 8,
+  "clerks": 2,
+  "dcPerRank": 1,
+  "dcPerStage": 1,
+  "stageCrit": 0.15,
+  "setback": 0.06,
+  "mishapSetback": 0.12,
+  "mishapFire": 0.15,
+  "mishapTension": 5,
+  "mishaps": [
+    { "effect": "fire", "text": "A brazier tips over the notes, and {place} burns." },
+    { "effect": "imp", "text": "Something answers a misread line, and an imp gets loose in town." },
+    { "effect": "lost", "text": "A month of notes turns out to rest on a copying error." }
+  ],
+  "stageWon": "{step} on {discovery} holds up, led by {scholar} ({roll}).",
+  "stageCritText": "{scholar} sees it all at once: {step} on {discovery} falls into place, and more besides ({roll}).",
+  "stageLost": "{step} on {discovery} runs into a dead end ({roll}), and the work goes back a little.",
   "funding": [
     {
       "name": "none",

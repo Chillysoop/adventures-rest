@@ -78,9 +78,53 @@ public sealed record StandInFunding
     public int Funding { get; init; }
 }
 
+/// <summary>A step on the way to a discovery: at this share of its lore the lead scholar rolls (research.json "stages").</summary>
+public sealed record StageDef
+{
+    public double At { get; init; } = 1;
+    public string Name { get; init; } = "";
+
+    /// <summary>The skill rolled; "" for the field's own (<see cref="ResearchRules.FieldSkills"/>).</summary>
+    public string Skill { get; init; } = "";
+}
+
+/// <summary>What can go wrong on a natural 1: a line and what it does (fire, imp, lost).</summary>
+public sealed record MishapDef
+{
+    public string Effect { get; init; } = "";
+    public string Text { get; init; } = "";
+}
+
 /// <summary>Numbers for town magic and research.</summary>
 public sealed record ResearchRules
 {
+    /// <summary>The steps each discovery is worked through, each a roll by the lead scholar; the last is the breakthrough.</summary>
+    public List<StageDef> Stages { get; init; } = [];
+    public Dictionary<string, string> FieldSkills { get; init; } = [];
+
+    /// <summary>A step's DC: a base, more by rank and by step.</summary>
+    public int StageDc { get; init; } = 8;
+
+    /// <summary>The town hall's clerks' bonus when no scholar can lead a step.</summary>
+    public int Clerks { get; init; } = 2;
+    public int DcPerRank { get; init; } = 1;
+    public int DcPerStage { get; init; } = 1;
+
+    /// <summary>Shares of the discovery's lore: a natural 20's head start, a miss's setback, a natural 1's.</summary>
+    public double StageCrit { get; init; } = 0.15;
+    public double Setback { get; init; } = 0.06;
+    public double MishapSetback { get; init; } = 0.12;
+
+    /// <summary>The share of the library a mishap's fire wrecks, and the tension an escaped imp adds.</summary>
+    public double MishapFire { get; init; } = 0.15;
+    public double MishapTension { get; init; } = 5;
+    public List<MishapDef> Mishaps { get; init; } = [];
+
+    /// <summary>{scholar}, {step}, {discovery}, {roll}.</summary>
+    public string StageWon { get; init; } = "";
+    public string StageCritText { get; init; } = "";
+    public string StageLost { get; init; } = "";
+
     public List<FundingDef> Funding { get; init; } = [];
 
     /// <summary>Funding costs this much more for each charter past the first.</summary>
@@ -179,6 +223,9 @@ public sealed class ResearchState
 
     /// <summary>Lore gathered toward each discovery begun (its commission was paid when it began).</summary>
     public OrderedMap<string, double> Progress { get; } = new();
+
+    /// <summary>Steps passed on each discovery begun (<see cref="ResearchRules.Stages"/>).</summary>
+    public OrderedMap<string, int> Steps { get; } = new();
 
     public string? Study { get; set; }
 
@@ -439,11 +486,106 @@ public static class Research
             else
             {
                 st.Progress[id] = st.Progress.Get(id, 0) + Lore(town);
-                if (st.Progress[id] >= LoreCost(town, d)) Discover(town, d);
+                if (Steps(town, d) && st.Progress[id] >= LoreCost(town, d)) Discover(town, d);
             }
         }
         Join(town);
         if (auto) StandIn(town);
+    }
+
+    // Steps ------------------------------------------------------------------------------------------
+
+    /// <summary>The skill a step is rolled with: its own, or the discovery's field's.</summary>
+    public static string StepSkill(Town town, DiscoveryDef d, StageDef stage) =>
+        stage.Skill != "" ? stage.Skill : Rules(town).FieldSkills.GetValueOrDefault(d.Field, "investigation");
+
+    public static int StepDc(Town town, DiscoveryDef d, int step) => Rules(town).StageDc + Rules(town).DcPerRank * d.Rank + Rules(town).DcPerStage * step;
+
+    /// <summary>The next step on a discovery, or null when every step is passed.</summary>
+    public static StageDef? NextStep(Town town, DiscoveryDef d)
+    {
+        int at = town.Research.Steps.Get(d.Id, 0);
+        var stages = Rules(town).Stages;
+        return at < stages.Count ? stages[at] : null;
+    }
+
+    /// <summary>Who leads the work at a skill: the best at it among the heroes at home and the learned townsfolk; null leaves it to the clerks.</summary>
+    public static Agent? Lead(Town town, string skill)
+    {
+        var r = Rules(town);
+        Agent? best = null;
+        int bestBonus = int.MinValue;
+        foreach (var a in town.Residents)
+        {
+            if (a.Hero != null ? a.IsAway : !r.Scholars.ContainsKey(a.Profession)) continue;
+            int b = Skills.Bonus(town, a, skill);
+            if (b > bestBonus) (best, bestBonus) = (a, b);
+        }
+        return best;
+    }
+
+    /// <summary>Where the scholars work: the first of the research institutions standing, for the dice to pop over.</summary>
+    private static Building? Desk(Town town) =>
+        Rules(town).Institutions.Select(i => town.Buildings.FirstOrDefault(b => b.Def.Id == i.Building && b.Complete)).FirstOrDefault(b => b != null);
+
+    /// <summary>
+    /// Research goes in steps, each a roll along the way: as the lore reaches a step's mark the lead scholar rolls its
+    /// skill against its DC. A success goes on (a natural 20 jumps ahead); a miss is a dead end that costs some of the
+    /// lore; a natural 1 is a mishap (a fire in the library, an imp loose in town, notes lost). The last step is the
+    /// breakthrough. True when every step is passed.
+    /// </summary>
+    private static bool Steps(Town town, DiscoveryDef d)
+    {
+        var r = Rules(town);
+        var st = town.Research;
+        if (r.Stages.Count == 0) return true;
+        double cost = LoreCost(town, d);
+        for (int guard = 0; guard < r.Stages.Count; guard++)
+        {
+            int at = st.Steps.Get(d.Id, 0);
+            if (at >= r.Stages.Count) return true;
+            var stage = r.Stages[at];
+            if (st.Progress.Get(d.Id, 0) < stage.At * cost) return false;
+            string skill = StepSkill(town, d, stage);
+            var lead = Lead(town, skill);
+            var check = Skills.Roll(town, lead, skill, StepDc(town, d, at), "research", building: Desk(town)?.Id, extra: lead == null ? r.Clerks : 0);
+            string Fill(string text) => text.Replace("{scholar}", lead?.Name ?? "the town hall's clerks").Replace("{step}", stage.Name)
+                .Replace("{discovery}", Lower(d.Name)).Replace("{roll}", Skills.Said(town, check));
+            if (check.Success)
+            {
+                st.Steps[d.Id] = at + 1;
+                if (check.Critical) st.Progress[d.Id] = st.Progress.Get(d.Id, 0) + r.StageCrit * cost;
+                Note(town, "d20", Saga.Cap(Fill(check.Critical ? r.StageCritText : r.StageWon)));
+                continue;
+            }
+            double back = (check.Fumble ? r.MishapSetback : r.Setback) * cost;
+            st.Progress[d.Id] = Math.Max(0, Math.Min(st.Progress.Get(d.Id, 0), stage.At * cost) - back);
+            string text = Saga.Cap(Fill(r.StageLost));
+            if (check.Fumble && r.Mishaps.Count > 0) text += " " + Mishap(town, r.Mishaps[town.Day % r.Mishaps.Count]);
+            Note(town, "d20", text);
+            town.Log(LedgerCategory.Town, check.Fumble ? Importance.Notable : Importance.Routine, text, lead != null ? [lead.Id] : []);
+            return false;
+        }
+        return st.Steps.Get(d.Id, 0) >= r.Stages.Count;
+    }
+
+    /// <summary>A natural 1 on a step: what goes wrong.</summary>
+    private static string Mishap(Town town, MishapDef m)
+    {
+        var r = Rules(town);
+        switch (m.Effect)
+        {
+            case "fire" when Desk(town) is { } desk && Blows.Burns(desk):
+                Blows.Wreck(town, desk, r.MishapFire);
+                return m.Text.Replace("{place}", desk.Name);
+            case "fire":
+                return "";
+            case "imp":
+                town.Tension += r.MishapTension;
+                return m.Text;
+            default:
+                return m.Text;
+        }
     }
 
     private static void Discover(Town town, DiscoveryDef d)
@@ -451,6 +593,7 @@ public static class Research
         var st = town.Research;
         st.Known.Add(d.Id);
         st.Progress.Remove(d.Id);
+        st.Steps.Remove(d.Id);
         st.Study = null;
         string what = d.Field == "arcana" ? $"The wizards of {town.Name} cast {Lower(d.Name)} for the first time" : $"{town.Name}'s scholars master {Lower(d.Name)}";
         Note(town, Sparks.Known, d.Name);

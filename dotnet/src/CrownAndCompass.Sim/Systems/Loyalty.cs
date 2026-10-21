@@ -96,7 +96,10 @@ public sealed record LoyaltyRules
     public int DesertDays { get; init; } = 3;
     public double LeaveChance { get; init; } = 0.25;
     public double Betray { get; init; } = 25;
-    public double BetrayChance { get; init; } = 0.4;
+
+    /// <summary>The Wisdom save a disloyal hero makes at the walls not to open a gate, and more when they are sworn to the foe's faction.</summary>
+    public int BetrayDc { get; init; } = 12;
+    public int BetraySworn { get; init; } = 6;
 
     /// <summary>Power a menace gains per level of a hero who goes over to it.</summary>
     public double TurncoatPower { get; init; } = 12;
@@ -362,7 +365,9 @@ public static class Loyalty
         {
             var s = a.Hero!;
             bool sworn = m?.FactionId != null && Factions.Of(town, a).Any(f => f.Id == m.FactionId);
-            if (!town.Rng.Chance(r.BetrayChance + (sworn ? 0.3 : 0))) continue;
+            // A Wisdom save against the whisper at the gate; a hero already grumbling makes it with disadvantage.
+            var save = Skills.Save(town, a, Ability.Wis, r.BetrayDc + (sworn ? r.BetraySworn : 0), "betray", s.Restless ? -1 : 0, "restless");
+            if (save.Success) continue;
             lost += s.Level * d.HeroLevel * 2 * Threat.Fortification(town);
             string name = Styled(town, a);
             string line = $"{name} unbars the {gates[opened++ % gates.Length]} gate for {foe} and is gone into the dark.";
