@@ -117,7 +117,12 @@ public class RegardTests
         var sim = Player();
         var t = sim.Town;
         sim.RunDays(5);
-        foreach (var h in t.Heroes) h.Hero!.Temper = "lawful";
+        // Nobody else in town is a lawbreaker, by temper or by a hot temper.
+        foreach (var h in t.Heroes)
+        {
+            h.Hero!.Temper = "lawful";
+            h.Traits = h.Traits.Where(x => x != Trait.HotTempered).ToHashSet();
+        }
         var rogue = WithTemper(t, "greedy");
         rogue.Gold = 100;
         Assert.True(Regard.Lawless(t, rogue));
