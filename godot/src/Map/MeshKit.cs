@@ -28,10 +28,24 @@ public sealed class MeshKit
     private readonly List<Vector3> _n = [];
     private readonly List<Color> _c = [];
     private readonly List<Vector2> _uv = [];
+    private readonly List<Vector2> _uv2 = [];
 
     /// <summary>The rig part the next triangles belong to (a hero's arm, leg, head...; see rig.gdshaderinc), written to UV.x.</summary>
     public float Part;
     private bool _rigged;
+
+    /// <summary>
+    /// Wind (blow() in common.gdshaderinc) for buildings and plants, which are never rigged: above 0, the next triangles are stalks
+    /// that bend with the gusts by this much per unit of height (UV.y). Cloth that flutters and smoke puffs that drift are set by
+    /// <see cref="Add(Model, Transform3D, Func{Color, Color}?)"/> and <see cref="Puff"/>.
+    /// </summary>
+    public float Sway;
+    private Func<Vector3, float>? _cloth;
+    private float _clothScale;
+    private Vector2 _clothAxis;
+    private float _puff = -1;
+    private Vector3 _puffAt;
+    private bool _wind;
     private readonly Stack<Transform3D> _stack = new();
     public Transform3D Xf = Transform3D.Identity;
 
@@ -52,6 +66,9 @@ public sealed class MeshKit
     {
         // A mirroring transform turns the winding inside out; swap two corners to keep faces outward.
         if (Xf.Basis.Determinant() < 0) (b, c) = (c, b);
+        WindAt(a);
+        WindAt(b);
+        WindAt(c);
         a = Xf * a;
         b = Xf * b;
         c = Xf * c;
@@ -63,9 +80,49 @@ public sealed class MeshKit
         {
             _n.Add(n);
             _c.Add(col);
-            _uv.Add(new Vector2(Part, 0));
         }
         _rigged |= Part != 0;
+    }
+
+    /// <summary>A vertex's UV (rig part, or the wind's cloth, stalk or smoke data) and UV2 (the cloth's flutter axis or the puff's centre).</summary>
+    private void WindAt(Vector3 p)
+    {
+        Vector2 uv = new(Part, 0), uv2 = Vector2.Zero;
+        if (_puff >= 0)
+        {
+            uv = new Vector2(-1 - _puff, _puffAt.Y);
+            uv2 = new Vector2(_puffAt.X, _puffAt.Z);
+        }
+        else if (_cloth != null)
+        {
+            uv = new Vector2(_cloth(p) * _clothScale, 0);
+            uv2 = _clothAxis;
+        }
+        else if (Sway > 0) uv = new Vector2(0, Sway * Mathf.Max((Xf * p).Y, 0));
+        _wind |= Part == 0 && uv != Vector2.Zero;
+        _uv.Add(uv);
+        _uv2.Add(uv2);
+    }
+
+    /// <summary>
+    /// A puff of chimney smoke centred at c: a small octahedron that the shader lifts, swells, carries downwind and shrinks away
+    /// on a loop, starting at phase (0 to 1) of it. Its size sets how high and far it goes.
+    /// </summary>
+    public void Puff(Vector3 c, float r, float phase, Color col)
+    {
+        _puff = Mathf.PosMod(phase, 1) * 0.999f;
+        _puffAt = Xf * c;
+        Vector3 x = new(r, 0, 0), y = new(0, r, 0), z = new(0, 0, r);
+        foreach (var sx in new[] { 1f, -1f })
+            foreach (var sz in new[] { 1f, -1f })
+            {
+                var ex = c + x * sx;
+                var ez = c + z * sz;
+                bool flip = sx * sz < 0;
+                Tri(c + y, flip ? ez : ex, flip ? ex : ez, col);
+                Tri(c - y, flip ? ex : ez, flip ? ez : ex, col.Darkened(0.12f));
+            }
+        _puff = -1;
     }
 
     public void Quad(Vector3 a, Vector3 b, Vector3 c, Vector3 d, Color col)
@@ -198,14 +255,41 @@ public sealed class MeshKit
     public void Add(Model m, Transform3D t, Func<Color, Color>? recolour = null)
     {
         Push(t);
+        var cloth = Cloth(m.Name);
+        if (cloth != null)
+        {
+            _clothScale = Xf.Basis.Scale.X;
+            // Wall banners hang against the wall on their -x side, so they only lift away from it (a half-length axis tells the shader).
+            var axis = Xf.Basis * Vector3.Right;
+            _clothAxis = new Vector2(axis.X, axis.Z).Normalized() * (m.Name.StartsWith("town/banner") ? 0.5f : 1);
+        }
         for (int i = 0; i < m.Triangles; i++)
         {
             var c = m.Colors[i];
+            _cloth = cloth != null && IsCloth(c) ? cloth : null;
             if (recolour != null) c = recolour(c) with { A = c.A };
             Tri(m.Verts[i * 3], m.Verts[i * 3 + 2], m.Verts[i * 3 + 1], c);
         }
+        _cloth = null;
         Pop();
     }
+
+    /// <summary>
+    /// How free each point of a Kenney flag's or banner's cloth is to flutter (its distance from where it is held, in model units),
+    /// or null for a model with no cloth. All their cloth lies across the model's x axis, which the flutter moves along.
+    /// </summary>
+    private static Func<Vector3, float>? Cloth(string model) => model switch
+    {
+        // Hung on a wall from a bar: they stir rather than stream.
+        "town/banner-red" or "town/banner-green" => p => Mathf.Max(0.97f - p.Y, 0) * 0.35f,
+        "castle/flag-pennant" => p => Mathf.Max(-p.Z - 0.04f, 0),
+        "castle/flag-wide" => p => Mathf.Max(0.86f - p.Y, 0) * Mathf.Max(1 - p.Z * p.Z / 0.073f, 0) + Mathf.Max(0.86f - p.Y, 0) * 0.15f,
+        "castle/flag-banner-long" => p => Mathf.Max(2.12f - p.Y, 0) * 0.45f,
+        _ => null,
+    };
+
+    /// <summary>Dyed cloth, not the wooden poles and bars or the white frames around it.</summary>
+    private static bool IsCloth(Color c) => !(c.R > c.G + 0.15f && c.G > c.B) && !(c.R > 0.75f && c.G > 0.75f && c.B > 0.75f);
 
     public void Add(string model, Transform3D t, Func<Color, Color>? recolour = null) => Add(Models.Get(model), t, recolour);
 
@@ -219,7 +303,8 @@ public sealed class MeshKit
         arrays[(int)Mesh.ArrayType.Vertex] = _v.ToArray();
         arrays[(int)Mesh.ArrayType.Normal] = _n.ToArray();
         arrays[(int)Mesh.ArrayType.Color] = _c.ToArray();
-        if (_rigged) arrays[(int)Mesh.ArrayType.TexUV] = _uv.ToArray();
+        if (_rigged || _wind) arrays[(int)Mesh.ArrayType.TexUV] = _uv.ToArray();
+        if (_wind) arrays[(int)Mesh.ArrayType.TexUV2] = _uv2.ToArray();
         mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays);
         return mesh;
     }
@@ -230,8 +315,11 @@ public sealed class MeshKit
         _n.Clear();
         _c.Clear();
         _uv.Clear();
+        _uv2.Clear();
         Part = 0;
         _rigged = false;
+        Sway = 0;
+        _wind = false;
         Xf = Transform3D.Identity;
         _stack.Clear();
     }
