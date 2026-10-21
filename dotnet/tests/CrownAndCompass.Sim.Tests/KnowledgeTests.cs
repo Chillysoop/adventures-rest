@@ -127,7 +127,8 @@ public class KnowledgeTests
         var next = Unwatched(t).First(s => s.Def.Id != site.Def.Id);
         Assert.Null(sim.CommissionScrying(next.Def.Id, caster.Id));
         while (t.Tick < caster.Hero.ScryRestUntil) sim.Step();
-        Assert.Contains(caster, Knowledge.Rested(t));
+        // Rested again, unless off on the road by now.
+        Assert.Equal(Knowledge.Scryers(t).Contains(caster), Knowledge.Rested(t).Contains(caster));
     }
 
     [Fact]
