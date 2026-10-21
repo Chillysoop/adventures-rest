@@ -24,7 +24,7 @@ public static class Brain
             Crowds.Leave(town, a);
             Execute(town, a, Choose(town, a));
             Crowds.Moved(town, a);
-            SampleMood(a, festival + (a.Activity == Activity.Praying ? town.Content.Shrines.PrayMood : 0) + Faith.Mood(town, a) + City.HomeMood(town, a) + Decor.Mood(town, a) + Crowds.Mood(town, a));
+            SampleMood(a, festival + (a.Activity == Activity.Praying ? town.Content.Shrines.PrayMood : 0) + Faith.Mood(town, a) + City.HomeMood(town, a) + Decor.Mood(town, a) + Crowds.Mood(town, a) + Army.Mood(town, a));
         }
         Crowds.End(town);
     }
@@ -57,7 +57,9 @@ public static class Brain
         double eat = a.Hunger > 35 ? (canEat ? (a.Hunger / 100) * 1.4 + (hour == 7 || hour == 12 || hour == 18 ? 0.2 : 0) : 0.05) : 0;
 
         double work = 0;
-        if (a.JobId != null && IsWorkHours(hour) && !Taxes.Striking(town, a) && !Guilds.Striking(town, a))
+        if (Army.Serving(a) && IsWorkHours(hour))
+            work = 0.95;
+        else if (a.JobId != null && IsWorkHours(hour) && !Taxes.Striking(town, a) && !Guilds.Striking(town, a))
             work = (a.Has(Trait.Lazy) ? 0.55 : 0.85) + (a.Has(Trait.Greedy) ? 0.1 : 0) + (a.Has(Trait.Ambitious) ? 0.05 : 0);
 
         double drink = 0;
@@ -137,7 +139,8 @@ public static class Brain
                 a.LocationId = a.HomeId;
                 break;
             case Activity.Working:
-                DoWork(town, a);
+                if (Army.Serving(a)) Army.Serve(town, a);
+                else DoWork(town, a);
                 break;
             case Activity.Drinking:
                 return DoDrink(town, a);

@@ -136,6 +136,7 @@ public sealed class Simulation
         double pace = Director.Daily(t);
         Threat.Daily(t, pace, Options.AutoMayor && Options.AutoDefense, Options.Enemy);
         Garrison.Daily(t, Options.AutoMayor && Options.AutoDefense);
+        Army.Daily(t);
         World.Daily(t, Options.AutoMayor);
         Trade.Daily(t, Options.AutoMayor);
         Armory.Daily(t, Options.AutoMayor && Options.AutoArmory);
@@ -471,6 +472,30 @@ public sealed class Simulation
 
     /// <summary>Fund a campaign: send a hired company against a menace's seat.</summary>
     public bool MarchMercenaries(string companyId, int menaceId) => Mercenaries.March(Town, companyId, menaceId);
+
+    /// <summary>Raise a regiment of the town's own soldiers at a training hall: recruits come in each day, armed from the treasury and the market.</summary>
+    public Regiment? RaiseRegiment(string unitId, int size, ArmyPost post = ArmyPost.Reserve) => Army.Raise(Town, unitId, size, post);
+
+    /// <summary>Take a regiment up or down to a size; those cut go home to their trades.</summary>
+    public bool ResizeRegiment(int regimentId, int size) => Army.Resize(Town, regimentId, size);
+
+    /// <summary>Stand a regiment (or the levy) down: its soldiers go home to their trades.</summary>
+    public bool DisbandRegiment(int regimentId) => Army.Disband(Town, regimentId);
+
+    /// <summary>Post a regiment: the walls, its hall in reserve, the town guard's patrol, or the mayor's guard.</summary>
+    public bool PostRegiment(int regimentId, ArmyPost post) => Army.SetPost(Town, regimentId, post);
+
+    /// <summary>Put a hero at the head of a regiment, or take them off it (null).</summary>
+    public bool CommandRegiment(int regimentId, int? heroId) => Army.SetCommander(Town, regimentId, heroId);
+
+    /// <summary>Call townsfolk up from their work into the levy, under the town's laws.</summary>
+    public Regiment? RaiseLevy(int size, ArmyPost post = ArmyPost.Walls) => Army.RaiseLevy(Town, size, post);
+
+    /// <summary>The levy law: volunteers only, or conscription.</summary>
+    public bool SetServiceLaw(ServiceLaw law) => Army.SetService(Town, law);
+
+    /// <summary>Whether the levy is paid a wage while it serves.</summary>
+    public bool SetLevyPay(bool paid) => Army.SetLevyPay(Town, paid);
 
     public DayStats Snapshot()
     {

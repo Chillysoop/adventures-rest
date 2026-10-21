@@ -96,6 +96,9 @@ public sealed record BuildingDef
     /// <summary>Most the town can have at once (0 = no limit).</summary>
     public int Max { get; init; }
 
+    /// <summary>A training hall: soldiers of the town's army it can train and quarter (<see cref="Systems.Army"/>).</summary>
+    public int Trains { get; init; }
+
     /// <summary>Watch house: each one makes every watchman count this much more.</summary>
     public double WatchBoost { get; init; }
 
@@ -1350,6 +1353,9 @@ public sealed class Content
     /// <summary>Sellsword companies for hire and how their campaigns go (content/game/mercenaries.json).</summary>
     public MercRules Mercenaries { get; init; } = new();
 
+    /// <summary>The town's own army: units, training, laws and posts (content/game/army.json).</summary>
+    public Systems.ArmyRules Army { get; init; } = new();
+
     /// <summary>Minor powers the town and its enemies court (content/game/powers.json).</summary>
     public PowerRules Powers { get; init; } = new();
 
@@ -1558,6 +1564,7 @@ public sealed class Content
             Sendings = Parse<SendingRules>("sendings.json"),
             Bastions = Parse<BastionRules>("bastions.json"),
             Mercenaries = Parse<MercRules>("mercenaries.json"),
+            Army = Parse<Systems.ArmyRules>("army.json"),
             Powers = Parse<PowerRules>("powers.json"),
             Regard = Parse<RegardRules>("regard.json"),
             Voices = Parse<VoiceRules>("voices.json"),
