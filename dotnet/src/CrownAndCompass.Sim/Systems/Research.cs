@@ -249,6 +249,8 @@ public static class Research
         int hedge = HedgeMages.All(town).Count;
         if (hedge > 0) list.Add(($"{hedge} hedge {(hedge == 1 ? "mage" : "mages")}", hedge * r.Hedge.Lore));
         if (Circles.Lore(town) is (string why, double lore) && lore > 0) list.Add((why, lore));
+        foreach (var w in town.Content.City.Wards)
+            if (w.Lore > 0 && town.City.OpenWards.Contains(w.Id)) list.Add((w.Name.ToLowerInvariant().StartsWith("the ") ? w.Name : "the " + w.Name, w.Lore));
         double wiz = 0, cast = 0;
         foreach (var a in town.Heroes.Where(a => !a.IsAway))
         {

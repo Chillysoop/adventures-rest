@@ -390,7 +390,7 @@ public static class Stories
     /// precedent:id (1 sets it, -1 forgets it) and calling:id (1: the story's hero takes it up, -1: it ends).
     /// </summary>
     public static readonly string[] EffectKeys =
-        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "grudge", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "esteem", "heroXp", "personal", "dismiss", "edge", "swell", "partyHurt", "rest", "slots", "loot", "partyLoyalty", "turnBack", "fine", "jail", "taint", "pact", "pactFavour", "infamy", "exile", "goodwill", "goodwill2", "prosperity", "security", "contact", "band", "moves", "stir", "book", "lore", "recover", "weregild", "owed"];
+        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "grudge", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "esteem", "heroXp", "personal", "dismiss", "edge", "swell", "partyHurt", "rest", "slots", "loot", "partyLoyalty", "turnBack", "fine", "jail", "taint", "pact", "pactFavour", "infamy", "exile", "goodwill", "goodwill2", "prosperity", "security", "contact", "band", "moves", "stir", "book", "lore", "recover", "weregild", "owed", "curse"];
 
     /// <summary>
     /// Every need a story or option can name; besides these, precedent:id, decree:id, season:id and
@@ -400,7 +400,7 @@ public static class Stories
     /// chapter) and below:level (binds that undercity level while it is open and not cleared).
     /// </summary>
     public static readonly string[] Needs =
-        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "settlement", "route", "courted", "veteran", "fallen", "admirer", "aggrieved", "abroad", "homeward", "victorious", "lawbreaker", "famous", "infamous", "trouble", "contact", "band", "forge", "below", "library", "scholars", "remains", "sworn", "pactless", "bloodied", "owed"];
+        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "settlement", "route", "courted", "veteran", "fallen", "admirer", "aggrieved", "abroad", "homeward", "victorious", "lawbreaker", "famous", "infamous", "trouble", "contact", "band", "forge", "below", "library", "scholars", "remains", "sworn", "pactless", "bloodied", "owed", "cursed"];
 
     private static readonly string[] Prefixed = ["precedent:", "decree:", "season:"];
 
@@ -936,9 +936,15 @@ public static class Stories
             }
             case "bloodied":
             case "owed":
+            case "cursed":
             {
                 // A hero in town who killed a townsperson in a brawl and has not settled it; or one the town owes favours.
-                bool Fits(Agent a) => !a.IsAway && (need == "bloodied" ? Taverns.Owing(town, a) != null : a.Hero!.Owed > 0);
+                bool Fits(Agent a) => !a.IsAway && need switch
+                {
+                    "bloodied" => Taverns.Owing(town, a) != null,
+                    "cursed" => a.Hero!.Curse != "",
+                    _ => a.Hero!.Owed > 0,
+                };
                 if (s.HeroId is int h) return Hero(town, h) is { } a && Fits(a);
                 if (!bind) return false;
                 var a2 = Pick(town.Heroes.Where(Fits).OrderBy(a => a.Id).ToList());
@@ -1490,6 +1496,14 @@ public static class Stories
                         said.Add(v > 0 ? "the kin are paid" : "the kin swear a feud");
                     }
                     break;
+                case "curse":
+                    // 1: the curse on the story's hero's weapon is lifted; -1: the blade is broken with it.
+                    if (s.HeroId is int ch && Hero(town, ch) is { } ca && ca.Hero!.Curse != "")
+                    {
+                        Curses.Lift(town, ca, v < 0);
+                        said.Add(v < 0 ? "the cursed blade is broken" : "the curse is lifted");
+                    }
+                    break;
                 case "owed":
                     // The story's hero is owed this many favours fewer (all of them when it is 0 or less).
                     if (s.HeroId is int oh && Hero(town, oh) is { } oa)
@@ -1640,6 +1654,8 @@ public static class Stories
         Put("{patron}", () => (s.Patron ?? (s.HeroId is int ph ? town.Agent(ph).Hero?.Patron : null)) is { Length: > 0 } pid && town.Content.Patrons.Patron(pid) is { } pd ? pd.Name : "the patron");
         Put("{patronTitle}", () => (s.Patron ?? (s.HeroId is int ph ? town.Agent(ph).Hero?.Patron : null)) is { Length: > 0 } pid && town.Content.Patrons.Patron(pid) is { } pd ? pd.Title : "a power beyond the world");
         Put("{familiar}", () => s.HeroId is int fh && town.Agent(fh).Hero is { Familiar: not "" } fs ? fs.Familiar : "a familiar");
+        Put("{curse}", () => s.HeroId is int cuh && town.Agent(cuh).Hero is { } cus && Curses.Of(town.Content, cus) is { } cud ? cud.Name : "cursed");
+        Put("{curseText}", () => s.HeroId is int cuh && town.Agent(cuh).Hero is { } cus && Curses.Of(town.Content, cus) is { } cud ? cud.Text : "");
         Put("{tavernKeeper}", () => s.BuildingId is int tk && Taverns.Keeper(town, town.Building(tk)) is { } kp ? kp.Name : "the keeper");
         Put("{tavernKeeperName}", () => s.BuildingId is int tk && Taverns.Keeper(town, town.Building(tk)) is { } kp ? kp.GivenName : "the keeper");
         Put("{keeperPast}", () => s.BuildingId is int tk && Taverns.Past(town, town.Building(tk)) is { } kp ? kp.Name : "a stranger");

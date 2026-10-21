@@ -397,8 +397,29 @@ public static class Ui
 
     private static readonly System.Text.RegularExpressions.Regex Coins = new(@"(?<![\w#=])(\d[\d,]*(?:\.\d+)?)(g\b| gold\b)", System.Text.RegularExpressions.RegexOptions.Compiled);
 
-    /// <summary>Put the gold icon before every sum of money in a piece of rich text: "120g" and "120 gold".</summary>
-    public static string Coined(string bbcode) => Coins.Replace(bbcode, m => $"{Img("gold", 14)}{m.Groups[1].Value}{(m.Groups[2].Value == "g" ? "" : " gold")}");
+    /// <summary>Gold at which the player sees platinum instead (ten gold a piece).</summary>
+    public const double PlatinumFrom = 1000;
+
+    /// <summary>
+    /// The money the player reads, in gold and platinum only: whole gold below <see cref="PlatinumFrom"/> (the
+    /// coppers and silver the sim keeps stay under the hood), platinum pieces at ten gold from there. Returns the
+    /// icon to wear and the figure.
+    /// </summary>
+    public static (string Icon, string Figure, bool Platinum) Money(double gold)
+    {
+        if (Math.Abs(gold) >= PlatinumFrom) return ("platinum", Math.Round(gold / 10).ToString("#,0", System.Globalization.CultureInfo.InvariantCulture), true);
+        double whole = gold > 0 && gold < 1 ? 1 : Math.Round(gold);
+        return ("gold", whole.ToString("#,0", System.Globalization.CultureInfo.InvariantCulture), false);
+    }
+
+    /// <summary>Put the coin before every sum of money in a piece of rich text ("120g", "120 gold"), as gold or platinum.</summary>
+    public static string Coined(string bbcode) => Coins.Replace(bbcode, m =>
+    {
+        if (!double.TryParse(m.Groups[1].Value.Replace(",", ""), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double v))
+            return $"{Img("gold", 14)}{m.Groups[1].Value}{(m.Groups[2].Value == "g" ? "" : " gold")}";
+        var (icon, figure, plat) = Money(v);
+        return $"{Img(icon, 14)}{figure}{(m.Groups[2].Value == "g" ? "" : plat ? " platinum" : " gold")}";
+    });
 
     /// <summary>A button label with its sum of money shown with the gold icon instead of a "g".</summary>
     public static void GoldButton(Button b)
@@ -409,8 +430,10 @@ public static class Ui
             b.Icon = null; // buttons that are reused may have shown a price before
             return;
         }
-        b.Text = b.Text.Remove(m.Index + m.Length - 1, 1);
-        b.Icon = Icon("gold");
+        double.TryParse(m.Groups[1].Value.Replace(",", ""), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double v);
+        var (icon, figure, _) = Money(v);
+        b.Text = b.Text.Remove(m.Index, m.Length).Insert(m.Index, figure);
+        b.Icon = Icon(icon);
         b.ExpandIcon = false;
         b.AddThemeConstantOverride("icon_max_width", 16);
     }

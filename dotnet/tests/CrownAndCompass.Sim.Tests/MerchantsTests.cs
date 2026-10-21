@@ -42,8 +42,10 @@ public class MerchantsTests
         double toStranger = Merchants.Asking(t, shop, stranger, Item(t));
         Assert.True(toFriend < toStranger);
 
-        // Another hero buys it off the shelf, and the town takes its tax.
-        stranger.Gold = 5000;
+        // Another hero buys it off the shelf, and the town takes its tax: a friend of the keeper, so the second-hand piece
+        // undercuts the forge's new one, with gold for that but not for a +2 piece.
+        owner.ChangeOpinion(stranger.Id, 80);
+        stranger.Gold = 1000;
         double tax = t.Accounts.Get(TreasuryAccount.SalesTax, 0);
         Gear.Shop(t);
         Assert.Empty(t.Wares);

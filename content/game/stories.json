@@ -6693,6 +6693,81 @@
           "loyalty": -10
         }
       }
+    },
+    {
+      "id": "cursed-blade",
+      "title": "{hero}'s {curse} blade",
+      "stakes": "medium",
+      "source": "heroes",
+      "needs": [
+        "cursed"
+      ],
+      "weight": 1.5,
+      "repeatDays": 30,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} cannot put down the weapon they brought home from the hoard. It is {curse}: {curseText} They ask the town for help, though half of them does not want it.",
+          "options": [
+            {
+              "label": "The temple lifts the curse",
+              "tags": [
+                "faith"
+              ],
+              "skill": "religion",
+              "dc": 14,
+              "cost": 60,
+              "needs": [
+                "temple"
+              ],
+              "success": {
+                "text": "The priests chant over the blade for a night and a day. At dawn it is only a fine weapon, and {heroName} sleeps for the first time in weeks.",
+                "effects": {
+                  "curse": 1,
+                  "loyalty": 4,
+                  "favour": 1
+                }
+              },
+              "failure": {
+                "text": "The blade drinks the holy water and hums. Whatever is in it is stronger than the temple's prayers, for now.",
+                "effects": {
+                  "loyalty": -2
+                }
+              }
+            },
+            {
+              "label": "Break it on the anvil",
+              "tags": [
+                "harsh",
+                "caution"
+              ],
+              "success": {
+                "text": "The smiths break the blade, and something screams as it goes. {heroName} is free, and poorer for it.",
+                "effects": {
+                  "curse": -1,
+                  "loyalty": 2
+                }
+              }
+            },
+            {
+              "label": "Let them keep it",
+              "tags": [
+                "freedom",
+                "valor"
+              ],
+              "prefer": 0.05,
+              "success": {
+                "text": "{heroName} keeps the blade. It is theirs now, curse and all, and it seems pleased.",
+                "effects": {}
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "{heroName} keeps the blade, or the blade keeps them.",
+        "effects": {}
+      }
     }
   ],
   "decrees": [

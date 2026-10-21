@@ -120,3 +120,96 @@ public class TavernsTests
         Assert.Null(Knowledge.ScryOffer(t, site));
     }
 }
+
+public class CursesAndDowntimeTests
+{
+    private static Agent Hero(Town t, string cls, int level = 3) => Quests.CreateHero(t, t.Content.Classes.First(c => c.Id == cls), level);
+
+    private static Town NewTown() => new Simulation(new SimulationOptions { Seed = 4, Enemy = false }).Town;
+
+    private static LibItem Weapon(Town t) =>
+        t.Content.Library.Items.Where(i => Gear.SlotOf(i) == "weapon" && i.Tier >= 1).OrderBy(i => i.Id, StringComparer.Ordinal).First();
+
+    [Fact]
+    public void ACursedWeaponGivesAndTakesAndWillNotBePutDown()
+    {
+        var t = NewTown();
+        var h = Hero(t, "fighter");
+        var it = Weapon(t);
+        // Not every weapon is cursed: take them up on different days until one is.
+        for (int tick = 0; tick < 400 && h.Hero!.Curse == ""; tick++, t.Tick++)
+        {
+            h.Hero.Magic.Clear();
+            Gear.Claim(t, h, it);
+        }
+        var s = h.Hero!;
+        var curse = Curses.Of(t.Content, s);
+        Assert.NotNull(curse);
+        Assert.Contains(t.Ledger.Entries, e => e.Text.Contains(curse!.Name, StringComparison.Ordinal));
+        // It will not make room for another weapon, nor be passed on.
+        Assert.Equal(0, Gear.Gain(t.Content, h, it));
+        var other = Hero(t, "fighter");
+        Assert.Null(Gear.Pass(t, h, other) is { } passed && Gear.SlotOf(passed) == "weapon" ? passed : null);
+        // The temple lifts it; the blade stays.
+        var story = Stories.Open(t, "cursed-blade");
+        Assert.NotNull(story);
+        Curses.Lift(t, h, breakIt: false);
+        Assert.Equal("", s.Curse);
+        Assert.True(s.Magic.ContainsKey("weapon"));
+    }
+
+    [Fact]
+    public void HeroesBuyLandTrainAndTakeAStakeBetweenJobs()
+    {
+        var t = NewTown();
+        var h = Hero(t, "fighter");
+        var s = h.Hero!;
+        s.Loyalty = 70;
+        h.Gold = 2000;
+        double treasury = t.Treasury;
+        for (int d = 0; d < 7; d++) { Downtime.Daily(t); t.Tick += SimTime.HoursPerDay; }
+        Assert.NotEqual("", s.Holding);
+        Assert.True(t.Treasury > treasury);
+        int xp = s.Xp;
+        for (int d = 0; d < 7; d++) { Downtime.Daily(t); t.Tick += SimTime.HoursPerDay; }
+        Assert.True(s.Xp > xp || s.Level > 3);
+    }
+}
+
+public class LawsAndCardsTests
+{
+    [Fact]
+    public void TheLawBookSetsTheSentenceAndEachMovesTheTown()
+    {
+        var t = new Simulation(new SimulationOptions { Seed = 4, Enemy = false }).Town;
+        var h = Quests.CreateHero(t, t.Content.Classes.First(c => c.Id == "fighter"), 3);
+        Assert.Equal("fine", Laws.For(t, "theft").Id);
+        Assert.Equal(1, Laws.Deter(t, "theft"));
+        Assert.True(Laws.Set(t, "theft", "flogging"));
+        Assert.False(Laws.Set(t, "theft", "flogging"));
+        Assert.False(Laws.Set(t, "arson", "fine"));
+        Assert.True(Laws.Deter(t, "theft") < 1);
+        t.Taxes.Unrest = 10;
+        double loyalty = h.Hero!.Loyalty;
+        string said = Laws.Sentence(t, "theft", h, 20);
+        Assert.Contains("lashes", said);
+        Assert.True(t.Taxes.Unrest < 10);
+        Assert.True(h.Hero.Loyalty < loyalty);
+        // Every punishment says how a sentence reads.
+        Assert.All(t.Content.Laws.Punishments, p => Assert.NotEqual("", p.Sentenced));
+    }
+
+    [Fact]
+    public void EveryClassHasAHeroCardRoleAndKeyPowers()
+    {
+        var t = new Simulation(new SimulationOptions { Seed = 4, Enemy = false }).Town;
+        string[] cards = ["tank", "striker", "healer", "scout", "face"];
+        foreach (var c in t.Content.Classes)
+        {
+            Assert.Contains(c.Card, cards);
+            var h = Quests.CreateHero(t, c, 5);
+            Assert.InRange(Roster.KeyPowers(t, h).Count, 0, 3);
+        }
+        Assert.All(cards, k => Assert.Contains(t.Content.Classes, c => c.Card == k));
+    }
+}

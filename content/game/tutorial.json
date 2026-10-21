@@ -655,6 +655,17 @@
       "title": "The town is yours",
       "text": "That's the basics. New tips will appear here as the town grows and as new features arrive in later builds. Good luck, Mayor.",
       "teaches": []
+    },
+    {
+      "id": "law-book",
+      "title": "The law book",
+      "text": "When the watch catches a hero brawling or stealing, the [b]law book[/b] in [b]Council[/b] says what happens to them. A fine is the old way. The stocks and flogging calm the streets and scare off the next offender, but the temple frowns and the heroes remember. Temple penance pleases the priests and the guilds call it soft. Restitution pleases the guilds and empties a hero's purse.",
+      "when": "day:20",
+      "point": "tab:Council",
+      "until": "tab:Council",
+      "teaches": [
+        "command:SetLaw"
+      ]
     }
   ],
   "untaught": {}

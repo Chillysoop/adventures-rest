@@ -273,6 +273,89 @@
         "weregild"
       ],
       "text": "When a drunk hero hits a townsperson once too hard in a brawl and kills them, the family come to the town hall for weregild, blood money for a life. Pay it from the treasury, make the hero pay, talk the family down, or refuse; refuse and they swear a feud on the hero."
+    },
+    {
+      "id": "cursed-weapon",
+      "term": "Cursed weapon",
+      "category": "adventure",
+      "icon": "face-death-skull",
+      "aliases": [
+        "cursed weapons",
+        "curse",
+        "cursed"
+      ],
+      "text": "Now and then a magic weapon a hero brings home from a hoard is cursed. Every curse gives and takes: a bloodthirsty blade bites deep but drags its bearer into brawls, a jealous one strikes true but allows no other magic, a craven one parries but flinches, a whispering one teaches secrets and talk of better towns, a gluttonous one feeds on its bearer's rest, a miserly one will sell nothing to the town. It cannot be put down until the temple lifts the curse or the smiths break the blade."
+    },
+    {
+      "id": "heroes-lives",
+      "term": "Heroes' own lives",
+      "category": "adventure",
+      "icon": "heroes",
+      "aliases": [
+        "downtime",
+        "holding",
+        "stake"
+      ],
+      "text": "Between jobs heroes spend their gold as they please: they buy land and a house of their own (and sleep there instead of the tavern, more rooted in the town), pay for training toward their next level, or buy a stake in a business that pays them back. They marry through the taverns like anyone, and a company that can afford it raises a bastion. None of it keeps them from answering a bounty."
+    },
+    {
+      "id": "platinum",
+      "term": "Gold and platinum",
+      "category": "goods",
+      "icon": "platinum",
+      "aliases": [
+        "platinum",
+        "coins"
+      ],
+      "text": "The town counts its money in gold, and from a thousand gold on in platinum pieces, ten gold apiece. The coppers and silver of everyday trade are still counted, out of sight."
+    },
+    {
+      "id": "heist",
+      "term": "Heists and the alarm",
+      "category": "adventure",
+      "icon": "d20",
+      "aliases": [
+        "alarm",
+        "heists",
+        "vault"
+      ],
+      "text": "A Fetch or a Rescue is a quiet job. Before each room the party's quietest tries to slip past; every slip is a fight and raises the alarm, and once it reaches the top the whole place wakes. A hoard on a Fetch sits in a vault of locks, wards and hidden catches that share the same alarm: set it off inside and the door slams, and they run with half the gold and no treasure."
+    },
+    {
+      "id": "routine",
+      "term": "Routine work",
+      "category": "rules",
+      "icon": "d20",
+      "aliases": [
+        "a day at the trade"
+      ],
+      "text": "Every business rolls its trade each day, with a line of why it went as it did, on the worker's character sheet. Routine work almost always succeeds: only a natural 1 that also falls short goes wrong."
+    },
+    {
+      "id": "law-book",
+      "term": "Law book",
+      "category": "council",
+      "icon": "tab-council",
+      "aliases": [
+        "laws",
+        "punishment",
+        "punishments"
+      ],
+      "text": "The council's list of punishments for the crimes the watch catches heroes at: brawling and theft. Each sentence moves order (unrest), fear (a share of would-be offenders who stay home), the guilds' standing, the temple god's favour and the offender's loyalty. Set them in the Council window."
+    },
+    {
+      "id": "hero-role",
+      "term": "Hero role",
+      "category": "people",
+      "icon": "tab-companies",
+      "aliases": [
+        "tank",
+        "striker",
+        "healer",
+        "face",
+        "role card"
+      ],
+      "text": "What a hero is for in a party, shown on their card with up to three key powers: a tank holds the line, a striker deals the damage, a healer keeps the party standing, a scout finds the way and the traps, and a face does the talking."
     }
   ]
 }

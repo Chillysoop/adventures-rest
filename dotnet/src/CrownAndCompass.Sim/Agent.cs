@@ -246,6 +246,14 @@ public sealed class HeroSheet
     /// <summary>Favours the town owes this caster for scryings they cast on credit (<see cref="Systems.Knowledge.ScryOffer"/>).</summary>
     public int Owed { get; set; }
 
+    /// <summary>The curse on their magic weapon, "" for none (<see cref="Systems.Curses"/>).</summary>
+    public string Curse { get; set; } = "";
+
+    /// <summary>Their own house and land in town, "" until they buy one; a business they hold a stake in, and what they put in (<see cref="Systems.Downtime"/>).</summary>
+    public string Holding { get; set; } = "";
+    public int? StakeId { get; set; }
+    public double Stake { get; set; }
+
     /// <summary>The familiar their patron sent ("a cinder imp"), "" for none.</summary>
     public string Familiar { get; set; } = "";
 

@@ -150,4 +150,43 @@ public class TermsTests
         Assert.Equal(stock + 1, t.Armory.Stock.Count);
         Assert.Contains(t.Ledger.Entries, e => e.Text.Contains("bring the Lost Lanterns home"));
     }
+
+    [Fact]
+    public void AHeistSneaksPastRoomsAndAnAlarmSharedWithTheVaultCanSlamItShut()
+    {
+        var sim = Player();
+        var t = sim.Town;
+        var site = Quests.Site(t, "goblin_warrens")!.Def;
+        bool slipped = false, raised = false, vault = false;
+        for (int seed = 1; seed < 60 && !(slipped && raised && vault); seed++)
+        {
+            var r = Expedition.Run(new Rng(seed), t.Content, site, Party(t, 4), terms: t.Content.Bounties.Term("fetch"));
+            slipped |= r.Lines.Any(l => l.Contains("past unseen"));
+            raised |= r.Lines.Any(l => l.Contains("The alarm rises") || l.Contains("the alarm goes up"));
+            vault |= r.Lines.Any(l => l.Contains("on the vault"));
+        }
+        Assert.True(slipped);
+        Assert.True(raised);
+        Assert.True(vault);
+    }
+
+    [Fact]
+    public void ACasterSolvesItTheirOwnWayAndAJobIsToldAsATale()
+    {
+        var sim = Player();
+        var t = sim.Town;
+        var site = Quests.Site(t, "goblin_warrens")!.Def;
+        var party = Party(t, 8);
+        party.Add(Quests.CreateHero(t, t.Content.Classes.First(x => x.Id == "wizard"), 8));
+        bool way = false;
+        for (int seed = 1; seed < 20 && !way; seed++)
+            way = Expedition.Run(new Rng(seed), t.Content, site, party).Lines.Any(l => l.Contains("no roll needed") || l.Contains("charms the guards") || l.Contains("unseen servant") || l.Contains("divination"));
+        Assert.True(way);
+        var goblins = Quests.Site(t, "goblin_warrens")!;
+        goblins.Known = SiteKnowledge.Rumoured;
+        var b = sim.PostBounty("goblin_warrens", 100, "fetch");
+        Assert.NotNull(b);
+        Assert.Equal("vault", b!.Plot);
+        Assert.Contains(t.Ledger.Entries, e => e.Text.Contains("the Vault Job"));
+    }
 }

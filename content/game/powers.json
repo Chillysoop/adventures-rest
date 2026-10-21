@@ -103,6 +103,39 @@
         { "id": "a-good-year", "kind": "harvest", "amount": 0.25, "days": 360, "text": "a year of good harvests", "paid": "A grey hare is seen in every field at dawn. The farmers say the soil has gone tired: the Grandmothers are taking their year of good harvests." },
         { "id": "the-mayors-voice", "kind": "voice", "amount": 15, "text": "the mayor's voice, a little of it", "paid": "The mayor wakes hoarse and stays hoarse. At the council table the townsfolk lean in to hear, and some stop bothering. The Grandmothers keep what they took in a stoppered jar." }
       ]
+    },
+    {
+      "id": "rose-thieves", "ref": "rose-thieves", "face": "visored-helm", "title": "Knight-Robber of the Rose", "leader": "Dame Isolde Fernhallow",
+      "goal": "wants hoarders robbed and the takings handed out on the village greens",
+      "seat": "a ruined chapel in the greenwood that every forester knows and none will name",
+      "witness": "a charcoal-burner with a red rose pinned to his hat",
+      "evil": false, "serves": "none", "shuns": [],
+      "base": 5, "likes": { "slain": 25, "wealth": -20, "dark": -30 },
+      "allyAt": 30, "price": 200, "tithe": 1, "gift": 40,
+      "ally": { "defence": 30, "income": 4, "text": "masked knights on the walls, and a share of what they take from the enemy's paymasters" },
+      "enemy": { "text": "nothing: they rob tyrants, not towns" }
+    },
+    {
+      "id": "foundling-purse", "ref": "foundling-purse", "face": "domino-mask", "title": "Matron of the Purse", "leader": "Mother Tansy",
+      "goal": "wants three orphanages fed, and every purse in reach a little lighter for it",
+      "seat": "the back stair of the Harrowgate orphanage",
+      "witness": "a barefoot boy who knows far more than a boy should",
+      "evil": false, "serves": "any", "shuns": ["undead"],
+      "base": 0, "likes": { "growth": 25, "wealth": 15, "infamy": -20 },
+      "allyAt": 25, "price": 220, "tithe": 2, "gift": 40,
+      "ally": { "income": 3, "warn": 0.2, "text": "word from every street child in town, so a fifth of enemy agents' blows are stopped, and a cut of the take for the treasury" },
+      "enemy": { "skim": 3, "strike": "treasury", "strikeEvery": 60, "text": "little hands in the treasury for {enemy}, and the town's purses picked" }
+    },
+    {
+      "id": "skyhold-post", "ref": "skyhold-post", "face": "dwarf-face", "title": "Postmaster of the Skyhold", "leader": "Brannoc Featherhand",
+      "goal": "wants every road and pass carrying its letters, and every stamp paid",
+      "seat": "the griffon eyries of the Skyhold, above the clouds",
+      "witness": "a dwarven courier who lands in the square, stamps a letter and is gone",
+      "evil": false, "serves": "any", "shuns": [],
+      "base": 10, "likes": { "routes": 35, "wealth": 10 },
+      "allyAt": 30, "price": 300, "tithe": 2, "gift": 45,
+      "ally": { "income": 5, "warn": 0.15, "text": "letters flown in from every road, so warnings come in time and the stamps pay the treasury" },
+      "enemy": { "arm": 0.25, "text": "{enemy}'s orders flown fast between its camps by griffon" }
     }
   ],
   "envoys": {

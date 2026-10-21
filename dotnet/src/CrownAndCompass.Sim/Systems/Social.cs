@@ -81,7 +81,7 @@ public static class Social
                 [p.Id, q.Id]);
 
         // Brawl.
-        if (after <= RivalThreshold && (q.Has(Trait.HotTempered) || q.Drinks >= 3) && rng.Chance(Math.Min(1, 0.35 * Taverns.Brawl(town, tavern, q))))
+        if (after <= RivalThreshold && (q.Has(Trait.HotTempered) || q.Drinks >= 3) && rng.Chance(Math.Min(1, 0.35 * Taverns.Brawl(town, tavern, q) * Curses.Brawl(town.Content, q))))
         {
             if (Skills.Calm(town, tavern, q)) return;
             if (town.Watch > 0 && rng.Chance(Council.WatchStrength(town)))

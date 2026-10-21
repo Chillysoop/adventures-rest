@@ -162,6 +162,7 @@ public partial class Main
             RenderSecret(p, t, a);
         }
         RenderGuilds(p, t);
+        RenderLaws(p, t);
         var history = t.Motions.Where(m => m.Status != MotionStatus.Pending).TakeLast(8).Reverse().ToList();
         if (history.Count > 0)
         {
@@ -261,6 +262,36 @@ public partial class Main
                     : "Services grow with the town: every new household, hall and institution costs upkeep. While taxes, rents and trade cover them, the townsfolk are content.");
     }
 
+    /// <summary>The law book: the punishment set for each crime, and what each choice would move.</summary>
+    private void RenderLaws(Pane p, Town t)
+    {
+        var r = Laws.Rules(t);
+        if (r.Crimes.Count == 0) return;
+        p.Heading("Law book");
+        foreach (var c in r.Crimes)
+        {
+            var now = Laws.For(t, c.Id);
+            string crime = c.Id;
+            var choices = r.Punishments.Select(x => (x.Name, x.Id != now.Id, false, (Action)(() => Act(() => _sim.SetLaw(crime, x.Id))))).ToArray();
+            p.Row($"[b]{Ui.Esc(c.Name)}[/b]  {Tag(now.Name, Ui.Gold)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(c.Text)} {Ui.Esc(now.Text)}\n{Ui.Esc(LawMoves(now))}[/font_size]")}", choices);
+        }
+        p.Note("The watch carries out the sentence the book sets each time it catches a hero at it. Harsh ones keep offenders home and calm the streets, but the temple and the heroes remember.");
+    }
+
+    private static string LawMoves(PunishmentDef x)
+    {
+        var parts = new List<string>();
+        void Add(string what, double v) { if (v != 0) parts.Add($"{what} {(v > 0 ? "+" : "")}{v:0.#}"); }
+        if (x.Fine != 1) parts.Add(x.Fine == 0 ? "no fine" : $"fine ×{x.Fine:0.#}");
+        Add("unrest", x.Order);
+        if (x.Fear > 0) parts.Add($"deters {Math.Round(x.Fear * 100)}%");
+        Add("guilds", x.Guilds);
+        Add("temple", x.Temple);
+        Add("Mandate", x.Mandate);
+        Add("offender's loyalty", x.Loyalty);
+        return parts.Count == 0 ? "Moves nothing else." : "Each sentence: " + string.Join(" · ", parts) + ".";
+    }
+
     // ---------- Bounties and the road ----------
 
     private void RenderBounties()
@@ -315,7 +346,8 @@ public partial class Main
             else if (party != null && !party.Returned) status = Tag($"{Ui.Esc(party.Name)} on the road", Ui.Gold);
             else if (live != null && live.Errand != "" && t.Content.Bounties.Errands.FirstOrDefault(x => x.Id == live.Errand) is { } boon)
                 status = Tag($"Mages' errand: {Math.Round(live.Reward)}g and {boon.Name}", Ui.Gold);
-            else if (live != null) status = Tag($"{(live.Terms == "slay" ? "Bounty" : Terms.Of(t, live).Name)} posted: {Math.Round(live.Reward)}g{(live.LootToTown ? ", loot to the town" : "")}", Ui.Gold);
+            else if (live != null) status = Tag($"{(live.Terms == "slay" ? "Bounty" : Terms.Of(t, live).Name)} posted: {Math.Round(live.Reward)}g{(live.LootToTown ? ", loot to the town" : "")}", Ui.Gold)
+                + (t.Content.Bounties.Plots.FirstOrDefault(x => x.Id == live.Plot) is { } plot ? Ui.C(Ui.Ink2, $" [font_size=11]{Ui.Esc(Ui.Cap(plot.Name))}[/font_size]") : "");
             else
             {
                 status = s.Attempts > 0 ? Tag($"{s.Attempts} failed {(s.Attempts == 1 ? "attempt" : "attempts")}", Ui.Bad) : Tag("Unexplored");
@@ -670,6 +702,7 @@ public partial class Main
             if (cls.HealSpell != null) spells.Add($"{cls.HealSpell.Name} ({cls.HealsAt(hs.Level)} a delve)");
             if (cls.AreaSpell != null) spells.Add(cls.AreaSpell.Name);
             string role = cls.Role == "" ? "" : $"{Ui.Cap(cls.Role)}{(cls.Magic != "" ? $", {cls.Magic} caster" : "")}";
+            if (cls.Card != "") p.Text($"{Tag(Ui.Cap(cls.Card), Ui.Gold)} {Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(string.Join(" · ", Roster.KeyPowers(t, a).Select(Ui.Cap)))}[/font_size]")}", 13);
             p.Text(Ui.C(Ui.Ink2, $"{Ui.Esc(role)}{(spells.Count > 0 ? $" · casts {Ui.Esc(string.Join(", ", spells))}" : "")}"), 13);
             p.Text($"Fights with {Ui.Esc(Gear.Describe(hs))} · AC {Gear.Ac(t.Content, a)} · attack +{Gear.Attack(t.Content, a)}{(hs.Stone ? " · carries a town sending stone" : "")}", 13);
             var (alone, carries) = Passage.Of(t, a);
@@ -768,6 +801,7 @@ public partial class Main
             p.Text(Ui.C(Ui.Ink2, "Carries " + string.Join(", ", kit) + "."), 13);
         }
         InspectPact(p, t, hs);
+        InspectLife(p, t, hs);
         if (hs.Taint > 0)
             p.Text(Ui.C(Ui.Bad, hs.Taint == 1 ? "Took a gift from the dark. Their shadow is slow to follow them." : $"Took {hs.Taint} gifts from the dark. They are not sleeping well."), 13);
         if (Regard.TemperOf(t, a) is TemperDef temper)
@@ -792,6 +826,25 @@ public partial class Main
     }
 
     /// <summary>The patron they are sworn to, its favour from −5 to +5 and what that lends them, and their familiar.</summary>
+    /// <summary>A cursed weapon, and the hero's own life between jobs: their land, their stake in a business.</summary>
+    private void InspectLife(Pane p, Town t, HeroSheet hs)
+    {
+        if (Curses.Of(t.Content, hs) is { } curse)
+        {
+            var mods = new List<string>();
+            foreach (var (kind, label) in new[] { ("attack", "attack"), ("ac", "AC"), ("damage", "damage"), ("skill", "skill") })
+            {
+                int m = Curses.Mod(t.Content, hs, kind);
+                if (m != 0) mods.Add($"{label} {(m > 0 ? "+" : "−")}{Math.Abs(m)}");
+            }
+            p.Text($"{Tag($"Cursed: {Ui.Cap(curse.Name)}", Ui.Bad)}{(mods.Count > 0 ? Ui.C(Ui.Ink2, $" {string.Join(", ", mods)}") : "")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(curse.Text)} It will not be put down, sold or passed on until the curse is lifted.[/font_size]")}", 13);
+        }
+        var life = new List<string>();
+        if (hs.Holding != "") life.Add($"owns {Ui.Esc(hs.Holding)} and sleeps there between jobs");
+        if (hs.StakeId is int sid) life.Add($"holds a {Js.Str(hs.Stake)}g stake in {BuildingLink(t.Building(sid))}");
+        if (life.Count > 0) p.Text(Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Cap(string.Join("; ", life))}.[/font_size]"), 12);
+    }
+
     private static void InspectPact(Pane p, Town t, HeroSheet hs)
     {
         if (Patrons.Of(t.Content, hs) is not { } pd) return;

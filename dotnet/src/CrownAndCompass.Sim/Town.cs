@@ -423,6 +423,9 @@ public sealed class Town
     /// <summary>Townsfolk killed by drunken heroes in tavern brawls, and whether their kin were paid (<see cref="Systems.Taverns"/>).</summary>
     public List<Systems.BloodDebt> BloodDebts { get; } = [];
 
+    /// <summary>The law book: the punishment the council has set for each crime, by crime id (<see cref="Systems.Laws"/>).</summary>
+    public Dictionary<string, string> Laws { get; } = new();
+
     /// <summary>Scouts posted to watch sites, oldest first.</summary>
     public List<Scout> Scouts { get; } = [];
 

@@ -172,6 +172,8 @@ public sealed class Simulation
         Guilds.Daily(t, Options.AutoMayor && Options.AutoCouncil);
         Union.Daily(t, Options.AutoMayor && Options.AutoCouncil);
         Patrons.Daily(t);
+        Curses.Daily(t);
+        Downtime.Daily(t);
         Notoriety.Daily(t);
         Passage.Daily(t);
         Decor.Daily(t);
@@ -358,6 +360,9 @@ public sealed class Simulation
 
     /// <summary>Endow a temple to the town's god once the town is big enough.</summary>
     public Building? BuildTemple() => Shrines.BuildTemple(Town);
+
+    /// <summary>Write a punishment for a crime into the law book (laws.json).</summary>
+    public bool SetLaw(string crime, string punishment) => Laws.Set(Town, crime, punishment);
 
     /// <summary>Send the watch against a faction the town has exposed.</summary>
     public bool CrackDown(string factionId) => Factions.CrackDown(Town, factionId);
