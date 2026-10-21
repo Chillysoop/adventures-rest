@@ -16,6 +16,7 @@ public class TradeTests
         t.City.Tier = City.TierIndex(t, "town");
         var s = t.Settlements.First(x => x.Kin.Trade.Offers.Count > 0);
         t.Regions[s.RegionId].Known = true;
+        Discovery.Meet(t, Neighbours.Key(s), Discovery.Met);
         s.Standing = 30;
         t.Treasury += 2000;
         return (sim, s);
@@ -43,6 +44,7 @@ public class TradeTests
         sim.RunDays(1);
         var s = t.Settlements.First(x => x.Kin.Trade.Offers.Count > 0);
         t.Regions[s.RegionId].Known = true;
+        Discovery.Meet(t, Neighbours.Key(s), Discovery.Met);
         s.Standing = 30;
         Assert.Equal(0, Trade.Cap(t));
         Assert.NotNull(Trade.Refuse(t, s));

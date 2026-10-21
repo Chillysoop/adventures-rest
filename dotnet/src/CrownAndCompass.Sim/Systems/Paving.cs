@@ -31,9 +31,9 @@ public static class Paving
         return best;
     }
 
-    /// <summary>The street the masons work on next: one already begun, else the nearest the centre.</summary>
+    /// <summary>The street the masons work on next: one already begun, else the nearest the centre. Side lanes stay earth.</summary>
     public static Street? Next(Town town) =>
-        town.Plan.Streets.Where(s => s.Points.Length >= 4 && !Done(s))
+        town.Plan.Streets.Where(s => s.Points.Length >= 4 && !s.Close && !Done(s))
             .OrderByDescending(s => s.Cobbled > 0).ThenBy(s => Reach(s)).ThenBy(s => s.Id).FirstOrDefault();
 
     public static void Daily(Town town)

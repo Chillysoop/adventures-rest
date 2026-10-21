@@ -235,6 +235,9 @@ public sealed class Menace
     /// <summary>The site it rules from; clearing it breaks the menace. Holdings are lairs it has taken in.</summary>
     public string SeatId { get; set; } = "";
     public string SeatName { get; set; } = "";
+
+    /// <summary>The seat it rose at, which its lineage comes from; a broken seat moves it on to another.</summary>
+    public string BornSeatId { get; set; } = "";
     public List<string> Holdings { get; } = [];
     public string Region { get; set; } = "the hills";
 
@@ -493,6 +496,7 @@ public static class Menaces
             SeenAttempts = seat.Attempts,
         };
         Seat(town, m, seat);
+        m.BornSeatId = seat.Def.Id;
         m.Cunning = cunning ?? CunningFor(town, IntOf(town, seat.Def.Boss.Monster));
         m.Lineage = lineage
             ?? (town.Content.Group(seat.Def.Group) is GroupDef g && g.Lineage != "" ? g.Lineage : null)
