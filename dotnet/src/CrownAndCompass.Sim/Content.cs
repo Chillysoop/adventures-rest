@@ -1448,6 +1448,10 @@ public sealed class Content
     /// <summary>The town armory: gifts, loot terms and pacts, buying loot (content/game/armory.json).</summary>
     public ArmoryRules Armory { get; init; } = new();
 
+    /// <summary>The mayor's regalia: slots, the pieces that fill them and what each does (content/game/regalia.json).</summary>
+    public RegaliaRules Regalia { get; init; } = new();
+    public MayoraltyRules Mayoralty { get; init; } = new();
+
     /// <summary>The alchemy bench: ingredients, recipes and what potions do (content/game/alchemy.json).</summary>
     public AlchemyRules Alchemy { get; init; } = new();
     public NeighbourRules Neighbours { get; init; } = new();
@@ -1727,6 +1731,8 @@ public sealed class Content
             Farming = Parse<FarmingRules>("farming.json"),
             Trade = Parse<TradeRules>("trade.json"),
             Armory = Parse<ArmoryRules>("armory.json"),
+            Regalia = Parse<RegaliaRules>("regalia.json"),
+            Mayoralty = Parse<MayoraltyRules>("mayoralty.json"),
             Alchemy = Parse<AlchemyRules>("alchemy.json"),
             Neighbours = Parse<NeighbourRules>("neighbours.json"),
             Legacies = Parse<LegacyRules>("legacies.json"),

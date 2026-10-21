@@ -238,6 +238,13 @@ public static class Watch
     /// <summary>A party hauls home a town-sized item; the hall keeps it.</summary>
     public static void ReceiveRelic(Town town, LibItem item, string partyName)
     {
+        if (Regalia.Is(town, item))
+        {
+            // Regalia goes to the armory, for the mayor to wear.
+            Armory.Add(town, item, $"hauled home by the {partyName}");
+            town.Log(LedgerCategory.Town, Importance.Notable, $"The {partyName} lay the {item.Name} before the mayor. It waits in the armory to be worn.");
+            return;
+        }
         town.Relics.Add(item.Id);
         var work = Rules(town).Works.FirstOrDefault(w => w.Relic == item.Id);
         string use = work == null ? "" : work.Reach > 0

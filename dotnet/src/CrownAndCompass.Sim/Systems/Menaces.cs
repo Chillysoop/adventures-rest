@@ -1410,6 +1410,7 @@ public static class Menaces
         if (dead.Count > 0) lines.Add($"{Expedition.ListNames(dead.Select(a => a.Name).ToList())} {(dead.Count == 1 ? "falls" : "fall")} on the walls.");
         record.Fallen.AddRange(dead.Select(a => a.Id));
         town.Watch = Math.Max(0, town.Watch - breaches * 2);
+        Mayoralty.Breached(town, breaches, m.Name);
         town.Tension += 60 + dead.Count * 5;
 
         if (breaches >= 2)

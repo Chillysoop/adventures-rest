@@ -66,6 +66,12 @@ public sealed record SimulationOptions
     /// <summary>Foes and heroes from the player's earlier campaigns, who may come back (<see cref="Systems.Legends"/>).</summary>
     public IReadOnlyList<Legend> Legends { get; init; } = [];
 
+    /// <summary>The mayor the player rolled and shaped on New game; null for one named after the seed, on the standard array.</summary>
+    public MayorRoll? Mayor { get; init; }
+
+    /// <summary>Hardcore: the mayor's death ends the campaign (<see cref="Systems.Mayoralty"/>).</summary>
+    public bool Hardcore { get; init; }
+
     /// <summary>Roads to victory switched off for this campaign (victory.json ids); the rest are open (<see cref="Systems.Victory"/>).</summary>
     public IReadOnlyList<string> RoadsOff { get; init; } = [];
 
@@ -94,6 +100,7 @@ public sealed class Simulation
         Town.Saga.Enabled = Options.Saga && Options.Enemy;
         Town.Saga.Endless.On = Options.Endless;
         Town.Saga.Legends.AddRange(Options.Legends.Where(l => l.Seed != Options.Seed));
+        if (Options.Mayor is { } mayor) Stories.Adopt(Town, mayor);
         Town.Victory.Off.AddRange(Options.RoadsOff.Where(id => id != Systems.Victory.Slay && Systems.Victory.Def(Town, id) != null).Distinct().Order(StringComparer.Ordinal));
         Systems.Boons.Choose(Town, Options.Boons);
         Charter();
@@ -176,6 +183,8 @@ public sealed class Simulation
         Rumors.Daily(t);
         Shrines.Daily(t, Options.AutoMayor);
         Faith.Daily(t);
+        Regalia.Daily(t, Options.AutoMayor && Options.AutoArmory);
+        Mayoralty.Daily(t, Options.AutoMayor && Options.AutoStories);
         Factions.Daily(t, Options.AutoMayor);
         Saga.Daily(t, Options.AutoMayor);
         DarkQuests.Daily(t);
@@ -494,6 +503,24 @@ public sealed class Simulation
     /// <summary>Say who the mayor was before the charter, which sets their abilities and skills.</summary>
     public bool ChooseBackground(string backgroundId) => Stories.ChooseBackground(Town, backgroundId);
 
+    /// <summary>Put on a piece of regalia from the armory (what it replaces goes back to the armory).</summary>
+    public bool WearRegalia(int stockId) => Regalia.Equip(Town, stockId);
+
+    /// <summary>Take off the regalia the mayor wears in a slot (chain, signet, sceptre, mantle, banner), back into the armory.</summary>
+    public bool TakeOffRegalia(string slot) => Regalia.Unequip(Town, slot);
+
+    /// <summary>Have the town's craftsmen make a piece of regalia for the treasury's gold, into the armory.</summary>
+    public bool CommissionRegalia(string itemId) => Regalia.Commission(Town, itemId) != null;
+
+    /// <summary>Where the mayor spends their days: "keep" (safe in the hall), "town" (the streets) or "ride" (with the next company out).</summary>
+    public bool SetMayorStance(string stance) => Mayoralty.SetStance(Town, stance);
+
+    /// <summary>Have the temple's priests raise the dead mayor, paid from the treasury.</summary>
+    public bool RaiseMayor() => Mayoralty.RaiseMayor(Town);
+
+    /// <summary>Name one of the council's candidates mayor in the dead one's place.</summary>
+    public bool NameSuccessor(int candidate) => Mayoralty.NameSuccessor(Town, candidate);
+
     /// <summary>Spend the mayor's next level on an advance: "ability:str,cha", "feat:lucky", "skill:arcana" or "expertise:persuasion".</summary>
     public bool AdvanceMayor(string advance) => Sheet.Advance(Town, advance);
 
@@ -629,6 +656,8 @@ public sealed class Simulation
         Factions.InitFactions(t);
         Powers.Init(t);
         Armory.Init(t);
+        Regalia.Init(t);
+        Mayoralty.Init(t, Options.Hardcore);
 
         if (Options.AutoMayor && Options.AutoPlanning) Mayor.Daily(t);
         else

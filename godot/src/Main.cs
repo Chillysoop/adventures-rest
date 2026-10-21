@@ -121,6 +121,8 @@ public partial class Main : Control
         if (_opts.Autoplay) _storySeen = _sim.Town.Stories.All.Count;
         SetSpeed(_opts.Speed ?? 1);
         _pot.AddRange(_opts.Brew);
+        _mayorSheet = _opts.MayorSheet;
+        if (_opts.MayorFallen) Mayoralty.Wound(_sim.Town, 9999, "a knife in the market");
         if (_opts.Tab is string t && Enum.TryParse<Tab>(t, true, out var tab)) SetTab(tab);
         if (_opts.Tray is string tray && Trays.FirstOrDefault(d => d.Id.Equals(tray, StringComparison.OrdinalIgnoreCase)) is { } td)
             Callable.From(() => OpenTray(td.Id)).CallDeferred();
@@ -223,6 +225,7 @@ public partial class Main : Control
         if (_opts.Menu) OpenMenu();
         if (plain || _opts.Title || _opts.Smoke) ShowTitle();
         if (_opts.Storytellers) PickStoryteller(false);
+        if (_opts.NewMayor) PickMayor(Sim.Content.Default().Storytellers.Default);
         if (_opts.History is string power) OpenHistory(power == "" ? null : power);
         if (_opts.Glossary is string entry) OpenGlossary(entry == "" ? null : entry);
         if (_opts.Settings) OpenSettings();
@@ -329,12 +332,12 @@ public partial class Main : Control
 
     // ---------- Game ----------
 
-    private void NewTown(int seed, bool autoplay = false, string? storyteller = null)
+    private void NewTown(int seed, bool autoplay = false, string? storyteller = null, MayorRoll? mayor = null, bool hardcore = false)
     {
         RememberLegends();
         // With --autoplay the stand-in mayor keeps playing, for demos and screenshots; only a player's towns meet old legends.
         var legends = autoplay ? [] : ProfileLegends();
-        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoArmory = autoplay && !_opts.KeepArmory, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay && _opts.Tax == null, AutoHonours = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay, AutoStories = autoplay, AutoExplore = autoplay && !_opts.Find, Legends = legends, Storyteller = storyteller ?? _opts.Storyteller ?? "rising", Boons = autoplay ? [.. _opts.Boons] : ChosenBoons(), Endless = _opts.Endless || (!autoplay && _endless) }));
+        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoArmory = autoplay && !_opts.KeepArmory, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay && _opts.Tax == null, AutoHonours = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay, AutoStories = autoplay, AutoExplore = autoplay && !_opts.Find, Legends = legends, Storyteller = storyteller ?? _opts.Storyteller ?? "rising", Boons = autoplay ? [.. _opts.Boons] : ChosenBoons(), Endless = _opts.Endless || (!autoplay && _endless), Mayor = mayor, Hardcore = hardcore || _opts.Hardcore }));
     }
 
     /// <summary>Show a town: a new one, or one loaded from a save.</summary>

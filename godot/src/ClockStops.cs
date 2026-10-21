@@ -21,6 +21,7 @@ public static class ClockStops
         new("war", "War and raids", "Raids, battles, hosts on the march", true),
         new("deaths", "Deaths of heroes", "At home or abroad", true),
         new("crises", "Crises and the big bad", "Crisis turns and the big bad's moves", true),
+        new("mayor", "Your mayor falls", "Killed by a knife, a breach or the road", true),
     ];
 
     /// <summary>The kind with this id; an id missing from the table is a bug at the call site.</summary>
