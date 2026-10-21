@@ -132,7 +132,7 @@ public static class Threat
     {
         var d = town.Content.Enemy.Defense;
         int heroLevels = town.Heroes.Where(a => !a.IsAway).Sum(a => a.Hero!.Level);
-        double baseDefense = town.Watch * d.Watchman * Planning.WatchFactor(town) + heroLevels * d.HeroLevel + town.Workers.Count * d.MilitiaPerWorker + Faith.Defense(town) + Factions.Defense(town) + Callings.Defence(town) + Institutions.Defence(town) + Loyalty.Defense(town) + Notoriety.Defense(town) + Decor.Defense(town) + Mercenaries.Defense(town) + Powers.Defense(town) + Clockwork.Defense(town) + Bastions.Defense(town) + Research.Defense(town) + Garrison.DutyDefense(town) + (allies ? World.AllyTroops(town) : 0);
+        double baseDefense = town.Watch * d.Watchman * Planning.WatchFactor(town) + heroLevels * d.HeroLevel + town.Workers.Count * d.MilitiaPerWorker + Faith.Defense(town) + Factions.Defense(town) + Callings.Defence(town) + Institutions.Defence(town) + Eggs.Defence(town) + Ruins.Defence(town) + Loyalty.Defense(town) + Notoriety.Defense(town) + Decor.Defense(town) + Mercenaries.Defense(town) + Powers.Defense(town) + Clockwork.Defense(town) + Bastions.Defense(town) + Research.Defense(town) + Garrison.DutyDefense(town) + (allies ? World.AllyTroops(town) : 0);
         return baseDefense * Fortification(town);
     }
 
@@ -393,11 +393,15 @@ public static class Threat
             (towers != 0 ? $" and {towers} {(towers == 1 ? "tower" : "towers")}." : "."));
         var record = Battles.Begin(town, "warband", "warband", e.Name, "orcs", e.Leader, en.Approach, en.Strength, startDef);
         def = Math.Max(0, def - Loyalty.Betray(town, e.Name, null, lines));
+        double gate = Cannons.Wagons(town, "warband", en.Sieges - 1, Garrison.WaveSection(town, en.Approach, 1), lines, record);
         for (int w = 1; w <= e.SiegeWaves && breaches < e.BreachesToFall; w++)
         {
             double wave = (en.Strength / (e.SiegeWaves - w + 1)) * (0.8 + rng.Next() * 0.4);
             int at = Garrison.WaveSection(town, en.Approach, w);
-            double hold = (def / (e.SiegeWaves - w + 1)) * (0.8 + rng.Next() * 0.4) * Garrison.SectionFactor(town, at);
+            double hold = (def / (e.SiegeWaves - w + 1)) * (0.8 + rng.Next() * 0.4) * Garrison.SectionFactor(town, at) * gate;
+            double shot = Cannons.Volley(town, "warband", "", wave, w, lines);
+            en.Strength -= wave - shot;
+            wave = shot;
             double wading = Garrison.Wade(town, wave);
             if (hold >= wading)
             {

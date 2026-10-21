@@ -928,6 +928,7 @@
       "service": {
         "escort": 0.08,
         "defence": 1,
+        "skyWatch": 24,
         "dread": -0.01
       },
       "choice": {
@@ -1013,7 +1014,7 @@
             "id": "lookout",
             "name": "a lookout over the town",
             "text": "Between voyages it rides at anchor high over the walls: raiders are seen a day before they come.",
-            "service": { "defence": 2, "dread": -0.01 }
+            "service": { "defence": 2, "dread": -0.01, "skyWatch": 24 }
           },
           {
             "id": "fares",
@@ -1706,6 +1707,54 @@
           "text": "A silver-grey dragon who came for the library, stayed for the bread, and keeps a list of everyone who has ever been rude to it."
         }
       ]
+    },
+    {
+      "id": "monastery",
+      "name": "the Monastery of the Falling Water",
+      "building": "monastery",
+      "icon": "inst-monastery",
+      "sparks": ["hero:monk:3", "craft:priest:3", "building:shrine"],
+      "tier": "town",
+      "title": "Abbot",
+      "blurb": "A walled cloister round a courtyard where a stream falls from the upper terrace into a still pool. Its monks keep the hours, teach the open-hand forms to anyone who will rise at dawn, and send their best out into the world to see what they are made of.",
+      "service": {
+        "tension": -0.05,
+        "mood": 0.05,
+        "calm": 0.25,
+        "calling": { "monk": 6 }
+      },
+      "choice": {
+        "label": "what the cloister teaches",
+        "text": "The brothers and sisters can only keep one discipline above the others. The council is asked which the town needs most.",
+        "options": [
+          {
+            "id": "stillness",
+            "name": "the way of stillness",
+            "deity": "lantern-mother",
+            "text": "Quiet hours in the courtyard for anyone who comes: tempers cool, and those near breaking find their feet.",
+            "service": { "calm": 0.15, "tension": -0.05 }
+          },
+          {
+            "id": "open-hand",
+            "name": "the way of the open hand",
+            "deity": "red-banner",
+            "text": "The forms taught at dawn in the square: more young folk take the road as monks, and the watch learns to fight without steel.",
+            "service": { "calling": { "monk": 6 }, "defence": 1 }
+          },
+          {
+            "id": "healing",
+            "name": "the way of the herb garden",
+            "deity": "greenhush",
+            "text": "The infirmary and its herb beds open to the town: wounds close, and nobody is turned away.",
+            "service": { "heal": 0.06, "mood": 0.05 }
+          }
+        ]
+      },
+      "keepers": [
+        { "name": "Abbot Tamsel Ure", "text": "A former mercenary captain who walked in out of the rain thirty years ago and never walked out. He still counts the gate guards when he passes them." },
+        { "name": "Mother Ildra Fenwise", "text": "She speaks perhaps a dozen words a day and makes every one of them land. The council dreads her visits and always does what she asks." },
+        { "name": "Brother Oswy Keld", "text": "Young, cheerful and alarmingly strong, he became abbot when the last one walked into the mountains and did not come back. He thinks she is still up there, thinking." }
+      ]
     }
   ],
   "fixtures": [
@@ -2045,6 +2094,30 @@
     }
   ],
   "requests": [
+    {
+      "id": "monastery-silent-novice",
+      "title": "The novice who will not speak",
+      "stakes": "low",
+      "source": "town",
+      "needs": ["institution:monastery"],
+      "minDay": 40,
+      "repeatDays": 240,
+      "weight": 0.25,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A novice at the Monastery has taken a vow of silence and stood in the falling water for three days. {keeper} says the novice saw something on the road that no one should see, and will not say what. The town is uneasy.",
+          "options": [
+            { "label": "Sit with the novice until they speak", "skill": "insight", "dc": 13,
+              "success": { "text": "On the fourth day the novice speaks: raiders camped by the old road, counting the farms. The watch thanks the cloister.", "effects": { "goodwill": 4, "tension": -1 } },
+              "failure": { "text": "The novice stays silent, and the town's whispers fill the silence with worse things.", "effects": { "goodwill": -1, "tension": 1 } } },
+            { "label": "Let {keeperName} handle it in the cloister's own way", "prefer": 0.05,
+              "success": { "text": "The abbot sits beside the novice in the water. Neither speaks. On the seventh day both walk out, and the cloister is calmer for it.", "effects": { "goodwill": 3, "tension": -2 } } }
+          ]
+        }
+      ],
+      "ignored": { "text": "The novice walks out of the gate one morning and is not seen again. The brothers do not talk about it.", "effects": { "goodwill": -2 } }
+    },
     {
       "id": "dock-gale",
       "title": "A gale at the mast",

@@ -1,0 +1,31 @@
+{
+  "_doc": "Tower cannons (Systems/Cannons.cs) and war-wagons. Research 'bombards' puts a gun on every wall tower (and one over the main gate); 'arcane-batteries', after it and with the Artificers' Foundry's crystals, makes them arcane guns that fire in the mode the foe calls for. Fire comes off each siege wave before it reaches the wall.",
+  "gateGuns": 1,
+  "basic": 3,
+  "arcane": 7,
+  "modes": [
+    { "id": "piercing", "name": "piercing bolts", "kinds": ["dragon"], "foes": ["forge-giants", "cloud-lords", "storm-kings"], "factor": 1.8,
+      "text": "The arcane guns load piercing bolts and fire on the biggest of them: crystal shafts that go through hide and bone." },
+    { "id": "blast", "name": "blast shells", "kinds": ["warband", "tribe", "rivals"], "foes": [], "factor": 1.3,
+      "text": "The arcane guns throw blast shells into the packed ranks before the wall." },
+    { "id": "flame", "name": "flame", "kinds": ["undead", "beasts", "cult", "schemers"], "foes": [], "factor": 1.5,
+      "text": "The arcane guns pour blue flame on the swarm below the wall. It burns what it touches and nothing else; no roof in town catches." }
+  ],
+  "basicText": "The tower cannons open up on them, {guns} guns in all.",
+  "wagons": {
+    "kinds": ["warband", "tribe", "rivals"],
+    "after": 1,
+    "most": 3,
+    "ram": 0.2,
+    "shot": 0.25,
+    "piercingShot": 0.7,
+    "sally": 0.3,
+    "sallyPerLevel": 0.05,
+    "texts": {
+      "come": "{wagons} at the {gate} under roofs of wet hides, rams slung beneath.",
+      "shot": "The cannons smash {n} of them before they reach the wall.",
+      "sally": "{hero} leads a sally out of the postern and fires {n} of them.",
+      "ram": "{reach} the {gate} and beat it in. The defenders there fight in the gap."
+    }
+  }
+}

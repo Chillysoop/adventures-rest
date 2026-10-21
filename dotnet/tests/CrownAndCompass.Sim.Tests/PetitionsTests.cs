@@ -98,7 +98,7 @@ public class PetitionsTests
         // Most towns hear petitions both early and late (the story pool is wide, so one seed can miss a stretch).
         var petitions = Content.Default().Stories.Stories.Where(d => d.Needs.Contains("petitioner") || d.Needs.Contains("ward")).Select(d => d.Id).ToHashSet();
         int both = 0;
-        foreach (int seed in new[] { 2, 4, 6, 7, 8 })
+        foreach (int seed in new[] { 1, 2, 3, 4, 5, 6, 7, 8 })
         {
             var sim = new Simulation(new SimulationOptions { Seed = seed });
             var t = sim.Town;
@@ -108,6 +108,6 @@ public class PetitionsTests
             int late = t.Stories.All.Count(s => petitions.Contains(s.Def)) - early;
             if (early > 0 && late > 0) both++;
         }
-        Assert.True(both >= 3, $"only {both} of 5 towns heard petitions both early and late");
+        Assert.True(both >= 5, $"only {both} of 8 towns heard petitions both early and late");
     }
 }
