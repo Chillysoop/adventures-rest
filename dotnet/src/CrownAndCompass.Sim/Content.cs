@@ -234,6 +234,9 @@ public sealed record ClassDef
     /// <summary>From the library: frontline, skirmisher, support, caster, scout or specialist.</summary>
     public string Role { get; init; } = "";
 
+    /// <summary>What a hero card says the class is for in a party: tank, striker, healer, scout or face.</summary>
+    public string Card { get; init; } = "";
+
     /// <summary>From the library: full, half, pact, or empty for classes that cast nothing.</summary>
     public string Magic { get; init; } = "";
 
@@ -592,6 +595,7 @@ public sealed record KnowledgeRules
     public double ScryBaseCost { get; init; } = 30;
     public double ScryCostPerDay { get; init; } = 15;
     public int ScryHours { get; init; } = 12;
+
     public int SlotsPerCaster { get; init; } = 1;
     public int SlotsPerTwoLevels { get; init; } = 1;
     public ScoutRules Scouts { get; init; } = new();
@@ -1488,6 +1492,13 @@ public sealed class Content
     public TaxRules Taxes { get; init; } = new();
     /// <summary>Trade guilds, their demands and their strikes (content/game/guilds.json).</summary>
     public GuildRules Guilds { get; init; } = new();
+
+    /// <summary>Patrons beyond the world and their pacts with heroes (content/game/patrons.json).</summary>
+    public PatronRules Patrons { get; init; } = new();
+    public Systems.TavernRules Taverns { get; init; } = new();
+    public Systems.CurseRules Curses { get; init; } = new();
+    public Systems.DowntimeRules Downtime { get; init; } = new();
+    public Systems.LawRules Laws { get; init; } = new();
     /// <summary>The top bar's month and when a trend counts as trouble (content/game/trends.json).</summary>
     public TrendRules Trends { get; init; } = new();
     public MerchantRules Merchants { get; init; } = new();
@@ -1734,6 +1745,11 @@ public sealed class Content
             Clockwork = Parse<ClockworkRules>("clockwork.json"),
             Taxes = Parse<TaxRules>("taxes.json"),
             Guilds = Parse<GuildRules>("guilds.json"),
+            Patrons = Parse<PatronRules>("patrons.json"),
+            Taverns = Parse<Systems.TavernRules>("taverns.json"),
+            Curses = Parse<Systems.CurseRules>("curses.json"),
+            Downtime = Parse<Systems.DowntimeRules>("downtime.json"),
+            Laws = Parse<Systems.LawRules>("laws.json"),
             Trends = Parse<TrendRules>("trends.json"),
             Merchants = Parse<MerchantRules>("merchants.json"),
             Wards = Parse<WardRules>("wards.json"),

@@ -2951,7 +2951,7 @@
       "stages": [
         {
           "id": "start",
-          "text": "{hero}'s patron spoke through them in the night, in a voice that was not theirs: it will fill {town}'s coffers, if {town} will remember its name.",
+          "text": "{hero}'s patron, {patron}, spoke through them in the night, in a voice that was not theirs: it will fill {town}'s coffers, if {town} will remember its name.",
           "options": [
             {
               "label": "Accept the gift", "tags": ["coin", "guile"],
@@ -3054,7 +3054,7 @@
       "stages": [
         {
           "id": "start",
-          "text": "{hero}'s patron wants its due. Its name is to be carved over the town gate, so that all who walk beneath it know whose town this is.",
+          "text": "{patron}, {hero}'s patron, wants its due. Its name is to be carved over the town gate, so that all who walk beneath it know whose town this is.",
           "options": [
             {
               "label": "Carve the name", "tags": ["coin"],
@@ -6440,6 +6440,1284 @@
         "effects": {
           "mandate": -1
         }
+      }
+    },
+    {
+      "id": "patron-courts",
+      "title": "{patron} comes courting",
+      "stakes": "medium",
+      "source": "heroes",
+      "needs": [
+        "pactless"
+      ],
+      "minDay": 20,
+      "weight": 0.5,
+      "repeatDays": 120,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} has dreamed the same dream three nights running: {patron}, {patronTitle}, offers a pact. Power, if {heroName} will give it what it wants. {heroName} asks the mayor what the town would think.",
+          "options": [
+            {
+              "label": "Tell them to take it",
+              "tags": [
+                "freedom",
+                "coin"
+              ],
+              "prefer": 0.05,
+              "success": {
+                "text": "{heroName} wakes with a mark on their wrist and a new light in their eyes. The town will see what the price is.",
+                "effects": {
+                  "pact": 1,
+                  "loyalty": 4,
+                  "dread": 2
+                }
+              }
+            },
+            {
+              "label": "Forbid it",
+              "tags": [
+                "order",
+                "faith"
+              ],
+              "prefer": 0.15,
+              "success": {
+                "text": "{heroName} burns the dream-letter in the tavern hearth. They are not sure they would have said no on their own.",
+                "effects": {
+                  "loyalty": -2,
+                  "favour": 2
+                }
+              }
+            },
+            {
+              "label": "Have {heroName} bargain for better terms",
+              "tags": [
+                "guile"
+              ],
+              "skill": "persuasion",
+              "dc": 15,
+              "aid": "hero",
+              "success": {
+                "text": "{heroName} talks the patron round in their sleep, and wakes sworn on terms it will regret.",
+                "effects": {
+                  "pact": 1,
+                  "pactFavour": 2,
+                  "loyalty": 3
+                }
+              },
+              "failure": {
+                "text": "The patron does not like being haggled with. {heroName} wakes sworn all the same, and already in its debt.",
+                "effects": {
+                  "pact": 1,
+                  "pactFavour": -2,
+                  "dread": 3
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "{heroName} stops talking about the dream. Nobody knows what they answered.",
+        "effects": {
+          "pact": 1
+        }
+      }
+    },
+    {
+      "id": "patron-errand",
+      "title": "{patron} sends {hero} an errand",
+      "stakes": "low",
+      "source": "heroes",
+      "needs": [
+        "sworn"
+      ],
+      "weight": 0.7,
+      "repeatDays": 45,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} has orders from {patron}. It wants something done in {town} tonight, and it wants the mayor not to ask what.",
+          "options": [
+            {
+              "label": "Look the other way",
+              "tags": [
+                "freedom"
+              ],
+              "prefer": 0.05,
+              "success": {
+                "text": "Something is done in the night. By morning {heroName} is in better spirits, and nobody can say quite what changed.",
+                "effects": {
+                  "pactFavour": 1,
+                  "dread": 2
+                }
+              }
+            },
+            {
+              "label": "Have the watch follow them",
+              "tags": [
+                "order",
+                "caution"
+              ],
+              "skill": "investigation",
+              "dc": 14,
+              "needs": [
+                "watch"
+              ],
+              "success": {
+                "text": "The watch sees {heroName} leave a sealed letter under the old bridge, and stop it before it is taken. {patron} is not pleased.",
+                "effects": {
+                  "pactFavour": -1,
+                  "dread": -2,
+                  "loyalty": -3
+                }
+              },
+              "failure": {
+                "text": "The watch loses {heroName} in a fog that rises out of nowhere. The errand is done all the same.",
+                "effects": {
+                  "pactFavour": 1,
+                  "dread": 3
+                }
+              }
+            },
+            {
+              "label": "Pay {heroName} to stay home",
+              "tags": [
+                "coin",
+                "caution"
+              ],
+              "cost": 40,
+              "prefer": 0.1,
+              "success": {
+                "text": "{heroName} takes the gold and stays at the tavern all night. {patron} remembers.",
+                "effects": {
+                  "pactFavour": -2,
+                  "loyalty": 2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "Whatever {patron} wanted, it got.",
+        "effects": {
+          "pactFavour": 1,
+          "dread": 1
+        }
+      }
+    },
+    {
+      "id": "familiar-mischief",
+      "title": "{hero}'s familiar gets loose",
+      "stakes": "low",
+      "source": "heroes",
+      "needs": [
+        "sworn",
+        "tavern"
+      ],
+      "weight": 0.5,
+      "repeatDays": 60,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero}'s familiar, {familiar}, got loose in {tavern} last night: the taps are knotted, the barmaid's hair is green and someone's purse is singing.",
+          "options": [
+            {
+              "label": "Make {heroName} pay for it",
+              "tags": [
+                "order"
+              ],
+              "prefer": 0.1,
+              "success": {
+                "text": "{heroName} pays up with a sigh and promises a leash. The familiar sulks for a week.",
+                "effects": {
+                  "fine": 15,
+                  "loyalty": -1
+                }
+              }
+            },
+            {
+              "label": "Laugh it off",
+              "tags": [
+                "mercy",
+                "freedom"
+              ],
+              "success": {
+                "text": "The story goes round every tavern in {town}, and gets better each time.",
+                "effects": {
+                  "loyalty": 2,
+                  "renown": 1
+                }
+              }
+            },
+            {
+              "label": "Have a priest bless the tavern",
+              "tags": [
+                "faith"
+              ],
+              "skill": "religion",
+              "dc": 12,
+              "needs": [
+                "temple"
+              ],
+              "success": {
+                "text": "The blessing sends the familiar squealing home. {patron} takes it as a slight.",
+                "effects": {
+                  "favour": 2,
+                  "pactFavour": -1
+                }
+              },
+              "failure": {
+                "text": "The holy water turns to ale. The tavern has never been busier.",
+                "effects": {
+                  "favour": -1,
+                  "loyalty": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The familiar goes home on its own when the ale runs out.",
+        "effects": {}
+      }
+    },
+    {
+      "id": "hollow-prince-design",
+      "title": "The Hollow Prince wants a door",
+      "stakes": "high",
+      "source": "heroes",
+      "needs": [
+        "patron:hollow-prince"
+      ],
+      "minDay": 40,
+      "weight": 1.2,
+      "repeatDays": 150,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} brings word from {patron}: it is pleased with {town}, and wants a door. A pit is to be dug under the old well and a stone set at its bottom, and the Prince's court will come and go as it likes. It pays well.",
+          "options": [
+            {
+              "label": "Dig the pit",
+              "tags": [
+                "coin"
+              ],
+              "success": {
+                "text": "The stone is set. The well water runs warm now, and the gold comes up in the buckets.",
+                "effects": {
+                  "gold": 300,
+                  "dread": 8,
+                  "mandate": -5,
+                  "pactFavour": 2,
+                  "taint": 1
+                }
+              }
+            },
+            {
+              "label": "Refuse it",
+              "tags": [
+                "faith",
+                "valor"
+              ],
+              "prefer": 0.15,
+              "success": {
+                "text": "{town} will dig no door for anyone. The Prince's sworn feel the cold of its displeasure.",
+                "effects": {
+                  "pactFavour": -2,
+                  "favour": 3,
+                  "mandate": 2
+                }
+              }
+            },
+            {
+              "label": "Seal the well for good",
+              "tags": [
+                "faith",
+                "order"
+              ],
+              "skill": "religion",
+              "dc": 16,
+              "needs": [
+                "temple"
+              ],
+              "success": {
+                "text": "The priests pour lead into the well and sing over it for a night and a day. Whatever was listening below stops.",
+                "effects": {
+                  "pactFavour": -3,
+                  "favour": 6,
+                  "dread": -4
+                }
+              },
+              "failure": {
+                "text": "The lead boils away. Something laughs at the bottom of the well, and {heroName} laughs with it.",
+                "effects": {
+                  "dread": 6,
+                  "wound": 6,
+                  "pactFavour": -1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "Someone digs the pit in the night. Nobody admits to it.",
+        "effects": {
+          "dread": 6,
+          "pactFavour": 1
+        }
+      }
+    },
+    {
+      "id": "thistle-queen-design",
+      "title": "The Thistle Queen's revel",
+      "stakes": "medium",
+      "source": "heroes",
+      "needs": [
+        "patron:thistle-queen"
+      ],
+      "minDay": 40,
+      "weight": 1.2,
+      "repeatDays": 150,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{patron} would honour {town} with a revel. {hero} says the hedge at the town's edge will open on midsummer night, and her court will dance in the square until dawn. Those who dance with them are not always the ones who come home.",
+          "options": [
+            {
+              "label": "Hold the revel",
+              "tags": [
+                "freedom",
+                "generous"
+              ],
+              "success": {
+                "text": "The square fills with lanterns no one lit and music no one plays. In the morning {town} is merrier than it has been in years, and two of its people are gone.",
+                "effects": {
+                  "festival": 1,
+                  "mandate": 4,
+                  "people": -2,
+                  "pactFavour": 2
+                }
+              }
+            },
+            {
+              "label": "Hold it, but ring the square with iron",
+              "tags": [
+                "caution",
+                "order"
+              ],
+              "skill": "arcana",
+              "dc": 14,
+              "success": {
+                "text": "Iron nails in every doorframe. The fey dance, sulk a little, and leave everyone where they found them.",
+                "effects": {
+                  "festival": 1,
+                  "mandate": 3,
+                  "pactFavour": 1
+                }
+              },
+              "failure": {
+                "text": "The fey take the iron as an insult and the music turns sharp. The revel ends in tears and broken glass.",
+                "effects": {
+                  "mandate": -2,
+                  "pactFavour": -2
+                }
+              }
+            },
+            {
+              "label": "Decline with gifts",
+              "tags": [
+                "caution",
+                "generous"
+              ],
+              "cost": 60,
+              "prefer": 0.1,
+              "success": {
+                "text": "Milk and honey left at the hedge, and a polite letter. The Queen is gracious, and does not forget.",
+                "effects": {
+                  "pactFavour": -1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The hedge opens anyway. Some dance, some sleep through it.",
+        "effects": {
+          "people": -1,
+          "pactFavour": 1
+        }
+      }
+    },
+    {
+      "id": "ninth-mask-design",
+      "title": "The Ninth Mask asks for the stars",
+      "stakes": "medium",
+      "source": "heroes",
+      "needs": [
+        "patron:ninth-mask"
+      ],
+      "minDay": 40,
+      "weight": 1.2,
+      "repeatDays": 150,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} has been drawing star charts on the tavern walls. {patron} wants the town's scholars to watch one patch of sky for a season and write down what they see. It promises secrets in return. It does not say whose.",
+          "options": [
+            {
+              "label": "Set the scholars to it",
+              "tags": [
+                "freedom"
+              ],
+              "success": {
+                "text": "The scholars watch, and write, and stop sleeping. The library has never learned so fast.",
+                "effects": {
+                  "lore": 120,
+                  "dread": 4,
+                  "pactFavour": 2
+                }
+              }
+            },
+            {
+              "label": "Take its secrets, keep our eyes",
+              "tags": [
+                "guile"
+              ],
+              "skill": "arcana",
+              "dc": 16,
+              "success": {
+                "text": "The scholars copy down what the Mask shows them without once looking up. It is impressed, and a little annoyed.",
+                "effects": {
+                  "lore": 80,
+                  "pactFavour": 1
+                }
+              },
+              "failure": {
+                "text": "One of them looks up. She has not stopped talking about it since, and the words are not ours.",
+                "effects": {
+                  "lore": 40,
+                  "dread": 6,
+                  "mandate": -2
+                }
+              }
+            },
+            {
+              "label": "Cover the windows",
+              "tags": [
+                "caution",
+                "faith"
+              ],
+              "prefer": 0.1,
+              "success": {
+                "text": "Shutters on every library window. The whispering stops, and so does the Mask's interest in {hero}.",
+                "effects": {
+                  "pactFavour": -2,
+                  "dread": -2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "Someone watches anyway. They are found in the morning with their eyes full of stars.",
+        "effects": {
+          "dread": 4,
+          "lore": 40
+        }
+      }
+    },
+    {
+      "id": "gilded-wager-design",
+      "title": "The Gilded Wager offers odds",
+      "stakes": "high",
+      "source": "heroes",
+      "needs": [
+        "patron:gilded-wager"
+      ],
+      "minDay": 40,
+      "weight": 1.2,
+      "repeatDays": 150,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{patron} has taken a liking to {town}, and offers the mayor a wager through {hero}: one toss of its coin, the treasury's gold against as much again. It has never been known to cheat. It has never been known to lose, either.",
+          "options": [
+            {
+              "label": "Toss for it",
+              "tags": [
+                "coin",
+                "valor"
+              ],
+              "ability": "cha",
+              "dc": 15,
+              "success": {
+                "text": "Heads. The coin spins in the air for a full minute before it lands. The treasury fills overnight, and the Wager laughs like a bell.",
+                "effects": {
+                  "gold": 400,
+                  "pactFavour": 2
+                }
+              },
+              "failure": {
+                "text": "Tails. The chests in the town hall are lighter by morning. The Wager is gracious in victory.",
+                "effects": {
+                  "gold": -250,
+                  "pactFavour": 1
+                }
+              }
+            },
+            {
+              "label": "Bet only what we can lose",
+              "tags": [
+                "caution",
+                "coin"
+              ],
+              "ability": "wis",
+              "dc": 12,
+              "success": {
+                "text": "A small stake, a small win. The Wager calls the mayor a coward, fondly.",
+                "effects": {
+                  "gold": 80
+                }
+              },
+              "failure": {
+                "text": "A small stake, a small loss, and a sneer.",
+                "effects": {
+                  "gold": -40,
+                  "pactFavour": -1
+                }
+              }
+            },
+            {
+              "label": "Refuse to gamble with the town",
+              "tags": [
+                "order"
+              ],
+              "prefer": 0.1,
+              "success": {
+                "text": "The Wager shrugs, and turns its luck on more interesting places.",
+                "effects": {
+                  "pactFavour": -2,
+                  "mandate": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The Wager takes silence for a refusal.",
+        "effects": {
+          "pactFavour": -1
+        }
+      }
+    },
+    {
+      "id": "keeper-old-company",
+      "title": "{tavernKeeperName}'s old company",
+      "stakes": "low",
+      "source": "tavern",
+      "needs": [
+        "keeper:adventurer",
+        "hero"
+      ],
+      "weight": 0.6,
+      "repeatDays": 120,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{tavernKeeper} of {tavern} {keeperStory}. Now a pedlar has sold them a sword they swear belonged to one of the four they lost, and they want to know how it came out of the ground.",
+          "options": [
+            {
+              "label": "Have a hero look into it",
+              "tags": [
+                "valor",
+                "mercy"
+              ],
+              "skill": "investigation",
+              "dc": 13,
+              "success": {
+                "text": "{hero} traces the sword to a barrow-robber and gets the bones back too. {tavernKeeperName} buries their friend at last, and the first round at {tavern} is on the house for a month.",
+                "effects": {
+                  "renown": 2,
+                  "loyalty": 3,
+                  "regard": 4
+                }
+              },
+              "failure": {
+                "text": "The pedlar is gone and the trail is cold. {tavernKeeperName} hangs the sword over the bar and does not talk about it.",
+                "effects": {
+                  "loyalty": -1
+                }
+              }
+            },
+            {
+              "label": "Buy the sword for the wall",
+              "tags": [
+                "generous"
+              ],
+              "cost": 25,
+              "success": {
+                "text": "The sword hangs over the bar at {tavern}, and every hero who drinks there toasts the four who never came home.",
+                "effects": {
+                  "loyalty": 2,
+                  "regard": 2
+                }
+              }
+            },
+            {
+              "label": "Leave the dead be",
+              "tags": [
+                "caution"
+              ],
+              "prefer": 0.05,
+              "success": {
+                "text": "{tavernKeeperName} nods. They expected nothing else from a town hall.",
+                "effects": {}
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "{tavernKeeperName} stops asking.",
+        "effects": {}
+      }
+    },
+    {
+      "id": "keeper-sergeant-patrol",
+      "title": "{tavernKeeperName} offers to keep the peace",
+      "stakes": "low",
+      "source": "tavern",
+      "needs": [
+        "keeper:sergeant"
+      ],
+      "weight": 0.6,
+      "repeatDays": 120,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{tavernKeeper} of {tavern} {keeperStory}. They offer to walk the lanes round {tavern} at closing time with a cudgel, if the town hall will pay for the lamp oil and look the other way when they use it.",
+          "options": [
+            {
+              "label": "Pay for the oil",
+              "tags": [
+                "order"
+              ],
+              "cost": 20,
+              "success": {
+                "text": "Closing time round {tavern} goes quiet. A few heads are cracked, all of them deserving.",
+                "effects": {
+                  "security": 1,
+                  "tension": -2
+                }
+              }
+            },
+            {
+              "label": "Deputise them properly",
+              "tags": [
+                "order",
+                "caution"
+              ],
+              "skill": "persuasion",
+              "dc": 12,
+              "needs": [
+                "watch"
+              ],
+              "success": {
+                "text": "{tavernKeeperName} takes the watch's oath again with tears in their eyes, and drills the young watchmen on their evenings off.",
+                "effects": {
+                  "security": 2,
+                  "mandate": 1
+                }
+              },
+              "failure": {
+                "text": "The captain of the watch will not have an old sergeant telling his men what to do. Words are said.",
+                "effects": {
+                  "tension": 1
+                }
+              }
+            },
+            {
+              "label": "No cudgels in the street",
+              "tags": [
+                "mercy",
+                "freedom"
+              ],
+              "prefer": 0.05,
+              "success": {
+                "text": "{tavernKeeperName} grumbles that the town has gone soft.",
+                "effects": {}
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "{tavernKeeperName} keeps the peace inside their own walls and leaves the lanes to the dark.",
+        "effects": {}
+      }
+    },
+    {
+      "id": "keeper-smuggler-cargo",
+      "title": "{tavernKeeperName}'s cellar",
+      "stakes": "medium",
+      "source": "tavern",
+      "needs": [
+        "keeper:smuggler"
+      ],
+      "weight": 0.6,
+      "repeatDays": 120,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{tavernKeeper} of {tavern} {keeperStory}. An old friend has left forty casks of brandy in their cellar that nobody paid duty on, and the friend has not come back for them. They ask the town hall what it would like done.",
+          "options": [
+            {
+              "label": "Take the town's cut",
+              "tags": [
+                "coin",
+                "guile"
+              ],
+              "prefer": 0.05,
+              "success": {
+                "text": "The brandy is sold quietly at {tavern} over the winter, and the town hall's share is counted in a back room.",
+                "effects": {
+                  "gold": 60,
+                  "mandate": -1,
+                  "heat": 2
+                }
+              }
+            },
+            {
+              "label": "Seize it for the treasury",
+              "tags": [
+                "order",
+                "harsh"
+              ],
+              "success": {
+                "text": "The casks are rolled into the town hall's cellar. {tavernKeeperName} pours a little cheaper for a while, out of spite or relief.",
+                "effects": {
+                  "gold": 35,
+                  "mandate": 1
+                }
+              }
+            },
+            {
+              "label": "Find the friend first",
+              "tags": [
+                "mercy",
+                "caution"
+              ],
+              "skill": "insight",
+              "dc": 14,
+              "success": {
+                "text": "The friend is found sleeping it off in a barn, and pays the duty and a fine to keep it quiet.",
+                "effects": {
+                  "gold": 45
+                }
+              },
+              "failure": {
+                "text": "The friend turns out to have friends, and they come for the brandy one night. Nobody is hurt; everybody is frightened.",
+                "effects": {
+                  "dread": 2,
+                  "tension": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "One night the casks are simply gone. {tavernKeeperName} says they heard nothing.",
+        "effects": {}
+      }
+    },
+    {
+      "id": "keeper-minstrel-festival",
+      "title": "{tavernKeeperName} wants a song contest",
+      "stakes": "low",
+      "source": "tavern",
+      "needs": [
+        "keeper:minstrel"
+      ],
+      "weight": 0.6,
+      "repeatDays": 120,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{tavernKeeper} of {tavern} {keeperStory}. They cannot sing now, but they want to hear {town} sing: a contest at {tavern}, with a silver cup, if the town hall will pay for it.",
+          "options": [
+            {
+              "label": "Put up the cup",
+              "tags": [
+                "generous"
+              ],
+              "cost": 30,
+              "success": {
+                "text": "Half the town crowds into {tavern} to sing, the other half to boo. {tavernKeeperName} weeps at the winner.",
+                "effects": {
+                  "festival": 1,
+                  "tension": -2,
+                  "prosperity": 1
+                }
+              }
+            },
+            {
+              "label": "Judge it yourself",
+              "tags": [
+                "guile"
+              ],
+              "skill": "performance",
+              "dc": 13,
+              "cost": 15,
+              "success": {
+                "text": "The mayor's choice of winner is cheered to the rafters. The loser's family is not invited next year.",
+                "effects": {
+                  "festival": 1,
+                  "mandate": 1
+                }
+              },
+              "failure": {
+                "text": "The mayor picks the miller's daughter, and the room knows exactly why. It is not forgotten.",
+                "effects": {
+                  "mandate": -1
+                }
+              }
+            },
+            {
+              "label": "Not this year",
+              "tags": [
+                "caution"
+              ],
+              "prefer": 0.05,
+              "success": {
+                "text": "{tavernKeeperName} hums the songs nobody will hear.",
+                "effects": {}
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "{tavern} stays quiet this year.",
+        "effects": {}
+      }
+    },
+    {
+      "id": "keeper-informer-ledger",
+      "title": "{tavernKeeperName} has a name for you",
+      "stakes": "medium",
+      "source": "tavern",
+      "needs": [
+        "keeper:informer"
+      ],
+      "weight": 0.6,
+      "repeatDays": 120,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{tavernKeeper} of {tavern} {keeperStory}. They have heard a stranger at their bar asking about the town's walls a little too carefully, and they will say more for a price.",
+          "options": [
+            {
+              "label": "Pay for the name",
+              "tags": [
+                "coin",
+                "order"
+              ],
+              "cost": 30,
+              "success": {
+                "text": "The stranger is taken at dawn with a sketch of the gates in his boot. {tavernKeeperName} has a new coat by the week's end.",
+                "effects": {
+                  "security": 2,
+                  "dread": -2
+                }
+              }
+            },
+            {
+              "label": "Squeeze it out of them",
+              "tags": [
+                "harsh"
+              ],
+              "skill": "intimidation",
+              "dc": 15,
+              "success": {
+                "text": "{tavernKeeperName} gives the name for nothing, and never tells the watch anything again.",
+                "effects": {
+                  "security": 1
+                }
+              },
+              "failure": {
+                "text": "{tavernKeeperName} remembers nothing at all, suddenly. The stranger is gone by morning.",
+                "effects": {
+                  "dread": 2
+                }
+              }
+            },
+            {
+              "label": "The town does not buy gossip",
+              "tags": [
+                "freedom"
+              ],
+              "prefer": 0.05,
+              "success": {
+                "text": "{tavernKeeperName} shrugs. Somebody else will buy it.",
+                "effects": {
+                  "dread": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "{tavernKeeperName} sells the name elsewhere.",
+        "effects": {
+          "dread": 1
+        }
+      }
+    },
+    {
+      "id": "keeper-widow-orphans",
+      "title": "{tavernKeeperName} takes in strays",
+      "stakes": "low",
+      "source": "tavern",
+      "needs": [
+        "keeper:widow"
+      ],
+      "weight": 0.6,
+      "repeatDays": 120,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{tavernKeeper} of {tavern} {keeperStory}. Three children with no family have been sleeping in the stable at {tavern}, and they ask the town hall for help to feed them.",
+          "options": [
+            {
+              "label": "Pay for their keep",
+              "tags": [
+                "generous",
+                "mercy"
+              ],
+              "cost": 25,
+              "success": {
+                "text": "The children are fed and set to work polishing mugs. The whole of {tavern} adopts them.",
+                "effects": {
+                  "mandate": 1,
+                  "tension": -1
+                }
+              }
+            },
+            {
+              "label": "Find them apprenticeships",
+              "tags": [
+                "order",
+                "mercy"
+              ],
+              "skill": "persuasion",
+              "dc": 12,
+              "success": {
+                "text": "A smith, a weaver and a baker each take one. In a few years {town} will have three more trades.",
+                "effects": {
+                  "people": 1,
+                  "prosperity": 1
+                }
+              },
+              "failure": {
+                "text": "Nobody wants them. {tavernKeeperName} keeps them anyway, and lets the town hall know what they think of it.",
+                "effects": {
+                  "mandate": -1
+                }
+              }
+            },
+            {
+              "label": "The temple can see to them",
+              "tags": [
+                "faith"
+              ],
+              "prefer": 0.05,
+              "success": {
+                "text": "The children go to the temple. {tavernKeeperName} visits them every week.",
+                "effects": {}
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "{tavernKeeperName} feeds the children out of their own pocket.",
+        "effects": {}
+      }
+    },
+    {
+      "id": "blood-money",
+      "title": "Blood money for {victim}",
+      "stakes": "high",
+      "source": "tavern",
+      "needs": [
+        "bloodied"
+      ],
+      "weight": 6,
+      "repeatDays": 1,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} killed {victim} with one blow too many in a tavern brawl. {kin} stand outside the town hall in mourning, and want weregild: blood money for a life, as the old law says.",
+          "options": [
+            {
+              "label": "The town pays the weregild",
+              "tags": [
+                "generous",
+                "order"
+              ],
+              "cost": 60,
+              "success": {
+                "text": "The town hall pays, and {kin} take it with stiff faces. {heroName} is grateful, and a little ashamed.",
+                "effects": {
+                  "weregild": 1,
+                  "loyalty": 4,
+                  "mandate": -1
+                }
+              }
+            },
+            {
+              "label": "{heroName} pays from their own purse",
+              "tags": [
+                "order",
+                "harsh"
+              ],
+              "success": {
+                "text": "{heroName} counts out the coin in front of {kin} and does not look up. They will not forgive the town for making them do it.",
+                "effects": {
+                  "weregild": 60,
+                  "loyalty": -6,
+                  "mandate": 1
+                }
+              }
+            },
+            {
+              "label": "Try to talk the kin round",
+              "tags": [
+                "mercy"
+              ],
+              "skill": "persuasion",
+              "dc": 15,
+              "success": {
+                "text": "Over a long evening the family is brought to take a smaller sum and {heroName}'s apology, made on their knees.",
+                "effects": {
+                  "weregild": 1,
+                  "gold": -20,
+                  "mandate": 1
+                }
+              },
+              "failure": {
+                "text": "The talk goes badly. {kin} leave the town hall swearing they will have their own justice.",
+                "effects": {
+                  "weregild": -1,
+                  "infamy": 3,
+                  "tension": 3
+                }
+              }
+            },
+            {
+              "label": "A brawl is a brawl",
+              "tags": [
+                "harsh",
+                "freedom"
+              ],
+              "prefer": 0.05,
+              "success": {
+                "text": "The mayor rules that a man who throws punches in a tavern takes what comes. {kin} swear a feud on {heroName}.",
+                "effects": {
+                  "weregild": -1,
+                  "infamy": 2,
+                  "tension": 4,
+                  "mandate": -2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "Nobody at the town hall will see them. {kin} take it to the streets.",
+        "effects": {
+          "weregild": -1,
+          "tension": 4,
+          "mandate": -2
+        }
+      }
+    },
+    {
+      "id": "scryer-favour",
+      "title": "{hero} calls in a favour",
+      "stakes": "low",
+      "source": "heroes",
+      "needs": [
+        "owed"
+      ],
+      "weight": 2,
+      "repeatDays": 20,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} scried for the town and took no gold for it. Now they want their favour: the council's seal on a letter that opens a rival's library to them, no questions asked.",
+          "options": [
+            {
+              "label": "Seal the letter",
+              "tags": [
+                "guile",
+                "generous"
+              ],
+              "prefer": 0.05,
+              "success": {
+                "text": "{heroName} takes the sealed letter with a thin smile. Somewhere, a librarian is about to have a bad day.",
+                "effects": {
+                  "owed": 1,
+                  "loyalty": 6,
+                  "mandate": -1
+                }
+              }
+            },
+            {
+              "label": "Pay them in gold after all",
+              "tags": [
+                "coin"
+              ],
+              "cost": 50,
+              "success": {
+                "text": "{heroName} takes the gold, but says a favour was the price, and gold is not a favour.",
+                "effects": {
+                  "owed": 1,
+                  "loyalty": 1
+                }
+              }
+            },
+            {
+              "label": "Talk them into something smaller",
+              "tags": [
+                "guile"
+              ],
+              "skill": "persuasion",
+              "dc": 14,
+              "success": {
+                "text": "{heroName} settles for a seat at the next feast and a line in the town's book of honours.",
+                "effects": {
+                  "owed": 1,
+                  "loyalty": 3
+                }
+              },
+              "failure": {
+                "text": "{heroName} hears the haggling for what it is, and leaves cold.",
+                "effects": {
+                  "owed": 1,
+                  "loyalty": -8
+                }
+              }
+            },
+            {
+              "label": "Refuse",
+              "tags": [
+                "order",
+                "harsh"
+              ],
+              "prefer": 0.05,
+              "success": {
+                "text": "The mayor will not lend the town's seal to anyone's grudge. {heroName} will not forget it.",
+                "effects": {
+                  "owed": 0,
+                  "loyalty": -12
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "{heroName} takes the silence as an answer.",
+        "effects": {
+          "owed": 0,
+          "loyalty": -10
+        }
+      }
+    },
+    {
+      "id": "cursed-blade",
+      "title": "{hero}'s {curse} blade",
+      "stakes": "medium",
+      "source": "heroes",
+      "needs": [
+        "cursed"
+      ],
+      "weight": 1.5,
+      "repeatDays": 30,
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} cannot put down the weapon they brought home from the hoard. It is {curse}: {curseText} They ask the town for help, though half of them does not want it.",
+          "options": [
+            {
+              "label": "The temple lifts the curse",
+              "tags": [
+                "faith"
+              ],
+              "skill": "religion",
+              "dc": 14,
+              "cost": 60,
+              "needs": [
+                "temple"
+              ],
+              "success": {
+                "text": "The priests chant over the blade for a night and a day. At dawn it is only a fine weapon, and {heroName} sleeps for the first time in weeks.",
+                "effects": {
+                  "curse": 1,
+                  "loyalty": 4,
+                  "favour": 1
+                }
+              },
+              "failure": {
+                "text": "The blade drinks the holy water and hums. Whatever is in it is stronger than the temple's prayers, for now.",
+                "effects": {
+                  "loyalty": -2
+                }
+              }
+            },
+            {
+              "label": "Break it on the anvil",
+              "tags": [
+                "harsh",
+                "caution"
+              ],
+              "success": {
+                "text": "The smiths break the blade, and something screams as it goes. {heroName} is free, and poorer for it.",
+                "effects": {
+                  "curse": -1,
+                  "loyalty": 2
+                }
+              }
+            },
+            {
+              "label": "Let them keep it",
+              "tags": [
+                "freedom",
+                "valor"
+              ],
+              "prefer": 0.05,
+              "success": {
+                "text": "{heroName} keeps the blade. It is theirs now, curse and all, and it seems pleased.",
+                "effects": {}
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "{heroName} keeps the blade, or the blade keeps them.",
+        "effects": {}
       }
     }
   ],

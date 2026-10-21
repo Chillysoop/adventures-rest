@@ -157,6 +157,7 @@ public sealed class Simulation
         Watch.Daily(t, Options.AutoMayor && Options.AutoBounties);
         Undercity.Daily(t, Options.AutoMayor);
         Research.Daily(t, Options.AutoMayor);
+        HedgeMages.Daily(t);
         Lairs.Daily(t, Options.AutoMayor, Options.AutoDefense);
         Rumors.Daily(t);
         Shrines.Daily(t, Options.AutoMayor);
@@ -180,6 +181,10 @@ public sealed class Simulation
         Loyalty.Daily(t, Options.AutoMayor && Options.AutoHonours);
         Secrets.Daily(t, Options.AutoMayor && Options.AutoCouncil);
         Guilds.Daily(t, Options.AutoMayor && Options.AutoCouncil);
+        Union.Daily(t, Options.AutoMayor && Options.AutoCouncil);
+        Patrons.Daily(t);
+        Curses.Daily(t);
+        Downtime.Daily(t);
         Notoriety.Daily(t);
         Heraldry.Daily(t);
         Eggs.Daily(t);
@@ -360,6 +365,12 @@ public sealed class Simulation
     /// <summary>Send the watch to break a guild's strike, at a cost in Mandate.</summary>
     public bool BreakStrike(string guildId) => Guilds.Break(Town, guildId);
 
+    /// <summary>Hear one side out with gold: "union" (the Common Cause, the workers' movement) or "mages".</summary>
+    public bool HearUnion(string side) => Union.Hear(Town, side);
+
+    /// <summary>Take a side outright between the Common Cause and the mages ("union" or "mages") for a season, and face the other's anger.</summary>
+    public bool TakeSide(string side) => Union.Side(Town, side);
+
     /// <summary>Answer a menace's demand for fealty: bend the knee and pay tribute, or refuse and face its host.</summary>
     public bool AnswerDemand(int menaceId, bool submit) => Menaces.Answer(Town, menaceId, submit);
 
@@ -396,6 +407,9 @@ public sealed class Simulation
 
     /// <summary>Endow a temple to the town's god once the town is big enough.</summary>
     public Building? BuildTemple() => Shrines.BuildTemple(Town);
+
+    /// <summary>Write a punishment for a crime into the law book (laws.json).</summary>
+    public bool SetLaw(string crime, string punishment) => Laws.Set(Town, crime, punishment);
 
     /// <summary>Send the watch against a faction the town has exposed.</summary>
     public bool CrackDown(string factionId) => Factions.CrackDown(Town, factionId);

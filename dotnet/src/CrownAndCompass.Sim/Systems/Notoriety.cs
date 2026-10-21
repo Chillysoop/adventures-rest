@@ -315,8 +315,8 @@ public static class Notoriety
         {
             var s = a.Hero!;
             if (s.AwayUntil != null) continue;
-            double brawl = (InfamyTier(town, s) > 0 ? c.Chance : 0) + (a.Has(Trait.HotTempered) ? c.HotTempered : 0);
-            double theft = a.Has(Trait.Greedy) ? c.Greedy : 0;
+            double brawl = ((InfamyTier(town, s) > 0 ? c.Chance : 0) + (a.Has(Trait.HotTempered) ? c.HotTempered : 0)) * Laws.Deter(town, "brawling");
+            double theft = (a.Has(Trait.Greedy) ? c.Greedy : 0) * Laws.Deter(town, "theft");
             double scale = (1 + c.PerInfamyTier * InfamyTier(town, s)) * (s.Loyalty < lr.Restless ? c.Restless : 1);
             if ((theft + brawl) * scale <= 0) continue;
             double roll = town.Rng.Next();
@@ -337,11 +337,8 @@ public static class Notoriety
         string name = Loyalty.Styled(town, a);
         if (Caught(town))
         {
-            double fine = Math.Min(Math.Floor(a.Gold), r.Crime.Fine + r.Crime.FinePerLevel * s.Level);
-            a.Gold -= fine;
-            if (fine > 0) town.Book(TreasuryAccount.Fines, fine);
-            Loyalty.Sway(a, r.Crime.CaughtLoyalty);
-            town.Log(LedgerCategory.Brawl, Importance.Notable, $"{name} breaks a chair over a drover's back at {where}. The watch hauls them out{(fine > 0 ? $" and fines them {Js.Str(fine)} gold" : "")}.", [a.Id]);
+            string sentence = Laws.Sentence(town, "brawling", a, r.Crime.Fine + r.Crime.FinePerLevel * s.Level);
+            town.Log(LedgerCategory.Brawl, Importance.Notable, $"{name} breaks a chair over a drover's back at {where}. The watch hauls them out{sentence}.", [a.Id]);
         }
         else
         {
@@ -363,11 +360,8 @@ public static class Notoriety
         string name = Loyalty.Styled(town, a);
         if (Caught(town))
         {
-            double fine = Math.Min(Math.Floor(a.Gold), r.Crime.Fine + r.Crime.FinePerLevel * s.Level);
-            a.Gold -= fine;
-            if (fine > 0) town.Book(TreasuryAccount.Fines, fine);
-            Loyalty.Sway(a, r.Crime.CaughtLoyalty);
-            town.Log(LedgerCategory.Hardship, Importance.Notable, $"The watch catches {name} with a hand in the till at {shop.Name}{(fine > 0 ? $", and the magistrate fines them {Js.Str(fine)} gold" : "")}.", [a.Id]);
+            string sentence = Laws.Sentence(town, "theft", a, r.Crime.Fine + r.Crime.FinePerLevel * s.Level);
+            town.Log(LedgerCategory.Hardship, Importance.Notable, $"The watch catches {name} with a hand in the till at {shop.Name}{(sentence != "" ? "," + sentence : "")}.", [a.Id]);
         }
         else
         {

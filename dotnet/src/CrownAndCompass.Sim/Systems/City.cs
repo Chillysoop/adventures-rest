@@ -68,6 +68,9 @@ public sealed record WardDef
     /// <summary>The densest the stand-in mayor zones it (the lords of Castle Hill keep their gardens, and the outer wards their sprawl).</summary>
     public int Densest { get; init; } = 2;
     public string Blurb { get; init; } = "";
+
+    /// <summary>Lore the ward's scholars and mages add to the library's a day once it has formed (the magic quarter).</summary>
+    public double Lore { get; init; }
 }
 
 /// <summary>
@@ -579,7 +582,8 @@ public static class City
         var map = new Dictionary<string, List<Building>>();
         foreach (var b in town.Buildings)
         {
-            if (!b.Complete || b.Def.Civic && !b.Def.Holy) continue;
+            // Civic works count only where a ward wants them (the library and the mage tower for the magic quarter).
+            if (!b.Complete || b.Def.Civic && !b.Def.Holy && !town.Content.City.Wards.Any(w => w.Draws.ContainsKey(b.Def.Id))) continue;
             var lot = town.Lot(b.LotId);
             int ring = Ring(town, lot.X, lot.Y);
             if (ring == 0) continue;
@@ -596,6 +600,7 @@ public static class City
         double d = w.Draws.TryGetValue(b.Def.Zone.ToString(), out double z) ? z : 0;
         if (w.Draws.TryGetValue(b.Def.Id, out double own)) d += own;
         if (b.Def.Holy && w.Draws.TryGetValue("Holy", out double holy)) d += holy;
+        if (w.Draws.TryGetValue("Arcane", out double arcane) && b.Workers.Any(id => town.Agent(id).HedgeSpell != "")) d += arcane;
         if (b.Def.Housing > 0 && b.Def.Id != "house" && w.Draws.TryGetValue("Fine", out double fine)) d += fine;
         return d;
     }
