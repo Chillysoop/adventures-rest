@@ -1524,6 +1524,9 @@ public sealed class Content
     /// <summary>Companies' arms and how their colours wear (content/game/heraldry.json).</summary>
     public HeraldryRules Heraldry { get; init; } = new();
 
+    /// <summary>Each faction's first-meeting picture and crest (content/game/intros.json).</summary>
+    public Systems.IntroRules Intros { get; init; } = new();
+
     /// <summary>The charter goals of a new town's first days (content/game/goals.json).</summary>
     public Systems.GoalRules Goals { get; init; } = new();
 
@@ -1551,6 +1554,18 @@ public sealed class Content
     public StorytellerRules Storytellers { get; init; } = new();
     public Systems.CharacterRules Character { get; init; } = new();
     public Systems.TacticRules Tactics { get; init; } = new();
+
+    /// <summary>The roads to victory and what each needs (content/game/victory.json).</summary>
+    public Systems.VictoryRules Victory { get; init; } = new();
+
+    /// <summary>The big bad's own quests and what they give it (content/game/darkquests.json).</summary>
+    public Systems.DarkQuestRules DarkQuests { get; init; } = new();
+
+    /// <summary>Boons won campaigns leave for the next, and how a win is graded (content/game/boons.json).</summary>
+    public Systems.BoonRules Boons { get; init; } = new();
+
+    /// <summary>Endless mode: the heralds of each new era and the complications they bring (content/game/endless.json).</summary>
+    public Systems.EndlessRules Endless { get; init; } = new();
 
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
@@ -1746,6 +1761,7 @@ public sealed class Content
             Goals = Parse<Systems.GoalRules>("goals.json"),
             Passage = Parse<PassageRules>("passage.json"),
             Heraldry = Parse<HeraldryRules>("heraldry.json"),
+            Intros = Parse<Systems.IntroRules>("intros.json"),
             Eggs = Parse<EggRules>("eggs.json"),
             Foes = Parse<FoeRules>("foes.json"),
             Cannons = Parse<Systems.CannonRules>("cannons.json"),
@@ -1756,6 +1772,10 @@ public sealed class Content
             Crowds = Parse<CrowdRules>("crowds.json"),
             Moods = Parse<MoodRules>("moods.json"),
             Storytellers = Parse<StorytellerRules>("storytellers.json"),
+            Victory = Parse<Systems.VictoryRules>("victory.json"),
+            DarkQuests = Parse<Systems.DarkQuestRules>("darkquests.json"),
+            Boons = Parse<Systems.BoonRules>("boons.json"),
+            Endless = Parse<Systems.EndlessRules>("endless.json"),
             Character = Parse<CharacterRules>("character.json"),
             Tactics = Parse<TacticRules>("tactics.json"),
         };
