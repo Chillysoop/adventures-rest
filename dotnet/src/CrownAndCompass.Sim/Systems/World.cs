@@ -216,6 +216,8 @@ public static class World
 
         PlaceAuthoredSites(town);
 
+        // Each lair-holder rules one lair in the world while the library has others of the country left.
+        var holders = new HashSet<string>(StringComparer.Ordinal);
         foreach (var region in town.Regions)
         {
             var rd = w.Rings[region.Ring];
@@ -227,7 +229,7 @@ public static class World
                 // Deeper into the region, harder sites: spread the ring's band across them.
                 int level = count == 1 ? rng.Range(lo, hi + 1) : lo + (int)Math.Round((hi - lo) * (double)i / (count - 1));
                 var kind = rng.Pick(region.Theme.Sites);
-                var def = BuildSite(town.Content, rng, region, kind, level, $"{region.Theme.Id}-{region.Id}-{i}", Fill(rng, region.Theme, kind.Names, used));
+                var def = BuildSite(town.Content, rng, region, kind, level, $"{region.Theme.Id}-{region.Id}-{i}", Fill(rng, region.Theme, kind.Names, used), holders);
                 town.Sites.Add(new SiteState(def) { RegionId = region.Id, Generated = true });
                 region.SiteIds.Add(def.Id);
             }
@@ -302,7 +304,7 @@ public static class World
     }
 
     /// <summary>Build a site for parties of the given level from the library's creatures of its country.</summary>
-    public static SiteDef BuildSite(Content content, Rng rng, Region region, SiteKindDef kind, int level, string id, string name)
+    public static SiteDef BuildSite(Content content, Rng rng, Region region, SiteKindDef kind, int level, string id, string name, HashSet<string>? holders = null)
     {
         var w = content.World;
         var theme = region.Theme;
@@ -351,7 +353,11 @@ public static class World
             bosses = content.Library.Monsters.Where(m => m.Damage != null && m.Band != "" && !m.Alignment.Contains("good") && m.Cr >= 0.5 && m.Cr <= Math.Max(1, level)).ToList();
         // Lair-holders first: the library marks some creatures as bosses.
         var marked = bosses.Where(m => m.Boss).ToList();
-        var boss = rng.Pick(marked.Count > 0 && rng.Chance(0.5) ? marked : bosses);
+        var from = marked.Count > 0 && rng.Chance(0.5) ? marked : bosses;
+        // One that holds no other lair yet, when the country has one.
+        if (holders != null && from.Where(m => !holders.Contains(m.Id)).ToList() is { Count: > 0 } fresh) from = fresh;
+        var boss = rng.Pick(from);
+        holders?.Add(boss.Id);
         var escorts = content.Wanderers(probe, [crLo, Math.Max(crLo, Math.Min(crHi, boss.Cr / 2))]).Where(m => m.Id != boss.Id).ToList();
         var bossEnc = new EncounterDef
         {
