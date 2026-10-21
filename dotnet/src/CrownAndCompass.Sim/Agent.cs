@@ -191,6 +191,9 @@ public sealed class HeroSheet
     /// <summary>Tick the hero is due back from an expedition, or null when in town.</summary>
     public int? AwayUntil { get; set; }
 
+    /// <summary>A caster resting after a scrying casts no other until this tick (<see cref="Systems.Knowledge"/>).</summary>
+    public int? ScryRestUntil { get; set; }
+
     public bool Lodging { get; set; }
 
     /// <summary>Healing potions from the general store, carried into the next delve.</summary>
