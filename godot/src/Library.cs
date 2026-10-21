@@ -4,13 +4,28 @@ using CrownAndCompass.Sim.Systems;
 namespace CrownAndCompass.Client;
 
 /// <summary>
-/// The library window: the wizards' library and its spellbooks, the wizards it has drawn to town, what the
-/// scholars are studying and how the council funds them, and the town's own tree of discoveries, revealed by
-/// who lives in town, who it trades with and what it has built.
+/// The library window: what the scholars study and what moves it, ideas taking shape and where each came from
+/// (newcomers, trade, the wilds, books, wizards), the feed of finds, and the library's spellbooks and wizards.
+/// Gold only greases the work; the window shows the people, books and finds that drive it.
 /// </summary>
 public partial class Main
 {
     private static readonly string[] Fields = ["arcana", "crafts", "husbandry", "healing", "trade", "war", "lore"];
+
+    private static readonly Dictionary<string, string> FieldIcons = new()
+    {
+        ["arcana"] = "lore", ["crafts"] = "tools", ["husbandry"] = "food", ["healing"] = "herbs",
+        ["trade"] = "gold", ["war"] = "defence", ["lore"] = "books",
+    };
+
+    /// <summary>What each kind of spark is, for the hover on its icon.</summary>
+    private static readonly Dictionary<string, string> SparkTips = new()
+    {
+        [Sparks.Newcomer] = "Townsfolk and newcomers", [Sparks.Trader] = "Trade", [Sparks.Built] = "Something built",
+        [Sparks.Book] = "A spellbook", [Sparks.Magic] = "Wizards and magic", [Sparks.Hero] = "Heroes",
+        [Sparks.Wilds] = "Explorers and the wilds", [Sparks.Slain] = "A monster slain", [Sparks.Ally] = "An ally",
+        [Sparks.Known] = "What the town knows", [Sparks.Charter] = "The charter",
+    };
 
     private void RenderLibrary()
     {
@@ -22,12 +37,14 @@ public partial class Main
 
         var rank = Research.Rank(t);
         int circle = Research.Circle(t);
-        p.Card($"[font_size=17][b]{Ui.Esc(Ui.Cap(rank.Name))}[/b][/font_size]  " + Ui.C(Ui.Ink2, $"power {Math.Round(Research.Power(t))}") + "\n" +
-               Ui.C(Ui.Ink2, $"{st.Books.Count} {(st.Books.Count == 1 ? "spellbook" : "spellbooks")} · " +
-                   (circle > 0 ? $"town magic of the {Research.Ordinal(circle)} circle" : "no town magic yet") +
-                   $" · {st.Known.Count} of {st.Revealed.Count} discoveries made"), Ui.Gold);
+        p.Card($"[font_size=17][b]{Ui.Esc(Ui.Cap(rank.Name))}[/b][/font_size]\n" + LibChips(
+            ("lore", $"{st.Known.Count}/{st.Revealed.Count}", Ui.Good, "Discoveries made / ideas found"),
+            ("compass", $"{r.Discoveries.Count - st.Revealed.Count} ?", null, "Ideas still hidden: the town and the wilds reveal them"),
+            ("books", $"{st.Books.Count}", null, "Spellbooks"),
+            ("tab-library", circle > 0 ? Research.Ordinal(circle) : "—", Ui.Gold, "Highest circle of town magic"),
+            ("heroes", $"{Math.Round(Research.Power(t))}", null, "Library power: book circles + wizard levels")), Ui.Gold);
 
-        // What the scholars are working on, and what it costs.
+        // What the scholars are on, and what moves it.
         p.Heading("The scholars");
         double lore = Research.Lore(t);
         if (st.Study is string id)
@@ -35,33 +52,49 @@ public partial class Main
             var d = Research.Def(t, id);
             double need = Research.LoreCost(t, d), have = st.Progress.Get(id, 0);
             int days = lore > 0 ? (int)Math.Ceiling(Math.Max(0, need - have) / lore) : 0;
-            p.Meter($"{d.Name}", have / need, lore > 0 ? $"{Ui.Days(days)} at {Js.Str(Math.Round(lore, 1))} lore a day" : "no lore coming in");
+            p.Meter(d.Name, have / need, lore > 0 ? $"{Ui.Days(days)} · {Js.Str(Math.Round(lore, 1))}/day" : "no lore coming in");
         }
-        else p.Note(Research.Open(t).Count > 0 ? "The scholars are idle. Choose what they study below."
-            : st.Revealed.Count > 0 && st.Known.Count == st.Revealed.Count ? "The scholars have made every discovery this town has found. New trades, peoples, partners, buildings and books may reveal more."
-            : "Nothing the scholars can study yet: discoveries are revealed by who lives in town, who it trades with, what it builds and the books in the library.");
-        var sources = Research.Sources(t);
-        if (sources.Count > 0)
-            p.Text(Ui.C(Ui.Ink2, "[font_size=12]Lore a day: " + string.Join(" · ", sources.Select(s => $"{Ui.Esc(s.Why)} {Js.Str(Math.Round(s.Lore, 1))}")) +
-                   $", × {Js.Str(r.Funding[st.Funding].Lore)} for funding[/font_size]"), 12);
+        else if (Research.Open(t).Count > 0) p.Text(Lb(Ui.C(Ui.Gold, "[b]Idle[/b] · pick an idea below"), "ui-warn"));
+        if (st.Notes > 0) p.Text(Lb(Ui.C(Ui.Ink2, $"{Js.Str(Math.Round(st.Notes))} lore of notes waiting for the next study"), "books"), 13);
+
+        // Each source of lore a day as a chip, what it is on hover.
+        var moves = Research.Sources(t).Select(s => (SourceIcon(s.Why), "+" + Js.Str(Math.Round(s.Lore, 1)), (Godot.Color?)Ui.Good, Ui.Cap(s.Why))).ToList();
+        moves.Add(("gold", $"×{Js.Str(r.Funding[st.Funding].Lore)}", Ui.Gold, "Funding: gold only greases the work"));
+        p.Text(LibChips(moves.ToArray()), 13);
+        var finds = st.Feed.Where(n => n.Lore > 0).Reverse().Take(4).ToList();
+        if (finds.Count > 0)
+            p.Text(string.Join("\n", finds.Select(n => Lb($"{Ui.Esc(Ui.Cap(n.Text))} {Ui.C(Ui.Good, "+" + Js.Str(n.Lore))} {Ui.C(Ui.Ink2, $"day {n.Day}")}", n.Icon))), 13);
+
         var buttons = new List<(string, bool, bool, Action)>();
         for (int i = 0; i < r.Funding.Count; i++)
         {
             int level = i;
             double cost = Research.FundingCost(t, i);
-            buttons.Add(($"{Ui.Cap(r.Funding[i].Name)}{(cost > 0 ? $" · {Js.Str(cost)}g" : "")}", st.Funding != i, st.Funding == i, () => Act(() => _sim.FundResearch(level))));
+            buttons.Add(($"×{Js.Str(r.Funding[i].Lore)}{(cost > 0 ? $" · {Js.Str(cost)}g" : "")}", st.Funding != i, st.Funding == i, () => Act(() => _sim.FundResearch(level))));
         }
         p.Buttons(buttons.ToArray());
 
-        // The tree: what this town could study, and what it is still missing.
+        // Ideas taking shape: a spark holds, the idea isn't clear yet.
+        if (st.Leads.Count > 0)
+        {
+            p.Heading("Taking shape");
+            p.Text(string.Join("\n", st.Leads.OrderBy(l => l.Key, StringComparer.Ordinal).Select(l =>
+            {
+                var d = Research.Def(t, l.Key);
+                int need = Math.Max(1, Research.BrewDays(t, d));
+                return Lb($"{Ui.Img(FieldIcons[d.Field], 14)} ? {Ui.C(Ui.Ink2, Ui.Esc(l.Value.Why))} {Pips(l.Value.Days, need)}", l.Value.Icon);
+            })), 13);
+        }
+
+        // The tree: what this town could study, where each idea came from, what it still needs.
         p.Heading("Discoveries");
         if (st.Revealed.Count == 0)
-            p.Note("No ideas have taken hold yet. Smiths, weavers, scribes and other trades, neighbours of other peoples, trade routes, temples and libraries, and spellbooks each reveal discoveries of their own.");
+            p.Note("No ideas yet. Newcomers, trade, buildings, books, explorers' finds and monsters your companies bring down each spark their own.");
         foreach (string field in Fields)
         {
             var defs = st.Revealed.Keys.Select(k => Research.Def(t, k)).Where(d => d.Field == field).OrderBy(d => Research.IsKnown(t, d.Id)).ThenBy(d => d.Rank).ThenBy(d => d.Id, StringComparer.Ordinal).ToList();
             if (defs.Count == 0) continue;
-            p.Text($"[b]{Ui.Cap(field == "arcana" ? "town magic" : field)}[/b]", 13);
+            p.Text($"{Ui.Img(FieldIcons[field], 16)} [b]{Ui.Cap(field == "arcana" ? "town magic" : field)}[/b]", 13);
             foreach (var d in defs)
             {
                 string did = d.Id;
@@ -70,33 +103,62 @@ public partial class Main
                 string state = known ? Tag("known", Ui.Good)
                     : st.Study == d.Id ? Tag("studying", Ui.Gold)
                     : missing.Count > 0 ? Tag("needs " + string.Join(", ", missing))
-                    : Tag($"rank {d.Rank}");
-                string body = $"[b]{Ui.Esc(d.Name)}[/b]  {state}\n" +
-                              Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(d.Text)} {Effects(d)} · from {Ui.Esc(st.Revealed[d.Id])}[/font_size]");
+                    : Tag($"{Js.Str(Research.LoreCost(t, d) - st.Progress.Get(d.Id, 0))} lore");
+                string icon = st.RevealIcon.Get(d.Id, Sparks.Known);
+                string body = $"{Ui.Img(icon, 15)} [b]{Ui.Esc(d.Name)}[/b]  {state}\n" +
+                              Ui.C(Ui.Ink2, $"[font_size=12]{Effects(d)}\nfrom {Ui.Esc(st.Revealed[d.Id])}[/font_size]");
+                body = $"[hint={Ui.Esc(d.Text).Replace("]", ")")}]{body}[/hint]";
                 if (known || st.Study == d.Id || missing.Count > 0) p.Row(body);
-                else
-                {
-                    double cost = st.Progress.ContainsKey(d.Id) ? 0 : Research.Commission(t, d);
-                    p.Row(body, (cost > 0 ? $"Study · {Js.Str(cost)}g" : "Study", t.Treasury >= cost, false, () => Act(() => _sim.StudyDiscovery(did))));
-                }
+                else p.Row(body, ("Study", true, st.Study == null, () => Act(() => _sim.StudyDiscovery(did))));
             }
         }
 
+        // The feed: why each idea appeared and what moved the scholars, newest first.
+        if (st.Feed.Count > 0)
+        {
+            p.Heading("News from the library");
+            p.Text(string.Join("\n", st.Feed.AsEnumerable().Reverse().Take(10).Select(n =>
+                Lb($"{Ui.C(Ui.Ink2, $"day {n.Day}")}  {Ui.Esc(Ui.Cap(n.Text))}{(n.Lore > 0 ? " " + Ui.C(Ui.Good, "+" + Js.Str(n.Lore)) : "")}", n.Icon))), 13);
+        }
+
         p.Heading("Spellbooks");
-        if (st.Books.Count == 0) p.Note("The library has no spellbooks yet. They come home from delves, on caravans from the elves, gnomes and far cities, and from wizards who hold a bastion.");
-        foreach (var b in st.Books.OrderByDescending(b => b.Circle).ThenBy(b => b.Id).Take(12))
-            p.Text($"{Ui.Esc(Ui.Cap(b.Name))}\n" + Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(b.From)}, day {b.Day}[/font_size]"), 13);
-        if (st.Books.Count > 12) p.Note($"and {st.Books.Count - 12} more.");
+        if (st.Books.Count == 0) p.Note("No spellbooks yet. They come home from delves, on caravans and from wizards' bastions.");
+        foreach (var b in st.Books.OrderByDescending(b => b.Circle).ThenBy(b => b.Id).Take(8))
+            p.Text(Lb($"[b]{Research.Ordinal(b.Circle)}[/b] {Ui.Esc(b.School)} {Ui.C(Ui.Ink2, $"· {Ui.Esc(b.From)}")}", "books"), 13);
+        if (st.Books.Count > 8) p.Note($"and {st.Books.Count - 8} more.");
 
         p.Heading("Wizards in town");
         var wizards = t.Heroes.Where(a => a.Hero!.Cls.Id == "wizard").OrderByDescending(a => a.Hero!.Level).ThenBy(a => a.Id).ToList();
-        if (wizards.Count == 0) p.Note("No wizards live in town. A library with books enough draws them, each stronger than the last.");
+        if (wizards.Count == 0) p.Note("No wizards yet. A library with books enough draws them, each stronger than the last.");
         foreach (var a in wizards)
-            p.Text($"[b]{Ui.Esc(a.Name)}[/b], level {a.Hero!.Level}{(st.Drawn.Contains(a.Id) ? Ui.C(Ui.Ink2, " · drawn by the library") : "")}{(a.IsAway ? Ui.C(Ui.Ink2, " · away") : "")}\n" +
-                   Ui.C(Ui.Ink2, $"[font_size=12]reads up to the {Research.Ordinal(Math.Min(9, (a.Hero.Level + 1) / 2))} circle[/font_size]"), 13);
-        p.Note("The library's power is the circles of its books and the levels of its wizards. As it grows it draws stronger wizards to town, and the highest circle both a book and a wizard reach is the town magic the scholars can work.");
+            p.Text(Lb($"[b]{Ui.Esc(a.Name)}[/b] {Ui.C(Ui.Ink2, $"lvl {a.Hero!.Level} · reads {Research.Ordinal(Math.Min(9, (a.Hero.Level + 1) / 2))} circle{(st.Drawn.Contains(a.Id) ? " · drawn by the library" : "")}{(a.IsAway ? " · away" : "")}")}", "lore"), 13);
         p.Commit();
     }
+
+    /// <summary>One point of a list, its icon first (with the source's meaning on hover).</summary>
+    private static string Lb(string text, string icon) =>
+        SparkTips.TryGetValue(icon, out string? tip) ? $"[hint={tip}]{Ui.Img(icon, 15)}[/hint] {text}" : $"{Ui.Img(icon, 15)} {text}";
+
+    private static string LibChips(params (string Icon, string Value, Godot.Color? Color, string Tip)[] chips) =>
+        string.Join("    ", chips.Select(c => $"[hint={c.Tip}]{Ui.Img(c.Icon, 16)} {(c.Color is Godot.Color col ? Ui.C(col, $"[b]{c.Value}[/b]") : $"[b]{c.Value}[/b]")}[/hint]"));
+
+    /// <summary>Days a lead has held, as filled and empty pips.</summary>
+    private static string Pips(int have, int need)
+    {
+        int n = Math.Min(8, need), full = (int)Math.Round(Math.Min(1.0, (double)have / need) * n);
+        return Ui.C(Ui.Gold, new string('●', full)) + Ui.C(Ui.Ink2, new string('○', n - full));
+    }
+
+    /// <summary>The icon for a lore source, from its words (Research.Sources).</summary>
+    private static string SourceIcon(string why) =>
+        why.Contains("clerk") ? "mandate"
+        : why.Contains("townsfolk") ? "population"
+        : why.Contains("hedge") || why.Contains("wizard") ? "lore"
+        : why.Contains("caster") ? "favour"
+        : why.Contains("spellbook") ? "books"
+        : why.Contains("already knows") ? "tab-library"
+        : why.Contains(" the ") || why.Contains('×') ? "tab-build"
+        : "tab-institutions";
 
     private static string Effects(DiscoveryDef d)
     {
@@ -104,15 +166,15 @@ public partial class Main
         foreach (var (good, f) in d.Yields) e.Add($"{good} {(f >= 1 ? "+" : "−")}{Math.Round(Math.Abs(f - 1) * 100)}%");
         if (d.Mood != 0) e.Add($"mood {(d.Mood > 0 ? "+" : "−")}{Js.Str(Math.Abs(d.Mood))}");
         if (d.Arrivals != 0) e.Add("more settlers");
-        if (d.Build != 0) e.Add($"building {Math.Round(d.Build * 100)}% faster");
-        if (d.Gold != 0) e.Add($"{(d.Gold > 0 ? "+" : "−")}{Js.Str(Math.Abs(d.Gold))}g a day");
+        if (d.Build != 0) e.Add($"build +{Math.Round(d.Build * 100)}%");
+        if (d.Gold != 0) e.Add($"{(d.Gold > 0 ? "+" : "−")}{Js.Str(Math.Abs(d.Gold))}g/day");
         if (d.Heroes != 0) e.Add($"+{d.Heroes} {(d.Heroes == 1 ? "hero" : "heroes")}");
         if (d.Defence != 0) e.Add($"defence +{Js.Str(d.Defence)}");
-        if (d.Fireproof != 0) e.Add($"fires {Math.Round(d.Fireproof * 100)}% less likely to catch");
-        if (d.Ward != 0) e.Add($"undercity stirs {Math.Round(d.Ward * 100)}% slower");
-        if (d.Xp != 0) e.Add("new heroes better trained");
-        if (d.Scry != 0) e.Add($"scrying {Math.Round(d.Scry * 100)}% cheaper");
-        if (d.Lore != 0) e.Add($"+{Js.Str(d.Lore)} lore a day");
-        return e.Count == 0 ? "" : $"({string.Join(", ", e)})";
+        if (d.Fireproof != 0) e.Add($"fires −{Math.Round(d.Fireproof * 100)}%");
+        if (d.Ward != 0) e.Add($"undercity −{Math.Round(d.Ward * 100)}%");
+        if (d.Xp != 0) e.Add("better-trained heroes");
+        if (d.Scry != 0) e.Add($"scrying −{Math.Round(d.Scry * 100)}%");
+        if (d.Lore != 0) e.Add($"+{Js.Str(d.Lore)} lore/day");
+        return string.Join(" · ", e);
     }
 }

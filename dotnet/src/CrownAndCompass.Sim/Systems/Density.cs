@@ -2,7 +2,7 @@ namespace CrownAndCompass.Sim.Systems;
 
 /// <summary>
 /// How tightly the town may build (city.json "densities"), after the way real and storied cities grow:
-/// a Phandalin of cottages and gardens, then a walled core like Baldur's Gate's Lower City where tall houses
+/// a frontier village of cottages and gardens, then a walled core like a great port's lower city where tall houses
 /// crowd wall to wall, while lower sprawl spills out past the gates. Density is painted with the zone
 /// (<see cref="Land.Brush"/>) and kept per plan cell; it decides how tall a house may grow
 /// (<see cref="BuildingDef.Density"/>), whether neighbours keep a lane between them, what the land is

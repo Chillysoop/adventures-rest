@@ -40,8 +40,33 @@ public partial class Heroes : Node3D
         public int Count;
     }
 
-    private static ShaderMaterial Material => Mats.Hero;
-    private static ShaderMaterial AuraMaterial => Mats.Aura;
+    private ShaderMaterial Material = Mats.Hero;
+    private ShaderMaterial AuraMaterial = Mats.Aura;
+
+    /// <summary>
+    /// Heroes drawn in a world of their own (the council chamber): their own copies of the materials, so their palette
+    /// doesn't fight the map's, with no fog of war and the painted look on. Call before the node enters the tree.
+    /// </summary>
+    public void OwnMaterials(Texture2D noise)
+    {
+        var clear = ImageTexture.CreateFromImage(Image.CreateEmpty(1, 1, false, Image.Format.Rgba8));
+        Material = (ShaderMaterial)Mats.Hero.Duplicate();
+        AuraMaterial = (ShaderMaterial)Mats.Aura.Duplicate();
+        foreach (var m in new[] { Material, AuraMaterial })
+        {
+            m.SetShaderParameter("fog_tex", clear);
+            m.SetShaderParameter("noise_tex", noise);
+            m.SetShaderParameter("night", 0.0);
+            m.SetShaderParameter("strategic", 0.0);
+            m.SetShaderParameter("toon", 1.0);
+        }
+        var ink = new ShaderMaterial { Shader = GD.Load<Shader>("res://assets/shaders/ink.gdshader") };
+        ink.SetShaderParameter("fog_tex", clear);
+        ink.SetShaderParameter("noise_tex", noise);
+        ink.SetShaderParameter("rigged", 1.0f);
+        ink.SetShaderParameter("width", 0.0035f);
+        Material.NextPass = ink;
+    }
 
     private readonly Batch[] _bodies = new Batch[Enum.GetValues<Frame>().Length];
     private readonly Batch[] _heads = new Batch[Enum.GetValues<Head>().Length];

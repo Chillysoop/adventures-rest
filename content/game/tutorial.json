@@ -129,16 +129,16 @@
     {
       "id": "war",
       "title": "Ready the walls",
-      "text": "Something will come for Briarford sooner or later. [b]War[/b] shows the threat and the walls: start with a timber palisade and watchtowers, then raise stone walls, a gatehouse, a moat and barracks in the walls as the town grows. Builders keep a clear strip along the wall line so the stone, towers and moat have room later. Raiders strike when your heroes are away, so don't send everyone at once.",
-      "point": "tab:War",
-      "until": "tab:War",
-      "teaches": ["tab:War", "command:BuildDefense"]
+      "text": "Something will come for Briarford sooner or later. [b]Defence[/b] holds the guard and the walls:\n• Palisade and watchtowers first\n• Stone walls, gatehouse, moat and barracks as the town grows\n• Raiders strike when heroes are away, so don't send everyone at once",
+      "point": "tab:Defence",
+      "until": "tab:Defence",
+      "teaches": ["tab:Defence", "command:BuildDefense"]
     },
     {
       "id": "guard-flags",
       "title": "Post the guard",
-      "text": "You don't steer the watch by hand: you give it orders. Press [b]G[/b] (or [b]Plant[/b] under Town guard in [b]War[/b]) and click anywhere to plant a flag; the nearest guards walk there and stand watch. Raiders shy away from what a flag covers, and what it covers holds better. Click a flag to stand it down. Try planting one by your farms.",
-      "point": "tab:War",
+      "text": "You don't steer the watch by hand: you give it orders. Press [b]G[/b] (or [b]Plant[/b] under Town guard in [b]Defence[/b]) and click anywhere to plant a flag; the nearest guards walk there and stand watch. Raiders shy away from what a flag covers, and what it covers holds better. Click a flag to stand it down. Try planting one by your farms.",
+      "point": "tab:Defence",
       "until": "flag",
       "teaches": ["key:G", "command:PlantFlag", "command:StandDown"]
     },
@@ -178,6 +178,15 @@
       "title": "The town is yours",
       "text": "That's the tour. From here, tips come one at a time when they matter: the first raid, the first story, the first guild. Good luck, Mayor.",
       "teaches": []
+    },
+    {
+      "id": "known-foes",
+      "title": "First contact",
+      "text": "Whoever the town meets shows up:\n• Foes under [b]War[/b], once someone has seen, heard of or fought them\n• Powers and peoples under [b]Diplomacy[/b]\n• Scouts, scrying, parties and witnesses find the rest",
+      "point": "tab:War",
+      "until": "tab:War",
+      "when": "count:Discovered",
+      "teaches": ["tab:War"]
     },
     {
       "id": "discoveries",
@@ -473,8 +482,8 @@
     {
       "id": "guard-duty",
       "title": "Heroes on guard",
-      "text": "Keep heroes home to guard the town. In the [b]War[/b] tab, or on a hero's sheet:\n• [b]Walls[/b]: stronger against raids and sieges; they meet the warlord first.\n• [b]Streets[/b]: the watch catches more spies, knives, thieves and fire-raisers.\nThey earn a daily wage and take no bounties. [b]Arm the guard[/b] hands them the armory's best in one click.",
-      "point": "tab:War",
+      "text": "Keep heroes home to guard the town. In the [b]Defence[/b] tab, or on a hero's sheet:\n• [b]Walls[/b]: stronger against raids and sieges; they meet the warlord first.\n• [b]Streets[/b]: the watch catches more spies, knives, thieves and fire-raisers.\nThey earn a daily wage and take no bounties. [b]Arm the guard[/b] hands them the armory's best in one click.",
+      "point": "tab:Defence",
       "when": "day:20",
       "until": "duty",
       "teaches": ["command:SetDuty"]
@@ -506,8 +515,8 @@
     {
       "id": "clockwork",
       "title": "Clockwork wardens",
-      "text": "A city with a mage tower or a guildhall can build [b]clockwork wardens[/b] under the [b]War[/b] tab. They never sleep and can't be bribed, so they help the watch catch a schemer's agents even when its captain is crooked. But townsfolk don't like being watched by brass, and the Quiet Hand or a scheming foe may try to steal one. A mage tower keeps the keys safer.",
-      "point": "tab:War",
+      "text": "A city with a mage tower or a guildhall can build [b]clockwork wardens[/b] under the [b]Defence[/b] tab. They never sleep and can't be bribed, so they help the watch catch a schemer's agents even when its captain is crooked. But townsfolk don't like being watched by brass, and the Quiet Hand or a scheming foe may try to steal one. A mage tower keeps the keys safer.",
+      "point": "tab:Defence",
       "when": "day:300",
       "teaches": ["command:BuildWarden", "command:ScrapWarden"]
     },
@@ -658,7 +667,7 @@
     {
       "id": "library",
       "title": "The library and its scholars",
-      "text": "Your scholars can study something new. Open [b]Library[/b]. Each town grows its own tree of discoveries: smiths, weavers and scribes, neighbours of other peoples, trade routes, temples and libraries each reveal ideas of their own. Pick one to [b]study[/b] (the first time pays its commission) and set how generously the council [b]funds[/b] the scholars. Spellbooks from delves and caravans make the library stronger, draw stronger wizards to town and open higher circles of town magic.",
+      "text": "Your scholars can study something new. Open [b]Library[/b].\n• Ideas appear from your town and the world: newcomers, trade, buildings, books, explorers' finds, monsters your companies slay\n• Pick one to [b]study[/b]: scholars, books, mages and finds move it, gold can't buy it\n• [b]Funding[/b] only speeds them a little",
       "point": "tab:Library",
       "until": "tab:Library",
       "when": "alert:scholars",
@@ -690,7 +699,7 @@
     {
       "id": "institutions-discovery",
       "title": "Institutions to discover",
-      "text": "The town starts knowing none of its [b]institutions[/b]: [b]0 of 23[/b].\nThey come to light from\n• heroes and folk who settle\n• crafts and trade\n• sites cleared\n• a bigger charter\nHeard-of ones show what they still need, then rise from the Government build bar.",
+      "text": "The town starts knowing none of its [b]institutions[/b].\nThey come to light from\n• heroes and folk who settle\n• crafts and trade\n• sites cleared\n• a bigger charter\nHeard-of ones show what they still need, then rise from the Government build bar.",
       "point": "tab:Institutions",
       "when": "count:InstitutionsSeen",
       "teaches": []
@@ -717,6 +726,17 @@
       "point": "buildbar",
       "until": "dense",
       "when": "density",
+      "teaches": []
+    },
+    {"id": "ruins", "title": "Ruins to restore", "text": "Some of the lairs near town are the ruins of old works: an aqueduct, a gatehouse, a watchtower, a star fort. Once a company clears one, an alert says it can be restored. Click it on the map, or open the [b]Campaign[/b] window, and choose [b]Restore[/b]: for a little gold it serves the town for good, with clean water, defence or an early warning.", "when": "alert:ruin", "point": "alerts", "teaches": ["command:RestoreRuin"]},
+    {"id": "rope-bridges", "title": "Rope bridges", "text": "Gorges on the roads have rope bridges across them, so companies cross where they would otherwise climb down and up. Raiders sometimes cut one, and an alert says so: companies then go the long way round. Open the [b]Campaign[/b] window and choose [b]Rebuild in stone[/b]. A stone bridge can never be cut again.", "when": "alert:bridge", "point": "alerts", "teaches": ["command:RebuildBridge"]},
+    {
+      "id": "council-chamber",
+      "title": "The council chamber",
+      "text": "[b]Council[/b] opens on the chamber, your councillors at their seats.\n• Raised hand: aye. Thumbs down: nay.\n• Heart on the plate: loyalty.\n• Badges over heads: who moved it, secrets you hold, traitor talk.\n• Click a councillor for their card.",
+      "point": "tab:Council",
+      "until": "tab:Council",
+      "when": "day:3",
       "teaches": []
     },
     {

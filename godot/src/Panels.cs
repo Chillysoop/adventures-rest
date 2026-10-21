@@ -14,20 +14,62 @@ public partial class Main
 
     // ---------- War ----------
 
+    /// <summary>The warband as the town sees it: quiet until its scouts have been seen (<see cref="Discovery"/>).</summary>
+    private static ThreatStage SeenStage(Town t) => Discovery.Known(t, Discovery.Warband) ? t.Enemy.Stage : ThreatStage.Quiet;
+
+    /// <summary>The foes the town has met, and nothing it hasn't: the warband once seen, then every known menace.</summary>
     private void RenderWar()
     {
         var p = _panes[Tab.War];
         var t = _sim.Town;
+        bool band = Threat.IsActive(t) && Discovery.Known(t, Discovery.Warband);
+        var foes = Discovery.KnownMenaces(t)
+            .Where(m => m.Origin != Menaces.FromWarband)
+            .OrderByDescending(m => m.ArrivalTick != null)
+            .ThenByDescending(m => m.BigBad)
+            .ThenByDescending(m => m.Stage)
+            .ThenByDescending(m => m.Power)
+            .ThenBy(m => m.Id)
+            .ToList();
+        int home = t.Heroes.Count(a => !a.IsAway);
+
+        p.Begin();
+        if (!band && foes.Count == 0)
+        {
+            p.Card($"{Ui.Img("foe-unseen", 30)}  [font_size=17][b]No foes known[/b][/font_size]\n{Ui.C(Ui.Ink2, "[font_size=13]• Scouts and scrying find them\n• Witnesses and messengers bring word\n• Parties meet them on the road[/font_size]")}");
+            p.Buttons(("Defence", true, false, () => OpenWindow(Tab.Defence)), ("Bounty board", true, false, () => OpenWindow(Tab.Bounties)));
+        }
+        if (band) RenderWarband(p, t);
+        if (foes.Count > 0)
+        {
+            p.Heading("Known foes");
+            foreach (var m in foes)
+            {
+                var (word, color) = MenaceStages[m.Stage];
+                string march = m.ArrivalTick is int at && at > t.Tick ? "  " + Tag($"marching, {Ui.Days((int)Math.Ceiling((at - t.Tick) / 24.0))}", Ui.Bad) : "";
+                string big = m.BigBad ? Tag("big bad", Ui.Bad) + "  " : "";
+                var met = Discovery.Of(t, Discovery.Key(m));
+                string how = met != null ? $"{Ui.Esc(Ui.Cap(met.How))} day {met.Day}" : "";
+                string seat = Quests.Site(t, m.SeatId) is { Known: not SiteKnowledge.Unheard } ? $" · {Ui.Esc(m.SeatName)}" : "";
+                FoeCard(p, [m], $"{Ui.KindIcon(m.Kind, 20)}[b]{Ui.Esc(Ui.Cap(m.Name))}[/b]  {big}{Tag(word, color)}  {Tag($"level {m.Level}")}{march}\n{Ui.C(Ui.Ink2, $"[font_size=12]{how}{seat}[/font_size]")}", m.ArrivalTick != null ? Ui.Bad : color);
+            }
+        }
+        p.Heading("Heroes");
+        p.Row($"[b]Heroes in town[/b]  {Tag(home.ToString(), home == 0 ? Ui.Bad : Ui.Ink)}\n{Ui.C(Ui.Ink2, "[font_size=12]Only heroes can kill a warlord at the walls.[/font_size]")}");
+        RenderSellswords(p, t);
+        p.Commit();
+    }
+
+    /// <summary>The warband's card and its guessed strength against the town's.</summary>
+    private void RenderWarband(Pane p, Town t)
+    {
         var stage = Stages[t.Enemy.Stage];
         double? est = Threat.EstimatedStrength(t);
         double def = Threat.Defense(t);
         double scale = Math.Max(Math.Max(def, est ?? 0), 1);
         var camp = t.Sites.FirstOrDefault(s => s.Def.Id == t.Content.Enemy.Outpost.Id);
-        int home = t.Heroes.Count(a => !a.IsAway);
-
-        p.Begin();
         string arrival = t.Enemy.Stage == ThreatStage.Marching && t.Enemy.ArrivalTick is int at
-            ? "\n" + Ui.C(Ui.Bad, $"[b]They reach the {Garrison.Place(t, t.Enemy.Approach)} in {Ui.Days((int)Math.Ceiling((at - t.Tick) / 24.0))}. Call the watch to arms there; heroes in town will face the warlord.[/b]")
+            ? "\n" + Ui.C(Ui.Bad, $"[b]At the {Garrison.Place(t, t.Enemy.Approach)} in {Ui.Days((int)Math.Ceiling((at - t.Tick) / 24.0))}.[/b] Call the watch to arms there in Defence.")
             : "";
         var threat = Assess.WarbandThreat(t);
         string card = $"{Ui.KindIcon("warband", 22)}[font_size=17][b]{Ui.Esc(Ui.Cap(t.Content.Enemy.Name))}[/b][/font_size]\n{stage.Text}{arrival}";
@@ -46,25 +88,16 @@ public partial class Main
             panel.AddChild(h);
             return panel;
         });
-        p.Heading("Strength");
-        // A broken warband has no strength left to guess at.
-        if (Threat.IsActive(t) && est is double e) p.Meter("Warband", 100 * e / scale, $"~{Math.Round(e)}", true);
-        else if (Threat.IsActive(t)) p.Text($"{Ui.C(Ui.Ink2, "Warband")}    [i]Unknown. Nobody has seen it yet.[/i]", 13);
+        if (est is double e) p.Meter("Warband", 100 * e / scale, $"~{Math.Round(e)}", true);
         p.Meter("Your defence", 100 * def / scale, $"{Math.Round(def)}");
-        p.Note($"Defence counts the watch, heroes in town, a militia of townsfolk, and the walls (×{Threat.Fortification(t):0.00}).{(Threat.IsActive(t) ? " The warband grows while dungeons go uncleared." : "")}");
-        RenderGuard(p, t);
-        RenderWorks(p, t);
-        p.Heading("Heroes");
-        p.Row($"[b]Heroes in town[/b]  {Tag(home.ToString())}\n{Ui.C(Ui.Ink2, "[font_size=12]Only heroes can kill the warlord when he comes.[/font_size]")}");
-        if (camp != null && !camp.Cleared) p.Note("The war camp feeds the warband. Post a bounty on it in the Bounties tab to strike first.");
-        RenderSellswords(p, t);
-        RenderClockwork(p, t);
-        p.Commit();
+        if (camp != null && !camp.Cleared) p.Note("• The war camp feeds the warband: post a bounty on it");
     }
 
     /// <summary>Sellsword companies: hire one onto the walls, send it against a menace, or pay it off.</summary>
     private void RenderSellswords(Pane p, Town t)
     {
+        // None to hire yet and none hired: nothing to show.
+        if (t.Hires.Count == 0 && Mercenaries.Rules(t).Companies.All(c => c.Tier != "" && !City.Reached(t, c.Tier))) return;
         p.Heading("Sellswords");
         var targets = Mercenaries.Targets(t);
         foreach (var c in Mercenaries.Rules(t).Companies)
@@ -136,45 +169,94 @@ public partial class Main
 
     // ---------- Council ----------
 
+    private Chamber? _chamber;
+
+    /// <summary>The seat picked in the chamber (its index in <see cref="Town.Seats"/>), or -1.</summary>
+    private int _councilSeat = -1;
+
     private void RenderCouncil()
     {
         var p = _panes[Tab.Council];
         var t = _sim.Town;
         p.Begin();
-        string facts = $"{Tag($"Tax {Math.Round(t.TaxRate * 100)}%", Ui.Ink)}   {Tag($"Watch {t.Watch}", Ui.Ink)}{(t.FestivalDays > 0 ? "   " + Tag("Festival!", Ui.Gold) : "")}";
+        ShowChamber(p, t);
+        RenderCouncillor(p, t);
+        RenderMotion(p, t);
         p.Meter("Mandate", t.Mandate, $"{Math.Round(t.Mandate)}", t.Mandate < 30);
-        p.Note("The townsfolk's approval of you. It follows their mood, fades back toward 50 unless you keep earning it, and falls when you rule by decree. A popular mayor draws settlers.");
-        p.Text(facts, 12);
+        p.Note("Fades back toward 50 unless you keep earning it.");
+        p.Text($"{Tag($"Tax {Math.Round(t.TaxRate * 100)}%", Ui.Ink)}   {Tag($"Watch {t.Watch}", Ui.Ink)}{(t.FestivalDays > 0 ? "   " + Tag("Festival!", Ui.Gold) : "")}", 12);
         RenderTaxes(p, t);
         var festive = Council.FestivalBlocked(t);
         p.Buttons(($"Hold a festival · {Js.Str(Council.FestivalCost(t))}g", festive == null, false, () => Act(() => _sim.HoldFestival())));
         p.Note(festive == null
             ? $"Mood up for {t.Content.Council.FestivalDays} days · Mandate +{Js.Str(t.Content.Council.FestivalMandate)}"
             : Ui.Cap(festive));
-        RenderMotion(p, t);
-        p.Heading("Seats");
-        foreach (var s in t.Seats)
-        {
-            if (s.HolderId is not int holder)
-            {
-                p.Row($"{Ui.C(Ui.Ink2, $"[b]{Ui.Esc(s.Def.Title)}[/b]")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{(t.Population < s.Def.UnlockPopulation ? $"Opens when {s.Def.UnlockPopulation} households live here" : "Vacant, to be filled tomorrow")}[/font_size]")}");
-                continue;
-            }
-            var a = t.Agent(holder);
-            string mood = s.Loyalty >= 60 ? "Loyal" : s.Loyalty >= 25 ? "Wary" : "Disloyal";
-            int skill = Council.Competence(t, s);
-            p.Row($"[b]{Ui.Esc(s.Def.Title)}[/b]  {Tag(mood, s.Loyalty < 25 ? Ui.Bad : s.Loyalty >= 60 ? Ui.Good : Ui.Ink2)}\n{AgentLink(a)} {Ui.C(Ui.Ink2, $"[font_size=12]· {a.Race} {a.Profession} · skill {(skill >= 0 ? "+" : "")}{skill} · loyalty {Math.Round(s.Loyalty)}\nMinds {Ui.Esc(s.Def.Portfolio)}. Wants {Ui.Esc(s.Def.Agenda)}.[/font_size]")}");
-            RenderSecret(p, t, a);
-        }
         RenderGuilds(p, t);
         var history = t.Motions.Where(m => m.Status != MotionStatus.Pending).TakeLast(8).Reverse().ToList();
         if (history.Count > 0)
         {
             p.Heading("Past motions");
-            foreach (var m in history)
-                p.Text($"{Ui.C(Ui.Ink2, $"[font_size=11]Day {m.ProposedTick / 24 + 1}[/font_size]")}  {Ui.Esc(Ui.Cap(m.Text))}  {Tag(m.Status == MotionStatus.Passed ? $"passed{(m.Decree ? " by decree" : "")}" : $"failed{(m.Decree ? " by decree" : "")}", m.Status == MotionStatus.Passed ? Ui.Good : Ui.Bad)}", 13);
+            p.Text(string.Join("\n", history.Select(m =>
+                $"{Ui.Img(m.Status == MotionStatus.Passed ? "vote-aye" : "vote-nay", 14)} {Ui.Esc(Ui.Cap(m.Text))}{(m.Decree ? " " + Ui.Img("decree", 13) : "")}  {Ui.C(Ui.Ink2, $"[font_size=11]day {m.ProposedTick / 24 + 1}[/font_size]")}")), 13);
         }
         p.Commit();
+    }
+
+    /// <summary>The hall at the head of the window: every seat, who holds it, how loyal they are and how they vote.</summary>
+    private void ShowChamber(Pane p, Town t)
+    {
+        if (_chamber == null)
+        {
+            _chamber = new Chamber();
+            _chamber.Picked = i =>
+            {
+                _councilSeat = _councilSeat == i ? -1 : i;
+                _dirty = true;
+            };
+        }
+        var pending = Council.PendingMotion(t);
+        var suspects = Infiltration.Whispered(t).SelectMany(w => new[] { w.A.Id, w.B.Id }).ToHashSet();
+        var seats = t.Seats.Select(s =>
+        {
+            bool locked = t.Population < s.Def.UnlockPopulation;
+            if (s.HolderId is not int id)
+                return new Chamber.SeatView(s.Def.Id, s.Def.Title, s.Def.Ability, null, "", "", 0, locked, s.Def.UnlockPopulation, null, false, false, false,
+                    locked ? $"{s.Def.Title}\nOpens at {s.Def.UnlockPopulation} households" : $"{s.Def.Title}\nEmpty: filled tomorrow");
+            var a = t.Agent(id);
+            var vote = pending?.Votes.FirstOrDefault(v => v.Seat == s.Def.Id);
+            int skill = Council.Competence(t, s);
+            return new Chamber.SeatView(s.Def.Id, s.Def.Title, s.Def.Ability, id, a.GivenName, a.Race, s.Loyalty, false, 0, vote?.Yes,
+                pending?.ProposerId == id, Secrets.Held(t, id) != null, suspects.Contains(id),
+                $"{s.Def.Title}: {a.Name}\n{Ui.Cap(a.Race)} {a.Profession}\n{LoyaltyWord(s.Loyalty)} {Math.Round(s.Loyalty)} · skill {(skill >= 0 ? "+" : "")}{skill}\nClick for their card");
+        }).ToList();
+        if (_councilSeat >= seats.Count) _councilSeat = -1;
+        _chamber.Selected = _councilSeat;
+        _chamber.Show(seats);
+        p.Add("chamber", () => _chamber);
+    }
+
+    private static string LoyaltyWord(double loyalty) => loyalty >= 60 ? "Loyal" : loyalty >= 25 ? "Wary" : "Disloyal";
+
+    /// <summary>The card of the councillor picked in the chamber: who they are, what they mind and want, and the levers on them.</summary>
+    private void RenderCouncillor(Pane p, Town t)
+    {
+        if (_councilSeat < 0) return;
+        var s = t.Seats[_councilSeat];
+        string colour = Ui.Hex(Chamber.SeatColour(s.Def.Id, s.Def.Ability));
+        string title = $"[color={colour}][b]{Ui.Esc(s.Def.Title)}[/b][/color]";
+        if (s.HolderId is not int holder)
+        {
+            p.Card(t.Population < s.Def.UnlockPopulation
+                ? $"{title}\n{Ui.Img("seat-locked")} Opens at {Ui.Img("population")} {s.Def.UnlockPopulation} households"
+                : $"{title}\n{Ui.C(Ui.Ink2, "Empty: filled tomorrow")}", Chamber.SeatColour(s.Def.Id, s.Def.Ability));
+            return;
+        }
+        var a = t.Agent(holder);
+        int skill = Council.Competence(t, s);
+        p.Card($"{title}  {AgentLink(a)}  {Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Ui.Cap(a.Race))} {Ui.Esc(a.Profession)}[/font_size]")}\n"
+            + $"{Ui.Img(Chamber.LoyalIcon(s.Loyalty))} {Tag($"{LoyaltyWord(s.Loyalty)} {Math.Round(s.Loyalty)}", Chamber.Loyal(s.Loyalty))}    {Ui.Img("skill")} {Tag($"{(skill >= 0 ? "+" : "")}{skill}", Ui.Ink)}\n"
+            + $"[font_size=12]• Minds {Ui.Esc(s.Def.Portfolio)}\n• Wants {Ui.Esc(s.Def.Agenda)}[/font_size]", Chamber.SeatColour(s.Def.Id, s.Def.Ability));
+        RenderSecret(p, t, a);
     }
 
     /// <summary>The motion before the council, and any traitor the taverns whisper of: the council window's and the tray's.</summary>
@@ -182,23 +264,25 @@ public partial class Main
     {
         var pending = Council.PendingMotion(t);
         p.Heading("Before the council");
-        if (pending == null) p.Note("No motion before the council. Councillors bring one when their portfolio needs it.");
+        if (pending == null) p.Note("No motion. Councillors bring one when their portfolio needs it.");
         else
         {
             int yes = pending.Votes.Count(v => v.Yes), no = pending.Votes.Count - yes;
             bool? majority = yes == no ? null : yes > no;
             int hoursLeft = pending.DeadlineTick - t.Tick;
-            var votes = string.Join("\n", pending.Votes.Select(v =>
-            {
-                var seat = t.Seats.First(x => x.Def.Id == v.Seat);
-                return $"{Ui.Esc(seat.Def.Title)}   {Ui.C(v.Yes ? Ui.Good : Ui.Bad, v.Yes ? "[b]Aye[/b]" : "[b]Nay[/b]")}";
-            }));
             string Decree(bool signIt) => majority != null && majority != signIt ? " (decree)" : "";
             int days = (int)Math.Ceiling(hoursLeft / 24.0);
-            p.Card($"[b]{Ui.Esc(Ui.Cap(pending.Text))}.[/b]\n{Ui.C(Ui.Ink2, $"Moved by {AgentLink(t.Agent(pending.ProposerId))}. {(pending.Cost > 0 ? $"Costs {pending.Cost}g. " : "")}If you say nothing in {days} {(hoursLeft > 24 ? "days" : "day")}, the council's vote stands.")}\n{votes}", Ui.Gold);
+            var names = string.Join("   ", pending.Votes.Select(v =>
+            {
+                var seat = t.Seats.First(x => x.Def.Id == v.Seat);
+                string who = seat.HolderId is int h ? t.Agent(h).GivenName : seat.Def.Title;
+                return $"{Ui.Img(v.Yes ? "vote-aye" : "vote-nay", 14)} {Ui.Esc(who)}";
+            }));
+            p.Card($"{Ui.Img("tab-council", 16)} [b]{Ui.Esc(Ui.Cap(pending.Text))}[/b]\n"
+                + $"[font_size=12]{Ui.Img("decree", 14)} {AgentLink(t.Agent(pending.ProposerId))}{(pending.Cost > 0 ? $"   {pending.Cost}g" : "")}   {Ui.Img("deadline", 14)} {Ui.Days(days)}\n{names}[/font_size]", Ui.Gold);
             int id = pending.Id;
             p.Buttons(($"Sign{Decree(true)}", true, true, () => Act(() => _sim.DecideMotion(id, true))), ($"Veto{Decree(false)}", true, false, () => Act(() => _sim.DecideMotion(id, false))));
-            p.Note("Going against the council's majority is a decree: it costs Mandate and angers the councillors you overrule.");
+            if (majority != null) p.Note($"Silence lets the vote stand. A decree against the majority costs Mandate and angers the councillors overruled.");
             // A secret in hand swings a councillor's vote, so the mayor can carry the hall without a decree.
             var levers = pending.Votes
                 .Where(v => v.Seat != pending.Proposer && t.Seats.First(x => x.Def.Id == v.Seat).HolderId is int h && Secrets.Held(t, h) != null)
@@ -207,12 +291,12 @@ public partial class Main
             if (levers.Count > 0)
             {
                 p.Buttons([.. levers.Select(l => ($"Press {t.Agent(l.h).GivenName} to vote {(l.v.Yes ? "nay" : "aye")}", true, false, (Action)(() => Act(() => _sim.PressCouncillor(l.h, !l.v.Yes)))))]);
-                p.Note($"You know what they hide. Pressing them spends it: they vote your way, never forgive it, and {Math.Round(t.Content.Council.Secrets.Scandal * 100)}% of the time word gets out.");
+                p.Note($"{Ui.Img("press", 13)} Spends the secret: they vote your way, never forgive it, {Math.Round(t.Content.Council.Secrets.Scandal * 100)}% chance word gets out.");
             }
         }
         foreach (var (mole, a, b) in Infiltration.Whispered(t))
         {
-            p.Card($"[b]A traitor on the council[/b]\n{Ui.C(Ui.Ink2, $"The taverns say {AgentLink(a)} or {AgentLink(b)} serves {Ui.Esc(mole.By)}. Name the traitor and they flee; name an honest councillor and they resign, and the council resents it. Wait, and the watch finds the proof while the traitor goes on working.")}", Ui.Bad);
+            p.Card($"{Ui.Img("traitor", 16)} [b]A traitor on the council[/b]\n[font_size=12]• {AgentLink(a)} or {AgentLink(b)} serves {Ui.Esc(mole.By)}\n• Name the traitor: they flee\n• Name the wrong one: they resign, the council resents it\n• Wait: the watch finds proof, the traitor keeps working[/font_size]", Ui.Bad);
             int ia = a.Id, ib = b.Id;
             p.Buttons(($"Name {a.GivenName}", true, false, () => Act(() => _sim.AccuseCouncillor(ia))), ($"Name {b.GivenName}", true, false, () => Act(() => _sim.AccuseCouncillor(ib))));
         }
@@ -226,13 +310,13 @@ public partial class Main
         var known = Secrets.Of(t, id);
         if (Secrets.Held(t, id) is { } held)
         {
-            p.Text($"{Tag("Secret", Ui.Gold)} {Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Ui.Cap(Secrets.Describe(t, held)))}. Press them on a vote before the council, or expose them and they lose the seat.[/font_size]")}", 12);
+            p.Text($"{Ui.Img("secret")} {Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Ui.Cap(Secrets.Describe(t, held)))}.\n• Press them on a vote\n• Expose them: they lose the seat[/font_size]")}", 12);
             p.Buttons(("Expose them", true, false, () => Act(() => _sim.ExposeCouncillor(id))));
             return;
         }
         if (known is { Known: true })
         {
-            p.Text(Ui.C(Ui.Ink2, known.Kind == "" ? "[font_size=12]Your people found nothing to hold over them.[/font_size]" : "[font_size=12]You have spent what you knew about them.[/font_size]"), 12);
+            p.Text(Ui.C(Ui.Ink2, known.Kind == "" ? "[font_size=12]Nothing to hold over them.[/font_size]" : "[font_size=12]You have spent what you knew.[/font_size]"), 12);
             return;
         }
         string? why = Secrets.DigBlocked(t, id);
@@ -669,6 +753,8 @@ public partial class Main
         var live = Watch.LiveOf(t, s);
         var scout = Watch.ScoutAt(t, s.Def.Id);
         p.Text($"[font_size=19][b]{Ui.Esc(Ui.Cap(s.Def.Name))}[/b][/font_size]\n{Ui.C(Ui.Ink2, $"Tier {s.Def.Tier} · {(s.Def.Distance == 0 ? "under the town" : $"{Ui.Days(s.Def.Distance)} away")}")}");
+        if (s.Def.Aloft) p.Text(Ui.C(new Color("cfe3f0"), "[b]A floating isle[/b], drifting above the clouds. Only a company that can fly, or rides the sky dock's airship, can reach it."));
+        if (Ruins.Of(t, s) is { } ruin && !s.Restored) p.Text(Ui.C(Ui.Gold, $"[b]Ruins[/b] of old works. Cleared, the town can restore it for {Js.Str(ruin.Cost)}g, and it {Ui.Esc(ruin.Gives)}."));
         string seen = sight switch
         {
             Sight.Live when scry != null => Ui.C(new Color("b48cff"), $"[b]Scrying[/b] {(scry.CasterId == 0 ? "in the Scrying Pool" : $"by {Ui.Esc(t.Agent(scry.CasterId).Name)}")}, {scry.EndTick - t.Tick} hours left. You see it as it is now."),
@@ -723,6 +809,17 @@ public partial class Main
         string sid = s.Def.Id;
         if (s.Cleared)
         {
+            if (Ruins.Of(t, s) is { } old)
+            {
+                if (s.Restored)
+                {
+                    p.Text(Ui.C(Ui.Good, $"Restored. It {Ui.Esc(old.Gives)}."));
+                    return;
+                }
+                p.Heading("Restore it");
+                p.Buttons(($"Restore it, {Js.Str(old.Cost)}g", t.Treasury >= old.Cost, true, () => Act(() => _sim.RestoreRuin(sid))));
+                p.Note($"Masons put it back in order, and it {old.Gives}. Nothing moves back in.");
+            }
             if (Loyalty.Lord(t, s.Def.Id) is Agent lord)
             {
                 p.Text($"The land of {AgentLink(lord, Loyalty.Styled(t, lord))}, held by their own retainers.");

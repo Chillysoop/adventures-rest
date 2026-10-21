@@ -49,6 +49,7 @@ public static class Lairs
             if (s.Cleared)
             {
                 // A knight's own retainers hold their lands at no cost to the treasury.
+                if (s.Restored) continue;
                 if (s.Held)
                 {
                     if (Loyalty.Lord(town, s.Def.Id) == null) town.Book(TreasuryAccount.Outposts, -r.Outpost.Upkeep);
@@ -65,7 +66,7 @@ public static class Lairs
             var kind = r.Kinds.GetValueOrDefault(s.Def.Kind);
             s.Strength = Math.Min(r.MaxStrength, s.Strength + (kind?.Growth ?? 0.5));
             // The far wilds trouble their own country (World's pleas), not the town.
-            if (s.Generated && s.Def.Distance > 1) continue;
+            if (s.Generated && s.Def.Distance > (town.Content.Foes.Of(s.Def.Foe)?.Reach ?? 1)) continue;
             if (s.Strength >= r.ActAt && town.Tick >= s.NextActTick) Act(town, s, autoMayor);
         }
         Thralls(town);
@@ -235,11 +236,16 @@ public static class Lairs
         s.BandTarget = target.Id;
         s.BandSize = raiders;
         s.LastRaidDay = town.Day;
-        s.NextActTick = town.Tick + r.BandHours;
+        // A sky watch sees them gathering sooner: a day more to plant the flags.
+        int sky = Institutions.SkyWatch(town);
+        s.NextActTick = town.Tick + r.BandHours + sky;
         string who = Rumors.Occupants(town.Content, s.Def);
         string bigger = s.Rebuffs > 0 ? " More of them than last time." : "";
-        Sightings.Report(town, Key(s), Sightings.Band, who, (int)raiders, s.Def.Id, target.Id, Garrison.SectionAt(town, town.Lot(target.LotId).X, town.Lot(target.LotId).Y), 0.5, r.BandHours + 6,
-            $"runs in with news: about {Js.Str(raiders)} {who} coming down {From(s)} toward {target.Name}. They will be there by nightfall.{bigger}");
+        string when = sky >= 12 ? "They will be there tomorrow night." : "They will be there by nightfall.";
+        Sightings.Report(town, Key(s), Sightings.Band, who, (int)raiders, s.Def.Id, target.Id, Garrison.SectionAt(town, town.Lot(target.LotId).X, town.Lot(target.LotId).Y), 0.5, r.BandHours + sky + 6,
+            sky > 0 ? $"flies in with news: about {Js.Str(raiders)} {who} gathering {From(s)}, bound for {target.Name}. {when}{bigger}"
+                : $"runs in with news: about {Js.Str(raiders)} {who} coming down {From(s)} toward {target.Name}. They will be there by nightfall.{bigger}",
+            reporter: sky > 0 ? Sightings.SkyRider(town) : null);
         return false;
     }
 
@@ -273,6 +279,7 @@ public static class Lairs
         {
             s.Strength = Math.Max(0, s.Strength - raiders);
             s.Rebuffs++;
+            town.FallenRaiders += raiders;
             town.Log(LedgerCategory.War, Importance.Notable, $"Some {Js.Str(raiders)} raiders {From(s)} fall on {where}{timing}, and the watch drives them off.");
             town.Tension += 5;
             return true;
@@ -305,6 +312,7 @@ public static class Lairs
             UntilDark(town, s);
             return false;
         }
+        Raise(town, s);
         var target = Outlying(town);
         string where = target?.Name ?? "the fields";
         bool surge = s.Stirs + 1 >= r.EscalateAt && target != null;
@@ -346,6 +354,18 @@ public static class Lairs
         town.Log(LedgerCategory.War, Importance.Major, $"The dead walk {From(s)} into {where}. {Expedition.ListNames(dead.Select(v => v.Name).ToList())} {(dead.Count == 1 ? "is" : "are")} found at dawn, cold and grey.", dead.Select(v => v.Id).ToList());
         town.Tension += 15 * dead.Count;
         return true;
+    }
+
+    /// <summary>A spirit-caller's walk brings back the raiders who fell at the town since its last.</summary>
+    private static void Raise(Town town, SiteState s)
+    {
+        var rules = town.Content.Foes;
+        if (town.Content.Foes.Of(s.Def.Foe) is not { Raises: true } || town.FallenRaiders < 1) return;
+        double gain = Math.Min(rules.RaiseMax, Js.Round(town.FallenRaiders * rules.Raise));
+        int risen = (int)town.FallenRaiders;
+        town.FallenRaiders = 0;
+        s.Strength = Math.Min(Rules(town).MaxStrength, s.Strength + gain);
+        town.Log(LedgerCategory.War, Importance.Notable, rules.RaiseText.Replace("{site}", s.Def.Name).Replace("{n}", Js.Str(risen)).Replace("{town}", town.Name));
     }
 
     // Schemers: a whisper at the well, and a resident steals for them.
@@ -457,6 +477,17 @@ public static class Lairs
             .Where(lm => lm.Damage != null && lm.Cr >= cr[0] && lm.Cr <= cr[^1] && lm.Habitats.Any(s.Def.Habitats.Contains))
             .OrderBy(lm => lm.Id, StringComparer.Ordinal)
             .ToList();
+        // A group's site is retaken by its own kind when one of its bosses fits.
+        if (c.Group(s.Def.Group) is GroupDef g)
+        {
+            var own = leaders.Where(lm => g.Bosses.Contains(lm.Id)).ToList();
+            if (own.Count == 0)
+                own = c.Library.Monsters
+                    .Where(lm => g.Bosses.Contains(lm.Id) && lm.Damage != null && lm.Cr >= cr[0] && lm.Cr <= cr[^1])
+                    .OrderBy(lm => lm.Id, StringComparer.Ordinal)
+                    .ToList();
+            if (own.Count > 0) leaders = own;
+        }
         s.Cleared = false;
         s.ResettleTick = null;
         s.Strength = r.StartStrength;
@@ -538,6 +569,7 @@ public static class Lairs
         if (IsWarCamp(town, s) || Undercity.IsUnder(town, s)) return "no patrol rides there";
         if (!s.Cleared || !s.ThoughtCleared) return "only a cleared site can be patrolled";
         if (s.Held) return "the town holds it already";
+        if (s.Restored) return "the town restored it";
         if (s.Patrolled) return "already patrolled";
         if (town.Sites.Count(x => x.Patrolled) >= p.Max) return $"the town can keep {p.Max} patrols";
         if (town.Treasury < PatrolWage(town, s) * 5) return "not enough gold";

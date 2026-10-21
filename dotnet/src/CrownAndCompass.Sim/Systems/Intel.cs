@@ -37,6 +37,14 @@ public sealed class CompanyState
     public string DeclinedSite { get; set; } = "";
     public double DeclinedReward { get; set; }
     public int DeclinedDay { get; set; } = -1;
+
+    /// <summary>How battered its tabards and banner are, 0 new to 1 rags (<see cref="Heraldry"/>), the ventures that did it, and the day it last came home.</summary>
+    public double Wear { get; set; }
+    public int Ventures { get; set; }
+    public int MendedDay { get; set; }
+
+    /// <summary>The town has heard the company is proud of its rags.</summary>
+    public bool Proud { get; set; }
 }
 
 /// <summary>A good deed on a company's record.</summary>
