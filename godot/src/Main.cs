@@ -121,6 +121,11 @@ public partial class Main : Control
         if (_opts.Tray is string tray && Trays.FirstOrDefault(d => d.Id.Equals(tray, StringComparison.OrdinalIgnoreCase)) is { } td)
             Callable.From(() => OpenTray(td.Id)).CallDeferred();
         if (_opts.Stat is int stat) Callable.From(() => { RenderHeader(); ShowStatTip(stat); }).CallDeferred();
+        if (_opts.Asks)
+        {
+            foreach (var area in Sim.Systems.Stewards.Areas.Where(a => a.CanAsk)) _sim.SetSteward(area.Id, Sim.Systems.StewardMode.Ask);
+            for (int d = 0; d < 20 && _sim.Town.Stewards.Asks.Count < 2; d++) _sim.RunDays(1);
+        }
         if (_opts.Site is string site) Select(Selection.Site(site));
         if (_opts.Wall is int wall) Select(Selection.Wall(wall));
         if (_opts.Strike) ShowStrike(true);
@@ -205,7 +210,7 @@ public partial class Main : Control
         if (_opts.Storytellers) PickStoryteller(false);
         if (_opts.History is string power) OpenHistory(power == "" ? null : power);
         if (_opts.Glossary is string entry) OpenGlossary(entry == "" ? null : entry);
-        if (_opts.Settings) OpenSettings();
+        if (_opts.Settings) OpenSettings(_opts.SettingsTab);
         for (int i = 0; i < _opts.Keywords.Count; i++)
         {
             var at = new Vector2(GetViewportRect().Size.X - 360 * (i + 1) - 20, 150 + 40 * i);

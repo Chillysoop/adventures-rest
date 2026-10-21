@@ -38,7 +38,7 @@ public partial class Main
     {
         var area = Stewards.Area(a.Area);
         bool open = _askOpen == a.Id;
-        var card = new PanelContainer { CustomMinimumSize = new Vector2(360, 0), MouseFilter = MouseFilterEnum.Stop };
+        var card = new PanelContainer { CustomMinimumSize = new Vector2(400, 0), MouseFilter = MouseFilterEnum.Stop };
         card.AddThemeStyleboxOverride("panel", Ui.Box(new Color(0.08f, 0.06f, 0.04f, 0.88f), Ui.Gold, 8, 1, 10, 6));
         var col = new VBoxContainer();
         col.AddThemeConstantOverride("separation", 4);
@@ -48,7 +48,7 @@ public partial class Main
         col.AddChild(row);
         row.AddChild(new TextureRect { Texture = Ui.Icon(area.Icon), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2(20, 20), SizeFlagsVertical = SizeFlags.ShrinkCenter, TooltipText = $"{area.Name} steward asks" });
         int id = a.Id;
-        var title = new Button { Text = a.Title, Flat = true, Alignment = HorizontalAlignment.Left, ClipText = true, SizeFlagsHorizontal = SizeFlags.ExpandFill, FocusMode = FocusModeEnum.None, TooltipText = a.Why == "" ? area.Blurb : a.Why };
+        var title = new Button { Text = a.Title, Flat = true, Alignment = HorizontalAlignment.Left, AutowrapMode = TextServer.AutowrapMode.WordSmart, SizeFlagsHorizontal = SizeFlags.ExpandFill, FocusMode = FocusModeEnum.None, TooltipText = a.Why == "" ? area.Blurb : a.Why };
         title.AddThemeFontSizeOverride("font_size", 13);
         title.Pressed += () =>
         {
