@@ -44,6 +44,7 @@ public partial class Main
 
         RenderLevy(p, t);
         RenderAllies(p, t);
+        RenderCampaigns(p, t);
 
         p.Heading("Raise");
         var units = t.Content.Army.Units.Where(u => !u.IsLevy).ToList();

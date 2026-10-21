@@ -31,6 +31,14 @@ public partial class Crowd
     /// <summary>Where the lines meet: out from the wall on the side the foe came, along the road.</summary>
     public (Vector2 At, Vector2 Out) FieldSpot(Town town, FieldBattle b)
     {
+        // Before a settlement's gates when the host marched on one.
+        if (Conquest.Target(town, b.Foe) is { } target)
+        {
+            var pin = Geo.SettlementPin(town, target);
+            var away = pin - Geo.Center;
+            var dir = away.LengthSquared() > 1e-6f ? away.Normalized() : Vector2.Down;
+            return (pin - dir * 5f, dir);
+        }
         // From the sim's wall line, so the spot is the same before the wall walk is built.
         var wall = OnWall(town, null, b.Approach, 0.5f);
         var o = Outward(wall);

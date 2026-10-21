@@ -136,4 +136,66 @@ public partial class Main
               (b.Goals.Count > 0 ? $"\n{string.Join("   ", goals)}" : "") + "[/font_size]",
             ("Watch", true, false, () => { _map.Crowd.WatchField(b); _map.LookAt(_map.Crowd.FieldSpot(t, b).At, 16); }));
     }
+
+    /// <summary>
+    /// Campaigns: won settlements waiting on the mayor's word, the ones the town holds (resistance, tribute, garrison),
+    /// allies' asks, and the settlements the host could march on.
+    /// </summary>
+    private void RenderCampaigns(Pane p, Town t)
+    {
+        var targets = Conquest.Targets(t);
+        if (t.Army.Regiments.Count == 0 && t.Army.Held.Count == 0 && t.Army.Pending.Count == 0) return;
+        if (targets.Count == 0 && t.Army.Held.Count == 0 && t.Army.Pending.Count == 0) return;
+        p.Heading("Campaigns");
+        foreach (int id in t.Army.Pending.ToList())
+        {
+            var s = t.Settlements.First(x => x.Id == id);
+            int sid = s.Id;
+            p.Row($"{Ui.Img("order-strike", 15)} [b]{Ui.Esc(s.Name)}[/b] is yours  ·  {Ui.C(Ui.Gold, "your word?")}",
+                ("Occupy", true, true, () => Act(() => _sim.SettleConquest(sid, ConquestChoice.Occupy))),
+                ($"Pillage · {Js.Str(Js.Round(s.Prosperity * t.Content.Army.Conquest.Loot))}g", true, false, () => Act(() => _sim.SettleConquest(sid, ConquestChoice.Pillage))),
+                ("Cripple", true, false, () => Act(() => _sim.SettleConquest(sid, ConquestChoice.Cripple))),
+                ("Spare", true, false, () => Act(() => _sim.SettleConquest(sid, ConquestChoice.Spare))));
+        }
+        foreach (var o in t.Army.Held.OrderBy(o => o.SettlementId))
+        {
+            var s = t.Settlements.First(x => x.Id == o.SettlementId);
+            var g = o.GarrisonId is int gid ? Army.Find(t, gid) : null;
+            int full = (int)Math.Round(o.Resistance / 10);
+            string bar = Ui.C(o.Resistance >= 70 ? Ui.Bad : Ui.Gold, new string('■', full)) + Ui.C(Ui.Line.Lightened(0.2f), new string('■', 10 - full));
+            int sid = s.Id;
+            var free = t.Army.Regiments.Where(r => r.Soldiers.Count > 0 && !Field.Away(t, r)).OrderBy(r => r.Id).ToList();
+            var items = free.Select(r => ("", $"{r.Name} · {r.Soldiers.Count}")).ToList();
+            var ids = free.Select(r => (int?)r.Id).ToList();
+            if (g != null)
+            {
+                items.Add(("", "Bring them home"));
+                ids.Add(null);
+            }
+            p.Row($"{Ui.Img("standing", 15)} [b]{Ui.Esc(s.Name)}[/b]  {Ui.Img("gold", 13)} +{Js.Str(o.Tribute)}/day\n" +
+                  $"[font_size=11]{bar}[/font_size]  {Ui.C(Ui.Ink2, "[font_size=12]resistance[/font_size]")}   {Ui.Img("tab-army", 13)} {(g != null ? Ui.Esc(g.Name) : Ui.C(Ui.Bad, "no garrison"))}",
+                ($"o{sid}{o.GarrisonId}{string.Join(",", ids)}", null, () => items.Count == 0 ? new Control() : Ui.Menu(g == null ? "Garrison" : "Change", "army-command", items, i => Act(() => _sim.GarrisonSettlement(sid, ids[i])))),
+                ("Free", true, false, () => Act(() => _sim.FreeSettlement(sid))));
+        }
+        foreach (var ask in t.Army.Asks)
+        {
+            var ally = t.Settlements.First(x => x.Id == ask.AllyId);
+            var foe = t.Settlements.First(x => x.Id == ask.TargetId);
+            p.Note($"{Ui.Cap(ally.People)} ask you to strike {foe.Name} by day {ask.UntilDay}.");
+        }
+        if (t.Army.Regiments.Count == 0) return;
+        var asked = t.Army.Asks.Select(a => a.TargetId).ToHashSet();
+        foreach (var s in targets.Take(8))
+        {
+            double def = Conquest.Defenders(t, s);
+            double ours = Field.HostWorth(t, Field.Marching(t), Field.MarchingAllies(t), Field.GoalHeroes(t));
+            string odds = ours >= def * 1.5 ? Ui.C(Ui.Good, "strong") : ours >= def ? Ui.C(Ui.Gold, "even") : Ui.C(Ui.Bad, "outmatched");
+            string? why = Field.MarchBlocked(t, $"{Conquest.Prefix}{s.Id}");
+            int sid = s.Id;
+            p.Row($"[b]{Ui.Esc(s.Name)}[/b]  {Ui.Img("standing", 13)}{Tag(Js.Str(Js.Round(s.Standing)), s.Standing >= 30 ? Ui.Good : s.Standing < 0 ? Ui.Bad : Ui.Ink2)}" +
+                  (s.Allied ? $"  {Ui.C(Ui.Gold, "ally")}" : "") + (asked.Contains(s.Id) ? $"  {Ui.C(Ui.Good, "asked for")}" : "") +
+                  $"\n[font_size=12]{Ui.Img("warband", 13)} {Js.Str(def)}  ·  {Ui.Img("compass", 13)} {AllyCalls.MarchDays(t, s)}d  ·  {odds}[/font_size]",
+                ($"March on{(why != null && why != "pick who marches" ? $" · {why}" : "")}", why == null, false, () => Act(() => _sim.Attack(sid, _fieldOrder))));
+        }
+    }
 }

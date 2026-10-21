@@ -89,6 +89,8 @@ public static class Alerts
     public static readonly AlertKind Loot = new("loot", "Loot for sale", "gold", AlertLevel.Decision, AlertWindow.Armory);
     public static readonly AlertKind Gifts = new("gifts", "Arms to give", "heroes", AlertLevel.Minor, AlertWindow.Armory);
     public static readonly AlertKind Outpost = new("outpost", "Land to hold", "warband", AlertLevel.Minor, AlertWindow.None);
+    public static readonly AlertKind Conquered = new("conquered", "A town to settle", "gold", AlertLevel.Decision, AlertWindow.Army);
+    public static readonly AlertKind WarAsk = new("warask", "An ally asks for war", "warband", AlertLevel.Minor, AlertWindow.Army);
     public static readonly AlertKind Holdout = new("holdout", "An ally holds out", "gold", AlertLevel.Decision, AlertWindow.Army);
     public static readonly AlertKind Stalled = new("stalled", "Building stalled", "gold", AlertLevel.Decision, AlertWindow.None);
     public static readonly AlertKind Bridge = new("bridge", "Bridge cut", "gold", AlertLevel.Decision, AlertWindow.Campaign);
@@ -488,6 +490,19 @@ public static class Alerts
             var s = AllyCalls.Of(t, c);
             yield return new($"holdout:{c.Id}", Holdout, $"{Cap(s.People)} hold out",
                 $"They will send {Js.Str(c.Strength)} for {Js.Str(c.Price)}g. Pay, threaten (DC {AllyCalls.ThreatenDc(t, c)}) or let them be.");
+        }
+        foreach (int id in t.Army.Pending)
+        {
+            var s = t.Settlements.First(x => x.Id == id);
+            yield return new($"conquered:{id}", Conquered, $"{s.Name} is yours",
+                "Occupy it for tribute, pillage and burn it, cripple it, or spare it.");
+        }
+        foreach (var ask in t.Army.Asks)
+        {
+            var ally = t.Settlements.First(x => x.Id == ask.AllyId);
+            var foe = t.Settlements.First(x => x.Id == ask.TargetId);
+            yield return new($"warask:{ask.AllyId}:{ask.TargetId}", WarAsk, $"{Cap(ally.People)} want {foe.Name} struck",
+                $"March on {foe.People} by day {ask.UntilDay} and {ally.People} will remember it. Every other people will too.");
         }
     }
 

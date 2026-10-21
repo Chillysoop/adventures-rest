@@ -154,6 +154,7 @@ public sealed record ArmyRules
     public LevyRules Levy { get; init; } = new();
     public AllyRules Allies { get; init; } = new();
     public FieldRules Field { get; init; } = new();
+    public ConquestRules Conquest { get; init; } = new();
     public IReadOnlyList<UnitDef> Units { get; init; } = [];
 }
 
@@ -235,6 +236,11 @@ public sealed class ArmyState
     public List<HeroGoal> Goals { get; } = [];
     public List<FieldBattle> Fields { get; } = [];
     public int NextField { get; set; } = 1;
+
+    /// <summary>Won settlements waiting on the mayor's word, the ones the town holds, and allies' asks for a blow.</summary>
+    public List<int> Pending { get; } = [];
+    public List<Occupation> Held { get; } = [];
+    public List<WarAsk> Asks { get; } = [];
 
     [NotSaved] internal List<Building>? Rounds;
     [NotSaved] internal int RoundsDay = -1;

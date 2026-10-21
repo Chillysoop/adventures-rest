@@ -419,6 +419,25 @@ public sealed class Options
                         AllyCalls.Hourly(t);
                         break;
                     }
+                    if (parts[0] == "conquer")
+                    {
+                        // "conquer" meets every people, takes the nearest settlement and holds it, then wins the next and leaves it waiting.
+                        foreach (var met in t.Settlements) met.Met = true;
+                        for (int k = 0; k < 2; k++)
+                        {
+                            foreach (var reg0 in t.Army.Regiments) sim.SetMarches(reg0.Id, !Conquest.Garrisoning(t, reg0));
+                            if (Conquest.Targets(t).FirstOrDefault() is not { } prey) break;
+                            prey.Prosperity = 0;
+                            if (sim.Attack(prey.Id, "advance") is null) break;
+                            while (t.Army.Sortie != null) sim.Step();
+                            if (k == 0 && t.Army.Pending.Contains(prey.Id))
+                            {
+                                sim.SettleConquest(prey.Id, ConquestChoice.Occupy);
+                                if (t.Army.Regiments.FirstOrDefault() is { } hold) sim.GarrisonSettlement(prey.Id, hold.Id);
+                            }
+                        }
+                        break;
+                    }
                     if (parts[0] == "road")
                     {
                         // "road[:strength]" puts the warband on the road two days out, every regiment picked to march.

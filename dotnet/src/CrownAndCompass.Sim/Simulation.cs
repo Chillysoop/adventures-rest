@@ -140,6 +140,7 @@ public sealed class Simulation
         Garrison.Daily(t, Options.AutoMayor && Options.AutoDefense);
         Army.Daily(t);
         AllyCalls.Daily(t);
+        Conquest.Daily(t);
         World.Daily(t, Options.AutoMayor);
         Trade.Daily(t, Options.AutoMayor);
         Armory.Daily(t, Options.AutoMayor && Options.AutoArmory);
@@ -540,6 +541,18 @@ public sealed class Simulation
 
     /// <summary>Call the host home before it meets the foe.</summary>
     public bool RecallHost() => Field.Recall(Town);
+
+    /// <summary>March the host on a settlement the town has met.</summary>
+    public Sortie? Attack(int settlementId, string order) => Field.MarchOut(Town, $"{Conquest.Prefix}{settlementId}", order);
+
+    /// <summary>The mayor's word on a won settlement: occupy, pillage, cripple or spare it.</summary>
+    public bool SettleConquest(int settlementId, ConquestChoice choice) => Conquest.Settle(Town, settlementId, choice);
+
+    /// <summary>Leave a regiment to hold an occupied settlement, or bring it home with null.</summary>
+    public bool GarrisonSettlement(int settlementId, int? regimentId) => Conquest.SetGarrison(Town, settlementId, regimentId);
+
+    /// <summary>Give an occupied settlement its freedom back.</summary>
+    public bool FreeSettlement(int settlementId) => Conquest.Free(Town, settlementId);
 
     public DayStats Snapshot()
     {

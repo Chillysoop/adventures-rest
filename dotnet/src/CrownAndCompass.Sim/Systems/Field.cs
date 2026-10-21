@@ -99,6 +99,9 @@ public sealed class Sortie
     public string Order { get; set; } = "advance";
     public int LeftTick { get; init; }
     public int MeetTick { get; set; }
+
+    /// <summary>Set once the battle is fought: when the host is home again.</summary>
+    public int? ReturnTick { get; set; }
     public List<int> Regiments { get; } = [];
     public List<int> Allies { get; } = [];
     public List<HeroGoal> Heroes { get; } = [];
@@ -198,13 +201,17 @@ public static class Field
     private static Menace? MenaceOf(Town town, string key) =>
         key.StartsWith("menace:", StringComparison.Ordinal) && int.TryParse(key[7..], out int id) ? town.Saga.Menaces.FirstOrDefault(m => m.Id == id) : null;
 
-    public static Foe? FoeOf(Town town, string key) => Foes(town).FirstOrDefault(f => f.Key == key);
+    public static Foe? FoeOf(Town town, string key) =>
+        Conquest.Target(town, key) is { } s ? Conquest.FoeOf(town, s, town.Army.Sortie?.Foe == key ? town.Army.Sortie.MeetTick : town.Tick + MarchHours(town, s)) : Foes(town).FirstOrDefault(f => f.Key == key);
 
-    /// <summary>Whether the regiment is out with the host.</summary>
-    public static bool Away(Town town, Regiment r) => town.Army.Sortie?.Regiments.Contains(r.Id) == true;
+    /// <summary>Hours the host takes to reach a settlement.</summary>
+    public static int MarchHours(Town town, Settlement s) => AllyCalls.MarchDays(town, s) * SimTime.HoursPerDay;
+
+    /// <summary>Whether the regiment is out with the host, or holding a conquered settlement.</summary>
+    public static bool Away(Town town, Regiment r) => town.Army.Sortie?.Regiments.Contains(r.Id) == true || Conquest.Garrisoning(town, r);
 
     /// <summary>Whether a townsperson is out with the host.</summary>
-    public static bool Afield(Town town, Agent a) => town.Army.Sortie != null && a.RegimentId is int id && town.Army.Sortie.Regiments.Contains(id);
+    public static bool Afield(Town town, Agent a) => a.RegimentId is int id && (town.Army.Sortie?.Regiments.Contains(id) == true || town.Army.Held.Any(o => o.GarrisonId == id));
 
     /// <summary>The worth of a regiment on the open field.</summary>
     public static double Worth(Town town, Regiment r) => Army.Strength(town, r) * Army.Unit(town, r).Field;
@@ -218,7 +225,7 @@ public static class Field
         regiments.Sum(r => Worth(town, r)) + allies.Sum(c => c.Strength) + heroes.Sum(h => h.Hero!.Level * Rules(town).HeroLevel);
 
     /// <summary>The regiments picked to march.</summary>
-    public static List<Regiment> Marching(Town town) => town.Army.Regiments.Where(r => r.Marches && r.Soldiers.Count > 0).OrderBy(r => r.Id).ToList();
+    public static List<Regiment> Marching(Town town) => town.Army.Regiments.Where(r => r.Marches && r.Soldiers.Count > 0 && !Conquest.Garrisoning(town, r)).OrderBy(r => r.Id).ToList();
 
     public static List<AllyCall> MarchingAllies(Town town) => town.Army.Calls.Where(c => c.State == CallState.Arrived && c.Marches).OrderBy(c => c.Id).ToList();
 
@@ -228,8 +235,12 @@ public static class Field
     public static string? MarchBlocked(Town town, string foeKey)
     {
         if (town.Army.Sortie != null) return "the host is out";
-        if (FoeOf(town, foeKey) is not { } f) return "no foe on the road";
-        if (f.ArrivalTick - town.Tick < Rules(town).LeastHours) return "too close to the walls";
+        if (Conquest.Target(town, foeKey) is { } target)
+        {
+            if (Conquest.AttackBlocked(town, target) is { } no) return no;
+        }
+        else if (FoeOf(town, foeKey) is not { } f) return "no foe on the road";
+        else if (f.ArrivalTick - town.Tick < Rules(town).LeastHours) return "too close to the walls";
         if (Marching(town).Count == 0 && MarchingAllies(town).Count == 0) return "pick who marches";
         return null;
     }
@@ -240,7 +251,9 @@ public static class Field
         if (MarchBlocked(town, foeKey) != null) return null;
         var f = FoeOf(town, foeKey)!;
         var r = Rules(town);
-        var s = new Sortie { Foe = foeKey, Order = Order(town, order).Id, LeftTick = town.Tick, MeetTick = town.Tick + Math.Max(1, (int)Math.Round((f.ArrivalTick - town.Tick) * r.MeetShare)) };
+        var target = Conquest.Target(town, foeKey);
+        int meet = target != null ? town.Tick + MarchHours(town, target) : town.Tick + Math.Max(1, (int)Math.Round((f.ArrivalTick - town.Tick) * r.MeetShare));
+        var s = new Sortie { Foe = foeKey, Order = Order(town, order).Id, LeftTick = town.Tick, MeetTick = meet };
         s.Regiments.AddRange(Marching(town).Select(x => x.Id));
         s.Allies.AddRange(MarchingAllies(town).Select(c => c.Id));
         foreach (var h in GoalHeroes(town))
@@ -251,8 +264,9 @@ public static class Field
         town.Army.Sortie = s;
         int hours = s.MeetTick - town.Tick;
         int men = s.Regiments.Sum(id => Army.Find(town, id)!.Soldiers.Count);
+        if (target != null) Conquest.Declare(town, target);
         town.Log(LedgerCategory.War, Importance.Notable,
-            $"The host marches out of {town.Name} to meet {f.Name} on the road: {men} soldiers{(s.Allies.Count > 0 ? $", {s.Allies.Count} allied {(s.Allies.Count == 1 ? "host" : "hosts")}" : "")}{(s.Heroes.Count > 0 ? $" and {s.Heroes.Count} {(s.Heroes.Count == 1 ? "hero" : "heroes")}" : "")}. They will meet in about {hours} hours.");
+            $"The host marches out of {town.Name} {(target != null ? $"on {target.Name}" : $"to meet {f.Name} on the road")}: {men} soldiers{(s.Allies.Count > 0 ? $", {s.Allies.Count} allied {(s.Allies.Count == 1 ? "host" : "hosts")}" : "")}{(s.Heroes.Count > 0 ? $" and {s.Heroes.Count} {(s.Heroes.Count == 1 ? "hero" : "heroes")}" : "")}. They will meet in about {hours} hours.");
         return s;
     }
 
@@ -266,7 +280,7 @@ public static class Field
     /// <summary>Call the host home before it meets the foe.</summary>
     public static bool Recall(Town town)
     {
-        if (town.Army.Sortie is not { } s) return false;
+        if (town.Army.Sortie is not { } s || s.ReturnTick != null) return false;
         Home(town, s);
         town.Log(LedgerCategory.War, Importance.Notable, "The host is called back before it meets the foe, and marches home to the walls.");
         return true;
@@ -311,6 +325,14 @@ public static class Field
     public static void Hourly(Town town)
     {
         if (town.Army.Sortie is not { } s || town.Tick < s.MeetTick) return;
+        // Fought: the host marches the road home.
+        if (s.ReturnTick is int back)
+        {
+            if (town.Tick < back) return;
+            Home(town, s);
+            town.Log(LedgerCategory.War, Importance.Notable, $"The host is home in {town.Name}.");
+            return;
+        }
         var f = FoeOf(town, s.Foe);
         if (f == null)
         {
@@ -320,7 +342,7 @@ public static class Field
             return;
         }
         Fight(town, s, f);
-        Home(town, s);
+        s.ReturnTick = town.Tick + Math.Max(1, s.MeetTick - s.LeftTick);
     }
 
     private sealed class Line
@@ -383,7 +405,7 @@ public static class Field
         double ours0 = lines.Sum(l => l.Hp);
         double foe0 = foe;
         battle.Theirs.Left.Clear();
-        log.Insert(0, $"The host of {town.Name}, some {Js.Str(Js.Round(ours0))} strong, meets {f.Name}, some {Js.Str(Js.Round(foe))} strong, on the road. The order is to {order.Name.ToLowerInvariant()}.");
+        log.Insert(0, $"The host of {town.Name}, some {Js.Str(Js.Round(ours0))} strong, meets {f.Name}, some {Js.Str(Js.Round(foe))} strong, {(f.Kind == "settlement" ? "before its gates" : "on the road")}. The order is to {order.Name.ToLowerInvariant()}.");
 
         double give = 1, take = 1, rattle = 0;
         bool slain = false;
@@ -550,6 +572,7 @@ public static class Field
             }
             else en.Strength = foe;
         }
+        else if (Conquest.Target(town, f.Key) is { } target) Conquest.Fought(town, target, b, won);
         else if (MenaceOf(town, f.Key) is { } m)
         {
             if (b.End == FieldEnd.Slain)
@@ -570,8 +593,10 @@ public static class Field
         }
         string head = b.End switch
         {
-            FieldEnd.Slain => $"Victory in the field! {f.Leader} is slain and {f.Name} broken.",
+            FieldEnd.Slain => $"Victory in the field! {Saga.Cap(f.Leader)} is slain and {f.Name} broken.",
             FieldEnd.Won => $"Victory in the field: {f.Name} breaks and runs.",
+            FieldEnd.Lost when f.Kind == "settlement" => $"Defeat at the gates of {f.Name}: the host breaks and runs for home.",
+            _ when f.Kind == "settlement" => $"A bloody draw at the gates of {f.Name}: the host draws off.",
             FieldEnd.Lost => $"Defeat in the field: the host breaks, and {f.Name} marches on toward the walls.",
             _ => $"A bloody draw in the field: both sides draw off, and {f.Name} marches on.",
         };

@@ -63,7 +63,12 @@ public class FieldTests
         Assert.All(t.Army.Regiments.SelectMany(r => r.Soldiers), id => Assert.Equal(Activity.Marching, t.Agent(id).Activity));
 
         RunTo(sim, s.MeetTick);
+        // Fought; the host marches the road home and is away until then.
+        Assert.NotNull(s.ReturnTick);
+        Assert.True(Threat.Defense(t) < home);
+        RunTo(sim, s.ReturnTick!.Value);
         Assert.Null(t.Army.Sortie);
+        Assert.True(Threat.Defense(t) > Threat.Defense(t, false) - 1);
         var b = Assert.Single(t.Army.Fields);
         Assert.True(b.End == FieldEnd.Won, string.Join("\n", b.Lines));
         Assert.Null(t.Enemy.ArrivalTick);
@@ -102,6 +107,7 @@ public class FieldTests
         Assert.Equal(HeroDuty.Field, hero.Hero!.Duty);
         Assert.False(Quests.Available(hero));
         RunTo(sim, s.MeetTick);
+        RunTo(sim, s.ReturnTick!.Value);
         var b = Assert.Single(t.Army.Fields);
         Assert.Contains(b.Goals, g => g.HeroId == hero.Id && g.Goal == "banner");
         Assert.Contains(b.Ours, u => u.Kind == "heroes");
