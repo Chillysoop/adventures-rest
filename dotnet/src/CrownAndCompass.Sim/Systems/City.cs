@@ -174,6 +174,9 @@ public sealed record MarketRules
     public double Pull { get; init; } = 3;
     public int Least { get; init; } = 100;
 
+    /// <summary>Shops the town keeps for each market square: a new square waits until it has this many for every square, the new one too.</summary>
+    public int ShopsEach { get; init; } = 6;
+
     /// <summary>Cells round a new square that open unpainted ground is painted for shops.</summary>
     public int Rim { get; init; } = 6;
 

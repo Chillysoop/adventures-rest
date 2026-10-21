@@ -296,6 +296,8 @@ public static class Streets
         var rules = town.Content.City.Markets;
         var plan = town.Plan;
         if (plan.Streets.Count == 0 || Land.OpenCells(town, Zone.Commercial) < rules.Least) return;
+        // A new square only once the town keeps enough shops to line the ones it has.
+        if (town.Buildings.Count(b => b.Def.Zone == Zone.Commercial) < rules.ShopsEach * (plan.Streets.Count(r => r.Market) + 1)) return;
         var squares = plan.Streets.Where(r => r.Square).Select(Middle).ToList();
         int n = Land.Size, w = (int)Math.Round(rules.Width * Land.Res), d = (int)Math.Round(rules.Depth * Land.Res);
         double best = double.MaxValue;
