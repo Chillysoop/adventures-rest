@@ -154,7 +154,8 @@ public class SendingsTests
         Assert.Equal(2, party.Edge);
         Assert.Equal(-1, party.Swell);
         while (!party.Resolved) sim.Step();
-        Assert.NotNull(party.Result);
+        // Into the delve, unless another company cleared the site first and the party found it empty.
+        Assert.True(party.Result != null || party.Empty && Quests.Site(t, party.SiteId)!.Cleared);
     }
 
     [Fact]
