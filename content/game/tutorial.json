@@ -292,11 +292,11 @@
     {
       "id": "decorate",
       "title": "Dress the town",
-      "text": "The build bar's [b]Decor[/b] tab has trees, benches, lamps, fountains, statues and more. Set them anywhere at any angle: click to place, drag to aim, and [b]R[/b] or Shift+wheel turns the piece. Drag fences and hedges into rows, paint trees and flowers, and clear pieces for half their price back. Every piece helps a little: benches rest the neighbours, lamps help the watch, stalls lift trade, statues win favour and loyalty, and houses on a pleasant street grow a storey sooner. Builders and lanes go round what you set down.",
+      "text": "The build bar's [b]Decor[/b] tab has trees, benches, lamps, fountains, statues and more. Set them anywhere at any angle: click to place, drag to aim, and [b]R[/b] or Shift+wheel turns the piece. The build bar tucks away while a piece is in hand and comes back once it is down; hold [b]Shift[/b] to place several. Drag fences and hedges into rows, paint trees and flowers, and clear pieces for half their price back. Every piece helps a little: benches rest the neighbours, lamps help the watch, stalls lift trade, statues win favour and loyalty, and houses on a pleasant street grow a storey sooner. Builders and lanes go round what you set down.",
       "point": "buildbar",
       "until": "decorated",
       "when": "day:22",
-      "teaches": ["command:Decorate", "command:ClearDecoration", "key:R"]
+      "teaches": ["command:Decorate", "command:ClearDecoration", "key:R", "key:Shift"]
     },
     {
       "id": "site-first",
@@ -370,7 +370,7 @@
       "point": "tab:Armory",
       "until": "tab:Armory",
       "when": "alert:gift",
-      "teaches": ["tab:Armory", "command:Gift", "command:BuyLoot", "command:SellStock", "command:OfferPact", "command:EndPact"]
+      "teaches": ["tab:Armory", "command:Gift", "command:Arm", "command:BuyLoot", "command:SellStock", "command:OfferPact", "command:EndPact"]
     },
     {
       "id": "alchemy",
@@ -478,6 +478,15 @@
       "point": "tab:Diplomacy",
       "until": "tab:Diplomacy",
       "teaches": ["command:AnswerEnvoy"]
+    },
+    {
+      "id": "guard-duty",
+      "title": "Heroes on guard",
+      "text": "Keep heroes home to guard the town. In the [b]War[/b] tab, or on a hero's sheet:\n• [b]Walls[/b]: stronger against raids and sieges; they meet the warlord first.\n• [b]Streets[/b]: the watch catches more spies, knives, thieves and fire-raisers.\nThey earn a daily wage and take no bounties. [b]Arm the guard[/b] hands them the armory's best in one click.",
+      "point": "tab:War",
+      "when": "day:20",
+      "until": "duty",
+      "teaches": ["command:SetDuty"]
     },
     {
       "id": "sellswords",
