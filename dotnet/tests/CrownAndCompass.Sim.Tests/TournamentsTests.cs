@@ -61,8 +61,10 @@ public class TournamentsTests
     {
         var (sim, t) = Town();
         ToProposal(sim);
+        // Rich on the morning the lists would open (a rich treasury earlier goes on the council's works).
+        sim.RunDays(t.Tourney.OpenDay - t.Day - 1);
         t.Treasury = 5000;
-        sim.RunDays(t.Tourney.OpenDay - t.Day + 1);
+        sim.RunDays(2);
         Assert.Equal(0, t.Tourney.Level);
         Assert.Equal(TourneyStage.Running, t.Tourney.Stage);
     }
