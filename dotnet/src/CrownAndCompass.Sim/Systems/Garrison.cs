@@ -92,6 +92,12 @@ public enum HeroDuty
     None,
     Walls,
     Streets,
+
+    /// <summary>Leading one of the town's regiments (<see cref="Army.SetCommander"/>).</summary>
+    Command,
+
+    /// <summary>Out with the host on the field, with a goal (<see cref="Field"/>).</summary>
+    Field,
 }
 
 /// <summary>Where a guard can be sent: a wall section, a tower, the gate, or a flag the player planted.</summary>

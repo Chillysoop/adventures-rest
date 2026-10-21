@@ -241,10 +241,7 @@ public partial class Planner(MapView map) : Control
         if (Tool.Zone is Zone z)
         {
             var c = z == Zone.None ? new Color(0.95f, 0.9f, 0.8f) : ToolColor(town, Tool);
-            // Where the zone's buildings will go on the land already painted, faintly, so a stroke's worth shows at once.
-            if (z != Zone.None)
-                foreach (var l in PlotsOf(town, z))
-                    Footprint(new Vector2((float)l.X, (float)l.Y), l.W / (float)Land.Res, l.D / (float)Land.Res, (float)l.Yaw, new Color(c, 0.12f), new Color(c, 0.6f), 1);
+            // Only the paint shows: buildings come as the town grows into it, never as outlines laid out ahead.
             // The stroke so far, as the brush will leave it, then the brush ring at the cursor.
             foreach (var p in _stroke) Disc(p, Radius, new Color(c, 0.18f));
             Ring(h, Radius, new Color(c, 0.95f), 2.5f);
@@ -322,17 +319,6 @@ public partial class Planner(MapView map) : Control
         Vector2[] q = [Screen(p - out1 - side), Screen(p - out1 + side), Screen(p + out1 + side), Screen(p + out1 - side)];
         DrawColoredPolygon(q, new Color(c, 0.55f));
         DrawPolyline([.. q, q[0]], c, 2, true);
-    }
-
-    private (Zone Zone, int Version, List<Lot> Lots)? _plots;
-
-    /// <summary>Where a zone's buildings would go, worked out again only when the plan changes.</summary>
-    private List<Lot> PlotsOf(Town town, Zone z)
-    {
-        if (_plots is { } p && p.Zone == z && p.Version == town.Plan.Version) return p.Lots;
-        var lots = Land.Plots(town, z, 120);
-        _plots = (z, town.Plan.Version, lots);
-        return lots;
     }
 
     /// <summary>Half a tile per sample: whether the building fits there facing the nearest lane.</summary>

@@ -1,0 +1,18 @@
+{
+  "_doc": "Boons (Systems/Boons.cs): what a won campaign leaves for the next. Each road to victory earns its boon, at a rank from the win's grade (gold 3, silver 2, bronze 1 by the day it was won); a gold win of any road also earns old-lore. The player keeps them in the profile's cabinet and switches each on or off when founding a town (SimulationOptions.Boons). kind groups them on the New game screen: military, economy, tech, adventuring, diplomacy. perRank: how much one rank gives; text fills {n}.",
+  "grades": [
+    { "id": "gold", "name": "Gold", "by": 620, "rank": 3 },
+    { "id": "silver", "name": "Silver", "by": 760, "rank": 2 },
+    { "id": "bronze", "name": "Bronze", "by": 100000, "rank": 1 }
+  ],
+  "boons": [
+    { "id": "veterans", "road": "slay", "kind": "military", "icon": "act-slay", "name": "Veteran knight", "text": "Charter knight +{n} levels", "perRank": 1 },
+    { "id": "old-banners", "road": "dominion", "kind": "military", "icon": "defence", "name": "Old banners", "text": "+{n} watchmen", "perRank": 1 },
+    { "id": "golden-coffers", "road": "golden", "kind": "economy", "icon": "gold", "name": "Golden coffers", "text": "+{n} gold", "perRank": 150 },
+    { "id": "merchant-charter", "road": "merchant", "kind": "economy", "icon": "standing", "name": "Merchant's charter", "text": "+{n} trade routes", "perRank": 1 },
+    { "id": "old-lore", "road": "", "grade": "gold", "kind": "tech", "icon": "books", "name": "Old lore", "text": "Scholars start with {n} lore", "perRank": 20 },
+    { "id": "famous-name", "road": "legends", "kind": "adventuring", "icon": "heroes", "name": "A famous name", "text": "Charter knight starts with {n} renown", "perRank": 15 },
+    { "id": "guild-maps", "road": "adventurers", "kind": "adventuring", "icon": "compass", "name": "Guild maps", "text": "{n} regions charted", "perRank": 1 },
+    { "id": "old-friends", "road": "alliance", "kind": "diplomacy", "icon": "favour", "name": "Old friends", "text": "Every people +{n} standing", "perRank": 6 }
+  ]
+}

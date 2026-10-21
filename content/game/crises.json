@@ -213,6 +213,13 @@
       "mandate": 4,
       "heat": 25
     },
+    "charmKinds": ["undead", "schemers", "dragon", "cult"],
+    "wards": ["warded-chamber", "chamber-warder"],
+    "warded": 3,
+    "seers": ["truth-seer"],
+    "seen": 2,
+    "wardFlared": "The wards on the council chamber flare blue as {victim} steps through the door, and the charm {by} laid on them burns away like cobweb. {victim} sits down blinking, and asks what day it is.",
+    "freed": "The charm on {victim} breaks. The town's {seat} weeps to hear what they did under {by}'s spell, and swears to make it right. The council lets them keep the seat.",
     "wrong": {
       "mandate": 8,
       "loyalty": 30

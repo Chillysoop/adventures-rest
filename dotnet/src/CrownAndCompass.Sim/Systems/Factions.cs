@@ -281,7 +281,7 @@ public static class Factions
     public static double WatchFactor(Town town)
     {
         var r = Rules(town);
-        double f = 1 + Faith.WatchBonus(town);
+        double f = 1 + Faith.WatchBonus(town) + HedgeMages.Watch(town) + Taverns.Watch(town);
         var wardens = Find(town, "dawn-wardens");
         if (wardens is { Active: true }) f += r.WardenWatch;
         var hand = Find(town, "quiet-hand");
@@ -949,9 +949,9 @@ public static class Factions
     private static void Rite(Town town, FactionState f)
     {
         var r = Rules(town);
-        town.Faiths.Favor[f.Lore.Patron] = town.Faiths.Favor.Get(f.Lore.Patron, 0) + r.RiteFavor * Math.Sqrt(f.Members.Count);
+        town.Faiths.Favor[f.Lore.Patron] = town.Faiths.Favor.Get(f.Lore.Patron, 0) + r.RiteFavor * Math.Sqrt(f.Members.Count) * Circles.RiteFactor(town);
         f.Heat = Math.Min(100, f.Heat + r.RiteHeat);
-        string where = f.DenId != null ? town.Building(f.DenId.Value).Name : "the old mill";
+        string where = Circles.RiteAt(town) is string stones ? $"the stones of {stones}" : f.DenId != null ? town.Building(f.DenId.Value).Name : "the old mill";
         town.Log(LedgerCategory.Faction, Importance.Routine, f.Known ? $"{Cap(f.Name)} {f.Verb("sings", "sing")} in the cellar of {where} again." : $"Townsfolk near {where} swear they heard singing under the floor at midnight, slow and wordless.");
     }
 

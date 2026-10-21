@@ -50,6 +50,7 @@ public partial class Main
         }
         else next = $"\n{Ui.C(Ui.Ink2, $"[font_size=12]The last act. Your champions are level {champ}.[/font_size]")}";
         p.Card($"[font_size=17][b]{Ui.Esc(Saga.ActTitle(t, s.Act))}[/b][/font_size]  {Tag($"since day {s.ActDays[^1]}")}{next}");
+        RenderVictory(p, t);
 
         if (Menaces.PendingDemand(t) is { } dm)
         {
@@ -65,7 +66,7 @@ public partial class Main
         if (big is { Alive: true })
         {
             string march = big.ArrivalTick is int at && at > t.Tick ? $"\n{Ui.C(Ui.Bad, $"[b]Its host reaches the walls in {Ui.Days((int)Math.Ceiling((at - t.Tick) / 24.0))}.[/b]")}" : "";
-            FoeCard(p, [big], $"{Tag("THE BIG BAD", Ui.Bad)}\n[font_size=16][b]{Ui.Esc(Ui.Cap(big.Name))}[/b][/font_size]  {Tag($"level {big.Level}")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Seat(t, big)} {(big.Marches == 0 ? "It has not marched on the town yet." : $"It has marched on the town {Times(big.Marches)}.")} Kill it to end the Long Night.[/font_size]")}{march}", Ui.Bad);
+            FoeCard(p, [big], $"{Tag("THE BIG BAD", Ui.Bad)}\n[font_size=16][b]{Ui.Esc(Ui.Cap(big.Name))}[/b][/font_size]  {Tag($"level {big.Level}")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Seat(t, big)} {(big.Marches == 0 ? "It has not marched on the town yet." : $"It has marched on the town {Times(big.Marches)}.")} Kill it to end the Long Night.[/font_size]")}{march}{DarkQuestLines(t)}", Ui.Bad);
         }
         if (s.YokeId is int yid && s.Menaces[yid - 1] is { Alive: true } yoke)
         {
@@ -95,7 +96,7 @@ public partial class Main
             var (word, color) = MenaceStages[m.Stage];
             string march = m.ArrivalTick is int at && at > t.Tick ? "  " + Tag($"marching, {Ui.Days((int)Math.Ceiling((at - t.Tick) / 24.0))} out", Ui.Bad) : "";
             string held = m.Holdings.Count > 0 ? $" It holds {m.Holdings.Count} more {(m.Holdings.Count == 1 ? "lair" : "lairs")}." : "";
-            FoeCard(p, [m], $"{Ui.KindIcon(m.Kind, 20)}[b]{Ui.Esc(Ui.Cap(m.Name))}[/b]  {Tag(word, color)}  {Tag($"level {m.Level}")}{march}\n{Leader(m)}{Tag(Menaces.CunningOf(t, m).Name)}  {Tag(Menaces.AmbitionOf(t, m).Name)}{Heirs(t, m)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Annals.Motive(t, m))} {Ui.Esc(Wants(t, m))} {Seat(t, m)}{held}[/font_size]")}{Remembers(t, m)}{LastHeard(t, m)}{Plan(t, m)}{Assets(t, m)}{Backers(t, m)}", color);
+            FoeCard(p, [m], $"{Ui.KindIcon(m.Kind, 20)}[b]{Ui.Esc(Ui.Cap(m.Name))}[/b]  {Tag(word, color)}  {Tag($"level {m.Level}")}{march}\n{Leader(m)}{Tag(Menaces.CunningOf(t, m).Name)}  {Tag(Menaces.AmbitionOf(t, m).Name)}{Temper(t, m)}{Heirs(t, m)}\n{Scores(t, m)}{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Annals.Motive(t, m))} {Ui.Esc(Wants(t, m))} {Seat(t, m)}{held}[/font_size]")}{Remembers(t, m)}{LastHeard(t, m)}{Plan(t, m)}{Assets(t, m)}{Backers(t, m)}", color);
         }
         p.Note("A threat grows while nobody clears its seat, as far as its wits allow: a beast only hunts, a dull band takes a valley and stops, a cunning or masterful leader builds a domain and can become the big bad. What it wants decides what it does to the town. Clearing the seat breaks it, and it falls back to a lair it holds.");
 
@@ -110,6 +111,51 @@ public partial class Main
             }
         }
         p.Commit();
+    }
+
+    /// <summary>The big bad's quests on its card: the one under way (with its site and days left), and the ones done or foiled.</summary>
+    private static string DarkQuestLines(Town t)
+    {
+        var st = DarkQuests.State(t);
+        string text = "";
+        if (DarkQuests.Current(t) is { } q && Quests.Site(t, q.SiteId) is { } site)
+            text += $"\n{Ui.Img("threat", 14)} {Tag("QUEST", Ui.Bad)} {Ui.Esc(Ui.Cap(q.Thing))} · [url=site:{site.Def.Id}]{Ui.C(Ui.Accent, Ui.Esc(site.Def.Name))}[/url] · {Tag(Ui.Days(DarkQuests.DaysLeft(t)), Ui.Bad)}";
+        if (st.Mine.Any())
+            text += "\n" + string.Join("  ", st.Mine.Select(x => Tag($"{(x.Foiled ? "✓" : "✗")} {Ui.Esc(Ui.Cap(x.Thing))}", x.Foiled ? Ui.Good : Ui.Bad)));
+        return text;
+    }
+
+    /// <summary>Roads to victory: one card per road, its terms as chips (green once met), and Claim once they all hold.</summary>
+    private void RenderVictory(Pane p, Town t)
+    {
+        p.Heading("Roads to victory");
+        if (Endless.On(t))
+        {
+            var eras = t.Saga.Endless.Eras;
+            string rest = Endless.RestLeft(t) is int days ? $"  {Tag($"next foe in {Ui.Days(days)}", Ui.Bad)}" : "";
+            string past = eras.Count == 0 ? "" : "\n[font_size=12]" + string.Join("  ", eras.Select(e => Tag($"{e.Number}. {Ui.Esc(Ui.Cap(e.Foe))} · day {e.Day}", Ui.Good))) + "[/font_size]";
+            p.Card($"{Ui.Img("dread", 20)} [b]Endless · era {Endless.EraNumber(t)}[/b]{rest}{past}", Ui.Accent);
+        }
+        var claimed = Victory.Claimed(t);
+        if (!Victory.Ready(t)) p.Note("Claim a road once the big bad shows itself.");
+        foreach (var d in Victory.Roads(t))
+        {
+            var terms = Victory.Terms(t, d);
+            int pct = (int)Math.Round(Victory.Progress(t, d) * 100);
+            bool mine = claimed?.Id == d.Id;
+            string state = mine ? Tag($"holding, {Ui.Days(Victory.DaysLeft(t))} left", Ui.Good)
+                : d.Id == Victory.Slay ? Tag("main quest", Ui.Gold)
+                : Victory.Met(t, d) ? Tag("ready", Ui.Good)
+                : Tag($"{pct}%");
+            string chips = string.Join("  ", terms.Select(x => Tag($"{x.Label} {Js.Str(x.Have)}/{Js.Str(x.Need)}", x.Met ? Ui.Good : Ui.Ink2)));
+            string hold = d.Id == Victory.Slay || mine ? "" : $"  {Ui.C(Ui.Ink2, $"[font_size=12]hold {Ui.Days(d.Hold)}[/font_size]")}";
+            p.Card($"{Ui.Img(d.Icon, 20)} [b]{Ui.Esc(d.Name)}[/b]  {state}{hold}\n[font_size=12]{chips}[/font_size]", mine ? Ui.Good : d.Id == Victory.Slay ? Ui.Gold : null);
+            if (claimed == null && Victory.ClaimBlocked(t, d.Id) == null)
+            {
+                string id = d.Id;
+                p.Buttons(($"Claim {d.Name}", true, true, () => Act(() => _sim.ClaimRoad(id))));
+            }
+        }
     }
 
     /// <summary>Rope bridges raiders cut, ruins the companies cleared, and the dark ranger taking the town's bounties.</summary>
@@ -241,6 +287,23 @@ public partial class Main
         if (parts.Count == 0) return "";
         return $"\n[font_size=12]{Tag("Remembers", Ui.Bad)} {Ui.Esc(Ui.Cap(string.Join("; ", parts)))}.[/font_size]";
     }
+
+    /// <summary>Its kind's temper this campaign.</summary>
+    private static string Temper(Town t, Menace m) => Character.TemperOf(t, m.Kind) is { } tm ? "  " + Tag(tm.Name, Ui.Accent) : "";
+
+    /// <summary>Its six scores, and what its kind is like this age.</summary>
+    private static string Scores(Town t, Menace m)
+    {
+        string line = $"[font_size=12]{string.Join("   ", Character.Sheet(t, m).Select(ScoreTag))}";
+        line += "[/font_size]\n";
+        if (Menaces.Done(t, m) is string done) line += Bullet("Done", done);
+        if (Menaces.Case(t, m) is string said) line += Bullet("Says", said);
+        if (Menaces.Truth(t, m) is string truth) line += Bullet("Truth", truth);
+        else if (m.Named) line += Ui.C(Ui.Ink2, "[font_size=12]• [i]Truth: take a holding to learn it[/i][/font_size]\n");
+        return line;
+    }
+
+    private static string Bullet(string tag, string text) => $"[font_size=12]• {Tag(tag)} {Ui.C(Ui.Ink2, Ui.Esc(text))}[/font_size]\n";
 
     /// <summary>The last the town heard of it.</summary>
     private static string LastHeard(Town t, Menace m) =>

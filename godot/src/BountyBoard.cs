@@ -254,6 +254,7 @@ public partial class Main
             status = Tag($"Mages' errand · {Math.Round(live.Reward)}g + {Ui.Esc(boon.Name)}", Ui.Gold);
         else if (live != null)
             status = Tag($"Posted · {Math.Round(live.Reward)}g{(live.LootToTown ? " + loot to us" : "")} · {Ui.Days(Math.Max(1, (int)Math.Ceiling((live.ExpiresTick - t.Tick) / 24.0)))} left", Ui.Gold)
+                + (t.Content.Bounties.Plots.FirstOrDefault(x => x.Id == live.Plot) is { } plot ? " " + Ui.C(Ui.Ink2, $"[font_size=11]{Ui.Esc(Ui.Cap(plot.Name))}[/font_size]") : "")
                 + (crews.Count == 0 ? " " + Tag("· nobody free", Ui.Bad) : "");
         else if (s.Attempts > 0) status = Tag($"{s.Attempts} failed {(s.Attempts == 1 ? "try" : "tries")}", Ui.Bad);
         else status = "";

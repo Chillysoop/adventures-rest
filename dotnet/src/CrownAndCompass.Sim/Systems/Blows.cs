@@ -173,7 +173,7 @@ public static class Blows
         string who = Who(town, victim);
         var t = Text(town, Assassinate);
         // A seasoned hero is hard to knife in the dark.
-        double guard = Council.WatchStrength(town) / Math.Max(0.5, cunning) + (victim.Hero is { } hs ? hs.Level * 0.04 : 0);
+        double guard = Council.WatchStrength(town) / Math.Max(0.5, cunning) + (victim.Hero is { } hs ? hs.Level * 0.04 : 0) + (town.Seats.Any(s => s.HolderId == victim.Id) ? Army.Bodyguard(town) : 0);
         if (rng.Chance(Math.Min(0.9, guard)))
         {
             var g = Guard(town, victim);

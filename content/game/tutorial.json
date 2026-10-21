@@ -504,6 +504,22 @@
       "teaches": []
     },
     {
+      "id": "favours-feuds",
+      "title": "Favours and feuds",
+      "text": "The minor powers also ask [b]favours[/b]: clear a lair they name, see an enemy destroyed, or open a new trade route. [b]Promise[/b] it and you have three months; keep your word for their friendship and a purse of gold, break it and they remember. Powers [b]feud[/b] with each other too. While a feud burns, the other side holds your alliance against you, and the dark ones strike at your town. Your ally will ask for gold to win the feud: pay, and its foe sues for peace.",
+      "when": "day:150",
+      "point": "tab:Diplomacy",
+      "teaches": []
+    },
+    {
+      "id": "first-contact",
+      "title": "First contact",
+      "text": "Powers and peoples stay unknown until you meet them. When one comes calling, a [b]first contact[/b] scene opens: your answers and rolls set where you start.\n\n• The bar under each name in [b]Diplomacy[/b] shows where they stand\n• Unmet ones can't trade, ally or be courted by you",
+      "when": "count:Discovered",
+      "point": "tab:Diplomacy",
+      "teaches": []
+    },
+    {
       "id": "wagons",
       "title": "Bigger caravans",
       "text": "Goods your town makes beyond what it needs earn nothing sitting in the market: the evening carters clear them away. A [b]trade route[/b] turns that surplus into gold. In [b]Diplomacy[/b], [b]Add a wagon[/b] to a route and its caravan carries more out on every run, up to four wagons. A bigger charter lets you run more routes, too.",
@@ -620,6 +636,15 @@
       "teaches": ["command:MeetGuildDemand", "command:PayOffGuild", "command:BreakStrike"]
     },
     {
+      "id": "union",
+      "title": "The movement and the mages",
+      "text": "Working townsfolk have banded together as [b]the Common Cause[/b]: guild hands and others, and even a few hedge mages, since magic users work the trades too. They want magic to serve the workers, not undercut them. The bar in [b]Council[/b] shows who has your ear. Funding research, the wizards' library and [b]hedge mages[/b] outside the movement pull it toward the mages; the movement's numbers and the guilds pull it back, and every hedge mage who joins widens the green middle. Keep it there and both work together. Let it lean and the slighted side sours, and too far it acts: the movement marches and every guild strikes, or the mages walk out. [b]Hear[/b] a side out for gold, or [b]side[/b] with one for a season if you are ready for the other's anger.",
+      "when": "alert:union",
+      "point": "tab:Council",
+      "until": "tab:Council",
+      "teaches": ["command:HearUnion", "command:TakeSide"]
+    },
+    {
       "id": "honours",
       "title": "Honours are yours to give",
       "text": "When a loyal knight holds no land, or the town has no champion, the strip says so. Click it: a cleared site can be granted to the knight, who holds it with their own retainers and lives on its rents, and the champion stands first on the walls. The council moves knighthoods itself; sign them in [b]Council[/b].",
@@ -731,6 +756,17 @@
     {"id": "ruins", "title": "Ruins to restore", "text": "Some of the lairs near town are the ruins of old works: an aqueduct, a gatehouse, a watchtower, a star fort. Once a company clears one, an alert says it can be restored. Click it on the map, or open the [b]Campaign[/b] window, and choose [b]Restore[/b]: for a little gold it serves the town for good, with clean water, defence or an early warning.", "when": "alert:ruin", "point": "alerts", "teaches": ["command:RestoreRuin"]},
     {"id": "rope-bridges", "title": "Rope bridges", "text": "Gorges on the roads have rope bridges across them, so companies cross where they would otherwise climb down and up. Raiders sometimes cut one, and an alert says so: companies then go the long way round. Open the [b]Campaign[/b] window and choose [b]Rebuild in stone[/b]. A stone bridge can never be cut again.", "when": "alert:bridge", "point": "alerts", "teaches": ["command:RebuildBridge"]},
     {
+      "id": "law-book",
+      "title": "The law book",
+      "text": "The [b]law book[/b] in [b]Council[/b] sets what happens when the watch catches a hero.\n• Fine: the old way\n• Stocks, flogging: calmer streets, fewer repeats; the temple frowns\n• Temple penance: priests pleased, guilds call it soft\n• Restitution: guilds pleased, purses emptied",
+      "when": "day:20",
+      "point": "tab:Council",
+      "until": "tab:Council",
+      "teaches": [
+        "command:SetLaw"
+      ]
+    },
+    {
       "id": "council-chamber",
       "title": "The council chamber",
       "text": "[b]Council[/b] opens on the chamber, your councillors at their seats.\n• Raised hand: aye. Thumbs down: nay.\n• Heart on the plate: loyalty.\n• Badges over heads: who moved it, secrets you hold, traitor talk.\n• Click a councillor for their card.",
@@ -749,7 +785,13 @@
     },
     {"id": "watchtowers", "title": "Watchtowers", "text": "Build a [b]Watchtower[/b] (Government) to see the wilds live.\n• Sees farther as the town grows\n• One per 100 residents\n• Past its sight, the fog stays", "point": "buildbar", "when": "day:12", "teaches": []},
     {"id": "rail-notices", "title": "Notices", "text": "Something new for you? A tile slides out beside its window.\n• Click: go there\n• Right-click: tuck it away\n• Red: urgent · Gold: your call", "point": "rail", "when": "day:4", "teaches": []},
-    {"id": "scry-word", "title": "Scry the fight", "text": "A party that sent word is fighting out of sight: the strip offers a [b]scry[/b].\n• Each caster scries once every 2 days\n• Loyal casters: free\n• Others: gold\n• Disaffected: a favour", "point": "alerts", "when": "alert:scry", "teaches": []}
+    {"id": "scry-word", "title": "Scry the fight", "text": "A party that sent word is fighting out of sight: the strip offers a [b]scry[/b].\n• Each caster scries once every 2 days\n• Loyal casters: free\n• Others: gold\n• Disaffected: a favour", "point": "alerts", "when": "alert:scry", "teaches": []},
+    {"id": "army", "title": "The army", "text": "[b]Army[/b] raises the town's own soldiers.\n• Build a [b]Drill Yard[/b], [b]Archery Range[/b] or [b]Stables[/b] (Government)\n• Raise a regiment: townsfolk leave their trades, are armed and drill\n• Post it: walls, reserve, patrol or the mayor's guard\n• Put a hero in command to lead it", "point": "tab:Army", "when": "day:8", "teaches": ["tab:Army", "command:RaiseRegiment", "command:ResizeRegiment", "command:DisbandRegiment", "command:PostRegiment", "command:CommandRegiment"]},
+    {"id": "levy", "title": "The levy", "text": "When a host comes, call the [b]levy[/b] in [b]Army[/b].\n• Townsfolk leave their work while called\n• Laws: volunteers or conscription, paid or unpaid\n• Conscripts and the unpaid grumble", "point": "tab:Army", "when": "day:14", "teaches": ["command:RaiseLevy", "command:SetServiceLaw", "command:SetLevyPay"]},
+    {"id": "allies-call", "title": "Calling allies", "text": "Allies send hosts when you [b]call[/b] them in [b]Army[/b].\n• Answers come within the day\n• Holdouts: pay, threaten or let go\n• Hosts march the road: call early\n• A friend under a shadow may turn at the walls", "point": "tab:Army", "when": "allies", "teaches": ["command:CallAllies", "command:BribeAlly", "command:ThreatenAlly", "command:LetAllyGo"]},
+    {"id": "field", "title": "Marching out", "text": "Meet a host on the road before it reaches the walls: the [b]Field[/b] card in [b]Army[/b].\n• Pick who marches; the rest hold the walls\n• Give heroes a goal: the leader, the banner\n• Pick an order: the dice and your commanders do the rest", "point": "tab:Army", "when": "alert:march", "teaches": ["command:MarchOut", "command:SetMarches", "command:SetAllyMarches", "command:SetFieldGoal", "command:SetFieldOrder", "command:RecallHost"]},
+    {"id": "conquest", "title": "Marching on others", "text": "[b]Army[/b] can march on any settlement you have met.\n• Every people sees it: allies trust you less\n• Won: occupy, pillage, cripple or spare\n• Held towns pay tribute, resist and may rise\n• Leave a regiment there to hold it down", "point": "tab:Army", "when": "regiments", "teaches": ["command:Attack", "command:SettleConquest", "command:GarrisonSettlement", "command:FreeSettlement"]},
+    {"id": "roads-to-victory", "title": "Roads to victory", "text": "[b]Campaign[/b] lists every way to win.\n\u2022 Slay the big bad, or\n\u2022 Allies, dominion, legends, a golden age, adventurers, trade\n\u2022 Once the big bad shows itself and a road's terms all hold: [b]Claim[/b]\n\u2022 It marches at once. Hold the terms to win", "point": "tab:Campaign", "when": "day:90", "teaches": ["command:ClaimRoad"]}
   ],
   "untaught": {}
 }

@@ -1,0 +1,83 @@
+{
+  "_doc": "Patrons and their pacts (Systems/Patrons.cs). A patron is a power from beyond the world that swears heroes to it: every warlock comes to town with one, and stories let it court other heroes. Each sworn hero has a favour from min to max. Every judgeEvery days the patron weighs what its hero did since the last time against what it wants (deeds: kills, delves, renown, infamy, gold, lore = the town's discoveries and spellbooks): a score of at least pleased raises favour by one, less than idle lowers it. Favour lends the hero its boon (attack, ac, skill per point, rounded toward zero, so it turns against them below zero). At max the patron sends a gift (gift.heroXp of the next level) and favour settles at afterGift; at min it takes its price and favour settles at afterPrice. When its sworn heroes in town hold designAt favour between them, the patron's own design can come to the town as a story (need patron:id). A hero who falls on a delve wakes in the veiled room and rolls three times; failing, the hero's own patron (or the fiend, for the unsworn) may offer a way out (bargain): they live, carry a dark gift and owe it.",
+  "judgeEvery": 15,
+  "pleased": 1,
+  "idle": 0.25,
+  "min": -5,
+  "max": 5,
+  "start": 1,
+  "afterGift": 3,
+  "afterPrice": -2,
+  "designAt": 4,
+  "gift": { "heroXp": 0.5 },
+  "familiar": 1,
+  "bargain": { "chance": 0.45, "favour": -2, "taint": 1, "fiend": "hollow-prince" },
+  "lines": {
+    "sworn": "{hero} is sworn to {patron}, {title}. It wants {wants}.",
+    "warms": "{patron} is pleased with {hero}: favour {favour}.",
+    "cools": "{patron} grows impatient with {hero}: favour {favour}.",
+    "gift": "{patron} sends {hero} a gift in the night. {giftText}",
+    "price": "{patron} takes its price from {hero}. {priceText}",
+    "broken": "{hero} breaks the pact with {patron}.",
+    "familiar": "{familiar} has come to {heroName}, sent by {patron}.",
+    "bargain": "{hero} came home from the dead. They will not say how, but they owe {patron}, and it shows: favour {favour}."
+  },
+  "veil": {
+    "wake": "{name} wakes in a veiled room, where a voice asks three questions.",
+    "pass": "{name} answers the veiled room ({rolls}) and walks back into their body.",
+    "fail": "{name} cannot answer the veiled room ({rolls}), and the door closes behind them.",
+    "offer": "Before the door can close, {patron} offers {name} a way back, for a price.",
+    "take": "{name} takes the bargain and wakes gasping on the floor, owing {patron}.",
+    "refuse": "{name} refuses {patron}, and the door closes."
+  },
+  "patrons": [
+    {
+      "id": "hollow-prince",
+      "name": "the Hollow Prince",
+      "kind": "fiend",
+      "title": "a prince of the hungry dark",
+      "wants": "blood spilled in its name",
+      "deeds": { "kills": 0.34, "infamy": 0.5 },
+      "boon": { "attack": 0.5 },
+      "giftText": "A blade-shaped burn on their palm, and their next fights come easier.",
+      "price": { "text": "Their skin blisters where the pact was signed, and something of them stays in the dark.", "wound": 0.5, "taint": 1 },
+      "familiars": ["a cinder imp", "a quill imp", "a bell imp", "a soot imp", "a brass imp"]
+    },
+    {
+      "id": "thistle-queen",
+      "name": "the Thistle Queen",
+      "kind": "fey",
+      "title": "a queen of the twilight glades",
+      "wants": "songs sung of her champion, and no oath broken",
+      "deeds": { "renown": 0.2, "delves": 0.5, "infamy": -0.5 },
+      "boon": { "ac": 0.5 },
+      "giftText": "They wake wearing a cloak of thistledown that turns blades.",
+      "price": { "text": "They lose a night and a day in a ring of mushrooms, and come back a little less fond of the town.", "loyalty": 12, "gold": 0.5 },
+      "familiars": ["a thorn sprite", "a moth the size of a hand", "a hare that talks in riddles"]
+    },
+    {
+      "id": "ninth-mask",
+      "name": "the Ninth Mask",
+      "kind": "star",
+      "title": "the star the ninth god-king of Ashkaar bargained with",
+      "wants": "secrets dug up and spoken aloud",
+      "deeds": { "lore": 1, "delves": 0.5 },
+      "boon": { "skill": 0.5 },
+      "giftText": "They dream a map of somewhere they have never been, and it is right.",
+      "price": { "text": "The whispering gets louder. They stop sleeping, and stop caring what the town thinks.", "wound": 0.25, "loyalty": 15, "restless": 1 },
+      "familiars": ["a raven with star-white eyes", "a whispering skull", "a glass moth"]
+    },
+    {
+      "id": "gilded-wager",
+      "name": "the Gilded Wager",
+      "kind": "celestial",
+      "title": "a fallen star-angel who dices with fate",
+      "wants": "great risks taken and great stakes won",
+      "deeds": { "delves": 1, "gold": 0.01 },
+      "boon": { "attack": 0.25, "ac": 0.25, "skill": 0.25 },
+      "giftText": "A gold coin with two heads turns up in their purse. They never lose a toss again.",
+      "price": { "text": "Every coin in their purse turns to lead, and luck walks out on them.", "gold": 1 },
+      "familiars": ["a silver-winged cat", "a coin-hawk", "a lucky white mouse"]
+    }
+  ]
+}
