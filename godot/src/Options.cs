@@ -70,6 +70,9 @@ public sealed class Options
     /// <summary>--episode id: strike a townsperson out on the streets with that inspiration or break, look at them and open their inspector.</summary>
     public string? Episode;
 
+    /// <summary>--intro lineage: show that faction's first-meeting card (intros.json).</summary>
+    public string? Intro;
+
     /// <summary>Claim this road to victory once the town is staged, for shots of a road being held (victory.json id).</summary>
     public string? Claim;
 
@@ -228,6 +231,7 @@ public sealed class Options
                 case "--storyteller": o.Storyteller = Next(); break;
                 case "--storytellers": o.Storytellers = o.Title = true; break;
                 case "--episode": o.Episode = Next(); break;
+                case "--intro": o.Intro = Next(); break;
                 case "--claim": o.Claim = Next(); break;
                 case "--endless": o.Endless = true; break;
                 case "--boons": o.Boons.AddRange(Next().Split(',', StringSplitOptions.RemoveEmptyEntries)); break;

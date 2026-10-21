@@ -58,6 +58,7 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["ui-no", "cross-mark", "#ef7f6f"],
   ["ui-warn", "hazard-sign", "#e8b93a"],
   ["ui-road", "walking-boot", "#c4955f"],
+  ["ui-goal", "on-target", "#e07a5f"],
   ["ui-heal", "health-normal", "#8cc084"],
   ["ui-wound", "sword-wound", "#ef7f6f"],
   ["ui-up", "upgrade", "#8cc084"],
@@ -271,6 +272,10 @@ const icons: [name: string, glyph: string, tint: string][] = [
     "dwarf-face", "woman-elf-face", "mermaid", "centaur", "worm-mouth", "flying-beetle", "wasp-sting", "vulture", "horse-head",
     "unicorn", "greek-sphinx", "medusa-head", "hyena-head", "lion", "tiger-head", "saber-toothed-cat-head", "fire",
   ].map((g): [string, string, string] => [`face-${g}`, g, mono]),
+  // Faction crests (content/game/intros.json "crest"): crest-<lineage>, white so the client paints it in the faction's colours
+  ...(JSON.parse(readFileSync(join(root, "content/game/intros.json"), "utf8")) as { intros: { lineage: string; crest: string }[] }).intros.map(
+    (i): [string, string, string] => [`crest-${i.lineage}`, i.crest, mono],
+  ),
 ];
 
 for (const [name, glyph, tint] of icons) {
@@ -280,7 +285,7 @@ for (const [name, glyph, tint] of icons) {
   const svg =
     tint === mono
       ? // Portraits are drawn large, so they are imported at twice the size.
-        `<svg xmlns="http://www.w3.org/2000/svg" width="${name.startsWith("face-") ? 128 : 64}" height="${name.startsWith("face-") ? 128 : 64}" viewBox="0 0 512 512"><g fill="#ffffff">${paths}</g></svg>\n`
+        `<svg xmlns="http://www.w3.org/2000/svg" width="${/^(face|crest)-/.test(name) ? 128 : 64}" height="${/^(face|crest)-/.test(name) ? 128 : 64}" viewBox="0 0 512 512"><g fill="#ffffff">${paths}</g></svg>\n`
       : // The outline first, then the glyph over it: a dark rim like the drawn icons, without paint-order.
         `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="-16 -16 544 544"><g fill="#1d1712" stroke="#1d1712" stroke-width="34" stroke-linejoin="round">${paths}</g><g fill="${tint}">${paths}</g></svg>\n`;
   writeFileSync(join(out, `${name}.svg`), svg);
