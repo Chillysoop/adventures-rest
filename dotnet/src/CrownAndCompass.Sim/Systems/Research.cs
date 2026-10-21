@@ -13,7 +13,7 @@ public sealed record DiscoveryDef : DecreeDef
     /// <summary>1 to 5: sets the lore it takes and the gold to commission it.</summary>
     public int Rank { get; init; } = 1;
 
-    /// <summary>Any one of these reveals it: craft:profession:n, folk:race:n, partner:people, building:id, book:school:circle, books:n, wizard:level, known:id, tier:charter.</summary>
+    /// <summary>Any one of these reveals it: hero:class:level, heroes:n, routes:n, delves:n, craft:profession:n, folk:race:n, partner:people, building:id, book:school:circle, books:n, wizard:level, known:id, tier:charter.</summary>
     public List<string> Sparks { get; init; } = [];
 
     /// <summary>All of these must hold to study it (same tokens, plus circle:n, the library's highest spell circle).</summary>
@@ -311,6 +311,27 @@ public static class Research
                 return (City.Reached(town, p[1]), $"the charter of a {City.TierName(town, p[1]).ToLowerInvariant()}");
             case "circle":
                 return (Circle(town) >= N(1), $"wizards who can cast the {Ordinal(N(1))} circle");
+            case "hero":
+            {
+                // hero:class[:level], "any" for any class.
+                var h = town.Heroes.Where(a => (p[1] == "any" || a.Hero!.Cls.Id == p[1]) && a.Hero!.Level >= N(2)).OrderBy(a => a.Id).FirstOrDefault();
+                return (h != null, h != null ? h.Name : p[1] == "any" ? $"a hero of level {N(2)}" : $"a {p[1]}");
+            }
+            case "heroes":
+            {
+                int n = town.Heroes.Count;
+                return (n >= N(1), $"{n} {(n == 1 ? "hero" : "heroes")} in town");
+            }
+            case "routes":
+            {
+                int n = Trade.Open(town).Count();
+                return (n >= N(1), $"{n} trade {(n == 1 ? "route" : "routes")}");
+            }
+            case "delves":
+            {
+                int n = town.Parties.Count(x => x.Returned && x.Result?.Outcome == ExpeditionOutcome.Cleared);
+                return (n >= N(1), $"{n} {(n == 1 ? "site" : "sites")} cleared");
+            }
             default:
                 return (false, token);
         }
