@@ -61,14 +61,16 @@ public partial class Main
 
     /// <summary>
     /// A new story pops up on its own (while the player is playing, not watching the stand-in); high stakes
-    /// pause the clock. A party's sending always pauses it, and the clock stays stopped until it is answered.
+    /// pause the clock. A party's sending pauses it, and the clock stays stopped until it is answered. Each is
+    /// a toggle in Settings ("stories", "sendings"): a sending let run pops up like any story.
     /// </summary>
     private void SyncStories(double delta)
     {
-        if (_title.Visible || _menu.Visible) return;
-        if (!_opts.Smoke && Sendings.Waiting(_sim.Town).FirstOrDefault(w => Sendings.Pauses(_sim.Town, w)) is { } sending)
+        if (_title.Visible || _menu.Visible || _settings.Visible) return;
+        bool holdSendings = ShouldStop("sendings");
+        if (!_opts.Smoke && holdSendings && Sendings.Waiting(_sim.Town).FirstOrDefault(w => Sendings.Pauses(_sim.Town, w)) is { } sending)
         {
-            if (_speed > 0) SetSpeed(0);
+            StopClock("sendings");
             if (!_story.Visible)
             {
                 _storySeen = Math.Max(_storySeen, sending.Id);
@@ -82,12 +84,12 @@ public partial class Main
         // One card at a time: a discovery's report on screen is answered first.
         if (_story.Visible || _find.Visible) return;
         // Quiet sendings (late in the campaign, not high stakes) wait on the alert strip rather than popping up.
-        var next = Stories.Pending(_sim.Town).FirstOrDefault(s => s.Id > _storySeen && !Sendings.Is(_sim.Town, s));
+        var next = Stories.Pending(_sim.Town).FirstOrDefault(s => s.Id > _storySeen && (!Sendings.Is(_sim.Town, s) || (!holdSendings && Sendings.Pauses(_sim.Town, s))));
         if (next == null) return;
         _storySeen = next.Id;
         if (_opts.Smoke) return;
         OpenStory(next.Id);
-        if (Stories.DefOf(_sim.Town, next).Stakes == "high" && _speed > 0 && !_opts.NoPause) SetSpeed(0);
+        if (Stories.DefOf(_sim.Town, next).Stakes == "high") StopClock(Sendings.Is(_sim.Town, next) ? "sendings" : "stories");
     }
 
     private static (string Word, Color Color) StakesLook(string stakes) => stakes switch
