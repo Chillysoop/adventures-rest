@@ -182,7 +182,7 @@
     {
       "id": "known-foes",
       "title": "First contact",
-      "text": "The town has met its first foe.\n• [b]War[/b] lists only foes someone has seen, heard of or fought\n• Scouts, scrying, parties and witnesses find the rest\n• Guard and walls are under [b]Defence[/b]",
+      "text": "Whoever the town meets shows up:\n• Foes under [b]War[/b], once someone has seen, heard of or fought them\n• Powers and peoples under [b]Diplomacy[/b]\n• Scouts, scrying, parties and witnesses find the rest",
       "point": "tab:War",
       "until": "tab:War",
       "when": "count:Discovered",
