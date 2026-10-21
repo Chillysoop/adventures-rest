@@ -30,19 +30,20 @@ public partial class Main
             string id = ps.Id;
             string name = Ui.Cap(Powers.Name(t, d));
             string standing = $"{(ps.Standing >= 0 ? "+" : "−")}{Math.Abs(Math.Round(ps.Standing))}";
-            string text = $"[b]{Ui.Esc(name)}[/b]  {Tag(word, color)} {Ui.C(Ui.Ink2, $"[font_size=12]{standing}[/font_size]")}\n" +
-                          $"[font_size=13]Led by [b]{Ui.Esc(d.Leader)}[/b], {Ui.Esc(d.Title)}[/font_size]" +
+            // Who it is and what it wants go on hover; the row shows its side, its price and what needs an answer.
+            string about = $"Led by {d.Leader}, {d.Title}.\nIt {d.Goal}. From {d.Seat}." + (ps.LastHeard != "" ? $"\nLast heard: {ps.LastHeard}" : "");
+            string text = $"{Ui.Tip($"[b]{Ui.Esc(name)}[/b] {Ui.Img("ui-info", 12)}", about)}  {Tag(word, color)} {Ui.Dim($"[font_size=12]{standing}[/font_size]")}" +
                           (lore != null ? $"  {Tag(Ui.Cap(lore.Kind))}" : "") +
-                          $"\n{Ui.C(Ui.Ink2, $"[font_size=12]It {Ui.Esc(d.Goal)}. From {Ui.Esc(d.Seat)}.[/font_size]")}";
+                          $"\n[font_size=12]{Ui.Img("ui-person", 13)} {Ui.Esc(d.Leader)}[/font_size]";
             if (ps.Side == PowerSide.Town)
-                text += $"\n[font_size=12]{Ui.C(Ui.Good, $"Gives the town {Ui.Esc(Powers.BoonText(t, d))}.")} Tithe {Js.Str(d.Tithe)}g a day.[/font_size]";
+                text += $"\n[font_size=12]{Ui.Bullet(Ui.C(Ui.Good, Ui.Esc(Ui.Cap(Powers.BoonText(t, d)))), "ui-yes")}  {Ui.Chip("gold", $"−{Js.Str(d.Tithe)}/day", Ui.Bad, "Tithe")}[/font_size]";
             else if (ps.Side == PowerSide.Enemy && Powers.Patron(t, ps) is { } patron)
-                text += $"\n[font_size=12]{Ui.C(Ui.Bad, $"Serves {Ui.Esc(patron.Name)}: {Ui.Esc(Powers.BaneText(t, ps))}. Destroy {Ui.Esc(patron.Name)} to free it, or raise its standing to {Js.Str(t.Content.Powers.WinBack)} to win it back.")}[/font_size]";
+                text += $"\n[font_size=12]{Ui.Bullet(Ui.Tip(Ui.C(Ui.Bad, $"Serves {Ui.Esc(patron.Name)}: {Ui.Esc(Powers.BaneText(t, ps))}"), $"Destroy {patron.Name} to free it, or raise its standing to {Js.Str(t.Content.Powers.WinBack)} to win it back."), "ui-no")}[/font_size]";
             else
             {
-                text += $"\n[font_size=12]{Ui.C(Ui.Ink2, $"As an ally: {Ui.Esc(Powers.BoonText(t, d))}. Allies at {Js.Str(d.AllyAt)} for {Js.Str(d.Price)}g, then {Js.Str(d.Tithe)}g a day.")}[/font_size]";
+                text += $"\n[font_size=12]{Ui.Bullet(Ui.Esc(Ui.Cap(Powers.BoonText(t, d))), "ui-yes")}  {Ui.Chip("standing", $"{Js.Str(d.AllyAt)}", Ui.Ink2, "Allies at this standing")} {Ui.Chip("gold", $"{Js.Str(d.Price)} +{Js.Str(d.Tithe)}/day", Ui.Gold, "Price, then tithe")}[/font_size]";
                 if (d.Serves == "any")
-                    text += $"\n[font_size=12]{Ui.C(Ui.Ink2, $"If an enemy buys it: {Ui.Esc(Powers.BaneText(t, ps))}.")}[/font_size]";
+                    text += $"\n[font_size=12]{Ui.Bullet(Ui.Dim(Ui.Esc(Ui.Cap(Powers.BaneText(t, ps)))), "ui-no")} {Ui.Dim("if an enemy buys it")}[/font_size]";
             }
             if (Powers.Suitor(t, ps) is { } suitor)
             {
@@ -55,7 +56,6 @@ public partial class Main
                 text += $"\n[font_size=12]{Ui.C(Ui.Bad, $"Still taking its price: the farms yield less for {Ui.Days(ps.OwedUntil - t.Day)}.")}[/font_size]";
             if (ps.Envoy != "")
                 text += $"\n[font_size=12]{Ui.C(Ui.Gold, $"Its envoy {Ui.Esc(Powers.EnvoyText(t, ps))}. Answer within {Ui.Days(Math.Max(1, ps.EnvoyUntil - t.Day))}.")}[/font_size]";
-            if (ps.LastHeard != "") text += $"\n{Ui.C(Ui.Ink2, $"[font_size=11]Last heard: {Ui.Esc(ps.LastHeard)}[/font_size]")}";
 
             double gift = Powers.GiftCost(t, id);
             var buttons = new List<(string, bool, bool, Action)>

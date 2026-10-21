@@ -710,7 +710,7 @@ public partial class Main : Control
             // One line an entry: the category's icon (its name on hover), the news, the day dimmed after it.
             string text = LinkNames(e);
             sb.Append(Ui.Tip(Ui.Img(LedgerIcon(e.Category), 16), e.Category.ToString())).Append(' ')
-                .Append(e.Importance == Importance.Major ? Ui.C(catColor == Ui.Ink2 ? Ui.Gold : catColor, $"[b]{text}[/b]") : text)
+                .Append(e.Importance == Importance.Major ? $"{Ui.C(catColor == Ui.Ink2 ? Ui.Gold : catColor, "◆")} [b]{text}[/b]" : text)
                 .Append("  ").Append(Ui.Dim($"[font_size=11]day {day}, {e.Tick % 24:00}:00[/font_size]"))
                 .Append("\n[font_size=6] [/font_size]\n");
         }
