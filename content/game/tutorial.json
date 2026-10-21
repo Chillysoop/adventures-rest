@@ -699,7 +699,7 @@
     {
       "id": "institutions-discovery",
       "title": "Institutions to discover",
-      "text": "The town starts knowing none of its [b]institutions[/b]: [b]0 of 23[/b].\nThey come to light from\n• heroes and folk who settle\n• crafts and trade\n• sites cleared\n• a bigger charter\nHeard-of ones show what they still need, then rise from the Government build bar.",
+      "text": "The town starts knowing none of its [b]institutions[/b].\nThey come to light from\n• heroes and folk who settle\n• crafts and trade\n• sites cleared\n• a bigger charter\nHeard-of ones show what they still need, then rise from the Government build bar.",
       "point": "tab:Institutions",
       "when": "count:InstitutionsSeen",
       "teaches": []
@@ -728,6 +728,8 @@
       "when": "density",
       "teaches": []
     },
+    {"id": "ruins", "title": "Ruins to restore", "text": "Some of the lairs near town are the ruins of old works: an aqueduct, a gatehouse, a watchtower, a star fort. Once a company clears one, an alert says it can be restored. Click it on the map, or open the [b]Campaign[/b] window, and choose [b]Restore[/b]: for a little gold it serves the town for good, with clean water, defence or an early warning.", "when": "alert:ruin", "point": "alerts", "teaches": ["command:RestoreRuin"]},
+    {"id": "rope-bridges", "title": "Rope bridges", "text": "Gorges on the roads have rope bridges across them, so companies cross where they would otherwise climb down and up. Raiders sometimes cut one, and an alert says so: companies then go the long way round. Open the [b]Campaign[/b] window and choose [b]Rebuild in stone[/b]. A stone bridge can never be cut again.", "when": "alert:bridge", "point": "alerts", "teaches": ["command:RebuildBridge"]},
     {
       "id": "council-chamber",
       "title": "The council chamber",

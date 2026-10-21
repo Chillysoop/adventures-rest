@@ -1,0 +1,47 @@
+{
+  "_doc": "Company heraldry (Systems/Heraldry.cs): each company takes arms when it first rides, from words in its name where they fit, else by lot from its name. Wear is how battered its tabards and banner are, 0 new to 1 rags: each venture adds to it, a bloody one more, and it mends slowly at home.",
+  "tinctures": [
+    { "id": "azure", "name": "blue", "hex": "2f4f8f" },
+    { "id": "gules", "name": "red", "hex": "9b2d20" },
+    { "id": "vert", "name": "green", "hex": "2f6b3a" },
+    { "id": "sable", "name": "black", "hex": "26231f" },
+    { "id": "purpure", "name": "purple", "hex": "5e3570" },
+    { "id": "tenne", "name": "tawny", "hex": "a35a1f" }
+  ],
+  "metals": [
+    { "id": "argent", "name": "silver", "hex": "e4e2da" },
+    { "id": "or", "name": "gold", "hex": "d9a93a" }
+  ],
+  "divisions": [
+    { "id": "plain", "name": "" },
+    { "id": "pale", "name": "per pale" },
+    { "id": "bend", "name": "per bend" },
+    { "id": "chevron", "name": "a chevron" },
+    { "id": "quarterly", "name": "quarterly" },
+    { "id": "chief", "name": "a chief" }
+  ],
+  "charges": [
+    { "id": "lion", "name": "a lion rampant", "words": ["Lion", "Pride", "Mane", "Brave", "Bold"] },
+    { "id": "tower", "name": "a tower", "words": ["Tower", "Stone", "Iron", "Wall", "Keep", "Shield", "Hold"] },
+    { "id": "star", "name": "three stars", "words": ["Star", "Night", "Silver", "Seven"] },
+    { "id": "crescent", "name": "a crescent moon", "words": ["Moon", "Dusk", "Pale", "Ghost"] },
+    { "id": "sun", "name": "a rising sun", "words": ["Sun", "Dawn", "Gold", "Bright", "Morning", "Lantern"] },
+    { "id": "swords", "name": "crossed swords", "words": ["Blade", "Sword", "Steel", "Edge", "Knife", "Spear"] },
+    { "id": "oak", "name": "an oak leaf", "words": ["Oak", "Green", "Thorn", "Wood", "Leaf", "Briar"] },
+    { "id": "crown", "name": "a crown", "words": ["Crown", "King", "Queen", "Royal", "Throne"] },
+    { "id": "flame", "name": "a flame", "words": ["Flame", "Ember", "Ash", "Fire", "Red", "Burning"] },
+    { "id": "key", "name": "a key", "words": ["Key", "Door", "Gate", "Lock", "Vault"] },
+    { "id": "wolf", "name": "a wolf's head", "words": ["Wolf", "Hound", "Fang", "Grey", "Hunt"] },
+    { "id": "eagle", "name": "an eagle displayed", "words": ["Eagle", "Hawk", "Wing", "Feather", "Sky", "Raven", "Crow"] },
+    { "id": "cross", "name": "a cross", "words": ["Holy", "Oath", "Vow", "Saint", "Pilgrim"] },
+    { "id": "skull", "name": "a skull", "words": ["Skull", "Bone", "Grave", "Dead", "Black", "Doom"] }
+  ],
+  "venture": 0.05,
+  "bloody": 0.1,
+  "mend": 0.004,
+  "proud": 0.6,
+  "proudText": [
+    "The {company}'s banner is more patch than cloth now, and they will not hear of a new one: every hole has a story, and they tell them all at the tavern.",
+    "The tabards of the {company} are faded and stitched in a dozen places. Children in the street point at the tears and ask which monster made which."
+  ]
+}

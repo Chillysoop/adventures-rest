@@ -729,6 +729,8 @@ public partial class Main
         var live = Watch.LiveOf(t, s);
         var scout = Watch.ScoutAt(t, s.Def.Id);
         p.Text($"[font_size=19][b]{Ui.Esc(Ui.Cap(s.Def.Name))}[/b][/font_size]\n{Ui.C(Ui.Ink2, $"Tier {s.Def.Tier} · {(s.Def.Distance == 0 ? "under the town" : $"{Ui.Days(s.Def.Distance)} away")}")}");
+        if (s.Def.Aloft) p.Text(Ui.C(new Color("cfe3f0"), "[b]A floating isle[/b], drifting above the clouds. Only a company that can fly, or rides the sky dock's airship, can reach it."));
+        if (Ruins.Of(t, s) is { } ruin && !s.Restored) p.Text(Ui.C(Ui.Gold, $"[b]Ruins[/b] of old works. Cleared, the town can restore it for {Js.Str(ruin.Cost)}g, and it {Ui.Esc(ruin.Gives)}."));
         string seen = sight switch
         {
             Sight.Live when scry != null => Ui.C(new Color("b48cff"), $"[b]Scrying[/b] {(scry.CasterId == 0 ? "in the Scrying Pool" : $"by {Ui.Esc(t.Agent(scry.CasterId).Name)}")}, {scry.EndTick - t.Tick} hours left. You see it as it is now."),
@@ -783,6 +785,17 @@ public partial class Main
         string sid = s.Def.Id;
         if (s.Cleared)
         {
+            if (Ruins.Of(t, s) is { } old)
+            {
+                if (s.Restored)
+                {
+                    p.Text(Ui.C(Ui.Good, $"Restored. It {Ui.Esc(old.Gives)}."));
+                    return;
+                }
+                p.Heading("Restore it");
+                p.Buttons(($"Restore it, {Js.Str(old.Cost)}g", t.Treasury >= old.Cost, true, () => Act(() => _sim.RestoreRuin(sid))));
+                p.Note($"Masons put it back in order, and it {old.Gives}. Nothing moves back in.");
+            }
             if (Loyalty.Lord(t, s.Def.Id) is Agent lord)
             {
                 p.Text($"The land of {AgentLink(lord, Loyalty.Styled(t, lord))}, held by their own retainers.");
