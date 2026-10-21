@@ -65,6 +65,35 @@ public partial class Main
         return lines + "[/font_size]";
     }
 
+    /// <summary>A score on a character sheet, coloured by how strong it is.</summary>
+    /// <summary>The icon for each score slot, in character.json's slots.</summary>
+    private static readonly Dictionary<string, string> ScoreIcons = new()
+    {
+        ["might"] = "defence", ["wealth"] = "gold", ["diplomacy"] = "standing", ["health"] = "health",
+        ["lore"] = "books", ["faith"] = "faith", ["wits"] = "wits", ["reach"] = "population",
+        ["dread"] = "dread", ["will"] = "will",
+    };
+
+    /// <summary>A score as its icon and number; the name shows on hover.</summary>
+    internal static string ScoreTag(Score x) =>
+        $"[hint={x.Name}]{(ScoreIcons.TryGetValue(x.Slot, out var icon) ? Ui.Img(icon, 14) : Ui.Esc(x.Name))} " +
+        Ui.C(x.Value >= 14 ? Ui.Good : x.Value <= 7 ? Ui.Bad : Ui.Ink, $"[b]{x.Value}[/b]") + "[/hint]";
+
+    /// <summary>A settlement's character sheet: size and purpose, its six scores, then customs, secret and a saying as bullets.</summary>
+    private static string CharacterSheet(Town t, Settlement s)
+    {
+        string size = Character.SizeOf(t, s)?.Name ?? s.Kin.Kind;
+        string purpose = Character.PurposeOf(t, s) is { } pu ? $" · {Ui.Esc(pu.Name)}" : "";
+        string lines = $"[font_size=12]{Tag(Ui.Cap(size))}{purpose}\n{string.Join("   ", Character.Sheet(t, s).Select(ScoreTag))}";
+        foreach (var c in Character.CustomsOf(t, s)) lines += "\n• " + Ui.C(Ui.Ink2, Ui.Esc(Character.Fill(s, c.Text)));
+        if (Character.SecretOf(t, s) is { } secret)
+            lines += "\n• " + (Character.SecretKnown(t, s)
+                ? Ui.C(Ui.Gold, $"Secret: {Ui.Esc(Ui.Cap(Character.Fill(s, secret.Text)))}.")
+                : Ui.C(Ui.Ink2, "A secret, told only to friends."));
+        if (Character.Proverb(t, s, s.Id + t.Day / 30) is string saying) lines += "\n" + Ui.C(Ui.Ink2, $"[i]{Ui.Esc(saying)}[/i]");
+        return lines + "[/font_size]";
+    }
+
     /// <summary>The people there who remember the town, and what they remember.</summary>
     private static string Cast(Town t, Settlement s)
     {
@@ -181,8 +210,9 @@ public partial class Main
             var (word, color) = StandingWord(s, w.Ally);
             int id = s.Id;
             var trade = s.Kin.Trade;
-            string goods = trade.Offers.Count == 0 ? "They don't trade."
-                : $"Want {string.Join(", ", trade.Wants)} · sell {string.Join(", ", trade.Offers)}.";
+            var offers = Trade.Offers(t, s);
+            string goods = offers.Count == 0 ? "They don't trade."
+                : $"Want {string.Join(", ", trade.Wants)} · sell {string.Join(", ", offers)}.";
             int pleas = t.Pleas.Count(x => x.SettlementId == s.Id && x.Status is PleaStatus.Open or PleaStatus.Taken);
             string boon = s.Kin.Boon.Text != "" ? Ui.Cap(s.Kin.Boon.Text.Replace("{S}", s.Name)) + (s.Kin.Boon.Troops > 0 ? ", and their warriors come if the walls are attacked." : ".") : "";
             string head = $"[b]{Ui.Esc(s.Name)}[/b]  {Tag(word, color)}{(s.Razed ? "" : $" {Ui.C(Ui.Ink2, $"[font_size=12]{(s.Standing >= 0 ? "+" : "−")}{Math.Abs(Math.Round(s.Standing))}[/font_size]")}")}" +
@@ -195,14 +225,14 @@ public partial class Main
                 p.Row(head);
                 continue;
             }
-            head += "\n" + Life(t, s);
+            head += "\n" + CharacterSheet(t, s) + "\n" + Life(t, s);
             var buttons = new List<(string, bool, bool, Action)>();
             if (!s.Allied || Shadows.Shadowed(s)) buttons.Add(($"Envoy · {Js.Str(w.EnvoyCost)}g", t.Treasury >= w.EnvoyCost, false, () => Act(() => _sim.SendEnvoy(id))));
             if (Shadows.Shadowed(s))
                 buttons.Add((Shadows.Rallier(t) is { } speaker && s.Shadow!.RallyHeroId == null ? $"Send {speaker.GivenName} to rally them" : "Rally", Shadows.RallyRefused(t, s) == null, true, () => Act(() => _sim.RallySettlement(id))));
             if (Neighbours.TroubleOf(t, s) is { Kind: "need", Aid: { } aid })
                 buttons.Add(($"Aid · {Js.Str(aid.Gold)}g, {Js.Str(aid.Qty)} {aid.Good.ToString().ToLowerInvariant()}", Neighbours.AidRefused(t, s) == null, true, () => Act(() => _sim.AidSettlement(id))));
-            if (!open.Any(r => r.SettlementId == s.Id) && trade.Offers.Count > 0)
+            if (!open.Any(r => r.SettlementId == s.Id) && offers.Count > 0)
             {
                 string? no = Trade.Refuse(t, s);
                 var (export, import) = Trade.Suggest(t, s);

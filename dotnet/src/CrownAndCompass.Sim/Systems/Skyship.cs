@@ -153,7 +153,7 @@ public static class Skyship
     public static (Good Good, double Price)? Bring(Town town, Settlement s, Good cargo)
     {
         var m = town.Market;
-        var offers = s.Kin.Trade.Offers.Where(g => g != cargo).ToList();
+        var offers = Trade.Offers(town, s).Where(g => g != cargo).ToList();
         if (offers.Count == 0) return null;
         var g = offers.OrderBy(x => m.Stock(x) / Math.Max(1, m.Target(x))).ThenBy(x => x).First();
         return (g, m.BasePrice(g) * Rules(town).BuyPrice * Lean(town, s, g));
