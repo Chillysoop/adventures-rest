@@ -21,6 +21,7 @@ public partial class Main : Control
         City,
         Ledger,
         War,
+        Army,
         Defence,
         Council,
         Bounties,
@@ -77,6 +78,7 @@ public partial class Main : Control
         BuildGuide();
         BuildStory();
         BuildFind();
+        BuildIntro();
         BuildTourney();
         BuildTale();
         BuildRecap();
@@ -109,6 +111,8 @@ public partial class Main : Control
             _opts.Cam ??= 8;
         }
         _opts.ApplyScript(_sim);
+        // A field battle held for a shot aims the camera itself once the map is laid out.
+        if (Map.Crowd.FieldU != null) _opts.Cam ??= 14;
         if (_opts.Tourney is int tourney) StageTourney(tourney);
         if (_opts.Secrets) StageSecrets();
         if (_opts.Guilds is string guilds) StageGuilds(guilds == "strike");
@@ -140,6 +144,20 @@ public partial class Main : Control
         // --rising aims at the building going up with the most hands on it, the least built first (for a clip of it rising).
         if (_opts.Rising && _sim.Town.Buildings.Where(b => b.IsSite && !b.Def.IsGrand).OrderByDescending(b => b.Workers.Count).ThenBy(b => b.BuildProgress / b.Def.BuildHours).ThenBy(b => b.Id).FirstOrDefault() is Building rising)
             _map.LookAt(Map.Geo.LotPos(_sim.Town.Lot(rising.LotId)), _opts.Cam ?? 6);
+        // --zone aims at the lot of a zone with the most of the zone's lots round it.
+        // --zone square aims at the oldest market square.
+        if (_opts.Zone == "square" && _sim.Town.Plan.Streets.FirstOrDefault(r => r.Market) is { } sq)
+        {
+            float sx = 0, sy = 0;
+            for (int i = 0; i < sq.Points.Length; i += 2) (sx, sy) = (sx + (float)sq.Points[i], sy + (float)sq.Points[i + 1]);
+            _map.LookAt(new Vector2(Map.Geo.Margin + sx * 2 / sq.Points.Length, Map.Geo.Margin + sy * 2 / sq.Points.Length), _opts.Cam ?? 9);
+        }
+        else if (_opts.Zone is string zn && Enum.TryParse<Zone>(zn, true, out var zone))
+        {
+            var lots = _sim.Town.Lots.Where(l => l.Zone == zone && l.BuildingId != null).ToList();
+            if (lots.OrderByDescending(l => lots.Count(o => (o.X - l.X) * (o.X - l.X) + (o.Y - l.Y) * (o.Y - l.Y) < 9)).ThenBy(l => l.Id).FirstOrDefault() is Lot best)
+                _map.LookAt(new Vector2(Map.Geo.Margin + (float)best.X, Map.Geo.Margin + (float)best.Y), _opts.Cam ?? 9);
+        }
         if (_opts.StrategicView) ToggleStrategic();
         if (_opts.Lens is string lens && Enum.TryParse<Map.Lens.Mode>(lens, true, out var lm)) _map.Lens.Show(true, lm);
         foreach (var (kind, at, label) in _opts.Markers) _map.Markers.Add(new Marker(kind, at, _sim.Town.Day, label));
@@ -160,6 +178,8 @@ public partial class Main : Control
         if (_opts.Folk && _sim.Town.Workers.Where(a => !a.IsAway).OrderByDescending(a => a.Practice).ThenBy(a => a.Id).FirstOrDefault() is Agent folk)
             Select(Selection.Agent(folk.Id));
         if (_opts.Episode is string episode) StageEpisode(episode);
+        if (_opts.Intro is string intro) StageIntro(intro);
+        if (_opts.Claim is string road && !_sim.ClaimRoad(road)) GD.Print($"Cannot claim {road}: {Victory.ClaimBlocked(_sim.Town, road)}");
         if (_opts.Befriend) StageNotables();
         if (_opts.House && _sim.Town.Buildings.Where(b => b.Complete && b.Def.Housing > 0).OrderByDescending(b => Decor.Comfort(_sim.Town, b)).ThenBy(b => b.Id).FirstOrDefault() is Building house)
         {
@@ -249,6 +269,7 @@ public partial class Main : Control
     private Story? OpenScripted(string id)
     {
         var t = _sim.Town;
+        if (t.Content.Stories.Story(id) is { Source: Powers.ContactSource }) return Powers.OpenContact(t, id);
         if (t.Content.Stories.Story(id) is not { } d || !Sendings.Is(d)) return Stories.Open(t, id);
         // Wait (up to a few days) for a party on the road far enough from its site.
         for (int hour = 0; hour < 24 * 6; hour++)
@@ -315,7 +336,7 @@ public partial class Main : Control
         RememberLegends();
         // With --autoplay the stand-in mayor keeps playing, for demos and screenshots; only a player's towns meet old legends.
         var legends = autoplay ? [] : ProfileLegends();
-        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoArmory = autoplay && !_opts.KeepArmory, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay && _opts.Tax == null, AutoHonours = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay, AutoStories = autoplay, AutoExplore = autoplay && !_opts.Find, Legends = legends, Storyteller = storyteller ?? _opts.Storyteller ?? "rising" }));
+        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoArmory = autoplay && !_opts.KeepArmory, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay && _opts.Tax == null, AutoHonours = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay, AutoStories = autoplay, AutoExplore = autoplay && !_opts.Find, Legends = legends, Storyteller = storyteller ?? _opts.Storyteller ?? "rising", Boons = autoplay ? [.. _opts.Boons] : ChosenBoons(), Endless = _opts.Endless || (!autoplay && _endless) }));
     }
 
     /// <summary>Show a town: a new one, or one loaded from a save.</summary>
@@ -342,6 +363,9 @@ public partial class Main : Control
         _storySeen = sim.Town.Stories.All.Count;
         CloseFind();
         _findSeen.Clear();
+        CloseIntro();
+        _introSeen = -1;
+        _introQueue.Clear();
         ResetClockWatch();
         CloseTale();
         _recap.Visible = false;
@@ -445,6 +469,12 @@ public partial class Main : Control
         if (_tale.Visible && k.Keycode == Key.Escape)
         {
             CloseTale();
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+        if (_intro.Visible && k.Keycode is Key.Escape or Key.Enter or Key.Space)
+        {
+            CloseIntro();
             GetViewport().SetInputAsHandled();
             return;
         }
@@ -589,6 +619,8 @@ public partial class Main : Control
         SyncOrders();
         SyncGuide();
         SyncGoals();
+        // A first meeting's picture comes before any scene or report it brought.
+        SyncIntros();
         SyncStories(delta);
         SyncFinds();
         SyncClockStops();
@@ -610,6 +642,7 @@ public partial class Main : Control
                     case Tab.City: RenderCity(); break;
                     case Tab.Ledger: RenderLedger(); break;
                     case Tab.War: RenderWar(); break;
+                    case Tab.Army: RenderArmy(); break;
                     case Tab.Defence: RenderDefence(); break;
                     case Tab.Council: RenderCouncil(); break;
                     case Tab.Bounties: RenderBounties(); break;
@@ -718,15 +751,36 @@ public partial class Main : Control
                 LedgerCategory.Construction or LedgerCategory.Property => Ui.Good,
                 _ => Ui.Ink2,
             };
-            sb.Append(Ui.C(Ui.Ink2, $"[font_size=12]Day {day} · {e.Tick % 24:00}:00[/font_size]"))
-                .Append("  ")
-                .Append(Ui.C(catColor, $"[font_size=11][b]{e.Category.ToString().ToUpperInvariant()}[/b][/font_size]"))
-                .Append('\n');
+            // One line an entry: the category's icon (its name on hover), the news, the day dimmed after it.
             string text = LinkNames(e);
-            sb.Append(e.Importance == Importance.Major ? $"{Ui.C(Ui.Gold, "◆")} [b]{text}[/b]" : text).Append("\n[font_size=6] [/font_size]\n");
+            sb.Append(Ui.Tip(Ui.Img(LedgerIcon(e.Category), 16), e.Category.ToString())).Append(' ')
+                .Append(e.Importance == Importance.Major ? $"{Ui.C(catColor == Ui.Ink2 ? Ui.Gold : catColor, "◆")} [b]{text}[/b]" : text)
+                .Append("  ").Append(Ui.Dim($"[font_size=11]day {day}, {e.Tick % 24:00}:00[/font_size]"))
+                .Append("\n[font_size=6] [/font_size]\n");
         }
         Ui.SetRich(_ledgerText, sb.ToString());
     }
+
+    private static string LedgerIcon(LedgerCategory c) => c switch
+    {
+        LedgerCategory.Arrival => "population",
+        LedgerCategory.Departure => "ui-road",
+        LedgerCategory.Property => "ui-house",
+        LedgerCategory.Construction => "tools",
+        LedgerCategory.Business => "gold",
+        LedgerCategory.Social => "ale",
+        LedgerCategory.Brawl => "ui-wound",
+        LedgerCategory.Romance => "ui-heart",
+        LedgerCategory.Hardship => "ui-warn",
+        LedgerCategory.Quest => "compass",
+        LedgerCategory.Council => "decree",
+        LedgerCategory.War => "threat",
+        LedgerCategory.Town => "mandate",
+        LedgerCategory.Rumor => "ui-eye",
+        LedgerCategory.Faith => "ui-holy",
+        LedgerCategory.Faction => "ui-faction",
+        _ => "d20",
+    };
 
     /// <summary>Turn the names of agents an entry mentions into links that open the inspector.</summary>
     private string LinkNames(LedgerEntry e)
@@ -773,6 +827,14 @@ public partial class Main : Control
         v.AddChild(h);
         var body = Ui.Rich($"[center]{Ui.Esc(t.Saga.EndText)} The full account is in the Chronicles.[/center]");
         v.AddChild(body);
+        // A win is graded by its day and fills the cabinet with boons for the next town (Cabinet.cs).
+        RecordWin();
+        if (won && Victory.Won(t) != null)
+        {
+            var g = Boons.Grade(t.Content, t.Day);
+            string boons = string.Join("   ", Boons.Earned(t).Select(e => $"{Ui.Img(e.Boon.Icon, 16)} {Ui.Esc(e.Boon.Name)} {new string('★', e.Rank)}"));
+            v.AddChild(Ui.Rich($"[center][b]{Ui.C(Ui.Gold, g.Name)}[/b] · day {t.Day}\n{boons}[/center]"));
+        }
         var actions = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
         actions.AddThemeConstantOverride("separation", 8);
         var again = new Button { Text = "New town", ThemeTypeVariation = "Post" };

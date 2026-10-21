@@ -1,0 +1,25 @@
+{
+  "_doc": "The law book (Systems/Laws.cs): the council sets the punishment for each crime the watch catches heroes at. Each sentence carried out moves order (unrest, negative calms it), fear (a share of would-be offenders who think twice), the guilds' standing and the temple god's favour, and the offender's loyalty. fine multiplies the usual fine. The default is the old fine, so a town that never opens the book plays as before.",
+  "default": "fine",
+  "crimes": [
+    { "id": "brawling", "name": "Brawling", "text": "Wrecking a taproom, breaking a drover's jaw, starting what the watch has to finish." },
+    { "id": "theft", "name": "Theft", "text": "A hand in a shop's till, a purse lifted at the market." }
+  ],
+  "punishments": [
+    { "id": "fine", "name": "A fine", "fine": 1, "text": "The magistrate fines them and lets them go. Nobody minds much either way.",
+      "sentenced": "and the magistrate fines them {fine} gold" },
+    { "id": "stocks", "name": "The stocks", "fine": 0.5, "order": -1, "fear": 0.2, "guilds": 0.5, "temple": -0.5, "loyalty": -2,
+      "text": "A day in the stocks on the square, pelted with cabbage. The shopkeepers like it; the priests think it petty.",
+      "sentenced": "and they spend a day in the stocks on the square while the market throws cabbages" },
+    { "id": "flogging", "name": "Flogging", "fine": 0, "order": -2, "fear": 0.45, "guilds": 1, "temple": -2, "loyalty": -6, "mandate": -0.5,
+      "text": "Ten lashes at the gate. Few dare the same crime twice, but the temple preaches against it and heroes remember.",
+      "sentenced": "and they take ten lashes at the gate, with half the town watching" },
+    { "id": "penance", "name": "Temple penance", "fine": 0, "order": 1, "temple": 2, "guilds": -1, "loyalty": 1,
+      "text": "A week scrubbing the temple steps and a vigil at the altar. The temple is pleased; the guilds call it soft.",
+      "sentenced": "and they are sent to scrub the temple steps for a week and keep vigil at the altar" },
+    { "id": "restitution", "name": "Restitution", "fine": 2, "order": -0.5, "fear": 0.1, "guilds": 2, "loyalty": -3,
+      "text": "Twice the harm paid back. The guilds call it justice; it empties a hero's purse.",
+      "sentenced": "and the magistrate makes them pay back twice over, {fine} gold" }
+  ],
+  "changed": "The council writes it into the law book: {crime} is now punished by {punishment}."
+}

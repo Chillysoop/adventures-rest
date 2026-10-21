@@ -93,6 +93,7 @@ public partial class TownView(MapView map) : Node3D
     private readonly Dictionary<string, MultiMeshInstance3D> _batches = [];
     private readonly MeshInstance3D _ground = new() { MaterialOverride = Mats.Props, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off };
     private readonly MeshInstance3D _walls = new() { MaterialOverride = Mats.Props };
+    private readonly MultiMeshInstance3D _hedges = new() { MaterialOverride = Mats.Props }, _hedgeTrees = new() { MaterialOverride = Mats.Props };
 
     private ImageTexture? _zoneTex;
     private int _zoneVersion = -1;
@@ -104,6 +105,8 @@ public partial class TownView(MapView map) : Node3D
     {
         AddChild(_ground);
         AddChild(_walls);
+        AddChild(_hedges);
+        AddChild(_hedgeTrees);
     }
 
     public void Reset()
@@ -135,6 +138,8 @@ public partial class TownView(MapView map) : Node3D
     /// </summary>
     private float Floor(Lot l)
     {
+        // Fields lie on the ground as it falls: the middle of the lot, never propped up.
+        if (l.Zone == Zone.Farmland) return Geo.LotCorners(l, 0).Average(Ground) * 0.5f + Ground(Geo.LotPos(l)) * 0.5f;
         float h = float.MinValue;
         foreach (var c in Geo.LotCorners(l, 0)) h = Mathf.Max(h, Ground(c));
         return Mathf.Max(h, Ground(Geo.LotPos(l)));
@@ -142,7 +147,7 @@ public partial class TownView(MapView map) : Node3D
 
     // ---------- Buildings ----------
 
-    private static string MeshKey(Building b)
+    private static string MeshKey(Building b, bool bare = false)
     {
         // A grand work rises in plain sight: its own shape, taller with every stage, in scaffold.
         if (b.IsSite && b.Def.IsGrand) return $"grand:{Math.Min(7, (int)(b.BuildProgress / b.Def.BuildHours * 8))}:{b.Def.Id}";
@@ -155,18 +160,42 @@ public partial class TownView(MapView map) : Node3D
             int pile = b.Hauled >= 1 && done >= 0.98 ? 0 : left > 0.3 ? 2 : left > 0.04 ? 1 : 0;
             return $"rise:{Math.Min(5, (int)(done * 6))}:{pile}{(b.Def.Stone > b.Def.Timber ? "s" : "t")}:{b.Def.Id}";
         }
-        return $"{b.Def.Id}:{b.Id % 4}";
+        // Fields without a farmstead of their own draw only their crop (variants 4-7).
+        return $"{b.Def.Id}:{b.Id % 4 + (bare ? 4 : 0)}";
+    }
+
+    /// <summary>Farmsteads stand this far apart at the least (tiles): the fields between them are open land, as in any farming country.</summary>
+    private const double FarmSpread = 2.6;
+
+    /// <summary>
+    /// The farms that have a farmstead: the oldest in each neighbourhood, so the farmhouses stand apart among the fields and the
+    /// rest of the farms are open land worked from them. Stable as farms are added, since newer farms never take an older's house.
+    /// </summary>
+    public static HashSet<int> Farmsteads(Town town)
+    {
+        var at = new List<Lot>();
+        var ids = new HashSet<int>();
+        foreach (var b in town.Buildings.OrderBy(b => b.Id))
+        {
+            if (b.Def.Zone != Zone.Farmland) continue;
+            var l = town.Lot(b.LotId);
+            if (at.Any(h => (h.X - l.X) * (h.X - l.X) + (h.Y - l.Y) * (h.Y - l.Y) < FarmSpread * FarmSpread)) continue;
+            at.Add(l);
+            ids.Add(b.Id);
+        }
+        return ids;
     }
 
     private void Buildings(Town town)
     {
         var groups = new SortedDictionary<string, List<(Vector3 P, float Yaw, float Scale)>>(StringComparer.Ordinal);
+        var steads = Farmsteads(town);
         foreach (var b in town.Buildings.OrderBy(b => b.Id))
         {
             var lot = town.Lot(b.LotId);
             var c = Geo.LotPos(lot);
             var p = new Vector3(c.X, Floor(lot), c.Y);
-            string key = MeshKey(b);
+            string key = MeshKey(b, b.Def.Zone == Zone.Farmland && !steads.Contains(b.Id));
             // The mast stands empty while the airship is off (or flying out or in: see Sky).
             if (key.StartsWith("sky_dock:", StringComparison.Ordinal) && !SkyMoored(town)) key = "sky_dock_away:" + key[9..];
             if (!groups.TryGetValue(key, out var list)) groups[key] = list = [];
@@ -256,6 +285,9 @@ public partial class TownView(MapView map) : Node3D
             case "courthouse": Courthouse(kit, v); break;
             case "library": Library(kit, v); break;
             case "barracks": Barracks(kit, v); break;
+            case "drill_yard": DrillYard(kit, v); break;
+            case "archery_range": ArcheryRange(kit, v); break;
+            case "stables": Stables(kit, v); break;
             case "cathedral": Cathedral(kit); break;
             case "arena": Arena(kit, v); break;
             case "keep": Keep(kit); break;
@@ -367,10 +399,6 @@ public partial class TownView(MapView map) : Node3D
 
     /// <summary>How far standing crops bend in the wind, per unit of their height (MeshKit.Sway).</summary>
     private const float CropSway = 0.7f;
-
-    /// <summary>Kenney's crops come untextured (white wheat, teal corn): ripe gold and leaf green, keeping their shading.</summary>
-    private static readonly Func<Color, Color> Wheat = c => new Color("d4ad4a") * (0.8f + 0.2f * c.Luminance);
-    private static readonly Func<Color, Color> Corn = c => new Color("6c9a36") * (0.8f + 0.2f * c.Luminance);
 
     private static void Chimney(MeshKit k, float x, float y, float z, bool smoke = false)
     {
@@ -614,63 +642,86 @@ public partial class TownView(MapView map) : Node3D
 
     private static void Farm(MeshKit k, int v)
     {
-        // Rows of wheat and a small barn.
-        k.Box(new Vector3(0, 0.005f, 0), new Vector3(0.96f, 0.02f, 0.96f), new Color("7a5e3a"));
-        k.Sway = CropSway;
-        for (int r = 0; r < 3; r++)
-            for (int c = 0; c < 2; c++)
-                k.Add(v % 2 == 0 ? "nature/crops_wheatStageB" : "nature/crops_cornStageC", MeshKit.At(-0.3f + c * 0.3f, 0, -0.32f + r * 0.32f, 0, v % 2 == 0 ? 0.55f : 0.35f), v % 2 == 0 ? Wheat : Corn);
-        k.Sway = 0;
-        k.Push(MeshKit.At(0.3f, 0, 0.12f, Mathf.Pi / 2, K * 0.75f));
+        // An open wheat field (its rows are painted on the ground): stooks of cut sheaves, a scarecrow, and the farmstead if it has one.
+        bool stead = v < 4;
+        v %= 4;
+        var straw = new Color("d8b448");
+        for (int i = 0; i < 3 + v % 2; i++)
+        {
+            float x = -0.36f + Geo.Hash(v * 31 + i * 3) * (stead ? 0.4f : 0.72f), z = -0.36f + Geo.Hash(v * 31 + i * 3 + 1) * 0.72f;
+            k.Frustum(new Vector3(x, 0, z), 0.055f, 0.012f, 0.13f, 6, straw, straw.Lightened(0.1f), i);
+        }
+        if (v % 2 == 0) Scarecrow(k, stead ? -0.1f : 0.08f, -0.05f, v);
+        if (stead) Farmstead(k, v, new Color("9b3d2a"));
+    }
+
+    /// <summary>A farmstead at the back corner of its field: a whitewashed farmhouse with a chimney and a barn beside it, a cart by the door.</summary>
+    private static void Farmstead(MeshKit k, int v, Color barn)
+    {
+        k.Push(MeshKit.At(0.28f, 0, -0.26f, 0, K * 0.62f));
         Walls(k, 2, 1, 0, false, v + 41, true);
         k.Push(MeshKit.At(0, 1, 0));
-        k.Gable(0, 2, 1, 0.8f, new Color("9b3d2a"), new Color("7a5232"), 0.1f);
+        k.Gable(0, 2, 1, 0.8f, RoofOf(v + 5), Palette.Plaster, 0.1f);
         k.Pop();
         k.Pop();
-        for (int i = 0; i < 4; i++) k.Add("nature/fence_simple", MeshKit.At(0, 0, 0, i * Mathf.Pi / 2, 1));
+        k.Box(new Vector3(0.4f, 0.2f, -0.3f), new Vector3(0.05f, 0.2f, 0.05f), Palette.Stone);
+        // The barn: broad and low, side on to the house.
+        k.Push(MeshKit.At(0.3f, 0, 0.16f, Mathf.Pi / 2, K * 0.7f));
+        Walls(k, 2, 1, 0, false, v + 43, true);
+        k.Push(MeshKit.At(0, 1, 0));
+        k.Gable(0, 2, 1, 0.95f, barn, new Color("7a5232"), 0.1f);
+        k.Pop();
+        k.Pop();
+        k.Box(new Vector3(0.12f, 0.03f, -0.06f), new Vector3(0.1f, 0.05f, 0.16f), Palette.Timber);
+        foreach (float z in new[] { -0.12f, 0.0f })
+            k.Frustum(new Vector3(0.07f, 0.04f, z), 0.035f, 0.035f, 0.012f, 8, Palette.DarkTimber);
+    }
+
+    /// <summary>A scarecrow: a post, a crossbar of sleeves and a straw hat.</summary>
+    private static void Scarecrow(MeshKit k, float x, float z, int v)
+    {
+        k.Box(new Vector3(x, 0, z), new Vector3(0.02f, 0.2f, 0.02f), Palette.Timber);
+        k.Box(new Vector3(x, 0.13f, z), new Vector3(0.14f, 0.025f, 0.025f), Dyes[(v + 2) % Dyes.Length]);
+        k.Blob(new Vector3(x, 0.2f, z), new Vector3(0.025f, 0.025f, 0.025f), new Color("d8c08a"));
+        k.Frustum(new Vector3(x, 0.215f, z), 0.045f, 0.015f, 0.03f, 8, new Color("c8a448"));
     }
 
     private static void RootFarm(MeshKit k, int v)
     {
-        // Ridged rows of turnips and onions, a pumpkin patch and a low clamp barn.
-        k.Box(new Vector3(0, 0.005f, 0), new Vector3(0.96f, 0.02f, 0.96f), new Color("6a4a2c"));
-        for (int r = 0; r < 4; r++) k.Add("nature/crops_dirtDoubleRow", MeshKit.At(-0.36f + r * 0.2f, 0, -0.08f, 0, 0.5f));
+        // Ridged rows of turnips and onions in the open, a pumpkin patch, and the farmstead if it has one.
+        bool stead = v < 4;
+        v %= 4;
         var leaf = new Color("5f8a34");
-        for (int r = 0; r < 4; r++)
+        int rows = stead ? 3 : 5;
+        for (int r = 0; r < rows; r++)
             for (int i = 0; i < 5; i++)
-                k.Blob(new Vector3(-0.36f + r * 0.2f + (i % 2 == 0 ? -0.03f : 0.03f), 0.04f, -0.42f + i * 0.17f), new Vector3(0.035f, 0.03f, 0.035f), leaf.Darkened(Geo.Hash(v * 13 + r * 5 + i) * 0.2f), 0.3f, r * 5 + i + v);
-        k.Add("nature/crop_pumpkin", MeshKit.At(0.36f, 0, 0.36f, v, 0.45f));
-        k.Add("nature/crop_pumpkin", MeshKit.At(0.24f, 0, 0.4f, v + 2, 0.38f));
-        k.Push(MeshKit.At(0.32f, 0, -0.2f, Mathf.Pi / 2, K * 0.62f));
-        Walls(k, 2, 1, 0, false, v + 43, true);
-        k.Push(MeshKit.At(0, 1, 0));
-        k.Gable(0, 2, 1, 0.7f, new Color("6a5a3a"), new Color("7a5232"), 0.1f);
-        k.Pop();
-        k.Pop();
-        for (int i = 0; i < 4; i++) k.Add("nature/fence_simple", MeshKit.At(0, 0, 0, i * Mathf.Pi / 2, 1));
+                k.Blob(new Vector3(-0.4f + r * 0.18f + (i % 2 == 0 ? -0.02f : 0.02f), 0.035f, -0.4f + i * 0.2f), new Vector3(0.035f, 0.03f, 0.035f), leaf.Darkened(Geo.Hash(v * 13 + r * 5 + i) * 0.2f), 0.3f, r * 5 + i + v);
+        k.Add("nature/crop_pumpkin", MeshKit.At(stead ? 0.0f : 0.36f, 0, 0.36f, v, 0.45f));
+        k.Add("nature/crop_pumpkin", MeshKit.At(stead ? -0.1f : 0.24f, 0, 0.42f, v + 2, 0.38f));
+        if (stead) Farmstead(k, v, new Color("6a5a3a"));
     }
 
     private static void HopYard(MeshKit k, int v)
     {
-        // Tall hop poles strung with bines over a strip of barley, and an oast house with its cowled kiln.
-        k.Box(new Vector3(0, 0.005f, 0), new Vector3(0.96f, 0.02f, 0.96f), new Color("8a7040"));
-        k.Sway = CropSway;
-        for (int r = 0; r < 2; r++)
-            for (int c = 0; c < 2; c++)
-                k.Add("nature/crops_wheatStageB", MeshKit.At(-0.32f + c * 0.26f, 0, 0.18f + r * 0.24f, 0, 0.45f), Wheat);
-        k.Sway = 0;
+        // Tall hop poles strung with bines over the barley, and with a farmstead, an oast house with its cowled kiln.
+        bool stead = v < 4;
+        v %= 4;
         var bine = new Color("5a8a2e");
-        for (int r = 0; r < 3; r++)
+        int rows = stead ? 3 : 5;
+        for (int r = 0; r < rows; r++)
         {
-            float x = -0.38f + r * 0.18f;
-            k.Box(new Vector3(x, 0.36f, -0.2f), new Vector3(0.006f, 0.006f, 0.42f), new Color("8a8478"));
-            for (int i = 0; i < 3; i++)
+            float x = -0.4f + r * 0.19f;
+            k.Box(new Vector3(x, 0.36f, -0.0f), new Vector3(0.006f, 0.006f, 0.8f), new Color("8a8478"));
+            for (int i = 0; i < 4; i++)
             {
-                float z = -0.4f + i * 0.2f;
+                float z = -0.39f + i * 0.26f;
                 k.Box(new Vector3(x, 0, z), new Vector3(0.014f, 0.38f, 0.014f), Palette.Timber);
+                k.Sway = CropSway;
                 k.Blob(new Vector3(x, 0.22f, z), new Vector3(0.035f, 0.13f, 0.035f), bine.Darkened(Geo.Hash(v * 7 + r * 3 + i) * 0.2f), 0.3f, r * 3 + i + v, bine.Darkened(0.3f));
+                k.Sway = 0;
             }
         }
+        if (!stead) return;
         k.Push(MeshKit.At(0.3f, 0, -0.18f, 0, K * 0.6f));
         Walls(k, 1, 2, 0, false, v + 47, true);
         k.Push(MeshKit.At(0, 1, 0));
@@ -684,17 +735,19 @@ public partial class TownView(MapView map) : Node3D
 
     private static void Orchard(MeshKit k, int v)
     {
-        // Rows of fruit trees on grass, a few apples in the boughs, and a cider shed with its barrels.
-        k.Box(new Vector3(0, 0.004f, 0), new Vector3(0.98f, 0.016f, 0.98f), new Color("6f8a42"));
+        // Rows of fruit trees in the grass, a few apples in the boughs, and with a farmstead, a cider shed with its barrels.
+        bool stead = v < 4;
+        v %= 4;
         var fruit = v % 2 == 0 ? new Color("c83a2a") : new Color("d8c040");
         for (int r = 0; r < 3; r++)
             for (int c = 0; c < 3; c++)
             {
-                if (r == 0 && c == 2) continue;
+                if (stead && r == 0 && c == 2) continue;
                 float x = -0.34f + c * 0.3f + (r % 2) * 0.08f, z = -0.34f + r * 0.3f;
                 k.Add(Geo.Hash(v * 11 + r * 3 + c) < 0.5f ? "nature/tree_oak" : "nature/tree_fat", MeshKit.At(x, 0, z, Geo.Hash(v + r * 3 + c) * Mathf.Tau, 0.3f), WorldView.Foliage);
                 k.Blob(new Vector3(x + 0.04f, 0.16f, z + 0.05f), new Vector3(0.02f, 0.02f, 0.02f), fruit);
             }
+        if (!stead) return;
         k.Push(MeshKit.At(0.34f, 0, -0.3f, 0, K * 0.5f));
         Walls(k, 1, 1, 0, false, v + 49, true);
         k.Push(MeshKit.At(0, 1, 0));
@@ -908,15 +961,19 @@ public partial class TownView(MapView map) : Node3D
     /// <summary>A sheepfold: a fenced pasture, a few white sheep and a small shed.</summary>
     private static void Sheepfold(MeshKit k, int v)
     {
-        k.Box(new Vector3(0, 0.004f, 0), new Vector3(0.98f, 0.016f, 0.98f), new Color("7f9a4e"));
-        for (int i = 0; i < 4; i++) k.Add("nature/fence_simple", MeshKit.At(0, 0, 0, i * Mathf.Pi / 2, 0.98f));
-        k.Push(MeshKit.At(-0.22f, 0, -0.27f, 0, 0.24f));
-        Walls(k, 2, 1, 0, false, v + 151, true);
-        k.Push(MeshKit.At(0, 1, 0));
-        k.Gable(0, 2, 1, 0.75f, new Color("7a5a3a"), Palette.Timber, 0.12f);
-        k.Pop();
-        k.Pop();
-        k.Frustum(new Vector3(0.3f, 0, -0.3f), 0.09f, 0.05f, 0.12f, 8, new Color("d8b45a"), new Color("e8c870"));
+        // Open pasture between the hedgerows: the flock grazing, and with a farmstead, the shepherd's shed and a hayrick.
+        bool stead = v < 4;
+        v %= 4;
+        if (stead)
+        {
+            k.Push(MeshKit.At(-0.22f, 0, -0.27f, 0, 0.24f));
+            Walls(k, 2, 1, 0, false, v + 151, true);
+            k.Push(MeshKit.At(0, 1, 0));
+            k.Gable(0, 2, 1, 0.75f, new Color("7a5a3a"), Palette.Timber, 0.12f);
+            k.Pop();
+            k.Pop();
+            k.Frustum(new Vector3(0.3f, 0, -0.3f), 0.09f, 0.05f, 0.12f, 8, new Color("d8b45a"), new Color("e8c870"));
+        }
         var wool = new Color("f2eee2");
         var shade = new Color("c8c2b2");
         var face = new Color("3a3430");
@@ -997,7 +1054,8 @@ public partial class TownView(MapView map) : Node3D
     /// <summary>A herb garden: raised beds of green and purple herbs and a little potting hut.</summary>
     private static void HerbGarden(MeshKit k, int v)
     {
-        k.Box(new Vector3(0, 0.004f, 0), new Vector3(0.98f, 0.016f, 0.98f), new Color("7a6a48"));
+        bool stead = v < 4;
+        v %= 4;
         Color[] herbs = [new("4f8a3a"), new("8a5ab0"), new("6fa04a"), new("d8c040"), new("3f7a4a")];
         for (int b = 0; b < 3; b++)
         {
@@ -1009,6 +1067,7 @@ public partial class TownView(MapView map) : Node3D
                 k.Blob(new Vector3(x + (i % 2 == 0 ? -0.03f : 0.03f), 0.09f, -0.34f + i * 0.14f), new Vector3(0.06f, 0.05f, 0.06f), c, 0.3f, b * 7 + i + v, c.Darkened(0.25f));
             }
         }
+        if (!stead) return;
         k.Push(MeshKit.At(0.33f, 0, -0.25f, 0, 0.3f));
         Walls(k, 1, 1, 0, false, v + 181, true);
         k.Push(MeshKit.At(0, 1, 0));
@@ -1018,7 +1077,6 @@ public partial class TownView(MapView map) : Node3D
         k.Add("nature/pot_small", MeshKit.At(0.26f, 0, 0.12f, 0, 0.45f));
         k.Add("nature/pot_small", MeshKit.At(0.4f, 0, 0.2f, 1, 0.4f));
         k.Blob(new Vector3(0.26f, 0.12f, 0.12f), new Vector3(0.05f, 0.05f, 0.05f), herbs[(v + 1) % herbs.Length]);
-        k.Add("nature/fence_simple", MeshKit.At(0, 0, 0, Mathf.Pi, 0.98f));
     }
 
     /// <summary>An apothecary: a narrow tall shop with green-glass bottles glowing on a shelf and a green sign.</summary>
@@ -1082,7 +1140,8 @@ public partial class TownView(MapView map) : Node3D
     /// <summary>A vineyard: rows of vines trained on stakes and wire, and a small stone press house.</summary>
     private static void Vineyard(MeshKit k, int v)
     {
-        k.Box(new Vector3(0, 0.004f, 0), new Vector3(0.98f, 0.016f, 0.98f), new Color("8a6a44"));
+        bool stead = v < 4;
+        v %= 4;
         var leaf = new Color("4f7f32");
         var grape = new Color("5a2a6a");
         for (int r = 0; r < 3; r++)
@@ -1097,6 +1156,7 @@ public partial class TownView(MapView map) : Node3D
                 if ((i + r + v) % 2 == 0) k.Blob(new Vector3(x + 0.04f, 0.1f, z + 0.06f), new Vector3(0.022f, 0.03f, 0.022f), grape);
             }
         }
+        if (!stead) return;
         k.Push(MeshKit.At(0.3f, 0, -0.22f, 0, 0.32f));
         Walls(k, 1, 1, 0, true, v + 211, true);
         k.Push(MeshKit.At(0, 1, 0));
@@ -1289,6 +1349,112 @@ public partial class TownView(MapView map) : Node3D
         for (int i = 0; i < 4; i++)
             k.Box(new Vector3(0.32f, 0, 0.12f + i * 0.065f), new Vector3(0.012f, 0.26f, 0.012f), i % 2 == 0 ? Palette.Timber : new Color("8a8a90"));
         k.Add("castle/flag-wide", MeshKit.At(0.38f, 0.6f, -0.4f, Mathf.Pi / 2, 0.4f), red);
+    }
+
+    /// <summary>A low timber fence round the edge of a yard, open at the front.</summary>
+    private static void YardFence(MeshKit k, Color wood, float gap = 0.18f)
+    {
+        k.Box(new Vector3(-0.47f, 0, 0), new Vector3(0.025f, 0.07f, 0.94f), wood);
+        k.Box(new Vector3(0.47f, 0, 0), new Vector3(0.025f, 0.07f, 0.94f), wood);
+        k.Box(new Vector3(0, 0, -0.47f), new Vector3(0.94f, 0.07f, 0.025f), wood);
+        float side = (0.94f - gap * 2) / 2;
+        k.Box(new Vector3(-0.47f + side / 2, 0, 0.47f), new Vector3(side, 0.07f, 0.025f), wood);
+        k.Box(new Vector3(0.47f - side / 2, 0, 0.47f), new Vector3(side, 0.07f, 0.025f), wood);
+        for (int i = 0; i < 5; i++)
+        {
+            float x = -0.47f + i * 0.235f;
+            k.Box(new Vector3(x, 0, -0.47f), new Vector3(0.035f, 0.1f, 0.035f), wood.Darkened(0.15f));
+        }
+    }
+
+    /// <summary>The drill yard: a beaten sand square with straw men to cut at, a rack of spears and shields, and a timber hall at the back under the town's red.</summary>
+    private static void DrillYard(MeshKit k, int v)
+    {
+        var wood = new Color("6a4a2e");
+        k.Box(new Vector3(0, 0, 0), new Vector3(0.96f, 0.012f, 0.96f), new Color("b8a07a"), new Color("c8b088"));
+        YardFence(k, wood);
+        // The hall: a long low timber house along the back.
+        k.Push(MeshKit.At(0, 0.012f, -0.33f, 0, Fit(3, 1, 0.8f)));
+        Walls(k, 3, 1, 0, false, v + 301, true);
+        k.Push(MeshKit.At(0, 1, 0));
+        k.Gable(0, 3, 1, 0.65f, new Color("7e4430"), Palette.Plaster, 0.12f);
+        k.Pop();
+        k.Pop();
+        // Straw men down the sides, a post and crossbar each.
+        var straw = new Color("d8b45a");
+        foreach (float x in new[] { -0.43f, 0.43f })
+            for (int i = 0; i < 2; i++)
+            {
+                var p = new Vector3(x, 0.012f, -0.12f + i * 0.14f);
+                k.Box(p, new Vector3(0.022f, 0.2f, 0.022f), Palette.Timber);
+                k.Box(p + new Vector3(0, 0.14f, 0), new Vector3(0.022f, 0.022f, 0.12f), Palette.Timber);
+                k.Blob(p + new Vector3(0, 0.12f, 0), new Vector3(0.035f, 0.06f, 0.035f), straw);
+                k.Blob(p + new Vector3(0, 0.22f, 0), new Vector3(0.03f, 0.03f, 0.03f), straw.Darkened(0.1f));
+            }
+        // A rack of spears and round shields by the hall door.
+        k.Box(new Vector3(0.28f, 0.17f, -0.15f), new Vector3(0.24f, 0.022f, 0.022f), Palette.DarkTimber);
+        for (int i = 0; i < 5; i++)
+            k.Box(new Vector3(0.18f + i * 0.05f, 0.012f, -0.15f), new Vector3(0.012f, 0.28f, 0.012f), i % 2 == 0 ? Palette.Timber : new Color("8a8a90"));
+        for (int i = 0; i < 2; i++)
+        {
+            k.Push(MeshKit.At(-0.2f + i * 0.09f, 0.06f, -0.16f, 0));
+            k.Frustum(Vector3.Zero, 0.04f, 0.04f, 0.01f, 8, new Color(i == 0 ? "7a2a22" : "2a4a7a"), new Color("9aa0a6"));
+            k.Pop();
+        }
+    }
+
+    /// <summary>The archery range: a long grass lane with straw butts and painted targets, a roofed shooting line at the back.</summary>
+    private static void ArcheryRange(MeshKit k, int v)
+    {
+        var wood = new Color("6a4a2e");
+        k.Box(new Vector3(0, 0, 0), new Vector3(0.96f, 0.01f, 0.96f), new Color("7e9a52"), new Color("8aa65c"));
+        k.Box(new Vector3(0, 0.01f, 0.05f), new Vector3(0.7f, 0.004f, 0.8f), new Color("a8a070"));
+        YardFence(k, wood);
+        // A roofed stand along the back: four posts and a shingle roof.
+        foreach (float x in new[] { -0.36f, -0.12f, 0.12f, 0.36f })
+            k.Box(new Vector3(x, 0.01f, -0.36f), new Vector3(0.03f, 0.22f, 0.03f), wood);
+        k.Box(new Vector3(0, 0.23f, -0.38f), new Vector3(0.8f, 0.03f, 0.18f), new Color("7a5232"));
+        k.Box(new Vector3(0, 0.01f, -0.42f), new Vector3(0.78f, 0.12f, 0.03f), wood.Darkened(0.1f));
+        // The butts: a straw bale with a painted face, three across the far end.
+        var straw = new Color("d8b45a");
+        for (int i = 0; i < 3; i++)
+        {
+            float x = -0.26f + i * 0.26f;
+            k.Box(new Vector3(x, 0.01f, 0.34f), new Vector3(0.14f, 0.12f, 0.08f), straw, straw.Lightened(0.1f));
+            k.Push(MeshKit.At(x, 0.13f, 0.3f, 0));
+            k.Push(new Transform3D(Basis.FromEuler(new Vector3(Mathf.Pi / 2, 0, 0)), Vector3.Zero));
+            k.Frustum(Vector3.Zero, 0.07f, 0.07f, 0.008f, 12, new Color("f0e8d0"));
+            k.Frustum(new Vector3(0, 0.002f, 0), 0.048f, 0.048f, 0.008f, 12, new Color("b8322a"));
+            k.Frustum(new Vector3(0, 0.004f, 0), 0.022f, 0.022f, 0.008f, 12, new Color("e8b93a"));
+            k.Pop();
+            k.Pop();
+            k.Box(new Vector3(x, 0.01f, 0.39f), new Vector3(0.02f, 0.2f, 0.02f), wood);
+        }
+        k.Add("castle/flag-wide", MeshKit.At(0.44f, 0.01f, -0.44f, Mathf.Pi / 2, 0.3f), Palette.Kenney(new Color("3a7a3a")));
+    }
+
+    /// <summary>The stables: a long timber stable with a hayloft along the back, a paddock rail, hay ricks and a water trough.</summary>
+    private static void Stables(MeshKit k, int v)
+    {
+        var wood = new Color("6a4a2e");
+        k.Box(new Vector3(0, 0, 0), new Vector3(0.96f, 0.012f, 0.96f), new Color("9a8a5a"), new Color("a89660"));
+        YardFence(k, wood, 0.14f);
+        k.Push(MeshKit.At(0, 0.012f, -0.3f, 0, Fit(3, 1, 0.86f)));
+        Walls(k, 3, 1, 0, false, v + 311, true);
+        k.Push(MeshKit.At(0, 1, 0));
+        k.Gable(0, 3, 1, 0.75f, new Color("6a5a3a"), new Color("8c6a44"), 0.14f);
+        k.Pop();
+        k.Pop();
+        // Stall doors along the front of the stable, each a dark half-door.
+        for (int i = 0; i < 4; i++)
+            k.Box(new Vector3(-0.3f + i * 0.2f, 0.012f, -0.13f), new Vector3(0.1f, 0.11f, 0.012f), Palette.DarkTimber);
+        var hay = new Color("d8b45a");
+        k.Blob(new Vector3(0.34f, 0.07f, 0.26f), new Vector3(0.09f, 0.08f, 0.08f), hay, 0.1f, v);
+        k.Blob(new Vector3(0.24f, 0.05f, 0.33f), new Vector3(0.06f, 0.05f, 0.06f), hay.Darkened(0.08f), 0.1f, v + 1);
+        // A trough.
+        k.Box(new Vector3(-0.3f, 0.012f, 0.28f), new Vector3(0.22f, 0.06f, 0.07f), wood);
+        k.Box(new Vector3(-0.3f, 0.07f, 0.28f), new Vector3(0.19f, 0.004f, 0.045f), new Color("4a7aa0"));
+        k.Add("castle/flag-wide", MeshKit.At(-0.44f, 0.012f, -0.44f, Mathf.Pi / 2, 0.3f), Palette.Kenney(new Color("8a5a2a")));
     }
 
     /// <summary>The cathedral: a tall nave and transept with an apse, twin spired towers at the west front and a spire at the crossing, all gilded at the top.</summary>
@@ -1741,6 +1907,7 @@ public partial class TownView(MapView map) : Node3D
     /// </summary>
     private void Footing(MeshKit k, Lot l)
     {
+        if (l.Zone == Zone.Farmland) return;
         float floor = Floor(l);
         var corners = Geo.LotCorners(l, 0);
         float low = corners.Min(Ground);
@@ -1836,6 +2003,29 @@ public partial class TownView(MapView map) : Node3D
                 left -= seg;
             }
         }
+        // Market squares are flagged from the day they're laid: crisp-edged, so the square reads among the lanes.
+        foreach (var r in town.Plan.Streets)
+        {
+            if (!r.Market) continue;
+            float x0 = float.MaxValue, y0 = float.MaxValue, x1 = float.MinValue, y1 = float.MinValue;
+            for (int k = 0; k < r.Points.Length; k += 2)
+            {
+                x0 = Mathf.Min(x0, (float)r.Points[k]); x1 = Mathf.Max(x1, (float)r.Points[k]);
+                y0 = Mathf.Min(y0, (float)r.Points[k + 1]); y1 = Mathf.Max(y1, (float)r.Points[k + 1]);
+            }
+            var poly = new Vector2[r.Points.Length / 2];
+            for (int k = 0; k < poly.Length; k++) poly[k] = new Vector2((float)r.Points[k * 2], (float)r.Points[k * 2 + 1]);
+            for (int y = Math.Max(0, (int)(y0 / px) - 2); y <= Math.Min(n - 1, (int)(y1 / px) + 2); y++)
+                for (int x = Math.Max(0, (int)(x0 / px) - 2); x <= Math.Min(n - 1, (int)(x1 / px) + 2); x++)
+                {
+                    var q = new Vector2((x + 0.5f) * px, (y + 0.5f) * px);
+                    float edge = float.MaxValue;
+                    for (int k = 0; k + 1 < poly.Length; k++) edge = Mathf.Min(edge, Geometry2D.GetClosestPointToSegment(q, poly[k], poly[k + 1]).DistanceTo(q));
+                    bool inside = Geometry2D.IsPointInPolygon(q, poly);
+                    float v = inside ? 1 : 1 - Mathf.SmoothStep(0.05f, (float)Streets.Width * 0.5f, edge);
+                    cobble[y * n + x] = Mathf.Max(cobble[y * n + x], v);
+                }
+        }
         // The square's trodden middle.
         for (int i = 0; i < n * n; i++)
             if (town.Plan.Paved[i / n / GroundUp * Land.Size + i % n / GroundUp] != 0) lane[i] = Mathf.Max(lane[i], 0.8f);
@@ -1904,6 +2094,7 @@ public partial class TownView(MapView map) : Node3D
         int version = $"{town.Lots.Count}|{plan.Streets.Count}|{plan.Zones.Aggregate(17, (h, z) => h * 31 + z)}|{plan.Density.Aggregate(17, (h, z) => h * 31 + z)}|{plan.Crops.Aggregate(17, (h, z) => h * 31 + z)}".GetHashCode();
         if (version == _zoneVersion) return;
         _zoneVersion = version;
+        Fields(town);
         int n = Land.Size * ZoneUp;
         // Premultiplied colour, so softening across a zone's edge fades it out instead of darkening it.
         for (int y = 0; y < n; y++)
@@ -1933,6 +2124,167 @@ public partial class TownView(MapView map) : Node3D
             Mats.Terrain.SetShaderParameter("zones_tex", _zoneTex);
         }
         else _zoneTex.Update(img);
+    }
+
+    private ImageTexture? _fieldTex, _fieldDirTex;
+
+    /// <summary>Field colour texels to a plan cell.</summary>
+    private const int FieldUp = 2;
+
+    /// <summary>A farm's fields reach this far from it (tiles); farmland farther from any farm lies fallow.</summary>
+    private const double FieldReach = 2.2;
+
+    /// <summary>
+    /// Farmland as open country: each farm works the painted fields nearest it, sown in rows that run the way the farm faces
+    /// (or grazed, for pasture and orchards), and hedgerows grow along the bounds between one farm's fields and the next and
+    /// round the farmland's edge, with a tree here and there. Fields nobody farms yet lie fallow. The terrain shader draws the
+    /// fields from two textures over the plan (fields_tex: crop colour premultiplied by cover; field_dir_tex: row heading, meadow, shade).
+    /// </summary>
+    private void Fields(Town town)
+    {
+        var plan = town.Plan;
+        int n = Land.Size;
+        var farms = town.Buildings.Where(b => b.Def.Zone == Zone.Farmland).OrderBy(b => b.Id).Select(b => (Lot: town.Lot(b.LotId), Crop: Farming.Crop(town, Farming.CropOf(town, b.Def)))).ToList();
+        // Farms in buckets of a few tiles, so each cell looks only at the farms near it.
+        const int bucket = 3 * Land.Res;
+        int nb = (n + bucket - 1) / bucket;
+        var near = new List<int>[nb * nb];
+        for (int f = 0; f < farms.Count; f++)
+        {
+            int bx = Math.Clamp((int)(farms[f].Lot.X * Land.Res) / bucket, 0, nb - 1), by = Math.Clamp((int)(farms[f].Lot.Y * Land.Res) / bucket, 0, nb - 1);
+            (near[by * nb + bx] ??= []).Add(f);
+        }
+        var region = new int[n * n];
+        var col = new byte[n * n * 4];
+        var dir = new byte[n * n * 4];
+        for (int i = 0; i < n * n; i++)
+        {
+            region[i] = -1;
+            if (plan.Zones[i] != (byte)Zone.Farmland || plan.Paved[i] != 0) continue;
+            int cx = i % n, cy = i / n;
+            double x = (cx + 0.5) / Land.Res, y = (cy + 0.5) / Land.Res;
+            int best = -1;
+            double bestD = FieldReach * FieldReach;
+            int bx = cx / bucket, by = cy / bucket;
+            for (int yy = Math.Max(0, by - 1); yy <= Math.Min(nb - 1, by + 1); yy++)
+                for (int xx = Math.Max(0, bx - 1); xx <= Math.Min(nb - 1, bx + 1); xx++)
+                    if (near[yy * nb + xx] is { } list)
+                        foreach (int f in list)
+                        {
+                            var l = farms[f].Lot;
+                            double d = (l.X - x) * (l.X - x) + (l.Y - y) * (l.Y - y);
+                            if (d < bestD) (bestD, best) = (d, f);
+                        }
+            Color c;
+            float heading, meadow, shade;
+            if (best >= 0)
+            {
+                region[i] = best;
+                var (lot, crop) = farms[best];
+                c = Planner.CropColor(crop);
+                // Rows run front to back of the farm: heading (−sin yaw, cos yaw), kept to half a turn.
+                heading = Mathf.PosMod(Mathf.Atan2(Mathf.Cos((float)lot.Yaw), -Mathf.Sin((float)lot.Yaw)), Mathf.Pi) / Mathf.Pi;
+                meadow = crop?.Id is "pasture" or "orchard" ? 1 : 0;
+                shade = Geo.Hash(lot.Id * 7 + 3);
+            }
+            else
+            {
+                // Fallow: a meadow in the crop's tint, in patches of two tiles.
+                int patch = cy / (2 * Land.Res) * n + cx / (2 * Land.Res);
+                region[i] = farms.Count + patch;
+                c = Planner.CropColor(Farming.Crop(town, plan.Crops[i])).Lerp(new Color("8fb85a"), 0.5f);
+                heading = Geo.Hash(patch * 3 + 1);
+                meadow = 1;
+                shade = Geo.Hash(patch * 3 + 2);
+            }
+            float a = best >= 0 ? 1 : 0.55f;
+            col[i * 4] = (byte)(c.R * a * 255);
+            col[i * 4 + 1] = (byte)(c.G * a * 255);
+            col[i * 4 + 2] = (byte)(c.B * a * 255);
+            col[i * 4 + 3] = (byte)(a * 255);
+            dir[i * 4] = (byte)(heading * 255);
+            dir[i * 4 + 1] = (byte)(meadow * 255);
+            dir[i * 4 + 2] = (byte)(shade * 255);
+            dir[i * 4 + 3] = 255;
+        }
+        // The crop colour drawn finer than the plan and softened, so a field's edge comes out round, not in steps.
+        int m = n * FieldUp;
+        var buf = new float[m * m * 4];
+        var tmp = new float[m * m * 4];
+        for (int y = 0; y < m; y++)
+            for (int x = 0; x < m; x++)
+            {
+                int c = (y / FieldUp * n + x / FieldUp) * 4, o = (y * m + x) * 4;
+                for (int ch = 0; ch < 4; ch++) buf[o + ch] = col[c + ch] / 255f;
+            }
+        Blur(buf, tmp, m, 1, m, 1);
+        Blur(tmp, buf, m, m, 1, 1);
+        var fine = new byte[m * m * 4];
+        for (int i = 0; i < fine.Length; i++) fine[i] = (byte)Mathf.Clamp(Mathf.RoundToInt(buf[i] * 255), 0, 255);
+        var colImg = Image.CreateFromData(m, m, false, Image.Format.Rgba8, fine);
+        var dirImg = Image.CreateFromData(n, n, false, Image.Format.Rgba8, dir);
+        if (_fieldTex == null)
+        {
+            _fieldTex = ImageTexture.CreateFromImage(colImg);
+            _fieldDirTex = ImageTexture.CreateFromImage(dirImg);
+            Mats.Terrain.SetShaderParameter("fields_tex", _fieldTex);
+            Mats.Terrain.SetShaderParameter("field_dir_tex", _fieldDirTex);
+        }
+        else
+        {
+            _fieldTex.Update(colImg);
+            _fieldDirTex!.Update(dirImg);
+        }
+        Hedgerows(town, region, farms.Count);
+    }
+
+    /// <summary>A bush on every edge between two fields of different farms, or between a field and open grass, with gaps and a tree here and there.</summary>
+    /// <param name="fallow">Region numbers from here up are fallow patches, not farms.</param>
+    private void Hedgerows(Town town, int[] region, int fallow)
+    {
+        var plan = town.Plan;
+        int n = Land.Size;
+        var bushes = new List<Transform3D>();
+        var trees = new List<Transform3D>();
+        void Edge(int i, int j, float x, float y)
+        {
+            int a = region[i], b = j < 0 ? -1 : region[j];
+            if (a == b || (a < 0 && b < 0)) return;
+            // Not across a lane, nor up against a building that isn't a farm's.
+            foreach (int c in (int[])[i, j])
+                if (c >= 0 && (plan.Paved[c] != 0 || (plan.Taken[c] != 0 && plan.Zones[c] != (byte)Zone.Farmland))) return;
+            // Between two fallow patches there's no hedge: it's one meadow.
+            if (a >= fallow && b >= fallow) return;
+            float h = Geo.Hash(i * 13 + j * 7);
+            if (h < 0.08f) return;
+            var p = new Vector2(Geo.Margin + x, Geo.Margin + y);
+            float yaw = Geo.Hash(i * 5 + 1) * Mathf.Tau, sc = 0.17f + Geo.Hash(i * 5 + 2) * 0.07f;
+            var at = new Vector3(p.X, Ground(p) - 0.02f, p.Y);
+            if (h > 0.965f) trees.Add(new Transform3D(Basis.FromEuler(new Vector3(0, yaw, 0)).Scaled(Vector3.One * (0.3f + Geo.Hash(i * 5 + 3) * 0.12f)), at));
+            else bushes.Add(new Transform3D(Basis.FromEuler(new Vector3(0, yaw, 0)).Scaled(new Vector3(sc * 1.3f, sc * 0.75f, sc * 1.3f)), at));
+        }
+        for (int cy = 0; cy < n; cy++)
+            for (int cx = 0; cx < n; cx++)
+            {
+                int i = cy * n + cx;
+                if (cx + 1 < n) Edge(i, i + 1, (cx + 1f) / Land.Res, (cy + 0.5f) / Land.Res);
+                if (cy + 1 < n) Edge(i, i + n, (cx + 0.5f) / Land.Res, (cy + 1f) / Land.Res);
+            }
+        Fill(_hedges, bushes, "hedge", k => k.Blob(new Vector3(0, 0.45f, 0), new Vector3(0.5f, 0.5f, 0.5f), new Color("3f6a2c"), 0.25f, 3, new Color("2c4a22")));
+        Fill(_hedgeTrees, trees, "hedge_tree", k => k.Add("nature/tree_oak", MeshKit.At(0, 0, 0, 0, 1), WorldView.Foliage));
+    }
+
+    private void Fill(MultiMeshInstance3D into, List<Transform3D> at, string mesh, Action<MeshKit> make)
+    {
+        if (!_meshes.TryGetValue(mesh, out var m))
+        {
+            var kit = new MeshKit();
+            make(kit);
+            _meshes[mesh] = m = kit.Build();
+        }
+        into.Multimesh ??= new MultiMesh { TransformFormat = MultiMesh.TransformFormatEnum.Transform3D, Mesh = m };
+        into.Multimesh.InstanceCount = at.Count;
+        for (int i = 0; i < at.Count; i++) into.Multimesh.SetInstanceTransform(i, at[i]);
     }
 
     /// <summary>A box blur of radius r along one axis (step between neighbours <paramref name="step"/>, between lines <paramref name="line"/>).</summary>

@@ -61,8 +61,10 @@ public class TournamentsTests
     {
         var (sim, t) = Town();
         ToProposal(sim);
+        // The stand-in spends freely meanwhile: the treasury must bear it on the opening morning itself.
+        sim.RunDays(t.Tourney.OpenDay - t.Day - 1);
         t.Treasury = 5000;
-        sim.RunDays(t.Tourney.OpenDay - t.Day + 1);
+        sim.RunDays(2);
         Assert.Equal(0, t.Tourney.Level);
         Assert.Equal(TourneyStage.Running, t.Tourney.Stage);
     }

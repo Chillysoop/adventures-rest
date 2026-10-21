@@ -41,6 +41,7 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["dragon", "dragon-head", "#e8673f"],
   ["cult", "cultist", "#d0566a"],
   ["rivals", "duel", "#d9b25a"],
+  ["fiends", "imp-laugh", "#e0553a"],
   // What a story choice puts at stake (content/game/assess.json icons) beside the goods and town icons above
   ["dread", "terror", "#b28ad8"],
   ["unrest", "fist", "#e07a5f"],
@@ -49,6 +50,54 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["foe-unseen", "fog", "#a9a294"],
   ["lore", "scroll-unfurled", "#d8c08a"],
   ["decree", "scroll-quill", "#cfc6b0"],
+  // The UI kit's glyphs (godot/src/UiKit.cs, docs/ui-text.md): coloured so a line reads at a glance, before any word
+  ["ui-info", "info", "#7fb0d4"],
+  ["ui-time", "hourglass", "#d8c08a"],
+  ["ui-day", "sundial", "#cfc6b0"],
+  ["ui-yes", "check-mark", "#8cc084"],
+  ["ui-no", "cross-mark", "#ef7f6f"],
+  ["ui-warn", "hazard-sign", "#e8b93a"],
+  ["ui-road", "walking-boot", "#c4955f"],
+  ["ui-goal", "on-target", "#e07a5f"],
+  ["ui-heal", "health-normal", "#8cc084"],
+  ["ui-wound", "sword-wound", "#ef7f6f"],
+  ["ui-up", "upgrade", "#8cc084"],
+  ["ui-lock", "padlock", "#b3a68f"],
+  ["ui-star", "round-star", "#e8b93a"],
+  ["ui-renown", "laurel-crown", "#e8b93a"],
+  ["ui-person", "person", "#cfc6b0"],
+  ["ui-house", "family-house", "#c08550"],
+  ["ui-trade", "trade", "#d9b25a"],
+  ["ui-shrine", "church", "#c9a0e8"],
+  ["ui-holy", "holy-symbol", "#f2d27a"],
+  ["ui-follower", "prayer", "#c9a0e8"],
+  ["ui-miracle", "stars-stack", "#f2d27a"],
+  ["ui-eye", "eye-target", "#7fb0d4"],
+  ["ui-skull", "skull-crossed-bones", "#cfcab4"],
+  ["ui-shield", "checked-shield", "#7fb0d4"],
+  ["ui-search", "magnifying-glass", "#cfc6b0"],
+  ["ui-faction", "tattered-banner", "#d9b25a"],
+  ["ui-bag", "swap-bag", "#c08550"],
+  ["ui-heart", "hearts", "#e07aa0"],
+  // The gods (content/original/deities.json): god-<id>, one glyph after each holy symbol
+  ["god-anvil-father", "anvil-impact", "#d9a05a"],
+  ["god-aurel", "open-palm", "#e8d27a"],
+  ["god-even-scale", "scales", "#cfd6e0"],
+  ["god-ferryman", "canoe", "#9fb0c8"],
+  ["god-greenhush", "oak-leaf", "#8cc084"],
+  ["god-hollow-king", "crowned-skull", "#a8b090"],
+  ["god-iron-crown", "mailed-fist", "#8a8f9a"],
+  ["god-lantern-mother", "lantern-flame", "#f2c45a"],
+  ["god-one-eye", "bleeding-eye", "#d8443c"],
+  ["god-red-banner", "tattered-banner", "#d0463c"],
+  ["god-stormmother", "trident", "#6fb3e0"],
+  ["god-veiled-coin", "two-coins", "#a8a0b8"],
+  ["god-ysolde", "book-aura", "#9c88e0"],
+  // Character sheet scores (content/game/character.json) beside the icons above
+  ["health", "health-normal", "#e07070"],
+  ["faith", "prayer", "#f0d890"],
+  ["wits", "brain", "#c9a0dc"],
+  ["will", "muscle-up", "#d89a5c"],
   // Institutions (content/game/institutions.json "icon")
   ["inst-temple-district", "church", "#e8d08a"],
   ["inst-adventurers-hall", "swords-emblem", "#d9b25a"],
@@ -119,6 +168,39 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["item-ring", "ring", mono],
   ["item-wand", "orb-wand", mono],
   ["item-stone", "rune-stone", mono],
+  // The army (godot/src/ArmyWindow.cs): white so the window tints each unit in its colours
+  ["tab-army", "rally-the-troops", mono],
+  ["unit-levy", "pitchfork", mono],
+  ["unit-swordsmen", "broadsword", mono],
+  ["unit-spearmen", "spears", mono],
+  ["unit-archers", "bowman", mono],
+  ["unit-crossbowmen", "crossbow", mono],
+  ["unit-outriders", "horse-head", mono],
+  ["unit-knights", "mounted-knight", mono],
+  ["unit-lantern-wardens", "lantern-flame", mono],
+  ["unit-oathsworn", "templar-shield", mono],
+  ["unit-spellguard", "fire-spell-cast", mono],
+  ["unit-griffon-riders", "griffin-symbol", mono],
+  ["unit-beast-wardens", "boar", mono],
+  ["unit-clockwork-sentinels", "robot-golem", mono],
+  ["unit-sky-marines", "pirate-hat", mono],
+  ["unit-pit-fighters", "sword-clash", mono],
+  ["unit-hold-shields", "dwarf-face", mono],
+  ["unit-wood-wardens", "elf-helmet", mono],
+  ["unit-sling-hands", "sling", mono],
+  ["unit-tunnel-sappers", "mining", mono],
+  ["unit-marsh-skirmishers", "lizardman", mono],
+  ["unit-frost-berserkers", "viking-head", mono],
+  ["unit-dune-lancers", "camel-head", mono],
+  ["unit-beacon-brethren", "holy-symbol", mono],
+  ["unit-harbour-marines", "anchor", mono],
+  ["post-walls", "stone-tower", mono],
+  ["post-reserve", "barracks-tent", mono],
+  ["post-patrol", "walking-boot", mono],
+  ["post-guard", "crown", mono],
+  ["army-command", "knight-banner", mono],
+  ["army-drill", "target-arrows", mono],
+  ["army-law", "scroll-quill", mono],
   // The bounty board's buttons: the terms of a job, then what else a row can do
   ["act-slay", "broadsword", mono],
   ["act-drive", "run", mono],
@@ -153,6 +235,10 @@ const icons: [name: string, glyph: string, tint: string][] = [
     "dwarf-face", "woman-elf-face", "mermaid", "centaur", "worm-mouth", "flying-beetle", "wasp-sting", "vulture", "horse-head",
     "unicorn", "greek-sphinx", "medusa-head", "hyena-head", "lion", "tiger-head", "saber-toothed-cat-head", "fire",
   ].map((g): [string, string, string] => [`face-${g}`, g, mono]),
+  // Faction crests (content/game/intros.json "crest"): crest-<lineage>, white so the client paints it in the faction's colours
+  ...(JSON.parse(readFileSync(join(root, "content/game/intros.json"), "utf8")) as { intros: { lineage: string; crest: string }[] }).intros.map(
+    (i): [string, string, string] => [`crest-${i.lineage}`, i.crest, mono],
+  ),
 ];
 
 for (const [name, glyph, tint] of icons) {
@@ -162,7 +248,7 @@ for (const [name, glyph, tint] of icons) {
   const svg =
     tint === mono
       ? // Portraits are drawn large, so they are imported at twice the size.
-        `<svg xmlns="http://www.w3.org/2000/svg" width="${name.startsWith("face-") ? 128 : 64}" height="${name.startsWith("face-") ? 128 : 64}" viewBox="0 0 512 512"><g fill="#ffffff">${paths}</g></svg>\n`
+        `<svg xmlns="http://www.w3.org/2000/svg" width="${/^(face|crest)-/.test(name) ? 128 : 64}" height="${/^(face|crest)-/.test(name) ? 128 : 64}" viewBox="0 0 512 512"><g fill="#ffffff">${paths}</g></svg>\n`
       : // The outline first, then the glyph over it: a dark rim like the drawn icons, without paint-order.
         `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="-16 -16 544 544"><g fill="#1d1712" stroke="#1d1712" stroke-width="34" stroke-linejoin="round">${paths}</g><g fill="${tint}">${paths}</g></svg>\n`;
   writeFileSync(join(out, `${name}.svg`), svg);

@@ -88,7 +88,7 @@ public partial class Main
         var r = t.Content.World.Intel;
         var rows = sorted.Select(e =>
         {
-            string makeup = string.Join(" · ", e.Members.Select(m => $"{Ui.Esc(Ui.Cap(m.Hero!.Cls.Name))} {m.Hero.Level}"));
+            string makeup = string.Join(" · ", e.Members.Select(m => $"{Ui.Esc(Ui.Cap(m.Hero!.Cls.Name))} {m.Hero.Level}{(m.Hero.Cls.Card != "" ? $" ({Ui.Esc(m.Hero.Cls.Card)})" : "")}"));
             string fame = e.Infamy > 0 && Notoriety.InfamyTier(t, Intel.Find(t, e.Name)!) > 0 ? Ui.C(Ui.Bad, Notoriety.InfamyName(t, e.Infamy))
                 : e.Renown > 0 ? Ui.C(Notoriety.FameTier(t, Intel.Find(t, e.Name)!) >= 2 ? Ui.Gold : Ui.Ink, Notoriety.FameName(t, e.Renown)) : Ui.C(Ui.Ink2, "Unknown");
             var (_, rc) = RelationWord(e.Relation, r.RefuseBelow);
@@ -100,7 +100,7 @@ public partial class Main
             };
             return new[]
             {
-                $"{Shield(t, e.Name)}[b]The {Ui.Esc(e.Name)}[/b]\n{Ui.C(Ui.Ink2, $"[font_size=11]{makeup}[/font_size]")}",
+                $"{Shield(t, e.Name)}[b]The {Ui.Esc(e.Name)}[/b] {Ui.C(Ui.Gold, $"[font_size=11]{Ui.Esc(e.Tier)}[/font_size]")}\n{Ui.C(Ui.Ink2, $"[font_size=11]{makeup}[/font_size]")}",
                 $"{e.Ready}/{e.Members.Count}",
                 $"[b]{e.Power}[/b]",
                 Ui.C(e.Loyalty < 35 ? Ui.Bad : Ui.Ink, Js.Str(Math.Round(e.Loyalty))),
@@ -162,7 +162,7 @@ public partial class Main
         {
             var s = h.Hero!;
             string temper = Regard.TemperOf(t, h)?.Name is string tn ? $" · {Ui.Esc(tn)}" : "";
-            string state = h.IsAway ? Ui.C(Ui.Gold, "Away") : s.Duty != HeroDuty.None ? DutyIcon(h, 13) + Ui.C(Ui.Good, s.Duty == HeroDuty.Walls ? "Walls" : "Streets") : Quests.Available(h) ? Ui.C(Ui.Good, "Ready") : s.JailedUntil != null ? Ui.C(Ui.Bad, "In jail") : Ui.C(Ui.Ink2, "Resting");
+            string state = h.IsAway ? Ui.C(Ui.Gold, "Away") : s.Duty != HeroDuty.None ? DutyIcon(h, 13) + Ui.C(Ui.Good, s.Duty switch { HeroDuty.Walls => "Walls", HeroDuty.Streets => "Streets", _ => "Command" }) : Quests.Available(h) ? Ui.C(Ui.Good, "Ready") : s.JailedUntil != null ? Ui.C(Ui.Bad, "In jail") : Ui.C(Ui.Ink2, "Resting");
             return new[]
             {
                 $"[b]{Ui.Esc(Notoriety.Known(h))}[/b]\n{Ui.C(Ui.Ink2, $"[font_size=11]{Ui.Esc(Ui.Cap(s.Cls.Name))}{temper}{(s.Magic.Count > 0 ? $" · {s.Magic.Count} magic" : "")}[/font_size]")}",

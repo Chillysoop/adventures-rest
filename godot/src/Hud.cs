@@ -29,6 +29,7 @@ public partial class Main
         [Tab.City] = "The city",
         [Tab.Ledger] = "Ledger",
         [Tab.War] = "War",
+        [Tab.Army] = "The army",
         [Tab.Defence] = "Defence",
         [Tab.Council] = "Council",
         [Tab.Bounties] = "Bounties and the road",
@@ -252,7 +253,7 @@ public partial class Main
         _windowTab = t;
         _windowTitle.Text = Titles[t];
         // The roster is a table and the council a hall: their windows open wide.
-        _window.OffsetRight = _window.OffsetLeft + (t == Tab.Companies ? 900 : t == Tab.Council ? 600 : t == Tab.Bounties ? 560 : 460);
+        _window.OffsetRight = _window.OffsetLeft + (t == Tab.Companies ? 900 : t is Tab.Council or Tab.Army ? 600 : t == Tab.Bounties ? 560 : 460);
         foreach (var (k, s) in _scrolls)
             if (k != Tab.Inspect) s.Visible = k == t;
         _window.Visible = true;

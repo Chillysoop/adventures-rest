@@ -38,6 +38,8 @@ public class ArmoryTests
         var (sim, t) = NewTown();
         var a = Hero(t, "fighter");
         Gear.Claim(t, a, Item(t, "weapon-1"));
+        // A blade taken up can come cursed, and a cursed one won't make room (CursesAndDowntimeTests): not this one.
+        a.Hero!.Curse = "";
         var gift = Armory.Add(t, Item(t, "weapon-2"), "a test");
         double loyalty = a.Hero!.Loyalty, pay = a.Hero.Pay;
         Assert.True(sim.Gift(gift.Id, a.Id));
