@@ -22,7 +22,7 @@ public partial class Chamber : Control
 
     public int Selected = -1;
 
-    private const float Scale = 3.2f;
+    private const float FigureScale = 3.2f;
     private static readonly Vector3 Centre = new(0, 0, -0.6f);
     private const float SeatRadius = 1.95f, TableRadius = 1.42f, ChairRadius = 2.3f, WallRadius = 3.9f;
 
@@ -317,7 +317,7 @@ public partial class Chamber : Control
             var act = s.Vote == true ? Heroes.Act.Cheer : Heroes.Act.Idle;
             if (s.Vote == false) yaw += (p.X >= 0 ? 1 : -1) * 0.6f;
             float u = act == Heroes.Act.Cheer ? _now * 0.25f + i * 0.21f : _now * 0.3f + i * 0.17f;
-            _heroes.PutLook(had.Look, new Transform3D(Basis.FromEuler(new Vector3(0, yaw, 0)).Scaled(Vector3.One * Scale), p), act, u);
+            _heroes.PutLook(had.Look, new Transform3D(Basis.FromEuler(new Vector3(0, yaw, 0)).Scaled(Vector3.One * FigureScale), p), act, u);
         }
         _heroes.Flush(_now);
         _marks.QueueRedraw();
@@ -369,7 +369,7 @@ public partial class Chamber : Control
             {
                 var s = c._seats[i];
                 var feet = c.OnScreen(SeatAt(i, n, SeatRadius));
-                var head = c.OnScreen(SeatAt(i, n, SeatRadius) + new Vector3(0, Chamber.Scale * 0.52f, 0));
+                var head = c.OnScreen(SeatAt(i, n, SeatRadius) + new Vector3(0, FigureScale * 0.52f, 0));
                 float h = Mathf.Max(feet.Y - head.Y, 30);
                 var box = new Rect2(head.X - h * 0.38f, head.Y - 6, h * 0.76f, h + 20);
                 c._hits.Add((box, i));
