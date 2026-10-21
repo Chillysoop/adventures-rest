@@ -85,6 +85,9 @@ public sealed class Options
     /// <summary>--skirmish [gear][,kind]: the town's heroes, one of each class, fight a ring of raiders by the square (for shots); "gear" hands them famous magic arms a moment in; kind picks the foes (undead, cult, rivals, schemers, beasts, dragon; orcs by default).</summary>
     public string? Skirmish;
 
+    /// <summary>For shots: the first company out is drawn in the thick of it at its site, and the camera aims there.</summary>
+    public bool Delve;
+
     /// <summary>--rolls: look into the busiest tavern and replay its latest skill checks as dice over people's heads.</summary>
     public bool Rolls;
 
@@ -221,6 +224,7 @@ public sealed class Options
                 case "--folk": o.Folk = true; break;
                 case "--skirmish": o.Skirmish = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
                 case "--rolls": o.Rolls = true; break;
+                case "--delve": o.Delve = true; break;
                 case "--wall": o.Wall = int.Parse(Next()); break;
                 case "--strike": o.Strike = true; break;
                 case "--house": o.House = true; break;
@@ -281,7 +285,7 @@ public sealed class Options
                 case "--advance": o.Advances.Add(Next()); break;
                 case "--inspiration": o.Inspiration = int.Parse(Next()); break;
                 case "--decor-at": o.DecorAt = Next().Split(',').Select(v => double.Parse(v, System.Globalization.CultureInfo.InvariantCulture)).ToArray(); break;
-                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--stock" or "--pact" or "--buy" or "--call" or "--flag" or "--wait" or "--works" or "--roster" or "--spot" or "--draw-wall" or "--gate" or "--raise" or "--skyrun":
+                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--stock" or "--pact" or "--buy" or "--call" or "--flag" or "--wait" or "--works" or "--roster" or "--spot" or "--draw-wall" or "--gate" or "--raise" or "--skyrun" or "--duty":
                     o.Script.Add((args[i][2..], Next()));
                     break;
             }
@@ -387,6 +391,13 @@ public sealed class Options
                         t.Treasury += Intel.Ask(t, p);
                         sim.BuyIntel(p.Id);
                     }
+                    break;
+                case "duty":
+                    // For shots of heroes on guard: post the highest-level hero in town free to go, to "walls" or "streets".
+                    var duty = arg == "streets" ? HeroDuty.Streets : HeroDuty.Walls;
+                    t.Treasury += 200;
+                    if (t.Heroes.Where(h => h.Hero!.Duty == HeroDuty.None && Garrison.DutyBlocked(t, h, duty) == null).OrderByDescending(h => h.Hero!.Level).ThenBy(h => h.Id).FirstOrDefault() is { } guardHero)
+                        sim.SetDuty(guardHero.Id, duty);
                     break;
                 case "stock":
                     // For armory shots: a find handed in under a pact.

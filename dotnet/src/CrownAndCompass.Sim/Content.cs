@@ -579,6 +579,36 @@ public sealed record KnowledgeRules
     public ScoutRules Scouts { get; init; } = new();
     public MirrorRules Mirror { get; init; } = new();
     public IReadOnlyList<SightWorkDef> Works { get; init; } = [];
+
+    /// <summary>Days a caster rests after a scrying before casting another: the more scryers in town, the more scryings a day.</summary>
+    public int ScryRestDays { get; init; } = 2;
+
+    /// <summary>What a caster asks to scry, by their loyalty: free at or above Free, gold at or above Favour, a favour below it.</summary>
+    public ScryPriceRules ScryPrice { get; init; } = new();
+    public WatchtowerRules Watchtowers { get; init; } = new();
+}
+
+public sealed record ScryPriceRules
+{
+    public double Free { get; init; } = 70;
+    public double Favour { get; init; } = 40;
+
+    /// <summary>Loyalty a caster scrying as a favour loses: they will not forget being asked.</summary>
+    public double FavourLoyalty { get; init; } = 6;
+}
+
+/// <summary>Watchtowers: each sees a circle of the wilds live around itself, wider as the town grows.</summary>
+public sealed record WatchtowerRules
+{
+    public string Building { get; init; } = "watchtower";
+
+    /// <summary>Tiles a tower sees around itself, plus more for every hundred residents, up to the most.</summary>
+    public double Sight { get; init; } = 30;
+    public double SightPerHundred { get; init; } = 4;
+    public double MostSight { get; init; } = 70;
+
+    /// <summary>The town may raise one tower for every this many residents (always one).</summary>
+    public int ResidentsEach { get; init; } = 100;
 }
 
 /// <summary>Where a rumour comes from and how far to trust it.</summary>
@@ -1002,6 +1032,9 @@ public sealed record TerrainKindDef
 
     /// <summary>"water" (a lake) or "sheer" (cliffs and peaks): nobody walks across, only flies, swims or climbs (<see cref="Systems.Passage"/>); "" for country anyone can.</summary>
     public string Barrier { get; init; } = "";
+
+    /// <summary>How much wider than other hard country it spreads across its region: wide country is costly to go round.</summary>
+    public double Wide { get; init; } = 1;
 }
 
 public sealed record TerrainHazardDef
@@ -1095,6 +1128,37 @@ public sealed record CampRules
 }
 
 /// <summary>Roads, rests and the country between the town and its sites (content/game/roads.json).</summary>
+/// <summary>
+/// Long mountain walls laid between the rings of the wilds. Roads must go through their passes, which open wherever a site
+/// stands in the wall's line and at a few spots besides: the choke points of the far country.
+/// </summary>
+public sealed record RangeRules
+{
+    /// <summary>The terrain kind the walls are made of (a sheer barrier).</summary>
+    public string Kind { get; init; } = "";
+
+    /// <summary>The ring a wall first stands beyond: none nearer the town than the outside of this ring.</summary>
+    public int FromRing { get; init; } = 3;
+
+    /// <summary>Walls laid in each gap between rings, least and most.</summary>
+    public int[] PerGap { get; init; } = [0, 0];
+
+    /// <summary>Degrees of the town's horizon a wall spans, least and most.</summary>
+    public double[] Arc { get; init; } = [40, 90];
+
+    /// <summary>Its depth in days, least and most.</summary>
+    public double[] Depth { get; init; } = [0.3, 0.45];
+
+    /// <summary>Passes cut besides those at sites in the wall's line, least and most.</summary>
+    public int[] Passes { get; init; } = [1, 2];
+
+    /// <summary>Half a pass's width, in days.</summary>
+    public double PassHalf { get; init; } = 0.3;
+
+    /// <summary>The shortest stretch of wall worth standing, in days along it.</summary>
+    public double Least { get; init; } = 0.8;
+}
+
 public sealed record RoadRules
 {
     /// <summary>Hours a party marches a day; a day's march is one day of distance on open ground.</summary>
@@ -1120,6 +1184,9 @@ public sealed record RoadRules
 
     /// <summary>The kinds of country each region theme puts in front of its sites (a kind twice is twice as likely).</summary>
     public IReadOnlyDictionary<string, List<string>> Themes { get; init; } = new Dictionary<string, List<string>>();
+
+    /// <summary>Mountain walls between the rings, broken only at their passes (<see cref="Systems.Roads.Ranges"/>).</summary>
+    public RangeRules Ranges { get; init; } = new();
 }
 
 /// <summary>

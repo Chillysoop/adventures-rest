@@ -107,8 +107,14 @@ public class UndercityTests
         var l = t.Undercity[0];
         t.Treasury += 2000;
         for (int i = 0; i < 3; i++) Quests.CreateHero(t, t.Content.Classes[i], 4);
-        Assert.NotNull(sim.PostBounty(Undercity.Def(t, l).Site.Id, 300));
-        for (int i = 0; i < 90 && l.Cleared == 0; i++) sim.RunDays(1);
+        string site = Undercity.Def(t, l).Site.Id;
+        Assert.NotNull(sim.PostBounty(site, 300));
+        for (int i = 0; i < 90 && l.Cleared == 0; i++)
+        {
+            // A party that limps back empty-handed may try again on a fresh bounty.
+            if (!t.Bounties.Any(b => b.SiteId == site && b.Status is BountyStatus.Open or BountyStatus.Taken)) sim.PostBounty(site, 300);
+            sim.RunDays(1);
+        }
         Assert.Equal(1, l.Cleared);
     }
 

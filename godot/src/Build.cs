@@ -24,6 +24,7 @@ public partial class Main
     private sealed record BuildItem(string Label, Zone? Zone = null, string? Building = null, DefenseWork? Defense = null, int Density = 0, string? Crop = null, bool Gate = false);
 
     private PanelContainer _buildBar = null!;
+    private HBoxContainer _buildTabs = null!;
     private HFlowContainer _buildItems = null!;
     private Label _buildHint = null!;
     private Button _buildToggle = null!;
@@ -99,14 +100,17 @@ public partial class Main
 
         var head = new HBoxContainer();
         head.AddThemeConstantOverride("separation", 4);
+        _buildTabs = new HBoxContainer();
+        _buildTabs.AddThemeConstantOverride("separation", 4);
+        head.AddChild(_buildTabs);
         foreach (var g in Enum.GetValues<BuildGroup>())
         {
             var b = new Button { Text = g.ToString(), ThemeTypeVariation = "Tab", ToggleMode = true, FocusMode = FocusModeEnum.None };
             b.Pressed += () => ShowBuildGroup(g);
-            head.AddChild(b);
+            _buildTabs.AddChild(b);
             _groupButtons[g] = b;
         }
-        head.AddChild(new VSeparator());
+        _buildTabs.AddChild(new VSeparator());
         _buildHint = Ui.Label("", Ui.Ink2, null, 12);
         _buildHint.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         _buildHint.SizeFlagsVertical = SizeFlags.ShrinkCenter;
@@ -125,19 +129,20 @@ public partial class Main
         _buildBar.SetAnchorsAndOffsetsPreset(LayoutPreset.CenterBottom, LayoutPresetMode.Minsize, Gap);
         _buildBar.GrowHorizontal = GrowDirection.Both;
         _buildBar.GrowVertical = GrowDirection.Begin;
-        _buildBar.OffsetBottom = -(DockHeight + Gap * 2 + 20);
-        _buildBar.OffsetTop = _buildBar.OffsetBottom;
+        FitBuildBar();
 
         _map.Planner.Changed += () =>
         {
             _dirty = true;
             SyncBuildButtons();
+            TuckBuildBar();
         };
         _map.Planner.Said += Toast;
         _map.Decorator.Changed += () =>
         {
             _dirty = true;
             SyncDecorButtons();
+            TuckBuildBar();
         };
         ShowBuildGroup(BuildGroup.Zones);
     }
@@ -153,6 +158,38 @@ public partial class Main
         _buildToggle.SetPressedNoSignal(_buildBar.Visible);
         _dirty = true;
         if (_buildBar.Visible) GuideEvent("build");
+    }
+
+    /// <summary>
+    /// With a tool in hand the bar folds down to its hint line so the map is clear to place on, and opens again
+    /// once the tool is put down (placed, right-click or Esc).
+    /// </summary>
+    private void TuckBuildBar()
+    {
+        bool tuck = _map.Planner.Active || _map.Decorator.Active;
+        if (_buildItems.Visible != tuck) return;
+        _buildTabs.Visible = !tuck;
+        _buildItems.Visible = !tuck;
+        Callable.From(FitBuildBar).CallDeferred();
+    }
+
+    /// <summary>Shrink the bar to what it holds, centred above the dock.</summary>
+    private void FitBuildBar()
+    {
+        _buildBar.OffsetLeft = _buildBar.OffsetRight = 0;
+        _buildBar.OffsetBottom = -(DockHeight + Gap * 2 + 20);
+        _buildBar.OffsetTop = _buildBar.OffsetBottom;
+        _buildBar.ResetSize();
+    }
+
+    /// <summary>A click anywhere off the open bar closes it; on the map it does nothing else.</summary>
+    private void ClickOffBuildBar(InputEventMouseButton mb)
+    {
+        _map.Swallow = false;
+        if (!_buildBar.Visible || !_buildItems.Visible || mb.ButtonIndex is not (MouseButton.Left or MouseButton.Right)) return;
+        if (_buildBar.GetGlobalRect().HasPoint(mb.Position) || _buildToggle.GetGlobalRect().HasPoint(mb.Position)) return;
+        ToggleBuildBar();
+        _map.Swallow = true;
     }
 
     private void ShowBuildGroup(BuildGroup g)
@@ -288,6 +325,8 @@ public partial class Main
             else
             {
                 var def = town.Content.Building(item.Building!);
+                // An institution's building stays off the bar until the town has heard of it.
+                b.Visible = !Institutions.Hidden(town, def.Id);
                 why = Planning.Blocked(town, def);
                 line = why ?? $"{Planning.Cost(town, def)}g";
                 tip = def.Blurb != "" ? def.Blurb : BuildTip(town, def);

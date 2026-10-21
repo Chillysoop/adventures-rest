@@ -259,6 +259,7 @@ public partial class TownView(MapView map) : Node3D
             case "granary": Granary(kit, v); break;
             case "builders_yard": BuildersYard(kit, v); break;
             case "watch_house": WatchHouse(kit, v); break;
+            case "watchtower": Watchtower(kit); break;
             case "timber_house" or "townhouse" or "manor" or "tenement" or "tall_house": Crafted(kit, id, v); break;
             case "quarry": Quarry(kit, v); break;
             case "sheepfold": Sheepfold(kit, v); break;
@@ -507,6 +508,49 @@ public partial class TownView(MapView map) : Node3D
         k.Add("castle/tower-square-mid", MeshKit.At(0.33f, 0.3f, -0.3f, 0, 0.3f), castle);
         k.Add("castle/tower-square-top-roof", MeshKit.At(0.33f, 0.6f, -0.3f, 0, 0.3f), castle);
         k.Add("castle/flag-pennant", MeshKit.At(0.33f, 0.92f, -0.3f, 0, 0.3f), Palette.Kenney(new Color("b8322a")));
+    }
+
+    private static void Watchtower(MeshKit k)
+    {
+        // A tall timber lookout on four splayed posts: braced, with a railed platform, a steep shingle roof and a beacon.
+        var post = new Color("6b4a2e");
+        var plank = new Color("8c6a44");
+        var roof = new Color("5a3a2a");
+        const float top = 1.55f, foot = 0.34f, head = 0.22f;
+        foreach (var (sx, sz) in new[] { (-1, -1), (1, -1), (-1, 1), (1, 1) })
+        {
+            var a = new Vector3(sx * foot, 0, sz * foot);
+            var b = new Vector3(sx * head, top, sz * head);
+            var mid = (a + b) / 2;
+            var dir = (b - a).Normalized();
+            k.Push(new Transform3D(new Basis(new Quaternion(Vector3.Up, dir)), mid));
+            k.Box(new Vector3(0, -(b - a).Length() / 2, 0), new Vector3(0.07f, (b - a).Length(), 0.07f), post);
+            k.Pop();
+        }
+        // Cross braces on every face, at two heights.
+        foreach (float y in new[] { 0.45f, 1.05f })
+        {
+            float w = Mathf.Lerp(foot, head, y / top);
+            k.Box(new Vector3(0, y, -w), new Vector3(w * 2, 0.05f, 0.04f), post);
+            k.Box(new Vector3(0, y, w), new Vector3(w * 2, 0.05f, 0.04f), post);
+            k.Box(new Vector3(-w, y, 0), new Vector3(0.04f, 0.05f, w * 2), post);
+            k.Box(new Vector3(w, y, 0), new Vector3(0.04f, 0.05f, w * 2), post);
+        }
+        // The platform, wider than the posts, its railing and corner uprights.
+        k.Box(new Vector3(0, top, 0), new Vector3(0.66f, 0.06f, 0.66f), plank);
+        foreach (var (x, z, w, d) in new[] { (0f, -0.31f, 0.66f, 0.04f), (0f, 0.31f, 0.66f, 0.04f), (-0.31f, 0f, 0.04f, 0.66f), (0.31f, 0f, 0.04f, 0.66f) })
+            k.Box(new Vector3(x, top + 0.2f, z), new Vector3(w, 0.05f, d), plank);
+        foreach (var (x, z) in new[] { (-0.3f, -0.3f), (0.3f, -0.3f), (-0.3f, 0.3f), (0.3f, 0.3f) })
+            k.Box(new Vector3(x, top, z), new Vector3(0.05f, 0.5f, 0.05f), post);
+        k.Push(MeshKit.At(0, top + 0.5f, 0));
+        k.Pyramid(0, 0.8f, 0.8f, 0.42f, roof, 0.05f);
+        k.Pop();
+        // The beacon brazier, lit, and a ladder up the front.
+        k.Box(new Vector3(0, top + 0.06f, 0), new Vector3(0.16f, 0.1f, 0.16f), new Color("4a443e"), new Color("ff8a3a", MeshKit.Flag.Ember));
+        k.Box(new Vector3(-0.08f, 0, foot + 0.05f), new Vector3(0.03f, top, 0.03f), plank);
+        k.Box(new Vector3(0.08f, 0, foot + 0.05f), new Vector3(0.03f, top, 0.03f), plank);
+        for (float y = 0.15f; y < top; y += 0.18f) k.Box(new Vector3(0, y, foot + 0.05f), new Vector3(0.16f, 0.025f, 0.03f), plank);
+        k.Add("castle/flag-pennant", MeshKit.At(0, top + 0.86f, 0, 0, 0.3f), Palette.Kenney(new Color("b8322a")));
     }
 
     private static void Tavern(MeshKit k, int v)

@@ -88,14 +88,18 @@ public static class Assess
     /// How hard a site looks for the town's heroes, by what the town believes of it (a rumour can be wrong): the
     /// levels a party wants for its believed tier over the strongest four heroes on the books.
     /// </summary>
-    public static Banded Danger(Town town, SiteState s)
+    public static Banded Danger(Town town, SiteState s) => DangerFor(town, s, town.Heroes.Where(h => !h.Departed && !h.Dead));
+
+    /// <summary>How hard a site looks for these heroes (a company and whoever would ride with it): the same ladder, over their strongest four.</summary>
+    public static Banded DangerFor(Town town, SiteState s, IEnumerable<Agent> heroes)
     {
         var r = Rules(town);
-        int tier = Math.Max(1, s.BelievedTier);
-        int want = r.PartyLevels * tier + r.PartyEdge;
-        int have = town.Heroes.Where(h => !h.Departed && !h.Dead).Select(h => h.Hero!.Level).OrderByDescending(l => l).Take(4).Sum();
-        return On(r.Danger, have == 0 ? double.MaxValue : (double)want / have);
+        int have = heroes.Select(h => h.Hero!.Level).OrderByDescending(l => l).Take(4).Sum();
+        return On(r.Danger, have == 0 ? double.MaxValue : (double)Wants(town, s) / have);
     }
+
+    /// <summary>The hero levels a party wants for what the town believes is at a site.</summary>
+    public static int Wants(Town town, SiteState s) => Rules(town).PartyLevels * Math.Max(1, s.BelievedTier) + Rules(town).PartyEdge;
 
     /// <summary>The weight of an effect key, by its prefix for decrees, precedents, callings, fixtures and projects.</summary>
     public static ImpactWeight? Weight(Town town, string key)

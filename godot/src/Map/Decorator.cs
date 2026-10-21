@@ -95,6 +95,7 @@ public partial class Decorator(MapView map) : Control
     {
         _hover = Lots(w);
         var def = Def;
+        bool placed = false;
         if (_press is Vector2 p)
         {
             if (Tool is { Piece: null })
@@ -106,17 +107,20 @@ public partial class Decorator(MapView map) : Control
                 int n = 0;
                 foreach (var (x, y, a) in Row(def, p, _hover.Value))
                     if (map.Sim.Decorate(def.Id, x, y, a) != null) n++;
-                if (n > 0) Changed?.Invoke();
+                placed = n > 0;
             }
             else if (def != null && def.Scatter && def.Line == 0 && _dragged)
             {
-                if (_painted > 0) Changed?.Invoke();
+                placed = _painted > 0;
             }
             else if (def != null)
             {
-                if (Place(def, p.X, p.Y, Angle) != null) Changed?.Invoke();
+                placed = Place(def, p.X, p.Y, Angle) != null;
             }
         }
+        // Once it is down the piece leaves the hand and the build bar comes back; Shift keeps it for more.
+        if (placed && Tool != null && !Input.IsKeyPressed(Key.Shift)) Pick(null);
+        else if (placed) Changed?.Invoke();
         _press = null;
         _dragged = false;
         Ghost();

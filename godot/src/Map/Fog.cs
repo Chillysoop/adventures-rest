@@ -31,8 +31,9 @@ public sealed class Fog
 {
     public const float X0 = 0;
     public const float Span = Geo.World;
-    private const int PerTile = 1;
-    public const int N = (int)Span * PerTile;
+    // Half a pixel a tile: the fog is soft-edged, and a 2048-tile world at full size would cost four times the repaint.
+    private const float PerTile = 0.5f;
+    public const int N = (int)(Span * PerTile);
 
     /// <summary>A report older than this shows as a "last seen" ghost.</summary>
     public const int StaleDays = 30;
@@ -78,8 +79,11 @@ public sealed class Fog
         // The Sleepless Spire lights every site within its reach.
         int reach = Watch.Reach(town);
         if (reach > 0) LiveAreas.Add((Geo.Center, SpireRadius(geo, reach)));
+        // Each watchtower sees its own circle of the wilds, wider as the town grows.
+        float tower = (float)Watch.TowerSight(town);
+        foreach (var b in Watch.Watchtowers(town)) LiveAreas.Add((Geo.LotPos(town.Lot(b.LotId)), tower));
         foreach (var (site, source) in Watch.LiveSites(town))
-            if (source != LiveSource.Spire && geo.Pins.TryGetValue(site.Def.Id, out var pin)) LiveAreas.Add((pin, SiteSight));
+            if (source is not (LiveSource.Spire or LiveSource.Tower) && geo.Pins.TryGetValue(site.Def.Id, out var pin)) LiveAreas.Add((pin, SiteSight));
 
         string key = $"{town.Day}|{LightRadius:F0}|{Reports.Count}|{string.Join(',', LiveAreas.Skip(1).Select(a => $"{a.P.Round()}:{a.R:F0}"))}|{string.Join(',', geo.Pins.Values.Select(p => p.Round().ToString("F0")))}";
         if (key == _key) return false;
