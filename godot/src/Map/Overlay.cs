@@ -177,6 +177,7 @@ public partial class Overlay(MapView map) : Control
                     LiveSource.Scout => "Scout watching",
                     LiveSource.Mirror => "Mirror",
                     LiveSource.Spire => "Spire sight",
+                    LiveSource.Tower => "Watchtower sight",
                     LiveSource.Outpost => "Held",
                     _ => "In sight",
                 },
