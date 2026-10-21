@@ -1712,6 +1712,8 @@
       "id": "monastery",
       "name": "the Monastery of the Falling Water",
       "building": "monastery",
+      "icon": "inst-monastery",
+      "sparks": ["hero:monk:3", "craft:priest:3", "building:shrine"],
       "tier": "town",
       "title": "Abbot",
       "blurb": "A walled cloister round a courtyard where a stream falls from the upper terrace into a still pool. Its monks keep the hours, teach the open-hand forms to anyone who will rise at dawn, and send their best out into the world to see what they are made of.",

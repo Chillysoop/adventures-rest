@@ -690,7 +690,7 @@
       {
       "id": "institutions-discovery",
       "title": "Institutions to discover",
-      "text": "The town starts knowing none of its [b]institutions[/b]: [b]0 of 23[/b].\nThey come to light from\n• heroes and folk who settle\n• crafts and trade\n• sites cleared\n• a bigger charter\nHeard-of ones show what they still need, then rise from the Government build bar.",
+      "text": "The town starts knowing none of its [b]institutions[/b].\nThey come to light from\n• heroes and folk who settle\n• crafts and trade\n• sites cleared\n• a bigger charter\nHeard-of ones show what they still need, then rise from the Government build bar.",
       "point": "tab:Institutions",
       "when": "count:InstitutionsSeen",
       "teaches": []
