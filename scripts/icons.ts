@@ -70,6 +70,20 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["order-guard", "flying-flag", mono],
   ["order-strike", "sword-brandish", mono],
   ["order-scout", "spyglass", mono],
+  // The council chamber (godot/src/Chamber.cs): votes over heads, seats, loyalty, what the mayor holds over them
+  ["vote-aye", "open-palm", "#8cc084"],
+  ["vote-nay", "thumb-down", "#ef7f6f"],
+  ["seat-locked", "padlock", "#b3a68f"],
+  ["loyal", "hearts", "#8cc084"],
+  ["wary", "sly", "#e8b93a"],
+  ["disloyal", "broken-heart", "#ef7f6f"],
+  ["secret", "secret-book", "#e8b93a"],
+  ["traitor", "backstab", "#d0566a"],
+  ["dig", "magnifying-glass", "#d8c08a"],
+  ["expose", "shouting", "#e07a5f"],
+  ["press", "chained-heart", "#d0566a"],
+  ["skill", "upgrade", "#7fb0d4"],
+  ["deadline", "hourglass", "#d8c08a"],
   // Enemy portraits (godot/src/Portrait.cs draws them on a medallion tinted by the enemy's kind)
   ...[
     "orc-head", "ogre", "troll", "goblin-head", "brutal-helm", "horned-helm", "giant",

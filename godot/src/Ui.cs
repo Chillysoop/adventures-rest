@@ -459,7 +459,10 @@ public sealed class Pane
         string sig = _sig.ToString();
         if (sig == _shown) return;
         _shown = sig;
-        foreach (var c in Box.GetChildren()) c.QueueFree();
+        // A control that keeps its own state (the council chamber's little world) is taken out and put back, not remade.
+        foreach (var c in Box.GetChildren())
+            if (c.HasMeta("keep")) Box.RemoveChild(c);
+            else c.QueueFree();
         foreach (var make in _items) Box.AddChild(make());
     }
 

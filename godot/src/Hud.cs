@@ -246,8 +246,8 @@ public partial class Main
     {
         _windowTab = t;
         _windowTitle.Text = Titles[t];
-        // The roster is a table: its window opens wide.
-        _window.OffsetRight = _window.OffsetLeft + (t == Tab.Companies ? 900 : 460);
+        // The roster is a table and the council a hall: their windows open wide.
+        _window.OffsetRight = _window.OffsetLeft + (t == Tab.Companies ? 900 : t == Tab.Council ? 600 : 460);
         foreach (var (k, s) in _scrolls)
             if (k != Tab.Inspect) s.Visible = k == t;
         _window.Visible = true;
