@@ -107,7 +107,8 @@ public static class Roads
             int n = rng.Range(rules.FeaturesPerRegion[0], rules.FeaturesPerRegion[^1] + 1);
             for (int i = 0; i < n; i++)
             {
-                var kind = rules.Kinds.FirstOrDefault(k => k.Id == rng.Pick(ids));
+                // The pick is drawn again for every kind looked at; the founding's sea is never drawn, so it is left out.
+                var kind = rules.Kinds.Where(k => !k.Boats).FirstOrDefault(k => k.Id == rng.Pick(ids));
                 if (kind == null) continue;
                 for (int tries = 0; tries < 10; tries++)
                 {

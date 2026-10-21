@@ -368,7 +368,8 @@ public static class Institutions
                 if (holds) { why = w; break; }
             }
             string tier = Charter(town, d);
-            if (why == null && tier != "" && City.Reached(town, tier)) why = $"the charter of a {City.TierName(town, tier).ToLowerInvariant()}";
+            // A charter brings talk only of what the town could build: no harbour inland.
+            if (why == null && tier != "" && City.Reached(town, tier) && !(town.Content.Buildings.FirstOrDefault(b => b.Id == d.Building) is { Coast: true } && !Fleet.Coastal(town))) why = $"the charter of a {City.TierName(town, tier).ToLowerInvariant()}";
             if (why == null && Find(town, d.Id) != null) why = "its opening";
             if (why == null) continue;
             town.InstitutionsSeen[d.Id] = why;

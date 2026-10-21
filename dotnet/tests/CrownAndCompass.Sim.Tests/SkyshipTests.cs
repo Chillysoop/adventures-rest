@@ -57,7 +57,8 @@ public class SkyshipTests
         var sim = new Simulation(new SimulationOptions { Seed = 1, AutoMayor = false });
         var t = sim.Town;
         var tower = t.Content.Neighbours.Project("mooring-tower")!;
-        var s = t.Settlements[0];
+        // A settlement not already on a cloud ledge, where airships tie up anyway.
+        var s = t.Settlements.First(x => t.Regions[x.RegionId].Site != "cloud-ledge");
         t.Regions[s.RegionId].Known = true;
         s.Standing = 20;
         // No airship, nothing to moor.
