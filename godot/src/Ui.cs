@@ -406,8 +406,30 @@ public static partial class Ui
     // A tag first, so sums inside one (a [hint=...] tooltip) are left alone.
     private static readonly System.Text.RegularExpressions.Regex Coins = new(@"\[[^\]]*\]|(?<![\w#=])(\d[\d,]*(?:\.\d+)?)(g\b| gold\b)", System.Text.RegularExpressions.RegexOptions.Compiled);
 
-    /// <summary>Put the gold icon before every sum of money in a piece of rich text: "120g" and "120 gold".</summary>
-    public static string Coined(string bbcode) => Coins.Replace(bbcode, m => !m.Groups[1].Success ? m.Value : $"{Img("gold", 14)}{m.Groups[1].Value}{(m.Groups[2].Value == "g" ? "" : " gold")}");
+    /// <summary>Gold at which the player sees platinum instead (ten gold a piece).</summary>
+    public const double PlatinumFrom = 1000;
+
+    /// <summary>
+    /// The money the player reads, in gold and platinum only: whole gold below <see cref="PlatinumFrom"/> (the
+    /// coppers and silver the sim keeps stay under the hood), platinum pieces at ten gold from there. Returns the
+    /// icon to wear and the figure.
+    /// </summary>
+    public static (string Icon, string Figure, bool Platinum) Money(double gold)
+    {
+        if (Math.Abs(gold) >= PlatinumFrom) return ("platinum", Math.Round(gold / 10).ToString("#,0", System.Globalization.CultureInfo.InvariantCulture), true);
+        double whole = gold > 0 && gold < 1 ? 1 : Math.Round(gold);
+        return ("gold", whole.ToString("#,0", System.Globalization.CultureInfo.InvariantCulture), false);
+    }
+
+    /// <summary>Put the coin before every sum of money in a piece of rich text ("120g", "120 gold"), as gold or platinum.</summary>
+    public static string Coined(string bbcode) => Coins.Replace(bbcode, m =>
+    {
+        if (!m.Groups[1].Success) return m.Value;
+        if (!double.TryParse(m.Groups[1].Value.Replace(",", ""), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double v))
+            return $"{Img("gold", 14)}{m.Groups[1].Value}{(m.Groups[2].Value == "g" ? "" : " gold")}";
+        var (icon, figure, plat) = Money(v);
+        return $"{Img(icon, 14)}{figure}{(m.Groups[2].Value == "g" ? "" : plat ? " platinum" : " gold")}";
+    });
 
     /// <summary>A button label with its sum of money shown with the gold icon instead of a "g".</summary>
     public static void GoldButton(Button b)
@@ -418,8 +440,10 @@ public static partial class Ui
             b.Icon = null; // buttons that are reused may have shown a price before
             return;
         }
-        b.Text = b.Text.Remove(m.Index + m.Length - 1, 1);
-        b.Icon = Icon("gold");
+        double.TryParse(m.Groups[1].Value.Replace(",", ""), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double v);
+        var (icon, figure, _) = Money(v);
+        b.Text = b.Text.Remove(m.Index, m.Length).Insert(m.Index, figure);
+        b.Icon = Icon(icon);
         b.ExpandIcon = false;
         b.AddThemeConstantOverride("icon_max_width", 16);
     }
@@ -717,6 +741,23 @@ public sealed class Pane
         });
     }
 
+    /// <summary>A tug of war between two sides, −100 (left) to +100 (right), with the bands where each side grumbles and acts.</summary>
+    public void Balance(string left, string right, double value, double calm, double lean, double breaking) =>
+        Add($"bal{left}{right}{Math.Round(value)}", () =>
+        {
+            var h = new HBoxContainer();
+            h.AddThemeConstantOverride("separation", 8);
+            var l = Ui.Label(left, Ui.Ink2, Ui.Bold, 13);
+            l.CustomMinimumSize = new Vector2(64, 0);
+            h.AddChild(l);
+            h.AddChild(new BalanceBar { Value = (float)(value / 100), Calm = (float)(calm / 100), Lean = (float)(lean / 100), Breaking = (float)(breaking / 100), SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(120, 10), SizeFlagsVertical = Control.SizeFlags.ShrinkCenter });
+            var rl = Ui.Label(right, Ui.Ink2, Ui.Bold, 13);
+            rl.CustomMinimumSize = new Vector2(64, 0);
+            rl.HorizontalAlignment = HorizontalAlignment.Right;
+            h.AddChild(rl);
+            return h;
+        });
+
     /// <summary>A labelled meter, 0 to 100.</summary>
     public void Meter(string label, double value, string figure, bool bad = false) =>
         Add($"m{label}{Math.Round(value)}{figure}{bad}", () =>
@@ -736,6 +777,30 @@ public sealed class Pane
             h.AddChild(f);
             return h;
         });
+}
+
+/// <summary>A tug of war from −1 (left) to +1 (right), with the calm middle band shaded and a marker where it stands.</summary>
+public partial class BalanceBar : Control
+{
+    public float Value;
+    public float Calm = 0.15f;
+    public float Lean = 0.25f;
+    public float Breaking = 0.6f;
+
+    public override void _Draw()
+    {
+        var r = new Rect2(Vector2.Zero, Size);
+        DrawStyleBox(Ui.Flat(Ui.Line, 0, 0, 99), r);
+        float mid = Size.X / 2;
+        float X(float v) => mid + v * mid;
+        DrawRect(new Rect2(X(-Breaking), 0, X(-Lean) - X(-Breaking), Size.Y), new Color(Ui.Gold, 0.35f));
+        DrawRect(new Rect2(X(Lean), 0, X(Breaking) - X(Lean), Size.Y), new Color(Ui.Gold, 0.35f));
+        DrawRect(new Rect2(0, 0, X(-Breaking), Size.Y), new Color(Ui.Bad, 0.45f));
+        DrawRect(new Rect2(X(Breaking), 0, Size.X - X(Breaking), Size.Y), new Color(Ui.Bad, 0.45f));
+        DrawRect(new Rect2(X(-Calm), 0, X(Calm) - X(-Calm), Size.Y), new Color(Ui.Good, 0.45f));
+        float x = X(Mathf.Clamp(Value, -1, 1));
+        DrawRect(new Rect2(x - 2, -3, 4, Size.Y + 6), Ui.Ink);
+    }
 }
 
 /// <summary>A rounded progress bar.</summary>

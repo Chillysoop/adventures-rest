@@ -35,7 +35,11 @@
     { "item": "ring-of-water-walking", "ways": ["water"] },
     { "item": "slippers-of-spider-climbing", "ways": ["sheer"] },
     { "item": "ring-of-swimming", "ways": ["river"] },
-    { "item": "gloves-of-swimming-and-climbing", "ways": ["river", "sheer"] }
+    { "item": "gloves-of-swimming-and-climbing", "ways": ["river", "sheer"] },
+    { "item": "saddle-pocket", "ways": ["river"] },
+    { "item": "ferrymans-coin", "ways": ["river"] },
+    { "item": "goatfoot-crampons", "ways": ["sheer"] },
+    { "item": "drowned-road-lantern", "ways": ["water"], "party": true }
   ],
   "mounts": [
     { "id": "horse", "name": "riding horse", "ways": ["river"], "price": 75, "buyAt": 350,

@@ -12,6 +12,7 @@
     { "id": "riverside", "voice": "the wharf crews", "likes": ["freedom", "guile"], "dislikes": ["order"] },
     { "id": "field", "voice": "the tenement folk", "likes": ["generous", "mercy"], "dislikes": ["harsh", "coin"] },
     { "id": "southgate", "voice": "the innkeepers and carters", "likes": ["coin", "valor"], "dislikes": ["caution"] },
-    { "id": "tanners", "voice": "the tanners' row", "likes": ["generous", "freedom"], "dislikes": ["order"] }
+    { "id": "tanners", "voice": "the tanners' row", "likes": ["generous", "freedom"], "dislikes": ["order"] },
+    { "id": "lamplit", "voice": "the scholars and hedge mages", "likes": ["freedom", "guile"], "dislikes": ["harsh"] }
   ]
 }

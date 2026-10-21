@@ -91,14 +91,14 @@ public static class Gear
     {
         var s = a.Hero!;
         int ac = ArmorAc(s.Armor, Rng.Modifier(a.Abilities.Dex), a) + (s.Shield?.Ac ?? 0);
-        return ac + Bonus(c, s, "armor") + Bonus(c, s, "shield") + s.ArmorBonus;
+        return ac + Bonus(c, s, "armor") + Bonus(c, s, "shield") + s.ArmorBonus + Patrons.Boon(c, s, "ac") + Curses.Mod(c, s, "ac");
     }
 
     /// <summary>To hit: proficiency, the class's key ability, the weapon's magic, and a caster's focus.</summary>
     public static int Attack(Content c, Agent a)
     {
         var s = a.Hero!;
-        return Expedition.Proficiency(s.Level) + Rng.Modifier(a.Abilities[s.Cls.Primary]) + s.WeaponBonus + Bonus(c, s, "weapon") + (s.Cls.Spell ? Bonus(c, s, "trinket") : 0);
+        return Expedition.Proficiency(s.Level) + Rng.Modifier(a.Abilities[s.Cls.Primary]) + s.WeaponBonus + Bonus(c, s, "weapon") + (s.Cls.Spell ? Bonus(c, s, "trinket") : 0) + Patrons.Boon(c, s, "attack") + Curses.Mod(c, s, "attack");
     }
 
     /// <summary>The weapon's dice (a caster's attack spell instead), doubled on a critical hit.</summary>
@@ -106,11 +106,11 @@ public static class Gear
     {
         var s = a.Hero!;
         var dice = s.Cls.Spell || s.Weapon?.Damage == null ? new Dice(1, s.Cls.DamageDie > 0 ? s.Cls.DamageDie : 6, 0) : s.Weapon.Damage.Value;
-        return dice.Roll(rng, crit) + Rng.Modifier(a.Abilities[s.Cls.Primary]) + s.WeaponBonus + Bonus(c, s, "weapon");
+        return dice.Roll(rng, crit) + Rng.Modifier(a.Abilities[s.Cls.Primary]) + s.WeaponBonus + Bonus(c, s, "weapon") + Curses.Mod(c, s, "damage");
     }
 
-    /// <summary>A charm, a cloak or a wand helps with traps, riddles and parley.</summary>
-    public static int Skill(Content c, HeroSheet s) => Bonus(c, s, "trinket");
+    /// <summary>A charm, a cloak or a wand helps with traps, riddles and parley, and so do a patron's favour and a familiar.</summary>
+    public static int Skill(Content c, HeroSheet s) => Bonus(c, s, "trinket") + Patrons.Boon(c, s, "skill") + Curses.Mod(c, s, "skill");
 
     /// <summary>Points of gear above the kit the class arrives with.</summary>
     public static int Edge(Content c, Agent a)
@@ -134,7 +134,7 @@ public static class Gear
         string slot = SlotOf(it);
         if (slot == "armor" && s.Armor == null) return 0;
         if (slot == "shield" && (s.Shield == null || !s.Cls.Shield)) return 0;
-        if (!Slots.Contains(slot)) return 0;
+        if (!Slots.Contains(slot) || Curses.Holds(c, s, slot)) return 0;
         return BonusOf(c, it) - Bonus(c, s, slot);
     }
 
@@ -181,7 +181,8 @@ public static class Gear
     public static LibItem? Pass(Town town, Agent from, Agent to)
     {
         var s = from.Hero!;
-        var best = s.Magic.Keys.Select(k => (Slot: k, Item: s.Magic[k])).OrderByDescending(x => x.Item.Tier).ThenByDescending(x => x.Item.ValueGp).ThenBy(x => x.Item.Name, StringComparer.Ordinal).FirstOrDefault();
+        // A cursed weapon will not leave its bearer's hand.
+        var best = s.Magic.Keys.Where(k => !(k == "weapon" && s.Curse != "")).Select(k => (Slot: k, Item: s.Magic[k])).OrderByDescending(x => x.Item.Tier).ThenByDescending(x => x.Item.ValueGp).ThenBy(x => x.Item.Name, StringComparer.Ordinal).FirstOrDefault();
         if (best.Item == null) return null;
         s.Magic.Remove(best.Slot);
         string named = s.Named.Get(best.Slot, "");
@@ -216,7 +217,11 @@ public static class Gear
     public static void Claim(Town town, Agent a, LibItem it)
     {
         var s = a.Hero!;
-        if (Gain(town.Content, a, it) > 0) Wear(town, a, it);
+        if (Gain(town.Content, a, it) > 0)
+        {
+            Wear(town, a, it);
+            if (s.Magic.TryGetValue("weapon", out var worn) && ReferenceEquals(worn, it)) Curses.Taken(town, a, it);
+        }
         else Sell(town, a, it);
     }
 
@@ -230,6 +235,8 @@ public static class Gear
     {
         var s = a.Hero!;
         string slot = SlotOf(it);
+        // A cursed weapon (or a jealous one) will not make room: the new piece goes straight back.
+        if (Curses.Holds(town.Content, s, slot)) return it;
         var old = s.Magic.TryGetValue(slot, out var o) ? o : null;
         s.Magic[slot] = it;
         s.Named.Remove(slot);
@@ -240,7 +247,7 @@ public static class Gear
     /// <summary>A hero with loot to spare offers it to the town armory first, and sells it on the road if the town won't buy.</summary>
     private static void Sell(Town town, Agent a, LibItem it)
     {
-        if (!Armory.OfferToTown(town, a, it)) SellOnRoad(town, a, it);
+        if (Curses.Greedy(town.Content, a.Hero!) || !Armory.OfferToTown(town, a, it)) SellOnRoad(town, a, it);
     }
 
     public static void SellOnRoad(Town town, Agent a, LibItem it)

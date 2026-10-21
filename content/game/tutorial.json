@@ -636,6 +636,15 @@
       "teaches": ["command:MeetGuildDemand", "command:PayOffGuild", "command:BreakStrike"]
     },
     {
+      "id": "union",
+      "title": "The movement and the mages",
+      "text": "Working townsfolk have banded together as [b]the Common Cause[/b]: guild hands and others, and even a few hedge mages, since magic users work the trades too. They want magic to serve the workers, not undercut them. The bar in [b]Council[/b] shows who has your ear. Funding research, the wizards' library and [b]hedge mages[/b] outside the movement pull it toward the mages; the movement's numbers and the guilds pull it back, and every hedge mage who joins widens the green middle. Keep it there and both work together. Let it lean and the slighted side sours, and too far it acts: the movement marches and every guild strikes, or the mages walk out. [b]Hear[/b] a side out for gold, or [b]side[/b] with one for a season if you are ready for the other's anger.",
+      "when": "alert:union",
+      "point": "tab:Council",
+      "until": "tab:Council",
+      "teaches": ["command:HearUnion", "command:TakeSide"]
+    },
+    {
       "id": "honours",
       "title": "Honours are yours to give",
       "text": "When a loyal knight holds no land, or the town has no champion, the strip says so. Click it: a cleared site can be granted to the knight, who holds it with their own retainers and lives on its rents, and the champion stands first on the walls. The council moves knighthoods itself; sign them in [b]Council[/b].",
@@ -746,6 +755,17 @@
     },
     {"id": "ruins", "title": "Ruins to restore", "text": "Some of the lairs near town are the ruins of old works: an aqueduct, a gatehouse, a watchtower, a star fort. Once a company clears one, an alert says it can be restored. Click it on the map, or open the [b]Campaign[/b] window, and choose [b]Restore[/b]: for a little gold it serves the town for good, with clean water, defence or an early warning.", "when": "alert:ruin", "point": "alerts", "teaches": ["command:RestoreRuin"]},
     {"id": "rope-bridges", "title": "Rope bridges", "text": "Gorges on the roads have rope bridges across them, so companies cross where they would otherwise climb down and up. Raiders sometimes cut one, and an alert says so: companies then go the long way round. Open the [b]Campaign[/b] window and choose [b]Rebuild in stone[/b]. A stone bridge can never be cut again.", "when": "alert:bridge", "point": "alerts", "teaches": ["command:RebuildBridge"]},
+    {
+      "id": "law-book",
+      "title": "The law book",
+      "text": "The [b]law book[/b] in [b]Council[/b] sets what happens when the watch catches a hero.\n• Fine: the old way\n• Stocks, flogging: calmer streets, fewer repeats; the temple frowns\n• Temple penance: priests pleased, guilds call it soft\n• Restitution: guilds pleased, purses emptied",
+      "when": "day:20",
+      "point": "tab:Council",
+      "until": "tab:Council",
+      "teaches": [
+        "command:SetLaw"
+      ]
+    },
     {
       "id": "council-chamber",
       "title": "The council chamber",
