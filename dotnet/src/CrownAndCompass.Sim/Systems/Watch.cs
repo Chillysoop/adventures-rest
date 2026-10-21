@@ -42,6 +42,7 @@ public enum LiveSource
     Mirror,
     Spire,
     Outpost,
+    Tower,
 }
 
 /// <summary>
@@ -245,6 +246,55 @@ public static class Watch
         town.Log(LedgerCategory.Town, Importance.Major, $"The {partyName} set the {item.Name} down in the town hall.{use}");
     }
 
+    // Watchtowers -------------------------------------------------------------------------------
+
+    private static WatchtowerRules Towers(Town town) => Rules(town).Watchtowers;
+
+    /// <summary>Tiles each watchtower sees around itself: wider as the town grows.</summary>
+    public static double TowerSight(Town town)
+    {
+        var r = Towers(town);
+        return Math.Min(r.MostSight, r.Sight + r.SightPerHundred * town.Population / 100.0);
+    }
+
+    /// <summary>The finished, open watchtowers, in id order.</summary>
+    public static List<Building> Watchtowers(Town town) =>
+        town.Buildings.Where(b => b.Def.Id == Towers(town).Building && b.Complete && !b.Closed).OrderBy(b => b.Id).ToList();
+
+    /// <summary>How many watchtowers the town may raise: one for every so many residents.</summary>
+    public static int MostTowers(Town town) => Math.Max(1, town.Population / Math.Max(1, Towers(town).ResidentsEach));
+
+    /// <summary>Why another watchtower can't go up yet, or null (not one: it isn't a tower).</summary>
+    public static string? TowerBlocked(Town town, BuildingDef d)
+    {
+        if (d.Id != Towers(town).Building) return null;
+        int have = town.Buildings.Count(b => b.Def.Id == d.Id);
+        int most = MostTowers(town);
+        return have >= most ? $"the town has {most}: one more at {(have + 1) * Towers(town).ResidentsEach} residents" : null;
+    }
+
+    /// <summary>Where a site lies in the town's tiles (from its corner).</summary>
+    public static (double X, double Y) SiteTiles(Town town, SiteState site)
+    {
+        var (x, y) = World.Spot(town, site);
+        return Passage.FromDays(x, y);
+    }
+
+    /// <summary>The watchtower that has a site in sight, if any.</summary>
+    public static Building? TowerOver(Town town, SiteState site)
+    {
+        var towers = Watchtowers(town);
+        if (towers.Count == 0 || site.Def.Distance == 0) return null;
+        double reach = TowerSight(town);
+        var (sx, sy) = SiteTiles(town, site);
+        foreach (var b in towers)
+        {
+            var lot = town.Lot(b.LotId);
+            if (Js.Hypot(sx - lot.X, sy - lot.Y) <= reach) return b;
+        }
+        return null;
+    }
+
     // What the town sees -------------------------------------------------------------------------
 
     /// <summary>Why a site is in live sight right now, or null under fog.</summary>
@@ -257,6 +307,7 @@ public static class Watch
         if (s != null && Watching(town, s)) return LiveSource.Scout;
         int reach = Reach(town);
         if (reach > 0 && site.Def.Distance <= reach) return LiveSource.Spire;
+        if (TowerOver(town, site) != null) return LiveSource.Tower;
         return null;
     }
 
