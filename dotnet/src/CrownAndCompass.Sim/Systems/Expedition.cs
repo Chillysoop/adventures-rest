@@ -42,6 +42,9 @@ public sealed record ExpeditionResult(
     /// <summary>Mishaps and feats that may grow into running jokes (<see cref="Voices"/>).</summary>
     public IReadOnlyList<Gag> Gags { get; init; } = [];
 
+    /// <summary>Every kind of creature they fought, in the order they met them (game or library ids), for the map to draw the fight.</summary>
+    public IReadOnlyList<string> Fought { get; init; } = [];
+
     /// <summary>Put the heroes' hit points and potions where they ended up.</summary>
     public void Apply(IEnumerable<Agent> heroes)
     {
@@ -110,6 +113,13 @@ public static class Expedition
 
         /// <summary>The round it spent on a signature move or calling help, instead of attacking.</summary>
         public int Spent { get; set; }
+
+        /// <summary>What its stat block lets it do (<see cref="Knacks"/>).</summary>
+        public KnackSet Ways { get; init; } = KnackSet.None;
+
+        /// <summary>Spent its power; got back up once; burst; said its piece about a knack.</summary>
+        public bool Powered, Rose, Burst;
+        public readonly HashSet<string> Told = [];
     }
 
     private sealed record Check(Combatant Who, int Roll, int Total, string With = "")
@@ -161,6 +171,7 @@ public static class Expedition
     {
         public readonly List<string> Lines = [];
         public readonly List<TaleBeat> Beats = [];
+        public readonly List<string> Fought = [];
         public readonly List<Gag> Gags = [];
         internal readonly List<Combatant> Party;
         public readonly OrderedMap<int, int> Kills = new();
@@ -214,6 +225,13 @@ public static class Expedition
         private int Scale => _site == null ? 1 : 1 + (Math.Max(1, _site.Tier) - 1) / 4;
 
         internal List<Combatant> Standing => Party.Where(c => !c.Down && !c.Dead).ToList();
+
+        // A fight's holds on the party (<see cref="Knacks"/>): swallowed whole, snared (a penalty to hit), dazed (no turn).
+        private readonly Dictionary<Combatant, (Foe By, int Until, int Dmg)> _held = [];
+        private readonly Dictionary<Combatant, (int Until, int Hit)> _snared = [];
+        private readonly Dictionary<Combatant, int> _dazed = [];
+
+        private Foe NewFoe(MonsterDef d) => new(d) { Tactic = Tactics.Of(_content, d), Ways = Knacks.Of(_content, d) };
 
         public void Log(string s) => Lines.Add(s.Length > 0 ? char.ToUpperInvariant(s[0]) + s[1..] : s);
 
@@ -426,14 +444,14 @@ public static class Expedition
             int n = rng.Range(e.Count[0], e.Count[1] + 1);
             // Fewer foes than drawn never empties a fight that had any.
             if (!def.Boss) n = Math.Max(Math.Min(n, 1), n + Swell);
-            var tactic = Tactics.Of(_content, def);
-            for (int i = 0; i < n; i++) foes.Add(new Foe(def) { Tactic = tactic });
+            for (int i = 0; i < n; i++) foes.Add(NewFoe(def));
+            if (!Fought.Contains(def.Id)) Fought.Add(def.Id);
             if (!string.IsNullOrEmpty(e.Escort) && e.EscortCount != null)
             {
                 var ed = _content.Monster(e.Escort);
-                var et = Tactics.Of(_content, ed);
+                if (!Fought.Contains(ed.Id)) Fought.Add(ed.Id);
                 int en = rng.Range(e.EscortCount[0], e.EscortCount[1] + 1);
-                for (int i = 0; i < en; i++) foes.Add(new Foe(ed) { Tactic = et });
+                for (int i = 0; i < en; i++) foes.Add(NewFoe(ed));
             }
             string label = n == 1 ? (def.Named ? def.Name : $"{Article(def.Name)} {def.Name}") : $"{n} {def.Plural}";
             if (def.Id != "mimic") Log($"{Cap(e.Text)}: {label}{(foes.Count > n ? $", with {foes.Count - n} more at its side" : "")}.");
@@ -442,7 +460,10 @@ public static class Expedition
 
             int totalXp = foes.Sum(f => f.Def.Xp);
             int round = 0;
-            bool monstersFirst = surprised;
+            _held.Clear();
+            _snared.Clear();
+            _dazed.Clear();
+            bool monstersFirst = surprised || Ambush(foes);
             if (def.Boss && Goad(foes[0])) HeroesAct(foes, 0);
             while (round < 20)
             {
@@ -518,6 +539,8 @@ public static class Expedition
                 if (living.Count == 0) return;
                 var s = c.Sheet;
                 string name = c.Agent.GivenName;
+                // Swallowed whole, or frozen by a gaze or a roar: no turn.
+                if (_held.ContainsKey(c) || (_dazed.TryGetValue(c, out int dazed) && round <= dazed)) continue;
 
                 // A badly hurt hero downs a potion (a bonus action) and fights on.
                 if (c.Potions > 0 && c.Hp < s.MaxHp * 0.35)
@@ -559,7 +582,8 @@ public static class Expedition
                     int felled = 0;
                     foreach (var f in targets)
                     {
-                        f.Hp -= dmg;
+                        f.Hp -= Spell(f, dmg);
+                        Struck(f, foes);
                         if (f.Hp <= 0) felled++;
                     }
                     Credit(c, felled);
@@ -578,7 +602,8 @@ public static class Expedition
                     int felled = 0;
                     foreach (var f in targets)
                     {
-                        f.Hp -= dmg;
+                        f.Hp -= Spell(f, dmg);
+                        Struck(f, foes);
                         if (f.Hp <= 0) felled++;
                     }
                     Credit(c, felled);
@@ -604,12 +629,20 @@ public static class Expedition
                     }
                     continue;
                 }
-                if (roll == 20 || roll + atk >= target.Def.Ac + Cover(target, round))
+                int snare = _snared.TryGetValue(c, out var sn) && round <= sn.Until ? sn.Hit : 0;
+                if (roll == 20 || roll + atk - snare - (target.Ways["aura"]?.Hit ?? 0) >= target.Def.Ac + Cover(target, round) + target.Ways.Ac)
                 {
                     int dmg = Gear.Damage(_content, rng, c.Agent, roll == 20);
                     if (s.Cls.Sneak && Standing.Count > 1) dmg += rng.Roll((int)Math.Ceiling(s.Level / 2.0), 6);
+                    // A blade passes half through a ghost.
+                    if (target.Ways["incorporeal"] is { } ghost)
+                    {
+                        dmg = (int)Math.Round(dmg * ghost.Share);
+                        Tell(target, ghost);
+                    }
                     dmg = Math.Max(1, dmg);
                     target.Hp -= dmg;
+                    Struck(target, foes);
                     if (target.Hp <= 0) Credit(c, 1);
                     if (roll == 20)
                     {
@@ -700,30 +733,201 @@ public static class Expedition
                 boss.Spent = round;
                 var m = _content.Monster(t.Minions);
                 int n = _rng.Range(t.MinionCount[0], t.MinionCount[1] + 1);
-                var mt = Tactics.Of(_content, m);
-                for (int i = 0; i < n; i++) foes.Add(new Foe(m) { Tactic = mt });
+                for (int i = 0; i < n; i++) foes.Add(NewFoe(m));
                 if (t.Called != "") Log(Cap(t.Called.Replace("{boss}", The(boss.Def)).Replace("{n}", n.ToString())));
             }
+        }
+
+        /// <summary>A knack's line, said once a fight for each foe that has it.</summary>
+        private void Tell(Foe f, KnackDef k, string hero = "")
+        {
+            if (k.Text == "" || !f.Told.Add(k.Id)) return;
+            Log(Cap(Knacks.Fill(k.Text, The(f.Def), hero)));
+        }
+
+        /// <summary>What a spell or scroll does to a foe: halved by magic resistance, more on a swarm, nothing the first time a legend shrugs it off.</summary>
+        private int Spell(Foe f, int dmg)
+        {
+            if (f.Ways["legendary"] is { } lr && !f.Told.Contains(lr.Id))
+            {
+                Tell(f, lr);
+                return 0;
+            }
+            if (f.Ways["magic"] is { } mr) dmg = (int)Math.Round(dmg * mr.Share);
+            if (f.Ways["swarm"] is { } sw) dmg = (int)Math.Round(dmg * sw.Share);
+            return Math.Max(1, dmg);
+        }
+
+        /// <summary>After a blow lands on a foe: the relentless get up once; the bursting burst as they die.</summary>
+        private void Struck(Foe f, List<Foe> foes)
+        {
+            if (f.Hp > 0) return;
+            if (f.Ways["fortitude"] is { } fort && !f.Rose)
+            {
+                f.Rose = true;
+                if (_rng.D20() >= fort.Dc)
+                {
+                    f.Hp = 1;
+                    Tell(f, fort);
+                    return;
+                }
+            }
+            if (f.Ways["deathburst"] is { } burst && !f.Burst)
+            {
+                f.Burst = true;
+                var laid = new List<string>();
+                foreach (var c in Standing)
+                {
+                    if (_rng.D20() + Rng.Modifier(c.Agent.Abilities.Dex) >= burst.Dc) continue;
+                    Hurt(c, Math.Max(1, (int)Math.Round(f.Def.Dice.Roll(_rng, false) * burst.Share)));
+                    if (c.Down) laid.Add(c.Agent.GivenName);
+                }
+                Log(Cap(Knacks.Fill(burst.Text, The(f.Def))) + (laid.Count > 0 ? " " + Laid(burst.Laid, laid) : ""));
+            }
+        }
+
+        private static string Laid(string text, List<string> names) =>
+            text.Replace("{heroes}", ListNames(names)).Replace("{go}", names.Count == 1 ? "goes" : "go").Replace("{is}", names.Count == 1 ? "is" : "are");
+
+        /// <summary>A foe that lies in wait strikes first unless the party's sharpest eyes see it.</summary>
+        private bool Ambush(List<Foe> foes)
+        {
+            var lurker = foes.FirstOrDefault(f => f.Ways.Has("ambush"));
+            if (lurker == null) return false;
+            var k = lurker.Ways["ambush"]!;
+            var check = BestCheck(SkillKind.Perception);
+            if (check.Total >= k.Dc)
+            {
+                Log(Cap(Knacks.Fill(k.Spotted, The(lurker.Def), check.Name)));
+                return false;
+            }
+            Tell(lurker, k);
+            return true;
+        }
+
+        /// <summary>
+        /// A foe's power (a breath, a gaze, a roar), once a fight: everyone in it, or one hero, saves with the ability it
+        /// names against its DC. A failure takes its damage and its hold (frozen a turn, or shaken and hard put to hit).
+        /// </summary>
+        private void UsePower(Foe f, int round)
+        {
+            var k = f.Ways["power"]!;
+            var p = f.Ways.Power!;
+            f.Powered = true;
+            f.Spent = round;
+            var targets = p.Area ? Standing : [_rng.Pick(Standing)];
+            List<string> laid = [], held = [], shaken = [];
+            foreach (var c in targets)
+            {
+                bool saved = _rng.D20() + Rng.Modifier(c.Agent.Abilities[p.Save]) >= p.Dc;
+                if (p.Dice is { } d)
+                {
+                    int dmg = Math.Max(1, (int)Math.Round(d.Roll(_rng) * k.Share * (saved ? 0.5 : 1)));
+                    Hurt(c, dmg);
+                    if (c.Down)
+                    {
+                        laid.Add(c.Agent.GivenName);
+                        continue;
+                    }
+                }
+                if (saved || p.Condition == "") continue;
+                if (p.Condition is "paralyzed" or "stunned" or "incapacitated" or "petrified" or "unconscious")
+                {
+                    _dazed[c] = round + k.Rounds;
+                    held.Add(c.Agent.GivenName);
+                }
+                else
+                {
+                    _snared[c] = (round + k.Rounds, k.Hit);
+                    shaken.Add(c.Agent.GivenName);
+                }
+            }
+            string line = Cap(Knacks.Fill(k.Text, The(f.Def), "", $"its {p.Name.ToLowerInvariant()}"));
+            if (laid.Count > 0) line += " " + Laid(k.Laid, laid);
+            if (held.Count > 0) line += " " + Laid(k.Held, held);
+            if (shaken.Count > 0) line += " " + Laid(k.Shaken, shaken);
+            if (laid.Count + held.Count + shaken.Count == 0 && k.Freed != "") line += " " + k.Freed;
+            Log(line);
+            Mark("power");
         }
 
         private void MonstersAct(List<Foe> foes, int round)
         {
             var rng = _rng;
+            // The swallowed are digested, until their swallower dies or they cut their way out.
+            foreach (var c in Party.Where(_held.ContainsKey).ToList())
+            {
+                var (by, until, chew) = _held[c];
+                if (by.Hp <= 0 || round > until || c.Down || c.Dead)
+                {
+                    _held.Remove(c);
+                    if (by.Hp > 0 && !c.Down && by.Ways["swallow"] is { Freed.Length: > 0 } sw) Log(Cap(Knacks.Fill(sw.Freed, The(by.Def), c.Agent.GivenName)));
+                    continue;
+                }
+                Hurt(c, chew);
+            }
+            int powers = 0;
+            foreach (var f in foes.ToList())
+            {
+                if (f.Hp <= 0 || f.Spent == round) continue;
+                if (f.Ways["regen"] is { } regen && f.Hp < f.Def.Hp)
+                {
+                    f.Hp = Math.Min(f.Def.Hp, f.Hp + Math.Max(1, (int)Math.Round(f.Def.Hp * regen.Share)));
+                    Tell(f, regen);
+                }
+                // The power on its first turn, or its second for every other one of a crowd, a few of them a fight.
+                if (f.Ways.Power != null && !f.Powered && Standing.Count > 0 && powers < f.Ways["power"]!.Most && round == (f.Def.Boss ? 1 : 1 + foes.IndexOf(f) % 2))
+                {
+                    powers++;
+                    UsePower(f, round);
+                    continue;
+                }
+            }
             foreach (var f in foes.ToList())
             {
                 int pack = Pack(f, foes);
+                if (f.Ways["pack"] is { } pk && foes.Any(o => o != f && o.Hp > 0)) pack = Math.Max(pack, pk.Hit);
                 for (int k = 0; k < Math.Max(1, f.Def.Attacks); k++)
                 {
                     if (f.Hp <= 0 || f.Spent == round) break;
                     var targets = Standing;
                     if (targets.Count == 0) return;
                     var t = rng.Pick(targets);
+                    int frenzy = 0;
+                    // A frenzied beast goes for whoever is bleeding most.
+                    if (f.Ways["frenzy"] is { } fz && targets.Where(c => c.Hp < c.Sheet.MaxHp / 2).OrderBy(c => c.Hp).ThenBy(c => c.Agent.Id).FirstOrDefault() is { } bleeding)
+                    {
+                        t = bleeding;
+                        frenzy = fz.Hit;
+                        Tell(f, fz, t.Agent.GivenName);
+                    }
                     int roll = rng.D20();
                     if (roll == 1) continue;
-                    if (roll == 20 || roll + f.Def.Attack + pack >= t.Ac)
+                    int caught = _snared.TryGetValue(t, out var sn) && round <= sn.Until ? 2 : 0;
+                    if (roll == 20 || roll + f.Def.Attack + pack + frenzy + caught >= t.Ac)
                     {
                         int dmg = Math.Max(1, f.Def.Dice.Roll(rng, roll == 20));
+                        if (round == 1 && f.Ways["charge"] is { } charge)
+                        {
+                            dmg += (int)Math.Round(dmg * charge.Share);
+                            Tell(f, charge, t.Agent.GivenName);
+                        }
                         Hurt(t, dmg);
+                        if (f.Ways["drain"] is { } drain)
+                        {
+                            f.Hp = Math.Min(f.Def.Hp, f.Hp + (int)Math.Round(dmg * drain.Share));
+                            Tell(f, drain, t.Agent.GivenName);
+                        }
+                        if (!t.Down && f.Ways["swallow"] is { } sw && !_held.ContainsKey(t) && !_held.Values.Any(h => h.By == f))
+                        {
+                            _held[t] = (f, round + sw.Rounds, Math.Max(1, dmg / 2));
+                            Log(Cap(Knacks.Fill(sw.Text, The(f.Def), t.Agent.GivenName)));
+                        }
+                        else if (!t.Down && f.Ways["grapple"] is { } gr)
+                        {
+                            _snared[t] = (round + gr.Rounds, gr.Hit);
+                            Tell(f, gr, t.Agent.GivenName);
+                        }
                         if (t.Down)
                         {
                             Log($"{Cap(The(f.Def))} {(roll == 20 ? "crits" : "hits")} {t.Agent.GivenName} for {dmg}. {t.Agent.GivenName} goes down.");
@@ -1222,6 +1426,7 @@ public static class Expedition
                 GoalMet = GoalMet,
                 Beats = Beats.ToList(),
                 Gags = Gags.ToList(),
+                Fought = Fought.ToList(),
             };
         }
     }

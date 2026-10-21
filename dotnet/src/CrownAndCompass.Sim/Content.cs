@@ -1350,6 +1350,9 @@ public sealed record WorldRules
 
     /// <summary>A hoard holds about this much gold times level^1.5.</summary>
     public double HoardPerLevel { get; init; } = 60;
+
+    /// <summary>Sites built for parties of this level or more may be held by a legend (a creature past challenge 20); 0 for none.</summary>
+    public int LegendLevel { get; init; }
     public double SettlementChance { get; init; } = 0.75;
     public StandingRules Standing { get; init; } = new();
     public CompanyRules Companies { get; init; } = new();
@@ -1537,6 +1540,7 @@ public sealed class Content
     public StorytellerRules Storytellers { get; init; } = new();
     public Systems.CharacterRules Character { get; init; } = new();
     public Systems.TacticRules Tactics { get; init; } = new();
+    public Systems.KnackRules Knacks { get; init; } = new();
     public Systems.BestiaryRules Bestiary { get; init; } = new();
 
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
@@ -1740,6 +1744,7 @@ public sealed class Content
             Storytellers = Parse<StorytellerRules>("storytellers.json"),
             Character = Parse<CharacterRules>("character.json"),
             Tactics = Parse<TacticRules>("tactics.json"),
+            Knacks = Parse<Systems.KnackRules>("knacks.json"),
             Bestiary = Parse<Systems.BestiaryRules>("bestiary.json"),
         };
     }

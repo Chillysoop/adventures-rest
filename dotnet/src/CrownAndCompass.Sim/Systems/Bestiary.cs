@@ -145,6 +145,46 @@ public static class Bestiary
     /// <summary>Every creature in the library that can be fought (it has a band), in id order.</summary>
     public static IEnumerable<LibMonster> All(Content content) => content.Library.Monsters.Where(m => m.Band != "");
 
+    /// <summary>
+    /// The creatures that hold a site, its master first: the boss, its escort, then whoever its fights name. Reads only:
+    /// the map draws a site's fights and raids with them.
+    /// </summary>
+    public static List<string> SiteFoes(SiteDef site)
+    {
+        var list = new List<string>();
+        void Add(string? id)
+        {
+            if (string.IsNullOrEmpty(id)) return;
+            if (id.EndsWith("@boss", StringComparison.Ordinal)) id = id[..^5];
+            if (!list.Contains(id)) list.Add(id);
+        }
+        Add(site.Boss.Monster);
+        Add(site.Boss.Escort);
+        foreach (var e in site.Encounters)
+            if (e.Kind == "combat")
+            {
+                Add(e.Monster);
+                Add(e.Escort);
+            }
+        return list;
+    }
+
+    /// <summary>
+    /// Who marches in a host: the warband's outpost, or a menace's seat and holdings. Its leader's creature first.
+    /// "" ids are left out; an empty list means the map's old orc figures.
+    /// </summary>
+    public static List<string> Host(Town town, string foe)
+    {
+        var list = new List<string>();
+        if (foe == "warband") list.AddRange(SiteFoes(town.Content.Enemy.Outpost));
+        else if (foe.StartsWith("menace:", StringComparison.Ordinal) && int.TryParse(foe[7..], out int mid) && town.Saga.Menaces.FirstOrDefault(x => x.Id == mid) is { } m)
+            foreach (var sid in new[] { m.SeatId }.Concat(m.Holdings))
+                if (Quests.Site(town, sid) is { } s)
+                    foreach (var id in SiteFoes(s.Def))
+                        if (!list.Contains(id)) list.Add(id);
+        return list;
+    }
+
     private static readonly char[] Split = ['-', '_', ' ', '\'', '(', ')', ','];
 
     private static HashSet<string> Words(string s) => s.ToLowerInvariant().Split(Split, StringSplitOptions.RemoveEmptyEntries).ToHashSet();

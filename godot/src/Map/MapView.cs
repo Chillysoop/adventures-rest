@@ -111,6 +111,9 @@ public partial class MapView : Control
 
     public Camera3D Camera => _camera;
     public float Distance => _dist;
+
+    /// <summary>The spot on the ground the camera looks at.</summary>
+    public Vector2 Target => _target;
     public AgentPositions Agents => _crowd.People;
     public Crowd Crowd => _crowd;
 
@@ -432,6 +435,12 @@ public partial class MapView : Control
         heroInk.SetShaderParameter("width", 0.0022f);
         Mats.Hero.NextPass = heroInk;
         _inks.Add(heroInk);
+        var beastInk = new ShaderMaterial { Shader = ink };
+        beastInk.SetShaderParameter("noise_tex", Mats.Beast.GetShaderParameter("noise_tex"));
+        beastInk.SetShaderParameter("beast", 1.0f);
+        beastInk.SetShaderParameter("width", 0.0022f);
+        Mats.Beast.NextPass = beastInk;
+        _inks.Add(beastInk);
     }
 
     private void PaintLight(float night)

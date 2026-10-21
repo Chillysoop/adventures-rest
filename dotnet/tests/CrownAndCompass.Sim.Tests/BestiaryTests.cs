@@ -51,4 +51,17 @@ public class BestiaryTests
         Assert.Equal(Bestiary.Of(C, "goblin-warrior").Signature, Bestiary.Of(C, "goblin").Signature);
         Assert.Equal(Bestiary.Of(C, "wolf").Signature, Bestiary.Of(C, "wolf@boss").Signature);
     }
+
+    [Fact]
+    public void EveryFoeHasCountryToBeMetIn()
+    {
+        // The country the world's regions are made of; a creature the books give no home gets one by its type.
+        var country = C.World.Themes.SelectMany(t => t.Habitats.Concat(t.Sites.SelectMany(k => k.Habitats))).ToHashSet();
+        var homeless = C.Library.Monsters
+            .Where(m => m.Damage != null && m.Cr >= 0.125 && !m.Alignment.Contains("good") && !m.Habitats.Any(country.Contains))
+            .Select(m => m.Id)
+            .ToList();
+        Assert.True(homeless.Count == 0, "Nowhere to meet: " + string.Join(", ", homeless));
+        Assert.All(C.Library.Monsters, m => Assert.NotEmpty(m.Habitats));
+    }
 }

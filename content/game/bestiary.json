@@ -248,6 +248,18 @@
       "marks": [
         "warpaint"
       ]
+    },
+    "flying-snake": {
+      "wings": "feather",
+      "gait": "fly",
+      "roam": "circle"
+    },
+    "insect-giant-fire-beetle": {
+      "marks": [
+        "shell",
+        "spikes"
+      ],
+      "bulk": 0.8
     }
   }
 }
