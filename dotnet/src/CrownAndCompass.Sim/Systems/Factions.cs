@@ -840,7 +840,7 @@ public static class Factions
             .ThenBy(s => s.Def.Distance)
             .ThenBy(s => s.Def.Id, StringComparer.Ordinal)
             .FirstOrDefault();
-        if (site == null || Knowledge.Scryers(town).Count == 0) return;
+        if (site == null || Knowledge.Rested(town).Count == 0) return;
         double cost = Knowledge.ScryCost(town, site.Def);
         if (Coffers(town, f) < cost) return;
         // The order pays the caster through the town's books, so the scrying is the town's to watch.

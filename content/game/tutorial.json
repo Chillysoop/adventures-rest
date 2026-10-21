@@ -718,7 +718,9 @@
       "until": "tab:Council",
       "when": "day:3",
       "teaches": []
-    }
+    },
+    {"id": "watchtowers", "title": "Watchtowers", "text": "Build a [b]Watchtower[/b] (Government) to see the wilds live.\n• Sees farther as the town grows\n• One per 100 residents\n• Past its sight, the fog stays", "point": "buildbar", "when": "day:12", "teaches": []},
+    {"id": "scry-word", "title": "Scry the fight", "text": "A party that sent word is fighting out of sight: the strip offers a [b]scry[/b].\n• Each caster scries once every 2 days\n• Loyal casters: free\n• Others: gold\n• Disaffected: a favour", "point": "alerts", "when": "alert:scry", "teaches": []}
   ],
   "untaught": {}
 }
