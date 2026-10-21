@@ -69,6 +69,16 @@ public sealed class Options
     public string? Storyteller;
     public bool Storytellers;
 
+    /// <summary>--new-mayor: the main menu on New game's mayor sheet, rolled, for shots.</summary>
+    public bool NewMayor;
+
+    /// <summary>--mayor-sheet: the Mayor window on its full character sheet.</summary>
+    public bool MayorSheet;
+
+    /// <summary>--hardcore: new towns are Hardcore (the mayor dies, the town is lost); --mayor-fallen kills the mayor for shots.</summary>
+    public bool Hardcore;
+    public bool MayorFallen;
+
     /// <summary>--episode id: strike a townsperson out on the streets with that inspiration or break, look at them and open their inspector.</summary>
     public string? Episode;
 
@@ -233,6 +243,10 @@ public sealed class Options
                 case "--settings-tab": o.Settings = true; o.SettingsTab = Next(); break;
                 case "--storyteller": o.Storyteller = Next(); break;
                 case "--storytellers": o.Storytellers = o.Title = true; break;
+                case "--new-mayor": o.NewMayor = o.Title = true; break;
+                case "--mayor-sheet": o.MayorSheet = true; o.Tab = "Mayor"; break;
+                case "--hardcore": o.Hardcore = true; break;
+                case "--mayor-fallen": o.MayorFallen = true; o.Tab = "Mayor"; break;
                 case "--episode": o.Episode = Next(); break;
                 case "--intro": o.Intro = Next(); break;
                 case "--claim": o.Claim = Next(); break;

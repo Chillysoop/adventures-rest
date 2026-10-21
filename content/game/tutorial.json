@@ -55,7 +55,7 @@
     {
       "id": "mayor",
       "title": "You, the mayor",
-      "text": "You have a character sheet of your own, like any adventurer. Open [b]Mayor[/b] (or press [b]C[/b]) to see your abilities and skills, and pick who you were before the charter: a soldier, a sage, a disgraced councillor... Your background decides what you're good at when you step into the town's stories.",
+      "text": "You have a character sheet of your own, like any adventurer. Open [b]Mayor[/b] (or press [b]C[/b]) to see what needs you now; [b]Character sheet[/b] there shows the abilities, skills and background you rolled on New game. Your background decides what you're good at when you step into the town's stories.",
       "point": "tab:Mayor",
       "until": "tab:Mayor",
       "teaches": ["tab:Mayor", "key:C", "command:ChooseBackground"]
@@ -820,6 +820,33 @@
       "point": "alerts",
       "when": "alert:patrol",
       "teaches": ["command:Patrol"]
+    },
+    {
+      "id": "regalia",
+      "title": "Your regalia",
+      "text": "[b]Mayor[/b] (C) shows your five regalia slots:\n• Chain · Signet · Sceptre · Mantle · Banner\n• [b]Wear[/b] pieces from the armory\n• [b]Commission[/b] new ones as the charter grows\nThey lift your rolls, Mandate and the council, and win heroes over. A banner goes with every company that marches.",
+      "point": "tab:Mayor",
+      "when": "day:12",
+      "until": "tab:Mayor",
+      "teaches": ["command:WearRegalia", "command:TakeOffRegalia", "command:CommissionRegalia"]
+    },
+    {
+      "id": "mayor-life",
+      "title": "Where your mayor goes",
+      "text": "Your mayor is a person in the town, with hit points. In [b]Mayor[/b] pick their days:\n• [b]Stay in the hall[/b]: safe\n• [b]Walk the streets[/b]: Mandate and loyalty, but knives and breaches reach you\n• [b]Ride with a company[/b]: an edge for the company and XP, and its dangers",
+      "point": "tab:Mayor",
+      "when": "day:16",
+      "until": "tab:Mayor",
+      "teaches": ["command:SetMayorStance"]
+    },
+    {
+      "id": "mayor-fallen",
+      "title": "Your mayor is dead",
+      "text": "In [b]Mayor[/b]:\n• [b]Raise[/b] them at the temple, if the body came home and you can pay\n• Or [b]name a new mayor[/b] from the council's three\nWait too long and the council chooses. Mandate falls every day without a mayor.",
+      "point": "tab:Mayor",
+      "when": "alert:fallen",
+      "until": "tab:Mayor",
+      "teaches": ["command:RaiseMayor", "command:NameSuccessor"]
     }
   ],
   "untaught": {}

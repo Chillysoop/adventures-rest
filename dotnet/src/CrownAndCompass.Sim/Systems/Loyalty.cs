@@ -173,6 +173,8 @@ public static class Loyalty
         Add(regardWhy, regard);
         if (Callings.Of(town, a) is { } calling) Add(calling.Name.ToLowerInvariant(), calling.Loyalty);
         foreach (var (why, pts) in Notoriety.LoyaltyFactors(town, a)) Add(why, pts);
+        foreach (var (why, pts) in Regalia.LoyaltyFactors(town)) Add(why, pts);
+        foreach (var (why, pts) in Mayoralty.LoyaltyFactors(town)) Add(why, pts);
         if (s.Knight) Add("knighted", r.Rank);
         if (s.FiefId != null) Add("lands of their own", r.Rank);
         if (s.Champion) Add($"champion of {town.Name}", r.Rank);
