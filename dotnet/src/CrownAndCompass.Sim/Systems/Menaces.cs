@@ -434,7 +434,9 @@ public static class Menaces
         };
         Seat(town, m, seat);
         m.Cunning = cunning ?? CunningFor(town, IntOf(town, seat.Def.Boss.Monster));
-        m.Lineage = lineage ?? Annals.ForMenace(town.Content.History, kind, World.RegionOf(town, seat)?.Theme.Id, seat.Def.Foe)?.Id ?? "";
+        m.Lineage = lineage
+            ?? (town.Content.Group(seat.Def.Group) is GroupDef g && g.Lineage != "" ? g.Lineage : null)
+            ?? Annals.ForMenace(town.Content.History, kind, World.RegionOf(town, seat)?.Theme.Id, seat.Def.Foe)?.Id ?? "";
         // A signature foe's master goes by its lineage's names (picked by the seat, not dice, so the stream holds).
         if (leader == null && Annals.Lineage(town.Content.History, m.Lineage) is { Leaders.Count: > 0 } heirs)
             m.Leader = heirs.Leaders[(int)(Voices.Hash(seat.Def.Id) % (uint)heirs.Leaders.Count)];

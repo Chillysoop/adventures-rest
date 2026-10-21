@@ -694,6 +694,8 @@ public static class Passage
             {
                 k++;
                 y += dir * (r.Spacing[0] + Hash(town.Seed, 100 + k) * (r.Spacing[^1] - r.Spacing[0]));
+                // Never in the middle of a lake or a range of peaks the river runs through: on down the water past it.
+                while (Math.Abs(y) <= r.Length - 0.5 && town.Terrain.Any(f => f.Kind.Barrier != "" && Roads.Contains(f, At(y).X, At(y).Y, town.Content.Roads.Margin * 1.5))) y += dir * 0.04;
                 if (Math.Abs(y) > r.Length - 0.5) break;
                 var p = At(y);
                 bool ford = Hash(town.Seed, 200 + k) < r.Fords;

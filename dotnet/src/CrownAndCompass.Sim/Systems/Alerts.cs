@@ -14,6 +14,7 @@ public enum AlertWindow
     None,
     Ledger,
     War,
+    Defence,
     Council,
     Bounties,
     Faith,
@@ -47,8 +48,8 @@ public sealed record Alert(string Key, AlertKind Kind, string Text, string Tip, 
 /// </summary>
 public static class Alerts
 {
-    public static readonly AlertKind Siege = new("siege", "Under attack", "warband", AlertLevel.Urgent, AlertWindow.War);
-    public static readonly AlertKind Sighted = new("sighted", "Raiders sighted", "warband", AlertLevel.Urgent, AlertWindow.War);
+    public static readonly AlertKind Siege = new("siege", "Under attack", "warband", AlertLevel.Urgent, AlertWindow.Defence);
+    public static readonly AlertKind Sighted = new("sighted", "Raiders sighted", "warband", AlertLevel.Urgent, AlertWindow.Defence);
     public static readonly AlertKind Captives = new("captives", "Townsfolk taken", "heroes", AlertLevel.Urgent, AlertWindow.Bounties);
     public static readonly AlertKind Hunger = new("hunger", "Hunger", "bread", AlertLevel.Urgent, AlertWindow.Council);
     public static readonly AlertKind Coffers = new("coffers", "Empty coffers", "gold", AlertLevel.Urgent, AlertWindow.Council);
@@ -331,10 +332,8 @@ public static class Alerts
         if (t.Research.Study != null) yield break;
         var open = Research.Open(t);
         if (open.Count == 0) yield break;
-        // Only once the town can pay for one: a study it can't afford isn't an action yet.
-        if (!open.Any(d => (t.Research.Progress.ContainsKey(d.Id) ? 0 : Research.Commission(t, d)) <= t.Treasury)) yield break;
         yield return new("scholars", Scholars, "The scholars are idle",
-            $"{open.Count} {(open.Count == 1 ? "discovery is" : "discoveries are")} ready to study, {open[0].Name.ToLowerInvariant()} the cheapest. Set the scholars to work in the Library window.");
+            $"{open.Count} {(open.Count == 1 ? "discovery is" : "discoveries are")} ready to study, {open[0].Name.ToLowerInvariant()} the quickest. Set the scholars to work in the Library window.");
     }
 
     /// <summary>A friend in the wilds whose need the town can meet now, and a villain's plan close to done.</summary>
