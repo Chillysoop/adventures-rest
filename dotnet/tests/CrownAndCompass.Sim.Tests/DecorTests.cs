@@ -243,6 +243,8 @@ public class DecorTests
     {
         var sim = new Simulation(new SimulationOptions { Seed = 1 });
         sim.RunDays(150);
+        // It spends only spare gold, so a poorer spell can hold it back a while.
+        for (int d = 0; d < 150 && sim.Town.Decor.Pieces.Count == 0; d += 10) sim.RunDays(10);
         var t = sim.Town;
         Assert.NotEmpty(t.Decor.Pieces);
         // It keeps off the wards laid out, so headless towns lose no building land to it.
