@@ -482,8 +482,8 @@
     {
       "id": "guard-duty",
       "title": "Heroes on guard",
-      "text": "Keep heroes home to guard the town. In the [b]War[/b] tab, or on a hero's sheet:\n• [b]Walls[/b]: stronger against raids and sieges; they meet the warlord first.\n• [b]Streets[/b]: the watch catches more spies, knives, thieves and fire-raisers.\nThey earn a daily wage and take no bounties. [b]Arm the guard[/b] hands them the armory's best in one click.",
-      "point": "tab:War",
+      "text": "Keep heroes home to guard the town. In the [b]Defence[/b] tab, or on a hero's sheet:\n• [b]Walls[/b]: stronger against raids and sieges; they meet the warlord first.\n• [b]Streets[/b]: the watch catches more spies, knives, thieves and fire-raisers.\nThey earn a daily wage and take no bounties. [b]Arm the guard[/b] hands them the armory's best in one click.",
+      "point": "tab:Defence",
       "when": "day:20",
       "until": "duty",
       "teaches": ["command:SetDuty"]
