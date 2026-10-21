@@ -500,6 +500,7 @@ public static class Saga
     {
         var f = Rules(town).Finale;
         town.Outcome = Outcome.Victory;
+        Victory.Win(town, Victory.Def(town, Victory.Slay) ?? new RoadDef { Id = Victory.Slay });
         town.Mandate = Math.Min(100, town.Mandate + 25);
         town.Saga.EndText = Fill(town, Grim(town) ? f.VictoryDark : f.Victory, m);
         town.Log(LedgerCategory.War, Importance.Major, town.Saga.EndText);
@@ -651,7 +652,7 @@ public static class Saga
 
     /// <summary>The end screen's title.</summary>
     public static string EndTitle(Town town) =>
-        town.Outcome == Outcome.Victory ? (town.Saga.Enabled ? "The Long Night is over" : "The Last Stand is won")
+        town.Outcome == Outcome.Victory ? Victory.Title(town) ?? (town.Saga.Enabled ? "The Long Night is over" : "The Last Stand is won")
         : town.Outcome == Outcome.Defeat ? $"{town.Name} has fallen"
         : "";
 

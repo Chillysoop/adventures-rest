@@ -1165,7 +1165,8 @@ public static class Menaces
             return;
         }
         if (restrained || m.NextAssaultTick is not int next || town.Tick < next) return;
-        bool due = m.BigBad && town.Day >= s.CrownDay + f.FirstMarchDays;
+        // A claimed road to victory brings it at once (Victory.Claim).
+        bool due = m.BigBad && (town.Day >= s.CrownDay + f.FirstMarchDays || town.Victory.Claimed != "");
         bool provoked = s.YokeId == m.Id && s.Defied;
         var am = AmbitionOf(town, m);
         // Only a menace that wants the town's walls comes for them, until it is crowned or defied.

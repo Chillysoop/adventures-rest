@@ -50,6 +50,7 @@ public partial class Main
         }
         else next = $"\n{Ui.C(Ui.Ink2, $"[font_size=12]The last act. Your champions are level {champ}.[/font_size]")}";
         p.Card($"[font_size=17][b]{Ui.Esc(Saga.ActTitle(t, s.Act))}[/b][/font_size]  {Tag($"since day {s.ActDays[^1]}")}{next}");
+        RenderVictory(p, t);
 
         if (Menaces.PendingDemand(t) is { } dm)
         {
@@ -110,6 +111,32 @@ public partial class Main
             }
         }
         p.Commit();
+    }
+
+    /// <summary>Roads to victory: one card per road, its terms as chips (green once met), and Claim once they all hold.</summary>
+    private void RenderVictory(Pane p, Town t)
+    {
+        p.Heading("Roads to victory");
+        var claimed = Victory.Claimed(t);
+        if (!Victory.Ready(t)) p.Note("Claim a road once the big bad shows itself.");
+        foreach (var d in Victory.Roads(t))
+        {
+            var terms = Victory.Terms(t, d);
+            int pct = (int)Math.Round(Victory.Progress(t, d) * 100);
+            bool mine = claimed?.Id == d.Id;
+            string state = mine ? Tag($"holding, {Ui.Days(Victory.DaysLeft(t))} left", Ui.Good)
+                : d.Id == Victory.Slay ? Tag("main quest", Ui.Gold)
+                : Victory.Met(t, d) ? Tag("ready", Ui.Good)
+                : Tag($"{pct}%");
+            string chips = string.Join("  ", terms.Select(x => Tag($"{x.Label} {Js.Str(x.Have)}/{Js.Str(x.Need)}", x.Met ? Ui.Good : Ui.Ink2)));
+            string hold = d.Id == Victory.Slay || mine ? "" : $"  {Ui.C(Ui.Ink2, $"[font_size=12]hold {Ui.Days(d.Hold)}[/font_size]")}";
+            p.Card($"{Ui.Img(d.Icon, 20)} [b]{Ui.Esc(d.Name)}[/b]  {state}{hold}\n[font_size=12]{chips}[/font_size]", mine ? Ui.Good : d.Id == Victory.Slay ? Ui.Gold : null);
+            if (claimed == null && Victory.ClaimBlocked(t, d.Id) == null)
+            {
+                string id = d.Id;
+                p.Buttons(($"Claim {d.Name}", true, true, () => Act(() => _sim.ClaimRoad(id))));
+            }
+        }
     }
 
     /// <summary>Rope bridges raiders cut, ruins the companies cleared, and the dark ranger taking the town's bounties.</summary>

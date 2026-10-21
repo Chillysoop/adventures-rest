@@ -70,6 +70,9 @@ public sealed class Options
     /// <summary>--episode id: strike a townsperson out on the streets with that inspiration or break, look at them and open their inspector.</summary>
     public string? Episode;
 
+    /// <summary>Claim this road to victory once the town is staged, for shots of a road being held (victory.json id).</summary>
+    public string? Claim;
+
     /// <summary>--history [power-id]: open the world's history timeline, with a power's story picked.</summary>
     public string? History;
 
@@ -215,6 +218,7 @@ public sealed class Options
                 case "--storyteller": o.Storyteller = Next(); break;
                 case "--storytellers": o.Storytellers = o.Title = true; break;
                 case "--episode": o.Episode = Next(); break;
+                case "--claim": o.Claim = Next(); break;
                 case "--history": o.History = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
                 case "--glossary": o.Glossary = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
                 case "--keyword": o.Keywords.AddRange(Next().Split(',')); break;

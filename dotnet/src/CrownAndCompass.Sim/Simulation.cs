@@ -65,6 +65,9 @@ public sealed record SimulationOptions
 
     /// <summary>Foes and heroes from the player's earlier campaigns, who may come back (<see cref="Systems.Legends"/>).</summary>
     public IReadOnlyList<Legend> Legends { get; init; } = [];
+
+    /// <summary>Roads to victory switched off for this campaign (victory.json ids); the rest are open (<see cref="Systems.Victory"/>).</summary>
+    public IReadOnlyList<string> RoadsOff { get; init; } = [];
 }
 
 /// <summary>
@@ -84,6 +87,7 @@ public sealed class Simulation
         Town.Storyteller = Systems.Storyteller.Def(Town.Content, Options.Storyteller)?.Id ?? Town.Content.Storytellers.Default;
         Town.Saga.Enabled = Options.Saga && Options.Enemy;
         Town.Saga.Legends.AddRange(Options.Legends.Where(l => l.Seed != Options.Seed));
+        Town.Victory.Off.AddRange(Options.RoadsOff.Where(id => id != Systems.Victory.Slay && Systems.Victory.Def(Town, id) != null).Distinct().Order(StringComparer.Ordinal));
         Charter();
         Goals.Begin(Town);
     }
@@ -183,6 +187,7 @@ public sealed class Simulation
         Stories.Daily(t, Options.AutoMayor && Options.AutoStories);
         Sheet.Daily(t, Options.AutoMayor && Options.AutoStories);
         Economy.Daily(t, true);
+        Victory.Daily(t);
         Taxes.Close(t);
         Trends.Close(t);
         History.Add(Snapshot());
@@ -191,6 +196,9 @@ public sealed class Simulation
         if (t.RecentNet.Count > 7) t.RecentNet.RemoveAt(0);
         t.AccountsToday = new();
     }
+
+    /// <summary>Claim a road to victory whose terms hold: the big bad marches to stop it, and the terms must hold for the road's days (<see cref="Victory"/>).</summary>
+    public bool ClaimRoad(string id) => Victory.Claim(Town, id);
 
     /// <summary>Have the watch seize an enemy's agent the townsfolk pointed out, before it strikes tonight.</summary>
     public bool Seize(int lurkerId) => Lurkers.Seize(Town, lurkerId);

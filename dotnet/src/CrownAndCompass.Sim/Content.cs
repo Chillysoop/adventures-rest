@@ -1526,6 +1526,9 @@ public sealed class Content
     /// <summary>The storytellers a town can be founded under, the game's difficulty (content/game/storytellers.json).</summary>
     public StorytellerRules Storytellers { get; init; } = new();
 
+    /// <summary>The roads to victory and what each needs (content/game/victory.json).</summary>
+    public Systems.VictoryRules Victory { get; init; } = new();
+
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
 
@@ -1721,6 +1724,7 @@ public sealed class Content
             Crowds = Parse<CrowdRules>("crowds.json"),
             Moods = Parse<MoodRules>("moods.json"),
             Storytellers = Parse<StorytellerRules>("storytellers.json"),
+            Victory = Parse<Systems.VictoryRules>("victory.json"),
         };
     }
 
