@@ -192,6 +192,7 @@ public partial class TownView(MapView map) : Node3D
         var steads = Farmsteads(town);
         foreach (var b in town.Buildings.OrderBy(b => b.Id))
         {
+            if (b.Razed) continue;
             var lot = town.Lot(b.LotId);
             var c = Geo.LotPos(lot);
             var p = new Vector3(c.X, Floor(lot), c.Y);

@@ -260,6 +260,9 @@ public sealed record CityRules
     /// <summary>How the masons pave the streets with stone from the centre outward once the town is grand enough.</summary>
     public PavingRules Paving { get; init; } = new();
 
+    /// <summary>Gold back when the council tears a building down or calls off a site (<see cref="Planning.Raze"/>).</summary>
+    public DemolishRules Demolish { get; init; } = new();
+
     /// <summary>The ground kept clear along each wall line for the wall's widest works.</summary>
     public WallStripRules WallStrip { get; init; } = new();
 
