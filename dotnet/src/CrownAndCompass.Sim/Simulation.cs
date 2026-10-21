@@ -68,6 +68,12 @@ public sealed record SimulationOptions
 
     /// <summary>Roads to victory switched off for this campaign (victory.json ids); the rest are open (<see cref="Systems.Victory"/>).</summary>
     public IReadOnlyList<string> RoadsOff { get; init; } = [];
+
+    /// <summary>Boons from the player's cabinet the town is founded with, as "id:rank" (<see cref="Systems.Boons"/>).</summary>
+    public IReadOnlyList<string> Boons { get; init; } = [];
+
+    /// <summary>Endless mode: a win closes an era and a worse foe comes; only a fall ends the campaign (<see cref="Systems.Endless"/>).</summary>
+    public bool Endless { get; init; }
 }
 
 /// <summary>
@@ -86,9 +92,12 @@ public sealed class Simulation
         Town = new Town(content ?? Content.Default(), Options.Seed);
         Town.Storyteller = Systems.Storyteller.Def(Town.Content, Options.Storyteller)?.Id ?? Town.Content.Storytellers.Default;
         Town.Saga.Enabled = Options.Saga && Options.Enemy;
+        Town.Saga.Endless.On = Options.Endless;
         Town.Saga.Legends.AddRange(Options.Legends.Where(l => l.Seed != Options.Seed));
         Town.Victory.Off.AddRange(Options.RoadsOff.Where(id => id != Systems.Victory.Slay && Systems.Victory.Def(Town, id) != null).Distinct().Order(StringComparer.Ordinal));
+        Systems.Boons.Choose(Town, Options.Boons);
         Charter();
+        Systems.Boons.Found(Town);
         Goals.Begin(Town);
     }
 
@@ -161,6 +170,7 @@ public sealed class Simulation
         Factions.Daily(t, Options.AutoMayor);
         Saga.Daily(t, Options.AutoMayor);
         DarkQuests.Daily(t);
+        Endless.Daily(t);
         Crises.Daily(t, Options.AutoMayor && Options.AutoDefense);
         Powers.Daily(t);
         Vengeance.Daily(t);
@@ -572,7 +582,7 @@ public sealed class Simulation
         Agent? knight = null;
         if (c.Rules.CharterKnight != "")
         {
-            knight = Quests.CreateHero(t, c.Classes.First(k => k.Id == c.Rules.CharterKnight), c.Rules.CharterKnightLevel);
+            knight = Quests.CreateHero(t, c.Classes.First(k => k.Id == c.Rules.CharterKnight), c.Rules.CharterKnightLevel + Systems.Boons.KnightLevels(t));
             knight.Hero!.Sworn = true;
             knight.Hero.Lodging = true;
         }

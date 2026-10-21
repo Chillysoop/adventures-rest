@@ -120,8 +120,8 @@ public partial class Main
         string text = "";
         if (DarkQuests.Current(t) is { } q && Quests.Site(t, q.SiteId) is { } site)
             text += $"\n{Ui.Img("threat", 14)} {Tag("QUEST", Ui.Bad)} {Ui.Esc(Ui.Cap(q.Thing))} · [url=site:{site.Def.Id}]{Ui.C(Ui.Accent, Ui.Esc(site.Def.Name))}[/url] · {Tag(Ui.Days(DarkQuests.DaysLeft(t)), Ui.Bad)}";
-        if (st.Past.Count > 0)
-            text += "\n" + string.Join("  ", st.Past.Select(x => Tag($"{(x.Foiled ? "✓" : "✗")} {Ui.Esc(Ui.Cap(x.Thing))}", x.Foiled ? Ui.Good : Ui.Bad)));
+        if (st.Mine.Any())
+            text += "\n" + string.Join("  ", st.Mine.Select(x => Tag($"{(x.Foiled ? "✓" : "✗")} {Ui.Esc(Ui.Cap(x.Thing))}", x.Foiled ? Ui.Good : Ui.Bad)));
         return text;
     }
 
@@ -129,6 +129,13 @@ public partial class Main
     private void RenderVictory(Pane p, Town t)
     {
         p.Heading("Roads to victory");
+        if (Endless.On(t))
+        {
+            var eras = t.Saga.Endless.Eras;
+            string rest = Endless.RestLeft(t) is int days ? $"  {Tag($"next foe in {Ui.Days(days)}", Ui.Bad)}" : "";
+            string past = eras.Count == 0 ? "" : "\n[font_size=12]" + string.Join("  ", eras.Select(e => Tag($"{e.Number}. {Ui.Esc(Ui.Cap(e.Foe))} · day {e.Day}", Ui.Good))) + "[/font_size]";
+            p.Card($"{Ui.Img("dread", 20)} [b]Endless · era {Endless.EraNumber(t)}[/b]{rest}{past}", Ui.Accent);
+        }
         var claimed = Victory.Claimed(t);
         if (!Victory.Ready(t)) p.Note("Claim a road once the big bad shows itself.");
         foreach (var d in Victory.Roads(t))

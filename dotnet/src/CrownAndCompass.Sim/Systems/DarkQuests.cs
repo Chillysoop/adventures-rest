@@ -69,6 +69,12 @@ public sealed class DarkQuestState
 
     /// <summary>Quests over, finished or foiled, in order.</summary>
     public List<DarkQuest> Past { get; } = [];
+
+    /// <summary>How many of <see cref="Past"/> were the earlier big bads' (<see cref="Endless"/>).</summary>
+    public int Era { get; set; }
+
+    /// <summary>This big bad's quests, over.</summary>
+    public IEnumerable<DarkQuest> Mine => Past.Skip(Era);
     public double Host { get; set; }
     public double Growth { get; set; }
     public int Escapes { get; set; }
@@ -102,6 +108,18 @@ public static class DarkQuests
     public static string Describe(Town town, DarkQuest q) =>
         Def(town, q.Def) is { } d && Saga.BigBad(town) is { } m ? Fill(town, d.Text, m, q) : "";
 
+    /// <summary>A new big bad starts its quests afresh (<see cref="Endless"/>); the old one's are kept as history.</summary>
+    internal static void Reset(Town town)
+    {
+        var st = State(town);
+        st.Current = null;
+        st.NextDay = 0;
+        st.Host = 0;
+        st.Growth = 0;
+        st.Escapes = 0;
+        st.Era = st.Past.Count;
+    }
+
     public static void Daily(Town town)
     {
         if (!town.Saga.Enabled || town.Outcome != null || Saga.BigBad(town) is not { Alive: true } m) return;
@@ -114,7 +132,7 @@ public static class DarkQuests
             else if (town.Day >= q.DueDay) Finish(town, m, q);
             return;
         }
-        if (st.Past.Count >= r.Most) return;
+        if (st.Mine.Count() >= r.Most) return;
         if (st.NextDay == 0) st.NextDay = town.Saga.CrownDay + town.Rng.Range(r.First[0], r.First[1] + 1);
         if (town.Day >= st.NextDay) Begin(town, m);
     }
@@ -123,7 +141,7 @@ public static class DarkQuests
     {
         var st = State(town);
         var r = Rules(town);
-        var used = st.Past.Select(x => x.Def).ToHashSet();
+        var used = st.Mine.Select(x => x.Def).ToHashSet();
         var fits = r.Quests.Where(d => (d.Kinds.Count == 0 || d.Kinds.Contains(m.Kind)) && !used.Contains(d.Id) && d.Things.Count > 0).ToList();
         var site = SiteFor(town, m);
         if (fits.Count == 0 || site == null)

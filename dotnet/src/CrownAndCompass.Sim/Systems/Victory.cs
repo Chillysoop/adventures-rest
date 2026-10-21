@@ -199,6 +199,12 @@ public static class Victory
         town.Victory.Claimed = "";
         if (d.Id == Slay) return;
         var m = Saga.BigBad(town)!;
+        if (Endless.On(town))
+        {
+            town.Victory.Road = "";
+            Endless.EraWon(town, d.Id, m);
+            return;
+        }
         town.Outcome = Outcome.Victory;
         town.Mandate = Math.Min(100, town.Mandate + 25);
         town.Saga.EndText = Saga.Fill(town, d.Ending, m).Replace("{allies}", AllyCount(town).ToString());

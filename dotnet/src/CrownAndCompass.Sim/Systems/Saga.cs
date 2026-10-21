@@ -226,6 +226,9 @@ public sealed class SagaState
     /// <summary>The big bad's own quests: under way, done and foiled (<see cref="Systems.DarkQuests"/>).</summary>
     public DarkQuestState DarkQuests { get; } = new();
 
+    /// <summary>Endless mode: whether a win only closes an era, and the eras so far (<see cref="Systems.Endless"/>).</summary>
+    public EndlessState Endless { get; } = new();
+
     /// <summary>The menace whose yoke the town is under after a sack, and whether it has stopped waiting for tribute.</summary>
     public int? YokeId { get; set; }
     public bool Defied { get; set; }
@@ -502,6 +505,11 @@ public static class Saga
     internal static void Win(Town town, Menace m)
     {
         var f = Rules(town).Finale;
+        if (Endless.On(town))
+        {
+            Endless.EraWon(town, Victory.Slay, m);
+            return;
+        }
         town.Outcome = Outcome.Victory;
         Victory.Win(town, Victory.Def(town, Victory.Slay) ?? new RoadDef { Id = Victory.Slay });
         town.Mandate = Math.Min(100, town.Mandate + 25);
