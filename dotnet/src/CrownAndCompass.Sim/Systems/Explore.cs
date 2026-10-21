@@ -1163,6 +1163,12 @@ public static class Explore
     {
         var ch = NextChapter(town, f)!;
         var members = Living(town, s);
+        // Everyone fell or left the company while it waited at the find.
+        if (members.Count == 0)
+        {
+            Lost(town, s);
+            return;
+        }
         var (beat, who) = Roll(town, members, ch.Skill, Dc(town, f, ch));
         f.Beat = beat;
         s.ResumeTick = null;

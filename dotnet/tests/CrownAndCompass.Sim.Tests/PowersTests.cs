@@ -124,6 +124,7 @@ public class PowersTests
         var (sim, m) = Seeded();
         var t = sim.Town;
         m.Power = 400;
+        m.Cunning = "cunning";
         double alone = Powers.OfferOf(t, m);
         var p = Powers.Find(t, "black-ledger")!;
         p.Side = PowerSide.Enemy;
