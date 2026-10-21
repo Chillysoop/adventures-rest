@@ -12,6 +12,7 @@ public static class Moments
 {
     public const string Level = "level";
     public const string Item = "item";
+    public const string Mount = "mount";
 
     /// <summary>How many recent moments the town keeps for the cards.</summary>
     private const int Kept = 30;
@@ -66,6 +67,10 @@ public static class Moments
         };
         Add(town, new HeroMoment(town.Tick, a.Id, Level, $"{a.Name} reaches level {level}", fame, gains));
     }
+
+    /// <summary>A hero takes to the sky on a beast of their own: a griffon bought, an owl, an eagle that chose them.</summary>
+    public static void Mounted(Town town, Agent a, MountDef m, string line) =>
+        Add(town, new HeroMoment(town.Tick, a.Id, Mount, $"{a.Name} rides a {m.Name}", line, [$"Flies over {Passage.Describe(Passage.Parse(m.Ways))}"]));
 
     /// <summary>A hero keeps a magic item from a hoard: it carries the story of where it was found.</summary>
     public static void Claimed(Town town, Agent a, LibItem item, string party, SiteState site, IReadOnlyList<Agent> with)

@@ -61,7 +61,9 @@ public class PassageTests
             {
                 if (a == b) continue;
                 var walk = Walk(t, a, Passage.Clear(t, b));
-                Assert.True(walk[^1] == Passage.Clear(t, b), $"stuck at ({walk[^1].X:0.00}, {walk[^1].Y:0.00}) on the way from ({a.X:0.00}, {a.Y:0.00}) to ({b.X:0.00}, {b.Y:0.00})");
+                var goal = Passage.Clear(t, b);
+                // Arrived: within the walk's own stopping distance (a step can land a hair off the goal).
+                Assert.True(Math.Abs(walk[^1].X - goal.X) + Math.Abs(walk[^1].Y - goal.Y) <= 1e-6, $"stuck at ({walk[^1].X:0.00}, {walk[^1].Y:0.00}) on the way from ({a.X:0.00}, {a.Y:0.00}) to ({b.X:0.00}, {b.Y:0.00})");
                 var bad = walk.FirstOrDefault(p => Trespass(t, p));
                 Assert.True(bad == default, $"({bad.X:0.00}, {bad.Y:0.00}) is in the wall or the moat, from ({a.X:0.00}, {a.Y:0.00}) to ({b.X:0.00}, {b.Y:0.00})");
             }
@@ -215,7 +217,7 @@ public class PassageTests
         heroes[0].Hero!.Mount = "griffon";
         Assert.Equal(Ways.None, Passage.Abilities(t, heroes) & Ways.Sheer);
         foreach (var h in heroes) h.Hero!.Mount = "griffon";
-        Assert.Equal(Ways.River | Ways.Water | Ways.Sheer, Passage.Abilities(t, heroes));
+        Assert.Equal(Ways.River | Ways.Water | Ways.Sheer | Ways.Air, Passage.Abilities(t, heroes));
         // Horses swim the river but no lake.
         foreach (var h in heroes) h.Hero!.Mount = "horse";
         Assert.Equal(Ways.River, Passage.Abilities(t, heroes) & (Ways.River | Ways.Water));
