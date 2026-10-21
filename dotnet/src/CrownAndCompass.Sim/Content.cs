@@ -579,6 +579,36 @@ public sealed record KnowledgeRules
     public ScoutRules Scouts { get; init; } = new();
     public MirrorRules Mirror { get; init; } = new();
     public IReadOnlyList<SightWorkDef> Works { get; init; } = [];
+
+    /// <summary>Days a caster rests after a scrying before casting another: the more scryers in town, the more scryings a day.</summary>
+    public int ScryRestDays { get; init; } = 2;
+
+    /// <summary>What a caster asks to scry, by their loyalty: free at or above Free, gold at or above Favour, a favour below it.</summary>
+    public ScryPriceRules ScryPrice { get; init; } = new();
+    public WatchtowerRules Watchtowers { get; init; } = new();
+}
+
+public sealed record ScryPriceRules
+{
+    public double Free { get; init; } = 70;
+    public double Favour { get; init; } = 40;
+
+    /// <summary>Loyalty a caster scrying as a favour loses: they will not forget being asked.</summary>
+    public double FavourLoyalty { get; init; } = 6;
+}
+
+/// <summary>Watchtowers: each sees a circle of the wilds live around itself, wider as the town grows.</summary>
+public sealed record WatchtowerRules
+{
+    public string Building { get; init; } = "watchtower";
+
+    /// <summary>Tiles a tower sees around itself, plus more for every hundred residents, up to the most.</summary>
+    public double Sight { get; init; } = 30;
+    public double SightPerHundred { get; init; } = 4;
+    public double MostSight { get; init; } = 70;
+
+    /// <summary>The town may raise one tower for every this many residents (always one).</summary>
+    public int ResidentsEach { get; init; } = 100;
 }
 
 /// <summary>Where a rumour comes from and how far to trust it.</summary>
