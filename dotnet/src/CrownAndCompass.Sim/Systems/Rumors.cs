@@ -268,6 +268,7 @@ public static class Rumors
     {
         site.Known = SiteKnowledge.Confirmed;
         site.Found = true;
+        Discovery.AtSite(town, site.Def.Id, Discovery.Met);
         site.Believed = Occupants(town.Content, site.Def);
         site.BelievedTier = site.Def.Tier;
         site.ThoughtCleared = cleared ?? site.Cleared;

@@ -432,6 +432,9 @@ public sealed class Town
 
     /// <summary>Enemies on the move that someone saw and reported (<see cref="Systems.Sightings"/>), and how many reports there have been.</summary>
     public List<Systems.Sighting> Sightings { get; } = [];
+
+    /// <summary>Every foe and power the town has come across, in the order it met them (<see cref="Systems.Discovery"/>).</summary>
+    public List<Systems.Meeting> Discovered { get; } = [];
     public int SightingCount { get; set; }
 
     /// <summary>Enemies' agents loose in town, looking over what they mean to strike tonight (<see cref="Systems.Lurkers"/>).</summary>

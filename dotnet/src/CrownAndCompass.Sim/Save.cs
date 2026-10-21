@@ -91,6 +91,7 @@ public static class SaveGame
             client = root.TryGetProperty("client", out var c) ? c.GetString() : null;
             var sim = (Simulation)new StateReader(ContentIndex.Of(content ?? Content.Default()), root).Read(typeof(Simulation));
             Systems.City.Migrate(sim.Town);
+            Systems.Discovery.Daily(sim.Town);
             return sim;
         }
         catch (Exception e) when (e is not SaveException)
