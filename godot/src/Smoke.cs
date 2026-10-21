@@ -195,6 +195,8 @@ public partial class Main
             case 31:
             {
                 // The tourney card: a grand tourney put on today, a stake on the first event, and its first heats ridden.
+                // Staged the hour before the heats start, so they are ridden whatever hour the play-through got here at.
+                for (int h = 0; h < 24 && _sim.Town.Hour != Tournaments.Rules(_sim.Town).StartHour - 1; h++) _sim.Step();
                 if (!Tournaments.Stage(_sim.Town, 1)) throw new InvalidOperationException("the tourney would not stage");
                 // A stake on the first event not yet under way (today's may have begun, by the hour), from a treasury that can spare it.
                 _sim.Town.Treasury = Math.Max(_sim.Town.Treasury, 5000);
@@ -205,12 +207,13 @@ public partial class Main
                 int pick = Tournaments.Chances(_sim.Town, first).OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key).First().Key;
                 if (!_sim.PlaceBet(ev, pick, Tournaments.Rules(_sim.Town).Betting.Min)) throw new InvalidOperationException("the bet was refused");
                 OpenTourney();
-                for (int h = 0; h < 14; h++) _sim.Step();
+                // Until a heat is ridden: today's may be over by the hour, so tomorrow's event rides first.
+                for (int h = 0; h < 36 && (h < 14 || _sim.Town.Tourney.Events.All(e => e.Heats.Count == 0)); h++) _sim.Step();
                 _dirty = true;
                 return 40;
             }
             case 32:
-                if (!_tourney.Visible || _sim.Town.Tourney.Events[0].Heats.Count == 0) throw new InvalidOperationException("the tourney's heats did not show");
+                if (!_tourney.Visible || _sim.Town.Tourney.Events.All(e => e.Heats.Count == 0)) throw new InvalidOperationException("the tourney's heats did not show");
                 CloseTourney();
                 return 5;
             default:
