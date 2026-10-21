@@ -80,6 +80,14 @@
       "id": "crystal",
       "words": ["crystalback"],
       "signature": "{boss} rattles its spines and they burst, showering the party with violet shards"
-    }
+    },
+    {"id": "hive", "words": ["chitterkin"], "pack": 2, "flee": 0.2, "fled": "The {foes} that are left scuttle back into their tunnels.", "signature": "{boss} shrieks, and the hive walls split open on every side", "minions": "chitterkin", "minionCount": [1, 3], "called": "{n} more chitterkin burrow up through the floor."},
+    {"id": "frost", "words": ["yeti"], "flee": 0.1, "fled": "The {foes} lope off into the snow.", "signature": "{boss} roars, and the snow above comes down on the party"},
+    {"id": "revels", "words": ["reveller", "ringmaster", "marionette"], "cover": 2, "coverRounds": 1, "flee": 0.3, "fled": "The {foes} bow, laugh and vanish behind the painted cloths.", "signature": "{boss} throws up a dazzle of coloured fire and the whole tent spins", "minions": "masked-reveller", "minionCount": [1, 2], "called": "The music swells, and {n} masked revellers dance in from the dark.", "pride": 12, "goaded": "{hero} heckles the show. {boss} cannot bear to be upstaged and stops to answer, and the party closes in."},
+    {"id": "inquisitors", "words": ["witchfinder", "witch"], "flee": 0.05, "fled": "The last {foes} fall back, swearing the writ will find the party again.", "signature": "{boss} raises a burning writ, and the faithful charge as one", "minions": "witch-hunter", "minionCount": [1, 2], "called": "{boss} rings a handbell, and {n} more witch hunters come with brands and chains."},
+    {"id": "preachers", "words": ["prophet", "hierophant"], "flee": 0.3, "fled": "The {foes} lose their nerve and flee their pulpit.", "signature": "{boss} preaches, and the words land like blows on every hero at once", "pride": 13, "goaded": "{hero} asks {boss} a question of faith. It cannot leave it unanswered, and while it sermonises the party moves."},
+    {"id": "hunters", "words": ["poacher", "beast", "lodge"], "cover": 1, "coverRounds": 2, "flee": 0.35, "fled": "The {foes} cut their losses and slip off down the game trails.", "signature": "{boss} springs the snares, and nets and stakes drop across the party", "minions": "poacher", "minionCount": [1, 2], "called": "{boss} sounds a hunting horn, and {n} poachers step out of the trees."},
+    {"id": "engines", "words": ["engine", "artificer"], "cover": 2, "coverRounds": 2, "signature": "{boss} vents scalding steam across the whole room"},
+    {"id": "grove", "words": ["thornling"], "cover": 2, "coverRounds": 1, "flee": 0.2, "fled": "The {foes} sink back into the roots.", "signature": "{boss} calls the roots up through the floor to bind the party"}
   ]
 }

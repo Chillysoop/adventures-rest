@@ -21,6 +21,7 @@ public partial class Main : Control
         City,
         Ledger,
         War,
+        Army,
         Defence,
         Council,
         Bounties,
@@ -108,6 +109,8 @@ public partial class Main : Control
             _opts.Cam ??= 8;
         }
         _opts.ApplyScript(_sim);
+        // A field battle held for a shot aims the camera itself once the map is laid out.
+        if (Map.Crowd.FieldU != null) _opts.Cam ??= 14;
         if (_opts.Tourney is int tourney) StageTourney(tourney);
         if (_opts.Secrets) StageSecrets();
         if (_opts.Guilds is string guilds) StageGuilds(guilds == "strike");
@@ -139,6 +142,20 @@ public partial class Main : Control
         // --rising aims at the building going up with the most hands on it, the least built first (for a clip of it rising).
         if (_opts.Rising && _sim.Town.Buildings.Where(b => b.IsSite && !b.Def.IsGrand).OrderByDescending(b => b.Workers.Count).ThenBy(b => b.BuildProgress / b.Def.BuildHours).ThenBy(b => b.Id).FirstOrDefault() is Building rising)
             _map.LookAt(Map.Geo.LotPos(_sim.Town.Lot(rising.LotId)), _opts.Cam ?? 6);
+        // --zone aims at the lot of a zone with the most of the zone's lots round it.
+        // --zone square aims at the oldest market square.
+        if (_opts.Zone == "square" && _sim.Town.Plan.Streets.FirstOrDefault(r => r.Market) is { } sq)
+        {
+            float sx = 0, sy = 0;
+            for (int i = 0; i < sq.Points.Length; i += 2) (sx, sy) = (sx + (float)sq.Points[i], sy + (float)sq.Points[i + 1]);
+            _map.LookAt(new Vector2(Map.Geo.Margin + sx * 2 / sq.Points.Length, Map.Geo.Margin + sy * 2 / sq.Points.Length), _opts.Cam ?? 9);
+        }
+        else if (_opts.Zone is string zn && Enum.TryParse<Zone>(zn, true, out var zone))
+        {
+            var lots = _sim.Town.Lots.Where(l => l.Zone == zone && l.BuildingId != null).ToList();
+            if (lots.OrderByDescending(l => lots.Count(o => (o.X - l.X) * (o.X - l.X) + (o.Y - l.Y) * (o.Y - l.Y) < 9)).ThenBy(l => l.Id).FirstOrDefault() is Lot best)
+                _map.LookAt(new Vector2(Map.Geo.Margin + (float)best.X, Map.Geo.Margin + (float)best.Y), _opts.Cam ?? 9);
+        }
         if (_opts.StrategicView) ToggleStrategic();
         if (_opts.Lens is string lens && Enum.TryParse<Map.Lens.Mode>(lens, true, out var lm)) _map.Lens.Show(true, lm);
         foreach (var (kind, at, label) in _opts.Markers) _map.Markers.Add(new Marker(kind, at, _sim.Town.Day, label));
@@ -248,6 +265,7 @@ public partial class Main : Control
     private Story? OpenScripted(string id)
     {
         var t = _sim.Town;
+        if (t.Content.Stories.Story(id) is { Source: Powers.ContactSource }) return Powers.OpenContact(t, id);
         if (t.Content.Stories.Story(id) is not { } d || !Sendings.Is(d)) return Stories.Open(t, id);
         // Wait (up to a few days) for a party on the road far enough from its site.
         for (int hour = 0; hour < 24 * 6; hour++)
@@ -609,6 +627,7 @@ public partial class Main : Control
                     case Tab.City: RenderCity(); break;
                     case Tab.Ledger: RenderLedger(); break;
                     case Tab.War: RenderWar(); break;
+                    case Tab.Army: RenderArmy(); break;
                     case Tab.Defence: RenderDefence(); break;
                     case Tab.Council: RenderCouncil(); break;
                     case Tab.Bounties: RenderBounties(); break;

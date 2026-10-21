@@ -163,6 +163,200 @@
     { "id": "act", "term": "Acts", "category": "world", "aliases": ["act"], "text": "The saga's chapters: Points of Light, The Wider Wilds, Lords of the Land and The Long Night. Each act opens wider and deadlier land." },
     { "id": "legend", "term": "Legends", "category": "world", "aliases": ["legend"], "text": "Famous heroes and foes of your earlier towns. They can turn up again in a new campaign." },
     { "id": "alert", "term": "Alerts", "category": "town", "aliases": ["alert"], "text": "Icons along the top when something needs you: red is urgent, gold waits on your decision. Hover for a summary, click to go and answer it, right-click to dismiss." },
-    { "id": "ledger", "term": "Ledger", "category": "town", "text": "The record of everything that happens in town, from brawls to weddings to dragons." }
+    { "id": "ledger", "term": "Ledger", "category": "town", "text": "The record of everything that happens in town, from brawls to weddings to dragons." },
+    {
+      "id": "patron",
+      "term": "Patron",
+      "category": "world",
+      "icon": "face-warlock-hood",
+      "aliases": [
+        "patrons",
+        "sworn"
+      ],
+      "text": "A power from beyond the world that swears heroes to it: the Hollow Prince (blood), the Thistle Queen (songs and kept oaths), the Ninth Mask (secrets) and the Gilded Wager (great risks). Every warlock comes to town sworn to one, with a familiar it sent; stories let a patron court other heroes. A sworn hero's favour runs from −5 to +5 as the patron judges what they did: it lends them attack, armour or skill, and turns against them below zero. At +5 the patron sends a gift; at −5 it takes its price. Pleased enough, a patron presses its own design on the town."
+    },
+    {
+      "id": "veiled-room",
+      "term": "Veiled room",
+      "category": "rules",
+      "icon": "d20",
+      "aliases": [
+        "death saves",
+        "death save"
+      ],
+      "text": "Where a hero at 0 hit points wakes when no friend can reach them with a spell, a potion or a bandage. A voice asks three questions: three rolls of 10 or more and they walk back into their body, three failures and the door closes. A natural 20 brings them straight back. As the door closes a patron may offer a costly way out: they live, owe it favour and carry a dark gift."
+    },
+    {
+      "id": "hedge-mage",
+      "term": "Hedge mage",
+      "category": "people",
+      "icon": "lore",
+      "aliases": [
+        "hedge mages",
+        "builder-mage",
+        "field-witch",
+        "fisher-mage"
+      ],
+      "text": "A townsperson who taught themselves one spell for their trade once the library grew strong: a builder-mage raises sites faster, a field-witch or fisher-mage brings in more, a grave-speaker helps the watch. The bottom rung of the town's magic, below the library's wizards and the archmage of the Mage Tower. The guilds resent them."
+    },
+    {
+      "id": "union",
+      "term": "The Common Cause",
+      "category": "council",
+      "icon": "tab-council",
+      "aliases": [
+        "the union",
+        "union",
+        "the movement"
+      ],
+      "text": "A movement of working townsfolk, many from the guilds and many not, and some hedge mages too: nobody is all one side. A bar in the Council window shows whether it or the town's mages have the town hall's ear: research funding, the wizards' library and hedge mages outside the movement pull it toward the mages; the movement's numbers and the guilds pull it back, and each hedge mage in the movement widens the middle. In the green middle both work together; let it lean and the slighted side sours, and too far the movement marches with every guild on strike, or the mages walk out. Hear a side out for gold, or take a side for a season and face the other's grudge."
+    },
+    {
+      "id": "stone-circle",
+      "term": "Stone circle",
+      "category": "world",
+      "icon": "lore",
+      "aliases": [
+        "stone circles",
+        "standing stones"
+      ],
+      "text": "A ring of rune-cut stones out in the wilds. Explorers can read the runes and wake one; from then on the library's mages draw lore from it every day. Cults hold their rites at the stones too, which brings their dark gods more favour unless the council funds research so the mages keep watch."
+    },
+    {
+      "id": "tavern-keeper",
+      "term": "Tavern keeper",
+      "category": "people",
+      "icon": "ale",
+      "aliases": [
+        "keeper's past",
+        "tavern keepers"
+      ],
+      "text": "Every tavern keeper came from somewhere: a retired adventurer keeps heroes fond of the town, an old watch sergeant stops brawls, a former smuggler pours cheap ale, a minstrel who lost their voice makes the songs go down better, an informer tells the watch what they hear, and a kind-hearted widow keeps anyone from being lonely for long. Now and then a keeper asks the town hall for something. Click a tavern to see its keeper's past."
+    },
+    {
+      "id": "tavern-quirk",
+      "term": "Odd taverns",
+      "category": "town",
+      "icon": "ale",
+      "aliases": [
+        "tavern quirk",
+        "quirk"
+      ],
+      "text": "No two taverns are alike: one is built in a beached barge, one has a fighting pit in the cellar, one is a hush-house where nobody raises their voice. Each draws its own crowd from further off (the hot-tempered, the shy, the sociable, heroes) and changes the evening: more brawls, fewer, better songs, easier talk."
+    },
+    {
+      "id": "drunk-persona",
+      "term": "In their cups",
+      "category": "people",
+      "icon": "ale",
+      "aliases": [
+        "drunk",
+        "persona"
+      ],
+      "text": "After three ales everyone turns into their own kind of drunk: the weeper, the singer, the philosopher, the boaster, the scrapper, the sleeper or the moon-eyed lover. It changes how their talk goes and how quickly they come to blows. Their inspector card says which they are."
+    },
+    {
+      "id": "slang",
+      "term": "Town slang",
+      "category": "town",
+      "icon": "lore",
+      "aliases": [
+        "slang"
+      ],
+      "text": "Every town has its own words for a few things: the watch might be the lanterns or the long coats, the mayor the chain or old seal. You hear them in tavern talk and rumours, never on prices. Click a tavern to see how your town says them."
+    },
+    {
+      "id": "blood-money",
+      "term": "Blood money",
+      "category": "rules",
+      "icon": "unrest",
+      "aliases": [
+        "weregild"
+      ],
+      "text": "When a drunk hero hits a townsperson once too hard in a brawl and kills them, the family come to the town hall for weregild, blood money for a life. Pay it from the treasury, make the hero pay, talk the family down, or refuse; refuse and they swear a feud on the hero."
+    },
+    {
+      "id": "cursed-weapon",
+      "term": "Cursed weapon",
+      "category": "adventure",
+      "icon": "face-death-skull",
+      "aliases": [
+        "cursed weapons",
+        "curse",
+        "cursed"
+      ],
+      "text": "Now and then a magic weapon a hero brings home from a hoard is cursed. Every curse gives and takes: a bloodthirsty blade bites deep but drags its bearer into brawls, a jealous one strikes true but allows no other magic, a craven one parries but flinches, a whispering one teaches secrets and talk of better towns, a gluttonous one feeds on its bearer's rest, a miserly one will sell nothing to the town. It cannot be put down until the temple lifts the curse or the smiths break the blade."
+    },
+    {
+      "id": "heroes-lives",
+      "term": "Heroes' own lives",
+      "category": "adventure",
+      "icon": "heroes",
+      "aliases": [
+        "downtime",
+        "holding",
+        "stake"
+      ],
+      "text": "Between jobs heroes spend their gold as they please: they buy land and a house of their own (and sleep there instead of the tavern, more rooted in the town), pay for training toward their next level, or buy a stake in a business that pays them back. They marry through the taverns like anyone, and a company that can afford it raises a bastion. None of it keeps them from answering a bounty."
+    },
+    {
+      "id": "platinum",
+      "term": "Gold and platinum",
+      "category": "goods",
+      "icon": "platinum",
+      "aliases": [
+        "platinum",
+        "coins"
+      ],
+      "text": "The town counts its money in gold, and from a thousand gold on in platinum pieces, ten gold apiece. The coppers and silver of everyday trade are still counted, out of sight."
+    },
+    {
+      "id": "heist",
+      "term": "Heists and the alarm",
+      "category": "adventure",
+      "icon": "d20",
+      "aliases": [
+        "alarm",
+        "heists",
+        "vault"
+      ],
+      "text": "A Fetch or a Rescue is a quiet job. Before each room the party's quietest tries to slip past; every slip is a fight and raises the alarm, and once it reaches the top the whole place wakes. A hoard on a Fetch sits in a vault of locks, wards and hidden catches that share the same alarm: set it off inside and the door slams, and they run with half the gold and no treasure."
+    },
+    {
+      "id": "routine",
+      "term": "Routine work",
+      "category": "rules",
+      "icon": "d20",
+      "aliases": [
+        "a day at the trade"
+      ],
+      "text": "Every business rolls its trade each day, with a line of why it went as it did, on the worker's character sheet. Routine work almost always succeeds: only a natural 1 that also falls short goes wrong."
+    },
+    {
+      "id": "law-book",
+      "term": "Law book",
+      "category": "council",
+      "icon": "tab-council",
+      "aliases": [
+        "laws",
+        "punishment",
+        "punishments"
+      ],
+      "text": "The council's list of punishments for the crimes the watch catches heroes at: brawling and theft. Each sentence moves order (unrest), fear (a share of would-be offenders who stay home), the guilds' standing, the temple god's favour and the offender's loyalty. Set them in the Council window."
+    },
+    {
+      "id": "hero-role",
+      "term": "Hero role",
+      "category": "people",
+      "icon": "tab-companies",
+      "aliases": [
+        "tank",
+        "striker",
+        "healer",
+        "face",
+        "role card"
+      ],
+      "text": "What a hero is for in a party, shown on their card with up to three key powers: a tank holds the line, a striker deals the damage, a healer keeps the party standing, a scout finds the way and the traps, and a face does the talking."
+    }
   ]
 }

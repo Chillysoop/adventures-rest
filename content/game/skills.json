@@ -79,12 +79,35 @@
   "checks": {
     "talk": { "skill": "persuasion" },
     "brawl": { "skill": "athletics" },
-    "calm": { "skill": "insight", "dc": 13, "text": "reads the mood and has {who} shown the door before a fist flies" },
-    "intimidate": { "skill": "intimidation", "dc": 12 },
-    "tend": { "skill": "medicine", "dc": 10, "rest": 45 },
-    "haggle": { "skill": "persuasion", "dc": 13, "success": 0.1, "critical": 0.2, "failure": -0.05, "fumble": -0.1 },
-    "craft": { "dc": 12, "success": 1.05, "critical": 1.15, "failure": 0.96, "fumble": 0.9 },
-    "perform": { "skill": "performance", "dc": 12, "chance": 0.15, "audience": 3, "mood": 8, "fumbleMood": -5, "tip": 0.25 },
+    "calm": { "skill": "insight", "dc": 13, "text": "reads the mood and has {who} shown the door before a fist flies",
+      "why": { "critical": "one look and the room settles", "success": "they read the mood in time", "failure": "the shouting is already too loud", "fumble": "they say exactly the wrong thing" }
+    },
+    "intimidate": { "skill": "intimidation", "dc": 12,
+      "why": { "critical": "they sit down before a word is said", "success": "the stare does its work", "failure": "the drunk does not scare", "fumble": "the drunk laughs in their face" }
+    },
+    "tend": { "skill": "medicine", "dc": 10, "rest": 45,
+      "why": { "critical": "the bruises are gone by morning", "success": "clean water and a steady hand", "failure": "the cut will not stop bleeding", "fumble": "they make it worse" }
+    },
+    "haggle": { "skill": "persuasion", "dc": 13, "success": 0.1, "critical": 0.2, "failure": -0.05, "fumble": -0.1,
+      "why": { "critical": "the carter is charmed into a real bargain", "success": "they talk the price down", "failure": "the carter will not budge", "fumble": "the carter sees them coming" }
+    },
+    "craft": {
+      "dc": 12,
+      "routine": true,
+      "success": 1.0,
+      "critical": 1.15,
+      "failure": 0.96,
+      "fumble": 0.9,
+      "why": {
+        "critical": "everything goes right at {workplace} today",
+        "success": "an ordinary good day's work at {workplace}",
+        "failure": "a tool breaks at {workplace} and the day goes slow",
+        "fumble": "a tool breaks at {workplace} and the day goes slow"
+      }
+    },
+    "perform": { "skill": "performance", "dc": 12, "chance": 0.15, "audience": 3, "mood": 8, "fumbleMood": -5, "tip": 0.25,
+      "why": { "critical": "the whole room sings along", "success": "the room warms to it", "failure": "the room talks over it", "fumble": "a string snaps and the room groans" }
+    },
     "pickpocket": { "skill": "sleight-of-hand", "chance": 0.02, "poor": 20, "take": [2, 9], "caught": -40 },
     "steal": { "skill": "stealth" },
     "bargain": { "skill": "persuasion", "success": 0.1, "critical": 0.2 }

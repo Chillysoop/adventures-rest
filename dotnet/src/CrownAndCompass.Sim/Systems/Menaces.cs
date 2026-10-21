@@ -235,6 +235,9 @@ public sealed class Menace
     /// <summary>The site it rules from; clearing it breaks the menace. Holdings are lairs it has taken in.</summary>
     public string SeatId { get; set; } = "";
     public string SeatName { get; set; } = "";
+
+    /// <summary>The seat it rose at, which its lineage comes from; a broken seat moves it on to another.</summary>
+    public string BornSeatId { get; set; } = "";
     public List<string> Holdings { get; } = [];
     public string Region { get; set; } = "the hills";
 
@@ -493,6 +496,7 @@ public static class Menaces
             SeenAttempts = seat.Attempts,
         };
         Seat(town, m, seat);
+        m.BornSeatId = seat.Def.Id;
         m.Cunning = cunning ?? CunningFor(town, IntOf(town, seat.Def.Boss.Monster));
         m.Lineage = lineage
             ?? (town.Content.Group(seat.Def.Group) is GroupDef g && g.Lineage != "" ? g.Lineage : null)
@@ -1358,6 +1362,9 @@ public static class Menaces
         lines.Add($"{Saga.Cap(m.Name)}, some {Js.Str(Js.Round(army))} strong, comes against {town.Name}. The defenders muster {Js.Str(Js.Round(startDef))} strong.");
         var record = Battles.Begin(town, $"menace:{m.Id}", m.Kind, m.Name, m.Def.People, m.Leader, m.Approach, army, startDef);
         def = Math.Max(0, def - Loyalty.Betray(town, m.Name, m, lines));
+        double went = AllyCalls.Betray(town, m.Name, lines);
+        def = Math.Max(0, def - went);
+        army += went;
         string foe = Quests.Site(town, m.SeatId)?.Def.Foe ?? "";
         double gate = Cannons.Wagons(town, m.Kind, m.Marches - 1, Garrison.WaveSection(town, m.Approach, 1), lines, record);
         for (int w = 1; w <= 3 && breaches < 2; w++)
@@ -1387,8 +1394,10 @@ public static class Menaces
         }
         m.Power = Math.Max(0, army);
         Crises.Assaulted(town, m, breaches >= 2);
-        int fallen = (int)Math.Min(town.Workers.Count, Js.Round(((startDef - def) / Math.Max(1, Threat.Fortification(town))) / 12));
-        var dead = new List<Agent>();
+        // The army's soldiers stand in the front rank and fall first; the militia pays for the rest.
+        var dead = Army.Bloodied(town, startDef - def, startDef);
+        AllyCalls.Fought(town, breaches < 2, (startDef - def) / Math.Max(1, startDef));
+        int fallen = (int)Math.Min(town.Workers.Count, Math.Max(0, Js.Round(((startDef - def) / Math.Max(1, Threat.Fortification(town))) / 12) - dead.Count));
         var workers = town.Workers;
         for (int i = 0; i < fallen; i++)
         {
