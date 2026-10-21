@@ -572,7 +572,7 @@ public static class Stories
             if (town.Tick >= s.DueTick) Lapse(town, s);
         if (autoMayor)
             foreach (var s in Pending(town)) StandIn(town, s);
-        if (r.Stories.Count == 0 || town.Day < Math.Max(r.FirstDay, st.NextDay) || st.Open.Count(s => !Sendings.Is(town, s)) >= r.MaxOpen || town.Outcome != null) return;
+        if (r.Stories.Count == 0 || town.Day < Math.Max(r.FirstDay, st.NextDay) || st.Open.Count(s => !Sendings.Is(town, s) && DefOf(town, s).Source != Powers.ContactSource) >= r.MaxOpen || town.Outcome != null) return;
         if (!town.Rng.Chance(r.Chance * Storyteller.Of(town).Stories)) return;
         var open = st.Open.Select(s => s.Def).ToHashSet();
         var fits = new List<(StoryDef Def, Story Bound)>();
@@ -611,8 +611,15 @@ public static class Stories
     }
 
     /// <summary>A power met for the first time: its first-contact scene, bound to it (<see cref="Powers.Introduce"/>).</summary>
-    public static Story? Contact(Town town, StoryDef d, Story seed) =>
-        BindFrom(town, d, seed) is { } bound ? Begin(town, d, bound) : null;
+    public static Story? Contact(Town town, StoryDef d, Story seed)
+    {
+        if (BindFrom(town, d, seed) is not { } bound) return null;
+        // A meeting comes on its own day: it holds back none of the town's own stories.
+        int next = town.Stories.NextDay;
+        var story = Begin(town, d, bound);
+        town.Stories.NextDay = next;
+        return story;
+    }
 
     /// <summary>The source of the card that tells of a company wiped out (<see cref="Remains"/>).</summary>
     public const string LostSource = "lost";
