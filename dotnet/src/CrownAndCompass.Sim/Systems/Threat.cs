@@ -189,6 +189,7 @@ public static class Threat
         else if (en.Stage == ThreatStage.Omens && en.Strength >= e.Stages.Probing)
         {
             Next(ThreatStage.Probing);
+            Discovery.Meet(town, Discovery.Warband, Discovery.Reported);
             SpawnOutpost(town);
         }
         else if (en.Stage == ThreatStage.Probing && en.Strength >= e.Stages.Raids)
