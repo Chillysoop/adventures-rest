@@ -144,6 +144,7 @@
     { "id": "dragon", "term": "Dragons", "category": "enemies", "icon": "dragon", "aliases": ["dragon", "drake", "drakes", "wyrm", "wyrms"], "text": "Wyrms of the old Tyranny's blood. They take valleys as tribute and hoard what they take." },
     { "id": "cult", "term": "Cults", "category": "enemies", "icon": "cult", "aliases": ["cult", "cultists", "cultist"], "text": "Secret faithful of dark powers, raising undead and fiends. They grow inside the town as well as out." },
     { "id": "rivals", "term": "Rivals", "category": "enemies", "icon": "rivals", "aliases": ["rival", "robber barons", "robber baron"], "text": "Robber barons and grasping traders who want the town's roads and coin." },
+    { "id": "fiends", "term": "Fiends", "category": "enemies", "icon": "fiends", "aliases": ["fiend", "imp", "imps", "burning doorway", "doorway"], "text": "Things from beyond a burning doorway. Late in some campaigns one opens near the town; its imps spoil food and its master bargains." },
 
     { "id": "god", "term": "Gods", "category": "world", "aliases": ["god", "gods", "goddess"], "text": "The town's gods. A temple or shrine wins a god's favour, and its blessings follow." },
     { "id": "shrine", "term": "Shrine", "category": "world", "aliases": ["shrines", "temple", "temples"], "text": "A place of worship. Temples and shrines raise a god's favour and heal the sick." },

@@ -41,6 +41,7 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["dragon", "dragon-head", "#e8673f"],
   ["cult", "cultist", "#d0566a"],
   ["rivals", "duel", "#d9b25a"],
+  ["fiends", "imp-laugh", "#e0553a"],
   // What a story choice puts at stake (content/game/assess.json icons) beside the goods and town icons above
   ["dread", "terror", "#b28ad8"],
   ["unrest", "fist", "#e07a5f"],
@@ -48,6 +49,11 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["threat", "crossed-swords", "#ef7f6f"],
   ["lore", "scroll-unfurled", "#d8c08a"],
   ["decree", "scroll-quill", "#cfc6b0"],
+  // Character sheet scores (content/game/character.json) beside the icons above
+  ["health", "health-normal", "#e07070"],
+  ["faith", "prayer", "#f0d890"],
+  ["wits", "brain", "#c9a0dc"],
+  ["will", "muscle-up", "#d89a5c"],
   // Dock windows, the build bar and the menu
   ["tab-city", "castle", mono],
   ["tab-ledger", "notebook", mono],

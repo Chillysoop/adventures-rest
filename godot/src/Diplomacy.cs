@@ -66,22 +66,30 @@ public partial class Main
     }
 
     /// <summary>A score on a character sheet, coloured by how strong it is.</summary>
-    internal static string ScoreTag(Score x) =>
-        Ui.C(x.Value >= 14 ? Ui.Good : x.Value <= 7 ? Ui.Bad : Ui.Ink, $"{Ui.Esc(x.Name)} [b]{x.Value}[/b]");
+    /// <summary>The icon for each score slot, in character.json's slots.</summary>
+    private static readonly Dictionary<string, string> ScoreIcons = new()
+    {
+        ["might"] = "defence", ["wealth"] = "gold", ["diplomacy"] = "standing", ["health"] = "health",
+        ["lore"] = "books", ["faith"] = "faith", ["wits"] = "wits", ["reach"] = "population",
+        ["dread"] = "dread", ["will"] = "will",
+    };
 
-    /// <summary>A settlement's character sheet: size and purpose, its six scores, customs, secret and a saying.</summary>
+    /// <summary>A score as its icon and number; the name shows on hover.</summary>
+    internal static string ScoreTag(Score x) =>
+        $"[hint={x.Name}]{(ScoreIcons.TryGetValue(x.Slot, out var icon) ? Ui.Img(icon, 14) : Ui.Esc(x.Name))} " +
+        Ui.C(x.Value >= 14 ? Ui.Good : x.Value <= 7 ? Ui.Bad : Ui.Ink, $"[b]{x.Value}[/b]") + "[/hint]";
+
+    /// <summary>A settlement's character sheet: size and purpose, its six scores, then customs, secret and a saying as bullets.</summary>
     private static string CharacterSheet(Town t, Settlement s)
     {
         string size = Character.SizeOf(t, s)?.Name ?? s.Kin.Kind;
-        string purpose = Character.PurposeOf(t, s) is { } pu ? $" · lives by {Ui.Esc(pu.Name)}" : "";
-        string lines = $"[font_size=12]{Tag(Ui.Cap(size))}{purpose}\n{string.Join("  ", Character.Sheet(t, s).Select(ScoreTag))}";
-        if (Character.PurposeOf(t, s) is { } p) lines += "\n" + Ui.C(Ui.Ink2, Ui.Esc(Character.Fill(s, p.Text)));
-        var customs = Character.CustomsOf(t, s);
-        if (customs.Count > 0) lines += "\n" + Ui.C(Ui.Ink2, $"Customs: {Ui.Esc(string.Join(" ", customs.Select(c => Character.Fill(s, c.Text))))}");
+        string purpose = Character.PurposeOf(t, s) is { } pu ? $" · {Ui.Esc(pu.Name)}" : "";
+        string lines = $"[font_size=12]{Tag(Ui.Cap(size))}{purpose}\n{string.Join("   ", Character.Sheet(t, s).Select(ScoreTag))}";
+        foreach (var c in Character.CustomsOf(t, s)) lines += "\n• " + Ui.C(Ui.Ink2, Ui.Esc(Character.Fill(s, c.Text)));
         if (Character.SecretOf(t, s) is { } secret)
-            lines += "\n" + (Character.SecretKnown(t, s)
+            lines += "\n• " + (Character.SecretKnown(t, s)
                 ? Ui.C(Ui.Gold, $"Secret: {Ui.Esc(Ui.Cap(Character.Fill(s, secret.Text)))}.")
-                : Ui.C(Ui.Ink2, "They keep a secret from strangers. Friends are told."));
+                : Ui.C(Ui.Ink2, "A secret, told only to friends."));
         if (Character.Proverb(t, s, s.Id + t.Day / 30) is string saying) lines += "\n" + Ui.C(Ui.Ink2, $"[i]{Ui.Esc(saying)}[/i]");
         return lines + "[/font_size]";
     }

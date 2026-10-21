@@ -104,6 +104,9 @@ public static class Expedition
 
         /// <summary>How its kind fights (<see cref="Tactics"/>).</summary>
         public TacticDef? Tactic { get; init; }
+
+        /// <summary>The round it spent on a signature move or calling help, instead of attacking.</summary>
+        public int Spent { get; set; }
     }
 
     private sealed record Check(Combatant Who, int Roll, int Total, string With = "")
@@ -675,19 +678,21 @@ public static class Expedition
             if (boss?.Tactic is not { } t) return;
             if (round == 2 && t.Signature != "")
             {
+                // It spends its round on it: half a blow to everyone, and a quick hero dodges it.
+                boss.Spent = round;
                 var downed = new List<string>();
                 foreach (var c in Standing)
                 {
-                    int dmg = Math.Max(1, boss.Def.Dice.Roll(_rng, false));
-                    // A quick hero dodges half of it.
-                    if (_rng.D20() + Rng.Modifier(c.Agent.Abilities.Dex) >= 10 + boss.Def.Attack / 2) dmg /= 2;
-                    Hurt(c, Math.Max(1, dmg));
+                    int dmg = Math.Max(1, boss.Def.Dice.Roll(_rng, false) / 2);
+                    if (_rng.D20() + Rng.Modifier(c.Agent.Abilities.Dex) >= 10 + boss.Def.Attack / 2) continue;
+                    Hurt(c, dmg);
                     if (c.Down) downed.Add(c.Agent.GivenName);
                 }
                 Log($"{Cap(t.Signature.Replace("{boss}", The(boss.Def)))}{(downed.Count > 0 ? $". {ListNames(downed)} {(downed.Count == 1 ? "goes" : "go")} down" : "")}.");
             }
             if (round == 3 && t.Minions != "")
             {
+                boss.Spent = round;
                 var m = _content.Monster(t.Minions);
                 int n = _rng.Range(t.MinionCount[0], t.MinionCount[1] + 1);
                 var mt = Tactics.Of(_content, m);
@@ -704,7 +709,7 @@ public static class Expedition
                 int pack = Pack(f, foes);
                 for (int k = 0; k < Math.Max(1, f.Def.Attacks); k++)
                 {
-                    if (f.Hp <= 0) break;
+                    if (f.Hp <= 0 || f.Spent == round) break;
                     var targets = Standing;
                     if (targets.Count == 0) return;
                     var t = rng.Pick(targets);

@@ -212,15 +212,17 @@ public partial class Main
     /// <summary>Its six scores, and what its kind is like this age.</summary>
     private static string Scores(Town t, Menace m)
     {
-        string line = $"[font_size=12]{string.Join("  ", Character.Sheet(t, m).Select(ScoreTag))}[/font_size]\n";
-        if (Character.TemperOf(t, m.Kind) is { Text: not "" } tm) line += Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(tm.Text)}[/font_size]\n");
-        if (Menaces.Done(t, m) is string done) line += $"[font_size=12]{Tag("Done")} {Ui.C(Ui.Ink2, Ui.Esc(done))}[/font_size]\n";
-        if (Menaces.Case(t, m) is string said) line += $"[font_size=12]{Tag("Its case")} {Ui.C(Ui.Ink2, Ui.Esc(said))}[/font_size]\n";
-        line += Menaces.Truth(t, m) is string truth
-            ? $"[font_size=12]{Tag("The truth")} {Ui.C(Ui.Ink2, Ui.Esc(truth))}[/font_size]\n"
-            : m.Named ? Ui.C(Ui.Ink2, "[font_size=12][i]There is more to it. Take one of its holdings to learn the truth.[/i][/font_size]\n") : "";
+        string line = $"[font_size=12]{string.Join("   ", Character.Sheet(t, m).Select(ScoreTag))}";
+        if (Character.TemperOf(t, m.Kind) is { } tm) line += $"  {Tag(Ui.Cap(tm.Name))}";
+        line += "[/font_size]\n";
+        if (Menaces.Done(t, m) is string done) line += Bullet("Done", done);
+        if (Menaces.Case(t, m) is string said) line += Bullet("Says", said);
+        if (Menaces.Truth(t, m) is string truth) line += Bullet("Truth", truth);
+        else if (m.Named) line += Ui.C(Ui.Ink2, "[font_size=12]• [i]Truth: take a holding to learn it[/i][/font_size]\n");
         return line;
     }
+
+    private static string Bullet(string tag, string text) => $"[font_size=12]• {Tag(tag)} {Ui.C(Ui.Ink2, Ui.Esc(text))}[/font_size]\n";
 
     /// <summary>The last the town heard of it.</summary>
     private static string LastHeard(Town t, Menace m) =>
