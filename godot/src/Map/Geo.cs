@@ -5,15 +5,15 @@ using Godot;
 namespace CrownAndCompass.Client.Map;
 
 /// <summary>
-/// Where things sit on the map, in world tiles (one tile is one town lot): a 1024-tile square of
-/// wilderness with the town grid (48 lots a side, in rings of wards) at its heart, a river past the ford the town was founded
+/// Where things sit on the map, in world tiles (one tile is one town lot): a 2048-tile square of
+/// wilderness with the town grid (96 lots a side, in rings of wards) at its heart, a river past the ford the town was founded
 /// on, and the adventure sites a few days' march out. Decoration is hashed from fixed numbers so
 /// it never touches the simulation's Rng.
 /// </summary>
 public sealed class Geo
 {
     public const int Grid = Town.Grid;
-    public const int World = 1024;
+    public const int World = 2048;
     public const int Margin = (World - Grid) / 2;
     public static readonly Vector2 Center = new(World / 2f, World / 2f);
 
