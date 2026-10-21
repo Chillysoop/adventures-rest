@@ -519,7 +519,7 @@ public static class Expedition
                 }
 
                 // Clerics keep the party alive before they swing.
-                if (s.Cls.Healer && c.Heals > 0)
+                if (s.Cls.Healer && c.Heals > 0 && !_hushed)
                 {
                     var patient = Party.Where(p => !p.Dead && p.Hp < p.Sheet.MaxHp * 0.4).OrderBy(p => p.Hp).FirstOrDefault();
                     if (patient != null)
@@ -540,7 +540,7 @@ public static class Expedition
                 }
 
                 // Casters with an area spell open with it, cast at a higher slot as they level.
-                if (s.Cls.Area && round == 1 && living.Count >= 2)
+                if (s.Cls.Area && round == 1 && living.Count >= 2 && !_hushed)
                 {
                     var spell = s.Cls.AreaSpell!;
                     var targets = living.Take(3).ToList();
@@ -558,7 +558,7 @@ public static class Expedition
                 }
 
                 // A caster with a scroll reads it when the foes crowd in or the master of the place shows itself.
-                if (c.Scrolls > 0 && Scrolls.Reads(s.Cls) && (living.Count >= 3 || living.Any(f => f.Def.Boss)))
+                if (c.Scrolls > 0 && Scrolls.Reads(s.Cls) && !_hushed && (living.Count >= 3 || living.Any(f => f.Def.Boss)))
                 {
                     var sr = _content.Shrines.Scroll;
                     c.Scrolls--;
@@ -668,7 +668,7 @@ public static class Expedition
             foreach (var c in Party)
             {
                 if (!c.Down || c.Dead) continue;
-                var healer = Standing.FirstOrDefault(h => h.Sheet.Cls.Healer && h.Heals > 0);
+                var healer = _hushed ? null : Standing.FirstOrDefault(h => h.Sheet.Cls.Healer && h.Heals > 0);
                 if (healer != null)
                 {
                     healer.Heals--;
@@ -779,6 +779,7 @@ public static class Expedition
                     c.Hp = Math.Min(c.Sheet.MaxHp, c.Hp + Math.Max(1, _rng.Roll(1, c.Sheet.Cls.HitDie) + Rng.Modifier(c.Agent.Abilities.Con)));
                 }
             }
+            Treat();
             if (inSite && _site != null && _rng.Chance(r.WanderChance))
             {
                 var wander = _site.Encounters.FirstOrDefault(e => e.Kind == "wander");
@@ -798,9 +799,10 @@ public static class Expedition
             if (Wiped) return;
             var rules = Roads.Camp;
             Log(text ?? Text("camp"));
+            Forage(habitats);
             if (_rng.Chance(rules.Ambush + rules.PerTier * tier))
             {
-                var check = BestCheck(SkillKind.Perception);
+                var check = WatchCheck();
                 bool seen = check.Total >= rules.WatchDc + tier / 2;
                 string watcher = check.Who.Agent.GivenName;
                 Log(Text(seen ? "campAmbush" : "campSurprised").Replace("{watcher}", watcher, StringComparison.Ordinal));
@@ -814,6 +816,21 @@ public static class Expedition
         public void Cross(TerrainKindDef kind, string name, int tier)
         {
             if (Wiped) return;
+            if (kind.Wonder != null)
+            {
+                Wonder(kind, name, tier);
+                return;
+            }
+            if (kind.Peril is { } peril && _way != null && _way.Chance(peril.Chance))
+            {
+                Peril(peril, name, tier);
+                if (!Wiped && _rng.Chance(kind.Ambush))
+                {
+                    Wilds(tier, kind.Habitats, kind.AmbushText.Count > 0 ? _rng.Pick(kind.AmbushText) : $"trouble in {name}", false);
+                    MarkLost();
+                }
+                return;
+            }
             var hz = kind.Hazard;
             int dc = hz.Dc + tier / 2;
             int scale = 1 + (Math.Max(1, tier) - 1) / 4;
@@ -836,6 +853,327 @@ public static class Expedition
                 Wilds(tier, kind.Habitats, kind.AmbushText.Count > 0 ? _rng.Pick(kind.AmbushText) : $"trouble in {name}", false);
                 MarkLost();
             }
+        }
+
+        // ---- The road's jobs, perils and strange places (Wayfaring) ----
+
+        /// <summary>Dice for the road's own rolls, off the town's stream; null when the venture has no road.</summary>
+        private Rng? _way;
+        private List<RoadJob> _jobs = [];
+        private Dictionary<int, Dictionary<string, int>> _skills = [];
+        private int _food = int.MaxValue;
+        private int _hunger;
+
+        /// <summary>No spell works here (dead-magic ground).</summary>
+        private bool _hushed;
+
+        /// <summary>The tracker found a back way in: one room fewer.</summary>
+        private bool _tracked;
+
+        private WayRules Way => _content.Roads.Wayfaring;
+
+        /// <summary>Who does what on the road, their bonus at every skill the road asks for, and the road's dice.</summary>
+        public void TakeJobs(List<RoadJob> jobs, Dictionary<int, Dictionary<string, int>> skills, Rng dice)
+        {
+            _jobs = jobs;
+            _skills = skills;
+            _way = dice;
+            _food = Way.Rations;
+        }
+
+        public IReadOnlyList<RoadJob> Jobs => _jobs;
+
+        public void TellJobs()
+        {
+            if (_jobs.Count == 0) return;
+            var list = Expedition.ListNames(_jobs.Select(j => $"{j.Name} {Way.Job(j.Job).Verb}").ToList());
+            string line = Wayfaring.Pick(_way!, Way.Texts, "jobs");
+            if (line != "") Log(line.Replace("{list}", list, StringComparison.Ordinal));
+        }
+
+        private Combatant? Doing(string job) =>
+            _jobs.FirstOrDefault(j => j.Job == job) is { } j ? Standing.FirstOrDefault(c => c.Agent.Id == j.AgentId) : null;
+
+        /// <summary>A hero's bonus at a skill on the road: the sheet's, their gear's, and anything weighing on them (hunger).</summary>
+        private int Bonus(Combatant c, string skill) =>
+            (_skills.TryGetValue(c.Agent.Id, out var m) && m.TryGetValue(skill, out var b) ? b : 0) + c.Skill;
+
+        /// <summary>A job's check: routine (no roll) when ten would do, else a d20 with natural 1s and 20s.</summary>
+        private (bool Ok, int Roll, int Total) Try(Combatant c, string skill, int dc, bool pressed = false)
+        {
+            int bonus = Bonus(c, skill);
+            if (!pressed && Wayfaring.Routine(bonus, dc)) return (true, 0, 10 + bonus);
+            int roll = (_way ?? _rng).D20();
+            return (roll == 20 || (roll != 1 && roll + bonus >= dc), roll, roll + bonus);
+        }
+
+        private static string Rolled((bool Ok, int Roll, int Total) t, int dc) => t.Roll == 0 ? "routine" : $"d20 {t.Roll}, {t.Total} vs DC {dc}";
+
+        private string WayText(string key, Combatant? who = null) =>
+            Wayfaring.Pick(_way ?? _rng, Way.Texts, key).Replace("{name}", who?.Agent.GivenName ?? "", StringComparison.Ordinal);
+
+        /// <summary>The night's watch: the hero whose job it is, or the sharpest eyes if nobody took it.</summary>
+        private Check WatchCheck()
+        {
+            if (Doing("watch") is not { } w) return BestCheck(SkillKind.Perception);
+            int roll = _rng.D20();
+            return new Check(w, roll, roll + Bonus(w, "perception"));
+        }
+
+        private void SetHunger(int n)
+        {
+            n = Math.Clamp(n, 0, Way.HungerMax);
+            int delta = n - _hunger;
+            if (delta == 0) return;
+            foreach (var c in Party)
+            {
+                c.Attack -= delta;
+                c.Skill -= delta;
+            }
+            _hunger = n;
+        }
+
+        /// <summary>A night's food: the rations first, then whatever the forager finds.</summary>
+        private void Forage(IReadOnlyList<string> habitats)
+        {
+            if (_way == null) return;
+            if (_food > 0)
+            {
+                _food--;
+                return;
+            }
+            var job = Way.Job("forage");
+            if (Doing("forage") is not { } f)
+            {
+                Log(WayText("hungry"));
+                SetHunger(_hunger + 1);
+                return;
+            }
+            int dc = job.Dc + (habitats.Any(job.HarshHabitats.Contains) ? job.Harsh : 0);
+            var t = Try(f, job.Skill, dc);
+            if (!t.Ok)
+            {
+                Log(WayText("hungryForager", f) + $" ({Rolled(t, dc)})");
+                SetHunger(_hunger + 1);
+                return;
+            }
+            Log(WayText("fed", f) + (t.Roll == 0 ? "" : $" ({Rolled(t, dc)})"));
+            SetHunger(_hunger - 1);
+            if (t.Roll == 20 && Doing("treat") is { } medic)
+            {
+                medic.Potions++;
+                Log(WayText("herbs", f));
+            }
+        }
+
+        /// <summary>The medic on a short rest: cleaned and stitched wounds give back a little more.</summary>
+        private void Treat()
+        {
+            if (Doing("treat") is not { } medic) return;
+            var hurt = Standing.Where(c => c.Hp < c.Sheet.MaxHp).ToList();
+            if (hurt.Count == 0) return;
+            var job = Way.Job("treat");
+            var t = Try(medic, job.Skill, job.Dc);
+            if (!t.Ok) return;
+            int each = Math.Max(1, job.Heal + Rng.Modifier(medic.Agent.Abilities.Wis));
+            int total = 0;
+            foreach (var c in hurt)
+            {
+                int gain = Math.Min(each, c.Sheet.MaxHp - c.Hp);
+                c.Hp += gain;
+                total += gain;
+            }
+            Log(WayText("treated", medic).Replace("{hp}", total.ToString(System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal));
+        }
+
+        /// <summary>At the site: the tracker looks for a way in that nobody guards.</summary>
+        public void Track(SiteDef site)
+        {
+            if (_way == null || Doing("track") is not { } tracker) return;
+            var job = Way.Job("track");
+            int dc = job.Dc + (int)(Math.Max(1, site.Tier) * job.PerTier);
+            var t = Try(tracker, job.Skill, dc);
+            _tracked = t.Ok;
+            Log(WayText(t.Ok ? "tracked" : "untracked", tracker) + (t.Roll == 0 ? "" : $" ({Rolled(t, dc)})"));
+        }
+
+        /// <summary>The bone ferryman takes them over his water, a toll a head.</summary>
+        public void Ferry(TerrainKindDef kind, string name)
+        {
+            if (Wiped || kind.Wonder is not { } w) return;
+            int toll = w.Toll * Standing.Count;
+            Gold -= toll;
+            Log(Pick(w.Text).Replace("{name}", name, StringComparison.Ordinal).Replace("{toll}", w.Toll.ToString(System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal));
+        }
+
+        private string Pick(IReadOnlyList<string> lines) => lines.Count > 0 ? (_way ?? _rng).Pick(lines) : "";
+
+        private Combatant? Best(string skill) => Standing.OrderByDescending(c => Bonus(c, skill)).ThenBy(c => c.Agent.Id).FirstOrDefault();
+
+        /// <summary>A strange place on the road, and the rule it bends.</summary>
+        private void Wonder(TerrainKindDef kind, string name, int tier)
+        {
+            var w = kind.Wonder!;
+            var dice = _way ?? _rng;
+            int gold = w.Gold * Math.Max(1, tier);
+            string Say(string line, Combatant? who) => line
+                .Replace("{name}", name, StringComparison.Ordinal)
+                .Replace("{name2}", who?.Agent.GivenName ?? "", StringComparison.Ordinal)
+                .Replace("{gold}", gold.ToString(System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal);
+            switch (w.Kind)
+            {
+                case "hush":
+                    Log(Say(Pick(w.Text), null));
+                    _hushed = true;
+                    if (_rng.Chance(kind.Ambush)) Wilds(tier, kind.Habitats, kind.AmbushText.Count > 0 ? Pick(kind.AmbushText) : $"trouble in {name}", false);
+                    _hushed = false;
+                    MarkLost();
+                    break;
+                case "well":
+                {
+                    var hero = dice.Pick(Standing);
+                    Log(Say(Pick(w.Text), hero));
+                    int roll = dice.D20();
+                    if (roll == 20)
+                    {
+                        foreach (var c in Standing) c.Hp = c.Sheet.MaxHp;
+                        Gold += gold;
+                        Log(Say(Pick(w.Wish), hero));
+                    }
+                    else if (roll >= 15)
+                    {
+                        hero.Potions++;
+                        Log(Say(Pick(w.Boon), hero));
+                    }
+                    else if (roll == 1)
+                    {
+                        hero.Skill--;
+                        Log(Say(Pick(w.Curse), hero));
+                    }
+                    else Log(Say(Pick(w.Nothing), hero));
+                    break;
+                }
+                case "bones":
+                {
+                    var who = Best(w.Skill)!;
+                    var t = Try(who, w.Skill, w.Dc + tier / 2);
+                    if (t.Ok) Gold += gold;
+                    Log(Say(t.Ok ? Pick(w.Text) : Pick(w.Missed), who));
+                    if (_rng.Chance(kind.Ambush))
+                    {
+                        Wilds(tier, ["tomb", "badlands", "desert"], kind.AmbushText.Count > 0 ? Pick(kind.AmbushText) : $"trouble in {name}", false);
+                        MarkLost();
+                    }
+                    break;
+                }
+                case "ring":
+                {
+                    var who = Best(w.Skill)!;
+                    var t = Try(who, w.Skill, w.Dc + tier / 2);
+                    if (t.Ok)
+                    {
+                        Log(Say(Pick(w.Text), who));
+                        LongRest();
+                    }
+                    else
+                    {
+                        Log(Say(Pick(w.Missed), who));
+                        foreach (var c in Party) c.Potions = 0;
+                        Gold -= gold / 2;
+                    }
+                    break;
+                }
+                case "oasis":
+                    Log(Say(Pick(w.Text), null));
+                    _food = Math.Max(_food, Way.Rations);
+                    SetHunger(0);
+                    foreach (var c in Standing) c.Hp = Math.Min(c.Sheet.MaxHp, c.Hp + c.Sheet.MaxHp / 4);
+                    break;
+                case "mirage":
+                {
+                    var who = Best(w.Skill)!;
+                    var t = Try(who, w.Skill, w.Dc + tier / 2);
+                    if (t.Ok)
+                    {
+                        Log(Say(Pick(w.Text), who) + $" ({Rolled(t, w.Dc + tier / 2)})");
+                        break;
+                    }
+                    Log(Say(Pick(w.Missed), who));
+                    if (w.Monster != "" && _content.Library.Monster(w.Monster) != null)
+                    {
+                        RoadFight(new EncounterDef { Kind = "combat", Monster = w.Monster, Count = [1, 1], Text = $"the false oasis of {name}" }, true);
+                        MarkLost();
+                    }
+                    break;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Nature as a monster: the avalanche, the sandstorm, the cliff. Each hero in turn rolls their best skill
+        /// against it (no taking ten with the mountain coming down); they need so many successes before so many
+        /// failures, every failure hurts whoever rolled it, and losing costs them their packs or more blood.
+        /// </summary>
+        private void Peril(PerilDef p, string name, int tier)
+        {
+            var dice = _way!;
+            Log($"In {name}: {Pick(p.Text)}");
+            int dc = p.Dc + tier / 2;
+            int scale = 1 + (Math.Max(1, tier) - 1) / 4;
+            int ok = 0, bad = 0, turn = 0;
+            var held = new List<string>();
+            var hurt = new List<string>();
+            while (ok < p.Need && bad < p.Fail && !Wiped)
+            {
+                var order = Standing.OrderBy(c => c.Agent.Id).ToList();
+                var c = order[turn++ % order.Count];
+                string skill = p.Skills.OrderByDescending(k => Bonus(c, k)).ThenBy(k => k, StringComparer.Ordinal).FirstOrDefault() ?? "athletics";
+                var t = Try(c, skill, dc, pressed: true);
+                if (t.Ok)
+                {
+                    ok++;
+                    held.Add($"{c.Agent.GivenName} ({t.Roll}+{t.Total - t.Roll})");
+                    continue;
+                }
+                bad++;
+                int dmg = 0;
+                for (int k = 0; k < scale; k++) dmg += dice.Roll(1, p.Die);
+                Hurt(c, dmg);
+                hurt.Add($"{c.Agent.GivenName} ({dmg})");
+            }
+            string tally = (held.Count > 0 ? $" Holding fast: {string.Join(", ", held)}." : "") + (hurt.Count > 0 ? $" Hurt: {string.Join(", ", hurt)}." : "");
+            if (ok >= p.Need)
+                Log($"{p.Win}{tally}");
+            else
+            {
+                Log($"{p.Lose}{tally}");
+                if (p.Cost == "packs")
+                {
+                    _food = 0;
+                    foreach (var c in Party) c.Potions /= 2;
+                }
+                else
+                    foreach (var c in Standing)
+                    {
+                        int dmg = 0;
+                        for (int k = 0; k < scale; k++) dmg += dice.Roll(1, p.Die);
+                        Hurt(c, dmg);
+                    }
+            }
+            if (Party.Any(c => c.Down && !c.Dead)) AfterCombat();
+            MarkLost();
+        }
+
+        /// <summary>A fight on the road: nothing to win, so they run sooner than in a lair.</summary>
+        private void RoadFight(EncounterDef e, bool surprised)
+        {
+            int swell = Swell;
+            double caution = _caution;
+            Swell = 0;
+            _caution = Math.Max(_caution, Roads.Retreat.RoadCaution);
+            Combat(e, surprised);
+            Swell = swell;
+            _caution = caution;
         }
 
         /// <summary>A fight with whatever roams this country, sized for its level.</summary>
@@ -895,7 +1233,7 @@ public static class Expedition
         {
             // Draw this delve's encounters from the site's deck.
             var deck = site.Encounters.ToList();
-            int count = Math.Min(deck.Count, 2 + site.Tier);
+            int count = Math.Min(deck.Count, 2 + site.Tier - (_tracked ? 1 : 0));
             var plan = new List<EncounterDef>();
             for (int i = 0; i < count; i++)
             {

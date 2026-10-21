@@ -867,6 +867,10 @@ public sealed record ThemeDef
     public IReadOnlyList<string> Names { get; init; } = [];
     public IReadOnlyList<string> Habitats { get; init; } = [];
     public int Weight { get; init; } = 1;
+
+    /// <summary>How hot (1) or cold (-1), and wet (1) or dry (-1), the country is; null fits any climate (caverns, the fey).</summary>
+    public double? Heat { get; init; }
+    public double? Wet { get; init; }
     public int MinRing { get; init; }
     public int MaxRing { get; init; } = 99;
 
@@ -1044,6 +1048,12 @@ public sealed record TerrainKindDef
 
     /// <summary>"water" (a lake) or "sheer" (cliffs and peaks): nobody walks across, only flies, swims or climbs (<see cref="Systems.Passage"/>); "" for country anyone can.</summary>
     public string Barrier { get; init; } = "";
+
+    /// <summary>Nature as a monster: now and then the crossing is a fight with the country itself (<see cref="Systems.Wayfaring"/>).</summary>
+    public Systems.PerilDef? Peril { get; init; }
+
+    /// <summary>A strange place that bends the rules: a wishing well, dead-magic ground, a bone ferryman (<see cref="Systems.Wayfaring"/>).</summary>
+    public Systems.WonderDef? Wonder { get; init; }
 }
 
 public sealed record TerrainHazardDef
@@ -1142,6 +1152,9 @@ public sealed record RoadRules
     /// <summary>Rope bridges over gorges, cut by raiders and rebuilt in stone (<see cref="Systems.Bridges"/>).</summary>
     public Systems.BridgeRules Bridges { get; init; } = new();
 
+    /// <summary>Jobs on the road, strange places and old gateways (<see cref="Systems.Wayfaring"/>).</summary>
+    public Systems.WayRules Wayfaring { get; init; } = new();
+
     /// <summary>Hours a party marches a day; a day's march is one day of distance on open ground.</summary>
     public int MarchHours { get; init; } = 10;
     public int Dawn { get; init; } = 6;
@@ -1213,10 +1226,31 @@ public sealed record IntelRules
 }
 
 /// <summary>The wilds: rings of themed regions around the town, their sites and the peoples living there (content/game/world.json).</summary>
+public sealed record ClimateRules
+{
+    /// <summary>How strongly a ring feels the climate, from the town's ring out; the last holds beyond.</summary>
+    public double[] Amp { get; init; } = [0.25, 0.5, 0.75, 0.95, 1.0];
+
+    /// <summary>How far from its climate a theme may be and still be likely.</summary>
+    public double Spread { get; init; } = 0.35;
+
+    /// <summary>How much wet-dry counts against hot-cold.</summary>
+    public double WetShare { get; init; } = 0.6;
+
+    /// <summary>A theme this much hotter or colder than the region is never picked while another fits.</summary>
+    public double Hard { get; init; } = 1.1;
+
+    /// <summary>Neighbouring regions never differ by this much heat: no jungle beside the tundra.</summary>
+    public double Clash { get; init; } = 1.5;
+}
+
 public sealed record WorldRules
 {
     public IReadOnlyList<RingDef> Rings { get; init; } = [];
     public int[] SitesPerRegion { get; init; } = [2, 3];
+
+    /// <summary>How the lands follow hot-cold and wet-dry (<see cref="Systems.World.Climate"/>).</summary>
+    public ClimateRules Climate { get; init; } = new();
 
     /// <summary>Experience a wandering band is worth, by party level (index = level - 1).</summary>
     public int[] Budget { get; init; } = [];

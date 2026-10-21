@@ -387,7 +387,11 @@ public partial class Main
                         ? $"They carry one of the town's sending stones: {slots} {(slots == 1 ? "sending" : "sendings")} left."
                         : $"{slots} spell {(slots == 1 ? "slot" : "slots")} for sendings. Each one costs a slot{(party.Members.Any(id => t.Agent(id).Hero!.Cls.Healer) ? ", and a healer's slot is a heal they won't have in the dungeon" : "")}.");
                 int id = party.Id;
-                p.Card($"[b]The {Ui.Esc(party.Name)}[/b]  {Tag($"due back day {due}", Ui.Gold)}\n{where} · {members}\n[font_size=12]{slotNote}[/font_size]");
+                // Who does what on the road, the skill it rolls and why it matters, one line each.
+                var crew = party.Members.Select(t.Agent).Where(a => !a.Dead).ToList();
+                var rules = Wayfaring.Rules(t.Content);
+                string jobs = string.Join("\n", Wayfaring.Assign(t, crew).Select(j => $"{Ui.Esc(Wayfaring.Describe(t, j))}: {Ui.C(Ui.Ink2, Ui.Esc(rules.Job(j.Job).Why))}"));
+                p.Card($"[b]The {Ui.Esc(party.Name)}[/b]  {Tag($"due back day {due}", Ui.Gold)}\n{where} · {members}\n[font_size=12]{jobs}\n{slotNote}[/font_size]");
                 if (Knowledge.Slots(t, party) > 0)
                     p.Buttons(
                         ("Ask for word", slots > 0, false, () => Act(() => _sim.SendWord(id))),

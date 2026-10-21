@@ -1,4 +1,58 @@
 {
+  "wayfaring": {
+    "_doc": "On the road (Systems/Wayfaring.cs). Each hero in a party takes one day job, in 'order', the free hero best at the job's skill first: navigate (hard country, harder the slower it is: 'slowDc' a unit of slowness), forage (after 'rations' nights out) and track (the way into the site). The night jobs, keeping watch and treating wounds on a rest, go to whoever is best at them. A job is routine, and nobody rolls, when 10 + the bonus meets the DC. A lost navigator costs 'lost' of the stretch's hours (at least 'lostMin'); a hungry night costs 1 on every blow and check until a meal; a tracker who finds the way in spares them the first room.",
+    "order": ["navigate", "forage", "track"],
+    "night": ["watch", "treat"],
+    "rations": 3,
+    "lost": 0.5,
+    "slowDc": 5,
+    "lostMin": 3,
+    "hungerMax": 3,
+    "jobs": {
+      "navigate": { "skill": "survival", "name": "Navigator", "verb": "navigates", "dc": 10, "perTier": 0.5, "why": "Survival finds the way through hard country; a lost navigator costs hours." },
+      "watch": { "skill": "perception", "name": "Watch", "verb": "keeps watch", "dc": 12, "perTier": 0.5, "why": "Perception at night spots trouble coming for the camp." },
+      "treat": { "skill": "medicine", "name": "Medic", "verb": "treats wounds", "dc": 10, "heal": 4, "why": "Medicine on a short rest gives back extra hit points." },
+      "forage": { "skill": "survival", "name": "Forager", "verb": "forages", "dc": 10, "harsh": 5, "harshHabitats": ["desert", "badlands", "arctic", "underworld"], "why": "Survival feeds the party once the rations run out; hungry heroes fight worse." },
+      "track": { "skill": "survival", "name": "Tracker", "verb": "tracks", "dc": 11, "perTier": 0.5, "why": "Survival reads the signs to a back way in, past the first room." }
+    },
+    "texts": {
+      "jobs": ["On the road {list}."],
+      "lost": ["{name} loses the way in {feature}, and it costs them {days}.", "In {feature} every trail looks the same; {name} has them walking in circles for {days}.", "{name} is sure of the way through {feature} until the same dead tree comes round twice: {days} lost."],
+      "found": ["{name} reads the ground in {feature} and keeps them on the right line.", "{name} finds the old way through {feature} by the moss on the stones."],
+      "hungry": ["The last of the rations went yesterday. They go to sleep hungry.", "Nothing in the pot tonight but water and hope."],
+      "hungryForager": ["{name} comes back to camp empty-handed: there is nothing to eat out here.", "{name} forages till dark and finds only roots nobody can stomach."],
+      "fed": ["{name} comes back with a brace of hares, and the pot bubbles.", "{name} finds berries, mushrooms and a stream full of trout."],
+      "herbs": ["{name} finds a patch of healing herbs as well, and brews a draught for the road."],
+      "treated": ["{name} cleans and stitches the worst of the wounds ({hp} more hit points between them).", "{name} sets a splint and binds the cuts, and everyone feels the better for it ({hp} hp)."],
+      "tracked": ["{name} reads the tracks round to a back way in, past the first of the guards.", "{name} finds where the creatures come and go, and leads them in by a gap nobody watches."],
+      "untracked": ["{name} loses the tracks in the stony ground, and they go in by the front."]
+    },
+    "wonders": {
+      "_doc": "Strange places that bend the rules, placed on their own dice after the rest of the world: 'perRing' per ring from ring 'rings'[0] to [1], each a kind from roads.json kinds with a 'wonder'. Oases go only in the themes the kind names; a 'ferry' wonder takes over one lake.",
+      "rings": [1, 4],
+      "perRing": 1,
+      "oases": 2
+    },
+    "gateways": {
+      "_doc": "Old gateways in the wilds that link two far places. A known, open gateway saves days when it lies near the way; a 'riddle' lock opens to a party's best Investigation against 'riddleDc' and stays open; a 'password' lock opens when an allied people living near either end tells the word. Parties learn of a gateway passing within 'notice' days of an end.",
+      "count": 1,
+      "near": [1, 2],
+      "far": [3, 4],
+      "riddleDc": 14,
+      "notice": 0.6,
+      "saving": 0.25,
+      "locks": ["open", "riddle", "password"],
+      "names": ["the {A} Gate", "the Arch of {B}", "the {A} Door", "the Old Gate of {B}"],
+      "words": ["Moon", "Star", "Silent", "Elder", "Grey", "Thorn", "Ember", "Hollow", "Dawn", "Dusk"],
+      "texts": {
+        "through": ["They step through {gate} and out under another sky, days nearer.", "{gate} hums as they pass under it; the far arch stands in country a week's walk off."],
+        "riddle": ["{name} works out the riddle carved over {gate} ({roll}), and the arch fills with light. It will open for anyone now."],
+        "riddleFailed": ["{name} puzzles over the riddle on {gate} ({roll}) and gets nowhere. They walk."],
+        "learned": ["The {people} tell the council the word that opens {gate}. Companies can use it now.", "An elder of the {people} whispers the old word for {gate}. It is open to the town's companies."],
+        "found": ["Returning companies tell of {gate}, an old arch in the wilds that leads somewhere far away."]
+      }
+    }
+  },
   "bridges": {
     "_doc": "Rope bridges over gorges (Systems/Bridges.cs): raiders of a live lair in the same country, out to ring 'ring', cut them now and then; the town rebuilds a cut one in stone for 'stone' gold.",
     "kinds": ["gorge"],
@@ -53,6 +107,7 @@
   "kinds": [
     {
       "id": "ridge",
+      "peril": {"name": "the avalanche", "chance": 0.2, "skills": ["athletics", "survival"], "dc": 12, "need": 4, "fail": 3, "die": 8, "cost": "packs", "text": ["Snow cracks like a thunderclap above them and the whole slope starts to move.", "A shelf of rock and snow lets go over the pass and comes down on them."], "win": "They ride it out, dig each other free and go on, shaken.", "lose": "When the snow settles their packs are somewhere under it."},
       "name": "ridge",
       "through": "over",
       "names": ["the {A} Ridge", "the {A}fang Heights", "the {A} Spine", "the {A} Crags"],
@@ -66,6 +121,7 @@
     },
     {
       "id": "mire",
+      "peril": {"name": "the sucking mud", "chance": 0.2, "skills": ["athletics", "nature"], "dc": 12, "need": 3, "fail": 3, "die": 6, "cost": "packs", "text": ["The ground under them turns to soup and starts to swallow them whole.", "The bog takes the first of them to the chest, then the next."], "win": "Roped together, they haul each other out onto firm ground.", "lose": "They get out, but the mire keeps their packs and half their boots."},
       "name": "mire",
       "through": "through",
       "names": ["the {A} Mire", "{A}water Fen", "the {A} Bog", "the {A} Sloughs"],
@@ -79,6 +135,7 @@
     },
     {
       "id": "tangle",
+      "peril": {"name": "the wildfire", "chance": 0.15, "skills": ["survival", "athletics"], "dc": 12, "need": 3, "fail": 3, "die": 8, "cost": "hurt", "text": ["Smoke on the wind, then the roar: the wood is burning and the fire is coming their way.", "A dry summer, a lightning strike, and the whole wood goes up around them."], "win": "They find a stream and run down it ahead of the flames.", "lose": "They come out of the smoke blistered and coughing, barely."},
       "name": "deep wood",
       "through": "through",
       "names": ["the {A}wood", "the {A} Tangle", "the {A} Thicket", "the {A} Weald"],
@@ -92,6 +149,7 @@
     },
     {
       "id": "gorge",
+      "peril": {"name": "the cliff climb", "chance": 0.2, "skills": ["athletics", "acrobatics"], "dc": 12, "need": 4, "fail": 3, "die": 8, "cost": "hurt", "text": ["The way down the gorge wall is a crumbling chimney of rock and old pitons.", "The path along the gorge has fallen away, and the only way on is the cliff face."], "win": "Hand over hand, with a rope belayed round every outcrop, they make it.", "lose": "A hold breaks; the rope saves a life but not much skin."},
       "name": "gorge",
       "through": "across",
       "names": ["the {A} Gorge", "{A} Chasm", "the {A} Gulch", "the {A}cut Ravine"],
@@ -118,6 +176,7 @@
     },
     {
       "id": "waste",
+      "peril": {"name": "the sandstorm", "chance": 0.2, "skills": ["survival", "athletics"], "dc": 12, "need": 3, "fail": 3, "die": 6, "cost": "packs", "text": ["A brown wall rises on the horizon and comes on faster than a horse.", "The wind gets up, the sky goes the colour of rust, and the storm swallows them."], "win": "They shelter behind the beasts and a dune's lee, and dig out when it passes.", "lose": "The storm scours away their water skins and half their kit."},
       "name": "badlands",
       "through": "across",
       "names": ["the {A} Flats", "the {A} Waste", "the {A} Barrens", "the {A} Scar"],
@@ -131,6 +190,7 @@
     },
     {
       "id": "icefield",
+      "peril": {"name": "the whiteout", "chance": 0.25, "skills": ["survival", "athletics"], "dc": 13, "need": 4, "fail": 3, "die": 8, "cost": "hurt", "text": ["The snow and sky become one white wall, and the crevasses are somewhere in it.", "A blizzard comes off the glacier, and every step could be onto nothing."], "win": "Roped and counting steps, they come out of it the way they meant to go.", "lose": "Frostbitten and half-buried, they stagger out of it a long way from where they meant."},
       "name": "icefield",
       "through": "across",
       "names": ["the {A} Ice", "the {A} Glacier", "the {A} Drifts"],
@@ -169,7 +229,14 @@
       "ambush": 0.3,
       "habitats": ["mountain"],
       "ambushText": ["something nests on the summits and comes down for them", "rocs wheel above the peaks"]
-    }
+    },
+    {"id": "hush", "name": "dead-magic ground", "through": "across", "names": ["the {A} Hush", "the Silent Field of {A}", "the {A} Stillness"], "words": ["Grey", "Dead", "Quiet", "Ashen", "Pale", "Old", "Hollow"], "slow": 1.0, "danger": 0.25, "ambush": 0.25, "habitats": ["grassland", "ruins"], "hazard": {"skill": "perception", "dc": 10, "die": 4, "text": ["no spell will catch here, and the air tastes of old pennies"]}, "ambushText": ["things that hate magic wait in the stillness for casters to stumble in"], "wonder": {"kind": "hush", "text": ["In {name} no magic works: spells die on the lips, and every ward goes dark."]}},
+    {"id": "well", "name": "wishing well", "through": "past", "names": ["the {A} Well", "the Wishing Well of {B}", "{A}spring"], "words": ["Silver", "Moon", "Old", "Crooked", "Lucky", "Weeping", "Green"], "slow": 1.0, "danger": 0.1, "ambush": 0, "habitats": ["grassland", "forest"], "hazard": {"skill": "perception", "dc": 5, "die": 2, "text": ["moss-grown stones round a black, deep well"]}, "wonder": {"kind": "well", "gold": 40, "text": ["They stop at {name}, and {name2} drops a coin in and makes a wish."], "wish": ["The well hums. {name2}'s wish comes true in its fashion: their wounds close and a purse of old coins lies on the lip ({gold} gold)."], "boon": ["Something glints in the bucket: a stoppered vial of something red and warm."], "nothing": ["The coin falls a long way. Nothing happens, or nothing they notice."], "curse": ["The well laughs. {name2} goes cold to the bone, and the luck goes out of them until they're home."]}},
+    {"id": "ferry", "name": "black water", "through": "over", "barrier": "water", "names": ["the Ferryman's {A}", "{A} Mere of the Ferryman", "the {A} Crossing"], "words": ["Black", "Still", "Grey", "Bone", "Mist", "Long", "Cold"], "slow": 1.0, "danger": 0.4, "ambush": 0.1, "habitats": ["coast", "swamp"], "hazard": {"skill": "hazard", "dc": 10, "die": 4, "text": ["a cold mist hangs on the water"]}, "ambushText": ["something in the water follows the boat"], "wonder": {"kind": "ferry", "toll": 3, "text": ["A skeleton in a boatman's hood poles them over {name} for {toll} gold a head, and says nothing at all.", "The bone ferryman of {name} holds out a hand for {toll} gold each, and takes them over without a word."]}},
+    {"id": "boneyard", "name": "dragon bones", "through": "through", "names": ["the {A} Boneyard", "the Canyon of {B}'s Bones", "the {A} Ribs"], "words": ["Wyrm", "Old", "Great", "Red", "Sky", "Ash", "Sun"], "slow": 1.2, "danger": 0.5, "ambush": 0.4, "habitats": ["badlands", "desert", "hills", "tomb"], "hazard": {"skill": "hazard", "dc": 11, "die": 6, "text": ["ribs as tall as towers, and a wind that moans through them"]}, "ambushText": ["the bones of the lesser dead get up and come for them", "scavengers that nest in a dragon's skull"], "wonder": {"kind": "bones", "dc": 13, "skill": "nature", "gold": 25, "text": ["{name2} knows dragon bone from stone, and they cut away a fang worth {gold} gold.", "{name2} finds a scale the size of a shield among the ribs ({gold} gold)."], "missed": ["The bones are picked clean; whatever was worth taking went with older thieves."]}},
+    {"id": "fairy-ring", "name": "fey ring", "through": "through", "names": ["the {A} Fairy Ring", "the Dancing Green of {B}", "the {A} Toadstools"], "words": ["Moon", "Toad", "Mushroom", "Twilight", "Dew", "Merry", "Glimmer"], "slow": 1.0, "danger": 0.2, "ambush": 0.1, "habitats": ["forest", "grassland"], "hazard": {"skill": "perception", "dc": 8, "die": 2, "text": ["a ring of white mushrooms, and music very faint"]}, "ambushText": ["the dancers do not like to be interrupted"], "wonder": {"kind": "ring", "dc": 13, "skill": "insight", "text": ["{name2} hears the music and will not let the others dance: they walk round the ring, rested just by its nearness.", "They lie down by {name}, and wake whole and rested as if they'd slept a week."], "missed": ["They dance. When they stop, their purses are lighter and their potions drunk, and nobody remembers giving anything away."]}},
+    {"id": "oasis", "name": "oasis", "through": "by", "names": ["the {A} Oasis", "{B}'s Well", "the {A} Palms"], "words": ["Date", "Sweet", "Green", "Blue", "Jewel", "Shade", "Twin"], "slow": 1.0, "danger": 0.1, "ambush": 0.05, "habitats": ["desert"], "hazard": {"skill": "perception", "dc": 5, "die": 2, "text": ["palms and a pool of clean water"]}, "wonder": {"kind": "oasis", "themes": ["duneglass", "cinderwastes"], "text": ["They rest at {name}: shade, dates and clean water. Their skins are full again."]}},
+    {"id": "mirage", "name": "oasis", "through": "by", "names": ["the {A} Oasis", "{B}'s Well", "the {A} Palms"], "words": ["Date", "Sweet", "Green", "Blue", "Jewel", "Shade", "Twin"], "slow": 1.0, "danger": 0.1, "ambush": 0, "habitats": ["desert"], "hazard": {"skill": "perception", "dc": 5, "die": 2, "text": ["palms and a pool of clean water"]}, "wonder": {"kind": "mirage", "themes": ["duneglass", "cinderwastes"], "dc": 13, "skill": "perception", "monster": "glimmerpool", "text": ["{name2} sees the pool breathe, and they give {name} a wide berth. The bones round its edge are not all camels'."], "missed": ["The water is sweet and cold, right up until the pool opens its mouth."]}}
   ],
   "themes": {
     "greenmarch": ["tangle", "gorge", "barrows", "lake"],

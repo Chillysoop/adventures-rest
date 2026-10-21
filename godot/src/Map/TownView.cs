@@ -2101,6 +2101,7 @@ public partial class TownView(MapView map) : Node3D
             mi.Position = map.Gen.At(pin, site.Def.Aloft ? 9 + 0.4f * Mathf.Sin((float)Time.GetTicksMsec() / 1600f + StableHash(id) % 7) : -0.05f);
         }
         RopeBridges(town);
+        Wonders(town);
         // The river's bridges, where roads cross it (its fords are shallows in the water itself).
         var gen = map.Gen;
         for (int i = 0; i < gen.Crossings.Count; i++)
@@ -2140,6 +2141,155 @@ public partial class TownView(MapView map) : Node3D
             mi.Position = new Vector3(at.X, 0, at.Y);
             mi.Rotation = new Vector3(0, Mathf.Atan2(radial.X, radial.Y), 0);
         }
+    }
+
+    /// <summary>The strange places in the wilds and the old gateways' arches, each where it lies (<see cref="Wayfaring"/>).</summary>
+    private void Wonders(Town town)
+    {
+        var gen = map.Gen;
+        foreach (var f in town.Terrain)
+        {
+            if (f.Kind.Wonder is not { } w) continue;
+            string id = $"wonder:{f.Id}";
+            if (_landmarks.ContainsKey(id)) continue;
+            double mid = (f.Inner + f.Outer) / 2, b = f.Bearing * Math.PI / 180;
+            var at = Geo.FromDays(mid * Math.Sin(b), -mid * Math.Cos(b));
+            var mi = new MeshInstance3D { Mesh = WonderMesh(w.Kind, Geo.Hash(StableHash(id))), MaterialOverride = Mats.Props };
+            AddChild(mi);
+            _landmarks[id] = mi;
+            mi.Position = gen.At(at, -0.05f);
+            mi.Rotation = new Vector3(0, (float)b, 0);
+        }
+        foreach (var g in town.Gateways)
+            foreach (var (x, y, end) in new[] { (g.Ax, g.Ay, 'a'), (g.Bx, g.By, 'b') })
+            {
+                string id = $"gate:{g.Id}:{end}";
+                string state = g.Open ? "open" : "shut";
+                if (_landmarks.TryGetValue(id, out var old) && (string)old.GetMeta("kind") == state) continue;
+                old?.QueueFree();
+                var mi = new MeshInstance3D { Mesh = GatewayArch(g.Open), MaterialOverride = Mats.Props };
+                mi.SetMeta("kind", state);
+                AddChild(mi);
+                _landmarks[id] = mi;
+                var at = Geo.FromDays(x, y);
+                mi.Position = gen.At(at, -0.05f);
+                mi.Rotation = new Vector3(0, Mathf.Atan2(at.X - Geo.Center.X, at.Y - Geo.Center.Y), 0);
+            }
+    }
+
+    /// <summary>What a strange place looks like: a well, grey dead stones, a jetty and the ferryman's boat, a dragon's ribs, a fairy ring, palms by a pool.</summary>
+    private static ArrayMesh WonderMesh(string kind, float r)
+    {
+        var k = new MeshKit();
+        var stone = Palette.Kenney(new Color("8a8a96"));
+        var pale = new Color("b8b2a4");
+        var bone = new Color("e6dcc4");
+        switch (kind)
+        {
+            case "well":
+                k.Frustum(new Vector3(0, 0, 0), 0.9f, 0.9f, 0.7f, 10, new Color("8a8478"), new Color("1c2630"));
+                foreach (float x in new[] { -0.8f, 0.8f }) k.Box(new Vector3(x, 0.7f, 0), new Vector3(0.12f, 1.4f, 0.12f), Palette.DarkTimber);
+                k.Push(MeshKit.At(0, 2.1f, 0));
+                k.Gable(0, 2.0f, 1.2f, 0.6f, new Color("6a4a3a"), Palette.Timber);
+                k.Pop();
+                for (int i = 0; i < 5; i++) k.Add("nature/flower_yellowA", MeshKit.At(Mathf.Cos(i * 1.3f + r) * 1.8f, 0, Mathf.Sin(i * 1.3f + r) * 1.8f, i, 1.5f));
+                break;
+            case "hush":
+                // Grey stones in a dead circle, nothing growing between them.
+                k.Frustum(new Vector3(0, -0.02f, 0), 4.2f, 4.2f, 0.04f, 16, new Color("8c877c"), new Color("9a958a"));
+                for (int i = 0; i < 6; i++)
+                {
+                    float a = i * Mathf.Tau / 6 + r;
+                    k.Add(i % 2 == 0 ? "nature/stone_tallA" : "nature/stone_tallB", MeshKit.At(Mathf.Cos(a) * 3.2f, 0, Mathf.Sin(a) * 3.2f, a, 2.2f), c => c.Lerp(pale, 0.7f));
+                }
+                k.Add("nature/statue_obelisk", MeshKit.At(0, 0, 0, r, 2.6f), c => c.Lerp(pale, 0.6f));
+                break;
+            case "ferry":
+                // A rotten jetty and a black boat with a hooded skeleton at the pole.
+                k.Box(new Vector3(0, 0.15f, -2.2f), new Vector3(1.0f, 0.1f, 3.4f), Palette.DarkTimber);
+                foreach (float z in new[] { -3.6f, -2.2f, -0.8f }) foreach (float x in new[] { -0.45f, 0.45f }) k.Box(new Vector3(x, -1f, z), new Vector3(0.1f, 1.3f, 0.1f), Palette.DarkTimber);
+                k.Box(new Vector3(1.6f, -0.05f, 0.6f), new Vector3(1.0f, 0.35f, 3.0f), new Color("2a2420"), new Color("3a322a"));
+                k.Box(new Vector3(1.6f, 0.3f, 1.4f), new Vector3(0.22f, 0.9f, 0.22f), bone);
+                k.Frustum(new Vector3(1.6f, 1.2f, 1.4f), 0.22f, 0.05f, 0.5f, 6, new Color("1a1a22"));
+                k.Box(new Vector3(1.6f, 0.2f, 1.7f), new Vector3(0.05f, 2.4f, 0.05f), Palette.DarkTimber);
+                k.Box(new Vector3(0.9f, 0.45f, -0.5f), new Vector3(0.18f, 0.18f, 0.18f), new Color("7cd6ff", MeshKit.Flag.Magic));
+                break;
+            case "bones":
+                // A dragon's ribs arching out of the ground, its skull half buried.
+                for (int i = 0; i < 6; i++)
+                {
+                    float z = -4 + i * 1.5f, h = 2.6f + 1.2f * Mathf.Sin(i * 0.6f);
+                    foreach (float side in new[] { -1f, 1f })
+                        for (int s2 = 0; s2 < 6; s2++)
+                        {
+                            float t0 = s2 / 6f, t1 = (s2 + 1) / 6f;
+                            // Each rib curves up and in from the ground toward the spine.
+                            var a = new Vector3(side * 2.4f * Mathf.Cos(t0 * Mathf.Pi * 0.5f), h * Mathf.Sin(t0 * Mathf.Pi * 0.5f), z);
+                            var c = new Vector3(side * 2.4f * Mathf.Cos(t1 * Mathf.Pi * 0.5f), h * Mathf.Sin(t1 * Mathf.Pi * 0.5f), z);
+                            Segment(k, a, c, 0.2f, bone);
+                        }
+                }
+                k.Box(new Vector3(0, 0, 0), new Vector3(0.4f, 0.4f, 9f), bone);
+                k.Blob(new Vector3(0, 0.4f, 5.6f), new Vector3(1.4f, 0.9f, 1.8f), bone, 0.1f, 3);
+                break;
+            case "ring":
+                for (int i = 0; i < 14; i++)
+                {
+                    float a = i * Mathf.Tau / 14 + r;
+                    k.Add("nature/mushroom_redGroup", MeshKit.At(Mathf.Cos(a) * 2.6f, 0, Mathf.Sin(a) * 2.6f, a * 3, 3.2f), c => c.Lerp(new Color("f2eee0"), 0.6f));
+                }
+                for (int i = 0; i < 5; i++) k.Box(new Vector3(Mathf.Cos(i * 2.1f) * 1.2f, 1.2f + i * 0.2f, Mathf.Sin(i * 2.1f) * 1.2f), new Vector3(0.1f, 0.1f, 0.1f), new Color("d6ff9a", MeshKit.Flag.Magic));
+                break;
+            case "oasis":
+            case "mirage":
+                // Palms round a blue pool; the false one is the same, and that is the trouble.
+                k.Frustum(new Vector3(0, -0.04f, 0), 2.6f, 2.4f, 0.08f, 14, new Color("2f7f9a"), new Color("3a9ab4"));
+                for (int i = 0; i < 6; i++)
+                {
+                    float a = i * Mathf.Tau / 6 + r, d = 3.1f + 0.4f * Mathf.Sin(i * 1.7f);
+                    var c = new Vector3(Mathf.Cos(a) * d, 0, Mathf.Sin(a) * d);
+                    float h = 3.2f + (i % 3) * 0.5f;
+                    k.Frustum(c, 0.14f, 0.1f, h, 6, new Color("8a6a44"));
+                    // Fronds arching out and drooping from the crown.
+                    var crown = c + new Vector3(0, h, 0);
+                    for (int f = 0; f < 6; f++)
+                    {
+                        float fa = f * Mathf.Tau / 6 + a;
+                        var dir = new Vector3(Mathf.Cos(fa), 0, Mathf.Sin(fa));
+                        var mid = crown + dir * 0.7f + new Vector3(0, 0.25f, 0);
+                        Segment(k, crown, mid, 0.16f, new Color("5a9a40"));
+                        Segment(k, mid, mid + dir * 0.8f - new Vector3(0, 0.6f, 0), 0.13f, new Color("4f8a3a"));
+                    }
+                }
+                break;
+        }
+        return k.Build();
+    }
+
+    /// <summary>A square beam from one point to another (a rib, a frond).</summary>
+    private static void Segment(MeshKit k, Vector3 a, Vector3 b, float thick, Color col)
+    {
+        var d = b - a;
+        float len = d.Length();
+        if (len < 1e-4f) return;
+        var y = d / len;
+        var x = Mathf.Abs(y.Dot(Vector3.Up)) > 0.95f ? Vector3.Right : y.Cross(Vector3.Up).Normalized();
+        var z = x.Cross(y);
+        k.Push(new Transform3D(new Basis(x, y, z), a));
+        k.Box(Vector3.Zero, new Vector3(thick, len, thick), col);
+        k.Pop();
+    }
+
+    /// <summary>An old gateway's arch: two worn pillars and a lintel, the space between lit when it is open.</summary>
+    private static ArrayMesh GatewayArch(bool open)
+    {
+        var k = new MeshKit();
+        var stone = new Color("7a7e8a");
+        foreach (float x in new[] { -1.6f, 1.6f }) k.Box(new Vector3(x, 0, 0), new Vector3(0.7f, 4.4f, 0.7f), stone, new Color("8a8e9a"));
+        k.Box(new Vector3(0, 4.3f, 0), new Vector3(4.2f, 0.7f, 0.9f), stone, new Color("8a8e9a"));
+        k.Frustum(new Vector3(0, -0.05f, 0), 3.2f, 3.2f, 0.08f, 12, new Color("8a8478"));
+        k.Box(new Vector3(0, 0.1f, 0), new Vector3(2.4f, 4.1f, 0.06f), open ? new Color("8fd8ff", MeshKit.Flag.Magic) : new Color("2a2a32"));
+        return k.Build();
     }
 
     /// <summary>A bridge along +Z over a gorge: rope and planks sagging in the middle, cut and hanging down one wall, or a stone arch.</summary>

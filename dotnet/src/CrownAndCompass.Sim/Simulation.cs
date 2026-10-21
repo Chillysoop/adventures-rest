@@ -174,6 +174,7 @@ public sealed class Simulation
         Eggs.Daily(t);
         Poaching.Daily(t);
         Bridges.Daily(t, Options.AutoMayor);
+        Wayfaring.Daily(t);
         Ruins.Daily(t, Options.AutoMayor);
         Passage.Daily(t);
         Decor.Daily(t);

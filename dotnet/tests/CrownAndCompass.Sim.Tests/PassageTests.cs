@@ -179,7 +179,8 @@ public class PassageTests
         for (int seed = 1; seed <= 30 && seen < 3; seed++)
         {
             var t = new Simulation(new SimulationOptions { Seed = seed }).Town;
-            foreach (var f in t.Terrain.Where(f => f.Kind.Barrier != ""))
+            // The bone ferryman's water is the one anyone crosses (WayfaringTests).
+            foreach (var f in t.Terrain.Where(f => f.Kind.Barrier != "" && f.Kind.Wonder == null))
             {
                 // Straight through the middle of it, from just short of it to just past it.
                 double mid = (f.Inner + f.Outer) / 2, a = f.Bearing * Math.PI / 180;

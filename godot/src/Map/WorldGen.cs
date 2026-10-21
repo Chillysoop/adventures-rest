@@ -401,7 +401,11 @@ public sealed class WorldGen
             ChunkTrees[i] = [];
             ChunkScatter[i] = [];
         }
-        var pins = geo.Pins.Values.ToArray();
+        // Sites, and the strange places and gateway arches of the wilds (Wayfaring), stand in clearings of their own.
+        var pins = geo.Pins.Values
+            .Concat(_town.Terrain.Where(t => t.Kind.Wonder != null).Select(t => Geo.FromDays((t.Inner + t.Outer) / 2 * Math.Sin(t.Bearing * Math.PI / 180), -(t.Inner + t.Outer) / 2 * Math.Cos(t.Bearing * Math.PI / 180))))
+            .Concat(_town.Gateways.SelectMany(g => new[] { Geo.FromDays(g.Ax, g.Ay), Geo.FromDays(g.Bx, g.By) }))
+            .ToArray();
         int count = 0;
         for (int y = 0; y < N; y++)
             for (int x = 0; x < N; x++)

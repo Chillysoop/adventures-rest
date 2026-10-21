@@ -44,6 +44,9 @@ public sealed class Options
     public string? Style;
     public bool Clean;
     public string? Site;
+
+    /// <summary>--wonder kind aims the camera at the first strange place of that kind (well, hush, ferry, bones, ring, oasis, mirage, gate).</summary>
+    public string? Wonder;
     /// <summary>Aim the camera at the first finished building with this id.</summary>
     public string? At;
     public string? Screenshot;
@@ -192,6 +195,7 @@ public sealed class Options
                 case "--tax": o.Tax = double.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture); break;
                 case "--scroll": o.Scroll = float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture); break;
                 case "--site": o.Site = Next(); break;
+                case "--wonder": o.Wonder = Next(); break;
                 case "--at": o.At = Next(); break;
                 case "--screenshot": o.Screenshot = Next(); break;
                 case "--frames": o.Frames = int.Parse(Next()); break;
