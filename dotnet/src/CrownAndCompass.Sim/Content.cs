@@ -327,6 +327,9 @@ public sealed record SiteDef
 
     /// <summary>Known to the town from the charter (the local menace); every other site starts as tavern talk at best.</summary>
     public bool Known { get; init; }
+
+    /// <summary>The ready-made enemy group holding it (groups.json), or "": its foes, boss and lineage come from the group.</summary>
+    public string Group { get; init; } = "";
 }
 
 /// <summary>Town-wide economic rules.</summary>
@@ -833,6 +836,41 @@ public sealed record RingDef
     public int Regions { get; init; }
 }
 
+/// <summary>
+/// A ready-made enemy group (groups.json): a site of its own in the themes it names, held by its own
+/// creatures and bosses rather than whatever the country breeds, and heir to its own lineage in history.json.
+/// </summary>
+public sealed record GroupDef
+{
+    public required string Id { get; init; }
+    public string Name { get; init; } = "";
+
+    /// <summary>The history.json lineage its menaces carry (its own, or an existing enemy it is a version of).</summary>
+    public string Lineage { get; init; } = "";
+
+    /// <summary>Region themes it may hold a site in.</summary>
+    public IReadOnlyList<string> Themes { get; init; } = [];
+    public IReadOnlyList<string> Names { get; init; } = [];
+    public IReadOnlyList<string> Habitats { get; init; } = [];
+    public IReadOnlyList<string> Deck { get; init; } = [];
+
+    /// <summary>Library monster ids that wander its site and escort its boss.</summary>
+    public IReadOnlyList<string> Foes { get; init; } = [];
+
+    /// <summary>Library monster ids that may lead it.</summary>
+    public IReadOnlyList<string> Bosses { get; init; } = [];
+
+    /// <summary>Encounter lines by deck kind ("wander", "boss"...), used before the theme's own.</summary>
+    public Dictionary<string, List<string>> Texts { get; init; } = [];
+}
+
+public sealed record GroupRules
+{
+    /// <summary>Chance a generated site in a theme with groups goes to one of them instead, when one fits its level.</summary>
+    public double Chance { get; init; }
+    public IReadOnlyList<GroupDef> Groups { get; init; } = [];
+}
+
 /// <summary>A kind of adventure site a region theme can hold: how it is named and what its deck is made of.</summary>
 public sealed record SiteKindDef
 {
@@ -1288,6 +1326,7 @@ public sealed class Content
 
     /// <summary>How lairs grow, act and are resettled.</summary>
     public LairRules Lairs { get; init; } = new();
+    public GroupRules Groups { get; init; } = new();
 
     /// <summary>How taverns trade in rumours.</summary>
     public RumorRules Rumors { get; init; } = new();
@@ -1491,12 +1530,25 @@ public sealed class Content
         : id.EndsWith("@boss", StringComparison.Ordinal) ? BossOf(id[..^5])
         : throw new KeyNotFoundException($"Unknown monster {id}");
 
-    /// <summary>Library creatures that can wander into a site: any of its habitats, inside the challenge range, with an attack to fight with.</summary>
-    public List<MonsterDef> Wanderers(SiteDef site, double[] cr) =>
-        Library.Monsters
+    /// <summary>Library creatures that can wander into a site: any of its habitats, inside the challenge range, with an attack to fight with. A group's site draws from the group's own foes when any fit the range.</summary>
+    public List<MonsterDef> Wanderers(SiteDef site, double[] cr)
+    {
+        if (Group(site.Group) is GroupDef g)
+        {
+            var own = Library.Monsters
+                .Where(lm => g.Foes.Contains(lm.Id) && lm.Damage != null && lm.Cr >= cr[0] && lm.Cr <= cr[^1] && lm.Band != "")
+                .Select(lm => _monsters[lm.Id])
+                .ToList();
+            if (own.Count > 0) return own;
+        }
+        return Library.Monsters
             .Where(lm => lm.Damage != null && lm.Cr >= cr[0] && lm.Cr <= cr[^1] && lm.Band != "" && !lm.Boss && lm.Habitats.Any(site.Habitats.Contains))
             .Select(lm => _monsters[lm.Id])
             .ToList();
+    }
+
+    /// <summary>The ready-made enemy group with this id, or null for "" and unknown ids.</summary>
+    public GroupDef? Group(string id) => id == "" ? null : Groups.Groups.FirstOrDefault(g => g.Id == id);
 
     public BuildingDef Building(string id) =>
         _buildings.TryGetValue(id, out var b) ? b : throw new KeyNotFoundException($"Unknown building {id}");
@@ -1538,6 +1590,7 @@ public sealed class Content
             Roads = Parse<RoadRules>("roads.json"),
             Rumors = Parse<RumorRules>("rumors.json"),
             Lairs = Parse<LairRules>("lairs.json"),
+            Groups = Parse<GroupRules>("groups.json"),
             Shrines = Parse<ShrineRules>("shrines.json"),
             Faith = Parse<FaithRules>("faith.json"),
             Factions = Parse<FactionRules>("factions.json"),
