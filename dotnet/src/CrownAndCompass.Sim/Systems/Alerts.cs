@@ -62,6 +62,8 @@ public static class Alerts
     public static readonly AlertKind Stores = new("stores", "Winter stores", "bread", AlertLevel.Decision, AlertWindow.City);
     public static readonly AlertKind Fealty = new("fealty", "Demands for fealty", "warband", AlertLevel.Decision, AlertWindow.Campaign);
     public static readonly AlertKind Doom = new("doom", "End-game crises", "warband", AlertLevel.Urgent, AlertWindow.Campaign);
+    public static readonly AlertKind DarkQuest = new("darkquest", "The big bad's quest", "warband", AlertLevel.Urgent, AlertWindow.Campaign);
+    public static readonly AlertKind Road = new("road", "A road to victory", "favour", AlertLevel.Decision, AlertWindow.Campaign);
     public static readonly AlertKind Clash = new("clash", "Enemies clash", "warband", AlertLevel.Decision, AlertWindow.Campaign);
     public static readonly AlertKind Traitor = new("traitor", "A traitor on the council", "mandate", AlertLevel.Decision, AlertWindow.Council);
     public static readonly AlertKind Scholars = new("scholars", "Idle scholars", "d20", AlertLevel.Minor, AlertWindow.Library);
@@ -106,7 +108,7 @@ public static class Alerts
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Sighted, Lurker, Captives, Doom, Crisis, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Balance, Fealty, Clash, Traitor, Plot, Stores, Story, Scry, Explorers, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Loot, Stalled, Bridge, Ruin, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Outpost, Housing, Crowded];
+        [Siege, Sighted, Lurker, Captives, Doom, Crisis, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Balance, Fealty, DarkQuest, Road, Clash, Traitor, Plot, Stores, Story, Scry, Explorers, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Loot, Stalled, Bridge, Ruin, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Outpost, Housing, Crowded];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
     public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Allies, Word, Crowds, Keepers, Outposts, Lists];
@@ -193,6 +195,13 @@ public static class Alerts
         foreach (var (mole, a, b) in Infiltration.Whispered(t))
             yield return new($"traitor:{mole.Id}", Traitor, $"{a.GivenName} or {b.GivenName}?",
                 $"The taverns say {a.Name} or {b.Name} serves {mole.By}. Name one before the council in the Council window, or wait for the watch to find proof while the traitor works.");
+        if (DarkQuests.Current(t) is { } dq && Quests.Site(t, dq.SiteId) is { } dqs)
+            yield return new($"darkquest:{dq.Def}", DarkQuest, $"Stop {Saga.BigBad(t)!.Leader}'s quest",
+                $"{DarkQuests.Describe(t, dq)} Clear {dqs.Def.Name} within {Days(DarkQuests.DaysLeft(t))} and it will not have it: post a bounty there.", SiteId: dqs.Def.Id);
+        if (Saga.BigBad(t) is { Alive: true } bb)
+            foreach (var d in Victory.Roads(t).Where(d => Victory.ClaimBlocked(t, d.Id) == null))
+                yield return new($"road:{d.Id}", Road, $"Claim {d.Name}",
+                    $"Every term of {d.Name} holds. Claim it in the Campaign window: {bb.Name} marches at once, and the terms must hold {Days(d.Hold)} more to win.");
         if (Menaces.PendingDemand(t) is { } dm)
             yield return new($"demand:{dm.Id}", Fealty, "A demand for fealty", $"{Cap(dm.Name)} wants the town as its vassal. Bend the knee or refuse in the Campaign window; silence is a refusal.");
     }
