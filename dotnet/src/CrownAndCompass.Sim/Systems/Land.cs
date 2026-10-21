@@ -14,6 +14,34 @@ public static class Land
     /// <summary>Cells to a side of the town plan.</summary>
     public const int Size = Town.Grid * Res;
 
+    /// <summary>
+    /// The box of cells round everything zoned, taken or paved, grown by <paramref name="margin"/> cells and kept inside the plan:
+    /// whole-plan searches walk only this, since the town's ground never reaches past it. Kept for the plan's version.
+    /// </summary>
+    public static (int X0, int Y0, int X1, int Y1) Bounds(LandPlan plan, int margin)
+    {
+        if (plan.BoundsSeen != plan.Version)
+        {
+            int n = Size, x0 = n, y0 = n, x1 = -1, y1 = -1;
+            for (int y = 0; y < n; y++)
+                for (int x = 0; x < n; x++)
+                {
+                    int i = y * n + x;
+                    if (plan.Zones[i] == 0 && plan.Taken[i] == 0 && plan.Paved[i] == 0) continue;
+                    if (x < x0) x0 = x;
+                    if (x > x1) x1 = x;
+                    if (y < y0) y0 = y;
+                    if (y > y1) y1 = y;
+                }
+            // An empty plan: the middle few cells, so loops stay well formed.
+            if (x1 < 0) (x0, y0, x1, y1) = (n / 2, n / 2, n / 2, n / 2);
+            plan.Box = (x0, y0, x1, y1);
+            plan.BoundsSeen = plan.Version;
+        }
+        var b = plan.Box;
+        return (Math.Max(0, b.X0 - margin), Math.Max(0, b.Y0 - margin), Math.Min(Size - 1, b.X1 + margin), Math.Min(Size - 1, b.Y1 + margin));
+    }
+
     /// <summary>A building's footprint in cells (width along its front, depth front to back).</summary>
     public static (int W, int D) Footprint(BuildingDef d)
     {
@@ -335,7 +363,8 @@ public static class Land
             bool spare = z is (byte)Zone.None or (byte)Zone.Civic;
             candidates.Add((dist + Jitter(i) * 0.6 + (spare ? 0 : 1000), i));
         }
-        foreach (var (_, i) in candidates.OrderBy(c => c.Score).ThenBy(c => c.Cell))
+        // Taken nearest first, a band of scores at a time, so a town that finds room near the hall never sorts the whole plan.
+        foreach (var (_, i) in Banded(candidates))
         {
             // Nudged off the cell centre, so nothing lines up on the plan's raster.
             double x = (i % Size + ox + (Jitter(i * 7 + 1) - 0.5) * 0.8) / Res, y = (i / Size + oy + (Jitter(i * 7 + 2) - 0.5) * 0.8) / Res;
@@ -349,6 +378,19 @@ public static class Land
     }
 
     private static readonly double[] Bends = [0, 0.2, -0.2, 0.4, -0.4, 0.7, -0.7];
+
+    /// <summary>Candidates in score order (ties by cell), sorted lazily in doubling bands of score.</summary>
+    private static IEnumerable<(double Score, int Cell)> Banded(List<(double Score, int Cell)> all)
+    {
+        if (all.Count == 0) yield break;
+        double top = all.Max(c => c.Score), lo = double.NegativeInfinity, hi = 8;
+        while (true)
+        {
+            foreach (var c in all.Where(c => c.Score >= lo && c.Score < hi).OrderBy(c => c.Score).ThenBy(c => c.Cell)) yield return c;
+            if (hi > top) yield break;
+            (lo, hi) = (hi, hi * 2);
+        }
+    }
 
     /// <summary>A building placed by hand at any point and heading (null faces the nearest street); it takes any unbuilt ground off the streets.</summary>
     public static Lot? At(Town town, BuildingDef def, double x, double y, double? yaw = null)
@@ -449,14 +491,21 @@ public static class Land
     /// Zone a round patch of open ground, centred on the open cell in a ring the charter reaches with the lowest
     /// <paramref name="key"/> (x, y, distance from the hall; null passes the cell over). Returns false when there's no room.
     /// </summary>
+    /// <summary>Tiles past the town's ground a painted patch may lie (<see cref="PaintPatch(Town, Zone, double, Func{double, double, double, double?}, byte)"/>).</summary>
+    public const int PatchReach = 16;
+
     public static bool PaintPatch(Town town, Zone zone, double radius, Func<double, double, double, double?> key, byte crop = 0)
     {
         var plan = town.Plan;
         int best = -1;
         double bestKey = double.MaxValue;
         var gardens = Gardens(town);
-        for (int i = 0; i < plan.Zones.Length; i++)
+        // A patch goes beside the town as it stands, never out in the empty land past it: the box round its ground and a few tiles more.
+        var (x0, y0, x1, y1) = Bounds(plan, PatchReach * Res);
+        for (int cy = y0; cy <= y1; cy++)
+        for (int cx = x0; cx <= x1; cx++)
         {
+            int i = cy * Size + cx;
             if (plan.Zones[i] != (byte)Zone.None || plan.Taken[i] != 0 || plan.Grounds[i] != 0) continue;
             double x = (i % Size + 0.5) / Res, y = (i / Size + 0.5) / Res;
             double dist = Math.Sqrt((x - Town.Center) * (x - Town.Center) + (y - Town.Center) * (y - Town.Center));
@@ -530,6 +579,23 @@ public sealed class LandPlan
 
     [field: NotSaved]
     public int GrowthSeen { get; set; } = -1;
+
+    /// <summary>Distance to the nearest built or paved cell, and which, for <see cref="BuiltSeen"/> (Streets.Built).</summary>
+    [field: NotSaved]
+    public float[]? BuiltDist { get; set; }
+
+    [field: NotSaved]
+    public int[]? BuiltNear { get; set; }
+
+    [field: NotSaved]
+    public int BuiltSeen { get; set; } = -1;
+
+    /// <summary>The box round every zoned, taken or paved cell, for <see cref="BoundsSeen"/> (<see cref="Land.Bounds"/>).</summary>
+    [field: NotSaved]
+    public (int X0, int Y0, int X1, int Y1) Box { get; set; }
+
+    [field: NotSaved]
+    public int BoundsSeen { get; set; } = -1;
 
     /// <summary>The ward each cell lies in (<see cref="Land.WardAt"/>).</summary>
     [field: NotSaved]
