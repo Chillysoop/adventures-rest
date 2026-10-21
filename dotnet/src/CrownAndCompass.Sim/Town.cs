@@ -422,6 +422,9 @@ public sealed class Town
 
     /// <summary>Enemies on the move that someone saw and reported (<see cref="Systems.Sightings"/>), and how many reports there have been.</summary>
     public List<Systems.Sighting> Sightings { get; } = [];
+
+    /// <summary>Every foe and power the town has come across, in the order it met them (<see cref="Systems.Discovery"/>).</summary>
+    public List<Systems.Meeting> Discovered { get; } = [];
     public int SightingCount { get; set; }
 
     /// <summary>Enemies' agents loose in town, looking over what they mean to strike tonight (<see cref="Systems.Lurkers"/>).</summary>
@@ -490,6 +493,9 @@ public sealed class Town
     /// <summary>Days of festival left.</summary>
     public int FestivalDays { get; set; }
 
+    /// <summary>Tick the last festival began, by motion or by the mayor's own word, or null before the first.</summary>
+    public int? FestivalTick { get; set; }
+
     public EnemyState Enemy { get; } = new();
 
     /// <summary>The campaign arc: its acts, the menaces abroad, and the town's dread (<see cref="Systems.Saga"/>).</summary>
@@ -507,6 +513,9 @@ public sealed class Town
 
     /// <summary>Trees, benches, lamps, statues: the set dressing the player has placed (<see cref="Systems.Decor"/>).</summary>
     public DecorState Decor { get; } = new();
+
+    /// <summary>The charter goals met in the first days (<see cref="Systems.Goals"/>).</summary>
+    public Systems.GoalsState Goals { get; } = new();
 
     /// <summary>The turning year: festival days and the visitors (<see cref="Systems.Seasons"/>).</summary>
     public SeasonState Seasons { get; } = new();
@@ -544,6 +553,9 @@ public sealed class Town
 
     /// <summary>The city's institutions, in the order they opened (<see cref="Systems.Institutions"/>).</summary>
     public List<Systems.InstitutionState> Institutions { get; } = [];
+
+    /// <summary>The institutions the town has heard of, with what revealed each; the rest stay blank slots (<see cref="Systems.Institutions.Seen"/>).</summary>
+    public OrderedMap<string, string> InstitutionsSeen { get; } = new();
 
     /// <summary>The yearly tourney: this year's draw, heats and bets, and past champions (<see cref="Systems.Tournaments"/>).</summary>
     public Systems.TourneyState Tourney { get; } = new();

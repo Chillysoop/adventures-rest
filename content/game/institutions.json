@@ -31,6 +31,8 @@
       "id": "temple-district",
       "name": "the Temple District",
       "building": "temple",
+      "icon": "inst-temple-district",
+      "sparks": ["craft:priest:1", "craft:acolyte:1", "building:shrine"],
       "adopt": true,
       "title": "High Priest",
       "blurb": "The temple and the shrines around it, with their almshouses, pilgrims' hostels and processions. The council decides which god's house gets the best ground and the council's coin, and that god's blessing falls on the town.",
@@ -118,6 +120,8 @@
       "id": "adventurers-hall",
       "name": "the Adventurers' Hall",
       "building": "adventurers_hall",
+      "icon": "inst-adventurers-hall",
+      "sparks": ["heroes:1"],
       "title": "Hallmaster",
       "blurb": "Where companies register, read the contract board and gear up. Contract fees pay the town a little, and the hall's specialty shapes what its members are good for.",
       "service": {
@@ -185,6 +189,8 @@
       "id": "grand-bazaar",
       "name": "the Grand Bazaar",
       "building": "grand_bazaar",
+      "icon": "inst-grand-bazaar",
+      "sparks": ["routes:1", "craft:factor:1"],
       "title": "Bazaar Warden",
       "blurb": "A caravanserai with stalls for visiting merchants and lodging for their beasts. The town can run one more trade route, and the warden decides which far-off traders get the best pitches.",
       "service": {
@@ -259,6 +265,8 @@
       "id": "druid-grove",
       "name": "the Druid Grove",
       "building": "druid_grove",
+      "icon": "inst-druid-grove",
+      "sparks": ["hero:druid:3", "craft:herbalist:2", "folk:elf:6"],
       "title": "Grove Warden",
       "blurb": "A patch of living wilderness inside the town: an ancient tree, a sacred pool and the druids who tend them. The fields bear more, the air is sweeter, and the grove has its own opinions.",
       "service": {
@@ -336,6 +344,8 @@
       "id": "famous-tavern",
       "name": "the town's famous tavern",
       "building": "tavern",
+      "icon": "inst-famous-tavern",
+      "sparks": ["building:tavern"],
       "adopt": true,
       "tier": "hamlet",
       "title": "Proprietor",
@@ -399,6 +409,8 @@
       "id": "wizards-library",
       "name": "the Wizards' Library",
       "building": "library",
+      "icon": "inst-wizards-library",
+      "sparks": ["hero:wizard:4", "books:2", "building:library"],
       "title": "Loremaster",
       "blurb": "The town's library, grown into a house of wizards: reading rooms, a warded vault for the spellbooks, and the wizards the books draw to town. The council decides which school the wizards put first, and the library's keeper speeds the scholars' work.",
       "service": {
@@ -469,6 +481,8 @@
       "id": "paladin-chapterhouse",
       "name": "the Paladin Chapterhouse",
       "building": "chapterhouse",
+      "icon": "inst-paladin-chapterhouse",
+      "sparks": ["hero:paladin:5", "hero:cleric:6", "craft:priest:4"],
       "tier": "village",
       "title": "Knight-Commander",
       "blurb": "A fortified hall where an order of paladins keeps its vigil, trains its squires and judges its own. Its oath shapes what the knights do for the town, and a knight who breaks it is the town's problem too.",
@@ -543,6 +557,8 @@
       "id": "alchemists-quarter",
       "name": "the Alchemists' Quarter",
       "building": "alchemists_quarter",
+      "icon": "inst-alchemists-quarter",
+      "sparks": ["craft:alchemist:1", "craft:herbalist:3"],
       "tier": "village",
       "title": "Master Alchemist",
       "blurb": "A crooked lane of stills, kilns and coloured smoke where alchemists brew for the town. Potions and dyes flow out; now and then so does something that was meant to stay in the jar.",
@@ -619,6 +635,8 @@
       "id": "artificers-foundry",
       "name": "the Artificers' Foundry",
       "building": "artificers_foundry",
+      "icon": "inst-artificers-foundry",
+      "sparks": ["craft:smith:3", "folk:gnome:7", "folk:dwarf:9"],
       "tier": "town",
       "title": "Forgemaster",
       "blurb": "Furnaces, lathes and a great water-wheel, where artificers build clockwork, engines and the odd marvel. Better tools and faster building, and inventions with minds of their own.",
@@ -686,6 +704,8 @@
       "id": "grand-arena",
       "name": "the Grand Arena",
       "building": "arena",
+      "icon": "inst-grand-arena",
+      "sparks": ["building:arena", "hero:fighter:6", "heroes:12"],
       "adopt": true,
       "tier": "city",
       "title": "Arena Master",
@@ -754,6 +774,8 @@
       "id": "bards-college",
       "name": "the Bards' College",
       "building": "theatre",
+      "icon": "inst-bards-college",
+      "sparks": ["hero:bard:4", "craft:player:2", "building:theatre"],
       "adopt": true,
       "tier": "large_town",
       "title": "Dean of Bards",
@@ -823,6 +845,8 @@
       "id": "undercity-gate",
       "name": "the Undercity Gate",
       "building": "undercity_gate",
+      "icon": "inst-undercity-gate",
+      "sparks": ["craft:quarrier:5", "hero:rogue:5"],
       "tier": "village",
       "title": "Gatewarden",
       "blurb": "A warded gatehouse over the stair down into the cellars, the sewers and whatever lies under them. Its warden keeps a ledger of everyone who goes down and everyone who comes back, and the dark below stirs slower for it.",
@@ -896,6 +920,8 @@
       "id": "griffon-roost",
       "name": "the Griffon Roost",
       "building": "griffon_roost",
+      "icon": "inst-griffon-roost",
+      "sparks": ["hero:ranger:6", "craft:sentry:5"],
       "tier": "town",
       "title": "Roostmaster",
       "blurb": "A timber tower of perches and nesting ledges where riders keep a flight of griffons. They wheel over the roads and the walls, and nothing sneaks up on a town that is watched from the sky.",
@@ -963,6 +989,8 @@
       "id": "sky-dock",
       "name": "the Sky Dock",
       "building": "sky_dock",
+      "icon": "inst-sky-dock",
+      "sparks": ["folk:gnome:10", "partner:gnomes"],
       "tier": "city",
       "title": "Dockmaster",
       "blurb": "A mooring mast, a gasbag shed and a crew of gnome riggers who keep the town's airship flying. One company at a time sails out in it, straight over whatever water or mountain stands in the way, and is carried home again.",
@@ -1014,6 +1042,8 @@
       "id": "monster-sanctuary",
       "name": "the Monster Sanctuary",
       "building": "monster_sanctuary",
+      "icon": "inst-monster-sanctuary",
+      "sparks": ["hero:druid:7", "hero:ranger:7", "craft:shepherd:8"],
       "tier": "large_town",
       "title": "Beastwarden",
       "blurb": "Walled pens, deep pools and a great iron aviary where wounded or orphaned monsters are kept, studied and sometimes healed. The town both loves and fears it, and visitors come from far away to stare.",
@@ -1087,6 +1117,8 @@
       "id": "cursed-auction-house",
       "name": "the Auction House of Marrow Lane",
       "building": "auction_house",
+      "icon": "inst-cursed-auction-house",
+      "sparks": ["delves:10", "hero:warlock:6"],
       "tier": "large_town",
       "title": "Auctioneer",
       "blurb": "A grand, gloomy hall where relics from ruins and dead adventurers' estates go under the hammer. The prices are excellent. Some of the lots are cursed. The auctioneer will not say which.",
@@ -1160,6 +1192,8 @@
       "id": "fey-market",
       "name": "the Fey Market",
       "building": "fey_market",
+      "icon": "inst-fey-market",
+      "sparks": ["folk:elf:9", "partner:elves", "hero:warlock:4"],
       "tier": "town",
       "title": "Market Warden",
       "blurb": "On moonlit nights a market of stalls that were not there by day: fey traders selling bottled laughter, glass apples and luck by the ounce. Everything has a price, and not all prices are paid in coin.",
@@ -1233,6 +1267,8 @@
       "id": "oracle-observatory",
       "name": "the Oracle's Observatory",
       "building": "observatory",
+      "icon": "inst-oracle-observatory",
+      "sparks": ["book:divination:3", "craft:cartographer:3", "wizard:7"],
       "tier": "city",
       "title": "Oracle",
       "blurb": "A domed tower of brass and glass where the oracle reads stars, smoke and bones. Some of what she sees comes true. The trick is knowing which.",
@@ -1302,6 +1338,8 @@
       "id": "dungeon-entrance",
       "name": "the Delve",
       "building": "dungeon_entrance",
+      "icon": "inst-dungeon-entrance",
+      "sparks": ["craft:quarrier:4", "folk:dwarf:8", "partner:dwarves"],
       "tier": "town",
       "title": "Delvemaster",
       "blurb": "Diggers under the town broke into a buried hall of the Stonekings: stair below stair of giant-cut stone, sealed doors and older things behind them. A shaft, a winch and a ledger now stand over it, and companies come from far away to go down.",
@@ -1375,6 +1413,8 @@
       "id": "embassy-quarter",
       "name": "the Embassy Quarter",
       "building": "embassy_quarter",
+      "icon": "inst-embassy-quarter",
+      "sparks": ["routes:3"],
       "tier": "large_town",
       "title": "Chamberlain",
       "blurb": "A walled square of envoys' houses: a dwarven reception hall half under the ground, a pavilion of living trees, and a flooded courtyard for guests who would rather swim. The Chamberlain keeps the peace between them, and the trade roads open wider for it.",
@@ -1451,6 +1491,8 @@
       "id": "planar-gatehouse",
       "name": "the Gatehouse of Ways",
       "building": "planar_gate",
+      "icon": "inst-planar-gatehouse",
+      "sparks": ["wizard:9", "book:conjuration:5"],
       "tier": "city",
       "title": "Warden of Ways",
       "blurb": "A ring of black stone taller than the walls, raised on the pattern of the old Ashkaari gates, that opens on places no road reaches. What comes through is rich, strange and sometimes hungry, and the Warden of Ways decides which door stands open.",
@@ -1526,6 +1568,8 @@
       "id": "hall-of-heroes",
       "name": "the Hall of Heroes",
       "building": "hall_of_heroes",
+      "icon": "inst-hall-of-heroes",
+      "sparks": ["hero:any:6", "delves:15"],
       "tier": "town",
       "title": "Curator",
       "blurb": "A long, high hall of trophies, memorial stones and recovered relics, with the town's adventures painted on its walls. Retired heroes teach in its yard, visitors come to stare, and one pedestal near the door stands empty, waiting for the founding banner the town lost long ago.",
@@ -1594,6 +1638,8 @@
       "id": "resident-dragon",
       "name": "the Dragon's Eyrie",
       "building": "dragon_eyrie",
+      "icon": "inst-resident-dragon",
+      "sparks": ["hero:any:10", "delves:30"],
       "tier": "large_town",
       "title": "Dragon",
       "blurb": "A dragon has taken the old tower on the hill as its residence, by treaty. It guards the town, eats a great deal, collects things, and has opinions about all of them. Roofs are built steeper now, festivals have a dragon in them, and children dare each other to wave.",
@@ -2108,13 +2154,10 @@
             },
             {
               "label": "Turn them away",
-              "success": {
-                "text": "The pilgrims trudge on to another town. {keeperName} does not speak to the council for a week.",
-                "effects": {
-                  "goodwill": -10,
-                  "favour": -8
-                }
-              }
+              "skill": "persuasion",
+              "dc": 13,
+              "success": { "text": "You send them on to the next shrine with bread and a letter. {keeper} is cool about it, but understands.", "effects": { "goodwill": -5, "favour": -4 } },
+              "failure": { "text": "The pilgrims trudge on to another town. {keeperName} does not speak to the council for a week.", "effects": { "goodwill": -10, "favour": -8 } }
             }
           ]
         }
@@ -2230,6 +2273,8 @@
           "options": [
             {
               "label": "Sponsor a great festival",
+              "skill": "performance",
+              "dc": 13,
               "cost": 150,
               "prefer": 0.05,
               "success": {
@@ -2240,7 +2285,8 @@
                   "favour": 15,
                   "goodwill": 10
                 }
-              }
+              },
+              "failure": { "text": "It rains on the procession and the wine runs short, but the god is honoured, after a fashion.", "effects": { "festival": 2, "mandate": 1, "favour": 8, "goodwill": 5 } }
             },
             {
               "label": "A modest feast will do",
@@ -2301,6 +2347,8 @@
           "options": [
             {
               "label": "Keep the well and build around it",
+              "skill": "persuasion",
+              "dc": 13,
               "prefer": 0.05,
               "success": {
                 "text": "The well is cleaned and roofed. Townsfolk drink from it for luck.",
@@ -2309,7 +2357,8 @@
                   "favour": 12,
                   "timber": -8
                 }
-              }
+              },
+              "failure": { "text": "The builders curse every stone of the new line, and charge for it. The well is kept, at a price.", "effects": { "goodwill": 4, "favour": 8, "timber": -20, "mandate": -1 } }
             },
             {
               "label": "Build over it",
@@ -2373,6 +2422,8 @@
           "options": [
             {
               "label": "Investigate the ruin",
+              "skill": "investigation",
+              "dc": 13,
               "prefer": 0.05,
               "success": {
                 "text": "{heroName} comes back with a sketch map and a fistful of old coins. The way into {site} is known now.",
@@ -2382,10 +2433,13 @@
                   "goodwill": 3,
                   "gold": 20
                 }
-              }
+              },
+              "failure": { "text": "The ruin has been picked clean long since. The company comes back with nothing but dust.", "effects": { "goodwill": 1 } }
             },
             {
               "label": "Protect the trade road",
+              "skill": "athletics",
+              "dc": 13,
               "success": {
                 "text": "The caravan gets through without a scratch, and {people} remember who sent the guard.",
                 "effects": {
@@ -2393,7 +2447,8 @@
                   "gold": 30,
                   "goodwill": 3
                 }
-              }
+              },
+              "failure": { "text": "The bandits slip past the company in the night, and the caravan limps in a wagon short.", "effects": { "regard": 2, "goodwill": 1 } }
             },
             {
               "label": "Try to do both",
@@ -2538,14 +2593,10 @@
             },
             {
               "label": "Stand by the company",
-              "success": {
-                "text": "The council says finders keepers. {heroName} is grateful; {people} are not.",
-                "effects": {
-                  "loyalty": 5,
-                  "regard": -10,
-                  "goodwill": 4
-                }
-              }
+              "skill": "persuasion",
+              "dc": 13,
+              "success": { "text": "You stand by the company, and argue it well enough that {people} grumble rather than rage.", "effects": { "loyalty": 5, "regard": -6, "goodwill": 4 } },
+              "failure": { "text": "You stand by them, and {people} take it as a declaration. Their envoy stops coming to dinner.", "effects": { "loyalty": 5, "regard": -12, "goodwill": 2 } }
             },
             {
               "label": "Broker a ceremony to return what matters",
@@ -2627,13 +2678,10 @@
             },
             {
               "label": "They knew the risks",
-              "success": {
-                "text": "The council says so. {keeperName} says something worse.",
-                "effects": {
-                  "goodwill": -8,
-                  "loyalty": -4
-                }
-              }
+              "skill": "persuasion",
+              "dc": 12,
+              "success": { "text": "You say it at the hall, plainly, and pay for a lamp in the window. The companies grumble, but they knew.", "effects": { "goodwill": -4, "loyalty": -2 } },
+              "failure": { "text": "The council says so. {keeperName} says something worse.", "effects": { "goodwill": -8, "loyalty": -4 } }
             }
           ]
         }
@@ -2684,6 +2732,8 @@
             },
             {
               "label": "Let the trader sell, for a licence fee",
+              "skill": "persuasion",
+              "dc": 12,
               "prefer": 0.05,
               "success": {
                 "text": "A brisk trade in eggs, and a fat licence for the treasury.",
@@ -2692,7 +2742,8 @@
                   "goodwill": 4,
                   "tension": 1
                 }
-              }
+              },
+              "failure": { "text": "The trader pays a pittance and sells three hatchlings that bite. The bazaar is not amused.", "effects": { "gold": 10, "goodwill": 1, "tension": 2 } }
             },
             {
               "label": "Send the trader packing",
@@ -2733,6 +2784,8 @@
           "options": [
             {
               "label": "Guard the spice train",
+              "skill": "athletics",
+              "dc": 13,
               "success": {
                 "text": "The spices arrive safe and the bazaar does a week's trade in a day.",
                 "effects": {
@@ -2740,10 +2793,13 @@
                   "gold": 40,
                   "mandate": 1
                 }
-              }
+              },
+              "failure": { "text": "The spice train gets through, short two wagons, and the council asks why it paid for the other caravan to go hungry.", "effects": { "goodwill": 2, "mandate": -1 } }
             },
             {
               "label": "Guard the convoy",
+              "skill": "athletics",
+              "dc": 13,
               "prefer": 0.03,
               "success": {
                 "text": "The convoy gets through. {people} are pleased; {keeperName} is not.",
@@ -2751,7 +2807,8 @@
                   "regard": 8,
                   "goodwill": -4
                 }
-              }
+              },
+              "failure": { "text": "The convoy is raided anyway, and the bazaar is left to fend for itself as well.", "effects": { "regard": 3, "goodwill": -6 } }
             },
             {
               "label": "Hire sellswords for both",
@@ -2889,6 +2946,8 @@
             },
             {
               "label": "Let the Order of the Unshut Book bid",
+              "skill": "persuasion",
+              "dc": 13,
               "needs": [
                 "faction:unshut-book"
               ],
@@ -2899,7 +2958,8 @@
                   "gold": 50,
                   "goodwill": 3
                 }
-              }
+              },
+              "failure": { "text": "The Order bids low and gets them anyway; nobody else dares bid against it.", "effects": { "standing": 4, "gold": 20, "goodwill": 1 } }
             },
             {
               "label": "Have someone open the grimoire first",
@@ -2980,13 +3040,10 @@
             },
             {
               "label": "Tell the druids to live with it",
-              "success": {
-                "text": "The pool scums over. The druids say nothing, which is worse.",
-                "effects": {
-                  "goodwill": -10,
-                  "food": -15
-                }
-              }
+              "skill": "persuasion",
+              "dc": 12,
+              "success": { "text": "You promise the druids the tanneries will move when the town can afford it. They don't believe you, quite.", "effects": { "goodwill": -5, "food": -15 } },
+              "failure": { "text": "The pool scums over. The druids say nothing, which is worse.", "effects": { "goodwill": -10, "food": -15 } }
             }
           ]
         }
@@ -3049,13 +3106,10 @@
             },
             {
               "label": "Fence it in",
-              "success": {
-                "text": "Chains and posts. The oak stops, and the grove goes very quiet.",
-                "effects": {
-                  "goodwill": -15,
-                  "dread": 1
-                }
-              }
+              "skill": "nature",
+              "dc": 13,
+              "success": { "text": "You find a fence it doesn't mind: willow, woven by the druids. It stays put, sulking.", "effects": { "goodwill": -8 } },
+              "failure": { "text": "Chains and posts. The oak stops, and the grove goes very quiet.", "effects": { "goodwill": -15, "dread": 1 } }
             }
           ]
         }
@@ -3089,6 +3143,8 @@
           "options": [
             {
               "label": "Promise it",
+              "skill": "nature",
+              "dc": 13,
               "prefer": 0.1,
               "success": {
                 "text": "The druids sing to the saplings, and in a season a bridge stands where none did.",
@@ -3097,7 +3153,8 @@
                   "precedent:clean-river": 1,
                   "goodwill": 8
                 }
-              }
+              },
+              "failure": { "text": "The druids take the promise, but the bridge grows thin and slow, and they say the river can tell a half-meant oath.", "effects": { "fixture:living-bridge": 1, "precedent:clean-river": 1, "goodwill": 2 } }
             },
             {
               "label": "Ask for a bridge without promises",
@@ -3184,14 +3241,10 @@
             },
             {
               "label": "It's only dye",
-              "success": {
-                "text": "The bridge withers on one side. The druids say the town's word is worth nothing.",
-                "effects": {
-                  "goodwill": -20,
-                  "precedent:river-fouled": 1,
-                  "precedent:clean-river": -1
-                }
-              }
+              "skill": "persuasion",
+              "dc": 13,
+              "success": { "text": "You make the druids see it washes out in a season. They don't like it, but it won't be the end of the world.", "effects": { "goodwill": -10, "precedent:river-fouled": 1, "precedent:clean-river": -1 } },
+              "failure": { "text": "The bridge withers on one side. The druids say the town's word is worth nothing.", "effects": { "goodwill": -20, "precedent:river-fouled": 1, "precedent:clean-river": -1 } }
             }
           ]
         }
@@ -3254,14 +3307,10 @@
             },
             {
               "label": "Send hunters after the wolves",
-              "success": {
-                "text": "Wolves hang from the gate, and the grove's druids weep.",
-                "effects": {
-                  "goodwill": -10,
-                  "dread": 1,
-                  "timber": 10
-                }
-              }
+              "skill": "survival",
+              "dc": 13,
+              "success": { "text": "The hunters thin the pack and bring back timber from the edge. The grove is cold about it.", "effects": { "goodwill": -8, "timber": 10 } },
+              "failure": { "text": "The hunters come back two wolves short and one man down, and the woods are quieter in the worst way.", "effects": { "goodwill": -12, "dread": 2 } }
             }
           ]
         }
@@ -3447,12 +3496,10 @@
             },
             {
               "label": "Have them thrown out",
-              "success": {
-                "text": "{keeperName} does it, unhappily.",
-                "effects": {
-                  "goodwill": -3
-                }
-              }
+              "skill": "intimidation",
+              "dc": 12,
+              "success": { "text": "Out they go, without a fuss. Nobody misses them.", "effects": { "goodwill": -1 } },
+              "failure": { "text": "The stranger won't go quietly, and takes a table with them. The regulars are not pleased.", "effects": { "goodwill": -3, "tension": 1 } }
             }
           ]
         }
@@ -3483,6 +3530,8 @@
           "options": [
             {
               "label": "Give it to the tavern as a bouncer",
+              "skill": "animal-handling",
+              "dc": 12,
               "needs": [
                 "institution:famous-tavern"
               ],
@@ -3494,10 +3543,13 @@
                   "goodwill": 2,
                   "tension": -1
                 }
-              }
+              },
+              "failure": { "text": "It bites the landlord on its first night and has to be chained in the cellar.", "effects": { "goodwill": -2, "tension": 1 } }
             },
             {
               "label": "Let the temple bless and keep it",
+              "skill": "religion",
+              "dc": 13,
               "needs": [
                 "institution:temple-district"
               ],
@@ -3507,7 +3559,8 @@
                   "fixture:mimic-blessed": 1,
                   "favour": 8
                 }
-              }
+              },
+              "failure": { "text": "The blessing doesn't take. The priests keep it in the crypt, and sleep badly.", "effects": { "favour": 2, "goodwill": -1 } }
             },
             {
               "label": "Let the Quiet Hand train it",
@@ -3573,13 +3626,16 @@
           "options": [
             {
               "label": "Side with the grove",
+              "skill": "persuasion",
+              "dc": 12,
               "success": {
                 "text": "The tree keeps its bough. The priests find oak elsewhere, sourly.",
                 "effects": {
                   "goodwill": 8,
                   "goodwill2": -8
                 }
-              }
+              },
+              "failure": { "text": "You side with the grove, and the temple takes it as a slight on the god himself.", "effects": { "goodwill": 6, "goodwill2": -12 } }
             },
             {
               "label": "Side with the temple",
@@ -3645,6 +3701,8 @@
           "options": [
             {
               "label": "The hall's fee comes first",
+              "skill": "persuasion",
+              "dc": 12,
               "success": {
                 "text": "The hall takes its fee and the bazaar sulks.",
                 "effects": {
@@ -3652,7 +3710,8 @@
                   "goodwill2": -6,
                   "gold": 20
                 }
-              }
+              },
+              "failure": { "text": "The hall gets its fee, and the bazaar says it was robbed in daylight.", "effects": { "goodwill": 4, "goodwill2": -10, "gold": 20 } }
             },
             {
               "label": "The bazaar sells it, the bazaar's cut",
@@ -3719,6 +3778,8 @@
           "options": [
             {
               "label": "Embrace the fame",
+              "skill": "performance",
+              "dc": 12,
               "prefer": 0.05,
               "success": {
                 "text": "The ballad spreads. New faces fill the hall, and a few bloody noses with them.",
@@ -3728,7 +3789,8 @@
                   "tension": 1,
                   "renown": 2
                 }
-              }
+              },
+              "failure": { "text": "The fame brings the wrong sort: brawlers and chancers looking for a name of their own.", "effects": { "people": 1, "goodwill": 2, "tension": 3 } }
             },
             {
               "label": "Ask for a verse about the town",
@@ -3788,6 +3850,8 @@
           "options": [
             {
               "label": "Let them meet there, and listen",
+              "skill": "stealth",
+              "dc": 13,
               "success": {
                 "text": "{keeperName} keeps an ear to the wall. The town learns a great deal.",
                 "effects": {
@@ -3795,7 +3859,8 @@
                   "goodwill": 3,
                   "standing": -2
                 }
-              }
+              },
+              "failure": { "text": "They catch the listener in the rafters. The Hand is not pleased, and the tavern pays for it.", "effects": { "heat": 12, "goodwill": -2, "standing": -8 } }
             },
             {
               "label": "Let them meet, and leave them be",
@@ -3886,12 +3951,10 @@
             },
             {
               "label": "Let her keep it",
-              "success": {
-                "text": "The library writes the book off. {keeperName} writes the council a letter about it.",
-                "effects": {
-                  "goodwill": -8
-                }
-              }
+              "skill": "persuasion",
+              "dc": 12,
+              "success": { "text": "You make her promise to leave it to the library in her will. The librarians grumble, but accept it.", "effects": { "goodwill": -4 } },
+              "failure": { "text": "The library writes the book off. {keeperName} writes the council a letter about it.", "effects": { "goodwill": -8 } }
             }
           ]
         }
@@ -3922,13 +3985,16 @@
           "options": [
             {
               "label": "Let the chapter judge its own",
+              "skill": "insight",
+              "dc": 13,
               "success": {
                 "text": "The knight rides out of the gate at dawn without his spurs. The chapter is satisfied.",
                 "effects": {
                   "goodwill": 6,
                   "tension": -1
                 }
-              }
+              },
+              "failure": { "text": "The chapter whitewashes him, and the town notices.", "effects": { "goodwill": 6, "tension": 2, "mandate": -2 } }
             },
             {
               "label": "Ask for a second chance",
@@ -4021,12 +4087,10 @@
             },
             {
               "label": "Forbid it: the town needs them here",
-              "success": {
-                "text": "The knights stay and stand on the walls, sullen.",
-                "effects": {
-                  "goodwill": -8
-                }
-              }
+              "skill": "persuasion",
+              "dc": 13,
+              "success": { "text": "You make the knights see where the town's danger lies. They stay, sour but sworn.", "effects": { "goodwill": -4 } },
+              "failure": { "text": "The knights stay and stand on the walls, sullen.", "effects": { "goodwill": -8 } }
             }
           ]
         }
@@ -4057,13 +4121,16 @@
           "options": [
             {
               "label": "Give the square to the knights",
+              "skill": "persuasion",
+              "dc": 12,
               "success": {
                 "text": "The vigil is splendid, and the priests sulk in the side streets.",
                 "effects": {
                   "goodwill": 5,
                   "goodwill2": -5
                 }
-              }
+              },
+              "failure": { "text": "The knights get the square, and the temple says so from the pulpit every week.", "effects": { "goodwill": 3, "goodwill2": -8 } }
             },
             {
               "label": "Give the square to the temple",
@@ -4138,16 +4205,21 @@
             },
             {
               "label": "Make the quarter pay",
+              "skill": "intimidation",
+              "dc": 12,
               "success": {
                 "text": "{keeperName} pays, with very bad grace.",
                 "effects": {
                   "goodwill": -4,
                   "tension": -1
                 }
-              }
+              },
+              "failure": { "text": "The quarter won't pay, and says so loudly. You end up with neither the gold nor the goodwill.", "effects": { "goodwill": -6, "tension": 1 } }
             },
             {
               "label": "Order stone walls between the stills",
+              "skill": "investigation",
+              "dc": 13,
               "cost": 100,
               "success": {
                 "text": "The quarter grumbles and builds them. Nothing has burned since.",
@@ -4155,7 +4227,8 @@
                   "goodwill": -2,
                   "tension": -2
                 }
-              }
+              },
+              "failure": { "text": "The walls go up in the wrong places, and the alchemists have to knock half of them through.", "effects": { "goodwill": -4, "tension": -1 } }
             }
           ]
         }
@@ -4216,12 +4289,10 @@
             },
             {
               "label": "Refuse",
-              "success": {
-                "text": "The great work waits.",
-                "effects": {
-                  "goodwill": -3
-                }
-              }
+              "skill": "persuasion",
+              "dc": 12,
+              "success": { "text": "You point {keeperName} to a cheaper reagent in an old herbal. It isn't the same, but it'll do.", "effects": { "goodwill": -1 } },
+              "failure": { "text": "The great work waits.", "effects": { "goodwill": -3 } }
             }
           ]
         }
@@ -4252,13 +4323,16 @@
           "options": [
             {
               "label": "Side with the grove",
+              "skill": "persuasion",
+              "dc": 12,
               "success": {
                 "text": "The moonpetal stays. The alchemists find a substitute that works almost as well.",
                 "effects": {
                   "goodwill": -5,
                   "goodwill2": 6
                 }
-              }
+              },
+              "failure": { "text": "You side with the grove, and the alchemists say the town has chosen weeds over gold.", "effects": { "goodwill": -7, "goodwill2": 4 } }
             },
             {
               "label": "Side with the alchemists",
@@ -4396,6 +4470,8 @@
           "options": [
             {
               "label": "Grant licences on the council's terms",
+              "skill": "persuasion",
+              "dc": 13,
               "success": {
                 "text": "From now on, every invention is licensed by the town, for a fee. The artificers grumble and pay.",
                 "effects": {
@@ -4403,7 +4479,8 @@
                   "gold": 25,
                   "precedent:foundry-licence": 1
                 }
-              }
+              },
+              "failure": { "text": "The licences are granted, but the terms please nobody and the foundry sulks.", "effects": { "goodwill": -6, "gold": 10, "precedent:foundry-licence": 1 } }
             },
             {
               "label": "Let them build it together",
@@ -4425,12 +4502,7 @@
             },
             {
               "label": "Stay out of it",
-              "success": {
-                "text": "{keeperName} settles it by giving the furnace to a third artificer entirely.",
-                "effects": {
-                  "goodwill": -1
-                }
-              }
+              "success": { "text": "{keeperName} settles it by giving the furnace to a third artificer entirely.", "effects": { "goodwill": -3 } }
             }
           ]
         }
@@ -4461,6 +4533,8 @@
           "options": [
             {
               "label": "Order the book lent",
+              "skill": "intimidation",
+              "dc": 13,
               "success": {
                 "text": "The schematics come back oily and dog-eared, and the foundry builds something marvellous from them.",
                 "effects": {
@@ -4468,7 +4542,8 @@
                   "fixture:brass-gatekeeper": 1,
                   "tension": 1
                 }
-              }
+              },
+              "failure": { "text": "The librarians lend the book with the important pages missing. The foundry builds nothing from it.", "effects": { "goodwill": 3, "tension": 3 } }
             },
             {
               "label": "Pay a copyist",
@@ -4484,12 +4559,10 @@
             },
             {
               "label": "Side with the librarians",
-              "success": {
-                "text": "The book stays where it is. {keeperName} is not pleased.",
-                "effects": {
-                  "goodwill": -5
-                }
-              }
+              "skill": "persuasion",
+              "dc": 12,
+              "success": { "text": "You side with the librarians, but find the foundry a lesser book to work from. It helps a little.", "effects": { "goodwill": -3 } },
+              "failure": { "text": "The book stays where it is. {keeperName} is not pleased.", "effects": { "goodwill": -5 } }
             }
           ]
         }
@@ -4552,6 +4625,8 @@
             },
             {
               "label": "Pay the champion to lose",
+              "skill": "deception",
+              "dc": 13,
               "cost": 100,
               "success": {
                 "text": "The fight is thrilling and the result never in doubt. Only {keeperName} knows.",
@@ -4559,7 +4634,8 @@
                   "goodwill": 2,
                   "renown": 1
                 }
-              }
+              },
+              "failure": { "text": "The champion takes the gold and falls over far too soon. The crowd smells the fix.", "effects": { "goodwill": -4, "mandate": -2 } }
             }
           ]
         }
@@ -4673,6 +4749,8 @@
           "options": [
             {
               "label": "Laugh along",
+              "skill": "performance",
+              "dc": 12,
               "prefer": 0.05,
               "success": {
                 "text": "The mayor attends opening night and laughs loudest. The town warms to them.",
@@ -4681,7 +4759,8 @@
                   "goodwill": 6,
                   "precedent:free-stage": 1
                 }
-              }
+              },
+              "failure": { "text": "Your laugh comes a beat late and the whole house sees it. The play goes on, and so does the joke.", "effects": { "mandate": -1, "goodwill": 4, "precedent:free-stage": 1 } }
             },
             {
               "label": "Ask for the worst lines to be cut",
@@ -4744,6 +4823,8 @@
           "options": [
             {
               "label": "Let the bards embellish it",
+              "skill": "performance",
+              "dc": 12,
               "success": {
                 "text": "The ballad is magnificent and largely invented. {heroName} is famous for things they never did.",
                 "effects": {
@@ -4751,7 +4832,8 @@
                   "goodwill": 5,
                   "goodwill2": -3
                 }
-              }
+              },
+              "failure": { "text": "The bards embellish it so far that the companies in the hall laugh out loud at the dragon in the third verse.", "effects": { "renown": 1, "goodwill": 3, "goodwill2": -6 } }
             },
             {
               "label": "Insist on the truth",
@@ -4816,12 +4898,15 @@
           "options": [
             {
               "label": "Move them on",
+              "skill": "intimidation",
+              "dc": 12,
               "success": {
                 "text": "The troupe moves on, and the college's benches fill again.",
                 "effects": {
                   "goodwill": 5
                 }
-              }
+              },
+              "failure": { "text": "The rival troupe goes, but plays its last night in the square for free, and draws the bigger crowd.", "effects": { "goodwill": 2, "tension": 1 } }
             },
             {
               "label": "Invite them into the college",
@@ -4996,13 +5081,16 @@
             },
             {
               "label": "Sell it to an alchemist",
+              "skill": "persuasion",
+              "dc": 12,
               "success": {
                 "text": "An alchemist pays well for it and asks whether there are more.",
                 "effects": {
                   "gold": 60,
                   "goodwill": -1
                 }
-              }
+              },
+              "failure": { "text": "Nobody wants it at the asking price. It goes for a pittance to a man who doesn't say what for.", "effects": { "gold": 20, "goodwill": -2 } }
             }
           ]
         }
@@ -5033,6 +5121,8 @@
           "options": [
             {
               "label": "Keep the watch above",
+              "skill": "insight",
+              "dc": 13,
               "success": {
                 "text": "The market settles its own quarrel, quietly. {keeperName} sends up a purse and a nod.",
                 "effects": {
@@ -5041,7 +5131,8 @@
                   "tension": 1,
                   "precedent:undermarket-blind-eye": 1
                 }
-              }
+              },
+              "failure": { "text": "The undermarket takes the blind eye as a licence, and things come up the stair that shouldn't.", "effects": { "gold": 10, "goodwill": 3, "tension": 3, "precedent:undermarket-blind-eye": 1 } }
             },
             {
               "label": "Send the watch down",
@@ -5127,6 +5218,8 @@
             },
             {
               "label": "Seal the vault",
+              "skill": "athletics",
+              "dc": 12,
               "success": {
                 "text": "Mortar, iron and a ward of the warden's own. The priests call it a second burial without rites.",
                 "effects": {
@@ -5134,7 +5227,8 @@
                   "goodwill2": -4,
                   "stir": -5
                 }
-              }
+              },
+              "failure": { "text": "The seal cracks within the month, and the priests say they told you so.", "effects": { "goodwill": 3, "goodwill2": -6 } }
             },
             {
               "label": "Bless the vault and leave the dead in it",
@@ -5180,6 +5274,8 @@
           "options": [
             {
               "label": "Let the hall post contracts",
+              "skill": "persuasion",
+              "dc": 13,
               "success": {
                 "text": "Companies queue at the gate with lanterns and fresh rope. Most come back, richer.",
                 "effects": {
@@ -5188,10 +5284,13 @@
                   "stir": -15,
                   "gold": 20
                 }
-              }
+              },
+              "failure": { "text": "The hall posts its contracts, and the first company down comes up short a man. The Gatewarden is furious.", "effects": { "goodwill": -5, "goodwill2": 3, "stir": -8 } }
             },
             {
               "label": "Only veterans may go down",
+              "skill": "insight",
+              "dc": 12,
               "success": {
                 "text": "The warden checks every company's ledger at the stair. Fewer go down, and fewer stay there.",
                 "effects": {
@@ -5199,7 +5298,8 @@
                   "goodwill2": -2,
                   "stir": -5
                 }
-              }
+              },
+              "failure": { "text": "Every chancer in the hall swears they are a veteran, and the Gatewarden can't tell the difference.", "effects": { "goodwill": 2, "goodwill2": -4, "stir": -2 } }
             },
             {
               "label": "Keep the way down shut to companies",
@@ -5242,6 +5342,8 @@
           "options": [
             {
               "label": "Brick it up",
+              "skill": "athletics",
+              "dc": 12,
               "success": {
                 "text": "The tunnel is bricked at both ends. The tavern's ale gets dearer, and {keeper2} will not look the warden in the eye.",
                 "effects": {
@@ -5249,7 +5351,8 @@
                   "goodwill2": -4,
                   "stir": -5
                 }
-              }
+              },
+              "failure": { "text": "The masons brick it up badly, and the cellar floods the first time it rains.", "effects": { "goodwill": 2, "goodwill2": -6, "stir": -2 } }
             },
             {
               "label": "Let it be: it is a tavern",
@@ -5323,12 +5426,10 @@
             },
             {
               "label": "A lantern will do",
-              "success": {
-                "text": "{keeperName} hangs a lantern and says nothing more about it.",
-                "effects": {
-                  "goodwill": -2
-                }
-              }
+              "skill": "perception",
+              "dc": 12,
+              "success": { "text": "You find a place for the lantern where the whole stair can see it. It will do, nearly.", "effects": { "goodwill": -1 } },
+              "failure": { "text": "{keeperName} hangs a lantern and says nothing more about it.", "effects": { "goodwill": -4 } }
             }
           ]
         }
@@ -5437,6 +5538,8 @@
           "options": [
             {
               "label": "Lend them the griffons",
+              "skill": "animal-handling",
+              "dc": 13,
               "success": {
                 "text": "{heroName}'s company flies out over the trees, and is back before anyone expected.",
                 "effects": {
@@ -5445,10 +5548,13 @@
                   "heroXp": 40,
                   "gold": 20
                 }
-              }
+              },
+              "failure": { "text": "The griffons won't fly for strangers. Two riders go out with them, and one comes back hurt.", "effects": { "goodwill": -6, "goodwill2": 3, "heroXp": 20 } }
             },
             {
               "label": "Lend one rider to scout for them",
+              "skill": "animal-handling",
+              "dc": 12,
               "success": {
                 "text": "A rider scouts the road ahead and the company walks it safely.",
                 "effects": {
@@ -5456,7 +5562,8 @@
                   "goodwill2": 2,
                   "heroXp": 20
                 }
-              }
+              },
+              "failure": { "text": "The rider's griffon goes lame on the second day, and the company walks the rest.", "effects": { "goodwill": -1, "goodwill2": 1, "heroXp": 10 } }
             },
             {
               "label": "Refuse",
@@ -5577,6 +5684,8 @@
           "options": [
             {
               "label": "Give it to the sanctuary",
+              "skill": "animal-handling",
+              "dc": 13,
               "success": {
                 "text": "The egg is set in a nest of coals. The town lines up to look at it.",
                 "effects": {
@@ -5584,17 +5693,21 @@
                   "renown": 1,
                   "fixture:sanctuary-dragon-egg": 1
                 }
-              }
+              },
+              "failure": { "text": "The egg goes cold in its first night at the sanctuary. The keepers grieve; the town is uneasy.", "effects": { "goodwill": 3, "dread": 1 } }
             },
             {
               "label": "Sell it",
+              "skill": "persuasion",
+              "dc": 12,
               "success": {
                 "text": "A collector from the coast pays a fortune for it.",
                 "effects": {
                   "gold": 150,
                   "goodwill": -4
                 }
-              }
+              },
+              "failure": { "text": "The buyers smell how badly you want it gone, and pay accordingly.", "effects": { "gold": 70, "goodwill": -6 } }
             },
             {
               "label": "Destroy it before it hatches",
@@ -5635,6 +5748,8 @@
           "options": [
             {
               "label": "Lend the arena the beasts",
+              "skill": "animal-handling",
+              "dc": 13,
               "success": {
                 "text": "The games are the best in years, and one beast does not come back.",
                 "effects": {
@@ -5643,7 +5758,8 @@
                   "goodwill2": 6,
                   "festival": 1
                 }
-              }
+              },
+              "failure": { "text": "A beast turns on its handler in the ring, and the sanctuary takes the rest home that night.", "effects": { "gold": 30, "goodwill": -10, "goodwill2": 3 } }
             },
             {
               "label": "Forbid it",
@@ -5705,6 +5821,8 @@
           "options": [
             {
               "label": "Make the house refund him",
+              "skill": "persuasion",
+              "dc": 13,
               "success": {
                 "text": "{keeperName} refunds him with a face like a closed door. The mirror goes back in the vault.",
                 "effects": {
@@ -5712,7 +5830,8 @@
                   "mandate": 2,
                   "precedent:auction-refund": 1
                 }
-              }
+              },
+              "failure": { "text": "The house refunds him, and tells every buyer on the coast that {town}'s auctions are not final.", "effects": { "goodwill": -8, "mandate": 1, "precedent:auction-refund": 1 } }
             },
             {
               "label": "Have a priest break the curse",
@@ -5774,6 +5893,8 @@
           "options": [
             {
               "label": "Sell it, with a warning",
+              "skill": "persuasion",
+              "dc": 12,
               "success": {
                 "text": "A collector buys it at a fine price and is never seen again. Nor is the chest.",
                 "effects": {
@@ -5781,7 +5902,8 @@
                   "goodwill": 4,
                   "tension": 1
                 }
-              }
+              },
+              "failure": { "text": "It sells cheap, and eats a footman before it reaches the buyer's carriage.", "effects": { "gold": 30, "goodwill": 1, "tension": 3 } }
             },
             {
               "label": "Have it destroyed",
@@ -5795,6 +5917,8 @@
             },
             {
               "label": "Lock it in an iron box",
+              "skill": "animal-handling",
+              "dc": 13,
               "cost": 60,
               "success": {
                 "text": "The chest goes into a lead-lined vault with the other things that knock. The auctioneer approves of the vault, if not the loss.",
@@ -5802,7 +5926,8 @@
                   "goodwill": 1,
                   "fixture:auction-iron-box": 1
                 }
-              }
+              },
+              "failure": { "text": "It won't go in the box. The smith's apprentice loses a sleeve finding out, and the box goes back unused.", "effects": { "goodwill": -1 } }
             }
           ]
         }
@@ -5845,6 +5970,8 @@
             },
             {
               "label": "Order it given up",
+              "skill": "intimidation",
+              "dc": 13,
               "success": {
                 "text": "The auctioneer gives it up and does not forgive the council.",
                 "effects": {
@@ -5852,10 +5979,13 @@
                   "goodwill2": 6,
                   "mandate": 1
                 }
-              }
+              },
+              "failure": { "text": "The house gives it up, and the buyers who were promised it never bid in {town} again.", "effects": { "goodwill": -10, "goodwill2": 4, "mandate": -1 } }
             },
             {
               "label": "Let the sale go ahead",
+              "skill": "persuasion",
+              "dc": 12,
               "success": {
                 "text": "A stranger in grey buys it, and the priests pray against him.",
                 "effects": {
@@ -5863,7 +5993,8 @@
                   "goodwill": 4,
                   "goodwill2": -8
                 }
-              }
+              },
+              "failure": { "text": "It sells, and the temple names the buyer from the pulpit.", "effects": { "gold": 20, "goodwill": 2, "goodwill2": -10 } }
             }
           ]
         }
@@ -5962,6 +6093,8 @@
           "options": [
             {
               "label": "Honour the bargain",
+              "skill": "persuasion",
+              "dc": 13,
               "success": {
                 "text": "The baker keeps her bread and her grey eyes. The fey trade more freely with a town that keeps its word.",
                 "effects": {
@@ -5969,7 +6102,8 @@
                   "mandate": -1,
                   "precedent:fey-bargain-honoured": 1
                 }
-              }
+              },
+              "failure": { "text": "The bargain is honoured, but the family cannot forgive the town for letting it stand.", "effects": { "goodwill": 6, "mandate": -3, "precedent:fey-bargain-honoured": 1 } }
             },
             {
               "label": "Bargain for them back",
@@ -6047,14 +6181,10 @@
             },
             {
               "label": "Demand the fey return the child",
-              "success": {
-                "text": "A fey courtier returns a baby in the night. Everyone agrees it is the right one. Mostly.",
-                "effects": {
-                  "goodwill": -4,
-                  "tension": -1,
-                  "dread": 1
-                }
-              }
+              "skill": "intimidation",
+              "dc": 14,
+              "success": { "text": "The fey take the demand with a bow and return the child, though they won't trade with you for a while.", "effects": { "goodwill": -2, "tension": -2 } },
+              "failure": { "text": "The fey laugh at the demand, and the market sleeps badly for a month.", "effects": { "goodwill": -6, "dread": 2 } }
             },
             {
               "label": "Close the market for a month",
@@ -6097,6 +6227,8 @@
           "options": [
             {
               "label": "Open the fey road",
+              "skill": "nature",
+              "dc": 13,
               "success": {
                 "text": "Fey traders walk out of the oldest oak on market nights. The market thrives; the grove sulks.",
                 "effects": {
@@ -6105,7 +6237,8 @@
                   "gold": 40,
                   "fixture:fey-ring": 1
                 }
-              }
+              },
+              "failure": { "text": "The road opens crooked. Travellers come through it lost and frightened, and the grove is furious.", "effects": { "goodwill": 2, "goodwill2": -8, "dread": 1 } }
             },
             {
               "label": "Refuse",
@@ -6197,12 +6330,10 @@
             },
             {
               "label": "Decline",
-              "success": {
-                "text": "{keeperName} keeps the vision to herself, as is her right.",
-                "effects": {
-                  "goodwill": -2
-                }
-              }
+              "skill": "persuasion",
+              "dc": 12,
+              "success": { "text": "You decline with a gift of incense, and she takes it gracefully.", "effects": { "goodwill": -1 } },
+              "failure": { "text": "{keeperName} keeps the vision to herself, as is her right.", "effects": { "goodwill": -2 } }
             }
           ]
         }
@@ -6264,13 +6395,10 @@
             },
             {
               "label": "Silence her",
-              "success": {
-                "text": "The oracle is forbidden to speak of it. The rumours are worse than the prophecy.",
-                "effects": {
-                  "goodwill": -8,
-                  "tension": 3
-                }
-              }
+              "skill": "intimidation",
+              "dc": 13,
+              "success": { "text": "She goes quiet, and the town is spared the panic, though she will not read for you again soon.", "effects": { "goodwill": -6, "tension": 1 } },
+              "failure": { "text": "She won't be silenced. She cries the doom in the square instead, louder for being forbidden.", "effects": { "goodwill": -10, "tension": 4 } }
             }
           ]
         }
@@ -6302,6 +6430,8 @@
           "options": [
             {
               "label": "Order them lent",
+              "skill": "intimidation",
+              "dc": 12,
               "success": {
                 "text": "The charts go to the tower. The oracle's readings grow sharper, and the librarian sulks.",
                 "effects": {
@@ -6309,10 +6439,13 @@
                   "goodwill2": -4,
                   "fixture:observatory-orrery": 1
                 }
-              }
+              },
+              "failure": { "text": "The librarians lend them, with an inventory as long as your arm and a complaint to the council.", "effects": { "goodwill": 3, "goodwill2": -8 } }
             },
             {
               "label": "Have the oracle read them in the library",
+              "skill": "arcana",
+              "dc": 13,
               "success": {
                 "text": "The oracle reads them at the library's tables, and both keepers learn something.",
                 "effects": {
@@ -6320,7 +6453,8 @@
                   "goodwill2": 2,
                   "lore": 20
                 }
-              }
+              },
+              "failure": { "text": "The oracle reads them under the librarians' eyes and sees nothing she trusts.", "effects": { "goodwill": 1, "goodwill2": 1, "lore": 5 } }
             },
             {
               "label": "Leave them where they are",
@@ -6450,6 +6584,8 @@
             },
             {
               "label": "Let the company keep it",
+              "skill": "persuasion",
+              "dc": 12,
               "success": {
                 "text": "The company drinks the town dry and tells everyone where they found it. More companies arrive.",
                 "effects": {
@@ -6457,10 +6593,13 @@
                   "mandate": 1,
                   "gold": 20
                 }
-              }
+              },
+              "failure": { "text": "The company keeps every coin, and the council grumbles about the gold walked past its door.", "effects": { "goodwill": 3, "mandate": -1 } }
             },
             {
               "label": "Buy the crown for the town",
+              "skill": "persuasion",
+              "dc": 13,
               "cost": 80,
               "success": {
                 "text": "The giant's crown is set up in the square. People sit in it.",
@@ -6469,7 +6608,8 @@
                   "festival": 2,
                   "fixture:giants-door": 1
                 }
-              }
+              },
+              "failure": { "text": "The company's price goes up halfway through the bargain. You pay it, and the town gets its crown.", "effects": { "goodwill": 1, "fixture:giants-door": 1, "gold": -40 } }
             }
           ]
         }
@@ -6658,6 +6798,8 @@
           "options": [
             {
               "label": "The hall registers them",
+              "skill": "persuasion",
+              "dc": 12,
               "success": {
                 "text": "Contracts, dues and rescue insurance, all in the hall's neat hand. The Delvemaster sulks by the winch.",
                 "effects": {
@@ -6665,17 +6807,21 @@
                   "goodwill2": 5,
                   "gold": 20
                 }
-              }
+              },
+              "failure": { "text": "The hall gets the ledger, and the Delve keeps a second one out of spite.", "effects": { "goodwill": -6, "goodwill2": 3, "gold": 10 } }
             },
             {
               "label": "The Delve keeps its ledger",
+              "skill": "persuasion",
+              "dc": 12,
               "success": {
                 "text": "{keeperName} keeps the ledger. The Hallmaster keeps a list of grievances.",
                 "effects": {
                   "goodwill": 5,
                   "goodwill2": -4
                 }
-              }
+              },
+              "failure": { "text": "The Delve keeps its ledger, and the hall's companies make a point of not signing it.", "effects": { "goodwill": 3, "goodwill2": -6 } }
             },
             {
               "label": "One ledger, kept together",
@@ -6749,6 +6895,8 @@
             },
             {
               "label": "Sell it",
+              "skill": "persuasion",
+              "dc": 12,
               "success": {
                 "text": "A collector from the coast pays very well and asks no questions.",
                 "effects": {
@@ -6756,7 +6904,8 @@
                   "goodwill": -1,
                   "goodwill2": -5
                 }
-              }
+              },
+              "failure": { "text": "The beast fetches little, and both houses think less of you for selling it.", "effects": { "gold": 30, "goodwill": -2, "goodwill2": -6 } }
             }
           ]
         }
@@ -6821,13 +6970,10 @@
             },
             {
               "label": "Refuse",
-              "success": {
-                "text": "The envoy bows very low and very coldly.",
-                "effects": {
-                  "regard": -5,
-                  "goodwill": -2
-                }
-              }
+              "skill": "persuasion",
+              "dc": 12,
+              "success": { "text": "You refuse, but offer a feast-day market in their name. It is not the toll, but it softens the blow.", "effects": { "regard": -2, "goodwill": -1 } },
+              "failure": { "text": "The envoy bows very low and very coldly.", "effects": { "regard": -5, "goodwill": -2 } }
             }
           ]
         }
@@ -6869,13 +7015,10 @@
             },
             {
               "label": "Let them duel",
-              "success": {
-                "text": "A great deal of shouting, one scratch and two delighted crowds. Both claim the corner.",
-                "effects": {
-                  "goodwill": -3,
-                  "tension": 1
-                }
-              }
+              "skill": "medicine",
+              "dc": 12,
+              "success": { "text": "They duel at dawn with a healer standing by. First blood, and both go home with their honour.", "effects": { "goodwill": -1 } },
+              "failure": { "text": "The duel goes too far and the healer comes too late to keep it quiet. Both houses blame the town.", "effects": { "goodwill": -4, "tension": 2 } }
             },
             {
               "label": "Settle it by the old charter",
@@ -6925,25 +7068,14 @@
           "options": [
             {
               "label": "Grant sanctuary",
-              "success": {
-                "text": "The noble stays, opens a perfumery and becomes very popular. Their family sends a letter every month.",
-                "effects": {
-                  "people": 1,
-                  "goodwill": -1,
-                  "tension": 1
-                }
-              }
+              "skill": "persuasion",
+              "dc": 13,
+              "success": { "text": "You grant sanctuary and talk the embassy round to calling it a kindness to both.", "effects": { "people": 1, "goodwill": 1 } },
+              "failure": { "text": "Sanctuary is granted, and the embassy treats it as an act of war in every letter home.", "effects": { "people": 1, "goodwill": -4, "tension": 2 } }
             },
             {
               "label": "Send them home",
-              "success": {
-                "text": "The family sends a gift of thanks and a promise. The noble's servants spit as they pass the town hall.",
-                "effects": {
-                  "gold": 60,
-                  "goodwill": 2,
-                  "mandate": -1
-                }
-              }
+              "success": { "text": "The family sends a gift of thanks and a promise. The noble's servants spit as they pass the town hall.", "effects": { "gold": 60, "goodwill": 2, "mandate": -2 } }
             },
             {
               "label": "Find out why they ran",
@@ -6994,6 +7126,8 @@
           "options": [
             {
               "label": "Let them drink, and listen",
+              "skill": "stealth",
+              "dc": 13,
               "success": {
                 "text": "The tavern's ears and the council's purse both do well. The envoys never suspect.",
                 "effects": {
@@ -7002,7 +7136,8 @@
                   "gold": 40,
                   "mandate": 1
                 }
-              }
+              },
+              "failure": { "text": "The envoys spot your listener on the second night, and the tavern loses them for good.", "effects": { "goodwill": -4, "goodwill2": -2 } }
             },
             {
               "label": "Give the envoys their own cellar",
@@ -7017,13 +7152,16 @@
             },
             {
               "label": "Warn the envoys",
+              "skill": "persuasion",
+              "dc": 12,
               "success": {
                 "text": "The envoys are touched by the warning and drink more carefully, and more gratefully.",
                 "effects": {
                   "goodwill": 3,
                   "goodwill2": -1
                 }
-              }
+              },
+              "failure": { "text": "The envoys take the warning as a threat, and the tavern takes it as a betrayal.", "effects": { "goodwill": 1, "goodwill2": -3 } }
             }
           ]
         }
@@ -7067,23 +7205,29 @@
             },
             {
               "label": "A pavilion in tubs",
+              "skill": "nature",
+              "dc": 12,
               "success": {
                 "text": "A handsome pavilion of potted trees. The elves are too polite to say what they think.",
                 "effects": {
                   "goodwill": 3,
                   "goodwill2": -2
                 }
-              }
+              },
+              "failure": { "text": "The trees sicken in their tubs within the month, and the druids say so to everyone.", "effects": { "goodwill": 1, "goodwill2": -4 } }
             },
             {
               "label": "Keep the paving",
+              "skill": "persuasion",
+              "dc": 12,
               "success": {
                 "text": "The paving stays. The elven envoy plants one seed between two stones anyway.",
                 "effects": {
                   "goodwill": 2,
                   "goodwill2": -4
                 }
-              }
+              },
+              "failure": { "text": "The envoys get their paving, and the grove takes it as the town's answer to it.", "effects": { "goodwill": -1, "goodwill2": -6 } }
             }
           ]
         }
@@ -7145,12 +7289,10 @@
             },
             {
               "label": "Send them home unsung",
-              "success": {
-                "text": "They sing their farewell on the way back through the ring. It is quite rude.",
-                "effects": {
-                  "goodwill": -3
-                }
-              }
+              "skill": "persuasion",
+              "dc": 12,
+              "success": { "text": "You send them home with gifts and a promise of a song next time. They take it graciously.", "effects": { "goodwill": -1 } },
+              "failure": { "text": "They sing their farewell on the way back through the ring. It is quite rude.", "effects": { "goodwill": -3 } }
             }
           ]
         }
@@ -7271,6 +7413,8 @@
             },
             {
               "label": "Shut it for a season",
+              "skill": "investigation",
+              "dc": 12,
               "success": {
                 "text": "The ring goes dark and the gatehouse yard goes quiet. Traders grumble.",
                 "effects": {
@@ -7278,7 +7422,8 @@
                   "goodwill": -2,
                   "dread": -2
                 }
-              }
+              },
+              "failure": { "text": "Shutting it is harder than opening it. The masons take twice as long, and the bill doubles.", "effects": { "gold": -60, "goodwill": -3, "dread": -1 } }
             },
             {
               "label": "Try to tune it by ear",
@@ -7342,6 +7487,8 @@
             },
             {
               "label": "Ask for a short one",
+              "skill": "performance",
+              "dc": 12,
               "success": {
                 "text": "Four verses, cheaply done. The far side finds it charming, in a provincial way.",
                 "effects": {
@@ -7349,17 +7496,15 @@
                   "goodwill2": 1,
                   "gold": 20
                 }
-              }
+              },
+              "failure": { "text": "The short one is very short, and very bad. Nobody sings it twice.", "effects": { "goodwill": 1, "goodwill2": -1 } }
             },
             {
               "label": "No song",
-              "success": {
-                "text": "The gate keeps hiring choirs, and the college keeps not writing.",
-                "effects": {
-                  "goodwill": -2,
-                  "goodwill2": -2
-                }
-              }
+              "skill": "persuasion",
+              "dc": 12,
+              "success": { "text": "No song, but you make it up to both with a toast in the square. They grumble, but go home.", "effects": { "goodwill": -1, "goodwill2": -1 } },
+              "failure": { "text": "The gate keeps hiring choirs, and the college keeps not writing.", "effects": { "goodwill": -3, "goodwill2": -3 } }
             }
           ]
         }
@@ -7413,13 +7558,16 @@
             },
             {
               "label": "Ask what it wants",
+              "skill": "insight",
+              "dc": 13,
               "success": {
                 "text": "It wanted to hear the town's bells. It hears them, smiles, and goes home.",
                 "effects": {
                   "goodwill": 3,
                   "goodwill2": 2
                 }
-              }
+              },
+              "failure": { "text": "It answers in riddles, and the temple calls it a demon to the whole square.", "effects": { "goodwill": 1, "goodwill2": -2, "dread": 1 } }
             },
             {
               "label": "Move it along",
@@ -7541,12 +7689,10 @@
             },
             {
               "label": "Walk away",
-              "success": {
-                "text": "The banner stays in the hills. {keeper} sets the letter on the empty pedestal.",
-                "effects": {
-                  "goodwill": -4
-                }
-              }
+              "skill": "persuasion",
+              "dc": 12,
+              "success": { "text": "You walk away, and make the hall see it was the price, not the banner, that you refused.", "effects": { "goodwill": -2 } },
+              "failure": { "text": "The banner stays in the hills. {keeper} sets the letter on the empty pedestal.", "effects": { "goodwill": -4 } }
             }
           ]
         }
@@ -7587,16 +7733,21 @@
             },
             {
               "label": "Ask them for one more season",
+              "skill": "persuasion",
+              "dc": 13,
               "success": {
                 "text": "{heroName} nods, and goes back out on the road. They still come to the hall every evening.",
                 "effects": {
                   "goodwill": -1,
                   "loyalty": 5
                 }
-              }
+              },
+              "failure": { "text": "{heroName} stays, but sourly, and the hall knows it.", "effects": { "goodwill": -3, "loyalty": -2 } }
             },
             {
               "label": "Let them teach between contracts",
+              "skill": "persuasion",
+              "dc": 12,
               "cost": 20,
               "success": {
                 "text": "{heroName} teaches in the yard when they are home, and the hall pays them for it.",
@@ -7604,7 +7755,8 @@
                   "goodwill": 3,
                   "heroXp": 10
                 }
-              }
+              },
+              "failure": { "text": "They teach, after a fashion: three lessons, then they're off on a contract again.", "effects": { "goodwill": 1, "heroXp": 5 } }
             }
           ]
         }
@@ -7647,21 +7799,22 @@
             },
             {
               "label": "Hang the shield only",
+              "skill": "religion",
+              "dc": 12,
               "success": {
                 "text": "The shield goes up on a nail by the door. {keeper} polishes it every day.",
                 "effects": {
                   "goodwill": 2
                 }
-              }
+              },
+              "failure": { "text": "The shield goes up, but the hall says a hero deserves their name too.", "effects": { "goodwill": -1 } }
             },
             {
               "label": "Not now",
-              "success": {
-                "text": "{keeper} keeps the shield behind the counter.",
-                "effects": {
-                  "goodwill": -3
-                }
-              }
+              "skill": "persuasion",
+              "dc": 12,
+              "success": { "text": "You promise the stone for spring, and mean it. The hall believes you, for now.", "effects": { "goodwill": -1 } },
+              "failure": { "text": "{keeper} keeps the shield behind the counter.", "effects": { "goodwill": -4 } }
             }
           ]
         }
@@ -7702,12 +7855,15 @@
             },
             {
               "label": "Keep the axe",
+              "skill": "intimidation",
+              "dc": 12,
               "success": {
                 "text": "The stranger leaves without it, and without leaving the map.",
                 "effects": {
                   "goodwill": 3
                 }
-              }
+              },
+              "failure": { "text": "You keep the axe, and the claimant tells every company on the road that {town} robbed them.", "effects": { "goodwill": -2 } }
             },
             {
               "label": "Ask them to prove it",
@@ -7786,13 +7942,10 @@
             },
             {
               "label": "Let it sell",
-              "success": {
-                "text": "A collector from the coast buys it. {keeper} does not speak to {keeper2} for a month.",
-                "effects": {
-                  "goodwill": -4,
-                  "goodwill2": 3
-                }
-              }
+              "skill": "persuasion",
+              "dc": 12,
+              "success": { "text": "It sells, but you get the buyer to lend it to the hall on feast days.", "effects": { "goodwill": -2, "goodwill2": 3 } },
+              "failure": { "text": "A collector from the coast buys it. {keeper} does not speak to {keeper2} for a month.", "effects": { "goodwill": -4, "goodwill2": 3 } }
             }
           ]
         }
@@ -7833,6 +7986,8 @@
             },
             {
               "label": "Let it hunt the wilds",
+              "skill": "nature",
+              "dc": 13,
               "success": {
                 "text": "It hunts the hills beyond the roads, and the wolves and worse that lived there are fewer.",
                 "effects": {
@@ -7840,7 +7995,8 @@
                   "dread": -1,
                   "tension": 1
                 }
-              }
+              },
+              "failure": { "text": "It hunts the wilds, and a drover's herd with them. The roads are emptier for a month.", "effects": { "goodwill": 1, "dread": 2, "tension": 2 } }
             },
             {
               "label": "Hold it to the treaty",
@@ -7904,6 +8060,8 @@
             },
             {
               "label": "Ask the houses to give",
+              "skill": "persuasion",
+              "dc": 13,
               "success": {
                 "text": "Most houses give something small and showy. One gives nothing, and the dragon notices.",
                 "effects": {
@@ -7911,7 +8069,8 @@
                   "tension": 2,
                   "mandate": -1
                 }
-              }
+              },
+              "failure": { "text": "The houses give, but every door you knock on remembers it.", "effects": { "goodwill": 1, "tension": 3, "mandate": -2 } }
             },
             {
               "label": "Offer a better gift",
@@ -7961,6 +8120,8 @@
           "options": [
             {
               "label": "Open the gates",
+              "skill": "persuasion",
+              "dc": 13,
               "success": {
                 "text": "A long column comes down the road under the dragon's wings. The town is crowded, and kinder.",
                 "effects": {
@@ -7969,7 +8130,8 @@
                   "goodwill": 6,
                   "regard": 10
                 }
-              }
+              },
+              "failure": { "text": "The gates open, but the town wants to know why its grain is feeding strangers.", "effects": { "people": 4, "food": -30, "goodwill": 3, "regard": 6, "tension": 2 } }
             },
             {
               "label": "Send food instead",
@@ -7985,13 +8147,10 @@
             },
             {
               "label": "Let them manage",
-              "success": {
-                "text": "{keeperName} goes to guard them anyway, alone, and is gone a week.",
-                "effects": {
-                  "goodwill": -5,
-                  "regard": -3
-                }
-              }
+              "skill": "persuasion",
+              "dc": 12,
+              "success": { "text": "You send word and a cart of tools instead. It isn't much, but it isn't nothing.", "effects": { "goodwill": -3, "regard": -1 } },
+              "failure": { "text": "{keeperName} goes to guard them anyway, alone, and is gone a week.", "effects": { "goodwill": -5, "regard": -3 } }
             }
           ]
         }
@@ -8023,6 +8182,8 @@
           "options": [
             {
               "label": "Let the dragon borrow it",
+              "skill": "persuasion",
+              "dc": 13,
               "success": {
                 "text": "It returns the book a month later, with notes in the margin in a script no one has seen for four thousand years. The scholars weep.",
                 "effects": {
@@ -8030,7 +8191,8 @@
                   "goodwill2": 3,
                   "lore": 30
                 }
-              }
+              },
+              "failure": { "text": "The dragon borrows it, and the librarians count every day until it comes back singed.", "effects": { "goodwill": 5, "goodwill2": -4, "lore": 10 } }
             },
             {
               "label": "Let it read in the library",
@@ -8046,13 +8208,10 @@
             },
             {
               "label": "Refuse",
-              "success": {
-                "text": "The dragon is very polite about it, and very cold for a season.",
-                "effects": {
-                  "goodwill": -5,
-                  "goodwill2": 2
-                }
-              }
+              "skill": "persuasion",
+              "dc": 12,
+              "success": { "text": "You refuse, but offer to have the passages copied out. The dragon is mollified, nearly.", "effects": { "goodwill": -3, "goodwill2": 2 } },
+              "failure": { "text": "The dragon takes the refusal badly, and the librarians sleep with buckets of sand by their beds.", "effects": { "goodwill": -7, "goodwill2": 1 } }
             }
           ]
         }
@@ -8084,13 +8243,16 @@
           "options": [
             {
               "label": "Give it the egg",
+              "skill": "persuasion",
+              "dc": 12,
               "success": {
                 "text": "The dragon carries the egg to its tower and broods it with great tenderness. The beastwarden is heartbroken.",
                 "effects": {
                   "goodwill": 8,
                   "goodwill2": -6
                 }
-              }
+              },
+              "failure": { "text": "The dragon takes the egg, and the sanctuary keepers weep in the street.", "effects": { "goodwill": 6, "goodwill2": -10 } }
             },
             {
               "label": "Let them share the hatching",
@@ -8154,13 +8316,16 @@
           "options": [
             {
               "label": "Divide the sky by hour",
+              "skill": "persuasion",
+              "dc": 13,
               "success": {
                 "text": "Dragon at dawn, griffons at noon. Both keepers grumble and both keep to it.",
                 "effects": {
                   "goodwill": 2,
                   "goodwill2": 2
                 }
-              }
+              },
+              "failure": { "text": "Nobody keeps to the hours. There are near misses over the market every morning.", "effects": { "goodwill": -1, "goodwill2": -1, "tension": 1 } }
             },
             {
               "label": "Side with the roost",
@@ -8174,13 +8339,16 @@
             },
             {
               "label": "Side with the dragon",
+              "skill": "persuasion",
+              "dc": 12,
               "success": {
                 "text": "The roost flies at night now, and the riders are tired.",
                 "effects": {
                   "goodwill": 5,
                   "goodwill2": -5
                 }
-              }
+              },
+              "failure": { "text": "You side with the dragon, and the roost's riders call it cowardice to your face.", "effects": { "goodwill": 3, "goodwill2": -8 } }
             }
           ]
         }
@@ -8213,6 +8381,8 @@
           "options": [
             {
               "label": "Train them as rescue mounts",
+              "skill": "animal-handling",
+              "dc": 13,
               "success": {
                 "text": "The hatchlings grow up between the sanctuary and the roost, and fly rescue for the whole road.",
                 "effects": {
@@ -8220,7 +8390,8 @@
                   "goodwill2": 6,
                   "fixture:griffon-hatchlings": 1
                 }
-              }
+              },
+              "failure": { "text": "The hatchlings won't take the bit. They are neither wild nor tame, and both houses blame the other.", "effects": { "goodwill": -4, "goodwill2": 2 } }
             },
             {
               "label": "Raise them wild",
@@ -8235,13 +8406,16 @@
             },
             {
               "label": "Half and half",
+              "skill": "animal-handling",
+              "dc": 12,
               "success": {
                 "text": "Two go to the roost, three go to the hills. Neither keeper is quite satisfied.",
                 "effects": {
                   "goodwill": 2,
                   "goodwill2": 2
                 }
-              }
+              },
+              "failure": { "text": "The two halves won't be parted, and the whole brood ends up neither one thing nor the other.", "effects": { "goodwill": -1, "goodwill2": -1 } }
             }
           ]
         }

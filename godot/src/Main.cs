@@ -71,6 +71,7 @@ public partial class Main : Control
         BuildTitle();
         BuildHistory();
         BuildGlossary();
+        BuildSettings();
         BuildGuide();
         BuildStory();
         BuildFind();
@@ -99,6 +100,12 @@ public partial class Main : Control
         if (_opts.Hour > 0) for (int i = 0; i < _opts.Hour; i++) _sim.Step();
         if (_opts.Siege is float siegeHours) SiegeShot(siegeHours);
         if (_opts.Skirmish is string skirmish) StageSkirmish(skirmish.Split(','));
+        if (_opts.Delve && _sim.Town.Parties.FirstOrDefault(p => !p.Returned) is { } delving && _map.Geo.Pins.TryGetValue(delving.SiteId, out var dpin))
+        {
+            _map.Crowd.StageDelve = true;
+            _opts.Look ??= dpin;
+            _opts.Cam ??= 8;
+        }
         _opts.ApplyScript(_sim);
         if (_opts.Tourney is int tourney) StageTourney(tourney);
         if (_opts.Secrets) StageSecrets();
@@ -197,6 +204,7 @@ public partial class Main : Control
         if (_opts.Storytellers) PickStoryteller(false);
         if (_opts.History is string power) OpenHistory(power == "" ? null : power);
         if (_opts.Glossary is string entry) OpenGlossary(entry == "" ? null : entry);
+        if (_opts.Settings) OpenSettings();
         for (int i = 0; i < _opts.Keywords.Count; i++)
         {
             var at = new Vector2(GetViewportRect().Size.X - 360 * (i + 1) - 20, 150 + 40 * i);
@@ -331,6 +339,7 @@ public partial class Main : Control
         _storySeen = sim.Town.Stories.All.Count;
         CloseFind();
         _findSeen.Clear();
+        ResetClockWatch();
         CloseTale();
         _recap.Visible = false;
         _talesSeen = -1;
@@ -347,8 +356,8 @@ public partial class Main : Control
     {
         if (Newsworthy(e)) Feed(e);
         SiegeNews(e);
-        // Real time with pause: the war's turning points stop the clock so the player can react.
-        if (e.Category == LedgerCategory.War && e.Importance == Importance.Major && _speed > 0 && !_opts.NoPause) SetSpeed(0);
+        // Real time with pause: the war's turning points stop the clock so the player can react (Settings.cs says which).
+        if (e.Category == LedgerCategory.War && e.Importance == Importance.Major) StopClock(CrisisNews(e) ? "crises" : "war");
         if (_sim.Town.Outcome != null && !_endShown) CallDeferred(MethodName.ShowEnd);
     }
 
@@ -444,8 +453,14 @@ public partial class Main : Control
         }
         if (_story.Visible && k.Keycode == Key.Escape)
         {
-            // A sending can't be waved away: the party is waiting on the stone.
-            if (_storyId is not int sid || Stories.Find(_sim.Town, sid) is not { } open || !Sendings.Is(_sim.Town, open) || open.Done || open.WaitTick > _sim.Town.Tick) CloseStory();
+            // A sending can't be waved away while it holds the clock: the party is waiting on the stone.
+            if (!ShouldStop("sendings") || _storyId is not int sid || Stories.Find(_sim.Town, sid) is not { } open || !Sendings.Is(_sim.Town, open) || open.Done || open.WaitTick > _sim.Town.Tick) CloseStory();
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+        if (_settings.Visible)
+        {
+            if (k.Keycode == Key.Escape) CloseSettings();
             GetViewport().SetInputAsHandled();
             return;
         }
@@ -570,8 +585,10 @@ public partial class Main : Control
         SyncMarkers();
         SyncOrders();
         SyncGuide();
+        SyncGoals();
         SyncStories(delta);
         SyncFinds();
+        SyncClockStops();
         SyncTourney();
         SyncTales(delta);
         SyncRecap();

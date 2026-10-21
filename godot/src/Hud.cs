@@ -1,5 +1,6 @@
 using CrownAndCompass.Client.Map;
 using CrownAndCompass.Sim;
+using CrownAndCompass.Sim.Systems;
 using Godot;
 
 namespace CrownAndCompass.Client;
@@ -7,7 +8,8 @@ namespace CrownAndCompass.Client;
 /// <summary>
 /// The screen layout, after Foundation and its kin: the map fills the screen; a resource bar runs
 /// along the top with the clock and speeds; the management windows open from a rail down the left
-/// and float over the map; the action tray and the news sit on the right; the inspector sits bottom left; the corner
+/// and float over the map, and the charter goals of the first days sit beside the rail under the top bar;
+/// the action tray and the news sit on the right; the inspector sits bottom left; the corner
 /// map, the campaign-map toggle and the marker palette sit bottom right.
 /// </summary>
 public partial class Main
@@ -63,6 +65,7 @@ public partial class Main
         BuildInspector();
         BuildFeed();
         BuildDock();
+        BuildGoals();
         BuildTray();
         BuildBuildBar();
         BuildCorner();
@@ -247,7 +250,7 @@ public partial class Main
         _windowTab = t;
         _windowTitle.Text = Titles[t];
         // The roster is a table: its window opens wide.
-        _window.OffsetRight = _window.OffsetLeft + (t == Tab.Companies ? 900 : 460);
+        _window.OffsetRight = _window.OffsetLeft + (t == Tab.Companies ? 900 : t == Tab.Bounties ? 560 : 460);
         foreach (var (k, s) in _scrolls)
             if (k != Tab.Inspect) s.Visible = k == t;
         _window.Visible = true;
@@ -338,6 +341,137 @@ public partial class Main
         Ui.Clear(_feed);
         ClearAlerts();
     }
+
+    // ---------- Charter goals ----------
+
+    private const float GoalsWidth = 292;
+    private PanelContainer _goalsCard = null!;
+    private VBoxContainer _goalsRows = null!;
+    private Label _goalsCount = null!;
+    private string _goalsSig = "";
+    private Simulation? _goalsSim;
+    private int _goalsDone;
+    private readonly List<Control> _goalsFlourish = [];
+
+    /// <summary>The first days' goals (Systems/Goals.cs): beside the rail under the top bar, clear of the alert strip and the news.</summary>
+    private void BuildGoals()
+    {
+        _goalsCard = new PanelContainer { Visible = false, MouseFilter = MouseFilterEnum.Ignore, CustomMinimumSize = new Vector2(GoalsWidth, 0) };
+        _goalsCard.AddThemeStyleboxOverride("panel", Castle.Oak(16, 12));
+        var v = new VBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
+        v.AddThemeConstantOverride("separation", 6);
+        _goalsCard.AddChild(v);
+        var head = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
+        var title = Ui.Label("CHARTER GOALS", Ui.Gold, Ui.Bold, 10);
+        title.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        head.AddChild(title);
+        _goalsCount = Ui.Label("", Ui.Ink2, Ui.Medium, 10);
+        head.AddChild(_goalsCount);
+        v.AddChild(head);
+        _goalsRows = new VBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
+        _goalsRows.AddThemeConstantOverride("separation", 8);
+        v.AddChild(_goalsRows);
+        AddChild(_goalsCard);
+        _goalsCard.SetAnchorsAndOffsetsPreset(LayoutPreset.TopLeft, LayoutPresetMode.Minsize);
+        _goalsCard.OffsetLeft = RailWidth + Gap;
+        _goalsCard.OffsetRight = RailWidth + Gap + GoalsWidth;
+        _goalsCard.OffsetTop = _goalsCard.OffsetBottom = TopBar + Gap;
+        _goalsCard.GrowVertical = GrowDirection.End;
+    }
+
+    /// <summary>Every frame: rebuild the card when the goals move on, flourish the ones just met, and stay out of the way.</summary>
+    private void SyncGoals()
+    {
+        var t = _sim.Town;
+        if (_goalsSim != _sim)
+        {
+            // A new town or a loaded one: what is already met is no news.
+            _goalsSim = _sim;
+            _goalsDone = t.Goals.Done.Count;
+            _goalsSig = "";
+            foreach (var c in _goalsFlourish) c.QueueFree();
+            _goalsFlourish.Clear();
+        }
+        if (t.Goals.Done.Count > _goalsDone)
+        {
+            foreach (var id in t.Goals.Done.Skip(_goalsDone))
+                if (t.Content.Goals.Goals.FirstOrDefault(g => g.Id == id) is GoalDef met) _goalsFlourish.Add(MetRow(met));
+            _goalsDone = t.Goals.Done.Count;
+            _goalsSig = "";
+        }
+        if (!_dirty && _goalsSig != "" && t.Goals.Closed && _goalsFlourish.Count == 0)
+        {
+            _goalsCard.Visible = false;
+            return;
+        }
+        var open = Goals.Open(t);
+        if (_dirty || _goalsSig == "")
+        {
+            string sig = string.Join("|", open.Select(g => $"{g.Id}:{Goals.Progress(t, g).Now}")) + $"#{_goalsFlourish.Count}";
+            if (sig != _goalsSig)
+            {
+                _goalsSig = sig;
+                foreach (var c in _goalsRows.GetChildren().OfType<Control>().Where(c => !_goalsFlourish.Contains(c)).ToList())
+                {
+                    _goalsRows.RemoveChild(c);
+                    c.QueueFree();
+                }
+                foreach (var g in open) _goalsRows.AddChild(GoalRow(t, g));
+                _goalsCount.Text = $"{t.Goals.Done.Count} OF {t.Content.Goals.Goals.Count}";
+            }
+        }
+        bool any = open.Count > 0 || _goalsFlourish.Count > 0;
+        bool covered = _window.Visible || _title.Visible || _menu.Visible || _endOverlay.Visible
+            || (_inspector.Visible && _inspector.GetGlobalRect().Intersects(_goalsCard.GetGlobalRect()));
+        _goalsCard.Visible = any && !covered;
+        // Hug the rows: wrapped text first measures tall before it knows its width, a row leaves as a goal is
+        // met, and a container only ever grows on its own.
+        if (_goalsCard.Visible) _goalsCard.ResetSize();
+    }
+
+    private static Control GoalRow(Town t, GoalDef g)
+    {
+        var (now, target) = Goals.Progress(t, g);
+        var row = new VBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
+        row.AddThemeConstantOverride("separation", 3);
+        var text = Ui.Label(g.Text, Ui.Ink, Ui.Medium, 13);
+        text.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        row.AddChild(text);
+        var bar = new ProgressBar { MinValue = 0, MaxValue = target, Value = now, ShowPercentage = false, CustomMinimumSize = new Vector2(0, 4), MouseFilter = MouseFilterEnum.Ignore };
+        bar.AddThemeStyleboxOverride("background", Ui.Flat(new Color(Ui.Line, 0.9f), 0, 0, 2));
+        bar.AddThemeStyleboxOverride("fill", Ui.Flat(Ui.Gold, 0, 0, 2));
+        row.AddChild(bar);
+        var info = Ui.Rich($"{Ui.C(Ui.Ink2, $"{Ui.Esc(g.Label)} {now}/{target}")}   {Ui.C(Ui.Gold, Ui.Esc(Goals.Reward(g)))}", 11);
+        info.MouseFilter = MouseFilterEnum.Ignore;
+        row.AddChild(info);
+        return row;
+    }
+
+    /// <summary>A met goal's last moment on the card: ticked and gilded, then gone, and the next goal in its place.</summary>
+    private Control MetRow(GoalDef g)
+    {
+        var row = new PanelContainer { MouseFilter = MouseFilterEnum.Ignore };
+        row.AddThemeStyleboxOverride("panel", Ui.Box(new Color(Ui.Gold, 0.14f), Ui.Gold, 6, 1, 8, 4));
+        var text = Ui.Rich($"{Ui.C(Ui.Good, "[b]✓[/b]")}  [s]{Ui.Esc(g.Text)}[/s]\n{Ui.C(Ui.Gold, $"[font_size=11]{Ui.Esc(Goals.Reward(g))}[/font_size]")}", 13);
+        text.MouseFilter = MouseFilterEnum.Ignore;
+        row.AddChild(text);
+        _goalsRows.AddChild(row);
+        _goalsRows.MoveChild(row, 0);
+        row.Modulate = new Color(1.6f, 1.4f, 0.8f, 0);
+        var tw = row.CreateTween();
+        tw.TweenProperty(row, "modulate", new Color(1.4f, 1.25f, 0.85f, 1), 0.25);
+        tw.TweenProperty(row, "modulate", Colors.White, 0.5);
+        tw.TweenInterval(2.2);
+        tw.TweenProperty(row, "modulate:a", 0.0, 0.6);
+        tw.TweenCallback(Callable.From(() =>
+        {
+            _goalsFlourish.Remove(row);
+            row.QueueFree();
+            _goalsSig = "";
+        }));
+        return row;
+    }
+
 
     // ---------- Corner: minimap, campaign map, markers ----------
 

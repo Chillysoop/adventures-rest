@@ -85,6 +85,7 @@ public sealed class Simulation
         Town.Saga.Enabled = Options.Saga && Options.Enemy;
         Town.Saga.Legends.AddRange(Options.Legends.Where(l => l.Seed != Options.Seed));
         Charter();
+        Goals.Begin(Town);
     }
 
     public void Step()
@@ -99,6 +100,7 @@ public sealed class Simulation
         Explore.Hourly(t, Options.AutoMayor && Options.AutoBounties && Options.AutoExplore);
         Lurkers.Hourly(t);
         Tournaments.Hourly(t);
+        Goals.Hourly(t);
         t.Tick++;
         if (t.Hour == 0) DailyTick();
     }
@@ -158,6 +160,7 @@ public sealed class Simulation
         Powers.Daily(t);
         Vengeance.Daily(t);
         Sightings.Daily(t);
+        Discovery.Daily(t);
         Menaces.Track(t);
         Infiltration.Daily(t);
         Turning.Daily(t);
@@ -266,6 +269,9 @@ public sealed class Simulation
     /// <summary>The player's other lever: sign or veto the motion before the council.</summary>
     public bool DecideMotion(int motionId, bool sign) => Council.Decide(Town, motionId, sign);
 
+    /// <summary>Call a festival on the mayor's own word: mood for a few days and a little Mandate, for gold.</summary>
+    public bool HoldFestival() => Council.HoldFestival(Town);
+
     /// <summary>Order a palisade or a watchtower.</summary>
     public bool BuildDefense(DefenseWork what) => Threat.Build(Town, what);
 
@@ -316,8 +322,8 @@ public sealed class Simulation
     /// <summary>Answer a menace's demand for fealty: bend the knee and pay tribute, or refuse and face its host.</summary>
     public bool AnswerDemand(int menaceId, bool submit) => Menaces.Answer(Town, menaceId, submit);
 
-    /// <summary>Pay a caster in town to scry a site, showing it live for a few hours.</summary>
-    public Scrying? CommissionScrying(string siteId) => Knowledge.CommissionScrying(Town, siteId);
+    /// <summary>Scry a site live for a few hours: the Scrying Pool if it has one left, else a rested caster (the named one) on their terms: free, gold or a favour.</summary>
+    public Scrying? CommissionScrying(string siteId, int? casterId = null) => Knowledge.CommissionScrying(Town, siteId, casterId);
 
     /// <summary>Mark a spot in the wilds (days of march east and south of the town) and pay a company to go and look at it.</summary>
     public Commission? MarkSpot(double x, double y, double? reward = null) => Explore.PostSpot(Town, x, y, reward);
@@ -535,6 +541,15 @@ public sealed class Simulation
         // The shopkeeper comes on top of the wagon's settlers. The inn is left to the first entrepreneur
         // (an inn on day one drained the settlers' purses into ale before they had homes).
         for (int i = 2; i < Options.Settlers; i++) Population.CreateAgent(t);
+        // The charter pays a pair of watchmen and swears a knight to the town, so it can stand guard before it can build a watch house.
+        t.Watch = c.Council.StartingWatch;
+        Agent? knight = null;
+        if (c.Rules.CharterKnight != "")
+        {
+            knight = Quests.CreateHero(t, c.Classes.First(k => k.Id == c.Rules.CharterKnight), c.Rules.CharterKnightLevel);
+            knight.Hero!.Sworn = true;
+            knight.Hero.Lodging = true;
+        }
 
         t.Market.Seed(Good.Food, 150);
         t.Market.Seed(Good.Timber, 60);
@@ -547,8 +562,8 @@ public sealed class Simulation
         t.Log(
             LedgerCategory.Town,
             Importance.Major,
-            $"The charter is signed. {t.Population} settlers and a wagon arrive at the river ford that will become {t.Name}. {Annals.Founding(t)}",
-            t.Residents.Select(a => a.Id).ToList());
+            $"The charter is signed. {t.Population} settlers and a wagon arrive at the river ford that will become {t.Name}. {Annals.Founding(t)}{(knight != null ? $" {knight.Name}, a knight sworn to the charter, rides at the wagon's side, and two watchmen walk behind it." : "")}",
+            t.Residents.Select(a => a.Id).Concat(knight != null ? [knight.Id] : []).Distinct().ToList());
     }
 
     /// <summary>A founder's lot in the zone's patch, or, failing that, anywhere open (it takes the zone all the same).</summary>

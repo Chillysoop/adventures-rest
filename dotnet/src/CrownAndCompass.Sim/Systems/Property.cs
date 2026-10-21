@@ -238,6 +238,34 @@ public static class Property
         return City.Unlocked(town, tenement) && FindLot(town, tenement) != null ? tenement : town.Content.Building("house");
     }
 
+    /// <summary>
+    /// Why painted land of a zone with room on it sits empty right now, in a few words for the build bar, or null when
+    /// someone could build there. Reads the town only.
+    /// </summary>
+    public static string? Waiting(Town town, Zone zone)
+    {
+        if (zone is not (Zone.Residential or Zone.Commercial or Zone.Industry) || Land.OpenPlots(town, zone) == 0) return null;
+        if (!Construction.Room(town)) return "waits on builders: every crew is busy";
+        var workers = town.Workers;
+        if (zone == Zone.Residential)
+        {
+            var house = town.Content.Building("house");
+            double price = house.Cost + Planning.Materials(town, house);
+            var wanting = workers.Where(a => a.Ambition is Ambition.OwnHome or Ambition.Landlord || a.HomeId == null).ToList();
+            if (wanting.Count == 0) return "nobody needs a new home yet";
+            return wanting.Any(a => a.Gold >= price) ? null : $"no settler can afford a house yet ({Js.Round(price)}g)";
+        }
+        var wanted = town.Content.Buildings
+            .Where(d => d.Buildable && d.IsBusiness && d.Zone == zone && City.Unlocked(town, d))
+            .Select(d => (d, s: Demand(town, d.Id)))
+            .Where(x => x.s >= 1.05)
+            .OrderByDescending(x => x.s).ThenBy(x => x.d.Id, StringComparer.Ordinal)
+            .ToList();
+        if (wanted.Count == 0) return zone == Zone.Commercial ? "no shop the town wants yet" : "no trade the town wants yet";
+        double cheapest = wanted.Min(x => x.d.Cost + Planning.Materials(town, x.d));
+        return workers.Any(a => a.Gold >= cheapest) ? null : $"nobody has the {Js.Round(cheapest)}g to open a {wanted[0].d.Name.ToLowerInvariant()}";
+    }
+
     public static double TotalCost(Town town, BuildingDef def, Lot lot) =>
         town.LotPrice(lot) + def.Cost + Planning.Materials(town, def);
 

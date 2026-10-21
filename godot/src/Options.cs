@@ -60,6 +60,9 @@ public sealed class Options
     /// <summary>--title shows the main menu; --tutorial start|step-id runs the tutorial from there (screenshots).</summary>
     public bool Title;
 
+    /// <summary>--settings opens the Settings window (screenshots).</summary>
+    public bool Settings;
+
     /// <summary>--storyteller id: who tells a new town's story; --storytellers opens the main menu's choice of them.</summary>
     public string? Storyteller;
     public bool Storytellers;
@@ -81,6 +84,9 @@ public sealed class Options
 
     /// <summary>--skirmish [gear][,kind]: the town's heroes, one of each class, fight a ring of raiders by the square (for shots); "gear" hands them famous magic arms a moment in; kind picks the foes (undead, cult, rivals, schemers, beasts, dragon; orcs by default).</summary>
     public string? Skirmish;
+
+    /// <summary>For shots: the first company out is drawn in the thick of it at its site, and the camera aims there.</summary>
+    public bool Delve;
 
     /// <summary>--rolls: look into the busiest tavern and replay its latest skill checks as dice over people's heads.</summary>
     public bool Rolls;
@@ -203,6 +209,7 @@ public sealed class Options
                 case "--load": o.Load = Next(); break;
                 case "--menu": o.Menu = true; break;
                 case "--title": o.Title = true; break;
+                case "--settings": o.Settings = true; break;
                 case "--storyteller": o.Storyteller = Next(); break;
                 case "--storytellers": o.Storytellers = o.Title = true; break;
                 case "--episode": o.Episode = Next(); break;
@@ -214,6 +221,7 @@ public sealed class Options
                 case "--folk": o.Folk = true; break;
                 case "--skirmish": o.Skirmish = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
                 case "--rolls": o.Rolls = true; break;
+                case "--delve": o.Delve = true; break;
                 case "--wall": o.Wall = int.Parse(Next()); break;
                 case "--strike": o.Strike = true; break;
                 case "--house": o.House = true; break;
