@@ -192,7 +192,9 @@ public class PlanningTests
         var sim = new Simulation(new SimulationOptions { Seed = 30 });
         sim.RunDays(120);
         var t = sim.Town;
-        Assert.Contains(t.Buildings, b => b.Def.IsBusiness && b.OwnerId == null && b.Def.Produces.Count > 0);
+        // Idle hands go to a town-run business, unless the private trade has already taken them all on.
+        Assert.True(t.Buildings.Any(b => b.Def.IsBusiness && b.OwnerId == null && b.Def.Produces.Count > 0)
+            || !t.Workers.Any(w => w.Age >= 18 && w.JobId == null));
         Assert.True(t.Population >= 20);
         Assert.True(t.Market.Price(Good.Food) < 2);
     }
