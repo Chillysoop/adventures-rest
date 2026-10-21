@@ -461,7 +461,7 @@ public static class Research
                 st.Slain[type] = st.Slain.Get(type, 0) + 1;
                 st.Slayers[type] = $"{party.Name} at {site.Def.Name}";
             }
-            Insight(town, type.Length > 0 ? Sparks.Slain : Sparks.Wilds, $"{party.Name}'s notes from {site.Def.Name}", r.Insight.Cleared * Math.Max(1, site.Def.Tier));
+            Insight(town, type.Length > 0 ? Sparks.Slain : Sparks.Wilds, $"{party.Name}{(party.Name.EndsWith('s') ? "'" : "'s")} notes from {site.Def.Name}", r.Insight.Cleared * Math.Max(1, site.Def.Tier));
             if (!town.Rng.Chance(r.BookFromDelve + r.BookFromDelvePerTier * site.Def.Tier)) continue;
             int circle = Math.Clamp(site.Def.Tier * 2 - 1 + town.Rng.Range(0, 2), 1, 9);
             Add(town, circle, $"brought up from {site.Def.Name} by {party.Name}");
