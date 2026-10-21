@@ -661,6 +661,11 @@ public sealed class Town
     internal Dictionary<int, int>? Present;
     [NotSaved]
     internal int? PresentWasAt;
+    /// <summary>The decree and institution yield of each good, worked out once an hour (<see cref="Systems.Economy"/>).</summary>
+    [NotSaved]
+    internal double[]? HourYields;
+    [NotSaved]
+    internal int HourYieldsAt = -1;
 
     public List<Building> Taverns => Buildings.Where(b => b.Complete && b.Def.Venue && !b.Closed && !b.ForSale).ToList();
 
