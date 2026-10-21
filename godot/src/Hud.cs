@@ -35,6 +35,7 @@ public partial class Main
         [Tab.Armory] = "The town armory",
         [Tab.Diplomacy] = "Diplomacy and trade",
         [Tab.Institutions] = "The town's institutions",
+        [Tab.Notables] = "People worth knowing",
         [Tab.Faith] = "Faith and factions",
         [Tab.Campaign] = "The campaign",
         [Tab.Chronicles] = "Chronicles",

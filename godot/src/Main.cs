@@ -32,6 +32,7 @@ public partial class Main : Control
         Chronicles,
         Mayor,
         Library,
+        Notables,
         Inspect,
     }
 
@@ -158,6 +159,7 @@ public partial class Main : Control
         if (_opts.Folk && _sim.Town.Workers.Where(a => !a.IsAway).OrderByDescending(a => a.Practice).ThenBy(a => a.Id).FirstOrDefault() is Agent folk)
             Select(Selection.Agent(folk.Id));
         if (_opts.Episode is string episode) StageEpisode(episode);
+        if (_opts.Befriend) StageNotables();
         if (_opts.House && _sim.Town.Buildings.Where(b => b.Complete && b.Def.Housing > 0).OrderByDescending(b => Decor.Comfort(_sim.Town, b)).ThenBy(b => b.Id).FirstOrDefault() is Building house)
         {
             Select(Selection.Building(house.Id));
@@ -618,6 +620,7 @@ public partial class Main : Control
                     case Tab.Diplomacy: RenderDiplomacy(); break;
                     case Tab.Library: RenderLibrary(); break;
                     case Tab.Institutions: RenderInstitutions(); break;
+                    case Tab.Notables: RenderNotables(); break;
                 }
             if (_drawer.Visible) RenderTray();
             if (_inspector.Visible) RenderInspect();

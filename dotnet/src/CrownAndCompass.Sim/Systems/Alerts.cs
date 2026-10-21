@@ -27,6 +27,7 @@ public enum AlertWindow
     Armory,
     Institutions,
     Tourney,
+    Notables,
 }
 
 /// <summary>A group of alerts: one icon on the strip, with a count and a hover list of what is in it.</summary>
@@ -94,14 +95,15 @@ public static class Alerts
     public static readonly AlertKind Guild = new("guild", "Guild demands", "favour", AlertLevel.Decision, AlertWindow.Council);
     public static readonly AlertKind Wager = new("wager", "Tourney bets", "gold", AlertLevel.Minor, AlertWindow.Tourney);
     public static readonly AlertKind Scry = new("scry", "Scry the fight", "compass", AlertLevel.Decision, AlertWindow.None);
+    public static readonly AlertKind Notable = new("notable", "Notables", "np-shaking-hands", AlertLevel.Decision, AlertWindow.Notables);
 
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Sighted, Lurker, Captives, Doom, Crisis, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Fealty, Clash, Traitor, Plot, Stores, Story, Scry, Explorers, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Loot, Stalled, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Outpost, Housing, Crowded];
+        [Siege, Sighted, Lurker, Captives, Doom, Crisis, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Fealty, Clash, Traitor, Plot, Stores, Story, Scry, Explorers, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Notable, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Loot, Stalled, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Outpost, Housing, Crowded];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
-    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Word, Crowds, Keepers, Outposts, Lists];
+    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Word, Crowds, Keepers, Notables, Outposts, Lists];
 
     public static List<Alert> Standing(Town town) => Rules.SelectMany(r => r(town)).ToList();
 
@@ -502,6 +504,21 @@ public static class Alerts
             else if (s.Regard <= -40)
                 yield return new($"keeper:{d.Id}", Institution, $"{Institutions.KeeperName(t, s)} is bitter",
                     $"{Cap(d.Name)} gives the town little while its keeper feels like this. Fund it more generously in the Institutions window, or answer its next request.");
+        }
+    }
+
+    /// <summary>A notable asking a favour, or one about to turn their back on the town.</summary>
+    private static IEnumerable<Alert> Notables(Town t)
+    {
+        foreach (var n in Systems.Notables.Active(t))
+        {
+            string who = Systems.Notables.NameOf(t, n);
+            if (Systems.Notables.AskOf(t, n) is { } ask)
+                yield return new($"notable:{n.Id}", Notable, $"{who} asks a favour",
+                    $"{Cap(who)} {ask.Text}. Answer in the Notables window within {Days(Math.Max(1, n.AskUntil - t.Day))}.", AgentId: n.AgentId);
+            else if (Systems.Notables.Band(t, n) == Systems.Notables.Bitter)
+                yield return new($"bitter:{n.Id}", Notable, $"{who} is bitter",
+                    $"{Cap(who)} will walk away from the town in {Days(Math.Max(1, t.Content.Notables.LeaveDays - n.BitterDays))}. Visit them in the Notables window.", AgentId: n.AgentId);
         }
     }
 

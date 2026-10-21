@@ -317,6 +317,7 @@ public static class TreasuryAccount
     public const string Institutions = "Institutions";
     public const string Tourney = "Tourney";
     public const string Guilds = "Guilds";
+    public const string Notables = "Notables";
 }
 
 /// <summary>How the campaign ended.</summary>
@@ -466,6 +467,9 @@ public sealed class Town
 
     /// <summary>The minor powers and whose side each is on (<see cref="Systems.Powers"/>).</summary>
     public List<PowerState> Powers { get; } = [];
+
+    /// <summary>Influential townsfolk who aren't heroes, and how each stands with the mayor (<see cref="Systems.Notables"/>).</summary>
+    public List<Systems.Notable> Notables { get; } = [];
 
     /// <summary>Free scryings from the Scrying Pool used today.</summary>
     public int FreeScryingsUsed { get; set; }

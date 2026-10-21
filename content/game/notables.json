@@ -1,0 +1,163 @@
+{
+  "_doc": "Notable townsfolk (Systems/Notables.cs): influential people who aren't heroes. One of each kind rises on its own, from the best of a trade in town or, for outsiders, from nowhere. The mayor builds regard with visits (a skill check the kind is open to, or a gift) and by answering their favours; regard drifts back to nothing when they are left alone. Warm and friendly notables pass on what they hear (the information network: `hears`) every `tipDays` of their band, and give their `warm`/`friend` effects daily and their `boon` once; bitter ones give their `bitter` effects and leave after `leaveDays`. Effects: gold (a day), mandate (a day). Nothing here rolls the town's dice: daily rolls are seeded from the seed, the day and the notable.",
+  "firstDay": 4,
+  "riseDays": 5,
+  "bands": [-50, -15, 15, 50],
+  "bandNames": ["Bitter", "Cool", "Neutral", "Warm", "Friend"],
+  "start": [-5, 10],
+  "drift": 0.3,
+  "visitDays": 4,
+  "coolDc": 2,
+  "fail": 3,
+  "fumble": 10,
+  "gift": 30,
+  "giftGain": 6,
+  "askDays": [9, 15],
+  "askOpen": 5,
+  "refuse": 4,
+  "tipDays": [0, 0, 0, 10, 5],
+  "leaveDays": 30,
+  "seat": 0.3,
+  "remember": 6,
+  "approaches": [
+    { "id": "flatter", "name": "Pay a call", "icon": "np-talk", "skill": "persuasion", "dc": 12, "gain": 9 },
+    { "id": "listen", "name": "Hear them out", "icon": "np-conversation", "skill": "insight", "dc": 12, "gain": 10 },
+    { "id": "song", "name": "Share a song", "icon": "np-lyre", "skill": "performance", "dc": 13, "gain": 12 },
+    { "id": "magic", "name": "Talk magic", "icon": "np-pointy-hat", "skill": "arcana", "dc": 13, "gain": 12 },
+    { "id": "tales", "name": "Swap old tales", "icon": "np-scroll-unfurled", "skill": "history", "dc": 12, "gain": 10 },
+    { "id": "pray", "name": "Pray together", "icon": "np-prayer", "skill": "religion", "dc": 12, "gain": 10 },
+    { "id": "craft", "name": "Lend a hand", "icon": "np-anvil-impact", "skill": "athletics", "dc": 12, "gain": 10 },
+    { "id": "books", "name": "Go over the books", "icon": "np-magnifying-glass", "skill": "investigation", "dc": 13, "gain": 12 },
+    { "id": "tend", "name": "Tend the sick", "icon": "np-healing", "skill": "medicine", "dc": 12, "gain": 10 },
+    { "id": "fields", "name": "Walk the hedgerows", "icon": "np-herbs-bundle", "skill": "nature", "dc": 12, "gain": 10 }
+  ],
+  "hears": {
+    "sites": { "name": "Places in the wilds", "icon": "np-treasure-map" },
+    "rumours": { "name": "The truth of tavern talk", "icon": "ale" },
+    "foes": { "name": "Enemies on the move", "icon": "warband" },
+    "plots": { "name": "Traitors and plots", "icon": "suspicion" },
+    "regions": { "name": "Far country", "icon": "compass" }
+  },
+  "kinds": [
+    {
+      "id": "master-smith",
+      "title": "Master smith",
+      "face": "np-anvil-impact",
+      "trades": ["smith"],
+      "rank": "practice",
+      "approaches": ["craft", "tales", "flatter"],
+      "hears": "foes",
+      "boon": "weapon-1",
+      "boonText": "forges a fine blade for the armory",
+      "warm": {},
+      "friend": {},
+      "bitter": { "mandate": -0.02 },
+      "asks": [
+        { "id": "ore", "text": "needs gold for good iron", "gold": 35, "gain": 12 },
+        { "id": "apprentice", "text": "wants a word with a lazy apprentice", "skill": "intimidation", "dc": 12, "gain": 10 }
+      ]
+    },
+    {
+      "id": "merchant-prince",
+      "title": "Merchant prince",
+      "face": "np-coins",
+      "trades": ["merchant", "shopkeeper", "factor"],
+      "rank": "gold",
+      "approaches": ["books", "flatter", "listen"],
+      "hears": "regions",
+      "warm": { "gold": 1 },
+      "friend": { "gold": 3 },
+      "bitter": { "gold": -1.5 },
+      "asks": [
+        { "id": "loan", "text": "asks a loan against a late caravan", "gold": 50, "gain": 14 },
+        { "id": "dispute", "text": "wants a dispute with a rival settled", "skill": "persuasion", "dc": 13, "gain": 12 }
+      ]
+    },
+    {
+      "id": "celebrity",
+      "title": "Local celebrity",
+      "face": "np-drama-masks",
+      "trades": ["player", "herald"],
+      "rank": "practice",
+      "approaches": ["song", "flatter", "listen"],
+      "hears": "sites",
+      "warm": { "mandate": 0.03 },
+      "friend": { "mandate": 0.07 },
+      "bitter": { "mandate": -0.06 },
+      "asks": [
+        { "id": "stage", "text": "wants a new stage for the summer", "gold": 40, "gain": 12 },
+        { "id": "review", "text": "wants the mayor at opening night", "skill": "performance", "dc": 12, "gain": 12 }
+      ]
+    },
+    {
+      "id": "innkeeper",
+      "title": "Innkeeper",
+      "face": "np-beer-stein",
+      "trades": ["barkeep"],
+      "rank": "practice",
+      "approaches": ["listen", "song", "tales"],
+      "hears": "rumours",
+      "warm": {},
+      "friend": { "mandate": 0.02 },
+      "bitter": { "mandate": -0.02 },
+      "asks": [
+        { "id": "cellar", "text": "has a flooded cellar to pay for", "gold": 30, "gain": 10 },
+        { "id": "brawler", "text": "wants a regular brawler calmed", "skill": "intimidation", "dc": 12, "gain": 10 }
+      ]
+    },
+    {
+      "id": "high-priest",
+      "title": "Respected priest",
+      "face": "np-sun-priest",
+      "trades": ["priest", "acolyte"],
+      "rank": "practice",
+      "approaches": ["pray", "listen", "tend"],
+      "hears": "plots",
+      "warm": { "mandate": 0.02 },
+      "friend": { "mandate": 0.05 },
+      "bitter": { "mandate": -0.04 },
+      "asks": [
+        { "id": "alms", "text": "asks alms for the poor", "gold": 30, "gain": 12 },
+        { "id": "sermon", "text": "wants the mayor to read at the feast", "skill": "religion", "dc": 12, "gain": 10 }
+      ]
+    },
+    {
+      "id": "hedge-healer",
+      "title": "Hedge healer",
+      "face": "np-herbs-bundle",
+      "trades": ["herbalist", "alchemist", "attendant"],
+      "rank": "practice",
+      "approaches": ["fields", "tend", "magic"],
+      "hears": "sites",
+      "boon": "potion-of-greater-healing",
+      "boonText": "brews a strong draught for the armory",
+      "warm": {},
+      "friend": {},
+      "bitter": { "mandate": -0.02 },
+      "asks": [
+        { "id": "herbs", "text": "needs rare herbs bought in", "gold": 30, "gain": 12 },
+        { "id": "fever", "text": "needs help with a fever ward", "skill": "medicine", "dc": 12, "gain": 12 }
+      ]
+    },
+    {
+      "id": "recluse",
+      "title": "Reclusive wizard",
+      "face": "np-wizard-face",
+      "outsider": true,
+      "minDay": 12,
+      "place": "a crooked tower past the fields",
+      "names": ["Orvell Thane", "Maudra Greaves", "Isembard Fallowmere", "Hesper Vane", "Tobiah Mournwood", "Ysolde Quillfeather", "Aldric Pennyweather", "Corwen Ashgrove"],
+      "approaches": ["magic", "tales", "books"],
+      "hears": "sites",
+      "boon": "wand-of-magic-missiles",
+      "boonText": "leaves a wand at the town hall's door",
+      "warm": {},
+      "friend": {},
+      "bitter": {},
+      "asks": [
+        { "id": "ink", "text": "wants rare inks fetched from the market", "gold": 35, "gain": 12 },
+        { "id": "riddle", "text": "sets the mayor a riddle", "skill": "arcana", "dc": 14, "gain": 16 }
+      ]
+    }
+  ]
+}

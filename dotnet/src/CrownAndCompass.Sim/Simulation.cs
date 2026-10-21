@@ -173,6 +173,7 @@ public sealed class Simulation
         Secrets.Daily(t, Options.AutoMayor && Options.AutoCouncil);
         Guilds.Daily(t, Options.AutoMayor && Options.AutoCouncil);
         Notoriety.Daily(t);
+        Notables.Daily(t);
         Passage.Daily(t);
         Decor.Daily(t);
         Stories.Daily(t, Options.AutoMayor && Options.AutoStories);
@@ -459,6 +460,12 @@ public sealed class Simulation
 
     /// <summary>Answer a minor power's envoy: accept its offer or demand and pay its price, or send it home.</summary>
     public bool AnswerEnvoy(string powerId, bool accept) => Powers.Answer(Town, powerId, accept);
+
+    /// <summary>Spend time with a notable townsperson: an approach they are open to (a check of the mayor's skill), or "gift".</summary>
+    public StoryBeat? VisitNotable(int notableId, string approach) => Notables.Visit(Town, notableId, approach);
+
+    /// <summary>Help a notable with the favour they asked (gold, or a check), or turn them down.</summary>
+    public StoryBeat? AnswerNotable(int notableId, bool help) => Notables.Answer(Town, notableId, help);
 
     /// <summary>Pay off a sellsword company that is home.</summary>
     public bool DismissMercenaries(string companyId) => Mercenaries.Dismiss(Town, companyId);
