@@ -1004,7 +1004,7 @@ public static class Expedition
         /// <summary>The tracker found a back way in: one room fewer.</summary>
         private bool _tracked;
 
-        private WayRules Way => _content.Roads.Wayfaring;
+        private WayRules Roadways => _content.Roads.Wayfaring;
 
         /// <summary>Who does what on the road, their bonus at every skill the road asks for, and the road's dice.</summary>
         public void TakeJobs(List<RoadJob> jobs, Dictionary<int, Dictionary<string, int>> skills, Rng dice)
@@ -1012,7 +1012,7 @@ public static class Expedition
             _jobs = jobs;
             _skills = skills;
             _way = dice;
-            _food = Way.Rations;
+            _food = Roadways.Rations;
         }
 
         public IReadOnlyList<RoadJob> Jobs => _jobs;
@@ -1020,8 +1020,8 @@ public static class Expedition
         public void TellJobs()
         {
             if (_jobs.Count == 0) return;
-            var list = Expedition.ListNames(_jobs.Select(j => $"{j.Name} {Way.Job(j.Job).Verb}").ToList());
-            string line = Wayfaring.Pick(_way!, Way.Texts, "jobs");
+            var list = Expedition.ListNames(_jobs.Select(j => $"{j.Name} {Roadways.Job(j.Job).Verb}").ToList());
+            string line = Wayfaring.Pick(_way!, Roadways.Texts, "jobs");
             if (line != "") Log(line.Replace("{list}", list, StringComparison.Ordinal));
         }
 
@@ -1044,7 +1044,7 @@ public static class Expedition
         private static string Rolled((bool Ok, int Roll, int Total) t, int dc) => t.Roll == 0 ? "routine" : $"d20 {t.Roll}, {t.Total} vs DC {dc}";
 
         private string WayText(string key, Combatant? who = null) =>
-            Wayfaring.Pick(_way ?? _rng, Way.Texts, key).Replace("{name}", who?.Agent.GivenName ?? "", StringComparison.Ordinal);
+            Wayfaring.Pick(_way ?? _rng, Roadways.Texts, key).Replace("{name}", who?.Agent.GivenName ?? "", StringComparison.Ordinal);
 
         /// <summary>The night's watch: the hero whose job it is, or the sharpest eyes if nobody took it.</summary>
         private Check WatchCheck()
@@ -1056,7 +1056,7 @@ public static class Expedition
 
         private void SetHunger(int n)
         {
-            n = Math.Clamp(n, 0, Way.HungerMax);
+            n = Math.Clamp(n, 0, Roadways.HungerMax);
             int delta = n - _hunger;
             if (delta == 0) return;
             foreach (var c in Party)
@@ -1076,7 +1076,7 @@ public static class Expedition
                 _food--;
                 return;
             }
-            var job = Way.Job("forage");
+            var job = Roadways.Job("forage");
             if (Doing("forage") is not { } f)
             {
                 Log(WayText("hungry"));
@@ -1106,7 +1106,7 @@ public static class Expedition
             if (Doing("treat") is not { } medic) return;
             var hurt = Standing.Where(c => c.Hp < c.Sheet.MaxHp).ToList();
             if (hurt.Count == 0) return;
-            var job = Way.Job("treat");
+            var job = Roadways.Job("treat");
             var t = Try(medic, job.Skill, job.Dc);
             if (!t.Ok) return;
             int each = Math.Max(1, job.Heal + Rng.Modifier(medic.Agent.Abilities.Wis));
@@ -1124,7 +1124,7 @@ public static class Expedition
         public void Track(SiteDef site)
         {
             if (_way == null || Doing("track") is not { } tracker) return;
-            var job = Way.Job("track");
+            var job = Roadways.Job("track");
             int dc = job.Dc + (int)(Math.Max(1, site.Tier) * job.PerTier);
             var t = Try(tracker, job.Skill, dc);
             _tracked = t.Ok;
@@ -1219,7 +1219,7 @@ public static class Expedition
                 }
                 case "oasis":
                     Log(Say(Pick(w.Text), null));
-                    _food = Math.Max(_food, Way.Rations);
+                    _food = Math.Max(_food, Roadways.Rations);
                     SetHunger(0);
                     foreach (var c in Standing) c.Hp = Math.Min(c.Sheet.MaxHp, c.Hp + c.Sheet.MaxHp / 4);
                     break;
