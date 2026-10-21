@@ -1,0 +1,17 @@
+{
+  "_doc": "Cursed weapons (Systems/Curses.cs). When a hero takes up a magic weapon from a hoard, chance per mille of the time (by a stable hash) it is cursed with one of these. A cursed weapon cannot be put down, sold or passed on until the curse is lifted (story need cursed, effect curse). Each curse gives and takes: attack, ac, damage and skill are added; brawl multiplies the bearer's chance of starting a tavern brawl; loyalty is added a day (it whispers); heal multiplies their rest in town; jealous bearers can wear no other magic; greedy bearers never sell their loot to the town.",
+  "chance": 150,
+  "lines": {
+    "cursed": "{hero} takes up the {item}, and it will not let go: it is {curse}. {text}",
+    "lifted": "The curse on {hero}'s {item} is lifted. It is only a blade now.",
+    "broken": "{hero}'s cursed {item} is broken on the temple's anvil, and something screams as it goes."
+  },
+  "curses": [
+    { "id": "bloodthirst", "name": "bloodthirsty", "text": "It strikes deep, and drags its bearer into every tavern brawl.", "attack": 1, "damage": 2, "brawl": 2.5 },
+    { "id": "jealous", "name": "jealous", "text": "It strikes true, but will not share its bearer with any other magic.", "attack": 2, "jealous": true },
+    { "id": "craven", "name": "craven", "text": "It parries every blow aimed at its bearer, and flinches from striking first.", "ac": 2, "attack": -1 },
+    { "id": "whispering", "name": "whispering", "text": "It whispers the secrets of locks and lies, and of better towns than this one.", "skill": 2, "loyalty": -0.15 },
+    { "id": "gluttonous", "name": "gluttonous", "text": "It bites deep, and feeds on its bearer while they sleep.", "damage": 3, "heal": 0.5 },
+    { "id": "miserly", "name": "miserly", "text": "It loves gold: its bearer fights harder, and will sell nothing to the town.", "attack": 1, "skill": 1, "greedy": true }
+  ]
+}

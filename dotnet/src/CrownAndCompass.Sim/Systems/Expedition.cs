@@ -45,6 +45,9 @@ public sealed record ExpeditionResult(
     /// <summary>Every kind of creature they fought, in the order they met them (game or library ids), for the map to draw the fight.</summary>
     public IReadOnlyList<string> Fought { get; init; } = [];
 
+    /// <summary>Heroes bought back from the veiled room, and the patron each now owes.</summary>
+    public OrderedMap<int, string> Bargains { get; init; } = new();
+
     /// <summary>Put the heroes' hit points and potions where they ended up.</summary>
     public void Apply(IEnumerable<Agent> heroes)
     {
@@ -175,6 +178,9 @@ public static class Expedition
         public readonly List<Gag> Gags = [];
         internal readonly List<Combatant> Party;
         public readonly OrderedMap<int, int> Kills = new();
+
+        /// <summary>Heroes bought back from the veiled room, and the patron they owe (<see cref="Patrons"/>).</summary>
+        public readonly OrderedMap<int, string> Bargains = new();
         public int Gold;
         public int Swell;
         public int Xp;
@@ -209,6 +215,9 @@ public static class Expedition
         public bool Talked;
         public bool Driven;
         public bool GoalMet;
+
+        /// <summary>How far the alarm has risen on a heist or a rescue (<see cref="HeistRules"/>).</summary>
+        public int Alarm;
         public readonly List<ExpeditionItem> Items = [];
 
         public Venture(Rng rng, Content content, IReadOnlyList<Agent> heroes, SiteDef? site = null)
@@ -325,8 +334,35 @@ public static class Expedition
             }
         }
 
+        /// <summary>Kinds of trouble a caster has already solved their own way on this delve.</summary>
+        private readonly HashSet<string> _waysUsed = [];
+
+        /// <summary>
+        /// A strong caster in the party gets them past this their own way, without a roll (once a delve for each kind):
+        /// flies them over the gorge, sends an unseen servant at the trap, divines the riddle, charms the guards.
+        /// </summary>
+        private bool Way(EncounterDef e)
+        {
+            if (_waysUsed.Contains(e.Kind)) return false;
+            foreach (var w in _content.Bounties.Ways)
+            {
+                if (w.Kind != e.Kind) continue;
+                var who = Standing.Where(c => w.Classes.Contains(c.Sheet.Cls.Id) && c.Sheet.Level >= w.MinLevel).OrderByDescending(c => c.Sheet.Level).ThenBy(c => c.Agent.Id).FirstOrDefault();
+                if (who == null) continue;
+                _waysUsed.Add(e.Kind);
+                Log(Cap(w.Line.Replace("{name}", who.Agent.GivenName).Replace("{class}", who.Sheet.Cls.Name.ToLowerInvariant()).Replace("{text}", e.Text)));
+                Mark("way");
+                Xp += e.Kind == "combat" ? 50 : 25;
+                if (e.Kind == "parley") _skipNextCombat = true;
+                if (e.Kind is "puzzle" or "parley" && e.Gold.Length > 1) Gold += _rng.Range(e.Gold[0], e.Gold[1] + 1);
+                return true;
+            }
+            return false;
+        }
+
         public void Encounter(EncounterDef e)
         {
+            if (e.Kind is "hazard" or "trap" or "puzzle" or "parley" && Way(e)) return;
             switch (e.Kind)
             {
                 case "combat":
@@ -975,6 +1011,10 @@ public static class Expedition
                     continue;
                 }
                 if (FirstAid(c)) continue;
+                // Nobody could reach them: they wake in the veiled room and answer its three questions (death saves).
+                var veil = _content.Patrons.Veil;
+                string name = c.Agent.GivenName;
+                if (veil.Wake != "") Log(veil.Wake.Replace("{name}", name));
                 int ok = 0;
                 int fail = 0;
                 var rolls = new List<int>();
@@ -987,10 +1027,26 @@ public static class Expedition
                     else if (r >= 10) ok++;
                     else fail++;
                 }
+                string said = string.Join(", ", rolls);
                 if (fail >= 3)
                 {
+                    // Before the door closes, a patron may offer a costly way back.
+                    if (Patrons.Offer(_content, _rng, c.Sheet) is { } patron)
+                    {
+                        Log(veil.Fail.Replace("{name}", name).Replace("{rolls}", said) + " " + veil.Offer.Replace("{name}", name).Replace("{patron}", patron.Name));
+                        if (!c.Sheet.Cls.Healer || c.Sheet.Patron == patron.Id)
+                        {
+                            c.Down = false;
+                            c.Hp = 1;
+                            Bargains[c.Agent.Id] = patron.Id;
+                            Log(veil.Take.Replace("{name}", name).Replace("{patron}", patron.Name));
+                            Mark("bargain", c, rolls[^1]);
+                            continue;
+                        }
+                        Log(veil.Refuse.Replace("{name}", name).Replace("{patron}", patron.Name));
+                    }
                     c.Dead = true;
-                    Log($"{c.Agent.GivenName} fails their death saves ({string.Join(", ", rolls)}) and dies.");
+                    Log($"{name} fails their death saves ({said}) and dies.");
                     Mark("death", c, rolls[^1]);
                     Speak("death", c);
                 }
@@ -998,7 +1054,7 @@ public static class Expedition
                 {
                     c.Down = false;
                     c.Hp = 1;
-                    Log($"{c.Agent.GivenName} pulls through on death saves ({string.Join(", ", rolls)}).");
+                    Log(veil.Pass != "" ? veil.Pass.Replace("{name}", name).Replace("{rolls}", said) : $"{name} pulls through on death saves ({said}).");
                     Mark("saved", c, rolls[^1]);
                 }
             }
@@ -1218,7 +1274,9 @@ public static class Expedition
                 if (boss) Log("At last, the heart of the place.");
                 Clock += 1;
                 bool won = true;
-                if (e.Kind == "combat") won = Combat(e, false);
+                if (!boss && e.Kind == "combat" && Terms is { Heist: true } && Sneak(site)) won = true;
+                else if (!boss && e.Kind == "combat" && Way(e)) won = true;
+                else if (e.Kind == "combat") won = Combat(e, false);
                 else Encounter(e);
                 MarkLost();
                 if (Wiped)
@@ -1313,6 +1371,13 @@ public static class Expedition
             }
             if (t.Item)
             {
+                if (t.Heist && !Vault(site))
+                {
+                    Gold -= loot - (int)(loot * _content.Bounties.Heist.Bolted);
+                    Log($"The vault door slams behind them and every bell in {site.Name} rings. They run with what is in their hands{(loot > 0 ? $" ({(int)(loot * _content.Bounties.Heist.Bolted)} gold)" : "")}, and the treasure stays behind.");
+                    Mark("goal");
+                    return ExpeditionOutcome.Retreated;
+                }
                 Log($"They find the hoard, take what they can carry{(loot > 0 ? $" ({loot} gold)" : "")} and get out of {site.Name} before the rest of it wakes.");
                 Mark("goal");
                 Treasure(site, true);
@@ -1324,6 +1389,62 @@ public static class Expedition
             Driven = true;
             SiteCleared = true;
             return ExpeditionOutcome.Cleared;
+        }
+
+        /// <summary>
+        /// Slip past a room on a quiet job: the party's best at it against the place, or fight it and raise the alarm.
+        /// Once the alarm is up the whole place is awake and nobody slips past anything. Returns whether they got by.
+        /// </summary>
+        private bool Sneak(SiteDef site)
+        {
+            var h = _content.Bounties.Heist;
+            if (Alarm >= h.AlarmMax) return false;
+            var check = BestCheck(SkillKind.Trap);
+            int dc = h.SneakDc + h.PerTier * Math.Max(1, site.Tier);
+            if (check.Total >= dc)
+            {
+                Log($"{check.Name} leads them past unseen (d20 {check.Roll}, {check.Total} vs DC {dc}); the alarm stays at {Alarm} of {h.AlarmMax}.");
+                Mark("sneak", check, dc);
+                return true;
+            }
+            Raise(site, $"{check.Name} kicks a pail in the dark (d20 {check.Roll}, {check.Total} vs DC {dc})");
+            return false;
+        }
+
+        /// <summary>The alarm goes up a step; at the top the whole place wakes, and more foes come to every room after.</summary>
+        private void Raise(SiteDef site, string why)
+        {
+            var h = _content.Bounties.Heist;
+            Alarm = Math.Min(h.AlarmMax, Alarm + 1);
+            if (Alarm >= h.AlarmMax)
+            {
+                Swell += h.Wake;
+                Log($"{why}, and the alarm goes up all through {site.Name}: every room ahead is awake now.");
+            }
+            else Log($"{why}. The alarm rises to {Alarm} of {h.AlarmMax}.");
+        }
+
+        /// <summary>The vault round a hoard: its locks, wards and hidden catches one after another, sharing the job's alarm. Returns whether they got in.</summary>
+        private bool Vault(SiteDef site)
+        {
+            var h = _content.Bounties.Heist;
+            int layers = h.Layers.Count == 0 ? 0 : h.Layers[Math.Clamp(site.Tier - 1, 0, h.Layers.Count - 1)];
+            int dc = h.LayerDc + h.PerTier * Math.Max(1, site.Tier);
+            for (int i = 0; i < layers; i++)
+            {
+                string kind = h.Kinds.Count == 0 ? SkillKind.Trap : h.Kinds[i % h.Kinds.Count];
+                string what = kind switch { SkillKind.Puzzle => "a ward", SkillKind.Perception => "a hidden catch", _ => "a lock" };
+                var check = BestCheck(kind);
+                if (check.Total >= dc)
+                {
+                    Log($"{check.Name} gets past {what} on the vault (d20 {check.Roll}, {check.Total} vs DC {dc}), {i + 1} of {layers}.");
+                    Mark("vault", check, dc);
+                    continue;
+                }
+                Raise(site, $"{check.Name} fumbles {what} on the vault (d20 {check.Roll}, {check.Total} vs DC {dc})");
+                if (Alarm >= h.AlarmMax) return false;
+            }
+            return true;
         }
 
         private void Hoard(SiteDef site)
@@ -1427,6 +1548,7 @@ public static class Expedition
                 Beats = Beats.ToList(),
                 Gags = Gags.ToList(),
                 Fought = Fought.ToList(),
+                Bargains = Bargains,
             };
         }
     }

@@ -73,6 +73,21 @@ public sealed record CheckDef
     public double Rest { get; init; }
     public List<int> Take { get; init; } = [];
     public int Caught { get; init; }
+
+    /// <summary>Routine work: it fails only on a natural 1 that also falls short, so it almost always succeeds.</summary>
+    public bool Routine { get; init; }
+
+    /// <summary>The one line of why it went as it did, by result: {workplace}, {who}.</summary>
+    public CheckWhy Why { get; init; } = new();
+}
+
+/// <summary>Why a check went as it did, in a line for each result.</summary>
+public sealed record CheckWhy
+{
+    public string Critical { get; init; } = "";
+    public string Success { get; init; } = "";
+    public string Failure { get; init; } = "";
+    public string Fumble { get; init; } = "";
 }
 
 /// <summary>
@@ -95,6 +110,9 @@ public sealed class SkillCheck
     public bool Success { get; init; }
     public bool Critical => Die == 20;
     public bool Fumble => Die == 1;
+
+    /// <summary>Why it went as it did, in a line ("the rows came in straight"); "" when the check has none.</summary>
+    public string Why { get; init; } = "";
 }
 
 /// <summary>
@@ -198,12 +216,15 @@ public static class Skills
     {
         int die = town.Rng.D20();
         int bonus = (a != null ? Bonus(town, a, skill) : WatchBonus(town, skill)) + extra;
-        bool ok = die == 20 || (die != 1 && die + bonus >= dc);
+        var def = Rules(town).Check(kind);
+        // Routine work almost always goes right: only a natural 1 that also falls short fails it.
+        bool ok = die == 20 || (def.Routine ? die != 1 || die + bonus >= dc : die != 1 && die + bonus >= dc);
         if (ok && a != null) Practise(town, a, skill, kind);
         return Record(town, new SkillCheck
         {
             Serial = ++town.CheckSerial, Tick = town.Tick, AgentId = a?.Id, TargetId = target, BuildingId = building,
             Kind = kind, Skill = skill, Die = die, Bonus = bonus, Dc = dc, Success = ok,
+            Why = Why(town, def.Why, die, ok, building, target),
         });
     }
 
@@ -226,6 +247,16 @@ public static class Skills
             Kind = kind, Skill = skillB, Die = db, Bonus = bb, Dc = da + ba + 1, Success = !first,
         });
         return (x, y);
+    }
+
+    /// <summary>The line of why a check went as it did.</summary>
+    private static string Why(Town town, CheckWhy w, int die, bool ok, int? building, int? target)
+    {
+        string line = die == 20 && w.Critical != "" ? w.Critical : die == 1 && w.Fumble != "" ? w.Fumble : ok ? w.Success : w.Failure;
+        if (line == "") return "";
+        if (line.Contains("{workplace}")) line = line.Replace("{workplace}", building is int b ? town.Building(b).Name : "the work");
+        if (line.Contains("{who}")) line = line.Replace("{who}", target is int t ? town.Agent(t).GivenName : "them");
+        return line;
     }
 
     private static SkillCheck Record(Town town, SkillCheck c)
@@ -282,7 +313,7 @@ public static class Skills
             if (best == null) continue;
             var chk = Roll(town, best, skill, c.Dc, "craft", null, b.Id);
             double f = chk.Critical ? c.Critical : chk.Fumble ? c.Fumble : chk.Success ? c.Success : c.Failure;
-            b.KnackPct = (int)Math.Round((f - 1) * 100);
+            b.KnackPct = (int)Math.Round((f - 1 + HedgeMages.Yield(town, b)) * 100);
         }
     }
 
@@ -309,7 +340,7 @@ public static class Skills
             int bb = Bonus(town, p, c.Skill);
             if (bb > bonus) (best, bonus) = (p, bb);
         }
-        var chk = Roll(town, best!, c.Skill, c.Dc, "perform", null, tavern.Id);
+        var chk = Roll(town, best!, c.Skill, c.Dc, "perform", null, tavern.Id, Taverns.Perform(town, tavern));
         if (!chk.Success && !chk.Fumble) return;
         double mood = chk.Fumble ? c.FumbleMood : chk.Critical ? 2 * c.Mood : c.Mood;
         double tips = 0;
@@ -361,7 +392,7 @@ public static class Skills
         var staff = tavern.OwnerId is int o ? tavern.Workers.Append(o) : tavern.Workers;
         var keep = staff.Distinct().Select(town.Agent).Where(w => !w.Departed && w.Id != brawler.Id && w.LocationId == tavern.Id).OrderBy(w => w.Id).FirstOrDefault();
         if (keep == null) return false;
-        var chk = Roll(town, keep, c.Skill, c.Dc, "calm", brawler.Id, tavern.Id);
+        var chk = Roll(town, keep, c.Skill, c.Dc, "calm", brawler.Id, tavern.Id, Taverns.Calm(town, tavern));
         if (!chk.Success) return false;
         brawler.Activity = Activity.Relaxing;
         brawler.LocationId = brawler.HomeId;

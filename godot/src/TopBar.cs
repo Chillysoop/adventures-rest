@@ -42,7 +42,7 @@ public partial class Main
         [
             new("Households", "population", $"{t.Population:N0}", young ? "" : PerMonth(pop), pop > 0.5 ? Ui.Good : pop < -0.5 ? Ui.Bad : Ui.Ink2, false, Tab.City),
             new("Heroes", "heroes", t.Heroes.Count.ToString(), away > 0 ? $"{away} out" : "", Ui.Ink2, false, Tab.Bounties),
-            new("Treasury", "gold", $"{Math.Floor(t.Treasury):N0}", young ? "" : PerMonth(net), net >= 0 ? Ui.Good : Ui.Bad, Trends.MoneyTrouble(t), Tab.Council),
+            new("Treasury", Ui.Money(Math.Floor(t.Treasury)).Icon, Ui.Money(Math.Floor(t.Treasury)).Figure, young ? "" : PerMonth(net), net >= 0 ? Ui.Good : Ui.Bad, Trends.MoneyTrouble(t), Tab.Council),
             new("Food", "bread", food, importing ? "importing" : Steady(stock, 3, "▲ stocking", "▼ drawing", "steady"), importing || stock < -3 ? Ui.Bad : stock > 3 ? Ui.Good : Ui.Ink2, Trends.FoodTrouble(t), Tab.City),
             new("Mandate", "mandate", $"{Math.Round(t.Mandate)}", Steady(mandate, 1, PerMonth(mandate), PerMonth(mandate), "steady"), mandate > 1 ? Ui.Good : mandate < -1 ? Ui.Bad : Ui.Ink2, Trends.MandateTrouble(t), Tab.Council),
             new("Unrest", "suspicion", $"{Math.Round(t.Taxes.Unrest)}", t.Taxes.Unrest < 1 && unrest <= 0 ? "calm" : Steady(unrest, 1, "rising", "easing", "steady"), unrest > 1 ? Ui.Bad : unrest < -1 ? Ui.Good : Ui.Ink2, Trends.UnrestTrouble(t), Tab.Council),
