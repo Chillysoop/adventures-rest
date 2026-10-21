@@ -367,6 +367,7 @@ public static class Explore
         var region = town.Regions[regionId];
         double pay = reward ?? SuggestedReward(town, region);
         if (pay <= 0 || town.Treasury < pay) return null;
+        if (Stewards.Intercept(town, "bounties", new StewardAsk { Area = "bounties", Kind = "survey", Title = $"Survey {region.Name} · {Js.Str(pay)}g", Why = "• Unknown country nearby\n• A company maps it and brings back finds", I1 = regionId, D1 = pay })) return null;
         town.Book(TreasuryAccount.Exploring, -pay);
         var c = new Commission
         {

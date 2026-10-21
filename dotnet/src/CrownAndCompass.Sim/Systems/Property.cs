@@ -108,7 +108,7 @@ public static class Property
         string service = d.Serves.Keys.Order(StringComparer.Ordinal).First();
         double capacity = 0;
         foreach (var b in town.Buildings)
-            if (b.Def.Serves.TryGetValue(service, out int n) && !b.ForSale) capacity += n;
+            if (b.Def.Serves.TryGetValue(service, out int n) && !b.ForSale && !b.Razed) capacity += n;
         int users = 0;
         foreach (var house in town.Buildings)
             if (house.Complete && City.Housing(town, house.Def.Id) is { } h && (h.Services.Contains(service) || HousingWants(town, h, service))) users += house.Residents.Count;
@@ -123,7 +123,7 @@ public static class Property
 
     private static double TavernDemand(Town town)
     {
-        int taverns = town.Buildings.Count(b => b.Def.Venue && !b.ForSale);
+        int taverns = town.Buildings.Count(b => b.Def.Venue && !b.ForSale && !b.Razed);
         if (taverns == 0) return town.Population >= 12 ? 3.0 : 0.5;
         return town.Population / (taverns * 40.0) + Crowds.Demand(town, Crowds.Tavern);
     }
@@ -131,7 +131,7 @@ public static class Property
     /// <summary>A general store lives on heroes buying potions before they march.</summary>
     private static double StoreDemand(Town town)
     {
-        int stores = town.Buildings.Count(b => b.Def.Id == "general_store" && !b.ForSale);
+        int stores = town.Buildings.Count(b => b.Def.Id == "general_store" && !b.ForSale && !b.Razed);
         int heroes = town.Heroes.Count;
         if (stores == 0) return heroes >= 3 ? 2.0 : 0.5;
         return heroes / (stores * 8.0);

@@ -536,6 +536,11 @@ public partial class Main
         var t = _sim.Town;
         var sel = _map.Selection;
         p.Begin();
+        if (sel != null && _map.Where(sel) != null)
+        {
+            bool on = _map.Follow == sel;
+            p.Buttons((on ? "◉ Following · F" : sel.Kind == "agent" ? "◎ Follow · F" : "◎ Centre · F", true, on, ToggleFollow));
+        }
         if (sel == null) p.Note("Click a building, a person or a site on the map.");
         else if (sel.Kind == "agent") InspectAgent(p, t, t.Agent(sel.Id));
         else if (sel.Kind == "building") InspectBuilding(p, t, t.Building(sel.Id));
@@ -714,6 +719,25 @@ public partial class Main
         if (b.Def.Crews > 0 && b.Complete)
             p.Text(Ui.C(Ui.Ink2, $"Puts {b.Def.Crews} more crews to work. The town has {Construction.Crews(t)} crews; a town its size keeps {Construction.Wanted(t)} busy."));
         if (Monuments.IsMonument(t, b.Def)) MonumentCard(p, t, b);
+        if (!b.Razed && Planning.RazeBlocked(t, b) == null) RazeButton(p, t, b);
+    }
+
+    /// <summary>Call off a site or tear a building down, for some gold back; it asks first.</summary>
+    private void RazeButton(Pane p, Town t, Building b)
+    {
+        int id = b.Id;
+        double back = Planning.Refund(t, b);
+        string verb = b.IsSite ? "Call off" : "Tear down";
+        string body = (b.IsSite ? "• The builders stop and the ground is freed" : "• Its people move out, its goods go to market")
+            + $"\n• {Js.Str(back)}g back" + (b.IsSite && b.BuildProgress > 0 ? " (work had begun)" : "");
+        p.Buttons(($"{verb} · +{Js.Str(back)}g", true, false, () => Ask($"{verb} {b.Name}?", body, verb, () => Act(() =>
+        {
+            if (_sim.Raze(id))
+            {
+                Select(null);
+                _map.Planner.Touch();
+            }
+        }))));
     }
 
     /// <summary>A tavern's character: its keeper's past and perk, its quirk and the crowd it draws, and how the town talks.</summary>
@@ -870,7 +894,19 @@ public partial class Main
                 p.Note(no == null ? $"Their retainers hold it at no cost to the town, and they take {Js.Str(t.Content.Loyalty.Fief.Rent)}g a day from the land." : Ui.Cap(no) + ".");
             }
             if (s.Held) return;
-            // Something will move back in unless the town holds it.
+            // Something will move back in unless a patrol keeps it clear or the town holds it.
+            p.Heading("Keep it clear");
+            if (s.Patrolled)
+            {
+                p.Buttons(("Call off the patrol", true, false, () => Act(() => _sim.Patrol(sid, false))));
+                p.Note($"• Patrolled · {Js.Str(Lairs.PatrolWage(t, s))}g a day\n• Heroes drive off what moves in");
+            }
+            else
+            {
+                string? noPatrol = Lairs.PatrolBlocked(t, s);
+                p.Buttons(($"Patrol it · {Js.Str(Lairs.PatrolWage(t, s))}g a day", noPatrol == null, true, () => Act(() => _sim.Patrol(sid, true))));
+                p.Note(noPatrol == null ? "• Riders meet whatever moves back in\n• Your best hero at home leads them" : Ui.Cap(noPatrol) + ".");
+            }
             string? blocked = Lairs.HoldBlocked(t, s);
             p.Heading("Hold it");
             var o = t.Content.Lairs.Outpost;

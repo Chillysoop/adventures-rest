@@ -97,7 +97,7 @@ public static class Farming
     {
         var farms = new Dictionary<string, int>();
         foreach (var b in town.Buildings)
-            if (b.Def.Zone == Zone.Farmland) farms[b.Def.Id] = farms.GetValueOrDefault(b.Def.Id) + 1;
+            if (b.Def.Zone == Zone.Farmland && !b.Razed) farms[b.Def.Id] = farms.GetValueOrDefault(b.Def.Id) + 1;
         CropDef? best = null;
         double low = double.MaxValue;
         foreach (var crop in Crops(town))

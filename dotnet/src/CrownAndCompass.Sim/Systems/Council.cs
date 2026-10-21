@@ -160,7 +160,7 @@ public static class Council
         return true;
     }
 
-    private static bool? Majority(Motion m)
+    internal static bool? Majority(Motion m)
     {
         int yes = m.Votes.Count(v => v.Yes);
         int no = m.Votes.Count - yes;

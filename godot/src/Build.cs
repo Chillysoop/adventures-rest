@@ -147,6 +147,20 @@ public partial class Main
         ShowBuildGroup(BuildGroup.Zones);
     }
 
+    /// <summary>Ctrl+Z: take back the last stroke of the zoning brush.</summary>
+    private void UndoPaint()
+    {
+        int n = _sim.UndoPaint();
+        if (n == 0)
+        {
+            Toast("Nothing to undo");
+            return;
+        }
+        _map.Planner.Touch();
+        Toast("Last stroke undone");
+        GuideEvent("undo");
+    }
+
     private void ToggleBuildBar()
     {
         _buildBar.Visible = !_buildBar.Visible;
@@ -346,7 +360,7 @@ public partial class Main
             { Zone: Zone z } => $"Paint {Planning.ZoneName(z)} land on open ground (other zones stay as they are: clear them first to repaint). Faint outlines show where buildings will fit. [ ] or Shift+wheel sizes the brush. Right-click puts the tool down.",
             { Wall: int } => "Draw the wall: click corners round the town and click the first again to close it, or Enter to keep the line shown. It must ring the town hall and miss every building. Backspace takes back a corner; right-click puts the tool down.",
             { Gate: int } => "Click on the wall's line to place a gate (every wall needs one, up to four). The masons start once the wall has a gate. Right-click when done.",
-            { Building: string id } => $"Click to place the {town.Content.Building(id).Name.ToLowerInvariant()} facing the nearest lane, or drag to turn it any way (Shift+wheel turns it too). Green ground takes it; a click near it settles on the nearest spot that fits. Right-click puts the tool down.",
+            { Building: string id } => $"Click to place the {town.Content.Building(id).Name.ToLowerInvariant()} facing the nearest lane, or drag to turn it any way (Shift+wheel turns it too). Green ground takes it; a click near it settles on the nearest spot that fits. Shift+click places another. Right-click puts the tool down.",
             _ => GroupHints[_buildGroup],
         };
     }

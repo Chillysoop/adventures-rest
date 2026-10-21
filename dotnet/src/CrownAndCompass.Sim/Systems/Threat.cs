@@ -647,6 +647,7 @@ public static class Threat
         var d = town.Defenses;
         var spec = Spec(town, what);
         if (BuildBlocked(town, what) != null) return false;
+        if (Stewards.Intercept(town, "defence", new StewardAsk { Area = "defence", Kind = "defense", Title = $"Build {Stewards.Lower(what.ToString())} · {Js.Str(BuildCost(town, what))}g", Why = $"• Threat: {town.Enemy.Stage.ToString().ToLowerInvariant()}\n• The walls are the town's first answer", I1 = (int)what })) return false;
         if (IsWall(what))
         {
             // A wall's timber and stone come off the market as it rises (Haul), so it waits when the market runs dry.

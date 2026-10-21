@@ -467,6 +467,7 @@ public static class Loyalty
     {
         var r = Rules(town).Fief;
         if (Quests.Site(town, siteId) is not SiteState site || FiefBlocked(town, a, site) != null) return false;
+        if (Stewards.Intercept(town, "honours", new StewardAsk { Area = "honours", Kind = "fief", Title = $"Grant {site.Def.Name} to Ser {a.GivenName} · {Js.Str(r.Cost)}g", Why = "• A loyal knight without lands\n• Lands bind a knight to the town", S1 = siteId, I1 = a.Id })) return false;
         town.Book(TreasuryAccount.Honours, -r.Cost);
         a.Hero!.FiefId = siteId;
         bool garrisoned = site.Held;
@@ -495,6 +496,7 @@ public static class Loyalty
     {
         var r = Rules(town).Champion;
         if (ChampionBlocked(town, a) != null) return false;
+        if (Stewards.Intercept(town, "honours", new StewardAsk { Area = "honours", Kind = "champion", Title = $"Name {a.Name} champion", Why = "• The town has no champion\n• The best-loved hero in town", I1 = a.Id })) return false;
         var old = town.Heroes.FirstOrDefault(h => h.Hero!.Champion);
         if (old != null)
         {
@@ -518,6 +520,7 @@ public static class Loyalty
         var r = Rules(town).Reward;
         var s = a.Hero;
         if (s == null || a.Departed || gold <= 0 || town.Treasury < gold) return false;
+        if (Stewards.Intercept(town, "honours", new StewardAsk { Area = "honours", Kind = "reward", Title = $"Purse for {a.Name} · {Js.Str(gold)}g", Why = $"• Loyalty {Math.Round(s.Loyalty)}: restless\n• A purse keeps them from drifting off", I1 = a.Id, D1 = gold })) return false;
         town.Book(TreasuryAccount.Honours, -gold);
         a.Gold += gold;
         s.Pay += gold;

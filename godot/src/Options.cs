@@ -62,6 +62,8 @@ public sealed class Options
 
     /// <summary>--settings opens the Settings window (screenshots).</summary>
     public bool Settings;
+    /// <summary>--settings-tab id opens it on that tab.</summary>
+    public string? SettingsTab;
 
     /// <summary>--storyteller id: who tells a new town's story; --storytellers opens the main menu's choice of them.</summary>
     public string? Storyteller;
@@ -142,6 +144,9 @@ public sealed class Options
     public bool TourneyCard = true;
     /// <summary>With <c>--at</c>: open that building's inspector (<c>--card</c>), for a shot of a monument's parts.</summary>
     public bool Card;
+
+    /// <summary>--asks hands every area to a steward who asks first and plays on until they ask (screenshots of the cards).</summary>
+    public bool Asks;
     /// <summary>For screenshots: click the alert at this position in the strip (0 is the first) once it shows.</summary>
     public int? Alert;
     /// <summary>For screenshots: show the hover summary of the alert icon at this position.</summary>
@@ -235,6 +240,7 @@ public sealed class Options
                 case "--menu": o.Menu = true; break;
                 case "--title": o.Title = true; break;
                 case "--settings": o.Settings = true; break;
+                case "--settings-tab": o.Settings = true; o.SettingsTab = Next(); break;
                 case "--storyteller": o.Storyteller = Next(); break;
                 case "--storytellers": o.Storytellers = o.Title = true; break;
                 case "--new-mayor": o.NewMayor = o.Title = true; break;
@@ -263,6 +269,7 @@ public sealed class Options
                 case "--zone": o.Zone = Next(); break;
                 case "--siege": o.Siege = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture) : 8; break;
                 case "--card": o.Card = true; break;
+                case "--asks": o.Asks = true; break;
                 case "--tourney": o.Tourney = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? int.Parse(Next()) : 1; break;
                 case "--tourney-hour": o.TourneyHour = int.Parse(Next()); break;
                 case "--tourney-day": o.TourneyDay = int.Parse(Next()); break;

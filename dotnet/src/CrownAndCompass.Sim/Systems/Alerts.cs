@@ -92,6 +92,7 @@ public static class Alerts
     public static readonly AlertKind Loot = new("loot", "Loot for sale", "gold", AlertLevel.Decision, AlertWindow.Armory);
     public static readonly AlertKind Gifts = new("gifts", "Arms to give", "heroes", AlertLevel.Minor, AlertWindow.Armory);
     public static readonly AlertKind Outpost = new("outpost", "Land to hold", "warband", AlertLevel.Minor, AlertWindow.None);
+    public static readonly AlertKind Patrol = new("patrol", "Keep it clear", "order-guard", AlertLevel.Minor, AlertWindow.None);
     public static readonly AlertKind Conquered = new("conquered", "A town to settle", "gold", AlertLevel.Decision, AlertWindow.Army);
     public static readonly AlertKind WarAsk = new("warask", "An ally asks for war", "warband", AlertLevel.Minor, AlertWindow.Army);
     public static readonly AlertKind Holdout = new("holdout", "An ally holds out", "gold", AlertLevel.Decision, AlertWindow.Army);
@@ -109,7 +110,7 @@ public static class Alerts
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Sighted, Lurker, Captives, Doom, Crisis, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Balance, Fealty, DarkQuest, Road, Clash, Traitor, Plot, Stores, Story, Scry, Explorers, Fallen, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Loot, Stalled, Bridge, Ruin, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Outpost, Housing, Crowded];
+        [Siege, Sighted, Lurker, Captives, Doom, Crisis, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Balance, Fealty, DarkQuest, Road, Clash, Traitor, Plot, Stores, Story, Scry, Explorers, Fallen, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Loot, Stalled, Bridge, Ruin, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Patrol, Outpost, Housing, Crowded];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
     public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Allies, Word, Crowds, Keepers, Outposts, Lists];
@@ -545,6 +546,14 @@ public static class Alerts
     /// <summary>A cleared site the town can afford to garrison before something moves back in. The watch waits for the word.</summary>
     private static IEnumerable<Alert> Outposts(Town t)
     {
+        // Cleared by a bounty, then kept clear by a patrol, then held for good by an outpost.
+        if (Lairs.WorthPatrolling(t) is { } p)
+        {
+            var pr = t.Content.Lairs.Patrol;
+            yield return new($"patrol:{p.Def.Id}", Patrol, $"Keep {p.Def.Name} clear?",
+                $"• Cleared, but something will move back in\n• A patrol: {Js.Str(Lairs.PatrolWage(t, p))}g a day\n• Heroes ride out and drive newcomers off", SiteId: p.Def.Id);
+            yield break;
+        }
         if (Lairs.WorthHolding(t) is not { } s) yield break;
         var o = t.Content.Lairs.Outpost;
         yield return new($"outpost:{s.Def.Id}", Outpost, $"Hold {s.Def.Name}?",
