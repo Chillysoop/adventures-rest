@@ -8,14 +8,14 @@ public readonly record struct Spark(bool Holds, string Why, string Icon);
 /// institutions. A token names a source the player can see and grow: newcomers (craft:, folk:), trade (partner:,
 /// routes:), what was built (building:, tier:), the library (book:, books:, wizard:, circle:), heroes (hero:,
 /// heroes:), the wilds (found: an explorers' find, slain: a creature type a company brought down, cleared:, delves:),
-/// minor powers (ally:), foes met or broken (foe:, broken:), peoples met (met:) and what is already known (known:). Why always names the person, place or thing behind it.
+/// minor powers (ally:), foes met or broken (foe:, broken:), peoples met (met:), Skywright relics brought home (relic:, relics:) and what is already known (known:). Why always names the person, place or thing behind it.
 /// </summary>
 public static class Sparks
 {
     /// <summary>The icon (godot/assets/icons) for each source.</summary>
     public const string Newcomer = "population", Trader = "gold", Built = "tab-build", Book = "books", Magic = "lore",
         Hero = "heroes", Wilds = "compass", Slain = "threat", Ally = "standing", Known = "tab-library", Charter = "mandate",
-        Foe = "rivals", People = "population";
+        Foe = "rivals", People = "population", Relic = "item-stone";
 
     public static Spark Check(Town town, string token)
     {
@@ -121,6 +121,16 @@ public static class Sparks
             {
                 var s = town.Settlements.Where(x => x.Met && x.Kin.Id == Arg(1)).OrderBy(x => x.Id).FirstOrDefault();
                 return new(s != null, s != null ? $"the folk of {s.Name}" : Arg(1), People);
+            }
+            case "relic":
+            {
+                var def = Lofted.Relic(town, Arg(1));
+                return new(Lofted.Holds(town, Arg(1)), def?.Name ?? Arg(1), Relic);
+            }
+            case "relics":
+            {
+                int n = Lofted.Held(town);
+                return new(n >= N(1), $"{n} Skywright {(n == 1 ? "relic" : "relics")}", Relic);
             }
             case "known":
                 return new(Research.IsKnown(town, Arg(1)), town.Content.Research.Discovery(Arg(1))?.Name.ToLowerInvariant() ?? Arg(1), Known);

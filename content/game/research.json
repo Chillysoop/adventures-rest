@@ -1112,6 +1112,272 @@
         "Food": 1.05
       },
       "mood": 0.2
+    },
+    {
+      "id": "skywright-histories",
+      "name": "Skywright histories",
+      "field": "lore",
+      "rank": 4,
+      "text": "Caldor's court mages raised cities on keelstones. Their relics still lie out at the edge of the world.",
+      "sparks": [
+        "cleared:9",
+        "book:divination:5",
+        "relics:1",
+        "known:the-great-working"
+      ],
+      "requires": [
+        "known:old-histories",
+        "circle:5"
+      ],
+      "lore": 1
+    },
+    {
+      "id": "keelstone-lore",
+      "name": "Keelstone lore",
+      "field": "arcana",
+      "rank": 5,
+      "text": "How a keelstone lifts, and where the rest of them lie.",
+      "sparks": [
+        "relics:2"
+      ],
+      "requires": [
+        "known:skywright-histories",
+        "circle:6"
+      ],
+      "scry": 0.1,
+      "lore": 2
+    },
+    {
+      "id": "sky-anchors",
+      "name": "Sky-anchors",
+      "field": "crafts",
+      "rank": 5,
+      "text": "Giant-forged chains and the towers that hold them: walls that never fall.",
+      "sparks": [
+        "relic:anchor-chain"
+      ],
+      "requires": [
+        "known:skywright-histories",
+        "circle:6"
+      ],
+      "defence": 20,
+      "build": 0.1
+    },
+    {
+      "id": "wind-wardens",
+      "name": "Wind-wardens",
+      "field": "arcana",
+      "rank": 5,
+      "text": "The Storm Vane turns the weather and the fliers away from the town.",
+      "sparks": [
+        "relic:storm-vane",
+        "slain:giant:5"
+      ],
+      "requires": [
+        "known:skywright-histories",
+        "circle:7"
+      ],
+      "defence": 20,
+      "yields": {
+        "Food": 1.1
+      }
+    },
+    {
+      "id": "lofting",
+      "name": "Lofting",
+      "field": "arcana",
+      "rank": 5,
+      "text": "All five relics and the library's highest magic: the town can raise a Lofted City.",
+      "sparks": [
+        "relics:5"
+      ],
+      "requires": [
+        "relics:5",
+        "known:keelstone-lore",
+        "circle:8"
+      ],
+      "mood": 1,
+      "lore": 2
+    },
+    {
+      "id": "awakened-sentinels",
+      "name": "Awakened sentinels",
+      "field": "arcana",
+      "rank": 5,
+      "text": "Stone guardians on every wall tower, woken from constructs the companies broke.",
+      "sparks": [
+        "slain:construct:3"
+      ],
+      "requires": [
+        "known:clockwork",
+        "circle:6"
+      ],
+      "defence": 30
+    },
+    {
+      "id": "storm-rails",
+      "name": "Storm rails",
+      "field": "trade",
+      "rank": 5,
+      "text": "Lightning-driven carts on Caldor's old roads: caravans run twice as fast.",
+      "sparks": [
+        "building:clock_tower",
+        "routes:6"
+      ],
+      "requires": [
+        "circle:6",
+        "known:fabrication"
+      ],
+      "gold": 25
+    },
+    {
+      "id": "elemental-hearths",
+      "name": "Elemental hearths",
+      "field": "crafts",
+      "rank": 5,
+      "text": "Bound fire in the forges, bound earth in the kilns.",
+      "sparks": [
+        "slain:elemental:3",
+        "building:artificers_foundry"
+      ],
+      "requires": [
+        "known:binding-elements",
+        "circle:6"
+      ],
+      "yields": {
+        "Tools": 1.25,
+        "Stone": 1.15
+      }
+    },
+    {
+      "id": "sky-skiffs",
+      "name": "Sky skiffs",
+      "field": "trade",
+      "rank": 5,
+      "text": "Small keelstone boats for the Sky Dock's riggers.",
+      "sparks": [
+        "building:sky_dock"
+      ],
+      "requires": [
+        "known:skywright-histories",
+        "circle:6"
+      ],
+      "gold": 15,
+      "arrivals": 0.05
+    },
+    {
+      "id": "dream-sending",
+      "name": "Dream-sending",
+      "field": "lore",
+      "rank": 5,
+      "text": "The Observatory's seers walk in dreams and see any site the town has heard of.",
+      "sparks": [
+        "building:observatory",
+        "book:divination:7"
+      ],
+      "requires": [
+        "circle:7"
+      ],
+      "scry": 0.2
+    },
+    {
+      "id": "warding-mists",
+      "name": "Warding mists",
+      "field": "arcana",
+      "rank": 5,
+      "text": "A fog that loses raiders on the way to the walls.",
+      "sparks": [
+        "slain:undead:8",
+        "book:illusion:7"
+      ],
+      "requires": [
+        "circle:7"
+      ],
+      "ward": 0.2,
+      "defence": 25
+    },
+    {
+      "id": "phoenix-rite",
+      "name": "Phoenix rite",
+      "field": "healing",
+      "rank": 5,
+      "text": "The cathedral's highest rite: heroes come back from wounds that should have killed them.",
+      "sparks": [
+        "building:cathedral",
+        "building:great_cathedral"
+      ],
+      "requires": [
+        "circle:7"
+      ],
+      "xp": 0.1,
+      "heroes": 1,
+      "mood": 0.5
+    },
+    {
+      "id": "city-weave",
+      "name": "The city-weave",
+      "field": "arcana",
+      "rank": 5,
+      "text": "One standing ward over every roof in town.",
+      "sparks": [
+        "cleared:12",
+        "book:abjuration:8"
+      ],
+      "requires": [
+        "known:guards-and-wards",
+        "circle:8"
+      ],
+      "ward": 0.3,
+      "defence": 40,
+      "fireproof": 0.2
+    },
+    {
+      "id": "hour-weaving",
+      "name": "Hour-weaving",
+      "field": "arcana",
+      "rank": 5,
+      "text": "The Cloud Glass shows tomorrow's weather, and tomorrow's raids.",
+      "sparks": [
+        "relic:cloud-glass",
+        "book:divination:9"
+      ],
+      "requires": [
+        "circle:9"
+      ],
+      "tension": -0.1,
+      "defence": 20,
+      "scry": 0.1
+    },
+    {
+      "id": "dragon-pact",
+      "name": "Dragon-pact",
+      "field": "war",
+      "rank": 5,
+      "text": "Dragon-speech and dragon-law: a wyrm that owes the town its life.",
+      "sparks": [
+        "slain:dragon:2"
+      ],
+      "requires": [
+        "known:dragonhide",
+        "circle:6"
+      ],
+      "defence": 30,
+      "heroes": 1
+    },
+    {
+      "id": "legend-forging",
+      "name": "Legend-forging",
+      "field": "crafts",
+      "rank": 5,
+      "text": "The smiths learn from a legend's own arms how to forge another.",
+      "sparks": [
+        "hero:any:17"
+      ],
+      "requires": [
+        "known:tempered-steel"
+      ],
+      "xp": 0.1,
+      "heroes": 1
     }
   ]
 }

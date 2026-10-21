@@ -145,6 +145,9 @@ public sealed record BuildingDef
     /// </summary>
     public IReadOnlyDictionary<string, double> Favour { get; init; } = new Dictionary<string, double>();
 
+    /// <summary>A size of the Lofted City (<see cref="Systems.Lofted"/>): the council picks one, and only one rises.</summary>
+    public bool Lofted { get; init; }
+
     public bool IsBusiness => Jobs > 0;
     public bool IsGrand => Stages.Count > 0;
     public bool IsPart => PartOf != "";
@@ -1370,6 +1373,7 @@ public sealed class Content
     public UndercityRules Undercity { get; init; } = new();
 
     public ResearchRules Research { get; init; } = new();
+    public Systems.LoftedRules Lofted { get; init; } = new();
 
     /// <summary>The world's history: its ages, the powers that rose and fell, and the calendar (content/game/history.json).</summary>
     public HistoryRules History { get; init; } = new();
@@ -1605,6 +1609,7 @@ public sealed class Content
             Legacies = Parse<LegacyRules>("legacies.json"),
             Undercity = Parse<UndercityRules>("undercity.json"),
             Research = Parse<ResearchRules>("research.json"),
+            Lofted = Parse<Systems.LoftedRules>("lofted.json"),
             History = Parse<HistoryRules>("history.json"),
             Stories = stories,
             Institutions = institutions,

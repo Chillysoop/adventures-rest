@@ -150,6 +150,7 @@ public sealed class Simulation
         Watch.Daily(t, Options.AutoMayor && Options.AutoBounties);
         Undercity.Daily(t, Options.AutoMayor);
         Research.Daily(t, Options.AutoMayor);
+        Lofted.Daily(t);
         Lairs.Daily(t, Options.AutoMayor, Options.AutoDefense);
         Rumors.Daily(t);
         Shrines.Daily(t, Options.AutoMayor);
@@ -262,6 +263,9 @@ public sealed class Simulation
 
     /// <summary>How much the council pays its scholars: 0 none up to 4, a royal academy.</summary>
     public bool FundResearch(int level) => Research.Fund(Town, level);
+
+    /// <summary>Sail the finished Lofted City to a known region, or -1 home over the town.</summary>
+    public bool SailLofted(int regionId) => Lofted.SetSail(Town, regionId);
 
     /// <summary>Set how generously the council funds an institution: 0 unfunded, 1 modest, 2 generous.</summary>
     public bool FundInstitution(string institutionId, int level) => Institutions.Fund(Town, institutionId, level);

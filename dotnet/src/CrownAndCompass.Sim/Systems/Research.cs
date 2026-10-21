@@ -312,6 +312,7 @@ public static class Research
         if (books > 0) list.Add(($"{town.Research.Books.Count} spellbooks", books));
         double known = Js.Sum(Known(town), d => d.Lore);
         if (known > 0) list.Add(("what the town already knows", known));
+        if (Lofted.Lore(town) is > 0 and double sky) list.Add(("the Lofted City's keelstone-wrights", sky));
         return list;
     }
 

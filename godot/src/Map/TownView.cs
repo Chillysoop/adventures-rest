@@ -160,6 +160,8 @@ public partial class TownView(MapView map) : Node3D
             string key = MeshKey(b);
             // The mast stands empty while the airship is off (or flying out or in: see Sky).
             if (key.StartsWith("sky_dock:", StringComparison.Ordinal) && !SkyMoored(town)) key = "sky_dock_away:" + key[9..];
+            // The Lofted City's cradle stands empty while it sails.
+            if (b.Def.Lofted && b.Complete && Lofted.Away(town)) key = "lofted_away:0";
             if (!groups.TryGetValue(key, out var list)) groups[key] = list = [];
             // Every building faces the way its lot was sited (toward the hall, or as the player turned it),
             // scaled from the one-tile models to its footprint.
@@ -276,6 +278,8 @@ public partial class TownView(MapView map) : Node3D
             case "great_cathedral": GreatCathedral(kit); break;
             case "royal_palace": Palace(kit); break;
             case "sky_citadel": Citadel(kit); break;
+            case "lofted_spire" or "lofted_isle" or "lofted_city": LoftedAloft(kit, id); break;
+            case "lofted_away": LoftedAway(kit); break;
             case "adventurers_hall": AdventurersHall(kit, v); break;
             case "druid_grove": DruidGrove(kit, v); break;
             case "grand_bazaar": Bazaar(kit, v); break;
@@ -1340,6 +1344,11 @@ public partial class TownView(MapView map) : Node3D
     /// </summary>
     private static void Rising(MeshKit k, string id, int eighth)
     {
+        if (id.StartsWith("lofted_", StringComparison.Ordinal))
+        {
+            LoftedRising(k, id, eighth);
+            return;
+        }
         float f = 0.12f + 0.88f * eighth / 8f;
         k.Box(Vector3.Zero, new Vector3(0.98f, 0.02f, 0.98f), Palette.Dirt.Darkened(0.1f));
         k.Push(new Transform3D(Basis.FromScale(new Vector3(1, f, 1)), Vector3.Zero));
