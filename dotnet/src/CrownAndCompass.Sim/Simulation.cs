@@ -252,6 +252,15 @@ public sealed class Simulation
     /// <summary>Send the sky dock's airship on a trade run: cargo out to a settlement's market, gold and their goods home.</summary>
     public bool SendSkyship(int settlementId, Good cargo) => Skyship.Send(Town, settlementId, cargo) != null;
 
+    /// <summary>Build a ship at the harbour: a fishing boat, a longship or a carrack (sea.json).</summary>
+    public bool BuildShip(string kind) => Fleet.Build(Town, kind) != null;
+
+    /// <summary>Send a ship on a trade run to a port along the coast with a cargo.</summary>
+    public bool SendShip(int shipId, int settlementId, Good cargo) => Fleet.Send(Town, shipId, settlementId, cargo);
+
+    /// <summary>Patch a ship's hull at the harbour.</summary>
+    public bool RepairShip(int shipId) => Fleet.Repair(Town, shipId);
+
     /// <summary>Raise a memorial to a hero in the hall of heroes.</summary>
     public bool RaiseMemorial(int heroId) => Legacies.RaiseMemorial(Town, heroId);
 

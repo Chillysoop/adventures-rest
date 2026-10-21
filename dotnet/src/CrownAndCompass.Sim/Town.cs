@@ -570,6 +570,10 @@ public sealed class Town
     /// <summary>Where the town was founded (founding.json id); null for the river ford, and in saves from before the choice (<see cref="Systems.Founding"/>).</summary>
     public string? Founding { get; set; }
 
+    /// <summary>The town's ships, for a town on the sea (<see cref="Systems.Fleet"/>).</summary>
+    public List<Systems.Ship> Ships { get; } = [];
+    public Systems.FleetState FleetState { get; } = new();
+
     /// <summary>The mayor's character sheet and the story events open and past (<see cref="Systems.Stories"/>).</summary>
     public Systems.StoryState Stories => _stories ??= new Systems.StoryState { Mayor = Systems.Stories.NewMayor(this) };
     // Made on first use, so a save from before stories existed gets a mayor too.

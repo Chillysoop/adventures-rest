@@ -961,6 +961,28 @@
       ]
     },
     {
+      "id": "harbour",
+      "name": "the Harbour",
+      "building": "harbour",
+      "title": "Harbourmaster",
+      "blurb": "The quay, the slip and the net sheds, run by a harbourmaster who knows every boat and every tide. The town's ships fish from it and sail from it.",
+      "service": { "gold": 1, "arrivals": 0.003 },
+      "choice": {
+        "label": "what the quay is for first",
+        "text": "There is only so much quay, and the harbourmaster wants to know who gets it.",
+        "options": [
+          { "id": "fishers", "name": "the fishing fleet", "text": "The boats go out on every tide and the smokehouses never cool.", "service": { "mood": 0.03 } },
+          { "id": "merchants", "name": "merchant ships", "text": "Foreign hulls tie up and pay their dues; the quay pays its own way.", "service": { "gold": 3 } },
+          { "id": "guard", "name": "a guard boat", "text": "A boat with a crossbow crew rows the harbour mouth all night.", "service": { "defence": 2 } }
+        ]
+      },
+      "keepers": [
+        { "name": "Morwen Tarrant", "text": "Thirty years a pilot, she can name a ship by the set of its sails at a league." },
+        { "name": "Dobbin Strake", "text": "A retired corsair who says he knows how they think. Nobody asks how he retired." },
+        { "name": "Hesk Ollander", "text": "A dwarf who distrusts the sea completely and so checks every mooring twice." }
+      ]
+    },
+    {
       "id": "sky-dock",
       "name": "the Sky Dock",
       "building": "sky_dock",

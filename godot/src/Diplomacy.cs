@@ -137,6 +137,39 @@ public partial class Main
         }
     }
 
+    /// <summary>The harbour's ships: each one's state, its best run, and new hulls to lay down (<see cref="Fleet"/>).</summary>
+    private void FleetRuns(Pane p, Town t)
+    {
+        if (!Fleet.Coastal(t) || Fleet.Harbour(t) == null) return;
+        p.Heading("Fleet");
+        var ports = Fleet.Ports(t).ToList();
+        foreach (var s in t.Ships.OrderBy(s => s.Id))
+        {
+            var d = Fleet.Def(t, s);
+            int id = s.Id;
+            string state = s.Out is { } v
+                ? $"at sea to {Ui.Esc(t.Settlements[v.SettlementId].Name)} · back in {Ui.Days(Math.Max(0, v.BackDay - t.Day))}"
+                : $"moored · fishing {Ui.Img("food", 13)}";
+            p.Row($"[font_size=13][b]{Ui.Esc(s.Name)}[/b] · {Ui.Esc(d.Name)}[/font_size]\n" +
+                  Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(s.Captain)} ({Ui.Esc(Fleet.ProwessName(t, s))}) · {Ui.Img("defence", 12)} hull {Js.Str(Js.Round(s.Hull))}/{Js.Str(d.Hull)} · {state}[/font_size]"),
+                ($"Patch {Js.Str(Fleet.RepairCost(t, s))}g", s.Out == null && s.Hull < d.Hull && t.Treasury >= Fleet.RepairCost(t, s), false, () => Act(() => _sim.RepairShip(id))));
+            if (s.Out != null) continue;
+            // Its best run now: the port and cargo that clear the most a day.
+            var best = ports.SelectMany(port => Goods.All.Where(g => Fleet.Refuse(t, s, port, g) == null).Select(g => (P: port, G: g, Gain: Fleet.Profit(t, s, port, g))))
+                .OrderByDescending(x => x.Gain / Fleet.Days(t, s, x.P)).ThenBy(x => x.P.Id).ThenBy(x => x.G).FirstOrDefault();
+            if (best.P == null) continue;
+            int pid = best.P.Id;
+            var cargo = best.G;
+            p.Row(Ui.C(Ui.Ink2, $"[font_size=12]• {Ui.Esc(best.P.Name)} · {Ui.Days(Fleet.Days(t, s, best.P))} · {cargo.ToString().ToLowerInvariant()} · {Ui.Img("gold", 12)} ~{Js.Str(Js.Round(best.Gain))}[/font_size]"),
+                ("Sail", true, best.Gain > 0, () => Act(() => _sim.SendShip(id, pid, cargo))));
+        }
+        p.Buttons(t.Content.Sea.Ships.Select(d =>
+        {
+            string kind = d.Id;
+            return ($"+ {d.Name} {Js.Str(Fleet.Cost(t, d))}g", Fleet.BuildBlocked(t, kind) == null, false, (Action)(() => Act(() => _sim.BuildShip(kind))));
+        }).ToArray());
+    }
+
     private void RenderDiplomacy()
     {
         var p = _panes[Tab.Diplomacy];
@@ -172,6 +205,7 @@ public partial class Main
         }
 
         SkyRuns(p, t);
+        FleetRuns(p, t);
 
         p.Heading("Peoples of the wilds");
         if (known.Count == 0) p.Note("The town hasn't heard of anyone out there yet. Parties bring back word of the peoples in the regions they visit.");

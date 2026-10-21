@@ -189,6 +189,8 @@
     "blurb": "A walled cloister round a courtyard and its falling water, with an infirmary and a herb garden. Calmer streets, fewer townsfolk who break, and monks who take to the road as heroes." },
   { "id": "griffon_roost", "name": "Griffon Roost", "size": [4, 4], "zone": "Civic", "buildable": false, "civic": true, "tier": "town", "cost": 380, "timber": 30, "stone": 10, "buildHours": 140, "max": 1,
     "blurb": "A timber tower of perches and nesting ledges for a flight of griffons and their riders. Safer roads, a watch from the sky, and a Roostmaster who answers to no one on the ground." },
+  { "id": "harbour", "name": "Harbour", "size": [5, 4], "zone": "Civic", "buildable": false, "civic": true, "coast": true, "tier": "thorp", "cost": 160, "timber": 30, "stone": 8, "buildHours": 110, "max": 1, "upkeep": 2,
+    "blurb": "A stone quay, a slipway and net sheds. Its boats fish when moored and sail trade runs down the coast; corsairs know the way in too." },
   { "id": "sky_dock", "name": "Sky Dock", "size": [5, 5], "zone": "Civic", "buildable": false, "civic": true, "tier": "city", "cost": 950, "timber": 50, "stone": 24, "buildHours": 220, "max": 1,
     "blurb": "A tall timber mooring mast and a cradle of scaffolds where the town's airship is built, patched and filled. It carries one company at a time straight over rivers, lakes and mountains, out to its job and home again." },
   { "id": "fey_market", "name": "Fey Market", "size": [5, 4], "zone": "Civic", "buildable": false, "civic": true, "tier": "town", "cost": 300, "timber": 16, "stone": 8, "buildHours": 110, "max": 1,

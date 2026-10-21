@@ -41,6 +41,9 @@ public sealed record BuildingDef
     public required string Name { get; init; }
     public Zone Zone { get; init; } = Zone.None;
     public bool Buildable { get; init; } = true;
+
+    /// <summary>Only a town founded on the sea can raise it (<see cref="Systems.Founding"/>).</summary>
+    public bool Coast { get; init; }
     public double Cost { get; init; }
     public double Timber { get; init; }
 
@@ -1439,6 +1442,9 @@ public sealed class Content
     /// <summary>Where a town can be founded, and what each site does for it (content/game/founding.json).</summary>
     public Systems.FoundingRules Founding { get; init; } = new();
 
+    /// <summary>The ships of a town on the sea (content/game/sea.json).</summary>
+    public Systems.FleetRules Sea { get; init; } = new();
+
     /// <summary>The storytellers a town can be founded under, the game's difficulty (content/game/storytellers.json).</summary>
     public StorytellerRules Storytellers { get; init; } = new();
 
@@ -1623,6 +1629,7 @@ public sealed class Content
             Moods = Parse<MoodRules>("moods.json"),
             Storytellers = Parse<StorytellerRules>("storytellers.json"),
             Founding = Parse<Systems.FoundingRules>("founding.json"),
+            Sea = Parse<Systems.FleetRules>("sea.json"),
         };
     }
 

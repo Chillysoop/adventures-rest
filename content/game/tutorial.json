@@ -632,9 +632,16 @@
     {
       "id": "road-jobs",
       "title": "On the road",
-      "text": "Out on the road each hero takes a job: one [b]navigates[/b] hard country (Survival; a lost navigator costs hours), one [b]forages[/b] once the rations run out (hungry heroes fight worse), one [b]tracks[/b] a back way into the site, and the sharpest eyes keep watch while the best healer treats wounds on a rest. Everyday jobs are routine and never fail; avalanches, sandstorms and cliff climbs are not. The [b]On the road[/b] list in Bounties shows who does what. Out in the wilds are strange places too: wishing wells, dead-magic ground where no spell works, a bone ferryman who takes anyone over his water for a toll, oases (not all of them real) and old gateways that step a company days nearer, once someone answers the riddle or a friendly people tells the word.",
+      "text": "Each hero on the road takes a job and rolls for it:\n• [b]Navigate[/b]: lost costs hours\n• [b]Forage[/b]: hungry heroes fight worse\n• [b]Track[/b]: a back way in\n• [b]Watch[/b] and [b]treat wounds[/b] at night\nEveryday jobs never fail; avalanches and sandstorms can. Watch for wells, dead-magic ground, ferrymen, oases and old gateways.",
       "when": "count:Parties",
       "teaches": []
+    },
+    {
+      "id": "harbour",
+      "title": "Your fleet",
+      "text": "Your harbour's boats:\n• [b]Fish[/b] while moored\n• [b]Sail[/b] trade runs down the coast (Diplomacy)\n• [b]Wear[/b] at sea: patch them at the quay\n• Meet [b]corsairs[/b]: captains grow from green to legendary\nBuild longships and carracks as the town grows.",
+      "when": "count:Ships",
+      "teaches": ["command:BuildShip", "command:SendShip", "command:RepairShip"]
     },
     {
       "id": "tales",

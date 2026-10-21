@@ -1,0 +1,35 @@
+{
+  "_doc": "The town's ships (Systems/Fleet.cs), for a town founded on the sea (founding.json kinds with a sea) once its Harbour stands. The harbour's first boat comes with it. Ships: cost gold and timber, crew to man them (fed `ration` food a head a day at sea), a hold for trade runs, a speed (days at sea for each day out the port's region lies), a hull that wears `wear` a day at sea and is patched for `repair` gold a point, `fish` food a day while moored, and `fight` against corsairs. A captain's prowess (1 green to 5 legendary) adds `prowessFish` to the catch and `prowessFight` to every fight, and grows `learn` a voyage. Ports are known settlements not hostile (`minStanding`) along the coast: their region within `reach` degrees of the town's sea, or one of `coastThemes`. Trade runs sell like the airship's (trade.json sky prices, the same gluts) and bring back the port's cheap goods. Corsairs: each run home meets them with `chance` plus `perRing` a ring out (at most `max`), strength `strength` plus `strengthPerRing`; the captain rolls d20 + the ship's fight against 10 + their strength. Lost, they take `loot` of the cargo and `hurt` hull; won, the captain learns and the crew share `prize` gold. Now and then (`raidEvery` days, `raidChance`) corsairs come for the harbour itself: the moored ships and the watch fight them off, or they take `raidGold` gold and `raidFood` food and hole a ship. The stand-in mayor builds the first ships, patches them below `patchBelow` of their hull, and sends a run every `standInEvery` days that clears `standInProfit`.",
+  "ration": 0.25,
+  "minStanding": -10,
+  "reach": 100,
+  "coastThemes": ["saltreach", "mirefen"],
+  "turnaround": 1,
+  "learn": 0.25,
+  "prowessFish": 0.1,
+  "prowessFight": 1,
+  "winterFish": 0.5,
+  "patchBelow": 0.5,
+  "standInEvery": 10,
+  "standInProfit": 40,
+  "ships": [
+    { "id": "rowboat", "name": "fishing boat", "cost": 60, "timber": 8, "crew": 2, "hold": 12, "speed": 0.9, "hull": 40, "wear": 2, "repair": 1, "fish": 3, "fight": 0 },
+    { "id": "longship", "name": "longship", "cost": 260, "timber": 30, "crew": 8, "hold": 35, "speed": 0.6, "hull": 90, "wear": 3, "repair": 1.5, "fish": 5, "fight": 4, "tier": "village" },
+    { "id": "carrack", "name": "carrack", "cost": 620, "timber": 60, "crew": 12, "hold": 80, "speed": 0.7, "hull": 160, "wear": 3, "repair": 2, "fish": 6, "fight": 6, "tier": "town" }
+  ],
+  "names": ["the Gull", "the Salt Hare", "the Widow's Luck", "the Grey Lady", "the Herring Queen", "the Brave Kettle", "the Stormpetrel", "the Long Wager", "the Sea Wren", "the Tidecaller", "the Bright Anchor", "the Second Chance"],
+  "captains": ["Old Maudie Pike", "Hollis Wrack", "Tamsin Rook", "Jory Salt", "Branna Kell", "Cobb Fenwick", "Ysolde Marr", "Petrock Vane", "Wenna Gale", "Aldo Crabbe"],
+  "prowess": ["green", "steady", "seasoned", "veteran", "legendary"],
+  "corsairs": {
+    "name": "the corsairs",
+    "chance": 0.12, "perRing": 0.05, "max": 0.45,
+    "strength": 3, "strengthPerRing": 2,
+    "loot": 0.6, "hurt": 25, "prize": 30,
+    "raidEvery": 20, "raidChance": 0.35, "raidStrength": 5, "raidGold": 60, "raidFood": 30, "watchFight": 0.5,
+    "win": ["{captain} sees the corsairs' sails at dawn, runs out the oars and leaves them wallowing; a boarding party that does catch up goes over the side. ({prize} gold of theirs)"],
+    "lose": ["Corsairs come out of the sea mist and board {ship}. {captain} saves the crew but not the hold: {lost} {good} gone, and the hull holed."],
+    "sunk": ["{ship} does not come home. A fishing boat finds a spar with her name on it."],
+    "repelled": ["Corsair longboats nose into the harbour by night. The watch and the crews of the moored ships meet them on the quay, and they row off empty."],
+    "raided": ["Corsairs raid the harbour by night: {gold} gold and {food} food carried off, and {ship} holed at her mooring."]
+  }
+}

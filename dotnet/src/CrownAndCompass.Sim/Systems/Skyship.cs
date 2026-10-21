@@ -149,6 +149,17 @@ public static class Skyship
         return qty <= 0 ? 0 : first * r.Glut * Math.Log((r.Glut + g0 + qty) / (r.Glut + g0));
     }
 
+    /// <summary>Sell a cargo into a people's market (the airship's, or a ship's, <see cref="Fleet"/>): the gold booked, and the glut it leaves.</summary>
+    public static double Sell(Town town, Settlement s, Good g, double qty)
+    {
+        double earned = Quote(town, s, g, qty);
+        var glut = GlutOf(town, s, g);
+        if (glut == null) State(town).Gluts.Add(glut = new SkyGlut { SettlementId = s.Id, Good = g });
+        glut.Qty += qty;
+        if (earned > 0) town.Book(TreasuryAccount.Trade, earned);
+        return earned;
+    }
+
     /// <summary>What they sell that the town is shortest of, for the trip home, and what it costs a unit there.</summary>
     public static (Good Good, double Price)? Bring(Town town, Settlement s, Good cargo)
     {
@@ -243,11 +254,7 @@ public static class Skyship
             town.Log(LedgerCategory.Town, Importance.Notable, st.LastLine);
             return;
         }
-        double earned = Quote(town, s, run.Cargo, qty);
-        var glut = GlutOf(town, s, run.Cargo);
-        if (glut == null) st.Gluts.Add(glut = new SkyGlut { SettlementId = s.Id, Good = run.Cargo });
-        glut.Qty += qty;
-        if (earned > 0) town.Book(TreasuryAccount.Trade, earned);
+        double earned = Sell(town, s, run.Cargo, qty);
         st.Earned += earned;
         string brought = "";
         if (Bring(town, s, run.Cargo) is { } bring && bring.Price > 0)
