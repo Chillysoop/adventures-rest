@@ -182,33 +182,6 @@ public partial class Main
         p.Commit();
     }
 
-    /// <summary>The bounty board in short: parties on the road and the worst threats, each a click from a bounty.</summary>
-    private void TrayBounties(Pane p, Town t)
-    {
-        RenderRoad(p, t);
-        var slay = t.Content.Bounties.Term("slay");
-        var named = Alerts.Standing(t).Where(a => a.SiteId != null).Select(a => a.SiteId!).ToHashSet();
-        var open = t.Sites
-            .Where(s => s.Known != SiteKnowledge.Unheard && !s.ThoughtCleared
-                && !t.Bounties.Any(b => b.SiteId == s.Def.Id && b.Status is BountyStatus.Open or BountyStatus.Taken))
-            .OrderBy(s => named.Contains(s.Def.Id) || s.Def.Id == t.Content.Enemy.Outpost.Id ? 0 : 1)
-            .ThenByDescending(s => s.BelievedTier).ThenBy(s => s.Def.Id, StringComparer.Ordinal)
-            .Take(4).ToList();
-        if (open.Count == 0) return;
-        p.Heading("Open threats");
-        foreach (var s in open)
-        {
-            string sid = s.Def.Id;
-            int reward = (int)Terms.Suggested(t, s, slay);
-            bool fits = Terms.Blocked(t, s, slay) == null;
-            var danger = Assess.Danger(t, s);
-            var site = s;
-            p.Row($"{SiteLink(s.Def)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{(s.Attempts > 0 ? $"{s.Attempts} failed {(s.Attempts == 1 ? "attempt" : "attempts")}" : s.Known == SiteKnowledge.Rumoured ? $"rumour: {Ui.Esc(s.Believed)}" : "unexplored")}[/font_size]")}",
-                ($"{Foes.CreatureFace(s.Believed, s.Def.Kind)}{danger.Id}", () => Foes.Of(t, site, 36), () => Foes.Bar("Danger", danger, Foes.Worse(danger), "How hard it looks for the heroes on the town's books.")),
-                ($"Post · {reward}g", fits && t.Treasury >= reward, true, () => Act(() => _sim.PostBounty(sid, reward, "slay"))));
-        }
-    }
-
     /// <summary>The war in short: the enemy's stage, its strength against yours and the heroes at home.</summary>
     private void TrayWar(Pane p, Town t)
     {
