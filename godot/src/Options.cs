@@ -273,7 +273,7 @@ public sealed class Options
                 case "--advance": o.Advances.Add(Next()); break;
                 case "--inspiration": o.Inspiration = int.Parse(Next()); break;
                 case "--decor-at": o.DecorAt = Next().Split(',').Select(v => double.Parse(v, System.Globalization.CultureInfo.InvariantCulture)).ToArray(); break;
-                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--stock" or "--pact" or "--buy" or "--call" or "--flag" or "--wait" or "--works" or "--roster" or "--spot" or "--draw-wall" or "--gate" or "--raise" or "--skyrun":
+                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--stock" or "--pact" or "--buy" or "--call" or "--flag" or "--wait" or "--works" or "--roster" or "--spot" or "--draw-wall" or "--gate" or "--raise" or "--skyrun" or "--duty":
                     o.Script.Add((args[i][2..], Next()));
                     break;
             }
@@ -379,6 +379,13 @@ public sealed class Options
                         t.Treasury += Intel.Ask(t, p);
                         sim.BuyIntel(p.Id);
                     }
+                    break;
+                case "duty":
+                    // For shots of heroes on guard: post the highest-level hero in town free to go, to "walls" or "streets".
+                    var duty = arg == "streets" ? HeroDuty.Streets : HeroDuty.Walls;
+                    t.Treasury += 200;
+                    if (t.Heroes.Where(h => h.Hero!.Duty == HeroDuty.None && Garrison.DutyBlocked(t, h, duty) == null).OrderByDescending(h => h.Hero!.Level).ThenBy(h => h.Id).FirstOrDefault() is { } guardHero)
+                        sim.SetDuty(guardHero.Id, duty);
                     break;
                 case "stock":
                     // For armory shots: a find handed in under a pact.

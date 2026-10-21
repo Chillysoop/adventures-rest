@@ -70,6 +70,14 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["order-guard", "flying-flag", mono],
   ["order-strike", "sword-brandish", mono],
   ["order-scout", "spyglass", mono],
+  // Armory items by kind (godot/src/Armory.cs), white so the window tints them by rarity
+  ["item-weapon", "broadsword", mono],
+  ["item-armor", "breastplate", mono],
+  ["item-shield", "round-shield", mono],
+  ["item-trinket", "gem-pendant", mono],
+  ["item-ring", "ring", mono],
+  ["item-wand", "orb-wand", mono],
+  ["item-stone", "rune-stone", mono],
   // Enemy portraits (godot/src/Portrait.cs draws them on a medallion tinted by the enemy's kind)
   ...[
     "orc-head", "ogre", "troll", "goblin-head", "brutal-helm", "horned-helm", "giant",

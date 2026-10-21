@@ -161,6 +161,9 @@ public sealed class HeroSheet
 
     /// <summary>The town's sworn champion (one at a time).</summary>
     public bool Champion { get; set; }
+
+    /// <summary>Posted to guard the town on a wage, and taking no bounties (<see cref="Systems.Garrison.SetDuty"/>).</summary>
+    public Systems.HeroDuty Duty { get; set; }
     public int LastRewardDay { get; set; } = -99;
 
     /// <summary>The menace they went over to, or the faction they ran to.</summary>

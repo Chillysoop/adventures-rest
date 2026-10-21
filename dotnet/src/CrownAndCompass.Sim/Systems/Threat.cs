@@ -132,7 +132,7 @@ public static class Threat
     {
         var d = town.Content.Enemy.Defense;
         int heroLevels = town.Heroes.Where(a => !a.IsAway).Sum(a => a.Hero!.Level);
-        double baseDefense = town.Watch * d.Watchman * Planning.WatchFactor(town) + heroLevels * d.HeroLevel + town.Workers.Count * d.MilitiaPerWorker + Faith.Defense(town) + Factions.Defense(town) + Callings.Defence(town) + Institutions.Defence(town) + Loyalty.Defense(town) + Notoriety.Defense(town) + Decor.Defense(town) + Mercenaries.Defense(town) + Powers.Defense(town) + Clockwork.Defense(town) + Bastions.Defense(town) + Research.Defense(town) + (allies ? World.AllyTroops(town) : 0);
+        double baseDefense = town.Watch * d.Watchman * Planning.WatchFactor(town) + heroLevels * d.HeroLevel + town.Workers.Count * d.MilitiaPerWorker + Faith.Defense(town) + Factions.Defense(town) + Callings.Defence(town) + Institutions.Defence(town) + Loyalty.Defense(town) + Notoriety.Defense(town) + Decor.Defense(town) + Mercenaries.Defense(town) + Powers.Defense(town) + Clockwork.Defense(town) + Bastions.Defense(town) + Research.Defense(town) + Garrison.DutyDefense(town) + (allies ? World.AllyTroops(town) : 0);
         return baseDefense * Fortification(town);
     }
 
@@ -338,7 +338,7 @@ public static class Threat
     {
         var d = town.Content.Enemy.Defense;
         var home = town.Heroes.Where(a => !a.IsAway);
-        return (Garrison.NightWatch(town) * d.Watchman * Planning.WatchFactor(town) + home.Sum(a => a.Hero!.Level) * d.HeroLevel) * Fortification(town) * (roll ? 0.7 + town.Rng.Next() * 0.6 : 1);
+        return (Garrison.NightWatch(town) * d.Watchman * Planning.WatchFactor(town) + home.Sum(a => a.Hero!.Level) * d.HeroLevel + Garrison.DutyDefense(town)) * Fortification(town) * (roll ? 0.7 + town.Rng.Next() * 0.6 : 1);
     }
 
     /// <summary>Outside the walls (or there are none yet), or out in the fields: what raiders can reach.</summary>
@@ -458,7 +458,8 @@ public static class Threat
         // The walls held; now the warlord comes in person, and only heroes can meet him.
         var champions = town.Heroes
             .Where(a => !a.IsAway && a.Hero!.Hp > 0)
-            .OrderByDescending(x => x.Hero!.Level)
+            .OrderByDescending(x => x.Hero!.Duty == HeroDuty.Walls)
+            .ThenByDescending(x => x.Hero!.Level)
             .ThenBy(x => x.Id)
             .Take(4)
             .ToList();

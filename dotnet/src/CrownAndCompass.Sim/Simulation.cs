@@ -199,6 +199,12 @@ public sealed class Simulation
     /// <summary>Sell an item from the armory to the merchants.</summary>
     public bool SellStock(int stockId) => Armory.Sell(Town, stockId);
 
+    /// <summary>Hand the armory's best to a group of heroes in one go (one hero, a company, the heroes on guard).</summary>
+    public int Arm(IEnumerable<int> heroIds) => Armory.Arm(Town, heroIds);
+
+    /// <summary>Post a hero to the walls or the streets, or stand them down.</summary>
+    public bool SetDuty(int heroId, HeroDuty duty) => Garrison.SetDuty(Town, heroId, duty);
+
     /// <summary>Brew a batch at the alchemy bench from two or three ingredients (herbs, monster parts); a new recipe gets a name in the town's book.</summary>
     public bool Brew(IReadOnlyList<string> ingredients) => Alchemy.Brew(Town, ingredients);
 

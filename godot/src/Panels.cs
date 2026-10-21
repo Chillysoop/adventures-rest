@@ -744,6 +744,7 @@ public partial class Main
         if (hs.Knight) honours.Add(Tag("Knight", Ui.Gold));
         if (hs.FiefId != null && Quests.Site(t, hs.FiefId) is SiteState land) honours.Add(Tag($"Holds {Ui.Esc(land.Def.Name)}", Ui.Gold));
         if (hs.Champion) honours.Add(Tag($"Champion of {t.Name}", Ui.Gold));
+        if (hs.Duty != HeroDuty.None) honours.Add(DutyIcon(a, 15) + Tag(hs.Duty == HeroDuty.Walls ? "On the walls" : "On the streets", Ui.Good));
         if (Callings.Of(t, a) is CallingDef calling) honours.Add(Tag(calling.Name, Ui.Good));
         if (honours.Count > 0) p.Text(string.Join("  ", honours));
         var lr = t.Content.Loyalty;
@@ -783,6 +784,15 @@ public partial class Main
             (hs.Champion ? "Champion" : "Name champion", champion == null, false, () => Act(() => _sim.NameChampion(id))),
             ($"Send a purse, {Js.Str(purse)}g", t.Treasury >= purse, false, () => Act(() => _sim.RewardHero(id, purse))));
         if (knight != null && !hs.Knight) p.Note($"Knighthood: {knight}.");
+        // Guard duty and the armory's best for them, one click each.
+        var best = Sim.Systems.Armory.BestFor(t, a);
+        var duty = new List<(string, bool, bool, Action)>();
+        if (hs.Duty != HeroDuty.Walls) duty.Add(("Post to walls", Garrison.DutyBlocked(t, a, HeroDuty.Walls) == null, false, () => Act(() => { _sim.SetDuty(id, HeroDuty.Walls); GuideEvent("duty"); })));
+        if (hs.Duty != HeroDuty.Streets) duty.Add(("Post to streets", Garrison.DutyBlocked(t, a, HeroDuty.Streets) == null, false, () => Act(() => { _sim.SetDuty(id, HeroDuty.Streets); GuideEvent("duty"); })));
+        if (hs.Duty != HeroDuty.None) duty.Add(("Stand down", true, false, () => Act(() => _sim.SetDuty(id, HeroDuty.None))));
+        duty.Add((best != null ? $"Arm: {(best.Name != "" ? best.Name : Gear.Plainly(best.Item))}" : "Arm", best != null, best != null, () => Act(() => _sim.Arm([id]))));
+        p.Buttons(duty.ToArray());
+        if (!a.IsAway) p.Note($"Guard duty: {Js.Str(Garrison.Wage(t, a))}g a day, no bounties.");
     }
 
     private void InspectBuilding(Pane p, Town t, Building b)

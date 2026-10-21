@@ -204,7 +204,7 @@
       "point": "tab:Armory",
       "when": "day:15",
       "until": "tab:Armory",
-      "teaches": ["tab:Armory", "command:Gift", "command:BuyLoot", "command:SellStock", "command:OfferPact", "command:EndPact"]
+      "teaches": ["tab:Armory", "command:Gift", "command:Arm", "command:BuyLoot", "command:SellStock", "command:OfferPact", "command:EndPact"]
     },
     {
       "id": "alchemy",
@@ -278,6 +278,15 @@
       "when": "day:8",
       "until": "orders",
       "teaches": ["command:ManTheWalls", "command:MarkSpot"]
+    },
+    {
+      "id": "guard-duty",
+      "title": "Heroes on guard",
+      "text": "Keep heroes home to guard the town. In the [b]War[/b] tab, or on a hero's sheet:\n• [b]Walls[/b]: stronger against raids and sieges; they meet the warlord first.\n• [b]Streets[/b]: the watch catches more spies, knives, thieves and fire-raisers.\nThey earn a daily wage and take no bounties. [b]Arm the guard[/b] hands them the armory's best in one click.",
+      "point": "tab:War",
+      "when": "day:20",
+      "until": "duty",
+      "teaches": ["command:SetDuty"]
     },
     {
       "id": "sellswords",
