@@ -407,7 +407,7 @@ public static class Neighbours
                 return;
             }
             // Insecure country makes every trouble worse; a strong band holds it off a little.
-            t.Severity = Math.Min(100, t.Severity + def.PerDay * (s.Security < r.Prosperity.InsecureBelow ? 1.3 : 1));
+            t.Severity = Math.Min(100, t.Severity + def.PerDay * (s.Security < r.Prosperity.InsecureBelow ? 1.3 : 1) * Character.Trouble(town, s, def.Id));
             if (t.Severity >= 100 || town.Day - t.SinceDay >= r.TroubleMaxDays) Fail(town, s, def);
             return;
         }
@@ -548,10 +548,10 @@ public static class Neighbours
     }
 
     /// <summary>The odds a settlement's band clears a site.</summary>
-    public static double BandOdds(Town town, LocalBand b, SiteState site)
+    public static double BandOdds(Town town, Settlement s, LocalBand b, SiteState site)
     {
         var br = Rules(town).Band;
-        return Math.Clamp(br.Base + br.PerLevel * (b.Level - World.LevelOf(site)) + br.PerMember * (b.Members - br.Members) - (site.Strength >= town.Content.Lairs.MaxStrength * 0.9 ? 0.05 : 0), br.Min, br.Max);
+        return Math.Clamp(br.Base + Character.Band(town, s) + br.PerLevel * (b.Level - World.LevelOf(site)) + br.PerMember * (b.Members - br.Members) - (site.Strength >= town.Content.Lairs.MaxStrength * 0.9 ? 0.05 : 0), br.Min, br.Max);
     }
 
     private static void Return(Town town, Settlement s, LocalBand b)
@@ -565,7 +565,7 @@ public static class Neighbours
         string text;
         if (site.Cleared)
             return;
-        if (town.Rng.Chance(BandOdds(town, b, site)))
+        if (town.Rng.Chance(BandOdds(town, s, b, site)))
         {
             Clear(town, site);
             b.Wins++;
