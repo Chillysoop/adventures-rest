@@ -1031,6 +1031,10 @@ public sealed record StandingRules
     public double Envoy { get; init; } = 10;
     public int EnvoyEveryDays { get; init; } = 8;
 
+    /// <summary>From this day, every meetEvery days, the nearest people the town has heard of but not met sends riders.</summary>
+    public int MeetFrom { get; init; } = 3;
+    public int MeetEvery { get; init; } = 5;
+
     /// <summary>Standing for clearing a site in a people's region.</summary>
     public double Cleared { get; init; } = 8;
 
@@ -1662,7 +1666,9 @@ public sealed class Content
         // The institutions' requests are story events like any other, kept with the institutions.
         var institutions = Parse<InstitutionRules>("institutions.json");
         var stories = WithSendings(Parse<StoryRules>("stories.json"), Parse<SendingRules>("sendings.json"));
-        stories = stories with { Stories = [.. stories.Stories, .. institutions.Requests], Precedents = [.. stories.Precedents, .. institutions.Precedents] };
+        // So are the powers' first-contact scenes, kept with the powers.
+        var powers = Parse<PowerRules>("powers.json");
+        stories = stories with { Stories = [.. stories.Stories, .. institutions.Requests, .. powers.Contacts], Precedents = [.. stories.Precedents, .. institutions.Precedents] };
         return new Content(
             Parse<List<BuildingDef>>("buildings.json"),
             Parse<NamesFile>("names.json").Races,
@@ -1703,7 +1709,7 @@ public sealed class Content
             Sendings = Parse<SendingRules>("sendings.json"),
             Bastions = Parse<BastionRules>("bastions.json"),
             Mercenaries = Parse<MercRules>("mercenaries.json"),
-            Powers = Parse<PowerRules>("powers.json"),
+            Powers = powers,
             Regard = Parse<RegardRules>("regard.json"),
             Voices = Parse<VoiceRules>("voices.json"),
             Explore = Parse<ExploreRules>("explore.json"),

@@ -504,6 +504,22 @@
       "teaches": []
     },
     {
+      "id": "favours-feuds",
+      "title": "Favours and feuds",
+      "text": "The minor powers also ask [b]favours[/b]: clear a lair they name, see an enemy destroyed, or open a new trade route. [b]Promise[/b] it and you have three months; keep your word for their friendship and a purse of gold, break it and they remember. Powers [b]feud[/b] with each other too. While a feud burns, the other side holds your alliance against you, and the dark ones strike at your town. Your ally will ask for gold to win the feud: pay, and its foe sues for peace.",
+      "when": "day:150",
+      "point": "tab:Diplomacy",
+      "teaches": []
+    },
+    {
+      "id": "first-contact",
+      "title": "First contact",
+      "text": "Powers and peoples stay unknown until you meet them. When one comes calling, a [b]first contact[/b] scene opens: your answers and rolls set where you start.\n\n• The bar under each name in [b]Diplomacy[/b] shows where they stand\n• Unmet ones can't trade, ally or be courted by you",
+      "when": "count:Discovered",
+      "point": "tab:Diplomacy",
+      "teaches": []
+    },
+    {
       "id": "wagons",
       "title": "Bigger caravans",
       "text": "Goods your town makes beyond what it needs earn nothing sitting in the market: the evening carters clear them away. A [b]trade route[/b] turns that surplus into gold. In [b]Diplomacy[/b], [b]Add a wagon[/b] to a route and its caravan carries more out on every run, up to four wagons. A bigger charter lets you run more routes, too.",

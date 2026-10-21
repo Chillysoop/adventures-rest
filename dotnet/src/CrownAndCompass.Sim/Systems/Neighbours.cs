@@ -294,10 +294,46 @@ public static class Neighbours
 
     // ---- The daily tick ----
 
+    /// <summary>Its <see cref="Discovery"/> key.</summary>
+    public static string Key(Settlement s) => "people:" + s.Id;
+
+    /// <summary>Whether the town has met a people: heard of their region and had word with them. Until then it can't trade, send envoys or hear their pleas.</summary>
+    public static bool Known(Town town, Settlement s) => town.Regions[s.RegionId].Known && Discovery.Known(town, Key(s));
+
+    /// <summary>The town meets a people for the first time: their first-contact scene opens. Returns whether this was the first meeting.</summary>
+    public static bool Introduce(Town town, Settlement s, string how)
+    {
+        if (!Discovery.Meet(town, Key(s), how)) return false;
+        if (town.Outcome == null && !s.Razed && town.Content.Stories.Story(Powers.ContactSource + "-people") is { } d) Stories.Contact(town, d, new Story { SettlementId = s.Id });
+        return true;
+    }
+
+    /// <summary>
+    /// Daily: a people a party has visited is met at once; otherwise, every few days, the nearest people the town has
+    /// heard of sends riders. A save from before first contact knows every people it had heard of, without scenes.
+    /// </summary>
+    public static void Know(Town town)
+    {
+        var w = town.Content.World.Standing;
+        if (!town.PeoplesMet)
+        {
+            town.PeoplesMet = true;
+            if (town.Day > w.MeetFrom)
+                foreach (var s in town.Settlements.Where(x => town.Regions[x.RegionId].Known)) Discovery.Meet(town, Key(s), Discovery.Heard);
+        }
+        foreach (var s in town.Settlements.Where(x => x.Met && !x.Razed && town.Regions[x.RegionId].Known && !Discovery.Known(town, Key(x))).ToList())
+            Introduce(town, s, Discovery.Met);
+        if (town.Day < w.MeetFrom || (town.Day - w.MeetFrom) % Math.Max(1, w.MeetEvery) != 0) return;
+        var next = town.Settlements.Where(x => !x.Razed && town.Regions[x.RegionId].Known && !Discovery.Known(town, Key(x)))
+            .OrderBy(x => town.Regions[x.RegionId].Days).ThenBy(x => x.Id).FirstOrDefault();
+        if (next != null) Introduce(town, next, Discovery.Met);
+    }
+
     public static void Daily(Town town, bool autoMayor)
     {
         var r = Rules(town);
         if (town.Settlements.Count == 0) return;
+        Know(town);
         foreach (var s in town.Settlements)
         {
             if (s.Leader == "") Found(town, s);
@@ -634,7 +670,7 @@ public static class Neighbours
     public static string? AidRefused(Town town, Settlement s)
     {
         if (s.Razed) return "they are gone";
-        if (!town.Regions[s.RegionId].Known) return "the town hasn't heard of them";
+        if (!Known(town, s)) return "the town hasn't met them";
         if (TroubleOf(town, s) is not { Aid: { } aid } def || def.Kind != "need") return "they need nothing aid can buy";
         if (town.Treasury < aid.Gold) return $"needs {Js.Str(aid.Gold)} gold";
         if (town.Market.Stock(aid.Good) < aid.Qty) return $"needs {Js.Str(aid.Qty)} {Lower(aid.Good.ToString())}";
@@ -668,7 +704,7 @@ public static class Neighbours
     {
         var r = Rules(town);
         if (s.Razed) return "they are gone";
-        if (!town.Regions[s.RegionId].Known) return "the town hasn't heard of them";
+        if (!Known(town, s)) return "the town hasn't met them";
         if (p.Peoples.Count > 0 && !p.Peoples.Contains(s.Kin.Id)) return "they have no use for it";
         if (s.Projects.Contains(p.Id)) return "already built";
         if (s.Works != null) return "they are already building";
@@ -803,7 +839,7 @@ public static class Neighbours
                 c.Gone = true;
                 continue;
             }
-            if (c.Regard < r.Regard || c.Memories.Count == 0 || !town.Regions[s.RegionId].Known) continue;
+            if (c.Regard < r.Regard || c.Memories.Count == 0 || !Known(town, s)) continue;
             if (!r.Favours.TryGetValue(c.Role, out var f)) continue;
             Favour(town, c, s, f);
         }

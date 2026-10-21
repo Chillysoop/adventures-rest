@@ -18,6 +18,8 @@
     "envoyCost": 60,
     "envoy": 10,
     "envoyEveryDays": 8,
+    "meetFrom": 3,
+    "meetEvery": 5,
     "cleared": 8,
     "plea": 14,
     "pleaIgnored": -4,
