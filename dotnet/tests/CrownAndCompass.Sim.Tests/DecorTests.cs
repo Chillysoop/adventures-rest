@@ -242,7 +242,10 @@ public class DecorTests
     public void TheStandInDressesTheLandRoundTheTown()
     {
         var sim = new Simulation(new SimulationOptions { Seed = 1 });
-        sim.RunDays(150);
+        // The stand-in only dresses from spare gold, so give it some rather than hope this seed is rich on the day.
+        sim.RunDays(140);
+        sim.Town.Treasury += 3000;
+        sim.RunDays(10);
         var t = sim.Town;
         Assert.NotEmpty(t.Decor.Pieces);
         // It keeps off the wards laid out, so headless towns lose no building land to it.

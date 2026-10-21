@@ -577,7 +577,7 @@ public static class Powers
 
     /// <summary>
     /// Every few days one power sends the town an envoy: a demand from the most hostile first, then an alliance from
-    /// the friendliest, then a pact. The dice only choose whether a power with strange prices asks one.
+    /// the friendliest, then a pact. Its own dice choose whether a power with strange prices asks one.
     /// </summary>
     private static void SendEnvoy(Town town)
     {
@@ -594,7 +594,8 @@ public static class Powers
         string kind = EnvoyKind(town, p);
         p.Envoy = kind;
         p.EnvoyGold = EnvoyAsk(town, d, kind);
-        p.EnvoyPrice = kind is "alliance" or "pact" && d.Strange.Count > 0 && town.Rng.Chance(d.StrangeChance) ? town.Rng.Pick(d.Strange).Id : "";
+        var dice = Dice(town, p);
+        p.EnvoyPrice = kind is "alliance" or "pact" && d.Strange.Count > 0 && dice.Chance(d.StrangeChance) ? dice.Pick(d.Strange).Id : "";
         p.EnvoyUntil = town.Day + e.AnswerDays;
         if (kind == "favour")
         {
@@ -609,6 +610,10 @@ public static class Powers
         string text = kind switch { "alliance" => e.Alliance, "pact" => e.Pact, _ => e.Demand };
         News(town, p, Fill(town, text.Replace("{price}", PriceText(town, p)).Replace("{boon}", d.Ally.Text).Replace("{answer}", e.AnswerDays.ToString()), p, d));
     }
+
+    /// <summary>The envoys' own dice, seeded from the town, the day and the power, so they never shift the main stream.</summary>
+    private static Rng Dice(Town town, PowerState p) =>
+        new(unchecked(town.Seed * 7919 + town.Day * 104729 + p.Id.Aggregate(17, (h, c) => h * 31 + c) + 29));
 
     public static StrangePriceDef? Strange(Town town, PowerState p) =>
         p.EnvoyPrice == "" ? null : Def(town, p.Id).Strange.FirstOrDefault(x => x.Id == p.EnvoyPrice);
