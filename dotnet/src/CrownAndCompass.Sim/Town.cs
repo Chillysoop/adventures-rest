@@ -303,6 +303,7 @@ public static class TreasuryAccount
     public const string Stories = "Stories";
     public const string GrandWorks = "Grand works";
     public const string Mercenaries = "Mercenaries";
+    public const string Army = "Army";
     public const string Powers = "Minor powers";
     public const string Decrees = "Decrees";
     public const string Trade = "Trade";
@@ -488,6 +489,9 @@ public sealed class Town
 
     /// <summary>Sellsword companies under contract to the town (<see cref="Systems.Mercenaries"/>).</summary>
     public List<Hire> Hires { get; } = [];
+
+    /// <summary>The town's own regiments and the levy laws (<see cref="Systems.Army"/>).</summary>
+    public ArmyState Army { get; } = new();
 
     /// <summary>The minor powers and whose side each is on (<see cref="Systems.Powers"/>).</summary>
     public List<PowerState> Powers { get; } = [];

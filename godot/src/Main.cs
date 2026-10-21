@@ -21,6 +21,7 @@ public partial class Main : Control
         City,
         Ledger,
         War,
+        Army,
         Defence,
         Council,
         Bounties,
@@ -108,6 +109,8 @@ public partial class Main : Control
             _opts.Cam ??= 8;
         }
         _opts.ApplyScript(_sim);
+        // A field battle held for a shot aims the camera itself once the map is laid out.
+        if (Map.Crowd.FieldU != null) _opts.Cam ??= 14;
         if (_opts.Tourney is int tourney) StageTourney(tourney);
         if (_opts.Secrets) StageSecrets();
         if (_opts.Guilds is string guilds) StageGuilds(guilds == "strike");
@@ -623,6 +626,7 @@ public partial class Main : Control
                     case Tab.City: RenderCity(); break;
                     case Tab.Ledger: RenderLedger(); break;
                     case Tab.War: RenderWar(); break;
+                    case Tab.Army: RenderArmy(); break;
                     case Tab.Defence: RenderDefence(); break;
                     case Tab.Council: RenderCouncil(); break;
                     case Tab.Bounties: RenderBounties(); break;
