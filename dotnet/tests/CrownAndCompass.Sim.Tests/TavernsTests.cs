@@ -176,7 +176,8 @@ public class LawsAndCardsTests
         Assert.True(Laws.Deter(t, "theft") < 1);
         t.Taxes.Unrest = 10;
         double loyalty = h.Hero!.Loyalty;
-        string said = Laws.Sentence(t, "theft", h, 20);
+        h.Abilities.Cha = 1; // a poor liar, so the court convicts
+        string said = Laws.Sentence(t, "theft", h, 20, witnessed: true);
         Assert.Contains("lashes", said);
         Assert.True(t.Taxes.Unrest < 10);
         Assert.True(h.Hero.Loyalty < loyalty);
