@@ -52,6 +52,9 @@ public partial class Crowd
         Heroes.PutLook(Heroes.FoeLook(kind, chief, body, skin) with { Legend = null }, new Transform3D(basis.Scaled(Vector3.One * scale * 0.95f), p + new Vector3(0, 0.03f, 0)), Heroes.Act.Idle, 0);
     }
 
+    /// <summary>--delve: the first company out fights at its site, whatever the hour.</summary>
+    public bool StageDelve;
+
     /// <summary>The kind of host the --skirmish heroes fight (--skirmish undead, cult, beasts...).</summary>
     public string SkirmishKind = "";
 
@@ -93,6 +96,40 @@ public partial class Crowd
         {
             var a = _skirmishers[k];
             var (hero, foe) = SkirmishSpot(k, _skirmishers.Count, a);
+            Fight(a, hero, map.Gen.At(foe, 0.3f), now);
+        }
+    }
+
+    /// <summary>The kind of host a site's foes look like (<see cref="Heroes.FoeLook"/>), from its boss's library type.</summary>
+    public static string HostKind(Town town, Sim.SiteDef site)
+    {
+        string id = site.Boss.Monster;
+        string type = town.Content.Library.Monster(town.Content.Monster(id).Ref)?.Type ?? "";
+        if (id.Contains("cult")) return "cult";
+        if (id.Contains("bandit")) return "rivals";
+        return type switch { "undead" => "undead", "beast" => "beasts", "dragon" => "dragon", _ => "" };
+    }
+
+    /// <summary>
+    /// A company in the thick of it at a site the town can see (a scrying, a tower, a mirror): each hero
+    /// squares up to one of the site's foes round the mouth of the place, the boss among them.
+    /// </summary>
+    private void DelveFight(Town town, Sim.Systems.Party party, Vector2 at, float now)
+    {
+        var site = Sim.Systems.Quests.Site(town, party.SiteId);
+        if (site == null) return;
+        string kind = HostKind(town, site.Def);
+        var skin = kind == "undead" ? new Color("cfc9b4") : OrcSkin;
+        var members = party.Members.Select(town.Agent).Where(a => !a.Dead && a.Hero != null).ToList();
+        for (int k = 0; k < members.Count; k++)
+        {
+            var a = members[k];
+            float ang = k * Mathf.Tau / Math.Max(1, members.Count) + party.Id * 0.7f;
+            var dir = new Vector2(Mathf.Cos(ang), Mathf.Sin(ang));
+            var foe = at + dir * 0.9f;
+            var hero = foe + dir * Heroes.Reach(a);
+            var d = hero - foe;
+            Foe(kind, map.Gen.At(foe), Mathf.Atan2(d.X, d.Y), k % 3 == 0 ? new Color("4a2018") : new Color("8a3a2a"), skin, 1.0f, Heroes.FoeAttack, now / Heroes.Blow + k * 0.29f, chief: k == 0);
             Fight(a, hero, map.Gen.At(foe, 0.3f), now);
         }
     }

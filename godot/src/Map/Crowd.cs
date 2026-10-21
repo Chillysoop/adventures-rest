@@ -403,6 +403,13 @@ public partial class Crowd(MapView map) : Node3D
                 }
             float yaw = Mathf.Atan2(dir.X, dir.Y);
             var side = new Vector2(dir.Y, -dir.X);
+            if (StageDelve && p == town.Parties.First(x => !x.Returned)) (pos, pace) = (pin, Pace.Delving);
+            if (pace == Pace.Delving)
+            {
+                DelveFight(town, p, pos, now);
+                banners.Add((gen.At(pos + new Vector2(0, 1.6f)), 0, Palette.Gold));
+                continue;
+            }
             bool stopped = pace is Pace.Camped or Pace.Resting;
             for (int i = 0; i < p.Members.Count; i++)
             {

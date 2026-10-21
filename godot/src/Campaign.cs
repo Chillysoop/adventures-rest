@@ -83,7 +83,7 @@ public partial class Main
 
         p.Heading("Threats in the land");
         var known = s.Menaces
-            .Where(m => m.Alive && !m.BigBad && (m.Named || m.Origin == Menaces.FromWarband))
+            .Where(m => m.Alive && !m.BigBad && Discovery.Known(t, m))
             .OrderByDescending(m => m.Stage)
             .ThenByDescending(m => m.Power)
             .ThenBy(m => m.Id)
