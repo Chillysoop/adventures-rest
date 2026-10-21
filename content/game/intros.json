@@ -249,6 +249,9 @@
     {"lineage": "wolfsbane-company", "crest": "wolf-howl", "field": "3a3a2a", "charge": "d8d0b0", "scene": "marches", "host": "rivals", "count": 6, "chief": 1.2, "skin": "d8a880", "cloth": "4a4a3a", "line": "Veteran sellswords who broke the Red Tide."},
     {"lineage": "ember-court", "crest": "dragon-head", "field": "6a1a0a", "charge": "f0b040", "scene": "ashlands", "host": "wyrms", "count": 3, "chief": 1.8, "skin": "2a1a1a", "cloth": "e8b040", "line": "The Old Wyrm's last daughter and her court."},
     {"lineage": "mire-grandmothers", "crest": "cauldron", "field": "2a3a2a", "charge": "b8e08a", "scene": "fen", "host": "witches", "count": 3, "chief": 1.15, "skin": "8a9a7a", "cloth": "3a4a3a", "line": "Three old women in the fens who trade in names."},
+    {"lineage": "rose-thieves", "crest": "rose", "field": "5a1a2a", "charge": "f0a0b0", "scene": "marches", "host": "knights", "count": 5, "chief": 1.2, "skin": "d8b090", "cloth": "6a2a3a", "line": "Oathsworn knights who rob hoarders to feed villages."},
+    {"lineage": "foundling-purse", "crest": "swap-bag", "field": "2a2a3a", "charge": "e8c870", "scene": "streets", "host": "schemers", "count": 5, "chief": 1.0, "skin": "d8b090", "cloth": "3a3a4a", "line": "Port orphans grown into thieves, robbing child-sellers."},
+    {"lineage": "skyhold-post", "crest": "envelope", "field": "2a4a6a", "charge": "f0e0a0", "scene": "skyhold", "host": "folk", "count": 4, "chief": 1.15, "skin": "d8b090", "cloth": "3a5a7a", "line": "Griffon couriers who fly the mountain passes."},
     {"lineage": "vermilion-conclave", "crest": "fire-ring", "field": "5a0a1a", "charge": "ff8a8a", "scene": "arcane", "host": "mages", "count": 5, "chief": 1.2, "skin": "d8b090", "cloth": "8a1a2a", "line": "Caldor's surviving court wizards, wanting a throne to stand behind."}
   ]
 }
