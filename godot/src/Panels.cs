@@ -143,9 +143,14 @@ public partial class Main
         p.Begin();
         string facts = $"{Tag($"Tax {Math.Round(t.TaxRate * 100)}%", Ui.Ink)}   {Tag($"Watch {t.Watch}", Ui.Ink)}{(t.FestivalDays > 0 ? "   " + Tag("Festival!", Ui.Gold) : "")}";
         p.Meter("Mandate", t.Mandate, $"{Math.Round(t.Mandate)}", t.Mandate < 30);
-        p.Note("The townsfolk's approval of you. It follows their mood and falls when you rule by decree. A popular mayor draws settlers.");
+        p.Note("The townsfolk's approval of you. It follows their mood, fades back toward 50 unless you keep earning it, and falls when you rule by decree. A popular mayor draws settlers.");
         p.Text(facts, 12);
         RenderTaxes(p, t);
+        var festive = Council.FestivalBlocked(t);
+        p.Buttons(($"Hold a festival · {Js.Str(Council.FestivalCost(t))}g", festive == null, false, () => Act(() => _sim.HoldFestival())));
+        p.Note(festive == null
+            ? $"Mood up for {t.Content.Council.FestivalDays} days · Mandate +{Js.Str(t.Content.Council.FestivalMandate)}"
+            : Ui.Cap(festive));
         RenderMotion(p, t);
         p.Heading("Seats");
         foreach (var s in t.Seats)
