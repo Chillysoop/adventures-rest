@@ -131,7 +131,7 @@ public static class Alerts
         }
         else if (t.Enemy.Stage == ThreatStage.Raids)
             yield return new("raids", Siege, "Raiders by night", "The warband raids the town when its heroes are away. Build walls, hire the watch, clear the war camp.");
-        foreach (var m in t.Saga.Menaces.Where(m => m.Alive && m.Named && m.ArrivalTick is int).OrderBy(m => m.Id))
+        foreach (var m in t.Saga.Menaces.Where(m => m.Alive && Discovery.Known(t, m) && m.ArrivalTick is int).OrderBy(m => m.Id))
         {
             int days = Math.Max(1, (int)Math.Ceiling((m.ArrivalTick!.Value - t.Tick) / 24.0));
             yield return new($"menace:{m.Id}", Siege, $"{Cap(m.Name)} in {Days(days)}", $"The host of {m.Name} marches from {m.SeatName} on the {Garrison.Place(t, m.Approach)}. Call the watch to arms there and the heroes home.", AtTown: true, Wall: m.Approach);
