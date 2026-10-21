@@ -19,6 +19,10 @@ public partial class Main
         : p.Standing >= -30 ? ("Wary", Ui.Gold)
         : ("Hostile", Ui.Bad);
 
+    /// <summary>Its band on the standing bar, 1 (hostile) to 5 (allied); a power serving an enemy is hostile.</summary>
+    private static int PowerBand(PowerState p, PowerDef d) =>
+        p.Side == PowerSide.Town ? 5 : p.Side == PowerSide.Enemy ? 1 : p.Standing >= d.AllyAt ? 4 : p.Standing >= 0 ? 3 : p.Standing >= -30 ? 2 : 1;
+
     /// <summary>The envoy's business in a few words.</summary>
     private static string EnvoyLine(Town t, PowerState p)
     {
@@ -37,15 +41,16 @@ public partial class Main
     private void RenderPowers(Pane p, Town t)
     {
         p.Heading("Minor powers");
-        foreach (var ps in t.Powers.OrderBy(x => x.Envoy != "" ? 0 : x.Side == PowerSide.Town ? 1 : x.CourtedBy != null ? 1 : x.Side == PowerSide.Enemy ? 2 : 3).ThenByDescending(x => x.Standing).ThenBy(x => x.Id, StringComparer.Ordinal))
+        int unmet = t.Powers.Count(x => !Powers.Met(t, x));
+        if (unmet == t.Powers.Count) p.Note("No powers met yet · they come calling as word of the town spreads.");
+        foreach (var ps in Powers.Known(t).OrderBy(x => x.Envoy != "" ? 0 : x.Side == PowerSide.Town ? 1 : x.CourtedBy != null ? 1 : x.Side == PowerSide.Enemy ? 2 : 3).ThenByDescending(x => x.Standing).ThenBy(x => x.Id, StringComparer.Ordinal))
         {
             var d = Powers.Def(t, ps.Id);
             var lore = t.Content.Library.Faction(d.Ref);
-            var (word, color) = PowerWord(t, ps, d);
+            var (word, _) = PowerWord(t, ps, d);
             string id = ps.Id;
             string name = Ui.Cap(Powers.Name(t, d));
-            string standing = $"{(ps.Standing >= 0 ? "+" : "−")}{Math.Abs(Math.Round(ps.Standing))}";
-            string text = $"[b]{Ui.Esc(name)}[/b]  {Tag(word, color)} {Ui.C(Ui.Ink2, $"[font_size=12]{standing}[/font_size]")}\n" +
+            string text = $"[b]{Ui.Esc(name)}[/b]\n" +
                           $"[font_size=12]{Ui.Esc(d.Leader)}, {Ui.Esc(d.Title)}[/font_size]" + (lore != null ? $"  {Tag(Ui.Cap(lore.Kind))}" : "");
             // One short line per fact, each behind its icon.
             void Line(string icon, Color c, string what) => text += $"\n[font_size=12]{Ui.Img(icon, 14)} {Ui.C(c, what)}[/font_size]";
@@ -87,8 +92,12 @@ public partial class Main
             else if (ps.Side == PowerSide.Neutral) buttons.Add(($"Ally · {Js.Str(d.Price)}g", Powers.AllyBlocked(t, id) == null, true, () => Act(() => _sim.AllyWithPower(id))));
             string face = d.Face;
             var ring = ps.Side == PowerSide.Town ? Ui.Good : ps.Side == PowerSide.Enemy ? Ui.Bad : ps.CourtedBy != null ? Ui.Gold : new Color("5a5347");
-            p.Row(text, ($"{face}{ring.ToHtml()}", () => new Portrait(56) { Glyph = face, Tint = d.Evil ? new Color("b5523b") : new Color("6f8fb5"), Ring = ring }, null), buttons.ToArray());
+            int band = PowerBand(ps, d);
+            double standing = ps.Standing;
+            p.Row(text, ($"{face}{ring.ToHtml()}{band}{word}{Math.Round(standing)}", () => new Portrait(56) { Glyph = face, Tint = d.Evil ? new Color("b5523b") : new Color("6f8fb5"), Ring = ring },
+                () => Foes.Standing(band, word, standing)), buttons.ToArray());
         }
-        p.Note("Gifts raise standing · allies anger rivals · outbid enemy bids before they answer.");
+        if (unmet > 0 && unmet < t.Powers.Count) p.Note($"{Ui.Img("face-help", 14)} {unmet} more {(unmet == 1 ? "power" : "powers")} not yet met");
+        if (unmet < t.Powers.Count) p.Note("Gifts raise standing · allies anger rivals · outbid enemy bids before they answer.");
     }
 }

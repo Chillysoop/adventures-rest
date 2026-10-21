@@ -18,6 +18,10 @@ public partial class Main
         : s.Standing >= -20 ? ("Wary", Ui.Gold)
         : ("Hostile", Ui.Bad);
 
+    /// <summary>Its band on the standing bar, 1 (hostile) to 5 (allied).</summary>
+    private static int StandingBand(Settlement s, double ally) =>
+        s.Allied ? 5 : s.Standing >= ally * 0.5 ? 4 : s.Standing >= 10 ? 3 : s.Standing >= -20 ? 2 : 1;
+
     /// <summary>A settlement's own life: its leader, how it is doing, its band, its trouble and what the town has built there.</summary>
     private static string Life(Town t, Settlement s)
     {
@@ -144,7 +148,7 @@ public partial class Main
         var w = t.Content.World.Standing;
         var tr = t.Content.Trade;
         p.Begin();
-        var known = t.Settlements.Where(s => t.Regions[s.RegionId].Known).OrderBy(s => s.Razed).ThenByDescending(s => Shadows.Shadowed(s)).ThenByDescending(s => s.Allied).ThenByDescending(s => s.Standing).ThenBy(s => s.Id).ToList();
+        var known = t.Settlements.Where(s => Neighbours.Known(t, s)).OrderBy(s => s.Razed).ThenByDescending(s => Shadows.Shadowed(s)).ThenByDescending(s => s.Allied).ThenByDescending(s => s.Standing).ThenBy(s => s.Id).ToList();
         int allies = known.Count(s => s.Allied);
         var open = Trade.Open(t).OrderBy(r => r.Id).ToList();
         p.Card($"[font_size=17][b]{known.Count} {(known.Count == 1 ? "people" : "peoples")} known[/b][/font_size]\n" +
@@ -174,7 +178,7 @@ public partial class Main
         SkyRuns(p, t);
 
         p.Heading("Peoples of the wilds");
-        if (known.Count == 0) p.Note("The town hasn't heard of anyone out there yet. Parties bring back word of the peoples in the regions they visit.");
+        if (known.Count == 0) p.Note("No peoples met yet · their riders come as word spreads.");
         foreach (var s in known)
         {
             var region = t.Regions[s.RegionId];
@@ -185,7 +189,7 @@ public partial class Main
                 : $"Want {string.Join(", ", trade.Wants)} · sell {string.Join(", ", trade.Offers)}.";
             int pleas = t.Pleas.Count(x => x.SettlementId == s.Id && x.Status is PleaStatus.Open or PleaStatus.Taken);
             string boon = s.Kin.Boon.Text != "" ? Ui.Cap(s.Kin.Boon.Text.Replace("{S}", s.Name)) + (s.Kin.Boon.Troops > 0 ? ", and their warriors come if the walls are attacked." : ".") : "";
-            string head = $"[b]{Ui.Esc(s.Name)}[/b]  {Tag(word, color)}{(s.Razed ? "" : $" {Ui.C(Ui.Ink2, $"[font_size=12]{(s.Standing >= 0 ? "+" : "−")}{Math.Abs(Math.Round(s.Standing))}[/font_size]")}")}" +
+            string head = $"[b]{Ui.Esc(s.Name)}[/b]{(s.Razed ? "  " + Tag(word, color) : "")}" +
                           $"{(pleas > 0 ? "  " + Tag(pleas == 1 ? "1 plea" : $"{pleas} pleas", Ui.Gold) : "")}\n" +
                           Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Ui.Cap(s.People))}, {Agent.Article(s.Kin.Kind)} {Ui.Esc(s.Kin.Kind)} in {Ui.Esc(region.Name)}, {Ui.Days(region.Days)} out[/font_size]") +
                           (s.Razed ? "" : $"\n[font_size=12]{Ui.Esc(goods)}[/font_size]") +
@@ -211,8 +215,9 @@ public partial class Main
                     : ("Trade", false, false, () => { }));
                 if (no != null) head += "\n" + Ui.C(Ui.Ink2, $"[font_size=11]No route yet: {Ui.Esc(no)}.[/font_size]");
             }
-            p.Text(head);
-            if (buttons.Count > 0) p.Buttons(buttons.ToArray());
+            int band = StandingBand(s, w.Ally);
+            double standing = s.Standing;
+            p.Row(head, ($"st{band}{word}{Math.Round(standing)}", null, () => Foes.Standing(band, word, standing)), buttons.ToArray());
             var build = Neighbours.ProjectsFor(t, s).Where(x => !s.Projects.Contains(x.Id)).ToList();
             if (s.Works == null && build.Count > 0)
                 p.Buttons(build.Select(x =>

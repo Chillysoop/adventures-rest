@@ -246,6 +246,7 @@ public partial class Main : Control
     private Story? OpenScripted(string id)
     {
         var t = _sim.Town;
+        if (t.Content.Stories.Story(id) is { Source: Powers.ContactSource }) return Powers.OpenContact(t, id);
         if (t.Content.Stories.Story(id) is not { } d || !Sendings.Is(d)) return Stories.Open(t, id);
         // Wait (up to a few days) for a party on the road far enough from its site.
         for (int hour = 0; hour < 24 * 6; hour++)

@@ -73,6 +73,7 @@
     "security": { "unit": 5, "sign": 1, "icon": "standing", "name": "allies" },
     "band": { "unit": 1, "sign": 1, "icon": "standing", "name": "allies" },
     "goodwill": { "unit": 4, "sign": 1, "icon": "standing", "name": "allies" },
+    "minor": { "unit": 6, "sign": 1, "icon": "standing", "name": "allies" },
     "goodwill2": { "unit": 4, "sign": 1, "icon": "standing", "name": "allies" },
     "heat": { "unit": 8, "sign": 0, "icon": "standing", "name": "allies" },
     "foePower": { "unit": 0.05, "sign": -1, "icon": "threat", "name": "the enemy" },

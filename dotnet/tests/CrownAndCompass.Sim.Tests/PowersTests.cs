@@ -10,7 +10,15 @@ public class PowersTests
         sim.RunDays(5);
         var m = Menaces.Seed(sim.Town, [2, 3]);
         Assert.NotNull(m);
+        MeetAll(sim.Town);
         return (sim, m!);
+    }
+
+    /// <summary>The town has met every power, without their first-contact scenes.</summary>
+    private static void MeetAll(Town t)
+    {
+        Powers.Init(t);
+        foreach (var p in t.Powers) Discovery.Meet(t, Powers.Key(p.Id), Discovery.Met);
     }
 
     private static void Courted(Town t, PowerState p, Menace m, double offer)
@@ -256,5 +264,73 @@ public class PowersTests
         Assert.Equal("", league.FeudWith);
         Assert.Equal("", ledger.FeudWith);
         Assert.True(ledger.Favour < ledgerFavour);
+    }
+
+    [Fact]
+    public void EveryPowerHasADayToCallAndAFirstContactScene()
+    {
+        var c = new Simulation(new SimulationOptions { Seed = 1 }).Town.Content;
+        foreach (var d in c.Powers.Powers)
+        {
+            Assert.True(d.MeetDay > 0, $"{d.Id} needs a meetDay");
+            var scene = c.Stories.Story(Powers.ContactSource + "-" + d.Id);
+            Assert.NotNull(scene);
+            Assert.Equal(Powers.ContactSource, scene!.Source);
+            Assert.Contains(scene.Stages[0].Options, o => o.Rolls);
+        }
+    }
+
+    [Fact]
+    public void TheTownMeetsAPowerWhenItsPeopleCallAndTheSceneSetsWhereItStands()
+    {
+        var sim = new Simulation(new SimulationOptions { Seed = 3, AutoMayor = false });
+        var t = sim.Town;
+        t.Treasury = 5000;
+        sim.RunDays(1);
+        Assert.Empty(Powers.Known(t));
+        Assert.False(sim.CourtPower("black-ledger"));
+        Assert.Equal("unknown", Powers.AllyBlocked(t, "black-ledger"));
+        int meet = t.Content.Powers.Powers.Min(d => d.MeetDay);
+        sim.RunDays(meet - t.Day + 1);
+        var first = Assert.Single(Powers.Known(t));
+        var scene = Assert.Single(Stories.Pending(t), s => s.Minor == first.Id);
+        Assert.Equal(Powers.ContactSource, Stories.DefOf(t, scene).Source);
+        double before = first.Standing;
+        Assert.NotNull(sim.ResolveStory(scene.Id, 0));
+        Assert.NotEqual(before, first.Standing);
+        Assert.True(sim.CourtPower(first.Id));
+    }
+
+    [Fact]
+    public void AnEnemyCourtingAPowerIsHowTheTownFirstHearsOfIt()
+    {
+        var (sim, m) = Seeded();
+        var t = sim.Town;
+        sim.RunDays(t.Content.Powers.CourtFrom - t.Day - 1);
+        t.Discovered.RemoveAll(c => c.Key.StartsWith("power:", StringComparison.Ordinal));
+        t.Stories.All.Clear();
+        foreach (var p in t.Powers) p.Standing = p.Favour = -50;
+        m.Stage = MenaceStage.Rising;
+        m.Cunning = "mastermind";
+        m.Power = 400;
+        sim.RunDays(2);
+        var courted = Assert.Single(t.Powers, p => p.CourtedBy == m.Id);
+        Assert.Equal(Discovery.Heard, Discovery.Of(t, Powers.Key(courted.Id))!.How);
+        Assert.Contains(Stories.Pending(t), s => s.Minor == courted.Id);
+    }
+
+    [Fact]
+    public void ThePeoplesSendRidersOneAtATimeAndTheTownCantDealWithOnesItHasntMet()
+    {
+        var sim = new Simulation(new SimulationOptions { Seed = 2, AutoMayor = false });
+        var t = sim.Town;
+        sim.RunDays(1);
+        Assert.DoesNotContain(t.Discovered, c => c.Key.StartsWith("people:", StringComparison.Ordinal));
+        var w = t.Content.World.Standing;
+        sim.RunDays(w.MeetFrom - t.Day + 1);
+        var met = Assert.Single(t.Settlements, s => Neighbours.Known(t, s));
+        Assert.Contains(Stories.Pending(t), s => s.SettlementId == met.Id && Stories.DefOf(t, s).Source == Powers.ContactSource);
+        foreach (var s in t.Settlements.Where(s => s != met && t.Regions[s.RegionId].Known))
+            Assert.Equal("the town hasn't met them", Trade.Refuse(t, s));
     }
 }
