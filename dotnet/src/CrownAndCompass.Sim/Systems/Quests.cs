@@ -246,6 +246,9 @@ public static class Quests
     /// <summary>XP from the start of a level to the next.</summary>
     internal static int XpToNext(int level) => level >= XpLevels.Length ? 0 : XpLevels[level] - XpLevels[level - 1];
 
+    /// <summary>The XP a level starts at and the next one's, for a sheet's bar; null at the top level.</summary>
+    public static (int From, int To)? XpBand(int level) => level < 1 || level >= XpLevels.Length ? null : (XpLevels[level - 1], XpLevels[level]);
+
     private static readonly string[] PartyAdjectives = ["Ashen", "Iron", "Crimson", "Silver", "Gallows", "Lucky", "Broken", "Midnight", "Copper", "Wandering"];
     private static readonly string[] PartyNouns = ["Blades", "Lanterns", "Owls", "Shields", "Hounds", "Crows", "Compasses", "Wolves", "Pilgrims", "Daggers"];
 
@@ -447,8 +450,9 @@ public static class Quests
             .Where(s => s.Known != SiteKnowledge.Unheard && !s.ThoughtCleared && s.Trust >= 50)
             // The undercity only once it stirs: the war on the surface comes first.
             .Where(s => !Undercity.IsUnder(town, s) || Undercity.Stirring(town, s))
-            // The trouble near town, which feeds the warband, comes before the far wilds.
-            .OrderBy(s => s.Generated)
+            // The big bad's quest comes first (DarkQuests); then the trouble near town, which feeds the warband, before the far wilds.
+            .OrderBy(s => DarkQuests.Sought(town, s) ? 0 : 1)
+            .ThenBy(s => s.Generated)
             .ThenBy(s => s.BelievedTier)
             .ThenBy(s => s.Attempts)
             .FirstOrDefault();

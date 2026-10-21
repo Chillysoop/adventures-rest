@@ -100,6 +100,7 @@ public partial class Main
             _tellers.AddChild(about);
             _tellers.AddChild(new Control { CustomMinimumSize = new Vector2(0, 6) });
         }
+        BuildCabinet(_tellers);
         TitleButton(_tellers, "Back", "Back to the main menu", primary: false, () => PickStoryteller(null));
 
         // Then the mayor: a rolled sheet to reroll and a background to pick, before the charter is signed.
@@ -194,6 +195,7 @@ public partial class Main
         _titleMenu.Visible = tutorial == null;
         _tellers.Visible = tutorial != null;
         _mayorSetup.Visible = false;
+        if (tutorial != null) FillCabinet();
     }
 
     private static Button TitleButton(VBoxContainer col, string text, string tip, bool primary, Action pressed)

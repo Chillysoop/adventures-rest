@@ -71,6 +71,15 @@ public sealed record SimulationOptions
 
     /// <summary>Hardcore: the mayor's death ends the campaign (<see cref="Systems.Mayoralty"/>).</summary>
     public bool Hardcore { get; init; }
+
+    /// <summary>Roads to victory switched off for this campaign (victory.json ids); the rest are open (<see cref="Systems.Victory"/>).</summary>
+    public IReadOnlyList<string> RoadsOff { get; init; } = [];
+
+    /// <summary>Boons from the player's cabinet the town is founded with, as "id:rank" (<see cref="Systems.Boons"/>).</summary>
+    public IReadOnlyList<string> Boons { get; init; } = [];
+
+    /// <summary>Endless mode: a win closes an era and a worse foe comes; only a fall ends the campaign (<see cref="Systems.Endless"/>).</summary>
+    public bool Endless { get; init; }
 }
 
 /// <summary>
@@ -89,9 +98,13 @@ public sealed class Simulation
         Town = new Town(content ?? Content.Default(), Options.Seed);
         Town.Storyteller = Systems.Storyteller.Def(Town.Content, Options.Storyteller)?.Id ?? Town.Content.Storytellers.Default;
         Town.Saga.Enabled = Options.Saga && Options.Enemy;
+        Town.Saga.Endless.On = Options.Endless;
         Town.Saga.Legends.AddRange(Options.Legends.Where(l => l.Seed != Options.Seed));
         if (Options.Mayor is { } mayor) Stories.Adopt(Town, mayor);
+        Town.Victory.Off.AddRange(Options.RoadsOff.Where(id => id != Systems.Victory.Slay && Systems.Victory.Def(Town, id) != null).Distinct().Order(StringComparer.Ordinal));
+        Systems.Boons.Choose(Town, Options.Boons);
         Charter();
+        Systems.Boons.Found(Town);
         Goals.Begin(Town);
     }
 
@@ -174,6 +187,8 @@ public sealed class Simulation
         Mayoralty.Daily(t, Options.AutoMayor && Options.AutoStories);
         Factions.Daily(t, Options.AutoMayor);
         Saga.Daily(t, Options.AutoMayor);
+        DarkQuests.Daily(t);
+        Endless.Daily(t);
         Crises.Daily(t, Options.AutoMayor && Options.AutoDefense);
         Powers.Daily(t);
         Vengeance.Daily(t);
@@ -205,6 +220,7 @@ public sealed class Simulation
         Stories.Daily(t, Options.AutoMayor && Options.AutoStories);
         Sheet.Daily(t, Options.AutoMayor && Options.AutoStories);
         Economy.Daily(t, true);
+        Victory.Daily(t);
         Taxes.Close(t);
         Trends.Close(t);
         History.Add(Snapshot());
@@ -213,6 +229,9 @@ public sealed class Simulation
         if (t.RecentNet.Count > 7) t.RecentNet.RemoveAt(0);
         t.AccountsToday = new();
     }
+
+    /// <summary>Claim a road to victory whose terms hold: the big bad marches to stop it, and the terms must hold for the road's days (<see cref="Victory"/>).</summary>
+    public bool ClaimRoad(string id) => Victory.Claim(Town, id);
 
     /// <summary>Have the watch seize an enemy's agent the townsfolk pointed out, before it strikes tonight.</summary>
     public bool Seize(int lurkerId) => Lurkers.Seize(Town, lurkerId);
@@ -680,7 +699,7 @@ public sealed class Simulation
         Agent? knight = null;
         if (c.Rules.CharterKnight != "")
         {
-            knight = Quests.CreateHero(t, c.Classes.First(k => k.Id == c.Rules.CharterKnight), c.Rules.CharterKnightLevel);
+            knight = Quests.CreateHero(t, c.Classes.First(k => k.Id == c.Rules.CharterKnight), c.Rules.CharterKnightLevel + Systems.Boons.KnightLevels(t));
             knight.Hero!.Sworn = true;
             knight.Hero.Lodging = true;
         }

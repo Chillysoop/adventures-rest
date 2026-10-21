@@ -82,7 +82,7 @@ public partial class Main
         // so it neither takes a dead click nor holds back the stories behind it.
         if (_story.Visible && _beat == null && _storyId is int open && Stories.Find(_sim.Town, open) is not { Done: false }) CloseStory();
         // One card at a time: a discovery's report on screen is answered first.
-        if (_story.Visible || _find.Visible) return;
+        if (_story.Visible || _find.Visible || _intro.Visible) return;
         // Quiet sendings (late in the campaign, not high stakes) wait on the alert strip rather than popping up.
         var next = Stories.Pending(_sim.Town).FirstOrDefault(s => s.Id > _storySeen && (!Sendings.Is(_sim.Town, s) || (!holdSendings && Sendings.Pauses(_sim.Town, s))));
         if (next == null) return;
@@ -812,26 +812,5 @@ public partial class Main
         return r;
     }
 
-    private static Control AbilityRow(Abilities a)
-    {
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", 6);
-        foreach (var (key, name) in new[] { (Ability.Str, "STR"), (Ability.Dex, "DEX"), (Ability.Con, "CON"), (Ability.Int, "INT"), (Ability.Wis, "WIS"), (Ability.Cha, "CHA") })
-        {
-            int score = a[key], mod = Rng.Modifier(score);
-            var cell = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-            cell.AddThemeStyleboxOverride("panel", Ui.Box(Ui.Panel2, Ui.Line, 8, 1, 4, 6));
-            var v = new VBoxContainer();
-            v.AddThemeConstantOverride("separation", -2);
-            foreach (var (text, color, font, size) in new[] { (name, Ui.Ink2, Ui.Bold, 10), ($"{(mod >= 0 ? "+" : "−")}{Math.Abs(mod)}", Ui.Ink, Ui.Display, 22), (score.ToString(), Ui.Ink2, Ui.Medium, 11) })
-            {
-                var l = Ui.Label(text, color, font, size);
-                l.HorizontalAlignment = HorizontalAlignment.Center;
-                v.AddChild(l);
-            }
-            cell.AddChild(v);
-            row.AddChild(cell);
-        }
-        return row;
-    }
+    private static Control AbilityRow(Abilities a) => SheetView.AbilityRow(a);
 }

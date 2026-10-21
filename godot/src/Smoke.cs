@@ -7,7 +7,7 @@ namespace CrownAndCompass.Client;
 /// <summary>
 /// With --smoke: the merge gate's play-through of a build (<c>scripts/gate.ts</c>). From the main menu (and its choice of storytellers) it
 /// rolls and rerolls a mayor, starts a new town, plays on at top speed, opens every window, the build bar, the campaign map, a wall and a guard flag and the
-/// game menu, saves and loads, starts the tutorial, opens the History, the Settings and the glossary with a pinned keyword card, steps into a story event, answers a party's sending, opens the tourney card with a bet on it, opens the recap and a tavern tale, a few frames apart so each one draws. It prints
+/// game menu, saves and loads, starts the tutorial, opens the History, the Settings and the glossary with a pinned keyword card, steps into a story event, answers a party's sending, opens the tourney card with a bet on it, opens the recap and a tavern tale, every faction's first-meeting picture, a few frames apart so each one draws. It prints
 /// <c>SMOKE OK</c> and quits with 0, or <c>SMOKE FAIL</c> and 1; the gate also fails on any engine error.
 /// </summary>
 public partial class Main
@@ -233,6 +233,14 @@ public partial class Main
             case 32:
                 if (!_tourney.Visible || _sim.Town.Tourney.Events.All(e => e.Heats.Count == 0)) throw new InvalidOperationException("the tourney's heats did not show");
                 CloseTourney();
+                return 5;
+            case 33:
+                // A first meeting's picture: every scene staged once, the last left up to draw.
+                foreach (var d in _sim.Town.Content.Intros.Intros) OpenIntro(d, null);
+                return 40;
+            case 34:
+                if (!_intro.Visible) throw new InvalidOperationException("the first-meeting card did not open");
+                CloseIntro();
                 return 5;
             default:
                 var t = _sim.Town;

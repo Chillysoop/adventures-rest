@@ -564,6 +564,22 @@ public static class Powers
         return d.Serves == "any" && !d.Shuns.Contains(m.Kind) && p.Side != PowerSide.Enemy && p.CourtedBy == null && !Pacted(town, p);
     }
 
+    /// <summary>
+    /// The big bad's pact (<see cref="DarkQuests"/>): the power it could most easily buy goes over to it without gold,
+    /// whatever its standing with the town. Pacts with the town don't hold against it. False when none would serve it.
+    /// </summary>
+    internal static bool Bind(Town town, Menace m)
+    {
+        var p = town.Powers.Where(p => Def(town, p.Id) is { Serves: "any" } d && !d.Shuns.Contains(m.Kind) && p.Side != PowerSide.Enemy)
+            .OrderBy(p => Resolve(town, p)).ThenBy(p => p.Id, StringComparer.Ordinal).FirstOrDefault();
+        if (p == null) return false;
+        p.CourtedBy = null;
+        p.Offer = Resolve(town, p) + 1;
+        p.CourtedBy = m.Id;
+        Decide(town, p, Def(town, p.Id));
+        return true;
+    }
+
     /// <summary>Every courtEvery days the strongest risen enemy with the wits for it courts the power it could most easily buy.</summary>
     private static void Court(Town town)
     {

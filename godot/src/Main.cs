@@ -77,6 +77,7 @@ public partial class Main : Control
         BuildGuide();
         BuildStory();
         BuildFind();
+        BuildIntro();
         BuildTourney();
         BuildTale();
         BuildRecap();
@@ -178,6 +179,8 @@ public partial class Main : Control
         if (_opts.Folk && _sim.Town.Workers.Where(a => !a.IsAway).OrderByDescending(a => a.Practice).ThenBy(a => a.Id).FirstOrDefault() is Agent folk)
             Select(Selection.Agent(folk.Id));
         if (_opts.Episode is string episode) StageEpisode(episode);
+        if (_opts.Intro is string intro) StageIntro(intro);
+        if (_opts.Claim is string road && !_sim.ClaimRoad(road)) GD.Print($"Cannot claim {road}: {Victory.ClaimBlocked(_sim.Town, road)}");
         if (_opts.House && _sim.Town.Buildings.Where(b => b.Complete && b.Def.Housing > 0).OrderByDescending(b => Decor.Comfort(_sim.Town, b)).ThenBy(b => b.Id).FirstOrDefault() is Building house)
         {
             Select(Selection.Building(house.Id));
@@ -334,7 +337,7 @@ public partial class Main : Control
         RememberLegends();
         // With --autoplay the stand-in mayor keeps playing, for demos and screenshots; only a player's towns meet old legends.
         var legends = autoplay ? [] : ProfileLegends();
-        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoArmory = autoplay && !_opts.KeepArmory, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay && _opts.Tax == null, AutoHonours = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay, AutoStories = autoplay, AutoExplore = autoplay && !_opts.Find, Legends = legends, Storyteller = storyteller ?? _opts.Storyteller ?? "rising", Mayor = mayor, Hardcore = hardcore || _opts.Hardcore }));
+        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoArmory = autoplay && !_opts.KeepArmory, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay && _opts.Tax == null, AutoHonours = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay, AutoStories = autoplay, AutoExplore = autoplay && !_opts.Find, Legends = legends, Storyteller = storyteller ?? _opts.Storyteller ?? "rising", Boons = autoplay ? [.. _opts.Boons] : ChosenBoons(), Endless = _opts.Endless || (!autoplay && _endless), Mayor = mayor, Hardcore = hardcore || _opts.Hardcore }));
     }
 
     /// <summary>Show a town: a new one, or one loaded from a save.</summary>
@@ -361,6 +364,9 @@ public partial class Main : Control
         _storySeen = sim.Town.Stories.All.Count;
         CloseFind();
         _findSeen.Clear();
+        CloseIntro();
+        _introSeen = -1;
+        _introQueue.Clear();
         ResetClockWatch();
         CloseTale();
         _recap.Visible = false;
@@ -464,6 +470,12 @@ public partial class Main : Control
         if (_tale.Visible && k.Keycode == Key.Escape)
         {
             CloseTale();
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+        if (_intro.Visible && k.Keycode is Key.Escape or Key.Enter or Key.Space)
+        {
+            CloseIntro();
             GetViewport().SetInputAsHandled();
             return;
         }
@@ -581,9 +593,11 @@ public partial class Main : Control
     public override void _Process(double delta)
     {
         double dt = Math.Min(0.1, delta);
-        // --scroll F: hold the open window scrolled to that share of its length (for screenshots).
+        // --scroll F: hold the open window (or else the inspector) scrolled to that share of its length (for screenshots).
         if (_opts.Scroll is float sf && _window.Visible && _windowTab is Tab wt && _scrolls.TryGetValue(wt, out var sc))
             sc.ScrollVertical = (int)(sf * Math.Max(0, sc.GetVScrollBar().MaxValue - sc.Size.Y));
+        else if (_opts.Scroll is float si && _scrolls.TryGetValue(Tab.Inspect, out var isc) && isc.IsVisibleInTree())
+            isc.ScrollVertical = (int)(si * Math.Max(0, isc.GetVScrollBar().MaxValue - isc.Size.Y));
         SyncScrollTo();
         TickLens(dt);
         _acc += dt * Speeds[_speed];
@@ -608,6 +622,8 @@ public partial class Main : Control
         SyncOrders();
         SyncGuide();
         SyncGoals();
+        // A first meeting's picture comes before any scene or report it brought.
+        SyncIntros();
         SyncStories(delta);
         SyncFinds();
         SyncClockStops();
@@ -813,6 +829,14 @@ public partial class Main : Control
         v.AddChild(h);
         var body = Ui.Rich($"[center]{Ui.Esc(t.Saga.EndText)} The full account is in the Chronicles.[/center]");
         v.AddChild(body);
+        // A win is graded by its day and fills the cabinet with boons for the next town (Cabinet.cs).
+        RecordWin();
+        if (won && Victory.Won(t) != null)
+        {
+            var g = Boons.Grade(t.Content, t.Day);
+            string boons = string.Join("   ", Boons.Earned(t).Select(e => $"{Ui.Img(e.Boon.Icon, 16)} {Ui.Esc(e.Boon.Name)} {new string('★', e.Rank)}"));
+            v.AddChild(Ui.Rich($"[center][b]{Ui.C(Ui.Gold, g.Name)}[/b] · day {t.Day}\n{boons}[/center]"));
+        }
         var actions = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
         actions.AddThemeConstantOverride("separation", 8);
         var again = new Button { Text = "New town", ThemeTypeVariation = "Post" };

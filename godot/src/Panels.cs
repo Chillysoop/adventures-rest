@@ -556,25 +556,15 @@ public partial class Main
             : scouting != null ? $"Out {(scouting.Mirror ? "hiding a mirror at" : "scouting")} {Quests.Site(t, scouting.SiteId)!.Def.Name}"
             : a.IsAway ? "Away on an expedition, somewhere in the fog" : a.Activity.ToString();
         string describe = a.Describe()[(a.Name.Length + 2)..];
-        p.Text($"[font_size=19][b]{Ui.Esc(Loyalty.Styled(t, a))}[/b][/font_size]\n{Ui.C(Ui.Ink2, $"{Ui.Esc(Ui.Cap(describe))} · {Ui.Esc(a.TraitList())}")}");
+        if (a.Hero != null)
+        {
+            var spec = HeroSheetSpec(t, a);
+            p.Add("sheet" + spec.Sig(), () => SheetView.Build(spec));
+        }
+        else p.Text($"[font_size=19][b]{Ui.Esc(Loyalty.Styled(t, a))}[/b][/font_size]\n{Ui.C(Ui.Ink2, $"{Ui.Esc(Ui.Cap(describe))} · {Ui.Esc(a.TraitList())}")}");
         if (seat != null) p.Text($"{Tag(seat.Def.Title, Ui.Gold)} loyalty {Math.Round(seat.Loyalty)}");
         if (a.Hero is HeroSheet hs)
         {
-            p.Text($"HP {hs.Hp}/{hs.MaxHp} · {hs.Xp} XP · {hs.Kills} kills · {hs.Expeditions} expeditions");
-            if (Annals.Past(t, a) is string past && past != "") p.Text(Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(past)}[/font_size]"));
-            var cls = hs.Cls;
-            var spells = new List<string>();
-            if (cls.HealSpell != null) spells.Add($"{cls.HealSpell.Name} ({cls.HealsAt(hs.Level)} a delve)");
-            if (cls.AreaSpell != null) spells.Add(cls.AreaSpell.Name);
-            string role = cls.Role == "" ? "" : $"{Ui.Cap(cls.Role)}{(cls.Magic != "" ? $", {cls.Magic} caster" : "")}";
-            if (cls.Card != "") p.Text($"{Tag(Ui.Cap(cls.Card), Ui.Gold)} {Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(string.Join(" · ", Roster.KeyPowers(t, a).Select(Ui.Cap)))}[/font_size]")}", 13);
-            p.Text(Ui.C(Ui.Ink2, $"{Ui.Esc(role)}{(spells.Count > 0 ? $" · casts {Ui.Esc(string.Join(", ", spells))}" : "")}"), 13);
-            p.Text($"Fights with {Ui.Esc(Gear.Describe(hs))} · AC {Gear.Ac(t.Content, a)} · attack +{Gear.Attack(t.Content, a)}{(hs.Stone ? " · carries a town sending stone" : "")}", 13);
-            var (alone, carries) = Passage.Of(t, a);
-            string mount = hs.Mount != "" && t.Content.Passage.Mount(hs.Mount) is { } md ? $"Rides a {md.Name}" : "";
-            string crosses = Passage.Describe(alone), party = Passage.Describe(carries & ~alone) is var more && more != "" ? $"; carries the whole party over {more}" : "";
-            if (mount != "" || crosses != "" || party != "")
-                p.Text(Ui.C(Ui.Ink2, Ui.Esc($"{mount}{(mount != "" && crosses != "" ? " · " : "")}{(crosses != "" ? $"can cross {crosses}" : "")}{party}")), 13);
             InspectNotoriety(p, t, a, hs);
             InspectLoyalty(p, t, a, hs);
         }
@@ -586,9 +576,8 @@ public partial class Main
         if (a.HedgeSpell != "" && t.Content.Research.Hedge.Trade(a.HedgeSpell) is { } hedge)
             p.Text($"{Tag(Ui.Cap(hedge.Name), Ui.Gold)} {Ui.C(Ui.Ink2, $"[font_size=12]Hedge mage: {Ui.Esc(hedge.Spell)}{(HedgeMages.Working(t, a) == null ? ", though not at their own trade now" : "")}.[/font_size]")}", 13);
         if (a.SpouseId is int sp) p.Text($"Married to {AgentLink(t.Agent(sp))}");
-        if (Taverns.Persona(t, a) is { } persona)
+        if (a.Hero == null && Taverns.Persona(t, a) is { } persona)
             p.Text(Ui.C(Ui.Ink2, $"[font_size=12]In their cups: {Ui.Esc(persona.Name)}{(Taverns.Drunk(t, a) != null ? ", and it shows tonight" : "")}.[/font_size]"), 12);
-        if (a.Hero != null && Taverns.Owing(t, a) is { } blood) p.Text(Ui.C(Ui.Bad, $"[font_size=12]Owes blood money for {Ui.Esc(blood.Victim)}.[/font_size]"), 12);
         InspectSheet(p, t, a);
         var friends = a.Opinions.Where(kv => kv.Value >= 40).OrderBy(kv => kv.Key).Select(kv => AgentLink(t.Agent(kv.Key))).ToList();
         var foes = a.Opinions.Where(kv => kv.Value <= -30).OrderBy(kv => kv.Key).Select(kv => AgentLink(t.Agent(kv.Key))).ToList();
@@ -657,18 +646,6 @@ public partial class Main
         p.Text($"{Tag($"Loyalty {loyalty}", color)} {Ui.C(color, mood)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(string.Join(" · ", why))}[/font_size]")}", 13);
         if (hs.JailedUntil is int jail)
             p.Text(Ui.C(Ui.Bad, $"In the town cells until day {jail / SimTime.HoursPerDay + 1}. They take no bounties until then."), 13);
-        if (hs.Potions + hs.Scrolls + hs.Copied > 0)
-        {
-            var kit = new List<string>();
-            if (hs.Potions > 0) kit.Add(hs.Potions == 1 ? "1 healing potion" : $"{hs.Potions} healing potions");
-            if (hs.Scrolls > 0) kit.Add(hs.Scrolls == 1 ? "1 spell scroll" : $"{hs.Scrolls} spell scrolls");
-            if (hs.Copied > 0) kit.Add($"{hs.Copied} copied into the spellbook");
-            p.Text(Ui.C(Ui.Ink2, "Carries " + string.Join(", ", kit) + "."), 13);
-        }
-        InspectPact(p, t, hs);
-        InspectLife(p, t, hs);
-        if (hs.Taint > 0)
-            p.Text(Ui.C(Ui.Bad, hs.Taint == 1 ? "Took a gift from the dark. Their shadow is slow to follow them." : $"Took {hs.Taint} gifts from the dark. They are not sleeping well."), 13);
         if (Regard.TemperOf(t, a) is TemperDef temper)
         {
             // What they make of the mayor, and the choice that moved them last.
@@ -697,42 +674,6 @@ public partial class Main
         duty.Add((best != null ? $"Arm: {(best.Name != "" ? best.Name : Gear.Plainly(best.Item))}" : "Arm", best != null, best != null, () => Act(() => _sim.Arm([id]))));
         p.Buttons(duty.ToArray());
         if (!a.IsAway) p.Note($"Guard duty: {Js.Str(Garrison.Wage(t, a))}g a day, no bounties.");
-    }
-
-    /// <summary>The patron they are sworn to, its favour from −5 to +5 and what that lends them, and their familiar.</summary>
-    /// <summary>A cursed weapon, and the hero's own life between jobs: their land, their stake in a business.</summary>
-    private void InspectLife(Pane p, Town t, HeroSheet hs)
-    {
-        if (Curses.Of(t.Content, hs) is { } curse)
-        {
-            var mods = new List<string>();
-            foreach (var (kind, label) in new[] { ("attack", "attack"), ("ac", "AC"), ("damage", "damage"), ("skill", "skill") })
-            {
-                int m = Curses.Mod(t.Content, hs, kind);
-                if (m != 0) mods.Add($"{label} {(m > 0 ? "+" : "−")}{Math.Abs(m)}");
-            }
-            p.Text($"{Tag($"Cursed: {Ui.Cap(curse.Name)}", Ui.Bad)}{(mods.Count > 0 ? Ui.C(Ui.Ink2, $" {string.Join(", ", mods)}") : "")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(curse.Text)} Stuck until lifted.[/font_size]")}", 13);
-        }
-        var life = new List<string>();
-        if (hs.Holding != "") life.Add($"owns {Ui.Esc(hs.Holding)} and sleeps there between jobs");
-        if (hs.StakeId is int sid) life.Add($"holds a {Js.Str(hs.Stake)}g stake in {BuildingLink(t.Building(sid))}");
-        if (life.Count > 0) p.Text(Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Cap(string.Join("; ", life))}.[/font_size]"), 12);
-    }
-
-    private static void InspectPact(Pane p, Town t, HeroSheet hs)
-    {
-        if (Patrons.Of(t.Content, hs) is not { } pd) return;
-        var r = t.Content.Patrons;
-        var color = hs.Favour >= 3 ? Ui.Good : hs.Favour <= -3 ? Ui.Bad : Ui.Ink2;
-        var boons = new List<string>();
-        foreach (var kind in new[] { "attack", "ac", "skill" })
-        {
-            int b = Patrons.Boon(t.Content, hs, kind);
-            if (b != 0) boons.Add($"{(kind == "ac" ? "AC" : kind)} {(b > 0 ? "+" : "−")}{Math.Abs(b)}");
-        }
-        string next = hs.Favour >= r.Max - 1 ? "one more good turn brings its gift" : hs.Favour <= r.Min + 1 ? "one more failing and it takes its price" : $"it judges them every {r.JudgeEvery} days";
-        string familiar = hs.Familiar != "" ? $" Their familiar is {hs.Familiar}." : "";
-        p.Text($"{Tag($"Pact: {Ui.Cap(pd.Name)}", Ui.Ink2)} {Ui.C(color, $"favour {Patrons.Favour(hs.Favour)}")}{(boons.Count > 0 ? Ui.C(Ui.Ink2, $" · {string.Join(", ", boons)}") : "")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Ui.Cap(pd.Title))}. It wants {Ui.Esc(pd.Wants)}; {next}.{Ui.Esc(familiar)}[/font_size]")}", 13);
     }
 
     private void InspectBuilding(Pane p, Town t, Building b)

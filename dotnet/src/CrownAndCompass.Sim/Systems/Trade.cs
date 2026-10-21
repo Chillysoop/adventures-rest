@@ -114,7 +114,7 @@ public static class Trade
     public static IEnumerable<TradeRoute> Open(Town town) => town.Trade.Routes.Where(r => !r.Closed);
 
     /// <summary>Routes the town's charter lets it run.</summary>
-    public static int Cap(Town town) => Rules(town).Routes.GetValueOrDefault(City.Tier(town).Id, 0) + Institutions.Routes(town);
+    public static int Cap(Town town) => Rules(town).Routes.GetValueOrDefault(City.Tier(town).Id, 0) + Institutions.Routes(town) + Boons.Routes(town);
 
     public static Settlement SettlementOf(Town town, TradeRoute r) => town.Settlements[r.SettlementId];
 

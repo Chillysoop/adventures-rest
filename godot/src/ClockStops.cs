@@ -14,6 +14,7 @@ public static class ClockStops
     public static readonly ClockStop[] All =
     [
         new("discoveries", "Discoveries", "First report, last step, or a step gone wrong", true),
+        new("first-contact", "First meetings", "A faction or foe met for the first time", true),
         new("sendings", "Sendings from parties", "A party asks what to do", true),
         new("stories", "Story events", "High-stakes stories", true),
         new("motions", "Council motions", "Off: they wait on the alert strip", false),
