@@ -65,6 +65,14 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["tab-library", "spell-book", mono],
   ["tab-build", "claw-hammer", mono],
   ["glossary", "open-book", mono],
+  // The mayor's regalia slots (content/game/regalia.json), the sheet and rerolling a new mayor
+  ["regalia-chain", "gem-chain", "#e8c15a"],
+  ["regalia-signet", "ring", "#d9b25a"],
+  ["regalia-sceptre", "winged-scepter", "#cfa64a"],
+  ["regalia-mantle", "cape", "#c0566a"],
+  ["regalia-banner", "flying-flag", "#7f9fd4"],
+  ["sheet", "id-card", mono],
+  ["reroll", "rolling-dices", mono],
   // Quick orders over the corner map
   ["order-defend", "guarded-tower", mono],
   ["order-guard", "flying-flag", mono],

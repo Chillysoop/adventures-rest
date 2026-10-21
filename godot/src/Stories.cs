@@ -8,7 +8,7 @@ namespace CrownAndCompass.Client;
 /// Story events, Paradox style: a card pops up when something in town needs the mayor, and its choices are
 /// d20 checks of the mayor's own sheet (<see cref="Stories"/>). The card shows each choice's skill, DC and
 /// odds; picking one rolls the die on screen, then tells what came of it. "Later" leaves the story on the
-/// alert strip until it runs its course. The Mayor window is the character sheet the rolls come from.
+/// alert strip until it runs its course. The Mayor window shows what needs the mayor now, with the character sheet the rolls come from a button away.
 /// </summary>
 public partial class Main
 {
@@ -390,6 +390,13 @@ public partial class Main
 
     // ---------- The mayor's sheet ----------
 
+    /// <summary>Whether the Mayor window shows the full character sheet rather than what needs the mayor now.</summary>
+    private bool _mayorSheet;
+
+    /// <summary>
+    /// The Mayor window: what is timely (a level to choose, stories waiting, the regalia worn and to wear,
+    /// decrees and callings in force), with the full character sheet one button away.
+    /// </summary>
     private void RenderMayor()
     {
         var p = _panes[Tab.Mayor];
@@ -398,12 +405,137 @@ public partial class Main
         var m = t.Stories.Mayor;
         var bg = r.Background(m.Background);
         p.Begin();
+        int max = Sheet.InspirationMax(t);
+        string pips = new string('●', Math.Min(m.Inspiration, max)) + new string('○', Math.Max(0, max - m.Inspiration));
+        p.Card($"[font_size=19][b]{Ui.Esc(m.Name)}[/b][/font_size]\n{Ui.C(Ui.Ink2, $"Lv {m.Level} {Ui.Esc(Stories.Title(t).ToLowerInvariant())} · {Ui.Esc(bg.Name.ToLowerInvariant())}")}   {Tag($"✦ {pips}", m.Inspiration > 0 ? Ui.Gold : Ui.Ink2)}", Ui.Gold);
+        p.Buttons(
+            (_mayorSheet ? "◂ Now" : $"{(Sheet.Pending(t) > 0 ? "▲ " : "")}Character sheet", true, !_mayorSheet, () =>
+            {
+                _mayorSheet = !_mayorSheet;
+                _dirty = true;
+            }));
+        if (_mayorSheet) MayorSheetView(p);
+        else MayorNow(p);
+        p.Commit();
+    }
+
+    /// <summary>What needs the mayor now.</summary>
+    private void MayorNow(Pane p)
+    {
+        var t = _sim.Town;
+        var r = t.Content.Stories;
+        var m = t.Stories.Mayor;
         int? next = Stories.NextLevelXp(t);
         int from = r.Levels.Count >= m.Level ? r.Levels[m.Level - 1] : 0;
-        p.Card($"[font_size=19][b]{Ui.Esc(m.Name)}[/b][/font_size]\n{Ui.C(Ui.Ink2, $"Level {m.Level} {Ui.Esc(Stories.Title(t).ToLowerInvariant())} of {Ui.Esc(t.Name)} · {Ui.Esc(bg.Name.ToLowerInvariant())}")}", Ui.Gold);
+        if (next is int n) p.Meter("XP", 100.0 * (m.Xp - from) / Math.Max(1, n - from), $"{m.Xp}/{n}");
+        if (Sheet.Pending(t) > 0) LevelUp(p);
+
+        var open = Stories.Pending(t);
+        p.Heading("Waiting on you");
+        if (open.Count == 0) p.Note("Nothing now.");
+        foreach (var s in open)
+        {
+            var d = Stories.DefOf(t, s);
+            var (word, color) = StakesLook(d.Stakes);
+            int days = Math.Max(1, (int)Math.Ceiling((s.DueTick - t.Tick) / 24.0));
+            int id = s.Id;
+            p.Row($"[b]{Ui.Esc(Stories.Fill(t, s, d.Title))}[/b]\n{Tag(word, color)} {Ui.C(Ui.Ink2, $"[font_size=12]· {Ui.Days(days)}[/font_size]")}", ("Step in", true, true, () => OpenStory(id)));
+        }
+
+        RegaliaRows(p);
+
+        var decrees = Decrees.Active(t).ToList();
+        if (decrees.Count > 0)
+        {
+            p.Heading("Decrees in force");
+            foreach (var d in decrees)
+                p.Text($"{Ui.Img("decree", 14)} [b]{Ui.Esc(d.Name)}[/b]  {Tag(Ui.Days(Decrees.DaysLeft(t, d.Id)), Ui.Ink2)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(d.Text)}[/font_size]")}", 13);
+        }
+        var called = Callings.Holders(t).ToList();
+        if (called.Count > 0)
+        {
+            p.Heading("Callings");
+            foreach (var (hero, c) in called)
+                p.Text($"[b]{Ui.Esc(c.Name)}[/b]  {AgentLink(hero)} {Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(hero.Hero!.Cls.Name.ToLowerInvariant())}[/font_size]")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(c.Text)}[/font_size]")}", 13);
+        }
+    }
+
+    /// <summary>What a piece of regalia does, as short chips.</summary>
+    private string RegaliaChips(RegaliaDef d)
+    {
+        var r = _sim.Town.Content.Stories;
+        var chips = new List<string>();
+        foreach (var (skill, n) in d.Skills.OrderBy(kv => kv.Key, StringComparer.Ordinal)) chips.Add($"{Ui.Img("d20", 12)} +{n} {Ui.Esc(r.Skill(skill)?.Name ?? skill)}");
+        if (d.Inspiration > 0) chips.Add($"✦ +{d.Inspiration} inspiration");
+        if (d.Mandate > 0) chips.Add($"{Ui.Img("mandate", 12)} +{Js.Str(d.Mandate)}/day");
+        if (d.Council > 0) chips.Add($"{Ui.Img("tab-council", 12)} +{Js.Str(d.Council)} seats/day");
+        if (d.Loyalty > 0) chips.Add($"{Ui.Img("heroes", 12)} +{Js.Str(d.Loyalty)} loyalty");
+        if (d.March > 0) chips.Add($"{Ui.Img("order-strike", 12)} +{d.March} to hit on the march");
+        return Ui.C(Ui.Ink2, $"[font_size=12]{string.Join("   ", chips)}[/font_size]");
+    }
+
+    /// <summary>The regalia: each slot with what's worn, pieces in the armory to put on, and pieces to commission.</summary>
+    private void RegaliaRows(Pane p)
+    {
+        var t = _sim.Town;
+        var rules = t.Content.Regalia;
+        p.Heading("Regalia");
+        foreach (var slot in rules.Slots)
+        {
+            var worn = Regalia.In(t, slot.Id);
+            string sl = slot.Id;
+            var lead = (Func<Control>)(() => SlotIcon(slot.Icon, worn != null));
+            if (worn != null && Regalia.Def(t, worn.Item) is { } d)
+                p.Row($"[b]{Ui.Esc(worn.Item.Name)}[/b]\n{RegaliaChips(d)}", ($"rg{slot.Icon}1", lead, null), ("Take off", true, false, () => Act(() => _sim.TakeOffRegalia(sl))));
+            else
+                p.Row(Ui.C(Ui.Ink2, $"{Ui.Esc(slot.Name)} · empty"), ($"rg{slot.Icon}0", lead, null));
+        }
+        var spare = t.Armory.Stock.Where(s => Regalia.Is(t, s.Item)).OrderBy(s => s.Id).ToList();
+        if (spare.Count > 0)
+        {
+            p.Heading("In the armory");
+            foreach (var s in spare)
+            {
+                var d = Regalia.Def(t, s.Item)!;
+                int id = s.Id;
+                string icon = rules.Slot(d.Slot)?.Icon ?? "";
+                p.Row($"[b]{Ui.Esc(s.Item.Name)}[/b]\n{RegaliaChips(d)}", ($"rga{icon}", () => SlotIcon(icon, true), null), ("Wear", true, true, () => Act(() => _sim.WearRegalia(id))));
+            }
+        }
+        // What the craftsmen could make: what the charter allows now, and the next one or two beyond it.
+        var commissions = Regalia.Commissions(t).Where(c => c.Refused is null or "not enough gold").Take(4).ToList();
+        if (commissions.Count > 0)
+        {
+            p.Heading("Commission");
+            foreach (var (item, d, refused) in commissions)
+            {
+                string id = item.Id;
+                string icon = rules.Slot(d.Slot)?.Icon ?? "";
+                p.Row($"[b]{Ui.Esc(item.Name)}[/b]  {Ui.Coined($"{Js.Str(Regalia.Price(t, item))}g")}\n{RegaliaChips(d)}", ($"rgc{icon}", () => SlotIcon(icon, false), null), ("Commission", refused == null, false, () => Act(() => _sim.CommissionRegalia(id))));
+            }
+        }
+    }
+
+    private static Control SlotIcon(string icon, bool filled)
+    {
+        var box = new PanelContainer { CustomMinimumSize = new Vector2(40, 40), SizeFlagsVertical = SizeFlags.ShrinkCenter };
+        box.AddThemeStyleboxOverride("panel", Ui.Box(Ui.Panel2, filled ? Ui.Gold : Ui.Line, 8, 1, 4, 4));
+        var img = new TextureRect { Texture = Ui.Icon(icon), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2(30, 30), Modulate = filled ? Colors.White : new Color(1, 1, 1, 0.35f) };
+        box.AddChild(img);
+        return box;
+    }
+
+    /// <summary>The full character sheet: abilities, skills, background, feats, inspiration and the mayor's record.</summary>
+    private void MayorSheetView(Pane p)
+    {
+        var t = _sim.Town;
+        var r = t.Content.Stories;
+        var m = t.Stories.Mayor;
+        var bg = r.Background(m.Background);
+        int? next = Stories.NextLevelXp(t);
+        int from = r.Levels.Count >= m.Level ? r.Levels[m.Level - 1] : 0;
         if (next is int n) p.Meter("Experience", 100.0 * (m.Xp - from) / Math.Max(1, n - from), $"{m.Xp}/{n}");
         else p.Meter("Experience", 100, $"{m.Xp}");
-        p.Note("You gain experience by seeing stories through. Each level lets you choose how you grow, and raises your proficiency bonus every four levels.");
         if (Sheet.Pending(t) > 0) LevelUp(p);
 
         p.Heading("Abilities");
@@ -412,38 +544,7 @@ public partial class Main
         p.Add(sig, () => AbilityRow(a));
         int prof = Stories.ProficiencyBonus(m.Level);
         int max = Sheet.InspirationMax(t);
-        string pips = new string('●', Math.Min(m.Inspiration, max)) + new string('○', Math.Max(0, max - m.Inspiration));
-        p.Text($"{Tag($"Proficiency +{prof}", Ui.Ink)}   {Tag($"Inspiration {pips}", m.Inspiration > 0 ? Ui.Gold : Ui.Ink2)}   {Ui.C(Ui.Ink2, $"[font_size=12]{m.Successes} won, {m.Failures} lost[/font_size]")}", 13);
-
-        p.Heading("Inspiration");
-        p.Note($"Spend one to reroll a failed d20 in a story. You hold up to {max}. Natural 20s earn it, and so does running the town well:");
-        foreach (var d in r.Deeds)
-        {
-            var (have, need) = Sheet.Progress(t, d);
-            string unit = d.Id == "content" ? $"days at {Js.Str(d.Threshold)}+ Mandate" : "";
-            p.Text($"{Ui.C(Ui.Gold, "✦")} {Ui.Esc(d.Name)}  {Ui.C(Ui.Ink2, $"[font_size=12]{(need > 1 ? $"{Math.Max(0, have)} of {need}{(unit != "" ? " " + unit : "")}" : "each one")}[/font_size]")}", 13);
-        }
-        var feats = Sheet.Feats(t);
-        if (feats.Count > 0)
-        {
-            p.Heading("Feats");
-            foreach (var f in feats) p.Text($"[b]{Ui.Esc(f.Name)}[/b]  {Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(f.Text)}[/font_size]")}", 13);
-        }
-
-        p.Heading("Background");
-        if (Stories.CanChooseBackground(t))
-        {
-            p.Note("Who were you before the charter? Your background sets your abilities, your two trained skills, and the kind of story you have advantage in. You can choose until you first step into a story.");
-            foreach (var b in r.Backgrounds)
-            {
-                var skills = string.Join(", ", b.Skills.Select(k => r.Skill(k)?.Name ?? k));
-                string id = b.Ref;
-                bool current = b.Ref == m.Background;
-                p.Row($"[b]{Ui.Esc(b.Name)}[/b]{(current ? "  " + Tag("now", Ui.Gold) : "")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(skills)} · best at {Ui.Esc(string.Join(", ", b.Abilities.Take(2).Select(x => x.ToUpperInvariant())))}. {Ui.Esc(b.Text)}[/font_size]")}",
-                    ("Choose", true, current, () => Act(() => _sim.ChooseBackground(id))));
-            }
-        }
-        else p.Text($"[b]{Ui.Esc(bg.Name)}[/b]  {Tag(bg.Feature, Ui.Gold)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(bg.Text)}[/font_size]")}", 13);
+        p.Text($"{Tag($"Proficiency +{prof}", Ui.Ink)}   {Ui.C(Ui.Ink2, $"[font_size=12]{m.Successes} won · {m.Failures} lost[/font_size]")}", 13);
 
         p.Heading("Skills");
         var lines = r.Skills.Select(sk =>
@@ -467,37 +568,39 @@ public partial class Main
             return grid;
         });
 
-        var open = Stories.Pending(t);
-        p.Heading("Waiting on you");
-        if (open.Count == 0) p.Note("No story needs you now. They come up as the town lives: in its taverns, its council, its heroes and its wars.");
-        foreach (var s in open)
+        p.Heading("Background");
+        if (Stories.CanChooseBackground(t) && !m.Chosen)
         {
-            var d = Stories.DefOf(t, s);
-            var (word, color) = StakesLook(d.Stakes);
-            int days = Math.Max(1, (int)Math.Ceiling((s.DueTick - t.Tick) / 24.0));
-            int id = s.Id;
-            p.Row($"[b]{Ui.Esc(Stories.Fill(t, s, d.Title))}[/b]\n{Tag(word, color)} {Ui.C(Ui.Ink2, $"[font_size=12]· runs its course in {Ui.Days(days)}[/font_size]")}", ("Step in", true, true, () => OpenStory(id)));
+            foreach (var b in r.Backgrounds)
+            {
+                var skills = string.Join(", ", b.Skills.Select(k => r.Skill(k)?.Name ?? k));
+                string id = b.Ref;
+                bool current = b.Ref == m.Background;
+                p.Row($"[b]{Ui.Esc(b.Name)}[/b]{(current ? "  " + Tag("now", Ui.Gold) : "")}\n{Ui.C(Ui.Ink2, $"[font_size=12]● {Ui.Esc(skills)} · ▲ {Ui.Esc(string.Join(" ", b.Abilities.Take(2).Select(x => x.ToUpperInvariant())))} · {Ui.Esc(b.Favoured)} stories[/font_size]")}",
+                    ("Choose", true, current, () => Act(() => _sim.ChooseBackground(id))));
+            }
         }
-        var decrees = Decrees.Active(t).ToList();
-        if (decrees.Count > 0)
+        else p.Text($"[b]{Ui.Esc(bg.Name)}[/b]  {Tag(bg.Feature, Ui.Gold)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(bg.Text)}[/font_size]")}", 13);
+
+        var feats = Sheet.Feats(t);
+        if (feats.Count > 0)
         {
-            p.Heading("Decrees in force");
-            foreach (var d in decrees)
-                p.Text($"[b]{Ui.Esc(d.Name)}[/b]  {Tag(Ui.Days(Decrees.DaysLeft(t, d.Id)) + " left", Ui.Ink2)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(d.Text)}[/font_size]")}", 13);
+            p.Heading("Feats");
+            foreach (var f in feats) p.Text($"[b]{Ui.Esc(f.Name)}[/b]  {Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(f.Text)}[/font_size]")}", 13);
         }
-        var called = Callings.Holders(t).ToList();
-        if (called.Count > 0)
+
+        p.Heading($"Inspiration · up to {max}");
+        foreach (var d in r.Deeds)
         {
-            p.Heading("Callings");
-            p.Note("Parts heroes have taken up in the town through the stories of their class. Each lasts while its hero stays and stays loyal.");
-            foreach (var (hero, c) in called)
-                p.Text($"[b]{Ui.Esc(c.Name)}[/b]  {AgentLink(hero)} {Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(hero.Hero!.Cls.Name.ToLowerInvariant())}[/font_size]")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(c.Text)}[/font_size]")}", 13);
+            var (have, need) = Sheet.Progress(t, d);
+            string unit = d.Id == "content" ? $" days at {Js.Str(d.Threshold)}+ Mandate" : "";
+            p.Text($"{Ui.C(Ui.Gold, "✦")} {Ui.Esc(d.Name)}  {Ui.C(Ui.Ink2, $"[font_size=12]{(need > 1 ? $"{Math.Max(0, have)}/{need}{unit}" : "each")}[/font_size]")}", 13);
         }
+
         var remembered = t.Stories.Precedents.Keys.Select(id => r.Precedent(id)).OfType<PrecedentDef>().ToList();
         if (remembered.Count > 0)
         {
             p.Heading("The town remembers");
-            p.Note("Hard choices are not forgotten. Later stories turn on them.");
             foreach (var pr in remembered)
                 p.Text($"{Ui.C(Ui.Ink2, $"[font_size=11]Day {t.Stories.Precedents[pr.Id]}[/font_size]")}  {Ui.Esc(pr.Text)}", 13);
         }
@@ -513,7 +616,6 @@ public partial class Main
                 p.Text($"{Ui.C(Ui.Ink2, $"[font_size=11]Day {b.Tick / 24 + 1}[/font_size]")}  {Ui.Esc(Stories.Fill(t, s, Stories.DefOf(t, s).Title))}  {Tag(what, color)}", 13);
             }
         }
-        p.Commit();
     }
 
     /// <summary>The first ability picked for a +1/+1 improvement, until the second is.</summary>

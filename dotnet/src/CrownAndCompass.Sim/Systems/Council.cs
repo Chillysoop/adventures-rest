@@ -194,7 +194,7 @@ public static class Council
         var res = town.Residents;
         double mood = res.Count > 0 ? Js.Sum(res, a => a.LastDayMood) / res.Count : 65;
         var speaker = FindSeat(town, SeatId.Speaker);
-        double drift = (mood - 70) * 0.04 + Planning.Mandate(town) * 0.05 + Decor.Mandate(town);
+        double drift = (mood - 70) * 0.04 + Planning.Mandate(town) * 0.05 + Decor.Mandate(town) + Regalia.Mandate(town);
         if (speaker != null && speaker.HolderId != null) drift += speaker.Loyalty >= LowLoyalty ? 0.15 * Competence(town, speaker) : -0.5;
         town.Mandate = Clamp(town.Mandate + drift, 0, 100);
     }
@@ -203,7 +203,7 @@ public static class Council
     {
         var h = town.Agent(s.HolderId!.Value);
         // Loyalty eases back toward neutral; a popular mayor wins people over.
-        s.Loyalty = Clamp(s.Loyalty + (50 - s.Loyalty) * 0.02 + (town.Mandate - 50) * 0.01, 0, 100);
+        s.Loyalty = Clamp(s.Loyalty + (50 - s.Loyalty) * 0.02 + (town.Mandate - 50) * 0.01 + Regalia.Council(town), 0, 100);
         if (s.Loyalty >= LowLoyalty)
         {
             s.LowLoyaltyDays = 0;

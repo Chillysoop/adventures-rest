@@ -64,6 +64,12 @@ public sealed class Options
     public string? Storyteller;
     public bool Storytellers;
 
+    /// <summary>--new-mayor: the main menu on New game's mayor sheet, rolled, for shots.</summary>
+    public bool NewMayor;
+
+    /// <summary>--mayor-sheet: the Mayor window on its full character sheet.</summary>
+    public bool MayorSheet;
+
     /// <summary>--episode id: strike a townsperson out on the streets with that inspiration or break, look at them and open their inspector.</summary>
     public string? Episode;
 
@@ -205,6 +211,8 @@ public sealed class Options
                 case "--title": o.Title = true; break;
                 case "--storyteller": o.Storyteller = Next(); break;
                 case "--storytellers": o.Storytellers = o.Title = true; break;
+                case "--new-mayor": o.NewMayor = o.Title = true; break;
+                case "--mayor-sheet": o.MayorSheet = true; o.Tab = "Mayor"; break;
                 case "--episode": o.Episode = Next(); break;
                 case "--history": o.History = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
                 case "--glossary": o.Glossary = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
