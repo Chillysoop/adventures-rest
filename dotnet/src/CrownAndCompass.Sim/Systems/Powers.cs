@@ -50,6 +50,9 @@ public sealed record PowerDef
     public string Goal { get; init; } = "";
     public string Seat { get; init; } = "";
 
+    /// <summary>The day its people first come calling, if the town hasn't met it sooner (<see cref="Powers.Introduce"/>).</summary>
+    public int MeetDay { get; init; }
+
     /// <summary>Who brings word of what it does: news through someone, never out of nowhere.</summary>
     public string Witness { get; init; } = "";
 
@@ -72,6 +75,9 @@ public sealed record PowerDef
     public PowerBoonDef Ally { get; init; } = new();
     public PowerBaneDef Enemy { get; init; } = new();
     public string ContractText { get; init; } = "";
+
+    /// <summary>The favours it asks of the town (<see cref="PowerFavourRules"/>): "clear", "slay", "route".</summary>
+    public IReadOnlyList<string> Asks { get; init; } = [];
 
     /// <summary>Strange prices its envoys may ask instead of gold, and the chance they do.</summary>
     public IReadOnlyList<StrangePriceDef> Strange { get; init; } = [];
@@ -127,6 +133,58 @@ public sealed record PowerEnvoyRules
     public string Bandwagon { get; init; } = "";
 }
 
+/// <summary>
+/// Favours a power's envoy asks of the town (powers.json "favours"): clear a known lair ("clear"), see the worst enemy
+/// dead ("slay") or open one more trade route ("route"), within <see cref="Days"/>. Done, it buys <see cref="Done"/>
+/// favour and gift x <see cref="Gold"/> gold; failed, it costs <see cref="Failed"/>.
+/// </summary>
+public sealed record PowerFavourRules
+{
+    public int Days { get; init; } = 90;
+    public int MaxTier { get; init; } = 3;
+    public double Done { get; init; } = 25;
+    public double Gold { get; init; } = 1;
+    public double Failed { get; init; } = 8;
+    public IReadOnlyDictionary<string, string> Ask { get; init; } = new Dictionary<string, string>();
+    public IReadOnlyDictionary<string, string> Task { get; init; } = new Dictionary<string, string>();
+    public string Kept { get; init; } = "";
+    public string Broken { get; init; } = "";
+}
+
+/// <summary>Two powers with a quarrel (powers.json "feuds").</summary>
+public sealed record FeudDef
+{
+    public required string A { get; init; }
+    public required string B { get; init; }
+    public string Why { get; init; } = "";
+}
+
+/// <summary>
+/// Feuds between the powers: from <see cref="From"/>, every <see cref="Every"/> days a quarrel that has rested longest
+/// flares for <see cref="Days"/>. While it burns, the side whose foe is the town's ally holds it against the town
+/// (<see cref="Hit"/> standing) and, if it strikes at all, strikes the town every <see cref="StrikeEvery"/> days. The
+/// town's ally calls on it for aid: gift x <see cref="Aid"/> gold ends the feud in the ally's favour.
+/// </summary>
+public sealed record PowerFeudRules
+{
+    public int From { get; init; } = 120;
+    public int Every { get; init; } = 70;
+    public int Days { get; init; } = 60;
+    public int Rest { get; init; } = 200;
+    public double Hit { get; init; } = 25;
+    public int StrikeEvery { get; init; } = 30;
+    public double Aid { get; init; } = 2;
+    public double AidFavour { get; init; } = 20;
+    public double Lost { get; init; } = 20;
+    public double Spurned { get; init; } = 15;
+    public IReadOnlyList<FeudDef> Pairs { get; init; } = [];
+    public string Begins { get; init; } = "";
+    public string CallToArms { get; init; } = "";
+    public string Won { get; init; } = "";
+    public string Ends { get; init; } = "";
+    public string Strikes { get; init; } = "";
+}
+
 public sealed record PowerTexts
 {
     public string Courted { get; init; } = "";
@@ -150,6 +208,9 @@ public sealed record PowerRules
     public double AllyResist { get; init; } = 25;
     public int PerEnemy { get; init; } = 2;
 
+    /// <summary>The first-contact scenes, one per power (id "contact-" + its id): stories of source "contact".</summary>
+    public List<StoryDef> Contacts { get; init; } = [];
+
     /// <summary>How much more an enemy's envoys can offer for each power already marching with it.</summary>
     public double Bandwagon { get; init; }
     public double Drift { get; init; } = 2;
@@ -165,6 +226,8 @@ public sealed record PowerRules
     public string WarnText { get; init; } = "";
     public IReadOnlyList<PowerDef> Powers { get; init; } = [];
     public PowerEnvoyRules Envoys { get; init; } = new();
+    public PowerFavourRules Favours { get; init; } = new();
+    public PowerFeudRules Feuds { get; init; } = new();
     public PowerTexts Text { get; init; } = new();
 }
 
@@ -211,6 +274,23 @@ public sealed class PowerState
 
     /// <summary>The last day of its pact with the town: until then it takes no enemy's gold.</summary>
     public int PactUntil { get; set; }
+
+    /// <summary>
+    /// The favour it asked of the town ("clear", "slay", "route"), its target (a site id, a menace id, a route count),
+    /// and the last day to do it once the town took it on (<see cref="TaskTaken"/>).
+    /// </summary>
+    public string Task { get; set; } = "";
+    public string TaskSite { get; set; } = "";
+    public int TaskMenace { get; set; }
+    public int TaskCount { get; set; }
+    public int TaskUntil { get; set; }
+    public bool TaskTaken { get; set; }
+
+    /// <summary>The power it is feuding with ("" for none), until when, and when its agents next strike the town over it.</summary>
+    public string FeudWith { get; set; } = "";
+    public int FeudUntil { get; set; }
+    public int FeudStrikeDay { get; set; }
+    public int NextFeudDay { get; set; }
 
     /// <summary>A strange price still being paid, and its last day ("harvest").</summary>
     public string Owed { get; set; } = "";
@@ -281,6 +361,7 @@ public static class Powers
         var d = Def(town, p.Id);
         double t = d.Base + d.Likes.OrderBy(kv => kv.Key, StringComparer.Ordinal).Sum(kv => kv.Value * Signal(town, kv.Key));
         t -= Rules(town).RivalHit * Rivals(town, d).Count(r => Find(town, r)?.Side == PowerSide.Town);
+        if (p.FeudWith != "" && Find(town, p.FeudWith)?.Side == PowerSide.Town) t -= Rules(town).Feuds.Hit;
         return Math.Clamp(t + p.Favour, -100, 100);
     }
 
@@ -295,6 +376,7 @@ public static class Powers
         if (!town.Saga.Enabled || town.Outcome != null) return;
         Init(town);
         var r = Rules(town);
+        Meet(town);
         foreach (var p in town.Powers)
         {
             var d = Def(town, p.Id);
@@ -308,13 +390,78 @@ public static class Powers
                 case PowerSide.Enemy: Bane(town, p, d); break;
             }
             if (p.CourtedBy != null && town.Day >= p.DecideDay) Decide(town, p, d);
-            if (p.Envoy != "" && p.Side != PowerSide.Neutral) Done(town, p);
+            if (p.Envoy != "" && (p.Side == PowerSide.Enemy || (p.Side == PowerSide.Town && p.Envoy is "alliance" or "pact" or "tribute"))) Done(town, p);
             else if (p.Envoy != "" && town.Day >= p.EnvoyUntil) Lapse(town, p, d);
+            if (p.TaskTaken) Task(town, p, d);
+            if (p.FeudWith != "") Feud(town, p, d);
             if (p.PactUntil == town.Day) News(town, p, Fill(town, r.Envoys.PactEnds, p, d), Importance.Notable);
             if (p.Owed != "" && town.Day >= p.OwedUntil) p.Owed = "";
         }
         Court(town);
+        StartFeud(town);
         SendEnvoy(town);
+    }
+
+    // First contact --------------------------------------------------------------------------------
+
+    /// <summary>The source of the first-contact scenes (powers.json "contacts").</summary>
+    public const string ContactSource = "contact";
+
+    /// <summary>Its <see cref="Discovery"/> key.</summary>
+    public static string Key(string id) => "power:" + id;
+
+    /// <summary>Whether the town has met it: until then it sends no envoys, takes no gifts and can't be allied.</summary>
+    public static bool Met(Town town, PowerState p) => Discovery.Known(town, Key(p.Id));
+
+    /// <summary>The powers the town has met, in list order.</summary>
+    public static IEnumerable<PowerState> Known(Town town) => town.Powers.Where(p => Met(town, p));
+
+    /// <summary>
+    /// The town meets a power for the first time: its first-contact scene opens, where the mayor's answers and rolls
+    /// set where the town starts with it. Returns whether this was the first meeting.
+    /// </summary>
+    public static bool Introduce(Town town, PowerState p, string how)
+    {
+        if (!Discovery.Meet(town, Key(p.Id), how)) return false;
+        if (town.Outcome == null && Rules(town).Contacts.FirstOrDefault(c => c.Id == ContactSource + "-" + p.Id) is { } d) Stories.Contact(town, d, new Story { Minor = p.Id });
+        return true;
+    }
+
+    /// <summary>
+    /// Daily: one power whose day has come calls on the town. A power a save from before first contact already dealt
+    /// with is known without a scene.
+    /// </summary>
+    private static void Meet(Town town)
+    {
+        foreach (var p in town.Powers.Where(p => !Met(town, p) && (p.Side != PowerSide.Neutral || p.CourtedBy != null || p.Envoy != "" || p.TaskTaken || p.FeudWith != "" || p.PactUntil > 0)))
+            Discovery.Meet(town, Key(p.Id), Discovery.Heard);
+        var due = town.Powers.Where(p => !Met(town, p) && town.Day >= Def(town, p.Id).MeetDay)
+            .OrderBy(p => Def(town, p.Id).MeetDay).ThenBy(p => p.Id, StringComparer.Ordinal).FirstOrDefault();
+        if (due != null) Introduce(town, due, Discovery.Met);
+    }
+
+    /// <summary>Open a first-contact scene now, for scripted shots: a power's, or the nearest heard-of people's.</summary>
+    public static Story? OpenContact(Town town, string storyId)
+    {
+        if (town.Content.Stories.Story(storyId) is not { Source: ContactSource } d) return null;
+        Init(town);
+        if (storyId == ContactSource + "-people")
+        {
+            var s = town.Settlements.Where(x => !x.Razed && town.Regions[x.RegionId].Known).OrderBy(x => town.Regions[x.RegionId].Days).ThenBy(x => x.Id).FirstOrDefault();
+            if (s == null) return null;
+            Discovery.Meet(town, Neighbours.Key(s), Discovery.Met);
+            return Stories.Contact(town, d, new Story { SettlementId = s.Id });
+        }
+        if (Find(town, storyId[(ContactSource.Length + 1)..]) is not { } p) return null;
+        Discovery.Meet(town, Key(p.Id), Discovery.Met);
+        return Stories.Contact(town, d, new Story { Minor = p.Id });
+    }
+
+    /// <summary>Standing and favour move together, as a gift moves them: what a story's "minor" effect does.</summary>
+    internal static void Sway(Town town, PowerState p, double v)
+    {
+        p.Favour += v;
+        p.Standing = Math.Clamp(p.Standing + v, -100, 100);
     }
 
     private static string Fill(Town town, string text, PowerState p, PowerDef d, Menace? enemy = null) => Saga.Sentences(text
@@ -433,6 +580,8 @@ public static class Powers
             var p = town.Powers.Where(p => Buyable(town, p, m) && offer > Resolve(town, p))
                 .OrderBy(p => Resolve(town, p)).ThenBy(p => p.Id, StringComparer.Ordinal).FirstOrDefault();
             if (p == null) continue;
+            // Word of the courting is how the town first hears of a power it hasn't met.
+            Introduce(town, p, Discovery.Heard);
             p.CourtedBy = m.Id;
             p.Offer = offer;
             p.DecideDay = town.Day + r.NoticeDays;
@@ -474,9 +623,12 @@ public static class Powers
     {
         var e = Rules(town).Envoys;
         var d = Def(town, p.Id);
-        if (p.Side != PowerSide.Neutral) return "";
+        if (p.Side == PowerSide.Enemy) return "";
+        bool favour = !p.TaskTaken && p.Standing >= e.PactAt && FavourFor(town, p, d) != null;
+        if (p.Side == PowerSide.Town) return favour ? "favour" : "";
         if (p.Standing < e.TributeBelow) return d.Evil ? "tribute" : "";
         if (p.Standing >= d.AllyAt - e.AllianceWithin) return "alliance";
+        if (favour) return "favour";
         if (p.Standing >= e.PactAt && d.Serves == "any" && !Pacted(town, p)) return "pact";
         return "";
     }
@@ -496,15 +648,15 @@ public static class Powers
 
     /// <summary>
     /// Every few days one power sends the town an envoy: a demand from the most hostile first, then an alliance from
-    /// the friendliest, then a pact. The dice only choose whether a power with strange prices asks one.
+    /// the friendliest, then a pact. Its own dice choose whether a power with strange prices asks one.
     /// </summary>
     private static void SendEnvoy(Town town)
     {
         var e = Rules(town).Envoys;
         if (town.Day < e.From || (town.Day - e.From) % Math.Max(1, e.Every) != 0) return;
         var p = town.Powers
-            .Where(p => p.Envoy == "" && town.Day >= p.NextEnvoyDay && EnvoyKind(town, p) != "")
-            .OrderBy(p => EnvoyKind(town, p) switch { "tribute" => 0, "alliance" => 1, _ => 2 })
+            .Where(p => p.Envoy == "" && town.Day >= p.NextEnvoyDay && Met(town, p) && EnvoyKind(town, p) != "")
+            .OrderBy(p => EnvoyKind(town, p) switch { "tribute" => 0, "alliance" => 1, "favour" => 2, _ => 3 })
             .ThenBy(p => EnvoyKind(town, p) == "tribute" ? p.Standing : -(p.Standing - Def(town, p.Id).AllyAt))
             .ThenBy(p => p.Id, StringComparer.Ordinal)
             .FirstOrDefault();
@@ -513,11 +665,26 @@ public static class Powers
         string kind = EnvoyKind(town, p);
         p.Envoy = kind;
         p.EnvoyGold = EnvoyAsk(town, d, kind);
-        p.EnvoyPrice = kind != "tribute" && d.Strange.Count > 0 && town.Rng.Chance(d.StrangeChance) ? town.Rng.Pick(d.Strange).Id : "";
+        var dice = Dice(town, p);
+        p.EnvoyPrice = kind is "alliance" or "pact" && d.Strange.Count > 0 && dice.Chance(d.StrangeChance) ? dice.Pick(d.Strange).Id : "";
         p.EnvoyUntil = town.Day + e.AnswerDays;
+        if (kind == "favour")
+        {
+            var (ask, site, menace, count) = FavourFor(town, p, d)!.Value;
+            p.Task = ask;
+            p.TaskSite = site;
+            p.TaskMenace = menace;
+            p.TaskCount = count;
+            News(town, p, Fill(town, TaskText(town, p, Rules(town).Favours.Ask.GetValueOrDefault(ask, "")).Replace("{answer}", e.AnswerDays.ToString()), p, d));
+            return;
+        }
         string text = kind switch { "alliance" => e.Alliance, "pact" => e.Pact, _ => e.Demand };
         News(town, p, Fill(town, text.Replace("{price}", PriceText(town, p)).Replace("{boon}", d.Ally.Text).Replace("{answer}", e.AnswerDays.ToString()), p, d));
     }
+
+    /// <summary>The envoys' own dice, seeded from the town, the day and the power, so they never shift the main stream.</summary>
+    private static Rng Dice(Town town, PowerState p) =>
+        new(unchecked(town.Seed * 7919 + town.Day * 104729 + p.Id.Aggregate(17, (h, c) => h * 31 + c) + 29));
 
     public static StrangePriceDef? Strange(Town town, PowerState p) =>
         p.EnvoyPrice == "" ? null : Def(town, p.Id).Strange.FirstOrDefault(x => x.Id == p.EnvoyPrice);
@@ -529,6 +696,7 @@ public static class Powers
     public static string? AnswerBlocked(Town town, PowerState p)
     {
         if (p.Envoy == "") return "no envoy";
+        if (p.Envoy == "favour") return null;
         if (Strange(town, p) is { } price)
             return price.Kind == "name" && Named(town) == null ? "no one in town to give" : null;
         return town.Treasury < p.EnvoyGold ? $"it asks {Js.Str(p.EnvoyGold)} gold" : null;
@@ -586,6 +754,21 @@ public static class Powers
         }
         if (AnswerBlocked(town, p) != null) return false;
         string kind = p.Envoy;
+        if (kind == "favour")
+        {
+            p.TaskTaken = true;
+            p.TaskUntil = town.Day + Rules(town).Favours.Days;
+            Done(town, p);
+            News(town, p, Fill(town, TaskText(town, p, Rules(town).Favours.Task.GetValueOrDefault(p.Task, "")), p, d), Importance.Notable);
+            return true;
+        }
+        if (kind == "aid")
+        {
+            town.Book(TreasuryAccount.Powers, -p.EnvoyGold);
+            Done(town, p);
+            WinFeud(town, p, d);
+            return true;
+        }
         string price = PriceText(town, p);
         if (Strange(town, p) is { } strange) PayStrange(town, p, d, strange);
         else town.Book(TreasuryAccount.Powers, -p.EnvoyGold);
@@ -627,8 +810,9 @@ public static class Powers
     private static void Refuse(Town town, PowerState p, PowerDef d, string text)
     {
         var e = Rules(town).Envoys;
-        bool demand = p.Envoy == "tribute";
-        p.Favour -= demand ? e.Spurned : e.Declined;
+        bool demand = p.Envoy is "tribute" or "aid";
+        p.Favour -= p.Envoy == "aid" ? Rules(town).Feuds.Spurned : demand ? e.Spurned : e.Declined;
+        if (p.Envoy == "favour") ClearTask(p);
         Done(town, p);
         News(town, p, Fill(town, text, p, d) + (demand ? $" {Capital(Name(town, d))} will remember it." : ""), demand ? Importance.Major : Importance.Notable);
     }
@@ -637,6 +821,7 @@ public static class Powers
 
     private static void Done(Town town, PowerState p)
     {
+        if (!p.TaskTaken) ClearTask(p);
         p.Envoy = "";
         p.EnvoyGold = 0;
         p.EnvoyPrice = "";
@@ -654,8 +839,165 @@ public static class Powers
             "alliance" => $"offers an alliance for {price} (its price is {Js.Str(d.Price)} gold), then {Js.Str(d.Tithe)} gold a day",
             "pact" => $"offers a truce for {price}: it takes no enemy's gold for {Js.Str(e.PactDays)} days",
             "tribute" => $"demands tribute of {price}, or it will remember the slight",
+            "favour" => $"asks a favour: {TaskText(town, p, "{task}")} within {Js.Str(Rules(town).Favours.Days)} days, for its friendship and {Js.Str(Js.Round(d.Gift * Rules(town).Favours.Gold))} gold",
+            "aid" => $"calls on the town for {price} to win its feud with {Name(town, Find(town, p.FeudWith) is { } f ? Def(town, f.Id) : d)}",
             _ => "",
         };
+    }
+
+    // Favours ------------------------------------------------------------------------------------
+
+    /// <summary>The first favour it could ask today, starting from a different one of its asks each envoy round.</summary>
+    public static (string Ask, string Site, int Menace, int Count)? FavourFor(Town town, PowerState p, PowerDef d)
+    {
+        var f = Rules(town).Favours;
+        if (d.Asks.Count == 0) return null;
+        int start = town.Day / Math.Max(1, Rules(town).Envoys.Every) % d.Asks.Count;
+        for (int i = 0; i < d.Asks.Count; i++)
+        {
+            string ask = d.Asks[(start + i) % d.Asks.Count];
+            switch (ask)
+            {
+                case "clear":
+                    var site = town.Sites.Where(s => !s.Cleared && s.Known == SiteKnowledge.Confirmed && s.Def.Tier <= f.MaxTier)
+                        .OrderBy(s => s.Def.Tier).ThenBy(s => s.Def.Id, StringComparer.Ordinal).FirstOrDefault();
+                    if (site != null) return (ask, site.Def.Id, 0, 0);
+                    break;
+                case "slay":
+                    if (Worst(town) is { } m) return (ask, "", m.Id, 0);
+                    break;
+                case "route":
+                    int open = Trade.Open(town).Count();
+                    if (open < Trade.Cap(town)) return (ask, "", 0, open + 1);
+                    break;
+            }
+        }
+        return null;
+    }
+
+    /// <summary>A favour's wording, with its target filled in: "{task}" is what to do.</summary>
+    public static string TaskText(Town town, PowerState p, string text)
+    {
+        string task = p.Task switch
+        {
+            "clear" => $"clear {Quests.Site(town, p.TaskSite)?.Def.Name ?? "a lair"}",
+            "slay" => $"see {town.Saga.Menaces.FirstOrDefault(m => m.Id == p.TaskMenace)?.Name ?? "the worst of the town's enemies"} destroyed",
+            "route" => $"open a new trade route ({Js.Str(p.TaskCount)} running)",
+            _ => "",
+        };
+        return text.Replace("{task}", task).Replace("{days}", Js.Str(Math.Max(0, p.TaskUntil - town.Day)));
+    }
+
+    /// <summary>Whether the favour the town took on is done.</summary>
+    public static bool TaskDone(Town town, PowerState p) => p.Task switch
+    {
+        "clear" => Quests.Site(town, p.TaskSite)?.Cleared ?? true,
+        "slay" => town.Saga.Menaces.FirstOrDefault(m => m.Id == p.TaskMenace) is not { Alive: true },
+        "route" => Trade.Open(town).Count() >= p.TaskCount,
+        _ => true,
+    };
+
+    private static void Task(Town town, PowerState p, PowerDef d)
+    {
+        var f = Rules(town).Favours;
+        if (TaskDone(town, p))
+        {
+            double gold = Js.Round(d.Gift * f.Gold);
+            p.Favour += f.Done;
+            p.Standing = Math.Clamp(p.Standing + f.Done, -100, 100);
+            if (gold > 0) town.Book(TreasuryAccount.Powers, gold);
+            News(town, p, Fill(town, TaskText(town, p, f.Kept).Replace("{gold}", Js.Str(gold)), p, d));
+            ClearTask(p);
+        }
+        else if (town.Day >= p.TaskUntil)
+        {
+            p.Favour -= f.Failed;
+            News(town, p, Fill(town, TaskText(town, p, f.Broken), p, d), Importance.Notable);
+            ClearTask(p);
+        }
+    }
+
+    private static void ClearTask(PowerState p)
+    {
+        p.Task = "";
+        p.TaskSite = "";
+        p.TaskMenace = 0;
+        p.TaskCount = 0;
+        p.TaskUntil = 0;
+        p.TaskTaken = false;
+    }
+
+    // Feuds --------------------------------------------------------------------------------------
+
+    private static string FeudFill(Town town, string text, PowerState p, PowerDef d, PowerState foe, string why = "") =>
+        Fill(town, text.Replace("{foe}", Name(town, Def(town, foe.Id))).Replace("{foeLeader}", Def(town, foe.Id).Leader).Replace("{why}", why), p, d);
+
+    /// <summary>Every few days the feud that has rested longest flares; the town's ally in it calls for aid.</summary>
+    private static void StartFeud(Town town)
+    {
+        var r = Rules(town).Feuds;
+        if (town.Day < r.From || (town.Day - r.From) % Math.Max(1, r.Every) != 0) return;
+        var pair = r.Pairs
+            .Select(f => (Def: f, A: Find(town, f.A), B: Find(town, f.B)))
+            .Where(x => x.A != null && x.B != null && x.A.FeudWith == "" && x.B.FeudWith == "" && town.Day >= x.A.NextFeudDay
+                        && x.A.Side != PowerSide.Enemy && x.B.Side != PowerSide.Enemy && (Met(town, x.A) || Met(town, x.B)))
+            .OrderBy(x => x.A!.NextFeudDay).FirstOrDefault();
+        if (pair.A == null || pair.B == null) return;
+        var (a, b) = (pair.A, pair.B);
+        Introduce(town, a, Discovery.Heard);
+        Introduce(town, b, Discovery.Heard);
+        foreach (var (x, y) in new[] { (a, b), (b, a) })
+        {
+            x.FeudWith = y.Id;
+            x.FeudUntil = town.Day + r.Days;
+            x.FeudStrikeDay = town.Day + r.StrikeEvery / 2;
+        }
+        a.NextFeudDay = town.Day + r.Days + r.Rest;
+        var da = Def(town, a.Id);
+        News(town, a, FeudFill(town, r.Begins, a, da, b, pair.Def.Why));
+        // A call to arms comes before whatever else its envoys were here about.
+        var ally = new[] { a, b }.FirstOrDefault(x => x.Side == PowerSide.Town);
+        if (ally == null) return;
+        if (ally.Envoy != "") Done(town, ally);
+        var dally = Def(town, ally.Id);
+        ally.Envoy = "aid";
+        ally.EnvoyGold = Js.Round(dally.Gift * r.Aid);
+        ally.EnvoyPrice = "";
+        ally.EnvoyUntil = town.Day + Rules(town).Envoys.AnswerDays;
+        News(town, ally, FeudFill(town, r.CallToArms.Replace("{price}", $"{Js.Str(ally.EnvoyGold)} gold"), ally, dally, Find(town, ally.FeudWith)!));
+    }
+
+    /// <summary>A feud burning: a side that strikes at all strikes the town that keeps its foe; it cools at its end.</summary>
+    private static void Feud(Town town, PowerState p, PowerDef d)
+    {
+        var r = Rules(town).Feuds;
+        var foe = Find(town, p.FeudWith);
+        if (foe == null || town.Day >= p.FeudUntil)
+        {
+            if (foe != null && string.CompareOrdinal(p.Id, foe.Id) < 0) News(town, p, FeudFill(town, r.Ends, p, d, foe), Importance.Notable);
+            p.FeudWith = "";
+            if (p.Envoy == "aid") Done(town, p);
+            return;
+        }
+        if (foe.Side == PowerSide.Town && p.Side != PowerSide.Town && d.Evil && d.Enemy.Strike != "" && town.Day >= p.FeudStrikeDay)
+        {
+            p.FeudStrikeDay = town.Day + r.StrikeEvery;
+            News(town, p, FeudFill(town, r.Strikes, p, d, foe), Importance.Notable);
+            Blows.Strike(town, d.Enemy.Strike, new Culprit(Name(town, d), d.Leader, d.Seat), 15 + d.Enemy.Host * 0.2, 1);
+        }
+    }
+
+    /// <summary>The town's gold wins its ally's feud: the ally is grateful, its foe sues for peace and remembers.</summary>
+    private static void WinFeud(Town town, PowerState ally, PowerDef d)
+    {
+        var r = Rules(town).Feuds;
+        var foe = Find(town, ally.FeudWith);
+        ally.Favour += r.AidFavour;
+        ally.FeudWith = "";
+        if (foe == null) return;
+        foe.Favour -= r.Lost;
+        foe.FeudWith = "";
+        News(town, ally, FeudFill(town, r.Won, ally, d, foe));
     }
 
     // The player's levers ------------------------------------------------------------------------
@@ -670,7 +1012,7 @@ public static class Powers
     public static bool Court(Town town, string id)
     {
         var p = Find(town, id);
-        if (p == null || town.Treasury < GiftCost(town, id)) return false;
+        if (p == null || !Met(town, p) || town.Treasury < GiftCost(town, id)) return false;
         double worth = GiftWorth(town, p);
         town.Book(TreasuryAccount.Powers, -GiftCost(town, id));
         p.Favour += worth;
@@ -684,7 +1026,7 @@ public static class Powers
     public static string? AllyBlocked(Town town, string id)
     {
         var p = Find(town, id);
-        if (p == null) return "unknown";
+        if (p == null || !Met(town, p)) return "unknown";
         var d = Def(town, id);
         if (p.Side == PowerSide.Town) return "already allied";
         if (p.Side == PowerSide.Enemy) return $"it serves {Patron(town, p)?.Name ?? "an enemy"}";

@@ -161,7 +161,7 @@ public static class Skyship
 
     /// <summary>Peoples the airship can fly to: known, standing, and not hostile.</summary>
     public static IEnumerable<Settlement> Ports(Town town) =>
-        town.Settlements.Where(s => !s.Razed && town.Regions[s.RegionId].Known && s.Standing >= Rules(town).MinStanding).OrderBy(s => s.Id);
+        town.Settlements.Where(s => !s.Razed && Neighbours.Known(town, s) && s.Standing >= Rules(town).MinStanding).OrderBy(s => s.Id);
 
     /// <summary>Why the airship can't fly this run now, or null if it can.</summary>
     public static string? Refuse(Town town, Settlement s, Good cargo)
@@ -171,7 +171,7 @@ public static class Skyship
         if (Away(town)) return "the airship is out on a run";
         if (Passage.AirshipsFree(town) <= 0) return "the airship is out with a company";
         if (s.Razed) return "they are gone";
-        if (!town.Regions[s.RegionId].Known) return "the town hasn't heard of them";
+        if (!Neighbours.Known(town, s)) return "the town hasn't met them";
         if (s.Standing < r.MinStanding) return "they would fire on it";
         if (Spare(town, cargo) < r.MinCargo) return $"the town has no {Lower(cargo)} to spare";
         if (town.Treasury < FitOut(town, s)) return $"needs {Js.Str(FitOut(town, s))} gold to fit out";

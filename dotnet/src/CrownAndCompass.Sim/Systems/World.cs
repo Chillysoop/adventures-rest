@@ -536,7 +536,7 @@ public static class World
     internal static Plea? Plead(Town town, Settlement s, SiteState site, double bonus)
     {
         var rules = town.Content.World.Standing;
-        if (s.Razed || !town.Regions[s.RegionId].Known || Reigns.Plea(town, s) <= 0) return null;
+        if (s.Razed || !Neighbours.Known(town, s) || Reigns.Plea(town, s) <= 0) return null;
         if (town.Pleas.Any(p => p.SiteId == site.Def.Id && p.Status is PleaStatus.Open or PleaStatus.Taken)) return null;
         double reward = Js.Round(rules.PleaRewardPerLevel * LevelOf(site) * (s.Allied ? 1.5 : 1) * bonus * Reigns.Plea(town, s));
         Tell(town, site, rules.PleaTrust, $"a runner from {s.Name}");
@@ -580,7 +580,7 @@ public static class World
         var rules = town.Content.World.Standing;
         if (town.Day - town.LastEnvoyDay < rules.EnvoyEveryDays || town.Treasury < rules.EnvoyCost + 200) return;
         var target = town.Settlements
-            .Where(s => !s.Allied && !s.Razed && town.Regions[s.RegionId].Known)
+            .Where(s => !s.Allied && !s.Razed && Neighbours.Known(town, s))
             .OrderByDescending(s => s.Standing)
             .ThenBy(s => s.Id)
             .FirstOrDefault();
@@ -593,7 +593,7 @@ public static class World
         var rules = town.Content.World.Standing;
         if (settlementId < 0 || settlementId >= town.Settlements.Count) return false;
         var s = town.Settlements[settlementId];
-        if (!town.Regions[s.RegionId].Known || s.Razed || town.Treasury < rules.EnvoyCost) return false;
+        if (!Neighbours.Known(town, s) || s.Razed || town.Treasury < rules.EnvoyCost) return false;
         town.Book(TreasuryAccount.Envoys, -rules.EnvoyCost);
         town.LastEnvoyDay = town.Day;
         // Gifts please less each time.

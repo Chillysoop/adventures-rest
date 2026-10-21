@@ -114,7 +114,7 @@ public partial class Main
         head.AddChild(new TextureRect { Texture = Ui.Icon("d20"), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2(30, 30), SizeFlagsVertical = SizeFlags.ShrinkCenter });
         bool sending = Sendings.Is(d);
         head.AddChild(Ui.Label(word, color, Ui.Bold, 11));
-        head.AddChild(Ui.Label("·  " + (sending ? "SENDING STONE" : d.Source == Stories.LostSource ? "THE FALLEN" : d.Source.ToUpperInvariant()), sending ? Ui.Accent : Ui.Ink2, Ui.Bold, 11));
+        head.AddChild(Ui.Label("·  " + (sending ? "SENDING STONE" : d.Source == Stories.LostSource ? "THE FALLEN" : d.Source == Powers.ContactSource ? "FIRST CONTACT" : d.Source.ToUpperInvariant()), sending ? Ui.Accent : Ui.Ink2, Ui.Bold, 11));
         var spacer = new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         head.AddChild(spacer);
         if (sending && !s.Done && Sendings.Pauses(t, s)) head.AddChild(Ui.Label("❚❚ Paused", Ui.Ink2, Ui.Medium, 11));

@@ -435,6 +435,9 @@ public sealed class Town
 
     /// <summary>Every foe and power the town has come across, in the order it met them (<see cref="Systems.Discovery"/>).</summary>
     public List<Systems.Meeting> Discovered { get; } = [];
+
+    /// <summary>Whether the peoples are met one by one (<see cref="Systems.Neighbours.Know"/>); false in saves from before.</summary>
+    public bool PeoplesMet { get; set; }
     public int SightingCount { get; set; }
 
     /// <summary>Enemies' agents loose in town, looking over what they mean to strike tonight (<see cref="Systems.Lurkers"/>).</summary>
