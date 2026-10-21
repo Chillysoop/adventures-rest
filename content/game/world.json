@@ -196,7 +196,7 @@
         "Giant-sized stairs climb these slopes to nowhere: the last of a Stoneking hall that Vermithrax burned off the mountain."
       ],
       "sites": [
-        { "names": ["the Lost Mine of {B}", "the {A} Delving", "Hammerdeep", "the Red Stair", "Skullpass Keep", "the Stoneking's Throne", "Ghorvak's Pass"],
+        { "names": ["the Sealed Mine of {B}", "the {A} Delving", "Hammerdeep", "the Red Stair", "Skullpass Keep", "the Stoneking's Throne", "Ghorvak's Pass"],
           "habitats": ["mountain", "caves", "underworld"], "deck": ["wander", "trap", "wander", "hazard", "treasure", "puzzle"] },
         { "names": ["the {A} Eyrie", "the Giant's Steading", "the Anvil That Burned"],
           "habitats": ["mountain", "hills"], "deck": ["wander", "hazard", "wander", "parley", "treasure"] }
