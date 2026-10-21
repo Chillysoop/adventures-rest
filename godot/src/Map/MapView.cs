@@ -487,8 +487,17 @@ public partial class MapView : Control
     private Marker? _grab;
     private Vector2 _grabOffset;
 
+    /// <summary>Set by the client when a click only closed a menu: the map ignores that press and its release.</summary>
+    public bool Swallow;
+
     public override void _GuiInput(InputEvent e)
     {
+        if (Swallow && e is InputEventMouseButton { ButtonIndex: MouseButton.Left or MouseButton.Right } sw)
+        {
+            if (!sw.Pressed) Swallow = false;
+            AcceptEvent();
+            return;
+        }
         if (Planner.Active && PlanInput(e)) return;
         if (Decorator.Active && DecorInput(e)) return;
         if (e is InputEventMouseButton mb)
