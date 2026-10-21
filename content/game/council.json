@@ -25,10 +25,15 @@
   "festivalPerResident": 0.8,
   "festivalDays": 2,
   "festivalMood": 15,
+  "festivalGapDays": 20,
+  "festivalMandate": 3,
   "motionDays": 3,
   "motionGapDays": 3,
   "decreeMandate": 8,
   "startingMandate": 60,
+  "mandateRest": 50,
+  "mandateEase": 0.02,
+  "startingWatch": 2,
   "secrets": {
     "chance": 0.6,
     "kinds": [

@@ -13,7 +13,7 @@ namespace CrownAndCompass.Client;
 public static class Showcase
 {
     /// <summary>Open ground (unpainted, unbuilt, off the lanes) over the whole w by h tiles from (x, y).</summary>
-    private static bool Open(Town t, int x, int y, int w, int h)
+    public static bool Open(Town t, int x, int y, int w, int h)
     {
         var plan = t.Plan;
         for (int cy = y * Land.Res; cy < (y + h) * Land.Res; cy++)

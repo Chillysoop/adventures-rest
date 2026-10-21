@@ -11,7 +11,12 @@ public static class Mats
     public static readonly ShaderMaterial Props = Make("props");
     public static readonly ShaderMaterial People = Make("props");
     public static readonly ShaderMaterial Foliage = Make("foliage");
-    public static readonly ShaderMaterial[] All = [Terrain, Water, Props, People, Foliage];
+
+    /// <summary>The heroes (<see cref="Heroes"/>), their enchanted weapons' auras, and combat effects (<see cref="Fx"/>).</summary>
+    public static readonly ShaderMaterial Hero = Make("hero");
+    public static readonly ShaderMaterial Aura = Make("aura");
+    public static readonly ShaderMaterial Effects = Make("fx");
+    public static readonly ShaderMaterial[] All = [Terrain, Water, Props, People, Foliage, Hero, Aura, Effects];
 
     private static ShaderMaterial Make(string name) => new() { Shader = GD.Load<Shader>($"res://assets/shaders/{name}.gdshader") };
 

@@ -6,7 +6,7 @@ namespace CrownAndCompass.Client;
 
 /// <summary>
 /// The main menu the game opens on: a town turning slowly behind the title, and Continue, Start, Start
-/// with tutorial, Load and Quit. Starting a town first asks who will tell its story: the storytellers of
+/// with tutorial, Load, History, Glossary, Settings and Quit. Starting a town first asks who will tell its story: the storytellers of
 /// content/game/storytellers.json, the game's difficulty; then where to found it, from the sites the new world offers
 /// (content/game/founding.json). The game menu (Esc) can bring it back.
 /// </summary>
@@ -72,6 +72,7 @@ public partial class Main
         TitleButton(col, "Load a town", "Pick a save slot", primary: false, OpenLoad);
         TitleButton(col, "History of the world", "The ages, empires and peoples before your town", primary: false, () => OpenHistory());
         TitleButton(col, "Glossary", "Every keyword in the game, explained (F1)", primary: false, () => OpenGlossary());
+        TitleButton(col, "Settings", "Which events stop the clock", primary: false, OpenSettings);
         TitleButton(col, "Quit", "Close the game", primary: false, () => GetTree().Quit());
 
         // Who tells the new town's story: one button each, with their character and what playing under them is like.

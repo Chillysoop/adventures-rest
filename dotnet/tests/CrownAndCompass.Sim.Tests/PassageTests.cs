@@ -207,7 +207,9 @@ public class PassageTests
         var sim = new Simulation(new SimulationOptions { Seed = 1 });
         sim.RunDays(30);
         var t = sim.Town;
-        var heroes = t.Heroes.Take(3).ToList();
+        foreach (var h in t.Heroes) h.Hero!.Mount = "";
+        // Heroes who can't fly or climb a cliff on their own (no spell or item for it).
+        var heroes = t.Heroes.Where(h => (Passage.Abilities(t, [h]) & Ways.Sheer) == Ways.None).Take(3).ToList();
         Assert.Equal(3, heroes.Count);
         // On foot and empty-handed: no flying carpet or winged boots of their own.
         foreach (var h in heroes)

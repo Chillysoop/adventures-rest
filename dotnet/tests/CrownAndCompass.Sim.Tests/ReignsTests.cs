@@ -45,7 +45,7 @@ public class ReignsTests
     }
 
     /// <summary>A town with a cunning risen menace whose seat is in reach of a settlement the town knows.</summary>
-    private static (Simulation Sim, Menace M, Settlement S) Shadowing()
+    private static (Simulation Sim, Menace M, Settlement S) Shadowing(Func<Menace, bool>? fits = null)
     {
         for (int seed = 3; seed < 30; seed++)
         {
@@ -53,8 +53,7 @@ public class ReignsTests
             sim.RunDays(3);
             var t = sim.Town;
             var m = Menaces.Seed(t, [1, 2, 3, 4]);
-            // The dead and the cults hollow a people out into a cult, never a puppet court: these tests want a ruler.
-            if (m == null || m.Kind is "cult" or "undead") continue;
+            if (m == null || fits?.Invoke(m) == false) continue;
             var s = t.Settlements.FirstOrDefault(x => !x.Razed && Shadows.Near(t, m, x));
             if (s == null) continue;
             m.Stage = MenaceStage.Rising;
@@ -119,9 +118,10 @@ public class ReignsTests
     [Fact]
     public void ADeepEnoughShadowPutsAPuppetOnTheirSeatAndLiftingItThrowsThePuppetDown()
     {
-        var (sim, m, s) = Shadowing();
+        // A cult or the undead take a settlement as a cult, not with a puppet.
+        var (sim, m, s) = Shadowing(x => x.Kind is not ("cult" or "undead"));
         var t = sim.Town;
-        if (m.Kind is "cult" or "undead" || Menaces.AmbitionOf(t, m).Id is "plague" or "intrigue") m.Ambition = "conquest";
+        if ( Menaces.AmbitionOf(t, m).Id is "plague" or "intrigue") m.Ambition = "conquest";
         string old = s.Leader;
         s.Shadow = new SettlementShadow { MenaceId = m.Id, Depth = t.Content.Neighbours.Shadow.Last + 1, Form = "tribute", Told = "tribute" };
         sim.RunDays(1);
