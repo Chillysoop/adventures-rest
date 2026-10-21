@@ -24,7 +24,7 @@ public static class Brain
             Crowds.Leave(town, a);
             Execute(town, a, Choose(town, a));
             Crowds.Moved(town, a);
-            SampleMood(a, festival + (a.Activity == Activity.Praying ? town.Content.Shrines.PrayMood : 0) + Faith.Mood(town, a) + City.HomeMood(town, a) + Decor.Mood(town, a) + Crowds.Mood(town, a));
+            SampleMood(a, festival + (a.Activity == Activity.Praying ? town.Content.Shrines.PrayMood : 0) + Faith.Mood(town, a) + City.HomeMood(town, a) + Decor.Mood(town, a) + Crowds.Mood(town, a) + Sickness.Mood(town, a));
         }
         Crowds.End(town);
     }
@@ -50,6 +50,9 @@ public static class Brain
 
         // A break holds them: on a bender they drink the waking hours away, sulking they stay in (Moods).
         if (a.Episode != "" && !night && a.Fatigue < 90 && a.Hunger < 70 && Moods.Holds(town, a) is Activity held) return held;
+
+        // The sick stay home abed by day (Sickness).
+        if (!night && a.Hero == null && a.Fatigue < 90 && a.Hunger < 70 && Sickness.Holds(town, a)) return Activity.Relaxing;
 
         double sleep = (a.Fatigue / 100) * (night ? 2.0 : hour >= 21 ? 1.0 : 0.3) + (a.Fatigue > 90 ? 1 : 0);
 

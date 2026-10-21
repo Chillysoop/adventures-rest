@@ -96,15 +96,18 @@ public static class Alerts
     public static readonly AlertKind Strike = new("strike", "A guild on strike", "population", AlertLevel.Urgent, AlertWindow.Council);
     public static readonly AlertKind Guild = new("guild", "Guild demands", "favour", AlertLevel.Decision, AlertWindow.Council);
     public static readonly AlertKind Wager = new("wager", "Tourney bets", "gold", AlertLevel.Minor, AlertWindow.Tourney);
+    public static readonly AlertKind Sick = new("sick", "Sickness", "sickness", AlertLevel.Urgent, AlertWindow.City);
+    public static readonly AlertKind Spent = new("spent", "Traps spent", "trap-pitch", AlertLevel.Decision, AlertWindow.Defence);
+    public static readonly AlertKind Dark = new("dark", "The dark company rides", "dark-company", AlertLevel.Decision, AlertWindow.Campaign);
     public static readonly AlertKind Scry = new("scry", "Scry the fight", "compass", AlertLevel.Decision, AlertWindow.None);
 
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Sighted, Lurker, Captives, Doom, Crisis, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Fealty, Clash, Traitor, Plot, Stores, Story, Scry, Explorers, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Loot, Stalled, Bridge, Ruin, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Outpost, Housing, Crowded];
+        [Siege, Sighted, Lurker, Captives, Doom, Crisis, Sick, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Fealty, Clash, Traitor, Plot, Dark, Spent, Stores, Story, Scry, Explorers, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Loot, Stalled, Bridge, Ruin, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Outpost, Housing, Crowded];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
-    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Word, Crowds, Keepers, Outposts, Lists];
+    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Word, Crowds, Keepers, Outposts, Lists, Brought];
 
     public static List<Alert> Standing(Town town) => Rules.SelectMany(r => r(town)).ToList();
 
@@ -475,6 +478,24 @@ public static class Alerts
             yield return new($"stalled:{b.Id}", Stalled, $"{Cap(b.Name)} waits for {what}",
                 $"The builders stand idle: the market has no {what} left. {from} send for it by caravan from the site ({Js.Str(Construction.CaravanCost(t, b))}g).", BuildingId: b.Id);
         }
+    }
+
+    /// <summary>Sickness in the houses; traps spent before a siege; the big bad's company on the road to a hoard.</summary>
+    private static IEnumerable<Alert> Brought(Town t)
+    {
+        if (Sickness.Outbreak(t))
+        {
+            int n = Sickness.Sick(t).Count;
+            yield return new("sick", Sick, n == 1 ? "Sickness in a house" : $"Sickness in {n} houses",
+                $"The sick stay home and spread it to the houses round. Send the healers door to door ({Js.Str(Sickness.TendCost(t))}g) or close the sick lanes from the City window.");
+        }
+        var spent = Traps.Spent(t);
+        if (spent.Count > 0)
+            yield return new("spent", Spent, spent.Count == 1 ? "A trap is spent" : $"{spent.Count} traps spent",
+                $"Refill them from the Defence window ({Js.Str(Traps.RefillCost(t))}g) before the next siege.");
+        if (DarkCompany.Target(t) is { } site && t.DarkCompany.Ambush == null && DarkCompany.MeetTick(t) != null)
+            yield return new("dark", Dark, $"{Cap(t.DarkCompany.Name)} ride for {site.Def.Name}",
+                $"They mean to rob its hoard for {Saga.BigBad(t)?.Leader}. Send a company there first, or ambush them on the road from the Campaign window.", SiteId: site.Def.Id);
     }
 
     /// <summary>A party that sent word home is in the fight now, out of sight: a scrying would show it.</summary>

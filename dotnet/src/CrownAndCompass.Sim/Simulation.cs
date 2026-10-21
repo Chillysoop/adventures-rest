@@ -117,6 +117,7 @@ public sealed class Simulation
         Brain.Daily(t);
         Tournaments.Daily(t, Options.AutoMayor && Options.AutoStories);
         Seasons.Daily(t);
+        Omens.Daily(t);
         Economy.Daily(t);
         Skills.Daily(t);
         Merchants.Daily(t);
@@ -134,6 +135,7 @@ public sealed class Simulation
         Population.DailyArrivals(t);
         if (Options.AutoMayor) Mayor.Daily(t, Options.AutoPlanning, Options.AutoDefense);
         Social.Daily(t);
+        Sickness.Daily(t);
         Moods.Daily(t);
         Council.Daily(t, Options.AutoCouncil);
         double pace = Director.Daily(t);
@@ -148,6 +150,8 @@ public sealed class Simulation
         Clockwork.Daily(t, Options.AutoMayor && Options.AutoDefense);
         Quests.Daily(t, Options.AutoMayor && Options.AutoBounties, Options.FreeCompanies);
         Explore.Daily(t, Options.AutoMayor && Options.AutoBounties);
+        Wounds.Daily(t, Options.AutoMayor && Options.AutoHonours);
+        Word.Daily(t);
         Intel.Daily(t, Options.AutoMayor && Options.AutoBounties && Options.AutoIntel);
         Bastions.Daily(t, Options.AutoMayor && Options.AutoBastions);
         Watch.Daily(t, Options.AutoMayor && Options.AutoBounties);
@@ -159,6 +163,7 @@ public sealed class Simulation
         Faith.Daily(t);
         Factions.Daily(t, Options.AutoMayor);
         Saga.Daily(t, Options.AutoMayor);
+        DarkCompany.Daily(t);
         Crises.Daily(t, Options.AutoMayor && Options.AutoDefense);
         Powers.Daily(t);
         Vengeance.Daily(t);
@@ -188,6 +193,7 @@ public sealed class Simulation
         Economy.Daily(t, true);
         Taxes.Close(t);
         Trends.Close(t);
+        Records.Close(t);
         History.Add(Snapshot());
         t.AccountsYesterday = t.AccountsToday;
         t.RecentNet.Add(Js.Sum(t.AccountsToday.Values, v => v));
@@ -233,6 +239,27 @@ public sealed class Simulation
 
     /// <summary>The player's word to explorers about something they found ("dig", "engage", "onward", "home", "parley"...).</summary>
     public bool OrderExplorers(int findId, string act) => Explore.Order(Town, findId, act);
+
+    /// <summary>Pay to mend one of a hero's lasting wounds ("restoration", "regenerate", "clockwork"). Returns why not, or null when mended.</summary>
+    public string? MendWound(int heroId, int wound, string mend) => Wounds.Pay(Town, heroId, wound, mend);
+
+    /// <summary>Lay a trap before a section of the wall (0 is the gate). Returns why not, or null when laid.</summary>
+    public string? LayTrap(string kind, int section) => Traps.Lay(Town, kind, section);
+
+    /// <summary>Take a laid trap up again.</summary>
+    public bool RemoveTrap(int trapId) => Traps.Remove(Town, trapId);
+
+    /// <summary>Refill every spent trap. Returns why not, or null when done.</summary>
+    public string? RefillTraps() => Traps.Refill(Town);
+
+    /// <summary>Close (or open) the sick lanes during an outbreak.</summary>
+    public bool Quarantine(bool on) => Sickness.SetQuarantine(Town, on);
+
+    /// <summary>Pay the healers to go door to door through the sick houses. Returns why not, or null when sent.</summary>
+    public string? TendTheSick() => Sickness.Tend(Town);
+
+    /// <summary>Send heroes (the best free ones unless named) to ambush the big bad's company on the road. Returns why not, or null when sent.</summary>
+    public string? AmbushDarkCompany(IReadOnlyList<int>? heroIds = null) => DarkCompany.SendAmbush(Town, heroIds);
 
     /// <summary>Pay the printer for the broadsheet's next front page ("praise", "hero" with a hero, "expose"). Returns why not, or null when bought.</summary>
     public string? SlantBroadsheet(string slant, int? heroId = null) => Broadsheet.Buy(Town, slant, heroId);

@@ -89,6 +89,9 @@ public sealed class Building(int id, BuildingDef def, int lotId)
     public bool ForSale { get; set; }
     public bool Closed { get; set; }
 
+    /// <summary>A house: the tick its sickness lifts, or the tick it lifted; 0 for never sick (<see cref="Systems.Sickness"/>).</summary>
+    public int SickUntil { get; set; }
+
     /// <summary>A house: how content its families were yesterday with what the town gives them (0 to 1).</summary>
     public double Contentment { get; set; } = 1;
 
@@ -575,6 +578,24 @@ public sealed class Town
 
     /// <summary>Townsfolk's inspirations and breaks: when the Ledger last told of one (<see cref="Systems.Moods"/>).</summary>
     public Systems.MoodState Moods { get; } = new();
+
+    /// <summary>The whole campaign's weekly readings and pinned moments, for the graphs (<see cref="Systems.Records"/>).</summary>
+    public Systems.RecordState Records { get; } = new();
+
+    /// <summary>What the heroes say of the town lately (<see cref="Systems.Word"/>).</summary>
+    public Systems.WordState Word { get; } = new();
+
+    /// <summary>This year's omen and the years' before (<see cref="Systems.Omens"/>).</summary>
+    public Systems.OmenState Omens { get; } = new();
+
+    /// <summary>Sickness in town: the sick lanes and the outbreaks so far (<see cref="Systems.Sickness"/>; the sick houses keep their own days).</summary>
+    public Systems.SicknessState Sickness { get; } = new();
+
+    /// <summary>Traps laid before the wall (<see cref="Systems.Traps"/>).</summary>
+    public Systems.TrapState Traps { get; } = new();
+
+    /// <summary>The big bad's own company on the roads (<see cref="Systems.DarkCompany"/>).</summary>
+    public Systems.DarkCompanyState DarkCompany { get; } = new();
 
     /// <summary>The storyteller the town was founded under (storytellers.json id); null in a save from before there were any (<see cref="Systems.Storyteller"/>).</summary>
     public string? Storyteller { get; set; }

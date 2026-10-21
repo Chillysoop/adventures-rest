@@ -375,6 +375,7 @@ public static class City
         if (next == null || Missing(town).Count > 0) return false;
         town.Book(TreasuryAccount.Charters, -next.Cost);
         town.City.Tier++;
+        Records.Pin(town, "charter", next.Name);
         town.Log(LedgerCategory.Town, Importance.Major, $"{town.Name} is granted the charter of a {next.Name.ToLowerInvariant()}. {next.Blurb}");
         town.Mandate = Math.Min(100, town.Mandate + 5);
         town.FestivalDays = Math.Max(town.FestivalDays, 1);

@@ -38,8 +38,33 @@ public partial class Main
         _ => ("Unwilling", Ui.Bad),
     };
 
+    /// <summary>Stars out of five as gold and dim marks.</summary>
+    public static string Stars(double stars)
+    {
+        int full = (int)Math.Round(Math.Clamp(stars, 0, 5));
+        return Ui.C(Ui.Gold, new string('★', full)) + Ui.Dim(new string('★', 5 - full));
+    }
+
+    /// <summary>What heroes say of the town on the roads: its stars, each thing they judge, and the latest says.</summary>
+    private void RenderWord(Pane p, Town t)
+    {
+        double r = Word.Rating(t);
+        double n = t.Content.Word.Neutral;
+        string draw = r > n + 0.25 ? Ui.Chip("heroes", "▲", Ui.Good, "Good word brings heroes sooner, and more of them seasoned")
+            : r < n - 0.25 ? Ui.Chip("heroes", "▼", Ui.Bad, "Bad word keeps heroes away") : "";
+        p.Heading("Word on the roads", "word");
+        p.Text($"[font_size=18]{Stars(r)}[/font_size]  [b]{r:0.0}[/b]  {draw}", 14);
+        p.Text(Ui.Chips(Word.Aspects(t).Select(a => Ui.Chip(a.Def.Icon, $"{a.Stars:0.#}", a.Stars >= n + 0.5 ? Ui.Good : a.Stars <= n - 0.5 ? Ui.Bad : Ui.Ink2, a.Def.Name)).ToArray()), 13);
+        foreach (var rv in t.Word.Reviews.AsEnumerable().Reverse().Take(2))
+        {
+            string who = rv.HeroId >= 1 && rv.HeroId <= t.Agents.Count ? t.Agent(rv.HeroId).GivenName : "A hero";
+            p.Text($"{Stars(rv.Stars)} {Ui.C(rv.Good ? Ui.Ink : Ui.Bad, $"“{Ui.Esc(rv.Text)}”")} {Ui.Dim($"[font_size=12]{Ui.Esc(who)}, day {rv.Day}[/font_size]")}", 13);
+        }
+    }
+
     private void RenderRoster(Pane p, Town t)
     {
+        RenderWord(p, t);
         p.Heading("Roster");
         p.Buttons(
             ("Companies", true, !_rosterHeroes, () => Act(() => _rosterHeroes = false)),

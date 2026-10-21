@@ -400,6 +400,7 @@ public static class Threat
             int at = Garrison.WaveSection(town, en.Approach, w);
             double hold = (def / (e.SiegeWaves - w + 1)) * (0.8 + rng.Next() * 0.4) * Garrison.SectionFactor(town, at) * gate;
             double shot = Cannons.Volley(town, "warband", "", wave, w, lines);
+            shot = Traps.Spring(town, "warband", shot, at, lines, record);
             en.Strength -= wave - shot;
             wave = shot;
             double wading = Garrison.Wade(town, wave);

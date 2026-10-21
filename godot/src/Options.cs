@@ -178,6 +178,9 @@ public sealed class Options
 
     /// <summary>--strike: open the quick orders' Strike list over the corner map.</summary>
     public bool Strike;
+
+    /// <summary>--hardships: sick houses, traps on the walls, a wounded hero and the dark company on the road, for shots.</summary>
+    public bool Hardships;
     public string? FindPick;
     public int? StoryPick;
 
@@ -229,6 +232,7 @@ public sealed class Options
                 case "--delve": o.Delve = true; break;
                 case "--wall": o.Wall = int.Parse(Next()); break;
                 case "--strike": o.Strike = true; break;
+                case "--hardships": o.Hardships = true; break;
                 case "--house": o.House = true; break;
                 case "--crowded": o.Crowded = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
                 case "--rising": o.Rising = true; break;

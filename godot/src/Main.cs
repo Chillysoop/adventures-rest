@@ -110,6 +110,7 @@ public partial class Main : Control
         _opts.ApplyScript(_sim);
         if (_opts.Tourney is int tourney) StageTourney(tourney);
         if (_opts.Secrets) StageSecrets();
+        if (_opts.Hardships) StageHardships();
         if (_opts.Guilds is string guilds) StageGuilds(guilds == "strike");
         _rosterPick = _opts.RosterPick ?? _rosterPick;
         _offerAnswer = _opts.RosterAnswer ?? _offerAnswer;

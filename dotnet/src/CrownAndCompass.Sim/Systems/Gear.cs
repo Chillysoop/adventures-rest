@@ -91,14 +91,14 @@ public static class Gear
     {
         var s = a.Hero!;
         int ac = ArmorAc(s.Armor, Rng.Modifier(a.Abilities.Dex), a) + (s.Shield?.Ac ?? 0);
-        return ac + Bonus(c, s, "armor") + Bonus(c, s, "shield") + s.ArmorBonus;
+        return ac + Bonus(c, s, "armor") + Bonus(c, s, "shield") + s.ArmorBonus + Wounds.Ac(c, s);
     }
 
     /// <summary>To hit: proficiency, the class's key ability, the weapon's magic, and a caster's focus.</summary>
     public static int Attack(Content c, Agent a)
     {
         var s = a.Hero!;
-        return Expedition.Proficiency(s.Level) + Rng.Modifier(a.Abilities[s.Cls.Primary]) + s.WeaponBonus + Bonus(c, s, "weapon") + (s.Cls.Spell ? Bonus(c, s, "trinket") : 0);
+        return Expedition.Proficiency(s.Level) + Rng.Modifier(a.Abilities[s.Cls.Primary]) + s.WeaponBonus + Bonus(c, s, "weapon") + (s.Cls.Spell ? Bonus(c, s, "trinket") : 0) + Wounds.Attack(c, s);
     }
 
     /// <summary>The weapon's dice (a caster's attack spell instead), doubled on a critical hit.</summary>
@@ -110,7 +110,7 @@ public static class Gear
     }
 
     /// <summary>A charm, a cloak or a wand helps with traps, riddles and parley.</summary>
-    public static int Skill(Content c, HeroSheet s) => Bonus(c, s, "trinket");
+    public static int Skill(Content c, HeroSheet s) => Bonus(c, s, "trinket") + Wounds.Skill(c, s);
 
     /// <summary>Points of gear above the kit the class arrives with.</summary>
     public static int Edge(Content c, Agent a)

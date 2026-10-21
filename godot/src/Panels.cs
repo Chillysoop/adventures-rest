@@ -447,6 +447,7 @@ public partial class Main
         var p = _panes[Tab.Chronicles];
         var t = _sim.Town;
         p.Begin();
+        RenderRecords(p, t);
         RenderHall(p, t);
         if (t.Legacies.Count > 0) p.Heading("Expeditions");
         if (t.Chronicles.Count == 0) p.Note("No expeditions yet. Post a bounty and wait for a party to form at the tavern. Their story comes back with them.");
@@ -538,6 +539,7 @@ public partial class Main
             string crosses = Passage.Describe(alone), party = Passage.Describe(carries & ~alone) is var more && more != "" ? $"; carries the whole party over {more}" : "";
             if (mount != "" || crosses != "" || party != "")
                 p.Text(Ui.C(Ui.Ink2, Ui.Esc($"{mount}{(mount != "" && crosses != "" ? " · " : "")}{(crosses != "" ? $"can cross {crosses}" : "")}{party}")), 13);
+            InspectWounds(p, t, a, hs);
             InspectNotoriety(p, t, a, hs);
             InspectLoyalty(p, t, a, hs);
         }
@@ -579,6 +581,40 @@ public partial class Main
         }
         if (a.Moments.Count > 0)
             p.Text(Ui.C(Ui.Ink2, $"[font_size=12]{string.Join("\n", a.Moments.AsEnumerable().Reverse().Select(m => Ui.Esc(m)))}[/font_size]"), 13);
+    }
+
+    /// <summary>Lasting wounds: each with what it costs them, and the mends the town can pay for.</summary>
+    private void InspectWounds(Pane p, Town t, Agent a, HeroSheet hs)
+    {
+        for (int i = 0; i < hs.Wounds.Count; i++)
+        {
+            var w = hs.Wounds[i];
+            if (Wounds.Def(t.Content, w.Id) is not { } d) continue;
+            var costs = new List<string>();
+            if (!w.Clockwork)
+            {
+                if (d.Attack != 0) costs.Add(Ui.Chip("word-gear", $"{d.Attack}", Ui.Bad, "Attack"));
+                if (d.Ac != 0) costs.Add(Ui.Chip("defence", $"{d.Ac}", Ui.Bad, "Armour"));
+                if (d.Skill != 0) costs.Add(Ui.Chip("d20", $"{d.Skill}", Ui.Bad, "Skill checks"));
+            }
+            if (d.Heals > 0 && !w.Clockwork) costs.Add(Ui.Chip("ui-time", Ui.Days(Math.Max(1, w.Day + d.Heals - t.Day)), Ui.Ink2, "Heals on its own in"));
+            string head = Ui.Tip($"{Ui.Img(d.Icon, 16)} {Ui.C(w.Clockwork ? Ui.Ink2 : Ui.Bad, $"[b]{Ui.Esc(Ui.Cap(d.Name))}[/b]")}", $"Taken at {w.Site}, day {w.Day}.{(w.Clockwork ? $" Fitted with {d.Part}." : "")}");
+            int index = i;
+            var buttons = new List<(string, bool, bool, Action)>();
+            if (!w.Clockwork)
+                foreach (var m in d.Mends.Select(id => Wounds.Mend(t.Content, id)).OfType<MendDef>())
+                {
+                    string? why = Wounds.Blocked(t, a, i, m);
+                    if (why is "needs the temple" or "needs an artificers' workshop" && m.Id != d.Mends[0]) continue;
+                    string mend = m.Id;
+                    buttons.Add(($"{m.Name} · {Js.Str(m.Cost)}g", why == null && t.Treasury >= m.Cost, false, () => Act(() =>
+                    {
+                        _sim.MendWound(a.Id, index, mend);
+                        GuideEvent("mend");
+                    })));
+                }
+            p.Row($"{head}  [font_size=12]{Ui.Chips(costs.ToArray())}[/font_size]", buttons.ToArray());
+        }
     }
 
     /// <summary>Fame and infamy: what the world calls them, and what their name does for them.</summary>

@@ -1314,6 +1314,7 @@ public static class Explore
         result.Apply(members);
         foreach (var id in result.Kills.Keys) town.Agent(id).Hero!.Kills += result.Kills.Get(id, 0);
         foreach (int id in result.Dead) Die(town, s, town.Agent(id));
+        Wounds.Home(town, result, Living(town, s), site?.Def.Name ?? "");
         foreach (var line in v.Lines) s.Journal.Add(line);
         var dead = result.Dead.Select(id => town.Agent(id).GivenName).ToList();
         int share = members.Count == 0 ? 0 : result.Xp / members.Count;
