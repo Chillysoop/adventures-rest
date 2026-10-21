@@ -701,6 +701,14 @@
       "until": "dense",
       "when": "density",
       "teaches": []
+    },
+    {
+      "id": "board-riders",
+      "title": "Who can ride",
+      "text": "The [b]Bounty board[/b] opens on who is free to ride today.\n• Each threat has a coloured pill per company: green easy, red deadly, for those heroes\n• Click a pill to offer that company the job by name\n• Hover any button to see what it costs and does",
+      "point": "tab:Bounties",
+      "when": "count:Companies",
+      "teaches": []
     }
   ],
   "untaught": {}
