@@ -23,7 +23,9 @@ public partial class Main
             hero.Hero.Wounds.Add(new Wound { Id = t.Content.Wounds.Wounds[0].Id, Site = t.Sites.OrderBy(s => s.Def.Id, StringComparer.Ordinal).First().Def.Name, Day = Math.Max(1, t.Day - 6) });
         if (Saga.BigBad(t) is not { Alive: true })
         {
-            if (t.Saga.Menaces.Where(m => m.Alive && Menaces.CanCrown(t, m)).OrderByDescending(m => m.Power).ThenBy(m => m.Id).FirstOrDefault() is not { } top) return;
+            var top = t.Saga.Menaces.Where(m => m.Alive && Menaces.CanCrown(t, m)).OrderByDescending(m => m.Power).ThenBy(m => m.Id).FirstOrDefault()
+                ?? (t.Content.Saga.Finale.Fallback.Count > 0 ? Menaces.Awaken(t, t.Content.Saga.Finale.Fallback[0]) : null);
+            if (top == null) return;
             t.Saga.BigBadId = top.Id;
             t.Saga.CrownDay = t.Day;
             t.Saga.NextRideDay = t.Day + 1000;

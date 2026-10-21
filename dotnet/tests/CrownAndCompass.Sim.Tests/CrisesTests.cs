@@ -132,7 +132,8 @@ public class CrisesTests
             sim.RunDays(60);
         }
         var t = sim.Town;
-        var m = Menaces.Seed(t, [2, 3])!;
+        // A seat no company at home is strong enough to clear before the plot plays out.
+        var m = Menaces.Seed(t, [6, 8])!;
         var g = new Grudge { Foe = Vengeance.Key(m), Name = m.Name, Leader = m.Leader, Seat = m.SeatName, Kind = kind, Wits = "mastermind", Cunning = 1.6 };
         t.Grudges.Add(g);
         t.Watch = 0;

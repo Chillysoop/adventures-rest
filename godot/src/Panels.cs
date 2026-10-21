@@ -597,6 +597,7 @@ public partial class Main
                 if (d.Ac != 0) costs.Add(Ui.Chip("defence", $"{d.Ac}", Ui.Bad, "Armour"));
                 if (d.Skill != 0) costs.Add(Ui.Chip("d20", $"{d.Skill}", Ui.Bad, "Skill checks"));
             }
+            if (w.Clockwork) costs.Add(Ui.Chip("mend-clockwork", Ui.Cap(d.Part), Ui.Ink2, "Fitted with clockwork: it costs them nothing"));
             if (d.Heals > 0 && !w.Clockwork) costs.Add(Ui.Chip("ui-time", Ui.Days(Math.Max(1, w.Day + d.Heals - t.Day)), Ui.Ink2, "Heals on its own in"));
             string head = Ui.Tip($"{Ui.Img(d.Icon, 16)} {Ui.C(w.Clockwork ? Ui.Ink2 : Ui.Bad, $"[b]{Ui.Esc(Ui.Cap(d.Name))}[/b]")}", $"Taken at {w.Site}, day {w.Day}.{(w.Clockwork ? $" Fitted with {d.Part}." : "")}");
             int index = i;
@@ -613,7 +614,7 @@ public partial class Main
                         GuideEvent("mend");
                     })));
                 }
-            p.Row($"{head}  [font_size=12]{Ui.Chips(costs.ToArray())}[/font_size]", buttons.ToArray());
+            p.Row($"{head}\n[font_size=12]{Ui.Chips(costs.ToArray())}[/font_size]", buttons.ToArray());
         }
     }
 

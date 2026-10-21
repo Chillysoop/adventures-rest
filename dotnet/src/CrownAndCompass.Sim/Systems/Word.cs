@@ -117,18 +117,22 @@ public static class Word
         var dice = new Rng(unchecked((int)Voices.Hash("word", town.Seed, town.Day)));
         var a = home[dice.Range(0, home.Count)];
         var scored = Aspects(town);
-        // What sticks with them most: the worst of it, unless the best stands out further from the middle.
-        var worst = scored.OrderBy(x => x.Stars).ThenBy(x => x.Def.Id, StringComparer.Ordinal).First();
-        var best = scored.OrderByDescending(x => x.Stars).ThenBy(x => x.Def.Id, StringComparer.Ordinal).First();
-        bool good = best.Stars - r.Neutral > r.Neutral - worst.Stars;
-        var pick = good ? best : worst;
-        var lines = good ? pick.Def.Good : pick.Def.Bad;
-        if (lines.Count == 0) return;
+        var reviews = town.Word.Reviews;
+        // What sticks with them: something that stands out from the middle, good or bad, and not what the last heroes said.
+        var said = reviews.TakeLast(2).Select(x => x.Aspect).ToHashSet();
+        var marked = scored.Where(x => Math.Abs(x.Stars - r.Neutral) >= 0.5 && !said.Contains(x.Def.Id)).ToList();
+        if (marked.Count == 0) marked = scored.Where(x => !said.Contains(x.Def.Id)).ToList();
+        if (marked.Count == 0) marked = scored;
+        var pick = marked[dice.Range(0, marked.Count)];
+        bool good = pick.Stars >= r.Neutral;
+        var all = good ? pick.Def.Good : pick.Def.Bad;
+        if (all.Count == 0) return;
+        var fresh = all.Where(l => reviews.All(x => !x.Text.StartsWith(l.Split('{')[0], StringComparison.Ordinal))).ToList();
+        var lines = fresh.Count > 0 ? fresh : all;
         var venues = town.Taverns;
         string tavern = venues.Count == 0 ? "the inn" : venues[a.Id % venues.Count].Name;
         string text = lines[dice.Range(0, lines.Count)].Replace("{town}", town.Name).Replace("{tavern}", tavern);
-        var reviews = town.Word.Reviews;
-        reviews.Add(new Review { Day = town.Day, HeroId = a.Id, Aspect = pick.Def.Id, Stars = (int)Math.Round(Rating(town)), Good = good, Text = text });
+        reviews.Add(new Review { Day = town.Day, HeroId = a.Id, Aspect = pick.Def.Id, Stars = (int)Math.Round(pick.Stars), Good = good, Text = text });
         while (reviews.Count > Math.Max(1, r.Keep)) reviews.RemoveAt(0);
     }
 }
