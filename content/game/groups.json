@@ -1,0 +1,279 @@
+{
+  "_doc": "Ready-made enemy groups (Systems/World.cs PickGroup, Content.Group). Each holds sites of its own in the themes it names: a generated site goes to a fitting group with this chance when one of its bosses suits the level. Its wanderers and escorts are drawn from foes (falling back to the site's habitats when none fit the level), its boss from bosses, a cleared site is retaken by its own bosses, and a menace rising from it carries the group's lineage (history.json, subject group:<id>, or an existing enemy's lineage for a group that is a version of it).",
+  "chance": 0.3,
+  "groups": [
+    {
+      "id": "sewer-infestation",
+      "name": "the sewer infestation",
+      "lineage": "drain-court",
+      "themes": ["crownruins", "saltreach"],
+      "names": ["the Old Sewers of {B}", "the {A} Drains", "the Smugglers' Culvert", "the Rat Court of {B}"],
+      "habitats": ["sewer", "urban", "ruins"],
+      "deck": ["wander", "hazard", "wander", "parley", "wander", "treasure"],
+      "foes": ["giant-rat", "giant-rat-diseased", "swarm-of-rats", "plague-rat-swarm", "wererat", "gray-ooze", "ochre-jelly", "bandit", "tough", "spy", "longreach"],
+      "bosses": ["rat-king", "otyugh", "wererat", "black-pudding", "bandit-captain"],
+      "texts": {
+        "wander": ["a tide of rats pours out of a side culvert", "smugglers hauling crates through the dark", "something heavy slides through the sludge"],
+        "hazard": ["the sluice gates open and the flood comes through", "bad air pooled in the low tunnels"],
+        "parley": ["a smuggler who will sell out the rat-men for safe passage"],
+        "boss": ["the master of the drains, on a throne of refuse"]
+      }
+    },
+    {
+      "id": "stolen-village",
+      "name": "the stolen village",
+      "lineage": "borrowed-faces",
+      "themes": ["greenmarch", "crownruins"],
+      "names": ["Quietwater", "{A}stead", "the Smiling Village of {B}", "{B}'s Rest"],
+      "habitats": ["urban", "grassland"],
+      "deck": ["parley", "wander", "puzzle", "wander", "trap", "treasure"],
+      "foes": ["doppelganger", "velvet-whisperer", "velvet-notary", "spy", "guard", "tough", "bandit"],
+      "bosses": ["velvet-masque", "velvet-chancellor", "doppelganger", "rakshasa"],
+      "texts": {
+        "wander": ["villagers who smile too long and answer too quickly", "the reeve's men, with orders to keep strangers out"],
+        "puzzle": ["the parish roll lists people nobody can find", "two of the same miller, in two different houses"],
+        "parley": ["a child who says her mother came home wrong"],
+        "boss": ["the one behind every borrowed face"]
+      }
+    },
+    {
+      "id": "frozen-pass",
+      "name": "the frozen pass",
+      "lineage": "white-pass",
+      "themes": ["rimefell", "highpeaks"],
+      "names": ["the {A} Pass", "the Yeti Steps", "the Pass of {B}", "the Howling Notch"],
+      "habitats": ["arctic", "mountain"],
+      "deck": ["wander", "hazard", "wander", "hazard", "parley", "treasure"],
+      "foes": ["yeti", "winter-wolf", "ice-mephit", "polar-bear", "rime-lindworm", "frost-giant"],
+      "bosses": ["great-yeti", "remorhaz", "frost-giant", "yeti", "rime-lindworm"],
+      "texts": {
+        "wander": ["white shapes on the white slope", "wolves whose breath freezes the air", "giant footprints across the pass"],
+        "hazard": ["an avalanche comes down the gully", "a whiteout on the narrowest ledge"],
+        "boss": ["the thing that melts the snow from below"]
+      }
+    },
+    {
+      "id": "buried-hive",
+      "name": "the buried hive",
+      "lineage": "chitter-hives",
+      "themes": ["greenmarch", "deeproads", "duneglass"],
+      "names": ["the {A} Hive", "the Hollow Fields", "the Egg Chambers of {B}", "the Chittering Mound"],
+      "habitats": ["caves", "grassland", "underworld"],
+      "deck": ["wander", "trap", "wander", "hazard", "wander", "treasure"],
+      "foes": ["chitterkin", "hivebound", "insatiable-brood", "giant-fire-beetle", "insect-giant-centipede", "swarm-of-insects"],
+      "bosses": ["chitterkin-brood-queen", "insatiable-brood", "ankheg", "bulette"],
+      "texts": {
+        "wander": ["the walls click and move", "a swarm boils out of a side tunnel"],
+        "trap": ["a pit dug by the hive to catch the careless", "egg sacs that burst when touched"],
+        "hazard": ["a tunnel that collapses behind them"],
+        "boss": ["the brood-queen, swollen with eggs"]
+      }
+    },
+    {
+      "id": "spider-temple",
+      "name": "the spider temple",
+      "lineage": "silk-mother",
+      "themes": ["thornwood", "deeproads"],
+      "names": ["the Silk Temple", "the Webbed Chapel of {B}", "the {A} Shrine", "the Temple Under the Web"],
+      "habitats": ["forest", "caves", "temple"],
+      "deck": ["wander", "trap", "wander", "puzzle", "wander", "treasure"],
+      "foes": ["cultist", "cultist-fanatic", "giant-spider", "giant-wolf-spider", "ettercap", "mistweaver-spider", "silkhound", "drider"],
+      "bosses": ["jorogumo", "drider", "silkhound", "priest"],
+      "texts": {
+        "wander": ["robed worshippers chanting under the webs", "spiders as big as ponies on the walls"],
+        "trap": ["a silk tripline strung with bells", "a floor of web over a pit"],
+        "puzzle": ["an altar that wants an offering of silk and blood"],
+        "boss": ["the high priestess, whose shadow has eight legs"]
+      }
+    },
+    {
+      "id": "plague-procession",
+      "name": "the plague procession",
+      "lineage": "grey-pilgrims",
+      "themes": ["ashenbarrows", "mirefen", "greenmarch"],
+      "names": ["the Procession Road", "the Plague Pits of {B}", "the {A} Lazar House", "the Grey Pilgrims' Camp"],
+      "habitats": ["grassland", "swamp", "tomb"],
+      "deck": ["wander", "hazard", "wander", "parley", "wander", "treasure"],
+      "foes": ["cultist", "giant-rat-diseased", "plague-rat-swarm", "plaguefly-cloud", "zombie", "wormhost", "ghoul"],
+      "bosses": ["plague-saint", "pestilence-herald", "corpse-cart", "ogre-zombie"],
+      "texts": {
+        "wander": ["a line of pilgrims ringing bells, coughing as they go", "the dead walking with grubs glowing in their chests"],
+        "hazard": ["a well gone bad", "the sickness takes one of them on the road"],
+        "parley": ["a pilgrim who wants to turn back"],
+        "boss": ["the saint who leads the procession"]
+      }
+    },
+    {
+      "id": "nightmare-carnival",
+      "name": "the nightmare carnival",
+      "lineage": "carnival-court",
+      "themes": ["feyfringe", "greenmarch"],
+      "names": ["the Carnival of {B}", "the Midnight Fair", "the {A} Big Top", "the Masked Caravan"],
+      "habitats": ["feywild", "grassland", "urban"],
+      "deck": ["parley", "wander", "puzzle", "wander", "trap", "treasure"],
+      "foes": ["masked-reveller", "sawdust-marionette", "bedshade", "flickerling", "green-hag", "sea-hag"],
+      "bosses": ["carnival-ringmaster", "night-hag", "green-hag"],
+      "texts": {
+        "wander": ["performers in masks that do not come off", "dolls that sit up as they pass"],
+        "trap": ["a hall of mirrors with one wrong door", "a ride that will not stop"],
+        "puzzle": ["a fortune-teller's game that must be won honestly"],
+        "parley": ["a juggler who wants out of the act"],
+        "boss": ["the ringmaster, in the centre ring"]
+      }
+    },
+    {
+      "id": "false-church",
+      "name": "the false church",
+      "lineage": "false-lamp",
+      "themes": ["crownruins", "ashenbarrows", "greenmarch"],
+      "names": ["the Chapel of the New Dawn", "the {A} Abbey", "the Church of {B}", "the Shrine of Borrowed Saints"],
+      "habitats": ["temple", "urban", "ruins"],
+      "deck": ["parley", "wander", "puzzle", "wander", "trap", "treasure"],
+      "foes": ["cultist", "cultist-fanatic", "imp", "quasit", "velvet-confessor", "priest-acolyte"],
+      "bosses": ["false-prophet", "rakshasa", "cultist-fanatic"],
+      "texts": {
+        "wander": ["worshippers who stare at the newcomers", "acolytes with brimstone on their breath"],
+        "puzzle": ["a relic that is plainly painted wood"],
+        "parley": ["a priest who has begun to doubt"],
+        "boss": ["the prophet, mid-sermon"]
+      }
+    },
+    {
+      "id": "monster-trade",
+      "name": "the monster trade",
+      "lineage": "cage-merchants",
+      "themes": ["saltreach", "duneglass", "greenmarch"],
+      "names": ["the Menagerie Camp", "the {A} Cages", "the Beast Market of {B}", "the Trappers' Stockade"],
+      "habitats": ["grassland", "forest", "coast"],
+      "deck": ["wander", "trap", "wander", "parley", "wander", "treasure"],
+      "foes": ["poacher", "beast-handler", "mastiff", "bandit", "owlbear", "griffon", "manticore", "mirage-lynx"],
+      "bosses": ["beast-broker", "beast-handler", "bandit-captain", "chimera"],
+      "texts": {
+        "wander": ["an escaped beast, still wearing its collar", "trappers carrying a cage between them"],
+        "trap": ["snares strung across the trail", "a net pit baited with meat"],
+        "parley": ["a handler who would set the beasts free for a price"],
+        "boss": ["the broker, among the cages"]
+      }
+    },
+    {
+      "id": "drowned-kingdom",
+      "name": "the drowned kingdom",
+      "lineage": "kraken-choir",
+      "themes": ["saltreach", "mirefen", "drownedempire", "stormcoast"],
+      "names": ["the Drowned Halls of {B}", "the {A} Deeps", "the Sunken Court", "the Kraken's Chapel"],
+      "habitats": ["coast", "ocean", "ruins"],
+      "deck": ["wander", "hazard", "wander", "puzzle", "wander", "treasure"],
+      "foes": ["merrow", "brinebound", "brine-changeling", "sahuagin-warrior", "ghoul", "cultist", "giant-octopus", "hunter-shark"],
+      "bosses": ["tide-hierophant", "sea-hag", "merrow", "kraken"],
+      "texts": {
+        "wander": ["drowned sailors walk out of the surf", "cultists chanting to something under the water"],
+        "hazard": ["the tide comes in through the halls", "a whirlpool in the flooded nave"],
+        "puzzle": ["a drowned throne that opens to the right tide"],
+        "boss": ["the hierophant, and the arms rising behind"]
+      }
+    },
+    {
+      "id": "abandoned-workshop",
+      "name": "the abandoned workshop",
+      "lineage": "unfinished-works",
+      "themes": ["crownruins", "highpeaks", "spellscar"],
+      "names": ["the {A} Workshop", "the Silent Foundry of {B}", "the Clockhouse", "the Maker's Hall"],
+      "habitats": ["laboratory", "ruins"],
+      "deck": ["trap", "wander", "puzzle", "wander", "hazard", "treasure"],
+      "foes": ["animated-armor", "animated-flying-sword", "homunculus", "malspell", "tally-engine", "robot-drone", "seeker-engine"],
+      "bosses": ["rogue-artificer", "bellfounder-golem", "clay-golem", "shield-guardian", "seeker-engine"],
+      "texts": {
+        "wander": ["tools that pick themselves up off the benches", "clerks of brass counting everything they see"],
+        "trap": ["a press that comes down when the door opens"],
+        "puzzle": ["a machine half-built, with one part missing"],
+        "hazard": ["a forge left burning for years"],
+        "boss": ["the maker who never left"]
+      }
+    },
+    {
+      "id": "witch-hunt",
+      "name": "the witch hunters",
+      "lineage": "ash-writ",
+      "themes": ["greenmarch", "crownruins", "ashenbarrows"],
+      "names": ["the Inquisitors' Camp", "the {A} Gallows", "the Writ House of {B}", "the Burning Court"],
+      "habitats": ["urban", "grassland", "ruins"],
+      "deck": ["parley", "wander", "wander", "puzzle", "wander", "treasure"],
+      "foes": ["witch-hunter", "guard", "warrior-infantry", "scout", "priest-acolyte"],
+      "bosses": ["witchfinder-general", "witch-hunter", "knight"],
+      "texts": {
+        "wander": ["hunters with silvered chains, asking after mages", "a cart of accused on the way to trial"],
+        "puzzle": ["a list of names, with the town's mages on it"],
+        "parley": ["an accused hedge witch who begs for help"],
+        "boss": ["the witchfinder, writ in hand"]
+      }
+    },
+    {
+      "id": "haunted-battlefield",
+      "name": "the haunted battlefield",
+      "lineage": "hollow-court",
+      "themes": ["ashenbarrows", "crownruins", "titanfield"],
+      "names": ["the Field of {B}", "the {A} Rout", "the Last Stand of {B}", "the Banners in the Mist"],
+      "habitats": ["grassland", "tomb", "ruins"],
+      "deck": ["wander", "hazard", "wander", "parley", "wander", "treasure"],
+      "foes": ["skeleton", "warhorse-skeleton", "banner-wraith", "specter", "wight", "ghost", "revenant"],
+      "bosses": ["death-knight", "gravewall-knight", "hollow-crown-marshal", "revenant", "wight"],
+      "texts": {
+        "wander": ["a ghostly line of spears in the mist", "a horn blows, and the dead form ranks"],
+        "hazard": ["the old battle replays around them"],
+        "parley": ["a ghost captain who wants to know who won"],
+        "boss": ["the knight who never left the field"]
+      }
+    },
+    {
+      "id": "corrupted-grove",
+      "name": "the corrupted grove",
+      "lineage": "elder-wild",
+      "themes": ["thornwood"],
+      "names": ["the Rotting Grove", "the {A} Blight", "the Sick Heart of {B}", "the Fungus Ring"],
+      "habitats": ["forest", "swamp"],
+      "deck": ["wander", "hazard", "wander", "puzzle", "wander", "treasure"],
+      "foes": ["thornling", "awakened-shrub", "awakened-tree", "mycolid-commoner", "violet-fungus", "shrieker-fungus", "ghostcap-sporeling"],
+      "bosses": ["fallen-druid", "thorn-matron", "mycolid-spore-lord", "shambling-mound", "elder-ironwood"],
+      "texts": {
+        "wander": ["twig-things that rattle through the brambles", "trees that lean in as they pass"],
+        "hazard": ["spore clouds thick as smoke"],
+        "puzzle": ["a sick heart-tree that might be healed"],
+        "boss": ["the druid who poisoned the grove to save it"]
+      }
+    },
+    {
+      "id": "occupied-frontier",
+      "name": "the occupied frontier",
+      "lineage": "marcher-pretender",
+      "themes": ["crownruins", "greenmarch"],
+      "names": ["the {A} Tollhouse", "the Occupied March of {B}", "the Garrison at {B}", "the Tax Road"],
+      "habitats": ["grassland", "hills", "urban"],
+      "deck": ["parley", "wander", "wander", "trap", "wander", "treasure"],
+      "foes": ["warrior-infantry", "scout", "brass-tax-collector", "toll-gate-brigand", "knight", "warrior-veteran"],
+      "bosses": ["highway-baron", "knight", "guard-captain"],
+      "texts": {
+        "wander": ["a patrol demanding papers and a toll", "tax collectors with an escort of pikes"],
+        "trap": ["a chain drawn across the road"],
+        "parley": ["villagers who will help, if they are protected after"],
+        "boss": ["the warlord in the requisitioned manor"]
+      }
+    },
+    {
+      "id": "cursed-hunting-lodge",
+      "name": "the cursed hunting lodge",
+      "lineage": "broken-pact",
+      "themes": ["greenmarch", "thornwood"],
+      "names": ["the {A} Lodge", "the Hunting Lodge of {B}", "the Hall of Antlers", "the Moonlit Chase"],
+      "habitats": ["forest", "grassland"],
+      "deck": ["wander", "trap", "wander", "parley", "wander", "treasure"],
+      "foes": ["werewolf", "wolf", "dire-wolf", "mastiff", "spectral-huntsman", "black-shuck"],
+      "bosses": ["lodge-lord", "werewolf", "dullahan"],
+      "texts": {
+        "wander": ["hounds that bay without a sound", "a hunting horn from nowhere"],
+        "trap": ["old mantraps in the leaves"],
+        "parley": ["a servant who still keeps the lodge"],
+        "boss": ["the lord of the lodge, under the moon"]
+      }
+    }
+  ]
+}

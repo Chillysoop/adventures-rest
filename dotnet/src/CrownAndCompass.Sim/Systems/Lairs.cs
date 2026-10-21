@@ -452,6 +452,17 @@ public static class Lairs
             .Where(lm => lm.Damage != null && lm.Cr >= cr[0] && lm.Cr <= cr[^1] && lm.Habitats.Any(s.Def.Habitats.Contains))
             .OrderBy(lm => lm.Id, StringComparer.Ordinal)
             .ToList();
+        // A group's site is retaken by its own kind when one of its bosses fits.
+        if (c.Group(s.Def.Group) is GroupDef g)
+        {
+            var own = leaders.Where(lm => g.Bosses.Contains(lm.Id)).ToList();
+            if (own.Count == 0)
+                own = c.Library.Monsters
+                    .Where(lm => g.Bosses.Contains(lm.Id) && lm.Damage != null && lm.Cr >= cr[0] && lm.Cr <= cr[^1])
+                    .OrderBy(lm => lm.Id, StringComparer.Ordinal)
+                    .ToList();
+            if (own.Count > 0) leaders = own;
+        }
         s.Cleared = false;
         s.ResettleTick = null;
         s.Strength = r.StartStrength;
