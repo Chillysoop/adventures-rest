@@ -127,7 +127,7 @@
       {
        "title": "Read the runes",
        "text": "The best scholar among them copies the runes and tries to make sense of them.",
-       "hours": 8,
+       "days": 1,
        "skill": "arcana",
        "dc": 12,
        "risk": "time",
@@ -137,7 +137,7 @@
       {
        "title": "Find who else comes here",
        "text": "They look for signs of who has used the stones lately.",
-       "hours": 8,
+       "days": 2,
        "skill": "survival",
        "dc": 13,
        "risk": "fight",
@@ -147,7 +147,7 @@
       {
        "title": "Wake the stones",
        "text": "At dusk the bravest of them stands in the ring and speaks the word.",
-       "hours": 10,
+       "days": 1,
        "skill": "arcana",
        "dc": 15,
        "risk": "wound",

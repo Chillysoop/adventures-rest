@@ -104,10 +104,12 @@ public class PatronsTests
     public void APatronCourtsAHeroAndPressesItsDesign()
     {
         var t = NewTown();
-        var h = Hero(t, "fighter");
+        Hero(t, "fighter");
         var court = Stories.Open(t, "patron-courts");
         Assert.NotNull(court);
-        Assert.Equal(h.Id, court!.HeroId);
+        // The town may start with a hero of its own, so the patron courts whichever hero it finds.
+        var h = t.Agent(Assert.IsType<int>(court!.HeroId));
+        Assert.NotNull(h.Hero);
         Assert.NotNull(court.Patron);
         Stories.Resolve(t, court.Id, 0);
         Assert.Equal(court.Patron, h.Hero!.Patron);
