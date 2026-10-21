@@ -149,8 +149,8 @@ public partial class Main
         var festive = Council.FestivalBlocked(t);
         p.Buttons(($"Hold a festival · {Js.Str(Council.FestivalCost(t))}g", festive == null, false, () => Act(() => _sim.HoldFestival())));
         p.Note(festive == null
-            ? $"Ale, lanterns and a feast on the treasury: the town's mood lifts for {t.Content.Council.FestivalDays} days, and your Mandate a little."
-            : $"No festival now: {festive}.");
+            ? $"Mood up for {t.Content.Council.FestivalDays} days · Mandate +{Js.Str(t.Content.Council.FestivalMandate)}"
+            : Ui.Cap(festive));
         RenderMotion(p, t);
         p.Heading("Seats");
         foreach (var s in t.Seats)

@@ -70,7 +70,7 @@ public partial class Main
         titles.AddThemeConstantOverride("separation", 2);
         head.AddChild(titles);
         titles.AddChild(Ui.Label("Settings", Ui.Ink, Ui.Display, 28));
-        titles.AddChild(Ui.Label("Kept for every town you play", Ui.Ink2, Ui.Medium, 12));
+        titles.AddChild(Ui.Label("For every town", Ui.Ink2, Ui.Medium, 12));
         var close = new Button { Text = "Close", TooltipText = "Back (Esc)", SizeFlagsVertical = SizeFlags.ShrinkCenter, FocusMode = FocusModeEnum.None };
         close.Pressed += CloseSettings;
         head.AddChild(close);
@@ -81,7 +81,7 @@ public partial class Main
         _settingsRows = new VBoxContainer();
         _settingsRows.AddThemeConstantOverride("separation", 6);
         v.AddChild(_settingsRows);
-        var foot = Ui.Label("The game menu, the main menu and the end of a campaign always stop it. Space starts it again.", Ui.Ink2, Ui.Body, 12);
+        var foot = Ui.Label("Menus always pause · Space resumes", Ui.Ink2, Ui.Body, 12);
         foot.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         v.AddChild(foot);
     }

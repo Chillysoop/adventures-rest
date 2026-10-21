@@ -114,7 +114,7 @@ public static class Council
         var c = town.Content.Council;
         if (town.FestivalDays > 0) return "a festival is on";
         if (town.FestivalTick is int at && town.Tick - at < c.FestivalGapDays * SimTime.HoursPerDay)
-            return $"the last was {(town.Tick - at) / SimTime.HoursPerDay} days ago; the town tires of them under {c.FestivalGapDays}";
+            return $"next in {c.FestivalGapDays - (town.Tick - at) / SimTime.HoursPerDay} days";
         if (town.Treasury < FestivalCost(town)) return "not enough gold";
         return null;
     }

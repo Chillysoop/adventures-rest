@@ -13,13 +13,13 @@ public static class ClockStops
 {
     public static readonly ClockStop[] All =
     [
-        new("discoveries", "Discoveries", "An exploring company's first report of a find, its last chapter, and a step gone wrong. Routine steps wait on the alert strip.", true),
-        new("sendings", "Sendings from parties", "A party out on a venture sends word and waits on your answer (early on, and high stakes later).", true),
-        new("stories", "Story events", "A high-stakes story event pops up.", true),
-        new("motions", "Council motions", "The council puts a motion to the vote. Off: it waits on the alert strip.", false),
-        new("war", "War and raids", "Raids, battles, enemy hosts on the march and the war's other turning points.", true),
-        new("deaths", "Deaths of heroes", "One of the town's heroes dies, at home or abroad.", true),
-        new("crises", "Crises and the big bad", "A crisis begins, turns or ends, and every move of the campaign's great enemy.", true),
+        new("discoveries", "Discoveries", "First report, last step, or a step gone wrong", true),
+        new("sendings", "Sendings from parties", "A party asks what to do", true),
+        new("stories", "Story events", "High-stakes stories", true),
+        new("motions", "Council motions", "Off: they wait on the alert strip", false),
+        new("war", "War and raids", "Raids, battles, hosts on the march", true),
+        new("deaths", "Deaths of heroes", "At home or abroad", true),
+        new("crises", "Crises and the big bad", "Crisis turns and the big bad's moves", true),
     ];
 
     /// <summary>The kind with this id; an id missing from the table is a bug at the call site.</summary>
