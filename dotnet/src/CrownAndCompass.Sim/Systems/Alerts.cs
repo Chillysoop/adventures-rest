@@ -14,6 +14,7 @@ public enum AlertWindow
     None,
     Ledger,
     War,
+    Defence,
     Council,
     Bounties,
     Faith,
@@ -47,8 +48,8 @@ public sealed record Alert(string Key, AlertKind Kind, string Text, string Tip, 
 /// </summary>
 public static class Alerts
 {
-    public static readonly AlertKind Siege = new("siege", "Under attack", "warband", AlertLevel.Urgent, AlertWindow.War);
-    public static readonly AlertKind Sighted = new("sighted", "Raiders sighted", "warband", AlertLevel.Urgent, AlertWindow.War);
+    public static readonly AlertKind Siege = new("siege", "Under attack", "warband", AlertLevel.Urgent, AlertWindow.Defence);
+    public static readonly AlertKind Sighted = new("sighted", "Raiders sighted", "warband", AlertLevel.Urgent, AlertWindow.Defence);
     public static readonly AlertKind Captives = new("captives", "Townsfolk taken", "heroes", AlertLevel.Urgent, AlertWindow.Bounties);
     public static readonly AlertKind Hunger = new("hunger", "Hunger", "bread", AlertLevel.Urgent, AlertWindow.Council);
     public static readonly AlertKind Coffers = new("coffers", "Empty coffers", "gold", AlertLevel.Urgent, AlertWindow.Council);
