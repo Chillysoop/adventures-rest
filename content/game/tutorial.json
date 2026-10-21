@@ -712,6 +712,14 @@
     },
     {"id": "ruins", "title": "Ruins to restore", "text": "Some of the lairs near town are the ruins of old works: an aqueduct, a gatehouse, a watchtower, a star fort. Once a company clears one, an alert says it can be restored. Click it on the map, or open the [b]Campaign[/b] window, and choose [b]Restore[/b]: for a little gold it serves the town for good, with clean water, defence or an early warning.", "when": "alert:ruin", "point": "alerts", "teaches": ["command:RestoreRuin"]},
     {"id": "rope-bridges", "title": "Rope bridges", "text": "Gorges on the roads have rope bridges across them, so companies cross where they would otherwise climb down and up. Raiders sometimes cut one, and an alert says so: companies then go the long way round. Open the [b]Campaign[/b] window and choose [b]Rebuild in stone[/b]. A stone bridge can never be cut again.", "when": "alert:bridge", "point": "alerts", "teaches": ["command:RebuildBridge"]},
+    {
+      "id": "board-riders",
+      "title": "Who can ride",
+      "text": "The [b]Bounty board[/b] opens on who is free to ride today.\n• Each threat has a coloured pill per company: green easy, red deadly, for those heroes\n• Click a pill to offer that company the job by name\n• Hover any button to see what it costs and does",
+      "point": "tab:Bounties",
+      "when": "count:Companies",
+      "teaches": []
+    },
     {"id": "watchtowers", "title": "Watchtowers", "text": "Build a [b]Watchtower[/b] (Government) to see the wilds live.\n• Sees farther as the town grows\n• One per 100 residents\n• Past its sight, the fog stays", "point": "buildbar", "when": "day:12", "teaches": []},
     {"id": "scry-word", "title": "Scry the fight", "text": "A party that sent word is fighting out of sight: the strip offers a [b]scry[/b].\n• Each caster scries once every 2 days\n• Loyal casters: free\n• Others: gold\n• Disaffected: a favour", "point": "alerts", "when": "alert:scry", "teaches": []}
   ],
