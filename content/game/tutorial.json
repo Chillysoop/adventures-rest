@@ -363,7 +363,7 @@
     {
       "id": "envoys",
       "title": "Envoys",
-      "text": "A minor power has sent you an [b]envoy[/b]. A power that likes you offers an [b]alliance[/b] for less than its usual price; a cordial one offers a [b]pact[/b], and while it holds no enemy can buy it; a hostile one [b]demands tribute[/b], and remembers if you refuse. The Mire Grandmothers often ask a stranger price than gold. Answer in [b]Diplomacy[/b] before the envoy rides home. Watch the enemies' backers: each power that joins an enemy makes the next likelier to follow.",
+      "text": "A minor power has sent you an [b]envoy[/b]. A power that likes you offers an [b]alliance[/b] for less than its usual price; a cordial one offers a [b]truce[/b], and while it holds no enemy can buy it; a hostile one [b]demands tribute[/b], and remembers if you refuse. The Mire Grandmothers often ask a stranger price than gold. Answer in [b]Diplomacy[/b] before the envoy rides home. Watch the enemies' backers: each power that joins an enemy makes the next likelier to follow.",
       "when": "alert:envoy",
       "point": "tab:Diplomacy",
       "until": "tab:Diplomacy",

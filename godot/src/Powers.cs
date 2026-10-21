@@ -50,7 +50,7 @@ public partial class Main
                 text += $"\n[font_size=12]{Ui.C(holds ? Ui.Gold : Ui.Bad, $"{Ui.Esc(Ui.Cap(suitor.Name))} offers {Js.Str(ps.Offer)} against the town's {Js.Str(Js.Round(Powers.Resolve(t, ps)))}. It answers in {Ui.Days(Math.Max(0, ps.DecideDay - t.Day))}{(holds ? "; for now it would refuse." : ": send gifts to outbid them.")}")}[/font_size]";
             }
             if (Powers.Pacted(t, ps))
-                text += $"\n[font_size=12]{Ui.C(Ui.Good, $"Pact: it takes no enemy's gold for {Ui.Days(ps.PactUntil - t.Day)} more.")}[/font_size]";
+                text += $"\n[font_size=12]{Ui.C(Ui.Good, $"Truce: it takes no enemy's gold for {Ui.Days(ps.PactUntil - t.Day)} more.")}[/font_size]";
             if (ps.Owed != "")
                 text += $"\n[font_size=12]{Ui.C(Ui.Bad, $"Still taking its price: the farms yield less for {Ui.Days(ps.OwedUntil - t.Day)}.")}[/font_size]";
             if (ps.Envoy != "")
@@ -75,6 +75,6 @@ public partial class Main
             var ring = ps.Side == PowerSide.Town ? Ui.Good : ps.Side == PowerSide.Enemy ? Ui.Bad : ps.CourtedBy != null ? Ui.Gold : new Color("5a5347");
             p.Row(text, ($"{face}{ring.ToHtml()}", () => new Portrait(56) { Glyph = face, Tint = d.Evil ? new Color("b5523b") : new Color("6f8fb5"), Ring = ring }, null), buttons.ToArray());
         }
-        p.Note("Each power likes and dislikes what the town does: the Ledger loves gold and trade, the Lanternbearers hate infamous heroes and dark allies, the League wants walls. Gifts buy favour that fades slowly, each one lately worth less. Allying with a power angers its rivals. Your clever enemies court the powers too; when one does, outbid it before the answer is due, and each power already with an enemy makes the next likelier to join it. Powers send envoys of their own: an alliance at a discount, a pact to take no enemy's gold, or a demand for tribute.");
+        p.Note("Each power likes and dislikes what the town does: the Ledger loves gold and trade, the Lanternbearers hate infamous heroes and dark allies, the League wants walls. Gifts buy favour that fades slowly, each one lately worth less. Allying with a power angers its rivals. Your clever enemies court the powers too; when one does, outbid it before the answer is due, and each power already with an enemy makes the next likelier to join it. Powers send envoys of their own: an alliance at a discount, a truce to take no enemy's gold, or a demand for tribute.");
     }
 }

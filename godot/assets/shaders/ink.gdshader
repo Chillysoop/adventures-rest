@@ -2,6 +2,7 @@ shader_type spatial;
 render_mode unshaded, cull_front, shadows_disabled, fog_disabled;
 
 #include "res://assets/shaders/common.gdshaderinc"
+#include "res://assets/shaders/rig.gdshaderinc"
 
 // Ink outline: the mesh drawn again a hair larger, back faces only, in dark ink.
 // Its width grows with the camera distance so lines stay about the same thickness on screen.
@@ -9,12 +10,15 @@ uniform float width = 0.0016;
 uniform vec3 ink = vec3(0.12, 0.08, 0.07);
 uniform float sway = 0.0;
 uniform float far_cut = 160.0;
+// Heroes: follow their rig (rig.gdshaderinc) so the line moves with the arm.
+uniform float rigged = 0.0;
 
 varying vec3 wpos;
 // Above 0 where the face looks toward the camera: a mesh with flipped winding, which gets no ink.
 varying float facing;
 
 void vertex() {
+	if (rigged > 0.5) rig(VERTEX, NORMAL, UV.x, INSTANCE_CUSTOM.a, fract(INSTANCE_CUSTOM.g));
 	wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	if (sway > 0.5) VERTEX.x += sin(TIME * 1.1 + wpos.x * 0.21 + wpos.z * 0.17) * 0.035 * max(VERTEX.y - 0.25, 0.0);
 	vec3 cam = INV_VIEW_MATRIX[3].xyz;
