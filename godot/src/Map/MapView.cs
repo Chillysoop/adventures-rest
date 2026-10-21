@@ -104,7 +104,10 @@ public partial class MapView : Control
     private bool _first = true;
     private string _stateKey = "";
 
-    public const float MinDist = 7, MaxDist = 1500;
+    public const float MinDist = 3.5f, MaxDist = 1500;
+
+    /// <summary>Nearer than this the camera leans down toward the ground, to watch heroes fight at their own height.</summary>
+    private const float HeroCam = 7;
 
     public Camera3D Camera => _camera;
     public float Distance => _dist;
@@ -328,8 +331,8 @@ public partial class MapView : Control
         _target = _target.Clamp(Vector2.Zero, new Vector2(Geo.World, Geo.World));
         _ground += (Gen.SurfaceAt(_target.X, _target.Y) - _ground) * (_first ? 1 : k);
         // Close in, the camera leans in like Northgard's; pulled out, it flattens toward a map.
-        float s = Mathf.InverseLerp(Mathf.Log(MinDist), Mathf.Log(MaxDist), Mathf.Log(_dist));
-        float pitch = Mathf.DegToRad(Mathf.Lerp(50, 72, s));
+        float s = Mathf.InverseLerp(Mathf.Log(HeroCam), Mathf.Log(MaxDist), Mathf.Log(_dist));
+        float pitch = Mathf.DegToRad(s >= 0 ? Mathf.Lerp(50, 72, s) : Mathf.Lerp(32, 50, Mathf.Clamp(Mathf.InverseLerp(Mathf.Log(MinDist), Mathf.Log(HeroCam), Mathf.Log(_dist)), 0, 1)));
         var dir = new Vector3(Mathf.Sin(_yaw) * Mathf.Cos(pitch), Mathf.Sin(pitch), Mathf.Cos(_yaw) * Mathf.Cos(pitch));
         var focus = new Vector3(_target.X, _ground, _target.Y);
         _camera.Position = focus + dir * _dist;
@@ -421,6 +424,13 @@ public partial class MapView : Control
             m.NextPass = pass;
             _inks.Add(pass);
         }
+        // Heroes get the ink too, following their rig, so they stand out like the buildings do.
+        var heroInk = new ShaderMaterial { Shader = ink };
+        heroInk.SetShaderParameter("noise_tex", Mats.Hero.GetShaderParameter("noise_tex"));
+        heroInk.SetShaderParameter("rigged", 1.0f);
+        heroInk.SetShaderParameter("width", 0.0022f);
+        Mats.Hero.NextPass = heroInk;
+        _inks.Add(heroInk);
     }
 
     private void PaintLight(float night)
