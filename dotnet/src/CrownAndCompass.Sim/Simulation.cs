@@ -160,6 +160,7 @@ public sealed class Simulation
         Powers.Daily(t);
         Vengeance.Daily(t);
         Sightings.Daily(t);
+        Discovery.Daily(t);
         Menaces.Track(t);
         Infiltration.Daily(t);
         Turning.Daily(t);
