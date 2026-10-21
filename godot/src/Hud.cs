@@ -29,6 +29,8 @@ public partial class Main
         [Tab.City] = "The city",
         [Tab.Ledger] = "Ledger",
         [Tab.War] = "War",
+        [Tab.Army] = "The army",
+        [Tab.Defence] = "Defence",
         [Tab.Council] = "Council",
         [Tab.Bounties] = "Bounties and the road",
         [Tab.Companies] = "Adventurers' roster",
@@ -110,7 +112,7 @@ public partial class Main
         _clock.MouseFilter = MouseFilterEnum.Pass;
         bar.AddChild(_clock);
         _threatPill = new PanelContainer { SizeFlagsVertical = SizeFlags.ShrinkCenter };
-        Ui.KeywordOn(_threatPill, "warband", () => Stages[_sim.Town.Enemy.Stage].Text);
+        Ui.KeywordOn(_threatPill, "warband", () => Stages[SeenStage(_sim.Town)].Text);
         _threat = Ui.Label("QUIET", Ui.Ink, Ui.Bold, 11);
         _threatPill.AddChild(_threat);
         bar.AddChild(_threatPill);
@@ -249,8 +251,8 @@ public partial class Main
     {
         _windowTab = t;
         _windowTitle.Text = Titles[t];
-        // The roster is a table: its window opens wide.
-        _window.OffsetRight = _window.OffsetLeft + (t == Tab.Companies ? 900 : t == Tab.Bounties ? 560 : 460);
+        // The roster is a table and the council a hall: their windows open wide.
+        _window.OffsetRight = _window.OffsetLeft + (t == Tab.Companies ? 900 : t is Tab.Council or Tab.Army ? 600 : t == Tab.Bounties ? 560 : 460);
         foreach (var (k, s) in _scrolls)
             if (k != Tab.Inspect) s.Visible = k == t;
         _window.Visible = true;

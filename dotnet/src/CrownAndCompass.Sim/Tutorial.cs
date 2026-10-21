@@ -76,6 +76,10 @@ public static class Tutorial
         if (token == "dense") return t.Plan.Density.Count(d => d > 0);
         if (token == "sown") return t.Plan.Crops.Count(c => c > 1);
         if (token == "airships") return Systems.Institutions.Airships(t);
+        // The town's regiments, and its finished training halls (Systems.Army).
+        if (token == "regiments") return t.Army.Regiments.Count;
+        if (token == "allies") return t.Settlements.Count(s => s.Allied && !s.Razed);
+        if (token == "halls") return t.Buildings.Count(b => b.Complete && b.Def.Trains > 0);
         // The charter goals still open (Systems.Goals).
         if (token == "goals") return Systems.Goals.Open(t).Count;
         if (!token.StartsWith("count:", StringComparison.Ordinal)) return null;

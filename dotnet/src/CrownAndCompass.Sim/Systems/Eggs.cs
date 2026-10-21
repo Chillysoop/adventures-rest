@@ -73,6 +73,12 @@ public static class Eggs
 
     public static DragonKindDef? Kind(Town town, string id) => Rules(town).Kinds.FirstOrDefault(k => k.Id == id);
 
+    /// <summary>The resident dragon's institution (the Dragon's Eyrie): the town keeps one dragon, so an egg-raised one moves in there.</summary>
+    public const string Eyrie = "resident-dragon";
+
+    /// <summary>A dragon already lives in the Eyrie by treaty, and it is not the one the town raised.</summary>
+    public static bool Resident(Town town) => Institutions.Find(town, Eyrie) != null && town.Egg is not { Grown: true };
+
     /// <summary>The egg is in town waiting for the mayor's word.</summary>
     public static bool Waiting(Town town) => town.Egg is { Kept: false, HatchedDay: null };
 
@@ -83,7 +89,8 @@ public static class Eggs
     public static void Found(Town town, Party party, SiteState site)
     {
         var r = Rules(town);
-        if (town.Egg != null || r.Kinds.Count == 0) return;
+        // One town dragon: a treaty dragon in the Eyrie lets no rival's egg into its town.
+        if (town.Egg != null || r.Kinds.Count == 0 || Resident(town)) return;
         string boss = site.Def.Boss.Monster ?? "";
         bool dragon = boss.Contains("dragon", StringComparison.Ordinal);
         double chance = dragon ? r.FromDragon : site.Def.Tier >= r.HoardTier ? r.FromHoard : 0;
@@ -147,6 +154,8 @@ public static class Eggs
     /// <summary>What the town's young or grown dragon does for it, or null with none.</summary>
     public static DragonAidDef? Aid(Town town) => town.Egg switch
     {
+        // Grown, it takes the Eyrie, whose service is then the dragon's; its own aid would count it twice.
+        { Grown: true } when Institutions.Find(town, Eyrie) != null => null,
         { Grown: true } => Rules(town).Grown,
         { HatchedDay: not null } => Rules(town).Hatchling,
         _ => null,

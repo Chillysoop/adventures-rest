@@ -220,6 +220,7 @@ public partial class Main
     {
         HeroDuty.Walls => "order-defend",
         HeroDuty.Streets => "order-guard",
+        HeroDuty.Command => "army-command",
         _ => "",
     };
 

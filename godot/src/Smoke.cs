@@ -7,7 +7,7 @@ namespace CrownAndCompass.Client;
 /// <summary>
 /// With --smoke: the merge gate's play-through of a build (<c>scripts/gate.ts</c>). From the main menu (and its choice of storytellers) it
 /// starts a new town, plays on at top speed, opens every window, the build bar, the campaign map, a wall and a guard flag and the
-/// game menu, saves and loads, starts the tutorial, opens the History, the Settings and the glossary with a pinned keyword card, steps into a story event, answers a party's sending, opens the tourney card with a bet on it, opens the recap and a tavern tale, a few frames apart so each one draws. It prints
+/// game menu, saves and loads, starts the tutorial, opens the History, the Settings and the glossary with a pinned keyword card, steps into a story event, answers a party's sending, opens the tourney card with a bet on it, opens the recap and a tavern tale, every faction's first-meeting picture, a few frames apart so each one draws. It prints
 /// <c>SMOKE OK</c> and quits with 0, or <c>SMOKE FAIL</c> and 1; the gate also fails on any engine error.
 /// </summary>
 public partial class Main
@@ -198,6 +198,8 @@ public partial class Main
             case 31:
             {
                 // The tourney card: a grand tourney put on today, a stake on the first event, and its first heats ridden.
+                // Staged the hour before the heats start, so they are ridden whatever hour the play-through got here at.
+                for (int h = 0; h < 24 && _sim.Town.Hour != Tournaments.Rules(_sim.Town).StartHour - 1; h++) _sim.Step();
                 if (!Tournaments.Stage(_sim.Town, 1)) throw new InvalidOperationException("the tourney would not stage");
                 // A stake on the first event not yet under way (today's may have begun, by the hour), from a treasury that can spare it.
                 _sim.Town.Treasury = Math.Max(_sim.Town.Treasury, 5000);
@@ -208,7 +210,8 @@ public partial class Main
                 int pick = Tournaments.Chances(_sim.Town, first).OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key).First().Key;
                 if (!_sim.PlaceBet(ev, pick, Tournaments.Rules(_sim.Town).Betting.Min)) throw new InvalidOperationException("the bet was refused");
                 OpenTourney();
-                for (int h = 0; h < 14; h++) _sim.Step();
+                // Until a heat is ridden: today's may be over by the hour, so tomorrow's event rides first.
+                for (int h = 0; h < 36 && (h < 14 || _sim.Town.Tourney.Events.All(e => e.Heats.Count == 0)); h++) _sim.Step();
                 _dirty = true;
                 return 40;
             }
@@ -216,6 +219,14 @@ public partial class Main
                 // Staged late in the day, the first event's hours may have passed: any event's heats will do.
                 if (!_tourney.Visible || _sim.Town.Tourney.Events.All(e => e.Heats.Count == 0)) throw new InvalidOperationException("the tourney's heats did not show");
                 CloseTourney();
+                return 5;
+            case 33:
+                // A first meeting's picture: every scene staged once, the last left up to draw.
+                foreach (var d in _sim.Town.Content.Intros.Intros) OpenIntro(d, null);
+                return 40;
+            case 34:
+                if (!_intro.Visible) throw new InvalidOperationException("the first-meeting card did not open");
+                CloseIntro();
                 return 5;
             default:
                 var t = _sim.Town;

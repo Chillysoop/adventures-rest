@@ -19,6 +19,12 @@ public sealed record MenaceKindDef
     public IReadOnlyList<string> StrikeDark { get; init; } = [];
     public string Raze { get; init; } = "";
     public string Slain { get; init; } = "";
+
+    /// <summary>What it did before the town heard its name, told when it rises: {leader}, {seat}, {region}.</summary>
+    public IReadOnlyList<string> Done { get; init; } = [];
+
+    /// <summary>Portents of what it means to do, told when a plan the town knows of is half done: {leader}, {plan}.</summary>
+    public IReadOnlyList<string> Doom { get; init; } = [];
 }
 
 /// <summary>
@@ -155,6 +161,55 @@ public sealed record MenaceRules
 
     /// <summary>Villains' plans and the assets their strength rests on (<see cref="Plots"/>).</summary>
     public PlotRules Plots { get; init; } = new();
+
+    /// <summary>The burning doorway some late campaigns open near the town (<see cref="Menaces.Doorways"/>).</summary>
+    public DoorwayRules Doorways { get; init; } = new();
+
+    /// <summary>A rising power pushes the weaker foe nearest it out, and folk fleeing both come to town.</summary>
+    public ChainRules Chains { get; init; } = new();
+
+    /// <summary>What each enemy leader says it wants, and the truth behind it.</summary>
+    public CaseRules Cases { get; init; } = new();
+}
+
+public sealed record DoorwayRules
+{
+    public string Kind { get; init; } = "fiends";
+    public int FromAct { get; init; } = 2;
+
+    /// <summary>Share of campaigns, by seed, that see a doorway at all.</summary>
+    public double Chance { get; init; }
+    public int[] AfterDays { get; init; } = [10, 90];
+
+    /// <summary>Chance a doorway's strike is imps making mischief rather than a raid, and the food they spoil.</summary>
+    public double Pests { get; init; }
+    public double Spoil { get; init; }
+    public double SpoilCap { get; init; }
+
+    /// <summary>{town}, {leader}, {seat}, {food}.</summary>
+    public IReadOnlyList<string> Mischief { get; init; } = [];
+}
+
+public sealed record ChainRules
+{
+    /// <summary>{name} (the pushed foe), {by} (the rising one).</summary>
+    public string Pushed { get; init; } = "";
+    public int[] Refugees { get; init; } = [2, 5];
+    public string Fled { get; init; } = "";
+}
+
+public sealed record MenaceCaseDef
+{
+    public string Case { get; init; } = "";
+    public string Truth { get; init; } = "";
+}
+
+public sealed record CaseRules
+{
+    /// <summary>{holding}, {truth}.</summary>
+    public string Found { get; init; } = "";
+    public double Dread { get; init; }
+    public IReadOnlyDictionary<string, IReadOnlyList<MenaceCaseDef>> Kinds { get; init; } = new Dictionary<string, IReadOnlyList<MenaceCaseDef>>();
 }
 
 public enum MenaceStage
@@ -180,6 +235,9 @@ public sealed class Menace
     /// <summary>The site it rules from; clearing it breaks the menace. Holdings are lairs it has taken in.</summary>
     public string SeatId { get; set; } = "";
     public string SeatName { get; set; } = "";
+
+    /// <summary>The seat it rose at, which its lineage comes from; a broken seat moves it on to another.</summary>
+    public string BornSeatId { get; set; } = "";
     public List<string> Holdings { get; } = [];
     public string Region { get; set; } = "the hills";
 
@@ -199,6 +257,9 @@ public sealed class Menace
 
     /// <summary>The town has heard its leader's name.</summary>
     public bool Named { get; set; }
+
+    /// <summary>Heroes have learned the truth behind its leader's case (<see cref="Menaces.Truth"/>).</summary>
+    public bool TruthKnown { get; set; }
     public int NextStrikeTick { get; set; }
     public int? NextAssaultTick { get; set; }
 
@@ -296,6 +357,7 @@ public sealed class Menace
 public static class Menaces
 {
     public const string FromWarband = "warband";
+    public const string FromDoorway = "doorway";
 
     private static MenaceRules Rules(Town town) => town.Content.Saga.Menaces;
 
@@ -334,6 +396,7 @@ public static class Menaces
             if (town.Outcome != null) return;
         }
         Feuds(town);
+        Doorways(town);
         Plots.Daily(town);
         Watch(town);
         Fester(town);
@@ -399,7 +462,7 @@ public static class Menaces
     private static string PickAmbition(Town town, string kind, string cunning, string lineage = "")
     {
         var heirs = Annals.Lineage(town.Content.History, lineage)?.Ambitions;
-        double Weight(MenaceAmbitionDef a) => a.Weight * (heirs != null && heirs.TryGetValue(a.Id, out double x) ? x : 1);
+        double Weight(MenaceAmbitionDef a) => a.Weight * (heirs != null && heirs.TryGetValue(a.Id, out double x) ? x : 1) * Character.Ambition(town, kind, a.Id);
         int rank = CunningRank(town, cunning);
         var fit = Rules(town).Ambitions
             .Where(a => a.Kinds.Count == 0 || a.Kinds.Contains(kind))
@@ -433,8 +496,11 @@ public static class Menaces
             SeenAttempts = seat.Attempts,
         };
         Seat(town, m, seat);
+        m.BornSeatId = seat.Def.Id;
         m.Cunning = cunning ?? CunningFor(town, IntOf(town, seat.Def.Boss.Monster));
-        m.Lineage = lineage ?? Annals.ForMenace(town.Content.History, kind, World.RegionOf(town, seat)?.Theme.Id, seat.Def.Foe)?.Id ?? "";
+        m.Lineage = lineage
+            ?? (town.Content.Group(seat.Def.Group) is GroupDef g && g.Lineage != "" ? g.Lineage : null)
+            ?? Annals.ForMenace(town.Content.History, kind, World.RegionOf(town, seat)?.Theme.Id, seat.Def.Foe)?.Id ?? "";
         // A signature foe's master goes by its lineage's names (picked by the seat, not dice, so the stream holds).
         if (leader == null && Annals.Lineage(town.Content.History, m.Lineage) is { Leaders.Count: > 0 } heirs)
             m.Leader = heirs.Leaders[(int)(Voices.Hash(seat.Def.Id) % (uint)heirs.Leaders.Count)];
@@ -479,6 +545,82 @@ public static class Menaces
         return m;
     }
 
+    /// <summary>The day a burning doorway opens in this campaign, or null if it never does: a pure function of the seed and when the act began.</summary>
+    public static int? DoorwayDay(Town town)
+    {
+        var d = Rules(town).Doorways;
+        if (d.Chance <= 0 || town.Saga.ActDays.Count <= d.FromAct) return null;
+        var dice = new Rng(town.Seed * 211 + 97);
+        if (!dice.Chance(d.Chance)) return null;
+        return town.Saga.ActDays[d.FromAct] + dice.Range(d.AfterDays[0], d.AfterDays[^1] + 1);
+    }
+
+    /// <summary>Late in some campaigns a doorway burns open in the nearest free lair, and something comes through.</summary>
+    private static void Doorways(Town town)
+    {
+        if (DoorwayDay(town) is not int day || town.Day < day) return;
+        if (town.Saga.Menaces.Any(m => m.Origin == FromDoorway)) return;
+        var seat = town.Sites
+            .Where(s => s.Generated && Free(town, s))
+            .OrderBy(s => s.Def.Distance)
+            .ThenBy(s => s.Def.Id, StringComparer.Ordinal)
+            .FirstOrDefault();
+        if (seat == null) return;
+        var m = Create(town, seat, Rules(town).Doorways.Kind, FromDoorway, Rules(town).Stages.Rising);
+        Announce(town, m, seat);
+    }
+
+    /// <summary>Imps from a doorway: spoiled food and a sour town, no fight.</summary>
+    private static bool Mischief(Town town, Menace m)
+    {
+        var d = Rules(town).Doorways;
+        if (m.Origin != FromDoorway || d.Mischief.Count == 0 || !town.Rng.Chance(d.Pests)) return false;
+        double food = Math.Floor(Math.Min(town.Market.Stock(Good.Food) * d.Spoil, d.SpoilCap));
+        if (food > 0) town.Market.Seed(Good.Food, -food);
+        town.Log(LedgerCategory.War, Importance.Notable, Saga.Cap(Saga.Fill(town, town.Rng.Pick(d.Mischief), m).Replace("{food}", Js.Str(food))));
+        return true;
+    }
+
+    /// <summary>What the leader says it wants, once it has a name.</summary>
+    public static string? Case(Town town, Menace m) => CaseOf(town, m) is { } c && m.Named ? Saga.Fill(town, c.Case, m) : null;
+
+    /// <summary>The truth behind the case, once heroes have found it.</summary>
+    public static string? Truth(Town town, Menace m) => CaseOf(town, m) is { } c && m.TruthKnown ? Saga.Fill(town, c.Truth, m) : null;
+
+    private static MenaceCaseDef? CaseOf(Town town, Menace m)
+    {
+        if (!Rules(town).Cases.Kinds.TryGetValue(m.Kind, out var list) || list.Count == 0) return null;
+        return list[new Rng(town.Seed * 223 + m.Id * 31 + 5).Range(0, list.Count)];
+    }
+
+    /// <summary>Heroes carry the truth out of a fallen holding.</summary>
+    private static void Learn(Town town, Menace m, SiteState holding)
+    {
+        var r = Rules(town).Cases;
+        if (m.TruthKnown || CaseOf(town, m) is not { } c || r.Found == "") return;
+        m.TruthKnown = true;
+        town.Saga.Dread = Math.Max(0, town.Saga.Dread - r.Dread);
+        town.Log(LedgerCategory.War, Importance.Notable, Saga.Cap(Saga.Fill(town, r.Found.Replace("{holding}", holding.Def.Name).Replace("{truth}", c.Truth), m)));
+    }
+
+    /// <summary>A power on the rise pushes the weaker foe nearest it out of its hills, and folk fleeing both reach the town.</summary>
+    private static void Chain(Town town, Menace m)
+    {
+        var c = Rules(town).Chains;
+        if (c.Pushed == "" || Quests.Site(town, m.SeatId) is not { } seat) return;
+        var weak = Alive(town)
+            .Where(o => o != m && o.Origin != FromWarband && o.Power < m.Power && o.Stage >= MenaceStage.Rising && Quests.Site(town, o.SeatId) is { Cleared: false })
+            .OrderBy(o => Quests.Site(town, o.SeatId)!.RegionId == seat.RegionId ? 0 : 1)
+            .ThenBy(o => Math.Abs(Quests.Site(town, o.SeatId)!.Def.Distance - seat.Def.Distance))
+            .ThenBy(o => o.Id)
+            .FirstOrDefault();
+        if (weak == null) return;
+        town.Log(LedgerCategory.War, Importance.Notable, Saga.Cap(Saga.Fill(town, c.Pushed, weak).Replace("{by}", m.Name)));
+        weak.NextStrikeTick = Math.Min(weak.NextStrikeTick, town.Tick);
+        int got = Population.Settle(town, town.Rng.Range(c.Refugees[0], c.Refugees[^1] + 1));
+        if (got > 0) town.Log(LedgerCategory.Arrival, Importance.Notable, Saga.Cap(c.Fled.Replace("{n}", Js.Str(got)).Replace("{by}", m.Name).Replace("{name}", weak.Name).Replace("{town}", town.Name)));
+    }
+
     /// <summary>A new menace led by someone in particular (a fallen hero), seated at the free lair nearest their level. Not yet announced.</summary>
     public static Menace? Rise(Town town, string kind, string leader, int level, string origin)
     {
@@ -491,7 +633,7 @@ public static class Menaces
     }
 
     /// <summary>The town hears the menace's name: its seat and region go on the map.</summary>
-    internal static void Announce(Town town, Menace m, SiteState seat)
+    public static void Announce(Town town, Menace m, SiteState seat)
     {
         m.Named = true;
         var region = World.RegionOf(town, seat);
@@ -500,8 +642,15 @@ public static class Menaces
         string text = Saga.Grim(town) && m.Def.RiseDark != "" ? m.Def.RiseDark : m.Def.Rise;
         string motive = Annals.Motive(town, m);
         string legend = m.Legend == "" ? "" : " " + m.Legend;
-        town.Log(LedgerCategory.War, Importance.Major, Saga.Fill(town, text, m) + legend + (motive == "" ? "" : " " + motive));
+        string done = Done(town, m) is string d ? " " + d : "";
+        // The first of its kind the town hears of tells what its kind is like in this age.
+        string temper = Character.TemperOf(town, m.Kind) is { Text: not "" } tm && !town.Saga.Menaces.Any(x => x != m && x.Kind == m.Kind && x.Named) ? " " + tm.Text : "";
+        town.Log(LedgerCategory.War, Importance.Major, Saga.Fill(town, text, m) + done + legend + (motive == "" ? "" : " " + motive) + temper);
     }
+
+    /// <summary>The deed it is known for from before the town heard its name, if its kind tells one.</summary>
+    public static string? Done(Town town, Menace m) =>
+        m.Def.Done.Count == 0 ? null : Saga.Cap(Saga.Fill(town, m.Def.Done[m.Id % m.Def.Done.Count], m));
 
     /// <summary>Word of what holds the seat now: the town's belief catches up with the menace's level.</summary>
     private static void Spread(Town town, Menace m, SiteState seat, int trust)
@@ -756,6 +905,7 @@ public static class Menaces
         string holdings = m.Holdings.Count == 0 ? "nothing else" : Expedition.ListNames(m.Holdings.Select(id => Quests.Site(town, id)!.Def.Name).ToList());
         m.Named = true;
         town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, r.PowerText, m).Replace("{oldname}", old).Replace("{holdings}", holdings)));
+        Chain(town, m);
     }
 
     /// <summary>The menace takes in the nearest free lair, preferring its own region: a holding, at full strength.</summary>
@@ -775,7 +925,7 @@ public static class Menaces
     }
 
     /// <summary>The menace takes in another lair as a holding (a plan's supply camp), if one is free.</summary>
-    internal static SiteState? TakeHolding(Town town, Menace m) => Quests.Site(town, m.SeatId) is { } seat ? Recruit(town, m, seat) : null;
+    public static SiteState? TakeHolding(Town town, Menace m) => Quests.Site(town, m.SeatId) is { } seat ? Recruit(town, m, seat) : null;
 
     /// <summary>The power a stage starts at.</summary>
     private static double Threshold(Town town, MenaceStage stage)
@@ -886,7 +1036,7 @@ public static class Menaces
         var rng = town.Rng;
         double far = 1 + 0.25 * Math.Max(0, seat.Def.Distance - 1);
         // A menace in its season strikes more often; one out of it keeps to its lair.
-        m.NextStrikeTick = town.Tick + (int)Math.Round(rng.Range(r.StrikeEveryDays[0], r.StrikeEveryDays[1] + 1) * far * Storyteller.StrikeEvery(town) / Seasons.Activity(town, m.Kind)) * SimTime.HoursPerDay;
+        m.NextStrikeTick = town.Tick + (int)Math.Round(rng.Range(r.StrikeEveryDays[0], r.StrikeEveryDays[1] + 1) * far * Storyteller.StrikeEvery(town) * Character.Strike(town, m) / Seasons.Activity(town, m.Kind)) * SimTime.HoursPerDay;
         var am = AmbitionOf(town, m);
         // Left alone, a menace that only holds its land keeps to it.
         if (am.Id == "territory" && town.Tick >= m.ProvokedUntilTick) return;
@@ -899,7 +1049,7 @@ public static class Menaces
             HitSettlement(town, m, victim);
             return;
         }
-        if (sworn) return;
+        if (sworn || Mischief(town, m)) return;
         if (am.Id == "plague" && am.Infect.Count > 0) Infect(town, m, am);
         else if (am.Id == "intrigue" && am.Schemes.Count > 0) Scheme(town, m, am);
         else HitTown(town, m);
@@ -1163,7 +1313,8 @@ public static class Menaces
             return;
         }
         if (restrained || m.NextAssaultTick is not int next || town.Tick < next) return;
-        bool due = m.BigBad && town.Day >= s.CrownDay + f.FirstMarchDays;
+        // A claimed road to victory brings it at once (Victory.Claim).
+        bool due = m.BigBad && (town.Day >= s.CrownDay + f.FirstMarchDays || town.Victory.Claimed != "");
         bool provoked = s.YokeId == m.Id && s.Defied;
         var am = AmbitionOf(town, m);
         // Only a menace that wants the town's walls comes for them, until it is crowned or defied.
@@ -1181,7 +1332,9 @@ public static class Menaces
         // The big bad gathers a greater host for every march: the finale's doom clock.
         if (m.BigBad)
         {
-            double d = Threat.Defense(town, allies: false), more = f.MarchGrowth * m.Marches;
+            // Its own quests (DarkQuests) make every host larger and each march grow faster.
+            var dq = town.Saga.DarkQuests;
+            double d = Threat.Defense(town, allies: false), more = (f.MarchGrowth + dq.Growth) * m.Marches + dq.Host;
             m.Power = Math.Clamp(m.Power, d * (f.MarchArmy[0] + more), d * (f.MarchArmy[^1] + more));
         }
         m.Marches++;
@@ -1209,6 +1362,9 @@ public static class Menaces
         lines.Add($"{Saga.Cap(m.Name)}, some {Js.Str(Js.Round(army))} strong, comes against {town.Name}. The defenders muster {Js.Str(Js.Round(startDef))} strong.");
         var record = Battles.Begin(town, $"menace:{m.Id}", m.Kind, m.Name, m.Def.People, m.Leader, m.Approach, army, startDef);
         def = Math.Max(0, def - Loyalty.Betray(town, m.Name, m, lines));
+        double went = AllyCalls.Betray(town, m.Name, lines);
+        def = Math.Max(0, def - went);
+        army += went;
         string foe = Quests.Site(town, m.SeatId)?.Def.Foe ?? "";
         double gate = Cannons.Wagons(town, m.Kind, m.Marches - 1, Garrison.WaveSection(town, m.Approach, 1), lines, record);
         for (int w = 1; w <= 3 && breaches < 2; w++)
@@ -1238,8 +1394,10 @@ public static class Menaces
         }
         m.Power = Math.Max(0, army);
         Crises.Assaulted(town, m, breaches >= 2);
-        int fallen = (int)Math.Min(town.Workers.Count, Js.Round(((startDef - def) / Math.Max(1, Threat.Fortification(town))) / 12));
-        var dead = new List<Agent>();
+        // The army's soldiers stand in the front rank and fall first; the militia pays for the rest.
+        var dead = Army.Bloodied(town, startDef - def, startDef);
+        AllyCalls.Fought(town, breaches < 2, (startDef - def) / Math.Max(1, startDef));
+        int fallen = (int)Math.Min(town.Workers.Count, Math.Max(0, Js.Round(((startDef - def) / Math.Max(1, Threat.Fortification(town))) / 12) - dead.Count));
         var workers = town.Workers;
         for (int i = 0; i < fallen; i++)
         {
@@ -1341,6 +1499,7 @@ public static class Menaces
         {
             if (!Quests.Site(town, id)!.Cleared) continue;
             Plots.Seize(town, m, Quests.Site(town, id)!);
+            Learn(town, m, Quests.Site(town, id)!);
             var raiders = town.Parties.Where(p => p.SiteId == id).OrderByDescending(p => p.DepartTick).ThenByDescending(p => p.Id).FirstOrDefault()?.Members;
             m.Holdings.Remove(id);
             m.Power = Math.Max(0, m.Power - r.HoldingCleared);
@@ -1366,6 +1525,16 @@ public static class Menaces
             seat.Cleared = false;
             seat.Def = seat.Def with { Tier = Math.Max(1, seat.Def.Tier - r.BrokenLevels) };
             seat.QuietUntil = town.Tick + r.FesterDays * SimTime.HoursPerDay;
+            return;
+        }
+        if (refuge == null && Plots.Undying(town, m, seat) is { } vessel)
+        {
+            // It cannot die while what holds its soul is hidden: it gathers itself again where that lies.
+            Plots.Reform(town, m, seat, vessel);
+            Seat(town, m, vessel);
+            m.Power *= r.SeatBroken;
+            m.Stage = StageFor(town, m);
+            m.SeenAttempts = vessel.Attempts;
             return;
         }
         if (refuge == null)
@@ -1451,7 +1620,7 @@ public static class Menaces
     private static bool MayEscape(Town town)
     {
         var f = town.Content.Saga.Finale;
-        return town.Saga.BigBadEscapes < f.Escapes || town.Day < town.Saga.CrownDay + f.MinDays;
+        return town.Saga.BigBadEscapes < f.Escapes + town.Saga.DarkQuests.Escapes || town.Day < town.Saga.CrownDay + f.MinDays;
     }
 
     /// <summary>The menace is finished. Its holdings go back to being ordinary lairs.</summary>

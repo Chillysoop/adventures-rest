@@ -27,6 +27,7 @@ public class ReignsTests
         var t = sim.Town;
         var s = t.Settlements.First(x => !x.Razed);
         t.Regions[s.RegionId].Known = true;
+        Discovery.Meet(t, Neighbours.Key(s), Discovery.Met);
         string old = s.Leader;
         string temper = s.Reign!.Temperament;
         int before = t.Ledger.Entries.Count;
@@ -53,7 +54,8 @@ public class ReignsTests
             sim.RunDays(3);
             var t = sim.Town;
             var m = Menaces.Seed(t, [1, 2, 3, 4]);
-            if (m == null || fits?.Invoke(m) == false) continue;
+            // The dead and the cults hollow a people out into a cult, never a puppet court: these tests want a ruler.
+            if (m == null || m.Kind is "cult" or "undead" || fits?.Invoke(m) == false) continue;
             var s = t.Settlements.FirstOrDefault(x => !x.Razed && Shadows.Near(t, m, x));
             if (s == null) continue;
             m.Stage = MenaceStage.Rising;
@@ -61,6 +63,7 @@ public class ReignsTests
             m.Cunning = "mastermind";
             m.Named = true;
             t.Regions[s.RegionId].Known = true;
+            Discovery.Meet(t, Neighbours.Key(s), Discovery.Met);
             return (sim, m, s);
         }
         throw new InvalidOperationException("no seed puts a menace near a settlement");

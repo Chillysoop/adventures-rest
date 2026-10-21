@@ -99,6 +99,9 @@ public sealed record BuildingDef
     /// <summary>Most the town can have at once (0 = no limit).</summary>
     public int Max { get; init; }
 
+    /// <summary>A training hall: soldiers of the town's army it can train and quarter (<see cref="Systems.Army"/>).</summary>
+    public int Trains { get; init; }
+
     /// <summary>Watch house: each one makes every watchman count this much more.</summary>
     public double WatchBoost { get; init; }
 
@@ -237,6 +240,9 @@ public sealed record ClassDef
     /// <summary>From the library: frontline, skirmisher, support, caster, scout or specialist.</summary>
     public string Role { get; init; } = "";
 
+    /// <summary>What a hero card says the class is for in a party: tank, striker, healer, scout or face.</summary>
+    public string Card { get; init; } = "";
+
     /// <summary>From the library: full, half, pact, or empty for classes that cast nothing.</summary>
     public string Magic { get; init; } = "";
 
@@ -279,6 +285,9 @@ public sealed record MonsterDef
     public int Xp { get; init; }
     public bool Boss { get; init; }
     public bool Undead { get; init; }
+
+    /// <summary>The library creature type (beast, undead, dragon...), for how it fights (<see cref="Systems.Tactics"/>).</summary>
+    public string Type { get; init; } = "";
 
     /// <summary>A named individual: no article before the name.</summary>
     public bool Named { get; init; }
@@ -339,6 +348,9 @@ public sealed record SiteDef
 
     /// <summary>The old work it is the ruin of (world.json "ruins"), which the town can restore once it is cleared.</summary>
     public string Ruin { get; init; } = "";
+
+    /// <summary>The ready-made enemy group holding it (groups.json), or "": its foes, boss and lineage come from the group.</summary>
+    public string Group { get; init; } = "";
 }
 
 /// <summary>Town-wide economic rules.</summary>
@@ -589,6 +601,7 @@ public sealed record KnowledgeRules
     public double ScryBaseCost { get; init; } = 30;
     public double ScryCostPerDay { get; init; } = 15;
     public int ScryHours { get; init; } = 12;
+
     public int SlotsPerCaster { get; init; } = 1;
     public int SlotsPerTwoLevels { get; init; } = 1;
     public ScoutRules Scouts { get; init; } = new();
@@ -852,6 +865,41 @@ public sealed record RingDef
     public int Regions { get; init; }
 }
 
+/// <summary>
+/// A ready-made enemy group (groups.json): a site of its own in the themes it names, held by its own
+/// creatures and bosses rather than whatever the country breeds, and heir to its own lineage in history.json.
+/// </summary>
+public sealed record GroupDef
+{
+    public required string Id { get; init; }
+    public string Name { get; init; } = "";
+
+    /// <summary>The history.json lineage its menaces carry (its own, or an existing enemy it is a version of).</summary>
+    public string Lineage { get; init; } = "";
+
+    /// <summary>Region themes it may hold a site in.</summary>
+    public IReadOnlyList<string> Themes { get; init; } = [];
+    public IReadOnlyList<string> Names { get; init; } = [];
+    public IReadOnlyList<string> Habitats { get; init; } = [];
+    public IReadOnlyList<string> Deck { get; init; } = [];
+
+    /// <summary>Library monster ids that wander its site and escort its boss.</summary>
+    public IReadOnlyList<string> Foes { get; init; } = [];
+
+    /// <summary>Library monster ids that may lead it.</summary>
+    public IReadOnlyList<string> Bosses { get; init; } = [];
+
+    /// <summary>Encounter lines by deck kind ("wander", "boss"...), used before the theme's own.</summary>
+    public Dictionary<string, List<string>> Texts { get; init; } = [];
+}
+
+public sealed record GroupRules
+{
+    /// <summary>Chance a generated site in a theme with groups goes to one of them instead, when one fits its level.</summary>
+    public double Chance { get; init; }
+    public IReadOnlyList<GroupDef> Groups { get; init; } = [];
+}
+
 /// <summary>A kind of adventure site a region theme can hold: how it is named and what its deck is made of.</summary>
 /// <summary>A signature foe: one site in fitting country given over to this master (content/game/foes.json).</summary>
 public sealed record FoeDef
@@ -1000,6 +1048,10 @@ public sealed record StandingRules
     public double EnvoyCost { get; init; } = 60;
     public double Envoy { get; init; } = 10;
     public int EnvoyEveryDays { get; init; } = 8;
+
+    /// <summary>From this day, every meetEvery days, the nearest people the town has heard of but not met sends riders.</summary>
+    public int MeetFrom { get; init; } = 3;
+    public int MeetEvery { get; init; } = 5;
 
     /// <summary>Standing for clearing a site in a people's region.</summary>
     public double Cleared { get; init; } = 8;
@@ -1403,6 +1455,7 @@ public sealed class Content
 
     /// <summary>How lairs grow, act and are resettled.</summary>
     public LairRules Lairs { get; init; } = new();
+    public GroupRules Groups { get; init; } = new();
 
     /// <summary>How taverns trade in rumours.</summary>
     public RumorRules Rumors { get; init; } = new();
@@ -1465,6 +1518,9 @@ public sealed class Content
     /// <summary>Sellsword companies for hire and how their campaigns go (content/game/mercenaries.json).</summary>
     public MercRules Mercenaries { get; init; } = new();
 
+    /// <summary>The town's own army: units, training, laws and posts (content/game/army.json).</summary>
+    public Systems.ArmyRules Army { get; init; } = new();
+
     /// <summary>Minor powers the town and its enemies court (content/game/powers.json).</summary>
     public PowerRules Powers { get; init; } = new();
 
@@ -1486,6 +1542,13 @@ public sealed class Content
     public TaxRules Taxes { get; init; } = new();
     /// <summary>Trade guilds, their demands and their strikes (content/game/guilds.json).</summary>
     public GuildRules Guilds { get; init; } = new();
+
+    /// <summary>Patrons beyond the world and their pacts with heroes (content/game/patrons.json).</summary>
+    public PatronRules Patrons { get; init; } = new();
+    public Systems.TavernRules Taverns { get; init; } = new();
+    public Systems.CurseRules Curses { get; init; } = new();
+    public Systems.DowntimeRules Downtime { get; init; } = new();
+    public Systems.LawRules Laws { get; init; } = new();
     /// <summary>The top bar's month and when a trend counts as trouble (content/game/trends.json).</summary>
     public TrendRules Trends { get; init; } = new();
     public MerchantRules Merchants { get; init; } = new();
@@ -1504,6 +1567,9 @@ public sealed class Content
 
     /// <summary>Companies' arms and how their colours wear (content/game/heraldry.json).</summary>
     public HeraldryRules Heraldry { get; init; } = new();
+
+    /// <summary>Each faction's first-meeting picture and crest (content/game/intros.json).</summary>
+    public Systems.IntroRules Intros { get; init; } = new();
 
     /// <summary>The charter goals of a new town's first days (content/game/goals.json).</summary>
     public Systems.GoalRules Goals { get; init; } = new();
@@ -1536,6 +1602,20 @@ public sealed class Content
 
     /// <summary>The storytellers a town can be founded under, the game's difficulty (content/game/storytellers.json).</summary>
     public StorytellerRules Storytellers { get; init; } = new();
+    public Systems.CharacterRules Character { get; init; } = new();
+    public Systems.TacticRules Tactics { get; init; } = new();
+
+    /// <summary>The roads to victory and what each needs (content/game/victory.json).</summary>
+    public Systems.VictoryRules Victory { get; init; } = new();
+
+    /// <summary>The big bad's own quests and what they give it (content/game/darkquests.json).</summary>
+    public Systems.DarkQuestRules DarkQuests { get; init; } = new();
+
+    /// <summary>Boons won campaigns leave for the next, and how a win is graded (content/game/boons.json).</summary>
+    public Systems.BoonRules Boons { get; init; } = new();
+
+    /// <summary>Endless mode: the heralds of each new era and the complications they bring (content/game/endless.json).</summary>
+    public Systems.EndlessRules Endless { get; init; } = new();
 
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
@@ -1608,6 +1688,7 @@ public sealed class Content
             Attacks = m.Attacks > 0 ? m.Attacks : lm.Attacks,
             Xp = m.Xp > 0 ? m.Xp : Library.XpForCr(lm.Cr),
             Undead = m.Undead || lm.Type == "undead",
+            Type = m.Type != "" ? m.Type : lm.Type,
         };
     }
 
@@ -1621,12 +1702,25 @@ public sealed class Content
         : id.EndsWith("@boss", StringComparison.Ordinal) ? BossOf(id[..^5])
         : throw new KeyNotFoundException($"Unknown monster {id}");
 
-    /// <summary>Library creatures that can wander into a site: any of its habitats, inside the challenge range, with an attack to fight with.</summary>
-    public List<MonsterDef> Wanderers(SiteDef site, double[] cr) =>
-        Library.Monsters
+    /// <summary>Library creatures that can wander into a site: any of its habitats, inside the challenge range, with an attack to fight with. A group's site draws from the group's own foes when any fit the range.</summary>
+    public List<MonsterDef> Wanderers(SiteDef site, double[] cr)
+    {
+        if (Group(site.Group) is GroupDef g)
+        {
+            var own = Library.Monsters
+                .Where(lm => g.Foes.Contains(lm.Id) && lm.Damage != null && lm.Cr >= cr[0] && lm.Cr <= cr[^1] && lm.Band != "")
+                .Select(lm => _monsters[lm.Id])
+                .ToList();
+            if (own.Count > 0) return own;
+        }
+        return Library.Monsters
             .Where(lm => lm.Damage != null && lm.Cr >= cr[0] && lm.Cr <= cr[^1] && lm.Band != "" && !lm.Boss && lm.Habitats.Any(site.Habitats.Contains))
             .Select(lm => _monsters[lm.Id])
             .ToList();
+    }
+
+    /// <summary>The ready-made enemy group with this id, or null for "" and unknown ids.</summary>
+    public GroupDef? Group(string id) => id == "" ? null : Groups.Groups.FirstOrDefault(g => g.Id == id);
 
     public BuildingDef Building(string id) =>
         _buildings.TryGetValue(id, out var b) ? b : throw new KeyNotFoundException($"Unknown building {id}");
@@ -1652,7 +1746,9 @@ public sealed class Content
         // The institutions' requests are story events like any other, kept with the institutions.
         var institutions = Parse<InstitutionRules>("institutions.json");
         var stories = WithSendings(Parse<StoryRules>("stories.json"), Parse<SendingRules>("sendings.json"));
-        stories = stories with { Stories = [.. stories.Stories, .. institutions.Requests], Precedents = [.. stories.Precedents, .. institutions.Precedents] };
+        // So are the powers' first-contact scenes, kept with the powers.
+        var powers = Parse<PowerRules>("powers.json");
+        stories = stories with { Stories = [.. stories.Stories, .. institutions.Requests, .. powers.Contacts], Precedents = [.. stories.Precedents, .. institutions.Precedents] };
         return new Content(
             Parse<List<BuildingDef>>("buildings.json"),
             Parse<NamesFile>("names.json").Races,
@@ -1669,6 +1765,7 @@ public sealed class Content
             Roads = Parse<RoadRules>("roads.json"),
             Rumors = Parse<RumorRules>("rumors.json"),
             Lairs = Parse<LairRules>("lairs.json"),
+            Groups = Parse<GroupRules>("groups.json"),
             Shrines = Parse<ShrineRules>("shrines.json"),
             Faith = Parse<FaithRules>("faith.json"),
             Factions = Parse<FactionRules>("factions.json"),
@@ -1692,7 +1789,8 @@ public sealed class Content
             Sendings = Parse<SendingRules>("sendings.json"),
             Bastions = Parse<BastionRules>("bastions.json"),
             Mercenaries = Parse<MercRules>("mercenaries.json"),
-            Powers = Parse<PowerRules>("powers.json"),
+            Army = Parse<Systems.ArmyRules>("army.json"),
+            Powers = powers,
             Regard = Parse<RegardRules>("regard.json"),
             Voices = Parse<VoiceRules>("voices.json"),
             Explore = Parse<ExploreRules>("explore.json"),
@@ -1702,6 +1800,11 @@ public sealed class Content
             Clockwork = Parse<ClockworkRules>("clockwork.json"),
             Taxes = Parse<TaxRules>("taxes.json"),
             Guilds = Parse<GuildRules>("guilds.json"),
+            Patrons = Parse<PatronRules>("patrons.json"),
+            Taverns = Parse<Systems.TavernRules>("taverns.json"),
+            Curses = Parse<Systems.CurseRules>("curses.json"),
+            Downtime = Parse<Systems.DowntimeRules>("downtime.json"),
+            Laws = Parse<Systems.LawRules>("laws.json"),
             Trends = Parse<TrendRules>("trends.json"),
             Merchants = Parse<MerchantRules>("merchants.json"),
             Wards = Parse<WardRules>("wards.json"),
@@ -1709,6 +1812,7 @@ public sealed class Content
             Goals = Parse<Systems.GoalRules>("goals.json"),
             Passage = Parse<PassageRules>("passage.json"),
             Heraldry = Parse<HeraldryRules>("heraldry.json"),
+            Intros = Parse<Systems.IntroRules>("intros.json"),
             Eggs = Parse<EggRules>("eggs.json"),
             Foes = Parse<FoeRules>("foes.json"),
             Cannons = Parse<Systems.CannonRules>("cannons.json"),
@@ -1721,6 +1825,12 @@ public sealed class Content
             Storytellers = Parse<StorytellerRules>("storytellers.json"),
             Founding = Parse<Systems.FoundingRules>("founding.json"),
             Sea = Parse<Systems.FleetRules>("sea.json"),
+            Victory = Parse<Systems.VictoryRules>("victory.json"),
+            DarkQuests = Parse<Systems.DarkQuestRules>("darkquests.json"),
+            Boons = Parse<Systems.BoonRules>("boons.json"),
+            Endless = Parse<Systems.EndlessRules>("endless.json"),
+            Character = Parse<CharacterRules>("character.json"),
+            Tactics = Parse<TacticRules>("tactics.json"),
         };
     }
 

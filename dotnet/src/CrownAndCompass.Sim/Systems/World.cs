@@ -240,7 +240,9 @@ public static class World
                 // Deeper into the region, harder sites: spread the ring's band across them.
                 int level = count == 1 ? rng.Range(lo, hi + 1) : lo + (int)Math.Round((hi - lo) * (double)i / (count - 1));
                 var kind = rng.Pick(region.Theme.Sites);
-                var def = BuildSite(town.Content, rng, region, kind, level, $"{region.Theme.Id}-{region.Id}-{i}", Fill(rng, region.Theme, kind.Names, used), holders);
+                var group = PickGroup(town.Content, rng, region.Theme, level);
+                if (group != null) kind = new SiteKindDef { Names = group.Names, Habitats = group.Habitats, Deck = group.Deck };
+                var def = BuildSite(town.Content, rng, region, kind, level, $"{region.Theme.Id}-{region.Id}-{i}", Fill(rng, region.Theme, kind.Names, used), holders, group);
                 town.Sites.Add(new SiteState(def) { RegionId = region.Id, Generated = true });
                 region.SiteIds.Add(def.Id);
             }
@@ -299,7 +301,8 @@ public static class World
 
     /// <summary>
     /// Each signature foe takes over one site in country it likes, in its rings (on its own dice, so the rest of the
-    /// world a seed makes is unchanged): its master and escort replace the library's pick, and the site its name.
+    /// world a seed makes is unchanged): its master and escort replace the library's pick, and the site its name. A site a
+    /// ready-made group (groups.json) holds stays theirs.
     /// </summary>
     private static void PlaceFoes(Town town, HashSet<string> used)
     {
@@ -309,7 +312,7 @@ public static class World
         {
             if (town.Content.Library.Monster(f.Monster) is not { } boss) continue;
             var pool = town.Sites
-                .Where(s => s.Generated && !taken.Contains(s.Def.Id) && s.RegionId is int rid && town.Regions[rid].Ring >= f.Rings[0] && town.Regions[rid].Ring <= f.Rings[^1])
+                .Where(s => s.Generated && s.Def.Group == "" && !taken.Contains(s.Def.Id) && s.RegionId is int rid && town.Regions[rid].Ring >= f.Rings[0] && town.Regions[rid].Ring <= f.Rings[^1])
                 .OrderBy(s => Math.Max(0, f.Themes.ToList().IndexOf(town.Regions[s.RegionId!.Value].Theme.Id)) + (f.Themes.Contains(town.Regions[s.RegionId!.Value].Theme.Id) ? 0 : 100))
                 .ThenBy(s => Math.Abs(s.Def.Tier - Math.Max(1, (int)Math.Round(boss.Cr))))
                 .ThenBy(s => s.Def.Id, StringComparer.Ordinal)
@@ -416,7 +419,25 @@ public static class World
     }
 
     /// <summary>Build a site for parties of the given level from the library's creatures of its country.</summary>
-    public static SiteDef BuildSite(Content content, Rng rng, Region region, SiteKindDef kind, int level, string id, string name, HashSet<string>? holders = null)
+    /// <summary>
+    /// Now and then a site goes to a ready-made enemy group (groups.json) of the theme instead, when one of its
+    /// bosses suits the level. Themes with no fitting group roll nothing.
+    /// </summary>
+    public static GroupDef? PickGroup(Content content, Rng rng, ThemeDef theme, int level)
+    {
+        var fits = content.Groups.Groups.Where(g => g.Themes.Contains(theme.Id) && GroupBosses(content, g, level).Count > 0).ToList();
+        if (fits.Count == 0 || !rng.Chance(content.Groups.Chance)) return null;
+        return rng.Pick(fits);
+    }
+
+    /// <summary>A group's bosses about as strong as a party of this level.</summary>
+    public static List<LibMonster> GroupBosses(Content content, GroupDef g, int level)
+    {
+        double lo = Math.Max(0.5, level * 0.75) - 1, hi = Math.Max(1, level) + 1;
+        return content.Library.Monsters.Where(m => g.Bosses.Contains(m.Id) && m.Damage != null && m.Cr >= lo && m.Cr <= hi).ToList();
+    }
+
+    public static SiteDef BuildSite(Content content, Rng rng, Region region, SiteKindDef kind, int level, string id, string name, HashSet<string>? holders = null, GroupDef? group = null)
     {
         var w = content.World;
         var theme = region.Theme;
@@ -425,10 +446,12 @@ public static class World
         int budget = w.Budget.Length == 0 ? 100 * level : w.Budget[Math.Min(level, w.Budget.Length) - 1];
         double hoard = w.HoardPerLevel * Math.Pow(level, 1.5);
         int[] Gold(double lo, double hi) => [(int)Math.Round(hoard * lo), (int)Math.Round(hoard * hi)];
-        string Text(string k) => theme.Texts.TryGetValue(k, out var lines) && lines.Count > 0 ? rng.Pick(lines) : k;
+        string Text(string k) =>
+            group != null && group.Texts.TryGetValue(k, out var own) && own.Count > 0 ? rng.Pick(own)
+            : theme.Texts.TryGetValue(k, out var lines) && lines.Count > 0 ? rng.Pick(lines) : k;
 
         var habitats = kind.Habitats.Count > 0 ? kind.Habitats.ToList() : theme.Habitats.ToList();
-        var probe = new SiteDef { Id = id, Name = name, Boss = new EncounterDef { Kind = "combat" }, Habitats = habitats };
+        var probe = new SiteDef { Id = id, Name = name, Boss = new EncounterDef { Kind = "combat" }, Habitats = habitats, Group = group?.Id ?? "" };
         if (content.Wanderers(probe, [crLo, crHi]).Count == 0)
         {
             habitats = habitats.Concat(theme.Habitats).Distinct().ToList();
@@ -452,7 +475,7 @@ public static class World
         // The boss: a creature of this country about as strong as the party, with lesser ones at its side.
         double bLo = Math.Max(0.5, level * 0.75);
         double bHi = Math.Max(1, level);
-        List<LibMonster> bosses = [];
+        List<LibMonster> bosses = group != null ? GroupBosses(content, group, level) : [];
         for (int widen = 0; widen < 12 && bosses.Count == 0; widen++)
         {
             bosses = content.Library.Monsters
@@ -487,6 +510,7 @@ public static class World
             Name = name,
             Tier = level,
             Kind = Lairs.KindOf(boss.Type, ""),
+            Group = group?.Id ?? "",
             Distance = region.Days,
             Encounters = deck,
             Boss = bossEnc,
@@ -555,7 +579,7 @@ public static class World
     internal static Plea? Plead(Town town, Settlement s, SiteState site, double bonus)
     {
         var rules = town.Content.World.Standing;
-        if (s.Razed || !town.Regions[s.RegionId].Known || Reigns.Plea(town, s) <= 0) return null;
+        if (s.Razed || !Neighbours.Known(town, s) || Reigns.Plea(town, s) <= 0) return null;
         if (town.Pleas.Any(p => p.SiteId == site.Def.Id && p.Status is PleaStatus.Open or PleaStatus.Taken)) return null;
         double reward = Js.Round(rules.PleaRewardPerLevel * LevelOf(site) * (s.Allied ? 1.5 : 1) * bonus * Reigns.Plea(town, s));
         Tell(town, site, rules.PleaTrust, $"a runner from {s.Name}");
@@ -599,7 +623,7 @@ public static class World
         var rules = town.Content.World.Standing;
         if (town.Day - town.LastEnvoyDay < rules.EnvoyEveryDays || town.Treasury < rules.EnvoyCost + 200) return;
         var target = town.Settlements
-            .Where(s => !s.Allied && !s.Razed && town.Regions[s.RegionId].Known)
+            .Where(s => !s.Allied && !s.Razed && Neighbours.Known(town, s))
             .OrderByDescending(s => s.Standing)
             .ThenBy(s => s.Id)
             .FirstOrDefault();
@@ -612,7 +636,7 @@ public static class World
         var rules = town.Content.World.Standing;
         if (settlementId < 0 || settlementId >= town.Settlements.Count) return false;
         var s = town.Settlements[settlementId];
-        if (!town.Regions[s.RegionId].Known || s.Razed || town.Treasury < rules.EnvoyCost) return false;
+        if (!Neighbours.Known(town, s) || s.Razed || town.Treasury < rules.EnvoyCost) return false;
         town.Book(TreasuryAccount.Envoys, -rules.EnvoyCost);
         town.LastEnvoyDay = town.Day;
         // Gifts please less each time.
@@ -628,6 +652,8 @@ public static class World
     public static void Shift(Town town, Settlement s, double delta)
     {
         if (s.Razed) return;
+        // A diplomatic people warms faster to a good turn; a closed one is slower to.
+        if (delta > 0) delta *= Character.Diplomacy(town, s);
         s.Standing = Math.Clamp(s.Standing + delta, -100, 100);
         if (s.Allied || s.Standing < town.Content.World.Standing.Ally) return;
         s.Allied = true;
@@ -639,6 +665,7 @@ public static class World
             (b.Text != "" ? $" From now on, {b.Text.Replace("{S}", s.Name)}" : "") +
             (b.Troops > 0 ? $"{(b.Text != "" ? ", and" : " They pledge")} their warriors will come if the walls are ever attacked." : "."));
         Annals.Allied(town, s);
+        Character.Allied(town, s);
         if (b.Maps) Reveal(town, town.Regions[s.RegionId], $"{Cap(s.People)} share their maps", town.Content.World.Standing.MapTrust);
     }
 

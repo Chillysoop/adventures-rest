@@ -77,6 +77,16 @@ public sealed class Options
     /// <summary>--episode id: strike a townsperson out on the streets with that inspiration or break, look at them and open their inspector.</summary>
     public string? Episode;
 
+    /// <summary>--intro lineage: show that faction's first-meeting card (intros.json).</summary>
+    public string? Intro;
+
+    /// <summary>Claim this road to victory once the town is staged, for shots of a road being held (victory.json id).</summary>
+    public string? Claim;
+
+    /// <summary>--endless: a new town plays endless mode; --boons id:rank,...: it is founded with these boons.</summary>
+    public bool Endless;
+    public List<string> Boons = [];
+
     /// <summary>--history [power-id]: open the world's history timeline, with a power's story picked.</summary>
     public string? History;
 
@@ -114,6 +124,9 @@ public sealed class Options
     public string? Crowded;
     /// <summary>Aim the camera at the building going up with the most hands on it (<c>--rising</c>), for a shot of the builders.</summary>
     public bool Rising;
+
+    /// <summary>--zone aims the camera at the thickest cluster of a zone's buildings (farmland, commercial, residential).</summary>
+    public string? Zone;
     /// <summary>--tourney N: put on a tourney of level N (0 modest to 2 legendary), stake on its second event and ride to that day's --tourney-hour, card open over the lists.</summary>
     public int? Tourney;
     public int TourneyHour = 13;
@@ -130,6 +143,8 @@ public sealed class Options
     public int? Alert;
     /// <summary>For screenshots: show the hover summary of the alert icon at this position.</summary>
     public int? AlertHover;
+    /// <summary>--notices F: at frame F, treat the urgent and decision alerts standing then as just arrived, so their rail tiles slide out.</summary>
+    public int? Notices;
 
     /// <summary>Camera distance in tiles and an optional point to look at (--cam 40 --look 512,480), and the strategic view.</summary>
     public float? Cam;
@@ -223,6 +238,10 @@ public sealed class Options
                 case "--founding": o.Founding = Next(); break;
                 case "--sites": o.Sites = o.Title = true; break;
                 case "--episode": o.Episode = Next(); break;
+                case "--intro": o.Intro = Next(); break;
+                case "--claim": o.Claim = Next(); break;
+                case "--endless": o.Endless = true; break;
+                case "--boons": o.Boons.AddRange(Next().Split(',', StringSplitOptions.RemoveEmptyEntries)); break;
                 case "--history": o.History = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
                 case "--glossary": o.Glossary = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
                 case "--keyword": o.Keywords.AddRange(Next().Split(',')); break;
@@ -237,6 +256,7 @@ public sealed class Options
                 case "--house": o.House = true; break;
                 case "--crowded": o.Crowded = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
                 case "--rising": o.Rising = true; break;
+                case "--zone": o.Zone = Next(); break;
                 case "--siege": o.Siege = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture) : 8; break;
                 case "--card": o.Card = true; break;
                 case "--tourney": o.Tourney = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? int.Parse(Next()) : 1; break;
@@ -247,6 +267,7 @@ public sealed class Options
                 case "--guilds": o.Guilds = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
                 case "--alert": o.Alert = int.Parse(Next()); break;
                 case "--alert-hover": o.AlertHover = int.Parse(Next()); break;
+                case "--notices": o.Notices = int.Parse(Next()); break;
                 case "--no-pause": o.NoPause = true; break;
                 case "--keep-reports": o.KeepReports = true; break;
                 case "--keep-armory": o.KeepArmory = true; break;
@@ -291,7 +312,7 @@ public sealed class Options
                 case "--advance": o.Advances.Add(Next()); break;
                 case "--inspiration": o.Inspiration = int.Parse(Next()); break;
                 case "--decor-at": o.DecorAt = Next().Split(',').Select(v => double.Parse(v, System.Globalization.CultureInfo.InvariantCulture)).ToArray(); break;
-                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--stock" or "--pact" or "--buy" or "--call" or "--flag" or "--wait" or "--works" or "--roster" or "--spot" or "--draw-wall" or "--gate" or "--raise" or "--skyrun" or "--duty":
+                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--stock" or "--pact" or "--buy" or "--call" or "--flag" or "--wait" or "--works" or "--roster" or "--spot" or "--draw-wall" or "--gate" or "--raise" or "--skyrun" or "--duty" or "--army":
                     o.Script.Add((args[i][2..], Next()));
                     break;
             }
@@ -404,6 +425,93 @@ public sealed class Options
                     t.Treasury += 200;
                     if (t.Heroes.Where(h => h.Hero!.Duty == HeroDuty.None && Garrison.DutyBlocked(t, h, duty) == null).OrderByDescending(h => h.Hero!.Level).ThenBy(h => h.Id).FirstOrDefault() is { } guardHero)
                         sim.SetDuty(guardHero.Id, duty);
+                    break;
+                case "army":
+                    // For army shots: "unit:size[:post[:drill]]" raises a full regiment (its hall built first if the town has none),
+                    // "levy:size" calls the levy, "allies" calls every people, "lead" puts the best free hero at the head of the first regiment.
+                    t.Treasury += 5000;
+                    var parts = arg.Split(':');
+                    if (parts[0] == "lead")
+                    {
+                        if (t.Army.Regiments.FirstOrDefault() is { } led && t.Heroes.Where(h => Army.CommandBlocked(t, led, h) == null).OrderByDescending(h => Army.Leadership(t, h)).ThenBy(h => h.Id).FirstOrDefault() is { } boss)
+                            sim.CommandRegiment(led.Id, boss.Id);
+                        break;
+                    }
+                    if (parts[0] == "allies")
+                    {
+                        // "allies" makes every known people a friend, calls them all and brings all but one host to the gate.
+                        foreach (var ally in t.Settlements) { ally.Allied = true; ally.Razed = false; ally.Standing = Math.Max(ally.Standing, 40); }
+                        foreach (var call in sim.CallAllies(t.Settlements.Select(x => x.Id))) call.AnswerTick = t.Tick;
+                        AllyCalls.Hourly(t);
+                        foreach (var call in t.Army.Calls.Where(c => c.State == CallState.Marching).Skip(1)) call.ArriveTick = t.Tick;
+                        AllyCalls.Hourly(t);
+                        break;
+                    }
+                    if (parts[0] == "conquer")
+                    {
+                        // "conquer" meets every people, takes the nearest settlement and holds it, then wins the next and leaves it waiting.
+                        foreach (var met in t.Settlements) met.Met = true;
+                        for (int k = 0; k < 2; k++)
+                        {
+                            foreach (var reg0 in t.Army.Regiments) sim.SetMarches(reg0.Id, !Conquest.Garrisoning(t, reg0));
+                            if (Conquest.Targets(t).FirstOrDefault() is not { } prey) break;
+                            prey.Prosperity = 0;
+                            if (sim.Attack(prey.Id, "advance") is null) break;
+                            while (t.Army.Sortie != null) sim.Step();
+                            if (k == 0 && t.Army.Pending.Contains(prey.Id))
+                            {
+                                sim.SettleConquest(prey.Id, ConquestChoice.Occupy);
+                                if (t.Army.Regiments.FirstOrDefault() is { } hold) sim.GarrisonSettlement(prey.Id, hold.Id);
+                            }
+                        }
+                        break;
+                    }
+                    if (parts[0] == "road")
+                    {
+                        // "road[:strength]" puts the warband on the road two days out, every regiment picked to march.
+                        foreach (var reg0 in t.Army.Regiments) sim.SetMarches(reg0.Id, true);
+                        t.Enemy.Stage = ThreatStage.Marching;
+                        t.Enemy.Strength = parts.Length > 1 ? double.Parse(parts[1], System.Globalization.CultureInfo.InvariantCulture) : 120;
+                        t.Enemy.ArrivalTick = t.Tick + 48;
+                        if (Field.FreeHeroes(t).FirstOrDefault() is { } champ0) sim.SetFieldGoal(champ0.Id, "leader");
+                        break;
+                    }
+                    if (parts[0] == "field")
+                    {
+                        // "field[:order[:u[:foe]]]" puts the warband on the road (by default four fifths of the host), marches every
+                        // regiment with the best free hero after its leader, fights it now and holds the playback at u.
+                        foreach (var reg0 in t.Army.Regiments) sim.SetMarches(reg0.Id, true);
+                        double host = Field.HostWorth(t, Field.Marching(t), [], []);
+                        t.Enemy.Stage = ThreatStage.Marching;
+                        t.Enemy.Strength = parts.Length > 3 ? double.Parse(parts[3], System.Globalization.CultureInfo.InvariantCulture) : Math.Max(40, host * 0.8);
+                        t.Enemy.ArrivalTick = t.Tick + 48;
+                        if (Field.FreeHeroes(t).FirstOrDefault() is { } champ) sim.SetFieldGoal(champ.Id, "leader");
+                        if (sim.MarchOut("warband", parts.Length > 1 ? parts[1] : "advance") is { } sortie)
+                        {
+                            sortie.MeetTick = t.Tick;
+                            Field.Hourly(t);
+                        }
+                        Map.Crowd.FieldU = parts.Length > 2 ? float.Parse(parts[2], System.Globalization.CultureInfo.InvariantCulture) : 0.5f;
+                        break;
+                    }
+                    if (parts[0] == "levy")
+                    {
+                        sim.SetServiceLaw(ServiceLaw.Conscription);
+                        sim.RaiseLevy(int.Parse(parts[1]));
+                        break;
+                    }
+                    var unit = Army.Unit(t, parts[0]);
+                    if (Army.Halls(t, unit).Count == 0)
+                    {
+                        var hd = t.Content.Building(unit.Halls[0]);
+                        if (Planning.CivicLot(t, hd) is { } hlot) t.AddBuilding(hd, hlot, null, hd.Name, true);
+                    }
+                    var post = parts.Length > 2 ? Enum.Parse<ArmyPost>(parts[2], true) : ArmyPost.Reserve;
+                    if (sim.RaiseRegiment(unit.Id, int.Parse(parts[1]), post) is { } reg)
+                    {
+                        Army.Fill(t, reg);
+                        reg.Drill = parts.Length > 3 ? double.Parse(parts[3], System.Globalization.CultureInfo.InvariantCulture) : 1;
+                    }
                     break;
                 case "stock":
                     // For armory shots: a find handed in under a pact.

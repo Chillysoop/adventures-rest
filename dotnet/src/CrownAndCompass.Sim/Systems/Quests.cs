@@ -117,6 +117,9 @@ public sealed class Bounty
 
     /// <summary>Loot terms: the company hands the hoard's magic to the town armory (<see cref="Armory"/>).</summary>
     public bool LootToTown { get; init; }
+
+    /// <summary>The classic tale the job is told as ("The Vault Job"), "" for none (<see cref="PlotDef"/>).</summary>
+    public string Plot { get; init; } = "";
 }
 
 public sealed class Party
@@ -285,13 +288,15 @@ public static class Quests
             FunderId = funder?.Id,
             Terms = term.Id,
             LootToTown = lootToTown,
+            Plot = Systems.Terms.PlotFor(town, s, term)?.Id ?? "",
         };
         town.Bounties.Add(b);
         string loot = lootToTown ? ", the hoard's magic to come to the town armory" : "";
+        string plot = town.Content.Bounties.Plots.FirstOrDefault(p => p.Id == b.Plot) is { } pd ? $" The taverns call it {pd.Name}: {pd.Pitch}" : "";
         if (funder == null)
-            town.Log(LedgerCategory.Town, Importance.Notable, term.Id == "slay"
+            town.Log(LedgerCategory.Town, Importance.Notable, (term.Id == "slay"
                 ? $"The council posts a bounty of {Js.Str(reward)} gold on {s.Def.Name}{loot}."
-                : $"The council posts a bounty of {Js.Str(reward)} gold to {term.Verb} {s.Def.Name}{loot}.");
+                : $"The council posts a bounty of {Js.Str(reward)} gold to {term.Verb} {s.Def.Name}{loot}.") + plot);
         // The heroes judge the terms as they judge any choice of the mayor's.
         if (funder == null && term.Tags.Count > 0) Regard.Judge(town, term.Tags, $"posted a bounty to {term.Verb} {s.Def.Name}", "Bounties");
         return b;
@@ -407,7 +412,7 @@ public static class Quests
             var s = a.Hero!;
             if (s.AwayUntil != null) continue;
             // A bed at the company's bastion, or above the tavern.
-            bool home = Bastions.Lodges(town, a) || s.Sworn;
+            bool home = Bastions.Lodges(town, a) || s.Sworn || s.Holding != "";
             s.Lodging = home || (taverns.Count > 0 && a.Gold >= Lodging);
             if (s.Lodging && !home)
             {
@@ -416,7 +421,7 @@ public static class Quests
                 t.Cash += Lodging;
             }
             // A long rest heals; a bed heals faster, and the shrine or temple more.
-            int healed = (int)Math.Ceiling(s.MaxHp * (s.Lodging ? 0.5 : 0.25));
+            int healed = (int)Math.Ceiling(s.MaxHp * (s.Lodging ? 0.5 : 0.25) * Curses.Heal(town.Content, s));
             if (s.Hp < s.MaxHp) healed = Shrines.Rest(town, a, healed);
             s.Hp = Math.Min(s.MaxHp, s.Hp + healed);
         }
@@ -442,8 +447,9 @@ public static class Quests
             .Where(s => s.Known != SiteKnowledge.Unheard && !s.ThoughtCleared && s.Trust >= 50)
             // The undercity only once it stirs: the war on the surface comes first.
             .Where(s => !Undercity.IsUnder(town, s) || Undercity.Stirring(town, s))
-            // The trouble near town, which feeds the warband, comes before the far wilds.
-            .OrderBy(s => s.Generated)
+            // The big bad's quest comes first (DarkQuests); then the trouble near town, which feeds the warband, before the far wilds.
+            .OrderBy(s => DarkQuests.Sought(town, s) ? 0 : 1)
+            .ThenBy(s => s.Generated)
             .ThenBy(s => s.BelievedTier)
             .ThenBy(s => s.Attempts)
             .FirstOrDefault();
@@ -638,6 +644,7 @@ public static class Quests
                 Wayfaring.Notice(town, party.Out, party.Start);
                 Wayfaring.Notice(town, party.Home, World.Spot(town, s));
             }
+            Patrons.Home(town, result);
 
             var chronicle = new Chronicle(
                 town.Chronicles.Count + 1,
@@ -691,6 +698,12 @@ public static class Quests
                 // They killed it and died on the road home; the town never learns.
                 s.Cleared = true;
                 s.ClearedTick = town.Tick;
+            }
+            if (bounty != null && bounty.Plot != "" && result.Outcome != ExpeditionOutcome.Wiped && (result.GoalMet || result.Outcome == ExpeditionOutcome.Cleared)
+                && town.Content.Bounties.Plots.FirstOrDefault(p => p.Id == bounty.Plot) is { } told)
+            {
+                Notoriety.CompanyDeed(town, party.Name, told.Renown);
+                town.Log(LedgerCategory.Quest, Importance.Notable, $"The {party.Name} pull off {told.Name}, and the taverns will be telling it for a year.", party.Members.ToList());
             }
             if (result.GoalMet && result.Outcome != ExpeditionOutcome.Wiped)
             {

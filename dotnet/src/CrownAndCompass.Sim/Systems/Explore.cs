@@ -7,6 +7,9 @@ public sealed record ExploreRules
 
     /// <summary>Days a company wanders a region before turning home, and the days more each "keep exploring" buys once that is up.</summary>
     public int ExploreDays { get; init; } = 3;
+
+    /// <summary>Rune-lit stone circles the town holds once a company wakes one (<see cref="Circles"/>).</summary>
+    public CircleRules Circles { get; init; } = new();
     public int KeepDays { get; init; } = 2;
 
     /// <summary>How close (days of march) a company must pass to a place to find it.</summary>
@@ -862,6 +865,8 @@ public static class Explore
                 return $"a caravan out of {town.Settlements[f.SettlementId!.Value].Name}";
             case "font":
                 return "a magical font";
+            case "circle":
+                return "a rune-lit stone circle";
             default:
                 return "an ancient ruin";
         }
@@ -1177,7 +1182,7 @@ public static class Explore
     {
         var ch = NextChapter(town, f)!;
         var members = Living(town, s);
-        // Everyone fell or left the company while it waited at the find.
+        // All of them fell (in a raid, a duel, a plague) while they dug: nobody is left to finish it.
         if (members.Count == 0)
         {
             Lost(town, s);
@@ -1243,6 +1248,8 @@ public static class Explore
                 Sheet.Inspire(town, 1, "a font of magic attuned");
                 return " The mayor is heartened by the news (inspiration).";
             }
+            case "circle":
+                return Circles.Claim(town, f);
             case "vault":
             {
                 double gold = Math.Round(rw.VaultGold * Math.Max(1, town.Regions[f.RegionId].Levels[0]));
@@ -1312,6 +1319,7 @@ public static class Explore
         v.Wilds(tier, site?.Def.Habitats ?? region.Theme.Habitats, site != null ? $"out of {site.Def.Name} they come" : "something comes out of the dark", true);
         var result = v.Result(v.Wiped ? ExpeditionOutcome.Wiped : ExpeditionOutcome.Retreated, Title(town, f));
         result.Apply(members);
+        Patrons.Home(town, result);
         foreach (var id in result.Kills.Keys) town.Agent(id).Hero!.Kills += result.Kills.Get(id, 0);
         foreach (int id in result.Dead) Die(town, s, town.Agent(id));
         foreach (var line in v.Lines) s.Journal.Add(line);

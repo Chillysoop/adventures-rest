@@ -114,7 +114,7 @@ public static class Trade
     public static IEnumerable<TradeRoute> Open(Town town) => town.Trade.Routes.Where(r => !r.Closed);
 
     /// <summary>Routes the town's charter lets it run.</summary>
-    public static int Cap(Town town) => Rules(town).Routes.GetValueOrDefault(City.Tier(town).Id, 0) + Institutions.Routes(town);
+    public static int Cap(Town town) => Rules(town).Routes.GetValueOrDefault(City.Tier(town).Id, 0) + Institutions.Routes(town) + Boons.Routes(town);
 
     public static Settlement SettlementOf(Town town, TradeRoute r) => town.Settlements[r.SettlementId];
 
@@ -143,13 +143,20 @@ public static class Trade
         return true;
     }
 
+    /// <summary>What a settlement sells: its people's goods, and the good it lives by (<see cref="Character.PurposeOf"/>).</summary>
+    public static IReadOnlyList<Good> Offers(Town town, Settlement s)
+    {
+        var offers = s.Kin.Trade.Offers;
+        return Character.PurposeOf(town, s)?.Good is Good g && !offers.Contains(g) ? [.. offers, g] : offers;
+    }
+
     /// <summary>Why the town can't open a route to this settlement now, or null if it can.</summary>
     public static string? Refuse(Town town, Settlement s)
     {
         var r = Rules(town);
         if (s.Razed) return "they are gone";
-        if (!town.Regions[s.RegionId].Known) return "the town hasn't heard of them";
-        if (s.Kin.Trade.Offers.Count == 0) return "they have nothing to sell";
+        if (!Neighbours.Known(town, s)) return "the town hasn't met them";
+        if (Offers(town, s).Count == 0) return "they have nothing to sell";
         if (Shadows.Paying(s)) return "they pay tribute to an enemy and dare not trade";
         if (Open(town).Any(x => x.SettlementId == s.Id)) return "a route already runs there";
         if (s.Standing < r.MinStanding) return $"they won't trade below {Js.Str(r.MinStanding)} standing";
@@ -164,7 +171,7 @@ public static class Trade
         var m = town.Market;
         var goods = Enum.GetValues<Good>();
         var wants = s.Kin.Trade.Wants.Count > 0 ? s.Kin.Trade.Wants : goods;
-        var offers = s.Kin.Trade.Offers.Count > 0 ? s.Kin.Trade.Offers : goods;
+        var offers = Offers(town, s).Count > 0 ? Offers(town, s) : goods;
         var import = offers.OrderBy(g => m.Stock(g) / Math.Max(1, m.Target(g))).ThenBy(g => g).First();
         var export = wants.Where(g => g != import).OrderByDescending(g => m.Stock(g) / Math.Max(1, m.Target(g))).ThenBy(g => g)
             .Cast<Good?>().FirstOrDefault() ?? goods.First(g => g != import);
@@ -176,7 +183,7 @@ public static class Trade
     {
         if (settlementId < 0 || settlementId >= town.Settlements.Count || export == import) return null;
         var s = town.Settlements[settlementId];
-        if (Refuse(town, s) != null || !s.Kin.Trade.Offers.Contains(import)) return null;
+        if (Refuse(town, s) != null || !Offers(town, s).Contains(import)) return null;
         double cost = OpenCost(town, s);
         town.Book(TreasuryAccount.Trade, -cost);
         var route = new TradeRoute

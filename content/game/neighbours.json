@@ -9,7 +9,10 @@
     "templars": { "title": "abbot", "names": ["Abbot Oswin", "Mother Aldith", "Brother-Abbot Caedmon", "Abbess Merewyn"] },
     "freeport": { "title": "harbourmaster", "names": ["Harbourmaster Vell Crane", "Harbourmistress Odile Sarr", "Harbourmaster Joss Tarrant", "Harbourmistress Lune Abbot"] },
     "frostsworn": { "title": "jarl", "names": ["Jarl Ragna Frostborn", "Jarl Halvard Ice-Eye", "Jarl Sigrid Whitecloak", "Jarl Torvald the Grey"] },
-    "oasis": { "title": "vizier", "names": ["Vizier Amara Sol", "Vizier Kasim Reed", "Vizier Nadira Well-Keeper", "Vizier Zahir Ten-Palms"] }
+    "oasis": { "title": "vizier", "names": ["Vizier Amara Sol", "Vizier Kasim Reed", "Vizier Nadira Well-Keeper", "Vizier Zahir Ten-Palms"] },
+    "catfolk": { "title": "den-mother", "names": ["Den-mother Saffi Quickwhisker", "Den-mother Ruyah Amberglance", "Den-father Tamas Longtail", "Den-mother Imri Duskmane"] },
+    "birdfolk": { "title": "eyrie-speaker", "names": ["Speaker Kree-of-the-Ledge", "Speaker Ashwing", "Speaker Tallow-Crest", "Speaker Hirrun Windcaller"] },
+    "hollow-legion": { "title": "castellan", "names": ["the Castellan of the Ninth Gate", "the Bell-Voiced Castellan", "the Castellan Who Waits", "the Green-Eyed Castellan"] }
   },
   "drift": 0.5,
   "prosperity": { "base": 45, "route": 10, "allied": 6, "insecure": 15, "insecureBelow": 30, "trouble": 0.4, "tolled": 12 },

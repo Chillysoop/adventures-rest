@@ -22,7 +22,7 @@ public partial class Main
         new("Town", "tab-city", "Your town: the city, the mayor and the Ledger", [Tab.City, Tab.Mayor, Tab.Ledger]),
         new("Council", "tab-council", "The council, the town's institutions and its faiths", [Tab.Council, Tab.Institutions, Tab.Faith]),
         new("Heroes", "tab-companies", "Bounties, adventuring companies and the armory", [Tab.Bounties, Tab.Companies, Tab.Armory]),
-        new("Realm", "tab-campaign", "War, diplomacy and the campaign beyond the walls", [Tab.War, Tab.Diplomacy, Tab.Campaign]),
+        new("Realm", "tab-campaign", "War, defence, diplomacy and the campaign", [Tab.War, Tab.Army, Tab.Defence, Tab.Diplomacy, Tab.Campaign]),
         new("Lore", "tab-library", "The town's chronicles and its library", [Tab.Chronicles, Tab.Library]),
     ];
 
@@ -38,7 +38,9 @@ public partial class Main
         [Tab.Bounties] = "Post jobs and follow parties on the road",
         [Tab.Companies] = "Roster of companies: sort, compare, offer jobs",
         [Tab.Armory] = "Gifts, loot and pacts with heroes",
-        [Tab.War] = "The enemy, your defence, the guard and walls",
+        [Tab.War] = "Foes the town has met",
+        [Tab.Army] = "Regiments, the levy, sellswords and commanders",
+        [Tab.Defence] = "Guard, walls, towers and wardens",
         [Tab.Diplomacy] = "Peoples, envoys and trade routes",
         [Tab.Campaign] = "The region, its menaces and the big bad",
         [Tab.Chronicles] = "Heroes' legends and the town's story",
@@ -58,6 +60,7 @@ public partial class Main
     {
         AlertWindow.Ledger => Tab.Ledger,
         AlertWindow.War => Tab.War,
+        AlertWindow.Defence => Tab.Defence,
         AlertWindow.Council => Tab.Council,
         AlertWindow.Bounties => Tab.Bounties,
         AlertWindow.Faith => Tab.Faith,
@@ -69,6 +72,7 @@ public partial class Main
         AlertWindow.Companies => Tab.Companies,
         AlertWindow.Armory => Tab.Armory,
         AlertWindow.Institutions => Tab.Institutions,
+        AlertWindow.Army => Tab.Army,
         _ => null,
     };
 

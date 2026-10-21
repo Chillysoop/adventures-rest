@@ -68,6 +68,15 @@ public sealed record SimulationOptions
 
     /// <summary>Foes and heroes from the player's earlier campaigns, who may come back (<see cref="Systems.Legends"/>).</summary>
     public IReadOnlyList<Legend> Legends { get; init; } = [];
+
+    /// <summary>Roads to victory switched off for this campaign (victory.json ids); the rest are open (<see cref="Systems.Victory"/>).</summary>
+    public IReadOnlyList<string> RoadsOff { get; init; } = [];
+
+    /// <summary>Boons from the player's cabinet the town is founded with, as "id:rank" (<see cref="Systems.Boons"/>).</summary>
+    public IReadOnlyList<string> Boons { get; init; } = [];
+
+    /// <summary>Endless mode: a win closes an era and a worse foe comes; only a fall ends the campaign (<see cref="Systems.Endless"/>).</summary>
+    public bool Endless { get; init; }
 }
 
 /// <summary>
@@ -87,8 +96,12 @@ public sealed class Simulation
         Town.Storyteller = Systems.Storyteller.Def(Town.Content, Options.Storyteller)?.Id ?? Town.Content.Storytellers.Default;
         Town.Founding = Systems.Founding.Kind(Town.Content, Options.Founding) is { } site && site.Id != Town.Content.Founding.Default ? site.Id : null;
         Town.Saga.Enabled = Options.Saga && Options.Enemy;
+        Town.Saga.Endless.On = Options.Endless;
         Town.Saga.Legends.AddRange(Options.Legends.Where(l => l.Seed != Options.Seed));
+        Town.Victory.Off.AddRange(Options.RoadsOff.Where(id => id != Systems.Victory.Slay && Systems.Victory.Def(Town, id) != null).Distinct().Order(StringComparer.Ordinal));
+        Systems.Boons.Choose(Town, Options.Boons);
         Charter();
+        Systems.Boons.Found(Town);
         Goals.Begin(Town);
     }
 
@@ -105,6 +118,8 @@ public sealed class Simulation
         Lurkers.Hourly(t);
         Tournaments.Hourly(t);
         Goals.Hourly(t);
+        AllyCalls.Hourly(t);
+        Field.Hourly(t);
         t.Tick++;
         if (t.Hour == 0) DailyTick();
     }
@@ -127,8 +142,11 @@ public sealed class Simulation
         City.Daily(t, Options.AutoMayor && Options.AutoPlanning);
         GrandWorks.Daily(t, Options.AutoMayor && Options.AutoPlanning);
         Monuments.Daily(t);
+        // Squares first, so the shops sited today front them.
+        Streets.Markets(t);
         if (Options.AutoMayor && Options.AutoPlanning) Construction.Daily(t);
         Streets.Wear(t);
+        Streets.Closes(t);
         Paving.Daily(t);
         Property.Daily(t);
         Population.DailyDepartures(t);
@@ -140,6 +158,9 @@ public sealed class Simulation
         double pace = Director.Daily(t);
         Threat.Daily(t, pace, Options.AutoMayor && Options.AutoDefense, Options.Enemy);
         Garrison.Daily(t, Options.AutoMayor && Options.AutoDefense);
+        Army.Daily(t);
+        AllyCalls.Daily(t);
+        Conquest.Daily(t);
         World.Daily(t, Options.AutoMayor);
         Trade.Daily(t, Options.AutoMayor);
         Armory.Daily(t, Options.AutoMayor && Options.AutoArmory);
@@ -154,12 +175,15 @@ public sealed class Simulation
         Watch.Daily(t, Options.AutoMayor && Options.AutoBounties);
         Undercity.Daily(t, Options.AutoMayor);
         Research.Daily(t, Options.AutoMayor);
+        HedgeMages.Daily(t);
         Lairs.Daily(t, Options.AutoMayor, Options.AutoDefense);
         Rumors.Daily(t);
         Shrines.Daily(t, Options.AutoMayor);
         Faith.Daily(t);
         Factions.Daily(t, Options.AutoMayor);
         Saga.Daily(t, Options.AutoMayor);
+        DarkQuests.Daily(t);
+        Endless.Daily(t);
         Crises.Daily(t, Options.AutoMayor && Options.AutoDefense);
         Powers.Daily(t);
         Vengeance.Daily(t);
@@ -176,6 +200,10 @@ public sealed class Simulation
         Loyalty.Daily(t, Options.AutoMayor && Options.AutoHonours);
         Secrets.Daily(t, Options.AutoMayor && Options.AutoCouncil);
         Guilds.Daily(t, Options.AutoMayor && Options.AutoCouncil);
+        Union.Daily(t, Options.AutoMayor && Options.AutoCouncil);
+        Patrons.Daily(t);
+        Curses.Daily(t);
+        Downtime.Daily(t);
         Notoriety.Daily(t);
         Heraldry.Daily(t);
         Eggs.Daily(t);
@@ -188,6 +216,7 @@ public sealed class Simulation
         Stories.Daily(t, Options.AutoMayor && Options.AutoStories);
         Sheet.Daily(t, Options.AutoMayor && Options.AutoStories);
         Economy.Daily(t, true);
+        Victory.Daily(t);
         Taxes.Close(t);
         Trends.Close(t);
         History.Add(Snapshot());
@@ -196,6 +225,9 @@ public sealed class Simulation
         if (t.RecentNet.Count > 7) t.RecentNet.RemoveAt(0);
         t.AccountsToday = new();
     }
+
+    /// <summary>Claim a road to victory whose terms hold: the big bad marches to stop it, and the terms must hold for the road's days (<see cref="Victory"/>).</summary>
+    public bool ClaimRoad(string id) => Victory.Claim(Town, id);
 
     /// <summary>Have the watch seize an enemy's agent the townsfolk pointed out, before it strikes tonight.</summary>
     public bool Seize(int lurkerId) => Lurkers.Seize(Town, lurkerId);
@@ -344,6 +376,12 @@ public sealed class Simulation
     /// <summary>Send the watch to break a guild's strike, at a cost in Mandate.</summary>
     public bool BreakStrike(string guildId) => Guilds.Break(Town, guildId);
 
+    /// <summary>Hear one side out with gold: "union" (the Common Cause, the workers' movement) or "mages".</summary>
+    public bool HearUnion(string side) => Union.Hear(Town, side);
+
+    /// <summary>Take a side outright between the Common Cause and the mages ("union" or "mages") for a season, and face the other's anger.</summary>
+    public bool TakeSide(string side) => Union.Side(Town, side);
+
     /// <summary>Answer a menace's demand for fealty: bend the knee and pay tribute, or refuse and face its host.</summary>
     public bool AnswerDemand(int menaceId, bool submit) => Menaces.Answer(Town, menaceId, submit);
 
@@ -380,6 +418,9 @@ public sealed class Simulation
 
     /// <summary>Endow a temple to the town's god once the town is big enough.</summary>
     public Building? BuildTemple() => Shrines.BuildTemple(Town);
+
+    /// <summary>Write a punishment for a crime into the law book (laws.json).</summary>
+    public bool SetLaw(string crime, string punishment) => Laws.Set(Town, crime, punishment);
 
     /// <summary>Send the watch against a faction the town has exposed.</summary>
     public bool CrackDown(string factionId) => Factions.CrackDown(Town, factionId);
@@ -497,6 +538,72 @@ public sealed class Simulation
     /// <summary>Fund a campaign: send a hired company against a menace's seat.</summary>
     public bool MarchMercenaries(string companyId, int menaceId) => Mercenaries.March(Town, companyId, menaceId);
 
+    /// <summary>Raise a regiment of the town's own soldiers at a training hall: recruits come in each day, armed from the treasury and the market.</summary>
+    public Regiment? RaiseRegiment(string unitId, int size, ArmyPost post = ArmyPost.Reserve) => Army.Raise(Town, unitId, size, post);
+
+    /// <summary>Take a regiment up or down to a size; those cut go home to their trades.</summary>
+    public bool ResizeRegiment(int regimentId, int size) => Army.Resize(Town, regimentId, size);
+
+    /// <summary>Stand a regiment (or the levy) down: its soldiers go home to their trades.</summary>
+    public bool DisbandRegiment(int regimentId) => Army.Disband(Town, regimentId);
+
+    /// <summary>Post a regiment: the walls, its hall in reserve, the town guard's patrol, or the mayor's guard.</summary>
+    public bool PostRegiment(int regimentId, ArmyPost post) => Army.SetPost(Town, regimentId, post);
+
+    /// <summary>Put a hero at the head of a regiment, or take them off it (null).</summary>
+    public bool CommandRegiment(int regimentId, int? heroId) => Army.SetCommander(Town, regimentId, heroId);
+
+    /// <summary>Call townsfolk up from their work into the levy, under the town's laws.</summary>
+    public Regiment? RaiseLevy(int size, ArmyPost post = ArmyPost.Walls) => Army.RaiseLevy(Town, size, post);
+
+    /// <summary>The levy law: volunteers only, or conscription.</summary>
+    public bool SetServiceLaw(ServiceLaw law) => Army.SetService(Town, law);
+
+    /// <summary>Whether the levy is paid a wage while it serves.</summary>
+    public bool SetLevyPay(bool paid) => Army.SetLevyPay(Town, paid);
+
+    /// <summary>Send riders to the allies named, calling their hosts to the town.</summary>
+    public List<AllyCall> CallAllies(IEnumerable<int> settlementIds) => AllyCalls.Call(Town, settlementIds);
+
+    /// <summary>Pay a holdout ally's price for its host.</summary>
+    public bool BribeAlly(int callId) => AllyCalls.Bribe(Town, callId);
+
+    /// <summary>Threaten a holdout ally into marching (the mayor's Intimidation; standing lost either way).</summary>
+    public bool ThreatenAlly(int callId) => AllyCalls.Threaten(Town, callId);
+
+    /// <summary>Let a holdout ally keep its host.</summary>
+    public bool LetAllyGo(int callId) => AllyCalls.LetGo(Town, callId);
+
+    /// <summary>Pick a regiment to march out with the host, or to stay on the walls.</summary>
+    public bool SetMarches(int regimentId, bool marches) => Field.SetMarches(Town, regimentId, marches);
+
+    /// <summary>Pick an allied host camped at the gate to march out with the town's host.</summary>
+    public bool SetAllyMarches(int callId, bool marches) => Field.SetAllyMarches(Town, callId, marches);
+
+    /// <summary>Give a hero a goal on the field ("leader", "banner", "flank", "shield"), or "" to keep them home.</summary>
+    public bool SetFieldGoal(int heroId, string goal) => Field.SetGoal(Town, heroId, goal);
+
+    /// <summary>March the host out to meet a foe on the road ("warband" or "menace:id") under an order.</summary>
+    public Sortie? MarchOut(string foe, string order) => Field.MarchOut(Town, foe, order);
+
+    /// <summary>Change the host's order before it meets the foe.</summary>
+    public bool SetFieldOrder(string order) => Field.SetOrder(Town, order);
+
+    /// <summary>Call the host home before it meets the foe.</summary>
+    public bool RecallHost() => Field.Recall(Town);
+
+    /// <summary>March the host on a settlement the town has met.</summary>
+    public Sortie? Attack(int settlementId, string order) => Field.MarchOut(Town, $"{Conquest.Prefix}{settlementId}", order);
+
+    /// <summary>The mayor's word on a won settlement: occupy, pillage, cripple or spare it.</summary>
+    public bool SettleConquest(int settlementId, ConquestChoice choice) => Conquest.Settle(Town, settlementId, choice);
+
+    /// <summary>Leave a regiment to hold an occupied settlement, or bring it home with null.</summary>
+    public bool GarrisonSettlement(int settlementId, int? regimentId) => Conquest.SetGarrison(Town, settlementId, regimentId);
+
+    /// <summary>Give an occupied settlement its freedom back.</summary>
+    public bool FreeSettlement(int settlementId) => Conquest.Free(Town, settlementId);
+
     public DayStats Snapshot()
     {
         var t = Town;
@@ -577,7 +684,7 @@ public sealed class Simulation
         Agent? knight = null;
         if (c.Rules.CharterKnight != "")
         {
-            knight = Quests.CreateHero(t, c.Classes.First(k => k.Id == c.Rules.CharterKnight), c.Rules.CharterKnightLevel);
+            knight = Quests.CreateHero(t, c.Classes.First(k => k.Id == c.Rules.CharterKnight), c.Rules.CharterKnightLevel + Systems.Boons.KnightLevels(t));
             knight.Hero!.Sworn = true;
             knight.Hero.Lodging = true;
         }

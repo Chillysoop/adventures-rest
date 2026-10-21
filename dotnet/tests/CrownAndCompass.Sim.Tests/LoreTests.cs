@@ -29,7 +29,15 @@ public class LoreTests
         foreach (var m in C.Mercenaries.Companies) HasLineage("mercenary:" + m.Id);
         foreach (var i in C.Institutions.Institutions) HasLineage("institution:" + i.Id);
         foreach (var g in C.Guilds.Guilds) HasLineage("guild:" + g.Id);
+        foreach (var p in C.Patrons.Patrons) HasLineage("patron:" + p.Id);
         foreach (var f in C.Foes.Foes) HasLineage("foe:" + f.Id);
+        // A ready-made enemy group is heir to its own lineage, or to the enemy it is a version of.
+        foreach (var g in C.Groups.Groups)
+        {
+            var l = Annals.Lineage(H, g.Lineage);
+            Assert.True(l != null, $"group {g.Id} names no lineage in content/game/history.json");
+            Assert.True(l!.Motive != "", $"group {g.Id}'s lineage {l.Id} says nothing of what it wants");
+        }
     }
 
     [Fact]
@@ -58,12 +66,15 @@ public class LoreTests
                     "mercenary" => C.Mercenaries.Companies.Any(m => m.Id == parts[1]),
                     "institution" => C.Institutions.Def(parts[1]) != null,
                     "guild" => C.Guilds.Guilds.Any(g => g.Id == parts[1]),
+                    "patron" => C.Patrons.Patron(parts[1]) != null,
                     "foe" => C.Foes.Foes.Any(f => f.Id == parts[1]),
+                    "group" => C.Group(parts[1]) is GroupDef g && g.Lineage == l.Id,
                     _ => false,
                 };
                 Assert.True(real, $"{l.Id}: {s} is not in the game");
                 if (parts[0] == "background") Assert.True(l.Classes.Count > 0, $"{l.Id}: no class comes up through it");
-                if (parts[0] != "menace" && parts[0] != "foe") Assert.True(l.Themes.Count == 0 && l.Ambitions.Count == 0, $"{l.Id}: themes and ambitions are for menaces");
+                if (parts[0] is not ("menace" or "foe")) Assert.True(l.Themes.Count == 0, $"{l.Id}: themes are for menaces");
+                if (parts[0] is not ("menace" or "group" or "foe")) Assert.True(l.Ambitions.Count == 0, $"{l.Id}: ambitions are for menaces");
                 // A lineage only makes an ambition likelier where the kind can want it at all.
                 foreach (var a in l.Ambitions.Keys)
                 {
@@ -87,7 +98,7 @@ public class LoreTests
             foreach (var theme in heirs.SelectMany(l => l.Themes).GroupBy(t => t))
                 Assert.True(theme.Count() == 1, $"{kind} has two lineages in {theme.Key}");
         }
-        foreach (var foe in C.Saga.Finale.Fallback)
+        foreach (var foe in C.Saga.Finale.Fallback.Concat(C.Endless.Heralds))
             Assert.True(Annals.Lineage(H, foe.Lineage)?.Subjects.Contains("menace:" + foe.Kind) == true, $"{foe.Leader} has no {foe.Kind} lineage");
     }
 
@@ -123,8 +134,10 @@ public class LoreTests
         {
             var l = Annals.Lineage(H, m.Lineage);
             Assert.True(l != null, $"{m.Name} has no lineage");
-            // A signature foe's menace keeps its own lineage (foes.json), whatever kind it raids as.
-            Assert.True(l!.Subjects.Contains("menace:" + m.Kind) || l.Subjects.Any(x => x.StartsWith("foe:")), $"{m.Name}: {l.Id} is not a {m.Kind} lineage");
+            // A ready-made group's menace is heir to the group's lineage; a signature foe's keeps its own (foes.json), whatever kind it raids as.
+            var seat = t.Sites.FirstOrDefault(s => s.Def.Id == m.SeatId);
+            if (seat != null && C.Group(seat.Def.Group) is GroupDef g) Assert.Equal(g.Lineage, l!.Id);
+            else Assert.True(l!.Subjects.Contains("menace:" + m.Kind) || l.Subjects.Any(x => x.StartsWith("foe:")), $"{m.Name}: {l.Id} is not a {m.Kind} lineage");
             Assert.NotEqual("", Annals.Motive(t, m));
         }
     }

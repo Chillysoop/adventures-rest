@@ -428,7 +428,8 @@ public partial class WorldView : Node3D
         kit.Add("nature/plant_bush", MeshKit.At(0.2f, 0, 0.12f, 0.5f, 1.2f), Foliage);
         meshes[WorldGen.Scatter.Bush] = kit.Build();
         kit.Clear();
-        // A tuft of grass: a few thin blades leaning out from a point.
+        // A tuft of grass: a few thin blades leaning out from a point, bending in the gusts.
+        kit.Sway = 1.1f;
         for (int i = 0; i < 5; i++)
         {
             float a = i * Mathf.Tau / 5 + 0.3f;
@@ -441,6 +442,7 @@ public partial class WorldView : Node3D
         }
         meshes[WorldGen.Scatter.Tuft] = kit.Build();
         kit.Clear();
+        kit.Sway = 0.9f;
         for (int i = 0; i < 6; i++)
         {
             var p = new Vector3(Mathf.Cos(i * 2.4f) * 0.12f * (i % 3), 0, Mathf.Sin(i * 2.4f) * 0.12f * (i % 3));

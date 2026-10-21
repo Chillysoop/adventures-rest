@@ -20,7 +20,8 @@ public class RosterTests
                 var site = t.Sites.Where(s => s.Known != SiteKnowledge.Unheard && !s.ThoughtCleared && !t.Bounties.Any(b => b.SiteId == s.Def.Id && b.Status is BountyStatus.Open or BountyStatus.Taken))
                     .OrderBy(s => s.BelievedTier).ThenBy(s => s.Def.Id, StringComparer.Ordinal).FirstOrDefault();
                 if (site == null) continue;
-                var company = Roster.Companies(t).FirstOrDefault(c => c.Ready >= 3 && c.Relation >= 40);
+                // A company with a band already on the road sends the rest out under a new name.
+                var company = Roster.Companies(t).FirstOrDefault(c => c.Ready >= 3 && c.Relation >= 40 && !t.Parties.Any(p => !p.Returned && p.Name == c.Name));
                 if (company != null) return (sim, company.Name, site);
             }
         }

@@ -61,7 +61,9 @@ public class PassageTests
             {
                 if (a == b) continue;
                 var walk = Walk(t, a, Passage.Clear(t, b));
-                Assert.True(walk[^1] == Passage.Clear(t, b), $"stuck at ({walk[^1].X:0.00}, {walk[^1].Y:0.00}) on the way from ({a.X:0.00}, {a.Y:0.00}) to ({b.X:0.00}, {b.Y:0.00})");
+                var goal = Passage.Clear(t, b);
+                // Arrived: within the walk's own stopping distance (a step can land a hair off the goal).
+                Assert.True(Math.Abs(walk[^1].X - goal.X) + Math.Abs(walk[^1].Y - goal.Y) <= 1e-6, $"stuck at ({walk[^1].X:0.00}, {walk[^1].Y:0.00}) on the way from ({a.X:0.00}, {a.Y:0.00}) to ({b.X:0.00}, {b.Y:0.00})");
                 var bad = walk.FirstOrDefault(p => Trespass(t, p));
                 Assert.True(bad == default, $"({bad.X:0.00}, {bad.Y:0.00}) is in the wall or the moat, from ({a.X:0.00}, {a.Y:0.00}) to ({b.X:0.00}, {b.Y:0.00})");
             }
@@ -207,6 +209,8 @@ public class PassageTests
         var sim = new Simulation(new SimulationOptions { Seed = 1 });
         sim.RunDays(30);
         var t = sim.Town;
+        // Three heroes to put on griffons: some towns take a while to draw a third.
+        while (t.Heroes.Count(h => (Passage.Abilities(t, [h]) & Ways.Sheer) == Ways.None) < 3 && t.Day < 200) sim.RunDays(5);
         foreach (var h in t.Heroes) h.Hero!.Mount = "";
         // Heroes who can't fly or climb a cliff on their own (no spell or item for it).
         var heroes = t.Heroes.Where(h => (Passage.Abilities(t, [h]) & Ways.Sheer) == Ways.None).Take(3).ToList();

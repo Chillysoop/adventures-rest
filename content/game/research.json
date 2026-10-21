@@ -1,30 +1,30 @@
 {
-  "_doc": "Town magic and research (Systems/Research.cs). Lore per day comes from institutions, scholars among the townsfolk, casters in town and the library's books, the wizards' library's keeper (keeperLore × how well the institution is kept), times the council's funding. Each discovery is revealed only when one of its sparks holds in this town (craft:<profession>:<n>, folk:<race>:<n>, partner:<people>, building:<id>, book:<school>:<circle>, books:<n>, wizard:<level>, known:<id>, tier:<charter>), so every run's tree differs; requires must all hold to study it. Rank sets its lore and its commission in gold.",
+  "_doc": "Town magic and research (Systems/Research.cs, sparks in Systems/Sparks.cs). Ideas appear from the town and the world: each discovery has sparks (craft:<profession>:<n> and folk:<race>:<n> name the newcomers behind them, partner:<people>, routes:<n>, building:<id>, tier:<charter>, book:<school>:<circle>, books:<n>, wizard:<level>, circle:<n>, hero:<class>[:level], heroes:<n>, found:<find kind>[:n] an explorers' find, slain:<creature type>[:n] what companies brought down at cleared sites, cleared:<tier>, delves:<n>, ally:<power>, known:<id>); once one has held brew[rank] days the idea is revealed, so every run's tree differs and grows with what the town meets. Requires must all hold to study it. Gold can't buy a study: lore a day comes from institutions, learned townsfolk, casters, books and the library's keeper, and insight brings lumps of lore from cleared sites, explorers' finds, new spellbooks, learned newcomers and drawn wizards. Funding only greases it (its lore multiplier) and is the council's gold sink.",
   "funding": [
     {
       "name": "none",
       "gold": 0,
-      "lore": 0.25
+      "lore": 1
     },
     {
       "name": "a stipend",
       "gold": 8,
-      "lore": 1
+      "lore": 1.2
     },
     {
       "name": "generous",
       "gold": 25,
-      "lore": 1.75
+      "lore": 1.4
     },
     {
       "name": "lavish",
       "gold": 80,
-      "lore": 2.5
+      "lore": 1.6
     },
     {
       "name": "a royal academy",
       "gold": 300,
-      "lore": 3.5
+      "lore": 1.8
     }
   ],
   "fundingPerTier": 0.5,
@@ -36,14 +36,21 @@
     1100,
     1800
   ],
-  "gold": [
+  "brew": [
     0,
-    150,
-    500,
-    1500,
-    4000,
-    9000
+    3,
+    5,
+    8,
+    12,
+    16
   ],
+  "insight": {
+    "cleared": 20,
+    "find": 25,
+    "book": 12,
+    "newcomer": 15,
+    "wizard": 4
+  },
   "institutions": [
     {
       "building": "library",
@@ -168,6 +175,27 @@
     }
   ],
   "standInReserve": 300,
+  "hedge": {
+    "_doc": "Hedge mages (Systems/HedgeMages.cs): once the library's power reaches power, every few days (every) the townsperson in a hedge trade with the sharpest mind (int or wis of at least minScore) learns that trade's spell, up to one per perPeople residents plus one per known discovery with arcana. At their own workplace a hedge mage adds yield to its day's work, build to the sites they raise, or watch to the watch. Each adds lore as a learned townsperson. The guilds resent them (Union.cs).",
+    "power": 4,
+    "every": 12,
+    "perPeople": 40,
+    "minScore": 12,
+    "lore": 0.3,
+    "trades": [
+      { "building": "builders_yard", "name": "builder-mage", "spell": "sets stone with a word", "build": 0.25 },
+      { "building": "farm", "name": "field-witch", "spell": "sings the rows to ripen", "yield": 0.1 },
+      { "building": "fishery", "name": "fisher-mage", "spell": "calls the shoals to the nets", "yield": 0.12 },
+      { "building": "forge", "name": "forge-mage", "spell": "quenches steel in moonlight", "yield": 0.12 },
+      { "building": "lumber_camp", "name": "tree-speaker", "spell": "asks the old oaks which may fall", "yield": 0.1 },
+      { "building": "brewery", "name": "ale-charmer", "spell": "never lets a batch turn", "yield": 0.1 },
+      { "building": "weaver", "name": "loom-witch", "spell": "weaves warmth into the wool", "yield": 0.1 },
+      { "building": "apothecary", "name": "hedge-alchemist", "spell": "can tell a cure from a poison by smell", "yield": 0.1 },
+      { "building": "temple", "name": "grave-speaking constable", "spell": "asks the dead who did it", "watch": 0.04 }
+    ],
+    "learned": "{name}, {trade} at {workplace}, has taught themselves a little magic: {spell}. {town} has its first {mage}.",
+    "learnedMore": "{name}, {trade} at {workplace}, has taught themselves a little magic: {spell}. The townsfolk call them a {mage}."
+  },
   "discoveries": [
     {
       "id": "tempered-steel",
@@ -370,7 +398,8 @@
       "sparks": [
         "craft:herbalist:2",
         "partner:elves",
-        "folk:elf:3"
+        "folk:elf:3",
+        "slain:plant"
       ],
       "yields": {
         "Herbs": 1.2
@@ -399,7 +428,8 @@
       "sparks": [
         "building:bathhouse",
         "known:herb-lore",
-        "tier:large_town"
+        "tier:large_town",
+        "found:font"
       ],
       "mood": 0.5,
       "arrivals": 0.03,
@@ -442,7 +472,8 @@
       "sparks": [
         "craft:cartographer:1",
         "partner:freeport",
-        "partner:oasis"
+        "partner:oasis",
+        "found:settlement"
       ],
       "arrivals": 0.04,
       "scry": 0.2
@@ -485,7 +516,8 @@
       "text": "Dwarf engineers' engines for the walls.",
       "sparks": [
         "folk:dwarf:8",
-        "building:barracks"
+        "building:barracks",
+        "slain:giant"
       ],
       "requires": [
         "known:clockwork"
@@ -534,10 +566,113 @@
       "sparks": [
         "book:divination:2",
         "craft:cartographer:1",
-        "building:adventurers_hall"
+        "building:adventurers_hall",
+        "slain:monstrosity",
+        "delves:3"
       ],
       "xp": 0.15,
       "scry": 0.15
+    },
+    {
+      "id": "grave-wards",
+      "name": "Grave wards",
+      "field": "war",
+      "rank": 2,
+      "text": "Salt lines, grave-bells and the old names cut over the doors: what the companies learned from the dead they put back down.",
+      "sparks": [
+        "slain:undead",
+        "found:ruin"
+      ],
+      "ward": 0.15,
+      "defence": 5
+    },
+    {
+      "id": "beast-craft",
+      "name": "Beast craft",
+      "field": "husbandry",
+      "rank": 2,
+      "text": "Hides, horn and the habits of the wild things the companies hunted, turned to the flocks and the tanners.",
+      "sparks": [
+        "slain:beast:3",
+        "found:lair:2"
+      ],
+      "yields": {
+        "Wool": 1.1,
+        "Food": 1.05
+      }
+    },
+    {
+      "id": "dragonhide",
+      "name": "Dragonhide",
+      "field": "crafts",
+      "rank": 4,
+      "text": "Scales off the beast a company brought down, riveted to leather: the town's best fighters go out half fireproof.",
+      "sparks": [
+        "slain:dragon"
+      ],
+      "requires": [
+        "known:tempered-steel"
+      ],
+      "defence": 12,
+      "xp": 0.1
+    },
+    {
+      "id": "fey-bargains",
+      "name": "Fey bargains",
+      "field": "lore",
+      "rank": 2,
+      "text": "Which gifts to leave at which stone, and which never to accept: the hedge and the hollow hills stop stealing children and start trading.",
+      "sparks": [
+        "slain:fey",
+        "ally:mire-grandmothers",
+        "found:font:2"
+      ],
+      "mood": 0.3,
+      "arrivals": 0.05
+    },
+    {
+      "id": "ledger-cyphers",
+      "name": "Ledger cyphers",
+      "field": "trade",
+      "rank": 2,
+      "text": "Double entry and a merchant's cypher, learned from the town's friends among the great houses of coin.",
+      "sparks": [
+        "ally:black-ledger",
+        "ally:crown-league",
+        "routes:4"
+      ],
+      "gold": 6
+    },
+    {
+      "id": "fiend-seals",
+      "name": "Fiend seals",
+      "field": "arcana",
+      "rank": 3,
+      "text": "Circles drawn from the sigils on a slain fiend's hide: nothing called up from below crosses a sealed threshold.",
+      "sparks": [
+        "slain:fiend",
+        "ally:lanternbearers"
+      ],
+      "requires": [
+        "circle:3"
+      ],
+      "ward": 0.2,
+      "defence": 8
+    },
+    {
+      "id": "binding-elements",
+      "name": "Binding the elements",
+      "field": "arcana",
+      "rank": 4,
+      "text": "What the companies learned bringing down a raging spirit of earth or flame: the wizards bid lesser ones to haul stone and stoke kilns.",
+      "sparks": [
+        "slain:elemental",
+        "found:font:3"
+      ],
+      "requires": [
+        "circle:4"
+      ],
+      "build": 0.12
     },
     {
       "id": "old-histories",
@@ -548,7 +683,8 @@
       "sparks": [
         "craft:scribe:1",
         "building:library",
-        "partner:elves"
+        "partner:elves",
+        "found:ruin"
       ],
       "mood": 0.3,
       "lore": 0.5
@@ -561,7 +697,8 @@
       "text": "Small charms every apprentice learns: mending, lights, a clean hearth.",
       "sparks": [
         "books:1",
-        "wizard:1"
+        "wizard:1",
+        "found:font"
       ],
       "lore": 0.5,
       "mood": 0.2
@@ -609,7 +746,8 @@
       "text": "Sigils on the grates and doors below: what comes up, burns.",
       "sparks": [
         "book:abjuration:3",
-        "book:abjuration:4"
+        "book:abjuration:4",
+        "slain:fiend"
       ],
       "requires": [
         "circle:3"
