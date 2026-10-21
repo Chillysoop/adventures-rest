@@ -220,6 +220,59 @@
         "standing stones"
       ],
       "text": "A ring of rune-cut stones out in the wilds. Explorers can read the runes and wake one; from then on the library's mages draw lore from it every day. Cults hold their rites at the stones too, which brings their dark gods more favour unless the council funds research so the mages keep watch."
+    },
+    {
+      "id": "tavern-keeper",
+      "term": "Tavern keeper",
+      "category": "people",
+      "icon": "ale",
+      "aliases": [
+        "keeper's past",
+        "tavern keepers"
+      ],
+      "text": "Every tavern keeper came from somewhere: a retired adventurer keeps heroes fond of the town, an old watch sergeant stops brawls, a former smuggler pours cheap ale, a minstrel who lost their voice makes the songs go down better, an informer tells the watch what they hear, and a kind-hearted widow keeps anyone from being lonely for long. Now and then a keeper asks the town hall for something. Click a tavern to see its keeper's past."
+    },
+    {
+      "id": "tavern-quirk",
+      "term": "Odd taverns",
+      "category": "town",
+      "icon": "ale",
+      "aliases": [
+        "tavern quirk",
+        "quirk"
+      ],
+      "text": "No two taverns are alike: one is built in a beached barge, one has a fighting pit in the cellar, one is a hush-house where nobody raises their voice. Each draws its own crowd from further off (the hot-tempered, the shy, the sociable, heroes) and changes the evening: more brawls, fewer, better songs, easier talk."
+    },
+    {
+      "id": "drunk-persona",
+      "term": "In their cups",
+      "category": "people",
+      "icon": "ale",
+      "aliases": [
+        "drunk",
+        "persona"
+      ],
+      "text": "After three ales everyone turns into their own kind of drunk: the weeper, the singer, the philosopher, the boaster, the scrapper, the sleeper or the moon-eyed lover. It changes how their talk goes and how quickly they come to blows. Their inspector card says which they are."
+    },
+    {
+      "id": "slang",
+      "term": "Town slang",
+      "category": "town",
+      "icon": "lore",
+      "aliases": [
+        "slang"
+      ],
+      "text": "Every town has its own words for a few things: the watch might be the lanterns or the long coats, the mayor the chain or old seal. You hear them in tavern talk and rumours, never on prices. Click a tavern to see how your town says them."
+    },
+    {
+      "id": "blood-money",
+      "term": "Blood money",
+      "category": "rules",
+      "icon": "unrest",
+      "aliases": [
+        "weregild"
+      ],
+      "text": "When a drunk hero hits a townsperson once too hard in a brawl and kills them, the family come to the town hall for weregild, blood money for a life. Pay it from the treasury, make the hero pay, talk the family down, or refuse; refuse and they swear a feud on the hero."
     }
   ]
 }

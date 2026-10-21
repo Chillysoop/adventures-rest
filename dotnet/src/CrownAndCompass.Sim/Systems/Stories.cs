@@ -1477,16 +1477,16 @@ public static class Stories
                     break;
                 case "weregild":
                     // 1: the kin of the townsperson the story's hero killed are paid (more than 1: that much out of the hero's own purse); -1: they swear a feud.
-                    if (s.HeroId is int wh && Hero(town, wh) is { } wa && Taverns.Owing(town, wa) is { } debt)
+                    if (s.HeroId is int wgh && Hero(town, wgh) is { } wga && Taverns.Owing(town, wga) is { } debt)
                     {
                         if (v > 1)
                         {
-                            double paid = Math.Min(v, Math.Floor(Math.Max(0, wa.Gold)));
-                            wa.Gold -= paid;
+                            double paid = Math.Min(v, Math.Floor(Math.Max(0, wga.Gold)));
+                            wga.Gold -= paid;
                             if (debt.KinId is int ki && town.Agent(ki) is { Departed: false } kin) kin.Gold += paid;
-                            said.Add($"{wa.GivenName} pays {Js.Str(paid)} gold");
+                            said.Add($"{wga.GivenName} pays {Js.Str(paid)} gold");
                         }
-                        Taverns.Settle(town, wa, v > 0);
+                        Taverns.Settle(town, wga, v > 0);
                         said.Add(v > 0 ? "the kin are paid" : "the kin swear a feud");
                     }
                     break;

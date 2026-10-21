@@ -9,7 +9,7 @@ public class UnionTests
     {
         var sim = new Simulation(new SimulationOptions { Seed = seed, AutoCouncil = false, AutoHonours = false, Enemy = false });
         var t = sim.Town;
-        for (int d = 0; d < 300 && !t.Union.Formed; d++) sim.RunDays(1);
+        for (int d = 0; d < 400 && !(t.Union.Formed && t.Guilds.Count > 0); d++) sim.RunDays(1);
         Assert.True(t.Union.Formed);
         return (sim, t);
     }

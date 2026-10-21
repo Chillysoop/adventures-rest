@@ -688,6 +688,10 @@ public partial class Main
         if (a.HedgeSpell != "" && t.Content.Research.Hedge.Trade(a.HedgeSpell) is { } hedge)
             p.Text($"{Tag(Ui.Cap(hedge.Name), Ui.Gold)} {Ui.C(Ui.Ink2, $"[font_size=12]Hedge mage: {Ui.Esc(hedge.Spell)}{(HedgeMages.Working(t, a) == null ? ", though not at their own trade now" : "")}.[/font_size]")}", 13);
         if (a.SpouseId is int sp) p.Text($"Married to {AgentLink(t.Agent(sp))}");
+        if (Taverns.Persona(t, a) is { } persona)
+            p.Text(Ui.C(Ui.Ink2, $"[font_size=12]In their cups: {Ui.Esc(persona.Name)}{(Taverns.Drunk(t, a) != null ? ", and it shows tonight" : "")}.[/font_size]"), 12);
+        if (a.Hero is { Owed: > 0 } owedHs) p.Text(Ui.C(Ui.Gold, $"[font_size=12]The town owes them {(owedHs.Owed == 1 ? "a favour" : $"{owedHs.Owed} favours")} for scrying on credit.[/font_size]"), 12);
+        if (a.Hero != null && Taverns.Owing(t, a) is { } blood) p.Text(Ui.C(Ui.Bad, $"[font_size=12]Owes blood money for {Ui.Esc(blood.Victim)}.[/font_size]"), 12);
         InspectSheet(p, t, a);
         var friends = a.Opinions.Where(kv => kv.Value >= 40).OrderBy(kv => kv.Key).Select(kv => AgentLink(t.Agent(kv.Key))).ToList();
         var foes = a.Opinions.Where(kv => kv.Value <= -30).OrderBy(kv => kv.Key).Select(kv => AgentLink(t.Agent(kv.Key))).ToList();
@@ -835,12 +839,28 @@ public partial class Main
             p.Text($"Buys heroes' loot with up to {Math.Floor(Merchants.Purse(t, b))}g. " +
                 (shelf.Count == 0 ? "Nothing second-hand on the shelf." : $"On the shelf: {string.Join(", ", shelf.Select(i => $"{Ui.Esc(i.Name)} ({Js.Str(Math.Ceiling(i.ValueGp * t.Content.Merchants.Resale))}g)"))}."));
         }
+        if (t.Taverns.Contains(b)) TavernCard(p, t, b);
         if (here.Count > 0) p.Text($"Here now: {string.Join(", ", here.Select(a => AgentLink(a)))}");
         if (b.IsSite) SiteCard(p, t, b);
         if (b.ParentId is int core) p.Text(Ui.C(Ui.Ink2, $"Part of {Ui.Esc(t.Building(core).Name)}."));
         if (b.Def.Crews > 0 && b.Complete)
             p.Text(Ui.C(Ui.Ink2, $"Puts {b.Def.Crews} more crews to work. The town has {Construction.Crews(t)} crews; a town its size keeps {Construction.Wanted(t)} busy."));
         if (Monuments.IsMonument(t, b.Def)) MonumentCard(p, t, b);
+    }
+
+    /// <summary>A tavern's character: its keeper's past and perk, its quirk and the crowd it draws, and how the town talks.</summary>
+    private void TavernCard(Pane p, Town t, Building b)
+    {
+        if (Taverns.Keeper(t, b) is { } k && Taverns.Past(t, b) is { } past)
+            p.Text($"{Tag(Ui.Cap(past.Name), Ui.Gold)} {AgentLink(k)} {Ui.Esc(past.Story)}.\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(past.PerkText)}[/font_size]")}", 13);
+        if (Taverns.Quirk(t, b) is { } q)
+        {
+            var crowd = q.Traits.Select(x => x switch { "HotTempered" => "the hot-tempered", "Gregarious" => "the sociable", _ => "the " + x.ToLowerInvariant() }).ToList();
+            if (q.Heroes) crowd.Add("heroes");
+            p.Text($"A tavern {Ui.Esc(q.Name)}. {Ui.Esc(q.Text)}{(crowd.Count > 0 ? Ui.C(Ui.Ink2, $" [font_size=12]Draws {Ui.Esc(string.Join(" and ", crowd))} from further off.[/font_size]") : "")}", 13);
+        }
+        var said = t.Content.Taverns.Slang.Select(w => $"\"{Taverns.Say(t, w.Plain)}\" for {w.Plain}").Take(4).ToList();
+        if (said.Count > 0) p.Text(Ui.C(Ui.Ink2, $"[font_size=12]In {Ui.Esc(t.Name)}'s taverns they say {Ui.Esc(string.Join(", ", said))}.[/font_size]"), 12);
     }
 
     /// <summary>A building site: what it waits on, and the player's say over it.</summary>
