@@ -227,6 +227,10 @@ public static class Foes
         return h;
     }
 
+    /// <summary>Where a power or people stands with the town, on five bands from hostile (1) to allied (5): "▮▮▮▯▯ Cordial".</summary>
+    public static HBoxContainer Standing(int band, string word, double standing) =>
+        Bar("", band, 5, word, Scale(1 - (band - 1) / 4.0), $"Standing {(standing >= 0 ? "+" : "−")}{Math.Abs(Math.Round(standing))}", 60);
+
     /// <summary>A menace's threat bar.</summary>
     public static HBoxContainer Threat(Town t, Menace m) =>
         Bar("Threat", Assess.Threat(t, m), Worse(Assess.Threat(t, m)), "How its strength compares with the town's defence, as far as the town can judge. Deadly: it can take the walls.");

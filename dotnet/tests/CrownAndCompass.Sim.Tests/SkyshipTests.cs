@@ -15,6 +15,7 @@ public class SkyshipTests
         sim.RunDays(1);
         var s = t.Settlements[0];
         t.Regions[s.RegionId].Known = true;
+        Discovery.Meet(t, Neighbours.Key(s), Discovery.Met);
         s.Standing = 0;
         t.Market.Seed(Good.Tools, 200);
         t.Treasury += 1000;
@@ -44,6 +45,7 @@ public class SkyshipTests
         sim.RunDays(1);
         var s = t.Settlements[0];
         t.Regions[s.RegionId].Known = true;
+        Discovery.Meet(t, Neighbours.Key(s), Discovery.Met);
         s.Standing = 0;
         t.Market.Seed(Good.Tools, 200);
         t.Treasury += 1000;

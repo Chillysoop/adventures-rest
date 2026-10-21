@@ -50,6 +50,9 @@ public sealed record PowerDef
     public string Goal { get; init; } = "";
     public string Seat { get; init; } = "";
 
+    /// <summary>The day its people first come calling, if the town hasn't met it sooner (<see cref="Powers.Introduce"/>).</summary>
+    public int MeetDay { get; init; }
+
     /// <summary>Who brings word of what it does: news through someone, never out of nowhere.</summary>
     public string Witness { get; init; } = "";
 
@@ -204,6 +207,9 @@ public sealed record PowerRules
     public IReadOnlyDictionary<string, double> Cunning { get; init; } = new Dictionary<string, double>();
     public double AllyResist { get; init; } = 25;
     public int PerEnemy { get; init; } = 2;
+
+    /// <summary>The first-contact scenes, one per power (id "contact-" + its id): stories of source "contact".</summary>
+    public List<StoryDef> Contacts { get; init; } = [];
 
     /// <summary>How much more an enemy's envoys can offer for each power already marching with it.</summary>
     public double Bandwagon { get; init; }
@@ -370,6 +376,7 @@ public static class Powers
         if (!town.Saga.Enabled || town.Outcome != null) return;
         Init(town);
         var r = Rules(town);
+        Meet(town);
         foreach (var p in town.Powers)
         {
             var d = Def(town, p.Id);
@@ -393,6 +400,68 @@ public static class Powers
         Court(town);
         StartFeud(town);
         SendEnvoy(town);
+    }
+
+    // First contact --------------------------------------------------------------------------------
+
+    /// <summary>The source of the first-contact scenes (powers.json "contacts").</summary>
+    public const string ContactSource = "contact";
+
+    /// <summary>Its <see cref="Discovery"/> key.</summary>
+    public static string Key(string id) => "power:" + id;
+
+    /// <summary>Whether the town has met it: until then it sends no envoys, takes no gifts and can't be allied.</summary>
+    public static bool Met(Town town, PowerState p) => Discovery.Known(town, Key(p.Id));
+
+    /// <summary>The powers the town has met, in list order.</summary>
+    public static IEnumerable<PowerState> Known(Town town) => town.Powers.Where(p => Met(town, p));
+
+    /// <summary>
+    /// The town meets a power for the first time: its first-contact scene opens, where the mayor's answers and rolls
+    /// set where the town starts with it. Returns whether this was the first meeting.
+    /// </summary>
+    public static bool Introduce(Town town, PowerState p, string how)
+    {
+        if (!Discovery.Meet(town, Key(p.Id), how)) return false;
+        if (town.Outcome == null && Rules(town).Contacts.FirstOrDefault(c => c.Id == ContactSource + "-" + p.Id) is { } d) Stories.Contact(town, d, new Story { Minor = p.Id });
+        return true;
+    }
+
+    /// <summary>
+    /// Daily: one power whose day has come calls on the town. A power a save from before first contact already dealt
+    /// with is known without a scene.
+    /// </summary>
+    private static void Meet(Town town)
+    {
+        foreach (var p in town.Powers.Where(p => !Met(town, p) && (p.Side != PowerSide.Neutral || p.CourtedBy != null || p.Envoy != "" || p.TaskTaken || p.FeudWith != "" || p.PactUntil > 0)))
+            Discovery.Meet(town, Key(p.Id), Discovery.Heard);
+        var due = town.Powers.Where(p => !Met(town, p) && town.Day >= Def(town, p.Id).MeetDay)
+            .OrderBy(p => Def(town, p.Id).MeetDay).ThenBy(p => p.Id, StringComparer.Ordinal).FirstOrDefault();
+        if (due != null) Introduce(town, due, Discovery.Met);
+    }
+
+    /// <summary>Open a first-contact scene now, for scripted shots: a power's, or the nearest heard-of people's.</summary>
+    public static Story? OpenContact(Town town, string storyId)
+    {
+        if (town.Content.Stories.Story(storyId) is not { Source: ContactSource } d) return null;
+        Init(town);
+        if (storyId == ContactSource + "-people")
+        {
+            var s = town.Settlements.Where(x => !x.Razed && town.Regions[x.RegionId].Known).OrderBy(x => town.Regions[x.RegionId].Days).ThenBy(x => x.Id).FirstOrDefault();
+            if (s == null) return null;
+            Discovery.Meet(town, Neighbours.Key(s), Discovery.Met);
+            return Stories.Contact(town, d, new Story { SettlementId = s.Id });
+        }
+        if (Find(town, storyId[(ContactSource.Length + 1)..]) is not { } p) return null;
+        Discovery.Meet(town, Key(p.Id), Discovery.Met);
+        return Stories.Contact(town, d, new Story { Minor = p.Id });
+    }
+
+    /// <summary>Standing and favour move together, as a gift moves them: what a story's "minor" effect does.</summary>
+    internal static void Sway(Town town, PowerState p, double v)
+    {
+        p.Favour += v;
+        p.Standing = Math.Clamp(p.Standing + v, -100, 100);
     }
 
     private static string Fill(Town town, string text, PowerState p, PowerDef d, Menace? enemy = null) => Saga.Sentences(text
@@ -511,6 +580,8 @@ public static class Powers
             var p = town.Powers.Where(p => Buyable(town, p, m) && offer > Resolve(town, p))
                 .OrderBy(p => Resolve(town, p)).ThenBy(p => p.Id, StringComparer.Ordinal).FirstOrDefault();
             if (p == null) continue;
+            // Word of the courting is how the town first hears of a power it hasn't met.
+            Introduce(town, p, Discovery.Heard);
             p.CourtedBy = m.Id;
             p.Offer = offer;
             p.DecideDay = town.Day + r.NoticeDays;
@@ -584,7 +655,7 @@ public static class Powers
         var e = Rules(town).Envoys;
         if (town.Day < e.From || (town.Day - e.From) % Math.Max(1, e.Every) != 0) return;
         var p = town.Powers
-            .Where(p => p.Envoy == "" && town.Day >= p.NextEnvoyDay && EnvoyKind(town, p) != "")
+            .Where(p => p.Envoy == "" && town.Day >= p.NextEnvoyDay && Met(town, p) && EnvoyKind(town, p) != "")
             .OrderBy(p => EnvoyKind(town, p) switch { "tribute" => 0, "alliance" => 1, "favour" => 2, _ => 3 })
             .ThenBy(p => EnvoyKind(town, p) == "tribute" ? p.Standing : -(p.Standing - Def(town, p.Id).AllyAt))
             .ThenBy(p => p.Id, StringComparer.Ordinal)
@@ -869,10 +940,12 @@ public static class Powers
         var pair = r.Pairs
             .Select(f => (Def: f, A: Find(town, f.A), B: Find(town, f.B)))
             .Where(x => x.A != null && x.B != null && x.A.FeudWith == "" && x.B.FeudWith == "" && town.Day >= x.A.NextFeudDay
-                        && x.A.Side != PowerSide.Enemy && x.B.Side != PowerSide.Enemy)
+                        && x.A.Side != PowerSide.Enemy && x.B.Side != PowerSide.Enemy && (Met(town, x.A) || Met(town, x.B)))
             .OrderBy(x => x.A!.NextFeudDay).FirstOrDefault();
         if (pair.A == null || pair.B == null) return;
         var (a, b) = (pair.A, pair.B);
+        Introduce(town, a, Discovery.Heard);
+        Introduce(town, b, Discovery.Heard);
         foreach (var (x, y) in new[] { (a, b), (b, a) })
         {
             x.FeudWith = y.Id;
@@ -939,7 +1012,7 @@ public static class Powers
     public static bool Court(Town town, string id)
     {
         var p = Find(town, id);
-        if (p == null || town.Treasury < GiftCost(town, id)) return false;
+        if (p == null || !Met(town, p) || town.Treasury < GiftCost(town, id)) return false;
         double worth = GiftWorth(town, p);
         town.Book(TreasuryAccount.Powers, -GiftCost(town, id));
         p.Favour += worth;
@@ -953,7 +1026,7 @@ public static class Powers
     public static string? AllyBlocked(Town town, string id)
     {
         var p = Find(town, id);
-        if (p == null) return "unknown";
+        if (p == null || !Met(town, p)) return "unknown";
         var d = Def(town, id);
         if (p.Side == PowerSide.Town) return "already allied";
         if (p.Side == PowerSide.Enemy) return $"it serves {Patron(town, p)?.Name ?? "an enemy"}";
