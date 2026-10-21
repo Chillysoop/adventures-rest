@@ -29,6 +29,9 @@ uniform sampler2D zones_tex : filter_linear, repeat_disable, hint_default_transp
 uniform vec2 town_origin = vec2(0.0);
 uniform float town_size = 0.0;
 uniform float zone_strength = 0.1;
+// Farmland as fields: crop colour premultiplied by cover (0.55 fallow, 1 farmed), and per field its row heading (r, half turns), meadow (g) and shade (b).
+uniform sampler2D fields_tex : filter_linear, repeat_disable, hint_default_transparent;
+uniform sampler2D field_dir_tex : filter_nearest, repeat_disable, hint_default_black;
 
 varying vec3 wpos;
 varying vec3 wnrm;
@@ -127,6 +130,27 @@ void fragment() {
 	col = season_grass(col);
 	vec3 turned = mix(vec3(0.62, 0.30, 0.13), vec3(0.82, 0.60, 0.20), nz3.g) * (0.75 + 0.3 * nz2.r);
 	col = mix(col, turned, autumn * clamp(canopy * 1.4, 0.0, 0.9) * 0.85);
+	// Fields: furrows of soil between ridges of the crop, running the way each farm faces; pasture, orchards and fallow are meadow in the crop's tint.
+	vec2 fuv = (p - town_origin) / max(town_size, 1.0);
+	if (town_size > 0.0 && fuv.x > 0.0 && fuv.y > 0.0 && fuv.x < 1.0 && fuv.y < 1.0) {
+		vec4 fc = texture(fields_tex, fuv);
+		if (fc.a > 0.02) {
+			vec4 fd = texture(field_dir_tex, fuv);
+			float ang = fd.r * 3.14159;
+			float across = dot(p, vec2(-sin(ang), cos(ang))) + (nz2.r - 0.5) * 0.12;
+			float ridge = 0.5 + 0.5 * cos(across * 6.2832 * 8.0);
+			// The crop's colour, a little muted toward the grass so fields sit in the land, varied field to field.
+			vec3 crop = mix(col, fc.rgb / fc.a, 0.8) * (0.88 + 0.2 * fd.b) * (0.93 + 0.12 * nz3.r);
+			vec3 soil = mix(vec3(0.42, 0.31, 0.19), vec3(0.52, 0.39, 0.24), nz3.g);
+			vec3 furrow = mix(crop * 0.72, soil, 0.45);
+			vec3 rows = mix(furrow, crop, smoothstep(0.2, 0.8, ridge + (g1.r - 0.5) * 0.3));
+			vec3 meadow = mix(col, crop, 0.5) * (0.93 + 0.12 * g2.g);
+			vec3 field = mix(rows, meadow, fd.g);
+			// Stubble and bare earth after the harvest and through the winter.
+			field = mix(field, mix(soil * 1.08, col, fd.g), max(snow, autumn * 0.4) * 0.6);
+			col = mix(col, field, smoothstep(0.3, 0.75, fc.a) * (1.0 - strategic));
+		}
+	}
 	col = lay_snow(col, p, snow_cover(p, normalize(wnrm).y) * smoothstep(-0.5, -0.1, h));
 	// The town's lanes and yards, worn into the grass (and trodden clear of snow) with ragged edges; the zone plan painted over them.
 	vec2 tuv = (p - town_origin) / max(town_size, 1.0);

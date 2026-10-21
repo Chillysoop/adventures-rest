@@ -5,7 +5,7 @@ using Godot;
 namespace CrownAndCompass.Client;
 
 /// <summary>The parchment-and-lamplight look shared with the web build: colours, fonts and the theme.</summary>
-public static class Ui
+public static partial class Ui
 {
     public static readonly Color Bg = new("17140f");
     public static readonly Color Panel = new("211d17");
@@ -177,6 +177,7 @@ public static class Ui
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             MetaUnderlined = false,
+            HintUnderlined = false,
         };
         r.Text = Dress(bbcode, skip);
         if (size != 14)
@@ -295,6 +296,13 @@ public static class Ui
                 int close = bbcode.IndexOf(']', i);
                 if (close < 0) { sb.Append(bbcode, i, bbcode.Length - i); break; }
                 string tag = bbcode.Substring(i, close - i + 1);
+                // [nk]...[/nk] (Ui.Plainly) keeps its words unlinked and is dropped here.
+                if (tag is "[nk]" or "[/nk]")
+                {
+                    depth = Math.Max(0, depth + (tag == "[nk]" ? 1 : -1));
+                    i = close + 1;
+                    continue;
+                }
                 if (tag.StartsWith("[url", StringComparison.Ordinal) || tag.StartsWith("[img", StringComparison.Ordinal)) depth++;
                 else if (tag is "[/url]" or "[/img]") depth = Math.Max(0, depth - 1);
                 sb.Append(tag);
@@ -395,10 +403,33 @@ public static class Ui
     /// <summary>An icon inline in rich text.</summary>
     public static string Img(string name, int size = 15) => $"[img={size}x{size} valign=center]res://assets/icons/{name}.svg[/img]";
 
-    private static readonly System.Text.RegularExpressions.Regex Coins = new(@"(?<![\w#=])(\d[\d,]*(?:\.\d+)?)(g\b| gold\b)", System.Text.RegularExpressions.RegexOptions.Compiled);
+    // A tag first, so sums inside one (a [hint=...] tooltip) are left alone.
+    private static readonly System.Text.RegularExpressions.Regex Coins = new(@"\[[^\]]*\]|(?<![\w#=])(\d[\d,]*(?:\.\d+)?)(g\b| gold\b)", System.Text.RegularExpressions.RegexOptions.Compiled);
 
-    /// <summary>Put the gold icon before every sum of money in a piece of rich text: "120g" and "120 gold".</summary>
-    public static string Coined(string bbcode) => Coins.Replace(bbcode, m => $"{Img("gold", 14)}{m.Groups[1].Value}{(m.Groups[2].Value == "g" ? "" : " gold")}");
+    /// <summary>Gold at which the player sees platinum instead (ten gold a piece).</summary>
+    public const double PlatinumFrom = 1000;
+
+    /// <summary>
+    /// The money the player reads, in gold and platinum only: whole gold below <see cref="PlatinumFrom"/> (the
+    /// coppers and silver the sim keeps stay under the hood), platinum pieces at ten gold from there. Returns the
+    /// icon to wear and the figure.
+    /// </summary>
+    public static (string Icon, string Figure, bool Platinum) Money(double gold)
+    {
+        if (Math.Abs(gold) >= PlatinumFrom) return ("platinum", Math.Round(gold / 10).ToString("#,0", System.Globalization.CultureInfo.InvariantCulture), true);
+        double whole = gold > 0 && gold < 1 ? 1 : Math.Round(gold);
+        return ("gold", whole.ToString("#,0", System.Globalization.CultureInfo.InvariantCulture), false);
+    }
+
+    /// <summary>Put the coin before every sum of money in a piece of rich text ("120g", "120 gold"), as gold or platinum.</summary>
+    public static string Coined(string bbcode) => Coins.Replace(bbcode, m =>
+    {
+        if (!m.Groups[1].Success) return m.Value;
+        if (!double.TryParse(m.Groups[1].Value.Replace(",", ""), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double v))
+            return $"{Img("gold", 14)}{m.Groups[1].Value}{(m.Groups[2].Value == "g" ? "" : " gold")}";
+        var (icon, figure, plat) = Money(v);
+        return $"{Img(icon, 14)}{figure}{(m.Groups[2].Value == "g" ? "" : plat ? " platinum" : " gold")}";
+    });
 
     /// <summary>A button label with its sum of money shown with the gold icon instead of a "g".</summary>
     public static void GoldButton(Button b)
@@ -409,8 +440,10 @@ public static class Ui
             b.Icon = null; // buttons that are reused may have shown a price before
             return;
         }
-        b.Text = b.Text.Remove(m.Index + m.Length - 1, 1);
-        b.Icon = Icon("gold");
+        double.TryParse(m.Groups[1].Value.Replace(",", ""), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double v);
+        var (icon, figure, _) = Money(v);
+        b.Text = b.Text.Remove(m.Index, m.Length).Insert(m.Index, figure);
+        b.Icon = Icon(icon);
         b.ExpandIcon = false;
         b.AddThemeConstantOverride("icon_max_width", 16);
     }
@@ -494,21 +527,34 @@ public sealed class Pane
 
     // ---- Building blocks ----
 
-    public void Heading(string text) =>
-        Add("h" + text, () =>
+    /// <summary>A section's heading: its icon (<paramref name="icon"/>, or the kit's for that heading) and the words in gold.</summary>
+    public void Heading(string text, string? icon = null) =>
+        Add("h" + text + icon, () =>
         {
-            var l = Ui.Label(text.ToUpperInvariant(), Ui.Ink2, Ui.Bold, 12);
+            var h = new HBoxContainer();
+            h.AddThemeConstantOverride("separation", 6);
+            if ((icon ?? Ui.HeadingIcon(text)) is string i) h.AddChild(Ui.IconRect(i, 17));
+            var l = Ui.Label(text.ToUpperInvariant(), Ui.KeywordColor, Ui.Bold, 12);
             l.AddThemeConstantOverride("line_spacing", 0);
+            l.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+            h.AddChild(l);
             var m = new MarginContainer();
             m.AddThemeConstantOverride("margin_top", 12);
-            m.AddChild(l);
+            m.AddChild(h);
             m.SetMeta("heading", text);
             return m;
         });
 
     public void Text(string bbcode, int size = 14) => Add("t" + size + bbcode, () => Ui.Rich(bbcode, size));
 
-    public void Note(string text) => Text(Ui.C(Ui.Ink2, text), 13);
+    /// <summary>A dim note: its first sentence, the rest behind an info mark (<see cref="Ui.Brief"/>).</summary>
+    public void Note(string text) => Text(Ui.C(Ui.Ink2, Ui.Brief(text)), 13);
+
+    /// <summary>A list, one point a line, each with an icon or a gold dot.</summary>
+    public void Bullets(IEnumerable<string> points, string? icon = null) => Text(Ui.Bullets(points, icon));
+
+    /// <summary>A line of icon chips (<see cref="Ui.Chip"/>).</summary>
+    public void Chips(params string[] chips) => Text(Ui.Chips(chips));
 
     /// <summary>A card with a tinted background, for summaries at the top of a pane.</summary>
     public void Card(string bbcode, Color? border = null) =>
@@ -695,6 +741,23 @@ public sealed class Pane
         });
     }
 
+    /// <summary>A tug of war between two sides, −100 (left) to +100 (right), with the bands where each side grumbles and acts.</summary>
+    public void Balance(string left, string right, double value, double calm, double lean, double breaking) =>
+        Add($"bal{left}{right}{Math.Round(value)}", () =>
+        {
+            var h = new HBoxContainer();
+            h.AddThemeConstantOverride("separation", 8);
+            var l = Ui.Label(left, Ui.Ink2, Ui.Bold, 13);
+            l.CustomMinimumSize = new Vector2(64, 0);
+            h.AddChild(l);
+            h.AddChild(new BalanceBar { Value = (float)(value / 100), Calm = (float)(calm / 100), Lean = (float)(lean / 100), Breaking = (float)(breaking / 100), SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(120, 10), SizeFlagsVertical = Control.SizeFlags.ShrinkCenter });
+            var rl = Ui.Label(right, Ui.Ink2, Ui.Bold, 13);
+            rl.CustomMinimumSize = new Vector2(64, 0);
+            rl.HorizontalAlignment = HorizontalAlignment.Right;
+            h.AddChild(rl);
+            return h;
+        });
+
     /// <summary>A labelled meter, 0 to 100.</summary>
     public void Meter(string label, double value, string figure, bool bad = false) =>
         Add($"m{label}{Math.Round(value)}{figure}{bad}", () =>
@@ -714,6 +777,30 @@ public sealed class Pane
             h.AddChild(f);
             return h;
         });
+}
+
+/// <summary>A tug of war from −1 (left) to +1 (right), with the calm middle band shaded and a marker where it stands.</summary>
+public partial class BalanceBar : Control
+{
+    public float Value;
+    public float Calm = 0.15f;
+    public float Lean = 0.25f;
+    public float Breaking = 0.6f;
+
+    public override void _Draw()
+    {
+        var r = new Rect2(Vector2.Zero, Size);
+        DrawStyleBox(Ui.Flat(Ui.Line, 0, 0, 99), r);
+        float mid = Size.X / 2;
+        float X(float v) => mid + v * mid;
+        DrawRect(new Rect2(X(-Breaking), 0, X(-Lean) - X(-Breaking), Size.Y), new Color(Ui.Gold, 0.35f));
+        DrawRect(new Rect2(X(Lean), 0, X(Breaking) - X(Lean), Size.Y), new Color(Ui.Gold, 0.35f));
+        DrawRect(new Rect2(0, 0, X(-Breaking), Size.Y), new Color(Ui.Bad, 0.45f));
+        DrawRect(new Rect2(X(Breaking), 0, Size.X - X(Breaking), Size.Y), new Color(Ui.Bad, 0.45f));
+        DrawRect(new Rect2(X(-Calm), 0, X(Calm) - X(-Calm), Size.Y), new Color(Ui.Good, 0.45f));
+        float x = X(Mathf.Clamp(Value, -1, 1));
+        DrawRect(new Rect2(x - 2, -3, 4, Size.Y + 6), Ui.Ink);
+    }
 }
 
 /// <summary>A rounded progress bar.</summary>
