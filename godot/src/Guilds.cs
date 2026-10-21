@@ -57,23 +57,23 @@ public partial class Main
         var r = Union.Rules(t);
         if (!u.Formed)
         {
-            p.Note($"Once {r.Founding} working townsfolk (guild hands and others, even a hedge mage or two) band together as {r.Name}, you will have to keep them and the town's mages in balance.");
+            p.Note($"Forms at {r.Founding} members. Then keep it and the mages in balance.");
             return;
         }
         string mood = Union.Mood(t);
         double concord = Union.Concord(t);
         var color = Union.Sided(t) || Math.Abs(u.Bar) >= r.Breaking ? Ui.Bad : Math.Abs(u.Bar) >= r.Lean ? Ui.Gold : Math.Abs(u.Bar) <= concord ? Ui.Good : Ui.Ink2;
-        string effect = Union.Sided(t) ? (u.Side == "union" ? $"Hedge magic outside the movement is banned and the library's lore is halved for {Ui.Days(u.SideUntil - t.Day)}." : $"Magic is welcome in every trade, the library works a quarter faster, and the movement is furious, for {Ui.Days(u.SideUntil - t.Day)}.")
-            : Math.Abs(u.Bar) <= concord ? "Both sides work together: the library learns faster and the guilds warm to you."
-            : u.Bar >= r.Breaking ? "The movement will march and every guild will strike together."
-            : u.Bar <= -r.Breaking ? "The mages will walk out, and a wizard may leave town."
-            : u.Bar >= r.Lean ? "Every guild's temper sours by the day."
-            : u.Bar <= -r.Lean ? "The library's studies slow."
-            : "Keep it in the green middle to keep both sides working.";
+        string effect = Union.Sided(t) ? (u.Side == "union" ? $"• Hedge magic outside it banned\n• Library lore halved\n• {Ui.Days(u.SideUntil - t.Day)} left" : $"• Magic in every trade\n• Library +25%\n• Movement furious\n• {Ui.Days(u.SideUntil - t.Day)} left")
+            : Math.Abs(u.Bar) <= concord ? "In balance: library faster, guilds warm."
+            : u.Bar >= r.Breaking ? "Next: a march and every guild on strike."
+            : u.Bar <= -r.Breaking ? "Next: the mages walk out."
+            : u.Bar >= r.Lean ? "Guilds souring daily."
+            : u.Bar <= -r.Lean ? "Library slowing."
+            : "Keep it in the green.";
         var members = Union.Members(t);
         int inGuilds = members.Count(a => Guilds.InTrade(t, a)), mages = members.Count(a => a.HedgeSpell != "");
-        string who = $"{members.Count} members: {inGuilds} from the guilds' trades, {members.Count - inGuilds} from other work{(mages > 0 ? $", {mages} of them hedge mages, who widen the middle" : "")}.";
-        p.Row($"[b]{Ui.Esc(Ui.Cap(r.Name))} and the mages[/b]  {Tag(mood, color)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(effect)} {Ui.Esc(who)}[/font_size]")}");
+        string who = $"{members.Count} members: {inGuilds} guild · {members.Count - inGuilds} other{(mages > 0 ? $" · {mages} hedge mages" : "")}";
+        p.Row($"[b]{Ui.Esc(Ui.Cap(r.Name))} and the mages[/b]  {Tag(mood, color)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(effect)}\n{Ui.Esc(who)}[/font_size]")}");
         p.Balance("Movement", "Mages", u.Bar, concord, r.Lean, r.Breaking);
         var pulls = Union.Pulls(t).OrderByDescending(x => Math.Abs(x.Pull)).Take(6).Select(x => $"{x.Why} {(x.Pull > 0 ? "→ mages" : "→ movement")} {Math.Round(Math.Abs(x.Pull))}");
         p.Text(Ui.C(Ui.Ink2, $"[font_size=12]Pulling it: {Ui.Esc(string.Join(" · ", pulls))}.[/font_size]"), 12);
@@ -85,7 +85,7 @@ public partial class Main
         p.Buttons(
             ("Side with the movement", side == null, false, () => Act(() => _sim.TakeSide("union"))),
             ("Side with the mages", side == null, false, () => Act(() => _sim.TakeSide("mages"))));
-        if (side == null) p.Note($"Taking a side holds for {Ui.Days(r.SideDays)} and the other side never quite forgets.");
+        if (side == null) p.Note($"A side holds {Ui.Days(r.SideDays)}. The other remembers.");
     }
 
     /// <summary>

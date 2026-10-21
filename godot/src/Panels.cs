@@ -262,7 +262,7 @@ public partial class Main
                     : "Services grow with the town: every new household, hall and institution costs upkeep. While taxes, rents and trade cover them, the townsfolk are content.");
     }
 
-    /// <summary>The law book: the punishment set for each crime, and what each choice would move.</summary>
+    /// <summary>The law book: the punishment set for each crime, and what each sentence moves, as icons.</summary>
     private void RenderLaws(Pane p, Town t)
     {
         var r = Laws.Rules(t);
@@ -273,23 +273,28 @@ public partial class Main
             var now = Laws.For(t, c.Id);
             string crime = c.Id;
             var choices = r.Punishments.Select(x => (x.Name, x.Id != now.Id, false, (Action)(() => Act(() => _sim.SetLaw(crime, x.Id))))).ToArray();
-            p.Row($"[b]{Ui.Esc(c.Name)}[/b]  {Tag(now.Name, Ui.Gold)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(c.Text)} {Ui.Esc(now.Text)}\n{Ui.Esc(LawMoves(now))}[/font_size]")}", choices);
+            p.Row($"[b]{Ui.Esc(c.Name)}[/b]  {Tag(now.Name, Ui.Gold)}\n[font_size=12]{LawMoves(now)}[/font_size]", choices);
         }
-        p.Note("The watch carries out the sentence the book sets each time it catches a hero at it. Harsh ones keep offenders home and calm the streets, but the temple and the heroes remember.");
+        p.Note("Carried out each time the watch catches a hero.");
     }
 
+    /// <summary>What one sentence moves: an icon and a number each.</summary>
     private static string LawMoves(PunishmentDef x)
     {
         var parts = new List<string>();
-        void Add(string what, double v) { if (v != 0) parts.Add($"{what} {(v > 0 ? "+" : "")}{v:0.#}"); }
-        if (x.Fine != 1) parts.Add(x.Fine == 0 ? "no fine" : $"fine ×{x.Fine:0.#}");
-        Add("unrest", x.Order);
-        if (x.Fear > 0) parts.Add($"deters {Math.Round(x.Fear * 100)}%");
-        Add("guilds", x.Guilds);
-        Add("temple", x.Temple);
-        Add("Mandate", x.Mandate);
-        Add("offender's loyalty", x.Loyalty);
-        return parts.Count == 0 ? "Moves nothing else." : "Each sentence: " + string.Join(" · ", parts) + ".";
+        void Add(string icon, double v, bool good, string suffix = "")
+        {
+            if (v == 0) return;
+            parts.Add($"{Ui.Img(icon, 13)} {Ui.C(good ? Ui.Good : Ui.Bad, $"{(v > 0 ? "+" : "")}{v:0.#}{suffix}")}");
+        }
+        if (x.Fine != 1) parts.Add($"{Ui.Img("gold", 13)} ×{x.Fine:0.#}");
+        Add("unrest", x.Order, x.Order < 0);
+        if (x.Fear > 0) parts.Add($"{Ui.Img("dread", 13)} {Ui.C(Ui.Good, $"−{Math.Round(x.Fear * 100)}% crime")}");
+        Add("standing", x.Guilds, x.Guilds > 0, " guilds");
+        Add("favour", x.Temple, x.Temple > 0, " temple");
+        Add("mandate", x.Mandate, x.Mandate > 0);
+        Add("heroes", x.Loyalty, x.Loyalty > 0, " loyalty");
+        return parts.Count == 0 ? Ui.C(Ui.Ink2, "No other effect") : string.Join("   ", parts);
     }
 
     // ---------- Bounties and the road ----------
@@ -723,7 +728,7 @@ public partial class Main
         if (a.SpouseId is int sp) p.Text($"Married to {AgentLink(t.Agent(sp))}");
         if (Taverns.Persona(t, a) is { } persona)
             p.Text(Ui.C(Ui.Ink2, $"[font_size=12]In their cups: {Ui.Esc(persona.Name)}{(Taverns.Drunk(t, a) != null ? ", and it shows tonight" : "")}.[/font_size]"), 12);
-        if (a.Hero is { Owed: > 0 } owedHs) p.Text(Ui.C(Ui.Gold, $"[font_size=12]The town owes them {(owedHs.Owed == 1 ? "a favour" : $"{owedHs.Owed} favours")} for scrying on credit.[/font_size]"), 12);
+        if (a.Hero is { Owed: > 0 } owedHs) p.Text(Ui.C(Ui.Gold, $"[font_size=12]Owed {owedHs.Owed} scrying {(owedHs.Owed == 1 ? "favour" : "favours")}[/font_size]"), 12);
         if (a.Hero != null && Taverns.Owing(t, a) is { } blood) p.Text(Ui.C(Ui.Bad, $"[font_size=12]Owes blood money for {Ui.Esc(blood.Victim)}.[/font_size]"), 12);
         InspectSheet(p, t, a);
         var friends = a.Opinions.Where(kv => kv.Value >= 40).OrderBy(kv => kv.Key).Select(kv => AgentLink(t.Agent(kv.Key))).ToList();
@@ -837,7 +842,7 @@ public partial class Main
                 int m = Curses.Mod(t.Content, hs, kind);
                 if (m != 0) mods.Add($"{label} {(m > 0 ? "+" : "−")}{Math.Abs(m)}");
             }
-            p.Text($"{Tag($"Cursed: {Ui.Cap(curse.Name)}", Ui.Bad)}{(mods.Count > 0 ? Ui.C(Ui.Ink2, $" {string.Join(", ", mods)}") : "")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(curse.Text)} It will not be put down, sold or passed on until the curse is lifted.[/font_size]")}", 13);
+            p.Text($"{Tag($"Cursed: {Ui.Cap(curse.Name)}", Ui.Bad)}{(mods.Count > 0 ? Ui.C(Ui.Ink2, $" {string.Join(", ", mods)}") : "")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(curse.Text)} Stuck until lifted.[/font_size]")}", 13);
         }
         var life = new List<string>();
         if (hs.Holding != "") life.Add($"owns {Ui.Esc(hs.Holding)} and sleeps there between jobs");
@@ -910,10 +915,10 @@ public partial class Main
         {
             var crowd = q.Traits.Select(x => x switch { "HotTempered" => "the hot-tempered", "Gregarious" => "the sociable", _ => "the " + x.ToLowerInvariant() }).ToList();
             if (q.Heroes) crowd.Add("heroes");
-            p.Text($"A tavern {Ui.Esc(q.Name)}. {Ui.Esc(q.Text)}{(crowd.Count > 0 ? Ui.C(Ui.Ink2, $" [font_size=12]Draws {Ui.Esc(string.Join(" and ", crowd))} from further off.[/font_size]") : "")}", 13);
+            p.Text($"A tavern {Ui.Esc(q.Name)}. {Ui.Esc(q.Text)}{(crowd.Count > 0 ? Ui.C(Ui.Ink2, $"\n[font_size=12]Draws: {Ui.Esc(string.Join(", ", crowd))}[/font_size]") : "")}", 13);
         }
         var said = t.Content.Taverns.Slang.Select(w => $"\"{Taverns.Say(t, w.Plain)}\" for {w.Plain}").Take(4).ToList();
-        if (said.Count > 0) p.Text(Ui.C(Ui.Ink2, $"[font_size=12]In {Ui.Esc(t.Name)}'s taverns they say {Ui.Esc(string.Join(", ", said))}.[/font_size]"), 12);
+        if (said.Count > 0) p.Text(Ui.C(Ui.Ink2, $"[font_size=12]Slang: {Ui.Esc(string.Join(", ", said))}[/font_size]"), 12);
     }
 
     /// <summary>A building site: what it waits on, and the player's say over it.</summary>
