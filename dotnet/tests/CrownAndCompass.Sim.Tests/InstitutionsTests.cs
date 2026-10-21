@@ -48,6 +48,29 @@ public class InstitutionsTests
     }
 
     [Fact]
+    public void InstitutionsStartUndiscoveredAndComeToLightFromTheirSparks()
+    {
+        foreach (var i in C.Institutions.Institutions)
+        {
+            Assert.NotEmpty(i.Sparks);
+            Assert.StartsWith("inst-", i.Icon);
+        }
+        var sim = Player();
+        var t = sim.Town;
+        Assert.Empty(t.InstitutionsSeen);
+        sim.RunDays(1);
+        Assert.True(t.InstitutionsSeen.Count() < C.Institutions.Institutions.Count / 3, $"{t.InstitutionsSeen.Count()} known on day one");
+        Assert.False(Institutions.Seen(t, "resident-dragon"));
+        Assert.True(Institutions.Hidden(t, "dragon_eyrie"));
+
+        // Opening one makes it known, whatever its sparks.
+        Raise(t, "griffon_roost");
+        sim.RunDays(1);
+        Assert.True(Institutions.Seen(t, "griffon-roost"));
+        Assert.False(Institutions.Hidden(t, "griffon_roost"));
+    }
+
+    [Fact]
     public void AHallOpensWithAKeeperAndItsCallingServesTheTown()
     {
         var sim = Player();

@@ -229,9 +229,8 @@ public partial class Main
         var shown = open.Take(limit).ToList();
         if (open.Count == 0) p.Note("No threat the town knows of. Explore to find more.");
         var free = Watch.FreeScryingsLeft(t) > 0;
-        var scryer = Knowledge.Scryers(t).FirstOrDefault();
         var watchers = Watch.Watchers(t);
-        foreach (var s in shown) BoardRow(p, t, s, chosen, crews, free, scryer, watchers, compact);
+        foreach (var s in shown) BoardRow(p, t, s, chosen, crews, free, watchers, compact);
         if (open.Count > shown.Count) p.Note($"+{open.Count - shown.Count} more on the full board");
 
         var cleared = t.Sites.Where(s => s.Known != SiteKnowledge.Unheard && s.ThoughtCleared).ToList();
@@ -240,7 +239,7 @@ public partial class Main
     }
 
     /// <summary>One threat: face, name, what's posted or happening, a danger pill per crew, and its buttons.</summary>
-    private void BoardRow(Pane p, Town t, SiteState s, TermDef chosen, List<Crew> crews, bool freeScry, Agent? scryer, List<Agent> watchers, bool compact)
+    private void BoardRow(Pane p, Town t, SiteState s, TermDef chosen, List<Crew> crews, bool freeScry, List<Agent> watchers, bool compact)
     {
         var live = t.Bounties.FirstOrDefault(b => b.SiteId == s.Def.Id && b.Status is BountyStatus.Open or BountyStatus.Taken);
         var party = live?.PartyId is int pid ? t.Parties.FirstOrDefault(x => x.Id == pid) : null;
@@ -273,10 +272,12 @@ public partial class Main
         var danger = Assess.Danger(t, s);
         bool canPost = live == null && blocked == null;
         bool scryable = Watch.LiveOf(t, s) == null;
-        double scryCost = Knowledge.ScryCost(t, s.Def);
+        // The first rested caster's terms: the loyal scry free, others for gold, the disaffected for a favour.
+        var offer = Knowledge.Offers(t, s.Def).FirstOrDefault();
+        double scryCost = offer?.Gold ?? 0;
         bool scouting = Watch.ScoutAt(t, sid) != null;
 
-        string sig = $"S{text}|{Foes.CreatureFace(s.Believed, s.Def.Kind)}{danger.Id}|{string.Join(",", pills.Select(x => x.Crew.Name + x.Band.Id + x.Crew.Offerable))}|{canPost}{blocked}{reward}{withLoot}{t.Treasury >= reward}{t.Treasury >= withLoot}|{scryable}{freeScry}{scryer?.Id}{Math.Round(scryCost)}{t.Treasury >= scryCost}|{scouting}{watchers.Count}|{chosen.Id}{compact}";
+        string sig = $"S{text}|{Foes.CreatureFace(s.Believed, s.Def.Kind)}{danger.Id}|{string.Join(",", pills.Select(x => x.Crew.Name + x.Band.Id + x.Crew.Offerable))}|{canPost}{blocked}{reward}{withLoot}{t.Treasury >= reward}{t.Treasury >= withLoot}|{scryable}{freeScry}{offer?.Caster.Id}{offer?.Price}{Math.Round(scryCost)}{t.Treasury >= scryCost}|{scouting}{watchers.Count}|{chosen.Id}{compact}";
         p.Add(sig, () =>
         {
             var v = new VBoxContainer();
@@ -325,10 +326,12 @@ public partial class Main
             {
                 string scryTip = freeScry
                     ? $"Scry {s.Def.Name}: see it live for {t.Content.Knowledge.ScryHours} hours\n• Free today (the Scrying Pool)"
-                    : scryer != null
-                        ? $"Scry {s.Def.Name}: see it live for {t.Content.Knowledge.ScryHours} hours\n• {Math.Round(scryCost)}g to {scryer.Name}, {scryer.Hero!.Cls.Name}"
-                        : $"Scry: see a site live\n• Needs a {ScryClasses(t)} of level {t.Content.Knowledge.ScryMinLevel}+ in town";
-                buttons.AddChild(IconButton("act-scry", "", scryTip, freeScry || scryer != null && t.Treasury >= scryCost, false, () => Act(() => _sim.CommissionScrying(sid))));
+                    : offer != null
+                        ? $"Scry {s.Def.Name}: see it live for {t.Content.Knowledge.ScryHours} hours\n• {offer.Caster.Name}, {offer.Caster.Hero!.Cls.Name}: {offer.Price switch { ScryPrice.Free => "free", ScryPrice.Gold => $"{Math.Round(offer.Gold)}g", _ => "as a favour" }}"
+                        : Knowledge.Scryers(t).Count > 0
+                            ? "Scry: see a site live\n• Every caster in town is resting from the last one"
+                            : $"Scry: see a site live\n• Needs a {ScryClasses(t)} of level {t.Content.Knowledge.ScryMinLevel}+ in town";
+                buttons.AddChild(IconButton("act-scry", "", scryTip, freeScry || offer != null && t.Treasury >= scryCost, false, () => Act(() => _sim.CommissionScrying(sid))));
                 if (!scouting && !compact)
                 {
                     var k = t.Content.Knowledge.Scouts;
