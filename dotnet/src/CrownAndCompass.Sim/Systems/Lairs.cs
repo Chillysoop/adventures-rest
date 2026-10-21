@@ -640,12 +640,24 @@ public static class Lairs
     }
 
     /// <summary>The cleared site the player might keep clear next: nearest first, one the treasury could pay a patrol for.</summary>
-    public static SiteState? WorthPatrolling(Town town) =>
-        town.Sites
-            .Where(x => !x.Patrolled && !x.Held && x.Cleared && x.ThoughtCleared && PatrolBlocked(town, x) == null)
-            .OrderBy(x => x.Def.Distance)
-            .ThenBy(x => x.Def.Id, StringComparer.Ordinal)
-            .FirstOrDefault();
+    public static SiteState? WorthPatrolling(Town town)
+    {
+        // Read every frame by the alert strip: the cheap checks first, and none at all once the town keeps all it can.
+        var p = Rules(town).Patrol;
+        int kept = 0;
+        foreach (var x in town.Sites)
+            if (x.Patrolled) kept++;
+        if (kept >= p.Max) return null;
+        SiteState? best = null;
+        foreach (var x in town.Sites)
+        {
+            if (!x.Cleared || !x.ThoughtCleared || x.Held || x.Patrolled || x.Restored || x.ResettleTick == null) continue;
+            if (best != null && (x.Def.Distance > best.Def.Distance || (x.Def.Distance == best.Def.Distance && string.CompareOrdinal(x.Def.Id, best.Def.Id) > 0))) continue;
+            if (PatrolBlocked(town, x) != null) continue;
+            best = x;
+        }
+        return best;
+    }
 
     private static void AutoHold(Town town)
     {
