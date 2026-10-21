@@ -56,7 +56,7 @@ public partial class Main
                 return 10;
             case 1:
                 // What the main menu's New game does, with the stand-in mayor playing so later systems come into play.
-                StartTown(tutorial: false, _opts.Seed ?? 1, autoplay: true, mayor: _mayorRoll);
+                StartTown(tutorial: false, _opts.Seed ?? 1, autoplay: true, mayor: Stories.RollMayor(_sim.Town.Content, _opts.Seed ?? 1, _mayorRoll.Background));
                 // A new town shows its charter goals (gone by the time the smoke run has played on).
                 SyncGoals();
                 if (Goals.Open(_sim.Town).Count == 0 || _goalsRows.GetChildCount() == 0) throw new InvalidOperationException("the charter goals card is empty in a new town");
@@ -217,12 +217,13 @@ public partial class Main
                 int pick = Tournaments.Chances(_sim.Town, first).OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key).First().Key;
                 if (!_sim.PlaceBet(ev, pick, Tournaments.Rules(_sim.Town).Betting.Min)) throw new InvalidOperationException("the bet was refused");
                 OpenTourney();
-                for (int h = 0; h < 14; h++) _sim.Step();
+                // Ride on until the first heat (a tourney staged late in the day starts the next morning).
+                for (int h = 0; h < 48 && (h < 14 || !_sim.Town.Tourney.Events.Any(e => e.Heats.Count > 0)); h++) _sim.Step();
                 _dirty = true;
                 return 40;
             }
             case 32:
-                if (!_tourney.Visible || _sim.Town.Tourney.Events[0].Heats.Count == 0) throw new InvalidOperationException("the tourney's heats did not show");
+                if (!_tourney.Visible || !_sim.Town.Tourney.Events.Any(e => e.Heats.Count > 0)) throw new InvalidOperationException("the tourney's heats did not show");
                 CloseTourney();
                 return 5;
             default:
