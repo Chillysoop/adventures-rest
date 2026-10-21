@@ -7,6 +7,8 @@
   project. The owner never opens GitHub, an engine or any other tool: show progress as summaries, Ledgers, screenshots and playable builds.
 - Decided: real time with pause on top of a daily strategic tick.
 - Priorities: low-cost scalability, efficiency, speed, quality, style.
+- Future expansion (not built): the underdark and other planes (fey, hells, space) as separate giant map layers
+  reached by ancient portals found on the map or portals the player builds late and must guard. See `docs/map-layers.md`; don't hard-wire "one map".
 
 ## Working here
 
@@ -108,6 +110,9 @@
   another system, capped in decor.json. Pieces claim plan cells (`Decor.Cells`, `LandPlan.Decor`): `Land.Fits` and lanes go
   round them, and they never stand on a lane. Appeal adds to house contentment (`Decor.Comfort`) and to ward land prices
   (`Decor.Prestige`). `--beautify D` dresses a town for screenshots; `--decor oak --decor-at x,y,a` shows the tool.
+- UI text (`docs/ui-text.md`, kit in `godot/src/UiKit.cs`): Conner wants little text. Icon before word (`Ui.Chip`), one point a
+  line (`Ui.Bullets`), explanations in hovers (`Ui.Tip`, `Ui.Brief`; `Pane.Note` briefs itself), colour by meaning, short labels.
+  Every pane heading has an icon (`Ui.HeadingIcons`); every god has `god-<id>`. New icons go in `scripts/icons.ts`.
 - Menus: every window is one click on the left rail (`godot/src/Dock.cs`, `Groups`/`Blurbs`, Shift+number `QuickTabs`); its
   badges count the alerts whose `AlertWindow` it answers, so a new alert badges its window for free. The action tray on the
   right (`godot/src/Tray.cs`: Bounties, Council, Events, War) slides out a drawer to act without a window. The top bar's

@@ -59,7 +59,7 @@ public class TradeTests
         var (sim, s) = Ready();
         var t = sim.Town;
         var (export, import) = Trade.Suggest(t, s);
-        Assert.Contains(import, s.Kin.Trade.Offers);
+        Assert.Contains(import, Trade.Offers(t, s));
         t.Market.Seed(export, t.Market.Target(export) * 3);
         t.Market.Seed(import, -t.Market.Stock(import));
         double treasury = t.Treasury, cost = Trade.OpenCost(t, s);

@@ -95,3 +95,52 @@ float cel(float ndl, float atten, float rough) {
 vec3 rim(vec3 n, vec3 v) {
 	return vec3(1.0, 0.9, 0.72) * pow(1.0 - clamp(dot(n, v), 0.0, 1.0), 4.0) * 0.16 * toon * (1.0 - night) * (1.0 - strategic);
 }
+
+// ---------- Wind ----------
+// One breeze across the whole map in rolling gusts, so a gust is seen sweeping over fields, banners and woods in turn.
+const vec2 WIND = vec2(0.8, 0.6);
+
+// 0 in a lull, 1 at a gust's front.
+float gust(vec2 p, float t) {
+	return smoothstep(-0.6, 1.1, sin(dot(p, WIND) * 0.07 - t * 1.1) + 0.4 * sin(dot(p, vec2(-0.6, 0.8)) * 0.045 + t * 0.37));
+}
+
+// The breeze in a mesh's own space (its rotation undone), so offsets scale with the model.
+vec3 wind_local(mat4 m) {
+	vec3 d = transpose(mat3(m)) * vec3(WIND.x, 0.0, WIND.y);
+	return d / max(length(d), 1e-5);
+}
+
+// Trees: the old gentle lean, stronger as a gust passes.
+float tree_sway(vec3 v, vec3 wp, float t) {
+	return sin(t * 1.1 + wp.x * 0.21 + wp.z * 0.17) * 0.035 * max(v.y - 0.25, 0.0) * (0.55 + 0.9 * gust(wp.xz, t));
+}
+
+// Moves a vertex by the wind, from MeshKit's wind data (MeshKit.WindAt): cloth (uv.x > 0, how free it hangs; flutter axis in
+// uv2, half length for a wall banner) ripples, stalks (uv.y > 0, how far up the stalk) bend with the gusts, and smoke puffs (uv.x < 0, its phase; centre in
+// uv.y and uv2) rise from a chimney, swell, drift downwind and shrink away on a loop.
+vec3 blow(vec3 v, vec2 uv, vec2 uv2, mat4 m, float t) {
+	if (uv.x == 0.0 && uv.y == 0.0) return v;
+	vec3 wp = (m * vec4(v, 1.0)).xyz;
+	float g = gust(wp.xz, t);
+	float ph = dot(m[3].xz, vec2(1.7, 1.3));
+	if (uv.x > 0.0) {
+		float w = uv.x;
+		float f = sin(t * (3.0 + 1.6 * g) - w * 10.0 + ph) * (0.16 + 0.2 * g) + sin(t * 5.7 - w * 17.0 + ph * 1.3) * 0.05;
+		// A half-length axis: a banner on a wall, which only lifts away from it.
+		if (length(uv2) < 0.75) f = abs(f);
+		return v + vec3(uv2.x, 0.0, uv2.y) / length(uv2) * f * w;
+	}
+	vec3 wl = wind_local(m);
+	if (uv.x == 0.0) {
+		float s = uv.y;
+		return v + wl * s * (0.04 + 0.26 * g + 0.05 * sin(t * 2.4 + ph + wp.x * 0.9));
+	}
+	vec3 c = vec3(uv2.x, uv.y, uv2.y);
+	float r = length(v - c);
+	float k = fract(t * 0.14 + (-uv.x - 1.0) + fract(ph * 0.131));
+	float size = smoothstep(0.0, 0.12, k) * (1.0 - smoothstep(0.6, 1.0, k)) * (0.8 + 2.4 * k);
+	float rise = k * r * 16.0;
+	float drift = k * k * r * (8.0 + 10.0 * g);
+	return c + (v - c) * size + vec3(0.0, rise, 0.0) + wl * drift + vec3(wl.z, 0.0, -wl.x) * sin(t * 0.9 + ph + k * 6.0) * r * 1.2 * k;
+}

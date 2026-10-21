@@ -17,6 +17,12 @@
       "family": ["Bonebreaker","Ashtusk","Redmane","Skullsplitter"] },
     { "id": "gnome", "name": "gnome", "weight": 8,
       "given": ["Alston","Bimpnottin","Carlin","Ellyjobell","Fonkin","Lilli","Nissa","Orryn","Roywyn","Zook","Boddynock","Dimble","Frug","Gimble","Kellen","Nyx","Tana","Wrenn"],
-      "family": ["Beren","Daergel","Folkor","Garrick","Nackle","Murnig","Timbers"] }
+      "family": ["Beren","Daergel","Folkor","Garrick","Nackle","Murnig","Timbers"] },
+    { "id": "catfolk", "name": "sunpaw", "weight": 0,
+      "given": ["Saffi","Ruyah","Tamas","Imri","Mirrel","Purrin","Kesh","Amberly","Zuri","Thistle","Nim","Sable","Ojo","Fennick","Lirra","Tavi"],
+      "family": ["Quickwhisker","Amberglance","Longtail","Duskmane","Softstep","Sunstripe"] },
+    { "id": "birdfolk", "name": "kestrine", "weight": 0,
+      "given": ["Kree","Ashwing","Tallow","Hirrun","Sivvi","Corra","Pell","Rook","Tessik","Wyll","Iska","Varro","Kaw","Lumen"],
+      "family": ["of-the-Ledge","Windcaller","Highcrest","Stormfeather","Cliffborn","Greyquill"] }
   ]
 }

@@ -17,6 +17,15 @@ public sealed record AssetDef
 
     /// <summary>Seized, it is a magic item for the town hall.</summary>
     public bool Relic { get; init; }
+
+    /// <summary>The least wits tier that keeps it (a phylactery takes a mastermind); empty for any.</summary>
+    public string MinCunning { get; init; } = "";
+
+    /// <summary>Hidden far from the menace, never at its seat: a site somewhere in the wilds the town must hunt for.</summary>
+    public bool Far { get; init; }
+
+    /// <summary>While it stands the menace cannot end: beaten at its last seat, it reforms where this lies.</summary>
+    public bool Undying { get; init; }
 }
 
 /// <summary>What a menace is working toward: something the town can learn of and get in the way of.</summary>
@@ -69,6 +78,12 @@ public sealed record PlotRules
     /// <summary>Menace kinds with lieutenants worth the name: a beast's brood scatters, it does not plot.</summary>
     public IReadOnlyList<string> LieutenantKinds { get; init; } = [];
 
+    /// <summary>Kinds too great to plot in secret: once named, the town watches every plan from the start.</summary>
+    public IReadOnlyList<string> Loud { get; init; } = [];
+
+    /// <summary>Told when a menace that cannot die reforms where its vessel lies: {leader}, {seat}, {asset}, {region}.</summary>
+    public string Reformed { get; init; } = "";
+
     /// <summary>Raid chance added on the road a menace holds.</summary>
     public double TollRaid { get; init; } = 0.25;
     public IReadOnlyList<AssetDef> Assets { get; init; } = [];
@@ -102,6 +117,9 @@ public sealed class MenacePlan
 
     /// <summary>The town has learned of it.</summary>
     public bool Known { get; set; }
+
+    /// <summary>The town has been warned it is half done.</summary>
+    public bool Portent { get; set; }
 }
 
 /// <summary>
@@ -146,7 +164,7 @@ public static class Plots
     {
         if (m.Assets.Count > 0 || m.Origin == Menaces.FromWarband) return;
         var def = Pick(town, m);
-        if (def != null) m.Assets.Add(new MenaceAsset { Def = def.Id, SiteId = m.SeatId });
+        if (def != null) m.Assets.Add(new MenaceAsset { Def = def.Id, SiteId = def.Far && Hideout(town, m) is { } far ? far.Def.Id : m.SeatId });
         m.NextPlanDay = town.Day + town.Rng.Range(Rules(town).FirstDays[0], Rules(town).FirstDays[1] + 1);
     }
 
@@ -154,15 +172,54 @@ public static class Plots
     internal static void Stock(Town town, Menace m, SiteState holding)
     {
         if (!town.Rng.Chance(Rules(town).HoldingAsset)) return;
-        var def = Pick(town, m);
+        var def = Pick(town, m, holding: true);
         if (def != null) m.Assets.Add(new MenaceAsset { Def = def.Id, SiteId = holding.Def.Id });
     }
 
-    private static AssetDef? Pick(Town town, Menace m)
+    private static AssetDef? Pick(Town town, Menace m, bool holding = false)
     {
         var have = m.Assets.Select(a => a.Def).ToHashSet();
-        var fit = Rules(town).Assets.Where(a => (a.Kinds.Count == 0 || a.Kinds.Contains(m.Kind)) && !have.Contains(a.Id)).ToList();
+        int wits = Menaces.CunningRank(town, m.Cunning);
+        var fit = Rules(town).Assets
+            .Where(a => (a.Kinds.Count == 0 || a.Kinds.Contains(m.Kind)) && !have.Contains(a.Id))
+            .Where(a => a.MinCunning == "" || wits >= Menaces.CunningRank(town, a.MinCunning))
+            .Where(a => !holding || !a.Far)
+            .ToList();
         return fit.Count == 0 ? null : fit[town.Rng.Range(0, fit.Count)];
+    }
+
+    /// <summary>Where a menace hides what it cannot lose: a free site in another region, as far from its seat as can be.</summary>
+    private static SiteState? Hideout(Town town, Menace m)
+    {
+        var seat = Quests.Site(town, m.SeatId);
+        int ring = seat?.RegionId is int rid ? town.Regions[rid].Ring : 0;
+        var free = town.Sites.Where(x => x.Generated && x.RegionId != seat?.RegionId && Menaces.Free(town, x)).ToList();
+        if (free.Count == 0) return null;
+        // The farthest rings first, then any: dice pick among them.
+        int far = free.Max(x => town.Regions[x.RegionId!.Value].Ring);
+        var pool = free.Where(x => town.Regions[x.RegionId!.Value].Ring >= Math.Max(ring, far - 1)).OrderBy(x => x.Def.Id, StringComparer.Ordinal).ToList();
+        return pool[town.Rng.Range(0, pool.Count)];
+    }
+
+    /// <summary>What keeps it from dying, if it stands anywhere but the seat that just fell.</summary>
+    internal static SiteState? Undying(Town town, Menace m, SiteState fallen) =>
+        m.Assets
+            .Where(a => AssetOf(town, a) is { Undying: true } && a.SiteId != fallen.Def.Id)
+            .Select(a => Quests.Site(town, a.SiteId))
+            .FirstOrDefault(x => x is { Cleared: false });
+
+    /// <summary>
+    /// Beaten at its last seat, a menace that cannot die gathers itself where its vessel lies. The town learns
+    /// the region it fled to, and only a rumour of the place: the hunt is on.
+    /// </summary>
+    internal static void Reform(Town town, Menace m, SiteState fallen, SiteState vessel)
+    {
+        Seize(town, m, fallen);
+        var a = m.Assets.First(x => x.SiteId == vessel.Def.Id && AssetOf(town, x) is { Undying: true });
+        if (World.RegionOf(town, vessel) is { } region) region.Known = true;
+        if (vessel.Known == SiteKnowledge.Unheard) Rumors.Hear(town, vessel, Rumors.Occupants(town.Content, vessel.Def), vessel.Def.Tier, 30);
+        town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Fill(town, m, Rules(town).Reformed)
+            .Replace("{seat}", fallen.Def.Name).Replace("{asset}", AssetOf(town, a)!.Name).Replace("{region}", World.RegionOf(town, vessel)?.Name ?? "the wilds")));
     }
 
     /// <summary>A site of the menace's was cleared: whatever it kept there is the town's, and its plan is set back.</summary>
@@ -266,6 +323,7 @@ public static class Plots
             if (m.Plan is { } p)
             {
                 if (!p.Known) Learn(town, m, p);
+                else if (!p.Portent && town.Day * 2 >= p.StartDay + p.DueDay) Foretell(town, m, p);
                 if (town.Day >= p.DueDay) Finish(town, m, p);
                 continue;
             }
@@ -296,6 +354,21 @@ public static class Plots
         if (fits.Count == 0) return;
         var (def, s) = fits[town.Rng.Range(0, fits.Count)];
         m.Plan = new MenacePlan { Def = def.Id, SettlementId = s?.Id, StartDay = town.Day, DueDay = town.Day + def.Days };
+        // A great wyrm does nothing quietly: the whole country watches it begin.
+        if (m.Named && Rules(town).Loud.Contains(m.Kind))
+        {
+            m.Plan.Known = true;
+            town.Log(LedgerCategory.War, Importance.Notable, Saga.Cap(Fill(town, m, Rules(town).Learned).Replace("{plan}", Describe(town, m))));
+        }
+    }
+
+    /// <summary>Half done, a plan the town knows of sends its portents ahead: what comes next if nobody stops it.</summary>
+    private static void Foretell(Town town, Menace m, MenacePlan p)
+    {
+        p.Portent = true;
+        if (m.Def.Doom.Count == 0) return;
+        string line = m.Def.Doom[(m.Id + p.StartDay) % m.Def.Doom.Count];
+        town.Log(LedgerCategory.War, Importance.Notable, Saga.Cap(Fill(town, m, line).Replace("{plan}", Describe(town, m)).Replace("{days}", Math.Max(0, p.DueDay - town.Day).ToString())));
     }
 
     /// <summary>A settlement within a ring of the menace's seat and near its bearing; a poor one for recruiters.</summary>

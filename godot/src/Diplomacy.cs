@@ -65,6 +65,35 @@ public partial class Main
         return lines + "[/font_size]";
     }
 
+    /// <summary>A score on a character sheet, coloured by how strong it is.</summary>
+    /// <summary>The icon for each score slot, in character.json's slots.</summary>
+    private static readonly Dictionary<string, string> ScoreIcons = new()
+    {
+        ["might"] = "defence", ["wealth"] = "gold", ["diplomacy"] = "standing", ["health"] = "health",
+        ["lore"] = "books", ["faith"] = "faith", ["wits"] = "wits", ["reach"] = "population",
+        ["dread"] = "dread", ["will"] = "will",
+    };
+
+    /// <summary>A score as its icon and number; the name shows on hover.</summary>
+    internal static string ScoreTag(Score x) =>
+        $"[hint={x.Name}]{(ScoreIcons.TryGetValue(x.Slot, out var icon) ? Ui.Img(icon, 14) : Ui.Esc(x.Name))} " +
+        Ui.C(x.Value >= 14 ? Ui.Good : x.Value <= 7 ? Ui.Bad : Ui.Ink, $"[b]{x.Value}[/b]") + "[/hint]";
+
+    /// <summary>A settlement's character sheet: size and purpose, its six scores, then customs, secret and a saying as bullets.</summary>
+    private static string CharacterSheet(Town t, Settlement s)
+    {
+        string size = Character.SizeOf(t, s)?.Name ?? s.Kin.Kind;
+        string purpose = Character.PurposeOf(t, s) is { } pu ? $" · {Ui.Esc(pu.Name)}" : "";
+        string lines = $"[font_size=12]{Tag(Ui.Cap(size))}{purpose}\n{string.Join("   ", Character.Sheet(t, s).Select(ScoreTag))}";
+        foreach (var c in Character.CustomsOf(t, s)) lines += "\n• " + Ui.C(Ui.Ink2, Ui.Esc(Character.Fill(s, c.Text)));
+        if (Character.SecretOf(t, s) is { } secret)
+            lines += "\n• " + (Character.SecretKnown(t, s)
+                ? Ui.C(Ui.Gold, $"Secret: {Ui.Esc(Ui.Cap(Character.Fill(s, secret.Text)))}.")
+                : Ui.C(Ui.Ink2, "A secret, told only to friends."));
+        if (Character.Proverb(t, s, s.Id + t.Day / 30) is string saying) lines += "\n" + Ui.C(Ui.Ink2, $"[i]{Ui.Esc(saying)}[/i]");
+        return lines + "[/font_size]";
+    }
+
     /// <summary>The people there who remember the town, and what they remember.</summary>
     private static string Cast(Town t, Settlement s)
     {
@@ -147,8 +176,7 @@ public partial class Main
         var known = t.Settlements.Where(s => t.Regions[s.RegionId].Known).OrderBy(s => s.Razed).ThenByDescending(s => Shadows.Shadowed(s)).ThenByDescending(s => s.Allied).ThenByDescending(s => s.Standing).ThenBy(s => s.Id).ToList();
         int allies = known.Count(s => s.Allied);
         var open = Trade.Open(t).OrderBy(r => r.Id).ToList();
-        p.Card($"[font_size=17][b]{known.Count} {(known.Count == 1 ? "people" : "peoples")} known[/b][/font_size]\n" +
-               Ui.C(Ui.Ink2, $"{allies} allied · {open.Count} of {Trade.Cap(t)} trade routes running · the {City.Tier(t).Name.ToLowerInvariant()}'s charter allows {Trade.Cap(t)}"), Ui.Gold);
+        p.Card(Ui.Chips(Ui.Chip("population", $"{known.Count}", Ui.Ink, "Peoples known"), Ui.Chip("standing", $"{allies}", Ui.Good, "Allied"), Ui.Chip("ui-trade", $"{open.Count}/{Trade.Cap(t)}", Ui.Gold, $"Trade routes running; the {City.Tier(t).Name.ToLowerInvariant()}'s charter allows {Trade.Cap(t)}")), Ui.Gold);
 
         RenderPowers(p, t);
 
@@ -163,9 +191,11 @@ public partial class Main
             int days = Math.Max(0, r.NextDay - t.Day);
             double net = r.Earned - r.Spent;
             int id = r.Id;
-            p.Row($"[b]{Ui.Esc(s.Name)}[/b]  {Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(s.People)}[/font_size]")}\n" +
-                  $"[font_size=13]{Ui.Esc(r.Export.ToString())} out, {Ui.Esc(r.Import.ToString())} back · next caravan home in {Ui.Days(days)}[/font_size]\n" +
-                  Ui.C(Ui.Ink2, $"[font_size=12]{r.Wagons} {(r.Wagons == 1 ? "wagon" : "wagons")} · {r.Caravans} {(r.Caravans == 1 ? "run" : "runs")}{(r.Raided > 0 ? $", {r.Raided} waylaid" : "")} · sold {Js.Str(Js.Round(r.Earned))}g, bought {Js.Str(Js.Round(r.Spent))}g · road danger {Math.Round(Trade.RaidChance(t, s) * 100)}%[/font_size]"),
+            string ex = r.Export.ToString().ToLowerInvariant(), im = r.Import.ToString().ToLowerInvariant();
+            double risk = Trade.RaidChance(t, s);
+            p.Row($"[b]{Ui.Esc(s.Name)}[/b]  {Ui.Dim($"[font_size=12]{Ui.Esc(s.People)}[/font_size]")}\n" +
+                  $"{Ui.Tip($"{Ui.Img(ex, 16)} → {Ui.Img(im, 16)}", $"{r.Export} out, {r.Import} back")}  {Ui.Chip("ui-time", Ui.Days(days), Ui.Ink2, "Next caravan home")}  {Ui.Chip("ui-skull", $"{Math.Round(risk * 100)}%", risk >= 0.2 ? Ui.Bad : risk > 0 ? Ui.Gold : Ui.Good, "Road danger")}\n" +
+                  $"[font_size=12]{Ui.Chips(Ui.Chip("ui-trade", $"{r.Wagons}", null, "Wagons"), Ui.Chip("ui-road", $"{r.Caravans}", null, "Runs"), r.Raided > 0 ? Ui.Chip("ui-wound", $"{r.Raided}", Ui.Bad, "Waylaid") : "", Ui.Chip("gold", $"{Js.Str(Js.Round(r.Earned - r.Spent))}", r.Earned >= r.Spent ? Ui.Good : Ui.Bad, $"Net: sold {Js.Str(Js.Round(r.Earned))}g, bought {Js.Str(Js.Round(r.Spent))}g"))}[/font_size]",
                 Trade.WagonCost(t, r) is double wagon
                     ? [($"Add a wagon · {Js.Str(wagon)}g", t.Treasury >= wagon, true, () => Act(() => _sim.AddWagon(id))), ("Close", true, false, () => Act(() => _sim.CloseTradeRoute(id)))]
                     : [("Close", true, false, () => Act(() => _sim.CloseTradeRoute(id)))]);
@@ -181,28 +211,30 @@ public partial class Main
             var (word, color) = StandingWord(s, w.Ally);
             int id = s.Id;
             var trade = s.Kin.Trade;
-            string goods = trade.Offers.Count == 0 ? "They don't trade."
-                : $"Want {string.Join(", ", trade.Wants)} · sell {string.Join(", ", trade.Offers)}.";
+            string Icons(IEnumerable<Good> gs) => string.Concat(gs.Select(g => Ui.Tip(Ui.Img(g.ToString().ToLowerInvariant(), 16), g.ToString())));
+            var offers = Trade.Offers(t, s);
+            string goods = offers.Count == 0 ? Ui.Dim("No trade")
+                : $"{Ui.Dim("want")} {Icons(trade.Wants)}   {Ui.Dim("sell")} {Icons(offers)}";
             int pleas = t.Pleas.Count(x => x.SettlementId == s.Id && x.Status is PleaStatus.Open or PleaStatus.Taken);
             string boon = s.Kin.Boon.Text != "" ? Ui.Cap(s.Kin.Boon.Text.Replace("{S}", s.Name)) + (s.Kin.Boon.Troops > 0 ? ", and their warriors come if the walls are attacked." : ".") : "";
             string head = $"[b]{Ui.Esc(s.Name)}[/b]  {Tag(word, color)}{(s.Razed ? "" : $" {Ui.C(Ui.Ink2, $"[font_size=12]{(s.Standing >= 0 ? "+" : "−")}{Math.Abs(Math.Round(s.Standing))}[/font_size]")}")}" +
                           $"{(pleas > 0 ? "  " + Tag(pleas == 1 ? "1 plea" : $"{pleas} pleas", Ui.Gold) : "")}\n" +
-                          Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Ui.Cap(s.People))}, {Agent.Article(s.Kin.Kind)} {Ui.Esc(s.Kin.Kind)} in {Ui.Esc(region.Name)}, {Ui.Days(region.Days)} out[/font_size]") +
-                          (s.Razed ? "" : $"\n[font_size=12]{Ui.Esc(goods)}[/font_size]") +
-                          (s.Razed || boon == "" ? "" : "\n" + Ui.C(Ui.Ink2, $"[font_size=12]{(s.Allied ? "" : $"Allied at {Js.Str(w.Ally)}: ")}{Ui.Esc(boon)}[/font_size]"));
+                          $"[font_size=12]{Ui.Tip(Ui.Dim($"{Ui.Esc(Ui.Cap(s.People))} {Ui.Img("ui-info", 12)}"), $"{Ui.Cap(s.People)}, {Agent.Article(s.Kin.Kind)} {s.Kin.Kind} in {region.Name}")}  {Ui.Chip("ui-road", Ui.Days(region.Days), Ui.Ink2, "Out")}[/font_size]" +
+                          (s.Razed ? "" : $"\n[font_size=12]{goods}[/font_size]") +
+                          (s.Razed || boon == "" ? "" : "\n" + $"[font_size=12]{Ui.Bullet(Ui.Tip(s.Allied ? Ui.C(Ui.Good, "Ally's boon") : Ui.Dim($"Boon at {Js.Str(w.Ally)}"), boon), "ui-star")}[/font_size]");
             if (s.Razed)
             {
                 p.Row(head);
                 continue;
             }
-            head += "\n" + Life(t, s);
+            head += "\n" + CharacterSheet(t, s) + "\n" + Life(t, s);
             var buttons = new List<(string, bool, bool, Action)>();
             if (!s.Allied || Shadows.Shadowed(s)) buttons.Add(($"Envoy · {Js.Str(w.EnvoyCost)}g", t.Treasury >= w.EnvoyCost, false, () => Act(() => _sim.SendEnvoy(id))));
             if (Shadows.Shadowed(s))
                 buttons.Add((Shadows.Rallier(t) is { } speaker && s.Shadow!.RallyHeroId == null ? $"Send {speaker.GivenName} to rally them" : "Rally", Shadows.RallyRefused(t, s) == null, true, () => Act(() => _sim.RallySettlement(id))));
             if (Neighbours.TroubleOf(t, s) is { Kind: "need", Aid: { } aid })
                 buttons.Add(($"Aid · {Js.Str(aid.Gold)}g, {Js.Str(aid.Qty)} {aid.Good.ToString().ToLowerInvariant()}", Neighbours.AidRefused(t, s) == null, true, () => Act(() => _sim.AidSettlement(id))));
-            if (!open.Any(r => r.SettlementId == s.Id) && trade.Offers.Count > 0)
+            if (!open.Any(r => r.SettlementId == s.Id) && offers.Count > 0)
             {
                 string? no = Trade.Refuse(t, s);
                 var (export, import) = Trade.Suggest(t, s);

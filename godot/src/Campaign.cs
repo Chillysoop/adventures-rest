@@ -96,7 +96,7 @@ public partial class Main
             var (word, color) = MenaceStages[m.Stage];
             string march = m.ArrivalTick is int at && at > t.Tick ? "  " + Tag($"marching, {Ui.Days((int)Math.Ceiling((at - t.Tick) / 24.0))} out", Ui.Bad) : "";
             string held = m.Holdings.Count > 0 ? $" It holds {m.Holdings.Count} more {(m.Holdings.Count == 1 ? "lair" : "lairs")}." : "";
-            FoeCard(p, [m], $"{Ui.KindIcon(m.Kind, 20)}[b]{Ui.Esc(Ui.Cap(m.Name))}[/b]  {Tag(word, color)}  {Tag($"level {m.Level}")}{march}\n{Leader(m)}{Tag(Menaces.CunningOf(t, m).Name)}  {Tag(Menaces.AmbitionOf(t, m).Name)}{Heirs(t, m)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Annals.Motive(t, m))} {Ui.Esc(Wants(t, m))} {Seat(t, m)}{held}[/font_size]")}{Remembers(t, m)}{LastHeard(t, m)}{Plan(t, m)}{Assets(t, m)}{Backers(t, m)}", color);
+            FoeCard(p, [m], $"{Ui.KindIcon(m.Kind, 20)}[b]{Ui.Esc(Ui.Cap(m.Name))}[/b]  {Tag(word, color)}  {Tag($"level {m.Level}")}{march}\n{Leader(m)}{Tag(Menaces.CunningOf(t, m).Name)}  {Tag(Menaces.AmbitionOf(t, m).Name)}{Temper(t, m)}{Heirs(t, m)}\n{Scores(t, m)}{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Annals.Motive(t, m))} {Ui.Esc(Wants(t, m))} {Seat(t, m)}{held}[/font_size]")}{Remembers(t, m)}{LastHeard(t, m)}{Plan(t, m)}{Assets(t, m)}{Backers(t, m)}", color);
         }
         p.Note("A threat grows while nobody clears its seat, as far as its wits allow: a beast only hunts, a dull band takes a valley and stops, a cunning or masterful leader builds a domain and can become the big bad. What it wants decides what it does to the town. Clearing the seat breaks it, and it falls back to a lair it holds.");
 
@@ -287,6 +287,23 @@ public partial class Main
         if (parts.Count == 0) return "";
         return $"\n[font_size=12]{Tag("Remembers", Ui.Bad)} {Ui.Esc(Ui.Cap(string.Join("; ", parts)))}.[/font_size]";
     }
+
+    /// <summary>Its kind's temper this campaign.</summary>
+    private static string Temper(Town t, Menace m) => Character.TemperOf(t, m.Kind) is { } tm ? "  " + Tag(tm.Name, Ui.Accent) : "";
+
+    /// <summary>Its six scores, and what its kind is like this age.</summary>
+    private static string Scores(Town t, Menace m)
+    {
+        string line = $"[font_size=12]{string.Join("   ", Character.Sheet(t, m).Select(ScoreTag))}";
+        line += "[/font_size]\n";
+        if (Menaces.Done(t, m) is string done) line += Bullet("Done", done);
+        if (Menaces.Case(t, m) is string said) line += Bullet("Says", said);
+        if (Menaces.Truth(t, m) is string truth) line += Bullet("Truth", truth);
+        else if (m.Named) line += Ui.C(Ui.Ink2, "[font_size=12]• [i]Truth: take a holding to learn it[/i][/font_size]\n");
+        return line;
+    }
+
+    private static string Bullet(string tag, string text) => $"[font_size=12]• {Tag(tag)} {Ui.C(Ui.Ink2, Ui.Esc(text))}[/font_size]\n";
 
     /// <summary>The last the town heard of it.</summary>
     private static string LastHeard(Town t, Menace m) =>
