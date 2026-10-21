@@ -28,6 +28,7 @@ public partial class Overlay(MapView map) : Control
         DrawWarband(town);
         DrawSightings(town);
         DrawSpots(town);
+        DrawEquips();
         DrawMarkers();
         DrawSelection(town);
     }
@@ -49,6 +50,28 @@ public partial class Overlay(MapView map) : Control
             if (fogA >= Fog.UnknownAlpha - 0.02f || !map.OnScreen(map.Gen.At(c, 2), out var at)) continue;
             float fade = 1 - Mathf.Clamp((fogA - Fog.SightAlpha) / (Fog.UnknownAlpha - Fog.SightAlpha), 0, 0.7f);
             Text(at, f.Name.ToUpperInvariant(), Ui.Medium, 10, ink with { A = ink.A * fade }, 3);
+        }
+    }
+
+    /// <summary>A banner over a hero who has just put on something powerful: rises, holds, fades.</summary>
+    private void DrawEquips()
+    {
+        var heroes = map.Crowd.Heroes;
+        if (!map.Crowd.Visible) return;
+        foreach (var e in heroes.Equips)
+        {
+            if (!heroes.Spots.TryGetValue(e.HeroId, out var p)) continue;
+            float age = heroes.Now - e.Born;
+            float rise = Mathf.Min(1, age / 0.4f);
+            if (!map.OnScreen(p + new Vector3(0, 0.8f + 0.12f * rise, 0), out var at)) continue;
+            float a = Mathf.Min(rise, Mathf.Clamp((6 - age) / 1.2f, 0, 1));
+            const int Size = 15;
+            var w = Ui.Bold.GetStringSize(e.Text, HorizontalAlignment.Left, -1, Size).X;
+            var box = new Rect2(at.X - w / 2 - 12, at.Y - 22, w + 24, 26);
+            DrawRect(box, new Color(InkC, 0.82f * a));
+            DrawRect(box, new Color(Palette.Gold, a), false, 1.5f);
+            DrawRect(new Rect2(box.Position.X, box.Position.Y, 4, box.Size.Y), new Color(e.Colour, a));
+            DrawString(Ui.Bold, new Vector2(at.X - w / 2, at.Y - 4), e.Text, HorizontalAlignment.Left, -1, Size, new Color(e.Colour.Lerp(Cream, 0.55f), a));
         }
     }
 

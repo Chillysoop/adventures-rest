@@ -117,4 +117,83 @@ public class PowersTests
         p.Standing += 60;
         Assert.DoesNotContain(Alerts.Standing(t), a => a.Key == "courted:silent-knife");
     }
+
+    [Fact]
+    public void EachPowerMarchingWithAnEnemyMakesItsNextOfferBigger()
+    {
+        var (sim, m) = Seeded();
+        var t = sim.Town;
+        m.Power = 400;
+        double alone = Powers.OfferOf(t, m);
+        var p = Powers.Find(t, "black-ledger")!;
+        p.Side = PowerSide.Enemy;
+        p.MenaceId = m.Id;
+        Assert.True(Powers.OfferOf(t, m) > alone);
+    }
+
+    [Fact]
+    public void PowersSendEnvoysAndAPactKeepsEnemiesFromBuyingThem()
+    {
+        var (sim, m) = Seeded();
+        var t = sim.Town;
+        sim.RunDays(t.Content.Powers.Envoys.From + t.Content.Powers.Envoys.Every);
+        Assert.Contains(t.Ledger.Entries, e => e.Text.StartsWith("An envoy of", StringComparison.Ordinal));
+
+        var knife = Powers.Find(t, "silent-knife")!;
+        Courted(t, knife, m, 500);
+        knife.Envoy = "pact";
+        knife.EnvoyGold = 10;
+        knife.EnvoyPrice = "";
+        knife.EnvoyUntil = t.Day + 5;
+        t.Treasury = 1000;
+        Assert.Contains(Alerts.Standing(t), a => a.Key == "envoy:silent-knife");
+        Assert.True(sim.AnswerEnvoy("silent-knife", true));
+        Assert.True(Powers.Pacted(t, knife));
+        Assert.Null(knife.CourtedBy);
+        Assert.False(Powers.Buyable(t, knife, m));
+        sim.RunDays(3);
+        Assert.NotEqual(PowerSide.Enemy, knife.Side);
+    }
+
+    [Fact]
+    public void RefusingADemandCostsMoreFavourThanLettingAnOfferGo()
+    {
+        var (sim, _) = Seeded();
+        var t = sim.Town;
+        var ledger = Powers.Find(t, "black-ledger")!;
+        ledger.Envoy = "tribute";
+        ledger.EnvoyUntil = t.Day + 5;
+        double before = ledger.Favour;
+        Assert.True(sim.AnswerEnvoy("black-ledger", false));
+        Assert.Equal(before - t.Content.Powers.Envoys.Spurned, ledger.Favour);
+        Assert.Equal("", ledger.Envoy);
+        Assert.False(sim.AnswerEnvoy("black-ledger", false));
+    }
+
+    [Fact]
+    public void TheGrandmothersTakeAStrangePriceInsteadOfGold()
+    {
+        var (sim, _) = Seeded();
+        var t = sim.Town;
+        var hags = Powers.Find(t, "mire-grandmothers")!;
+        hags.Envoy = "alliance";
+        hags.EnvoyGold = 999999;
+        hags.EnvoyPrice = "a-name";
+        hags.EnvoyUntil = t.Day + 5;
+        double gold = t.Treasury;
+        int folk = t.Residents.Count;
+        Assert.Null(Powers.AnswerBlocked(t, hags));
+        Assert.True(sim.AnswerEnvoy("mire-grandmothers", true));
+        Assert.Equal(PowerSide.Town, hags.Side);
+        Assert.Equal(gold, t.Treasury);
+        Assert.Equal(folk - 1, t.Residents.Count);
+
+        hags.Side = PowerSide.Neutral;
+        hags.Envoy = "pact";
+        hags.EnvoyPrice = "a-good-year";
+        hags.EnvoyUntil = t.Day + 5;
+        Assert.True(sim.AnswerEnvoy("mire-grandmothers", true));
+        Assert.Equal(0.75, Powers.Harvest(t), 3);
+        Assert.True(t.Content.Powers.Powers.Single(d => d.Id == "mire-grandmothers").Strange.All(x => x.Text != "" && x.Paid != ""));
+    }
 }

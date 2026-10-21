@@ -462,6 +462,15 @@
       "teaches": ["command:CourtPower", "command:AllyWithPower", "command:BreakWithPower"]
     },
     {
+      "id": "envoys",
+      "title": "Envoys",
+      "text": "A minor power has sent you an [b]envoy[/b]. A power that likes you offers an [b]alliance[/b] for less than its usual price; a cordial one offers a [b]truce[/b], and while it holds no enemy can buy it; a hostile one [b]demands tribute[/b], and remembers if you refuse. The Mire Grandmothers often ask a stranger price than gold. Answer in [b]Diplomacy[/b] before the envoy rides home. Watch the enemies' backers: each power that joins an enemy makes the next likelier to follow.",
+      "when": "alert:envoy",
+      "point": "tab:Diplomacy",
+      "until": "tab:Diplomacy",
+      "teaches": ["command:AnswerEnvoy"]
+    },
+    {
       "id": "sellswords",
       "title": "Sellswords",
       "text": "Gold can buy an army too. Under [b]Sellswords[/b] in the [b]War[/b] tab, hire a mercenary company for a fee and a daily wage, and it stands on the walls with the watch. Once the town knows where a named menace sits, fund a campaign to march them against it. They can break its holds and even storm its seat, but only heroes can end the greatest foe. A company the treasury can't pay walks away.",

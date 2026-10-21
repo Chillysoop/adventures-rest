@@ -1,12 +1,13 @@
 {
-  "_doc": "Minor powers (Systems/Powers.cs): strong outside factions with a leader, a goal and a price, who side with the town or with one of its enemies. Standing settles toward base plus each liked signal (0-1, see Powers.Signal) times its weight, plus the favour the town's gifts bought (which fades by favourFade a day). At allyAt the town can pay price and then tithe a day for the ally boon; a town ally whose standing falls below leaveBelow, or whose tithe goes unpaid lapseDays, walks away. Allying angers its rivals by rivalHit. From courtFrom on, every courtEvery days the strongest risen enemy whose wits allow it courts one power that serves (serves 'any', the enemy's kind not in shuns): its offer is its power times its wits (cunning) times offerPerPower; if that beats the power's standing (plus allyResist when it is the town's ally) word comes through a witness and the town has noticeDays to raise standing past the offer with gifts (giftCost gold, giftFavour favour, each gift worth giftFalloff less than the last until they fade). Otherwise it joins that enemy: it arms it daily, skims the treasury, strikes with a Blows kind every strikeEvery days and adds host to the enemy's army at the walls. It goes back to neutral (standing reset to freedFavour favour) when that enemy dies, or comes back to the town early once standing reaches winBack. Each enemy takes at most perEnemy powers. Every power needs a library faction (ref) and a faction lineage in history.json.",
+  "_doc": "Minor powers (Systems/Powers.cs): strong outside factions with a leader, a goal and a price, who side with the town or with one of its enemies. Standing settles toward base plus each liked signal (0-1, see Powers.Signal) times its weight, plus the favour the town's gifts bought (which fades by favourFade a day). At allyAt the town can pay price and then tithe a day for the ally boon; a town ally whose standing falls below leaveBelow, or whose tithe goes unpaid lapseDays, walks away. Allying angers its rivals by rivalHit. From courtFrom on, every courtEvery days the strongest risen enemy whose wits allow it courts one power that serves (serves 'any', the enemy's kind not in shuns): its offer is its power times its wits (cunning) times offerPerPower; if that beats the power's standing (plus allyResist when it is the town's ally) word comes through a witness and the town has noticeDays to raise standing past the offer with gifts (giftCost gold, giftFavour favour, each gift worth giftFalloff less than the last until they fade). Otherwise it joins that enemy: it arms it daily, skims the treasury, strikes with a Blows kind every strikeEvery days and adds host to the enemy's army at the walls. It goes back to neutral (standing reset to freedFavour favour) when that enemy dies, or comes back to the town early once standing reaches winBack. Each enemy takes at most perEnemy powers, and every power already marching with it adds bandwagon to its next offer. Envoys: from envoys.from, every envoys.every days the power with the most pressing case sends the town one (evil powers below tributeBelow demand tribute of gift x tribute, powers within allianceWithin of allyAt offer an alliance at price x allianceDiscount, others at pactAt or better that could serve an enemy offer a pact for gift x pactPrice: no enemy can buy them for pactDays). The town has answerDays to answer; refusing costs declined favour (spurned for a demand), and a lapsed answer is a refusal. A power with strange prices asks one instead of gold with strangeChance: name (a townsperson departs), harvest (farms yield amount less for days), voice (amount Mandate). Every power needs a library faction (ref) and a faction lineage in history.json.",
   "courtFrom": 60,
   "courtEvery": 45,
   "noticeDays": 8,
   "offerPerPower": 0.14,
   "cunning": { "mindless": 0, "crafty": 0.6, "cunning": 1, "mastermind": 1.5 },
   "allyResist": 25,
-  "perEnemy": 2,
+  "perEnemy": 3,
+  "bandwagon": 0.35,
   "drift": 2,
   "favourFade": 0.25,
   "giftFavour": 12,
@@ -95,9 +96,30 @@
       "base": -10, "likes": { "dread": 30, "growth": 10 },
       "allyAt": 20, "price": 380, "tithe": 3, "gift": 50,
       "ally": { "hex": 0.8, "text": "a hex on the worst enemy, so its strength withers a little each day" },
-      "enemy": { "arm": 0.3, "strike": "stores", "strikeEvery": 50, "text": "rot in the town's stores and blight in its fields" }
+      "enemy": { "arm": 0.3, "strike": "stores", "strikeEvery": 50, "text": "rot in the town's stores and blight in its fields" },
+      "strangeChance": 0.75,
+      "strange": [
+        { "id": "a-name", "kind": "name", "text": "the name of one of the town's folk, freely given", "paid": "{person} walks out toward the fens one misty morning, humming a tune nobody taught them, and is not seen again. The Grandmothers have their name." },
+        { "id": "a-good-year", "kind": "harvest", "amount": 0.25, "days": 360, "text": "a year of good harvests", "paid": "A grey hare is seen in every field at dawn. The farmers say the soil has gone tired: the Grandmothers are taking their year of good harvests." },
+        { "id": "the-mayors-voice", "kind": "voice", "amount": 15, "text": "the mayor's voice, a little of it", "paid": "The mayor wakes hoarse and stays hoarse. At the council table the townsfolk lean in to hear, and some stop bothering. The Grandmothers keep what they took in a stoppered jar." }
+      ]
     }
   ],
+  "envoys": {
+    "from": 40, "every": 25, "answerDays": 10, "rest": 60,
+    "allianceWithin": 10, "allianceDiscount": 0.7,
+    "pactAt": -10, "pactDays": 120, "pactPrice": 1.5, "pactFavour": 5,
+    "tributeBelow": -25, "tribute": 2, "tributeFavour": 15,
+    "spurned": 10, "declined": 3,
+    "alliance": "An envoy of {name} rides in under a flag of truce. {leader}, {title}, offers {town} an alliance for {price}, less than they ask of most: {boon}. The envoy waits {answer} days for an answer.",
+    "pact": "An envoy of {name} comes to the town hall with a sealed letter from {leader}. For {price}, {name} will swear a truce: it takes no enemy's gold while the truce holds. The envoy waits {answer} days for an answer.",
+    "demand": "An envoy of {name} stands in the square and reads out {leader}'s demand: tribute of {price}, or {town} will learn what it costs to slight {name}. The envoy waits {answer} days.",
+    "accepted": "{town} gives the envoy of {name} {price}, and {leader} keeps the bargain: {terms}.",
+    "refused": "The council sends the envoy of {name} home with nothing.",
+    "lapsed": "The envoy of {name} waited in vain for an answer and rode home.",
+    "pactEnds": "The truce with {name} has run out. Its door is open to any enemy's gold again.",
+    "bandwagon": "Word is that {backers} already march with {enemy}, which makes the offer look the safer."
+  },
   "text": {
     "courted": "{witness} says envoys of {enemy} have been seen at {seat}, offering {name} gold and promises. An answer is due in {days} days.",
     "refused": "{witness} says {name} sent {enemy}'s envoys away empty-handed. {town} can breathe easier.",
