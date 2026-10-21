@@ -21,6 +21,7 @@ public partial class Main : Control
         City,
         Ledger,
         War,
+        Defence,
         Council,
         Bounties,
         Companies,
@@ -610,6 +611,7 @@ public partial class Main : Control
                     case Tab.City: RenderCity(); break;
                     case Tab.Ledger: RenderLedger(); break;
                     case Tab.War: RenderWar(); break;
+                    case Tab.Defence: RenderDefence(); break;
                     case Tab.Council: RenderCouncil(); break;
                     case Tab.Bounties: RenderBounties(); break;
                     case Tab.Companies: RenderCompanies(); break;
@@ -679,8 +681,8 @@ public partial class Main : Control
         _clock.TooltipText = $"{season.Name} of year {Seasons.Year(t)}, day {Seasons.DayOf(t)} of {Seasons.Rules(t).Days}. {Seasons.Next(t).Name} comes in {Ui.Days(Seasons.DaysLeft(t))}.\n{season.Blurb}";
         _tierLabel.Text = $"{City.Tier(t).Name} · about {City.Souls(t):N0} souls";
         _standing = StandingAlerts();
-        var stage = Stages[t.Enemy.Stage];
-        _threat.Text = (t.Enemy.Stage == ThreatStage.Marching && t.Enemy.ArrivalTick is int at ? $"Siege in {Math.Ceiling((at - t.Tick) / 24.0)}d" : stage.Label).ToUpperInvariant();
+        var stage = Stages[SeenStage(t)];
+        _threat.Text = (SeenStage(t) == ThreatStage.Marching && t.Enemy.ArrivalTick is int at ? $"Siege in {Math.Ceiling((at - t.Tick) / 24.0)}d" : stage.Label).ToUpperInvariant();
         var pillColor = stage.Level == 2 ? Ui.Bad : stage.Level == 1 ? Ui.Gold : Ui.Line;
         _threatPill.AddThemeStyleboxOverride("panel", Ui.Box(stage.Level == 2 ? Ui.Bad : Ui.Panel, pillColor, 99, 1, 10, 3));
         _threat.AddThemeColorOverride("font_color", stage.Level == 2 ? Colors.White : stage.Level == 1 ? Ui.Gold : Ui.Ink);

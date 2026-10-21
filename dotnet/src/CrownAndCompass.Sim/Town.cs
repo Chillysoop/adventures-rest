@@ -388,6 +388,16 @@ public sealed class Town
 
     /// <summary>Heroes' recent level-ups and magic items, for the client's cards (<see cref="Systems.Moments"/>).</summary>
     public List<HeroMoment> Moments { get; } = [];
+
+    /// <summary>The dragon's egg the town holds, or the dragon it hatched (<see cref="Systems.Eggs"/>).</summary>
+    public Systems.DragonEgg? Egg { get; set; }
+
+    /// <summary>Raiders who fell at the town since a spirit-caller last called them up (foes.json).</summary>
+    public double FallenRaiders { get; set; }
+
+    /// <summary>The rival dark ranger's dealings with the town, once she has started taking its bounties.</summary>
+    public Systems.RangerState? Ranger { get; set; }
+
     public List<Seat> Seats { get; } = [];
     public List<Motion> Motions { get; } = [];
 
