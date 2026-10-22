@@ -65,8 +65,18 @@ public sealed class SiteState(SiteDef def)
     /// <summary>When something new moves into the cleared site, unless the town holds it.</summary>
     public int? ResettleTick { get; set; }
 
-    /// <summary>The town keeps an outpost here: nothing resettles it, and the town sees it live.</summary>
+    /// <summary>A tower stands here (the town's, or a knight's): nothing resettles it, and the town sees it live.</summary>
     public bool Held { get; set; }
+
+    /// <summary>A tower is rising here, done at this tick (<see cref="Lairs.Hold"/>); nothing moves in while builders are on site.</summary>
+    public int? TowerDue { get; set; }
+
+    /// <summary>Something comes to test the tower at this tick (<see cref="Lairs.Tested"/>), and who it is.</summary>
+    public int? ThreatTick { get; set; }
+    public string ThreatBy { get; set; } = "";
+
+    /// <summary>The tower was reinforced against the coming test.</summary>
+    public bool Reinforced { get; set; }
 
     /// <summary>The town pays a standing patrol to keep it clear: newcomers are met and, mostly, driven off (<see cref="Lairs.Patrol"/>).</summary>
     public bool Patrolled { get; set; }

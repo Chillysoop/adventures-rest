@@ -763,11 +763,28 @@ public sealed record TributeRules
     public double PayIfTreasuryOver { get; init; } = 4;
 }
 
+/// <summary>A guard tower on a cleared site (<see cref="Systems.Lairs.Hold"/>): built with gold over days, then tested now and then.</summary>
 public sealed record OutpostRules
 {
     public double Cost { get; init; } = 150;
     public double Upkeep { get; init; } = 2;
     public int Max { get; init; } = 3;
+
+    /// <summary>Days the tower takes to rise.</summary>
+    public int BuildDays { get; init; } = 4;
+
+    /// <summary>Something comes to test a standing tower about once in this many days, with this many days' warning.</summary>
+    public double TestEveryDays { get; init; } = 75;
+    public int WarnDays { get; init; } = 3;
+
+    /// <summary>The garrison's odds of holding, less for each tier of the site, and more for a knight's levels.</summary>
+    public double HoldChance { get; init; } = 0.8;
+    public double PerTier { get; init; } = 0.1;
+    public double PerLevel { get; init; } = 0.02;
+
+    /// <summary>Gold to reinforce a tower against a coming test, and what it adds to the odds.</summary>
+    public double Reinforce { get; init; } = 60;
+    public double ReinforceBonus { get; init; } = 0.25;
 }
 
 /// <summary>A standing patrol over a cleared site: heroes ride it and meet whatever tries to move back in (<see cref="Systems.Lairs.Patrol"/>).</summary>
@@ -784,6 +801,9 @@ public sealed record PatrolRules
     /// <summary>Experience for the hero who drives them off.</summary>
     public int Xp { get; init; } = 60;
     public int Max { get; init; } = 4;
+
+    /// <summary>A lost fight wounds the hero who led it: d6s per tier of the site, plus one (never below 1 hit point).</summary>
+    public int WoundDice { get; init; } = 1;
 }
 
 /// <summary>Lairs: how sites grow, act by their kind, and are resettled (content/game/lairs.json).</summary>

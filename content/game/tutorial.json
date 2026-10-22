@@ -823,10 +823,18 @@
     {
       "id": "patrols",
       "title": "Keep it clear",
-      "text": "A cleared site won't stay clear: something moves back in.\n• [b]Patrol it[/b] from its card: a little gold a day\n• Your best hero at home drives off newcomers\n• Later, garrison an outpost to hold it for good",
+      "text": "A cleared site won't stay clear: something moves back in.\n• [b]Patrol it[/b] from its card: a little gold a day\n• Your best hero at home drives off newcomers\n• A failed patrol can wound the hero\n• Later, build a tower to hold it for good",
       "point": "alerts",
       "when": "alert:patrol",
       "teaches": ["command:Patrol"]
+    },
+    {
+      "id": "tower-tested",
+      "title": "A tower tested",
+      "text": "Something is coming to test one of your towers.\n• [b]Reinforce[/b] it from its card before they come\n• A strong garrison holds\n• A weak one falls, and the site wants clearing again",
+      "point": "alerts",
+      "when": "alert:tower",
+      "teaches": ["command:ReinforceTower"]
     },
     {
       "id": "regalia",

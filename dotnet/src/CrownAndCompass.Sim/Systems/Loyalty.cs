@@ -228,14 +228,17 @@ public static class Loyalty
         var s = a.Hero!;
         if (s.FiefId != null && Quests.Site(town, s.FiefId) is SiteState fief)
         {
-            if (fief.Cleared && fief.Held)
+            if (fief.Cleared)
             {
                 a.Gold += r.Fief.Rent;
                 s.Pay += r.Fief.Rent;
+                // A knight who rides their own land builds a tower once their purse allows; one who lets it lie never does.
+                if (s.FiefWay == "ride" && !fief.Held && fief.TowerDue == null && a.Gold >= town.Content.Lairs.Outpost.Cost + 50) Fortify(town, a, fief);
             }
             else
             {
                 s.FiefId = null;
+                s.FiefWay = "";
                 Sway(a, -r.Fief.Loyalty);
                 town.Log(LedgerCategory.War, Importance.Notable, $"Ser {a.Name} has lost {fief.Def.Name}, and with it their lands.", [a.Id]);
             }
@@ -335,8 +338,11 @@ public static class Loyalty
         var s = a.Hero!;
         if (s.FiefId == null || Quests.Site(town, s.FiefId) is not SiteState site) return;
         site.Held = false;
+        site.TowerDue = null;
+        site.ThreatTick = null;
         site.ResettleTick = town.Tick + SimTime.HoursPerDay;
         s.FiefId = null;
+        s.FiefWay = "";
     }
 
     internal static void Strip(Agent a)
@@ -345,6 +351,7 @@ public static class Loyalty
         s.Knight = false;
         s.Champion = false;
         s.FiefId = null;
+        s.FiefWay = "";
     }
 
     /// <summary>
@@ -467,24 +474,55 @@ public static class Loyalty
         return null;
     }
 
-    /// <summary>Grant a knight a cleared site as their land: their retainers hold it, and the town stops paying any garrison there.</summary>
+    /// <summary>
+    /// Grant a knight a cleared site as their land. It is theirs, not the town's: the knight chooses how to keep it
+    /// (<see cref="Choose"/>) and pays for it from their own purse, and the town has no say in it after.
+    /// </summary>
     public static bool Grant(Town town, Agent a, string siteId)
     {
         var r = Rules(town).Fief;
         if (Quests.Site(town, siteId) is not SiteState site || FiefBlocked(town, a, site) != null) return false;
         if (Stewards.Intercept(town, "honours", new StewardAsk { Area = "honours", Kind = "fief", Title = $"Grant {site.Def.Name} to Ser {a.GivenName} · {Js.Str(r.Cost)}g", Why = "• A loyal knight without lands\n• Lands bind a knight to the town", S1 = siteId, I1 = a.Id })) return false;
         town.Book(TreasuryAccount.Honours, -r.Cost);
-        a.Hero!.FiefId = siteId;
-        bool garrisoned = site.Held;
-        site.Held = true;
-        site.ResettleTick = null;
+        var s = a.Hero!;
+        s.FiefId = siteId;
+        bool tower = site.Held || site.TowerDue != null;
+        site.Patrolled = false;
+        site.Reinforced = false;
+        s.FiefWay = tower ? "tower" : Choose(town, a);
         Sway(a, r.Loyalty);
-        town.Log(
-            LedgerCategory.Council,
-            Importance.Major,
-            $"The mayor grants {site.Def.Name} to Ser {a.Name} and their heirs. {(garrisoned ? "The watch's garrison marches home; the knight's own retainers hold it now" : "The knight's retainers ride out to hold it")}.",
-            [a.Id]);
+        string how = s.FiefWay switch
+        {
+            _ when tower => "The town's tower is theirs now, manned by their own retainers",
+            "tower" => "They spend their own purse raising a tower over it",
+            "ride" => "They mean to ride its bounds themselves and meet whatever comes",
+            _ => "They take its rents and leave it to look after itself",
+        };
+        if (!tower && s.FiefWay == "tower") Fortify(town, a, site);
+        else if (!tower) site.ResettleTick ??= town.Tick + town.Content.Lairs.ResettleDays[1] * SimTime.HoursPerDay;
+        town.Log(LedgerCategory.Council, Importance.Major, $"The mayor grants {site.Def.Name} to Ser {a.Name} and their heirs. {how}.", [a.Id]);
         return true;
+    }
+
+    /// <summary>
+    /// How a knight keeps their land, by their own nature and purse: the generous, ambitious or wary build a tower if
+    /// they can pay for it, the bold ride its bounds, and the greedy or idle take the rents and let it lie.
+    /// </summary>
+    public static string Choose(Town town, Agent a)
+    {
+        double cost = town.Content.Lairs.Outpost.Cost;
+        if (a.Has(Trait.Greedy) || a.Has(Trait.Lazy)) return "rent";
+        if (a.Gold >= cost && (a.Has(Trait.Generous) || a.Has(Trait.Ambitious) || a.Has(Trait.Shy) || a.Hero!.Level < 5)) return "tower";
+        return "ride";
+    }
+
+    /// <summary>A knight raises a tower on their own land from their own purse.</summary>
+    private static void Fortify(Town town, Agent a, SiteState site)
+    {
+        a.Gold -= town.Content.Lairs.Outpost.Cost;
+        a.Hero!.FiefWay = "tower";
+        Lairs.Build(town, site);
+        town.Log(LedgerCategory.War, Importance.Notable, $"Ser {a.Name} pays masons from their own purse to raise a tower over {site.Def.Name}.", [a.Id]);
     }
 
     public static string? ChampionBlocked(Town town, Agent a)
@@ -546,7 +584,7 @@ public static class Loyalty
         var site = knight == null ? null : FiefFor(town, knight);
         if (knight != null && site != null)
             yield return new($"fief:{knight.Id}", $"Lands for Ser {knight.GivenName}",
-                $"Ser {knight.Name} has served loyally and holds no land. {site.Def.Name} is cleared; grant it for {Js.Str(r.Fief.Cost)}g and their retainers hold it while they take its rents.", SiteId: site.Def.Id);
+                $"Ser {knight.Name} has served loyally and holds no land. {site.Def.Name} is cleared; grant it for {Js.Str(r.Fief.Cost)}g and it is theirs to keep as they choose, taking its rents.", SiteId: site.Def.Id);
         if (!town.Heroes.Any(a => a.Hero!.Champion) && ChampionFor(town) is { } best)
             yield return new($"champion:{best.Id}", "Name a champion",
                 $"{town.Name} has no champion. {Styled(town, best)}, level {best.Hero!.Level}, would stand first on the walls; name them from their sheet.", AgentId: best.Id);

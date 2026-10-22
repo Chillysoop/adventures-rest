@@ -472,8 +472,11 @@ public sealed class Simulation
     /// <summary>Pay for a mirror pair and have one hidden at a site, for a lasting live view.</summary>
     public Scout? PlantMirror(string siteId) => Watch.PlantMirror(Town, siteId);
 
-    /// <summary>Garrison a cleared site so nothing moves back in, and the town sees it live.</summary>
+    /// <summary>Raise a guard tower on a cleared site: once it stands nothing moves back in, and the town sees it live.</summary>
     public bool HoldSite(string siteId) => Lairs.Hold(Town, siteId);
+
+    /// <summary>Send spears and stores to a tower before something comes to test it (<see cref="Lairs.Reinforce"/>).</summary>
+    public bool ReinforceTower(string siteId) => Lairs.Reinforce(Town, siteId);
 
     /// <summary>Post (or call off) a standing patrol over a cleared site, to keep it clear (<see cref="Lairs.Patrol"/>).</summary>
     public bool Patrol(string siteId, bool on) => Lairs.Patrol(Town, siteId, on);
