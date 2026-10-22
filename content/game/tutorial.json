@@ -3,7 +3,7 @@
     {
       "id": "welcome",
       "title": "Welcome, Mayor",
-      "text": "Briarford is yours to grow. You don't command heroes:\n• [b]Build[/b] and paint zones\n• Post [b]bounties[/b] and set laws\n• Townsfolk and heroes choose for themselves\nFollow the [b]gold outline[/b]. End the tour any time.",
+      "text": "This town is yours to grow. You don't command heroes:\n• [b]Build[/b] and paint zones\n• Post [b]bounties[/b] and set laws\n• Townsfolk and heroes choose for themselves\nFollow the [b]gold outline[/b]. End the tour any time.",
       "teaches": []
     },
     {
@@ -129,7 +129,7 @@
     {
       "id": "war",
       "title": "Ready the walls",
-      "text": "Something will come for Briarford. [b]Defence[/b] holds the guard and walls:\n• Palisade and watchtowers first\n• Stone walls, gatehouse, moat, barracks later\n• Raiders strike when heroes are away",
+      "text": "Something will come for your town. [b]Defence[/b] holds the guard and walls:\n• Palisade and watchtowers first\n• Stone walls, gatehouse, moat, barracks later\n• Raiders strike when heroes are away",
       "point": "tab:Defence",
       "until": "tab:Defence",
       "teaches": ["tab:Defence", "command:BuildDefense"]

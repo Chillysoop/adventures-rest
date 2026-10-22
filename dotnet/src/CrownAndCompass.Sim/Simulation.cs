@@ -75,6 +75,9 @@ public sealed record SimulationOptions
     /// <summary>Hardcore: the mayor's death ends the campaign (<see cref="Systems.Mayoralty"/>).</summary>
     public bool Hardcore { get; init; }
 
+    /// <summary>The town's name as the player typed it on New game; blank keeps Briarford.</summary>
+    public string TownName { get; init; } = "";
+
     /// <summary>Roads to victory switched off for this campaign (victory.json ids); the rest are open (<see cref="Systems.Victory"/>).</summary>
     public IReadOnlyList<string> RoadsOff { get; init; } = [];
 
@@ -99,6 +102,7 @@ public sealed class Simulation
     {
         Options = options ?? new SimulationOptions();
         Town = new Town(content ?? Content.Default(), Options.Seed);
+        if (Systems.Founding.CleanName(Town.Content, Options.TownName) is { } named) Town.Name = named;
         Town.Storyteller = Systems.Storyteller.Def(Town.Content, Options.Storyteller)?.Id ?? Town.Content.Storytellers.Default;
         Town.Founding = Systems.Founding.Kind(Town.Content, Options.Founding) is { } site && site.Id != Town.Content.Founding.Default ? site.Id : null;
         Town.Saga.Enabled = Options.Saga && Options.Enemy;

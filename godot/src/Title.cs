@@ -33,6 +33,9 @@ public partial class Main
     /// <summary>New game's Hardcore toggle: the mayor's death ends the campaign.</summary>
     private bool _hardcore;
 
+    /// <summary>The name New game's town will take, as typed or rolled.</summary>
+    private string _townPick = "";
+
     private void BuildTitle()
     {
         _title = new Control { Visible = false, MouseFilter = MouseFilterEnum.Stop };
@@ -154,11 +157,19 @@ public partial class Main
     {
         _tellerPick = storyteller;
         _hardcore = _opts.Hardcore;
+        if (_townPick == "") RollTownName();
         _mayorRoll = Stories.RollMayor(Sim.Content.Default(), (int)(GD.Randi() & 0x7fffffff));
         _tellers.Visible = _sites.Visible = false;
         _titleMenu.Visible = false;
         _mayorSetup.Visible = true;
         RenderMayorSetup();
+    }
+
+    /// <summary>A name off founding.json's list, never the one already showing.</summary>
+    private void RollTownName()
+    {
+        var names = Sim.Content.Default().Founding.Names.Where(n => n != _townPick).ToList();
+        if (names.Count > 0) _townPick = names[(int)(GD.Randi() % (uint)names.Count)];
     }
 
     private void RerollMayor()
@@ -180,6 +191,27 @@ public partial class Main
         var r = Sim.Content.Default().Stories;
         var bg = r.Background(_mayorRoll.Background);
         var col = _mayorSetup;
+        // The town's name first: typed, or rolled from founding.json's list.
+        col.AddChild(Ui.Label("Your town", Ui.Ink2, Ui.Bold, 13));
+        var named = new HBoxContainer();
+        named.AddThemeConstantOverride("separation", 14);
+        var nameBox = new LineEdit
+        {
+            Text = _townPick, PlaceholderText = "Name your town", MaxLength = Sim.Content.Default().Founding.NameMost,
+            CustomMinimumSize = new Vector2(320, 44), TooltipText = "What the town is called in the Ledger, the songs and the history books",
+        };
+        nameBox.AddThemeFontOverride("font", Ui.Display);
+        nameBox.AddThemeFontSizeOverride("font_size", 24);
+        nameBox.TextChanged += text => _townPick = text;
+        named.AddChild(nameBox);
+        var rollName = new Button { Icon = Ui.Icon("d20"), ExpandIcon = true, TooltipText = "Roll a name", CustomMinimumSize = new Vector2(44, 44), SizeFlagsVertical = SizeFlags.ShrinkCenter, FocusMode = FocusModeEnum.None };
+        rollName.AddThemeConstantOverride("icon_max_width", 24);
+        Ui.GoldButton(rollName);
+        rollName.Pressed += () => { RollTownName(); nameBox.Text = _townPick; };
+        named.AddChild(rollName);
+        col.AddChild(named);
+        col.AddChild(new Control { CustomMinimumSize = new Vector2(0, 6) });
+
         col.AddChild(Ui.Label("Your mayor", Ui.Ink2, Ui.Bold, 13));
         var head = new HBoxContainer();
         head.AddThemeConstantOverride("separation", 14);
@@ -224,7 +256,7 @@ public partial class Main
         hard.Toggled += on => _hardcore = on;
         col.AddChild(hard);
         col.AddChild(new Control { CustomMinimumSize = new Vector2(0, 4) });
-        TitleButton(col, "Begin", "Sign the charter and start the town", primary: true, () => StartTown(_tellTutorial, _seedPick, storyteller: _tellerPick, founding: _foundingPick, mayor: _mayorRoll, hardcore: _hardcore));
+        TitleButton(col, "Begin", "Sign the charter and start the town", primary: true, () => StartTown(_tellTutorial, _seedPick, storyteller: _tellerPick, founding: _foundingPick, mayor: _mayorRoll, hardcore: _hardcore, townName: _townPick));
         TitleButton(col, "Back", "Back to the sites", primary: false, () => PickSite(_tellerPick ?? "rising", _seedPick));
     }
 
@@ -288,9 +320,9 @@ public partial class Main
         SetSpeed(0);
     }
 
-    private void StartTown(bool tutorial, int? seed = null, bool autoplay = false, string? storyteller = null, string? founding = null, MayorRoll? mayor = null, bool hardcore = false)
+    private void StartTown(bool tutorial, int? seed = null, bool autoplay = false, string? storyteller = null, string? founding = null, MayorRoll? mayor = null, bool hardcore = false, string? townName = null)
     {
-        NewTown(seed ?? (int)(GD.Randi() % 9999) + 1, autoplay, storyteller, founding, mayor, hardcore);
+        NewTown(seed ?? (int)(GD.Randi() % 9999) + 1, autoplay, storyteller, founding, mayor, hardcore, townName);
         // Begin at first light rather than in the dark of the first midnight.
         for (int i = 0; i < 7; i++) _sim.Step();
         HideTitle();

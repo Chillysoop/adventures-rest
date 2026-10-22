@@ -55,6 +55,10 @@ public sealed record FoundingRules
     /// <summary>The old keep a crag or a pass may start with in ruins (<see cref="Ruins"/>).</summary>
     public RuinDef? Ruin { get; init; }
     public IReadOnlyList<FoundingDef> Kinds { get; init; } = [];
+
+    /// <summary>Names New game offers when the player rolls one for the town, and the longest a name may be.</summary>
+    public IReadOnlyList<string> Names { get; init; } = [];
+    public int NameMost { get; init; } = 24;
 }
 
 /// <summary>A site offered on New game: its kind and where it lies from the river ford.</summary>
@@ -68,6 +72,16 @@ public sealed record FoundingSite(FoundingDef Def, double Bearing);
 /// </summary>
 public static class Founding
 {
+    /// <summary>A name the player typed, tidied: trimmed, single-spaced, no markup brackets, cut to the longest allowed; null when nothing is left.</summary>
+    public static string? CleanName(Content content, string? typed)
+    {
+        if (string.IsNullOrWhiteSpace(typed)) return null;
+        var kept = new string(typed.Where(c => !char.IsControl(c) && c is not ('[' or ']' or '{' or '}' or '<' or '>')).ToArray());
+        string name = string.Join(' ', kept.Split(' ', StringSplitOptions.RemoveEmptyEntries));
+        if (name.Length > content.Founding.NameMost) name = name[..content.Founding.NameMost].TrimEnd();
+        return name == "" ? null : name;
+    }
+
     public static FoundingRules Rules(Content content) => content.Founding;
 
     public static FoundingDef? Kind(Content content, string? id) => Rules(content).Kinds.FirstOrDefault(k => k.Id == id);
