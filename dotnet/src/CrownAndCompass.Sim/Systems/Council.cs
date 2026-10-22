@@ -173,7 +173,7 @@ public static class Council
         return true;
     }
 
-    private static bool? Majority(Motion m)
+    internal static bool? Majority(Motion m)
     {
         int yes = m.Votes.Count(v => v.Yes);
         int no = m.Votes.Count - yes;
@@ -235,7 +235,7 @@ public static class Council
         var res = town.Residents;
         double mood = res.Count > 0 ? Js.Sum(res, a => a.LastDayMood) / res.Count : 65;
         var speaker = FindSeat(town, SeatId.Speaker);
-        double drift = (mood - 70) * 0.04 + Planning.Mandate(town) * 0.05 + Decor.Mandate(town);
+        double drift = (mood - 70) * 0.04 + Planning.Mandate(town) * 0.05 + Decor.Mandate(town) + Regalia.Mandate(town) + Mayoralty.Mandate(town);
         if (speaker != null && speaker.HolderId != null) drift += speaker.Loyalty >= LowLoyalty ? 0.15 * Competence(town, speaker) : -0.5;
         // Goodwill fades: a mandate above its rest has to be kept earned.
         var rules = town.Content.Council;
@@ -247,7 +247,7 @@ public static class Council
     {
         var h = town.Agent(s.HolderId!.Value);
         // Loyalty eases back toward neutral; a popular mayor wins people over.
-        s.Loyalty = Clamp(s.Loyalty + (50 - s.Loyalty) * 0.02 + (town.Mandate - 50) * 0.01, 0, 100);
+        s.Loyalty = Clamp(s.Loyalty + (50 - s.Loyalty) * 0.02 + (town.Mandate - 50) * 0.01 + Regalia.Council(town), 0, 100);
         if (s.Loyalty >= LowLoyalty)
         {
             s.LowLoyaltyDays = 0;
@@ -425,7 +425,7 @@ public static class Council
     }
 
     /// <summary>The DC to sway a councillor by an approach: their passive Insight (or Wisdom), easier the more loyal they are.</summary>
-    public static int SwayDc(Town town, Seat s, ApproachDef a)
+    public static int SwayDc(Town town, Seat s, TalkDef a)
     {
         var them = town.Agent(s.HolderId!.Value);
         int loyal = (int)Math.Round((50 - s.Loyalty) / Math.Max(1, Negotiation.Rules(town).Sway.LoyaltyPer));

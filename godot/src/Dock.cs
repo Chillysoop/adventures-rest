@@ -19,7 +19,7 @@ public partial class Main
     /// <summary>Every management window, in the group it belongs to on the rail.</summary>
     private static readonly DockGroup[] Groups =
     [
-        new("Town", "tab-city", "Your town: the city, the mayor and the Ledger", [Tab.City, Tab.Mayor, Tab.Ledger]),
+        new("Town", "tab-city", "Your town: the city, the mayor, its notables and the Ledger", [Tab.City, Tab.Mayor, Tab.Notables, Tab.Ledger]),
         new("Council", "tab-council", "The council, the town's institutions and its faiths", [Tab.Council, Tab.Institutions, Tab.Faith]),
         new("Heroes", "tab-companies", "Bounties, adventuring companies and the armory", [Tab.Bounties, Tab.Companies, Tab.Armory]),
         new("Realm", "tab-campaign", "War, defence, diplomacy and the campaign", [Tab.War, Tab.Army, Tab.Defence, Tab.Diplomacy, Tab.Campaign]),
@@ -30,8 +30,9 @@ public partial class Main
     private static readonly Dictionary<Tab, string> Blurbs = new()
     {
         [Tab.City] = "Charter, wards, housing and growth",
-        [Tab.Mayor] = "Your character sheet and level-ups (C)",
+        [Tab.Mayor] = "Your mayor: what needs you, regalia, sheet (C)",
         [Tab.Ledger] = "Everything that happened, day by day",
+        [Tab.Notables] = "People worth knowing: win them over, hear their news",
         [Tab.Council] = "Motions, members, taxes and the town's laws",
         [Tab.Institutions] = "Guilds, colleges and their keepers",
         [Tab.Faith] = "Gods, shrines and the factions",
@@ -73,6 +74,7 @@ public partial class Main
         AlertWindow.Armory => Tab.Armory,
         AlertWindow.Institutions => Tab.Institutions,
         AlertWindow.Army => Tab.Army,
+        AlertWindow.Notables => Tab.Notables,
         _ => null,
     };
 

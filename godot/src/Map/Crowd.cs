@@ -216,6 +216,9 @@ public partial class Crowd(MapView map) : Node3D
 
     /// <summary>The heroes, in their own gear and moving with their own rig; and the sparks and spells of a fight.</summary>
     public readonly Heroes Heroes = new();
+
+    /// <summary>Every creature, each kind its own model (<see cref="Map.Beasts"/>).</summary>
+    public readonly Beasts Beasts = new();
     public readonly Fx Fx = new();
     private readonly MultiMeshInstance3D _folk = Make(), _heroes = Make(), _orcs = Make(), _banners = Make(), _guards = Make(), _loads = Make();
     private readonly List<float> _buf = [];
@@ -253,6 +256,7 @@ public partial class Crowd(MapView map) : Node3D
         BuildSiege(kit, _ram, _ladders, _arrows, _flames, _smoke);
         foreach (var m in new[] { _folk, _heroes, _orcs, _banners, _guards, _loads, _ram, _ladders, _arrows, _flames, _smoke }) AddChild(m);
         AddChild(Heroes);
+        AddChild(Beasts);
         AddChild(Fx);
     }
 
@@ -371,6 +375,7 @@ public partial class Crowd(MapView map) : Node3D
     public void Advance(float dt)
     {
         var town = map.Sim.Town;
+        Beasts.Bind(town.Content);
         People.Advance(dt, map.TimeScale);
         Fx.Advance(dt);
         // The figures' own clock: frame time, so swings and strides keep pace in a recorded clip too.
@@ -524,16 +529,20 @@ public partial class Crowd(MapView map) : Node3D
             var road = Passage.Road(town, Geo.ToDays(from), (0, 0)).Select(Geo.FromDays).ToArray();
             var (pos, dir) = Along(road, t * 0.85f);
             int n = Math.Min(160, (int)Math.Round(en.Strength / 3));
+            var host = Sim.Systems.Bestiary.Host(town, "warband");
             for (int i = 0; i < n; i++)
             {
                 var o = new Vector2((Geo.Hash(i * 5 + 1) - 0.5f) * 7, (Geo.Hash(i * 5 + 2) - 0.5f) * 5);
                 if (map.Fog.AlphaAt(pos + o) >= Fog.SightAlpha) continue;
                 float bob = Mathf.Abs(Mathf.Sin(now * 8 + i)) * 0.03f;
-                Foe("", gen.At(pos + o), Mathf.Atan2(dir.X, dir.Y), i % 7 == 0 ? new Color("4a2018") : new Color("8a3a2a"), OrcSkin, 1.1f, Heroes.Act.Walk, now * 1.7f + i * 0.37f);
+                Foe("", gen.At(pos + o), Mathf.Atan2(dir.X, dir.Y), i % 7 == 0 ? new Color("4a2018") : new Color("8a3a2a"), OrcSkin, 1.1f, Heroes.Act.Walk, now * 1.7f + i * 0.37f, creature: Ranks(host, i, i == 0));
             }
         }
         SiegeHost(town, now);
         SkirmishFoes(now);
+        GalleryPut(now);
+        Wildlife(town, now);
+        Beasts.Flush();
         Flush(_orcs);
         SiegeProps(town, now);
         Heroes.Flush(now);

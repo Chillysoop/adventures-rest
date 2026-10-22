@@ -42,7 +42,7 @@ public static class Odds
     }
 
     /// <summary>One menu entry per approach: its icon, "Persuade · d20+5 vs 13 · 60%", and its hover.</summary>
-    public static List<(string Icon, string Text, string Tip)> Approaches(Town t, Func<ApproachDef, int> dc, Func<ApproachDef, string> why)
+    public static List<(string Icon, string Text, string Tip)> Approaches(Town t, Func<TalkDef, int> dc, Func<TalkDef, string> why)
     {
         var list = new List<(string, string, string)>();
         foreach (var a in Negotiation.Rules(t).Approaches)

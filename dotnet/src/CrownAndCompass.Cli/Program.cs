@@ -27,6 +27,7 @@ string? legends = null;
 bool summary = false;
 bool handTaxes = false;
 string storyteller = "rising";
+bool hardcore = false;
 bool roads = false;
 bool claim = false;
 bool endless = false;
@@ -72,6 +73,9 @@ for (int i = 0; i < args.Length; i++)
         case "--summary":
             summary = true;
             break;
+        case "--hardcore":
+            hardcore = true;
+            break;
         case "--storyteller":
             storyteller = i + 1 < args.Length ? args[++i] : storyteller;
             if (Storyteller.Def(Content.Default(), storyteller) == null)
@@ -106,7 +110,7 @@ for (int i = 0; i < args.Length; i++)
 }
 
 var past = legends != null && File.Exists(legends) ? Legends.Read(File.ReadAllText(legends)) : [];
-var sim = load != null ? SaveGame.ReadFile(load, out _) : new Simulation(new SimulationOptions { Seed = seed, Legends = past, AutoCouncil = !handTaxes, Storyteller = storyteller, RoadsOff = roadsOff, Endless = endless, Boons = boons });
+var sim = load != null ? SaveGame.ReadFile(load, out _) : new Simulation(new SimulationOptions { Seed = seed, Legends = past, AutoCouncil = !handTaxes, Storyteller = storyteller, RoadsOff = roadsOff, Endless = endless, Boons = boons, Hardcore = hardcore });
 var town = sim.Town;
 seed = town.Seed;
 var minImportance = all ? Importance.Routine : Importance.Notable;

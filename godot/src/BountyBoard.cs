@@ -454,7 +454,10 @@ public partial class Main
             int id = party.Id;
             string members = string.Join(", ", party.Members.Select(m => AgentLink(t.Agent(m), t.Agent(m).GivenName)));
             string where = party.RecalledTick != null ? Ui.C(Ui.Gold, "called home") : $"→ {SiteLink(site.Def)}";
-            string text = $"[b]The {Ui.Esc(party.Name)}[/b] {where}  {Tag($"back day {due}", Ui.Gold)}\n[font_size=12]{members}[/font_size]";
+            // Who does what on the road and the skill it rolls, a bullet each.
+            var crew = party.Members.Select(t.Agent).Where(a => !a.Dead).ToList();
+            string jobs = string.Join("", Wayfaring.Assign(t, crew).Select(j => $"\n• {Ui.Esc(Wayfaring.Describe(t, j))}"));
+            string text = $"[b]The {Ui.Esc(party.Name)}[/b] {where}  {Tag($"back day {due}", Ui.Gold)}\n[font_size=12]{members}{Ui.C(Ui.Ink2, jobs)}[/font_size]";
             bool can = Knowledge.Slots(t, party) > 0;
             bool stone = Sim.Systems.Armory.Carries(t, party);
             string left = !can ? "No caster or sending stone with them: no way to reach them"

@@ -251,12 +251,19 @@ public class PowersTests
         var league = Powers.Find(t, "crown-league")!;
         var ledger = Powers.Find(t, "black-ledger")!;
         league.Side = PowerSide.Town;
+        // Liked, and paid, enough to stay the town's ally through the days of the run, whatever else they bring.
+        league.Favour = 100;
+        t.Treasury += 20000;
         foreach (var p in t.Powers) p.NextFeudDay = p.Id == "crown-league" ? 0 : 99999;
-        double before = Powers.Target(t, ledger);
         sim.RunDays(r.From - t.Day + 1);
         Assert.Equal("black-ledger", league.FeudWith);
         Assert.Equal("crown-league", ledger.FeudWith);
-        Assert.True(Powers.Target(t, ledger) < before - r.Hit / 2);
+        // Favour and the town's signals drift over the days; the feud's own hit is what is checked.
+        double feuding = Powers.Target(t, ledger);
+        ledger.FeudWith = "";
+        double before = Powers.Target(t, ledger);
+        ledger.FeudWith = "crown-league";
+        Assert.True(feuding < before - r.Hit / 2);
         Assert.Equal("aid", league.Envoy);
         t.Treasury = 10000;
         double ledgerFavour = ledger.Favour;

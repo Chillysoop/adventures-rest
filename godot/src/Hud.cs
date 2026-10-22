@@ -37,6 +37,7 @@ public partial class Main
         [Tab.Armory] = "The town armory",
         [Tab.Diplomacy] = "Diplomacy and trade",
         [Tab.Institutions] = "The town's institutions",
+        [Tab.Notables] = "People worth knowing",
         [Tab.Faith] = "Faith and factions",
         [Tab.Campaign] = "The campaign",
         [Tab.Chronicles] = "Chronicles",
@@ -123,7 +124,7 @@ public partial class Main
         sh.AddThemeConstantOverride("separation", 2);
         speeds.AddChild(sh);
         string[] labels = ["❚❚", "1×", "4×", "12×", "36×"];
-        string[] tips = ["Pause (space)", "Normal (1): a day lasts a minute", "Fast (2): a day in 15 seconds", "Faster (3): a day in 5 seconds", "Fastest (4): a day in under 2 seconds"];
+        string[] tips = ["Pause · Space", "Normal: a day a minute\n+ / − change speed", "Fast: a day in 15 s\n+ / − change speed", "Faster: a day in 5 s\n+ / − change speed", "Fastest: a day in under 2 s\n+ / − change speed"];
         for (int i = 0; i < 5; i++)
         {
             int k = i;
@@ -148,13 +149,14 @@ public partial class Main
 
     private void BuildPaused()
     {
-        _pausedPill = Ui.Label("PAUSED", new Color("f6eedb"), Ui.Bold, 12);
+        _pausedPill = Ui.Label("❚❚ PAUSED · Space", new Color("f6eedb"), Ui.Bold, 12);
         var pill = new PanelContainer { MouseFilter = MouseFilterEnum.Ignore, SizeFlagsHorizontal = SizeFlags.ShrinkCenter };
         pill.AddThemeStyleboxOverride("panel", Ui.Flat(new Color(0.08f, 0.06f, 0.04f, 0.8f), 12, 4, 99));
         pill.AddChild(_pausedPill);
         // Under the alert strip, centred, with the siege banner below it.
         var col = BuildAlerts();
         col.AddChild(pill);
+        col.AddChild(BuildAsks());
         BuildSiegeBanner(col);
     }
 
@@ -249,6 +251,7 @@ public partial class Main
 
     private void OpenWindow(Tab t)
     {
+        if (_windowTab != t) Remember();
         _windowTab = t;
         _windowTitle.Text = Titles[t];
         // The roster is a table and the council a hall: their windows open wide.
@@ -418,7 +421,8 @@ public partial class Main
                     _goalsRows.RemoveChild(c);
                     c.QueueFree();
                 }
-                foreach (var g in open) _goalsRows.AddChild(GoalRow(t, g));
+                var next = Goals.Next(t);
+                foreach (var g in open) _goalsRows.AddChild(GoalRow(t, g, g == next));
                 _goalsCount.Text = $"{t.Goals.Done.Count} OF {t.Content.Goals.Goals.Count}";
             }
         }
@@ -431,14 +435,26 @@ public partial class Main
         if (_goalsCard.Visible) _goalsCard.ResetSize();
     }
 
-    private static Control GoalRow(Town t, GoalDef g)
+    /// <summary>One goal: its icon and few words, a bar, and the count and reward. The one the pointer is on is gilded.</summary>
+    private static Control GoalRow(Town t, GoalDef g, bool next)
     {
         var (now, target) = Goals.Progress(t, g);
         var row = new VBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
         row.AddThemeConstantOverride("separation", 3);
-        var text = Ui.Label(g.Text, Ui.Ink, Ui.Medium, 13);
+        var head = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
+        head.AddThemeConstantOverride("separation", 6);
+        if (g.Icon != "")
+            head.AddChild(new TextureRect
+            {
+                Texture = Ui.Icon(g.Icon), CustomMinimumSize = new Vector2(18, 18), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+                StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, SizeFlagsVertical = SizeFlags.ShrinkCenter, MouseFilter = MouseFilterEnum.Ignore,
+                Modulate = next ? Ui.Gold : Ui.Ink2,
+            });
+        var text = Ui.Label(next ? $"{g.Text}  ▶" : g.Text, next ? Ui.Gold : Ui.Ink, next ? Ui.Bold : Ui.Medium, 13);
         text.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        row.AddChild(text);
+        text.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        head.AddChild(text);
+        row.AddChild(head);
         var bar = new ProgressBar { MinValue = 0, MaxValue = target, Value = now, ShowPercentage = false, CustomMinimumSize = new Vector2(0, 4), MouseFilter = MouseFilterEnum.Ignore };
         bar.AddThemeStyleboxOverride("background", Ui.Flat(new Color(Ui.Line, 0.9f), 0, 0, 2));
         bar.AddThemeStyleboxOverride("fill", Ui.Flat(Ui.Gold, 0, 0, 2));
@@ -495,6 +511,7 @@ public partial class Main
         tools.AddChild(BuildLensButton());
         corner.AddChild(tools);
         corner.AddChild(BuildOrders());
+        corner.AddChild(BuildPins());
 
         var frame = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ShrinkEnd };
         frame.AddThemeStyleboxOverride("panel", Castle.Oak(8, 8));

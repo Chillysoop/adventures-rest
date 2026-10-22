@@ -303,7 +303,12 @@ public static class Population
         }
         foreach (var lot in town.Lots) if (lot.OwnerId == a.Id) lot.OwnerId = null;
         // Whoever leaves, by the road or the grave, leaves their factions too.
-        foreach (var f in town.Factions) Remove(f.Members, a.Id);
+        foreach (var f in town.Factions)
+            if (f.Members.Contains(a.Id))
+            {
+                Remove(f.Members, a.Id);
+                Factions.Prune(town, f);
+            }
     }
 
     public static void Remove(List<int> list, int id)

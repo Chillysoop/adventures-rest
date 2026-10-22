@@ -25,6 +25,7 @@ public partial class Main
         [Sparks.Book] = "A spellbook", [Sparks.Magic] = "Wizards and magic", [Sparks.Hero] = "Heroes",
         [Sparks.Wilds] = "Explorers and the wilds", [Sparks.Slain] = "A monster slain", [Sparks.Ally] = "An ally",
         [Sparks.Known] = "What the town knows", [Sparks.Charter] = "The charter",
+        [Sparks.Foe] = "A foe met or broken", [Sparks.Relic] = "A Skywright relic",
     };
 
     private void RenderLibrary()
@@ -104,6 +105,8 @@ public partial class Main
             })), 13);
         }
 
+        RenderSkyworks(p, t);
+
         // The tree: what this town could study, where each idea came from, what it still needs.
         p.Heading("Discoveries");
         if (st.Revealed.Count == 0)
@@ -151,6 +154,88 @@ public partial class Main
         foreach (var a in wizards)
             p.Text(Lb($"[b]{Ui.Esc(a.Name)}[/b] {Ui.C(Ui.Ink2, $"lvl {a.Hero!.Level} · reads {Research.Ordinal(Math.Min(9, (a.Hero.Level + 1) / 2))} circle{(st.Drawn.Contains(a.Id) ? " · drawn by the library" : "")}{(a.IsAway ? " · away" : "")}")}", "lore"), 13);
         p.Commit();
+    }
+
+    /// <summary>
+    /// The Skywright relics (where each lies, who holds it, the foe racing for them) and the Lofted City: its stages
+    /// while it rises, then where it hovers and where it can sail. Shown once the town has heard of any of it.
+    /// </summary>
+    private void RenderSkyworks(Pane p, Town t)
+    {
+        var lr = t.Content.Lofted;
+        var ls = t.Lofted;
+        bool heard = (lr.Reveal != "" && Research.IsKnown(t, lr.Reveal)) || Lofted.Held(t) > 0 || ls.Relics.Any(r => r.Holder != "");
+        var city = Lofted.City(t);
+        if (!heard && city == null) return;
+
+        p.Heading("Skywright relics");
+        p.Text(string.Join("\n", ls.Relics.Select(rs =>
+        {
+            var def = Lofted.Relic(t, rs.Id);
+            var site = Quests.Site(t, rs.SiteId);
+            string where = site == null || site.Known == SiteKnowledge.Unheard ? "?" : Ui.Esc(site.Def.Name);
+            string state = rs.Holder == "town" ? Ui.C(Ui.Good, "✓ home")
+                : rs.Holder != "" ? Ui.C(Ui.Bad, $"⚔ {Ui.Esc(Lofted.HolderName(t, rs))}")
+                : Ui.C(Ui.Ink2, where);
+            string body = $"[b]{Ui.Esc(Ui.Cap(def?.Name ?? rs.Id))}[/b]  {state}";
+            return $"[hint={Ui.Esc(def?.Text ?? "").Replace("]", ")")}]{Lb(body, rs.Holder == "town" ? Sparks.Relic : rs.Holder != "" ? "rivals" : "compass")}[/hint]";
+        })), 13);
+        if (Lofted.Rival(t) is { Alive: true } rival && ls.Relics.Any(r => r.Holder != "town"))
+        {
+            int held = ls.Relics.Count(r => r.Holder == $"menace:{rival.Id}");
+            string keel = ls.Raised ? Ui.C(Ui.Bad, " · dark keel risen")
+                : ls.RaiseDay is int day ? Ui.C(Ui.Bad, $" · dark keel in {Ui.Days(Math.Max(0, day - t.Day))}")
+                : $" · keel at {lr.Race.RaiseAt}";
+            p.Text(Lb($"Racing you: [b]{Ui.Esc(Ui.Cap(rival.Name))}[/b] {Ui.C(Ui.Ink2, $"{held} held{keel}")}", "rivals"), 13);
+        }
+
+        p.Heading("The Lofted City");
+        if (city == null)
+        {
+            p.Note(Lofted.Locked(t, t.Content.Building("lofted_spire")) is { } why ? $"✗ {why}" : "Pick a size in the build menu (Government): spire, isle or city.");
+            return;
+        }
+        if (!city.Complete)
+        {
+            int stage = GrandWorks.Current(city), n = city.Def.Stages.Count;
+            p.Meter(Ui.Cap(city.Name), city.BuildProgress / city.Def.BuildHours, $"{stage + 1}/{n} · {city.Def.Stages[Math.Clamp(stage, 0, n - 1)].Name}");
+            return;
+        }
+        string at = Lofted.Sailing(t)
+            ? $"sailing · {Ui.Days((int)Math.Ceiling((ls.ArriveTick - t.Tick) / 24.0))}"
+            : ls.RegionId is int rid ? $"over {Ui.Esc(t.Regions[rid].Name)}" : $"over {Ui.Esc(t.Name)}";
+        p.Text(Lb($"[b]{Ui.Esc(Ui.Cap(city.Name))}[/b]  {Ui.C(Ui.Gold, at)}", Sparks.Relic), 14);
+        var scope = lr.Scope(city.Def.Id);
+        var sail = new List<(string, bool, bool, Action)>();
+        if (ls.RegionId != null) sail.Add(("⌂ Home", Lofted.SailBlocked(t, -1) == null, true, () => Act(() => _sim.SailLofted(-1))));
+        foreach (var g in t.Regions.Where(g => g.Known && g.Id != ls.RegionId).OrderByDescending(g => ls.Relics.Any(r => r.Holder == "" && Quests.Site(t, r.SiteId)?.RegionId == g.Id)).ThenByDescending(g => g.Days).ThenBy(g => g.Id).Take(6))
+        {
+            int gid = g.Id;
+            sail.Add(($"⛵ {g.Name}", Lofted.SailBlocked(t, gid) == null, false, () => Act(() => _sim.SailLofted(gid))));
+        }
+        if (sail.Count > 0) p.Buttons(sail.ToArray());
+        if (scope != null) p.Note($"{Js.Str(scope.SailGold)}g a day aloft · companies set out from under it");
+    }
+
+    /// <summary>For shots: every relic home, lofting known, and the city of this size standing (or rising some eighths) beside the town.</summary>
+    private void StageLofted(string arg)
+    {
+        var t = _sim.Town;
+        var parts = arg.Split(':');
+        var d = t.Content.Buildings.FirstOrDefault(b => b.Id == parts[0] && b.Lofted);
+        if (d == null) return;
+        _sim.RunDays(1);
+        foreach (var rs in t.Lofted.Relics) rs.Holder = "town";
+        t.Research.Known.Add(t.Content.Lofted.Reveal);
+        t.Research.Known.Add(t.Content.Lofted.Unlock);
+        if (Planning.CivicLot(t, d) is not { } lot) return;
+        bool rising = parts.Length > 1 && int.TryParse(parts[1], out _);
+        var b = t.AddBuilding(d, lot, null, $"the {d.Name}", !rising);
+        if (rising)
+        {
+            b.Stage = d.Stages.Count;
+            b.BuildProgress = d.BuildHours * Math.Clamp(int.Parse(parts[1]), 0, 7) / 8.0;
+        }
     }
 
     /// <summary>One point of a list, its icon first (with the source's meaning on hover).</summary>

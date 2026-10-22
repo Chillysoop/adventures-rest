@@ -80,8 +80,8 @@ public static class Sheet
     }
 
     /// <summary>
-    /// Someone who lends the mayor a hand at a skill (the Help action): a councillor trained in it and loyal enough, the
-    /// most skilled first. Their help is advantage.
+    /// Someone who lends the mayor a hand at a skill (the Help action): a councillor trained in it and loyal enough, or a
+    /// notable resident trained in it who counts the mayor a friend, the most skilled first. Their help is advantage.
     /// </summary>
     public static Agent? Helper(Town town, string skill)
     {
@@ -97,6 +97,14 @@ public static class Sheet
             int b = Skills.Bonus(town, a, skill);
             if (b > bestBonus) (best, bestBonus) = (a, b);
         }
+        foreach (var n in town.Notables)
+        {
+            if (n.AgentId is not int id || Notables.Band(town, n) != Notables.Friend) continue;
+            var a = town.Agent(id);
+            if (a.Departed || !Skills.Trained(town, a, skill)) continue;
+            int b = Skills.Bonus(town, a, skill);
+            if (b > bestBonus) (best, bestBonus) = (a, b);
+        }
         return best;
     }
 
@@ -106,7 +114,9 @@ public static class Sheet
         var a = Helper(town, skill);
         if (a == null) return "";
         var seat = town.Seats.FirstOrDefault(s => s.HolderId == a.Id);
-        return seat != null ? $"{a.GivenName} the {seat.Def.Title} helps" : $"{a.GivenName} helps";
+        if (seat != null) return $"{a.GivenName} the {seat.Def.Title} helps";
+        var n = town.Notables.FirstOrDefault(x => x.AgentId == a.Id);
+        return n != null ? $"{a.GivenName} the {Notables.DefOf(town, n).Title.ToLowerInvariant()} helps" : $"{a.GivenName} helps";
     }
 
     public static bool Succeeded(StoryBeat b) => b.Result is StoryResult.Critical or StoryResult.Success or StoryResult.Certain;
@@ -137,7 +147,7 @@ public static class Sheet
 
     // ---------- Inspiration ----------
 
-    public static int InspirationMax(Town town) => Rules(town).InspirationMax + Feats(town).Sum(f => f.Inspiration);
+    public static int InspirationMax(Town town) => Rules(town).InspirationMax + Feats(town).Sum(f => f.Inspiration) + Regalia.Inspiration(town);
 
     /// <summary>Give the mayor inspiration, up to what they can hold, saying why in the Ledger if a reason is given.</summary>
     public static void Inspire(Town town, int n, string why)

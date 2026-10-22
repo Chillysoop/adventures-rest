@@ -37,6 +37,10 @@ public class ResearchTests
                     case "found": Assert.Contains(p[1], new[] { "lair", "settlement", "company", "caravan", "font", "ruin" }); break;
                     case "slain": Assert.Contains(c.Library.Monsters, m => m.Type.Equals(p[1], StringComparison.OrdinalIgnoreCase)); break;
                     case "ally": Assert.Contains(c.Powers.Powers, x => x.Id == p[1]); break;
+                    case "foe" or "broken": Assert.Contains(c.History.Lineages, x => x.Id == p[1]); break;
+                    case "met": Assert.Contains(c.World.Peoples, x => x.Id == p[1]); break;
+                    case "relic": Assert.Contains(c.Lofted.Relics, x => x.Id == p[1]); break;
+                    case "relics": Assert.InRange(int.Parse(p[1]), 1, c.Lofted.Relics.Count); break;
                     case "books" or "wizard" or "circle" or "routes" or "delves" or "cleared" or "heroes" or "hero": break;
                     default: Assert.Fail($"{d.Id}: unknown token {token}"); break;
                 }

@@ -13,6 +13,9 @@ namespace CrownAndCompass.Client;
 public partial class Portrait : Control
 {
     public string Glyph = "help";
+
+    /// <summary>A whole icon to draw instead of a face glyph (a notable's trade).</summary>
+    public string? Icon;
     public Color Tint = Ui.Ink2;
     public Color Ring = new("5a5347");
     public bool Crowned;
@@ -38,7 +41,7 @@ public partial class Portrait : Control
         DrawCircle(c, r * 0.8f, new Color("1d1712"));
         DrawCircle(c, r * 0.76f, Tint.Darkened(0.72f));
         DrawCircle(c + new Vector2(0, -r * 0.16f), r * 0.56f, new Color(Tint.Darkened(0.45f), 0.55f));
-        var face = Ui.Icon("face-" + Glyph);
+        var face = Ui.Icon(Icon ?? "face-" + Glyph);
         float g = r * 1.12f;
         var light = Tint.Lerp(Ui.Ink, 0.55f);
         DrawTextureRect(face, new Rect2(c - new Vector2(g / 2, g / 2), new Vector2(g, g)), false, Rumoured ? new Color(light, 0.55f) : light);

@@ -323,7 +323,7 @@ public static class Guilds
     }
 
     /// <summary>The DC to talk a guild round by an approach: its master's passive Insight or Wisdom, harder the angrier the guild.</summary>
-    public static int TalkDc(Town town, Guild g, ApproachDef a)
+    public static int TalkDc(Town town, Guild g, TalkDef a)
     {
         var r = Negotiation.Rules(town).Guild;
         int angry = (int)Math.Round((50 - g.Standing) / Math.Max(1, r.StandingPer));

@@ -42,9 +42,9 @@ public sealed record GlossaryBook
 /// </summary>
 public static class Glossary
 {
-    private static GlossaryBook? _default;
+    private static readonly Lazy<GlossaryBook> _default = new(() => Parse(Content.ReadText("glossary.json")));
 
-    public static GlossaryBook Default() => _default ??= Parse(Content.ReadText("glossary.json"));
+    public static GlossaryBook Default() => _default.Value;
 
     public static GlossaryBook Parse(string json) => JsonSerializer.Deserialize<GlossaryBook>(json, Content.JsonOptions) ?? new GlossaryBook();
 

@@ -228,7 +228,7 @@ public static class AllyCalls
     }
 
     /// <summary>The DC to talk a holdout round by an approach: their ruler's passive Insight or Wisdom, harder the less they think of the town.</summary>
-    public static int NegotiateDc(Town town, AllyCall c, ApproachDef a)
+    public static int NegotiateDc(Town town, AllyCall c, TalkDef a)
     {
         var s = Of(town, c);
         var t = Ruler(town, s);

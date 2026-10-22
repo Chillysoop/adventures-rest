@@ -80,6 +80,22 @@ public class TabletopRulesTests
     }
 
     [Fact]
+    public void ANotableFriendLendsTheMayorAHand()
+    {
+        var sim = Player();
+        var t = sim.Town;
+        foreach (var s in t.Seats) s.Loyalty = 0;
+        var a = t.Residents.First(x => x.Hero == null && !t.Seats.Any(s => s.HolderId == x.Id) && Skills.All(t).Any(s => Skills.Trained(t, x, s.Id)));
+        string skill = Skills.All(t).Select(s => s.Id).First(s => Skills.Trained(t, a, s));
+        var n = new Notable { Id = 999, Kind = t.Content.Notables.Kinds[0].Id, AgentId = a.Id, Regard = 0 };
+        t.Notables.Add(n);
+        Assert.Null(Sheet.Helper(t, skill));
+        n.Regard = 100;
+        Assert.Equal(a, Sheet.Helper(t, skill));
+        Assert.Contains(a.GivenName, Sheet.HelpText(t, skill));
+    }
+
+    [Fact]
     public void TrialsWeighTheCaseAgainstTheTaleWithoutDice()
     {
         var sim = Player();

@@ -4,5 +4,9 @@
   "floor": 50,
   "imports": 0.25,
   "unrest": 25,
-  "mandate": 40
+  "mandate": 40,
+  "records": {
+    "every": 7,
+    "pins": 160
+  }
 }

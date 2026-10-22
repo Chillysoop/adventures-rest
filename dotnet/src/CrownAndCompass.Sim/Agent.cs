@@ -280,6 +280,9 @@ public sealed class HeroSheet
 
     /// <summary>Where each magic item they carry came from, by item id ("Taken from King-under-Turf on day 51...").</summary>
     public OrderedMap<string, string> ItemTales { get; } = new();
+
+    /// <summary>Lasting wounds they carry, oldest first (<see cref="Systems.Wounds"/>).</summary>
+    public List<Systems.Wound> Wounds { get; } = [];
 }
 
 /// <summary>
