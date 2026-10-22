@@ -1,0 +1,26 @@
+{
+  "slots": [
+    { "id": "chain", "name": "Chain of office", "icon": "regalia-chain" },
+    { "id": "signet", "name": "Signet", "icon": "regalia-signet" },
+    { "id": "sceptre", "name": "Sceptre", "icon": "regalia-sceptre" },
+    { "id": "mantle", "name": "Mantle", "icon": "regalia-mantle" },
+    { "id": "banner", "name": "Banner", "icon": "regalia-banner" }
+  ],
+  "start": ["chain-of-the-first-charter"],
+  "commission": { "markup": 1.0, "reserve": 100 },
+  "items": [
+    { "ref": "chain-of-the-first-charter", "slot": "chain", "skills": { "persuasion": 1 } },
+    { "ref": "burghers-seven-link-chain", "slot": "chain", "tier": 1, "council": 0.3, "skills": { "persuasion": 1 } },
+    { "ref": "oathbound-chain", "slot": "chain", "tier": 3, "inspiration": 1, "skills": { "persuasion": 2, "insight": 1 } },
+    { "ref": "wax-and-iron-signet", "slot": "signet", "tier": 0, "skills": { "investigation": 1, "deception": 1 } },
+    { "ref": "signet-of-the-open-hand", "slot": "signet", "tier": 1, "loyalty": 4 },
+    { "ref": "seal-of-the-unbroken-word", "slot": "signet", "tier": 2, "mandate": 0.05, "skills": { "insight": 2 } },
+    { "ref": "beacon-sceptre", "slot": "sceptre", "tier": 1, "skills": { "intimidation": 2, "athletics": 1 } },
+    { "ref": "sceptre-of-quiet-courts", "slot": "sceptre", "tier": 3, "mandate": 0.08, "council": 0.3, "skills": { "insight": 1 } },
+    { "ref": "road-worn-mantle", "slot": "mantle", "tier": 0, "loyalty": 2, "skills": { "survival": 1 } },
+    { "ref": "mantle-of-the-lamplit-hall", "slot": "mantle", "tier": 2, "inspiration": 1, "skills": { "history": 1, "religion": 1 } },
+    { "ref": "town-pennant", "slot": "banner", "tier": 1, "march": 1 },
+    { "ref": "muster-standard", "slot": "banner", "tier": 3, "march": 1, "loyalty": 3 },
+    { "ref": "banner-of-the-free-city", "slot": "banner", "tier": 4, "march": 2, "loyalty": 4, "mandate": 0.05 }
+  ]
+}

@@ -409,12 +409,12 @@ public static class Alchemy
             .ToDictionary(g => g.Key, g => g.Select(x => x.m).ToList());
     });
 
-    /// <summary>What the stand-in mayor keeps on the shelf, most wanted first: healing, wards for the lairs the town knows, fever-breakers while a plague-bringer lives.</summary>
+    /// <summary>What the stand-in mayor keeps on the shelf, most wanted first: healing, wards for the lairs the town knows, fever-breakers while a plague-bringer lives or sickness is in town.</summary>
     private static List<AlchemyRecipeDef> Wanted(Town town)
     {
         var r = Rules(town);
         var kinds = town.Sites.Where(s => !s.Cleared && s.Known != SiteKnowledge.Unheard).Select(s => s.Def.Kind).ToHashSet();
-        bool plague = Menaces.Alive(town).Any(m => Menaces.AmbitionOf(town, m).Id == "plague");
+        bool plague = Menaces.Alive(town).Any(m => Menaces.AmbitionOf(town, m).Id == "plague") || Sickness.Outbreak(town);
         var list = r.Recipes.Where(x => x.Use == "healing").ToList();
         list.AddRange(r.Recipes.Where(x => x.Use == "ward" && x.Against.Any(kinds.Contains)));
         if (plague) list.AddRange(r.Recipes.Where(x => x.Use == "cure"));

@@ -244,6 +244,7 @@ public static class Armory
         var stock = town.Armory.Stock.FirstOrDefault(s => s.Id == stockId);
         if (stock == null || heroId < 1 || heroId > town.Agents.Count) return false;
         var a = town.Agent(heroId);
+        if (Stewards.Intercept(town, "armory", new StewardAsk { Area = "armory", Kind = "gift", Title = $"Give {stock.Item.Name} to {a.Name}", Why = $"• {a.Name} gains most from it\n• Gifts win loyalty", I1 = stockId, I2 = heroId })) return false;
         if (Refuse(town, a, stock.Item) != null) return false;
         var s = a.Hero!;
         var it = stock.Item;
@@ -337,6 +338,7 @@ public static class Armory
         var stock = town.Armory.Stock.FirstOrDefault(s => s.Id == stockId);
         if (stock == null) return false;
         double gold = SellValue(town, stock.Item);
+        if (Stewards.Intercept(town, "armory", new StewardAsk { Area = "armory", Kind = "sell", Title = $"Sell {stock.Item.Name} · {Js.Str(gold)}g", Why = $"• Unused since day {stock.Day}\n• No hero in town wants it", I1 = stockId })) return false;
         town.Armory.Stock.Remove(stock);
         town.Book(TreasuryAccount.Armory, gold);
         town.Log(LedgerCategory.Town, Importance.Routine, $"The town hall sells the {Gear.Plainly(stock.Item)} from the armory for {Js.Str(gold)} gold.");
@@ -491,6 +493,7 @@ public static class Armory
     {
         var o = town.Armory.Offers.FirstOrDefault(x => x.Id == offerId);
         if (o == null || town.Treasury < o.Price) return false;
+        if (Stewards.Intercept(town, "armory", new StewardAsk { Area = "armory", Kind = "buy", Title = $"Buy {o.Item.Name} · {Js.Str(o.Price)}g", Why = "• A hero in town would use it\n• The treasury can spare it", I1 = offerId })) return false;
         town.Armory.Offers.Remove(o);
         town.Book(TreasuryAccount.Armory, -o.Price);
         town.Armory.Bought++;

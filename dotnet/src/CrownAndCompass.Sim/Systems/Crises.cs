@@ -584,6 +584,7 @@ public static class Crises
         var x = town.Crises.Clashes.FirstOrDefault(c => c.Id == clashId);
         if (x == null || x.Done || x.Answered) return false;
         if (against != 0 && against != x.A && against != x.B) return false;
+        if (Stewards.Intercept(town, "defence", new StewardAsk { Area = "defence", Kind = "clash", Title = against == 0 ? "Stay out of the clash" : $"Join the clash against {town.Saga.Menaces.FirstOrDefault(m => m.Id == against)?.Name ?? "the foe"}", Why = "• Two foes at each other's throats\n• A blow now weakens the worse of them", I1 = clashId, I2 = against })) return false;
         x.Answered = true;
         x.Against = against == 0 ? null : against;
         return true;

@@ -367,6 +367,7 @@ public static class Explore
         var region = town.Regions[regionId];
         double pay = reward ?? SuggestedReward(town, region);
         if (pay <= 0 || town.Treasury < pay) return null;
+        if (Stewards.Intercept(town, "bounties", new StewardAsk { Area = "bounties", Kind = "survey", Title = $"Survey {region.Name} · {Js.Str(pay)}g", Why = "• Unknown country nearby\n• A company maps it and brings back finds", I1 = regionId, D1 = pay })) return null;
         town.Book(TreasuryAccount.Exploring, -pay);
         var c = new Commission
         {
@@ -1322,6 +1323,7 @@ public static class Explore
         Patrons.Home(town, result);
         foreach (var id in result.Kills.Keys) town.Agent(id).Hero!.Kills += result.Kills.Get(id, 0);
         foreach (int id in result.Dead) Die(town, s, town.Agent(id));
+        Wounds.Home(town, result, Living(town, s), site?.Def.Name ?? "");
         foreach (var line in v.Lines) s.Journal.Add(line);
         var dead = result.Dead.Select(id => town.Agent(id).GivenName).ToList();
         int share = members.Count == 0 ? 0 : result.Xp / members.Count;

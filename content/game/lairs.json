@@ -25,6 +25,7 @@
   "worseChance": 0.4,
   "bossCr": [[1, 2], [1, 2], [2, 3], [3, 4]],
   "outpost": { "cost": 150, "upkeep": 2, "max": 3 },
+  "patrol": { "wage": 3, "perTier": 2, "chance": 0.6, "perLevel": 0.07, "xp": 60, "max": 4 },
   "softShare": 0.5,
   "maxWaitDays": 3,
   "habits": {

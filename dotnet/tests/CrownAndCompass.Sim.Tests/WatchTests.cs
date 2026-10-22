@@ -27,7 +27,7 @@ public class WatchTests
     {
         var sim = WithScout();
         var t = sim.Town;
-        var site = t.Sites.First(s => !s.Cleared);
+        var site = t.Sites.First(s => !s.Cleared && !s.ThoughtCleared && s.Known != SiteKnowledge.Unheard);
         sim.Town.Treasury += 500;
         var scout = sim.PostScout(site.Def.Id);
         Assert.NotNull(scout);
@@ -47,7 +47,7 @@ public class WatchTests
     {
         var sim = WithScout();
         var t = sim.Town;
-        var scout = sim.PostScout(t.Sites.First(s => !s.Cleared).Def.Id)!;
+        var scout = sim.PostScout(t.Sites.First(s => !s.Cleared && !s.ThoughtCleared && s.Known != SiteKnowledge.Unheard).Def.Id)!;
         for (int i = 0; i < 5; i++) sim.Step();
         Assert.True(sim.RecallScout(scout.Id));
         Assert.Equal(t.Tick + 5, scout.ReturnTick);

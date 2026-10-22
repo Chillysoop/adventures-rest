@@ -16,7 +16,10 @@ public static class Mats
     public static readonly ShaderMaterial Hero = Make("hero");
     public static readonly ShaderMaterial Aura = Make("aura");
     public static readonly ShaderMaterial Effects = Make("fx");
-    public static readonly ShaderMaterial[] All = [Terrain, Water, Props, People, Foliage, Hero, Aura, Effects];
+
+    /// <summary>Every creature, one mesh per kind (<see cref="Beasts"/>).</summary>
+    public static readonly ShaderMaterial Beast = Make("beast");
+    public static readonly ShaderMaterial[] All = [Terrain, Water, Props, People, Foliage, Hero, Aura, Effects, Beast];
 
     private static ShaderMaterial Make(string name) => new() { Shader = GD.Load<Shader>($"res://assets/shaders/{name}.gdshader") };
 

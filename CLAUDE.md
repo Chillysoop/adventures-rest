@@ -39,6 +39,10 @@
   that carries between runs; each feature owns a section (`legends` now). The sim never reads it: the client passes it
   in `SimulationOptions` (`Legends`), and the town keeps what it used in saved state. Turncoats and returning legends
   are `Systems/Turning.cs` with numbers in saga.json `turning`.
+- The mayor (`Systems/Stories.cs` sheet, `Systems/Regalia.cs` gear, `Systems/Mayoralty.cs` life, numbers in `regalia.json` and
+  `mayoralty.json`): rolled on New game (`SimulationOptions.Mayor`), wears regalia from the armory, and is a person with hit points and a
+  stance (`keep` safe, `town` exposed to assassins and breaches, `ride` with the next company out). A dead mayor is raised at the temple
+  or succeeded by one of three rolled candidates; `SimulationOptions.Hardcore` makes death a defeat. Its rolls use its own dice, never `Town.Rng`.
 - Notoriety (`Systems/Notoriety.cs`, numbers in `content/game/notoriety.json`): heroes (`HeroSheet.Renown`, `Infamy`,
   `Epithet`) and companies (`CompanyState.Renown`, `Infamy`) earn fame or infamy through `Notoriety.Deed`/`CompanyDeed`;
   new deeds that should make a name call those rather than adding to `Renown` directly. Stories bind them with the
@@ -133,7 +137,9 @@
   can outline part of the HUD (`point`), wait for the player (`until`: a client event, `tab:X`, or `count:<any Town
   list>`) and hold back until it is relevant (`when`: `count:X`, `day:N`, `alert:<key>`), so new systems rarely need
   client code (`godot/src/Guide.cs`). Keep step ids stable: players who finished the tutorial are shown steps with new
-  ids as "New in this build". The main menu is `godot/src/Title.cs` (`--title`, `--tutorial start|<step-id>` for shots).
+  ids as "New in this build". Early-game direction is the charter goals (`content/game/goals.json`, `Systems/Goals.cs`):
+  each goal's `point` (any tutorial anchor, `tab:X`, `zone:<Zone>`, `place:<building>`) rings the button for the next goal with an
+  arrow whenever no tutorial step is showing (`SyncGoalPointer` in `godot/src/Guide.cs`). The main menu is `godot/src/Title.cs` (`--title`, `--tutorial start|<step-id>` for shots).
 - Look: the painted style is the default (`MapView.Painted`: cel bands in `light()` via `cel()` in common.gdshaderinc, ink outline
   `ink.gdshader` as the props/foliage next_pass, glow, haze; `--style classic` for the old look, `--clean` hides the HUD in shots).
   MeshKit faces must wind outward (the outline inks inside-out parts black). Homes are modelled in Blender from code

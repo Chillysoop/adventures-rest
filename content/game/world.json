@@ -9,8 +9,17 @@
     { "days": 13, "levels": [14, 17], "regions": 10 },
     { "days": 18, "levels": [16, 20], "regions": 11 }
   ],
+  "climate": {
+    "_doc": "Lands follow hot-cold and wet-dry (World.Climate): each seed turns a warm side and a wet side of the map; a region's heat and wet are the cosines of its bearing from them, growing from 'amp'[0] in ring 0 to 1 in the far rings. A theme's 'heat'/'wet' (none: anywhere, like caverns) weighs how well it fits, and one more than 'hard' hotter or colder is never picked while anything else fits. Neighbours (along the ring, and inward) never differ by 'clash' or more.",
+    "amp": [0.25, 0.5, 0.75, 0.95, 1.0],
+    "spread": 0.35,
+    "wetShare": 0.6,
+    "hard": 1.1,
+    "clash": 1.5
+  },
   "sitesPerRegion": [2, 3],
   "budget": [200, 400, 600, 1000, 2000, 2400, 3000, 3600, 4400, 4800, 6000, 7200, 8400, 10000, 11200, 12800, 16000, 16800, 19200, 22400],
+  "legendLevel": 19,
   "hoardPerLevel": 60,
   "settlementChance": 0.75,
   "standing": {
@@ -159,7 +168,7 @@
     { "id": "greenmarch", "name": "farmland", "regions": ["the {A} Vale", "{A}march", "the {A} Fields", "the {A} Downs"],
       "words": ["Hedge", "Mill", "Barley", "Willow", "Oak", "Brook", "Sheaf", "Clover", "Hay", "Ash"],
       "names": ["Ambry", "Cobb", "Dunstan", "Elder", "Fennick", "Godwin"],
-      "habitats": ["grassland", "hills", "forest"], "weight": 3, "minRing": 0, "maxRing": 2,
+      "habitats": ["grassland", "hills", "forest"], "heat": 0, "wet": 0, "weight": 3, "minRing": 0, "maxRing": 2,
       "peoples": ["villagers", "halflings"],
       "text": "hedged fields and quiet mills, with trouble on the roads",
       "history": [
@@ -183,7 +192,7 @@
     { "id": "thornwood", "name": "deep forest", "regions": ["the {A}wood", "{A} Forest", "the {A} Weald", "the Wood of {B}"],
       "words": ["Thorn", "Moss", "Elder", "Briar", "Yew", "Shadow", "Silver", "Owl", "Fern", "Green"],
       "names": ["Aelith", "Caerwyn", "Ilyra", "Nimue", "Sylvar", "Thaliel"],
-      "habitats": ["forest", "feywild"], "weight": 3, "minRing": 0,
+      "habitats": ["forest", "feywild"], "heat": 0, "wet": 0.5, "weight": 3, "minRing": 0,
       "peoples": ["elves"],
       "text": "giant trees, bramble walls and mossy stone circles",
       "history": [
@@ -207,7 +216,7 @@
     { "id": "highpeaks", "name": "mountains", "regions": ["the {A} Peaks", "the {A} Crags", "the {A}spine", "Mount {B}"],
       "words": ["Iron", "Grey", "Thunder", "Frost", "Hammer", "Anvil", "Granite", "Eagle", "Copper", "Storm"],
       "names": ["Baradun", "Dumak", "Grimnir", "Kharzul", "Thrain", "Vorn"],
-      "habitats": ["mountain", "hills"], "weight": 3, "minRing": 0,
+      "habitats": ["mountain", "hills"], "heat": -0.5, "wet": 0, "weight": 3, "minRing": 0,
       "peoples": ["dwarves", "gnomes", "birdfolk"],
       "text": "scree slopes, pine ridges and high passes riddled with old mine adits",
       "history": [
@@ -258,7 +267,7 @@
     { "id": "crownruins", "name": "castle ruins", "regions": ["the {A} Crownlands", "the Fallen Kingdom of {B}", "the {A} Marches", "the Ruins of {B}"],
       "words": ["Broken", "Fallen", "Ashen", "Hollow", "Grey", "Crown", "Banner", "Lost", "Sunken", "King's"],
       "names": ["Aldmere", "Corvane", "Halbrecht", "Morwenna", "Ostrand", "Vael"],
-      "habitats": ["ruins", "grassland", "hills"], "weight": 3, "minRing": 0,
+      "habitats": ["ruins", "grassland", "hills"], "heat": 0, "wet": 0, "weight": 3, "minRing": 0,
       "peoples": ["villagers", "templars", "hollow-legion"],
       "settlementChance": 0.4,
       "text": "toppled castles and broken highways of a kingdom that fell",
@@ -283,7 +292,7 @@
     { "id": "ashenbarrows", "name": "haunted moor", "regions": ["the {A} Barrows", "the Moor of {B}", "the {A} Heath"],
       "words": ["Ashen", "Grave", "Bone", "Mourn", "Raven", "Pale", "Lantern", "Hollow", "Barrow", "Wight"],
       "names": ["Aethel", "Brannoch", "Cynric", "Morcant", "Sigeric", "Wulfstan"],
-      "habitats": ["grassland", "hills", "tomb"], "weight": 2, "minRing": 1,
+      "habitats": ["grassland", "hills", "tomb"], "heat": -0.3, "wet": 0.2, "weight": 2, "minRing": 1,
       "peoples": ["templars"],
       "text": "heath, standing stones and mass graves where the dead walk",
       "history": [
@@ -307,7 +316,7 @@
     { "id": "mirefen", "name": "swamp", "regions": ["the {A} Fen", "the {A}mire", "the Marsh of {B}"],
       "words": ["Black", "Reed", "Leech", "Murk", "Eel", "Bog", "Mist", "Sunken", "Will", "Frog"],
       "names": ["Gulgra", "Ssessk", "Hethra", "Mawl", "Orrin", "Tusk"],
-      "habitats": ["swamp", "lake"], "weight": 2, "minRing": 1,
+      "habitats": ["swamp", "lake"], "heat": 0.4, "wet": 0.9, "weight": 2, "minRing": 1,
       "peoples": ["lizardfolk"],
       "text": "reed beds, stilt villages and sinking ruins lost in fog",
       "history": [
@@ -331,7 +340,7 @@
     { "id": "saltreach", "name": "coast", "regions": ["the {A} Coast", "{A} Bay", "the {A} Isles"],
       "words": ["Salt", "Gull", "Wreck", "Storm", "Brine", "Grey", "Tide", "Kelp", "Cliff", "Pearl"],
       "names": ["Marrow", "Kestrin", "Delphine", "Corran", "Ysolde", "Bram"],
-      "habitats": ["coast", "ocean"], "weight": 2, "minRing": 1,
+      "habitats": ["coast", "ocean"], "heat": 0, "wet": 0.6, "weight": 2, "minRing": 1,
       "peoples": ["freeport", "villagers", "birdfolk"],
       "text": "cliffs, coves and reefs where smugglers and worse come ashore",
       "history": [
@@ -355,7 +364,7 @@
     { "id": "rimefell", "name": "frozen north", "regions": ["the {A} Waste", "{A}fell", "the {A} Glacier"],
       "words": ["Rime", "Frost", "White", "Howling", "Ice", "Winter", "Bitter", "Snow", "Aurora", "Wolf"],
       "names": ["Hrothgar", "Sigrun", "Ulfa", "Bjarki", "Kari", "Ylva"],
-      "habitats": ["arctic", "mountain"], "weight": 2, "minRing": 2,
+      "habitats": ["arctic", "mountain"], "heat": -1, "wet": 0, "weight": 2, "minRing": 2,
       "peoples": ["frostsworn"],
       "text": "ice fields under the aurora, whale-bone camps and frozen lakes",
       "history": [
@@ -379,7 +388,7 @@
     { "id": "duneglass", "name": "desert", "regions": ["the {A} Waste", "the {A} Sands", "the Dunes of {B}"],
       "words": ["Glass", "Salt", "Sun", "Dust", "Bone", "Red", "Mirage", "Scorpion", "Burning", "Brass"],
       "names": ["Asheb", "Khemut", "Nefra", "Sahir", "Tazrit", "Zahir"],
-      "habitats": ["desert", "badlands"], "weight": 2, "minRing": 2,
+      "habitats": ["desert", "badlands"], "heat": 1, "wet": -1, "weight": 2, "minRing": 2,
       "peoples": ["oasis", "catfolk"],
       "text": "dunes, salt flats and buried cities under a cruel sun",
       "history": [
@@ -403,7 +412,7 @@
     { "id": "cinderwastes", "name": "volcanic wastes", "regions": ["the {A} Wastes", "the Cinders of {B}", "Mount {B}"],
       "words": ["Cinder", "Ash", "Ember", "Obsidian", "Sulphur", "Molten", "Smoke", "Brimstone", "Glass", "Flame"],
       "names": ["Pyrrhos", "Vulkar", "Ignath", "Sorrak", "Thessaly", "Brand"],
-      "habitats": ["mountain", "badlands", "plane-of-fire"], "weight": 1, "minRing": 3,
+      "habitats": ["mountain", "badlands", "plane-of-fire"], "heat": 0.9, "wet": -0.6, "weight": 1, "minRing": 3,
       "peoples": ["dwarves"],
       "settlementChance": 0.4,
       "text": "lava fields, obsidian spires and sulphur springs",

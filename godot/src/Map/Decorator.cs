@@ -236,6 +236,7 @@ public partial class Decorator(MapView map) : Control
     {
         foreach (var b in town.Buildings)
         {
+            if (b.Razed) continue;
             double a = Decor.AppealOf(town, b);
             if (Math.Abs(a) < 0.15) continue;
             var (x, y) = Decor.PosOf(town, b);

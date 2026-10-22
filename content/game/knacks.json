@@ -1,0 +1,29 @@
+{
+  "_doc": "What each creature does in a fight from its own stat block (Systems/Knacks.cs). A creature has every knack one of whose names appears in its trait or action names (case does not matter; 'not' names rule one out). Numbers: hit and ac add to its attack rolls and its armour; share scales damage (charge: extra share of a blow in round 1; power: share of the power's dice on a failed save, half that on a success; regen: share of its hp back each round; incorporeal: share of a weapon blow that lands; magic, swarm: share of a spell's damage; deathburst: share of a blow to each hero who fails the save; drain: share of the damage it heals); rounds how long a hero stays swallowed, snared or dazed; dc the check to see through an ambush, to stay up, or to dodge a death burst. The power knack takes the creature's strongest power (a breath, a gaze, a roar) read off its stat block with its own DC and dice; most uses it caps how many foes in one fight use theirs. Texts: {foe} the creature, {hero} a hero, {power} the power, {heroes} those it laid low.",
+  "knacks": [
+    {"id": "pack", "names": ["Pack Tactics"], "hit": 2},
+    {"id": "flyby", "names": ["Flyby", "Flight"], "ac": 2, "text": "{foe} wheels away overhead after every pass, never where the blades are."},
+    {"id": "slippery", "names": ["Nimble Escape", "Cunning Action", "Misty Step", "Teleport", "Parry", "Agile"], "ac": 1},
+    {"id": "charge", "names": ["Charge", "Pounce", "Trampling Charge", "Trample", "Running Leap", "Standing Leap"], "share": 0.5, "text": "{foe} charges into {hero} before the party is set."},
+    {"id": "power", "names": [], "share": 0.5, "most": 1, "rounds": 1, "hit": 2,
+      "text": "{foe} uses {power}.",
+      "laid": "{heroes} {go} down.",
+      "held": "{heroes} {is} caught by it and can do nothing.",
+      "shaken": "{heroes} {is} shaken by it.",
+      "freed": "The party stands firm."},
+    {"id": "swallow", "names": ["Swallow", "Engulf"], "rounds": 2, "text": "{foe} swallows {hero} whole.", "freed": "{hero} cuts free of {foe}."},
+    {"id": "grapple", "names": ["Constrict", "Grab", "Web", "Tongue", "Abduct", "Grapple", "Tentacles"], "not": ["Web Walker", "Web Sense"], "rounds": 1, "hit": 2, "text": "{foe} has {hero} tangled and held."},
+    {"id": "regen", "names": ["Regeneration", "Regenerate"], "share": 0.08, "text": "{foe}'s wounds close up as the party watches."},
+    {"id": "ambush", "names": ["False Appearance", "Stone Camouflage", "Ambusher", "Surprise Attack", "Camouflage", "Invisibility", "Transparent", "Shadow Stealth", "Mimicry", "Earth Glide"], "dc": 13,
+      "text": "{foe} was waiting, unseen, and strikes first.", "spotted": "{hero} spots {foe} lying in wait."},
+    {"id": "incorporeal", "names": ["Incorporeal"], "share": 0.6, "text": "Blades pass half through {foe}."},
+    {"id": "swarm", "names": ["Swarm"], "not": ["Swarm Resilience"], "share": 1.5},
+    {"id": "magic", "names": ["Magic Resistance"], "share": 0.75},
+    {"id": "legendary", "names": ["Legendary Resistance"], "text": "{foe} shrugs off the spell as if it were rain."},
+    {"id": "fortitude", "names": ["Undead Fortitude", "Relentless", "Undead Resilience", "Bloodied Fury"], "dc": 10, "text": "{foe} should be down, and gets back up."},
+    {"id": "frenzy", "names": ["Blood Frenzy", "Rampage", "Berserk"], "hit": 1, "text": "{foe} smells blood and goes for {hero}."},
+    {"id": "deathburst", "names": ["Death Burst", "Death Throes"], "dc": 12, "share": 0.5, "text": "{foe} bursts as it dies.", "laid": "{heroes} {go} down."},
+    {"id": "drain", "names": ["Life Drain", "Drain", "Blood Drain", "Proboscis"], "share": 0.5, "text": "{foe} drinks {hero}'s strength and grows stronger."},
+    {"id": "aura", "names": ["Fire Aura", "Stench", "Illumination", "Corrosive Form", "Heated Body"], "hit": 1}
+  ]
+}

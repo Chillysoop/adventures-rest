@@ -93,6 +93,7 @@ public static class GrandWorks
     {
         town.Log(LedgerCategory.Town, Importance.Major, $"{Cap(b.Name)} stands complete, and the whole town turns out to see it. {Bonus(b.Def)}.");
         town.FestivalDays = Math.Max(town.FestivalDays, 2);
+        if (b.Def.Lofted) Lofted.Risen(town, b);
     }
 
     /// <summary>What the finished work does for the town, in a sentence.</summary>
@@ -129,7 +130,7 @@ public static class GrandWorks
     private static void Steward(Town town)
     {
         if (town.Buildings.Any(b => b.Def.IsGrand && b.IsSite)) return;
-        foreach (var d in All(town).OrderBy(d => d.Stages.Sum(s => s.Gold)).ThenBy(d => d.Id, StringComparer.Ordinal))
+        foreach (var d in All(town).Where(d => !d.Lofted).OrderBy(d => d.Stages.Sum(s => s.Gold)).ThenBy(d => d.Id, StringComparer.Ordinal))
         {
             if (Planning.Blocked(town, d) != null) continue;
             // Only gold the town plainly doesn't need: several times the first stage, and well past the next charter.

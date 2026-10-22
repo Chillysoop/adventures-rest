@@ -195,7 +195,15 @@ public static class World
             {
                 // Each ring shows as many different kinds of country as it can before repeating one.
                 var fresh = allowed.Where(t => !picked.Contains(t)).ToList();
-                var theme = WeightedTheme(rng, fresh.Count > 0 ? fresh : allowed.Where(t => picked.Count == 0 || t != picked[^1]).ToList());
+                // The lands follow the climate: the region's spot on the map decides how hot and wet it is.
+                double at = (offset + i * arc) % 360;
+                var (heat, wet) = Climate(town, ring, at);
+                // Its neighbours so far: the region before it in the ring (and the first, closing the ring), and those inward of it.
+                var beside = town.Regions.Where(r => r.Ring == ring - 1 && Math.Abs(AngleBetween(r.Bearing, at)) < (r.Arc + arc) / 2).Select(r => r.Theme).ToList();
+                if (picked.Count > 0) beside.Add(picked[^1]);
+                if (i == rd.Regions - 1 && picked.Count > 0) beside.Add(picked[0]);
+                var pool = Fitting(w.Climate, fresh.Count > 0 ? fresh : allowed.Where(t => picked.Count == 0 || t != picked[^1]).ToList(), heat, beside);
+                var theme = ClimateTheme(rng, w.Climate, pool, heat, wet);
                 picked.Add(theme);
                 double bearing = (offset + i * arc + (rng.Next() - 0.5) * 0.3 * arc) % 360;
                 var region = new Region
@@ -262,6 +270,7 @@ public static class World
         PlaceFoes(town, used);
         PlaceIsles(town, used);
         Ruins.Place(town, used, Fill);
+        Wayfaring.Place(town);
     }
 
     /// <summary>
@@ -330,17 +339,47 @@ public static class World
         }
     }
 
-    private static ThemeDef WeightedTheme(Rng rng, IReadOnlyList<ThemeDef> themes)
+    /// <summary>
+    /// How hot and wet the land is at a bearing in a ring: each seed turns a warm side and a wet side of the map, and
+    /// the far rings feel it more than the town's own. Hash-made, so it moves none of the world's dice.
+    /// </summary>
+    public static (double Heat, double Wet) Climate(Town town, int ring, double bearing)
     {
-        int total = themes.Sum(t => t.Weight);
-        int roll = rng.Range(0, total);
+        var c = town.Content.World.Climate;
+        double warm = Voices.Hash("climate-warm", town.Seed) % 360;
+        double wetSide = (warm + 90 + Voices.Hash("climate-wet", town.Seed) % 180) % 360;
+        double amp = c.Amp.Length == 0 ? 1 : c.Amp[Math.Min(ring, c.Amp.Length - 1)];
+        return (amp * Math.Cos((bearing - warm) * Math.PI / 180), amp * Math.Cos((bearing - wetSide) * Math.PI / 180));
+    }
+
+    /// <summary>The themes a region of this heat may hold: never jungle beside the tundra, unless nothing else is left.</summary>
+    private static List<ThemeDef> Fitting(ClimateRules c, List<ThemeDef> themes, double heat, List<ThemeDef> beside)
+    {
+        bool Clashes(ThemeDef t) => t.Heat is double h && beside.Any(b => b.Heat is double bh && Math.Abs(h - bh) >= c.Clash);
+        var fit = themes.Where(t => !Clashes(t) && (t.Heat is not double h || Math.Abs(h - heat) <= c.Hard)).ToList();
+        if (fit.Count > 0) return fit;
+        fit = themes.Where(t => !Clashes(t)).ToList();
+        return fit.Count > 0 ? fit : themes;
+    }
+
+    /// <summary>A theme by weight, each weighed by how well it fits the region's climate.</summary>
+    private static ThemeDef ClimateTheme(Rng rng, ClimateRules c, IReadOnlyList<ThemeDef> themes, double heat, double wet)
+    {
+        double Fit(ThemeDef t)
+        {
+            double d = (t.Heat is double h ? (h - heat) * (h - heat) : 0) + (t.Wet is double w ? c.WetShare * (w - wet) * (w - wet) : 0);
+            return t.Weight * Math.Max(0.02, Math.Exp(-d / Math.Max(0.01, c.Spread)));
+        }
+        double total = themes.Sum(Fit);
+        double roll = rng.Next() * total;
         foreach (var t in themes)
         {
-            if (roll < t.Weight) return t;
-            roll -= t.Weight;
+            if (roll < Fit(t)) return t;
+            roll -= Fit(t);
         }
-        return themes[0];
+        return themes[^1];
     }
+
 
     /// <summary>A fresh name from the patterns: {A} a theme word, {B} a theme name.</summary>
     private static string Fill(Rng rng, ThemeDef theme, IReadOnlyList<string> patterns, HashSet<string> used)
@@ -443,6 +482,9 @@ public static class World
         }
         if (bosses.Count == 0)
             bosses = content.Library.Monsters.Where(m => m.Damage != null && m.Band != "" && !m.Alignment.Contains("good") && m.Cr >= 0.5 && m.Cr <= Math.Max(1, level)).ToList();
+        // At the edge of the world the legends wait: the ancient dragons, the lich, the tarrasque may hold the last lairs.
+        if (group == null && level >= content.World.LegendLevel && content.World.LegendLevel > 0)
+            bosses = bosses.Concat(content.Library.Monsters.Where(m => m.Damage != null && m.Band != "" && !m.Alignment.Contains("good") && m.Cr > 20 && m.Habitats.Any(habitats.Contains))).ToList();
         // Lair-holders first: the library marks some creatures as bosses.
         var marked = bosses.Where(m => m.Boss).ToList();
         var from = marked.Count > 0 && rng.Chance(0.5) ? marked : bosses;

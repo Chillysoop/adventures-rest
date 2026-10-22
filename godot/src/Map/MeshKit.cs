@@ -32,6 +32,22 @@ public sealed class MeshKit
 
     /// <summary>The rig part the next triangles belong to (a hero's arm, leg, head...; see rig.gdshaderinc), written to UV.x.</summary>
     public float Part;
+
+    /// <summary>
+    /// The joint the next triangles turn about (a creature's hip, shoulder, wing root, neck; see beastrig.gdshaderinc), in the
+    /// current transform's space: written with the part as UV (part, y) and UV2 (x, z). Null for the heroes' fixed joints.
+    /// </summary>
+    public Vector3? Pivot;
+    private bool _pivoted;
+
+    /// <summary>How many triangle corners have been added: a mark to recolour from (<see cref="Recolour"/>).</summary>
+    public int Corners => _c.Count;
+
+    /// <summary>Recolours every corner added since a mark: pieces made for the heroes' palette baked into a creature's own colours.</summary>
+    public void Recolour(int from, Func<Color, Color> f)
+    {
+        for (int i = from; i < _c.Count; i++) _c[i] = f(_c[i]);
+    }
     private bool _rigged;
 
     /// <summary>
@@ -88,7 +104,14 @@ public sealed class MeshKit
     private void WindAt(Vector3 p)
     {
         Vector2 uv = new(Part, 0), uv2 = Vector2.Zero;
-        if (_puff >= 0)
+        if (Pivot is Vector3 pv && Part != 0)
+        {
+            var w = Xf * pv;
+            uv = new Vector2(Part, w.Y);
+            uv2 = new Vector2(w.X, w.Z);
+            _pivoted = true;
+        }
+        else if (_puff >= 0)
         {
             uv = new Vector2(-1 - _puff, _puffAt.Y);
             uv2 = new Vector2(_puffAt.X, _puffAt.Z);
@@ -304,7 +327,7 @@ public sealed class MeshKit
         arrays[(int)Mesh.ArrayType.Normal] = _n.ToArray();
         arrays[(int)Mesh.ArrayType.Color] = _c.ToArray();
         if (_rigged || _wind) arrays[(int)Mesh.ArrayType.TexUV] = _uv.ToArray();
-        if (_wind) arrays[(int)Mesh.ArrayType.TexUV2] = _uv2.ToArray();
+        if (_wind || _pivoted) arrays[(int)Mesh.ArrayType.TexUV2] = _uv2.ToArray();
         mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays);
         return mesh;
     }
@@ -318,6 +341,8 @@ public sealed class MeshKit
         _uv2.Clear();
         Part = 0;
         _rigged = false;
+        Pivot = null;
+        _pivoted = false;
         Sway = 0;
         _wind = false;
         Xf = Transform3D.Identity;

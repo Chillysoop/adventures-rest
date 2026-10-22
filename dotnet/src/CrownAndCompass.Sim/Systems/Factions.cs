@@ -315,7 +315,8 @@ public static class Factions
         if (auto) Policy(town);
     }
 
-    private static void Prune(Town town, FactionState f)
+    /// <summary>Drops departed members; a faction left with nobody goes dormant.</summary>
+    internal static void Prune(Town town, FactionState f)
     {
         if (!f.Active) return;
         f.Members.RemoveAll(id => town.Agent(id).Departed);

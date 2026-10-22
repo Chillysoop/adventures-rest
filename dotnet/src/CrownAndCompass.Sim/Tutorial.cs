@@ -56,16 +56,16 @@ public static class Tutorial
     /// <summary>Things the player does in the client that can finish a step.</summary>
     public static readonly string[] Events = ["next", "speed", "pause", "rotate", "select", "select:agent", "select:building", "select:site", "build", "strategic", "menu", "save", "alert", "roll", "flag", "call", "select:wall", "select:tower", "select:flag", "explorers", "pin", "glossary", "orders", "lens", "seize", "duty"];
 
-    private static TutorialBook? _default;
+    private static readonly Lazy<TutorialBook> _default = new(() => Parse(Content.ReadText("tutorial.json")));
 
-    public static TutorialBook Default() => _default ??= Parse(Content.ReadText("tutorial.json"));
+    public static TutorialBook Default() => _default.Value;
 
     public static TutorialBook Parse(string json) => JsonSerializer.Deserialize<TutorialBook>(json, Content.JsonOptions) ?? new TutorialBook();
 
     /// <summary>
     /// A number read off the town for steps to watch: "count:Bounties" is the size of that list on
     /// <see cref="Town"/> (any public list works, so a new system needs no code here); "zoned" is the painted
-    /// ground not yet built on, "decorated" the decorations set down, "airships" the sky dock's ships, "goals" the charter goals still open. Null for a name that means nothing.
+    /// ground not yet built on, "decorated" the decorations set down, "airships" the sky dock's ships, "relics" the Skywright relics held, "lofted" 1 once the Lofted City flies, "goals" the charter goals still open. Null for a name that means nothing.
     /// </summary>
     public static int? Measure(Town t, string token)
     {
@@ -80,6 +80,9 @@ public static class Tutorial
         if (token == "regiments") return t.Army.Regiments.Count;
         if (token == "allies") return t.Settlements.Count(s => s.Allied && !s.Razed);
         if (token == "halls") return t.Buildings.Count(b => b.Complete && b.Def.Trains > 0);
+        // Skywright relics the town holds, and 1 once the Lofted City flies (Systems.Lofted).
+        if (token == "relics") return Systems.Lofted.Held(t);
+        if (token == "lofted") return Systems.Lofted.Aloft(t) ? 1 : 0;
         // The charter goals still open (Systems.Goals).
         if (token == "goals") return Systems.Goals.Open(t).Count;
         if (!token.StartsWith("count:", StringComparison.Ordinal)) return null;

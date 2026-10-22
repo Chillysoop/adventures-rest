@@ -1,0 +1,22 @@
+{
+  "_doc": "Wall traps, after Stronghold's killing grounds: laid before a section of the drawn wall (section 0 is the gate). In a siege, every wave that comes at a section loses 'cut' of its ground troops to each trap there that is ready; fliers pass over. A trap with 'once' is spent when it goes off and wants 'refill' gold to lay again. 'gatehouse' traps need the gatehouse and go only at the gate.",
+  "kinds": [
+    { "id": "pitch-ditch", "name": "Pitch ditch", "icon": "trap-pitch", "cost": 60, "timber": 2, "stone": 0, "cut": 0.3, "once": true, "refill": 25,
+      "tip": "A ditch of pitch and straw before the wall. Lit when the first wave reaches it.",
+      "text": "The pitch ditch before the {place} goes up under them. Burning, they fall back." },
+    { "id": "caltrops", "name": "Caltrops", "icon": "trap-caltrops", "cost": 30, "timber": 0, "stone": 0, "cut": 0.08, "once": false, "refill": 0,
+      "tip": "Iron spikes strewn in the grass. Every wave at this wall limps.",
+      "text": "Caltrops in the grass before the {place} lame the front ranks." },
+    { "id": "wolf-pits", "name": "Wolf pits", "icon": "trap-pits", "cost": 45, "timber": 4, "stone": 0, "cut": 0.16, "once": false, "refill": 0, "first": true,
+      "tip": "Staked pits under turf. They take the first wave at this wall.",
+      "text": "The turf before the {place} gives way. The first rank goes down onto the stakes." },
+    { "id": "murder-holes", "name": "Murder holes", "icon": "trap-murder-holes", "cost": 90, "timber": 0, "stone": 8, "cut": 0.15, "once": false, "refill": 0, "gatehouse": true,
+      "tip": "Holes in the gatehouse vault for rocks, arrows and boiling water. Every wave at the gate.",
+      "text": "Rocks and boiling water come down through the murder holes on whoever reaches the gate." }
+  ],
+  "texts": {
+    "laid": "{trap} laid before the {place}.",
+    "refilled": "The ditches are dug out and filled with pitch again: {gold} gold.",
+    "removed": "{trap} before the {place} taken up."
+  }
+}
