@@ -135,7 +135,9 @@ public class LoreTests
             var l = Annals.Lineage(H, m.Lineage);
             Assert.True(l != null, $"{m.Name} has no lineage");
             // A ready-made group's menace is heir to the group's lineage; a signature foe's keeps its own (foes.json), whatever kind it raids as.
-            var seat = t.Sites.FirstOrDefault(s => s.Def.Id == m.SeatId);
+            // Judged by the seat it rose at: a broken menace that fled to a holding keeps the lineage it was born with.
+            var born = m.BornSeatId != "" ? m.BornSeatId : m.SeatId;
+            var seat = t.Sites.FirstOrDefault(s => s.Def.Id == born);
             if (seat != null && C.Group(seat.Def.Group) is GroupDef g) Assert.Equal(g.Lineage, l!.Id);
             else Assert.True(l!.Subjects.Contains("menace:" + m.Kind) || l.Subjects.Any(x => x.StartsWith("foe:")), $"{m.Name}: {l.Id} is not a {m.Kind} lineage");
             Assert.NotEqual("", Annals.Motive(t, m));
