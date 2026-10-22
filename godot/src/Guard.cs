@@ -112,6 +112,7 @@ public partial class Main
             $"Your defence counts the watch, heroes at home, a militia of townsfolk, and the walls.{(Threat.IsActive(t) ? " The warband grows while dungeons go uncleared." : "")}"), 12);
         RenderGuard(p, t);
         RenderWorks(p, t);
+        RenderTraps(p, t);
         RenderClockwork(p, t);
         p.Commit();
     }
@@ -268,6 +269,7 @@ public partial class Main
         if (section == 0) WorkRow(p, t, d.StoneWall == PalisadeState.Built ? DefenseWork.Gatehouse : DefenseWork.Palisade);
         if (!Garrison.TowerOn(t, section) && Garrison.TowerSection(t, d.Towers + d.TowersBuilding.Count) == section) WorkRow(p, t, DefenseWork.Tower);
         WorkRow(p, t, d.StoneWall == PalisadeState.Built ? (d.Moat == PalisadeState.Built ? d.Barracks < t.Content.Garrison.BarracksWork.Max ? DefenseWork.Barracks : DefenseWork.CityWall : DefenseWork.Moat) : DefenseWork.StoneWall);
+        RenderTrapsAt(p, t, section);
         p.Note("Guards on their beats walk the wall in turns round the town. A stretch with more of the watch on it than its share holds better when a wave hits it; a bare one, worse.");
     }
 
@@ -306,5 +308,55 @@ public partial class Main
             _sim.StandDown(postId);
             Select(null);
         })));
+    }
+
+    /// <summary>Every trap laid, wall by wall, and the refill for spent pitch. Laying is on each wall's card.</summary>
+    private void RenderTraps(Pane p, Town t)
+    {
+        if (!Garrison.Walled(t)) return;
+        p.Heading("Traps", "trap-caltrops");
+        if (t.Traps.Laid.Count == 0)
+        {
+            p.Note("Click a stretch of wall on the map to lay pitch, caltrops or pits before it. Each takes a share of every wave that comes at that wall.");
+            return;
+        }
+        foreach (var g in t.Traps.Laid.GroupBy(x => x.Section).OrderBy(g => g.Key))
+        {
+            int section = g.Key;
+            var icons = g.OrderBy(x => x.Id).Select(x => Traps.Def(t, x.Kind) is { } d ? Ui.Tip(Ui.Img(d.Icon, 18) + (x.Spent ? Ui.C(Ui.Bad, "✕") : ""), d.Name + (x.Spent ? " (spent)" : "")) : "");
+            p.Row($"[b]{Ui.Esc(Ui.Cap(Garrison.Place(t, section)))}[/b]  {string.Join(" ", icons)}", ("Open", true, false, () => ShowWall(section)));
+        }
+        p.Text(Ui.Chips(Ui.Chip("warband", $"{Math.Round(t.Traps.Taken)}", Ui.Good, "Foes the traps have taken")), 13);
+        var spent = Traps.Spent(t);
+        if (spent.Count > 0)
+            p.Buttons(($"Refill · {Js.Str(Traps.RefillCost(t))}g", t.Treasury >= Traps.RefillCost(t), true, () => Act(() => _sim.RefillTraps())));
+    }
+
+    /// <summary>A wall's traps: the ones laid, to take up, and the kinds still to lay.</summary>
+    private void RenderTrapsAt(Pane p, Town t, int section)
+    {
+        if (!Garrison.Walled(t)) return;
+        p.Heading("Traps", "trap-caltrops");
+        foreach (var trap in Traps.At(t, section).OrderBy(x => x.Id))
+        {
+            if (Traps.Def(t, trap.Kind) is not { } d) continue;
+            int id = trap.Id;
+            p.Row($"{Ui.Img(d.Icon, 18)} [b]{Ui.Esc(d.Name)}[/b]{(trap.Spent ? "  " + Tag("Spent", Ui.Bad) : "")}", ("Take up", true, false, () => Act(() => _sim.RemoveTrap(id))));
+        }
+        foreach (var d in t.Content.Traps.Kinds)
+        {
+            string? why = Traps.Blocked(t, d.Id, section);
+            if (why is "laid already" or "only at the gate") continue;
+            string kind = d.Id;
+            string cut = $"−{Math.Round(d.Cut * 100)}%";
+            string chips = Ui.Chips(Ui.Chip("warband", cut, Ui.Good, d.First ? "Of the first wave" : "Of every wave"), d.Once ? Ui.Chip("ui-time", "once", Ui.Ink2, $"Spent when lit; refill {Js.Str(d.Refill)}g") : "");
+            string head = Ui.Tip($"{Ui.Img(d.Icon, 18)} {Ui.Esc(d.Name)}", d.Tip);
+            if (why is not null and not "not enough gold") p.Row($"{head}  {Tag(Ui.Cap(why))}");
+            else p.Row($"{head}  [font_size=12]{chips}[/font_size]", ($"Lay · {Js.Str(Traps.Cost(t, d))}g", why == null, true, () => Act(() =>
+            {
+                _sim.LayTrap(kind, section);
+                GuideEvent("trap");
+            })));
+        }
     }
 }

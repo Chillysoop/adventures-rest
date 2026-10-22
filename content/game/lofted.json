@@ -1,0 +1,35 @@
+{
+  "_doc": "The Lofted City (Systems/Lofted.cs). Five Skywright relics lie at far sites (ring minRing and out, preferring the listed world themes); a company clearing the site brings the relic home, worth relicLore. The discovery `reveal` rumours where they lie, `confirm` makes it certain, and `unlock` opens the three sizes (buildings.json lofted_spire, lofted_isle, lofted_city: grand works with \"lofted\": true). Spark tokens relic:<id> and relics:<n>. Once `reveal` is known the strongest hostile menace races the town: it takes a free relic firstAfter days later, then every claimEvery days; with raiseAt it raises a dark keel after raiseDays (power x 1 + power). Breaking it returns its relics. A finished city sails to a known region (Simulation.SailLofted) at speed days of flight per day of road, sailGold a day, and companies set out from under it when that's nearer.",
+  "minRing": 5,
+  "reveal": "skywright-histories",
+  "confirm": "keelstone-lore",
+  "unlock": "lofting",
+  "relicLore": 60,
+  "relics": [
+    { "id": "keelstone", "name": "the Drowned Keelstone", "themes": ["drownedempire", "spellscar"],
+      "text": "A keelstone the size of a hay cart. Out of the water it still lifts a hand's breadth off the ground." },
+    { "id": "storm-vane", "name": "the Storm Vane", "themes": ["stormcoast", "spellscar"],
+      "text": "A Skywright weathervane of blue bronze: the wind turns to where it points." },
+    { "id": "anchor-chain", "name": "the Anchor of Kings", "themes": ["titanfield", "stormcoast"],
+      "text": "Giant-forged links that once held a city to the earth. Forty men to lift one." },
+    { "id": "sky-charter", "name": "the Skywright Charter", "themes": ["kingsbones", "spellscar"],
+      "text": "The Skywrights' own book of lofting, sealed in a dead king's observatory." },
+    { "id": "cloud-glass", "name": "the Cloud Glass", "themes": ["spellscar", "kingsbones", "titanfield"],
+      "text": "The steering-lens of a fallen sky city. Clouds part where it looks." }
+  ],
+  "race": { "firstAfter": 30, "claimEvery": 45, "raiseAt": 3, "raiseDays": 90, "power": 0.5 },
+  "scopes": [
+    { "building": "lofted_spire", "lore": 4, "speed": 0.4, "sailGold": 40 },
+    { "building": "lofted_isle", "lore": 8, "speed": 0.55, "sailGold": 80 },
+    { "building": "lofted_city", "lore": 14, "speed": 0.7, "sailGold": 140 }
+  ],
+  "texts": {
+    "found": ["{who} is cleared, and the company carries {relic} home to the library. The wizards will not leave it alone.", "Under {who} the company finds {relic}, Skywright work from before the Long Night, and brings it home."],
+    "returned": ["In the ruins of {who}'s seat the town's companies find {relic} and carry it home.", "{relic} comes home from the hoard of {who}, broken now."],
+    "rival": ["Word of the Skywright relics reaches {who}. It wants a city in the sky as much as {town} does.", "{who} has heard where the Skywrights' relics lie, and sends its servants to dig."],
+    "claimed": ["{who}'s servants take {relic} from {site} before the town's companies reach it. Break {who} to win it back.", "{relic} is gone from {site}: {who} has it now."],
+    "keel": ["{who} has three Skywright relics and lays a dark keel of its own. Break it before the keel rises.", "Spies say {who} is building a keel of black stone. If it rises, it will be far stronger."],
+    "raised": ["{who}'s dark keel rises over its seat, and its hosts muster under a floating fortress.", "A dark keel lifts off the ground at {who}'s seat. Every raid it sends now comes stronger."],
+    "risen": ["{who} lifts free of its cradle and rises over {town}, keelstones humming. Every soul in the town turns out to watch it climb.", "The anchor chains pay out, the keelstones wake, and {who} rises over {town}. Nothing like it has flown since the Long Night."]
+  }
+}

@@ -256,7 +256,7 @@ public static class Plots
     {
         string rarity = site.Def.Tier >= 9 ? "very rare" : site.Def.Tier >= 5 ? "rare" : "uncommon";
         var items = town.Content.Library.Items
-            .Where(i => i.Rarity == rarity && !town.Relics.Contains(i.Id))
+            .Where(i => i.Rarity == rarity && !town.Relics.Contains(i.Id) && !Regalia.Is(town, i))
             .OrderBy(i => i.Id, StringComparer.Ordinal)
             .ToList();
         return items.Count == 0 ? null : items[town.Rng.Range(0, items.Count)];

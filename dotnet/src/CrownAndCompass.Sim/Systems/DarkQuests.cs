@@ -118,6 +118,7 @@ public static class DarkQuests
         st.Growth = 0;
         st.Escapes = 0;
         st.Era = st.Past.Count;
+        DarkCompany.Scatter(town);
     }
 
     public static void Daily(Town town)
@@ -180,7 +181,7 @@ public static class DarkQuests
             .FirstOrDefault();
     }
 
-    private static void Foil(Town town, Menace m, DarkQuest q, SiteState? site)
+    internal static void Foil(Town town, Menace m, DarkQuest q, SiteState? site)
     {
         var st = State(town);
         var def = Def(town, q.Def);
@@ -193,7 +194,7 @@ public static class DarkQuests
         if (site != null && Plots.RelicFor(town, site) is { } item) Watch.ReceiveRelic(town, item, $"heroes who cleared {site.Def.Name}");
     }
 
-    private static void Finish(Town town, Menace m, DarkQuest q)
+    internal static void Finish(Town town, Menace m, DarkQuest q)
     {
         var st = State(town);
         var def = Def(town, q.Def);

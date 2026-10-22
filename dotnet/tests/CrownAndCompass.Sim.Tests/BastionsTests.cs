@@ -52,7 +52,9 @@ public class BastionsTests
         double sales = t.Accounts.Get(TreasuryAccount.LandSales, 0);
         Assert.True(sim.AnswerBastion(r.Id, BastionAnswer.Grant));
         Assert.False(sim.AnswerBastion(r.Id, BastionAnswer.Refuse));
-        sim.RunDays(1);
+        // The company breaks ground once members are home with the gold; it waits a day at a time until then.
+        for (int d = 0; d < 20 && r.Status != BastionRequestStatus.Founded; d++) sim.RunDays(1);
+        if (r.Status != BastionRequestStatus.Founded) return false;
         var b = Assert.Single(t.Bastions);
         Assert.Equal(r.Company, b.Company);
         Assert.Equal(BastionRequestStatus.Founded, r.Status);

@@ -248,6 +248,14 @@ public sealed record StoryOutcome
     public int After { get; init; }
 }
 
+/// <summary>A mayor rolled on New game: a name, the background picked and six scores (4d6, lowest dropped), highest first.</summary>
+public sealed record MayorRoll
+{
+    public string Name { get; init; } = "";
+    public string Background { get; init; } = "";
+    public IReadOnlyList<int> Scores { get; init; } = [];
+}
+
 /// <summary>The mayor, as a D&amp;D character: background, level and XP, inspiration. Abilities and skills follow from them.</summary>
 public sealed class MayorSheet
 {
@@ -258,6 +266,9 @@ public sealed class MayorSheet
     public bool Chosen { get; set; }
     public int Level { get; set; } = 1;
     public int Xp { get; set; }
+
+    /// <summary>The six scores rolled on New game, highest first, dealt out in the background's ability order; empty for the standard array.</summary>
+    public List<int> Rolled { get; } = [];
 
     /// <summary>D&amp;D inspiration: spend one to reroll a failed check. Running the town well and natural 20s earn it.</summary>
     public int Inspiration { get; set; }
@@ -495,19 +506,62 @@ public static class Stories
         };
     }
 
-    /// <summary>The mayor's ability scores: the standard array in the background's order, +2 and +1 from it, then each ability advance taken (at most 20).</summary>
-    public static Abilities Scores(Town town)
+    /// <summary>
+    /// Roll a mayor for New game from its own seed (never the town's rng): a name from the human names and six
+    /// scores of 4d6 with the lowest die dropped, highest first. Rerolling is rolling again with another seed.
+    /// </summary>
+    public static MayorRoll RollMayor(Content c, int seed, string background = "")
     {
-        var r = Rules(town);
+        var rng = new Rng(seed);
+        var names = c.Races.First(x => x.Id == "human");
+        string name = $"{rng.Pick(names.Given)} {rng.Pick(names.Family)}";
+        var scores = new List<int>();
+        for (int i = 0; i < 6; i++)
+        {
+            var dice = new[] { rng.Range(1, 7), rng.Range(1, 7), rng.Range(1, 7), rng.Range(1, 7) };
+            scores.Add(dice.Sum() - dice.Min());
+        }
+        var bgs = c.Stories.Backgrounds;
+        string bg = bgs.Any(b => b.Ref == background) ? background : bgs.Count > 0 ? bgs[rng.Range(0, bgs.Count)].Ref : "";
+        return new MayorRoll { Name = name, Background = bg, Scores = scores.OrderByDescending(x => x).ToList() };
+    }
+
+    /// <summary>Make the rolled mayor the town's: name, background (chosen) and scores.</summary>
+    public static void Adopt(Town town, MayorRoll roll)
+    {
         var m = town.Stories.Mayor;
-        var bg = r.Background(m.Background);
+        if (roll.Name != "") m.Name = roll.Name;
+        if (Rules(town).Backgrounds.Any(b => b.Ref == roll.Background))
+        {
+            m.Background = roll.Background;
+            m.Chosen = true;
+        }
+        m.Rolled.Clear();
+        if (roll.Scores.Count == 6) m.Rolled.AddRange(roll.Scores.Select(s => Math.Clamp(s, 3, 18)).OrderByDescending(s => s));
+    }
+
+    /// <summary>Scores dealt out in a background's ability order, with its +2 and +1: a level 1 mayor's abilities (New game shows them as rolled).</summary>
+    public static Abilities Deal(StoryRules r, string background, IReadOnlyList<int> array)
+    {
+        var bg = r.Background(background);
         var a = new Abilities();
-        for (int i = 0; i < bg.Abilities.Count && i < r.Array.Count; i++) a[bg.Abilities[i]] = r.Array[i];
+        for (int i = 0; i < bg.Abilities.Count && i < array.Count; i++) a[bg.Abilities[i]] = array[i];
         if (bg.Abilities.Count > 1)
         {
             a[bg.Abilities[0]] += 2;
             a[bg.Abilities[1]] += 1;
         }
+        return a;
+    }
+
+    /// <summary>The scores dealt out before the background's bonus: the rolled ones, or the standard array.</summary>
+    public static IReadOnlyList<int> Array(Town town) => town.Stories.Mayor.Rolled.Count == 6 ? town.Stories.Mayor.Rolled : Rules(town).Array;
+
+    /// <summary>The mayor's ability scores: the standard array in the background's order, +2 and +1 from it, then each ability advance taken (at most 20).</summary>
+    public static Abilities Scores(Town town)
+    {
+        var m = town.Stories.Mayor;
+        var a = Deal(Rules(town), m.Background, Array(town));
         foreach (var adv in m.Advances)
             if (adv.StartsWith("ability:", StringComparison.Ordinal))
                 foreach (var ab in adv[8..].Split(','))
@@ -533,7 +587,7 @@ public static class Stories
         if (ab == "") return (0, 0, "");
         int mod = Rng.Modifier(Scores(town)[ab]);
         int prof = sk != null && Proficient(town, skill) ? ProficiencyBonus(town.Stories.Mayor.Level) * (Expert(town, skill) ? 2 : 1) : 0;
-        if (sk != null) prof += Sheet.Feats(town).Sum(f => f.Skills.GetValueOrDefault(skill));
+        if (sk != null) prof += Sheet.Feats(town).Sum(f => f.Skills.GetValueOrDefault(skill)) + Regalia.Skill(town, skill);
         return (mod, prof, ab);
     }
 

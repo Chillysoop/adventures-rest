@@ -790,8 +790,9 @@ public static class Army
                 a.LocationId = stops.Count == 0 ? null : stops[(a.Id * 7 + town.Hour * 3) % stops.Count].Id;
                 break;
             case ArmyPost.Guard:
+                // The mayor's guard stands at the keep, where the mayor lives, or at the hall before there is one.
                 a.Activity = Activity.Guarding;
-                a.LocationId = hall?.Id ?? r.HallId;
+                a.LocationId = Keep(town)?.Id ?? hall?.Id ?? r.HallId;
                 break;
             case ArmyPost.Walls:
                 a.Activity = Activity.Guarding;
@@ -803,6 +804,9 @@ public static class Army
                 break;
         }
     }
+
+    /// <summary>The mayor's keep, if it stands.</summary>
+    public static Building? Keep(Town town) => town.Buildings.FirstOrDefault(b => b.Def.Id == "keep" && b.Complete);
 
     /// <summary>The buildings the guard's round passes, by id: everything finished, farms and camps included (kept for the day).</summary>
     private static List<Building> Rounds(Town town)

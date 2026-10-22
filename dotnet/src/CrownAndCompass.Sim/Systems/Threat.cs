@@ -403,6 +403,7 @@ public static class Threat
             int at = Garrison.WaveSection(town, en.Approach, w);
             double hold = (def / (e.SiegeWaves - w + 1)) * (0.8 + rng.Next() * 0.4) * Garrison.SectionFactor(town, at) * gate;
             double shot = Cannons.Volley(town, "warband", "", wave, w, lines);
+            shot = Traps.Spring(town, "warband", shot, at, lines, record);
             en.Strength -= wave - shot;
             wave = shot;
             double wading = Garrison.Wade(town, wave);
@@ -439,6 +440,7 @@ public static class Threat
         if (dead.Count > 0) lines.Add($"{Expedition.ListNames(dead.Select(a => a.Name).ToList())} {(dead.Count == 1 ? "falls" : "fall")} on the walls.");
         record.Fallen.AddRange(dead.Select(a => a.Id));
         town.Watch = Math.Max(0, town.Watch - breaches * 2);
+        Mayoralty.Breached(town, breaches, e.Name);
 
         if (breaches >= e.BreachesToFall)
         {
@@ -646,6 +648,7 @@ public static class Threat
         var d = town.Defenses;
         var spec = Spec(town, what);
         if (BuildBlocked(town, what) != null) return false;
+        if (Stewards.Intercept(town, "defence", new StewardAsk { Area = "defence", Kind = "defense", Title = $"Build {Stewards.Lower(what.ToString())} · {Js.Str(BuildCost(town, what))}g", Why = $"• Threat: {town.Enemy.Stage.ToString().ToLowerInvariant()}\n• The walls are the town's first answer", I1 = (int)what })) return false;
         if (IsWall(what))
         {
             // A wall's timber and stone come off the market as it rises (Haul), so it waits when the market runs dry.

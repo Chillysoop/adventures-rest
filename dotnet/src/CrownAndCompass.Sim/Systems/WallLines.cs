@@ -121,7 +121,7 @@ public static class WallLines
         var (radii, why) = Trace(town, ring, pts);
         if (why != null) return why;
         var r = Rules(town);
-        foreach (var b in town.Buildings.OrderBy(b => b.Id))
+        foreach (var b in town.Buildings.Where(b => !b.Razed).OrderBy(b => b.Id))
         {
             var l = town.Lot(b.LotId);
             double dx = l.X - Town.Center, dy = l.Y - Town.Center, a = Math.Atan2(dy, dx), dist = Math.Sqrt(dx * dx + dy * dy);
@@ -164,6 +164,7 @@ public static class WallLines
         // The way out of the gate must be open ground, not a building.
         foreach (var b in town.Buildings)
         {
+            if (b.Razed) continue;
             var l = town.Lot(b.LotId);
             if (Js.Hypot(l.X - px, l.Y - py) < Math.Max(l.W, l.D) / (double)Land.Res / 2 + 0.6) return $"{Named(b)} stands in the way";
         }

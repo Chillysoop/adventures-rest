@@ -20,7 +20,10 @@ public static class Mats
     /// <summary>Mist banks and falling water (<see cref="TownView"/> scenery): soft sheets, one shader, two modes.</summary>
     public static readonly ShaderMaterial Mist = Make("veil");
     public static readonly ShaderMaterial Falls = Make("veil");
-    public static readonly ShaderMaterial[] All = [Terrain, Water, Props, People, Foliage, Hero, Aura, Effects, Mist, Falls];
+
+    /// <summary>Every creature, one mesh per kind (<see cref="Beasts"/>).</summary>
+    public static readonly ShaderMaterial Beast = Make("beast");
+    public static readonly ShaderMaterial[] All = [Terrain, Water, Props, People, Foliage, Hero, Aura, Effects, Mist, Falls, Beast];
 
     private static ShaderMaterial Make(string name) => new() { Shader = GD.Load<Shader>($"res://assets/shaders/{name}.gdshader") };
 

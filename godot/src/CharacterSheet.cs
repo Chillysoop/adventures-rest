@@ -56,27 +56,147 @@ public partial class Main
         return Geo.LotPos(lot) + f * (lot.D / (float)Land.Res / 2 + 0.25f) + new Godot.Vector2(f.Y, -f.X) * ((Geo.Hash(agentId * 13 + 1) - 0.5f) * 2 * half);
     }
 
+    /// <summary>The portrait glyph for a class (assets/icons/face-*.svg).</summary>
+    private static string ClassGlyph(string cls) => cls switch
+    {
+        "fighter" => "crossed-swords",
+        "barbarian" => "axe-swing",
+        "paladin" => "templar-shield",
+        "warden" => "oak",
+        "rogue" => "cloak-dagger",
+        "ranger" => "bowman",
+        "cartographer" => "treasure-map",
+        "monk" => "fist",
+        "wizard" => "pointy-hat",
+        "sorcerer" => "fireball",
+        "warlock" => "warlock-eye",
+        "reliquarian" => "relic-blade",
+        "bard" => "lyre",
+        "cleric" => "holy-symbol",
+        "druid" => "oak-leaf",
+        "hedge-witch" => "cauldron",
+        _ => "visored-helm",
+    };
+
+    // Plainly: the icon already says what it is, so glossary words in the line get no second one.
+    private static string Line(string icon, string text, Godot.Color? color = null) => $"{Ui.Img(icon, 14)} {Ui.Plainly(color is Godot.Color c ? Ui.C(c, text) : text)}";
+
+    private static string Signed(int n) => n >= 0 ? $"+{n}" : $"−{-n}";
+
+    /// <summary>A hero's character sheet: who they are, their numbers, what they fight with and carry, and their story.</summary>
+    private SheetSpec HeroSheetSpec(Town t, Agent a)
+    {
+        var hs = a.Hero!;
+        var cls = hs.Cls;
+        var c = t.Content;
+        string bg = hs.Background != "" && c.Library.Background(hs.Background) is { } b ? $" · {Ui.Esc(b.Name.ToLowerInvariant())}" : "";
+        var badge = new List<string>();
+        if (cls.Card != "") badge.Add($"{Ui.Img("role-" + cls.Card, 15)} {Tag(Ui.Cap(cls.Card), Ui.Gold)}");
+        if (hs.PartyName != null) badge.Add(Ui.C(Ui.Ink2, $"of the {Ui.Esc(hs.PartyName)}"));
+        if (hs.Knight) badge.Add(Tag("Knight", Ui.Gold));
+        if (hs.Champion) badge.Add(Tag("Champion", Ui.Gold));
+        double xp = -1;
+        string xpText = "max level";
+        if (Quests.XpBand(hs.Level) is var (from, to))
+        {
+            xp = (hs.Xp - from) / (double)Math.Max(1, to - from);
+            xpText = $"{hs.Xp:#,0} / {to:#,0} XP";
+        }
+
+        int prof = Skills.HeroProficiency(hs.Level);
+        var vitals = new List<SheetStat>
+        {
+            new("ui-shield", "ARMOUR", Gear.Ac(c, a).ToString(), "Armour class: what a foe must roll to hit"),
+            new("ui-heart", "HIT POINTS", $"{hs.Hp}/{hs.MaxHp}", "", hs.MaxHp > 0 ? hs.Hp / (double)hs.MaxHp : 0),
+            new("item-weapon", "ATTACK", Signed(Gear.Attack(c, a)), "Added to every attack roll"),
+            new("d20", "PROFICIENCY", Signed(prof), "Added to trained skills; half to the rest"),
+            new("ui-skull", "FOES SLAIN", hs.Kills.ToString(), $"{hs.Expeditions} expeditions"),
+        };
+
+        var fights = new List<string> { Line("item-weapon", $"{Ui.Esc(Ui.Cap(Piece(hs, hs.Weapon, "weapon") is var w && w != "" ? w : "bare hands"))} {Ui.Dim(Signed(Gear.Attack(c, a)))}") };
+        if (cls.Sneak) fights.Add(Line("role-striker", "Sneak attack"));
+        if (cls.HealSpell != null && cls.HealsAt(hs.Level) is var heals && heals > 0) fights.Add(Line("ui-heal", $"{Ui.Esc(cls.HealSpell.Name)} {Ui.Dim($"×{heals} a delve")}"));
+        if (cls.AreaSpell != null) fights.Add(Line("sheet-spell", Ui.Esc(cls.AreaSpell.Name)));
+        if (cls.Role != "") fights.Add(Ui.Dim(Ui.Esc(Ui.Cap(cls.Role) + (cls.Magic != "" ? $", {cls.Magic} caster" : ""))));
+
+        var kit = new List<string>();
+        if (Piece(hs, hs.Armor, "armor") is var armor && armor != "") kit.Add(Line("item-armor", Ui.Esc(Ui.Cap(armor))));
+        if (Piece(hs, hs.Shield, "shield") is var shield && shield != "") kit.Add(Line("item-shield", Ui.Esc(Ui.Cap(shield))));
+        if (hs.Magic.TryGetValue("trinket", out var trinket)) kit.Add(Line(trinket.Category == "ring" ? "item-ring" : "item-trinket", Ui.Esc(trinket.Name), Ui.Gold));
+        if (hs.Potions > 0) kit.Add(Line("potions", $"Healing potion ×{hs.Potions}"));
+        if (hs.Scrolls > 0) kit.Add(Line("sheet-spell", $"Spell scroll ×{hs.Scrolls}"));
+        if (hs.Copied > 0) kit.Add(Line("books", $"{hs.Copied} copied into the spellbook"));
+        if (hs.Stone) kit.Add(Line("item-stone", "Town sending stone"));
+        if (hs.Mount != "" && c.Passage.Mount(hs.Mount) is { } md) kit.Add(Line("sheet-mount", Ui.Esc(Ui.Cap(md.Name))));
+        var (alone, carries) = Passage.Of(t, a);
+        if (Passage.Describe(alone) is var crosses && crosses != "") kit.Add(Line("ui-road", Ui.Esc($"Crosses {crosses}")));
+        if (Passage.Describe(carries & ~alone) is var more && more != "") kit.Add(Line("ui-road", Ui.Esc($"Takes the party over {more}")));
+
+        var features = new List<string>();
+        if (Patrons.Of(c, hs) is { } pd)
+        {
+            var fc = hs.Favour >= 3 ? Ui.Good : hs.Favour <= -3 ? Ui.Bad : Ui.Ink2;
+            var boons = new[] { "attack", "ac", "skill" }.Select(k => (k, Patrons.Boon(c, hs, k))).Where(x => x.Item2 != 0).Select(x => $"{(x.k == "ac" ? "AC" : x.k)} {Signed(x.Item2)}");
+            features.Add(Ui.Tip(Line("sheet-patron", $"{Ui.Esc(Ui.Cap(pd.Name))} {Ui.C(fc, $"favour {Patrons.Favour(hs.Favour)}")} {Ui.Dim(string.Join(", ", boons))}"), $"{Ui.Cap(pd.Title)}. It wants {pd.Wants}."));
+        }
+        if (hs.Familiar != "") features.Add(Line("sheet-familiar", Ui.Esc(Ui.Cap(hs.Familiar))));
+        if (Curses.Of(c, hs) is { } curse)
+        {
+            var mods = new[] { ("attack", "attack"), ("ac", "AC"), ("damage", "damage"), ("skill", "skill") }.Select(x => (x.Item2, Curses.Mod(c, hs, x.Item1))).Where(x => x.Item2 != 0).Select(x => $"{x.Item1} {Signed(x.Item2)}");
+            features.Add(Ui.Tip(Line("sheet-curse", $"Cursed: {Ui.Esc(Ui.Cap(curse.Name))} {string.Join(", ", mods)}", Ui.Bad), $"{curse.Text} Stuck until lifted."));
+        }
+        if (hs.Taint > 0) features.Add(Line("ui-skull", hs.Taint == 1 ? "A gift from the dark" : $"{hs.Taint} gifts from the dark", Ui.Bad));
+        if (hs.Holding != "") features.Add(Line("ui-house", $"Owns {Ui.Esc(hs.Holding)}"));
+        if (hs.StakeId is int sid) features.Add(Line("ui-trade", $"{Js.Str(hs.Stake)}g stake in {BuildingLink(t.Building(sid))}"));
+
+        var story = new List<string>();
+        if (Annals.Past(t, a) is string past && past != "") story.Add(Ui.Dim(Ui.Esc(past)));
+        story.Add(Line("ui-person", Ui.Esc(Ui.Cap(a.TraitList()))));
+        if (Taverns.Persona(t, a) is { } persona) story.Add(Line("ale", $"In their cups: {Ui.Esc(persona.Name)}{(Taverns.Drunk(t, a) != null ? Ui.Dim(", tonight") : "")}"));
+        if (Taverns.Owing(t, a) is { } blood) story.Add(Line("gold", $"Owes blood money for {Ui.Esc(blood.Victim)}", Ui.Bad));
+
+        return new SheetSpec
+        {
+            Name = Loyalty.Styled(t, a),
+            Subtitle = $"Level {hs.Level} {Ui.Esc(a.Race.ToLowerInvariant())} {Ui.Esc(cls.Name.ToLowerInvariant())}{bg}",
+            Badge = string.Join("  ", badge),
+            Glyph = ClassGlyph(cls.Id),
+            Tint = Palette.ClassColor(cls.Id),
+            Ring = Notoriety.FameTier(t, hs) >= 2 ? Ui.Gold : Notoriety.InfamyTier(t, hs) >= 2 ? Ui.Bad : new Godot.Color("5a5347"),
+            Crowned = hs.Knight || hs.Champion,
+            Xp = xp,
+            XpText = xpText,
+            Vitals = vitals,
+            Abilities = a.Abilities,
+            Skills = Skills.All(t).Select(sk => new SheetSkill(sk.Name, Skills.Bonus(t, a, sk.Id), Skills.Trained(t, a, sk.Id), Skills.Expert(t, a, sk.Id))).ToList(),
+            SkillsNote = $"● trained {Signed(prof)} · ◆ expert",
+            Right = [new("Attacks & spells", "item-weapon", fights), new("Equipment", "sheet-pack", kit), new("Features", "ui-star", features)],
+            Wide = [new("Story", "lore", story)],
+        };
+    }
+
+    /// <summary>A worn piece by name: its magic version when it has one ("+1 longsword"), else the plain gear.</summary>
+    private static string Piece(HeroSheet s, LibGear? g, string slot) =>
+        s.Magic.TryGetValue(slot, out var it) ? Gear.Label(s, it) : g == null ? "" : Library.Prose(g.Name);
+
     /// <summary>
     /// Anyone's character sheet: ability scores, proficiency, all eighteen skills with their bonus (trained ones
     /// marked, expert ones doubly), and the last few d20s they rolled around town.
     /// </summary>
     private void InspectSheet(Pane p, Town t, Agent a)
     {
+        if (a.Hero != null)
+        {
+            InspectRolls(p, t, a);
+            return;
+        }
         p.Heading("Character sheet");
         p.Add($"ab{a.Abilities}", () => AbilityRow(a.Abilities));
-        if (a.Hero is HeroSheet hs)
-        {
-            string bg = hs.Background != "" && t.Content.Library.Background(hs.Background) is { } b ? $" · {b.Name.ToLowerInvariant()} background" : "";
-            p.Text($"{Tag($"Proficiency +{Skills.HeroProficiency(hs.Level)}", Ui.Ink)}  {Ui.C(Ui.Ink2, $"[font_size=12]Level {hs.Level} {Ui.Esc(hs.Cls.Name.ToLowerInvariant())}{Ui.Esc(bg)}; half proficiency on everything else[/font_size]")}", 13);
-        }
-        else
-        {
-            var r = t.Content.Skills.Townsfolk;
-            int practised = Skills.Practised(t, a);
-            string grade = practised >= r.PracticeMax ? "masterful" : practised > 0 ? "practised" : "learning";
-            int toNext = practised >= r.PracticeMax ? 0 : r.PracticeStep - a.Practice % Math.Max(1, r.PracticeStep);
-            p.Text($"{Tag($"Trade +{r.Proficiency + practised}", Ui.Ink)}  {Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Ui.Cap(a.Profession))}, {grade}{(toNext > 0 ? $" ({toNext} good turns at the trade to the next step)" : "")}. Untrained at everything else.[/font_size]")}", 13);
-        }
+        var r = t.Content.Skills.Townsfolk;
+        int practised = Skills.Practised(t, a);
+        string grade = practised >= r.PracticeMax ? "masterful" : practised > 0 ? "practised" : "learning";
+        int toNext = practised >= r.PracticeMax ? 0 : r.PracticeStep - a.Practice % Math.Max(1, r.PracticeStep);
+        p.Text($"{Tag($"Trade +{r.Proficiency + practised}", Ui.Ink)}  {Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Ui.Cap(a.Profession))}, {grade}{(toNext > 0 ? $" ({toNext} good turns at the trade to the next step)" : "")}. Untrained at everything else.[/font_size]")}", 13);
         var cells = new System.Text.StringBuilder("[table=2]");
         foreach (var s in Skills.All(t))
         {
@@ -88,6 +208,12 @@ public partial class Main
         }
         cells.Append("[/table]");
         p.Text(cells.ToString(), 12);
+        InspectRolls(p, t, a);
+    }
+
+    /// <summary>The last few d20s they rolled around town.</summary>
+    private static void InspectRolls(Pane p, Town t, Agent a)
+    {
         var rolls = Skills.Recent(t, a.Id).Take(5).ToList();
         if (rolls.Count == 0) return;
         p.Heading("Latest rolls");

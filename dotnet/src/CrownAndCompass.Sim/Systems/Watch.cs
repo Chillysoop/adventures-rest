@@ -116,6 +116,7 @@ public static class Watch
     {
         var site = Quests.Site(town, siteId);
         if (site == null || site.Known == SiteKnowledge.Unheard || site.ThoughtCleared || ScoutAt(town, siteId) != null) return null;
+        if (Stewards.Intercept(town, "bounties", new StewardAsk { Area = "bounties", Kind = "scout", Title = $"Scout {site.Def.Name}", Why = "• A party is heading there\n• Eyes on it before they arrive", S1 = siteId })) return null;
         var hero = Watchers(town).FirstOrDefault();
         if (hero == null) return null;
         var s = Dispatch(town, hero, site, false);
@@ -238,6 +239,13 @@ public static class Watch
     /// <summary>A party hauls home a town-sized item; the hall keeps it.</summary>
     public static void ReceiveRelic(Town town, LibItem item, string partyName)
     {
+        if (Regalia.Is(town, item))
+        {
+            // Regalia goes to the armory, for the mayor to wear.
+            Armory.Add(town, item, $"hauled home by the {partyName}");
+            town.Log(LedgerCategory.Town, Importance.Notable, $"The {partyName} lay the {item.Name} before the mayor. It waits in the armory to be worn.");
+            return;
+        }
         town.Relics.Add(item.Id);
         var work = Rules(town).Works.FirstOrDefault(w => w.Relic == item.Id);
         string use = work == null ? "" : work.Reach > 0

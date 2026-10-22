@@ -4,7 +4,7 @@ namespace CrownAndCompass.Sim.Tests;
 
 public class ConquestTests
 {
-    /// <summary>A town with a strong drilled host, every settlement met, the nearest a weak village and two allies.</summary>
+    /// <summary>A town with a strong drilled host, every settlement met, the weakest the target and two allies.</summary>
     private static (Simulation Sim, Settlement Target) Town()
     {
         var sim = new Simulation(new SimulationOptions { Seed = 3, AutoMayor = false, Enemy = false, AutoStories = false });
@@ -19,8 +19,8 @@ public class ConquestTests
         r.Drill = 1;
         r.Marches = true;
         foreach (var s in t.Settlements) s.Met = true;
-        var target = t.Settlements.OrderBy(s => t.Regions[s.RegionId].Days).First();
-        target.Prosperity = 0;
+        foreach (var s in t.Settlements) s.Prosperity = 0;
+        var target = t.Settlements.OrderBy(s => Conquest.Defenders(t, s)).ThenBy(s => t.Regions[s.RegionId].Days).ThenBy(s => s.Id).First();
         foreach (var s in t.Settlements.Where(s => s.Id != target.Id).Take(2))
         {
             s.Allied = true;
