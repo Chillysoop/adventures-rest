@@ -140,6 +140,14 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["tab-library", "spell-book", mono],
   ["tab-build", "claw-hammer", mono],
   ["glossary", "open-book", mono],
+  // The mayor's regalia slots (content/game/regalia.json), the sheet and rerolling a new mayor
+  ["regalia-chain", "gem-chain", "#e8c15a"],
+  ["regalia-signet", "ring", "#d9b25a"],
+  ["regalia-sceptre", "winged-scepter", "#cfa64a"],
+  ["regalia-mantle", "cape", "#c0566a"],
+  ["regalia-banner", "flying-flag", "#7f9fd4"],
+  ["sheet", "id-card", mono],
+  ["reroll", "rolling-dices", mono],
   // Quick orders over the corner map
   ["order-defend", "guarded-tower", mono],
   ["order-guard", "flying-flag", mono],
@@ -199,6 +207,19 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["post-guard", "crown", mono],
   ["army-command", "knight-banner", mono],
   ["army-drill", "target-arrows", mono],
+  // Character sheets (godot/src/SheetView.cs): hero roles and the sheet's section heads
+  ["role-tank", "shield", mono],
+  ["role-striker", "sword-clash", mono],
+  ["role-healer", "heart-plus", mono],
+  ["role-scout", "footprint", mono],
+  ["role-face", "talk", mono],
+  ["sheet-spell", "spell-book", mono],
+  ["sheet-pack", "backpack", mono],
+  ["sheet-mount", "horse-head", mono],
+  ["sheet-familiar", "imp-laugh", mono],
+  ["sheet-curse", "cursed-star", mono],
+  ["sheet-patron", "evil-book", mono],
+  ["sheet-xp", "upgrade", mono],
   ["army-law", "scroll-quill", mono],
   // The bounty board's buttons: the terms of a job, then what else a row can do
   ["act-slay", "broadsword", mono],
@@ -271,6 +292,9 @@ const icons: [name: string, glyph: string, tint: string][] = [
     "barn-owl", "eagle-head", "raven", "amber-mosquito", "crab", "shark-jaws", "fish-monster", "lizardman", "evil-tree", "fairy",
     "dwarf-face", "woman-elf-face", "mermaid", "centaur", "worm-mouth", "flying-beetle", "wasp-sting", "vulture", "horse-head",
     "unicorn", "greek-sphinx", "medusa-head", "hyena-head", "lion", "tiger-head", "saber-toothed-cat-head", "fire",
+    // Heroes' portraits on their sheets, one per class (SheetView.ClassGlyph)
+    "crossed-swords", "axe-swing", "templar-shield", "oak", "cloak-dagger", "bowman", "treasure-map", "fist",
+    "pointy-hat", "fireball", "warlock-eye", "relic-blade", "lyre", "holy-symbol", "oak-leaf", "cauldron",
   ].map((g): [string, string, string] => [`face-${g}`, g, mono]),
   // Faction crests (content/game/intros.json "crest"): crest-<lineage>, white so the client paints it in the faction's colours
   ...(JSON.parse(readFileSync(join(root, "content/game/intros.json"), "utf8")) as { intros: { lineage: string; crest: string }[] }).intros.map(

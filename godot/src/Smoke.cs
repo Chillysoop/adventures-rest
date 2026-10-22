@@ -6,7 +6,7 @@ namespace CrownAndCompass.Client;
 
 /// <summary>
 /// With --smoke: the merge gate's play-through of a build (<c>scripts/gate.ts</c>). From the main menu (and its choice of storytellers) it
-/// starts a new town, plays on at top speed, opens every window, the build bar, the campaign map, a wall and a guard flag and the
+/// rolls and rerolls a mayor, starts a new town, plays on at top speed, opens every window, the build bar, the campaign map, a wall and a guard flag and the
 /// game menu, saves and loads, starts the tutorial, opens the History, the Settings and the glossary with a pinned keyword card, steps into a story event, answers a party's sending, opens the tourney card with a bet on it, opens the recap and a tavern tale, every faction's first-meeting picture, a few frames apart so each one draws. It prints
 /// <c>SMOKE OK</c> and quits with 0, or <c>SMOKE FAIL</c> and 1; the gate also fails on any engine error.
 /// </summary>
@@ -47,10 +47,16 @@ public partial class Main
                 // New game asks for a storyteller first.
                 PickStoryteller(false);
                 if (!_tellers.Visible || _titleMenu.Visible) throw new InvalidOperationException("the storytellers are not showing");
+                // Then the mayor's rolled sheet: a reroll and another background.
+                PickMayor(Sim.Content.Default().Storytellers.Default);
+                var rolled = _mayorRoll;
+                RerollMayor();
+                PickMayorBackground(Sim.Content.Default().Stories.Backgrounds[^1].Ref);
+                if (!_mayorSetup.Visible || _tellers.Visible || _mayorRoll.Background == rolled.Background && _mayorRoll.Scores.SequenceEqual(rolled.Scores)) throw new InvalidOperationException("the mayor's sheet did not reroll");
                 return 10;
             case 1:
                 // What the main menu's New game does, with the stand-in mayor playing so later systems come into play.
-                StartTown(tutorial: false, _opts.Seed ?? 1, autoplay: true);
+                StartTown(tutorial: false, _opts.Seed ?? 1, autoplay: true, mayor: Stories.RollMayor(_sim.Town.Content, _opts.Seed ?? 1, _mayorRoll.Background));
                 // A new town shows its charter goals (gone by the time the smoke run has played on).
                 SyncGoals();
                 if (Goals.Open(_sim.Town).Count == 0 || _goalsRows.GetChildCount() == 0) throw new InvalidOperationException("the charter goals card is empty in a new town");
@@ -114,8 +120,10 @@ public partial class Main
             case 20:
                 OpenHistory(null);
                 // The Settings window over it, every clock-stop toggle drawn.
-                OpenSettings();
-                if (_settingsRows.GetChildCount() != ClockStops.All.Length) throw new InvalidOperationException("the settings did not draw every toggle");
+                // Every tab drawn, then the clock tab: a heading, every clock-stop toggle and a footnote.
+                foreach (var (tab, _, _) in SettingsTabs) OpenSettings(tab);
+                OpenSettings("clock");
+                if (_settingsRows.GetChildCount() != ClockStops.All.Length + 2) throw new InvalidOperationException("the settings did not draw every toggle");
                 return 10;
             case 21:
                 CloseSettings();
@@ -156,9 +164,15 @@ public partial class Main
                     if (!_sim.AdvanceMayor(adv)) throw new InvalidOperationException($"the mayor could not take {adv}");
                     _dirty = true;
                 }
+                // The full character sheet behind its button, and a piece of regalia commissioned and worn.
+                _mayorSheet = true;
+                _sim.Town.Treasury = Math.Max(_sim.Town.Treasury, 5000);
+                if (Regalia.Commissions(_sim.Town).FirstOrDefault(c => c.Refused == null) is { Item: var piece } && _sim.CommissionRegalia(piece.Id))
+                    _sim.WearRegalia(_sim.Town.Armory.Stock.First(x => x.Item.Id == piece.Id).Id);
                 return 10;
             case 25:
             {
+                _mayorSheet = false;
                 // A party's sending: the card with the party's and the hall's help on each roll, answered with the first choice.
                 SetTab(Tab.Mayor);
                 if (OpenScripted("bridge-toll") is not { } sending) return 1;
@@ -169,8 +183,14 @@ public partial class Main
             case 26:
                 if (_story.Visible && (_beat == null || _beatResult is not { Visible: true })) throw new InvalidOperationException("the sending's roll did not land");
                 CloseStory();
-                return 5;
+                // The mayor out in the streets, then dead: the fallen card with the temple and the council's candidates.
+                if (!_sim.SetMayorStance("town")) throw new InvalidOperationException("the mayor would not walk the streets");
+                Mayoralty.Wound(_sim.Town, 9999, "a smoke test");
+                if (!Mayoralty.Dead(_sim.Town)) throw new InvalidOperationException("the mayor did not die");
+                _dirty = true;
+                return 10;
             case 27:
+                if (Mayoralty.Dead(_sim.Town) && !_sim.NameSuccessor(0)) throw new InvalidOperationException("no successor was named");
                 // An explorers' report card, as one pops up, with the company's latest roll if it has one.
                 if (_sim.Town.Finds.LastOrDefault() is { } find) OpenFind(find.Id, find.Beat);
                 return 70;

@@ -8,13 +8,14 @@ public readonly record struct Spark(bool Holds, string Why, string Icon);
 /// institutions. A token names a source the player can see and grow: newcomers (craft:, folk:), trade (partner:,
 /// routes:), what was built (building:, tier:), the library (book:, books:, wizard:, circle:), heroes (hero:,
 /// heroes:), the wilds (found: an explorers' find, slain: a creature type a company brought down, cleared:, delves:),
-/// minor powers (ally:) and what is already known (known:). Why always names the person, place or thing behind it.
+/// minor powers (ally:), foes met or broken (foe:, broken:), peoples met (met:), Skywright relics brought home (relic:, relics:) and what is already known (known:). Why always names the person, place or thing behind it.
 /// </summary>
 public static class Sparks
 {
     /// <summary>The icon (godot/assets/icons) for each source.</summary>
     public const string Newcomer = "population", Trader = "gold", Built = "tab-build", Book = "books", Magic = "lore",
-        Hero = "heroes", Wilds = "compass", Slain = "threat", Ally = "standing", Known = "tab-library", Charter = "mandate";
+        Hero = "heroes", Wilds = "compass", Slain = "threat", Ally = "standing", Known = "tab-library", Charter = "mandate",
+        Foe = "rivals", People = "population", Relic = "item-stone";
 
     public static Spark Check(Town town, string token)
     {
@@ -104,6 +105,32 @@ public static class Sparks
             {
                 var def = town.Content.Powers.Powers.FirstOrDefault(x => x.Id == Arg(1));
                 return new(def != null && Powers.Ally(town, Arg(1)), def != null ? Powers.Name(town, def) : Arg(1), Ally);
+            }
+            case "foe":
+            {
+                // A menace of this lineage the town knows of, alive or broken.
+                var m = town.Saga.Menaces.Where(x => x.Lineage == Arg(1) && Discovery.Known(town, x)).OrderBy(x => x.Id).FirstOrDefault();
+                return new(m != null, m != null ? m.Name : Arg(1), Foe);
+            }
+            case "broken":
+            {
+                var m = town.Saga.Menaces.Where(x => x.Lineage == Arg(1) && !x.Alive).OrderBy(x => x.Id).FirstOrDefault();
+                return new(m != null, m != null ? $"the fall of {m.Name}" : Arg(1), Foe);
+            }
+            case "met":
+            {
+                var s = town.Settlements.Where(x => x.Met && x.Kin.Id == Arg(1)).OrderBy(x => x.Id).FirstOrDefault();
+                return new(s != null, s != null ? $"the folk of {s.Name}" : Arg(1), People);
+            }
+            case "relic":
+            {
+                var def = Lofted.Relic(town, Arg(1));
+                return new(Lofted.Holds(town, Arg(1)), def?.Name ?? Arg(1), Relic);
+            }
+            case "relics":
+            {
+                int n = Lofted.Held(town);
+                return new(n >= N(1), $"{n} Skywright {(n == 1 ? "relic" : "relics")}", Relic);
             }
             case "known":
                 return new(Research.IsKnown(town, Arg(1)), town.Content.Research.Discovery(Arg(1))?.Name.ToLowerInvariant() ?? Arg(1), Known);

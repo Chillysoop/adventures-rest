@@ -287,6 +287,41 @@
       { "name": "the gilding", "gold": 10000, "goods": { "Tools": 40, "Cloth": 60 }, "hours": 650 }
     ],
     "blurb": "A grand work: a bronze-and-stone colossus of the town's founder, its lantern seen for a day's ride. Pilgrims and traders come to see it, and the mayor who raised it is remembered." },
+  { "id": "lofted_spire", "name": "Lofted Spire", "size": [5, 5], "zone": "Civic", "buildable": false, "civic": true, "lofted": true, "tier": "city", "buildHours": 3300,
+    "upkeep": 40, "max": 1, "heroes": 4, "attraction": 0.15, "comfort": 0.04, "mandate": 6, "defense": 0.3,
+    "stages": [
+      { "name": "the keel cradle", "gold": 6000, "goods": { "Stone": 200, "Timber": 120 }, "hours": 600 },
+      { "name": "the keelstone engine", "gold": 9000, "goods": { "Tools": 80, "Potions": 40 }, "hours": 750 },
+      { "name": "the anchor chains", "gold": 7000, "goods": { "Tools": 60, "Stone": 100 }, "hours": 600 },
+      { "name": "the spire's halls", "gold": 8000, "goods": { "Stone": 200, "Cloth": 40 }, "hours": 700 },
+      { "name": "the lofting", "gold": 10000, "goods": { "Potions": 60, "Books": 30 }, "hours": 650 }
+    ],
+    "blurb": "The Lofted City, small: one Skywright spire on a keelstone. Machinery first, then the halls, then it rises. Heroes, settlers, Mandate and lore; it can sail." },
+  { "id": "lofted_isle", "name": "Sky Isle", "size": [7, 7], "zone": "Civic", "buildable": false, "civic": true, "lofted": true, "tier": "city", "buildHours": 5200,
+    "upkeep": 70, "max": 1, "heroes": 7, "attraction": 0.25, "comfort": 0.07, "mandate": 10, "defense": 0.5, "salesBoost": 0.04,
+    "stages": [
+      { "name": "the keel cradle", "gold": 10000, "goods": { "Stone": 300, "Timber": 200 }, "hours": 700 },
+      { "name": "the keelstone engine", "gold": 14000, "goods": { "Tools": 120, "Potions": 60 }, "hours": 850 },
+      { "name": "the wind-vanes", "gold": 11000, "goods": { "Tools": 80, "Cloth": 80 }, "hours": 700 },
+      { "name": "the anchor chains", "gold": 11000, "goods": { "Tools": 80, "Stone": 160 }, "hours": 700 },
+      { "name": "the isle's streets", "gold": 13000, "goods": { "Stone": 300, "Timber": 120 }, "hours": 800 },
+      { "name": "the sky-market and towers", "gold": 15000, "goods": { "Stone": 200, "Cloth": 80, "Tools": 40 }, "hours": 750 },
+      { "name": "the lofting", "gold": 16000, "goods": { "Potions": 100, "Books": 50 }, "hours": 700 }
+    ],
+    "blurb": "The Lofted City, middling: an isle of streets and towers on three keelstones. Machinery first, then the city, then it rises. A great boost to heroes, settlers, trade, Mandate and lore; it can sail." },
+  { "id": "lofted_city", "name": "Lofted City", "size": [9, 9], "zone": "Civic", "buildable": false, "civic": true, "lofted": true, "tier": "great_city", "buildHours": 7600,
+    "upkeep": 110, "max": 1, "heroes": 10, "attraction": 0.35, "comfort": 0.1, "mandate": 16, "defense": 0.8, "salesBoost": 0.06, "watchBoost": 0.3,
+    "stages": [
+      { "name": "the keel cradle", "gold": 15000, "goods": { "Stone": 400, "Timber": 300 }, "hours": 800 },
+      { "name": "the keelstone engines", "gold": 20000, "goods": { "Tools": 160, "Potions": 100 }, "hours": 1000 },
+      { "name": "the wind-vanes", "gold": 16000, "goods": { "Tools": 100, "Cloth": 120 }, "hours": 800 },
+      { "name": "the anchor chains", "gold": 16000, "goods": { "Tools": 120, "Stone": 200 }, "hours": 800 },
+      { "name": "the lower city", "gold": 18000, "goods": { "Stone": 400, "Timber": 200 }, "hours": 1000 },
+      { "name": "the sky-harbour", "gold": 18000, "goods": { "Timber": 200, "Cloth": 120 }, "hours": 900 },
+      { "name": "the high city and its palace", "gold": 22000, "goods": { "Stone": 400, "Cloth": 120, "Tools": 60 }, "hours": 1100 },
+      { "name": "the lofting", "gold": 25000, "goods": { "Potions": 160, "Books": 80 }, "hours": 1200 }
+    ],
+    "blurb": "The Lofted City, whole: a city on five keelstones, with a harbour for airships and a palace in the clouds. Machinery first, then the city, then it rises. The greatest boost a town can build; it can sail." },
   { "id": "great_cathedral", "name": "Great Cathedral", "size": [6, 5], "zone": "Civic", "buildable": false, "civic": true, "tier": "great_city", "buildHours": 4200,
     "upkeep": 30, "max": 1, "comfort": 0.06, "mandate": 8, "attraction": 0.1,
     "stages": [

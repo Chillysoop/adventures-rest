@@ -95,6 +95,7 @@ public static class Mercenaries
     {
         if (HireBlocked(town, id) != null) return false;
         var c = Def(town, id);
+        if (Stewards.Intercept(town, "defence", new StewardAsk { Area = "defence", Kind = "hire", Title = $"Hire {c.Name} · {Js.Str(c.Fee)}g", Why = "• The town is short of swords\n• Paid by the day after the fee", S1 = id })) return false;
         town.Book(TreasuryAccount.Mercenaries, -c.Fee);
         town.Hires.Add(new Hire { CompanyId = id, Strength = c.Strength, HiredDay = town.Day });
         town.Log(LedgerCategory.War, Importance.Notable, $"The council signs {c.Name} for {Js.Str(c.Fee)} gold and {Js.Str(c.Wage)} a day. Their {c.People} march in under their banners and take the walls with the watch.");
