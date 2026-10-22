@@ -169,4 +169,21 @@ public class VoyagesTests
         loaded.RunDays(15);
         Assert.Equal(sim.Town.Ledger.Entries.Select(e => e.Format()), loaded.Town.Ledger.Entries.Select(e => e.Format()));
     }
+
+    [Fact]
+    public void ACompanyLongGoneWithoutWordIsCalledOverdueUntilItIsHeardFrom()
+    {
+        var sim = new Simulation(new SimulationOptions { Seed = 4 });
+        var t = sim.Town;
+        for (int d = 0; d < 60 && !t.Parties.Any(p => !p.Returned); d++) sim.RunDays(1);
+        var party = t.Parties.First(p => !p.Returned);
+        Assert.True(party.Expected > 0);
+        Assert.DoesNotContain(Alerts.Standing(t), a => a.Key == $"overdue:{party.Id}");
+        party.Expected = t.Tick - (t.Content.Knowledge.OverdueDays + 1) * SimTime.HoursPerDay;
+        var alert = Assert.Single(Alerts.Standing(t), a => a.Key == $"overdue:{party.Id}");
+        Assert.Equal(party.SiteId, alert.SiteId);
+        party.ReturnTick = t.Tick + 48;
+        Knowledge.Heard(t, party);
+        Assert.DoesNotContain(Alerts.Standing(t), a => a.Key == $"overdue:{party.Id}");
+    }
 }

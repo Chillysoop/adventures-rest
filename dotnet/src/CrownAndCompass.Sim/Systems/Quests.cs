@@ -166,6 +166,10 @@ public sealed class Party
     /// <summary>The exploring company it grew out of, which the council paid for.</summary>
     public int? SurveyId { get; init; }
 
+    /// <summary>When the town last reckoned them home, and when it last had word of them: the day they left, or a sending since.</summary>
+    public int Expected { get; set; }
+    public int HeardTick { get; set; }
+
     /// <summary>Sending-stone messages exchanged on the road; each costs one of the party's spell slots.</summary>
     public int Sendings { get; set; }
 

@@ -620,6 +620,9 @@ public sealed record KnowledgeRules
     /// <summary>What a caster asks to scry, by their loyalty: free at or above Free, gold at or above Favour, a favour below it.</summary>
     public ScryPriceRules ScryPrice { get; init; } = new();
     public WatchtowerRules Watchtowers { get; init; } = new();
+
+    /// <summary>Days past the homecoming the town last reckoned before a silent party is called overdue.</summary>
+    public int OverdueDays { get; init; } = 3;
 }
 
 public sealed record ScryPriceRules

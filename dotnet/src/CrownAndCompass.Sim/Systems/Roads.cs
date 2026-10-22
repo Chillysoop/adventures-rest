@@ -758,6 +758,8 @@ public static class Roads
         party.ArriveTick = (int)Math.Ceiling(arrive);
         // A first guess at the homecoming, made good when they reach the site.
         party.ReturnTick = (int)Math.Ceiling(Finish(town.Content, WakeAfterRest(town.Content, arrive), outHours));
+        party.Expected = party.ReturnTick;
+        party.HeardTick = party.DepartTick;
     }
 
     /// <summary>Hourly: parties reaching their sites go in.</summary>
