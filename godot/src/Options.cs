@@ -88,6 +88,9 @@ public sealed class Options
     /// <summary>--tower rising|standing|tested: stage a town tower on the nearest seen site and open its card.</summary>
     public string? Tower;
 
+    /// <summary>--wilds zones|walking|brush: paint an explore zone and a road patrol and look at them on the campaign map (brush: a stroke under way too).</summary>
+    public string? Wilds;
+
     /// <summary>--intro lineage: show that faction's first-meeting card (intros.json).</summary>
     public string? Intro;
 
@@ -267,6 +270,7 @@ public sealed class Options
                 case "--episode": o.Episode = Next(); break;
                 case "--intro": o.Intro = Next(); break;
                 case "--tower": o.Tower = Next(); break;
+                case "--wilds": o.Wilds = Next(); break;
                 case "--claim": o.Claim = Next(); break;
                 case "--endless": o.Endless = true; break;
                 case "--boons": o.Boons.AddRange(Next().Split(',', StringSplitOptions.RemoveEmptyEntries)); break;

@@ -243,15 +243,19 @@ public static class Lairs
         s.BandSize = raiders;
         s.LastRaidDay = town.Day;
         // A sky watch sees them gathering sooner: a day more to plant the flags.
+        // So do riders patrolling the ground it sets out from or crosses.
         int sky = Institutions.SkyWatch(town);
+        int patrolled = Wilds.Warns(town, World.Spot(town, s));
+        sky += patrolled;
         s.NextActTick = town.Tick + r.BandHours + sky;
         string who = Rumors.Occupants(town.Content, s.Def);
         string bigger = s.Rebuffs > 0 ? " More of them than last time." : "";
         string when = sky >= 12 ? "They will be there tomorrow night." : "They will be there by nightfall.";
         Sightings.Report(town, Key(s), Sightings.Band, who, (int)raiders, s.Def.Id, target.Id, Garrison.SectionAt(town, town.Lot(target.LotId).X, town.Lot(target.LotId).Y), 0.5, r.BandHours + sky + 6,
-            sky > 0 ? $"flies in with news: about {Js.Str(raiders)} {who} gathering {From(s)}, bound for {target.Name}. {when}{bigger}"
+            sky > patrolled ? $"flies in with news: about {Js.Str(raiders)} {who} gathering {From(s)}, bound for {target.Name}. {when}{bigger}"
+                : patrolled > 0 ? $"brings news: about {Js.Str(raiders)} {who} setting out {From(s)}, bound for {target.Name}. {when}{bigger}"
                 : $"runs in with news: about {Js.Str(raiders)} {who} coming down {From(s)} toward {target.Name}. They will be there by nightfall.{bigger}",
-            reporter: sky > 0 ? Sightings.SkyRider(town) : null);
+            reporter: sky > patrolled ? Sightings.SkyRider(town) : patrolled > 0 ? Wilds.Spotter(town, World.Spot(town, s)) : null);
         return false;
     }
 

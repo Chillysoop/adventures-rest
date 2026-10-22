@@ -199,6 +199,7 @@ public sealed class Simulation
         using (Asking("bounties"))
         {
             Quests.Daily(t, Hand("bounties"), Options.FreeCompanies);
+            Wilds.Daily(t, Options.AutoMayor);
             Explore.Daily(t, Hand("bounties"));
             Intel.Daily(t, Stewards.Sub(t, Options, "bounties", Options.AutoIntel));
         }
@@ -446,6 +447,15 @@ public sealed class Simulation
 
     /// <summary>Scry a site live for a few hours: the Scrying Pool if it has one left, else a rested caster (the named one) on their terms: free, gold or a favour.</summary>
     public Scrying? CommissionScrying(string siteId, int? casterId = null) => Knowledge.CommissionScrying(Town, siteId, casterId);
+
+    /// <summary>Paint cells of the wilds with the explore or patrol brush (cells of <see cref="Wilds.Rules"/>' grid, x east and y south of the town). Returns the zone painted into.</summary>
+    public WildZone? PaintWilds(string kind, IEnumerable<(int X, int Y)> cells) => Wilds.Paint(Town, kind, cells);
+
+    /// <summary>Rub out painted cells of a brush's kind; a zone left empty is gone.</summary>
+    public int EraseWilds(string kind, IEnumerable<(int X, int Y)> cells) => Wilds.Erase(Town, kind, cells);
+
+    /// <summary>Send a horse regiment to ride a painted patrol, or (null) call its regiment home.</summary>
+    public bool SendRiders(int zoneId, int? regimentId) => Wilds.Send(Town, zoneId, regimentId);
 
     /// <summary>Mark a spot in the wilds (days of march east and south of the town) and pay a company to go and look at it.</summary>
     public Commission? MarkSpot(double x, double y, double? reward = null) => Explore.PostSpot(Town, x, y, reward);

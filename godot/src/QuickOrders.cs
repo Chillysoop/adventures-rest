@@ -9,11 +9,12 @@ namespace CrownAndCompass.Client;
 /// The quick orders over the corner map, always on screen so the town can be mobilised in a click: Defend mans the gate
 /// and every side a host marches from (or stands them down), Guard plants a flag over the farm raiders were seen heading
 /// for or puts the flag in hand, Strike lists the foes the town knows with a bounty or a sellsword march for each, and
-/// Scout marks a spot anywhere on the map for a company to go and look at. A button turns red while it is needed.
+/// Explore and Patrol pick up the wilds brushes to paint ground for companies to walk or riders to keep. A button turns
+/// red while it is needed.
 /// </summary>
 public partial class Main
 {
-    private Button _defendButton = null!, _guardButton = null!, _strikeButton = null!, _scoutButton = null!;
+    private Button _defendButton = null!, _guardButton = null!, _strikeButton = null!, _scoutButton = null!, _patrolButton = null!;
     private Control _ordersBar = null!;
     private PanelContainer _strikePanel = null!;
     private Pane _strikePane = null!;
@@ -64,12 +65,14 @@ public partial class Main
         _guardButton.Pressed += QuickGuard;
         _strikeButton = OrderButton("order-strike", "Strike");
         _strikeButton.Pressed += () => ShowStrike(!_strikePanel.Visible);
-        _scoutButton = OrderButton("order-scout", "Scout");
-        _scoutButton.Pressed += ToggleScouting;
-        foreach (var b in new[] { _defendButton, _guardButton, _strikeButton, _scoutButton }) bar.AddChild(b);
+        _scoutButton = OrderButton("act-explore", "Explore");
+        _scoutButton.Pressed += () => ToggleBrush(Wilds.Explore);
+        _patrolButton = OrderButton("order-patrol", "Patrol");
+        _patrolButton.Pressed += () => ToggleBrush(Wilds.Patrol);
+        foreach (var b in new[] { _defendButton, _guardButton, _strikeButton, _scoutButton, _patrolButton }) bar.AddChild(b);
         _ordersBar = bar;
         box.AddChild(bar);
-        _map.SpotMarked += OnSpotMarked;
+        _map.WildsPainted += OnWildsPainted;
         return box;
     }
 
@@ -196,35 +199,36 @@ public partial class Main
         p.Commit();
     }
 
-    // ---------- Scout ----------
+    // ---------- Explore and Patrol ----------
 
-    private void ToggleScouting()
+    /// <summary>Pick up a wilds brush (or put it down), on the campaign map where the wilds are.</summary>
+    private void ToggleBrush(string kind)
     {
-        _map.Scouting = !_map.Scouting;
-        if (_map.Scouting)
+        _map.Brush = _map.Brush == kind ? null : kind;
+        if (_map.Brush != null)
         {
             _map.Flagging = false;
             _map.Placing = null;
             _map.Planner.Pick(null);
             _map.Decorator.Pick(null);
-            Hint("Click anywhere on the map, even in the fog, for a company to go and look · Esc to cancel", 30);
+            if (!_map.Strategic) ToggleStrategic();
+            Hint(kind == Wilds.Explore ? "Drag to paint ground to explore · right-drag rubs out · Esc done" : "Drag to paint a patrol · right-drag rubs out · Esc done", 30);
         }
         else Hint("");
         _dirty = true;
     }
 
-    private void OnSpotMarked(Vector2 w)
+    private void OnWildsPainted(string kind, List<(int X, int Y)> cells, bool erase)
     {
         var t = _sim.Town;
-        var (x, y) = Geo.ToDays(w);
-        if (Explore.SpotBlocked(t, x, y) is string why)
+        if (erase)
         {
-            Hint($"Can't mark it there: {why}.");
-            return;
+            int n = _sim.EraseWilds(kind, cells);
+            if (n > 0) Hint($"Rubbed out {n} {(n == 1 ? "stretch" : "stretches")}.");
         }
-        var c = _sim.MarkSpot(x, y);
-        _map.Scouting = false;
-        if (c != null) Hint($"The council offers {Math.Round(c.Reward)}g to a company that will go and look {Explore.Bearing(x, y)} there.");
+        else if (_sim.PaintWilds(kind, cells) is { } z)
+            Hint(kind == Wilds.Explore ? $"{Wilds.Unseen(z)} to walk · next trip {Wilds.TripReward(t, z):0}g" : $"Patrol · {Wilds.Wage(t, z):0.#}g a day");
+        else if (cells.Select(c => Wilds.CellBlocked(t, c.X, c.Y)).FirstOrDefault(w => w != null) is string why) Hint($"Can't paint there: {why}.");
         GuideEvent("orders");
         _dirty = true;
     }
@@ -242,7 +246,7 @@ public partial class Main
     private void SyncOrders()
     {
         var t = _sim.Town;
-        if (_ordersHint.Visible && _clockReal > _hintUntil && !_map.Scouting && !_map.Flagging) _ordersHint.Visible = false;
+        if (_ordersHint.Visible && _clockReal > _hintUntil && _map.Brush == null && !_map.Flagging) _ordersHint.Visible = false;
 
         string? defendWhy = DefendBlocked();
         bool manned = WallOrders().Count > 0 && Garrison.WallsManned(t);
@@ -266,9 +270,13 @@ public partial class Main
         _strikeButton.SetPressedNoSignal(_strikePanel.Visible);
         _strikeButton.TooltipText = "Strike: the foes the town knows of, each with a bounty to post or sellswords to send.";
 
-        int spots = Explore.Spots(t).Count;
-        _scoutButton.SetPressedNoSignal(_map.Scouting);
-        _scoutButton.Text = spots > 0 ? $"Scout {spots}" : "Scout";
-        _scoutButton.TooltipText = $"Scout: mark a spot anywhere on the map for a company to go and look at ({spots} of {t.Content.Explore.Commission.MaxSpots} marked).";
+        int left = t.Wilds.Where(z => z.Kind == Wilds.Explore).Sum(Wilds.Unseen);
+        _scoutButton.SetPressedNoSignal(_map.Brush == Wilds.Explore);
+        _scoutButton.Text = left > 0 ? $"Explore {left}" : "Explore";
+        _scoutButton.TooltipText = "Explore: paint ground for a company to walk\n• Paid again each trip until it's all seen\n• Right-drag rubs out";
+        var patrols = t.Wilds.Where(z => z.Kind == Wilds.Patrol).ToList();
+        _patrolButton.SetPressedNoSignal(_map.Brush == Wilds.Patrol);
+        _patrolButton.ThemeTypeVariation = patrols.Any(z => z.Unpaid) ? "Post" : "";
+        _patrolButton.TooltipText = $"Patrol: paint ground for riders to keep\n• {t.Content.Wilds.Patrol.PerCell:0.#}g a day a stretch\n• Fewer caravans lost, raiders seen sooner\n• Right-drag rubs out";
     }
 }

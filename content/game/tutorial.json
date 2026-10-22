@@ -96,11 +96,11 @@
     {
       "id": "explore",
       "title": "Send explorers",
-      "text": "The map only shows what someone has told the town. To find places for certain, open [b]Bounties[/b] and offer a company coin to [b]Explore[/b] a region. A company goes when it thinks the pay is worth the danger, so it may take a few days; once out, they report every lair, settlement and ruin they come on before doing anything about it.",
-      "point": "tab:Bounties",
+      "text": "The map only shows what someone has told the town.\n• Press [b]Explore[/b] over the corner map and drag to paint ground\n• The council pays a company to walk it, trip after trip, until it's all seen\n• They report each lair, settlement and ruin before acting\nRight-drag rubs paint out.",
+      "point": "orders",
       "until": "next",
       "when": "count:Heroes",
-      "teaches": ["command:PostSurvey"]
+      "teaches": ["command:PostSurvey", "command:PaintWilds", "command:EraseWilds"]
     },
     {
       "id": "council",
@@ -258,7 +258,7 @@
     {
       "id": "quick-orders",
       "title": "Quick orders",
-      "text": "The four buttons over the corner map are there when you need to move fast. [b]Defend[/b] sounds the horn on the gate and on whichever side a host is marching from; it glows red while a side is left bare, and pressed again it stands them down. [b]Guard[/b] picks up a guard flag, like [b]G[/b]. [b]Strike[/b] lists the threats you know of, each with a bounty to post or sellswords to send. [b]Scout[/b] marks a spot: click anywhere on the map, even deep in the fog, and the council offers a company coin to walk there and tell you what it finds.",
+      "text": "The four buttons over the corner map are there when you need to move fast. [b]Defend[/b] sounds the horn on the gate and on whichever side a host is marching from; it glows red while a side is left bare, and pressed again it stands them down. [b]Guard[/b] picks up a guard flag, like [b]G[/b]. [b]Strike[/b] lists the threats you know of, each with a bounty to post or sellswords to send. [b]Explore[/b] and [b]Patrol[/b] paint the wilds: ground for a company to walk, or for riders to keep.",
       "point": "orders",
       "until": "orders",
       "when": "day:12",
@@ -876,7 +876,8 @@
     {"id": "sway-vote", "title": "Swaying the vote", "text": "Each councillor rolls a [b]d20[/b] + their lean to vote. Hover a vote to see it.\n• Before you sign, [b]Sway[/b] one councillor\n• Persuade, Intimidate or Deceive: each shows its odds\n• A loyal councillor trained in the skill helps: advantage\n• One try a motion", "point": "tab:Council", "until": "tab:Council", "when": "count:Motions", "teaches": ["command:SwayCouncillor"]},
     {"id": "negotiate", "title": "Negotiating", "text": "[b]Negotiate[/b] with a guild or a holding-out ally.\n• Choose how: Persuade, Intimidate or Deceive\n• Each shows the d20, its DC and your odds\n• Win: settled without gold. Lose: they think less of you\n• One try each demand", "point": "tab:Council", "until": "tab:Council", "when": "alert:guild", "teaches": ["command:NegotiateGuild"]},
     {"id": "trials", "title": "The court", "text": "Heroes the watch catches now stand [b]trial[/b]. No dice.\n• The case: your captain's Investigation, the watch, witnesses\n• Against their tale: their Deception\n• Guilty: the law book's sentence. Not: they walk free\n• From a Town, a caster of [b]Zone of Truth[/b] lets no lie stand", "point": "tab:Council", "until": "tab:Council", "when": "count:Trials", "teaches": ["command:SetTrialMagic"]},
-    {"id": "conditions", "title": "Conditions", "text": "People can be [b]Exhausted[/b], [b]Frightened[/b], [b]Charmed[/b] or [b]Inspired[/b].\n• Shown on their card as icons\n• Inspired: advantage on their rolls\n• The rest: disadvantage\n• Hover one for what it does", "when": "day:12", "teaches": []}
+    {"id": "conditions", "title": "Conditions", "text": "People can be [b]Exhausted[/b], [b]Frightened[/b], [b]Charmed[/b] or [b]Inspired[/b].\n• Shown on their card as icons\n• Inspired: advantage on their rolls\n• The rest: disadvantage\n• Hover one for what it does", "when": "day:12", "teaches": []},
+    {"id": "painted-patrols", "title": "Painted patrols", "text": "Press [b]Patrol[/b] over the corner map and paint the wilds.\n• Riders keep it for a daily wage\n• Roads through it lose fewer caravans\n• Raiders crossing it are seen sooner\n• Send outriders or knights from [b]Bounties[/b] to save the wage", "point": "orders", "when": "day:25", "teaches": ["command:SendRiders"]}
   ],
   "untaught": {}
 }

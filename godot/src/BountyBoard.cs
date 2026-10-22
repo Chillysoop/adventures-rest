@@ -33,7 +33,9 @@ public partial class Main
         int road = t.Parties.Count(x => !x.Returned);
         if (Fold(p, "road", "On the road", road == 0 ? "none" : road.ToString(), "Parties out on jobs. Ask for word or call them home by sending stone.")) RenderRoad(p, t);
         int out_ = t.Surveys.Count(Explore.Out);
-        if (Fold(p, "explore", "Exploring", out_ > 0 ? $"{out_} out" : "", "Pay a company to explore a region and find what's there.\nOr press Scout over the corner map to mark a spot for them.")) RenderExplore(p, t);
+        if (Fold(p, "explore", "Exploring", out_ > 0 ? $"{out_} out" : "", "Paint ground for a company to explore.\n• Explore over the corner map\n• Paid each trip until it's all seen")) RenderExplore(p, t);
+        int patrols = t.Wilds.Count(z => z.Kind == Wilds.Patrol);
+        if (Fold(p, "patrol", "Patrols", patrols > 0 ? patrols.ToString() : "", "Paint ground for riders to keep.\n• Fewer caravans lost on its roads\n• Raiders crossing it seen sooner", t.Wilds.Any(z => z.Kind == Wilds.Patrol && z.Unpaid) ? Ui.Bad : null)) RenderPatrols(p, t);
         int eyes = t.Scouts.Count(x => x.Out) + t.Mirrors.Count(m => m.Intact);
         if (Fold(p, "eyes", "Eyes in the wilds", eyes > 0 ? eyes.ToString() : "", "Scouts, hidden mirrors and the works that let the town see sites live.")) RenderEyes(p, t);
         p.Commit();
@@ -492,7 +494,9 @@ public partial class Main
             var at = s.AtFind is int fid ? Explore.FindOf(t, fid) : null;
             string state = s.Phase switch
             {
+                SurveyPhase.Outbound when s.ZoneId != null => "On the road to the ground you painted",
                 SurveyPhase.Outbound when s.SpotX is double sx && s.SpotY is double sy => $"On the road to the spot you marked {Explore.Bearing(sx, sy)}",
+                SurveyPhase.Exploring when s.ZoneId is int zid && !s.Escorting => $"Walking the painted ground, {(Wilds.Of(t, zid) is { } wz ? Wilds.Unseen(wz) : 0)} left",
                 SurveyPhase.Outbound => $"On the road to {Ui.Esc(region.Name)}",
                 SurveyPhase.Exploring when s.SpotX != null && !s.Escorting => $"Looking round the spot you marked in {Ui.Esc(region.Name)}",
                 SurveyPhase.Exploring => s.Escorting ? "Walking a caravan home" : $"Exploring {Ui.Esc(region.Name)}, {Ui.Days(Math.Max(1, (int)Math.Ceiling((s.ExploreUntil - t.Tick) / 24.0)))} left",
@@ -512,36 +516,40 @@ public partial class Main
         }
         foreach (var c in t.Commissions.Where(c => c.Status == BountyStatus.Open))
         {
-            string what = c.SpotX is double sx && c.SpotY is double sy
+            string what = c.ZoneId is int czid && Wilds.Of(t, czid) is { } cz ? Ui.Esc(Ui.Cap(Wilds.Name(t, cz)))
+                : c.SpotX is double sx && c.SpotY is double sy
                 ? $"Spot marked {Explore.Bearing(sx, sy)}, {Js.Hypot(sx, sy):0.0} days out"
                 : Ui.Esc(t.Regions[c.RegionId].Name);
             p.Row($"{what}  {Tag($"Offer posted · {Math.Round(c.Reward)}g", Ui.Gold)}\n{Ui.C(Ui.Ink2, "[font_size=12]Waiting for a company[/font_size]")}");
         }
-        int strongest = t.Heroes.Select(h => h.Hero!.Level).DefaultIfEmpty(1).Max();
-        foreach (var r in t.Regions.Where(r => r.Known && Explore.CanCommission(t, r.Id)).OrderBy(r => r.Ring).ThenBy(r => r.Id))
+        foreach (var z in Wilds.OfKind(t, Wilds.Explore).OrderBy(z => z.Id).ToList())
         {
-            int heard = r.SiteIds.Count(id => Quests.Site(t, id)!.Known != SiteKnowledge.Unheard);
-            int found = r.SiteIds.Count(id => Quests.Site(t, id)!.Found);
-            int reward = (int)Math.Round(Explore.SuggestedReward(t, r));
-            string what = !r.Visited ? "never explored" : found == 0 ? "explored, nothing found" : $"{found} found";
-            bool risky = r.Levels[0] > strongest + 1;
-            int rid = r.Id;
-            string text = $"{Ui.Esc(r.Name)} {Ui.C(Ui.Ink2, $"[font_size=11]{Ui.Esc(r.Theme.Name)} · {Ui.Days(r.Days)} out · {what}{(heard > found ? $", {heard - found} heard of" : "")}[/font_size]")}{(risky ? Ui.C(Ui.Bad, " [font_size=11]· too dangerous yet[/font_size]") : "")}";
-            p.Add($"X{text}{reward}{t.Treasury >= reward}", () =>
-            {
-                var v = new VBoxContainer();
-                v.AddThemeConstantOverride("separation", 4);
-                var h = new HBoxContainer();
-                h.AddThemeConstantOverride("separation", 6);
-                var l = Ui.Rich(text, 13);
-                l.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-                h.AddChild(l);
-                h.AddChild(IconButton("act-explore", $"{reward}g", $"Explore {r.Name}: pay a company to look round\n• {reward}g from the treasury\n• They send word of each find and wait for yours", t.Treasury >= reward, false, () => Act(() => _sim.PostSurvey(rid, reward))));
-                v.AddChild(h);
-                v.AddChild(new ColorRect { Color = new Color(Ui.Line, 0.5f), CustomMinimumSize = new Vector2(0, 1) });
-                return v;
-            });
+            int zid = z.Id;
+            var cells = z.Cells.Select(c => (c.X, c.Y)).ToList();
+            p.Row($"{Ui.Esc(Ui.Cap(Wilds.Name(t, z)))}  {Tag($"{z.Cells.Count - Wilds.Unseen(z)} of {z.Cells.Count} walked", Map.Overlay.ExploreInk)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Map.Overlay.WildsTag(t, z))}[/font_size]")}",
+                ("Rub out", true, false, () => Act(() => _sim.EraseWilds(Wilds.Explore, cells))));
         }
+        p.Row(Ui.C(Ui.Ink2, "[font_size=12]Paint ground on the map for a company to walk.[/font_size]"), ("Paint", true, true, () => ToggleBrush(Wilds.Explore)));
+    }
+
+    /// <summary>The painted patrols: what each costs, how it has fared, the horse riding it, and the brush.</summary>
+    private void RenderPatrols(Pane p, Town t)
+    {
+        var horse = t.Army.Regiments.Where(r => r.Soldiers.Count > 0 && Army.Unit(t, r).Role == "horse").OrderBy(r => r.Id).ToList();
+        foreach (var z in Wilds.OfKind(t, Wilds.Patrol).OrderBy(z => z.Id).ToList())
+        {
+            int zid = z.Id;
+            var cells = z.Cells.Select(c => (c.X, c.Y)).ToList();
+            var riders = Wilds.Riders(t, z);
+            var next = horse.FirstOrDefault(r => r.WildsId == null && Wilds.SendBlocked(t, r, z) == null);
+            string state = z.Unpaid ? Ui.C(Ui.Bad, "Unpaid: the riders went home") : $"Won {z.Won} · lost {z.Lost}";
+            var buttons = new List<(string, bool, bool, Action)>();
+            if (riders != null) buttons.Add(($"Call {riders.Name} home", true, false, () => Act(() => _sim.SendRiders(zid, null))));
+            else buttons.Add((next != null ? $"Send {next.Name}" : "Send horse", next != null, false, () => { if (next != null) Act(() => _sim.SendRiders(zid, next.Id)); }));
+            buttons.Add(("Rub out", true, false, () => Act(() => _sim.EraseWilds(Wilds.Patrol, cells))));
+            p.Row($"{Ui.Esc(Ui.Cap(Wilds.Name(t, z)))}  {Tag($"{Wilds.Wage(t, z):0.#}g a day", Map.Overlay.PatrolInk)}\n[font_size=12]{(riders != null ? $"{Ui.Esc(riders.Name)} ride it · " : "")}{state}[/font_size]", buttons.ToArray());
+        }
+        p.Row(Ui.C(Ui.Ink2, "[font_size=12]Paint ground on the map for riders to keep.[/font_size]"), ("Paint", true, true, () => ToggleBrush(Wilds.Patrol)));
     }
 
     private static string ScryClasses(Town t) =>

@@ -1572,6 +1572,7 @@ public sealed class Content
     public VoiceRules Voices { get; init; } = new();
     /// <summary>Exploring companies and what they find (content/game/explore.json).</summary>
     public ExploreRules Explore { get; init; } = new();
+    public Systems.WildsRules Wilds { get; init; } = new();
     /// <summary>The town guard's posts and the wall works past the stone walls (content/game/garrison.json).</summary>
     public GarrisonRules Garrison { get; init; } = new();
 
@@ -1857,6 +1858,7 @@ public sealed class Content
             Regard = Parse<RegardRules>("regard.json"),
             Voices = Parse<VoiceRules>("voices.json"),
             Explore = Parse<ExploreRules>("explore.json"),
+            Wilds = Parse<Systems.WildsRules>("wilds.json"),
             Garrison = Parse<GarrisonRules>("garrison.json"),
             Bounties = Parse<BountyRules>("bounties.json"),
             Broadsheet = Parse<BroadsheetRules>("broadsheet.json"),

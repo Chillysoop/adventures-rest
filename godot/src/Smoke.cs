@@ -94,8 +94,12 @@ public partial class Main
                 // The quick orders over the corner map: man the walls, the Strike list, and a spot marked for a company.
                 QuickDefend();
                 ShowStrike(true);
-                ToggleScouting();
-                OnSpotMarked(CrownAndCompass.Client.Map.Geo.FromDays(0.9, -0.6));
+                ToggleBrush(Wilds.Explore);
+                OnWildsPainted(Wilds.Explore, [(2, -2), (3, -2)], false);
+                ToggleBrush(Wilds.Patrol);
+                OnWildsPainted(Wilds.Patrol, [(2, 1), (3, 1)], false);
+                OnWildsPainted(Wilds.Patrol, [(3, 1)], true);
+                ToggleBrush(Wilds.Patrol);
                 return 5;
             case 17:
                 ShowStrike(false);
