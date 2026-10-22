@@ -114,8 +114,11 @@ public partial class Main
         var rows = sorted.Select(e =>
         {
             string makeup = string.Join(" · ", e.Members.Select(m => $"{Ui.Esc(Ui.Cap(m.Hero!.Cls.Name))} {m.Hero.Level}{(m.Hero.Cls.Card != "" ? $" ({Ui.Esc(m.Hero.Cls.Card)})" : "")}"));
-            string fame = e.Infamy > 0 && Notoriety.InfamyTier(t, Intel.Find(t, e.Name)!) > 0 ? Ui.C(Ui.Bad, Notoriety.InfamyName(t, e.Infamy))
-                : e.Renown > 0 ? Ui.C(Notoriety.FameTier(t, Intel.Find(t, e.Name)!) >= 2 ? Ui.Gold : Ui.Ink, Notoriety.FameName(t, e.Renown)) : Ui.C(Ui.Ink2, "Unknown");
+            // Renown as a figure, its step of fame in the hover; a bad name shows in red instead.
+            string fame = e.Infamy > 0 && Notoriety.InfamyTier(t, Intel.Find(t, e.Name)!) > 0
+                ? Ui.Chip("ui-skull", Notoriety.InfamyName(t, e.Infamy), Ui.Bad, $"Infamy {e.Infamy}, renown {e.Renown}", 14)
+                : Ui.Chip("ui-renown", e.Renown.ToString(), e.Renown == 0 ? Ui.Ink2 : Notoriety.FameTier(t, Intel.Find(t, e.Name)!) >= 2 ? Ui.Gold : Ui.Ink,
+                    $"Renown {e.Renown}: {Notoriety.FameName(t, e.Renown)}. Quests suggest a renown; short of it, more foes stand and fight.", 14);
             var (_, rc) = RelationWord(e.Relation, r.RefuseBelow);
             string state = e.State switch
             {
@@ -137,7 +140,7 @@ public partial class Main
             };
         }).ToList();
         p.Table(
-            ["Company", "Ready", "Power", "Loyalty", "Relation", "Missions", "Deeds", "Fame", "Now"],
+            ["Company", "Ready", "Power", "Loyalty", "Relation", "Missions", "Deeds", "Renown", "Now"],
             [0, 52, 52, 60, 66, 70, 52, 86, 86],
             rows,
             _rosterSort,
@@ -253,7 +256,7 @@ public partial class Main
             if (c.Offers > 0) record.Add($"{c.Offers} {(c.Offers == 1 ? "job" : "jobs")} taken when asked");
             if (c.Declined > 0) record.Add($"{c.Declined} turned down");
             if (c.ReportsSold > 0) record.Add($"{c.ReportsSold} {(c.ReportsSold == 1 ? "report" : "reports")} sold for {Js.Str(Js.Round(c.GoldPaid))}g");
-            if (c.Renown > 0 || c.Infamy > 0) record.Add($"renown {c.Renown}{(c.Infamy > 0 ? $", infamy {c.Infamy}" : "")}");
+            if (c.Infamy > 0) record.Add($"infamy {c.Infamy}");
         }
         string deeds = c == null || c.Deeds.Count == 0 ? "" :
             "\n" + Ui.C(Ui.Ink2, "[font_size=12]Latest good deeds:[/font_size]") + "\n" +
@@ -263,6 +266,12 @@ public partial class Main
         p.Card($"[b]The {Ui.Esc(e.Name)}[/b]  {Tag(word, color)}{sulk}{banner}\n{Ui.C(Ui.Ink2, $"[font_size=12]{where}[/font_size]")}\n[font_size=13]{members}[/font_size]" +
                (record.Count > 0 ? $"\n{Ui.C(Ui.Ink2, $"[font_size=12]{string.Join(" · ", record)}[/font_size]")}" : "") + deeds, Ui.Gold);
         p.Meter("Relation", e.Relation, Js.Str(Math.Round(e.Relation)), e.Relation < r.RefuseBelow);
+        // Renown toward its next step of fame: the quests it can ride to without more foes standing against it.
+        var fameSteps = t.Content.Notoriety.Fame;
+        int renown = c?.Renown ?? 0, step = Notoriety.Tier(fameSteps, renown);
+        int next = step + 1 < fameSteps.Count ? fameSteps[step + 1].At : renown;
+        p.Meter("Renown", next == 0 ? 0 : 100.0 * Math.Min(renown, next) / next,
+            step + 1 < fameSteps.Count ? $"{renown} · {fameSteps[step + 1].Name} at {next}" : $"{renown} · {fameSteps[step].Name}", false);
         var home = e.Members.Where(m => !m.IsAway).ToList();
         if (home.Count > 0)
         {

@@ -1,5 +1,5 @@
 {
-  "_doc": "Notable townsfolk (Systems/Notables.cs): influential people who aren't heroes. One of each kind rises on its own, from the best of a trade in town or, for outsiders, from nowhere. The mayor builds regard with visits (a skill check the kind is open to, or a gift) and by answering their favours; regard drifts back to nothing when they are left alone. Warm and friendly notables pass on what they hear (the information network: `hears`) every `tipDays` of their band, and give their `warm`/`friend` effects daily and their `boon` once; bitter ones give their `bitter` effects and leave after `leaveDays`. Effects: gold (a day), mandate (a day). Every trade guild's master rises as a `guildMaster` notable the day they take the chair (unless they are one already), and while warm adds `guild` standing a day to their guild (twice as a friend, minus while bitter), so winning the master calms the guild and, through it, its councillor. Nothing here rolls the town's dice: daily rolls are seeded from the seed, the day and the notable.",
+  "_doc": "Notable townsfolk (Systems/Notables.cs): influential people who aren't heroes. One of each kind rises on its own, from the best of a trade in town or, for outsiders, from nowhere. The mayor builds regard with visits (a skill check the kind is open to, or a gift) and by answering their favours; regard drifts back to nothing when they are left alone. Warm and friendly notables pass on what they hear (the information network: `hears`) every `tipDays` of their band, and give their `warm`/`friend` effects daily and their `boon` once; bitter ones give their `bitter` effects and leave after `leaveDays`. Effects: gold (a day), mandate (a day). Every trade guild's master rises as a `guildMaster` notable the day they take the chair (unless they are one already), and while warm adds `guild` standing a day to their guild (twice as a friend, minus while bitter), so winning the master calms the guild and, through it, its councillor. Nothing here rolls the town's dice: daily rolls are seeded from the seed, the day and the notable. Some favours are quests (an ask with \"quest\": its terms, {site} in its text): a resident notable puts up questShare of the site's usual bounty from their own purse (at least questMin), the mayor's yes posts it on the board, and the company that does it earns questFame renown and the notable's regard.",
   "firstDay": 4,
   "riseDays": 5,
   "bands": [-50, -15, 15, 50],
@@ -15,6 +15,9 @@
   "askDays": [9, 15],
   "askOpen": 5,
   "refuse": 4,
+  "questShare": 0.6,
+  "questMin": 40,
+  "questFame": 3,
   "tipDays": [0, 0, 0, 10, 5],
   "leaveDays": 30,
   "seat": 0.3,
@@ -54,7 +57,8 @@
       "bitter": {},
       "asks": [
         { "id": "dues", "text": "has the guild's hall roof to mend", "gold": 30, "gain": 10 },
-        { "id": "rival", "text": "wants a cheating rival shown up", "skill": "insight", "dc": 12, "gain": 10 }
+        { "id": "rival", "text": "wants a cheating rival shown up", "skill": "insight", "dc": 12, "gain": 10 },
+        { "id": "road", "text": "wants the road past {site} made safe for the guild's carts", "quest": "slay", "gain": 12 }
       ]
     },
     {
@@ -72,7 +76,8 @@
       "bitter": { "mandate": -0.02 },
       "asks": [
         { "id": "ore", "text": "needs gold for good iron", "gold": 35, "gain": 12 },
-        { "id": "apprentice", "text": "wants a word with a lazy apprentice", "skill": "intimidation", "dc": 12, "gain": 10 }
+        { "id": "apprentice", "text": "wants a word with a lazy apprentice", "skill": "intimidation", "dc": 12, "gain": 10 },
+        { "id": "lode", "text": "wants rare ore brought back from {site}", "quest": "fetch", "gain": 14 }
       ]
     },
     {
@@ -88,7 +93,8 @@
       "bitter": { "gold": -1.5 },
       "asks": [
         { "id": "loan", "text": "asks a loan against a late caravan", "gold": 50, "gain": 14 },
-        { "id": "dispute", "text": "wants a dispute with a rival settled", "skill": "persuasion", "dc": 13, "gain": 12 }
+        { "id": "dispute", "text": "wants a dispute with a rival settled", "skill": "persuasion", "dc": 13, "gain": 12 },
+        { "id": "strongbox", "text": "wants a stolen strongbox brought back from {site}", "quest": "fetch", "gain": 14 }
       ]
     },
     {
@@ -104,7 +110,8 @@
       "bitter": { "mandate": -0.06 },
       "asks": [
         { "id": "stage", "text": "wants a new stage for the summer", "gold": 40, "gain": 12 },
-        { "id": "review", "text": "wants the mayor at opening night", "skill": "performance", "dc": 12, "gain": 12 }
+        { "id": "review", "text": "wants the mayor at opening night", "skill": "performance", "dc": 12, "gain": 12 },
+        { "id": "ballad", "text": "wants a deed worth a ballad: the beasts driven out of {site}", "quest": "drive", "gain": 12 }
       ]
     },
     {
@@ -120,7 +127,8 @@
       "bitter": { "mandate": -0.02 },
       "asks": [
         { "id": "cellar", "text": "has a flooded cellar to pay for", "gold": 30, "gain": 10 },
-        { "id": "brawler", "text": "wants a regular brawler calmed", "skill": "intimidation", "dc": 12, "gain": 10 }
+        { "id": "brawler", "text": "wants a regular brawler calmed", "skill": "intimidation", "dc": 12, "gain": 10 },
+        { "id": "drovers", "text": "wants whatever preys on the drovers near {site} put down", "quest": "slay", "gain": 12 }
       ]
     },
     {
@@ -136,7 +144,8 @@
       "bitter": { "mandate": -0.04 },
       "asks": [
         { "id": "alms", "text": "asks alms for the poor", "gold": 30, "gain": 12 },
-        { "id": "sermon", "text": "wants the mayor to read at the feast", "skill": "religion", "dc": 12, "gain": 10 }
+        { "id": "sermon", "text": "wants the mayor to read at the feast", "skill": "religion", "dc": 12, "gain": 10 },
+        { "id": "restless", "text": "wants the restless dead at {site} laid to rest", "quest": "slay", "gain": 14 }
       ]
     },
     {
@@ -154,7 +163,8 @@
       "bitter": { "mandate": -0.02 },
       "asks": [
         { "id": "herbs", "text": "needs rare herbs bought in", "gold": 30, "gain": 12 },
-        { "id": "fever", "text": "needs help with a fever ward", "skill": "medicine", "dc": 12, "gain": 12 }
+        { "id": "fever", "text": "needs help with a fever ward", "skill": "medicine", "dc": 12, "gain": 12 },
+        { "id": "moonwort", "text": "wants moonwort that grows only at {site}", "quest": "fetch", "gain": 12 }
       ]
     },
     {

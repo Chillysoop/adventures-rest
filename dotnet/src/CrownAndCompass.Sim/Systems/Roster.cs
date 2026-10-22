@@ -139,7 +139,9 @@ public static class Roster
             if (town.Parties.Any(p => !p.Returned && p.Name == name)) continue;
             var riders = members.Where(Quests.Available).Take(r.MaxRiders).ToList();
             if (riders.Count == 0) continue;
-            riders.AddRange(free.Take(Math.Max(0, 3 - riders.Count)));
+            // Only newcomers the company has room for make up the numbers.
+            int room = town.Content.World.Companies.MaxMembers - members.Count;
+            riders.AddRange(free.Take(Math.Max(0, Math.Min(room, 3 - riders.Count))));
             if (riders.Count >= 3) crews.Add(new Crew(name, riders, Unavailable(town, name) == null));
         }
         if (free.Count >= 3) crews.Add(new Crew("", free.Take(r.MaxRiders).ToList(), false));
@@ -162,13 +164,16 @@ public static class Roster
             .ThenByDescending(h => h.Hero!.Level)
             .ThenBy(h => h.Id)
             .ToList();
+        int room = town.Content.World.Companies.MaxMembers - Intel.Members(town, company).Count;
         foreach (var h in free)
         {
+            if (room <= 0) break;
             int levels = riders.Sum(m => m.Hero!.Level);
             if (riders.Count >= 3 && (levels >= 3 * tier || riders.Count >= r.MaxRiders)) break;
             if (leader.OpinionOf(h.Id) < -10 || h.OpinionOf(leader.Id) < -10) continue;
             if (Quests.Motive(town, h, job, riders.Count + 1) < 0.5) continue;
             riders.Add(h);
+            room--;
         }
         return riders;
     }
@@ -180,6 +185,7 @@ public static class Roster
         if (members.Count == 0) return "no one rides under that name any more";
         if (Intel.Find(town, company)?.SulkUntil is int until && town.Tick < until) return "they are still sore at the council and won't hear it";
         if (Intel.Relation(town, company, members) < town.Content.World.Intel.RefuseBelow) return "they won't work for this council";
+        if (town.Parties.Any(p => !p.Returned && p.Name == company)) return "they are out on the road";
         if (members.Count(Quests.Available) == 0)
             return town.Parties.Any(p => !p.Returned && p.Name == company) ? "they are out on the road" : members.All(m => m.IsAway) ? "none of them are in town" : "none of them are fit to ride yet";
         return null;
@@ -249,6 +255,9 @@ public static class Roster
 
         int levels = riders.Sum(h => h.Hero!.Level), need = 3 * tier;
         if (levels < need) reasons.Add(($"{s.Def.Name} looks too much for them (levels {levels}, it wants {need})", -r.Danger * (1 - (double)levels / need)));
+        int shortBy = Notoriety.Short(town, company, s);
+        if (shortBy > 0)
+            reasons.Add(($"nobody at {s.Def.Name} has heard of them (renown {Notoriety.RenownOf(town, company)}, it suggests {Notoriety.Suggested(town, s)})", -town.Content.Notoriety.Renown.Unproven * shortBy));
         if (c != null && Notoriety.FameTier(town, c) >= r.PettyFame && tier <= r.PettyTier) reasons.Add(("it's beneath a company of their name", -r.Petty));
 
         double score = r.Accept + Js.Sum(reasons, x => x.Points);

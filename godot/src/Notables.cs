@@ -85,9 +85,16 @@ public partial class Main
             if (Notables.AskOf(t, n) is { } ask)
             {
                 string? blocked = Notables.AnswerBlocked(t, n);
-                string help = ask.Gold > 0 ? $"Help · {Js.Str(ask.Gold)}g"
+                var questSite = ask.Quest != "" ? Quests.Site(t, n.AskSite) : null;
+                string help = questSite != null ? "Post the job"
+                    : ask.Gold > 0 ? $"Help · {Js.Str(ask.Gold)}g"
                     : $"{Ui.Cap(t.Content.Stories.Skill(ask.Skill)?.Name ?? ask.Skill)} · {Math.Round(Notables.Chance(t, ask.Skill, ask.Dc) * 100)}%";
-                p.Row($"[font_size=13]{Ui.C(Ui.Gold, "◆")} {Ui.Esc(Ui.Cap(ask.Text))}  {Ui.C(Ui.Good, $"+{Js.Str(ask.Gain)}")}  {Ui.C(Ui.Ink2, $"{Math.Max(1, n.AskUntil - t.Day)}d")}[/font_size]",
+                // A quest goes on the bounty board on their gold; the regard comes when a company sees it done.
+                string quest = questSite == null ? "" : "\n" + Ui.Bullets([
+                    Ui.Chip("gold", Js.Str(Notables.QuestReward(t, questSite)), Ui.Gold, "The reward, from their own purse", 12) + " theirs, on the board",
+                    Ui.Chip("ui-renown", Notoriety.Suggested(t, questSite).ToString(), Ui.Ink2, "Renown suggested for the company that takes it", 12) + " renown suggested",
+                    "Regard when a company sees it done"]);
+                p.Row($"[font_size=13]{Ui.C(Ui.Gold, "◆")} {Ui.Esc(Ui.Cap(Notables.AskText(t, n, ask)))}  {Ui.C(Ui.Good, $"+{Js.Str(ask.Gain)}")}  {Ui.C(Ui.Ink2, $"{Math.Max(1, n.AskUntil - t.Day)}d")}{quest}[/font_size]",
                     (help, blocked == null, true, () => Act(() => _sim.AnswerNotable(id, true))),
                     ("Refuse", true, false, () => Act(() => _sim.AnswerNotable(id, false))));
             }

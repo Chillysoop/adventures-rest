@@ -484,13 +484,13 @@ public static class Explore
             if (c.Status != BountyStatus.Open) continue;
             var region = town.Regions[c.RegionId];
             int tier = Math.Max(1, region.Levels[0]);
-            var pool = town.Heroes.Where(Quests.Available).OrderByDescending(h => Watch.CanScout(town, h)).ThenByDescending(h => h.Hero!.Level).ThenBy(h => h.Id).ToList();
+            var pool = town.Heroes.Where(h => Muster.Free(town, h)).OrderByDescending(h => Watch.CanScout(town, h)).ThenByDescending(h => h.Hero!.Level).ThenBy(h => h.Id).ToList();
             if (pool.Count < rules.MinHeroes) continue;
             var leader = pool.FirstOrDefault(h => Interest(town, h, c, 3) >= 0.5);
             if (leader == null) continue;
             var members = new List<Agent> { leader };
             bool Sender(Agent a) => Knowledge.Casts(town, a, town.Content.Knowledge.SendSpell);
-            var rest = pool.Where(h => h.Id != leader.Id)
+            var rest = pool.Where(h => h.Id != leader.Id && Muster.Rides(town, leader, h))
                 .OrderByDescending(h => !members.Any(Sender) && Sender(h))
                 .ThenByDescending(h => leader.OpinionOf(h.Id))
                 .ThenByDescending(h => h.Hero!.Level)
@@ -500,6 +500,7 @@ public static class Explore
             {
                 if (members.Count >= rules.MaxHeroes) break;
                 if (leader.OpinionOf(r.Id) < -10 || r.OpinionOf(leader.Id) < -10) continue;
+                if (!Muster.Rides(town, leader, r, members.Count(m => m.Hero!.PartyName == null))) continue;
                 if (Interest(town, r, c, members.Count + 1) < 0.4) continue;
                 members.Add(r);
             }
@@ -513,7 +514,7 @@ public static class Explore
     {
         var region = town.Regions[c.RegionId];
         string? name = members[0].Hero!.PartyName;
-        if (name == null || town.Parties.Any(p => !p.Returned && p.Name == name) || town.Surveys.Any(x => Out(x) && x.Name == name)) name = CompanyName(town);
+        if (name == null || town.Parties.Any(p => !p.Returned && p.Name == name) || town.Surveys.Any(x => Out(x) && x.Name == name)) name = Muster.Name(town);
         var s = new Survey
         {
             Id = town.Surveys.Count + 1,
@@ -550,18 +551,6 @@ public static class Explore
             Importance.Notable,
             $"The {name} ({string.Join(", ", members.Select(m => $"{m.GivenName} the {m.Hero!.Cls.Name}"))}) take the council's coin to {(c.SpotX == null ? "explore " : "look at ")}{Goal(town, c)}, and march out at dawn{(Sends(town, s) ? "" : " with a cage of homing birds, since none of them can cast a sending")}.",
             s.Members);
-    }
-
-    private static string CompanyName(Town town)
-    {
-        string[] adj = ["Far", "Wayfaring", "Lantern", "Pathfinding", "Long Road", "Compass", "Wild", "Thornwood"];
-        string[] noun = ["Wardens", "Walkers", "Seekers", "Rangers", "Finders", "Pilgrims", "Hounds", "Foxes"];
-        for (int i = 0; i < 20; i++)
-        {
-            string name = $"{town.Rng.Pick(adj)} {town.Rng.Pick(noun)}";
-            if (town.Parties.All(p => p.Name != name) && town.Surveys.All(x => x.Name != name)) return name;
-        }
-        return $"Survey No. {town.Surveys.Count + 1}";
     }
 
     /// <summary>Where a company enters a region: on its bearing, a little short of its sites.</summary>
