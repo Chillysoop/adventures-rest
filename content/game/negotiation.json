@@ -1,0 +1,35 @@
+{
+  "_doc": "How the mayor talks someone round (Systems/Negotiation.cs): swaying a councillor before a vote, talking down a guild's demand or strike, bringing a holding-out ally to march. The player chooses the approach. Each is the mayor's d20 + skill against the other side's passive Insight (10 + their bonus) or, for a threat, their Wisdom save bonus + 10, plus dc. win is what their regard (a councillor's loyalty, a guild's standing, an ally's standing) moves on a success, crit more on a natural 20, lose on a failure, and loseMandate the Mandate a failure costs (a lie found out). A councillor or (later) a notable trained in the skill, and loyal enough (help), lends a hand: advantage.",
+  "help": 50,
+  "approaches": [
+    { "id": "persuade", "name": "Persuade", "skill": "persuasion", "icon": "talk-persuade", "against": "insight", "dc": 0,
+      "win": 0, "crit": 4, "lose": -3, "loseMandate": 0,
+      "text": "Reason and goodwill. Costs little if it fails." },
+    { "id": "intimidate", "name": "Intimidate", "skill": "intimidation", "icon": "talk-intimidate", "against": "wis", "dc": -1,
+      "win": -5, "crit": 0, "lose": -10, "loseMandate": 0,
+      "text": "A hard word. Works more often, but they resent it even when it does." },
+    { "id": "deceive", "name": "Deceive", "skill": "deception", "icon": "talk-deceive", "against": "insight", "dc": -2,
+      "win": 0, "crit": 2, "lose": -12, "loseMandate": 2,
+      "text": "A clever lie. Easiest of all, and ruinous if they see through it." }
+  ],
+  "sway": {
+    "loyaltyPer": 10,
+    "text": "{approach}: the mayor takes {name} aside before the vote ({roll}). {result}",
+    "won": "The {seat} votes {vote}.",
+    "lost": "The {seat} keeps their vote, and remembers being asked."
+  },
+  "guild": {
+    "dc": 10,
+    "standingPer": 10,
+    "fumbleStrike": 3,
+    "won": "{approach}: the mayor sits down with {master} of the {name} ({roll}), and {want}.",
+    "lost": "{approach}: the mayor sits down with {master} of the {name} ({roll}). The guild will not budge, and thinks less of the town hall for asking.",
+    "dropped": "the demand is dropped",
+    "ended": "the strike is called off"
+  },
+  "ally": {
+    "standingPer": 10,
+    "won": "{approach}: the mayor's rider carries a letter to {ruler} ({roll}). {People} march",
+    "lost": "{approach}: the mayor's letter reaches {ruler} ({roll}), and changes nothing."
+  }
+}

@@ -20,6 +20,9 @@ public partial class Main
         ["steal"] = "the town strongbox",
         ["intimidate"] = "facing a brawler down",
         ["bargain"] = "haggling over gear",
+        ["tempted"] = "a dark whisper",
+        ["betray"] = "a whisper at the gate",
+        ["research"] = "a step in the scholars' work",
     };
 
     private int _rollsSeen = -1;
@@ -145,6 +148,7 @@ public partial class Main
             var mods = new[] { ("attack", "attack"), ("ac", "AC"), ("damage", "damage"), ("skill", "skill") }.Select(x => (x.Item2, Curses.Mod(c, hs, x.Item1))).Where(x => x.Item2 != 0).Select(x => $"{x.Item1} {Signed(x.Item2)}");
             features.Add(Ui.Tip(Line("sheet-curse", $"Cursed: {Ui.Esc(Ui.Cap(curse.Name))} {string.Join(", ", mods)}", Ui.Bad), $"{curse.Text} Stuck until lifted."));
         }
+        foreach (var cond in Conditions.Of(t, a)) features.Add(Ui.Tip(Line(cond.Icon, Ui.Esc(cond.Name), cond.Edge > 0 ? Ui.Good : Ui.Bad), cond.Text));
         if (hs.Taint > 0) features.Add(Line("ui-skull", hs.Taint == 1 ? "A gift from the dark" : $"{hs.Taint} gifts from the dark", Ui.Bad));
         if (hs.Holding != "") features.Add(Line("ui-house", $"Owns {Ui.Esc(hs.Holding)}"));
         if (hs.StakeId is int sid) features.Add(Line("ui-trade", $"{Js.Str(hs.Stake)}g stake in {BuildingLink(t.Building(sid))}"));
@@ -185,6 +189,7 @@ public partial class Main
     /// </summary>
     private void InspectSheet(Pane p, Town t, Agent a)
     {
+        InspectConditions(p, t, a);
         if (a.Hero != null)
         {
             InspectRolls(p, t, a);
@@ -211,6 +216,14 @@ public partial class Main
         InspectRolls(p, t, a);
     }
 
+    /// <summary>The conditions they are under (conditions.json), each an icon with what it does on hover.</summary>
+    private static void InspectConditions(Pane p, Town t, Agent a)
+    {
+        var list = Conditions.Of(t, a);
+        if (list.Count == 0) return;
+        p.Chips([.. list.Select(d => Ui.Chip(d.Icon, d.Name, d.Edge > 0 ? Ui.Good : Ui.Bad, d.Text))]);
+    }
+
     /// <summary>The last few d20s they rolled around town.</summary>
     private static void InspectRolls(Pane p, Town t, Agent a)
     {
@@ -219,7 +232,8 @@ public partial class Main
         p.Heading("Latest rolls");
         foreach (var c in rolls)
         {
-            string die = c.Critical ? Ui.C(Ui.Gold, "[b]20[/b]") : c.Fumble ? Ui.C(Ui.Bad, "[b]1[/b]") : c.Die.ToString();
+            string die = (c.Critical ? Ui.C(Ui.Gold, "[b]20[/b]") : c.Fumble ? Ui.C(Ui.Bad, "[b]1[/b]") : c.Die.ToString())
+                + (c.Other is int o ? Ui.Tip(Ui.C(Ui.Ink2, $" ({o})"), $"{(o <= c.Die ? "Advantage" : "Disadvantage")}: {c.Edge}") : "");
             string result = c.Success ? Ui.C(Ui.Good, "success") : Ui.C(Ui.Bad, "failure");
             string what = CheckKinds.GetValueOrDefault(c.Kind, c.Kind);
             p.Text($"{Ui.C(Ui.Ink2, $"[font_size=11]Day {c.Tick / 24 + 1}, {c.Tick % 24:00}:00[/font_size]")}  {Ui.Esc(Skills.Name(t, c.Skill))}: d20 {die} {Skills.Sign(c.Bonus)} = {c.Total} vs {c.Dc}, {result} {Ui.C(Ui.Ink2, $"[font_size=11]· {Ui.Esc(what)}{(c.Why != "" ? $": {Ui.Esc(c.Why)}" : "")}[/font_size]")}", 12);

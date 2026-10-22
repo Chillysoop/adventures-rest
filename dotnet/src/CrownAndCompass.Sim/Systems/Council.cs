@@ -24,7 +24,16 @@ public enum DecidedBy
     Council,
 }
 
-public sealed record Vote(string Seat, bool Yes);
+/// <summary>
+/// A councillor's vote: their d20 plus how they lean (their seat's view of the motion, what they think of its mover,
+/// their guild) against 11. <see cref="Swayed"/> marks a vote the mayor talked round.
+/// </summary>
+public sealed record Vote(string Seat, bool Yes)
+{
+    public int Die { get; init; }
+    public int Lean { get; init; }
+    public bool Swayed { get; init; }
+}
 
 public sealed class Motion
 {
@@ -49,6 +58,9 @@ public sealed class Motion
     public bool Decree { get; set; }
 
     public DecidedBy? DecidedBy { get; set; }
+
+    /// <summary>The seat the mayor tried to sway before the vote ("" for none yet): one try a motion.</summary>
+    public string SwayedSeat { get; set; } = "";
 }
 
 /// <summary>
@@ -141,6 +153,7 @@ public static class Council
         PayWatch(town);
         FillSeats(town);
         DriftMandate(town);
+        if (autoDecide) Laws.StandIn(town);
         foreach (var s in town.Seats) if (s.HolderId != null) LoyaltyDay(town, s);
 
         var pending = PendingMotion(town);
@@ -397,6 +410,54 @@ public static class Council
         };
     }
 
+    /// <summary>What a councillor's d20 plus lean must reach to vote aye.</summary>
+    public const int VoteDc = 11;
+
+    /// <summary>Why the mayor can't sway this seat's vote on the motion now, or null.</summary>
+    public static string? SwayBlocked(Town town, Motion m, string seat)
+    {
+        if (m.Status != MotionStatus.Pending) return "already settled";
+        if (m.SwayedSeat != "") return "one try a motion";
+        if (seat == m.Proposer) return "they moved it";
+        var s = FindSeat(town, seat);
+        if (s?.HolderId == null || m.Votes.All(v => v.Seat != seat)) return "no vote";
+        return null;
+    }
+
+    /// <summary>The DC to sway a councillor by an approach: their passive Insight (or Wisdom), easier the more loyal they are.</summary>
+    public static int SwayDc(Town town, Seat s, TalkDef a)
+    {
+        var them = town.Agent(s.HolderId!.Value);
+        int loyal = (int)Math.Round((50 - s.Loyalty) / Math.Max(1, Negotiation.Rules(town).Sway.LoyaltyPer));
+        return Negotiation.Dc(town, a, them, loyal);
+    }
+
+    /// <summary>
+    /// Before the vote is settled the mayor takes one councillor aside, by an approach the player picks: on a success
+    /// their vote turns the other way. One try a motion; their loyalty moves as the approach weighs it.
+    /// </summary>
+    public static StoryBeat? Sway(Town town, int motionId, string seat, string approach)
+    {
+        var m = town.Motions.FirstOrDefault(x => x.Id == motionId);
+        var a = Negotiation.Approach(town, approach);
+        if (m == null || a == null || SwayBlocked(town, m, seat) != null) return null;
+        var s = FindSeat(town, seat)!;
+        var them = town.Agent(s.HolderId!.Value);
+        int i = m.Votes.FindIndex(v => v.Seat == seat);
+        var was = m.Votes[i];
+        m.SwayedSeat = seat;
+        var beat = Negotiation.Roll(town, a, SwayDc(town, s, a), "sway");
+        bool won = Sheet.Succeeded(beat);
+        if (won) m.Votes[i] = was with { Yes = !was.Yes, Swayed = true };
+        s.Loyalty = Clamp(s.Loyalty + Negotiation.Shift(a, beat), 0, 100);
+        Negotiation.Settle(town, a, beat);
+        var r = Negotiation.Rules(town).Sway;
+        string result = (won ? r.Won : r.Lost).Replace("{seat}", s.Def.Title).Replace("{vote}", won ? (was.Yes ? "nay" : "aye") : was.Yes ? "aye" : "nay");
+        town.Log(LedgerCategory.Council, Importance.Notable, r.Text.Replace("{approach}", a.Name).Replace("{name}", them.Name)
+            .Replace("{roll}", Negotiation.Said(town, beat)).Replace("{result}", result), [them.Id]);
+        return beat;
+    }
+
     private static List<Vote> CastVotes(Town town, Motion m)
     {
         var votes = new List<Vote>();
@@ -414,8 +475,11 @@ public static class Council
                 votes.Add(new Vote(s.Def.Id, bought));
                 continue;
             }
-            double lean = town.Content.Council.Alignment[m.Kind][s.Def.Id] * 50 + voter.OpinionOf(m.ProposerId) * 0.3 + Guilds.Lean(town, s.Def.Id, m.Kind) + town.Rng.Range(-25, 25);
-            votes.Add(new Vote(s.Def.Id, lean > 0));
+            // How they lean, as a modifier on their d20 against 11: a seat that wants the motion with all its heart is +20.
+            double lean = town.Content.Council.Alignment[m.Kind][s.Def.Id] * 50 + voter.OpinionOf(m.ProposerId) * 0.3 + Guilds.Lean(town, s.Def.Id, m.Kind);
+            int mod = (int)Math.Round(Math.Clamp(lean / 2.5, -20, 20));
+            int die = town.Rng.D20();
+            votes.Add(new Vote(s.Def.Id, die == 20 || (die != 1 && die + mod >= VoteDc)) { Die = die, Lean = mod });
         }
         return votes;
     }

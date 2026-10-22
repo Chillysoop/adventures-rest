@@ -34,6 +34,7 @@ public partial class Main : Control
         Chronicles,
         Mayor,
         Library,
+        Notables,
         Inspect,
     }
 
@@ -200,6 +201,7 @@ public partial class Main : Control
         if (_opts.Episode is string episode) StageEpisode(episode);
         if (_opts.Intro is string intro) StageIntro(intro);
         if (_opts.Claim is string road && !_sim.ClaimRoad(road)) GD.Print($"Cannot claim {road}: {Victory.ClaimBlocked(_sim.Town, road)}");
+        if (_opts.Befriend) StageNotables();
         if (_opts.House && _sim.Town.Buildings.Where(b => b.Complete && b.Def.Housing > 0).OrderByDescending(b => Decor.Comfort(_sim.Town, b)).ThenBy(b => b.Id).FirstOrDefault() is Building house)
         {
             Select(Selection.Building(house.Id));
@@ -746,6 +748,8 @@ public partial class Main : Control
         SyncOrders();
         SyncGuide();
         SyncGoals();
+        SyncGoalPointer(_clockReal >= _nextGoalPoint);
+        if (_clockReal >= _nextGoalPoint) _nextGoalPoint = _clockReal + 0.25;
         // A first meeting's picture comes before any scene or report it brought.
         SyncIntros();
         SyncStories(delta);
@@ -783,6 +787,7 @@ public partial class Main : Control
                     case Tab.Diplomacy: RenderDiplomacy(); break;
                     case Tab.Library: RenderLibrary(); break;
                     case Tab.Institutions: RenderInstitutions(); break;
+                    case Tab.Notables: RenderNotables(); break;
                 }
             if (_drawer.Visible) RenderTray();
             if (_inspector.Visible) RenderInspect();
