@@ -122,6 +122,10 @@ public sealed class Bounty
     /// <summary>The building whose coffers hold the escrow (the temple), or null for the treasury.</summary>
     public int? FunderId { get; init; }
 
+    /// <summary>A townsperson whose own purse holds the escrow (a notable's quest), and the notable it is for (<see cref="Notables"/>).</summary>
+    public int? PatronId { get; init; }
+    public int? NotableId { get; set; }
+
     /// <summary>How the job is to be done: slay, drive, parley, rescue or fetch (<see cref="Systems.Terms"/>).</summary>
     public string Terms { get; init; } = "slay";
 
@@ -262,9 +266,6 @@ public static class Quests
     /// <summary>The XP a level starts at and the next one's, for a sheet's bar; null at the top level.</summary>
     public static (int From, int To)? XpBand(int level) => level < 1 || level >= XpLevels.Length ? null : (XpLevels[level - 1], XpLevels[level]);
 
-    private static readonly string[] PartyAdjectives = ["Ashen", "Iron", "Crimson", "Silver", "Gallows", "Lucky", "Broken", "Midnight", "Copper", "Wandering"];
-    private static readonly string[] PartyNouns = ["Blades", "Lanterns", "Owls", "Shields", "Hounds", "Crows", "Compasses", "Wolves", "Pilgrims", "Daggers"];
-
     public static void InitSites(Town town)
     {
         foreach (var def in town.Content.Sites)
@@ -284,13 +285,13 @@ public static class Quests
     /// Post a bounty, holding the reward in escrow from the treasury, or from a funder's coffers (the
     /// temple). Returns null if the payer can't cover it or the town knows of no such danger.
     /// </summary>
-    public static Bounty? PostBounty(Town town, string siteId, double reward, Building? funder = null, string terms = "slay", bool lootToTown = false)
+    public static Bounty? PostBounty(Town town, string siteId, double reward, Building? funder = null, string terms = "slay", bool lootToTown = false, Agent? patron = null)
     {
         var s = Site(town, siteId);
-        double purse = funder?.Cash ?? town.Treasury;
+        double purse = patron?.Gold ?? funder?.Cash ?? town.Treasury;
         if (s == null || s.Known == SiteKnowledge.Unheard || s.ThoughtCleared || reward <= 0 || purse < reward) return null;
         if (town.Bounties.Any(b => b.SiteId == siteId && IsActive(b))) return null;
-        if (funder == null && Stewards.Intercept(town, "bounties", new StewardAsk
+        if (funder == null && patron == null && Stewards.Intercept(town, "bounties", new StewardAsk
             {
                 Area = "bounties",
                 Kind = "bounty",
@@ -303,7 +304,8 @@ public static class Quests
             })) return null;
         var term = town.Content.Bounties.Term(terms);
         if (term.Id != terms || Systems.Terms.Blocked(town, s, term) != null) return null;
-        if (funder != null) funder.Cash -= reward;
+        if (patron != null) patron.Gold -= reward;
+        else if (funder != null) funder.Cash -= reward;
         else town.Book(TreasuryAccount.Bounties, -reward);
         var b = new Bounty
         {
@@ -313,6 +315,7 @@ public static class Quests
             PostedTick = town.Tick,
             ExpiresTick = town.Tick + BountyDays * SimTime.HoursPerDay,
             FunderId = funder?.Id,
+            PatronId = patron?.Id,
             Terms = term.Id,
             LootToTown = lootToTown,
             Plot = Systems.Terms.PlotFor(town, s, term)?.Id ?? "",
@@ -320,19 +323,20 @@ public static class Quests
         town.Bounties.Add(b);
         string loot = lootToTown ? ", the hoard's magic to come to the town armory" : "";
         string plot = town.Content.Bounties.Plots.FirstOrDefault(p => p.Id == b.Plot) is { } pd ? $" The taverns call it {pd.Name}: {pd.Pitch}" : "";
-        if (funder == null)
+        if (funder == null && patron == null)
             town.Log(LedgerCategory.Town, Importance.Notable, (term.Id == "slay"
                 ? $"The council posts a bounty of {Js.Str(reward)} gold on {s.Def.Name}{loot}."
                 : $"The council posts a bounty of {Js.Str(reward)} gold to {term.Verb} {s.Def.Name}{loot}.") + plot);
         // The heroes judge the terms as they judge any choice of the mayor's.
-        if (funder == null && term.Tags.Count > 0) Regard.Judge(town, term.Tags, $"posted a bounty to {term.Verb} {s.Def.Name}", "Bounties");
+        if (funder == null && patron == null && term.Tags.Count > 0) Regard.Judge(town, term.Tags, $"posted a bounty to {term.Verb} {s.Def.Name}", "Bounties");
         return b;
     }
 
     /// <summary>Hand an unearned reward back to whoever put it up.</summary>
     public static void Refund(Town town, Bounty b)
     {
-        if (b.FunderId != null) town.Building(b.FunderId.Value).Cash += b.Reward;
+        if (b.PatronId != null) town.Agent(b.PatronId.Value).Gold += b.Reward;
+        else if (b.FunderId != null) town.Building(b.FunderId.Value).Cash += b.Reward;
         else town.Book(TreasuryAccount.Bounties, b.Reward);
     }
 
@@ -407,6 +411,7 @@ public static class Quests
         Captives.Daily(town);
         if (autoMayor) Captives.AutoPost(town);
         if (autoMayor) AutoPost(town);
+        Muster.Daily(town);
         FormParties(town);
         if (companies) Campaigns.Daily(town);
     }
@@ -462,6 +467,7 @@ public static class Quests
             if (b.Status != BountyStatus.Open || town.Tick < b.ExpiresTick) continue;
             b.Status = BountyStatus.Expired;
             Refund(town, b);
+            Notables.QuestLapsed(town, b);
             town.Log(LedgerCategory.Town, Importance.Routine, $"No one takes the bounty on {Site(town, b.SiteId)!.Def.Name}; the council withdraws it.");
         }
     }
@@ -534,7 +540,7 @@ public static class Quests
             if (bounty.Status != BountyStatus.Open) continue;
             var s = Site(town, bounty.SiteId)!;
             int tier = Math.Max(1, s.BelievedTier);
-            var pool = town.Heroes.Where(Available).OrderByDescending(h => h.Hero!.Level).ThenBy(h => h.Id).ToList();
+            var pool = town.Heroes.Where(h => Muster.Free(town, h)).OrderByDescending(h => h.Hero!.Level).ThenBy(h => h.Id).ToList();
             if (pool.Count == 0) continue;
 
             var leader = pool.FirstOrDefault(h => Interest(town, h, bounty, 3) >= 0.6);
@@ -542,9 +548,11 @@ public static class Quests
 
             var members = new List<Agent> { leader };
             int levels = leader.Hero!.Level;
+            // A company rides with its own first, then newcomers it has room for.
             var recruits = pool
-                .Where(h => h.Id != leader.Id)
-                .OrderByDescending(h => leader.OpinionOf(h.Id))
+                .Where(h => h.Id != leader.Id && Muster.Rides(town, leader, h))
+                .OrderByDescending(h => h.Hero!.PartyName != null)
+                .ThenByDescending(h => leader.OpinionOf(h.Id))
                 .ThenByDescending(h => h.Hero!.Level)
                 .ThenBy(h => h.Id)
                 .ToList();
@@ -552,6 +560,7 @@ public static class Quests
             {
                 if (members.Count >= 4 || (members.Count >= 3 && levels >= 3 * tier + 2)) break;
                 if (leader.OpinionOf(r.Id) < -10 || r.OpinionOf(leader.Id) < -10) continue;
+                if (!Muster.Rides(town, leader, r, members.Count(m => m.Hero!.PartyName == null))) continue;
                 if (Interest(town, r, bounty, members.Count + 1) < 0.5) continue;
                 members.Add(r);
                 levels += r.Hero!.Level;
@@ -573,9 +582,9 @@ public static class Quests
     internal static Party Launch(Town town, List<Agent> members, SiteState s, Bounty? bounty)
     {
         var leader = members[0];
-        // A company keeps its name, unless another band under that name is already on the road.
+        // A company keeps its name; newcomers riding with it join it, and a band of newcomers takes a new one.
         string? name = leader.Hero!.PartyName;
-        if (name == null || town.Parties.Any(p => !p.Returned && p.Name == name)) name = PartyName(town);
+        if (name == null || town.Parties.Any(p => !p.Returned && p.Name == name)) name = Muster.Name(town);
         var party = new Party
         {
             Id = town.Parties.Count + 1,
@@ -586,6 +595,13 @@ public static class Quests
             DepartTick = town.Tick,
             Start = Lofted.Start(town, World.Spot(town, s)),
         };
+        // A name the foe has never heard of doesn't make it run: more of them stand and fight.
+        int unproven = Notoriety.Swell(town, name, s);
+        if (unproven > 0)
+        {
+            party.Swell += unproven;
+            party.Said.Add($"Nobody at {s.Def.Name} has heard of the {name}, so more of the foe stand and fight (renown {Notoriety.RenownOf(town, name)}, it suggests {Notoriety.Suggested(town, s)}).");
+        }
         Roads.Depart(town, party, members, s, bounty);
         town.Parties.Add(party);
         if (bounty != null)
@@ -614,16 +630,6 @@ public static class Quests
         return party;
     }
 
-    private static string PartyName(Town town)
-    {
-        for (int i = 0; i < 20; i++)
-        {
-            string name = $"{town.Rng.Pick(PartyAdjectives)} {town.Rng.Pick(PartyNouns)}";
-            if (town.Parties.All(p => p.Name != name)) return name;
-        }
-        return $"Company No. {town.Parties.Count + 1}";
-    }
-
     private static void ReturnParties(Town town)
     {
         foreach (var party in town.Parties)
@@ -649,6 +655,7 @@ public static class Quests
                 {
                     bounty.Status = BountyStatus.Failed;
                     Refund(town, bounty);
+                    Notables.QuestHome(town, bounty, party, false);
                 }
                 if (party.PleaId is int pid) World.Reopen(town.Pleas[pid - 1]);
                 s.ClearedTick = town.Tick;
@@ -764,6 +771,7 @@ public static class Quests
                 Refund(town, bounty);
             }
             if (earned && result.Outcome != ExpeditionOutcome.Wiped && bounty is { Errand: not "" }) Errands.Keep(town, bounty);
+            if (bounty is { NotableId: not null }) Notables.QuestHome(town, bounty, party, bounty.Status == BountyStatus.Completed);
             pay += World.AfterDelve(town, party, s, result.Outcome) + party.Bonus;
             Alchemy.Homecoming(town, party, s.Def, result.Outcome, survivors);
             if (result.Outcome == ExpeditionOutcome.Cleared && survivors.Count > 0) Notoriety.Cleared(town, party, survivors, s.Def.Tier, party.PleaId != null);

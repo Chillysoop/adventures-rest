@@ -13,14 +13,14 @@ public static class Campaigns
     {
         var rules = town.Content.World.Companies;
         if (town.Regions.Count == 0) return;
-        var pool = town.Heroes.Where(Quests.Available).OrderByDescending(h => h.Hero!.Level).ThenBy(h => h.Id).ToList();
+        var pool = town.Heroes.Where(h => Muster.Free(town, h)).OrderByDescending(h => h.Hero!.Level).ThenBy(h => h.Id).ToList();
         while (pool.Count >= rules.MinMembers)
         {
             var leader = pool[0];
             pool.RemoveAt(0);
             // Most days a company is happy to spend in the taverns.
             if (!town.Rng.Chance(rules.SetOutChance)) continue;
-            var members = Recruit(leader, pool, rules);
+            var members = Recruit(town, leader, pool, rules);
             if (members.Count < rules.MinMembers) continue;
             var target = Choose(town, members, rules);
             if (target == null) continue;
@@ -29,13 +29,14 @@ public static class Campaigns
         }
     }
 
-    /// <summary>Old companions first, then friends, all within a few levels of the leader.</summary>
-    private static List<Agent> Recruit(Agent leader, List<Agent> pool, CompanyRules rules)
+    /// <summary>The leader's own company first, then newcomers it has room for (friends first), within a few levels of the leader.</summary>
+    private static List<Agent> Recruit(Town town, Agent leader, List<Agent> pool, CompanyRules rules)
     {
         var members = new List<Agent> { leader };
         string? company = leader.Hero!.PartyName;
         var recruits = pool
-            .Where(h => Math.Abs(h.Hero!.Level - leader.Hero.Level) <= rules.LevelSpread)
+            .Where(h => Muster.Rides(town, leader, h))
+            .Where(h => (company != null && h.Hero!.PartyName == company) || Math.Abs(h.Hero!.Level - leader.Hero.Level) <= rules.LevelSpread)
             .Where(h => leader.OpinionOf(h.Id) >= -10 && h.OpinionOf(leader.Id) >= -10)
             .OrderByDescending(h => company != null && h.Hero!.PartyName == company ? 1 : 0)
             .ThenByDescending(h => leader.OpinionOf(h.Id))
@@ -44,6 +45,7 @@ public static class Campaigns
         foreach (var r in recruits)
         {
             if (members.Count >= rules.MaxMembers) break;
+            if (!Muster.Rides(town, leader, r, members.Count(m => m.Hero!.PartyName == null))) continue;
             members.Add(r);
         }
         return members;
@@ -98,7 +100,8 @@ public static class Campaigns
                 (region != null && !region.Visited ? 0.15 : 0) +
                 (site.Def.Id == camp ? rules.CampGlory : 0) -
                 rules.Travel * site.Def.Distance -
-                (leader.Has(Trait.Lazy) ? 0.1 * site.Def.Distance : 0) +
+                (leader.Has(Trait.Lazy) ? 0.1 * site.Def.Distance : 0) -
+                town.Content.Notoriety.Renown.Unproven * Notoriety.Short(town, leader.Hero!.PartyName, site) +
                 town.Rng.Next() * 0.2;
             if (score > bestScore)
             {

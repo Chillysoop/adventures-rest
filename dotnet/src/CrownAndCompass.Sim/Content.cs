@@ -1157,6 +1157,16 @@ public sealed record CompanyRules
 
     /// <summary>Levels a company of greenhorns with no veteran to lead them steps down when picking a site.</summary>
     public int GreenStep { get; init; } = 1;
+
+    /// <summary>A hero left alone in a company this many days with no recruit to fill it joins another company short a blade (<see cref="Systems.Muster"/>).</summary>
+    public int LoneDays { get; init; } = 20;
+
+    /// <summary>A newcomer joins a company whose best member is at most this many levels above their own.</summary>
+    public int JoinSpread { get; init; } = 3;
+
+    /// <summary>The words company names are made of: no two companies riding at once share a word.</summary>
+    public List<string> Adjectives { get; init; } = [];
+    public List<string> Nouns { get; init; } = [];
 }
 
 /// <summary>When a party in a delve gives up, and how it tends its fallen.</summary>
