@@ -1,0 +1,25 @@
+{
+  "neutral": 2.5,
+  "arrivals": 0.06,
+  "seasoned": 0.05,
+  "every": 4,
+  "keep": 8,
+  "fairPay": 20,
+  "aspects": [
+    { "id": "beds", "name": "Beds", "icon": "word-beds",
+      "good": ["The beds above {tavern} are warm and the ale is honest.", "Got a room the night I walked in. That never happens."],
+      "bad": ["Slept in a hayloft again. {town} needs more inns.", "Every bed in {tavern} was taken. Every one."] },
+    { "id": "pay", "name": "Pay", "icon": "word-pay",
+      "good": ["The council pays what a job is worth, and on time.", "Came for one bounty, stayed for six. The coin is good."],
+      "bad": ["Bounties here wouldn't buy a decent sword.", "Risked my neck for a purse I could hold in one hand."] },
+    { "id": "gear", "name": "Gear", "icon": "word-gear",
+      "good": ["The smith here knows a blade from a butter knife.", "Found mail that fits on the first try."],
+      "bad": ["Nowhere to buy a proper blade in this town.", "I'm still carrying the sword I came with. Nobody here could make a better."] },
+    { "id": "healing", "name": "Healing", "icon": "word-healing",
+      "good": ["The priests had me on my feet in a day.", "Came home in pieces. The healers put me back together."],
+      "bad": ["No healer worth the name. I patched myself up.", "If you get hurt out there, don't count on this town."] },
+    { "id": "welcome", "name": "Welcome", "icon": "word-welcome",
+      "good": ["The mayor knows our names. That counts for something.", "They treat us like their own here."],
+      "bad": ["The mayor looks through us like we're hired help.", "This town is happy to take our blood and forget our names."] }
+  ]
+}

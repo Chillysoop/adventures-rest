@@ -1,0 +1,32 @@
+{
+  "down": 0.07,
+  "saved": 0.25,
+  "most": 3,
+  "autoReserve": 4,
+  "mends": [
+    { "id": "restoration", "name": "Restoration", "icon": "mend-restoration", "cost": 90, "needs": "shrine", "level": 0,
+      "text": "The priests pray over {hero}. The {wound} trouble them no more." },
+    { "id": "regenerate", "name": "Regrowth", "icon": "mend-regrow", "cost": 320, "needs": "temple", "level": 13,
+      "text": "{healer} speaks the great prayer of regrowth over {hero}. Where the {wound} was, the flesh is whole." },
+    { "id": "clockwork", "name": "Clockwork", "icon": "mend-clockwork", "cost": 160, "needs": "workshop", "level": 0,
+      "text": "The artificers fit {hero} with {part}. It whirs, clicks, and does its work." }
+  ],
+  "wounds": [
+    { "id": "lost-eye", "name": "lost eye", "icon": "wound-eye", "attack": -1, "skill": -1, "mends": ["regenerate", "clockwork"], "part": "a ground-glass clockwork eye",
+      "text": "{hero} comes home from {site} with one eye. The other is somewhere in there." },
+    { "id": "lost-hand", "name": "lost hand", "icon": "wound-hand", "attack": -2, "mends": ["regenerate", "clockwork"], "part": "a brass clockwork hand",
+      "text": "{hero} comes home from {site} short a hand, wrapped in a bloody shirt." },
+    { "id": "lame-leg", "name": "lame leg", "icon": "wound-leg", "ac": -1, "attack": -1, "mends": ["regenerate", "clockwork"], "part": "a sprung clockwork brace",
+      "text": "{hero} limps home from {site}. The leg will never be what it was." },
+    { "id": "bad-knee", "name": "bad knee", "icon": "wound-leg", "ac": -1, "mends": ["restoration"],
+      "text": "{hero}'s knee went the wrong way at {site}. It clicks on every stair now." },
+    { "id": "burn-scars", "name": "burn scars", "icon": "wound-burn", "skill": -1, "mends": ["restoration"],
+      "text": "{hero} comes back from {site} burned down one side. Children stare." },
+    { "id": "cracked-ribs", "name": "cracked ribs", "icon": "wound-ribs", "ac": -1, "heals": 45, "mends": ["restoration"],
+      "text": "{hero} cracked their ribs at {site} and breathes in short gasps.", "healed": "{hero}'s ribs have knitted. They can laugh again without wincing." },
+    { "id": "ringing-ears", "name": "ringing ears", "icon": "wound-ear", "skill": -1, "heals": 30, "mends": ["restoration"],
+      "text": "Something went off beside {hero}'s head at {site}. They shout everything now.", "healed": "The ringing in {hero}'s ears has stopped." },
+    { "id": "shaking-hands", "name": "shaking hands", "icon": "wound-hand", "attack": -1, "heals": 60, "mends": ["restoration"],
+      "text": "{hero} came close to dying at {site}. Their hands have not stopped shaking.", "healed": "{hero}'s hands are steady again." }
+  ]
+}

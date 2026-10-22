@@ -1580,6 +1580,24 @@ public sealed class Content
     public Systems.CharacterRules Character { get; init; } = new();
     public Systems.TacticRules Tactics { get; init; } = new();
 
+    /// <summary>Heroes' lasting wounds and how they mend (content/game/wounds.json).</summary>
+    public Systems.WoundRules Wounds { get; init; } = new();
+
+    /// <summary>Adventurers' word of the town and what it does to who comes (content/game/word.json).</summary>
+    public Systems.WordRules Word { get; init; } = new();
+
+    /// <summary>The year omens the seers foretell (content/game/omens.json).</summary>
+    public Systems.OmenRules Omens { get; init; } = new();
+
+    /// <summary>How sickness comes to town and spreads (content/game/sickness.json).</summary>
+    public Systems.SicknessRules Sickness { get; init; } = new();
+
+    /// <summary>Traps laid before the wall (content/game/traps.json).</summary>
+    public Systems.TrapRules Traps { get; init; } = new();
+
+    /// <summary>The big bad's own adventuring company (content/game/darkcompany.json).</summary>
+    public Systems.DarkCompanyRules DarkCompany { get; init; } = new();
+
     /// <summary>The roads to victory and what each needs (content/game/victory.json).</summary>
     public Systems.VictoryRules Victory { get; init; } = new();
 
@@ -1806,6 +1824,12 @@ public sealed class Content
             Endless = Parse<Systems.EndlessRules>("endless.json"),
             Character = Parse<CharacterRules>("character.json"),
             Tactics = Parse<TacticRules>("tactics.json"),
+            Wounds = Parse<WoundRules>("wounds.json"),
+            Word = Parse<WordRules>("word.json"),
+            Omens = Parse<OmenRules>("omens.json"),
+            Sickness = Parse<SicknessRules>("sickness.json"),
+            Traps = Parse<TrapRules>("traps.json"),
+            DarkCompany = Parse<DarkCompanyRules>("darkcompany.json"),
         };
     }
 

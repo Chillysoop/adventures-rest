@@ -168,6 +168,7 @@ public static class Legacies
             }
             if (!a.Dead || s.Level < r.MinLevel || s.TurnedTo != null) continue;
             var fallen = Remember(town, a);
+            Records.Pin(town, "fallen", a.GivenName);
             if (s.Level >= r.HeirLevel && town.Rng.Chance(Math.Min(r.HeirChanceMax, r.HeirChance + s.Renown * r.HeirChancePerRenown)))
                 fallen.HeirDay = town.Day + town.Rng.Range(r.HeirDays[0], r.HeirDays[1] + 1);
         }

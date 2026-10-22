@@ -116,6 +116,7 @@ public partial class Main : Control
         if (Map.Crowd.FieldU != null) _opts.Cam ??= 14;
         if (_opts.Tourney is int tourney) StageTourney(tourney);
         if (_opts.Secrets) StageSecrets();
+        if (_opts.Hardships) StageHardships();
         if (_opts.Guilds is string guilds) StageGuilds(guilds == "strike");
         _rosterPick = _opts.RosterPick ?? _rosterPick;
         _offerAnswer = _opts.RosterAnswer ?? _offerAnswer;

@@ -1083,10 +1083,13 @@ public static class Menaces
             return;
         }
         string text = am.Infect[rng.Range(0, am.Infect.Count)];
+        int? home = v.HomeId;
         Threat.Kill(town, v);
         m.Power += r.FailedDelve;
         Saga.Scar(town, 1);
         town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, text, m).Replace("{victim}", v.Name).Replace("{where}", where)), [v.Id]);
+        // Whatever came for them leaves a sickness in the house.
+        Sickness.Night(town, home);
         town.Tension += 20;
     }
 
@@ -1373,6 +1376,7 @@ public static class Menaces
             int at = Garrison.WaveSection(town, m.Approach, w);
             double hold = (def / (3 - w + 1)) * (0.8 + rng.Next() * 0.4) * Garrison.SectionFactor(town, at) * gate;
             double shot = Cannons.Volley(town, m.Kind, foe, wave, w, lines);
+            shot = Traps.Spring(town, m.Kind, shot, at, lines, record);
             army -= wave - shot;
             wave = shot;
             double wading = Garrison.Wade(town, wave, Passage.Fliers(town, m.Kind));
