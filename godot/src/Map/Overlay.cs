@@ -181,7 +181,7 @@ public partial class Overlay(MapView map) : Control
                     LiveSource.Mirror => "Mirror",
                     LiveSource.Spire => "Spire sight",
                     LiveSource.Tower => "Watchtower sight",
-                    LiveSource.Outpost => "Held",
+                    LiveSource.Outpost => site.TowerDue != null ? "Tower rising" : "Held",
                     _ => "In sight",
                 },
                 Sight.Scouted when fog.LastReport(site.Def.Id) is Report rep => town.Day - rep.Day > Fog.StaleDays ? $"Last seen day {rep.Day}" : $"Scouted day {rep.Day}",

@@ -2537,6 +2537,8 @@ public partial class TownView(MapView map) : Node3D
             var sight = map.Fog.SightOf(site.Def.Id, pin);
             bool cleared = sight == Sight.Live ? site.Cleared : map.Fog.LastReport(site.Def.Id)?.Outcome == ExpeditionOutcome.Cleared;
             string kind = LandmarkKind(town, site.Def) + (site.Restored ? ":restored" : cleared ? ":cleared" : "");
+            // A guard tower standing over a held site, or rising there with its scaffold.
+            if (site.Cleared) kind += site.Held ? "|tower" : site.TowerDue != null ? "|rising" : "";
             string id = site.Def.Id;
             if (!_landmarks.TryGetValue(id, out var mi) || (string)mi.GetMeta("kind") != kind)
             {
@@ -2648,6 +2650,36 @@ public partial class TownView(MapView map) : Node3D
         return k.Build();
     }
 
+    /// <summary>
+    /// The town's (or a knight's) guard tower beside a held site, like a restored watchtower: roofed, flagged and
+    /// lit. While it rises, a half-built stump in scaffolding with a pile of stone and timber at its foot.
+    /// </summary>
+    private static void GuardTower(MeshKit k, bool done)
+    {
+        var stone = Palette.Kenney(new Color("6a6a7a"));
+        k.Push(MeshKit.At(3.8f, 0, -3.2f, 0.35f, 0.6f));
+        k.Add("castle/tower-square-base", MeshKit.At(0, 0, 0, 0, 2.0f), stone);
+        if (done)
+        {
+            k.Add("castle/tower-square-mid-windows", MeshKit.At(0, 2.0f, 0, 0, 2.0f), stone);
+            k.Add("castle/tower-square-roof", MeshKit.At(0, 4.0f, 0, 0, 2.0f), Palette.Kenney(new Color("7a5232")));
+            k.Add("castle/flag-pennant", MeshKit.At(0, 5.8f, 0, 0, 1.8f), Palette.Kenney(new Color("d8a93a")));
+            k.Box(new Vector3(0, 2.6f, 1.02f), new Vector3(0.3f, 0.3f, 0.04f), new Color("ffb04a", MeshKit.Flag.Ember));
+        }
+        else
+        {
+            // Scaffold poles at the corners, planks round the top, and the builders' stock.
+            foreach (float x in new[] { -1.15f, 1.15f })
+                foreach (float z in new[] { -1.15f, 1.15f })
+                    k.Box(new Vector3(x, 0, z), new Vector3(0.1f, 3.2f, 0.1f), Palette.Timber);
+            k.Box(new Vector3(0, 2.1f, 1.15f), new Vector3(2.4f, 0.08f, 0.35f), new Color("8a6239"));
+            k.Box(new Vector3(0, 2.1f, -1.15f), new Vector3(2.4f, 0.08f, 0.35f), new Color("8a6239"));
+            k.Box(new Vector3(2.0f, 0, 1.4f), new Vector3(0.9f, 0.45f, 0.7f), Palette.Stone, new Color("a8a294"));
+            k.Box(new Vector3(-1.9f, 0, 1.6f), new Vector3(1.2f, 0.25f, 0.5f), Palette.Timber, new Color("8a6239"));
+        }
+        k.Pop();
+    }
+
     /// <summary>A hash of a site id that is the same on every run (string.GetHashCode is not).</summary>
     private static int StableHash(string s)
     {
@@ -2659,6 +2691,9 @@ public partial class TownView(MapView map) : Node3D
     private static ArrayMesh Landmark(string kind, float r)
     {
         var k = new MeshKit();
+        string[] parts = kind.Split('|');
+        kind = parts[0];
+        if (parts.Length > 1) GuardTower(k, parts[1] == "tower");
         bool cleared = kind.EndsWith(":cleared");
         var stone = Palette.Kenney(new Color("6a6a7a"));
         switch (kind.Split(':')[0])

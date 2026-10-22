@@ -135,6 +135,7 @@ public partial class Main : Control
             foreach (var area in Sim.Systems.Stewards.Areas.Where(a => a.CanAsk)) _sim.SetSteward(area.Id, Sim.Systems.StewardMode.Ask);
             for (int d = 0; d < 20 && _sim.Town.Stewards.Asks.Count < 2; d++) _sim.RunDays(1);
         }
+        if (_opts.Tower is string tower) StageTower(tower);
         if (_opts.Site is string site) Select(Selection.Site(site));
         if (_opts.Wall is int wall) Select(Selection.Wall(wall));
         if (_opts.Strike) ShowStrike(true);
@@ -249,6 +250,26 @@ public partial class Main : Control
     /// For a shot of an inspiration or a break: the first townsperson out in front of a building with a few others about,
     /// struck with it now, the camera on them and their inspector open.
     /// </summary>
+    /// <summary>For shots: a town tower rising, standing or about to be tested on the nearest site the town has seen.</summary>
+    private void StageTower(string state)
+    {
+        var t = _sim.Town;
+        var s = t.Sites
+            .Where(x => !x.Def.Aloft && x.Def.Distance > 0 && Ruins.Of(t, x) == null && x.Def.Id != t.Content.Enemy.Outpost.Id && Loyalty.Lord(t, x.Def.Id) == null && _map.Geo.Pins.ContainsKey(x.Def.Id))
+            .OrderByDescending(x => x.Cleared)
+            .ThenBy(x => x.Def.Distance)
+            .ThenBy(x => x.Def.Id, StringComparer.Ordinal)
+            .FirstOrDefault();
+        if (s == null) return;
+        s.Cleared = s.ThoughtCleared = true;
+        s.Held = state != "rising";
+        s.TowerDue = state == "rising" ? t.Tick + 60 : null;
+        s.ThreatTick = state == "tested" ? t.Tick + 50 : null;
+        s.ThreatBy = state == "tested" ? "raiders out of the wilds" : "";
+        _opts.Site = s.Def.Id;
+        _opts.Cam ??= 26;
+    }
+
     private void StageEpisode(string id)
     {
         var t = _sim.Town;

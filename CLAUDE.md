@@ -152,6 +152,10 @@
   (`crest-<lineage>` from `scripts/icons.ts`) and a short line. The card stages the host live with the heroes' kit (creature bodies:
   `Frame.Spider`, `Wyrm`, `Wraith`, `Crawler`, `Rat`) and shows once per lineage (`Intros.Due` over `Town.Discovered`; clock stop
   `first-contact`). `IntrosTests` fails a lineage without one. Shots: `--intro <lineage>`.
+- Lair towers (`Systems/Lairs.cs`, lairs.json `outpost`/`patrol`): a cleared site is kept clear by a patrol (a lost fight wounds
+  the hero) or a tower built over `buildDays` (`SiteState.TowerDue`, then `Held`), tested now and then on the site's own dice
+  (`Lairs.Tested`, `Reinforce`, alert `tower`). A knight's fief is theirs: `Loyalty.Choose` sets `HeroSheet.FiefWay`
+  (tower/ride/rent) and the town gets no buttons there. Shots: `--tower rising|standing|tested`.
 - Cliffs (`Systems/Cliffs.cs`, passage.json `cliffs`): plateaus in the near wilds past the plan, a pure function of the seed. Passage
   treats each as a barrier opened only at its ramps (`Passage.Obstacles`, `RoundCliffs` for roads); the client raises them
   (`WorldGen`) and faces them with rock (`WorldView.BuildCliffs`).

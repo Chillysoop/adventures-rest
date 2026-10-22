@@ -41,7 +41,7 @@ public class LoyaltyTests
     }
 
     [Fact]
-    public void AKnightsLandsAreHeldByTheirRetainersAtNoCostToTheTown()
+    public void AKnightsLandsAreTheirOwnToKeepAtNoCostToTheTown()
     {
         var (sim, t) = NewTown();
         var a = Veteran(t);
@@ -49,14 +49,42 @@ public class LoyaltyTests
         var site = t.Sites.First(s => !s.Generated && s.Def.Id != t.Content.Enemy.Outpost.Id);
         Assert.Equal("only a cleared site can be granted", Loyalty.FiefBlocked(t, a, site));
         site.Cleared = site.ThoughtCleared = true;
+        // A knight with a purse and no greed builds a tower from it.
+        a.Gold = 1000;
         Assert.True(sim.GrantFief(a.Id, site.Def.Id));
-        Assert.True(site.Held);
+        Assert.Equal(Loyalty.Choose(t, a), a.Hero!.FiefWay);
+        if (a.Hero.FiefWay == "tower")
+        {
+            Assert.NotNull(site.TowerDue);
+            Assert.Equal(1000 - t.Content.Lairs.Outpost.Cost, a.Gold);
+        }
+        // The town has no say on a knight's land.
+        Assert.Equal("a knight's land", Lairs.HoldBlocked(t, site));
+        Assert.Equal("a knight's land", Lairs.PatrolBlocked(t, site));
         Assert.Same(a, Loyalty.Lord(t, site.Def.Id));
         Assert.EndsWith($" of {site.Def.Name}", Loyalty.Styled(t, a));
-        double gold = a.Gold;
-        sim.RunDays(2);
+        sim.RunDays(t.Content.Lairs.Outpost.BuildDays + 1);
         Assert.Equal(0, t.Accounts.Get(TreasuryAccount.Outposts, 0));
-        Assert.True(a.Gold > gold);
+        Assert.Equal(site.Def.Id, a.Hero.FiefId);
+        Assert.True(a.Hero.FiefWay != "tower" || site.Held);
+    }
+
+    [Fact]
+    public void AGreedyKnightTakesTheRentsAndLosesTheLandWhenSomethingMovesIn()
+    {
+        var (sim, t) = NewTown();
+        var a = Veteran(t);
+        sim.Knight(a.Id);
+        a.Traits = new HashSet<Trait>(a.Traits) { Trait.Greedy };
+        var site = t.Sites.First(s => !s.Generated && s.Def.Id != t.Content.Enemy.Outpost.Id);
+        site.Cleared = site.ThoughtCleared = true;
+        Assert.True(sim.GrantFief(a.Id, site.Def.Id));
+        Assert.Equal("rent", a.Hero!.FiefWay);
+        Assert.False(site.Held);
+        site.ResettleTick = t.Tick;
+        sim.RunDays(2);
+        Assert.False(site.Cleared);
+        Assert.Null(a.Hero.FiefId);
     }
 
     [Fact]

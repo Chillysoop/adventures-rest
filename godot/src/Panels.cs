@@ -839,6 +839,32 @@ public partial class Main
             : "Every part at once can empty the treasury, and the market's timber and stone with it.");
     }
 
+    /// <summary>A tower on a site: rising, standing, or about to be tested (the town's can be reinforced).</summary>
+    private void TowerStatus(Pane p, Town t, SiteState s, bool town)
+    {
+        if (!s.Held && s.TowerDue == null) return;
+        var o = t.Content.Lairs.Outpost;
+        p.Heading("Tower");
+        if (s.TowerDue is int due)
+        {
+            p.Note($"• Rising · {Ui.Days((int)Math.Ceiling((due - t.Tick) / 24.0))} left");
+            return;
+        }
+        if (s.ThreatTick is not int at)
+        {
+            p.Note(town ? $"• Standing · {Js.Str(o.Upkeep)}g a day\n• Holds {Math.Round(Lairs.HoldOdds(t, s) * 100)}% if tested" : $"• Standing · holds {Math.Round(Lairs.HoldOdds(t, s) * 100)}% if tested");
+            return;
+        }
+        string sid = s.Def.Id;
+        p.Text(Ui.C(Ui.Bad, $"[b]{Ui.Esc(Ui.Cap(s.ThreatBy))}[/b] come in {Ui.Days(Math.Max(1, (int)Math.Ceiling((at - t.Tick) / 24.0)))}."));
+        if (town && !s.Reinforced)
+        {
+            string? no = Lairs.ReinforceBlocked(t, s);
+            p.Buttons(($"Reinforce · {Js.Str(o.Reinforce)}g", no == null, true, () => Act(() => _sim.ReinforceTower(sid))));
+        }
+        p.Note($"• Holds {Math.Round(Lairs.HoldOdds(t, s) * 100)}%{(s.Reinforced ? " · reinforced" : "")}\n• Falls: the site wants clearing again");
+    }
+
     private void InspectSite(Pane p, Town t, SiteState s)
     {
         var pin = _map.Geo.Pins.GetValueOrDefault(s.Def.Id);
@@ -855,8 +881,9 @@ public partial class Main
             Sight.Live when scry != null => Ui.C(new Color("b48cff"), $"[b]Scrying[/b] {(scry.CasterId == 0 ? "in the Scrying Pool" : $"by {Ui.Esc(t.Agent(scry.CasterId).Name)}")}, {scry.EndTick - t.Tick} hours left. You see it as it is now."),
             Sight.Live when live == LiveSource.Mirror => Ui.C(new Color("cfe3f0"), "[b]Mirror[/b]: the hidden mirror shows it as it is now, until someone finds it."),
             Sight.Live when live == LiveSource.Scout && scout != null => Ui.C(Ui.Good, $"[b]Watched[/b] by {Ui.Esc(t.Agent(scout.HeroId).Name)} from cover, rations for {Ui.Days((int)Math.Ceiling((scout.LeaveTick - t.Tick) / 24.0))}."),
-            Sight.Live when live == LiveSource.Outpost && Loyalty.Lord(t, s.Def.Id) is Agent lord => Ui.C(Ui.Good, $"[b]Held[/b] by the retainers of {Ui.Esc(Loyalty.Styled(t, lord))}. Nothing moves back in."),
-            Sight.Live when live == LiveSource.Outpost => Ui.C(Ui.Good, $"[b]Held[/b] by a garrison of the watch, {Js.Str(t.Content.Lairs.Outpost.Upkeep)}g a day. Nothing moves back in."),
+            Sight.Live when live == LiveSource.Outpost && s.TowerDue != null => Ui.C(Ui.Good, "[b]Watched[/b] by the builders raising its tower."),
+            Sight.Live when live == LiveSource.Outpost && Loyalty.Lord(t, s.Def.Id) is Agent lord => Ui.C(Ui.Good, $"[b]Held[/b] by the tower of {Ui.Esc(Loyalty.Styled(t, lord))}. Nothing moves back in."),
+            Sight.Live when live == LiveSource.Outpost => Ui.C(Ui.Good, "[b]Held[/b] by the town's tower. Nothing moves back in."),
             Sight.Live when live == LiveSource.Spire => Ui.C(Ui.Gold, "[b]In the Spire's sight[/b], day and night."),
             Sight.Live when live == LiveSource.Tower && Watch.TowerOver(t, s) is { } tower => Ui.C(Ui.Gold, $"[b]In sight[/b] of {Ui.Esc(tower.Name)}, day and night."),
             Sight.Live => "In sight of the town.",
@@ -917,7 +944,11 @@ public partial class Main
             }
             if (Loyalty.Lord(t, s.Def.Id) is Agent lord)
             {
-                p.Text($"The land of {AgentLink(lord, Loyalty.Styled(t, lord))}, held by their own retainers.");
+                // The knight's own: they choose how to keep it, and the town has no say.
+                string way = s.TowerDue != null ? "raising a tower" : s.Held ? "their tower holds it" : lord.Hero!.FiefWay == "ride" ? "rides its bounds" : "takes the rents, lets it lie";
+                p.Text($"The land of {AgentLink(lord, Loyalty.Styled(t, lord))}.");
+                p.Note($"• {Ui.Cap(way)}\n• Theirs to keep, not the town's");
+                TowerStatus(p, t, s, false);
                 return;
             }
             // A landless knight can be granted it, whether or not the watch garrisons it now.
@@ -928,9 +959,13 @@ public partial class Main
                 int kid = knight.Id;
                 p.Heading("Grant it");
                 p.Buttons(($"Grant it to Ser {knight.GivenName}, {Js.Str(t.Content.Loyalty.Fief.Cost)}g", no == null, true, () => Act(() => _sim.GrantFief(kid, sid))));
-                p.Note(no == null ? $"Their retainers hold it at no cost to the town, and they take {Js.Str(t.Content.Loyalty.Fief.Rent)}g a day from the land." : Ui.Cap(no) + ".");
+                p.Note(no == null ? $"• Theirs, not the town's: they choose how to keep it\n• They take {Js.Str(t.Content.Loyalty.Fief.Rent)}g a day in rent" : Ui.Cap(no) + ".");
             }
-            if (s.Held) return;
+            if (s.Held || s.TowerDue != null)
+            {
+                TowerStatus(p, t, s, true);
+                return;
+            }
             // Something will move back in unless a patrol keeps it clear or the town holds it.
             p.Heading("Keep it clear");
             if (s.Patrolled)
@@ -947,8 +982,8 @@ public partial class Main
             string? blocked = Lairs.HoldBlocked(t, s);
             p.Heading("Hold it");
             var o = t.Content.Lairs.Outpost;
-            p.Buttons(($"Garrison an outpost, {Js.Str(o.Cost)}g", blocked == null, true, () => Act(() => _sim.HoldSite(sid))));
-            p.Note(blocked == null ? $"{Js.Str(o.Upkeep)}g a day. Nothing resettles it, and you see it live." : Ui.Cap(blocked) + ".");
+            p.Buttons(($"Build a tower · {Js.Str(o.Cost)}g", blocked == null, true, () => Act(() => _sim.HoldSite(sid))));
+            p.Note(blocked == null ? $"• Rises in {Ui.Days(o.BuildDays)}\n• {Js.Str(o.Upkeep)}g a day\n• Nothing moves back in · seen live\n• Now and then tested" : Ui.Cap(blocked) + ".");
             return;
         }
         p.Heading("Eyes on it");
