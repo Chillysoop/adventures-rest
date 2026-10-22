@@ -18,6 +18,9 @@ public sealed record TrendRules
     /// <summary>Unrest and Mandate in trouble: unrest from this, or Mandate under this while it falls.</summary>
     public double Unrest { get; init; } = 25;
     public double Mandate { get; init; } = 40;
+
+    /// <summary>The whole campaign's graphs (<see cref="Records"/>).</summary>
+    public RecordRules Records { get; init; } = new();
 }
 
 /// <summary>One day's close of the town's key numbers, for the top bar's month.</summary>

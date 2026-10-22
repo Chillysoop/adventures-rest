@@ -1,0 +1,265 @@
+{
+  "_doc": "How every creature looks, moves and roams (Systems/Bestiary.cs reads it off the stat block; the map builds its model from it). sizes: height against a man. colours: a word in a creature's id and the hide it gives. typeHides: hides a type draws from when the name gives none (each creature nudged its own shade). creatures: hand-set parts by library id (plan, head, gait, strike, roam, wings, material, hide, frame, helm, weapon, off, heads, legs, arms, eyes, neck, tail, bulk, leg, scale, marks with '-' to remove).",
+  "sizes": {
+    "tiny": 0.4,
+    "small": 0.72,
+    "medium": 1,
+    "large": 1.6,
+    "huge": 2.4,
+    "gargantuan": 3.3
+  },
+  "colours": {
+    "red": "b8332a",
+    "crimson": "a01e2a",
+    "blood": "8a1a1a",
+    "bloodtusk": "7a3a2a",
+    "blue": "2f5fb0",
+    "green": "3f8a3a",
+    "black": "2a2630",
+    "white": "e8eef2",
+    "polar": "eef2f0",
+    "gold": "e0b030",
+    "golden": "e0b030",
+    "silver": "c8d0d8",
+    "brass": "c8a050",
+    "bronze": "a8743a",
+    "copper": "b8683a",
+    "gray": "8a8a88",
+    "grey": "8a8a88",
+    "violet": "7a4ab0",
+    "purple": "6a3a98",
+    "ochre": "c89a3a",
+    "brown": "6a4a2a",
+    "ash": "5a5652",
+    "ember": "c8502a",
+    "cinder": "6a3a2a",
+    "frost": "b8dcef",
+    "ice": "b8dcef",
+    "rime": "c8e4f0",
+    "winter": "d8e8f0",
+    "iron": "6a6e76",
+    "clay": "a87a5a",
+    "stone": "8a8478",
+    "flesh": "c89a88",
+    "shadow": "2e2a3a",
+    "bone": "ddd3b8",
+    "magma": "c8401a",
+    "steam": "c8ccd0",
+    "dust": "b8a888",
+    "muck": "5a5a2a",
+    "plague": "8a9a4a",
+    "velvet": "6a1e3a",
+    "ink": "1e2238",
+    "dusk": "4a3a58",
+    "night": "2a2448",
+    "emerald": "2a9a5a",
+    "kyanos": "2a7ac8",
+    "magentos": "c83a9a",
+    "xanthos": "d8c83a",
+    "deepblue": "1a3a7a",
+    "scarlet": "c8202a",
+    "ivory": "eee4cc",
+    "thorn": "4a6a2a",
+    "mist": "c0c8cc",
+    "fog": "b0b8bc",
+    "salt": "e8e4d8",
+    "lantern": "e8b048",
+    "candle": "eee0b0",
+    "star": "e8e0ff",
+    "storm": "5a6a8a",
+    "gravelback": "6a6a60",
+    "rot": "6a7a48",
+    "bloat": "9a7aa8",
+    "skull": "ddd3b8",
+    "glass": "a8d8e8",
+    "mire": "4a5a32",
+    "brimstone": "8a3a1a",
+    "sun": "f0c040",
+    "moon": "d0d8f0"
+  },
+  "typeHides": {
+    "beast": [
+      "7a5a3a",
+      "6a5a48",
+      "8a6a42",
+      "5a4a3a",
+      "9a7a52",
+      "4a4038",
+      "a08a6a",
+      "6a4a32"
+    ],
+    "monstrosity": [
+      "6a5a7a",
+      "7a6a48",
+      "5a7a5a",
+      "8a5a4a",
+      "4a5a6a",
+      "7a7a58",
+      "6a4a5a",
+      "8a7a5a"
+    ],
+    "humanoid": [
+      "d8b08a",
+      "c8946a",
+      "a8744a",
+      "8a5a3a",
+      "e0c0a0",
+      "b88a62"
+    ],
+    "giant": [
+      "b89070",
+      "8a9a7a",
+      "a88068",
+      "7a8aa0",
+      "c8a080"
+    ],
+    "fiend": [
+      "9a2a2a",
+      "6a1a3a",
+      "8a3a5a",
+      "5a2a2a",
+      "a8402a",
+      "4a2a4a"
+    ],
+    "celestial": [
+      "f0e8d8",
+      "e8d8a8",
+      "f8f0e0",
+      "d8e0f0"
+    ],
+    "fey": [
+      "5a8a4a",
+      "7a6aa0",
+      "4a7a6a",
+      "8a9a5a",
+      "6a5a8a",
+      "a88a5a"
+    ],
+    "undead": [
+      "8a9a7a",
+      "7a8070",
+      "9a9488",
+      "6a7468",
+      "a8a090"
+    ],
+    "elemental": [
+      "8a7a6a",
+      "6a8aa0",
+      "a87a5a"
+    ],
+    "construct": [
+      "8a8478",
+      "7a7e86",
+      "a08a6a",
+      "6a6e76"
+    ],
+    "aberration": [
+      "6a3a7a",
+      "3a6a7a",
+      "7a3a5a",
+      "4a4a7a",
+      "5a7a6a"
+    ],
+    "plant": [
+      "4a7a32",
+      "5a6a2a",
+      "6a8a3a",
+      "3a5a2a"
+    ],
+    "ooze": [
+      "7ac850",
+      "c8b850",
+      "6a50c8",
+      "8a8a8a"
+    ],
+    "dragon": [
+      "7a4a2a",
+      "4a6a3a",
+      "6a3a3a",
+      "3a4a6a"
+    ]
+  },
+  "creatures": {
+    "nightmare": {
+      "wings": "",
+      "marks": [
+        "flames"
+      ],
+      "material": "fire"
+    },
+    "war-horse-skeleton": {
+      "marks": [
+        "barding"
+      ]
+    },
+    "horse-war": {
+      "marks": [
+        "barding"
+      ]
+    },
+    "insect-giant-centipede": {
+      "marks": [
+        "spikes"
+      ]
+    },
+    "insect-giant-wasp": {
+      "marks": [
+        "stripes"
+      ]
+    },
+    "incubus": {
+      "marks": [
+        "cape"
+      ]
+    },
+    "succubus": {
+      "marks": [
+        "crown"
+      ]
+    },
+    "bleeding-rose": {
+      "head": "rose"
+    },
+    "fluttering-cherry": {
+      "head": "blossom",
+      "gait": "hover",
+      "roam": "drift"
+    },
+    "aurha": {
+      "head": "dragon",
+      "marks": [
+        "flames"
+      ]
+    },
+    "bloodwyrm": {
+      "marks": [
+        "spikes"
+      ]
+    },
+    "plague-rat-swarm": {
+      "marks": [
+        "plague"
+      ]
+    },
+    "gloomfeeder": {
+      "head": "maw"
+    },
+    "bloodtusk-raider": {
+      "marks": [
+        "warpaint"
+      ]
+    },
+    "flying-snake": {
+      "wings": "feather",
+      "gait": "fly",
+      "roam": "circle"
+    },
+    "insect-giant-fire-beetle": {
+      "marks": [
+        "shell",
+        "spikes"
+      ],
+      "bulk": 0.8
+    }
+  }
+}

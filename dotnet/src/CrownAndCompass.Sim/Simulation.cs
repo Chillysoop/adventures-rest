@@ -66,6 +66,12 @@ public sealed record SimulationOptions
     /// <summary>Foes and heroes from the player's earlier campaigns, who may come back (<see cref="Systems.Legends"/>).</summary>
     public IReadOnlyList<Legend> Legends { get; init; } = [];
 
+    /// <summary>The mayor the player rolled and shaped on New game; null for one named after the seed, on the standard array.</summary>
+    public MayorRoll? Mayor { get; init; }
+
+    /// <summary>Hardcore: the mayor's death ends the campaign (<see cref="Systems.Mayoralty"/>).</summary>
+    public bool Hardcore { get; init; }
+
     /// <summary>Roads to victory switched off for this campaign (victory.json ids); the rest are open (<see cref="Systems.Victory"/>).</summary>
     public IReadOnlyList<string> RoadsOff { get; init; } = [];
 
@@ -94,6 +100,7 @@ public sealed class Simulation
         Town.Saga.Enabled = Options.Saga && Options.Enemy;
         Town.Saga.Endless.On = Options.Endless;
         Town.Saga.Legends.AddRange(Options.Legends.Where(l => l.Seed != Options.Seed));
+        if (Options.Mayor is { } mayor) Stories.Adopt(Town, mayor);
         Town.Victory.Off.AddRange(Options.RoadsOff.Where(id => id != Systems.Victory.Slay && Systems.Victory.Def(Town, id) != null).Distinct().Order(StringComparer.Ordinal));
         Systems.Boons.Choose(Town, Options.Boons);
         Charter();
@@ -109,8 +116,9 @@ public sealed class Simulation
         Property.Hourly(t);
         Social.Hourly(t);
         Roads.Hourly(t);
-        Sendings.Hourly(t, Options.AutoMayor && Options.AutoStories);
-        Explore.Hourly(t, Options.AutoMayor && Options.AutoBounties && Options.AutoExplore);
+        Sendings.Hourly(t, Hand("stories"));
+        // Finds wait on the player under a steward who asks: only a steward left to it answers them.
+        Explore.Hourly(t, Stewards.Mode(t, Options, "bounties") == StewardMode.Steward && Stewards.Sub(t, Options, "bounties", Options.AutoExplore));
         Lurkers.Hourly(t);
         Tournaments.Hourly(t);
         Goals.Hourly(t);
@@ -119,6 +127,18 @@ public sealed class Simulation
         t.Tick++;
         if (t.Hour == 0) DailyTick();
     }
+
+    /// <summary>Whether the stand-in decides for an area: a steward acts or asks (<see cref="Stewards"/>).</summary>
+    private bool Hand(string area) => Stewards.Hand(Town, Options, area);
+
+    /// <summary>While the stand-in decides for an area whose steward asks first, its spending becomes asks.</summary>
+    private Stewards.Scope Asking(string area) => Stewards.For(Town, Options, area);
+
+    /// <summary>Hand an area of the town's business to a steward, have the steward ask first, or take it back.</summary>
+    public bool SetSteward(string area, StewardMode mode) => Stewards.Set(Town, area, mode);
+
+    /// <summary>Yes or no to what a steward asks.</summary>
+    public bool AnswerSteward(int askId, bool yes) => Stewards.Answer(Town, askId, yes);
 
     public void RunDays(int days)
     {
@@ -130,57 +150,76 @@ public sealed class Simulation
     {
         var t = Town;
         Brain.Daily(t);
-        Tournaments.Daily(t, Options.AutoMayor && Options.AutoStories);
+        Tournaments.Daily(t, Hand("stories"));
         Seasons.Daily(t);
+        Omens.Daily(t);
         Economy.Daily(t);
         Skills.Daily(t);
         Merchants.Daily(t);
-        City.Daily(t, Options.AutoMayor && Options.AutoPlanning);
-        GrandWorks.Daily(t, Options.AutoMayor && Options.AutoPlanning);
+        City.Daily(t, Hand("planning"));
+        GrandWorks.Daily(t, Hand("planning"));
         Monuments.Daily(t);
         // Squares first, so the shops sited today front them.
         Streets.Markets(t);
-        if (Options.AutoMayor && Options.AutoPlanning) Construction.Daily(t);
+        if (Hand("planning")) Construction.Daily(t);
         Streets.Wear(t);
         Streets.Closes(t);
         Paving.Daily(t);
         Property.Daily(t);
         Population.DailyDepartures(t);
         Population.DailyArrivals(t);
-        if (Options.AutoMayor) Mayor.Daily(t, Options.AutoPlanning, Options.AutoDefense);
+        if (Options.AutoMayor)
+            using (Asking("defence"))
+                Mayor.Daily(t, Hand("planning"), Hand("defence"));
         Social.Daily(t);
+        Sickness.Daily(t);
         Moods.Daily(t);
-        Council.Daily(t, Options.AutoCouncil);
+        Council.Daily(t, Stewards.Mode(t, Options, "council") == StewardMode.Steward);
         double pace = Director.Daily(t);
-        Threat.Daily(t, pace, Options.AutoMayor && Options.AutoDefense, Options.Enemy);
-        Garrison.Daily(t, Options.AutoMayor && Options.AutoDefense);
+        using (Asking("defence"))
+        {
+            Threat.Daily(t, pace, Hand("defence"), Options.Enemy);
+            Garrison.Daily(t, Hand("defence"));
+        }
         Army.Daily(t);
         AllyCalls.Daily(t);
         Conquest.Daily(t);
         World.Daily(t, Options.AutoMayor);
         Trade.Daily(t, Options.AutoMayor);
-        Armory.Daily(t, Options.AutoMayor && Options.AutoArmory);
-        Alchemy.Daily(t, Options.AutoMayor && Options.AutoArmory);
+        using (Asking("armory")) Armory.Daily(t, Hand("armory"));
+        Alchemy.Daily(t, Options.AutoMayor && Stewards.Mode(t, Options, "armory") == StewardMode.Steward);
         Neighbours.Daily(t, Options.AutoMayor);
-        Mercenaries.Daily(t, Options.AutoMayor && Options.AutoDefense);
-        Clockwork.Daily(t, Options.AutoMayor && Options.AutoDefense);
-        Quests.Daily(t, Options.AutoMayor && Options.AutoBounties, Options.FreeCompanies);
-        Explore.Daily(t, Options.AutoMayor && Options.AutoBounties);
-        Intel.Daily(t, Options.AutoMayor && Options.AutoBounties && Options.AutoIntel);
+        using (Asking("defence"))
+        {
+            Mercenaries.Daily(t, Hand("defence"));
+            Clockwork.Daily(t, Hand("defence"));
+        }
+        using (Asking("honours")) Wounds.Daily(t, Hand("honours"));
+        Word.Daily(t);
+        using (Asking("bounties"))
+        {
+            Quests.Daily(t, Hand("bounties"), Options.FreeCompanies);
+            Explore.Daily(t, Hand("bounties"));
+            Intel.Daily(t, Stewards.Sub(t, Options, "bounties", Options.AutoIntel));
+        }
         Bastions.Daily(t, Options.AutoMayor && Options.AutoBastions);
-        Watch.Daily(t, Options.AutoMayor && Options.AutoBounties);
+        using (Asking("bounties")) Watch.Daily(t, Hand("bounties"));
         Undercity.Daily(t, Options.AutoMayor);
         Research.Daily(t, Options.AutoMayor);
         HedgeMages.Daily(t);
-        Lairs.Daily(t, Options.AutoMayor, Options.AutoDefense);
+        Lofted.Daily(t);
+        using (Asking("defence")) Lairs.Daily(t, Options.AutoMayor, Hand("defence"));
         Rumors.Daily(t);
         Shrines.Daily(t, Options.AutoMayor);
         Faith.Daily(t);
+        Regalia.Daily(t, Options.AutoMayor && Options.AutoArmory);
+        Mayoralty.Daily(t, Options.AutoMayor && Options.AutoStories);
         Factions.Daily(t, Options.AutoMayor);
         Saga.Daily(t, Options.AutoMayor);
         DarkQuests.Daily(t);
+        DarkCompany.Daily(t);
         Endless.Daily(t);
-        Crises.Daily(t, Options.AutoMayor && Options.AutoDefense);
+        using (Asking("defence")) Crises.Daily(t, Hand("defence"));
         Powers.Daily(t);
         Vengeance.Daily(t);
         Sightings.Daily(t);
@@ -189,14 +228,14 @@ public sealed class Simulation
         Infiltration.Daily(t);
         Turning.Daily(t);
         Legacies.Daily(t, Options.AutoMayor);
-        Institutions.Daily(t, Options.AutoMayor && Options.AutoPlanning);
+        Institutions.Daily(t, Hand("planning"));
         Regard.Daily(t);
         Wards.Daily(t);
-        Broadsheet.Daily(t, Options.AutoMayor && Options.AutoStories);
-        Loyalty.Daily(t, Options.AutoMayor && Options.AutoHonours);
-        Secrets.Daily(t, Options.AutoMayor && Options.AutoCouncil);
-        Guilds.Daily(t, Options.AutoMayor && Options.AutoCouncil);
-        Union.Daily(t, Options.AutoMayor && Options.AutoCouncil);
+        Broadsheet.Daily(t, Hand("stories"));
+        using (Asking("honours")) Loyalty.Daily(t, Hand("honours"));
+        Secrets.Daily(t, Options.AutoMayor && Stewards.Mode(t, Options, "council") == StewardMode.Steward);
+        Guilds.Daily(t, Options.AutoMayor && Stewards.Mode(t, Options, "council") == StewardMode.Steward);
+        Union.Daily(t, Options.AutoMayor && Stewards.Mode(t, Options, "council") == StewardMode.Steward);
         Patrons.Daily(t);
         Curses.Daily(t);
         Downtime.Daily(t);
@@ -209,12 +248,14 @@ public sealed class Simulation
         Ruins.Daily(t, Options.AutoMayor);
         Passage.Daily(t);
         Decor.Daily(t);
-        Stories.Daily(t, Options.AutoMayor && Options.AutoStories);
-        Sheet.Daily(t, Options.AutoMayor && Options.AutoStories);
+        Stories.Daily(t, Hand("stories"));
+        Sheet.Daily(t, Hand("stories"));
+        Stewards.Daily(t, Options);
         Economy.Daily(t, true);
         Victory.Daily(t);
         Taxes.Close(t);
         Trends.Close(t);
+        Records.Close(t);
         History.Add(Snapshot());
         t.AccountsYesterday = t.AccountsToday;
         t.RecentNet.Add(Js.Sum(t.AccountsToday.Values, v => v));
@@ -264,6 +305,27 @@ public sealed class Simulation
     /// <summary>The player's word to explorers about something they found ("dig", "engage", "onward", "home", "parley"...).</summary>
     public bool OrderExplorers(int findId, string act) => Explore.Order(Town, findId, act);
 
+    /// <summary>Pay to mend one of a hero's lasting wounds ("restoration", "regenerate", "clockwork"). Returns why not, or null when mended.</summary>
+    public string? MendWound(int heroId, int wound, string mend) => Wounds.Pay(Town, heroId, wound, mend);
+
+    /// <summary>Lay a trap before a section of the wall (0 is the gate). Returns why not, or null when laid.</summary>
+    public string? LayTrap(string kind, int section) => Traps.Lay(Town, kind, section);
+
+    /// <summary>Take a laid trap up again.</summary>
+    public bool RemoveTrap(int trapId) => Traps.Remove(Town, trapId);
+
+    /// <summary>Refill every spent trap. Returns why not, or null when done.</summary>
+    public string? RefillTraps() => Traps.Refill(Town);
+
+    /// <summary>Close (or open) the sick lanes during an outbreak.</summary>
+    public bool Quarantine(bool on) => Sickness.SetQuarantine(Town, on);
+
+    /// <summary>Pay the healers to go door to door through the sick houses. Returns why not, or null when sent.</summary>
+    public string? TendTheSick() => Sickness.Tend(Town);
+
+    /// <summary>Send heroes (the best free ones unless named) to ambush the big bad's company on the road. Returns why not, or null when sent.</summary>
+    public string? AmbushDarkCompany(IReadOnlyList<int>? heroIds = null) => DarkCompany.SendAmbush(Town, heroIds);
+
     /// <summary>Pay the printer for the broadsheet's next front page ("praise", "hero" with a hero, "expose"). Returns why not, or null when bought.</summary>
     public string? SlantBroadsheet(string slant, int? heroId = null) => Broadsheet.Buy(Town, slant, heroId);
 
@@ -300,6 +362,9 @@ public sealed class Simulation
 
     /// <summary>How much the council pays its scholars: 0 none up to 4, a royal academy.</summary>
     public bool FundResearch(int level) => Research.Fund(Town, level);
+
+    /// <summary>Sail the finished Lofted City to a known region, or -1 home over the town.</summary>
+    public bool SailLofted(int regionId) => Lofted.SetSail(Town, regionId);
 
     /// <summary>Set how generously the council funds an institution: 0 unfunded, 1 modest, 2 generous.</summary>
     public bool FundInstitution(string institutionId, int level) => Institutions.Fund(Town, institutionId, level);
@@ -403,6 +468,9 @@ public sealed class Simulation
     /// <summary>Garrison a cleared site so nothing moves back in, and the town sees it live.</summary>
     public bool HoldSite(string siteId) => Lairs.Hold(Town, siteId);
 
+    /// <summary>Post (or call off) a standing patrol over a cleared site, to keep it clear (<see cref="Lairs.Patrol"/>).</summary>
+    public bool Patrol(string siteId, bool on) => Lairs.Patrol(Town, siteId, on);
+
     /// <summary>Endow a temple to the town's god once the town is big enough.</summary>
     public Building? BuildTemple() => Shrines.BuildTemple(Town);
 
@@ -429,6 +497,12 @@ public sealed class Simulation
     public Building? Place(string buildingId, double x, double y, double? yaw = null) => Planning.Place(Town, buildingId, x, y, yaw);
 
     /// <summary>Add a part to a monument (temple, keep, town hall): a nave, a bell tower, a curtain wall.</summary>
+    /// <summary>Tear down a town building, or call off a site, for part of its gold back (<see cref="Planning.Raze"/>).</summary>
+    public bool Raze(int buildingId) => Planning.Raze(Town, Town.Building(buildingId));
+
+    /// <summary>Take back the last brush stroke on ground still unbuilt; returns cells put back.</summary>
+    public int UndoPaint() => Planning.Undo(Town);
+
     public Building? AddPart(int monumentId, string partId) => Monuments.Add(Town, Town.Building(monumentId), partId);
 
     /// <summary>Add every part a monument can take now, as far as the gold goes. Returns how many were begun.</summary>
@@ -494,6 +568,24 @@ public sealed class Simulation
 
     /// <summary>Say who the mayor was before the charter, which sets their abilities and skills.</summary>
     public bool ChooseBackground(string backgroundId) => Stories.ChooseBackground(Town, backgroundId);
+
+    /// <summary>Put on a piece of regalia from the armory (what it replaces goes back to the armory).</summary>
+    public bool WearRegalia(int stockId) => Regalia.Equip(Town, stockId);
+
+    /// <summary>Take off the regalia the mayor wears in a slot (chain, signet, sceptre, mantle, banner), back into the armory.</summary>
+    public bool TakeOffRegalia(string slot) => Regalia.Unequip(Town, slot);
+
+    /// <summary>Have the town's craftsmen make a piece of regalia for the treasury's gold, into the armory.</summary>
+    public bool CommissionRegalia(string itemId) => Regalia.Commission(Town, itemId) != null;
+
+    /// <summary>Where the mayor spends their days: "keep" (safe in the hall), "town" (the streets) or "ride" (with the next company out).</summary>
+    public bool SetMayorStance(string stance) => Mayoralty.SetStance(Town, stance);
+
+    /// <summary>Have the temple's priests raise the dead mayor, paid from the treasury.</summary>
+    public bool RaiseMayor() => Mayoralty.RaiseMayor(Town);
+
+    /// <summary>Name one of the council's candidates mayor in the dead one's place.</summary>
+    public bool NameSuccessor(int candidate) => Mayoralty.NameSuccessor(Town, candidate);
 
     /// <summary>Spend the mayor's next level on an advance: "ability:str,cha", "feat:lucky", "skill:arcana" or "expertise:persuasion".</summary>
     public bool AdvanceMayor(string advance) => Sheet.Advance(Town, advance);
@@ -623,6 +715,9 @@ public sealed class Simulation
         var (hw, hd) = Land.Footprint(hallDef);
         t.AddBuilding(hallDef, new Lot(0, Town.Center, Town.Center) { W = hw, D = hd, Zone = Zone.Civic }, null, "the Town Hall", true);
         Streets.Square(t, t.Lot(0));
+        // The mayor's keep: the town's first stone, small to begin with and grown into a castle by parts (Monuments).
+        var keepDef = c.Building("keep");
+        if (Planning.CivicLot(t, keepDef) is { } keepLot) t.AddBuilding(keepDef, keepLot, null, "the Mayor's Keep", true);
         Quests.InitSites(t);
         World.Generate(t);
         Council.InitCouncil(t);
@@ -630,6 +725,8 @@ public sealed class Simulation
         Factions.InitFactions(t);
         Powers.Init(t);
         Armory.Init(t);
+        Regalia.Init(t);
+        Mayoralty.Init(t, Options.Hardcore);
 
         if (Options.AutoMayor && Options.AutoPlanning) Mayor.Daily(t);
         else

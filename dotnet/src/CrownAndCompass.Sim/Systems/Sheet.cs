@@ -107,7 +107,7 @@ public static class Sheet
 
     // ---------- Inspiration ----------
 
-    public static int InspirationMax(Town town) => Rules(town).InspirationMax + Feats(town).Sum(f => f.Inspiration);
+    public static int InspirationMax(Town town) => Rules(town).InspirationMax + Feats(town).Sum(f => f.Inspiration) + Regalia.Inspiration(town);
 
     /// <summary>Give the mayor inspiration, up to what they can hold, saying why in the Ledger if a reason is given.</summary>
     public static void Inspire(Town town, int n, string why)
