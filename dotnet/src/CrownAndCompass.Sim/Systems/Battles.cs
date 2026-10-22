@@ -91,6 +91,9 @@ public sealed class Battle
     public List<int> Fallen { get; } = [];
     public List<int> Champions { get; } = [];
     public List<int> ChampionsFell { get; } = [];
+
+    /// <summary>Traps that went off before the wall, by id (<see cref="Traps"/>).</summary>
+    public List<int> Traps { get; } = [];
     public BattleEnd End { get; set; }
 
     public bool Breached => Waves.Any(w => w.Breached);
@@ -123,6 +126,7 @@ public static class Battles
             Defenders = (int)Js.Round(defenders),
         };
         town.Battles.Add(b);
+        Records.Pin(town, "siege", name);
         while (town.Battles.Count > Math.Max(1, Rules(town).Keep)) town.Battles.RemoveAt(0);
         return b;
     }

@@ -62,6 +62,8 @@ public static class Alerts
     public static readonly AlertKind Stores = new("stores", "Winter stores", "bread", AlertLevel.Decision, AlertWindow.City);
     public static readonly AlertKind Fealty = new("fealty", "Demands for fealty", "warband", AlertLevel.Decision, AlertWindow.Campaign);
     public static readonly AlertKind Doom = new("doom", "End-game crises", "warband", AlertLevel.Urgent, AlertWindow.Campaign);
+    public static readonly AlertKind DarkQuest = new("darkquest", "The big bad's quest", "warband", AlertLevel.Urgent, AlertWindow.Campaign);
+    public static readonly AlertKind Road = new("road", "A road to victory", "favour", AlertLevel.Decision, AlertWindow.Campaign);
     public static readonly AlertKind Clash = new("clash", "Enemies clash", "warband", AlertLevel.Decision, AlertWindow.Campaign);
     public static readonly AlertKind Traitor = new("traitor", "A traitor on the council", "mandate", AlertLevel.Decision, AlertWindow.Council);
     public static readonly AlertKind Scholars = new("scholars", "Idle scholars", "d20", AlertLevel.Minor, AlertWindow.Library);
@@ -77,6 +79,7 @@ public static class Alerts
     public static readonly AlertKind Crisis = new("crisis", "A crisis", "d20", AlertLevel.Urgent, AlertWindow.Story);
     public static readonly AlertKind Story = new("story", "Events", "d20", AlertLevel.Decision, AlertWindow.Story);
     public static readonly AlertKind Explorers = new("explorers", "Explorers' reports", "compass", AlertLevel.Decision, AlertWindow.Bounties);
+    public static readonly AlertKind Fallen = new("fallen", "The mayor is dead", "face-death-skull", AlertLevel.Urgent, AlertWindow.Mayor);
     public static readonly AlertKind LevelUp = new("levelup", "Level up", "d20", AlertLevel.Decision, AlertWindow.Mayor);
     public static readonly AlertKind Bastion = new("bastion", "Bastions", "heroes", AlertLevel.Decision, AlertWindow.Companies);
     public static readonly AlertKind Institution = new("institution", "Institutions", "favour", AlertLevel.Decision, AlertWindow.Institutions);
@@ -89,6 +92,7 @@ public static class Alerts
     public static readonly AlertKind Loot = new("loot", "Loot for sale", "gold", AlertLevel.Decision, AlertWindow.Armory);
     public static readonly AlertKind Gifts = new("gifts", "Arms to give", "heroes", AlertLevel.Minor, AlertWindow.Armory);
     public static readonly AlertKind Outpost = new("outpost", "Land to hold", "warband", AlertLevel.Minor, AlertWindow.None);
+    public static readonly AlertKind Patrol = new("patrol", "Keep it clear", "order-guard", AlertLevel.Minor, AlertWindow.None);
     public static readonly AlertKind Conquered = new("conquered", "A town to settle", "gold", AlertLevel.Decision, AlertWindow.Army);
     public static readonly AlertKind WarAsk = new("warask", "An ally asks for war", "warband", AlertLevel.Minor, AlertWindow.Army);
     public static readonly AlertKind Holdout = new("holdout", "An ally holds out", "gold", AlertLevel.Decision, AlertWindow.Army);
@@ -101,15 +105,18 @@ public static class Alerts
     public static readonly AlertKind Guild = new("guild", "Guild demands", "favour", AlertLevel.Decision, AlertWindow.Council);
     public static readonly AlertKind Balance = new("union", "Guilds and mages", "favour", AlertLevel.Decision, AlertWindow.Council);
     public static readonly AlertKind Wager = new("wager", "Tourney bets", "gold", AlertLevel.Minor, AlertWindow.Tourney);
+    public static readonly AlertKind Sick = new("sick", "Sickness", "sickness", AlertLevel.Urgent, AlertWindow.City);
+    public static readonly AlertKind Spent = new("spent", "Traps spent", "trap-pitch", AlertLevel.Decision, AlertWindow.Defence);
+    public static readonly AlertKind Dark = new("dark", "The dark company rides", "dark-company", AlertLevel.Decision, AlertWindow.Campaign);
     public static readonly AlertKind Scry = new("scry", "Scry the fight", "compass", AlertLevel.Decision, AlertWindow.None);
 
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Sighted, Lurker, Captives, Doom, Crisis, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Balance, Fealty, Clash, Traitor, Plot, Stores, Story, Scry, Explorers, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Loot, Stalled, Bridge, Ruin, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Outpost, Housing, Crowded];
+        [Siege, Sighted, Lurker, Captives, Doom, Crisis, Sick, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Balance, Fealty, DarkQuest, Road, Clash, Traitor, Plot, Dark, Spent, Stores, Story, Scry, Explorers, Fallen, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Loot, Stalled, Bridge, Ruin, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Patrol, Outpost, Housing, Crowded];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
-    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Allies, Word, Crowds, Keepers, Outposts, Lists];
+    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Allies, Word, Crowds, Keepers, Outposts, Lists, Brought];
 
     public static List<Alert> Standing(Town town) => Rules.SelectMany(r => r(town)).ToList();
 
@@ -193,6 +200,13 @@ public static class Alerts
         foreach (var (mole, a, b) in Infiltration.Whispered(t))
             yield return new($"traitor:{mole.Id}", Traitor, $"{a.GivenName} or {b.GivenName}?",
                 $"The taverns say {a.Name} or {b.Name} serves {mole.By}. Name one before the council in the Council window, or wait for the watch to find proof while the traitor works.");
+        if (DarkQuests.Current(t) is { } dq && Quests.Site(t, dq.SiteId) is { } dqs)
+            yield return new($"darkquest:{dq.Def}", DarkQuest, $"Stop {Saga.BigBad(t)!.Leader}'s quest",
+                $"{DarkQuests.Describe(t, dq)} Clear {dqs.Def.Name} within {Days(DarkQuests.DaysLeft(t))} and it will not have it: post a bounty there.", SiteId: dqs.Def.Id);
+        if (Saga.BigBad(t) is { Alive: true } bb)
+            foreach (var d in Victory.Roads(t).Where(d => Victory.ClaimBlocked(t, d.Id) == null))
+                yield return new($"road:{d.Id}", Road, $"Claim {d.Name}",
+                    $"Every term of {d.Name} holds. Claim it in the Campaign window: {bb.Name} marches at once, and the terms must hold {Days(d.Hold)} more to win.");
         if (Menaces.PendingDemand(t) is { } dm)
             yield return new($"demand:{dm.Id}", Fealty, "A demand for fealty", $"{Cap(dm.Name)} wants the town as its vassal. Bend the knee or refuse in the Campaign window; silence is a refusal.");
     }
@@ -215,6 +229,9 @@ public static class Alerts
             yield return new($"find:{f.Id}:{f.Log.Count}", Explorers, Explore.Title(t, f),
                 $"The {s.Name} found {Explore.What(t, f)} and wait for word. In {(hours >= 24 ? Days((int)Math.Ceiling(hours / 24.0)) : $"{hours} hours")} their leader decides.", FindId: f.Id);
         }
+        if (Mayoralty.Dead(t) && !t.Mayoralty.Hardcore)
+            yield return new("fallen", Fallen, $"Mayor {t.Stories.Mayor.Name} is dead",
+                $"{Cap(t.Mayoralty.Cause)}. Raise them at the temple, or name a new mayor, on the Mayor tab.");
         if (Sheet.Pending(t) > 0)
         {
             var (level, improvement) = Sheet.NextAdvance(t);
@@ -491,6 +508,24 @@ public static class Alerts
         }
     }
 
+    /// <summary>Sickness in the houses; traps spent before a siege; the big bad's company on the road to a hoard.</summary>
+    private static IEnumerable<Alert> Brought(Town t)
+    {
+        if (Sickness.Outbreak(t))
+        {
+            int n = Sickness.Sick(t).Count;
+            yield return new("sick", Sick, n == 1 ? "Sickness in a house" : $"Sickness in {n} houses",
+                $"The sick stay home and spread it to the houses round. Send the healers door to door ({Js.Str(Sickness.TendCost(t))}g) or close the sick lanes from the City window.");
+        }
+        var spent = Traps.Spent(t);
+        if (spent.Count > 0)
+            yield return new("spent", Spent, spent.Count == 1 ? "A trap is spent" : $"{spent.Count} traps spent",
+                $"Refill them from the Defence window ({Js.Str(Traps.RefillCost(t))}g) before the next siege.");
+        if (DarkCompany.Target(t) is { } site && t.DarkCompany.Ambush == null && DarkCompany.MeetTick(t) != null)
+            yield return new("dark", Dark, $"{Cap(t.DarkCompany.Name)} ride for {site.Def.Name}",
+                $"They mean to rob its hoard for {Saga.BigBad(t)?.Leader}. Send a company there first, or ambush them on the road from the Campaign window.", SiteId: site.Def.Id);
+    }
+
     /// <summary>An ally called to arms that will come only for gold or a harder word.</summary>
     private static IEnumerable<Alert> Allies(Town t)
     {
@@ -532,6 +567,14 @@ public static class Alerts
     /// <summary>A cleared site the town can afford to garrison before something moves back in. The watch waits for the word.</summary>
     private static IEnumerable<Alert> Outposts(Town t)
     {
+        // Cleared by a bounty, then kept clear by a patrol, then held for good by an outpost.
+        if (Lairs.WorthPatrolling(t) is { } p)
+        {
+            var pr = t.Content.Lairs.Patrol;
+            yield return new($"patrol:{p.Def.Id}", Patrol, $"Keep {p.Def.Name} clear?",
+                $"• Cleared, but something will move back in\n• A patrol: {Js.Str(Lairs.PatrolWage(t, p))}g a day\n• Heroes ride out and drive newcomers off", SiteId: p.Def.Id);
+            yield break;
+        }
         if (Lairs.WorthHolding(t) is not { } s) yield break;
         var o = t.Content.Lairs.Outpost;
         yield return new($"outpost:{s.Def.Id}", Outpost, $"Hold {s.Def.Name}?",

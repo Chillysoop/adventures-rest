@@ -54,6 +54,8 @@ public class StoriesTests
         var t = Player().Town;
         Assert.True(t.Stories.Mayor.Name.Length > 3);
         Assert.True(t.Stories.Mayor.Chosen == false);
+        // The sheet alone, without the charter chain's +1 on persuasion.
+        Regalia.Unequip(t, "chain");
         Assert.True(Stories.ChooseBackground(t, "soldier"));
         var a = Stories.Scores(t);
         Assert.Equal(17, a.Str);

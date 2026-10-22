@@ -9,17 +9,17 @@
     {
       "id": "time",
       "title": "Start the clock",
-      "text": "The town lives in real time, and you can pause whenever you like. Press [b]Space[/b] or a speed button to let time run. Keys [b]1[/b] to [b]4[/b] pick a speed. Big war news pauses the game for you.",
+      "text": "The town lives in real time, and you can pause whenever you like. Press [b]Space[/b] or a speed button to let time run.\n• [b]+[/b] / [b]−[/b] faster or slower\n• Big news stops the clock (Settings)",
       "point": "speeds",
       "until": "speed",
-      "teaches": ["key:Space", "key:Key1", "key:Key4"]
+      "teaches": ["key:Space", "key:Equal", "key:Minus", "key:KpAdd", "key:KpSubtract"]
     },
     {
       "id": "camera",
       "title": "Look around",
-      "text": "[b]Scroll[/b] to zoom and [b]drag[/b] to pan. [b]Q[/b] and [b]E[/b] turn the view. [b]Home[/b] or a double right-click brings you back to the town square. Try turning the view.",
+      "text": "[b]Scroll[/b] to zoom; [b]drag[/b], [b]WASD[/b] or the screen edge to pan. [b]Q[/b] and [b]E[/b] turn the view. [b]Home[/b] or a double right-click brings you back to the town square. Try turning the view.",
       "until": "rotate",
-      "teaches": ["key:Q", "key:E", "key:Home"]
+      "teaches": ["key:Q", "key:E", "key:Home", "key:W", "key:A", "key:S", "key:D", "key:Up", "key:Down", "key:Left", "key:Right"]
     },
     {
       "id": "inspect",
@@ -55,7 +55,7 @@
     {
       "id": "mayor",
       "title": "You, the mayor",
-      "text": "You have a character sheet of your own, like any adventurer. Open [b]Mayor[/b] (or press [b]C[/b]) to see your abilities and skills, and pick who you were before the charter: a soldier, a sage, a disgraced councillor... Your background decides what you're good at when you step into the town's stories.",
+      "text": "You have a character sheet of your own, like any adventurer. Open [b]Mayor[/b] (or press [b]C[/b]) to see what needs you now; [b]Character sheet[/b] there shows the abilities, skills and background you rolled on New game. Your background decides what you're good at when you step into the town's stories.",
       "point": "tab:Mayor",
       "until": "tab:Mayor",
       "teaches": ["tab:Mayor", "key:C", "command:ChooseBackground"]
@@ -169,7 +169,7 @@
     {
       "id": "save",
       "title": "Saving",
-      "text": "[b]Esc[/b] or [b]Menu[/b] opens the game menu with five save slots. The town autosaves every three days and when you quit. [b]F5[/b] quicksaves and [b]F9[/b] loads it. [b]History[/b] in the same menu tells of the empires and wars before your town.",
+      "text": "[b]Esc[/b] or [b]Menu[/b] opens the game menu: name a save, or load one. The town autosaves every 7 days and when you quit. [b]F5[/b] quicksaves and [b]F9[/b] loads it. [b]History[/b] in the same menu tells of the empires and wars before your town.",
       "point": "menu",
       "teaches": ["key:Escape", "key:F5", "key:F9"]
     },
@@ -790,7 +790,73 @@
     {"id": "levy", "title": "The levy", "text": "When a host comes, call the [b]levy[/b] in [b]Army[/b].\n• Townsfolk leave their work while called\n• Laws: volunteers or conscription, paid or unpaid\n• Conscripts and the unpaid grumble", "point": "tab:Army", "when": "day:14", "teaches": ["command:RaiseLevy", "command:SetServiceLaw", "command:SetLevyPay"]},
     {"id": "allies-call", "title": "Calling allies", "text": "Allies send hosts when you [b]call[/b] them in [b]Army[/b].\n• Answers come within the day\n• Holdouts: pay, threaten or let go\n• Hosts march the road: call early\n• A friend under a shadow may turn at the walls", "point": "tab:Army", "when": "allies", "teaches": ["command:CallAllies", "command:BribeAlly", "command:ThreatenAlly", "command:LetAllyGo"]},
     {"id": "field", "title": "Marching out", "text": "Meet a host on the road before it reaches the walls: the [b]Field[/b] card in [b]Army[/b].\n• Pick who marches; the rest hold the walls\n• Give heroes a goal: the leader, the banner\n• Pick an order: the dice and your commanders do the rest", "point": "tab:Army", "when": "alert:march", "teaches": ["command:MarchOut", "command:SetMarches", "command:SetAllyMarches", "command:SetFieldGoal", "command:SetFieldOrder", "command:RecallHost"]},
-    {"id": "conquest", "title": "Marching on others", "text": "[b]Army[/b] can march on any settlement you have met.\n• Every people sees it: allies trust you less\n• Won: occupy, pillage, cripple or spare\n• Held towns pay tribute, resist and may rise\n• Leave a regiment there to hold it down", "point": "tab:Army", "when": "regiments", "teaches": ["command:Attack", "command:SettleConquest", "command:GarrisonSettlement", "command:FreeSettlement"]}
+    {"id": "conquest", "title": "Marching on others", "text": "[b]Army[/b] can march on any settlement you have met.\n• Every people sees it: allies trust you less\n• Won: occupy, pillage, cripple or spare\n• Held towns pay tribute, resist and may rise\n• Leave a regiment there to hold it down", "point": "tab:Army", "when": "regiments", "teaches": ["command:Attack", "command:SettleConquest", "command:GarrisonSettlement", "command:FreeSettlement"]},
+    {"id": "roads-to-victory", "title": "Roads to victory", "text": "[b]Campaign[/b] lists every way to win.\n\u2022 Slay the big bad, or\n\u2022 Allies, dominion, legends, a golden age, adventurers, trade\n\u2022 Once the big bad shows itself and a road's terms all hold: [b]Claim[/b]\n\u2022 It marches at once. Hold the terms to win", "point": "tab:Campaign", "when": "day:90", "teaches": ["command:ClaimRoad"]},
+    {
+      "id": "getting-about",
+      "title": "Getting about",
+      "text": "• [b]Ctrl[/b]+1–0 pins what's selected; [b]1[/b]–[b]0[/b] flies back\n• [b]F[/b] follows who's selected\n• [b]Alt[/b]+Left or mouse back: where you were\n• [b]F11[/b] fullscreen · every key in Settings › Keys",
+      "when": "day:2",
+      "teaches": ["key:Ctrl", "key:F", "key:Alt", "key:F11"]
+    },
+    {
+      "id": "undo-tear-down",
+      "title": "Change your mind",
+      "text": "• [b]Ctrl[/b]+[b]Z[/b] takes back your last brush stroke\n• A site's card: [b]Call off[/b], all gold back if not begun\n• A building's card: [b]Tear down[/b] for a little back",
+      "when": "day:4",
+      "teaches": ["key:Z", "command:UndoPaint", "command:Raze"]
+    },
+    {
+      "id": "stewards",
+      "title": "Hand it to a steward",
+      "text": "Settings › [b]Stewards[/b]: for each area of business\n• [b]You[/b] handle it\n• A [b]steward[/b] does\n• Or the steward [b]asks you[/b]: a small ✔ / ✖ card, hover for why",
+      "when": "day:6",
+      "teaches": ["command:SetSteward", "command:AnswerSteward"]
+    },
+    {
+      "id": "patrols",
+      "title": "Keep it clear",
+      "text": "A cleared site won't stay clear: something moves back in.\n• [b]Patrol it[/b] from its card: a little gold a day\n• Your best hero at home drives off newcomers\n• Later, garrison an outpost to hold it for good",
+      "point": "alerts",
+      "when": "alert:patrol",
+      "teaches": ["command:Patrol"]
+    },
+    {
+      "id": "regalia",
+      "title": "Your regalia",
+      "text": "[b]Mayor[/b] (C) shows your five regalia slots:\n• Chain · Signet · Sceptre · Mantle · Banner\n• [b]Wear[/b] pieces from the armory\n• [b]Commission[/b] new ones as the charter grows\nThey lift your rolls, Mandate and the council, and win heroes over. A banner goes with every company that marches.",
+      "point": "tab:Mayor",
+      "when": "day:12",
+      "until": "tab:Mayor",
+      "teaches": ["command:WearRegalia", "command:TakeOffRegalia", "command:CommissionRegalia"]
+    },
+    {
+      "id": "mayor-life",
+      "title": "Where your mayor goes",
+      "text": "Your mayor is a person in the town, with hit points. In [b]Mayor[/b] pick their days:\n• [b]Stay in the hall[/b]: safe\n• [b]Walk the streets[/b]: Mandate and loyalty, but knives and breaches reach you\n• [b]Ride with a company[/b]: an edge for the company and XP, and its dangers",
+      "point": "tab:Mayor",
+      "when": "day:16",
+      "until": "tab:Mayor",
+      "teaches": ["command:SetMayorStance"]
+    },
+    {
+      "id": "mayor-fallen",
+      "title": "Your mayor is dead",
+      "text": "In [b]Mayor[/b]:\n• [b]Raise[/b] them at the temple, if the body came home and you can pay\n• Or [b]name a new mayor[/b] from the council's three\nWait too long and the council chooses. Mandate falls every day without a mayor.",
+      "point": "tab:Mayor",
+      "when": "alert:fallen",
+      "until": "tab:Mayor",
+      "teaches": ["command:RaiseMayor", "command:NameSuccessor"]
+    },
+    {"id": "skywright-relics", "title": "Skywright relics", "text": "A company brought home a [b]Skywright relic[/b].\n• Five lie at the far edges of the map\n• Each sparks high magic in the Library\n• All five open the [b]Lofted City[/b]\n• Foes race you for them: break a foe to take back what it stole", "point": "tab:Library", "when": "relics", "teaches": []},
+    {"id": "lofted-city", "title": "The Lofted City", "text": "Your [b]Lofted City[/b] flies.\n• [b]Sail[/b] it from the Library to any land you know\n• Companies set out from under it\n• It sees every site below", "point": "tab:Library", "when": "lofted", "teaches": ["command:SailLofted"]},
+    {"id": "year-omens", "title": "The year's omen", "text": "Each year the seers foretell one omen for a season.\n• See it under the season in the [b]City[/b] window\n• Green helps, red hurts\n• Plan stores and walls round it", "point": "tab:City", "when": "day:3", "teaches": []},
+    {"id": "word-of-mouth", "title": "Word on the roads", "text": "Heroes rate the town out of five stars: beds, pay, gear, healing, welcome.\n• Good word brings more heroes, and better ones\n• See the stars and their says in [b]Companies[/b]", "point": "tab:Companies", "when": "day:20", "teaches": []},
+    {"id": "lasting-wounds", "title": "Lasting wounds", "text": "A hero who goes down in a fight may come home with a lasting wound.\n• Click the hero to see what it costs them\n• Mend it at the shrine, the temple, or with clockwork", "when": "day:40", "teaches": ["command:MendWound"]},
+    {"id": "wall-traps", "title": "Wall traps", "text": "Click a stretch of wall to lay traps before it.\n• Each takes a share of every wave there\n• Pitch burns once: refill it from [b]Defence[/b]\n• Fliers pass over", "point": "tab:Defence", "when": "day:30", "teaches": ["command:LayTrap", "command:RemoveTrap", "command:RefillTraps"]},
+    {"id": "sickness", "title": "Sickness", "text": "Sickness only comes when something brings it: the dead, rats, a caravan.\n• It spreads house to house\n• Send the healers, or close the sick lanes, from the [b]City[/b] window", "point": "alerts", "when": "alert:sick", "teaches": ["command:Quarantine", "command:TendTheSick"]},
+    {"id": "dark-company", "title": "The dark company", "text": "The big bad has its own adventurers: they fetch what its quests seek and rob hoards.\n• Whoever reaches a site first takes it\n• Or ambush them on the road from [b]Campaign[/b]\n• Beaten, their leader may join you", "point": "alerts", "when": "alert:dark", "teaches": ["command:AmbushDarkCompany"]},
+    {"id": "campaign-graphs", "title": "The whole campaign", "text": "The [b]Chronicles[/b] window draws the town's people, gold, dread and more since day one.\n• Pins mark sieges, charters and the fallen\n• Hover a pin for what happened", "point": "tab:Chronicles", "when": "day:60", "teaches": []}
   ],
   "untaught": {}
 }

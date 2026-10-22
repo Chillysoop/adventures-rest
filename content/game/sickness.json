@@ -1,0 +1,32 @@
+{
+  "_doc": "Sickness only comes when something brings it: a plague-bringer's night visit, rats or pilgrims from a plague group's site near town, or a caravan home from a feverish village (any caravan in a plague year). It spreads house to house like fire, slowed by clean water (wells, fountains) and healers (shrine, temple, bathhouse). The sick stay home and are miserable; nobody dies of it.",
+  "reach": 4.5,
+  "neighbours": 4,
+  "spread": 0.22,
+  "days": [6, 10],
+  "immune": 30,
+  "rest": 45,
+  "water": 0.8,
+  "healers": { "shrine": 0.15, "temple": 0.3, "bathhouse": 0.15, "most": 0.7 },
+  "quarantine": { "spread": 0.3, "mood": -2 },
+  "sickMood": -10,
+  "tend": { "cost": 8, "days": 2 },
+  "groups": ["plague-procession", "sewer-infestation"],
+  "groupReach": 3,
+  "groupChance": 0.004,
+  "caravan": 0.06,
+  "plagueYearCaravan": 0.03,
+  "texts": {
+    "seed": "Sickness at {house}: {why}. A cloth goes up on the door.",
+    "spread": "The sickness spreads from {from} to {list}.",
+    "cured": "A dose of {cure} breaks the fever at {house}.",
+    "over": "The last of the sick in {town} are up and about. The cloths come down off the doors.",
+    "tended": "The healers go door to door through the sick lanes, {gold} gold from the treasury. The worst of it should pass in a day or two.",
+    "quarantine": "The council closes the sick lanes. Nobody in or out but the healers.",
+    "lifted": "The council opens the sick lanes again.",
+    "night": "the dead walked there in the night",
+    "rats": "rats up from {site}",
+    "pilgrims": "grey pilgrims from {site} begged at the door",
+    "caravan": "the caravan home from {settlement} brought a fever with it"
+  }
+}

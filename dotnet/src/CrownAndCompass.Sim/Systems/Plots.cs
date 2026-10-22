@@ -252,11 +252,11 @@ public static class Plots
     }
 
     /// <summary>A rare magic item the town hall doesn't hold yet, about as fine as the site was hard.</summary>
-    private static LibItem? RelicFor(Town town, SiteState site)
+    internal static LibItem? RelicFor(Town town, SiteState site)
     {
         string rarity = site.Def.Tier >= 9 ? "very rare" : site.Def.Tier >= 5 ? "rare" : "uncommon";
         var items = town.Content.Library.Items
-            .Where(i => i.Rarity == rarity && !town.Relics.Contains(i.Id))
+            .Where(i => i.Rarity == rarity && !town.Relics.Contains(i.Id) && !Regalia.Is(town, i))
             .OrderBy(i => i.Id, StringComparer.Ordinal)
             .ToList();
         return items.Count == 0 ? null : items[town.Rng.Range(0, items.Count)];

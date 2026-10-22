@@ -148,6 +148,9 @@ public sealed record BuildingDef
     /// </summary>
     public IReadOnlyDictionary<string, double> Favour { get; init; } = new Dictionary<string, double>();
 
+    /// <summary>A size of the Lofted City (<see cref="Systems.Lofted"/>): the council picks one, and only one rises.</summary>
+    public bool Lofted { get; init; }
+
     public bool IsBusiness => Jobs > 0;
     public bool IsGrand => Stages.Count > 0;
     public bool IsPart => PartOf != "";
@@ -764,6 +767,22 @@ public sealed record OutpostRules
     public int Max { get; init; } = 3;
 }
 
+/// <summary>A standing patrol over a cleared site: heroes ride it and meet whatever tries to move back in (<see cref="Systems.Lairs.Patrol"/>).</summary>
+public sealed record PatrolRules
+{
+    /// <summary>Gold a day, and more a day for each tier of the site.</summary>
+    public double Wage { get; init; } = 3;
+    public double PerTier { get; init; } = 2;
+
+    /// <summary>The patrol's odds of driving newcomers off, and how much each level of the best hero at home above twice the tier adds.</summary>
+    public double Chance { get; init; } = 0.6;
+    public double PerLevel { get; init; } = 0.07;
+
+    /// <summary>Experience for the hero who drives them off.</summary>
+    public int Xp { get; init; } = 60;
+    public int Max { get; init; } = 4;
+}
+
 /// <summary>Lairs: how sites grow, act by their kind, and are resettled (content/game/lairs.json).</summary>
 public sealed record LairRules
 {
@@ -798,6 +817,7 @@ public sealed record LairRules
     /// <summary>Challenge-rating range of a new occupant's leader, by tier.</summary>
     public double[][] BossCr { get; init; } = [];
     public OutpostRules Outpost { get; init; } = new();
+    public PatrolRules Patrol { get; init; } = new();
 
     /// <summary>Raiders wait for a day when at least this share of the heroes' levels is away.</summary>
     public double SoftShare { get; init; } = 0.5;
@@ -1448,6 +1468,10 @@ public sealed class Content
     /// <summary>The town armory: gifts, loot terms and pacts, buying loot (content/game/armory.json).</summary>
     public ArmoryRules Armory { get; init; } = new();
 
+    /// <summary>The mayor's regalia: slots, the pieces that fill them and what each does (content/game/regalia.json).</summary>
+    public RegaliaRules Regalia { get; init; } = new();
+    public MayoraltyRules Mayoralty { get; init; } = new();
+
     /// <summary>The alchemy bench: ingredients, recipes and what potions do (content/game/alchemy.json).</summary>
     public AlchemyRules Alchemy { get; init; } = new();
     public NeighbourRules Neighbours { get; init; } = new();
@@ -1455,6 +1479,7 @@ public sealed class Content
     public UndercityRules Undercity { get; init; } = new();
 
     public ResearchRules Research { get; init; } = new();
+    public Systems.LoftedRules Lofted { get; init; } = new();
 
     /// <summary>The world's history: its ages, the powers that rose and fell, and the calendar (content/game/history.json).</summary>
     public HistoryRules History { get; init; } = new();
@@ -1524,6 +1549,9 @@ public sealed class Content
     /// <summary>Companies' arms and how their colours wear (content/game/heraldry.json).</summary>
     public HeraldryRules Heraldry { get; init; } = new();
 
+    /// <summary>Each faction's first-meeting picture and crest (content/game/intros.json).</summary>
+    public Systems.IntroRules Intros { get; init; } = new();
+
     /// <summary>The charter goals of a new town's first days (content/game/goals.json).</summary>
     public Systems.GoalRules Goals { get; init; } = new();
 
@@ -1551,6 +1579,36 @@ public sealed class Content
     public StorytellerRules Storytellers { get; init; } = new();
     public Systems.CharacterRules Character { get; init; } = new();
     public Systems.TacticRules Tactics { get; init; } = new();
+
+    /// <summary>Heroes' lasting wounds and how they mend (content/game/wounds.json).</summary>
+    public Systems.WoundRules Wounds { get; init; } = new();
+
+    /// <summary>Adventurers' word of the town and what it does to who comes (content/game/word.json).</summary>
+    public Systems.WordRules Word { get; init; } = new();
+
+    /// <summary>The year omens the seers foretell (content/game/omens.json).</summary>
+    public Systems.OmenRules Omens { get; init; } = new();
+
+    /// <summary>How sickness comes to town and spreads (content/game/sickness.json).</summary>
+    public Systems.SicknessRules Sickness { get; init; } = new();
+
+    /// <summary>Traps laid before the wall (content/game/traps.json).</summary>
+    public Systems.TrapRules Traps { get; init; } = new();
+
+    /// <summary>The big bad's own adventuring company (content/game/darkcompany.json).</summary>
+    public Systems.DarkCompanyRules DarkCompany { get; init; } = new();
+
+    /// <summary>The roads to victory and what each needs (content/game/victory.json).</summary>
+    public Systems.VictoryRules Victory { get; init; } = new();
+
+    /// <summary>The big bad's own quests and what they give it (content/game/darkquests.json).</summary>
+    public Systems.DarkQuestRules DarkQuests { get; init; } = new();
+
+    /// <summary>Boons won campaigns leave for the next, and how a win is graded (content/game/boons.json).</summary>
+    public Systems.BoonRules Boons { get; init; } = new();
+
+    /// <summary>Endless mode: the heralds of each new era and the complications they bring (content/game/endless.json).</summary>
+    public Systems.EndlessRules Endless { get; init; } = new();
 
     /// <summary>The content library every hero class, creature, spell and magic item comes from.</summary>
     public Library Library { get; }
@@ -1712,11 +1770,14 @@ public sealed class Content
             Farming = Parse<FarmingRules>("farming.json"),
             Trade = Parse<TradeRules>("trade.json"),
             Armory = Parse<ArmoryRules>("armory.json"),
+            Regalia = Parse<RegaliaRules>("regalia.json"),
+            Mayoralty = Parse<MayoraltyRules>("mayoralty.json"),
             Alchemy = Parse<AlchemyRules>("alchemy.json"),
             Neighbours = Parse<NeighbourRules>("neighbours.json"),
             Legacies = Parse<LegacyRules>("legacies.json"),
             Undercity = Parse<UndercityRules>("undercity.json"),
             Research = Parse<ResearchRules>("research.json"),
+            Lofted = Parse<Systems.LoftedRules>("lofted.json"),
             History = Parse<HistoryRules>("history.json"),
             Stories = stories,
             Institutions = institutions,
@@ -1746,6 +1807,7 @@ public sealed class Content
             Goals = Parse<Systems.GoalRules>("goals.json"),
             Passage = Parse<PassageRules>("passage.json"),
             Heraldry = Parse<HeraldryRules>("heraldry.json"),
+            Intros = Parse<Systems.IntroRules>("intros.json"),
             Eggs = Parse<EggRules>("eggs.json"),
             Foes = Parse<FoeRules>("foes.json"),
             Cannons = Parse<Systems.CannonRules>("cannons.json"),
@@ -1756,8 +1818,18 @@ public sealed class Content
             Crowds = Parse<CrowdRules>("crowds.json"),
             Moods = Parse<MoodRules>("moods.json"),
             Storytellers = Parse<StorytellerRules>("storytellers.json"),
+            Victory = Parse<Systems.VictoryRules>("victory.json"),
+            DarkQuests = Parse<Systems.DarkQuestRules>("darkquests.json"),
+            Boons = Parse<Systems.BoonRules>("boons.json"),
+            Endless = Parse<Systems.EndlessRules>("endless.json"),
             Character = Parse<CharacterRules>("character.json"),
             Tactics = Parse<TacticRules>("tactics.json"),
+            Wounds = Parse<WoundRules>("wounds.json"),
+            Word = Parse<WordRules>("word.json"),
+            Omens = Parse<OmenRules>("omens.json"),
+            Sickness = Parse<SicknessRules>("sickness.json"),
+            Traps = Parse<TrapRules>("traps.json"),
+            DarkCompany = Parse<DarkCompanyRules>("darkcompany.json"),
         };
     }
 

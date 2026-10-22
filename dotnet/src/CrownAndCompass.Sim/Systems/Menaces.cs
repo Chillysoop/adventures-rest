@@ -1083,10 +1083,13 @@ public static class Menaces
             return;
         }
         string text = am.Infect[rng.Range(0, am.Infect.Count)];
+        int? home = v.HomeId;
         Threat.Kill(town, v);
         m.Power += r.FailedDelve;
         Saga.Scar(town, 1);
         town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, text, m).Replace("{victim}", v.Name).Replace("{where}", where)), [v.Id]);
+        // Whatever came for them leaves a sickness in the house.
+        Sickness.Night(town, home);
         town.Tension += 20;
     }
 
@@ -1313,7 +1316,8 @@ public static class Menaces
             return;
         }
         if (restrained || m.NextAssaultTick is not int next || town.Tick < next) return;
-        bool due = m.BigBad && town.Day >= s.CrownDay + f.FirstMarchDays;
+        // A claimed road to victory brings it at once (Victory.Claim).
+        bool due = m.BigBad && (town.Day >= s.CrownDay + f.FirstMarchDays || town.Victory.Claimed != "");
         bool provoked = s.YokeId == m.Id && s.Defied;
         var am = AmbitionOf(town, m);
         // Only a menace that wants the town's walls comes for them, until it is crowned or defied.
@@ -1331,7 +1335,9 @@ public static class Menaces
         // The big bad gathers a greater host for every march: the finale's doom clock.
         if (m.BigBad)
         {
-            double d = Threat.Defense(town, allies: false), more = f.MarchGrowth * m.Marches;
+            // Its own quests (DarkQuests) make every host larger and each march grow faster.
+            var dq = town.Saga.DarkQuests;
+            double d = Threat.Defense(town, allies: false), more = (f.MarchGrowth + dq.Growth) * m.Marches + dq.Host;
             m.Power = Math.Clamp(m.Power, d * (f.MarchArmy[0] + more), d * (f.MarchArmy[^1] + more));
         }
         m.Marches++;
@@ -1370,6 +1376,7 @@ public static class Menaces
             int at = Garrison.WaveSection(town, m.Approach, w);
             double hold = (def / (3 - w + 1)) * (0.8 + rng.Next() * 0.4) * Garrison.SectionFactor(town, at) * gate;
             double shot = Cannons.Volley(town, m.Kind, foe, wave, w, lines);
+            shot = Traps.Spring(town, m.Kind, shot, at, lines, record);
             army -= wave - shot;
             wave = shot;
             double wading = Garrison.Wade(town, wave, Passage.Fliers(town, m.Kind));
@@ -1407,6 +1414,7 @@ public static class Menaces
         if (dead.Count > 0) lines.Add($"{Expedition.ListNames(dead.Select(a => a.Name).ToList())} {(dead.Count == 1 ? "falls" : "fall")} on the walls.");
         record.Fallen.AddRange(dead.Select(a => a.Id));
         town.Watch = Math.Max(0, town.Watch - breaches * 2);
+        Mayoralty.Breached(town, breaches, m.Name);
         town.Tension += 60 + dead.Count * 5;
 
         if (breaches >= 2)
@@ -1617,7 +1625,7 @@ public static class Menaces
     private static bool MayEscape(Town town)
     {
         var f = town.Content.Saga.Finale;
-        return town.Saga.BigBadEscapes < f.Escapes || town.Day < town.Saga.CrownDay + f.MinDays;
+        return town.Saga.BigBadEscapes < f.Escapes + town.Saga.DarkQuests.Escapes || town.Day < town.Saga.CrownDay + f.MinDays;
     }
 
     /// <summary>The menace is finished. Its holdings go back to being ordinary lairs.</summary>

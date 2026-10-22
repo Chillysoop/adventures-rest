@@ -114,7 +114,7 @@ public static class Trade
     public static IEnumerable<TradeRoute> Open(Town town) => town.Trade.Routes.Where(r => !r.Closed);
 
     /// <summary>Routes the town's charter lets it run.</summary>
-    public static int Cap(Town town) => Rules(town).Routes.GetValueOrDefault(City.Tier(town).Id, 0) + Institutions.Routes(town);
+    public static int Cap(Town town) => Rules(town).Routes.GetValueOrDefault(City.Tier(town).Id, 0) + Institutions.Routes(town) + Boons.Routes(town);
 
     public static Settlement SettlementOf(Town town, TradeRoute r) => town.Settlements[r.SettlementId];
 
@@ -277,6 +277,7 @@ public static class Trade
         }
         World.Shift(town, s, r.StandingPerCaravan);
         Armory.Caravan(town, s);
+        Sickness.Caravan(town, s);
         town.Log(LedgerCategory.Town, Importance.Routine,
             $"The caravan comes home from {s.Name}: {(sent > 0 ? $"{Js.Str(Js.Round(sent))} {Lower(route.Export)} sold for {Js.Str(Js.Round(earned))} gold" : $"no {Lower(route.Export)} to spare this time")}" +
             $"{(bought > 0 ? $", {Js.Str(Js.Round(bought))} {Lower(route.Import)} bought for {Js.Str(Js.Round(bought * price))}" : "")}.");

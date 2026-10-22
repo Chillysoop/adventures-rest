@@ -39,6 +39,10 @@
   that carries between runs; each feature owns a section (`legends` now). The sim never reads it: the client passes it
   in `SimulationOptions` (`Legends`), and the town keeps what it used in saved state. Turncoats and returning legends
   are `Systems/Turning.cs` with numbers in saga.json `turning`.
+- The mayor (`Systems/Stories.cs` sheet, `Systems/Regalia.cs` gear, `Systems/Mayoralty.cs` life, numbers in `regalia.json` and
+  `mayoralty.json`): rolled on New game (`SimulationOptions.Mayor`), wears regalia from the armory, and is a person with hit points and a
+  stance (`keep` safe, `town` exposed to assassins and breaches, `ride` with the next company out). A dead mayor is raised at the temple
+  or succeeded by one of three rolled candidates; `SimulationOptions.Hardcore` makes death a defeat. Its rolls use its own dice, never `Town.Rng`.
 - Notoriety (`Systems/Notoriety.cs`, numbers in `content/game/notoriety.json`): heroes (`HeroSheet.Renown`, `Infamy`,
   `Epithet`) and companies (`CompanyState.Renown`, `Infamy`) earn fame or infamy through `Notoriety.Deed`/`CompanyDeed`;
   new deeds that should make a name call those rather than adding to `Renown` directly. Stories bind them with the
@@ -143,6 +147,11 @@
   witch hunters...) that hold sites of their own in the themes they name, with their own foes, bosses and a history.json lineage
   (subject `group:id`, or an existing enemy's lineage for a version of it). A cleared group site is retaken by its own bosses.
   Monster names: SRD/CC-BY or originals only; WotC-only creatures get an original name and look (report https://claude.ai/artifact/RLbN5w9GFQ976uamUqgPDw).
+- First meetings (`content/game/intros.json`, `Systems/Intros.cs`, client `godot/src/Intros.cs`, `Vignette.cs`): every history.json
+  lineage a town can meet (menace, foe, group, people, faction) has one line there: a scene, a host look, colours, a crest glyph
+  (`crest-<lineage>` from `scripts/icons.ts`) and a short line. The card stages the host live with the heroes' kit (creature bodies:
+  `Frame.Spider`, `Wyrm`, `Wraith`, `Crawler`, `Rat`) and shows once per lineage (`Intros.Due` over `Town.Discovered`; clock stop
+  `first-contact`). `IntrosTests` fails a lineage without one. Shots: `--intro <lineage>`.
 - Cliffs (`Systems/Cliffs.cs`, passage.json `cliffs`): plateaus in the near wilds past the plan, a pure function of the seed. Passage
   treats each as a barrier opened only at its ramps (`Passage.Obstacles`, `RoundCliffs` for roads); the client raises them
   (`WorldGen`) and faces them with rock (`WorldView.BuildCliffs`).

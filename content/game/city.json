@@ -3,6 +3,7 @@
   "exportShare": 0.75,
   "paths": { "wearPerTrip": 0.02, "mostTrips": 20, "fade": 0.97, "lay": 1.2 },
   "growth": { "reach": 1, "offStreet": 0.5, "yard": 1, "shuffle": 0.8, "hall": 0.05, "turn": 0.3 },
+  "demolish": { "unstarted": 1, "started": 0.6, "finished": 0.25 },
   "markets": { "_doc": "Market squares in shop paint: spacing between squares, the square's width and depth, how near a street it must lie, the pull (score off) of a square's rim for shops, the open shop-paint cells a square waits for, the cells round a new square that open unpainted ground is painted for shops, the shops the town keeps per square before it grows another, and the score added to a shop off the streets (tiles).", "spacing": 6, "width": 2.2, "depth": 1.6, "reach": 4, "pull": 3, "least": 60, "rim": 6, "shopsEach": 6, "offStreet": 1.5 },
   "closes": { "_doc": "Side lanes in home paint: once a day the open home paint at least 'deep' tiles from any street and within 'near' tiles of what's built gets a lane to the nearest street, 'perDay' at most.", "deep": 2.4, "near": 2.5, "perDay": 1 },
   "paving": { "tier": "town", "perDay": 0.6, "stone": 2, "gold": 6, "reserve": 500, "comfort": 0.03, "reach": 2 },

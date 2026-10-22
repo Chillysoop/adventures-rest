@@ -1,3 +1,4 @@
+using CrownAndCompass.Client.Map;
 using CrownAndCompass.Sim;
 using CrownAndCompass.Sim.Systems;
 using Godot;
@@ -50,6 +51,7 @@ public partial class Main
         }
         else next = $"\n{Ui.C(Ui.Ink2, $"[font_size=12]The last act. Your champions are level {champ}.[/font_size]")}";
         p.Card($"[font_size=17][b]{Ui.Esc(Saga.ActTitle(t, s.Act))}[/b][/font_size]  {Tag($"since day {s.ActDays[^1]}")}{next}");
+        RenderVictory(p, t);
 
         if (Menaces.PendingDemand(t) is { } dm)
         {
@@ -65,8 +67,9 @@ public partial class Main
         if (big is { Alive: true })
         {
             string march = big.ArrivalTick is int at && at > t.Tick ? $"\n{Ui.C(Ui.Bad, $"[b]Its host reaches the walls in {Ui.Days((int)Math.Ceiling((at - t.Tick) / 24.0))}.[/b]")}" : "";
-            FoeCard(p, [big], $"{Tag("THE BIG BAD", Ui.Bad)}\n[font_size=16][b]{Ui.Esc(Ui.Cap(big.Name))}[/b][/font_size]  {Tag($"level {big.Level}")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Seat(t, big)} {(big.Marches == 0 ? "It has not marched on the town yet." : $"It has marched on the town {Times(big.Marches)}.")} Kill it to end the Long Night.[/font_size]")}{march}", Ui.Bad);
+            FoeCard(p, [big], $"{Tag("THE BIG BAD", Ui.Bad)}\n[font_size=16][b]{Ui.Esc(Ui.Cap(big.Name))}[/b][/font_size]  {Tag($"level {big.Level}")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Seat(t, big)} {(big.Marches == 0 ? "It has not marched on the town yet." : $"It has marched on the town {Times(big.Marches)}.")} Kill it to end the Long Night.[/font_size]")}{march}{DarkQuestLines(t)}", Ui.Bad);
         }
+        RenderDarkCompany(p, t);
         if (s.YokeId is int yid && s.Menaces[yid - 1] is { Alive: true } yoke)
         {
             var y = t.Content.Saga.Yoke;
@@ -110,6 +113,92 @@ public partial class Main
             }
         }
         p.Commit();
+    }
+
+    /// <summary>The big bad's own company: who rides in it, where it is bound, and the town's answer (race it, or ambush it).</summary>
+    private void RenderDarkCompany(Pane p, Town t)
+    {
+        var c = t.DarkCompany;
+        if (!c.Riding || Saga.BigBad(t) is not { Alive: true } big) return;
+        var members = c.Members.Select(m => DarkCompany.Role(t, m.Role) is { } r ? Ui.Tip(Ui.Esc(m.Name), Ui.Cap(r.Title)) + Ui.Dim($" {Ui.Esc(r.Title)}") : "").ToList();
+        string tally = Ui.Chips(Ui.Chip("gold", $"{c.Robbed}", Ui.Bad, "Hoards robbed for its master"), Ui.Chip("ui-no", $"{c.Lost}", Ui.Good, "Errands lost to your heroes"));
+        string errand;
+        if (DarkCompany.Target(t) is { } site)
+        {
+            int days = Math.Max(0, (int)Math.Ceiling((c.ArriveTick - t.Tick) / 24.0));
+            errand = $"{Ui.Img("ui-road", 15)} Rides for [b]{Ui.Esc(site.Def.Name)}[/b], there in {Ui.C(Ui.Bad, $"[b]{Ui.Days(days)}[/b]")}";
+        }
+        else errand = Ui.Dim("Resting between errands.");
+        if (DarkCompany.OnQuest(t)) errand += $"  {Tag("FOR ITS QUEST", Ui.Bad)}";
+        FoeCard(p, [big], $"{Tag("THE DARK COMPANY", Ui.Accent)}\n[font_size=16][b]{Ui.Esc(Ui.Cap(c.Name))}[/b][/font_size]  {tally}\n[font_size=12]{string.Join(" · ", members)}[/font_size]\n{errand}", Ui.Accent);
+        if (DarkCompany.Target(t) is { } target)
+        {
+            if (c.Ambush is { } amb)
+            {
+                var who = amb.HeroIds.Select(t.Agent).Select(h => h.GivenName).ToList();
+                p.Text($"{Ui.Img("ambush", 15)} {Ui.Esc(Expedition.ListNames(who))} lie in wait on the road{(amb.Fought ? ", riding home" : "")}.", 13);
+            }
+            else
+            {
+                string? why = DarkCompany.AmbushBlocked(t);
+                var go = DarkCompany.Free(t).Take(t.Content.DarkCompany.Party).Select(h => h.GivenName).ToList();
+                string tip = why == null ? $"{Expedition.ListNames(go)} ride out and meet them halfway." : Ui.Cap(why) + ".";
+                string siteId = target.Def.Id;
+                p.Row(Ui.Tip($"{Ui.Img("ambush", 15)} Ambush them on the road", tip),
+                    ("Ambush", why == null, true, () => Act(() =>
+                    {
+                        _sim.AmbushDarkCompany();
+                        GuideEvent("ambush");
+                    })),
+                    ("Show", true, false, () => { Select(Selection.Site(siteId)); }));
+            }
+        }
+        p.Note("Whoever reaches a site first takes it: send a company there before them, or ambush them on the road. Beaten, they break, their master loses power, and their leader may join you.");
+    }
+
+    /// <summary>The big bad's quests on its card: the one under way (with its site and days left), and the ones done or foiled.</summary>
+    private static string DarkQuestLines(Town t)
+    {
+        var st = DarkQuests.State(t);
+        string text = "";
+        if (DarkQuests.Current(t) is { } q && Quests.Site(t, q.SiteId) is { } site)
+            text += $"\n{Ui.Img("threat", 14)} {Tag("QUEST", Ui.Bad)} {Ui.Esc(Ui.Cap(q.Thing))} · [url=site:{site.Def.Id}]{Ui.C(Ui.Accent, Ui.Esc(site.Def.Name))}[/url] · {Tag(Ui.Days(DarkQuests.DaysLeft(t)), Ui.Bad)}";
+        if (st.Mine.Any())
+            text += "\n" + string.Join("  ", st.Mine.Select(x => Tag($"{(x.Foiled ? "✓" : "✗")} {Ui.Esc(Ui.Cap(x.Thing))}", x.Foiled ? Ui.Good : Ui.Bad)));
+        return text;
+    }
+
+    /// <summary>Roads to victory: one card per road, its terms as chips (green once met), and Claim once they all hold.</summary>
+    private void RenderVictory(Pane p, Town t)
+    {
+        p.Heading("Roads to victory");
+        if (Endless.On(t))
+        {
+            var eras = t.Saga.Endless.Eras;
+            string rest = Endless.RestLeft(t) is int days ? $"  {Tag($"next foe in {Ui.Days(days)}", Ui.Bad)}" : "";
+            string past = eras.Count == 0 ? "" : "\n[font_size=12]" + string.Join("  ", eras.Select(e => Tag($"{e.Number}. {Ui.Esc(Ui.Cap(e.Foe))} · day {e.Day}", Ui.Good))) + "[/font_size]";
+            p.Card($"{Ui.Img("dread", 20)} [b]Endless · era {Endless.EraNumber(t)}[/b]{rest}{past}", Ui.Accent);
+        }
+        var claimed = Victory.Claimed(t);
+        if (!Victory.Ready(t)) p.Note("Claim a road once the big bad shows itself.");
+        foreach (var d in Victory.Roads(t))
+        {
+            var terms = Victory.Terms(t, d);
+            int pct = (int)Math.Round(Victory.Progress(t, d) * 100);
+            bool mine = claimed?.Id == d.Id;
+            string state = mine ? Tag($"holding, {Ui.Days(Victory.DaysLeft(t))} left", Ui.Good)
+                : d.Id == Victory.Slay ? Tag("main quest", Ui.Gold)
+                : Victory.Met(t, d) ? Tag("ready", Ui.Good)
+                : Tag($"{pct}%");
+            string chips = string.Join("  ", terms.Select(x => Tag($"{x.Label} {Js.Str(x.Have)}/{Js.Str(x.Need)}", x.Met ? Ui.Good : Ui.Ink2)));
+            string hold = d.Id == Victory.Slay || mine ? "" : $"  {Ui.C(Ui.Ink2, $"[font_size=12]hold {Ui.Days(d.Hold)}[/font_size]")}";
+            p.Card($"{Ui.Img(d.Icon, 20)} [b]{Ui.Esc(d.Name)}[/b]  {state}{hold}\n[font_size=12]{chips}[/font_size]", mine ? Ui.Good : d.Id == Victory.Slay ? Ui.Gold : null);
+            if (claimed == null && Victory.ClaimBlocked(t, d.Id) == null)
+            {
+                string id = d.Id;
+                p.Buttons(($"Claim {d.Name}", true, true, () => Act(() => _sim.ClaimRoad(id))));
+            }
+        }
     }
 
     /// <summary>Rope bridges raiders cut, ruins the companies cleared, and the dark ranger taking the town's bounties.</summary>

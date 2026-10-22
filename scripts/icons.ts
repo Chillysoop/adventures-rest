@@ -58,6 +58,7 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["ui-no", "cross-mark", "#ef7f6f"],
   ["ui-warn", "hazard-sign", "#e8b93a"],
   ["ui-road", "walking-boot", "#c4955f"],
+  ["ui-goal", "on-target", "#e07a5f"],
   ["ui-heal", "health-normal", "#8cc084"],
   ["ui-wound", "sword-wound", "#ef7f6f"],
   ["ui-up", "upgrade", "#8cc084"],
@@ -139,6 +140,14 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["tab-library", "spell-book", mono],
   ["tab-build", "claw-hammer", mono],
   ["glossary", "open-book", mono],
+  // The mayor's regalia slots (content/game/regalia.json), the sheet and rerolling a new mayor
+  ["regalia-chain", "gem-chain", "#e8c15a"],
+  ["regalia-signet", "ring", "#d9b25a"],
+  ["regalia-sceptre", "winged-scepter", "#cfa64a"],
+  ["regalia-mantle", "cape", "#c0566a"],
+  ["regalia-banner", "flying-flag", "#7f9fd4"],
+  ["sheet", "id-card", mono],
+  ["reroll", "rolling-dices", mono],
   // Quick orders over the corner map
   ["order-defend", "guarded-tower", mono],
   ["order-guard", "flying-flag", mono],
@@ -198,6 +207,19 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["post-guard", "crown", mono],
   ["army-command", "knight-banner", mono],
   ["army-drill", "target-arrows", mono],
+  // Character sheets (godot/src/SheetView.cs): hero roles and the sheet's section heads
+  ["role-tank", "shield", mono],
+  ["role-striker", "sword-clash", mono],
+  ["role-healer", "heart-plus", mono],
+  ["role-scout", "footprint", mono],
+  ["role-face", "talk", mono],
+  ["sheet-spell", "spell-book", mono],
+  ["sheet-pack", "backpack", mono],
+  ["sheet-mount", "horse-head", mono],
+  ["sheet-familiar", "imp-laugh", mono],
+  ["sheet-curse", "cursed-star", mono],
+  ["sheet-patron", "evil-book", mono],
+  ["sheet-xp", "upgrade", mono],
   ["army-law", "scroll-quill", mono],
   // The bounty board's buttons: the terms of a job, then what else a row can do
   ["act-slay", "broadsword", mono],
@@ -214,6 +236,49 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["act-offer", "shaking-hands", mono],
   ["act-explore", "treasure-map", mono],
   ["act-build", "claw-hammer", mono],
+  // Lasting wounds and their mends (wounds.json)
+  ["wound-burn", "burn", "#d8704a"],
+  ["wound-ear", "hearing-disabled", "#c8574a"],
+  ["wound-eye", "eyepatch", "#c8574a"],
+  ["wound-hand", "severed-hand", "#c8574a"],
+  ["wound-leg", "wooden-pegleg", "#c8574a"],
+  ["wound-ribs", "ribcage", "#c8574a"],
+  ["wound", "scar-wound", "#c8574a"],
+  ["mend-restoration", "prayer", "#e8d79a"],
+  ["mend-regrow", "regeneration", "#8cc084"],
+  ["mend-clockwork", "mechanical-arm", "#a7b0b8"],
+  // Word of mouth (word.json)
+  ["word", "round-star", "#e2c25c"],
+  ["word-beds", "bed", "#c08550"],
+  ["word-pay", "coins", "#e2c25c"],
+  ["word-gear", "sword-brandish", "#a7b0b8"],
+  ["word-healing", "health-potion", "#d86a6a"],
+  ["word-welcome", "shaking-hands", "#8cc084"],
+  // Year omens (omens.json)
+  ["omen", "night-sky", "#a68ad8"],
+  ["omen-harsh-winter", "snowflake-2", "#a8d0e8"],
+  ["omen-harvest", "wheat", "#e2c25c"],
+  ["omen-blood-moon", "moon-bats", "#c8574a"],
+  ["omen-fair-winds", "wind-slap", "#a8d0e8"],
+  ["omen-rain", "heavy-rain", "#7f9fd4"],
+  ["omen-comet", "comet-spark", "#e8d79a"],
+  ["omen-plague", "plague-doctor-profile", "#9cb85a"],
+  ["omen-quiet", "dove", "#ece5d3"],
+  ["omen-drought", "desert", "#d8a85c"],
+  ["omen-mild-winter", "sun-cloud", "#e8d79a"],
+  // Wall traps (traps.json)
+  ["trap-pitch", "fire-zone", "#e0743c"],
+  ["trap-caltrops", "caltrops", "#a7b0b8"],
+  ["trap-pits", "spiky-pit", "#b07a44"],
+  ["trap-murder-holes", "falling-rocks", "#b3ada4"],
+  // Sickness, the dark company and the campaign's graphs
+  ["sickness", "virus", "#9cb85a"],
+  ["sick-house", "person-in-bed", "#9cb85a"],
+  ["quarantine", "biohazard", "#e2c25c"],
+  ["tend", "healing", "#8cc0d8"],
+  ["dark-company", "cloak-dagger", "#a68ad8"],
+  ["ambush", "crossed-swords", "#c8574a"],
+  ["records", "histogram", mono],
   // Enemy portraits (godot/src/Portrait.cs draws them on a medallion tinted by the enemy's kind)
   ...[
     "orc-head", "ogre", "troll", "goblin-head", "brutal-helm", "horned-helm", "giant",
@@ -227,7 +292,14 @@ const icons: [name: string, glyph: string, tint: string][] = [
     "barn-owl", "eagle-head", "raven", "amber-mosquito", "crab", "shark-jaws", "fish-monster", "lizardman", "evil-tree", "fairy",
     "dwarf-face", "woman-elf-face", "mermaid", "centaur", "worm-mouth", "flying-beetle", "wasp-sting", "vulture", "horse-head",
     "unicorn", "greek-sphinx", "medusa-head", "hyena-head", "lion", "tiger-head", "saber-toothed-cat-head", "fire",
+    // Heroes' portraits on their sheets, one per class (SheetView.ClassGlyph)
+    "crossed-swords", "axe-swing", "templar-shield", "oak", "cloak-dagger", "bowman", "treasure-map", "fist",
+    "pointy-hat", "fireball", "warlock-eye", "relic-blade", "lyre", "holy-symbol", "oak-leaf", "cauldron",
   ].map((g): [string, string, string] => [`face-${g}`, g, mono]),
+  // Faction crests (content/game/intros.json "crest"): crest-<lineage>, white so the client paints it in the faction's colours
+  ...(JSON.parse(readFileSync(join(root, "content/game/intros.json"), "utf8")) as { intros: { lineage: string; crest: string }[] }).intros.map(
+    (i): [string, string, string] => [`crest-${i.lineage}`, i.crest, mono],
+  ),
 ];
 
 for (const [name, glyph, tint] of icons) {
@@ -237,7 +309,7 @@ for (const [name, glyph, tint] of icons) {
   const svg =
     tint === mono
       ? // Portraits are drawn large, so they are imported at twice the size.
-        `<svg xmlns="http://www.w3.org/2000/svg" width="${name.startsWith("face-") ? 128 : 64}" height="${name.startsWith("face-") ? 128 : 64}" viewBox="0 0 512 512"><g fill="#ffffff">${paths}</g></svg>\n`
+        `<svg xmlns="http://www.w3.org/2000/svg" width="${/^(face|crest)-/.test(name) ? 128 : 64}" height="${/^(face|crest)-/.test(name) ? 128 : 64}" viewBox="0 0 512 512"><g fill="#ffffff">${paths}</g></svg>\n`
       : // The outline first, then the glyph over it: a dark rim like the drawn icons, without paint-order.
         `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="-16 -16 544 544"><g fill="#1d1712" stroke="#1d1712" stroke-width="34" stroke-linejoin="round">${paths}</g><g fill="${tint}">${paths}</g></svg>\n`;
   writeFileSync(join(out, `${name}.svg`), svg);

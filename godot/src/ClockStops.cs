@@ -14,12 +14,14 @@ public static class ClockStops
     public static readonly ClockStop[] All =
     [
         new("discoveries", "Discoveries", "First report, last step, or a step gone wrong", true),
+        new("first-contact", "First meetings", "A faction or foe met for the first time", true),
         new("sendings", "Sendings from parties", "A party asks what to do", true),
         new("stories", "Story events", "High-stakes stories", true),
         new("motions", "Council motions", "Off: they wait on the alert strip", false),
         new("war", "War and raids", "Raids, battles, hosts on the march", true),
         new("deaths", "Deaths of heroes", "At home or abroad", true),
         new("crises", "Crises and the big bad", "Crisis turns and the big bad's moves", true),
+        new("mayor", "Your mayor falls", "Killed by a knife, a breach or the road", true),
     ];
 
     /// <summary>The kind with this id; an id missing from the table is a bug at the call site.</summary>

@@ -111,6 +111,7 @@ public partial class MapView : Control
 
     public Camera3D Camera => _camera;
     public float Distance => _dist;
+    public Vector2 Target => _target;
     public AgentPositions Agents => _crowd.People;
     public Crowd Crowd => _crowd;
 
@@ -219,7 +220,49 @@ public partial class MapView : Control
         Mats.SetAll("fog_tex", Fog.Texture);
     }
 
-    public void Recenter() => _manual = false;
+    public void Recenter()
+    {
+        _manual = false;
+        Follow = null;
+    }
+
+    /// <summary>What the camera rides with (a hero, a party on the road, a caravan's building...), until the player pans away.</summary>
+    public Selection? Follow { get; set; }
+
+    /// <summary>Tiles per second the keys and the screen edge pan at, at a middling zoom (Settings: camera speed).</summary>
+    public float PanSpeed { get; set; } = 1;
+
+    /// <summary>Pan when the cursor rests on the edge of the screen (Settings, on unless turned off).</summary>
+    public bool EdgePan { get; set; } = true;
+
+    /// <summary>Set by the client while a text box has the keys, so typing a name doesn't pan the map.</summary>
+    public bool KeysBusy { get; set; }
+
+    /// <summary>Where something you can click stands now: a person in town or on the road with their party, a building, a site.</summary>
+    public Vector2? Where(Selection s)
+    {
+        var t = Sim.Town;
+        switch (s.Kind)
+        {
+            case "agent" when s.Id >= 1 && s.Id <= t.Agents.Count:
+                if (_crowd.People.Sprites.TryGetValue(s.Id, out var sp) && sp.Visible) return sp.P;
+                var party = t.Parties.Where(p => !p.Returned && p.Members.Contains(s.Id)).OrderByDescending(p => p.Id).FirstOrDefault();
+                return party != null ? _crowd.PartyPos(t, party) : null;
+            case "building" when s.Id >= 1 && s.Id <= t.Buildings.Count:
+                return Geo.LotPos(t.Lot(t.Building(s.Id).LotId));
+            case "site":
+                return Geo.Pins.TryGetValue(s.SiteId, out var pin) ? pin : null;
+            default:
+                return null;
+        }
+    }
+
+    /// <summary>Fly to a point you pinned or a thing you clicked a link to.</summary>
+    public void FlyTo(Vector2 p, float? dist = null)
+    {
+        Follow = null;
+        LookAt(p, dist ?? Mathf.Min(_goalDist, 40));
+    }
 
     public void ToggleStrategic() => Strategic = !Strategic;
 
@@ -320,6 +363,7 @@ public partial class MapView : Control
     private void UpdateCamera(float dt)
     {
         if (Size.X < 1 || Size.Y < 1) return;
+        Steer(dt);
         if (!_manual)
         {
             // Frame the town and the lamplit ground around it.
@@ -349,6 +393,38 @@ public partial class MapView : Control
         Mats.Terrain.SetShaderParameter("border_width", Mathf.Clamp(_dist * 0.006f, 0.3f, 6f));
         Mats.SetAll("strategic", _strategic);
         _grade.SetShaderParameter("strategic", _strategic);
+    }
+
+    /// <summary>The keys and the screen's edge pan the camera, turned with it; following, it keeps the followed in view.</summary>
+    private void Steer(float dt)
+    {
+        var move = Vector2.Zero;
+        if (!KeysBusy && !Input.IsKeyPressed(Key.Alt) && !Input.IsKeyPressed(Key.Ctrl))
+            move = new Vector2(Input.GetAxis("pan_left", "pan_right"), Input.GetAxis("pan_up", "pan_down"));
+        if (EdgePan && move == Vector2.Zero && DisplayServer.WindowIsFocused() && !Planner.Painting)
+        {
+            var at = GetViewport().GetMousePosition();
+            var vp = GetViewportRect().Size;
+            const float Edge = 4;
+            if (at.X >= 0 && at.Y >= 0 && at.X <= vp.X && at.Y <= vp.Y)
+                move = new Vector2(at.X <= Edge ? -1 : at.X >= vp.X - Edge ? 1 : 0, at.Y <= Edge ? -1 : at.Y >= vp.Y - Edge ? 1 : 0);
+        }
+        if (move != Vector2.Zero)
+        {
+            // Screen up is away from the camera: turn the move by the camera's heading.
+            var forward = new Vector2(-Mathf.Sin(_yaw), -Mathf.Cos(_yaw));
+            var right = new Vector2(-forward.Y, forward.X);
+            var step = (right * move.X - forward * move.Y).LimitLength(1) * _dist * 0.9f * PanSpeed * dt;
+            _target += step;
+            _manual = true;
+            Follow = null;
+            return;
+        }
+        if (Follow != null && Sim != null && Where(Follow) is Vector2 p)
+        {
+            _manual = true;
+            _target += (p - _target) * (1 - Mathf.Exp(-dt * 5));
+        }
     }
 
     private void UpdateLight(Town town)
@@ -576,6 +652,7 @@ public partial class MapView : Control
             if (!_dragging && mm.Position.DistanceTo(_pressAt) < 5 && (mm.ButtonMask & MouseButtonMask.Left) != 0) return;
             _dragging = true;
             _manual = true;
+            Follow = null;
             var a = ToWorld(mm.Position - mm.Relative);
             var b = ToWorld(mm.Position);
             _target -= b - a;

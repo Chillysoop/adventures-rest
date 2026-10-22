@@ -1,0 +1,52 @@
+{
+  "_doc": "Roads to victory (Systems/Victory.cs). Every road ends the big bad's threat in its own way, so none can be claimed before the big bad has shown itself (been crowned). Slay is the Saga's own finale (Saga.Win). Once its terms hold the mayor may claim it (Simulation.ClaimRoad): the big bad marches at once, and the terms must hold `hold` days more. Numbers: allies = allied settlements and powers; powers = minor powers allied; sworn = standing a settlement needs to count as under the banner; fameTier = notoriety.json fame tier index (3 Renowned, 4 Legendary); tier = city.json charter id; cleared = share of known sites cleared; income = trade gold over the last month.",
+  "roads": [
+    {
+      "id": "slay", "name": "Slay the Big Bad", "icon": "act-slay", "kind": "Heroic",
+      "blurb": "Your heroes hunt down and kill the villain behind it all.",
+      "title": "The Long Night is over"
+    },
+    {
+      "id": "alliance", "name": "Grand Alliance", "icon": "standing", "kind": "Diplomatic",
+      "blurb": "Your allies' combined might makes the big bad a spent force.",
+      "title": "The Grand Alliance stands",
+      "ending": "The banners of {allies} allies gather under {town}'s. Counted against them, {name} is a spent force: {leader} sues for terms, gives up {seat} and is never heard of again.",
+      "hold": 30, "allies": 12, "powers": 3
+    },
+    {
+      "id": "dominion", "name": "Dominion", "icon": "face-crown", "kind": "Domination",
+      "blurb": "Every settlement and minor power flies your banner.",
+      "title": "One banner over the wilds",
+      "ending": "From the hills to the far roads every hall flies {town}'s banner. With no one left to shelter or arm it, {name} is hunted from valley to valley until {leader} is taken in chains.",
+      "hold": 30, "sworn": 60, "share": 0.75, "powers": 5
+    },
+    {
+      "id": "legends", "name": "Age of Legends", "icon": "heroes", "kind": "Fame",
+      "blurb": "Your heroes grow so famous that the big bad's servants desert it.",
+      "title": "An age of legends",
+      "ending": "Songs of {town}'s heroes are sung in {leader}'s own camp. One by one its captains slip away to join the legend, until {name} is a name for frightening children and nothing more.",
+      "hold": 30, "fameTier": 4, "heroes": 4, "companyTier": 4
+    },
+    {
+      "id": "golden", "name": "Golden Age", "icon": "mandate", "kind": "City",
+      "blurb": "A great city rich, content and safe, even with the big bad at the gates.",
+      "title": "A golden age",
+      "ending": "Through the worst {name} could do, {town} has known nothing but plenty. {name}'s own people slip away to its gates for bread and work, until {leader} rules an empty land and is heard of no more.",
+      "hold": 120, "tier": "great_city", "mandate": 80, "unrest": 10
+    },
+    {
+      "id": "adventurers", "name": "Capital of Adventurers", "icon": "compass", "kind": "Adventure",
+      "blurb": "The companies make your town their home and clear the map.",
+      "title": "The capital of adventurers",
+      "ending": "There is no lair left in the wilds the companies of {town} have not torn open. {name} has nowhere left to hide, and {leader} dies alone in the last of them.",
+      "hold": 30, "cleared": 0.7, "companies": 8, "bastions": 4
+    },
+    {
+      "id": "merchant", "name": "Merchant Crown", "icon": "gold", "kind": "Wealth",
+      "blurb": "Own the region's trade and starve the big bad's host.",
+      "title": "The merchant crown",
+      "ending": "Every road and river carries {town}'s goods and nobody else's. {name}'s host can buy neither bread nor blades; its sellswords take {town}'s coin instead, and {leader} is handed over in a sack.",
+      "hold": 60, "routes": 8, "income": 15000
+    }
+  ]
+}
