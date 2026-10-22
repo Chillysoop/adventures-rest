@@ -13,5 +13,8 @@
   "serviceGrowth": 100,
   "crewShare": 0.5,
   "crewWage": 0.5,
-  "crewReserveDays": 2
+  "crewReserveDays": 2,
+  "buyoutPremium": 0.6,
+  "buyoutMandate": 35,
+  "buyoutProudMandate": 60
 }

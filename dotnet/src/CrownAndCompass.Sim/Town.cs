@@ -329,6 +329,7 @@ public static class TreasuryAccount
     public const string Guilds = "Guilds";
     public const string Notables = "Notables";
     public const string Patrols = "Patrols";
+    public const string Buyouts = "Buyouts";
 }
 
 /// <summary>How the campaign ended.</summary>
