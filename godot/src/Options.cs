@@ -89,6 +89,12 @@ public sealed class Options
     /// <summary>--episode id: strike a townsperson out on the streets with that inspiration or break, look at them and open their inspector.</summary>
     public string? Episode;
 
+    /// <summary>--tower rising|standing|tested: stage a town tower on the nearest seen site and open its card.</summary>
+    public string? Tower;
+
+    /// <summary>--wilds zones|walking|brush: paint an explore zone and a road patrol and look at them on the campaign map (brush: a stroke under way too).</summary>
+    public string? Wilds;
+
     /// <summary>--intro lineage: show that faction's first-meeting card (intros.json).</summary>
     public string? Intro;
 
@@ -144,6 +150,8 @@ public sealed class Options
     public string? Zone;
     /// <summary>--lofted size[:eighths]: stage the Lofted City (lofted_spire, lofted_isle, lofted_city) finished, or rising that many eighths; aim with --at.</summary>
     public string? Lofted;
+    /// <summary>--befriend: give the notables a spread of regard (a friend, the warm, the cool, the bitter) and play 12 days on, for a shot of the Notables window.</summary>
+    public bool Befriend;
     /// <summary>--tourney N: put on a tourney of level N (0 modest to 2 legendary), stake on its second event and ride to that day's --tourney-hour, card open over the lists.</summary>
     public int? Tourney;
     public int TourneyHour = 13;
@@ -267,6 +275,8 @@ public sealed class Options
                 case "--mayor-fallen": o.MayorFallen = true; o.Tab = "Mayor"; break;
                 case "--episode": o.Episode = Next(); break;
                 case "--intro": o.Intro = Next(); break;
+                case "--tower": o.Tower = Next(); break;
+                case "--wilds": o.Wilds = Next(); break;
                 case "--claim": o.Claim = Next(); break;
                 case "--endless": o.Endless = true; break;
                 case "--boons": o.Boons.AddRange(Next().Split(',', StringSplitOptions.RemoveEmptyEntries)); break;
@@ -288,6 +298,7 @@ public sealed class Options
                 case "--rising": o.Rising = true; break;
                 case "--zone": o.Zone = Next(); break;
                 case "--lofted": o.Lofted = Next(); break;
+                case "--befriend": o.Befriend = true; break;
                 case "--siege": o.Siege = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture) : 8; break;
                 case "--card": o.Card = true; break;
                 case "--asks": o.Asks = true; break;

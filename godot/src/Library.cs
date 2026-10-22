@@ -54,6 +54,24 @@ public partial class Main
             double need = Research.LoreCost(t, d), have = st.Progress.Get(id, 0);
             int days = lore > 0 ? (int)Math.Ceiling(Math.Max(0, need - have) / lore) : 0;
             p.Meter(d.Name, have / need, lore > 0 ? $"{Ui.Days(days)} · {Js.Str(Math.Round(lore, 1))}/day" : "no lore coming in");
+            // The steps along the way, each a roll by the lead scholar when the lore reaches its mark.
+            int passed = st.Steps.Get(id, 0);
+            var stages = r.Stages;
+            if (stages.Count > 0)
+            {
+                var marks = stages.Select((x, i) => Ui.Img(i < passed ? "ui-yes" : i == passed ? "d20" : "ui-time", 13)).ToList();
+                string next = "";
+                if (Research.NextStep(t, d) is { } stage)
+                {
+                    string skill = Research.StepSkill(t, d, stage);
+                    var lead = Research.Lead(t, skill);
+                    int bonus = lead != null ? Skills.Bonus(t, lead, skill) : Skills.WatchBonus(t, skill) + r.Clerks;
+                    int dc = Research.StepDc(t, d, passed);
+                    next = "  " + Ui.Tip(Ui.C(Ui.Ink2, $"{Ui.Esc(Ui.Cap(stage.Name))} at {Math.Round(stage.At * 100)}%: {Ui.Esc(Skills.Name(t, skill))} d20{Odds.Sign(bonus)} vs {dc}"),
+                        $"{(lead != null ? lead.Name : "The town hall's clerks")} lead the work. A miss is a dead end that costs some lore; a natural 1 is a mishap; a natural 20 jumps ahead.");
+                }
+                p.Text($"{string.Join(" ", marks)}{next}", 12);
+            }
         }
         else if (Research.Open(t).Count > 0) p.Text(Lb(Ui.C(Ui.Gold, "[b]Idle[/b] · pick an idea below"), "ui-warn"));
         if (st.Notes > 0) p.Text(Lb(Ui.C(Ui.Ink2, $"{Js.Str(Math.Round(st.Notes))} lore of notes waiting for the next study"), "books"), 13);
@@ -62,9 +80,9 @@ public partial class Main
         var moves = Research.Sources(t).Select(s => (SourceIcon(s.Why), "+" + Js.Str(Math.Round(s.Lore, 1)), (Godot.Color?)Ui.Good, Ui.Cap(s.Why))).ToList();
         moves.Add(("gold", $"×{Js.Str(r.Funding[st.Funding].Lore)}", Ui.Gold, "Funding: gold only greases the work"));
         p.Text(LibChips(moves.ToArray()), 13);
-        var finds = st.Feed.Where(n => n.Lore > 0).Reverse().Take(4).ToList();
+        var finds = st.Feed.Where(n => n.Lore > 0 || n.Icon == "d20").Reverse().Take(4).ToList();
         if (finds.Count > 0)
-            p.Text(string.Join("\n", finds.Select(n => Lb($"{Ui.Esc(Ui.Cap(n.Text))} {Ui.C(Ui.Good, "+" + Js.Str(n.Lore))} {Ui.C(Ui.Ink2, $"day {n.Day}")}", n.Icon))), 13);
+            p.Text(string.Join("\n", finds.Select(n => Lb($"{Ui.Esc(Ui.Cap(n.Text))} {(n.Lore > 0 ? Ui.C(Ui.Good, "+" + Js.Str(n.Lore)) + " " : "")}{Ui.C(Ui.Ink2, $"day {n.Day}")}", n.Icon))), 13);
 
         var buttons = new List<(string, bool, bool, Action)>();
         for (int i = 0; i < r.Funding.Count; i++)

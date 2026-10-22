@@ -327,6 +327,8 @@ public static class TreasuryAccount
     public const string Institutions = "Institutions";
     public const string Tourney = "Tourney";
     public const string Guilds = "Guilds";
+    public const string Notables = "Notables";
+    public const string Patrols = "Patrols";
 }
 
 /// <summary>How the campaign ended.</summary>
@@ -437,6 +439,13 @@ public sealed class Town
     /// <summary>Companies sent out exploring, oldest first.</summary>
     public List<Systems.Survey> Surveys { get; } = [];
 
+    /// <summary>Zones the mayor painted on the campaign map to explore or patrol (<see cref="Systems.Wilds"/>).</summary>
+    public List<Systems.WildZone> Wilds { get; } = [];
+    public int WildCount { get; set; }
+
+    /// <summary>Bumped whenever painted zones change, so roads' patrol cover is worked out again.</summary>
+    [NotSaved] public int WildsStamp;
+
     /// <summary>What exploring companies have come on, oldest first.</summary>
     public List<Systems.Find> Finds { get; } = [];
 
@@ -448,6 +457,10 @@ public sealed class Town
 
     /// <summary>The law book: the punishment the council has set for each crime, by crime id (<see cref="Systems.Laws"/>).</summary>
     public Dictionary<string, string> Laws { get; } = new();
+
+    /// <summary>The truth magic the court uses at trials, by spell id ("" for none), and the latest trials, oldest first (<see cref="Systems.Laws"/>).</summary>
+    public string TrialMagic { get; set; } = "";
+    public List<Systems.Trial> Trials { get; } = [];
 
     /// <summary>Scouts posted to watch sites, oldest first.</summary>
     public List<Scout> Scouts { get; } = [];
@@ -507,6 +520,9 @@ public sealed class Town
 
     /// <summary>The minor powers and whose side each is on (<see cref="Systems.Powers"/>).</summary>
     public List<PowerState> Powers { get; } = [];
+
+    /// <summary>Influential townsfolk who aren't heroes, and how each stands with the mayor (<see cref="Systems.Notables"/>).</summary>
+    public List<Systems.Notable> Notables { get; } = [];
 
     /// <summary>Free scryings from the Scrying Pool used today.</summary>
     public int FreeScryingsUsed { get; set; }

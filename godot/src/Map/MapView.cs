@@ -73,11 +73,15 @@ public partial class MapView : Control
     /// <summary>The player clicked the map with the guard flag in hand.</summary>
     public event Action<Vector2>? FlagDropped;
 
-    /// <summary>The scout's mark is in hand: a left click, in either view, marks that spot for a company to look at.</summary>
-    public bool Scouting { get; set; }
+    /// <summary>A brush for the wilds in hand (<see cref="Wilds.Explore"/> or <see cref="Wilds.Patrol"/>): left drags paint cells, right drags rub them out.</summary>
+    public string? Brush { get; set; }
 
-    /// <summary>The player clicked the map with the scout's mark in hand.</summary>
-    public event Action<Vector2>? SpotMarked;
+    /// <summary>The cells of the stroke under way, and whether it rubs out.</summary>
+    public readonly List<(int X, int Y)> BrushCells = [];
+    public bool BrushErasing { get; private set; }
+
+    /// <summary>A stroke of the wilds brush ended: its kind, its cells, and whether it rubbed out.</summary>
+    public event Action<string, List<(int X, int Y)>, bool>? WildsPainted;
     public bool Strategic { get; private set; }
 
     /// <summary>The point of the map the camera looks at.</summary>
@@ -588,6 +592,7 @@ public partial class MapView : Control
             return;
         }
         if (Planner.Active && PlanInput(e)) return;
+        if (Brush != null && BrushInput(e)) return;
         if (Decorator.Active && DecorInput(e)) return;
         if (e is InputEventMouseButton mb)
         {
@@ -607,7 +612,7 @@ public partial class MapView : Control
                     _pressAt = mb.Position;
                     _dragging = false;
                     Pressed?.Invoke();
-                    if (Strategic && Placing == null && !Scouting && MarkerAt(mb.Position) is Marker m)
+                    if (Strategic && Placing == null && MarkerAt(mb.Position) is Marker m)
                     {
                         _grab = m;
                         _grabOffset = ToScreen(m.P) - mb.Position;
@@ -621,8 +626,7 @@ public partial class MapView : Control
                 else if (!_dragging)
                 {
                     var w = ToWorld(mb.Position);
-                    if (Scouting) SpotMarked?.Invoke(w);
-                    else if (Flagging && !Strategic) FlagDropped?.Invoke(w);
+                    if (Flagging && !Strategic) FlagDropped?.Invoke(w);
                     else if (Placing is MarkerKind kind)
                     {
                         var m = new Marker(kind, w, Sim.Town.Day);
@@ -651,7 +655,7 @@ public partial class MapView : Control
         else if (e is InputEventMouseMotion hover && hover.ButtonMask == 0)
         {
             HoverMarker = Strategic && Placing == null ? MarkerAt(hover.Position) : null;
-            MouseDefaultCursorShape = Placing != null || Flagging || Scouting ? CursorShape.Cross : HoverMarker != null ? CursorShape.Move : CursorShape.Arrow;
+            MouseDefaultCursorShape = Placing != null || Flagging ? CursorShape.Cross : HoverMarker != null ? CursorShape.Move : CursorShape.Arrow;
         }
         else if (e is InputEventMouseMotion carry && _grab != null && (carry.ButtonMask & MouseButtonMask.Left) != 0)
         {
@@ -674,6 +678,54 @@ public partial class MapView : Control
     }
 
     /// <summary>Left button plans while a tool is picked (a drag paints, the map no longer pans), right-click puts it down.</summary>
+    /// <summary>The wilds brush: a left drag paints cells, a right drag rubs them out, each stroke sent on release; wheel and middle drag still move the camera.</summary>
+    private bool BrushInput(InputEvent e)
+    {
+        switch (e)
+        {
+            case InputEventMouseButton { ButtonIndex: MouseButton.Left or MouseButton.Right } b when !b.DoubleClick:
+                if (b.Pressed)
+                {
+                    BrushCells.Clear();
+                    BrushErasing = b.ButtonIndex == MouseButton.Right;
+                    BrushAt(b.Position);
+                }
+                else if (BrushCells.Count > 0)
+                {
+                    WildsPainted?.Invoke(Brush!, [.. BrushCells], BrushErasing);
+                    BrushCells.Clear();
+                }
+                AcceptEvent();
+                return true;
+            case InputEventMouseMotion mm when (mm.ButtonMask & (MouseButtonMask.Left | MouseButtonMask.Right)) != 0 && BrushCells.Count > 0:
+                BrushAt(mm.Position);
+                AcceptEvent();
+                return true;
+            case InputEventMouseMotion hover when hover.ButtonMask == 0:
+                MouseDefaultCursorShape = CursorShape.Cross;
+                return false;
+        }
+        return false;
+    }
+
+    private (double X, double Y) _brushLast;
+
+    /// <summary>Add the cells between the last point of the stroke and this one, so a quick drag leaves no gaps.</summary>
+    private void BrushAt(Vector2 screen)
+    {
+        var p = Geo.ToDays(ToWorld(screen));
+        var from = BrushCells.Count == 0 ? p : _brushLast;
+        double step = Sim.Town.Content.Wilds.Cell * 0.4;
+        int n = Math.Max(1, (int)Math.Ceiling(Js.Hypot(p.X - from.X, p.Y - from.Y) / step));
+        for (int i = 0; i <= n; i++)
+        {
+            double t = (double)i / n;
+            var c = Wilds.CellOf(Sim.Town, from.X + (p.X - from.X) * t, from.Y + (p.Y - from.Y) * t);
+            if (!BrushCells.Contains(c)) BrushCells.Add(c);
+        }
+        _brushLast = p;
+    }
+
     private bool PlanInput(InputEvent e)
     {
         switch (e)

@@ -133,6 +133,9 @@ public sealed class Commission
     /// <summary>A spot the mayor marked on the map (days of march east and south of the town), for a company to go and look at.</summary>
     public double? SpotX { get; init; }
     public double? SpotY { get; init; }
+
+    /// <summary>The painted zone it was posted for (<see cref="Wilds"/>), if any.</summary>
+    public int? ZoneId { get; set; }
 }
 
 public enum SurveyPhase
@@ -176,6 +179,9 @@ public sealed class Survey
     /// <summary>The marked spot it was sent to look at, if it was sent to one rather than to explore a whole region.</summary>
     public double? SpotX { get; init; }
     public double? SpotY { get; init; }
+
+    /// <summary>The painted zone it was sent to walk, if any.</summary>
+    public int? ZoneId { get; set; }
     public int DepartTick { get; init; }
     public SurveyPhase Phase { get; set; }
     public List<SurveyLeg> Legs { get; } = [];
@@ -282,11 +288,11 @@ public static class Explore
 
     public static double SuggestedReward(Town town, Region r) => Rules(town).Commission.Base + Rules(town).Commission.PerRing * r.Ring;
 
-    private static bool Active(Commission c) => c.Status is BountyStatus.Open or BountyStatus.Taken;
+    public static bool Active(Commission c) => c.Status is BountyStatus.Open or BountyStatus.Taken;
 
     /// <summary>Regions a company could be sent to explore: heard of, and not being explored already.</summary>
     public static bool CanCommission(Town town, int regionId) =>
-        regionId >= 0 && regionId < town.Regions.Count && town.Regions[regionId].Known && !town.Commissions.Any(c => c.RegionId == regionId && c.SpotX == null && Active(c));
+        regionId >= 0 && regionId < town.Regions.Count && town.Regions[regionId].Known && !town.Commissions.Any(c => c.RegionId == regionId && c.SpotX == null && c.ZoneId == null && Active(c));
 
     /// <summary>Spots marked for a company to look at that nobody has finished with yet.</summary>
     public static List<Commission> Spots(Town town) => town.Commissions.Where(c => c.SpotX != null && Active(c)).OrderBy(c => c.Id).ToList();
@@ -358,7 +364,35 @@ public static class Explore
 
     /// <summary>Where a commission sends a company: its marked spot, or its region's name.</summary>
     private static string Goal(Town town, Commission c) =>
-        c.SpotX is double x && c.SpotY is double y ? $"the spot the council marked {Bearing(x, y)}" : town.Regions[c.RegionId].Name;
+        c.ZoneId is int zid && Wilds.Of(town, zid) is { } z ? $"{Wilds.Name(town, z)} the council painted"
+        : c.SpotX is double x && c.SpotY is double y ? $"the spot the council marked {Bearing(x, y)}" : town.Regions[c.RegionId].Name;
+
+    /// <summary>
+    /// Post the next trip into a painted explore zone: the pay for the cells still unseen, held from the treasury until the
+    /// company is home. Nothing is posted while the treasury can't spare it; the zone waits.
+    /// </summary>
+    public static Commission? PostZone(Town town, WildZone z)
+    {
+        if (z.Kind != Wilds.Explore || Wilds.Unseen(z) == 0 || Wilds.Busy(town, z)) return null;
+        var (mx, my) = Wilds.Middle(town, z);
+        var region = RegionAt(town, mx, my);
+        if (region == null) return null;
+        double pay = Wilds.TripReward(town, z);
+        if (pay <= 0 || town.Treasury < pay) return null;
+        town.Book(TreasuryAccount.Exploring, -pay);
+        var c = new Commission
+        {
+            Id = town.Commissions.Count + 1,
+            RegionId = region.Id,
+            Reward = pay,
+            PostedTick = town.Tick,
+            ExpiresTick = town.Tick + Rules(town).Commission.Days * SimTime.HoursPerDay,
+            ZoneId = z.Id,
+        };
+        town.Commissions.Add(c);
+        town.Log(LedgerCategory.Town, Importance.Routine, $"The council offers {Js.Str(pay)} gold to any company that will walk {Wilds.Name(town, z)} it painted, {Wilds.Unseen(z)} {(Wilds.Unseen(z) == 1 ? "stretch" : "stretches")} nobody has seen.");
+        return c;
+    }
 
     /// <summary>The player's lever: pay a company to explore a region. The reward is held from the treasury until they come home.</summary>
     public static Commission? Post(Town town, int regionId, double? reward = null)
@@ -488,13 +522,17 @@ public static class Explore
             CommissionId = c.Id,
             SpotX = c.SpotX,
             SpotY = c.SpotY,
+            ZoneId = c.ZoneId,
             DepartTick = town.Tick,
             Phase = SurveyPhase.Outbound,
         };
         s.Members.AddRange(members.Select(m => m.Id));
         c.Status = BountyStatus.Taken;
         c.SurveyId = s.Id;
-        var entry = c.SpotX is double sx && c.SpotY is double sy ? (sx, sy) : Entry(town, region);
+        var zone = c.ZoneId is int zid ? Wilds.Of(town, zid) : null;
+        if (zone != null) zone.Trips++;
+        var entry = zone != null && Wilds.NextCell(town, zone, (0, 0)) is { } first ? first
+            : c.SpotX is double sx && c.SpotY is double sy ? (sx, sy) : Entry(town, region);
         var said = new List<string>();
         var route = Roads.Plan(town, (0, 0), entry, Roads.Mind(town, members, false, false), town.Rng, said);
         s.Legs.Add(new SurveyLeg { FromX = 0, FromY = 0, Route = route, Start = town.Tick, Kind = "out" });
@@ -631,6 +669,7 @@ public static class Explore
     {
         var region = town.Regions[s.RegionId];
         var rng = town.Rng;
+        if (s.ZoneId is int zid && Wilds.Of(town, zid) is { } zone && Wilds.NextCell(town, zone, Where(town, s, town.Tick)) is { } cell) return cell;
         if (s.SpotX is double sx && s.SpotY is double sy)
         {
             // Sent to a marked spot: they cast about it rather than wander the whole region.
@@ -682,6 +721,8 @@ public static class Explore
     {
         var leg = s.Legs[^1];
         bool done = town.Tick >= End(town, leg);
+        // Out on the road, they see the painted ground they pass.
+        if (town.Wilds.Count > 0) Wilds.See(town, Where(town, s, town.Tick));
         if (s.Phase == SurveyPhase.Homeward)
         {
             if (done) Home(town, s);
@@ -692,12 +733,14 @@ public static class Explore
         if (s.Phase == SurveyPhase.Outbound)
         {
             s.Phase = SurveyPhase.Exploring;
-            s.ExploreUntil = town.Tick + (s.SpotX == null ? Rules(town).ExploreDays : Rules(town).Commission.SpotDays) * SimTime.HoursPerDay;
-            s.Journal.Add(s.SpotX == null ? $"They reach {town.Regions[s.RegionId].Name}." : "They reach the spot the council marked, and cast about it.");
+            var zone = s.ZoneId is int zid ? Wilds.Of(town, zid) : null;
+            s.ExploreUntil = town.Tick + (zone != null ? Wilds.TripHours(town, zone) : (s.SpotX == null ? Rules(town).ExploreDays : Rules(town).Commission.SpotDays) * SimTime.HoursPerDay);
+            s.Journal.Add(zone != null ? $"They reach {Wilds.Name(town, zone)} the council painted, and set about walking it." : s.SpotX == null ? $"They reach {town.Regions[s.RegionId].Name}." : "They reach the spot the council marked, and cast about it.");
             // Out there, they learn the name of the country the spot lies in.
             town.Regions[s.RegionId].Known = true;
         }
-        if (s.Escorting || town.Tick >= s.ExploreUntil || Hp(town, s) < Rules(town).HomeHp) GoHome(town, s);
+        bool walked = s.ZoneId is int wz && (Wilds.Of(town, wz) is not { } wild || Wilds.Unseen(wild) == 0);
+        if (s.Escorting || walked || town.Tick >= s.ExploreUntil || Hp(town, s) < Rules(town).HomeHp) GoHome(town, s);
         else March(town, s, Next(town, s), "wander");
     }
 

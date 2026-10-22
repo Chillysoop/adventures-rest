@@ -20,7 +20,7 @@ public partial class Main
         _map.Flagging = !_map.Flagging;
         if (_map.Flagging)
         {
-            _map.Scouting = false;
+            _map.Brush = null;
             _map.Planner.Pick(null);
             _map.Decorator.Pick(null);
         }

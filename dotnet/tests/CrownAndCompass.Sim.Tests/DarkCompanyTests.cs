@@ -68,8 +68,10 @@ public class DarkCompanyTests
         foreach (var p in t.Parties.Where(p => p.SiteId == site.Def.Id)) p.ArriveTick = int.MaxValue;
         t.DarkCompany.ArriveTick = t.Tick + 1;
         int robbed = t.DarkCompany.Robbed;
+        // A site its master's dark quest sought is seized for the quest instead (DarkQuests.Finish), not robbed for power.
+        bool sought = DarkQuests.Current(t) is { } q && q.SiteId == site.Def.Id;
         sim.RunDays(1);
-        if (t.DarkCompany.Robbed > robbed)
+        if (t.DarkCompany.Robbed > robbed && !sought)
         {
             Assert.True(site.Def.Loot[^1] < loot);
             Assert.True(master.Power > power * 1.03 || master.Power > power + 10);

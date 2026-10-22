@@ -203,6 +203,7 @@ public sealed class Simulation
         using (Asking("bounties"))
         {
             Quests.Daily(t, Hand("bounties"), Options.FreeCompanies);
+            Wilds.Daily(t, Options.AutoMayor);
             Explore.Daily(t, Hand("bounties"));
             Intel.Daily(t, Stewards.Sub(t, Options, "bounties", Options.AutoIntel));
         }
@@ -244,6 +245,7 @@ public sealed class Simulation
         Curses.Daily(t);
         Downtime.Daily(t);
         Notoriety.Daily(t);
+        Notables.Daily(t);
         Heraldry.Daily(t);
         Eggs.Daily(t);
         Poaching.Daily(t);
@@ -400,6 +402,9 @@ public sealed class Simulation
     /// <summary>The player's other lever: sign or veto the motion before the council.</summary>
     public bool DecideMotion(int motionId, bool sign) => Council.Decide(Town, motionId, sign);
 
+    /// <summary>Take one councillor aside before the vote and try to turn their vote, by an approach: "persuade", "intimidate" or "deceive".</summary>
+    public StoryBeat? SwayCouncillor(int motionId, string seat, string approach) => Council.Sway(Town, motionId, seat, approach);
+
     /// <summary>Call a festival on the mayor's own word: mood for a few days and a little Mandate, for gold.</summary>
     public bool HoldFestival() => Council.HoldFestival(Town);
 
@@ -447,6 +452,9 @@ public sealed class Simulation
     /// <summary>Pay a trade guild to drop its demand or call off its strike.</summary>
     public bool PayOffGuild(string guildId) => Guilds.PayOff(Town, guildId);
 
+    /// <summary>Talk a guild's demand or strike away, by an approach: "persuade", "intimidate" or "deceive" (negotiation.json).</summary>
+    public StoryBeat? NegotiateGuild(string guildId, string approach) => Guilds.Negotiate(Town, guildId, approach);
+
     /// <summary>Send the watch to break a guild's strike, at a cost in Mandate.</summary>
     public bool BreakStrike(string guildId) => Guilds.Break(Town, guildId);
 
@@ -461,6 +469,15 @@ public sealed class Simulation
 
     /// <summary>Scry a site live for a few hours: the Scrying Pool if it has one left, else a rested caster (the named one) on their terms: free, gold or a favour.</summary>
     public Scrying? CommissionScrying(string siteId, int? casterId = null) => Knowledge.CommissionScrying(Town, siteId, casterId);
+
+    /// <summary>Paint cells of the wilds with the explore or patrol brush (cells of <see cref="Wilds.Rules"/>' grid, x east and y south of the town). Returns the zone painted into.</summary>
+    public WildZone? PaintWilds(string kind, IEnumerable<(int X, int Y)> cells) => Wilds.Paint(Town, kind, cells);
+
+    /// <summary>Rub out painted cells of a brush's kind; a zone left empty is gone.</summary>
+    public int EraseWilds(string kind, IEnumerable<(int X, int Y)> cells) => Wilds.Erase(Town, kind, cells);
+
+    /// <summary>Send a horse regiment to ride a painted patrol, or (null) call its regiment home.</summary>
+    public bool SendRiders(int zoneId, int? regimentId) => Wilds.Send(Town, zoneId, regimentId);
 
     /// <summary>Mark a spot in the wilds (days of march east and south of the town) and pay a company to go and look at it.</summary>
     public Commission? MarkSpot(double x, double y, double? reward = null) => Explore.PostSpot(Town, x, y, reward);
@@ -487,8 +504,11 @@ public sealed class Simulation
     /// <summary>Pay for a mirror pair and have one hidden at a site, for a lasting live view.</summary>
     public Scout? PlantMirror(string siteId) => Watch.PlantMirror(Town, siteId);
 
-    /// <summary>Garrison a cleared site so nothing moves back in, and the town sees it live.</summary>
+    /// <summary>Raise a guard tower on a cleared site: once it stands nothing moves back in, and the town sees it live.</summary>
     public bool HoldSite(string siteId) => Lairs.Hold(Town, siteId);
+
+    /// <summary>Send spears and stores to a tower before something comes to test it (<see cref="Lairs.Reinforce"/>).</summary>
+    public bool ReinforceTower(string siteId) => Lairs.Reinforce(Town, siteId);
 
     /// <summary>Post (or call off) a standing patrol over a cleared site, to keep it clear (<see cref="Lairs.Patrol"/>).</summary>
     public bool Patrol(string siteId, bool on) => Lairs.Patrol(Town, siteId, on);
@@ -498,6 +518,9 @@ public sealed class Simulation
 
     /// <summary>Write a punishment for a crime into the law book (laws.json).</summary>
     public bool SetLaw(string crime, string punishment) => Laws.Set(Town, crime, punishment);
+
+    /// <summary>Hold every trial under a truth spell from laws.json "trial" (Zone of Truth), or "" for none.</summary>
+    public bool SetTrialMagic(string spell) => Laws.SetTrialMagic(Town, spell);
 
     /// <summary>Send the watch against a faction the town has exposed.</summary>
     public bool CrackDown(string factionId) => Factions.CrackDown(Town, factionId);
@@ -627,6 +650,12 @@ public sealed class Simulation
     /// <summary>Answer a minor power's envoy: accept its offer or demand and pay its price, or send it home.</summary>
     public bool AnswerEnvoy(string powerId, bool accept) => Powers.Answer(Town, powerId, accept);
 
+    /// <summary>Spend time with a notable townsperson: an approach they are open to (a check of the mayor's skill), or "gift".</summary>
+    public StoryBeat? VisitNotable(int notableId, string approach) => Notables.Visit(Town, notableId, approach);
+
+    /// <summary>Help a notable with the favour they asked (gold, or a check), or turn them down.</summary>
+    public StoryBeat? AnswerNotable(int notableId, bool help) => Notables.Answer(Town, notableId, help);
+
     /// <summary>Pay off a sellsword company that is home.</summary>
     public bool DismissMercenaries(string companyId) => Mercenaries.Dismiss(Town, companyId);
 
@@ -669,8 +698,8 @@ public sealed class Simulation
     /// <summary>Pay a holdout ally's price for its host.</summary>
     public bool BribeAlly(int callId) => AllyCalls.Bribe(Town, callId);
 
-    /// <summary>Threaten a holdout ally into marching (the mayor's Intimidation; standing lost either way).</summary>
-    public bool ThreatenAlly(int callId) => AllyCalls.Threaten(Town, callId);
+    /// <summary>Talk a holdout ally into marching, by an approach: "persuade", "intimidate" or "deceive" (negotiation.json).</summary>
+    public StoryBeat? NegotiateAlly(int callId, string approach) => AllyCalls.Negotiate(Town, callId, approach);
 
     /// <summary>Let a holdout ally keep its host.</summary>
     public bool LetAllyGo(int callId) => AllyCalls.LetGo(Town, callId);

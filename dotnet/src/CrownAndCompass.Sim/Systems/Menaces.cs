@@ -1215,8 +1215,14 @@ public static class Menaces
         Discovery.Meet(town, m, Discovery.Attacked);
         Passage.Alarm(town, where);
         // A sky watch sees them come over the hills in time for the watch to turn out: they meet them at the fence.
-        double warned = 1 + Institutions.SkyWatch(town) / 48.0 * town.Content.Enemy.Defense.SkyWatch;
-        if (warned > 1) town.Log(LedgerCategory.War, Importance.Routine, $"{Saga.Cap(Sightings.SkyRider(town))} sees {m.Name}'s raiders coming for {place} and rings the alarm.");
+        int patrolled = Quests.Site(town, m.SeatId) is { } seat ? Wilds.Warns(town, World.Spot(town, seat)) : 0;
+        double warned = 1 + (Institutions.SkyWatch(town) + patrolled) / 48.0 * town.Content.Enemy.Defense.SkyWatch;
+        if (warned > 1)
+        {
+            string eye = Institutions.SkyWatch(town) > 0 || Quests.Site(town, m.SeatId) is not { } sp ? Sightings.SkyRider(town) : Wilds.Spotter(town, World.Spot(town, sp));
+            bool many = eye.StartsWith("riders ", StringComparison.Ordinal);
+            town.Log(LedgerCategory.War, Importance.Routine, $"{Saga.Cap(eye)} {(many ? "see" : "sees")} {m.Name}'s raiders coming for {place} and {(many ? "ring" : "rings")} the alarm.");
+        }
         if (Threat.LocalDefense(town) * Garrison.FlagFactor(town, where) * warned >= raiders)
         {
             m.Power = Math.Max(0, m.Power - raiders * r.RepelLoss);

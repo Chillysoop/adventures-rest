@@ -237,6 +237,9 @@ public sealed record ClassDef
     public int Weight { get; init; }
     public bool Sneak { get; init; }
 
+    /// <summary>The abilities its heroes add proficiency to on saving throws (from the library; the key ability and Wisdom if it names none).</summary>
+    public IReadOnlyList<string> Saves { get; init; } = [];
+
     /// <summary>What a fumbling hero nearly drops: "the weapon", "the spellbook".</summary>
     public string Fumble { get; init; } = "the weapon";
 
@@ -767,11 +770,28 @@ public sealed record TributeRules
     public double PayIfTreasuryOver { get; init; } = 4;
 }
 
+/// <summary>A guard tower on a cleared site (<see cref="Systems.Lairs.Hold"/>): built with gold over days, then tested now and then.</summary>
 public sealed record OutpostRules
 {
     public double Cost { get; init; } = 150;
     public double Upkeep { get; init; } = 2;
     public int Max { get; init; } = 3;
+
+    /// <summary>Days the tower takes to rise.</summary>
+    public int BuildDays { get; init; } = 4;
+
+    /// <summary>Something comes to test a standing tower about once in this many days, with this many days' warning.</summary>
+    public double TestEveryDays { get; init; } = 75;
+    public int WarnDays { get; init; } = 3;
+
+    /// <summary>The garrison's odds of holding, less for each tier of the site, and more for a knight's levels.</summary>
+    public double HoldChance { get; init; } = 0.8;
+    public double PerTier { get; init; } = 0.1;
+    public double PerLevel { get; init; } = 0.02;
+
+    /// <summary>Gold to reinforce a tower against a coming test, and what it adds to the odds.</summary>
+    public double Reinforce { get; init; } = 60;
+    public double ReinforceBonus { get; init; } = 0.25;
 }
 
 /// <summary>A standing patrol over a cleared site: heroes ride it and meet whatever tries to move back in (<see cref="Systems.Lairs.Patrol"/>).</summary>
@@ -788,6 +808,9 @@ public sealed record PatrolRules
     /// <summary>Experience for the hero who drives them off.</summary>
     public int Xp { get; init; } = 60;
     public int Max { get; init; } = 4;
+
+    /// <summary>A lost fight wounds the hero who led it: d6s per tier of the site, plus one (never below 1 hit point).</summary>
+    public int WoundDice { get; init; } = 1;
 }
 
 /// <summary>Lairs: how sites grow, act by their kind, and are resettled (content/game/lairs.json).</summary>
@@ -1559,6 +1582,7 @@ public sealed class Content
     public VoiceRules Voices { get; init; } = new();
     /// <summary>Exploring companies and what they find (content/game/explore.json).</summary>
     public ExploreRules Explore { get; init; } = new();
+    public Systems.WildsRules Wilds { get; init; } = new();
     /// <summary>The town guard's posts and the wall works past the stone walls (content/game/garrison.json).</summary>
     public GarrisonRules Garrison { get; init; } = new();
 
@@ -1577,12 +1601,16 @@ public sealed class Content
     public Systems.CurseRules Curses { get; init; } = new();
     public Systems.DowntimeRules Downtime { get; init; } = new();
     public Systems.LawRules Laws { get; init; } = new();
+    public Systems.ConditionRules Conditions { get; init; } = new();
+    public Systems.NegotiationRules Negotiation { get; init; } = new();
     /// <summary>The top bar's month and when a trend counts as trouble (content/game/trends.json).</summary>
     public TrendRules Trends { get; init; } = new();
     public MerchantRules Merchants { get; init; } = new();
     public WardRules Wards { get; init; } = new();
     /// <summary>Fame and infamy for heroes and companies (content/game/notoriety.json).</summary>
     public NotorietyRules Notoriety { get; init; } = new();
+    /// <summary>Notable townsfolk and the information network (content/game/notables.json).</summary>
+    public NotableRules Notables { get; init; } = new();
 
     /// <summary>Signature foes placed in the wilds (content/game/foes.json).</summary>
     public FoeRules Foes { get; init; } = new();
@@ -1716,6 +1744,7 @@ public sealed class Content
             HitDie = c.HitDie > 0 ? c.HitDie : lc.HitDie,
             Role = lc.Role,
             Magic = lc.Magic,
+            Saves = lc.Saves.Count > 0 ? lc.Saves : [c.Primary != "" ? c.Primary : lc.Primary.FirstOrDefault() ?? Ability.Str, Ability.Wis],
             HealSpell = lc.Magic == "" ? null : spells.FirstOrDefault(s => s.Roles.Contains("heal")),
             AreaSpell = lc.Magic == "" ? null : spells.FirstOrDefault(s => s.Level == 1 && s.Targets == "area" && s.Roles.Contains("damage") && s.Dice != null),
         };
@@ -1848,6 +1877,7 @@ public sealed class Content
             Regard = Parse<RegardRules>("regard.json"),
             Voices = Parse<VoiceRules>("voices.json"),
             Explore = Parse<ExploreRules>("explore.json"),
+            Wilds = Parse<Systems.WildsRules>("wilds.json"),
             Garrison = Parse<GarrisonRules>("garrison.json"),
             Bounties = Parse<BountyRules>("bounties.json"),
             Broadsheet = Parse<BroadsheetRules>("broadsheet.json"),
@@ -1859,10 +1889,13 @@ public sealed class Content
             Curses = Parse<Systems.CurseRules>("curses.json"),
             Downtime = Parse<Systems.DowntimeRules>("downtime.json"),
             Laws = Parse<Systems.LawRules>("laws.json"),
+            Conditions = Parse<Systems.ConditionRules>("conditions.json"),
+            Negotiation = Parse<Systems.NegotiationRules>("negotiation.json"),
             Trends = Parse<TrendRules>("trends.json"),
             Merchants = Parse<MerchantRules>("merchants.json"),
             Wards = Parse<WardRules>("wards.json"),
             Notoriety = Parse<NotorietyRules>("notoriety.json"),
+            Notables = Parse<NotableRules>("notables.json"),
             Goals = Parse<Systems.GoalRules>("goals.json"),
             Passage = Parse<PassageRules>("passage.json"),
             Heraldry = Parse<HeraldryRules>("heraldry.json"),

@@ -208,7 +208,7 @@ public static class Field
     public static int MarchHours(Town town, Settlement s) => AllyCalls.MarchDays(town, s) * SimTime.HoursPerDay;
 
     /// <summary>Whether the regiment is out with the host, or holding a conquered settlement.</summary>
-    public static bool Away(Town town, Regiment r) => town.Army.Sortie?.Regiments.Contains(r.Id) == true || Conquest.Garrisoning(town, r);
+    public static bool Away(Town town, Regiment r) => town.Army.Sortie?.Regiments.Contains(r.Id) == true || Conquest.Garrisoning(town, r) || r.WildsId != null;
 
     /// <summary>Whether a townsperson is out with the host.</summary>
     public static bool Afield(Town town, Agent a) => a.RegimentId is int id && (town.Army.Sortie?.Regiments.Contains(id) == true || town.Army.Held.Any(o => o.GarrisonId == id));

@@ -30,19 +30,15 @@ public sealed record AllyRules
     /// <summary>Gold a holdout asks for each point of its host.</summary>
     public double BribePerStrength { get; init; } = 4;
 
-    /// <summary>The Intimidation DC to threaten a holdout into marching, and more for its standing below 50; standing lost either way, more on a failure.</summary>
-    public int ThreatenDc { get; init; } = 13;
-    public double ThreatenPerStanding { get; init; } = 0.1;
-    public double ThreatenCost { get; init; } = 12;
-    public double ThreatenFailCost { get; init; } = 30;
-
+    /// <summary>A ruler under a foe's shadow makes a Wisdom save not to be its creature already: DC 10, and a point for each this much depth past turnFrom.</summary>
+    public double TurnDcPer { get; init; } = 3;
     /// <summary>Standing each call costs (asking is a favour), and what a host that fought and won brings back.</summary>
     public double CallCost { get; init; } = 3;
     public double Fought { get; init; } = 6;
 
-    /// <summary>Shadow depth past which an ally may already be the enemy's, and how likely per point past it; a puppet ruler always is.</summary>
+    /// <summary>Shadow depth past which an ally may already be the enemy's; a puppet ruler always is.</summary>
     public double TurnFrom { get; init; } = 40;
-    public double TurnPerDepth { get; init; } = 0.012;
+
 
     /// <summary>Days before the town may call the same ally again.</summary>
     public int Again { get; init; } = 20;
@@ -93,7 +89,7 @@ public sealed class AllyCall
 /// <summary>
 /// Calling the town's allies to arms. The mayor sends riders to one ally, some or all; each answers within the day.
 /// Most friends come (more the better they stand, the readier their ruler, the safer their own lands); others hold out
-/// for gold, which the mayor can pay, threaten them over (an Intimidation check that costs standing either way), or let
+/// for gold, which the mayor can pay, talk them round (persuade, intimidate or deceive, <see cref="Negotiation"/>), or let
 /// go; a few refuse. A host that comes must march the days its region lies from town, so a call sent late arrives late.
 /// And a people under a foe's shadow, or a puppet ruler, may be the foe's already: they march, camp at the gate, and go
 /// over to the enemy when the walls are hit.
@@ -165,8 +161,15 @@ public static class AllyCalls
         if (Reigns.Puppet(s)) return true;
         double depth = s.Shadow?.Depth ?? 0;
         var r = Rules(town);
-        return depth > r.TurnFrom && town.Rng.Chance((depth - r.TurnFrom) * r.TurnPerDepth);
+        if (depth <= r.TurnFrom) return false;
+        // Their ruler's Wisdom save against the whispers: a devout or wary one holds out longest. Out of sight, so unseen.
+        int dc = 10 + (int)Math.Round((depth - r.TurnFrom) / Math.Max(1, r.TurnDcPer));
+        int die = town.Rng.D20();
+        return die == 1 || (die != 20 && die + Ruler(town, s).Wis < dc);
     }
+
+    /// <summary>The temperament of an ally's ruler, which sets their Wisdom and Insight.</summary>
+    public static TemperamentDef Ruler(Town town, Settlement s) => Reigns.TemperOf(town, s);
 
     private static void Answer(Town town, AllyCall c)
     {
@@ -224,41 +227,46 @@ public static class AllyCalls
         return true;
     }
 
-    /// <summary>The DC to threaten a holdout.</summary>
-    public static int ThreatenDc(Town town, AllyCall c) =>
-        Rules(town).ThreatenDc + (int)Math.Round(Math.Max(0, 50 - Of(town, c).Standing) * Rules(town).ThreatenPerStanding);
+    /// <summary>The DC to talk a holdout round by an approach: their ruler's passive Insight or Wisdom, harder the less they think of the town.</summary>
+    public static int NegotiateDc(Town town, AllyCall c, TalkDef a)
+    {
+        var s = Of(town, c);
+        var t = Ruler(town, s);
+        int cold = (int)Math.Round((50 - s.Standing) / Math.Max(1, Negotiation.Rules(town).Ally.StandingPer));
+        return Negotiation.Dc(a, 10 + t.Insight, t.Wis, Math.Max(0, cold));
+    }
 
     /// <summary>
-    /// Threaten a holdout: the mayor's Intimidation against them. It costs standing either way; on a success they march,
-    /// on a failure they keep their host and like the town much less (and may break the alliance).
+    /// Talk a holdout round by an approach the player picks: the mayor's roll against their ruler. On a success they
+    /// march; on a failure they keep their host. Either way their standing moves as the approach weighs it, and an
+    /// ally that ends up liking the town less than nothing breaks the alliance.
     /// </summary>
-    public static bool Threaten(Town town, int callId)
+    public static StoryBeat? Negotiate(Town town, int callId, string approach)
     {
         var c = town.Army.Calls.FirstOrDefault(x => x.Id == callId);
-        if (c == null || c.State != CallState.Holdout) return false;
+        var a = Negotiation.Approach(town, approach);
+        if (c == null || a == null || c.State != CallState.Holdout) return null;
         var s = Of(town, c);
-        var r = Rules(town);
-        var beat = Sheet.Roll(town, "intimidation", "", ThreatenDc(town, c), "", false, false);
-        beat.Option = "threaten";
-        town.Stories.LastCheck = beat;
-        town.Stories.Checks++;
-        string roll = $"(Intimidation {beat.Total} against DC {beat.Dc}, {Stories.Word(beat.Result)})";
+        var r = Negotiation.Rules(town).Ally;
+        var beat = Negotiation.Roll(town, a, NegotiateDc(town, c, a), "ally");
+        s.Standing += Negotiation.Shift(a, beat);
+        Negotiation.Settle(town, a, beat);
+        string Fill(string text) => text.Replace("{approach}", a.Name).Replace("{ruler}", s.Leader != "" ? s.Leader : "their ruler")
+            .Replace("{People}", Saga.Cap(s.People)).Replace("{roll}", Negotiation.Said(town, beat));
         if (Sheet.Succeeded(beat))
         {
-            s.Standing -= r.ThreatenCost;
             c.Turncoat = Bought(town, s);
-            March(town, c, $"The mayor's word is hard and plain {roll}. {Saga.Cap(s.People)} march, sullen");
-            return true;
+            March(town, c, Fill(r.Won));
+            return beat;
         }
-        s.Standing -= r.ThreatenFailCost;
         c.State = CallState.Refused;
         if (s.Standing < 0)
         {
             s.Allied = false;
-            town.Log(LedgerCategory.War, Importance.Major, $"{Saga.Cap(s.People)} will not be threatened {roll}. They send the rider back and break the alliance.");
+            town.Log(LedgerCategory.War, Importance.Major, $"{Fill(r.Lost)} {Saga.Cap(s.People)} send the rider back and break the alliance.");
         }
-        else town.Log(LedgerCategory.War, Importance.Major, $"{Saga.Cap(s.People)} will not be threatened {roll}. They keep their host at home and remember it.");
-        return true;
+        else town.Log(LedgerCategory.War, Importance.Major, $"{Fill(r.Lost)} They keep their host at home.");
+        return beat;
     }
 
     /// <summary>Let a holdout keep its host.</summary>

@@ -29,6 +29,7 @@ public enum AlertWindow
     Institutions,
     Tourney,
     Army,
+    Notables,
 }
 
 /// <summary>A group of alerts: one icon on the strip, with a count and a hover list of what is in it.</summary>
@@ -92,6 +93,7 @@ public static class Alerts
     public static readonly AlertKind Loot = new("loot", "Loot for sale", "gold", AlertLevel.Decision, AlertWindow.Armory);
     public static readonly AlertKind Gifts = new("gifts", "Arms to give", "heroes", AlertLevel.Minor, AlertWindow.Armory);
     public static readonly AlertKind Outpost = new("outpost", "Land to hold", "warband", AlertLevel.Minor, AlertWindow.None);
+    public static readonly AlertKind Tower = new("tower", "Tower tested", "warband", AlertLevel.Urgent, AlertWindow.None);
     public static readonly AlertKind Patrol = new("patrol", "Keep it clear", "order-guard", AlertLevel.Minor, AlertWindow.None);
     public static readonly AlertKind Conquered = new("conquered", "A town to settle", "gold", AlertLevel.Decision, AlertWindow.Army);
     public static readonly AlertKind WarAsk = new("warask", "An ally asks for war", "warband", AlertLevel.Minor, AlertWindow.Army);
@@ -109,14 +111,15 @@ public static class Alerts
     public static readonly AlertKind Spent = new("spent", "Traps spent", "trap-pitch", AlertLevel.Decision, AlertWindow.Defence);
     public static readonly AlertKind Dark = new("dark", "The dark company rides", "dark-company", AlertLevel.Decision, AlertWindow.Campaign);
     public static readonly AlertKind Scry = new("scry", "Scry the fight", "compass", AlertLevel.Decision, AlertWindow.None);
+    public static readonly AlertKind Notable = new("notable", "Notables", "np-shaking-hands", AlertLevel.Decision, AlertWindow.Notables);
 
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Sighted, Lurker, Captives, Doom, Crisis, Sick, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Balance, Fealty, DarkQuest, Road, Clash, Traitor, Plot, Dark, Spent, Stores, Story, Scry, Explorers, Fallen, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Loot, Stalled, Bridge, Ruin, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Patrol, Outpost, Housing, Crowded];
+        [Siege, Sighted, Lurker, Captives, Doom, Crisis, Sick, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Balance, Fealty, DarkQuest, Road, Clash, Traitor, Plot, Dark, Spent, Stores, Story, Scry, Explorers, Fallen, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Notable, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Loot, Stalled, Bridge, Ruin, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Tower, Patrol, Outpost, Housing, Crowded];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
-    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Allies, Word, Crowds, Keepers, Outposts, Lists, Brought];
+    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Allies, Word, Crowds, Keepers, Notables, Outposts, Lists, Brought];
 
     public static List<Alert> Standing(Town town) => Rules.SelectMany(r => r(town)).ToList();
 
@@ -534,7 +537,7 @@ public static class Alerts
             if (c.State != CallState.Holdout) continue;
             var s = AllyCalls.Of(t, c);
             yield return new($"holdout:{c.Id}", Holdout, $"{Cap(s.People)} hold out",
-                $"They will send {Js.Str(c.Strength)} for {Js.Str(c.Price)}g. Pay, threaten (DC {AllyCalls.ThreatenDc(t, c)}) or let them be.");
+                $"They will send {Js.Str(c.Strength)} for {Js.Str(c.Price)}g. Pay, talk them round or let them be.");
         }
         foreach (int id in t.Army.Pending)
         {
@@ -567,7 +570,15 @@ public static class Alerts
     /// <summary>A cleared site the town can afford to garrison before something moves back in. The watch waits for the word.</summary>
     private static IEnumerable<Alert> Outposts(Town t)
     {
-        // Cleared by a bounty, then kept clear by a patrol, then held for good by an outpost.
+        // A town tower that something is coming to test: one action, reinforce it.
+        foreach (var x in t.Sites)
+        {
+            if (x.ThreatTick is not int at || !x.Held || x.Reinforced || Systems.Loyalty.Lord(t, x.Def.Id) != null) continue;
+            int days = Math.Max(1, (int)Math.Ceiling((at - t.Tick) / (double)SimTime.HoursPerDay));
+            yield return new($"tower:{x.Def.Id}", Tower, $"{x.Def.Name}: tower tested in {days}d",
+                $"• {Cap(x.ThreatBy)} are coming\n• Holds {Math.Round(Lairs.HoldOdds(t, x) * 100)}% now\n• Reinforce: {Js.Str(t.Content.Lairs.Outpost.Reinforce)}g", SiteId: x.Def.Id);
+        }
+        // Cleared by a bounty, then kept clear by a patrol, then held for good by a tower.
         if (Lairs.WorthPatrolling(t) is { } p)
         {
             var pr = t.Content.Lairs.Patrol;
@@ -578,7 +589,7 @@ public static class Alerts
         if (Lairs.WorthHolding(t) is not { } s) yield break;
         var o = t.Content.Lairs.Outpost;
         yield return new($"outpost:{s.Def.Id}", Outpost, $"Hold {s.Def.Name}?",
-            $"{s.Def.Name} is cleared, and something will move back in unless the town holds it. A garrison of the watch costs {Js.Str(o.Cost)} gold and {Js.Str(o.Upkeep)} a day; send it from the site's panel.", SiteId: s.Def.Id);
+            $"• Cleared, but something will move back in\n• A tower: {Js.Str(o.Cost)}g, {o.BuildDays} days to build, {Js.Str(o.Upkeep)}g a day", SiteId: s.Def.Id);
     }
 
     /// <summary>An institution waiting on the council's choice, or a keeper whose patience has run out.</summary>
@@ -594,6 +605,21 @@ public static class Alerts
             else if (s.Regard <= -40)
                 yield return new($"keeper:{d.Id}", Institution, $"{Institutions.KeeperName(t, s)} is bitter",
                     $"{Cap(d.Name)} gives the town little while its keeper feels like this. Fund it more generously in the Institutions window, or answer its next request.");
+        }
+    }
+
+    /// <summary>A notable asking a favour, or one about to turn their back on the town.</summary>
+    private static IEnumerable<Alert> Notables(Town t)
+    {
+        foreach (var n in Systems.Notables.Active(t))
+        {
+            string who = Systems.Notables.NameOf(t, n);
+            if (Systems.Notables.AskOf(t, n) is { } ask)
+                yield return new($"notable:{n.Id}", Notable, $"{who} asks a favour",
+                    $"{Cap(who)} {ask.Text}. Answer in the Notables window within {Days(Math.Max(1, n.AskUntil - t.Day))}.", AgentId: n.AgentId);
+            else if (Systems.Notables.Band(t, n) == Systems.Notables.Bitter)
+                yield return new($"bitter:{n.Id}", Notable, $"{who} is bitter",
+                    $"{Cap(who)} will walk away from the town in {Days(Math.Max(1, t.Content.Notables.LeaveDays - n.BitterDays))}. Visit them in the Notables window.", AgentId: n.AgentId);
         }
     }
 

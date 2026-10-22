@@ -471,6 +471,16 @@ public static partial class Ui
         popup.IndexPressed += i => pick((int)i);
         return m;
     }
+
+    /// <summary>A drop-down whose entries each carry a hover (a roll's breakdown).</summary>
+    public static MenuButton Menu(string label, string icon, IReadOnlyList<(string Icon, string Text, string Tip)> items, Action<int> pick, string tip)
+    {
+        var m = Menu(label, icon, items.Select(x => (x.Icon, x.Text)).ToList(), pick);
+        m.TooltipText = tip;
+        var popup = m.GetPopup();
+        for (int i = 0; i < items.Count; i++) popup.SetItemTooltip(i, items[i].Tip);
+        return m;
+    }
 }
 
 /// <summary>The hover and pinned cards that explain keywords (Main implements it in Keywords.cs).</summary>
@@ -630,6 +640,42 @@ public sealed class Pane
             h.AddThemeConstantOverride("h_separation", 8);
             h.AddThemeConstantOverride("v_separation", 6);
             foreach (var x in menus) h.AddChild(Ui.Menu(x.Label, x.Icon, x.Items, x.Pick));
+            return h;
+        });
+    }
+
+    /// <summary>A line of drop-downs whose entries carry hovers: how to talk someone round, with the odds of each approach.</summary>
+    public void RollMenus(params (string Label, string Icon, string Tip, IReadOnlyList<(string Icon, string Text, string Tip)> Items, Action<int> Pick)[] menus)
+    {
+        var sig = new StringBuilder("R");
+        foreach (var x in menus) sig.Append('|').Append(x.Label).Append(x.Icon).Append(x.Tip).Append(string.Join("/", x.Items.Select(i => i.Icon + i.Text + i.Tip)));
+        Add(sig.ToString(), () =>
+        {
+            var h = new HFlowContainer();
+            h.AddThemeConstantOverride("h_separation", 8);
+            h.AddThemeConstantOverride("v_separation", 6);
+            foreach (var x in menus) h.AddChild(Ui.Menu(x.Label, x.Icon, x.Items, x.Pick, x.Tip));
+            return h;
+        });
+    }
+
+    /// <summary>Buttons with a hover each (the odds of the roll a button makes).</summary>
+    public void TipButtons(params (string Label, bool Enabled, bool Primary, Action Press, string Tip)[] buttons)
+    {
+        var sig = new StringBuilder("B");
+        foreach (var b in buttons) sig.Append('|').Append(b.Label).Append(b.Enabled).Append(b.Primary).Append(b.Tip);
+        Add(sig.ToString(), () =>
+        {
+            var h = new HBoxContainer();
+            h.AddThemeConstantOverride("separation", 8);
+            foreach (var b in buttons)
+            {
+                var btn = new Button { Text = b.Label, Disabled = !b.Enabled, ThemeTypeVariation = b.Primary ? "Post" : "", TooltipText = b.Tip };
+                Ui.GoldButton(btn);
+                var press = b.Press;
+                btn.Pressed += () => press();
+                h.AddChild(btn);
+            }
             return h;
         });
     }
