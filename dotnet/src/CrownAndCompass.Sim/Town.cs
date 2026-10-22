@@ -328,6 +328,7 @@ public static class TreasuryAccount
     public const string Tourney = "Tourney";
     public const string Guilds = "Guilds";
     public const string Notables = "Notables";
+    public const string Patrols = "Patrols";
 }
 
 /// <summary>How the campaign ended.</summary>
@@ -437,6 +438,13 @@ public sealed class Town
 
     /// <summary>Companies sent out exploring, oldest first.</summary>
     public List<Systems.Survey> Surveys { get; } = [];
+
+    /// <summary>Zones the mayor painted on the campaign map to explore or patrol (<see cref="Systems.Wilds"/>).</summary>
+    public List<Systems.WildZone> Wilds { get; } = [];
+    public int WildCount { get; set; }
+
+    /// <summary>Bumped whenever painted zones change, so roads' patrol cover is worked out again.</summary>
+    [NotSaved] public int WildsStamp;
 
     /// <summary>What exploring companies have come on, oldest first.</summary>
     public List<Systems.Find> Finds { get; } = [];

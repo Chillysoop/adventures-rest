@@ -60,9 +60,40 @@ public class LairsTests
         t.Treasury = 1000;
         Assert.True(sim.HoldSite(s.Def.Id));
         Assert.Equal(1000 - t.Content.Lairs.Outpost.Cost, t.Treasury, 6);
-        sim.RunDays(5);
+        // The tower takes days to rise; nothing moves in while the builders work.
+        Assert.False(s.Held);
+        Assert.NotNull(s.TowerDue);
+        Assert.Equal("a tower is rising", Lairs.HoldBlocked(t, s));
+        sim.RunDays(t.Content.Lairs.Outpost.BuildDays + 1);
         Assert.True(s.Cleared);
+        Assert.True(s.Held);
+        Assert.Null(s.TowerDue);
         Assert.Equal(LiveSource.Outpost, Watch.LiveOf(t, s));
+    }
+
+    [Fact]
+    public void ATowerIsTestedWithWarningAndAWeakOneFalls()
+    {
+        var sim = new Simulation(new SimulationOptions { Seed = 2, AutoMayor = false });
+        var t = sim.Town;
+        var s = t.Sites.First(x => x.Known != SiteKnowledge.Unheard && !x.Generated);
+        s.Cleared = s.ThoughtCleared = s.Held = true;
+        t.Treasury = 1000;
+        var o = t.Content.Lairs.Outpost;
+        // Sooner or later something comes, and the town hears days ahead.
+        for (int d = 0; d < 600 && s.ThreatTick == null; d++) sim.RunDays(1);
+        Assert.NotNull(s.ThreatTick);
+        Assert.Contains(Alerts.Standing(t), a => a.Key == $"tower:{s.Def.Id}");
+        double odds = Lairs.HoldOdds(t, s);
+        Assert.True(sim.ReinforceTower(s.Def.Id));
+        Assert.True(Lairs.HoldOdds(t, s) > odds);
+        Assert.DoesNotContain(Alerts.Standing(t), a => a.Key == $"tower:{s.Def.Id}");
+        Assert.False(sim.ReinforceTower(s.Def.Id));
+        sim.RunDays(o.WarnDays + 1);
+        Assert.Null(s.ThreatTick);
+        // Held, or fallen and wanting clearing again.
+        Assert.True((s.Held && s.Cleared) || (!s.Held && !s.Cleared));
+        Assert.Contains(t.Ledger.Entries, e => e.Text.Contains($"The tower at {s.Def.Name}"));
     }
 
     [Fact]

@@ -171,6 +171,9 @@ public sealed class HeroSheet
     /// <summary>A cleared site the town granted the knight as their land.</summary>
     public string? FiefId { get; set; }
 
+    /// <summary>How the knight runs their land, their own choice (<see cref="Systems.Loyalty.Choose"/>): "tower", "ride" or "rent".</summary>
+    public string FiefWay { get; set; } = "";
+
     /// <summary>The town's sworn champion (one at a time).</summary>
     public bool Champion { get; set; }
 

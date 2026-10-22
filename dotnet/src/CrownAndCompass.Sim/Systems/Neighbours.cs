@@ -106,6 +106,9 @@ public sealed record BandRules
 public sealed record ProjectDef
 {
     public string Id { get; init; } = "";
+
+    /// <summary>No longer offered: kept so old saves load (the caravan patrol rides on as a painted patrol, <see cref="Wilds"/>).</summary>
+    public bool Retired { get; init; }
     public string Name { get; init; } = "";
     public double Cost { get; init; }
     public int Days { get; init; }
@@ -398,6 +401,7 @@ public static class Neighbours
         var r = Rules(town).Security;
         double t = r.Base + (s.Band is { Home: true } b ? b.Members * r.PerMember : 0);
         foreach (var p in s.Projects) t += Rules(town).Project(p)?.Security ?? 0;
+        t += Wilds.Security(town, s);
         t -= Shadows.SecurityLoss(town, s);
         foreach (var m in Menaces.Alive(town))
         {
@@ -697,7 +701,7 @@ public static class Neighbours
     // ---- Projects ----
 
     public static IEnumerable<ProjectDef> ProjectsFor(Town town, Settlement s) =>
-        Rules(town).Projects.Where(p => p.Peoples.Count == 0 || p.Peoples.Contains(s.Kin.Id));
+        Rules(town).Projects.Where(p => !p.Retired && (p.Peoples.Count == 0 || p.Peoples.Contains(s.Kin.Id)));
 
     /// <summary>Why the town can't fund this project at this settlement now, or null if it can.</summary>
     public static string? ProjectRefused(Town town, Settlement s, ProjectDef p)
@@ -768,7 +772,7 @@ public static class Neighbours
     {
         double k = 1;
         foreach (var id in s.Projects) k *= Rules(town).Project(id)?.Raid ?? 1;
-        return k;
+        return k * Wilds.RaidShare(town, s);
     }
 
     /// <summary>An allied people's gifts to market, times this.</summary>

@@ -128,7 +128,7 @@
     { "id": "bridge", "name": "Bridge", "cost": 300, "days": 22, "prosperity": 8, "tripDays": 2, "raid": 0.6,
       "text": "A proper bridge on the road to {settlement}: caravans cross in a day what took three.",
       "done": "The bridge on the road to {settlement} is open. The first carts across bring a cask for {town}'s council." },
-    { "id": "patrol", "name": "Caravan patrol", "cost": 160, "days": 8, "upkeep": 1.5, "security": 10, "raid": 0.5,
+    { "id": "patrol", "name": "Caravan patrol", "retired": true, "cost": 160, "days": 8, "upkeep": 1.5, "security": 10, "raid": 0.5,
       "text": "Riders who keep the road to {settlement} and see caravans through, paid by {town}.",
       "done": "{town}'s riders begin to patrol the road to {settlement}." },
     { "id": "waystation", "name": "Waystation", "cost": 200, "days": 12, "prosperity": 4, "rest": true,

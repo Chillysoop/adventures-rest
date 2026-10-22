@@ -203,6 +203,7 @@ public static class Stewards
         "warden" => Clockwork.Build(town),
         "clash" => Crises.Join(town, a.I1, a.I2),
         "hold" => Lairs.Hold(town, a.S1),
+        "reinforce" => Lairs.Reinforce(town, a.S1),
         _ => false,
     };
 

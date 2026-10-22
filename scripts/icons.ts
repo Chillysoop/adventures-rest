@@ -154,6 +154,7 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["order-guard", "flying-flag", mono],
   ["order-strike", "sword-brandish", mono],
   ["order-scout", "spyglass", mono],
+  ["order-patrol", "cavalry", mono],
   // The council chamber (godot/src/Chamber.cs): votes over heads, seats, loyalty, what the mayor holds over them
   ["vote-aye", "open-palm", "#8cc084"],
   ["vote-nay", "thumb-down", "#ef7f6f"],

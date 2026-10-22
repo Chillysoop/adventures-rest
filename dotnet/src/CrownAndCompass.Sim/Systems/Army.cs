@@ -214,6 +214,9 @@ public sealed class Regiment
 
     /// <summary>Picked to march out with the host (the rest stay on the walls).</summary>
     public bool Marches { get; set; }
+
+    /// <summary>The painted patrol it rides, out in the wilds (<see cref="Wilds"/>).</summary>
+    public int? WildsId { get; set; }
 }
 
 /// <summary>The army's state: its regiments and the levy laws.</summary>

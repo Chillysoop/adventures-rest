@@ -48,16 +48,22 @@ public static class Lairs
             }
             if (s.Cleared)
             {
-                // A knight's own retainers hold their lands at no cost to the treasury.
                 if (s.Restored) continue;
-                if (s.Held)
+                // A knight runs their own land: their retainers keep any tower at no cost to the treasury.
+                var lord = Loyalty.Lord(town, s.Def.Id);
+                if (s.TowerDue is int due)
                 {
-                    if (Loyalty.Lord(town, s.Def.Id) == null) town.Book(TreasuryAccount.Outposts, -r.Outpost.Upkeep);
+                    if (town.Tick >= due) Raised(town, s, lord);
                 }
-                else if (s.Patrolled && !PayPatrol(town, s)) { }
+                else if (s.Held)
+                {
+                    if (lord == null) town.Book(TreasuryAccount.Outposts, -r.Outpost.Upkeep);
+                    Tested(town, s, lord, autoMayor && autoDefense);
+                }
+                else if (lord == null && s.Patrolled && !PayPatrol(town, s)) { }
                 else if (s.ResettleTick != null && town.Tick >= s.ResettleTick)
                 {
-                    if (s.Patrolled) Meet(town, s);
+                    if (s.Patrolled || lord?.Hero!.FiefWay == "ride") Meet(town, s, lord);
                     else Resettle(town, s);
                 }
                 continue;
@@ -237,15 +243,19 @@ public static class Lairs
         s.BandSize = raiders;
         s.LastRaidDay = town.Day;
         // A sky watch sees them gathering sooner: a day more to plant the flags.
+        // So do riders patrolling the ground it sets out from or crosses.
         int sky = Institutions.SkyWatch(town);
+        int patrolled = Wilds.Warns(town, World.Spot(town, s));
+        sky += patrolled;
         s.NextActTick = town.Tick + r.BandHours + sky;
         string who = Rumors.Occupants(town.Content, s.Def);
         string bigger = s.Rebuffs > 0 ? " More of them than last time." : "";
         string when = sky >= 12 ? "They will be there tomorrow night." : "They will be there by nightfall.";
         Sightings.Report(town, Key(s), Sightings.Band, who, (int)raiders, s.Def.Id, target.Id, Garrison.SectionAt(town, town.Lot(target.LotId).X, town.Lot(target.LotId).Y), 0.5, r.BandHours + sky + 6,
-            sky > 0 ? $"flies in with news: about {Js.Str(raiders)} {who} gathering {From(s)}, bound for {target.Name}. {when}{bigger}"
+            sky > patrolled ? $"flies in with news: about {Js.Str(raiders)} {who} gathering {From(s)}, bound for {target.Name}. {when}{bigger}"
+                : patrolled > 0 ? $"brings news: about {Js.Str(raiders)} {who} setting out {From(s)}, bound for {target.Name}. {when}{bigger}"
                 : $"runs in with news: about {Js.Str(raiders)} {who} coming down {From(s)} toward {target.Name}. They will be there by nightfall.{bigger}",
-            reporter: sky > 0 ? Sightings.SkyRider(town) : null);
+            reporter: sky > patrolled ? Sightings.SkyRider(town) : patrolled > 0 ? Wilds.Spotter(town, World.Spot(town, s)) : null);
         return false;
     }
 
@@ -517,30 +527,136 @@ public static class Lairs
         };
     }
 
-    // Outposts -----------------------------------------------------------------------------------
+    // Towers -------------------------------------------------------------------------------------
 
     public static string? HoldBlocked(Town town, SiteState s)
     {
         var o = Rules(town).Outpost;
         if (!s.Cleared || !s.ThoughtCleared) return "only a cleared site can be held";
+        if (s.TowerDue != null) return "a tower is rising";
         if (s.Held) return "already held";
-        if (town.Sites.Count(x => x.Held) >= o.Max) return $"the town can hold {o.Max} outposts";
+        if (Loyalty.Lord(town, s.Def.Id) != null) return "a knight's land";
+        if (town.Sites.Count(x => (x.Held || x.TowerDue != null) && Loyalty.Lord(town, x.Def.Id) == null) >= o.Max) return $"the town can hold {o.Max} towers";
         if (town.Treasury < o.Cost) return $"needs {Js.Str(o.Cost)} gold";
         return null;
     }
 
-    /// <summary>Garrison a cleared site: nothing moves back in, and the town sees it as it is.</summary>
+    /// <summary>Raise a guard tower on a cleared site: it takes gold and days to build, and once up nothing moves back in and the town sees it live.</summary>
     public static bool Hold(Town town, string siteId)
     {
         var s = town.Sites.FirstOrDefault(x => x.Def.Id == siteId);
         if (s == null || HoldBlocked(town, s) != null) return false;
         var o = Rules(town).Outpost;
-        if (Stewards.Intercept(town, "defence", new StewardAsk { Area = "defence", Kind = "hold", Title = $"Garrison {s.Def.Name} · {Js.Str(o.Cost)}g", Why = "• Cleared, but something may move back in\n• An outpost keeps it clear", S1 = siteId })) return false;
+        if (Stewards.Intercept(town, "defence", new StewardAsk { Area = "defence", Kind = "hold", Title = $"Build a tower at {s.Def.Name} · {Js.Str(o.Cost)}g", Why = "• Cleared, but something may move back in\n• A tower keeps it clear", S1 = siteId })) return false;
         town.Book(TreasuryAccount.Outposts, -o.Cost);
-        s.Held = true;
+        Build(town, s);
+        town.Log(LedgerCategory.War, Importance.Notable, $"Masons and a guard of the watch march out to raise a tower at {s.Def.Name}. It will stand in {o.BuildDays} days, and cost {Js.Str(o.Upkeep)} gold a day to keep.");
+        return true;
+    }
+
+    /// <summary>Builders go out to a site (the town's or a knight's): nothing moves in while they work.</summary>
+    internal static void Build(Town town, SiteState s)
+    {
+        s.TowerDue = town.Tick + Rules(town).Outpost.BuildDays * SimTime.HoursPerDay;
         s.Patrolled = false;
         s.ResettleTick = null;
-        town.Log(LedgerCategory.War, Importance.Notable, $"A garrison of the watch marches out to hold {s.Def.Name} for {town.Name}, at {Js.Str(o.Upkeep)} gold a day.");
+    }
+
+    private static void Raised(Town town, SiteState s, Agent? lord)
+    {
+        s.TowerDue = null;
+        s.Held = true;
+        town.Log(LedgerCategory.War, Importance.Notable, lord != null
+            ? $"Ser {lord.Name}'s tower stands over {s.Def.Name}, manned by their own retainers."
+            : $"The tower at {s.Def.Name} is finished and manned. Nothing moves back in while it stands.", lord != null ? [lord.Id] : []);
+    }
+
+    /// <summary>Who comes to test a tower: the strongest menace abroad, or whatever the wilds send.</summary>
+    private static string Tester(Town town)
+    {
+        var m = Menaces.Alive(town).OrderByDescending(x => x.Power).ThenBy(x => x.Id).FirstOrDefault();
+        return m != null ? $"raiders of {m.Name}" : "raiders out of the wilds";
+    }
+
+    /// <summary>Its own dice, so a tower's tests never shift the town's main stream.</summary>
+    private static Rng Dice(Town town, SiteState s) => new(unchecked(town.Seed * 7919 + town.Tick * 104729 + Stable(s.Def.Id) + 29));
+
+    private static int Stable(string id)
+    {
+        int h = 17;
+        foreach (char c in id) h = unchecked(h * 31 + c);
+        return h;
+    }
+
+    /// <summary>The garrison's odds of holding a test: less at deeper sites, more for a knight's levels and for reinforcements.</summary>
+    public static double HoldOdds(Town town, SiteState s)
+    {
+        var o = Rules(town).Outpost;
+        int level = Loyalty.Lord(town, s.Def.Id)?.Hero!.Level ?? 0;
+        return Math.Clamp(o.HoldChance - o.PerTier * s.Def.Tier + o.PerLevel * level + (s.Reinforced ? o.ReinforceBonus : 0), 0.1, 0.95);
+    }
+
+    /// <summary>
+    /// Now and then something comes to test a standing tower. The town hears of it <c>WarnDays</c> ahead and can
+    /// reinforce it (<see cref="Reinforce"/>); a strong garrison holds, a weak one falls and the site wants clearing again.
+    /// </summary>
+    internal static void Tested(Town town, SiteState s, Agent? lord, bool auto)
+    {
+        var o = Rules(town).Outpost;
+        var dice = Dice(town, s);
+        if (s.ThreatTick == null)
+        {
+            if (!dice.Chance(1 / o.TestEveryDays)) return;
+            s.ThreatTick = town.Tick + o.WarnDays * SimTime.HoursPerDay;
+            s.ThreatBy = Tester(town);
+            s.Reinforced = false;
+            town.Log(LedgerCategory.War, Importance.Major, $"Word comes that {s.ThreatBy} gather to test the tower at {s.Def.Name}. They will come in {o.WarnDays} days.", lord != null ? [lord.Id] : []);
+            // A knight sees to their own walls when they can afford it; the stand-in mayor sees to the town's.
+            if (lord != null && !lord.Has(Trait.Lazy) && lord.Gold >= o.Reinforce)
+            {
+                lord.Gold -= o.Reinforce;
+                s.Reinforced = true;
+            }
+            else if (lord == null && auto && town.Treasury >= o.Reinforce + 300) Reinforce(town, s.Def.Id);
+            return;
+        }
+        if (town.Tick < s.ThreatTick) return;
+        bool held = dice.Chance(HoldOdds(town, s));
+        string by = s.ThreatBy;
+        s.ThreatTick = null;
+        s.ThreatBy = "";
+        s.Reinforced = false;
+        if (held)
+        {
+            if (lord != null) Notoriety.Deed(town, lord, "patrol", 1);
+            town.Log(LedgerCategory.War, Importance.Notable, $"The tower at {s.Def.Name} holds: {by} break on its walls and go back the way they came.", lord != null ? [lord.Id] : []);
+            return;
+        }
+        s.Held = false;
+        Resettle(town, s);
+        town.Log(LedgerCategory.War, Importance.Major, $"The tower at {s.Def.Name} falls to {by}. They hold the site now; it wants clearing again.", lord != null ? [lord.Id] : []);
+    }
+
+    public static string? ReinforceBlocked(Town town, SiteState s)
+    {
+        var o = Rules(town).Outpost;
+        if (!s.Held || s.ThreatTick == null) return "nothing comes against it";
+        if (Loyalty.Lord(town, s.Def.Id) != null) return "a knight's land";
+        if (s.Reinforced) return "already reinforced";
+        if (town.Treasury < o.Reinforce) return $"needs {Js.Str(o.Reinforce)} gold";
+        return null;
+    }
+
+    /// <summary>Send men and stores to a tower before its test: better odds that it holds.</summary>
+    public static bool Reinforce(Town town, string siteId)
+    {
+        var s = town.Sites.FirstOrDefault(x => x.Def.Id == siteId);
+        if (s == null || ReinforceBlocked(town, s) != null) return false;
+        var o = Rules(town).Outpost;
+        if (Stewards.Intercept(town, "defence", new StewardAsk { Area = "defence", Kind = "reinforce", Title = $"Reinforce {s.Def.Name} · {Js.Str(o.Reinforce)}g", Why = $"• {Cap(s.ThreatBy)} are coming\n• Holds {Math.Round(HoldOdds(town, s) * 100)}% now", S1 = siteId })) return false;
+        town.Book(TreasuryAccount.Outposts, -o.Reinforce);
+        s.Reinforced = true;
+        town.Log(LedgerCategory.War, Importance.Notable, $"Spears and stores go out to the tower at {s.Def.Name} before {s.ThreatBy} come.");
         return true;
     }
 
@@ -568,7 +684,8 @@ public static class Lairs
         var p = Rules(town).Patrol;
         if (IsWarCamp(town, s) || Undercity.IsUnder(town, s)) return "no patrol rides there";
         if (!s.Cleared || !s.ThoughtCleared) return "only a cleared site can be patrolled";
-        if (s.Held) return "the town holds it already";
+        if (s.Held || s.TowerDue != null) return "a tower holds it";
+        if (Loyalty.Lord(town, s.Def.Id) != null) return "a knight's land";
         if (s.Restored) return "the town restored it";
         if (s.Patrolled) return "already patrolled";
         if (town.Sites.Count(x => x.Patrolled) >= p.Max) return $"the town can keep {p.Max} patrols";
@@ -614,12 +731,18 @@ public static class Lairs
         return true;
     }
 
-    /// <summary>Something tries to move into a patrolled site: the best hero at home rides with the patrol to meet it.</summary>
-    private static void Meet(Town town, SiteState s)
+    /// <summary>
+    /// Something tries to move into a patrolled site: the best hero at home rides with the patrol to meet it (on a
+    /// knight's land, the knight, or their retainers alone). A lost fight wounds the hero who led it.
+    /// </summary>
+    private static void Meet(Town town, SiteState s, Agent? lord = null)
     {
         var p = Rules(town).Patrol;
-        var hero = town.Heroes.Where(a => !a.IsAway && !a.Dead).OrderByDescending(a => a.Hero!.Level).ThenBy(a => a.Id).FirstOrDefault();
+        var hero = lord != null
+            ? (lord.IsAway || lord.Dead ? null : lord)
+            : town.Heroes.Where(a => !a.IsAway && !a.Dead).OrderByDescending(a => a.Hero!.Level).ThenBy(a => a.Id).FirstOrDefault();
         double chance = hero == null ? p.Chance * 0.5 : Math.Clamp(p.Chance + p.PerLevel * (hero.Hero!.Level - 2 * s.Def.Tier), 0.15, 0.95);
+        string riders = lord != null ? $"Ser {lord.GivenName}'s riders" : "The patrol";
         if (town.Rng.Chance(chance))
         {
             var r = Rules(town);
@@ -631,12 +754,20 @@ public static class Lairs
             }
             town.Log(LedgerCategory.War, Importance.Notable, hero != null
                 ? $"On patrol, {hero.Name} meets something moving into {s.Def.Name} and drives it off. The site stays clear."
-                : $"The patrol meets something moving into {s.Def.Name} and drives it off. The site stays clear.", hero != null ? [hero.Id] : []);
+                : $"{riders} meet something moving into {s.Def.Name} and drive it off. The site stays clear.", hero != null ? [hero.Id] : []);
             return;
         }
         s.Patrolled = false;
         Resettle(town, s);
-        town.Log(LedgerCategory.War, Importance.Major, $"The patrol could not hold {s.Def.Name}: something has moved back in. It wants clearing again.", hero != null ? [hero.Id] : []);
+        string wound = "";
+        if (hero != null)
+        {
+            var h = hero.Hero!;
+            int hurt = Dice(town, s).Roll(p.WoundDice * (s.Def.Tier + 1), 6);
+            h.Hp = Math.Max(1, h.Hp - hurt);
+            wound = $" {hero.Name} is carried home wounded ({hurt} hit points).";
+        }
+        town.Log(LedgerCategory.War, Importance.Major, $"{riders} could not hold {s.Def.Name}: something has moved back in. It wants clearing again.{wound}", hero != null ? [hero.Id] : []);
     }
 
     /// <summary>The cleared site the player might keep clear next: nearest first, one the treasury could pay a patrol for.</summary>
@@ -651,7 +782,7 @@ public static class Lairs
         SiteState? best = null;
         foreach (var x in town.Sites)
         {
-            if (!x.Cleared || !x.ThoughtCleared || x.Held || x.Patrolled || x.Restored || x.ResettleTick == null) continue;
+            if (!x.Cleared || !x.ThoughtCleared || x.Held || x.TowerDue != null || x.Patrolled || x.Restored || x.ResettleTick == null) continue;
             if (best != null && (x.Def.Distance > best.Def.Distance || (x.Def.Distance == best.Def.Distance && string.CompareOrdinal(x.Def.Id, best.Def.Id) > 0))) continue;
             if (PatrolBlocked(town, x) != null) continue;
             best = x;

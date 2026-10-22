@@ -21,6 +21,7 @@ public partial class Overlay(MapView map) : Control
         if (map.Sim == null) return;
         var town = map.Sim.Town;
         DrawTerrain(town);
+        DrawWilds(town);
         DrawSites(town);
         DrawFinds(town);
         DrawTrails(town);
@@ -181,7 +182,7 @@ public partial class Overlay(MapView map) : Control
                     LiveSource.Mirror => "Mirror",
                     LiveSource.Spire => "Spire sight",
                     LiveSource.Tower => "Watchtower sight",
-                    LiveSource.Outpost => "Held",
+                    LiveSource.Outpost => site.TowerDue != null ? "Tower rising" : "Held",
                     _ => "In sight",
                 },
                 Sight.Scouted when fog.LastReport(site.Def.Id) is Report rep => town.Day - rep.Day > Fog.StaleDays ? $"Last seen day {rep.Day}" : $"Scouted day {rep.Day}",
@@ -461,6 +462,82 @@ public partial class Overlay(MapView map) : Control
                 for (int i = 0; i < 3; i++) ci.DrawRect(new Rect2(P(-5.5f, -5 + i * 4), new Vector2(i == 2 ? 7 : 11, 1.8f) * s), col);
                 break;
         }
+    }
+
+    public static readonly Color ExploreInk = new("4f9fd0");
+    public static readonly Color PatrolInk = new("d0763a");
+
+    /// <summary>Where a cell's corner (days from the town) lands on screen, lifted a little off the ground.</summary>
+    private bool Corner(Town town, double x, double y, out Vector2 at) => map.OnScreen(map.Gen.At(Geo.FromDays(x, y), 1.5f), out at);
+
+    /// <summary>One cell as a quad on screen, or null when part of it is off the view.</summary>
+    private Vector2[]? Quad(Town town, int cx, int cy)
+    {
+        double c = town.Content.Wilds.Cell;
+        double x0 = cx * c, y0 = cy * c, x1 = x0 + c, y1 = y0 + c;
+        if (!Corner(town, x0, y0, out var a) || !Corner(town, x1, y0, out var b) || !Corner(town, x1, y1, out var d) || !Corner(town, x0, y1, out var e)) return null;
+        var r = GetViewportRect().Grow(200);
+        if (!r.HasPoint(a) && !r.HasPoint(b) && !r.HasPoint(d) && !r.HasPoint(e)) return null;
+        return [a, b, d, e];
+    }
+
+    /// <summary>
+    /// Painted zones: explore ground in blue (walked cells paler), patrols in rust (grey while unpaid), each edged where it
+    /// ends, with a tag at its middle saying how it stands; and the stroke under the brush.
+    /// </summary>
+    private void DrawWilds(Town town)
+    {
+        foreach (var z in town.Wilds.OrderBy(z => z.Id))
+        {
+            bool explore = z.Kind == Wilds.Explore;
+            var ink = explore ? ExploreInk : z.Unpaid ? new Color("8a8478") : PatrolInk;
+            var cells = new HashSet<(int, int)>(z.Cells.Select(c => (c.X, c.Y)));
+            foreach (var c in z.Cells)
+            {
+                if (Quad(town, c.X, c.Y) is not { } q) continue;
+                DrawColoredPolygon(q, new Color(ink, explore && c.Seen ? 0.08f : 0.24f));
+                // Edges only where the zone ends, so it reads as one painted patch.
+                (int dx, int dy, int i)[] sides = [(0, -1, 0), (1, 0, 1), (0, 1, 2), (-1, 0, 3)];
+                foreach (var (dx, dy, i) in sides)
+                    if (!cells.Contains((c.X + dx, c.Y + dy)))
+                    {
+                        if (explore) DrawDashedLine(q[i], q[(i + 1) % 4], new Color(ink, 0.95f), 2.5f, 8);
+                        else DrawLine(q[i], q[(i + 1) % 4], new Color(ink, 0.95f), 3);
+                    }
+            }
+            var (mx, my) = Wilds.Middle(town, z);
+            if (!map.OnScreen(map.Gen.At(Geo.FromDays(mx, my), 2), out var at)) continue;
+            Disc(at, 11, new Color("2a241c"), ink, 2.5f);
+            DrawTextureRect(Ui.Icon(explore ? "act-explore" : "order-patrol"), new Rect2(at - new Vector2(8, 8), new Vector2(16, 16)), false);
+            Text(at + new Vector2(0, 26), WildsTag(town, z), Ui.Bold, 13, ink.Lerp(Cream, 0.35f));
+        }
+        if (map.Brush is string brush && map.BrushCells.Count > 0)
+        {
+            var ink = map.BrushErasing ? new Color("c0392b") : brush == Wilds.Explore ? ExploreInk : PatrolInk;
+            foreach (var (x, y) in map.BrushCells)
+                if (Quad(town, x, y) is { } q)
+                {
+                    bool blocked = !map.BrushErasing && Wilds.CellBlocked(town, x, y) != null;
+                    DrawColoredPolygon(q, new Color(blocked ? new Color("c0392b") : ink, 0.38f));
+                }
+        }
+    }
+
+    /// <summary>A zone's short tag: what is left to walk and who is on it, or what the patrol costs and who rides it.</summary>
+    public static string WildsTag(Town town, WildZone z)
+    {
+        if (z.Kind == Wilds.Explore)
+        {
+            int left = Wilds.Unseen(z);
+            var s = town.Surveys.FirstOrDefault(x => x.ZoneId == z.Id && Explore.Out(x));
+            if (s != null) return $"The {s.Name} · {left} left";
+            var c = town.Commissions.FirstOrDefault(x => x.ZoneId == z.Id && x.Status == BountyStatus.Open);
+            if (c != null) return $"{left} left · {Math.Round(c.Reward)}g offered";
+            return left == 0 ? "Walked" : $"{left} left · needs {Wilds.TripReward(town, z):0}g";
+        }
+        if (z.Unpaid) return $"Unpaid · {Wilds.Wage(town, z):0.#}g a day";
+        var r = Wilds.Riders(town, z);
+        return r != null ? $"{r.Name} · {Wilds.Wage(town, z):0.#}g a day" : $"Patrol · {Wilds.Wage(town, z):0.#}g a day";
     }
 
     /// <summary>Spots the mayor marked for a company to look at: a dashed gold ring round the ground, a spyglass pin, and who is on it.</summary>

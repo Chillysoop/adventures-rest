@@ -154,6 +154,17 @@
   (`crest-<lineage>` from `scripts/icons.ts`) and a short line. The card stages the host live with the heroes' kit (creature bodies:
   `Frame.Spider`, `Wyrm`, `Wraith`, `Crawler`, `Rat`) and shows once per lineage (`Intros.Due` over `Town.Discovered`; clock stop
   `first-contact`). `IntrosTests` fails a lineage without one. Shots: `--intro <lineage>`.
+- Lair towers (`Systems/Lairs.cs`, lairs.json `outpost`/`patrol`): a cleared site is kept clear by a patrol (a lost fight wounds
+  the hero) or a tower built over `buildDays` (`SiteState.TowerDue`, then `Held`), tested now and then on the site's own dice
+  (`Lairs.Tested`, `Reinforce`, alert `tower`). A knight's fief is theirs: `Loyalty.Choose` sets `HeroSheet.FiefWay`
+  (tower/ride/rent) and the town gets no buttons there. Shots: `--tower rising|standing|tested`.
+- Painted zones (`Systems/Wilds.cs`, `content/game/wilds.json`; client `MapView.Brush`, `Overlay.DrawWilds`, the Explore and Patrol
+  quick orders, Bounties folds): the mayor paints cells of the wilds. Explore paint posts an ordinary survey commission
+  (`Explore.PostZone`, `Commission.ZoneId`) again after each trip until every cell is `Seen`, then fades. Patrol paint stays until
+  rubbed out: a daily wage per cell (less what a horse regiment riding it covers, `Regiment.WildsId`, away from the walls), raids cut and
+  security added on roads through it (`Wilds.Road` in `Neighbours.RaidShare`/`SecurityTarget`), lair and menace raids seen sooner
+  (`Wilds.Warns`), meetings rolled on its own dice. Old caravan patrols migrate into it (`retired` in neighbours.json); lair patrols
+  stay their own order. The region list and the spot click are gone from the UI (`PostSurvey`/`MarkSpot` stay for the stand-in and old saves).
 - Cliffs (`Systems/Cliffs.cs`, passage.json `cliffs`): plateaus in the near wilds past the plan, a pure function of the seed. Passage
   treats each as a barrier opened only at its ramps (`Passage.Obstacles`, `RoundCliffs` for roads); the client raises them
   (`WorldGen`) and faces them with rock (`WorldView.BuildCliffs`).
