@@ -195,7 +195,7 @@ public static class Alerts
             var seat = Quests.Site(t, m.SeatId);
             string where = seat == null || seat.Known == SiteKnowledge.Unheard ? $"its seat in {m.Region}" : seat.Def.Name;
             yield return new($"doom:{c.Id}", Doom, $"{Cap(Crises.Title(t, c))} in {Days(Crises.DaysLeft(t, c))}",
-                $"{Cap(m.Name)}'s {Crises.SeverityOf(t, c).Name} crisis strikes at the town until its host marches on the walls. Break {where} first: post a bounty in the Campaign window.", SiteId: seat?.Def.Id);
+                $"{Cap(m.Name)}'s {Crises.SeverityOf(t, c).Name} crisis strikes at the town until its host marches on the walls. Break {where} first: post a bounty on it from Bounties.", SiteId: seat?.Def.Id);
         }
         foreach (var x in Crises.Pending(t).OrderBy(x => x.Id))
             yield return new($"clash:{x.Id}", Clash, $"Battle at {x.Where} in {Days(Math.Max(1, x.Day - t.Day))}",
@@ -391,7 +391,7 @@ public static class Alerts
             int days = Math.Max(0, p.DueDay - t.Day);
             var seat = Quests.Site(t, m.SeatId);
             yield return new($"plot:{m.Id}:{p.Def}", Plot, $"Stop {m.Leader}'s plan",
-                $"{Plots.Describe(t, m)} It comes to a head in {Days(days)}. Clear its seat or one of its holdings to set it back; post a bounty in the Campaign window.", SiteId: seat?.Def.Id);
+                $"{Plots.Describe(t, m)} It comes to a head in {Days(days)}. Clear its seat or one of its holdings to set it back; post a bounty on it from Bounties.", SiteId: seat?.Def.Id);
         }
     }
 
