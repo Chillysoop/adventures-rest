@@ -847,7 +847,9 @@
       "when": "alert:fallen",
       "until": "tab:Mayor",
       "teaches": ["command:RaiseMayor", "command:NameSuccessor"]
-    }
+    },
+    {"id": "skywright-relics", "title": "Skywright relics", "text": "A company brought home a [b]Skywright relic[/b].\n• Five lie at the far edges of the map\n• Each sparks high magic in the Library\n• All five open the [b]Lofted City[/b]\n• Foes race you for them: break a foe to take back what it stole", "point": "tab:Library", "when": "relics", "teaches": []},
+    {"id": "lofted-city", "title": "The Lofted City", "text": "Your [b]Lofted City[/b] flies.\n• [b]Sail[/b] it from the Library to any land you know\n• Companies set out from under it\n• It sees every site below", "point": "tab:Library", "when": "lofted", "teaches": ["command:SailLofted"]}
   ],
   "untaught": {}
 }

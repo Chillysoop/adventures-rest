@@ -573,6 +573,7 @@ public static class Quests
             BountyId = bounty?.Id,
             SiteId = s.Def.Id,
             DepartTick = town.Tick,
+            Start = Lofted.Start(town, World.Spot(town, s)),
         };
         Roads.Depart(town, party, members, s, bounty);
         town.Parties.Add(party);

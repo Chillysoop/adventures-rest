@@ -132,6 +132,8 @@ public sealed class Options
 
     /// <summary>--zone aims the camera at the thickest cluster of a zone's buildings (farmland, commercial, residential).</summary>
     public string? Zone;
+    /// <summary>--lofted size[:eighths]: stage the Lofted City (lofted_spire, lofted_isle, lofted_city) finished, or rising that many eighths; aim with --at.</summary>
+    public string? Lofted;
     /// <summary>--tourney N: put on a tourney of level N (0 modest to 2 legendary), stake on its second event and ride to that day's --tourney-hour, card open over the lists.</summary>
     public int? Tourney;
     public int TourneyHour = 13;
@@ -267,6 +269,7 @@ public sealed class Options
                 case "--crowded": o.Crowded = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
                 case "--rising": o.Rising = true; break;
                 case "--zone": o.Zone = Next(); break;
+                case "--lofted": o.Lofted = Next(); break;
                 case "--siege": o.Siege = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture) : 8; break;
                 case "--card": o.Card = true; break;
                 case "--asks": o.Asks = true; break;

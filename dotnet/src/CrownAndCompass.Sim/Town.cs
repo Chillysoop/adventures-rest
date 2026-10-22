@@ -595,6 +595,9 @@ public sealed class Town
     /// <summary>The library, its spellbooks and what the town's scholars have discovered.</summary>
     public Systems.ResearchState Research { get; } = new();
 
+    /// <summary>The Skywright relics, the foe racing for them, and the Lofted City's course (<see cref="Systems.Lofted"/>).</summary>
+    public Systems.LoftedState Lofted { get; } = new();
+
     /// <summary>The city's institutions, in the order they opened (<see cref="Systems.Institutions"/>).</summary>
     public List<Systems.InstitutionState> Institutions { get; } = [];
 

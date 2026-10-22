@@ -657,6 +657,7 @@ public static class City
     public static string? Locked(Town town, BuildingDef d)
     {
         if (!Reached(town, d.Tier)) return $"needs the town to be a {TierName(town, d.Tier).ToLowerInvariant()}";
+        if (Lofted.Locked(town, d) is { } lofted) return lofted;
         if (d.Wards.Count > 0 && !d.Wards.Any(town.City.OpenWards.Contains))
             return $"needs the {string.Join(" or the ", d.Wards.Select(w => Ward(town, w).Name))} to grow up";
         return null;
