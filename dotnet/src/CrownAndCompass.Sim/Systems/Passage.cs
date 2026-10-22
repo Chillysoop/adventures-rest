@@ -973,6 +973,10 @@ public static class Passage
 
     /// <summary>A floating isle needs every member to fly (a mount, a spell or an item), or a free airship to carry them.</summary>
     public static bool CanReach(Town town, IReadOnlyList<Agent> members, SiteState site) =>
+        Voyages.CanReach(town, members, site) && CanFly(town, members, site);
+
+    /// <summary>A floating isle needs every member to fly, or a free airship.</summary>
+    private static bool CanFly(Town town, IReadOnlyList<Agent> members, SiteState site) =>
         !site.Def.Aloft || (Abilities(town, members) & Ways.Air) != 0 || (Parse(Rules(town).Airship.Ways) & Ways.Air) != 0 && AirshipsFree(town) > 0;
 
     /// <summary>The mind of a company with an airship under it: it crosses what the ship does.</summary>

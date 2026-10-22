@@ -370,6 +370,12 @@ public sealed class Simulation
     /// <summary>Patch a ship's hull at the harbour, or an airship's at the Sky Dock.</summary>
     public bool RepairShip(int shipId) => Fleet.Repair(Town, shipId);
 
+    /// <summary>Send a sea ship on a job: patrol the home waters, scout a sea land, or bombard a sea site, with heroes aboard as marines.</summary>
+    public bool SailJob(int shipId, string job, int regionId = -1, string siteId = "", IReadOnlyList<int>? marines = null) => Voyages.Send(Town, shipId, job, regionId, siteId, marines);
+
+    /// <summary>Who fills a sea ship's free marine places: "" nobody, "watch" lent watchmen, "hired" sellswords.</summary>
+    public bool SetShipGuard(int shipId, string guard) => Voyages.SetGuard(Town, shipId, guard);
+
     /// <summary>Fly an airship on a job: "patrol" over the town, "scout" a region, or "strike" a lair there, with heroes aboard as marines.</summary>
     public bool FlyShip(int shipId, string job, int regionId = -1, string siteId = "", IReadOnlyList<int>? marines = null) => Sky.Send(Town, shipId, job, regionId, siteId, marines);
 

@@ -157,6 +157,9 @@ public sealed class Party
     /// <summary>Whether it went in the sky dock's airship, which stays with it until it is home.</summary>
     public bool Airship { get; set; }
 
+    /// <summary>The harbour's ship that carries it over the open sea, out and home again (<see cref="Voyages"/>).</summary>
+    public int? ShipId { get; set; }
+
     /// <summary>Where it set out from, in day units: the town, or the spot where explorers chose to go in (<see cref="Explore"/>).</summary>
     public (double X, double Y) Start { get; init; }
 

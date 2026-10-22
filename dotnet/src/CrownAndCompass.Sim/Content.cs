@@ -1221,6 +1221,9 @@ public sealed record TerrainKindDef
     /// <summary>Open water the town's own boats take anyone over (the sea by a coastal town, <see cref="Systems.Founding"/>).</summary>
     public bool Boats { get; init; }
 
+    /// <summary>Open sea only a ship crosses (the ocean): a company boards one of the harbour's ships (<see cref="Systems.Voyages"/>) or can't go.</summary>
+    public bool Ship { get; init; }
+
     /// <summary>How much wider than other hard country it spreads across its region: wide country is costly to go round.</summary>
     public double Wide { get; init; } = 1;
 }
