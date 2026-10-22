@@ -23,7 +23,7 @@ public sealed record TrophyDef
 /// <summary>
 /// A magic item a foe can drop (spoils.json "drops"): from creatures with these words in their names or of these types
 /// (a frost giant's gauntlets), or from a cleared site of these groups, signature foes, menace lineages or kinds, or a
-/// people's hall taken by the army. Chance is for one creature of challenge 0; more for stronger ones and bosses.
+/// people's hall taken by the army, or any cleared site of a theme or habitat (sea or sky loot). Chance is for one creature of challenge 0; more for stronger ones and bosses.
 /// </summary>
 public sealed record DropDef
 {
@@ -35,6 +35,10 @@ public sealed record DropDef
     public IReadOnlyList<string> Lineages { get; init; } = [];
     public IReadOnlyList<string> Kinds { get; init; } = [];
     public IReadOnlyList<string> Peoples { get; init; } = [];
+
+    /// <summary>Or a cleared site in a region of these themes (a sea reach, a sky isle), or with one of these habitats.</summary>
+    public IReadOnlyList<string> Themes { get; init; } = [];
+    public IReadOnlyList<string> Habitats { get; init; } = [];
     public double Chance { get; init; } = 0.05;
 
     /// <summary>Only the master of a place carries it.</summary>
@@ -236,12 +240,15 @@ public static class Spoils
         {
             double cr = Math.Max(1, site.Def.Tier);
             var menace = Menaces.At(town, site.Def.Id);
+            string theme = site.RegionId is int rid && rid >= 0 && rid < town.Regions.Count ? town.Regions[rid].Theme.Id : "";
             foreach (var d in r.Drops)
             {
                 bool mine = site.Def.Group != "" && d.Groups.Contains(site.Def.Group)
                     || site.Def.Foe != "" && d.Foes.Contains(site.Def.Foe)
                     || menace != null && (d.Lineages.Contains(menace.Lineage) || d.Kinds.Contains(menace.Kind))
-                    || site.Def.Kind != "" && d.Kinds.Contains(site.Def.Kind);
+                    || site.Def.Kind != "" && d.Kinds.Contains(site.Def.Kind)
+                    || theme != "" && d.Themes.Contains(theme)
+                    || d.Habitats.Count > 0 && site.Def.Habitats.Any(d.Habitats.Contains);
                 if (mine) Roll(d, cr, true);
             }
         }
