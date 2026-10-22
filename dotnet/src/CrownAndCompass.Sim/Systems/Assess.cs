@@ -27,6 +27,9 @@ public sealed record AssessRules
     public int PartyLevels { get; init; } = 3;
     public int PartyEdge { get; init; } = 2;
 
+    /// <summary>Hero levels a party wants per foe that stands and fights a company of too little renown (<see cref="Notoriety.Swell(Town, string?, SiteState)"/>).</summary>
+    public int RenownLevels { get; init; } = 2;
+
     /// <summary>The most points one effect adds to a reward or a risk, so one big number does not drown the rest.</summary>
     public double PerEffect { get; init; } = 3;
 
@@ -90,12 +93,16 @@ public static class Assess
     /// </summary>
     public static Banded Danger(Town town, SiteState s) => DangerFor(town, s, town.Heroes.Where(h => !h.Departed && !h.Dead));
 
-    /// <summary>How hard a site looks for these heroes (a company and whoever would ride with it): the same ladder, over their strongest four.</summary>
-    public static Banded DangerFor(Town town, SiteState s, IEnumerable<Agent> heroes)
+    /// <summary>
+    /// How hard a site looks for these heroes (a company and whoever would ride with it): the same ladder, over their
+    /// strongest four, and harder for a company whose renown falls short of the site's (more foes stand and fight).
+    /// </summary>
+    public static Banded DangerFor(Town town, SiteState s, IEnumerable<Agent> heroes, string? company = null)
     {
         var r = Rules(town);
         int have = heroes.Select(h => h.Hero!.Level).OrderByDescending(l => l).Take(4).Sum();
-        return On(r.Danger, have == 0 ? double.MaxValue : (double)Wants(town, s) / have);
+        int wants = Wants(town, s) + r.RenownLevels * Notoriety.Swell(town, company, s);
+        return On(r.Danger, have == 0 ? double.MaxValue : (double)wants / have);
     }
 
     /// <summary>The hero levels a party wants for what the town believes is at a site.</summary>
