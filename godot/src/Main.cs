@@ -149,7 +149,7 @@ public partial class Main : Control
         {
             if (wk == "gate" && _sim.Town.Gateways.FirstOrDefault() is { } g) _opts.Look ??= Map.Geo.FromDays(g.Ax, g.Ay);
             // --wonder quay: the harbour's quay on the shore of a town on the sea.
-            else if (wk == "quay" && _sim.Town.Terrain.FirstOrDefault(f => f.Kind.Boats) is { } sea)
+            else if (wk == "quay" && Sim.Systems.Founding.Bay(_sim.Town) is { } sea)
                 _opts.Look ??= Map.Geo.FromDays((sea.Inner + 0.05) * Math.Sin(sea.Bearing * Math.PI / 180), -(sea.Inner + 0.05) * Math.Cos(sea.Bearing * Math.PI / 180));
             // --wonder home:trees: the first people met whose home looks like that (marked met for the shot).
             else if (wk.StartsWith("home:") && _sim.Town.Settlements.FirstOrDefault(s => Map.TownView.SettlementLook(_sim.Town, s) == wk[5..]) is { } home)

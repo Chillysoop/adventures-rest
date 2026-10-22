@@ -191,26 +191,32 @@ public static class World
         if (w.Rings.Count == 0 || w.Themes.Count == 0) return;
         var rng = new Rng(town.Seed * 7919 + 104729);
         var used = new HashSet<string>(town.Sites.Select(s => s.Def.Name));
+        PlaceOcean(town);
 
         for (int ring = 0; ring < w.Rings.Count; ring++)
         {
             var rd = w.Rings[ring];
-            var allowed = w.Themes.Where(t => t.MinRing <= ring && ring <= t.MaxRing).ToList();
+            var inRing = w.Themes.Where(t => t.MinRing <= ring && ring <= t.MaxRing).ToList();
             double arc = 360.0 / rd.Regions;
             double offset = rng.Next() * 360;
             var picked = new List<ThemeDef>();
             for (int i = 0; i < rd.Regions; i++)
             {
-                // Each ring shows as many different kinds of country as it can before repeating one.
-                var fresh = allowed.Where(t => !picked.Contains(t)).ToList();
                 // The lands follow the climate: the region's spot on the map decides how hot and wet it is.
                 double at = (offset + i * arc) % 360;
+                // The ocean's regions are open water and islands; the rest of the world is land.
+                bool sea = InOcean(town, ring, at);
+                var allowed = inRing.Where(t => t.Sea == sea).ToList();
+                if (allowed.Count == 0) allowed = inRing.Where(t => !t.Sea).ToList();
+                // Each ring shows as many different kinds of country as it can before repeating one.
+                var fresh = allowed.Where(t => !picked.Contains(t)).ToList();
                 var (heat, wet) = Climate(town, ring, at);
                 // Its neighbours so far: the region before it in the ring (and the first, closing the ring), and those inward of it.
                 var beside = town.Regions.Where(r => r.Ring == ring - 1 && Math.Abs(AngleBetween(r.Bearing, at)) < (r.Arc + arc) / 2).Select(r => r.Theme).ToList();
                 if (picked.Count > 0) beside.Add(picked[^1]);
                 if (i == rd.Regions - 1 && picked.Count > 0) beside.Add(picked[0]);
-                var pool = Fitting(w.Climate, fresh.Count > 0 ? fresh : allowed.Where(t => picked.Count == 0 || t != picked[^1]).ToList(), heat, beside);
+                var again = allowed.Where(t => picked.Count == 0 || t != picked[^1]).ToList();
+                var pool = Fitting(w.Climate, fresh.Count > 0 ? fresh : again.Count > 0 ? again : allowed, heat, beside);
                 var theme = ClimateTheme(rng, w.Climate, pool, heat, wet);
                 picked.Add(theme);
                 double bearing = (offset + i * arc + (rng.Next() - 0.5) * 0.3 * arc) % 360;
@@ -272,6 +278,9 @@ public static class World
             }
         }
 
+        IsleCity(town, rng, used);
+        // The sea goes in before the hard country, so no mountains or marsh stand in open water.
+        SeaFeatures(town);
         // Last, so the country between the sites never shifts the regions and sites a seed makes.
         Roads.Generate(town, rng);
         Bridges.Span(town);
@@ -281,6 +290,100 @@ public static class World
         Wayfaring.Place(town);
         Founding.Place(town);
     }
+
+    /// <summary>
+    /// Where the ocean lies (world.json "ocean"): a wedge of the map from <see cref="OceanRules.FromRing"/> out, its bearing
+    /// and width rolled on its own dice so the rest of the world a seed makes keeps its draws.
+    /// </summary>
+    private static void PlaceOcean(Town town)
+    {
+        var o = town.Content.World.Ocean;
+        if (o.Arc.Length == 0) return;
+        var rng = new Rng(town.Seed * 3571 + 9973);
+        town.OceanBearing = Js.Round(rng.Next() * 3600) / 10.0;
+        town.OceanArc = Js.Round((o.Arc[0] + rng.Next() * (o.Arc[^1] - o.Arc[0])) * 10) / 10.0;
+    }
+
+    /// <summary>Whether a region of this ring centred on this bearing is open sea.</summary>
+    public static bool InOcean(Town town, int ring, double bearing) =>
+        town.OceanArc > 0 && ring >= town.Content.World.Ocean.FromRing && Math.Abs(AngleBetween(bearing, town.OceanBearing)) <= town.OceanArc / 2;
+
+    /// <summary>Whether the region is open sea.</summary>
+    public static bool Sea(Region region) => region.Theme.Sea;
+
+    /// <summary>
+    /// The great island city: a settlement of world.json's isle people in the sea region of its rings nearest the ocean's
+    /// middle, rich from the start and growing (<see cref="PeopleDef.Grows"/>). It takes the place of any settlement there.
+    /// </summary>
+    private static void IsleCity(Town town, Rng rng, HashSet<string> used)
+    {
+        var c = town.Content.World.Ocean.City;
+        var people = town.Content.World.Peoples.FirstOrDefault(p => p.Id == c.People);
+        if (people == null || town.OceanArc <= 0) return;
+        var region = town.Regions
+            .Where(r => Sea(r) && r.Ring >= c.Rings[0] && r.Ring <= c.Rings[^1])
+            .OrderBy(r => Math.Abs(AngleBetween(r.Bearing, town.OceanBearing)))
+            .ThenBy(r => r.Ring)
+            .ThenBy(r => r.Id)
+            .FirstOrDefault();
+        if (region == null) return;
+        var s = new Settlement
+        {
+            Id = region.SettlementId ?? town.Settlements.Count,
+            Name = Fill(rng, region.Theme, people.Settlements, used),
+            Kin = people,
+            RegionId = region.Id,
+            Standing = people.Start,
+            Prosperity = c.Prosperity,
+            NextPleaDay = 2 + rng.Range(town.Content.World.Standing.PleaEveryDays[0], town.Content.World.Standing.PleaEveryDays[1] + 1),
+        };
+        if (region.SettlementId is int id) town.Settlements[id] = s;
+        else town.Settlements.Add(s);
+        region.SettlementId = s.Id;
+    }
+
+    /// <summary>
+    /// The ocean's water on the map: one stretch of open sea per ring, over that ring's sea regions, from the gap before
+    /// the ring to the gap after it. Its sites are islands, wrecks and sea caves in it; the boats take parties over.
+    /// </summary>
+    private static void SeaFeatures(Town town)
+    {
+        var kind = town.Content.Roads.Kinds.FirstOrDefault(k => k.Id == "ocean");
+        var rings = town.Content.World.Rings;
+        if (kind == null || town.OceanArc <= 0) return;
+        var rng = new Rng(town.Seed * 3571 + 4441);
+        string name = (kind.Names.Count > 0 ? rng.Pick(kind.Names) : "the {A} Sea").Replace("{A}", kind.Words.Count > 0 ? rng.Pick(kind.Words) : "Grey", StringComparison.Ordinal);
+        for (int ring = 0; ring < rings.Count; ring++)
+        {
+            var seas = town.Regions.Where(r => r.Ring == ring && Sea(r)).OrderBy(r => r.Id).ToList();
+            if (seas.Count == 0) continue;
+            // The sea regions of a ring lie side by side: from the westmost's edge round to the eastmost's, about the ocean's middle.
+            double from = seas.Min(r => Turn(r.Bearing, town.OceanBearing) - r.Arc / 2) + town.OceanBearing;
+            double to = seas.Max(r => Turn(r.Bearing, town.OceanBearing) + r.Arc / 2) + town.OceanBearing;
+            // Each ring's water runs a little into the next ring's, so the open sea has no seams between them.
+            bool seaIn = town.Regions.Any(r => r.Ring == ring - 1 && Sea(r)), seaOut = town.Regions.Any(r => r.Ring == ring + 1 && Sea(r));
+            double inner = (ring == 0 ? 0.3 : Gap(rings, ring - 1)) - (seaIn ? 0.4 : 0);
+            double outer = (ring + 1 < rings.Count ? Gap(rings, ring) : rings[ring].Days * 1.25 + 2.5) + (seaOut ? 0.4 : 0);
+            town.Terrain.Add(new Feature
+            {
+                Id = town.Terrain.Count,
+                Name = name,
+                Kind = kind,
+                RegionId = seas[seas.Count / 2].Id,
+                Tier = seas.Max(r => r.Levels[0]),
+                Bearing = Js.Round(((from + to) / 2 + 360) % 360 * 10) / 10.0,
+                Arc = Js.Round((to - from) * 10) / 10.0,
+                Inner = Js.Round(inner * 100) / 100.0,
+                Outer = Js.Round(outer * 100) / 100.0,
+            });
+        }
+    }
+
+    /// <summary>Degrees from b round to a, -180 to 180.</summary>
+    private static double Turn(double a, double b) => ((a - b) % 360 + 540) % 360 - 180;
+
+    /// <summary>Days out to the middle of the gap between a ring's sites and the next ring's.</summary>
+    private static double Gap(IReadOnlyList<RingDef> rings, int ring) => (rings[ring].Days * 1.12 + 0.14 + rings[ring + 1].Days * 0.82) / 2;
 
     /// <summary>
     /// A few far sites in high country float: the rock they stand on has torn loose and drifts above the clouds, and only
