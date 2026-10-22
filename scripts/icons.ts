@@ -182,6 +182,8 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["cond-frightened", "terror", "#c49ae0"],
   ["cond-charmed", "charm", "#e07ab8"],
   ["cond-inspired", "enlightenment", "#e8c45c"],
+  ["cond-sick", "vomiting", "#9cc46a"],
+  ["cond-wounded", "bandage-roll", "#d8645c"],
   ["deadline", "hourglass", "#d8c08a"],
   // Armory items by kind (godot/src/Armory.cs), white so the window tints them by rarity
   ["item-weapon", "broadsword", mono],
