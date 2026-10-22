@@ -717,6 +717,9 @@ public sealed class Simulation
         var (hw, hd) = Land.Footprint(hallDef);
         t.AddBuilding(hallDef, new Lot(0, Town.Center, Town.Center) { W = hw, D = hd, Zone = Zone.Civic }, null, "the Town Hall", true);
         Streets.Square(t, t.Lot(0));
+        // The mayor's keep: the town's first stone, small to begin with and grown into a castle by parts (Monuments).
+        var keepDef = c.Building("keep");
+        if (Planning.CivicLot(t, keepDef) is { } keepLot) t.AddBuilding(keepDef, keepLot, null, "the Mayor's Keep", true);
         Quests.InitSites(t);
         World.Generate(t);
         Council.InitCouncil(t);
