@@ -1218,7 +1218,7 @@ public static class Stories
         if (o.Aid == "hero" && s.HeroId is int h && Hero(town, h) is { IsAway: false } a) return $"{a.GivenName} lends a hand";
         var bg = Rules(town).Background(town.Stories.Mayor.Background);
         if (bg.Favoured != "" && bg.Favoured == DefOf(town, s).Source) return bg.Feature;
-        return "";
+        return Sheet.HelpText(town, o.Skill);
     }
 
     /// <summary>The chance the check succeeds, with advantage if it has it and an inspired reroll if one is asked for and in hand.</summary>

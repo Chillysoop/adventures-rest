@@ -21,5 +21,21 @@
       "text": "Twice the harm paid back. The guilds call it justice; it empties a hero's purse.",
       "sentenced": "and the magistrate makes them pay back twice over, {fine} gold" }
   ],
+  "trial": {
+    "_doc": "Every catch goes before the court, with no dice: 10 + the Captain of the Watch's Investigation (the watch's own if the seat is empty), +1 for each watchPer watchmen up to watchMost, + witnesses for a crime done before a crowd, against 10 + the accused's Deception. Ties go to the court. A guilty one who walks free costs acquitted Mandate. Once the town reaches a truth spell's tier and a hero at home can cast it, the council may order trials held under it; each pays the caster fee gold. certain means no lie holds; bonus adds to the evidence instead.",
+    "witnesses": 2,
+    "watchPer": 4,
+    "watchMost": 3,
+    "acquitted": 1,
+    "kept": 12,
+    "truth": [
+      { "spell": "detect-thoughts", "icon": "truth-thoughts", "tier": "town", "bonus": 5, "fee": 10,
+        "text": "A mage reads the accused's surface thoughts for the court: the case gets much stronger." },
+      { "spell": "zone-of-truth", "icon": "truth-zone", "tier": "town", "certain": true, "fee": 20,
+        "text": "A priest or bard holds the trial in a circle where no one can lie: the guilty are always found so." }
+    ],
+    "freed": ". They swear they did nothing, and the court can't prove otherwise (evidence {evidence} against their tale {lies}): they walk free",
+    "under": ". Held under {magic}, the trial is short"
+  },
   "changed": "The council writes it into the law book: {crime} is now punished by {punishment}."
 }

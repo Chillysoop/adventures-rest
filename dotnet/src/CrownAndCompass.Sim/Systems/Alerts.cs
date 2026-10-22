@@ -536,7 +536,7 @@ public static class Alerts
             if (c.State != CallState.Holdout) continue;
             var s = AllyCalls.Of(t, c);
             yield return new($"holdout:{c.Id}", Holdout, $"{Cap(s.People)} hold out",
-                $"They will send {Js.Str(c.Strength)} for {Js.Str(c.Price)}g. Pay, threaten (DC {AllyCalls.ThreatenDc(t, c)}) or let them be.");
+                $"They will send {Js.Str(c.Strength)} for {Js.Str(c.Price)}g. Pay, talk them round or let them be.");
         }
         foreach (int id in t.Army.Pending)
         {

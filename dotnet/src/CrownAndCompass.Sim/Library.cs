@@ -88,6 +88,9 @@ public sealed record LibClass
     public required string Source { get; init; }
     public int HitDie { get; init; }
     public IReadOnlyList<string> Primary { get; init; } = [];
+
+    /// <summary>The abilities the class is proficient in saving throws with.</summary>
+    public IReadOnlyList<string> Saves { get; init; } = [];
     public string Role { get; init; } = "";
 
     /// <summary>full, half, pact, or empty for classes that cast nothing.</summary>
@@ -576,6 +579,7 @@ public sealed class Library
             Source = Str(e, "source"),
             HitDie = (int)Num(e, "hitDie"),
             Primary = Strings(e, "primaryAbilities"),
+            Saves = Strings(e, "savingThrows"),
             Role = hasRt ? Str(rt, "role") : "",
             Magic = hasRt ? Str(rt, "magic") : "",
             Features = e.TryGetProperty("features", out var fs) && fs.ValueKind == JsonValueKind.Array

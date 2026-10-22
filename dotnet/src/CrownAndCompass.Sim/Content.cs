@@ -234,6 +234,9 @@ public sealed record ClassDef
     public int Weight { get; init; }
     public bool Sneak { get; init; }
 
+    /// <summary>The abilities its heroes add proficiency to on saving throws (from the library; the key ability and Wisdom if it names none).</summary>
+    public IReadOnlyList<string> Saves { get; init; } = [];
+
     /// <summary>What a fumbling hero nearly drops: "the weapon", "the spellbook".</summary>
     public string Fumble { get; init; } = "the weapon";
 
@@ -1567,6 +1570,8 @@ public sealed class Content
     public Systems.CurseRules Curses { get; init; } = new();
     public Systems.DowntimeRules Downtime { get; init; } = new();
     public Systems.LawRules Laws { get; init; } = new();
+    public Systems.ConditionRules Conditions { get; init; } = new();
+    public Systems.NegotiationRules Negotiation { get; init; } = new();
     /// <summary>The top bar's month and when a trend counts as trouble (content/game/trends.json).</summary>
     public TrendRules Trends { get; init; } = new();
     public MerchantRules Merchants { get; init; } = new();
@@ -1699,6 +1704,7 @@ public sealed class Content
             HitDie = c.HitDie > 0 ? c.HitDie : lc.HitDie,
             Role = lc.Role,
             Magic = lc.Magic,
+            Saves = lc.Saves.Count > 0 ? lc.Saves : [c.Primary != "" ? c.Primary : lc.Primary.FirstOrDefault() ?? Ability.Str, Ability.Wis],
             HealSpell = lc.Magic == "" ? null : spells.FirstOrDefault(s => s.Roles.Contains("heal")),
             AreaSpell = lc.Magic == "" ? null : spells.FirstOrDefault(s => s.Level == 1 && s.Targets == "area" && s.Roles.Contains("damage") && s.Dice != null),
         };
@@ -1842,6 +1848,8 @@ public sealed class Content
             Curses = Parse<Systems.CurseRules>("curses.json"),
             Downtime = Parse<Systems.DowntimeRules>("downtime.json"),
             Laws = Parse<Systems.LawRules>("laws.json"),
+            Conditions = Parse<Systems.ConditionRules>("conditions.json"),
+            Negotiation = Parse<Systems.NegotiationRules>("negotiation.json"),
             Trends = Parse<TrendRules>("trends.json"),
             Merchants = Parse<MerchantRules>("merchants.json"),
             Wards = Parse<WardRules>("wards.json"),

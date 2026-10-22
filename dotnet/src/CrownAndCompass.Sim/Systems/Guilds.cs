@@ -145,6 +145,9 @@ public sealed class Guild
 
     /// <summary>Day the strike ends; striking while the town's day is before it.</summary>
     public int StrikeUntil { get; set; }
+
+    /// <summary>The demand or strike the mayor last sat down to talk over (<see cref="Guilds.TalkKey"/>): one talk each.</summary>
+    public string Talked { get; set; } = "";
 }
 
 /// <summary>
@@ -307,6 +310,58 @@ public static class Guilds
         g.StrikeUntil = 0;
         g.Standing = Math.Clamp(Math.Max(g.Standing, striking ? r.AfterStrike : 0) + r.PaidOff, 0, 100);
         return true;
+    }
+
+    /// <summary>What the guild is pressing now, so each demand or strike is talked over once.</summary>
+    public static string TalkKey(Town town, Guild g) => OnStrike(town, g) ? $"strike:{g.StrikeUntil}" : g.Want == "" ? "" : $"{g.Want}:{g.Due}";
+
+    public static string? TalkBlocked(Town town, Guild g)
+    {
+        string key = TalkKey(town, g);
+        if (key == "") return "nothing to settle";
+        return g.Talked == key ? "already talked it over" : null;
+    }
+
+    /// <summary>The DC to talk a guild round by an approach: its master's passive Insight or Wisdom, harder the angrier the guild.</summary>
+    public static int TalkDc(Town town, Guild g, TalkDef a)
+    {
+        var r = Negotiation.Rules(town).Guild;
+        int angry = (int)Math.Round((50 - g.Standing) / Math.Max(1, r.StandingPer));
+        if (g.MasterId is int m && town.Agent(m) is { Departed: false } master) return Negotiation.Dc(town, a, master, angry);
+        return Negotiation.Dc(a, r.Dc, r.Dc - 10, angry);
+    }
+
+    /// <summary>
+    /// The player's lever: sit down with the guild's master and talk the demand or the strike away, by an approach the
+    /// player picks. A success settles it as paying would, without the gold; a failure leaves it standing and sours the
+    /// guild, and a natural 1 brings its strike nearer. One talk for each demand or strike.
+    /// </summary>
+    public static StoryBeat? Negotiate(Town town, string id, string approach)
+    {
+        var r = Rules(town);
+        var a = Negotiation.Approach(town, approach);
+        if (Find(town, id) is not { } g || a == null || TalkBlocked(town, g) != null) return null;
+        var nr = Negotiation.Rules(town).Guild;
+        g.Talked = TalkKey(town, g);
+        bool striking = OnStrike(town, g);
+        var beat = Negotiation.Roll(town, a, TalkDc(town, g, a), "guild");
+        Negotiation.Settle(town, a, beat);
+        string roll = Negotiation.Said(town, beat);
+        if (Sheet.Succeeded(beat))
+        {
+            g.Want = "";
+            g.NextDemand = town.Day + r.DemandGap;
+            g.StrikeUntil = 0;
+            g.Standing = Math.Clamp(Math.Max(g.Standing, striking ? r.AfterStrike : 0) + Negotiation.Shift(a, beat), 0, 100);
+            g.Talked = TalkKey(town, g);
+            Log(town, g, nr.Won, Importance.Notable, ("approach", a.Name), ("roll", roll), ("want", striking ? nr.Ended : nr.Dropped));
+            return beat;
+        }
+        g.Standing = Math.Clamp(g.Standing + Negotiation.Shift(a, beat), 0, 100);
+        if (beat.Result == StoryResult.Fumble && !striking && g.Want != "") g.Due = Math.Max(town.Day + 1, g.Due - nr.FumbleStrike);
+        g.Talked = TalkKey(town, g);
+        Log(town, g, nr.Lost, Importance.Notable, ("approach", a.Name), ("roll", roll));
+        return beat;
     }
 
     public static string? BreakBlocked(Town town, Guild g)

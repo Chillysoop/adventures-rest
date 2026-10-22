@@ -379,6 +379,9 @@ public sealed class Simulation
     /// <summary>The player's other lever: sign or veto the motion before the council.</summary>
     public bool DecideMotion(int motionId, bool sign) => Council.Decide(Town, motionId, sign);
 
+    /// <summary>Take one councillor aside before the vote and try to turn their vote, by an approach: "persuade", "intimidate" or "deceive".</summary>
+    public StoryBeat? SwayCouncillor(int motionId, string seat, string approach) => Council.Sway(Town, motionId, seat, approach);
+
     /// <summary>Call a festival on the mayor's own word: mood for a few days and a little Mandate, for gold.</summary>
     public bool HoldFestival() => Council.HoldFestival(Town);
 
@@ -425,6 +428,9 @@ public sealed class Simulation
 
     /// <summary>Pay a trade guild to drop its demand or call off its strike.</summary>
     public bool PayOffGuild(string guildId) => Guilds.PayOff(Town, guildId);
+
+    /// <summary>Talk a guild's demand or strike away, by an approach: "persuade", "intimidate" or "deceive" (negotiation.json).</summary>
+    public StoryBeat? NegotiateGuild(string guildId, string approach) => Guilds.Negotiate(Town, guildId, approach);
 
     /// <summary>Send the watch to break a guild's strike, at a cost in Mandate.</summary>
     public bool BreakStrike(string guildId) => Guilds.Break(Town, guildId);
@@ -477,6 +483,9 @@ public sealed class Simulation
 
     /// <summary>Write a punishment for a crime into the law book (laws.json).</summary>
     public bool SetLaw(string crime, string punishment) => Laws.Set(Town, crime, punishment);
+
+    /// <summary>Hold every trial under a truth spell from laws.json "trial" (Zone of Truth), or "" for none.</summary>
+    public bool SetTrialMagic(string spell) => Laws.SetTrialMagic(Town, spell);
 
     /// <summary>Send the watch against a faction the town has exposed.</summary>
     public bool CrackDown(string factionId) => Factions.CrackDown(Town, factionId);
@@ -654,8 +663,8 @@ public sealed class Simulation
     /// <summary>Pay a holdout ally's price for its host.</summary>
     public bool BribeAlly(int callId) => AllyCalls.Bribe(Town, callId);
 
-    /// <summary>Threaten a holdout ally into marching (the mayor's Intimidation; standing lost either way).</summary>
-    public bool ThreatenAlly(int callId) => AllyCalls.Threaten(Town, callId);
+    /// <summary>Talk a holdout ally into marching, by an approach: "persuade", "intimidate" or "deceive" (negotiation.json).</summary>
+    public StoryBeat? NegotiateAlly(int callId, string approach) => AllyCalls.Negotiate(Town, callId, approach);
 
     /// <summary>Let a holdout ally keep its host.</summary>
     public bool LetAllyGo(int callId) => AllyCalls.LetGo(Town, callId);

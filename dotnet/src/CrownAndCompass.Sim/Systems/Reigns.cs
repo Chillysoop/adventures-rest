@@ -19,6 +19,10 @@ public sealed record TemperamentDef
 
     /// <summary>How hard an enemy's shadow is to lay over them: its spread is divided by this.</summary>
     public double Resolve { get; init; } = 1;
+
+    /// <summary>The ruler's Wisdom save bonus and Insight bonus, for the rolls made against them.</summary>
+    public int Wis { get; init; }
+    public int Insight { get; init; }
     public string Text { get; init; } = "";
 }
 

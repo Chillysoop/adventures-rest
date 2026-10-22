@@ -450,6 +450,10 @@ public sealed class Town
     /// <summary>The law book: the punishment the council has set for each crime, by crime id (<see cref="Systems.Laws"/>).</summary>
     public Dictionary<string, string> Laws { get; } = new();
 
+    /// <summary>The truth magic the court uses at trials, by spell id ("" for none), and the latest trials, oldest first (<see cref="Systems.Laws"/>).</summary>
+    public string TrialMagic { get; set; } = "";
+    public List<Systems.Trial> Trials { get; } = [];
+
     /// <summary>Scouts posted to watch sites, oldest first.</summary>
     public List<Scout> Scouts { get; } = [];
 
