@@ -295,7 +295,7 @@ public static class Property
         string what = def.Housing > 0 ? (rental ? $"a {def.Name.ToLowerInvariant()} to let" : "a home for the family") : site.Name;
         town.Log(
             LedgerCategory.Property,
-            def.IsBusiness ? Importance.Notable : Importance.Routine,
+            def.IsBusiness && !town.Buildings.Any(o => o != site && o.Def.Id == def.Id) ? Importance.Notable : Importance.Routine,
             $"{a.Name} buys {(def.Zone == Zone.Industry ? "an" : "a")} {Planning.ZoneName(def.Zone)} lot for {Js.ToFixed(lotPrice, 0)} gold and breaks ground on {what}.",
             [a.Id]);
         return true;
@@ -381,9 +381,11 @@ public static class Property
             }
         }
         b.LaborBudget = 0;
+        // The town's first of a trade is news; the tenth brewery is routine.
+        bool firstOfKind = !town.Buildings.Any(o => o != b && o.Complete && o.Def.Id == b.Def.Id);
         town.Log(
             LedgerCategory.Construction,
-            b.Def.IsBusiness ? Importance.Notable : Importance.Routine,
+            b.Def.IsBusiness && firstOfKind ? Importance.Notable : Importance.Routine,
             $"{Capitalize(b.Name)} is finished{(b.OwnerId != null ? $" for {town.OwnerName(b.OwnerId)}" : "")}.",
             b.OwnerId != null ? [b.OwnerId.Value] : []);
     }

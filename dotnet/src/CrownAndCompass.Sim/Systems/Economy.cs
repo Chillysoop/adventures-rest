@@ -338,7 +338,7 @@ public static class Economy
                     if (landlord != null) r.ChangeOpinion(landlord.Id, -25);
                     town.Log(
                         LedgerCategory.Hardship,
-                        Importance.Notable,
+                        Importance.Routine,
                         $"{r.Name} cannot pay rent and is turned out of {house.Name} by {town.OwnerName(house.OwnerId)}.",
                         landlord != null ? [r.Id, landlord.Id] : [r.Id]);
                 }

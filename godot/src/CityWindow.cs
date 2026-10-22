@@ -105,8 +105,12 @@ public partial class Main
             string needs = h.Goods.Count + h.Services.Count == 0 ? Ui.Bullet(Ui.Dim("Just a roof"), "ui-house")
                 : wants == "" ? Ui.Bullet(Ui.C(Ui.Good, "Has all it wants"), "ui-yes") : Ui.Bullet(Ui.C(Ui.Bad, $"Short of {Ui.Esc(wants)}"), "ui-warn");
             string grow = h.Next != "" ? "\n" + Ui.Bullet(Ui.Tip(Ui.Dim($"→ {t.Content.Building(h.Next).Name}{(h.Dense != "" ? $" / {t.Content.Building(h.Dense).Name}" : "")}"), $"Grows into a {t.Content.Building(h.Next).Name.ToLowerInvariant()}{(h.Dense != "" ? $" (a {t.Content.Building(h.Dense).Name.ToLowerInvariant()} on high-density land)" : "")} when its family has what that wants."), "ui-up") : "";
-            p.Row($"[b]{Ui.Esc(def.Name)}[/b]  {Ui.Chips(Ui.Chip("ui-house", $"{homes.Count}", null, "Homes"), Ui.Chip("ui-person", $"{people}", null, "Living"), Ui.Chip("gold", $"{h.Tax:0.##}", Ui.Gold, "Hearth tax a day, each"))}\n[font_size=12]{needs}{grow}[/font_size]");
-            if (homes.Count > 0 && (h.Goods.Count > 0 || h.Services.Count > 0)) p.Meter("Content", content * 100, $"{Math.Round(content * 100)}%", content < t.Content.City.DowngradeBelow);
+            // The contentment bar hangs under its own house's row, above the rule.
+            bool meter = homes.Count > 0 && (h.Goods.Count > 0 || h.Services.Count > 0);
+            bool low = content < t.Content.City.DowngradeBelow;
+            string pct = $"{Math.Round(content * 100)}%";
+            p.Row($"[b]{Ui.Esc(def.Name)}[/b]  {Ui.Chips(Ui.Chip("ui-house", $"{homes.Count}", null, "Homes"), Ui.Chip("ui-person", $"{people}", null, "Living"), Ui.Chip("gold", $"{h.Tax:0.##}", Ui.Gold, "Hearth tax a day, each"))}\n[font_size=12]{needs}{grow}[/font_size]",
+                meter ? ($"content{pct}{low}", null, () => Pane.MeterLine("Content", content * 100, pct, low)) : null);
         }
 
         p.Heading("Services");

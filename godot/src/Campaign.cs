@@ -46,8 +46,13 @@ public partial class Main
         if (s.Act + 1 < acts.Count)
         {
             var n = acts[s.Act + 1];
-            string gate = s.Act == 0 ? "once the Last Stand is settled and " : "when ";
-            next = $"\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(n.Name)} begins {gate}your champions reach level {n.OpensAtLevel} (they are level {champ} now), no sooner than day {n.EarliestDay}. By day {n.LatestDay} it comes anyway.[/font_size]")}";
+            // What the next act waits on, one tick or cross a line (the same tests as Saga.AdvanceAct).
+            string Check(bool done, string what) => Ui.Bullet(Ui.C(done ? Ui.Good : Ui.Ink2, what), done ? "ui-yes" : "ui-no");
+            var waits = new List<string>();
+            if (s.Act == 0) waits.Add(Check(!Threat.IsActive(t) || s.Sacks > 0, "The Last Stand settled"));
+            waits.Add(Check(champ >= n.OpensAtLevel, $"Champions level {n.OpensAtLevel} (now {champ})"));
+            waits.Add(Check(t.Day >= n.EarliestDay, $"Day {n.EarliestDay}"));
+            next = $"\n[font_size=12]{Ui.Tip(Ui.C(Ui.Ink2, $"Next: [b]{Ui.Esc(n.Name)}[/b]"), $"Begins when all of these hold, or on day {n.LatestDay} regardless.")}  {Ui.Chip("ui-time", $"by day {n.LatestDay}", Ui.Ink2, "It comes by this day regardless", 12)}\n{string.Join("\n", waits)}[/font_size]";
         }
         else next = $"\n{Ui.C(Ui.Ink2, $"[font_size=12]The last act. Your champions are level {champ}.[/font_size]")}";
         p.Card($"[font_size=17][b]{Ui.Esc(Saga.ActTitle(t, s.Act))}[/b][/font_size]  {Tag($"since day {s.ActDays[^1]}")}{next}");
