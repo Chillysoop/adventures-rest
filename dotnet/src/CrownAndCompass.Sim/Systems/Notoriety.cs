@@ -109,6 +109,23 @@ public sealed record NotorietyRules
     /// <summary>Infamy fades by one point every this many days.</summary>
     public int DecayDays { get; init; } = 15;
     public CrimeRules Crime { get; init; } = new();
+    public RenownRules Renown { get; init; } = new();
+}
+
+/// <summary>A company's renown against the sites it rides for (notoriety.json "renown").</summary>
+public sealed record RenownRules
+{
+    /// <summary>The renown a company is suggested to have for a site of each tier, from tier 1; past the list, its last.</summary>
+    public List<int> Suggested { get; init; } = [];
+
+    /// <summary>Tiers short of a site's suggestion at which one, then two, more foes stand in each fight.</summary>
+    public List<int> SwellAt { get; init; } = [1, 3];
+
+    /// <summary>Appeal a company choosing its own site loses per tier it is short.</summary>
+    public double Unproven { get; init; } = 0.15;
+
+    /// <summary>Mandate the town gains when one of its companies reaches a new fame tier.</summary>
+    public double TownMandate { get; init; } = 2;
 }
 
 /// <summary>
@@ -182,12 +199,51 @@ public static class Notoriety
         }
     }
 
-    /// <summary>A company's deed: its name earns fame (or infamy) of its own.</summary>
+    /// <summary>A company's deed: its name earns renown (or infamy) of its own. A new step of fame is the town's pride too.</summary>
     public static void CompanyDeed(Town town, string name, int fame, int infamy = 0)
     {
         var c = Intel.Company(town, name);
+        int before = FameTier(town, c);
         c.Renown += Math.Max(0, fame);
         c.Infamy += Math.Max(0, infamy);
+        int now = FameTier(town, c);
+        if (now <= before || Intel.Members(town, name).Count == 0) return;
+        double mandate = Rules(town).Renown.TownMandate;
+        town.Mandate = Math.Clamp(town.Mandate + mandate, 0, 100);
+        town.Log(LedgerCategory.Quest, Importance.Major,
+            $"The {name} are {Rules(town).Fame[now].Name.ToLowerInvariant()} now, with {c.Renown} renown. {town.Name} is proud to be their home (+{Js.Str(mandate)} Mandate).",
+            Intel.Members(town, name).Select(m => m.Id).ToList());
+    }
+
+    // Renown and the road ------------------------------------------------------------------------
+
+    /// <summary>The renown suggested for a company riding to a site of this tier.</summary>
+    public static int Suggested(Town town, int tier)
+    {
+        var list = Rules(town).Renown.Suggested;
+        return list.Count == 0 ? 0 : list[Math.Clamp(tier - 1, 0, list.Count - 1)];
+    }
+
+    public static int Suggested(Town town, SiteState s) => Suggested(town, Math.Max(1, s.BelievedTier));
+
+    /// <summary>A company's renown, 0 for a band with no name yet.</summary>
+    public static int RenownOf(Town town, string? company) => company != null && Intel.Find(town, company) is { } c ? c.Renown : 0;
+
+    /// <summary>Tiers of site a company's renown falls short of: 0 when it has what the site suggests.</summary>
+    public static int Short(Town town, string? company, SiteState s)
+    {
+        int renown = RenownOf(town, company), tier = Math.Max(1, s.BelievedTier), fits = 0;
+        for (int t = 1; t <= tier; t++) if (Suggested(town, t) <= renown) fits = t;
+        return tier - fits;
+    }
+
+    /// <summary>More foes that stand and fight a company nobody there has heard of, by how far short its renown falls.</summary>
+    public static int Swell(Town town, string? company, SiteState s)
+    {
+        var at = Rules(town).Renown.SwellAt;
+        int shortBy = Short(town, company, s), swell = 0;
+        foreach (int step in at) if (step > 0 && shortBy >= step) swell++;
+        return swell;
     }
 
     /// <summary>Put a good deed on a company's record; the same deed twice in a day counts once.</summary>

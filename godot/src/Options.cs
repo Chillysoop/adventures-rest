@@ -359,7 +359,7 @@ public sealed class Options
                 case "--advance": o.Advances.Add(Next()); break;
                 case "--inspiration": o.Inspiration = int.Parse(Next()); break;
                 case "--decor-at": o.DecorAt = Next().Split(',').Select(v => double.Parse(v, System.Globalization.CultureInfo.InvariantCulture)).ToArray(); break;
-                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--stock" or "--pact" or "--buy" or "--call" or "--flag" or "--wait" or "--works" or "--roster" or "--spot" or "--draw-wall" or "--gate" or "--raise" or "--skyrun" or "--fly" or "--duty" or "--army":
+                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--stock" or "--pact" or "--buy" or "--call" or "--flag" or "--wait" or "--works" or "--roster" or "--spot" or "--draw-wall" or "--gate" or "--raise" or "--skyrun" or "--fly" or "--duty" or "--army" or "--sinks":
                     o.Script.Add((args[i][2..], Next()));
                     break;
             }
@@ -578,6 +578,32 @@ public sealed class Options
                         Army.Fill(t, reg);
                         reg.Drill = parts.Length > 3 ? double.Parse(parts[3], System.Globalization.CultureInfo.InvariantCulture) : 1;
                     }
+                    break;
+                case "sinks":
+                    // For shots of a rich town's spending: the first regiment in masterwork arms and the next being re-armed, the nearest
+                    // people's charter bought, the first power met sworn for good, and a dreadnought at the Sky Dock if there is one.
+                    t.Treasury += 200000;
+                    var regs = t.Army.Regiments.Where(r => !Army.Unit(t, r).IsLevy).OrderBy(r => r.Id).ToList();
+                    if (regs.Count > 0) regs[0].Arms = 2;
+                    if (regs.Count > 1)
+                    {
+                        regs[1].Arms = 0;
+                        if (sim.RefitRegiment(regs[1].Id)) regs[1].Refitted = regs[1].Soldiers.Count / 2;
+                    }
+                    if (t.Settlements.Where(x => !x.Razed).OrderBy(x => t.Regions[x.RegionId].Days).ThenBy(x => x.Id).FirstOrDefault() is { } charter)
+                    {
+                        charter.Met = true;
+                        charter.Standing = Math.Max(charter.Standing, 60);
+                        sim.BuySettlement(charter.Id);
+                    }
+                    if (t.Powers.OrderBy(x => x.Id, StringComparer.Ordinal).FirstOrDefault() is { } oath)
+                    {
+                        Powers.Introduce(t, oath, "sinks");
+                        oath.Side = PowerSide.Town;
+                        oath.Standing = Math.Max(oath.Standing, 70);
+                        sim.SwearPower(oath.Id);
+                    }
+                    if (CrownAndCompass.Sim.Systems.Sky.Dock(t) != null) Fleet.Build(t, "dreadnought", free: true);
                     break;
                 case "stock":
                     // For armory shots: a find handed in under a pact.

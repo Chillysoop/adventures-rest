@@ -60,7 +60,7 @@ public partial class Main
             int left(int day) => Math.Max(1, day - t.Day);
             if (ps.Envoy != "") Line("standing", Ui.Gold, $"{Ui.Esc(EnvoyLine(t, ps))} · {Ui.Days(left(ps.EnvoyUntil))}");
             if (ps.Side == PowerSide.Town)
-                text += $"\n[font_size=12]{Ui.Bullet(Ui.C(Ui.Good, Ui.Esc(Ui.Cap(Powers.BoonText(t, d)))), "ui-yes")}  {Ui.Chip("gold", $"−{Js.Str(d.Tithe)}/day", Ui.Bad, "Tithe")}[/font_size]";
+                text += $"\n[font_size=12]{Ui.Bullet(Ui.C(Ui.Good, Ui.Esc(Ui.Cap(Powers.BoonText(t, d)))), "ui-yes")}  {(ps.Sworn ? Ui.Chip("face-crown", "Sworn", Ui.Good, "Sworn for good: no tithe, and no enemy can buy it") : Ui.Chip("gold", $"−{Js.Str(d.Tithe)}/day", Ui.Bad, "Tithe"))}[/font_size]";
             else if (ps.Side == PowerSide.Enemy && Powers.Patron(t, ps) is { } patron)
                 text += $"\n[font_size=12]{Ui.Bullet(Ui.Tip(Ui.C(Ui.Bad, $"Serves {Ui.Esc(patron.Name)}: {Ui.Esc(Powers.BaneText(t, ps))}"), $"Destroy {patron.Name} to free it, or raise its standing to {Js.Str(t.Content.Powers.WinBack)} to win it back."), "ui-no")}[/font_size]";
             else
@@ -92,6 +92,7 @@ public partial class Main
                 buttons.Insert(0, ("Refuse", true, false, () => Act(() => _sim.AnswerEnvoy(id, false))));
                 buttons.Insert(0, (ps.Envoy == "favour" ? verb : $"{verb} · {price}", Powers.AnswerBlocked(t, ps) == null, true, () => Act(() => _sim.AnswerEnvoy(id, true))));
             }
+            if (ps.Side == PowerSide.Town && !ps.Sworn) buttons.Add(($"Buy oath · {Js.Str(Powers.OathPrice(t, id))}g", Powers.SwearBlocked(t, id) == null, false, () => Act(() => _sim.SwearPower(id))));
             if (ps.Side == PowerSide.Town) buttons.Add(("Break", true, false, () => Act(() => _sim.BreakWithPower(id))));
             else if (ps.Side == PowerSide.Neutral) buttons.Add(($"Ally · {Js.Str(d.Price)}g", Powers.AllyBlocked(t, id) == null, true, () => Act(() => _sim.AllyWithPower(id))));
             string face = d.Face;

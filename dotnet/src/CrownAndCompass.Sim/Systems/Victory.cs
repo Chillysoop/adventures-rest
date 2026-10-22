@@ -235,7 +235,7 @@ public static class Victory
 
     private static IEnumerable<Settlement> Standing(Town town) => town.Settlements.Where(s => !s.Razed);
 
-    private static int Sworn(Town town, RoadDef d) => Standing(town).Count(s => s.Allied && s.Standing >= d.Sworn && !Shadows.Shadowed(s));
+    private static int Sworn(Town town, RoadDef d) => Standing(town).Count(s => (s.Allied && s.Standing >= d.Sworn || town.Army.Held.Any(o => o.Bought && o.SettlementId == s.Id)) && !Shadows.Shadowed(s));
 
     private static double ClearedShare(Town town)
     {
