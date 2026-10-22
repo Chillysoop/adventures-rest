@@ -399,6 +399,9 @@ public sealed record TownRules
 
     /// <summary>A road crewman's hourly wage, below any trade's so crews are the last resort.</summary>
     public double CrewWage { get; init; } = 0.5;
+
+    /// <summary>Days of upkeep the treasury keeps in hand before the hall pays full crews; below it crews shrink with it.</summary>
+    public double CrewReserveDays { get; init; } = 2;
 }
 
 /// <summary>Council seat ids as the content names them.</summary>
