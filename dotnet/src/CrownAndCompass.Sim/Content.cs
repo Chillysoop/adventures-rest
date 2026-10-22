@@ -1573,6 +1573,8 @@ public sealed class Content
     public WardRules Wards { get; init; } = new();
     /// <summary>Fame and infamy for heroes and companies (content/game/notoriety.json).</summary>
     public NotorietyRules Notoriety { get; init; } = new();
+    /// <summary>Notable townsfolk and the information network (content/game/notables.json).</summary>
+    public NotableRules Notables { get; init; } = new();
 
     /// <summary>Signature foes placed in the wilds (content/game/foes.json).</summary>
     public FoeRules Foes { get; init; } = new();
@@ -1844,6 +1846,7 @@ public sealed class Content
             Merchants = Parse<MerchantRules>("merchants.json"),
             Wards = Parse<WardRules>("wards.json"),
             Notoriety = Parse<NotorietyRules>("notoriety.json"),
+            Notables = Parse<NotableRules>("notables.json"),
             Goals = Parse<Systems.GoalRules>("goals.json"),
             Passage = Parse<PassageRules>("passage.json"),
             Heraldry = Parse<HeraldryRules>("heraldry.json"),

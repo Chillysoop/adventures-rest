@@ -138,6 +138,7 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["tab-chronicles", "scroll-quill", mono],
   ["tab-mayor", "throne-king", mono],
   ["tab-library", "spell-book", mono],
+  ["tab-notables", "conversation", mono],
   ["tab-build", "claw-hammer", mono],
   ["glossary", "open-book", mono],
   // The mayor's regalia slots (content/game/regalia.json), the sheet and rerolling a new mayor
@@ -279,6 +280,11 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["dark-company", "cloak-dagger", "#a68ad8"],
   ["ambush", "crossed-swords", "#c8574a"],
   ["records", "histogram", mono],
+  // Notable townsfolk: faces and the ways the mayor wins them over (godot/src/Notables.cs)
+  ...[
+    "anvil-impact", "coins", "drama-masks", "beer-stein", "sun-priest", "herbs-bundle", "wizard-face", "talk", "conversation",
+    "lyre", "pointy-hat", "scroll-unfurled", "prayer", "magnifying-glass", "healing", "treasure-map", "shaking-hands", "present",
+  ].map((g): [string, string, string] => [`np-${g}`, g, mono]),
   // Enemy portraits (godot/src/Portrait.cs draws them on a medallion tinted by the enemy's kind)
   ...[
     "orc-head", "ogre", "troll", "goblin-head", "brutal-helm", "horned-helm", "giant",
