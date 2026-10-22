@@ -68,9 +68,11 @@ public class SicknessTests
         var t = sim.Town;
         var house = t.Buildings.Where(b => b.Complete && b.Def.Housing > 0 && b.Residents.Count > 0).OrderBy(b => b.Id).First();
         Sickness.Seed(t, house, "a test");
-        sim.RunDays(30);
+        int start = t.Day;
+        // It burns out within a season (another may start later on its own, so stop at the first end).
+        while (Sickness.Outbreak(t) && t.Day - start < 60) sim.RunDays(1);
         Assert.False(Sickness.Outbreak(t));
-        Assert.True(t.Day - t.Sickness.LastOver < 30);
+        Assert.True(t.Sickness.LastOver >= start);
     }
 
     [Fact]
