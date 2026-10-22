@@ -34,6 +34,7 @@ public partial class Main : Control
         Chronicles,
         Mayor,
         Library,
+        Notables,
         Inspect,
     }
 
@@ -105,6 +106,7 @@ public partial class Main : Control
         if (_opts.Lofted is string lofted) StageLofted(lofted);
         if (_opts.Siege is float siegeHours) SiegeShot(siegeHours);
         if (_opts.Skirmish is string skirmish) StageSkirmish(skirmish.Split(','));
+        if (_opts.Bestiary is string bestiary) StageBestiary(bestiary);
         if (_opts.Delve && _sim.Town.Parties.FirstOrDefault(p => !p.Returned) is { } delving && _map.Geo.Pins.TryGetValue(delving.SiteId, out var dpin))
         {
             _map.Crowd.StageDelve = true;
@@ -142,6 +144,14 @@ public partial class Main : Control
         // --shadowed aims at the first settlement the town has met that lies under an enemy's shadow.
         if (_opts.Shadowed && _sim.Town.Settlements.FirstOrDefault(s => s.Met && Shadows.Shadowed(s)) is { } dark)
             _opts.Look ??= Map.Geo.SettlementPin(_sim.Town, dark);
+        if (_opts.Wonder is string wk)
+        {
+            if (wk == "gate" && _sim.Town.Gateways.FirstOrDefault() is { } g) _opts.Look ??= Map.Geo.FromDays(g.Ax, g.Ay);
+            else if (_sim.Town.Terrain.FirstOrDefault(f => f.Kind.Wonder?.Kind == wk) is { } wf)
+            {
+                _opts.Look ??= Map.Geo.FromDays((wf.Inner + wf.Outer) / 2 * Math.Sin(wf.Bearing * Math.PI / 180), -(wf.Inner + wf.Outer) / 2 * Math.Cos(wf.Bearing * Math.PI / 180));
+            }
+        }
         if (_opts.Cam is float cam)
             _map.LookAt(_opts.Look ?? (_opts.Site is string at && _map.Geo.Pins.TryGetValue(at, out var pin) ? pin : Map.Geo.Center), cam);
         // --at aims the camera at the town's first finished building of a kind.
@@ -190,6 +200,7 @@ public partial class Main : Control
         if (_opts.Episode is string episode) StageEpisode(episode);
         if (_opts.Intro is string intro) StageIntro(intro);
         if (_opts.Claim is string road && !_sim.ClaimRoad(road)) GD.Print($"Cannot claim {road}: {Victory.ClaimBlocked(_sim.Town, road)}");
+        if (_opts.Befriend) StageNotables();
         if (_opts.House && _sim.Town.Buildings.Where(b => b.Complete && b.Def.Housing > 0).OrderByDescending(b => Decor.Comfort(_sim.Town, b)).ThenBy(b => b.Id).FirstOrDefault() is Building house)
         {
             Select(Selection.Building(house.Id));
@@ -711,6 +722,8 @@ public partial class Main : Control
         SyncOrders();
         SyncGuide();
         SyncGoals();
+        SyncGoalPointer(_clockReal >= _nextGoalPoint);
+        if (_clockReal >= _nextGoalPoint) _nextGoalPoint = _clockReal + 0.25;
         // A first meeting's picture comes before any scene or report it brought.
         SyncIntros();
         SyncStories(delta);
@@ -748,6 +761,7 @@ public partial class Main : Control
                     case Tab.Diplomacy: RenderDiplomacy(); break;
                     case Tab.Library: RenderLibrary(); break;
                     case Tab.Institutions: RenderInstitutions(); break;
+                    case Tab.Notables: RenderNotables(); break;
                 }
             if (_drawer.Visible) RenderTray();
             if (_inspector.Visible) RenderInspect();

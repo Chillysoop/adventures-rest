@@ -337,7 +337,7 @@ public static class Notoriety
         string name = Loyalty.Styled(town, a);
         if (Caught(town))
         {
-            string sentence = Laws.Sentence(town, "brawling", a, r.Crime.Fine + r.Crime.FinePerLevel * s.Level);
+            string sentence = Laws.Sentence(town, "brawling", a, r.Crime.Fine + r.Crime.FinePerLevel * s.Level, witnessed: true);
             town.Log(LedgerCategory.Brawl, Importance.Notable, $"{name} breaks a chair over a drover's back at {where}. The watch hauls them out{sentence}.", [a.Id]);
         }
         else
@@ -361,7 +361,7 @@ public static class Notoriety
         if (Caught(town))
         {
             string sentence = Laws.Sentence(town, "theft", a, r.Crime.Fine + r.Crime.FinePerLevel * s.Level);
-            town.Log(LedgerCategory.Hardship, Importance.Notable, $"The watch catches {name} with a hand in the till at {shop.Name}{(sentence != "" ? "," + sentence : "")}.", [a.Id]);
+            town.Log(LedgerCategory.Hardship, Importance.Notable, $"The watch catches {name} with a hand in the till at {shop.Name}{(sentence == "" || sentence.StartsWith('.') ? sentence : "," + sentence)}.", [a.Id]);
         }
         else
         {

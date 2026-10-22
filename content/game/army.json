@@ -50,14 +50,10 @@
     "comeUnsafe": 0.004,
     "holdout": 0.7,
     "bribePerStrength": 4,
-    "threatenDc": 13,
-    "threatenPerStanding": 0.1,
-    "threatenCost": 12,
-    "threatenFailCost": 30,
     "callCost": 3,
     "fought": 6,
     "turnFrom": 40,
-    "turnPerDepth": 0.012,
+    "turnDcPer": 3,
     "again": 20
   },
   "field": {

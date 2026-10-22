@@ -138,6 +138,7 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["tab-chronicles", "scroll-quill", mono],
   ["tab-mayor", "throne-king", mono],
   ["tab-library", "spell-book", mono],
+  ["tab-notables", "conversation", mono],
   ["tab-build", "claw-hammer", mono],
   ["glossary", "open-book", mono],
   // The mayor's regalia slots (content/game/regalia.json), the sheet and rerolling a new mayor
@@ -166,6 +167,17 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["expose", "shouting", "#e07a5f"],
   ["press", "chained-heart", "#d0566a"],
   ["skill", "upgrade", "#7fb0d4"],
+  // Talking people round (negotiation.json approaches), the court (laws.json trial) and conditions (conditions.json)
+  ["talk-persuade", "conversation", "#8cc084"],
+  ["talk-intimidate", "fist", "#ef7f6f"],
+  ["talk-deceive", "domino-mask", "#a68ad8"],
+  ["trial", "scales", "#d8c08a"],
+  ["truth-thoughts", "psychic-waves", "#7fb0d4"],
+  ["truth-zone", "crystal-eye", "#e8d27a"],
+  ["cond-exhausted", "tired-eye", "#b8a98a"],
+  ["cond-frightened", "terror", "#c49ae0"],
+  ["cond-charmed", "charm", "#e07ab8"],
+  ["cond-inspired", "enlightenment", "#e8c45c"],
   ["deadline", "hourglass", "#d8c08a"],
   // Armory items by kind (godot/src/Armory.cs), white so the window tints them by rarity
   ["item-weapon", "broadsword", mono],
@@ -279,6 +291,11 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["dark-company", "cloak-dagger", "#a68ad8"],
   ["ambush", "crossed-swords", "#c8574a"],
   ["records", "histogram", mono],
+  // Notable townsfolk: faces and the ways the mayor wins them over (godot/src/Notables.cs)
+  ...[
+    "anvil-impact", "coins", "drama-masks", "beer-stein", "sun-priest", "herbs-bundle", "wizard-face", "talk", "conversation",
+    "lyre", "pointy-hat", "scroll-unfurled", "prayer", "magnifying-glass", "healing", "treasure-map", "shaking-hands", "present",
+  ].map((g): [string, string, string] => [`np-${g}`, g, mono]),
   // Enemy portraits (godot/src/Portrait.cs draws them on a medallion tinted by the enemy's kind)
   ...[
     "orc-head", "ogre", "troll", "goblin-head", "brutal-helm", "horned-helm", "giant",

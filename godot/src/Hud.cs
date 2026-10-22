@@ -37,6 +37,7 @@ public partial class Main
         [Tab.Armory] = "The town armory",
         [Tab.Diplomacy] = "Diplomacy and trade",
         [Tab.Institutions] = "The town's institutions",
+        [Tab.Notables] = "People worth knowing",
         [Tab.Faith] = "Faith and factions",
         [Tab.Campaign] = "The campaign",
         [Tab.Chronicles] = "Chronicles",
@@ -420,7 +421,8 @@ public partial class Main
                     _goalsRows.RemoveChild(c);
                     c.QueueFree();
                 }
-                foreach (var g in open) _goalsRows.AddChild(GoalRow(t, g));
+                var next = Goals.Next(t);
+                foreach (var g in open) _goalsRows.AddChild(GoalRow(t, g, g == next));
                 _goalsCount.Text = $"{t.Goals.Done.Count} OF {t.Content.Goals.Goals.Count}";
             }
         }
@@ -433,14 +435,26 @@ public partial class Main
         if (_goalsCard.Visible) _goalsCard.ResetSize();
     }
 
-    private static Control GoalRow(Town t, GoalDef g)
+    /// <summary>One goal: its icon and few words, a bar, and the count and reward. The one the pointer is on is gilded.</summary>
+    private static Control GoalRow(Town t, GoalDef g, bool next)
     {
         var (now, target) = Goals.Progress(t, g);
         var row = new VBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
         row.AddThemeConstantOverride("separation", 3);
-        var text = Ui.Label(g.Text, Ui.Ink, Ui.Medium, 13);
+        var head = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
+        head.AddThemeConstantOverride("separation", 6);
+        if (g.Icon != "")
+            head.AddChild(new TextureRect
+            {
+                Texture = Ui.Icon(g.Icon), CustomMinimumSize = new Vector2(18, 18), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+                StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, SizeFlagsVertical = SizeFlags.ShrinkCenter, MouseFilter = MouseFilterEnum.Ignore,
+                Modulate = next ? Ui.Gold : Ui.Ink2,
+            });
+        var text = Ui.Label(next ? $"{g.Text}  ▶" : g.Text, next ? Ui.Gold : Ui.Ink, next ? Ui.Bold : Ui.Medium, 13);
         text.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        row.AddChild(text);
+        text.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        head.AddChild(text);
+        row.AddChild(head);
         var bar = new ProgressBar { MinValue = 0, MaxValue = target, Value = now, ShowPercentage = false, CustomMinimumSize = new Vector2(0, 4), MouseFilter = MouseFilterEnum.Ignore };
         bar.AddThemeStyleboxOverride("background", Ui.Flat(new Color(Ui.Line, 0.9f), 0, 0, 2));
         bar.AddThemeStyleboxOverride("fill", Ui.Flat(Ui.Gold, 0, 0, 2));

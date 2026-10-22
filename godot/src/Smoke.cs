@@ -233,6 +233,7 @@ public partial class Main
                 return 40;
             }
             case 32:
+                // Staged late in the day, the first event's hours may have passed: any event's heats will do.
                 if (!_tourney.Visible || _sim.Town.Tourney.Events.All(e => e.Heats.Count == 0)) throw new InvalidOperationException("the tourney's heats did not show");
                 CloseTourney();
                 return 5;

@@ -234,6 +234,9 @@ public sealed record ClassDef
     public int Weight { get; init; }
     public bool Sneak { get; init; }
 
+    /// <summary>The abilities its heroes add proficiency to on saving throws (from the library; the key ability and Wisdom if it names none).</summary>
+    public IReadOnlyList<string> Saves { get; init; } = [];
+
     /// <summary>What a fumbling hero nearly drops: "the weapon", "the spellbook".</summary>
     public string Fumble { get; init; } = "the weapon";
 
@@ -1000,6 +1003,10 @@ public sealed record ThemeDef
     public IReadOnlyList<string> Names { get; init; } = [];
     public IReadOnlyList<string> Habitats { get; init; } = [];
     public int Weight { get; init; } = 1;
+
+    /// <summary>How hot (1) or cold (-1), and wet (1) or dry (-1), the country is; null fits any climate (caverns, the fey).</summary>
+    public double? Heat { get; init; }
+    public double? Wet { get; init; }
     public int MinRing { get; init; }
     public int MaxRing { get; init; } = 99;
 
@@ -1182,6 +1189,12 @@ public sealed record TerrainKindDef
     /// <summary>"water" (a lake) or "sheer" (cliffs and peaks): nobody walks across, only flies, swims or climbs (<see cref="Systems.Passage"/>); "" for country anyone can.</summary>
     public string Barrier { get; init; } = "";
 
+    /// <summary>Nature as a monster: now and then the crossing is a fight with the country itself (<see cref="Systems.Wayfaring"/>).</summary>
+    public Systems.PerilDef? Peril { get; init; }
+
+    /// <summary>A strange place that bends the rules: a wishing well, dead-magic ground, a bone ferryman (<see cref="Systems.Wayfaring"/>).</summary>
+    public Systems.WonderDef? Wonder { get; init; }
+
     /// <summary>How much wider than other hard country it spreads across its region: wide country is costly to go round.</summary>
     public double Wide { get; init; } = 1;
 }
@@ -1313,6 +1326,9 @@ public sealed record RoadRules
     /// <summary>Rope bridges over gorges, cut by raiders and rebuilt in stone (<see cref="Systems.Bridges"/>).</summary>
     public Systems.BridgeRules Bridges { get; init; } = new();
 
+    /// <summary>Jobs on the road, strange places and old gateways (<see cref="Systems.Wayfaring"/>).</summary>
+    public Systems.WayRules Wayfaring { get; init; } = new();
+
     /// <summary>Hours a party marches a day; a day's march is one day of distance on open ground.</summary>
     public int MarchHours { get; init; } = 10;
     public int Dawn { get; init; } = 6;
@@ -1387,16 +1403,40 @@ public sealed record IntelRules
 }
 
 /// <summary>The wilds: rings of themed regions around the town, their sites and the peoples living there (content/game/world.json).</summary>
+public sealed record ClimateRules
+{
+    /// <summary>How strongly a ring feels the climate, from the town's ring out; the last holds beyond.</summary>
+    public double[] Amp { get; init; } = [0.25, 0.5, 0.75, 0.95, 1.0];
+
+    /// <summary>How far from its climate a theme may be and still be likely.</summary>
+    public double Spread { get; init; } = 0.35;
+
+    /// <summary>How much wet-dry counts against hot-cold.</summary>
+    public double WetShare { get; init; } = 0.6;
+
+    /// <summary>A theme this much hotter or colder than the region is never picked while another fits.</summary>
+    public double Hard { get; init; } = 1.1;
+
+    /// <summary>Neighbouring regions never differ by this much heat: no jungle beside the tundra.</summary>
+    public double Clash { get; init; } = 1.5;
+}
+
 public sealed record WorldRules
 {
     public IReadOnlyList<RingDef> Rings { get; init; } = [];
     public int[] SitesPerRegion { get; init; } = [2, 3];
+
+    /// <summary>How the lands follow hot-cold and wet-dry (<see cref="Systems.World.Climate"/>).</summary>
+    public ClimateRules Climate { get; init; } = new();
 
     /// <summary>Experience a wandering band is worth, by party level (index = level - 1).</summary>
     public int[] Budget { get; init; } = [];
 
     /// <summary>A hoard holds about this much gold times level^1.5.</summary>
     public double HoardPerLevel { get; init; } = 60;
+
+    /// <summary>Sites built for parties of this level or more may be held by a legend (a creature past challenge 20); 0 for none.</summary>
+    public int LegendLevel { get; init; }
     public double SettlementChance { get; init; } = 0.75;
     public StandingRules Standing { get; init; } = new();
     public CompanyRules Companies { get; init; } = new();
@@ -1550,12 +1590,16 @@ public sealed class Content
     public Systems.CurseRules Curses { get; init; } = new();
     public Systems.DowntimeRules Downtime { get; init; } = new();
     public Systems.LawRules Laws { get; init; } = new();
+    public Systems.ConditionRules Conditions { get; init; } = new();
+    public Systems.NegotiationRules Negotiation { get; init; } = new();
     /// <summary>The top bar's month and when a trend counts as trouble (content/game/trends.json).</summary>
     public TrendRules Trends { get; init; } = new();
     public MerchantRules Merchants { get; init; } = new();
     public WardRules Wards { get; init; } = new();
     /// <summary>Fame and infamy for heroes and companies (content/game/notoriety.json).</summary>
     public NotorietyRules Notoriety { get; init; } = new();
+    /// <summary>Notable townsfolk and the information network (content/game/notables.json).</summary>
+    public NotableRules Notables { get; init; } = new();
 
     /// <summary>Signature foes placed in the wilds (content/game/foes.json).</summary>
     public FoeRules Foes { get; init; } = new();
@@ -1599,6 +1643,8 @@ public sealed class Content
     public StorytellerRules Storytellers { get; init; } = new();
     public Systems.CharacterRules Character { get; init; } = new();
     public Systems.TacticRules Tactics { get; init; } = new();
+    public Systems.KnackRules Knacks { get; init; } = new();
+    public Systems.BestiaryRules Bestiary { get; init; } = new();
 
     /// <summary>Heroes' lasting wounds and how they mend (content/game/wounds.json).</summary>
     public Systems.WoundRules Wounds { get; init; } = new();
@@ -1678,6 +1724,7 @@ public sealed class Content
             HitDie = c.HitDie > 0 ? c.HitDie : lc.HitDie,
             Role = lc.Role,
             Magic = lc.Magic,
+            Saves = lc.Saves.Count > 0 ? lc.Saves : [c.Primary != "" ? c.Primary : lc.Primary.FirstOrDefault() ?? Ability.Str, Ability.Wis],
             HealSpell = lc.Magic == "" ? null : spells.FirstOrDefault(s => s.Roles.Contains("heal")),
             AreaSpell = lc.Magic == "" ? null : spells.FirstOrDefault(s => s.Level == 1 && s.Targets == "area" && s.Roles.Contains("damage") && s.Dice != null),
         };
@@ -1744,10 +1791,11 @@ public sealed class Content
         Converters = { new JsonStringEnumConverter() },
     };
 
-    private static Content? _default;
+    // Lazy so tests starting in parallel share one instance: saves resolve content by reference.
+    private static readonly Lazy<Content> _default = new(() => Load(ReadEmbedded));
 
     /// <summary>The bundled content, parsed once and shared (content is immutable).</summary>
-    public static Content Default() => _default ??= Load(ReadEmbedded);
+    public static Content Default() => _default.Value;
 
     /// <summary>Load content from a directory of JSON files laid out like the repo's content/game/.</summary>
     public static Content FromDirectory(string dir) => Load(name => File.ReadAllText(Path.Combine(dir, name)));
@@ -1820,10 +1868,13 @@ public sealed class Content
             Curses = Parse<Systems.CurseRules>("curses.json"),
             Downtime = Parse<Systems.DowntimeRules>("downtime.json"),
             Laws = Parse<Systems.LawRules>("laws.json"),
+            Conditions = Parse<Systems.ConditionRules>("conditions.json"),
+            Negotiation = Parse<Systems.NegotiationRules>("negotiation.json"),
             Trends = Parse<TrendRules>("trends.json"),
             Merchants = Parse<MerchantRules>("merchants.json"),
             Wards = Parse<WardRules>("wards.json"),
             Notoriety = Parse<NotorietyRules>("notoriety.json"),
+            Notables = Parse<NotableRules>("notables.json"),
             Goals = Parse<Systems.GoalRules>("goals.json"),
             Passage = Parse<PassageRules>("passage.json"),
             Heraldry = Parse<HeraldryRules>("heraldry.json"),
@@ -1844,6 +1895,8 @@ public sealed class Content
             Endless = Parse<Systems.EndlessRules>("endless.json"),
             Character = Parse<CharacterRules>("character.json"),
             Tactics = Parse<TacticRules>("tactics.json"),
+            Knacks = Parse<Systems.KnackRules>("knacks.json"),
+            Bestiary = Parse<Systems.BestiaryRules>("bestiary.json"),
             Wounds = Parse<WoundRules>("wounds.json"),
             Word = Parse<WordRules>("word.json"),
             Omens = Parse<OmenRules>("omens.json"),

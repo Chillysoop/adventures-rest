@@ -33,8 +33,16 @@ public sealed record TurningRules
     public IReadOnlyList<string> SpareText { get; init; } = [];
     public IReadOnlyList<string> WaverText { get; init; } = [];
 
-    /// <summary>Daily chance a hero in town falls and rises as a menace, against everything their past taught them.</summary>
-    public double Fall { get; init; } = 0.0001;
+    /// <summary>Daily chance something dark tempts a hero in town; a failed Wisdom save and they fall and rise as a menace.</summary>
+    public double Fall { get; init; } = 0.0002;
+
+    /// <summary>The Wisdom save's DC, more for each dark gift taken; loyal heroes (from loyalFrom) save with advantage, restless ones with disadvantage.</summary>
+    public int FallDc { get; init; } = 12;
+    public int TaintDc { get; init; } = 2;
+    public double LoyalFrom { get; init; } = 60;
+
+    /// <summary>{hero}, {town}, {roll}: a hero who held firm.</summary>
+    public IReadOnlyList<string> HeldText { get; init; } = [];
     public int FallDay { get; init; } = 90;
     public int FallLevel { get; init; } = 3;
 
@@ -144,11 +152,32 @@ public static class Turning
         {
             var s = a.Hero!;
             if (!r.FallKinds.ContainsKey(s.Cls.Id)) continue;
-            // Loyal heroes are harder to turn, but nobody is beyond it.
-            if (!town.Rng.Chance(r.Fall * Math.Max(0.25, 1.5 - s.Loyalty / 100) * Notoriety.FallFactor(town, s) * (1 + r.TaintFall * s.Taint))) continue;
+            if (!town.Rng.Chance(r.Fall * Notoriety.FallFactor(town, s) * (1 + r.TaintFall * s.Taint))) continue;
+            // Tempted: a Wisdom save. Loyal heroes are harder to turn, but nobody is beyond it.
+            var (edge, why) = FallEdge(town, a);
+            var save = Skills.Save(town, a, Ability.Wis, FallDc(town, a), "tempted", edge, why);
+            if (save.Success)
+            {
+                if (r.HeldText.Count > 0)
+                    town.Log(LedgerCategory.Quest, Importance.Notable, r.HeldText[town.Rng.Range(0, r.HeldText.Count)]
+                        .Replace("{hero}", Loyalty.Styled(town, a)).Replace("{town}", town.Name).Replace("{roll}", Skills.Said(town, save)), [a.Id]);
+                return;
+            }
             FallFrom(town, a);
             return;
         }
+    }
+
+    /// <summary>The Wisdom save's DC against a hero's fall: more for each dark gift they took.</summary>
+    public static int FallDc(Town town, Agent a) => Rules(town).FallDc + Rules(town).TaintDc * a.Hero!.Taint;
+
+    /// <summary>Advantage for a loyal hero, disadvantage for a restless one, on the save against falling.</summary>
+    public static (int Edge, string Why) FallEdge(Town town, Agent a)
+    {
+        var s = a.Hero!;
+        if (s.Loyalty >= Rules(town).LoyalFrom) return (1, "loyal to the town");
+        if (s.Restless) return (-1, "restless");
+        return (0, "");
     }
 
     /// <summary>The hero leaves the town and rises as the leader of a menace of their class's kind.</summary>

@@ -667,6 +667,12 @@ public static class Quests
             }
             var result = party.Result!;
             result.Apply(members);
+            // What they passed on the road, the town hears of now (an old gateway).
+            if (result.Outcome != ExpeditionOutcome.Wiped)
+            {
+                Wayfaring.Notice(town, party.Out, party.Start);
+                Wayfaring.Notice(town, party.Home, World.Spot(town, s));
+            }
             Patrons.Home(town, result);
 
             var chronicle = new Chronicle(

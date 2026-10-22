@@ -39,6 +39,8 @@ public class SecretsTests
         var seat = Dug(sim, t, s => s.Def.Id != m.Proposer);
         int id = seat.HolderId!.Value;
         bool before = m.Votes.First(v => v.Seat == seat.Def.Id).Yes;
+        // Loyal enough to have some to lose.
+        seat.Loyalty = Math.Max(seat.Loyalty, 50);
         double loyalty = seat.Loyalty;
         Assert.True(sim.PressCouncillor(id, !before));
         Assert.Equal(!before, m.Votes.First(v => v.Seat == seat.Def.Id).Yes);

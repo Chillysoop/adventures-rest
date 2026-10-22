@@ -58,7 +58,7 @@ public partial class Main
         static int Score(TaleBeat b) => b.Kind switch
         {
             "setout" or "boss" or "kill" or "death" or "lost" or "cleared" or "goal" or "retreat" => 5,
-            "crit" or "fumble" or "down" or "saved" => 4,
+            "crit" or "fumble" or "down" or "saved" or "power" => 4,
             "say" or "parley" or "puzzle" => 3,
             "trap" or "treasure" or "fight" or "heal" => 2,
             "hazard" or "spell" => 1,

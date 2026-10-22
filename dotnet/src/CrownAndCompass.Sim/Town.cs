@@ -327,6 +327,7 @@ public static class TreasuryAccount
     public const string Institutions = "Institutions";
     public const string Tourney = "Tourney";
     public const string Guilds = "Guilds";
+    public const string Notables = "Notables";
 }
 
 /// <summary>How the campaign ended.</summary>
@@ -417,6 +418,9 @@ public sealed class Town
     /// <summary>The country that bends the roads between the town and its sites (<see cref="Systems.Roads"/>).</summary>
     public List<Feature> Terrain { get; } = [];
 
+    /// <summary>Old gateways in the wilds that link two far places (<see cref="Systems.Wayfaring"/>).</summary>
+    public List<Gateway> Gateways { get; } = [];
+
     /// <summary>Villages, holds and enclaves out in the wilds, by id.</summary>
     public List<Settlement> Settlements { get; } = [];
 
@@ -445,6 +449,10 @@ public sealed class Town
 
     /// <summary>The law book: the punishment the council has set for each crime, by crime id (<see cref="Systems.Laws"/>).</summary>
     public Dictionary<string, string> Laws { get; } = new();
+
+    /// <summary>The truth magic the court uses at trials, by spell id ("" for none), and the latest trials, oldest first (<see cref="Systems.Laws"/>).</summary>
+    public string TrialMagic { get; set; } = "";
+    public List<Systems.Trial> Trials { get; } = [];
 
     /// <summary>Scouts posted to watch sites, oldest first.</summary>
     public List<Scout> Scouts { get; } = [];
@@ -504,6 +512,9 @@ public sealed class Town
 
     /// <summary>The minor powers and whose side each is on (<see cref="Systems.Powers"/>).</summary>
     public List<PowerState> Powers { get; } = [];
+
+    /// <summary>Influential townsfolk who aren't heroes, and how each stands with the mayor (<see cref="Systems.Notables"/>).</summary>
+    public List<Systems.Notable> Notables { get; } = [];
 
     /// <summary>Free scryings from the Scrying Pool used today.</summary>
     public int FreeScryingsUsed { get; set; }

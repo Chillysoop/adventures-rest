@@ -104,6 +104,10 @@ public sealed class SkillCheck
     public string Kind { get; init; } = "";
     public string Skill { get; init; } = "";
     public int Die { get; init; }
+
+    /// <summary>The die not kept, when a condition gave advantage or disadvantage, and the condition.</summary>
+    public int? Other { get; init; }
+    public string Edge { get; init; } = "";
     public int Bonus { get; init; }
     public int Total => Die + Bonus;
     public int Dc { get; init; }
@@ -133,7 +137,22 @@ public static class Skills
 
     public static SkillDef? Def(Town town, string skill) => town.Content.Stories.Skill(skill);
 
-    public static string Name(Town town, string skill) => Def(town, skill)?.Name ?? skill;
+    public static string Name(Town town, string skill) =>
+        skill.StartsWith(SavePrefix, StringComparison.Ordinal) ? $"{AbilityName(skill[SavePrefix.Length..])} save" : Def(town, skill)?.Name ?? skill;
+
+    /// <summary>A saving throw is kept as a check of the skill "save:wis".</summary>
+    public const string SavePrefix = "save:";
+
+    public static string AbilityName(string ability) => ability switch
+    {
+        Ability.Str => "Strength",
+        Ability.Dex => "Dexterity",
+        Ability.Con => "Constitution",
+        Ability.Int => "Intelligence",
+        Ability.Wis => "Wisdom",
+        Ability.Cha => "Charisma",
+        _ => ability,
+    };
 
     // ---------- The sheet ----------
 
@@ -205,6 +224,50 @@ public static class Skills
 
     public static int WatchBonus(Town town, string skill) => Rules(town).Watchman.GetValueOrDefault(skill);
 
+    /// <summary>Their saving throw bonus: the ability's modifier, and a hero's proficiency in the saves their class trains.</summary>
+    public static int SaveBonus(Town town, Agent a, string ability) =>
+        Rng.Modifier(a.Abilities[ability]) + (a.Hero != null && a.Hero.Cls.Saves.Contains(ability) ? HeroProficiency(a.Hero.Level) : 0);
+
+    /// <summary>A d20, or two kept high or low when <paramref name="edge"/> is advantage (1) or disadvantage (-1). Returns the kept die and the other.</summary>
+    public static (int Die, int? Other) Throw(Town town, int edge)
+    {
+        int die = town.Rng.D20();
+        if (edge == 0) return (die, null);
+        int second = town.Rng.D20();
+        return edge > 0 ? (Math.Max(die, second), Math.Min(die, second)) : (Math.Min(die, second), Math.Max(die, second));
+    }
+
+    /// <summary>
+    /// A saving throw: a d20 plus their save bonus (and any extra) against a DC, with advantage or disadvantage from their
+    /// conditions and from <paramref name="edge"/> (loyalty, say). A natural 20 always saves and a natural 1 always fails.
+    /// Kept with the other checks, so it shows on their sheet and pops over them.
+    /// </summary>
+    public static SkillCheck Save(Town town, Agent a, string ability, int dc, string kind, int edge = 0, string edgeWhy = "", int extra = 0)
+    {
+        var (cond, why) = Conditions.Edge(town, a, Conditions.Saves);
+        int net = Math.Sign(edge) + cond;
+        int e = net > 0 ? 1 : net < 0 ? -1 : 0;
+        var (die, other) = Throw(town, e);
+        int bonus = SaveBonus(town, a, ability) + extra;
+        bool ok = die == 20 || (die != 1 && die + bonus >= dc);
+        return Record(town, new SkillCheck
+        {
+            Serial = ++town.CheckSerial, Tick = town.Tick, AgentId = a.Id, Kind = kind, Skill = SavePrefix + ability,
+            Die = die, Other = other, Edge = e == 0 ? "" : e == Math.Sign(edge) && edgeWhy != "" ? edgeWhy : why,
+            Bonus = bonus, Dc = dc, Success = ok,
+        });
+    }
+
+    /// <summary>The chance of a save (a natural 20 always saves, a natural 1 never), with an edge.</summary>
+    public static double SaveChance(int bonus, int dc, int edge)
+    {
+        int faces = 0;
+        for (int f = 1; f <= 20; f++)
+            if (f == 20 || (f != 1 && f + bonus >= dc)) faces++;
+        double p = faces / 20.0;
+        return edge > 0 ? 1 - (1 - p) * (1 - p) : edge < 0 ? p * p : p;
+    }
+
     // ---------- Checks ----------
 
     /// <summary>
@@ -214,7 +277,8 @@ public static class Skills
     /// </summary>
     public static SkillCheck Roll(Town town, Agent? a, string skill, int dc, string kind, int? target = null, int? building = null, int extra = 0)
     {
-        int die = town.Rng.D20();
+        var (edge, edgeWhy) = Conditions.Edge(town, a, Conditions.Checks);
+        var (die, other) = Throw(town, edge);
         int bonus = (a != null ? Bonus(town, a, skill) : WatchBonus(town, skill)) + extra;
         var def = Rules(town).Check(kind);
         // Routine work almost always goes right: only a natural 1 that also falls short fails it.
@@ -223,7 +287,7 @@ public static class Skills
         return Record(town, new SkillCheck
         {
             Serial = ++town.CheckSerial, Tick = town.Tick, AgentId = a?.Id, TargetId = target, BuildingId = building,
-            Kind = kind, Skill = skill, Die = die, Bonus = bonus, Dc = dc, Success = ok,
+            Kind = kind, Skill = skill, Die = die, Other = other, Edge = edgeWhy, Bonus = bonus, Dc = dc, Success = ok,
             Why = Why(town, def.Why, die, ok, building, target),
         });
     }
@@ -231,7 +295,10 @@ public static class Skills
     /// <summary>Two roll against each other; the first wins ties. Returns both checks, each against the other's total.</summary>
     public static (SkillCheck First, SkillCheck Second) Contest(Town town, Agent a, string skillA, Agent b, string skillB, string kind, int? building = null)
     {
-        int da = town.Rng.D20(), db = town.Rng.D20();
+        var (ea, wa) = Conditions.Edge(town, a, Conditions.Checks);
+        var (eb, wb) = Conditions.Edge(town, b, Conditions.Checks);
+        var (da, oa) = Throw(town, ea);
+        var (db, ob) = Throw(town, eb);
         int ba = Bonus(town, a, skillA), bb = Bonus(town, b, skillB);
         bool first = da + ba >= db + bb;
         if (first) Practise(town, a, skillA, kind);
@@ -239,12 +306,12 @@ public static class Skills
         var x = Record(town, new SkillCheck
         {
             Serial = ++town.CheckSerial, Tick = town.Tick, AgentId = a.Id, TargetId = b.Id, BuildingId = building,
-            Kind = kind, Skill = skillA, Die = da, Bonus = ba, Dc = db + bb, Success = first,
+            Kind = kind, Skill = skillA, Die = da, Other = oa, Edge = wa, Bonus = ba, Dc = db + bb, Success = first,
         });
         var y = Record(town, new SkillCheck
         {
             Serial = ++town.CheckSerial, Tick = town.Tick, AgentId = b.Id, TargetId = a.Id, BuildingId = building,
-            Kind = kind, Skill = skillB, Die = db, Bonus = bb, Dc = da + ba + 1, Success = !first,
+            Kind = kind, Skill = skillB, Die = db, Other = ob, Edge = wb, Bonus = bb, Dc = da + ba + 1, Success = !first,
         });
         return (x, y);
     }

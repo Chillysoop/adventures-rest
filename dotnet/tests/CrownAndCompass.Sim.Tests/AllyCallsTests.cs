@@ -50,7 +50,9 @@ public class AllyCallsTests
         while (t.Tick < first.ArriveTick) sim.Step();
         sim.Step();
         Assert.Equal(CallState.Arrived, first.State);
-        Assert.True(Threat.Defense(t) > before);
+        // The camped host stands on the walls (the town's own numbers move on their own meanwhile).
+        Assert.True(AllyCalls.Defense(t) > 0);
+        Assert.True(Threat.Defense(t) > Threat.Defense(t, allies: false));
 
         // With no foe in sight they go home when their days are up.
         sim.RunDays(t.Content.Army.Allies.Stay + marching.Max(c => (c.ArriveTick - t.Tick) / SimTime.HoursPerDay) + 2);
@@ -80,7 +82,7 @@ public class AllyCallsTests
 
         double gold = t.Treasury;
         double standing = s.Standing;
-        Assert.True(sim.ThreatenAlly(c.Id));
+        Assert.NotNull(sim.NegotiateAlly(c.Id, "intimidate"));
         Assert.True(s.Standing < standing);
         Assert.Equal(gold, t.Treasury);
         Assert.Contains(c.State, new[] { CallState.Marching, CallState.Refused });

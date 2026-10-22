@@ -56,9 +56,9 @@ public static class Tutorial
     /// <summary>Things the player does in the client that can finish a step.</summary>
     public static readonly string[] Events = ["next", "speed", "pause", "rotate", "select", "select:agent", "select:building", "select:site", "build", "strategic", "menu", "save", "alert", "roll", "flag", "call", "select:wall", "select:tower", "select:flag", "explorers", "pin", "glossary", "orders", "lens", "seize", "duty"];
 
-    private static TutorialBook? _default;
+    private static readonly Lazy<TutorialBook> _default = new(() => Parse(Content.ReadText("tutorial.json")));
 
-    public static TutorialBook Default() => _default ??= Parse(Content.ReadText("tutorial.json"));
+    public static TutorialBook Default() => _default.Value;
 
     public static TutorialBook Parse(string json) => JsonSerializer.Deserialize<TutorialBook>(json, Content.JsonOptions) ?? new TutorialBook();
 
