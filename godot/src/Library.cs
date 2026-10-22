@@ -76,8 +76,10 @@ public partial class Main
         else if (Research.Open(t).Count > 0) p.Text(Lb(Ui.C(Ui.Gold, "[b]Idle[/b] · pick an idea below"), "ui-warn"));
         if (st.Notes > 0) p.Text(Lb(Ui.C(Ui.Ink2, $"{Js.Str(Math.Round(st.Notes))} lore of notes waiting for the next study"), "books"), 13);
 
-        // Each source of lore a day as a chip, what it is on hover.
-        var moves = Research.Sources(t).Select(s => (SourceIcon(s.Why), "+" + Js.Str(Math.Round(s.Lore, 1)), (Godot.Color?)Ui.Good, Ui.Cap(s.Why))).ToList();
+        // Lore a day by kind of source, one chip each, the sources it sums on hover.
+        var moves = Research.Sources(t).GroupBy(s => SourceIcon(s.Why))
+            .Select(g => (g.Key, "+" + Js.Str(Math.Round(g.Sum(s => s.Lore), 1)), (Godot.Color?)Ui.Good,
+                string.Join("\n", g.Select(s => $"{Ui.Cap(s.Why)} +{Js.Str(Math.Round(s.Lore, 1))}")))).ToList();
         moves.Add(("gold", $"×{Js.Str(r.Funding[st.Funding].Lore)}", Ui.Gold, "Funding: gold only greases the work"));
         p.Text(LibChips(moves.ToArray()), 13);
         var finds = st.Feed.Where(n => n.Lore > 0 || n.Icon == "d20").Reverse().Take(4).ToList();
