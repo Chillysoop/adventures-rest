@@ -110,4 +110,16 @@ public class FoundingTests
         loaded.RunDays(10);
         Assert.Equal(sim.Town.Ledger.Entries.Select(e => e.Format()), loaded.Town.Ledger.Entries.Select(e => e.Format()));
     }
+
+    [Fact]
+    public void ThePlayerNamesTheTownAndTheNameIsKept()
+    {
+        var sim = new Simulation(new SimulationOptions { Seed = 3, TownName = "  Kestrel   [b]Rise[/b] " });
+        Assert.Equal("Kestrel bRise/b", sim.Town.Name);
+        Assert.Equal("Briarford", new Simulation(new SimulationOptions { Seed = 3, TownName = "   " }).Town.Name);
+        Assert.True(Founding.CleanName(sim.Town.Content, new string('x', 99))!.Length <= sim.Town.Content.Founding.NameMost);
+        Assert.NotEmpty(sim.Town.Content.Founding.Names);
+        sim.RunDays(3);
+        Assert.Equal(sim.Town.Name, SaveGame.Read(SaveGame.Write(sim)).Town.Name);
+    }
 }

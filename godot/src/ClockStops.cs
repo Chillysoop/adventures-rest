@@ -17,7 +17,7 @@ public static class ClockStops
         new("first-contact", "First meetings", "A faction or foe met for the first time", true),
         new("sendings", "Sendings from parties", "A party asks what to do", true),
         new("stories", "Story events", "High-stakes stories", true),
-        new("motions", "Council motions", "Off: they wait on the alert strip", false),
+        new("motions", "Council motions", "Off: they wait on the Council badge", false),
         new("war", "War and raids", "Raids, battles, hosts on the march", true),
         new("deaths", "Deaths of heroes", "At home or abroad", true),
         new("crises", "Crises and the big bad", "Crisis turns and the big bad's moves", true),

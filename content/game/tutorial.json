@@ -3,7 +3,7 @@
     {
       "id": "welcome",
       "title": "Welcome, Mayor",
-      "text": "Briarford is yours to grow. You don't command heroes:\n• [b]Build[/b] and paint zones\n• Post [b]bounties[/b] and set laws\n• Townsfolk and heroes choose for themselves\nFollow the [b]gold outline[/b]. End the tour any time.",
+      "text": "This town is yours to grow. You don't command heroes:\n• [b]Build[/b] and paint zones\n• Post [b]bounties[/b] and set laws\n• Townsfolk and heroes choose for themselves\nFollow the [b]gold outline[/b]. End the tour any time.",
       "teaches": []
     },
     {
@@ -113,7 +113,7 @@
     {
       "id": "alerts",
       "title": "Alerts",
-      "text": "Icons along the top need you.\n• Red urgent, gold a decision; the number counts them\n• [b]Hover[/b]: summary\n• [b]Click[/b]: go and answer it\n• [b]Right-click[/b]: dismiss\nThey clear once solved.",
+      "text": "Badges on the left rail need you.\n• Red urgent, gold a decision; the number counts them\n• [b]Hover[/b] a button: what waits there\n• [b]Click[/b] one: go and answer it\n• [b]Right-click[/b]: dismiss\nThey clear once solved.",
       "point": "alerts",
       "when": "alert:",
       "teaches": []
@@ -129,7 +129,7 @@
     {
       "id": "war",
       "title": "Ready the walls",
-      "text": "Something will come for Briarford. [b]Defence[/b] holds the guard and walls:\n• Palisade and watchtowers first\n• Stone walls, gatehouse, moat, barracks later\n• Raiders strike when heroes are away",
+      "text": "Something will come for your town. [b]Defence[/b] holds the guard and walls:\n• Palisade and watchtowers first\n• Stone walls, gatehouse, moat, barracks later\n• Raiders strike when heroes are away",
       "point": "tab:Defence",
       "until": "tab:Defence",
       "teaches": ["tab:Defence", "command:BuildDefense"]
@@ -223,7 +223,7 @@
     {
       "id": "stories",
       "title": "Step into a story",
-      "text": "A card pops up when something happens you can step into.\n• Each choice is a [b]d20[/b] roll of your skill against a DC\n• [b]Odds[/b] bar: green and full is near-certain\n• [b]Reward[/b] / [b]Risk[/b]: what it could win or cost\n• [b]Later[/b] leaves it on the strip; left alone it runs its course\n• Tick [b]Inspiration[/b] to reroll a failure",
+      "text": "A card pops up when something happens you can step into.\n• Each choice is a [b]d20[/b] roll of your skill against a DC\n• [b]Odds[/b] bar: green and full is near-certain\n• [b]Reward[/b] / [b]Risk[/b]: what it could win or cost\n• [b]Later[/b] leaves it in [b]Events[/b]; left alone it runs its course\n• Tick [b]Inspiration[/b] to reroll a failure",
       "point": "alerts",
       "until": "next",
       "when": "alert:story",
@@ -334,7 +334,7 @@
     {
       "id": "siege-watch",
       "title": "Watch the siege",
-      "text": "A host camps through the night and storms at dawn.\n• The banner under the alerts follows each wave: click it to watch\n• Breaches set roofs alight\n• If the walls hold, home heroes sally at the leader\nWhat wins: walls, towers, the watch called, heroes home.",
+      "text": "A host camps through the night and storms at dawn.\n• The siege banner at the top follows each wave: click it to watch\n• Breaches set roofs alight\n• If the walls hold, home heroes sally at the leader\nWhat wins: walls, towers, the watch called, heroes home.",
       "point": "siege",
       "when": "count:Battles",
       "teaches": []
@@ -350,7 +350,7 @@
     {
       "id": "fear",
       "title": "Fear",
-      "text": "Near the top, the alert counts the days until the town gives up and the campaign is lost.\n• Break the menace they fear most\n• Win a fight\n• Fund the temples\nStone never burns; the Library can fireproof timber.",
+      "text": "The fear alert counts the days until the town gives up and the campaign is lost.\n• Break the menace they fear most\n• Win a fight\n• Fund the temples\nStone never burns; the Library can fireproof timber.",
       "point": "alerts",
       "when": "alert:fear",
       "teaches": []
@@ -629,7 +629,7 @@
     {
       "id": "guilds",
       "title": "The trade guilds",
-      "text": "Workers in one trade formed a [b]guild[/b]; its master leans on a councillor.\n• Demands come with a deadline (taxes, a festival, land)\n• [b]Meet it[/b]: they warm to you\n• [b]Pay them off[/b]: it goes away\n• Ignored: they sour, then [b]strike[/b]\n• [b]Break the strike[/b] with the watch: costs Mandate",
+      "text": "Workers in one trade formed a [b]guild[/b]; its master leans on a councillor.\n• Demands come with a deadline (taxes, a festival, land)\n• [b]Meet it[/b]: they warm to you\n• [b]Pay them off[/b]: it goes away\n• Ignored: they sour, then [b]strike[/b]\n• [b]Break the strike[/b] with the watch: costs Mandate\n• Its master is a [b]Notable[/b]: win them over and the guild warms too",
       "point": "tab:Council",
       "until": "tab:Council",
       "when": "alert:guild",
@@ -647,7 +647,7 @@
     {
       "id": "honours",
       "title": "Honours are yours to give",
-      "text": "The strip says when a loyal knight has no land or the town no champion.\n• Click it: grant a cleared site to the knight\n• They hold it with retainers and live on its rents\n• The champion stands first on the walls\nSign knighthoods in [b]Council[/b].",
+      "text": "An alert says when a loyal knight has no land or the town no champion.\n• Click it: grant a cleared site to the knight\n• They hold it with retainers and live on its rents\n• The champion stands first on the walls\nSign knighthoods in [b]Council[/b].",
       "point": "alerts",
       "until": "next",
       "when": "alert:honours",
@@ -806,7 +806,7 @@
     },
     {"id": "watchtowers", "title": "Watchtowers", "text": "Build a [b]Watchtower[/b] (Government) to see the wilds live.\n• Sees farther as the town grows\n• One per 100 residents\n• Past its sight, the fog stays", "point": "buildbar", "when": "day:12", "teaches": []},
     {"id": "rail-notices", "title": "Notices", "text": "Something new for you? A tile slides out beside its window.\n• Click: go there\n• Right-click: tuck it away\n• Red: urgent · Gold: your call", "point": "rail", "when": "day:4", "teaches": []},
-    {"id": "scry-word", "title": "Scry the fight", "text": "A party that sent word is fighting out of sight: the strip offers a [b]scry[/b].\n• Each caster scries once every 2 days\n• Loyal casters: free\n• Others: gold\n• Disaffected: a favour", "point": "alerts", "when": "alert:scry", "teaches": []},
+    {"id": "scry-word", "title": "Scry the fight", "text": "A party that sent word is fighting out of sight: an alert offers a [b]scry[/b].\n• Each caster scries once every 2 days\n• Loyal casters: free\n• Others: gold\n• Disaffected: a favour", "point": "alerts", "when": "alert:scry", "teaches": []},
     {"id": "army", "title": "The army", "text": "[b]Army[/b] raises the town's own soldiers.\n• Build a [b]Drill Yard[/b], [b]Archery Range[/b] or [b]Stables[/b] (Government)\n• Raise a regiment: townsfolk leave their trades, are armed and drill\n• Post it: walls, reserve, patrol or the mayor's guard\n• Put a hero in command to lead it", "point": "tab:Army", "when": "day:8", "teaches": ["tab:Army", "command:RaiseRegiment", "command:ResizeRegiment", "command:DisbandRegiment", "command:PostRegiment", "command:CommandRegiment"]},
     {"id": "levy", "title": "The levy", "text": "When a host comes, call the [b]levy[/b] in [b]Army[/b].\n• Townsfolk leave their work while called\n• Laws: volunteers or conscription, paid or unpaid\n• Conscripts and the unpaid grumble", "point": "tab:Army", "when": "day:14", "teaches": ["command:RaiseLevy", "command:SetServiceLaw", "command:SetLevyPay"]},
     {"id": "allies-call", "title": "Calling allies", "text": "Allies send hosts when you [b]call[/b] them in [b]Army[/b].\n• Answers come within the day\n• Holdouts: pay, negotiate or let go\n• Hosts march the road: call early\n• A friend under a shadow may turn at the walls", "point": "tab:Army", "when": "allies", "teaches": ["command:CallAllies", "command:BribeAlly", "command:NegotiateAlly", "command:LetAllyGo"]},

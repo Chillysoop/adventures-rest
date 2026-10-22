@@ -64,7 +64,16 @@ public partial class Main
             string ear = hears == null ? "" : band >= Notables.Warm
                 ? $"{Ui.Img(hears.Icon, 13)} {Ui.C(Ui.Good, Ui.Esc(hears.Name))}{(n.Tips > 0 ? $" ×{n.Tips}" : "")}"
                 : $"{Ui.Img(hears.Icon, 13)} {Ui.C(Ui.Ink2, Ui.Esc(hears.Name) + " at Warm")}";
-            string text = $"[font_size=16][b]{Ui.Esc(who)}[/b][/font_size]  {Ui.C(Ui.Ink2, Ui.Esc(d.Title))}\n" +
+            // A guild's master carries the guild: their mood shows beside the guild's standing.
+            var guild = Notables.GuildOf(t, n);
+            string title = guild != null ? $"Master of {Guilds.Name(t, guild)}" : d.Title;
+            if (guild != null)
+            {
+                double lean = band == Notables.Friend ? 2 * r.Guild : band >= Notables.Warm ? r.Guild : band == Notables.Bitter ? -r.Guild : 0;
+                gives.Insert(0, Ui.Chip("tab-council", $"{Math.Round(guild.Standing)}{(lean != 0 ? $" {(lean > 0 ? "▲" : "▼")}" : "")}", lean > 0 ? Ui.Good : lean < 0 ? Ui.Bad : Ui.Ink2,
+                    lean > 0 ? "Guild standing: they talk the members round, so it climbs each day" : lean < 0 ? "Guild standing: they stir the members up against you" : "Guild standing: win them to Warm and the guild warms to you too", 13));
+            }
+            string text = $"[font_size=16][b]{Ui.Esc(who)}[/b][/font_size]  {Ui.C(Ui.Ink2, Ui.Esc(Ui.Cap(title)))}\n" +
                           $"[font_size=13]{Ui.C(BandColor(band), $"[b]{Ui.Esc(Notables.BandName(t, n))}[/b] {Signed(n.Regard)}")}" +
                           (n.Favours > 0 ? $"   {Ui.C(Ui.Good, $"✔{n.Favours}")}" : "") + $"\n{ear}" +
                           (gives.Count > 0 ? "\n" + string.Join("   ", gives) : "") + "[/font_size]";

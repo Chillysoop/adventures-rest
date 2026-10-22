@@ -78,6 +78,19 @@ public partial class Main
         _ => null,
     };
 
+    /// <summary>
+    /// The rail button an alert's badge sits on: the window that answers it, or for the few answered on the map or a
+    /// card, the window nearest them. Null leaves it to the Events tray (stories and crises).
+    /// </summary>
+    private static Tab? RailOf(Alert a) => TabOf(a.Kind.Window) ?? a.Kind.Id switch
+    {
+        "heroes" or "honours" => Tab.Companies,
+        "crowded" or "stalled" or "tourney" or "wager" => Tab.City,
+        "outpost" or "tower" or "patrol" or "scry" => Tab.Bounties,
+        "lurker" => Tab.Defence,
+        _ => null,
+    };
+
     private void BuildDock()
     {
         _rail = new PanelContainer();
@@ -149,6 +162,7 @@ public partial class Main
         b.AddThemeStyleboxOverride("hover_pressed", on);
         var tab = t;
         b.Pressed += () => { SetTab(tab); GuideEvent("rail"); };
+        b.MouseEntered += () => ShowRailAlerts(tab, b);
 
         var badge = new PanelContainer { Visible = false, MouseFilter = MouseFilterEnum.Ignore };
         var count = Ui.Label("", Colors.White, Ui.Bold, 11);
@@ -166,7 +180,7 @@ public partial class Main
     {
         var by = new Dictionary<Tab, List<Alert>>();
         foreach (var a in ShownAlerts)
-            if (TabOf(a.Kind.Window) is Tab t)
+            if (RailOf(a) is Tab t)
             {
                 if (!by.TryGetValue(t, out var list)) by[t] = list = [];
                 list.Add(a);
@@ -174,13 +188,13 @@ public partial class Main
         foreach (var (t, (count, badge)) in _badges)
         {
             var list = by.GetValueOrDefault(t);
-            SetBadge(count, badge, list ?? [], _tabButtons[t], $"{Titles[t]}{(QuickKey(t) is { Length: > 0 } k ? $"  ({k})" : "")}\n{Blurbs.GetValueOrDefault(t, "")}");
+            SetBadge(count, badge, list ?? [], _tabButtons[t], $"{Titles[t]}{(QuickKey(t) is { Length: > 0 } k ? $"  ({k})" : "")}\n{Blurbs.GetValueOrDefault(t, "")}", listOnHover: true);
         }
         UpdateTrayBadges();
     }
 
     /// <summary>A badge for a list of alerts: how many, red if any is urgent, gold for decisions, a grey dot for minor ones.</summary>
-    private static void SetBadge(Label count, PanelContainer badge, List<Alert> alerts, Control owner, string tip)
+    private static void SetBadge(Label count, PanelContainer badge, List<Alert> alerts, Control owner, string tip, bool listOnHover = false)
     {
         badge.Visible = alerts.Count > 0;
         if (alerts.Count == 0)
@@ -199,7 +213,8 @@ public partial class Main
         badge.AddThemeStyleboxOverride("panel", s);
         count.AddThemeColorOverride("font_color", top == AlertLevel.Urgent ? Colors.White : new Color("2a1d0c"));
         badge.CustomMinimumSize = dot ? new Vector2(9, 9) : new Vector2(18, 17);
-        owner.TooltipText = tip + "\n" + string.Join("\n", alerts.Take(4).Select(a => $"• {a.Text}"));
+        // A rail button lists its alerts in a popup on hover (Alerts.cs ShowRailAlerts), so no tooltip on top of it.
+        owner.TooltipText = listOnHover ? "" : tip + "\n" + string.Join("\n", alerts.Take(4).Select(a => $"• {a.Text}"));
         // In the owner's top-right corner (a button lays out no children of its own).
         badge.Size = badge.GetCombinedMinimumSize();
         badge.Position = new Vector2(Math.Max(owner.Size.X, owner.CustomMinimumSize.X) - badge.Size.X - 2, 2);

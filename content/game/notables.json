@@ -1,5 +1,5 @@
 {
-  "_doc": "Notable townsfolk (Systems/Notables.cs): influential people who aren't heroes. One of each kind rises on its own, from the best of a trade in town or, for outsiders, from nowhere. The mayor builds regard with visits (a skill check the kind is open to, or a gift) and by answering their favours; regard drifts back to nothing when they are left alone. Warm and friendly notables pass on what they hear (the information network: `hears`) every `tipDays` of their band, and give their `warm`/`friend` effects daily and their `boon` once; bitter ones give their `bitter` effects and leave after `leaveDays`. Effects: gold (a day), mandate (a day). Nothing here rolls the town's dice: daily rolls are seeded from the seed, the day and the notable.",
+  "_doc": "Notable townsfolk (Systems/Notables.cs): influential people who aren't heroes. One of each kind rises on its own, from the best of a trade in town or, for outsiders, from nowhere. The mayor builds regard with visits (a skill check the kind is open to, or a gift) and by answering their favours; regard drifts back to nothing when they are left alone. Warm and friendly notables pass on what they hear (the information network: `hears`) every `tipDays` of their band, and give their `warm`/`friend` effects daily and their `boon` once; bitter ones give their `bitter` effects and leave after `leaveDays`. Effects: gold (a day), mandate (a day). Every trade guild's master rises as a `guildMaster` notable the day they take the chair (unless they are one already), and while warm adds `guild` standing a day to their guild (twice as a friend, minus while bitter), so winning the master calms the guild and, through it, its councillor. Nothing here rolls the town's dice: daily rolls are seeded from the seed, the day and the notable.",
   "firstDay": 4,
   "riseDays": 5,
   "bands": [-50, -15, 15, 50],
@@ -38,7 +38,25 @@
     "plots": { "name": "Traitors and plots", "icon": "suspicion" },
     "regions": { "name": "Far country", "icon": "compass" }
   },
+  "guild": 0.5,
+  "guildMaster": "guild-master",
   "kinds": [
+    {
+      "id": "guild-master",
+      "title": "Guild master",
+      "face": "np-shaking-hands",
+      "trades": [],
+      "rank": "practice",
+      "approaches": ["books", "craft", "flatter"],
+      "hears": "rumours",
+      "warm": {},
+      "friend": {},
+      "bitter": {},
+      "asks": [
+        { "id": "dues", "text": "has the guild's hall roof to mend", "gold": 30, "gain": 10 },
+        { "id": "rival", "text": "wants a cheating rival shown up", "skill": "insight", "dc": 12, "gain": 10 }
+      ]
+    },
     {
       "id": "master-smith",
       "title": "Master smith",

@@ -24,6 +24,12 @@ public partial class Main
             string mood = strike ? "On strike" : g.Standing >= r.Pleased ? "Pleased" : g.Standing >= r.Angry ? "Content" : "Angry";
             var color = strike || g.Standing < r.Angry ? Ui.Bad : g.Standing >= r.Pleased ? Ui.Good : Ui.Ink2;
             string master = g.MasterId is int m ? AgentLink(t.Agent(m)) : "no master";
+            if (g.MasterId is int mm && t.Notables.FirstOrDefault(n => !n.Gone && n.AgentId == mm) is { } known)
+            {
+                int band = Notables.Band(t, known);
+                master += " " + Ui.Tip(Ui.C(band >= Notables.Warm ? Ui.Good : band == Notables.Bitter ? Ui.Bad : Ui.Ink2, $"({Notables.BandName(t, known)})"),
+                    "How the master feels about you. Win them over in Notables and the guild warms with them");
+            }
             string hall = g.HallId is int h ? BuildingLink(t.Building(h)) : "the taverns";
             var seat = Council.FindSeat(t, g.Seat);
             string backs = Council.Holder(t, g.Seat) is { } holder ? $"Backs {AgentLink(holder)} the {Ui.Esc(seat!.Def.Title)}" : $"Waits for a {Ui.Esc(seat?.Def.Title ?? "councillor")}";

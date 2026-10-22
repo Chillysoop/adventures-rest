@@ -84,6 +84,9 @@ public sealed class Options
 
     /// <summary>--hardcore: new towns are Hardcore (the mayor dies, the town is lost); --mayor-fallen kills the mayor for shots.</summary>
     public bool Hardcore;
+
+    /// <summary>--town NAME: what new towns are called (blank keeps Briarford).</summary>
+    public string TownName = "";
     public bool MayorFallen;
 
     /// <summary>--episode id: strike a townsperson out on the streets with that inspiration or break, look at them and open their inspector.</summary>
@@ -272,6 +275,7 @@ public sealed class Options
                 case "--new-mayor": o.NewMayor = o.Title = true; break;
                 case "--mayor-sheet": o.MayorSheet = true; o.Tab = "Mayor"; break;
                 case "--hardcore": o.Hardcore = true; break;
+                case "--town": o.TownName = Next(); break;
                 case "--mayor-fallen": o.MayorFallen = true; o.Tab = "Mayor"; break;
                 case "--episode": o.Episode = Next(); break;
                 case "--intro": o.Intro = Next(); break;

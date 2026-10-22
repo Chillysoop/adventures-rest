@@ -135,7 +135,7 @@ public partial class Main
 
     /// <summary>The alerts a tray answers: its window's, or for Events every story waiting on the mayor.</summary>
     private List<Alert> TrayAlerts(TrayDef d) =>
-        ShownAlerts.Where(a => d.Window is Tab w ? TabOf(a.Kind.Window) == w : a.Kind.Window == AlertWindow.Story || a.StoryId != null && TabOf(a.Kind.Window) == null).ToList();
+        ShownAlerts.Where(a => d.Window is Tab w ? RailOf(a) == w : a.Kind.Window == AlertWindow.Story || a.StoryId != null && RailOf(a) == null).ToList();
 
     private void UpdateTrayBadges()
     {

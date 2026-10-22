@@ -134,4 +134,21 @@ public class GuildsTests
         Assert.Equal(sim.Town.Ledger.Entries.Select(e => e.Format()), loaded.Town.Ledger.Entries.Select(e => e.Format()));
         Assert.Equal(Encoding.UTF8.GetString(SaveGame.StateJson(sim)), Encoding.UTF8.GetString(SaveGame.StateJson(loaded)));
     }
+
+    [Fact]
+    public void AGuildsMasterIsANotableAndWinningThemCalmsTheGuild()
+    {
+        var (sim, t, g) = Town();
+        sim.RunDays(2);
+        var n = t.Notables.FirstOrDefault(x => !x.Gone && x.AgentId == g.MasterId);
+        Assert.NotNull(n);
+        Assert.Same(g, Notables.GuildOf(t, n!));
+        g.Standing = 40;
+        n!.Regard = 100;
+        double before = g.Standing;
+        sim.RunDays(1);
+        var r = t.Content.Guilds;
+        // The master's friendship outpulls the guild's own drift back toward its rest.
+        Assert.True(g.Standing > before + (r.Rest - before) * r.Drift, $"standing {before} -> {g.Standing}");
+    }
 }
