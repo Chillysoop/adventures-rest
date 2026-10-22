@@ -7,9 +7,11 @@ using Alert = CrownAndCompass.Sim.Systems.Alert;
 namespace CrownAndCompass.Client;
 
 /// <summary>
-/// The alert strip under the top bar, in the manner of Paradox games: one icon per kind of trouble, urgent
-/// first, with a count when several share it. Hover for a summary of each; click to go where it is answered
-/// (a kind with several opens a list to pick from); right-click to dismiss. What the alerts are comes from
+/// The alerts. They live on the left rail: each window's button carries a badge counting what waits there (red
+/// urgent, gold a decision, a grey dot for minor), hovering it lists them (click one to go where it is answered,
+/// right-click to dismiss), and a new urgent or decision alert slides a tile out of the button (RailNotices.cs).
+/// Stories and crises badge the Events tray. The old icon strip under the top bar is kept as the alerts' model
+/// but no longer shown. What the alerts are comes from
 /// the sim (<see cref="Alerts"/>), and each is one thing the player should act on (news stays in the feed):
 /// an alert lasts while its condition does and clears once it is resolved. Minor alerts also time out while
 /// the clock runs; decisions and urgent ones stay until resolved or dismissed. A dismissed or faded alert
@@ -31,6 +33,9 @@ public partial class Main
     private readonly HashSet<string> _dismissed = [];
     private string _alertSig = "";
     private string? _openKind;
+
+    /// <summary>A rail list opened by --alert-hover for a shot stays open without the mouse.</summary>
+    private bool _railPinned;
     private Control? _tipAnchor, _listAnchor;
     private string? _tipKind;
     private readonly List<(AlertKind Kind, List<Alert> Items, Control Icon)> _alertGroups = [];
@@ -49,7 +54,7 @@ public partial class Main
         // Between the management window on the left and the news feed on the right.
         col.OffsetLeft = RailWidth + 480;
         col.OffsetRight = -(TrayWidth + 360);
-        _alertRow = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore, Alignment = BoxContainer.AlignmentMode.Center };
+        _alertRow = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore, Alignment = BoxContainer.AlignmentMode.Center, Visible = false };
         _alertRow.AddThemeConstantOverride("separation", 6);
         col.AddChild(_alertRow);
 
@@ -202,7 +207,8 @@ public partial class Main
 
         // Popups follow their icon as the strip re-centres.
         if (_alertTip.Visible && IsInstanceValid(_tipAnchor)) PlaceAlertPopup(_alertTip, _tipAnchor!);
-        if (_alertList.Visible && IsInstanceValid(_listAnchor)) PlaceAlertPopup(_alertList, _listAnchor!);
+        if (_alertList.Visible && IsInstanceValid(_listAnchor)) PlaceAlertPopup(_alertList, _listAnchor!, beside: _openKind?.StartsWith("rail:", StringComparison.Ordinal) == true);
+        SyncRailAlerts();
 
         // Minor groups fade out over their last seconds; urgent ones breathe.
         float pulse = 0.82f + 0.18f * Mathf.Sin((float)_clockReal * 4);
@@ -241,7 +247,11 @@ public partial class Main
         // A summary or list that was open stays open over its kind's new icon.
         if (tipKind != null && _alertGroups.FirstOrDefault(g => g.Kind.Id == tipKind) is { Icon: not null } hovered)
             ShowAlertTip(hovered.Kind, hovered.Items, hovered.Icon);
-        if (_openKind != null)
+        if (_openKind != null && _openKind.StartsWith("rail:", StringComparison.Ordinal))
+        {
+            if (Enum.TryParse<Tab>(_openKind[5..], out var railTab) && _tabButtons.TryGetValue(railTab, out var railButton)) ShowRailAlerts(railTab, railButton);
+        }
+        else if (_openKind != null)
         {
             var open = _alertGroups.FirstOrDefault(g => g.Kind.Id == _openKind);
             if (open.Icon == null || open.Items.Count < 2) CloseAlertList();
@@ -347,22 +357,84 @@ public partial class Main
         _openKind = kind.Id;
         Ui.Clear(_alertListBox);
         _alertListBox.AddChild(AlertHeading(kind, items.Count));
-        foreach (var a in items)
+        foreach (var a in items) _alertListBox.AddChild(AlertRow(a, 28));
+        _alertListBox.AddChild(Ui.Label("Click to go there · right-click to dismiss", new Color(Ui.Ink2, 0.75f), Ui.Body, 11));
+        _listAnchor = chip;
+        PlaceAlertPopup(_alertList, chip);
+    }
+
+    /// <summary>
+    /// Hovering a rail button lists the alerts waiting at its window, most pressing first: each with its portrait or
+    /// icon, its line in the colour of its level and the reason under it. Click one to go there, right-click to dismiss.
+    /// The list stays while the mouse is on the button or the list.
+    /// </summary>
+    private void ShowRailAlerts(Tab tab, Control button)
+    {
+        var items = ShownAlerts.Where(a => RailOf(a) == tab)
+            .OrderByDescending(a => a.Kind.Level).ThenBy(a => a.Key, StringComparer.Ordinal).ToList();
+        if (items.Count == 0)
         {
-            var row = new PanelContainer { MouseFilter = MouseFilterEnum.Stop, MouseDefaultCursorShape = CursorShape.PointingHand, TooltipText = $"{a.Tip}\nClick to go there · right-click to dismiss" };
+            if (_openKind == $"rail:{tab}") CloseAlertList();
+            return;
+        }
+        _alertTip.Visible = false;
+        _openKind = $"rail:{tab}";
+        Ui.Clear(_alertListBox);
+        var top = items.Max(a => a.Kind.Level);
+        var head = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
+        head.AddThemeConstantOverride("separation", 8);
+        head.AddChild(new TextureRect { Texture = Ui.Icon($"tab-{tab.ToString().ToLowerInvariant()}"), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2(18, 18), SizeFlagsVertical = SizeFlags.ShrinkCenter, MouseFilter = MouseFilterEnum.Ignore });
+        head.AddChild(Ui.Label(Titles[tab], LevelColor(top), Ui.Bold, 14));
+        _alertListBox.AddChild(head);
+        foreach (var a in items.Take(8)) _alertListBox.AddChild(AlertRow(a, 28, withTip: true));
+        if (items.Count > 8) _alertListBox.AddChild(Ui.Label($"…and {items.Count - 8} more in the window", Ui.Ink2, Ui.Body, 12));
+        _alertListBox.AddChild(Ui.Label("Click: go there · Right-click: dismiss", new Color(Ui.Ink2, 0.75f), Ui.Body, 11));
+        _listAnchor = button;
+        PlaceAlertPopup(_alertList, button, beside: true);
+    }
+
+    /// <summary>Close the rail's list once the mouse has left both the button and the list.</summary>
+    private void SyncRailAlerts()
+    {
+        if (_railPinned || _openKind == null || !_openKind.StartsWith("rail:", StringComparison.Ordinal) || !IsInstanceValid(_listAnchor)) return;
+        var m = GetViewport().GetMousePosition();
+        if (_listAnchor!.GetGlobalRect().Grow(6).HasPoint(m) || _alertList.GetGlobalRect().Grow(10).HasPoint(m)) return;
+        // The gap between the button and the list counts as on it, so the mouse can cross over.
+        var a = _listAnchor.GetGlobalRect();
+        var bridge = new Rect2(a.End.X, a.Position.Y - 8, Math.Max(0, _alertList.GlobalPosition.X - a.End.X), a.Size.Y + 16);
+        if (bridge.HasPoint(m)) return;
+        CloseAlertList();
+    }
+
+    /// <summary>One alert in a list: its face or icon, its line, optionally its reason; click to go, right-click to dismiss.</summary>
+    private Control AlertRow(Alert a, float faceSize, bool withTip = false)
+    {
+        var kind = a.Kind;
+        {
+            var row = new PanelContainer { MouseFilter = MouseFilterEnum.Stop, MouseDefaultCursorShape = CursorShape.PointingHand, TooltipText = withTip ? "" : $"{a.Tip}\nClick to go there · right-click to dismiss" };
             var normal = Ui.Box(Ui.Panel, Ui.Line, 6, 1, 8, 5);
             var hover = Ui.Box(Ui.Panel2, LevelColor(kind.Level), 6, 1, 8, 5);
             row.AddThemeStyleboxOverride("panel", normal);
             row.MouseEntered += () => row.AddThemeStyleboxOverride("panel", hover);
             row.MouseExited += () => row.AddThemeStyleboxOverride("panel", normal);
-            var label = Ui.Label(a.Text, Ui.Ink, Ui.Medium, 13);
+            Control label;
+            if (withTip)
+            {
+                var words = Ui.Rich($"{Ui.C(kind.Level == AlertLevel.Minor ? Ui.Ink : LevelColor(kind.Level), $"[b]{Ui.Esc(a.Text)}[/b]")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Points(Ui.Esc(a.Tip))}[/font_size]")}", 13);
+                words.CustomMinimumSize = new Vector2(300, 0);
+                label = words;
+            }
+            else label = Ui.Label(a.Text, Ui.Ink, Ui.Medium, 13);
             label.MouseFilter = MouseFilterEnum.Ignore;
-            if (AlertFace(a, 28) is { } face)
+            Control? face = AlertFace(a, faceSize);
+            if (face == null && withTip)
+                face = new TextureRect { Texture = Ui.Icon(kind.Icon), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2(faceSize, faceSize), SizeFlagsVertical = SizeFlags.ShrinkBegin, Modulate = LevelColor(kind.Level), MouseFilter = MouseFilterEnum.Ignore };
+            if (face != null)
             {
                 var line = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
                 line.AddThemeConstantOverride("separation", 8);
                 line.AddChild(face);
-                label.SizeFlagsVertical = SizeFlags.ShrinkCenter;
+                if (!withTip) label.SizeFlagsVertical = SizeFlags.ShrinkCenter;
                 line.AddChild(label);
                 row.AddChild(line);
             }
@@ -375,11 +447,8 @@ public partial class Main
                 else return;
                 row.AcceptEvent();
             };
-            _alertListBox.AddChild(row);
+            return row;
         }
-        _alertListBox.AddChild(Ui.Label("Click to go there · right-click to dismiss", new Color(Ui.Ink2, 0.75f), Ui.Body, 11));
-        _listAnchor = chip;
-        PlaceAlertPopup(_alertList, chip);
     }
 
     /// <summary>The portrait of the enemy or the site an alert is about, if it is about one.</summary>
@@ -414,14 +483,23 @@ public partial class Main
     }
 
     /// <summary>Under the icon, kept on screen.</summary>
-    private void PlaceAlertPopup(PanelContainer popup, Control chip)
+    private void PlaceAlertPopup(PanelContainer popup, Control chip, bool beside = false)
     {
         popup.Visible = true;
         var size = popup.GetCombinedMinimumSize();
         if (popup.Size != size) popup.Size = size;
         var view = GetViewportRect().Size;
-        var at = chip.GlobalPosition + new Vector2(chip.Size.X / 2 - size.X / 2, chip.Size.Y + 8);
-        popup.Position = new Vector2(Math.Clamp(at.X, 8, view.X - size.X - 8), at.Y);
+        if (beside)
+        {
+            // To the right of a rail button, kept on screen top and bottom.
+            var by = chip.GlobalPosition + new Vector2(chip.Size.X + 8, -6);
+            popup.Position = new Vector2(by.X, Math.Clamp(by.Y, 8, Math.Max(8, view.Y - size.Y - 8)));
+        }
+        else
+        {
+            var at = chip.GlobalPosition + new Vector2(chip.Size.X / 2 - size.X / 2, chip.Size.Y + 8);
+            popup.Position = new Vector2(Math.Clamp(at.X, 8, view.X - size.X - 8), at.Y);
+        }
         if (popup.GetIndex() != GetChildCount() - 1) MoveChild(popup, GetChildCount() - 1);
     }
 
@@ -452,13 +530,14 @@ public partial class Main
         if (_opts.Alert is int i && i < _alertGroups.Count)
         {
             _opts.Alert = null;
-            var (kind, items, icon) = _alertGroups[i];
-            PressAlert(kind, items, icon);
+            Go(_alertGroups[i].Items[0]);
         }
-        if (_opts.AlertHover is int h && h < _alertGroups.Count && _alertGroups[h].Icon.Size.X > 0)
+        // --alert-hover N: the list of the Nth rail button that has alerts, top to bottom.
+        var railed = _tabButtons.Where(kv => ShownAlerts.Any(a => RailOf(a) == kv.Key)).OrderBy(kv => kv.Value.GlobalPosition.Y).ToList();
+        if (_opts.AlertHover is int h && h < railed.Count && railed[h].Value.Size.X > 0)
         {
-            var (kind, items, icon) = _alertGroups[h];
-            ShowAlertTip(kind, items, icon);
+            ShowRailAlerts(railed[h].Key, railed[h].Value);
+            _railPinned = true;
             _opts.AlertHover = null;
         }
     }

@@ -274,6 +274,21 @@ public partial class Main
         _goalArrow.ResetSize();
     }
 
+    /// <summary>
+    /// Where a step about an alert points: the rail button (or the Events tray) holding the alert its "when" names,
+    /// else the one holding the most pressing alert.
+    /// </summary>
+    private Control? AlertAnchor()
+    {
+        var shown = ShownAlerts.ToList();
+        string? want = _step?.When is { } w && w.StartsWith("alert:", StringComparison.Ordinal) ? w[6..] : null;
+        var a = (want != null ? shown.FirstOrDefault(x => x.Key.StartsWith(want, StringComparison.Ordinal)) : null)
+            ?? shown.OrderByDescending(x => x.Kind.Level).ThenBy(x => x.Key, StringComparer.Ordinal).FirstOrDefault();
+        if (a == null) return null;
+        if (RailOf(a) is Tab tab && _tabButtons.TryGetValue(tab, out var b)) return b;
+        return _trayButtons.TryGetValue("Events", out var events) ? events.Button : null;
+    }
+
     private Control? GuideTarget(string point)
     {
         Control? c = point switch
@@ -282,7 +297,7 @@ public partial class Main
             "topbar" => _stats,
             "clock" => _clock,
             "threat" => _threatPill,
-            "alerts" => _alertRow.GetChildCount() > 0 ? _alertRow : null,
+            "alerts" => AlertAnchor(),
             "feed" => _feed.GetChildCount() > 0 ? _feed : null,
             "build" => _buildBar.Visible ? null : _buildToggle,
             "buildbar" => _buildBar.Visible ? _buildBar : _buildToggle,

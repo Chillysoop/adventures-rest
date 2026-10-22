@@ -279,7 +279,7 @@ public static class Notables
         town.Notables.Add(n);
         string who = NameOf(town, n);
         string where = d.Outsider && d.Place != "" ? $", who keeps to {d.Place}," : "";
-        town.Log(LedgerCategory.Town, Importance.Notable, $"{who}{where} is someone worth knowing: {TitleOf(town, n, d).ToLowerInvariant()}.", agentId != null ? [agentId.Value] : []);
+        town.Log(LedgerCategory.Town, Importance.Notable, $"{who}{where} is someone worth knowing: {TitleOf(town, n, d)}.", agentId != null ? [agentId.Value] : []);
     }
 
     // The day ---------------------------------------------------------------------------------------
