@@ -3,6 +3,8 @@
   "courtFrom": 60,
   "_contactDoc": "First contact: the town knows no power at the start. Each is met on its meetDay (its people come calling), or earlier when the town hears an enemy courting it or an ally feuding with it. A first meeting opens its contact story (contacts, also \"contact-people\" for the peoples, met from world.json standing meetFrom every meetEvery days; source \"contact\", needs [\"minor\"]); the \"minor\" effect moves its standing and favour. Unmet powers send no envoys, take no gifts and can't be allied.",
   "courtEvery": 45,
+  "oathPrice": 30,
+  "oathStanding": 50,
   "noticeDays": 8,
   "offerPerPower": 0.14,
   "cunning": { "mindless": 0, "crafty": 0.6, "cunning": 1, "mastermind": 1.5 },

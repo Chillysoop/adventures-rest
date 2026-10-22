@@ -569,7 +569,13 @@ public partial class Main
         {
             var color = c.Outcome == ExpeditionOutcome.Cleared || c.GoalMet ? Ui.Good : c.Outcome == ExpeditionOutcome.Wiped ? Ui.Bad : Ui.Ink2;
             string tale = c.Beats.Count > 0 && c.MemberIds.Count > 0 ? $"  [url=tale:{c.Id}]{Ui.C(Ui.Gold, "▶ Hear the tale")}[/url]" : "";
-            string head = $"[url=chron:{c.Id}][b]{Ui.Esc(c.PartyName)}[/b][/url] at {Ui.Esc(c.SiteName)}  {Tag(c.Verdict, color)}{tale}\n{Ui.C(Ui.Ink2, $"[font_size=12]Day {c.DepartDay}–{c.ReturnDay} · {Ui.Esc(string.Join(", ", c.Members))}[/font_size]")}";
+            // Who went, by first name, the fallen in red with a skull; the full roster is in the hover.
+            string who = c.MemberIds.Count == 0 ? Ui.Esc(string.Join(", ", c.Members))
+                : Ui.Tip(string.Join("  ", c.MemberIds.Select(id => c.Dead.Contains(id)
+                    ? $"{Ui.Img("ui-skull", 12)}{Ui.C(Ui.Bad, Ui.Esc(t.Agent(id).GivenName))}"
+                    : Ui.Esc(t.Agent(id).GivenName))), string.Join("\n", c.Members));
+            string gold = c.Gold > 0 ? "  " + Ui.Chip("gold", $"{c.Gold:N0}", Ui.Gold, "Gold they brought home", 12) : "";
+            string head = $"[url=chron:{c.Id}][b]{Ui.Esc(c.PartyName)}[/b][/url] at {Ui.Esc(c.SiteName)}  {Tag(c.Verdict, color)}{tale}\n{Ui.C(Ui.Ink2, $"[font_size=12]Day {c.DepartDay}–{c.ReturnDay} · [/font_size]")}[font_size=12]{who}{gold}[/font_size]";
             if (_openChronicles.Contains(c.Id))
                 head += "\n" + string.Join("\n", c.Lines.Select(l => $"{Ui.C(color, "│")} [font_size=13]{Ui.Esc(l)}[/font_size]"));
             p.Row(head);
@@ -834,7 +840,17 @@ public partial class Main
         if (b.Def.Crews > 0 && b.Complete)
             p.Text(Ui.C(Ui.Ink2, $"Puts {b.Def.Crews} more crews to work. The town has {Construction.Crews(t)} crews; a town its size keeps {Construction.Wanted(t)} busy."));
         if (Monuments.IsMonument(t, b.Def)) MonumentCard(p, t, b);
+        if (b.OwnerId != null && b.Def.IsBusiness && !b.Def.Civic && b.Complete) BuyButton(p, t, b);
         if (!b.Razed && Planning.RazeBlocked(t, b) == null) RazeButton(p, t, b);
+    }
+
+    /// <summary>Buy a townsman's business for the town; the owner's answer shows when they won't sell.</summary>
+    private void BuyButton(Pane p, Town t, Building b)
+    {
+        int id = b.Id;
+        string? no = Property.BuyBlocked(t, b);
+        p.Buttons(($"Buy for the town · {Js.Str(Property.BuyPrice(t, b))}g", no == null, false, () => Act(() => _sim.BuyBuilding(id))));
+        if (no != null && no != "not enough gold") p.Note(Ui.Cap(no) + ".");
     }
 
     /// <summary>Call off a site or tear a building down, for some gold back; it asks first.</summary>

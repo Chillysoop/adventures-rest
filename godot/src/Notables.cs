@@ -85,9 +85,16 @@ public partial class Main
             if (Notables.AskOf(t, n) is { } ask)
             {
                 string? blocked = Notables.AnswerBlocked(t, n);
-                string help = ask.Gold > 0 ? $"Help · {Js.Str(ask.Gold)}g"
+                var questSite = ask.Quest != "" ? Quests.Site(t, n.AskSite) : null;
+                string help = questSite != null ? "Post the job"
+                    : ask.Gold > 0 ? $"Help · {Js.Str(ask.Gold)}g"
                     : $"{Ui.Cap(t.Content.Stories.Skill(ask.Skill)?.Name ?? ask.Skill)} · {Math.Round(Notables.Chance(t, ask.Skill, ask.Dc) * 100)}%";
-                p.Row($"[font_size=13]{Ui.C(Ui.Gold, "◆")} {Ui.Esc(Ui.Cap(ask.Text))}  {Ui.C(Ui.Good, $"+{Js.Str(ask.Gain)}")}  {Ui.C(Ui.Ink2, $"{Math.Max(1, n.AskUntil - t.Day)}d")}[/font_size]",
+                // A quest goes on the bounty board on their gold; the regard comes when a company sees it done.
+                string quest = questSite == null ? "" : "\n" + Ui.Bullets([
+                    Ui.Chip("gold", Js.Str(Notables.QuestReward(t, questSite)), Ui.Gold, "The reward, from their own purse", 12) + " theirs, on the board",
+                    Ui.Chip("ui-renown", Notoriety.Suggested(t, questSite).ToString(), Ui.Ink2, "Renown suggested for the company that takes it", 12) + " renown suggested",
+                    "Regard when a company sees it done"]);
+                p.Row($"[font_size=13]{Ui.C(Ui.Gold, "◆")} {Ui.Esc(Ui.Cap(Notables.AskText(t, n, ask)))}  {Ui.C(Ui.Good, $"+{Js.Str(ask.Gain)}")}  {Ui.C(Ui.Ink2, $"{Math.Max(1, n.AskUntil - t.Day)}d")}{quest}[/font_size]",
                     (help, blocked == null, true, () => Act(() => _sim.AnswerNotable(id, true))),
                     ("Refuse", true, false, () => Act(() => _sim.AnswerNotable(id, false))));
             }
@@ -136,7 +143,12 @@ public partial class Main
         _sim.RunDays(12);
         if (list.FirstOrDefault(n => !n.Gone && n.Ask == "" && Notables.Band(t, n) >= Notables.Warm) is { } asker)
         {
-            asker.Ask = Notables.DefOf(t, asker).Asks[0].Id;
+            // A quest if they hand one out and a place is open for it, so shots show the job.
+            var asks = Notables.DefOf(t, asker).Asks;
+            var site = t.Sites.FirstOrDefault(x => x.Known != SiteKnowledge.Unheard && !x.ThoughtCleared && !t.Bounties.Any(b => b.SiteId == x.Def.Id && b.Status is BountyStatus.Open or BountyStatus.Taken));
+            var ask = asks.FirstOrDefault(a => a.Quest != "" && site != null && asker.AgentId != null) ?? asks[0];
+            asker.Ask = ask.Id;
+            asker.AskSite = ask.Quest != "" ? site!.Def.Id : "";
             asker.AskUntil = t.Day + 4;
         }
         _dirty = true;

@@ -173,6 +173,12 @@ public partial class Main
                 items.Add(("", "Bring them home"));
                 ids.Add(null);
             }
+            if (o.Bought)
+            {
+                p.Row($"{Ui.Img("face-crown", 15)} [b]{Ui.Esc(s.Name)}[/b]  {Ui.Img("gold", 13)} +{Js.Str(o.Tribute)}/day  {Ui.C(Ui.Good, "sworn")}",
+                    ("Free", true, false, () => Act(() => _sim.FreeSettlement(sid))));
+                continue;
+            }
             p.Row($"{Ui.Img("standing", 15)} [b]{Ui.Esc(s.Name)}[/b]  {Ui.Img("gold", 13)} +{Js.Str(o.Tribute)}/day\n" +
                   $"[font_size=11]{bar}[/font_size]  {Ui.C(Ui.Ink2, "[font_size=12]resistance[/font_size]")}   {Ui.Img("tab-army", 13)} {(g != null ? Ui.Esc(g.Name) : Ui.C(Ui.Bad, "no garrison"))}",
                 ($"o{sid}{o.GarrisonId}{string.Join(",", ids)}", null, () => items.Count == 0 ? new Control() : Ui.Menu(g == null ? "Garrison" : "Change", "army-command", items, i => Act(() => _sim.GarrisonSettlement(sid, ids[i])))),

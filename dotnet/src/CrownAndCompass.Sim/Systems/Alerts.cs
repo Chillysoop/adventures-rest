@@ -634,7 +634,7 @@ public static class Alerts
             string who = Systems.Notables.NameOf(t, n);
             if (Systems.Notables.AskOf(t, n) is { } ask)
                 yield return new($"notable:{n.Id}", Notable, $"{who} asks a favour",
-                    $"{Cap(who)} {ask.Text}. Answer in the Notables window within {Days(Math.Max(1, n.AskUntil - t.Day))}.", AgentId: n.AgentId);
+                    $"{Cap(who)} {Systems.Notables.AskText(t, n, ask)}. Answer in the Notables window within {Days(Math.Max(1, n.AskUntil - t.Day))}.", AgentId: n.AgentId);
             else if (Systems.Notables.Band(t, n) == Systems.Notables.Bitter)
                 yield return new($"bitter:{n.Id}", Notable, $"{who} is bitter",
                     $"{Cap(who)} will walk away from the town in {Days(Math.Max(1, t.Content.Notables.LeaveDays - n.BitterDays))}. Visit them in the Notables window.", AgentId: n.AgentId);

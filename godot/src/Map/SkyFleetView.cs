@@ -45,7 +45,7 @@ public partial class TownView
                 }
                 var lot = town.Lot(dock.LotId);
                 var c = Geo.LotPos(lot);
-                float scale = Math.Max(lot.W, lot.D) / (float)Land.Res / 0.92f * s.Kind switch { "galleon" => 1.7f, "frigate" => 1.35f, _ => 1f };
+                float scale = Math.Max(lot.W, lot.D) / (float)Land.Res / 0.92f * s.Kind switch { "leviathan" => 3f, "dreadnought" => 2.3f, "galleon" => 1.7f, "frigate" => 1.35f, _ => 1f };
                 var mast = new Vector3(c.X, Floor(lot) + 0.7f * scale, c.Y);
                 float bob = 0.06f * Mathf.Sin((float)Time.GetTicksMsec() / 700f + s.Id);
                 float climb = Mathf.SmoothStep(0, 1, Mathf.Clamp(u * 2.5f, 0, 1));

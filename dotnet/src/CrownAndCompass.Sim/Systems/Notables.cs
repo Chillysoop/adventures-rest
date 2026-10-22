@@ -37,6 +37,11 @@ public sealed record NotableRules
     public int AskOpen { get; init; } = 5;
     public double Refuse { get; init; } = 4;
 
+    /// <summary>A quest a notable hands out: the share of a site's usual bounty they put up, the least they will, and the renown the company earns.</summary>
+    public double QuestShare { get; init; } = 0.6;
+    public double QuestMin { get; init; } = 40;
+    public int QuestFame { get; init; } = 3;
+
     /// <summary>Days between tips by band (0: none): only the warm pass on what they hear.</summary>
     public List<int> TipDays { get; init; } = [];
 
@@ -72,6 +77,7 @@ public sealed record ApproachDef
     public string Skill { get; init; } = "";
     public int Dc { get; init; } = 12;
     public double Gain { get; init; } = 10;
+
 }
 
 /// <summary>A kind of news a notable picks up for the town.</summary>
@@ -90,6 +96,9 @@ public sealed record AskDef
     public string Skill { get; init; } = "";
     public int Dc { get; init; } = 12;
     public double Gain { get; init; } = 10;
+
+    /// <summary>A quest for a company (its terms: slay, fetch, rescue...), "" for a favour of the mayor's. {site} names the place.</summary>
+    public string Quest { get; init; } = "";
 }
 
 /// <summary>A kind of notable: who it rises from, how they like to be won over, what they hear and what they give.</summary>
@@ -139,6 +148,10 @@ public sealed class Notable
 
     /// <summary>The favour they are asking (an ask id), "" for none, the day it lapses and the day they next ask.</summary>
     public string Ask { get; set; } = "";
+
+    /// <summary>The site a quest they ask is for, and the bounty it went up as once the mayor posted it.</summary>
+    public string AskSite { get; set; } = "";
+    public int? QuestId { get; set; }
     public int AskUntil { get; set; }
     public int NextAsk { get; set; }
     public int Favours { get; set; }
@@ -317,10 +330,16 @@ public static class Notables
             // Only those on speaking terms ask: a neglected notable cools and stops asking, but never sours on their own.
             if (Band(town, n) > Cool)
             {
-                var ask = d.Asks[dice.Range(0, d.Asks.Count)];
-                n.Ask = ask.Id;
-                n.AskUntil = town.Day + r.AskOpen;
-                town.Log(LedgerCategory.Town, Importance.Notable, $"{NameOf(town, n)} {ask.Text}, and hopes the mayor will help.", Agents(n));
+                // A quest needs a place to send a company and the gold to pay it; otherwise they ask another favour.
+                var asks = d.Asks.Where(a => a.Quest == "" || QuestSite(town, n, a) != null).ToList();
+                if (asks.Count > 0)
+                {
+                    var ask = asks[dice.Range(0, asks.Count)];
+                    n.Ask = ask.Id;
+                    n.AskSite = ask.Quest != "" ? QuestSite(town, n, ask)!.Def.Id : "";
+                    n.AskUntil = town.Day + r.AskOpen;
+                    town.Log(LedgerCategory.Town, Importance.Notable, $"{NameOf(town, n)} {AskText(town, n, ask)}, and hopes the mayor will help.", Agents(n));
+                }
             }
             n.NextAsk = town.Day + r.AskOpen + dice.Range(r.AskDays[0], r.AskDays[1] + 1);
         }
@@ -527,11 +546,91 @@ public static class Notables
 
     public static AskDef? AskOf(Town town, Notable n) => n.Ask == "" ? null : DefOf(town, n).Asks.FirstOrDefault(a => a.Id == n.Ask);
 
+    /// <summary>What they ask, with the place named: "wants ore dug from the Old Mine".</summary>
+    public static string AskText(Town town, Notable n, AskDef ask) =>
+        ask.Text.Replace("{site}", Quests.Site(town, n.AskSite)?.Def.Name ?? "a place in the wilds");
+
     public static string? AnswerBlocked(Town town, Notable n)
     {
         if (n.Gone || AskOf(town, n) is not { } ask) return "nothing asked";
         if (ask.Gold > 0 && town.Treasury < ask.Gold) return "no gold";
+        if (ask.Quest != "" && (Quests.Site(town, n.AskSite) is not { } s || !Open(town, s))) return "the job is gone";
         return null;
+    }
+
+    // Quests ---------------------------------------------------------------------------------------
+
+    /// <summary>A known place still held, with no job on it, that the terms can be done at.</summary>
+    private static bool Open(Town town, SiteState s) =>
+        s.Known != SiteKnowledge.Unheard && !s.ThoughtCleared &&
+        (!Undercity.IsUnder(town, s) || Undercity.Stirring(town, s)) &&
+        !town.Bounties.Any(b => b.SiteId == s.Def.Id && Quests.IsActive(b));
+
+    /// <summary>The gold a notable puts up for a quest at a site.</summary>
+    public static double QuestReward(Town town, SiteState s) =>
+        Js.Round(Quests.SuggestedReward(Math.Max(1, s.BelievedTier)) * Rules(town).QuestShare);
+
+    /// <summary>The place a resident notable would send a company for this quest: the gentlest one they can pay for, nearest first.</summary>
+    private static SiteState? QuestSite(Town town, Notable n, AskDef ask)
+    {
+        if (n.AgentId is not int id) return null;
+        var term = town.Content.Bounties.Term(ask.Quest);
+        double purse = town.Agent(id).Gold;
+        return town.Sites
+            .Where(s => Open(town, s) && Systems.Terms.Blocked(town, s, term) == null)
+            .Where(s => QuestReward(town, s) >= Rules(town).QuestMin && QuestReward(town, s) <= purse)
+            .OrderBy(s => s.BelievedTier)
+            .ThenBy(s => s.Def.Distance)
+            .ThenBy(s => s.Def.Id, StringComparer.Ordinal)
+            .FirstOrDefault();
+    }
+
+    /// <summary>The mayor takes the quest: the council posts it on the board, the notable's gold held against it.</summary>
+    private static bool PostQuest(Town town, Notable n, AskDef ask)
+    {
+        if (n.AgentId is not int id || Quests.Site(town, n.AskSite) is not { } s) return false;
+        var patron = town.Agent(id);
+        double reward = QuestReward(town, s);
+        var b = Quests.PostBounty(town, s.Def.Id, reward, terms: ask.Quest, patron: patron);
+        if (b == null) return false;
+        b.NotableId = n.Id;
+        n.QuestId = b.Id;
+        town.Log(LedgerCategory.Quest, Importance.Notable,
+            $"{Cap(NameOf(town, n))} puts up {Js.Str(reward)} gold on {s.Def.Name}, and the council posts it on the board: {NameOf(town, n)} {AskText(town, n, ask)}. Renown suggested: {Notoriety.Suggested(town, s)}.", [id]);
+        return true;
+    }
+
+    /// <summary>A company comes home from a notable's quest: done, and they think the better of the mayor who found them the blades.</summary>
+    public static void QuestHome(Town town, Bounty b, Party party, bool done)
+    {
+        var r = Rules(town);
+        if (b.NotableId is not int nid || Find(town, nid) is not { } n) return;
+        n.QuestId = null;
+        var ask = DefOf(town, n).Asks.FirstOrDefault(a => a.Quest == b.Terms) ?? DefOf(town, n).Asks.FirstOrDefault(a => a.Quest != "");
+        string site = Quests.Site(town, b.SiteId)?.Def.Name ?? "the wilds";
+        if (!done)
+        {
+            Remember(town, n, $"Day {town.Day}: the {party.Name} came back from {site} without the job done.");
+            return;
+        }
+        double gain = ask?.Gain ?? 10;
+        Shift(n, gain);
+        n.Favours++;
+        Remember(town, n, $"Day {town.Day}: the {party.Name} saw to {site} for them.");
+        Notoriety.Record(town, party.Name, $"did {NameOf(town, n)}'s job at {site}");
+        Notoriety.CompanyDeed(town, party.Name, r.QuestFame);
+        town.Log(LedgerCategory.Quest, Importance.Notable,
+            $"{Cap(NameOf(town, n))} thanks the mayor: the {party.Name} saw to {site}. (+{Js.Str(gain)} regard, +{r.QuestFame} renown for the {party.Name})",
+            [.. Agents(n), .. party.Members]);
+    }
+
+    /// <summary>Nobody took a notable's quest before it lapsed.</summary>
+    public static void QuestLapsed(Town town, Bounty b)
+    {
+        if (b.NotableId is not int nid || Find(town, nid) is not { } n) return;
+        n.QuestId = null;
+        Shift(n, -Rules(town).Refuse);
+        Remember(town, n, $"Day {town.Day}: their job at {Quests.Site(town, b.SiteId)?.Def.Name ?? "the wilds"} went begging.");
     }
 
     /// <summary>Help with the favour a notable asked (gold, or a check of the mayor's), or turn it down.</summary>
@@ -549,6 +648,13 @@ public static class Notables
             return null;
         }
         if (AnswerBlocked(town, n) != null) return null;
+        if (ask.Quest != "")
+        {
+            if (!PostQuest(town, n, ask)) return null;
+            n.Ask = "";
+            Remember(town, n, $"Day {town.Day}: the mayor posted their job on the board.");
+            return null;
+        }
         n.Ask = "";
         StoryBeat? beat = null;
         double v = ask.Gain;
