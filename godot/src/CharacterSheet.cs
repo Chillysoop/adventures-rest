@@ -118,8 +118,7 @@ public partial class Main
 
         var fights = new List<string> { Line("item-weapon", $"{Ui.Esc(Ui.Cap(Piece(hs, hs.Weapon, "weapon") is var w && w != "" ? w : "bare hands"))} {Ui.Dim(Signed(Gear.Attack(c, a)))}") };
         if (cls.Sneak) fights.Add(Line("role-striker", "Sneak attack"));
-        if (cls.HealSpell != null && cls.HealsAt(hs.Level) is var heals && heals > 0) fights.Add(Line("ui-heal", $"{Ui.Esc(cls.HealSpell.Name)} {Ui.Dim($"×{heals} a delve")}"));
-        if (cls.AreaSpell != null) fights.Add(Line("sheet-spell", Ui.Esc(cls.AreaSpell.Name)));
+        foreach (var (icon, label, tip) in Prowess.Sheet(c, hs)) fights.Add(Ui.Tip(Line(icon, Ui.Esc(label)), tip));
         if (cls.Role != "") fights.Add(Ui.Dim(Ui.Esc(Ui.Cap(cls.Role) + (cls.Magic != "" ? $", {cls.Magic} caster" : ""))));
 
         var kit = new List<string>();

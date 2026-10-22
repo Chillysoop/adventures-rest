@@ -11,5 +11,6 @@
   ],
   "sellShare": 0.5,
   "sellCap": [0, 25, 100, 400, 1000, 2500],
-  "edgePerLevel": 3
+  "edgePerLevel": 3,
+  "silver": { "cost": 100, "level": 3 }
 }
