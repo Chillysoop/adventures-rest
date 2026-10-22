@@ -32,7 +32,7 @@ public sealed record HedgeRules
     public double Lore { get; init; } = 0.3;
     public List<HedgeTrade> Trades { get; init; } = [];
 
-    /// <summary>Ledger lines: {name}, {trade}, {workplace}, {spell}, {mage}, {town}; the first for the town's first.</summary>
+    /// <summary>Ledger lines: {name}, {trade}, {workplace}, {spell}, {mage} ({a mage} with its article), {town}; the first for the town's first.</summary>
     public string Learned { get; init; } = "";
     public string LearnedMore { get; init; } = "";
 
@@ -103,6 +103,7 @@ public static class HedgeMages
             .Replace("{trade}", Agent.Article(pick.Profession) + " " + pick.Profession)
             .Replace("{workplace}", b.Name)
             .Replace("{spell}", t.Spell)
+            .Replace("{a mage}", Agent.Article(t.Name) + " " + t.Name)
             .Replace("{mage}", t.Name)
             .Replace("{town}", town.Name);
         town.Log(LedgerCategory.Social, Importance.Notable, Saga.Sentences(line), [pick.Id]);

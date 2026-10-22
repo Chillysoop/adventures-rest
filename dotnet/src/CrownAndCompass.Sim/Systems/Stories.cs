@@ -1271,9 +1271,10 @@ public static class Stories
         beat.Stage = stage.Id;
         beat.Option = Fill(town, s, o.Label);
         beat.Table = Voices.Table(town, o.Tags, beat.Result);
-        Conclude(town, s, beat, outcome);
+        string chose = Chose(o.Label, beat.Option);
+        Conclude(town, s, beat, outcome, chose);
         // The heroes hear what the mayor chose, and judge it by their tempers.
-        if (o.Tags.Count > 0) Regard.Judge(town, o.Tags, $"chose to {Lower(beat.Option)}", Fill(town, s, DefOf(town, s).Title));
+        if (o.Tags.Count > 0) Regard.Judge(town, o.Tags, chose, Fill(town, s, DefOf(town, s).Title));
         return beat;
     }
 
@@ -1284,10 +1285,10 @@ public static class Stories
             ?? new StoryOutcome { Text = Sendings.Is(town, s) ? "No answer comes, and they do as they think best." : "In the end it comes to nothing." };
         var beat = new StoryBeat { Tick = town.Tick, Stage = s.Stage, Option = "Let it run its course", Result = StoryResult.Ignored };
         // A story left alone ends there, whatever its outcome would lead to.
-        Conclude(town, s, beat, outcome with { Next = "" });
+        Conclude(town, s, beat, outcome with { Next = "" }, "");
     }
 
-    private static void Conclude(Town town, Story s, StoryBeat beat, StoryOutcome outcome)
+    private static void Conclude(Town town, Story s, StoryBeat beat, StoryOutcome outcome, string chose)
     {
         var d = DefOf(town, s);
         string effects = Apply(town, s, outcome.Effects);
@@ -1296,7 +1297,7 @@ public static class Stories
         string roll = beat.Result is StoryResult.Certain or StoryResult.Ignored ? "" : $" ({Rules(town).Skill(beat.Skill)?.Name ?? Cap(beat.Skill)} {beat.Total} against DC {beat.Dc}{(beat.Helpers != "" ? $", with {beat.Helpers}" : "")}: {Word(beat.Result)})";
         bool goesOn = outcome.Next != "" && d.Stages.Any(x => x.Id == outcome.Next);
         town.Log(LedgerCategory.Story, d.Stakes == "high" && !goesOn ? Importance.Major : Importance.Notable,
-            $"{Fill(town, s, d.Title)}: {(beat.Result == StoryResult.Ignored ? "left to run its course" : $"Mayor {town.Stories.Mayor.Name} chose to {Lower(beat.Option)}")}{roll}. {beat.Text}{effects}", Agents(s));
+            $"{Fill(town, s, d.Title)}: {(beat.Result == StoryResult.Ignored ? "left to run its course" : $"Mayor {town.Stories.Mayor.Name} {chose}")}{roll}. {beat.Text}{effects}", Agents(s));
         if (goesOn)
         {
             s.Stage = outcome.Next;
@@ -1823,4 +1824,14 @@ public static class Stories
     internal static string Cap(string s) => s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
 
     private static string Lower(string s) => s.Length == 0 ? s : char.ToLowerInvariant(s[0]) + s[1..];
+
+    /// <summary>Option labels that don't start with a verb ("Friendship", "They knew the risks") read as a quote.</summary>
+    private static readonly HashSet<string> NotVerbs = ["a", "an", "the", "they", "it's", "one", "only", "half", "no", "not", "nothing", "friendship", "gold", "quietly", "what", "which", "who"];
+
+    /// <summary>"chose to make it talk", or "chose “Friendship”" when the label (before it is filled) isn't a deed.</summary>
+    public static string Chose(string label, string filled)
+    {
+        string first = label.Split(' ', 2)[0].TrimEnd(',', '.').ToLowerInvariant();
+        return NotVerbs.Contains(first) || !char.IsLetter(label.FirstOrDefault()) ? $"chose “{filled}”" : $"chose to {Lower(filled)}";
+    }
 }

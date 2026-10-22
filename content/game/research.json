@@ -217,7 +217,7 @@
       { "building": "temple", "name": "grave-speaking constable", "spell": "asks the dead who did it", "watch": 0.04 }
     ],
     "learned": "{name}, {trade} at {workplace}, has taught themselves a little magic: {spell}. {town} has its first {mage}.",
-    "learnedMore": "{name}, {trade} at {workplace}, has taught themselves a little magic: {spell}. The townsfolk call them a {mage}."
+    "learnedMore": "{name}, {trade} at {workplace}, has taught themselves a little magic: {spell}. The townsfolk call them {a mage}."
   },
   "discoveries": [
     {

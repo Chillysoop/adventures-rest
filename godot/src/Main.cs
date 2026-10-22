@@ -444,6 +444,8 @@ public partial class Main : Control
         foreach (var (id, icon, label, _) in LedgerKinds)
         {
             var b = new Button { Icon = Ui.Icon(icon), ExpandIcon = false, ToggleMode = true, TooltipText = label, ThemeTypeVariation = "Speed", FocusMode = FocusModeEnum.None };
+            // The icons are drawn large; on the filter row they only need to read at a glance.
+            b.AddThemeConstantOverride("icon_max_width", 24);
             b.SetMeta("kind", id);
             b.Pressed += () =>
             {

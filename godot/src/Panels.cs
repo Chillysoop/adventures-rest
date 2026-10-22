@@ -190,8 +190,10 @@ public partial class Main
         RenderCouncillor(p, t);
         RenderMotion(p, t);
         p.Meter("Mandate", t.Mandate, $"{Math.Round(t.Mandate)}", t.Mandate < 30);
-        p.Note("Fades back toward 50 unless you keep earning it.");
-        p.Text($"{Tag($"Tax {Math.Round(t.TaxRate * 100)}%", Ui.Ink)}   {Tag($"Watch {t.Watch}", Ui.Ink)}{(t.FestivalDays > 0 ? "   " + Tag("Festival!", Ui.Gold) : "")}", 12);
+        p.Chips(
+            Ui.Chip("ui-time", "→ 50", Ui.Ink2, "Mandate fades back toward 50 unless you keep earning it", 13),
+            Ui.Chip("defence", $"{t.Watch}", Ui.Ink, "Watchmen on the town's payroll", 13),
+            t.FestivalDays > 0 ? Ui.Chip("ui-heart", "Festival!", Ui.Gold, $"A festival for {t.FestivalDays} more days", 13) : "");
         RenderTaxes(p, t);
         var festive = Council.FestivalBlocked(t);
         p.Buttons(($"Hold a festival · {Js.Str(Council.FestivalCost(t))}g", festive == null, false, () => Act(() => _sim.HoldFestival())));
@@ -370,20 +372,23 @@ public partial class Main
         int pct = (int)Math.Round(rate * 100);
         p.Heading("Taxes");
         double mood = Taxes.Mood(t) + r.Mood * unrest / 100;
-        p.Row($"[b]Tax rate[/b]  {Tag($"{pct}%", rate > usual + 1e-9 ? Ui.Bad : rate < usual - 1e-9 ? Ui.Good : Ui.Ink)}\n{Ui.C(Ui.Ink2, $"[font_size=12]Taken from every sale, drink and hearth. Above {Math.Round(usual * 100)}% each point sours the townsfolk and puts settlers off; below it pleases them (mood {(mood >= 0 ? "+" : "")}{mood:0.0} now).[/font_size]")}",
+        string taxTip = $"Taken from every sale, drink and hearth. Above {Math.Round(usual * 100)}% each point sours the townsfolk and puts settlers off; below it pleases them.";
+        p.Row($"{Ui.Tip($"[b]Tax rate[/b]  {Tag($"{pct}%", rate > usual + 1e-9 ? Ui.Bad : rate < usual - 1e-9 ? Ui.Good : Ui.Ink)}", taxTip)}\n[font_size=12]{Ui.Chip("ui-heart", Ui.Signed(mood, "0.0"), null, "What the tax rate does to every townsperson's mood now", 13)}[/font_size]",
             ("−1%", rate > r.Min + 1e-9, false, () => Act(() => _sim.SetTax(rate - r.Step))),
             ("+1%", rate < r.Max - 1e-9, true, () => Act(() => _sim.SetTax(rate + r.Step))));
         double income = Taxes.Income(t), services = Taxes.Services(t), funding = Taxes.Funding(t);
         bool shortfall = funding < 1;
-        p.Text($"Services {Tag($"{services:N0}g a day", shortfall ? Ui.Bad : Ui.Ink)}   Taxes, rents and trade {Tag($"{income:N0}g a day", shortfall ? Ui.Bad : Ui.Good)}", 12);
+        p.Chips(
+            Ui.Chip("ui-up", $"+{income:N0}g/day", shortfall ? Ui.Bad : Ui.Good, "Taxes, rents and trade coming in each day"),
+            Ui.Chip("gold", $"−{services:N0}g/day", shortfall ? Ui.Bad : Ui.Ink, "What the town's services cost each day: the watch, the roads, the wells and the institutions"));
         p.Meter("Unrest", unrest, $"{Math.Round(unrest)}", unrest >= 25);
         p.Note(unrest >= r.StrikeAt
-            ? $"The town's services are falling apart and workers are downing tools to protest. Raise taxes or find more income: trade routes, wonders, institutions that pay."
+            ? "Workers are striking over failing services. Raise taxes or find more income: trade routes, wonders, institutions that pay."
             : shortfall
-                ? "The watch, the roads, the wells and the institutions cost more than the town takes in. Unrest is climbing: it sours every household, costs Mandate and turns settlers away, and at its worst workers walk out."
+                ? "Services cost more than the town takes in. Unrest is climbing: it sours every household, costs Mandate and turns settlers away, and at its worst workers walk out."
                 : unrest > 0
-                    ? "The town's services are paid for again, and the unrest is easing."
-                    : "Services grow with the town: every new household, hall and institution costs upkeep. While taxes, rents and trade cover them, the townsfolk are content.");
+                    ? "Services are paid for again; unrest is easing."
+                    : "Services are paid for. They grow with the town: every new household, hall and institution costs upkeep.");
     }
 
     /// <summary>The law book: the punishment set for each crime, and what each sentence moves, as icons.</summary>
