@@ -204,8 +204,7 @@ public partial class Main
         nameBox.AddThemeFontSizeOverride("font_size", 24);
         nameBox.TextChanged += text => _townPick = text;
         named.AddChild(nameBox);
-        var rollName = new Button { Icon = Ui.Icon("d20"), ExpandIcon = true, TooltipText = "Roll a name", CustomMinimumSize = new Vector2(44, 44), SizeFlagsVertical = SizeFlags.ShrinkCenter, FocusMode = FocusModeEnum.None };
-        rollName.AddThemeConstantOverride("icon_max_width", 24);
+        var rollName = new Button { Text = "Roll a name", TooltipText = "A name from the old maps", CustomMinimumSize = new Vector2(120, 40), SizeFlagsVertical = SizeFlags.ShrinkCenter, FocusMode = FocusModeEnum.None };
         Ui.GoldButton(rollName);
         rollName.Pressed += () => { RollTownName(); nameBox.Text = _townPick; };
         named.AddChild(rollName);
