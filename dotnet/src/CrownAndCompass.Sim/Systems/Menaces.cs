@@ -1083,10 +1083,13 @@ public static class Menaces
             return;
         }
         string text = am.Infect[rng.Range(0, am.Infect.Count)];
+        int? home = v.HomeId;
         Threat.Kill(town, v);
         m.Power += r.FailedDelve;
         Saga.Scar(town, 1);
         town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, text, m).Replace("{victim}", v.Name).Replace("{where}", where)), [v.Id]);
+        // Whatever came for them leaves a sickness in the house.
+        Sickness.Night(town, home);
         town.Tension += 20;
     }
 
@@ -1373,6 +1376,7 @@ public static class Menaces
             int at = Garrison.WaveSection(town, m.Approach, w);
             double hold = (def / (3 - w + 1)) * (0.8 + rng.Next() * 0.4) * Garrison.SectionFactor(town, at) * gate;
             double shot = Cannons.Volley(town, m.Kind, foe, wave, w, lines);
+            shot = Traps.Spring(town, m.Kind, shot, at, lines, record);
             army -= wave - shot;
             wave = shot;
             double wading = Garrison.Wade(town, wave, Passage.Fliers(town, m.Kind));
@@ -1410,6 +1414,7 @@ public static class Menaces
         if (dead.Count > 0) lines.Add($"{Expedition.ListNames(dead.Select(a => a.Name).ToList())} {(dead.Count == 1 ? "falls" : "fall")} on the walls.");
         record.Fallen.AddRange(dead.Select(a => a.Id));
         town.Watch = Math.Max(0, town.Watch - breaches * 2);
+        Mayoralty.Breached(town, breaches, m.Name);
         town.Tension += 60 + dead.Count * 5;
 
         if (breaches >= 2)

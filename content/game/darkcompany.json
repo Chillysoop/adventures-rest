@@ -1,0 +1,36 @@
+{
+  "_doc": "The big bad's own adventuring company. It forms 'form' days after the big bad is crowned and rides out every 'every' days to rob a site's hoard for its master. A town party that reaches the site first wins the race; otherwise the hoard is robbed ('robbed' share left) and the big bad gains 'gain' of its power. The player can send up to 'party' heroes to ambush it on the road. Beaten, its leader may yield and join the town ('turn'); it reforms 'reform' days later while the big bad lives.",
+  "form": 12,
+  "every": [16, 28],
+  "reform": [60, 90],
+  "gain": 0.06,
+  "gainFlat": 15,
+  "loss": 0.12,
+  "robbed": 0.25,
+  "turn": 0.35,
+  "party": 4,
+  "names": ["the Ashen Hand", "the Nine Knives", "the Red Lanterns", "the Hollow Company", "the Black Harrow", "the Grey Wolves of the Pass", "the Last Candle", "the Thorn Choir"],
+  "roles": [
+    { "id": "blade", "title": "blackguard", "monster": "knight", "cls": "paladin", "lead": true },
+    { "id": "hex", "title": "hexer", "monster": "mage", "cls": "warlock", "lead": true },
+    { "id": "knife", "title": "knife", "monster": "assassin", "cls": "rogue", "lead": true },
+    { "id": "priest", "title": "dark priest", "monster": "priest", "cls": "cleric", "lead": false },
+    { "id": "brute", "title": "brute", "monster": "berserker", "cls": "barbarian", "lead": false },
+    { "id": "pit", "title": "pit fighter", "monster": "gladiator", "cls": "fighter", "lead": false }
+  ],
+  "texts": {
+    "formed": "{master} raises a company of its own to ride the roads for it: {company}, led by {leader} the {title}. Where your heroes go, they will go too.",
+    "quest": "Word on the roads: {company} ride for {site} to fetch what {master} seeks there. They will be there in {days}. Get there first, or meet them on the road.",
+    "seized": "{company} reach {site} first and carry off what {Master} sought there.",
+    "sets": "Word on the roads: {company} ride for {site}. They will be there in {days}.",
+    "late": "{company} reach {site} and find it cleared. They ride home with nothing for {master}.",
+    "beaten": "{company} reach {site} and find the {party} already there. They turn their horses and ride on.",
+    "robbed": "{company} slip into {site} and out again with its hoard. {Master} grows stronger.",
+    "ambush": "{heroes} ride out to waylay {company} on the road to {site}.",
+    "missed": "{heroes} wait on the road to {site}, but {company} have already passed.",
+    "won": "{heroes} ambush {company} on the road to {site} and cut them down. {Master} will feel it.",
+    "lost": "{company} beat off {heroes}' ambush on the road to {site} and ride on.",
+    "yields": "{leader} throws down their blade and kneels. Spared, they swear to fight for {town} against {master}.",
+    "reformed": "{master} has a new company on the roads: {company}, led by {leader} the {title}."
+  }
+}

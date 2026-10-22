@@ -483,6 +483,7 @@ public partial class Main
         var p = _panes[Tab.Chronicles];
         var t = _sim.Town;
         p.Begin();
+        RenderRecords(p, t);
         RenderHall(p, t);
         if (t.Legacies.Count > 0) p.Heading("Expeditions");
         if (t.Chronicles.Count == 0) p.Note("No expeditions yet. Post a bounty and wait for a party to form at the tavern. Their story comes back with them.");
@@ -536,6 +537,11 @@ public partial class Main
         var t = _sim.Town;
         var sel = _map.Selection;
         p.Begin();
+        if (sel != null && _map.Where(sel) != null)
+        {
+            bool on = _map.Follow == sel;
+            p.Buttons((on ? "◉ Following · F" : sel.Kind == "agent" ? "◎ Follow · F" : "◎ Centre · F", true, on, ToggleFollow));
+        }
         if (sel == null) p.Note("Click a building, a person or a site on the map.");
         else if (sel.Kind == "agent") InspectAgent(p, t, t.Agent(sel.Id));
         else if (sel.Kind == "building") InspectBuilding(p, t, t.Building(sel.Id));
@@ -565,6 +571,7 @@ public partial class Main
         if (seat != null) p.Text($"{Tag(seat.Def.Title, Ui.Gold)} loyalty {Math.Round(seat.Loyalty)}");
         if (a.Hero is HeroSheet hs)
         {
+            InspectWounds(p, t, a, hs);
             InspectNotoriety(p, t, a, hs);
             InspectLoyalty(p, t, a, hs);
         }
@@ -610,6 +617,41 @@ public partial class Main
         }
         if (a.Moments.Count > 0)
             p.Text(Ui.C(Ui.Ink2, $"[font_size=12]{string.Join("\n", a.Moments.AsEnumerable().Reverse().Select(m => Ui.Esc(m)))}[/font_size]"), 13);
+    }
+
+    /// <summary>Lasting wounds: each with what it costs them, and the mends the town can pay for.</summary>
+    private void InspectWounds(Pane p, Town t, Agent a, HeroSheet hs)
+    {
+        for (int i = 0; i < hs.Wounds.Count; i++)
+        {
+            var w = hs.Wounds[i];
+            if (Wounds.Def(t.Content, w.Id) is not { } d) continue;
+            var costs = new List<string>();
+            if (!w.Clockwork)
+            {
+                if (d.Attack != 0) costs.Add(Ui.Chip("word-gear", $"{d.Attack}", Ui.Bad, "Attack"));
+                if (d.Ac != 0) costs.Add(Ui.Chip("defence", $"{d.Ac}", Ui.Bad, "Armour"));
+                if (d.Skill != 0) costs.Add(Ui.Chip("d20", $"{d.Skill}", Ui.Bad, "Skill checks"));
+            }
+            if (w.Clockwork) costs.Add(Ui.Chip("mend-clockwork", Ui.Cap(d.Part), Ui.Ink2, "Fitted with clockwork: it costs them nothing"));
+            if (d.Heals > 0 && !w.Clockwork) costs.Add(Ui.Chip("ui-time", Ui.Days(Math.Max(1, w.Day + d.Heals - t.Day)), Ui.Ink2, "Heals on its own in"));
+            string head = Ui.Tip($"{Ui.Img(d.Icon, 16)} {Ui.C(w.Clockwork ? Ui.Ink2 : Ui.Bad, $"[b]{Ui.Esc(Ui.Cap(d.Name))}[/b]")}", $"Taken at {w.Site}, day {w.Day}.{(w.Clockwork ? $" Fitted with {d.Part}." : "")}");
+            int index = i;
+            var buttons = new List<(string, bool, bool, Action)>();
+            if (!w.Clockwork)
+                foreach (var m in d.Mends.Select(id => Wounds.Mend(t.Content, id)).OfType<MendDef>())
+                {
+                    string? why = Wounds.Blocked(t, a, i, m);
+                    if (why is "needs the temple" or "needs an artificers' workshop" && m.Id != d.Mends[0]) continue;
+                    string mend = m.Id;
+                    buttons.Add(($"{m.Name} · {Js.Str(m.Cost)}g", why == null && t.Treasury >= m.Cost, false, () => Act(() =>
+                    {
+                        _sim.MendWound(a.Id, index, mend);
+                        GuideEvent("mend");
+                    })));
+                }
+            p.Row($"{head}\n[font_size=12]{Ui.Chips(costs.ToArray())}[/font_size]", buttons.ToArray());
+        }
     }
 
     /// <summary>Fame and infamy: what the world calls them, and what their name does for them.</summary>
@@ -714,6 +756,25 @@ public partial class Main
         if (b.Def.Crews > 0 && b.Complete)
             p.Text(Ui.C(Ui.Ink2, $"Puts {b.Def.Crews} more crews to work. The town has {Construction.Crews(t)} crews; a town its size keeps {Construction.Wanted(t)} busy."));
         if (Monuments.IsMonument(t, b.Def)) MonumentCard(p, t, b);
+        if (!b.Razed && Planning.RazeBlocked(t, b) == null) RazeButton(p, t, b);
+    }
+
+    /// <summary>Call off a site or tear a building down, for some gold back; it asks first.</summary>
+    private void RazeButton(Pane p, Town t, Building b)
+    {
+        int id = b.Id;
+        double back = Planning.Refund(t, b);
+        string verb = b.IsSite ? "Call off" : "Tear down";
+        string body = (b.IsSite ? "• The builders stop and the ground is freed" : "• Its people move out, its goods go to market")
+            + $"\n• {Js.Str(back)}g back" + (b.IsSite && b.BuildProgress > 0 ? " (work had begun)" : "");
+        p.Buttons(($"{verb} · +{Js.Str(back)}g", true, false, () => Ask($"{verb} {b.Name}?", body, verb, () => Act(() =>
+        {
+            if (_sim.Raze(id))
+            {
+                Select(null);
+                _map.Planner.Touch();
+            }
+        }))));
     }
 
     /// <summary>A tavern's character: its keeper's past and perk, its quirk and the crowd it draws, and how the town talks.</summary>
@@ -870,7 +931,19 @@ public partial class Main
                 p.Note(no == null ? $"Their retainers hold it at no cost to the town, and they take {Js.Str(t.Content.Loyalty.Fief.Rent)}g a day from the land." : Ui.Cap(no) + ".");
             }
             if (s.Held) return;
-            // Something will move back in unless the town holds it.
+            // Something will move back in unless a patrol keeps it clear or the town holds it.
+            p.Heading("Keep it clear");
+            if (s.Patrolled)
+            {
+                p.Buttons(("Call off the patrol", true, false, () => Act(() => _sim.Patrol(sid, false))));
+                p.Note($"• Patrolled · {Js.Str(Lairs.PatrolWage(t, s))}g a day\n• Heroes drive off what moves in");
+            }
+            else
+            {
+                string? noPatrol = Lairs.PatrolBlocked(t, s);
+                p.Buttons(($"Patrol it · {Js.Str(Lairs.PatrolWage(t, s))}g a day", noPatrol == null, true, () => Act(() => _sim.Patrol(sid, true))));
+                p.Note(noPatrol == null ? "• Riders meet whatever moves back in\n• Your best hero at home leads them" : Ui.Cap(noPatrol) + ".");
+            }
             string? blocked = Lairs.HoldBlocked(t, s);
             p.Heading("Hold it");
             var o = t.Content.Lairs.Outpost;

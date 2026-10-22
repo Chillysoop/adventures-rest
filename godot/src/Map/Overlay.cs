@@ -28,6 +28,9 @@ public partial class Overlay(MapView map) : Control
         DrawWarband(town);
         DrawSightings(town);
         DrawSpots(town);
+        DrawSick(town);
+        DrawTraps(town);
+        DrawDarkCompany(town);
         DrawEquips();
         DrawMarkers();
         DrawSelection(town);
@@ -478,6 +481,54 @@ public partial class Overlay(MapView map) : Control
             string label = s == null ? $"Look here · {Math.Round(c.Reward)}g" : s.Phase == SurveyPhase.Outbound ? $"The {s.Name}, on the way" : $"The {s.Name}, looking";
             Text(at + new Vector2(0, 18), label, Ui.Bold, 13, Palette.Gold);
         }
+    }
+
+    /// <summary>A sick house: a cloth on its door, as the townsfolk hang one.</summary>
+    private void DrawSick(Town town)
+    {
+        if (!Sickness.Outbreak(town)) return;
+        foreach (var b in Sickness.Sick(town))
+        {
+            if (!map.OnScreen(map.Gen.At(Geo.LotPos(town.Lot(b.LotId)), 3), out var at)) continue;
+            Disc(at - new Vector2(0, 14), 10, new Color("3a4a26"), new Color("9cb85a"), 2);
+            DrawTextureRect(Ui.Icon("sick-house"), new Rect2(at - new Vector2(8, 22), new Vector2(16, 16)), false);
+        }
+    }
+
+    /// <summary>Traps before the wall: a small mark on each stretch that has them, red when spent.</summary>
+    private void DrawTraps(Town town)
+    {
+        if (town.Traps.Laid.Count == 0) return;
+        foreach (var g in town.Traps.Laid.GroupBy(x => x.Section).OrderBy(g => g.Key))
+        {
+            var w = Garrison.WallPoint(town, g.Key);
+            var pos = new Vector2(Geo.Margin, Geo.Margin) + new Vector2((float)w.X, (float)w.Y);
+            if (!map.OnScreen(map.Gen.At(pos, 1), out var at)) continue;
+            int i = 0;
+            foreach (var trap in g.OrderBy(x => x.Id))
+            {
+                if (Traps.Def(town, trap.Kind) is not { } d) continue;
+                var c = at + new Vector2((i++ - (g.Count() - 1) / 2f) * 20, 18);
+                Disc(c, 9, new Color("2a241c"), trap.Spent ? new Color("c0392b") : new Color("b3ada4"), 2);
+                DrawTextureRect(Ui.Icon(d.Icon), new Rect2(c - new Vector2(7, 7), new Vector2(14, 14)), false, trap.Spent ? new Color(1, 1, 1, 0.4f) : Colors.White);
+            }
+        }
+    }
+
+    /// <summary>The big bad's company on the road: a black banner between its master's seat and the hoard it rides for.</summary>
+    private void DrawDarkCompany(Town town)
+    {
+        var c = town.DarkCompany;
+        if (DarkCompany.Target(town) is not { } site || Saga.BigBad(town) is not { } big) return;
+        if (!map.Geo.Pins.TryGetValue(site.Def.Id, out var to)) return;
+        var from = big.SeatId != "" && map.Geo.Pins.TryGetValue(big.SeatId, out var seat) ? seat : to + new Vector2(40, -40);
+        float total = Math.Max(1, c.ArriveTick - c.SetOutTick);
+        float t = Mathf.Clamp((town.Tick + map.HourFraction - c.SetOutTick) / total, 0, 1);
+        var pos = from + (to - from) * t;
+        // Word on the roads: it shows through the fog.
+        if (!map.OnScreen(map.Gen.At(pos, 2), out var at)) return;
+        Banner(at - new Vector2(0, 16), new Color("4a2a5a"), InkC, 1);
+        Text(at + new Vector2(0, 8), Ui.Cap(c.Name), Ui.Bold, 13, new Color("d8b8ff"));
     }
 
     /// <summary>The player's markers: pins with a pictogram and an optional name, at one size on both views.</summary>

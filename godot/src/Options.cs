@@ -62,10 +62,22 @@ public sealed class Options
 
     /// <summary>--settings opens the Settings window (screenshots).</summary>
     public bool Settings;
+    /// <summary>--settings-tab id opens it on that tab.</summary>
+    public string? SettingsTab;
 
     /// <summary>--storyteller id: who tells a new town's story; --storytellers opens the main menu's choice of them.</summary>
     public string? Storyteller;
     public bool Storytellers;
+
+    /// <summary>--new-mayor: the main menu on New game's mayor sheet, rolled, for shots.</summary>
+    public bool NewMayor;
+
+    /// <summary>--mayor-sheet: the Mayor window on its full character sheet.</summary>
+    public bool MayorSheet;
+
+    /// <summary>--hardcore: new towns are Hardcore (the mayor dies, the town is lost); --mayor-fallen kills the mayor for shots.</summary>
+    public bool Hardcore;
+    public bool MayorFallen;
 
     /// <summary>--episode id: strike a townsperson out on the streets with that inspiration or break, look at them and open their inspector.</summary>
     public string? Episode;
@@ -123,6 +135,8 @@ public sealed class Options
 
     /// <summary>--zone aims the camera at the thickest cluster of a zone's buildings (farmland, commercial, residential).</summary>
     public string? Zone;
+    /// <summary>--lofted size[:eighths]: stage the Lofted City (lofted_spire, lofted_isle, lofted_city) finished, or rising that many eighths; aim with --at.</summary>
+    public string? Lofted;
     /// <summary>--tourney N: put on a tourney of level N (0 modest to 2 legendary), stake on its second event and ride to that day's --tourney-hour, card open over the lists.</summary>
     public int? Tourney;
     public int TourneyHour = 13;
@@ -135,6 +149,9 @@ public sealed class Options
     public bool TourneyCard = true;
     /// <summary>With <c>--at</c>: open that building's inspector (<c>--card</c>), for a shot of a monument's parts.</summary>
     public bool Card;
+
+    /// <summary>--asks hands every area to a steward who asks first and plays on until they ask (screenshots of the cards).</summary>
+    public bool Asks;
     /// <summary>For screenshots: click the alert at this position in the strip (0 is the first) once it shows.</summary>
     public int? Alert;
     /// <summary>For screenshots: show the hover summary of the alert icon at this position.</summary>
@@ -191,6 +208,9 @@ public sealed class Options
 
     /// <summary>--strike: open the quick orders' Strike list over the corner map.</summary>
     public bool Strike;
+
+    /// <summary>--hardships: sick houses, traps on the walls, a wounded hero and the dark company on the road, for shots.</summary>
+    public bool Hardships;
     public string? FindPick;
     public int? StoryPick;
 
@@ -228,8 +248,13 @@ public sealed class Options
                 case "--menu": o.Menu = true; break;
                 case "--title": o.Title = true; break;
                 case "--settings": o.Settings = true; break;
+                case "--settings-tab": o.Settings = true; o.SettingsTab = Next(); break;
                 case "--storyteller": o.Storyteller = Next(); break;
                 case "--storytellers": o.Storytellers = o.Title = true; break;
+                case "--new-mayor": o.NewMayor = o.Title = true; break;
+                case "--mayor-sheet": o.MayorSheet = true; o.Tab = "Mayor"; break;
+                case "--hardcore": o.Hardcore = true; break;
+                case "--mayor-fallen": o.MayorFallen = true; o.Tab = "Mayor"; break;
                 case "--episode": o.Episode = Next(); break;
                 case "--intro": o.Intro = Next(); break;
                 case "--claim": o.Claim = Next(); break;
@@ -247,12 +272,15 @@ public sealed class Options
                 case "--bestiary": o.Bestiary = Next(); break;
                 case "--wall": o.Wall = int.Parse(Next()); break;
                 case "--strike": o.Strike = true; break;
+                case "--hardships": o.Hardships = true; break;
                 case "--house": o.House = true; break;
                 case "--crowded": o.Crowded = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
                 case "--rising": o.Rising = true; break;
                 case "--zone": o.Zone = Next(); break;
+                case "--lofted": o.Lofted = Next(); break;
                 case "--siege": o.Siege = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture) : 8; break;
                 case "--card": o.Card = true; break;
+                case "--asks": o.Asks = true; break;
                 case "--tourney": o.Tourney = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? int.Parse(Next()) : 1; break;
                 case "--tourney-hour": o.TourneyHour = int.Parse(Next()); break;
                 case "--tourney-day": o.TourneyDay = int.Parse(Next()); break;

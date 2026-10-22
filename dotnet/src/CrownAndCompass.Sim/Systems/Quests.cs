@@ -68,6 +68,9 @@ public sealed class SiteState(SiteDef def)
     /// <summary>The town keeps an outpost here: nothing resettles it, and the town sees it live.</summary>
     public bool Held { get; set; }
 
+    /// <summary>The town pays a standing patrol to keep it clear: newcomers are met and, mostly, driven off (<see cref="Lairs.Patrol"/>).</summary>
+    public bool Patrolled { get; set; }
+
     /// <summary>A ruin the town restored once it was cleared (<see cref="Ruins"/>): it serves the town and is never resettled.</summary>
     public bool Restored { get; set; }
 
@@ -277,6 +280,17 @@ public static class Quests
         double purse = funder?.Cash ?? town.Treasury;
         if (s == null || s.Known == SiteKnowledge.Unheard || s.ThoughtCleared || reward <= 0 || purse < reward) return null;
         if (town.Bounties.Any(b => b.SiteId == siteId && IsActive(b))) return null;
+        if (funder == null && Stewards.Intercept(town, "bounties", new StewardAsk
+            {
+                Area = "bounties",
+                Kind = "bounty",
+                Title = $"Bounty · {s.Def.Name} · {Js.Str(reward)}g",
+                Why = $"• {Stewards.Cap(s.Believed == "" ? "trouble, by report" : s.Believed)}\n• Tier {s.BelievedTier} · {s.Attempts} tries so far\n• Pay asked for its danger",
+                S1 = siteId,
+                S2 = terms,
+                I1 = lootToTown ? 1 : 0,
+                D1 = reward,
+            })) return null;
         var term = town.Content.Bounties.Term(terms);
         if (term.Id != terms || Systems.Terms.Blocked(town, s, term) != null) return null;
         if (funder != null) funder.Cash -= reward;
@@ -396,11 +410,12 @@ public static class Quests
         int open = town.Bounties.Count(b => b.Status == BountyStatus.Open);
         // A famous company in town draws others who want to ride with it, or against it.
         int fame = Notoriety.TownFame(town);
-        double chance = Math.Min(0.9, 0.12 + 0.25 * open + (heroes < 4 ? 0.2 : 0) + town.Content.Notoriety.Arrivals * fame);
+        // So does good word on the roads, and bad word keeps them away.
+        double chance = Math.Clamp(0.12 + 0.25 * open + (heroes < 4 ? 0.2 : 0) + town.Content.Notoriety.Arrivals * fame + Word.Arrivals(town) + Omens.Heroes(town), 0.02, 0.9);
         if (!town.Rng.Chance(chance)) return;
 
         // More taverns, more talk on the roads: seasoned heroes hear of the town and come.
-        double green = Math.Max(0.3, Math.Max(0.4, 0.7 - town.Content.Rumors.BetterHeroesPerTavern * (taverns.Count - 1)) - town.Content.Notoriety.Seasoned * fame);
+        double green = Math.Max(0.3, Math.Max(0.4, 0.7 - town.Content.Rumors.BetterHeroesPerTavern * (taverns.Count - 1)) - town.Content.Notoriety.Seasoned * fame - Word.Seasoned(town));
         int level = (town.Rng.Chance(green) ? 1 : town.Rng.Chance(0.8) ? 2 : 3) + Saga.ArrivalBonus(town);
         var a = CreateHero(town, PickClass(town), level);
         string where = taverns[town.Rng.Range(0, taverns.Count)].Name;
@@ -559,6 +574,7 @@ public static class Quests
             BountyId = bounty?.Id,
             SiteId = s.Def.Id,
             DepartTick = town.Tick,
+            Start = Lofted.Start(town, World.Spot(town, s)),
         };
         Roads.Depart(town, party, members, s, bounty);
         town.Parties.Add(party);
@@ -669,6 +685,7 @@ public static class Quests
             var dead = result.Dead.Where(id => !raised.Contains(id)).ToList();
             foreach (int id in raised) Loyalty.Sway(town.Agent(id), town.Content.Loyalty.Raised);
             var survivors = members.Where(m => !dead.Contains(m.Id)).ToList();
+            Wounds.Home(town, result, survivors, s.Def.Name);
             foreach (var m in members)
             {
                 var sheet = m.Hero!;

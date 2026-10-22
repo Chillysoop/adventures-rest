@@ -30,7 +30,7 @@ public partial class Main
     private static readonly Dictionary<Tab, string> Blurbs = new()
     {
         [Tab.City] = "Charter, wards, housing and growth",
-        [Tab.Mayor] = "Your character sheet and level-ups (C)",
+        [Tab.Mayor] = "Your mayor: what needs you, regalia, sheet (C)",
         [Tab.Ledger] = "Everything that happened, day by day",
         [Tab.Council] = "Motions, members, taxes and the town's laws",
         [Tab.Institutions] = "Guilds, colleges and their keepers",
