@@ -59,7 +59,7 @@ public class HordeTests
         Seat(t, m).Strength = 100;
         seat.Attempts++;
         Horde.Daily(t, m);
-        Assert.InRange(Seat(t, m).Strength, 64, 70);
+        Assert.Equal(100 * (1 - Horde.Rules(t).Struck), Seat(t, m).Strength, 6);
 
         // Long past due with too little gathered: it waits, and the town hears it is too thin.
         foreach (var c in Horde.State(t).Camps) c.Strength = 0;

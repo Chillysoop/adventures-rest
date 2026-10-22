@@ -25,6 +25,9 @@ public sealed record HordeRules
     /// <summary>Survivors of a beaten host come home to the seat's camp, up to this share of the next full host.</summary>
     public double Survivors { get; init; } = 0.4;
 
+    /// <summary>The big bad's crisis coming to a head fills its camps up to this share of the host a crisis brings (<see cref="Crises"/>).</summary>
+    public double Crisis { get; init; } = 0.7;
+
     /// <summary>Share of the treasury the host carries off when it first breaks into the lower town.</summary>
     public double Loot { get; init; } = 0.3;
 
@@ -225,6 +228,32 @@ public static class Horde
             c.Strength *= Math.Pow(1 - r.Struck, fights);
             if (before >= 1) Tell(town, m, r.Thinned, Importance.Notable, site);
         }
+    }
+
+    /// <summary>Its bands are coming together at the seat to march.</summary>
+    public static bool Mustering(Town town, Menace m) => On(town, m) && m.ArrivalTick == null && State(town).Stage == HordeStage.Mustering;
+
+    /// <summary>
+    /// Its crisis comes to a head (<see cref="Crises"/>): the warriors it called join the seat's camp and the host musters
+    /// now, full or not. A host already on the road takes them in.
+    /// </summary>
+    public static void Hasten(Town town, Menace m, double joined)
+    {
+        var h = State(town);
+        if (m.ArrivalTick != null)
+        {
+            m.Power += joined;
+            return;
+        }
+        if (h.Stage is HordeStage.None or HordeStage.Marching) Begin(town, m, h.Stage == HordeStage.Marching);
+        Camps(town, m);
+        if (h.Camps.FirstOrDefault(c => c.SiteId == m.SeatId) is { } seat) seat.Strength += joined;
+        if (h.Stage == HordeStage.Mustering) return;
+        h.Stage = HordeStage.Mustering;
+        h.MusterTick = town.Tick + Rules(town).MusterDays * SimTime.HoursPerDay;
+        if (Watched(town).Count == 0) return;
+        h.Told = 3;
+        Tell(town, m, Rules(town).Massing, Importance.Major);
     }
 
     /// <summary>The seat fell and the big bad got away: whatever gathered there is lost.</summary>

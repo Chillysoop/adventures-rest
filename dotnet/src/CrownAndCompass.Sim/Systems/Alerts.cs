@@ -211,7 +211,8 @@ public static class Alerts
             var m = Crises.MenaceOf(t, c);
             var seat = Quests.Site(t, m.SeatId);
             string where = seat == null || seat.Known == SiteKnowledge.Unheard ? $"its seat in {m.Region}" : seat.Def.Name;
-            yield return new($"doom:{c.Id}", Doom, $"{Cap(Crises.Title(t, c))} in {Days(Crises.DaysLeft(t, c))}",
+            // The big bad's crisis has no count of days: its host marches when its camps are full or the crisis comes to a head.
+            yield return new($"doom:{c.Id}", Doom, Horde.On(t, m) ? Cap(Crises.Title(t, c)) : $"{Cap(Crises.Title(t, c))} in {Days(Crises.DaysLeft(t, c))}",
                 $"{Cap(m.Name)}'s {Crises.SeverityOf(t, c).Name} crisis strikes at the town until its host marches on the walls. Break {where} first: post a bounty on it from Bounties.", SiteId: seat?.Def.Id);
         }
         foreach (var x in Crises.Pending(t).OrderBy(x => x.Id))

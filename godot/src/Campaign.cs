@@ -284,7 +284,8 @@ public partial class Main
                 CrisisPhase.Onslaught => "Striking at the town",
                 _ => "Its host is marching on the walls",
             };
-            string when = c.Phase == CrisisPhase.Marching ? $"It reaches the walls in {Ui.Days(Math.Max(1, days))}." : $"It culminates in about {Ui.Days(days)}, with its host at the walls.";
+            string when = Horde.On(t, m) ? (c.Phase == CrisisPhase.Marching ? "Its host is massing or on the road." : "When it comes to a head, its host marches.")
+                : c.Phase == CrisisPhase.Marching ? $"It reaches the walls in {Ui.Days(Math.Max(1, days))}." : $"It culminates in about {Ui.Days(days)}, with its host at the walls.";
             string blows = c.BlowsLanded + c.BlowsStopped == 0 ? "" : $" Blows so far: {c.BlowsLanded} landed, {c.BlowsStopped} stopped.";
             FoeCard(p, [m], $"{Tag($"{sv.Name.ToUpperInvariant()} CRISIS", color)}  {Tag(phase)}\n[font_size=16][b]{Ui.Esc(Ui.Cap(Crises.Title(t, c)))}[/b][/font_size] of {Ui.Esc(m.Name)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Crises.KindOf(t, m).What)} {when}{blows} Break its seat first and the crisis dies with it. {Seat(t, m)}[/font_size]")}", color);
         }
