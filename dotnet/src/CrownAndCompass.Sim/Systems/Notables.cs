@@ -46,6 +46,12 @@ public sealed record NotableRules
     /// <summary>Council loyalty a day a notable holding a seat gives while warm (and takes while bitter).</summary>
     public double Seat { get; init; } = 0.3;
 
+    /// <summary>Guild standing a day a guild's master gives while warm (twice as a friend, taken away while bitter).</summary>
+    public double Guild { get; init; } = 0.5;
+
+    /// <summary>The kind every guild master rises as, unless they are a notable already.</summary>
+    public string GuildMaster { get; init; } = "guild-master";
+
     /// <summary>Lines each notable keeps of what passed between them and the mayor.</summary>
     public int Remember { get; init; } = 6;
 
@@ -212,11 +218,19 @@ public static class Notables
     private static void Rise(Town town)
     {
         var r = Rules(town);
-        var last = town.Notables.Count == 0 ? -999 : town.Notables.Max(n => n.Since);
+        // A guild's master is someone worth knowing the day they take the chair, unless they are already.
+        if (r.Kind(r.GuildMaster) is { } gm)
+            foreach (var g in town.Guilds.OrderBy(g => g.Id, StringComparer.Ordinal))
+                if (g.MasterId is int m && !town.Notables.Any(n => !n.Gone && n.AgentId == m))
+                {
+                    Add(town, gm, m, "");
+                    return;
+                }
+        var last = town.Notables.Count == 0 ? -999 : town.Notables.Where(n => n.Kind != r.GuildMaster).Select(n => n.Since).DefaultIfEmpty(-999).Max();
         if (town.Day - last < r.RiseDays) return;
         foreach (var d in r.Kinds)
         {
-            if (town.Day < d.MinDay || town.Notables.Any(n => !n.Gone && n.Kind == d.Id)) continue;
+            if (d.Id == r.GuildMaster || town.Day < d.MinDay || town.Notables.Any(n => !n.Gone && n.Kind == d.Id)) continue;
             if (d.Outsider)
             {
                 if (d.Names.Count == 0) continue;
@@ -265,7 +279,7 @@ public static class Notables
         town.Notables.Add(n);
         string who = NameOf(town, n);
         string where = d.Outsider && d.Place != "" ? $", who keeps to {d.Place}," : "";
-        town.Log(LedgerCategory.Town, Importance.Notable, $"{who}{where} is someone worth knowing: the town's {d.Title.ToLowerInvariant()}.", agentId != null ? [agentId.Value] : []);
+        town.Log(LedgerCategory.Town, Importance.Notable, $"{who}{where} is someone worth knowing: {TitleOf(town, n, d).ToLowerInvariant()}.", agentId != null ? [agentId.Value] : []);
     }
 
     // The day ---------------------------------------------------------------------------------------
@@ -278,6 +292,13 @@ public static class Notables
         {
             n.Gone = true;
             town.Log(LedgerCategory.Town, Importance.Notable, $"The town has lost its {d.Title.ToLowerInvariant()}: {a.Name} is {(a.Dead ? "dead" : "gone")}.", [id]);
+            return;
+        }
+
+        if (n.Kind == r.GuildMaster && GuildOf(town, n) == null)
+        {
+            n.Gone = true;
+            town.Log(LedgerCategory.Town, Importance.Routine, $"{NameOf(town, n)} no longer speaks for a guild.", Agents(n));
             return;
         }
 
@@ -309,6 +330,12 @@ public static class Notables
         if (effects != null) Give(town, effects);
         if (band >= Warm && SeatOf(town, n) is { } seat) seat.Loyalty = Math.Min(100, seat.Loyalty + r.Seat);
         if (band == Bitter && SeatOf(town, n) is { } sour) sour.Loyalty = Math.Max(0, sour.Loyalty - r.Seat);
+        // A guild follows its master: won over, they talk the members round; soured, they stir them up.
+        if (GuildOf(town, n) is { } guild && !Guilds.OnStrike(town, guild))
+        {
+            double lean = band == Friend ? 2 * r.Guild : band >= Warm ? r.Guild : band == Bitter ? -r.Guild : 0;
+            guild.Standing = Math.Clamp(guild.Standing + lean, 0, 100);
+        }
 
         if (band == Friend && !n.BoonGiven && d.Boon != "" && town.Content.Library.Item(d.Boon) is { } item)
         {
@@ -339,6 +366,15 @@ public static class Notables
         if (effects.TryGetValue("gold", out double g) && g != 0) town.Book(TreasuryAccount.Notables, g > 0 ? g : -Math.Min(Math.Max(0, town.Treasury), -g));
         if (effects.TryGetValue("mandate", out double m) && m != 0) town.Mandate = Math.Clamp(town.Mandate + m, 0, 100);
     }
+
+    /// <summary>The guild this notable is master of, if any.</summary>
+    public static Guild? GuildOf(Town town, Notable n) => n.AgentId is int id ? town.Guilds.FirstOrDefault(g => g.MasterId == id) : null;
+
+    /// <summary>The town's guild master, the town's master smith: what the town calls them.</summary>
+    public static string TitleOf(Town town, Notable n) => TitleOf(town, n, DefOf(town, n));
+
+    private static string TitleOf(Town town, Notable n, NotableDef d) =>
+        n.Kind == Rules(town).GuildMaster && GuildOf(town, n) is { } g ? $"master of {Guilds.Name(town, g)}" : $"the town's {d.Title.ToLowerInvariant()}";
 
     private static Seat? SeatOf(Town town, Notable n) => n.AgentId is int id ? town.Seats.FirstOrDefault(s => s.HolderId == id) : null;
 

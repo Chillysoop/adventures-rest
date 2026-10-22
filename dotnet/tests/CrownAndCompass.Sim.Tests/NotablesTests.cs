@@ -30,7 +30,7 @@ public class NotablesTests
             }
             Assert.True(r.Hears.ContainsKey(d.Hears), $"{d.Id} hears {d.Hears}");
             if (d.Boon != "") Assert.NotNull(t.Content.Library.Item(d.Boon));
-            Assert.True(d.Outsider ? d.Names.Count > 0 : d.Trades.Count > 0, $"{d.Id} needs trades or names");
+            Assert.True(d.Outsider ? d.Names.Count > 0 : d.Trades.Count > 0 || d.Id == r.GuildMaster, $"{d.Id} needs trades or names");
             Assert.NotEmpty(d.Asks);
             foreach (var ask in d.Asks)
                 Assert.True(ask.Gold > 0 || t.Content.Stories.Skill(ask.Skill) != null, $"{d.Id} ask {ask.Id} needs gold or a skill");

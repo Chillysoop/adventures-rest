@@ -629,7 +629,7 @@
     {
       "id": "guilds",
       "title": "The trade guilds",
-      "text": "Workers in one trade formed a [b]guild[/b]; its master leans on a councillor.\n• Demands come with a deadline (taxes, a festival, land)\n• [b]Meet it[/b]: they warm to you\n• [b]Pay them off[/b]: it goes away\n• Ignored: they sour, then [b]strike[/b]\n• [b]Break the strike[/b] with the watch: costs Mandate",
+      "text": "Workers in one trade formed a [b]guild[/b]; its master leans on a councillor.\n• Demands come with a deadline (taxes, a festival, land)\n• [b]Meet it[/b]: they warm to you\n• [b]Pay them off[/b]: it goes away\n• Ignored: they sour, then [b]strike[/b]\n• [b]Break the strike[/b] with the watch: costs Mandate\n• Its master is a [b]Notable[/b]: win them over and the guild warms too",
       "point": "tab:Council",
       "until": "tab:Council",
       "when": "alert:guild",
