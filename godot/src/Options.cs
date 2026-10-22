@@ -581,7 +581,7 @@ public sealed class Options
                     break;
                 case "sinks":
                     // For shots of a rich town's spending: the first regiment in masterwork arms and the next being re-armed, the nearest
-                    // people's charter bought, the first power met sworn for good, and a dreadnought at the Sky Dock if there is one.
+                    // people's charter bought, the first power met sworn for good, a dreadnought at the Sky Dock if there is one, and the strongest company retained.
                     t.Treasury += 200000;
                     var regs = t.Army.Regiments.Where(r => !Army.Unit(t, r).IsLevy).OrderBy(r => r.Id).ToList();
                     if (regs.Count > 0) regs[0].Arms = 2;
@@ -604,6 +604,11 @@ public sealed class Options
                         sim.SwearPower(oath.Id);
                     }
                     if (CrownAndCompass.Sim.Systems.Sky.Dock(t) != null) Fleet.Build(t, "dreadnought", free: true);
+                    if (Roster.Companies(t).OrderByDescending(e => e.Power).ThenBy(e => e.Name, StringComparer.Ordinal).FirstOrDefault()?.Name is string kept)
+                    {
+                        Intel.Deal(t, kept, 50);
+                        sim.RetainCompany(kept);
+                    }
                     break;
                 case "stock":
                     // For armory shots: a find handed in under a pact.
