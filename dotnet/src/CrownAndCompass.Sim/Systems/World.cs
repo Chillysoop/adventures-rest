@@ -34,6 +34,11 @@ public sealed class Region
 public sealed class Settlement
 {
     public int Id { get; init; }
+
+    /// <summary>How much of the road here painted patrols keep, worked out once a day (<see cref="Wilds.Road"/>).</summary>
+    [NotSaved] internal double RoadCover;
+    [NotSaved] internal int RoadDay = -1;
+    [NotSaved] internal int RoadStamp = -1;
     public required string Name { get; init; }
     public required PeopleDef Kin { get; init; }
     public int RegionId { get; init; }

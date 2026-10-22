@@ -137,6 +137,7 @@ public partial class Main : Control
             for (int d = 0; d < 20 && _sim.Town.Stewards.Asks.Count < 2; d++) _sim.RunDays(1);
         }
         if (_opts.Tower is string tower) StageTower(tower);
+        if (_opts.Wilds is string wilds) StageWilds(wilds);
         if (_opts.Site is string site) Select(Selection.Site(site));
         if (_opts.Wall is int wall) Select(Selection.Wall(wall));
         if (_opts.Strike) ShowStrike(true);
@@ -260,6 +261,31 @@ public partial class Main : Control
     /// struck with it now, the camera on them and their inspector open.
     /// </summary>
     /// <summary>For shots: a town tower rising, standing or about to be tested on the nearest site the town has seen.</summary>
+    /// <summary>For shots: ground painted to explore to the north-east, a patrol on the road to the nearest settlement, and the campaign map over them.</summary>
+    private void StageWilds(string state)
+    {
+        var t = _sim.Town;
+        t.Book(TreasuryAccount.Exploring, 2000);
+        var cells = new List<(int X, int Y)>();
+        for (int y = -6; y <= -3; y++)
+            for (int x = 2; x <= 5 - (y == -6 ? 1 : 0); x++) cells.Add((x, y));
+        _sim.PaintWilds(Wilds.Explore, cells);
+        if (t.Settlements.Where(s => !s.Razed).OrderBy(s => Js.Hypot(Explore.SettlementSpot(t, s).X, Explore.SettlementSpot(t, s).Y)).FirstOrDefault() is { } near)
+            Wilds.PatrolRoad(t, near);
+        _sim.RunDays(state == "walking" ? 4 : 1);
+        if (state == "brush")
+        {
+            _map.Brush = Wilds.Patrol;
+            for (int x = 6; x <= 9; x++) _map.BrushCells.Add((x, 1));
+        }
+        _opts.StrategicView = true;
+        _boardOpen.Add("explore");
+        _boardOpen.Add("patrol");
+        var mids = t.Wilds.Select(z => Wilds.Middle(t, z)).ToList();
+        _opts.Look ??= mids.Count == 0 ? Map.Geo.Center : Map.Geo.FromDays(mids.Average(m => m.X), mids.Average(m => m.Y));
+        _opts.Cam ??= 340;
+    }
+
     private void StageTower(string state)
     {
         var t = _sim.Town;
@@ -632,7 +658,7 @@ public partial class Main : Control
         else if (Keys.Is(k, "build")) ToggleBuildBar();
         else if (Keys.Is(k, "flag")) ToggleFlag();
         else if (k.Keycode == Key.Escape && _map.Flagging) ToggleFlag();
-        else if (k.Keycode == Key.Escape && _map.Scouting) ToggleScouting();
+        else if (k.Keycode == Key.Escape && _map.Brush != null) ToggleBrush(_map.Brush);
         else if (k.Keycode == Key.Escape && _strikePanel.Visible) ShowStrike(false);
         else if (k.Keycode is Key.Enter or Key.KpEnter or Key.Backspace && !k.AltPressed && _map.Planner.WallKey(k.Keycode)) { }
         else if (k.Keycode == Key.Escape && _map.Planner.Active) _map.Planner.Pick(null);

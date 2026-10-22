@@ -1,0 +1,34 @@
+{
+  "_doc": "Painted zones on the campaign map (Systems/Wilds.cs). The mayor paints cells of the wilds: explore zones post a council commission again and again until a company has walked every cell; patrol zones hire riders for a daily wage to ride them, cutting caravan raids on the roads through them, seeing raiders sooner and meeting trouble on the way. Distances are days of march, wages gold a day.",
+  "cell": 0.5,
+  "near": 0.5,
+  "explore": {
+    "_doc": "A trip's pay is the survey reward of the zone's region times (base + perCell for each unseen cell up to tripCells). The company explores daysBase + daysPerCell for each unseen cell, at most maxDays, and sees every cell whose centre comes within sight.",
+    "base": 0.6,
+    "perCell": 0.08,
+    "tripCells": 12,
+    "daysBase": 1,
+    "daysPerCell": 0.3,
+    "maxDays": 8,
+    "sight": 0.45
+  },
+  "patrol": {
+    "_doc": "Hired riders cover riderCells cells; each soldier of a regiment sent to ride it covers soldierCells times its unit's patrol. Cover (0 to 1) is what they can ride over the zone's size. A patrolled road keeps raidCut less of its raid chance and gives its settlement security; a raid that sets out from or crosses patrolled ground is seen warnHours sooner. Each day the riders may meet something (meetPerCell a cell, at most meetMost), rolled on the zone's own dice.",
+    "perCell": 0.15,
+    "riderCells": 8,
+    "soldierCells": 1.5,
+    "raidCut": 0.5,
+    "security": 10,
+    "warnHours": 12,
+    "meetPerCell": 0.006,
+    "meetMost": 0.25,
+    "chance": 0.65,
+    "perLevel": 0.06,
+    "soldierBonus": 0.15,
+    "xp": 40,
+    "pelts": 6,
+    "woundDice": 1,
+    "standIn": { "cost": 160, "reserve": 600 },
+    "meets": ["a pack of wolves stalking a drover's string", "bandits waiting at a ford", "goblin scouts skulking along a ridge", "an owlbear in the brush beside the road", "deserters robbing pilgrims", "a band of gnolls following the herds"]
+  }
+}
