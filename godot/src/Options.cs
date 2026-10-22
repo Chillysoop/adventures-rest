@@ -44,6 +44,9 @@ public sealed class Options
     public string? Style;
     public bool Clean;
     public string? Site;
+
+    /// <summary>--wonder kind aims the camera at the first strange place of that kind (well, hush, ferry, bones, ring, oasis, mirage, gate).</summary>
+    public string? Wonder;
     /// <summary>Aim the camera at the first finished building with this id.</summary>
     public string? At;
     public string? Screenshot;
@@ -112,6 +115,9 @@ public sealed class Options
 
     /// <summary>For shots: the first company out is drawn in the thick of it at its site, and the camera aims there.</summary>
     public bool Delve;
+
+    /// <summary>--bestiary page|plan[:page]|id,id...: a gallery of creatures on open ground, idling, walking and striking, the camera on them.</summary>
+    public string? Bestiary;
 
     /// <summary>--rolls: look into the busiest tavern and replay its latest skill checks as dice over people's heads.</summary>
     public bool Rolls;
@@ -239,6 +245,7 @@ public sealed class Options
                 case "--tax": o.Tax = double.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture); break;
                 case "--scroll": o.Scroll = float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture); break;
                 case "--site": o.Site = Next(); break;
+                case "--wonder": o.Wonder = Next(); break;
                 case "--at": o.At = Next(); break;
                 case "--screenshot": o.Screenshot = Next(); break;
                 case "--frames": o.Frames = int.Parse(Next()); break;
@@ -270,6 +277,7 @@ public sealed class Options
                 case "--skirmish": o.Skirmish = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
                 case "--rolls": o.Rolls = true; break;
                 case "--delve": o.Delve = true; break;
+                case "--bestiary": o.Bestiary = Next(); break;
                 case "--wall": o.Wall = int.Parse(Next()); break;
                 case "--strike": o.Strike = true; break;
                 case "--hardships": o.Hardships = true; break;
@@ -590,6 +598,9 @@ public sealed class Options
         }
     }
 
+    /// <summary>Stages the next shot of a run that takes several and returns its file, or null when done.</summary>
+    public Func<string?>? NextShot;
+
     /// <summary>Save a screenshot and quit once enough frames have drawn for the camera to settle.</summary>
     public void Capture(Node node, ref int frames)
     {
@@ -600,6 +611,13 @@ public sealed class Options
         var img = node.GetViewport().GetTexture().GetImage();
         img.SavePng(Screenshot);
         GD.Print($"Saved {Screenshot}");
+        // A run that shoots several pages (--bestiary a;b;c) stages the next and goes on.
+        if (NextShot?.Invoke() is string next)
+        {
+            Screenshot = next;
+            frames = 0;
+            return;
+        }
         node.GetTree().Quit();
         Screenshot = null;
     }

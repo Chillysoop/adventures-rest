@@ -95,20 +95,23 @@ public class CrowdsTests
     public void NoPlaceEverHoldsMoreThanItHasRoomFor(int seed)
     {
         var sim = new Simulation(new SimulationOptions { Seed = seed });
-        bool visited = false, praying = false, venues = false;
-        for (int h = 0; h < 24 * 150; h++)
+        bool visited = false, praying = false;
+        int? venues = null;
+        const int Hours = 24 * 150;
+        for (int h = 0; h < Hours; h++)
         {
             sim.Step();
             var t = sim.Town;
+            visited |= t.Agents.Any(a => a.Activity == Activity.Visiting);
+            praying |= t.Agents.Any(a => a.Activity == Activity.Praying);
             if (h % 7 != 0) continue;
             foreach (var b in t.Buildings.Where(b => b.Def.Capacity > 0 && b.Complete))
                 Assert.True(Crowds.Inside(t, b) <= b.Def.Capacity, $"{b.Name} holds {Crowds.Inside(t, b)} of {b.Def.Capacity}");
-            visited |= t.Agents.Any(a => a.Activity == Activity.Visiting);
-            venues |= Crowds.Places(t).Keys.Any(k => k != Crowds.Tavern && k != Crowds.Holy);
-            praying |= t.Agents.Any(a => a.Activity == Activity.Praying);
+            if (venues == null && Crowds.Places(t).Keys.Any(k => k != Crowds.Tavern && k != Crowds.Holy)) venues = h;
         }
-        // Townsfolk go out once there is a market hall, bathhouse or the like to go to.
-        Assert.Equal(venues, visited);
+        // Townsfolk go out once there is a market hall, bathhouse or the like to go to (given a few days to find it).
+        if (venues == null) Assert.False(visited);
+        else if (venues < Hours - 24 * 5) Assert.True(visited);
         Assert.True(praying);
     }
 }

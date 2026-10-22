@@ -105,6 +105,7 @@ public partial class Main : Control
         if (_opts.Lofted is string lofted) StageLofted(lofted);
         if (_opts.Siege is float siegeHours) SiegeShot(siegeHours);
         if (_opts.Skirmish is string skirmish) StageSkirmish(skirmish.Split(','));
+        if (_opts.Bestiary is string bestiary) StageBestiary(bestiary);
         if (_opts.Delve && _sim.Town.Parties.FirstOrDefault(p => !p.Returned) is { } delving && _map.Geo.Pins.TryGetValue(delving.SiteId, out var dpin))
         {
             _map.Crowd.StageDelve = true;
@@ -142,6 +143,14 @@ public partial class Main : Control
         // --shadowed aims at the first settlement the town has met that lies under an enemy's shadow.
         if (_opts.Shadowed && _sim.Town.Settlements.FirstOrDefault(s => s.Met && Shadows.Shadowed(s)) is { } dark)
             _opts.Look ??= Map.Geo.SettlementPin(_sim.Town, dark);
+        if (_opts.Wonder is string wk)
+        {
+            if (wk == "gate" && _sim.Town.Gateways.FirstOrDefault() is { } g) _opts.Look ??= Map.Geo.FromDays(g.Ax, g.Ay);
+            else if (_sim.Town.Terrain.FirstOrDefault(f => f.Kind.Wonder?.Kind == wk) is { } wf)
+            {
+                _opts.Look ??= Map.Geo.FromDays((wf.Inner + wf.Outer) / 2 * Math.Sin(wf.Bearing * Math.PI / 180), -(wf.Inner + wf.Outer) / 2 * Math.Cos(wf.Bearing * Math.PI / 180));
+            }
+        }
         if (_opts.Cam is float cam)
             _map.LookAt(_opts.Look ?? (_opts.Site is string at && _map.Geo.Pins.TryGetValue(at, out var pin) ? pin : Map.Geo.Center), cam);
         // --at aims the camera at the town's first finished building of a kind.
