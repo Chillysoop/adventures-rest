@@ -505,19 +505,7 @@ public partial class Crowd
         var gen = map.Gen;
         if (_siege is { } b && _look is { } l)
         {
-            if (RamAt(out var ram, out float ryaw, now))
-            {
-                PutXf(new Transform3D(Basis.FromEuler(new Vector3(0, ryaw, 0)).Scaled(new Vector3(1.05f, 1.05f, 1.05f)), gen.At(ram)), Colors.White, Colors.White);
-                // More war-wagons beside the first: those the guns or a sally stopped lie broken short of the gate.
-                var side = l.GateOut.Orthogonal();
-                for (int i = 1; i < b.Wagons; i++)
-                {
-                    bool through = i < b.WagonsThrough;
-                    var at = ram + side * (i % 2 == 1 ? 0.9f : -0.9f) * ((i + 1) / 2) + (through ? Vector2.Zero : l.GateOut * (1.6f + i * 0.4f));
-                    var tilt = through ? Vector3.Zero : new Vector3(0.25f, 0, 0.35f);
-                    PutXf(new Transform3D(Basis.FromEuler(new Vector3(tilt.X, ryaw + (through ? 0 : 0.6f), tilt.Z)).Scaled(Vector3.One * 1.05f), gen.At(at)), Colors.White, Colors.White);
-                }
-            }
+            if (RamAt(out var ram, out float ryaw, now)) PutXf(new Transform3D(Basis.FromEuler(new Vector3(0, ryaw, 0)).Scaled(new Vector3(1.05f, 1.05f, 1.05f)), gen.At(ram)), Colors.White, Colors.White);
             Flush(_ram);
 
             // Ladders up each stretch a wave has come at, from the moment it reaches the wall.

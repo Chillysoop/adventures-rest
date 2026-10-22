@@ -722,6 +722,13 @@
       "teaches": ["tab:Institutions", "command:FundInstitution", "command:ChooseInstitution"]
     },
     {
+      "id": "road-jobs",
+      "title": "On the road",
+      "text": "Out on the road each hero takes a job: one [b]navigates[/b] hard country (Survival; a lost navigator costs hours), one [b]forages[/b] once the rations run out (hungry heroes fight worse), one [b]tracks[/b] a back way into the site, and the sharpest eyes keep watch while the best healer treats wounds on a rest. Everyday jobs are routine and never fail; avalanches, sandstorms and cliff climbs are not. The [b]On the road[/b] list in Bounties shows who does what. Out in the wilds are strange places too: wishing wells, dead-magic ground where no spell works, a bone ferryman who takes anyone over his water for a toll, oases (not all of them real) and old gateways that step a company days nearer, once someone answers the riddle or a friendly people tells the word.",
+      "when": "count:Parties",
+        "teaches": []
+      },
+      {
       "id": "institutions-discovery",
       "title": "Institutions to discover",
       "text": "The town starts knowing none of its [b]institutions[/b].\nThey come to light from\n• heroes and folk who settle\n• crafts and trade\n• sites cleared\n• a bigger charter\nHeard-of ones show what they still need, then rise from the Government build bar.",

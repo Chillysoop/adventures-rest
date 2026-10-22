@@ -417,6 +417,9 @@ public sealed class Town
     /// <summary>The country that bends the roads between the town and its sites (<see cref="Systems.Roads"/>).</summary>
     public List<Feature> Terrain { get; } = [];
 
+    /// <summary>Old gateways in the wilds that link two far places (<see cref="Systems.Wayfaring"/>).</summary>
+    public List<Gateway> Gateways { get; } = [];
+
     /// <summary>Villages, holds and enclaves out in the wilds, by id.</summary>
     public List<Settlement> Settlements { get; } = [];
 

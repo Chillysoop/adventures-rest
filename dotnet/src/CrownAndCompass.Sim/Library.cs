@@ -290,10 +290,10 @@ public sealed class Library
     public IEnumerable<LibSpell> SpellsOf(string classId) =>
         Spells.Where(s => s.Classes.Contains(classId)).OrderBy(s => s.Level).ThenBy(s => s.Id, StringComparer.Ordinal);
 
-    private static Library? _default;
+    private static readonly Lazy<Library> _default = new(() => Load(EmbeddedFiles()));
 
     /// <summary>The bundled library, parsed once and shared.</summary>
-    public static Library Default() => _default ??= Load(EmbeddedFiles());
+    public static Library Default() => _default.Value;
 
     /// <summary>Load from the repo's content/ directory (everything but content/game).</summary>
     public static Library FromDirectory(string contentDir) =>
