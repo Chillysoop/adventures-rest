@@ -153,6 +153,7 @@ public static class Conquest
         }
         town.Army.Pending.Add(s.Id);
         b.Lines.Add($"The gates of {s.Name} are open. It waits on the mayor's word.");
+        Spoils.Conquered(town, s.Kin.Id, s.Name);
     }
 
     public static string? SettleBlocked(Town town, Settlement s, ConquestChoice choice) =>

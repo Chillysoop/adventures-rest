@@ -202,7 +202,7 @@ public static class Mayoralty
     }
 
     /// <summary>An assassin's blow that would have fallen on someone else may be for the mayor, walking the streets.</summary>
-    internal static bool Marked(Town town) => Exposed(town) && Dice(town, 1).Chance(Rules(town).Assassin);
+    internal static bool Marked(Town town) => Exposed(town) && Dice(town, 1).Chance(Rules(town).Assassin * (1 - Regalia.Ward(town)));
 
     /// <summary>The assassin's knife reaches the mayor.</summary>
     internal static void Knifed(Town town, Culprit by)

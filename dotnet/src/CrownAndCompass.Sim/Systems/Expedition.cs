@@ -75,9 +75,9 @@ public sealed record Halt(double From, double To, string Kind);
 /// site, encounter by encounter. It never touches the town; it returns what happened and a
 /// Chronicle written from the logged rolls, and the caller applies the results.
 /// </summary>
-public static class Expedition
+public static partial class Expedition
 {
-    internal sealed class Combatant(Agent agent)
+    internal sealed partial class Combatant(Agent agent)
     {
         public Agent Agent { get; } = agent;
         public HeroSheet Sheet { get; } = agent.Hero!;
@@ -106,7 +106,7 @@ public static class Expedition
         public int Beast { get; set; }
     }
 
-    private sealed class Foe(MonsterDef def)
+    private sealed partial class Foe(MonsterDef def)
     {
         public MonsterDef Def { get; } = def;
         public int Hp { get; set; } = def.Hp;
@@ -170,7 +170,7 @@ public static class Expedition
     /// One party's venture: the road, its camps and rests, the site itself. It keeps its own clock (in
     /// ticks) and its own record of hit points, and hands back what happened as a result.
     /// </summary>
-    public sealed class Venture
+    public sealed partial class Venture
     {
         public readonly List<string> Lines = [];
         public readonly List<TaleBeat> Beats = [];
@@ -225,7 +225,7 @@ public static class Expedition
             _rng = rng;
             _content = content;
             _site = site;
-            Party = heroes.Select(agent => new Combatant(agent) { Ac = Gear.Ac(content, agent) + Alchemy.WardAc(content, agent.Hero!, site), Attack = Gear.Attack(content, agent), Skill = Gear.Skill(content, agent.Hero!), Veteran = agent.Hero!.Expeditions >= content.World.Companies.Veteran, Beast = content.Passage.Mount(agent.Hero.Mount)?.Fights ?? 0 }).ToList();
+            Party = heroes.Select(agent => new Combatant(agent) { Ac = Gear.Ac(content, agent) + Alchemy.WardAc(content, agent.Hero!, site), Attack = Gear.Attack(content, agent), Skill = Gear.Skill(content, agent.Hero!), Veteran = agent.Hero!.Expeditions >= content.World.Companies.Veteran, Beast = content.Passage.Mount(agent.Hero.Mount)?.Fights ?? 0, Powers = Enchant.Worn(content, agent.Hero) }).ToList();
             // Greenhorns with nobody seasoned among them lose their nerve sooner.
             if (Party.Any(c => c.Sheet.Expeditions == 0) && !Party.Any(c => c.Veteran)) _caution = content.Roads.Retreat.GreenCaution;
         }
@@ -499,11 +499,13 @@ public static class Expedition
             _held.Clear();
             _snared.Clear();
             _dazed.Clear();
+            foreach (var c in Party) c.FightUsed.Clear();
             bool monstersFirst = surprised || Ambush(foes);
             if (def.Boss && Goad(foes[0])) HeroesAct(foes, 0);
             while (round < 20)
             {
                 round++;
+                _round = round;
                 if (!monstersFirst) HeroesAct(foes, round);
                 monstersFirst = false;
                 if (foes.All(f => f.Hp <= 0)) break;
@@ -588,6 +590,9 @@ public static class Expedition
                     if (c.Potions == 0 && c.Sheet.Potions >= 3) Gag(c, "potion");
                 }
 
+                Regen(c);
+                if (ItemAction(c, foes, living, round)) continue;
+
                 // Clerics keep the party alive before they swing.
                 if (s.Cls.Healer && c.Heals > 0 && !_hushed)
                 {
@@ -666,9 +671,10 @@ public static class Expedition
                     continue;
                 }
                 int snare = _snared.TryGetValue(c, out var sn) && round <= sn.Until ? sn.Hit : 0;
-                if (roll == 20 || roll + atk - snare - (target.Ways["aura"]?.Hit ?? 0) >= target.Def.Ac + Cover(target, round) + target.Ways.Ac)
+                bool sure = false;
+                if (roll == 20 || roll + atk - snare - (target.Ways["aura"]?.Hit ?? 0) >= target.Def.Ac + Cover(target, round) + target.Ways.Ac || (sure = Sure(c, target)))
                 {
-                    int dmg = Gear.Damage(_content, rng, c.Agent, roll == 20);
+                    int dmg = Gear.Damage(_content, rng, c.Agent, roll == 20) + OnHit(c, target, roll == 20, foes);
                     if (s.Cls.Sneak && Standing.Count > 1) dmg += rng.Roll((int)Math.Ceiling(s.Level / 2.0), 6);
                     // A blade passes half through a ghost.
                     if (target.Ways["incorporeal"] is { } ghost)
@@ -678,8 +684,10 @@ public static class Expedition
                     }
                     dmg = Math.Max(1, dmg);
                     target.Hp -= dmg;
+                    Drain(c, dmg);
                     Struck(target, foes);
                     if (target.Hp <= 0) Credit(c, 1);
+                    if (!sure && roll != 20 && target.Hp > 0) Haste(c, target, foes, atk);
                     if (roll == 20)
                     {
                         Log($"Natural 20! {name} hits {The(target.Def)} for {dmg}{(target.Hp <= 0 ? " and it goes down" : "")}.");
@@ -830,6 +838,7 @@ public static class Expedition
         {
             var lurker = foes.FirstOrDefault(f => f.Ways.Has("ambush"));
             if (lurker == null) return false;
+            if (Warned(lurker)) return false;
             var k = lurker.Ways["ambush"]!;
             var check = BestCheck(SkillKind.Perception);
             if (check.Total >= k.Dc)
@@ -852,13 +861,14 @@ public static class Expedition
             f.Powered = true;
             f.Spent = round;
             var targets = p.Area ? Standing : [_rng.Pick(Standing)];
+            if (Reflect(f, targets, p.Name, p.Dice)) return;
             List<string> laid = [], held = [], shaken = [];
             foreach (var c in targets)
             {
                 bool saved = _rng.D20() + Rng.Modifier(c.Agent.Abilities[p.Save]) >= p.Dc;
                 if (p.Dice is { } d)
                 {
-                    int dmg = Math.Max(1, (int)Math.Round(d.Roll(_rng) * k.Share * (saved ? 0.5 : 1)));
+                    int dmg = Math.Max(1, (int)Math.Round(d.Roll(_rng) * k.Share * (saved ? 0.5 : 1) * Resist(c, p.Name)));
                     Hurt(c, dmg);
                     if (c.Down)
                     {
@@ -866,7 +876,7 @@ public static class Expedition
                         continue;
                     }
                 }
-                if (saved || p.Condition == "") continue;
+                if (saved || p.Condition == "" || Free(c)) continue;
                 if (p.Condition is "paralyzed" or "stunned" or "incapacitated" or "petrified" or "unconscious")
                 {
                     _dazed[c] = round + k.Rounds;
@@ -905,7 +915,7 @@ public static class Expedition
             int powers = 0;
             foreach (var f in foes.ToList())
             {
-                if (f.Hp <= 0 || f.Spent == round) continue;
+                if (f.Hp <= 0 || f.Spent == round || f.HeldUntil >= round) continue;
                 if (f.Ways["regen"] is { } regen && f.Hp < f.Def.Hp)
                 {
                     f.Hp = Math.Min(f.Def.Hp, f.Hp + Math.Max(1, (int)Math.Round(f.Def.Hp * regen.Share)));
@@ -925,7 +935,7 @@ public static class Expedition
                 if (f.Ways["pack"] is { } pk && foes.Any(o => o != f && o.Hp > 0)) pack = Math.Max(pack, pk.Hit);
                 for (int k = 0; k < Math.Max(1, f.Def.Attacks); k++)
                 {
-                    if (f.Hp <= 0 || f.Spent == round) break;
+                    if (f.Hp <= 0 || f.Spent == round || f.HeldUntil >= round) break;
                     var targets = Standing;
                     if (targets.Count == 0) return;
                     var t = rng.Pick(targets);
@@ -948,18 +958,20 @@ public static class Expedition
                             dmg += (int)Math.Round(dmg * charge.Share);
                             Tell(f, charge, t.Agent.GivenName);
                         }
+                        dmg = Guard(t, f, dmg);
                         Hurt(t, dmg);
+                        Rebuke(t, f, round);
                         if (f.Ways["drain"] is { } drain)
                         {
                             f.Hp = Math.Min(f.Def.Hp, f.Hp + (int)Math.Round(dmg * drain.Share));
                             Tell(f, drain, t.Agent.GivenName);
                         }
-                        if (!t.Down && f.Ways["swallow"] is { } sw && !_held.ContainsKey(t) && !_held.Values.Any(h => h.By == f))
+                        if (!t.Down && !Free(t) && f.Ways["swallow"] is { } sw && !_held.ContainsKey(t) && !_held.Values.Any(h => h.By == f))
                         {
                             _held[t] = (f, round + sw.Rounds, Math.Max(1, dmg / 2));
                             Log(Cap(Knacks.Fill(sw.Text, The(f.Def), t.Agent.GivenName)));
                         }
-                        else if (!t.Down && f.Ways["grapple"] is { } gr)
+                        else if (!t.Down && !Free(t) && f.Ways["grapple"] is { } gr)
                         {
                             _snared[t] = (round + gr.Rounds, gr.Hit);
                             Tell(f, gr, t.Agent.GivenName);
@@ -1082,6 +1094,7 @@ public static class Expedition
                 c.Hp = c.Sheet.MaxHp;
                 c.Heals = c.Sheet.Cls.HealsAt(c.Sheet.Level);
                 c.HitDice = Math.Min(c.Sheet.Level, c.HitDice + Math.Max(1, (int)(c.Sheet.Level * Roads.LongRest.HitDice)));
+                c.Used.Clear();
             }
             _shortRests = 0;
         }
@@ -1805,7 +1818,7 @@ public static class Expedition
             var pool = _content.LootItems.Where(it => it.Tier >= itemTier && it.Tier <= itemTier + 1).ToList();
             if (pool.Count > 0 && (sure || _rng.Chance(_content.Loot.ItemChancePerTier * site.Tier)))
             {
-                var item = _rng.Pick(pool);
+                var item = Hoarded(pool, site);
                 if (item.Slot == "town")
                 {
                     // Too big or too strange for one hero: it goes to the town.

@@ -320,7 +320,7 @@ public static class Army
         }
         double floor = Rules(town).DrillFloor;
         double each = u.Strength * (floor + (1 - floor) * r.Drill);
-        return r.Soldiers.Count * each * (1 + 0.03 * stout / r.Soldiers.Count) * (1 + Command(town, r));
+        return r.Soldiers.Count * each * (1 + 0.03 * stout / r.Soldiers.Count) * (1 + Command(town, r)) * Kit.RegimentFactor(town, r);
     }
 
     /// <summary>The regiment's worth at the walls in a siege: its strength, its post's share, and how it fights from a wall.</summary>
@@ -470,6 +470,7 @@ public static class Army
         if (r == null) return false;
         foreach (int id in r.Soldiers.ToList()) Release(town, r, id);
         StandDownCommander(town, r);
+        Kit.Disbanded(town, r.Id);
         town.Army.Regiments.Remove(r);
         town.Log(LedgerCategory.War, Importance.Notable, Unit(town, r).IsLevy
             ? $"The levy is stood down. The townsfolk go home to their trades."

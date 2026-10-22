@@ -853,7 +853,7 @@
     {
       "id": "regalia",
       "title": "Your regalia",
-      "text": "[b]Mayor[/b] (C) shows your five regalia slots:\n• Chain · Signet · Sceptre · Mantle · Banner\n• [b]Wear[/b] pieces from the armory\n• [b]Commission[/b] new ones as the charter grows\nThey lift your rolls, Mandate and the council, and win heroes over. A banner goes with every company that marches.",
+      "text": "[b]Mayor[/b] (C) shows your six regalia slots:\n• Circlet · Chain · Signet · Sceptre · Mantle · Banner\n• [b]Wear[/b] pieces from the armory\n• [b]Commission[/b] new ones as the charter grows\n• Rare ones from the wilds ward off knives, lies and charms\nThey lift your rolls, Mandate and the council, and win heroes over. A banner goes with every company that marches.",
       "point": "tab:Mayor",
       "when": "day:12",
       "until": "tab:Mayor",
@@ -891,7 +891,10 @@
     {"id": "negotiate", "title": "Negotiating", "text": "[b]Negotiate[/b] with a guild or a holding-out ally.\n• Choose how: Persuade, Intimidate or Deceive\n• Each shows the d20, its DC and your odds\n• Win: settled without gold. Lose: they think less of you\n• One try each demand", "point": "tab:Council", "until": "tab:Council", "when": "alert:guild", "teaches": ["command:NegotiateGuild"]},
     {"id": "trials", "title": "The court", "text": "Heroes the watch catches now stand [b]trial[/b]. No dice.\n• The case: your captain's Investigation, the watch, witnesses\n• Against their tale: their Deception\n• Guilty: the law book's sentence. Not: they walk free\n• From a Town, a caster of [b]Zone of Truth[/b] lets no lie stand", "point": "tab:Council", "until": "tab:Council", "when": "count:Trials", "teaches": ["command:SetTrialMagic"]},
     {"id": "conditions", "title": "Conditions", "text": "People can be [b]Exhausted[/b], [b]Frightened[/b], [b]Charmed[/b], [b]Sick[/b], [b]Wounded[/b] or [b]Inspired[/b].\n• Shown on their card as icons\n• Inspired: advantage on their rolls\n• The rest: disadvantage\n• Hover one for what it does", "when": "day:12", "teaches": []},
-    {"id": "painted-patrols", "title": "Painted patrols", "text": "Press [b]Patrol[/b] over the corner map and paint the wilds.\n• Riders keep it for a daily wage\n• Roads through it lose fewer caravans\n• Raiders crossing it are seen sooner\n• Send outriders or knights from [b]Bounties[/b] to save the wage", "point": "orders", "when": "day:25", "teaches": ["command:SendRiders"]}
+    {"id": "painted-patrols", "title": "Painted patrols", "text": "Press [b]Patrol[/b] over the corner map and paint the wilds.\n• Riders keep it for a daily wage\n• Roads through it lose fewer caravans\n• Raiders crossing it are seen sooner\n• Send outriders or knights from [b]Bounties[/b] to save the wage", "point": "orders", "when": "day:25", "teaches": ["command:SendRiders"]},
+    {"id": "item-powers", "title": "Magic that does things", "text": "Magic items have [b]powers[/b] now.\n• Fireballs, chain lightning, holds, healing\n• A whisper home, a glass that scries for you\n• Hover an item for its powers\n• Heroes wear up to 3 charms; some suit one class", "point": "tab:Armory", "when": "day:15", "teaches": []},
+    {"id": "spoils", "title": "Parts and the forge", "text": "Companies bring home [b]parts[/b] from what they beat: wolf fangs, troll blood, drake scales.\n• [b]Armory[/b]: sell them, or have the forge make arms\n• Plain +1/+2/+3 arms: dearer and finer parts as they rise\n• Strong foes carry their own magic: a frost giant its gauntlets", "point": "tab:Armory", "until": "tab:Armory", "when": "parts", "teaches": ["command:Craft", "command:CancelCraft", "command:SellParts"]},
+    {"id": "plain-arms", "title": "Arm the watch", "text": "Plain +1/+2/+3 arms can go to the [b]watch[/b] and your [b]regiments[/b].\n• [b]Armory[/b]: Arm or Recall each unit\n• Each piece makes the unit stronger\n• Heroes take them too, until real magic beats them", "point": "tab:Armory", "when": "day:30", "teaches": ["command:IssueArms", "command:ArmUnit", "command:RecallArms"]}
   ],
   "untaught": {}
 }

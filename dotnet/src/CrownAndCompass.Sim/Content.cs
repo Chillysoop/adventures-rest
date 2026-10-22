@@ -1544,6 +1544,12 @@ public sealed class Content
 
     /// <summary>The alchemy bench: ingredients, recipes and what potions do (content/game/alchemy.json).</summary>
     public AlchemyRules Alchemy { get; init; } = new();
+
+    /// <summary>Magic items' powers, elements and the plain +N arms (content/game/enchantments.json).</summary>
+    public EnchantRules Enchant { get; init; } = new();
+
+    /// <summary>What foes drop: parts, signature items by creature, group, foe and lineage, and the forge's recipes (content/game/spoils.json).</summary>
+    public SpoilsRules Spoils { get; init; } = new();
     public NeighbourRules Neighbours { get; init; } = new();
     public LegacyRules Legacies { get; init; } = new();
     public UndercityRules Undercity { get; init; } = new();
@@ -1700,7 +1706,8 @@ public sealed class Content
     public Library Library { get; }
 
     /// <summary>Library magic items a hoard can hold (the loot rules' slots), by id.</summary>
-    public IReadOnlyList<LibItem> LootItems => _lootItems ??= Library.Items.Where(i => i.Tier > 0 && Loot.Slots.Contains(i.Slot)).ToList();
+    /// <summary>Signature pieces (spoils.json drops) only come from their own foes, never from any hoard.</summary>
+    public IReadOnlyList<LibItem> LootItems => _lootItems ??= Library.Items.Where(i => i.Tier > 0 && Loot.Slots.Contains(i.Slot) && !Spoils.Signature(i.Id)).ToList();
     private IReadOnlyList<LibItem>? _lootItems;
 
     public Content(
@@ -1861,6 +1868,8 @@ public sealed class Content
             Regalia = Parse<RegaliaRules>("regalia.json"),
             Mayoralty = Parse<MayoraltyRules>("mayoralty.json"),
             Alchemy = Parse<AlchemyRules>("alchemy.json"),
+            Enchant = Parse<EnchantRules>("enchantments.json"),
+            Spoils = Parse<SpoilsRules>("spoils.json"),
             Neighbours = Parse<NeighbourRules>("neighbours.json"),
             Legacies = Parse<LegacyRules>("legacies.json"),
             Undercity = Parse<UndercityRules>("undercity.json"),

@@ -595,6 +595,7 @@ public sealed class Town
 
     /// <summary>The alchemy bench: monster parts in store, potions on the shelf and the town's recipe book (<see cref="Systems.Alchemy"/>).</summary>
     public AlchemyState Alchemy { get; } = new();
+    public SpoilsState Spoils { get; } = new();
 
     /// <summary>The recipes the town has named, for tutorial steps to count.</summary>
     public IReadOnlyList<RecipeEntry> Recipes => Alchemy.Book;
