@@ -52,4 +52,28 @@ public class SkyshipTests
         t.Parties.Add(new Party { Name = "the Lanterns", Members = [], SiteId = t.Sites[0].Def.Id, Airship = true });
         Assert.Equal("the airship is out with a company", Skyship.Refuse(t, s, Good.Tools));
     }
+
+    [Fact]
+    public void AMooringTowerMakesLongRunsPay()
+    {
+        var sim = new Simulation(new SimulationOptions { Seed = 1, AutoMayor = false });
+        var t = sim.Town;
+        var tower = t.Content.Neighbours.Project("mooring-tower")!;
+        // A settlement not already on a cloud ledge, where airships tie up anyway.
+        var s = t.Settlements.First(x => t.Regions[x.RegionId].Site != "cloud-ledge");
+        t.Regions[s.RegionId].Known = true;
+        s.Standing = 20;
+        // No airship, nothing to moor.
+        Assert.NotNull(Neighbours.ProjectRefused(t, s, tower));
+        var d = t.Content.Building("sky_dock");
+        t.AddBuilding(d, Planning.CivicLot(t, d)!, null, "the Sky Dock", true);
+        sim.RunDays(1);
+        Assert.False(Skyship.Moored(t, s));
+        double price = Skyship.Price(t, s, Good.Tools);
+        int days = Skyship.FlightDays(t, s);
+        s.Projects.Add(tower.Id);
+        Assert.True(Skyship.Moored(t, s));
+        Assert.True(Skyship.Price(t, s, Good.Tools) > price);
+        Assert.True(Skyship.FlightDays(t, s) <= days);
+    }
 }

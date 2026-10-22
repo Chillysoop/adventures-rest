@@ -157,12 +157,43 @@ public class KnowledgeTests
         Assert.Null(Watch.TowerOver(t, site));
         tower!.BuildProgress = tower.Def.BuildHours;
         var lot = t.Lot(tower.LotId);
-        bool inSight = Js.Hypot(sx - lot.X, sy - lot.Y) <= Watch.TowerSight(t);
+        bool inSight = Js.Hypot(sx - lot.X, sy - lot.Y) <= Watch.TowerSight(t, tower);
         Assert.Equal(inSight, Watch.LiveOf(t, site) == LiveSource.Tower);
         // A bigger town sees farther, up to the most.
         Assert.True(Watch.TowerSight(t) > w.Sight);
         Assert.True(Watch.TowerSight(t) <= w.MostSight);
         // One tower for every hundred residents.
         Assert.Equal(t.Population < 2 * w.ResidentsEach, Watch.TowerBlocked(t, tower.Def) != null);
+    }
+
+    /// <summary>Towers on a crag or a cloud ledge see farther than at the ford, and one on a hill farther than one on the flat.</summary>
+    [Fact]
+    public void WatchtowersOnHighGroundSeeFarther()
+    {
+        var ford = new Simulation(new SimulationOptions { Seed = 3 }).Town;
+        var crag = new Simulation(new SimulationOptions { Seed = 3, Founding = "crag" }).Town;
+        var w = ford.Content.Knowledge.Watchtowers;
+        Assert.Equal(Founding.Kind(ford.Content, "crag")!.Sight, Watch.TowerSight(crag) - Watch.TowerSight(ford), 6);
+        Assert.True(Founding.Kind(ford.Content, "cloud-ledge")!.Sight > Founding.Kind(ford.Content, "crag")!.Sight);
+        // A tower raised on the highest ground it can find sees farther for the height under it.
+        var sim = new Simulation(new SimulationOptions { Seed = 3 });
+        var t = sim.Town;
+        sim.RunDays(30);
+        t.Treasury += 2000;
+        var spots = new List<(double H, double X, double Y)>();
+        for (int r = 8; r < 40; r++)
+            for (int a = 0; a < 24; a++)
+            {
+                double x = Town.Center + r * Math.Cos(a * Math.PI / 12), y = Town.Center + r * Math.Sin(a * Math.PI / 12);
+                spots.Add((Hills.Height(t, x, y), x, y));
+            }
+        Building? tower = null;
+        foreach (var (_, x, y) in spots.OrderByDescending(p => p.H).ThenBy(p => p.X).ThenBy(p => p.Y))
+            if ((tower = sim.Place(w.Building, x, y)) != null) break;
+        Assert.NotNull(tower);
+        var lot = t.Lot(tower!.LotId);
+        double height = Hills.Height(t, lot.X, lot.Y);
+        Assert.True(height > 0.3, $"height {height}");
+        Assert.Equal(Watch.TowerSight(t) + Math.Min(w.MostHeight, w.PerHeight * height), Watch.TowerSight(t, tower), 6);
     }
 }

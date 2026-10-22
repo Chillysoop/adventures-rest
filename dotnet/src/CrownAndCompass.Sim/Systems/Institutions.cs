@@ -300,6 +300,8 @@ public static class Institutions
     /// <summary>Airships the town can send a company off in: one as soon as the dock flies any at all.</summary>
     public static int Airships(Town town)
     {
+        // Once the dock has its fleet, its ships at the mast are what can fly (<see cref="Sky"/>).
+        if (town.SkyFleet.Granted) return Sky.Ships(town).Count(s => Sky.Moored(town, s) && s.Lift >= 1);
         double n = town.Institutions.Count == 0 ? 0 : Sum(town, d => d.Airship);
         return n < 0.05 ? 0 : Math.Max(1, (int)Math.Floor(n + 0.05));
     }
@@ -311,7 +313,7 @@ public static class Institutions
     public static int Calling(Town town, string cls) => town.Institutions.Count == 0 ? 0 : (int)Math.Round(Sum(town, d => d.Calling.GetValueOrDefault(cls)));
 
     /// <summary>Hours sooner than the fields the town's riders in the sky see a raid coming: at most two days.</summary>
-    public static int SkyWatch(Town town) => (int)Math.Clamp(Math.Round((town.Institutions.Count == 0 ? 0 : Sum(town, d => d.SkyWatch)) + Ruins.SkyWatch(town)), 0, 48);
+    public static int SkyWatch(Town town) => (int)Math.Clamp(Math.Round((town.Institutions.Count == 0 ? 0 : Sum(town, d => d.SkyWatch)) + Ruins.SkyWatch(town) + Sky.PatrolHours(town)), 0, 48);
 
     public static int Routes(Town town) => town.Institutions.Count == 0 ? 0 : (int)Math.Floor(Sum(town, d => d.Routes) + 0.05);
 
@@ -368,7 +370,8 @@ public static class Institutions
                 if (holds) { why = w; break; }
             }
             string tier = Charter(town, d);
-            if (why == null && tier != "" && City.Reached(town, tier)) why = $"the charter of a {City.TierName(town, tier).ToLowerInvariant()}";
+            // A charter brings talk only of what the town could build: no harbour inland.
+            if (why == null && tier != "" && City.Reached(town, tier) && !(town.Content.Buildings.FirstOrDefault(b => b.Id == d.Building) is { Coast: true } && !Fleet.Coastal(town))) why = $"the charter of a {City.TierName(town, tier).ToLowerInvariant()}";
             if (why == null && Find(town, d.Id) != null) why = "its opening";
             if (why == null) continue;
             town.InstitutionsSeen[d.Id] = why;

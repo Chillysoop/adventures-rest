@@ -123,6 +123,9 @@ public sealed record ProjectDef
     /// <summary>Parties coming home from its region rest there and arrive whole.</summary>
     public bool Rest { get; init; }
 
+    /// <summary>A high tower the town's airship moors at (<see cref="Skyship.Moored"/>): only for a town with an airship.</summary>
+    public bool Mooring { get; init; }
+
     /// <summary>The allied people's gifts to market, times this.</summary>
     public double Boon { get; init; } = 1;
 
@@ -711,6 +714,7 @@ public static class Neighbours
         if (!Known(town, s)) return "the town hasn't met them";
         if (p.Peoples.Count > 0 && !p.Peoples.Contains(s.Kin.Id)) return "they have no use for it";
         if (s.Projects.Contains(p.Id)) return "already built";
+        if (p.Mooring && Institutions.Airships(town) == 0) return "the town has no airship to moor there";
         if (s.Works != null) return "they are already building";
         if (s.Standing < r.ProjectMinStanding) return $"they won't let the town build below {Js.Str(r.ProjectMinStanding)} standing";
         if (town.Treasury < p.Cost) return $"needs {Js.Str(p.Cost)} gold";
@@ -940,7 +944,7 @@ public static class Neighbours
         if (town.Settlements.Any(s => s.Works != null)) return;
         foreach (var s in town.Settlements.Where(x => x.Allied || x.Standing >= 30).OrderByDescending(x => x.Standing).ThenBy(x => x.Id))
         {
-            var p = ProjectsFor(town, s).Where(p => ProjectRefused(town, s, p) == null && town.Treasury >= p.Cost * r.ProjectAuto + r.ProjectAutoReserve)
+            var p = ProjectsFor(town, s).Where(p => !p.Mooring && ProjectRefused(town, s, p) == null && town.Treasury >= p.Cost * r.ProjectAuto + r.ProjectAutoReserve)
                 .OrderBy(p => p.Cost).ThenBy(p => p.Id, StringComparer.Ordinal).FirstOrDefault();
             if (p == null) continue;
             Fund(town, s.Id, p.Id);

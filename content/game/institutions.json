@@ -987,6 +987,30 @@
       ]
     },
     {
+      "id": "harbour",
+      "name": "the Harbour",
+      "building": "harbour",
+      "icon": "inst-harbour",
+      "sparks": ["building:harbour"],
+      "title": "Harbourmaster",
+      "blurb": "The quay, the slip and the net sheds, run by a harbourmaster who knows every boat and every tide. The town's ships fish from it and sail from it.",
+      "service": { "gold": 1, "arrivals": 0.003 },
+      "choice": {
+        "label": "what the quay is for first",
+        "text": "There is only so much quay, and the harbourmaster wants to know who gets it.",
+        "options": [
+          { "id": "fishers", "name": "the fishing fleet", "text": "The boats go out on every tide and the smokehouses never cool.", "service": { "mood": 0.03 } },
+          { "id": "merchants", "name": "merchant ships", "text": "Foreign hulls tie up and pay their dues; the quay pays its own way.", "service": { "gold": 3 } },
+          { "id": "guard", "name": "a guard boat", "text": "A boat with a crossbow crew rows the harbour mouth all night.", "service": { "defence": 2 } }
+        ]
+      },
+      "keepers": [
+        { "name": "Morwen Tarrant", "text": "Thirty years a pilot, she can name a ship by the set of its sails at a league." },
+        { "name": "Dobbin Strake", "text": "A retired corsair who says he knows how they think. Nobody asks how he retired." },
+        { "name": "Hesk Ollander", "text": "A dwarf who distrusts the sea completely and so checks every mooring twice." }
+      ]
+    },
+    {
       "id": "sky-dock",
       "name": "the Sky Dock",
       "building": "sky_dock",
@@ -2094,6 +2118,7 @@
     }
   ],
   "requests": [
+    {"id": "harbour-strangers", "title": "A strange sail at the quay", "stakes": "medium", "source": "town", "needs": ["institution:harbour"], "minDay": 30, "repeatDays": 180, "weight": 0.3, "stages": [{"id": "start", "text": "A black-hulled ship with no flag has tied up at the end of the quay and asks for water and rope. {keeper} thinks her crew have the look of corsairs, and the fishwives agree.", "options": [{"label": "Search the ship", "skill": "investigation", "dc": 14, "success": {"text": "Under the nets the watch finds a hold of stolen bells and a corsair chart. The crew are put off at sword point and the chart goes to the council.", "effects": {"goodwill": 4, "mandate": 1}}, "failure": {"text": "The search turns up nothing but salt fish, and the crew sail off cursing the town to every port on the coast.", "effects": {"goodwill": -1, "gold": -30}}}, {"label": "Sell them what they ask, at a price", "success": {"text": "{keeperName} charges double for water and rope, and the ship slips out on the next tide.", "effects": {"gold": 50, "goodwill": 1}}}, {"label": "Turn them away", "skill": "intimidation", "dc": 12, "prefer": 0.05, "success": {"text": "A boat of crossbowmen rows out and the black ship stands off without a word.", "effects": {"goodwill": 2, "tension": -1}}, "failure": {"text": "The black ship stands off, but two of the town's boats go missing that week.", "effects": {"gold": -60, "goodwill": -2}}}]}], "ignored": {"text": "The black ship is gone in the night, and so are the harbour's best coils of rope.", "effects": {"gold": -30, "goodwill": -1}}},
     {
       "id": "monastery-silent-novice",
       "title": "The novice who will not speak",

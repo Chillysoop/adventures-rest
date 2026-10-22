@@ -115,6 +115,7 @@ public partial class TownView(MapView map) : Node3D
         _batches.Clear();
         foreach (var l in _landmarks.Values) l.QueueFree();
         _landmarks.Clear();
+        ResetScenery();
         _groundKey = _wallKey = _buildKey = "";
         _zoneVersion = -1;
     }
@@ -199,6 +200,8 @@ public partial class TownView(MapView map) : Node3D
             string key = MeshKey(b, b.Def.Zone == Zone.Farmland && !steads.Contains(b.Id));
             // The mast stands empty while the airship is off (or flying out or in: see Sky).
             if (key.StartsWith("sky_dock:", StringComparison.Ordinal) && !SkyMoored(town)) key = "sky_dock_away:" + key[9..];
+            // A watchtower on a hill or on the town's high ground stands on a stone footing, its beacon seen for miles.
+            if (key.StartsWith("watchtower:", StringComparison.Ordinal) && (Founding.Sight(town) > 0 || Watch.TowerSight(town, b) - Watch.TowerSight(town) >= 3)) key = "watchtower:9";
             // The Lofted City's cradle stands empty while it sails.
             if (b.Def.Lofted && b.Complete && Lofted.Away(town)) key = "lofted_away:0";
             if (!groups.TryGetValue(key, out var list)) groups[key] = list = [];
@@ -271,7 +274,7 @@ public partial class TownView(MapView map) : Node3D
             case "granary": Granary(kit, v); break;
             case "builders_yard": BuildersYard(kit, v); break;
             case "watch_house": WatchHouse(kit, v); break;
-            case "watchtower": Watchtower(kit); break;
+            case "watchtower": Watchtower(kit, v == 9); break;
             case "timber_house" or "townhouse" or "manor" or "tenement" or "tall_house": Crafted(kit, id, v); break;
             case "quarry": Quarry(kit, v); break;
             case "sheepfold": Sheepfold(kit, v); break;
@@ -280,6 +283,14 @@ public partial class TownView(MapView map) : Node3D
             case "herb_garden": HerbGarden(kit, v); break;
             case "apothecary": Apothecary(kit, v); break;
             case "fishery": Fishery(kit, v); break;
+            case "harbour":
+                kit.Push(MeshKit.At(-0.28f, 0, 0, 0, 0.55f));
+                Store(kit, v + 1);
+                kit.Pop();
+                kit.Push(MeshKit.At(0.25f, 0, 0, 0, 0.6f));
+                Fishery(kit, v);
+                kit.Pop();
+                break;
             case "vineyard": Vineyard(kit, v); break;
             case "scriptorium": Scriptorium(kit, v); break;
             case "bathhouse": Bathhouse(kit, v); break;
@@ -565,8 +576,18 @@ public partial class TownView(MapView map) : Node3D
         k.Add("castle/flag-pennant", MeshKit.At(0.33f, 0.92f, -0.3f, 0, 0.3f), Palette.Kenney(new Color("b8322a")));
     }
 
-    private static void Watchtower(MeshKit k)
+    private static void Watchtower(MeshKit k, bool peak)
     {
+        if (peak)
+        {
+            // A peak tower: a rough stone footing and a cairn, the lookout set on top.
+            var stone = new Color("8a8478");
+            k.Box(new Vector3(0, 0, 0), new Vector3(0.95f, 0.22f, 0.95f), stone);
+            k.Box(new Vector3(0, 0.22f, 0), new Vector3(0.78f, 0.16f, 0.78f), new Color("9a9488"));
+            k.Box(new Vector3(0.36f, 0.38f, 0.36f), new Vector3(0.12f, 0.1f, 0.12f), stone);
+            k.Box(new Vector3(-0.38f, 0.38f, 0.3f), new Vector3(0.09f, 0.08f, 0.09f), stone);
+            k.Push(MeshKit.At(0, 0.38f, 0));
+        }
         // A tall timber lookout on four splayed posts: braced, with a railed platform, a steep shingle roof and a beacon.
         var post = new Color("6b4a2e");
         var plank = new Color("8c6a44");
@@ -606,6 +627,11 @@ public partial class TownView(MapView map) : Node3D
         k.Box(new Vector3(0.08f, 0, foot + 0.05f), new Vector3(0.03f, top, 0.03f), plank);
         for (float y = 0.15f; y < top; y += 0.18f) k.Box(new Vector3(0, y, foot + 0.05f), new Vector3(0.16f, 0.025f, 0.03f), plank);
         k.Add("castle/flag-pennant", MeshKit.At(0, top + 0.86f, 0, 0, 0.3f), Palette.Kenney(new Color("b8322a")));
+        if (!peak) return;
+        // A signal fire on a pole above the roof.
+        k.Box(new Vector3(0.24f, top + 0.5f, 0.24f), new Vector3(0.03f, 0.55f, 0.03f), post);
+        k.Box(new Vector3(0.24f, top + 1.05f, 0.24f), new Vector3(0.12f, 0.08f, 0.12f), new Color("4a443e"), new Color("ffb04a", MeshKit.Flag.Ember));
+        k.Pop();
     }
 
     private static void Tavern(MeshKit k, int v)
@@ -2555,16 +2581,22 @@ public partial class TownView(MapView map) : Node3D
         }
         RopeBridges(town);
         Wonders(town);
+        Ships(town);
+        Scenery(town);
         // The river's bridges, where roads cross it (its fords are shallows in the water itself).
         var gen = map.Gen;
         for (int i = 0; i < gen.Crossings.Count; i++)
         {
             var (c, at, flow) = gen.Crossings[i];
             string id = $"crossing:{i}";
-            if (c.Kind != "bridge" || _landmarks.ContainsKey(id)) continue;
+            // The town's own bridge grows a ward of houses once it is a town.
+            string state = i == 0 && City.Reached(town, BridgeWardTier) ? "ward" : "plain";
+            if (c.Kind != "bridge" || _landmarks.TryGetValue(id, out var was) && (string)was.GetMeta("kind") == state) continue;
+            _landmarks.GetValueOrDefault(id)?.QueueFree();
             var across = new Vector2(-flow.Y, flow.X);
             float deck = Mathf.Max(gen.SurfaceAt(at.X + across.X * 4.6f, at.Y + across.Y * 4.6f), gen.SurfaceAt(at.X - across.X * 4.6f, at.Y - across.Y * 4.6f)) + 0.1f;
-            var mi = new MeshInstance3D { Mesh = Bridge(deck, i == 0), MaterialOverride = Mats.Props };
+            var mi = new MeshInstance3D { Mesh = Bridge(deck, i == 0, state == "ward"), MaterialOverride = Mats.Props };
+            mi.SetMeta("kind", state);
             AddChild(mi);
             _landmarks[id] = mi;
             mi.Position = new Vector3(at.X, 0, at.Y);
@@ -2628,6 +2660,107 @@ public partial class TownView(MapView map) : Node3D
                 mi.Position = gen.At(at, -0.05f);
                 mi.Rotation = new Vector3(0, Mathf.Atan2(at.X - Geo.Center.X, at.Y - Geo.Center.Y), 0);
             }
+    }
+
+    /// <summary>
+    /// A town on the sea (<see cref="Sim.Systems.Fleet"/>): a quay on the shore where its sea begins, the ships moored at it,
+    /// and those out on a run sailing away over the water, bobbing.
+    /// </summary>
+    private void Ships(Town town)
+    {
+        if (!Sim.Systems.Fleet.Coastal(town) || town.Terrain.FirstOrDefault(f => f.Kind.Boats) is not { } sea) return;
+        var gen = map.Gen;
+        double b = sea.Bearing * Math.PI / 180;
+        Vector2 Along(double days, double turn = 0) => Geo.FromDays(days * Math.Sin(b + turn), -days * Math.Cos(b + turn));
+        // The shore: the first water out along the sea's bearing.
+        var dir = new Vector2((float)Math.Sin(b), (float)-Math.Cos(b));
+        float shore = Geo.Clearing;
+        while (shore < Geo.Clearing + 200 && gen.HeightAt(Geo.Center.X + dir.X * shore, Geo.Center.Y + dir.Y * shore) > WorldGen.WaterLevel - 0.2f) shore += 0.5f;
+        Vector2 Off(float r, float side) => Geo.Center + dir * r + new Vector2(-dir.Y, dir.X) * side;
+        var quay = Off(shore + 1.5f, 0);
+        float face = Mathf.Atan2(dir.X, dir.Y);
+        if (Sim.Systems.Fleet.Harbour(town) != null && !_landmarks.ContainsKey("quay"))
+        {
+            var k = new MeshKit();
+            k.Box(new Vector3(0, -0.2f, 0), new Vector3(0.9f, 0.5f, 6f), new Color("8a8478"), new Color("6e685c"));
+            foreach (float z in new[] { -2f, 0f, 2f }) k.Box(new Vector3(0.5f, 0.1f, z), new Vector3(0.18f, 0.3f, 0.18f), Palette.DarkTimber);
+            var mi = new MeshInstance3D { Mesh = k.Build(), MaterialOverride = Mats.Props };
+            AddChild(mi);
+            _landmarks["quay"] = mi;
+            mi.Position = new Vector3(quay.X, WorldGen.WaterLevel + 0.25f, quay.Y);
+            mi.Rotation = new Vector3(0, face, 0);
+        }
+        var alive = new HashSet<string>();
+        float now = (float)Time.GetTicksMsec() / 1000f;
+        foreach (var s in town.Ships)
+        {
+            string id = $"ship:{s.Id}";
+            alive.Add(id);
+            if (!_landmarks.TryGetValue(id, out var mi))
+            {
+                mi = new MeshInstance3D { Mesh = ShipMesh(s.Kind), MaterialOverride = Mats.Props };
+                AddChild(mi);
+                _landmarks[id] = mi;
+            }
+            Vector2 at;
+            float yaw = face;
+            if (s.Out is { } v)
+            {
+                // Out and back again: furthest at the halfway day, drifting toward the port's side of the sea.
+                double u = Math.Clamp(1 - Math.Abs((town.Day - (v.BackDay - v.Days)) / Math.Max(1.0, v.Days) * 2 - 1), 0, 1);
+                double side = ((s.Id % 3) - 1) * 0.25;
+                float far = (float)Passage.DayRadius(sea.Outer) - 6;
+                at = Off(shore + 7 + (float)u * Mathf.Max(0, far - shore - 7), (float)side * 30 * (float)u);
+                yaw = face + (float)side;
+            }
+            // Moored alongside the quay, either side of it, out along its length.
+            else at = Off(shore + 1.2f + (s.Id / 2 % 3) * 2.2f, (s.Id % 2 == 0 ? -1 : 1) * (2.0f + (float)Fleet.Def(town, s).Hold / 40f));
+            mi.Position = new Vector3(at.X, Mathf.Max(WorldGen.WaterLevel, gen.HeightAt(at.X, at.Y)) + 0.05f * Mathf.Sin(now * 1.3f + s.Id), at.Y);
+            mi.Rotation = new Vector3(0.03f * Mathf.Sin(now * 0.9f + s.Id), yaw, 0);
+        }
+        foreach (var key in _landmarks.Keys.Where(k => k.StartsWith("ship:", StringComparison.Ordinal) && !alive.Contains(k)).ToList())
+        {
+            _landmarks[key].QueueFree();
+            _landmarks.Remove(key);
+        }
+    }
+
+    /// <summary>A fishing boat, a longship with its striped sail and shields, or a three-masted carrack.</summary>
+    private static ArrayMesh ShipMesh(string kind)
+    {
+        var k = new MeshKit();
+        var hull = new Color("6a4a2a");
+        var sail = new Color("e8dcc0");
+        switch (kind)
+        {
+            case "longship":
+                k.Box(new Vector3(0, -0.1f, 0), new Vector3(0.9f, 0.45f, 4.2f), hull, Palette.DarkTimber);
+                k.Box(new Vector3(0, 0.1f, 2.2f), new Vector3(0.25f, 0.8f, 0.3f), hull);
+                k.Box(new Vector3(0, 0.1f, -2.2f), new Vector3(0.25f, 0.6f, 0.3f), hull);
+                k.Box(new Vector3(0, 0.3f, 0), new Vector3(0.08f, 2.4f, 0.08f), Palette.DarkTimber);
+                k.Box(new Vector3(0, 1.4f, 0), new Vector3(1.8f, 1.1f, 0.05f), new Color("b8423a"), sail);
+                for (int i = 0; i < 6; i++)
+                    foreach (float x in new[] { -0.47f, 0.47f })
+                        k.Frustum(new Vector3(x, 0.15f, -1.5f + i * 0.6f), 0.18f, 0.18f, 0.04f, 6, i % 2 == 0 ? new Color("c8a040") : new Color("3a5a8a"));
+                break;
+            case "carrack":
+                k.Box(new Vector3(0, -0.1f, 0), new Vector3(1.6f, 0.9f, 5f), hull, Palette.DarkTimber);
+                k.Box(new Vector3(0, 0.6f, -2f), new Vector3(1.5f, 0.6f, 1.2f), hull);
+                k.Box(new Vector3(0, 0.5f, 2.1f), new Vector3(1.2f, 0.4f, 0.9f), hull);
+                foreach (var (z, h) in new[] { (-1.2f, 2.8f), (0.4f, 3.4f), (1.8f, 2.4f) })
+                {
+                    k.Box(new Vector3(0, 0.3f, z), new Vector3(0.1f, h, 0.1f), Palette.DarkTimber);
+                    k.Box(new Vector3(0, 0.3f + h * 0.55f, z), new Vector3(1.9f, h * 0.45f, 0.05f), sail);
+                }
+                break;
+            default:
+                k.Box(new Vector3(0, -0.05f, 0), new Vector3(0.5f, 0.25f, 1.6f), hull, Palette.DarkTimber);
+                k.Box(new Vector3(0, 0.05f, 0), new Vector3(0.45f, 0.04f, 0.15f), new Color("8a6a42"));
+                k.Box(new Vector3(0, 0.15f, 0.2f), new Vector3(0.05f, 1.1f, 0.05f), Palette.DarkTimber);
+                k.Box(new Vector3(0.25f, 0.7f, 0.2f), new Vector3(0.5f, 0.7f, 0.03f), sail);
+                break;
+        }
+        return k.Build();
     }
 
     /// <summary>What a strange place looks like: a well, grey dead stones, a jetty and the ferryman's boat, a dragon's ribs, a fairy ring, palms by a pool.</summary>
@@ -2787,7 +2920,7 @@ public partial class TownView(MapView map) : Node3D
     }
 
     /// <summary>A bridge over the river, its deck at <paramref name="deck"/>: the town's of timber on stone piers, the old ones all stone.</summary>
-    private static ArrayMesh Bridge(float deck, bool timber)
+    private static ArrayMesh Bridge(float deck, bool timber, bool ward = false)
     {
         var k = new MeshKit();
         var stone = new Color("8a8478");
@@ -2797,6 +2930,7 @@ public partial class TownView(MapView map) : Node3D
         foreach (float z in new[] { -2.4f, -0.8f, 0.8f, 2.4f }) k.Box(new Vector3(0, -1.4f, z), new Vector3(1.0f, deck + 1.25f, 0.5f), stone, stone);
         // Abutments down into each bank, so the deck meets the ground instead of floating over it.
         foreach (float z in new[] { -4.2f, 4.2f }) k.Box(new Vector3(0, -1.4f, z), new Vector3(1.3f, deck + 1.25f, 1.6f), stone, stone);
+        if (ward) BridgeHouses(k, deck);
         return k.Build();
     }
 

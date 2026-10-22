@@ -309,7 +309,9 @@ public static class Lofted
         var from = Pos(town);
         var to = regionId < 0 ? (0.0, 0.0) : Spot(town.Regions[regionId]);
         double dist = Math.Sqrt((to.Item1 - from.X) * (to.Item1 - from.X) + (to.Item2 - from.Y) * (to.Item2 - from.Y));
-        int days = Math.Max(1, (int)Math.Ceiling(dist * scope.Speed - 1e-9));
+        // The same winds as the town's airships (Sky.FlightDays): sailing with the season's wind is quicker.
+        double heading = (Math.Atan2(to.Item1 - from.X, -(to.Item2 - from.Y)) * 180 / Math.PI + 360) % 360;
+        int days = Sky.FlightDays(town, dist, scope.Speed, heading);
         town.Book(TreasuryAccount.GrandWorks, -scope.SailGold * days);
         st.FromX = from.X;
         st.FromY = from.Y;

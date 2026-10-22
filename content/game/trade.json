@@ -22,7 +22,7 @@
   "wagonLoad": 0.75,
   "wagonCost": [200, 450, 900],
   "sky": {
-    "_doc": "The sky dock's airship on trade runs (Systems/Skyship.cs). Any known people at minStanding or better will let it moor; no route needed. It flies the hold (hold + holdPerHundred per 100 people, at most holdMax) of one good the town can spare (above keepShare of its target) there and back in speed days per day of road plus turnaround, for fitOut + fitOutPerDay a day aloft. Cargo sells at sellPrice times base (wantedPrice if they want it), plus farPremium per ring out, leaned by up to spread per people and good; every glut units sold there lately halve the price, glutFade of it clearing a day. Home it brings their good the town is shortest of, bought at buyPrice while the market holds under bringBelow of target. storm by season: the chance storms hold it stormDays longer, once a run. ambush per whole flying host (passage.json fliers) near the far end, up to ambushMax; ambushLoss of the cargo is cut loose. The stand-in mayor sends a run at most every standInEvery days when it clears standInProfit.",
+    "_doc": "The sky dock's airship on trade runs (Systems/Skyship.cs). Any known people at minStanding or better will let it moor; no route needed. It flies the hold (hold + holdPerHundred per 100 people, at most holdMax) of one good the town can spare (above keepShare of its target) there and back in speed days per day of road plus turnaround, for fitOut + fitOutPerDay a day aloft. Cargo sells at sellPrice times base (wantedPrice if they want it), plus farPremium per ring out, leaned by up to spread per people and good; every glut units sold there lately halve the price, glutFade of it clearing a day. Home it brings their good the town is shortest of, bought at buyPrice while the market holds under bringBelow of target. storm by season: the chance storms hold it stormDays longer, once a run. ambush per whole flying host (passage.json fliers) near the far end, up to ambushMax; ambushLoss of the cargo is cut loose. At a people with a high tower (a mooring tower project in neighbours.json, or a cloud-ledge site) it turns round in towerTurnaround days, sells for towerPremium more and meets towerAmbush of the fliers. The stand-in mayor sends a run at most every standInEvery days when it clears standInProfit.",
     "minStanding": -10,
     "hold": 30,
     "holdPerHundred": 3,
@@ -30,6 +30,9 @@
     "minCargo": 6,
     "speed": 0.5,
     "turnaround": 1,
+    "towerTurnaround": 0,
+    "towerPremium": 0.15,
+    "towerAmbush": 0.5,
     "fitOut": 40,
     "fitOutPerDay": 8,
     "keepShare": 0.6,

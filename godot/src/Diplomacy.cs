@@ -1,6 +1,7 @@
 using CrownAndCompass.Sim;
 using CrownAndCompass.Sim.Systems;
 using Godot;
+using Sky = CrownAndCompass.Sim.Systems.Sky;
 
 namespace CrownAndCompass.Client;
 
@@ -170,6 +171,107 @@ public partial class Main
         }
     }
 
+    private bool _skyMarines = true;
+
+    /// <summary>The Sky Dock's airships (<see cref="Sky"/>): each one's hull, lift and job, and the flights it can take now.</summary>
+    private void SkyFleet(Pane p, Town t)
+    {
+        if (!t.SkyFleet.Granted || Sky.Dock(t) == null) return;
+        var r = Sky.Rules(t);
+        p.Heading("Sky fleet", "ui-airship");
+        var free = Sky.Marines(t).OrderByDescending(h => h.Hero!.Level).ThenBy(h => h.Id).ToList();
+        p.Buttons(($"{(_skyMarines ? "✓" : "○")} Marines aboard ({free.Count} free)", true, _skyMarines, () => { _skyMarines = !_skyMarines; _dirty = true; }));
+        foreach (var s in Sky.Ships(t))
+        {
+            var d = Fleet.Def(t, s);
+            int id = s.Id;
+            string state = s.Flight is { } f
+                ? $"{Ui.Img(f.Job == "strike" ? "ui-ballista" : f.Job == "scout" ? "ui-eye" : "defence", 12)} {f.Job} · back in {Ui.Days(Math.Max(0, f.BackDay - t.Day))}"
+                : s.DownedRegion is int dr ? Ui.C(Ui.Bad, $"down in {Ui.Esc(t.Regions[dr].Name)}{(s.SalvageDay is int sd ? $" · riggers in {Ui.Days(Math.Max(0, sd - t.Day))}" : "")}")
+                : Skyship.Flying(t, s.Id) ? "on a merchant run" : "at the mast";
+            int won = s.Won, fights = s.Fights;
+            var acts = new List<(string, bool, bool, Action)>();
+            if (s.DownedRegion != null)
+                acts.Add(($"Salvage {Js.Str(r.Salvage)}g", s.SalvageDay == null && t.Treasury >= r.Salvage, true, () => Act(() => _sim.SalvageShip(id))));
+            else if (Sky.Moored(t, s))
+            {
+                if (s.Lift < d.Lift) acts.Add(($"Charge {Js.Str(Sky.ChargeCost(t, s))}g", t.Treasury >= Sky.ChargeCost(t, s), false, () => Act(() => _sim.ChargeShip(id))));
+                if (s.Hull < d.Hull) acts.Add(($"Patch {Js.Str(Fleet.RepairCost(t, s))}g", t.Treasury >= Fleet.RepairCost(t, s), false, () => Act(() => _sim.RepairShip(id))));
+            }
+            p.Row($"[font_size=13][b]{Ui.Esc(Ui.Cap(s.Name))}[/b] · {Ui.Esc(d.Name)}[/font_size]\n" +
+                  $"[font_size=12]{Ui.Chips(Ui.Chip("defence", $"{Js.Str(Js.Round(s.Hull))}/{Js.Str(d.Hull)}", s.Hull < d.Hull * 0.5 ? Ui.Bad : null, "Hull"),
+                      Ui.Chip("ui-lift", $"{s.Lift}/{d.Lift}", s.Lift < d.Lift * 0.5 ? Ui.Gold : null, "Lift-crystal: a day aloft each"),
+                      Ui.Chip("ui-ballista", $"{d.Guns}", null, "Ballistae"),
+                      Ui.Chip("unit-sky-marines", $"{d.Marines}", null, "Marines it carries"),
+                      fights > 0 ? Ui.Chip("ui-skull", $"{won}/{fights}", won * 2 >= fights ? Ui.Good : Ui.Bad, "Fights won") : "")}[/font_size]\n" +
+                  Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(s.Captain)} ({Ui.Esc(Fleet.ProwessName(t, s))}) · {state}[/font_size]"),
+                [.. acts]);
+            if (!Sky.Moored(t, s) || Skyship.Flying(t, s.Id)) continue;
+            var marines = _skyMarines ? free.Take(d.Marines).Select(h => h.Id).ToList() : [];
+            var jobs = new List<(string, bool, bool, Action)>();
+            jobs.Add(($"Patrol · {Ui.Days(r.PatrolDays)}", Sky.Refuse(t, s, "patrol", -1, "", marines) == null, false, () => Act(() => _sim.FlyShip(id, "patrol", marines: marines))));
+            // Scout the nearest land not yet charted; strike the nearest lair the town has heard of.
+            var scout = t.Regions.Where(x => x.Ring > 0 && !x.Known && Sky.Refuse(t, s, "scout", x.Id, "", marines) == null).OrderBy(x => x.Days).ThenBy(x => x.Id).FirstOrDefault();
+            if (scout != null)
+            {
+                int rid = scout.Id;
+                jobs.Add(($"Scout {scout.Name} · {Ui.Days(Sky.Days(t, s, scout))}", true, false, () => Act(() => _sim.FlyShip(id, "scout", rid, marines: marines))));
+            }
+            var lair = t.Sites.Where(x => !x.Cleared && x.Known != SiteKnowledge.Unheard && x.RegionId is int rg && Sky.Refuse(t, s, "strike", rg, x.Def.Id, marines) == null)
+                .OrderBy(x => t.Regions[x.RegionId!.Value].Days).ThenBy(x => x.Def.Id, StringComparer.Ordinal).FirstOrDefault();
+            if (lair != null)
+            {
+                int rg = lair.RegionId!.Value;
+                string sid = lair.Def.Id;
+                jobs.Add(($"Strike {lair.Def.Name} · {Ui.Days(Sky.Days(t, s, t.Regions[rg]))}", true, true, () => Act(() => _sim.FlyShip(id, "strike", rg, sid, marines))));
+            }
+            p.Buttons([.. jobs]);
+        }
+        var last = t.SkyFleet.Battles.LastOrDefault();
+        if (last != null)
+            p.Text(Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Img("ui-skull", 12)} Last fight: {Ui.Esc(r.Foes.FirstOrDefault(k => k.Id == last.Foe)?.Name ?? last.Foe)} · {last.Outcome}[/font_size]"));
+        // The kinds the charter allows now, and the next one up to aim for.
+        var kinds = r.Ships.Where((d, i) => i == 0 || r.Ships[i - 1].Tier == "" || City.Reached(t, r.Ships[i - 1].Tier)).ToList();
+        p.Buttons(kinds.Select(d =>
+        {
+            string kind = d.Id;
+            return ($"+ {d.Name} {Js.Str(Fleet.Cost(t, d))}g", Sky.BuildBlocked(t, kind) == null, false, (Action)(() => Act(() => _sim.BuildShip(kind))));
+        }).ToArray());
+    }
+
+    /// <summary>The harbour's ships: each one's state, its best run, and new hulls to lay down (<see cref="Fleet"/>).</summary>
+    private void FleetRuns(Pane p, Town t)
+    {
+        if (!Fleet.Coastal(t) || Fleet.Harbour(t) == null) return;
+        p.Heading("Fleet");
+        var ports = Fleet.Ports(t).ToList();
+        foreach (var s in Fleet.AtSea(t))
+        {
+            var d = Fleet.Def(t, s);
+            int id = s.Id;
+            string state = s.Out is { } v
+                ? $"at sea to {Ui.Esc(t.Settlements[v.SettlementId].Name)} · back in {Ui.Days(Math.Max(0, v.BackDay - t.Day))}"
+                : $"moored · fishing {Ui.Img("food", 13)}";
+            p.Row($"[font_size=13][b]{Ui.Esc(s.Name)}[/b] · {Ui.Esc(d.Name)}[/font_size]\n" +
+                  Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(s.Captain)} ({Ui.Esc(Fleet.ProwessName(t, s))}) · {Ui.Img("defence", 12)} hull {Js.Str(Js.Round(s.Hull))}/{Js.Str(d.Hull)} · {state}[/font_size]"),
+                ($"Patch {Js.Str(Fleet.RepairCost(t, s))}g", s.Out == null && s.Hull < d.Hull && t.Treasury >= Fleet.RepairCost(t, s), false, () => Act(() => _sim.RepairShip(id))));
+            if (s.Out != null) continue;
+            // Its best run now: the port and cargo that clear the most a day.
+            var best = ports.SelectMany(port => Goods.All.Where(g => Fleet.Refuse(t, s, port, g) == null).Select(g => (P: port, G: g, Gain: Fleet.Profit(t, s, port, g))))
+                .OrderByDescending(x => x.Gain / Fleet.Days(t, s, x.P)).ThenBy(x => x.P.Id).ThenBy(x => x.G).FirstOrDefault();
+            if (best.P == null) continue;
+            int pid = best.P.Id;
+            var cargo = best.G;
+            p.Row(Ui.C(Ui.Ink2, $"[font_size=12]• {Ui.Esc(best.P.Name)} · {Ui.Days(Fleet.Days(t, s, best.P))} · {cargo.ToString().ToLowerInvariant()} · {Ui.Img("gold", 12)} ~{Js.Str(Js.Round(best.Gain))}[/font_size]"),
+                ("Sail", true, best.Gain > 0, () => Act(() => _sim.SendShip(id, pid, cargo))));
+        }
+        p.Buttons(t.Content.Sea.Ships.Select(d =>
+        {
+            string kind = d.Id;
+            return ($"+ {d.Name} {Js.Str(Fleet.Cost(t, d))}g", Fleet.BuildBlocked(t, kind) == null, false, (Action)(() => Act(() => _sim.BuildShip(kind))));
+        }).ToArray());
+    }
+
     private void RenderDiplomacy()
     {
         var p = _panes[Tab.Diplomacy];
@@ -206,6 +308,8 @@ public partial class Main
         }
 
         SkyRuns(p, t);
+        SkyFleet(p, t);
+        FleetRuns(p, t);
 
         p.Heading("Peoples of the wilds");
         if (known.Count == 0) p.Note("No peoples met yet · their riders come as word spreads.");

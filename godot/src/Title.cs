@@ -8,8 +8,9 @@ namespace CrownAndCompass.Client;
 /// <summary>
 /// The main menu the game opens on: a town turning slowly behind the title, and Continue, Start, Start
 /// with tutorial, Load, History, Glossary, Settings and Quit. Starting a town first asks who will tell its story: the storytellers of
-/// content/game/storytellers.json, the game's difficulty; then shows the mayor's sheet, rolled, to reroll
-/// and give a background. The game menu (Esc) can bring it back.
+/// content/game/storytellers.json, the game's difficulty; then where to found it, from the sites the new world offers
+/// (content/game/founding.json); then shows the mayor's sheet, rolled, to reroll and give a background. The game menu
+/// (Esc) can bring it back.
 /// </summary>
 public partial class Main
 {
@@ -18,9 +19,13 @@ public partial class Main
     private Label _continueAbout = null!;
     private readonly List<Control> _hiddenByTitle = [];
     private bool _menuLoadOnly;
-    private VBoxContainer _titleMenu = null!, _tellers = null!, _mayorSetup = null!;
+    private VBoxContainer _titleMenu = null!, _tellers = null!, _sites = null!, _mayorSetup = null!;
     private bool _tellTutorial;
     private string? _tellerPick;
+
+    /// <summary>The site picked on New game, and the seed of the world it was picked in.</summary>
+    private string? _foundingPick;
+    private int? _seedPick;
 
     /// <summary>The mayor rolled for the new town: rerolled with a new seed, the background picked on it.</summary>
     private MayorRoll _mayorRoll = new();
@@ -93,7 +98,7 @@ public partial class Main
         foreach (var st in rules.Storytellers)
         {
             string id = st.Id;
-            TitleButton(_tellers, $"{st.Title}  ·  {st.Name}", st.Text, primary: id == rules.Default, () => PickMayor(id));
+            TitleButton(_tellers, $"{st.Title}  ·  {st.Name}", st.Text, primary: id == rules.Default, () => PickSite(id));
             var about = Ui.Label($"{st.Character} {st.Text}", Ui.Ink2, Ui.Body, 13);
             about.AutowrapMode = TextServer.AutowrapMode.WordSmart;
             about.CustomMinimumSize = new Vector2(520, 0);
@@ -103,19 +108,54 @@ public partial class Main
         BuildCabinet(_tellers);
         TitleButton(_tellers, "Back", "Back to the main menu", primary: false, () => PickStoryteller(null));
 
+        // Where to found it: filled for the new world's seed when a storyteller is picked.
+        _sites = new VBoxContainer { Alignment = BoxContainer.AlignmentMode.Center, Visible = false };
+        _sites.AddThemeConstantOverride("separation", 6);
+        stack.AddChild(_sites);
+
         // Then the mayor: a rolled sheet to reroll and a background to pick, before the charter is signed.
         _mayorSetup = new VBoxContainer { Alignment = BoxContainer.AlignmentMode.Center, Visible = false };
         _mayorSetup.AddThemeConstantOverride("separation", 8);
         stack.AddChild(_mayorSetup);
     }
 
-    /// <summary>After the storyteller, the mayor: a fresh roll, kept until Begin or Back.</summary>
+    /// <summary>
+    /// Where to found the town: the sites this seed's world offers, the river ford first. The ones not chosen stay on the
+    /// map, held by neighbours or foes.
+    /// </summary>
+    private void PickSite(string storyteller, int? seed = null)
+    {
+        _tellerPick = storyteller;
+        int s = seed ?? _opts.Seed ?? (int)(GD.Randi() % 9999) + 1;
+        foreach (var c in _sites.GetChildren()) c.QueueFree();
+        _sites.AddChild(Ui.Label("Where do you found your town?", Ui.Ink, Ui.Display, 30));
+        _sites.AddChild(Ui.Label("The others stay on the map, held by neighbours or foes.", Ui.Ink2, Ui.Body, 13));
+        _sites.AddChild(new Control { CustomMinimumSize = new Vector2(0, 8) });
+        var preview = new Simulation(new SimulationOptions { Seed = s }).Town;
+        foreach (var site in Sim.Systems.Founding.Offered(preview))
+        {
+            string id = site.Def.Id;
+            // The name on the button, the story in its tooltip, and what it does as icon chips beneath.
+            TitleButton(_sites, site.Def.Name, $"{site.Def.Blurb}\n{Sim.Systems.Founding.Summary(site.Def)}", primary: id == preview.Content.Founding.Default, () => { _foundingPick = id; _seedPick = s; PickMayor(storyteller); });
+            var chips = Sim.Systems.Founding.Effects(site.Def);
+            var row = Ui.Rich(chips.Count == 0 ? "[color=#b8a98a]no bonus, no drawback[/color]" : string.Join("   ", chips.Select(c => $"{Ui.Img(c.Icon, 16)} {c.Text}")));
+            row.FitContent = true;
+            row.CustomMinimumSize = new Vector2(520, 0);
+            _sites.AddChild(row);
+            _sites.AddChild(new Control { CustomMinimumSize = new Vector2(0, 2) });
+        }
+        TitleButton(_sites, "Back", "Back to the storytellers", primary: false, () => PickStoryteller(_tellTutorial));
+        _titleMenu.Visible = _tellers.Visible = _mayorSetup.Visible = false;
+        _sites.Visible = true;
+    }
+
+    /// <summary>After the site, the mayor: a fresh roll, kept until Begin or Back.</summary>
     private void PickMayor(string storyteller)
     {
         _tellerPick = storyteller;
         _hardcore = _opts.Hardcore;
         _mayorRoll = Stories.RollMayor(Sim.Content.Default(), (int)(GD.Randi() & 0x7fffffff));
-        _tellers.Visible = false;
+        _tellers.Visible = _sites.Visible = false;
         _titleMenu.Visible = false;
         _mayorSetup.Visible = true;
         RenderMayorSetup();
@@ -184,8 +224,8 @@ public partial class Main
         hard.Toggled += on => _hardcore = on;
         col.AddChild(hard);
         col.AddChild(new Control { CustomMinimumSize = new Vector2(0, 4) });
-        TitleButton(col, "Begin", "Sign the charter and start the town", primary: true, () => StartTown(_tellTutorial, storyteller: _tellerPick, mayor: _mayorRoll, hardcore: _hardcore));
-        TitleButton(col, "Back", "Back to the storytellers", primary: false, () => PickStoryteller(_tellTutorial));
+        TitleButton(col, "Begin", "Sign the charter and start the town", primary: true, () => StartTown(_tellTutorial, _seedPick, storyteller: _tellerPick, founding: _foundingPick, mayor: _mayorRoll, hardcore: _hardcore));
+        TitleButton(col, "Back", "Back to the sites", primary: false, () => PickSite(_tellerPick ?? "rising", _seedPick));
     }
 
     /// <summary>Show the storytellers to start a town under (with or without the tutorial), or with null go back to the menu.</summary>
@@ -194,7 +234,7 @@ public partial class Main
         _tellTutorial = tutorial == true;
         _titleMenu.Visible = tutorial == null;
         _tellers.Visible = tutorial != null;
-        _mayorSetup.Visible = false;
+        _sites.Visible = _mayorSetup.Visible = false;
         if (tutorial != null) FillCabinet();
     }
 
@@ -248,9 +288,9 @@ public partial class Main
         SetSpeed(0);
     }
 
-    private void StartTown(bool tutorial, int? seed = null, bool autoplay = false, string? storyteller = null, MayorRoll? mayor = null, bool hardcore = false)
+    private void StartTown(bool tutorial, int? seed = null, bool autoplay = false, string? storyteller = null, string? founding = null, MayorRoll? mayor = null, bool hardcore = false)
     {
-        NewTown(seed ?? (int)(GD.Randi() % 9999) + 1, autoplay, storyteller, mayor, hardcore);
+        NewTown(seed ?? (int)(GD.Randi() % 9999) + 1, autoplay, storyteller, founding, mayor, hardcore);
         // Begin at first light rather than in the dark of the first midnight.
         for (int i = 0; i < 7; i++) _sim.Step();
         HideTitle();

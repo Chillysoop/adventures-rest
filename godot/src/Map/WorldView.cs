@@ -17,13 +17,21 @@ public static class Mats
     public static readonly ShaderMaterial Aura = Make("aura");
     public static readonly ShaderMaterial Effects = Make("fx");
 
+    /// <summary>Mist banks and falling water (<see cref="TownView"/> scenery): soft sheets, one shader, two modes.</summary>
+    public static readonly ShaderMaterial Mist = Make("veil");
+    public static readonly ShaderMaterial Falls = Make("veil");
+
     /// <summary>Every creature, one mesh per kind (<see cref="Beasts"/>).</summary>
     public static readonly ShaderMaterial Beast = Make("beast");
-    public static readonly ShaderMaterial[] All = [Terrain, Water, Props, People, Foliage, Hero, Aura, Effects, Beast];
+    public static readonly ShaderMaterial[] All = [Terrain, Water, Props, People, Foliage, Hero, Aura, Effects, Mist, Falls, Beast];
 
     private static ShaderMaterial Make(string name) => new() { Shader = GD.Load<Shader>($"res://assets/shaders/{name}.gdshader") };
 
-    static Mats() => People.SetShaderParameter("hide_in_strategic", 1.0);
+    static Mats()
+    {
+        People.SetShaderParameter("hide_in_strategic", 1.0);
+        Falls.SetShaderParameter("mode", 1.0);
+    }
 
     public static void SetAll(string param, Variant v)
     {
@@ -112,6 +120,58 @@ public partial class WorldView : Node3D
                 BuildScatter(cx, cy);
             }
         BuildCliffs();
+        BuildSiteCliff();
+    }
+
+    /// <summary>
+    /// Rock faces where the town's founding site drops away (<see cref="Sim.Systems.Founding"/>): round a crag, a plateau or a
+    /// ledge, wherever the ground falls steeply out from the town, and none down a ramp or a gentle slope.
+    /// </summary>
+    /// <summary>A stretch of the founding site's cliff: its top and foot on the map, the way out, and how far it drops.</summary>
+    public readonly record struct Face(Vector2 Top, Vector2 Foot, Vector2 Dir, float High);
+
+    /// <summary>The founding site's cliff faces, found once (<see cref="BuildSiteCliff"/>); waterfalls and lift baskets go on them.</summary>
+    public List<Face> SiteFaces { get; } = [];
+
+    private void BuildSiteCliff()
+    {
+        SiteFaces.Clear();
+        if (Gen.Town.Founding == null) return;
+        var kit = new MeshKit();
+        Color[] stones = [new("8c8172"), new("a39785"), new("74695d"), new("968a77")];
+        float from = Geo.Clearing - 6, to = Geo.Clearing + 60;
+        int n = (int)(Mathf.Tau * (Geo.Clearing + 14) / 0.9f);
+        for (int k = 0; k < n; k++)
+        {
+            float a = k * Mathf.Tau / n;
+            var dir = new Vector2(Mathf.Cos(a), Mathf.Sin(a));
+            // The steepest fall along this line out from the town.
+            float best = 0, at = 0;
+            for (float r = from; r < to; r += 1)
+            {
+                var p = Geo.Center + dir * r;
+                float fall = Gen.HeightAt(p.X, p.Y) - Gen.HeightAt(p.X + dir.X * 3, p.Y + dir.Y * 3);
+                if (fall > best)
+                {
+                    best = fall;
+                    at = r;
+                }
+            }
+            if (best < 2.5f) continue;
+            var top = Geo.Center + dir * at;
+            var foot = Geo.Center + dir * (at + 3);
+            float baseY = Gen.HeightAt(foot.X, foot.Y) - 0.3f, high = Gen.HeightAt(top.X, top.Y) - baseY;
+            SiteFaces.Add(new Face(top, foot, dir, high));
+            var mid = Geo.Center + dir * (at + 1.6f);
+            int seed = 9001 + k;
+            var col = stones[(int)(Geo.Hash(seed * 7 + 2) * stones.Length) % stones.Length];
+            float w = 0.6f + Geo.Hash(seed * 7 + 1) * 0.5f;
+            kit.Blob(new Vector3(mid.X, baseY + high * 0.3f, mid.Y), new Vector3(w * 1.2f, high * 0.36f, w), col, 0.3f, seed, col.Darkened(0.2f));
+            var up = mid - dir * 0.5f;
+            kit.Blob(new Vector3(up.X, baseY + high * 0.7f, up.Y), new Vector3(w, high * 0.27f, w * 0.85f), col.Lightened(0.08f), 0.3f, seed + 1, col.Darkened(0.15f));
+        }
+        if (kit.Triangles == 0) return;
+        AddChild(new MeshInstance3D { Mesh = kit.Build(), MaterialOverride = Mats.Props });
     }
 
     /// <summary>

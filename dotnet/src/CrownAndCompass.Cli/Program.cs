@@ -5,6 +5,7 @@
 //        [--legends file.json]   (foes and heroes of earlier runs may come back; this run's are added to the file)
 //        [--summary]   (print only one JSON line on how the campaign stands, for scripts/gate.ts)
 //        [--storyteller steady|rising|chaotic]   (who tells the campaign: the difficulty; rising is the default)
+//        [--founding id]   (where the town is founded: a founding.json id; the river ford is the default)
 //        [--endless]   (a win closes an era; only a fall ends the campaign)   [--boons id:rank,...]   (found the town with boons)
 //        [--roads]   (print every road to victory's terms each month)   [--claim]   (claim the first road whose terms hold, as a player might)   [--roads-off a,b]   (close these roads; "all" for every one but slay)
 // Prints exactly what `npm run sim` prints for the same arguments.
@@ -27,6 +28,7 @@ string? legends = null;
 bool summary = false;
 bool handTaxes = false;
 string storyteller = "rising";
+string founding = "";
 bool hardcore = false;
 bool roads = false;
 bool claim = false;
@@ -73,6 +75,14 @@ for (int i = 0; i < args.Length; i++)
         case "--summary":
             summary = true;
             break;
+        case "--founding":
+            founding = i + 1 < args.Length ? args[++i] : founding;
+            if (Founding.Kind(Content.Default(), founding) == null)
+            {
+                Console.Error.WriteLine($"Unknown founding {founding}: one of {string.Join(", ", Content.Default().Founding.Kinds.Select(k => k.Id))}");
+                return 1;
+            }
+            break;
         case "--hardcore":
             hardcore = true;
             break;
@@ -110,7 +120,7 @@ for (int i = 0; i < args.Length; i++)
 }
 
 var past = legends != null && File.Exists(legends) ? Legends.Read(File.ReadAllText(legends)) : [];
-var sim = load != null ? SaveGame.ReadFile(load, out _) : new Simulation(new SimulationOptions { Seed = seed, Legends = past, AutoCouncil = !handTaxes, Storyteller = storyteller, RoadsOff = roadsOff, Endless = endless, Boons = boons, Hardcore = hardcore });
+var sim = load != null ? SaveGame.ReadFile(load, out _) : new Simulation(new SimulationOptions { Seed = seed, Legends = past, AutoCouncil = !handTaxes, Storyteller = storyteller, RoadsOff = roadsOff, Endless = endless, Boons = boons, Founding = founding, Hardcore = hardcore });
 var town = sim.Town;
 seed = town.Seed;
 var minImportance = all ? Importance.Routine : Importance.Notable;

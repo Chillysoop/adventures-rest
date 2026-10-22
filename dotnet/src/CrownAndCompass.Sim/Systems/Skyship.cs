@@ -53,6 +53,11 @@ public sealed record SkyRules
     public double AmbushMax { get; init; } = 0.35;
     public double AmbushLoss { get; init; } = 0.5;
 
+    /// <summary>At a high tower (<see cref="Skyship.Moored"/>): days moored there, the extra the cargo fetches, and the share of the fliers' chance left.</summary>
+    public int TowerTurnaround { get; init; }
+    public double TowerPremium { get; init; } = 0.15;
+    public double TowerAmbush { get; init; } = 0.5;
+
     /// <summary>The stand-in mayor sends a run at most this often, when it clears StandInProfit gold.</summary>
     public int StandInEvery { get; init; } = 12;
     public double StandInProfit { get; init; } = 60;
@@ -70,6 +75,9 @@ public sealed class SkyRun
 
     /// <summary>Storms have already held it back once.</summary>
     public bool Stormed { get; set; }
+
+    /// <summary>The airship flying it (<see cref="Sky"/>), or -1 for a run from before the town had a fleet.</summary>
+    public int ShipId { get; init; } = -1;
 }
 
 /// <summary>How much of a good the airship has sold into a people's market lately: the more, the less it fetches there.</summary>
@@ -111,11 +119,22 @@ public static class Skyship
 
     public static bool Away(Town town) => State(town).Out != null;
 
+    /// <summary>Whether this airship is the one out on the merchant run.</summary>
+    public static bool Flying(Town town, int shipId) => State(town).Out?.ShipId == shipId;
+
     public static double Hold(Town town) => Math.Min(Rules(town).HoldMax, Rules(town).Hold + Rules(town).HoldPerHundred * town.Population / 100.0);
 
     /// <summary>Days there and back by air: half the road and none of its mud or snow.</summary>
     public static int FlightDays(Town town, Settlement s) =>
-        Math.Max(2, 2 * (int)Math.Ceiling(town.Regions[s.RegionId].Days * Rules(town).Speed - 1e-9) + Rules(town).Turnaround);
+        Math.Max(2, 2 * (int)Math.Ceiling(town.Regions[s.RegionId].Days * Rules(town).Speed - 1e-9) + (Moored(town, s) ? Rules(town).TowerTurnaround : Rules(town).Turnaround));
+
+    /// <summary>
+    /// A people with a high tower the airship moors at (Q41): one the town paid for (a mooring tower project), or a town on a
+    /// ledge above the clouds that was there first (<see cref="Founding"/>). Long runs to them pay: quicker turnaround, a
+    /// better price, and the tower's guns keep fliers off.
+    /// </summary>
+    public static bool Moored(Town town, Settlement s) =>
+        s.Projects.Any(p => town.Content.Neighbours.Project(p)?.Mooring == true) || town.Regions[s.RegionId].Site == "cloud-ledge";
 
     public static double FitOut(Town town, Settlement s) => Rules(town).FitOut + Rules(town).FitOutPerDay * FlightDays(town, s);
 
@@ -136,7 +155,7 @@ public static class Skyship
     {
         var r = Rules(town);
         double p = town.Market.BasePrice(g) * (s.Kin.Trade.Wants.Contains(g) ? r.WantedPrice : r.SellPrice)
-            * (1 + r.FarPremium * town.Regions[s.RegionId].Ring) * Lean(town, s, g);
+            * (1 + r.FarPremium * town.Regions[s.RegionId].Ring + (Moored(town, s) ? r.TowerPremium : 0)) * Lean(town, s, g);
         return p / (1 + (GlutOf(town, s, g)?.Qty ?? 0) / r.Glut);
     }
 
@@ -147,6 +166,17 @@ public static class Skyship
         double g0 = GlutOf(town, s, g)?.Qty ?? 0;
         double first = Price(town, s, g) * (1 + g0 / r.Glut);
         return qty <= 0 ? 0 : first * r.Glut * Math.Log((r.Glut + g0 + qty) / (r.Glut + g0));
+    }
+
+    /// <summary>Sell a cargo into a people's market (the airship's, or a ship's, <see cref="Fleet"/>): the gold booked, and the glut it leaves.</summary>
+    public static double Sell(Town town, Settlement s, Good g, double qty)
+    {
+        double earned = Quote(town, s, g, qty);
+        var glut = GlutOf(town, s, g);
+        if (glut == null) State(town).Gluts.Add(glut = new SkyGlut { SettlementId = s.Id, Good = g });
+        glut.Qty += qty;
+        if (earned > 0) town.Book(TreasuryAccount.Trade, earned);
+        return earned;
     }
 
     /// <summary>What they sell that the town is shortest of, for the trip home, and what it costs a unit there.</summary>
@@ -193,7 +223,9 @@ public static class Skyship
         st.Spent += cost;
         town.Market.Seed(cargo, -qty);
         int days = FlightDays(town, s);
-        st.Out = new SkyRun { Id = st.Runs + 1, SettlementId = s.Id, Cargo = cargo, Qty = qty, SetOutTick = town.Tick, BackDay = town.Day + days };
+        // The merchant run takes the best-gunned airship at the mast that isn't wanted elsewhere.
+        int ship = Sky.Ships(town).Where(x => Sky.Moored(town, x) && x.Lift >= 2).OrderByDescending(x => Fleet.Def(town, x).Hold).ThenBy(x => x.Id).FirstOrDefault()?.Id ?? -1;
+        st.Out = new SkyRun { Id = st.Runs + 1, SettlementId = s.Id, Cargo = cargo, Qty = qty, SetOutTick = town.Tick, BackDay = town.Day + days, ShipId = ship };
         town.Log(LedgerCategory.Town, Importance.Notable,
             $"{Cap(Name(town))} casts off from the Sky Dock with {Js.Str(Js.Round(qty))} {Lower(cargo)} in the hold, bound over everything for {s.Name} ({Js.Str(cost)} gold to fit out). It should be home in {days} days.");
         return st.Out;
@@ -243,11 +275,7 @@ public static class Skyship
             town.Log(LedgerCategory.Town, Importance.Notable, st.LastLine);
             return;
         }
-        double earned = Quote(town, s, run.Cargo, qty);
-        var glut = GlutOf(town, s, run.Cargo);
-        if (glut == null) st.Gluts.Add(glut = new SkyGlut { SettlementId = s.Id, Good = run.Cargo });
-        glut.Qty += qty;
-        if (earned > 0) town.Book(TreasuryAccount.Trade, earned);
+        double earned = Sell(town, s, run.Cargo, qty);
         st.Earned += earned;
         string brought = "";
         if (Bring(town, s, run.Cargo) is { } bring && bring.Price > 0)
@@ -276,6 +304,9 @@ public static class Skyship
         return Fliers(town, region).OrderByDescending(m => Passage.Fliers(town, m.Kind)).ThenByDescending(m => m.Power).ThenBy(m => m.Id).FirstOrDefault();
     }
 
+    /// <summary>Flying hosts living near a region (<see cref="Sky"/> meets them in the air).</summary>
+    public static IEnumerable<Menace> FliersNear(Town town, Region region) => Fliers(town, region);
+
     private static IEnumerable<Menace> Fliers(Town town, Region region) =>
         town.Saga.Menaces.Where(m => m.Alive && Passage.Fliers(town, m.Kind) > 0 && Quests.Site(town, m.SeatId) is { RegionId: int rid } && rid >= 0 && rid < town.Regions.Count
             && Math.Abs(town.Regions[rid].Ring - region.Ring) <= 1 && Trade.Near(town.Regions[rid], region));
@@ -284,7 +315,7 @@ public static class Skyship
     public static double AmbushChance(Town town, Settlement s)
     {
         var r = Rules(town);
-        return Math.Min(r.AmbushMax, r.Ambush * Js.Sum(Fliers(town, town.Regions[s.RegionId]), m => Passage.Fliers(town, m.Kind)));
+        return Math.Min(r.AmbushMax, r.Ambush * Js.Sum(Fliers(town, town.Regions[s.RegionId]), m => Passage.Fliers(town, m.Kind))) * (Moored(town, s) ? r.TowerAmbush : 1);
     }
 
     /// <summary>The stand-in mayor flies the town's richest surplus to whoever pays best for it, now and then, if it clears a profit.</summary>

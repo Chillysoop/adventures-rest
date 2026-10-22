@@ -83,6 +83,12 @@ public partial class MapView : Control
     /// <summary>A stroke of the wilds brush ended: its kind, its cells, and whether it rubbed out.</summary>
     public event Action<string, List<(int X, int Y)>, bool>? WildsPainted;
     public bool Strategic { get; private set; }
+
+    /// <summary>The point of the map the camera looks at.</summary>
+    public Vector2 Target => _target;
+
+    /// <summary>The land under the town and the wilds (<see cref="WorldView"/>).</summary>
+    public WorldView Lands => _world;
     private float _strategic;
 
     private SubViewportContainer _box = null!;
@@ -115,7 +121,6 @@ public partial class MapView : Control
 
     public Camera3D Camera => _camera;
     public float Distance => _dist;
-    public Vector2 Target => _target;
     public AgentPositions Agents => _crowd.People;
     public Crowd Crowd => _crowd;
 
@@ -325,6 +330,8 @@ public partial class MapView : Control
         }
         _decor.Refresh();
         _town.Sky(dt);
+        _town.SkyFleet(dt);
+        _town.Weather(dt);
         _town.Fliers(dt);
         _crowd.Advance(dt);
         _lurkers.Advance();

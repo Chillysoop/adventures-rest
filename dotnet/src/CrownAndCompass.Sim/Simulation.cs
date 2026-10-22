@@ -63,6 +63,9 @@ public sealed record SimulationOptions
     /// <summary>Who tells the campaign: "steady", "rising" (the default) or "chaotic" (content/game/storytellers.json).</summary>
     public string Storyteller { get; init; } = "rising";
 
+    /// <summary>Where the town is founded: a founding.json id from <see cref="Systems.Founding.Offered"/>; "" for the river ford.</summary>
+    public string Founding { get; init; } = "";
+
     /// <summary>Foes and heroes from the player's earlier campaigns, who may come back (<see cref="Systems.Legends"/>).</summary>
     public IReadOnlyList<Legend> Legends { get; init; } = [];
 
@@ -97,6 +100,7 @@ public sealed class Simulation
         Options = options ?? new SimulationOptions();
         Town = new Town(content ?? Content.Default(), Options.Seed);
         Town.Storyteller = Systems.Storyteller.Def(Town.Content, Options.Storyteller)?.Id ?? Town.Content.Storytellers.Default;
+        Town.Founding = Systems.Founding.Kind(Town.Content, Options.Founding) is { } site && site.Id != Town.Content.Founding.Default ? site.Id : null;
         Town.Saga.Enabled = Options.Saga && Options.Enemy;
         Town.Saga.Endless.On = Options.Endless;
         Town.Saga.Legends.AddRange(Options.Legends.Where(l => l.Seed != Options.Seed));
@@ -352,6 +356,24 @@ public sealed class Simulation
 
     /// <summary>Send the sky dock's airship on a trade run: cargo out to a settlement's market, gold and their goods home.</summary>
     public bool SendSkyship(int settlementId, Good cargo) => Skyship.Send(Town, settlementId, cargo) != null;
+
+    /// <summary>Build a ship at the harbour: a fishing boat, a longship or a carrack (sea.json).</summary>
+    public bool BuildShip(string kind) => Fleet.Build(Town, kind) != null;
+
+    /// <summary>Send a ship on a trade run to a port along the coast with a cargo.</summary>
+    public bool SendShip(int shipId, int settlementId, Good cargo) => Fleet.Send(Town, shipId, settlementId, cargo);
+
+    /// <summary>Patch a ship's hull at the harbour, or an airship's at the Sky Dock.</summary>
+    public bool RepairShip(int shipId) => Fleet.Repair(Town, shipId);
+
+    /// <summary>Fly an airship on a job: "patrol" over the town, "scout" a region, or "strike" a lair there, with heroes aboard as marines.</summary>
+    public bool FlyShip(int shipId, string job, int regionId = -1, string siteId = "", IReadOnlyList<int>? marines = null) => Sky.Send(Town, shipId, job, regionId, siteId, marines);
+
+    /// <summary>Refill an airship's lift-crystal at the Sky Dock.</summary>
+    public bool ChargeShip(int shipId) => Sky.Charge(Town, shipId);
+
+    /// <summary>Send riggers with fresh crystal to an airship that came down in the wilds.</summary>
+    public bool SalvageShip(int shipId) => Sky.Salvage(Town, shipId);
 
     /// <summary>Raise a memorial to a hero in the hall of heroes.</summary>
     public bool RaiseMemorial(int heroId) => Legacies.RaiseMemorial(Town, heroId);
@@ -801,6 +823,7 @@ public sealed class Simulation
             knight.Hero!.Sworn = true;
             knight.Hero.Lodging = true;
         }
+        Founding.Charter(t);
 
         t.Market.Seed(Good.Food, 150);
         t.Market.Seed(Good.Timber, 60);
@@ -813,7 +836,7 @@ public sealed class Simulation
         t.Log(
             LedgerCategory.Town,
             Importance.Major,
-            $"The charter is signed. {t.Population} settlers and a wagon arrive at the river ford that will become {t.Name}. {Annals.Founding(t)}{(knight != null ? $" {knight.Name}, a knight sworn to the charter, rides at the wagon's side, and two watchmen walk behind it." : "")}",
+            $"The charter is signed. {t.Population} settlers and a wagon arrive at {Founding.At(t)} that will become {t.Name}. {Annals.Founding(t)}{(knight != null ? $" {knight.Name}, a knight sworn to the charter, rides at the wagon's side, and two watchmen walk behind it." : "")}",
             t.Residents.Select(a => a.Id).Concat(knight != null ? [knight.Id] : []).Distinct().ToList());
     }
 

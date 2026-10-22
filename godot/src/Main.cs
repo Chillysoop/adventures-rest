@@ -148,6 +148,38 @@ public partial class Main : Control
         if (_opts.Wonder is string wk)
         {
             if (wk == "gate" && _sim.Town.Gateways.FirstOrDefault() is { } g) _opts.Look ??= Map.Geo.FromDays(g.Ax, g.Ay);
+            // --wonder quay: the harbour's quay on the shore of a town on the sea.
+            else if (wk == "quay" && _sim.Town.Terrain.FirstOrDefault(f => f.Kind.Boats) is { } sea)
+                _opts.Look ??= Map.Geo.FromDays((sea.Inner + 0.05) * Math.Sin(sea.Bearing * Math.PI / 180), -(sea.Inner + 0.05) * Math.Cos(sea.Bearing * Math.PI / 180));
+            // --wonder home:trees: the first people met whose home looks like that (marked met for the shot).
+            else if (wk.StartsWith("home:") && _sim.Town.Settlements.FirstOrDefault(s => Map.TownView.SettlementLook(_sim.Town, s) == wk[5..]) is { } home)
+            {
+                home.Met = true;
+                _opts.Look ??= Map.Geo.SettlementPin(_sim.Town, home);
+            }
+            // --wonder falls: the first plateau's waterfall side; --wonder lift: a cliff-top town's tallest face.
+            else if (wk == "falls" && Cliffs.Of(_sim.Town).FirstOrDefault() is { } plateau)
+                _opts.Look ??= new Vector2((float)plateau.X + Map.Geo.Margin, (float)plateau.Y + Map.Geo.Margin);
+            // --wonder bridge: the town's own bridge over the river (its bridge ward once a town).
+            else if (wk == "bridge" && _map.Gen.Crossings.Count > 0)
+                _opts.Look ??= _map.Gen.Crossings[0].At;
+            // --wonder tower: a finished watchtower at the town's edge, on the highest ground near (then --at watchtower).
+            else if (wk == "tower")
+            {
+                _sim.Town.Treasury += 1000;
+                var spots = Enumerable.Range(0, 24 * 10).Select(i => (R: 8 + i / 24, A: i % 24 * Math.PI / 12))
+                    .Select(q => (X: Town.Center + q.R * Math.Cos(q.A), Y: Town.Center + q.R * Math.Sin(q.A)))
+                    .OrderByDescending(q => Hills.Height(_sim.Town, q.X, q.Y)).ThenBy(q => q.X).ThenBy(q => q.Y);
+                foreach (var (x, y) in spots)
+                    if (_sim.Place(_sim.Town.Content.Knowledge.Watchtowers.Building, x, y) is Building tw)
+                    {
+                        tw.BuildProgress = tw.Def.BuildHours;
+                        _opts.Look ??= Map.Geo.LotPos(_sim.Town.Lot(tw.LotId));
+                        break;
+                    }
+            }
+            else if (wk == "lift" && _map.Lands.SiteFaces.OrderByDescending(f => f.High).FirstOrDefault() is { High: > 0 } face)
+                _opts.Look ??= face.Top;
             else if (_sim.Town.Terrain.FirstOrDefault(f => f.Kind.Wonder?.Kind == wk) is { } wf)
             {
                 _opts.Look ??= Map.Geo.FromDays((wf.Inner + wf.Outer) / 2 * Math.Sin(wf.Bearing * Math.PI / 180), -(wf.Inner + wf.Outer) / 2 * Math.Cos(wf.Bearing * Math.PI / 180));
@@ -246,6 +278,7 @@ public partial class Main : Control
         if (_opts.Menu) OpenMenu();
         if (plain || _opts.Title || _opts.Smoke) ShowTitle();
         if (_opts.Storytellers) PickStoryteller(false);
+        if (_opts.Sites) PickSite(_sim.Town.Storyteller ?? "rising", _opts.Seed);
         if (_opts.NewMayor) PickMayor(Sim.Content.Default().Storytellers.Default);
         if (_opts.History is string power) OpenHistory(power == "" ? null : power);
         if (_opts.Glossary is string entry) OpenGlossary(entry == "" ? null : entry);
@@ -437,12 +470,12 @@ public partial class Main : Control
 
     // ---------- Game ----------
 
-    private void NewTown(int seed, bool autoplay = false, string? storyteller = null, MayorRoll? mayor = null, bool hardcore = false)
+    private void NewTown(int seed, bool autoplay = false, string? storyteller = null, string? founding = null, MayorRoll? mayor = null, bool hardcore = false)
     {
         RememberLegends();
         // With --autoplay the stand-in mayor keeps playing, for demos and screenshots; only a player's towns meet old legends.
         var legends = autoplay ? [] : ProfileLegends();
-        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoArmory = autoplay && !_opts.KeepArmory, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay && _opts.Tax == null, AutoHonours = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay, AutoStories = autoplay, AutoExplore = autoplay && !_opts.Find, Legends = legends, Storyteller = storyteller ?? _opts.Storyteller ?? "rising", Boons = autoplay ? [.. _opts.Boons] : ChosenBoons(), Endless = _opts.Endless || (!autoplay && _endless), Mayor = mayor, Hardcore = hardcore || _opts.Hardcore }));
+        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoArmory = autoplay && !_opts.KeepArmory, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay && _opts.Tax == null, AutoHonours = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay, AutoStories = autoplay, AutoExplore = autoplay && !_opts.Find, Legends = legends, Storyteller = storyteller ?? _opts.Storyteller ?? "rising", Boons = autoplay ? [.. _opts.Boons] : ChosenBoons(), Endless = _opts.Endless || (!autoplay && _endless), Founding = founding ?? _opts.Founding ?? "", Mayor = mayor, Hardcore = hardcore || _opts.Hardcore }));
     }
 
     /// <summary>Show a town: a new one, or one loaded from a save.</summary>

@@ -107,7 +107,8 @@ public static class Roads
             int n = rng.Range(rules.FeaturesPerRegion[0], rules.FeaturesPerRegion[^1] + 1);
             for (int i = 0; i < n; i++)
             {
-                var kind = rules.Kinds.FirstOrDefault(k => k.Id == rng.Pick(ids));
+                // The pick is drawn again for every kind looked at; the founding's sea is never drawn, so it is left out.
+                var kind = rules.Kinds.Where(k => !k.Boats).FirstOrDefault(k => k.Id == rng.Pick(ids));
                 if (kind == null) continue;
                 for (int tries = 0; tries < 10; tries++)
                 {
@@ -547,8 +548,9 @@ public static class Roads
                     if (around.Count > 0 && (back - cur).Length > 1e-9) path.Add(new Waypoint { X = back.X, Y = back.Y });
                 }
                 bool flies = (mind.Ways & needs) == needs;
-                // The bone ferryman takes anyone over his water, for a toll.
-                bool ferry = !flies && next.Kind.Wonder?.Kind == "ferry";
+                // The bone ferryman takes anyone over his water, for a toll; the town's own boats take them over its sea.
+                bool boats = !flies && next.Kind.Boats;
+                bool ferry = !flies && (boats || next.Kind.Wonder?.Kind == "ferry");
                 bool over = flies || ferry || around.Count == 0;
                 if (!ferry && Passage.Rules(town).Texts.TryGetValue(over ? "over" : "round", out var told) && told.Count > 0)
                     said.Add(Cap(rng.Pick(told)
@@ -559,7 +561,8 @@ public static class Roads
                 if (over)
                 {
                     path.Add(new Waypoint { X = entry.X, Y = entry.Y });
-                    path.Add(new Waypoint { X = exit.X, Y = exit.Y, Way = ferry ? "ferry" : "fly", Feature = next });
+                    path.Add(new Waypoint { X = exit.X, Y = exit.Y, Way = boats ? "sail" : ferry ? "ferry" : "fly", Feature = next });
+                    if (boats) said.Add($"The town's boats take them over {next.Name}.");
                     cur = exit;
                 }
                 else
@@ -631,7 +634,7 @@ public static class Roads
         // Stepping through an old gateway takes no time at all.
         if (to.Way == "portal") return 0;
         double len = Math.Sqrt((to.X - from.X) * (to.X - from.X) + (to.Y - from.Y) * (to.Y - from.Y));
-        return len * rules.MarchHours * (to.Way == "cross" && to.Feature != null ? 1 + (to.Feature.Kind.Slow - 1) * (1 - to.Ease) : 1) + to.Delay;
+        return len * rules.MarchHours * (to.Way == "cross" && to.Feature != null ? 1 + (to.Feature.Kind.Slow - 1) * (1 - to.Ease) : to.Way == "sail" && to.Feature != null ? to.Feature.Kind.Slow : 1) + to.Delay;
     }
 
     /// <summary>Hours of marching the whole road takes, from <paramref name="from"/>.</summary>

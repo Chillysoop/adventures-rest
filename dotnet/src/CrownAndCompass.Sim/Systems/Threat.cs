@@ -143,7 +143,7 @@ public static class Threat
         double walls = w.CityWall == PalisadeState.Built ? d.CityWall
             : w.StoneWall == PalisadeState.Built ? d.StoneWall
             : w.Palisade == PalisadeState.Built ? d.Palisade : 1;
-        return walls * Blows.WallFactor(town) * Garrison.MoatFactor(town) * (1 + d.PerTower * w.Towers + Garrison.FortBonus(town) + Planning.Defense(town));
+        return walls * Blows.WallFactor(town) * Garrison.MoatFactor(town) * (1 + d.PerTower * w.Towers + Garrison.FortBonus(town) + Planning.Defense(town) + Founding.Defence(town));
     }
 
     /// <summary>What the town's scouts believe the warband numbers, rounded the way rumours are.</summary>

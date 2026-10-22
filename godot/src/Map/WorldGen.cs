@@ -144,7 +144,13 @@ public sealed class WorldGen
                 : wet < -0.35f ? Biome.Heath
                 : pick < 0.3f ? Biome.Woodland : Biome.Meadow;
         }
-        Biomes[TownCell] = Biome.Meadow;
+        // A desert cliff city stands on bare ground, a ledge or a pass on rock.
+        Biomes[TownCell] = town.Founding == null ? Biome.Meadow : Sim.Systems.Founding.Of(town).Look switch
+        {
+            "desert" => Biome.Heath,
+            "ledge" or "pass" => Biome.Hills,
+            _ => Biome.Meadow,
+        };
         // A site's habitat decides its territory's ground.
         foreach (var site in town.Sites)
         {
@@ -220,6 +226,9 @@ public sealed class WorldGen
                 float core = 1 - Mathf.SmoothStep(0.15f, 0.55f, (float)(Math.Abs(r - mid) / Math.Max(0.05, half)));
                 return Mathf.Lerp(h, -1.4f, core * k) + k * (1 - core) * 3;
             }
+            case "sea":
+                // The open sea: deep, with a long shelving beach.
+                return Mathf.Lerp(h, -2.4f + _n1.Fbm(p.X / 30, p.Y / 30, 2) * 0.5f, Mathf.SmoothStep(0, 0.45f, k));
             case "lake":
                 // Open water with a shelving shore: deep enough that nobody wades it.
                 return Mathf.Lerp(h, -1.6f + _n1.Fbm(p.X / 18, p.Y / 18, 2) * 0.4f, Mathf.SmoothStep(0, 0.6f, k));
@@ -249,7 +258,7 @@ public sealed class WorldGen
         return f.Kind.Id switch
         {
             "tangle" => bias + 0.75f * k,
-            "ridge" or "icefield" or "waste" or "peaks" or "range" or "lake" => Mathf.Lerp(bias, -1, k),
+            "ridge" or "icefield" or "waste" or "peaks" or "range" or "lake" or "sea" => Mathf.Lerp(bias, -1, k),
             "beastland" => bias + 0.3f * k,
             "monsterland" => Mathf.Lerp(bias, -0.2f, k),
             "mire" => Mathf.Lerp(bias, -0.05f, k),
@@ -341,11 +350,53 @@ public sealed class WorldGen
                 h = FeatureHeight(p, h);
                 // Plateaus and their cliffs in the near wilds (the sim's Cliffs: walkers go round them or up the ramps).
                 h += (float)Sim.Systems.Cliffs.Height(_town, x - Geo.Margin, y - Geo.Margin);
+                h += SiteHeight(p, d);
                 float dr = _riverDist[y * (N + 1) + x];
                 // Shallow at the fords, stones showing through; deep in the channel everywhere else.
                 if (dr < 6) h = Mathf.Min(h, Mathf.Lerp(Mathf.Lerp(-1.1f, -0.12f, FordAt(p)), h, Mathf.SmoothStep(0.6f, 5.5f, dr)));
                 Height[y * (N + 1) + x] = h;
             }
+    }
+
+    /// <summary>
+    /// What the town's founding site (<see cref="Sim.Systems.Founding"/>) does to the ground: a crag or a plateau lifts the
+    /// town above the plain (the plateau with one ramp down on the side it faces), a ledge sits high with the mountain rising
+    /// behind it, a desert city has its sandstone cliff at its back. The river still cuts down through it all.
+    /// </summary>
+    private float SiteHeight(Vector2 p, float d)
+    {
+        if (_town.Founding == null) return 0;
+        var off = p - Geo.Center;
+        float bearing = Mathf.RadToDeg(Mathf.Atan2(off.X, -off.Y));
+        float face = (float)Sim.Systems.Founding.Facing(_town);
+        // 0 on the side the site faces, 180 at its back.
+        float gap = Mathf.Abs(Mathf.PosMod(bearing - face + 540, 360) - 180);
+        float rag = _n2.Fbm(p.X / 26, p.Y / 26, 3) * 5;
+        float rim = Geo.Clearing + rag;
+        float behind = Mathf.SmoothStep(100, 150, gap);
+        // The high ground stops at a cliff over the river instead of the river cutting through it.
+        float bank = Mathf.SmoothStep(2.5f, 7, RiverDistance(p));
+        switch (Sim.Systems.Founding.Of(_town).Look)
+        {
+            case "crag":
+                return 9 * bank * (1 - Mathf.SmoothStep(rim + 4, rim + 11, d));
+            case "plateau":
+            {
+                // Sheer all round but for the ramp on the side it faces.
+                float ramp = 1 - Mathf.SmoothStep(8, 16, gap);
+                return 14 * bank * (1 - Mathf.SmoothStep(rim + 10, rim + 13 + ramp * 36, d));
+            }
+            case "ledge":
+            {
+                float top = 20 * bank * (1 - Mathf.SmoothStep(rim + 6, rim + 9, d));
+                float wall = behind * Mathf.SmoothStep(rim + 2, rim + 30, d) * (40 + 30 * _n2.Ridge(p.X / 40, p.Y / 40, 3));
+                return top + wall;
+            }
+            case "desert":
+                return behind * Mathf.SmoothStep(rim, rim + 8, d) * (22 + 6 * _n1.Fbm(p.X / 18, p.Y / 18, 2));
+            default:
+                return 0;
+        }
     }
 
     public float HeightAt(float x, float y)

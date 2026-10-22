@@ -47,6 +47,9 @@ public partial class Main
                 // New game asks for a storyteller first.
                 PickStoryteller(false);
                 if (!_tellers.Visible || _titleMenu.Visible) throw new InvalidOperationException("the storytellers are not showing");
+                // Then where to found the town.
+                PickSite("rising", _opts.Seed ?? 1);
+                if (!_sites.Visible || _sites.GetChildCount() < 4) throw new InvalidOperationException("the founding sites are not showing");
                 // Then the mayor's rolled sheet: a reroll and another background.
                 PickMayor(Sim.Content.Default().Storytellers.Default);
                 var rolled = _mayorRoll;

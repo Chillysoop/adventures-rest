@@ -230,6 +230,8 @@ public static class Trade
         }
         if (autoMayor) StandIn(town);
         Skyship.Daily(town, autoMayor);
+        Fleet.Daily(town, autoMayor);
+        Sky.Daily(town, autoMayor);
     }
 
     private static void Caravan(Town town, TradeRoute route, Settlement s)
@@ -261,7 +263,7 @@ public static class Trade
             return;
         }
         route.LostInRow = 0;
-        double earned = sent * m.BasePrice(route.Export) * (s.Kin.Trade.Wants.Contains(route.Export) ? r.WantedPrice : r.ExportPrice);
+        double earned = sent * m.BasePrice(route.Export) * (s.Kin.Trade.Wants.Contains(route.Export) ? r.WantedPrice : r.ExportPrice) * Founding.Trade(town);
         m.Seed(route.Export, -sent);
         if (earned > 0) town.Book(TreasuryAccount.Trade, earned);
         route.Earned += earned;

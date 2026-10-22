@@ -122,6 +122,9 @@
     "rescued": "The {party} find {captain} of {band} alive in {site} and bring them home to {settlement}."
   },
   "projects": [
+    { "id": "mooring-tower", "name": "Mooring tower", "cost": 280, "days": 18, "prosperity": 6, "mooring": true,
+      "text": "A tall stone tower with a mooring mast at {settlement}: the town's airship ties up there, unloads fast and sells dear, and its guns keep fliers off.",
+      "done": "The mooring tower at {settlement} is finished. The airship's first visit draws half the town onto the rooftops." },
     { "id": "watchtower", "name": "Watchtower", "cost": 220, "days": 16, "security": 20,
       "text": "A stone tower on the heights above {settlement}, manned by its own people, that sees trouble coming.",
       "done": "The watchtower above {settlement} is finished. Its first beacon is lit in {town}'s honour." },

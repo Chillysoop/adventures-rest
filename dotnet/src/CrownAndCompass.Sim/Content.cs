@@ -41,6 +41,9 @@ public sealed record BuildingDef
     public required string Name { get; init; }
     public Zone Zone { get; init; } = Zone.None;
     public bool Buildable { get; init; } = true;
+
+    /// <summary>Only a town founded on the sea can raise it (<see cref="Systems.Founding"/>).</summary>
+    public bool Coast { get; init; }
     public double Cost { get; init; }
     public double Timber { get; init; }
 
@@ -638,6 +641,10 @@ public sealed record WatchtowerRules
     public double SightPerHundred { get; init; } = 4;
     public double MostSight { get; init; } = 70;
 
+    /// <summary>A tower on a hill sees farther: tiles per tile of ground under it, up to the most.</summary>
+    public double PerHeight { get; init; } = 4;
+    public double MostHeight { get; init; } = 12;
+
     /// <summary>The town may raise one tower for every this many residents (always one).</summary>
     public int ResidentsEach { get; init; } = 100;
 }
@@ -1195,6 +1202,9 @@ public sealed record TerrainKindDef
     /// <summary>A strange place that bends the rules: a wishing well, dead-magic ground, a bone ferryman (<see cref="Systems.Wayfaring"/>).</summary>
     public Systems.WonderDef? Wonder { get; init; }
 
+    /// <summary>Open water the town's own boats take anyone over (the sea by a coastal town, <see cref="Systems.Founding"/>).</summary>
+    public bool Boats { get; init; }
+
     /// <summary>How much wider than other hard country it spreads across its region: wide country is costly to go round.</summary>
     public double Wide { get; init; } = 1;
 }
@@ -1640,6 +1650,15 @@ public sealed class Content
     /// <summary>Townsfolk's inspirations and breaks (content/game/moods.json).</summary>
     public MoodRules Moods { get; init; } = new();
 
+    /// <summary>Where a town can be founded, and what each site does for it (content/game/founding.json).</summary>
+    public Systems.FoundingRules Founding { get; init; } = new();
+
+    /// <summary>The ships of a town on the sea (content/game/sea.json).</summary>
+    public Systems.FleetRules Sea { get; init; } = new();
+
+    /// <summary>The town's airships, the winds and storms they fly through, and how they fight (content/game/sky.json).</summary>
+    public Systems.SkyFleetRules Sky { get; init; } = new();
+
     /// <summary>The storytellers a town can be founded under, the game's difficulty (content/game/storytellers.json).</summary>
     public StorytellerRules Storytellers { get; init; } = new();
     public Systems.CharacterRules Character { get; init; } = new();
@@ -1891,6 +1910,9 @@ public sealed class Content
             Crowds = Parse<CrowdRules>("crowds.json"),
             Moods = Parse<MoodRules>("moods.json"),
             Storytellers = Parse<StorytellerRules>("storytellers.json"),
+            Founding = Parse<Systems.FoundingRules>("founding.json"),
+            Sea = Parse<Systems.FleetRules>("sea.json"),
+            Sky = Parse<Systems.SkyFleetRules>("sky.json"),
             Victory = Parse<Systems.VictoryRules>("victory.json"),
             DarkQuests = Parse<Systems.DarkQuestRules>("darkquests.json"),
             Boons = Parse<Systems.BoonRules>("boons.json"),

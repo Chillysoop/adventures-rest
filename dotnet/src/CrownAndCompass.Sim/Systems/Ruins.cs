@@ -32,7 +32,8 @@ public static class Ruins
 {
     private static RuinRules Rules(Town town) => town.Content.World.Ruins;
 
-    public static RuinDef? Of(Town town, SiteState s) => s.Def.Ruin == "" ? null : Rules(town).Kinds.FirstOrDefault(k => k.Id == s.Def.Ruin);
+    public static RuinDef? Of(Town town, SiteState s) =>
+        s.Def.Ruin == "" ? null : Rules(town).Kinds.FirstOrDefault(k => k.Id == s.Def.Ruin) ?? (town.Content.Founding.Ruin is { } keep && keep.Id == s.Def.Ruin ? keep : null);
 
     private static IEnumerable<(SiteState Site, RuinDef Def)> Restored(Town town) =>
         town.Sites.Where(s => s.Restored).Select(s => (s, Of(town, s))).Where(x => x.Item2 != null).Select(x => (x.s, x.Item2!));

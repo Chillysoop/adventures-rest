@@ -1,6 +1,7 @@
 using CrownAndCompass.Sim;
 using CrownAndCompass.Sim.Systems;
 using Godot;
+using Airships = CrownAndCompass.Sim.Systems.Sky;
 
 namespace CrownAndCompass.Client;
 
@@ -72,6 +73,9 @@ public sealed class Options
     public string? Storyteller;
     public bool Storytellers;
 
+    /// <summary>--founding id: where a new town is founded (founding.json); --sites shows New game's choice of sites.</summary>
+    public string? Founding;
+    public bool Sites;
     /// <summary>--new-mayor: the main menu on New game's mayor sheet, rolled, for shots.</summary>
     public bool NewMayor;
 
@@ -263,6 +267,8 @@ public sealed class Options
                 case "--settings-tab": o.Settings = true; o.SettingsTab = Next(); break;
                 case "--storyteller": o.Storyteller = Next(); break;
                 case "--storytellers": o.Storytellers = o.Title = true; break;
+                case "--founding": o.Founding = Next(); break;
+                case "--sites": o.Sites = o.Title = true; break;
                 case "--new-mayor": o.NewMayor = o.Title = true; break;
                 case "--mayor-sheet": o.MayorSheet = true; o.Tab = "Mayor"; break;
                 case "--hardcore": o.Hardcore = true; break;
@@ -349,7 +355,7 @@ public sealed class Options
                 case "--advance": o.Advances.Add(Next()); break;
                 case "--inspiration": o.Inspiration = int.Parse(Next()); break;
                 case "--decor-at": o.DecorAt = Next().Split(',').Select(v => double.Parse(v, System.Globalization.CultureInfo.InvariantCulture)).ToArray(); break;
-                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--stock" or "--pact" or "--buy" or "--call" or "--flag" or "--wait" or "--works" or "--roster" or "--spot" or "--draw-wall" or "--gate" or "--raise" or "--skyrun" or "--duty" or "--army":
+                case "--bounty" or "--scry" or "--send" or "--recall" or "--build" or "--scout" or "--mirror" or "--relic" or "--stock" or "--pact" or "--buy" or "--call" or "--flag" or "--wait" or "--works" or "--roster" or "--spot" or "--draw-wall" or "--gate" or "--raise" or "--skyrun" or "--fly" or "--duty" or "--army":
                     o.Script.Add((args[i][2..], Next()));
                     break;
             }
@@ -399,6 +405,25 @@ public sealed class Options
                         .OrderByDescending(x => Skyship.Profit(t, x.S, x.G)).FirstOrDefault();
                     if (pick.S != null) sim.SendSkyship(pick.S.Id, pick.G);
                     else Godot.GD.Print($"--skyrun {arg}: nowhere to fly");
+                    break;
+                case "fly":
+                    // For shots of the sky fleet: the first airship at the mast flies "patrol", or "scout"/"strike" the nearest
+                    // land or lair, with a frigate laid down first when the arg ends in "+".
+                    t.Treasury += 3000;
+                    if (arg.EndsWith('+')) sim.BuildShip("frigate");
+                    string flyJob = arg.TrimEnd('+');
+                    foreach (var ship in Airships.Ships(t).Where(x => Airships.Moored(t, x)))
+                    {
+                        int rid = -1;
+                        string flySite = "";
+                        if (flyJob == "scout") rid = t.Regions.Where(x => x.Ring > 0 && Airships.Refuse(t, ship, flyJob, x.Id, "", []) == null).OrderBy(x => x.Days).Select(x => x.Id).FirstOrDefault(-1);
+                        if (flyJob == "strike" && t.Sites.Where(x => !x.Cleared && x.RegionId != null).OrderBy(x => t.Regions[x.RegionId!.Value].Days).FirstOrDefault() is { } lair)
+                        {
+                            if (lair.Known == SiteKnowledge.Unheard) lair.Known = SiteKnowledge.Rumoured;
+                            (rid, flySite) = (lair.RegionId!.Value, lair.Def.Id);
+                        }
+                        if (!sim.FlyShip(ship.Id, flyJob, rid, flySite)) Godot.GD.Print($"--fly {arg}: {ship.Name} can't fly ({Airships.Refuse(t, ship, flyJob, rid, flySite, [])})");
+                    }
                     break;
                 case "works":
                     // For shots of the walls: raise them at once, the stone and (with "all") every work that goes on it.

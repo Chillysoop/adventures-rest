@@ -28,6 +28,9 @@ public sealed class Region
     public bool Visited { get; set; }
     public int? SettlementId { get; set; }
     public List<string> SiteIds { get; } = [];
+
+    /// <summary>A town site not chosen at the founding (founding.json id), held by its settlement or by foes (<see cref="Founding"/>).</summary>
+    public string? Site { get; set; }
 }
 
 /// <summary>A pocket of light out in the wilds: a village, a dwarf hold, an elf enclave.</summary>
@@ -276,6 +279,7 @@ public static class World
         PlaceIsles(town, used);
         Ruins.Place(town, used, Fill);
         Wayfaring.Place(town);
+        Founding.Place(town);
     }
 
     /// <summary>
