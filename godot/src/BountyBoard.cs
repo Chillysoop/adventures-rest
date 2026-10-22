@@ -268,10 +268,14 @@ public partial class Main
         string rumour = seated != null
             ? Ui.C(Ui.Bad, $"[font_size=11]seat of {Ui.Esc(seated.Name)}{(seated.BigBad ? ", the big bad" : "")}{(s.Def.Tier > 0 ? $", tier {s.Def.Tier}" : "")}[/font_size]")
             : s.Known == SiteKnowledge.Rumoured ? Ui.C(Ui.Ink2, $"[font_size=11]rumour: {Ui.Esc(s.Believed)} ({Rumors.Trust(s.Trust)})[/font_size]") : "";
-        string text = $"{SiteLink(s.Def)} {Ui.C(Ui.Gold, $"[font_size=11]{tier}[/font_size]")}{(status != "" ? $"\n[font_size=12]{status}[/font_size]" : "")}{(rumour != "" ? $"\n{rumour}" : "")}";
+        int suggested = Notoriety.Suggested(t, s);
+        string renown = "  " + Ui.Chip("ui-renown", suggested.ToString(), Ui.Ink2,
+            suggested == 0 ? "Renown suggested: none. Any company can make its name here." : $"Renown suggested: {suggested}\n• A company with less can still go\n• Fewer foes there know its name, so more stand and fight", 12);
+        string patron = live?.NotableId is int nid && Notables.Find(t, nid) is { } giver ? "  " + Ui.C(Ui.Gold, $"[font_size=11]for {Ui.Esc(Notables.NameOf(t, giver))}[/font_size]") : "";
+        string text = $"{SiteLink(s.Def)} {Ui.C(Ui.Gold, $"[font_size=11]{tier}[/font_size]")}{renown}{patron}{(status != "" ? $"\n[font_size=12]{status}[/font_size]" : "")}{(rumour != "" ? $"\n{rumour}" : "")}";
 
         bool onRoad = party != null && !party.Returned;
-        var pills = onRoad ? [] : crews.Take(PillsShown).Select(c => (Crew: c, Band: Assess.DangerFor(t, s, c.Riders))).ToList();
+        var pills = onRoad ? [] : crews.Take(PillsShown).Select(c => (Crew: c, Band: Assess.DangerFor(t, s, c.Riders, c.Name == "" ? null : c.Name))).ToList();
         var danger = Assess.Danger(t, s);
         bool canPost = live == null && blocked == null;
         bool scryable = Watch.LiveOf(t, s) == null;
@@ -388,7 +392,9 @@ public partial class Main
         pill.Tip = () =>
         {
             int levels = c.Riders.Select(r => r.Hero!.Level).OrderByDescending(l => l).Take(4).Sum();
-            string head = $"{CrewName(c)}: {band.Name} for them\n{Riders(c)}\n• Levels {levels}, it wants about {Assess.Wants(t, s)}";
+            int shortBy = Notoriety.Short(t, c.Name == "" ? null : c.Name, s);
+            string known = shortBy > 0 ? $"\n• Renown {Notoriety.RenownOf(t, c.Name == "" ? null : c.Name)}, it suggests {Notoriety.Suggested(t, s)}: more foes will stand and fight" : "";
+            string head = $"{CrewName(c)}: {band.Name} for them\n{Riders(c)}\n• Levels {levels}, it wants about {Assess.Wants(t, s)}{known}";
             if (c.Name == "") return $"{head}\nThey'd form a party if you post a bounty.";
             if (!c.Offerable) return $"{head}\nWon't hear an offer: {Roster.Unavailable(t, c.Name)}.";
             var view = Roster.Weigh(t, c.Name, sid, reward, terms);

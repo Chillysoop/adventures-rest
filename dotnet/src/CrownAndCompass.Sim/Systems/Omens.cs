@@ -134,8 +134,10 @@ public static class Omens
             st.Id = pick.O.Id;
             st.Season = pick.Later[dice.Range(0, pick.Later.Count)];
             st.Past.Add($"{year}:{st.Id}");
-            string when = $"in the {seasons[st.Season].Name.ToLowerInvariant()}";
-            string told = r.Foretold.Replace("{town}", town.Name).Replace("{omen}", pick.O.Name.ToLowerInvariant()).Replace("{when}", when).Replace("{text}", pick.O.Text);
+            string season = seasons[st.Season].Name.ToLowerInvariant();
+            // "A mild winter" already says when.
+            string when = pick.O.Name.Contains(season, StringComparison.OrdinalIgnoreCase) ? "" : $" in the {season}";
+            string told = r.Foretold.Replace("{town}", town.Name).Replace("{omen}", pick.O.Name.ToLowerInvariant()).Replace(" {when}", when).Replace("{text}", pick.O.Text);
             town.Log(LedgerCategory.Town, Importance.Notable, Saga.Cap(told));
         }
         if (!st.Come && st.Season == now && Def(town, st.Id) is { } o)
