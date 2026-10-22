@@ -115,10 +115,11 @@ public partial class Main
         {
             string makeup = string.Join(" · ", e.Members.Select(m => $"{Ui.Esc(Ui.Cap(m.Hero!.Cls.Name))} {m.Hero.Level}{(m.Hero.Cls.Card != "" ? $" ({Ui.Esc(m.Hero.Cls.Card)})" : "")}"));
             // Renown as a figure, its step of fame in the hover; a bad name shows in red instead.
-            string fame = e.Infamy > 0 && Notoriety.InfamyTier(t, Intel.Find(t, e.Name)!) > 0
-                ? Ui.Chip("ui-skull", Notoriety.InfamyName(t, e.Infamy), Ui.Bad, $"Infamy {e.Infamy}, renown {e.Renown}", 14)
-                : Ui.Chip("ui-renown", e.Renown.ToString(), e.Renown == 0 ? Ui.Ink2 : Notoriety.FameTier(t, Intel.Find(t, e.Name)!) >= 2 ? Ui.Gold : Ui.Ink,
-                    $"Renown {e.Renown}: {Notoriety.FameName(t, e.Renown)}. Quests suggest a renown; short of it, more foes stand and fight.", 14);
+            // Renown as a figure, its step of fame in the hover, and a skull beside it for a bad name.
+            string fame = Ui.Chip("ui-renown", e.Renown.ToString(), e.Renown == 0 ? Ui.Ink2 : Notoriety.FameTier(t, Intel.Find(t, e.Name)!) >= 2 ? Ui.Gold : Ui.Ink,
+                    $"Renown {e.Renown}: {Notoriety.FameName(t, e.Renown)}. Quests suggest a renown; short of it, more foes stand and fight.", 14)
+                + (e.Infamy > 0 && Notoriety.InfamyTier(t, Intel.Find(t, e.Name)!) > 0
+                    ? " " + Ui.Tip(Ui.Img("ui-skull", 14), $"{Notoriety.InfamyName(t, e.Infamy)}: infamy {e.Infamy}") : "");
             var (_, rc) = RelationWord(e.Relation, r.RefuseBelow);
             string state = e.State switch
             {

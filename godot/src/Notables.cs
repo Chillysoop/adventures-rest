@@ -143,7 +143,12 @@ public partial class Main
         _sim.RunDays(12);
         if (list.FirstOrDefault(n => !n.Gone && n.Ask == "" && Notables.Band(t, n) >= Notables.Warm) is { } asker)
         {
-            asker.Ask = Notables.DefOf(t, asker).Asks[0].Id;
+            // A quest if they hand one out and a place is open for it, so shots show the job.
+            var asks = Notables.DefOf(t, asker).Asks;
+            var site = t.Sites.FirstOrDefault(x => x.Known != SiteKnowledge.Unheard && !x.ThoughtCleared && !t.Bounties.Any(b => b.SiteId == x.Def.Id && b.Status is BountyStatus.Open or BountyStatus.Taken));
+            var ask = asks.FirstOrDefault(a => a.Quest != "" && site != null && asker.AgentId != null) ?? asks[0];
+            asker.Ask = ask.Id;
+            asker.AskSite = ask.Quest != "" ? site!.Def.Id : "";
             asker.AskUntil = t.Day + 4;
         }
         _dirty = true;

@@ -269,7 +269,8 @@ public partial class Main
             ? Ui.C(Ui.Bad, $"[font_size=11]seat of {Ui.Esc(seated.Name)}{(seated.BigBad ? ", the big bad" : "")}{(s.Def.Tier > 0 ? $", tier {s.Def.Tier}" : "")}[/font_size]")
             : s.Known == SiteKnowledge.Rumoured ? Ui.C(Ui.Ink2, $"[font_size=11]rumour: {Ui.Esc(s.Believed)} ({Rumors.Trust(s.Trust)})[/font_size]") : "";
         int suggested = Notoriety.Suggested(t, s);
-        string renown = suggested > 0 ? "  " + Ui.Chip("ui-renown", suggested.ToString(), Ui.Ink2, $"Renown suggested: {suggested}\n• A company with less can still go\n• Fewer foes there know its name, so more stand and fight", 12) : "";
+        string renown = "  " + Ui.Chip("ui-renown", suggested.ToString(), Ui.Ink2,
+            suggested == 0 ? "Renown suggested: none. Any company can make its name here." : $"Renown suggested: {suggested}\n• A company with less can still go\n• Fewer foes there know its name, so more stand and fight", 12);
         string patron = live?.NotableId is int nid && Notables.Find(t, nid) is { } giver ? "  " + Ui.C(Ui.Gold, $"[font_size=11]for {Ui.Esc(Notables.NameOf(t, giver))}[/font_size]") : "";
         string text = $"{SiteLink(s.Def)} {Ui.C(Ui.Gold, $"[font_size=11]{tier}[/font_size]")}{renown}{patron}{(status != "" ? $"\n[font_size=12]{status}[/font_size]" : "")}{(rumour != "" ? $"\n{rumour}" : "")}";
 

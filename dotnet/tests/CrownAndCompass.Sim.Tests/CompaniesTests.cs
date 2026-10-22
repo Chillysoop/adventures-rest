@@ -27,7 +27,9 @@ public class CompaniesTests
             var riding = Intel.MembersByCompany(t);
             var words = riding.SelectMany(x => x.Name.Split(' ')).ToList();
             Assert.Equal(words.Count, words.Distinct().Count());
-            Assert.All(riding, x => Assert.True(x.Members.Count <= t.Content.World.Companies.MaxMembers + 1, $"seed {seed}: the {x.Name} have {x.Members.Count}"));
+            // A company with a bastion takes in guests who live there; the rest keep a party's roll.
+            Assert.All(riding.Where(x => !t.Bastions.Any(b => b.Company == x.Name)),
+                x => Assert.True(x.Members.Count <= t.Content.World.Companies.MaxMembers, $"seed {seed}: the {x.Name} have {x.Members.Count}"));
         }
     }
 
