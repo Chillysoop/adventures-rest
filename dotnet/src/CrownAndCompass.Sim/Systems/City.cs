@@ -260,6 +260,9 @@ public sealed record CityRules
     /// <summary>How the masons pave the streets with stone from the centre outward once the town is grand enough.</summary>
     public PavingRules Paving { get; init; } = new();
 
+    /// <summary>Gold back when the council tears a building down or calls off a site (<see cref="Planning.Raze"/>).</summary>
+    public DemolishRules Demolish { get; init; } = new();
+
     /// <summary>The ground kept clear along each wall line for the wall's widest works.</summary>
     public WallStripRules WallStrip { get; init; } = new();
 
@@ -378,6 +381,7 @@ public static class City
         if (next == null || Missing(town).Count > 0) return false;
         town.Book(TreasuryAccount.Charters, -next.Cost);
         town.City.Tier++;
+        Records.Pin(town, "charter", next.Name);
         town.Log(LedgerCategory.Town, Importance.Major, $"{town.Name} is granted the charter of a {next.Name.ToLowerInvariant()}. {next.Blurb}");
         town.Mandate = Math.Min(100, town.Mandate + 5);
         town.FestivalDays = Math.Max(town.FestivalDays, 1);
@@ -654,6 +658,7 @@ public static class City
     public static string? Locked(Town town, BuildingDef d)
     {
         if (!Reached(town, d.Tier)) return $"needs the town to be a {TierName(town, d.Tier).ToLowerInvariant()}";
+        if (Lofted.Locked(town, d) is { } lofted) return lofted;
         if (d.Wards.Count > 0 && !d.Wards.Any(town.City.OpenWards.Contains))
             return $"needs the {string.Join(" or the ", d.Wards.Select(w => Ward(town, w).Name))} to grow up";
         return null;

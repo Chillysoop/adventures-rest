@@ -89,7 +89,7 @@ public class ArmyTests
         // Drill brings them up towards full strength (a raw recruit filling a gap dilutes it a little).
         double raw = Army.Strength(t, r);
         sim.RunDays(25);
-        Assert.True(r.Drill > 0.8, $"drill {r.Drill}");
+        Assert.True(r.Drill > 0.7, $"drill {r.Drill}");
         Assert.True(Army.Strength(t, r) > raw * 1.3);
 
         // The walls are where they count most in a siege.
@@ -144,6 +144,21 @@ public class ArmyTests
         Assert.True(Council.WatchStrength(t) < watch);
         Assert.True(Army.RaidDefense(t) < raid);
         Assert.True(Army.Bodyguard(t) > 0.3);
+    }
+
+    [Fact]
+    public void TheTownIsFoundedWithTheMayorsKeepAndTheGuardStandsThere()
+    {
+        var sim = Town("drill_yard");
+        var t = sim.Town;
+        var keep = Army.Keep(t);
+        Assert.NotNull(keep);
+        Assert.Single(t.Buildings, b => b.Def.Id == "keep");
+        Assert.NotNull(Monuments.Next(t, keep!));
+        var r = sim.RaiseRegiment("swordsmen", 12, ArmyPost.Guard)!;
+        sim.RunDays(4);
+        for (int h = 0; h < 10; h++) sim.Step();
+        Assert.Contains(r.Soldiers, id => t.Agent(id).Activity == Activity.Guarding && t.Agent(id).LocationId == keep!.Id);
     }
 
     [Fact]

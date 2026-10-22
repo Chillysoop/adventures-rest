@@ -72,9 +72,11 @@ public class ExploreTests
     [Fact]
     public void CompanyLooksAtAMarkedSpot()
     {
-        var sim = new Simulation(new SimulationOptions { Seed = 7, AutoBounties = true, AutoCouncil = true, AutoDefense = true, AutoPlanning = true, AutoExplore = false });
+        var sim = new Simulation(new SimulationOptions { Seed = 5, AutoBounties = true, AutoCouncil = true, AutoDefense = true, AutoPlanning = true, AutoExplore = false });
         sim.RunDays(40);
         var t = sim.Town;
+        // Mark it when a company could take it, not while every hero is out on the road.
+        for (int d = 0; d < 60 && t.Heroes.Count(Quests.Available) < t.Content.Explore.Commission.MinHeroes + 1; d++) sim.RunDays(1);
         t.Book(TreasuryAccount.Exploring, 500);
         Assert.Null(sim.MarkSpot(0.1, 0.1));
         var region = t.Regions.First(r => r.Ring == 0);

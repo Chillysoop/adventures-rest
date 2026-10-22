@@ -208,6 +208,8 @@ async function client(outDir: string) {
   const smokeMs = Number(process.env.GATE_SMOKE_MINUTES ?? 15) * 60_000;
   const game = ["--rendering-driver", "opengl3", "--audio-driver", "Dummy", "--resolution", "960x540", "--", "--smoke", "--seed", "3"];
   const hasX = await run("sh", ["-c", "command -v xvfb-run"]);
+  // The play-through grows with every window and system; on a software-rendered runner it takes 13 minutes or more.
+  const smokeMs = 25 * 60_000;
   const r = hasX.code === 0
     ? await run("xvfb-run", ["-a", bin, ...game], { timeoutMs: smokeMs })
     : await run(bin, ["--headless", ...game.slice(4)], { timeoutMs: smokeMs });

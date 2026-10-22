@@ -190,11 +190,15 @@ public class PlanningTests
     {
         // Seed 30 used to stall with a dozen idle, run the treasury dry and starve by day 90.
         var sim = new Simulation(new SimulationOptions { Seed = 30 });
-        sim.RunDays(120);
         var t = sim.Town;
-        // Idle hands go to a town-run business, unless the private trade has already taken them all on.
-        Assert.True(t.Buildings.Any(b => b.Def.IsBusiness && b.OwnerId == null && b.Def.Produces.Count > 0)
-            || !t.Workers.Any(w => w.Age >= 18 && w.JobId == null));
+        // At some point the stand-in opens a town-run workshop (a buyer may take it on later).
+        bool townRun = false;
+        for (int day = 0; day < 120; day++)
+        {
+            sim.RunDays(1);
+            townRun |= t.Buildings.Any(b => b.Def.IsBusiness && b.OwnerId == null && b.Def.Produces.Count > 0);
+        }
+        Assert.True(townRun);
         Assert.True(t.Population >= 20);
         Assert.True(t.Market.Price(Good.Food) < 2);
     }

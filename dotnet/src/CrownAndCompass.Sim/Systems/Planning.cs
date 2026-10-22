@@ -29,7 +29,9 @@ public static class Planning
             if (sown != null && Farming.Blocked(town, sown) != null) return 0;
         }
         // A zone paints open ground only (and the density or crop of its own land), so a stroke never eats another zone: the eraser clears land to repaint it.
-        int n = Land.Brush(town, dabs, Math.Clamp(radius, 0.25, MaxBrush), zone, overwrite: zone == Zone.None, density: density, crop: sown == null ? (byte)0 : Farming.Code(town, sown.Id));
+        var undo = new List<(int, byte, byte, byte)>();
+        int n = Land.Brush(town, dabs, Math.Clamp(radius, 0.25, MaxBrush), zone, overwrite: zone == Zone.None, density: density, crop: sown == null ? (byte)0 : Farming.Code(town, sown.Id), undo: undo);
+        if (n > 0) town.Plan.LastStroke = undo;
         if (n > 0)
             town.Log(
                 LedgerCategory.Property,
@@ -43,6 +45,88 @@ public static class Planning
     }
 
     public static string ZoneName(Zone zone) => zone.ToString().ToLowerInvariant();
+
+    /// <summary>Take back the player's last brush stroke on ground still unbuilt (Ctrl+Z). Returns cells put back.</summary>
+    public static int Undo(Town town)
+    {
+        var plan = town.Plan;
+        if (plan.LastStroke is not { Count: > 0 } stroke) return 0;
+        plan.LastStroke = null;
+        int n = 0;
+        foreach (var (i, zone, density, crop) in stroke)
+        {
+            if (plan.Taken[i] != 0) continue;
+            plan.Zones[i] = zone;
+            plan.Density[i] = density;
+            plan.Crops[i] = crop;
+            n++;
+        }
+        if (n == 0) return 0;
+        plan.Changed();
+        plan.Painted++;
+        town.Log(LedgerCategory.Property, Importance.Routine, $"The council takes back its last change to the plan ({Acres(n)}).");
+        return n;
+    }
+
+    // Tearing down ----------------------------------------------------------------------------
+
+    public static DemolishRules DemolishRules(Town town) => town.Content.City.Demolish;
+
+    /// <summary>Why the council can't tear this down or call it off, or null if it can.</summary>
+    public static string? RazeBlocked(Town town, Building b)
+    {
+        if (b.Razed) return "it is already gone";
+        if (b.OwnerId is int o) return $"it belongs to {town.Agent(o).Name}";
+        if (b.Def.Id == "town_hall" || b.Def.IsGrand || b.Def.IsPart || b.Def.Bastion || Monuments.IsMonument(town, b.Def))
+            return "it is one of the town's pillars";
+        // The last of a kind that houses an institution keeps its keeper's door open.
+        if (b.Complete && Institutions.For(town, b.Def.Id) != null && !town.Buildings.Any(x => x != b && x.Def.Id == b.Def.Id && x.Complete))
+            return "the town's only one keeps an institution";
+        return null;
+    }
+
+    /// <summary>Gold back for tearing it down: all of it for a site not begun, a share of what's left for one under way, a little for a finished one.</summary>
+    public static double Refund(Town town, Building b)
+    {
+        var r = DemolishRules(town);
+        double paid = b.Paid > 0 ? b.Paid : Math.Max(0, Cost(town, b.Def) - Materials(town, b.Def));
+        double share = b.Complete ? r.Finished
+            : b.BuildProgress <= 0 ? r.Unstarted
+            : r.Started * (1 - Math.Clamp(b.BuildProgress / Math.Max(1, b.Def.BuildHours), 0, 1));
+        return Math.Floor(paid * share);
+    }
+
+    /// <summary>Tear a town building down, or call off a site: its people move out, its goods go to market, the gold back to the treasury, its ground is free.</summary>
+    public static bool Raze(Town town, Building b)
+    {
+        if (RazeBlocked(town, b) != null) return false;
+        bool site = b.IsSite;
+        double refund = Refund(town, b);
+        foreach (int id in b.Workers.ToList())
+            if (town.Agent(id).JobId == b.Id) town.Agent(id).JobId = null;
+        foreach (int id in b.Residents.ToList())
+            if (town.Agent(id).HomeId == b.Id) town.Agent(id).HomeId = null;
+        b.Workers.Clear();
+        b.Residents.Clear();
+        foreach (var (g, q) in b.Stock.ToList())
+        {
+            if (q > 0) town.Market.Seed(g, q);
+            b.Stock[g] = 0;
+        }
+        // A running business's till comes back; a site's float was never the treasury's.
+        if (!site) refund += Math.Max(0, b.Cash);
+        b.Cash = 0;
+        b.LaborBudget = 0;
+        b.Draws = b.Priority = b.Opened = b.ForSale = false;
+        b.StalledSince = -1;
+        b.Razed = true;
+        Land.Release(town, town.Lot(b.LotId));
+        if (refund > 0) town.Book(TreasuryAccount.Works, refund);
+        town.Log(LedgerCategory.Construction, Importance.Notable, site
+            ? $"The council calls off work on {b.Name}{(refund > 0 ? $" and has {Js.Str(refund)} gold back" : "")}."
+            : $"The council has {b.Name} torn down{(refund > 0 ? $", for {Js.Str(refund)} gold back" : "")}.");
+        return true;
+    }
 
     /// <summary>Painted area in words: a plan cell is a sixteenth of a tile, and a tile is about an acre.</summary>
     private static string Acres(int cells)
@@ -108,7 +192,7 @@ public static class Planning
         if (SightWork(town, d.Id) is { } w) return Watch.WorkBlocked(town, w);
         if (!Placeable(town).Contains(d)) return "not the town's to build";
         if (City.Locked(town, d) is { } locked) return locked;
-        int count = town.Buildings.Count(b => b.Def.Id == d.Id);
+        int count = town.Buildings.Count(b => b.Def.Id == d.Id && !b.Razed);
         if (d.Max > 0 && count >= d.Max) return $"the town has {d.Max}";
         if (Watch.TowerBlocked(town, d) is { } towers) return towers;
         if (town.Population < d.Population) return $"needs {d.Population} residents";
@@ -173,6 +257,7 @@ public static class Planning
         // The council's timber and stone come off the market as the haulers carry them (Construction.Haul), so the work can stall.
         town.Book(d.Id == "house" ? TreasuryAccount.CharterHouses : TreasuryAccount.Works, -(cost - Materials(town, d)));
         var site = town.AddBuilding(d, lot, null, name, false);
+        site.Paid = cost - Materials(town, d);
         site.Draws = true;
         site.LaborBudget = Construction.Hours(town, d) * Brain.ConstructionWage;
         if (d.IsBusiness) site.Cash = StartingCash;
@@ -187,7 +272,7 @@ public static class Planning
 
     private static string CivicName(Town town, BuildingDef d)
     {
-        int n = town.Buildings.Count(b => b.Def.Id == d.Id);
+        int n = town.Buildings.Count(b => b.Def.Id == d.Id && !b.Razed);
         return n == 0 ? $"the {d.Name}" : $"the {d.Name} No. {n + 1}";
     }
 
@@ -251,4 +336,16 @@ public static class Planning
         double grow = town.Content.Rules.ServiceGrowth;
         return grow > 0 ? Js.Round(f * (1 + town.Workers.Count / grow)) : f;
     }
+}
+
+public sealed record DemolishRules
+{
+    /// <summary>Share of what was paid back for a site whose footings aren't begun.</summary>
+    public double Unstarted { get; init; } = 1;
+
+    /// <summary>Share of what was paid back for a site under way, times the share of the work still to do.</summary>
+    public double Started { get; init; } = 0.6;
+
+    /// <summary>Share of what was paid back for a finished building.</summary>
+    public double Finished { get; init; } = 0.25;
 }

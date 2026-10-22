@@ -181,7 +181,8 @@ public class PassageTests
         for (int seed = 1; seed <= 30 && seen < 3; seed++)
         {
             var t = new Simulation(new SimulationOptions { Seed = seed }).Town;
-            foreach (var f in t.Terrain.Where(f => f.Kind.Barrier != ""))
+            // The bone ferryman's water is the one anyone crosses (WayfaringTests).
+            foreach (var f in t.Terrain.Where(f => f.Kind.Barrier != "" && f.Kind.Wonder == null))
             {
                 // Straight through the middle of it, from just short of it to just past it.
                 double mid = (f.Inner + f.Outer) / 2, a = f.Bearing * Math.PI / 180;
@@ -214,6 +215,12 @@ public class PassageTests
         // Heroes who can't fly or climb a cliff on their own (no spell or item for it).
         var heroes = t.Heroes.Where(h => (Passage.Abilities(t, [h]) & Ways.Sheer) == Ways.None).Take(3).ToList();
         Assert.Equal(3, heroes.Count);
+        // On foot and empty-handed: no flying carpet or winged boots of their own.
+        foreach (var h in heroes)
+        {
+            h.Hero!.Mount = "";
+            foreach (var k in h.Hero.Magic.Select(e => e.Key).ToList()) h.Hero.Magic.Remove(k);
+        }
         Assert.Equal(Ways.None, Passage.Abilities(t, heroes) & Ways.Sheer);
         // One on a griffon is not enough; all of them on griffons go anywhere.
         heroes[0].Hero!.Mount = "griffon";

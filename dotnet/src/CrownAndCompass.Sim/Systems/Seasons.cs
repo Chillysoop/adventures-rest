@@ -175,21 +175,22 @@ public static class Seasons
     public static double Mood(Town town)
     {
         var s = Current(town);
-        return s.Mood + (Festival(town) && s.Festival != null ? s.Festival.Mood : 0);
+        return s.Mood + (Festival(town) && s.Festival != null ? s.Festival.Mood : 0) + Omens.Mood(town);
     }
 
-    public static double Yield(Town town, Good g) => Current(town).YieldOf(g);
+    // The year's omen folds into the season it falls in (Omens).
+    public static double Yield(Town town, Good g) => Current(town).YieldOf(g) * Omens.Yield(town, g);
 
-    public static double Build(Town town) => Current(town).Build;
+    public static double Build(Town town) => Current(town).Build * Omens.Build(town);
 
-    public static double Arrivals(Town town) => Current(town).Arrivals;
+    public static double Arrivals(Town town) => Current(town).Arrivals + Omens.Arrivals(town);
 
     /// <summary>How busy a kind of menace is this season.</summary>
-    public static double Activity(Town town, string kind) => Current(town).Menace.TryGetValue(kind, out double a) ? a : 1;
+    public static double Activity(Town town, string kind) => (Current(town).Menace.TryGetValue(kind, out double a) ? a : 1) * Omens.Menace(town);
 
-    public static double Warband(Town town) => Current(town).Warband;
+    public static double Warband(Town town) => Current(town).Warband * Omens.Warband(town);
 
-    public static int MarchDays(Town town) => Current(town).MarchDays;
+    public static int MarchDays(Town town) => Current(town).MarchDays + Omens.MarchDays(town);
 
     // The day ----------------------------------------------------------------------------------
 
@@ -297,7 +298,7 @@ public static class Seasons
         double festival = Festival(town) && s.Festival != null ? s.Festival.Tourists : 1;
         // Gardens, fountains and statues the settlers come for draw visitors too.
         double appeal = Decor.Draw(town) / Math.Max(0.01, Decor.Rules(town).DrawCap);
-        double n = City.Souls(town) * r.PerSoul * s.Tourists * festival * Tournaments.Tourists(town) * (1 + r.TierBonus * town.City.Tier + r.Appeal * appeal);
+        double n = City.Souls(town) * r.PerSoul * s.Tourists * Omens.Tourists(town) * festival * Tournaments.Tourists(town) * (1 + r.TierBonus * town.City.Tier + r.Appeal * appeal);
         st.Tourists = (int)Math.Floor(n);
         st.TouristGold = 0;
         if (st.Tourists == 0) return;

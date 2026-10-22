@@ -59,6 +59,12 @@ public sealed class Building(int id, BuildingDef def, int lotId)
     /// <summary>A site the player put first: builders and the town's timber and stone go to it ahead of the others.</summary>
     public bool Priority { get; set; }
 
+    /// <summary>Torn down or called off by the council (<see cref="Systems.Planning.Raze"/>): neither built nor a site, gone from the map, its ground free.</summary>
+    public bool Razed { get; set; }
+
+    /// <summary>Gold the council has paid for it (the commission, then timber and stone as hauled), for a refund if it comes down.</summary>
+    public double Paid { get; set; }
+
     /// <summary>A council site waiting for timber or stone the market hasn't got: the tick it stalled, or -1.</summary>
     public int StalledSince { get; set; } = -1;
 
@@ -89,6 +95,9 @@ public sealed class Building(int id, BuildingDef def, int lotId)
     public bool ForSale { get; set; }
     public bool Closed { get; set; }
 
+    /// <summary>A house: the tick its sickness lifts, or the tick it lifted; 0 for never sick (<see cref="Systems.Sickness"/>).</summary>
+    public int SickUntil { get; set; }
+
     /// <summary>A house: how content its families were yesterday with what the town gives them (0 to 1).</summary>
     public double Contentment { get; set; } = 1;
 
@@ -113,8 +122,8 @@ public sealed class Building(int id, BuildingDef def, int lotId)
     public void Raise(Town town, double hours) =>
         BuildProgress = Math.Min(BuildProgress + hours, Math.Max(BuildProgress, Math.Min(Funded, Systems.Construction.Ready(town, this))));
 
-    public bool Complete => BuildProgress >= Def.BuildHours;
-    public bool IsSite => !Complete;
+    public bool Complete => !Razed && BuildProgress >= Def.BuildHours;
+    public bool IsSite => !Razed && !Complete;
     /// <summary>The town hall's road crews: extra hands the treasury hires out of the town's upkeep.</summary>
     public int Crew { get; set; }
 
@@ -408,6 +417,9 @@ public sealed class Town
     /// <summary>The country that bends the roads between the town and its sites (<see cref="Systems.Roads"/>).</summary>
     public List<Feature> Terrain { get; } = [];
 
+    /// <summary>Old gateways in the wilds that link two far places (<see cref="Systems.Wayfaring"/>).</summary>
+    public List<Gateway> Gateways { get; } = [];
+
     /// <summary>Villages, holds and enclaves out in the wilds, by id.</summary>
     public List<Settlement> Settlements { get; } = [];
 
@@ -555,6 +567,15 @@ public sealed class Town
     /// <summary>The town armory: items to gift heroes, and loot offered to the town (<see cref="Systems.Armory"/>).</summary>
     public ArmoryState Armory { get; } = new();
 
+    /// <summary>Which areas of the town's business the player has handed to stewards, and what they ask (<see cref="Systems.Stewards"/>).</summary>
+    public Systems.StewardState Stewards { get; } = new();
+
+    /// <summary>The mayor's regalia: what they wear in each slot, and the banner's boons on companies out (<see cref="Systems.Regalia"/>).</summary>
+    public RegaliaState Regalia { get; } = new();
+
+    /// <summary>The mayor as a living person: where they spend their days, their wounds, death and successors (<see cref="Systems.Mayoralty"/>).</summary>
+    public MayoraltyState Mayoralty { get; } = new();
+
     /// <summary>The alchemy bench: monster parts in store, potions on the shelf and the town's recipe book (<see cref="Systems.Alchemy"/>).</summary>
     public AlchemyState Alchemy { get; } = new();
 
@@ -580,6 +601,9 @@ public sealed class Town
     /// <summary>The library, its spellbooks and what the town's scholars have discovered.</summary>
     public Systems.ResearchState Research { get; } = new();
 
+    /// <summary>The Skywright relics, the foe racing for them, and the Lofted City's course (<see cref="Systems.Lofted"/>).</summary>
+    public Systems.LoftedState Lofted { get; } = new();
+
     /// <summary>The city's institutions, in the order they opened (<see cref="Systems.Institutions"/>).</summary>
     public List<Systems.InstitutionState> Institutions { get; } = [];
 
@@ -591,6 +615,24 @@ public sealed class Town
 
     /// <summary>Townsfolk's inspirations and breaks: when the Ledger last told of one (<see cref="Systems.Moods"/>).</summary>
     public Systems.MoodState Moods { get; } = new();
+
+    /// <summary>The whole campaign's weekly readings and pinned moments, for the graphs (<see cref="Systems.Records"/>).</summary>
+    public Systems.RecordState Records { get; } = new();
+
+    /// <summary>What the heroes say of the town lately (<see cref="Systems.Word"/>).</summary>
+    public Systems.WordState Word { get; } = new();
+
+    /// <summary>This year's omen and the years' before (<see cref="Systems.Omens"/>).</summary>
+    public Systems.OmenState Omens { get; } = new();
+
+    /// <summary>Sickness in town: the sick lanes and the outbreaks so far (<see cref="Systems.Sickness"/>; the sick houses keep their own days).</summary>
+    public Systems.SicknessState Sickness { get; } = new();
+
+    /// <summary>Traps laid before the wall (<see cref="Systems.Traps"/>).</summary>
+    public Systems.TrapState Traps { get; } = new();
+
+    /// <summary>The big bad's own company on the roads (<see cref="Systems.DarkCompany"/>).</summary>
+    public Systems.DarkCompanyState DarkCompany { get; } = new();
 
     /// <summary>The storyteller the town was founded under (storytellers.json id); null in a save from before there were any (<see cref="Systems.Storyteller"/>).</summary>
     public string? Storyteller { get; set; }

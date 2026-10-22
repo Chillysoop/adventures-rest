@@ -1,0 +1,21 @@
+{
+  "_doc": "The mayor as a living person (Systems/Mayoralty.cs). Hit points are hp.base + hp.perLevel per level past the first, plus the Constitution modifier each level (at least 1 a level); they heal heal of the most a day, or all at once with a temple. Stances: keep (out of reach, nothing gained), town (walks the streets: mandate a day, loyalty from heroes, but assassins come for the mayor with assassin share of their blows and each breach in a siege wounds them with breach chance) and ride (goes with the next company to march: edge on its checks and blows, xp when it comes home, xpCleared if it cleared the place; each fallen companion is perDead chance of a wound, and a wiped company takes the mayor with it, body and all). Wounds are a share of the most hit points between the two numbers given. A dead mayor can be raised at the temple for raise.cost + raise.perLevel a level from the treasury unless the body was lost; otherwise the council names a successor from candidates rolled mayors, who starts with successorXp of the dead mayor's XP. Until then Mandate falls by leaderless a day, and after decideDays the council chooses for the player (the stand-in chooses at once: raise if it can pay with reserve to spare). Hardcore (New game): the mayor's death ends the campaign.",
+  "hp": { "base": 8, "perLevel": 5 },
+  "heal": 0.15,
+  "stances": [
+    { "id": "keep", "name": "Stay in the hall", "icon": "defence" },
+    { "id": "town", "name": "Walk the streets", "icon": "population", "mandate": 0.04, "loyalty": 2 },
+    { "id": "ride", "name": "Ride with a company", "icon": "compass", "edge": 1 }
+  ],
+  "start": "keep",
+  "assassin": 0.35,
+  "assassinWound": [0.5, 1.3],
+  "breach": 0.3,
+  "breachWound": [0.25, 0.8],
+  "ride": { "xp": 25, "xpCleared": 60, "perDead": 0.25, "wound": [0.3, 1.1] },
+  "raise": { "cost": 600, "perLevel": 150, "reserve": 200 },
+  "candidates": 3,
+  "successorXp": 0.5,
+  "leaderless": 0.8,
+  "decideDays": 7
+}

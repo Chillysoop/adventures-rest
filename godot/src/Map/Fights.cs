@@ -40,14 +40,76 @@ public partial class Crowd
     }
 
     private readonly HashSet<int> _struck = [];
+    private readonly Dictionary<int, float> _blows = [];
 
-    /// <summary>One of a host, in the chunky style (<see cref="Heroes.FoeLook"/>), scaled as the old figures were.</summary>
-    private void Foe(string kind, Vector3 p, float yaw, Color body, Color skin, float scale, Heroes.Act act, float u, float flash = 0, bool chief = false) =>
-        Heroes.PutLook(Heroes.FoeLook(kind, chief, body, skin), new Transform3D(Basis.FromEuler(new Vector3(0, yaw, 0)).Scaled(Vector3.One * scale * 0.95f), p), act == Heroes.FoeAttack ? Heroes.FoeLook(kind, chief, body, skin).Attack : act, u, flash);
-
-    /// <summary>One of a host fallen on their back.</summary>
-    private void FoeFallen(string kind, Vector3 p, float yaw, Color body, Color skin, float scale, bool chief = false)
+    /// <summary>
+    /// The moment a creature's blow lands (u its attack cycle): its power every third blow (a breath's fire, a gaze's
+    /// glare, in the colour of what it is), a spat or loosed bolt, or the sparks of a bite or a claw.
+    /// </summary>
+    private void BeastBlow(Town town, string id, int key, Vector3 from, Vector3 to, float u)
     {
+        float f = u - Mathf.Floor(u);
+        float was = _blows.GetValueOrDefault(key, f);
+        _blows[key] = f;
+        if (!(was < 0.47f && f >= 0.47f)) return;
+        var a = Beasts.Of(id);
+        if (a == null) return;
+        var ways = Sim.Systems.Knacks.Of(town.Content, town.Content.Monster(id));
+        if (ways.Power is { } p && (int)Mathf.Floor(u) % 3 == 0)
+        {
+            string n = p.Name.ToLowerInvariant();
+            var c = n.Contains("fire") || n.Contains("flame") || n.Contains("heat") ? new Color("ff7a2a")
+                : n.Contains("cold") || n.Contains("frost") || n.Contains("ice") ? new Color("bfe8ff")
+                : n.Contains("lightning") || n.Contains("thunder") ? new Color("9fd0ff")
+                : n.Contains("acid") || n.Contains("poison") || n.Contains("spore") ? new Color("8ee04a")
+                : n.Contains("gaze") || n.Contains("glare") ? new Color("e6f04a")
+                : new Color("c08aff");
+            Fx.Bolt(from, to, c, 6);
+            Fx.Burst(to, c, p.Area ? 1.4f : 0.9f);
+            return;
+        }
+        switch (a.Strike)
+        {
+            case "spit" or "shoot" or "cast":
+                Fx.Bolt(from, to, a.Strike == "spit" ? new Color("9ce05a") : new Color("ffe0a0"));
+                break;
+            case "engulf" or "touch":
+                Fx.Motes(to, new Color("#" + a.Accent), 5);
+                break;
+            default:
+                Fx.Hit(to, new Color("ff6a4a"), 0.5f + 0.2f * Mathf.Min(3, (float)a.Scale));
+                break;
+        }
+    }
+
+    /// <summary>
+    /// One of a host: the creature it is (<see cref="Beasts"/>, its own model, wearing the host's colour), or with no
+    /// creature named, the chunky figures of old (<see cref="Heroes.FoeLook"/>), scaled as they were.
+    /// </summary>
+    private void Foe(string kind, Vector3 p, float yaw, Color body, Color skin, float scale, Heroes.Act act, float u, float flash = 0, bool chief = false, string? creature = null)
+    {
+        if (creature != null)
+        {
+            var bact = act switch { Heroes.Act.Idle => Beasts.Act.Idle, Heroes.Act.Walk => Beasts.Act.Move, _ => Beasts.Act.Attack };
+            p.Y += Beasts.Lift(creature, bact == Beasts.Act.Move);
+            Beasts.Put(creature, new Transform3D(Basis.FromEuler(new Vector3(0, yaw, 0)).Scaled(Vector3.One * scale * 0.95f), p), bact, u, body, chief, flash);
+            return;
+        }
+        Heroes.PutLook(Heroes.FoeLook(kind, chief, body, skin), new Transform3D(Basis.FromEuler(new Vector3(0, yaw, 0)).Scaled(Vector3.One * scale * 0.95f), p), act == Heroes.FoeAttack ? Heroes.FoeLook(kind, chief, body, skin).Attack : act, u, flash);
+    }
+
+    /// <summary>The creature the i-th of a host is: its leader first (Bestiary.Host), the rest by turns; null for the old figures.</summary>
+    private static string? Ranks(List<string> host, int i, bool chief = false) =>
+        host.Count == 0 ? null : chief || host.Count == 1 ? host[0] : host[1 + i % (host.Count - 1)];
+
+    /// <summary>One of a host fallen on their back (a creature on its side).</summary>
+    private void FoeFallen(string kind, Vector3 p, float yaw, Color body, Color skin, float scale, bool chief = false, string? creature = null)
+    {
+        if (creature != null)
+        {
+            Beasts.Fallen(creature, p, yaw, scale * 0.95f, body, chief);
+            return;
+        }
         var basis = Basis.FromEuler(new Vector3(0, yaw, 0)) * Basis.FromEuler(new Vector3(-Mathf.Pi / 2, 0, 0));
         Heroes.PutLook(Heroes.FoeLook(kind, chief, body, skin) with { Legend = null }, new Transform3D(basis.Scaled(Vector3.One * scale * 0.95f), p + new Vector3(0, 0.03f, 0)), Heroes.Act.Idle, 0);
     }
@@ -120,16 +182,24 @@ public partial class Crowd
         if (site == null) return;
         string kind = HostKind(town, site.Def);
         var skin = kind == "undead" ? new Color("cfc9b4") : OrcSkin;
+        // The boss squares up to the first of them; the rest are whoever the company met inside, else the site's own.
+        var held = Sim.Systems.Bestiary.SiteFoes(site.Def);
+        var met = party.Result?.Fought.Where(id => id != held.FirstOrDefault()).Distinct().ToList() ?? [];
+        var host = held.Take(1).Concat(met.Count > 0 ? met : held.Skip(1)).ToList();
         var members = party.Members.Select(town.Agent).Where(a => !a.Dead && a.Hero != null).ToList();
         for (int k = 0; k < members.Count; k++)
         {
             var a = members[k];
             float ang = k * Mathf.Tau / Math.Max(1, members.Count) + party.Id * 0.7f;
             var dir = new Vector2(Mathf.Cos(ang), Mathf.Sin(ang));
-            var foe = at + dir * 0.9f;
-            var hero = foe + dir * Heroes.Reach(a);
+            string? who = Ranks(host, k, k == 0);
+            // Something big stands further off, and the hero meets it at its own reach.
+            float girth = who != null ? 0.22f * (float)(Beasts.Of(who)?.Scale ?? 1) : 0;
+            var foe = at + dir * (0.9f + girth);
+            var hero = foe + dir * (Heroes.Reach(a) + girth);
             var d = hero - foe;
-            Foe(kind, map.Gen.At(foe), Mathf.Atan2(d.X, d.Y), k % 3 == 0 ? new Color("4a2018") : new Color("8a3a2a"), skin, 1.0f, Heroes.FoeAttack, now / Heroes.Blow + k * 0.29f, chief: k == 0);
+            Foe(kind, map.Gen.At(foe), Mathf.Atan2(d.X, d.Y), k % 3 == 0 ? new Color("4a2018") : new Color("8a3a2a"), skin, 1.0f, Heroes.FoeAttack, now / Heroes.Blow + k * 0.29f, chief: k == 0, creature: who);
+            if (who != null) BeastBlow(town, who, party.Id * 64 + k, map.Gen.At(foe, 0.35f * (1 + girth)), map.Gen.At(hero, 0.3f), now / Heroes.Blow + k * 0.29f);
             Fight(a, hero, map.Gen.At(foe, 0.3f), now);
         }
     }

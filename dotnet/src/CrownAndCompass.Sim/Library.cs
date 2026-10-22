@@ -48,6 +48,37 @@ public sealed record LibMonster
     public IReadOnlyList<string> Habitats { get; init; } = [];
     public string Band { get; init; } = "";
     public bool Boss { get; init; }
+
+    /// <summary>The stat block's body: size (tiny to gargantuan), speeds other than walking, strength, dexterity,
+    /// armour, the names of its traits and of its attacks (best first as listed). <see cref="Systems.Bestiary"/> reads
+    /// them for how it looks, moves and fights.</summary>
+    public string Size { get; init; } = "medium";
+    public int Fly { get; init; }
+    public int Swim { get; init; }
+    public int Burrow { get; init; }
+    public int Climb { get; init; }
+    public bool Hover { get; init; }
+    public int Str { get; init; } = 10;
+    public int Dex { get; init; } = 10;
+    public string ArmorNote { get; init; } = "";
+    public IReadOnlyList<string> Traits { get; init; } = [];
+    public IReadOnlyList<string> Strikes { get; init; } = [];
+
+    /// <summary>Every action, bonus action, reaction and legendary action it has, by name ("Fire Breath", "Swallow").</summary>
+    public IReadOnlyList<string> Abilities { get; init; } = [];
+
+    /// <summary>What it does that heroes save against (a breath, a gaze, a roar), strongest first.</summary>
+    public IReadOnlyList<LibPower> Powers { get; init; } = [];
+}
+
+/// <summary>
+/// Something a creature does that its targets save against: a dragon's breath, a basilisk's gaze. Save is the ability
+/// ("dex"), Dice what a failure takes (null for none), Area whether it falls on everyone, Condition what a failure
+/// leaves them ("paralyzed", "frightened"; "" for none).
+/// </summary>
+public sealed record LibPower(string Name, int Dc, string Save, Dice? Dice, bool Area, string Condition)
+{
+    public double Avg => Dice is { } d ? d.Count * (d.Die + 1) / 2.0 + d.Bonus : 0;
 }
 
 public sealed record LibClass
@@ -259,10 +290,10 @@ public sealed class Library
     public IEnumerable<LibSpell> SpellsOf(string classId) =>
         Spells.Where(s => s.Classes.Contains(classId)).OrderBy(s => s.Level).ThenBy(s => s.Id, StringComparer.Ordinal);
 
-    private static Library? _default;
+    private static readonly Lazy<Library> _default = new(() => Load(EmbeddedFiles()));
 
     /// <summary>The bundled library, parsed once and shared.</summary>
-    public static Library Default() => _default ??= Load(EmbeddedFiles());
+    public static Library Default() => _default.Value;
 
     /// <summary>Load from the repo's content/ directory (everything but content/game).</summary>
     public static Library FromDirectory(string contentDir) =>
@@ -375,6 +406,76 @@ public sealed class Library
 
     private static readonly Regex Multiattack = new(@"makes (two|three|four|five)\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
+    private static readonly Regex TextAttack = new(@"Attack Roll: \+(\d+)[^.]*?\.\s*(?:\d+ \((\d+d\d+(?:\s*[+-]\s*\d+)?)\)|(\d+)) [A-Z][a-z]+ damage", RegexOptions.CultureInvariant);
+
+    /// <summary>
+    /// Where a creature the books give no home lives, from what it is: fiends in the hells, constructs in ruins and
+    /// workshops, swimmers in the sea. Every creature has somewhere to be met.
+    /// </summary>
+    private static List<string> HabitatsOf(string id, string type, double swim)
+    {
+        bool Is(params string[] w) => w.Any(id.Contains);
+        List<string> list = type switch
+        {
+            "humanoid" => Is("pirate") ? ["coast", "ocean"] : Is("lizardfolk", "frogoblin") ? ["swamp", "lake"] : Is("deep-gnome") ? ["underworld", "caves"]
+                : Is("kobold", "goblin", "bugbear", "hobgoblin") ? ["caves", "hills", "forest"] : Is("orc", "wild-warrior", "feral") ? ["hills", "grassland", "mountain"]
+                : Is("mage", "alchemist", "mechanist") ? ["urban", "laboratory"] : Is("druid") ? ["forest", "feywild"] : ["urban", "hills", "forest"],
+            "beast" => Is("raptor", "saurus", "ankylo", "allosaur") ? ["grassland", "forest"] : Is("pteranodon") ? ["coast", "hills"] : Is("hippo") ? ["swamp", "lake"]
+                : Is("scorpion") ? ["desert", "badlands"] : Is("snake", "frog") ? ["swamp", "forest"] : ["forest", "grassland", "hills"],
+            "monstrosity" => ["hills", "caves", "forest"],
+            "construct" => ["ruins", "laboratory"],
+            "fiend" => ["hell", "abyss", "ruins"],
+            "aberration" => ["underworld", "caves"],
+            "undead" => ["tomb", "ruins", "shadowfell"],
+            "elemental" => Is("fire", "scorch", "blaze", "salamand", "ember") ? ["plane-of-fire", "badlands"] : Is("water", "muck", "mire") ? ["plane-of-water", "swamp"]
+                : Is("earth", "stone") ? ["plane-of-earth", "mountain"] : ["plane-of-air", "mountain"],
+            "fey" => ["feywild", "forest"],
+            "dragon" => ["mountain", "hills"],
+            "plant" => ["forest", "swamp"],
+            "ooze" => ["caves", "underworld"],
+            "giant" => ["hills", "mountain"],
+            "celestial" => ["temple", "astral-plane"],
+            _ => ["hills", "ruins"],
+        };
+        if (swim >= 30 && !list.Contains("coast")) list = ["coast", "lake", .. list];
+        return list;
+    }
+
+    private static readonly Regex SaveNew = new(@"(Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) Saving Throw: DC (\d+)", RegexOptions.CultureInvariant);
+    private static readonly Regex SaveOld = new(@"DC (\d+) (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) saving throw", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+    private static readonly Regex SaveDice = new(@"\d+ \((\d+d\d+(?:\s*[+-]\s*\d+)?)\)", RegexOptions.CultureInvariant);
+    private static readonly Regex SaveCondition = new(@"(Paralyzed|Incapacitated|Frightened|Restrained|Poisoned|Stunned|Petrified|Blinded|Charmed|Grappled|Unconscious|Prone)", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+
+    /// <summary>The powers in a stat block's actions: each with a saving throw, read off its text.</summary>
+    private static List<LibPower> PowersOf(JsonElement actions)
+    {
+        var list = new List<LibPower>();
+        if (actions.ValueKind != JsonValueKind.Array) return list;
+        foreach (var a in actions.EnumerateArray())
+        {
+            string text = Str(a, "text"), name = Str(a, "name").Trim();
+            // A save that rides on a bite or a blade is part of the blow, not a power of its own.
+            if (text.Contains("Attack Roll", StringComparison.Ordinal) || text.Contains("Weapon Attack", StringComparison.Ordinal) || a.TryGetProperty("attacks", out _)) continue;
+            int dc;
+            string save;
+            var m = SaveNew.Match(text);
+            if (m.Success) (save, dc) = (m.Groups[1].Value, int.Parse(m.Groups[2].Value, CultureInfo.InvariantCulture));
+            else if (SaveOld.Match(text) is { Success: true } o) (save, dc) = (o.Groups[2].Value, int.Parse(o.Groups[1].Value, CultureInfo.InvariantCulture));
+            else continue;
+            // What a failure costs: the text after the save, up to a success.
+            int from = text.IndexOf("Failure", StringComparison.Ordinal) is int f and >= 0 ? f : 0;
+            string fail = text[from..];
+            int stop = fail.IndexOf("Success", StringComparison.Ordinal);
+            if (stop > 0) fail = fail[..stop];
+            var dice = SaveDice.Match(fail) is { Success: true } dm ? Dice.Parse(dm.Groups[1].Value) : null;
+            string cond = SaveCondition.Match(fail) is { Success: true } cm ? cm.Groups[1].Value.ToLowerInvariant() : "";
+            if (dice == null && cond == "") continue;
+            bool area = text.Contains("each creature", StringComparison.OrdinalIgnoreCase) || text.Contains("Cone", StringComparison.Ordinal) || text.Contains("Emanation", StringComparison.Ordinal) || text.Contains("Sphere", StringComparison.Ordinal);
+            list.Add(new LibPower(name, dc, save[..3].ToLowerInvariant(), dice, area, cond));
+        }
+        return list.OrderByDescending(p => p.Avg * (p.Area ? 2 : 1) + (p.Condition != "" ? 5 : 0)).ThenBy(p => p.Name, StringComparer.Ordinal).ToList();
+    }
+
     private static LibMonster ParseMonster(JsonElement e)
     {
         int toHit = 0;
@@ -382,10 +483,13 @@ public sealed class Library
         string weapon = "";
         double best = -1;
         int attacks = 1;
-        if (e.TryGetProperty("actions", out var actions) && actions.ValueKind == JsonValueKind.Array)
+        var strikes = new List<string>();
+        e.TryGetProperty("actions", out var actions);
+        if (actions.ValueKind == JsonValueKind.Array)
         {
             foreach (var a in actions.EnumerateArray())
             {
+                if (a.TryGetProperty("attacks", out var any) && any.ValueKind == JsonValueKind.Array && any.GetArrayLength() > 0) strikes.Add(Str(a, "name").Trim());
                 if (Str(a, "name").StartsWith("Multiattack", StringComparison.Ordinal))
                 {
                     var m = Multiattack.Match(Str(a, "text"));
@@ -404,8 +508,25 @@ public sealed class Library
                 }
             }
         }
+        // Attacks the importer could not break down ("1 Slashing damage", a blade with lightning on top): read off the text.
+        if (damage == null && actions.ValueKind == JsonValueKind.Array)
+            foreach (var a in actions.EnumerateArray())
+            {
+                var m = TextAttack.Match(Str(a, "text"));
+                if (!m.Success) continue;
+                var dice = m.Groups[2].Success ? Dice.Parse(m.Groups[2].Value) : int.TryParse(m.Groups[3].Value, out int flat) ? new Dice(1, 1, flat - 1) : null;
+                if (dice == null) continue;
+                damage = dice;
+                toHit = int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture);
+                weapon = Str(a, "name");
+                if (strikes.Count == 0) strikes.Add(weapon.Trim());
+                break;
+            }
         var rt = Rt(e);
         bool hasRt = rt.ValueKind == JsonValueKind.Object;
+        var speed = e.TryGetProperty("speed", out var spd) && spd.ValueKind == JsonValueKind.Object ? spd : default;
+        var habitats = Strings(e, "habitats");
+        if (habitats.Count == 0) habitats = HabitatsOf(Str(e, "id"), Str(e, "type"), speed.ValueKind == JsonValueKind.Object ? Num(speed, "swim") : 0);
         return new LibMonster
         {
             Id = Str(e, "id"),
@@ -421,9 +542,26 @@ public sealed class Library
             Damage = damage,
             Weapon = weapon,
             Attacks = attacks,
-            Habitats = Strings(e, "habitats"),
+            Habitats = habitats,
             Band = hasRt ? Str(rt, "band") : "",
             Boss = hasRt && Flag(rt, "boss"),
+            Size = Str(e, "size") is { Length: > 0 } size ? size : "medium",
+            Fly = e.TryGetProperty("speed", out var sp) && sp.ValueKind == JsonValueKind.Object ? (int)Num(sp, "fly") : 0,
+            Swim = sp.ValueKind == JsonValueKind.Object ? (int)Num(sp, "swim") : 0,
+            Burrow = sp.ValueKind == JsonValueKind.Object ? (int)Num(sp, "burrow") : 0,
+            Climb = sp.ValueKind == JsonValueKind.Object ? (int)Num(sp, "climb") : 0,
+            Hover = sp.ValueKind == JsonValueKind.Object && sp.TryGetProperty("hover", out var hv) && hv.ValueKind is JsonValueKind.True or JsonValueKind.Number,
+            Str = ab.ValueKind == JsonValueKind.Object && Num(ab, "str") > 0 ? (int)Num(ab, "str") : 10,
+            Dex = ab.ValueKind == JsonValueKind.Object && Num(ab, "dex") > 0 ? (int)Num(ab, "dex") : 10,
+            ArmorNote = Str(e, "armorNote"),
+            Traits = e.TryGetProperty("traits", out var ts) && ts.ValueKind == JsonValueKind.Array
+                ? ts.EnumerateArray().Where(t => t.ValueKind == JsonValueKind.Object).Select(t => Str(t, "name").Trim()).Where(n => n != "").ToList()
+                : [],
+            Strikes = strikes,
+            Abilities = actions.ValueKind == JsonValueKind.Array
+                ? actions.EnumerateArray().Where(a => a.ValueKind == JsonValueKind.Object).Select(a => Str(a, "name").Trim()).Where(n => n != "").ToList()
+                : [],
+            Powers = PowersOf(actions),
         };
     }
 

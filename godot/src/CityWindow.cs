@@ -21,6 +21,7 @@ public partial class Main
         p.Card($"{Ui.Tip(Ui.Head(Ui.Esc(tier.Name), "tab-city", Ui.KeywordColor, 17), tier.Blurb)}\n{Ui.Chips(Ui.Chip("population", $"{t.Population}", null, "Households"), Ui.Chip("ui-person", $"~{City.Souls(t):N0}", null, "Souls"))}");
 
         RenderSeason(p, t);
+        RenderSickness(p, t);
         RenderSettlers(t, p);
 
         var next = City.NextTier(t);
@@ -204,6 +205,7 @@ public partial class Main
         if (busy.Count > 0) effects.Add(Ui.Tip($"{Ui.Img("threat", 16)} {Ui.C(Ui.Bad, "[b]▲[/b]")}", $"On the move: {Expedition.ListNames(busy)}"));
         if (quiet.Count > 0) effects.Add(Ui.Tip($"{Ui.Img("threat", 16)} {Ui.C(Ui.Good, "[b]▼[/b]")}", $"Lie low: {Expedition.ListNames(quiet)}"));
         p.Text(Ui.Chips(effects.ToArray()), 13);
+        RenderOmen(p, t);
 
         double cap = Seasons.Stores(t);
         double full = Seasons.StoresFull(t);
@@ -215,6 +217,57 @@ public partial class Main
         if (holding && more > 0) p.Row(Ui.C(Ui.Ink2, $"[font_size=12]{why}[/font_size]"), ($"Lay in stores · {cost:N0}g", t.Treasury >= cost, true, () => { _sim.LayInStores(); _dirty = true; }));
         else p.Note(why);
         p.Text(Ui.Chips(Ui.Chip("ui-person", $"{st.Tourists}", null, "Visitors"), Ui.Chip("gold", $"{st.TouristGold:N0}", Ui.Gold, "Visitors spent yesterday"), Ui.Chip("ui-day", $"{st.SeasonGold:N0}g", Ui.Gold, "Visitors spent this season")), 13);
+    }
+
+    /// <summary>This year's omen: what the seers foretold, when it falls and what it does.</summary>
+    private static void RenderOmen(Pane p, Town t)
+    {
+        if (Omens.Foretold(t) is not { } o) return;
+        bool now = Omens.Now(t) == o;
+        int? until = Omens.DaysUntil(t);
+        var color = o.Good ? Ui.Good : Ui.Bad;
+        string when = now ? Ui.Chip("ui-time", "now", color, "In its season now") : until is int d && d > 0 ? Ui.Chip("ui-time", $"in {Ui.Days(d)}", Ui.Ink2, "When it falls") : Ui.Chip("ui-time", "passed", Ui.Ink2);
+        string effects = string.Join(" ", OmenEffects(o));
+        p.Text($"{Ui.Tip($"{Ui.Img(o.Icon, 18)} [b]{Ui.Esc(o.Name)}[/b]", $"The seers foretold it for this year. {o.Text}")}  {when}  {effects}", 13);
+    }
+
+    /// <summary>What an omen does, as chips: green for a boon, red for a trial.</summary>
+    public static List<string> OmenEffects(OmenDef o)
+    {
+        var e = new List<string>();
+        string Pct(double y) => Ui.C(y >= 1 ? Ui.Good : Ui.Bad, $"[b]{Math.Round(y * 100)}%[/b]");
+        foreach (var (g, y) in o.Yields) e.Add(Ui.Tip($"{Ui.Img(g.ToString().ToLowerInvariant(), 14)} {Pct(y)}", $"{g} output"));
+        if (o.Mood != 0) e.Add(Ui.Tip($"{Ui.Img("mandate", 14)} {Ui.Signed(o.Mood)}", "Mood"));
+        if (Math.Abs(o.Build - 1) > 0.01) e.Add(Ui.Tip($"{Ui.Img("tools", 14)} {Pct(o.Build)}", "Building speed"));
+        if (o.Arrivals != 0) e.Add(Ui.Tip($"{Ui.Img("population", 14)} {Ui.C(o.Arrivals > 0 ? Ui.Good : Ui.Bad, o.Arrivals > 0 ? "[b]▲[/b]" : "[b]▼[/b]")}", "Settlers"));
+        if (o.Heroes != 0) e.Add(Ui.Tip($"{Ui.Img("heroes", 14)} {Ui.C(o.Heroes > 0 ? Ui.Good : Ui.Bad, o.Heroes > 0 ? "[b]▲[/b]" : "[b]▼[/b]")}", "Heroes walking in"));
+        if (Math.Abs(o.Tourists - 1) > 0.01) e.Add(Ui.Tip($"{Ui.Img("ui-person", 14)} {Pct(o.Tourists)}", "Visitors"));
+        if (o.Menace > 1.01 || o.Warband > 1.01) e.Add(Ui.Tip($"{Ui.Img("threat", 14)} {Ui.C(Ui.Bad, "[b]▲[/b]")}", "Enemies on the move"));
+        else if (o.Menace < 0.99 || o.Warband < 0.99) e.Add(Ui.Tip($"{Ui.Img("threat", 14)} {Ui.C(Ui.Good, "[b]▼[/b]")}", "Enemies lie low"));
+        if (o.MarchDays != 0) e.Add(Ui.Tip($"{Ui.Img("ui-road", 14)} {Ui.C(o.MarchDays > 0 ? Ui.Good : Ui.Bad, $"[b]{(o.MarchDays > 0 ? "+" : "")}{Ui.Days(o.MarchDays)}[/b]")}", "Armies march"));
+        if (Math.Abs(o.Sick - 1) > 0.01) e.Add(Ui.Tip($"{Ui.Img("sickness", 14)} {Pct(o.Sick)}", "Sickness spreads"));
+        return e;
+    }
+
+    /// <summary>Sickness in the houses: how many, who brought it, and the council's two answers.</summary>
+    private void RenderSickness(Pane p, Town t)
+    {
+        if (!Sickness.Outbreak(t)) return;
+        var sick = Sickness.Sick(t);
+        var r = t.Content.Sickness;
+        p.Heading("Sickness", "sickness");
+        p.Text(Ui.Chips(Ui.Chip("sick-house", $"{sick.Count}", Ui.Bad, "Sick houses"), Ui.Chip("ui-person", $"{Sickness.Abed(t)}", Ui.Bad, "Abed"),
+            Ui.Chip("tend", $"−{Math.Round(Sickness.Healers(t) * 100)}%", Ui.Good, "Healers and clean water slow the spread")), 13);
+        int until = t.Tick + r.Tend.Days * SimTime.HoursPerDay;
+        bool tended = sick.All(b => b.SickUntil <= until);
+        double cost = Sickness.TendCost(t);
+        p.Row(Ui.Tip($"{Ui.Img("tend", 16)} Healers door to door", $"Every sick house is up within {Ui.Days(r.Tend.Days)}."),
+            (tended ? "Tended" : $"Tend · {Js.Str(cost)}g", !tended && t.Treasury >= cost, true, () => Act(() => _sim.TendTheSick())));
+        bool q = t.Sickness.Quarantine;
+        p.Row(Ui.Tip($"{Ui.Img("quarantine", 16)} Close the sick lanes", $"Spreads {Math.Round((1 - r.Quarantine.Spread) * 100)}% slower; everyone's mood {Ui.Signed(r.Quarantine.Mood)}."),
+            (q ? "Open" : "Close", true, !q, () => Act(() => _sim.Quarantine(!q))));
+        var shown = sick.OrderBy(b => b.Id).First();
+        p.Buttons(("Show", true, false, () => LookAtBuilding(shown)));
     }
 
     /// <summary>Why settlers come or stay away: each reason with its sign, as the arrivals roll counts it.</summary>
