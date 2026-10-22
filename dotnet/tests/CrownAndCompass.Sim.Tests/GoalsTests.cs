@@ -132,4 +132,17 @@ public class GoalsTests
         Assert.Equal(sim.Town.Goals.Done, loaded.Town.Goals.Done);
         Assert.Equal(sim.Town.Treasury, loaded.Town.Treasury);
     }
+
+    [Fact]
+    public void AfterTheListTheCardShowsTheNextCharter()
+    {
+        var sim = Player();
+        var t = sim.Town;
+        Assert.Empty(Ahead.Now(t).Aims);
+        t.Goals.Closed = true;
+        var (title, aims) = Ahead.Now(t);
+        Assert.Contains(City.NextTier(t)!.Name, title);
+        Assert.InRange(aims.Count, 1, Ahead.Most);
+        Assert.All(aims, a => Assert.InRange(a.Share, 0, 1));
+    }
 }

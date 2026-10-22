@@ -241,7 +241,8 @@ public partial class Main
         if (check || _goalTarget == null)
         {
             var next = _goalsCard.Visible && !tutorial ? CrownAndCompass.Sim.Systems.Goals.Next(_sim.Town) : null;
-            _goalPoint = next?.Point ?? "";
+            _goalPoint = next?.Point
+                ?? (_goalsCard.Visible && !tutorial && _sim.Town.Goals.Closed ? CrownAndCompass.Sim.Systems.Ahead.Now(_sim.Town).Aims.FirstOrDefault(a => a.Point != "")?.Point : null) ?? "";
             _goalTarget = _goalPoint == "" ? null : GuideTarget(_goalPoint);
         }
         var target = _goalsCard.Visible && !tutorial && _goalTarget != null && _goalTarget.IsVisibleInTree() ? _goalTarget : null;

@@ -353,7 +353,9 @@ public partial class Main
     private PanelContainer _goalsCard = null!;
     private VBoxContainer _goalsRows = null!;
     private Label _goalsCount = null!;
+    private Label _goalsTitle = null!;
     private string _goalsSig = "";
+    private int _aheadShown;
     private Simulation? _goalsSim;
     private int _goalsDone;
     private readonly List<Control> _goalsFlourish = [];
@@ -367,9 +369,9 @@ public partial class Main
         v.AddThemeConstantOverride("separation", 6);
         _goalsCard.AddChild(v);
         var head = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
-        var title = Ui.Label("CHARTER GOALS", Ui.Gold, Ui.Bold, 10);
-        title.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        head.AddChild(title);
+        _goalsTitle = Ui.Label("CHARTER GOALS", Ui.Gold, Ui.Bold, 10);
+        _goalsTitle.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        head.AddChild(_goalsTitle);
         _goalsCount = Ui.Label("", Ui.Ink2, Ui.Medium, 10);
         head.AddChild(_goalsCount);
         v.AddChild(head);
@@ -404,15 +406,13 @@ public partial class Main
             _goalsDone = t.Goals.Done.Count;
             _goalsSig = "";
         }
-        if (!_dirty && _goalsSig != "" && t.Goals.Closed && _goalsFlourish.Count == 0)
-        {
-            _goalsCard.Visible = false;
-            return;
-        }
         var open = Goals.Open(t);
         if (_dirty || _goalsSig == "")
         {
-            string sig = string.Join("|", open.Select(g => $"{g.Id}:{Goals.Progress(t, g).Now}")) + $"#{_goalsFlourish.Count}";
+            // Once the charter goals are done the card carries on as the what-next card (Systems/Goals.cs Ahead).
+            var (aheadTitle, aims) = open.Count == 0 && _goalsFlourish.Count == 0 ? Ahead.Now(t) : ("", []);
+            string sig = string.Join("|", open.Select(g => $"{g.Id}:{Goals.Progress(t, g).Now}")) + $"#{_goalsFlourish.Count}"
+                + aheadTitle + string.Join("|", aims.Select(a => $"{a.Text}:{a.Figure}"));
             if (sig != _goalsSig)
             {
                 _goalsSig = sig;
@@ -423,10 +423,14 @@ public partial class Main
                 }
                 var next = Goals.Next(t);
                 foreach (var g in open) _goalsRows.AddChild(GoalRow(t, g, g == next));
-                _goalsCount.Text = $"{t.Goals.Done.Count} OF {t.Content.Goals.Goals.Count}";
+                foreach (var a in aims) _goalsRows.AddChild(Row(a.Icon, a.Text, a.Share, a.Figure == "" ? "" : Ui.C(Ui.Ink2, Ui.Esc(a.Figure)), a.Point != ""));
+                _aheadShown = aims.Count;
+                bool charter = open.Count > 0 || _goalsFlourish.Count > 0;
+                _goalsTitle.Text = charter ? "CHARTER GOALS" : aheadTitle.ToUpperInvariant();
+                _goalsCount.Text = charter ? $"{t.Goals.Done.Count} OF {t.Content.Goals.Goals.Count}" : "";
             }
         }
-        bool any = open.Count > 0 || _goalsFlourish.Count > 0;
+        bool any = open.Count > 0 || _goalsFlourish.Count > 0 || _aheadShown > 0;
         bool covered = _window.Visible || _title.Visible || _menu.Visible || _endOverlay.Visible
             || (_inspector.Visible && _inspector.GetGlobalRect().Intersects(_goalsCard.GetGlobalRect()));
         _goalsCard.Visible = any && !covered;
@@ -439,29 +443,38 @@ public partial class Main
     private static Control GoalRow(Town t, GoalDef g, bool next)
     {
         var (now, target) = Goals.Progress(t, g);
+        return Row(g.Icon, g.Text, (double)now / Math.Max(1, target), $"{Ui.C(Ui.Ink2, $"{Ui.Esc(g.Label)} {now}/{target}")}   {Ui.C(Ui.Gold, Ui.Esc(Goals.Reward(g)))}", next);
+    }
+
+    /// <summary>A line of the card: icon and few words, a bar, and a small figure below.</summary>
+    private static Control Row(string icon, string words, double share, string figure, bool next)
+    {
         var row = new VBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
         row.AddThemeConstantOverride("separation", 3);
         var head = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
         head.AddThemeConstantOverride("separation", 6);
-        if (g.Icon != "")
+        if (icon != "")
             head.AddChild(new TextureRect
             {
-                Texture = Ui.Icon(g.Icon), CustomMinimumSize = new Vector2(18, 18), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+                Texture = Ui.Icon(icon), CustomMinimumSize = new Vector2(18, 18), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
                 StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, SizeFlagsVertical = SizeFlags.ShrinkCenter, MouseFilter = MouseFilterEnum.Ignore,
                 Modulate = next ? Ui.Gold : Ui.Ink2,
             });
-        var text = Ui.Label(next ? $"{g.Text}  ▶" : g.Text, next ? Ui.Gold : Ui.Ink, next ? Ui.Bold : Ui.Medium, 13);
+        var text = Ui.Label(next ? $"{words}  ▶" : words, next ? Ui.Gold : Ui.Ink, next ? Ui.Bold : Ui.Medium, 13);
         text.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         text.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         head.AddChild(text);
         row.AddChild(head);
-        var bar = new ProgressBar { MinValue = 0, MaxValue = target, Value = now, ShowPercentage = false, CustomMinimumSize = new Vector2(0, 4), MouseFilter = MouseFilterEnum.Ignore };
+        var bar = new ProgressBar { MinValue = 0, MaxValue = 1, Step = 0, Value = Math.Clamp(share, 0, 1), ShowPercentage = false, CustomMinimumSize = new Vector2(0, 4), MouseFilter = MouseFilterEnum.Ignore };
         bar.AddThemeStyleboxOverride("background", Ui.Flat(new Color(Ui.Line, 0.9f), 0, 0, 2));
         bar.AddThemeStyleboxOverride("fill", Ui.Flat(Ui.Gold, 0, 0, 2));
         row.AddChild(bar);
-        var info = Ui.Rich($"{Ui.C(Ui.Ink2, $"{Ui.Esc(g.Label)} {now}/{target}")}   {Ui.C(Ui.Gold, Ui.Esc(Goals.Reward(g)))}", 11);
-        info.MouseFilter = MouseFilterEnum.Ignore;
-        row.AddChild(info);
+        if (figure != "")
+        {
+            var info = Ui.Rich(figure, 11);
+            info.MouseFilter = MouseFilterEnum.Ignore;
+            row.AddChild(info);
+        }
         return row;
     }
 

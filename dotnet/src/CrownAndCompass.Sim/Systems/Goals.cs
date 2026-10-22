@@ -165,3 +165,49 @@ public static class Goals
         t.Log(LedgerCategory.Town, Importance.Notable, $"Charter goal met: {g.Text}.{(reward == "" ? "" : $" The town gains {reward}.")}");
     }
 }
+
+/// <summary>One line of the what-next card once the charter goals are done: an icon, a few words, how far along, and the button it points at.</summary>
+public sealed record Aim(string Icon, string Text, string Figure, double Share, string Point = "");
+
+/// <summary>
+/// What the town works toward after its first charter list, read fresh off the town (nothing saved): the next
+/// charter's missing terms, then, once the big bad shows, the closest road to victory, then the days a claimed road
+/// still has to hold. Pure reads, so the card can never disagree with the City and Campaign windows.
+/// </summary>
+public static class Ahead
+{
+    /// <summary>Lines shown at once.</summary>
+    public const int Most = 3;
+
+    /// <summary>The card's heading and its lines; no lines once the charter goals still show or the campaign is over.</summary>
+    public static (string Title, List<Aim> Aims) Now(Town t)
+    {
+        if (!t.Goals.Closed || t.Outcome != null) return ("", []);
+        if (Victory.Claimed(t) is { } held)
+            return ($"Hold {held.Name}", [new(held.Icon, $"Hold {held.Name}", $"{Victory.Held(t)}/{held.Hold} days", (double)Victory.Held(t) / Math.Max(1, held.Hold), "tab:Campaign")]);
+        if (Victory.Ready(t) || City.NextTier(t) == null)
+        {
+            var road = Victory.Roads(t).OrderByDescending(d => Victory.Progress(t, d)).ThenBy(d => d.Id, StringComparer.Ordinal).FirstOrDefault();
+            if (road == null) return ("", []);
+            var terms = Victory.Terms(t, road).Where(x => !x.Met).Take(Most).ToList();
+            if (terms.Count == 0)
+                return (road.Name, [new(road.Icon, Victory.Ready(t) ? $"Claim {road.Name}" : $"{road.Name} holds", "", 1, Victory.Ready(t) ? "tab:Campaign" : "")]);
+            return (road.Name, terms.Select(x => new Aim(road.Icon, x.Label, x.AtMost ? $"{Js.Str(x.Have)} (at most {Js.Str(x.Need)})" : $"{Js.Str(x.Have)}/{Js.Str(x.Need)}", x.Share)).ToList());
+        }
+        var next = City.NextTier(t)!;
+        var aims = new List<Aim>();
+        if (t.Population < next.Residents) aims.Add(new("population", "Households", $"{t.Population}/{next.Residents}", (double)t.Population / next.Residents));
+        foreach (string id in next.Requires)
+            if (!City.Has(t, id))
+            {
+                var b = t.Content.Building(id);
+                bool rising = t.Buildings.Any(x => x.Def.Id == id && x.IsSite);
+                aims.Add(new("tools", $"{Agent.Article(b.Name)} {b.Name.ToLowerInvariant()}", rising ? "rising" : "", rising ? 0.5 : 0));
+            }
+        if (next.Walls != "" && !City.WallsStand(t, next.Walls))
+            aims.Add(new("defence", next.Walls == "CityWall" ? "The city wall" : "Stone walls", "", 0, "tab:Defence"));
+        if (t.Treasury < next.Cost) aims.Add(new("gold", "Charter fee", $"{Js.Str(Math.Floor(t.Treasury))}/{Js.Str(next.Cost)}g", t.Treasury / next.Cost));
+        if (aims.Count == 0) aims.Add(new("decree", $"Claim the {next.Name.ToLowerInvariant()} charter", "", 1, "tab:City"));
+        return ($"Next charter: {next.Name}", aims.Take(Most).ToList());
+    }
+}
