@@ -13,7 +13,7 @@
     { "id": "deeps", "name": "The deeps", "themes": ["deeproads"] },
     { "id": "woods", "name": "The forests", "themes": ["thornwood", "feyfringe"] },
     { "id": "heart", "name": "The river heartland", "themes": ["greenmarch", "crownruins", "ashenbarrows", "spellscar"] },
-    { "id": "coast", "name": "The coast", "themes": ["saltreach", "drownedempire", "stormcoast"] },
+    { "id": "coast", "name": "The coast", "themes": ["saltreach", "drownedempire", "stormcoast", "shallows", "archipelago", "deepsea"] },
     { "id": "fens", "name": "The fens", "themes": ["mirefen"] },
     { "id": "sands", "name": "The southern sands", "themes": ["duneglass", "kingsbones"] }
   ],

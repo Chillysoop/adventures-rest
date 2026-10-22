@@ -68,11 +68,14 @@ public class OceanTests
             Assert.Equal(region.SettlementId, city.Id);
             Assert.Equal(t.Content.World.Ocean.City.Prosperity, city.Prosperity);
         }
+        // Its luck aims higher by the day, whatever else befalls it.
         var sim = new Simulation(new SimulationOptions { Seed = 2 });
+        var w = sim.Town.Content.World.Ocean.City;
         var c = sim.Town.Settlements.Single(s => s.Kin.Grows > 0);
-        double early = Neighbours.ProsperityTarget(sim.Town, c);
         sim.RunDays(200);
-        Assert.True(Neighbours.ProsperityTarget(sim.Town, c) > early + 10);
+        var plain = new Settlement { Id = c.Id, Name = c.Name, Kin = c.Kin with { Grows = 0 }, RegionId = c.RegionId, Standing = c.Standing, Security = c.Security, Trouble = c.Trouble };
+        double lift = Neighbours.ProsperityTarget(sim.Town, c) - Neighbours.ProsperityTarget(sim.Town, plain);
+        Assert.Equal(w.Prosperity - sim.Town.Content.Neighbours.Prosperity.Base + c.Kin.Grows * sim.Town.Day, lift, 6);
     }
 
     [Fact]
