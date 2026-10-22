@@ -443,6 +443,9 @@ public static class World
         }
         if (bosses.Count == 0)
             bosses = content.Library.Monsters.Where(m => m.Damage != null && m.Band != "" && !m.Alignment.Contains("good") && m.Cr >= 0.5 && m.Cr <= Math.Max(1, level)).ToList();
+        // At the edge of the world the legends wait: the ancient dragons, the lich, the tarrasque may hold the last lairs.
+        if (group == null && level >= content.World.LegendLevel && content.World.LegendLevel > 0)
+            bosses = bosses.Concat(content.Library.Monsters.Where(m => m.Damage != null && m.Band != "" && !m.Alignment.Contains("good") && m.Cr > 20 && m.Habitats.Any(habitats.Contains))).ToList();
         // Lair-holders first: the library marks some creatures as bosses.
         var marked = bosses.Where(m => m.Boss).ToList();
         var from = marked.Count > 0 && rng.Chance(0.5) ? marked : bosses;

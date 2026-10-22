@@ -105,6 +105,7 @@ public partial class Main : Control
         if (_opts.Lofted is string lofted) StageLofted(lofted);
         if (_opts.Siege is float siegeHours) SiegeShot(siegeHours);
         if (_opts.Skirmish is string skirmish) StageSkirmish(skirmish.Split(','));
+        if (_opts.Bestiary is string bestiary) StageBestiary(bestiary);
         if (_opts.Delve && _sim.Town.Parties.FirstOrDefault(p => !p.Returned) is { } delving && _map.Geo.Pins.TryGetValue(delving.SiteId, out var dpin))
         {
             _map.Crowd.StageDelve = true;

@@ -508,6 +508,12 @@ public partial class MapView : Control
         heroInk.SetShaderParameter("width", 0.0022f);
         Mats.Hero.NextPass = heroInk;
         _inks.Add(heroInk);
+        var beastInk = new ShaderMaterial { Shader = ink };
+        beastInk.SetShaderParameter("noise_tex", Mats.Beast.GetShaderParameter("noise_tex"));
+        beastInk.SetShaderParameter("beast", 1.0f);
+        beastInk.SetShaderParameter("width", 0.0022f);
+        Mats.Beast.NextPass = beastInk;
+        _inks.Add(beastInk);
     }
 
     private void PaintLight(float night)

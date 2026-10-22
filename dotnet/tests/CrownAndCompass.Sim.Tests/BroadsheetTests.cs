@@ -30,7 +30,8 @@ public class BroadsheetTests
         var t = sim.Town;
         sim.RunDays(60);
         t.Treasury += 5000;
-        var hero = t.Heroes.First();
+        // A hero at home if there is one: one out on the road may not come back before the paper prints.
+        var hero = t.Heroes.Where(h => !h.Dead && !h.Departed).OrderBy(h => h.Hero!.AwayUntil == null ? 0 : 1).ThenByDescending(h => h.Hero!.Level).ThenBy(h => h.Id).First();
         int renown = hero.Hero!.Renown;
         double regard = hero.Hero.Regard;
         Assert.NotNull(sim.SlantBroadsheet("hero"));
