@@ -699,6 +699,8 @@ public partial class Main : Control
         SyncOrders();
         SyncGuide();
         SyncGoals();
+        SyncGoalPointer(_clockReal >= _nextGoalPoint);
+        if (_clockReal >= _nextGoalPoint) _nextGoalPoint = _clockReal + 0.25;
         // A first meeting's picture comes before any scene or report it brought.
         SyncIntros();
         SyncStories(delta);

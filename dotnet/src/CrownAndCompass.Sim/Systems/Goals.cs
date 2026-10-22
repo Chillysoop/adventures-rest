@@ -20,6 +20,18 @@ public sealed record GoalDef
 
     /// <summary>Days of festival cheer the town gets.</summary>
     public int Festival { get; init; }
+
+    /// <summary>
+    /// The button the card points the player at while this is the goal to work on: a tutorial anchor
+    /// (<see cref="Tutorial.Anchors"/>), "tab:&lt;Tab&gt;", "zone:&lt;Zone&gt;" (that brush on the build bar) or "place:&lt;building&gt;".
+    /// </summary>
+    public string Point { get; init; } = "";
+
+    /// <summary>A measure that must be above 0 before the card points at the button (a motion to answer), or "".</summary>
+    public string When { get; init; } = "";
+
+    /// <summary>The icon the card shows beside the goal (godot/assets/icons).</summary>
+    public string Icon { get; init; } = "";
 }
 
 public sealed record GoalRules
@@ -56,6 +68,7 @@ public static class Goals
 
     /// <summary>
     /// A number read off the town: "households", "tier", "built:&lt;building&gt;", "painted:&lt;Zone&gt;" (whole tiles of it), "watch",
+    /// "decided" (motions the mayor signed or vetoed), "motions" (waiting on the mayor),
     /// or any tutorial measure (<see cref="Tutorial.Measure"/>). Null for a token that means nothing.
     /// </summary>
     public static int? Measure(Town t, string token)
@@ -63,6 +76,8 @@ public static class Goals
         if (token == "households") return t.Population;
         if (token == "tier") return t.City.Tier;
         if (token == "watch") return t.Watch + Built(t, "watch_house");
+        if (token == "motions") return t.Motions.Count(m => m.Status == MotionStatus.Pending);
+        if (token == "decided") return t.Motions.Count(m => m.DecidedBy == DecidedBy.Mayor);
         if (token.StartsWith("built:", StringComparison.Ordinal))
             return t.Content.Buildings.Any(b => b.Id == token[6..]) ? Built(t, token[6..]) : null;
         if (token.StartsWith("painted:", StringComparison.Ordinal))
@@ -96,6 +111,9 @@ public static class Goals
         int now = Measure(t, g.Measure) ?? 0;
         return g.Gain ? now - t.Goals.Base.Get(g.Id, now) : now;
     }
+
+    /// <summary>The goal the card points at: the first open one with a button to press.</summary>
+    public static GoalDef? Next(Town t) => Open(t).FirstOrDefault(g => g.Point != "" && (g.When == "" || Measure(t, g.When) > 0));
 
     /// <summary>The reward in words: "15 gold", "+3 mandate", "a festival day".</summary>
     public static string Reward(GoalDef g)
