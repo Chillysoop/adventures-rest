@@ -26,8 +26,8 @@ public class SagaTests(LongCampaign campaign) : IClassFixture<LongCampaign>
         for (int i = 1; i < t.Saga.ActDays.Count; i++)
         {
             var act = t.Content.Saga.Acts[i];
-            Assert.True(t.Saga.ActDays[i] > t.Saga.ActDays[i - 1]);
-            Assert.InRange(t.Saga.ActDays[i], act.EarliestDay, act.LatestDay);
+            // Each act waits its least days and opens by its most, whatever the town's strength.
+            Assert.InRange(t.Saga.ActDays[i] - t.Saga.ActDays[i - 1], Math.Max(1, act.MinDays), act.MaxDays);
         }
         Assert.Contains(t.Ledger.Entries, e => e.Text.StartsWith("Act IV: The Long Night.", StringComparison.Ordinal));
         Assert.NotEqual("", t.Saga.EndText);

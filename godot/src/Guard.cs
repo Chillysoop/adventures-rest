@@ -235,8 +235,8 @@ public partial class Main
     {
         if (t.Enemy.Stage == ThreatStage.Marching && t.Enemy.ArrivalTick is int at && t.Enemy.Approach == section)
             return $"{Ui.Cap(t.Content.Enemy.Name)} comes at it in {Ui.Days(Math.Max(1, (int)Math.Ceiling((at - t.Tick) / 24.0)))}.";
-        foreach (var m in t.Saga.Menaces.Where(m => m.Alive && m.ArrivalTick != null && m.Approach == section).OrderBy(m => m.Id))
-            return $"{Ui.Cap(m.Name)} comes at it in {Ui.Days(Math.Max(1, (int)Math.Ceiling((m.ArrivalTick!.Value - t.Tick) / 24.0)))}.";
+        foreach (var m in t.Saga.Menaces.Where(m => m.Alive && m.ArrivalTick != null && m.Approach == section && Horde.Known(t, m)).OrderBy(m => m.Id))
+            return Horde.On(t, m) ? $"{Ui.Cap(m.Name)} comes at it, {Horde.Word(t, m)}." : $"{Ui.Cap(m.Name)} comes at it in {Ui.Days(Math.Max(1, (int)Math.Ceiling((m.ArrivalTick!.Value - t.Tick) / 24.0)))}.";
         return null;
     }
 

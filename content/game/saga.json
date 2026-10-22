@@ -9,8 +9,6 @@
         4
       ],
       "opensAtLevel": 0,
-      "earliestDay": 0,
-      "latestDay": 0,
       "arrivalBonus": 0,
       "pace": 1.0,
       "seeds": [],
@@ -24,8 +22,9 @@
         6
       ],
       "opensAtLevel": 3,
-      "earliestDay": 140,
-      "latestDay": 240,
+      "opensAtPopulation": 150,
+      "minDays": 100,
+      "maxDays": 300,
       "arrivalBonus": 1,
       "pace": 1.2,
       "seeds": [
@@ -48,8 +47,9 @@
         9
       ],
       "opensAtLevel": 5,
-      "earliestDay": 320,
-      "latestDay": 440,
+      "opensAtPopulation": 450,
+      "minDays": 120,
+      "maxDays": 360,
       "arrivalBonus": 2,
       "pace": 1.4,
       "seeds": [
@@ -72,8 +72,9 @@
         12
       ],
       "opensAtLevel": 7,
-      "earliestDay": 520,
-      "latestDay": 660,
+      "opensAtPopulation": 900,
+      "minDays": 140,
+      "maxDays": 400,
       "arrivalBonus": 3,
       "pace": 1.6,
       "seeds": [
@@ -1105,6 +1106,28 @@
       0.9
     ],
     "yokeRideUnder": 0
+  },
+  "horde": {
+    "gatherDays": 40,
+    "seatWeight": 2,
+    "holdings": 2,
+    "struck": 0.35,
+    "musterDays": 3,
+    "marchDays": 6,
+    "patience": 20,
+    "minShare": 0.6,
+    "blindDays": 2,
+    "survivors": 0.4,
+    "loot": 0.3,
+    "gather": "{leader} calls every band that serves {name} home. At {seat} and its other holds, a host is gathering.",
+    "half": "Word from {spotter}: the camps of {name} at {camp} are swelling. The host is more than half gathered.",
+    "halfRumour": "Travellers say the roads round {seat} are thick with armed bands, all going the same way.",
+    "massing": "Word from {spotter}: the bands of {name} are leaving its holdings for {seat}. The host is about to march.",
+    "thinned": "The fighting at {camp} has cost {name} dear: the camp there is thinner by a third.",
+    "scattered": "With {camp} cleared, the bands that gathered there for {name} have scattered.",
+    "thin": "{leader} has waited for a host that will not come: raids on its camps have left {name} too thin to march. It gathers still.",
+    "march": "{name} is on the march! {leader} leads the whole host out of {seat}, and it is coming for the {where}.",
+    "breach": "{name} breaks into the lower town of {town} and puts it to the torch, but the keep and the high streets hold. {leader} draws off to gather the host again. The next time the walls break, {town} falls."
   },
   "turning": {
     "spared": 0.04,
