@@ -74,6 +74,11 @@ public class GoalsTests
         // Gold rewards go on the books under their own account, once.
         double gold = t.Treasury;
         var tavern = t.Content.Goals.Goals.First(g => g.Id == "tavern");
+        foreach (var g in t.Content.Goals.Goals.TakeWhile(g => g != tavern).Where(g => !t.Goals.Done.Contains(g.Id)))
+        {
+            t.Goals.Done.Add(g.Id);
+            t.Goals.DoneDay.Add(0);
+        }
         var lot = new Lot(t.Lots.Count, Town.Center + 8, Town.Center + 8) { W = 4, D = 3, Zone = Zone.Commercial };
         t.AddBuilding(t.Content.Building("tavern"), lot, null, "the Test Tavern", true);
         Goals.Hourly(t);
