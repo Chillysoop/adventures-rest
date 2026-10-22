@@ -190,8 +190,10 @@ public partial class Main
         RenderCouncillor(p, t);
         RenderMotion(p, t);
         p.Meter("Mandate", t.Mandate, $"{Math.Round(t.Mandate)}", t.Mandate < 30);
-        p.Note("Fades back toward 50 unless you keep earning it.");
-        p.Text($"{Tag($"Tax {Math.Round(t.TaxRate * 100)}%", Ui.Ink)}   {Tag($"Watch {t.Watch}", Ui.Ink)}{(t.FestivalDays > 0 ? "   " + Tag("Festival!", Ui.Gold) : "")}", 12);
+        p.Chips(
+            Ui.Chip("ui-time", "→ 50", Ui.Ink2, "Mandate fades back toward 50 unless you keep earning it", 13),
+            Ui.Chip("defence", $"{t.Watch}", Ui.Ink, "Watchmen on the town's payroll", 13),
+            t.FestivalDays > 0 ? Ui.Chip("ui-heart", "Festival!", Ui.Gold, $"A festival for {t.FestivalDays} more days", 13) : "");
         RenderTaxes(p, t);
         var festive = Council.FestivalBlocked(t);
         p.Buttons(($"Hold a festival · {Js.Str(Council.FestivalCost(t))}g", festive == null, false, () => Act(() => _sim.HoldFestival())));
@@ -370,20 +372,23 @@ public partial class Main
         int pct = (int)Math.Round(rate * 100);
         p.Heading("Taxes");
         double mood = Taxes.Mood(t) + r.Mood * unrest / 100;
-        p.Row($"[b]Tax rate[/b]  {Tag($"{pct}%", rate > usual + 1e-9 ? Ui.Bad : rate < usual - 1e-9 ? Ui.Good : Ui.Ink)}\n{Ui.C(Ui.Ink2, $"[font_size=12]Taken from every sale, drink and hearth. Above {Math.Round(usual * 100)}% each point sours the townsfolk and puts settlers off; below it pleases them (mood {(mood >= 0 ? "+" : "")}{mood:0.0} now).[/font_size]")}",
+        string taxTip = $"Taken from every sale, drink and hearth. Above {Math.Round(usual * 100)}% each point sours the townsfolk and puts settlers off; below it pleases them.";
+        p.Row($"{Ui.Tip($"[b]Tax rate[/b]  {Tag($"{pct}%", rate > usual + 1e-9 ? Ui.Bad : rate < usual - 1e-9 ? Ui.Good : Ui.Ink)}", taxTip)}\n[font_size=12]{Ui.Chip("ui-heart", Ui.Signed(mood, "0.0"), null, "What the tax rate does to every townsperson's mood now", 13)}[/font_size]",
             ("−1%", rate > r.Min + 1e-9, false, () => Act(() => _sim.SetTax(rate - r.Step))),
             ("+1%", rate < r.Max - 1e-9, true, () => Act(() => _sim.SetTax(rate + r.Step))));
         double income = Taxes.Income(t), services = Taxes.Services(t), funding = Taxes.Funding(t);
         bool shortfall = funding < 1;
-        p.Text($"Services {Tag($"{services:N0}g a day", shortfall ? Ui.Bad : Ui.Ink)}   Taxes, rents and trade {Tag($"{income:N0}g a day", shortfall ? Ui.Bad : Ui.Good)}", 12);
+        p.Chips(
+            Ui.Chip("ui-up", $"+{income:N0}g/day", shortfall ? Ui.Bad : Ui.Good, "Taxes, rents and trade coming in each day"),
+            Ui.Chip("gold", $"−{services:N0}g/day", shortfall ? Ui.Bad : Ui.Ink, "What the town's services cost each day: the watch, the roads, the wells and the institutions"));
         p.Meter("Unrest", unrest, $"{Math.Round(unrest)}", unrest >= 25);
         p.Note(unrest >= r.StrikeAt
-            ? $"The town's services are falling apart and workers are downing tools to protest. Raise taxes or find more income: trade routes, wonders, institutions that pay."
+            ? "Workers are striking over failing services. Raise taxes or find more income: trade routes, wonders, institutions that pay."
             : shortfall
-                ? "The watch, the roads, the wells and the institutions cost more than the town takes in. Unrest is climbing: it sours every household, costs Mandate and turns settlers away, and at its worst workers walk out."
+                ? "Services cost more than the town takes in. Unrest is climbing: it sours every household, costs Mandate and turns settlers away, and at its worst workers walk out."
                 : unrest > 0
-                    ? "The town's services are paid for again, and the unrest is easing."
-                    : "Services grow with the town: every new household, hall and institution costs upkeep. While taxes, rents and trade cover them, the townsfolk are content.");
+                    ? "Services are paid for again; unrest is easing."
+                    : "Services are paid for. They grow with the town: every new household, hall and institution costs upkeep.");
     }
 
     /// <summary>The law book: the punishment set for each crime, and what each sentence moves, as icons.</summary>
@@ -495,9 +500,11 @@ public partial class Main
             else chips.Add(Ui.Tip(Ui.Img("ui-no", 14) + " " + Ui.Dim(god.Evil ? "cult only" : "no shrine"), god.Evil ? "No house: only a cult would feed it." : "No house of its own yet."));
             if (places.Count == 0 && funds >= 1) chips.Add(Ui.Chip("gold", $"{Math.Round(funds)}", Ui.Gold, "Saved by the faithful towards a shrine"));
             string icon = Ui.GodIcon(god.Id);
+            // The favour bar hangs under the god's own row, above the rule, so it can't be read as the next god's.
+            double share = 100 * Math.Min(1, favor / Math.Max(1, need));
+            string figure = favor >= need ? "ready" : $"{Math.Round(100 * favor / Math.Max(1, need))}%";
             p.Row($"{Ui.Tip(Ui.C(hue, $"[b]{Ui.Esc(Faith.Short(god))}[/b]"), about)}{holy}\n{Ui.Chips(chips.ToArray())}",
-                (icon, () => Ui.IconRect(icon, 40, about), null));
-            if (!god.Evil) p.Meter("Favour", 100 * Math.Min(1, favor / Math.Max(1, need)), favor >= need ? "ready" : $"{Math.Round(100 * favor / Math.Max(1, need))}%");
+                ($"{icon}{(god.Evil ? "" : figure + Math.Round(share))}", () => Ui.IconRect(icon, 40, about), god.Evil ? null : () => Pane.MeterLine("Favour", share, figure)));
         }
         p.Note("Devotion builds a god's favour. When it brims over, the god acts in town.");
         var miracles = fs.Miracles.TakeLast(5).Reverse().ToList();
@@ -535,8 +542,10 @@ public partial class Main
                 Ui.Chip("population", $"{f.Members.Count}", null, "Members"),
                 Ui.Chip("gold", $"{Math.Round(Factions.Coffers(t, f))}", Ui.Gold, "Coffers"),
                 Ui.Chip("standing", $"{Math.Round(f.Standing)}", standColor, "Standing with the town"));
-            p.Row($"{Ui.Img("ui-faction", 16)} {Ui.Tip($"[b]{Ui.Esc(Ui.Cap(f.Name))}[/b]", lore)}  {kind}  {Tag(stand, standColor)}\n{chips}{motto}", actions.ToArray());
-            p.Meter("Suspicion", f.Heat, $"{Math.Round(f.Heat)}", f.Heat >= rules.ExposeAt * 0.75);
+            double heat = f.Heat;
+            bool hot = heat >= rules.ExposeAt * 0.75;
+            p.Row($"{Ui.Img("ui-faction", 16)} {Ui.Tip($"[b]{Ui.Esc(Ui.Cap(f.Name))}[/b]", lore)}  {kind}  {Tag(stand, standColor)}\n{chips}{motto}",
+                ($"heat{Math.Round(heat)}{hot}", null, () => Pane.MeterLine("Suspicion", heat, $"{Math.Round(heat)}", hot)), actions.ToArray());
         }
         if (t.Factions.Any(f => f.Active && !f.Known))
             p.Note("Not every faction shows its face. Secret ones are exposed as the watch's suspicion of them grows.");

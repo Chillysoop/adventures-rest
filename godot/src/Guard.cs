@@ -108,8 +108,19 @@ public partial class Main
         double scale = Math.Max(Math.Max(def, est ?? 0), 1);
         p.Meter("Your defence", 100 * def / scale, $"{Math.Round(def)}");
         if (est is double e) p.Meter("Warband", 100 * e / scale, $"~{Math.Round(e)}", true);
-        p.Text(Ui.Tip(Ui.Chips(Ui.Chip("defence", "watch", Ui.Ink2), Ui.Chip("heroes", "heroes", Ui.Ink2), Ui.Chip("population", "militia", Ui.Ink2), Ui.Chip("stone", $"×{Threat.Fortification(t):0.00}", Ui.Gold, "Walls multiply it")),
-            $"Your defence counts the watch, heroes at home, a militia of townsfolk, and the walls.{(Threat.IsActive(t) ? " The warband grows while dungeons go uncleared." : "")}"), 12);
+        // What the defence is made of, before the walls multiply it.
+        var dd = t.Content.Enemy.Defense;
+        double fort = Threat.Fortification(t);
+        double watch = t.Watch * dd.Watchman * Planning.WatchFactor(t);
+        double heroes = t.Heroes.Where(a => !a.IsAway).Sum(a => a.Hero!.Level) * dd.HeroLevel;
+        double militia = t.Workers.Count * dd.MilitiaPerWorker;
+        double rest = Math.Max(0, def / Math.Max(fort, 1e-9) - watch - heroes - militia);
+        p.Text(Ui.Chips(
+            Ui.Chip("defence", $"{Math.Round(watch)}", Ui.Ink, "The watch"),
+            Ui.Chip("heroes", $"{Math.Round(heroes)}", Ui.Ink, "Heroes at home"),
+            Ui.Chip("population", $"{Math.Round(militia)}", Ui.Ink, "A militia of townsfolk"),
+            rest >= 1 ? Ui.Chip("ui-shield", $"{Math.Round(rest)}", Ui.Ink, "Everything else: soldiers, allies, sellswords, the gods, factions, institutions") : "",
+            Ui.Chip("stone", $"×{fort:0.00}", Ui.Gold, $"Walls and towers multiply it{(Threat.IsActive(t) ? ". The warband grows while dungeons go uncleared" : "")}")), 12);
         RenderGuard(p, t);
         RenderWorks(p, t);
         RenderTraps(p, t);
@@ -164,10 +175,10 @@ public partial class Main
     {
         var walls = Garrison.OnDuty(t, HeroDuty.Walls);
         var streets = Garrison.OnDuty(t, HeroDuty.Streets);
-        p.Row($"{Ui.Tip($"{Ui.Img("heroes", 16)} [b]Heroes on guard[/b]", "Heroes on guard stay home and take no bounties.")}  {Ui.Chips(
+        p.Row($"{Ui.Tip($"{Ui.Img("heroes", 16)} {Ui.Plainly("[b]Heroes on guard[/b]")}", "Heroes on guard stay home and take no bounties.")}  {Ui.Chips(
             Ui.Chip("order-defend", $"{walls.Count}", null, "On the walls"), Ui.Chip("defence", $"+{Js.Str(Math.Round(Garrison.DutyDefense(t)))}", Ui.Good, "Defence"),
             Ui.Chip("order-guard", $"{streets.Count}", null, "On the streets"), Ui.Chip("ui-eye", $"+{Js.Str(Math.Round(Garrison.StreetWatch(t) * 100))}%", Ui.Good, "Watch"),
-            Ui.Chip("gold", $"−{Js.Str(Math.Round(Garrison.DutyWages(t)))}/day", Ui.Bad, "Wages"))}");
+            Ui.Chip("gold", $"−{Js.Str(Math.Round(Garrison.DutyWages(t)))}g", Ui.Bad, "Wages a day"))}");
         foreach (var h in Garrison.Defenders(t))
         {
             int hid = h.Id;

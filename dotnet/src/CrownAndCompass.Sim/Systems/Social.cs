@@ -108,7 +108,7 @@ public static class Social
                 {
                     p.CourtingId = q.Id;
                     q.CourtingId = p.Id;
-                    town.Log(LedgerCategory.Romance, Importance.Notable, $"Tongues wag at {tavern.Name}: {p.Name} and {q.Name} have been seen walking out together.", [p.Id, q.Id]);
+                    town.Log(LedgerCategory.Romance, Importance.Routine, $"Tongues wag at {tavern.Name}: {p.Name} and {q.Name} have been seen walking out together.", [p.Id, q.Id]);
                 }
             }
             else if (p.CourtingId == q.Id && after >= MarryThreshold && mutual >= MarryThreshold && rng.Chance(0.25))

@@ -886,7 +886,10 @@ public static class Explore
     {
         var s = Survey(town, f.SurveyId)!;
         // The first report of a find is news; how each chapter goes is for whoever follows it.
-        town.Log(LedgerCategory.Quest, f.Chapter == 0 && f.Clues == 0 ? Importance.Notable : Importance.Routine, $"Word from the {s.Name} in {town.Regions[f.RegionId].Name}: {f.Log[^1]}", s.Members);
+        // Word that came by bird tells what they found, not how it travelled.
+        string bird = Text(town, "bird");
+        string word = f.Log.Count > 1 && f.Log[^1] == bird ? f.Log[^2] : f.Log[^1];
+        town.Log(LedgerCategory.Quest, f.Chapter == 0 && f.Clues == 0 ? Importance.Notable : Importance.Routine, $"Word from the {s.Name} in {town.Regions[f.RegionId].Name}: {word}", s.Members);
     }
 
     public static FindKindDef Def(Town town, Find f) => Rules(town).Kind(f.Kind) ?? throw new KeyNotFoundException($"Unknown find kind {f.Kind}");

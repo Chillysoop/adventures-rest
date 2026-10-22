@@ -105,8 +105,12 @@ public partial class Main
             string needs = h.Goods.Count + h.Services.Count == 0 ? Ui.Bullet(Ui.Dim("Just a roof"), "ui-house")
                 : wants == "" ? Ui.Bullet(Ui.C(Ui.Good, "Has all it wants"), "ui-yes") : Ui.Bullet(Ui.C(Ui.Bad, $"Short of {Ui.Esc(wants)}"), "ui-warn");
             string grow = h.Next != "" ? "\n" + Ui.Bullet(Ui.Tip(Ui.Dim($"→ {t.Content.Building(h.Next).Name}{(h.Dense != "" ? $" / {t.Content.Building(h.Dense).Name}" : "")}"), $"Grows into a {t.Content.Building(h.Next).Name.ToLowerInvariant()}{(h.Dense != "" ? $" (a {t.Content.Building(h.Dense).Name.ToLowerInvariant()} on high-density land)" : "")} when its family has what that wants."), "ui-up") : "";
-            p.Row($"[b]{Ui.Esc(def.Name)}[/b]  {Ui.Chips(Ui.Chip("ui-house", $"{homes.Count}", null, "Homes"), Ui.Chip("ui-person", $"{people}", null, "Living"), Ui.Chip("gold", $"{h.Tax:0.##}", Ui.Gold, "Hearth tax a day, each"))}\n[font_size=12]{needs}{grow}[/font_size]");
-            if (homes.Count > 0 && (h.Goods.Count > 0 || h.Services.Count > 0)) p.Meter("Content", content * 100, $"{Math.Round(content * 100)}%", content < t.Content.City.DowngradeBelow);
+            // The contentment bar hangs under its own house's row, above the rule.
+            bool meter = homes.Count > 0 && (h.Goods.Count > 0 || h.Services.Count > 0);
+            bool low = content < t.Content.City.DowngradeBelow;
+            string pct = $"{Math.Round(content * 100)}%";
+            p.Row($"[b]{Ui.Esc(def.Name)}[/b]  {Ui.Chips(Ui.Chip("ui-house", $"{homes.Count}", null, "Homes"), Ui.Chip("ui-person", $"{people}", null, "Living"), Ui.Chip("gold", $"{h.Tax:0.##}", Ui.Gold, "Hearth tax a day, each"))}\n[font_size=12]{needs}{grow}[/font_size]",
+                meter ? ($"content{pct}{low}", null, () => Pane.MeterLine("Content", content * 100, pct, low)) : null);
         }
 
         p.Heading("Services");
@@ -197,7 +201,7 @@ public partial class Main
         if (Math.Abs(s.Build - 1) > 0.05) effects.Add(Ui.Tip($"{Ui.Img("tools", 16)} {Pct(s.Build)}", "Building speed"));
         if (s.Mood != 0) effects.Add(Ui.Tip($"{Ui.Img("mandate", 16)} {Ui.Signed(s.Mood)}", "Mood"));
         effects.Add(Ui.Tip($"{Ui.Img("ui-trade", 16)} {Ui.C(Ui.Gold, $"[b]{s.ImportPremium:0.#}×[/b]")}", "Caravans charge this much for what the town lacks"));
-        if (s.MarchDays > 0) effects.Add(Ui.Tip($"{Ui.Img("ui-road", 16)} {Ui.C(Ui.Bad, $"[b]+{Ui.Days(s.MarchDays)}[/b]")}", "Armies march slower"));
+        if (s.MarchDays > 0) effects.Add(Ui.Tip($"{Ui.Img("ui-road", 16)} {Ui.C(Ui.Bad, $"[b]+{Ui.Days(s.MarchDays).Replace(' ', '\u00a0')}[/b]")}", "Armies march slower"));
         var busy = s.Menace.Where(kv => kv.Value >= 1.25).Select(kv => kv.Key).ToList();
         var quiet = s.Menace.Where(kv => kv.Value <= 0.7).Select(kv => kv.Key).ToList();
         if (s.Warband >= 1.25) busy.Insert(0, "the warband");
@@ -244,7 +248,7 @@ public partial class Main
         if (Math.Abs(o.Tourists - 1) > 0.01) e.Add(Ui.Tip($"{Ui.Img("ui-person", 14)} {Pct(o.Tourists)}", "Visitors"));
         if (o.Menace > 1.01 || o.Warband > 1.01) e.Add(Ui.Tip($"{Ui.Img("threat", 14)} {Ui.C(Ui.Bad, "[b]▲[/b]")}", "Enemies on the move"));
         else if (o.Menace < 0.99 || o.Warband < 0.99) e.Add(Ui.Tip($"{Ui.Img("threat", 14)} {Ui.C(Ui.Good, "[b]▼[/b]")}", "Enemies lie low"));
-        if (o.MarchDays != 0) e.Add(Ui.Tip($"{Ui.Img("ui-road", 14)} {Ui.C(o.MarchDays > 0 ? Ui.Good : Ui.Bad, $"[b]{(o.MarchDays > 0 ? "+" : "")}{Ui.Days(o.MarchDays)}[/b]")}", "Armies march"));
+        if (o.MarchDays != 0) e.Add(Ui.Tip($"{Ui.Img("ui-road", 14)} {Ui.C(o.MarchDays > 0 ? Ui.Good : Ui.Bad, $"[b]{(o.MarchDays > 0 ? "+" : "")}{Ui.Days(o.MarchDays).Replace(' ', '\u00a0')}[/b]")}", "Armies march"));
         if (Math.Abs(o.Sick - 1) > 0.01) e.Add(Ui.Tip($"{Ui.Img("sickness", 14)} {Pct(o.Sick)}", "Sickness spreads"));
         return e;
     }

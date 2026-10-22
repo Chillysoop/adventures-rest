@@ -806,23 +806,26 @@ public sealed class Pane
 
     /// <summary>A labelled meter, 0 to 100.</summary>
     public void Meter(string label, double value, string figure, bool bad = false) =>
-        Add($"m{label}{Math.Round(value)}{figure}{bad}", () =>
-        {
-            var h = new HBoxContainer();
-            h.AddThemeConstantOverride("separation", 8);
-            if (Ui.MeterIcon(label) is string icon) h.AddChild(new TextureRect { Texture = Ui.Icon(icon), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2(16, 16), SizeFlagsVertical = Control.SizeFlags.ShrinkCenter });
-            var l = Ui.Label(label, Ui.Ink2, null, 13);
-            l.CustomMinimumSize = new Vector2(84, 0);
-            if (Ui.MeterKeyword(label) is string kw) Ui.KeywordOn(l, kw);
-            h.AddChild(l);
-            var bar = new MeterBar { Value = (float)Math.Clamp(value / 100, 0, 1), Fill = bad ? Ui.Bad : Ui.Gold, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(60, 8), SizeFlagsVertical = Control.SizeFlags.ShrinkCenter };
-            h.AddChild(bar);
-            var f = Ui.Label(figure, Ui.Ink, Ui.Bold, 14);
-            f.CustomMinimumSize = new Vector2(34, 0);
-            f.HorizontalAlignment = HorizontalAlignment.Right;
-            h.AddChild(f);
-            return h;
-        });
+        Add($"m{label}{Math.Round(value)}{figure}{bad}", () => MeterLine(label, value, figure, bad));
+
+    /// <summary>A meter's line on its own, to hang under a row (a <c>Row</c> look's Under) so it reads as that row's.</summary>
+    public static Control MeterLine(string label, double value, string figure, bool bad = false)
+    {
+        var h = new HBoxContainer();
+        h.AddThemeConstantOverride("separation", 8);
+        if (Ui.MeterIcon(label) is string icon) h.AddChild(new TextureRect { Texture = Ui.Icon(icon), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2(16, 16), SizeFlagsVertical = Control.SizeFlags.ShrinkCenter });
+        var l = Ui.Label(label, Ui.Ink2, null, 13);
+        l.CustomMinimumSize = new Vector2(84, 0);
+        if (Ui.MeterKeyword(label) is string kw) Ui.KeywordOn(l, kw);
+        h.AddChild(l);
+        var bar = new MeterBar { Value = (float)Math.Clamp(value / 100, 0, 1), Fill = bad ? Ui.Bad : Ui.Gold, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(60, 8), SizeFlagsVertical = Control.SizeFlags.ShrinkCenter };
+        h.AddChild(bar);
+        var f = Ui.Label(figure, Ui.Ink, Ui.Bold, 14);
+        f.CustomMinimumSize = new Vector2(34, 0);
+        f.HorizontalAlignment = HorizontalAlignment.Right;
+        h.AddChild(f);
+        return h;
+    }
 }
 
 /// <summary>A tug of war from −1 (left) to +1 (right), with the calm middle band shaded and a marker where it stands.</summary>

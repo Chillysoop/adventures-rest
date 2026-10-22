@@ -444,6 +444,8 @@ public partial class Main : Control
         foreach (var (id, icon, label, _) in LedgerKinds)
         {
             var b = new Button { Icon = Ui.Icon(icon), ExpandIcon = false, ToggleMode = true, TooltipText = label, ThemeTypeVariation = "Speed", FocusMode = FocusModeEnum.None };
+            // The icons are drawn large; on the filter row they only need to read at a glance.
+            b.AddThemeConstantOverride("icon_max_width", 24);
             b.SetMeta("kind", id);
             b.Pressed += () =>
             {
@@ -922,7 +924,7 @@ public partial class Main : Control
             string text = LinkNames(e);
             sb.Append(Ui.Tip(Ui.Img(LedgerIcon(e.Category), 16), e.Category.ToString())).Append(' ')
                 .Append(e.Importance == Importance.Major ? $"{Ui.C(catColor == Ui.Ink2 ? Ui.Gold : catColor, "◆")} [b]{text}[/b]" : text)
-                .Append("  ").Append(Ui.Dim($"[font_size=11]day {day}, {e.Tick % 24:00}:00[/font_size]"))
+                .Append("  ").Append(Ui.Dim($"[font_size=11]day {day}{(e.Tick % 24 == 0 ? "" : $", {e.Tick % 24:00}:00")}[/font_size]"))
                 .Append("\n[font_size=6] [/font_size]\n");
         }
         if (n == 0) sb.Append(Ui.C(Ui.Ink2, "Nothing matches."));
