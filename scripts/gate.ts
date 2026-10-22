@@ -204,12 +204,11 @@ async function client(outDir: string) {
   const bin = join(outDir, "linux/CrownAndCompass.x86_64");
   exportBuild("Linux", bin);
   if (failed) return;
-  // A software-rendered smoke run on a small container can take longer than CI's: GATE_SMOKE_MINUTES raises the limit.
-  const smokeMs = Number(process.env.GATE_SMOKE_MINUTES ?? 15) * 60_000;
   const game = ["--rendering-driver", "opengl3", "--audio-driver", "Dummy", "--resolution", "960x540", "--", "--smoke", "--seed", "3"];
   const hasX = await run("sh", ["-c", "command -v xvfb-run"]);
   // The play-through grows with every window and system; on a software-rendered runner it takes 13 minutes or more.
-  const smokeMs = 25 * 60_000;
+  // GATE_SMOKE_MINUTES raises the limit on a slower container.
+  const smokeMs = Number(process.env.GATE_SMOKE_MINUTES ?? 25) * 60_000;
   const r = hasX.code === 0
     ? await run("xvfb-run", ["-a", bin, ...game], { timeoutMs: smokeMs })
     : await run(bin, ["--headless", ...game.slice(4)], { timeoutMs: smokeMs });
