@@ -93,7 +93,7 @@ public sealed record EnchantRules
     public IReadOnlyDictionary<string, IReadOnlyList<string>> Habitats { get; init; } = new Dictionary<string, IReadOnlyList<string>>();
     public double Affinity { get; init; } = 4;
     public BasicArmsRules Basic { get; init; } = new();
-    public ArmsRules Arms { get; init; } = new();
+    public KitRules Arms { get; init; } = new();
 
     /// <summary>Most magic charms a hero can be attuned to at once.</summary>
     public int Attune { get; init; } = 3;

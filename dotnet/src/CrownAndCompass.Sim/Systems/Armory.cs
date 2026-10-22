@@ -426,7 +426,7 @@ public static class Armory
     {
         var r = Rules(town).Pact;
         // Loot to the town, or a fetching job: the best of the hoard was taken for the town.
-        if (bounty != null && (bounty.LootToTown || (bounty.FunderId == null && Terms.Of(town, bounty).Item)))
+        if (bounty != null && (bounty.LootToTown || (bounty is { FunderId: null, PatronId: null } && Terms.Of(town, bounty).Item)))
         {
             Add(town, it, $"the {Poss(party.Name)} find, under the bounty's terms");
             town.Armory.HandedIn++;

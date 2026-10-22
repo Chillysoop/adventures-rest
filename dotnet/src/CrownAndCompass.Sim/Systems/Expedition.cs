@@ -738,7 +738,7 @@ public static partial class Expedition
             double left = kin.Sum(f => Math.Max(0, f.Hp)) / (double)Math.Max(1, kin.Sum(f => f.Def.Hp));
             if (left >= t.Flee) return false;
             foreach (var f in living) f.Hp = 0;
-            if (t.Fled != "") Log(Cap(t.Fled.Replace("{foes}", living.Count == 1 ? living[0].Def.Name : living[0].Def.Plural)));
+            if (t.Fled != "") Log(Cap(t.Fled.Replace("{foes}", living[0].Def.Plural)));
             return true;
         }
 

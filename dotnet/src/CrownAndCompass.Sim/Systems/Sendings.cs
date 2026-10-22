@@ -216,7 +216,7 @@ public static class Sendings
                 return $"{Js.Str(v)} spell {(v == 1 ? "slot" : "slots")} spent";
             case "loot":
                 party.Bonus += v;
-                return $"+{Js.Str(v)} gold for the {party.Name}";
+                return $"{(v < 0 ? "−" : "+")}{Js.Str(Math.Abs(v))} gold for the {party.Name}";
             case "partyLoyalty":
                 foreach (var a in members) a.Hero!.Loyalty = Math.Clamp(a.Hero.Loyalty + v, 0, 100);
                 return $"the {party.Name}{(party.Name.EndsWith('s') ? "'" : "'s")} loyalty {(v > 0 ? "+" : "−")}{Js.Str(Math.Abs(v))}";

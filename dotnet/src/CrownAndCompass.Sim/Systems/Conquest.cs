@@ -44,6 +44,18 @@ public sealed record ConquestRules
 
     /// <summary>Standing a freed settlement gives back.</summary>
     public double Freed { get; init; } = 25;
+
+    /// <summary>Buying a settlement's charter: what it asks (a base, per point of prosperity and of its host) and the standing it needs to sell.</summary>
+    public CharterRules Charter { get; init; } = new();
+}
+
+/// <summary>A settlement sells its charter and swears to the town without a fight (<see cref="Conquest.Buy"/>).</summary>
+public sealed record CharterRules
+{
+    public double Standing { get; init; } = 40;
+    public double Base { get; init; } = 4000;
+    public double PerProsperity { get; init; } = 300;
+    public double PerHost { get; init; } = 40;
 }
 
 public enum ConquestChoice
@@ -62,6 +74,9 @@ public sealed class Occupation
     public double Resistance { get; set; }
     public int? GarrisonId { get; set; }
     public double Tribute { get; set; }
+
+    /// <summary>Bought, not taken: its people sold their charter and do not resist.</summary>
+    public bool Bought { get; init; }
 }
 
 /// <summary>An ally's ask: strike a settlement of its foes before the day.</summary>
@@ -201,6 +216,40 @@ public static class Conquest
         return true;
     }
 
+    /// <summary>What a settlement asks for its charter.</summary>
+    public static double CharterPrice(Town town, Settlement s)
+    {
+        var c = Rules(town).Charter;
+        return Js.Round(c.Base + s.Prosperity * c.PerProsperity + AllyCalls.Host(town, s) * c.PerHost);
+    }
+
+    /// <summary>Why the town can't buy this settlement's charter now, or null.</summary>
+    public static string? BuyBlocked(Town town, Settlement s)
+    {
+        var c = Rules(town).Charter;
+        if (s.Razed) return "they are gone";
+        if (!Neighbours.Known(town, s)) return "the town hasn't met them";
+        if (Held(town, s) != null) return "the town holds it already";
+        if (Shadows.Shadowed(s)) return "something in the dark holds it";
+        if (s.Standing < c.Standing) return $"they won't sell to a town they think so little of (standing {Js.Str(Js.Round(s.Standing))}, needs {Js.Str(c.Standing)})";
+        if (town.Treasury < CharterPrice(town, s)) return "not enough gold";
+        return null;
+    }
+
+    /// <summary>Buy a settlement's charter: it swears to the town, pays tribute and never resists, and stays a friend.</summary>
+    public static bool Buy(Town town, int settlementId)
+    {
+        var s = town.Settlements.FirstOrDefault(x => x.Id == settlementId);
+        if (s == null || BuyBlocked(town, s) != null) return false;
+        double price = CharterPrice(town, s);
+        town.Book(TreasuryAccount.Buyouts, -price);
+        town.Army.Held.Add(new Occupation { SettlementId = s.Id, Day = town.Day, Bought = true });
+        town.Army.Pending.Remove(s.Id);
+        World.Shift(town, s, 10);
+        town.Log(LedgerCategory.Town, Importance.Major, $"{Saga.Cap(s.People)} sell {s.Name}'s charter to {town.Name} for {Js.Str(price)} gold. Its banner hangs under the town's now.");
+        return true;
+    }
+
     /// <summary>Leave a regiment to hold an occupied settlement (or bring it home with null).</summary>
     public static bool SetGarrison(Town town, int settlementId, int? regimentId)
     {
@@ -244,6 +293,8 @@ public static class Conquest
             double held = garrison != null ? Field.Worth(town, garrison) : 0;
             o.Tribute = Js.Round(s.Prosperity * r.Tribute * 10) / 10;
             town.Book(TreasuryAccount.Army, o.Tribute);
+            // A sold charter is kept willingly: no wear and no resistance.
+            if (o.Bought) continue;
             s.Prosperity = Math.Max(5, s.Prosperity - r.Wear);
             o.Resistance = Math.Clamp(o.Resistance + r.Resist - held * r.ResistPerGarrison, 0, r.Rising);
             if (o.Resistance >= r.Rising)

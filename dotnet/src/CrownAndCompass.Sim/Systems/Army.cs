@@ -155,7 +155,32 @@ public sealed record ArmyRules
     public AllyRules Allies { get; init; } = new();
     public FieldRules Field { get; init; } = new();
     public ConquestRules Conquest { get; init; } = new();
+    public ArmsRules Arms { get; init; } = new();
     public IReadOnlyList<UnitDef> Units { get; init; } = [];
+}
+
+/// <summary>A grade of arms and armour the town's smiths can forge for a regiment (army.json "arms").</summary>
+public sealed record ArmsDef
+{
+    public string Id { get; init; } = "";
+    public string Name { get; init; } = "";
+
+    /// <summary>Share added to each soldier's strength once they carry it.</summary>
+    public double Strength { get; init; }
+
+    /// <summary>Gold to arm one soldier: a flat sum and so many times the unit's own kit, and goods off the market.</summary>
+    public double Gold { get; init; }
+    public double Kit { get; init; }
+    [JsonConverter(typeof(GoodsListConverter))]
+    public IReadOnlyList<KeyValuePair<Good, double>> Goods { get; init; } = [];
+}
+
+/// <summary>Re-arming regiments: the grades, which buildings' smiths forge them, and how many soldiers a smith arms a day.</summary>
+public sealed record ArmsRules
+{
+    public IReadOnlyList<string> Smiths { get; init; } = [];
+    public double PerSmith { get; init; } = 1;
+    public IReadOnlyList<ArmsDef> Grades { get; init; } = [];
 }
 
 /// <summary>Where a regiment stands.</summary>
@@ -217,6 +242,11 @@ public sealed class Regiment
 
     /// <summary>The painted patrol it rides, out in the wilds (<see cref="Wilds"/>).</summary>
     public int? WildsId { get; set; }
+
+    /// <summary>The grade of arms it carries (0 the unit's own kit), and while the smiths re-arm it, the soldiers already carrying the next.</summary>
+    public int Arms { get; set; }
+    public bool Refitting { get; set; }
+    public int Refitted { get; set; }
 }
 
 /// <summary>The army's state: its regiments and the levy laws.</summary>
@@ -319,7 +349,7 @@ public static class Army
             stout += Rng.Modifier(a.Abilities.Str) + Rng.Modifier(a.Abilities.Con);
         }
         double floor = Rules(town).DrillFloor;
-        double each = u.Strength * (floor + (1 - floor) * r.Drill);
+        double each = u.Strength * (floor + (1 - floor) * r.Drill) * (1 + ArmsShare(town, r));
         return r.Soldiers.Count * each * (1 + 0.03 * stout / r.Soldiers.Count) * (1 + Command(town, r)) * Kit.RegimentFactor(town, r);
     }
 
@@ -659,7 +689,8 @@ public static class Army
         var hall = r.HallId is int hid ? town.Building(hid) : null;
         foreach (var a in pool.Take(want))
         {
-            double cost = RecruitCost(town, u);
+            // A recruit to a regiment that carries better arms is armed to match.
+            double cost = RecruitCost(town, u) + (Grade(town, r.Arms) is { } grade ? ArmsCost(town, u, grade) : 0);
             if (town.Treasury < cost)
             {
                 r.Short = "no gold to arm them";
@@ -755,6 +786,95 @@ public static class Army
         {
             if (Unit(town, r).IsLevy) continue;
             Recruit(town, r);
+        }
+        Forge(town);
+    }
+
+    // Arms --------------------------------------------------------------------------------------
+
+    /// <summary>The grade of arms a regiment carries, if better than its kit.</summary>
+    public static ArmsDef? Grade(Town town, int arms) => arms >= 1 && arms <= Rules(town).Arms.Grades.Count ? Rules(town).Arms.Grades[arms - 1] : null;
+
+    /// <summary>The next grade its smiths could forge for it, if any.</summary>
+    public static ArmsDef? NextGrade(Town town, Regiment r) => Grade(town, r.Arms + 1);
+
+    /// <summary>What the regiment's arms add to each soldier's strength: its grade, and the next for those already re-armed.</summary>
+    public static double ArmsShare(Town town, Regiment r)
+    {
+        double now = Grade(town, r.Arms)?.Strength ?? 0;
+        if (!r.Refitting || r.Soldiers.Count == 0 || NextGrade(town, r) is not { } next) return now;
+        double done = Math.Min(1, r.Refitted / (double)r.Soldiers.Count);
+        return now + (next.Strength - now) * done;
+    }
+
+    /// <summary>Gold, goods at today's prices included, to arm one soldier of this unit at this grade.</summary>
+    public static double ArmsCost(Town town, UnitDef u, ArmsDef g)
+    {
+        double c = g.Gold + g.Kit * u.Cost;
+        foreach (var (good, n) in g.Goods) c += town.Market.Quote(good, n);
+        return Js.Round(c);
+    }
+
+    /// <summary>What re-arming the whole regiment at its next grade would cost now.</summary>
+    public static double RefitCost(Town town, Regiment r) =>
+        NextGrade(town, r) is { } g ? ArmsCost(town, Unit(town, r), g) * Math.Max(0, r.Soldiers.Count - r.Refitted) : 0;
+
+    /// <summary>The town's smiths at work: the workers of the buildings that forge arms.</summary>
+    public static int Smiths(Town town) =>
+        town.Buildings.Where(b => b.Complete && !b.Closed && Rules(town).Arms.Smiths.Contains(b.Def.Id)).Sum(b => b.Workers.Count);
+
+    /// <summary>Soldiers the town's smiths can re-arm in a day.</summary>
+    public static int ForgedPerDay(Town town) => (int)Math.Floor(Smiths(town) * Rules(town).Arms.PerSmith);
+
+    /// <summary>Why the council can't commission the next grade of arms for this regiment now, or null.</summary>
+    public static string? RefitBlocked(Town town, Regiment r)
+    {
+        if (Unit(town, r).IsLevy) return "the levy brings its own";
+        if (r.Refitting) return "the smiths are at it already";
+        if (NextGrade(town, r) is not { } g) return "it carries the best arms there are";
+        if (r.Soldiers.Count == 0) return "it has no soldiers yet";
+        if (Smiths(town) == 0) return "no smith in town is at a forge";
+        if (town.Treasury < ArmsCost(town, Unit(town, r), g) * Math.Min(r.Soldiers.Count, Math.Max(1, ForgedPerDay(town)))) return "not enough gold";
+        return null;
+    }
+
+    /// <summary>Commission the town's smiths to re-arm a regiment at the next grade: paid soldier by soldier as they forge.</summary>
+    public static bool Refit(Town town, int regimentId)
+    {
+        if (Find(town, regimentId) is not { } r || RefitBlocked(town, r) != null) return false;
+        r.Refitting = true;
+        r.Refitted = 0;
+        var g = NextGrade(town, r)!;
+        town.Log(LedgerCategory.War, Importance.Notable, $"The council commissions the smiths: {r.Name} are to carry {g.Name.ToLowerInvariant()} arms, {Js.Str(ArmsCost(town, Unit(town, r), g))} gold a soldier.");
+        return true;
+    }
+
+    /// <summary>The smiths' day: as many soldiers as they can arm, oldest commission first, paid as each is armed; short of gold they wait.</summary>
+    private static void Forge(Town town)
+    {
+        int left = ForgedPerDay(town);
+        foreach (var r in town.Army.Regiments.Where(r => r.Refitting).OrderBy(r => r.Id).ToList())
+        {
+            var g = NextGrade(town, r);
+            if (g == null)
+            {
+                r.Refitting = false;
+                continue;
+            }
+            var u = Unit(town, r);
+            double each = ArmsCost(town, u, g);
+            while (left > 0 && r.Refitted < r.Soldiers.Count && town.Treasury >= each)
+            {
+                town.Book(TreasuryAccount.Army, -each);
+                foreach (var (good, n) in g.Goods) town.Market.Buy(good, n);
+                r.Refitted++;
+                left--;
+            }
+            if (r.Refitted < r.Soldiers.Count) continue;
+            r.Arms++;
+            r.Refitting = false;
+            r.Refitted = 0;
+            town.Log(LedgerCategory.War, Importance.Notable, $"{r.Name} parade in {g.Name.ToLowerInvariant()} arms from the town's forges.");
         }
     }
 

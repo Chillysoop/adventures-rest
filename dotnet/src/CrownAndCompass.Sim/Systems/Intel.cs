@@ -45,6 +45,12 @@ public sealed class CompanyState
 
     /// <summary>The town has heard the company is proud of its rags.</summary>
     public bool Proud { get; set; }
+
+    /// <summary>The day the company came down to one member, or null (<see cref="Muster"/>).</summary>
+    public int? LoneSince { get; set; }
+
+    /// <summary>Its fallen whose places recruits have taken, counted in the order they fell.</summary>
+    public int Filled { get; set; }
 }
 
 /// <summary>A good deed on a company's record.</summary>
@@ -78,7 +84,7 @@ public static class Intel
 
     /// <summary>Whether the council paid for this trip with a bounty from the treasury.</summary>
     public static bool Commissioned(Town town, Party party) =>
-        (party.BountyId is int bid && town.Bounties[bid - 1].FunderId == null) || party.SurveyId != null;
+        (party.BountyId is int bid && town.Bounties[bid - 1] is { FunderId: null, PatronId: null }) || party.SurveyId != null;
 
     public static CompanyState Company(Town town, string name)
     {

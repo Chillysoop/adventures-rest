@@ -1,7 +1,7 @@
 namespace CrownAndCompass.Sim.Systems;
 
 /// <summary>How plain arms help the watch and the army (enchantments.json "arms").</summary>
-public sealed record ArmsRules
+public sealed record KitRules
 {
     /// <summary>Strength each point of bonus per man adds, as a share.</summary>
     public double PerPoint { get; init; } = 0.12;
@@ -21,7 +21,7 @@ public static class Kit
 
     public static string Regiment(int id) => $"regiment:{id}";
 
-    private static ArmsRules Rules(Town town) => town.Content.Enchant.Arms;
+    private static KitRules Rules(Town town) => town.Content.Enchant.Arms;
 
     /// <summary>Whether the watch or a soldier can carry the piece: plain arms, a weapon, armour or a shield.</summary>
     public static bool Fits(Town town, LibItem it) => Enchant.Basic(town.Content, it) && Gear.SlotOf(it) is "weapon" or "armor" or "shield";
