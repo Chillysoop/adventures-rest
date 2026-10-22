@@ -156,7 +156,10 @@ public static class Economy
         var rules = town.Content.Rules;
         int idle = town.Workers.Count(a => a.JobId == null);
         int afford = (int)(PerResidentUpkeep(town, town.Workers.Count) * rules.CrewShare / (rules.CrewWage * 8));
-        if (town.Treasury <= 0) afford = 0;
+        // Crews follow the treasury down as it runs low (a winter without barges), a few at a time, so they are
+        // let go before it is empty rather than all on the day it is.
+        double reserve = rules.CrewReserveDays * UpkeepBill(town);
+        if (reserve > 0) afford = (int)(afford * Math.Clamp(town.Treasury / reserve, 0, 1));
         hall.Crew = Math.Max(0, Math.Min(afford, hall.Workers.Count + idle));
         // Crews shrink by the last hired; the rest look for a trade.
         while (hall.Workers.Count > hall.Crew)

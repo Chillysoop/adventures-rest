@@ -394,11 +394,20 @@ public sealed record TownRules
     public double TreasuryFree { get; init; } = 15000;
     public double TreasuryKeep { get; init; }
 
+    /// <summary>Buying out a townsman's business (<see cref="Systems.Property.Buy"/>): the share over its worth the owner asks, the Mandate an owner
+    /// needs to sell to the council at all, and the Mandate a proud (ambitious) one needs. An owner in debt sells whatever the Mandate.</summary>
+    public double BuyoutPremium { get; init; } = 0.6;
+    public double BuyoutMandate { get; init; } = 35;
+    public double BuyoutProudMandate { get; init; } = 60;
+
     /// <summary>Share of the per-resident upkeep paid out as wages to road crews hired from the idle.</summary>
     public double CrewShare { get; init; } = 0.5;
 
     /// <summary>A road crewman's hourly wage, below any trade's so crews are the last resort.</summary>
     public double CrewWage { get; init; } = 0.5;
+
+    /// <summary>Days of upkeep the treasury keeps in hand before the hall pays full crews; below it crews shrink with it.</summary>
+    public double CrewReserveDays { get; init; } = 2;
 }
 
 /// <summary>Council seat ids as the content names them.</summary>

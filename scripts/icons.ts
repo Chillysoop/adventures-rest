@@ -225,6 +225,7 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["post-guard", "crown", mono],
   ["army-command", "knight-banner", mono],
   ["army-drill", "target-arrows", mono],
+  ["army-arms", "anvil-impact", mono],
   // Character sheets (godot/src/SheetView.cs): hero roles and the sheet's section heads
   ["role-tank", "shield", mono],
   ["role-striker", "sword-clash", mono],

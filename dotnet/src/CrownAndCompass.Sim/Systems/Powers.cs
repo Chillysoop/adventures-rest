@@ -208,6 +208,10 @@ public sealed record PowerRules
     public double AllyResist { get; init; } = 25;
     public int PerEnemy { get; init; } = 2;
 
+    /// <summary>Buying an ally's oath for good (<see cref="Powers.Swear"/>): its price times this, at this standing or better.</summary>
+    public double OathPrice { get; init; } = 30;
+    public double OathStanding { get; init; } = 50;
+
     /// <summary>The first-contact scenes, one per power (id "contact-" + its id): stories of source "contact".</summary>
     public List<StoryDef> Contacts { get; init; } = [];
 
@@ -274,6 +278,9 @@ public sealed class PowerState
 
     /// <summary>The last day of its pact with the town: until then it takes no enemy's gold.</summary>
     public int PactUntil { get; set; }
+
+    /// <summary>The town bought its oath: it stays the town's ally for good, asks no tithe and no enemy can buy it away.</summary>
+    public bool Sworn { get; set; }
 
     /// <summary>
     /// The favour it asked of the town ("clear", "slay", "route"), its target (a site id, a menace id, a route count),
@@ -489,13 +496,14 @@ public static class Powers
     private static void Serve(Town town, PowerState p, PowerDef d)
     {
         var r = Rules(town);
-        if (town.Treasury >= d.Tithe)
+        if (p.Sworn) p.Unpaid = 0;
+        else if (town.Treasury >= d.Tithe)
         {
             town.Book(TreasuryAccount.Powers, -d.Tithe);
             p.Unpaid = 0;
         }
         else p.Unpaid++;
-        if (p.Unpaid >= r.LapseDays || p.Standing < r.LeaveBelow)
+        if (!p.Sworn && (p.Unpaid >= r.LapseDays || p.Standing < r.LeaveBelow))
         {
             Leave(town, p, d, p.Unpaid >= r.LapseDays ? "its tithe has gone unpaid" : "it no longer likes what the town has become");
             return;
@@ -561,7 +569,7 @@ public static class Powers
     public static bool Buyable(Town town, PowerState p, Menace m)
     {
         var d = Def(town, p.Id);
-        return d.Serves == "any" && !d.Shuns.Contains(m.Kind) && p.Side != PowerSide.Enemy && p.CourtedBy == null && !Pacted(town, p);
+        return d.Serves == "any" && !d.Shuns.Contains(m.Kind) && p.Side != PowerSide.Enemy && p.CourtedBy == null && !Pacted(town, p) && !p.Sworn;
     }
 
     /// <summary>
@@ -570,7 +578,7 @@ public static class Powers
     /// </summary>
     internal static bool Bind(Town town, Menace m)
     {
-        var p = town.Powers.Where(p => Def(town, p.Id) is { Serves: "any" } d && !d.Shuns.Contains(m.Kind) && p.Side != PowerSide.Enemy)
+        var p = town.Powers.Where(p => Def(town, p.Id) is { Serves: "any" } d && !d.Shuns.Contains(m.Kind) && p.Side != PowerSide.Enemy && !p.Sworn)
             .OrderBy(p => Resolve(town, p)).ThenBy(p => p.Id, StringComparer.Ordinal).FirstOrDefault();
         if (p == null) return false;
         p.CourtedBy = null;
@@ -615,7 +623,7 @@ public static class Powers
         var r = Rules(town);
         var m = Suitor(town, p);
         p.CourtedBy = null;
-        if (m == null || !m.Alive || Resolve(town, p) >= p.Offer)
+        if (m == null || !m.Alive || p.Sworn || Resolve(town, p) >= p.Offer)
         {
             if (m != null) News(town, p, Fill(town, r.Text.Refused, p, d, m));
             return;
@@ -1065,11 +1073,41 @@ public static class Powers
         return true;
     }
 
+    /// <summary>What an ally asks to swear to the town for good.</summary>
+    public static double OathPrice(Town town, string id) => Js.Round(Def(town, id).Price * Rules(town).OathPrice);
+
+    /// <summary>Why the town can't buy this power's oath now, or null.</summary>
+    public static string? SwearBlocked(Town town, string id)
+    {
+        var p = Find(town, id);
+        if (p == null || !Met(town, p)) return "unknown";
+        if (p.Sworn) return "sworn already";
+        if (p.Side != PowerSide.Town) return "it must be an ally first";
+        if (p.Standing < Rules(town).OathStanding) return $"it needs standing {Js.Str(Rules(town).OathStanding)}";
+        if (town.Treasury < OathPrice(town, id)) return "not enough gold";
+        return null;
+    }
+
+    /// <summary>Buy an ally's oath: it serves the town for good, without a tithe, and no enemy's gold can turn it.</summary>
+    public static bool Swear(Town town, string id)
+    {
+        if (SwearBlocked(town, id) != null) return false;
+        var p = Find(town, id)!;
+        var d = Def(town, id);
+        double price = OathPrice(town, id);
+        town.Book(TreasuryAccount.Buyouts, -price);
+        p.Sworn = true;
+        p.CourtedBy = null;
+        News(town, p, $"{Name(town, d)} take {Js.Str(price)} gold and swear to {town.Name} for good: no tithe, and no enemy's gold will turn them.");
+        return true;
+    }
+
     /// <summary>End an alliance: no more tithe, and it remembers.</summary>
     public static bool Break(Town town, string id)
     {
         var p = Find(town, id);
         if (p == null || p.Side != PowerSide.Town) return false;
+        p.Sworn = false;
         var d = Def(town, id);
         p.Side = PowerSide.Neutral;
         p.Favour -= Rules(town).RivalHit;
