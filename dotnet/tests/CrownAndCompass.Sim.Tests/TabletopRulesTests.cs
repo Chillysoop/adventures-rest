@@ -157,6 +157,7 @@ public class TabletopRulesTests
         a.Fatigue = 0;
         a.Hunger = 0;
         a.Episode = "";
+        if (a.HomeId is int home) t.Building(home).SickUntil = 0;
         Assert.Equal(0, Conditions.Edge(t, a, Conditions.Checks).Edge);
         a.Fatigue = 99;
         Assert.True(Conditions.Has(t, a, "exhausted"));
@@ -171,6 +172,24 @@ public class TabletopRulesTests
         Assert.NotNull(check.Other);
         Assert.True(check.Die >= check.Other);
         Assert.Equal("Inspired", check.Edge);
+    }
+
+    [Fact]
+    public void SicknessAndLastingWoundsAreConditions()
+    {
+        var sim = Player();
+        var t = sim.Town;
+        var a = t.Residents.First(x => x.Hero == null && x.HomeId != null);
+        t.Building(a.HomeId!.Value).SickUntil = 0;
+        Assert.False(Conditions.Has(t, a, "sick"));
+        t.Building(a.HomeId!.Value).SickUntil = t.Tick + 24;
+        Assert.True(Conditions.Has(t, a, "sick"));
+        var hero = t.Heroes.First();
+        hero.Hero!.Wounds.Clear();
+        Assert.False(Conditions.Has(t, hero, "wounded"));
+        hero.Hero!.Wounds.Add(new Wound { Id = t.Content.Wounds.Wounds[0].Id, Day = t.Day });
+        Assert.True(Conditions.Has(t, hero, "wounded"));
+        Assert.Equal(-1, Conditions.Edge(t, hero, Conditions.Saves).Edge);
     }
 
     [Fact]

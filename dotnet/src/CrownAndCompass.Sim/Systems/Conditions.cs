@@ -29,7 +29,7 @@ public sealed record ConditionRules
 
 /// <summary>
 /// Conditions after the SRD's, read off what someone is already going through (fatigue, hunger, raiders next door, a
-/// break, a foe's charm, an inspiration), so they cost nothing to keep and nothing to save. Each puts advantage or
+/// break, a foe's charm, an inspiration, a sick house, a lasting wound), so they cost nothing to keep and nothing to save. Each puts advantage or
 /// disadvantage on their checks or saves (<see cref="Skills"/>); the inspector shows them as icons.
 /// </summary>
 public static class Conditions
@@ -52,6 +52,8 @@ public static class Conditions
             "frightened" => Moods.Episode(town, a) is { } e && r.Fear.Contains(e.Effect) || Passage.Fleeing(town, a),
             "charmed" => Infiltration.Of(town, a.Id) is { Charmed: true },
             "inspired" => Moods.Episode(town, a) is { } e2 && Moods.IsInspiration(town, e2),
+            "sick" => Sickness.Holds(town, a),
+            "wounded" => a.Hero is { } s && s.Wounds.Any(w => !w.Clockwork),
             _ => false,
         };
     }
