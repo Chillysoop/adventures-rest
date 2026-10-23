@@ -132,6 +132,8 @@ public partial class Main : Control
         if (_opts.Tray is string tray && Trays.FirstOrDefault(d => d.Id.Equals(tray, StringComparison.OrdinalIgnoreCase)) is { } td)
             Callable.From(() => OpenTray(td.Id)).CallDeferred();
         if (_opts.Stat is int stat) Callable.From(() => { RenderHeader(); ShowStatTip(stat); }).CallDeferred();
+        if (_opts.WeatherTip) Callable.From(() => { RenderHeader(); ShowWeatherTip(); }).CallDeferred();
+        if (_opts.WeatherLayer) _weatherButton.ButtonPressed = true;
         if (_opts.Asks)
         {
             foreach (var area in Sim.Systems.Stewards.Areas.Where(a => a.CanAsk)) _sim.SetSteward(area.Id, Sim.Systems.StewardMode.Ask);
@@ -887,6 +889,7 @@ public partial class Main : Control
         _threatPill.AddThemeStyleboxOverride("panel", Ui.Box(stage.Level == 2 ? Ui.Bad : Ui.Panel, pillColor, 99, 1, 10, 3));
         _threat.AddThemeColorOverride("font_color", stage.Level == 2 ? Colors.White : stage.Level == 1 ? Ui.Gold : Ui.Ink);
 
+        RenderWeather(t);
         RenderStats(t);
     }
 

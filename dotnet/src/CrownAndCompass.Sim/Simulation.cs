@@ -161,6 +161,7 @@ public sealed class Simulation
         Tournaments.Daily(t, Hand("stories"));
         Seasons.Daily(t);
         Omens.Daily(t);
+        Weather.Daily(t);
         Economy.Daily(t);
         Skills.Daily(t);
         Merchants.Daily(t);

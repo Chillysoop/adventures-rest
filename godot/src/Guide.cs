@@ -296,6 +296,8 @@ public partial class Main
             "speeds" => _speedsBox,
             "topbar" => _stats,
             "clock" => _clock,
+            "weather" => _weatherChip,
+            "weather-layer" => _weatherButton,
             "threat" => _threatPill,
             "alerts" => AlertAnchor(),
             "feed" => _feed.GetChildCount() > 0 ? _feed : null,

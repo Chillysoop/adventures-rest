@@ -251,8 +251,9 @@ public class PowersTests
         var league = Powers.Find(t, "crown-league")!;
         var ledger = Powers.Find(t, "black-ledger")!;
         league.Side = PowerSide.Town;
-        // Liked, and paid, enough to stay the town's ally through the days of the run, whatever else they bring.
+        // Liked, and sworn, so it stays the town's ally through the days of the run whatever the treasury does.
         league.Favour = 100;
+        league.Sworn = true;
         t.Treasury += 20000;
         foreach (var p in t.Powers) p.NextFeudDay = p.Id == "crown-league" ? 0 : 99999;
         sim.RunDays(r.From - t.Day + 1);

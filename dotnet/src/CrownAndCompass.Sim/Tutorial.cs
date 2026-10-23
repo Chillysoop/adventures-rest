@@ -51,10 +51,10 @@ public sealed record TutorialBook
 public static class Tutorial
 {
     /// <summary>Things on screen a step can point at, besides "tab:&lt;Tab&gt;" for a dock button.</summary>
-    public static readonly string[] Anchors = ["speeds", "topbar", "clock", "threat", "alerts", "feed", "build", "buildbar", "strategic", "minimap", "orders", "lens", "markers", "menu", "glossary", "window", "inspector", "dock", "rail", "tray", "siege", "goals"];
+    public static readonly string[] Anchors = ["speeds", "topbar", "clock", "threat", "alerts", "feed", "build", "buildbar", "strategic", "minimap", "orders", "lens", "markers", "menu", "glossary", "window", "inspector", "dock", "rail", "tray", "siege", "goals", "weather", "weather-layer"];
 
     /// <summary>Things the player does in the client that can finish a step.</summary>
-    public static readonly string[] Events = ["next", "speed", "pause", "rotate", "select", "select:agent", "select:building", "select:site", "build", "strategic", "menu", "save", "alert", "roll", "flag", "call", "select:wall", "select:tower", "select:flag", "explorers", "pin", "glossary", "orders", "lens", "seize", "duty"];
+    public static readonly string[] Events = ["next", "speed", "pause", "rotate", "select", "select:agent", "select:building", "select:site", "build", "strategic", "menu", "save", "alert", "roll", "flag", "call", "select:wall", "select:tower", "select:flag", "explorers", "pin", "glossary", "orders", "lens", "seize", "duty", "weather", "weather-layer"];
 
     private static readonly Lazy<TutorialBook> _default = new(() => Parse(Content.ReadText("tutorial.json")));
 

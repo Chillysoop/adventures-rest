@@ -644,6 +644,9 @@ public sealed class Town
     /// <summary>This year's omen and the years' before (<see cref="Systems.Omens"/>).</summary>
     public Systems.OmenState Omens { get; } = new();
 
+    /// <summary>What the town has heard of the weather (<see cref="Systems.Weather"/>; the weather itself is never saved).</summary>
+    public Systems.WeatherState Weather { get; } = new();
+
     /// <summary>Sickness in town: the sick lanes and the outbreaks so far (<see cref="Systems.Sickness"/>; the sick houses keep their own days).</summary>
     public Systems.SicknessState Sickness { get; } = new();
 

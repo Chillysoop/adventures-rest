@@ -133,7 +133,7 @@ public class SkyTests
     public void TheWindSpeedsAShipWithItAndSlowsOneAgainstIt()
     {
         var t = new Simulation(new SimulationOptions { Seed = 2 }).Town;
-        double with = Sky.WindBearing(t, Seasons.Index(t));
+        double with = Weather.Prevailing(t, Weather.TimeOf(t.Tick));
         Assert.True(Sky.FlightDays(t, 20, 0.5, with) < Sky.FlightDays(t, 20, 0.5, (with + 180) % 360));
     }
 

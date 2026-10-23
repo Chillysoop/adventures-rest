@@ -23,6 +23,8 @@ public sealed class Options
     public string? Tray;
     /// <summary>--stat N: hover the Nth resource in the top bar, for a shot of its month.</summary>
     public int? Stat;
+    /// <summary>--weather-tip: hover the top bar's weather, for a shot of the forecast. --weather-layer: the campaign map's weather layer on.</summary>
+    public bool WeatherTip, WeatherLayer;
     /// <summary>--tax 0.05: set the tax rate before the days run, for a shot of a town in the red.</summary>
     public double? Tax;
     public float? Scroll;
@@ -254,6 +256,8 @@ public sealed class Options
                 case "--tab": o.Tab = Next(); break;
                 case "--tray": o.Tray = Next(); break;
                 case "--stat": o.Stat = int.Parse(Next()); break;
+                case "--weather-tip": o.WeatherTip = true; break;
+                case "--weather-layer": o.WeatherLayer = true; break;
                 case "--tax": o.Tax = double.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture); break;
                 case "--scroll": o.Scroll = float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture); break;
                 case "--site": o.Site = Next(); break;

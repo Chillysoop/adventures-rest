@@ -167,6 +167,12 @@
   security added on roads through it (`Wilds.Road` in `Neighbours.RaidShare`/`SecurityTarget`), lair and menace raids seen sooner
   (`Wilds.Warns`), meetings rolled on its own dice. Old caravan patrols migrate into it (`retired` in neighbours.json); lair patrols
   stay their own order. The region list and the spot click are gone from the UI (`PostSurvey`/`MarkSpot` stay for the stand-in and old saves).
+- Weather (`Systems/Weather.cs`, `content/game/weather.json`): a pure function of the seed and tick (`Voices.Hash`, never
+  `Town.Rng`; only `WeatherState` is saved). Pressure fronts drift on the prevailing wind over seasons and climate; read it with
+  `Weather.At(town, x, y, tick)` (days from the town, x east, y south), `Here`, `Worst`, `Ground` (snow lying, wet ground),
+  `Forecast`, `StormIn`. Steps Fair/Grey/Foul/Storm/Tempest; airships, sky trade and marches (`Weather.MarchDays`) read it.
+  Client: `Map/WeatherView.cs` (sky, rain, snow, lightning, shader `gale_wind`/`wet_ground`/`snow`), the campaign-map layer
+  `Map/WeatherLayer.cs` (off by default, a toggle by the corner map), the top-bar chip `WeatherHud.cs`; clock stop `storm`.
 - Cliffs (`Systems/Cliffs.cs`, passage.json `cliffs`): plateaus in the near wilds past the plan, a pure function of the seed. Passage
   treats each as a barrier opened only at its ramps (`Passage.Obstacles`, `RoundCliffs` for roads); the client raises them
   (`WorldGen`) and faces them with rock (`WorldView.BuildCliffs`).

@@ -49,7 +49,7 @@ public partial class TownView
         _farmFences.Mesh = null;
     }
 
-    /// <summary>Every frame: lift baskets ride their ropes, the mist thickens at dawn, and snow falls round the camera in winter.</summary>
+    /// <summary>Every frame: lift baskets ride their ropes, the mist thickens at dawn and in fog, and rain or snow falls round the camera as the weather has it.</summary>
     public void Weather(float dt)
     {
         var town = map.Sim.Town;
@@ -65,9 +65,10 @@ public partial class TownView
         float hour = (town.Tick % SimTime.HoursPerDay) + map.HourFraction;
         // Thickest an hour after dawn, burnt off by late morning, a little back at dusk; more in autumn and winter, and over the sea.
         float dawn = Mathf.Exp(-Mathf.Pow((hour - 6.5f) / 1.8f, 2)), dusk = 0.4f * Mathf.Exp(-Mathf.Pow((hour - 20f) / 1.5f, 2));
-        float mist = Mathf.Clamp(0.1f + dawn * 0.6f + dusk + (float)look.Autumn * 0.2f + (float)look.Winter * 0.15f + (Fleet.Coastal(town) ? 0.15f : 0), 0, 1);
+        float mist = Mathf.Clamp(0.1f + dawn * 0.6f + dusk + (float)look.Autumn * 0.2f + (float)look.Winter * 0.15f + (Fleet.Coastal(town) ? 0.15f : 0) + map.Mistiness * 0.6f, 0, 1);
         Mats.Mist.SetShaderParameter("mist", mist);
-        Snowfall((float)look.Winter);
+        Snowfall(map.Snowing);
+        Rainfall(map.Rain);
     }
 
     // ---------- Neighbours ----------
@@ -636,10 +637,11 @@ public partial class TownView
         if (_snowfall == null)
         {
             if (winter < 0.05f) return;
-            var flake = new QuadMesh { Size = new Vector2(0.09f, 0.09f) };
+            // Round flakes: a tiny low sphere, so near the camera they read as snow and not as squares.
+            var flake = new SphereMesh { Radius = 0.05f, Height = 0.1f, RadialSegments = 6, Rings = 3 };
             _snowfall = new CpuParticles3D
             {
-                Amount = 1800,
+                Amount = 2600,
                 Lifetime = 9,
                 Preprocess = 9,
                 Mesh = flake,
@@ -655,7 +657,6 @@ public partial class TownView
                 MaterialOverride = new StandardMaterial3D
                 {
                     ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
-                    BillboardMode = BaseMaterial3D.BillboardModeEnum.Particles,
                     AlbedoColor = new Color(1, 1, 1, 0.85f),
                     Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
                 },
@@ -663,8 +664,51 @@ public partial class TownView
             AddChild(_snowfall);
         }
         _snowfall.Emitting = winter > 0.05f && !map.Strategic;
-        ((StandardMaterial3D)_snowfall.MaterialOverride).AlbedoColor = new Color(1, 1, 1, 0.85f * Mathf.Clamp(winter, 0.2f, 1));
+        ((StandardMaterial3D)_snowfall.MaterialOverride).AlbedoColor = new Color(1, 1, 1, 0.9f * Mathf.Clamp(winter * 2.2f, 0.45f, 1));
+        // The wind drives the flakes slantwise.
+        _snowfall.Direction = new Vector3(0.15f + map.Wind * 0.9f, -1, 0.05f + map.Wind * 0.5f);
         var look = map.Target;
         _snowfall.GlobalPosition = new Vector3(look.X, map.Gen.SurfaceAt(look.X, look.Y) + 16, look.Y);
+    }
+
+    private CpuParticles3D? _rainfall;
+
+    /// <summary>Rain round the camera: thin streaks, slanting with the wind, heavier as the weather's fall rises.</summary>
+    private void Rainfall(float rain)
+    {
+        if (_rainfall == null)
+        {
+            if (rain < 0.05f) return;
+            var streak = new QuadMesh { Size = new Vector2(0.035f, 0.7f) };
+            _rainfall = new CpuParticles3D
+            {
+                Amount = 3400,
+                Lifetime = 1.6f,
+                Preprocess = 1.6f,
+                Mesh = streak,
+                EmissionShape = CpuParticles3D.EmissionShapeEnum.Box,
+                EmissionBoxExtents = new Vector3(36, 1, 36),
+                Direction = new Vector3(0.1f, -1, 0.05f),
+                Spread = 3,
+                Gravity = Vector3.Zero,
+                InitialVelocityMin = 13f,
+                InitialVelocityMax = 17f,
+                LocalCoords = false,
+                CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+                MaterialOverride = new StandardMaterial3D
+                {
+                    ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+                    BillboardMode = BaseMaterial3D.BillboardModeEnum.FixedY,
+                    AlbedoColor = new Color(0.78f, 0.84f, 0.92f, 0.4f),
+                    Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+                },
+            };
+            AddChild(_rainfall);
+        }
+        _rainfall.Emitting = rain > 0.05f && !map.Strategic;
+        ((StandardMaterial3D)_rainfall.MaterialOverride).AlbedoColor = new Color(0.78f, 0.84f, 0.92f, 0.65f * Mathf.Clamp(rain * 1.8f, 0.35f, 1));
+        _rainfall.Direction = new Vector3(0.1f + map.Wind * 0.45f, -1, 0.05f + map.Wind * 0.25f);
+        var look = map.Target;
+        _rainfall.GlobalPosition = new Vector3(look.X, map.Gen.SurfaceAt(look.X, look.Y) + 18, look.Y);
     }
 }

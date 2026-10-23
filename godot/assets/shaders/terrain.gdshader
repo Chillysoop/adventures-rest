@@ -237,7 +237,9 @@ void fragment() {
 		col *= 1.0 - strategic * 0.8;
 	}
 
+	// Rain darkens the ground and gives it a little sheen (MapView.UpdateSky).
+	col *= 1.0 - wet_ground * 0.14;
 	ALBEDO = to_linear(col);
 	EMISSION = to_linear(emit);
-	ROUGHNESS = 1.0;
+	ROUGHNESS = 1.0 - wet_ground * 0.35;
 }
