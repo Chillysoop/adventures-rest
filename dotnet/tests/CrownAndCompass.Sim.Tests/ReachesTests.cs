@@ -120,4 +120,25 @@ public class ReachesTests
         Assert.True(company.ReturnTick < int.MaxValue / 4);
         Assert.True(hero.Hero.Hp < hp || hero.Hero.Hp == 1);
     }
+
+    [Fact]
+    public void TheSkyDockStandsOnlyOnHighGround()
+    {
+        var t = new Simulation(new SimulationOptions { Seed = 4, AutoMayor = false }).Town;
+        var dock = t.Content.Building("sky_dock");
+        var h = t.Content.Sky.Heights;
+        // The square is level: never there.
+        Assert.False(Sky.SitsHigh(t, dock, Town.Center, Town.Center));
+        var grid = Hills.Grid(t);
+        int top = Enumerable.Range(0, grid.Length).OrderByDescending(i => grid[i]).First();
+        double x = (top % Land.Size + 0.5) / Land.Res, y = (top / Land.Size + 0.5) / Land.Res;
+        Assert.True(grid[top] >= h.MinHeight);
+        Assert.True(Sky.SitsHigh(t, dock, x, y));
+        // Other buildings don't care.
+        Assert.True(Sky.SitsHigh(t, t.Content.Building("house"), Town.Center, Town.Center));
+        // Wherever a lot is found for it, it is high.
+        var lot = Land.Find(t, dock, null);
+        if (lot != null) Assert.True(Sky.SitsHigh(t, dock, lot.X, lot.Y));
+        else Assert.NotNull(Sky.HeightBlocked(t, dock));
+    }
 }

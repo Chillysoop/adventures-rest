@@ -50,6 +50,7 @@ public sealed record SkyFleetRules
     /// <summary>How high the Sky Dock's own lent airship climbs (<see cref="Reaches"/>): higher bands need one of the town's ships.</summary>
     public double DockCeiling { get; init; } = 0.45;
     public CrystalRules Crystal { get; init; } = new();
+    public HeightRules Heights { get; init; } = new();
     public ExpeditionRules Expedition { get; init; } = new();
     public int RaidEvery { get; init; } = 24;
     public double RaidChance { get; init; } = 0.3;
@@ -66,6 +67,19 @@ public sealed record SkyFleetRules
     public IReadOnlyList<string> Captains { get; init; } = [];
     public IReadOnlyList<SkyFoeDef> Foes { get; init; } = [];
     public Dictionary<string, List<string>> Texts { get; init; } = [];
+}
+
+/// <summary>
+/// Where the Sky Dock may stand (Conner, 2026-10-22: "must be built at elevation either on mountains or a tall castle or a
+/// floating city"): `building` only on ground at least `minHeight` tiles up (a hilltop), within `towerReach` tiles of the
+/// keep's `tower` once it stands, or anywhere once the Lofted City flies.
+/// </summary>
+public sealed record HeightRules
+{
+    public string Building { get; init; } = "sky_dock";
+    public double MinHeight { get; init; } = 0.8;
+    public string Tower { get; init; } = "keep_high_tower";
+    public double TowerReach { get; init; } = 8;
 }
 
 /// <summary>
@@ -174,6 +188,32 @@ public static class Sky
 
     /// <summary>Airships at the mast that could take a company or a merchant run now.</summary>
     public static int Ready(Town town) => Ships(town).Count(s => Moored(town, s) && s.Lift >= 2);
+
+    // ---- Where the dock may stand ----
+
+    /// <summary>Whether a building that wants height (the Sky Dock) may stand here: a hilltop, beside the keep's tall tower, or anywhere once the Lofted City flies.</summary>
+    public static bool SitsHigh(Town town, BuildingDef d, double x, double y)
+    {
+        var h = Rules(town).Heights;
+        if (d.Id != h.Building || Lofted.Aloft(town)) return true;
+        if (Hills.Height(town, x, y) >= h.MinHeight) return true;
+        return town.Buildings.Any(b => b.Def.Id == h.Tower && b.Complete && Js.Hypot(town.Lot(b.LotId).X - x, town.Lot(b.LotId).Y - y) <= h.TowerReach);
+    }
+
+    /// <summary>Why the dock can stand nowhere yet: no hilltop in the opened rings, no tall tower, no flying city. Null when somewhere will do.</summary>
+    public static string? HeightBlocked(Town town, BuildingDef d)
+    {
+        var h = Rules(town).Heights;
+        if (d.Id != h.Building || Lofted.Aloft(town) || town.Buildings.Any(b => b.Def.Id == h.Tower && b.Complete)) return null;
+        var grid = Hills.Grid(town);
+        for (int i = 0; i < grid.Length; i++)
+        {
+            if (grid[i] < h.MinHeight) continue;
+            double x = (i % Land.Size + 0.5) / Land.Res, y = (i / Land.Size + 0.5) / Land.Res;
+            if (City.IsOpen(town, x, y)) return null;
+        }
+        return "needs high ground: a hilltop in the town's opened rings, the keep's high tower, or the Lofted City";
+    }
 
     public static string? BuildBlocked(Town town, string kind)
     {

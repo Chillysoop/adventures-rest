@@ -640,7 +640,7 @@ public static class City
     /// <summary>Whether a building may stand on this lot: its ward is open and the building allows it.</summary>
     public static bool Allows(Town town, BuildingDef d, Lot lot) => Allows(town, d, lot.X, lot.Y);
 
-    public static bool Allows(Town town, BuildingDef d, double x, double y) => AllowsWard(town, d, x, y) && Density.Allows(town, d, x, y);
+    public static bool Allows(Town town, BuildingDef d, double x, double y) => AllowsWard(town, d, x, y) && Density.Allows(town, d, x, y) && Sky.SitsHigh(town, d, x, y);
 
     /// <summary>As <see cref="Allows(Town, BuildingDef, double, double)"/>, whatever the density the land is zoned for.</summary>
     public static bool AllowsWard(Town town, BuildingDef d, double x, double y)
