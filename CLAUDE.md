@@ -79,6 +79,13 @@
   home or a building, and otherwise move on at `StayUntil` saying why. `Lodging.Nightly` beds heroes first, then travellers; a hero
   camped `campNights` in a row rides on unless the town binds them (knight, fief, bastion, duty). Client: tents at `Lodging.Camp`
   (`Crowd.Tents`), arrivals walk in from `Lodging.Road`.
+- Refugees (`Systems/Refugees.cs`, `content/game/refugees.json`): every blow that drives folk out of a settlement or a
+  menace's way calls `Refugees.Flee(town, from, by, range)` (never `Population.Settle`); its size is times `Refugees.Draw`
+  (walls, Mandate, haven fame, less dread). They are travellers with `Agent.Refugee`, camp free, wait `patience` days (longer
+  while homes or workplaces rise) and settle like any traveller; settled ones never leave for misery. A column of `cardAt`+
+  waits on the `refugee-column` story (`Town.Refuge.Column`, effect `shelter`). Sheltering earns Mandate, the people's thanks
+  and haven titles (`havens`); when their menace falls, those still camped go home and a razed village rises again, allied.
+  Shots: `--refugees N`, `--story refugee-column`.
 - Zone layouts (city.json `markets`, `closes`): each zone grows its own way. Shops: `Streets.Markets` lays a rectangular
   market square (`Street.Market`) in shop paint with a straight high street to the nearest street, once the town keeps
   `shopsEach` shops per square; shops front its rim first, a side all facing one way. Homes: `Streets.Closes` lays a wandering
