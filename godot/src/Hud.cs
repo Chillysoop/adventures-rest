@@ -174,7 +174,7 @@ public partial class Main
         pad.AddChild(box);
         scroll.AddChild(pad);
         _scrolls[t] = scroll;
-        _panes[t] = new Pane(box, t.ToString());
+        _panes[t] = new Pane(box, t.ToString()) { Hue = t == Tab.Inspect ? null : Groups[GroupOf(t)].Hue };
         return scroll;
     }
 

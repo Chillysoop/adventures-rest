@@ -375,8 +375,8 @@
     {
       "id": "alchemy",
       "title": "The alchemy bench",
-      "text": "An [b]Apothecary[/b] holds an alchemy bench (foot of [b]Armory[/b]).\n• Pick two or three ingredients, [b]Brew[/b]\n• Herbs from your beds, monster parts from cleared lairs\n• Each lends a quality: mending, vigour, ember, rime, gloom, purity\n• Reach a recipe and it's yours; miss and it spoils",
-      "point": "tab:Armory",
+      "text": "An [b]Apothecary[/b] holds an alchemy bench ([b]Armory[/b] → Alchemy).\n• Pick two or three ingredients, [b]Brew[/b]\n• Herbs from your beds, monster parts from cleared lairs\n• Each lends a quality: mending, vigour, ember, rime, gloom, purity\n• Reach a recipe and it's yours; miss and it spoils",
+      "point": "tab:Armory:Alchemy",
       "until": "tab:Armory",
       "when": "day:40",
       "teaches": ["command:Brew"]
@@ -385,7 +385,7 @@
       "id": "alchemy-shelf",
       "title": "Potions on the shelf",
       "text": "Brews wait on the town's shelf.\n• [b]Healing draughts[/b]: heroes take them out\n• [b]Ward[/b]: harder to hit at its kind of lair\n• [b]Fever-breaker[/b]: saves a townsperson\n• [b]Sell[/b] the rest from the shelf",
-      "point": "tab:Armory",
+      "point": "tab:Armory:Alchemy",
       "until": "tab:Armory",
       "when": "count:Recipes",
       "teaches": ["command:SellPotions"]
@@ -465,7 +465,7 @@
       "id": "powers",
       "title": "Minor powers",
       "text": "[b]Minor powers[/b]: smugglers, assassins, spies, lords, wizards, a dragon, a coven. Each has a leader, a goal and a price. In [b]Diplomacy[/b]:\n• [b]Send gifts[/b]: raise standing\n• [b]Ally[/b]: their price and a daily tithe\n• [b]Break[/b] with one\n• Enemy envoys court them too: outbid with gifts",
-      "point": "tab:Diplomacy",
+      "point": "tab:Diplomacy:Powers",
       "until": "tab:Diplomacy",
       "when": "day:80",
       "teaches": ["command:CourtPower", "command:AllyWithPower", "command:BreakWithPower"]
@@ -475,7 +475,7 @@
       "title": "Envoys",
       "text": "A minor power has sent an [b]envoy[/b]. Answer in [b]Diplomacy[/b] before they ride home.\n• Friendly: a cheap [b]alliance[/b]\n• Cordial: a [b]truce[/b] no enemy can buy\n• Hostile: [b]tribute[/b], remembered if refused\nEach power joining an enemy draws the next.",
       "when": "alert:envoy",
-      "point": "tab:Diplomacy",
+      "point": "tab:Diplomacy:Powers",
       "until": "tab:Diplomacy",
       "teaches": ["command:AnswerEnvoy"]
     },
@@ -508,7 +508,7 @@
       "title": "Favours and feuds",
       "text": "Minor powers ask [b]favours[/b]: clear a lair, kill a foe, open a route.\n• [b]Promise[/b]: three months; keep it for gold and friendship\n• Break it: they remember\n• [b]Feuds[/b]: their foe holds your alliance against you\n• Pay your ally to win it and the foe sues for peace",
       "when": "day:150",
-      "point": "tab:Diplomacy",
+      "point": "tab:Diplomacy:Powers",
       "teaches": []
     },
     {
@@ -523,7 +523,7 @@
       "id": "wagons",
       "title": "Bigger caravans",
       "text": "Surplus goods earn nothing sitting in the market.\n• A [b]trade route[/b] turns them into gold\n• [b]Add a wagon[/b] in [b]Diplomacy[/b]: more each run, up to four\n• Bigger charters run more routes",
-      "point": "tab:Diplomacy",
+      "point": "tab:Diplomacy:Trade",
       "until": "tab:Diplomacy",
       "when": "day:150",
       "teaches": ["command:AddWagon"]
@@ -532,7 +532,7 @@
       "id": "clockwork",
       "title": "Clockwork wardens",
       "text": "A city with a mage tower or guildhall can build [b]clockwork wardens[/b] ([b]Defence[/b]).\n• Never sleep, can't be bribed: catch agents\n• Townsfolk dislike being watched by brass\n• Thieves may try to steal one; a mage tower guards the keys",
-      "point": "tab:Defence",
+      "point": "tab:Defence:Wardens",
       "when": "day:300",
       "teaches": ["command:BuildWarden", "command:ScrapWarden"]
     },
@@ -558,7 +558,7 @@
       "id": "sky-trade",
       "title": "Merchant of the skies",
       "text": "The [b]Sky Dock[/b]'s airship trades too ([b]Diplomacy[/b] → [b]The airship[/b]).\n• Pick a people and a spare good, [b]send[/b]\n• Flies straight over rivers and peaks, twice as fast, no route needed\n• Prices: more far out and for wants; less if sold lately\n• Back with gold and their cheap goods\n• Trading or carrying a company, not both",
-      "point": "tab:Diplomacy",
+      "point": "tab:Diplomacy:Trade",
       "until": "tab:Diplomacy",
       "when": "airships",
       "teaches": ["command:SendSkyship"]
@@ -807,11 +807,11 @@
     {"id": "watchtowers", "title": "Watchtowers", "text": "Build a [b]Watchtower[/b] (Government) to see the wilds live.\n• Sees farther as the town grows\n• One per 100 residents\n• Past its sight, the fog stays", "point": "buildbar", "when": "day:12", "teaches": []},
     {"id": "rail-notices", "title": "Notices", "text": "Something new for you? A tile slides out beside its window.\n• Click: go there\n• Right-click: tuck it away\n• Red: urgent · Gold: your call", "point": "rail", "when": "day:4", "teaches": []},
     {"id": "scry-word", "title": "Scry the fight", "text": "A party that sent word is fighting out of sight: an alert offers a [b]scry[/b].\n• Each caster scries once every 2 days\n• Loyal casters: free\n• Others: gold\n• Disaffected: a favour", "point": "alerts", "when": "alert:scry", "teaches": []},
-    {"id": "army", "title": "The army", "text": "[b]Army[/b] raises the town's own soldiers.\n• Build a [b]Drill Yard[/b], [b]Archery Range[/b] or [b]Stables[/b] (Government)\n• Raise a regiment: townsfolk leave their trades, are armed and drill\n• Post it: walls, reserve, patrol or the mayor's guard\n• Put a hero in command to lead it", "point": "tab:Army", "when": "day:8", "teaches": ["tab:Army", "command:RaiseRegiment", "command:ResizeRegiment", "command:DisbandRegiment", "command:PostRegiment", "command:CommandRegiment"]},
+    {"id": "army", "title": "The army", "text": "[b]Army[/b] raises the town's own soldiers.\n• Build a [b]Drill Yard[/b], [b]Archery Range[/b] or [b]Stables[/b] (Government)\n• Raise a regiment: townsfolk leave their trades, are armed and drill\n• Post it: walls, reserve, patrol or the mayor's guard\n• Put a hero in command to lead it", "point": "tab:Army:Raise", "when": "day:8", "teaches": ["tab:Army", "command:RaiseRegiment", "command:ResizeRegiment", "command:DisbandRegiment", "command:PostRegiment", "command:CommandRegiment"]},
     {"id": "levy", "title": "The levy", "text": "When a host comes, call the [b]levy[/b] in [b]Army[/b].\n• Townsfolk leave their work while called\n• Laws: volunteers or conscription, paid or unpaid\n• Conscripts and the unpaid grumble", "point": "tab:Army", "when": "day:14", "teaches": ["command:RaiseLevy", "command:SetServiceLaw", "command:SetLevyPay"]},
-    {"id": "allies-call", "title": "Calling allies", "text": "Allies send hosts when you [b]call[/b] them in [b]Army[/b].\n• Answers come within the day\n• Holdouts: pay, negotiate or let go\n• Hosts march the road: call early\n• A friend under a shadow may turn at the walls", "point": "tab:Army", "when": "allies", "teaches": ["command:CallAllies", "command:BribeAlly", "command:NegotiateAlly", "command:LetAllyGo"]},
+    {"id": "allies-call", "title": "Calling allies", "text": "Allies send hosts when you [b]call[/b] them in [b]Army[/b].\n• Answers come within the day\n• Holdouts: pay, negotiate or let go\n• Hosts march the road: call early\n• A friend under a shadow may turn at the walls", "point": "tab:Army:Allies", "when": "allies", "teaches": ["command:CallAllies", "command:BribeAlly", "command:NegotiateAlly", "command:LetAllyGo"]},
     {"id": "field", "title": "Marching out", "text": "Meet a host on the road before it reaches the walls: the [b]Field[/b] card in [b]Army[/b].\n• Pick who marches; the rest hold the walls\n• Give heroes a goal: the leader, the banner\n• Pick an order: the dice and your commanders do the rest", "point": "tab:Army", "when": "alert:march", "teaches": ["command:MarchOut", "command:SetMarches", "command:SetAllyMarches", "command:SetFieldGoal", "command:SetFieldOrder", "command:RecallHost"]},
-    {"id": "conquest", "title": "Marching on others", "text": "[b]Army[/b] can march on any settlement you have met.\n• Every people sees it: allies trust you less\n• Won: occupy, pillage, cripple or spare\n• Held towns pay tribute, resist and may rise\n• Leave a regiment there to hold it down", "point": "tab:Army", "when": "regiments", "teaches": ["command:Attack", "command:SettleConquest", "command:GarrisonSettlement", "command:FreeSettlement"]},
+    {"id": "conquest", "title": "Marching on others", "text": "[b]Army[/b] can march on any settlement you have met.\n• Every people sees it: allies trust you less\n• Won: occupy, pillage, cripple or spare\n• Held towns pay tribute, resist and may rise\n• Leave a regiment there to hold it down", "point": "tab:Army:Allies", "when": "regiments", "teaches": ["command:Attack", "command:SettleConquest", "command:GarrisonSettlement", "command:FreeSettlement"]},
     {"id": "roads-to-victory", "title": "Roads to victory", "text": "[b]Campaign[/b] lists every way to win.\n\u2022 Slay the big bad, or\n\u2022 Allies, dominion, legends, a golden age, adventurers, trade\n\u2022 Once the big bad shows itself and a road's terms all hold: [b]Claim[/b]\n\u2022 It marches at once. Hold the terms to win", "point": "tab:Campaign:Victory", "when": "day:90", "teaches": ["command:ClaimRoad"]},
     {
       "id": "getting-about",
@@ -882,7 +882,7 @@
     {"id": "year-omens", "title": "The year's omen", "text": "Each year the seers foretell one omen for a season.\n• See it under the season in the [b]City[/b] window\n• Green helps, red hurts\n• Plan stores and walls round it", "point": "tab:City", "when": "day:3", "teaches": []},
     {"id": "word-of-mouth", "title": "Word on the roads", "text": "Heroes rate the town out of five stars: beds, pay, gear, healing, welcome.\n• Good word brings more heroes, and better ones\n• See the stars and their says in [b]Companies[/b]", "point": "tab:Companies", "when": "day:20", "teaches": []},
     {"id": "lasting-wounds", "title": "Lasting wounds", "text": "A hero who goes down in a fight may come home with a lasting wound.\n• Click the hero to see what it costs them\n• Mend it at the shrine, the temple, or with clockwork", "when": "day:40", "teaches": ["command:MendWound"]},
-    {"id": "wall-traps", "title": "Wall traps", "text": "Click a stretch of wall to lay traps before it.\n• Each takes a share of every wave there\n• Pitch burns once: refill it from [b]Defence[/b]\n• Fliers pass over", "point": "tab:Defence", "when": "day:30", "teaches": ["command:LayTrap", "command:RemoveTrap", "command:RefillTraps"]},
+    {"id": "wall-traps", "title": "Wall traps", "text": "Click a stretch of wall to lay traps before it.\n• Each takes a share of every wave there\n• Pitch burns once: refill it from [b]Defence[/b]\n• Fliers pass over", "point": "tab:Defence:Walls", "when": "day:30", "teaches": ["command:LayTrap", "command:RemoveTrap", "command:RefillTraps"]},
     {"id": "sickness", "title": "Sickness", "text": "Sickness only comes when something brings it: the dead, rats, a caravan.\n• It spreads house to house\n• Send the healers, or close the sick lanes, from the [b]City[/b] window", "point": "alerts", "when": "alert:sick", "teaches": ["command:Quarantine", "command:TendTheSick"]},
     {"id": "dark-company", "title": "The dark company", "text": "The big bad has its own adventurers: they fetch what its quests seek and rob hoards.\n• Whoever reaches a site first takes it\n• Or ambush them on the road from [b]Campaign[/b]\n• Beaten, their leader may join you", "point": "alerts", "when": "alert:dark", "teaches": ["command:AmbushDarkCompany"]},
     {"id": "campaign-graphs", "title": "The whole campaign", "text": "The [b]Chronicles[/b] window draws the town's people, gold, dread and more since day one.\n• Pins mark sieges, charters and the fallen\n• Hover a pin for what happened", "point": "tab:Chronicles", "when": "day:60", "teaches": []},
@@ -897,12 +897,14 @@
     {"id": "renown", "title": "Renown", "text": "Companies keep their members and earn [b]renown[/b] for every deed.\n• Each bounty row shows the renown it suggests\n• Short of it, more foes stand and fight\n• A company's new step of fame lifts your Mandate\n• Newcomers join the most renowned company with room", "point": "tab:Companies", "until": "tab:Companies", "when": "count:Companies", "teaches": []},
     {"id": "retainers", "title": "Your own company", "text": "Pick a company in [b]Companies[/b] and [b]Retain for good[/b].\n• Costlier with more levels and renown\n• Then a daily wage\n• They lean to every job you offer\n• Their reports come home free\n• They never leave, unless the wage stops", "point": "tab:Companies", "when": "day:120", "teaches": ["command:RetainCompany", "command:ReleaseCompany"]},
     {"id": "item-powers", "title": "Magic that does things", "text": "Magic items have [b]powers[/b] now.\n• Fireballs, chain lightning, holds, healing\n• A whisper home, a glass that scries for you\n• Hover an item for its powers\n• Heroes wear up to 3 charms; some suit one class", "point": "tab:Armory", "when": "day:15", "teaches": []},
-    {"id": "spoils", "title": "Parts and the forge", "text": "Companies bring home [b]parts[/b] from what they beat: wolf fangs, troll blood, drake scales.\n• [b]Armory[/b]: sell them, or have the forge make arms\n• Plain +1/+2/+3 arms: dearer and finer parts as they rise\n• Strong foes carry their own magic: a frost giant its gauntlets", "point": "tab:Armory", "until": "tab:Armory", "when": "parts", "teaches": ["command:Craft", "command:CancelCraft", "command:SellParts"]},
-    {"id": "plain-arms", "title": "Arm the watch", "text": "Plain +1/+2/+3 arms can go to the [b]watch[/b] and your [b]regiments[/b].\n• [b]Armory[/b]: Arm or Recall each unit\n• Each piece makes the unit stronger\n• Heroes take them too, until real magic beats them", "point": "tab:Armory", "when": "day:30", "teaches": ["command:IssueArms", "command:ArmUnit", "command:RecallArms"]},
-    {"id": "hall-relics", "title": "Relics in the hall", "text": "Big finds go to the [b]town hall[/b] and work from there.\n• A caravan bell: fewer caravans waylaid\n• A warlord's tusk: more defence on the walls\n• [b]Armory[/b]: see what each relic does", "point": "tab:Armory", "when": "count:Relics", "teaches": []},
+    {"id": "spoils", "title": "Parts and the forge", "text": "Companies bring home [b]parts[/b] from what they beat: wolf fangs, troll blood, drake scales.\n• [b]Armory[/b]: sell them, or have the forge make arms\n• Plain +1/+2/+3 arms: dearer and finer parts as they rise\n• Strong foes carry their own magic: a frost giant its gauntlets", "point": "tab:Armory:Forge", "until": "tab:Armory", "when": "parts", "teaches": ["command:Craft", "command:CancelCraft", "command:SellParts"]},
+    {"id": "plain-arms", "title": "Arm the watch", "text": "Plain +1/+2/+3 arms can go to the [b]watch[/b] and your [b]regiments[/b].\n• [b]Armory[/b]: Arm or Recall each unit\n• Each piece makes the unit stronger\n• Heroes take them too, until real magic beats them", "point": "tab:Armory:Forge", "when": "day:30", "teaches": ["command:IssueArms", "command:ArmUnit", "command:RecallArms"]},
+    {"id": "hall-relics", "title": "Relics in the hall", "text": "Big finds go to the [b]town hall[/b] and work from there.\n• A caravan bell: fewer caravans waylaid\n• A warlord's tusk: more defence on the walls\n• [b]Armory[/b]: see what each relic does", "point": "tab:Armory:Hall", "when": "count:Relics", "teaches": []},
     {"id": "the-ocean", "title": "The open sea", "text": "Word of the open sea has reached town.\n• Islands, wrecks and sea caves lie out there\n• Companies sail to them like any other site\n• A great island city trades and grows\n• Corsairs, reef folk and a drowned cult hold the water", "point": "strategic", "when": "seas", "teaches": []},
     {"id": "final-host", "title": "The final host", "text": "The big bad's host [b]gathers[/b] at its seat and holdings before it marches.\n• No countdown: only word from your eyes\n• A tower, patrol, scout or scrying by a camp counts it\n• A fight at a camp thins it; a cleared holding scatters it\n• Meet it on the road with the army", "point": "tab:Campaign", "until": "tab:Campaign", "when": "alert:horde", "teaches": []},
-    {"id": "rail-groups", "title": "Six groups, tabs inside", "text": "The rail holds six groups: [b]Town[/b], [b]Council[/b], [b]Heroes[/b], [b]War[/b], [b]Realm[/b], [b]Lore[/b].\n• Each window's tabs run along its top, with their own badges\n• Long windows split into pages\n• Click a heading to fold it; it stays folded", "point": "rail", "when": "day:2", "teaches": []}
+    {"id": "rail-groups", "title": "Six groups, tabs inside", "text": "The rail holds six groups: [b]Town[/b], [b]Council[/b], [b]Heroes[/b], [b]War[/b], [b]Realm[/b], [b]Lore[/b].\n• Each window's tabs run along its top, with their own badges\n• Long windows split into pages\n• Click a heading to fold it; it stays folded", "point": "rail", "when": "day:2", "teaches": []},
+    {"id": "build-buckets", "title": "Build by kind", "text": "The build bar sorts by kind: [b]Homes[/b], [b]Farming[/b], [b]Industry[/b], [b]Trade[/b], [b]Leisure[/b], [b]Faith[/b], [b]Civic[/b], [b]Defence[/b].\n• Paint zones first, then place buildings\n• A kind shows once you can build any of it\n• Buildings far past your charter stay hidden", "point": "buildbar", "when": "day:3", "teaches": []},
+    {"id": "outfit-company", "title": "Kit out a company", "text": "[b]Heroes[/b] → [b]Companies[/b]: click a company in the roster.\n• [b]Party[/b]: click a face to open their sheet\n• [b]Give[/b]: pick an armory item and who gets it\n• [b]Arm all[/b]: the best gear to each\n• [b]Purse[/b]: gold for loyalty\n• Each sheet has its own [b]Give[/b] too", "point": "tab:Companies", "until": "outfit", "when": "count:Companies", "teaches": []}
   ],
   "untaught": {}
 }
