@@ -311,6 +311,28 @@ public static partial class Expedition
         /// <summary>No snare, hold or swallow takes a hero whose gear keeps them free.</summary>
         private static bool Free(Combatant c) => c.Has("free");
 
+        /// <summary>What a hero's items add to a check of this kind: eyes for traps, a silver tongue for parley.</summary>
+        private static int Knack(Combatant c, string kind)
+        {
+            int n = 0;
+            foreach (var (_, p, _) in c.Of("knack"))
+                if (p.Vs.Contains(kind)) n = Math.Max(n, (int)p.Amount);
+            return n;
+        }
+
+        /// <summary>A bag that holds more than it should: the best of them carries home a share more of the gold.</summary>
+        private void Haul()
+        {
+            if (Gold <= 0) return;
+            var best = Party.Where(c => !c.Dead).SelectMany(c => c.Of("haul").Select(x => (C: c, x.Power, x.Item)))
+                .OrderByDescending(x => x.Power.Amount).ThenBy(x => x.C.Agent.Id).FirstOrDefault();
+            if (best.C == null) return;
+            int more = (int)Math.Floor(Gold * best.Power.Amount);
+            if (more <= 0) return;
+            Gold += more;
+            Log($"{Its(best.C, best.Item)} swallows {more} more gold than they could have carried.");
+        }
+
         /// <summary>A ward that turns a foe's power back on it, once a fight: nobody in its path is touched.</summary>
         private bool Reflect(Foe f, List<Combatant> targets, string power, Dice? dice)
         {

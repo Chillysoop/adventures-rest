@@ -39,7 +39,15 @@
     { "item": "saddle-pocket", "ways": ["river"] },
     { "item": "ferrymans-coin", "ways": ["river"] },
     { "item": "goatfoot-crampons", "ways": ["sheer"] },
-    { "item": "drowned-road-lantern", "ways": ["water"], "party": true }
+    { "item": "drowned-road-lantern", "ways": ["water"], "party": true },
+    { "item": "apparatus-of-the-crab", "ways": ["water", "river"], "party": true },
+    { "item": "boots-of-levitation", "ways": ["sheer"] },
+    { "item": "cloak-of-the-manta-ray", "ways": ["river"] },
+    { "item": "folding-boat", "ways": ["river", "water"], "party": true },
+    { "item": "feather-token-swan-boat", "ways": ["river"], "party": true },
+    { "item": "horseshoes-of-a-zephyr", "ways": ["river"] },
+    { "item": "rope-of-climbing", "ways": ["sheer"], "party": true },
+    { "item": "water-horse-bridle", "ways": ["river"], "party": true }
   ],
   "mounts": [
     { "id": "horse", "name": "riding horse", "ways": ["river"], "price": 75, "buyAt": 350,

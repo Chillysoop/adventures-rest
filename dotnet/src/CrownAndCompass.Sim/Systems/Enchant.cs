@@ -34,7 +34,8 @@ public sealed record PowerKindDef
 /// blow), regen (heals each round), heal (mends the worst hurt), ac, resist (halves a foe's power of its element),
 /// reflect (turns a foe's power back on it), guard (halves a blow), free (no snare or hold takes them), first (never
 /// ambushed), haste (another blow a round), might (attack and damage), sure (a shot that cannot miss), sending (a
-/// sending stone's word home) and scry (scries for the town for free).
+/// sending stone's word home), scry (scries for the town for free), knack (+<see cref="Amount"/> on delve checks of the
+/// kinds in <see cref="Vs"/>: trap, hazard, puzzle, parley, perception) and haul (a share more of the gold carried home).
 /// </summary>
 public sealed record ItemPowerDef
 {
@@ -195,7 +196,7 @@ public static class Enchant
             .Replace("{targets}", p.Targets.ToString())
             .Replace("{uses}", uses)
             .Replace("{vs}", string.Join(", ", p.Vs))
-            .Replace("{amount}", p.Kind == "drain" ? $"{Js.Round(p.Amount * 100)}%" : Js.Str(p.Amount))
+            .Replace("{amount}", p.Kind is "drain" or "haul" ? $"{Js.Round(p.Amount * 100)}%" : Js.Str(p.Amount))
             .Replace("{rounds}", p.Rounds == 1 ? "a round" : $"{p.Rounds} rounds")
             .Replace("{effect}", effect)
             .Replace("  ", " ")

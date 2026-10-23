@@ -319,7 +319,7 @@ public static partial class Expedition
         {
             int ab = kind == SkillKind.Hazard ? Math.Max(c.Agent.Abilities.Con, c.Agent.Abilities.Wis) : c.Agent.Abilities[SkillAbility[kind]];
             int cls = c.Sheet.Cls.Skills.GetValueOrDefault(kind, 0);
-            return Rng.Modifier(ab) + cls + (cls > 0 ? Proficiency(c.Sheet.Level) : 0) + c.Skill;
+            return Rng.Modifier(ab) + cls + (cls > 0 ? Proficiency(c.Sheet.Level) : 0) + c.Skill + Knack(c, kind);
         }
 
         private static void Hurt(Combatant c, int dmg)
@@ -1867,6 +1867,7 @@ public static partial class Expedition
                 Log($"No one comes back from {siteName}.");
                 Mark("lost");
             }
+            if (outcome != ExpeditionOutcome.Wiped) Haul();
             var hp = new OrderedMap<int, int>();
             var potions = new OrderedMap<int, int>();
             var scrolls = new OrderedMap<int, int>();

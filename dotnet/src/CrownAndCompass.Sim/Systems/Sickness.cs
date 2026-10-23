@@ -147,7 +147,7 @@ public static class Sickness
     {
         var r = Rules(town);
         if (Resting(town)) return;
-        double chance = (s.Trouble?.Def == "fever" ? r.Caravan : 0) + (Omens.Sick(town) > 1 ? r.PlagueYearCaravan : 0);
+        double chance = ((s.Trouble?.Def == "fever" ? r.Caravan : 0) + (Omens.Sick(town) > 1 ? r.PlagueYearCaravan : 0)) * (1 - Regalia.Sick(town));
         if (chance <= 0) return;
         var dice = Dice(town, 7000 + s.Id);
         if (!dice.Chance(chance)) return;
@@ -250,7 +250,7 @@ public static class Sickness
         {
             if (s.Cleared || !r.Groups.Contains(s.Def.Group) || s.Def.Distance > r.GroupReach) continue;
             var dice = Dice(town, unchecked((int)Voices.Hash(s.Def.Id)));
-            if (!dice.Chance(r.GroupChance * Omens.Sick(town))) continue;
+            if (!dice.Chance(r.GroupChance * Omens.Sick(town) * (1 - Regalia.Sick(town)))) continue;
             var houses = town.Buildings.Where(House).ToList();
             if (houses.Count == 0) return;
             string why = (s.Def.Group == "sewer-infestation" ? Text(town, "rats") : Text(town, "pilgrims")).Replace("{site}", s.Def.Name);

@@ -131,6 +131,7 @@ public partial class Main
         RenderKit(p, t);
         RenderForge(p, t);
         RenderParts(p, t);
+        RenderRelics(p, t);
         RenderAlchemy(p);
         p.Commit();
     }

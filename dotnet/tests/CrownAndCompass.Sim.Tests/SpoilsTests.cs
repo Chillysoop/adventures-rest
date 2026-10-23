@@ -149,4 +149,66 @@ public class SpoilsTests
         var a = Quests.CreateHero(t, t.Content.Classes.First(c => c.Id == "fighter"), 5);
         Assert.Equal(0, Gear.Gain(t.Content, a, t.Content.Library.Item("ninefold-seal")!));
     }
+
+    [Fact]
+    public void HallRelicsDoWhatTheySay()
+    {
+        var sim = new Simulation(new SimulationOptions { Seed = 4, AutoMayor = false });
+        var t = sim.Town;
+        double escort = Institutions.Escort(t), truth = Regalia.Truth(t);
+        int defence = (int)Institutions.Defence(t);
+        Watch.ReceiveRelic(t, t.Content.Library.Item("caravan-bell")!, "Test Company");
+        Watch.ReceiveRelic(t, t.Content.Library.Item("broken-warlord-tusk")!, "Test Company");
+        Watch.ReceiveRelic(t, t.Content.Library.Item("unveiling-mirror")!, "Test Company");
+        Assert.True(Institutions.Escort(t) > escort);
+        Assert.True(Institutions.Defence(t) > defence);
+        Assert.True(Regalia.Truth(t) > truth);
+        // Kept in the hall, not worn: the mayor can't put one on.
+        Assert.False(Regalia.Is(t, t.Content.Library.Item("caravan-bell")!));
+        Assert.DoesNotContain(t.Armory.Stock, s => s.Item.Id == "caravan-bell");
+        // The loupe makes the forge cheaper.
+        var rec = t.Content.Spoils.Recipe("plain-weapon-1")!;
+        double cost = Spoils.Cost(t, rec);
+        Watch.ReceiveRelic(t, t.Content.Library.Item("enchanters-ley-loupe")!, "Test Company");
+        Assert.True(Spoils.Cost(t, rec) < cost);
+    }
+
+    [Fact]
+    public void EveryLootItemDoesSomething()
+    {
+        // A piece heroes or the town can find does more than its +N: a power, a way across, a hall effect or plain arms.
+        var passage = C.Passage.Items.Select(i => i.Item).ToHashSet();
+        var hall = C.Regalia.Items.Select(i => i.Ref).ToHashSet();
+        var watched = C.Knowledge.Works.Select(w => w.Relic).ToHashSet();
+        var plain = C.LootItems.Where(i => Enchant.Of(C, i).Count == 0 && !Enchant.Basic(C, i) && !passage.Contains(i.Id) && !hall.Contains(i.Id) && !watched.Contains(i.Id)
+            && !C.Armory.Start.Contains(i.Id) && C.Armory.Stone != i.Id && !System.Text.RegularExpressions.Regex.IsMatch(i.Name, @"\+\d")).Select(i => i.Id).ToList();
+        Assert.True(plain.Count <= Allowed.Count, "items that only give a bonus: " + string.Join(", ", plain.Except(Allowed)));
+    }
+
+    /// <summary>Bonus-only pieces Conner is weighing whether to keep (asked 2026-10-23); shrink as they get effects or go.</summary>
+    private static readonly HashSet<string> Allowed =
+    [
+        "amulet-of-the-planes",
+        "armor-of-vulnerability",
+        "bag-of-beans",
+        "bag-of-devouring",
+        "cubic-gate",
+        "decanter-of-endless-water",
+        "deck-of-many-things",
+        "dragon-orb",
+        "dust-of-dryness",
+        "feather-token",
+        "feather-token-anchor",
+        "feather-token-fan",
+        "feather-token-tree",
+        "manual-of-golems",
+        "marvelous-pigments",
+        "mysterious-deck",
+        "potion-of-fire-giant-strength",
+        "shield-of-missile-attraction",
+        "sovereign-glue",
+        "talisman-of-the-sphere",
+        "universal-solvent",
+        "well-of-many-worlds",
+    ];
 }

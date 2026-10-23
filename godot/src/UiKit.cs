@@ -163,6 +163,7 @@ public static partial class Ui
         ["In the armory"] = "tools",
         ["Forge"] = "forge",
         ["Parts"] = "item-part",
+        ["In the hall"] = "inst-hall-of-heroes",
         ["Watch and soldiers"] = "order-guard",
         ["Inspiration"] = "ui-star",
         ["Its parts"] = "stone",
