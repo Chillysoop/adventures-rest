@@ -46,7 +46,9 @@ public partial class Main
             foreach (var m in foes)
             {
                 var (word, color) = MenaceStages[m.Stage];
-                string march = m.ArrivalTick is int at && at > t.Tick ? "  " + Tag($"marching, {Ui.Days((int)Math.Ceiling((at - t.Tick) / 24.0))}", Ui.Bad) : "";
+                // The big bad's host shows its stage, never a count of days.
+                string march = Horde.On(t, m) ? (m.ArrivalTick == null || Horde.Known(t, m) ? "  " + Tag(Horde.Word(t, m), m.ArrivalTick != null ? Ui.Bad : Ui.Accent) : "")
+                    : m.ArrivalTick is int at && at > t.Tick ? "  " + Tag($"marching, {Ui.Days((int)Math.Ceiling((at - t.Tick) / 24.0))}", Ui.Bad) : "";
                 string big = m.BigBad ? Tag("big bad", Ui.Bad) + "  " : "";
                 var met = Discovery.Of(t, Discovery.Key(m));
                 string how = met != null ? $"{Ui.Esc(Ui.Cap(met.How))} day {met.Day}" : "";

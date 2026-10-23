@@ -134,7 +134,7 @@ public class MoodsTests
     public void EveryStorytellerHasANameACharacterAndRisingChangesNothing()
     {
         var c = Content.Default();
-        Assert.Equal(["steady", "rising", "chaotic"], c.Storytellers.Storytellers.Select(s => s.Id));
+        Assert.Equal(["steady", "rising", "chaotic", "relentless"], c.Storytellers.Storytellers.Select(s => s.Id));
         Assert.All(c.Storytellers.Storytellers, s => Assert.True(s.Name != "" && s.Character != "" && s.Text != "" && s.Title != ""));
         var rising = Storyteller.Def(c, "rising")!;
         Assert.Equal(new StorytellerDef { Id = rising.Id, Title = rising.Title, Name = rising.Name, Character = rising.Character, Text = rising.Text }, rising);

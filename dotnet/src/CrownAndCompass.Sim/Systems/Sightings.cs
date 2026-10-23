@@ -127,7 +127,8 @@ public static class Sightings
     public static void Daily(Town town)
     {
         town.Sightings.RemoveAll(s => town.Tick >= s.UntilTick);
-        foreach (var m in town.Saga.Menaces.Where(m => m.Alive && m.ArrivalTick != null).OrderBy(m => m.Id))
+        // The big bad's host is seen leaving only by eyes on its road; without them, when it is close.
+        foreach (var m in town.Saga.Menaces.Where(m => m.Alive && m.ArrivalTick != null && Horde.Known(town, m)).OrderBy(m => m.Id))
             Marching(town, $"menace:{m.Id}", m.Name, m.SeatId, m.Approach, m.ArrivalTick!.Value);
         if (town.Enemy.Stage == ThreatStage.Marching && town.Enemy.ArrivalTick is int at)
             Marching(town, "warband", town.Content.Enemy.Name, town.Content.Enemy.Outpost.Id, town.Enemy.Approach, at);
@@ -144,7 +145,7 @@ public static class Sightings
         int daysOut = Math.Max(0, (int)Math.Ceiling((arrival - town.Tick) / (double)SimTime.HoursPerDay));
         string where = Garrison.Place(town, section);
         string text = old == null
-            ? $"brings word: {foe} has set out, heading for the {where}."
+            ? progress > 0.5 ? $"runs in: {foe} is close, coming for the {where}!" : $"brings word: {foe} has set out, heading for the {where}."
             : daysOut == 1 && old.Progress < 1 - 1e-9 && (arrival - old.Tick) > SimTime.HoursPerDay
                 ? $"sees {foe} a day from the {where}, close enough to count the banners."
                 : "";

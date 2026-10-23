@@ -117,6 +117,11 @@
   with no swing and must roll nothing, so gate sweeps stay put. Moods (`content/game/moods.json`, `Systems/Moods.cs`): townsfolk high for
   days get a trade inspiration, low ones break (`Agent.Episode`, shown as street bubbles and in the inspector; `--episode id` stages one).
   Their rolls use `Moods.Dice` (seeded from seed, tick and person), not `Town.Rng`, so moods never shift the main stream.
+- Acts and the final horde (saga.json `acts`, `horde`; `Systems/Saga.cs`, `Systems/Horde.cs`): an act opens when the town is strong
+  enough (`OpensAtLevel` champions and `OpensAtPopulation`, times `Storyteller.Acts`), after its `minDays`, or after `maxDays` regardless.
+  The big bad's host gathers at its seat and holdings (`HordeState.Camps`), musters, then marches; fights at a camp thin it, a cleared
+  holding scatters it. The town learns its size and moves only with eyes on its camps or road (`Horde.Eyes`, `RoadWatched`), else a day
+  or two out; nothing shows a count of days for it (`Horde.Word`). Its first breach burns the lower town (`Horde.Reprieve`); the next falls it.
 - Decorations (`content/game/decor.json`, `Systems/Decor.cs`, client `Map/Decorator.cs`, `Map/DecorView.cs`): free positions in
   tiles from the town's corner and any angle (radians, model front +Z turned by it). Every piece needs a small effect in
   another system, capped in decor.json. Pieces claim plan cells (`Decor.Cells`, `LandPlan.Decor`): `Land.Fits` and lanes go
