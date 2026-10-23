@@ -26,6 +26,7 @@
     "vintner": ["nature"],
     "scribe": ["history", "investigation"],
     "barkeep": ["insight", "persuasion"],
+    "innkeeper": ["insight", "persuasion"],
     "shopkeeper": ["persuasion", "insight"],
     "merchant": ["persuasion", "insight"],
     "attendant": ["medicine"],

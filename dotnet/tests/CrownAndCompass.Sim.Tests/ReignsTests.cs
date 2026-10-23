@@ -113,7 +113,8 @@ public class ReignsTests
         Assert.NotNull(Shadows.RallyRefused(t, s));
         int days = 2 * t.Regions[s.RegionId].Days + t.Content.Neighbours.Shadow.Rally.Days + 2;
         sim.RunDays(days);
-        Assert.False(hero.IsAway);
+        // Home again (they may since have ridden out with a company).
+        Assert.Contains(t.Ledger.Entries, e => e.Text.Contains($"{hero.GivenName} is back from {s.Name}"));
         Assert.True(s.Shadow == null || s.Shadow.RallyHeroId == null);
         Assert.Contains(t.Ledger.Entries, e => e.Text.Contains(s.Name) && e.Text.Contains("Persuasion"));
     }

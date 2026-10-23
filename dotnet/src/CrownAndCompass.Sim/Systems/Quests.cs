@@ -279,7 +279,6 @@ public sealed record Chronicle(
 public static class Quests
 {
     private const int BountyDays = 10;
-    private const double Lodging = 1;
     private static readonly int[] XpLevels =
         [0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000, 85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000];
 
@@ -428,7 +427,7 @@ public static class Quests
         ReturnParties(town);
         Voices.Forsworn(town);
         HeroArrivals(town);
-        LodgingAndRest(town);
+        Lodging.Nightly(town);
         Gear.Shop(town);
         ExpireBounties(town);
         Captives.Daily(town);
@@ -442,7 +441,6 @@ public static class Quests
     private static void HeroArrivals(Town town)
     {
         var taverns = town.Taverns;
-        if (taverns.Count == 0) return;
         int heroes = town.Heroes.Count;
         if (heroes >= City.HeroCap(town)) return;
         int open = town.Bounties.Count(b => b.Status == BountyStatus.Open);
@@ -450,37 +448,18 @@ public static class Quests
         int fame = Notoriety.TownFame(town);
         // So does good word on the roads, and bad word keeps them away.
         double chance = Math.Clamp(0.12 + 0.25 * open + (heroes < 4 ? 0.2 : 0) + town.Content.Notoriety.Arrivals * fame + Word.Arrivals(town) + Omens.Heroes(town), 0.02, 0.9);
+        // Word gets round that the rooms are taken: fewer come when they'd have to camp.
+        bool room = Lodging.Rooms(town) > town.Lodging.Guests;
+        if (!room) chance *= Lodging.Rules(town).CampArrivals;
         if (!town.Rng.Chance(chance)) return;
 
         // More taverns, more talk on the roads: seasoned heroes hear of the town and come.
         double green = Math.Max(0.3, Math.Max(0.4, 0.7 - town.Content.Rumors.BetterHeroesPerTavern * (taverns.Count - 1)) - town.Content.Notoriety.Seasoned * fame - Word.Seasoned(town));
         int level = (town.Rng.Chance(green) ? 1 : town.Rng.Chance(0.8) ? 2 : 3) + Saga.ArrivalBonus(town);
         var a = CreateHero(town, PickClass(town), level);
-        string where = taverns[town.Rng.Range(0, taverns.Count)].Name;
-        town.Log(LedgerCategory.Arrival, Importance.Notable, $"{a.Describe()}, walks into {where} looking for paid work. {Annals.Past(town, a)} ({a.TraitList()})", [a.Id]);
-    }
-
-    private static void LodgingAndRest(Town town)
-    {
-        var taverns = town.Taverns;
-        foreach (var a in town.Heroes)
-        {
-            var s = a.Hero!;
-            if (s.AwayUntil != null) continue;
-            // A bed at the company's bastion, or above the tavern.
-            bool home = Bastions.Lodges(town, a) || s.Sworn || s.Holding != "";
-            s.Lodging = home || (taverns.Count > 0 && a.Gold >= Lodging);
-            if (s.Lodging && !home)
-            {
-                var t = taverns[a.Id % taverns.Count];
-                a.Gold -= Lodging;
-                t.Cash += Lodging;
-            }
-            // A long rest heals; a bed heals faster, and the shrine or temple more.
-            int healed = (int)Math.Ceiling(s.MaxHp * (s.Lodging ? 0.5 : 0.25) * Curses.Heal(town.Content, s));
-            if (s.Hp < s.MaxHp) healed = Shrines.Rest(town, a, healed);
-            s.Hp = Math.Min(s.MaxHp, s.Hp + healed);
-        }
+        a.Hero!.Wanderer = true;
+        string where = room && taverns.Count > 0 ? $"walks into {taverns[town.Rng.Range(0, taverns.Count)].Name}" : $"pitches camp outside {town.Name}";
+        town.Log(LedgerCategory.Arrival, Importance.Notable, $"{a.Describe()}, {where} looking for paid work. {Annals.Past(town, a)} ({a.TraitList()})", [a.Id]);
     }
 
     private static void ExpireBounties(Town town)

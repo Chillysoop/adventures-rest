@@ -821,6 +821,13 @@ public partial class Main
                 : $"Busiest yesterday: {b.PeakLast}/{b.Def.Capacity}.";
             p.Text($"{now}\n{last}");
         }
+        if (b.Def.Rooms > 0 && b.Complete)
+        {
+            var guests = t.Agents.Where(a => !a.Departed && a.InnId == b.Id).Select(a => a.Id).ToList();
+            bool full = guests.Count >= b.Def.Rooms;
+            p.Text($"Rooms {guests.Count}/{b.Def.Rooms}" + (full ? Ui.C(Ui.Bad, " · full") : "") + (guests.Count > 0 ? $"\nGuests: {People(guests)}" : ""));
+            if (full && t.Lodging.Camped > 0) p.Note($"{t.Lodging.Camped} camping outside town. Heroes ride on after {t.Content.Lodging.CampNights} nights; another inn takes them.");
+        }
         if (b.Def.Housing > 0 && Decor.Comfort(t, b) is double comfort && Math.Abs(comfort) >= 0.005)
             p.Text(comfort > 0
                 ? Ui.C(Ui.Good, $"A pleasant street: the household is {Math.Round(comfort * 100)}% more content, so the house grows sooner.")

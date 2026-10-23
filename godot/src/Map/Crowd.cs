@@ -149,6 +149,12 @@ public sealed class AgentPositions(MapView map)
         foreach (var a in town.Agents)
         {
             var tgt = Target(town, a);
+            // Newcomers come into sight on the road and walk in to the inn or the camp.
+            if (tgt != null && !Sprites.ContainsKey(a.Id) && a.ArrivedTick > 0 && town.Tick - a.ArrivedTick < 12 && (a.Traveller || a.Hero != null))
+            {
+                var (rx, ry) = Lodging.Road(town);
+                Sprites[a.Id] = new Sprite { P = new Vector2(Geo.Margin + (float)rx, Geo.Margin + (float)ry), Yaw = Geo.Hash(a.Id) * Mathf.Tau, Visible = true };
+            }
             // Woken by raiders: they come running out of their own door.
             if (tgt != null && Passage.Fleeing(town, a) && (!Sprites.TryGetValue(a.Id, out var was) || !was.Visible) && (a.LocationId ?? a.HomeId) is int door)
                 Sprites[a.Id] = new Sprite { P = Front(town.Lot(town.Building(door).LotId), 0.5f, 0.5f), Visible = true, Fleeing = true };
@@ -223,6 +229,69 @@ public partial class Crowd(MapView map) : Node3D
     private readonly MultiMeshInstance3D _folk = Make(), _heroes = Make(), _orcs = Make(), _banners = Make(), _guards = Make(), _loads = Make();
     private readonly List<float> _buf = [];
 
+    /// <summary>The camp outside town: a tent for every two sleeping rough (<see cref="Lodging.Campers"/>), redrawn once an hour.</summary>
+    private readonly MultiMeshInstance3D _tents = new()
+    {
+        Multimesh = new MultiMesh { TransformFormat = MultiMesh.TransformFormatEnum.Transform3D, UseColors = true },
+        MaterialOverride = Mats.Props,
+        CastShadow = GeometryInstance3D.ShadowCastingSetting.On,
+    };
+    private readonly MultiMeshInstance3D _fire = new()
+    {
+        Multimesh = new MultiMesh { TransformFormat = MultiMesh.TransformFormatEnum.Transform3D },
+        MaterialOverride = Mats.Props,
+    };
+    private int _tentTick = -1;
+    private const int MostTents = 30;
+    private static readonly Color[] Canvas = [new("d8c8a0"), new("c9b088"), new("b8a27a"), new("a8865c"), new("d0bc94")];
+
+    private void Tents(Town town)
+    {
+        if (_tentTick == town.Tick) return;
+        _tentTick = town.Tick;
+        int n = Math.Min(MostTents, (Lodging.Campers(town) + 1) / 2);
+        var mm = _tents.Multimesh;
+        mm.InstanceCount = n;
+        _fire.Multimesh.InstanceCount = n == 0 ? 0 : 1;
+        if (n == 0) return;
+        var (cx, cy) = Lodging.Camp(town);
+        var camp = new Vector2(Geo.Margin + (float)cx, Geo.Margin + (float)cy);
+        _fire.Multimesh.SetInstanceTransform(0, new Transform3D(Basis.Identity, map.Gen.At(camp)));
+        var outward = (camp - Geo.Center).Normalized();
+        for (int i = 0; i < n; i++)
+        {
+            // A loose cluster spiralling out from the first tent, each turned to the camp's middle.
+            float ang = i * 2.39996f + Geo.Hash(i * 7 + 3) * 0.6f, r = 0.55f + 0.4f * Mathf.Sqrt(i) + Geo.Hash(i * 7 + 4) * 0.12f;
+            var p = camp + outward * 0.3f + new Vector2(Mathf.Cos(ang), Mathf.Sin(ang)) * r;
+            float yaw = Mathf.Atan2(camp.X - p.X, camp.Y - p.Y) + (Geo.Hash(i * 7 + 5) - 0.5f) * 0.5f;
+            float scale = 0.85f + Geo.Hash(i * 7 + 6) * 0.3f;
+            mm.SetInstanceTransform(i, new Transform3D(Basis.FromEuler(new Vector3(0, yaw, 0)).Scaled(Vector3.One * scale), map.Gen.At(p)));
+            mm.SetInstanceColor(i, Canvas[i % Canvas.Length]);
+        }
+    }
+
+    /// <summary>The camp's fire: a ring of stones, crossed logs and embers.</summary>
+    private static void Campfire(MeshKit kit)
+    {
+        for (int i = 0; i < 7; i++)
+        {
+            float a = i * Mathf.Tau / 7;
+            kit.Box(new Vector3(Mathf.Cos(a) * 0.12f, 0, Mathf.Sin(a) * 0.12f), new Vector3(0.05f, 0.035f, 0.05f), new Color("8a8478"));
+        }
+        kit.Box(new Vector3(0, 0, 0), new Vector3(0.18f, 0.03f, 0.04f), new Color("4a3424"));
+        kit.Box(new Vector3(0, 0.01f, 0), new Vector3(0.04f, 0.03f, 0.18f), new Color("4a3424"));
+        kit.Box(new Vector3(0, 0.03f, 0), new Vector3(0.08f, 0.06f, 0.08f), new Color("ff9a3a", MeshKit.Flag.Ember));
+    }
+
+    /// <summary>A ridge tent of canvas over two poles, its flap open toward +z.</summary>
+    private static void Tent(MeshKit kit)
+    {
+        var canvas = Colors.White;
+        kit.Gable(0, 0.44f, 0.36f, 0.28f, canvas, canvas.Darkened(0.12f), 0.015f);
+        kit.Frustum(new Vector3(-0.23f, 0, 0), 0.01f, 0.01f, 0.33f, 4, new Color("4a3424"));
+        kit.Frustum(new Vector3(0.23f, 0, 0), 0.01f, 0.01f, 0.33f, 4, new Color("4a3424"));
+    }
+
     private static MultiMeshInstance3D Make() => new()
     {
         Multimesh = new MultiMesh { TransformFormat = MultiMesh.TransformFormatEnum.Transform3D, UseColors = true, UseCustomData = true },
@@ -253,6 +322,14 @@ public partial class Crowd(MapView map) : Node3D
         kit.Clear();
         Load(kit);
         _loads.Multimesh.Mesh = kit.Build();
+        kit.Clear();
+        Tent(kit);
+        _tents.Multimesh.Mesh = kit.Build();
+        kit.Clear();
+        Campfire(kit);
+        _fire.Multimesh.Mesh = kit.Build();
+        AddChild(_tents);
+        AddChild(_fire);
         BuildSiege(kit, _ram, _ladders, _arrows, _flames, _smoke);
         foreach (var m in new[] { _folk, _heroes, _orcs, _banners, _guards, _loads, _ram, _ladders, _arrows, _flames, _smoke }) AddChild(m);
         AddChild(Heroes);
@@ -388,6 +465,7 @@ public partial class Crowd(MapView map) : Node3D
         if (!close) return;
         SiegeNow(town);
         SkirmishCast(town);
+        Tents(town);
 
         // Townsfolk in one batch, heroes in another; haulers' loads in their own.
         var loads = new List<(Vector3 P, float Yaw, bool Stone)>();
