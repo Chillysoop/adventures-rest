@@ -141,4 +141,64 @@ public class ReachesTests
         if (lot != null) Assert.True(Sky.SitsHigh(t, dock, lot.X, lot.Y));
         else Assert.NotNull(Sky.HeightBlocked(t, dock));
     }
+
+    [Fact]
+    public void TheCloudCourtFloatsFarOutAndOnlyAHighEnoughShipReachesIt()
+    {
+        for (int seed = 1; seed <= 6; seed++)
+        {
+            var t = new Simulation(new SimulationOptions { Seed = seed }).Town;
+            var court = Assert.Single(t.Settlements, s => s.Kin.Id == "cloud-court");
+            Assert.InRange(t.Regions[court.RegionId].Ring, 5, 6);
+            Assert.Equal(court.Id, t.Regions[court.RegionId].SettlementId);
+        }
+        var (sim, town) = Docked(2);
+        var c = town.Settlements.Single(s => s.Kin.Id == "cloud-court");
+        town.Regions[c.RegionId].Known = true;
+        Neighbours.Introduce(town, c, "test");
+        c.Met = true;
+        c.Standing = 60;
+        Assert.NotNull(Reaches.Unreached(town, c));
+        Assert.False(sim.SendEnvoy(c.Id));
+        Assert.Equal(Reaches.Unreached(town, c), Trade.Refuse(town, c));
+        Assert.Equal(Reaches.Unreached(town, c), Conquest.AttackBlocked(town, c));
+        // A galleon still flies too low; a dreadnought climbs to the cloud sea.
+        Fleet.Build(town, "galleon", true);
+        Assert.NotNull(Reaches.Unreached(town, c));
+        Fleet.Build(town, "dreadnought", true);
+        Assert.Null(Reaches.Unreached(town, c));
+        Assert.True(sim.SendEnvoy(c.Id));
+        // Peoples on the ground are never held up by the sky.
+        Assert.All(town.Settlements.Where(s => s.Kin.Band == ""), s => Assert.Null(Reaches.Unreached(town, s)));
+    }
+
+    [Fact]
+    public void MetallicAncientsAreNeighboursToTalkTradeAndAllyWithOnceAShipClimbsToThem()
+    {
+        int found = 0;
+        for (int seed = 1; seed <= 8; seed++)
+        {
+            var w = new Simulation(new SimulationOptions { Seed = seed }).Town;
+            foreach (var d in w.Settlements.Where(s => s.Kin.Id.EndsWith("-ancient")))
+            {
+                found++;
+                Assert.InRange(w.Regions[d.RegionId].Ring, 5, 7);
+                Assert.Equal("cloud", d.Kin.Band);
+            }
+        }
+        Assert.InRange(found, 4, 36);
+        int seedWith = Enumerable.Range(1, 8).First(n => new Simulation(new SimulationOptions { Seed = n }).Town.Settlements.Any(s => s.Kin.Id.EndsWith("-ancient")));
+        var (sim, t) = Docked(seedWith);
+        var dragon = t.Settlements.First(s => s.Kin.Id.EndsWith("-ancient"));
+        t.Regions[dragon.RegionId].Known = true;
+        Neighbours.Introduce(t, dragon, "test");
+        dragon.Met = true;
+        Fleet.Build(t, "dreadnought", true);
+        dragon.Standing = t.Content.World.Standing.Ally - 1;
+        Assert.True(sim.SendEnvoy(dragon.Id));
+        Assert.True(dragon.Allied);
+        var (export, import) = Trade.Suggest(t, dragon);
+        Assert.Null(Trade.Refuse(t, dragon));
+        Assert.True(sim.OpenTradeRoute(dragon.Id, export, import));
+    }
 }

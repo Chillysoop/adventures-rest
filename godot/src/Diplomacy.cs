@@ -377,9 +377,10 @@ public partial class Main
                 p.Row(head);
                 continue;
             }
+            if (Reaches.Unreached(t, s) is { } high) head += $"\n[font_size=12]{Ui.Chip("inst-sky-dock", "Out of reach", Ui.Bad, Ui.Cap(high))}[/font_size]";
             head += "\n" + CharacterSheet(t, s) + "\n" + Life(t, s);
             var buttons = new List<(string, bool, bool, Action)>();
-            if (!s.Allied || Shadows.Shadowed(s)) buttons.Add(($"Envoy · {Js.Str(w.EnvoyCost)}g · {DecisionOdds(t, "envoy")}", t.Treasury >= w.EnvoyCost, false, () => Act(() => _sim.SendEnvoy(id))));
+            if (!s.Allied || Shadows.Shadowed(s)) buttons.Add(($"Envoy · {Js.Str(w.EnvoyCost)}g · {DecisionOdds(t, "envoy")}", t.Treasury >= w.EnvoyCost && Reaches.Unreached(t, s) == null, false, () => Act(() => _sim.SendEnvoy(id))));
             if (Shadows.Shadowed(s))
                 buttons.Add((Shadows.Rallier(t) is { } speaker && s.Shadow!.RallyHeroId == null ? $"Send {speaker.GivenName} to rally them" : "Rally", Shadows.RallyRefused(t, s) == null, true, () => Act(() => _sim.RallySettlement(id))));
             if (Neighbours.TroubleOf(t, s) is { Kind: "need", Aid: { } aid })

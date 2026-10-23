@@ -48,6 +48,17 @@ public static class Reaches
             .ToList();
     }
 
+    /// <summary>Whether the town has a way as high as this: an airship that climbs to it, or the Lofted City itself.</summary>
+    public static bool Climbs(Town town, double ceiling) =>
+        ceiling <= 0 || Lofted.Aloft(town) || (Sky.Dock(town) != null && Sky.Ships(town).Any(s => Fleet.Def(town, s).Ceiling >= ceiling - 1e-9));
+
+    /// <summary>Why envoys, caravans, aid and armies can't get to a people of the sky (<see cref="PeopleDef.Band"/>), or null when they can.</summary>
+    public static string? Unreached(Town town, Settlement s)
+    {
+        if (town.Content.World.Isles.Band(s.Kin.Band) is not { } band) return null;
+        return Climbs(town, band.Ceiling) ? null : $"only an airship that climbs to {band.Name} reaches them";
+    }
+
     /// <summary>Whether a company can get to a site in the sky at all: on its own wings where the band allows, or aboard.</summary>
     public static bool CanReach(Town town, IReadOnlyList<Agent> members, SiteState site)
     {

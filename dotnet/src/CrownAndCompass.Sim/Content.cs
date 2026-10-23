@@ -1103,6 +1103,9 @@ public sealed record PeopleDef
 
     /// <summary>What they buy from the town and sell to it along a trade route (<see cref="Systems.Trade"/>).</summary>
     public Systems.TradeGoodsDef Trade { get; init; } = new();
+
+    /// <summary>The height of the sky they live at (world.json isles bands); empty on the ground. Envoys, caravans, aid and armies reach them only aboard an airship that climbs that high (<see cref="Systems.Reaches.Unreached"/>).</summary>
+    public string Band { get; init; } = "";
 }
 
 public sealed record StandingRules
@@ -1513,6 +1516,8 @@ public sealed record IsleCityRules
     public string People { get; init; } = "";
     public int[] Rings { get; init; } = [2, 3];
     public double Prosperity { get; init; } = 60;
+    public IReadOnlyList<string> Themes { get; init; } = [];
+    public double Chance { get; init; } = 1;
 }
 
 /// <summary>Floating isles in the far wilds (world.json "isles"), reached only by air.</summary>
@@ -1520,6 +1525,9 @@ public sealed record IsleRules
 {
     /// <summary>The sky's heights, lowest first: what lies in each, and how high a ship must climb to get there.</summary>
     public IReadOnlyList<SkyBandDef> Bands { get; init; } = [];
+
+    /// <summary>Peoples of the sky (each with a `band` in world.json peoples): each settles one free land region of its `rings`, its `themes` first, with its `chance`, on their own dice.</summary>
+    public IReadOnlyList<IsleCityRules> Peoples { get; init; } = [];
 
     public SkyBandDef? Band(string id) => id == "" ? null : Bands.FirstOrDefault(b => b.Id == id);
 }

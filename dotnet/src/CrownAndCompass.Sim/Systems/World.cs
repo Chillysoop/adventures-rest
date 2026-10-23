@@ -286,6 +286,7 @@ public static class World
         Bridges.Span(town);
         PlaceFoes(town, used);
         PlaceIsles(town, used);
+        SkyPeoples(town, used);
         Ruins.Place(town, used, Fill);
         Wayfaring.Place(town);
         Founding.Place(town);
@@ -315,6 +316,41 @@ public static class World
     /// The great island city: a settlement of world.json's isle people in the sea region of its rings nearest the ocean's
     /// middle, rich from the start and growing (<see cref="PeopleDef.Grows"/>). It takes the place of any settlement there.
     /// </summary>
+    /// <summary>
+    /// The peoples of the sky (world.json isles `peoples`): the cloud court and the metallic ancients each settle a free land
+    /// region of the far rings, their themes first, on their own dice so the world a seed makes keeps its draws. Added last, so
+    /// no settlement's id moves.
+    /// </summary>
+    private static void SkyPeoples(Town town, HashSet<string> used)
+    {
+        var rng = new Rng(town.Seed * 7451 + 911);
+        foreach (var c in town.Content.World.Isles.Peoples)
+        {
+            var people = town.Content.World.Peoples.FirstOrDefault(p => p.Id == c.People);
+            if (people == null || rng.Next() >= c.Chance) continue;
+            var pool = town.Regions
+                .Where(r => !Sea(r) && r.SettlementId == null && r.Ring >= c.Rings[0] && r.Ring <= c.Rings[^1])
+                .OrderBy(r => r.Id)
+                .ToList();
+            var best = pool.Where(r => c.Themes.Contains(r.Theme.Id)).ToList();
+            if (best.Count > 0) pool = best;
+            if (pool.Count == 0) continue;
+            var region = pool[rng.Range(0, pool.Count)];
+            var s = new Settlement
+            {
+                Id = town.Settlements.Count,
+                Name = Fill(rng, region.Theme, people.Settlements, used),
+                Kin = people,
+                RegionId = region.Id,
+                Standing = people.Start,
+                Prosperity = c.Prosperity,
+                NextPleaDay = 2 + rng.Range(town.Content.World.Standing.PleaEveryDays[0], town.Content.World.Standing.PleaEveryDays[1] + 1),
+            };
+            town.Settlements.Add(s);
+            region.SettlementId = s.Id;
+        }
+    }
+
     private static void IsleCity(Town town, Rng rng, HashSet<string> used)
     {
         var c = town.Content.World.Ocean.City;
@@ -752,7 +788,7 @@ public static class World
         var rules = town.Content.World.Standing;
         if (town.Day - town.LastEnvoyDay < rules.EnvoyEveryDays || town.Treasury < rules.EnvoyCost + 200) return;
         var target = town.Settlements
-            .Where(s => !s.Allied && !s.Razed && Neighbours.Known(town, s))
+            .Where(s => !s.Allied && !s.Razed && Neighbours.Known(town, s) && Reaches.Unreached(town, s) == null)
             .OrderByDescending(s => s.Standing)
             .ThenBy(s => s.Id)
             .FirstOrDefault();
@@ -765,7 +801,7 @@ public static class World
         var rules = town.Content.World.Standing;
         if (settlementId < 0 || settlementId >= town.Settlements.Count) return false;
         var s = town.Settlements[settlementId];
-        if (!Neighbours.Known(town, s) || s.Razed || town.Treasury < rules.EnvoyCost) return false;
+        if (!Neighbours.Known(town, s) || s.Razed || town.Treasury < rules.EnvoyCost || Reaches.Unreached(town, s) != null) return false;
         town.Book(TreasuryAccount.Envoys, -rules.EnvoyCost);
         town.LastEnvoyDay = town.Day;
         // Gifts please less each time.

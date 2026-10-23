@@ -120,7 +120,7 @@ public static class Conquest
         if (s.Razed) return "burned";
         if (Held(town, s) != null) return "already ours";
         if (town.Army.Pending.Contains(s.Id)) return "waiting on your word";
-        return null;
+        return Reaches.Unreached(town, s);
     }
 
     /// <summary>Whether two peoples bear each other a grudge.</summary>
@@ -231,6 +231,7 @@ public static class Conquest
         if (!Neighbours.Known(town, s)) return "the town hasn't met them";
         if (Held(town, s) != null) return "the town holds it already";
         if (Shadows.Shadowed(s)) return "something in the dark holds it";
+        if (Reaches.Unreached(town, s) is { } high) return high;
         if (s.Standing < c.Standing) return $"they won't sell to a town they think so little of (standing {Js.Str(Js.Round(s.Standing))}, needs {Js.Str(c.Standing)})";
         if (town.Treasury < CharterPrice(town, s)) return "not enough gold";
         return null;

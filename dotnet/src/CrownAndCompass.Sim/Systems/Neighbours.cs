@@ -680,6 +680,7 @@ public static class Neighbours
     {
         if (s.Razed) return "they are gone";
         if (!Known(town, s)) return "the town hasn't met them";
+        if (Reaches.Unreached(town, s) is { } high) return high;
         if (TroubleOf(town, s) is not { Aid: { } aid } def || def.Kind != "need") return "they need nothing aid can buy";
         if (town.Treasury < aid.Gold) return $"needs {Js.Str(aid.Gold)} gold";
         if (town.Market.Stock(aid.Good) < aid.Qty) return $"needs {Js.Str(aid.Qty)} {Lower(aid.Good.ToString())}";
