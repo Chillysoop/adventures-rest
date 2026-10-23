@@ -66,8 +66,14 @@ public sealed class Geo
     {
         double r = Math.Sqrt(x * x + y * y);
         if (r < 1e-6) return Center;
-        return Center + new Vector2((float)(x / r), (float)(y / r)) * DayRadius(r);
+        var p = Center + new Vector2((float)(x / r), (float)(y / r)) * DayRadius(r);
+        // A town founded far from the world's heart has the farthest country past the map's edge on its far side: drawn at the edge.
+        var inside = p.Clamp(new Vector2(Edge, Edge), new Vector2(World - Edge, World - Edge));
+        return inside == p ? p : Center + (p - Center) * Mathf.Min(Mathf.Abs((World / 2f - Edge) / Mathf.Max(1e-3f, Mathf.Abs(p.X - Center.X))), Mathf.Abs((World / 2f - Edge) / Mathf.Max(1e-3f, Mathf.Abs(p.Y - Center.Y))));
     }
+
+    /// <summary>Tiles kept between anything drawn and the map's edge.</summary>
+    private const float Edge = 24;
 
     public static Vector2 FromDays((double X, double Y) p) => FromDays(p.X, p.Y);
 
@@ -150,5 +156,52 @@ public sealed class Geo
         if (h > 19 && h < 22) return (h - 19) / 3;
         if (h >= 22 || h < 4) return 1;
         return 1 - (h - 4) / 3;
+    }
+
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Town, Dictionary<int, Vector2[]>> ScoutWays = new();
+
+    /// <summary>The way a scout rides out to its site, round the hard country like any party (sketched once, on its own dice).</summary>
+    public static Vector2[] ScoutWay(Town town, Scout s, Vector2 pin)
+    {
+        var ways = ScoutWays.GetOrCreateValue(town);
+        if (!ways.TryGetValue(s.Id, out var line))
+            ways[s.Id] = line = Country.Sketch(town, (0, 0), ToDays(pin), town.Seed * 7919 + s.Id).Select(FromDays).ToArray();
+        return line;
+    }
+
+    /// <summary>The point a share of the way along a line, by length.</summary>
+    public static Vector2 Along(Vector2[] line, float t)
+    {
+        if (line.Length == 0) return Center;
+        float total = 0;
+        for (int i = 1; i < line.Length; i++) total += line[i - 1].DistanceTo(line[i]);
+        float want = Mathf.Clamp(t, 0, 1) * total;
+        for (int i = 1; i < line.Length; i++)
+        {
+            float d = line[i - 1].DistanceTo(line[i]);
+            if (want <= d && d > 0) return line[i - 1].Lerp(line[i], want / d);
+            want -= d;
+        }
+        return line[^1];
+    }
+
+    /// <summary>The first share of a line, by length.</summary>
+    public static Vector2[] Part(Vector2[] line, float t)
+    {
+        if (t >= 1 || line.Length < 2) return line;
+        var end = Along(line, t);
+        float total = 0;
+        for (int i = 1; i < line.Length; i++) total += line[i - 1].DistanceTo(line[i]);
+        float want = Mathf.Clamp(t, 0, 1) * total;
+        var o = new List<Vector2> { line[0] };
+        for (int i = 1; i < line.Length; i++)
+        {
+            float d = line[i - 1].DistanceTo(line[i]);
+            if (want <= d) break;
+            want -= d;
+            o.Add(line[i]);
+        }
+        o.Add(end);
+        return o.ToArray();
     }
 }

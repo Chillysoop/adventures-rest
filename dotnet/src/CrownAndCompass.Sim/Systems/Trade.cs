@@ -232,6 +232,7 @@ public static class Trade
         Skyship.Daily(town, autoMayor);
         Fleet.Daily(town, autoMayor);
         Sky.Daily(town, autoMayor);
+        Reaches.Daily(town);
     }
 
     private static void Caravan(Town town, TradeRoute route, Settlement s)

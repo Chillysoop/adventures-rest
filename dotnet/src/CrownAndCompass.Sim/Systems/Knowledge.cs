@@ -196,8 +196,20 @@ public static class Knowledge
             Importance.Notable,
             $"The mayor's sending stone reaches the {party.Name}. {leader.GivenName} answers: {answer}",
             party.Members);
+        Heard(town, party);
         return answer;
     }
+
+    /// <summary>Word from a party on the road: the town now knows when to look for it home.</summary>
+    public static void Heard(Town town, Party party)
+    {
+        party.HeardTick = town.Tick;
+        party.Expected = party.ReturnTick;
+    }
+
+    /// <summary>Parties out past the homecoming the town last reckoned by more than the grace days, with no word since.</summary>
+    public static IEnumerable<Party> Overdue(Town town) =>
+        town.Parties.Where(p => !p.Returned && p.Expected > 0 && town.Tick >= p.Expected + town.Content.Knowledge.OverdueDays * SimTime.HoursPerDay).OrderBy(p => p.Id);
 
     /// <summary>A recalled party walks home without setting foot in the site; the bounty goes back on the board.</summary>
     internal static void ComeHome(Town town, Party party, SiteState site, Bounty? bounty, List<Agent> members)

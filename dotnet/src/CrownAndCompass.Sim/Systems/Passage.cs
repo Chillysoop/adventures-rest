@@ -242,6 +242,9 @@ public static class Passage
 
     private static Cache Store(Town town) => Caches.GetValue(town, _ => new Cache());
 
+    /// <summary>Drops what was worked out for the town, once the world moves under it (<see cref="Founding.Settle"/>).</summary>
+    internal static void Forget(Town town) => Caches.Remove(town);
+
     private static string Key(Town town)
     {
         var d = town.Defenses;
@@ -748,22 +751,40 @@ public static class Passage
             var to = (w.X, w.Y);
             for (int guard = 0; guard < 6 && MeetsRiver(town, cur, to) != null; guard++)
             {
-                Crossing? best = null;
-                double bestLen = double.MaxValue;
+                // A ford in spate after rain is passed over for a bridge, if one can be reached (Weather.Flooded).
+                Crossing? best = null, spate = null;
+                double bestLen = double.MaxValue, spateLen = double.MaxValue;
                 foreach (var c in crossings)
                 {
                     var at = (c.X, c.Y);
                     if (Dist(cur, at) < 1e-6 || MeetsRiver(town, cur, at) is double m && m < 0.999) continue;
                     double len = Dist(cur, at) + Dist(at, to);
+                    if (c.Kind == "ford" && Weather.Flooded(town, c.X, c.Y))
+                    {
+                        if (len < spateLen)
+                        {
+                            spateLen = len;
+                            spate = c;
+                        }
+                        continue;
+                    }
                     if (len < bestLen)
                     {
                         bestLen = len;
                         best = c;
                     }
                 }
+                if (best == null && spate != null)
+                {
+                    best = spate;
+                    bestLen = spateLen;
+                    spate = null;
+                }
                 if (best == null) break;
                 outp.Add(new Waypoint { X = best.X, Y = best.Y, Way = best.Kind, Crossing = best.Name });
-                if (said != null && Line(town, best.Kind == "ford" ? "ford" : "bridge") is { } line)
+                if (said != null && spate != null && spateLen < bestLen && Weather.Rules(town).Road.Line(new Rng(unchecked((int)Voices.Hash("spate", town.Seed, town.Day, (int)Math.Round(spate.X * 100)))), "flood") is { Length: > 0 } flood)
+                    said.Add(Saga.Cap(flood.Replace("{name}", spate.Name, StringComparison.Ordinal).Replace("{bridge}", best.Name, StringComparison.Ordinal)));
+                else if (said != null && Line(town, best.Kind == "ford" ? "ford" : "bridge") is { } line)
                     said.Add(line.Replace("{name}", best.Name, StringComparison.Ordinal).Replace("{river}", Rules(town).River.Name, StringComparison.Ordinal));
                 cur = (best.X, best.Y);
             }
@@ -973,13 +994,16 @@ public static class Passage
 
     /// <summary>A floating isle needs every member to fly (a mount, a spell or an item), or a free airship to carry them.</summary>
     public static bool CanReach(Town town, IReadOnlyList<Agent> members, SiteState site) =>
-        !site.Def.Aloft || (Abilities(town, members) & Ways.Air) != 0 || (Parse(Rules(town).Airship.Ways) & Ways.Air) != 0 && AirshipsFree(town) > 0;
+        Voyages.CanReach(town, members, site) && Reaches.CanReach(town, members, site);
 
     /// <summary>The mind of a company with an airship under it: it crosses what the ship does.</summary>
     public static RouteMind Aboard(Town town, Party party, RouteMind mind)
     {
-        if (!party.Airship) return mind;
         var r = Rules(town).Airship;
+        // The town's own airship that carried it up brings it home (Reaches).
+        if (party.ShipId is int id && town.Ships.FirstOrDefault(s => s.Id == id) is { } ship && Fleet.Aloft(town, ship))
+            return mind with { Ways = mind.Ways | Parse(r.Ways), Carrier = ship.Name };
+        if (!party.Airship) return mind;
         return mind with { Ways = mind.Ways | Parse(r.Ways), Carrier = r.Name };
     }
 

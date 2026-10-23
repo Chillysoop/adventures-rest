@@ -107,6 +107,7 @@ public partial class Main
         bar.AddChild(_stats);
         bar.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
 
+        bar.AddChild(BuildWeatherChip());
         _clock = Ui.Label("Day 1 · 00:00", Ui.Ink, Ui.Display, 16);
         _clock.SizeFlagsVertical = SizeFlags.ShrinkCenter;
         _clock.CustomMinimumSize = new Vector2(176, 0);
@@ -174,7 +175,7 @@ public partial class Main
         pad.AddChild(box);
         scroll.AddChild(pad);
         _scrolls[t] = scroll;
-        _panes[t] = new Pane(box, t.ToString());
+        _panes[t] = new Pane(box, t.ToString()) { Hue = t == Tab.Inspect ? null : Groups[GroupOf(t)].Hue };
         return scroll;
     }
 
@@ -438,8 +439,8 @@ public partial class Main
                     c.QueueFree();
                 }
                 var next = Goals.Next(t);
-                foreach (var g in open) _goalsRows.AddChild(GoalRow(t, g, g == next));
-                foreach (var a in aims) _goalsRows.AddChild(Row(a.Icon, a.Text, a.Share, a.Figure == "" ? "" : Ui.C(Ui.Ink2, Ui.Esc(a.Figure)), a.Point != ""));
+                foreach (var g in open) _goalsRows.AddChild(Clickable(GoalRow(t, g, g == next), g.Goes, $"goal:{g.Id}"));
+                foreach (var a in aims) _goalsRows.AddChild(Clickable(Row(a.Icon, a.Text, a.Share, a.Figure == "" ? "" : Ui.C(Ui.Ink2, Ui.Esc(a.Figure)), a.Point != ""), a.Goes, "aim"));
                 _aheadShown = aims.Count;
                 bool charter = open.Count > 0 || _goalsFlourish.Count > 0;
                 _goalsTitle.Text = charter ? "CHARTER GOALS" : aheadTitle.ToUpperInvariant();
@@ -494,6 +495,24 @@ public partial class Main
         return row;
     }
 
+    /// <summary>A line of the card that takes the player where to act on it when clicked (<see cref="GoTo"/>), lit while hovered.</summary>
+    private Control Clickable(Control row, string goes, string key)
+    {
+        if (goes == "") return row;
+        row.MouseFilter = MouseFilterEnum.Stop;
+        row.MouseDefaultCursorShape = CursorShape.PointingHand;
+        row.TooltipText = "Click to go there";
+        row.MouseEntered += () => row.Modulate = new Color(1.25f, 1.18f, 1);
+        row.MouseExited += () => row.Modulate = Colors.White;
+        row.GuiInput += e =>
+        {
+            if (e is not InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left }) return;
+            row.AcceptEvent();
+            GoTo(goes, key);
+        };
+        return row;
+    }
+
     /// <summary>A met goal's last moment on the card: ticked and gilded, then gone, and the next goal in its place.</summary>
     private Control MetRow(GoalDef g)
     {
@@ -538,6 +557,7 @@ public partial class Main
         home.Pressed += () => _map.Recenter();
         tools.AddChild(home);
         tools.AddChild(BuildLensButton());
+        tools.AddChild(BuildWeatherButton());
         corner.AddChild(tools);
         corner.AddChild(BuildOrders());
         corner.AddChild(BuildPins());

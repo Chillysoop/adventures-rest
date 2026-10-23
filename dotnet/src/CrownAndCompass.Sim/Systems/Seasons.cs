@@ -149,6 +149,16 @@ public static class Seasons
     /// <summary>Days since the year began (day 0 is the first of spring).</summary>
     private static int DayOfYear(Town town, int day) => day - 1 + Rules(town).StartSeason * Rules(town).Days + Rules(town).StartDay;
 
+    /// <summary>Days in a year.</summary>
+    public static double YearLength(Town town) => Math.Max(1, Rules(town).Days * Math.Max(1, Rules(town).Seasons.Count));
+
+    /// <summary>The day of the year (0 the first of spring, fractional) at a time in days since the campaign began.</summary>
+    public static double YearDay(Town town, double t)
+    {
+        double len = YearLength(town);
+        return ((t + Rules(town).StartSeason * Rules(town).Days + Rules(town).StartDay) % len + len) % len;
+    }
+
     /// <summary>The count of seasons since the campaign's first spring.</summary>
     public static int Index(Town town) => Index(town, town.Day);
 
@@ -190,7 +200,7 @@ public static class Seasons
 
     public static double Warband(Town town) => Current(town).Warband * Omens.Warband(town);
 
-    public static int MarchDays(Town town) => Current(town).MarchDays + Omens.MarchDays(town);
+    public static int MarchDays(Town town) => Current(town).MarchDays + Omens.MarchDays(town) + Weather.MarchDays(town);
 
     // The day ----------------------------------------------------------------------------------
 

@@ -480,6 +480,7 @@ public partial class Main
         if (t.Day < fs.JusticeUntil) boons.Add(Ui.Bullet($"[b]Justice[/b] with the watch  {Ui.Chip("ui-time", Ui.Days(fs.JusticeUntil - t.Day), Ui.Gold, "Days left")}", "ui-shield"));
         if (boons.Count > 0) p.Card(string.Join("\n", boons), Ui.Gold);
 
+        p.Page("Gods", "faith");
         p.Heading("The gods in town");
         var gods = Faith.Gods(t)
             .Select(g => (God: g, Followers: Faith.Followers(t, g.Id).Count, Places: Faith.Places(t, g.Id)))
@@ -518,6 +519,7 @@ public partial class Main
             })), 13);
         }
 
+        p.Page("Factions", "ui-faction");
         p.Heading("Factions");
         var rules = t.Content.Factions;
         var known = t.Factions.Where(f => f.Active && f.Known).ToList();
@@ -796,6 +798,7 @@ public partial class Main
         if (hs.Duty != HeroDuty.None) duty.Add(("Stand down", true, false, () => Act(() => _sim.SetDuty(id, HeroDuty.None))));
         duty.Add((best != null ? $"Arm: {(best.Name != "" ? best.Name : Gear.Plainly(best.Item))}" : "Arm", best != null, best != null, () => Act(() => _sim.Arm([id]))));
         p.Buttons(duty.ToArray());
+        GiveMenu(p, t, a);
         if (!a.IsAway) p.Note($"Guard duty: {Js.Str(Garrison.Wage(t, a))}g a day, no bounties.");
     }
 
@@ -887,6 +890,20 @@ public partial class Main
     private void SiteCard(Pane p, Town t, Building b)
     {
         int id = b.Id;
+        if (b.Damaged)
+        {
+            // How the town mends damage, for every damaged building at once.
+            p.Text(Ui.C(Ui.Bad, "Damaged: being mended"));
+            string cost = Js.Str(Construction.RepairCost(t));
+            (string Way, string Label)[] ways = [("crews", "Builders"), ("first", "First"), ("hire", $"Hire · {cost}g/day")];
+            p.Buttons(ways.Select(w => (w.Label, w.Way != t.Repairs, w.Way == t.Repairs, (Action)(() => Act(() => _sim.SetRepairs(w.Way))))).ToArray());
+            p.Note(t.Repairs switch
+            {
+                "first" => "Repairs: every damaged building goes ahead of new builds.",
+                "hire" => "Repairs: the council pays hands to mend every damaged building.",
+                _ => "Repairs: builders mend damage as they come to it.",
+            });
+        }
         if (Construction.Stalled(t, b))
         {
             var (timber, stone) = Construction.Wanting(b);
@@ -980,7 +997,7 @@ public partial class Main
             Sight.Live => "In sight of the town.",
             Sight.Scouted when report != null => t.Day - report.Day > Fog.StaleDays
                 ? $"Last seen on day {report.Day}, in a report {t.Day - report.Day} days old. Things may have changed."
-                : $"Scouted on day {report.Day}. You know it as the party described it, not as it is now.",
+                : $"Described on day {report.Day}. You know it as it was then, not as it is now.",
             _ when t.Finds.LastOrDefault(f => f.SiteId == s.Def.Id && f.Known) is { } find => $"Found by the {Ui.Esc(Explore.Survey(t, find.SurveyId)!.Name)} on day {SimTime.DayOf(find.FoundTick)}, who sent word of it.",
             _ => s.HeardFrom != ""
                 ? $"Only hearsay, from {Ui.Esc(s.HeardFrom)}. The map shows roughly where; nobody has seen it. Send explorers to find it."

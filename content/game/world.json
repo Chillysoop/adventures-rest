@@ -499,11 +499,18 @@
     "city": { "people": "isle-city", "rings": [2, 3], "prosperity": 75 }
   },
   "isles": {
-    "_doc": "Floating isles (World.PlaceIsles): far sites in high country torn loose and drifting above the clouds. Only a company that can fly, or rides the sky dock's airship, gets there.",
-    "count": 2,
-    "rings": [3, 4],
-    "themes": ["highpeaks", "feyfringe", "rimefell", "cinderwastes"],
-    "names": ["the Drifting Isle of {A}", "the {A} Skyrock", "the Isle of {B}", "the Hanging Rock of {A}"]
+    "_doc": "The sky's heights (Systems/Reaches.cs, World.PlaceIsles): far sites torn loose and drifting above the clouds, band by band from the lowest. Each band lifts `count` sites of rings `rings` (themes `themes`, any land when empty) on its own dice. An airship gets a company there only with a `ceiling` at least the band's (sky.json ships); heroes who fly (mounts, spells, items) reach a band only where `fliers` is set. A band's `foe` (foes.json, with the same `band`) is seated on its sites, each with one of `bosses` as its master.",
+    "bands": [
+      { "id": "low", "name": "low isles", "ceiling": 0, "fliers": true, "count": 3, "rings": [1, 3], "themes": [],
+        "names": ["the Drifting Isle of {A}", "the {A} Skyrock", "the Isle of {B}", "the Hanging Rock of {A}"] },
+      { "id": "high", "name": "high isles", "ceiling": 0.45, "fliers": true, "count": 3, "rings": [3, 5], "themes": ["highpeaks", "feyfringe", "rimefell", "cinderwastes"],
+        "names": ["the Cloud-Wrapped Peak of {A}", "the High Isle of {B}", "the {A} Eyrie", "the Summit Above {B}"] },
+      { "id": "cloud", "name": "the cloud sea", "ceiling": 0.85, "fliers": false, "count": 3, "rings": [5, 7], "themes": [],
+        "names": ["the Cloudbank Ruin of {B}", "the {A} Stormwall", "the Isle in the Cloud Sea", "the Thunderhead Spire of {A}"] },
+      { "id": "roost", "name": "dragon roosts", "ceiling": 0.95, "fliers": false, "count": 4, "rings": [6, 7], "themes": [],
+        "names": ["the Roost of {B}", "the {A} Wyrm-Eyrie", "the Hoard-Crag Above {B}", "the Burning Roost of {A}"],
+        "foe": "elder-wyrms", "bosses": ["ancient-red-dragon", "ancient-blue-dragon", "ancient-green-dragon", "ancient-black-dragon", "ancient-white-dragon"] }
+    ]
   },
   "ruins": {
     "_doc": "Old works near the town fallen to ruin (Systems/Ruins.cs): a lair like any other until cleared, then restored for 'cost' gold to serve for good. {A} a word of the country, {B} a name.",
