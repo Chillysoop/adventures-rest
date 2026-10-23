@@ -102,6 +102,11 @@
     { "id": "primordial-jelly", "name": "primordial jelly", "value": 150, "grade": 3, "blurb": "", "types": ["ooze"], "cr": [7, 99] }
   ],
   "drops": [
+    {"ref": "cloak-of-the-manta-ray", "chance": 0.08, "groups": ["corsair-fleet"]},
+    {"ref": "folding-boat", "chance": 0.06, "groups": ["corsair-fleet"], "peoples": ["isle-city"]},
+    {"ref": "trident-of-fish-command", "chance": 0.08, "groups": ["drowned-choir"], "peoples": ["tidekin"]},
+    {"ref": "necklace-of-adaptation", "chance": 0.05, "groups": ["drowned-choir"]},
+    {"ref": "ring-of-swimming", "chance": 0.06, "peoples": ["tidekin", "isle-city"]},
     { "ref": "rimegrip-gauntlets", "chance": 0.06, "words": ["frost giant"] },
     { "ref": "belt-of-giant-strength-frost-or-stone", "chance": 0.03, "words": ["frost giant", "stone giant"] },
     { "ref": "hoarfrost-mail", "chance": 0.025, "words": ["frost giant", "winter wolf", "rime lindworm"] },
