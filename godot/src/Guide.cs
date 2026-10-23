@@ -238,7 +238,8 @@ public partial class Main
     private void SyncGoalPointer(bool check)
     {
         bool tutorial = _guideCard.Visible || _outline.Visible;
-        if (check || _goalTarget == null)
+        // The build bar rebuilds its buttons on every tab: a remembered one may be gone.
+        if (check || _goalTarget == null || !IsInstanceValid(_goalTarget))
         {
             var next = _goalsCard.Visible && !tutorial ? CrownAndCompass.Sim.Systems.Goals.Next(_sim.Town) : null;
             _goalPoint = next?.Point

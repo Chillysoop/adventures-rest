@@ -306,6 +306,7 @@ public partial class Main
         }
         Ui.Clear(_buildItems);
         _buildButtons.Clear();
+        // The decor buttons went with the items: left listed, putting the decor tool down would touch freed buttons.
         _decorButtons.Clear();
         _map.Planner.Pick(null);
         _map.Decorator.Pick(null);

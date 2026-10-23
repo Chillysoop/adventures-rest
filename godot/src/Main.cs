@@ -77,6 +77,7 @@ public partial class Main : Control
         BuildGlossary();
         BuildSettings();
         BuildGuide();
+        BuildModal();
         BuildStory();
         BuildFind();
         BuildIntro();
@@ -827,6 +828,7 @@ public partial class Main : Control
         SyncTourney();
         SyncTales(delta);
         SyncRecap();
+        SyncModal();
         SyncMoments();
         SyncKeywords(delta);
         SyncChecks();
