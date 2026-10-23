@@ -259,13 +259,6 @@ public partial class Main
         string where = e.Road != null
             ? $"On the road to {SiteLink(Quests.Site(t, e.Road.SiteId)!.Def)}{(e.Road.BountyId != null && Intel.Commissioned(t, e.Road) ? ", on the council's job" : ", on their own account")}, due back day {SimTime.DayOf(e.Road.ReturnTick)}"
             : e.State == "Ready" ? "In town and ready for work" : e.State == "Away" ? "Out of town" : "In town, resting their wounds";
-        string members = string.Join("\n", e.Members.Select(m =>
-        {
-            var s = m.Hero!;
-            string hp = s.Hp < s.MaxHp ? Ui.C(s.Hp < s.MaxHp * 0.7 ? Ui.Bad : Ui.Ink2, $" · {s.Hp}/{s.MaxHp} hp") : "";
-            string temper = Regard.TemperOf(t, m)?.Name is string tn ? $" · {Ui.Esc(tn)}" : "";
-            return $"{AgentLink(m, Notoriety.Known(m))} {Ui.C(Ui.Ink2, $"{Ui.Esc(Ui.Cap(s.Cls.Name))} {s.Level}{temper} · loyalty {Math.Round(s.Loyalty)}")}{hp}";
-        }));
         var record = new List<string>();
         if (c != null)
         {
@@ -280,7 +273,7 @@ public partial class Main
             string.Join("\n", c.Deeds.AsEnumerable().Reverse().Take(4).Select(d => Ui.C(Ui.Good, $"[font_size=12]Day {d.Day}: {Ui.Esc(d.What)}[/font_size]")));
         var arms = Heraldry.Of(t.Content, e.Name);
         string banner = $"\n{Shield(t, e.Name, 18)}{Ui.C(Ui.Ink2, $"[font_size=12][i]{Ui.Esc(arms.Blazon)}[/i], {Ui.Esc(Heraldry.Worn(c?.Wear ?? 0))}[/font_size]")}";
-        p.Card($"[b]The {Ui.Esc(e.Name)}[/b]  {Tag(word, color)}{sulk}{banner}\n{Ui.C(Ui.Ink2, $"[font_size=12]{where}[/font_size]")}\n[font_size=13]{members}[/font_size]" +
+        p.Card($"[b]The {Ui.Esc(e.Name)}[/b]  {Tag(word, color)}{sulk}{banner}\n{Ui.C(Ui.Ink2, $"[font_size=12]{where}[/font_size]")}" +
                (record.Count > 0 ? $"\n{Ui.C(Ui.Ink2, $"[font_size=12]{string.Join(" · ", record)}[/font_size]")}" : "") + deeds, Ui.Gold);
         p.Meter("Relation", e.Relation, Js.Str(Math.Round(e.Relation)), e.Relation < r.RefuseBelow);
         // Renown toward its next step of fame: the quests it can ride to without more foes standing against it.
@@ -289,12 +282,9 @@ public partial class Main
         int next = step + 1 < fameSteps.Count ? fameSteps[step + 1].At : renown;
         p.Meter("Renown", next == 0 ? 0 : 100.0 * Math.Min(renown, next) / next,
             step + 1 < fameSteps.Count ? $"{renown} · {fameSteps[step + 1].Name} at {next}" : $"{renown} · {fameSteps[step].Name}", false);
-        var home = e.Members.Where(m => !m.IsAway).ToList();
-        if (home.Count > 0)
-        {
-            var ids = home.Select(m => m.Id).ToList();
-            p.Buttons(("Arm from the armory", home.Any(m => Sim.Systems.Armory.BestFor(t, m) != null), false, () => Act(() => _sim.Arm(ids))));
-        }
+        p.Heading("Party");
+        PartyStrip(p, t, e.Members);
+        OutfitCompany(p, t, e.Members);
         Retainer(p, t, e.Name, c);
 
         p.Heading($"Offer the {e.Name} a job");

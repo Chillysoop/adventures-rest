@@ -224,7 +224,7 @@ public static class Wayfaring
         if (mind.Navigator == "" || mind.Dice == null) return 0;
         var rules = Rules(content);
         var job = rules.Job("navigate");
-        int dc = job.Dc + (int)(f.Tier * job.PerTier + Math.Max(0, f.Kind.Slow - 1) * rules.SlowDc);
+        int dc = job.Dc + (int)(f.Tier * job.PerTier + Math.Max(0, f.Kind.Slow - 1) * rules.SlowDc) + mind.Murk;
         if (Routine(mind.NavBonus, dc)) return 0;
         int roll = mind.Dice.D20();
         if (roll != 1 && (roll == 20 || roll + mind.NavBonus >= dc))
@@ -289,6 +289,7 @@ public static class Wayfaring
                 Arc = lake.Arc,
                 Inner = lake.Inner,
                 Outer = lake.Outer,
+                Shape = lake.Shape,
             };
         }
         PlaceGateways(town, rng);

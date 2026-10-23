@@ -138,7 +138,8 @@ public partial class FoundingMap : Control
         {
             if (f.Inner > View * 1.5 + Js.Hypot(f.Ox, f.Oy)) continue;
             var c = Hard(f.Kind.Id);
-            DrawColoredPolygon(Sector(f.Ox, f.Oy, f.Bearing, f.Arc, f.Inner, f.Outer), f.Kind.Barrier == "" && f.Kind.Id != "ocean" ? c with { A = 0.55f } : c);
+            var outline = f.Shape.Count >= 3 ? Country.Outline(f).Select(p => Px(p.X, p.Y)).ToArray() : Sector(f.Ox, f.Oy, f.Bearing, f.Arc, f.Inner, f.Outer);
+            DrawColoredPolygon(outline, f.Kind.Barrier == "" && f.Kind.Id != "ocean" ? c with { A = 0.55f } : c);
         }
         // The rings of danger: a faint line between each, and the levels its lairs are built for.
         var ink = new Color("1e1a14");

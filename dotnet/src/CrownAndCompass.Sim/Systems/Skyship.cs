@@ -44,8 +44,8 @@ public sealed record SkyRules
     /// <summary>Standing each run that gets there earns with the people.</summary>
     public double StandingPerRun { get; init; } = 0.5;
 
-    /// <summary>Chance by season id that storms hold the ship back, and the days they cost.</summary>
-    public Dictionary<string, double> Storm { get; init; } = [];
+    /// <summary>Chance the weather at the far port holds the ship back, by its step there (fair to tempest), and the days it costs.</summary>
+    public double[] StormStep { get; init; } = [0, 0.02, 0.15, 0.7, 1];
     public int[] StormDays { get; init; } = [1, 3];
 
     /// <summary>Chance of being set upon for each whole flying host (passage.json "fliers") near the far end, at most AmbushMax; the cargo share cut loose to get away.</summary>
@@ -248,12 +248,14 @@ public static class Skyship
         var st = State(town);
         var s = town.Settlements[run.SettlementId];
         // Storms hold the ship back once a run at most: a day or three lost, nothing more.
-        if (!run.Stormed && town.Rng.Chance(r.Storm.GetValueOrDefault(Seasons.Current(town).Id)))
+        var (px, py) = Explore.SettlementSpot(town, s);
+        int step = Weather.Worst(town, px, py, town.Day).Step;
+        if (!run.Stormed && town.Rng.Chance(r.StormStep.Length == 0 ? 0 : r.StormStep[Math.Min(step, r.StormStep.Length - 1)]))
         {
             run.Stormed = true;
             int late = town.Rng.Range(r.StormDays[0], r.StormDays[^1] + 1);
             run.BackDay = town.Day + late;
-            town.Log(LedgerCategory.Town, Importance.Routine, $"A bird from {s.Name}: storms keep {Name(town)} moored there {late} more {(late == 1 ? "day" : "days")}.");
+            town.Log(LedgerCategory.Town, Importance.Routine, $"A bird from {s.Name}: {Weather.Kind(town, Weather.Worst(town, px, py, town.Day).Kind).Name.ToLowerInvariant()} keeps {Name(town)} moored there {late} more {(late == 1 ? "day" : "days")}.");
             return;
         }
         st.Out = null;

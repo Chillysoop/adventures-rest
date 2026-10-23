@@ -10,7 +10,8 @@ public class FoesTests
         foreach (int seed in new[] { 1, 2, 3, 4, 5, 6 })
         {
             var t = new Simulation(new SimulationOptions { Seed = seed }).Town;
-            foreach (var f in t.Content.Foes.Foes)
+            // Foes a height of the sky seats on several sites are ReachesTests'.
+            foreach (var f in t.Content.Foes.Foes.Where(f => !t.Content.World.Isles.Bands.Any(b => b.Foe == f.Id)))
             {
                 var site = t.Sites.SingleOrDefault(s => s.Def.Foe == f.Id);
                 Assert.True(site != null, $"seed {seed}: no site for {f.Id}");

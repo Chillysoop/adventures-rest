@@ -282,13 +282,9 @@ public partial class Main
 
     private void BuildRecap()
     {
-        _recap = new PanelContainer { Visible = false, CustomMinimumSize = new Vector2(600, 0), ZIndex = 21, MouseFilter = MouseFilterEnum.Stop };
+        _recap = new PanelContainer { Visible = false, CustomMinimumSize = new Vector2(600, 0), MouseFilter = MouseFilterEnum.Stop };
         _recap.AddThemeStyleboxOverride("panel", Castle.Oak(26, 22));
-        AddChild(_recap);
-        _recap.SetAnchorsAndOffsetsPreset(LayoutPreset.Center, LayoutPresetMode.Minsize);
-        _recap.GrowHorizontal = GrowDirection.Both;
-        _recap.GrowVertical = GrowDirection.Both;
-        _recap.MinimumSizeChanged += () => Ui.Refit(_recap);
+        AddModal(_recap);
     }
 
     /// <summary>The recap a game master opens a session with: the big moments since a day, who is hurt or away, and the open leads.</summary>
@@ -320,7 +316,7 @@ public partial class Main
         v.AddChild(foot);
         _recap.AddChild(v);
         _recap.Visible = true;
-        MoveChild(_recap, GetChildCount() - 1);
+        _recap.MoveToFront();
     }
 
     /// <summary>A new season opens with a recap of the last, in a town the player runs.</summary>

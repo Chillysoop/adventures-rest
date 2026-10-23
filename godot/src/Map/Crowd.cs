@@ -504,7 +504,8 @@ public partial class Crowd(MapView map) : Node3D
             var pos = ScoutPos(town, s, pin);
             if (map.Fog.AlphaAt(pos) >= Fog.SightAlpha) continue;
             var a = town.Agent(s.HeroId);
-            var dir = (pin - pos).Normalized();
+            var ahead = ScoutAhead(town, s, pin);
+            var dir = (ahead - pos).LengthSquared() > 1e-4f ? (ahead - pos).Normalized() : (pin - pos).Normalized();
             Heroes.Put(a, gen.At(pos), Mathf.Atan2(dir.X, dir.Y), Heroes.Act.Idle, now * 0.3f + a.Id * 0.17f);
         }
         ListsRiders(town, now);
@@ -783,10 +784,13 @@ public partial class Crowd(MapView map) : Node3D
 
     public Vector2? PartyPos(Town town, Party p) => Geo.PartyAt(town, p, map.HourFraction)?.Pos;
 
+    private Vector2 ScoutAhead(Town town, Scout s, Vector2 pin) =>
+        Geo.Along(Geo.ScoutWay(town, s, pin), Mathf.Min(1, (float)Watch.ScoutLeg(town, s, map.HourFraction) + 0.02f));
+
     public Vector2 ScoutPos(Town town, Scout s, Vector2 pin)
     {
         float leg = (float)Watch.ScoutLeg(town, s, map.HourFraction);
         var dir = (pin - Geo.Center).Normalized();
-        return leg >= 1 ? pin - dir * 6 + new Vector2(dir.Y, -dir.X) * 2 : Geo.Center + (pin - Geo.Center) * leg;
+        return leg >= 1 ? pin - dir * 6 + new Vector2(dir.Y, -dir.X) * 2 : Geo.Along(Geo.ScoutWay(town, s, pin), leg);
     }
 }

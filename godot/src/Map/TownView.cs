@@ -2614,11 +2614,13 @@ public partial class TownView(MapView map) : Node3D
             string id = $"gorge:{f.Id}";
             if (_landmarks.TryGetValue(id, out var old) && (string)old.GetMeta("kind") == f.Bridge) continue;
             old?.QueueFree();
-            double b = f.Bearing * Math.PI / 180;
-            var at = Geo.FromDays(Roads.Middle(f));
-            // Across the band: out from where the gorge is measured.
-            var radial = new Vector2((float)Math.Sin(b), (float)-Math.Cos(b));
-            float span = 9f;
+            // Across the gorge at its middle: from the nearest point of its rim to the far one.
+            var mid = Country.Middle(f);
+            var at = Geo.FromDays(mid);
+            var rim = Country.Outline(f).OrderBy(p => Js.Hypot(p.X - mid.X, p.Y - mid.Y)).First();
+            var radial = (Geo.FromDays(rim) - at).Normalized();
+            if (radial.LengthSquared() < 1e-6f) radial = (at - Geo.Center).Normalized();
+            float span = Mathf.Clamp(Geo.FromDays(rim).DistanceTo(at) * 2.2f, 9f, 16f);
             float deck = Mathf.Max(gen.SurfaceAt(at.X + radial.X * span / 2, at.Y + radial.Y * span / 2), gen.SurfaceAt(at.X - radial.X * span / 2, at.Y - radial.Y * span / 2)) + 0.05f;
             var mi = new MeshInstance3D { Mesh = GorgeBridge(f.Bridge, deck, span), MaterialOverride = Mats.Props };
             mi.SetMeta("kind", f.Bridge);

@@ -96,12 +96,15 @@ public class TradeTests
     }
 
     [Fact]
-    public void WinterSlowsTheCaravans()
+    public void WinterAndItsSnowSlowTheCaravans()
     {
         var (sim, s) = Ready();
         var t = sim.Town;
         int summer = Trade.TripDays(t, s);
         while (Seasons.Current(t).Id != "winter") sim.RunDays(1);
+        Assert.True(Trade.TripDays(t, s) >= summer);
+        // Snow lying on the roads slows them more.
+        while (Weather.MarchDays(t) == 0 && Seasons.Current(t).Id == "winter") sim.RunDays(1);
         Assert.True(Trade.TripDays(t, s) > summer);
     }
 

@@ -282,6 +282,9 @@ public static class Founding
         {
             f.Ox += town.HeartX;
             f.Oy += town.HeartY;
+            // An outline is in days from the town itself.
+            for (int i = 0; i < f.Shape.Count; i++) f.Shape[i] = (f.Shape[i].X + town.HeartX, f.Shape[i].Y + town.HeartY);
+            f.Box = null;
         }
         foreach (var g in town.Gateways)
         {
@@ -311,6 +314,7 @@ public static class Founding
             g.Known = true;
         Passage.Forget(town);
         Cliffs.Forget(town);
+        Country.Forget(town);
     }
 
     /// <summary>What a site does, as short chips for New game: an icon key and a figure ("defence", "+30%").</summary>

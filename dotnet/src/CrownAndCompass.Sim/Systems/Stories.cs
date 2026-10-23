@@ -448,7 +448,7 @@ public static class Stories
     /// chapter) and below:level (binds that undercity level while it is open and not cleared).
     /// </summary>
     public static readonly string[] Needs =
-        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "settlement", "route", "courted", "veteran", "fallen", "admirer", "aggrieved", "abroad", "homeward", "victorious", "lawbreaker", "famous", "infamous", "trouble", "contact", "band", "forge", "below", "library", "scholars", "remains", "minor", "egg", "eggHeld", "ranger", "sworn", "pactless", "bloodied", "owed", "cursed"];
+        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "settlement", "route", "courted", "veteran", "fallen", "admirer", "aggrieved", "abroad", "stormbound", "homeward", "victorious", "lawbreaker", "famous", "infamous", "trouble", "contact", "band", "forge", "below", "library", "scholars", "remains", "minor", "egg", "eggHeld", "ranger", "sworn", "pactless", "bloodied", "owed", "cursed"];
 
     private static readonly string[] Prefixed = ["precedent:", "decree:", "season:"];
 
@@ -458,6 +458,7 @@ public static class Stories
         if (Needs.Contains(need)) return true;
         string n = need.TrimStart('!');
         if (n.StartsWith("precedent:", StringComparison.Ordinal)) return c.Stories.Precedent(n[10..]) != null;
+        if (n.StartsWith(Manners.Need, StringComparison.Ordinal)) return c.Manners.Manner(n[Manners.Need.Length..]) != null;
         if (n.StartsWith("decree:", StringComparison.Ordinal)) return c.Stories.Decree(n[7..]) != null;
         if (n.StartsWith("season:", StringComparison.Ordinal)) return c.Seasons.Seasons.Any(x => x.Id == n[7..]);
         if (n.StartsWith("calling:", StringComparison.Ordinal)) return c.Stories.Calling(n[8..]) != null;
@@ -1029,11 +1030,14 @@ public static class Stories
                 return a2 != null;
             }
             case "abroad":
+            case "stormbound":
             case "homeward":
             case "victorious":
             {
                 // Bound by the sending: where the party is now.
                 if (s.PartyId is not int sp || town.Parties.FirstOrDefault(p => p.Id == sp) is not { } party) return false;
+                if (need == "stormbound")
+                    return Sendings.Abroad(town, party) && Roads.Where(town, party, town.Tick) is { } at && Weather.At(town, at.X, at.Y, town.Tick).Step >= Weather.Storm;
                 return need == "abroad" ? Sendings.Abroad(town, party)
                     : Sendings.Homeward(town, party) && (need == "homeward" || party.Result!.Outcome == ExpeditionOutcome.Cleared);
             }
@@ -1197,8 +1201,9 @@ public static class Stories
     /// <summary>Whether an option can be taken now: its own needs, its cost, and the story's bindings still holding.</summary>
     public static string? Blocked(Town town, Story s, StoryOption o)
     {
+        if (Hidden(town, s, o)) return "not for them";
         if (o.Cost > 0 && town.Treasury < o.Cost) return $"needs {Js.Str(o.Cost)} gold";
-        foreach (var need in o.Needs)
+        foreach (var need in o.Needs.Where(n => !n.StartsWith(Manners.Need, StringComparison.Ordinal)))
             if (!Meet(town, need, s, bind: false) && !MeetFresh(town, need)) return need switch
             {
                 "temple" => "needs a temple",
@@ -1212,6 +1217,10 @@ public static class Stories
             };
         return null;
     }
+
+    /// <summary>An option only a faction with a manner is offered (a need "manner:id"): the card leaves it out for the rest.</summary>
+    public static bool Hidden(Town town, Story s, StoryOption o) =>
+        o.Needs.Any(n => n.StartsWith(Manners.Need, StringComparison.Ordinal) && !Manners.Has(town, s, n[Manners.Need.Length..]));
 
     /// <summary>A need an option names that the story did not bind: checked against the town without binding anything.</summary>
     private static bool MeetFresh(Town town, string need) => need switch
@@ -1240,8 +1249,12 @@ public static class Stories
         return o.Dc + (a.Length == 0 ? 0 : a[Math.Clamp(town.Saga.Act, 0, a.Length - 1)]);
     }
 
+    /// <summary>An option's DC on this story: a first meeting is harder or easier by the manners of whoever it is with.</summary>
+    public static int DcOf(Town town, Story s, StoryOption o) =>
+        DcOf(town, o) + (DefOf(town, s).Source == Powers.ContactSource ? Manners.Lean(town, Manners.KeyOf(s), o.Skill) : 0);
+
     public static double Chance(Town town, Story s, StoryOption o, bool inspired = false) =>
-        !o.Rolls ? 1 : Sheet.Chance(town, o.Skill, o.Ability, DcOf(town, o), Advantage(town, s, o) != "", inspired, Sendings.HelpTotal(town, s, o));
+        !o.Rolls ? 1 : Sheet.Chance(town, o.Skill, o.Ability, DcOf(town, s, o), Advantage(town, s, o) != "", inspired, Sendings.HelpTotal(town, s, o));
 
     /// <summary>
     /// The mayor's answer to a story's current stage: option by index, with inspiration spent to reroll
@@ -1260,13 +1273,13 @@ public static class Stories
         StoryOutcome outcome;
         if (!o.Rolls)
         {
-            beat = new StoryBeat { Tick = town.Tick, Skill = o.Skill != "" ? o.Skill : o.Ability, Dc = DcOf(town, o), Result = StoryResult.Certain };
+            beat = new StoryBeat { Tick = town.Tick, Skill = o.Skill != "" ? o.Skill : o.Ability, Dc = DcOf(town, s, o), Result = StoryResult.Certain };
             outcome = o.Success;
         }
         else
         {
             var help = Sendings.Helpers(town, s, o);
-            beat = Sheet.Roll(town, o.Skill, o.Ability, DcOf(town, o), Advantage(town, s, o), inspired, o.Partial != null, help.Sum(h => h.Bonus));
+            beat = Sheet.Roll(town, o.Skill, o.Ability, DcOf(town, s, o), Advantage(town, s, o), inspired, o.Partial != null, help.Sum(h => h.Bonus));
             beat.Helpers = string.Join(", ", help.Select(h => $"{h.Name} {(h.Bonus >= 0 ? "+" : "−")}{Math.Abs(h.Bonus)}"));
             outcome = beat.Result switch
             {
@@ -1320,7 +1333,11 @@ public static class Stories
                 if (Sendings.PartyOf(town, s) is { } p) after = Math.Min(after, Math.Max(0, (p.Resolved ? p.ReturnTick : p.ArriveTick) - town.Tick - 2));
                 s.WaitTick = after > 0 ? town.Tick + after : null;
                 s.DueTick = town.Tick + after + town.Content.Sendings.DueHours;
-                if (after > 0 && Sendings.PartyOf(town, s) is { } sp) sp.Sendings++;
+                if (after > 0 && Sendings.PartyOf(town, s) is { } sp)
+                {
+                    sp.Sendings++;
+                    Knowledge.Heard(town, sp);
+                }
             }
             else s.DueTick = Math.Max(s.DueTick, town.Tick + 2 * SimTime.HoursPerDay);
             return;
@@ -1341,7 +1358,7 @@ public static class Stories
     };
 
     /// <summary>Apply an outcome's effects in a fixed order; returns a short account of the plain numbers for the Ledger.</summary>
-    private static string Apply(Town town, Story s, Dictionary<string, double> effects)
+    internal static string Apply(Town town, Story s, Dictionary<string, double> effects)
     {
         var said = new List<string>();
         foreach (var key in effects.Keys)
@@ -1810,6 +1827,8 @@ public static class Stories
         Put("{settlement}", () => s.SettlementId is int st ? town.Settlements[st].Name : "a far town");
         Put("{people}", () => s.SettlementId is int sp ? town.Settlements[sp].People : "the folk of a far town");
         Put("{leader}", () => s.SettlementId is int sl ? town.Settlements[sl].Leader : "their leader");
+        Put("{foeLeader}", () => s.MenaceId is int fl ? town.Saga.Menaces[fl - 1].Leader : "their master");
+        Put("{motive}", () => Motive(town, s));
         Put("{band}", () => s.SettlementId is int sb ? town.Settlements[sb].Band?.Name ?? "their band" : "their band");
         Put("{trouble}", () => s.SettlementId is int stt && Neighbours.TroubleOf(town, town.Settlements[stt]) is { } td ? td.Name : "their trouble");
         Put("{contact}", () => s.ContactId is int ci && Neighbours.ContactById(town, ci) is { } cc ? cc.Name : "an old friend");
@@ -1838,7 +1857,19 @@ public static class Stories
         Put("{victim}", () => s.HeroId is int vh && town.BloodDebts.LastOrDefault(d => d.HeroId == vh) is { } vd ? vd.Victim : "the dead");
         Put("{kin}", () => s.HeroId is int vh && town.BloodDebts.LastOrDefault(d => d.HeroId == vh) is { } vd ? vd.Kin : "the family");
         Put("{class}", () => s.HeroId is int h ? town.Agent(h).Hero?.Cls.Name.ToLowerInvariant() ?? "hero" : "hero");
-        return Cap(sb.ToString());
+        // A name that opens a sentence ("the Ashen Abbot") is capitalised there.
+        return Saga.Sentences(sb.ToString());
+    }
+
+    /// <summary>What whoever the story is about wants, from their lineage: a menace's in its leader's words.</summary>
+    private static string Motive(Town town, Story s)
+    {
+        var h = town.Content.History;
+        if (s.MenaceId is int m && Annals.Motive(town, town.Saga.Menaces[m - 1]) is { Length: > 0 } said) return said;
+        var l = s.SettlementId is int st ? Annals.LineageOf(h, "people:" + town.Settlements[st].Kin.Id)
+            : s.Minor is string mn ? Annals.LineageOf(h, "faction:" + Powers.Def(town, mn).Ref)
+            : null;
+        return l is { Motive: not "" } ? l.Motive.Replace("{town}", town.Name) : "to be left alone.";
     }
 
     private static InstitutionState? Bound(Town town, Story s, int i) => i < s.Institutions.Count ? Institutions.Find(town, s.Institutions[i]) : null;

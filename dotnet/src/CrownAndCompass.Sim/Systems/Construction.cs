@@ -179,6 +179,49 @@ public static class Construction
             if (Stalled(town, b) && town.Tick - b.StalledSince >= 24 && town.Treasury > CaravanCost(town, b) + 300) SendCaravan(town, b);
     }
 
+    /// <summary>The ways the town mends what storms, fires and enemies wreck: "crews" (builders as they come to it), "first" (put first), "hire" (the council pays hands).</summary>
+    public static readonly string[] RepairWays = ["crews", "first", "hire"];
+
+    /// <summary>Daily: damaged buildings mended as the town's repairs say; mended ones are whole again.</summary>
+    public static void Mend(Town town)
+    {
+        var r = Rules(town);
+        foreach (var b in town.Buildings.OrderBy(b => b.Id))
+        {
+            if (!b.Wrecked) continue;
+            if (!b.IsSite)
+            {
+                b.Wrecked = false;
+                b.Priority = false;
+                continue;
+            }
+            if (town.Repairs == "first") b.Priority = true;
+            else if (town.Repairs == "hire")
+            {
+                double hours = Math.Min(r.HireHours, Math.Max(0, b.Def.BuildHours - b.BuildProgress));
+                double cost = Js.Round(hours * r.Hire);
+                if (hours <= 0 || town.Treasury < cost + r.HireReserve) continue;
+                town.Book(TreasuryAccount.Repairs, -cost);
+                b.Raise(town, hours);
+            }
+        }
+    }
+
+    /// <summary>Gold a day the hired hands would cost at today's damage.</summary>
+    public static double RepairCost(Town town)
+    {
+        var r = Rules(town);
+        return town.Buildings.Where(b => b.Damaged).Sum(b => Js.Round(Math.Min(r.HireHours, Math.Max(0, b.Def.BuildHours - b.BuildProgress)) * r.Hire));
+    }
+
+    /// <summary>Choose how the town mends its damage.</summary>
+    public static bool SetRepairs(Town town, string way)
+    {
+        if (!RepairWays.Contains(way)) return false;
+        town.Repairs = way;
+        return true;
+    }
+
     /// <summary>Put a site first, or back in line.</summary>
     public static bool Prioritise(Town town, Building b, bool first)
     {
@@ -230,4 +273,9 @@ public sealed record ConstructionRules
 
     /// <summary>Hours a council site may wait on timber or stone before it counts as stalled.</summary>
     public int StallHours { get; init; } = 6;
+
+    /// <summary>Hired hands mending damage ("hire" repairs): gold an hour of work, hours a day at each building, and the treasury kept back.</summary>
+    public double Hire { get; init; } = 1.5;
+    public double HireHours { get; init; } = 10;
+    public double HireReserve { get; init; } = 150;
 }

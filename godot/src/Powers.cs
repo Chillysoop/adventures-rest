@@ -54,7 +54,7 @@ public partial class Main
             string about = $"Led by {d.Leader}, {d.Title}.\nIt {d.Goal}. From {d.Seat}." + (ps.LastHeard != "" ? $"\nLast heard: {ps.LastHeard}" : "");
             string text = $"{Ui.Tip($"[b]{Ui.Esc(name)}[/b] {Ui.Img("ui-info", 12)}", about)}" +
                           (lore != null ? $"  {Tag(Ui.Cap(lore.Kind))}" : "") +
-                          $"\n[font_size=12]{Ui.Img("ui-person", 13)} {Ui.Esc(d.Leader)}[/font_size]";
+                          $"\n[font_size=12]{Ui.Img("ui-person", 13)} {Ui.Esc(d.Leader)}   {MannerChips(t, Powers.Key(id))}[/font_size]";
             // One short line per fact, each behind its icon.
             void Line(string icon, Color c, string what) => text += $"\n[font_size=12]{Ui.Img(icon, 14)} {Ui.C(c, what)}[/font_size]";
             int left(int day) => Math.Max(1, day - t.Day);
@@ -101,6 +101,7 @@ public partial class Main
             double standing = ps.Standing;
             p.Row(text, ($"{face}{ring.ToHtml()}{band}{word}{Math.Round(standing)}", () => new Portrait(56) { Glyph = face, Tint = d.Evil ? new Color("b5523b") : new Color("6f8fb5"), Ring = ring },
                 () => Foes.Standing(band, word, standing)), buttons.ToArray());
+            RenderOvertures(p, t, Powers.Key(id));
         }
         if (unmet > 0 && unmet < t.Powers.Count) p.Note($"{Ui.Img("face-help", 14)} {unmet} more {(unmet == 1 ? "power" : "powers")} not yet met");
         if (unmet < t.Powers.Count) p.Note("Gifts raise standing · allies anger rivals · outbid enemy bids before they answer.");
