@@ -30,7 +30,7 @@ public static class Voyages
     /// </summary>
     public static (double Slow, double Storm) Weather(Town town, Region? region = null)
     {
-        var (x, y) = region == null ? (0.0, 0.0) : Lofted.Spot(region);
+        var (x, y) = region == null ? (0.0, 0.0) : Lofted.Spot(town, region);
         var steps = town.Content.Sky.StormStep;
         int step = Systems.Weather.Worst(town, x, y, town.Day).Step;
         double storm = steps.Length == 0 ? 0 : steps[Math.Min(step, steps.Length - 1)];
@@ -91,7 +91,7 @@ public static class Voyages
         party.ShipId = ship.Id;
         var rng = Dice(town, ship.Id * 3 + party.Id);
         int survival = mind.Navigator != "" ? mind.NavBonus : 0;
-        var where = town.Regions.Where(r => World.Sea(r)).OrderBy(r => Distance(r, to)).ThenBy(r => r.Id).FirstOrDefault();
+        var where = town.Regions.Where(r => World.Sea(r)).OrderBy(r => Distance(town, r, to)).ThenBy(r => r.Id).FirstOrDefault();
         double pace = SailPace(town, ship, survival, rng, where, Math.Atan2(to.X - from.X, from.Y - to.Y) * 180 / Math.PI);
         town.Log(LedgerCategory.Quest, Importance.Routine, $"{party.Name} go aboard {ship.Name} at the harbour, {ship.Captain} at the helm, bound over the open sea.");
         // Whatever finds the ship on the way out is met now; the heroes stand at the rail.
@@ -119,10 +119,10 @@ public static class Voyages
         return false;
     }
 
-    private static double Distance(Region r, (double X, double Y) p)
+    private static double Distance(Town town, Region r, (double X, double Y) p)
     {
-        double a = r.Bearing * Math.PI / 180;
-        return Js.Hypot(Math.Sin(a) * r.Days - p.X, -Math.Cos(a) * r.Days - p.Y);
+        var (x, y) = World.Middle(town, r);
+        return Js.Hypot(x - p.X, y - p.Y);
     }
 
     // ---- Guards ----
@@ -297,7 +297,7 @@ public static class Voyages
         foreach (var a in f.Marines.Select(town.Agent).Where(a => !a.Dead && a.Hero != null)) a.Hero!.AwayUntil = null;
         if (f.Job == "scout" && region != null)
         {
-            Sky.Charted(town, region.Id, (0, 0), Sky.Middle(region), s.Name);
+            Sky.Charted(town, region.Id, (0, 0), Sky.Middle(town, region), s.Name);
             region.Known = true;
             var seen = town.Sites.Where(x => x.RegionId == region.Id && !x.Cleared).OrderBy(x => x.Def.Id, StringComparer.Ordinal).ToList();
             foreach (var site in seen)

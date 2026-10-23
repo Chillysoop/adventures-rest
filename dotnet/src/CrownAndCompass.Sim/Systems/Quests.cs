@@ -24,6 +24,9 @@ public sealed class SiteState(SiteDef def)
     /// <summary>Built by world generation rather than written by hand in sites.json.</summary>
     public bool Generated { get; init; }
 
+    /// <summary>Days out from the world's heart, where the town did not settle at it; 0 when it did (then <see cref="SiteDef.Distance"/>).</summary>
+    public int Out { get; set; }
+
     public SiteKnowledge Known { get; set; }
 
     /// <summary>Someone has seen it with their own eyes (a party, a scout, explorers, an ally's map): the town knows where it really is, not just roughly.</summary>

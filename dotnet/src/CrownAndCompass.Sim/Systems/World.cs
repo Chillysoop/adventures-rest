@@ -10,14 +10,19 @@ public sealed class Region
     public required string Name { get; init; }
     public required ThemeDef Theme { get; init; }
 
-    /// <summary>Ring index, 0 nearest the town.</summary>
+    /// <summary>Ring index, 0 nearest the world's heart (<see cref="World.Heart"/>): the deeper the ring, the harder its sites.</summary>
     public int Ring { get; init; }
-    public int Days { get; init; }
+
+    /// <summary>Days' march from the town to its middle.</summary>
+    public int Days { get; set; }
+
+    /// <summary>Days out from the world's heart its ring lies; 0 in a world whose town stands at the heart (then <see cref="Days"/>).</summary>
+    public int Out { get; set; }
 
     /// <summary>Party levels its sites are built for.</summary>
     public required int[] Levels { get; init; }
 
-    /// <summary>Compass bearing from the town in degrees (0 north, clockwise) and the arc it spans.</summary>
+    /// <summary>Compass bearing from the world's heart in degrees (0 north, clockwise) and the arc it spans.</summary>
     public double Bearing { get; init; }
     public double Arc { get; init; }
 
@@ -145,14 +150,14 @@ public static class World
     }
 
     /// <summary>
-    /// Where a site lies: its compass bearing (degrees, 0 north, clockwise) and how far out it is in
-    /// days of open-ground march. A region spreads its sites across its arc; sites outside any region
-    /// (the war camp) sit between the hand-written ones.
+    /// Where a site lies from the world's heart: its compass bearing (degrees, 0 north, clockwise) and how far out it is in
+    /// days of open-ground march. A region spreads its sites across its arc; sites outside any region (the war camp) sit
+    /// between the hand-written ones.
     /// </summary>
     public static (double Bearing, double Reach) Place(Town town, SiteState s)
     {
         int i = town.Sites.IndexOf(s);
-        double reach = s.Def.Distance * (0.82 + Hash(i * 7 + 3) * 0.3);
+        double reach = Out(s) * (0.82 + Hash(i * 7 + 3) * 0.3);
         if (RegionOf(town, s) is { } region)
         {
             int k = region.SiteIds.IndexOf(s.Def.Id);
@@ -169,9 +174,34 @@ public static class World
     public static (double X, double Y) Spot(Town town, SiteState s)
     {
         var (b, r) = Place(town, s);
-        double a = b * Math.PI / 180;
-        return (r * Math.Sin(a), -r * Math.Cos(a));
+        return AtHeart(town, b, r);
     }
+
+    /// <summary>The world's heart, in day units from the town (<see cref="Town.HeartX"/>).</summary>
+    public static (double X, double Y) Heart(Town town) => (town.HeartX, town.HeartY);
+
+    /// <summary>A spot on this bearing (degrees from north) this many days out from the world's heart, in day units from the town.</summary>
+    public static (double X, double Y) AtHeart(Town town, double bearing, double reach)
+    {
+        double a = bearing * Math.PI / 180;
+        return (town.HeartX + reach * Math.Sin(a), town.HeartY - reach * Math.Cos(a));
+    }
+
+    /// <summary>A spot in day units from the town, as days out from the world's heart and the bearing it lies on from there.</summary>
+    public static (double Reach, double Bearing) FromHeart(Town town, double x, double y)
+    {
+        double dx = x - town.HeartX, dy = y - town.HeartY;
+        return (Js.Hypot(dx, dy), (Math.Atan2(dx, -dy) * 180 / Math.PI + 360) % 360);
+    }
+
+    /// <summary>Days out from the world's heart a region's ring lies.</summary>
+    public static int Out(Region r) => r.Out > 0 ? r.Out : r.Days;
+
+    /// <summary>Days out from the world's heart a site lies, before its own spread.</summary>
+    public static int Out(SiteState s) => s.Out > 0 ? s.Out : s.Def.Distance;
+
+    /// <summary>A region's middle, in day units from the town.</summary>
+    public static (double X, double Y) Middle(Town town, Region r) => AtHeart(town, r.Bearing, Out(r));
 
     /// <summary>Experience for clearing a site: the encounter budget of its level.</summary>
     public static int Milestone(Town town, SiteState site)
@@ -185,7 +215,8 @@ public static class World
 
     // ---- Generation ----
 
-    public static void Generate(Town town)
+    /// <summary>The world for a new town, founded at <paramref name="homeX"/>, <paramref name="homeY"/> days from the heart (<see cref="Founding.Home"/>).</summary>
+    public static void Generate(Town town, double? homeX = null, double? homeY = null)
     {
         var w = town.Content.World;
         if (w.Rings.Count == 0 || w.Themes.Count == 0) return;
@@ -288,7 +319,7 @@ public static class World
         PlaceIsles(town, used);
         Ruins.Place(town, used, Fill);
         Wayfaring.Place(town);
-        Founding.Place(town);
+        Founding.Place(town, homeX, homeY);
     }
 
     /// <summary>
@@ -381,6 +412,13 @@ public static class World
 
     /// <summary>Degrees from b round to a, -180 to 180.</summary>
     private static double Turn(double a, double b) => ((a - b) % 360 + 540) % 360 - 180;
+
+    /// <summary>Days from the world's heart a ring's country runs from and to: the gaps either side of its sites.</summary>
+    public static (double Inner, double Outer) Band(Town town, int ring)
+    {
+        var rings = town.Content.World.Rings;
+        return (ring == 0 ? 0 : Gap(rings, ring - 1), ring + 1 < rings.Count ? Gap(rings, ring) : rings[ring].Days * 1.25 + 2.5);
+    }
 
     /// <summary>Days out to the middle of the gap between a ring's sites and the next ring's.</summary>
     private static double Gap(IReadOnlyList<RingDef> rings, int ring) => (rings[ring].Days * 1.12 + 0.14 + rings[ring + 1].Days * 0.82) / 2;
@@ -476,11 +514,14 @@ public static class World
     public static (double Heat, double Wet) Climate(Town town, int ring, double bearing)
     {
         var c = town.Content.World.Climate;
-        double warm = Voices.Hash("climate-warm", town.Seed) % 360;
+        double warm = Warm(town);
         double wetSide = (warm + 90 + Voices.Hash("climate-wet", town.Seed) % 180) % 360;
         double amp = c.Amp.Length == 0 ? 1 : c.Amp[Math.Min(ring, c.Amp.Length - 1)];
         return (amp * Math.Cos((bearing - warm) * Math.PI / 180), amp * Math.Cos((bearing - wetSide) * Math.PI / 180));
     }
+
+    /// <summary>The bearing from the heart of the world's warm side.</summary>
+    public static double Warm(Town town) => Voices.Hash("climate-warm", town.Seed) % 360;
 
     /// <summary>The themes a region of this heat may hold: never jungle beside the tundra, unless nothing else is left.</summary>
     private static List<ThemeDef> Fitting(ClimateRules c, List<ThemeDef> themes, double heat, List<ThemeDef> beside)

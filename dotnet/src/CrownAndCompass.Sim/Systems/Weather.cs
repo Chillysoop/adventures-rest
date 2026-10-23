@@ -466,10 +466,11 @@ public static class Weather
     /// <summary>The region at a spot (day units from the town), or null in the town's own ring 0 gaps.</summary>
     public static Region? RegionAt(Town town, double x, double y)
     {
-        double d = Math.Sqrt(x * x + y * y);
+        // Rings and bearings are the world's, measured from its heart.
+        var (d, b) = World.FromHeart(town, x, y);
         if (town.Regions.Count == 0) return null;
         var c = Caches.GetValue(town, _ => new Cache());
-        c.Rings ??= town.Regions.GroupBy(g => g.Ring).Select(g => (g.Key, g.Average(x => (double)x.Days))).OrderBy(p => p.Key).ToList();
+        c.Rings ??= town.Regions.GroupBy(g => g.Ring).Select(g => (g.Key, g.Average(x => (double)World.Out(x)))).OrderBy(p => p.Key).ToList();
         int ring = c.Rings[0].Ring;
         double best = double.MaxValue;
         foreach (var (rg, days) in c.Rings)
@@ -478,7 +479,6 @@ public static class Weather
                 best = Math.Abs(days - d);
                 ring = rg;
             }
-        double b = (Math.Atan2(x, -y) * 180 / Math.PI + 360) % 360;
         Region? pick = null;
         double off = double.MaxValue;
         foreach (var g in town.Regions)
@@ -537,7 +537,7 @@ public static class Weather
     /// <summary>The map's warm and wet sides at a spot, as <see cref="World.Climate"/> gives a region's, but smooth.</summary>
     private static (double Heat, double Wet) Climate(Town town, double x, double y)
     {
-        double d = Math.Sqrt(x * x + y * y), b = (Math.Atan2(x, -y) * 180 / Math.PI + 360) % 360;
+        var (d, b) = World.FromHeart(town, x, y);
         var rings = town.Content.World.Rings;
         int ring = 0;
         while (ring < rings.Count - 1 && rings[ring].Days < d) ring++;

@@ -2640,8 +2640,8 @@ public partial class TownView(MapView map) : Node3D
             if (f.Kind.Wonder is not { } w) continue;
             string id = $"wonder:{f.Id}";
             if (_landmarks.ContainsKey(id)) continue;
-            double mid = (f.Inner + f.Outer) / 2, b = f.Bearing * Math.PI / 180;
-            var at = Geo.FromDays(mid * Math.Sin(b), -mid * Math.Cos(b));
+            double b = f.Bearing * Math.PI / 180;
+            var at = Geo.FromDays(Roads.Middle(f));
             var mi = new MeshInstance3D { Mesh = WonderMesh(w.Kind, Geo.Hash(StableHash(id))), MaterialOverride = Mats.Props };
             AddChild(mi);
             _landmarks[id] = mi;

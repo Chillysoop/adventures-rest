@@ -193,7 +193,7 @@ public static class Sky
     /// <summary>The chance the weather over a land holds a ship today, less the share of storms it climbs above.</summary>
     public static double StormChance(Town town, ShipDef d, Region? region)
     {
-        var (x, y) = region == null ? (0.0, 0.0) : Lofted.Spot(region);
+        var (x, y) = region == null ? (0.0, 0.0) : Lofted.Spot(town, region);
         var steps = Rules(town).StormStep;
         int step = Weather.Worst(town, x, y, town.Day).Step;
         return steps.Length == 0 ? 0 : steps[Math.Min(step, steps.Length - 1)] * (1 - d.Ceiling);
@@ -445,11 +445,7 @@ public static class Sky
     }
 
     /// <summary>The middle of a land, in days from the town (the way <see cref="World.Spot"/> places a site).</summary>
-    public static (double X, double Y) Middle(Region region)
-    {
-        double a = region.Bearing * Math.PI / 180;
-        return (region.Days * Math.Sin(a), -region.Days * Math.Cos(a));
-    }
+    public static (double X, double Y) Middle(Town town, Region region) => World.Middle(town, region);
 
     /// <summary>
     /// A ship home from scouting charts what it flew over: the line out from <paramref name="from"/> to <paramref name="to"/>
@@ -493,7 +489,7 @@ public static class Sky
         foreach (var a in f.Marines.Select(town.Agent).Where(a => !a.Dead && a.Hero != null)) a.Hero!.AwayUntil = null;
         if (f.Job == "scout" && region != null)
         {
-            Charted(town, region.Id, (0, 0), Middle(region), s.Name);
+            Charted(town, region.Id, (0, 0), Middle(town, region), s.Name);
             region.Known = true;
             var seen = town.Sites.Where(x => x.RegionId == region.Id && !x.Cleared).OrderBy(x => x.Def.Id, StringComparer.Ordinal).ToList();
             foreach (var site in seen)

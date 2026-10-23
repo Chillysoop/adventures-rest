@@ -19,6 +19,10 @@ public sealed class Feature
     public double Inner { get; init; }
     public double Outer { get; init; }
 
+    /// <summary>Where its <see cref="Bearing"/> and rings are measured from, in day units from the town: the world's heart for the wilds' own country, (0, 0) for the town's.</summary>
+    public double Ox { get; set; }
+    public double Oy { get; set; }
+
     /// <summary>A gorge's rope bridge: "" none, "rope", "cut" by raiders, or rebuilt in "stone" (<see cref="Bridges"/>).</summary>
     public string Bridge { get; set; } = "";
     public string BridgeName { get; set; } = "";
@@ -210,11 +214,30 @@ public static class Roads
     public static bool Contains(Feature f, double x, double y, double margin = 0)
     {
         if (f.Shape.Count >= 3) return Country.Inside(f, x, y, margin);
+        x -= f.Ox;
+        y -= f.Oy;
         double r = Math.Sqrt(x * x + y * y);
         if (r < 1e-6 || r < f.Inner - margin || r > f.Outer + margin) return false;
         double b = Math.Atan2(x, -y) * 180 / Math.PI;
         return Math.Abs(AngleDiff(b, f.Bearing)) <= f.Arc / 2 + margin / r * 180 / Math.PI;
     }
+
+    /// <summary>A spot in day units from the town as the feature measures it: days out from its middle and the bearing from there.</summary>
+    public static (double R, double Bearing) Local(Feature f, double x, double y)
+    {
+        double dx = x - f.Ox, dy = y - f.Oy;
+        return (Math.Sqrt(dx * dx + dy * dy), (Math.Atan2(dx, -dy) * 180 / Math.PI + 360) % 360);
+    }
+
+    /// <summary>The spot on a bearing this many days out from where the feature is measured, in day units from the town.</summary>
+    public static (double X, double Y) At(Feature f, double bearing, double r)
+    {
+        double a = bearing * Math.PI / 180;
+        return (f.Ox + r * Math.Sin(a), f.Oy - r * Math.Cos(a));
+    }
+
+    /// <summary>The middle of the feature's band, in day units from the town.</summary>
+    public static (double X, double Y) Middle(Feature f) => Country.Middle(f);
 
     // ---- Geometry ----
 
@@ -240,7 +263,7 @@ public static class Roads
         foreach (double r in new[] { Math.Max(0.05, f.Inner - margin), f.Outer + margin })
         {
             double half = f.Arc / 2 + margin / r * 180 / Math.PI;
-            for (int i = 0; i <= 8; i++) pts.Add(Polar(f.Bearing - half + 2 * half * i / 8, r));
+            for (int i = 0; i <= 8; i++) pts.Add(Polar(f.Bearing - half + 2 * half * i / 8, r) + new P(f.Ox, f.Oy));
         }
         pts = pts.OrderBy(p => p.X).ThenBy(p => p.Y).ToList();
         var hull = new List<P>();
@@ -798,7 +821,7 @@ public static class Roads
         }
     }
 
-    /// <summary>The level of the wilds at a distance from town: the band of the ring that far out.</summary>
+    /// <summary>The level of the wilds at a distance from the world's heart: the band of the ring that far out.</summary>
     internal static int TierAt(Town town, double reach)
     {
         var rings = town.Content.World.Rings;
@@ -811,9 +834,9 @@ public static class Roads
     {
         var f = town.Terrain.FirstOrDefault(t => Contains(t, p.X, p.Y, 0.1));
         if (f != null) return f.Kind.Habitats;
-        double reach = Math.Sqrt(p.X * p.X + p.Y * p.Y);
+        var (reach, bearing) = World.FromHeart(town, p.X, p.Y);
         var region = town.Regions
-            .OrderBy(g => Math.Abs(AngleDiff(Math.Atan2(p.X, -p.Y) * 180 / Math.PI, g.Bearing)) / Math.Max(1, g.Arc) + Math.Abs(g.Days - reach))
+            .OrderBy(g => Math.Abs(AngleDiff(bearing, g.Bearing)) / Math.Max(1, g.Arc) + Math.Abs(World.Out(g) - reach))
             .ThenBy(g => g.Id)
             .FirstOrDefault();
         return region?.Theme.Habitats ?? ["grassland", "forest", "hills"];
@@ -861,7 +884,7 @@ public static class Roads
             {
                 double at = Marched(content, start, dusk);
                 var spot = Along(town, from, route, at);
-                int tier = TierAt(town, Math.Sqrt(spot.X * spot.X + spot.Y * spot.Y));
+                int tier = TierAt(town, World.FromHeart(town, spot.X, spot.Y).Reach);
                 var habitats = HabitatsAt(town, spot);
                 // A night in killing weather, on its own dice; an airship's crew sleeps aboard.
                 var exposed = party.Airship ? null : Weather.Exposure(town, spot.X, spot.Y, dusk);

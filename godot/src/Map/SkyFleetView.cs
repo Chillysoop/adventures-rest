@@ -63,7 +63,8 @@ public partial class TownView
                 }
                 else
                 {
-                    float b = Mathf.DegToRad((float)(f.RegionId >= 0 ? town.Regions[f.RegionId].Bearing : 0));
+                    var (rx, ry) = f.RegionId >= 0 ? World.Middle(town, town.Regions[f.RegionId]) : (0.0, -1.0);
+                    float b = Mathf.Atan2((float)rx, (float)-ry);
                     var dir = new Vector3(Mathf.Sin(b), 0, -Mathf.Cos(b));
                     u = Mathf.Clamp(u, 0, 1);
                     at = mast + Vector3.Up * (climb * 1.2f + u * 2.5f) + dir * (u * u * u * 40) + Vector3.Up * bob;
