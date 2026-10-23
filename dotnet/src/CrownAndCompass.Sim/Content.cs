@@ -349,6 +349,9 @@ public sealed record SiteDef
     /// <summary>A floating isle: only a company that can fly, or rides the sky dock's airship, gets there.</summary>
     public bool Aloft { get; init; }
 
+    /// <summary>The height of the sky it floats at (world.json isles `bands`), or "" on the ground.</summary>
+    public string Band { get; init; } = "";
+
     /// <summary>The old work it is the ruin of (world.json "ruins"), which the town can restore once it is cleared.</summary>
     public string Ruin { get; init; } = "";
 
@@ -626,6 +629,9 @@ public sealed record KnowledgeRules
     /// <summary>What a caster asks to scry, by their loyalty: free at or above Free, gold at or above Favour, a favour below it.</summary>
     public ScryPriceRules ScryPrice { get; init; } = new();
     public WatchtowerRules Watchtowers { get; init; } = new();
+
+    /// <summary>Days past the homecoming the town last reckoned before a silent party is called overdue.</summary>
+    public int OverdueDays { get; init; } = 3;
 }
 
 public sealed record ScryPriceRules
@@ -975,6 +981,9 @@ public sealed record FoeDef
 
     /// <summary>Its seat is lifted into the sky as a floating isle (<see cref="SiteDef.Aloft"/>).</summary>
     public bool Aloft { get; init; }
+
+    /// <summary>A height of the sky whose sites it holds (<see cref="SkyBandDef.Foe"/>); such a foe is seated there, not by the ordinary placing.</summary>
+    public string Band { get; init; } = "";
 }
 
 public sealed record FoeRules
@@ -1226,6 +1235,9 @@ public sealed record TerrainKindDef
 
     /// <summary>Open water the town's own boats take anyone over (the sea by a coastal town, <see cref="Systems.Founding"/>).</summary>
     public bool Boats { get; init; }
+
+    /// <summary>Open sea only a ship crosses (the ocean): a company boards one of the harbour's ships (<see cref="Systems.Voyages"/>) or can't go.</summary>
+    public bool Ship { get; init; }
 
     /// <summary>How much wider than other hard country it spreads across its region: wide country is costly to go round.</summary>
     public double Wide { get; init; } = 1;
@@ -1506,10 +1518,29 @@ public sealed record IsleCityRules
 /// <summary>Floating isles in the far wilds (world.json "isles"), reached only by air.</summary>
 public sealed record IsleRules
 {
+    /// <summary>The sky's heights, lowest first: what lies in each, and how high a ship must climb to get there.</summary>
+    public IReadOnlyList<SkyBandDef> Bands { get; init; } = [];
+
+    public SkyBandDef? Band(string id) => id == "" ? null : Bands.FirstOrDefault(b => b.Id == id);
+}
+
+/// <summary>
+/// One height of the sky (<see cref="Systems.Reaches"/>): `count` far sites in rings `rings` (and themes `themes`, any land
+/// when empty) float there. An airship reaches it only with a `ceiling` at least this; heroes who fly reach it on their own
+/// only where `fliers` is set. A band with a `foe` seats that foe (foes.json, its `band`) on its sites, each with one of `bosses`.
+/// </summary>
+public sealed record SkyBandDef
+{
+    public string Id { get; init; } = "";
+    public string Name { get; init; } = "";
+    public double Ceiling { get; init; }
+    public bool Fliers { get; init; }
     public int Count { get; init; }
     public int[] Rings { get; init; } = [3, 4];
     public IReadOnlyList<string> Themes { get; init; } = [];
     public IReadOnlyList<string> Names { get; init; } = [];
+    public string Foe { get; init; } = "";
+    public IReadOnlyList<string> Bosses { get; init; } = [];
 }
 
 /// <summary>

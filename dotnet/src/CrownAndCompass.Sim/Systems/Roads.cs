@@ -46,6 +46,9 @@ public sealed class Waypoint
     /// <summary>The old gateway a "portal" step goes through (<see cref="Wayfaring.Shortcut"/>).</summary>
     public string Gate { get; init; } = "";
 
+    /// <summary>On a "sail" stretch aboard a ship: hours at sea for each hour of march (<see cref="RouteMind.Sail"/>); 0 for the open water's own pace.</summary>
+    public double Sail { get; init; }
+
     public Waypoint Lost(double hours) => new() { X = X, Y = Y, Way = Way, Feature = Feature, Crossing = Crossing, Ease = Ease, Delay = Delay + hours, Gate = Gate };
 }
 
@@ -64,6 +67,9 @@ public sealed record RouteMind(double TimeWeight, double RiskWeight, double Leve
     /// <summary>Who finds the way through hard country, and their Survival (<see cref="Wayfaring"/>); "" for nobody.</summary>
     public string Navigator { get; init; } = "";
     public int NavBonus { get; init; }
+
+    /// <summary>Hours at sea for each hour of march over open sea, aboard the harbour's ship (<see cref="Voyages.SailPace"/>); 0 for none aboard.</summary>
+    public double Sail { get; init; }
 
     /// <summary>Who tries an old gateway's riddle, and their Investigation.</summary>
     public string Puzzler { get; init; } = "";
@@ -549,7 +555,8 @@ public static class Roads
                 }
                 bool flies = (mind.Ways & needs) == needs;
                 // The bone ferryman takes anyone over his water, for a toll; the town's own boats take them over its sea.
-                bool boats = !flies && next.Kind.Boats;
+                // Aboard the harbour's ship they sail even where they could fly; the open sea takes nobody else but fliers.
+                bool boats = next.Kind.Boats && (!flies || next.Kind.Ship && mind.Sail > 0);
                 bool ferry = !flies && (boats || next.Kind.Wonder?.Kind == "ferry");
                 bool over = flies || ferry || around.Count == 0;
                 if (!ferry && Passage.Rules(town).Texts.TryGetValue(over ? "over" : "round", out var told) && told.Count > 0)
@@ -561,8 +568,8 @@ public static class Roads
                 if (over)
                 {
                     path.Add(new Waypoint { X = entry.X, Y = entry.Y });
-                    path.Add(new Waypoint { X = exit.X, Y = exit.Y, Way = boats ? "sail" : ferry ? "ferry" : "fly", Feature = next });
-                    if (boats) said.Add($"The town's boats take them over {next.Name}.");
+                    path.Add(new Waypoint { X = exit.X, Y = exit.Y, Way = boats ? "sail" : ferry ? "ferry" : "fly", Feature = next, Sail = boats && next.Kind.Ship ? mind.Sail : 0 });
+                    if (boats) said.Add(next.Kind.Ship && mind.Carrier != "" ? $"{Cap(mind.Carrier)} carries them over {next.Name}." : $"The town's boats take them over {next.Name}.");
                     cur = exit;
                 }
                 else
@@ -634,7 +641,7 @@ public static class Roads
         // Stepping through an old gateway takes no time at all.
         if (to.Way == "portal") return 0;
         double len = Math.Sqrt((to.X - from.X) * (to.X - from.X) + (to.Y - from.Y) * (to.Y - from.Y));
-        return len * rules.MarchHours * (to.Way == "cross" && to.Feature != null ? 1 + (to.Feature.Kind.Slow - 1) * (1 - to.Ease) : to.Way == "sail" && to.Feature != null ? to.Feature.Kind.Slow : 1) + to.Delay;
+        return len * rules.MarchHours * (to.Way == "cross" && to.Feature != null ? 1 + (to.Feature.Kind.Slow - 1) * (1 - to.Ease) : to.Way == "sail" && to.Feature != null ? (to.Sail > 0 ? to.Sail : to.Feature.Kind.Slow) : 1) + to.Delay;
     }
 
     /// <summary>Hours of marching the whole road takes, from <paramref name="from"/>.</summary>
@@ -675,7 +682,7 @@ public static class Roads
         for (int i = route.Count - 1; i >= 0; i--)
         {
             var (x, y) = i > 0 ? (route[i - 1].X, route[i - 1].Y) : end;
-            back.Add(new Waypoint { X = x, Y = y, Way = route[i].Way, Feature = route[i].Feature, Crossing = route[i].Crossing });
+            back.Add(new Waypoint { X = x, Y = y, Way = route[i].Way, Feature = route[i].Feature, Crossing = route[i].Crossing, Sail = route[i].Sail });
         }
         return back;
     }
@@ -743,13 +750,17 @@ public static class Roads
     internal static void Depart(Town town, Party party, IReadOnlyList<Agent> members, SiteState site, Bounty? bounty)
     {
         var spot = World.Spot(town, site);
-        var mind = Passage.Board(town, party, Mind(town, members, Hurry(town, bounty, site), false), party.Start, spot, site.Def.Aloft);
+        var mind = Reaches.Embark(town, party, members, Mind(town, members, Hurry(town, bounty, site), false), site);
+        mind = Passage.Board(town, party, mind, party.Start, spot, site.Def.Aloft && party.ShipId == null && Reaches.DockReaches(town, site));
+        mind = Voyages.Embark(town, party, members, mind, party.Start, spot);
         party.Out = Plan(town, party.Start, spot, mind, town.Rng, party.Said);
         double outHours = Hours(town, party.Start, party.Out);
         double arrive = Finish(town.Content, party.DepartTick, outHours);
         party.ArriveTick = (int)Math.Ceiling(arrive);
         // A first guess at the homecoming, made good when they reach the site.
         party.ReturnTick = (int)Math.Ceiling(Finish(town.Content, WakeAfterRest(town.Content, arrive), outHours));
+        party.Expected = party.ReturnTick;
+        party.HeardTick = party.DepartTick;
     }
 
     /// <summary>Hourly: parties reaching their sites go in.</summary>
@@ -910,6 +921,8 @@ public static class Roads
         party.ReturnTick = Math.Max(party.LeaveTick, (int)Math.Ceiling(Finish(content, party.LeaveTick, Hours(town, spot, party.Home))));
         foreach (var m in members) m.Hero!.AwayUntil = party.ReturnTick;
         party.Result = v.Result(outcome, site.Def.Name);
+        // Its airship lost, a company in the sky waits there for a rescue.
+        if (outcome != ExpeditionOutcome.Wiped && Reaches.Wait(town, party, site)) Reaches.Strand(town, party, site);
     }
 
     private static string Text(Town town, string key) =>
@@ -945,6 +958,7 @@ public static class Roads
             var p = Along(town, party.Start, party.Out, Marched(content, party.DepartTick, t));
             return new Whereabouts(p.X, p.Y, PaceAt(content, t));
         }
+        if (party.StrandedTick != null && t >= party.LeaveTick) return new Whereabouts(spot.X, spot.Y, Pace.Camped);
         if (t < party.LeaveTick)
         {
             var halt = party.Halts.LastOrDefault(h => t >= h.From && t < h.To);

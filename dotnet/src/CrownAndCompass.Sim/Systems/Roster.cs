@@ -222,7 +222,8 @@ public static class Roster
         var riders = Riders(town, company, job, tier);
         if (riders.Count < 3)
             return No($"only {riders.Count} of them can ride, and no free hero in town will make up three");
-        if (!Passage.CanReach(town, riders, s)) return No($"{s.Def.Name} floats above the clouds, and none of them can fly there");
+        if (!Passage.CanReach(town, riders, s))
+            return No(s.Def.Aloft ? $"{s.Def.Name} floats above the clouds, and none of them can fly there" : $"{s.Def.Name} lies out on the open sea, and the harbour has no ship free to take them");
 
         int n = riders.Count;
         var reasons = new List<(string Why, double Points)>();

@@ -178,6 +178,7 @@ public static class Sendings
         }
         party.Asked++;
         party.Sendings++;
+        Knowledge.Heard(town, party);
         return Stories.BeginSending(town, pick.Def, pick.Bound, r.DueHours);
     }
 

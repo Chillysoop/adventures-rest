@@ -157,11 +157,22 @@ public sealed class Party
     /// <summary>Whether it went in the sky dock's airship, which stays with it until it is home.</summary>
     public bool Airship { get; set; }
 
+    /// <summary>The harbour's ship that carries it over the open sea, or the town's airship that carries it into the sky, out and home again (<see cref="Voyages"/>, <see cref="Reaches"/>).</summary>
+    public int? ShipId { get; set; }
+
+    /// <summary>Its airship was lost on the way (<see cref="Reaches"/>), and when it was left stranded at the site.</summary>
+    public bool ShipLost { get; set; }
+    public int? StrandedTick { get; set; }
+
     /// <summary>Where it set out from, in day units: the town, or the spot where explorers chose to go in (<see cref="Explore"/>).</summary>
     public (double X, double Y) Start { get; init; }
 
     /// <summary>The exploring company it grew out of, which the council paid for.</summary>
     public int? SurveyId { get; init; }
+
+    /// <summary>When the town last reckoned them home, and when it last had word of them: the day they left, or a sending since.</summary>
+    public int Expected { get; set; }
+    public int HeardTick { get; set; }
 
     /// <summary>Sending-stone messages exchanged on the road; each costs one of the party's spell slots.</summary>
     public int Sendings { get; set; }
@@ -647,6 +658,12 @@ public static class Quests
                 continue;
             }
             if (!party.Resolved) Roads.Arrive(town, party);
+            if (town.Tick < party.ReturnTick)
+            {
+                // Stranded where it went (Reaches): not home after all.
+                party.Returned = false;
+                continue;
+            }
             if (party.Empty)
             {
                 // The rumour that sent them was false: the place stands empty.

@@ -1309,7 +1309,11 @@ public static class Stories
                 if (Sendings.PartyOf(town, s) is { } p) after = Math.Min(after, Math.Max(0, (p.Resolved ? p.ReturnTick : p.ArriveTick) - town.Tick - 2));
                 s.WaitTick = after > 0 ? town.Tick + after : null;
                 s.DueTick = town.Tick + after + town.Content.Sendings.DueHours;
-                if (after > 0 && Sendings.PartyOf(town, s) is { } sp) sp.Sendings++;
+                if (after > 0 && Sendings.PartyOf(town, s) is { } sp)
+                {
+                    sp.Sendings++;
+                    Knowledge.Heard(town, sp);
+                }
             }
             else s.DueTick = Math.Max(s.DueTick, town.Tick + 2 * SimTime.HoursPerDay);
             return;
