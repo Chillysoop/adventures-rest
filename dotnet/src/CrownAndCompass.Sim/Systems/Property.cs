@@ -420,7 +420,9 @@ public static class Property
         {
             var owner = town.Agent(b.OwnerId.Value);
             owner.Gold += b.LaborBudget;
-            if (b.Def.Housing > 0 && (owner.HomeId == null || town.Building(owner.HomeId.Value).OwnerId != owner.Id))
+            // Tenants who took its beds first keep them: the owner moves in only if the household fits.
+            int household = owner.SpouseId != null && town.Agent(owner.SpouseId.Value) is { Departed: false, Hero: null } ? 2 : 1;
+            if (b.Def.Housing - b.Residents.Count >= household && (owner.HomeId == null || town.Building(owner.HomeId.Value).OwnerId != owner.Id))
             {
                 Economy.MoveIn(town, owner, b);
                 if (owner.SpouseId != null) Economy.MoveIn(town, town.Agent(owner.SpouseId.Value), b);

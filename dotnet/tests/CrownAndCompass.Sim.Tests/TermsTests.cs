@@ -105,9 +105,12 @@ public class TermsTests
         sim.RunDays(30);
         var site = Quests.Site(t, "goblin_warrens")!;
         site.Known = SiteKnowledge.Rumoured;
+        // The goblins hold their warrens again, whatever the heroes did this month.
+        site.Cleared = false;
+        site.ThoughtCleared = false;
         t.Treasury += 1000;
-        // A story may already have posted one there.
-        t.Bounties.RemoveAll(x => x.SiteId == "goblin_warrens" && x.Status == BountyStatus.Open);
+        // A story, or the heroes themselves, may already have one going there.
+        t.Bounties.RemoveAll(x => x.SiteId == "goblin_warrens" && x.Status is BountyStatus.Open or BountyStatus.Taken);
         var b = sim.PostBounty("goblin_warrens", 100, "fetch")!;
         b.Errand = "ward";
         t.Saga.Dread = 50;
