@@ -13,13 +13,49 @@
   "standInEvery": 10,
   "standInProfit": 40,
   "ships": [
-    { "id": "rowboat", "name": "fishing boat", "cost": 60, "timber": 8, "crew": 2, "hold": 12, "speed": 0.9, "hull": 40, "wear": 2, "repair": 1, "fish": 3, "fight": 0 },
-    { "id": "longship", "name": "longship", "cost": 260, "timber": 30, "crew": 8, "hold": 35, "speed": 0.6, "hull": 90, "wear": 3, "repair": 1.5, "fish": 5, "fight": 4, "tier": "village" },
-    { "id": "carrack", "name": "carrack", "cost": 620, "timber": 60, "crew": 12, "hold": 80, "speed": 0.7, "hull": 160, "wear": 3, "repair": 2, "fish": 6, "fight": 6, "tier": "town" }
+    { "id": "rowboat", "name": "fishing boat", "cost": 60, "timber": 8, "crew": 2, "hold": 12, "speed": 0.9, "hull": 40, "wear": 2, "repair": 1, "fish": 3, "fight": 0, "guns": 0, "agility": 3, "marines": 2 },
+    { "id": "longship", "name": "longship", "cost": 420, "timber": 30, "crew": 8, "hold": 35, "speed": 0.6, "hull": 90, "wear": 3, "repair": 1.5, "fish": 5, "fight": 4, "guns": 2, "agility": 4, "marines": 6, "tier": "village" },
+    { "id": "carrack", "name": "carrack", "cost": 900, "timber": 60, "crew": 12, "hold": 80, "speed": 0.7, "hull": 160, "wear": 3, "repair": 2, "fish": 6, "fight": 6, "guns": 5, "agility": 1, "marines": 8, "tier": "town" }
   ],
   "names": ["the Gull", "the Salt Hare", "the Widow's Luck", "the Grey Lady", "the Herring Queen", "the Brave Kettle", "the Stormpetrel", "the Long Wager", "the Sea Wren", "the Tidecaller", "the Bright Anchor", "the Second Chance"],
   "captains": ["Old Maudie Pike", "Hollis Wrack", "Tamsin Rook", "Jory Salt", "Branna Kell", "Cobb Fenwick", "Ysolde Marr", "Petrock Vane", "Wenna Gale", "Aldo Crabbe"],
   "prowess": ["green", "steady", "seasoned", "veteran", "legendary"],
+  "foes": [
+    { "id": "corsair-sloop", "name": "a corsair sloop", "rings": [1, 20], "power": 18, "speed": 3, "boards": true },
+    { "id": "sahuagin", "name": "sahuagin raiders out of the reef", "rings": [1, 5], "power": 22, "speed": 3, "boards": true },
+    { "id": "corsair-galley", "name": "a corsair war-galley", "rings": [2, 20], "power": 32, "speed": 2, "boards": true },
+    { "id": "sea-serpent", "name": "a sea serpent", "rings": [3, 20], "power": 38, "speed": 4, "boards": false },
+    { "id": "ghost-ship", "name": "a drowned ship crewed by the Choir's dead", "rings": [4, 20], "power": 44, "speed": 2, "boards": true },
+    { "id": "kraken", "name": "a kraken", "rings": [6, 20], "power": 75, "speed": 3, "boards": false }
+  ],
+  "powerPerRing": 3,
+  "voyages": {
+    "_doc": "The sea's jobs and passages (Systems/Voyages.cs). A ship's days at sea are its speed times the navigator's roll (d20 + the captain's prowess + the best Survival aboard against 'navigateDc': times navigate[0] on a 20, [1] on a pass, [2] on a miss, [3] on a 1) times the weather (1 + 'weather' times sky.json's 'stormStep' chance for the day's sky over the waters, and the season's wind on the heading up to sky.json's 'wind' either way). Each day out a ship meets something with 'meet' plus 'meetPerRing' a ring out (at most 'meetMax'), one of 'foes' for the ring, fought as sky.json's ship fights. Jobs: 'patrol' the home waters for 'patrolDays' (each patrol turns away 'patrolGuard' of the corsairs' raids), 'scout' a sea land (charted like an airship's scouting), 'strike' a sea site (each gun takes 'strikeShare' of its strength a day in reach, at most 'strikeMost').",
+    "navigateDc": 12,
+    "navigate": [0.7, 0.85, 1.15, 1.4],
+    "weather": 1.5,
+    "meet": 0.08, "meetPerRing": 0.03, "meetMax": 0.4,
+    "patrolGuard": 0.35, "patrolDays": 6,
+    "strikeShare": 0.05, "strikeMost": 0.4,
+    "texts": {
+      "sail": ["{ship} slips her moorings, {captain} at the helm, bound for {where}.", "The harbour bell rings as {ship} stands out to sea for {where}."],
+      "storm": ["A gale catches {ship} off {where}; {captain} runs before it and loses a day."],
+      "evaded": ["{captain} sees {foe} hull-up on the horizon and crowds on sail; they never close."],
+      "won": ["{ship} meets {foe} off {where}. {captain} takes the weather gauge, the guns speak, and {foe} break off.", "Off {where}, {foe} come at {ship} and are beaten off with their sails in rags."],
+      "boarded": ["{foe} grapple {ship} off {where}; {marines} meet them at the rail and throw them back into the sea."],
+      "repelled": ["{foe} grapple {ship} off {where} and fight their way aboard before {marines} drive them off. The ship limps on."],
+      "lost": ["{foe} maul {ship} off {where}; {captain} breaks off with the hull stove in."],
+      "wrecked": ["{ship} goes down off {where}, fighting {foe}. Her crew take to the boats."],
+      "scouted": ["{ship} is home from {where}: {captain}'s charts show {found}."],
+      "struck": ["{ship} is home from {where}: her guns took the fight out of {site} ({share} of their strength)."],
+      "patrolled": ["{ship} is home from patrolling the home waters, nothing slipped past her."]
+    }
+  },
+  "guards": {
+    "_doc": "Who stands at the rail besides the crew, filling the ship's marine places the heroes leave: 'watch' lends town watchmen (gone from the town's watch while at sea), 'hired' pays sellsword marines 'wage' gold a head a day at sea. 'fight' is what each adds to the boarding.",
+    "watch": { "fight": 2.5 },
+    "hired": { "fight": 3.5, "wage": 2 }
+  },
   "corsairs": {
     "name": "the corsairs",
     "chance": 0.12, "perRing": 0.05, "max": 0.45,

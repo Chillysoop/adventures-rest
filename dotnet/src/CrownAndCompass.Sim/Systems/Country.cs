@@ -782,6 +782,8 @@ public static class Country
         public required string[] Way;
         public required double[] Ease;
         public required int Seed;
+        /// <summary>Hours at sea for each hour of march aboard the town's ship (<see cref="RouteMind.Sail"/>).</summary>
+        public double Sail;
     }
 
     private static Costs Weigh(Town town, Land land, RouteMind mind, int seed)
@@ -799,7 +801,9 @@ public static class Country
             if (needs != Ways.None)
             {
                 bool flies = (mind.Ways & needs) == needs;
-                if (flies) (cost[i], way[i]) = (1, "fly");
+                // Aboard the harbour's ship they sail even where they could fly, at the ship's pace (Voyages.Embark).
+                if (f.Kind.Ship && mind.Sail > 0) (cost[i], way[i]) = (mind.Sail, "sail");
+                else if (flies) (cost[i], way[i]) = (1, "fly");
                 else if (f.Kind.Boats) (cost[i], way[i]) = (f.Kind.Slow, "sail");
                 else if (f.Kind.Wonder?.Kind == "ferry") (cost[i], way[i]) = (1.3, "ferry");
                 else (cost[i], way[i]) = (Never, "");
@@ -814,7 +818,7 @@ public static class Country
             way[i] = "cross";
             ease[i] = e;
         }
-        return new Costs { Feature = cost, Way = way, Ease = ease, Seed = seed };
+        return new Costs { Feature = cost, Way = way, Ease = ease, Seed = seed, Sail = mind.Sail };
     }
 
     /// <summary>A cell's cost per day walked through it, or <see cref="Never"/>.</summary>
@@ -1042,6 +1046,7 @@ public static class Country
                     Way = way,
                     Feature = f,
                     Ease = f == null ? 0 : k.Ease[run.Owner - 1],
+                    Sail = way == "sail" && f!.Kind.Ship ? k.Sail : 0,
                     Quick = way is "road" or "cross" ? Js.Round(Along(town, land, a, b) * 1000) / 1000.0 : 0,
                 });
             }

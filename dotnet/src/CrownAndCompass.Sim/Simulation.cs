@@ -396,6 +396,12 @@ public sealed class Simulation
     /// <summary>Patch a ship's hull at the harbour, or an airship's at the Sky Dock.</summary>
     public bool RepairShip(int shipId) => Fleet.Repair(Town, shipId);
 
+    /// <summary>Send a sea ship on a job: patrol the home waters, scout a sea land, or bombard a sea site, with heroes aboard as marines.</summary>
+    public bool SailJob(int shipId, string job, int regionId = -1, string siteId = "", IReadOnlyList<int>? marines = null) => Voyages.Send(Town, shipId, job, regionId, siteId, marines);
+
+    /// <summary>Who fills a sea ship's free marine places: "" nobody, "watch" lent watchmen, "hired" sellswords.</summary>
+    public bool SetShipGuard(int shipId, string guard) => Voyages.SetGuard(Town, shipId, guard);
+
     /// <summary>Fly an airship on a job: "patrol" over the town, "scout" a region, or "strike" a lair there, with heroes aboard as marines.</summary>
     public bool FlyShip(int shipId, string job, int regionId = -1, string siteId = "", IReadOnlyList<int>? marines = null) => Sky.Send(Town, shipId, job, regionId, siteId, marines);
 
@@ -514,6 +520,9 @@ public sealed class Simulation
 
     /// <summary>Reach a party on the road by sending stone: ask for word, or call it home.</summary>
     public string? SendWord(int partyId, bool recall = false) => Knowledge.Send(Town, partyId, recall);
+
+    /// <summary>Send an airship to look for an overdue company where it went up into the sky (<see cref="Reaches.Rescue"/>).</summary>
+    public bool RescueParty(int partyId) => Reaches.Rescue(Town, partyId) == null;
 
     /// <summary>Buy a company's report of a trip the council didn't pay for: at their asking price, or haggled down.</summary>
     /// <summary>Offer one company a job by name; it takes it and marches at once, or turns it down. Null when it can't be offered.</summary>

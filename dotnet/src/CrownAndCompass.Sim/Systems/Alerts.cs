@@ -57,6 +57,7 @@ public static class Alerts
 {
     public static readonly AlertKind Siege = new("siege", "Under attack", "warband", AlertLevel.Urgent, AlertWindow.Defence, "Walls");
     public static readonly AlertKind Sighted = new("sighted", "Raiders sighted", "warband", AlertLevel.Urgent, AlertWindow.Defence, "Town guard");
+    public static readonly AlertKind Overdue = new("overdue", "Overdue", "compass", AlertLevel.Decision, AlertWindow.Bounties);
     public static readonly AlertKind Captives = new("captives", "Townsfolk taken", "heroes", AlertLevel.Urgent, AlertWindow.Bounties);
     public static readonly AlertKind Hunger = new("hunger", "Hunger", "bread", AlertLevel.Urgent, AlertWindow.City);
     public static readonly AlertKind Coffers = new("coffers", "Empty coffers", "gold", AlertLevel.Urgent, AlertWindow.Council, "Hall>Taxes");
@@ -122,10 +123,10 @@ public static class Alerts
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Sighted, Lurker, Captives, Doom, Crisis, Sick, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Balance, Fealty, Gathering, DarkQuest, Road, Clash, Traitor, Plot, Dark, Spent, Stores, Story, Scry, Explorers, Fallen, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Notable, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Loot, Stalled, Bridge, Ruin, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Tower, Patrol, Outpost, Housing, Crowded, WarAsk];
+        [Siege, Sighted, Lurker, Captives, Overdue, Doom, Crisis, Sick, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Balance, Fealty, Gathering, DarkQuest, Road, Clash, Traitor, Plot, Dark, Spent, Stores, Story, Scry, Explorers, Fallen, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Notable, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Loot, Stalled, Bridge, Ruin, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Tower, Patrol, Outpost, Housing, Crowded, WarAsk];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
-    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Allies, Word, Crowds, Keepers, Notables, Outposts, Lists, Brought];
+    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Allies, Word, Crowds, Keepers, Notables, Outposts, Lists, Brought, Missing];
 
     public static List<Alert> Standing(Town town) => Rules.SelectMany(r => r(town)).ToList();
 
@@ -531,6 +532,22 @@ public static class Alerts
                 timber > 0 && !t.Buildings.Any(q => q.Complete && q.Def.Id == "lumber_camp") ? "There is no lumber camp: zone industry for one, or" : "Wait for the market to fill, or";
             yield return new($"stalled:{b.Id}", Stalled, $"{Cap(b.Name)} waits for {what}",
                 $"The builders stand idle: the market has no {what} left. {from} send for it by caravan from the site ({Js.Str(Construction.CaravanCost(t, b))}g).", BuildingId: b.Id);
+        }
+    }
+
+    /// <summary>Companies long past the day the town looked for them home, with no word: where they went is all the town knows.</summary>
+    private static IEnumerable<Alert> Missing(Town t)
+    {
+        foreach (var p in Knowledge.Overdue(t))
+        {
+            var site = Quests.Site(t, p.SiteId);
+            int quiet = (t.Tick - p.HeardTick) / SimTime.HoursPerDay;
+            string bound = site != null ? site.Def.Name : "the wilds";
+            string ask = site is { Def.Aloft: true } && Reaches.RescueRefused(t, p) == null ? "Send an airship to look for them from Bounties"
+                : Knowledge.SlotsLeft(t, p) > 0 ? "Send a stone to them" : "Scry where they went, or post a bounty to find them";
+            yield return new($"overdue:{p.Id}", Overdue, $"The {p.Name} are overdue",
+                $"This company has been gone a while. No word for {quiet} days; they set out for {bound}, looked for home by day {SimTime.DayOf(p.Expected)}. {ask}.",
+                SiteId: site?.Def.Id);
         }
     }
 

@@ -59,7 +59,15 @@
     { "id": "storm-roc", "name": "a storm roc", "rings": [5, 20], "power": 50, "speed": 4, "boards": false }
   ],
   "powerPerRing": 3,
+  "dockCeiling": 0.45,
+  "expedition": { "edge": 1, "wait": 1, "search": [1, 4], "strandMost": 40, "walkHurt": 0.3 },
   "texts": {
+    "carry": ["the {party} go aboard {ship} at the Sky Dock, {captain} at the wheel, bound up for {where}.", "{ship} lifts the {party} off the Sky Dock mast and climbs toward {where}."],
+    "opened": ["{ship}'s ballistae sweep the landing before the {party} go down onto {where}."],
+    "stranded": ["{ship} does not come back for the {party} at {where}. They are on their own above the clouds."],
+    "searching": ["{ship} lifts off to look for the {party}, last bound for {where}."],
+    "rescued": ["{ship} finds the {party} on {where} after {search} of looking and brings them home.", "Signal fires on {where}: {ship} picks up the {party}, thin and sunburnt, and turns for home."],
+    "ownWay": ["the {party} come home at last, having climbed down from {where} on rope and nerve. Nobody came for them."],
     "launch": ["{ship} lifts off the Sky Dock mast, {captain} at the wheel, bound for {where}.", "The riggers cast off and {ship} climbs over the rooftops toward {where}."],
     "patrol": ["{ship} circles the town on patrol, {captain} watching the roads from the clouds."],
     "storm": ["A storm catches {ship} over {where}; {captain} rides it out, burning lift to stay aloft."],
