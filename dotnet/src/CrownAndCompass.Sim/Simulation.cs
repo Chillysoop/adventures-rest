@@ -63,8 +63,15 @@ public sealed record SimulationOptions
     /// <summary>Who tells the campaign: "steady", "rising" (the default) or "chaotic" (content/game/storytellers.json).</summary>
     public string Storyteller { get; init; } = "rising";
 
-    /// <summary>Where the town is founded: a founding.json id from <see cref="Systems.Founding.Offered"/>; "" for the river ford.</summary>
+    /// <summary>What kind of town is founded: a founding.json id (<see cref="Systems.Founding.KindsAt"/>); "" for the river ford.</summary>
     public string Founding { get; init; } = "";
+
+    /// <summary>
+    /// Where the town is founded, in days from the world's heart (x east, y south), picked on New game's map. Null for the
+    /// kind's own pin (<see cref="Systems.Founding.Spots"/>): the heart itself for the river ford.
+    /// </summary>
+    public double? HomeX { get; init; }
+    public double? HomeY { get; init; }
 
     /// <summary>Foes and heroes from the player's earlier campaigns, who may come back (<see cref="Systems.Legends"/>).</summary>
     public IReadOnlyList<Legend> Legends { get; init; } = [];
@@ -176,6 +183,8 @@ public sealed class Simulation
         Streets.Closes(t);
         Paving.Daily(t);
         Property.Daily(t);
+        Lodging.Decide(t);
+        Refugees.Daily(t);
         Population.DailyDepartures(t);
         Population.DailyArrivals(t);
         if (Options.AutoMayor)
@@ -200,6 +209,7 @@ public sealed class Simulation
         Alchemy.Daily(t, Options.AutoMayor && Stewards.Mode(t, Options, "armory") == StewardMode.Steward);
         Spoils.Daily(t, Options.AutoMayor && Options.AutoArmory);
         Neighbours.Daily(t, Options.AutoMayor);
+        Founding.Daily(t);
         using (Asking("defence"))
         {
             Mercenaries.Daily(t, Hand("defence"));
@@ -815,7 +825,7 @@ public sealed class Simulation
         return new DayStats(
             Day: t.Day - 1,
             Population: res.Count,
-            Homeless: workers.Count(a => a.HomeId == null),
+            Homeless: workers.Count(a => a.Homeless),
             Unemployed: workers.Count(a => a.JobId == null),
             Buildings: t.Buildings.Count(b => b.Complete),
             Sites: t.Buildings.Count(b => b.IsSite),
@@ -842,7 +852,7 @@ public sealed class Simulation
         var keepDef = c.Building("keep");
         if (Planning.CivicLot(t, keepDef) is { } keepLot) t.AddBuilding(keepDef, keepLot, null, "the Mayor's Keep", true);
         Quests.InitSites(t);
-        World.Generate(t);
+        World.Generate(t, Options.HomeX, Options.HomeY);
         Council.InitCouncil(t);
         Threat.InitThreat(t);
         Factions.InitFactions(t);

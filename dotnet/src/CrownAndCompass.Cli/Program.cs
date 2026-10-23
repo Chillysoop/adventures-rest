@@ -5,7 +5,8 @@
 //        [--legends file.json]   (foes and heroes of earlier runs may come back; this run's are added to the file)
 //        [--summary]   (print only one JSON line on how the campaign stands, for scripts/gate.ts)
 //        [--storyteller steady|rising|chaotic]   (who tells the campaign: the difficulty; rising is the default)
-//        [--founding id]   (where the town is founded: a founding.json id; the river ford is the default)
+//        [--founding id]   (what kind of town is founded: a founding.json id; the river ford is the default)
+//        [--home x,y]      (where on the map, in days from the world's heart, x east and y south; the kind's own pin by default)
 //        [--endless]   (a win closes an era; only a fall ends the campaign)   [--boons id:rank,...]   (found the town with boons)
 //        [--roads]   (print every road to victory's terms each month)   [--claim]   (claim the first road whose terms hold, as a player might)   [--roads-off a,b]   (close these roads; "all" for every one but slay)
 // Prints exactly what `npm run sim` prints for the same arguments.
@@ -29,6 +30,7 @@ bool summary = false;
 bool handTaxes = false;
 string storyteller = "rising";
 string founding = "";
+double? homeX = null, homeY = null;
 bool hardcore = false;
 bool roads = false;
 bool claim = false;
@@ -75,6 +77,17 @@ for (int i = 0; i < args.Length; i++)
         case "--summary":
             summary = true;
             break;
+        case "--home":
+        {
+            var xy = (i + 1 < args.Length ? args[++i] : "").Split(',');
+            if (xy.Length != 2 || !double.TryParse(xy[0], System.Globalization.CultureInfo.InvariantCulture, out var hx) || !double.TryParse(xy[1], System.Globalization.CultureInfo.InvariantCulture, out var hy))
+            {
+                Console.Error.WriteLine("--home takes x,y in days from the world's heart");
+                return 1;
+            }
+            (homeX, homeY) = (hx, hy);
+            break;
+        }
         case "--founding":
             founding = i + 1 < args.Length ? args[++i] : founding;
             if (Founding.Kind(Content.Default(), founding) == null)
@@ -120,7 +133,7 @@ for (int i = 0; i < args.Length; i++)
 }
 
 var past = legends != null && File.Exists(legends) ? Legends.Read(File.ReadAllText(legends)) : [];
-var sim = load != null ? SaveGame.ReadFile(load, out _) : new Simulation(new SimulationOptions { Seed = seed, Legends = past, AutoCouncil = !handTaxes, Storyteller = storyteller, RoadsOff = roadsOff, Endless = endless, Boons = boons, Founding = founding, Hardcore = hardcore });
+var sim = load != null ? SaveGame.ReadFile(load, out _) : new Simulation(new SimulationOptions { Seed = seed, Legends = past, AutoCouncil = !handTaxes, Storyteller = storyteller, RoadsOff = roadsOff, Endless = endless, Boons = boons, Founding = founding, HomeX = homeX, HomeY = homeY, Hardcore = hardcore });
 var town = sim.Town;
 seed = town.Seed;
 var minImportance = all ? Importance.Routine : Importance.Notable;

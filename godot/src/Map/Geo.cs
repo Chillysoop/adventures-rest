@@ -66,8 +66,14 @@ public sealed class Geo
     {
         double r = Math.Sqrt(x * x + y * y);
         if (r < 1e-6) return Center;
-        return Center + new Vector2((float)(x / r), (float)(y / r)) * DayRadius(r);
+        var p = Center + new Vector2((float)(x / r), (float)(y / r)) * DayRadius(r);
+        // A town founded far from the world's heart has the farthest country past the map's edge on its far side: drawn at the edge.
+        var inside = p.Clamp(new Vector2(Edge, Edge), new Vector2(World - Edge, World - Edge));
+        return inside == p ? p : Center + (p - Center) * Mathf.Min(Mathf.Abs((World / 2f - Edge) / Mathf.Max(1e-3f, Mathf.Abs(p.X - Center.X))), Mathf.Abs((World / 2f - Edge) / Mathf.Max(1e-3f, Mathf.Abs(p.Y - Center.Y))));
     }
+
+    /// <summary>Tiles kept between anything drawn and the map's edge.</summary>
+    private const float Edge = 24;
 
     public static Vector2 FromDays((double X, double Y) p) => FromDays(p.X, p.Y);
 

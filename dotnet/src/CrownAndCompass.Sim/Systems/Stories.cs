@@ -438,7 +438,7 @@ public static class Stories
     /// precedent:id (1 sets it, -1 forgets it) and calling:id (1: the story's hero takes it up, -1: it ends).
     /// </summary>
     public static readonly string[] EffectKeys =
-        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "grudge", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "esteem", "heroXp", "personal", "dismiss", "edge", "swell", "partyHurt", "rest", "slots", "loot", "partyLoyalty", "turnBack", "fine", "jail", "taint", "infamy", "exile", "goodwill", "goodwill2", "prosperity", "security", "contact", "band", "moves", "stir", "book", "lore", "recover", "minor", "egg", "ranger", "settle", "pact", "pactFavour", "weregild", "owed", "curse", "magicItem"];
+        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "grudge", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "esteem", "heroXp", "personal", "dismiss", "edge", "swell", "partyHurt", "rest", "slots", "loot", "partyLoyalty", "turnBack", "fine", "jail", "taint", "infamy", "exile", "goodwill", "goodwill2", "prosperity", "security", "contact", "band", "moves", "stir", "book", "lore", "recover", "minor", "egg", "ranger", "shelter", "settle", "pact", "pactFavour", "weregild", "owed", "curse", "magicItem"];
 
     /// <summary>
     /// Every need a story or option can name; besides these, precedent:id, decree:id, season:id and
@@ -448,7 +448,7 @@ public static class Stories
     /// chapter) and below:level (binds that undercity level while it is open and not cleared).
     /// </summary>
     public static readonly string[] Needs =
-        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "settlement", "route", "courted", "veteran", "fallen", "admirer", "aggrieved", "abroad", "stormbound", "homeward", "victorious", "lawbreaker", "famous", "infamous", "trouble", "contact", "band", "forge", "below", "library", "scholars", "remains", "minor", "egg", "eggHeld", "ranger", "sworn", "pactless", "bloodied", "owed", "cursed"];
+        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "settlement", "route", "courted", "veteran", "fallen", "admirer", "aggrieved", "abroad", "stormbound", "homeward", "victorious", "lawbreaker", "famous", "infamous", "trouble", "contact", "band", "forge", "below", "library", "scholars", "remains", "minor", "egg", "eggHeld", "ranger", "column", "sworn", "pactless", "bloodied", "owed", "cursed"];
 
     private static readonly string[] Prefixed = ["precedent:", "decree:", "season:"];
 
@@ -678,7 +678,7 @@ public static class Stories
         foreach (var d in r.Stories)
         {
             // Sendings come from parties on the road (Sendings.Hourly), and word of a lost company from its wipe (Lost), not the town.
-            if (Sendings.Is(d) || d.Source == LostSource || d.Source == FoundSource || d.Source == Powers.ContactSource || d.Source == Eggs.Source || d.Source == Poaching.Source) continue;
+            if (Sendings.Is(d) || d.Source == LostSource || d.Source == FoundSource || d.Source == Powers.ContactSource || d.Source == Eggs.Source || d.Source == Poaching.Source || d.Source == Refugees.Source) continue;
             if (open.Contains(d.Id) || town.Day < d.MinDay || town.Population < d.MinPopulation) continue;
             if (st.LastDay.Get(d.Id, -9999) + d.RepeatDays > town.Day) continue;
             if (Bind(town, d) is { } bound) fits.Add((d, bound));
@@ -923,7 +923,7 @@ public static class Stories
             case "hungry":
                 return town.Market.Price(Good.Food) >= town.Market.BasePrice(Good.Food) * 1.5;
             case "homeless":
-                return town.Workers.Count(a => a.HomeId == null) >= 3;
+                return town.Workers.Count(a => a.Homeless) >= 3;
             case "rich":
                 return town.Treasury >= 400;
             case "poor":
@@ -1092,6 +1092,8 @@ public static class Stories
                 return Eggs.Held(town);
             case "ranger":
                 return Poaching.Waiting(town);
+            case "column":
+                return Refugees.Waiting(town);
             case "scholars":
                 return town.Research.Study != null;
             case "fallen":
@@ -1504,6 +1506,9 @@ public static class Stories
                 case "ranger":
                     said.Add(Poaching.Decide(town, (int)v));
                     break;
+                case "shelter":
+                    said.Add(Refugees.Decide(town, (int)v));
+                    break;
                 case "recover":
                     if (v > 0 && s.SiteId is string lostAt && Remains.Post(town, lostAt) is { } rb)
                         said.Add($"a bounty of {Js.Str(rb.Reward)} gold to bring the fallen home");
@@ -1833,6 +1838,7 @@ public static class Stories
         Put("{trouble}", () => s.SettlementId is int stt && Neighbours.TroubleOf(town, town.Settlements[stt]) is { } td ? td.Name : "their trouble");
         Put("{contact}", () => s.ContactId is int ci && Neighbours.ContactById(town, ci) is { } cc ? cc.Name : "an old friend");
         Put("{memory}", () => s.ContactId is int cm && Neighbours.ContactById(town, cm) is { Memories.Count: > 0 } cmm ? cmm.Memories[^1] : "old kindnesses");
+        Put("{refugees}", () => Refugees.ColumnText(town));
         Put("{season}", () => Seasons.Current(town).Name.ToLowerInvariant());
         Put("{fallen}", () => s.FallenId is int fh ? town.Agent(fh).Name : "a fallen hero");
         Put("{fallenName}", () => s.FallenId is int fh ? town.Agent(fh).GivenName : "the fallen");

@@ -137,8 +137,8 @@ public static class Country
         if (f.Shape.Count >= 3) return f.Shape;
         var pts = new List<(double X, double Y)>();
         int n = Math.Max(4, (int)Math.Ceiling(f.Arc / 4));
-        for (int i = 0; i <= n; i++) pts.Add(Polar(f.Bearing - f.Arc / 2 + f.Arc * i / n, f.Outer));
-        for (int i = n; i >= 0; i--) pts.Add(Polar(f.Bearing - f.Arc / 2 + f.Arc * i / n, Math.Max(0.02, f.Inner)));
+        for (int i = 0; i <= n; i++) pts.Add(Roads.At(f, f.Bearing - f.Arc / 2 + f.Arc * i / n, f.Outer));
+        for (int i = n; i >= 0; i--) pts.Add(Roads.At(f, f.Bearing - f.Arc / 2 + f.Arc * i / n, Math.Max(0.02, f.Inner)));
         return pts;
     }
 
@@ -208,7 +208,7 @@ public static class Country
     /// <summary>The middle of a feature's outline, in days: where its name goes on the map.</summary>
     public static (double X, double Y) Middle(Feature f)
     {
-        if (f.Shape.Count < 3) return Polar(f.Bearing, (f.Inner + f.Outer) / 2);
+        if (f.Shape.Count < 3) return Roads.At(f, f.Bearing, (f.Inner + f.Outer) / 2);
         // The outline point nearest the average: a bent ridge's middle stays on the ridge.
         double mx = f.Shape.Average(p => p.X), my = f.Shape.Average(p => p.Y);
         if (InPolygon(f.Shape, mx, my)) return (mx, my);
@@ -660,6 +660,9 @@ public static class Country
         foreach (var f in town.Terrain) h = unchecked(h * 31 + f.Id * 17 + f.Shape.Count);
         return h;
     }
+
+    /// <summary>Drops the land grid: the country moved under it (<see cref="Founding.Settle"/>).</summary>
+    internal static void Forget(Town town) => Caches.Remove(town);
 
     /// <summary>The town's land grid, worked out again only when its country or crossings change.</summary>
     public static Land LandOf(Town town)

@@ -335,6 +335,7 @@ public static class TreasuryAccount
     public const string Notables = "Notables";
     public const string Patrols = "Patrols";
     public const string Buyouts = "Buyouts";
+    public const string Refugees = "Refugees";
     public const string Retainers = "Retainers";
 }
 
@@ -586,6 +587,12 @@ public sealed class Town
 
     /// <summary>The town's tier, its wards and what its households want (<see cref="Systems.City"/>).</summary>
     public CityState City { get; } = new();
+
+    /// <summary>Last night's guests at the inns and those camped outside town (<see cref="Systems.Lodging"/>).</summary>
+    public LodgingState Lodging { get; } = new();
+
+    /// <summary>The refugees the town has taken in or turned away, the column at the road and its haven fame (<see cref="Systems.Refugees"/>).</summary>
+    public RefugeeState Refuge { get; } = new();
     public Defenses Defenses { get; } = new();
 
     /// <summary>The town guard on the walls and the orders it holds (<see cref="Systems.Garrison"/>).</summary>
@@ -686,6 +693,19 @@ public sealed class Town
     /// <summary>Where the town was founded (founding.json id); null for the river ford, and in saves from before the choice (<see cref="Systems.Founding"/>).</summary>
     public string? Founding { get; set; }
 
+    /// <summary>The town sites New game pinned on the map, and who holds the ones passed over (<see cref="Systems.Founding.Spots"/>).</summary>
+    public List<Systems.FoundingSpot> FoundingSpots { get; } = [];
+
+    /// <summary>The bearing from a coastal town to its nearest ocean, worked out once (<see cref="Systems.Founding.Facing"/>).</summary>
+    [NotSaved] internal double? Shoreward;
+
+    /// <summary>
+    /// The world's heart in day units from the town (x east, y south): where the rings of country centre and the wilds are
+    /// mildest. (0, 0) when the town stands at it, as it always did before the player could choose (<see cref="Systems.Founding.Settle"/>).
+    /// </summary>
+    public double HeartX { get; set; }
+    public double HeartY { get; set; }
+
     /// <summary>The middle of the ocean's wedge of the map, in degrees, and its width; 0 wide for no ocean (<see cref="Systems.World.InOcean"/>).</summary>
     public double OceanBearing { get; set; }
     public double OceanArc { get; set; }
@@ -758,7 +778,8 @@ public sealed class Town
         get
         {
             int n = 0;
-            foreach (var a in Agents) if (!a.Departed) n++;
+            // Travellers looking the town over are guests, not residents, until they settle (Lodging).
+            foreach (var a in Agents) if (!a.Departed && !a.Traveller) n++;
             return n;
         }
     }

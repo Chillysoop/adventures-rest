@@ -85,6 +85,9 @@ public sealed record BuildingDef
 
     /// <summary>Townsfolk it holds at once on an outing (a tavern's drinkers, a shrine's worshippers, a bathhouse's bathers); 0 = it takes no visitors (<see cref="Systems.Crowds"/>).</summary>
     public int Capacity { get; init; }
+
+    /// <summary>Rooms it lets to travellers and adventurers for the night (<see cref="Systems.Lodging"/>); 0 = none.</summary>
+    public int Rooms { get; init; }
     public string? Profession { get; init; }
 
     /// <summary>A house of the gods: offerings and tithes fill its coffers, which the treasury never sweeps.</summary>
@@ -1777,6 +1780,12 @@ public sealed class Content
     /// <summary>How many fit in a tavern, shrine or bathhouse at once, and what the townsfolk do when it is full (content/game/crowds.json).</summary>
     public CrowdRules Crowds { get; init; } = new();
 
+    /// <summary>Rooms at the inns, travellers who stay a few nights to look the town over, and heroes who camp (content/game/lodging.json).</summary>
+    public LodgingRules Lodging { get; init; } = new();
+
+    /// <summary>Folk fleeing struck settlements and menaces, the camp they wait in and the haven fame of taking them in (content/game/refugees.json).</summary>
+    public Systems.RefugeeRules Refugees { get; init; } = new();
+
     /// <summary>Townsfolk's inspirations and breaks (content/game/moods.json).</summary>
     public MoodRules Moods { get; init; } = new();
 
@@ -2058,6 +2067,8 @@ public sealed class Content
             Crises = Parse<CrisisRules>("crises.json"),
             Tourney = Parse<TourneyRules>("tournaments.json"),
             Crowds = Parse<CrowdRules>("crowds.json"),
+            Lodging = Parse<LodgingRules>("lodging.json"),
+            Refugees = Parse<Systems.RefugeeRules>("refugees.json"),
             Moods = Parse<MoodRules>("moods.json"),
             Storytellers = Parse<StorytellerRules>("storytellers.json"),
             Founding = Parse<Systems.FoundingRules>("founding.json"),

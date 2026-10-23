@@ -175,6 +175,23 @@
       "ignored": { "text": "He leaves on the morning cart with a purse full of {town}'s coin.", "effects": { "mandate": -2 } }
     },
     {
+      "id": "refugee-column", "title": "Refugees at the road", "stakes": "high", "source": "refugees",
+      "needs": ["column"], "weight": 0,
+      "stages": [
+        { "id": "start",
+          "text": "{refugees} have stopped on the road outside {town}: families with handcarts, the old on mules, children carrying what they could. They ask for a place to pitch their tents until they can build again. The council waits on the mayor's word.",
+          "options": [
+            { "label": "Take them all in", "tags": ["mercy", "generous"], "prefer": 0.3,
+              "success": { "text": "The gates open, and the town carries bread out to the road.", "effects": { "shelter": 1 } } },
+            { "label": "Take the ones we can feed", "tags": ["caution", "coin"],
+              "success": { "text": "Half of them come in. The rest go on, looking back.", "effects": { "shelter": 2 } } },
+            { "label": "Turn them away", "tags": ["harsh", "coin"],
+              "success": { "text": "The watch bars the road. The column turns, slowly, and goes on.", "effects": { "shelter": 3 } } }
+          ] }
+      ],
+      "ignored": { "text": "Nobody says no, so they pitch their tents by the road and stay.", "effects": { "shelter": 1, "mandate": -1 } }
+    },
+    {
       "id": "dark-ranger", "title": "The dark ranger", "stakes": "high", "source": "ranger",
       "needs": ["ranger"], "weight": 0,
       "stages": [

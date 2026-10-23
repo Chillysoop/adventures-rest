@@ -22,6 +22,7 @@ public partial class Main
         "sickness" => ("sickness", new Color("9cb85a")),
         "dark" => ("dark-company", new Color("a68ad8")),
         "victory" => ("ui-star", Ui.Good),
+        "haven" => ("homeless", Ui.Good),
         _ => ("ui-info", Ui.Ink2),
     };
 
@@ -102,6 +103,7 @@ public partial class RecordsChart(List<float> values, List<int> days, List<(int 
         "sickness" => "sickness at",
         "dark" => "the dark company rides:",
         "victory" => "broke",
+        "haven" => "known as",
         _ => "",
     };
 

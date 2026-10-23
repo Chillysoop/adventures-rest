@@ -132,8 +132,8 @@ public static class Population
         }
         double foodPrice = town.Market.Price(Good.Food);
         var res = town.Workers;
-        int homeless = res.Count(x => x.HomeId == null);
-        int idle = res.Count(x => x.JobId == null);
+        int homeless = res.Count(x => x.Homeless);
+        int idle = res.Count(x => x.JobId == null && !x.Traveller);
 
         double jobs = 0.06 * openJobs, beds = 0.04 * openBeds, building = 0.05 * sites, bread = foodPrice > 1.8 ? 0.4 : 0;
         double roofless = 0.04 * homeless, workless = 0.06 * idle;
@@ -145,6 +145,9 @@ public static class Population
         // A young town is a chance at cheap land: the frontier draws settlers until the town is a proper village.
         double frontier = town.Content.Rules.FrontierDraw * Math.Max(0, 1 - town.Population / town.Content.Rules.FrontierSize);
         attraction += frontier;
+        // A haven's name travels: the roads bring hopefuls to a town known to take people in.
+        double haven = Refugees.Appeal(town);
+        attraction += haven;
         // Settlers want land to build on: with no residential lot zoned and for sale, fewer come.
         double land = Planning.VacantZoned(town, Zone.Residential) == 0 ? 0.15 : 0;
         if (land > 0) attraction -= land;
@@ -167,6 +170,7 @@ public static class Population
         Add("The town's institutions", institutions);
         Add("Unrest over neglected services", unrest);
         Add("Cheap land in a young town", frontier);
+        Add($"Known as {Refugees.Title(town)}", haven);
         Add("No zoned home lots for sale", -land);
         return new(attraction, parts);
     }
@@ -189,8 +193,8 @@ public static class Population
 
         for (int g = 0; g < groups; g++)
         {
-            if (rng.Chance(0.3)) ArriveCouple(town);
-            else ArriveSingle(town);
+            if (rng.Chance(0.3)) ArriveCouple(town, true);
+            else ArriveSingle(town, true);
         }
     }
 
@@ -216,23 +220,38 @@ public static class Population
         return -gone;
     }
 
-    private static void ArriveSingle(Town town)
+    /// <summary>
+    /// Newcomers off the road come as travellers (<see cref="Lodging"/>): they stay some nights to look the town over, fewer
+    /// when every room is taken, and settle only if they find their feet. Settlers a story sends come to stay.
+    /// </summary>
+    private static string Stay(Town town, IEnumerable<Agent> party, bool traveller)
+    {
+        if (!traveller) return "";
+        var r = Lodging.Rules(town);
+        bool room = Lodging.Rooms(town) > town.Lodging.Guests;
+        int nights = room ? town.Rng.Range(r.StayLeast, r.StayMost + 1) : r.CampStay;
+        foreach (var a in party) Lodging.Arrive(town, a, nights);
+        return room ? ", and takes a room to look the town over" : ", and camps by the road for want of a room";
+    }
+
+    private static void ArriveSingle(Town town, bool traveller = false)
     {
         var a = CreateAgent(town);
+        string stay = Stay(town, [a], traveller);
         if (a.Ambition == Ambition.OpenBusiness)
         {
             string dream = a.DreamBusiness != null
                 ? $"dreaming of opening {Agent.Article(town.Content.Building(a.DreamBusiness).Name)} {town.Content.Building(a.DreamBusiness).Name.ToLowerInvariant()}"
                 : "looking for a business to buy into";
-            town.Log(LedgerCategory.Arrival, Importance.Notable, $"{a.Describe()}, rides in with {Js.ToFixed(a.Gold, 0)} gold, {dream}.", [a.Id]);
+            town.Log(LedgerCategory.Arrival, Importance.Notable, $"{a.Describe()}, rides in with {Js.ToFixed(a.Gold, 0)} gold, {dream}{stay}.", [a.Id]);
         }
         else
         {
-            town.Log(LedgerCategory.Arrival, Importance.Routine, $"{a.Describe()}, arrives looking for work. ({a.TraitList()})", [a.Id]);
+            town.Log(LedgerCategory.Arrival, Importance.Routine, $"{a.Describe()}, arrives looking for work{stay}. ({a.TraitList()})", [a.Id]);
         }
     }
 
-    private static void ArriveCouple(Town town)
+    private static void ArriveCouple(Town town, bool traveller = false)
     {
         var a = CreateAgent(town);
         string raceId = town.Content.Races.First(r => r.Name == a.Race).Id;
@@ -242,10 +261,11 @@ public static class Population
         a.ChangeOpinion(b.Id, 70);
         b.ChangeOpinion(a.Id, 70);
         double pooled = a.Gold + b.Gold;
+        string stay = Stay(town, [a, b], traveller);
         town.Log(
             LedgerCategory.Arrival,
             Importance.Routine,
-            $"The {a.FamilyName} family arrives by cart: {a.GivenName} the {a.Profession} and {b.GivenName} the {b.Profession}, with {Js.ToFixed(pooled, 0)} gold between them.",
+            $"The {a.FamilyName} family arrives by cart: {a.GivenName} the {a.Profession} and {b.GivenName} the {b.Profession}, with {Js.ToFixed(pooled, 0)} gold between them{stay.Replace(", and takes a room", ", and take a room").Replace(", and camps", ", and camp")}.",
             [a.Id, b.Id]);
     }
 
@@ -254,7 +274,10 @@ public static class Population
     {
         foreach (var a in town.Residents)
         {
-            if (a.Departed || a.MiserableDays < 4) continue;
+            // Travellers make up their own minds (Lodging.Decide).
+            if (a.Departed || a.Traveller || a.MiserableDays < 4) continue;
+            // Those who fled here and found a roof or work have nowhere else: they stay, however hard it is.
+            if (a.Refugee && (a.HomeId != null || a.JobId != null)) continue;
             string reason = WorstComplaint(a);
             Depart(town, a);
             string withName = "";

@@ -666,6 +666,13 @@ public partial class Main
         if (a.HedgeSpell != "" && t.Content.Research.Hedge.Trade(a.HedgeSpell) is { } hedge)
             p.Text($"{Tag(Ui.Cap(hedge.Name), Ui.Gold)} {Ui.C(Ui.Ink2, $"[font_size=12]Hedge mage: {Ui.Esc(hedge.Spell)}{(HedgeMages.Working(t, a) == null ? ", though not at their own trade now" : "")}.[/font_size]")}", 13);
         if (a.SpouseId is int sp) p.Text($"Married to {AgentLink(t.Agent(sp))}");
+        if (a.Refugee)
+        {
+            string from = a.RefugeeFrom is int rf ? t.Settlements[rf].Name : "their home";
+            p.Text(a.Traveller
+                ? Ui.Chip("homeless", $"Fled {Ui.Esc(from)} · {Ui.Days(Math.Max(0, a.StayUntil - t.Day))}", Ui.Gold, "A refugee in the camp: a home, work or land of their own and they stay for good")
+                : Ui.Chip("ui-house", $"Fled {Ui.Esc(from)}", Ui.Good, "Found a home here, and stays for good"), 13);
+        }
         if (a.Hero == null && Taverns.Persona(t, a) is { } persona)
             p.Text(Ui.C(Ui.Ink2, $"[font_size=12]In their cups: {Ui.Esc(persona.Name)}{(Taverns.Drunk(t, a) != null ? ", and it shows tonight" : "")}.[/font_size]"), 12);
         InspectSheet(p, t, a);
@@ -820,6 +827,13 @@ public partial class Main
                 ? Ui.C(Ui.Bad, $"Yesterday it filled to {b.PeakLast} and turned townsfolk away {b.TurnedAwayLast} times; they went elsewhere or home. Another of its kind nearby would take the crowd.")
                 : $"Busiest yesterday: {b.PeakLast}/{b.Def.Capacity}.";
             p.Text($"{now}\n{last}");
+        }
+        if (b.Def.Rooms > 0 && b.Complete)
+        {
+            var guests = t.Agents.Where(a => !a.Departed && a.InnId == b.Id).Select(a => a.Id).ToList();
+            bool full = guests.Count >= b.Def.Rooms;
+            p.Text($"Rooms {guests.Count}/{b.Def.Rooms}" + (full ? Ui.C(Ui.Bad, " · full") : "") + (guests.Count > 0 ? $"\nGuests: {People(guests)}" : ""));
+            if (full && t.Lodging.Camped > 0) p.Note($"{t.Lodging.Camped} camping outside town. Heroes ride on after {t.Content.Lodging.CampNights} nights; another inn takes them.");
         }
         if (b.Def.Housing > 0 && Decor.Comfort(t, b) is double comfort && Math.Abs(comfort) >= 0.005)
             p.Text(comfort > 0

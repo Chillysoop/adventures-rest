@@ -22,6 +22,7 @@ public partial class Main
 
         p.Page("Growth", "ui-up");
         RenderSeason(p, t);
+        RenderRefugees(p, t);
         RenderSettlers(t, p);
 
         var next = City.NextTier(t);
@@ -275,6 +276,35 @@ public partial class Main
             (q ? "Open" : "Close", true, !q, () => Act(() => _sim.Quarantine(!q))));
         var shown = sick.OrderBy(b => b.Id).First();
         p.Buttons(("Show", true, false, () => LookAtBuilding(shown)));
+    }
+
+    /// <summary>The refugee camp by the road: who waits, who found their feet, who was turned away, and the town's haven name.</summary>
+    private void RenderRefugees(Pane p, Town t)
+    {
+        var st = t.Refuge;
+        var camp = Refugees.Camped(t).ToList();
+        if (camp.Count == 0 && st.Sheltered == 0 && st.TurnedAway == 0) return;
+        var r = t.Content.Refugees;
+        p.Heading("Refugees", "homeless");
+        string title = Refugees.Title(t);
+        if (title != "") p.Text(Ui.Chip("ui-renown", Ui.Cap(title), Ui.Gold, "Haven fame: more refugees choose the town, and settlers come sooner"), 13);
+        int soonest = camp.Count == 0 ? 0 : camp.Min(a => a.StayUntil) - t.Day;
+        p.Text(Ui.Chips(
+            Ui.Chip("homeless", $"{camp.Count}", null, "In the camp by the road"),
+            Ui.Chip("ui-house", $"{st.Settled}", Ui.Good, "Settled for good"),
+            Ui.Chip("ui-person", $"{st.WentHome}", Ui.Ink2, "Went home to rebuild"),
+            Ui.Chip("ui-skull", $"{st.TurnedAway + st.GaveUp}", Ui.Bad, "Turned away or gave up waiting")), 13);
+        foreach (var l in st.Lost.Where(l => !l.Retaken).OrderBy(l => l.Day))
+            if (Quests.Site(t, l.SiteId) is { } lostTo)
+                p.Text(Ui.Tip($"{Ui.Img("ui-house", 14)} {Ui.Esc(t.Settlements[l.From].Name)} {Ui.C(Ui.Bad, "←")} {Ui.Esc(lostTo.Def.Name)}",
+                    "Their lost home. Clear the site and those still in the camp go home and rebuild; the village comes back as a friend."), 13);
+        if (camp.Count > 0)
+            p.Text(string.Join("\n", new[] {
+                Ui.Tip($"{Ui.Img("ui-time", 14)} Soonest leaves in {Ui.Days(Math.Max(0, soonest))}", $"They wait {r.Patience.Least} days, a day more for each day homes or workplaces are going up, up to {r.Patience.Most}."),
+                Ui.Tip($"{Ui.Img("food", 14)} The council feeds those with no coin", "Rations come out of the treasury; with an empty treasury they go hungry and leave sooner."),
+                camp.Count >= r.CrowdAt
+                    ? Ui.Tip(Ui.C(Ui.Bad, $"{Ui.Img("sickness", 14)} Crowded: grumbling, fever risk"), "A temple, shrine or bathhouse and full bellies keep it down. Homes and work empty the camp.")
+                    : "" }.Where(x => x != "")), 13);
     }
 
     /// <summary>Why settlers come or stay away: each reason with its sign, as the arrivals roll counts it.</summary>

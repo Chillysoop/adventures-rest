@@ -197,7 +197,7 @@ public partial class Main : Control
                 _opts.Look ??= face.Top;
             else if (_sim.Town.Terrain.FirstOrDefault(f => f.Kind.Wonder?.Kind == wk) is { } wf)
             {
-                _opts.Look ??= Map.Geo.FromDays((wf.Inner + wf.Outer) / 2 * Math.Sin(wf.Bearing * Math.PI / 180), -(wf.Inner + wf.Outer) / 2 * Math.Cos(wf.Bearing * Math.PI / 180));
+                _opts.Look ??= Map.Geo.FromDays(Sim.Systems.Roads.Middle(wf));
             }
         }
         if (_opts.Cam is float cam)
@@ -221,6 +221,12 @@ public partial class Main : Control
             float sx = 0, sy = 0;
             for (int i = 0; i < sq.Points.Length; i += 2) (sx, sy) = (sx + (float)sq.Points[i], sy + (float)sq.Points[i + 1]);
             _map.LookAt(new Vector2(Map.Geo.Margin + sx * 2 / sq.Points.Length, Map.Geo.Margin + sy * 2 / sq.Points.Length), _opts.Cam ?? 9);
+        }
+        // --zone camp aims at the camp outside town, where those without a roof pitch tents.
+        else if (_opts.Zone == "camp")
+        {
+            var (cx, cy) = Lodging.Camp(_sim.Town);
+            _map.LookAt(new Vector2(Map.Geo.Margin + (float)cx, Map.Geo.Margin + (float)cy), _opts.Cam ?? 7);
         }
         else if (_opts.Zone is string zn && Enum.TryParse<Zone>(zn, true, out var zone))
         {
@@ -274,6 +280,11 @@ public partial class Main : Control
         }
         foreach (var adv in _opts.Advances) _sim.AdvanceMayor(adv);
         if (_opts.Inspiration is int insp) _sim.Town.Stories.Mayor.Inspiration = insp;
+        if (_opts.Refugees is int fled && _sim.Town.Settlements.FirstOrDefault(s => !s.Razed) is { } fledFrom)
+        {
+            Refugees.Flee(_sim.Town, fledFrom, null, [fled, fled]);
+            if (Refugees.Waiting(_sim.Town)) Refugees.Decide(_sim.Town, 1);
+        }
         if (_opts.Story is string story && OpenScripted(story) is { } opened)
         {
             OpenStory(opened.Id);
@@ -387,6 +398,12 @@ public partial class Main : Control
     {
         var t = _sim.Town;
         if (t.Content.Stories.Story(id) is { Source: Powers.ContactSource }) return Powers.OpenContact(t, id);
+        // A column of refugees at the road, from the nearest village.
+        if (id == Refugees.StoryId)
+        {
+            if (!Refugees.Waiting(t) && t.Settlements.FirstOrDefault(s => !s.Razed) is { } from) Refugees.Flee(t, from, null, [14, 14]);
+            return t.Stories.Open.FirstOrDefault(s => s.Def == id);
+        }
         if (t.Content.Stories.Story(id) is not { } d || !Sendings.Is(d)) return Stories.Open(t, id);
         // Wait (up to a few days) for a party on the road far enough from its site.
         for (int hour = 0; hour < 24 * 6; hour++)
@@ -489,12 +506,12 @@ public partial class Main : Control
 
     // ---------- Game ----------
 
-    private void NewTown(int seed, bool autoplay = false, string? storyteller = null, string? founding = null, MayorRoll? mayor = null, bool hardcore = false, string? townName = null)
+    private void NewTown(int seed, bool autoplay = false, string? storyteller = null, string? founding = null, MayorRoll? mayor = null, bool hardcore = false, string? townName = null, (double X, double Y)? home = null)
     {
         RememberLegends();
         // With --autoplay the stand-in mayor keeps playing, for demos and screenshots; only a player's towns meet old legends.
         var legends = autoplay ? [] : ProfileLegends();
-        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoArmory = autoplay && !_opts.KeepArmory, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay && _opts.Tax == null, AutoHonours = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay, AutoStories = autoplay, AutoExplore = autoplay && !_opts.Find, Legends = legends, Storyteller = storyteller ?? _opts.Storyteller ?? "rising", Boons = autoplay ? [.. _opts.Boons] : ChosenBoons(), Endless = _opts.Endless || (!autoplay && _endless), Founding = founding ?? _opts.Founding ?? "", Mayor = mayor, Hardcore = hardcore || _opts.Hardcore, TownName = townName ?? _opts.TownName }));
+        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoArmory = autoplay && !_opts.KeepArmory, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay && _opts.Tax == null, AutoHonours = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay, AutoStories = autoplay, AutoExplore = autoplay && !_opts.Find, Legends = legends, Storyteller = storyteller ?? _opts.Storyteller ?? "rising", Boons = autoplay ? [.. _opts.Boons] : ChosenBoons(), Endless = _opts.Endless || (!autoplay && _endless), Founding = founding ?? _opts.Founding ?? "", HomeX = home?.X ?? _opts.Home?.X, HomeY = home?.Y ?? _opts.Home?.Y, Mayor = mayor, Hardcore = hardcore || _opts.Hardcore, TownName = townName ?? _opts.TownName }));
     }
 
     /// <summary>Show a town: a new one, or one loaded from a save.</summary>

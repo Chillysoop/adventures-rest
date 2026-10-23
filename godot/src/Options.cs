@@ -88,6 +88,12 @@ public sealed class Options
 
     /// <summary>--founding id: where a new town is founded (founding.json); --sites shows New game's choice of sites.</summary>
     public string? Founding;
+
+    /// <summary>--home x,y: where on the map a new town is founded, in days from the world's heart (x east, y south).</summary>
+    public (double X, double Y)? Home;
+
+    /// <summary>--site-hover x,y: with --sites, the spot New game's map shows the pointer over (days from the heart).</summary>
+    public (double X, double Y)? SiteHover;
     public bool Sites;
     /// <summary>--new-mayor: the main menu on New game's mayor sheet, rolled, for shots.</summary>
     public bool NewMayor;
@@ -132,6 +138,9 @@ public sealed class Options
 
     /// <summary>--folk: select the most practised townsperson, for a look at their character sheet.</summary>
     public bool Folk;
+
+    /// <summary>--refugees N: N refugees from the nearest village take their tents by the road on load (camp shots).</summary>
+    public int? Refugees;
 
     /// <summary>--skirmish [gear][,kind]: the town's heroes, one of each class, fight a ring of raiders by the square (for shots); "gear" hands them famous magic arms a moment in; kind picks the foes (undead, cult, rivals, schemers, beasts, dragon; orcs by default).</summary>
     public string? Skirmish;
@@ -293,6 +302,18 @@ public sealed class Options
                 case "--storyteller": o.Storyteller = Next(); break;
                 case "--storytellers": o.Storytellers = o.Title = true; break;
                 case "--founding": o.Founding = Next(); break;
+                case "--home":
+                {
+                    var spot = Next().Split(',');
+                    if (spot.Length == 2 && double.TryParse(spot[0], System.Globalization.CultureInfo.InvariantCulture, out var hx) && double.TryParse(spot[1], System.Globalization.CultureInfo.InvariantCulture, out var hy)) o.Home = (hx, hy);
+                    break;
+                }
+                case "--site-hover":
+                {
+                    var spot = Next().Split(',');
+                    if (spot.Length == 2 && double.TryParse(spot[0], System.Globalization.CultureInfo.InvariantCulture, out var sx) && double.TryParse(spot[1], System.Globalization.CultureInfo.InvariantCulture, out var sy)) o.SiteHover = (sx, sy);
+                    break;
+                }
                 case "--sites": o.Sites = o.Title = true; break;
                 case "--new-mayor": o.NewMayor = o.Title = true; break;
                 case "--mayor-sheet": o.MayorSheet = true; o.Tab = "Mayor"; break;
@@ -312,6 +333,7 @@ public sealed class Options
                 case "--tutorial": o.Tutorial = Next(); break;
                 case "--hero": o.Hero = true; break;
                 case "--folk": o.Folk = true; break;
+                case "--refugees": o.Refugees = int.Parse(Next()); break;
                 case "--skirmish": o.Skirmish = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
                 case "--rolls": o.Rolls = true; break;
                 case "--delve": o.Delve = true; break;

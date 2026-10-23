@@ -56,7 +56,7 @@ public class SkyTests
         Assert.All(t.Sites.Where(s => s.RegionId == region.Id && !s.Cleared), s => Assert.Equal(SiteKnowledge.Confirmed, s.Known));
         // It charts the line it flew and the land round its end, so the map lifts the fog there.
         var chart = Assert.Single(t.Charts, c => c.RegionId == region.Id);
-        Assert.Equal(Sky.Middle(region), (chart.ToX, chart.ToY));
+        Assert.Equal(Sky.Middle(t, region), (chart.ToX, chart.ToY));
         Assert.InRange(chart.Radius, 0.3, t.Content.Sky.ChartMost);
         Assert.All(t.Sites.Where(s => s.RegionId == region.Id && !s.Cleared), s => Assert.NotNull(s.FoundTick));
         // The riggers charge it again at the dock.

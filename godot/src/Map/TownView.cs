@@ -258,6 +258,7 @@ public partial class TownView(MapView map) : Node3D
         {
             case "sign": kit.Add("nature/sign", MeshKit.At(0, 0, 0, 0, 0.7f)); break;
             case "tavern": Tavern(kit, v); break;
+            case "inn": Inn(kit, v); break;
             case "town_hall": Hall(kit, v); break;
             case "farm": Farm(kit, v); break;
             case "root_farm": RootFarm(kit, v); break;
@@ -661,6 +662,34 @@ public partial class TownView(MapView map) : Node3D
         k.Add("town/lantern", MeshKit.At(-1.3f, 0, 1.25f, 0, 0.8f));
         k.Box(new Vector3(-1.3f, 1.2f, 1.25f), new Vector3(0.1f, 0.1f, 0.1f), new Color("ffcf7a", MeshKit.Flag.Window));
         k.Add("town/stall-bench", MeshKit.At(0.9f, 0, 1.45f, Mathf.Pi / 2, 0.9f));
+        k.Pop();
+    }
+
+    /// <summary>An inn: three storeys of rooms over a stone ground floor, a hanging sign and a stable lean-to for the guests' horses.</summary>
+    private static void Inn(MeshKit k, int v)
+    {
+        k.Push(MeshKit.At(0.1f, 0, -0.1f, 0, Fit(3, 3, 0.92f)));
+        Walls(k, 3, 2, 0, true, v + 7, true);
+        Walls(k, 3, 2, 1, false, v + 9, false);
+        Walls(k, 3, 2, 2, false, v + 11, false);
+        k.Push(MeshKit.At(0, 3, 0));
+        k.Gable(0, 3, 2, 1.3f, new Color("6e4a2e"), Palette.Plaster, 0.12f);
+        k.Pop();
+        Chimney(k, -1.0f, 3, -0.3f, true);
+        Chimney(k, 1.0f, 3, 0.3f, false);
+        // The sign on its bracket over the door, and a lamp to find it by at night.
+        k.Box(new Vector3(-0.6f, 1.55f, 1.25f), new Vector3(0.05f, 0.05f, 0.5f), new Color("4a3424"));
+        k.Box(new Vector3(-0.6f, 1.25f, 1.42f), new Vector3(0.04f, 0.4f, 0.32f), new Color("c89a3a"));
+        k.Add("town/lantern", MeshKit.At(0.6f, 0, 1.2f, 0, 0.8f));
+        k.Box(new Vector3(0.6f, 1.2f, 1.2f), new Vector3(0.1f, 0.1f, 0.1f), new Color("ffcf7a", MeshKit.Flag.Window));
+        // The stable: a lean-to on posts at the side, hay inside.
+        k.Box(new Vector3(-1.95f, 0, 0.6f), new Vector3(0.9f, 0.05f, 1.3f), new Color("6a5638"));
+        foreach (float z in new[] { 0.05f, 1.15f })
+            k.Box(new Vector3(-2.3f, 0, z), new Vector3(0.08f, 0.9f, 0.08f), new Color("4a3424"));
+        k.Push(MeshKit.At(-1.95f, 0.9f, 0.6f, Mathf.Pi / 2));
+        k.Gable(0, 1.3f, 0.9f, 0.35f, new Color("8a6a3a"), new Color("6a5638"), 0.05f);
+        k.Pop();
+        k.Box(new Vector3(-1.95f, 0.05f, 0.6f), new Vector3(0.5f, 0.3f, 0.5f), new Color("d8b45a"));
         k.Pop();
     }
 
@@ -2692,8 +2721,8 @@ public partial class TownView(MapView map) : Node3D
             if (f.Kind.Wonder is not { } w) continue;
             string id = $"wonder:{f.Id}";
             if (_landmarks.ContainsKey(id)) continue;
-            double mid = (f.Inner + f.Outer) / 2, b = f.Bearing * Math.PI / 180;
-            var at = Geo.FromDays(mid * Math.Sin(b), -mid * Math.Cos(b));
+            double b = f.Bearing * Math.PI / 180;
+            var at = Geo.FromDays(Roads.Middle(f));
             var mi = new MeshInstance3D { Mesh = WonderMesh(w.Kind, Geo.Hash(StableHash(id))), MaterialOverride = Mats.Props };
             AddChild(mi);
             _landmarks[id] = mi;

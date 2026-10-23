@@ -55,6 +55,7 @@ public class BroadsheetTests
         for (int i = 0; i < 12 && !exposed; i++)
         {
             double before = t.Mandate = 40;
+            t.Treasury = Math.Max(t.Treasury, 5000);
             Assert.Null(sim.SlantBroadsheet("praise"));
             sim.RunDays(Broadsheet.NextDay(t) - t.Day + 1);
             exposed = Broadsheet.Latest(t)!.Exposed;

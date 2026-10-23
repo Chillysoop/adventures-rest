@@ -283,11 +283,7 @@ public static class Lofted
     public static bool Away(Town town) => Aloft(town) && (town.Lofted.ToX != 0 || town.Lofted.ToY != 0 || Sailing(town));
 
     /// <summary>A region's middle, in day units from the town.</summary>
-    public static (double X, double Y) Spot(Region g)
-    {
-        double a = g.Bearing * Math.PI / 180;
-        return (g.Days * Math.Sin(a), -g.Days * Math.Cos(a));
-    }
+    public static (double X, double Y) Spot(Town town, Region g) => World.Middle(town, g);
 
     /// <summary>Why the city can't sail there now, or null.</summary>
     public static string? SailBlocked(Town town, int regionId)
@@ -307,7 +303,7 @@ public static class Lofted
         var st = town.Lofted;
         var scope = Rules(town).Scope(City(town)!.Def.Id) ?? new LoftedScopeDef();
         var from = Pos(town);
-        var to = regionId < 0 ? (0.0, 0.0) : Spot(town.Regions[regionId]);
+        var to = regionId < 0 ? (0.0, 0.0) : Spot(town, town.Regions[regionId]);
         double dist = Math.Sqrt((to.Item1 - from.X) * (to.Item1 - from.X) + (to.Item2 - from.Y) * (to.Item2 - from.Y));
         // The same winds as the town's airships (Sky.FlightDays): sailing with the season's wind is quicker.
         double heading = (Math.Atan2(to.Item1 - from.X, -(to.Item2 - from.Y)) * 180 / Math.PI + 360) % 360;

@@ -187,7 +187,6 @@ public sealed class WorldGen
         _ => null,
     };
 
-
     /// <summary>
     /// The feature a point lies in and how deep inside it (0 at a ragged edge to 1 a few tiles in), or
     /// null. Edges wander with noise so a ridge or a mire never reads as a ruled shape.
@@ -492,7 +491,7 @@ public sealed class WorldGen
         }
         // Sites, and the strange places and gateway arches of the wilds (Wayfaring), stand in clearings of their own.
         var pins = geo.Pins.Values
-            .Concat(_town.Terrain.Where(t => t.Kind.Wonder != null).Select(t => Geo.FromDays((t.Inner + t.Outer) / 2 * Math.Sin(t.Bearing * Math.PI / 180), -(t.Inner + t.Outer) / 2 * Math.Cos(t.Bearing * Math.PI / 180))))
+            .Concat(_town.Terrain.Where(t => t.Kind.Wonder != null).Select(t => Geo.FromDays(Roads.Middle(t))))
             .Concat(_town.Gateways.SelectMany(g => new[] { Geo.FromDays(g.Ax, g.Ay), Geo.FromDays(g.Bx, g.By) }))
             .ToArray();
         int count = 0;

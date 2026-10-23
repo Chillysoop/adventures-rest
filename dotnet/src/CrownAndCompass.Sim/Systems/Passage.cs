@@ -255,6 +255,9 @@ public static class Passage
 
     private static Cache Store(Town town) => Caches.GetValue(town, _ => new Cache());
 
+    /// <summary>Drops what was worked out for the town, once the world moves under it (<see cref="Founding.Settle"/>).</summary>
+    internal static void Forget(Town town) => Caches.Remove(town);
+
     private static string Key(Town town)
     {
         var d = town.Defenses;
