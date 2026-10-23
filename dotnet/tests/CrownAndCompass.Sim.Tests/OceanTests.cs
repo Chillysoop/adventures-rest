@@ -73,7 +73,8 @@ public class OceanTests
         var w = sim.Town.Content.World.Ocean.City;
         var c = sim.Town.Settlements.Single(s => s.Kin.Grows > 0);
         sim.RunDays(200);
-        var plain = new Settlement { Id = c.Id, Name = c.Name, Kin = c.Kin with { Grows = 0 }, RegionId = c.RegionId, Standing = c.Standing, Security = c.Security, Trouble = c.Trouble };
+        var plain = new Settlement { Id = c.Id, Name = c.Name, Kin = c.Kin with { Grows = 0 }, RegionId = c.RegionId, Standing = c.Standing, Security = c.Security, Trouble = c.Trouble, Allied = c.Allied, Shadow = c.Shadow };
+        plain.Projects.AddRange(c.Projects);
         double lift = Neighbours.ProsperityTarget(sim.Town, c) - Neighbours.ProsperityTarget(sim.Town, plain);
         Assert.Equal(w.Prosperity - sim.Town.Content.Neighbours.Prosperity.Base + c.Kin.Grows * sim.Town.Day, lift, 6);
     }
