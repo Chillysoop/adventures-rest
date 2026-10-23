@@ -145,7 +145,21 @@ public static class Alchemy
 
     /// <summary>Measures of an ingredient to hand: herbs from the market's stock, parts from the alchemists' stores.</summary>
     public static int Stock(Town town, AlchemyIngredientDef i) =>
-        i.Herb ? (int)Math.Floor(town.Market.Stock(Good.Herbs) / Rules(town).Herbs) : town.Alchemy.Parts.Get(i.Id, 0);
+        i.Herb ? (int)Math.Floor(town.Market.Stock(Good.Herbs) / Rules(town).Herbs) : town.Alchemy.Parts.Get(i.Id, 0) + Trophies(town, i).Sum(t => t.N);
+
+    /// <summary>The ingredient a kind of monster part counts as in the pot, by the creature types it comes from, or null.</summary>
+    public static AlchemyIngredientDef? IngredientOf(Town town, TrophyDef t) =>
+        Rules(town).Ingredients.FirstOrDefault(i => !i.Herb && i.Types.Any(t.Types.Contains));
+
+    /// <summary>The parts in the town's stores (<see cref="Spoils"/>) that serve as this ingredient, cheapest first.</summary>
+    private static List<(string Id, int N)> Trophies(Town town, AlchemyIngredientDef i)
+    {
+        var spoils = town.Content.Spoils;
+        return town.Spoils.Trophies
+            .Where(p => p.Value > 0 && spoils.Trophy(p.Key) is { } t && IngredientOf(town, t)?.Id == i.Id)
+            .OrderBy(p => spoils.Trophy(p.Key)!.Value).ThenBy(p => p.Key, StringComparer.Ordinal)
+            .Select(p => (p.Key, p.Value)).ToList();
+    }
 
     /// <summary>What a mix lends a brew, in the properties' order.</summary>
     public static OrderedMap<string, int> Mix(Town town, IReadOnlyList<string> ids)
@@ -247,8 +261,13 @@ public static class Alchemy
             town.Market.Take(Good.Herbs, herbs);
             town.Book(TreasuryAccount.Alchemy, -cost);
         }
+        // Parts come from the alchemists' own stores first, then from what companies brought home (the cheapest first).
         foreach (var id in ids)
-            if (r.Ingredient(id) is { Herb: false }) a.Parts[id] = a.Parts.Get(id, 0) - 1;
+            if (r.Ingredient(id) is { Herb: false } part)
+            {
+                if (a.Parts.Get(id, 0) > 0) a.Parts[id] = a.Parts.Get(id, 0) - 1;
+                else if (Trophies(town, part).FirstOrDefault() is { Id: not null } t) Spoils.Use(town, t.Id, 1);
+            }
         var brewer = Brewer(town);
         string who = brewer?.Name ?? "The town's alchemist";
         IReadOnlyList<int>? tag = brewer?.Id is int bid ? [bid] : null;

@@ -94,6 +94,10 @@ public sealed record SpoilsRules
     /// <summary>The stand-in mayor sells parts over this many of a kind.</summary>
     public int AutoKeep { get; init; } = 12;
 
+    /// <summary>Each open trade road adds this share to what the caravans pay for parts, up to <see cref="RouteMost"/> roads.</summary>
+    public double RouteShare { get; init; } = 0.1;
+    public int RouteMost { get; init; } = 5;
+
     private HashSet<string>? _signature;
 
     /// <summary>Whether the item only drops from the foes its drop names.</summary>
@@ -130,6 +134,9 @@ public sealed class CraftOrder
 
     /// <summary>Gold paid for it, given back if it's called off (0 on orders saved before it was kept: the recipe's price).</summary>
     public double Paid { get; init; }
+
+    /// <summary>The hero who ordered it with their own gold; it goes to them, not the armory.</summary>
+    public int? ForId { get; init; }
 }
 
 public sealed class SpoilsState
@@ -320,13 +327,24 @@ public static class Spoils
         int have = town.Spoils.Trophies.Get(trophyId, 0);
         n = Math.Min(n, have);
         if (t == null || n <= 0) return 0;
-        double gold = Math.Floor(n * t.Value * Rules(town).SellShare);
+        double gold = Math.Floor(n * Price(town, t));
         Take(town, trophyId, n);
         town.Book(TreasuryAccount.Armory, gold);
         town.Spoils.Sold += gold;
-        town.Log(LedgerCategory.Town, Importance.Routine, $"The town sells {Count(t, n)} to the caravans for {Js.Str(gold)} gold.");
+        int roads = Math.Min(Rules(town).RouteMost, Trade.Open(town).Count());
+        town.Log(LedgerCategory.Town, Importance.Routine, $"The town sells {Count(t, n)} to the caravans for {Js.Str(gold)} gold{(roads > 0 ? $", carried down {roads} trade {(roads == 1 ? "road" : "roads")}" : "")}.");
         return gold;
     }
+
+    /// <summary>What one part fetches from the caravans: its share of the worth, more for each trade road it can travel.</summary>
+    public static double Price(Town town, TrophyDef t)
+    {
+        var r = Rules(town);
+        return t.Value * r.SellShare * (1 + r.RouteShare * Math.Min(r.RouteMost, Trade.Open(town).Count()));
+    }
+
+    /// <summary>Parts taken from the stores for another use (the apothecary's pot, a notable's ask).</summary>
+    public static void Use(Town town, string trophyId, int n) => Take(town, trophyId, Math.Min(n, town.Spoils.Trophies.Get(trophyId, 0)));
 
     private static void Take(Town town, string trophyId, int n)
     {
@@ -405,11 +423,42 @@ public static class Spoils
         return order;
     }
 
+    /// <summary>
+    /// A rich hero orders a piece for themselves: the best the town's shops and parts can make that beats what they wear,
+    /// within their purse. They pay the work and the parts' worth to the town; it goes to them when done.
+    /// </summary>
+    public static (string Item, double Cost, string Shop)? ForHero(Town town, Agent a, double purse)
+    {
+        if (town.Spoils.Orders.Any(o => o.ForId == a.Id)) return null;
+        var pick = Rules(town).Recipes
+            .Where(rec => rec.Faction == "" && town.City.Tier >= rec.Tier && Shops(town, rec).Count > 0 && town.Content.Library.Item(rec.Ref) is { } it && Gear.Gain(town.Content, a, it) > 0)
+            .Select(rec => (rec, parts: Parts(town, rec)))
+            .Where(x => x.parts != null)
+            .Select(x => (x.rec, x.parts, cost: Cost(town, x.rec) + x.parts!.Sum(p => Rules(town).Trophy(p.Key) is { } t ? Price(town, t) * p.Value : 0)))
+            .Where(x => x.cost <= purse)
+            .OrderByDescending(x => Gear.Gain(town.Content, a, town.Content.Library.Item(x.rec.Ref)!))
+            .ThenBy(x => x.rec.Id, StringComparer.Ordinal)
+            .FirstOrDefault();
+        if (pick.rec == null) return null;
+        var item = town.Content.Library.Item(pick.rec.Ref)!;
+        foreach (var (id, n) in pick.parts!) Take(town, id, n);
+        double cost = Math.Ceiling(pick.cost);
+        a.Gold -= cost;
+        town.Book(TreasuryAccount.Patron, cost);
+        var shop = Shops(town, pick.rec).OrderBy(b => town.Spoils.Orders.Count(o => o.BuildingId == b.Id)).ThenBy(b => b.Id).First();
+        int queued = town.Spoils.Orders.Where(o => o.BuildingId == shop.Id).Select(o => o.DueTick).DefaultIfEmpty(town.Tick).Max();
+        town.Spoils.Orders.Add(new CraftOrder { Id = town.Spoils.NextOrder++, RecipeId = pick.rec.Id, BuildingId = shop.Id, DueTick = Math.Max(queued, town.Tick) + pick.rec.Days * SimTime.HoursPerDay, Day = town.Day, ForId = a.Id });
+        return (Gear.Plainly(item), cost, Shop(shop));
+    }
+
+    /// <summary>A shop's name to follow "the": "Artificers' Foundry" for "the Artificers' Foundry".</summary>
+    private static string Shop(Building b) => b.Name.StartsWith("the ", StringComparison.OrdinalIgnoreCase) ? b.Name[4..] : b.Name;
+
     /// <summary>Call off an order: the gold comes back, the parts don't.</summary>
     public static bool Cancel(Town town, int orderId)
     {
         var o = town.Spoils.Orders.FirstOrDefault(x => x.Id == orderId);
-        if (o == null || Rules(town).Recipe(o.RecipeId) is not { } rec) return false;
+        if (o == null || o.ForId != null || Rules(town).Recipe(o.RecipeId) is not { } rec) return false;
         town.Spoils.Orders.Remove(o);
         double paid = o.Paid > 0 ? o.Paid : rec.Gold;
         town.Book(TreasuryAccount.Armory, paid);
@@ -424,6 +473,13 @@ public static class Spoils
             town.Spoils.Orders.Remove(o);
             if (Rules(town).Recipe(o.RecipeId) is not { } rec || town.Content.Library.Item(rec.Ref) is not LibItem it) continue;
             var shop = town.Buildings.FirstOrDefault(b => b.Id == o.BuildingId);
+            if (o.ForId is int hid && town.Agent(hid) is { Dead: false, Hero: not null } hero)
+            {
+                town.Spoils.Crafted++;
+                town.Log(LedgerCategory.Town, Importance.Routine, $"The {(shop != null ? Shop(shop) : "forge")} finishes {hero.Name}'s {Gear.Plainly(it)}.", [hero.Id]);
+                Gear.Claim(town, hero, it);
+                continue;
+            }
             Armory.Add(town, it, $"made at the {shop?.Name ?? "forge"}");
             town.Spoils.Crafted++;
             town.Log(LedgerCategory.Town, Importance.Notable, $"The {shop?.Name ?? "forge"} finishes {Agent.Article(Gear.Plainly(it))} {Gear.Plainly(it)}. It waits in the armory.");

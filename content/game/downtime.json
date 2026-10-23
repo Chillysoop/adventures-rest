@@ -1,5 +1,5 @@
 {
-  "_doc": "Heroes' own lives between jobs (Systems/Downtime.cs). Once a week (by id) each hero in town with gold to spare does something with it, in this order: buys land and a house of their own (landCost plus landPerLevel a level, paid to the town; then they sleep there instead of the tavern, gain rootLoyalty once and rooted a day after), trains (trainPerLevel a level, for trainXp of their next level, at most trainMaxLevel), or buys a stake in a business in town (stake gold into its till, paying back dividend of it a day while the till has it). They can still be called up for any job.",
+  "_doc": "Heroes' own lives between jobs (Systems/Downtime.cs). Once a week (by id) each hero in town with gold to spare does something with it, in this order: buys land and a house of their own (landCost plus landPerLevel a level, paid to the town; then they sleep there instead of the tavern, gain rootLoyalty once and rooted a day after), plays patron (with patron.spare gold over keep and patron.renown, at most once in patron.every days, gives patron.share of it: a forge order made for them from the town's parts, else the next part of a monument, else their god's shrine fund or, if the shrine stands, its favour at favourPerGold; patron.fame renown each), trains (trainPerLevel a level, for trainXp of their next level, at most trainMaxLevel), or buys a stake in a business in town (stake gold into its till, paying back dividend of it a day while the till has it). They can still be called up for any job.",
   "keep": 40,
   "landCost": 150,
   "landPerLevel": 20,
@@ -10,11 +10,16 @@
   "trainMaxLevel": 19,
   "stake": 120,
   "dividend": 0.01,
+  "patron": { "spare": 800, "renown": 10, "share": 0.5, "every": 60, "fame": 2, "favourPerGold": 0.01 },
   "holdings": ["a farmstead past the mill", "a narrow house on the hill", "an old tower by the river", "a cottage with a walled garden", "a hunting lodge at the forest's edge", "a house over the bakery"],
   "lines": {
     "land": "{hero} buys {holding} for {cost} gold, and sleeps under their own roof between jobs.",
     "train": "{hero} pays {cost} gold for a week's hard training with {trainer}.",
-    "stake": "{hero} buys a stake in {business} for {cost} gold."
+    "stake": "{hero} buys a stake in {business} for {cost} gold.",
+    "forge": "{hero} pays {cost} gold for the {shop} to make them {item} from the town's spoils.",
+    "monument": "{hero} pays {cost} gold out of their own fortune for the {part} of {monument}.",
+    "shrine": "{hero} gives {cost} gold toward a shrine to {god}.",
+    "endow": "{hero} endows the shrine of {god} with {cost} gold."
   },
   "trainers": ["an old sword-master", "the watch's drill sergeant", "a retired duelist", "a scholar of the arcane", "a priest who once marched with the crusades"]
 }

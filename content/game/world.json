@@ -56,6 +56,13 @@
     "greenStep": 1,
     "loneDays": 20,
     "joinSpread": 3,
+    "troubles": {
+      "_doc": "Free companies are drawn without a bounty to what troubles the town (Systems/Troubles.cs): a camp of the final host (`host`), a menace that fell on a settlement or the town in the last `harmDays` (`burner`), a lair that raided in the last `raidDays` (`raider`); each adds to the company's liking for the site. Home from one having fought, the company and each survivor earn `fame` renown, `clearedFame` more if they cleared it. Lines: {company}, {site}, {foe}, {settlement}.",
+      "host": 0.35, "raider": 0.25, "burner": 0.3, "raidDays": 30, "harmDays": 60, "fame": 4, "clearedFame": 4,
+      "hostLine": "The {company} went out to {site} uncalled and struck the host of {foe} where it gathers. The taverns drink to them.",
+      "raiderLine": "The {company} went after the raiders of {site} without waiting for a bounty. The carters on the roads won't forget it.",
+      "burnerLine": "The {company} rode against {foe} at {site}, for what it did to {settlement}. Nobody paid them to."
+    },
     "adjectives": ["Ashen", "Iron", "Crimson", "Silver", "Gallows", "Lucky", "Broken", "Midnight", "Copper", "Wandering", "Golden", "Hollow", "Thornwood", "Storm", "Grey", "Lantern", "Oaken", "Wyrm", "Raven", "Seventh", "Cinder", "Gilded", "Bramble", "Last", "Moonlit", "Stone", "Wild", "Ember", "Frost", "Black", "Far", "Wayfaring", "Pathfinding"],
     "nouns": ["Blades", "Lanterns", "Owls", "Shields", "Hounds", "Crows", "Compasses", "Wolves", "Pilgrims", "Daggers", "Banners", "Spears", "Stags", "Hammers", "Wardens", "Foxes", "Seekers", "Oaths", "Ravens", "Griffons", "Brands", "Keys", "Bears", "Wayfarers", "Candles", "Bells", "Lances", "Vipers", "Shepherds", "Torches", "Walkers", "Rangers", "Finders"]
   },

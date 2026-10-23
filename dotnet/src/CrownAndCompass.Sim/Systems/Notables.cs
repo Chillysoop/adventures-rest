@@ -99,6 +99,10 @@ public sealed record AskDef
 
     /// <summary>A quest for a company (its terms: slay, fetch, rescue...), "" for a favour of the mayor's. {site} names the place.</summary>
     public string Quest { get; init; } = "";
+
+    /// <summary>A monster part from the town's stores (<see cref="Spoils"/>), of these creature types and at least this grade. {part} names it.</summary>
+    public IReadOnlyList<string> Parts { get; init; } = [];
+    public int Grade { get; init; } = 1;
 }
 
 /// <summary>A kind of notable: who it rises from, how they like to be won over, what they hear and what they give.</summary>
@@ -151,6 +155,9 @@ public sealed class Notable
 
     /// <summary>The site a quest they ask is for, and the bounty it went up as once the mayor posted it.</summary>
     public string AskSite { get; set; } = "";
+
+    /// <summary>The monster part they asked for, by trophy id, when the favour is a part.</summary>
+    public string AskPart { get; set; } = "";
     public int? QuestId { get; set; }
     public int AskUntil { get; set; }
     public int NextAsk { get; set; }
@@ -333,12 +340,13 @@ public static class Notables
             if (Band(town, n) > Cool)
             {
                 // A quest needs a place to send a company and the gold to pay it; otherwise they ask another favour.
-                var asks = d.Asks.Where(a => a.Quest == "" || QuestSite(town, n, a) != null).ToList();
+                var asks = d.Asks.Where(a => (a.Quest == "" || QuestSite(town, n, a) != null) && (a.Parts.Count == 0 || PartsFor(town, a).Count > 0)).ToList();
                 if (asks.Count > 0)
                 {
                     var ask = asks[dice.Range(0, asks.Count)];
                     n.Ask = ask.Id;
                     n.AskSite = ask.Quest != "" ? QuestSite(town, n, ask)!.Def.Id : "";
+                    n.AskPart = ask.Parts.Count > 0 ? PartFor(town, ask, dice) : "";
                     n.AskUntil = town.Day + r.AskOpen;
                     town.Log(LedgerCategory.Town, Importance.Notable, $"{NameOf(town, n)} {AskText(town, n, ask)}, and hopes the mayor will help.", Agents(n));
                 }
@@ -550,12 +558,28 @@ public static class Notables
 
     /// <summary>What they ask, with the place named: "wants ore dug from the Old Mine".</summary>
     public static string AskText(Town town, Notable n, AskDef ask) =>
-        ask.Text.Replace("{site}", Quests.Site(town, n.AskSite)?.Def.Name ?? "a place in the wilds");
+        ask.Text.Replace("{site}", Quests.Site(town, n.AskSite)?.Def.Name ?? "a place in the wilds")
+            .Replace("{part}", town.Content.Spoils.Trophy(n.AskPart) is { } t ? Spoils.Count(t, 1) : "a monster part");
+
+    /// <summary>The kinds of part that would answer an ask, by trophy.</summary>
+    private static List<TrophyDef> PartsFor(Town town, AskDef ask) =>
+        town.Content.Spoils.Trophies.Where(t => t.Grade >= ask.Grade && t.Types.Any(ask.Parts.Contains)).ToList();
+
+    /// <summary>The part a notable asks for: one already in the stores if any (they've heard of it), else one of the commonest kind.</summary>
+    private static string PartFor(Town town, AskDef ask, Rng dice)
+    {
+        var all = PartsFor(town, ask);
+        var held = all.Where(t => town.Spoils.Trophies.Get(t.Id, 0) > 0).OrderBy(t => t.Id, StringComparer.Ordinal).ToList();
+        int low = all.Min(t => t.Grade);
+        var pool = held.Count > 0 ? held : all.Where(t => t.Grade == low).OrderBy(t => t.Id, StringComparer.Ordinal).ToList();
+        return pool[dice.Range(0, pool.Count)].Id;
+    }
 
     public static string? AnswerBlocked(Town town, Notable n)
     {
         if (n.Gone || AskOf(town, n) is not { } ask) return "nothing asked";
         if (ask.Gold > 0 && town.Treasury < ask.Gold) return "no gold";
+        if (ask.Parts.Count > 0 && town.Spoils.Trophies.Get(n.AskPart, 0) < 1) return "none in the stores";
         if (ask.Quest != "" && (Quests.Site(town, n.AskSite) is not { } s || !Open(town, s))) return "the job is gone";
         return null;
     }
@@ -661,6 +685,7 @@ public static class Notables
         StoryBeat? beat = null;
         double v = ask.Gain;
         if (ask.Gold > 0) town.Book(TreasuryAccount.Notables, -ask.Gold);
+        if (ask.Parts.Count > 0) Spoils.Use(town, n.AskPart, 1);
         if (ask.Skill != "")
         {
             beat = Roll(town, ask.Skill, ask.Dc, ask.Text);

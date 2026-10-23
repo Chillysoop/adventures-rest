@@ -270,6 +270,10 @@ public sealed class Menace
     public int Approach { get; set; }
     public int SeenAttempts { get; set; }
 
+    /// <summary>The last day it fell on a settlement or the town, and where (<see cref="Troubles"/>).</summary>
+    public int? HarmDay { get; set; }
+    public string HarmedName { get; set; } = "";
+
     /// <summary>Times its host has marched on the town.</summary>
     public int Marches { get; set; }
     public bool BigBad { get; set; }
@@ -1052,7 +1056,11 @@ public static class Menaces
         if (sworn || Mischief(town, m)) return;
         if (am.Id == "plague" && am.Infect.Count > 0) Infect(town, m, am);
         else if (am.Id == "intrigue" && am.Schemes.Count > 0) Scheme(town, m, am);
-        else HitTown(town, m);
+        else
+        {
+            HitTown(town, m);
+            Troubles.Harmed(town, m, town.Name);
+        }
     }
 
     /// <summary>A night visit: a townsperson taken, and the menace grows on what it takes. Defenders at home can keep the door.</summary>
@@ -1142,6 +1150,7 @@ public static class Menaces
     {
         var r = Rules(town);
         bool known = town.Regions[s.RegionId].Known;
+        Troubles.Harmed(town, m, s.Name);
         if (m.Stage >= MenaceStage.Dominion && (s.Standing <= -40 || town.Rng.Chance(0.4)))
         {
             s.Razed = true;

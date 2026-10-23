@@ -33,8 +33,8 @@ public class NotablesTests
             Assert.True(d.Outsider ? d.Names.Count > 0 : d.Trades.Count > 0 || d.Id == r.GuildMaster, $"{d.Id} needs trades or names");
             Assert.NotEmpty(d.Asks);
             foreach (var ask in d.Asks)
-                Assert.True(ask.Gold > 0 || t.Content.Stories.Skill(ask.Skill) != null || t.Content.Bounties.Term(ask.Quest).Id == ask.Quest && ask.Quest != "",
-                    $"{d.Id} ask {ask.Id} needs gold, a skill or a quest's terms");
+                Assert.True(ask.Gold > 0 || ask.Parts.Count > 0 || t.Content.Stories.Skill(ask.Skill) != null || t.Content.Bounties.Term(ask.Quest).Id == ask.Quest && ask.Quest != "",
+                    $"{d.Id} ask {ask.Id} needs gold, parts, a skill or a quest's terms");
         }
     }
 

@@ -1179,6 +1179,9 @@ public sealed record CompanyRules
     /// <summary>A newcomer joins a company whose best member is at most this many levels above their own.</summary>
     public int JoinSpread { get; init; } = 3;
 
+    /// <summary>What draws companies to the town's troubles (<see cref="Troubles"/>).</summary>
+    public TroubleRules Troubles { get; init; } = new();
+
     /// <summary>The words company names are made of: no two companies riding at once share a word.</summary>
     public List<string> Adjectives { get; init; } = [];
     public List<string> Nouns { get; init; } = [];

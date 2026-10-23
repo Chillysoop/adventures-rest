@@ -16,6 +16,8 @@
   "deeds": {
     "clear": { "epithets": ["the Delver", "the Ruinbreaker", "the Bold", "the Lanternbearer"], "text": "for the ruins they have cleared" },
     "slay": { "epithets": ["the Foebane", "the Valiant", "the Unbroken", "the Wallguard"], "text": "for the foe they cut down before the walls", "record": "{hero} cut down foes before the walls" },
+    "patron": { "epithets": ["the Generous", "the Openhanded", "the Benefactor"], "text": "for giving their fortune to the town" },
+    "trouble": { "epithets": ["the Hostbreaker", "the Roadwarden", "the Answerer"], "text": "for riding against what troubled the town" },
     "plea": { "epithets": ["the Warden", "the Wildfriend", "the Faithful"], "text": "for the villages they have answered" },
     "level": { "epithets": ["the Seasoned", "the Wanderer", "the Storied"], "text": "for the road they have walked" },
     "honour": { "epithets": ["the Sworn", "the Shield of the Town"], "text": "for the honours the town has given them", "record": "{hero} was honoured by the town" },
