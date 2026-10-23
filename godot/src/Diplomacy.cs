@@ -182,6 +182,17 @@ public partial class Main
         p.Heading("Sky fleet", "ui-airship");
         var free = Sky.Marines(t).OrderByDescending(h => h.Hero!.Level).ThenBy(h => h.Id).ToList();
         p.Buttons(($"{(_skyMarines ? "✓" : "○")} Marines aboard ({free.Count} free)", true, _skyMarines, () => { _skyMarines = !_skyMarines; _dirty = true; }));
+        // The fuel: the store, the traders' crystal this month, and the seams the companies found.
+        double stock = Js.Round(Crystal.Stock(t) * 10) / 10;
+        int sale = (int)Math.Min(6, Math.Floor(Crystal.ForSale(t)));
+        string mines = string.Join(" ", Crystal.Seams(t).Where(x => x.Mined).Select(x => Ui.Chip("ui-lift", $"+{Js.Str(Js.Round(Crystal.Yield(t, x) * 10) / 10)}/day", x.Cleared ? Ui.Good : Ui.Bad, $"Crystal mine on {x.Def.Name}{(x.Cleared ? "" : ": retaken, yields nothing until cleared")}")));
+        p.Row($"[font_size=12]{Ui.Chips(Ui.Chip("ui-lift", Js.Str(stock), stock < 4 ? Ui.Bad : null, "Lift-crystal in store: a charge burns a day of it for each day of lift" + (Research.Crystal(t) > 0 ? $", {Js.Str(Js.Round(Research.Crystal(t) * 100))}% less with what the town knows" : "")), mines)}[/font_size]",
+            ($"Buy {sale} · {Js.Str(Crystal.Price(t, sale))}g", sale > 0 && Crystal.BuyRefused(t, sale) == null, false, () => Act(() => _sim.BuyCrystal(sale))));
+        foreach (var seam in Crystal.Seams(t).Where(x => !x.Mined))
+        {
+            string sid = seam.Def.Id;
+            p.Buttons(($"Mine {seam.Def.Name} · {Js.Str(r.Crystal.MineCost)}g", Crystal.MineRefused(t, seam) == null, true, () => Act(() => _sim.MineSeam(sid))));
+        }
         foreach (var s in Sky.Ships(t))
         {
             var d = Fleet.Def(t, s);
@@ -196,7 +207,7 @@ public partial class Main
                 acts.Add(($"Salvage {Js.Str(r.Salvage)}g", s.SalvageDay == null && t.Treasury >= r.Salvage, true, () => Act(() => _sim.SalvageShip(id))));
             else if (Sky.Moored(t, s))
             {
-                if (s.Lift < d.Lift) acts.Add(($"Charge {Js.Str(Sky.ChargeCost(t, s))}g", t.Treasury >= Sky.ChargeCost(t, s), false, () => Act(() => _sim.ChargeShip(id))));
+                if (s.Lift < d.Lift) acts.Add(($"Charge {Js.Str(Math.Floor(Sky.ChargeLift(t, s)))} · {Js.Str(Sky.ChargeCost(t, s))}g", Sky.ChargeLift(t, s) >= 1 && t.Treasury >= Sky.ChargeCost(t, s), false, () => Act(() => _sim.ChargeShip(id))));
                 if (s.Hull < d.Hull) acts.Add(($"Patch {Js.Str(Fleet.RepairCost(t, s))}g", t.Treasury >= Fleet.RepairCost(t, s), false, () => Act(() => _sim.RepairShip(id))));
             }
             p.Row($"[font_size=13][b]{Ui.Esc(Ui.Cap(s.Name))}[/b] · {Ui.Esc(d.Name)}[/font_size]\n" +

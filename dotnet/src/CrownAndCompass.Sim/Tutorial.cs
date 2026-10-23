@@ -86,6 +86,8 @@ public static class Tutorial
         if (token == "lofted") return Systems.Lofted.Aloft(t) ? 1 : 0;
         // Sea lands of the ocean the town knows of (Systems.World.Sea).
         if (token == "seas") return t.Regions.Count(r => r.Known && Systems.World.Sea(r));
+        // The town's airships (Systems.Sky).
+        if (token == "airships") return Systems.Sky.Ships(t).Count();
         // The charter goals still open (Systems.Goals).
         if (token == "goals") return Systems.Goals.Open(t).Count;
         // Parts the town holds from the wilds (Systems.Spoils).

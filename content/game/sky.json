@@ -44,7 +44,7 @@
   "ships": [
     { "id": "skiff", "realm": "sky", "name": "sky skiff", "cost": 220, "timber": 14, "crew": 3, "hold": 10, "speed": 0.45, "hull": 50, "wear": 1, "repair": 1.5, "lift": 12, "recharge": 4, "guns": 2, "agility": 4, "marines": 2, "ceiling": 0.2 },
     { "id": "frigate", "realm": "sky", "name": "sky frigate", "cost": 640, "timber": 40, "crew": 10, "hold": 30, "speed": 0.5, "hull": 120, "wear": 1.5, "repair": 2, "lift": 16, "recharge": 7, "guns": 6, "agility": 2, "marines": 4, "ceiling": 0.45, "tier": "city" },
-    { "id": "galleon", "realm": "sky", "name": "sky galleon", "cost": 1400, "timber": 80, "crew": 18, "hold": 70, "speed": 0.6, "hull": 220, "wear": 2, "repair": 2.5, "lift": 22, "recharge": 11, "guns": 11, "agility": 0, "marines": 6, "ceiling": 0.7, "tier": "great_city" },
+    { "id": "galleon", "realm": "sky", "name": "sky galleon", "cost": 1400, "timber": 80, "crew": 18, "hold": 70, "speed": 0.6, "hull": 220, "wear": 2, "repair": 2.5, "lift": 22, "recharge": 11, "guns": 11, "agility": 0, "marines": 6, "ceiling": 0.7, "tier": "city" },
     { "id": "dreadnought", "realm": "sky", "name": "sky dreadnought", "cost": 18000, "timber": 220, "crew": 30, "hold": 140, "speed": 0.55, "hull": 520, "wear": 3, "repair": 4, "lift": 30, "recharge": 24, "guns": 24, "agility": -1, "marines": 9, "ceiling": 0.85, "tier": "great_city" },
     { "id": "leviathan", "realm": "sky", "name": "sky leviathan", "cost": 48000, "timber": 420, "crew": 50, "hold": 260, "speed": 0.5, "hull": 1100, "wear": 4, "repair": 6, "lift": 40, "recharge": 45, "guns": 40, "agility": -2, "marines": 12, "ceiling": 0.95, "tier": "great_city" }
   ],
@@ -59,6 +59,7 @@
   ],
   "powerPerRing": 3,
   "dockCeiling": 0.45,
+  "crystal": { "start": 16, "buy": 18, "buyMost": 12, "buyDays": 30, "shardsPerTier": 1.5, "seamFrom": "high", "mineCost": 900, "mineYield": 0.6, "mineYieldPerRing": 0.15 },
   "expedition": { "edge": 1, "wait": 1, "search": [1, 4], "strandMost": 40, "walkHurt": 0.3 },
   "texts": {
     "carry": ["the {party} go aboard {ship} at the Sky Dock, {captain} at the wheel, bound up for {where}.", "{ship} lifts the {party} off the Sky Dock mast and climbs toward {where}."],

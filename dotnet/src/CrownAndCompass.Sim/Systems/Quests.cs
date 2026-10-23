@@ -18,6 +18,10 @@ public sealed class SiteState(SiteDef def)
     public bool Cleared { get; set; }
     public int Attempts { get; set; }
 
+    /// <summary>A cleared isle in the sky shows a seam of lift-crystal (<see cref="Crystal"/>), and the town may have a mine on it.</summary>
+    public bool Seam { get; set; }
+    public bool Mined { get; set; }
+
     /// <summary>The region of the wilds it lies in (<see cref="World"/>), or null for sites raised later.</summary>
     public int? RegionId { get; set; }
 
@@ -698,6 +702,7 @@ public static class Quests
                 Wayfaring.Notice(town, party.Home, World.Spot(town, s));
             }
             Patrons.Home(town, result);
+            if (result.Outcome == ExpeditionOutcome.Cleared) Crystal.Home(town, party, s);
 
             var chronicle = new Chronicle(
                 town.Chronicles.Count + 1,

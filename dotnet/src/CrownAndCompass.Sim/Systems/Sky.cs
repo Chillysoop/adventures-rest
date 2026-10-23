@@ -49,6 +49,7 @@ public sealed record SkyFleetRules
 
     /// <summary>How high the Sky Dock's own lent airship climbs (<see cref="Reaches"/>): higher bands need one of the town's ships.</summary>
     public double DockCeiling { get; init; } = 0.45;
+    public CrystalRules Crystal { get; init; } = new();
     public ExpeditionRules Expedition { get; init; } = new();
     public int RaidEvery { get; init; } = 24;
     public double RaidChance { get; init; } = 0.3;
@@ -65,6 +66,26 @@ public sealed record SkyFleetRules
     public IReadOnlyList<string> Captains { get; init; } = [];
     public IReadOnlyList<SkyFoeDef> Foes { get; init; } = [];
     public Dictionary<string, List<string>> Texts { get; init; } = [];
+}
+
+/// <summary>
+/// Lift-crystal, the airships' fuel (Conner, 2026-10-22: "even if you rush to airships, you still need a fuel source"). Every
+/// day of lift a charge puts back burns a day's crystal from the dock's store (less what discoveries save, <see cref="Research.Crystal"/>).
+/// The dock comes with `start`; traders sell `buyMost` every `buyDays` at `buy` gold; companies bring home `shardsPerTier` a tier
+/// from a cleared site in the sky; and a cleared isle from the `seamFrom` height up shows a seam the town can mine for
+/// `mineCost` gold, yielding `mineYield` (plus `mineYieldPerRing` a ring out) a day while it stays clear.
+/// </summary>
+public sealed record CrystalRules
+{
+    public double Start { get; init; } = 16;
+    public double Buy { get; init; } = 18;
+    public double BuyMost { get; init; } = 12;
+    public int BuyDays { get; init; } = 30;
+    public double ShardsPerTier { get; init; } = 1.5;
+    public string SeamFrom { get; init; } = "high";
+    public double MineCost { get; init; } = 900;
+    public double MineYield { get; init; } = 0.6;
+    public double MineYieldPerRing { get; init; } = 0.15;
 }
 
 /// <summary>
@@ -117,6 +138,11 @@ public sealed class SkyBattle
 public sealed class SkyFleetState
 {
     public bool Granted { get; set; }
+
+    /// <summary>Lift-crystal in the dock's store, in days of lift (<see cref="Sky.Charge"/>), and what was bought of it since <see cref="BoughtDay"/>.</summary>
+    public double Crystal { get; set; }
+    public double Bought { get; set; }
+    public int BoughtDay { get; set; }
     public int NextRaidDay { get; set; }
     public List<SkyBattle> Battles { get; } = [];
 }
@@ -230,18 +256,29 @@ public static class Sky
 
     // ---- Lift, repairs, salvage ----
 
-    public static double ChargeCost(Town town, Ship s) => Js.Round(Math.Max(0, Fleet.Def(town, s).Lift - s.Lift) * Fleet.Def(town, s).Recharge);
+    /// <summary>Days of lift a charge would put back now: what the ship lacks, as far as the dock's crystal goes.</summary>
+    public static double ChargeLift(Town town, Ship s)
+    {
+        double missing = Math.Max(0, Fleet.Def(town, s).Lift - s.Lift);
+        double burn = 1 - Research.Crystal(town);
+        return Math.Min(missing, burn <= 0 ? missing : State(town).Crystal / burn);
+    }
 
-    /// <summary>Fill an airship's lift-crystal at the dock.</summary>
+    /// <summary>The riggers' gold for a charge (the crystal is the store's).</summary>
+    public static double ChargeCost(Town town, Ship s) => Js.Round(ChargeLift(town, s) * Fleet.Def(town, s).Recharge);
+
+    /// <summary>Fill an airship's lift-crystal at the dock, as far as the store goes.</summary>
     public static bool Charge(Town town, int shipId)
     {
         var s = town.Ships.FirstOrDefault(x => x.Id == shipId);
         if (s == null || !Fleet.Aloft(town, s) || !Moored(town, s) || Dock(town) == null || s.Lift >= Fleet.Def(town, s).Lift) return false;
+        double lift = ChargeLift(town, s);
         double cost = ChargeCost(town, s);
-        if (town.Treasury < cost) return false;
+        if (lift < 1 || town.Treasury < cost) return false;
         town.Book(TreasuryAccount.Works, -cost);
-        s.Lift = Fleet.Def(town, s).Lift;
-        town.Log(LedgerCategory.Town, Importance.Routine, $"The riggers charge {s.Name}'s lift-crystal ({Js.Str(cost)} gold).");
+        s.Lift += lift;
+        State(town).Crystal = Math.Max(0, State(town).Crystal - lift * (1 - Research.Crystal(town)));
+        town.Log(LedgerCategory.Town, Importance.Routine, $"The riggers charge {s.Name}'s lift-crystal ({Js.Str(Js.Round(lift))} days of lift, {Js.Str(cost)} gold).");
         return true;
     }
 
@@ -268,6 +305,7 @@ public static class Sky
         if (!st.Granted)
         {
             st.Granted = true;
+            st.Crystal += r.Crystal.Start;
             st.NextRaidDay = town.Day + r.RaidEvery;
             if (!Ships(town).Any()) Fleet.Build(town, r.Ships[0].Id, free: true);
         }

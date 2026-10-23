@@ -401,6 +401,12 @@ public sealed class Simulation
     /// <summary>Refill an airship's lift-crystal at the Sky Dock.</summary>
     public bool ChargeShip(int shipId) => Sky.Charge(Town, shipId);
 
+    /// <summary>Buy lift-crystal from the traders at the Sky Dock (<see cref="Crystal.Buy"/>).</summary>
+    public bool BuyCrystal(int units) => Crystal.Buy(Town, units);
+
+    /// <summary>Open a crystal mine on a seam found on a cleared isle (<see cref="Crystal.Mine"/>).</summary>
+    public bool MineSeam(string siteId) => Crystal.Mine(Town, siteId);
+
     /// <summary>Send riggers with fresh crystal to an airship that came down in the wilds.</summary>
     public bool SalvageShip(int shipId) => Sky.Salvage(Town, shipId);
 
