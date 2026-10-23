@@ -139,8 +139,13 @@ public class GuildsTests
     public void AGuildsMasterIsANotableAndWinningThemCalmsTheGuild()
     {
         var (sim, t, g) = Town();
-        sim.RunDays(2);
-        var n = t.Notables.FirstOrDefault(x => !x.Gone && x.AgentId == g.MasterId);
+        // Masters rise one a day, so a town where several guilds formed at once waits its turn.
+        Notable? n = null;
+        for (int d = 0; d < 2 + t.Guilds.Count && n == null; d++)
+        {
+            sim.RunDays(1);
+            n = t.Notables.FirstOrDefault(x => !x.Gone && x.AgentId == g.MasterId);
+        }
         Assert.NotNull(n);
         Assert.Same(g, Notables.GuildOf(t, n!));
         g.Standing = 40;
