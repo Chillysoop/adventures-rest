@@ -67,6 +67,7 @@
     "stranded": ["{ship} does not come back for the {party} at {where}. They are on their own above the clouds."],
     "searching": ["{ship} lifts off to look for the {party}, last bound for {where}."],
     "rescued": ["{ship} finds the {party} on {where} after {search} of looking and brings them home.", "Signal fires on {where}: {ship} picks up the {party}, thin and sunburnt, and turns for home."],
+    "harbour": ["A prisoner from a fallen isle gives up where {group} hide: {site}, deep in the clouds. Now the town knows where to strike."],
     "ownWay": ["the {party} come home at last, having climbed down from {where} on rope and nerve. Nobody came for them."],
     "launch": ["{ship} lifts off the Sky Dock mast, {captain} at the wheel, bound for {where}.", "The riggers cast off and {ship} climbs over the rooftops toward {where}."],
     "patrol": ["{ship} circles the town on patrol, {captain} watching the roads from the clouds."],

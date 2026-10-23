@@ -666,7 +666,7 @@ public static class Explore
             double rr = Rules(town).Commission.SpotRadius * (0.4 + rng.Next() * 0.6);
             return (sx + rr * Math.Cos(ra), sy + rr * Math.Sin(ra));
         }
-        var unfound = region.SiteIds.Select(id => Quests.Site(town, id)!).Where(x => !x.Found && !x.Cleared).ToList();
+        var unfound = region.SiteIds.Select(id => Quests.Site(town, id)!).Where(x => !x.Found && !x.Cleared && !x.Hidden).ToList();
         if (unfound.Count > 0 && rng.Chance(0.55))
         {
             var (x, y) = World.Spot(town, rng.Pick(unfound));
@@ -746,7 +746,7 @@ public static class Explore
         double sight = Rules(town).Sight;
         double D((double X, double Y) q) => Math.Sqrt((q.X - p.X) * (q.X - p.X) + (q.Y - p.Y) * (q.Y - p.Y));
         var site = town.Sites
-            .Where(x => !x.Found && !x.Cleared && !x.Held && x.RegionId != null && D(World.Spot(town, x)) <= sight)
+            .Where(x => !x.Found && !x.Cleared && !x.Held && !x.Hidden && x.RegionId != null && D(World.Spot(town, x)) <= sight)
             .OrderBy(x => D(World.Spot(town, x)))
             .ThenBy(x => x.Def.Id, StringComparer.Ordinal)
             .FirstOrDefault();

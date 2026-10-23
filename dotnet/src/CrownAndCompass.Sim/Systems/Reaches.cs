@@ -48,6 +48,22 @@ public static class Reaches
             .ToList();
     }
 
+    /// <summary>A hidden harbour comes to light once another isle of its group falls: someone taken there talks.</summary>
+    private static void Harbours(Town town)
+    {
+        foreach (var h in town.Sites.Where(s => s.Hidden).OrderBy(s => s.Def.Id, StringComparer.Ordinal).ToList())
+        {
+            if (!town.Sites.Any(s => s != h && s.Def.Group == h.Def.Group && s.Cleared)) continue;
+            h.Hidden = false;
+            var g = town.Content.Group(h.Def.Group);
+            Rumors.Hear(town, h, Rumors.Occupants(town.Content, h.Def), h.Def.Tier, 80);
+            h.HeardFrom = "a prisoner from a fallen isle";
+            town.Log(LedgerCategory.Quest, Importance.Notable,
+                (Rules(town).Texts.TryGetValue("harbour", out var t) && t.Count > 0 ? t[0] : "{site} is found.")
+                    .Replace("{group}", g?.Name ?? "the raiders", StringComparison.Ordinal).Replace("{site}", h.Def.Name, StringComparison.Ordinal));
+        }
+    }
+
     /// <summary>Whether the town has a way as high as this: an airship that climbs to it, or the Lofted City itself.</summary>
     public static bool Climbs(Town town, double ceiling) =>
         ceiling <= 0 || Lofted.Aloft(town) || (Sky.Dock(town) != null && Sky.Ships(town).Any(s => Fleet.Def(town, s).Ceiling >= ceiling - 1e-9));
@@ -182,6 +198,7 @@ public static class Reaches
     /// <summary>Daily: a company stranded long enough climbs down on its own, hurt for it.</summary>
     public static void Daily(Town town)
     {
+        Harbours(town);
         var x = X(town);
         foreach (var party in Stranded(town).ToList())
         {

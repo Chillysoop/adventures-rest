@@ -22,6 +22,9 @@ public sealed class SiteState(SiteDef def)
     public bool Seam { get; set; }
     public bool Mined { get; set; }
 
+    /// <summary>A group's hidden harbour (<see cref="GroupDef.Harbour"/>): no tavern talks of it and no survey finds it until someone sees it with their own eyes or another of the group's isles falls.</summary>
+    public bool Hidden { get; set; }
+
     /// <summary>The region of the wilds it lies in (<see cref="World"/>), or null for sites raised later.</summary>
     public int? RegionId { get; set; }
 

@@ -527,7 +527,7 @@ public static class Sky
         if (f.Job == "scout" && region != null)
         {
             region.Known = true;
-            var seen = town.Sites.Where(x => x.RegionId == region.Id && !x.Cleared).OrderBy(x => x.Def.Id, StringComparer.Ordinal).ToList();
+            var seen = town.Sites.Where(x => x.RegionId == region.Id && !x.Cleared && !x.Hidden).OrderBy(x => x.Def.Id, StringComparer.Ordinal).ToList();
             foreach (var site in seen)
             {
                 site.Found = true;

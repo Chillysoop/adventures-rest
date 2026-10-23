@@ -946,6 +946,12 @@ public sealed record GroupDef
 
     /// <summary>Encounter lines by deck kind ("wander", "boss"...), used before the theme's own.</summary>
     public Dictionary<string, List<string>> Texts { get; init; } = [];
+
+    /// <summary>Heights of the sky it holds isles in (world.json isles bands) instead of sites on the ground.</summary>
+    public IReadOnlyList<string> Bands { get; init; } = [];
+
+    /// <summary>Names for its hidden harbour: the first isle it takes in a world, which no rumour or survey finds until another of its isles falls (<see cref="SiteState.Hidden"/>).</summary>
+    public IReadOnlyList<string> Harbour { get; init; } = [];
 }
 
 public sealed record GroupRules
@@ -1549,6 +1555,9 @@ public sealed record SkyBandDef
     public IReadOnlyList<string> Names { get; init; } = [];
     public string Foe { get; init; } = "";
     public IReadOnlyList<string> Bosses { get; init; } = [];
+
+    /// <summary>The chance an isle of the band without a foe goes to one of the groups that hold this band (groups.json `bands`).</summary>
+    public double Groups { get; init; }
 }
 
 /// <summary>

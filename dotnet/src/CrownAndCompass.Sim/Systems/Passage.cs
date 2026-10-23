@@ -76,6 +76,9 @@ public sealed record MountDef
     /// <summary>An institution that must stand for it to be sold (the Griffon Roost), or "".</summary>
     public string Institution { get; init; } = "";
 
+    /// <summary>Peoples (world.json) who sell it to the town's heroes once allied, roost or no roost.</summary>
+    public IReadOnlyList<string> Peoples { get; init; } = [];
+
     /// <summary>A spell that calls it for free (a paladin's steed), or "".</summary>
     public string Spell { get; init; } = "";
     public IReadOnlyList<string> Text { get; init; } = [];
@@ -1010,7 +1013,7 @@ public static class Passage
                 if (Rank(m) <= haveRank) break;
                 if (h.Level < m.Level || m.Chooses > 0 || m.Tame != null) continue;
                 if (m.Classes.Count > 0 && !m.Classes.Contains(h.Cls.Id)) continue;
-                if (m.Institution != "" && (Institutions.Find(town, m.Institution) is not { } inst || inst.Shut)) continue;
+                if (m.Institution != "" && (Institutions.Find(town, m.Institution) is not { } inst || inst.Shut) && !Sold(town, m)) continue;
                 bool called = false;
                 if (m.Spell != "")
                 {
@@ -1030,6 +1033,9 @@ public static class Passage
         }
         foreach (var m in r.Mounts.Where(m => m.Chooses > 0).OrderBy(m => m.Id, StringComparer.Ordinal)) Choose(town, m);
     }
+
+    /// <summary>An allied people breeds the beast and sells it to the town's heroes.</summary>
+    public static bool Sold(Town town, MountDef m) => m.Peoples.Count > 0 && town.Settlements.Any(s => s.Allied && !s.Razed && m.Peoples.Contains(s.Kin.Id));
 
     /// <summary>A hero takes a mount: theirs from now on, told in the Ledger (and on a card when it is one worth telling).</summary>
     public static void Ride(Town town, Agent a, MountDef m, Importance importance, string? line = null)

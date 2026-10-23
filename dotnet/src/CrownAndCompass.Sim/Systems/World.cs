@@ -317,6 +317,26 @@ public static class World
     /// middle, rich from the start and growing (<see cref="PeopleDef.Grows"/>). It takes the place of any settlement there.
     /// </summary>
     /// <summary>
+    /// An isle without a band foe may go to a group of the sky (groups.json `bands`): its site is built again around the
+    /// group's foes and bosses. The first isle a group with a harbour takes in a world is that harbour, hidden.
+    /// </summary>
+    private static void SkyGroup(Town town, Rng rng, SkyBandDef band, SiteState site, HashSet<string> used)
+    {
+        if (band.Groups <= 0 || !rng.Chance(band.Groups)) return;
+        int level = site.Def.Tier;
+        var fits = town.Content.Groups.Groups.Where(g => g.Bands.Contains(band.Id) && GroupBosses(town.Content, g, level).Count > 0).ToList();
+        if (fits.Count == 0) return;
+        var g = rng.Pick(fits);
+        var region = town.Regions[site.RegionId!.Value];
+        bool harbour = g.Harbour.Count > 0 && !town.Sites.Any(s => s.Def.Group == g.Id);
+        var kind = new SiteKindDef { Names = harbour ? g.Harbour : g.Names, Habitats = g.Habitats, Deck = g.Deck };
+        used.Remove(site.Def.Name);
+        var def = BuildSite(town.Content, rng, region, kind, level, site.Def.Id, Fill(rng, region.Theme, kind.Names, used), null, g);
+        site.Def = def with { Aloft = true, Band = band.Id };
+        site.Hidden = harbour;
+    }
+
+    /// <summary>
     /// The peoples of the sky (world.json isles `peoples`): the cloud court and the metallic ancients each settle a free land
     /// region of the far rings, their themes first, on their own dice so the world a seed makes keeps its draws. Added last, so
     /// no settlement's id moves.
@@ -445,7 +465,11 @@ public static class World
                 used.Remove(site.Def.Name);
                 string name = band.Names.Count > 0 ? Fill(rng, town.Regions[site.RegionId!.Value].Theme, band.Names, used) : site.Def.Name;
                 site.Def = site.Def with { Aloft = true, Band = band.Id, Name = name };
-                if (foe == null) continue;
+                if (foe == null)
+                {
+                    SkyGroup(town, rng, band, site, used);
+                    continue;
+                }
                 string boss = band.Bosses.Count > 0 ? band.Bosses[rng.Range(0, band.Bosses.Count)] : foe.Monster;
                 if (town.Content.Library.Monster(boss) == null) continue;
                 site.Def = site.Def with
@@ -587,7 +611,7 @@ public static class World
     /// </summary>
     public static GroupDef? PickGroup(Content content, Rng rng, ThemeDef theme, int level)
     {
-        var fits = content.Groups.Groups.Where(g => g.Themes.Contains(theme.Id) && GroupBosses(content, g, level).Count > 0).ToList();
+        var fits = content.Groups.Groups.Where(g => g.Bands.Count == 0 && g.Themes.Contains(theme.Id) && GroupBosses(content, g, level).Count > 0).ToList();
         if (fits.Count == 0 || !rng.Chance(content.Groups.Chance)) return null;
         return rng.Pick(fits);
     }

@@ -201,4 +201,57 @@ public class ReachesTests
         Assert.Null(Trade.Refuse(t, dragon));
         Assert.True(sim.OpenTradeRoute(dragon.Id, export, import));
     }
+
+    [Fact]
+    public void SkyGroupsHoldIslesAndTheArmadaHidesItsHarbourUntilAnotherIsleFalls()
+    {
+        var seen = new HashSet<string>();
+        Town? withHarbour = null;
+        for (int seed = 1; seed <= 12; seed++)
+        {
+            var t = new Simulation(new SimulationOptions { Seed = seed, AutoMayor = false }).Town;
+            foreach (var s in t.Sites.Where(s => t.Content.Group(s.Def.Group) is { Bands.Count: > 0 }))
+            {
+                seen.Add(s.Def.Group);
+                Assert.True(s.Def.Aloft);
+                Assert.Contains(s.Def.Band, t.Content.Group(s.Def.Group)!.Bands);
+            }
+            // Groups of the sky never take a site on the ground.
+            Assert.DoesNotContain(t.Sites, s => !s.Def.Aloft && t.Content.Group(s.Def.Group) is { Bands.Count: > 0 });
+            if (withHarbour == null && t.Sites.Count(s => s.Def.Group == "sky-armada") >= 2) withHarbour = t;
+        }
+        Assert.Contains("sky-armada", seen);
+        Assert.Contains("storm-cult", seen);
+        var town = withHarbour!;
+        var harbour = Assert.Single(town.Sites, s => s.Hidden);
+        Assert.Equal("sky-armada", harbour.Def.Group);
+        // No tale or hearsay finds it.
+        Rumors.Hear(town, harbour, "pirates", 3);
+        Assert.Equal(SiteKnowledge.Unheard, harbour.Known);
+        // Another of the armada's isles falls, and a prisoner talks.
+        town.Sites.First(s => s.Def.Group == "sky-armada" && !s.Hidden).Cleared = true;
+        Reaches.Daily(town);
+        Assert.False(harbour.Hidden);
+        Assert.NotEqual(SiteKnowledge.Unheard, harbour.Known);
+    }
+
+    [Fact]
+    public void AlliedGriffonClansSellGriffonsWithoutARoost()
+    {
+        var sim = new Simulation(new SimulationOptions { Seed = 1, AutoMayor = false });
+        var t = sim.Town;
+        var griffon = Passage.Rules(t).Mount("griffon")!;
+        Assert.False(Passage.Sold(t, griffon));
+        var clans = t.Settlements.FirstOrDefault(s => s.Kin.Id == "griffon-clans")
+            ?? Enumerable.Range(2, 10).Select(n => new Simulation(new SimulationOptions { Seed = n }).Town).SelectMany(x => x.Settlements).First(s => s.Kin.Id == "griffon-clans");
+        var s = new Settlement { Id = t.Settlements.Count, Name = "the Test Eyrie", Kin = clans.Kin, RegionId = 0, Allied = true };
+        t.Settlements.Add(s);
+        Assert.True(Passage.Sold(t, griffon));
+        var hero = t.Heroes.First();
+        hero.Hero!.Level = griffon.Level;
+        hero.Hero.Mount = "";
+        hero.Gold = griffon.BuyAt + 10;
+        Passage.Daily(t);
+        Assert.Equal("griffon", hero.Hero.Mount);
+    }
 }
