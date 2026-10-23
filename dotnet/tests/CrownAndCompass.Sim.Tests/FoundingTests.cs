@@ -51,7 +51,7 @@ public class FoundingTests
         for (int seed = 1; seed <= 6; seed++)
         {
             var t = Founded(seed, "sea-cove");
-            var sea = Assert.Single(t.Terrain, f => f.Kind.Boats);
+            var sea = Assert.Single(t.Terrain, f => f.Kind.Id == "sea");
             foreach (var s in t.Sites)
             {
                 var (x, y) = World.Spot(t, s);

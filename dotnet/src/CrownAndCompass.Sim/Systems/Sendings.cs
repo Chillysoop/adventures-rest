@@ -188,7 +188,7 @@ public static class Sendings
     /// </summary>
     private static void Told(Town town, Party party)
     {
-        if (!Intel.Commissioned(town, party)) return;
+        if (!Intel.Commissioned(town, party) && !Retainers.Held(town, party.Name)) return;
         party.SentTick = town.Tick;
         if (!Homeward(town, party) || Quests.Site(town, party.SiteId) is not { } site) return;
         if ((site.ReportTick ?? -1) < town.Tick) Rumors.Confirm(town, site, $"the {party.Name}'s sending");

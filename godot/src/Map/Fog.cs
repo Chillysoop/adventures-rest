@@ -74,7 +74,7 @@ public sealed class Fog
     /// <summary>Recompute when anything that shapes the fog changed; cheap to call every frame.</summary>
     public bool Refresh(Town town, Geo geo)
     {
-        CollectReports(town);
+        CollectReports(town, geo);
         LiveAreas.Clear();
         // The town's lamplight reaches a little past its edge; each watchtower sees farther.
         LightRadius = geo.TownRadius + 9 + town.Defenses.Towers * 5;
@@ -95,7 +95,7 @@ public sealed class Fog
         return true;
     }
 
-    private void CollectReports(Town town)
+    private void CollectReports(Town town, Geo geo)
     {
         Reports.Clear();
         foreach (var p in town.Parties)
@@ -157,7 +157,9 @@ public sealed class Fog
         {
             if (!s.Home) continue;
             float reach = s.Arrived ? 1 : Mathf.Clamp((s.LeaveTick - s.DepartTick) / (float)Math.Max(1, s.ArriveTick - s.DepartTick), 0, 1);
-            Reports.Add(new Report(s.SiteId, SimTime.DayOf(s.ReturnTick), s.Arrived, reach, null));
+            // They ride round the hard country like anyone, so the road they describe bends with it.
+            var road = geo.Pins.TryGetValue(s.SiteId, out var pin) ? new List<Vector2[]> { Geo.Part(Geo.ScoutWay(town, s, pin), reach) } : null;
+            Reports.Add(new Report(s.SiteId, SimTime.DayOf(s.ReturnTick), s.Arrived, reach, null, road));
         }
     }
 

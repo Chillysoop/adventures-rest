@@ -161,6 +161,7 @@ public static class Blows
         b.Opened = false;
         b.LaborBudget = 0;
         b.Contentment = Math.Min(b.Contentment, 0.5);
+        b.Wrecked = true;
     }
 
     /// <summary>A councillor or a hero at home, killed in the night unless the watch is quicker.</summary>

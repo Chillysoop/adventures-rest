@@ -48,7 +48,7 @@ public class FieldTests
     [Fact]
     public void TheHostMarchesOutBreaksAWeakFoeAndComesHome()
     {
-        var sim = Town(25);
+        var sim = Town(8);
         var t = sim.Town;
         Assert.Single(Field.Foes(t));
         Assert.Equal("pick who marches", Field.MarchBlocked(t, "warband"));
@@ -97,7 +97,8 @@ public class FieldTests
     [Fact]
     public void HeroesTakeGoalsAndComeBackToTheirOwnLives()
     {
-        var sim = Town(150);
+        // A foe the host can stand against past the first round, when the heroes go for their goals.
+        var sim = Town(100);
         var t = sim.Town;
         foreach (var r in t.Army.Regiments) sim.SetMarches(r.Id, true);
         var hero = Field.FreeHeroes(t).First();

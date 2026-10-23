@@ -178,6 +178,7 @@ public static class Loyalty
         foreach (var (why, pts) in Notoriety.LoyaltyFactors(town, a)) Add(why, pts);
         foreach (var (why, pts) in Regalia.LoyaltyFactors(town)) Add(why, pts);
         foreach (var (why, pts) in Mayoralty.LoyaltyFactors(town)) Add(why, pts);
+        Add("on the town's retainer", Retainers.Loyalty(town, a));
         if (s.Knight) Add("knighted", r.Rank);
         if (s.FiefId != null) Add("lands of their own", r.Rank);
         if (s.Champion) Add($"champion of {town.Name}", r.Rank);
@@ -215,7 +216,7 @@ public static class Loyalty
             }
             else if (s.Loyalty >= r.Restless + 10) s.Restless = false;
             s.DisloyalDays = s.Loyalty < r.Desert ? s.DisloyalDays + 1 : 0;
-            if (s.DisloyalDays >= r.DesertDays && town.Rng.Chance(r.LeaveChance)) Leave(town, a);
+            if (s.DisloyalDays >= r.DesertDays && !Retainers.Holds(town, a) && town.Rng.Chance(r.LeaveChance)) Leave(town, a);
         }
         Reckon(town);
         if (auto) Policy(town);

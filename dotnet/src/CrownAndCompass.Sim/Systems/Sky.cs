@@ -15,7 +15,8 @@ public sealed record SkyFoeDef
 public sealed record SkyFleetRules
 {
     public double Wind { get; init; } = 0.2;
-    public Dictionary<string, double> Storm { get; init; } = [];
+    /// <summary>Chance a day aloft is held by the weather where the ship flies, by its step (fair, grey, foul, storm, tempest).</summary>
+    public double[] StormStep { get; init; } = [0, 0.01, 0.1, 0.6, 1];
     public int[] StormDays { get; init; } = [1, 2];
     public int Turnaround { get; init; } = 1;
     public double Learn { get; init; } = 0.25;
@@ -162,18 +163,22 @@ public static class Sky
 
     // ---- Winds and storms (the one sky-travel model: Lofted's sailing can read it too) ----
 
-    /// <summary>The bearing the season's wind blows toward, turned by the seed.</summary>
-    public static double WindBearing(Town town, int season) => World.Hash(town.Seed * 613 + season * 97 + 11) * 360;
-
     /// <summary>Days aloft for a straight flight of so many road days on a bearing: the wind behind is quicker, ahead slower.</summary>
     public static int FlightDays(Town town, double roadDays, double speed, double bearing)
     {
-        double toward = (bearing - WindBearing(town, Seasons.Index(town)) + 360) % 360 * Math.PI / 180;
+        // The prevailing wind of the day (Weather): with it is quicker, against it slower.
+        double toward = (bearing - Weather.Prevailing(town, Weather.TimeOf(town.Tick)) + 360) % 360 * Math.PI / 180;
         return Math.Max(1, (int)Math.Ceiling(roadDays * speed * (1 - Rules(town).Wind * Math.Cos(toward)) - 1e-9));
     }
 
-    /// <summary>The chance a storm catches a ship today, less the share of them it climbs above.</summary>
-    public static double StormChance(Town town, ShipDef d) => Rules(town).Storm.GetValueOrDefault(Seasons.Current(town).Id) * (1 - d.Ceiling);
+    /// <summary>The chance the weather over a land holds a ship today, less the share of storms it climbs above.</summary>
+    public static double StormChance(Town town, ShipDef d, Region? region)
+    {
+        var (x, y) = region == null ? (0.0, 0.0) : Lofted.Spot(region);
+        var steps = Rules(town).StormStep;
+        int step = Weather.Worst(town, x, y, town.Day).Step;
+        return steps.Length == 0 ? 0 : steps[Math.Min(step, steps.Length - 1)] * (1 - d.Ceiling);
+    }
 
     /// <summary>Days there and back to a region, moored a day at the far end.</summary>
     public static int Days(Town town, Ship s, Region region) =>
@@ -296,7 +301,7 @@ public static class Sky
         string where = region?.Name ?? "the town";
         s.Lift = Math.Max(0, s.Lift - 1);
         s.Hull = Math.Max(0, s.Hull - d.Wear);
-        if (!f.Stormed && rng.Chance(StormChance(town, d)))
+        if (!f.Stormed && rng.Chance(StormChance(town, d, region)))
         {
             f.Stormed = true;
             int late = rng.Range(r.StormDays[0], r.StormDays[^1] + 1);

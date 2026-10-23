@@ -452,9 +452,19 @@ public static class Powers
     {
         if (town.Content.Stories.Story(storyId) is not { Source: ContactSource } d) return null;
         Init(town);
-        if (storyId == ContactSource + "-people")
+        if (storyId.StartsWith(Manners.MenacePrefix, StringComparison.Ordinal) || storyId.StartsWith(Manners.SignsPrefix, StringComparison.Ordinal))
         {
-            var s = town.Settlements.Where(x => !x.Razed && town.Regions[x.RegionId].Known).OrderBy(x => town.Regions[x.RegionId].Days).ThenBy(x => x.Id).FirstOrDefault();
+            string lineage = storyId[(storyId.IndexOf('-', ContactSource.Length + 1) + 1)..];
+            var m = town.Saga.Menaces.Where(x => x.Alive && x.Lineage == lineage).OrderBy(x => x.Id).FirstOrDefault()
+                ?? town.Saga.Menaces.Where(x => x.Alive).OrderBy(x => x.Id).FirstOrDefault();
+            if (m == null) return null;
+            Discovery.Meet(town, m, Discovery.Sighted);
+            return Stories.Contact(town, d, new Story { MenaceId = m.Id, SiteId = m.SeatId != "" ? m.SeatId : null });
+        }
+        if (storyId.StartsWith(ContactSource + "-people", StringComparison.Ordinal))
+        {
+            string kin = storyId.StartsWith(Manners.PeoplePrefix, StringComparison.Ordinal) ? storyId[Manners.PeoplePrefix.Length..] : "";
+            var s = town.Settlements.Where(x => !x.Razed && (kin == "" ? town.Regions[x.RegionId].Known : x.Kin.Id == kin)).OrderBy(x => town.Regions[x.RegionId].Days).ThenBy(x => x.Id).FirstOrDefault();
             if (s == null) return null;
             Discovery.Meet(town, Neighbours.Key(s), Discovery.Met);
             return Stories.Contact(town, d, new Story { SettlementId = s.Id });

@@ -117,6 +117,11 @@
   with no swing and must roll nothing, so gate sweeps stay put. Moods (`content/game/moods.json`, `Systems/Moods.cs`): townsfolk high for
   days get a trade inspiration, low ones break (`Agent.Episode`, shown as street bubbles and in the inspector; `--episode id` stages one).
   Their rolls use `Moods.Dice` (seeded from seed, tick and person), not `Town.Rng`, so moods never shift the main stream.
+- Acts and the final horde (saga.json `acts`, `horde`; `Systems/Saga.cs`, `Systems/Horde.cs`): an act opens when the town is strong
+  enough (`OpensAtLevel` champions and `OpensAtPopulation`, times `Storyteller.Acts`), after its `minDays`, or after `maxDays` regardless.
+  The big bad's host gathers at its seat and holdings (`HordeState.Camps`), musters, then marches; fights at a camp thin it, a cleared
+  holding scatters it. The town learns its size and moves only with eyes on its camps or road (`Horde.Eyes`, `RoadWatched`), else a day
+  or two out; nothing shows a count of days for it (`Horde.Word`). Its first breach burns the lower town (`Horde.Reprieve`); the next falls it.
 - Decorations (`content/game/decor.json`, `Systems/Decor.cs`, client `Map/Decorator.cs`, `Map/DecorView.cs`): free positions in
   tiles from the town's corner and any angle (radians, model front +Z turned by it). Every piece needs a small effect in
   another system, capped in decor.json. Pieces claim plan cells (`Decor.Cells`, `LandPlan.Decor`): `Land.Fits` and lanes go
@@ -125,8 +130,14 @@
 - UI text (`docs/ui-text.md`, kit in `godot/src/UiKit.cs`): Conner wants little text. Icon before word (`Ui.Chip`), one point a
   line (`Ui.Bullets`), explanations in hovers (`Ui.Tip`, `Ui.Brief`; `Pane.Note` briefs itself), colour by meaning, short labels.
   Every pane heading has an icon (`Ui.HeadingIcons`); every god has `god-<id>`. New icons go in `scripts/icons.ts`.
-- Menus: every window is one click on the left rail (`godot/src/Dock.cs`, `Groups`/`Blurbs`, Shift+number `QuickTabs`); its
-  badges count the alerts whose `AlertWindow` it answers, so a new alert badges its window for free. The action tray on the
+- Menus: the left rail (`godot/src/Dock.cs`) is six coloured groups (`Groups`: Town, Council, Heroes, War, Realm, Lore;
+  Shift+1 to 6); a group opens one window with its windows as tabs along the top (`TabNames`, `Blurbs`). A new window is a
+  tab in a group, never a new rail button. Rail buttons and tabs badge the alerts whose `AlertWindow` they answer, so a new
+  alert badges its window for free. Long windows split into pages (`Pane.Page`, `--page Name` for shots; tutorial points
+  `tab:Council:Laws`); headings fold on click (`Pane.Folded`, kept in the profile's settings) and a heading with nothing
+  under it is dropped, so don't print "nothing yet" lines. Window headings sit on a band in the group's hue (`Pane.Hue`);
+  long how-it-works notes go in one `Pane.Help` hover. The Build bar sorts by kind (`BuildGroup` buckets, `BucketOf`,
+  `CivicBuckets` in `godot/src/Build.cs`): zone brushes, then buildings, hiding any more than one charter tier ahead. The action tray on the
   right (`godot/src/Tray.cs`: Bounties, Council, Events, War) slides out a drawer to act without a window. The top bar's
   monthly trends and hover cards read `Systems/Trends.cs` (30 days of books, food, Mandate, unrest; numbers in trends.json).
 - Godot client in `godot/` (Godot 4.3 .NET). Screenshots: `xvfb-run -a godot --path godot --rendering-driver opengl3
@@ -156,6 +167,11 @@
   (`crest-<lineage>` from `scripts/icons.ts`) and a short line. The card stages the host live with the heroes' kit (creature bodies:
   `Frame.Spider`, `Wyrm`, `Wraith`, `Crawler`, `Rat`) and shows once per lineage (`Intros.Due` over `Town.Discovered`; clock stop
   `first-contact`). `IntrosTests` fails a lineage without one. Shots: `--intro <lineage>`.
+- Fights (`Systems/Prowess.cs`, `Systems/Expedition.Prowess.cs`, numbers in `content/game/prowess.json`): heroes gain Extra Attack
+  (library class features), cantrip dice and spell slots by level; casters pick from prowess.json `spells` each turn (the library gives
+  dice, damage type and save); class powers are `powers` entries played by id. Every blow on a foe goes through `Venture.Hit(foe, dmg,
+  type, magic, silver)`, which applies the library's resist/immune/vulnerable and stops regeneration; new damage (item powers) goes
+  through it too. Foes pick whom to hit by their Intelligence (`Venture.Victim`).
 - Lair towers (`Systems/Lairs.cs`, lairs.json `outpost`/`patrol`): a cleared site is kept clear by a patrol (a lost fight wounds
   the hero) or a tower built over `buildDays` (`SiteState.TowerDue`, then `Held`), tested now and then on the site's own dice
   (`Lairs.Tested`, `Reinforce`, alert `tower`). A knight's fief is theirs: `Loyalty.Choose` sets `HeroSheet.FiefWay`
@@ -167,6 +183,22 @@
   security added on roads through it (`Wilds.Road` in `Neighbours.RaidShare`/`SecurityTarget`), lair and menace raids seen sooner
   (`Wilds.Warns`), meetings rolled on its own dice. Old caravan patrols migrate into it (`retired` in neighbours.json); lair patrols
   stay their own order. The region list and the spot click are gone from the UI (`PostSurvey`/`MarkSpot` stay for the stand-in and old saves).
+- Weather (`Systems/Weather.cs`, `content/game/weather.json`): a pure function of the seed and tick (`Voices.Hash`, never
+  `Town.Rng`; only `WeatherState` is saved). Pressure fronts drift on the prevailing wind over seasons and climate; read it with
+  `Weather.At(town, x, y, tick)` (days from the town, x east, y south), `Here`, `Worst`, `Ground` (snow lying, wet ground),
+  `Forecast`, `StormIn`. Steps Fair/Grey/Foul/Storm/Tempest; airships, sky trade and marches (`Weather.MarchDays`) read it.
+  Roads (weather.json `road`): `Roads.Weathered` slows each stretch by snow, mud and storms (`Weather.Slow`), fog and storms add
+  navigation DC (`RouteMind.Murk`), fords in spate send parties to bridges (`Weather.Flooded`), killing nights call for saves
+  and shelter (`Weather.Exposure`, `Venture.Exposed`), all on their own dice; story need `stormbound`.
+  Town (weather.json `harvest`, `damage`): `Weather.Harvest` leans farm yields (influences, never decides; about even over a
+  year), storms with a gale wreck timber and lightning fires it (`Blows.Wreck` sets `Building.Wrecked`); `Town.Repairs`
+  (`Simulation.SetRepairs`: crews/first/hire, `Construction.Mend`) is how damage from any cause is mended.
+  Storm lords (weather.json `lords`): sites whose master is listed (storm giants, blue dragons, cloud giants, hags, frost giants,
+  white dragons) work storm, fog or winter round their lairs (`WeatherState.Lords`, refreshed each morning) and some call storms
+  at the town or a company (`WeatherState.Called`); `WeatherNow.By` names who. Answers: `wardens` research, a high druid at
+  home, `tamed` research for harvests, `glass` research for the forecast. Bump `WeatherState.Version` when you change either list.
+  Client: `Map/WeatherView.cs` (sky, rain, snow, lightning, shader `gale_wind`/`wet_ground`/`snow`), the campaign-map layer
+  `Map/WeatherLayer.cs` (off by default, a toggle by the corner map), the top-bar chip `WeatherHud.cs`; clock stop `storm`.
 - Cliffs (`Systems/Cliffs.cs`, passage.json `cliffs`): plateaus in the near wilds past the plan, a pure function of the seed. Passage
   treats each as a barrier opened only at its ramps (`Passage.Obstacles`, `RoundCliffs` for roads); the client raises them
   (`WorldGen`) and faces them with rock (`WorldView.BuildCliffs`).

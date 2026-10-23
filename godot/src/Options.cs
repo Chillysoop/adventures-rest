@@ -19,10 +19,20 @@ public sealed class Options
     public int Hour;
     public int? Speed;
     public string? Tab;
+    /// <summary>--page Name: the page of the --tab window to show (a paged window's strip).</summary>
+    public string? Page;
+    /// <summary>--goal N: click the Nth charter goal (goals.json order, from 1) as if on the card, for a shot of where it leads.</summary>
+    public int? Goal;
+    /// <summary>--next N: press the Next button N times, for a shot of where it leads.</summary>
+    public int Next;
+    /// <summary>--fold Tab/Heading: fold that section for the shot (repeatable).</summary>
+    public List<string> Fold = [];
     /// <summary>--tray Bounties opens that drawer of the action tray, for screenshots.</summary>
     public string? Tray;
     /// <summary>--stat N: hover the Nth resource in the top bar, for a shot of its month.</summary>
     public int? Stat;
+    /// <summary>--weather-tip: hover the top bar's weather, for a shot of the forecast. --weather-layer: the campaign map's weather layer on.</summary>
+    public bool WeatherTip, WeatherLayer;
     /// <summary>--tax 0.05: set the tax rate before the days run, for a shot of a town in the red.</summary>
     public double? Tax;
     public float? Scroll;
@@ -48,6 +58,9 @@ public sealed class Options
 
     /// <summary>--wonder kind aims the camera at the first strange place of that kind (well, hush, ferry, bones, ring, oasis, mirage, gate).</summary>
     public string? Wonder;
+
+    /// <summary>--land kind: aim at the nearest stretch of that hard country (ridge, mire, tangle, gorge...).</summary>
+    public string? Land;
     /// <summary>Aim the camera at the first finished building with this id.</summary>
     public string? At;
     public string? Screenshot;
@@ -167,6 +180,8 @@ public sealed class Options
     public bool TourneyCard = true;
     /// <summary>With <c>--at</c>: open that building's inspector (<c>--card</c>), for a shot of a monument's parts.</summary>
     public bool Card;
+    /// <summary>With <c>--at</c>: wreck that building first (<c>--wreck</c>), for a shot of the repairs card.</summary>
+    public bool Wreck;
 
     /// <summary>--asks hands every area to a steward who asks first and plays on until they ask (screenshots of the cards).</summary>
     public bool Asks;
@@ -252,12 +267,19 @@ public sealed class Options
                 case "--hour": o.Hour = int.Parse(Next()); break;
                 case "--speed": o.Speed = int.Parse(Next()); break;
                 case "--tab": o.Tab = Next(); break;
+                case "--goal": o.Goal = int.Parse(Next()); break;
+                case "--next": o.Next = int.Parse(Next()); break;
+                case "--page": o.Page = Next(); break;
+                case "--fold": o.Fold.Add(Next()); break;
                 case "--tray": o.Tray = Next(); break;
                 case "--stat": o.Stat = int.Parse(Next()); break;
+                case "--weather-tip": o.WeatherTip = true; break;
+                case "--weather-layer": o.WeatherLayer = true; break;
                 case "--tax": o.Tax = double.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture); break;
                 case "--scroll": o.Scroll = float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture); break;
                 case "--site": o.Site = Next(); break;
                 case "--wonder": o.Wonder = Next(); break;
+                case "--land": o.Land = Next(); break;
                 case "--at": o.At = Next(); break;
                 case "--screenshot": o.Screenshot = Next(); break;
                 case "--frames": o.Frames = int.Parse(Next()); break;
@@ -305,6 +327,7 @@ public sealed class Options
                 case "--befriend": o.Befriend = true; break;
                 case "--siege": o.Siege = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture) : 8; break;
                 case "--card": o.Card = true; break;
+                case "--wreck": o.Wreck = true; break;
                 case "--asks": o.Asks = true; break;
                 case "--tourney": o.Tourney = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? int.Parse(Next()) : 1; break;
                 case "--tourney-hour": o.TourneyHour = int.Parse(Next()); break;
@@ -581,7 +604,7 @@ public sealed class Options
                     break;
                 case "sinks":
                     // For shots of a rich town's spending: the first regiment in masterwork arms and the next being re-armed, the nearest
-                    // people's charter bought, the first power met sworn for good, and a dreadnought at the Sky Dock if there is one.
+                    // people's charter bought, the first power met sworn for good, a dreadnought at the Sky Dock if there is one, and the strongest company retained.
                     t.Treasury += 200000;
                     var regs = t.Army.Regiments.Where(r => !Army.Unit(t, r).IsLevy).OrderBy(r => r.Id).ToList();
                     if (regs.Count > 0) regs[0].Arms = 2;
@@ -604,6 +627,11 @@ public sealed class Options
                         sim.SwearPower(oath.Id);
                     }
                     if (CrownAndCompass.Sim.Systems.Sky.Dock(t) != null) Fleet.Build(t, "dreadnought", free: true);
+                    if (Roster.Companies(t).OrderByDescending(e => e.Power).ThenBy(e => e.Name, StringComparer.Ordinal).FirstOrDefault()?.Name is string kept)
+                    {
+                        Intel.Deal(t, kept, 50);
+                        sim.RetainCompany(kept);
+                    }
                     break;
                 case "stock":
                     // For armory shots: a find handed in under a pact.

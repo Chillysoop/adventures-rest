@@ -279,6 +279,37 @@
       "ignored": { "text": "Nobody sends for them. Their gear stays at {site}, for anyone who clears it to find.", "effects": {} }
     },
     {
+      "id": "deck-of-many-things", "title": "{hero} brings home a Deck of Many Things", "stakes": "high", "source": "found",
+      "needs": ["hero"],
+      "stages": [
+        {
+          "id": "start",
+          "text": "{hero} lays a worn deck of ivory cards on the council table. Every hero in the tavern knows the tales: a draw can make a lord or end a life. {heroName} wants to draw.",
+          "options": [
+            {
+              "label": "Draw one card", "ability": "cha", "dc": 12, "aid": "hero", "tags": ["valor"], "prefer": 0.4,
+              "success": { "text": "The Sun: {heroName} feels the card's warmth settle into their bones and their purse.", "effects": { "heroXp": 0.5, "gold": 150 } },
+              "critical": { "text": "The Star: something wakes in {heroName}, and the deck leaves a gift in their hand before it fades.", "effects": { "heroXp": 1, "magicItem": 3, "renown": 3 } },
+              "failure": { "text": "Flames: a cold fire licks over {heroName}'s hands. The burns heal, slowly.", "effects": { "wound": 12 } },
+              "fumble": { "text": "The Skull: a figure in a hooded robe steps out of the card. {heroName} drives it back, bleeding.", "effects": { "wound": 25, "dread": 3 } }
+            },
+            {
+              "label": "Draw three", "ability": "cha", "dc": 16, "aid": "hero", "tags": ["valor", "coin"], "prefer": 0.1,
+              "success": { "text": "The Key, the Gem and the Sun: a blade, a fortune and a name the bards will sing.", "effects": { "magicItem": 3, "gold": 400, "renown": 5 } },
+              "critical": { "text": "The Throne, the Star, the Moon: {heroName} walks out of the hall a legend, carrying something no smith alive could make.", "effects": { "magicItem": 4, "heroXp": 1.5, "renown": 10, "mandate": 3 } },
+              "failure": { "text": "The Rogue and Ruin: a friend's trust sours, and old debts in {heroName}'s name land on the treasury.", "effects": { "wound": 15, "loyalty": -5, "gold": -150 } },
+              "fumble": { "text": "The Void: {heroName}'s eyes go empty. The body lives; whoever they were has gone somewhere else, and they leave the life of the road.", "effects": { "retire": 1, "dread": 5 } }
+            },
+            {
+              "label": "Burn the deck", "tags": ["caution", "faith"],
+              "success": { "text": "The cards curl in the brazier and scream as they burn. {heroName} sulks for a week. The temple rings its bell.", "effects": { "loyalty": -3, "dread": -2, "mandate": 1 } }
+            }
+          ]
+        }
+      ],
+      "ignored": { "text": "{heroName} draws alone in the night. In the morning the deck is gone, and {heroName} wakes with burnt hands.", "effects": { "wound": 8 } }
+    },
+    {
       "id": "hero-wager", "title": "{hero}'s wager", "stakes": "low", "source": "heroes",
       "needs": ["hero"], "repeatDays": 50,
       "stages": [

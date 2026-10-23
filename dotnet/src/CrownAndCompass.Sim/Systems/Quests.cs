@@ -646,7 +646,7 @@ public static class Quests
             var bounty = party.BountyId is int bid ? town.Bounties[bid - 1] : null;
             var members = party.Members.Select(town.Agent).ToList();
             // Only a council bounty buys the council the report; anyone else keeps theirs to sell.
-            party.Withheld = !Intel.Commissioned(town, party);
+            party.Withheld = !Intel.Commissioned(town, party) && !Retainers.Held(town, party.Name);
             // Explorers who went in to fight tell of the country they walked when they're home, if anyone comes home.
             if (party.SurveyId is int sid && town.Surveys.FirstOrDefault(x => x.Id == sid) is { } survey)
                 Wilds.Told(town, survey, party.Result is not { Outcome: ExpeditionOutcome.Wiped });

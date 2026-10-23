@@ -498,62 +498,203 @@ public interface IKeywordCards
 
 /// <summary>
 /// A side pane rebuilt from a description each time the game changes, but only re-instantiated
-/// when the description differs, so a running clock never steals a click or a hover.
+/// when the description differs, so a running clock never steals a click or a hover. A long pane splits into
+/// pages (<see cref="Page"/>) shown one at a time under a strip of their names; what comes before the first page
+/// shows on all of them. Each heading starts a section the player can fold by clicking it, and a heading with
+/// nothing under it is left out.
 /// </summary>
 public sealed class Pane
 {
     public VBoxContainer Box { get; }
-    private readonly StringBuilder _sig = new();
-    private readonly List<Func<Control>> _items = [];
+    /// <summary>Names this pane's folds in <see cref="Folded"/>; a pane without one cannot fold.</summary>
+    public string Id { get; }
+    private readonly List<(string Sig, Func<Control> Make, int Page, string? Section, bool Head)> _items = [];
+    private readonly List<(string Name, string Icon)> _pages = [];
+    private int _page = -1;
+    private string? _section;
     private string _shown = "\0";
 
-    public Pane(VBoxContainer box) => Box = box;
+    /// <summary>The colour of this pane's window group: its headings sit on a band of it.</summary>
+    public Color? Hue { get; set; }
+
+    /// <summary>The page the player last picked, by name (the first page when it is gone).</summary>
+    public string? Selected { get; set; }
+
+    /// <summary>Folded sections, as "pane/heading", for every pane at once (the client keeps them in the profile).</summary>
+    public static HashSet<string> Folded { get; } = [];
+
+    /// <summary>A page was picked or a section folded: the client redraws and remembers the folds.</summary>
+    public static Action? Changed;
+
+    public Pane(VBoxContainer box, string id = "")
+    {
+        Box = box;
+        Id = id;
+    }
+
+    /// <summary>The names of this pane's pages as it was last committed.</summary>
+    public IReadOnlyList<string> Pages => _pages.Select(x => x.Name).ToList();
 
     public void Begin()
     {
-        _sig.Clear();
         _items.Clear();
+        _pages.Clear();
+        _page = -1;
+        _section = null;
     }
 
-    public void Add(string sig, Func<Control> make)
+    public void Add(string sig, Func<Control> make) => _items.Add((sig, make, _page, _section, false));
+
+    /// <summary>Start a page: what follows, up to the next page, shows only while it is picked.</summary>
+    public void Page(string name, string icon)
     {
-        _sig.Append(sig).Append('\u001f');
-        _items.Add(make);
+        if (_pages.Count == 0) _items.Add(("", PageStrip, -1, null, false));
+        _pages.Add((name, icon));
+        _page = _pages.Count - 1;
+        _section = null;
     }
+
+    /// <summary>The page a heading was last drawn on, if the pane has pages.</summary>
+    public string? PageOf(string heading) =>
+        _items.FirstOrDefault(i => i.Head && i.Section == heading) is { Page: >= 0 } it ? _pages[it.Page].Name : null;
+
+    /// <summary>A dim "How it works" line whose hover holds the explanation, for what a player reads once.</summary>
+    public void Help(params string[] lines) =>
+        Text(Ui.Tip(Ui.Dim($"{Ui.Img("ui-info", 13)} How it works"), string.Join("\n\n", lines)), 12);
+
+    private bool IsFolded(string heading) => Id != "" && Folded.Contains($"{Id}/{heading}");
 
     public void Commit()
     {
-        string sig = _sig.ToString();
-        if (sig == _shown) return;
-        _shown = sig;
+        // A page or a section with nothing in it is left out; the picked page falls back to the first that has something.
+        var filled = new HashSet<(int, string?)>();
+        foreach (var it in _items)
+            if (!it.Head && it.Sig != "") filled.Add((it.Page, it.Section));
+        var live = Enumerable.Range(0, _pages.Count).Where(i => filled.Any(f => f.Item1 == i)).ToList();
+        int pick = live.FirstOrDefault(i => _pages[i].Name == Selected, live.Count > 0 ? live[0] : -1);
+        Selected = pick >= 0 ? _pages[pick].Name : null;
+        _live = live;
+
+        var shown = new List<(string Sig, Func<Control> Make)>();
+        var sig = new StringBuilder();
+        foreach (var it in _items)
+        {
+            if (it.Page >= 0 && it.Page != pick) continue;
+            if (it.Sig == "" && live.Count < 2) continue;
+            if (it.Head && !filled.Contains((it.Page, it.Section))) continue;
+            if (!it.Head && it.Section != null && IsFolded(it.Section)) continue;
+            string s = it.Sig;
+            if (s == "") s = "P" + string.Join("|", live.Select(i => _pages[i].Name)) + "#" + pick;
+            else if (it.Head) s += IsFolded(it.Section!) ? "+" : "-";
+            sig.Append(s).Append('\u001f');
+            shown.Add((s, it.Make));
+        }
+        string all = sig.ToString();
+        if (all == _shown) return;
+        _shown = all;
         // A control that keeps its own state (the council chamber's little world) is taken out and put back, not remade.
         foreach (var c in Box.GetChildren())
             if (c.HasMeta("keep")) Box.RemoveChild(c);
             else c.QueueFree();
-        foreach (var make in _items) Box.AddChild(make());
+        foreach (var (_, make) in shown) Box.AddChild(make());
     }
+
+    private List<int> _live = [];
 
     public void Invalidate() => _shown = "\0";
 
+    /// <summary>The strip of page names along the top of a paged pane, the picked one lit.</summary>
+    private Control PageStrip()
+    {
+        var h = new HBoxContainer();
+        h.AddThemeConstantOverride("separation", 4);
+        foreach (int i in _live)
+        {
+            var (name, icon) = _pages[i];
+            bool on = name == Selected;
+            var b = new Button { Text = name, Icon = Ui.Icon(icon), ExpandIcon = false, FocusMode = Control.FocusModeEnum.None, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, MouseDefaultCursorShape = Control.CursorShape.PointingHand };
+            b.SetMeta("page", name);
+            b.AddThemeConstantOverride("icon_max_width", 16);
+            b.AddThemeConstantOverride("h_separation", 6);
+            b.AddThemeFontSizeOverride("font_size", 13);
+            var style = Ui.Flat(on ? new Color(Ui.Gold, 0.16f) : new Color(Ui.Panel2, 0.7f), 8, 5, 5);
+            if (on)
+            {
+                style.BorderColor = Ui.Gold;
+                style.BorderWidthBottom = 2;
+            }
+            foreach (var st in new[] { "normal", "hover", "pressed", "hover_pressed" }) b.AddThemeStyleboxOverride(st, st == "hover" && !on ? Ui.Flat(new Color(Ui.Gold, 0.08f), 8, 5, 5) : style);
+            b.AddThemeColorOverride("font_color", on ? Ui.Gold : Ui.Ink2);
+            b.AddThemeColorOverride("font_hover_color", on ? Ui.Gold : Ui.Ink);
+            b.AddThemeColorOverride("icon_normal_color", on ? Ui.Gold : Ui.Ink2);
+            b.AddThemeColorOverride("icon_hover_color", on ? Ui.Gold : Ui.Ink);
+            b.Pressed += () =>
+            {
+                Selected = name;
+                Changed?.Invoke();
+            };
+            h.AddChild(b);
+        }
+        var m = new MarginContainer();
+        m.AddThemeConstantOverride("margin_bottom", 2);
+        m.AddChild(h);
+        return m;
+    }
+
     // ---- Building blocks ----
 
-    /// <summary>A section's heading: its icon (<paramref name="icon"/>, or the kit's for that heading) and the words in gold.</summary>
-    public void Heading(string text, string? icon = null) =>
-        Add("h" + text + icon, () =>
+    /// <summary>
+    /// A section's heading: its icon (<paramref name="icon"/>, or the kit's for that heading) and the words in gold.
+    /// Clicking it folds the section away (a ▸ marks it) and clicking again opens it.
+    /// </summary>
+    public void Heading(string text, string? icon = null)
+    {
+        _section = text;
+        _items.Add(("h" + text + icon, () =>
         {
-            var h = new HBoxContainer();
+            bool folded = IsFolded(text);
+            var h = new HBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
             h.AddThemeConstantOverride("separation", 6);
             if ((icon ?? Ui.HeadingIcon(text)) is string i) h.AddChild(Ui.IconRect(i, 17));
             var l = Ui.Label(text.ToUpperInvariant(), Ui.KeywordColor, Ui.Bold, 12);
             l.AddThemeConstantOverride("line_spacing", 0);
             l.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+            l.MouseFilter = Control.MouseFilterEnum.Ignore;
             h.AddChild(l);
             var m = new MarginContainer();
             m.AddThemeConstantOverride("margin_top", 12);
-            m.AddChild(h);
+            if (Hue is Color hue)
+            {
+                // A band of the window's colour, so sections read apart at a glance.
+                var band = new PanelContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+                var style = Ui.Flat(new Color(hue, 0.1f), 8, 4, 4);
+                style.BorderColor = hue;
+                style.BorderWidthLeft = 3;
+                band.AddThemeStyleboxOverride("panel", style);
+                band.AddChild(h);
+                m.AddChild(band);
+            }
+            else m.AddChild(h);
             m.SetMeta("heading", text);
+            if (Id == "") return m;
+            l.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+            var fold = Ui.Label(folded ? "▸" : "▾", folded ? Ui.KeywordColor : Ui.Ink2, Ui.Bold, 13);
+            fold.MouseFilter = Control.MouseFilterEnum.Ignore;
+            h.AddChild(fold);
+            m.MouseFilter = Control.MouseFilterEnum.Stop;
+            m.MouseDefaultCursorShape = Control.CursorShape.PointingHand;
+            m.TooltipText = folded ? "Show" : "Fold";
+            string key = $"{Id}/{text}";
+            m.GuiInput += e =>
+            {
+                if (e is not InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left }) return;
+                if (!Folded.Remove(key)) Folded.Add(key);
+                m.AcceptEvent();
+                Changed?.Invoke();
+            };
             return m;
-        });
+        }, _page, text, true));
+    }
 
     public void Text(string bbcode, int size = 14) => Add("t" + size + bbcode, () => Ui.Rich(bbcode, size));
 
