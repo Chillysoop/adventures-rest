@@ -125,7 +125,7 @@ public static class Infiltration
 
     /// <summary>The council chamber is warded against charms (a decree in force or a warder in the calling).</summary>
     public static bool Warded(Town town) =>
-        Rules(town).Wards.Any(w => Decrees.InForce(town, w) || Callings.Holder(town, w) != null);
+        Rules(town).Wards.Any(w => Decrees.InForce(town, w) || Callings.Holder(town, w) != null) || Regalia.Charm(town);
 
     /// <summary>Someone sits by the council door who hears lies.</summary>
     public static bool Seen(Town town) => Rules(town).Seers.Any(w => Callings.Holder(town, w) != null);
@@ -185,7 +185,7 @@ public static class Infiltration
                 town.Moles.Remove(m);
                 continue;
             }
-            m.Suspicion += r.Daily * (0.5 + Council.WatchStrength(town)) * (Seen(town) ? r.Seen : 1);
+            m.Suspicion += r.Daily * (0.5 + Council.WatchStrength(town)) * (Seen(town) ? r.Seen : 1) * (1 + Regalia.Truth(town));
             if (m.DecoyId is int d && (SeatOf(town, d) == null || town.Agent(d).Dead || town.Agent(d).Departed)) m.DecoyId = null;
             if (m.DecoyId == null && m.Suspicion >= r.Whisper) Whisper(town, m);
             if (m.Suspicion >= r.Proof)
