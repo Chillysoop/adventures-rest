@@ -758,6 +758,7 @@ public static class World
                 Tell(town, site, trust, lead);
                 // An ally's map puts the place where it really is.
                 site.Found = true;
+                site.FoundTick ??= town.Tick;
             }
         }
         string lands = Expedition.ListNames(news.Select(r =>

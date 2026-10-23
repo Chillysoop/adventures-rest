@@ -178,7 +178,20 @@ public static class Sendings
         }
         party.Asked++;
         party.Sendings++;
+        Told(town, party);
         return Stories.BeginSending(town, pick.Def, pick.Bound, r.DueHours);
+    }
+
+    /// <summary>
+    /// A sending carries a few words of where the party stands. On a council bounty the road it has walked so far is the
+    /// town's, and once it has been at the site, the site is too: what lives there and whether it fell, as of now.
+    /// </summary>
+    private static void Told(Town town, Party party)
+    {
+        if (!Intel.Commissioned(town, party)) return;
+        party.SentTick = town.Tick;
+        if (!Homeward(town, party) || Quests.Site(town, party.SiteId) is not { } site) return;
+        if ((site.ReportTick ?? -1) < town.Tick) Rumors.Confirm(town, site, $"the {party.Name}'s sending");
     }
 
     /// <summary>On the road out, not yet at the site.</summary>

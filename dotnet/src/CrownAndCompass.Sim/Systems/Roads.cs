@@ -963,37 +963,53 @@ public static class Roads
     /// <summary>The roads a party walked and could describe: out (as far as it got) and home. Each is a line of spots.</summary>
     public static List<List<(double X, double Y)>> Walked(Town town, Party party)
     {
+        if (party.RecalledTick is int rt) return WalkedOut(town, party, rt);
         var lines = new List<List<(double X, double Y)>>();
-        var site = Quests.Site(town, party.SiteId)!;
-        var spot = World.Spot(town, site);
-        var outLine = new List<(double X, double Y)> { party.Start };
-        if (party.RecalledTick is int rt)
-        {
-            double walked = Marched(town.Content, party.DepartTick, rt);
-            var cur = party.Start;
-            double h = 0;
-            foreach (var w in party.Out)
-            {
-                double leg = LegHours(town.Content.Roads, cur, w);
-                if (h + leg >= walked)
-                {
-                    outLine.Add(Along(town, party.Start, party.Out, walked));
-                    break;
-                }
-                if (w.Way == "portal")
-                {
-                    lines.Add(outLine);
-                    outLine = [];
-                }
-                outLine.Add((w.X, w.Y));
-                h += leg;
-                cur = (w.X, w.Y);
-            }
-            lines.Add(outLine);
-            return lines;
-        }
-        Split(lines, outLine, party.Out.Count > 0 ? party.Out : [new Waypoint { X = spot.X, Y = spot.Y }]);
+        var spot = World.Spot(town, Quests.Site(town, party.SiteId)!);
+        Split(lines, [party.Start], party.Out.Count > 0 ? party.Out : [new Waypoint { X = spot.X, Y = spot.Y }]);
         if (party.Home.Count > 0 && party.GoneTick == null) Split(lines, [spot], party.Home);
+        return lines;
+    }
+
+    /// <summary>
+    /// What a party still out could have described by <paramref name="tick"/> (when it sent word home): the road out as
+    /// far as it had got, and, once it had reached the site, the whole road out.
+    /// </summary>
+    public static List<List<(double X, double Y)>> WalkedBy(Town town, Party party, int tick)
+    {
+        if (tick < party.ArriveTick || party.RecalledTick != null) return WalkedOut(town, party, Math.Min(tick, party.RecalledTick ?? tick));
+        var lines = new List<List<(double X, double Y)>>();
+        var spot = World.Spot(town, Quests.Site(town, party.SiteId)!);
+        Split(lines, [party.Start], party.Out.Count > 0 ? party.Out : [new Waypoint { X = spot.X, Y = spot.Y }]);
+        return lines;
+    }
+
+    /// <summary>The road out as far as the party had marched by <paramref name="until"/>.</summary>
+    private static List<List<(double X, double Y)>> WalkedOut(Town town, Party party, int until)
+    {
+        var lines = new List<List<(double X, double Y)>>();
+        var outLine = new List<(double X, double Y)> { party.Start };
+        double walked = Marched(town.Content, party.DepartTick, until);
+        var cur = party.Start;
+        double h = 0;
+        foreach (var w in party.Out)
+        {
+            double leg = LegHours(town.Content.Roads, cur, w);
+            if (h + leg >= walked)
+            {
+                outLine.Add(Along(town, party.Start, party.Out, walked));
+                break;
+            }
+            if (w.Way == "portal")
+            {
+                lines.Add(outLine);
+                outLine = [];
+            }
+            outLine.Add((w.X, w.Y));
+            h += leg;
+            cur = (w.X, w.Y);
+        }
+        lines.Add(outLine);
         return lines;
     }
 

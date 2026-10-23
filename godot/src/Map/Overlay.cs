@@ -495,7 +495,7 @@ public partial class Overlay(MapView map) : Control
             foreach (var c in z.Cells)
             {
                 if (Quad(town, c.X, c.Y) is not { } q) continue;
-                DrawColoredPolygon(q, new Color(ink, explore && c.Seen ? 0.08f : 0.24f));
+                DrawColoredPolygon(q, new Color(ink, explore && c.Seen && !c.Pending ? 0.08f : 0.24f));
                 // Edges only where the zone ends, so it reads as one painted patch.
                 (int dx, int dy, int i)[] sides = [(0, -1, 0), (1, 0, 1), (0, 1, 2), (-1, 0, 3)];
                 foreach (var (dx, dy, i) in sides)
@@ -533,6 +533,7 @@ public partial class Overlay(MapView map) : Control
             if (s != null) return $"The {s.Name} · {left} left";
             var c = town.Commissions.FirstOrDefault(x => x.ZoneId == z.Id && x.Status == BountyStatus.Open);
             if (c != null) return $"{left} left · {Math.Round(c.Reward)}g offered";
+            if (left == 0 && Wilds.Untold(z) > 0) return "Walked · awaiting their report";
             return left == 0 ? "Walked" : $"{left} left · needs {Wilds.TripReward(town, z):0}g";
         }
         if (z.Unpaid) return $"Unpaid · {Wilds.Wage(town, z):0.#}g a day";

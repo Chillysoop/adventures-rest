@@ -104,6 +104,32 @@ public class SendingsTests
         Assert.NotNull(Stories.Resolve(t, s.Id, hallOption));
     }
 
+    /// <summary>A sending on a council bounty carries the road walked so far; one from the road home confirms the site.</summary>
+    [Fact]
+    public void ASendingTellsTheTownWhereThePartyStands()
+    {
+        var (sim, party) = PartyOnTheRoad();
+        var t = sim.Town;
+        Assert.True(Intel.Commissioned(t, party));
+        Assert.NotNull(Sendings.Open(t, party, "bridge-toll"));
+        Assert.Equal(t.Tick, party.SentTick);
+        var road = Roads.WalkedBy(t, party, t.Tick);
+        Assert.NotEmpty(road);
+        Assert.True(road[0].Count >= 2);
+
+        for (int h = 0; h < 24 * 60 && !Sendings.Homeward(t, party) && !party.Returned; h++) sim.Step();
+        if (!Sendings.Homeward(t, party)) return;
+        foreach (var s in t.Stories.Open.Where(s => s.PartyId == party.Id)) s.Done = true;
+        var site = Quests.Site(t, party.SiteId)!;
+        site.Known = SiteKnowledge.Rumoured;
+        site.ReportTick = null;
+        var home = t.Content.Sendings.Stories.Where(d => d.Needs.Contains("homeward")).Select(d => Sendings.Open(t, party, d.Id)).FirstOrDefault(s => s != null);
+        if (home == null) return;
+        Assert.Equal(SiteKnowledge.Confirmed, site.Known);
+        Assert.Equal(t.Tick, site.ReportTick);
+        Assert.Equal(site.Cleared, site.ThoughtCleared);
+    }
+
     [Fact]
     public void AnswersChangeTheVentureAndCanTurnThePartyBack()
     {
