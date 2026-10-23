@@ -184,6 +184,7 @@ public static partial class Ui
         ["Reports for sale"] = "lore",
         ["Restore it"] = "stone",
         ["Roads and ruins"] = "ui-road",
+        ["Party"] = "sheet",
         ["Roster"] = "heroes",
         ["Seats"] = "mandate",
         ["Sellswords"] = "threat",
