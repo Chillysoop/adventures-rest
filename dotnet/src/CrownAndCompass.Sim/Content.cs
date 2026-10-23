@@ -260,9 +260,6 @@ public sealed record ClassDef
 
     public bool Healer => HealSpell != null;
     public bool Area => AreaSpell != null;
-
-    /// <summary>Heals a hero of this class carries into a delve: full casters more than half casters.</summary>
-    public int HealsAt(int level) => HealSpell == null ? 0 : Magic == "full" ? 1 + level / 2 : level / 2;
 }
 
 /// <summary>
@@ -1592,6 +1589,12 @@ public sealed class Content
 
     /// <summary>The alchemy bench: ingredients, recipes and what potions do (content/game/alchemy.json).</summary>
     public AlchemyRules Alchemy { get; init; } = new();
+
+    /// <summary>Magic items' powers, elements and the plain +N arms (content/game/enchantments.json).</summary>
+    public EnchantRules Enchant { get; init; } = new();
+
+    /// <summary>What foes drop: parts, signature items by creature, group, foe and lineage, and the forge's recipes (content/game/spoils.json).</summary>
+    public SpoilsRules Spoils { get; init; } = new();
     public NeighbourRules Neighbours { get; init; } = new();
     public LegacyRules Legacies { get; init; } = new();
     public UndercityRules Undercity { get; init; } = new();
@@ -1712,6 +1715,9 @@ public sealed class Content
     public Systems.CharacterRules Character { get; init; } = new();
     public Systems.TacticRules Tactics { get; init; } = new();
     public Systems.KnackRules Knacks { get; init; } = new();
+
+    /// <summary>How heroes fight as they level: attacks, spell slots, fighting spells, class powers, damage types (content/game/prowess.json).</summary>
+    public Systems.ProwessRules Prowess { get; init; } = new();
     public Systems.BestiaryRules Bestiary { get; init; } = new();
 
     /// <summary>Heroes' lasting wounds and how they mend (content/game/wounds.json).</summary>
@@ -1748,7 +1754,8 @@ public sealed class Content
     public Library Library { get; }
 
     /// <summary>Library magic items a hoard can hold (the loot rules' slots), by id.</summary>
-    public IReadOnlyList<LibItem> LootItems => _lootItems ??= Library.Items.Where(i => i.Tier > 0 && Loot.Slots.Contains(i.Slot)).ToList();
+    /// <summary>Signature pieces (spoils.json drops) only come from their own foes, never from any hoard.</summary>
+    public IReadOnlyList<LibItem> LootItems => _lootItems ??= Library.Items.Where(i => i.Tier > 0 && Loot.Slots.Contains(i.Slot) && !Spoils.Signature(i.Id)).ToList();
     private IReadOnlyList<LibItem>? _lootItems;
 
     public Content(
@@ -1909,6 +1916,8 @@ public sealed class Content
             Regalia = Parse<RegaliaRules>("regalia.json"),
             Mayoralty = Parse<MayoraltyRules>("mayoralty.json"),
             Alchemy = Parse<AlchemyRules>("alchemy.json"),
+            Enchant = Parse<EnchantRules>("enchantments.json"),
+            Spoils = Parse<SpoilsRules>("spoils.json"),
             Neighbours = Parse<NeighbourRules>("neighbours.json"),
             Legacies = Parse<LegacyRules>("legacies.json"),
             Undercity = Parse<UndercityRules>("undercity.json"),
@@ -1968,6 +1977,7 @@ public sealed class Content
             Character = Parse<CharacterRules>("character.json"),
             Tactics = Parse<TacticRules>("tactics.json"),
             Knacks = Parse<Systems.KnackRules>("knacks.json"),
+            Prowess = Parse<Systems.ProwessRules>("prowess.json"),
             Bestiary = Parse<Systems.BestiaryRules>("bestiary.json"),
             Wounds = Parse<WoundRules>("wounds.json"),
             Word = Parse<WordRules>("word.json"),

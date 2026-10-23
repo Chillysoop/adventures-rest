@@ -117,6 +117,9 @@ public sealed class StockItem
     /// <summary>The name a townsperson gave the blade they forged (<see cref="Systems.Moods"/>), "" for none.</summary>
     public string Name { get; set; } = "";
 
+    /// <summary>Who carries it while issued: "watch" or "regiment:N" (<see cref="Kit"/>); "" in the armory.</summary>
+    public string Unit { get; set; } = "";
+
     /// <summary>"Emberfang, a +1 weapon", or the item's own name.</summary>
     public string Title => Name != "" ? $"{Name}, {Gear.Plainly(Item)}" : Gear.Plainly(Item);
 }
@@ -140,6 +143,9 @@ public sealed class ArmoryState
     public List<StockItem> Stock { get; } = [];
     public List<LootOffer> Offers { get; } = [];
     public int NextId { get; set; } = 1;
+
+    /// <summary>Plain arms out with the watch and the regiments (<see cref="Kit"/>).</summary>
+    public List<StockItem> Issued { get; } = [];
 
     public int Gifts { get; set; }
     public int Bought { get; set; }
@@ -185,7 +191,7 @@ public static class Armory
     // Stones on the road --------------------------------------------------------------------------
 
     /// <summary>A living member of the party carries one of the town's sending stones.</summary>
-    public static bool Carries(Town town, Party party) => party.Members.Any(id => town.Agent(id) is { Dead: false, Hero.Stone: true });
+    public static bool Carries(Town town, Party party) => party.Members.Any(id => town.Agent(id) is { Dead: false, Hero: { } h } && (h.Stone || Enchant.Has(town.Content, h, "sending")));
 
     /// <summary>Sendings a carried stone adds to the party's spell slots.</summary>
     public static int StoneSlots(Town town, Party party) => Carries(town, party) ? Rules(town).StoneSlots : 0;
@@ -234,7 +240,7 @@ public static class Armory
     private static bool CompanySends(Town town, Agent a)
     {
         var mates = a.Hero!.PartyName is string n ? Intel.Members(town, n) : [a];
-        return mates.Any(m => m.Hero!.Stone || Knowledge.Sends(town, m));
+        return mates.Any(m => m.Hero!.Stone || Enchant.Has(town.Content, m.Hero, "sending") || Knowledge.Sends(town, m));
     }
 
     /// <summary>The mayor's gift: an item from the armory goes to a hero in town, who wears or carries it from now on.</summary>
@@ -257,7 +263,7 @@ public static class Armory
         }
         else
         {
-            string slot = Gear.SlotOf(it), oldName = s.Named.Get(slot, "");
+            string slot = Gear.Into(town.Content, s, it), oldName = s.Named.Get(slot, "");
             var old = Gear.Fit(town, a, it);
             if (stock.Name != "")
             {

@@ -24,6 +24,13 @@ public sealed record RegaliaDef
     public double Council { get; init; }
     public double Loyalty { get; init; }
     public int March { get; init; }
+
+    /// <summary>Share an assassin's chance at the mayor falls by, and that the guard's chance to stop a knife rises by.</summary>
+    public double Ward { get; init; }
+
+    /// <summary>How much faster a councillor serving a foe is found out; whether it wards the chamber against charms.</summary>
+    public double Truth { get; init; }
+    public bool Charm { get; init; }
 }
 
 /// <summary>Commissions from the town's craftsmen (regalia.json "commission").</summary>
@@ -93,6 +100,9 @@ public static class Regalia
     public static double Mandate(Town town) => Js.Sum(Worn(town), w => w.Def.Mandate);
     public static double Council(Town town) => Js.Sum(Worn(town), w => w.Def.Council);
     public static int March(Town town) => Worn(town).Sum(w => w.Def.March);
+    public static double Ward(Town town) => Math.Min(0.9, Js.Sum(Worn(town), w => w.Def.Ward));
+    public static double Truth(Town town) => Js.Sum(Worn(town), w => w.Def.Truth);
+    public static bool Charm(Town town) => Worn(town).Any(w => w.Def.Charm);
 
     /// <summary>Heroes' loyalty from the mayor's regalia, piece by piece, for <see cref="Loyalty.Factors"/>.</summary>
     public static IEnumerable<(string Why, double Points)> LoyaltyFactors(Town town) =>

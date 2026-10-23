@@ -7,9 +7,11 @@
   "greedyReserve": 3,
   "enchanted": [
     { "items": ["weapon-1", "armor-1", "shield-1", "wand-of-the-war-mage-1"], "population": 50 },
-    { "items": ["weapon-2", "armor-2", "shield-2", "wand-of-the-war-mage-2"], "population": 100, "faction": "unshut-book" }
+    { "items": ["weapon-2", "armor-2", "shield-2", "wand-of-the-war-mage-2"], "population": 100, "faction": "unshut-book" },
+    { "items": ["weapon-3", "armor-3", "shield-3", "wand-of-the-war-mage-3"], "population": 250, "faction": "unshut-book" }
   ],
   "sellShare": 0.5,
   "sellCap": [0, 25, 100, 400, 1000, 2500],
-  "edgePerLevel": 3
+  "edgePerLevel": 3,
+  "silver": { "cost": 100, "level": 3 }
 }

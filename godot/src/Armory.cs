@@ -74,7 +74,11 @@ public partial class Main
         }).ToList();
         if (cards.Count > 0)
             p.Add($"ag{_armoryPick}|{string.Join(";", cards.Select(c => $"{c.Id},{c.Name},{c.Who},{c.Duty}"))}", () => ItemGrid(cards));
-        if (shown.FirstOrDefault(s => s.Id == _armoryPick) is { } pick) PickedItem(p, t, pick);
+        if (shown.FirstOrDefault(s => s.Id == _armoryPick) is { } pick)
+        {
+            PickedItem(p, t, pick);
+            PickedPowers(p, t, pick);
+        }
 
         p.Heading("Offered to the town");
         if (offers.Count == 0) p.Note("Nothing on offer.");
@@ -124,6 +128,9 @@ public partial class Main
             string line = no != null && c is not { Pact: true } ? Ui.C(Ui.Ink2, $" · no pact: {Ui.Esc(no)}") : "";
             p.Row($"[b]The {Ui.Esc(name)}[/b]  {Tag(word, color)}  {pact}\n{Ui.C(Ui.Ink2, $"[font_size=12]{home.Count}/{members.Count} in town{line}[/font_size]")}", buttons.ToArray());
         }
+        RenderKit(p, t);
+        RenderForge(p, t);
+        RenderParts(p, t);
         RenderAlchemy(p);
         p.Commit();
     }
