@@ -290,7 +290,8 @@ public static class Threat
         }
         string where = target!.Name;
         Passage.Alarm(town, target);
-        local *= Garrison.FlagFactor(town, target);
+        local *= Garrison.FlagFactor(town, target) * Elements.Watch(town, out string fog);
+        if (fog != "") timing += fog;
         if (Garrison.Covered(town, target)) timing += ", where the watch had planted its flag";
 
         if (local >= raiders)

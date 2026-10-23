@@ -218,6 +218,16 @@ public static class Ahead
             aims.Add(new("defence", next.Walls == "CityWall" ? "The city wall" : "Stone walls", "", 0, "tab:Defence"));
         if (t.Treasury < next.Cost) aims.Add(new("gold", "Charter fee", $"{Js.Str(Math.Floor(t.Treasury))}/{Js.Str(next.Cost)}g", t.Treasury / next.Cost, Open: "tab:City:Growth>Claim"));
         if (aims.Count == 0) aims.Add(new("decree", $"Claim the {next.Name.ToLowerInvariant()} charter", "", 1, "tab:City:Growth>Claim"));
+        if (Harbour(t) is { } harbour) aims.Insert(Math.Min(aims.Count, Most - 1), harbour);
         return ($"Next charter: {next.Name}", aims.Take(Most).ToList());
+    }
+
+    /// <summary>A town on the sea with no harbour yet: its own ships reach the islands and pay better than borrowing an airship.</summary>
+    private static Aim? Harbour(Town t)
+    {
+        if (!Fleet.Coastal(t) || t.Buildings.Any(b => b.Def.Id == "harbour")) return null;
+        var d = t.Content.Buildings.FirstOrDefault(b => b.Id == "harbour");
+        if (d == null || City.Locked(t, d) != null) return null;
+        return new("unit-harbour-marines", "A harbour", "", 0, Open: "place:harbour");
     }
 }

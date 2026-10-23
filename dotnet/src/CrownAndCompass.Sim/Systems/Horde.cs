@@ -59,6 +59,9 @@ public sealed class HordeCamp
 
     /// <summary>Parties that fought here and came home, as last counted: each new one thins the camp.</summary>
     public int SeenAttempts { get; set; }
+
+    /// <summary>Day snow last lay deep on it (<see cref="Elements.Snowbound"/>).</summary>
+    public int? ColdDay { get; set; }
 }
 
 public sealed class HordeState
@@ -155,7 +158,7 @@ public static class Horde
         {
             double perDay = full / Math.Max(1, r.GatherDays) / Math.Max(1, r.SeatWeight + r.Holdings) * Storyteller.HordeGrowth(town) * Seasons.Activity(town, m.Kind);
             foreach (var c in h.Camps)
-                if (Gathered(town) < full) c.Strength += perDay * (c.SiteId == m.SeatId ? r.SeatWeight : 1);
+                if (!Elements.Snowbound(town, m, c) && Gathered(town) < full) c.Strength += perDay * (c.SiteId == m.SeatId ? r.SeatWeight : 1);
             Warn(town, m, full);
             var s = town.Saga;
             if (s.YokeId == m.Id && !s.Defied) return;

@@ -347,8 +347,15 @@ public static class Sky
     {
         var r = Rules(town);
         int ring = region?.Ring ?? 0;
-        double menaces = region == null ? 0 : Js.Sum(Skyship.FliersNear(town, region), m => Passage.Fliers(town, m.Kind));
+        double menaces = region == null || Roosting(town, region) ? 0 : Js.Sum(Skyship.FliersNear(town, region), m => Passage.Fliers(town, m.Kind));
         return Math.Min(r.MeetMax, r.Meet + r.MeetPerRing * ring + r.MenaceMeet * menaces);
+    }
+
+    /// <summary>Foul weather over a land keeps its flying menaces on their roosts (<see cref="Elements.Grounded"/>).</summary>
+    private static bool Roosting(Town town, Region region)
+    {
+        var (x, y) = Lofted.Spot(town, region);
+        return Elements.Grounded(town, x, y);
     }
 
     /// <summary>A foe in the air: a flying menace near, if one comes, or one of sky.json's foes for the ring.</summary>
@@ -359,7 +366,7 @@ public static class Sky
     {
         var r = Rules(town);
         int ring = region?.Ring ?? 0;
-        if (region != null && Skyship.FliersNear(town, region).OrderByDescending(m => m.Power).ThenBy(m => m.Id).FirstOrDefault() is { } m && rng.Chance(0.5))
+        if (region != null && !Roosting(town, region) && Skyship.FliersNear(town, region).OrderByDescending(m => m.Power).ThenBy(m => m.Id).FirstOrDefault() is { } m && rng.Chance(0.5))
             return (m.Name, Math.Max(10, m.Power * r.MenaceShare), 3, false, m);
         var kinds = r.Foes.Where(k => ring >= k.Rings[0] && ring <= k.Rings[^1]).ToList();
         if (kinds.Count == 0) return null;
@@ -518,6 +525,7 @@ public static class Sky
     {
         var r = Rules(town);
         State(town).NextRaidDay = town.Day + r.RaidEvery;
+        if (Elements.PiratesHeld(town)) return;
         var rng = Dice(town, 977);
         if (!rng.Chance(r.RaidChance)) return;
         var moored = Ships(town).Where(s => Moored(town, s)).ToList();
