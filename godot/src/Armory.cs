@@ -161,6 +161,9 @@ public partial class Main
         p.Row($"[b]{Ui.Esc(s.Title)}[/b] {Stars(s.Item)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Ui.Cap(s.From))} · day {s.Day}[/font_size]")}\n[font_size=13]{suits}[/font_size]",
             ($"ap{id}|{string.Join(",", items.Select(i => i.Item2))}", () => ItemBadge(ItemIcon(t, s.Item), color, 56), takers.Count > 1 ? () => Ui.Menu("Give to", "tab-armory", items, i => Act(() => _sim.Gift(id, hids[i]))) : null),
             buttons.ToArray());
+        if (takers.Count > 1) p.Menus(("Give to", "tab-armory", items, i => Act(() => _sim.Gift(id, hids[i]))));
+        else if (takers.Count == 0 && t.Heroes.Any(h => h.IsAway && Sim.Systems.Armory.Use(t, h, s.Item) > 0))
+            p.Note("Whoever could use it is on the road. Give it when they're home.");
     }
 
     /// <summary>The slot filters: an icon toggle for each kind, with how many the armory holds.</summary>

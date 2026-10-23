@@ -798,6 +798,7 @@ public partial class Main
         if (hs.Duty != HeroDuty.None) duty.Add(("Stand down", true, false, () => Act(() => _sim.SetDuty(id, HeroDuty.None))));
         duty.Add((best != null ? $"Arm: {(best.Name != "" ? best.Name : Gear.Plainly(best.Item))}" : "Arm", best != null, best != null, () => Act(() => _sim.Arm([id]))));
         p.Buttons(duty.ToArray());
+        GiveMenu(p, t, a);
         if (!a.IsAway) p.Note($"Guard duty: {Js.Str(Garrison.Wage(t, a))}g a day, no bounties.");
     }
 
