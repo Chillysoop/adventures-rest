@@ -514,6 +514,9 @@ public sealed class Pane
     private string? _section;
     private string _shown = "\0";
 
+    /// <summary>The colour of this pane's window group: its headings sit on a band of it.</summary>
+    public Color? Hue { get; set; }
+
     /// <summary>The page the player last picked, by name (the first page when it is gone).</summary>
     public string? Selected { get; set; }
 
@@ -550,6 +553,14 @@ public sealed class Pane
         _page = _pages.Count - 1;
         _section = null;
     }
+
+    /// <summary>The page a heading was last drawn on, if the pane has pages.</summary>
+    public string? PageOf(string heading) =>
+        _items.FirstOrDefault(i => i.Head && i.Section == heading) is { Page: >= 0 } it ? _pages[it.Page].Name : null;
+
+    /// <summary>A dim "How it works" line whose hover holds the explanation, for what a player reads once.</summary>
+    public void Help(params string[] lines) =>
+        Text(Ui.Tip(Ui.Dim($"{Ui.Img("ui-info", 13)} How it works"), string.Join("\n\n", lines)), 12);
 
     private bool IsFolded(string heading) => Id != "" && Folded.Contains($"{Id}/{heading}");
 
@@ -652,7 +663,18 @@ public sealed class Pane
             h.AddChild(l);
             var m = new MarginContainer();
             m.AddThemeConstantOverride("margin_top", 12);
-            m.AddChild(h);
+            if (Hue is Color hue)
+            {
+                // A band of the window's colour, so sections read apart at a glance.
+                var band = new PanelContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+                var style = Ui.Flat(new Color(hue, 0.1f), 8, 4, 4);
+                style.BorderColor = hue;
+                style.BorderWidthLeft = 3;
+                band.AddThemeStyleboxOverride("panel", style);
+                band.AddChild(h);
+                m.AddChild(band);
+            }
+            else m.AddChild(h);
             m.SetMeta("heading", text);
             if (Id == "") return m;
             l.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;

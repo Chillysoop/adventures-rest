@@ -739,6 +739,10 @@ public partial class Main : Control
     {
         _scrollHeading = heading;
         _scrollTries = 30;
+        // On a paged window, its page first; and a folded section opens.
+        if (_windowTab is Tab wt && _panes[wt].PageOf(heading) is string page) _panes[wt].Selected = page;
+        if (_windowTab is Tab ft) Pane.Folded.Remove($"{ft}/{heading}");
+        _dirty = true;
     }
 
     private void SyncScrollTo()

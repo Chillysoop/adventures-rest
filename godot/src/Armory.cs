@@ -58,6 +58,7 @@ public partial class Main
             p.Buttons(($"Arm the guard ({guard.Count})", guard.Any(h => Sim.Systems.Armory.BestFor(t, h) != null), true, () => Act(() => _sim.Arm(ids))));
         }
 
+        p.Page("Items", "tab-armory");
         p.Heading("In the armory");
         var counts = ArmoryFilters.Select(f => f.Key == "" ? stock.Count : stock.Count(s => FilterOf(t, s.Item) == f.Key)).ToList();
         p.Add($"af{_armorySlot}|{string.Join(",", counts)}", () => FilterBar(counts));
@@ -126,10 +127,13 @@ public partial class Main
             string line = no != null && c is not { Pact: true } ? Ui.C(Ui.Ink2, $" · no pact: {Ui.Esc(no)}") : "";
             p.Row($"[b]The {Ui.Esc(name)}[/b]  {Tag(word, color)}  {pact}\n{Ui.C(Ui.Ink2, $"[font_size=12]{home.Count}/{members.Count} in town{line}[/font_size]")}", buttons.ToArray());
         }
+        p.Page("Forge", "forge");
         RenderKit(p, t);
         RenderForge(p, t);
         RenderParts(p, t);
+        p.Page("Hall", "ui-renown");
         RenderRelics(p, t);
+        p.Page("Alchemy", "potions");
         RenderAlchemy(p);
         p.Commit();
     }
