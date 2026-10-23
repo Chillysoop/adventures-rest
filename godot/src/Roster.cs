@@ -114,7 +114,6 @@ public partial class Main
         var rows = sorted.Select(e =>
         {
             string makeup = string.Join(" · ", e.Members.Select(m => $"{Ui.Esc(Ui.Cap(m.Hero!.Cls.Name))} {m.Hero.Level}{(m.Hero.Cls.Card != "" ? $" ({Ui.Esc(m.Hero.Cls.Card)})" : "")}"));
-            // Renown as a figure, its step of fame in the hover; a bad name shows in red instead.
             // Renown as a figure, its step of fame in the hover, and a skull beside it for a bad name.
             string fame = Ui.Chip("ui-renown", e.Renown.ToString(), e.Renown == 0 ? Ui.Ink2 : Notoriety.FameTier(t, Intel.Find(t, e.Name)!) >= 2 ? Ui.Gold : Ui.Ink,
                     $"Renown {e.Renown}: {Notoriety.FameName(t, e.Renown)}. Quests suggest a renown; short of it, more foes stand and fight.", 14)
@@ -129,7 +128,7 @@ public partial class Main
             };
             return new[]
             {
-                $"{Shield(t, e.Name)}[b]The {Ui.Esc(e.Name)}[/b] {Ui.C(Ui.Gold, $"[font_size=11]{Ui.Esc(e.Tier)}[/font_size]")}\n{Ui.C(Ui.Ink2, $"[font_size=11]{makeup}[/font_size]")}",
+                $"{Shield(t, e.Name)}[b]The {Ui.Esc(e.Name)}[/b] {(Retainers.Held(t, e.Name) ? Ui.Tip(Ui.Img("face-crown", 14), "On the town's retainer") + " " : "")}{Ui.C(Ui.Gold, $"[font_size=11]{Ui.Esc(e.Tier)}[/font_size]")}\n{Ui.C(Ui.Ink2, $"[font_size=11]{makeup}[/font_size]")}",
                 $"{e.Ready}/{e.Members.Count}",
                 $"[b]{e.Power}[/b]",
                 Ui.C(e.Loyalty < 35 ? Ui.Bad : Ui.Ink, Js.Str(Math.Round(e.Loyalty))),
@@ -234,6 +233,23 @@ public partial class Main
         return $"[font_size={size}][color=#{a.Field.Hex.TrimStart('#')}]■[/color][/font_size][font_size={size - 4}][color=#{a.Metal.Hex.TrimStart('#')}]✦[/color][/font_size] ";
     }
 
+    /// <summary>Sign the company on for good, or the wage it draws and a button to let it go.</summary>
+    private void Retainer(Pane p, Town t, string name, CompanyState? c)
+    {
+        if (c is { Retained: true })
+        {
+            p.Text(Ui.Chips(
+                Ui.Chip("face-crown", "Retained", Ui.Good, "Sworn to the town: they lean to every job you offer, bring their reports home free and never leave"),
+                Ui.Chip("gold", $"−{Js.Str(c.Wage)}/day", Ui.Bad, "Their wage. Unpaid for a few days, they quit")), 13);
+            p.Buttons(("Let them go", true, false, () => Act(() => _sim.ReleaseCompany(name))));
+            return;
+        }
+        string? no = Retainers.Blocked(t, name);
+        p.Buttons(($"Retain for good · {Js.Str(Retainers.Price(t, name))}g", no == null, false, () => Act(() => _sim.RetainCompany(name))));
+        if (no != null && !no.StartsWith("the treasury")) p.Note(Ui.Cap(no) + ".");
+        else p.Note($"Then {Js.Str(Retainers.Wage(t, name))}g a day. They take your jobs, bring reports home free and never leave.");
+    }
+
     private void RenderPick(Pane p, Town t, RosterEntry e)
     {
         var r = t.Content.World.Intel;
@@ -279,6 +295,7 @@ public partial class Main
             var ids = home.Select(m => m.Id).ToList();
             p.Buttons(("Arm from the armory", home.Any(m => Sim.Systems.Armory.BestFor(t, m) != null), false, () => Act(() => _sim.Arm(ids))));
         }
+        Retainer(p, t, e.Name, c);
 
         p.Heading($"Offer the {e.Name} a job");
         if (_offerAnswer is { } last && last.Company == e.Name)
