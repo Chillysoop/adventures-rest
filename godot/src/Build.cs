@@ -84,7 +84,7 @@ public partial class Main
 
     private static readonly Dictionary<BuildGroup, string> GroupHints = new()
     {
-        [BuildGroup.Zones] = "Paint zones on open land with the brush. Townsfolk and newcomers build what the town's economy needs in them, facing the lanes. Denser homes and shops unlock with the charters: paint them over built streets too, and the houses there grow taller. Fields are sown one crop at a time: wheat, root crops, barley and hops, orchards, pasture, herbs or vines.",
+        [BuildGroup.Zones] = "Paint land with the brush and the townsfolk build in it. Charters open denser homes and shops, and more crops.",
         [BuildGroup.Government] = "Government works, paid from the treasury and built by the town's builders.",
         [BuildGroup.Commission] = "Commission a business the town owns and runs. Its profits go to the treasury.",
         [BuildGroup.Decor] = "Set dressing, anywhere and at any angle. Every piece makes its corner pleasanter and does one small job for the town.",
@@ -229,6 +229,8 @@ public partial class Main
         foreach (var (k, b) in _groupButtons) b.SetPressedNoSignal(k == g);
         Ui.Clear(_buildItems);
         _buildButtons.Clear();
+        // The decor buttons went with the items: left listed, putting the decor tool down would touch freed buttons.
+        _decorButtons.Clear();
         _map.Planner.Pick(null);
         _map.Decorator.Pick(null);
         if (g == BuildGroup.Decor)

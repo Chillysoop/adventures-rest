@@ -19,10 +19,16 @@ public partial class Main
     /// <summary>How many of the town's meetings have been looked at for intros; -1 until the first look after a load.</summary>
     private int _introSeen = -1;
     private readonly Queue<(Meeting Meeting, IntroDef Intro)> _introQueue = [];
+    private (IntroDef Def, Meeting? Meeting)? _introShown;
+    private int _introRedo;
+
+    /// <summary>The card's width, and its text's inside the oak frame: text is laid out at these from the start, so it
+    /// is never measured at no width (a column of single letters, a card taller than the screen).</summary>
+    private const float IntroWidth = 660, TextWidth = IntroWidth - 36, CrestSize = 58, NamesWidth = TextWidth - CrestSize - 12;
 
     private void BuildIntro()
     {
-        _intro = new PanelContainer { Visible = false, CustomMinimumSize = new Vector2(660, 0), ZIndex = 21, MouseFilter = MouseFilterEnum.Stop };
+        _intro = new PanelContainer { Visible = false, CustomMinimumSize = new Vector2(IntroWidth, 0), MouseFilter = MouseFilterEnum.Stop };
         _intro.AddThemeStyleboxOverride("panel", Castle.Oak(18, 18));
         var v = new VBoxContainer();
         v.AddThemeConstantOverride("separation", 8);
@@ -32,11 +38,7 @@ public partial class Main
         _introBox = new VBoxContainer();
         _introBox.AddThemeConstantOverride("separation", 6);
         v.AddChild(_introBox);
-        AddChild(_intro);
-        _intro.SetAnchorsAndOffsetsPreset(LayoutPreset.Center, LayoutPresetMode.Minsize);
-        _intro.GrowHorizontal = GrowDirection.Both;
-        _intro.GrowVertical = GrowDirection.Both;
-        _intro.MinimumSizeChanged += () => Ui.Refit(_intro);
+        AddModal(_intro);
     }
 
     /// <summary>New meetings bring their lineage's intro, the first time each lineage is met; one card at a time.</summary>
@@ -61,9 +63,12 @@ public partial class Main
     {
         var t = _sim.Town;
         _introArt.Show(d, Intros.Scene(t, d));
-        RenderIntro(t, d, meeting);
+        _introShown = (d, meeting);
+        _introRedo = 2;
+        RenderIntro();
         _intro.Visible = true;
-        MoveChild(_intro, GetChildCount() - 1);
+        _intro.MoveToFront();
+        Fit(_intro);
     }
 
     private void CloseIntro()
@@ -92,8 +97,10 @@ public partial class Main
         [Discovery.Heard] = ("lore", "Heard of"),
     };
 
-    private void RenderIntro(Town t, IntroDef d, Meeting? meeting)
+    private void RenderIntro()
     {
+        if (_introShown is not var (d, meeting)) return;
+        var t = _sim.Town;
         Ui.Clear(_introBox);
         var lineage = Annals.Lineage(t.Content.History, d.Lineage);
         var menace = meeting != null && meeting.Key.StartsWith("menace:", StringComparison.Ordinal) && int.TryParse(meeting.Key.AsSpan(7), out int mid)
@@ -104,15 +111,15 @@ public partial class Main
         // The crest beside the name, the way they were met under it.
         var head = new HBoxContainer();
         head.AddThemeConstantOverride("separation", 12);
-        head.AddChild(new Crest(d, 58));
-        var names = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        head.AddChild(new Crest(d, CrestSize));
+        var names = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(NamesWidth, 0) };
         names.AddThemeConstantOverride("separation", 0);
         string how = meeting != null && Ways.TryGetValue(meeting.How, out var w) ? $"{Ui.Img(w.Icon, 13)} {w.Word} · day {meeting.Day}" : "";
-        names.AddChild(Ui.Rich(Ui.C(charge.Lerp(Ui.Ink, 0.4f), $"[font_size=11][b]FIRST MEETING[/b][/font_size]") + (how != "" ? Ui.Dim($"[font_size=11]   {how}[/font_size]") : ""), 11));
+        names.AddChild(Sized(Ui.Rich(Ui.C(charge.Lerp(Ui.Ink, 0.4f), $"[font_size=11][b]FIRST MEETING[/b][/font_size]") + (how != "" ? Ui.Dim($"[font_size=11]   {how}[/font_size]") : ""), 11), NamesWidth));
         var title = Ui.Label(Ui.Cap(lineage?.Title ?? d.Lineage), Ui.Ink, Ui.Display, 26);
         title.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        names.AddChild(title);
-        if (d.Line != "") names.AddChild(Ui.Rich(Ui.C(Ui.Ink2, $"[i]{Ui.Esc(d.Line)}[/i]"), 14));
+        names.AddChild(Sized(title, NamesWidth));
+        if (d.Line != "") names.AddChild(Sized(Ui.Rich(Ui.C(Ui.Ink2, $"[i]{Ui.Esc(d.Line)}[/i]"), 14), NamesWidth));
         head.AddChild(names);
         _introBox.AddChild(head);
 
@@ -127,7 +134,7 @@ public partial class Main
         string motive = Motive(t, lineage, menace);
         if (motive != "") points.Add(Ui.Bullet(Ui.Esc(motive), "ui-goal"));
         if (menace != null && menace.Leader != "") points.Add(Ui.Bullet($"{Ui.Esc(menace.Leader)}" + (menace.SeatName != "" ? Ui.Dim($" · {Ui.Esc(menace.SeatName)}") : ""), "ui-person"));
-        if (points.Count > 0) _introBox.AddChild(Ui.Rich(string.Join("\n", points), 14));
+        if (points.Count > 0) _introBox.AddChild(Sized(Ui.Rich(string.Join("\n", points), 14), TextWidth));
 
         var foot = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.End };
         foot.AddThemeConstantOverride("separation", 8);
@@ -154,6 +161,12 @@ public partial class Main
         onward.Pressed += CloseIntro;
         foot.AddChild(onward);
         _introBox.AddChild(foot);
+    }
+
+    private static T Sized<T>(T c, float width) where T : Control
+    {
+        c.CustomMinimumSize = new Vector2(width, c.CustomMinimumSize.Y);
+        return c;
     }
 
     private static string FirstSentence(string text)
