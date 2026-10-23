@@ -174,6 +174,7 @@ public sealed class Simulation
         Streets.Closes(t);
         Paving.Daily(t);
         Property.Daily(t);
+        Lodging.Decide(t);
         Population.DailyDepartures(t);
         Population.DailyArrivals(t);
         if (Options.AutoMayor)
@@ -778,7 +779,7 @@ public sealed class Simulation
         return new DayStats(
             Day: t.Day - 1,
             Population: res.Count,
-            Homeless: workers.Count(a => a.HomeId == null),
+            Homeless: workers.Count(a => a.Homeless),
             Unemployed: workers.Count(a => a.JobId == null),
             Buildings: t.Buildings.Count(b => b.Complete),
             Sites: t.Buildings.Count(b => b.IsSite),

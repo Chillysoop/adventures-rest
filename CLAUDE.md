@@ -74,12 +74,17 @@
   `Construction.Crews`; the stand-in mayor adds one below `Construction.Wanted`), whose builders work the nearest site
   (`Construction.SiteFor`). A house grows a storey only with `HousingDef.Near` services within `nearReach`, `Foods` kinds of
   food and `Beauty` appeal (`City.NeedsBlocked`).
+- Lodging (`Systems/Lodging.cs`, `content/game/lodging.json`): newcomers off the road are travellers (`Agent.Traveller`: out of
+  `Population`, never `Homeless`) who take a room (`BuildingDef.Rooms`: tavern 4, inn 12) or camp, settle once they hold a job, a
+  home or a building, and otherwise move on at `StayUntil` saying why. `Lodging.Nightly` beds heroes first, then travellers; a hero
+  camped `campNights` in a row rides on unless the town binds them (knight, fief, bastion, duty). Client: tents at `Lodging.Camp`
+  (`Crowd.Tents`), arrivals walk in from `Lodging.Road`.
 - Zone layouts (city.json `markets`, `closes`): each zone grows its own way. Shops: `Streets.Markets` lays a rectangular
   market square (`Street.Market`) in shop paint with a straight high street to the nearest street, once the town keeps
   `shopsEach` shops per square; shops front its rim first, a side all facing one way. Homes: `Streets.Closes` lays a wandering
   side lane (`Street.Close`, never paved) from the deepest open home paint. Fields are client-side (`TownView.Fields`): each
   farm works the farmland nearest it in rows the way it faces, hedgerows on the bounds, a farmstead only on the oldest farm per
-  2.6 tiles. The zone brush shows paint only, never outlines of buildings to come. `--zone farmland|commercial|residential|square` aims shots.
+  2.6 tiles. The zone brush shows paint only, never outlines of buildings to come. `--zone farmland|commercial|residential|square|camp` aims shots.
 - Monuments (`Systems/Monuments.cs`, parts in buildings.json with `partOf`, `after`, `favour`): the town hall, temple and keep
   grow by parts, each its own civic building beside the core (`Building.ParentId`) with its own bonuses and a daily `favour`
   with the god (`"god"`) or a faction (`"faction:id"`, negative for a rival). `Building.Grow` lets the council add the cheapest

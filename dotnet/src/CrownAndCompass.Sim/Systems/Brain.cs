@@ -135,8 +135,9 @@ public static class Brain
         switch (act)
         {
             case Activity.Sleeping:
-                a.LocationId = a.HomeId;
-                a.Fatigue = Math.Max(0, a.Fatigue - (a.HomeId != null ? 14 : 8));
+                // A room at the inn sleeps as well as a bed at home.
+                a.LocationId = a.HomeId ?? a.InnId;
+                a.Fatigue = Math.Max(0, a.Fatigue - (a.LocationId != null ? 14 : 8));
                 a.Drinks = 0;
                 break;
             case Activity.Eating:
@@ -260,7 +261,7 @@ public static class Brain
             0.45 * a.Hunger -
             0.25 * a.Fatigue -
             0.25 * a.Loneliness -
-            (a.HomeId == null && a.Hero?.Lodging != true ? 20 : 0) -
+            (a.HomeId == null && a.InnId == null && a.Hero?.Lodging != true ? 20 : 0) -
             (a.JobId == null && a.Ambition != Ambition.OpenBusiness && a.Hero == null ? 10 : 0);
         a.MoodToday += Math.Max(0, Math.Min(100, mood));
         a.MoodSamples++;
@@ -276,7 +277,7 @@ public static class Brain
             a.MoodToday = 0;
             a.MoodSamples = 0;
             a.MiserableDays = a.LastDayMood < 35 ? a.MiserableDays + 1 : 0;
-            a.DaysHomeless = a.HomeId == null ? a.DaysHomeless + 1 : 0;
+            a.DaysHomeless = a.Homeless ? a.DaysHomeless + 1 : 0;
             a.DaysUnemployed = a.JobId == null ? a.DaysUnemployed + 1 : 0;
         }
     }

@@ -87,6 +87,7 @@ public static class Alerts
     public static readonly AlertKind Heroes = new("heroes", "Restless heroes", "heroes", AlertLevel.Decision, AlertWindow.None);
     public static readonly AlertKind Honours = new("honours", "Honours to give", "favour", AlertLevel.Decision, AlertWindow.None);
     public static readonly AlertKind Housing = new("housing", "Housing", "homeless", AlertLevel.Minor, AlertWindow.City);
+    public static readonly AlertKind Rooms = new("rooms", "No rooms", "heroes", AlertLevel.Minor, AlertWindow.City);
     public static readonly AlertKind Crowded = new("crowded", "Full to the doors", "population", AlertLevel.Minor, AlertWindow.None);
     public static readonly AlertKind Work = new("work", "Idle hands", "population", AlertLevel.Decision, AlertWindow.City);
     public static readonly AlertKind Settlers = new("settlers", "No settlers", "population", AlertLevel.Decision, AlertWindow.City);
@@ -116,7 +117,7 @@ public static class Alerts
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Sighted, Lurker, Captives, Doom, Crisis, Sick, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Balance, Fealty, DarkQuest, Road, Clash, Traitor, Plot, Dark, Spent, Stores, Story, Scry, Explorers, Fallen, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Notable, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Loot, Stalled, Bridge, Ruin, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Tower, Patrol, Outpost, Housing, Crowded, WarAsk];
+        [Siege, Sighted, Lurker, Captives, Doom, Crisis, Sick, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Balance, Fealty, DarkQuest, Road, Clash, Traitor, Plot, Dark, Spent, Stores, Story, Scry, Explorers, Fallen, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Notable, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Loot, Stalled, Bridge, Ruin, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Tower, Patrol, Outpost, Housing, Rooms, Crowded, WarAsk];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
     public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Allies, Word, Crowds, Keepers, Notables, Outposts, Lists, Brought];
@@ -464,7 +465,7 @@ public static class Alerts
     private static IEnumerable<Alert> Homes(Town t)
     {
         var workers = t.Workers;
-        int homeless = workers.Count(a => a.HomeId == null);
+        int homeless = workers.Count(a => a.Homeless);
         if (homeless > 0)
         {
             // Townsfolk build their own homes, but only on residential land: say whether there is any left to build on.
@@ -473,7 +474,11 @@ public static class Alerts
                 : "Homes are going up on the residential land; painting more lets more go up at once.";
             yield return new("homeless", Housing, $"{homeless} homeless", $"Townsfolk with no roof lose heart and leave. {room}", AtTown: true);
         }
-        int idle = workers.Count(a => a.JobId == null);
+        int camping = t.Heroes.Count(a => a.Hero!.AwayUntil == null && !a.Hero.Lodging);
+        if (camping > 0)
+            yield return new("rooms", Rooms, $"{camping} {(camping == 1 ? "hero" : "heroes")} camping",
+                $"No free room at the inns. Heroes who camp {t.Content.Lodging.CampNights} nights ride on, and travellers move on sooner. Commission an inn from the Build bar (B), or paint shops for townsfolk to open one.", AtTown: true);
+        int idle = workers.Count(a => a.JobId == null && !a.Traveller);
         if (idle >= Math.Max(4, workers.Count / 5))
             yield return new("idle", Work, $"{idle} out of work", "Idle townsfolk drift away, and every one of them puts settlers off. Zone land for shops, workshops and farms.", AtTown: true);
         var draw = Population.Appeal(t);

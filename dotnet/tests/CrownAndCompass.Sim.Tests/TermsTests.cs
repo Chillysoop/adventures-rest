@@ -64,6 +64,8 @@ public class TermsTests
     {
         var sim = Player();
         var t = sim.Town;
+        // Hands enough for two raids: a town nobody zones keeps only the wagon's settlers (travellers move on).
+        Population.Settle(t, 12);
         sim.RunDays(30);
         var site = Quests.Site(t, "goblin_warrens")!;
         site.Known = SiteKnowledge.Rumoured;

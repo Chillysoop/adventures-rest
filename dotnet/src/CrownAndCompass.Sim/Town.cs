@@ -562,6 +562,9 @@ public sealed class Town
 
     /// <summary>The town's tier, its wards and what its households want (<see cref="Systems.City"/>).</summary>
     public CityState City { get; } = new();
+
+    /// <summary>Last night's guests at the inns and those camped outside town (<see cref="Systems.Lodging"/>).</summary>
+    public LodgingState Lodging { get; } = new();
     public Defenses Defenses { get; } = new();
 
     /// <summary>The town guard on the walls and the orders it holds (<see cref="Systems.Garrison"/>).</summary>
@@ -724,7 +727,8 @@ public sealed class Town
         get
         {
             int n = 0;
-            foreach (var a in Agents) if (!a.Departed) n++;
+            // Travellers looking the town over are guests, not residents, until they settle (Lodging).
+            foreach (var a in Agents) if (!a.Departed && !a.Traveller) n++;
             return n;
         }
     }

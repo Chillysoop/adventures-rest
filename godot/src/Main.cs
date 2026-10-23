@@ -205,6 +205,12 @@ public partial class Main : Control
             for (int i = 0; i < sq.Points.Length; i += 2) (sx, sy) = (sx + (float)sq.Points[i], sy + (float)sq.Points[i + 1]);
             _map.LookAt(new Vector2(Map.Geo.Margin + sx * 2 / sq.Points.Length, Map.Geo.Margin + sy * 2 / sq.Points.Length), _opts.Cam ?? 9);
         }
+        // --zone camp aims at the camp outside town, where those without a roof pitch tents.
+        else if (_opts.Zone == "camp")
+        {
+            var (cx, cy) = Lodging.Camp(_sim.Town);
+            _map.LookAt(new Vector2(Map.Geo.Margin + (float)cx, Map.Geo.Margin + (float)cy), _opts.Cam ?? 7);
+        }
         else if (_opts.Zone is string zn && Enum.TryParse<Zone>(zn, true, out var zone))
         {
             var lots = _sim.Town.Lots.Where(l => l.Zone == zone && l.BuildingId != null).ToList();

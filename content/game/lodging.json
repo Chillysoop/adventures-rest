@@ -1,0 +1,12 @@
+{
+  "price": 1,
+  "stayLeast": 2,
+  "stayMost": 4,
+  "campStay": 1,
+  "campNights": 3,
+  "campArrivals": 0.5,
+  "roomHeal": 0.5,
+  "campHeal": 0.25,
+  "campOut": 1.6,
+  "roadOut": 7
+}
