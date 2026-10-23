@@ -69,7 +69,9 @@ public class TermsTests
         sim.RunDays(30);
         var site = Quests.Site(t, "goblin_warrens")!;
         site.Known = SiteKnowledge.Rumoured;
-        var farm = t.Buildings.First(b => b.Complete && b.Workers.Count > 0 && b.Workers.All(id => t.Buildings.All(o => o.OwnerId != id)));
+        // The goblins hold their warrens again, whatever the heroes did this month.
+        site.Cleared = false;
+        var farm = t.Buildings.First(b => b.Complete && b.Workers.Any(id => t.Agent(id).Hero == null && t.Seats.All(x => x.HolderId != id)) && b.Workers.All(id => t.Buildings.All(o => o.OwnerId != id)));
         // Take until a raid carries someone off (it doesn't every time).
         string said = "";
         for (int i = 0; i < 20 && said == ""; i++) said = Captives.Take(t, site, farm);
