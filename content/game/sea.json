@@ -30,13 +30,14 @@
   ],
   "powerPerRing": 3,
   "voyages": {
-    "_doc": "The sea's jobs and passages (Systems/Voyages.cs). A ship's days at sea are its speed times the navigator's roll (d20 + the captain's prowess + the best Survival aboard against 'navigateDc': times navigate[0] on a 20, [1] on a pass, [2] on a miss, [3] on a 1) times the weather (1 + 'weather' times the season's storm chance in sky.json). Each day out a ship meets something with 'meet' plus 'meetPerRing' a ring out (at most 'meetMax'), one of 'foes' for the ring, fought as sky.json's ship fights. Jobs: 'patrol' the home waters for 'patrolDays' (each patrol turns away 'patrolGuard' of the corsairs' raids), 'scout' a sea land (charted like an airship's scouting), 'strike' a sea site (each gun takes 'strikeShare' of its strength a day in reach, at most 'strikeMost').",
+    "_doc": "The sea's jobs and passages (Systems/Voyages.cs). A ship's days at sea are its speed times the navigator's roll (d20 + the captain's prowess + the best Survival aboard against 'navigateDc': times navigate[0] on a 20, [1] on a pass, [2] on a miss, [3] on a 1) times the weather (1 + 'weather' times the season's storm chance in sky.json). Each day out a ship meets something with 'meet' plus 'meetPerRing' a ring out (at most 'meetMax'), one of 'foes' for the ring, fought as sky.json's ship fights. Jobs: 'patrol' the home waters for 'patrolDays' (each patrol turns away 'patrolGuard' of the corsairs' raids), 'scout' a sea land (charted like an airship's scouting), 'strike' a sea site (each gun takes 'strikeShare' of its strength a day in reach, at most 'strikeMost'). A company that sails to an island in the town's own ship (taken before the Sky Dock's lent airship whenever open sea is all that's in the way) brings home 'hold' gold times (ring + 1) of salvage and trade when it wins.",
     "navigateDc": 12,
     "navigate": [0.7, 0.85, 1.15, 1.4],
     "weather": 1.5,
     "meet": 0.08, "meetPerRing": 0.03, "meetMax": 0.4,
     "patrolGuard": 0.35, "patrolDays": 6,
     "strikeShare": 0.05, "strikeMost": 0.4,
+    "hold": 40,
     "texts": {
       "sail": ["{ship} slips her moorings, {captain} at the helm, bound for {where}.", "The harbour bell rings as {ship} stands out to sea for {where}."],
       "storm": ["A gale catches {ship} off {where}; {captain} runs before it and loses a day."],

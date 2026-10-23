@@ -166,6 +166,9 @@ public sealed record VoyageRules
     /// <summary>A shore party's share of a sea site's strength taken by each gun's day in reach, at most StrikeMost.</summary>
     public double StrikeShare { get; init; } = 0.05;
     public double StrikeMost { get; init; } = 0.4;
+
+    /// <summary>Gold a company that sailed in the town's own ship brings home in its hold, per ring of the site, when it won.</summary>
+    public double Hold { get; init; } = 40;
     public Dictionary<string, List<string>> Texts { get; init; } = [];
 }
 

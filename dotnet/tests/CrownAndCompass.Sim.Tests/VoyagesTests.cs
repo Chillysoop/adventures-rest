@@ -228,4 +228,24 @@ public class VoyagesTests
         Assert.Equal(p.Berths + 2 * p.PerQuay, Fleet.Berths(t));
         Assert.True(Fleet.Has(t, p.Lighthouse) && Fleet.Has(t, p.Barracks) && Fleet.Has(t, p.TradingHouse));
     }
+
+    [Fact]
+    public void TheTownsOwnShipTakesACompanyToAnIslandAndItsHoldPaysBetter()
+    {
+        var t = Harboured().Town;
+        var isle = Island(t);
+        var spot = World.Spot(t, isle);
+        Assert.True(Voyages.Sails(t, (0, 0), spot));
+        // Open sea is all that's in the way: no borrowed airship, the harbour's ship carries them.
+        var company = new Party { Name = "the Gulls", Members = [], SiteId = isle.Def.Id };
+        var mind = Passage.Board(t, company, Walk, (0, 0), spot);
+        Assert.False(company.Airship);
+        mind = Voyages.Embark(t, company, [], mind, (0, 0), spot);
+        Assert.NotEqual("", mind.Carrier);
+        // Its hold brings home salvage on a win, more the farther out; nothing on a loss or by air.
+        int ring = t.Regions[isle.RegionId!.Value].Ring;
+        if (company.ShipId != null) Assert.Equal(t.Content.Sea.Voyages.Hold * (1 + ring), Voyages.Hold(t, company, isle, true));
+        Assert.Equal(0, Voyages.Hold(t, company, isle, false));
+        Assert.Equal(0, Voyages.Hold(t, new Party { Name = "the Kites", Members = [], SiteId = isle.Def.Id, Airship = true }, isle, true));
+    }
 }

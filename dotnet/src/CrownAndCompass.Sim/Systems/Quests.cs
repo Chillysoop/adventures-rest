@@ -727,7 +727,7 @@ public static class Quests
             // Bodies carried home can be raised at the temple; a wiped party leaves nobody to carry them.
             // A rescue or a raid on the hoard earns the bounty without clearing the place.
             bool earned = result.Outcome == ExpeditionOutcome.Cleared || result.GoalMet;
-            double pay = result.Gold + (earned ? bounty?.Reward ?? 0 : 0);
+            double pay = result.Gold + (earned ? bounty?.Reward ?? 0 : 0) + Voyages.Hold(town, party, s, earned);
             var rites = new List<(string Text, int Id)>();
             var raised = result.Outcome == ExpeditionOutcome.Wiped ? [] : Shrines.Raise(town, result.Dead, party.Name, ref pay, rites);
             var dead = result.Dead.Where(id => !raised.Contains(id)).ToList();

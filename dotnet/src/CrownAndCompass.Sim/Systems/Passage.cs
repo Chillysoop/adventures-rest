@@ -1014,6 +1014,8 @@ public static class Passage
         var ship = Parse(r.Ways);
         var meets = Meets(town, from, to) | (aloft ? Ways.Air : Ways.None);
         if (ship == Ways.None || (meets & ~mind.Ways) == Ways.None || AirshipsFree(town) <= 0) return mind;
+        // Open sea and nothing else in the way: the town's own ship takes them (Voyages.Embark), not a borrowed airship.
+        if (!aloft && (meets & ~mind.Ways & ~Ways.Water) == Ways.None && Voyages.Sails(town, from, to)) return mind;
         party.Airship = true;
         if (r.Text.Count > 0)
         {
