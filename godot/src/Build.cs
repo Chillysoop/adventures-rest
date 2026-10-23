@@ -12,12 +12,68 @@ namespace CrownAndCompass.Client;
 /// </summary>
 public partial class Main
 {
+    /// <summary>The build bar's buckets: what a thing is for, whether it is painted, commissioned or placed.</summary>
     private enum BuildGroup
     {
-        Zones,
-        Government,
-        Commission,
+        Homes,
+        Farming,
+        Industry,
+        Trade,
+        Leisure,
+        Faith,
+        Civic,
+        Defence,
+        Wonders,
         Decor,
+    }
+
+    /// <summary>Each bucket's icon, colour and one-line hint (the rest of what it does sits on each button's hover).</summary>
+    private static readonly Dictionary<BuildGroup, (string Icon, Color Hue, string Hint)> GroupLook = new()
+    {
+        [BuildGroup.Homes] = ("ui-house", new Color("8cc084"), "Paint homes · settlers build them"),
+        [BuildGroup.Farming] = ("food", new Color("d9c46a"), "Sow fields one crop at a time"),
+        [BuildGroup.Industry] = ("tools", new Color("c9925e"), "Paint workshops · or commission one"),
+        [BuildGroup.Trade] = ("gold", new Color("e8b93a"), "Paint shops · or commission one"),
+        [BuildGroup.Leisure] = ("ale", new Color("e08aa8"), "Taverns, baths, stages: mood and heroes"),
+        [BuildGroup.Faith] = ("faith", new Color("b996e6"), "Shrines and temples for the gods"),
+        [BuildGroup.Civic] = ("tab-council", new Color("74aee6"), "The town's own halls and institutions"),
+        [BuildGroup.Defence] = ("defence", new Color("ef7f6f"), "Walls, gates, towers and the watch"),
+        [BuildGroup.Wonders] = ("ui-star", new Color("f0d070"), "Grand works that take seasons"),
+        [BuildGroup.Decor] = ("face-oak-leaf", new Color("5ec2b0"), "Dress the streets · each piece helps a little"),
+    };
+
+    /// <summary>Civic buildings whose bucket isn't Civic.</summary>
+    private static readonly Dictionary<string, BuildGroup> CivicBuckets = new()
+    {
+        ["granary"] = BuildGroup.Farming,
+        ["builders_yard"] = BuildGroup.Industry, ["artificers_foundry"] = BuildGroup.Industry, ["alchemists_quarter"] = BuildGroup.Industry,
+        ["market_hall"] = BuildGroup.Trade, ["guildhall"] = BuildGroup.Trade, ["auction_house"] = BuildGroup.Trade, ["grand_bazaar"] = BuildGroup.Trade,
+        ["fey_market"] = BuildGroup.Trade, ["harbour"] = BuildGroup.Trade, ["sky_dock"] = BuildGroup.Trade, ["embassy_quarter"] = BuildGroup.Trade,
+        ["arena"] = BuildGroup.Leisure, ["library"] = BuildGroup.Leisure,
+        ["shrine"] = BuildGroup.Faith, ["temple"] = BuildGroup.Faith, ["cathedral"] = BuildGroup.Faith, ["monastery"] = BuildGroup.Faith,
+        ["druid_grove"] = BuildGroup.Faith, ["chapterhouse"] = BuildGroup.Faith,
+        ["watch_house"] = BuildGroup.Defence, ["drill_yard"] = BuildGroup.Defence, ["archery_range"] = BuildGroup.Defence, ["stables"] = BuildGroup.Defence,
+        ["watchtower"] = BuildGroup.Defence, ["barracks"] = BuildGroup.Defence, ["keep"] = BuildGroup.Defence, ["griffon_roost"] = BuildGroup.Defence,
+        ["dragon_eyrie"] = BuildGroup.Defence,
+    };
+
+    /// <summary>Townsfolk businesses that are leisure, not trade.</summary>
+    private static readonly HashSet<string> Venues = ["tavern", "bathhouse", "theatre"];
+
+    /// <summary>The bucket a building sits in on the bar.</summary>
+    private static BuildGroup BucketOf(BuildingDef d)
+    {
+        if (d.IsGrand) return BuildGroup.Wonders;
+        if (CivicBuckets.TryGetValue(d.Id, out var g)) return g;
+        if (Venues.Contains(d.Id)) return BuildGroup.Leisure;
+        return d.Zone switch
+        {
+            Zone.Residential => BuildGroup.Homes,
+            Zone.Farmland => BuildGroup.Farming,
+            Zone.Industry => BuildGroup.Industry,
+            Zone.Commercial => BuildGroup.Trade,
+            _ => BuildGroup.Civic,
+        };
     }
 
     /// <summary>One button on the bar: a zone to paint, a building to place, or a defense to order.</summary>
@@ -28,21 +84,21 @@ public partial class Main
     private HFlowContainer _buildItems = null!;
     private Label _buildHint = null!;
     private Button _buildToggle = null!;
-    private BuildGroup _buildGroup = BuildGroup.Zones;
+    private BuildGroup _buildGroup = BuildGroup.Homes;
     private readonly Dictionary<BuildGroup, Button> _groupButtons = [];
     private readonly List<(BuildItem Item, Button Button)> _buildButtons = [];
 
-    private static readonly BuildItem[] Zones =
-    [
-        // Homes and shops come in three densities, unlocked by the charters (Density in the sim).
-        new("Residential", Zone.Residential), new("Res · Medium", Zone.Residential, Density: 1), new("Res · High", Zone.Residential, Density: 2),
-        new("Commercial", Zone.Commercial), new("Comm · Medium", Zone.Commercial, Density: 1), new("Comm · High", Zone.Commercial, Density: 2),
-        new("Industry", Zone.Industry),
-    ];
+    private static readonly BuildItem ClearZone = new("Clear zone", Zone.None);
 
-    /// <summary>The zone brushes: homes, shops and workshops, a field for each crop (content/game/farming.json), and the eraser.</summary>
-    private static BuildItem[] ZoneItems(Content content) =>
-        [.. Zones, .. content.Farming.Crops.Select(c => new BuildItem(c.Name, Zone.Farmland, Crop: c.Id)), new("Clear zone", Zone.None)];
+    /// <summary>A bucket's zone brushes: homes and shops in three densities (unlocked by the charters), workshops, a field for each crop.</summary>
+    private static BuildItem[] ZoneItems(Content content, BuildGroup g) => g switch
+    {
+        BuildGroup.Homes => [new("Homes", Zone.Residential), new("Homes · Medium", Zone.Residential, Density: 1), new("Homes · High", Zone.Residential, Density: 2), ClearZone],
+        BuildGroup.Trade => [new("Shops", Zone.Commercial), new("Shops · Medium", Zone.Commercial, Density: 1), new("Shops · High", Zone.Commercial, Density: 2), ClearZone],
+        BuildGroup.Industry => [new("Workshops", Zone.Industry), ClearZone],
+        BuildGroup.Farming => [.. content.Farming.Crops.Select(c => new BuildItem(c.Name, Zone.Farmland, Crop: c.Id)), ClearZone],
+        _ => [],
+    };
 
     private static readonly BuildItem[] Defenses =
     [
@@ -63,32 +119,36 @@ public partial class Main
     private BuildItem[] BuildItems(BuildGroup g)
     {
         // Before the first town is adopted there is nothing to build yet.
-        if (_sim == null) return g == BuildGroup.Zones ? ZoneItems(Content.Default()) : [];
+        if (_sim == null) return ZoneItems(Content.Default(), g);
         var town = _sim.Town;
         int Order(BuildingDef d) => d.Tier == "" ? 0 : City.TierIndex(town, d.Tier);
         IEnumerable<BuildingDef> Sorted(Func<BuildingDef, bool> keep) =>
-            town.Content.Buildings.Where(keep).OrderBy(Order).ThenBy(d => d.Cost).ThenBy(d => d.Id, StringComparer.Ordinal);
-        return g switch
-        {
-            BuildGroup.Zones => ZoneItems(town.Content),
-            BuildGroup.Government =>
-            [
-                new("Charter House", Building: "house"),
-                .. Sorted(d => Planning.IsGovernment(town, d) && d.Id != "town_hall").Select(d => new BuildItem(d.Name, Building: d.Id)),
-                .. Defenses,
-            ],
-            BuildGroup.Decor => [],
-            _ => [.. Sorted(d => d.Buildable && d.IsBusiness && !Planning.IsGovernment(town, d)).Select(d => new BuildItem(d.Name, Building: d.Id))],
-        };
+            town.Content.Buildings.Where(d => keep(d) && BucketOf(d) == g).OrderBy(Order).ThenBy(d => d.Cost).ThenBy(d => d.Id, StringComparer.Ordinal);
+        // Painted first, then what the town commissions and runs, then its own works.
+        return
+        [
+            .. ZoneItems(town.Content, g),
+            .. g == BuildGroup.Homes ? [new BuildItem("Charter House", Building: "house")] : Array.Empty<BuildItem>(),
+            .. Sorted(d => d.Buildable && d.IsBusiness && !Planning.IsGovernment(town, d)).Select(d => new BuildItem(d.Name, Building: d.Id)),
+            .. Sorted(d => Planning.IsGovernment(town, d) && d.Id != "town_hall").Select(d => new BuildItem(d.Name, Building: d.Id)),
+            .. g == BuildGroup.Defence ? Defenses : [],
+        ];
     }
 
-    private static readonly Dictionary<BuildGroup, string> GroupHints = new()
+    /// <summary>
+    /// Whether the bar shows an item yet: zone brushes and walls always, a building once the town's charter is at most
+    /// one short of it (it shows dimmed until then), so each bucket grows with the town.
+    /// </summary>
+    private bool Revealed(BuildItem item)
     {
-        [BuildGroup.Zones] = "Paint zones on open land with the brush. Townsfolk and newcomers build what the town's economy needs in them, facing the lanes. Denser homes and shops unlock with the charters: paint them over built streets too, and the houses there grow taller. Fields are sown one crop at a time: wheat, root crops, barley and hops, orchards, pasture, herbs or vines.",
-        [BuildGroup.Government] = "Government works, paid from the treasury and built by the town's builders.",
-        [BuildGroup.Commission] = "Commission a business the town owns and runs. Its profits go to the treasury.",
-        [BuildGroup.Decor] = "Set dressing, anywhere and at any angle. Every piece makes its corner pleasanter and does one small job for the town.",
-    };
+        if (item.Building is not string id || _sim == null) return true;
+        var d = _sim.Town.Content.Building(id);
+        if (Institutions.Hidden(_sim.Town, d.Id)) return false;
+        return d.Tier == "" || City.TierIndex(_sim.Town, d.Tier) <= _sim.Town.City.Tier + 1;
+    }
+
+    /// <summary>A bucket shows once it has anything to offer.</summary>
+    private bool BucketShown(BuildGroup g) => g == BuildGroup.Decor || BuildItems(g).Any(Revealed);
 
     private void BuildBuildBar()
     {
@@ -105,7 +165,18 @@ public partial class Main
         head.AddChild(_buildTabs);
         foreach (var g in Enum.GetValues<BuildGroup>())
         {
-            var b = new Button { Text = g.ToString(), ThemeTypeVariation = "Tab", ToggleMode = true, FocusMode = FocusModeEnum.None };
+            var (icon, hue, hint) = GroupLook[g];
+            var b = new Button { Text = g.ToString(), Icon = Ui.Icon(icon), ExpandIcon = false, ThemeTypeVariation = "Tab", ToggleMode = true, FocusMode = FocusModeEnum.None, TooltipText = hint };
+            b.AddThemeConstantOverride("icon_max_width", 18);
+            b.AddThemeConstantOverride("h_separation", 5);
+            b.AddThemeFontSizeOverride("font_size", 13);
+            var on = Ui.Flat(new Color(hue, 0.2f), 4, 11, 5);
+            on.BorderColor = hue;
+            on.BorderWidthBottom = 3;
+            b.AddThemeStyleboxOverride("pressed", on);
+            b.AddThemeStyleboxOverride("hover_pressed", on);
+            b.AddThemeColorOverride("font_pressed_color", hue.Lightened(0.25f));
+            b.AddThemeColorOverride("font_hover_pressed_color", hue.Lightened(0.25f));
             b.Pressed += () => ShowBuildGroup(g);
             _buildTabs.AddChild(b);
             _groupButtons[g] = b;
@@ -115,9 +186,10 @@ public partial class Main
         _buildHint.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         _buildHint.SizeFlagsVertical = SizeFlags.ShrinkCenter;
         _buildHint.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        _buildHint.CustomMinimumSize = new Vector2(420, 0);
-        head.AddChild(_buildHint);
+        _buildHint.CustomMinimumSize = new Vector2(300, 0);
         col.AddChild(head);
+        // The hint gets its own line under the buckets, so the buckets keep the whole width.
+        col.AddChild(_buildHint);
 
         // Rows that wrap: the lists grow with every charter.
         _buildItems = new HFlowContainer { CustomMinimumSize = new Vector2(1110, 0) };
@@ -144,7 +216,7 @@ public partial class Main
             SyncDecorButtons();
             TuckBuildBar();
         };
-        ShowBuildGroup(BuildGroup.Zones);
+        ShowBuildGroup(BuildGroup.Homes);
     }
 
     /// <summary>Ctrl+Z: take back the last stroke of the zoning brush.</summary>
@@ -219,16 +291,23 @@ public partial class Main
         foreach (var (item, b) in _buildButtons)
             if (Is(item)) return b;
         foreach (var g in Enum.GetValues<BuildGroup>())
-            if (g != _buildGroup && BuildItems(g).Any(Is)) return _groupButtons[g];
+            if (g != _buildGroup && BuildItems(g).Any(i => Is(i) && Revealed(i))) return _groupButtons[g];
         return null;
     }
 
     private void ShowBuildGroup(BuildGroup g)
     {
+        if (!BucketShown(g)) g = BuildGroup.Homes;
         _buildGroup = g;
-        foreach (var (k, b) in _groupButtons) b.SetPressedNoSignal(k == g);
+        foreach (var (k, b) in _groupButtons)
+        {
+            b.SetPressedNoSignal(k == g);
+            b.Visible = BucketShown(k);
+        }
         Ui.Clear(_buildItems);
         _buildButtons.Clear();
+        // The decor buttons went with the items: left listed, putting the decor tool down would touch freed buttons.
+        _decorButtons.Clear();
         _map.Planner.Pick(null);
         _map.Decorator.Pick(null);
         if (g == BuildGroup.Decor)
@@ -236,9 +315,13 @@ public partial class Main
             ShowDecor();
             return;
         }
-        foreach (var item in BuildItems(g))
+        BuildItem? last = null;
+        foreach (var item in BuildItems(g).Where(Revealed))
         {
-            var b = new Button { ToggleMode = item.Defense == null || Threat.IsWall(item.Defense.Value), FocusMode = FocusModeEnum.None, CustomMinimumSize = new Vector2(112, 58), ClipText = true };
+            // A thin rule between what is painted and what is placed.
+            if (last != null && (last.Zone != null) != (item.Zone != null)) _buildItems.AddChild(new VSeparator());
+            last = item;
+            var b = new Button { ToggleMode = item.Defense == null || Threat.IsWall(item.Defense.Value), FocusMode = FocusModeEnum.None, CustomMinimumSize = new Vector2(112, 58) };
             b.AddThemeFontSizeOverride("font_size", 12);
             if (item.Zone is Zone z)
             {
@@ -356,8 +439,6 @@ public partial class Main
             else
             {
                 var def = town.Content.Building(item.Building!);
-                // An institution's building stays off the bar until the town has heard of it.
-                b.Visible = !Institutions.Hidden(town, def.Id);
                 why = Planning.Blocked(town, def);
                 line = why ?? $"{Planning.Cost(town, def)}g";
                 tip = def.Blurb != "" ? def.Blurb : BuildTip(town, def);
@@ -371,15 +452,16 @@ public partial class Main
         SyncBuildButtons();
         _buildHint.Text = _map.Planner.Tool switch
         {
-            { Zone: Zone.None } => "Brush over painted land to clear it. [ ] or Shift+wheel sizes the brush. Right-click puts the tool down.",
-            { Zone: Zone.Farmland, Crop: string c } => $"Sow fields with {(Farming.Crop(town, c)?.Name ?? c).ToLowerInvariant()}, out beyond the houses where the farmers live; painting over open fields of another crop resows them (other zones stay as they are: clear them first to repaint). Right-click puts the tool down.",
-            { Zone: Zone z, Density: > 0 } t => $"Paint {Density.Name(town, t.Density).ToLowerInvariant()}-density {Planning.ZoneName(z)} land, on open ground or over built {Planning.ZoneName(z)} streets to let them grow taller (other zones stay as they are: clear them first to repaint). Faint outlines show where buildings will fit. [ ] or Shift+wheel sizes the brush. Right-click puts the tool down.",
-            { Zone: Zone z } => $"Paint {Planning.ZoneName(z)} land on open ground (other zones stay as they are: clear them first to repaint). Faint outlines show where buildings will fit. [ ] or Shift+wheel sizes the brush. Right-click puts the tool down.",
-            { Wall: int } => "Draw the wall: click corners round the town and click the first again to close it, or Enter to keep the line shown. It must ring the town hall and miss every building. Backspace takes back a corner; right-click puts the tool down.",
-            { Gate: int } => "Click on the wall's line to place a gate (every wall needs one, up to four). The masons start once the wall has a gate. Right-click when done.",
-            { Building: string id } => $"Click to place the {town.Content.Building(id).Name.ToLowerInvariant()} facing the nearest lane, or drag to turn it any way (Shift+wheel turns it too). Green ground takes it; a click near it settles on the nearest spot that fits. Shift+click places another. Right-click puts the tool down.",
-            _ => GroupHints[_buildGroup],
+            { Zone: Zone.None } => "Brush to clear unbuilt paint · [ ] size · Right-click: done",
+            { Zone: Zone.Farmland, Crop: string c } => $"Sow {(Farming.Crop(town, c)?.Name ?? c).ToLowerInvariant()} beyond the houses · [ ] size · Right-click: done",
+            { Zone: Zone z, Density: > 0 } t => $"Paint {Density.Name(town, t.Density).ToLowerInvariant()} {Planning.ZoneName(z)}, also over built streets · [ ] size · Right-click: done",
+            { Zone: Zone z } => $"Paint {Planning.ZoneName(z)} on open ground · [ ] size · Right-click: done",
+            { Wall: int } => "Click corners round the town · click the first to close · Backspace: undo a corner · Right-click: done",
+            { Gate: int } => "Click on the wall's line for a gate (1 to 4) · Right-click: done",
+            { Building: string id } => $"Click to place the {town.Content.Building(id).Name.ToLowerInvariant()} · drag to turn · Shift+click: another · Right-click: done",
+            _ => GroupLook[_buildGroup].Hint,
         };
+        _buildHint.AddThemeColorOverride("font_color", _map.Planner.Tool == null ? GroupLook[_buildGroup].Hue : Ui.Ink2);
     }
 
     private static string BuildTip(Town town, BuildingDef def) => def.Id switch
@@ -397,7 +479,17 @@ public partial class Main
     private void OpenPlan(string group, string? tool, int[]? hover)
     {
         if (!_buildBar.Visible) ToggleBuildBar();
-        if (Enum.TryParse<BuildGroup>(group, true, out var g)) ShowBuildGroup(g);
+        // Old names from before the buckets still work in shot scripts.
+        var named = group.ToLowerInvariant() switch { "zones" => "Homes", "government" => "Civic", "commission" => "Trade", var x => x };
+        if (Enum.TryParse<BuildGroup>(named, true, out var g)) ShowBuildGroup(g);
+        // A tool from another bucket opens that bucket.
+        if (tool != null && !BuildItems(_buildGroup).Any(i => i.Building == tool || (i.Zone?.ToString().Equals(tool.Split(':')[0], StringComparison.OrdinalIgnoreCase) ?? false)))
+            foreach (var other in Enum.GetValues<BuildGroup>())
+                if (BuildItems(other).Any(i => i.Building == tool || (i.Zone?.ToString().Equals(tool.Split(':')[0], StringComparison.OrdinalIgnoreCase) ?? false)))
+                {
+                    ShowBuildGroup(other);
+                    break;
+                }
         if (tool == null) return;
         // A zone may name its density after a colon (residential:2), and farmland its crop (farmland:orchard).
         var parts = tool.Split(':');

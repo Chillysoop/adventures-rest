@@ -1,6 +1,6 @@
 namespace CrownAndCompass.Sim.Systems;
 
-/// <summary>One act of the campaign, opened when the town's heroes reach its tier (or time runs out).</summary>
+/// <summary>One act of the campaign, opened when the town grows strong enough for it (or after a long wait).</summary>
 public sealed record ActDef
 {
     public string Name { get; init; } = "";
@@ -8,12 +8,16 @@ public sealed record ActDef
     /// <summary>Party levels the act's threats are built for.</summary>
     public int[] Levels { get; init; } = [1, 4];
 
-    /// <summary>Average level of the town's four best heroes the act waits for.</summary>
+    /// <summary>The town's strength the act waits for: the average level of its four best heroes, and its people.</summary>
     public int OpensAtLevel { get; init; }
+    public int OpensAtPopulation { get; init; }
 
-    /// <summary>The act never opens before this day, and always opens by LatestDay.</summary>
-    public int EarliestDay { get; init; }
-    public int LatestDay { get; init; }
+    /// <summary>
+    /// Days the act before lasts at least, however strong the town, and at most: a town that cannot grow still
+    /// meets the next act in the end.
+    /// </summary>
+    public int MinDays { get; init; }
+    public int MaxDays { get; init; } = 400;
 
     /// <summary>Levels added to every hero who arrives: the town's name carries farther each act.</summary>
     public int ArrivalBonus { get; init; }
@@ -167,6 +171,7 @@ public sealed record SagaRules
     public DreadRules Dread { get; init; } = new();
     public YokeRules Yoke { get; init; } = new();
     public FinaleRules Finale { get; init; } = new();
+    public HordeRules Horde { get; init; } = new();
     public TurningRules Turning { get; init; } = new();
 
     /// <summary>Days with no living menace and no crisis, from Act II on, before a new power rises at the act's level.</summary>
@@ -219,6 +224,9 @@ public sealed class SagaState
     public int? BigBadId { get; set; }
     public int CrownDay { get; set; }
 
+    /// <summary>The big bad's host gathering at its camps (<see cref="Systems.Horde"/>).</summary>
+    public HordeState Horde { get; } = new();
+
     /// <summary>Times the big bad has been driven from its seat and got away.</summary>
     public int BigBadEscapes { get; set; }
 
@@ -251,8 +259,8 @@ public sealed class SagaState
 /// <summary>
 /// The campaign arc, a ten-hour story told in four acts whose threats match the heroes' tiers: Points
 /// of Light (the Bloodtusk Warband and the lairs around town), the Wider Wilds, Lords of the Land, and
-/// the Long Night. An act opens when the town's best heroes reach its tier, and always by its latest
-/// day. Lairs the town knows of and leaves alone fester into menaces (<see cref="Menaces"/>); the
+/// the Long Night. An act opens when the town is strong enough for it (its best heroes' level and its
+/// people), never in a rush and never later than a long wait. Lairs the town knows of and leaves alone fester into menaces (<see cref="Menaces"/>); the
 /// strongest of them at the last act becomes the campaign's big bad, so each playthrough's villain
 /// comes out of play. The tone is heroic, and turns dark as the town spirals: dread rises with every
 /// menace in power, every sack and every village razed, until families flee, heroes desert, and evil
@@ -368,9 +376,19 @@ public static class Saga
         var next = acts[s.Act + 1];
         // Act I is the warband's: it ends with the Last Stand (won, or the town sacked), or when time runs out.
         bool spineDone = s.Act > 0 || !Threat.IsActive(town) || s.Sacks > 0;
-        bool ready = spineDone && town.Day >= next.EarliestDay && ChampionLevel(town) >= next.OpensAtLevel;
-        if (ready || town.Day >= next.LatestDay) OpenAct(town, s.Act + 1);
+        int days = town.Day - s.ActDays[^1];
+        bool ready = spineDone && days >= next.MinDays && Strong(town, next);
+        if (ready || days >= next.MaxDays) OpenAct(town, s.Act + 1);
     }
+
+    /// <summary>The champions' level an act waits for, after the storyteller's say.</summary>
+    public static int LevelFor(Town town, ActDef act) => (int)Math.Ceiling(act.OpensAtLevel * Storyteller.Acts(town) - 1e-9);
+
+    /// <summary>The people an act waits for, after the storyteller's say.</summary>
+    public static int PopulationFor(Town town, ActDef act) => (int)Js.Round(act.OpensAtPopulation * Storyteller.Acts(town));
+
+    /// <summary>The town is strong enough for the act: its champions and its people both.</summary>
+    public static bool Strong(Town town, ActDef act) => ChampionLevel(town) >= LevelFor(town, act) && town.Population >= PopulationFor(town, act);
 
     private static void OpenAct(Town town, int act)
     {
@@ -407,6 +425,8 @@ public static class Saga
         else text = Fill(town, f.Crown, top);
         s.BigBadId = top.Id;
         s.CrownDay = town.Day;
+        s.Horde.Stage = HordeStage.None;
+        s.Horde.Breached = false;
         s.NextRideDay = town.Day + f.RideAfterDays;
         top.BigBad = true;
         Menaces.Ascend(town, top);

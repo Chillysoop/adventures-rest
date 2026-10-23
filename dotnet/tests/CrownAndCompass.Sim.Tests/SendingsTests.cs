@@ -104,14 +104,43 @@ public class SendingsTests
         Assert.NotNull(Stories.Resolve(t, s.Id, hallOption));
     }
 
+    /// <summary>A sending on a council bounty carries the road walked so far; one from the road home confirms the site.</summary>
+    [Fact]
+    public void ASendingTellsTheTownWhereThePartyStands()
+    {
+        var (sim, party) = PartyOnTheRoad();
+        var t = sim.Town;
+        Assert.True(Intel.Commissioned(t, party));
+        Assert.NotNull(Sendings.Open(t, party, "bridge-toll"));
+        Assert.Equal(t.Tick, party.SentTick);
+        var road = Roads.WalkedBy(t, party, t.Tick);
+        Assert.NotEmpty(road);
+        Assert.True(road[0].Count >= 2);
+
+        for (int h = 0; h < 24 * 60 && !Sendings.Homeward(t, party) && !party.Returned; h++) sim.Step();
+        if (!Sendings.Homeward(t, party)) return;
+        foreach (var s in t.Stories.Open.Where(s => s.PartyId == party.Id)) s.Done = true;
+        var site = Quests.Site(t, party.SiteId)!;
+        site.Known = SiteKnowledge.Rumoured;
+        site.ReportTick = null;
+        var home = t.Content.Sendings.Stories.Where(d => d.Needs.Contains("homeward")).Select(d => Sendings.Open(t, party, d.Id)).FirstOrDefault(s => s != null);
+        if (home == null) return;
+        Assert.Equal(SiteKnowledge.Confirmed, site.Known);
+        Assert.Equal(t.Tick, site.ReportTick);
+        Assert.Equal(site.Cleared, site.ThoughtCleared);
+    }
+
     [Fact]
     public void AnswersChangeTheVentureAndCanTurnThePartyBack()
     {
         var (sim, party) = PartyOnTheRoad();
         var t = sim.Town;
-        var storm = Sendings.Open(t, party, "party-storm")!;
-        int turn = Stories.StageOf(t, storm).Options.FindIndex(o => o.Success.Effects.ContainsKey("turnBack"));
-        Stories.Resolve(t, storm.Id, turn);
+        // The storm sending comes only when the sky over them is a storm.
+        var at = Roads.Where(t, party, t.Tick)!.Value;
+        Assert.Equal(Weather.At(t, at.X, at.Y, t.Tick).Step >= Weather.Storm, Sendings.Open(t, party, "party-storm") is { } storm && (storm.Done = true));
+        var fever = Sendings.Open(t, party, "fever-in-camp")!;
+        int turn = Stories.StageOf(t, fever).Options.FindIndex(o => o.Success.Effects.ContainsKey("turnBack"));
+        Stories.Resolve(t, fever.Id, turn);
         Assert.NotNull(party.RecalledTick);
         Assert.Equal(Leg.Homeward, Knowledge.LegOf(t, party));
     }

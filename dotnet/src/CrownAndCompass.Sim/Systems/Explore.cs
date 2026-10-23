@@ -202,6 +202,9 @@ public sealed class Survey
     /// <summary>The company's own account of the trip, told at the tavern when it is home.</summary>
     public List<string> Journal { get; } = [];
 
+    /// <summary>Painted cells it walked that the town hasn't heard of yet ("zone:x:y"), told when it is home (<see cref="Wilds.Told"/>).</summary>
+    public List<string> Saw { get; } = [];
+
     /// <summary>The day each find was rolled for, so a day in the region rolls once.</summary>
     public int RolledDay { get; set; } = -1;
 }
@@ -301,14 +304,13 @@ public static class Explore
     public static Region? RegionAt(Town town, double x, double y)
     {
         if (town.Regions.Count == 0) return null;
-        double d = Js.Hypot(x, y);
-        double bearing = (Math.Atan2(x, -y) * 180 / Math.PI + 360) % 360;
+        var (d, bearing) = World.FromHeart(town, x, y);
         double Off(Region r)
         {
             double a = Math.Abs(r.Bearing - bearing) % 360;
             return Math.Min(a, 360 - a);
         }
-        int ring = town.Regions.OrderBy(r => Math.Abs(r.Days - d)).ThenBy(r => r.Ring).First().Ring;
+        int ring = town.Regions.OrderBy(r => Math.Abs(World.Out(r) - d)).ThenBy(r => r.Ring).First().Ring;
         return town.Regions.Where(r => r.Ring == ring).OrderBy(Off).ThenBy(r => r.Id).First();
     }
 
@@ -535,8 +537,9 @@ public static class Explore
         var entry = zone != null && Wilds.NextCell(town, zone, (0, 0)) is { } first ? first
             : c.SpotX is double sx && c.SpotY is double sy ? (sx, sy) : Entry(town, region);
         var said = new List<string>();
-        var route = Roads.Plan(town, (0, 0), entry, Roads.Mind(town, members, false, false), town.Rng, said);
+        var route = Roads.Plan(town, (0, 0), entry, Roads.Mind(town, members, false, false) with { Explorer = true }, town.Rng, said);
         s.Legs.Add(new SurveyLeg { FromX = 0, FromY = 0, Route = route, Start = town.Tick, Kind = "out" });
+        Country.Wear(town, (0, 0), route);
         s.Journal.AddRange(said);
         town.Surveys.Add(s);
         foreach (var m in members)
@@ -556,18 +559,14 @@ public static class Explore
     /// <summary>Where a company enters a region: on its bearing, a little short of its sites.</summary>
     private static (double X, double Y) Entry(Town town, Region r)
     {
-        double reach = Math.Max(0.6, r.Days * 0.8);
-        double a = r.Bearing * Math.PI / 180;
-        return (reach * Math.Sin(a), -reach * Math.Cos(a));
+        return World.AtHeart(town, r.Bearing, Math.Max(0.6, World.Out(r) * 0.8));
     }
 
     /// <summary>Where a settlement lies: the heart of its region, a little past its sites.</summary>
     public static (double X, double Y) SettlementSpot(Town town, Settlement st)
     {
         var r = town.Regions[st.RegionId];
-        double a = (r.Bearing + r.Arc * 0.18) * Math.PI / 180;
-        double reach = r.Days + 0.3;
-        return (reach * Math.Sin(a), -reach * Math.Cos(a));
+        return World.AtHeart(town, r.Bearing + r.Arc * 0.18, World.Out(r) + 0.3);
     }
 
     // ---------- The march ----------
@@ -649,8 +648,10 @@ public static class Explore
         var from = Where(town, s, town.Tick);
         if (s.Legs.Count > 0 && s.Legs[^1].Stop == null && End(town, s.Legs[^1]) > town.Tick) s.Legs[^1].Stop = town.Tick;
         var said = new List<string>();
-        var route = Roads.Plan(town, from, to, Roads.Mind(town, living, false, Hp(town, s) < 0.6), town.Rng, said);
+        // Out exploring they keep to the land's lines; going home they take the best road.
+        var route = Roads.Plan(town, from, to, Roads.Mind(town, living, false, Hp(town, s) < 0.6) with { Explorer = kind != "home" }, town.Rng, said);
         s.Legs.Add(new SurveyLeg { FromX = from.X, FromY = from.Y, Route = route, Start = town.Tick, Kind = kind });
+        Country.Wear(town, from, route);
     }
 
     /// <summary>A spot to make for next in the region: somewhere they have not found yet, or just more of the country.</summary>
@@ -673,10 +674,11 @@ public static class Explore
             return (x + (rng.Next() - 0.5) * 0.4, y + (rng.Next() - 0.5) * 0.4);
         }
         if (World.SettlementIn(town, region) is { Razed: false } st && !st.Met && rng.Chance(0.4)) return SettlementSpot(town, st);
+        // Landmarks: the edge of a ridge or a mire, a strange place; they walk the land's lines rather than open country.
+        if (rng.Chance(Country.Rules(town).Landmark) && Country.Landmark(town, region, Where(town, s, town.Tick), rng) is { } mark) return mark;
         double bearing = region.Bearing + (rng.Next() - 0.5) * region.Arc * 0.7;
-        double reach = region.Days + (rng.Next() - 0.5) * 0.9;
-        double a = bearing * Math.PI / 180;
-        return (Math.Max(0.5, reach) * Math.Sin(a), -Math.Max(0.5, reach) * Math.Cos(a));
+        double reach = World.Out(region) + (rng.Next() - 0.5) * 0.9;
+        return World.AtHeart(town, bearing, Math.Max(0.5, reach));
     }
 
     // ---------- The hourly tick ----------
@@ -711,7 +713,7 @@ public static class Explore
         var leg = s.Legs[^1];
         bool done = town.Tick >= End(town, leg);
         // Out on the road, they see the painted ground they pass.
-        if (town.Wilds.Count > 0) Wilds.See(town, Where(town, s, town.Tick));
+        if (town.Wilds.Count > 0) Wilds.See(town, s, Where(town, s, town.Tick));
         if (s.Phase == SurveyPhase.Homeward)
         {
             if (done) Home(town, s);
@@ -841,6 +843,7 @@ public static class Explore
         {
             // They have seen it with their own eyes: it goes on their map, where it really is.
             site.Found = true;
+            site.FoundTick ??= town.Tick;
         }
         if (f.SettlementId is int stid && f.Kind == "settlement") town.Settlements[stid].Met = true;
         s.Legs[^1].Stop = town.Tick;
@@ -1492,6 +1495,7 @@ public static class Explore
         var rules = Rules(town);
         s.Phase = SurveyPhase.Home;
         s.ReturnTick = town.Tick;
+        Wilds.Told(town, s, true);
         Pay(town, s);
         var living = Living(town, s);
         var region = town.Regions[s.RegionId];
@@ -1521,6 +1525,7 @@ public static class Explore
     private static void Lost(Town town, Survey s)
     {
         s.Phase = SurveyPhase.Lost;
+        Wilds.Told(town, s, false);
         if (s.AtFind is int fid) FindOf(town, fid)!.State = FindState.Done;
         s.AtFind = null;
         if (s.CommissionId is int cid && CommissionOf(town, cid) is { Status: BountyStatus.Taken } c)

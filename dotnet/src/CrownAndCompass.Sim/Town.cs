@@ -124,6 +124,10 @@ public sealed class Building(int id, BuildingDef def, int lotId)
 
     public bool Complete => !Razed && BuildProgress >= Def.BuildHours;
     public bool IsSite => !Razed && !Complete;
+
+    /// <summary>Wrecked by a storm, a fire or an enemy and not mended yet (<see cref="Systems.Blows.Wreck"/>); mended as the town's repairs say.</summary>
+    public bool Wrecked { get; set; }
+    public bool Damaged => Wrecked && IsSite;
     /// <summary>The town hall's road crews: extra hands the treasury hires out of the town's upkeep.</summary>
     public int Crew { get; set; }
 
@@ -282,6 +286,7 @@ public static class TreasuryAccount
     public const string CharterHouses = "Charter houses";
     public const string Bounties = "Bounties";
     public const string Upkeep = "Upkeep";
+    public const string Repairs = "Repairs";
     public const string CountingHouse = "Counting house";
     public const string Watch = "Watch";
     public const string CouncilMotions = "Council motions";
@@ -331,6 +336,7 @@ public static class TreasuryAccount
     public const string Patrols = "Patrols";
     public const string Buyouts = "Buyouts";
     public const string Refugees = "Refugees";
+    public const string Retainers = "Retainers";
 }
 
 /// <summary>How the campaign ended.</summary>
@@ -352,6 +358,9 @@ public sealed class Town
     public Ledger Ledger { get; } = new();
     public Market Market { get; }
     public int Tick { get; set; }
+
+    /// <summary>How the town mends what storms, fires and enemies wreck (<see cref="Systems.Construction.RepairWays"/>).</summary>
+    public string Repairs { get; set; } = "crews";
     public double Treasury { get; set; }
     public double TaxRate { get; set; }
 
@@ -422,6 +431,12 @@ public sealed class Town
     /// <summary>The country that bends the roads between the town and its sites (<see cref="Systems.Roads"/>).</summary>
     public List<Feature> Terrain { get; } = [];
 
+    /// <summary>Whether the country has its real outlines (<see cref="Systems.Country"/>); an older town's are drawn the first day it is loaded.</summary>
+    public bool Shaped { get; set; }
+
+    /// <summary>Wear on the wilds' ground, by land cell (<see cref="Systems.Country.Land"/>): walked often, it becomes a quicker trail.</summary>
+    public Dictionary<int, double> Trails { get; } = [];
+
     /// <summary>Old gateways in the wilds that link two far places (<see cref="Systems.Wayfaring"/>).</summary>
     public List<Gateway> Gateways { get; } = [];
 
@@ -471,11 +486,20 @@ public sealed class Town
     /// <summary>Enemies on the move that someone saw and reported (<see cref="Systems.Sightings"/>), and how many reports there have been.</summary>
     public List<Systems.Sighting> Sightings { get; } = [];
 
+    /// <summary>Country an airship (or ship) flew over and charted for the council, oldest first (<see cref="Systems.Sky.Charted"/>).</summary>
+    public List<Systems.Chart> Charts { get; } = [];
+
     /// <summary>Every foe and power the town has come across, in the order it met them (<see cref="Systems.Discovery"/>).</summary>
     public List<Systems.Meeting> Discovered { get; } = [];
 
     /// <summary>Whether the peoples are met one by one (<see cref="Systems.Neighbours.Know"/>); false in saves from before.</summary>
     public bool PeoplesMet { get; set; }
+
+    /// <summary>How many meetings have been looked at for a menace's herald (<see cref="Systems.Manners.Daily"/>).</summary>
+    public int HeraldsSeen { get; set; }
+
+    /// <summary>The day each overture can next be made, by "key/manner" (<see cref="Systems.Manners.Overture"/>).</summary>
+    public OrderedMap<string, int> Overtures { get; } = new();
     public int SightingCount { get; set; }
 
     /// <summary>Enemies' agents loose in town, looking over what they mean to strike tonight (<see cref="Systems.Lurkers"/>).</summary>
@@ -651,6 +675,9 @@ public sealed class Town
     /// <summary>This year's omen and the years' before (<see cref="Systems.Omens"/>).</summary>
     public Systems.OmenState Omens { get; } = new();
 
+    /// <summary>What the town has heard of the weather (<see cref="Systems.Weather"/>; the weather itself is never saved).</summary>
+    public Systems.WeatherState Weather { get; } = new();
+
     /// <summary>Sickness in town: the sick lanes and the outbreaks so far (<see cref="Systems.Sickness"/>; the sick houses keep their own days).</summary>
     public Systems.SicknessState Sickness { get; } = new();
 
@@ -665,6 +692,23 @@ public sealed class Town
 
     /// <summary>Where the town was founded (founding.json id); null for the river ford, and in saves from before the choice (<see cref="Systems.Founding"/>).</summary>
     public string? Founding { get; set; }
+
+    /// <summary>The town sites New game pinned on the map, and who holds the ones passed over (<see cref="Systems.Founding.Spots"/>).</summary>
+    public List<Systems.FoundingSpot> FoundingSpots { get; } = [];
+
+    /// <summary>The bearing from a coastal town to its nearest ocean, worked out once (<see cref="Systems.Founding.Facing"/>).</summary>
+    [NotSaved] internal double? Shoreward;
+
+    /// <summary>
+    /// The world's heart in day units from the town (x east, y south): where the rings of country centre and the wilds are
+    /// mildest. (0, 0) when the town stands at it, as it always did before the player could choose (<see cref="Systems.Founding.Settle"/>).
+    /// </summary>
+    public double HeartX { get; set; }
+    public double HeartY { get; set; }
+
+    /// <summary>The middle of the ocean's wedge of the map, in degrees, and its width; 0 wide for no ocean (<see cref="Systems.World.InOcean"/>).</summary>
+    public double OceanBearing { get; set; }
+    public double OceanArc { get; set; }
 
     /// <summary>The town's ships, for a town on the sea (<see cref="Systems.Fleet"/>).</summary>
     public List<Systems.Ship> Ships { get; } = [];

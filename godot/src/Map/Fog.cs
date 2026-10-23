@@ -17,9 +17,13 @@ public enum Sight
     Live,
 }
 
-/// <summary>What one party's report taught the town.</summary>
-/// <summary>A party's or scout's account; <see cref="Roads"/> are the roads it walked (world points), or null for the straight road out.</summary>
-public sealed record Report(string SiteId, int Day, bool ReachedSite, float Reach, ExpeditionOutcome? Outcome, IReadOnlyList<Vector2[]>? Roads = null);
+/// <summary>
+/// A party's or scout's account; <see cref="Roads"/> are the roads it walked (world points), or null for the straight road out.
+/// A ship's chart also describes the land round <see cref="At"/>, <see cref="AtRadius"/> tiles across, and sees a wider
+/// strip either side of its line (<see cref="Width"/>).
+/// </summary>
+public sealed record Report(string SiteId, int Day, bool ReachedSite, float Reach, ExpeditionOutcome? Outcome, IReadOnlyList<Vector2[]>? Roads = null,
+    float Width = Fog.ReportRoad, Vector2? At = null, float AtRadius = 0);
 
 /// <summary>
 /// The fog of war. Everything is derived from the simulation (parties that came home, scryings,
@@ -70,7 +74,7 @@ public sealed class Fog
     /// <summary>Recompute when anything that shapes the fog changed; cheap to call every frame.</summary>
     public bool Refresh(Town town, Geo geo)
     {
-        CollectReports(town);
+        CollectReports(town, geo);
         LiveAreas.Clear();
         // The town's lamplight reaches a little past its edge; each watchtower sees farther.
         LightRadius = geo.TownRadius + 9 + town.Defenses.Towers * 5;
@@ -91,7 +95,7 @@ public sealed class Fog
         return true;
     }
 
-    private void CollectReports(Town town)
+    private void CollectReports(Town town, Geo geo)
     {
         Reports.Clear();
         foreach (var p in town.Parties)
@@ -113,16 +117,49 @@ public sealed class Fog
         }
         foreach (var s in town.Surveys)
         {
-            if (s.Phase != SurveyPhase.Home) continue;
+            int back = s.ReturnTick;
+            if (s.Phase == SurveyPhase.Engaged)
+            {
+                // Explorers who went in to fight tell of the country they walked once the fight's survivors are home.
+                var took = town.Parties.FirstOrDefault(p => p.SurveyId == s.Id);
+                if (took is not { Returned: true } || town.Chronicles.Any(c => c.PartyName == took.Name && c.DepartDay == SimTime.DayOf(took.DepartTick) && c.Outcome == ExpeditionOutcome.Wiped)) continue;
+                back = took.ReturnTick;
+            }
+            else if (s.Phase != SurveyPhase.Home) continue;
             var roads = Explore.Walked(town, s).Select(line => line.Select(Geo.FromDays).ToArray()).ToList();
-            Reports.Add(new Report("", SimTime.DayOf(s.ReturnTick), false, 1, null, roads));
+            Reports.Add(new Report("", SimTime.DayOf(back), false, 1, null, roads));
+        }
+        // A party on a council bounty that sent word home: the road it had walked by then, and the site once it had been there.
+        foreach (var p in town.Parties)
+        {
+            if (p.Returned || p.SentTick is not int sent) continue;
+            var roads = Roads.WalkedBy(town, p, sent).Select(line => line.Select(Geo.FromDays).ToArray()).ToList();
+            Reports.Add(new Report(p.SiteId, SimTime.DayOf(sent), sent >= p.ArriveTick && p.RecalledTick == null, 1, null, roads));
+        }
+        // Ships home from scouting describe the line they flew and the land round its end.
+        foreach (var c in town.Charts)
+        {
+            var from = Geo.FromDays(c.FromX, c.FromY);
+            var to = Geo.FromDays(c.ToX, c.ToY);
+            float across = Geo.DayRadius(Math.Sqrt(c.ToX * c.ToX + c.ToY * c.ToY) + c.Radius) - Geo.DayRadius(Math.Sqrt(c.ToX * c.ToX + c.ToY * c.ToY));
+            Reports.Add(new Report("", SimTime.DayOf(c.Tick), false, 1, null, [[from, to]], ChartRoad, to, Math.Max(ReportSite, across)));
+        }
+        // Anything the town has found or confirmed (an ally's map, a ship's charts, the Lofted City's watch, live sight)
+        // is described where it stands, as of then, even with no party's report of it.
+        var told = Reports.Where(r => r.ReachedSite).Select(r => r.SiteId).ToHashSet();
+        foreach (var s in town.Sites)
+        {
+            if (!s.Found || told.Contains(s.Def.Id) || (s.ReportTick ?? s.FoundTick) is not int at) continue;
+            Reports.Add(new Report(s.Def.Id, SimTime.DayOf(at), true, 1, s.ThoughtCleared ? ExpeditionOutcome.Cleared : null, []));
         }
         // Scouts who come home describe the road and the site they watched.
         foreach (var s in town.Scouts)
         {
             if (!s.Home) continue;
             float reach = s.Arrived ? 1 : Mathf.Clamp((s.LeaveTick - s.DepartTick) / (float)Math.Max(1, s.ArriveTick - s.DepartTick), 0, 1);
-            Reports.Add(new Report(s.SiteId, SimTime.DayOf(s.ReturnTick), s.Arrived, reach, null));
+            // They ride round the hard country like anyone, so the road they describe bends with it.
+            var road = geo.Pins.TryGetValue(s.SiteId, out var pin) ? new List<Vector2[]> { Geo.Part(Geo.ScoutWay(town, s, pin), reach) } : null;
+            Reports.Add(new Report(s.SiteId, SimTime.DayOf(s.ReturnTick), s.Arrived, reach, null, road));
         }
     }
 
@@ -199,10 +236,11 @@ public sealed class Fog
             if (!PinOf(geo, r, out var pin)) continue;
             foreach (var (a, b) in Segments(r, pin))
             {
-                Grow(a, ReportRoad);
-                Grow(b, ReportRoad);
+                Grow(a, r.Width);
+                Grow(b, r.Width);
             }
             if (r.ReachedSite) Grow(pin, ReportSite);
+            if (r.At is Vector2 at) Grow(at, r.AtRadius);
         }
         int x0 = Math.Max(0, Px(bx0)), y0 = Math.Max(0, Px(by0)), x1 = Math.Min(N - 1, Px(bx1)), y1 = Math.Min(N - 1, Px(by1));
         for (int y = y0; y <= y1; y++)
@@ -215,8 +253,9 @@ public sealed class Fog
         foreach (var r in Reports)
         {
             if (!PinOf(geo, r, out var pin)) continue;
-            foreach (var (a, b) in Segments(r, pin)) Stamp(a, b, ReportRoad, r.Day);
+            foreach (var (a, b) in Segments(r, pin)) Stamp(a, b, r.Width, r.Day);
             if (r.ReachedSite) Stamp(pin, pin, ReportSite, r.Day);
+            if (r.At is Vector2 at) Stamp(at, at, r.AtRadius, r.Day);
         }
         int today = town.Day;
         for (int y = y0; y <= y1; y++)
@@ -267,6 +306,9 @@ public sealed class Fog
 
     /// <summary>Half-width of the strip of road a report describes, and the radius it describes around a site.</summary>
     public const float ReportRoad = 5, ReportSite = 16;
+
+    /// <summary>Half-width of the strip a ship sees either side of its line from the air.</summary>
+    public const float ChartRoad = 12;
 
     public Sight SightOf(string siteId, Vector2 pin) =>
         IsLive(pin) ? Sight.Live : Reports.Any(r => r.SiteId == siteId && r.ReachedSite) ? Sight.Scouted : Sight.Rumoured;

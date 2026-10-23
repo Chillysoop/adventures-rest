@@ -79,7 +79,7 @@
     "column": "A column of {n} refugees from {from} has stopped on the road outside {town}. They ask to stay.",
     "taken": "{n} refugees from {from} are taken in and pitch their tents outside {town}.",
     "turned": "{n} refugees from {from} are turned back at the road and go on to look for somewhere else.",
-    "settle": "{who}, who fled {from}, {verb} to stay in {town}, having found {what}.",
+    "settle": "{who}, who fled {from}, {verb} to stay in {town}, {what}.",
     "gaveUp": "{who}, who fled {from}, {verb} on from the camp outside {town}: {why}.",
     "home": "{from} is safe again with {by} gone. {n} of its folk strike their tents outside {town} and go home.",
     "lost": "The refugees from {from} say it was {site} that took their home. They ask the town's companies to take it back.",

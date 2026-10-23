@@ -63,8 +63,15 @@ public sealed record SimulationOptions
     /// <summary>Who tells the campaign: "steady", "rising" (the default) or "chaotic" (content/game/storytellers.json).</summary>
     public string Storyteller { get; init; } = "rising";
 
-    /// <summary>Where the town is founded: a founding.json id from <see cref="Systems.Founding.Offered"/>; "" for the river ford.</summary>
+    /// <summary>What kind of town is founded: a founding.json id (<see cref="Systems.Founding.KindsAt"/>); "" for the river ford.</summary>
     public string Founding { get; init; } = "";
+
+    /// <summary>
+    /// Where the town is founded, in days from the world's heart (x east, y south), picked on New game's map. Null for the
+    /// kind's own pin (<see cref="Systems.Founding.Spots"/>): the heart itself for the river ford.
+    /// </summary>
+    public double? HomeX { get; init; }
+    public double? HomeY { get; init; }
 
     /// <summary>Foes and heroes from the player's earlier campaigns, who may come back (<see cref="Systems.Legends"/>).</summary>
     public IReadOnlyList<Legend> Legends { get; init; } = [];
@@ -161,6 +168,7 @@ public sealed class Simulation
         Tournaments.Daily(t, Hand("stories"));
         Seasons.Daily(t);
         Omens.Daily(t);
+        Weather.Daily(t);
         Economy.Daily(t);
         Skills.Daily(t);
         Merchants.Daily(t);
@@ -170,6 +178,7 @@ public sealed class Simulation
         // Squares first, so the shops sited today front them.
         Streets.Markets(t);
         if (Hand("planning")) Construction.Daily(t);
+        Construction.Mend(t);
         Streets.Wear(t);
         Streets.Closes(t);
         Paving.Daily(t);
@@ -200,6 +209,7 @@ public sealed class Simulation
         Alchemy.Daily(t, Options.AutoMayor && Stewards.Mode(t, Options, "armory") == StewardMode.Steward);
         Spoils.Daily(t, Options.AutoMayor && Options.AutoArmory);
         Neighbours.Daily(t, Options.AutoMayor);
+        Founding.Daily(t);
         using (Asking("defence"))
         {
             Mercenaries.Daily(t, Hand("defence"));
@@ -214,6 +224,7 @@ public sealed class Simulation
             Explore.Daily(t, Hand("bounties"));
             Intel.Daily(t, Stewards.Sub(t, Options, "bounties", Options.AutoIntel));
         }
+        Retainers.Daily(t);
         Bastions.Daily(t, Options.AutoMayor && Options.AutoBastions);
         using (Asking("bounties")) Watch.Daily(t, Hand("bounties"));
         Undercity.Daily(t, Options.AutoMayor);
@@ -236,6 +247,7 @@ public sealed class Simulation
         Vengeance.Daily(t);
         Sightings.Daily(t);
         Discovery.Daily(t);
+        Manners.Daily(t);
         Menaces.Track(t);
         Infiltration.Daily(t);
         Turning.Daily(t);
@@ -363,6 +375,9 @@ public sealed class Simulation
     /// <summary>Send an envoy with gifts to a settlement out in the wilds, to win its people over.</summary>
     public bool SendEnvoy(int settlementId) => World.SendEnvoy(Town, settlementId);
 
+    /// <summary>Make an overture to a people ("people:id") or power ("power:id") the way one of its manners likes. Returns the roll, or null.</summary>
+    public StoryBeat? Overture(string key, string manner) => Manners.Overture(Town, key, manner);
+
     /// <summary>Send coin and goods to see a settlement through its trouble.</summary>
     public bool AidSettlement(int settlementId) => Neighbours.Aid(Town, settlementId);
 
@@ -390,6 +405,12 @@ public sealed class Simulation
 
     /// <summary>Patch a ship's hull at the harbour, or an airship's at the Sky Dock.</summary>
     public bool RepairShip(int shipId) => Fleet.Repair(Town, shipId);
+
+    /// <summary>Send a sea ship on a job: patrol the home waters, scout a sea land, or bombard a sea site, with heroes aboard as marines.</summary>
+    public bool SailJob(int shipId, string job, int regionId = -1, string siteId = "", IReadOnlyList<int>? marines = null) => Voyages.Send(Town, shipId, job, regionId, siteId, marines);
+
+    /// <summary>Who fills a sea ship's free marine places: "" nobody, "watch" lent watchmen, "hired" sellswords.</summary>
+    public bool SetShipGuard(int shipId, string guard) => Voyages.SetGuard(Town, shipId, guard);
 
     /// <summary>Fly an airship on a job: "patrol" over the town, "scout" a region, or "strike" a lair there, with heroes aboard as marines.</summary>
     public bool FlyShip(int shipId, string job, int regionId = -1, string siteId = "", IReadOnlyList<int>? marines = null) => Sky.Send(Town, shipId, job, regionId, siteId, marines);
@@ -510,6 +531,9 @@ public sealed class Simulation
     /// <summary>Reach a party on the road by sending stone: ask for word, or call it home.</summary>
     public string? SendWord(int partyId, bool recall = false) => Knowledge.Send(Town, partyId, recall);
 
+    /// <summary>Send an airship to look for an overdue company where it went up into the sky (<see cref="Reaches.Rescue"/>).</summary>
+    public bool RescueParty(int partyId) => Reaches.Rescue(Town, partyId) == null;
+
     /// <summary>Buy a company's report of a trip the council didn't pay for: at their asking price, or haggled down.</summary>
     /// <summary>Offer one company a job by name; it takes it and marches at once, or turns it down. Null when it can't be offered.</summary>
     public JobAnswer? OfferJob(string company, string siteId, double reward, string terms = "slay", bool lootToTown = false) =>
@@ -596,6 +620,9 @@ public sealed class Simulation
     /// <summary>Send a caravan for the timber and stone a stalled site is waiting on, at the import premium.</summary>
     public bool SendCaravan(int buildingId) => Construction.SendCaravan(Town, Town.Building(buildingId));
 
+    /// <summary>How damage from storms, fires and enemies is mended: "crews", "first" or "hire".</summary>
+    public bool SetRepairs(string way) => Construction.SetRepairs(Town, way);
+
     /// <summary>Rebuild a rope bridge raiders cut, in stone that can't be cut again.</summary>
     public bool RebuildBridge(int featureId) => Bridges.Rebuild(Town, featureId);
 
@@ -677,6 +704,12 @@ public sealed class Simulation
 
     /// <summary>Buy an allied power's oath: it stays the town's for good, with no tithe, and no enemy can buy it away.</summary>
     public bool SwearPower(string powerId) => Powers.Swear(Town, powerId);
+
+    /// <summary>Sign an adventuring company onto the town's retainer for good: a signing price, then a daily wage.</summary>
+    public bool RetainCompany(string company) => Retainers.Retain(Town, company);
+
+    /// <summary>Let a retained company go.</summary>
+    public bool ReleaseCompany(string company) => Retainers.Release(Town, company);
 
     /// <summary>Answer a minor power's envoy: accept its offer or demand and pay its price, or send it home.</summary>
     public bool AnswerEnvoy(string powerId, bool accept) => Powers.Answer(Town, powerId, accept);
@@ -807,7 +840,7 @@ public sealed class Simulation
         var keepDef = c.Building("keep");
         if (Planning.CivicLot(t, keepDef) is { } keepLot) t.AddBuilding(keepDef, keepLot, null, "the Mayor's Keep", true);
         Quests.InitSites(t);
-        World.Generate(t);
+        World.Generate(t, Options.HomeX, Options.HomeY);
         Council.InitCouncil(t);
         Threat.InitThreat(t);
         Factions.InitFactions(t);

@@ -1323,6 +1323,12 @@ public static class Menaces
             if (town.Tick >= arrival) Assault(town, m);
             return;
         }
+        // The big bad's host gathers at its camps before it marches.
+        if (Horde.On(town, m))
+        {
+            Horde.Daily(town, m);
+            return;
+        }
         if (restrained || m.NextAssaultTick is not int next || town.Tick < next) return;
         // A claimed road to victory brings it at once (Victory.Claim).
         bool due = m.BigBad && (town.Day >= s.CrownDay + f.FirstMarchDays || town.Victory.Claimed != "");
@@ -1425,6 +1431,14 @@ public static class Menaces
         Mayoralty.Breached(town, breaches, m.Name);
         town.Tension += 60 + dead.Count * 5;
 
+        // The final host's first break of the walls burns the lower town but takes nothing more: the next one falls it.
+        if (breaches >= 2 && Horde.Reprieve(town, m, lines))
+        {
+            record.End = BattleEnd.Sacked;
+            Chronicle(town, lines, ExpeditionOutcome.Retreated, []);
+            town.Log(LedgerCategory.War, Importance.Major, $"{lines[^1]} (Chronicle {town.Chronicles.Count})", dead.Select(a => a.Id).ToList());
+            return;
+        }
         if (breaches >= 2)
         {
             record.End = BattleEnd.Fell;
@@ -1591,6 +1605,7 @@ public static class Menaces
         var f = town.Content.Saga.Finale;
         if (!MayEscape(town)) return false;
         s.BigBadEscapes++;
+        Horde.Lost(town, seat.Def.Id);
         string fled = seat.Def.Name;
         var refuge = m.Holdings.Select(id => Quests.Site(town, id)!).Where(x => !x.Cleared).OrderByDescending(x => x.Def.Tier).ThenBy(x => x.Def.Id, StringComparer.Ordinal).FirstOrDefault();
         if (refuge != null)

@@ -19,30 +19,127 @@ public class FoundingTests
     }
 
     [Fact]
-    public void NewGameOffersTheFordAndSitesTheCountryAllows()
+    public void TheHeartlandPinsASiteOfEveryKindWhereItsCountrySuitsIt()
     {
+        var r = Content.Default().Founding;
         for (int seed = 1; seed <= 12; seed++)
         {
             var t = Founded(seed, "");
-            var offered = Founding.Offered(t);
-            Assert.Equal(t.Content.Founding.Default, offered[0].Def.Id);
-            Assert.InRange(offered.Count, 2, t.Content.Founding.Offered);
-            Assert.Equal(offered.Count, offered.Select(o => o.Def.Id).Distinct().Count());
-            foreach (var o in offered.Where(o => o.Def.Near.Count > 0))
-                Assert.Contains(t.Regions, g => g.Ring <= o.Def.Within && o.Def.Near.Contains(g.Theme.Id));
-            // The ones not chosen stand on the map, held by neighbours or foes.
-            Assert.Equal(offered.Count - 1, t.Regions.Count(g => g.Site != null));
-            Assert.All(t.Regions.Where(g => g.Site != null), g => Assert.False(string.IsNullOrEmpty(Founding.Describe(t, g))));
+            var spots = Founding.Spots(t);
+            Assert.Equal(r.Kinds.Select(k => k.Id).Order(StringComparer.Ordinal), spots.Select(p => p.Kind).Order(StringComparer.Ordinal));
+            var ford = spots.Single(p => p.Kind == r.Default);
+            Assert.Equal((0.0, 0.0), (ford.X, ford.Y));
+            Assert.Equal("town", ford.Holder);
+            foreach (var p in spots.Where(p => p != ford))
+            {
+                Assert.InRange(Js.Hypot(p.X, p.Y), 0.5, r.Heartland + 0.01);
+                Assert.Null(Founding.Blocked(t, p.X, p.Y));
+                Assert.Contains(Founding.KindsAt(t, p.X, p.Y), k => k.Id == p.Kind);
+                Assert.All(spots.Where(o => o != p), o => Assert.True(Js.Hypot(o.X - p.X, o.Y - p.Y) >= r.Apart - 0.02, $"seed {seed}: {p.Kind} and {o.Kind} share ground"));
+            }
+            // The coast's sites lie on the real shore, where the world has an ocean.
+            if (t.OceanArc > 0)
+                foreach (var p in spots.Where(p => Founding.Kind(t.Content, p.Kind)!.Shore))
+                    Assert.Contains(t.Terrain, f => f.Kind.Id == "ocean" && Roads.Contains(f, p.X, p.Y, r.Shore));
         }
     }
 
     [Fact]
-    public void AChosenSiteIsAmongTheOnesOffered()
+    public void TheSitesPassedOverAreHeldOrLieEmptyAndAreTakenLater()
+    {
+        int people = 0, foes = 0, empty = 0;
+        for (int seed = 1; seed <= 12; seed++)
+        {
+            var t = Founded(seed, "");
+            foreach (var p in t.FoundingSpots.Where(p => p.Holder != "town"))
+            {
+                if (p.Holder == "people") people++;
+                else if (p.Holder == "foes") foes++;
+                else empty++;
+                Assert.False(string.IsNullOrEmpty(Founding.Describe(t, p)));
+            }
+            Assert.All(t.Regions.Where(g => g.Site != null), g => Assert.False(string.IsNullOrEmpty(Founding.Describe(t, g))));
+        }
+        Assert.True(people > 0 && foes > 0 && empty > 0, $"{people} held by people, {foes} by foes, {empty} empty");
+
+        var sim = new Simulation(new SimulationOptions { Seed = 3 });
+        int before = sim.Town.FoundingSpots.Count(p => p.Holder == "");
+        sim.RunDays(400);
+        Assert.True(sim.Town.FoundingSpots.Count(p => p.Holder == "") < before);
+        Assert.Contains(sim.Town.FoundingSpots, p => p.Day > 0);
+    }
+
+    [Fact]
+    public void AChosenKindIsFoundedOnItsPinAwayFromTheHeart()
     {
         var t = Founded(2, "isle");
         Assert.Equal("isle", t.Founding);
-        Assert.Contains(Founding.Offered(t), o => o.Def.Id == "isle");
+        var pin = t.FoundingSpots.Single(p => p.Kind == "isle");
+        Assert.Equal("town", pin.Holder);
+        Assert.Equal(-pin.X, t.HeartX, 6);
+        Assert.Equal(-pin.Y, t.HeartY, 6);
         Assert.DoesNotContain(t.Regions, g => g.Site == "isle");
+    }
+
+    [Fact]
+    public void TheWildsStayWhereTheyLieAndTheTownWalksToThemFromItsOwnGround()
+    {
+        for (int seed = 1; seed <= 6; seed++)
+        {
+            var heart = Founded(seed, "");
+            var pin = heart.FoundingSpots.First(p => p.Kind == "crag");
+            var t = Founded(seed, "crag");
+            Assert.Equal(heart.Sites.Count, t.Sites.Count);
+            foreach (var s in t.Sites.Where(s => s.Def.Distance > 0))
+            {
+                var h = heart.Sites.Single(x => x.Def.Id == s.Def.Id);
+                // The same place in the world, at the same danger...
+                var (x, y) = World.Spot(t, s);
+                var (hx, hy) = World.Spot(heart, h);
+                Assert.Equal(hx - pin.X, x, 6);
+                Assert.Equal(hy - pin.Y, y, 6);
+                Assert.Equal(h.Def.Tier, s.Def.Tier);
+                // ...and as many days from the town as it lies.
+                Assert.Equal(Math.Max(1, (int)Math.Round(Js.Hypot(x, y))), s.Def.Distance);
+            }
+            // The country nearest the town is the country it knows.
+            var known = t.Regions.Where(g => g.Known).ToList();
+            Assert.NotEmpty(known);
+            Assert.True(known.Max(g => g.Days) <= t.Regions.Where(g => !g.Known).Min(g => g.Days));
+            // Hard country keeps clear of the town's own ground.
+            Assert.DoesNotContain(t.Terrain, f => f.Kind.Id != "ocean" && Roads.Contains(f, 0, 0, 0.2));
+        }
+    }
+
+    [Fact]
+    public void ATownFoundedFarOutHasHarderCountryCloser()
+    {
+        var heart = Founded(4, "");
+        // The farthest open spot on land that takes a river ford.
+        var (x, y) = Enumerable.Range(0, 72).Select(i => (B: i * 5.0, R: 3.4))
+            .Select(p => (X: p.R * Math.Sin(p.B * Math.PI / 180), Y: -p.R * Math.Cos(p.B * Math.PI / 180)))
+            .First(p => Founding.KindsAt(heart, p.X, p.Y).Any(k => k.Id == "river-ford"));
+        var far = new Simulation(new SimulationOptions { Seed = 4, HomeX = x, HomeY = y }).Town;
+        Assert.Equal(-x, far.HeartX, 6);
+        double Nearest(Town t, int level) => t.Sites.Where(s => s.Def.Distance > 0 && s.Def.Tier >= level).Min(s => Js.Hypot(World.Spot(t, s).X, World.Spot(t, s).Y));
+        Assert.True(Nearest(far, 5) < Nearest(heart, 5));
+        // Too deep in the wilds, or out at sea, the kind's own pin is taken instead.
+        var deep = new Simulation(new SimulationOptions { Seed = 4, HomeX = 30, HomeY = 0 }).Town;
+        Assert.Equal(0, deep.HeartX);
+        Assert.NotNull(Founding.Blocked(heart, 30, 0));
+    }
+
+    [Fact]
+    public void ATownFoundedAwayFromTheHeartSurvivesASave()
+    {
+        var sim = new Simulation(new SimulationOptions { Seed = 6, Founding = "pass-keep" });
+        sim.RunDays(30);
+        var loaded = SaveGame.Read(SaveGame.Write(sim));
+        Assert.Equal(sim.Town.HeartX, loaded.Town.HeartX);
+        Assert.Equal(sim.Town.Terrain.Select(f => (f.Ox, f.Oy)), loaded.Town.Terrain.Select(f => (f.Ox, f.Oy)));
+        sim.RunDays(30);
+        loaded.RunDays(30);
+        Assert.Equal(sim.Town.Ledger.Entries.Select(e => e.Format()), loaded.Town.Ledger.Entries.Select(e => e.Format()));
     }
 
     [Fact]
@@ -51,7 +148,7 @@ public class FoundingTests
         for (int seed = 1; seed <= 6; seed++)
         {
             var t = Founded(seed, "sea-cove");
-            var sea = Assert.Single(t.Terrain, f => f.Kind.Boats);
+            var sea = Assert.Single(t.Terrain, f => f.Kind.Id == "sea");
             foreach (var s in t.Sites)
             {
                 var (x, y) = World.Spot(t, s);

@@ -374,7 +374,7 @@ public static class Crises
         if (c.Phase == CrisisPhase.Marching)
         {
             // Its host was turned back or broken on the way, or never reached the walls: the crisis is spent.
-            if (m.ArrivalTick == null) End(town, c, "held");
+            if (m.ArrivalTick == null && !Horde.Mustering(town, m)) End(town, c, "held");
             return;
         }
         m.Power += Rules(town).Gather * sv.Strength;
@@ -433,9 +433,21 @@ public static class Crises
         town.Log(LedgerCategory.War, Importance.Major, Saga.Fill(town, KindOf(town, m).Culminate, m));
         for (int i = 0; i < sv.CulminationBlows && town.Outcome == null; i++) Strike(town, c, m, sv);
         if (town.Outcome != null) return;
+        double before = m.Power;
         Absorb(town, m);
         int others = Active(town).Count(x => x != c);
         double host = Threat.Defense(town) * sv.Army * (1 + r.OverlapArmy * others) * (0.9 + town.Rng.Next() * 0.2);
+        // The big bad's crisis fills its camps up to a share of the host a crisis brings, with what it absorbed and the
+        // allies it called on top, and what has gathered there marches now (Horde).
+        if (Horde.On(town, m))
+        {
+            double joined = Math.Max(0, host * Horde.Rules(town).Crisis - Horde.Gathered(town)) + Math.Max(0, m.Power - before) + Allies(town, m);
+            m.Power = before;
+            c.PowerBefore = m.Power;
+            c.Phase = CrisisPhase.Marching;
+            Horde.Hasten(town, m, joined);
+            return;
+        }
         // The big bad's doom clock: every march it has made swells the host its crisis brings, so a finale the heroes
         // cannot end at the seat or the breach ends at the walls instead.
         if (m.BigBad) host = Math.Max(host, Threat.Defense(town) * town.Content.Saga.Finale.MarchGrowth * m.Marches);

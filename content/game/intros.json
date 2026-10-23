@@ -183,6 +183,9 @@
     }
   ],
   "intros": [
+    {"lineage": "drowned-choir", "crest": "tentacle-strike", "field": "0f2a32", "charge": "7ad0c8", "scene": "shore", "host": "cult", "count": 6, "chief": 1.2, "skin": "8aa8a0", "cloth": "1a3a40", "line": "A drowned god's choir, singing it back up from the deep."},
+    {"lineage": "tidekin", "crest": "wave-crest", "field": "14445a", "charge": "a8e8e0", "scene": "shore", "host": "folk", "count": 5, "chief": 1.1, "skin": "6a9a9a", "cloth": "2a5a6a", "line": "Reef-dwellers who kept the Coil's sea-shrines."},
+    {"lineage": "isle-city", "crest": "galleon", "field": "3a2a10", "charge": "f0d080", "scene": "harbour", "host": "merchants", "count": 6, "chief": 1.15, "skin": "c89870", "cloth": "5a3a1a", "line": "The greatest port on the sea, and it knows it."},
     {"lineage": "red-tide", "crest": "war-axe", "field": "8f2d20", "charge": "e8c060", "scene": "warcamp", "host": "tribe", "count": 6, "chief": 1.35, "skin": "6a8a3a", "cloth": "8f2d20", "line": "Orc hosts still marching to Ghorvak's war-drum."},
     {"lineage": "warren-clans", "crest": "goblin-head", "field": "4a5a2a", "charge": "d8c060", "scene": "peaks", "host": "tribe", "count": 7, "chief": 1.1, "skin": "8aa04a", "cloth": "5a4a2a", "line": "Goblin clans that breed faster than the passes can feed."},
     {"lineage": "stoneking-giants", "crest": "giant", "field": "5a5048", "charge": "d8c8a0", "scene": "peaks", "host": "tribe", "count": 3, "chief": 1.8, "skin": "9a8a70", "cloth": "5a5048", "line": "The last kin of the giant kings who carved the mountains."},
@@ -205,6 +208,7 @@
     {"lineage": "spirit-callers", "crest": "totem-mask", "field": "3a2a1a", "charge": "c8e0a0", "scene": "steppe", "host": "cult", "count": 4, "chief": 1.2, "skin": "a87858", "cloth": "4a3a2a", "line": "River-tribe priests who call their fallen back to fight."},
     {"lineage": "black-bough", "crest": "bowman", "field": "1a2a1a", "charge": "a8b890", "scene": "wildwood", "host": "schemers", "count": 4, "chief": 1.15, "skin": "c8a080", "cloth": "2a3a2a", "line": "Old marcher wardens, now rangers for hire."},
     {"lineage": "forge-giants", "crest": "anvil-impact", "field": "4a2a1a", "charge": "ff9a3a", "scene": "forge", "host": "tribe", "count": 3, "chief": 1.8, "skin": "6a4a3a", "cloth": "4a2a1a", "line": "Giants forging the weapons to retake the Smith-King's holds."},
+    {"lineage": "elder-wyrms", "crest": "dragon-breath", "field": "2a0a0a", "charge": "f06020", "scene": "skyhold", "host": "wyrms", "count": 1, "chief": 2.4, "skin": "8a1a10", "cloth": "2a0a0a", "line": "An ancient dragon of the Old Wyrm's eldest, roosting above the clouds."},
     {"lineage": "cloud-lords", "crest": "castle", "field": "3a4a6a", "charge": "f0f0ff", "scene": "skyhold", "host": "tribe", "count": 3, "chief": 1.8, "skin": "c8c0b0", "cloth": "3a4a6a", "line": "Giant lords who lifted their castles into the sky."},
     {"lineage": "storm-kings", "crest": "lightning-storm", "field": "1a2a4a", "charge": "a8e0ff", "scene": "shore", "host": "tribe", "count": 3, "chief": 1.8, "skin": "8a9ab0", "cloth": "1a2a4a", "line": "The eldest giants, sleeping in the sea and the storms."},
     {"lineage": "hollow-choir", "crest": "pipe-organ", "field": "2a1a2a", "charge": "c8b8e8", "scene": "crypt", "host": "cult", "count": 5, "chief": 1.2, "skin": "c8c0b0", "cloth": "3a2a3a", "line": "Choristers singing open the grave of the Hollow King."},

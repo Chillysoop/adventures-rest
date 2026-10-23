@@ -309,7 +309,7 @@ public static class Neighbours
     public static bool Introduce(Town town, Settlement s, string how)
     {
         if (!Discovery.Meet(town, Key(s), how)) return false;
-        if (town.Outcome == null && !s.Razed && town.Content.Stories.Story(Powers.ContactSource + "-people") is { } d) Stories.Contact(town, d, new Story { SettlementId = s.Id });
+        if (town.Outcome == null && !s.Razed && Manners.PeopleContact(town, s) is { } d) Stories.Contact(town, d, new Story { SettlementId = s.Id });
         return true;
     }
 
@@ -427,6 +427,8 @@ public static class Neighbours
         if (Plots.Tolled(town, s) != null) t -= r.Tolled;
         t -= Shadows.ProsperityLoss(town, s);
         foreach (var p in s.Projects) t += Rules(town).Project(p)?.Prosperity ?? 0;
+        // A growing city (the great island city) starts rich and grows richer by the day.
+        if (s.Kin.Grows > 0) t += town.Content.World.Ocean.City.Prosperity - r.Base + s.Kin.Grows * town.Day;
         return t;
     }
 

@@ -457,7 +457,10 @@ public partial class Main
         foreach (var party in t.Parties.Where(x => !x.Returned))
         {
             var site = Quests.Site(t, party.SiteId)!;
-            int due = SimTime.DayOf(party.ReturnTick);
+            // The town only knows when it last reckoned them home, not where they are now.
+            int due = SimTime.DayOf(party.Expected > 0 ? party.Expected : party.ReturnTick);
+            bool overdue = Knowledge.Overdue(t).Contains(party);
+            string rescue = Reaches.RescueRefused(t, party) ?? "";
             int slots = Knowledge.SlotsLeft(t, party);
             int id = party.Id;
             string members = string.Join(", ", party.Members.Select(m => AgentLink(t.Agent(m), t.Agent(m).GivenName)));
@@ -465,7 +468,7 @@ public partial class Main
             // Who does what on the road and the skill it rolls, a bullet each.
             var crew = party.Members.Select(t.Agent).Where(a => !a.Dead).ToList();
             string jobs = string.Join("", Wayfaring.Assign(t, crew).Select(j => $"\n• {Ui.Esc(Wayfaring.Describe(t, j))}"));
-            string text = $"[b]The {Ui.Esc(party.Name)}[/b] {where}  {Tag($"back day {due}", Ui.Gold)}\n[font_size=12]{members}{Ui.C(Ui.Ink2, jobs)}[/font_size]";
+            string text = $"[b]The {Ui.Esc(party.Name)}[/b] {where}  {(overdue ? Tag($"overdue since day {due}", Ui.Bad) : Tag($"back day {due}", Ui.Gold))}\n[font_size=12]{members}{Ui.C(Ui.Ink2, jobs)}[/font_size]";
             bool can = Knowledge.Slots(t, party) > 0;
             bool stone = Sim.Systems.Armory.Carries(t, party);
             string left = !can ? "No caster or sending stone with them: no way to reach them"
@@ -473,7 +476,8 @@ public partial class Main
                 : stone ? $"{slots} sending{(slots == 1 ? "" : "s")} left on the town's stone"
                 : $"{slots} spell slot{(slots == 1 ? "" : "s")} left; each sending costs one{(party.Members.Any(m => t.Agent(m).Hero!.Cls.Healer) ? " (a healer's slot is a heal lost)" : "")}";
             bool canRecall = can && slots > 0 && Knowledge.CanRecall(t, party);
-            p.Add($"P{text}{slots}{can}{canRecall}", () =>
+            bool aloft = overdue && site.Def.Aloft;
+            p.Add($"P{text}{slots}{can}{canRecall}{aloft}{rescue}", () =>
             {
                 var v = new VBoxContainer();
                 v.AddThemeConstantOverride("separation", 6);
@@ -484,6 +488,8 @@ public partial class Main
                 h.AddChild(r);
                 h.AddChild(IconButton("act-word", "", $"Ask for word: they send news of how it goes\n• {left}", can && slots > 0, false, () => Act(() => _sim.SendWord(id))));
                 h.AddChild(IconButton("act-recall", "", $"Call them home: they turn back now\n• {left}", canRecall, false, () => Act(() => _sim.SendWord(id, recall: true))));
+                if (aloft)
+                    h.AddChild(IconButton("inst-sky-dock", "", $"Send an airship to look for them where they went\n• {(rescue == "" ? "Days of searching, none if the site is scried" : Ui.Cap(rescue))}", rescue == "", false, () => Act(() => _sim.RescueParty(id))));
                 v.AddChild(h);
                 v.AddChild(new ColorRect { Color = Ui.Line, CustomMinimumSize = new Vector2(0, 1) });
                 return v;

@@ -229,6 +229,9 @@ public sealed class HeroSheet
     /// <summary>Healing potions from the general store, carried into the next delve.</summary>
     public int Potions { get; set; }
 
+    /// <summary>Draughts from a hoard (a potion of giant strength, an oil of sharpness), all drunk on the next delve (<see cref="Systems.Draughts"/>).</summary>
+    public List<LibItem> Draughts { get; } = [];
+
     /// <summary>Spell scrolls from the scriptorium or a hoard, each read once in a fight (<see cref="Systems.Scrolls"/>).</summary>
     public int Scrolls { get; set; }
 
@@ -379,6 +382,9 @@ public sealed class Agent
 
     /// <summary>Without a roof of their own, and not a traveller passing through.</summary>
     public bool Homeless => HomeId == null && !Traveller;
+
+    /// <summary>Wants a roof in town: the homeless and the travellers looking it over, whom landlords and the council build for.</summary>
+    public bool Roofless => HomeId == null;
 
     public double MoodToday { get; set; }
     public int MoodSamples { get; set; }

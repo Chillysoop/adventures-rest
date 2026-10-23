@@ -279,10 +279,14 @@ public static class Institutions
             if (Rules(town).Fixture(f) is { } fd) yield return fd.Service;
     }
 
-    /// <summary>Sum one number of every open institution's service, each scaled by its strength.</summary>
+    /// <summary>No institution open and no relic in the hall: every service sum is nothing.</summary>
+    private static bool Idle(Town town) => town.Institutions.Count == 0 && town.Relics.Count == 0;
+
+    /// <summary>Sum one number of every open institution's service, each scaled by its strength, and the hall's relics' at full.</summary>
     private static double Sum(Town town, Func<ServiceDef, double> field)
     {
         double total = 0;
+        foreach (var h in Regalia.HallServices(town)) total += field(h);
         foreach (var s in town.Institutions)
         {
             if (s.Shut) continue;
@@ -293,47 +297,49 @@ public static class Institutions
         return total;
     }
 
-    public static double Mood(Town town) => town.Institutions.Count == 0 ? 0 : Sum(town, d => d.Mood);
-    public static double Arrivals(Town town) => town.Institutions.Count == 0 ? 0 : Sum(town, d => d.Arrivals);
-    public static double Defence(Town town) => town.Institutions.Count == 0 ? 0 : Sum(town, d => d.Defence);
-    public static int Heroes(Town town) => town.Institutions.Count == 0 ? 0 : (int)Math.Floor(Sum(town, d => d.Heroes) + 0.05);
+    public static double Mood(Town town) => Idle(town) ? 0 : Sum(town, d => d.Mood);
+    public static double Arrivals(Town town) => Idle(town) ? 0 : Sum(town, d => d.Arrivals);
+    public static double Defence(Town town) => Idle(town) ? 0 : Sum(town, d => d.Defence);
+    public static int Heroes(Town town) => Idle(town) ? 0 : (int)Math.Floor(Sum(town, d => d.Heroes) + 0.05);
     /// <summary>Airships the town can send a company off in: one as soon as the dock flies any at all.</summary>
     public static int Airships(Town town)
     {
         // Once the dock has its fleet, its ships at the mast are what can fly (<see cref="Sky"/>).
         if (town.SkyFleet.Granted) return Sky.Ships(town).Count(s => Sky.Moored(town, s) && s.Lift >= 1);
-        double n = town.Institutions.Count == 0 ? 0 : Sum(town, d => d.Airship);
+        double n = Idle(town) ? 0 : Sum(town, d => d.Airship);
         return n < 0.05 ? 0 : Math.Max(1, (int)Math.Floor(n + 0.05));
     }
 
     /// <summary>Share off the chance a low mood breaks someone, at most a half.</summary>
-    public static double Calm(Town town) => town.Institutions.Count == 0 ? 0 : Math.Clamp(Sum(town, d => d.Calm), 0, 0.5);
+    public static double Calm(Town town) => Idle(town) ? 0 : Math.Clamp(Sum(town, d => d.Calm), 0, 0.5);
 
     /// <summary>Weight institutions add to drawing a hero of this class.</summary>
-    public static int Calling(Town town, string cls) => town.Institutions.Count == 0 ? 0 : (int)Math.Round(Sum(town, d => d.Calling.GetValueOrDefault(cls)));
+    public static int Calling(Town town, string cls) => Idle(town) ? 0 : (int)Math.Round(Sum(town, d => d.Calling.GetValueOrDefault(cls)));
 
     /// <summary>Hours sooner than the fields the town's riders in the sky see a raid coming: at most two days.</summary>
-    public static int SkyWatch(Town town) => (int)Math.Clamp(Math.Round((town.Institutions.Count == 0 ? 0 : Sum(town, d => d.SkyWatch)) + Ruins.SkyWatch(town) + Sky.PatrolHours(town)), 0, 48);
+    public static int SkyWatch(Town town) => (int)Math.Clamp(Math.Round((Idle(town) ? 0 : Sum(town, d => d.SkyWatch)) + Ruins.SkyWatch(town) + Sky.PatrolHours(town)), 0, 48);
 
-    public static int Routes(Town town) => town.Institutions.Count == 0 ? 0 : (int)Math.Floor(Sum(town, d => d.Routes) + 0.05);
+    public static int Routes(Town town) => Idle(town) ? 0 : (int)Math.Floor(Sum(town, d => d.Routes) + 0.05);
 
     /// <summary>Share off the chance a caravan is waylaid, at most a half.</summary>
-    public static double Escort(Town town) => town.Institutions.Count == 0 ? 0 : Math.Min(0.5, Sum(town, d => d.Escort));
+    public static double Escort(Town town) => Idle(town) ? 0 : Math.Min(0.5, Sum(town, d => d.Escort));
 
     /// <summary>Extra hit points a night's rest in town heals.</summary>
-    public static int Rest(Town town, int maxHp) => town.Institutions.Count == 0 ? 0 : (int)Math.Ceiling(maxHp * Sum(town, d => d.Heal) - 1e-9);
+    public static int Rest(Town town, int maxHp) => Idle(town) ? 0 : (int)Math.Ceiling(maxHp * Sum(town, d => d.Heal) - 1e-9);
 
     /// <summary>Share off the stir the undercity gathers, at most three fifths.</summary>
-    public static double Hush(Town town) => town.Institutions.Count == 0 ? 0 : Math.Clamp(Sum(town, d => d.Hush), -0.5, 0.6);
+    public static double Hush(Town town) => Idle(town) ? 0 : Math.Clamp(Sum(town, d => d.Hush), -0.5, 0.6);
 
-    public static double Build(Town town) => town.Institutions.Count == 0 ? 1 : 1 + Sum(town, d => d.Build);
+    public static double Build(Town town) => Idle(town) ? 1 : 1 + Sum(town, d => d.Build);
 
     /// <summary>What each good's makers produce, multiplied: a yield of 1.1 at full strength is a tenth more.</summary>
     public static double Yield(Town town, Good good)
     {
-        if (town.Institutions.Count == 0) return 1;
+        if (Idle(town)) return 1;
         string key = good.ToString();
         double f = 1;
+        foreach (var h in Regalia.HallServices(town))
+            if (h.Yields.TryGetValue(key, out double hy)) f *= hy;
         foreach (var s in town.Institutions)
         {
             if (s.Shut) continue;
@@ -386,6 +392,7 @@ public static class Institutions
     public static void Daily(Town town, bool autoMayor)
     {
         var r = Rules(town);
+        ServeHall(town);
         if (r.Institutions.Count == 0) return;
         Reveal(town);
         Found(town);
@@ -483,6 +490,17 @@ public static class Institutions
                 f.Standing = Math.Clamp(f.Standing + p.Standing * k, -100, 100);
                 f.Heat = Math.Clamp(f.Heat + p.FactionHeat * k, 0, 100);
             }
+        }
+    }
+
+    /// <summary>The hall's relics' daily parts: gold, tension and dread, at full.</summary>
+    private static void ServeHall(Town town)
+    {
+        foreach (var p in Regalia.HallServices(town))
+        {
+            if (p.Gold != 0) town.Book(TreasuryAccount.Institutions, p.Gold);
+            if (p.Tension != 0) town.Tension = Math.Max(0, town.Tension + p.Tension);
+            if (p.Dread != 0) town.Saga.Dread = Math.Clamp(town.Saga.Dread + p.Dread, 0, 100);
         }
     }
 

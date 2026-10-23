@@ -11,8 +11,10 @@ public class LandmarksTests
         var sim = new Simulation(new SimulationOptions { Seed = 2 });
         sim.RunDays(20);
         var t = sim.Town;
-        var isle = t.Sites.First(s => s.Def.Aloft);
-        Assert.InRange(t.Regions[isle.RegionId!.Value].Ring, 3, 4);
+        // The high isles: wings get there, but the dock's lent airship climbs only so high (ReachesTests has the rest).
+        var isle = t.Sites.First(s => s.Def.Band == "high");
+        var band = t.Content.World.Isles.Band("high")!;
+        Assert.InRange(t.Regions[isle.RegionId!.Value].Ring, band.Rings[0], band.Rings[^1]);
         var walkers = t.Heroes.Take(3).ToList();
         foreach (var h in walkers)
         {

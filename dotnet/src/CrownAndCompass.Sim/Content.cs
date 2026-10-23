@@ -352,6 +352,9 @@ public sealed record SiteDef
     /// <summary>A floating isle: only a company that can fly, or rides the sky dock's airship, gets there.</summary>
     public bool Aloft { get; init; }
 
+    /// <summary>The height of the sky it floats at (world.json isles `bands`), or "" on the ground.</summary>
+    public string Band { get; init; } = "";
+
     /// <summary>The old work it is the ruin of (world.json "ruins"), which the town can restore once it is cleared.</summary>
     public string Ruin { get; init; } = "";
 
@@ -629,6 +632,9 @@ public sealed record KnowledgeRules
     /// <summary>What a caster asks to scry, by their loyalty: free at or above Free, gold at or above Favour, a favour below it.</summary>
     public ScryPriceRules ScryPrice { get; init; } = new();
     public WatchtowerRules Watchtowers { get; init; } = new();
+
+    /// <summary>Days past the homecoming the town last reckoned before a silent party is called overdue.</summary>
+    public int OverdueDays { get; init; } = 3;
 }
 
 public sealed record ScryPriceRules
@@ -678,6 +684,11 @@ public sealed record RumorRules
 
     /// <summary>Days after a clearing before anyone talks of the place being taken again.</summary>
     public int QuietDays { get; init; } = 20;
+
+    /// <summary>Days before a first-hand report of a site nobody can see goes back to hearsay, and the trust it keeps.</summary>
+    public int StaleDays { get; init; } = 180;
+    public int StaleTrust { get; init; } = 50;
+    public IReadOnlyList<string> Stale { get; init; } = [];
     public IReadOnlyList<RumorSource> Travellers { get; init; } = [];
     public int[] ResidentReliability { get; init; } = [25, 65];
     public int[] HeroReliability { get; init; } = [55, 90];
@@ -904,6 +915,15 @@ public sealed record LootRules
 
     /// <summary>Chance per site tier that a cleared hoard holds a magic item.</summary>
     public double ItemChancePerTier { get; init; } = 0.15;
+
+    /// <summary>Slots only a hoard holds besides <see cref="Slots"/>: draughts and siege pieces.</summary>
+    public IReadOnlyList<string> HoardSlots { get; init; } = [];
+
+    /// <summary>A hoard's weight on a piece that doesn't belong in the site's country.</summary>
+    public double OffFit { get; init; } = 1;
+
+    /// <summary>Library items never found: no fitting effect.</summary>
+    public IReadOnlyList<string> Pulled { get; init; } = [];
 }
 
 /// <summary>One ring of country around the town: how far out it lies and what level of party it suits.</summary>
@@ -978,6 +998,9 @@ public sealed record FoeDef
 
     /// <summary>Its seat is lifted into the sky as a floating isle (<see cref="SiteDef.Aloft"/>).</summary>
     public bool Aloft { get; init; }
+
+    /// <summary>A height of the sky whose sites it holds (<see cref="SkyBandDef.Foe"/>); such a foe is seated there, not by the ordinary placing.</summary>
+    public string Band { get; init; } = "";
 }
 
 public sealed record FoeRules
@@ -1025,6 +1048,9 @@ public sealed record ThemeDef
     public double? Wet { get; init; }
     public int MinRing { get; init; }
     public int MaxRing { get; init; } = 99;
+
+    /// <summary>Open water: only the ocean's regions draw it, and they draw nothing else (world.json "ocean").</summary>
+    public bool Sea { get; init; }
 
     /// <summary>Peoples who may have a settlement in the region; the first is the likeliest.</summary>
     public IReadOnlyList<string> Peoples { get; init; } = [];
@@ -1083,6 +1109,9 @@ public sealed record PeopleDef
 
     /// <summary>Starting standing with the town, -100 to 100.</summary>
     public double Start { get; init; }
+
+    /// <summary>A growing city: its settlements' prosperity aims at the ocean city's start (<see cref="IsleCityRules.Prosperity"/>) plus this much a day.</summary>
+    public double Grows { get; init; }
 
     /// <summary>Where they come from in the world's history, told when they ally.</summary>
     public string History { get; init; } = "";
@@ -1224,8 +1253,14 @@ public sealed record TerrainKindDef
     /// <summary>Open water the town's own boats take anyone over (the sea by a coastal town, <see cref="Systems.Founding"/>).</summary>
     public bool Boats { get; init; }
 
+    /// <summary>Open sea only a ship crosses (the ocean): a company boards one of the harbour's ships (<see cref="Systems.Voyages"/>) or can't go.</summary>
+    public bool Ship { get; init; }
+
     /// <summary>How much wider than other hard country it spreads across its region: wide country is costly to go round.</summary>
     public double Wide { get; init; } = 1;
+
+    /// <summary>Its outline (<see cref="Systems.Country"/>): "chain" for a long wandering band (a ridge, a gorge), "blob" for a patch (a mire, a wood).</summary>
+    public string Shape { get; init; } = "blob";
 }
 
 public sealed record TerrainHazardDef
@@ -1384,6 +1419,9 @@ public sealed record RoadRules
 
     /// <summary>Mountain walls between the rings, broken only at their passes (<see cref="Systems.Roads.Ranges"/>).</summary>
     public RangeRules Ranges { get; init; } = new();
+
+    /// <summary>The lie of the land: hard country's outlines, the way parties pick over it, and the trails they wear (<see cref="Systems.Country"/>).</summary>
+    public Systems.CountryRules Country { get; init; } = new();
 }
 
 /// <summary>
@@ -1475,15 +1513,57 @@ public sealed record WorldRules
     public IReadOnlyList<ThemeDef> Themes { get; init; } = [];
     public IsleRules Isles { get; init; } = new();
     public Systems.RuinRules Ruins { get; init; } = new();
+    public OceanRules Ocean { get; init; } = new();
+}
+
+/// <summary>
+/// The ocean (world.json "ocean"): a wedge of the campaign map, its bearing and width rolled on the seed, whose regions
+/// are open water and islands. Empty arc for a world with no sea.
+/// </summary>
+public sealed record OceanRules
+{
+    /// <summary>Least and most degrees of the compass it takes.</summary>
+    public double[] Arc { get; init; } = [];
+
+    /// <summary>The first ring of regions that is sea.</summary>
+    public int FromRing { get; init; } = 1;
+    public IsleCityRules City { get; init; } = new();
+}
+
+/// <summary>The great island city every ocean holds: a people's settlement in a sea region near the ocean's middle.</summary>
+public sealed record IsleCityRules
+{
+    public string People { get; init; } = "";
+    public int[] Rings { get; init; } = [2, 3];
+    public double Prosperity { get; init; } = 60;
 }
 
 /// <summary>Floating isles in the far wilds (world.json "isles"), reached only by air.</summary>
 public sealed record IsleRules
 {
+    /// <summary>The sky's heights, lowest first: what lies in each, and how high a ship must climb to get there.</summary>
+    public IReadOnlyList<SkyBandDef> Bands { get; init; } = [];
+
+    public SkyBandDef? Band(string id) => id == "" ? null : Bands.FirstOrDefault(b => b.Id == id);
+}
+
+/// <summary>
+/// One height of the sky (<see cref="Systems.Reaches"/>): `count` far sites in rings `rings` (and themes `themes`, any land
+/// when empty) float there. An airship reaches it only with a `ceiling` at least this; heroes who fly reach it on their own
+/// only where `fliers` is set. A band with a `foe` seats that foe (foes.json, its `band`) on its sites, each with one of `bosses`.
+/// </summary>
+public sealed record SkyBandDef
+{
+    public string Id { get; init; } = "";
+    public string Name { get; init; } = "";
+    public double Ceiling { get; init; }
+    public bool Fliers { get; init; }
     public int Count { get; init; }
     public int[] Rings { get; init; } = [3, 4];
     public IReadOnlyList<string> Themes { get; init; } = [];
     public IReadOnlyList<string> Names { get; init; } = [];
+    public string Foe { get; init; } = "";
+    public IReadOnlyList<string> Bosses { get; init; } = [];
 }
 
 /// <summary>
@@ -1651,6 +1731,7 @@ public sealed class Content
 
     /// <summary>Each faction's first-meeting picture and crest (content/game/intros.json).</summary>
     public Systems.IntroRules Intros { get; init; } = new();
+    public Systems.MannerRules Manners { get; init; } = new();
 
     /// <summary>The charter goals of a new town's first days (content/game/goals.json).</summary>
     public Systems.GoalRules Goals { get; init; } = new();
@@ -1709,6 +1790,9 @@ public sealed class Content
     /// <summary>The year omens the seers foretell (content/game/omens.json).</summary>
     public Systems.OmenRules Omens { get; init; } = new();
 
+    /// <summary>The weather fronts and the climate they cross (content/game/weather.json).</summary>
+    public Systems.WeatherRules Weather { get; init; } = new();
+
     /// <summary>How sickness comes to town and spreads (content/game/sickness.json).</summary>
     public Systems.SicknessRules Sickness { get; init; } = new();
 
@@ -1735,8 +1819,12 @@ public sealed class Content
 
     /// <summary>Library magic items a hoard can hold (the loot rules' slots), by id.</summary>
     /// <summary>Signature pieces (spoils.json drops) only come from their own foes, never from any hoard.</summary>
-    public IReadOnlyList<LibItem> LootItems => _lootItems ??= Library.Items.Where(i => i.Tier > 0 && Loot.Slots.Contains(i.Slot) && !Spoils.Signature(i.Id)).ToList();
+    public IReadOnlyList<LibItem> LootItems => _lootItems ??= Library.Items.Where(i => i.Tier > 0 && Loot.Slots.Contains(i.Slot) && !Spoils.Signature(i.Id) && !Loot.Pulled.Contains(i.Id)).ToList();
     private IReadOnlyList<LibItem>? _lootItems;
+
+    /// <summary>What a cleared hoard can hold: the loot, and the draughts and siege pieces only hoards turn up.</summary>
+    public IReadOnlyList<LibItem> HoardItems => _hoardItems ??= LootItems.Concat(Library.Items.Where(i => i.Tier > 0 && Loot.HoardSlots.Contains(i.Slot) && !Spoils.Signature(i.Id) && !Loot.Pulled.Contains(i.Id))).ToList();
+    private IReadOnlyList<LibItem>? _hoardItems;
 
     public Content(
         IReadOnlyList<BuildingDef> buildings,
@@ -1863,7 +1951,13 @@ public sealed class Content
         var stories = WithSendings(Parse<StoryRules>("stories.json"), Parse<SendingRules>("sendings.json"));
         // So are the powers' first-contact scenes, kept with the powers.
         var powers = Parse<PowerRules>("powers.json");
-        stories = stories with { Stories = [.. stories.Stories, .. institutions.Requests, .. powers.Contacts], Precedents = [.. stories.Precedents, .. institutions.Precedents] };
+        // And the first meetings composed from each people's and enemy's manners.
+        var history = Parse<HistoryRules>("history.json");
+        var world = Parse<WorldRules>("world.json");
+        var neighbours = Parse<NeighbourRules>("neighbours.json");
+        var manners = Parse<Systems.MannerRules>("manners.json");
+        var met = Systems.Manners.Compose(manners, history, world, neighbours);
+        stories = stories with { Stories = [.. stories.Stories, .. institutions.Requests, .. powers.Contacts, .. met], Precedents = [.. stories.Precedents, .. institutions.Precedents] };
         return new Content(
             Parse<List<BuildingDef>>("buildings.json"),
             Parse<NamesFile>("names.json").Races,
@@ -1876,7 +1970,7 @@ public sealed class Content
         {
             Knowledge = Parse<KnowledgeRules>("knowledge.json"),
             Loot = Parse<LootRules>("loot.json"),
-            World = Parse<WorldRules>("world.json"),
+            World = world,
             Roads = Parse<RoadRules>("roads.json"),
             Rumors = Parse<RumorRules>("rumors.json"),
             Lairs = Parse<LairRules>("lairs.json"),
@@ -1898,12 +1992,12 @@ public sealed class Content
             Alchemy = Parse<AlchemyRules>("alchemy.json"),
             Enchant = Parse<EnchantRules>("enchantments.json"),
             Spoils = Parse<SpoilsRules>("spoils.json"),
-            Neighbours = Parse<NeighbourRules>("neighbours.json"),
+            Neighbours = neighbours,
             Legacies = Parse<LegacyRules>("legacies.json"),
             Undercity = Parse<UndercityRules>("undercity.json"),
             Research = Parse<ResearchRules>("research.json"),
             Lofted = Parse<Systems.LoftedRules>("lofted.json"),
-            History = Parse<HistoryRules>("history.json"),
+            History = history,
             Stories = stories,
             Institutions = institutions,
             Sendings = Parse<SendingRules>("sendings.json"),
@@ -1937,6 +2031,7 @@ public sealed class Content
             Passage = Parse<PassageRules>("passage.json"),
             Heraldry = Parse<HeraldryRules>("heraldry.json"),
             Intros = Parse<Systems.IntroRules>("intros.json"),
+            Manners = manners,
             Eggs = Parse<EggRules>("eggs.json"),
             Foes = Parse<FoeRules>("foes.json"),
             Cannons = Parse<Systems.CannonRules>("cannons.json"),
@@ -1964,6 +2059,7 @@ public sealed class Content
             Wounds = Parse<WoundRules>("wounds.json"),
             Word = Parse<WordRules>("word.json"),
             Omens = Parse<OmenRules>("omens.json"),
+            Weather = Parse<WeatherRules>("weather.json"),
             Sickness = Parse<SicknessRules>("sickness.json"),
             Traps = Parse<TrapRules>("traps.json"),
             DarkCompany = Parse<DarkCompanyRules>("darkcompany.json"),

@@ -77,6 +77,7 @@ public partial class Main : Control
         BuildGlossary();
         BuildSettings();
         BuildGuide();
+        BuildModal();
         BuildStory();
         BuildFind();
         BuildIntro();
@@ -128,10 +129,21 @@ public partial class Main : Control
         _pot.AddRange(_opts.Brew);
         _mayorSheet = _opts.MayorSheet;
         if (_opts.MayorFallen) Mayoralty.Wound(_sim.Town, 9999, "a knife in the market");
-        if (_opts.Tab is string t && Enum.TryParse<Tab>(t, true, out var tab)) SetTab(tab);
+        if (_opts.Tab is string t && Enum.TryParse<Tab>(t, true, out var tab))
+        {
+            SetTab(tab);
+            if (_opts.Page != null) _panes[tab].Selected = _opts.Page;
+        }
+        if (_opts.Goal is int goal && _sim.Town.Content.Goals.Goals.ElementAtOrDefault(goal - 1) is { } gd)
+            Callable.From(() => GoTo(gd.Goes, $"goal:{gd.Id}")).CallDeferred();
+        // After the alerts have been read once.
+        if (_opts.Next > 0) GetTree().CreateTimer(0.5).Timeout += () => { for (int i = 0; i < _opts.Next; i++) PressNext(); };
+        foreach (var f in _opts.Fold) Pane.Folded.Add(f);
         if (_opts.Tray is string tray && Trays.FirstOrDefault(d => d.Id.Equals(tray, StringComparison.OrdinalIgnoreCase)) is { } td)
             Callable.From(() => OpenTray(td.Id)).CallDeferred();
         if (_opts.Stat is int stat) Callable.From(() => { RenderHeader(); ShowStatTip(stat); }).CallDeferred();
+        if (_opts.WeatherTip) Callable.From(() => { RenderHeader(); ShowWeatherTip(); }).CallDeferred();
+        if (_opts.WeatherLayer) _weatherButton.ButtonPressed = true;
         if (_opts.Asks)
         {
             foreach (var area in Sim.Systems.Stewards.Areas.Where(a => a.CanAsk)) _sim.SetSteward(area.Id, Sim.Systems.StewardMode.Ask);
@@ -145,11 +157,14 @@ public partial class Main : Control
         // --shadowed aims at the first settlement the town has met that lies under an enemy's shadow.
         if (_opts.Shadowed && _sim.Town.Settlements.FirstOrDefault(s => s.Met && Shadows.Shadowed(s)) is { } dark)
             _opts.Look ??= Map.Geo.SettlementPin(_sim.Town, dark);
+        // --land aims at the nearest hard country of a kind (Country), to show its shape and the roads round it.
+        if (_opts.Land is string lk && _sim.Town.Terrain.Where(f => f.Kind.Id == lk).OrderBy(f => Js.Hypot(Country.Middle(f).X, Country.Middle(f).Y)).FirstOrDefault() is { } land)
+            _opts.Look ??= Map.Geo.FromDays(Country.Middle(land));
         if (_opts.Wonder is string wk)
         {
             if (wk == "gate" && _sim.Town.Gateways.FirstOrDefault() is { } g) _opts.Look ??= Map.Geo.FromDays(g.Ax, g.Ay);
             // --wonder quay: the harbour's quay on the shore of a town on the sea.
-            else if (wk == "quay" && _sim.Town.Terrain.FirstOrDefault(f => f.Kind.Boats) is { } sea)
+            else if (wk == "quay" && Sim.Systems.Founding.Bay(_sim.Town) is { } sea)
                 _opts.Look ??= Map.Geo.FromDays((sea.Inner + 0.05) * Math.Sin(sea.Bearing * Math.PI / 180), -(sea.Inner + 0.05) * Math.Cos(sea.Bearing * Math.PI / 180));
             // --wonder home:trees: the first people met whose home looks like that (marked met for the shot).
             else if (wk.StartsWith("home:") && _sim.Town.Settlements.FirstOrDefault(s => Map.TownView.SettlementLook(_sim.Town, s) == wk[5..]) is { } home)
@@ -182,7 +197,7 @@ public partial class Main : Control
                 _opts.Look ??= face.Top;
             else if (_sim.Town.Terrain.FirstOrDefault(f => f.Kind.Wonder?.Kind == wk) is { } wf)
             {
-                _opts.Look ??= Map.Geo.FromDays((wf.Inner + wf.Outer) / 2 * Math.Sin(wf.Bearing * Math.PI / 180), -(wf.Inner + wf.Outer) / 2 * Math.Cos(wf.Bearing * Math.PI / 180));
+                _opts.Look ??= Map.Geo.FromDays(Sim.Systems.Roads.Middle(wf));
             }
         }
         if (_opts.Cam is float cam)
@@ -191,6 +206,8 @@ public partial class Main : Control
         if (_opts.At is string atKind && _sim.Town.Buildings.Where(b => b.Def.Id == atKind && b.Complete).OrderBy(b => b.Id).FirstOrDefault() is Building at0)
         {
             _map.LookAt(Map.Geo.LotPos(_sim.Town.Lot(at0.LotId)), _opts.Cam ?? 22);
+            // --wreck damages it first (a storm's work, for a shot of the repairs card).
+            if (_opts.Wreck) CrownAndCompass.Sim.Systems.Blows.Wreck(_sim.Town, at0, 0.4);
             // --card opens its inspector too (a monument's parts, a site's say).
             if (_opts.Card) Select(Selection.Building(at0.Id));
         }
@@ -489,12 +506,12 @@ public partial class Main : Control
 
     // ---------- Game ----------
 
-    private void NewTown(int seed, bool autoplay = false, string? storyteller = null, string? founding = null, MayorRoll? mayor = null, bool hardcore = false, string? townName = null)
+    private void NewTown(int seed, bool autoplay = false, string? storyteller = null, string? founding = null, MayorRoll? mayor = null, bool hardcore = false, string? townName = null, (double X, double Y)? home = null)
     {
         RememberLegends();
         // With --autoplay the stand-in mayor keeps playing, for demos and screenshots; only a player's towns meet old legends.
         var legends = autoplay ? [] : ProfileLegends();
-        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoArmory = autoplay && !_opts.KeepArmory, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay && _opts.Tax == null, AutoHonours = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay, AutoStories = autoplay, AutoExplore = autoplay && !_opts.Find, Legends = legends, Storyteller = storyteller ?? _opts.Storyteller ?? "rising", Boons = autoplay ? [.. _opts.Boons] : ChosenBoons(), Endless = _opts.Endless || (!autoplay && _endless), Founding = founding ?? _opts.Founding ?? "", Mayor = mayor, Hardcore = hardcore || _opts.Hardcore, TownName = townName ?? _opts.TownName }));
+        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoArmory = autoplay && !_opts.KeepArmory, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay && _opts.Tax == null, AutoHonours = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay, AutoStories = autoplay, AutoExplore = autoplay && !_opts.Find, Legends = legends, Storyteller = storyteller ?? _opts.Storyteller ?? "rising", Boons = autoplay ? [.. _opts.Boons] : ChosenBoons(), Endless = _opts.Endless || (!autoplay && _endless), Founding = founding ?? _opts.Founding ?? "", HomeX = home?.X ?? _opts.Home?.X, HomeY = home?.Y ?? _opts.Home?.Y, Mayor = mayor, Hardcore = hardcore || _opts.Hardcore, TownName = townName ?? _opts.TownName }));
     }
 
     /// <summary>Show a town: a new one, or one loaded from a save.</summary>
@@ -703,13 +720,14 @@ public partial class Main : Control
         }
         int digit = k.Keycode is >= Key.Key0 and <= Key.Key9 ? ((int)(k.Keycode - Key.Key0) + 9) % 10 : -1;
         if (Keys.Is(k, "pause")) PlayerSpeed(_speed == 0 ? _lastSpeed : 0);
-        else if (digit >= 0 && k.ShiftPressed && !k.CtrlPressed && !k.AltPressed) SetTab(QuickTabs[digit]);
+        else if (digit >= 0 && digit < Groups.Length && k.ShiftPressed && !k.CtrlPressed && !k.AltPressed) OpenGroup(digit);
         else if (digit >= 0 && k.CtrlPressed && !k.ShiftPressed && !k.AltPressed) SetPin(digit);
         else if (digit >= 0 && !k.CtrlPressed && !k.ShiftPressed && !k.AltPressed) GoToPin(digit);
         else if (Keys.Is(k, "faster")) PlayerSpeed(Math.Min(Speeds.Length - 1, _speed + 1));
         else if (Keys.Is(k, "slower")) PlayerSpeed(Math.Max(1, _speed - 1));
         else if (Keys.Is(k, "home")) _map.Recenter();
         else if (Keys.Is(k, "build")) ToggleBuildBar();
+        else if (Keys.Is(k, "next")) PressNext();
         else if (Keys.Is(k, "flag")) ToggleFlag();
         else if (k.Keycode == Key.Escape && _map.Flagging) ToggleFlag();
         else if (k.Keycode == Key.Escape && _map.Brush != null) ToggleBrush(_map.Brush);
@@ -751,6 +769,10 @@ public partial class Main : Control
     {
         _scrollHeading = heading;
         _scrollTries = 30;
+        // On a paged window, its page first; and a folded section opens.
+        if (_windowTab is Tab wt && _panes[wt].PageOf(heading) is string page) _panes[wt].Selected = page;
+        if (_windowTab is Tab ft) Pane.Folded.Remove($"{ft}/{heading}");
+        _dirty = true;
     }
 
     private void SyncScrollTo()
@@ -765,6 +787,31 @@ public partial class Main : Control
         if (head == null || head.Position.Y <= 0) return;
         sc.ScrollVertical = (int)head.Position.Y;
         _scrollHeading = null;
+    }
+
+    /// <summary>Draw the open management window's pane.</summary>
+    private void RenderWindow()
+    {
+        switch (_windowTab)
+        {
+            case Tab.City: RenderCity(); break;
+            case Tab.Ledger: RenderLedger(); break;
+            case Tab.War: RenderWar(); break;
+            case Tab.Army: RenderArmy(); break;
+            case Tab.Defence: RenderDefence(); break;
+            case Tab.Council: RenderCouncil(); break;
+            case Tab.Bounties: RenderBounties(); break;
+            case Tab.Companies: RenderCompanies(); break;
+            case Tab.Armory: RenderArmory(); break;
+            case Tab.Faith: RenderFaith(); break;
+            case Tab.Campaign: RenderCampaign(); break;
+            case Tab.Chronicles: RenderChronicles(); break;
+            case Tab.Mayor: RenderMayor(); break;
+            case Tab.Diplomacy: RenderDiplomacy(); break;
+            case Tab.Library: RenderLibrary(); break;
+            case Tab.Institutions: RenderInstitutions(); break;
+            case Tab.Notables: RenderNotables(); break;
+        }
     }
 
     public override void _Process(double delta)
@@ -801,7 +848,11 @@ public partial class Main : Control
         SyncGuide();
         SyncGoals();
         SyncGoalPointer(_clockReal >= _nextGoalPoint);
-        if (_clockReal >= _nextGoalPoint) _nextGoalPoint = _clockReal + 0.25;
+        if (_clockReal >= _nextGoalPoint)
+        {
+            _nextGoalPoint = _clockReal + 0.25;
+            SyncNextButton();
+        }
         // A first meeting's picture comes before any scene or report it brought.
         SyncIntros();
         SyncStories(delta);
@@ -810,6 +861,7 @@ public partial class Main : Control
         SyncTourney();
         SyncTales(delta);
         SyncRecap();
+        SyncModal();
         SyncMoments();
         SyncKeywords(delta);
         SyncChecks();
@@ -820,27 +872,7 @@ public partial class Main : Control
         if (_dirty)
         {
             RenderHeader();
-            if (_window.Visible)
-                switch (_windowTab)
-                {
-                    case Tab.City: RenderCity(); break;
-                    case Tab.Ledger: RenderLedger(); break;
-                    case Tab.War: RenderWar(); break;
-                    case Tab.Army: RenderArmy(); break;
-                    case Tab.Defence: RenderDefence(); break;
-                    case Tab.Council: RenderCouncil(); break;
-                    case Tab.Bounties: RenderBounties(); break;
-                    case Tab.Companies: RenderCompanies(); break;
-                    case Tab.Armory: RenderArmory(); break;
-                    case Tab.Faith: RenderFaith(); break;
-                    case Tab.Campaign: RenderCampaign(); break;
-                    case Tab.Chronicles: RenderChronicles(); break;
-                    case Tab.Mayor: RenderMayor(); break;
-                    case Tab.Diplomacy: RenderDiplomacy(); break;
-                    case Tab.Library: RenderLibrary(); break;
-                    case Tab.Institutions: RenderInstitutions(); break;
-                    case Tab.Notables: RenderNotables(); break;
-                }
+            if (_window.Visible) RenderWindow();
             if (_drawer.Visible) RenderTray();
             if (_inspector.Visible) RenderInspect();
             if (_strikePanel.Visible) RenderStrike();
@@ -904,6 +936,7 @@ public partial class Main : Control
         _threatPill.AddThemeStyleboxOverride("panel", Ui.Box(stage.Level == 2 ? Ui.Bad : Ui.Panel, pillColor, 99, 1, 10, 3));
         _threat.AddThemeColorOverride("font_color", stage.Level == 2 ? Colors.White : stage.Level == 1 ? Ui.Gold : Ui.Ink);
 
+        RenderWeather(t);
         RenderStats(t);
     }
 

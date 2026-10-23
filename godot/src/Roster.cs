@@ -114,7 +114,6 @@ public partial class Main
         var rows = sorted.Select(e =>
         {
             string makeup = string.Join(" · ", e.Members.Select(m => $"{Ui.Esc(Ui.Cap(m.Hero!.Cls.Name))} {m.Hero.Level}{(m.Hero.Cls.Card != "" ? $" ({Ui.Esc(m.Hero.Cls.Card)})" : "")}"));
-            // Renown as a figure, its step of fame in the hover; a bad name shows in red instead.
             // Renown as a figure, its step of fame in the hover, and a skull beside it for a bad name.
             string fame = Ui.Chip("ui-renown", e.Renown.ToString(), e.Renown == 0 ? Ui.Ink2 : Notoriety.FameTier(t, Intel.Find(t, e.Name)!) >= 2 ? Ui.Gold : Ui.Ink,
                     $"Renown {e.Renown}: {Notoriety.FameName(t, e.Renown)}. Quests suggest a renown; short of it, more foes stand and fight.", 14)
@@ -129,7 +128,7 @@ public partial class Main
             };
             return new[]
             {
-                $"{Shield(t, e.Name)}[b]The {Ui.Esc(e.Name)}[/b] {Ui.C(Ui.Gold, $"[font_size=11]{Ui.Esc(e.Tier)}[/font_size]")}\n{Ui.C(Ui.Ink2, $"[font_size=11]{makeup}[/font_size]")}",
+                $"{Shield(t, e.Name)}[b]The {Ui.Esc(e.Name)}[/b] {(Retainers.Held(t, e.Name) ? Ui.Tip(Ui.Img("face-crown", 14), "On the town's retainer") + " " : "")}{Ui.C(Ui.Gold, $"[font_size=11]{Ui.Esc(e.Tier)}[/font_size]")}\n{Ui.C(Ui.Ink2, $"[font_size=11]{makeup}[/font_size]")}",
                 $"{e.Ready}/{e.Members.Count}",
                 $"[b]{e.Power}[/b]",
                 Ui.C(e.Loyalty < 35 ? Ui.Bad : Ui.Ink, Js.Str(Math.Round(e.Loyalty))),
@@ -234,6 +233,23 @@ public partial class Main
         return $"[font_size={size}][color=#{a.Field.Hex.TrimStart('#')}]■[/color][/font_size][font_size={size - 4}][color=#{a.Metal.Hex.TrimStart('#')}]✦[/color][/font_size] ";
     }
 
+    /// <summary>Sign the company on for good, or the wage it draws and a button to let it go.</summary>
+    private void Retainer(Pane p, Town t, string name, CompanyState? c)
+    {
+        if (c is { Retained: true })
+        {
+            p.Text(Ui.Chips(
+                Ui.Chip("face-crown", "Retained", Ui.Good, "Sworn to the town: they lean to every job you offer, bring their reports home free and never leave"),
+                Ui.Chip("gold", $"−{Js.Str(c.Wage)}/day", Ui.Bad, "Their wage. Unpaid for a few days, they quit")), 13);
+            p.Buttons(("Let them go", true, false, () => Act(() => _sim.ReleaseCompany(name))));
+            return;
+        }
+        string? no = Retainers.Blocked(t, name);
+        p.Buttons(($"Retain for good · {Js.Str(Retainers.Price(t, name))}g", no == null, false, () => Act(() => _sim.RetainCompany(name))));
+        if (no != null && !no.StartsWith("the treasury")) p.Note(Ui.Cap(no) + ".");
+        else p.Note($"Then {Js.Str(Retainers.Wage(t, name))}g a day. They take your jobs, bring reports home free and never leave.");
+    }
+
     private void RenderPick(Pane p, Town t, RosterEntry e)
     {
         var r = t.Content.World.Intel;
@@ -243,13 +259,6 @@ public partial class Main
         string where = e.Road != null
             ? $"On the road to {SiteLink(Quests.Site(t, e.Road.SiteId)!.Def)}{(e.Road.BountyId != null && Intel.Commissioned(t, e.Road) ? ", on the council's job" : ", on their own account")}, due back day {SimTime.DayOf(e.Road.ReturnTick)}"
             : e.State == "Ready" ? "In town and ready for work" : e.State == "Away" ? "Out of town" : "In town, resting their wounds";
-        string members = string.Join("\n", e.Members.Select(m =>
-        {
-            var s = m.Hero!;
-            string hp = s.Hp < s.MaxHp ? Ui.C(s.Hp < s.MaxHp * 0.7 ? Ui.Bad : Ui.Ink2, $" · {s.Hp}/{s.MaxHp} hp") : "";
-            string temper = Regard.TemperOf(t, m)?.Name is string tn ? $" · {Ui.Esc(tn)}" : "";
-            return $"{AgentLink(m, Notoriety.Known(m))} {Ui.C(Ui.Ink2, $"{Ui.Esc(Ui.Cap(s.Cls.Name))} {s.Level}{temper} · loyalty {Math.Round(s.Loyalty)}")}{hp}";
-        }));
         var record = new List<string>();
         if (c != null)
         {
@@ -264,7 +273,7 @@ public partial class Main
             string.Join("\n", c.Deeds.AsEnumerable().Reverse().Take(4).Select(d => Ui.C(Ui.Good, $"[font_size=12]Day {d.Day}: {Ui.Esc(d.What)}[/font_size]")));
         var arms = Heraldry.Of(t.Content, e.Name);
         string banner = $"\n{Shield(t, e.Name, 18)}{Ui.C(Ui.Ink2, $"[font_size=12][i]{Ui.Esc(arms.Blazon)}[/i], {Ui.Esc(Heraldry.Worn(c?.Wear ?? 0))}[/font_size]")}";
-        p.Card($"[b]The {Ui.Esc(e.Name)}[/b]  {Tag(word, color)}{sulk}{banner}\n{Ui.C(Ui.Ink2, $"[font_size=12]{where}[/font_size]")}\n[font_size=13]{members}[/font_size]" +
+        p.Card($"[b]The {Ui.Esc(e.Name)}[/b]  {Tag(word, color)}{sulk}{banner}\n{Ui.C(Ui.Ink2, $"[font_size=12]{where}[/font_size]")}" +
                (record.Count > 0 ? $"\n{Ui.C(Ui.Ink2, $"[font_size=12]{string.Join(" · ", record)}[/font_size]")}" : "") + deeds, Ui.Gold);
         p.Meter("Relation", e.Relation, Js.Str(Math.Round(e.Relation)), e.Relation < r.RefuseBelow);
         // Renown toward its next step of fame: the quests it can ride to without more foes standing against it.
@@ -273,12 +282,10 @@ public partial class Main
         int next = step + 1 < fameSteps.Count ? fameSteps[step + 1].At : renown;
         p.Meter("Renown", next == 0 ? 0 : 100.0 * Math.Min(renown, next) / next,
             step + 1 < fameSteps.Count ? $"{renown} · {fameSteps[step + 1].Name} at {next}" : $"{renown} · {fameSteps[step].Name}", false);
-        var home = e.Members.Where(m => !m.IsAway).ToList();
-        if (home.Count > 0)
-        {
-            var ids = home.Select(m => m.Id).ToList();
-            p.Buttons(("Arm from the armory", home.Any(m => Sim.Systems.Armory.BestFor(t, m) != null), false, () => Act(() => _sim.Arm(ids))));
-        }
+        p.Heading("Party");
+        PartyStrip(p, t, e.Members);
+        OutfitCompany(p, t, e.Members);
+        Retainer(p, t, e.Name, c);
 
         p.Heading($"Offer the {e.Name} a job");
         if (_offerAnswer is { } last && last.Company == e.Name)

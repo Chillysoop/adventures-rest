@@ -140,7 +140,9 @@ public partial class Main
         _storyBox.AddChild(Ui.Rich(LinkStory(s, Stories.Fill(t, s, stage.Text)), 15));
 
         var m = t.Stories.Mayor;
-        for (int i = 0; i < stage.Options.Count; i++) _storyBox.AddChild(OptionRow(s, stage.Options[i], i));
+        // An option only for a faction of some manner is left off the card for everyone else.
+        for (int i = 0, shown = 0; i < stage.Options.Count; i++)
+            if (!Stories.Hidden(t, s, stage.Options[i])) _storyBox.AddChild(OptionRow(s, stage.Options[i], i, ++shown));
 
         var foot = new HBoxContainer();
         foot.AddThemeConstantOverride("separation", 10);
@@ -222,7 +224,7 @@ public partial class Main
         return esc;
     }
 
-    private Control OptionRow(Story s, StoryOption o, int index)
+    private Control OptionRow(Story s, StoryOption o, int index, int number)
     {
         var t = _sim.Town;
         string? blocked = Stories.Blocked(t, s, o);
@@ -240,7 +242,10 @@ public partial class Main
             int total = bonus + helpers.Sum(h => h.Bonus);
             string help = string.Concat(helpers.Select(h => $" + {h.Name} {(h.Bonus >= 0 ? "+" : "−")}{Math.Abs(h.Bonus)}"));
             breakdown = $"{name} {(bonus >= 0 ? "+" : "−")}{Math.Abs(bonus)} ({ab.ToUpperInvariant()}{Edge(o.Skill)}){help}" + (adv != "" ? $"\nAdvantage: {adv}" : "");
-            sub = $"{Ui.Img("d20", 15)} {Ui.C(Ui.Ink, $"[b]{name} {(total >= 0 ? "+" : "−")}{Math.Abs(total)}[/b]")} {Ui.Dim("vs")} {Ui.C(Ui.Ink, $"[b]DC {Stories.DcOf(t, o)}[/b]")}"
+            // A first meeting's DC moves with the manners of whoever it is with.
+            if (Stories.DefOf(t, s).Source == Powers.ContactSource && Manners.Why(t, Manners.KeyOf(s), o.Skill) is { Length: > 0 } ways)
+                breakdown += $"\nDC by their ways: {ways}";
+            sub = $"{Ui.Img("d20", 15)} {Ui.C(Ui.Ink, $"[b]{name} {(total >= 0 ? "+" : "−")}{Math.Abs(total)}[/b]")} {Ui.Dim("vs")} {Ui.C(Ui.Ink, $"[b]DC {Stories.DcOf(t, s, o)}[/b]")}"
                 + (adv != "" ? $"  {Ui.Img("ui-up", 14)} {Ui.C(Ui.Good, "[b]advantage[/b]")}" : "") + cost;
         }
         if (blocked != null) sub = $"{Ui.Img("ui-lock", 14)} {Ui.Dim(Ui.Esc(Ui.Cap(blocked)))}";
@@ -276,7 +281,7 @@ public partial class Main
         v.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         v.OffsetLeft = 14;
         v.OffsetTop = 8;
-        var label = Ui.Label($"{index + 1}.  {Stories.Fill(t, s, o.Label)}", blocked != null ? Ui.Ink2 : Ui.Ink, Ui.Medium, 15);
+        var label = Ui.Label($"{number}.  {Stories.Fill(t, s, o.Label)}", blocked != null ? Ui.Ink2 : Ui.Ink, Ui.Medium, 15);
         label.MouseFilter = MouseFilterEnum.Ignore;
         v.AddChild(label);
         var subl = Ui.Rich(sub, 12);
@@ -447,7 +452,6 @@ public partial class Main
 
         var open = Stories.Pending(t);
         p.Heading("Waiting on you");
-        if (open.Count == 0) p.Note("Nothing now.");
         foreach (var s in open)
         {
             var d = Stories.DefOf(t, s);

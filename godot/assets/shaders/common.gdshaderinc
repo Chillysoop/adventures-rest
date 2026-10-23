@@ -11,6 +11,9 @@ uniform float toon = 0.0;
 uniform float snow = 0.0;
 uniform float autumn = 0.0;
 uniform float spring = 0.0;
+// The weather (MapView.UpdateSky): the wind's strength (0 still, 1 a gale) and how wet the ground is.
+uniform float gale_wind = 0.2;
+uniform float wet_ground = 0.0;
 
 const vec3 PARCHMENT = vec3(0.89, 0.83, 0.70);
 const vec3 INK = vec3(0.30, 0.23, 0.16);
@@ -101,8 +104,10 @@ vec3 rim(vec3 n, vec3 v) {
 const vec2 WIND = vec2(0.8, 0.6);
 
 // 0 in a lull, 1 at a gust's front.
+// Harder and quicker as the weather's wind rises (a gale keeps the woods tossing).
 float gust(vec2 p, float t) {
-	return smoothstep(-0.6, 1.1, sin(dot(p, WIND) * 0.07 - t * 1.1) + 0.4 * sin(dot(p, vec2(-0.6, 0.8)) * 0.045 + t * 0.37));
+	float hard = 0.6 + gale_wind * 2.0;
+	return smoothstep(-0.6, 1.1, sin(dot(p, WIND) * 0.07 - t * 1.1 * (0.8 + gale_wind)) + 0.4 * sin(dot(p, vec2(-0.6, 0.8)) * 0.045 + t * 0.37)) * hard;
 }
 
 // The breeze in a mesh's own space (its rotation undone), so offsets scale with the model.

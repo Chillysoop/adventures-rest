@@ -16,7 +16,8 @@ public class RoadsTests
             foreach (var s in t.Sites)
             {
                 var (x, y) = World.Spot(t, s);
-                Assert.DoesNotContain(t.Terrain, f => Roads.Contains(f, x, y));
+                // The ocean's sites are its islands, out in the water.
+                Assert.DoesNotContain(t.Terrain, f => f.Kind.Id != "ocean" && Roads.Contains(f, x, y));
             }
         }
     }
@@ -30,6 +31,20 @@ public class RoadsTests
         Assert.Equal(24 + 7, Roads.Finish(c, 0, 11), 6);
         Assert.Equal(10, Roads.Marched(c, 0, 24), 6);
         Assert.Equal(24 + 6, Roads.WakeAfterRest(c, 20), 6);
+    }
+
+    /// <summary>How far a point inside a feature's outline is from its edge.</summary>
+    private static double Inside(Feature f, double x, double y)
+    {
+        var s = Country.Outline(f);
+        double best = double.MaxValue;
+        for (int i = 0, j = s.Count - 1; i < s.Count; j = i++)
+        {
+            double dx = s[i].X - s[j].X, dy = s[i].Y - s[j].Y, len = dx * dx + dy * dy;
+            double u = len == 0 ? 0 : Math.Clamp(((x - s[j].X) * dx + (y - s[j].Y) * dy) / len, 0, 1);
+            best = Math.Min(best, Math.Sqrt(Math.Pow(s[j].X + u * dx - x, 2) + Math.Pow(s[j].Y + u * dy - y, 2)));
+        }
+        return best;
     }
 
     [Fact]
@@ -54,7 +69,8 @@ public class RoadsTests
                             for (int k = 1; k < 10; k++)
                             {
                                 double x = cur.X + (w.X - cur.X) * k / 10, y = cur.Y + (w.Y - cur.Y) * k / 10;
-                                Assert.False(Roads.Contains(w.Feature!, x, y), $"seed {seed}: the {p.Name} walk into {w.Feature!.Name}");
+                                // The land is a grid of cells owned by their centres, so a road beside country may clip its outline by half a cell.
+                                Assert.False(Roads.Contains(w.Feature!, x, y) && Inside(w.Feature!, x, y) > t.Content.Roads.Country.Cell / 2, $"seed {seed}: the {p.Name} walk into {w.Feature!.Name}");
                             }
                         cur = (w.X, w.Y);
                         fromCrossing = w.Crossing != "";

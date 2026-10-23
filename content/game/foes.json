@@ -13,6 +13,8 @@
     }
   },
   "foes": [
+    {"id": "elder-wyrms", "monster": "ancient-red-dragon", "escort": "", "kind": "beasts", "rings": [6, 7], "band": "roost", "aloft": true, "reach": 3,
+     "themes": [], "names": [], "text": "an ancient dragon on a mountain of coin, awake before they landed and amused that they came"},
     { "id": "gnoll-pack", "monster": "gnoll-packlord", "escort": "gnoll-warrior", "escortCount": [3, 6], "kind": "tribe", "rings": [1, 1], "reach": 2,
       "themes": ["greenmarch", "duneglass", "crownruins"], "names": ["the {A} Boneyard", "the Laughing Kraal", "the Hyena Rocks"],
       "text": "the packlord gnawing on something that used to be a cart-horse" },
@@ -28,7 +30,7 @@
     { "id": "forge-giants", "monster": "fire-giant", "escort": "hell-hound", "escortCount": [1, 2], "kind": "tribe", "rings": [3, 4],
       "themes": ["cinderwastes", "highpeaks"], "names": ["the Giants' Forge", "the {A} Foundry", "the Anvil Hall"],
       "text": "a fire giant at a forge the size of a house, hammering out a sword for a war that has not started yet" },
-    { "id": "cloud-lords", "monster": "cloud-giant", "escort": "griffon", "escortCount": [1, 2], "kind": "tribe", "rings": [3, 4], "aloft": true,
+    { "id": "cloud-lords", "monster": "cloud-giant", "escort": "griffon", "escortCount": [1, 2], "kind": "tribe", "rings": [3, 4], "aloft": true, "band": "high",
       "themes": ["highpeaks", "feyfringe", "rimefell"], "names": ["the Castle in the Clouds", "the {A} Sky-Keep", "the Cloud Lord's Hall"],
       "text": "a cloud giant lord on a throne of mist, who has been expecting them and finds them small" },
     { "id": "storm-kings", "monster": "storm-giant", "escort": "", "escortCount": [0, 0], "kind": "tribe", "rings": [4, 4],

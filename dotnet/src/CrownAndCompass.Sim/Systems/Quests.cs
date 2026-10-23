@@ -24,10 +24,16 @@ public sealed class SiteState(SiteDef def)
     /// <summary>Built by world generation rather than written by hand in sites.json.</summary>
     public bool Generated { get; init; }
 
+    /// <summary>Days out from the world's heart, where the town did not settle at it; 0 when it did (then <see cref="SiteDef.Distance"/>).</summary>
+    public int Out { get; set; }
+
     public SiteKnowledge Known { get; set; }
 
     /// <summary>Someone has seen it with their own eyes (a party, a scout, explorers, an ally's map): the town knows where it really is, not just roughly.</summary>
     public bool Found { get; set; }
+
+    /// <summary>When it was first found; null for a site never found, or found in a save from before.</summary>
+    public int? FoundTick { get; set; }
 
     /// <summary>Who the town last heard of it from ("a tinker passing through", "the dwarves of Ironhold").</summary>
     public string HeardFrom { get; set; } = "";
@@ -157,11 +163,22 @@ public sealed class Party
     /// <summary>Whether it went in the sky dock's airship, which stays with it until it is home.</summary>
     public bool Airship { get; set; }
 
+    /// <summary>The harbour's ship that carries it over the open sea, or the town's airship that carries it into the sky, out and home again (<see cref="Voyages"/>, <see cref="Reaches"/>).</summary>
+    public int? ShipId { get; set; }
+
+    /// <summary>Its airship was lost on the way (<see cref="Reaches"/>), and when it was left stranded at the site.</summary>
+    public bool ShipLost { get; set; }
+    public int? StrandedTick { get; set; }
+
     /// <summary>Where it set out from, in day units: the town, or the spot where explorers chose to go in (<see cref="Explore"/>).</summary>
     public (double X, double Y) Start { get; init; }
 
     /// <summary>The exploring company it grew out of, which the council paid for.</summary>
     public int? SurveyId { get; init; }
+
+    /// <summary>When the town last reckoned them home, and when it last had word of them: the day they left, or a sending since.</summary>
+    public int Expected { get; set; }
+    public int HeardTick { get; set; }
 
     /// <summary>Sending-stone messages exchanged on the road; each costs one of the party's spell slots.</summary>
     public int Sendings { get; set; }
@@ -201,6 +218,9 @@ public sealed class Party
 
     /// <summary>They found the site empty and turned back.</summary>
     public bool Empty { get; set; }
+
+    /// <summary>When the party last sent word home by sending stone on a council bounty: the road it had walked by then is the town's.</summary>
+    public int? SentTick { get; set; }
 
     /// <summary>When the last of them died, for a party that never comes home.</summary>
     public int? GoneTick { get; set; }
@@ -619,13 +639,22 @@ public static class Quests
             var bounty = party.BountyId is int bid ? town.Bounties[bid - 1] : null;
             var members = party.Members.Select(town.Agent).ToList();
             // Only a council bounty buys the council the report; anyone else keeps theirs to sell.
-            party.Withheld = !Intel.Commissioned(town, party);
+            party.Withheld = !Intel.Commissioned(town, party) && !Retainers.Held(town, party.Name);
+            // Explorers who went in to fight tell of the country they walked when they're home, if anyone comes home.
+            if (party.SurveyId is int sid && town.Surveys.FirstOrDefault(x => x.Id == sid) is { } survey)
+                Wilds.Told(town, survey, party.Result is not { Outcome: ExpeditionOutcome.Wiped });
             if (party.RecalledTick != null)
             {
                 Knowledge.ComeHome(town, party, s, bounty, members);
                 continue;
             }
             if (!party.Resolved) Roads.Arrive(town, party);
+            if (town.Tick < party.ReturnTick)
+            {
+                // Stranded where it went (Reaches): not home after all.
+                party.Returned = false;
+                continue;
+            }
             if (party.Empty)
             {
                 // The rumour that sent them was false: the place stands empty.

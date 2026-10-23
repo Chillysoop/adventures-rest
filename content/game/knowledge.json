@@ -22,6 +22,7 @@
     "smashPerTier": 0.015
   },
   "scryRestDays": 2,
+  "overdueDays": 3,
   "scryPrice": { "free": 70, "favour": 40, "favourLoyalty": 6 },
   "watchtowers": { "building": "watchtower", "sight": 30, "sightPerHundred": 4, "mostSight": 70, "perHeight": 4, "mostHeight": 12, "residentsEach": 100 },
   "works": [

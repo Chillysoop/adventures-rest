@@ -20,8 +20,8 @@ public partial class Main
         p.Begin();
         p.Card($"{Ui.Tip(Ui.Head(Ui.Esc(tier.Name), "tab-city", Ui.KeywordColor, 17), tier.Blurb)}\n{Ui.Chips(Ui.Chip("population", $"{t.Population}", null, "Households"), Ui.Chip("ui-person", $"~{City.Souls(t):N0}", null, "Souls"))}");
 
+        p.Page("Growth", "ui-up");
         RenderSeason(p, t);
-        RenderSickness(p, t);
         RenderRefugees(p, t);
         RenderSettlers(t, p);
 
@@ -55,7 +55,9 @@ public partial class Main
             p.Note(Ui.Esc(next.Blurb));
         }
         else p.Note("The greatest charter there is. From here the city only grows richer and its houses grander.");
+        RenderGrandWorks(p, t);
 
+        p.Page("Wards", "ui-house");
         p.Heading("Wards");
         p.Note("Wards aren't laid out ahead. Once a few buildings stand in a quarter round the old town, it grows into the ward that suits what was built there first.");
         foreach (var id0 in t.City.OpenWards)
@@ -92,8 +94,9 @@ public partial class Main
         }
 
         RenderDensity(p, t);
-        RenderGrandWorks(p, t);
+        RenderUnder(p, t);
 
+        p.Page("Homes", "population");
         p.Heading("Houses");
         foreach (var h in t.Content.City.Housing)
         {
@@ -134,7 +137,7 @@ public partial class Main
             }
             p.Note("How much of what the houses want to buy the market could sell them yesterday. Workshops open where these run short.");
         }
-        RenderUnder(p, t);
+        RenderSickness(p, t);
         p.Commit();
     }
 

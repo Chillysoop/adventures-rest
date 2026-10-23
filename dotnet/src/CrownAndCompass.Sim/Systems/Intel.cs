@@ -46,6 +46,12 @@ public sealed class CompanyState
     /// <summary>The town has heard the company is proud of its rags.</summary>
     public bool Proud { get; set; }
 
+    /// <summary>On the town's retainer (<see cref="Retainers"/>): its daily wage, the day it signed, and days its wage went unpaid.</summary>
+    public bool Retained { get; set; }
+    public double Wage { get; set; }
+    public int RetainedDay { get; set; }
+    public int Unpaid { get; set; }
+
     /// <summary>The day the company came down to one member, or null (<see cref="Muster"/>).</summary>
     public int? LoneSince { get; set; }
 
