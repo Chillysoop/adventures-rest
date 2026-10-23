@@ -236,7 +236,7 @@ public static class Fleet
         var r = Rules(town);
         double sea = Founding.Facing(town);
         return town.Settlements.Where(s => !s.Razed && town.Regions[s.RegionId].Known && s.Standing >= r.MinStanding
-            && (r.CoastThemes.Contains(town.Regions[s.RegionId].Theme.Id) || Gap(town.Regions[s.RegionId].Bearing, sea) <= r.Reach)).OrderBy(s => s.Id);
+            && (r.CoastThemes.Contains(town.Regions[s.RegionId].Theme.Id) || town.Regions[s.RegionId].Theme.Sea || Gap(town.Regions[s.RegionId].Bearing, sea) <= r.Reach)).OrderBy(s => s.Id);
     }
 
     private static double Gap(double a, double b) => Math.Abs(((a - b) % 360 + 540) % 360 - 180);

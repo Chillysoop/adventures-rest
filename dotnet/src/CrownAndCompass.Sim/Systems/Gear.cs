@@ -33,6 +33,15 @@ public sealed record GearRules
 
     /// <summary>Points of gear above a fresh kit a company counts as one level when it picks a site.</summary>
     public double EdgePerLevel { get; init; } = 3;
+
+    /// <summary>What the forge charges to silver a weapon, and the level from which a hero thinks it worth it.</summary>
+    public SilverRules Silver { get; init; } = new();
+}
+
+public sealed record SilverRules
+{
+    public double Cost { get; init; } = 100;
+    public int Level { get; init; } = 3;
 }
 
 /// <summary>
@@ -45,7 +54,10 @@ public sealed record GearRules
 /// </summary>
 public static class Gear
 {
-    public static readonly string[] Slots = ["weapon", "armor", "shield", "trinket"];
+    public static readonly string[] Slots = ["weapon", "armor", "shield", "trinket", "trinket2", "trinket3"];
+
+    /// <summary>The charms a hero is attuned to: rings, cloaks, wands, amulets, three at most.</summary>
+    public static readonly string[] Charms = ["trinket", "trinket2", "trinket3"];
 
     private static GearRules Rules(Town town) => town.Content.Gear;
 
@@ -65,9 +77,10 @@ public static class Gear
     /// <summary>The slot a magic item really fills: brooches and rings of "shielding" are worn, not carried on an arm.</summary>
     public static string SlotOf(LibItem it) => it.Slot is "armor" or "shield" && it.Category != "armor" ? "trinket" : it.Slot;
 
-    /// <summary>What a magic item adds in its slot: the +N in its name, or by tier.</summary>
+    /// <summary>What a magic item adds in its slot: its powers' own bonus, the +N in its name, or by tier.</summary>
     public static int BonusOf(Content c, LibItem it)
     {
+        if (Enchant.Bonus(c, it) is int own) return own;
         var m = Plus.Match(it.Name);
         if (m.Success) return int.Parse(m.Groups[1].Value);
         return SlotOf(it) switch
@@ -78,7 +91,16 @@ public static class Gear
         };
     }
 
-    private static int Bonus(Content c, HeroSheet s, string slot) => s.Magic.TryGetValue(slot, out var it) ? BonusOf(c, it) : 0;
+    /// <summary>What an item is worth to a hero weighing it: its bonus and its powers.</summary>
+    public static double Worth(Content c, LibItem it) => BonusOf(c, it) + Enchant.Worth(c, it);
+
+    /// <summary>The bonus in a slot; for the charms, the best of them.</summary>
+    private static int Bonus(Content c, HeroSheet s, string slot) =>
+        slot == "trinket" ? Charms.Select(k => s.Magic.TryGetValue(k, out var ch) ? BonusOf(c, ch) : 0).Max()
+        : s.Magic.TryGetValue(slot, out var it) ? BonusOf(c, it) : 0;
+
+    /// <summary>The charms the hero wears.</summary>
+    public static IEnumerable<LibItem> Charmed(HeroSheet s) => Charms.Where(s.Magic.ContainsKey).Select(k => s.Magic[k]);
 
     private static int ArmorAc(LibGear? armor, int dex, Agent a)
     {
@@ -91,14 +113,14 @@ public static class Gear
     {
         var s = a.Hero!;
         int ac = ArmorAc(s.Armor, Rng.Modifier(a.Abilities.Dex), a) + (s.Shield?.Ac ?? 0);
-        return ac + Bonus(c, s, "armor") + Bonus(c, s, "shield") + s.ArmorBonus + Patrons.Boon(c, s, "ac") + Curses.Mod(c, s, "ac") + Wounds.Ac(c, s);
+        return ac + Bonus(c, s, "armor") + Bonus(c, s, "shield") + Enchant.Ac(c, s) + s.ArmorBonus + Patrons.Boon(c, s, "ac") + Curses.Mod(c, s, "ac") + Wounds.Ac(c, s);
     }
 
     /// <summary>To hit: proficiency, the class's key ability, the weapon's magic, and a caster's focus.</summary>
     public static int Attack(Content c, Agent a)
     {
         var s = a.Hero!;
-        return Expedition.Proficiency(s.Level) + Rng.Modifier(a.Abilities[s.Cls.Primary]) + s.WeaponBonus + Bonus(c, s, "weapon") + (s.Cls.Spell ? Bonus(c, s, "trinket") : 0) + Patrons.Boon(c, s, "attack") + Curses.Mod(c, s, "attack") + Wounds.Attack(c, s);
+        return Expedition.Proficiency(s.Level) + Rng.Modifier(a.Abilities[s.Cls.Primary]) + s.WeaponBonus + Bonus(c, s, "weapon") + (s.Cls.Spell ? Bonus(c, s, "trinket") : 0) + Enchant.Might(c, s) + Patrons.Boon(c, s, "attack") + Curses.Mod(c, s, "attack") + Wounds.Attack(c, s);
     }
 
     /// <summary>The weapon's dice (a caster's attack spell instead), doubled on a critical hit.</summary>
@@ -106,7 +128,14 @@ public static class Gear
     {
         var s = a.Hero!;
         var dice = s.Cls.Spell || s.Weapon?.Damage == null ? new Dice(1, s.Cls.DamageDie > 0 ? s.Cls.DamageDie : 6, 0) : s.Weapon.Damage.Value;
-        return dice.Roll(rng, crit) + Rng.Modifier(a.Abilities[s.Cls.Primary]) + s.WeaponBonus + Bonus(c, s, "weapon") + Curses.Mod(c, s, "damage");
+        return dice.Roll(rng, crit) + Rng.Modifier(a.Abilities[s.Cls.Primary]) + Flat(c, a);
+    }
+
+    /// <summary>The weapon's magic and any curse on its damage, which ride on a caster's cantrips too.</summary>
+    public static int Flat(Content c, Agent a)
+    {
+        var s = a.Hero!;
+        return s.WeaponBonus + Bonus(c, s, "weapon") + Enchant.Might(c, s) + Curses.Mod(c, s, "damage");
     }
 
     /// <summary>A charm, a cloak or a wand helps with traps, riddles and parley, and so do a patron's favour and a familiar.</summary>
@@ -119,7 +148,7 @@ public static class Gear
         int dex = Rng.Modifier(a.Abilities.Dex);
         var kit = s.Cls.Wears.Count > 0 ? c.Library.GearOf(s.Cls.Wears[0]) : null;
         int edge = Math.Max(0, ArmorAc(s.Armor, dex, a) - ArmorAc(kit, dex, a));
-        foreach (var slot in Slots) edge += Bonus(c, s, slot);
+        foreach (var slot in new[] { "weapon", "armor", "shield", "trinket" }) edge += Bonus(c, s, slot);
         return edge;
     }
 
@@ -134,16 +163,33 @@ public static class Gear
         string slot = SlotOf(it);
         if (slot == "armor" && s.Armor == null) return 0;
         if (slot == "shield" && (s.Shield == null || !s.Cls.Shield)) return 0;
-        if (!Slots.Contains(slot) || Curses.Holds(c, s, slot)) return 0;
-        return BonusOf(c, it) - Bonus(c, s, slot);
+        if (!Slots.Contains(slot) || Curses.Holds(c, s, slot) || !Enchant.Usable(c, s, it)) return 0;
+        if (slot == "trinket" && Charmed(s).Any(w => w.Id == it.Id)) return 0;
+        string into = Into(c, s, it);
+        double diff = Worth(c, it) - (s.Magic.TryGetValue(into, out var worn) ? Worth(c, worn) : 0);
+        return diff > 0 ? Math.Max(1, (int)Math.Round(diff)) : (int)Math.Floor(diff);
     }
+
+    /// <summary>The slot an item would go in: its own, or for a charm the first free one, else the one worth least.</summary>
+    public static string Into(Content c, HeroSheet s, LibItem it)
+    {
+        string slot = SlotOf(it);
+        if (slot != "trinket") return slot;
+        int attune = Math.Clamp(c.Enchant.Attune, 1, Charms.Length);
+        var open = Charms.Take(attune).ToList();
+        return open.FirstOrDefault(k => !s.Magic.ContainsKey(k))
+            ?? open.OrderBy(k => Worth(c, s.Magic[k])).ThenBy(k => k, StringComparer.Ordinal).First();
+    }
+
+    /// <summary>The slot the hero wears this very item in, or null.</summary>
+    public static string? WornIn(HeroSheet s, LibItem it) => Slots.FirstOrDefault(k => s.Magic.TryGetValue(k, out var w) && ReferenceEquals(w, it));
 
     // Names -------------------------------------------------------------------------------------
 
     /// <summary>"+1 longsword", "Frost Brand", "+2 chain mail".</summary>
     public static string Label(HeroSheet s, LibItem it)
     {
-        string slot = SlotOf(it);
+        string slot = WornIn(s, it) ?? SlotOf(it);
         if (s.Named.Count > 0 && s.Named.TryGetValue(slot, out var named) && s.Magic.TryGetValue(slot, out var worn) && ReferenceEquals(worn, it))
             return $"{named} ({Unnamed(s, it)})";
         return Unnamed(s, it);
@@ -174,7 +220,8 @@ public static class Gear
         }
         var parts = new[] { Piece(s.Weapon, "weapon"), Piece(s.Armor, "armor"), Piece(s.Shield, "shield") }.Where(p => p != "").ToList();
         string kit = parts.Count > 0 ? string.Join(", ", parts) : "bare hands";
-        return s.Magic.TryGetValue("trinket", out var t) ? $"{kit}; {t.Name}" : kit;
+        var charms = Charmed(s).Select(t => t.Name).ToList();
+        return charms.Count > 0 ? $"{kit}; {string.Join(", ", charms)}" : kit;
     }
 
     /// <summary>The best magic item of one hero passes to another, who wears it; returns it, or null if there was none.</summary>
@@ -234,9 +281,9 @@ public static class Gear
     public static LibItem? Fit(Town town, Agent a, LibItem it)
     {
         var s = a.Hero!;
-        string slot = SlotOf(it);
         // A cursed weapon (or a jealous one) will not make room: the new piece goes straight back.
-        if (Curses.Holds(town.Content, s, slot)) return it;
+        if (Curses.Holds(town.Content, s, SlotOf(it))) return it;
+        string slot = Into(town.Content, s, it);
         var old = s.Magic.TryGetValue(slot, out var o) ? o : null;
         s.Magic[slot] = it;
         s.Named.Remove(slot);
@@ -340,7 +387,21 @@ public static class Gear
                 .ThenBy(o => o.Piece?.Id ?? o.Magic!.Id, StringComparer.Ordinal)
                 .FirstOrDefault();
             if (buy != null) Buy(town, a, buy);
+            // Nothing better to buy: a seasoned hero has the forge silver their blade, for what plain steel can't hurt.
+            else if (forge != null && !s.Silvered && !s.Cls.Spell && s.Level >= r.Silver.Level && !Prowess.Magic(s) && budget >= r.Silver.Cost) Silver(town, a, forge);
         }
+    }
+
+    private static void Silver(Town town, Agent a, Building forge)
+    {
+        double price = Rules(town).Silver.Cost;
+        a.Gold -= price;
+        double tax = price * town.TaxRate;
+        town.Book(TreasuryAccount.SalesTax, tax);
+        forge.Cash += price - tax - price * Rules(town).Wholesale;
+        forge.RevenueToday += price;
+        a.Hero!.Silvered = true;
+        town.Log(LedgerCategory.Quest, Importance.Routine, $"{a.Name} has the {Library.Prose(a.Hero.Weapon?.Name ?? "weapon")} silvered at {forge.Name} for {Js.Str(price)} gold.", [a.Id]);
     }
 
     /// <summary>
@@ -363,7 +424,11 @@ public static class Gear
             if (lib.GearOf(id) is LibGear arm && a.Abilities.Str >= arm.Strength && s.Armor != null && ArmorAc(arm, dex, a) - ArmorAc(s.Armor, dex, a) is int p && p > points)
                 (best, slot, points) = (arm, "armor", p);
         if (best == null) return null;
-        if (slot == "weapon") s.Weapon = best;
+        if (slot == "weapon")
+        {
+            s.Weapon = best;
+            s.Silvered = false;
+        }
         else s.Armor = best;
         Relist(s);
         string what = Library.Prose(best.Name);
@@ -397,7 +462,11 @@ public static class Gear
         else
         {
             var g = o.Piece!;
-            if (o.Slot == "weapon") s.Weapon = g;
+            if (o.Slot == "weapon")
+            {
+                s.Weapon = g;
+                s.Silvered = false;
+            }
             else if (o.Slot == "armor") s.Armor = g;
             else s.Shield = g;
             Relist(s);

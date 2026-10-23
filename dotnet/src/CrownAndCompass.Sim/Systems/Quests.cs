@@ -640,7 +640,7 @@ public static class Quests
             var bounty = party.BountyId is int bid ? town.Bounties[bid - 1] : null;
             var members = party.Members.Select(town.Agent).ToList();
             // Only a council bounty buys the council the report; anyone else keeps theirs to sell.
-            party.Withheld = !Intel.Commissioned(town, party);
+            party.Withheld = !Intel.Commissioned(town, party) && !Retainers.Held(town, party.Name);
             if (party.RecalledTick != null)
             {
                 Knowledge.ComeHome(town, party, s, bounty, members);
@@ -826,6 +826,7 @@ public static class Quests
             if (result.Outcome == ExpeditionOutcome.Wiped) Stories.Lost(town, Remains.Lie(town, party, s, members), party);
             foreach (var (rite, id) in rites) town.Log(LedgerCategory.Faith, Importance.Major, rite, [id]);
             Lairs.AfterDelve(town, s, result);
+            Spoils.Homecoming(town, party, s, result, survivors, bounty);
             foreach (var it in result.Items)
             {
                 if (it.HeroId == null) Watch.ReceiveRelic(town, it.Item, party.Name);

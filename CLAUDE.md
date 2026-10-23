@@ -161,6 +161,11 @@
   (`crest-<lineage>` from `scripts/icons.ts`) and a short line. The card stages the host live with the heroes' kit (creature bodies:
   `Frame.Spider`, `Wyrm`, `Wraith`, `Crawler`, `Rat`) and shows once per lineage (`Intros.Due` over `Town.Discovered`; clock stop
   `first-contact`). `IntrosTests` fails a lineage without one. Shots: `--intro <lineage>`.
+- Fights (`Systems/Prowess.cs`, `Systems/Expedition.Prowess.cs`, numbers in `content/game/prowess.json`): heroes gain Extra Attack
+  (library class features), cantrip dice and spell slots by level; casters pick from prowess.json `spells` each turn (the library gives
+  dice, damage type and save); class powers are `powers` entries played by id. Every blow on a foe goes through `Venture.Hit(foe, dmg,
+  type, magic, silver)`, which applies the library's resist/immune/vulnerable and stops regeneration; new damage (item powers) goes
+  through it too. Foes pick whom to hit by their Intelligence (`Venture.Victim`).
 - Lair towers (`Systems/Lairs.cs`, lairs.json `outpost`/`patrol`): a cleared site is kept clear by a patrol (a lost fight wounds
   the hero) or a tower built over `buildDays` (`SiteState.TowerDue`, then `Held`), tested now and then on the site's own dice
   (`Lairs.Tested`, `Reinforce`, alert `tower`). A knight's fief is theirs: `Loyalty.Choose` sets `HeroSheet.FiefWay`

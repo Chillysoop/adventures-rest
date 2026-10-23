@@ -330,6 +330,7 @@ public static class TreasuryAccount
     public const string Notables = "Notables";
     public const string Patrols = "Patrols";
     public const string Buyouts = "Buyouts";
+    public const string Retainers = "Retainers";
 }
 
 /// <summary>How the campaign ended.</summary>
@@ -596,6 +597,7 @@ public sealed class Town
 
     /// <summary>The alchemy bench: monster parts in store, potions on the shelf and the town's recipe book (<see cref="Systems.Alchemy"/>).</summary>
     public AlchemyState Alchemy { get; } = new();
+    public SpoilsState Spoils { get; } = new();
 
     /// <summary>The recipes the town has named, for tutorial steps to count.</summary>
     public IReadOnlyList<RecipeEntry> Recipes => Alchemy.Book;
@@ -657,6 +659,10 @@ public sealed class Town
 
     /// <summary>Where the town was founded (founding.json id); null for the river ford, and in saves from before the choice (<see cref="Systems.Founding"/>).</summary>
     public string? Founding { get; set; }
+
+    /// <summary>The middle of the ocean's wedge of the map, in degrees, and its width; 0 wide for no ocean (<see cref="Systems.World.InOcean"/>).</summary>
+    public double OceanBearing { get; set; }
+    public double OceanArc { get; set; }
 
     /// <summary>The town's ships, for a town on the sea (<see cref="Systems.Fleet"/>).</summary>
     public List<Systems.Ship> Ships { get; } = [];

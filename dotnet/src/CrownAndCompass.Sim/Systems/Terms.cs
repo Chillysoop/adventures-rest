@@ -196,6 +196,29 @@ public sealed record OfferRules
 
     /// <summary>Most riders a company sends; heroes with no company join one short of three.</summary>
     public int MaxRiders { get; init; } = 4;
+
+    /// <summary>Keeping a company on the town's retainer (<see cref="Retainers"/>).</summary>
+    public RetainerRules Retainer { get; init; } = new();
+}
+
+/// <summary>
+/// A company kept on the town's retainer: a signing price of Base, plus PerLevel times its members' levels raised to
+/// LevelPower, plus PerRenown per point of renown, then Wage of that a day. It needs Relation with the council to sign.
+/// On the retainer it leans Bonus more to every job the council offers, its own trips' reports come home free, its
+/// members are Loyalty happier, and it never leaves. A wage the treasury can't pay for LapseDays lets it go, Dealings sourer.
+/// </summary>
+public sealed record RetainerRules
+{
+    public double Base { get; init; } = 2500;
+    public double PerLevel { get; init; } = 40;
+    public double LevelPower { get; init; } = 1.5;
+    public double PerRenown { get; init; } = 15;
+    public double Wage { get; init; } = 0.01;
+    public double Relation { get; init; } = 40;
+    public double Bonus { get; init; } = 0.6;
+    public double Loyalty { get; init; } = 10;
+    public int LapseDays { get; init; } = 3;
+    public double Dealings { get; init; } = -10;
 }
 
 /// <summary>Townsfolk carried off in a raid, held at a site until rescued or lost.</summary>
@@ -351,6 +374,12 @@ public static class Captives
             // They come home with nothing: no bed, no job, until they find them again.
             a.Departed = false;
             a.Hunger = Math.Max(a.Hunger, 60);
+            // A cult that dropped them while they were gone has lost its hold: they come home keeping no god.
+            if (Faith.Of(town, a)?.Evil == true && Factions.Of(town, a).Count == 0)
+            {
+                a.Faith = "";
+                a.Devout = false;
+            }
         }
         town.Mandate = Math.Min(100, town.Mandate + r.FreedMandate);
         Stories.Remember(town, "captives-freed");

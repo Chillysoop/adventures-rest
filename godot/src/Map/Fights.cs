@@ -25,6 +25,7 @@ public partial class Crowd
         if (!Heroes.Lands(a.Id, act, u)) return;
         var look = Heroes.LookOf(a);
         var hand = p + new Vector3(0, 0.4f * scale, 0) + flat * 0.12f * scale;
+        if (ItemBlow(a, hand, foe)) return;
         switch (act)
         {
             case Heroes.Act.Cast:
@@ -37,6 +38,26 @@ public partial class Crowd
                 Fx.Hit(foe - flat * 0.12f, look.Glow is Color g && look.Aura ? g : new Color("ffe0a0"), look.Attack == Heroes.Act.Swing2 ? 1.3f : 1);
                 break;
         }
+    }
+
+    private Content? _content;
+    private readonly Dictionary<int, int> _landed = [];
+
+    /// <summary>
+    /// Every fourth landed blow of a hero carrying a blasting or chaining item, the item goes off: a burst on the foe
+    /// or a bolt from the hand, in its element's colour (enchantments.json "elements").
+    /// </summary>
+    private bool ItemBlow(Agent a, Vector3 hand, Vector3 foe)
+    {
+        if (_content == null || a.Hero == null) return false;
+        int n = _landed[a.Id] = _landed.GetValueOrDefault(a.Id) + 1;
+        if (n % 4 != 0) return false;
+        var pw = Sim.Systems.Enchant.Worn(_content, a.Hero).Select(w => w.Power).FirstOrDefault(x => x.Kind is "blast" or "chain");
+        if (pw == null) return false;
+        var c = new Color("#" + (_content.Enchant.Element(pw.Element)?.Color ?? "c0a0ff"));
+        Fx.Bolt(hand + new Vector3(0, 0.1f, 0), foe, c, pw.Kind == "chain" ? 8 : 6);
+        Fx.Burst(foe, c, pw.Kind == "blast" ? 1.6f : 0.9f);
+        return true;
     }
 
     private readonly HashSet<int> _struck = [];

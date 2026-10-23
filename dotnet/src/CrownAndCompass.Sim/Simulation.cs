@@ -196,6 +196,7 @@ public sealed class Simulation
         Trade.Daily(t, Options.AutoMayor);
         using (Asking("armory")) Armory.Daily(t, Hand("armory"));
         Alchemy.Daily(t, Options.AutoMayor && Stewards.Mode(t, Options, "armory") == StewardMode.Steward);
+        Spoils.Daily(t, Options.AutoMayor && Options.AutoArmory);
         Neighbours.Daily(t, Options.AutoMayor);
         using (Asking("defence"))
         {
@@ -211,6 +212,7 @@ public sealed class Simulation
             Explore.Daily(t, Hand("bounties"));
             Intel.Daily(t, Stewards.Sub(t, Options, "bounties", Options.AutoIntel));
         }
+        Retainers.Daily(t);
         Bastions.Daily(t, Options.AutoMayor && Options.AutoBastions);
         using (Asking("bounties")) Watch.Daily(t, Hand("bounties"));
         Undercity.Daily(t, Options.AutoMayor);
@@ -302,6 +304,24 @@ public sealed class Simulation
 
     /// <summary>Sell every dose of a potion on the town's shelf.</summary>
     public bool SellPotions(string recipeId) => Alchemy.Sell(Town, recipeId);
+
+    /// <summary>Order a piece from the forge or a workshop (spoils.json recipes): paid now, in the armory when done.</summary>
+    public bool Craft(string recipeId) => Spoils.Craft(Town, recipeId) != null;
+
+    /// <summary>Call off a piece on order: the gold comes back.</summary>
+    public bool CancelCraft(int orderId) => Spoils.Cancel(Town, orderId);
+
+    /// <summary>Sell creature parts the town holds to the caravans.</summary>
+    public double SellParts(string trophyId, int count) => Spoils.Sell(Town, trophyId, count);
+
+    /// <summary>Issue plain arms from the armory to the watch ("watch") or a regiment ("regiment:N").</summary>
+    public bool IssueArms(int stockId, string unit) => Kit.Issue(Town, stockId, unit);
+
+    /// <summary>Issue every plain piece the armory holds to the unit until each man carries his share.</summary>
+    public int ArmUnit(string unit) => Kit.Equip(Town, unit);
+
+    /// <summary>Take issued arms back into the armory.</summary>
+    public bool RecallArms(int stockId) => Kit.Recall(Town, stockId);
 
     /// <summary>Offer a company a loot pact: the magic it finds comes to the armory, for a finder's fee. A wary company refuses.</summary>
     public bool OfferPact(string company) => Armory.OfferPact(Town, company);
@@ -656,6 +676,12 @@ public sealed class Simulation
 
     /// <summary>Buy an allied power's oath: it stays the town's for good, with no tithe, and no enemy can buy it away.</summary>
     public bool SwearPower(string powerId) => Powers.Swear(Town, powerId);
+
+    /// <summary>Sign an adventuring company onto the town's retainer for good: a signing price, then a daily wage.</summary>
+    public bool RetainCompany(string company) => Retainers.Retain(Town, company);
+
+    /// <summary>Let a retained company go.</summary>
+    public bool ReleaseCompany(string company) => Retainers.Release(Town, company);
 
     /// <summary>Answer a minor power's envoy: accept its offer or demand and pay its price, or send it home.</summary>
     public bool AnswerEnvoy(string powerId, bool accept) => Powers.Answer(Town, powerId, accept);
