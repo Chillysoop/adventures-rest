@@ -83,7 +83,9 @@ public static partial class Expedition
         public HeroSheet Sheet { get; } = agent.Hero!;
         public bool Down { get; set; }
         public bool Dead { get; set; }
-        public int Heals { get; set; } = agent.Hero!.Cls.HealsAt(agent.Hero.Level);
+
+        /// <summary>Spell slots left until the next long rest (pact slots: short rest), for heals, spells, smites and sendings.</summary>
+        public int Slots { get; set; }
 
         /// <summary>Kept apart from the sheet until the party is home, so the town learns nothing early.</summary>
         public int Hp { get; set; } = agent.Hero!.Hp;
@@ -104,9 +106,45 @@ public static partial class Expedition
 
         /// <summary>Hit points of the beast they ride that fights beside them (a snow bear), taken before their own.</summary>
         public int Beast { get; set; }
+
+        /// <summary>The mayor's word over the sending stone, on spell attacks as well as blows.</summary>
+        public int Edge { get; set; }
+
+        /// <summary>Class power uses left, by power id (<see cref="Prowess"/>).</summary>
+        public readonly Dictionary<string, int> Uses = [];
+
+        /// <summary>Hit points left in a healing pool (lay on hands).</summary>
+        public int Pool { get; set; }
+
+        /// <summary>This fight: raging, the inspiration die held, bless and the like, haste, innate sorcery, temporary hit points.</summary>
+        public bool Raging { get; set; }
+        public int Rose { get; set; }
+        public int Inspired { get; set; }
+        public int HitBuff { get; set; }
+        public int AcBuff { get; set; }
+        public int Haste { get; set; }
+        public int Focus { get; set; }
+        public int Temp { get; set; }
+
+        /// <summary>The beast a druid has become and the hit points left in it.</summary>
+        public LibMonster? Form { get; set; }
+        public int Shape { get; set; }
+
+        /// <summary>The foe their hunter's mark or hex is on, and its dice.</summary>
+        internal Foe? MarkOn { get; set; }
+        public Dice MarkDice { get; set; }
+        public string MarkType { get; set; } = "";
+
+        /// <summary>This turn: sneak attack, a smite, a strike power already used; this fight: a spell to steady the party already cast.</summary>
+        public bool Sneaked, Smote, Struck, Buffed, Recovered;
+
+        /// <summary>The round they last rolled with a blow (uncanny dodge).</summary>
+        public int Dodged { get; set; }
+
+        public int ArmorClass => (Form?.Ac ?? Ac) + AcBuff;
     }
 
-    private sealed partial class Foe(MonsterDef def)
+    internal sealed partial class Foe(MonsterDef def)
     {
         public MonsterDef Def { get; } = def;
         public int Hp { get; set; } = def.Hp;
@@ -123,6 +161,26 @@ public static partial class Expedition
         /// <summary>Spent its power; got back up once; burst; said its piece about a knack.</summary>
         public bool Powered, Rose, Burst;
         public readonly HashSet<string> Told = [];
+
+        /// <summary>Its library entry: defences, saves, wits.</summary>
+        public LibMonster? Lib { get; init; }
+
+        /// <summary>Held by a spell (no turns) until this round; why, so a blow can break a charm or a sleep.</summary>
+        public int HeldUntil { get; set; }
+        public string HeldBy { get; set; } = "";
+
+        /// <summary>Hindered (easier to hit, worse at hitting) until this round, by this much.</summary>
+        public int HinderUntil { get; set; }
+        public int Hinder { get; set; }
+
+        /// <summary>The round it last took a damage type that stops its regeneration.</summary>
+        public int Seared { get; set; } = -1;
+
+        /// <summary>Times it has knitted back up from 0 this fight.</summary>
+        public int Rises { get; set; }
+
+        public bool Held(int round) => HeldUntil >= round;
+        public string Type => Lib?.Type is { Length: > 0 } t ? t : Def.Type;
     }
 
     private sealed record Check(Combatant Who, int Roll, int Total, string With = "")
@@ -226,6 +284,7 @@ public static partial class Expedition
             _content = content;
             _site = site;
             Party = heroes.Select(agent => new Combatant(agent) { Ac = Gear.Ac(content, agent) + Alchemy.WardAc(content, agent.Hero!, site), Attack = Gear.Attack(content, agent), Skill = Gear.Skill(content, agent.Hero!), Veteran = agent.Hero!.Expeditions >= content.World.Companies.Veteran, Beast = content.Passage.Mount(agent.Hero.Mount)?.Fights ?? 0, Powers = Enchant.Worn(content, agent.Hero) }).ToList();
+            foreach (var c in Party) Refresh(c, true);
             // Greenhorns with nobody seasoned among them lose their nerve sooner.
             if (Party.Any(c => c.Sheet.Expeditions == 0) && !Party.Any(c => c.Veteran)) _caution = content.Roads.Retreat.GreenCaution;
         }
@@ -240,7 +299,7 @@ public static partial class Expedition
         private readonly Dictionary<Combatant, (int Until, int Hit)> _snared = [];
         private readonly Dictionary<Combatant, int> _dazed = [];
 
-        private Foe NewFoe(MonsterDef d) => new(d) { Tactic = Tactics.Of(_content, d), Ways = Knacks.Of(_content, d) };
+        private Foe NewFoe(MonsterDef d) => new(d) { Tactic = Tactics.Of(_content, d), Ways = Knacks.Of(_content, d), Lib = Prowess.Lib(_content, d) };
 
         public void Log(string s) => Lines.Add(s.Length > 0 ? char.ToUpperInvariant(s[0]) + s[1..] : s);
 
@@ -312,6 +371,7 @@ public static partial class Expedition
             {
                 c.Attack += edge;
                 c.Skill += edge;
+                c.Edge += edge;
             }
         }
 
@@ -326,6 +386,13 @@ public static partial class Expedition
         {
             int soak = Math.Min(c.Beast, dmg);
             c.Beast -= soak;
+            dmg -= soak;
+            soak = Math.Min(c.Temp, dmg);
+            c.Temp -= soak;
+            dmg -= soak;
+            // A druid's beast shape takes the blows until it is beaten out of them.
+            soak = Math.Min(c.Shape, dmg);
+            c.Shape -= soak;
             c.Hp -= dmg - soak;
             if (c.Hp <= 0)
             {
@@ -499,6 +566,7 @@ public static partial class Expedition
             _held.Clear();
             _snared.Clear();
             _dazed.Clear();
+            StartFight();
             foreach (var c in Party) c.FightUsed.Clear();
             bool monstersFirst = surprised || Ambush(foes);
             if (def.Boss && Goad(foes[0])) HeroesAct(foes, 0);
@@ -508,7 +576,7 @@ public static partial class Expedition
                 _round = round;
                 if (!monstersFirst) HeroesAct(foes, round);
                 monstersFirst = false;
-                if (foes.All(f => f.Hp <= 0)) break;
+                if (foes.All(f => f.Hp <= 0 && !Rising(f, round))) break;
                 if (Scatter(foes)) break;
                 if (def.Boss) BossMoves(foes, round);
                 MonstersAct(foes, round);
@@ -523,12 +591,14 @@ public static partial class Expedition
                         : $"Bloodied and outmatched, the party breaks off and runs, dragging {ListNames(fallen)} with them.");
                     Mark("retreat");
                     Speak("retreat");
+                    EndFight();
                     AfterCombat();
                     return false;
                 }
             }
 
             bool won = foes.All(f => f.Hp <= 0);
+            EndFight();
             int foeMax = foes.Sum(f => f.Def.Hp);
             FoeShare = foeMax == 0 ? 0 : foes.Sum(f => Math.Max(0, f.Hp)) / (double)foeMax;
             if (won)
@@ -570,7 +640,6 @@ public static partial class Expedition
 
         private void HeroesAct(List<Foe> foes, int round)
         {
-            var rng = _rng;
             foreach (var c in Standing)
             {
                 var living = foes.Where(f => f.Hp > 0).ToList();
@@ -579,9 +648,11 @@ public static partial class Expedition
                 string name = c.Agent.GivenName;
                 // Swallowed whole, or frozen by a gaze or a roar: no turn.
                 if (_held.ContainsKey(c) || (_dazed.TryGetValue(c, out int dazed) && round <= dazed)) continue;
+                if (c.Form != null && c.Shape <= 0) EndShape(c);
+                c.Sneaked = c.Smote = c.Struck = false;
 
                 // A badly hurt hero downs a potion (a bonus action) and fights on.
-                if (c.Potions > 0 && c.Hp < s.MaxHp * 0.35)
+                if (c.Potions > 0 && c.Hp < s.MaxHp * 0.35 && c.Form == null)
                 {
                     c.Potions--;
                     int drunk = Potion();
@@ -589,62 +660,27 @@ public static partial class Expedition
                     Log(Voices.Variant(_content, "potion", "{name} gulps a {potion} (+{hp} hp).", Seed, ("name", name), ("potion", PotionName()), ("hp", drunk.ToString())));
                     if (c.Potions == 0 && c.Sheet.Potions >= 3) Gag(c, "potion");
                 }
+                else BonusAction(c, foes, living, round);
 
                 Regen(c);
                 if (ItemAction(c, foes, living, round)) continue;
 
-                // Clerics keep the party alive before they swing.
-                if (s.Cls.Healer && c.Heals > 0 && !_hushed)
-                {
-                    var patient = Party.Where(p => !p.Dead && p.Hp < p.Sheet.MaxHp * 0.4).OrderBy(p => p.Hp).FirstOrDefault();
-                    if (patient != null)
-                    {
-                        var spell = s.Cls.HealSpell!;
-                        int healed = (spell.Dice ?? new Dice(1, 8, 0)).Roll(rng) + Rng.Modifier(c.Agent.Abilities[s.Cls.Casting]);
-                        bool wasDown = patient.Down;
-                        patient.Hp = Math.Min(patient.Sheet.MaxHp, patient.Hp + Math.Max(1, healed));
-                        patient.Down = false;
-                        c.Heals--;
-                        if (wasDown)
-                        {
-                            Log($"{name} drags {patient.Agent.GivenName} back from the brink with {Library.Prose(spell.Name)} (+{Math.Max(1, healed)} hp).");
-                            Mark("heal", c);
-                        }
-                        continue;
-                    }
-                }
-
-                // Casters with an area spell open with it, cast at a higher slot as they level.
-                if (s.Cls.Area && round == 1 && living.Count >= 2 && !_hushed)
-                {
-                    var spell = s.Cls.AreaSpell!;
-                    var targets = living.Take(3).ToList();
-                    int dmg = spell.Dice!.Value.Roll(rng) + (s.Level - 1) * spell.Dice.Value.Die / 2 + c.Copied * _content.Shrines.Scroll.CopyBonus;
-                    int felled = 0;
-                    foreach (var f in targets)
-                    {
-                        f.Hp -= Spell(f, dmg);
-                        Struck(f, foes);
-                        if (f.Hp <= 0) felled++;
-                    }
-                    Credit(c, felled);
-                    Log($"{name} looses {Library.Prose(spell.Name)} into {targets.Count} of them for {dmg} damage{(felled > 0 ? $", dropping {felled}" : "")}.");
-                    Mark("spell", c);
-                    continue;
-                }
+                // Healers keep the party alive before they swing; casters spend a slot when the fight calls for one.
+                if (HealTurn(c)) continue;
+                if (TurnUndead(c, foes, round) || Rite(c, foes, round)) continue;
+                if (CastTurn(c, foes, living, round)) continue;
 
                 // A caster with a scroll reads it when the foes crowd in or the master of the place shows itself.
-                if (c.Scrolls > 0 && Scrolls.Reads(s.Cls) && !_hushed && (living.Count >= 3 || living.Any(f => f.Def.Boss)))
+                if (c.Scrolls > 0 && Scrolls.Reads(s.Cls) && !_hushed && c.Form == null && (living.Count >= 3 || living.Any(f => f.Def.Boss)))
                 {
                     var sr = _content.Shrines.Scroll;
                     c.Scrolls--;
                     var targets = living.OrderByDescending(f => f.Def.Boss).Take(sr.Targets).ToList();
-                    int dmg = Math.Max(1, (Sim.Dice.Parse(sr.Dice) ?? new Dice(3, 6, 0)).Roll(rng));
+                    int dmg = Math.Max(1, (Sim.Dice.Parse(sr.Dice) ?? new Dice(3, 6, 0)).Roll(_rng));
                     int felled = 0;
                     foreach (var f in targets)
                     {
-                        f.Hp -= Spell(f, dmg);
-                        Struck(f, foes);
+                        Hit(f, Spell(f, dmg), "force", true, false, foes, round);
                         if (f.Hp <= 0) felled++;
                     }
                     Credit(c, felled);
@@ -652,59 +688,7 @@ public static partial class Expedition
                     continue;
                 }
 
-                var target = living[0];
-                int roll = rng.D20();
-                int atk = c.Attack;
-                if (roll == 1)
-                {
-                    if (rng.Chance(0.3))
-                    {
-                        Log($"{name} rolls a natural 1 and nearly loses {s.Cls.Fumble}.");
-                        Mark("fumble", c, 1);
-                        if (c.Sheet.NicknameFor == "fumble") Gag(c, "fumble");
-                        else
-                        {
-                            Gags.Add(new Gag(c.Agent.Id, "fumble"));
-                            Speak("fumble", c);
-                        }
-                    }
-                    continue;
-                }
-                int snare = _snared.TryGetValue(c, out var sn) && round <= sn.Until ? sn.Hit : 0;
-                bool sure = false;
-                if (roll == 20 || roll + atk - snare - (target.Ways["aura"]?.Hit ?? 0) >= target.Def.Ac + Cover(target, round) + target.Ways.Ac || (sure = Sure(c, target)))
-                {
-                    int dmg = Gear.Damage(_content, rng, c.Agent, roll == 20) + OnHit(c, target, roll == 20, foes);
-                    if (s.Cls.Sneak && Standing.Count > 1) dmg += rng.Roll((int)Math.Ceiling(s.Level / 2.0), 6);
-                    // A blade passes half through a ghost.
-                    if (target.Ways["incorporeal"] is { } ghost)
-                    {
-                        dmg = (int)Math.Round(dmg * ghost.Share);
-                        Tell(target, ghost);
-                    }
-                    dmg = Math.Max(1, dmg);
-                    target.Hp -= dmg;
-                    Drain(c, dmg);
-                    Struck(target, foes);
-                    if (target.Hp <= 0) Credit(c, 1);
-                    if (!sure && roll != 20 && target.Hp > 0) Haste(c, target, foes, atk);
-                    if (roll == 20)
-                    {
-                        Log($"Natural 20! {name} hits {The(target.Def)} for {dmg}{(target.Hp <= 0 ? " and it goes down" : "")}.");
-                        Mark(target.Hp <= 0 && target.Def.Boss ? "kill" : "crit", c, 20, 20 + atk, target.Def.Ac);
-                        if (c.Sheet.NicknameFor == "crit") Gag(c, "crit");
-                        else
-                        {
-                            Gags.Add(new Gag(c.Agent.Id, "crit"));
-                            Speak("crit", c);
-                        }
-                    }
-                    else if (target.Hp <= 0 && target.Def.Boss)
-                    {
-                        Log($"{name} lands the killing blow on {The(target.Def)} (d20 {roll}{Sign(atk)}, {dmg} damage).");
-                        Mark("kill", c, roll, roll + atk, target.Def.Ac);
-                    }
-                }
+                StrikeTurn(c, foes, round);
             }
         }
 
@@ -718,7 +702,7 @@ public static partial class Expedition
         }
 
         /// <summary>Cover a foe's kind fights from in the first rounds.</summary>
-        private static int Cover(Foe f, int round) => f.Tactic is { Cover: > 0 } t && round <= t.CoverRounds ? t.Cover : 0;
+        private int Cover(Foe f, int round) => f.Tactic is { Cover: > 0 } t && round <= t.CoverRounds && !Party.Any(c => !c.Down && !c.Dead && Prowess.Power(_content, c.Sheet, "read-the-land") != null) ? t.Cover : 0;
 
         /// <summary>A pack hunter hits harder with its packmates still standing.</summary>
         private static int Pack(Foe f, List<Foe> foes) =>
@@ -799,7 +783,7 @@ public static partial class Expedition
             }
             if (f.Ways["magic"] is { } mr) dmg = (int)Math.Round(dmg * mr.Share);
             if (f.Ways["swarm"] is { } sw) dmg = (int)Math.Round(dmg * sw.Share);
-            return Math.Max(1, dmg);
+            return dmg <= 0 ? 0 : Math.Max(1, dmg);
         }
 
         /// <summary>After a blow lands on a foe: the relentless get up once; the bursting burst as they die.</summary>
@@ -900,6 +884,8 @@ public static partial class Expedition
         private void MonstersAct(List<Foe> foes, int round)
         {
             var rng = _rng;
+            Rise(foes, round);
+            Auras(foes, round);
             // The swallowed are digested, until their swallower dies or they cut their way out.
             foreach (var c in Party.Where(_held.ContainsKey).ToList())
             {
@@ -915,12 +901,21 @@ public static partial class Expedition
             int powers = 0;
             foreach (var f in foes.ToList())
             {
-                if (f.Hp <= 0 || f.Spent == round || f.HeldUntil >= round) continue;
+                if (f.Hp <= 0 || f.Spent == round) continue;
                 if (f.Ways["regen"] is { } regen && f.Hp < f.Def.Hp)
                 {
-                    f.Hp = Math.Min(f.Def.Hp, f.Hp + Math.Max(1, (int)Math.Round(f.Def.Hp * regen.Share)));
-                    Tell(f, regen);
+                    // Fire or acid on a troll: its wounds stay open this turn.
+                    if (f.Seared == round)
+                    {
+                        if (f.Told.Add("seared")) Log(Cap(Prowess.Line(_content, "seared", ("type", _searedBy.GetValueOrDefault(f, "fire")), ("foe", The(f.Def)))));
+                    }
+                    else
+                    {
+                        f.Hp = Math.Min(f.Def.Hp, f.Hp + Math.Max(1, (int)Math.Round(f.Def.Hp * regen.Share)));
+                        Tell(f, regen);
+                    }
                 }
+                if (f.Held(round)) continue;
                 // The power on its first turn, or its second for every other one of a crowd, a few of them a fight.
                 if (f.Ways.Power != null && !f.Powered && Standing.Count > 0 && powers < f.Ways["power"]!.Most && round == (f.Def.Boss ? 1 : 1 + foes.IndexOf(f) % 2))
                 {
@@ -935,10 +930,10 @@ public static partial class Expedition
                 if (f.Ways["pack"] is { } pk && foes.Any(o => o != f && o.Hp > 0)) pack = Math.Max(pack, pk.Hit);
                 for (int k = 0; k < Math.Max(1, f.Def.Attacks); k++)
                 {
-                    if (f.Hp <= 0 || f.Spent == round || f.HeldUntil >= round) break;
+                    if (f.Hp <= 0 || f.Spent == round || f.Held(round)) break;
                     var targets = Standing;
                     if (targets.Count == 0) return;
-                    var t = rng.Pick(targets);
+                    var t = Victim(f, targets);
                     int frenzy = 0;
                     // A frenzied beast goes for whoever is bleeding most.
                     if (f.Ways["frenzy"] is { } fz && targets.Where(c => c.Hp < c.Sheet.MaxHp / 2).OrderBy(c => c.Hp).ThenBy(c => c.Agent.Id).FirstOrDefault() is { } bleeding)
@@ -950,7 +945,8 @@ public static partial class Expedition
                     int roll = rng.D20();
                     if (roll == 1) continue;
                     int caught = _snared.TryGetValue(t, out var sn) && round <= sn.Until ? 2 : 0;
-                    if (roll == 20 || roll + f.Def.Attack + pack + frenzy + caught >= t.Ac)
+                    int hindered = f.HinderUntil >= round ? f.Hinder : 0;
+                    if (roll == 20 || roll + f.Def.Attack + pack + frenzy + caught - hindered >= t.ArmorClass)
                     {
                         int dmg = Math.Max(1, f.Def.Dice.Roll(rng, roll == 20));
                         if (round == 1 && f.Ways["charge"] is { } charge)
@@ -958,8 +954,9 @@ public static partial class Expedition
                             dmg += (int)Math.Round(dmg * charge.Share);
                             Tell(f, charge, t.Agent.GivenName);
                         }
-                        dmg = Guard(t, f, dmg);
+                        dmg = Guard(t, f, Taken(t, f, dmg, round));
                         Hurt(t, dmg);
+                        Relentless(t);
                         Rebuke(t, f, round);
                         if (f.Ways["drain"] is { } drain)
                         {
@@ -998,10 +995,10 @@ public static partial class Expedition
             foreach (var c in Party)
             {
                 if (!c.Down || c.Dead) continue;
-                var healer = _hushed ? null : Standing.FirstOrDefault(h => h.Sheet.Cls.Healer && h.Heals > 0);
+                var healer = _hushed ? null : Standing.FirstOrDefault(h => h.Sheet.Cls.Healer && h.Slots > 0);
                 if (healer != null)
                 {
-                    healer.Heals--;
+                    healer.Slots--;
                     c.Down = false;
                     c.Hp = Math.Max(1, _rng.Roll(1, 8) + healer.Sheet.Level);
                     Log($"{healer.Agent.GivenName} stabilizes {c.Agent.GivenName}.");
@@ -1092,7 +1089,7 @@ public static partial class Expedition
                 if (c.Dead) continue;
                 c.Down = false;
                 c.Hp = c.Sheet.MaxHp;
-                c.Heals = c.Sheet.Cls.HealsAt(c.Sheet.Level);
+                Refresh(c, true);
                 c.HitDice = Math.Min(c.Sheet.Level, c.HitDice + Math.Max(1, (int)(c.Sheet.Level * Roads.LongRest.HitDice)));
                 c.Used.Clear();
             }
@@ -1104,8 +1101,8 @@ public static partial class Expedition
         {
             foreach (var c in Party)
             {
-                int spent = Math.Min(slots, c.Heals);
-                c.Heals -= spent;
+                int spent = Math.Min(slots, c.Slots);
+                c.Slots -= spent;
                 slots -= spent;
             }
         }
@@ -1129,6 +1126,7 @@ public static partial class Expedition
                     c.HitDice--;
                     c.Hp = Math.Min(c.Sheet.MaxHp, c.Hp + Math.Max(1, _rng.Roll(1, c.Sheet.Cls.HitDie) + Rng.Modifier(c.Agent.Abilities.Con)));
                 }
+                Refresh(c, false);
             }
             Treat();
             if (inSite && _site != null && _rng.Chance(r.WanderChance))

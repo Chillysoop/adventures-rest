@@ -69,6 +69,28 @@ public sealed record LibMonster
 
     /// <summary>What it does that heroes save against (a breath, a gaze, a roar), strongest first.</summary>
     public IReadOnlyList<LibPower> Powers { get; init; } = [];
+
+    /// <summary>The rest of its ability scores, for saving throws against spells and class powers.</summary>
+    public int Con { get; init; } = 10;
+    public int Wis { get; init; } = 10;
+    public int Cha { get; init; } = 10;
+
+    /// <summary>The damage type of its strongest attack ("slashing").</summary>
+    public string DamageType { get; init; } = "";
+
+    /// <summary>Damage types it shrugs off half of, none of, or takes double from ("fire", "slashing").</summary>
+    public IReadOnlyList<string> Resist { get; init; } = [];
+    public IReadOnlyList<string> Immune { get; init; } = [];
+    public IReadOnlyList<string> Vulnerable { get; init; } = [];
+
+    /// <summary>Conditions that can't take hold of it ("charmed", "paralyzed").</summary>
+    public IReadOnlyList<string> ConditionImmune { get; init; } = [];
+
+    /// <summary>Damage types that stop its regeneration for a turn (a troll's acid and fire).</summary>
+    public IReadOnlyList<string> RegenStops { get; init; } = [];
+
+    /// <summary>Its regeneration brings it back up from 0 unless something it fears stopped it (a troll).</summary>
+    public bool RegenRises { get; init; }
 }
 
 /// <summary>
@@ -113,6 +135,11 @@ public sealed record LibSpell
     public string Targets { get; init; } = "";
     public IReadOnlyList<string> Roles { get; init; } = [];
     public string? Fog { get; init; }
+
+    /// <summary>The first damage type it deals ("fire"), the ability its targets save with ("dex"), and whether it is an attack roll.</summary>
+    public string DamageType { get; init; } = "";
+    public string Save { get; init; } = "";
+    public bool Attack { get; init; }
 }
 
 public sealed record LibItem
@@ -140,8 +167,9 @@ public sealed record LibGear
     public string Slot { get; init; } = "";
     public double CostGp { get; init; }
 
-    /// <summary>A weapon's damage dice.</summary>
+    /// <summary>A weapon's damage dice and type ("slashing").</summary>
     public Dice? Damage { get; init; }
+    public string DamageType { get; init; } = "";
     public IReadOnlyList<string> Properties { get; init; } = [];
 
     /// <summary>Armour class it gives (a shield's +2).</summary>
@@ -484,6 +512,7 @@ public sealed class Library
         int toHit = 0;
         Dice? damage = null;
         string weapon = "";
+        string damageType = "";
         double best = -1;
         int attacks = 1;
         var strikes = new List<string>();
@@ -508,6 +537,7 @@ public sealed class Library
                     damage = dice;
                     toHit = (int)Num(atk, "toHit");
                     weapon = Str(a, "name");
+                    damageType = Str(atk, "type").ToLowerInvariant();
                 }
             }
         }
@@ -565,7 +595,45 @@ public sealed class Library
                 ? actions.EnumerateArray().Where(a => a.ValueKind == JsonValueKind.Object).Select(a => Str(a, "name").Trim()).Where(n => n != "").ToList()
                 : [],
             Powers = PowersOf(actions),
+            Con = ab.ValueKind == JsonValueKind.Object && Num(ab, "con") > 0 ? (int)Num(ab, "con") : 10,
+            Wis = ab.ValueKind == JsonValueKind.Object && Num(ab, "wis") > 0 ? (int)Num(ab, "wis") : 10,
+            Cha = ab.ValueKind == JsonValueKind.Object && Num(ab, "cha") > 0 ? (int)Num(ab, "cha") : 10,
+            DamageType = damageType,
+            Resist = DamageTypesIn(e, "resist"),
+            Immune = DamageTypesIn(e, "immune"),
+            Vulnerable = DamageTypesIn(e, "vulnerable"),
+            ConditionImmune = Strings(e, "conditionImmune").Select(c => c.ToLowerInvariant()).ToList(),
+            RegenStops = Regen(e).Stops,
+            RegenRises = Regen(e).Rises,
         };
+    }
+
+    /// <summary>The damage types of the game, as the books spell them.</summary>
+    public static readonly string[] DamageTypes =
+        ["acid", "bludgeoning", "cold", "fire", "force", "lightning", "necrotic", "piercing", "poison", "psychic", "radiant", "slashing", "thunder"];
+
+    /// <summary>Damage types named in a defence list, whatever the wording ("and slashing from nonmagical attacks").</summary>
+    private static List<string> DamageTypesIn(JsonElement e, string key)
+    {
+        var said = Strings(e, key).Select(x => x.ToLowerInvariant()).ToList();
+        return DamageTypes.Where(t => said.Any(x => x.Contains(t, StringComparison.Ordinal))).ToList();
+    }
+
+    private static readonly Regex RegenStop = new(@"takes ([A-Za-z ,]+?) damage, this trait doesn", RegexOptions.CultureInvariant);
+
+    /// <summary>A regeneration trait's weakness: the damage types that stop it, and whether it brings the creature back up from 0.</summary>
+    private static (List<string> Stops, bool Rises) Regen(JsonElement e)
+    {
+        if (!e.TryGetProperty("traits", out var ts) || ts.ValueKind != JsonValueKind.Array) return ([], false);
+        foreach (var t in ts.EnumerateArray())
+        {
+            if (t.ValueKind != JsonValueKind.Object || !Str(t, "name").Contains("Regenerat", StringComparison.Ordinal)) continue;
+            string text = Str(t, "text");
+            var m = RegenStop.Match(text);
+            string words = m.Success ? m.Groups[1].Value.ToLowerInvariant() : "";
+            return (DamageTypes.Where(d => words.Contains(d, StringComparison.Ordinal)).ToList(), text.Contains("dies only if", StringComparison.Ordinal));
+        }
+        return ([], false);
     }
 
     private static LibClass ParseClass(JsonElement e)
@@ -603,6 +671,9 @@ public sealed class Library
             Targets = hasRt ? Str(rt, "targets") : "",
             Roles = hasRt ? Strings(rt, "roles") : [],
             Fog = Fog(e),
+            DamageType = Strings(e, "damageTypes").FirstOrDefault() ?? "",
+            Save = Str(e, "save") is { Length: >= 3 } sv ? sv[..3].ToLowerInvariant() : "",
+            Attack = Flag(e, "attack"),
         };
     }
 
@@ -630,7 +701,7 @@ public sealed class Library
     {
         string id = Str(e, "id");
         if (e.TryGetProperty("weapon", out var w) && w.ValueKind == JsonValueKind.Object && Dice.Parse(Str(w, "damage")) is Dice dmg)
-            return new LibGear { Id = id, Name = Str(e, "name"), Source = Str(e, "source"), Slot = "weapon", CostGp = Num(e, "costGp"), Damage = dmg, Properties = Strings(w, "properties") };
+            return new LibGear { Id = id, Name = Str(e, "name"), Source = Str(e, "source"), Slot = "weapon", CostGp = Num(e, "costGp"), Damage = dmg, DamageType = Str(w, "type"), Properties = Strings(w, "properties") };
         if (e.TryGetProperty("armor", out var a) && a.ValueKind == JsonValueKind.Object)
         {
             bool shield = Str(Rt(e), "slot") == "shield";
