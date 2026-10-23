@@ -178,8 +178,6 @@ public sealed class WorldGen
         _ => null,
     };
 
-    /// <summary>Days out from the town for a world point: the inverse of <see cref="Geo.DayRadius"/>.</summary>
-    private static double DaysOut(float r) => r >= Geo.DayRadius(0.3) ? (r - Geo.Reach0) / Geo.TilesPerDay : r / (Geo.TilesPerDay + Geo.Reach0 / 0.3);
 
     /// <summary>
     /// The feature a point lies in and how deep inside it (0 at a ragged edge to 1 a few tiles in), or

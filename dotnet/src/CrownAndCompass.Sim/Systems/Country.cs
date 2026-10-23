@@ -57,7 +57,7 @@ public sealed record CountryRules
 public sealed record ChainShape
 {
     public double[] Length { get; init; } = [0.8, 2.2];
-    public double[] Width { get; init; } = [0.16, 0.32];
+    public double[] Width { get; init; } = [0.26, 0.45];
 
     /// <summary>Radians its line may turn each step.</summary>
     public double Bend { get; init; } = 0.35;
@@ -94,6 +94,9 @@ public sealed record TrailRules
     /// <summary>Wear at which a track is fully worn, and how much quicker the going is on one.</summary>
     public double Worn { get; init; } = 4;
     public double Quick { get; init; } = 0.2;
+
+    /// <summary>How much cheaper a fully worn track looks to a party picking its way: they keep to it, so tracks draw together.</summary>
+    public double Pull { get; init; } = 0.45;
 
     /// <summary>Wear below this is forgotten.</summary>
     public double Least { get; init; } = 0.1;
@@ -698,12 +701,11 @@ public static class Country
     }
 
     /// <summary>How much quicker the going is in a cell for the trail worn there (0 to <see cref="TrailRules.Quick"/>).</summary>
-    public static double Quick(Town town, int cell)
-    {
-        if (!town.Trails.TryGetValue(cell, out double w)) return 0;
-        var t = Rules(town).Trail;
-        return t.Quick * Math.Min(1, w / t.Worn);
-    }
+    public static double Quick(Town town, int cell) => Rules(town).Trail.Quick * Worn(town, cell);
+
+    /// <summary>How worn a cell's track is, 0 to 1 (fully worn).</summary>
+    public static double Worn(Town town, int cell) =>
+        town.Trails.TryGetValue(cell, out double w) ? Math.Min(1, w / Rules(town).Trail.Worn) : 0;
 
     /// <summary>The worn tracks the map shows: each cell's middle in days and how worn it is (1 fully).</summary>
     public static IEnumerable<(double X, double Y, double Worn)> Tracks(Town town)
@@ -813,11 +815,12 @@ public static class Country
         {
             byte w = land.Water[c];
             if ((w & 1) != 0 && (w & 2) == 0 && (mind.Ways & Ways.River) == 0) return Never;
-            cost = 1 + r.Wander * Bumps(k.Seed, x, y, r.WanderSize);
+            // A worn track has no bumps to pick round: it is the way.
+            cost = 1 + r.Wander * Bumps(k.Seed, x, y, r.WanderSize) * (1 - Worn(town, c));
             if (mind.Explorer && ((w & 4) != 0 || land.Depth[c] > -r.FollowNear)) cost *= r.Follow;
         }
         if (double.IsInfinity(cost)) return cost;
-        cost *= 1 - Quick(town, c);
+        cost *= 1 - r.Trail.Pull * Worn(town, c);
         foreach (var (ax, ay) in mind.Avoid)
         {
             double d = Js.Hypot(x - ax, y - ay);
@@ -843,7 +846,7 @@ public static class Country
         Array.Fill(cost, -1);
         int gl = Local(goal);
         var (gx, gy) = land.Centre(goal);
-        double hmin = 0.7 * (1 - Rules(town).Trail.Quick);
+        double hmin = 0.7 * (1 - Rules(town).Trail.Pull);
         var open = new PriorityQueue<int, double>();
         int sl = Local(start);
         g[sl] = 0;
@@ -1003,7 +1006,7 @@ public static class Country
                     Way = way,
                     Feature = f,
                     Ease = f == null ? 0 : k.Ease[run.Owner - 1],
-                    Quick = way is "road" or "cross" ? Js.Round(Worn(town, land, a, b) * 1000) / 1000.0 : 0,
+                    Quick = way is "road" or "cross" ? Js.Round(Along(town, land, a, b) * 1000) / 1000.0 : 0,
                 });
             }
             if (f != null && path.Count > first) crossed.Add((f, pts[0], pts[^1], path.Count - 1));
@@ -1030,7 +1033,7 @@ public static class Country
     }
 
     /// <summary>The trail's quickness along a stretch, averaged.</summary>
-    private static double Worn(Town town, Land land, (double X, double Y) a, (double X, double Y) b)
+    private static double Along(Town town, Land land, (double X, double Y) a, (double X, double Y) b)
     {
         if (town.Trails.Count == 0) return 0;
         double len = Js.Hypot(b.X - a.X, b.Y - a.Y);
