@@ -426,7 +426,7 @@ public static class Quests
         // So does good word on the roads, and bad word keeps them away.
         double chance = Math.Clamp(0.12 + 0.25 * open + (heroes < 4 ? 0.2 : 0) + town.Content.Notoriety.Arrivals * fame + Word.Arrivals(town) + Omens.Heroes(town), 0.02, 0.9);
         // Word gets round that the rooms are taken: fewer come when they'd have to camp.
-        bool room = town.Lodging.Camped == 0 && Lodging.Rooms(town) > town.Lodging.Guests;
+        bool room = Lodging.Rooms(town) > town.Lodging.Guests;
         if (!room) chance *= Lodging.Rules(town).CampArrivals;
         if (!town.Rng.Chance(chance)) return;
 

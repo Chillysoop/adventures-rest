@@ -374,6 +374,8 @@ public static class Property
                 break;
             case "tavern":
                 return UniqueTavernName(town);
+            case "inn":
+                return UniqueTavernName(town) + " Inn";
             case "general_store":
                 name = $"{family}'s General Store";
                 break;

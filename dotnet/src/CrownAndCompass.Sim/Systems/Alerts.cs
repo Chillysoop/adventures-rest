@@ -474,7 +474,7 @@ public static class Alerts
                 : "Homes are going up on the residential land; painting more lets more go up at once.";
             yield return new("homeless", Housing, $"{homeless} homeless", $"Townsfolk with no roof lose heart and leave. {room}", AtTown: true);
         }
-        int camping = t.Heroes.Count(a => a.Hero!.AwayUntil == null && !a.Hero.Lodging);
+        int camping = t.Heroes.Count(a => a.Hero!.AwayUntil == null && !a.Hero.Lodging && a.Gold >= t.Content.Lodging.Price);
         if (camping > 0)
             yield return new("rooms", Rooms, $"{camping} {(camping == 1 ? "hero" : "heroes")} camping",
                 $"No free room at the inns. Heroes who camp {t.Content.Lodging.CampNights} nights ride on, and travellers move on sooner. Commission an inn from the Build bar (B), or paint shops for townsfolk to open one.", AtTown: true);
