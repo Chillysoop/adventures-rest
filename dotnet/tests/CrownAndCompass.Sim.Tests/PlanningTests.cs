@@ -188,8 +188,9 @@ public class PlanningTests
     [Fact]
     public void TheStandInPutsIdleHandsToWorkInATownNoOneInvestsIn()
     {
-        // Seed 30 used to stall with a dozen idle, run the treasury dry and starve by day 90.
-        var sim = new Simulation(new SimulationOptions { Seed = 30 });
+        // Seed 30 used to stall with a dozen idle, run the treasury dry and starve by day 90. Since the ocean its town
+        // grows past that on its own, so seed 31, the smallest town of the seeds after it, stands in.
+        var sim = new Simulation(new SimulationOptions { Seed = 31 });
         var t = sim.Town;
         // At some point the stand-in opens a town-run workshop (a buyer may take it on later).
         bool townRun = false;

@@ -62,6 +62,9 @@ public sealed class WorldGen
 
     /// <summary>The sim's hard country (<see cref="Roads"/>), raised out of the ground here so the roads bend round what you see.</summary>
     private readonly Feature[] _features;
+
+    /// <summary>Islands in the ocean: a centre and a radius in tiles.</summary>
+    private readonly List<(Vector2 At, float R)> _isles = [];
     private readonly Town _town;
 
     public Town Town => _town;
@@ -74,6 +77,12 @@ public sealed class WorldGen
         _n3 = new Noise(seed * 91 + 23);
         _town = town;
         _features = town.Terrain.ToArray();
+        // The ocean's sites and towns stand on islands: a great one for a city, a small one for a wreck or a cave.
+        foreach (var site in town.Sites)
+            if (site.RegionId is int rid && town.Regions[rid].Theme.Sea && geo.Pins.TryGetValue(site.Def.Id, out var pin))
+                _isles.Add((pin, 9 + Geo.Hash(site.Def.Id.Aggregate(17, (a, c) => a * 31 + c)) * 7));
+        foreach (var st in town.Settlements.Where(st => town.Regions[st.RegionId].Theme.Sea))
+            _isles.Add((Geo.SettlementPin(town, st), st.Kin.Grows > 0 ? 34 : 16));
         River = Passage.River(town).Select(Geo.FromDays).ToArray();
         TraceRiver();
         foreach (var c in Passage.Crossings(town))
@@ -193,16 +202,22 @@ public sealed class WorldGen
         if (rw < Geo.Clearing) return null;
         double r = DaysOut(rw);
         double bearing = Mathf.RadToDeg(Mathf.Atan2(d.X, -d.Y));
+        (Feature F, float K)? best = null;
         foreach (var f in _features)
         {
-            if (r < f.Inner - 0.2 || r > f.Outer + 0.2) continue;
+            bool ocean = f.Kind.Id == "ocean";
+            double pad = ocean ? 0.6 : 0.2;
+            if (r < f.Inner - pad || r > f.Outer + pad) continue;
             double diff = ((bearing - f.Bearing) % 360 + 540) % 360 - 180;
             double side = (f.Arc / 2 - Math.Abs(diff)) * Math.PI / 180 * r;
             double inside = Math.Min(Math.Min(r - f.Inner, f.Outer - r), side) * Geo.TilesPerDay;
             inside += _n2.Fbm(p.X / 22 + f.Id * 7, p.Y / 22, 3) * 4;
-            if (inside > -3) return (f, Mathf.SmoothStep(-3, 12, (float)inside));
+            // The ocean's shore wanders far more: bays and headlands, never the ruled edge of a ring.
+            if (ocean) inside += _n3.Fbm(p.X / 90, p.Y / 90, 3) * 30;
+            // Where two stretches of hard country meet (the ocean's rings), the one the point is deepest in wins.
+            if (inside > -3 && (best == null || inside > best.Value.K)) best = (f, (float)inside);
         }
-        return null;
+        return best is { } b ? (b.F, Mathf.SmoothStep(-3, 12, b.K)) : null;
     }
 
     /// <summary>How the hard country reshapes the ground at a point.</summary>
@@ -229,6 +244,13 @@ public sealed class WorldGen
             case "sea":
                 // The open sea: deep, with a long shelving beach.
                 return Mathf.Lerp(h, -2.4f + _n1.Fbm(p.X / 30, p.Y / 30, 2) * 0.5f, Mathf.SmoothStep(0, 0.45f, k));
+            case "ocean":
+            {
+                // The ocean: deeper than any bay, broken by the islands its sites and towns stand on.
+                float sea = Mathf.Lerp(h, -3.2f + _n1.Fbm(p.X / 40, p.Y / 40, 2) * 0.8f, Mathf.SmoothStep(0, 0.45f, k));
+                float isle = IsleAt(p);
+                return isle <= 0 ? sea : Mathf.Max(sea, Mathf.Lerp(-1.5f, 1.4f + _n2.Fbm(p.X / 12, p.Y / 12, 3) * 2.2f, isle));
+            }
             case "lake":
                 // Open water with a shelving shore: deep enough that nobody wades it.
                 return Mathf.Lerp(h, -1.6f + _n1.Fbm(p.X / 18, p.Y / 18, 2) * 0.4f, Mathf.SmoothStep(0, 0.6f, k));
@@ -251,6 +273,20 @@ public sealed class WorldGen
         }
     }
 
+    /// <summary>How far up an island a point is: 0 off every island, 1 at a centre; the shore wanders with noise.</summary>
+    private float IsleAt(Vector2 p)
+    {
+        float best = 0;
+        foreach (var (at, r) in _isles)
+        {
+            float reach = r * 1.4f;
+            if (Mathf.Abs(p.X - at.X) > reach || Mathf.Abs(p.Y - at.Y) > reach) continue;
+            float d = p.DistanceTo(at) / r + _n3.Fbm(p.X / 9, p.Y / 9, 2) * 0.35f;
+            best = Mathf.Max(best, 1 - Mathf.SmoothStep(0.55f, 1.15f, d));
+        }
+        return best;
+    }
+
     /// <summary>Forest bias the hard country adds: thick in a tangled wood, none on bare rock or waste.</summary>
     private float FeatureForest(Vector2 p, float bias)
     {
@@ -258,6 +294,7 @@ public sealed class WorldGen
         return f.Kind.Id switch
         {
             "tangle" => bias + 0.75f * k,
+            "ocean" => Mathf.Lerp(bias, -1, k * (1 - IsleAt(p))),
             "ridge" or "icefield" or "waste" or "peaks" or "range" or "lake" or "sea" => Mathf.Lerp(bias, -1, k),
             "beastland" => bias + 0.3f * k,
             "monsterland" => Mathf.Lerp(bias, -0.2f, k),

@@ -16,7 +16,8 @@ public class RoadsTests
             foreach (var s in t.Sites)
             {
                 var (x, y) = World.Spot(t, s);
-                Assert.DoesNotContain(t.Terrain, f => Roads.Contains(f, x, y));
+                // The ocean's sites are its islands, out in the water.
+                Assert.DoesNotContain(t.Terrain, f => f.Kind.Id != "ocean" && Roads.Contains(f, x, y));
             }
         }
     }

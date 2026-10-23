@@ -428,6 +428,8 @@ public static class Neighbours
         if (Plots.Tolled(town, s) != null) t -= r.Tolled;
         t -= Shadows.ProsperityLoss(town, s);
         foreach (var p in s.Projects) t += Rules(town).Project(p)?.Prosperity ?? 0;
+        // A growing city (the great island city) starts rich and grows richer by the day.
+        if (s.Kin.Grows > 0) t += town.Content.World.Ocean.City.Prosperity - r.Base + s.Kin.Grows * town.Day;
         return t;
     }
 
