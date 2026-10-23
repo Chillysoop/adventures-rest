@@ -13,8 +13,8 @@
   "standInEvery": 10,
   "standInProfit": 40,
   "ships": [
-    { "id": "rowboat", "name": "fishing boat", "cost": 60, "timber": 8, "crew": 2, "hold": 12, "speed": 0.9, "hull": 40, "wear": 2, "repair": 1, "fish": 3, "fight": 0, "guns": 0, "agility": 3, "marines": 2 },
-    { "id": "longship", "name": "longship", "cost": 420, "timber": 30, "crew": 8, "hold": 35, "speed": 0.6, "hull": 90, "wear": 3, "repair": 1.5, "fish": 5, "fight": 4, "guns": 2, "agility": 4, "marines": 6, "tier": "village" },
+    { "id": "rowboat", "river": true, "name": "fishing boat", "cost": 60, "timber": 8, "crew": 2, "hold": 12, "speed": 0.9, "hull": 40, "wear": 2, "repair": 1, "fish": 3, "fight": 0, "guns": 0, "agility": 3, "marines": 2 },
+    { "id": "longship", "river": true, "name": "longship", "cost": 420, "timber": 30, "crew": 8, "hold": 35, "speed": 0.6, "hull": 90, "wear": 3, "repair": 1.5, "fish": 5, "fight": 4, "guns": 2, "agility": 4, "marines": 6, "tier": "village" },
     { "id": "carrack", "name": "carrack", "cost": 900, "timber": 60, "crew": 12, "hold": 80, "speed": 0.7, "hull": 160, "wear": 3, "repair": 2, "fish": 6, "fight": 6, "guns": 5, "agility": 1, "marines": 8, "tier": "town" }
   ],
   "names": ["the Gull", "the Salt Hare", "the Widow's Luck", "the Grey Lady", "the Herring Queen", "the Brave Kettle", "the Stormpetrel", "the Long Wager", "the Sea Wren", "the Tidecaller", "the Bright Anchor", "the Second Chance"],
@@ -71,5 +71,6 @@
   "harbour": { "berths": 2, "perQuay": 2, "anchorage": 2, "anchorLoad": 0.8, "quays": ["harbour_quay", "harbour_long_quay"],
     "shipyard": "harbour_shipyard", "yardCost": 0.8, "tradingHouse": "harbour_trading_house", "trading": 1.2,
     "lighthouse": "harbour_lighthouse", "light": 2, "lightCorsairs": 0.7, "barracks": "harbour_naval_barracks", "barracksFight": 6,
-    "dryDock": "harbour_dry_dock", "dockRepair": 0.6, "dockMend": 2 }
+    "dryDock": "harbour_dry_dock", "dockRepair": 0.6, "dockMend": 2 },
+  "river": { "building": "river_harbour", "reach": 1.2, "fish": 0.6 }
 }

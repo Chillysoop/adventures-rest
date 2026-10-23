@@ -283,7 +283,7 @@ public partial class TownView(MapView map) : Node3D
             case "herb_garden": HerbGarden(kit, v); break;
             case "apothecary": Apothecary(kit, v); break;
             case "fishery": Fishery(kit, v); break;
-            case "harbour":
+            case "harbour" or "river_harbour":
                 kit.Push(MeshKit.At(-0.28f, 0, 0, 0, 0.55f));
                 Store(kit, v + 1);
                 kit.Pop();

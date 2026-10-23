@@ -716,6 +716,13 @@ public static class Passage
     public static IReadOnlyList<Crossing> Crossings(Town town) =>
         town.Ferries.Count == 0 ? Fixed(town) : [.. Fixed(town), .. town.Ferries.Where(f => !f.Cut).Select(f => new Crossing("ferry", f.Name, f.X, f.Y))];
 
+    /// <summary>Whether the river runs out to the ocean (<see cref="End"/>).</summary>
+    public static bool Mouth(Town town)
+    {
+        var line = River(town);
+        return town.Terrain.Any(f => f.Kind.Id == "ocean" && (Roads.Contains(f, line[0].X, line[0].Y, 0.6) || Roads.Contains(f, line[^1].X, line[^1].Y, 0.6)));
+    }
+
     /// <summary>The fords and bridges on the river: the town's own, and others every day or two up and down it.</summary>
     public static IReadOnlyList<Crossing> Fixed(Town town)
     {

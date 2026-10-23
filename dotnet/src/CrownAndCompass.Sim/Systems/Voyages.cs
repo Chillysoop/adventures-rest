@@ -58,7 +58,7 @@ public static class Voyages
 
     /// <summary>The harbour's ships that could take a company over the open sea now, best first: the most marine places, then the fastest.</summary>
     public static IEnumerable<Ship> Free(Town town) =>
-        Fleet.Harbour(town) == null ? [] : Fleet.AtSea(town).Where(s => Moored(town, s)).OrderByDescending(s => Fleet.Def(town, s).Marines).ThenBy(s => Fleet.Def(town, s).Speed).ThenBy(s => s.Id);
+        Fleet.Harbour(town) == null || !Fleet.ToSea(town) ? [] : Fleet.AtSea(town).Where(s => Moored(town, s)).OrderByDescending(s => Fleet.Def(town, s).Marines).ThenBy(s => Fleet.Def(town, s).Speed).ThenBy(s => s.Id);
 
     /// <summary>Whether a company can get to a site at all: one out on the open sea needs every member able to cross water, or a free ship.</summary>
     public static bool CanReach(Town town, IReadOnlyList<Agent> members, SiteState site) =>
@@ -163,6 +163,7 @@ public static class Voyages
         if (Fleet.Harbour(town) == null) return "needs a harbour";
         if (!Moored(town, s)) return s.Hull < Fleet.Def(town, s).Hull * 0.25 ? "needs patching first" : "already at sea";
         if (job is not ("patrol" or "scout" or "strike")) return "no such job";
+        if (job != "patrol" && !Fleet.ToSea(town)) return "the river doesn't reach the sea";
         if (marines.Count > Fleet.Def(town, s).Marines) return $"carries {Fleet.Def(town, s).Marines} marines at most";
         var free = Marines(town).Select(h => h.Id).ToHashSet();
         if (marines.Any(id => !free.Contains(id))) return "a hero is away or hurt";

@@ -254,7 +254,7 @@ public partial class Main
     /// <summary>The harbour's ships: each one's state, its best run, and new hulls to lay down (<see cref="Fleet"/>).</summary>
     private void FleetRuns(Pane p, Town t)
     {
-        if (!Fleet.Coastal(t) || Fleet.Harbour(t) == null) return;
+        if (Fleet.Harbour(t) == null) return;
         p.Heading("Fleet");
         var ports = Fleet.Ports(t).ToList();
         var free = Voyages.Marines(t).OrderByDescending(h => h.Hero!.Level).ThenBy(h => h.Id).ToList();
@@ -268,7 +268,7 @@ public partial class Main
                 ? $"at sea to {Ui.Esc(t.Settlements[v.SettlementId].Name)} · back in {Ui.Days(Math.Max(0, v.BackDay - t.Day))}"
                 : s.Flight is { } f ? $"{Ui.Img(f.Job == "strike" ? "ui-ballista" : f.Job == "scout" ? "ui-eye" : "defence", 12)} {(f.Job == "strike" ? "bombard" : f.Job)} · back in {Ui.Days(Math.Max(0, f.BackDay - t.Day))}"
                 : carrying != null ? $"{Ui.Img("heroes", 12)} carrying {Ui.Esc(carrying.Name)}"
-                : $"moored · fishing {Ui.Img("food", 13)}";
+                : $"{(Fleet.AtAnchor(t, s) ? "at anchor" : "moored")} · fishing {Ui.Img("food", 13)}";
             string guard = s.Guard == "watch" ? "Watch" : s.Guard == "hired" ? "Hired" : "No guard";
             string next = s.Guard == "" ? "watch" : s.Guard == "watch" ? "hired" : "";
             p.Row($"[font_size=13][b]{Ui.Esc(s.Name)}[/b] · {Ui.Esc(d.Name)}[/font_size]\n" +

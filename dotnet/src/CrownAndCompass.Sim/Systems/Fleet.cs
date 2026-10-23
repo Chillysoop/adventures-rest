@@ -32,6 +32,9 @@ public sealed record ShipDef
     public double Agility { get; init; }
     public int Marines { get; init; }
     public double Ceiling { get; init; }
+
+    /// <summary>Shallow enough for the river: a river harbour builds only these.</summary>
+    public bool River { get; init; }
 }
 
 public sealed record CorsairRules
@@ -87,6 +90,7 @@ public sealed record FleetRules
     public GuardRules Guards { get; init; } = new();
     public VoyageRules Voyages { get; init; } = new();
     public HarbourParts Harbour { get; init; } = new();
+    public RiverHarbourRules River { get; init; } = new();
 
     public ShipDef? Ship(string id) => Ships.FirstOrDefault(s => s.Id == id);
 }
@@ -118,6 +122,14 @@ public sealed record HarbourParts
     public string DryDock { get; init; } = "";
     public double DockRepair { get; init; } = 0.6;
     public double DockMend { get; init; } = 2;
+}
+
+/// <summary>sea.json `river`: the river harbour's building, how far (days) from the water a port may lie, and its catch.</summary>
+public sealed record RiverHarbourRules
+{
+    public string Building { get; init; } = "river_harbour";
+    public double Reach { get; init; } = 1.2;
+    public double Fish { get; init; } = 0.6;
 }
 
 public sealed record GuardRules
@@ -232,7 +244,13 @@ public static class Fleet
     public static IEnumerable<Ship> AtSea(Town town) => town.Ships.Where(s => !Aloft(town, s)).OrderBy(s => s.Id);
 
     /// <summary>The town's harbour, standing: needed for any ship.</summary>
-    public static Building? Harbour(Town town) => town.Buildings.FirstOrDefault(b => b.Def.Id == "harbour" && b.Complete && !b.Closed);
+    public static Building? Harbour(Town town) => town.Buildings.FirstOrDefault(b => (b.Def.Id == "harbour" || b.Def.Id == Rules(town).River.Building) && b.Complete && !b.Closed);
+
+    /// <summary>A town off the sea keeps its boats at a river harbour: river hulls only, ports along the water, the open sea only where the river reaches it.</summary>
+    public static bool OnRiver(Town town) => !Coastal(town) && Harbour(town) is { } h && h.Def.Id == Rules(town).River.Building;
+
+    /// <summary>Whether the harbour's ships can reach the open sea: from the coast, or down a river that runs to it.</summary>
+    public static bool ToSea(Town town) => Coastal(town) || OnRiver(town) && Passage.Mouth(town);
 
     /// <summary>Whether a part of the harbour stands (buildings.json `partOf: harbour`).</summary>
     public static bool Has(Town town, string partId) =>
@@ -260,8 +278,8 @@ public static class Fleet
     public static string? BuildBlocked(Town town, string kind)
     {
         if (Kind(town, kind) is { Realm: "sky" }) return Sky.BuildBlocked(town, kind);
-        if (!Coastal(town)) return "the town isn't on the sea";
-        if (Harbour(town) == null) return "needs a harbour";
+        if (Harbour(town) == null) return Coastal(town) ? "needs a harbour" : "needs a river harbour";
+        if (OnRiver(town) && Rules(town).Ship(kind) is { River: false }) return "too big for the river";
         if (AtSea(town).Count() >= Berths(town) + Parts(town).Anchorage) return "the harbour and the anchorage are full: add a quay";
         if (Rules(town).Ship(kind) is not { } d) return "no such ship";
         if (d.Tier != "" && !City.Reached(town, d.Tier)) return $"needs the town to be a {City.TierName(town, d.Tier).ToLowerInvariant()}";
@@ -326,11 +344,25 @@ public static class Fleet
     /// <summary>Ports a ship can sail to: known, not hostile, and along the coast.</summary>
     public static IEnumerable<Settlement> Ports(Town town)
     {
-        if (!Coastal(town)) return [];
         var r = Rules(town);
+        if (OnRiver(town))
+        {
+            var line = Passage.River(town);
+            return town.Settlements.Where(s => !s.Razed && town.Regions[s.RegionId].Known && s.Standing >= r.MinStanding
+                && (Passage.Mouth(town) && (r.CoastThemes.Contains(town.Regions[s.RegionId].Theme.Id) || town.Regions[s.RegionId].Theme.Sea)
+                    || line.Min(p => Math.Abs(p.X - Spot(town, s).X) + Math.Abs(p.Y - Spot(town, s).Y)) <= r.River.Reach)).OrderBy(s => s.Id);
+        }
+        if (!Coastal(town)) return [];
         double sea = Founding.Facing(town);
         return town.Settlements.Where(s => !s.Razed && town.Regions[s.RegionId].Known && s.Standing >= r.MinStanding
             && (r.CoastThemes.Contains(town.Regions[s.RegionId].Theme.Id) || town.Regions[s.RegionId].Theme.Sea || Gap(town.Regions[s.RegionId].Bearing, sea) <= r.Reach)).OrderBy(s => s.Id);
+    }
+
+    private static (double X, double Y) Spot(Town town, Settlement s)
+    {
+        var g = town.Regions[s.RegionId];
+        double b = g.Bearing * Math.PI / 180;
+        return (g.Days * Math.Sin(b), -g.Days * Math.Cos(b));
     }
 
     private static double Gap(double a, double b) => Math.Abs(((a - b) % 360 + 540) % 360 - 180);
@@ -385,7 +417,7 @@ public static class Fleet
     /// <summary>Daily, from <see cref="Trade.Daily"/>: the harbour's first boat, fishing, ships home, corsairs, and the stand-in.</summary>
     public static void Daily(Town town, bool autoMayor)
     {
-        if (!Coastal(town)) return;
+        if (!Coastal(town) && !OnRiver(town)) return;
         if (Harbour(town) == null)
         {
             // The stand-in mayor raises the harbour once the treasury can spare it.
@@ -419,7 +451,7 @@ public static class Fleet
             if (s.Hull <= 0 || s.Flight != null || Voyages.Carrying(town, s) != null) continue;
             var d = Def(town, s);
             if (Has(town, r.Harbour.DryDock) && !AtAnchor(town, s)) s.Hull = Math.Min(d.Hull, s.Hull + r.Harbour.DockMend);
-            double catchToday = d.Fish * (1 + r.ProwessFish * (s.Prowess - 1)) * (winter ? r.WinterFish : 1);
+            double catchToday = d.Fish * (1 + r.ProwessFish * (s.Prowess - 1)) * (winter ? r.WinterFish : 1) * (OnRiver(town) ? r.River.Fish : 1);
             town.Market.Seed(Good.Food, catchToday);
             s.Fished += catchToday;
         }

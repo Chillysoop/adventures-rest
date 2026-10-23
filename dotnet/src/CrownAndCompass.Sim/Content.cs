@@ -44,6 +44,9 @@ public sealed record BuildingDef
 
     /// <summary>Only a town founded on the sea can raise it (<see cref="Systems.Founding"/>).</summary>
     public bool Coast { get; init; }
+
+    /// <summary>Only a town off the sea, on the river, can raise it (the river harbour, <see cref="Systems.Fleet.OnRiver"/>).</summary>
+    public bool River { get; init; }
     public double Cost { get; init; }
     public double Timber { get; init; }
 

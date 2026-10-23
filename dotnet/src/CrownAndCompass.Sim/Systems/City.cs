@@ -659,6 +659,7 @@ public static class City
     {
         if (!Reached(town, d.Tier)) return $"needs the town to be a {TierName(town, d.Tier).ToLowerInvariant()}";
         if (d.Coast && !Fleet.Coastal(town)) return "needs a town founded on the sea";
+        if (d.River && Fleet.Coastal(town)) return "a town on the sea builds a harbour";
         if (Lofted.Locked(town, d) is { } lofted) return lofted;
         if (d.Wards.Count > 0 && !d.Wards.Any(town.City.OpenWards.Contains))
             return $"needs the {string.Join(" or the ", d.Wards.Select(w => Ward(town, w).Name))} to grow up";

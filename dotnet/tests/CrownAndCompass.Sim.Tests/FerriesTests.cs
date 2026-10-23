@@ -48,4 +48,38 @@ public class FerriesTests
         // No second ferry on the same reach.
         Assert.True(Ferries.Spots(t).Count < spots.Count);
     }
+
+    [Fact]
+    public void ARiverTownKeepsRiverBoatsThatTradeAlongTheWater()
+    {
+        var sim = new Simulation(new SimulationOptions { Seed = 2, AutoMayor = false });
+        var t = sim.Town;
+        var d = t.Content.Building("river_harbour");
+        Assert.Null(City.Locked(t, d) is "a town on the sea builds a harbour" ? "x" : null);
+        var lot = Land.Find(t, d, null)!;
+        lot.Zone = Zone.Civic;
+        t.AddBuilding(d, lot, null, "the River Harbour", true);
+        foreach (var g in t.Regions) g.Known = true;
+        t.Treasury = 20000;
+        t.City.Tier = City.TierIndex(t, "town");
+        sim.RunDays(1);
+        Assert.True(Fleet.OnRiver(t));
+        Assert.Single(Fleet.AtSea(t));
+        Assert.Equal("too big for the river", Fleet.BuildBlocked(t, "carrack"));
+        Assert.NotNull(Fleet.Build(t, "longship"));
+        // Its ports lie along the water; the open sea only where the river runs to it.
+        var line = Passage.River(t);
+        foreach (var s in Fleet.Ports(t))
+        {
+            var g = t.Regions[s.RegionId];
+            double b = g.Bearing * Math.PI / 180, x = g.Days * Math.Sin(b), y = -g.Days * Math.Cos(b);
+            bool near = line.Min(p => Math.Abs(p.X - x) + Math.Abs(p.Y - y)) <= t.Content.Sea.River.Reach;
+            Assert.True(near || Passage.Mouth(t));
+        }
+        Assert.Equal(Passage.Mouth(t), Fleet.ToSea(t));
+        // A sea town builds a harbour, not a river harbour.
+        var cove = new Simulation(new SimulationOptions { Seed = 3, Founding = "sea-cove" }).Town;
+        cove.City.Tier = City.TierIndex(cove, "city");
+        Assert.Equal("a town on the sea builds a harbour", City.Locked(cove, d));
+    }
 }
