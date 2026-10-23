@@ -89,9 +89,11 @@ public class VoyagesTests
         // A good navigator makes the passage quicker on the whole.
         double Mean(int survival) => Enumerable.Range(0, 200).Average(i => Voyages.SailPace(t, ship, survival, new Rng(i)));
         Assert.True(Mean(8) < Mean(-2));
-        // Winter's storms slow every ship more than summer's.
-        var storms = t.Content.Sky.Storm;
-        Assert.True(storms["winter"] > storms["summer"]);
+        // A storm slows a ship more than fair skies, and the wind behind it is quicker than the wind ahead.
+        var steps = t.Content.Sky.StormStep;
+        Assert.True(steps[^1] > steps[0]);
+        double wind = Weather.Prevailing(t, Weather.TimeOf(t.Tick));
+        Assert.True(Voyages.Tailwind(t, wind) < Voyages.Tailwind(t, wind + 180));
     }
 
     [Fact]

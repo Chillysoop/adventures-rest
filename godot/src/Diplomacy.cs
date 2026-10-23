@@ -315,8 +315,69 @@ public partial class Main
         var open = Trade.Open(t).OrderBy(r => r.Id).ToList();
         p.Card(Ui.Chips(Ui.Chip("population", $"{known.Count}", Ui.Ink, "Peoples known"), Ui.Chip("standing", $"{allies}", Ui.Good, "Allied"), Ui.Chip("ui-trade", $"{open.Count}/{Trade.Cap(t)}", Ui.Gold, $"Trade routes running; the {City.Tier(t).Name.ToLowerInvariant()}'s charter allows {Trade.Cap(t)}")), Ui.Gold);
 
-        RenderPowers(p, t);
+        p.Page("Peoples", "population");
+        p.Heading("Peoples of the wilds");
+        if (known.Count == 0) p.Note("No peoples met yet · their riders come as word spreads.");
+        foreach (var s in known)
+        {
+            var region = t.Regions[s.RegionId];
+            var (word, color) = StandingWord(s, w.Ally);
+            int id = s.Id;
+            var trade = s.Kin.Trade;
+            string Icons(IEnumerable<Good> gs) => string.Concat(gs.Select(g => Ui.Tip(Ui.Img(g.ToString().ToLowerInvariant(), 16), g.ToString())));
+            var offers = Trade.Offers(t, s);
+            string goods = offers.Count == 0 ? Ui.Dim("No trade")
+                : $"{Ui.Dim("want")} {Icons(trade.Wants)}   {Ui.Dim("sell")} {Icons(offers)}";
+            int pleas = t.Pleas.Count(x => x.SettlementId == s.Id && x.Status is PleaStatus.Open or PleaStatus.Taken);
+            string boon = s.Kin.Boon.Text != "" ? Ui.Cap(s.Kin.Boon.Text.Replace("{S}", s.Name)) + (s.Kin.Boon.Troops > 0 ? ", and their warriors come if the walls are attacked." : ".") : "";
+            string head = $"[b]{Ui.Esc(s.Name)}[/b]{(s.Razed ? "  " + Tag(word, color) : "")}" +
+                          $"{(pleas > 0 ? "  " + Tag(pleas == 1 ? "1 plea" : $"{pleas} pleas", Ui.Gold) : "")}\n" +
+                          $"[font_size=12]{Ui.Tip(Ui.Dim($"{Ui.Esc(Ui.Cap(s.People))} {Ui.Img("ui-info", 12)}"), $"{Ui.Cap(s.People)}, {Agent.Article(s.Kin.Kind)} {s.Kin.Kind} in {region.Name}")}  {Ui.Chip("ui-road", Ui.Days(region.Days), Ui.Ink2, "Out")}[/font_size]" +
+                          (s.Razed ? "" : $"\n[font_size=12]{goods}[/font_size]") +
+                          (s.Razed || boon == "" ? "" : "\n" + $"[font_size=12]{Ui.Bullet(Ui.Tip(s.Allied ? Ui.C(Ui.Good, "Ally's boon") : Ui.Dim($"Boon at {Js.Str(w.Ally)}"), boon), "ui-star")}[/font_size]");
+            if (s.Razed)
+            {
+                p.Row(head);
+                continue;
+            }
+            head += $"\n[font_size=12]{MannerChips(t, Neighbours.Key(s))}[/font_size]\n" + CharacterSheet(t, s) + "\n" + Life(t, s);
+            var buttons = new List<(string, bool, bool, Action)>();
+            if (!s.Allied || Shadows.Shadowed(s)) buttons.Add(($"Envoy · {Js.Str(w.EnvoyCost)}g · {DecisionOdds(t, "envoy")}", t.Treasury >= w.EnvoyCost, false, () => Act(() => _sim.SendEnvoy(id))));
+            if (Shadows.Shadowed(s))
+                buttons.Add((Shadows.Rallier(t) is { } speaker && s.Shadow!.RallyHeroId == null ? $"Send {speaker.GivenName} to rally them" : "Rally", Shadows.RallyRefused(t, s) == null, true, () => Act(() => _sim.RallySettlement(id))));
+            if (Neighbours.TroubleOf(t, s) is { Kind: "need", Aid: { } aid })
+                buttons.Add(($"Aid · {Js.Str(aid.Gold)}g, {Js.Str(aid.Qty)} {aid.Good.ToString().ToLowerInvariant()}", Neighbours.AidRefused(t, s) == null, true, () => Act(() => _sim.AidSettlement(id))));
+            if (Conquest.Held(t, s) == null)
+                buttons.Add(($"Buy charter · {Js.Str(Conquest.CharterPrice(t, s))}g", Conquest.BuyBlocked(t, s) == null, false, () => Act(() => _sim.BuySettlement(id))));
+            else head += $"\n[font_size=12]{Ui.Chip("face-crown", "Sworn to you", Ui.Good, "The town holds its charter")}[/font_size]";
+            if (!open.Any(r => r.SettlementId == s.Id) && offers.Count > 0)
+            {
+                string? no = Trade.Refuse(t, s);
+                var (export, import) = Trade.Suggest(t, s);
+                buttons.Add(no == null
+                    ? ($"Trade {export} for {import} · {Js.Str(Trade.OpenCost(t, s))}g", true, true, () => Act(() => _sim.OpenTradeRoute(id, export, import)))
+                    : ("Trade", false, false, () => { }));
+                if (no != null) head += "\n" + Ui.C(Ui.Ink2, $"[font_size=11]No route yet: {Ui.Esc(no)}.[/font_size]");
+            }
+            int band = StandingBand(s, w.Ally);
+            double standing = s.Standing;
+            p.Row(head, ($"st{band}{word}{Math.Round(standing)}", null, () => Foes.Standing(band, word, standing)), buttons.ToArray());
+            RenderOvertures(p, t, Neighbours.Key(s));
+            var build = Neighbours.ProjectsFor(t, s).Where(x => !s.Projects.Contains(x.Id)).ToList();
+            if (s.Works == null && build.Count > 0)
+                p.Buttons(build.Select(x =>
+                {
+                    string pid = x.Id;
+                    return ($"{x.Name} · {Js.Str(x.Cost)}g", Neighbours.ProjectRefused(t, s, x) == null, false, (Action)(() => Act(() => _sim.FundProject(id, pid))));
+                }).ToArray());
+            p.Row(Cast(t, s));
+        }
+        p.Help(
+            "Each settlement has its own leader, its own band of adventurers and its own troubles. Aid meets a need; a project there lasts (a watchtower keeps it safe, a bridge or patrol keeps its road open, a waystation lets your parties rest). The people you help remember it.",
+            "Rulers age, die and are overthrown, and each heir has a temperament of their own that warms or cools relations. A risen enemy's shadow spreads over the settlements near it: dread, then tribute (no trade, families fleeing to you), then a cult or a puppet ruler. Clear its site nearest them, send an envoy, or send a hero to rally them.",
+            $"Envoys carry gifts, and each one pleases a little less than the last. Clearing trouble near a people, answering their pleas and every caravan that gets through all raise standing. At {Js.Str(w.Ally)} they ally with the town.");
 
+        p.Page("Trade", "ui-trade");
         p.Heading("Trade routes");
         if (open.Count == 0)
             p.Note(Trade.Cap(t) == 0
@@ -342,64 +403,9 @@ public partial class Main
         SkyFleet(p, t);
         FleetRuns(p, t);
 
-        p.Heading("Peoples of the wilds");
-        if (known.Count == 0) p.Note("No peoples met yet · their riders come as word spreads.");
-        foreach (var s in known)
-        {
-            var region = t.Regions[s.RegionId];
-            var (word, color) = StandingWord(s, w.Ally);
-            int id = s.Id;
-            var trade = s.Kin.Trade;
-            string Icons(IEnumerable<Good> gs) => string.Concat(gs.Select(g => Ui.Tip(Ui.Img(g.ToString().ToLowerInvariant(), 16), g.ToString())));
-            var offers = Trade.Offers(t, s);
-            string goods = offers.Count == 0 ? Ui.Dim("No trade")
-                : $"{Ui.Dim("want")} {Icons(trade.Wants)}   {Ui.Dim("sell")} {Icons(offers)}";
-            int pleas = t.Pleas.Count(x => x.SettlementId == s.Id && x.Status is PleaStatus.Open or PleaStatus.Taken);
-            string boon = s.Kin.Boon.Text != "" ? Ui.Cap(s.Kin.Boon.Text.Replace("{S}", s.Name)) + (s.Kin.Boon.Troops > 0 ? ", and their warriors come if the walls are attacked." : ".") : "";
-            string head = $"[b]{Ui.Esc(s.Name)}[/b]{(s.Razed ? "  " + Tag(word, color) : "")}" +
-                          $"{(pleas > 0 ? "  " + Tag(pleas == 1 ? "1 plea" : $"{pleas} pleas", Ui.Gold) : "")}\n" +
-                          $"[font_size=12]{Ui.Tip(Ui.Dim($"{Ui.Esc(Ui.Cap(s.People))} {Ui.Img("ui-info", 12)}"), $"{Ui.Cap(s.People)}, {Agent.Article(s.Kin.Kind)} {s.Kin.Kind} in {region.Name}")}  {Ui.Chip("ui-road", Ui.Days(region.Days), Ui.Ink2, "Out")}[/font_size]" +
-                          (s.Razed ? "" : $"\n[font_size=12]{goods}[/font_size]") +
-                          (s.Razed || boon == "" ? "" : "\n" + $"[font_size=12]{Ui.Bullet(Ui.Tip(s.Allied ? Ui.C(Ui.Good, "Ally's boon") : Ui.Dim($"Boon at {Js.Str(w.Ally)}"), boon), "ui-star")}[/font_size]");
-            if (s.Razed)
-            {
-                p.Row(head);
-                continue;
-            }
-            head += "\n" + CharacterSheet(t, s) + "\n" + Life(t, s);
-            var buttons = new List<(string, bool, bool, Action)>();
-            if (!s.Allied || Shadows.Shadowed(s)) buttons.Add(($"Envoy · {Js.Str(w.EnvoyCost)}g · {DecisionOdds(t, "envoy")}", t.Treasury >= w.EnvoyCost, false, () => Act(() => _sim.SendEnvoy(id))));
-            if (Shadows.Shadowed(s))
-                buttons.Add((Shadows.Rallier(t) is { } speaker && s.Shadow!.RallyHeroId == null ? $"Send {speaker.GivenName} to rally them" : "Rally", Shadows.RallyRefused(t, s) == null, true, () => Act(() => _sim.RallySettlement(id))));
-            if (Neighbours.TroubleOf(t, s) is { Kind: "need", Aid: { } aid })
-                buttons.Add(($"Aid · {Js.Str(aid.Gold)}g, {Js.Str(aid.Qty)} {aid.Good.ToString().ToLowerInvariant()}", Neighbours.AidRefused(t, s) == null, true, () => Act(() => _sim.AidSettlement(id))));
-            if (Conquest.Held(t, s) == null)
-                buttons.Add(($"Buy charter · {Js.Str(Conquest.CharterPrice(t, s))}g", Conquest.BuyBlocked(t, s) == null, false, () => Act(() => _sim.BuySettlement(id))));
-            else head += $"\n[font_size=12]{Ui.Chip("face-crown", "Sworn to you", Ui.Good, "The town holds its charter")}[/font_size]";
-            if (!open.Any(r => r.SettlementId == s.Id) && offers.Count > 0)
-            {
-                string? no = Trade.Refuse(t, s);
-                var (export, import) = Trade.Suggest(t, s);
-                buttons.Add(no == null
-                    ? ($"Trade {export} for {import} · {Js.Str(Trade.OpenCost(t, s))}g", true, true, () => Act(() => _sim.OpenTradeRoute(id, export, import)))
-                    : ("Trade", false, false, () => { }));
-                if (no != null) head += "\n" + Ui.C(Ui.Ink2, $"[font_size=11]No route yet: {Ui.Esc(no)}.[/font_size]");
-            }
-            int band = StandingBand(s, w.Ally);
-            double standing = s.Standing;
-            p.Row(head, ($"st{band}{word}{Math.Round(standing)}", null, () => Foes.Standing(band, word, standing)), buttons.ToArray());
-            var build = Neighbours.ProjectsFor(t, s).Where(x => !s.Projects.Contains(x.Id)).ToList();
-            if (s.Works == null && build.Count > 0)
-                p.Buttons(build.Select(x =>
-                {
-                    string pid = x.Id;
-                    return ($"{x.Name} · {Js.Str(x.Cost)}g", Neighbours.ProjectRefused(t, s, x) == null, false, (Action)(() => Act(() => _sim.FundProject(id, pid))));
-                }).ToArray());
-            p.Row(Cast(t, s));
-        }
-        p.Note("Each settlement has its own leader, its own band of adventurers and its own troubles. Aid meets a need; a project there lasts (a watchtower keeps it safe, a bridge or patrol keeps its road open, a waystation lets your parties rest). The people you help remember it.");
-        p.Note("Rulers age, die and are overthrown, and each heir has a temperament of their own that warms or cools relations. A risen enemy's shadow spreads over the settlements near it: dread, then tribute (no trade, families fleeing to you), then a cult or a puppet ruler. Clear its site nearest them, send an envoy, or send a hero to rally them.");
-        p.Note($"Envoys carry gifts, and each one pleases a little less than the last. Clearing trouble near a people, answering their pleas and every caravan that gets through all raise standing. At {Js.Str(w.Ally)} they ally with the town.");
+
+        p.Page("Powers", "ui-faction");
+        RenderPowers(p, t);
         p.Commit();
     }
 }

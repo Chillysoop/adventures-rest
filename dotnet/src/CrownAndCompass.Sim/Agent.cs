@@ -223,6 +223,9 @@ public sealed class HeroSheet
     /// <summary>Healing potions from the general store, carried into the next delve.</summary>
     public int Potions { get; set; }
 
+    /// <summary>Draughts from a hoard (a potion of giant strength, an oil of sharpness), all drunk on the next delve (<see cref="Systems.Draughts"/>).</summary>
+    public List<LibItem> Draughts { get; } = [];
+
     /// <summary>Spell scrolls from the scriptorium or a hoard, each read once in a fight (<see cref="Systems.Scrolls"/>).</summary>
     public int Scrolls { get; set; }
 

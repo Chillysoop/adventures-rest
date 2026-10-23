@@ -321,6 +321,7 @@ public partial class MapView : Control
         Geo.PlaceSites(town, ease);
         Fog.Refresh(town, Geo);
         UpdateStates(town);
+        UpdateTrails(town);
         UpdateCamera(dt);
         _first = false;
         if (town.Tick != _lastTick)
@@ -335,6 +336,7 @@ public partial class MapView : Control
         _town.Fliers(dt);
         _crowd.Advance(dt);
         _lurkers.Advance();
+        UpdateSky(town, dt);
         UpdateLight(town);
         _overlay.QueueRedraw();
         if (Planner.Active) Planner.QueueRedraw();
@@ -369,6 +371,16 @@ public partial class MapView : Control
         if (key == _stateKey) return;
         _stateKey = key;
         _world.SetStates(states);
+    }
+
+    private int _trailDay = -1;
+
+    /// <summary>The worn trails of the wilds, drawn afresh each morning.</summary>
+    private void UpdateTrails(Town town)
+    {
+        if (town.Day == _trailDay) return;
+        _trailDay = town.Day;
+        _world.SetTrails(town);
     }
 
     private void UpdateCamera(float dt)
@@ -461,12 +473,13 @@ public partial class MapView : Control
         _env.FogLightColor = haze;
         UpdateSeason(town);
         PaintLight(night);
+        ApplySky();
         if (town.Outcome == Outcome.Defeat) _env.AmbientLightColor = _env.AmbientLightColor.Lerp(new Color("a03020"), 0.4f);
     }
 
     private Vector3 _season = new(-1, -1, -1);
 
-    /// <summary>The land shows the season: snow in winter, turned leaves in autumn, fresh green in spring; winter light is colder and greyer.</summary>
+    /// <summary>The land shows the season: turned leaves in autumn, fresh green in spring; winter light is colder and greyer. Snow lies as the weather laid it (<see cref="UpdateSky"/>).</summary>
     private void UpdateSeason(Town town)
     {
         var look = Seasons.Look(town);
@@ -474,10 +487,9 @@ public partial class MapView : Control
         if (!s.IsEqualApprox(_season))
         {
             _season = s;
-            Mats.SetAll("snow", s.X);
             Mats.SetAll("autumn", s.Y);
             Mats.SetAll("spring", s.Z);
-            _grade.SetShaderParameter("saturation", 0.9f - s.X * 0.12f + s.Z * 0.04f);
+            _saturation = 0.9f - s.X * 0.12f + s.Z * 0.04f;
             _grade.SetShaderParameter("cold", s.X);
         }
         // The inked campaign map keeps its own light.
@@ -538,7 +550,7 @@ public partial class MapView : Control
         var haze = _env.BackgroundColor.Lerp(new Color("a9c3d8"), 0.6f * (1 - night));
         _env.BackgroundColor = haze;
         _env.FogLightColor = haze;
-        _grade.SetShaderParameter("saturation", 1.12f);
+        _saturation = 1.12f;
     }
 
     // ---------- Projection and picking ----------

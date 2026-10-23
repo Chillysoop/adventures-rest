@@ -30,7 +30,6 @@ public partial class Main
         var sale = Intel.ForSale(t);
         // Reports with new ground first; the ones that would tell the town nothing new fold into one line.
         var worth = sale.Where(x => Intel.NewGround(t, x) > 0).OrderByDescending(x => Intel.NewGround(t, x)).ThenByDescending(x => x.ReturnTick).ThenBy(x => x.Id).ToList();
-        if (worth.Count == 0) p.Note("No company holds a report of ground the town doesn't know.");
         foreach (var party in worth)
         {
             var site = Quests.Site(t, party.SiteId)!;

@@ -1,5 +1,5 @@
 {
-  "_doc": "The turning year: four seasons of 'days' days each. Yields multiply what each good's makers produce; menace multiplies how fast each kind of menace grows and how often it strikes; marchDays adds to every army's march. Tourists come by the soul and spend at taverns and shops; traders set the caravans' import premium (times base price) and the export floor. Stores: in autumn the town's cellars and granaries hold food back from the export barges (holdPerHousehold, plus each granary's foodStore times granaryHold), and the council can lay in more at the traders' price.",
+  "_doc": "The turning year: four seasons of 'days' days each. Yields multiply what each good's makers produce; menace multiplies how fast each kind of menace grows and how often it strikes; marchDays adds to every army's march (snow lying and storms add more: weather.json). Tourists come by the soul and spend at taverns and shops; traders set the caravans' import premium (times base price) and the export floor. Stores: in autumn the town's cellars and granaries hold food back from the export barges (holdPerHousehold, plus each granary's foodStore times granaryHold), and the council can lay in more at the traders' price.",
   "days": 30,
   "startSeason": 0,
   "startDay": 10,
@@ -45,7 +45,7 @@
       "mood": -4, "build": 0.7, "arrivals": -0.2,
       "yields": { "Food": 0.4, "Wool": 0.6, "Herbs": 0.3, "Wine": 0.5, "Timber": 0.85 },
       "menace": { "tribe": 0.55, "undead": 1.6, "schemers": 1.0, "beasts": 1.35, "rivals": 0.6, "cult": 1.2 },
-      "warband": 0.55, "marchDays": 3,
+      "warband": 0.55, "marchDays": 2,
       "tourists": 0.35, "importPremium": 3.6, "exportShare": 0.9, "fair": false, "hold": true,
       "festival": { "name": "Midwinter", "days": 2, "mood": 8, "tourists": 1.2, "text": "{town} keeps {festival} through the longest night: lanterns in every window and a feast against the dark." }
     }

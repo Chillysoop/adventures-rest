@@ -46,6 +46,7 @@ public partial class Main
             ("heroes", $"{Math.Round(Research.Power(t))}", null, "Library power: book circles + wizard levels")), Ui.Gold);
 
         // What the scholars are on, and what moves it.
+        p.Page("Study", "lore");
         p.Heading("The scholars");
         double lore = Research.Lore(t);
         if (st.Study is string id)
@@ -107,9 +108,16 @@ public partial class Main
             })), 13);
         }
 
-        RenderSkyworks(p, t);
+        // The feed: why each idea appeared and what moved the scholars, newest first.
+        if (st.Feed.Count > 0)
+        {
+            p.Heading("News from the library");
+            p.Text(string.Join("\n", st.Feed.AsEnumerable().Reverse().Take(10).Select(n =>
+                Lb($"{Ui.C(Ui.Ink2, $"day {n.Day}")}  {Ui.Esc(Ui.Cap(n.Text))}{(n.Lore > 0 ? " " + Ui.C(Ui.Good, "+" + Js.Str(n.Lore)) : "")}", n.Icon))), 13);
+        }
 
         // The tree: what this town could study, where each idea came from, what it still needs.
+        p.Page("Ideas", "compass");
         p.Heading("Discoveries");
         if (st.Revealed.Count == 0)
             p.Note("No ideas yet. Newcomers, trade, buildings, books, explorers' finds and monsters your companies bring down each spark their own.");
@@ -136,25 +144,19 @@ public partial class Main
             }
         }
 
-        // The feed: why each idea appeared and what moved the scholars, newest first.
-        if (st.Feed.Count > 0)
-        {
-            p.Heading("News from the library");
-            p.Text(string.Join("\n", st.Feed.AsEnumerable().Reverse().Take(10).Select(n =>
-                Lb($"{Ui.C(Ui.Ink2, $"day {n.Day}")}  {Ui.Esc(Ui.Cap(n.Text))}{(n.Lore > 0 ? " " + Ui.C(Ui.Good, "+" + Js.Str(n.Lore)) : "")}", n.Icon))), 13);
-        }
-
+        p.Page("Books", "books");
         p.Heading("Spellbooks");
-        if (st.Books.Count == 0) p.Note("No spellbooks yet. They come home from delves, on caravans and from wizards' bastions.");
         foreach (var b in st.Books.OrderByDescending(b => b.Circle).ThenBy(b => b.Id).Take(8))
             p.Text(Lb($"[b]{Research.Ordinal(b.Circle)}[/b] {Ui.Esc(b.School)} {Ui.C(Ui.Ink2, $"· {Ui.Esc(b.From)}")}", "books"), 13);
         if (st.Books.Count > 8) p.Note($"and {st.Books.Count - 8} more.");
 
         p.Heading("Wizards in town");
         var wizards = t.Heroes.Where(a => a.Hero!.Cls.Id == "wizard").OrderByDescending(a => a.Hero!.Level).ThenBy(a => a.Id).ToList();
-        if (wizards.Count == 0) p.Note("No wizards yet. A library with books enough draws them, each stronger than the last.");
         foreach (var a in wizards)
             p.Text(Lb($"[b]{Ui.Esc(a.Name)}[/b] {Ui.C(Ui.Ink2, $"lvl {a.Hero!.Level} · reads {Research.Ordinal(Math.Min(9, (a.Hero.Level + 1) / 2))} circle{(st.Drawn.Contains(a.Id) ? " · drawn by the library" : "")}{(a.IsAway ? " · away" : "")}")}", "lore"), 13);
+
+        p.Page("Sky", "ui-airship");
+        RenderSkyworks(p, t);
         p.Commit();
     }
 

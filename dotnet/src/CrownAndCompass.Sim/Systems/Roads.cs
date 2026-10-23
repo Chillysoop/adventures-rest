@@ -22,6 +22,15 @@ public sealed class Feature
     /// <summary>A gorge's rope bridge: "" none, "rope", "cut" by raiders, or rebuilt in "stone" (<see cref="Bridges"/>).</summary>
     public string Bridge { get; set; } = "";
     public string BridgeName { get; set; } = "";
+
+    /// <summary>
+    /// Its outline in days from the town (<see cref="Country"/>); empty for the old ring sectors, which <see cref="Bearing"/>,
+    /// <see cref="Arc"/>, <see cref="Inner"/> and <see cref="Outer"/> describe. A shaped feature keeps those as the sector round it.
+    /// </summary>
+    public List<(double X, double Y)> Shape { get; init; } = [];
+
+    /// <summary>Its outline's box (min x, min y, max x, max y), worked out once.</summary>
+    [NotSaved] internal double[]? Box;
 }
 
 /// <summary>A turn in a party's road, in day units from the town (x east, y south); <see cref="Way"/> is how they walked the stretch that ends here.</summary>
@@ -37,8 +46,11 @@ public sealed class Waypoint
     /// <summary>The ford or bridge the stretch ends at, for "ford" and "bridge" (<see cref="Passage.Crossings"/>).</summary>
     public string Crossing { get; init; } = "";
 
-    /// <summary>Share of the hard country's slowness the party's mounts take off on a "cross" (snow bears on the ice).</summary>
+    /// <summary>Share of the hard country's slowness the party takes off on a "cross": mounts (snow bears on the ice), guides, a skilled leader.</summary>
     public double Ease { get; init; }
+
+    /// <summary>Share of the time a worn trail saves on the stretch (<see cref="Country.Quick"/>).</summary>
+    public double Quick { get; init; }
 
     /// <summary>Hours lost on the stretch when the navigator lost the way (<see cref="Wayfaring.Navigate"/>).</summary>
     public double Delay { get; init; }
@@ -49,7 +61,7 @@ public sealed class Waypoint
     /// <summary>On a "sail" stretch aboard a ship: hours at sea for each hour of march (<see cref="RouteMind.Sail"/>); 0 for the open water's own pace.</summary>
     public double Sail { get; init; }
 
-    public Waypoint Lost(double hours) => new() { X = X, Y = Y, Way = Way, Feature = Feature, Crossing = Crossing, Ease = Ease, Delay = Delay + hours, Gate = Gate };
+    public Waypoint Lost(double hours) => new() { X = X, Y = Y, Way = Way, Feature = Feature, Crossing = Crossing, Ease = Ease, Quick = Quick, Sail = Sail, Delay = Delay + hours, Gate = Gate };
 }
 
 /// <summary>How a party weighs time against danger when the road forks.</summary>
@@ -77,6 +89,15 @@ public sealed record RouteMind(double TimeWeight, double RiskWeight, double Leve
 
     /// <summary>The planning's own dice, off the town's stream; null plans with no rolls.</summary>
     public Rng? Dice { get; init; }
+
+    /// <summary>Navigation DC the sky adds as they set off: fog, a storm (<see cref="Weather.Murk"/>).</summary>
+    public int Murk { get; init; }
+
+    /// <summary>Out exploring: they keep to the land's lines, along the river and the edges of hard country (<see cref="Country"/>).</summary>
+    public bool Explorer { get; init; }
+
+    /// <summary>Places they keep away from: where they were set on along the way out.</summary>
+    public IReadOnlyList<(double X, double Y)> Avoid { get; init; } = [];
 }
 
 public enum Pace
@@ -100,61 +121,13 @@ public static class Roads
 {
     // ---- Generation ----
 
-    /// <summary>Put hard country in front of each region's sites, never on a site or another feature.</summary>
+    /// <summary>Hard country through the wilds in real shapes (<see cref="Country.Lay"/>), after the mountain walls between the far rings.</summary>
     public static void Generate(Town town, Rng rng)
     {
-        var rules = town.Content.Roads;
-        var w = town.Content.World;
         var spots = town.Sites.Select(s => World.Spot(town, s)).ToList();
         Ranges(town, rng, spots);
-        foreach (var region in town.Regions)
-        {
-            if (!rules.Themes.TryGetValue(region.Theme.Id, out var ids) || ids.Count == 0) continue;
-            int n = rng.Range(rules.FeaturesPerRegion[0], rules.FeaturesPerRegion[^1] + 1);
-            for (int i = 0; i < n; i++)
-            {
-                // The pick is drawn again for every kind looked at; the founding's sea is never drawn, so it is left out.
-                var kind = rules.Kinds.Where(k => !k.Boats).FirstOrDefault(k => k.Id == rng.Pick(ids));
-                if (kind == null) continue;
-                for (int tries = 0; tries < 10; tries++)
-                {
-                    double arc = Math.Min(region.Arc * 0.95, region.Arc * (rules.Arc[0] + rng.Next() * (rules.Arc[^1] - rules.Arc[0])) * kind.Wide);
-                    double bearing = (region.Bearing + (rng.Next() - 0.5) * 0.8 * region.Arc + 360) % 360;
-                    // The open ground along this arc between the sites that lie on it: hard country fills a gap.
-                    var reaches = spots
-                        .Where(p => Math.Abs(AngleDiff(Math.Atan2(p.X, -p.Y) * 180 / Math.PI, bearing)) < arc / 2 + 12)
-                        .Select(p => Math.Sqrt(p.X * p.X + p.Y * p.Y))
-                        .Append(0.15)
-                        .Append(region.Days + 2.5)
-                        .OrderBy(r => r)
-                        .ToList();
-                    var gaps = new List<(double A, double B)>();
-                    for (int g = 1; g < reaches.Count; g++)
-                        if (reaches[g] - reaches[g - 1] >= 0.62) gaps.Add((reaches[g - 1] + 0.22, reaches[g] - 0.22));
-                    // The first lies in front of the region's sites; another may lie anywhere open.
-                    var fits = i == 0 ? gaps.Where(g => g.B <= region.Days + 0.3).ToList() : gaps;
-                    if (fits.Count == 0) continue;
-                    var gap = i == 0 ? fits[^1] : rng.Pick(fits);
-                    double depth = Math.Min(gap.B - gap.A, 0.3 + rng.Next() * 0.35);
-                    double outer = gap.B - rng.Next() * (gap.B - gap.A - depth);
-                    var f = new Feature
-                    {
-                        Id = town.Terrain.Count,
-                        Name = Name(rng, kind),
-                        Kind = kind,
-                        RegionId = region.Id,
-                        Tier = TierAt(town, outer),
-                        Bearing = Js.Round(bearing * 10) / 10.0,
-                        Arc = Js.Round(arc * 10) / 10.0,
-                        Inner = Js.Round(Math.Max(0.4, outer - depth) * 100) / 100.0,
-                        Outer = Js.Round(outer * 100) / 100.0,
-                    };
-                    if (f.Outer - f.Inner < 0.2 || spots.Any(p => Contains(f, p.X, p.Y, 0.18)) || town.Terrain.Any(o => Overlaps(o, f))) continue;
-                    town.Terrain.Add(f);
-                    break;
-                }
-            }
-        }
+        Country.Lay(town, rng, spots);
+        town.Shaped = true;
     }
 
     /// <summary>
@@ -201,18 +174,9 @@ public static class Roads
                     {
                         double bearing = (centre - span / 2 + (from + to) / 2 + 720) % 360;
                         var region = town.Regions.Where(g => g.Ring == ring).OrderBy(g => Math.Abs(AngleDiff(g.Bearing, bearing))).ThenBy(g => g.Id).FirstOrDefault();
-                        stretches.Add(new Feature
-                        {
-                            Id = town.Terrain.Count + stretches.Count,
-                            Name = name,
-                            Kind = kind,
-                            RegionId = region?.Id ?? 0,
-                            Tier = TierAt(town, outer),
-                            Bearing = Js.Round(bearing * 10) / 10.0,
-                            Arc = Js.Round((to - from) * 10) / 10.0,
-                            Inner = inner,
-                            Outer = outer,
-                        });
+                        // The wall bends in and out along its line and swells and thins (Country.Wall).
+                        var shape = Country.Wall(town.Content.Roads.Country, rng, bearing, to - from, inner, outer);
+                        stretches.Add(Country.Shaped(town, town.Terrain.Count + stretches.Count, name, kind, region?.Id ?? 0, shape));
                     }
                     from = Math.Max(from, c + half);
                 }
@@ -223,14 +187,14 @@ public static class Roads
         }
     }
 
-    private static string Name(Rng rng, TerrainKindDef kind)
+    internal static string Name(Rng rng, TerrainKindDef kind)
     {
         string pattern = kind.Names.Count > 0 ? rng.Pick(kind.Names) : $"the {{A}} {kind.Name}";
         string word = kind.Words.Count > 0 ? rng.Pick(kind.Words) : "Wild";
         return pattern.Replace("{A}", word, StringComparison.Ordinal);
     }
 
-    private static double AngleDiff(double a, double b)
+    internal static double AngleDiff(double a, double b)
     {
         double d = (a - b) % 360;
         if (d > 180) d -= 360;
@@ -245,6 +209,7 @@ public static class Roads
     /// <summary>Whether a point lies inside the feature, grown by a margin in days.</summary>
     public static bool Contains(Feature f, double x, double y, double margin = 0)
     {
+        if (f.Shape.Count >= 3) return Country.Inside(f, x, y, margin);
         double r = Math.Sqrt(x * x + y * y);
         if (r < 1e-6 || r < f.Inner - margin || r > f.Outer + margin) return false;
         double b = Math.Atan2(x, -y) * 180 / Math.PI;
@@ -477,10 +442,12 @@ public static class Roads
             var stretches = (mind.Ways & Ways.River) != 0 ? [new Waypoint { X = hop.X, Y = hop.Y }] : Passage.Ford(town, cur, [new Waypoint { X = hop.X, Y = hop.Y }], said);
             foreach (var w in stretches)
             {
-                var leg = Stretch(town, cur, (w.X, w.Y), mind, rng, said);
+                // Picked over the land, the road only meets the river at its crossings; the old straight way may need one found.
+                var picked = Country.Stretch(town, cur, (w.X, w.Y), mind, rng, said);
+                var leg = picked ?? Stretch(town, cur, (w.X, w.Y), mind, rng, said);
                 leg[^1] = leg[^1].Delay > 0 ? w.Lost(leg[^1].Delay) : w;
                 // Going round hard country can bend the road back over the river: those legs take a crossing too.
-                path.AddRange((mind.Ways & Ways.River) != 0 ? leg : Passage.Ford(town, cur, leg, said));
+                path.AddRange((mind.Ways & Ways.River) != 0 || picked != null ? leg : Passage.Ford(town, cur, leg, said));
                 cur = (w.X, w.Y);
             }
         }
@@ -641,7 +608,7 @@ public static class Roads
         // Stepping through an old gateway takes no time at all.
         if (to.Way == "portal") return 0;
         double len = Math.Sqrt((to.X - from.X) * (to.X - from.X) + (to.Y - from.Y) * (to.Y - from.Y));
-        return len * rules.MarchHours * (to.Way == "cross" && to.Feature != null ? 1 + (to.Feature.Kind.Slow - 1) * (1 - to.Ease) : to.Way == "sail" && to.Feature != null ? (to.Sail > 0 ? to.Sail : to.Feature.Kind.Slow) : 1) + to.Delay;
+        return len * rules.MarchHours * (to.Way == "cross" && to.Feature != null ? 1 + (to.Feature.Kind.Slow - 1) * (1 - to.Ease) : to.Way == "sail" && to.Feature != null ? (to.Sail > 0 ? to.Sail : to.Feature.Kind.Slow) : 1) * (1 - to.Quick) + to.Delay;
     }
 
     /// <summary>Hours of marching the whole road takes, from <paramref name="from"/>.</summary>
@@ -682,9 +649,66 @@ public static class Roads
         for (int i = route.Count - 1; i >= 0; i--)
         {
             var (x, y) = i > 0 ? (route[i - 1].X, route[i - 1].Y) : end;
-            back.Add(new Waypoint { X = x, Y = y, Way = route[i].Way, Feature = route[i].Feature, Crossing = route[i].Crossing, Sail = route[i].Sail });
+            back.Add(new Waypoint { X = x, Y = y, Way = route[i].Way, Feature = route[i].Feature, Crossing = route[i].Crossing, Ease = route[i].Ease, Quick = route[i].Quick, Sail = route[i].Sail });
         }
         return back;
+    }
+
+    /// <summary>
+    /// A planned road with the weather on it: each stretch slowed by the sky over it when they walk it (snow, mud, storms;
+    /// only the wind aloft), sampled a day's march at a time. The worst of it goes into <paramref name="said"/>.
+    /// </summary>
+    public static List<Waypoint> Weathered(Town town, (double X, double Y) from, List<Waypoint> route, double start, bool aloft, List<string> said)
+    {
+        var content = town.Content;
+        var r = content.Roads;
+        var road = Weather.Rules(town).Road;
+        var outp = new List<Waypoint>(route.Count);
+        double h = 0, lost = 0, worst = 0;
+        string why = "", place = "";
+        WeatherNow seen = default;
+        var cur = from;
+        foreach (var w in route)
+        {
+            double leg = LegHours(r, cur, w);
+            // A ship's pace at sea already reads the weather (Voyages.SailPace).
+            if (leg <= 0 || w.Way == "sail" && w.Sail > 0)
+            {
+                outp.Add(w);
+                cur = (w.X, w.Y);
+                continue;
+            }
+            int n = Math.Max(1, (int)Math.Ceiling(leg / Math.Max(1, r.MarchHours)));
+            double share = 0;
+            for (int i = 0; i < n; i++)
+            {
+                double k = (i + 0.5) / n;
+                var (x, y) = (cur.X + (w.X - cur.X) * k, cur.Y + (w.Y - cur.Y) * k);
+                var (extra, cause, now) = Weather.Slow(town, x, y, (int)Finish(content, start, h + leg * k), aloft);
+                share += extra / n;
+                if (extra * leg / n > worst && cause != "")
+                {
+                    worst = extra * leg / n;
+                    why = cause;
+                    seen = now;
+                    place = w.Feature?.Name ?? (w.Crossing != "" ? w.Crossing : Weather.RegionAt(town, x, y)?.Name ?? "the wilds");
+                }
+            }
+            double add = Js.Round(leg * share * 10) / 10.0;
+            outp.Add(add > 0 ? w.Lost(add) : w);
+            lost += add;
+            h += leg + add;
+            cur = (w.X, w.Y);
+        }
+        if (lost >= 4 && why != "")
+        {
+            string line = road.Line(new Rng(unchecked((int)Voices.Hash("weather-road", town.Seed, (int)start, route.Count))), why);
+            if (line != "")
+                said.Add(Cap(line.Replace("{place}", place, StringComparison.Ordinal)
+                    .Replace("{days}", DaysText(lost / r.MarchHours, r.MarchHours), StringComparison.Ordinal)
+                    .Replace("{kind}", Weather.Kind(town, seen.Kind).Name.ToLowerInvariant(), StringComparison.Ordinal)));
+        }
+        return outp;
     }
 
     // ---- The march schedule ----
@@ -753,7 +777,8 @@ public static class Roads
         var mind = Reaches.Embark(town, party, members, Mind(town, members, Hurry(town, bounty, site), false), site);
         mind = Passage.Board(town, party, mind, party.Start, spot, site.Def.Aloft && party.ShipId == null && Reaches.DockReaches(town, site));
         mind = Voyages.Embark(town, party, members, mind, party.Start, spot);
-        party.Out = Plan(town, party.Start, spot, mind, town.Rng, party.Said);
+        mind = mind with { Murk = Weather.Murk(town, party.Start.X, party.Start.Y, town.Tick) };
+        party.Out = Weathered(town, party.Start, Plan(town, party.Start, spot, mind, town.Rng, party.Said), party.DepartTick, party.Airship, party.Said);
         double outHours = Hours(town, party.Start, party.Out);
         double arrive = Finish(town.Content, party.DepartTick, outHours);
         party.ArriveTick = (int)Math.Ceiling(arrive);
@@ -774,7 +799,7 @@ public static class Roads
     }
 
     /// <summary>The level of the wilds at a distance from town: the band of the ring that far out.</summary>
-    private static int TierAt(Town town, double reach)
+    internal static int TierAt(Town town, double reach)
     {
         var rings = town.Content.World.Rings;
         foreach (var r in rings)
@@ -794,9 +819,13 @@ public static class Roads
         return region?.Theme.Habitats ?? ["grassland", "forest", "hills"];
     }
 
-    /// <summary>Walk a road: hard country crossed, the noon rest, and the nights in camp, in the order they come.</summary>
-    private static void Walk(Town town, Expedition.Venture v, (double X, double Y) from, IReadOnlyList<Waypoint> route, double start)
+    /// <summary>
+    /// Walk a road: hard country crossed, the noon rest, and the nights in camp, in the order they come. Returns where on it
+    /// they were set on.
+    /// </summary>
+    private static List<(double X, double Y)> Walk(Town town, Expedition.Venture v, Party party, (double X, double Y) from, IReadOnlyList<Waypoint> route, double start)
     {
+        var troubled = new List<(double X, double Y)>();
         var content = town.Content;
         var r = content.Roads;
         double total = Hours(town, from, route);
@@ -804,17 +833,21 @@ public static class Roads
         var events = new List<(double At, int Order, Action Act)>();
         double h = 0;
         var cur = from;
+        Waypoint? prev = null;
         foreach (var w in route)
         {
             double leg = LegHours(r, cur, w);
-            if (w.Way == "cross" && w.Feature is { } f)
+            // A road picked over the land crosses a stretch of country in several steps: it is met once, on the first.
+            bool again = prev != null && prev.Way == w.Way && prev.Feature != null && prev.Feature == w.Feature;
+            prev = w;
+            if (!again && w.Way == "cross" && w.Feature is { } f)
                 events.Add((h + leg / 2, 0, () =>
                 {
                     v.Cross(f.Kind, f.Name, f.Tier);
                     if (v.Wiped) return;
                     foreach (var line in Passage.Taming(town, town.Rng, v.Party.Where(c => !c.Down).Select(c => c.Agent).ToList(), f.Kind.Id)) v.Log(line);
                 }));
-            else if (w.Way == "ferry" && w.Feature is { } water)
+            else if (!again && w.Way == "ferry" && w.Feature is { } water)
                 events.Add((h + leg / 2, 0, () => v.Ferry(water.Kind, water.Name)));
             h += leg;
             cur = (w.X, w.Y);
@@ -830,16 +863,26 @@ public static class Roads
                 var spot = Along(town, from, route, at);
                 int tier = TierAt(town, Math.Sqrt(spot.X * spot.X + spot.Y * spot.Y));
                 var habitats = HabitatsAt(town, spot);
-                events.Add((at, 2, () => v.Camp(tier, habitats)));
+                // A night in killing weather, on its own dice; an airship's crew sleeps aboard.
+                var exposed = party.Airship ? null : Weather.Exposure(town, spot.X, spot.Y, dusk);
+                int night = (int)dusk;
+                events.Add((at, 2, () =>
+                {
+                    if (exposed is { } e) v.Exposed(Weather.Rules(town).Road, e.Kind, Weather.Kind(town, e.W.Kind).Name.ToLowerInvariant(), tier, new Rng(unchecked((int)Voices.Hash("weather-camp", town.Seed, night, party.Id))));
+                    if (!v.Wiped) v.Camp(tier, habitats);
+                }));
             }
         }
         foreach (var (at, _, act) in events.OrderBy(e => e.At).ThenBy(e => e.Order))
         {
             if (v.Wiped) break;
             v.Clock = Finish(content, start, at);
+            int fights = v.RoadFights;
             act();
+            if (v.RoadFights > fights) troubled.Add(Along(town, from, route, at));
         }
         if (!v.Wiped) v.Clock = end;
+        return troubled;
     }
 
     /// <summary>
@@ -875,7 +918,8 @@ public static class Roads
         v.Speak("setout");
         v.TellJobs();
         foreach (var line in party.Said) v.Log(line);
-        Walk(town, v, party.Start, party.Out, party.DepartTick);
+        var troubled = Walk(town, v, party, party.Start, party.Out, party.DepartTick);
+        Country.Wear(town, party.Start, party.Out);
 
         var outcome = ExpeditionOutcome.Wiped;
         double leave = v.Clock;
@@ -907,9 +951,13 @@ public static class Roads
             // Home again, choosing the roads afresh: a hurt party takes no chances.
             bool hurt = v.HpFraction() < 0.6 || v.Fallen > 0;
             var said = new List<string>();
-            party.Home = Plan(town, spot, (0, 0), Passage.Aboard(town, party, Mind(town, members, false, hurt)), town.Rng, said);
+            // They keep clear of where they were set on, and go home by whatever way looks best now.
+            var mind = Passage.Aboard(town, party, Mind(town, members, false, hurt)) with { Avoid = troubled };
+            mind = mind with { Murk = Weather.Murk(town, spot.X, spot.Y, party.LeaveTick) };
+            party.Home = Weathered(town, spot, Plan(town, spot, (0, 0), mind, town.Rng, said), party.LeaveTick, party.Airship, said);
             foreach (var line in said) v.Log(line);
-            Walk(town, v, spot, party.Home, party.LeaveTick);
+            Walk(town, v, party, spot, party.Home, party.LeaveTick);
+            Country.Wear(town, spot, party.Home);
             if (v.Wiped) outcome = ExpeditionOutcome.Wiped;
         }
         if (outcome == ExpeditionOutcome.Wiped)

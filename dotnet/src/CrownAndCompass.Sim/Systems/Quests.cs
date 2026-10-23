@@ -651,7 +651,7 @@ public static class Quests
             var bounty = party.BountyId is int bid ? town.Bounties[bid - 1] : null;
             var members = party.Members.Select(town.Agent).ToList();
             // Only a council bounty buys the council the report; anyone else keeps theirs to sell.
-            party.Withheld = !Intel.Commissioned(town, party);
+            party.Withheld = !Intel.Commissioned(town, party) && !Retainers.Held(town, party.Name);
             if (party.RecalledTick != null)
             {
                 Knowledge.ComeHome(town, party, s, bounty, members);
