@@ -53,6 +53,7 @@ public sealed record SkyFleetRules
     public HeightRules Heights { get; init; } = new();
     public ExpeditionRules Expedition { get; init; } = new();
     public DockParts Parts { get; init; } = new();
+    public AirRaidRules AirRaids { get; init; } = new();
     public int RaidEvery { get; init; } = 24;
     public double RaidChance { get; init; } = 0.3;
     public double RaidStrength { get; init; } = 8;
@@ -190,6 +191,10 @@ public sealed class SkyFleetState
     /// <summary>Griffon eggs brought home from the isles, each kept for the hero who found it (<see cref="Systems.Crystal.Hatch"/>).</summary>
     public List<SkyEgg> Eggs { get; } = [];
     public int NextRaidDay { get; set; }
+
+    /// <summary>An attack from the air on its way (<see cref="Systems.AirRaids"/>), and the day the next may be rolled.</summary>
+    public AirRaid? AirRaid { get; set; }
+    public int NextAirRaidDay { get; set; }
     public List<SkyBattle> Battles { get; } = [];
 }
 

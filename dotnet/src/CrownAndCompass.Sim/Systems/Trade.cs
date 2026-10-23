@@ -234,6 +234,7 @@ public static class Trade
         Fleet.Daily(town, autoMayor);
         Sky.Daily(town, autoMayor);
         Reaches.Daily(town);
+        AirRaids.Daily(town);
         Crystal.Daily(town, autoMayor);
     }
 

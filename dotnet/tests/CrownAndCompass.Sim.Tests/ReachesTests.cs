@@ -63,7 +63,9 @@ public class ReachesTests
         Assert.NotNull(Fleet.Build(t, "dreadnought"));
         Assert.True(Reaches.CanReach(t, fliers, cloud));
         Assert.False(Reaches.CanReach(t, fliers, roost));
-        var leviathan = Fleet.Build(t, "leviathan")!;
+        // A third hull needs a free berth: the dock's two are full.
+        Assert.Null(Fleet.Build(t, "leviathan"));
+        var leviathan = Fleet.Build(t, "leviathan", true)!;
         Assert.True(Reaches.CanReach(t, fliers, roost));
         Assert.Equal(leviathan.Id, Reaches.Free(t, roost).First().Id);
         // The least ship that climbs high enough goes, so the leviathan stays free for the roosts.
@@ -95,7 +97,7 @@ public class ReachesTests
         // The town only sees them overdue; a new leviathan goes to look.
         t.Tick += (t.Content.Knowledge.OverdueDays + 1) * SimTime.HoursPerDay;
         Assert.Contains(Alerts.Standing(t), a => a.Key == $"overdue:{company.Id}" && !a.Tip.Contains("airship"));
-        var rescuer = Fleet.Build(t, "leviathan")!;
+        var rescuer = Fleet.Build(t, "leviathan", true)!;
         Assert.Contains(Alerts.Standing(t), a => a.Key == $"overdue:{company.Id}" && a.Tip.Contains("airship"));
         Assert.True(sim.RescueParty(company.Id));
         Assert.Equal(rescuer.Id, company.ShipId);
@@ -253,5 +255,38 @@ public class ReachesTests
         hero.Gold = griffon.BuyAt + 10;
         Passage.Daily(t);
         Assert.Equal("griffon", hero.Hero.Mount);
+    }
+
+    [Fact]
+    public void AttacksFromTheAirComeLateRarelyAndAlwaysWarned()
+    {
+        var (sim, t) = Docked(3);
+        var r = t.Content.Sky.AirRaids;
+        Assert.NotEmpty(AirRaids.Attackers(t));
+        // Never before its day.
+        for (int d = 0; d < 40; d++) AirRaids.Daily(t);
+        Assert.Null(t.SkyFleet.AirRaid);
+        t.Tick = r.From * SimTime.HoursPerDay;
+        int warned = 0;
+        for (int d = 0; d < 1200 && t.SkyFleet.AirRaid == null; d++)
+        {
+            t.Tick += SimTime.HoursPerDay;
+            AirRaids.Daily(t);
+        }
+        var raid = Assert.IsType<AirRaid>(t.SkyFleet.AirRaid);
+        Assert.Contains(Alerts.Standing(t), a => a.Key == "airraid");
+        warned = raid.Day - t.Day;
+        Assert.Equal(r.WarnDays, warned);
+        // On the day it strikes and is gone; a strong guard beats it off and the heroes make a name.
+        double gold = t.Treasury;
+        foreach (var h in t.Heroes) h.Hero!.Level = 20;
+        t.Watch = 200;
+        int renown = t.Heroes.Sum(h => h.Hero!.Renown);
+        t.Tick = raid.Day * SimTime.HoursPerDay;
+        AirRaids.Daily(t);
+        Assert.Null(t.SkyFleet.AirRaid);
+        Assert.Equal(gold, t.Treasury, 6);
+        Assert.True(t.Heroes.Sum(h => h.Hero!.Renown) > renown);
+        Assert.DoesNotContain(Alerts.Standing(t), a => a.Key == "airraid");
     }
 }
