@@ -157,12 +157,16 @@ public partial class Main
         _rail.OffsetTop = TopBar + Gap;
         _rail.OffsetLeft = 0;
 
-        // Build, on its own at the bottom.
+        // Build and Next at the bottom.
         var dock = new PanelContainer();
         dock.AddThemeStyleboxOverride("panel", Castle.Ledge(12, 4));
+        var dockRow = new HBoxContainer();
+        dockRow.AddThemeConstantOverride("separation", 6);
+        dock.AddChild(dockRow);
         _buildToggle = DockButton("Build", "tab-build", "Zone land and place government buildings (B)");
         _buildToggle.Pressed += ToggleBuildBar;
-        dock.AddChild(_buildToggle);
+        dockRow.AddChild(_buildToggle);
+        dockRow.AddChild(BuildNextButton());
         AddChild(dock);
         _dock = dock;
         dock.SetAnchorsAndOffsetsPreset(LayoutPreset.CenterBottom, LayoutPresetMode.Minsize, Gap);

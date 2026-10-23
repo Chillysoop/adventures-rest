@@ -33,7 +33,12 @@ public enum AlertWindow
 }
 
 /// <summary>A group of alerts: one icon on the strip, with a count and a hover list of what is in it.</summary>
-public sealed record AlertKind(string Id, string Title, string Icon, AlertLevel Level, AlertWindow Window);
+/// <summary>
+/// A kind of alert. <paramref name="Act"/> is where in its window it is answered, which the client opens, scrolls to and
+/// lights in one click: a page and the start of a button's words or hover or of a heading ("Hall>Sign"), either alone
+/// ("Taxes", "Growth&gt;"); "" opens only the window.
+/// </summary>
+public sealed record AlertKind(string Id, string Title, string Icon, AlertLevel Level, AlertWindow Window, string Act = "");
 
 /// <summary>
 /// One thing the player should act on. The key stays the same while it is the same problem, so a dismissed
@@ -50,67 +55,67 @@ public sealed record Alert(string Key, AlertKind Kind, string Text, string Tip, 
 /// </summary>
 public static class Alerts
 {
-    public static readonly AlertKind Siege = new("siege", "Under attack", "warband", AlertLevel.Urgent, AlertWindow.Defence);
-    public static readonly AlertKind Sighted = new("sighted", "Raiders sighted", "warband", AlertLevel.Urgent, AlertWindow.Defence);
+    public static readonly AlertKind Siege = new("siege", "Under attack", "warband", AlertLevel.Urgent, AlertWindow.Defence, "Walls");
+    public static readonly AlertKind Sighted = new("sighted", "Raiders sighted", "warband", AlertLevel.Urgent, AlertWindow.Defence, "Town guard");
     public static readonly AlertKind Captives = new("captives", "Townsfolk taken", "heroes", AlertLevel.Urgent, AlertWindow.Bounties);
     public static readonly AlertKind Hunger = new("hunger", "Hunger", "bread", AlertLevel.Urgent, AlertWindow.City);
-    public static readonly AlertKind Coffers = new("coffers", "Empty coffers", "gold", AlertLevel.Urgent, AlertWindow.Council);
-    public static readonly AlertKind Underfunded = new("underfunded", "Services go short", "gold", AlertLevel.Urgent, AlertWindow.Council);
-    public static readonly AlertKind Fear = new("fear", "Fear", "warband", AlertLevel.Urgent, AlertWindow.Campaign);
-    public static readonly AlertKind Unrest = new("unrest", "Unrest", "mandate", AlertLevel.Urgent, AlertWindow.Council);
-    public static readonly AlertKind Hostile = new("hostile", "Hostile factions", "suspicion", AlertLevel.Urgent, AlertWindow.Faith);
-    public static readonly AlertKind Motion = new("motion", "Council motions", "mandate", AlertLevel.Decision, AlertWindow.Council);
-    public static readonly AlertKind Stores = new("stores", "Winter stores", "bread", AlertLevel.Decision, AlertWindow.City);
-    public static readonly AlertKind Fealty = new("fealty", "Demands for fealty", "warband", AlertLevel.Decision, AlertWindow.Campaign);
-    public static readonly AlertKind Doom = new("doom", "End-game crises", "warband", AlertLevel.Urgent, AlertWindow.Campaign);
-    public static readonly AlertKind Gathering = new("horde", "The host gathers", "warband", AlertLevel.Urgent, AlertWindow.Campaign);
-    public static readonly AlertKind DarkQuest = new("darkquest", "The big bad's quest", "warband", AlertLevel.Urgent, AlertWindow.Campaign);
-    public static readonly AlertKind Road = new("road", "A road to victory", "favour", AlertLevel.Decision, AlertWindow.Campaign);
-    public static readonly AlertKind Clash = new("clash", "Enemies clash", "warband", AlertLevel.Decision, AlertWindow.Campaign);
-    public static readonly AlertKind Traitor = new("traitor", "A traitor on the council", "mandate", AlertLevel.Decision, AlertWindow.Council);
-    public static readonly AlertKind Scholars = new("scholars", "Idle scholars", "d20", AlertLevel.Minor, AlertWindow.Library);
-    public static readonly AlertKind Below = new("below", "Stirring below", "warband", AlertLevel.Decision, AlertWindow.City);
-    public static readonly AlertKind Trade = new("trade", "Trade routes", "gold", AlertLevel.Minor, AlertWindow.Diplomacy);
-    public static readonly AlertKind Courted = new("courted", "Powers courted", "rivals", AlertLevel.Decision, AlertWindow.Diplomacy);
-    public static readonly AlertKind Envoy = new("envoy", "Envoys waiting", "standing", AlertLevel.Decision, AlertWindow.Diplomacy);
-    public static readonly AlertKind Neighbour = new("neighbour", "Neighbours in trouble", "favour", AlertLevel.Decision, AlertWindow.Diplomacy);
-    public static readonly AlertKind Shadow = new("shadow", "Villages in shadow", "warband", AlertLevel.Decision, AlertWindow.Diplomacy);
-    public static readonly AlertKind Plot = new("plot", "Villains' plans", "warband", AlertLevel.Decision, AlertWindow.Campaign);
-    public static readonly AlertKind Charter = new("charter", "Charters", "favour", AlertLevel.Decision, AlertWindow.City);
-    public static readonly AlertKind GrandWork = new("grandwork", "Grand works", "gold", AlertLevel.Decision, AlertWindow.City);
+    public static readonly AlertKind Coffers = new("coffers", "Empty coffers", "gold", AlertLevel.Urgent, AlertWindow.Council, "Hall>Taxes");
+    public static readonly AlertKind Underfunded = new("underfunded", "Services go short", "gold", AlertLevel.Urgent, AlertWindow.Council, "Hall>Taxes");
+    public static readonly AlertKind Fear = new("fear", "Fear", "warband", AlertLevel.Urgent, AlertWindow.Campaign, "Foes>Dread");
+    public static readonly AlertKind Unrest = new("unrest", "Unrest", "mandate", AlertLevel.Urgent, AlertWindow.Council, "Hall>Hold a festival");
+    public static readonly AlertKind Hostile = new("hostile", "Hostile factions", "suspicion", AlertLevel.Urgent, AlertWindow.Faith, "Factions");
+    public static readonly AlertKind Motion = new("motion", "Council motions", "mandate", AlertLevel.Decision, AlertWindow.Council, "Sign");
+    public static readonly AlertKind Stores = new("stores", "Winter stores", "bread", AlertLevel.Decision, AlertWindow.City, "Growth>");
+    public static readonly AlertKind Fealty = new("fealty", "Demands for fealty", "warband", AlertLevel.Decision, AlertWindow.Campaign, "Foes>Threats in the land");
+    public static readonly AlertKind Doom = new("doom", "End-game crises", "warband", AlertLevel.Urgent, AlertWindow.Campaign, "Foes>Crises");
+    public static readonly AlertKind Gathering = new("horde", "The host gathers", "warband", AlertLevel.Urgent, AlertWindow.Campaign, "Foes>Threats in the land");
+    public static readonly AlertKind DarkQuest = new("darkquest", "The big bad's quest", "warband", AlertLevel.Urgent, AlertWindow.Campaign, "Foes>Threats in the land");
+    public static readonly AlertKind Road = new("road", "A road to victory", "favour", AlertLevel.Decision, AlertWindow.Campaign, "Victory>Roads to victory");
+    public static readonly AlertKind Clash = new("clash", "Enemies clash", "warband", AlertLevel.Decision, AlertWindow.Campaign, "Foes>Threats in the land");
+    public static readonly AlertKind Traitor = new("traitor", "A traitor on the council", "mandate", AlertLevel.Decision, AlertWindow.Council, "Hall>Before the council");
+    public static readonly AlertKind Scholars = new("scholars", "Idle scholars", "d20", AlertLevel.Minor, AlertWindow.Library, "Study>The scholars");
+    public static readonly AlertKind Below = new("below", "Stirring below", "warband", AlertLevel.Decision, AlertWindow.City, "Homes>Under the streets");
+    public static readonly AlertKind Trade = new("trade", "Trade routes", "gold", AlertLevel.Minor, AlertWindow.Diplomacy, "Trade routes");
+    public static readonly AlertKind Courted = new("courted", "Powers courted", "rivals", AlertLevel.Decision, AlertWindow.Diplomacy, "Peoples of the wilds");
+    public static readonly AlertKind Envoy = new("envoy", "Envoys waiting", "standing", AlertLevel.Decision, AlertWindow.Diplomacy, "Peoples of the wilds");
+    public static readonly AlertKind Neighbour = new("neighbour", "Neighbours in trouble", "favour", AlertLevel.Decision, AlertWindow.Diplomacy, "Peoples of the wilds");
+    public static readonly AlertKind Shadow = new("shadow", "Villages in shadow", "warband", AlertLevel.Decision, AlertWindow.Diplomacy, "Peoples of the wilds");
+    public static readonly AlertKind Plot = new("plot", "Villains' plans", "warband", AlertLevel.Decision, AlertWindow.Campaign, "Foes>Threats in the land");
+    public static readonly AlertKind Charter = new("charter", "Charters", "favour", AlertLevel.Decision, AlertWindow.City, "Claim");
+    public static readonly AlertKind GrandWork = new("grandwork", "Grand works", "gold", AlertLevel.Decision, AlertWindow.City, "Growth>Grand works");
     public static readonly AlertKind Crisis = new("crisis", "A crisis", "d20", AlertLevel.Urgent, AlertWindow.Story);
     public static readonly AlertKind Story = new("story", "Events", "d20", AlertLevel.Decision, AlertWindow.Story);
-    public static readonly AlertKind Explorers = new("explorers", "Explorers' reports", "compass", AlertLevel.Decision, AlertWindow.Bounties);
+    public static readonly AlertKind Explorers = new("explorers", "Explorers' reports", "compass", AlertLevel.Decision, AlertWindow.Bounties, "Exploring");
     public static readonly AlertKind Fallen = new("fallen", "The mayor is dead", "face-death-skull", AlertLevel.Urgent, AlertWindow.Mayor);
     public static readonly AlertKind LevelUp = new("levelup", "Level up", "d20", AlertLevel.Decision, AlertWindow.Mayor);
-    public static readonly AlertKind Bastion = new("bastion", "Bastions", "heroes", AlertLevel.Decision, AlertWindow.Companies);
+    public static readonly AlertKind Bastion = new("bastion", "Bastions", "heroes", AlertLevel.Decision, AlertWindow.Companies, "Bastions");
     public static readonly AlertKind Institution = new("institution", "Institutions", "favour", AlertLevel.Decision, AlertWindow.Institutions);
     public static readonly AlertKind Heroes = new("heroes", "Restless heroes", "heroes", AlertLevel.Decision, AlertWindow.None);
     public static readonly AlertKind Honours = new("honours", "Honours to give", "favour", AlertLevel.Decision, AlertWindow.None);
-    public static readonly AlertKind Housing = new("housing", "Housing", "homeless", AlertLevel.Minor, AlertWindow.City);
+    public static readonly AlertKind Housing = new("housing", "Housing", "homeless", AlertLevel.Minor, AlertWindow.City, "Homes>Houses");
     public static readonly AlertKind Crowded = new("crowded", "Full to the doors", "population", AlertLevel.Minor, AlertWindow.None);
-    public static readonly AlertKind Work = new("work", "Idle hands", "population", AlertLevel.Decision, AlertWindow.City);
-    public static readonly AlertKind Settlers = new("settlers", "No settlers", "population", AlertLevel.Decision, AlertWindow.City);
-    public static readonly AlertKind Loot = new("loot", "Loot for sale", "gold", AlertLevel.Decision, AlertWindow.Armory);
-    public static readonly AlertKind Gifts = new("gifts", "Arms to give", "heroes", AlertLevel.Minor, AlertWindow.Armory);
+    public static readonly AlertKind Work = new("work", "Idle hands", "population", AlertLevel.Decision, AlertWindow.City, "Growth>Why settlers");
+    public static readonly AlertKind Settlers = new("settlers", "No settlers", "population", AlertLevel.Decision, AlertWindow.City, "Growth>Why settlers");
+    public static readonly AlertKind Loot = new("loot", "Loot for sale", "gold", AlertLevel.Decision, AlertWindow.Armory, "Offered to the town");
+    public static readonly AlertKind Gifts = new("gifts", "Arms to give", "heroes", AlertLevel.Minor, AlertWindow.Armory, "In the armory");
     public static readonly AlertKind Outpost = new("outpost", "Land to hold", "warband", AlertLevel.Minor, AlertWindow.None);
     public static readonly AlertKind Tower = new("tower", "Tower tested", "warband", AlertLevel.Urgent, AlertWindow.None);
     public static readonly AlertKind Patrol = new("patrol", "Keep it clear", "order-guard", AlertLevel.Minor, AlertWindow.None);
-    public static readonly AlertKind Conquered = new("conquered", "A town to settle", "gold", AlertLevel.Decision, AlertWindow.Army);
-    public static readonly AlertKind WarAsk = new("warask", "An ally asks for war", "warband", AlertLevel.Minor, AlertWindow.Army);
-    public static readonly AlertKind Holdout = new("holdout", "An ally holds out", "gold", AlertLevel.Decision, AlertWindow.Army);
+    public static readonly AlertKind Conquered = new("conquered", "A town to settle", "gold", AlertLevel.Decision, AlertWindow.Army, "Allies");
+    public static readonly AlertKind WarAsk = new("warask", "An ally asks for war", "warband", AlertLevel.Minor, AlertWindow.Army, "Allies");
+    public static readonly AlertKind Holdout = new("holdout", "An ally holds out", "gold", AlertLevel.Decision, AlertWindow.Army, "Allies");
     public static readonly AlertKind Stalled = new("stalled", "Building stalled", "gold", AlertLevel.Decision, AlertWindow.None);
-    public static readonly AlertKind Bridge = new("bridge", "Bridge cut", "gold", AlertLevel.Decision, AlertWindow.Campaign);
-    public static readonly AlertKind Ruin = new("ruin", "Ruin to restore", "gold", AlertLevel.Decision, AlertWindow.Campaign);
+    public static readonly AlertKind Bridge = new("bridge", "Bridge cut", "gold", AlertLevel.Decision, AlertWindow.Campaign, "Roads>Roads and ruins");
+    public static readonly AlertKind Ruin = new("ruin", "Ruin to restore", "gold", AlertLevel.Decision, AlertWindow.Campaign, "Roads>Roads and ruins");
     public static readonly AlertKind Lurker = new("lurker", "A stranger watching", "suspicion", AlertLevel.Urgent, AlertWindow.None);
     public static readonly AlertKind Tourney = new("tourney", "The tourney", "favour", AlertLevel.Decision, AlertWindow.Tourney);
-    public static readonly AlertKind Strike = new("strike", "A guild on strike", "population", AlertLevel.Urgent, AlertWindow.Council);
-    public static readonly AlertKind Guild = new("guild", "Guild demands", "favour", AlertLevel.Decision, AlertWindow.Council);
-    public static readonly AlertKind Balance = new("union", "Guilds and mages", "favour", AlertLevel.Decision, AlertWindow.Council);
+    public static readonly AlertKind Strike = new("strike", "A guild on strike", "population", AlertLevel.Urgent, AlertWindow.Council, "Guilds>Guilds");
+    public static readonly AlertKind Guild = new("guild", "Guild demands", "favour", AlertLevel.Decision, AlertWindow.Council, "Guilds>Guilds");
+    public static readonly AlertKind Balance = new("union", "Guilds and mages", "favour", AlertLevel.Decision, AlertWindow.Council, "Guilds>Guilds");
     public static readonly AlertKind Wager = new("wager", "Tourney bets", "gold", AlertLevel.Minor, AlertWindow.Tourney);
-    public static readonly AlertKind Sick = new("sick", "Sickness", "sickness", AlertLevel.Urgent, AlertWindow.City);
-    public static readonly AlertKind Spent = new("spent", "Traps spent", "trap-pitch", AlertLevel.Decision, AlertWindow.Defence);
-    public static readonly AlertKind Dark = new("dark", "The dark company rides", "dark-company", AlertLevel.Decision, AlertWindow.Campaign);
+    public static readonly AlertKind Sick = new("sick", "Sickness", "sickness", AlertLevel.Urgent, AlertWindow.City, "Growth>Sickness");
+    public static readonly AlertKind Spent = new("spent", "Traps spent", "trap-pitch", AlertLevel.Decision, AlertWindow.Defence, "Traps");
+    public static readonly AlertKind Dark = new("dark", "The dark company rides", "dark-company", AlertLevel.Decision, AlertWindow.Campaign, "Foes>");
     public static readonly AlertKind Scry = new("scry", "Scry the fight", "compass", AlertLevel.Decision, AlertWindow.None);
     public static readonly AlertKind Notable = new("notable", "Notables", "np-shaking-hands", AlertLevel.Decision, AlertWindow.Notables);
 

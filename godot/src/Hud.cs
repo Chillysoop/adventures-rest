@@ -438,8 +438,8 @@ public partial class Main
                     c.QueueFree();
                 }
                 var next = Goals.Next(t);
-                foreach (var g in open) _goalsRows.AddChild(GoalRow(t, g, g == next));
-                foreach (var a in aims) _goalsRows.AddChild(Row(a.Icon, a.Text, a.Share, a.Figure == "" ? "" : Ui.C(Ui.Ink2, Ui.Esc(a.Figure)), a.Point != ""));
+                foreach (var g in open) _goalsRows.AddChild(Clickable(GoalRow(t, g, g == next), g.Goes, $"goal:{g.Id}"));
+                foreach (var a in aims) _goalsRows.AddChild(Clickable(Row(a.Icon, a.Text, a.Share, a.Figure == "" ? "" : Ui.C(Ui.Ink2, Ui.Esc(a.Figure)), a.Point != ""), a.Goes, "aim"));
                 _aheadShown = aims.Count;
                 bool charter = open.Count > 0 || _goalsFlourish.Count > 0;
                 _goalsTitle.Text = charter ? "CHARTER GOALS" : aheadTitle.ToUpperInvariant();
@@ -491,6 +491,24 @@ public partial class Main
             info.MouseFilter = MouseFilterEnum.Ignore;
             row.AddChild(info);
         }
+        return row;
+    }
+
+    /// <summary>A line of the card that takes the player where to act on it when clicked (<see cref="GoTo"/>), lit while hovered.</summary>
+    private Control Clickable(Control row, string goes, string key)
+    {
+        if (goes == "") return row;
+        row.MouseFilter = MouseFilterEnum.Stop;
+        row.MouseDefaultCursorShape = CursorShape.PointingHand;
+        row.TooltipText = "Click to go there";
+        row.MouseEntered += () => row.Modulate = new Color(1.25f, 1.18f, 1);
+        row.MouseExited += () => row.Modulate = Colors.White;
+        row.GuiInput += e =>
+        {
+            if (e is not InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left }) return;
+            row.AcceptEvent();
+            GoTo(goes, key);
+        };
         return row;
     }
 

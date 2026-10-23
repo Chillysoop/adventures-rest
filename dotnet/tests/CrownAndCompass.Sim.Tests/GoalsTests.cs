@@ -28,6 +28,8 @@ public class GoalsTests
         foreach (var g in rules.Goals)
         {
             Assert.True(PointKnown(t, g.Point, tabs), $"goal {g.Id} points at \"{g.Point}\", which is not on screen");
+            // A click on any goal takes the player where to act on it.
+            Assert.True(g.Goes != "" && PointKnown(t, g.Goes, tabs), $"goal {g.Id} opens \"{g.Goes}\" when clicked, which is not on screen");
             Assert.True(g.When == "" || Goals.Measure(t, g.When) != null, $"goal {g.Id} waits on \"{g.When}\", which means nothing");
             Assert.True(g.Icon == "" || File.Exists(Path.Combine(icons, g.Icon + ".svg")), $"goal {g.Id} shows icon \"{g.Icon}\", which is not in godot/assets/icons");
         }
@@ -40,11 +42,46 @@ public class GoalsTests
     private static string Repo([System.Runtime.CompilerServices.CallerFilePath] string here = "") =>
         Path.GetFullPath(Path.Combine(Path.GetDirectoryName(here)!, "..", "..", ".."));
 
-    private static bool PointKnown(Town t, string point, List<string> tabs) =>
-        point == "" || Tutorial.Anchors.Contains(point)
-        || (point.StartsWith("tab:", StringComparison.Ordinal) && tabs.Contains(point[4..]))
+    internal static bool PointKnown(Town t, string point, List<string> tabs) =>
+        point == "" || Tutorial.Anchors.Contains(point) || point is "brush:explore" or "brush:patrol"
+        || (point.StartsWith("tab:", StringComparison.Ordinal) && tabs.Contains(point[4..].Split('>')[0].Split(':')[0]) && PageKnown(point[4..].Split('>')[0]))
         || (point.StartsWith("zone:", StringComparison.Ordinal) && Enum.TryParse<Zone>(point[5..], out var z) && z != Zone.None)
         || (point.StartsWith("place:", StringComparison.Ordinal) && t.Content.Buildings.Any(b => b.Id == point[6..] && b.Civic));
+
+    /// <summary>A window page named after the colon ("City:Growth") is one its pane draws (<c>p.Page("Growth", ...)</c> in godot/src).</summary>
+    private static bool PageKnown(string spec)
+    {
+        int colon = spec.IndexOf(':');
+        if (colon < 0) return true;
+        string page = $"p.Page(\"{spec[(colon + 1)..]}\"";
+        return Directory.EnumerateFiles(Path.Combine(Repo(), "godot", "src"), "*.cs", SearchOption.AllDirectories).Any(f => File.ReadAllText(f).Contains(page));
+    }
+
+    [Fact]
+    public void EveryLineOfTheWhatNextCardOpensSomewhere()
+    {
+        var sim = Player();
+        var t = sim.Town;
+        var tabs = TutorialTests.ClientTabs();
+        // The charter list done: the card turns to the next charter's terms.
+        t.Goals.Closed = true;
+        var (_, aims) = Ahead.Now(t);
+        Assert.NotEmpty(aims);
+        Assert.All(aims, a => Assert.True(a.Goes != "" && PointKnown(t, a.Goes, tabs), $"\"{a.Text}\" opens \"{a.Goes}\" when clicked, which is not on screen"));
+    }
+
+    [Fact]
+    public void EveryAlertActNamesAPageAndAControlTheClientDraws()
+    {
+        var src = string.Concat(Directory.EnumerateFiles(Path.Combine(Repo(), "godot", "src"), "*.cs", SearchOption.AllDirectories).Select(File.ReadAllText));
+        foreach (var k in Alerts.Kinds.Where(k => k.Act != ""))
+        {
+            int gt = k.Act.IndexOf('>');
+            string page = gt < 0 ? "" : k.Act[..gt], item = gt < 0 ? k.Act : k.Act[(gt + 1)..];
+            Assert.True(page == "" || src.Contains($"p.Page(\"{page}\""), $"alert {k.Id} opens page \"{page}\", which no window draws");
+            Assert.True(item == "" || src.Contains($"\"{item}"), $"alert {k.Id} lights \"{item}\", which no window draws");
+        }
+    }
 
     [Fact]
     public void AGoalIsMetOncePaysOnceAndShowsTheNext()

@@ -134,6 +134,10 @@ public partial class Main : Control
             SetTab(tab);
             if (_opts.Page != null) _panes[tab].Selected = _opts.Page;
         }
+        if (_opts.Goal is int goal && _sim.Town.Content.Goals.Goals.ElementAtOrDefault(goal - 1) is { } gd)
+            Callable.From(() => GoTo(gd.Goes, $"goal:{gd.Id}")).CallDeferred();
+        // After the alerts have been read once.
+        if (_opts.Next > 0) GetTree().CreateTimer(0.5).Timeout += () => { for (int i = 0; i < _opts.Next; i++) PressNext(); };
         foreach (var f in _opts.Fold) Pane.Folded.Add(f);
         if (_opts.Tray is string tray && Trays.FirstOrDefault(d => d.Id.Equals(tray, StringComparison.OrdinalIgnoreCase)) is { } td)
             Callable.From(() => OpenTray(td.Id)).CallDeferred();
@@ -699,6 +703,7 @@ public partial class Main : Control
         else if (Keys.Is(k, "slower")) PlayerSpeed(Math.Max(1, _speed - 1));
         else if (Keys.Is(k, "home")) _map.Recenter();
         else if (Keys.Is(k, "build")) ToggleBuildBar();
+        else if (Keys.Is(k, "next")) PressNext();
         else if (Keys.Is(k, "flag")) ToggleFlag();
         else if (k.Keycode == Key.Escape && _map.Flagging) ToggleFlag();
         else if (k.Keycode == Key.Escape && _map.Brush != null) ToggleBrush(_map.Brush);
@@ -819,7 +824,11 @@ public partial class Main : Control
         SyncGuide();
         SyncGoals();
         SyncGoalPointer(_clockReal >= _nextGoalPoint);
-        if (_clockReal >= _nextGoalPoint) _nextGoalPoint = _clockReal + 0.25;
+        if (_clockReal >= _nextGoalPoint)
+        {
+            _nextGoalPoint = _clockReal + 0.25;
+            SyncNextButton();
+        }
         // A first meeting's picture comes before any scene or report it brought.
         SyncIntros();
         SyncStories(delta);
