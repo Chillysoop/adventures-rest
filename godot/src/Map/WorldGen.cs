@@ -60,8 +60,8 @@ public sealed class WorldGen
     /// <summary>Its fords and bridges on the map, and which way the water runs there.</summary>
     public readonly List<(Crossing Crossing, Vector2 At, Vector2 Flow)> Crossings = [];
 
-    /// <summary>The sim's hard country (<see cref="Roads"/>), raised out of the ground here so the roads bend round what you see.</summary>
-    private readonly Feature[] _features;
+    /// <summary>The sim's hard country on its land grid (<see cref="Country"/>), raised out of the ground here so the roads bend round what you see.</summary>
+    private readonly Country.Land _land;
     private readonly Town _town;
 
     public Town Town => _town;
@@ -73,7 +73,7 @@ public sealed class WorldGen
         _n2 = new Noise(seed * 57 + 11);
         _n3 = new Noise(seed * 91 + 23);
         _town = town;
-        _features = town.Terrain.ToArray();
+        _land = Country.LandOf(town);
         River = Passage.River(town).Select(Geo.FromDays).ToArray();
         TraceRiver();
         foreach (var c in Passage.Crossings(town))
@@ -137,8 +137,8 @@ public sealed class WorldGen
             float wet = _n2.Fbm(s.X / 260, s.Y / 260, 3);
             float high = _n3.Fbm(s.X / 320 + 40, s.Y / 320, 3);
             float pick = Geo.Hash(Seed * 31 + c);
-            Biomes[c] = high > 0.42f ? Biome.Crags
-                : wet > 0.35f && high < 0 ? Biome.Marsh
+            // Open country: meadow, heath, rolling hills and light woods. Crags, marsh and deep forest are the sim's hard country.
+            Biomes[c] = high > 0.15f ? Biome.Hills
                 : wet > 0.1f ? (pick < 0.75f ? Biome.Woodland : Biome.Meadow)
                 : high > 0.15f ? Biome.Hills
                 : wet < -0.35f ? Biome.Heath
@@ -185,34 +185,33 @@ public sealed class WorldGen
     /// The feature a point lies in and how deep inside it (0 at a ragged edge to 1 a few tiles in), or
     /// null. Edges wander with noise so a ridge or a mire never reads as a ruled shape.
     /// </summary>
-    public (Feature F, float K)? FeatureAt(Vector2 p)
+    public (Feature F, float K)? FeatureAt(Vector2 p) => FeatureAt(p, out _);
+
+    /// <summary>As <see cref="FeatureAt(Vector2)"/>, with how far toward its deepest line the point lies (0 at the edge, 1 on the line).</summary>
+    public (Feature F, float K)? FeatureAt(Vector2 p, out float core)
     {
-        if (_features.Length == 0) return null;
+        core = 0;
         var d = p - Geo.Center;
         float rw = d.Length();
         if (rw < Geo.Clearing) return null;
-        double r = DaysOut(rw);
-        double bearing = Mathf.RadToDeg(Mathf.Atan2(d.X, -d.Y));
-        foreach (var f in _features)
-        {
-            if (r < f.Inner - 0.2 || r > f.Outer + 0.2) continue;
-            double diff = ((bearing - f.Bearing) % 360 + 540) % 360 - 180;
-            double side = (f.Arc / 2 - Math.Abs(diff)) * Math.PI / 180 * r;
-            double inside = Math.Min(Math.Min(r - f.Inner, f.Outer - r), side) * Geo.TilesPerDay;
-            inside += _n2.Fbm(p.X / 22 + f.Id * 7, p.Y / 22, 3) * 4;
-            if (inside > -3) return (f, Mathf.SmoothStep(-3, 12, (float)inside));
-        }
-        return null;
+        var (x, y) = Geo.ToDays(p);
+        var (f, depth, deepest) = _land.Lie(x, y);
+        if (f == null) return null;
+        double inside = depth * Geo.TilesPerDay + _n2.Fbm(p.X / 22 + f.Id * 7, p.Y / 22, 3) * 4;
+        if (inside <= -3) return null;
+        core = deepest > 0 ? Mathf.Clamp((float)(depth / deepest), 0, 1) : 0;
+        return (f, Mathf.SmoothStep(-3, 12, (float)inside));
     }
 
     /// <summary>How the hard country reshapes the ground at a point.</summary>
     private float FeatureHeight(Vector2 p, float h)
     {
-        if (FeatureAt(p) is not var (f, k) || k <= 0) return h;
+        if (FeatureAt(p, out float spine) is not var (f, k) || k <= 0) return h;
         switch (f.Kind.Id)
         {
             case "ridge":
-                return h + Mathf.SmoothStep(0, 1, k) * (12 + 34 * Mathf.Pow(_n2.Ridge(p.X / 45 + f.Id, p.Y / 45, 4), 1.3f));
+                // Highest along its spine, falling to its edges.
+                return h + Mathf.SmoothStep(0, 1, k) * (6 + 14 * spine + 26 * Mathf.Pow(_n2.Ridge(p.X / 45 + f.Id, p.Y / 45, 4), 1.3f));
             case "icefield":
                 return h + k * (4 + 6 * _n1.Fbm(p.X / 40, p.Y / 40, 3));
             case "mire":
@@ -220,10 +219,7 @@ public sealed class WorldGen
             case "gorge":
             {
                 // A ravine down the middle of the band, water at the bottom.
-                var d = p - Geo.Center;
-                double r = DaysOut(d.Length());
-                double mid = (f.Inner + f.Outer) / 2, half = (f.Outer - f.Inner) / 2;
-                float core = 1 - Mathf.SmoothStep(0.15f, 0.55f, (float)(Math.Abs(r - mid) / Math.Max(0.05, half)));
+                float core = Mathf.SmoothStep(0.45f, 0.85f, spine);
                 return Mathf.Lerp(h, -1.4f, core * k) + k * (1 - core) * 3;
             }
             case "sea":
@@ -234,8 +230,8 @@ public sealed class WorldGen
                 return Mathf.Lerp(h, -1.6f + _n1.Fbm(p.X / 18, p.Y / 18, 2) * 0.4f, Mathf.SmoothStep(0, 0.6f, k));
             case "peaks":
             case "range":
-                // Sheer summits: cliffs no road climbs.
-                return h + Mathf.SmoothStep(0, 1, k) * (26 + 48 * Mathf.Pow(_n2.Ridge(p.X / 30 + f.Id, p.Y / 30, 4), 1.1f));
+                // Sheer summits: cliffs no road climbs, highest along the chain's spine.
+                return h + Mathf.SmoothStep(0, 1, k) * (20 + 18 * spine + 40 * Mathf.Pow(_n2.Ridge(p.X / 30 + f.Id, p.Y / 30, 4), 1.1f));
             case "barrows":
                 return h + k * 1.2f * Mathf.Max(0, _n1.Get(p.X / 6, p.Y / 6));
             case "beastland":
@@ -322,9 +318,10 @@ public sealed class WorldGen
 
     private float RawHeight(float x, float y)
     {
-        float h = 3.2f + _n1.Fbm(x / 170, y / 170, 5) * 5.5f;
-        float chain = Mathf.SmoothStep(0.25f, 0.65f, _n3.Fbm(x / 320 + 40, y / 320, 3));
-        if (chain > 0) h += chain * Mathf.Pow(_n2.Ridge(x / 150, y / 150, 4), 2) * 52;
+        // Rolling open country: every hill a party has to go round is the sim's (Country), so nothing else stands high.
+        float h = 3.2f + _n1.Fbm(x / 170, y / 170, 5) * 4.5f;
+        float swell = Mathf.SmoothStep(0.25f, 0.65f, _n3.Fbm(x / 320 + 40, y / 320, 3));
+        if (swell > 0) h += swell * Mathf.Pow(_n2.Ridge(x / 150, y / 150, 4), 2) * 5;
         h += _n2.Get(x / 23, y / 23) * 0.8f;
         // No pond or lake the roads don't know of: open water is the sim's (its lakes and the river) or the sea at the world's end.
         h = Mathf.Max(h, 0.6f);
@@ -476,7 +473,8 @@ public sealed class WorldGen
                 var biome = Biomes[TerritoryAt(p)];
                 float bias = biome switch
                 {
-                    Biome.Woodland => 0.42f,
+                    // Open woodland: copses and spinneys a party walks through; the deep woods are the sim's tangles.
+                    Biome.Woodland => 0.12f,
                     Biome.Marsh => 0.05f,
                     Biome.Crags => 0.0f,
                     Biome.Hills => -0.12f,

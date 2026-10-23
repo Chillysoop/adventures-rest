@@ -1528,9 +1528,13 @@ public static partial class Expedition
         }
 
         /// <summary>A fight with whatever roams this country, sized for its level.</summary>
+        /// <summary>Fights with what lives in the wilds so far (<see cref="Wilds"/>): where on the road they came, the party remembers.</summary>
+        public int RoadFights { get; private set; }
+
         public void Wilds(int tier, IReadOnlyList<string> habitats, string text, bool surprised)
         {
             tier = Math.Max(1, tier);
+            RoadFights++;
             var probe = new SiteDef { Id = "wilds", Name = "the wilds", Tier = tier, Boss = new EncounterDef { Kind = "combat" }, Habitats = habitats };
             double[] cr = [Math.Max(0.125, tier / 8.0), Math.Max(0.5, tier / 2.0)];
             // Only what would attack travellers: nothing of good heart.

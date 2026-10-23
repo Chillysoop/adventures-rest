@@ -289,6 +289,7 @@ public static class Wayfaring
                 Arc = lake.Arc,
                 Inner = lake.Inner,
                 Outer = lake.Outer,
+                Shape = lake.Shape,
             };
         }
         PlaceGateways(town, rng);

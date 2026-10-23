@@ -1226,6 +1226,9 @@ public sealed record TerrainKindDef
 
     /// <summary>How much wider than other hard country it spreads across its region: wide country is costly to go round.</summary>
     public double Wide { get; init; } = 1;
+
+    /// <summary>Its outline (<see cref="Systems.Country"/>): "chain" for a long wandering band (a ridge, a gorge), "blob" for a patch (a mire, a wood).</summary>
+    public string Shape { get; init; } = "blob";
 }
 
 public sealed record TerrainHazardDef
@@ -1384,6 +1387,9 @@ public sealed record RoadRules
 
     /// <summary>Mountain walls between the rings, broken only at their passes (<see cref="Systems.Roads.Ranges"/>).</summary>
     public RangeRules Ranges { get; init; } = new();
+
+    /// <summary>The lie of the land: hard country's outlines, the way parties pick over it, and the trails they wear (<see cref="Systems.Country"/>).</summary>
+    public Systems.CountryRules Country { get; init; } = new();
 }
 
 /// <summary>
