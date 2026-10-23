@@ -168,10 +168,9 @@ public class ArmyTests
         var t = sim.Town;
         var r = sim.RaiseRegiment("swordsmen", 12)!;
         sim.RunDays(3);
-        // Companies may all be out on a trip: wait for a hero to come home.
-        bool Free(Agent h) => !h.IsAway && Army.CommandBlocked(t, r, h) == null;
-        for (int d = 0; d < 40 && !t.Heroes.Any(Free); d++) sim.RunDays(1);
-        var hero = t.Heroes.Where(Free).OrderByDescending(h => h.Hero!.Level).First();
+        // A hero at home to lead it: the whole roster may be out on one company.
+        for (int d = 0; d < 60 && !t.Heroes.Any(h => !h.IsAway && Army.CommandBlocked(t, r, h) == null); d++) sim.RunDays(1);
+        var hero = t.Heroes.Where(h => !h.IsAway && Army.CommandBlocked(t, r, h) == null).OrderByDescending(h => h.Hero!.Level).First();
         double plain = Army.Strength(t, r);
         Assert.True(sim.CommandRegiment(r.Id, hero.Id));
         Assert.Equal(HeroDuty.Command, hero.Hero!.Duty);

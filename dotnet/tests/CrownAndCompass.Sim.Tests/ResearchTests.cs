@@ -41,7 +41,7 @@ public class ResearchTests
                     case "met": Assert.Contains(c.World.Peoples, x => x.Id == p[1]); break;
                     case "relic": Assert.Contains(c.Lofted.Relics, x => x.Id == p[1]); break;
                     case "relics": Assert.InRange(int.Parse(p[1]), 1, c.Lofted.Relics.Count); break;
-                    case "books" or "wizard" or "circle" or "routes" or "delves" or "cleared" or "heroes" or "hero": break;
+                    case "books" or "wizard" or "circle" or "routes" or "delves" or "cleared" or "heroes" or "hero" or "seam": break;
                     default: Assert.Fail($"{d.Id}: unknown token {token}"); break;
                 }
             }

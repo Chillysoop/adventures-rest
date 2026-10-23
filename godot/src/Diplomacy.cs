@@ -182,6 +182,17 @@ public partial class Main
         p.Heading("Sky fleet", "ui-airship");
         var free = Sky.Marines(t).OrderByDescending(h => h.Hero!.Level).ThenBy(h => h.Id).ToList();
         p.Buttons(($"{(_skyMarines ? "✓" : "○")} Marines aboard ({free.Count} free)", true, _skyMarines, () => { _skyMarines = !_skyMarines; _dirty = true; }));
+        // The fuel: the store, the traders' crystal this month, and the seams the companies found.
+        double stock = Js.Round(Crystal.Stock(t) * 10) / 10;
+        int sale = (int)Math.Min(6, Math.Floor(Crystal.ForSale(t)));
+        string mines = string.Join(" ", Crystal.Seams(t).Where(x => x.Mined).Select(x => Ui.Chip("ui-lift", $"+{Js.Str(Js.Round(Crystal.Yield(t, x) * 10) / 10)}/day", x.Cleared ? Ui.Good : Ui.Bad, $"Crystal mine on {x.Def.Name}{(x.Cleared ? "" : ": retaken, yields nothing until cleared")}")));
+        p.Row($"[font_size=12]{Ui.Chips(Ui.Chip("ui-lift", Js.Str(stock), stock < 4 ? Ui.Bad : null, "Lift-crystal in store: a charge burns a day of it for each day of lift" + (Research.Crystal(t) > 0 ? $", {Js.Str(Js.Round(Research.Crystal(t) * 100))}% less with what the town knows" : "")), mines)}[/font_size]",
+            ($"Buy {sale} · {Js.Str(Crystal.Price(t, sale))}g", sale > 0 && Crystal.BuyRefused(t, sale) == null, false, () => Act(() => _sim.BuyCrystal(sale))));
+        foreach (var seam in Crystal.Seams(t).Where(x => !x.Mined))
+        {
+            string sid = seam.Def.Id;
+            p.Buttons(($"Mine {seam.Def.Name} · {Js.Str(r.Crystal.MineCost)}g", Crystal.MineRefused(t, seam) == null, true, () => Act(() => _sim.MineSeam(sid))));
+        }
         foreach (var s in Sky.Ships(t))
         {
             var d = Fleet.Def(t, s);
@@ -196,7 +207,7 @@ public partial class Main
                 acts.Add(($"Salvage {Js.Str(r.Salvage)}g", s.SalvageDay == null && t.Treasury >= r.Salvage, true, () => Act(() => _sim.SalvageShip(id))));
             else if (Sky.Moored(t, s))
             {
-                if (s.Lift < d.Lift) acts.Add(($"Charge {Js.Str(Sky.ChargeCost(t, s))}g", t.Treasury >= Sky.ChargeCost(t, s), false, () => Act(() => _sim.ChargeShip(id))));
+                if (s.Lift < d.Lift) acts.Add(($"Charge {Js.Str(Math.Floor(Sky.ChargeLift(t, s)))} · {Js.Str(Sky.ChargeCost(t, s))}g", Sky.ChargeLift(t, s) >= 1 && t.Treasury >= Sky.ChargeCost(t, s), false, () => Act(() => _sim.ChargeShip(id))));
                 if (s.Hull < d.Hull) acts.Add(($"Patch {Js.Str(Fleet.RepairCost(t, s))}g", t.Treasury >= Fleet.RepairCost(t, s), false, () => Act(() => _sim.RepairShip(id))));
             }
             p.Row($"[font_size=13][b]{Ui.Esc(Ui.Cap(s.Name))}[/b] · {Ui.Esc(d.Name)}[/font_size]\n" +
@@ -243,7 +254,7 @@ public partial class Main
     /// <summary>The harbour's ships: each one's state, its best run, and new hulls to lay down (<see cref="Fleet"/>).</summary>
     private void FleetRuns(Pane p, Town t)
     {
-        if (!Fleet.Coastal(t) || Fleet.Harbour(t) == null) return;
+        if (Fleet.Harbour(t) == null) return;
         p.Heading("Fleet");
         var ports = Fleet.Ports(t).ToList();
         var free = Voyages.Marines(t).OrderByDescending(h => h.Hero!.Level).ThenBy(h => h.Id).ToList();
@@ -257,7 +268,7 @@ public partial class Main
                 ? $"at sea to {Ui.Esc(t.Settlements[v.SettlementId].Name)} · back in {Ui.Days(Math.Max(0, v.BackDay - t.Day))}"
                 : s.Flight is { } f ? $"{Ui.Img(f.Job == "strike" ? "ui-ballista" : f.Job == "scout" ? "ui-eye" : "defence", 12)} {(f.Job == "strike" ? "bombard" : f.Job)} · back in {Ui.Days(Math.Max(0, f.BackDay - t.Day))}"
                 : carrying != null ? $"{Ui.Img("heroes", 12)} carrying {Ui.Esc(carrying.Name)}"
-                : $"moored · fishing {Ui.Img("food", 13)}";
+                : $"{(Fleet.AtAnchor(t, s) ? "at anchor" : "moored")} · fishing {Ui.Img("food", 13)}";
             string guard = s.Guard == "watch" ? "Watch" : s.Guard == "hired" ? "Hired" : "No guard";
             string next = s.Guard == "" ? "watch" : s.Guard == "watch" ? "hired" : "";
             p.Row($"[font_size=13][b]{Ui.Esc(s.Name)}[/b] · {Ui.Esc(d.Name)}[/font_size]\n" +
@@ -340,9 +351,10 @@ public partial class Main
                 p.Row(head);
                 continue;
             }
+            if (Reaches.Unreached(t, s) is { } high) head += $"\n[font_size=12]{Ui.Chip("inst-sky-dock", "Out of reach", Ui.Bad, Ui.Cap(high))}[/font_size]";
             head += $"\n[font_size=12]{MannerChips(t, Neighbours.Key(s))}[/font_size]\n" + CharacterSheet(t, s) + "\n" + Life(t, s);
             var buttons = new List<(string, bool, bool, Action)>();
-            if (!s.Allied || Shadows.Shadowed(s)) buttons.Add(($"Envoy · {Js.Str(w.EnvoyCost)}g · {DecisionOdds(t, "envoy")}", t.Treasury >= w.EnvoyCost, false, () => Act(() => _sim.SendEnvoy(id))));
+            if (!s.Allied || Shadows.Shadowed(s)) buttons.Add(($"Envoy · {Js.Str(w.EnvoyCost)}g · {DecisionOdds(t, "envoy")}", t.Treasury >= w.EnvoyCost && Reaches.Unreached(t, s) == null, false, () => Act(() => _sim.SendEnvoy(id))));
             if (Shadows.Shadowed(s))
                 buttons.Add((Shadows.Rallier(t) is { } speaker && s.Shadow!.RallyHeroId == null ? $"Send {speaker.GivenName} to rally them" : "Rally", Shadows.RallyRefused(t, s) == null, true, () => Act(() => _sim.RallySettlement(id))));
             if (Neighbours.TroubleOf(t, s) is { Kind: "need", Aid: { } aid })

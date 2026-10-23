@@ -156,6 +156,7 @@ public static class Trade
         var r = Rules(town);
         if (s.Razed) return "they are gone";
         if (!Neighbours.Known(town, s)) return "the town hasn't met them";
+        if (Reaches.Unreached(town, s) is { } high) return high;
         if (Offers(town, s).Count == 0) return "they have nothing to sell";
         if (Shadows.Paying(s)) return "they pay tribute to an enemy and dare not trade";
         if (Open(town).Any(x => x.SettlementId == s.Id)) return "a route already runs there";
@@ -233,6 +234,8 @@ public static class Trade
         Fleet.Daily(town, autoMayor);
         Sky.Daily(town, autoMayor);
         Reaches.Daily(town);
+        AirRaids.Daily(town);
+        Crystal.Daily(town, autoMayor);
     }
 
     private static void Caravan(Town town, TradeRoute route, Settlement s)

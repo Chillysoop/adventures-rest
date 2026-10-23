@@ -1,5 +1,5 @@
 {
-  "_doc": "Manners: each faction's personality, read from the data it already has, never written per faction. A people's come from its history.json lineage traits, its might and how warm it starts, plus its ruler's temperament (neighbours.json temperaments); a power's from its powers.json likes and evil; a menace's from its lineage ambitions plus its kind's temper this campaign. Each manner moves the DCs of the skills it answers to (dc: negative is easier), lends one option to a first meeting (greet, then terms), one to an enemy herald's visit (parley) and one ongoing overture in the Diplomacy window. First meetings are composed from these at load (Systems/Manners.cs): contact-people-<people id>, contact-menace-<lineage>, contact-signs-<lineage>. Arrivals are the opening line per lineage; a lineage without one gets the role's fallback with its first manner's arrive clause. In greet/terms/parley effects, warm is what they think of the town (regard for a people, minor for a power).",
+  "_doc": "Manners: each faction's personality, read from the data it already has, never written per faction. A people's come from its history.json lineage traits, its might and how warm it starts, plus its ruler's temperament (neighbours.json temperaments); a power's from its powers.json likes and evil; a menace's from its lineage ambitions plus its kind's temper this campaign. Each manner moves the DCs of the skills it answers to (dc: negative is easier), lends one option to a first meeting (greet, then terms), one to an enemy herald's visit (parley) and one ongoing overture in the Diplomacy window. First meetings are composed from these at load (Systems/Manners.cs): contact-people-<people id>, contact-menace-<lineage>, contact-signs-<lineage>. Arrivals are the opening line per people (by its id, for peoples that share a lineage) or per lineage; a lineage without one gets the role's fallback with its first manner's arrive clause. In greet/terms/parley effects, warm is what they think of the town (regard for a people, minor for a power).",
   "most": 3,
   "dcCap": 4,
   "traits": {
@@ -79,6 +79,13 @@
   "terms": "Before they go, {leader}'s envoy speaks plainly. {motive}",
   "parley": "{motive}",
   "arrivals": {
+    "cloud-court": "A cloud castle's shadow crosses the fields at noon. A giant herald of {settlement} comes down a rope of mist to ask what {town} offers the court above.",
+    "griffon-clans": "Three griffons wheel over the walls and land on the green. A rider of {settlement} asks who rules here, and whether {town} keeps meat for their mounts.",
+    "gold-ancient": "A gold dragon circles the town once, then sets down outside the gate. In a clear, patient voice it asks after {town}'s laws and who keeps them.",
+    "silver-ancient": "An old traveller in grey walks in from the hills and leaves a silver scale on the inn table. {leader} of {settlement} would know {town}'s heart.",
+    "bronze-ancient": "Thunder rolls out of a clear sky over the harbour road. A bronze dragon lands by the well and asks who in {town} would stand against the sea's raiders.",
+    "brass-ancient": "A brass dragon lands in the market square, sends the stalls flying, and asks loudly for the best talker in {town}. It has all afternoon.",
+    "copper-ancient": "A copper dragon perches on the town hall roof and asks the crowd a riddle. Whoever answers may hear what {leader} of {settlement} wants of {town}.",
     "river-folk": "A cart comes up the river road from {settlement}, heaped with cheese and turnips. {leader} walks beside it, cap in hand, to meet the new neighbours.",
     "march-halflings": "Three ponies and far more halflings than should fit on them arrive from {settlement}, with a basket for whoever opens the gate. {leader} has sent pie.",
     "deep-realm": "Dwarves of {settlement} march to the gate in step, beards braided. {leader}'s herald asks, flatly, whether {town} knows a dragon when it sees one.",

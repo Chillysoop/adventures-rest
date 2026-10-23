@@ -55,12 +55,13 @@ public class WildsTests
         for (int d = 0; d < 300 && Wilds.Of(t, id) != null; d++)
         {
             sim.RunDays(1);
-            // Walked ground stays the company's own until it is home to tell of it: still exploring, or gone in to fight
-            // a site it found and not back yet.
+            // Walked ground stays the company's own until it is home to tell of it: still exploring, held up by a meeting
+            // on the way, or gone in to fight a site it found and not back yet.
             if (Wilds.Of(t, id) is { } z && Wilds.Untold(z) > 0)
             {
                 pending = true;
-                Assert.Contains(t.Surveys, s => s.Saw.Count > 0 && (Explore.Out(s) || t.Parties.Any(p => p.SurveyId == s.Id && !p.Returned)));
+                Assert.Contains(t.Surveys, s => s.Saw.Count > 0 && (Explore.Out(s) || s.Phase == SurveyPhase.Engaged
+                    || t.Parties.Any(p => p.SurveyId == s.Id && !p.Returned)));
             }
             if (t.Commissions.Any(c => c.ZoneId == id)) posted = true;
             if (t.Surveys.Any(s => s.ZoneId == id && s.Phase == SurveyPhase.Home)) walked = true;

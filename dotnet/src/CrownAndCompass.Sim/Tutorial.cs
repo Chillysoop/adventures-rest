@@ -65,7 +65,7 @@ public static class Tutorial
     /// <summary>
     /// A number read off the town for steps to watch: "count:Bounties" is the size of that list on
     /// <see cref="Town"/> (any public list works, so a new system needs no code here); "zoned" is the painted
-    /// ground not yet built on, "decorated" the decorations set down, "airships" the sky dock's ships at the mast, "skyships" all of them, "relics" the Skywright relics held, "lofted" 1 once the Lofted City flies, "seas" the sea lands the town knows, "goals" the charter goals still open, "damaged" the buildings waiting on repair. Null for a name that means nothing.
+    /// ground not yet built on, "decorated" the decorations set down, "airships" the sky dock's ships at the mast, "skyships" all of them, "relics" the Skywright relics held, "lofted" 1 once the Lofted City flies, "seas" the sea lands the town knows, "goals" the charter goals still open, "damaged" the buildings waiting on repair, "refugees" those camped outside town. Null for a name that means nothing.
     /// </summary>
     public static int? Measure(Town t, string token)
     {
@@ -86,8 +86,12 @@ public static class Tutorial
         if (token == "lofted") return Systems.Lofted.Aloft(t) ? 1 : 0;
         // Sea lands of the ocean the town knows of (Systems.World.Sea).
         if (token == "seas") return t.Regions.Count(r => r.Known && Systems.World.Sea(r));
+        // The town's airships (Systems.Sky).
+        if (token == "airships") return Systems.Sky.Ships(t).Count();
         // The charter goals still open (Systems.Goals).
         if (token == "goals") return Systems.Goals.Open(t).Count;
+        // Refugees camped outside town (Systems.Refugees).
+        if (token == "refugees") return Systems.Refugees.Camping(t);
         // Parts the town holds from the wilds (Systems.Spoils).
         if (token == "parts") return t.Spoils.Trophies.Sum(x => x.Value);
         // Buildings a storm, fire or enemy has wrecked and that are not mended yet.

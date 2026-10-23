@@ -193,7 +193,6 @@ public sealed record NeighbourRules
     public double FailedStanding { get; init; } = 6;
     public double SolvedProsperity { get; init; } = 12;
     public double AidedStanding { get; init; } = 12;
-    public int[] Refugees { get; init; } = [2, 5];
     public double NewLeaderChance { get; init; } = 0.5;
 
     /// <summary>Rulers' temperaments and how reigns end (<see cref="Reigns"/>), and an enemy's shadow over the settlements (<see cref="Shadows"/>).</summary>
@@ -527,6 +526,7 @@ public static class Neighbours
     {
         var r = Rules(town);
         string said = Saga.Cap(Fill(town, s, def.Failed));
+        string? lostTo = s.Trouble?.SiteId;
         s.Trouble = null;
         s.Prosperity = Math.Max(0, s.Prosperity - r.FailedProsperity);
         bool known = town.Regions[s.RegionId].Known;
@@ -535,10 +535,7 @@ public static class Neighbours
         foreach (var c in CastOf(town, s).ToList()) c.Regard = Math.Max(0, c.Regard + r.Cast.Lapsed);
         // Those who give up on the settlement come to the town, if it is known to them.
         if (known && town.Rng.Chance(0.5))
-        {
-            int n = Population.Settle(town, town.Rng.Range(r.Refugees[0], r.Refugees[1] + 1));
-            if (n > 0) town.Log(LedgerCategory.Arrival, Importance.Routine, $"{n} {(n == 1 ? "family" : "families")} from {s.Name} come up the road to {town.Name}, having given up on home.");
-        }
+            Refugees.Flee(town, s, null, Refugees.Rules(town).Sources.Trouble, n => $"{n} {(n == 1 ? "refugee" : "refugees")} from {s.Name} come up the road to {town.Name}, having given up on home, and pitch tents by the road.", siteId: lostTo);
         if (!town.Rng.Chance(r.NewLeaderChance) || Reigns.Puppet(s) || Reigns.YearsOf(town, s) < 1) return;
         Reigns.Fall(town, s, "stepdown", null, Lower(def.Name));
     }
@@ -692,6 +689,7 @@ public static class Neighbours
     {
         if (s.Razed) return "they are gone";
         if (!Known(town, s)) return "the town hasn't met them";
+        if (Reaches.Unreached(town, s) is { } high) return high;
         if (TroubleOf(town, s) is not { Aid: { } aid } def || def.Kind != "need") return "they need nothing aid can buy";
         if (town.Treasury < aid.Gold) return $"needs {Js.Str(aid.Gold)} gold";
         if (town.Market.Stock(aid.Good) < aid.Qty) return $"needs {Js.Str(aid.Qty)} {Lower(aid.Good.ToString())}";

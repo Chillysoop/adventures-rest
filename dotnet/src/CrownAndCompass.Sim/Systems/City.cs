@@ -640,7 +640,7 @@ public static class City
     /// <summary>Whether a building may stand on this lot: its ward is open and the building allows it.</summary>
     public static bool Allows(Town town, BuildingDef d, Lot lot) => Allows(town, d, lot.X, lot.Y);
 
-    public static bool Allows(Town town, BuildingDef d, double x, double y) => AllowsWard(town, d, x, y) && Density.Allows(town, d, x, y);
+    public static bool Allows(Town town, BuildingDef d, double x, double y) => AllowsWard(town, d, x, y) && Density.Allows(town, d, x, y) && Sky.SitsHigh(town, d, x, y);
 
     /// <summary>As <see cref="Allows(Town, BuildingDef, double, double)"/>, whatever the density the land is zoned for.</summary>
     public static bool AllowsWard(Town town, BuildingDef d, double x, double y)
@@ -659,6 +659,7 @@ public static class City
     {
         if (!Reached(town, d.Tier)) return $"needs the town to be a {TierName(town, d.Tier).ToLowerInvariant()}";
         if (d.Coast && !Fleet.Coastal(town)) return "needs a town founded on the sea";
+        if (d.River && Fleet.Coastal(town)) return "a town on the sea builds a harbour";
         if (Lofted.Locked(town, d) is { } lofted) return lofted;
         if (d.Wards.Count > 0 && !d.Wards.Any(town.City.OpenWards.Contains))
             return $"needs the {string.Join(" or the ", d.Wards.Select(w => Ward(town, w).Name))} to grow up";

@@ -1329,6 +1329,29 @@
       }
     },
     {
+      "id": "crystal-tapping",
+      "name": "Crystal tapping",
+      "field": "crafts",
+      "rank": 3,
+      "text": "Riggers learn to draw lift from a crystal without cracking it: every charge burns less of the store.",
+      "sparks": [
+        "building:sky_dock"
+      ],
+      "crystal": 0.25
+    },
+    {
+      "id": "seam-sounding",
+      "name": "Seam sounding",
+      "field": "crafts",
+      "rank": 4,
+      "text": "Miners who have worked a lift-crystal seam learn to follow its grain: every crystal mine yields more.",
+      "sparks": [
+        "seam"
+      ],
+      "seams": 0.5,
+      "crystal": 0.1
+    },
+    {
       "id": "sky-skiffs",
       "name": "Sky skiffs",
       "field": "trade",

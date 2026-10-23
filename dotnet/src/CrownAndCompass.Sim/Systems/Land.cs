@@ -314,7 +314,7 @@ public static class Land
         plan.Fresh();
         // Buildings kept to certain wards search on their own; the rest share a search per zone and size.
         byte crop = Farming.CropOf(town, def);
-        var key = (zone, w, d, def.Wards.Count == 0 && def.Density == 0 && crop == 0 ? "" : def.Id);
+        var key = (zone, w, d, def.Wards.Count == 0 && def.Density == 0 && crop == 0 && def.Id != town.Content.Sky.Heights.Building ? "" : def.Id);
         if (!plan.Found.TryGetValue(key, out var spot)) plan.Found[key] = spot = Search(town, def, w, d, zone, crop);
         // A fresh lot each time: the caller may set its zone, and claims it under the next id.
         return spot == null ? null : new Lot(town.Lots.Count, spot.X, spot.Y) { W = w, D = d, Yaw = spot.Yaw, Zone = zone ?? Zone.Civic };

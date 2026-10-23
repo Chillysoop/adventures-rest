@@ -78,8 +78,9 @@ public static class Lodging
             if (s.Hp < s.MaxHp) healed = Shrines.Rest(town, a, healed);
             s.Hp = Math.Min(s.MaxHp, s.Hp + healed);
         }
+        // Refugees camp free outside town: the town feeds them (Refugees.Daily), so they never take a room.
         foreach (var a in town.Agents.Where(a => a.Traveller && !a.Departed).OrderBy(a => a.Id))
-            if (!Room(a)) camped++;
+            if (a.Refugee || !Room(a)) camped++;
 
         foreach (var a in leaving)
         {
@@ -122,7 +123,8 @@ public static class Lodging
                 continue;
             }
             string who = spouse == null ? a.Name : $"{a.Name} and {spouse.GivenName}";
-            town.Log(LedgerCategory.Departure, Importance.Routine, $"{who} {(spouse == null ? "moves" : "move")} on from {town.Name}: {why}.", [a.Id]);
+            town.Log(LedgerCategory.Departure, Importance.Routine,
+                a.Refugee ? Refugees.GaveUp(town, a, who, spouse != null, why) : $"{who} {(spouse == null ? "moves" : "move")} on from {town.Name}: {why}.", [a.Id]);
             Population.Depart(town, a);
             if (spouse != null) Population.Depart(town, spouse);
             town.Lodging.MovedOn += spouse == null ? 1 : 2;
@@ -143,7 +145,8 @@ public static class Lodging
             x.Traveller = false;
         }
         string who = spouse == null ? a.Name : $"{a.Name} and {spouse.GivenName}";
-        town.Log(LedgerCategory.Arrival, Importance.Routine, $"{who} {(spouse == null ? "decides" : "decide")} to stay in {town.Name}, {what}.", [a.Id]);
+        town.Log(LedgerCategory.Arrival, Importance.Routine,
+            a.Refugee ? Refugees.Settled(town, a, who, spouse != null, what) : $"{who} {(spouse == null ? "decides" : "decide")} to stay in {town.Name}, {what}.", [a.Id]);
         town.Lodging.Settled += spouse == null ? 1 : 2;
     }
 

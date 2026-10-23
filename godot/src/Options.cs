@@ -139,6 +139,9 @@ public sealed class Options
     /// <summary>--folk: select the most practised townsperson, for a look at their character sheet.</summary>
     public bool Folk;
 
+    /// <summary>--refugees N: N refugees from the nearest village take their tents by the road on load (camp shots).</summary>
+    public int? Refugees;
+
     /// <summary>--skirmish [gear][,kind]: the town's heroes, one of each class, fight a ring of raiders by the square (for shots); "gear" hands them famous magic arms a moment in; kind picks the foes (undead, cult, rivals, schemers, beasts, dragon; orcs by default).</summary>
     public string? Skirmish;
 
@@ -330,6 +333,7 @@ public sealed class Options
                 case "--tutorial": o.Tutorial = Next(); break;
                 case "--hero": o.Hero = true; break;
                 case "--folk": o.Folk = true; break;
+                case "--refugees": o.Refugees = int.Parse(Next()); break;
                 case "--skirmish": o.Skirmish = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? Next() : ""; break;
                 case "--rolls": o.Rolls = true; break;
                 case "--delve": o.Delve = true; break;

@@ -63,7 +63,9 @@ public class ReachesTests
         Assert.NotNull(Fleet.Build(t, "dreadnought"));
         Assert.True(Reaches.CanReach(t, fliers, cloud));
         Assert.False(Reaches.CanReach(t, fliers, roost));
-        var leviathan = Fleet.Build(t, "leviathan")!;
+        // A third hull needs a free berth: the dock's two are full.
+        Assert.Null(Fleet.Build(t, "leviathan"));
+        var leviathan = Fleet.Build(t, "leviathan", true)!;
         Assert.True(Reaches.CanReach(t, fliers, roost));
         Assert.Equal(leviathan.Id, Reaches.Free(t, roost).First().Id);
         // The least ship that climbs high enough goes, so the leviathan stays free for the roosts.
@@ -95,7 +97,7 @@ public class ReachesTests
         // The town only sees them overdue; a new leviathan goes to look.
         t.Tick += (t.Content.Knowledge.OverdueDays + 1) * SimTime.HoursPerDay;
         Assert.Contains(Alerts.Standing(t), a => a.Key == $"overdue:{company.Id}" && !a.Tip.Contains("airship"));
-        var rescuer = Fleet.Build(t, "leviathan")!;
+        var rescuer = Fleet.Build(t, "leviathan", true)!;
         Assert.Contains(Alerts.Standing(t), a => a.Key == $"overdue:{company.Id}" && a.Tip.Contains("airship"));
         Assert.True(sim.RescueParty(company.Id));
         Assert.Equal(rescuer.Id, company.ShipId);
@@ -119,5 +121,172 @@ public class ReachesTests
         Assert.Null(company.StrandedTick);
         Assert.True(company.ReturnTick < int.MaxValue / 4);
         Assert.True(hero.Hero.Hp < hp || hero.Hero.Hp == 1);
+    }
+
+    [Fact]
+    public void TheSkyDockStandsOnlyOnHighGround()
+    {
+        var t = new Simulation(new SimulationOptions { Seed = 4, AutoMayor = false }).Town;
+        var dock = t.Content.Building("sky_dock");
+        var h = t.Content.Sky.Heights;
+        // The square is level: never there.
+        Assert.False(Sky.SitsHigh(t, dock, Town.Center, Town.Center));
+        var grid = Hills.Grid(t);
+        int top = Enumerable.Range(0, grid.Length).OrderByDescending(i => grid[i]).First();
+        double x = (top % Land.Size + 0.5) / Land.Res, y = (top / Land.Size + 0.5) / Land.Res;
+        Assert.True(grid[top] >= h.MinHeight);
+        Assert.True(Sky.SitsHigh(t, dock, x, y));
+        // Other buildings don't care.
+        Assert.True(Sky.SitsHigh(t, t.Content.Building("house"), Town.Center, Town.Center));
+        // Wherever a lot is found for it, it is high.
+        var lot = Land.Find(t, dock, null);
+        if (lot != null) Assert.True(Sky.SitsHigh(t, dock, lot.X, lot.Y));
+        else Assert.NotNull(Sky.HeightBlocked(t, dock));
+    }
+
+    [Fact]
+    public void TheCloudCourtFloatsFarOutAndOnlyAHighEnoughShipReachesIt()
+    {
+        for (int seed = 1; seed <= 6; seed++)
+        {
+            var t = new Simulation(new SimulationOptions { Seed = seed }).Town;
+            var court = Assert.Single(t.Settlements, s => s.Kin.Id == "cloud-court");
+            Assert.InRange(t.Regions[court.RegionId].Ring, 5, 6);
+            Assert.Equal(court.Id, t.Regions[court.RegionId].SettlementId);
+        }
+        var (sim, town) = Docked(2);
+        var c = town.Settlements.Single(s => s.Kin.Id == "cloud-court");
+        town.Regions[c.RegionId].Known = true;
+        Neighbours.Introduce(town, c, "test");
+        c.Met = true;
+        c.Standing = 60;
+        Assert.NotNull(Reaches.Unreached(town, c));
+        Assert.False(sim.SendEnvoy(c.Id));
+        Assert.Equal(Reaches.Unreached(town, c), Trade.Refuse(town, c));
+        Assert.Equal(Reaches.Unreached(town, c), Conquest.AttackBlocked(town, c));
+        // A galleon still flies too low; a dreadnought climbs to the cloud sea.
+        Fleet.Build(town, "galleon", true);
+        Assert.NotNull(Reaches.Unreached(town, c));
+        Fleet.Build(town, "dreadnought", true);
+        Assert.Null(Reaches.Unreached(town, c));
+        Assert.True(sim.SendEnvoy(c.Id));
+        // Peoples on the ground are never held up by the sky.
+        Assert.All(town.Settlements.Where(s => s.Kin.Band == ""), s => Assert.Null(Reaches.Unreached(town, s)));
+    }
+
+    [Fact]
+    public void MetallicAncientsAreNeighboursToTalkTradeAndAllyWithOnceAShipClimbsToThem()
+    {
+        int found = 0;
+        for (int seed = 1; seed <= 8; seed++)
+        {
+            var w = new Simulation(new SimulationOptions { Seed = seed }).Town;
+            foreach (var d in w.Settlements.Where(s => s.Kin.Id.EndsWith("-ancient")))
+            {
+                found++;
+                Assert.InRange(w.Regions[d.RegionId].Ring, 5, 7);
+                Assert.Equal("cloud", d.Kin.Band);
+            }
+        }
+        Assert.InRange(found, 4, 36);
+        int seedWith = Enumerable.Range(1, 8).First(n => new Simulation(new SimulationOptions { Seed = n }).Town.Settlements.Any(s => s.Kin.Id.EndsWith("-ancient")));
+        var (sim, t) = Docked(seedWith);
+        var dragon = t.Settlements.First(s => s.Kin.Id.EndsWith("-ancient"));
+        t.Regions[dragon.RegionId].Known = true;
+        Neighbours.Introduce(t, dragon, "test");
+        dragon.Met = true;
+        Fleet.Build(t, "dreadnought", true);
+        dragon.Standing = t.Content.World.Standing.Ally - 1;
+        Assert.True(sim.SendEnvoy(dragon.Id));
+        Assert.True(dragon.Allied);
+        var (export, import) = Trade.Suggest(t, dragon);
+        Assert.Null(Trade.Refuse(t, dragon));
+        Assert.True(sim.OpenTradeRoute(dragon.Id, export, import));
+    }
+
+    [Fact]
+    public void SkyGroupsHoldIslesAndTheArmadaHidesItsHarbourUntilAnotherIsleFalls()
+    {
+        var seen = new HashSet<string>();
+        Town? withHarbour = null;
+        for (int seed = 1; seed <= 12; seed++)
+        {
+            var t = new Simulation(new SimulationOptions { Seed = seed, AutoMayor = false }).Town;
+            foreach (var s in t.Sites.Where(s => t.Content.Group(s.Def.Group) is { Bands.Count: > 0 }))
+            {
+                seen.Add(s.Def.Group);
+                Assert.True(s.Def.Aloft);
+                Assert.Contains(s.Def.Band, t.Content.Group(s.Def.Group)!.Bands);
+            }
+            // Groups of the sky never take a site on the ground.
+            Assert.DoesNotContain(t.Sites, s => !s.Def.Aloft && t.Content.Group(s.Def.Group) is { Bands.Count: > 0 });
+            if (withHarbour == null && t.Sites.Count(s => s.Def.Group == "sky-armada") >= 2) withHarbour = t;
+        }
+        Assert.Contains("sky-armada", seen);
+        Assert.Contains("storm-cult", seen);
+        var town = withHarbour!;
+        var harbour = Assert.Single(town.Sites, s => s.Hidden);
+        Assert.Equal("sky-armada", harbour.Def.Group);
+        // No tale or hearsay finds it.
+        Rumors.Hear(town, harbour, "pirates", 3);
+        Assert.Equal(SiteKnowledge.Unheard, harbour.Known);
+        // Another of the armada's isles falls, and a prisoner talks.
+        town.Sites.First(s => s.Def.Group == "sky-armada" && !s.Hidden).Cleared = true;
+        Reaches.Daily(town);
+        Assert.False(harbour.Hidden);
+        Assert.NotEqual(SiteKnowledge.Unheard, harbour.Known);
+    }
+
+    [Fact]
+    public void AlliedGriffonClansSellGriffonsWithoutARoost()
+    {
+        var sim = new Simulation(new SimulationOptions { Seed = 1, AutoMayor = false });
+        var t = sim.Town;
+        var griffon = Passage.Rules(t).Mount("griffon")!;
+        Assert.False(Passage.Sold(t, griffon));
+        var clans = t.Settlements.FirstOrDefault(s => s.Kin.Id == "griffon-clans")
+            ?? Enumerable.Range(2, 10).Select(n => new Simulation(new SimulationOptions { Seed = n }).Town).SelectMany(x => x.Settlements).First(s => s.Kin.Id == "griffon-clans");
+        var s = new Settlement { Id = t.Settlements.Count, Name = "the Test Eyrie", Kin = clans.Kin, RegionId = 0, Allied = true };
+        t.Settlements.Add(s);
+        Assert.True(Passage.Sold(t, griffon));
+        var hero = t.Heroes.First();
+        hero.Hero!.Level = griffon.Level;
+        hero.Hero.Mount = "";
+        hero.Gold = griffon.BuyAt + 10;
+        Passage.Daily(t);
+        Assert.Equal("griffon", hero.Hero.Mount);
+    }
+
+    [Fact]
+    public void AttacksFromTheAirComeLateRarelyAndAlwaysWarned()
+    {
+        var (sim, t) = Docked(3);
+        var r = t.Content.Sky.AirRaids;
+        Assert.NotEmpty(AirRaids.Attackers(t));
+        // Never before its day.
+        for (int d = 0; d < 40; d++) AirRaids.Daily(t);
+        Assert.Null(t.SkyFleet.AirRaid);
+        t.Tick = r.From * SimTime.HoursPerDay;
+        int warned = 0;
+        for (int d = 0; d < 1200 && t.SkyFleet.AirRaid == null; d++)
+        {
+            t.Tick += SimTime.HoursPerDay;
+            AirRaids.Daily(t);
+        }
+        var raid = Assert.IsType<AirRaid>(t.SkyFleet.AirRaid);
+        Assert.Contains(Alerts.Standing(t), a => a.Key == "airraid");
+        warned = raid.Day - t.Day;
+        Assert.Equal(r.WarnDays, warned);
+        // On the day it strikes and is gone; a strong guard beats it off and the heroes make a name.
+        double gold = t.Treasury;
+        foreach (var h in t.Heroes) h.Hero!.Level = 20;
+        t.Watch = 200;
+        int renown = t.Heroes.Sum(h => h.Hero!.Renown);
+        t.Tick = raid.Day * SimTime.HoursPerDay;
+        AirRaids.Daily(t);
+        Assert.Null(t.SkyFleet.AirRaid);
+        Assert.Equal(gold, t.Treasury, 6);
+        Assert.True(t.Heroes.Sum(h => h.Hero!.Renown) > renown);
+        Assert.DoesNotContain(Alerts.Standing(t), a => a.Key == "airraid");
     }
 }

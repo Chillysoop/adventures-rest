@@ -49,7 +49,7 @@ public static class Voyages
     {
         var v = V(town);
         int d20 = rng.D20();
-        int total = d20 + (int)Math.Floor(s.Prowess - 1) + survival;
+        int total = d20 + (int)Math.Floor(s.Prowess - 1) + survival + (Fleet.Has(town, Fleet.Rules(town).Harbour.Lighthouse) ? Fleet.Rules(town).Harbour.Light : 0);
         double pace = d20 == 20 ? v.Navigate[0] : d20 == 1 ? v.Navigate[3] : total >= v.NavigateDc ? v.Navigate[1] : v.Navigate[2];
         return (pace, total);
     }
@@ -69,7 +69,7 @@ public static class Voyages
 
     /// <summary>The harbour's ships that could take a company over the open sea now, best first: the most marine places, then the fastest.</summary>
     public static IEnumerable<Ship> Free(Town town) =>
-        Fleet.Harbour(town) == null ? [] : Fleet.AtSea(town).Where(s => Moored(town, s)).OrderByDescending(s => Fleet.Def(town, s).Marines).ThenBy(s => Fleet.Def(town, s).Speed).ThenBy(s => s.Id);
+        Fleet.Harbour(town) == null || !Fleet.ToSea(town) ? [] : Fleet.AtSea(town).Where(s => Moored(town, s)).OrderByDescending(s => Fleet.Def(town, s).Marines).ThenBy(s => Fleet.Def(town, s).Speed).ThenBy(s => s.Id);
 
     /// <summary>Whether a company can get to a site at all: one out on the open sea needs every member able to cross water, or a free ship.</summary>
     public static bool CanReach(Town town, IReadOnlyList<Agent> members, SiteState site) =>
@@ -110,6 +110,23 @@ public static class Voyages
             }
         }
         return mind with { Ways = mind.Ways | Ways.Water, Carrier = ship.Name, Sail = pace };
+    }
+
+    /// <summary>Whether the town's own ship would carry a company from here to there: the way crosses open sea and a ship is free.</summary>
+    public static bool Sails(Town town, (double X, double Y) from, (double X, double Y) to) =>
+        Free(town).Any() && town.Terrain.Any(f => f.Kind.Ship && Crosses(f, from, to));
+
+    /// <summary>
+    /// What a company that sailed in the town's own ship brings home in its hold besides the take: salvage and trade picked
+    /// up on the way, more the farther out it went. A company the Sky Dock lent an airship brings nothing extra.
+    /// </summary>
+    public static double Hold(Town town, Party party, SiteState site, bool earned)
+    {
+        if (!earned || party.ShipId is not int id || town.Ships.FirstOrDefault(s => s.Id == id) is not { } ship || Fleet.Aloft(town, ship)) return 0;
+        int ring = site.RegionId is int rid ? town.Regions[rid].Ring : 0;
+        double gold = Js.Round(V(town).Hold * (1 + ring));
+        if (gold > 0) town.Log(LedgerCategory.Quest, Importance.Routine, $"{ship.Name}'s hold comes home with the {party.Name}: {Js.Str(gold)} gold of salvage and trade besides.");
+        return gold;
     }
 
     private static bool Crosses(Feature f, (double X, double Y) a, (double X, double Y) b)
@@ -174,6 +191,7 @@ public static class Voyages
         if (Fleet.Harbour(town) == null) return "needs a harbour";
         if (!Moored(town, s)) return s.Hull < Fleet.Def(town, s).Hull * 0.25 ? "needs patching first" : "already at sea";
         if (job is not ("patrol" or "scout" or "strike")) return "no such job";
+        if (job != "patrol" && !Fleet.ToSea(town)) return "the river doesn't reach the sea";
         if (marines.Count > Fleet.Def(town, s).Marines) return $"carries {Fleet.Def(town, s).Marines} marines at most";
         var free = Marines(town).Select(h => h.Id).ToHashSet();
         if (marines.Any(id => !free.Contains(id))) return "a hero is away or hurt";
@@ -299,7 +317,7 @@ public static class Voyages
         {
             Sky.Charted(town, region.Id, (0, 0), Sky.Middle(town, region), s.Name);
             region.Known = true;
-            var seen = town.Sites.Where(x => x.RegionId == region.Id && !x.Cleared).OrderBy(x => x.Def.Id, StringComparer.Ordinal).ToList();
+            var seen = town.Sites.Where(x => x.RegionId == region.Id && !x.Cleared && !x.Hidden).OrderBy(x => x.Def.Id, StringComparer.Ordinal).ToList();
             foreach (var site in seen)
             {
                 site.Found = true;

@@ -76,6 +76,12 @@ public sealed record MountDef
     /// <summary>An institution that must stand for it to be sold (the Griffon Roost), or "".</summary>
     public string Institution { get; init; } = "";
 
+    /// <summary>Peoples (world.json) who sell it to the town's heroes once allied, roost or no roost.</summary>
+    public IReadOnlyList<string> Peoples { get; init; } = [];
+
+    /// <summary>Or a part of the Sky Dock (the aerie) that breeds and sells it.</summary>
+    public string Part { get; init; } = "";
+
     /// <summary>A spell that calls it for free (a paladin's steed), or "".</summary>
     public string Spell { get; init; } = "";
     public IReadOnlyList<string> Text { get; init; } = [];
@@ -136,6 +142,12 @@ public sealed record RiverRules
     public double[] Spacing { get; init; } = [1.2, 2.2];
     public double Fords { get; init; } = 0.6;
     public string TownCrossing { get; init; } = "the town bridge";
+
+    /// <summary>Where it rises and ends: the ocean's shore that way, else terrain kinds it rises in (`sources`), `reach` days north or south and within `wide` days east or west; it bends to them over the last (1 - `pull`) of its run.</summary>
+    public double[] Reach { get; init; } = [8, 18];
+    public double Wide { get; init; } = 9;
+    public double Pull { get; init; } = 0.45;
+    public IReadOnlyList<string> Sources { get; init; } = ["range", "peaks"];
     public IReadOnlyList<string> FordNames { get; init; } = [];
     public IReadOnlyList<string> BridgeNames { get; init; } = [];
     public IReadOnlyList<string> Words { get; init; } = [];
@@ -177,6 +189,7 @@ public sealed record PassageRules
     public WallPassRules Walls { get; init; } = new();
     public FleeRules Flee { get; init; } = new();
     public RiverRules River { get; init; } = new();
+    public FerryRules Ferries { get; init; } = new();
     public CliffRules Cliffs { get; init; } = new();
     public IReadOnlyList<CrossSpellDef> Spells { get; init; } = [];
     public IReadOnlyList<CrossItemDef> Items { get; init; } = [];
@@ -658,11 +671,21 @@ public static class Passage
         double phase = Hash(town.Seed, 1) * Math.PI * 2;
         var spots = town.Sites.Where(s => s.Def.Distance > 0).Select(s => World.Spot(town, s)).ToList();
         var line = new List<(double X, double Y)>();
-        for (double y = -r.Length; y <= r.Length + 1e-9; y += 0.04)
+        double Base(double y)
         {
             double far = Smooth(r.Straight, r.Straight + r.Ease, Math.Abs(y)), wave = 0;
             for (int k = 0; k < r.Waves.Length; k++) wave += r.Waves[k][0] * Math.Sin(y * r.Waves[k][1] + phase * (k + 1));
-            double x = r.Offset + far * wave;
+            return r.Offset + far * wave;
+        }
+        // A great river: it rises in distant mountains and runs out to the sea where the land gives it one.
+        var up = End(town, -1);
+        var down = End(town, 1);
+        double y0 = up?.Y ?? -r.Length, y1 = down?.Y ?? r.Length;
+        for (double y = y0; y <= y1 + 1e-9; y += 0.04)
+        {
+            double x = Base(y);
+            if (up is { } u) x += Smooth(r.Pull, 1, y / u.Y) * (u.X - Base(u.Y));
+            if (down is { } d) x += Smooth(r.Pull, 1, y / d.Y) * (d.X - Base(d.Y));
             foreach (var (sx, sy) in spots)
             {
                 double dy = sy - y;
@@ -676,17 +699,45 @@ public static class Passage
         return c.River = line;
     }
 
+    /// <summary>
+    /// Where the river ends upstream (dir -1, north) or down (dir 1, south): the ocean's shore when the sea lies that way,
+    /// else the nearest mountains out there (its source), else nowhere, and it runs on off the edge of what is known.
+    /// </summary>
+    private static (double X, double Y)? End(Town town, int dir)
+    {
+        var r = Rules(town).River;
+        (double X, double Y) At(double bearing, double days) => (days * Math.Sin(bearing * Math.PI / 180), -days * Math.Cos(bearing * Math.PI / 180));
+        bool Fits((double X, double Y) p) => p.Y * dir >= r.Reach[0] && p.Y * dir <= r.Reach[^1] && Math.Abs(p.X) <= r.Wide;
+        var sea = town.Terrain.Where(f => f.Kind.Id == "ocean").OrderBy(f => f.Inner).ThenBy(f => f.Id)
+            .Select(f => At(f.Bearing, f.Inner + 0.3)).Where(Fits).Select(p => ((double X, double Y)?)p).FirstOrDefault();
+        if (sea != null) return sea;
+        return town.Terrain.Where(f => r.Sources.Contains(f.Kind.Id)).Select(f => At(f.Bearing, (f.Inner + f.Outer) / 2)).Where(Fits)
+            .OrderBy(p => Math.Abs(p.X) + Math.Abs(p.Y) * 0.25).ThenBy(p => p.Y * dir).Select(p => ((double X, double Y)?)p).FirstOrDefault();
+    }
+
+    /// <summary>Every way over the river now: its fords and bridges, and the town's ferries that still run (<see cref="Ferries"/>).</summary>
+    public static IReadOnlyList<Crossing> Crossings(Town town) =>
+        town.Ferries.Count == 0 ? Fixed(town) : [.. Fixed(town), .. town.Ferries.Where(f => !f.Cut).Select(f => new Crossing("ferry", f.Name, f.X, f.Y))];
+
+    /// <summary>Whether the river runs out to the ocean (<see cref="End"/>).</summary>
+    public static bool Mouth(Town town)
+    {
+        var line = River(town);
+        return town.Terrain.Any(f => f.Kind.Id == "ocean" && (Roads.Contains(f, line[0].X, line[0].Y, 0.6) || Roads.Contains(f, line[^1].X, line[^1].Y, 0.6)));
+    }
+
     /// <summary>The fords and bridges on the river: the town's own, and others every day or two up and down it.</summary>
-    public static IReadOnlyList<Crossing> Crossings(Town town)
+    public static IReadOnlyList<Crossing> Fixed(Town town)
     {
         var c = Store(town);
         if (c.Crossings != null) return c.Crossings;
         var r = Rules(town).River;
         var line = River(town);
         var list = new List<Crossing>();
+        double y0 = line[0].Y, y1 = line[^1].Y;
         (double X, double Y) At(double y)
         {
-            int i = Math.Clamp((int)Math.Round((y + r.Length) / 0.04), 0, line.Count - 1);
+            int i = Math.Clamp((int)Math.Round((y - y0) / 0.04), 0, line.Count - 1);
             return line[i];
         }
         var home = At(0);
@@ -698,8 +749,9 @@ public static class Passage
                 k++;
                 y += dir * (r.Spacing[0] + Hash(town.Seed, 100 + k) * (r.Spacing[^1] - r.Spacing[0]));
                 // Never in the middle of a lake or a range of peaks the river runs through: on down the water past it.
-                while (Math.Abs(y) <= r.Length - 0.5 && town.Terrain.Any(f => f.Kind.Barrier != "" && Roads.Contains(f, At(y).X, At(y).Y, town.Content.Roads.Margin * 1.5))) y += dir * 0.04;
-                if (Math.Abs(y) > r.Length - 0.5) break;
+                bool Inside(double v) => v >= y0 + 0.5 && v <= y1 - 0.5;
+                while (Inside(y) && town.Terrain.Any(f => f.Kind.Barrier != "" && Roads.Contains(f, At(y).X, At(y).Y, town.Content.Roads.Margin * 1.5))) y += dir * 0.04;
+                if (!Inside(y)) break;
                 var p = At(y);
                 bool ford = Hash(town.Seed, 200 + k) < r.Fords;
                 var names = ford ? r.FordNames : r.BridgeNames;
@@ -784,7 +836,7 @@ public static class Passage
                 outp.Add(new Waypoint { X = best.X, Y = best.Y, Way = best.Kind, Crossing = best.Name });
                 if (said != null && spate != null && spateLen < bestLen && Weather.Rules(town).Road.Line(new Rng(unchecked((int)Voices.Hash("spate", town.Seed, town.Day, (int)Math.Round(spate.X * 100)))), "flood") is { Length: > 0 } flood)
                     said.Add(Saga.Cap(flood.Replace("{name}", spate.Name, StringComparison.Ordinal).Replace("{bridge}", best.Name, StringComparison.Ordinal)));
-                else if (said != null && Line(town, best.Kind == "ford" ? "ford" : "bridge") is { } line)
+                else if (said != null && Line(town, best.Kind is "ford" or "ferry" ? best.Kind : "bridge") is { } line)
                     said.Add(line.Replace("{name}", best.Name, StringComparison.Ordinal).Replace("{river}", Rules(town).River.Name, StringComparison.Ordinal));
                 cur = (best.X, best.Y);
             }
@@ -983,6 +1035,8 @@ public static class Passage
         var ship = Parse(r.Ways);
         var meets = Meets(town, from, to) | (aloft ? Ways.Air : Ways.None);
         if (ship == Ways.None || (meets & ~mind.Ways) == Ways.None || AirshipsFree(town) <= 0) return mind;
+        // Open sea and nothing else in the way: the town's own ship takes them (Voyages.Embark), not a borrowed airship.
+        if (!aloft && (meets & ~mind.Ways & ~Ways.Water) == Ways.None && Voyages.Sails(town, from, to)) return mind;
         party.Airship = true;
         if (r.Text.Count > 0)
         {
@@ -1031,7 +1085,7 @@ public static class Passage
                 if (Rank(m) <= haveRank) break;
                 if (h.Level < m.Level || m.Chooses > 0 || m.Tame != null) continue;
                 if (m.Classes.Count > 0 && !m.Classes.Contains(h.Cls.Id)) continue;
-                if (m.Institution != "" && (Institutions.Find(town, m.Institution) is not { } inst || inst.Shut)) continue;
+                if (m.Institution != "" && (Institutions.Find(town, m.Institution) is not { } inst || inst.Shut) && !Sold(town, m)) continue;
                 bool called = false;
                 if (m.Spell != "")
                 {
@@ -1051,6 +1105,10 @@ public static class Passage
         }
         foreach (var m in r.Mounts.Where(m => m.Chooses > 0).OrderBy(m => m.Id, StringComparer.Ordinal)) Choose(town, m);
     }
+
+    /// <summary>An allied people breeds the beast and sells it to the town's heroes.</summary>
+    public static bool Sold(Town town, MountDef m) =>
+        m.Peoples.Count > 0 && town.Settlements.Any(s => s.Allied && !s.Razed && m.Peoples.Contains(s.Kin.Id)) || Sky.Has(town, m.Part);
 
     /// <summary>A hero takes a mount: theirs from now on, told in the Ledger (and on a card when it is one worth telling).</summary>
     public static void Ride(Town town, Agent a, MountDef m, Importance importance, string? line = null)

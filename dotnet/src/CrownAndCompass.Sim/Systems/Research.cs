@@ -40,6 +40,10 @@ public sealed record DiscoveryDef : DecreeDef
     /// <summary>The share off the cost of a scrying.</summary>
     public double Scry { get; init; }
 
+    /// <summary>The share of lift-crystal a charge saves (<see cref="Sky.Charge"/>), and how much more a crystal mine yields.</summary>
+    public double Crystal { get; init; }
+    public double Seams { get; init; }
+
     /// <summary>Tower guns it brings (<see cref="Cannons"/>): 1 bombards, 2 arcane guns.</summary>
     public int Cannons { get; init; }
 }
@@ -313,6 +317,12 @@ public static class Research
     public static double Xp(Town town) => Math.Min(0.75, Js.Sum(Known(town), d => d.Xp));
 
     public static double Scry(Town town) => Math.Min(0.6, Js.Sum(Known(town), d => d.Scry));
+
+    /// <summary>The share of lift-crystal the town's known discoveries save on every charge.</summary>
+    public static double Crystal(Town town) => Math.Min(0.6, Js.Sum(Known(town), d => d.Crystal));
+
+    /// <summary>What the town's known discoveries add to every crystal mine's yield, as a share.</summary>
+    public static double Seams(Town town) => Js.Sum(Known(town), d => d.Seams);
 
     // The library ------------------------------------------------------------------------------------
 

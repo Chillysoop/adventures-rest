@@ -237,8 +237,24 @@ public partial class Main
         var ruins = Ruins.Restorable(t).ToList();
         var camp = Poaching.Camp(t);
         bool ranger = camp != null && t.Ranger is { Poached: > 0 };
-        if (cut.Count == 0 && ruins.Count == 0 && !ranger) return;
+        var spots = Ferries.Spots(t);
+        if (cut.Count == 0 && ruins.Count == 0 && !ranger && spots.Count == 0 && t.Ferries.Count == 0) return;
         p.Heading("Roads and ruins");
+        var fr = Ferries.Rules(t);
+        foreach (var f in t.Ferries.OrderBy(f => f.Id))
+        {
+            int fid = f.Id;
+            p.Card($"{Ui.Img("ui-road", 16)} [b]{Ui.Esc(Ui.Cap(f.Name))}[/b]  {(f.Cut ? Tag("cut", Ui.Bad) : Tag("runs", Ui.Good))}", null);
+            p.Buttons(f.Cut
+                ? ($"Put it back, {Js.Str(fr.Rebuild)}g", t.Treasury >= fr.Rebuild, true, () => Act(() => _sim.RebuildFerry(fid)))
+                : ("Cut it", true, false, () => Act(() => _sim.CutFerry(fid))));
+        }
+        for (int i = 0; i < spots.Count; i++)
+        {
+            int spot = i;
+            string side = spots[i].Y < 0 ? "upriver" : "downriver";
+            p.Buttons(($"Ferry {side}, {Ui.Days(Math.Max(1, (int)Math.Round(Math.Abs(spots[i].Y))))} · {Js.Str(fr.Cost)}g", Ferries.BuildBlocked(t, spot) == null, false, () => Act(() => _sim.BuildFerry(spot))));
+        }
         double stone = t.Content.Roads.Bridges.Stone;
         foreach (var f in cut)
         {

@@ -48,7 +48,7 @@ public class ThreatTests
     public void PunishesATownThatNeverFortifiesAndNeverFightsBack()
     {
         int fallen = 0;
-        foreach (int seed in Enumerable.Range(1, 16))
+        foreach (int seed in Enumerable.Range(1, 40))
         {
             var sim = new Simulation(new SimulationOptions { Seed = seed, AutoBounties = false, AutoDefense = false, FreeCompanies = false, AutoStories = false });
             sim.Town.Defenses.Palisade = PalisadeState.Building;
@@ -58,9 +58,9 @@ public class ThreatTests
             if (sim.Town.Saga.Sacks > 0 || sim.Town.Outcome == Outcome.Defeat) fallen++;
         }
         // A good share fall; the rest hold on the militia, guard and neighbours of a town grown big enough
-        // (over twenty seeds, main now sees 8 fall and this town's skill checks 6, where 14 once did). Sixteen
-        // seeds, since any change to the rng stream reshuffles which ones hold.
-        Assert.True(fallen >= 4, $"only {fallen} of 16 fell");
+        // (about 15 of 40 now). Forty seeds, since any change to the world or the rng stream reshuffles which
+        // ones hold, and sixteen swung between 3 and 5 on changes that left the share the same.
+        Assert.True(fallen >= 10, $"only {fallen} of 40 fell");
     }
 
     [Fact]
@@ -69,7 +69,7 @@ public class ThreatTests
         // Sixteen seeds and nearly half of them won: any change to the rng stream reshuffles which seeds win
         // (over twenty seeds, 55% to 70% win by day 260), so six seeds were too few to tell a weaker town from a reshuffle.
         int won = 0;
-        foreach (int seed in Enumerable.Range(1, 16))
+        foreach (int seed in Enumerable.Range(1, 40))
         {
             var sim = new Simulation(new SimulationOptions { Seed = seed });
             RunUntilLastStand(sim, 260);

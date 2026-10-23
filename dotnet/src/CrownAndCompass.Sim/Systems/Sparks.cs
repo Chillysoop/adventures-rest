@@ -132,6 +132,11 @@ public static class Sparks
                 int n = Lofted.Held(town);
                 return new(n >= N(1), $"{n} Skywright {(n == 1 ? "relic" : "relics")}", Relic);
             }
+            case "seam":
+            {
+                var s = Crystal.Seams(town).FirstOrDefault();
+                return new(s != null, s != null ? $"the crystal seam on {s.Def.Name}" : "a seam of lift-crystal", Wilds);
+            }
             case "known":
                 return new(Research.IsKnown(town, Arg(1)), town.Content.Research.Discovery(Arg(1))?.Name.ToLowerInvariant() ?? Arg(1), Known);
             case "tier":

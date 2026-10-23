@@ -184,6 +184,7 @@ public sealed class Simulation
         Paving.Daily(t);
         Property.Daily(t);
         Lodging.Decide(t);
+        Refugees.Daily(t);
         Population.DailyDepartures(t);
         Population.DailyArrivals(t);
         if (Options.AutoMayor)
@@ -268,6 +269,7 @@ public sealed class Simulation
         Eggs.Daily(t);
         Poaching.Daily(t);
         Bridges.Daily(t, Options.AutoMayor);
+        Ferries.Daily(t);
         Wayfaring.Daily(t);
         Ruins.Daily(t, Options.AutoMayor);
         Passage.Daily(t);
@@ -416,6 +418,12 @@ public sealed class Simulation
 
     /// <summary>Refill an airship's lift-crystal at the Sky Dock.</summary>
     public bool ChargeShip(int shipId) => Sky.Charge(Town, shipId);
+
+    /// <summary>Buy lift-crystal from the traders at the Sky Dock (<see cref="Crystal.Buy"/>).</summary>
+    public bool BuyCrystal(int units) => Crystal.Buy(Town, units);
+
+    /// <summary>Open a crystal mine on a seam found on a cleared isle (<see cref="Crystal.Mine"/>).</summary>
+    public bool MineSeam(string siteId) => Crystal.Mine(Town, siteId);
 
     /// <summary>Send riggers with fresh crystal to an airship that came down in the wilds.</summary>
     public bool SalvageShip(int shipId) => Sky.Salvage(Town, shipId);
@@ -624,6 +632,11 @@ public sealed class Simulation
 
     /// <summary>Rebuild a rope bridge raiders cut, in stone that can't be cut again.</summary>
     public bool RebuildBridge(int featureId) => Bridges.Rebuild(Town, featureId);
+
+    /// <summary>Put a ferry across the river at one of <see cref="Ferries.Spots"/>.</summary>
+    public bool BuildFerry(int spot) => Ferries.Build(Town, spot) != null;
+    public bool CutFerry(int ferryId) => Ferries.CutOwn(Town, ferryId);
+    public bool RebuildFerry(int ferryId) => Ferries.Rebuild(Town, ferryId);
 
     /// <summary>Restore a cleared ruin (an aqueduct, a gatehouse, a watchtower, a star fort) to serve the town.</summary>
     public bool RestoreRuin(string siteId) => Ruins.Restore(Town, siteId);
