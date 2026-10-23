@@ -255,6 +255,7 @@ public sealed class Simulation
         Eggs.Daily(t);
         Poaching.Daily(t);
         Bridges.Daily(t, Options.AutoMayor);
+        Ferries.Daily(t);
         Wayfaring.Daily(t);
         Ruins.Daily(t, Options.AutoMayor);
         Passage.Daily(t);
@@ -611,6 +612,11 @@ public sealed class Simulation
 
     /// <summary>Rebuild a rope bridge raiders cut, in stone that can't be cut again.</summary>
     public bool RebuildBridge(int featureId) => Bridges.Rebuild(Town, featureId);
+
+    /// <summary>Put a ferry across the river at one of <see cref="Ferries.Spots"/>.</summary>
+    public bool BuildFerry(int spot) => Ferries.Build(Town, spot) != null;
+    public bool CutFerry(int ferryId) => Ferries.CutOwn(Town, ferryId);
+    public bool RebuildFerry(int ferryId) => Ferries.Rebuild(Town, ferryId);
 
     /// <summary>Restore a cleared ruin (an aqueduct, a gatehouse, a watchtower, a star fort) to serve the town.</summary>
     public bool RestoreRuin(string siteId) => Ruins.Restore(Town, siteId);

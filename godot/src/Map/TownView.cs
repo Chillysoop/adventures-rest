@@ -2596,8 +2596,9 @@ public partial class TownView(MapView map) : Node3D
         Wonders(town);
         Ships(town);
         Scenery(town);
-        // The river's bridges, where roads cross it (its fords are shallows in the water itself).
         var gen = map.Gen;
+        Ferries(town, gen);
+        // The river's bridges, where roads cross it (its fords are shallows in the water itself).
         for (int i = 0; i < gen.Crossings.Count; i++)
         {
             var (c, at, flow) = gen.Crossings[i];
@@ -2615,6 +2616,44 @@ public partial class TownView(MapView map) : Node3D
             mi.Position = new Vector3(at.X, 0, at.Y);
             mi.Rotation = new Vector3(0, Mathf.Atan2(across.X, across.Y), 0);
         }
+    }
+
+    /// <summary>The town's ferries over the river: a raft on a rope between two posts, or the posts alone once it is cut.</summary>
+    private void Ferries(Town town, WorldGen gen)
+    {
+        foreach (var f in town.Ferries)
+        {
+            string id = $"ferry:{f.Id}", state = f.Cut ? "cut" : "run";
+            if (_landmarks.TryGetValue(id, out var was) && (string)was.GetMeta("kind") == state) continue;
+            was?.QueueFree();
+            var at = Geo.FromDays(f.X, f.Y);
+            int i = 0;
+            for (int k = 1; k < gen.River.Length; k++)
+                if (gen.River[k].DistanceSquaredTo(at) < gen.River[i].DistanceSquaredTo(at)) i = k;
+            var flow = (gen.River[Math.Min(gen.River.Length - 1, i + 1)] - gen.River[Math.Max(0, i - 1)]).Normalized();
+            var across = new Vector2(-flow.Y, flow.X);
+            float bank = Mathf.Max(gen.SurfaceAt(at.X + across.X * 4.6f, at.Y + across.Y * 4.6f), gen.SurfaceAt(at.X - across.X * 4.6f, at.Y - across.Y * 4.6f));
+            var mi = new MeshInstance3D { Mesh = FerryMesh(f.Cut, bank, gen.SurfaceAt(at.X, at.Y)), MaterialOverride = Mats.Props };
+            mi.SetMeta("kind", state);
+            AddChild(mi);
+            _landmarks[id] = mi;
+            mi.Position = new Vector3(at.X, 0, at.Y);
+            mi.Rotation = new Vector3(0, Mathf.Atan2(across.X, across.Y), 0);
+        }
+    }
+
+    private static ArrayMesh FerryMesh(bool cut, float bank, float water)
+    {
+        var k = new MeshKit();
+        var post = new Color("6a4a2a");
+        var rope = new Color("c8b48a");
+        foreach (float z in new[] { -4.4f, 4.4f }) k.Box(new Vector3(0.9f, bank - 0.3f, z), new Vector3(0.18f, 1.5f, 0.18f), post);
+        if (cut) return k.Build();
+        float level = Mathf.Max(water, 0) + 0.06f;
+        k.Box(new Vector3(0.9f, bank + 0.9f, 0), new Vector3(0.03f, 0.03f, 8.8f), rope);
+        k.Box(new Vector3(0, level, 1.2f), new Vector3(1.6f, 0.12f, 1.4f), new Color("8a6239"), new Color("7a5229"));
+        k.Box(new Vector3(0.3f, level + 0.12f, 1.2f), new Vector3(0.05f, 0.9f, 0.05f), post);
+        return k.Build();
     }
 
     /// <summary>Each gorge's rope bridge where the roads cross it: swaying planks, a cut bridge hanging from one side, or rebuilt in stone.</summary>

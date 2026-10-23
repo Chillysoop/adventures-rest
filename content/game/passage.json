@@ -58,6 +58,9 @@
         "won": ["A great white snow bear stands across the trail. {hero} walks up to it alone and wins it over {how}; it follows them home and lets them ride.", "On the ice they meet a snow bear sow whose cubs are long grown. {hero} calms her {how}, and she carries them the rest of the way."],
         "lost": ["A snow bear blocks the trail and {hero} tries to win it over, but it shrugs them off into a drift and lumbers away.", "{hero} gets close enough to a snow bear to touch it, which is exactly when it decides it has had enough."] } }
   ],
+  "ferries": { "cost": 220, "rebuild": 120, "gap": 1.6, "reach": 9, "cutChance": 0.01, "near": 1.5, "cutters": ["tribe", "rivals"],
+    "names": ["{A} Ferry", "the {A} Ferry", "the Ferry at {A}"],
+    "texts": ["A ferry runs over {river} now: {ferry}. Companies, caravans and anyone else may use it.", "The town cuts {ferry} loose and sinks the raft: no one crosses {river} there now.", "Raiders from {site} cut {ferry}'s rope and sink the raft. The long way round it is, until the town puts it back.", "{ferry} runs again."] },
   "airship": {
     "name": "the town's airship",
     "ways": ["river", "water", "sheer", "air"],
@@ -68,6 +71,7 @@
     "over": ["There is no road across {name}, but they go straight over it, thanks to {carrier}.", "Where everyone else goes round {name}, they cross it by {carrier}."],
     "round": ["Nobody walks across {name}: they go round it, {days} out of their way.", "{name} stands in the way and there is no crossing it on foot; the long way round costs them {days}."],
     "ford": ["They cross {river} at {name}, wading to the waist.", "They splash over {river} at {name}."],
-    "bridge": ["They cross {river} by {name}.", "{name} carries them over {river}."]
+    "bridge": ["They cross {river} by {name}.", "{name} carries them over {river}."],
+    "ferry": ["They cross {river} on {name}, the ferryman poling them over.", "{name} takes them over {river}, horses and all."]
   }
 }
