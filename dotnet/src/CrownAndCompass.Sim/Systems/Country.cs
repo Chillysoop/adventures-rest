@@ -30,11 +30,17 @@ public sealed record CountryRules
     public double WallSwell { get; init; } = 0.3;
 
     /// <summary>Open ground's bumps (dells, copses, a hill to go round): up to this much slower, about this many days across.</summary>
-    public double Wander { get; init; } = 0.35;
-    public double WanderSize { get; init; } = 1.2;
+    public double Wander { get; init; } = 1.4;
+    public double WanderSize { get; init; } = 0.6;
 
     /// <summary>The longest straight stretch a road keeps on open ground, in days: past that it follows the land's small bends.</summary>
     public double Straightest { get; init; } = 0.5;
+
+    /// <summary>A straight stretch is kept when it costs no more than this share over the cells' own path (which zigzags on the grid).</summary>
+    public double Slack { get; init; } = 0.06;
+
+    /// <summary>Times a road's corners are cut round (Chaikin): each pass makes its bends rounder.</summary>
+    public int Round { get; init; } = 2;
 
     /// <summary>Days into a feature its danger is spread over: deep country is feared for every day of it.</summary>
     public double DangerDepth { get; init; } = 0.4;
@@ -733,10 +739,18 @@ public static class Country
     private static double Ease(Town town, RouteMind mind, Feature f) =>
         1 - (1 - mind.Eases.GetValueOrDefault(f.Kind.Id)) * (1 - Skill(town, mind, f));
 
-    /// <summary>Smooth bumps of open ground for one road, 0 to 1.</summary>
+    /// <summary>Smooth bumps of open ground for one road, 0 to 1: two layers turned off the grid, so no valley runs along it.</summary>
     private static double Bumps(int seed, double x, double y, double size)
     {
-        double fx = x / size, fy = y / size;
+        double a = (seed & 1023) / 1023.0 * Math.PI;
+        double c = Math.Cos(a), s = Math.Sin(a);
+        double big = Noise(seed, (x * c - y * s) / size, (x * s + y * c) / size);
+        double small = Noise(seed ^ 0x5bd1, (x * s + y * c) * 2.3 / size, (y * s - x * c) * 2.3 / size);
+        return big * 0.7 + small * 0.3;
+    }
+
+    private static double Noise(int seed, double fx, double fy)
+    {
         int ix = (int)Math.Floor(fx), iy = (int)Math.Floor(fy);
         double tx = fx - ix, ty = fy - iy;
         tx = tx * tx * (3 - 2 * tx);
@@ -833,6 +847,12 @@ public static class Country
     /// The cheapest way over the land from one cell to another inside a box of cells, as cells from the start, with
     /// the cost walked to each; null when there is none.
     /// </summary>
+    private static readonly (int X, int Y)[] Steps =
+    [
+        (1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1),
+        (2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2),
+    ];
+
     private static (List<int> Cells, List<double> Spent)? Search(Town town, Land land, Costs k, RouteMind mind, int start, int goal, int x0, int y0, int x1, int y1)
     {
         int bw = x1 - x0 + 1, bh = y1 - y0 + 1;
@@ -870,26 +890,41 @@ public static class Country
             shut[u] = true;
             int ux = u % bw, uy = u / bw;
             double cu = Cost(u);
-            for (int dy = -1; dy <= 1; dy++)
-                for (int dx = -1; dx <= 1; dx++)
+            // Sixteen ways out of a cell (the knight's moves too), so a road can run at any angle, not just the grid's eight.
+            foreach (var (dx, dy) in Steps)
+            {
+                int vx = ux + dx, vy = uy + dy;
+                if (vx < 0 || vy < 0 || vx >= bw || vy >= bh) continue;
+                int v = vy * bw + vx;
+                if (shut[v]) continue;
+                double cv = Cost(v);
+                if (double.IsInfinity(cv)) continue;
+                double step;
+                if (Math.Abs(dx) + Math.Abs(dy) == 3)
                 {
-                    if (dx == 0 && dy == 0) continue;
-                    int vx = ux + dx, vy = uy + dy;
-                    if (vx < 0 || vy < 0 || vx >= bw || vy >= bh) continue;
-                    int v = vy * bw + vx;
-                    if (shut[v]) continue;
-                    double cv = Cost(v);
-                    if (double.IsInfinity(cv)) continue;
+                    // A knight's move crosses the two cells between; no slipping through either.
+                    int m1 = Math.Abs(dx) == 2 ? uy * bw + ux + dx / 2 : (uy + dy / 2) * bw + ux;
+                    int m2 = Math.Abs(dx) == 2 ? vy * bw + ux + dx / 2 : (uy + dy / 2) * bw + vx;
+                    double c1 = Cost(m1), c2 = Cost(m2);
+                    if (double.IsInfinity(c1) || double.IsInfinity(c2)) continue;
+                    // Nor hopping over a sliver of other ground: the road must say what it crossed.
+                    int ou = land.Owner[Global(u)], ov = land.Owner[Global(v)], o1 = land.Owner[Global(m1)], o2 = land.Owner[Global(m2)];
+                    if (o1 != ou && o1 != ov || o2 != ou && o2 != ov) continue;
+                    step = 2.23606798 * land.Cell * (cu + c1 + c2 + cv) / 4;
+                }
+                else
+                {
                     // No slipping diagonally between two cells nobody can cross.
                     if (dx != 0 && dy != 0 && (double.IsInfinity(Cost(uy * bw + vx)) || double.IsInfinity(Cost(vy * bw + ux)))) continue;
-                    double step = (dx != 0 && dy != 0 ? 1.41421356 : 1) * land.Cell * (cu + cv) / 2;
-                    double alt = g[u] + step;
-                    if (alt >= g[v]) continue;
-                    g[v] = alt;
-                    from[v] = u;
-                    var (vxw, vyw) = land.Centre(Global(v));
-                    open.Enqueue(v, alt + hmin * Js.Hypot(gx - vxw, gy - vyw));
+                    step = (dx != 0 && dy != 0 ? 1.41421356 : 1) * land.Cell * (cu + cv) / 2;
                 }
+                double alt = g[u] + step;
+                if (alt >= g[v]) continue;
+                g[v] = alt;
+                from[v] = u;
+                var (vxw, vyw) = land.Centre(Global(v));
+                open.Enqueue(v, alt + hmin * Js.Hypot(gx - vxw, gy - vyw));
+            }
         }
         if (g[gl] == double.MaxValue) return null;
         var cells = new List<int>();
@@ -986,7 +1021,7 @@ public static class Country
                 for (int j = i + 2; j < pts.Count; j++)
                 {
                     if (Js.Hypot(pts[j].X - pts[i].X, pts[j].Y - pts[i].Y) > r.Straightest) break;
-                    if (LineCost(town, land, k, mind, pts[i], pts[j], run.Owner) <= run.Spent[j] - run.Spent[i] + 1e-9) best = j;
+                    if (LineCost(town, land, k, mind, pts[i], pts[j], run.Owner) <= (run.Spent[j] - run.Spent[i]) * (1 + r.Slack) + 1e-9) best = j;
                 }
                 keep.Add(best);
                 i = best;
@@ -994,7 +1029,8 @@ public static class Country
             var f = run.Owner > 0 ? land.Features[run.Owner - 1] : null;
             string way = f == null ? "road" : k.Way[run.Owner - 1];
             int first = path.Count;
-            var line = Soften(keep.Select(q => pts[q]).ToList());
+            var line = keep.Select(q => pts[q]).ToList();
+            for (int pass = 0; pass < r.Round; pass++) line = Soften(line);
             for (int q = 1; q < line.Count; q++)
             {
                 var a = line[q - 1];
@@ -1016,7 +1052,20 @@ public static class Country
         return path;
     }
 
-    /// <summary>Corners cut once (Chaikin), the ends kept where they are: a walked line rounds its turns.</summary>
+    /// <summary>
+    /// The way a lone rider (a scout) would likely take from one spot to another, for the map to draw: picked on its own dice
+    /// from <paramref name="seed"/>, never the town's. Starts at <paramref name="from"/> and ends at <paramref name="to"/>.
+    /// </summary>
+    public static List<(double X, double Y)> Sketch(Town town, (double X, double Y) from, (double X, double Y) to, int seed)
+    {
+        var path = Stretch(town, from, to, new RouteMind(1, 1, 1, "", null, false, false), new Rng(seed), []);
+        var pts = new List<(double X, double Y)> { from };
+        if (path == null) pts.Add(to);
+        else pts.AddRange(path.Select(w => (w.X, w.Y)));
+        return pts;
+    }
+
+    /// <summary>Corners cut (Chaikin), the ends kept where they are: a walked line rounds its turns.</summary>
     private static List<(double X, double Y)> Soften(List<(double X, double Y)> pts)
     {
         if (pts.Count < 3) return pts;

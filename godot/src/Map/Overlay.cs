@@ -680,7 +680,7 @@ public partial class Overlay(MapView map) : Control
             {
                 if (now + h < s.DepartTick || now + h > s.ReturnTick) return null;
                 float leg = (float)Watch.ScoutLeg(town, s, map.HourFraction + h);
-                return leg >= 1 ? pin - dir * 6 + new Vector2(dir.Y, -dir.X) * 2 : Geo.Center + (pin - Geo.Center) * leg;
+                return leg >= 1 ? pin - dir * 6 + new Vector2(dir.Y, -dir.X) * 2 : Geo.Along(Geo.ScoutWay(town, s, pin), leg);
             }, strategic ? new Color("2f4f2a") : new Color("b8f0a0"));
         }
         var en = town.Enemy;
