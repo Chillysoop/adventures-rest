@@ -826,6 +826,7 @@ public static class Quests
             if (result.Outcome == ExpeditionOutcome.Wiped) Stories.Lost(town, Remains.Lie(town, party, s, members), party);
             foreach (var (rite, id) in rites) town.Log(LedgerCategory.Faith, Importance.Major, rite, [id]);
             Lairs.AfterDelve(town, s, result);
+            Spoils.Homecoming(town, party, s, result, survivors, bounty);
             foreach (var it in result.Items)
             {
                 if (it.HeroId == null) Watch.ReceiveRelic(town, it.Item, party.Name);
