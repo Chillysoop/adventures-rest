@@ -249,6 +249,7 @@ public static class Roster
         if (cut > 0) reasons.Add(("they'd hand the hoard's magic to the town", -cut));
 
         reasons.Add(("the council asked them by name", r.Asked));
+        if (Retainers.Held(town, company)) reasons.Add(("they are on the town's retainer", Retainers.Bonus(town, company)));
         double rel = Intel.Relation(town, company, Intel.Members(town, company));
         if (Math.Abs(rel - 50) >= 5)
             reasons.Add((rel >= 50 ? "they think well of the council" : "they think little of the council", (rel - 50) * r.Relation));

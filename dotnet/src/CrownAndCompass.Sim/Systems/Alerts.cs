@@ -63,6 +63,7 @@ public static class Alerts
     public static readonly AlertKind Stores = new("stores", "Winter stores", "bread", AlertLevel.Decision, AlertWindow.City);
     public static readonly AlertKind Fealty = new("fealty", "Demands for fealty", "warband", AlertLevel.Decision, AlertWindow.Campaign);
     public static readonly AlertKind Doom = new("doom", "End-game crises", "warband", AlertLevel.Urgent, AlertWindow.Campaign);
+    public static readonly AlertKind Gathering = new("horde", "The host gathers", "warband", AlertLevel.Urgent, AlertWindow.Campaign);
     public static readonly AlertKind DarkQuest = new("darkquest", "The big bad's quest", "warband", AlertLevel.Urgent, AlertWindow.Campaign);
     public static readonly AlertKind Road = new("road", "A road to victory", "favour", AlertLevel.Decision, AlertWindow.Campaign);
     public static readonly AlertKind Clash = new("clash", "Enemies clash", "warband", AlertLevel.Decision, AlertWindow.Campaign);
@@ -116,7 +117,7 @@ public static class Alerts
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Sighted, Lurker, Captives, Doom, Crisis, Sick, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Balance, Fealty, DarkQuest, Road, Clash, Traitor, Plot, Dark, Spent, Stores, Story, Scry, Explorers, Fallen, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Notable, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Loot, Stalled, Bridge, Ruin, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Tower, Patrol, Outpost, Housing, Crowded];
+        [Siege, Sighted, Lurker, Captives, Doom, Crisis, Sick, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Balance, Fealty, Gathering, DarkQuest, Road, Clash, Traitor, Plot, Dark, Spent, Stores, Story, Scry, Explorers, Fallen, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Notable, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Loot, Stalled, Bridge, Ruin, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Tower, Patrol, Outpost, Housing, Crowded, WarAsk];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
     public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Allies, Word, Crowds, Keepers, Notables, Outposts, Lists, Brought];
@@ -152,8 +153,24 @@ public static class Alerts
             yield return new("raids", Siege, "Raiders by night", "The warband raids the town when its heroes are away. Build walls, hire the watch, clear the war camp.");
         foreach (var m in t.Saga.Menaces.Where(m => m.Alive && Discovery.Known(t, m) && m.ArrivalTick is int).OrderBy(m => m.Id))
         {
+            if (Horde.On(t, m))
+            {
+                // The big bad's host: no count of days, only what the town's eyes have seen.
+                if (Horde.Known(t, m))
+                    yield return new($"menace:{m.Id}", Siege, $"{Cap(m.Name)} {Horde.Word(t, m)}", $"Its host comes for the {Garrison.Place(t, m.Approach)}. Call the watch to arms there and the heroes home, or march the army out to meet it.", AtTown: true, Wall: m.Approach);
+                continue;
+            }
             int days = Math.Max(1, (int)Math.Ceiling((m.ArrivalTick!.Value - t.Tick) / 24.0));
             yield return new($"menace:{m.Id}", Siege, $"{Cap(m.Name)} in {Days(days)}", $"The host of {m.Name} marches from {m.SeatName} on the {Garrison.Place(t, m.Approach)}. Call the watch to arms there and the heroes home.", AtTown: true, Wall: m.Approach);
+        }
+        // The big bad's host gathering at its camps: thin it at its camps, and put eyes on them.
+        if (Saga.BigBad(t) is { } big && Horde.On(t, big) && big.ArrivalTick == null && Horde.State(t).Stage is HordeStage.Gathering or HordeStage.Mustering)
+        {
+            var seat = Quests.Site(t, big.SeatId);
+            string eyes = Horde.Seen(t, big) is double share
+                ? $"Your eyes on its camps count it {(share >= 0.95 ? "full" : share >= 0.5 ? "more than half gathered" : "under half gathered")}."
+                : "Nobody watches its camps: a tower, patrol, scout or scrying by them would show how big it grows and when it moves.";
+            yield return new("horde", Gathering, $"{Cap(big.Name)} {Horde.Word(t, big)}", $"Raid {seat?.Def.Name ?? "its seat"} and its holdings to thin the host before it marches. {eyes}", SiteId: seat?.Def.Id);
         }
         // A band someone saw on its way: a night to put guards over its mark.
         foreach (var g in t.Sightings.Where(g => g.Kind == Sightings.Band && g.TargetId != null).OrderBy(g => g.Id))
@@ -194,7 +211,8 @@ public static class Alerts
             var m = Crises.MenaceOf(t, c);
             var seat = Quests.Site(t, m.SeatId);
             string where = seat == null || seat.Known == SiteKnowledge.Unheard ? $"its seat in {m.Region}" : seat.Def.Name;
-            yield return new($"doom:{c.Id}", Doom, $"{Cap(Crises.Title(t, c))} in {Days(Crises.DaysLeft(t, c))}",
+            // The big bad's crisis has no count of days: its host marches when its camps are full or the crisis comes to a head.
+            yield return new($"doom:{c.Id}", Doom, Horde.On(t, m) ? Cap(Crises.Title(t, c)) : $"{Cap(Crises.Title(t, c))} in {Days(Crises.DaysLeft(t, c))}",
                 $"{Cap(m.Name)}'s {Crises.SeverityOf(t, c).Name} crisis strikes at the town until its host marches on the walls. Break {where} first: post a bounty on it from Bounties.", SiteId: seat?.Def.Id);
         }
         foreach (var x in Crises.Pending(t).OrderBy(x => x.Id))

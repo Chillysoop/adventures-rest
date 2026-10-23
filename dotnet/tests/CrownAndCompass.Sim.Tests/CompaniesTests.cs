@@ -104,8 +104,7 @@ public class CompaniesTests
             var ask = Notables.DefOf(t, n).Asks.First(a => a.Quest != "");
             var site = t.Sites.Where(s => s.Known != SiteKnowledge.Unheard && !s.ThoughtCleared && !t.Bounties.Any(b => b.SiteId == s.Def.Id && b.Status is BountyStatus.Open or BountyStatus.Taken))
                 .Where(s => Systems.Terms.Blocked(t, s, t.Content.Bounties.Term(ask.Quest)) == null)
-                // A sealed level of the undercity takes no job until it stirs (Notables.Open).
-                .Where(s => !Systems.Undercity.IsUnder(t, s) || Systems.Undercity.Stirring(t, s))
+                .Where(s => !Undercity.IsUnder(t, s) || Undercity.Stirring(t, s))
                 .OrderBy(s => s.BelievedTier).FirstOrDefault();
             if (site == null) continue;
             var patron = t.Agent(n.AgentId!.Value);

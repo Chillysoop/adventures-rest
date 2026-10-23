@@ -146,6 +146,9 @@ public sealed class HeroSheet
     /// <summary>Carries one of the town's sending stones: their company can send word with no caster's slot (<see cref="Systems.Armory"/>).</summary>
     public bool Stone { get; set; }
 
+    /// <summary>Their weapon is silvered, so it bites creatures plain steel can't (<see cref="Systems.Prowess.Harm"/>).</summary>
+    public bool Silvered { get; set; }
+
     /// <summary>The site kind of the ward draught they drank before setting out, harder to hit there (<see cref="Systems.Alchemy"/>).</summary>
     public string? Ward { get; set; }
 

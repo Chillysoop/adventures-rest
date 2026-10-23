@@ -13,7 +13,7 @@
     { "id": "deeps", "name": "The deeps", "themes": ["deeproads"] },
     { "id": "woods", "name": "The forests", "themes": ["thornwood", "feyfringe"] },
     { "id": "heart", "name": "The river heartland", "themes": ["greenmarch", "crownruins", "ashenbarrows", "spellscar"] },
-    { "id": "coast", "name": "The coast", "themes": ["saltreach", "drownedempire", "stormcoast"] },
+    { "id": "coast", "name": "The coast", "themes": ["saltreach", "drownedempire", "stormcoast", "shallows", "archipelago", "deepsea"] },
     { "id": "fens", "name": "The fens", "themes": ["mirefen"] },
     { "id": "sands", "name": "The southern sands", "themes": ["duneglass", "kingsbones"] }
   ],
@@ -83,6 +83,9 @@
     {"id": "ravening", "name": "ravening", "subjects": ["menace:fiends"], "weight": 1, "ambitions": {"conquest": 2, "hunger": 1.5}, "strike": 0.8, "will": 3, "text": "In this age the fiends come through hungry, and nothing on the near side of a doorway is safe."}
   ],
   "lineages": [
+    {"id": "drowned-choir", "power": "coil", "subjects": ["group:drowned-choir"], "themes": [], "title": "the Drowned Choir", "motive": "{leader} heard the Coil's drowned god still singing under the sea, and means to sing it awake, whatever it drowns on the way up.", "ambitions": {"intrigue": 1.5, "plague": 2}},
+    {"id": "tidekin", "power": "coil", "subjects": ["people:tidekin"], "title": "the tidekin of the reefs", "motive": "They want the drowned shrines left in peace, and the corsairs gone from their reefs.", "traits": ["Shy", "Generous"]},
+    {"id": "isle-city", "power": "free-ports", "subjects": ["people:isle-city"], "title": "the great island city", "motive": "They want every ship on the sea to pay its dues in their harbour, and no fleet bigger than their own.", "traits": ["Greedy", "Ambitious"]},
     {"id": "red-tide", "power": "red-tide", "subjects": ["menace:tribe"], "themes": [], "title": "heirs of the Red Tide", "motive": "{leader} carries Ghorvak's war-drum and means to finish what the Red Tide began in 380 AL: every lowland hall burned and every road the orcs' own.", "ambitions": {"conquest": 1.5}},
     {"id": "warren-clans", "power": "warrens", "subjects": ["menace:tribe"], "themes": ["highpeaks", "deeproads"], "title": "the Warren clans", "motive": "The Warren clans breed faster than the passes can feed them, and {leader} wants the valleys below for the spill.", "ambitions": {"territory": 1.5}},
     {"id": "stoneking-giants", "power": "stonekings", "subjects": ["menace:tribe"], "themes": ["cinderwastes", "crownruins"], "title": "the Stonekings' last kin", "motive": "{leader} still calls the high places the Stonekings' halls, and counts every wall built in them as theft.", "ambitions": {"territory": 1.5, "vassal": 1.5}},

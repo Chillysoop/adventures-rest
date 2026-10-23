@@ -53,7 +53,7 @@ public static class Ruins
         if (r.Kinds.Count == 0) return;
         var rng = new Rng(town.Seed * 5303 + 977);
         var pool = town.Sites
-            .Where(s => s.Generated && s.Def.Foe == "" && !s.Def.Aloft && s.RegionId is int rid && town.Regions[rid].Ring <= r.Ring)
+            .Where(s => s.Generated && s.Def.Foe == "" && !s.Def.Aloft && s.RegionId is int rid && town.Regions[rid].Ring <= r.Ring && !town.Regions[rid].Theme.Sea)
             .OrderBy(s => s.Def.Id, StringComparer.Ordinal)
             .ToList();
         var kinds = r.Kinds.ToList();

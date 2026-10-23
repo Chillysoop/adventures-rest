@@ -49,7 +49,8 @@ public partial class Main
                 double ours = Field.HostWorth(t, Field.Marching(t), Field.MarchingAllies(t), Field.GoalHeroes(t));
                 double odds = ours / Math.Max(1, est);
                 string tag = odds >= 1.5 ? Ui.C(Ui.Good, "strong") : odds >= 1 ? Ui.C(Ui.Gold, "even") : Ui.C(Ui.Bad, "outmatched");
-                p.Row($"{Ui.Img("warband", 15)} [b]{Ui.Esc(Ui.Cap(f.Name))}[/b]  ~{Js.Str(Js.Round(est))}  ·  at the walls in [b]{hours}h[/b]\n" +
+                string when = Saga.BigBad(t) is { } bb && f.Key == Discovery.Key(bb) && Horde.On(t, bb) ? Horde.Word(t, bb) : $"at the walls in [b]{hours}h[/b]";
+                p.Row($"{Ui.Img("warband", 15)} [b]{Ui.Esc(Ui.Cap(f.Name))}[/b]  ~{Js.Str(Js.Round(est))}  ·  {when}\n" +
                       $"[font_size=12]Host {Ui.C(Ui.Ink, Js.Str(Js.Round(ours)))} · {tag}[/font_size]");
                 p.Add($"fp{string.Join(",", t.Army.Regiments.Select(r => $"{r.Id}{r.Marches}{r.Soldiers.Count}"))}|{string.Join(",", t.Army.Calls.Select(c => $"{c.Id}{c.State}{c.Marches}"))}|{string.Join(",", t.Army.Goals.Select(g => $"{g.HeroId}{g.Goal}"))}",
                     () => MarchPicks(t));

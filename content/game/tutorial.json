@@ -63,7 +63,7 @@
     {
       "id": "ledger",
       "title": "Every window, one click",
-      "text": "Every window is one button on the left rail.\n• Hover a button for its name\n• [b]Badge[/b]: red urgent, gold a decision\n• [b]Shift[/b]+number: your ten most used\nOpen the [b]Ledger[/b] now: everything that happens in town.",
+      "text": "Six groups on the left rail, each a window with tabs.\n• [b]Badge[/b]: red urgent, gold a decision\n• [b]Shift[/b]+1 to 6: a group\n• Click a heading to fold it\nOpen [b]Town[/b], then the [b]Ledger[/b] tab: everything that happens in town.",
       "point": "tab:Ledger",
       "until": "tab:Ledger",
       "teaches": ["key:Key9", "tab:Ledger"]
@@ -448,7 +448,7 @@
       "id": "ward-voices",
       "title": "Every ward has a voice",
       "text": "The wards judge your choices too.\n• Market Ward: profit. Temple wardens: mercy. Wharf crews: free hands\n• Choices show which wards they please or anger\n• Warm wards grow sooner; sour ones grumble\nSee each ward in [b]City[/b].",
-      "point": "tab:City",
+      "point": "tab:City:Wards",
       "when": "day:60",
       "teaches": []
     },
@@ -585,7 +585,7 @@
       "id": "plots",
       "title": "What villains are planning",
       "text": "A named menace is always plotting: a road, tithe-takers, a raid.\n• Scrying its seat, or a nearby friend, reveals the plan\n• [b]Campaign[/b] shows it and the holdings it rests on\n• Clear a holding: the plan is set back\n• Strong settlements turn plans away",
-      "point": "tab:Campaign",
+      "point": "tab:Campaign:Foes",
       "until": "tab:Campaign",
       "when": "alert:plot",
       "teaches": []
@@ -603,7 +603,7 @@
       "id": "crises",
       "title": "End-game crises",
       "text": "A power left alone late starts its [b]crisis[/b]: the Great Horde, the Long Dark, Wyrmfire...\n• Burns houses, knifes councillors, fouls stores\n• Ends with its host at the gates\n• Break its seat first and it dies\n• Several feed each other\n[b]Campaign[/b]: ride out when two crises clash.",
-      "point": "tab:Campaign",
+      "point": "tab:Campaign:Foes",
       "until": "tab:Campaign",
       "when": "alert:doom",
       "teaches": ["command:JoinClash"]
@@ -630,7 +630,7 @@
       "id": "guilds",
       "title": "The trade guilds",
       "text": "Workers in one trade formed a [b]guild[/b]; its master leans on a councillor.\n• Demands come with a deadline (taxes, a festival, land)\n• [b]Meet it[/b]: they warm to you\n• [b]Pay them off[/b]: it goes away\n• Ignored: they sour, then [b]strike[/b]\n• [b]Break the strike[/b] with the watch: costs Mandate\n• Its master is a [b]Notable[/b]: win them over and the guild warms too",
-      "point": "tab:Council",
+      "point": "tab:Council:Guilds",
       "until": "tab:Council",
       "when": "alert:guild",
       "teaches": ["command:MeetGuildDemand", "command:PayOffGuild", "command:BreakStrike"]
@@ -640,7 +640,7 @@
       "title": "The movement and the mages",
       "text": "[b]The Common Cause[/b]: workers, and some hedge mages, want magic to serve the trades. The bar in [b]Council[/b]:\n• Research and hedge mages pull it to the mages\n• Numbers and guilds pull it back\n• Keep it green: both work together\n• Too far: marches and strikes, or mages walk out\n• [b]Hear[/b] a side for gold, or [b]side[/b] with one a season",
       "when": "alert:union",
-      "point": "tab:Council",
+      "point": "tab:Council:Guilds",
       "until": "tab:Council",
       "teaches": ["command:HearUnion", "command:TakeSide"]
     },
@@ -684,7 +684,7 @@
       "id": "undercity",
       "title": "Under the streets",
       "text": "Digging broke into the [b]undercity[/b]; each charter opens a deeper level.\n• Left alone it [b]stirs[/b], until something comes up at night\n• [b]City[/b]: send the watch on [b]patrol[/b] for a little gold\n• Or a bounty: heroes delve with no road\n• Cleared: quiet for a season",
-      "point": "tab:City",
+      "point": "tab:City:Wards",
       "until": "tab:City",
       "when": "count:Undercity",
       "teaches": ["command:PatrolUndercity"]
@@ -693,7 +693,7 @@
       "id": "library",
       "title": "The library and its scholars",
       "text": "Your scholars can study something new. Open [b]Library[/b].\n• Ideas appear from your town and the world: newcomers, trade, buildings, books, explorers' finds, monsters your companies slay\n• Pick one to [b]study[/b]: scholars, books, mages and finds move it, gold can't buy it\n• [b]Funding[/b] only speeds them a little",
-      "point": "tab:Library",
+      "point": "tab:Library:Ideas",
       "until": "tab:Library",
       "when": "alert:scholars",
       "teaches": ["tab:Library", "command:StudyDiscovery", "command:FundResearch"]
@@ -761,7 +761,7 @@
       "id": "wards",
       "title": "New wards",
       "text": "A new charter opens land round the old town.\n• Wards aren't drawn: a quarter becomes one from what's built\n• Shops: Market Ward. Workshops: Trades. Shrines: Temple. Fine houses: Castle Hill\nSee them in [b]City[/b].",
-      "point": "tab:City",
+      "point": "tab:City:Wards",
       "when": "alert:charter",
       "teaches": []
     },
@@ -781,7 +781,7 @@
       "title": "The law book",
       "text": "The [b]law book[/b] in [b]Council[/b] sets what happens when the watch catches a hero.\n• Fine: the old way\n• Stocks, flogging: calmer streets, fewer repeats; the temple frowns\n• Temple penance: priests pleased, guilds call it soft\n• Restitution: guilds pleased, purses emptied",
       "when": "day:20",
-      "point": "tab:Council",
+      "point": "tab:Council:Laws",
       "until": "tab:Council",
       "teaches": [
         "command:SetLaw"
@@ -812,7 +812,7 @@
     {"id": "allies-call", "title": "Calling allies", "text": "Allies send hosts when you [b]call[/b] them in [b]Army[/b].\n• Answers come within the day\n• Holdouts: pay, negotiate or let go\n• Hosts march the road: call early\n• A friend under a shadow may turn at the walls", "point": "tab:Army", "when": "allies", "teaches": ["command:CallAllies", "command:BribeAlly", "command:NegotiateAlly", "command:LetAllyGo"]},
     {"id": "field", "title": "Marching out", "text": "Meet a host on the road before it reaches the walls: the [b]Field[/b] card in [b]Army[/b].\n• Pick who marches; the rest hold the walls\n• Give heroes a goal: the leader, the banner\n• Pick an order: the dice and your commanders do the rest", "point": "tab:Army", "when": "alert:march", "teaches": ["command:MarchOut", "command:SetMarches", "command:SetAllyMarches", "command:SetFieldGoal", "command:SetFieldOrder", "command:RecallHost"]},
     {"id": "conquest", "title": "Marching on others", "text": "[b]Army[/b] can march on any settlement you have met.\n• Every people sees it: allies trust you less\n• Won: occupy, pillage, cripple or spare\n• Held towns pay tribute, resist and may rise\n• Leave a regiment there to hold it down", "point": "tab:Army", "when": "regiments", "teaches": ["command:Attack", "command:SettleConquest", "command:GarrisonSettlement", "command:FreeSettlement"]},
-    {"id": "roads-to-victory", "title": "Roads to victory", "text": "[b]Campaign[/b] lists every way to win.\n\u2022 Slay the big bad, or\n\u2022 Allies, dominion, legends, a golden age, adventurers, trade\n\u2022 Once the big bad shows itself and a road's terms all hold: [b]Claim[/b]\n\u2022 It marches at once. Hold the terms to win", "point": "tab:Campaign", "when": "day:90", "teaches": ["command:ClaimRoad"]},
+    {"id": "roads-to-victory", "title": "Roads to victory", "text": "[b]Campaign[/b] lists every way to win.\n\u2022 Slay the big bad, or\n\u2022 Allies, dominion, legends, a golden age, adventurers, trade\n\u2022 Once the big bad shows itself and a road's terms all hold: [b]Claim[/b]\n\u2022 It marches at once. Hold the terms to win", "point": "tab:Campaign:Victory", "when": "day:90", "teaches": ["command:ClaimRoad"]},
     {
       "id": "getting-about",
       "title": "Getting about",
@@ -877,8 +877,8 @@
       "until": "tab:Mayor",
       "teaches": ["command:RaiseMayor", "command:NameSuccessor"]
     },
-    {"id": "skywright-relics", "title": "Skywright relics", "text": "A company brought home a [b]Skywright relic[/b].\n• Five lie at the far edges of the map\n• Each sparks high magic in the Library\n• All five open the [b]Lofted City[/b]\n• Foes race you for them: break a foe to take back what it stole", "point": "tab:Library", "when": "relics", "teaches": []},
-    {"id": "lofted-city", "title": "The Lofted City", "text": "Your [b]Lofted City[/b] flies.\n• [b]Sail[/b] it from the Library to any land you know\n• Companies set out from under it\n• It sees every site below", "point": "tab:Library", "when": "lofted", "teaches": ["command:SailLofted"]},
+    {"id": "skywright-relics", "title": "Skywright relics", "text": "A company brought home a [b]Skywright relic[/b].\n• Five lie at the far edges of the map\n• Each sparks high magic in the Library\n• All five open the [b]Lofted City[/b]\n• Foes race you for them: break a foe to take back what it stole", "point": "tab:Library:Sky", "when": "relics", "teaches": []},
+    {"id": "lofted-city", "title": "The Lofted City", "text": "Your [b]Lofted City[/b] flies.\n• [b]Sail[/b] it from the Library to any land you know\n• Companies set out from under it\n• It sees every site below", "point": "tab:Library:Sky", "when": "lofted", "teaches": ["command:SailLofted"]},
     {"id": "year-omens", "title": "The year's omen", "text": "Each year the seers foretell one omen for a season.\n• See it under the season in the [b]City[/b] window\n• Green helps, red hurts\n• Plan stores and walls round it", "point": "tab:City", "when": "day:3", "teaches": []},
     {"id": "word-of-mouth", "title": "Word on the roads", "text": "Heroes rate the town out of five stars: beds, pay, gear, healing, welcome.\n• Good word brings more heroes, and better ones\n• See the stars and their says in [b]Companies[/b]", "point": "tab:Companies", "when": "day:20", "teaches": []},
     {"id": "lasting-wounds", "title": "Lasting wounds", "text": "A hero who goes down in a fight may come home with a lasting wound.\n• Click the hero to see what it costs them\n• Mend it at the shrine, the temple, or with clockwork", "when": "day:40", "teaches": ["command:MendWound"]},
@@ -888,17 +888,21 @@
     {"id": "campaign-graphs", "title": "The whole campaign", "text": "The [b]Chronicles[/b] window draws the town's people, gold, dread and more since day one.\n• Pins mark sieges, charters and the fallen\n• Hover a pin for what happened", "point": "tab:Chronicles", "when": "day:60", "teaches": []},
     {"id": "notables", "title": "Notable townsfolk", "text": "People worth knowing rise in town: the best smith, a merchant prince, the innkeeper, a wizard in a tower. Open [b]Notables[/b].\n• Visit: a skill check they like\n• Gifts and favours warm them\n• Warm: they pass on news\n• Some favours are quests: their gold on the board for a company\n• Friends: boons\n• Bitter: they walk away", "point": "tab:Notables", "until": "tab:Notables", "when": "count:Notables", "teaches": ["tab:Notables", "command:VisitNotable", "command:AnswerNotable"]},
     {"id": "sway-vote", "title": "Swaying the vote", "text": "Each councillor rolls a [b]d20[/b] + their lean to vote. Hover a vote to see it.\n• Before you sign, [b]Sway[/b] one councillor\n• Persuade, Intimidate or Deceive: each shows its odds\n• A loyal councillor trained in the skill helps: advantage\n• One try a motion", "point": "tab:Council", "until": "tab:Council", "when": "count:Motions", "teaches": ["command:SwayCouncillor"]},
-    {"id": "negotiate", "title": "Negotiating", "text": "[b]Negotiate[/b] with a guild or a holding-out ally.\n• Choose how: Persuade, Intimidate or Deceive\n• Each shows the d20, its DC and your odds\n• Win: settled without gold. Lose: they think less of you\n• One try each demand", "point": "tab:Council", "until": "tab:Council", "when": "alert:guild", "teaches": ["command:NegotiateGuild"]},
-    {"id": "trials", "title": "The court", "text": "Heroes the watch catches now stand [b]trial[/b]. No dice.\n• The case: your captain's Investigation, the watch, witnesses\n• Against their tale: their Deception\n• Guilty: the law book's sentence. Not: they walk free\n• From a Town, a caster of [b]Zone of Truth[/b] lets no lie stand", "point": "tab:Council", "until": "tab:Council", "when": "count:Trials", "teaches": ["command:SetTrialMagic"]},
+    {"id": "negotiate", "title": "Negotiating", "text": "[b]Negotiate[/b] with a guild or a holding-out ally.\n• Choose how: Persuade, Intimidate or Deceive\n• Each shows the d20, its DC and your odds\n• Win: settled without gold. Lose: they think less of you\n• One try each demand", "point": "tab:Council:Guilds", "until": "tab:Council", "when": "alert:guild", "teaches": ["command:NegotiateGuild"]},
+    {"id": "trials", "title": "The court", "text": "Heroes the watch catches now stand [b]trial[/b]. No dice.\n• The case: your captain's Investigation, the watch, witnesses\n• Against their tale: their Deception\n• Guilty: the law book's sentence. Not: they walk free\n• From a Town, a caster of [b]Zone of Truth[/b] lets no lie stand", "point": "tab:Council:Laws", "until": "tab:Council", "when": "count:Trials", "teaches": ["command:SetTrialMagic"]},
     {"id": "conditions", "title": "Conditions", "text": "People can be [b]Exhausted[/b], [b]Frightened[/b], [b]Charmed[/b], [b]Sick[/b], [b]Wounded[/b] or [b]Inspired[/b].\n• Shown on their card as icons\n• Inspired: advantage on their rolls\n• The rest: disadvantage\n• Hover one for what it does", "when": "day:12", "teaches": []},
     {"id": "painted-patrols", "title": "Painted patrols", "text": "Press [b]Patrol[/b] over the corner map and paint the wilds.\n• Riders keep it for a daily wage\n• Roads through it lose fewer caravans\n• Raiders crossing it are seen sooner\n• Send outriders or knights from [b]Bounties[/b] to save the wage", "point": "orders", "when": "day:25", "teaches": ["command:SendRiders"]},
     {"id": "re-arm", "title": "Re-arm the army", "text": "Each regiment in [b]Army[/b] can be re-armed by the town's smiths.\n• Steel, then masterwork, then runed arms\n• Each grade makes every soldier stronger\n• Needs a [b]Forge[/b] with smiths at work\n• Paid soldier by soldier as they are armed", "point": "tab:Army", "when": "day:150", "teaches": ["command:RefitRegiment"]},
     {"id": "buy-outs", "title": "Buy them out", "text": "A rich town can buy what it can't build.\n• A shop or workshop: select it, [b]Buy for the town[/b]\n• A people's charter in [b]Diplomacy[/b]: they swear to you\n• An ally's oath: no tithe, and no enemy can buy it\n• Owners and peoples who don't trust you won't sell", "point": "tab:Diplomacy", "when": "day:250", "teaches": ["command:BuyBuilding", "command:BuySettlement", "command:SwearPower"]},
     {"id": "renown", "title": "Renown", "text": "Companies keep their members and earn [b]renown[/b] for every deed.\n• Each bounty row shows the renown it suggests\n• Short of it, more foes stand and fight\n• A company's new step of fame lifts your Mandate\n• Newcomers join the most renowned company with room", "point": "tab:Companies", "until": "tab:Companies", "when": "count:Companies", "teaches": []},
+    {"id": "retainers", "title": "Your own company", "text": "Pick a company in [b]Companies[/b] and [b]Retain for good[/b].\n• Costlier with more levels and renown\n• Then a daily wage\n• They lean to every job you offer\n• Their reports come home free\n• They never leave, unless the wage stops", "point": "tab:Companies", "when": "day:120", "teaches": ["command:RetainCompany", "command:ReleaseCompany"]},
     {"id": "item-powers", "title": "Magic that does things", "text": "Magic items have [b]powers[/b] now.\n• Fireballs, chain lightning, holds, healing\n• A whisper home, a glass that scries for you\n• Hover an item for its powers\n• Heroes wear up to 3 charms; some suit one class", "point": "tab:Armory", "when": "day:15", "teaches": []},
     {"id": "spoils", "title": "Parts and the forge", "text": "Companies bring home [b]parts[/b] from what they beat: wolf fangs, troll blood, drake scales.\n• [b]Armory[/b]: sell them, or have the forge make arms\n• Plain +1/+2/+3 arms: dearer and finer parts as they rise\n• Strong foes carry their own magic: a frost giant its gauntlets", "point": "tab:Armory", "until": "tab:Armory", "when": "parts", "teaches": ["command:Craft", "command:CancelCraft", "command:SellParts"]},
     {"id": "plain-arms", "title": "Arm the watch", "text": "Plain +1/+2/+3 arms can go to the [b]watch[/b] and your [b]regiments[/b].\n• [b]Armory[/b]: Arm or Recall each unit\n• Each piece makes the unit stronger\n• Heroes take them too, until real magic beats them", "point": "tab:Armory", "when": "day:30", "teaches": ["command:IssueArms", "command:ArmUnit", "command:RecallArms"]},
-    {"id": "hall-relics", "title": "Relics in the hall", "text": "Big finds go to the [b]town hall[/b] and work from there.\n• A caravan bell: fewer caravans waylaid\n• A warlord's tusk: more defence on the walls\n• [b]Armory[/b]: see what each relic does", "point": "tab:Armory", "when": "count:Relics", "teaches": []}
+    {"id": "hall-relics", "title": "Relics in the hall", "text": "Big finds go to the [b]town hall[/b] and work from there.\n• A caravan bell: fewer caravans waylaid\n• A warlord's tusk: more defence on the walls\n• [b]Armory[/b]: see what each relic does", "point": "tab:Armory", "when": "count:Relics", "teaches": []},
+    {"id": "the-ocean", "title": "The open sea", "text": "Word of the open sea has reached town.\n• Islands, wrecks and sea caves lie out there\n• Companies sail to them like any other site\n• A great island city trades and grows\n• Corsairs, reef folk and a drowned cult hold the water", "point": "strategic", "when": "seas", "teaches": []},
+    {"id": "final-host", "title": "The final host", "text": "The big bad's host [b]gathers[/b] at its seat and holdings before it marches.\n• No countdown: only word from your eyes\n• A tower, patrol, scout or scrying by a camp counts it\n• A fight at a camp thins it; a cleared holding scatters it\n• Meet it on the road with the army", "point": "tab:Campaign", "until": "tab:Campaign", "when": "alert:horde", "teaches": []},
+    {"id": "rail-groups", "title": "Six groups, tabs inside", "text": "The rail holds six groups: [b]Town[/b], [b]Council[/b], [b]Heroes[/b], [b]War[/b], [b]Realm[/b], [b]Lore[/b].\n• Each window's tabs run along its top, with their own badges\n• Long windows split into pages\n• Click a heading to fold it; it stays folded", "point": "rail", "when": "day:2", "teaches": []}
   ],
   "untaught": {}
 }

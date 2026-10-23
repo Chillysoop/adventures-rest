@@ -496,7 +496,7 @@ public partial class TownView
         st.Begin(Mesh.PrimitiveType.Triangles);
         var tint = new Color("dfe6ea");
         int sheets = 0;
-        if (town.Terrain.FirstOrDefault(f => f.Kind.Boats) is { } sea)
+        if (Sim.Systems.Founding.Bay(town) is { } sea)
         {
             double b0 = sea.Bearing * Math.PI / 180;
             for (int i = 0; i < 36; i++)

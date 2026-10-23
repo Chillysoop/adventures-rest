@@ -174,7 +174,7 @@ public partial class Main
         pad.AddChild(box);
         scroll.AddChild(pad);
         _scrolls[t] = scroll;
-        _panes[t] = new Pane(box);
+        _panes[t] = new Pane(box, t.ToString());
         return scroll;
     }
 
@@ -217,6 +217,17 @@ public partial class Main
     private void BuildWindow()
     {
         _window = Floating(out var body, out _windowTitle, () => CloseWindow());
+        // The group's icon in its colour before its name, and its windows as tabs under the title bar.
+        _windowIcon = new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2(20, 20), MouseFilter = MouseFilterEnum.Ignore, SizeFlagsVertical = SizeFlags.ShrinkCenter };
+        _windowTitle.GetParent().AddChild(_windowIcon);
+        _windowTitle.GetParent().MoveChild(_windowIcon, 0);
+        _windowTitle.GetParent<HBoxContainer>().AddThemeConstantOverride("separation", 8);
+        body.AddChild(BuildWindowTabs());
+        Pane.Changed = () =>
+        {
+            _dirty = true;
+            SaveSettings();
+        };
         foreach (var t in Enum.GetValues<Tab>())
             if (t != Tab.Inspect) body.AddChild(MakeScroll(t));
         AddChild(_window);
@@ -253,7 +264,12 @@ public partial class Main
     {
         if (_windowTab != t) Remember();
         _windowTab = t;
-        _windowTitle.Text = Titles[t];
+        var grp = Groups[GroupOf(t)];
+        _groupTab[GroupOf(t)] = t;
+        _windowTitle.Text = grp.Name;
+        _windowTitle.AddThemeColorOverride("font_color", grp.Hue.Lightened(0.15f));
+        _windowIcon.Texture = Ui.Icon(grp.Icon);
+        _windowIcon.Modulate = grp.Hue;
         // The roster is a table and the council a hall: their windows open wide.
         _window.OffsetRight = _window.OffsetLeft + (t == Tab.Companies ? 900 : t is Tab.Council or Tab.Army ? 600 : t == Tab.Bounties ? 560 : 460);
         foreach (var (k, s) in _scrolls)

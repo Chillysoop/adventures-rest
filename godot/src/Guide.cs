@@ -285,8 +285,23 @@ public partial class Main
         var a = (want != null ? shown.FirstOrDefault(x => x.Key.StartsWith(want, StringComparison.Ordinal)) : null)
             ?? shown.OrderByDescending(x => x.Kind.Level).ThenBy(x => x.Key, StringComparer.Ordinal).FirstOrDefault();
         if (a == null) return null;
-        if (RailOf(a) is Tab tab && _tabButtons.TryGetValue(tab, out var b)) return b;
+        if (RailOf(a) is Tab tab) return TabAnchor(tab) ?? RailButtonOf(tab);
         return _trayButtons.TryGetValue("Events", out var events) ? events.Button : null;
+    }
+
+    /// <summary>
+    /// A window ("Council") or one of its pages ("Council:Laws"): its rail button or tab until the window is open,
+    /// then the page's button until that page is showing.
+    /// </summary>
+    private Control? PageAnchor(string spec)
+    {
+        var parts = spec.Split(':', 2);
+        if (!Enum.TryParse<Tab>(parts[0], out var tab) || tab == Tab.Inspect) return null;
+        var a = TabAnchor(tab);
+        if (a != null || parts.Length < 2) return a;
+        var pane = _panes[tab];
+        if (pane.Selected == parts[1]) return null;
+        return pane.Box.FindChildren("*", "Button", true, false).OfType<Button>().FirstOrDefault(b => b.HasMeta("page") && (string)b.GetMeta("page") == parts[1]);
     }
 
     private Control? GuideTarget(string point)
@@ -315,7 +330,7 @@ public partial class Main
             "siege" => _siegeBanner,
             "goals" => _goalsCard,
             _ when point.StartsWith("zone:", StringComparison.Ordinal) || point.StartsWith("place:", StringComparison.Ordinal) => BuildTarget(point),
-            _ when point.StartsWith("tab:", StringComparison.Ordinal) && Enum.TryParse<Tab>(point[4..], out var tab) && _tabButtons.TryGetValue(tab, out var b) => TabAnchor(tab, b),
+            _ when point.StartsWith("tab:", StringComparison.Ordinal) => PageAnchor(point[4..]),
             _ => null,
         };
         return c != null && c.IsVisibleInTree() ? c : null;

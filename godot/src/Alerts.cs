@@ -249,7 +249,7 @@ public partial class Main
             ShowAlertTip(hovered.Kind, hovered.Items, hovered.Icon);
         if (_openKind != null && _openKind.StartsWith("rail:", StringComparison.Ordinal))
         {
-            if (Enum.TryParse<Tab>(_openKind[5..], out var railTab) && _tabButtons.TryGetValue(railTab, out var railButton)) ShowRailAlerts(railTab, railButton);
+            if (int.TryParse(_openKind[5..], out int railGroup) && railGroup >= 0 && railGroup < Groups.Length) ShowRailAlerts(railGroup, _railButtons[railGroup]);
         }
         else if (_openKind != null)
         {
@@ -368,23 +368,23 @@ public partial class Main
     /// icon, its line in the colour of its level and the reason under it. Click one to go there, right-click to dismiss.
     /// The list stays while the mouse is on the button or the list.
     /// </summary>
-    private void ShowRailAlerts(Tab tab, Control button)
+    private void ShowRailAlerts(int g, Control button)
     {
-        var items = ShownAlerts.Where(a => RailOf(a) == tab)
+        var items = ShownAlerts.Where(a => RailGroupOf(a) == g)
             .OrderByDescending(a => a.Kind.Level).ThenBy(a => a.Key, StringComparer.Ordinal).ToList();
         if (items.Count == 0)
         {
-            if (_openKind == $"rail:{tab}") CloseAlertList();
+            if (_openKind == $"rail:{g}") CloseAlertList();
             return;
         }
         _alertTip.Visible = false;
-        _openKind = $"rail:{tab}";
+        _openKind = $"rail:{g}";
         Ui.Clear(_alertListBox);
         var top = items.Max(a => a.Kind.Level);
         var head = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
         head.AddThemeConstantOverride("separation", 8);
-        head.AddChild(new TextureRect { Texture = Ui.Icon($"tab-{tab.ToString().ToLowerInvariant()}"), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2(18, 18), SizeFlagsVertical = SizeFlags.ShrinkCenter, MouseFilter = MouseFilterEnum.Ignore });
-        head.AddChild(Ui.Label(Titles[tab], LevelColor(top), Ui.Bold, 14));
+        head.AddChild(new TextureRect { Texture = Ui.Icon(Groups[g].Icon), Modulate = Groups[g].Hue, ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2(18, 18), SizeFlagsVertical = SizeFlags.ShrinkCenter, MouseFilter = MouseFilterEnum.Ignore });
+        head.AddChild(Ui.Label(Groups[g].Name, LevelColor(top), Ui.Bold, 14));
         _alertListBox.AddChild(head);
         foreach (var a in items.Take(8)) _alertListBox.AddChild(AlertRow(a, 28, withTip: true));
         if (items.Count > 8) _alertListBox.AddChild(Ui.Label($"…and {items.Count - 8} more in the window", Ui.Ink2, Ui.Body, 12));
@@ -533,10 +533,10 @@ public partial class Main
             Go(_alertGroups[i].Items[0]);
         }
         // --alert-hover N: the list of the Nth rail button that has alerts, top to bottom.
-        var railed = _tabButtons.Where(kv => ShownAlerts.Any(a => RailOf(a) == kv.Key)).OrderBy(kv => kv.Value.GlobalPosition.Y).ToList();
-        if (_opts.AlertHover is int h && h < railed.Count && railed[h].Value.Size.X > 0)
+        var railed = Enumerable.Range(0, Groups.Length).Where(g => ShownAlerts.Any(a => RailGroupOf(a) == g)).ToList();
+        if (_opts.AlertHover is int h && h < railed.Count && _railButtons[railed[h]].Size.X > 0)
         {
-            ShowRailAlerts(railed[h].Key, railed[h].Value);
+            ShowRailAlerts(railed[h], _railButtons[railed[h]]);
             _railPinned = true;
             _opts.AlertHover = null;
         }
