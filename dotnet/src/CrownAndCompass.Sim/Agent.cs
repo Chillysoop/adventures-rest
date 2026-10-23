@@ -376,6 +376,9 @@ public sealed class Agent
     /// <summary>Without a roof of their own, and not a traveller passing through.</summary>
     public bool Homeless => HomeId == null && !Traveller;
 
+    /// <summary>Wants a roof in town: the homeless and the travellers looking it over, whom landlords and the council build for.</summary>
+    public bool Roofless => HomeId == null;
+
     public double MoodToday { get; set; }
     public int MoodSamples { get; set; }
     public double LastDayMood { get; set; } = 70;

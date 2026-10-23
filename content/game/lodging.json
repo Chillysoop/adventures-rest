@@ -4,7 +4,7 @@
   "stayMost": 4,
   "campStay": 1,
   "campNights": 3,
-  "campArrivals": 0.5,
+  "campArrivals": 1,
   "roomHeal": 0.5,
   "campHeal": 0.25,
   "campOut": 1.6,

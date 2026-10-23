@@ -232,7 +232,7 @@ public sealed record LodgingRules
     public int CampNights { get; init; } = 3;
 
     /// <summary>Share of the daily chance a hero comes when every room is taken.</summary>
-    public double CampArrivals { get; init; } = 0.5;
+    public double CampArrivals { get; init; } = 1;
 
     /// <summary>Share of their hit points a night's rest heals: in a bed, and in a bedroll.</summary>
     public double RoomHeal { get; init; } = 0.5;

@@ -49,7 +49,7 @@ public static class Property
         int slots = 1 + workers.Count / 150;
         foreach (var a in workers.Where(x => x.Gold > 300 && !x.Has(Trait.Lazy)).OrderByDescending(x => x.Gold).ThenBy(x => x.Id).Take(slots).ToList())
         {
-            if (idle <= 0 && town.Workers.Count(x => x.Homeless) == 0) return;
+            if (idle <= 0 && town.Workers.Count(x => x.Roofless) == 0) return;
             int before = town.Buildings.Count;
             TryOpenBusiness(town, a, keepAmbition: true);
             if (town.Buildings.Count > before) idle -= 2;
@@ -226,7 +226,7 @@ public static class Property
 
     private static void TryBuildRental(Town town, Agent a)
     {
-        int homeless = town.Workers.Count(x => x.Homeless);
+        int homeless = town.Workers.Count(x => x.Roofless);
         int openBeds = 0;
         foreach (var b in town.Buildings) openBeds += b.IsSite ? b.Def.Housing : b.OpenBeds;
         // Landlords build ahead of the town: a few empty beds draw settlers down the road.

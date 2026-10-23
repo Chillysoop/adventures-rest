@@ -165,7 +165,7 @@ public static class Mayor
     /// <summary>Build a charter house for the homeless, paid by the treasury. Returns whether one was started.</summary>
     public static bool CommissionHousing(Town town, int minHomeless = 5)
     {
-        int homeless = town.Workers.Count(a => a.Homeless);
+        int homeless = town.Workers.Count(a => a.Roofless);
         // One house at a time, more while many sleep rough.
         int building = town.Buildings.Count(b => b.IsSite && b.OwnerId == null && b.Def.Housing > 0);
         if (homeless < minHomeless || building > homeless / 12 || !Construction.Room(town)) return false;
