@@ -30,6 +30,13 @@
   "motionDays": 3,
   "motionGapDays": 3,
   "decreeMandate": 8,
+  "handOver": [
+    { "area": "council", "at": "goal:council-motion", "text": "The council's steward hands the motions to the mayor: from now on, the mayor signs or vetoes." },
+    { "area": "defence", "at": "day:15", "text": "The captain's steward hands the town's {area} to the mayor: walls, towers and sellswords are yours to order now." },
+    { "area": "armory", "at": "day:25", "text": "The quartermaster hands the {area} to the mayor: buying, gifting and selling the town's loot is yours now." },
+    { "area": "honours", "at": "day:40", "text": "The herald hands the town's {area} to the mayor: purses, fiefs and champions are yours to grant now." }
+  ],
+  "spend": { "law": 6, "trial": 4, "service": 6, "crackdown": 5, "ally": 8, "swear": 8, "quarantine": 3, "union": 8, "institution": 5 },
   "startingMandate": 60,
   "mandateRest": 50,
   "mandateEase": 0.02,

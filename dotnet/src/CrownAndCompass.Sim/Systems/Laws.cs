@@ -121,7 +121,8 @@ public static class Laws
         var r = Rules(town);
         var c = r.Crimes.FirstOrDefault(x => x.Id == crime);
         var p = r.Punishment(punishment);
-        if (c == null || p == null || For(town, crime).Id == p.Id) return false;
+        if (c == null || p == null || For(town, crime).Id == p.Id || Council.Short(town, "law") != null) return false;
+        Council.Spend(town, "law");
         town.Laws[crime] = p.Id;
         if (r.Changed != "")
             town.Log(LedgerCategory.Council, Importance.Notable, r.Changed.Replace("{crime}", c.Name.ToLowerInvariant()).Replace("{punishment}", p.Name.ToLowerInvariant()));
@@ -154,6 +155,8 @@ public static class Laws
         var r = Rules(town).Trial;
         if (spell == town.TrialMagic) return false;
         if (spell != "" && (r.Of(spell) is not { } t || TruthBlocked(town, t) != null)) return false;
+        if (Council.Short(town, "trial") != null) return false;
+        Council.Spend(town, "trial");
         town.TrialMagic = spell;
         string name = spell == "" ? "" : town.Content.Library.Spell(spell)?.Name ?? spell;
         town.Log(LedgerCategory.Council, Importance.Notable, spell == ""

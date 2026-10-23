@@ -524,7 +524,8 @@ public static class Institutions
     {
         if (DefOf(town, s).Choice == null) return "it has nothing to choose";
         int wait = s.ChoiceDay + Rules(town).ChangeDays - town.Day;
-        return s.Choice != "" && wait > 0 ? $"chosen lately: {wait} {(wait == 1 ? "day" : "days")} until it can change" : null;
+        if (s.Choice != "" && wait > 0) return $"chosen lately: {wait} {(wait == 1 ? "day" : "days")} until it can change";
+        return s.Choice != "" ? Council.Short(town, "institution") : null;
     }
 
     /// <summary>Make the institution's choice: the first is free, changing it later costs the keeper's regard.</summary>
@@ -535,6 +536,7 @@ public static class Institutions
         var o = d.Choice!.Options.FirstOrDefault(x => x.Id == option);
         if (o == null) return false;
         bool change = s.Choice != "";
+        if (change) Council.Spend(town, "institution");
         s.Choice = option;
         s.ChoiceDay = town.Day;
         if (change) s.Regard = Math.Max(-100, s.Regard - Rules(town).ChangeRegard);

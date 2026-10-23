@@ -44,6 +44,12 @@ public sealed class StewardState
 
     public int NextId { get; set; } = 1;
 
+    /// <summary>Whether the town's start has been read (<see cref="SimulationOptions.HandOver"/>).</summary>
+    public bool Begun { get; set; }
+
+    /// <summary>Areas a steward runs only until they come due to the player, in council.json <c>handOver</c> order.</summary>
+    public List<string> Learning { get; } = [];
+
     /// <summary>The area whose steward is deciding right now and asks instead of acting; set only inside <see cref="Stewards.For"/>.</summary>
     [NotSaved]
     internal string? Asking;
@@ -110,6 +116,7 @@ public static class Stewards
     {
         if (Areas.All(a => a.Id != area) || (mode == StewardMode.Ask && !Area(area).CanAsk)) return false;
         town.Stewards.Modes[area] = mode;
+        town.Stewards.Learning.Remove(area);
         if (mode != StewardMode.Ask) town.Stewards.Asks.RemoveAll(a => a.Area == area);
         return true;
     }
@@ -208,8 +215,42 @@ public static class Stewards
     };
 
     /// <summary>Daily: asks the player let stand too long lapse, old noes are forgotten, and a council steward who asks puts the pending motion.</summary>
+    /// <summary>Whether an area a steward holds for a new player comes due: "day:N", "goal:id" (open or met), or any goal measure above 0.</summary>
+    private static bool Due(Town town, string at)
+    {
+        if (at.StartsWith("day:", StringComparison.Ordinal)) return int.TryParse(at[4..], out int d) && town.Day >= d;
+        if (at.StartsWith("goal:", StringComparison.Ordinal))
+            return town.Goals.Closed || town.Goals.Done.Contains(at[5..]) || Goals.Open(town).Any(g => g.Id == at[5..]);
+        return Goals.Measure(town, at) > 0;
+    }
+
+    /// <summary>A new player's stewards: take the areas in council.json <c>handOver</c> at the start, and hand each over when it comes due.</summary>
+    private static void HandOver(Town town, SimulationOptions o)
+    {
+        var st = town.Stewards;
+        if (!st.Begun)
+        {
+            st.Begun = true;
+            if (!o.HandOver) return;
+            foreach (var h in town.Content.Council.HandOver)
+                if (Areas.Any(a => a.Id == h.Area) && !st.Modes.ContainsKey(h.Area))
+                {
+                    st.Modes[h.Area] = StewardMode.Steward;
+                    st.Learning.Add(h.Area);
+                }
+        }
+        foreach (var h in town.Content.Council.HandOver)
+        {
+            if (!st.Learning.Contains(h.Area) || !Due(town, h.At)) continue;
+            st.Learning.Remove(h.Area);
+            st.Modes[h.Area] = StewardMode.Player;
+            town.Log(LedgerCategory.Council, Importance.Notable, h.Text.Replace("{area}", Area(h.Area).Name.ToLowerInvariant()));
+        }
+    }
+
     public static void Daily(Town town, SimulationOptions o)
     {
+        HandOver(town, o);
         var st = town.Stewards;
         st.Asks.RemoveAll(a => town.Day - a.Day >= AskDays || Mode(town, o, a.Area) != StewardMode.Ask);
         foreach (var k in st.Declined.Where(kv => town.Day - kv.Value >= DeclineDays).Select(kv => kv.Key).Order(StringComparer.Ordinal).ToList()) st.Declined.Remove(k);

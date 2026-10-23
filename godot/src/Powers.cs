@@ -79,6 +79,9 @@ public partial class Main
             if (ps.TaskTaken) Line("decree", Ui.Gold, $"Promised: {Ui.Esc(Powers.TaskText(t, ps, "{task}"))} · {Ui.Days(left(ps.TaskUntil))}");
             if (Powers.Pacted(t, ps)) Line("defence", Ui.Good, $"Truce · {Ui.Days(left(ps.PactUntil))}");
             if (ps.Owed != "") Line("food", Ui.Bad, $"Farms −25% · {Ui.Days(left(ps.OwedUntil))}");
+            string pledge = ps.Side == PowerSide.Neutral ? "ally" : ps.Side == PowerSide.Town && !ps.Sworn ? "swear" : "";
+            if (pledge != "" && Council.Cost(t, pledge) > 0)
+                Line("mandate", t.Mandate < Council.Cost(t, pledge) ? Ui.Bad : Ui.Gold, $"{(pledge == "ally" ? "Alliance" : "Oath")} spends {Js.Str(Council.Cost(t, pledge))} Mandate");
 
             double gift = Powers.GiftCost(t, id);
             var buttons = new List<(string, bool, bool, Action)>

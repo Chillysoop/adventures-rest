@@ -75,6 +75,12 @@ public sealed record SimulationOptions
     /// <summary>Hardcore: the mayor's death ends the campaign (<see cref="Systems.Mayoralty"/>).</summary>
     public bool Hardcore { get; init; }
 
+    /// <summary>
+    /// A new player's town: stewards start in charge of the areas in council.json <c>handOver</c> and hand each to the
+    /// player when it comes due (<see cref="Stewards.Daily"/>), so the first days ask less. The player can take any back sooner.
+    /// </summary>
+    public bool HandOver { get; init; }
+
     /// <summary>The town's name as the player typed it on New game; blank keeps Briarford.</summary>
     public string TownName { get; init; } = "";
 
@@ -431,6 +437,9 @@ public sealed class Simulation
 
     /// <summary>Call a festival on the mayor's own word: mood for a few days and a little Mandate, for gold.</summary>
     public bool HoldFestival() => Council.HoldFestival(Town);
+
+    /// <summary>Proclaim one of the season's edicts (seasons.json <c>edicts</c>): its decree stands for the season.</summary>
+    public bool ChooseEdict(string edictId) => Seasons.Choose(Town, edictId);
 
     /// <summary>Order a palisade or a watchtower.</summary>
     public bool BuildDefense(DefenseWork what) => Threat.Build(Town, what);

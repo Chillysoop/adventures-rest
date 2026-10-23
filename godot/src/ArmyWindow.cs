@@ -196,6 +196,7 @@ public partial class Main
     {
         var l = t.Content.Army.Levy;
         p.Heading("Levy");
+        p.Text($"Changing the service law  {Ui.Writ(t, "service", "Changing it")}", 12);
         p.Choice("Service", ["Volunteers", "Conscription"], t.Army.Service == ServiceLaw.Volunteers ? 0 : 1, i => Act(() => _sim.SetServiceLaw(i == 0 ? ServiceLaw.Volunteers : ServiceLaw.Conscription)));
         p.Choice("Pay", [$"Paid · {Js.Str(l.Wage)}/day", "Unpaid"], t.Army.LevyPaid ? 0 : 1, i => Act(() => _sim.SetLevyPay(i == 0)));
         int room = Army.LevyRoom(t);

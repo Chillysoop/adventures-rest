@@ -271,8 +271,8 @@ public partial class Main
         p.Row(Ui.Tip($"{Ui.Img("tend", 16)} Healers door to door", $"Every sick house is up within {Ui.Days(r.Tend.Days)}."),
             (tended ? "Tended" : $"Tend · {Js.Str(cost)}g", !tended && t.Treasury >= cost, true, () => Act(() => _sim.TendTheSick())));
         bool q = t.Sickness.Quarantine;
-        p.Row(Ui.Tip($"{Ui.Img("quarantine", 16)} Close the sick lanes", $"Spreads {Math.Round((1 - r.Quarantine.Spread) * 100)}% slower; everyone's mood {Ui.Signed(r.Quarantine.Mood)}."),
-            (q ? "Open" : "Close", true, !q, () => Act(() => _sim.Quarantine(!q))));
+        p.Row(Ui.Tip($"{Ui.Img("quarantine", 16)} Close the sick lanes", $"Spreads {Math.Round((1 - r.Quarantine.Spread) * 100)}% slower; everyone's mood {Ui.Signed(r.Quarantine.Mood)}.") + (q ? "" : "  " + Ui.Writ(t, "quarantine", "Closing them")),
+            (q ? "Open" : "Close", q || Council.Short(t, "quarantine") == null, !q, () => Act(() => _sim.Quarantine(!q))));
         var shown = sick.OrderBy(b => b.Id).First();
         p.Buttons(("Show", true, false, () => LookAtBuilding(shown)));
     }

@@ -635,7 +635,8 @@ public static class Army
 
     public static bool SetService(Town town, ServiceLaw law)
     {
-        if (town.Army.Service == law) return false;
+        if (town.Army.Service == law || Council.Short(town, "service") != null) return false;
+        Council.Spend(town, "service");
         town.Army.Service = law;
         if (law == ServiceLaw.Conscription)
         {
