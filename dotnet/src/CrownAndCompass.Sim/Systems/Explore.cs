@@ -202,6 +202,9 @@ public sealed class Survey
     /// <summary>The company's own account of the trip, told at the tavern when it is home.</summary>
     public List<string> Journal { get; } = [];
 
+    /// <summary>Painted cells it walked that the town hasn't heard of yet ("zone:x:y"), told when it is home (<see cref="Wilds.Told"/>).</summary>
+    public List<string> Saw { get; } = [];
+
     /// <summary>The day each find was rolled for, so a day in the region rolls once.</summary>
     public int RolledDay { get; set; } = -1;
 }
@@ -716,7 +719,7 @@ public static class Explore
         var leg = s.Legs[^1];
         bool done = town.Tick >= End(town, leg);
         // Out on the road, they see the painted ground they pass.
-        if (town.Wilds.Count > 0) Wilds.See(town, Where(town, s, town.Tick));
+        if (town.Wilds.Count > 0) Wilds.See(town, s, Where(town, s, town.Tick));
         if (s.Phase == SurveyPhase.Homeward)
         {
             if (done) Home(town, s);
@@ -846,6 +849,7 @@ public static class Explore
         {
             // They have seen it with their own eyes: it goes on their map, where it really is.
             site.Found = true;
+            site.FoundTick ??= town.Tick;
         }
         if (f.SettlementId is int stid && f.Kind == "settlement") town.Settlements[stid].Met = true;
         s.Legs[^1].Stop = town.Tick;
@@ -1497,6 +1501,7 @@ public static class Explore
         var rules = Rules(town);
         s.Phase = SurveyPhase.Home;
         s.ReturnTick = town.Tick;
+        Wilds.Told(town, s, true);
         Pay(town, s);
         var living = Living(town, s);
         var region = town.Regions[s.RegionId];
@@ -1526,6 +1531,7 @@ public static class Explore
     private static void Lost(Town town, Survey s)
     {
         s.Phase = SurveyPhase.Lost;
+        Wilds.Told(town, s, false);
         if (s.AtFind is int fid) FindOf(town, fid)!.State = FindState.Done;
         s.AtFind = null;
         if (s.CommissionId is int cid && CommissionOf(town, cid) is { Status: BountyStatus.Taken } c)

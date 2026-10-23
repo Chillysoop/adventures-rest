@@ -29,6 +29,9 @@ public sealed class SiteState(SiteDef def)
     /// <summary>Someone has seen it with their own eyes (a party, a scout, explorers, an ally's map): the town knows where it really is, not just roughly.</summary>
     public bool Found { get; set; }
 
+    /// <summary>When it was first found; null for a site never found, or found in a save from before.</summary>
+    public int? FoundTick { get; set; }
+
     /// <summary>Who the town last heard of it from ("a tinker passing through", "the dwarves of Ironhold").</summary>
     public string HeardFrom { get; set; } = "";
 
@@ -201,6 +204,9 @@ public sealed class Party
 
     /// <summary>They found the site empty and turned back.</summary>
     public bool Empty { get; set; }
+
+    /// <summary>When the party last sent word home by sending stone on a council bounty: the road it had walked by then is the town's.</summary>
+    public int? SentTick { get; set; }
 
     /// <summary>When the last of them died, for a party that never comes home.</summary>
     public int? GoneTick { get; set; }
@@ -641,6 +647,9 @@ public static class Quests
             var members = party.Members.Select(town.Agent).ToList();
             // Only a council bounty buys the council the report; anyone else keeps theirs to sell.
             party.Withheld = !Intel.Commissioned(town, party) && !Retainers.Held(town, party.Name);
+            // Explorers who went in to fight tell of the country they walked when they're home, if anyone comes home.
+            if (party.SurveyId is int sid && town.Surveys.FirstOrDefault(x => x.Id == sid) is { } survey)
+                Wilds.Told(town, survey, party.Result is not { Outcome: ExpeditionOutcome.Wiped });
             if (party.RecalledTick != null)
             {
                 Knowledge.ComeHome(town, party, s, bounty, members);
