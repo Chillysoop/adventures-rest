@@ -245,6 +245,7 @@ public partial class Main
         bool tutorial = _guideCard.Visible || _outline.Visible;
         // The trail carries on into the windows the card is hidden behind: rail button, tab, page, then the control.
         bool free = !tutorial && !_title.Visible && !_menu.Visible && !_endOverlay.Visible;
+        // The build bar rebuilds its buttons on every tab, and a window its controls: a remembered one may be gone.
         if (check || _goalTarget == null || !IsInstanceValid(_goalTarget))
         {
             var t = _sim.Town;
