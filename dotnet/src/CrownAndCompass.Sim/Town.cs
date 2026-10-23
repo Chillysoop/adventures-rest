@@ -422,6 +422,12 @@ public sealed class Town
     /// <summary>The country that bends the roads between the town and its sites (<see cref="Systems.Roads"/>).</summary>
     public List<Feature> Terrain { get; } = [];
 
+    /// <summary>Whether the country has its real outlines (<see cref="Systems.Country"/>); an older town's are drawn the first day it is loaded.</summary>
+    public bool Shaped { get; set; }
+
+    /// <summary>Wear on the wilds' ground, by land cell (<see cref="Systems.Country.Land"/>): walked often, it becomes a quicker trail.</summary>
+    public Dictionary<int, double> Trails { get; } = [];
+
     /// <summary>Old gateways in the wilds that link two far places (<see cref="Systems.Wayfaring"/>).</summary>
     public List<Gateway> Gateways { get; } = [];
 

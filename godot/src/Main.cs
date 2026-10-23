@@ -155,6 +155,9 @@ public partial class Main : Control
         // --shadowed aims at the first settlement the town has met that lies under an enemy's shadow.
         if (_opts.Shadowed && _sim.Town.Settlements.FirstOrDefault(s => s.Met && Shadows.Shadowed(s)) is { } dark)
             _opts.Look ??= Map.Geo.SettlementPin(_sim.Town, dark);
+        // --land aims at the nearest hard country of a kind (Country), to show its shape and the roads round it.
+        if (_opts.Land is string lk && _sim.Town.Terrain.Where(f => f.Kind.Id == lk).OrderBy(f => Js.Hypot(Country.Middle(f).X, Country.Middle(f).Y)).FirstOrDefault() is { } land)
+            _opts.Look ??= Map.Geo.FromDays(Country.Middle(land));
         if (_opts.Wonder is string wk)
         {
             if (wk == "gate" && _sim.Town.Gateways.FirstOrDefault() is { } g) _opts.Look ??= Map.Geo.FromDays(g.Ax, g.Ay);

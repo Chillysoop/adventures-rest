@@ -103,6 +103,7 @@ public class CompaniesTests
             if (n == null) continue;
             var ask = Notables.DefOf(t, n).Asks.First(a => a.Quest != "");
             var site = t.Sites.Where(s => s.Known != SiteKnowledge.Unheard && !s.ThoughtCleared && !t.Bounties.Any(b => b.SiteId == s.Def.Id && b.Status is BountyStatus.Open or BountyStatus.Taken))
+                .Where(s => !Systems.Undercity.IsUnder(t, s) || Systems.Undercity.Stirring(t, s))
                 .Where(s => Systems.Terms.Blocked(t, s, t.Content.Bounties.Term(ask.Quest)) == null)
                 .Where(s => !Undercity.IsUnder(t, s) || Undercity.Stirring(t, s))
                 .OrderBy(s => s.BelievedTier).FirstOrDefault();
