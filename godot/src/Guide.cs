@@ -1,6 +1,7 @@
 using System.Text.Json;
 using CrownAndCompass.Client.Map;
 using CrownAndCompass.Sim;
+using CrownAndCompass.Sim.Systems;
 using Godot;
 
 namespace CrownAndCompass.Client;
@@ -208,6 +209,10 @@ public partial class Main
     // ---------- The goal pointer: the charter goal to work on next, and the button that does it ----------
 
     private Panel _goalRing = null!;
+
+    /// <summary>An alert just answered (<see cref="Go(Alert)"/>): the control its window acts on, lit while the alert stands and its window is open.</summary>
+    private string _trail = "", _trailKey = "";
+    private Tab? _trailTab;
     private Label _goalArrow = null!;
     private Control? _goalTarget;
     private string _goalPoint = "";
@@ -238,14 +243,20 @@ public partial class Main
     private void SyncGoalPointer(bool check)
     {
         bool tutorial = _guideCard.Visible || _outline.Visible;
-        if (check || _goalTarget == null)
+        // The trail carries on into the windows the card is hidden behind: rail button, tab, page, then the control.
+        bool free = !tutorial && !_title.Visible && !_menu.Visible && !_endOverlay.Visible;
+        if (check || _goalTarget == null || !IsInstanceValid(_goalTarget))
         {
-            var next = _goalsCard.Visible && !tutorial ? CrownAndCompass.Sim.Systems.Goals.Next(_sim.Town) : null;
-            _goalPoint = next?.Point
-                ?? (_goalsCard.Visible && !tutorial && _sim.Town.Goals.Closed ? CrownAndCompass.Sim.Systems.Ahead.Now(_sim.Town).Aims.FirstOrDefault(a => a.Point != "")?.Point : null) ?? "";
+            var t = _sim.Town;
+            if (_trail != "" && !TrailLive()) _trail = "";
+            var next = free ? Goals.Next(t) : null;
+            _goalPoint = !free ? ""
+                : _trail != "" ? _trail
+                : next?.Point
+                ?? (t.Goals.Closed ? Ahead.Now(t).Aims.FirstOrDefault(a => a.Point != "")?.Point : null) ?? "";
             _goalTarget = _goalPoint == "" ? null : GuideTarget(_goalPoint);
         }
-        var target = _goalsCard.Visible && !tutorial && _goalTarget != null && _goalTarget.IsVisibleInTree() ? _goalTarget : null;
+        var target = free && _goalTarget != null && IsInstanceValid(_goalTarget) && _goalTarget.IsVisibleInTree() ? _goalTarget : null;
         _goalRing.Visible = _goalArrow.Visible = target != null;
         if (target == null) return;
         var r = target.GetGlobalRect().Grow(4);
@@ -275,6 +286,50 @@ public partial class Main
     }
 
     /// <summary>
+    /// A click on a charter goal or a what-next line: open the place to act on it, in the pointer's tokens. A brush or a
+    /// building comes in hand on the build bar (or, when the town can't raise it yet, its group opens and says why), a
+    /// window opens on its page, a wilds brush is picked up.
+    /// </summary>
+    private void GoTo(string point, string key = "")
+    {
+        var t = _sim.Town;
+        // What was clicked leads the pointer from here until it is done or its window or tool is put away.
+        _trail = point;
+        _trailKey = key;
+        _trailTab = point.StartsWith("tab:", StringComparison.Ordinal) && Enum.TryParse<Tab>(SplitItem(point[4..]).Window.Split(':')[0], out var tt) ? tt : null;
+        _goalTarget = null;
+        if (point.StartsWith("zone:", StringComparison.Ordinal) || point.StartsWith("place:", StringComparison.Ordinal))
+        {
+            bool zone = point[0] == 'z';
+            string id = zone ? point[5..] : point[6..];
+            bool Is(BuildItem i) => zone ? i.Zone?.ToString() == id && i.Density == 0 && (i.Crop == null || i.Crop == "wheat") : i.Building == id;
+            // Whichever group of the bar holds it, so the bar's grouping can change freely.
+            var group = Enum.GetValues<BuildGroup>().FirstOrDefault(g => BuildItems(g).Any(Is));
+            if (!BuildItems(group).Any(Is)) return;
+            CloseWindow();
+            string? why = zone ? null : Planning.Blocked(t, t.Content.Building(id));
+            OpenPlan(group.ToString(), why == null ? id : null, null);
+            if (why != null) Toast($"{t.Content.Building(id).Name}: {why}");
+        }
+        else if (point.StartsWith("tab:", StringComparison.Ordinal))
+        {
+            var parts = SplitItem(point[4..]).Window.Split(':', 2);
+            if (!Enum.TryParse<Tab>(parts[0], out var tab) || tab == Tab.Inspect) return;
+            if (parts.Length > 1) _panes[tab].Selected = parts[1];
+            OpenWindow(tab);
+        }
+        else if (point.StartsWith("brush:", StringComparison.Ordinal))
+        {
+            if (_map.Brush != point[6..]) ToggleBrush(point[6..]);
+        }
+        else if (point is "build" or "buildbar")
+        {
+            if (!_buildBar.Visible) ToggleBuildBar();
+        }
+        else if (point == "strategic" && !_map.Strategic) ToggleStrategic();
+    }
+
+    /// <summary>
     /// Where a step about an alert points: the rail button (or the Events tray) holding the alert its "when" names,
     /// else the one holding the most pressing alert.
     /// </summary>
@@ -290,18 +345,65 @@ public partial class Main
     }
 
     /// <summary>
-    /// A window ("Council") or one of its pages ("Council:Laws"): its rail button or tab until the window is open,
-    /// then the page's button until that page is showing.
+    /// Whether the clicked goal or answered alert still leads the pointer: it stands (a goal not yet met, an alert still
+    /// raised) and the window, build bar or brush it opened is still out.
+    /// </summary>
+    private bool TrailLive()
+    {
+        var t = _sim.Town;
+        if (_trailKey.StartsWith("goal:", StringComparison.Ordinal) && t.Goals.Done.Contains(_trailKey[5..])) return false;
+        if (_trailKey.StartsWith("alert:", StringComparison.Ordinal) && !ShownAlerts.Any(a => a.Key == _trailKey[6..])) return false;
+        if (_trail.StartsWith("tab:", StringComparison.Ordinal)) return _window.Visible && _windowTab == _trailTab;
+        if (_trail.StartsWith("zone:", StringComparison.Ordinal) || _trail.StartsWith("place:", StringComparison.Ordinal)) return _buildBar.Visible;
+        if (_trail.StartsWith("brush:", StringComparison.Ordinal)) return _map.Brush == _trail[6..];
+        return false;
+    }
+
+    /// <summary>
+    /// The trail to a window's control, one step at a time: a window ("Council"), one of its pages ("Council:Hall") and
+    /// a control in it ("Council:Hall>Sign"). Its rail button until the window is open (its tab while another window of
+    /// the group is), then the page's button until that page is showing, then the control itself.
     /// </summary>
     private Control? PageAnchor(string spec)
     {
-        var parts = spec.Split(':', 2);
+        var (window, item) = SplitItem(spec);
+        var parts = window.Split(':', 2);
         if (!Enum.TryParse<Tab>(parts[0], out var tab) || tab == Tab.Inspect) return null;
         var a = TabAnchor(tab);
-        if (a != null || parts.Length < 2) return a;
+        if (a != null) return a;
         var pane = _panes[tab];
-        if (pane.Selected == parts[1]) return null;
-        return pane.Box.FindChildren("*", "Button", true, false).OfType<Button>().FirstOrDefault(b => b.HasMeta("page") && (string)b.GetMeta("page") == parts[1]);
+        if (parts.Length > 1 && pane.Selected != parts[1]
+            && pane.Box.FindChildren("*", "Button", true, false).OfType<Button>().FirstOrDefault(b => b.HasMeta("page") && (string)b.GetMeta("page") == parts[1]) is { } page)
+            return page;
+        return item == null ? null : ItemAnchor(tab, item);
+    }
+
+    /// <summary>"City:Growth>Claim" into the window and page, and the control after the "&gt;" (null when none is named).</summary>
+    private static (string Window, string? Item) SplitItem(string spec)
+    {
+        int gt = spec.IndexOf('>');
+        return gt < 0 ? (spec, null) : (spec[..gt], spec[(gt + 1)..]);
+    }
+
+    /// <summary>
+    /// The button in an open window whose words or hover begin with these (an enabled one first), else the heading that
+    /// does (unfolded); scrolled into view the first time it is found.
+    /// </summary>
+    private Control? ItemAnchor(Tab tab, string item)
+    {
+        if (!_scrolls.TryGetValue(tab, out var scroll)) return null;
+        bool Starts(string s) => s.StartsWith(item, StringComparison.OrdinalIgnoreCase);
+        var controls = scroll.FindChildren("*", "Control", true, false).OfType<Control>().Where(c => c.IsVisibleInTree()).ToList();
+        Control? hit = controls.OfType<Button>().Where(b => Starts(b.Text) || Starts(b.TooltipText)).OrderBy(b => b.Disabled).FirstOrDefault();
+        if (hit == null && controls.FirstOrDefault(c => c.HasMeta("heading") && Starts((string)c.GetMeta("heading"))) is { } head)
+        {
+            string name = (string)head.GetMeta("heading");
+            if (Pane.Folded.Remove($"{_panes[tab].Id}/{name}")) Pane.Changed?.Invoke();
+            if (head != _goalTarget) ScrollToHeading(name);
+            return head;
+        }
+        if (hit != null && hit != _goalTarget) scroll.EnsureControlVisible(hit);
+        return hit;
     }
 
     private Control? GuideTarget(string point)
@@ -320,6 +422,9 @@ public partial class Main
             "lens" => _lensBar.Visible ? _lensBar : _lensButton,
             "minimap" => _miniFrame,
             "markers" => _markerBar,
+            "orders" => _ordersBar,
+            "brush:explore" => _scoutButton,
+            "brush:patrol" => _patrolButton,
             "menu" => _menuButton,
             "glossary" => _glossaryButton,
             "window" => _window,

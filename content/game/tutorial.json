@@ -32,10 +32,10 @@
     {
       "id": "charter-goals",
       "title": "Charter goals",
-      "text": "The card by the rail lists your [b]charter goals[/b].\n• The gold one is next: follow its arrow\n• Each pays a small reward\n• The next goal takes its place",
+      "text": "The card by the rail lists your [b]charter goals[/b].\n• Click a goal to go straight to it\n• [b]Next[/b] (N) by Build: whatever needs you, one click each\n• Each pays a small reward\n• The next goal takes its place",
       "point": "goals",
       "when": "goals",
-      "teaches": []
+      "teaches": ["key:N"]
     },
     {
       "id": "inspect",

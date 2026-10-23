@@ -33,6 +33,7 @@ public static class Keys
         new("faster", "order-strike", "Faster", [Key.Equal, Key.KpAdd]),
         new("slower", "order-guard", "Slower", [Key.Minus, Key.KpSubtract]),
         new("build", "tab-build", "Build", [Key.B]),
+        new("next", "ui-up", "Next thing to do", [Key.N]),
         new("undo", "tab-build", "Undo zone stroke", [Ctrl(Key.Z)]),
         new("brush_smaller", "tab-build", "Brush smaller", [Key.Bracketleft]),
         new("brush_bigger", "tab-build", "Brush bigger", [Key.Bracketright]),
