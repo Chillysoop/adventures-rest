@@ -335,6 +335,7 @@ public static class TreasuryAccount
     public const string Notables = "Notables";
     public const string Patrols = "Patrols";
     public const string Buyouts = "Buyouts";
+    public const string Retainers = "Retainers";
 }
 
 /// <summary>How the campaign ended.</summary>
@@ -429,6 +430,12 @@ public sealed class Town
     /// <summary>The country that bends the roads between the town and its sites (<see cref="Systems.Roads"/>).</summary>
     public List<Feature> Terrain { get; } = [];
 
+    /// <summary>Whether the country has its real outlines (<see cref="Systems.Country"/>); an older town's are drawn the first day it is loaded.</summary>
+    public bool Shaped { get; set; }
+
+    /// <summary>Wear on the wilds' ground, by land cell (<see cref="Systems.Country.Land"/>): walked often, it becomes a quicker trail.</summary>
+    public Dictionary<int, double> Trails { get; } = [];
+
     /// <summary>Old gateways in the wilds that link two far places (<see cref="Systems.Wayfaring"/>).</summary>
     public List<Gateway> Gateways { get; } = [];
 
@@ -483,6 +490,12 @@ public sealed class Town
 
     /// <summary>Whether the peoples are met one by one (<see cref="Systems.Neighbours.Know"/>); false in saves from before.</summary>
     public bool PeoplesMet { get; set; }
+
+    /// <summary>How many meetings have been looked at for a menace's herald (<see cref="Systems.Manners.Daily"/>).</summary>
+    public int HeraldsSeen { get; set; }
+
+    /// <summary>The day each overture can next be made, by "key/manner" (<see cref="Systems.Manners.Overture"/>).</summary>
+    public OrderedMap<string, int> Overtures { get; } = new();
     public int SightingCount { get; set; }
 
     /// <summary>Enemies' agents loose in town, looking over what they mean to strike tonight (<see cref="Systems.Lurkers"/>).</summary>
@@ -669,6 +682,10 @@ public sealed class Town
 
     /// <summary>Where the town was founded (founding.json id); null for the river ford, and in saves from before the choice (<see cref="Systems.Founding"/>).</summary>
     public string? Founding { get; set; }
+
+    /// <summary>The middle of the ocean's wedge of the map, in degrees, and its width; 0 wide for no ocean (<see cref="Systems.World.InOcean"/>).</summary>
+    public double OceanBearing { get; set; }
+    public double OceanArc { get; set; }
 
     /// <summary>The town's ships, for a town on the sea (<see cref="Systems.Fleet"/>).</summary>
     public List<Systems.Ship> Ships { get; } = [];

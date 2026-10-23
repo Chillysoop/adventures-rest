@@ -38,10 +38,10 @@ public class GiftsTests
         for (int d = 0; d < 400 && (gift = Stories.Open(t, "dark-gift")) == null; d++) sim.RunDays(1);
         Assert.NotNull(gift);
         var hero = t.Agent(gift!.HeroId!.Value);
-        int level = hero.Hero!.Level, xp = hero.Hero.Xp;
+        int level = hero.Hero!.Level, xp = hero.Hero.Xp, taint = hero.Hero.Taint;
         int take = Stories.StageOf(t, gift).Options.FindIndex(o => o.Success.Effects.ContainsKey("taint") && o.Skill == "");
         Stories.Resolve(t, gift.Id, take);
-        Assert.Equal(1, hero.Hero.Taint);
+        Assert.Equal(taint + 1, hero.Hero.Taint);
         Assert.True(hero.Hero.Level > level || hero.Hero.Xp > xp);
 
         var again = Stories.Open(t, "dark-gift");

@@ -64,7 +64,8 @@ public partial class Main
             var it = t.Content.Library.Item(rec.Ref)!;
             string id = rec.Id;
             string needs = string.Join(", ", rec.Needs.Select(n => NeedText(t, n.Key, n.Value)));
-            string sub = Ui.Chips(Ui.Chip("gold", Js.Str(rec.Gold), t.Treasury >= rec.Gold ? null : Ui.Bad), needs != "" ? Ui.Chip("item-part", Ui.Esc(needs), no == "not enough parts" ? Ui.Bad : null) : "", Ui.Chip("ui-time", Ui.Days(rec.Days)));
+            double cost = Spoils.Cost(t, rec);
+            string sub = Ui.Chips(Ui.Chip("gold", Js.Str(cost), t.Treasury >= cost ? null : Ui.Bad), needs != "" ? Ui.Chip("item-part", Ui.Esc(needs), no == "not enough parts" ? Ui.Bad : null) : "", Ui.Chip("ui-time", Ui.Days(rec.Days)));
             p.Row($"[b]{Powered(t.Content, it, Ui.Esc(Gear.Plainly(it)))}[/b] {Stars(it)}\n[font_size=12]{sub}{(no != null ? Ui.Dim($" · {Ui.Esc(no)}") : "")}[/font_size]",
                 ($"fr{rec.Id}", () => ItemBadge(ItemIcon(t, it), RarityOf(it)), null),
                 ("Make", no == null, no == null, () => Act(() => _sim.Craft(id))));
@@ -114,5 +115,19 @@ public partial class Main
         var buttons = units.Where(u => Kit.Men(t, u) > 0).Take(4)
             .Select(u => (Label: $"To {Kit.Name(t, u).Replace("the ", "")}", Enabled: Kit.Refuse(t, s, u) == null, Primary: false, Press: (Action)(() => Act(() => _sim.IssueArms(id, u))))).ToArray();
         if (buttons.Length > 0) p.Buttons(buttons);
+    }
+
+    /// <summary>Relics the hall keeps and what each does for the town.</summary>
+    private void RenderRelics(Pane p, Town t)
+    {
+        var kept = Regalia.InHall(t).ToList();
+        if (kept.Count == 0) return;
+        p.Heading("In the hall");
+        foreach (var d in kept)
+        {
+            if (t.Content.Library.Item(d.Ref) is not LibItem it) continue;
+            var does = (d.Service == null ? [] : Institutions.Describe(t, d.Service)).Concat(Regalia.Describe(t, d)).ToList();
+            p.Row(Ui.Tip($"{Ui.Img("inst-hall-of-heroes", 14)} [b]{Ui.Esc(it.Name)}[/b] {Ui.Dim(Ui.Esc(string.Join(" · ", does)))}", it.Text));
+        }
     }
 }

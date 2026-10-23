@@ -118,8 +118,7 @@ public partial class Main
 
         var fights = new List<string> { Line("item-weapon", $"{Worn(c, hs, "weapon", Ui.Esc(Ui.Cap(Piece(hs, hs.Weapon, "weapon") is var w && w != "" ? w : "bare hands")))} {Ui.Dim(Signed(Gear.Attack(c, a)))}") };
         if (cls.Sneak) fights.Add(Line("role-striker", "Sneak attack"));
-        if (cls.HealSpell != null && cls.HealsAt(hs.Level) is var heals && heals > 0) fights.Add(Line("ui-heal", $"{Ui.Esc(cls.HealSpell.Name)} {Ui.Dim($"×{heals} a delve")}"));
-        if (cls.AreaSpell != null) fights.Add(Line("sheet-spell", Ui.Esc(cls.AreaSpell.Name)));
+        foreach (var (icon, label, tip) in Prowess.Sheet(c, hs)) fights.Add(Ui.Tip(Line(icon, Ui.Esc(label)), tip));
         if (cls.Role != "") fights.Add(Ui.Dim(Ui.Esc(Ui.Cap(cls.Role) + (cls.Magic != "" ? $", {cls.Magic} caster" : ""))));
 
         var kit = new List<string>();
@@ -130,6 +129,7 @@ public partial class Main
         if (charms.Count > 0) kit.Add(Ui.Tip(Ui.Dim($"Attuned {charms.Count}/{c.Enchant.Attune}"), "Magic charms a hero can wear at once"));
         if (hs.Potions > 0) kit.Add(Line("potions", $"Healing potion ×{hs.Potions}"));
         if (hs.Scrolls > 0) kit.Add(Line("sheet-spell", $"Spell scroll ×{hs.Scrolls}"));
+        foreach (var d in hs.Draughts) kit.Add(Line("potions", Powered(c, d, Ui.Esc(d.Name))));
         if (hs.Copied > 0) kit.Add(Line("books", $"{hs.Copied} copied into the spellbook"));
         if (hs.Stone) kit.Add(Line("item-stone", "Town sending stone"));
         if (hs.Mount != "" && c.Passage.Mount(hs.Mount) is { } md) kit.Add(Line("sheet-mount", Ui.Esc(Ui.Cap(md.Name))));

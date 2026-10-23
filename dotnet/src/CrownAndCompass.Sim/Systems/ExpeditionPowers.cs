@@ -38,11 +38,8 @@ public static partial class Expedition
         }
     }
 
-    private sealed partial class Foe
+    internal sealed partial class Foe
     {
-        /// <summary>Pinned by a hero's magic (a web, a freezing blow) until the end of this round.</summary>
-        public int HeldUntil;
-
         private bool _named;
         private string _element = "";
 
@@ -61,8 +58,8 @@ public static partial class Expedition
     public sealed partial class Venture
     {
         /// <summary>
-        /// A hoard's piece: plain +N arms rarer the higher the bonus, and pieces of the elements the site's country favours
-        /// (cold in the frozen north, fire in the burning wastes) likelier than the rest.
+        /// A hoard's piece: plain +N arms rarer the higher the bonus, and pieces that belong in the site's country (cold in
+        /// the frozen north, a boat on the coast, a grave-blade in a tomb: enchantments.json found) likelier than the rest.
         /// </summary>
         private LibItem Hoarded(List<LibItem> pool, SiteDef site)
         {
@@ -71,7 +68,9 @@ public static partial class Expedition
             double Weight(LibItem it)
             {
                 if (Enchant.Basic(_content, it)) return r.Basic.Weight[Math.Clamp(Gear.BonusOf(_content, it), 0, r.Basic.Weight.Length - 1)];
-                return favoured.Count > 0 && Enchant.Elements(_content, it).Any(favoured.Contains) ? r.Affinity : 1;
+                bool fits = (favoured.Count > 0 && Enchant.Elements(_content, it).Any(favoured.Contains))
+                    || (r.Found.TryGetValue(it.Id, out var at) && at.Any(site.Habitats.Contains));
+                return fits ? r.Affinity : _content.Loot.OffFit;
             }
             double total = Js.Sum(pool, Weight), x = _rng.Next() * total;
             foreach (var it in pool)
@@ -132,9 +131,8 @@ public static partial class Expedition
                     foreach (var f in targets)
                     {
                         int hit = Burn(f, p.Element, Spell(f, dmg));
+                        if (hit > 0) hit = Hit(f, hit, Element(p), true, false, foes, round);
                         if (hit == 0) shrugged++;
-                        f.Hp -= hit;
-                        Struck(f, foes);
                         if (f.Hp <= 0) felled++;
                     }
                     Credit(c, felled);
@@ -149,9 +147,8 @@ public static partial class Expedition
                     {
                         var f = chain[i];
                         int hit = Burn(f, p.Element, Spell(f, Math.Max(1, dmg >> i)));
+                        if (hit > 0) hit = Hit(f, hit, Element(p), true, false, foes, round);
                         total += hit;
-                        f.Hp -= hit;
-                        Struck(f, foes);
                         if (f.Hp <= 0) felled++;
                     }
                     Credit(c, felled);
@@ -171,6 +168,7 @@ public static partial class Expedition
                     return true;
                 }
                 big.HeldUntil = round + Math.Max(1, hold.Power.Rounds);
+                big.HeldBy = "";
                 Log($"{Its(c, hold.Item)} pins {The(big.Def)} where it stands for {(hold.Power.Rounds <= 1 ? "a round" : $"{hold.Power.Rounds} rounds")}.");
                 Mark("spell", c);
                 return true;
@@ -189,13 +187,27 @@ public static partial class Expedition
             return false;
         }
 
-        /// <summary>What a hero's gear adds to a blow that lands: an element on every hit, a bane's bite, a critical's power.</summary>
+        /// <summary>The damage type of an item power: its element, or raw force.</summary>
+        private static string Element(ItemPowerDef p) => p.Element != "" ? p.Element : "force";
+
+        /// <summary>A weapon's element on a blow that landed, each its own damage type against the foe's defences.</summary>
+        private int Strikes(Combatant c, Foe target, bool crit, List<Foe> foes)
+        {
+            int more = 0;
+            foreach (var (i, p, it) in c.Of("strike"))
+            {
+                if (target.Hp <= 0) break;
+                int dmg = Burn(target, p.Element, (p.Roll ?? new Dice(1, 6, 0)).Roll(_rng, crit));
+                if (dmg > 0) more += Hit(target, dmg, Element(p), true, false, foes, _round);
+            }
+            return more;
+        }
+
+        /// <summary>What a hero's gear adds to the blow itself: a bane's bite, a critical's power.</summary>
         private int OnHit(Combatant c, Foe target, bool crit, List<Foe> foes)
         {
             if (c.Powers.Count == 0) return 0;
             int more = 0;
-            foreach (var (i, p, it) in c.Of("strike"))
-                more += Burn(target, p.Element, (p.Roll ?? new Dice(1, 6, 0)).Roll(_rng, crit));
             foreach (var (i, p, it) in c.Of("bane"))
             {
                 if (!Bitten(target, p) || p.Uses > 0 && c.FightUsed.Contains(i)) continue;
@@ -219,6 +231,7 @@ public static partial class Expedition
                             break;
                         case "hold":
                             target.HeldUntil = Math.Max(target.HeldUntil, Rounds() + Math.Max(1, p.Rounds));
+                            target.HeldBy = "";
                             Log($"{Its(c, it)} {(p.Element == "cold" ? "freezes" : p.Element == "radiant" || p.Element == "fire" ? "blinds" : "stuns")} {The(target.Def)} where it stands.");
                             break;
                         default:
@@ -276,8 +289,7 @@ public static partial class Expedition
             int roll = _rng.D20();
             if (roll == 1 || roll != 20 && roll + atk < target.Def.Ac + target.Ways.Ac) return;
             int dmg = Math.Max(1, Gear.Damage(_content, _rng, c.Agent, roll == 20));
-            target.Hp -= dmg;
-            Struck(target, foes);
+            Hit(target, dmg, c.Sheet.Weapon?.DamageType is { Length: > 0 } wt ? wt : "bludgeoning", Prowess.Magic(c.Sheet), c.Sheet.Silvered, foes, _round);
             if (target.Hp <= 0) Credit(c, 1);
         }
 
@@ -297,6 +309,7 @@ public static partial class Expedition
             if (t.Ready("rebuke", true) is not { } r) return;
             t.Spend(r.I, true);
             f.HeldUntil = Math.Max(f.HeldUntil, round + Math.Max(1, r.Power.Rounds));
+            f.HeldBy = "";
             Log($"{Its(t, r.Item)} answers the blow: {The(f.Def)} is {(r.Power.Element == "cold" ? "frozen" : "held")} fast.");
         }
 
@@ -310,6 +323,28 @@ public static partial class Expedition
 
         /// <summary>No snare, hold or swallow takes a hero whose gear keeps them free.</summary>
         private static bool Free(Combatant c) => c.Has("free");
+
+        /// <summary>What a hero's items add to a check of this kind: eyes for traps, a silver tongue for parley.</summary>
+        private static int Knack(Combatant c, string kind)
+        {
+            int n = 0;
+            foreach (var (_, p, _) in c.Of("knack"))
+                if (p.Vs.Contains(kind)) n = Math.Max(n, (int)p.Amount);
+            return n;
+        }
+
+        /// <summary>A bag that holds more than it should: the best of them carries home a share more of the gold.</summary>
+        private void Haul()
+        {
+            if (Gold <= 0) return;
+            var best = Party.Where(c => !c.Dead).SelectMany(c => c.Of("haul").Select(x => (C: c, x.Power, x.Item)))
+                .OrderByDescending(x => x.Power.Amount).ThenBy(x => x.C.Agent.Id).FirstOrDefault();
+            if (best.C == null) return;
+            int more = (int)Math.Floor(Gold * best.Power.Amount);
+            if (more <= 0) return;
+            Gold += more;
+            Log($"{Its(best.C, best.Item)} swallows {more} more gold than they could have carried.");
+        }
 
         /// <summary>A ward that turns a foe's power back on it, once a fight: nobody in its path is touched.</summary>
         private bool Reflect(Foe f, List<Combatant> targets, string power, Dice? dice)

@@ -23,7 +23,7 @@ public sealed record FieldRules
     public double Low { get; init; } = 0.75;
     public double High { get; init; } = 1.25;
 
-    /// <summary>The order check: d20 + drill × Drilled + leadership × Led against the order's DC; a failure fights at Muddled, a 1 routs.</summary>
+    /// <summary>The order check: d20 + drill × Drilled + leadership × Led against the order's DC; a failure fights at Muddled, and a 1 routs a line whose host is outmatched (a winning host's line only stumbles).</summary>
     public double Drilled { get; init; } = 4;
     public double Led { get; init; } = 20;
     public int AllyBonus { get; init; } = 2;
@@ -193,7 +193,7 @@ public static class Field
             var e = town.Content.Enemy;
             list.Add(new Foe("warband", e.Name, "warband", e.Leader, en.Strength, at, en.Approach));
         }
-        foreach (var m in town.Saga.Menaces.Where(m => m.Alive && m.ArrivalTick != null).OrderBy(m => m.Id))
+        foreach (var m in town.Saga.Menaces.Where(m => m.Alive && m.ArrivalTick != null && Horde.Known(town, m)).OrderBy(m => m.Id))
             list.Add(new Foe($"menace:{m.Id}", m.Name, m.Kind, m.Leader, m.Power, m.ArrivalTick!.Value, m.Approach));
         return list;
     }
@@ -449,6 +449,8 @@ public static class Field
                 }
 
             double dealt = 0, worth = 0;
+            // A line only loses heart on a natural 1 when the day is going against the host; a winning host just stumbles.
+            bool outmatched = lines.Where(l => l.Unit.Routed == 0).Sum(l => l.Hp) < foe;
             foreach (var l in lines)
             {
                 if (l.Unit.Routed > 0 || l.Hp <= 0)
@@ -457,9 +459,9 @@ public static class Field
                     continue;
                 }
                 int d20 = rng.Range(1, 21);
-                bool muddled = l.Bonus < 99 && d20 + l.Bonus + (int)Math.Round(l.Lead * r.Led) < order.Dc;
+                bool muddled = l.Bonus < 99 && (d20 == 1 || d20 + l.Bonus + (int)Math.Round(l.Lead * r.Led) < order.Dc);
                 l.Unit.Muddled.Add(muddled);
-                if (l.Bonus < 99 && d20 == 1)
+                if (l.Bonus < 99 && d20 == 1 && outmatched)
                 {
                     l.Unit.Routed = round;
                     l.Hp *= 0.9;

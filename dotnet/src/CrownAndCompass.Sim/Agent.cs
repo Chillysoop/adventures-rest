@@ -146,6 +146,9 @@ public sealed class HeroSheet
     /// <summary>Carries one of the town's sending stones: their company can send word with no caster's slot (<see cref="Systems.Armory"/>).</summary>
     public bool Stone { get; set; }
 
+    /// <summary>Their weapon is silvered, so it bites creatures plain steel can't (<see cref="Systems.Prowess.Harm"/>).</summary>
+    public bool Silvered { get; set; }
+
     /// <summary>The site kind of the ward draught they drank before setting out, harder to hit there (<see cref="Systems.Alchemy"/>).</summary>
     public string? Ward { get; set; }
 
@@ -219,6 +222,9 @@ public sealed class HeroSheet
 
     /// <summary>Healing potions from the general store, carried into the next delve.</summary>
     public int Potions { get; set; }
+
+    /// <summary>Draughts from a hoard (a potion of giant strength, an oil of sharpness), all drunk on the next delve (<see cref="Systems.Draughts"/>).</summary>
+    public List<LibItem> Draughts { get; } = [];
 
     /// <summary>Spell scrolls from the scriptorium or a hoard, each read once in a fight (<see cref="Systems.Scrolls"/>).</summary>
     public int Scrolls { get; set; }

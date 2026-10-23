@@ -257,7 +257,7 @@ public static class Wayfaring
         var w = rules.Wonders;
         for (int ring = w.Rings[0]; ring <= w.Rings[^1] && common.Count > 0; ring++)
         {
-            var regions = town.Regions.Where(r => r.Ring == ring).ToList();
+            var regions = town.Regions.Where(r => r.Ring == ring && !r.Theme.Sea).ToList();
             for (int i = 0; i < w.PerRing && regions.Count > 0; i++)
             {
                 var region = rng.Pick(regions);
@@ -289,6 +289,7 @@ public static class Wayfaring
                 Arc = lake.Arc,
                 Inner = lake.Inner,
                 Outer = lake.Outer,
+                Shape = lake.Shape,
             };
         }
         PlaceGateways(town, rng);

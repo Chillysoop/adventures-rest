@@ -1,0 +1,670 @@
+{
+  "_doc": "Manners: each faction's personality, read from the data it already has, never written per faction. A people's come from its history.json lineage traits, its might and how warm it starts, plus its ruler's temperament (neighbours.json temperaments); a power's from its powers.json likes and evil; a menace's from its lineage ambitions plus its kind's temper this campaign. Each manner moves the DCs of the skills it answers to (dc: negative is easier), lends one option to a first meeting (greet, then terms), one to an enemy herald's visit (parley) and one ongoing overture in the Diplomacy window. First meetings are composed from these at load (Systems/Manners.cs): contact-people-<people id>, contact-menace-<lineage>, contact-signs-<lineage>. Arrivals are the opening line per lineage; a lineage without one gets the role's fallback with its first manner's arrive clause. In greet/terms/parley effects, warm is what they think of the town (regard for a people, minor for a power).",
+  "most": 3,
+  "dcCap": 4,
+  "traits": {
+    "Greedy": "greedy",
+    "Ambitious": "ambitious",
+    "Shy": "shy",
+    "Generous": "generous",
+    "Gregarious": "gregarious",
+    "HotTempered": "fierce",
+    "Romantic": "romantic"
+  },
+  "tempers": {
+    "generous": "generous",
+    "shrewd": "greedy",
+    "wary": "shy",
+    "proud": "proud",
+    "devout": "pious",
+    "timid": "timid",
+    "puppet": "cruel"
+  },
+  "menaceTempers": {
+    "warlike": "fierce",
+    "sensible": "shy",
+    "feuding": "greedy",
+    "restless": "cruel",
+    "dormant": "shy",
+    "legion": "proud",
+    "patient": "cunning",
+    "cruel": "cruel",
+    "courtly": "proud",
+    "proud": "proud",
+    "wrathful": "fierce",
+    "slumbering": "greedy",
+    "ravenous": "fierce",
+    "territorial": "proud",
+    "cutthroat": "greedy",
+    "honourable": "proud",
+    "zealous": "pious",
+    "secretive": "cunning",
+    "bargaining": "greedy",
+    "ravening": "fierce"
+  },
+  "ambitions": {
+    "conquest": "fierce",
+    "territory": "proud",
+    "vassal": "ambitious",
+    "plague": "cruel",
+    "intrigue": "cunning",
+    "hunger": "fierce"
+  },
+  "ambitionAt": 1.5,
+  "likes": {
+    "wealth": "greedy",
+    "routes": "gregarious",
+    "slain": "fierce",
+    "heroes": "ambitious",
+    "growth": "ambitious",
+    "walls": "proud",
+    "dread": "cruel",
+    "-dark": "pious",
+    "-infamy": "generous",
+    "-wealth": "generous"
+  },
+  "likesAt": 20,
+  "evil": "cunning",
+  "mightyTroops": 35,
+  "mighty": "proud",
+  "warmFrom": 25,
+  "warm": "gregarious",
+  "coldBelow": -10,
+  "cold": "shy",
+  "fallback": {
+    "people": "Riders from {settlement} come to the gate: {people}, sent by {leader}. They come {arrive}.",
+    "menace": "A herald of {menace} comes to the gate with words from {foeLeader}. They come {arrive}.",
+    "signs": "Signs of {menace} near {town}: tracks, carcasses, and quiet where there should be birds."
+  },
+  "terms": "Before they go, {leader}'s envoy speaks plainly. {motive}",
+  "parley": "{motive}",
+  "arrivals": {
+    "river-folk": "A cart comes up the river road from {settlement}, heaped with cheese and turnips. {leader} walks beside it, cap in hand, to meet the new neighbours.",
+    "march-halflings": "Three ponies and far more halflings than should fit on them arrive from {settlement}, with a basket for whoever opens the gate. {leader} has sent pie.",
+    "deep-realm": "Dwarves of {settlement} march to the gate in step, beards braided. {leader}'s herald asks, flatly, whether {town} knows a dragon when it sees one.",
+    "first-leaves": "Nobody sees them come. At dawn there are elves of {settlement} under the oak by the gate, watching the woodcutters. {leader} waits to be noticed.",
+    "deep-gnomes": "A gnome of {settlement} climbs out of a well in the market, unrolls a map of everything under {town}, and asks who is in charge of buying it.",
+    "fen-folk": "Lizardfolk of {settlement} stand at the edge of the fields at dawn, very still, holding eels. {leader} has sent them to taste the air of the new town.",
+    "dawn-templars": "Brothers and sisters of {settlement} ride in under the dawn banner. Before anything else they ask where {town} buries its dead, and how deep.",
+    "free-port-folk": "A captain of {settlement} arrives with a clerk, a lawyer and a crate of wine, and asks what {town} charges in harbour dues. There is no harbour. She asks anyway.",
+    "tidekin": "At low tide there are tidekin of {settlement} on the rocks below the town, singing softly, leaving pearls in a shell for whoever climbs down.",
+    "isle-city": "A tall ship of {settlement} drops anchor where everyone can see it. Its purser comes ashore to count what {town} has worth buying, and what it ought to pay.",
+    "frost-jarls": "Frost-sworn of {settlement} ride in wrapped in wolf fur and lay an axe across the council table. {leader} wants to know if {town} is worth the walk.",
+    "sunpaw-clans": "A sunpaw scout of {settlement} is found asleep in the council chamber, having read every letter on the desk. She would like to talk terms. And cream.",
+    "kestrine-eyries": "A kestrine of {settlement} lands on the bell tower and will not come down. It shouts that {leader} would hear what the new town wants with the high places.",
+    "hollow-legion": "Empty armour of {settlement} marches to the gate, stops, and waits. A voice from inside the helm asks whether {town} serves the rightful king.",
+    "oasis-heirs": "A caravan of {settlement} kneels its camels outside the gate. {leader}'s steward unrolls a carpet, pours date wine, and asks nothing at all for an hour.",
+    "red-tide": "A rider in a red-daubed helm flings a broken standard at the gate: {foeLeader} sends greetings, and asks how many fighters {town} has.",
+    "warren-clans": "A goblin herald with a white rag on a stick pops out of a drain. {foeLeader}, it squeaks, would discuss terms. And the pantry.",
+    "stoneking-giants": "The ground shakes before the herald comes: a giant of {menace} with a cart for a satchel. {foeLeader} wants to know who built a town on the Stonekings' road.",
+    "rime-giants": "Frost creeps over the gate at noon. A giant of {menace} stands beyond it, breath like a blizzard, with words from {foeLeader}.",
+    "hollow-court": "At midnight a herald knocks at the gate, pale as linen and smelling of the grave. {foeLeader} invites {town} to dine.",
+    "ninefold-dead": "A gilded scribe of the dead arrives on a bier and reads out a writ: {town} stands on land of the Ninefold Throne, and owes it nine hundred years of rent.",
+    "drowned": "A drowned man walks out of the river, water pouring from his mouth as he speaks the words of {foeLeader}.",
+    "last-door": "A gift arrives with no giver: a silver mirror. When the mayor looks in it, {foeLeader} looks back, and smiles.",
+    "broken-pact": "A fey herald steps out of a ring of mushrooms that was not there yesterday, bows too low, and recites terms nobody asked for, from {foeLeader}.",
+    "coil-whisperers": "A snake in the council chamber speaks in a woman's voice: {foeLeader} would be friends with {town}. For now.",
+    "tyranny-broods": "Livestock gone, sheds clawed open, a scale the size of a shield in the mud: {menace} has found {town}'s scent.",
+    "wyrm-blood": "A dragonborn herald in red lacquer lands a wyvern in the market and demands whoever owns the gold here, on behalf of {foeLeader}.",
+    "ash-regents": "Ash falls on {town} for an hour. Then a kobold herald in a crown too big for it arrives to read {foeLeader}'s terms.",
+    "elder-wild": "The trees lean toward {town} overnight. Something in the deep wood has noticed the axes: {menace}.",
+    "marcher-pretender": "A herald in quartered colours trumpets at the gate: {foeLeader}, rightful lord of these marches, will hear {town}'s oath of fealty now.",
+    "corsairs": "A corsair longboat beaches below the town. Its captain tosses a purse to the watch: {foeLeader} pays well for friends, and better for silence.",
+    "caravan-princes": "A prince's factor arrives with a ledger and armed men, and asks {town} to sign a small contract with {menace}. A very small one.",
+    "hollow-choir": "Singing in the streets at night: three townsfolk in grey, eyes shut, singing the hymn of {menace}. None of them remember it in the morning.",
+    "last-door-fiends": "A smell of sulphur, a scorch mark on the council table, and a contract in red ink, already signed by {foeLeader}.",
+    "gnoll-packs": "Laughter in the hills all night. At dawn a gnoll of {menace} stands on the ridge holding up a sheep's head, and laughs again for {foeLeader}.",
+    "ember-kennel": "Scorched paw prints the size of plates circle the town, and the dogs won't stop howling: {menace} hunts here now.",
+    "spirit-callers": "The dead of {town}'s graveyard are seen at dusk, walking back to their old homes. A voice on the wind says {foeLeader} would speak with the living.",
+    "black-bough": "An arrow fletched with black leaves pins a letter to the gate: {foeLeader} claims the forest, and every road in it.",
+    "forge-giants": "A wheel of red-hot iron rolls to the gate and stops. Behind it comes a giant of {menace} with a hammer like a tower, and a message from {foeLeader}.",
+    "cloud-lords": "A shadow passes over {town} at noon: a castle on a cloud. A rope ladder drops into the square, and a herald climbs down to announce {foeLeader}.",
+    "storm-kings": "Lightning strikes the bell tower three times, and a voice in the thunder names {foeLeader}, king of the storm."
+  },
+  "closer": {
+    "label": "Keep them at the gate",
+    "tags": ["valor", "order"],
+    "skill": "intimidation",
+    "dc": 13,
+    "success": { "text": "They see a town that guards its gate, and respect it, a little.", "effects": { "warm": -3, "mandate": 1 } },
+    "failure": { "text": "They leave muttering. {leader} will hear that the new town is rude.", "effects": { "warm": -10 } }
+  },
+  "standOff": {
+    "label": "Make no promise",
+    "tags": ["order"],
+    "success": { "text": "{town} keeps its counsel, and they go home.", "effects": {} }
+  },
+  "dismiss": {
+    "label": "Send the herald back with nothing",
+    "tags": ["order"],
+    "success": { "text": "The herald goes as it came. {menace} will make of that what it likes.", "effects": {} }
+  },
+  "ignored": {
+    "people": { "text": "Nobody comes to the gate. They wait a day, then turn for home.", "effects": { "warm": -5 } },
+    "menace": { "text": "Nobody answers. The herald leaves its words nailed to the gate, and they frighten people.", "effects": { "dread": 2 } },
+    "signs": { "text": "Nobody looks into it, and the stories grow in the telling.", "effects": { "dread": 2 } }
+  },
+  "signs": [
+    {
+      "label": "Read the tracks",
+      "tags": ["order"],
+      "skill": "survival",
+      "dc": 12,
+      "success": { "text": "The trail runs straight back to its lair. Now {town} knows where it sleeps.", "effects": { "reveal": 1 } },
+      "failure": { "text": "The trail goes cold in the rocks.", "effects": {} }
+    },
+    {
+      "label": "Ward the roads",
+      "tags": ["mercy"],
+      "skill": "nature",
+      "dc": 12,
+      "success": { "text": "Bells, salt and bonfires on the roads. People sleep easier.", "effects": { "dread": -3 } },
+      "failure": { "text": "Something knocks the bonfires over in the night.", "effects": { "dread": 2 } }
+    },
+    {
+      "label": "Burn the carcasses and say nothing",
+      "tags": ["order"],
+      "success": { "text": "The smoke drifts over the walls, and the talk dies down, mostly.", "effects": { "dread": -1 } }
+    }
+  ],
+  "manners": [
+    {
+      "id": "proud",
+      "name": "Proud",
+      "icon": "face-crown",
+      "tip": "Honour matters more than gold · threats backfire",
+      "dc": { "history": -2, "persuasion": -1, "intimidation": 3, "deception": 1 },
+      "arrive": "under their banners, and wait to be greeted first",
+      "greet": {
+        "label": "Greet {leader} by every title",
+        "tags": ["order"],
+        "skill": "history",
+        "dc": 12,
+        "success": { "text": "They straighten at the old titles. Someone in {town} knows who they are.", "effects": { "warm": 12 } },
+        "failure": { "text": "You stumble over a title, and the silence is long.", "effects": { "warm": -4 } }
+      },
+      "terms": {
+        "label": "Promise them a place of honour at your table",
+        "tags": ["order"],
+        "success": { "text": "They will be seated first at every feast in {town}. They like that very much.", "effects": { "warm": 8 } }
+      },
+      "parley": {
+        "label": "Receive the herald with full ceremony",
+        "tags": ["order"],
+        "skill": "history",
+        "dc": 13,
+        "success": { "text": "Flattered, the herald boasts of its master's halls, and lets slip where they are.", "effects": { "reveal": 1 } },
+        "failure": { "text": "The herald takes the ceremony as fear.", "effects": { "dread": 2 } }
+      },
+      "overture": {
+        "name": "Sing their deeds",
+        "icon": "lore",
+        "skill": "history",
+        "dc": 12,
+        "every": 30,
+        "win": 12,
+        "crit": 6,
+        "lose": -4,
+        "won": "The town crier tells the old victories of {name} in the square. Word reaches them.",
+        "lost": "The crier gets the old battle wrong, and {name} hear of it."
+      }
+    },
+    {
+      "id": "greedy",
+      "name": "Greedy",
+      "icon": "gold",
+      "tip": "Everything has a price · gold speaks loudest",
+      "dc": { "persuasion": -2, "insight": -1, "religion": 2 },
+      "arrive": "with scales and a clerk, ready to buy or sell",
+      "greet": {
+        "label": "Talk prices",
+        "tags": ["coin"],
+        "skill": "persuasion",
+        "dc": 11,
+        "success": { "text": "You agree on prices that suit you both, and they buy a little on the spot.", "effects": { "warm": 8, "gold": 30 } },
+        "failure": { "text": "They name a price that insults you both.", "effects": { "warm": -2 } }
+      },
+      "terms": {
+        "label": "Offer first pick of the market",
+        "tags": ["coin"],
+        "skill": "insight",
+        "dc": 12,
+        "success": { "text": "You guess what they are short of. They buy it at once, and gladly.", "effects": { "warm": 6, "gold": 25 } },
+        "failure": { "text": "You misjudge what they need, and nothing changes hands.", "effects": {} }
+      },
+      "parley": {
+        "label": "Pay the herald to carry a gift home",
+        "tags": ["coin"],
+        "cost": 80,
+        "success": { "text": "Gold is understood everywhere. {menace} is in no hurry now.", "effects": { "delay": 48, "dread": -2 } }
+      },
+      "overture": {
+        "name": "Send a purse",
+        "icon": "gold",
+        "skill": "persuasion",
+        "dc": 10,
+        "cost": 80,
+        "every": 20,
+        "win": 14,
+        "crit": 6,
+        "lose": 5,
+        "won": "The purse is counted twice and found pleasing. {name} think better of {town}.",
+        "lost": "{name} take the purse and grumble that it was light."
+      }
+    },
+    {
+      "id": "shy",
+      "name": "Shy",
+      "icon": "foe-unseen",
+      "tip": "Keep your distance · no tricks, no pressure",
+      "dc": { "insight": -2, "stealth": -1, "intimidation": 2, "deception": 2, "performance": 1 },
+      "arrive": "quietly, and keep to the edge of the fields",
+      "greet": {
+        "label": "Let them come in their own time",
+        "tags": ["mercy"],
+        "success": { "text": "You leave the gate open and send nobody out. By evening they come in, quietly, and seem grateful.", "effects": { "warm": 8 } }
+      },
+      "terms": {
+        "label": "Promise to keep your riders off their land",
+        "tags": ["mercy"],
+        "success": { "text": "They want nothing more than that. They will hold you to it.", "effects": { "warm": 8 } }
+      },
+      "parley": {
+        "label": "Have the herald followed home",
+        "tags": ["guile"],
+        "skill": "stealth",
+        "dc": 14,
+        "success": { "text": "Your tracker comes back with the way to its master's lair.", "effects": { "reveal": 1 } },
+        "failure": { "text": "Your tracker comes back with nothing, and a cut on the cheek.", "effects": { "dread": 2 } }
+      },
+      "overture": {
+        "name": "Leave them in peace",
+        "icon": "ui-heart",
+        "every": 40,
+        "win": 6,
+        "won": "No envoys, no riders: only a gift left at the boundary stone. {name} take it, and are glad of the quiet."
+      }
+    },
+    {
+      "id": "generous",
+      "name": "Generous",
+      "icon": "favour",
+      "tip": "Glad to share · ask, and be grateful",
+      "dc": { "persuasion": -2, "medicine": -1, "intimidation": 2, "deception": 2 },
+      "arrive": "with full baskets, as if to a neighbour",
+      "greet": {
+        "label": "Accept their gifts gladly",
+        "tags": ["mercy"],
+        "success": { "text": "The baskets go round the square. {town} eats well tonight, and they are pleased to see it.", "effects": { "warm": 10, "food": 15 } }
+      },
+      "terms": {
+        "label": "Promise to share in lean years",
+        "tags": ["mercy"],
+        "skill": "persuasion",
+        "dc": 11,
+        "success": { "text": "They clasp hands on it. Neither side will go hungry while the other eats.", "effects": { "warm": 8 } },
+        "failure": { "text": "The promise sounds hollow, even to you.", "effects": { "warm": 2 } }
+      },
+      "parley": {
+        "label": "Send the herald off with bread",
+        "tags": ["mercy"],
+        "skill": "persuasion",
+        "dc": 14,
+        "success": { "text": "The herald eats, and talks, and some of its anger goes out of it.", "effects": { "dread": -2, "delay": 24 } },
+        "failure": { "text": "The herald throws the bread in the ditch.", "effects": { "dread": 1 } }
+      },
+      "overture": {
+        "name": "Ask a kindness",
+        "icon": "food",
+        "skill": "persuasion",
+        "dc": 12,
+        "every": 45,
+        "win": 4,
+        "lose": -2,
+        "effects": { "food": 25 },
+        "won": "{name} send carts of food, and are glad to be asked.",
+        "lost": "{name} have little to spare this season, and say so."
+      }
+    },
+    {
+      "id": "gregarious",
+      "name": "Gregarious",
+      "icon": "np-conversation",
+      "tip": "Love company · feasts and fairs win them",
+      "dc": { "performance": -2, "persuasion": -1, "stealth": 2 },
+      "arrive": "singing, more of them than were sent",
+      "greet": {
+        "label": "Feast them",
+        "tags": ["mercy", "coin"],
+        "cost": 30,
+        "success": { "text": "They eat well and sing louder. {leader} will hear the new town keeps a good table.", "effects": { "warm": 12 } }
+      },
+      "terms": {
+        "label": "Invite them to the next fair",
+        "tags": ["mercy"],
+        "success": { "text": "They promise to come, and bring friends. The fair will be loud.", "effects": { "warm": 6, "festival": 1 } }
+      },
+      "parley": {
+        "label": "Get the herald drunk",
+        "tags": ["guile"],
+        "skill": "performance",
+        "dc": 12,
+        "success": { "text": "By the third jug the herald is telling you where its master sleeps.", "effects": { "reveal": 1 } },
+        "failure": { "text": "The herald drinks you under the table and leaves laughing.", "effects": { "dread": 1 } }
+      },
+      "overture": {
+        "name": "Host a feast",
+        "icon": "ale",
+        "skill": "performance",
+        "dc": 11,
+        "cost": 50,
+        "every": 25,
+        "win": 12,
+        "crit": 6,
+        "lose": 4,
+        "effects": { "mandate": 1 },
+        "won": "{name} come to {town} for a feast and stay for three days. Everyone is sorry to see them go.",
+        "lost": "The feast is dull and the ale is thin. {name} go home early."
+      }
+    },
+    {
+      "id": "fierce",
+      "name": "Fierce",
+      "icon": "threat",
+      "tip": "Respect strength · meet a challenge, never dodge it",
+      "dc": { "athletics": -2, "intimidation": -1, "persuasion": 2, "deception": 1 },
+      "arrive": "armed, and looking for a fight to judge you by",
+      "greet": {
+        "label": "Answer their challenge",
+        "tags": ["valor"],
+        "skill": "athletics",
+        "dc": 13,
+        "success": { "text": "You win the wrestling bout by a hair. They roar and pound the table. A town with a spine.", "effects": { "warm": 14, "mandate": 1 } },
+        "failure": { "text": "You end up in the horse trough. They laugh a long time.", "effects": { "warm": -6 } }
+      },
+      "terms": {
+        "label": "Swear to stand with them in battle",
+        "tags": ["valor"],
+        "success": { "text": "They cut their palms and yours. It is a serious oath to them.", "effects": { "warm": 10 } }
+      },
+      "parley": {
+        "label": "Answer the challenge in kind",
+        "tags": ["valor"],
+        "skill": "intimidation",
+        "dc": 14,
+        "success": { "text": "You meet the herald's stare until it looks away. The town cheers.", "effects": { "dread": -3, "mandate": 2 } },
+        "failure": { "text": "Your voice cracks. The herald laughs, and so does the story of it.", "effects": { "dread": 4 } }
+      },
+      "overture": {
+        "name": "Champion's bout",
+        "icon": "rivals",
+        "skill": "athletics",
+        "dc": 14,
+        "every": 35,
+        "win": 16,
+        "crit": 6,
+        "lose": -6,
+        "effects": { "mandate": 2 },
+        "won": "{town}'s champion throws {name}'s best into the dust. They have not had such a good day in years.",
+        "lost": "{town}'s champion is carried off the field. {name} make songs about it."
+      }
+    },
+    {
+      "id": "romantic",
+      "name": "Romantic",
+      "icon": "np-lyre",
+      "tip": "Moved by songs and grand gestures",
+      "dc": { "performance": -2, "history": -1, "insight": 1, "intimidation": 1 },
+      "arrive": "garlanded, with a poet to remember the day",
+      "greet": {
+        "label": "Trade songs",
+        "tags": ["mercy"],
+        "skill": "performance",
+        "dc": 12,
+        "success": { "text": "Your song makes their poet weep. That counts for a great deal.", "effects": { "warm": 12 } },
+        "failure": { "text": "You forget the second verse. Politely, they sing it for you.", "effects": { "warm": -3 } }
+      },
+      "terms": {
+        "label": "Name a street after their heroes",
+        "tags": ["mercy", "coin"],
+        "cost": 20,
+        "success": { "text": "A new sign goes up by the square, and their poet writes it into a song.", "effects": { "warm": 10 } }
+      },
+      "parley": {
+        "label": "Trade verses with the herald",
+        "tags": ["guile"],
+        "skill": "performance",
+        "dc": 13,
+        "success": { "text": "The herald cannot resist a rhyme, and rhymes its master's lair with 'despair'.", "effects": { "reveal": 1, "dread": -1 } },
+        "failure": { "text": "The herald's verse is better than yours, and crueller.", "effects": { "dread": 2 } }
+      },
+      "overture": {
+        "name": "Send a bard",
+        "icon": "np-lyre",
+        "skill": "performance",
+        "dc": 13,
+        "every": 30,
+        "win": 14,
+        "crit": 6,
+        "lose": -3,
+        "won": "{town}'s bard sings for {name} under the stars. They will remember the night.",
+        "lost": "The bard's voice fails in the cold. {name} are kind about it, which is worse."
+      }
+    },
+    {
+      "id": "ambitious",
+      "name": "Ambitious",
+      "icon": "ui-goal",
+      "tip": "Want to rise · back their plans and share the gains",
+      "dc": { "persuasion": -1, "history": -1, "insight": 1 },
+      "arrive": "with plans already drawn, to see what use you are",
+      "greet": {
+        "label": "Talk of what you could build together",
+        "tags": ["order"],
+        "skill": "persuasion",
+        "dc": 13,
+        "success": { "text": "Their eyes light up at roads and markets that don't exist yet. They want in.", "effects": { "warm": 12 } },
+        "failure": { "text": "Your plans sound small to them.", "effects": { "warm": -4 } }
+      },
+      "terms": {
+        "label": "Promise them a share of the roads",
+        "tags": ["coin"],
+        "skill": "persuasion",
+        "dc": 13,
+        "success": { "text": "A share of every caravan's tolls, in writing. They sign quickly.", "effects": { "warm": 10 } },
+        "failure": { "text": "They want a bigger share than you can give.", "effects": { "warm": -2 } }
+      },
+      "parley": {
+        "label": "Hear out the offer",
+        "tags": ["guile"],
+        "skill": "insight",
+        "dc": 13,
+        "success": { "text": "You listen well. Its master wants more than {town}, and the herald says where it rules from.", "effects": { "reveal": 1 } },
+        "failure": { "text": "The offer is a trap, and you nearly walk into it.", "effects": { "dread": 2 } }
+      },
+      "overture": {
+        "name": "Back their claim",
+        "icon": "ui-goal",
+        "skill": "persuasion",
+        "dc": 13,
+        "cost": 60,
+        "every": 30,
+        "win": 12,
+        "crit": 6,
+        "lose": -2,
+        "effects": { "prosperity": 6 },
+        "won": "{town}'s gold and letters back {name}'s plans. They prosper, and know whom to thank.",
+        "lost": "{name} take the gold, but say {town} backed them too timidly."
+      }
+    },
+    {
+      "id": "pious",
+      "name": "Pious",
+      "icon": "faith",
+      "tip": "Faith first · share the rites, never mock them",
+      "dc": { "religion": -2, "insight": -1, "deception": 3, "intimidation": 1 },
+      "arrive": "behind a priest, with a blessing for the gate",
+      "greet": {
+        "label": "Pray with them",
+        "tags": ["mercy"],
+        "skill": "religion",
+        "dc": 11,
+        "success": { "text": "You know the words of their prayer. They are moved that a stranger does.", "effects": { "warm": 12 } },
+        "failure": { "text": "You kneel at the wrong moment.", "effects": { "warm": -2 } }
+      },
+      "terms": {
+        "label": "Promise a shrine to their faith",
+        "tags": ["mercy", "coin"],
+        "cost": 40,
+        "success": { "text": "A small shrine goes up by the gate. Their pilgrims will stop there.", "effects": { "warm": 12 } }
+      },
+      "parley": {
+        "label": "Bless the gate against them",
+        "tags": ["mercy"],
+        "skill": "religion",
+        "dc": 12,
+        "success": { "text": "The herald will not cross the blessed line, and the town sees it.", "effects": { "dread": -4 } },
+        "failure": { "text": "The herald steps over the line and smiles.", "effects": { "dread": 2 } }
+      },
+      "overture": {
+        "name": "Share the rites",
+        "icon": "faith",
+        "skill": "religion",
+        "dc": 12,
+        "every": 30,
+        "win": 12,
+        "crit": 6,
+        "lose": -3,
+        "effects": { "security": 5 },
+        "won": "{town}'s priests keep a holy day with {name}. Their shrines feel safer for it.",
+        "lost": "The rites go wrong in small ways that {name} notice."
+      }
+    },
+    {
+      "id": "cunning",
+      "name": "Cunning",
+      "icon": "face-domino-mask",
+      "tip": "Every word weighed · lies are seen through",
+      "dc": { "investigation": -2, "insight": 1, "deception": 3, "persuasion": 1 },
+      "arrive": "with more questions than answers",
+      "greet": {
+        "label": "Match wits",
+        "tags": ["guile"],
+        "skill": "insight",
+        "dc": 13,
+        "success": { "text": "You answer every probing question with a better one. They are impressed, and a little wary.", "effects": { "warm": 10 } },
+        "failure": { "text": "They learn far more about {town} than you learn about them.", "effects": { "warm": -6 } }
+      },
+      "terms": {
+        "label": "Offer an exchange of letters",
+        "tags": ["guile"],
+        "skill": "investigation",
+        "dc": 12,
+        "success": { "text": "Letters, ciphers and the odd useful rumour, both ways. They like the arrangement.", "effects": { "warm": 6 } },
+        "failure": { "text": "Your first letter is read by the wrong people.", "effects": { "warm": -2 } }
+      },
+      "parley": {
+        "label": "Feed the herald lies",
+        "tags": ["guile"],
+        "skill": "deception",
+        "dc": 14,
+        "success": { "text": "The herald goes home with a picture of a town that doesn't exist. Its master will plan for the wrong one.", "effects": { "foePower": -0.04 } },
+        "failure": { "text": "The herald sees through you, and its master will remember the insult.", "effects": { "dread": 3, "grudge": 1 } }
+      },
+      "overture": {
+        "name": "Trade secrets",
+        "icon": "secret",
+        "skill": "investigation",
+        "dc": 13,
+        "every": 30,
+        "win": 8,
+        "crit": 4,
+        "lose": -6,
+        "effects": { "reveal": 1 },
+        "won": "{name} trade a secret for a secret, and tell {town} of a place near them worth knowing.",
+        "lost": "{name} got the better of the trade, and they know it."
+      }
+    },
+    {
+      "id": "cruel",
+      "name": "Cruel",
+      "icon": "dread",
+      "tip": "Respect only fear · kindness looks like weakness",
+      "dc": { "intimidation": -2, "persuasion": 3, "religion": 1 },
+      "arrive": "with something dead tied to the lead horse",
+      "greet": {
+        "label": "Show no fear",
+        "tags": ["valor"],
+        "skill": "intimidation",
+        "dc": 13,
+        "success": { "text": "You don't flinch. They decide {town} is worth dealing with.", "effects": { "warm": 4, "mandate": 2 } },
+        "failure": { "text": "They smell fear on you, and enjoy it.", "effects": { "warm": -8, "dread": 2 } }
+      },
+      "terms": {
+        "label": "Pay for their goodwill",
+        "tags": ["coin"],
+        "cost": 60,
+        "success": { "text": "They take the gold without thanks. It buys peace, for now.", "effects": { "warm": 8 } }
+      },
+      "parley": {
+        "label": "Show the herald the gallows",
+        "tags": ["valor"],
+        "skill": "intimidation",
+        "dc": 13,
+        "success": { "text": "The herald looks at the rope a long time, then leaves faster than it came.", "effects": { "dread": -4 } },
+        "failure": { "text": "The herald laughs at the gallows: it has seen far worse, and done it.", "effects": { "dread": 5 } }
+      },
+      "overture": {
+        "name": "Pay their price",
+        "icon": "gold",
+        "cost": 120,
+        "every": 30,
+        "win": 10,
+        "effects": { "mandate": -2 },
+        "won": "{town} pays what {name} ask. They are pleased. The townsfolk are not."
+      }
+    },
+    {
+      "id": "timid",
+      "name": "Timid",
+      "icon": "ui-heart",
+      "tip": "Easily frightened · reassure them, offer shelter",
+      "dc": { "persuasion": -2, "intimidation": -3, "performance": -1 },
+      "arrive": "few, and nervous, ready to run",
+      "greet": {
+        "label": "Reassure them",
+        "tags": ["mercy"],
+        "skill": "persuasion",
+        "dc": 10,
+        "success": { "text": "They stop glancing at the road behind them, and stay for supper.", "effects": { "warm": 10 } },
+        "failure": { "text": "Something you say frightens them, and they leave early.", "effects": { "warm": -2 } }
+      },
+      "terms": {
+        "label": "Promise your walls if trouble comes",
+        "tags": ["valor", "mercy"],
+        "success": { "text": "Shelter behind {town}'s walls: it is the thing they wanted most.", "effects": { "warm": 10 } }
+      },
+      "parley": {
+        "label": "Call the watch out in force",
+        "tags": ["order"],
+        "skill": "intimidation",
+        "dc": 11,
+        "success": { "text": "Every spear in {town} lines the gate. The herald turns pale and goes.", "effects": { "dread": -3, "mandate": 1 } },
+        "failure": { "text": "The watch turns out late and ragged.", "effects": { "dread": 2 } }
+      },
+      "overture": {
+        "name": "Offer protection",
+        "icon": "defence",
+        "skill": "persuasion",
+        "dc": 11,
+        "every": 30,
+        "win": 12,
+        "crit": 4,
+        "lose": -3,
+        "effects": { "security": 6 },
+        "won": "{town}'s watch rides {name}'s roads for a week. They feel safer, and thank you for it.",
+        "lost": "{name} hear the offer as a threat."
+      }
+    }
+  ]
+}

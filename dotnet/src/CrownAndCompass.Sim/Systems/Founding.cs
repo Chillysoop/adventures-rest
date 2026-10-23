@@ -202,7 +202,7 @@ public static class Founding
     {
         foreach (var site in Offered(town).Where(s => s.Def.Id != Of(town).Id))
         {
-            var region = town.Regions.Where(g => g.Ring <= 1 && g.Site == null)
+            var region = town.Regions.Where(g => g.Ring <= 1 && g.Site == null && !g.Theme.Sea)
                 .OrderBy(g => g.SettlementId == null ? 1 : 0)
                 .ThenBy(g => Gap(g.Bearing, site.Bearing))
                 .ThenBy(g => g.Id)
@@ -217,8 +217,15 @@ public static class Founding
     /// The way the site faces, in compass degrees: where its sea lies, the road out of its pass, the open side of a cliff
     /// city or a ledge (the rock rises behind). The kind's bearing turned by the seed.
     /// </summary>
-    public static double Facing(Town town) =>
-        Of(town).Sea != null ? (Of(town).Bearing + (Hash(town.Seed, 41) - 0.5) * 60 + 360) % 360 : Hash(town.Seed, 43) * 360;
+    public static double Facing(Town town)
+    {
+        if (Of(town).Sea == null) return Hash(town.Seed, 43) * 360;
+        double b = (Of(town).Bearing + (Hash(town.Seed, 41) - 0.5) * 60 + 360) % 360;
+        if (town.OceanArc <= 0) return b;
+        // The shore faces the ocean: the founding's own bearing where that is out over it, else the ocean's nearest edge.
+        double turn = ((b - town.OceanBearing) % 360 + 540) % 360 - 180, half = town.OceanArc / 2 * 0.8;
+        return (town.OceanBearing + Math.Clamp(turn, -half, half) + 360) % 360;
+    }
 
     /// <summary>The site a region holds and who holds it, for its card: null when it holds none.</summary>
     public static string? Describe(Town town, Region region)
@@ -228,6 +235,9 @@ public static class Founding
             return k.Held.Replace("{name}", s.Name, StringComparison.Ordinal);
         return k.Foes;
     }
+
+    /// <summary>The bay before a town founded on the sea, or null; the ocean further out is separate water.</summary>
+    public static Feature? Bay(Town town) => town.Terrain.FirstOrDefault(f => f.Kind.Id == Rules(town.Content).Sea);
 
     /// <summary>A sector of open water from the town's shore, kept clear of every site; the town's boats cross it.</summary>
     private static void Sea(Town town, FoundingDef def)

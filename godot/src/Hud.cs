@@ -175,7 +175,7 @@ public partial class Main
         pad.AddChild(box);
         scroll.AddChild(pad);
         _scrolls[t] = scroll;
-        _panes[t] = new Pane(box);
+        _panes[t] = new Pane(box, t.ToString()) { Hue = t == Tab.Inspect ? null : Groups[GroupOf(t)].Hue };
         return scroll;
     }
 
@@ -218,6 +218,17 @@ public partial class Main
     private void BuildWindow()
     {
         _window = Floating(out var body, out _windowTitle, () => CloseWindow());
+        // The group's icon in its colour before its name, and its windows as tabs under the title bar.
+        _windowIcon = new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2(20, 20), MouseFilter = MouseFilterEnum.Ignore, SizeFlagsVertical = SizeFlags.ShrinkCenter };
+        _windowTitle.GetParent().AddChild(_windowIcon);
+        _windowTitle.GetParent().MoveChild(_windowIcon, 0);
+        _windowTitle.GetParent<HBoxContainer>().AddThemeConstantOverride("separation", 8);
+        body.AddChild(BuildWindowTabs());
+        Pane.Changed = () =>
+        {
+            _dirty = true;
+            SaveSettings();
+        };
         foreach (var t in Enum.GetValues<Tab>())
             if (t != Tab.Inspect) body.AddChild(MakeScroll(t));
         AddChild(_window);
@@ -254,7 +265,12 @@ public partial class Main
     {
         if (_windowTab != t) Remember();
         _windowTab = t;
-        _windowTitle.Text = Titles[t];
+        var grp = Groups[GroupOf(t)];
+        _groupTab[GroupOf(t)] = t;
+        _windowTitle.Text = grp.Name;
+        _windowTitle.AddThemeColorOverride("font_color", grp.Hue.Lightened(0.15f));
+        _windowIcon.Texture = Ui.Icon(grp.Icon);
+        _windowIcon.Modulate = grp.Hue;
         // The roster is a table and the council a hall: their windows open wide.
         _window.OffsetRight = _window.OffsetLeft + (t == Tab.Companies ? 900 : t is Tab.Council or Tab.Army ? 600 : t == Tab.Bounties ? 560 : 460);
         foreach (var (k, s) in _scrolls)
@@ -423,8 +439,8 @@ public partial class Main
                     c.QueueFree();
                 }
                 var next = Goals.Next(t);
-                foreach (var g in open) _goalsRows.AddChild(GoalRow(t, g, g == next));
-                foreach (var a in aims) _goalsRows.AddChild(Row(a.Icon, a.Text, a.Share, a.Figure == "" ? "" : Ui.C(Ui.Ink2, Ui.Esc(a.Figure)), a.Point != ""));
+                foreach (var g in open) _goalsRows.AddChild(Clickable(GoalRow(t, g, g == next), g.Goes, $"goal:{g.Id}"));
+                foreach (var a in aims) _goalsRows.AddChild(Clickable(Row(a.Icon, a.Text, a.Share, a.Figure == "" ? "" : Ui.C(Ui.Ink2, Ui.Esc(a.Figure)), a.Point != ""), a.Goes, "aim"));
                 _aheadShown = aims.Count;
                 bool charter = open.Count > 0 || _goalsFlourish.Count > 0;
                 _goalsTitle.Text = charter ? "CHARTER GOALS" : aheadTitle.ToUpperInvariant();
@@ -476,6 +492,24 @@ public partial class Main
             info.MouseFilter = MouseFilterEnum.Ignore;
             row.AddChild(info);
         }
+        return row;
+    }
+
+    /// <summary>A line of the card that takes the player where to act on it when clicked (<see cref="GoTo"/>), lit while hovered.</summary>
+    private Control Clickable(Control row, string goes, string key)
+    {
+        if (goes == "") return row;
+        row.MouseFilter = MouseFilterEnum.Stop;
+        row.MouseDefaultCursorShape = CursorShape.PointingHand;
+        row.TooltipText = "Click to go there";
+        row.MouseEntered += () => row.Modulate = new Color(1.25f, 1.18f, 1);
+        row.MouseExited += () => row.Modulate = Colors.White;
+        row.GuiInput += e =>
+        {
+            if (e is not InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left }) return;
+            row.AcceptEvent();
+            GoTo(goes, key);
+        };
         return row;
     }
 

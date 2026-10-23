@@ -31,6 +31,15 @@ public sealed record RegaliaDef
     /// <summary>How much faster a councillor serving a foe is found out; whether it wards the chamber against charms.</summary>
     public double Truth { get; init; }
     public bool Charm { get; init; }
+
+    /// <summary>Hall pieces: share off the forge's gold; share off the chance sickness comes to town; a twin that lets the
+    /// senior company on the road send word home.</summary>
+    public double Craft { get; init; }
+    public double Sick { get; init; }
+    public bool Sending { get; init; }
+
+    /// <summary>A hall piece's (slot "hall") part in the town's services, as an institution's at full strength.</summary>
+    public ServiceDef? Service { get; init; }
 }
 
 /// <summary>Commissions from the town's craftsmen (regalia.json "commission").</summary>
@@ -81,7 +90,41 @@ public static class Regalia
 
     public static RegaliaDef? Def(Town town, LibItem it) => Rules(town).Item(it.Id);
 
-    public static bool Is(Town town, LibItem it) => Def(town, it) != null;
+    /// <summary>A piece the mayor wears; hall pieces (slot "hall") are relics the town keeps instead.</summary>
+    public static bool Is(Town town, LibItem it) => Def(town, it) is { Slot: not Hall };
+
+    public const string Hall = "hall";
+
+    /// <summary>The relics the hall keeps that do something, each once however many were hauled home.</summary>
+    public static IEnumerable<RegaliaDef> InHall(Town town)
+    {
+        if (town.Relics.Count == 0) yield break;
+        foreach (var id in town.Relics.Distinct().OrderBy(x => x, StringComparer.Ordinal))
+            if (Rules(town).Item(id) is { Slot: Hall } d) yield return d;
+    }
+
+    /// <summary>A piece's own powers over the mayor's work, in short phrases ("+2 persuasion", "wards off assassins").</summary>
+    public static List<string> Describe(Town town, RegaliaDef d)
+    {
+        var said = d.Skills.OrderBy(k => k.Key, StringComparer.Ordinal).Select(k => $"+{k.Value} {k.Key}").ToList();
+        if (d.Inspiration > 0) said.Add($"+{d.Inspiration} inspiration");
+        if (d.Mandate > 0) said.Add("a steadier Mandate");
+        if (d.Council > 0) said.Add("a readier council");
+        if (d.Loyalty > 0) said.Add("loyal heroes");
+        if (d.March > 0) said.Add("a faster muster");
+        if (d.Ward > 0) said.Add("a ward against assassins");
+        if (d.Truth > 0) said.Add("turncoats found sooner");
+        if (d.Charm) said.Add("a ward against charms");
+        if (d.Craft > 0) said.Add($"the forge {Js.Round(d.Craft * 100)}% cheaper");
+        if (d.Sick > 0) said.Add($"{Js.Round(d.Sick * 100)}% less sickness");
+        if (d.Sending) said.Add("word from the senior company");
+        return said;
+    }
+
+    public static IEnumerable<ServiceDef> HallServices(Town town) => InHall(town).Where(d => d.Service != null).Select(d => d.Service!);
+
+    /// <summary>What the mayor wears and what the hall keeps, for the sums below.</summary>
+    private static IEnumerable<RegaliaDef> Held(Town town) => Worn(town).Select(w => w.Def).Concat(InHall(town));
 
     /// <summary>The worn pieces and what each does, in slot order.</summary>
     public static IEnumerable<(StockItem Piece, RegaliaDef Def)> Worn(Town town) =>
@@ -95,18 +138,25 @@ public static class Regalia
 
     // What it does --------------------------------------------------------------------------------
 
-    public static int Skill(Town town, string skill) => Worn(town).Sum(w => w.Def.Skills.GetValueOrDefault(skill));
-    public static int Inspiration(Town town) => Worn(town).Sum(w => w.Def.Inspiration);
-    public static double Mandate(Town town) => Js.Sum(Worn(town), w => w.Def.Mandate);
-    public static double Council(Town town) => Js.Sum(Worn(town), w => w.Def.Council);
-    public static int March(Town town) => Worn(town).Sum(w => w.Def.March);
-    public static double Ward(Town town) => Math.Min(0.9, Js.Sum(Worn(town), w => w.Def.Ward));
-    public static double Truth(Town town) => Js.Sum(Worn(town), w => w.Def.Truth);
-    public static bool Charm(Town town) => Worn(town).Any(w => w.Def.Charm);
+    public static int Skill(Town town, string skill) => Held(town).Sum(d => d.Skills.GetValueOrDefault(skill));
+    public static int Inspiration(Town town) => Held(town).Sum(d => d.Inspiration);
+    public static double Mandate(Town town) => Js.Sum(Held(town), d => d.Mandate);
+    public static double Council(Town town) => Js.Sum(Held(town), d => d.Council);
+    public static int March(Town town) => Held(town).Sum(d => d.March);
+    public static double Ward(Town town) => Math.Min(0.9, Js.Sum(Held(town), d => d.Ward));
+    public static double Truth(Town town) => Js.Sum(Held(town), d => d.Truth);
+    public static bool Charm(Town town) => Held(town).Any(d => d.Charm);
+    public static double Craft(Town town) => Math.Min(0.5, Js.Sum(InHall(town), d => d.Craft));
+    public static double Sick(Town town) => Math.Min(0.8, Js.Sum(InHall(town), d => d.Sick));
+
+    /// <summary>The hall keeps a twin of something that carries words, and this is the senior company with the town's name.</summary>
+    public static bool Sends(Town town, Party party) =>
+        town.Relics.Count > 0 && InHall(town).Any(d => d.Sending) && town.Parties.Where(p => p.Members.Count > 0).Min(p => (int?)p.Id) == party.Id;
 
     /// <summary>Heroes' loyalty from the mayor's regalia, piece by piece, for <see cref="Loyalty.Factors"/>.</summary>
     public static IEnumerable<(string Why, double Points)> LoyaltyFactors(Town town) =>
-        Worn(town).Where(w => w.Def.Loyalty != 0).Select(w => ($"the mayor's {w.Piece.Item.Name}", w.Def.Loyalty));
+        Worn(town).Where(w => w.Def.Loyalty != 0).Select(w => ($"the mayor's {w.Piece.Item.Name}", w.Def.Loyalty))
+            .Concat(InHall(town).Where(d => d.Loyalty != 0).Select(d => ($"the {town.Content.Library.Item(d.Ref)?.Name ?? d.Ref} in the hall", d.Loyalty)));
 
     // Wearing -------------------------------------------------------------------------------------
 
@@ -122,7 +172,7 @@ public static class Regalia
     public static bool Equip(Town town, int stockId)
     {
         var stock = town.Armory.Stock.FirstOrDefault(s => s.Id == stockId);
-        if (stock == null || Def(town, stock.Item) is not { } d) return false;
+        if (stock == null || Def(town, stock.Item) is not { Slot: not Hall } d) return false;
         var old = In(town, d.Slot);
         town.Armory.Stock.Remove(stock);
         if (old != null)

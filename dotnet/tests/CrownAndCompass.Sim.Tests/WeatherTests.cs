@@ -71,7 +71,7 @@ public class WeatherTests
     {
         // What the sky upwind does today, the town tends to get a little later.
         double same = 0, cross = 0;
-        for (int seed = 1; seed <= 4; seed++)
+        for (int seed = 1; seed <= 12; seed++)
         {
             var t = Fresh(seed);
             for (int day = 5; day < 120; day++)

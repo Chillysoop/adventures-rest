@@ -31,6 +31,7 @@ uniform float town_size = 0.0;
 uniform float zone_strength = 0.1;
 // Farmland as fields: crop colour premultiplied by cover (0.55 fallow, 1 farmed), and per field its row heading (r, half turns), meadow (g) and shade (b).
 uniform sampler2D fields_tex : filter_linear, repeat_disable, hint_default_transparent;
+uniform sampler2D trail_tex : filter_linear, repeat_disable, hint_default_black;
 uniform sampler2D field_dir_tex : filter_nearest, repeat_disable, hint_default_black;
 
 varying vec3 wpos;
@@ -179,6 +180,13 @@ void fragment() {
 		float rim = smoothstep(0.42, 0.5, z.a) * (1.0 - smoothstep(0.55, 0.7, z.a));
 		vec3 zc = z.rgb / max(z.a, 0.001);
 		col = mix(col, mix(zc, vec3(1.0), rim * 0.35), clamp((zedge + rim * 1.4) * zone_strength, 0.0, 1.0) * (1.0 - strategic));
+	}
+
+	// Trails worn by the companies' feet: bare, ragged earth where they walk most (Country.Tracks).
+	float trail = texture(trail_tex, p / world_size).r;
+	if (trail > 0.0) {
+		float tr = smoothstep(0.1, 0.4, trail + (nz2.r - 0.5) * 0.2 + (g1.g - 0.5) * 0.12);
+		col = mix(col, vec3(0.58, 0.47, 0.32) * (0.88 + 0.2 * nz3.r), tr * 0.85 * (1.0 - snow * 0.6));
 	}
 
 	// Tracks the parties have walked, from their reports.

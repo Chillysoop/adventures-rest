@@ -321,6 +321,7 @@ public partial class MapView : Control
         Geo.PlaceSites(town, ease);
         Fog.Refresh(town, Geo);
         UpdateStates(town);
+        UpdateTrails(town);
         UpdateCamera(dt);
         _first = false;
         if (town.Tick != _lastTick)
@@ -370,6 +371,16 @@ public partial class MapView : Control
         if (key == _stateKey) return;
         _stateKey = key;
         _world.SetStates(states);
+    }
+
+    private int _trailDay = -1;
+
+    /// <summary>The worn trails of the wilds, drawn afresh each morning.</summary>
+    private void UpdateTrails(Town town)
+    {
+        if (town.Day == _trailDay) return;
+        _trailDay = town.Day;
+        _world.SetTrails(town);
     }
 
     private void UpdateCamera(float dt)

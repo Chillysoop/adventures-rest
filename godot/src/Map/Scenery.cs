@@ -87,13 +87,8 @@ public partial class TownView
         }
         if (st.Kin.Race == "elf") return "trees";
         var (x, y) = Explore.SettlementSpot(town, st);
-        double d = Math.Sqrt(x * x + y * y), b = Math.Atan2(x, -y) * 180 / Math.PI;
         foreach (var f in town.Terrain)
-        {
-            if (f.Kind.Id != "gorge") continue;
-            double off = Math.Abs(((b - f.Bearing) % 360 + 540) % 360 - 180);
-            if (d > f.Inner - 0.6 && d < f.Outer + 0.6 && off < f.Arc / 2 + 12) return "gorge";
-        }
+            if (f.Kind.Id == "gorge" && Roads.Contains(f, x, y, 0.6)) return "gorge";
         if (st.Kin.Race == "dwarf") return "hall";
         return "hamlet";
     }
@@ -497,7 +492,7 @@ public partial class TownView
         st.Begin(Mesh.PrimitiveType.Triangles);
         var tint = new Color("dfe6ea");
         int sheets = 0;
-        if (town.Terrain.FirstOrDefault(f => f.Kind.Boats) is { } sea)
+        if (Sim.Systems.Founding.Bay(town) is { } sea)
         {
             double b0 = sea.Bearing * Math.PI / 180;
             for (int i = 0; i < 36; i++)

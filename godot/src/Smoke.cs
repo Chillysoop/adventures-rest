@@ -29,6 +29,21 @@ public partial class Main
         }
     }
 
+    /// <summary>Draw every page of a paged window once, then leave it on its first.</summary>
+    private void SmokePages(Tab t)
+    {
+        if (t == Tab.Inspect) return;
+        var pane = _panes[t];
+        RenderWindow();
+        var pages = pane.Pages;
+        foreach (var page in pages)
+        {
+            pane.Selected = page;
+            RenderWindow();
+        }
+        if (pages.Count > 0) pane.Selected = pages[0];
+    }
+
     /// <summary>Run one stage of the play-through and say how many frames to wait before the next.</summary>
     private int SmokeStage(int stage)
     {
@@ -37,6 +52,7 @@ public partial class Main
         if (stage >= 3 && stage < 3 + windows)
         {
             OpenWindow(Enum.GetValues<Tab>()[stage - 3]);
+            SmokePages(Enum.GetValues<Tab>()[stage - 3]);
             return 5;
         }
         if (stage >= 3 + windows) stage -= extra;
@@ -68,6 +84,13 @@ public partial class Main
                 return 90;
             case 2:
                 foreach (var tab in Enum.GetValues<Tab>()) SetTab(tab);
+                // Each group on the rail opens its window on one of its own tabs.
+                for (int g = 0; g < Groups.Length; g++)
+                {
+                    CloseWindow();
+                    OpenGroup(g);
+                    if (_windowTab is not Tab open || GroupOf(open) != g) throw new InvalidOperationException($"the {Groups[g].Name} group did not open");
+                }
                 return 1;
             case >= 3 and <= 13:
                 // One window open at a time, each given a few frames to draw (Inspect, the last, opens by clicking).

@@ -48,7 +48,7 @@ public class FieldTests
     [Fact]
     public void TheHostMarchesOutBreaksAWeakFoeAndComesHome()
     {
-        var sim = Town(25);
+        var sim = Town(8);
         var t = sim.Town;
         Assert.Single(Field.Foes(t));
         Assert.Equal("pick who marches", Field.MarchBlocked(t, "warband"));

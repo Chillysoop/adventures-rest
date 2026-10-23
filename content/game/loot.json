@@ -1,5 +1,9 @@
 {
+  "_doc": "Hoards (Expedition.Treasure). slots: what a hero or the town can carry home from one (hoards also hold draughts and siege pieces, \"hoardSlots\"). pulled: library items never found, with no fitting effect (Conner, 2026-10-23). offFit: a hoard's weight on a piece that doesn't belong in the site's country (enchantments.json found), against affinity for one that does.",
   "slots": ["weapon", "armor", "shield", "trinket", "town"],
+  "hoardSlots": ["consumable", "siege"],
   "weaponBonus": [0, 1, 1, 1, 2, 2, 3],
-  "itemChancePerTier": 0.15
+  "itemChancePerTier": 0.15,
+  "offFit": 0.35,
+  "pulled": ["amulet-of-the-planes", "armor-of-vulnerability", "bag-of-beans", "bag-of-devouring", "cubic-gate", "decanter-of-endless-water", "dragon-orb", "dust-of-dryness", "feather-token", "feather-token-anchor", "feather-token-fan", "feather-token-tree", "manual-of-golems", "marvelous-pigments", "mysterious-deck", "potion-of-fire-giant-strength", "shield-of-missile-attraction", "sovereign-glue", "talisman-of-the-sphere", "universal-solvent", "well-of-many-worlds"]
 }
