@@ -128,7 +128,12 @@ public partial class Main : Control
         _pot.AddRange(_opts.Brew);
         _mayorSheet = _opts.MayorSheet;
         if (_opts.MayorFallen) Mayoralty.Wound(_sim.Town, 9999, "a knife in the market");
-        if (_opts.Tab is string t && Enum.TryParse<Tab>(t, true, out var tab)) SetTab(tab);
+        if (_opts.Tab is string t && Enum.TryParse<Tab>(t, true, out var tab))
+        {
+            SetTab(tab);
+            if (_opts.Page != null) _panes[tab].Selected = _opts.Page;
+        }
+        foreach (var f in _opts.Fold) Pane.Folded.Add(f);
         if (_opts.Tray is string tray && Trays.FirstOrDefault(d => d.Id.Equals(tray, StringComparison.OrdinalIgnoreCase)) is { } td)
             Callable.From(() => OpenTray(td.Id)).CallDeferred();
         if (_opts.Stat is int stat) Callable.From(() => { RenderHeader(); ShowStatTip(stat); }).CallDeferred();
@@ -686,7 +691,7 @@ public partial class Main : Control
         }
         int digit = k.Keycode is >= Key.Key0 and <= Key.Key9 ? ((int)(k.Keycode - Key.Key0) + 9) % 10 : -1;
         if (Keys.Is(k, "pause")) PlayerSpeed(_speed == 0 ? _lastSpeed : 0);
-        else if (digit >= 0 && k.ShiftPressed && !k.CtrlPressed && !k.AltPressed) SetTab(QuickTabs[digit]);
+        else if (digit >= 0 && digit < Groups.Length && k.ShiftPressed && !k.CtrlPressed && !k.AltPressed) OpenGroup(digit);
         else if (digit >= 0 && k.CtrlPressed && !k.ShiftPressed && !k.AltPressed) SetPin(digit);
         else if (digit >= 0 && !k.CtrlPressed && !k.ShiftPressed && !k.AltPressed) GoToPin(digit);
         else if (Keys.Is(k, "faster")) PlayerSpeed(Math.Min(Speeds.Length - 1, _speed + 1));
@@ -750,6 +755,31 @@ public partial class Main : Control
         _scrollHeading = null;
     }
 
+    /// <summary>Draw the open management window's pane.</summary>
+    private void RenderWindow()
+    {
+        switch (_windowTab)
+        {
+            case Tab.City: RenderCity(); break;
+            case Tab.Ledger: RenderLedger(); break;
+            case Tab.War: RenderWar(); break;
+            case Tab.Army: RenderArmy(); break;
+            case Tab.Defence: RenderDefence(); break;
+            case Tab.Council: RenderCouncil(); break;
+            case Tab.Bounties: RenderBounties(); break;
+            case Tab.Companies: RenderCompanies(); break;
+            case Tab.Armory: RenderArmory(); break;
+            case Tab.Faith: RenderFaith(); break;
+            case Tab.Campaign: RenderCampaign(); break;
+            case Tab.Chronicles: RenderChronicles(); break;
+            case Tab.Mayor: RenderMayor(); break;
+            case Tab.Diplomacy: RenderDiplomacy(); break;
+            case Tab.Library: RenderLibrary(); break;
+            case Tab.Institutions: RenderInstitutions(); break;
+            case Tab.Notables: RenderNotables(); break;
+        }
+    }
+
     public override void _Process(double delta)
     {
         double dt = Math.Min(0.1, delta);
@@ -803,27 +833,7 @@ public partial class Main : Control
         if (_dirty)
         {
             RenderHeader();
-            if (_window.Visible)
-                switch (_windowTab)
-                {
-                    case Tab.City: RenderCity(); break;
-                    case Tab.Ledger: RenderLedger(); break;
-                    case Tab.War: RenderWar(); break;
-                    case Tab.Army: RenderArmy(); break;
-                    case Tab.Defence: RenderDefence(); break;
-                    case Tab.Council: RenderCouncil(); break;
-                    case Tab.Bounties: RenderBounties(); break;
-                    case Tab.Companies: RenderCompanies(); break;
-                    case Tab.Armory: RenderArmory(); break;
-                    case Tab.Faith: RenderFaith(); break;
-                    case Tab.Campaign: RenderCampaign(); break;
-                    case Tab.Chronicles: RenderChronicles(); break;
-                    case Tab.Mayor: RenderMayor(); break;
-                    case Tab.Diplomacy: RenderDiplomacy(); break;
-                    case Tab.Library: RenderLibrary(); break;
-                    case Tab.Institutions: RenderInstitutions(); break;
-                    case Tab.Notables: RenderNotables(); break;
-                }
+            if (_window.Visible) RenderWindow();
             if (_drawer.Visible) RenderTray();
             if (_inspector.Visible) RenderInspect();
             if (_strikePanel.Visible) RenderStrike();

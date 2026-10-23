@@ -447,7 +447,6 @@ public partial class Main
 
         var open = Stories.Pending(t);
         p.Heading("Waiting on you");
-        if (open.Count == 0) p.Note("Nothing now.");
         foreach (var s in open)
         {
             var d = Stories.DefOf(t, s);

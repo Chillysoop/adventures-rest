@@ -19,6 +19,10 @@ public sealed class Options
     public int Hour;
     public int? Speed;
     public string? Tab;
+    /// <summary>--page Name: the page of the --tab window to show (a paged window's strip).</summary>
+    public string? Page;
+    /// <summary>--fold Tab/Heading: fold that section for the shot (repeatable).</summary>
+    public List<string> Fold = [];
     /// <summary>--tray Bounties opens that drawer of the action tray, for screenshots.</summary>
     public string? Tray;
     /// <summary>--stat N: hover the Nth resource in the top bar, for a shot of its month.</summary>
@@ -252,6 +256,8 @@ public sealed class Options
                 case "--hour": o.Hour = int.Parse(Next()); break;
                 case "--speed": o.Speed = int.Parse(Next()); break;
                 case "--tab": o.Tab = Next(); break;
+                case "--page": o.Page = Next(); break;
+                case "--fold": o.Fold.Add(Next()); break;
                 case "--tray": o.Tray = Next(); break;
                 case "--stat": o.Stat = int.Parse(Next()); break;
                 case "--tax": o.Tax = double.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture); break;

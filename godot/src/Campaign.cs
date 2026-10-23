@@ -56,8 +56,6 @@ public partial class Main
         }
         else next = $"\n{Ui.C(Ui.Ink2, $"[font_size=12]The last act. Your champions are level {champ}.[/font_size]")}";
         p.Card($"[font_size=17][b]{Ui.Esc(Saga.ActTitle(t, s.Act))}[/b][/font_size]  {Tag($"since day {s.ActDays[^1]}")}{next}");
-        RenderVictory(p, t);
-
         if (Menaces.PendingDemand(t) is { } dm)
         {
             var am = Menaces.AmbitionOf(t, dm);
@@ -68,6 +66,11 @@ public partial class Main
             p.Buttons(("Bend the knee", true, false, () => Act(() => _sim.AnswerDemand(id, true))), ("Refuse", true, true, () => Act(() => _sim.AnswerDemand(id, false))));
         }
 
+        p.Page("Victory", "ui-star");
+        RenderVictory(p, t);
+
+        p.Page("Foes", "threat");
+        RenderCrises(p, t);
         var big = Saga.BigBad(t);
         if (big is { Alive: true })
         {
@@ -81,9 +84,6 @@ public partial class Main
             string missed = s.MissedTribute > 0 ? $" Tribute missed {Times(s.MissedTribute)} of {y.MissedToMarch} before it marches." : "";
             FoeCard(p, [yoke], $"{Tag("UNDER THE YOKE", Ui.Accent)}\n[b]{Ui.Esc(Ui.Cap(yoke.Name))}[/b] takes {Math.Round(y.Share * 100)}% of the treasury every {Ui.Days(y.EveryDays)}.{missed}\n{Ui.C(Ui.Ink2, "[font_size=12]Kill its leader to break the yoke. The walls break a second time, and the town falls.[/font_size]")}", Ui.Accent);
         }
-
-        RenderCrises(p, t);
-        RenderRoads(p, t);
 
         p.Heading("Dread");
         var tone = Tones[s.Tone];
@@ -117,6 +117,9 @@ public partial class Main
                 p.Text($"{Ui.C(Ui.Ink2, $"[font_size=12]Day {m.EndedDay}[/font_size]")}  {Ui.KindIcon(m.Kind, 16)}{Ui.Esc(Ui.Cap(m.Name))}{turned}", 13);
             }
         }
+
+        p.Page("Roads", "ui-road");
+        RenderRoads(p, t);
         p.Commit();
     }
 

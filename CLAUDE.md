@@ -125,8 +125,12 @@
 - UI text (`docs/ui-text.md`, kit in `godot/src/UiKit.cs`): Conner wants little text. Icon before word (`Ui.Chip`), one point a
   line (`Ui.Bullets`), explanations in hovers (`Ui.Tip`, `Ui.Brief`; `Pane.Note` briefs itself), colour by meaning, short labels.
   Every pane heading has an icon (`Ui.HeadingIcons`); every god has `god-<id>`. New icons go in `scripts/icons.ts`.
-- Menus: every window is one click on the left rail (`godot/src/Dock.cs`, `Groups`/`Blurbs`, Shift+number `QuickTabs`); its
-  badges count the alerts whose `AlertWindow` it answers, so a new alert badges its window for free. The action tray on the
+- Menus: the left rail (`godot/src/Dock.cs`) is six coloured groups (`Groups`: Town, Council, Heroes, War, Realm, Lore;
+  Shift+1 to 6); a group opens one window with its windows as tabs along the top (`TabNames`, `Blurbs`). A new window is a
+  tab in a group, never a new rail button. Rail buttons and tabs badge the alerts whose `AlertWindow` they answer, so a new
+  alert badges its window for free. Long windows split into pages (`Pane.Page`, `--page Name` for shots; tutorial points
+  `tab:Council:Laws`); headings fold on click (`Pane.Folded`, kept in the profile's settings) and a heading with nothing
+  under it is dropped, so don't print "nothing yet" lines. The action tray on the
   right (`godot/src/Tray.cs`: Bounties, Council, Events, War) slides out a drawer to act without a window. The top bar's
   monthly trends and hover cards read `Systems/Trends.cs` (30 days of books, food, Mandate, unrest; numbers in trends.json).
 - Godot client in `godot/` (Godot 4.3 .NET). Screenshots: `xvfb-run -a godot --path godot --rendering-driver opengl3

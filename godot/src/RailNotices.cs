@@ -139,7 +139,7 @@ public partial class Main
         AddChild(tile);
 
         var n = new Notice { Tab = tab, Alert = a, Tile = tile, Count = count };
-        tile.TooltipText = $"{Titles[tab]}\n• {a.Text}";
+        tile.TooltipText = $"{TabNames[tab]}\n• {a.Text}";
         tile.MouseEntered += () => n.Hovered = true;
         tile.MouseExited += () => n.Hovered = false;
         tile.GuiInput += ev =>
@@ -156,7 +156,7 @@ public partial class Main
         };
 
         // Out from behind the rail, level with the button.
-        var button = _tabButtons[tab];
+        var button = RailButtonOf(tab);
         tile.Size = tile.GetCombinedMinimumSize();
         float y = button.GlobalPosition.Y + (button.Size.Y - tile.Size.Y) / 2;
         tile.Position = new Vector2(RailWidth - tile.Size.X * 0.5f, y);
@@ -180,7 +180,7 @@ public partial class Main
         {
             _notices.Remove(n);
             n.Tile.QueueFree();
-            if (intoBadge && _badges.TryGetValue(n.Tab, out var b) && b.Badge.Visible)
+            if (intoBadge && _railBadges[GroupOf(n.Tab)] is var b && b.Badge.Visible)
             {
                 b.Badge.PivotOffset = b.Badge.Size / 2;
                 var pop = b.Badge.CreateTween();

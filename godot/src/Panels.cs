@@ -188,6 +188,7 @@ public partial class Main
         p.Begin();
         ShowChamber(p, t);
         RenderCouncillor(p, t);
+        p.Page("Hall", "tab-council");
         RenderMotion(p, t);
         p.Meter("Mandate", t.Mandate, $"{Math.Round(t.Mandate)}", t.Mandate < 30);
         p.Chips(
@@ -200,7 +201,9 @@ public partial class Main
         p.Note(festive == null
             ? $"Mood up for {t.Content.Council.FestivalDays} days · Mandate +{Js.Str(t.Content.Council.FestivalMandate)}"
             : Ui.Cap(festive));
+        p.Page("Guilds", "ui-trade");
         RenderGuilds(p, t);
+        p.Page("Laws", "decree");
         RenderLaws(p, t);
         var history = t.Motions.Where(m => m.Status != MotionStatus.Pending).TakeLast(8).Reverse().ToList();
         if (history.Count > 0)
@@ -281,8 +284,7 @@ public partial class Main
     {
         var pending = Council.PendingMotion(t);
         p.Heading("Before the council");
-        if (pending == null) p.Note("No motion. Councillors bring one when their portfolio needs it.");
-        else
+        if (pending != null)
         {
             int yes = pending.Votes.Count(v => v.Yes), no = pending.Votes.Count - yes;
             bool? majority = yes == no ? null : yes > no;
@@ -432,11 +434,7 @@ public partial class Main
                 on ? ("Stop", true, false, (Action)(() => Act(() => _sim.SetTrialMagic("")))) : ("Use it", why == null, false, (Action)(() => Act(() => _sim.SetTrialMagic(spellId)))));
         }
         var recent = t.Trials.AsEnumerable().Reverse().Take(5).ToList();
-        if (recent.Count == 0)
-        {
-            p.Note("No trials yet.");
-            return;
-        }
+        if (recent.Count == 0) return;
         p.Text(string.Join("\n", recent.Select(x =>
         {
             var a = t.Agent(x.AgentId);
@@ -521,7 +519,6 @@ public partial class Main
         p.Heading("Factions");
         var rules = t.Content.Factions;
         var known = t.Factions.Where(f => f.Active && f.Known).ToList();
-        if (known.Count == 0) p.Note("No faction in town that you know of. They take root as the town grows.");
         foreach (var f in known)
         {
             string stand = f.Standing >= 30 ? "Friendly" : f.Standing <= -30 ? "Hostile" : "Neutral";
