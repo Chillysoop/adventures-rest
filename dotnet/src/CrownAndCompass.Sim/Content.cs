@@ -260,9 +260,6 @@ public sealed record ClassDef
 
     public bool Healer => HealSpell != null;
     public bool Area => AreaSpell != null;
-
-    /// <summary>Heals a hero of this class carries into a delve: full casters more than half casters.</summary>
-    public int HealsAt(int level) => HealSpell == null ? 0 : Magic == "full" ? 1 + level / 2 : level / 2;
 }
 
 /// <summary>
@@ -1695,6 +1692,9 @@ public sealed class Content
     public Systems.CharacterRules Character { get; init; } = new();
     public Systems.TacticRules Tactics { get; init; } = new();
     public Systems.KnackRules Knacks { get; init; } = new();
+
+    /// <summary>How heroes fight as they level: attacks, spell slots, fighting spells, class powers, damage types (content/game/prowess.json).</summary>
+    public Systems.ProwessRules Prowess { get; init; } = new();
     public Systems.BestiaryRules Bestiary { get; init; } = new();
 
     /// <summary>Heroes' lasting wounds and how they mend (content/game/wounds.json).</summary>
@@ -1954,6 +1954,7 @@ public sealed class Content
             Character = Parse<CharacterRules>("character.json"),
             Tactics = Parse<TacticRules>("tactics.json"),
             Knacks = Parse<Systems.KnackRules>("knacks.json"),
+            Prowess = Parse<Systems.ProwessRules>("prowess.json"),
             Bestiary = Parse<Systems.BestiaryRules>("bestiary.json"),
             Wounds = Parse<WoundRules>("wounds.json"),
             Word = Parse<WordRules>("word.json"),

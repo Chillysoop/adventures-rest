@@ -83,7 +83,8 @@ public class ExploreTests
         double a = region.Bearing * Math.PI / 180;
         var (x, y) = (region.Days * Math.Sin(a), -region.Days * Math.Cos(a));
         Assert.Equal(region.Id, Explore.RegionAt(t, x, y)!.Id);
-        var c = sim.MarkSpot(x, y);
+        // Pay well enough that whoever is free takes it, whatever this seed's heroes are like.
+        var c = sim.MarkSpot(x, y, 200);
         Assert.NotNull(c);
         Assert.NotNull(Explore.SpotBlocked(t, x + 0.05, y));
         Survey? s = null;

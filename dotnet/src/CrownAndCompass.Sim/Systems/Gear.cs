@@ -33,6 +33,15 @@ public sealed record GearRules
 
     /// <summary>Points of gear above a fresh kit a company counts as one level when it picks a site.</summary>
     public double EdgePerLevel { get; init; } = 3;
+
+    /// <summary>What the forge charges to silver a weapon, and the level from which a hero thinks it worth it.</summary>
+    public SilverRules Silver { get; init; } = new();
+}
+
+public sealed record SilverRules
+{
+    public double Cost { get; init; } = 100;
+    public int Level { get; init; } = 3;
 }
 
 /// <summary>
@@ -119,7 +128,14 @@ public static class Gear
     {
         var s = a.Hero!;
         var dice = s.Cls.Spell || s.Weapon?.Damage == null ? new Dice(1, s.Cls.DamageDie > 0 ? s.Cls.DamageDie : 6, 0) : s.Weapon.Damage.Value;
-        return dice.Roll(rng, crit) + Rng.Modifier(a.Abilities[s.Cls.Primary]) + s.WeaponBonus + Bonus(c, s, "weapon") + Enchant.Might(c, s) + Curses.Mod(c, s, "damage");
+        return dice.Roll(rng, crit) + Rng.Modifier(a.Abilities[s.Cls.Primary]) + Flat(c, a);
+    }
+
+    /// <summary>The weapon's magic and any curse on its damage, which ride on a caster's cantrips too.</summary>
+    public static int Flat(Content c, Agent a)
+    {
+        var s = a.Hero!;
+        return s.WeaponBonus + Bonus(c, s, "weapon") + Enchant.Might(c, s) + Curses.Mod(c, s, "damage");
     }
 
     /// <summary>A charm, a cloak or a wand helps with traps, riddles and parley, and so do a patron's favour and a familiar.</summary>
@@ -371,7 +387,21 @@ public static class Gear
                 .ThenBy(o => o.Piece?.Id ?? o.Magic!.Id, StringComparer.Ordinal)
                 .FirstOrDefault();
             if (buy != null) Buy(town, a, buy);
+            // Nothing better to buy: a seasoned hero has the forge silver their blade, for what plain steel can't hurt.
+            else if (forge != null && !s.Silvered && !s.Cls.Spell && s.Level >= r.Silver.Level && !Prowess.Magic(s) && budget >= r.Silver.Cost) Silver(town, a, forge);
         }
+    }
+
+    private static void Silver(Town town, Agent a, Building forge)
+    {
+        double price = Rules(town).Silver.Cost;
+        a.Gold -= price;
+        double tax = price * town.TaxRate;
+        town.Book(TreasuryAccount.SalesTax, tax);
+        forge.Cash += price - tax - price * Rules(town).Wholesale;
+        forge.RevenueToday += price;
+        a.Hero!.Silvered = true;
+        town.Log(LedgerCategory.Quest, Importance.Routine, $"{a.Name} has the {Library.Prose(a.Hero.Weapon?.Name ?? "weapon")} silvered at {forge.Name} for {Js.Str(price)} gold.", [a.Id]);
     }
 
     /// <summary>
@@ -394,7 +424,11 @@ public static class Gear
             if (lib.GearOf(id) is LibGear arm && a.Abilities.Str >= arm.Strength && s.Armor != null && ArmorAc(arm, dex, a) - ArmorAc(s.Armor, dex, a) is int p && p > points)
                 (best, slot, points) = (arm, "armor", p);
         if (best == null) return null;
-        if (slot == "weapon") s.Weapon = best;
+        if (slot == "weapon")
+        {
+            s.Weapon = best;
+            s.Silvered = false;
+        }
         else s.Armor = best;
         Relist(s);
         string what = Library.Prose(best.Name);
@@ -428,7 +462,11 @@ public static class Gear
         else
         {
             var g = o.Piece!;
-            if (o.Slot == "weapon") s.Weapon = g;
+            if (o.Slot == "weapon")
+            {
+                s.Weapon = g;
+                s.Silvered = false;
+            }
             else if (o.Slot == "armor") s.Armor = g;
             else s.Shield = g;
             Relist(s);
