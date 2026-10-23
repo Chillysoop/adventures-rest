@@ -120,6 +120,32 @@ public class RefugeesTests
     }
 
     [Fact]
+    public void TheyNameWhatTookTheirHomeAndGoBackWhenACompanyRetakesIt()
+    {
+        var sim = Town();
+        var t = sim.Town;
+        var from = Somewhere(t);
+        var site = t.Sites.Where(x => !x.Cleared && x.RegionId != null).OrderBy(x => x.Def.Id, StringComparer.Ordinal).First();
+        from.Razed = true;
+        Refugees.Flee(t, from, null, [4, 4], siteId: site.Def.Id);
+        var lost = Refugees.LostOf(t, from.Id);
+        Assert.NotNull(lost);
+        Assert.Equal(site.Def.Id, lost!.SiteId);
+        Assert.Contains(t.Pleas, p => p.SiteId == site.Def.Id && p.SettlementId == from.Id && p.Status == PleaStatus.Open);
+        var camp = Refugees.Camped(t).ToList();
+        Assert.True(camp.Count >= 2, $"{camp.Count} came");
+        var stayer = camp[0];
+        stayer.Traveller = false;
+        site.Cleared = true;
+        Refugees.Daily(t);
+        Assert.True(lost.Retaken);
+        Assert.False(stayer.Departed);
+        Assert.All(camp.Skip(1), a => Assert.True(a.Departed));
+        Assert.False(from.Razed);
+        Assert.True(from.Allied);
+    }
+
+    [Fact]
     public void ASettledRefugeeWithAHomeOrWorkNeverLeavesForMisery()
     {
         var sim = Town();

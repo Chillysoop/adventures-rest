@@ -84,7 +84,9 @@
   (walls, Mandate, haven fame, less dread). They are travellers with `Agent.Refugee`, camp free, wait `patience` days (longer
   while homes or workplaces rise) and settle like any traveller; settled ones never leave for misery. A column of `cardAt`+
   waits on the `refugee-column` story (`Town.Refuge.Column`, effect `shelter`). Sheltering earns Mandate, the people's thanks
-  and haven titles (`havens`); when their menace falls, those still camped go home and a razed village rises again, allied.
+  and haven titles (`havens`). They name the site that took their home (`Refugees.Remember`, `Town.Refuge.Lost`; pass `siteId` to
+  `Flee` when the blow has one) and an exiles' plea stands to retake it; when it is cleared or their menace falls, those still
+  camped go home and a razed village rises again, allied.
   Shots: `--refugees N`, `--story refugee-column`.
 - Zone layouts (city.json `markets`, `closes`): each zone grows its own way. Shops: `Streets.Markets` lays a rectangular
   market square (`Street.Market`) in shop paint with a straight high street to the nearest street, once the town keeps

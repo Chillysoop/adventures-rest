@@ -584,13 +584,14 @@ public static class World
     }
 
     /// <summary>A settlement begs the town's heroes for help with a site, offering a reward (more when its own band failed).</summary>
-    internal static Plea? Plead(Town town, Settlement s, SiteState site, double bonus)
+    /// <remarks>With <paramref name="exiles"/>, it is the settlement's refugees in the town's camp who ask, to retake their lost home: razed or not, ruler or none.</remarks>
+    internal static Plea? Plead(Town town, Settlement s, SiteState site, double bonus, bool exiles = false)
     {
         var rules = town.Content.World.Standing;
-        if (s.Razed || !Neighbours.Known(town, s) || Reigns.Plea(town, s) <= 0) return null;
+        if (!exiles && (s.Razed || !Neighbours.Known(town, s) || Reigns.Plea(town, s) <= 0)) return null;
         if (town.Pleas.Any(p => p.SiteId == site.Def.Id && p.Status is PleaStatus.Open or PleaStatus.Taken)) return null;
-        double reward = Js.Round(rules.PleaRewardPerLevel * LevelOf(site) * (s.Allied ? 1.5 : 1) * bonus * Reigns.Plea(town, s));
-        Tell(town, site, rules.PleaTrust, $"a runner from {s.Name}");
+        double reward = Js.Round(rules.PleaRewardPerLevel * LevelOf(site) * (s.Allied ? 1.5 : 1) * bonus * (exiles ? 1 : Reigns.Plea(town, s)));
+        Tell(town, site, rules.PleaTrust, exiles ? $"the refugees from {s.Name}" : $"a runner from {s.Name}");
         var plea = new Plea
         {
             Id = town.Pleas.Count + 1,
@@ -603,7 +604,9 @@ public static class World
         town.Log(
             LedgerCategory.Quest,
             Importance.Notable,
-            $"A runner from {s.Name} reaches the taverns: {s.People} beg for help with {site.Def.Name} and offer {Js.Str(reward)} gold to whoever deals with it.");
+            exiles
+                ? $"In the taverns, the refugees from {s.Name} pool what they have: {Js.Str(reward)} gold to whoever takes {site.Def.Name} back so they can go home."
+                : $"A runner from {s.Name} reaches the taverns: {s.People} beg for help with {site.Def.Name} and offer {Js.Str(reward)} gold to whoever deals with it.");
         return plea;
     }
 

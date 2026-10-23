@@ -1,5 +1,5 @@
 {
-  "_doc": "Refugees (Systems/Refugees.cs): folk fleeing a struck settlement or a menace come up the road as travellers, camp free outside town and wait far longer than other travellers, longer still while homes and work are going up. A column of cardAt or more asks the mayor first (story refugee-column). Sheltering them earns Mandate, their people's thanks and the town's haven fame; once the menace that drove them out falls, those not yet settled go home and rebuild.",
+  "_doc": "Refugees (Systems/Refugees.cs): folk fleeing a struck settlement or a menace come up the road as travellers, camp free outside town and wait far longer than other travellers, longer still while homes and work are going up. A column of cardAt or more asks the mayor first (story refugee-column). They name the site that took their home and a plea (pleaBonus times a settlement's usual reward) stands to retake it while any wait in the camp. Sheltering them earns Mandate, their people's thanks and the town's haven fame; once the menace that drove them out falls, those not yet settled go home and rebuild.",
   "draw": {
     "_doc": "How readily refugees pick this town over another: base, plus the best wall standing, plus the Mandate above 50 and the haven's fame, less its dread; the group's size is times this.",
     "base": 0.7,
@@ -65,6 +65,7 @@
     "security": 30,
     "standing": 100
   },
+  "pleaBonus": 1.5,
   "havens": [
     { "at": 10, "title": "a haven", "draw": 0.1, "appeal": 0.03, "mandate": 3, "standing": 4,
       "text": "Word goes along the roads that {town} takes in those who have lost everything. People begin to call it a haven." },
@@ -81,6 +82,8 @@
     "settle": "{who}, who fled {from}, {verb} to stay in {town}, having found {what}.",
     "gaveUp": "{who}, who fled {from}, {verb} on from the camp outside {town}: {why}.",
     "home": "{from} is safe again with {by} gone. {n} of its folk strike their tents outside {town} and go home.",
+    "lost": "The refugees from {from} say it was {site} that took their home. They ask the town's companies to take it back.",
+    "retaken": "{site} is cleared, and {from} is theirs again. {n} of its folk strike their tents outside {town} and go home.",
     "rebuilt": "{from} rises from its ashes. Its folk who sheltered in {town} came home to rebuild it, and they remember who took them in.",
     "fever": "A fever from the crowded refugee camp",
     "grumble": "The refugee camp outside {town} is crowded and hungry, and the town grumbles about it."

@@ -291,6 +291,10 @@ public partial class Main
             Ui.Chip("ui-house", $"{st.Settled}", Ui.Good, "Settled for good"),
             Ui.Chip("ui-person", $"{st.WentHome}", Ui.Ink2, "Went home to rebuild"),
             Ui.Chip("ui-skull", $"{st.TurnedAway + st.GaveUp}", Ui.Bad, "Turned away or gave up waiting")), 13);
+        foreach (var l in st.Lost.Where(l => !l.Retaken).OrderBy(l => l.Day))
+            if (Quests.Site(t, l.SiteId) is { } lostTo)
+                p.Text(Ui.Tip($"{Ui.Img("ui-house", 14)} {Ui.Esc(t.Settlements[l.From].Name)} {Ui.C(Ui.Bad, "←")} {Ui.Esc(lostTo.Def.Name)}",
+                    "Their lost home. Clear the site and those still in the camp go home and rebuild; the village comes back as a friend."), 13);
         if (camp.Count > 0)
             p.Text(string.Join("\n", new[] {
                 Ui.Tip($"{Ui.Img("ui-time", 14)} Soonest leaves in {Ui.Days(Math.Max(0, soonest))}", $"They wait {r.Patience.Least} days, a day more for each day homes or workplaces are going up, up to {r.Patience.Most}."),

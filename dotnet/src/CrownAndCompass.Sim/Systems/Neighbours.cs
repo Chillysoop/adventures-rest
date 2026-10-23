@@ -512,6 +512,7 @@ public static class Neighbours
     {
         var r = Rules(town);
         string said = Saga.Cap(Fill(town, s, def.Failed));
+        string? lostTo = s.Trouble?.SiteId;
         s.Trouble = null;
         s.Prosperity = Math.Max(0, s.Prosperity - r.FailedProsperity);
         bool known = town.Regions[s.RegionId].Known;
@@ -520,7 +521,7 @@ public static class Neighbours
         foreach (var c in CastOf(town, s).ToList()) c.Regard = Math.Max(0, c.Regard + r.Cast.Lapsed);
         // Those who give up on the settlement come to the town, if it is known to them.
         if (known && town.Rng.Chance(0.5))
-            Refugees.Flee(town, s, null, Refugees.Rules(town).Sources.Trouble, n => $"{n} {(n == 1 ? "refugee" : "refugees")} from {s.Name} come up the road to {town.Name}, having given up on home, and pitch tents by the road.");
+            Refugees.Flee(town, s, null, Refugees.Rules(town).Sources.Trouble, n => $"{n} {(n == 1 ? "refugee" : "refugees")} from {s.Name} come up the road to {town.Name}, having given up on home, and pitch tents by the road.", siteId: lostTo);
         if (!town.Rng.Chance(r.NewLeaderChance) || Reigns.Puppet(s) || Reigns.YearsOf(town, s) < 1) return;
         Reigns.Fall(town, s, "stepdown", null, Lower(def.Name));
     }

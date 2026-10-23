@@ -97,6 +97,9 @@ public sealed record RefugeeRules
     public double GrumbleMost { get; init; } = 0.3;
     public double Fever { get; init; } = 0.02;
     public RefugeeHome Home { get; init; } = new();
+
+    /// <summary>The reward on the plea to retake a lost home, times a settlement's usual.</summary>
+    public double PleaBonus { get; init; } = 1.5;
     public IReadOnlyList<HavenDef> Havens { get; init; } = [];
     public IReadOnlyDictionary<string, string> Texts { get; init; } = new Dictionary<string, string>();
 }
@@ -109,6 +112,16 @@ public sealed class RefugeeColumn
     public int? By { get; set; }
     public string FromName { get; set; } = "";
     public int Day { get; set; }
+}
+
+/// <summary>A home refugees lost to a foe's site: a plea stands to retake it while any of them wait in the camp.</summary>
+public sealed class LostHome
+{
+    public int From { get; set; }
+    public required string SiteId { get; set; }
+    public int? By { get; set; }
+    public int Day { get; set; }
+    public bool Retaken { get; set; }
 }
 
 /// <summary>The town's dealings with refugees, and its haven fame.</summary>
@@ -124,6 +137,9 @@ public sealed class RefugeeState
     /// <summary>Steps of haven fame reached (refugees.json havens).</summary>
     public int Haven { get; set; }
     public RefugeeColumn? Column { get; set; }
+
+    /// <summary>Homes refugees lost to a foe's site, and whether a company has retaken them.</summary>
+    public List<LostHome> Lost { get; } = [];
 
     /// <summary>The camp grumbled yesterday: Mandate it cost.</summary>
     public double Grumbled { get; set; }
@@ -177,7 +193,7 @@ public static class Refugees
     /// rules' line); a column of <see cref="RefugeeRules.CardAt"/> or more stops on the road and asks the mayor.
     /// Returns how many came straight in.
     /// </summary>
-    public static int Flee(Town town, Settlement? from, Menace? by, int[] range, Func<int, string>? said = null, string? fromName = null)
+    public static int Flee(Town town, Settlement? from, Menace? by, int[] range, Func<int, string>? said = null, string? fromName = null, string? siteId = null)
     {
         if (town.Outcome != null || range.Length == 0) return 0;
         var rng = town.Rng;
@@ -196,14 +212,43 @@ public static class Refugees
                 Stories.Contact(town, def, new Story { SettlementId = from?.Id, MenaceId = by?.Id });
             }
             town.Log(LedgerCategory.Arrival, Importance.Major, Fill(town, Text(town, "column"), town.Refuge.Column!.Count, where));
+            Remember(town, from, by, siteId);
             return 0;
         }
         var come = Arrive(town, n, from, by);
         string line = said?.Invoke(n) ?? Fill(town, Text(town, "come"), n, where);
         town.Log(LedgerCategory.Arrival, Importance.Notable, line, come);
         Welcome(town, n, from);
+        Remember(town, from, by, siteId);
         return n;
     }
+
+    /// <summary>
+    /// They name what took their home: the site behind their trouble, else the menace's seat or holding nearest them. A plea
+    /// to retake it goes up in the taverns, and stands while any of them wait in the camp.
+    /// </summary>
+    private static void Remember(Town town, Settlement? from, Menace? by, string? siteId)
+    {
+        if (from == null || town.Refuge.Lost.Any(l => l.From == from.Id && !l.Retaken)) return;
+        var region = town.Regions[from.RegionId];
+        var site = siteId != null ? Quests.Site(town, siteId)
+            : by == null ? null
+            : new[] { by.SeatId }.Concat(by.Holdings)
+                .Select(id => Quests.Site(town, id))
+                .OfType<SiteState>()
+                .Where(x => !x.Cleared && x.RegionId != null)
+                .OrderBy(x => x.RegionId == region.Id ? 0 : 1)
+                .ThenBy(x => World.AngleBetween(town.Regions[x.RegionId!.Value].Bearing, region.Bearing))
+                .ThenBy(x => x.Def.Id, StringComparer.Ordinal)
+                .FirstOrDefault();
+        if (site is not { Cleared: false }) return;
+        town.Refuge.Lost.Add(new LostHome { From = from.Id, SiteId = site.Def.Id, By = by?.Id, Day = town.Day });
+        town.Log(LedgerCategory.Quest, Importance.Notable, Saga.Cap(Text(town, "lost").Replace("{from}", from.Name).Replace("{site}", site.Def.Name).Replace("{town}", town.Name)));
+        World.Plead(town, from, site, Rules(town).PleaBonus, exiles: true);
+    }
+
+    /// <summary>The lost home a refugee's settlement is waiting to have retaken, if any.</summary>
+    public static LostHome? LostOf(Town town, int settlementId) => town.Refuge.Lost.FirstOrDefault(l => l.From == settlementId && !l.Retaken);
 
     private static string Fill(Town town, string text, int n, string from) =>
         Saga.Cap(text.Replace("{n}", Js.Str(n)).Replace("{from}", from).Replace("{town}", town.Name));
@@ -308,6 +353,7 @@ public static class Refugees
         var st = town.Refuge;
         if (st.Column != null && !town.Stories.Open.Any(s => s.Def == StoryId)) Decide(town, 1);
         st.Grumbled = 0;
+        Retake(town);
         var camp = Camped(town).OrderBy(a => a.Id).ToList();
         if (camp.Count == 0) return;
         int day = town.Day;
@@ -360,41 +406,69 @@ public static class Refugees
         if (house != null) Sickness.Seed(town, house, Text(town, "fever"));
     }
 
+    /// <summary>
+    /// A company cleared the site a people lost their home to: those still in the camp go home and rebuild; those settled
+    /// here stay for good. While any wait and the site stands, the plea to retake it is kept up.
+    /// </summary>
+    private static void Retake(Town town)
+    {
+        foreach (var l in town.Refuge.Lost.Where(l => !l.Retaken).ToList())
+        {
+            var s = town.Settlements[l.From];
+            var waiting = Camped(town).Where(a => a.RefugeeFrom == l.From).OrderBy(a => a.Id).ToList();
+            if (Quests.Site(town, l.SiteId) is not { } site) continue;
+            if (site.Cleared)
+            {
+                l.Retaken = true;
+                Home(town, s, waiting, Text(town, "retaken").Replace("{site}", site.Def.Name));
+                continue;
+            }
+            if (waiting.Count > 0 && !town.Pleas.Any(p => p.SiteId == l.SiteId && p.Status is PleaStatus.Open or PleaStatus.Taken))
+                World.Plead(town, s, site, Rules(town).PleaBonus, exiles: true);
+        }
+    }
+
     /// <summary>The menace that drove them out is gone: refugees still in the camp go home, and a razed settlement rises again.</summary>
     private static void GoHome(Town town, List<Agent> going)
     {
-        var r = Rules(town);
         foreach (var g in going.GroupBy(a => (a.RefugeeFrom ?? -1, a.RefugeeBy!.Value)).OrderBy(g => g.Key.Item1).ThenBy(g => g.Key.Item2))
         {
             var s = g.Key.Item1 >= 0 ? town.Settlements[g.Key.Item1] : null;
             var m = town.Saga.Menaces[g.Key.Item2 - 1];
-            int n = 0;
-            foreach (var a in g)
-            {
-                if (a.Departed) continue;
-                Population.Depart(town, a);
-                n++;
-            }
-            if (n == 0) continue;
-            town.Refuge.WentHome += n;
-            string from = s?.Name ?? "their home";
-            town.Log(LedgerCategory.Departure, Importance.Notable,
-                Saga.Cap(Text(town, "home").Replace("{from}", from).Replace("{by}", m.Name).Replace("{n}", Js.Str(n)).Replace("{town}", town.Name)), g.Select(a => a.Id).ToList());
-            if (s == null) continue;
-            if (!s.Razed)
-            {
-                Thank(town, s, Math.Min(r.Welcome.ThanksMost, r.Welcome.Thanks * n));
-                continue;
-            }
-            s.Razed = false;
-            s.Prosperity = r.Home.Prosperity;
-            s.Security = r.Home.Security;
-            s.Trouble = null;
-            s.Shadow = null;
-            s.Standing = Math.Max(0, s.Standing);
-            town.Log(LedgerCategory.Town, Importance.Major, Saga.Cap(Text(town, "rebuilt").Replace("{from}", s.Name).Replace("{town}", town.Name)));
-            World.Shift(town, s, r.Home.Standing);
+            if (s != null && LostOf(town, s.Id) is { } lost) lost.Retaken = true;
+            Home(town, s, g.ToList(), Text(town, "home").Replace("{by}", m.Name));
         }
+    }
+
+    /// <summary>Refugees go home (logged with the line given), and a razed settlement they come from rises again as a friend.</summary>
+    private static void Home(Town town, Settlement? s, List<Agent> going, string said)
+    {
+        var r = Rules(town);
+        int n = 0;
+        foreach (var a in going)
+        {
+            if (a.Departed) continue;
+            Population.Depart(town, a);
+            n++;
+        }
+        if (n == 0) return;
+        town.Refuge.WentHome += n;
+        town.Log(LedgerCategory.Departure, Importance.Notable,
+            Saga.Cap(said.Replace("{from}", s?.Name ?? "their home").Replace("{n}", Js.Str(n)).Replace("{town}", town.Name)), going.Select(a => a.Id).ToList());
+        if (s == null) return;
+        if (!s.Razed)
+        {
+            Thank(town, s, Math.Min(r.Welcome.ThanksMost, r.Welcome.Thanks * n));
+            return;
+        }
+        s.Razed = false;
+        s.Prosperity = r.Home.Prosperity;
+        s.Security = r.Home.Security;
+        s.Trouble = null;
+        s.Shadow = null;
+        s.Standing = Math.Max(0, s.Standing);
+        town.Log(LedgerCategory.Town, Importance.Major, Saga.Cap(Text(town, "rebuilt").Replace("{from}", s.Name).Replace("{town}", town.Name)));
+        World.Shift(town, s, r.Home.Standing);
     }
 
     /// <summary>A refugee in the camp found their feet: the Ledger tells it their way.</summary>
