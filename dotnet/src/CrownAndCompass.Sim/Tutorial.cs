@@ -65,7 +65,7 @@ public static class Tutorial
     /// <summary>
     /// A number read off the town for steps to watch: "count:Bounties" is the size of that list on
     /// <see cref="Town"/> (any public list works, so a new system needs no code here); "zoned" is the painted
-    /// ground not yet built on, "decorated" the decorations set down, "airships" the sky dock's ships at the mast, "skyships" all of them, "relics" the Skywright relics held, "lofted" 1 once the Lofted City flies, "goals" the charter goals still open. Null for a name that means nothing.
+    /// ground not yet built on, "decorated" the decorations set down, "airships" the sky dock's ships at the mast, "skyships" all of them, "relics" the Skywright relics held, "lofted" 1 once the Lofted City flies, "seas" the sea lands the town knows, "goals" the charter goals still open. Null for a name that means nothing.
     /// </summary>
     public static int? Measure(Town t, string token)
     {
@@ -84,6 +84,8 @@ public static class Tutorial
         // Skywright relics the town holds, and 1 once the Lofted City flies (Systems.Lofted).
         if (token == "relics") return Systems.Lofted.Held(t);
         if (token == "lofted") return Systems.Lofted.Aloft(t) ? 1 : 0;
+        // Sea lands of the ocean the town knows of (Systems.World.Sea).
+        if (token == "seas") return t.Regions.Count(r => r.Known && Systems.World.Sea(r));
         // The charter goals still open (Systems.Goals).
         if (token == "goals") return Systems.Goals.Open(t).Count;
         // Parts the town holds from the wilds (Systems.Spoils).

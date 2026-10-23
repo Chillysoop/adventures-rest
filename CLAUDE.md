@@ -117,6 +117,11 @@
   with no swing and must roll nothing, so gate sweeps stay put. Moods (`content/game/moods.json`, `Systems/Moods.cs`): townsfolk high for
   days get a trade inspiration, low ones break (`Agent.Episode`, shown as street bubbles and in the inspector; `--episode id` stages one).
   Their rolls use `Moods.Dice` (seeded from seed, tick and person), not `Town.Rng`, so moods never shift the main stream.
+- Acts and the final horde (saga.json `acts`, `horde`; `Systems/Saga.cs`, `Systems/Horde.cs`): an act opens when the town is strong
+  enough (`OpensAtLevel` champions and `OpensAtPopulation`, times `Storyteller.Acts`), after its `minDays`, or after `maxDays` regardless.
+  The big bad's host gathers at its seat and holdings (`HordeState.Camps`), musters, then marches; fights at a camp thin it, a cleared
+  holding scatters it. The town learns its size and moves only with eyes on its camps or road (`Horde.Eyes`, `RoadWatched`), else a day
+  or two out; nothing shows a count of days for it (`Horde.Word`). Its first breach burns the lower town (`Horde.Reprieve`); the next falls it.
 - Decorations (`content/game/decor.json`, `Systems/Decor.cs`, client `Map/Decorator.cs`, `Map/DecorView.cs`): free positions in
   tiles from the town's corner and any angle (radians, model front +Z turned by it). Every piece needs a small effect in
   another system, capped in decor.json. Pieces claim plan cells (`Decor.Cells`, `LandPlan.Decor`): `Land.Fits` and lanes go
@@ -160,6 +165,11 @@
   (`crest-<lineage>` from `scripts/icons.ts`) and a short line. The card stages the host live with the heroes' kit (creature bodies:
   `Frame.Spider`, `Wyrm`, `Wraith`, `Crawler`, `Rat`) and shows once per lineage (`Intros.Due` over `Town.Discovered`; clock stop
   `first-contact`). `IntrosTests` fails a lineage without one. Shots: `--intro <lineage>`.
+- Fights (`Systems/Prowess.cs`, `Systems/Expedition.Prowess.cs`, numbers in `content/game/prowess.json`): heroes gain Extra Attack
+  (library class features), cantrip dice and spell slots by level; casters pick from prowess.json `spells` each turn (the library gives
+  dice, damage type and save); class powers are `powers` entries played by id. Every blow on a foe goes through `Venture.Hit(foe, dmg,
+  type, magic, silver)`, which applies the library's resist/immune/vulnerable and stops regeneration; new damage (item powers) goes
+  through it too. Foes pick whom to hit by their Intelligence (`Venture.Victim`).
 - Lair towers (`Systems/Lairs.cs`, lairs.json `outpost`/`patrol`): a cleared site is kept clear by a patrol (a lost fight wounds
   the hero) or a tower built over `buildDays` (`SiteState.TowerDue`, then `Held`), tested now and then on the site's own dice
   (`Lairs.Tested`, `Reinforce`, alert `tower`). A knight's fief is theirs: `Loyalty.Choose` sets `HeroSheet.FiefWay`

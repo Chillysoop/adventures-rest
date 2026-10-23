@@ -232,13 +232,15 @@ public static class Notables
     {
         var r = Rules(town);
         // A guild's master is someone worth knowing the day they take the chair, unless they are already.
+        bool chaired = false;
         if (r.Kind(r.GuildMaster) is { } gm)
             foreach (var g in town.Guilds.OrderBy(g => g.Id, StringComparer.Ordinal))
                 if (g.MasterId is int m && !town.Notables.Any(n => !n.Gone && n.AgentId == m))
                 {
                     Add(town, gm, m, "");
-                    return;
+                    chaired = true;
                 }
+        if (chaired) return;
         var last = town.Notables.Count == 0 ? -999 : town.Notables.Where(n => n.Kind != r.GuildMaster).Select(n => n.Since).DefaultIfEmpty(-999).Max();
         if (town.Day - last < r.RiseDays) return;
         foreach (var d in r.Kinds)

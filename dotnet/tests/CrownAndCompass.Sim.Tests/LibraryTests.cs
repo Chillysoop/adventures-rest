@@ -46,7 +46,7 @@ public class LibraryTests
         Assert.Equal(6, wizard.HitDie);
         Assert.False(C.Classes.First(c => c.Id == "fighter").Healer);
         Assert.Equal("scout", C.Classes.First(c => c.Id == "cartographer").Role);
-        Assert.Equal(0, C.Classes.First(c => c.Id == "paladin").HealsAt(1));
+        Assert.Equal(0, Systems.Prowess.Casts(C, C.Classes.First(c => c.Id == "paladin"), 1));
     }
 
     [Fact]

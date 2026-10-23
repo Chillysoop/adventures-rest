@@ -274,6 +274,40 @@
         "parley": ["a servant who still keeps the lodge"],
         "boss": ["the lord of the lodge, under the moon"]
       }
+    },
+    {
+      "id": "corsair-fleet",
+      "name": "the corsair fleet",
+      "lineage": "corsairs",
+      "themes": ["shallows", "archipelago", "saltreach"],
+      "names": ["the Corsairs' Cove of {B}", "the {A} Anchorage", "the Black Sail Cay", "the Pirate Stockade of {B}"],
+      "habitats": ["coast", "ocean"],
+      "deck": ["wander", "parley", "wander", "trap", "wander", "treasure"],
+      "foes": ["pirate", "bandit", "tough", "spy", "scout", "reef-shark", "giant-crab"],
+      "bosses": ["pirate-captain", "bandit-captain", "sea-hag"],
+      "texts": {
+        "wander": ["a press-gang looking for new hands", "corsairs sharing out a prize on the beach"],
+        "trap": ["a powder keg under the jetty, fuse already lit"],
+        "parley": ["a pressed sailor who wants to go home", "a quartermaster who thinks the captain cheats"],
+        "boss": ["the corsair captain, on the deck of the flagship"]
+      }
+    },
+    {
+      "id": "drowned-choir",
+      "name": "the Drowned Choir",
+      "lineage": "drowned-choir",
+      "themes": ["deepsea", "archipelago", "drownedempire"],
+      "names": ["the Choir's Reef", "the Bell Temple of {B}", "the {A} Drowning Stair", "the Sunken Chapel of {B}"],
+      "habitats": ["ocean", "plane-of-water", "ruins"],
+      "deck": ["wander", "hazard", "wander", "puzzle", "wander", "treasure"],
+      "foes": ["cultist", "priest-acolyte", "sahuagin-warrior", "merrow", "ghoul", "ghast", "giant-octopus", "hunter-shark"],
+      "bosses": ["sea-hag", "water-elemental", "wight", "kraken"],
+      "texts": {
+        "wander": ["choristers singing underwater, and something singing back", "drowned sailors with the Choir's mark on their brows"],
+        "hazard": ["the temple floods on the last note of the hymn"],
+        "puzzle": ["bells that must be rung in the drowned god's order"],
+        "boss": ["the Choir's cantor, who has not breathed in years"]
+      }
     }
   ]
 }

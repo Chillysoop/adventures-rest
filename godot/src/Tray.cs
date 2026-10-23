@@ -198,7 +198,7 @@ public partial class Main
         }
         var foes = Discovery.KnownMenaces(t).Where(m => m.Origin != Menaces.FromWarband).OrderByDescending(m => m.ArrivalTick != null).ThenByDescending(m => m.Power).ThenBy(m => m.Id).ToList();
         foreach (var m in foes.Take(3))
-            p.Text($"{Ui.KindIcon(m.Kind, 16)}[b]{Ui.Esc(Ui.Cap(m.Name))}[/b]  {Tag(MenaceStages[m.Stage].Word, MenaceStages[m.Stage].Color)}{(m.ArrivalTick != null ? "  " + Tag("marching", Ui.Bad) : "")}", 13);
+            p.Text($"{Ui.KindIcon(m.Kind, 16)}[b]{Ui.Esc(Ui.Cap(m.Name))}[/b]  {Tag(MenaceStages[m.Stage].Word, MenaceStages[m.Stage].Color)}{(m.ArrivalTick != null && Horde.Known(t, m) ? "  " + Tag("marching", Ui.Bad) : "")}", 13);
         if (!band && foes.Count == 0) p.Text($"{Ui.Img("foe-unseen", 18)} {Ui.C(Ui.Ink2, "No foes known")}", 13);
         double scale = Math.Max(Math.Max(def, est ?? 0), 1);
         if (est is double e) p.Meter("Warband", 100 * e / scale, $"~{Math.Round(e)}", true);
