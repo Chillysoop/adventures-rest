@@ -143,7 +143,7 @@ public sealed record AirRaidRules
 {
     public int From { get; init; } = 400;
     public int Every { get; init; } = 30;
-    public double Chance { get; init; } = 0.12;
+    public double Chance { get; init; } = 0.2;
     public int WarnDays { get; init; } = 3;
     public int SignalDays { get; init; } = 2;
     public double HeroLevel { get; init; } = 0.5;

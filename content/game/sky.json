@@ -59,7 +59,7 @@
   ],
   "powerPerRing": 3,
   "dockCeiling": 0.45,
-  "airRaids": { "from": 400, "every": 30, "chance": 0.12, "warnDays": 3, "signalDays": 2, "heroLevel": 0.5, "perYear": 4, "fame": 3, "hurt": 0.3, "mandate": 3,
+  "airRaids": { "from": 400, "every": 30, "chance": 0.2, "warnDays": 3, "signalDays": 2, "heroLevel": 0.5, "perYear": 4, "fame": 3, "hurt": 0.3, "mandate": 3,
     "attackers": [
       { "id": "wyrm", "name": "an ancient dragon", "foe": "elder-wyrms", "weight": 1, "strength": 40, "gold": 300, "burns": 3,
         "warn": "Herders in the hills saw it first: a dragon out of {site}, circling lower each day. It will be over the town in {days}. Keep the airships moored, the watch on the towers and the heroes home.",
