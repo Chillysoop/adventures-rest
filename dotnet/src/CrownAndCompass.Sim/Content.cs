@@ -681,6 +681,11 @@ public sealed record RumorRules
 
     /// <summary>Days after a clearing before anyone talks of the place being taken again.</summary>
     public int QuietDays { get; init; } = 20;
+
+    /// <summary>Days before a first-hand report of a site nobody can see goes back to hearsay, and the trust it keeps.</summary>
+    public int StaleDays { get; init; } = 180;
+    public int StaleTrust { get; init; } = 50;
+    public IReadOnlyList<string> Stale { get; init; } = [];
     public IReadOnlyList<RumorSource> Travellers { get; init; } = [];
     public int[] ResidentReliability { get; init; } = [25, 65];
     public int[] HeroReliability { get; init; } = [55, 90];

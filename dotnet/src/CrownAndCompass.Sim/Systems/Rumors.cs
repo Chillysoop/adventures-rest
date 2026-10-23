@@ -85,8 +85,35 @@ public static class Rumors
         }
         // Whatever the town can see right now, it knows for certain.
         foreach (var (site, _) in Watch.LiveSites(town))
+        {
             if (site.Known != SiteKnowledge.Confirmed || site.ThoughtCleared != site.Cleared || site.Believed != Occupants(town.Content, site.Def))
                 Confirm(town, site, "Eyes on the place");
+            else site.ReportTick = town.Tick;
+        }
+        Stale(town);
+    }
+
+    /// <summary>
+    /// A first-hand report nobody has renewed in <see cref="RumorRules.StaleDays"/> goes back to hearsay: the town still
+    /// knows where the place is, but a lair it thinks cleared may have been taken again, so companies may go and look.
+    /// Sites the town keeps eyes on (towers, patrols, a knight's land, live sight) never go stale.
+    /// </summary>
+    private static void Stale(Town town)
+    {
+        var r = Rules(town);
+        int limit = r.StaleDays * SimTime.HoursPerDay;
+        foreach (var site in town.Sites)
+        {
+            if (site.Known != SiteKnowledge.Confirmed || site.ReportTick is not int at || town.Tick - at < limit) continue;
+            if (site.Held || site.TowerDue != null || site.Patrolled || Loyalty.Lord(town, site.Def.Id) != null || Watch.LiveOf(town, site) != null) continue;
+            site.Known = SiteKnowledge.Rumoured;
+            site.Trust = Math.Min(site.Trust, r.StaleTrust);
+            site.HeardFrom = "an old report";
+            if (!site.ThoughtCleared) continue;
+            site.ThoughtCleared = false;
+            if (r.Stale.Count > 0)
+                town.Log(LedgerCategory.Quest, Importance.Routine, r.Stale[(site.Def.Id.Length + town.Day) % r.Stale.Count].Replace("{site}", site.Def.Name, StringComparison.Ordinal));
+        }
     }
 
     private static (string Text, int? Id, int Reliability) Teller(Town town, Building tavern)
@@ -269,6 +296,7 @@ public static class Rumors
     {
         site.Known = SiteKnowledge.Confirmed;
         site.Found = true;
+        site.FoundTick ??= asOf ?? town.Tick;
         Discovery.AtSite(town, site.Def.Id, Discovery.Met);
         site.Believed = Occupants(town.Content, site.Def);
         site.BelievedTier = site.Def.Tier;

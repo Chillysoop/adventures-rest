@@ -485,6 +485,9 @@ public sealed class Town
     /// <summary>Enemies on the move that someone saw and reported (<see cref="Systems.Sightings"/>), and how many reports there have been.</summary>
     public List<Systems.Sighting> Sightings { get; } = [];
 
+    /// <summary>Country an airship (or ship) flew over and charted for the council, oldest first (<see cref="Systems.Sky.Charted"/>).</summary>
+    public List<Systems.Chart> Charts { get; } = [];
+
     /// <summary>Every foe and power the town has come across, in the order it met them (<see cref="Systems.Discovery"/>).</summary>
     public List<Systems.Meeting> Discovered { get; } = [];
 

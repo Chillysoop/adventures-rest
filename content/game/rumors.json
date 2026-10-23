@@ -4,6 +4,8 @@
   "maxChance": 0.8,
   "unheardWeight": 3,
   "quietDays": 20,
+  "staleDays": 180,
+  "staleTrust": 50,
   "travellers": [
     { "text": "a trapper in from the hills", "reliability": [45, 80] },
     { "text": "a tinker working the east road", "reliability": [30, 65] },
@@ -33,6 +35,10 @@
   "resettled": [
     "{source} saw smoke over {site} again. Something has moved back in.",
     "{source} says {site} is not empty any more: {who}, by the sound of it."
+  ],
+  "stale": [
+    "Nobody has set eyes on {site} in half a year. Whatever the last report said, who knows what lives there now.",
+    "The last word on {site} is half a year old. The taverns have stopped taking it for gospel."
   ],
   "betterHeroesPerTavern": 0.08
 }
