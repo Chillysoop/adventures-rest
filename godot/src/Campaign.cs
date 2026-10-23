@@ -50,14 +50,14 @@ public partial class Main
             string Check(bool done, string what) => Ui.Bullet(Ui.C(done ? Ui.Good : Ui.Ink2, what), done ? "ui-yes" : "ui-no");
             var waits = new List<string>();
             if (s.Act == 0) waits.Add(Check(!Threat.IsActive(t) || s.Sacks > 0, "The Last Stand settled"));
-            waits.Add(Check(champ >= n.OpensAtLevel, $"Champions level {n.OpensAtLevel} (now {champ})"));
-            waits.Add(Check(t.Day >= n.EarliestDay, $"Day {n.EarliestDay}"));
-            next = $"\n[font_size=12]{Ui.Tip(Ui.C(Ui.Ink2, $"Next: [b]{Ui.Esc(n.Name)}[/b]"), $"Begins when all of these hold, or on day {n.LatestDay} regardless.")}  {Ui.Chip("ui-time", $"by day {n.LatestDay}", Ui.Ink2, "It comes by this day regardless", 12)}\n{string.Join("\n", waits)}[/font_size]";
+            int lvl = Saga.LevelFor(t, n), pop = Saga.PopulationFor(t, n), inAct = t.Day - s.ActDays[^1];
+            waits.Add(Check(champ >= lvl, $"Champions level {lvl} (now {champ})"));
+            waits.Add(Check(t.Population >= pop, $"{pop} people (now {t.Population})"));
+            if (inAct < n.MinDays) waits.Add(Check(false, $"{n.MinDays - inAct} more days of this act"));
+            next = $"\n[font_size=12]{Ui.Tip(Ui.C(Ui.Ink2, $"Next: [b]{Ui.Esc(n.Name)}[/b]"), $"Begins once the town is this strong. A town that never gets there meets it after {n.MaxDays} days of this act.")}\n{string.Join("\n", waits)}[/font_size]";
         }
         else next = $"\n{Ui.C(Ui.Ink2, $"[font_size=12]The last act. Your champions are level {champ}.[/font_size]")}";
         p.Card($"[font_size=17][b]{Ui.Esc(Saga.ActTitle(t, s.Act))}[/b][/font_size]  {Tag($"since day {s.ActDays[^1]}")}{next}");
-        RenderVictory(p, t);
-
         if (Menaces.PendingDemand(t) is { } dm)
         {
             var am = Menaces.AmbitionOf(t, dm);
@@ -68,10 +68,15 @@ public partial class Main
             p.Buttons(("Bend the knee", true, false, () => Act(() => _sim.AnswerDemand(id, true))), ("Refuse", true, true, () => Act(() => _sim.AnswerDemand(id, false))));
         }
 
+        p.Page("Victory", "ui-star");
+        RenderVictory(p, t);
+
+        p.Page("Foes", "threat");
+        RenderCrises(p, t);
         var big = Saga.BigBad(t);
         if (big is { Alive: true })
         {
-            string march = big.ArrivalTick is int at && at > t.Tick ? $"\n{Ui.C(Ui.Bad, $"[b]Its host reaches the walls in {Ui.Days((int)Math.Ceiling((at - t.Tick) / 24.0))}.[/b]")}" : "";
+            string march = HordeLines(t, big);
             FoeCard(p, [big], $"{Tag("THE BIG BAD", Ui.Bad)}\n[font_size=16][b]{Ui.Esc(Ui.Cap(big.Name))}[/b][/font_size]  {Tag($"level {big.Level}")}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Seat(t, big)} {(big.Marches == 0 ? "It has not marched on the town yet." : $"It has marched on the town {Times(big.Marches)}.")} Kill it to end the Long Night.[/font_size]")}{march}{DarkQuestLines(t)}", Ui.Bad);
         }
         RenderDarkCompany(p, t);
@@ -81,9 +86,6 @@ public partial class Main
             string missed = s.MissedTribute > 0 ? $" Tribute missed {Times(s.MissedTribute)} of {y.MissedToMarch} before it marches." : "";
             FoeCard(p, [yoke], $"{Tag("UNDER THE YOKE", Ui.Accent)}\n[b]{Ui.Esc(Ui.Cap(yoke.Name))}[/b] takes {Math.Round(y.Share * 100)}% of the treasury every {Ui.Days(y.EveryDays)}.{missed}\n{Ui.C(Ui.Ink2, "[font_size=12]Kill its leader to break the yoke. The walls break a second time, and the town falls.[/font_size]")}", Ui.Accent);
         }
-
-        RenderCrises(p, t);
-        RenderRoads(p, t);
 
         p.Heading("Dread");
         var tone = Tones[s.Tone];
@@ -117,6 +119,9 @@ public partial class Main
                 p.Text($"{Ui.C(Ui.Ink2, $"[font_size=12]Day {m.EndedDay}[/font_size]")}  {Ui.KindIcon(m.Kind, 16)}{Ui.Esc(Ui.Cap(m.Name))}{turned}", 13);
             }
         }
+
+        p.Page("Roads", "ui-road");
+        RenderRoads(p, t);
         p.Commit();
     }
 
@@ -162,6 +167,25 @@ public partial class Main
     }
 
     /// <summary>The big bad's quests on its card: the one under way (with its site and days left), and the ones done or foiled.</summary>
+    /// <summary>The big bad's host: its stage and what the town's eyes have counted, never a count of days.</summary>
+    private static string HordeLines(Town t, Menace big)
+    {
+        if (!Horde.On(t, big)) return big.ArrivalTick is int at && at > t.Tick ? $"\n{Ui.C(Ui.Bad, $"[b]Its host reaches the walls in {Ui.Days((int)Math.Ceiling((at - t.Tick) / 24.0))}.[/b]")}" : "";
+        if (big.ArrivalTick != null && !Horde.Known(t, big)) return $"\n{Ui.Bullet(Ui.C(Ui.Ink2, "Its host: no word"), "ui-eye")}";
+        string word = Horde.Word(t, big);
+        var lines = new List<string> { Ui.Bullet(Ui.C(big.ArrivalTick != null ? Ui.Bad : Ui.Accent, $"[b]Its host: {word}[/b]"), "warband") };
+        if (Horde.State(t).Breached) lines.Add(Ui.Bullet(Ui.Tip(Ui.C(Ui.Bad, "Next breach falls the town"), "Its host broke the walls once and burned the lower town"), "ui-warn"));
+        if (big.ArrivalTick == null)
+        {
+            int camps = Horde.State(t).Camps.Count, seen = Horde.Watched(t).Count;
+            lines.Add(Horde.Seen(t, big) is double share
+                ? Ui.Bullet(Ui.Tip(Ui.C(Ui.Good, $"Eyes on {seen} of {camps} camps · {(share >= 0.95 ? "full" : share >= 0.5 ? "over half gathered" : "under half gathered")}"), "Towers, scryings, scouts and patrols by its camps"), "ui-eye")
+                : Ui.Bullet(Ui.Tip(Ui.C(Ui.Ink2, $"No eyes on its {camps} camps"), "A tower, patrol, scout or scrying by a camp shows how big the host grows and when it moves"), "ui-eye"));
+            lines.Add(Ui.Bullet(Ui.Tip(Ui.C(Ui.Ink2, "Raid its camps to thin it"), "A fight at a camp thins it; clearing a holding scatters its camp"), "act-slay"));
+        }
+        return "\n[font_size=12]" + string.Join("\n", lines) + "[/font_size]";
+    }
+
     private static string DarkQuestLines(Town t)
     {
         var st = DarkQuests.State(t);
@@ -263,7 +287,8 @@ public partial class Main
                 CrisisPhase.Onslaught => "Striking at the town",
                 _ => "Its host is marching on the walls",
             };
-            string when = c.Phase == CrisisPhase.Marching ? $"It reaches the walls in {Ui.Days(Math.Max(1, days))}." : $"It culminates in about {Ui.Days(days)}, with its host at the walls.";
+            string when = Horde.On(t, m) ? (c.Phase == CrisisPhase.Marching ? "Its host is massing or on the road." : "When it comes to a head, its host marches.")
+                : c.Phase == CrisisPhase.Marching ? $"It reaches the walls in {Ui.Days(Math.Max(1, days))}." : $"It culminates in about {Ui.Days(days)}, with its host at the walls.";
             string blows = c.BlowsLanded + c.BlowsStopped == 0 ? "" : $" Blows so far: {c.BlowsLanded} landed, {c.BlowsStopped} stopped.";
             FoeCard(p, [m], $"{Tag($"{sv.Name.ToUpperInvariant()} CRISIS", color)}  {Tag(phase)}\n[font_size=16][b]{Ui.Esc(Ui.Cap(Crises.Title(t, c)))}[/b][/font_size] of {Ui.Esc(m.Name)}\n{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Crises.KindOf(t, m).What)} {when}{blows} Break its seat first and the crisis dies with it. {Seat(t, m)}[/font_size]")}", color);
         }

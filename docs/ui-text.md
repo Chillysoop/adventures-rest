@@ -36,7 +36,9 @@ Rich text (returns BBCode for `Ui.Rich`, `Pane.Text`, `Pane.Row`, `Pane.Card`):
 
 Controls: `Ui.IconRect(icon, size, tip)`, `Ui.IconChip(icon, value, color, tip)`, `Ui.IconRow(chips...)`.
 
-Panes: `Pane.Heading(text, icon?)` (each heading has an icon in `Ui.HeadingIcons`; add yours there),
+Panes: `Pane.Page(name, icon)` splits a long window into pages under a strip (what comes before the first page shows on
+all of them), `Pane.Heading(text, icon?)` (each heading has an icon in `Ui.HeadingIcons`; add yours there; it folds on
+click and is left out when nothing follows it, so skip "none yet" notes),
 `Pane.Bullets(points)`, `Pane.Chips(chips...)`, `Pane.Note(text)` (briefed).
 
 ## Icons

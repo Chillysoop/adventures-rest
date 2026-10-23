@@ -4,7 +4,7 @@ namespace CrownAndCompass.Sim.Systems;
 /// Rooms for the night (content/game/lodging.json). Taverns let a few rooms and inns many (<see cref="BuildingDef.Rooms"/>);
 /// every night the heroes in town and the travellers looking it over take them, heroes first, and pay the house. Whoever
 /// finds none camps outside town: a hero come looking for work who camps <see cref="LodgingRules.CampNights"/> nights in a row rides on, unless the
-/// town has given them a reason to stay. Travellers are newcomers who came up the road (<see cref="Population.DailyArrivals"/>):
+/// town has given them a reason to stay (a company, a retainer, a fief, a duty). Travellers are newcomers who came up the road (<see cref="Population.DailyArrivals"/>):
 /// they stay a few nights, settle once they find work, a home or a business of their own, and otherwise move on.
 /// </summary>
 public static class Lodging
@@ -25,10 +25,10 @@ public static class Lodging
     public static bool Housed(Town town, Agent a) => a.HomeId != null || Bastions.Lodges(town, a) || a.Hero!.Sworn || a.Hero.Holding != "";
 
     /// <summary>A hero the town has tied to it, or who never came looking for work, who never rides on for want of a room.</summary>
-    private static bool Bound(Agent a)
+    private static bool Bound(Town town, Agent a)
     {
         var s = a.Hero!;
-        return !s.Wanderer || s.Knight || s.Champion || s.FiefId != null || s.BastionId != null || s.Duty != HeroDuty.None || s.TurnedTo != null;
+        return !s.Wanderer || s.PartyName != null || Retainers.Holds(town, a) || s.Knight || s.Champion || s.FiefId != null || s.BastionId != null || s.Duty != HeroDuty.None || s.TurnedTo != null;
     }
 
     /// <summary>
@@ -71,7 +71,7 @@ public static class Lodging
                 camped++;
                 // Only waiting on a room wears them out: a hero with an empty purse sleeps rough and stays for the next bounty.
                 if (a.Gold >= r.Price) s.CampNights++;
-                if (s.CampNights >= r.CampNights && !Bound(a)) leaving.Add(a);
+                if (s.CampNights >= r.CampNights && !Bound(town, a)) leaving.Add(a);
             }
             // A long rest heals; a bed heals faster, and the shrine or temple more.
             int healed = (int)Math.Ceiling(s.MaxHp * (s.Lodging ? r.RoomHeal : r.CampHeal) * Curses.Heal(town.Content, s));
@@ -115,7 +115,12 @@ public static class Lodging
                 continue;
             }
             if (day < a.StayUntil) continue;
-            string why = Why(town);
+            // A town with work going or a place to live keeps them: they settle and look for it as townsfolk do.
+            if (Lack(town) is not string why)
+            {
+                Settle(town, a, spouse);
+                continue;
+            }
             string who = spouse == null ? a.Name : $"{a.Name} and {spouse.GivenName}";
             town.Log(LedgerCategory.Departure, Importance.Routine, $"{who} {(spouse == null ? "moves" : "move")} on from {town.Name}: {why}.", [a.Id]);
             Population.Depart(town, a);
@@ -127,22 +132,26 @@ public static class Lodging
 
     private static void Settle(Town town, Agent a, Agent? spouse)
     {
-        string what = (a.RegimentId ?? spouse?.RegimentId) != null ? "a place in the host"
-            : (a.JobId ?? spouse?.JobId) is int job ? $"work at {town.Building(job).Name}"
-            : (a.HomeId ?? spouse?.HomeId) is int home ? $"a roof at {town.Building(home).Name}"
-            : "land of their own";
+        string what = (a.RegimentId ?? spouse?.RegimentId) != null ? "having found a place in the host"
+            : (a.JobId ?? spouse?.JobId) is int job ? $"having found work at {town.Building(job).Name}"
+            : (a.HomeId ?? spouse?.HomeId) is int home ? $"having found a roof at {town.Building(home).Name}"
+            : town.Buildings.Any(b => b.OwnerId == a.Id || (spouse != null && b.OwnerId == spouse.Id)) ? "having found land of their own"
+            : "liking its prospects";
         foreach (var x in new[] { a, spouse })
         {
             if (x == null) continue;
             x.Traveller = false;
         }
         string who = spouse == null ? a.Name : $"{a.Name} and {spouse.GivenName}";
-        town.Log(LedgerCategory.Arrival, Importance.Routine, $"{who} {(spouse == null ? "decides" : "decide")} to stay in {town.Name}, having found {what}.", [a.Id]);
+        town.Log(LedgerCategory.Arrival, Importance.Routine, $"{who} {(spouse == null ? "decides" : "decide")} to stay in {town.Name}, {what}.", [a.Id]);
         town.Lodging.Settled += spouse == null ? 1 : 2;
     }
 
-    /// <summary>Why a traveller found nothing to keep them, read off the town: the first of no work, nowhere to live, no room.</summary>
-    public static string Why(Town town)
+    /// <summary>
+    /// What sends an unsettled traveller on, read off the town, or null when it has work going (open jobs or a site
+    /// rising) and somewhere to live (a free bed or open home land).
+    /// </summary>
+    public static string? Lack(Town town)
     {
         int jobs = 0, beds = 0;
         foreach (var b in town.Buildings)
@@ -152,8 +161,7 @@ public static class Lodging
         }
         if (jobs == 0 && !town.Buildings.Any(b => b.IsSite)) return "no work going";
         if (beds == 0 && Land.OpenPlots(town, Zone.Residential) == 0) return "no land to build a home on";
-        if (Rooms(town) == 0) return "no room at an inn to wait for work";
-        return "no work to be had";
+        return null;
     }
 
     /// <summary>A newcomer off the road: a traveller who stays some nights before deciding, fewer when there's no room to be had.</summary>

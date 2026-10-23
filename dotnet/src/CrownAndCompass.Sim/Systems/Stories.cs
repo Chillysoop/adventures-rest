@@ -438,7 +438,7 @@ public static class Stories
     /// precedent:id (1 sets it, -1 forgets it) and calling:id (1: the story's hero takes it up, -1: it ends).
     /// </summary>
     public static readonly string[] EffectKeys =
-        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "grudge", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "esteem", "heroXp", "personal", "dismiss", "edge", "swell", "partyHurt", "rest", "slots", "loot", "partyLoyalty", "turnBack", "fine", "jail", "taint", "infamy", "exile", "goodwill", "goodwill2", "prosperity", "security", "contact", "band", "moves", "stir", "book", "lore", "recover", "minor", "egg", "ranger", "settle", "pact", "pactFavour", "weregild", "owed", "curse"];
+        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "grudge", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "esteem", "heroXp", "personal", "dismiss", "edge", "swell", "partyHurt", "rest", "slots", "loot", "partyLoyalty", "turnBack", "fine", "jail", "taint", "infamy", "exile", "goodwill", "goodwill2", "prosperity", "security", "contact", "band", "moves", "stir", "book", "lore", "recover", "minor", "egg", "ranger", "settle", "pact", "pactFavour", "weregild", "owed", "curse", "magicItem"];
 
     /// <summary>
     /// Every need a story or option can name; besides these, precedent:id, decree:id, season:id and
@@ -677,7 +677,7 @@ public static class Stories
         foreach (var d in r.Stories)
         {
             // Sendings come from parties on the road (Sendings.Hourly), and word of a lost company from its wipe (Lost), not the town.
-            if (Sendings.Is(d) || d.Source == LostSource || d.Source == Powers.ContactSource || d.Source == Eggs.Source || d.Source == Poaching.Source) continue;
+            if (Sendings.Is(d) || d.Source == LostSource || d.Source == FoundSource || d.Source == Powers.ContactSource || d.Source == Eggs.Source || d.Source == Poaching.Source) continue;
             if (open.Contains(d.Id) || town.Day < d.MinDay || town.Population < d.MinPopulation) continue;
             if (st.LastDay.Get(d.Id, -9999) + d.RepeatDays > town.Day) continue;
             if (Bind(town, d) is { } bound) fits.Add((d, bound));
@@ -724,6 +724,17 @@ public static class Stories
     {
         var d = Rules(town).Story(defId);
         if (d == null || BindFrom(town, d, new Story { SiteId = siteId }) is not { } bound) return null;
+        return Begin(town, d, bound);
+    }
+
+    /// <summary>The source of cards a find opens (enchantments.json events): never drawn at random.</summary>
+    public const string FoundSource = "found";
+
+    /// <summary>A hero brings home something that opens a card of its own (a deck of many things): the card binds them.</summary>
+    public static Story? Found(Town town, string defId, Agent hero)
+    {
+        var d = Rules(town).Story(defId);
+        if (d == null || town.Outcome != null || BindFrom(town, d, new Story { HeroId = hero.Id }) is not { } bound) return null;
         return Begin(town, d, bound);
     }
 
@@ -1642,6 +1653,19 @@ public static class Stories
                         }
                         Taverns.Settle(town, wga, v > 0);
                         said.Add(v > 0 ? "the kin are paid" : "the kin swear a feud");
+                    }
+                    break;
+                case "magicItem":
+                    // The story's hero gains a piece of this tier from the hoard pool, worn if it suits them.
+                    if (s.HeroId is int mh && Hero(town, mh) is { } ma)
+                    {
+                        var pool = town.Content.LootItems.Where(i => i.Tier == (int)v && Gear.Slots.Contains(Gear.SlotOf(i)) && !Enchant.Rules(town.Content).Events.ContainsKey(i.Id)).OrderBy(i => i.Id, StringComparer.Ordinal).ToList();
+                        if (pool.Count > 0)
+                        {
+                            var won = pool[town.Rng.Range(0, pool.Count)];
+                            Gear.Claim(town, ma, won);
+                            said.Add($"{ma.GivenName} gains the {won.Name}");
+                        }
                     }
                     break;
                 case "curse":

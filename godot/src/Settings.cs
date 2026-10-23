@@ -70,6 +70,10 @@ public partial class Main
         if (display?["fullscreen"] is JsonValue fs && fs.TryGetValue(out bool full) && full && _opts.Screenshot == null && !_opts.Smoke && !_opts.Bench)
             DisplayServer.WindowSetMode(DisplayServer.WindowMode.Fullscreen);
         Keys.Apply(section?["keys"] as JsonObject);
+        Pane.Folded.Clear();
+        if (section?["folds"] is JsonArray folds)
+            foreach (var f in folds)
+                if (f is JsonValue fv && fv.TryGetValue(out string? key) && key != null) Pane.Folded.Add(key);
     }
 
     private void SaveSettings()
@@ -82,6 +86,7 @@ public partial class Main
         section["camera"] = new JsonObject { ["edgePan"] = _map.EdgePan, ["panSpeed"] = _map.PanSpeed };
         section["display"] = new JsonObject { ["uiScale"] = _uiScale, ["fullscreen"] = DisplayServer.WindowGetMode() is DisplayServer.WindowMode.Fullscreen or DisplayServer.WindowMode.ExclusiveFullscreen };
         section["keys"] = Keys.Write();
+        section["folds"] = new JsonArray(Pane.Folded.Order(StringComparer.Ordinal).Select(f => (JsonNode)JsonValue.Create(f)).ToArray());
         WriteProfileSection("settings", section.DeepClone());
     }
 

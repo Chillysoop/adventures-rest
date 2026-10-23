@@ -39,7 +39,6 @@ public partial class Main
         RenderField(p, t);
 
         p.Heading("Regiments");
-        if (regiments.Count == 0) p.Note("None yet. Raise one below, or call the levy.");
         foreach (var r in regiments) RegimentRow(p, t, r);
 
         RenderLevy(p, t);

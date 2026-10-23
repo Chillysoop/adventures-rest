@@ -904,6 +904,15 @@ public sealed record LootRules
 
     /// <summary>Chance per site tier that a cleared hoard holds a magic item.</summary>
     public double ItemChancePerTier { get; init; } = 0.15;
+
+    /// <summary>Slots only a hoard holds besides <see cref="Slots"/>: draughts and siege pieces.</summary>
+    public IReadOnlyList<string> HoardSlots { get; init; } = [];
+
+    /// <summary>A hoard's weight on a piece that doesn't belong in the site's country.</summary>
+    public double OffFit { get; init; } = 1;
+
+    /// <summary>Library items never found: no fitting effect.</summary>
+    public IReadOnlyList<string> Pulled { get; init; } = [];
 }
 
 /// <summary>One ring of country around the town: how far out it lies and what level of party it suits.</summary>
@@ -1026,6 +1035,9 @@ public sealed record ThemeDef
     public int MinRing { get; init; }
     public int MaxRing { get; init; } = 99;
 
+    /// <summary>Open water: only the ocean's regions draw it, and they draw nothing else (world.json "ocean").</summary>
+    public bool Sea { get; init; }
+
     /// <summary>Peoples who may have a settlement in the region; the first is the likeliest.</summary>
     public IReadOnlyList<string> Peoples { get; init; } = [];
 
@@ -1083,6 +1095,9 @@ public sealed record PeopleDef
 
     /// <summary>Starting standing with the town, -100 to 100.</summary>
     public double Start { get; init; }
+
+    /// <summary>A growing city: its settlements' prosperity aims at the ocean city's start (<see cref="IsleCityRules.Prosperity"/>) plus this much a day.</summary>
+    public double Grows { get; init; }
 
     /// <summary>Where they come from in the world's history, told when they ally.</summary>
     public string History { get; init; } = "";
@@ -1475,6 +1490,29 @@ public sealed record WorldRules
     public IReadOnlyList<ThemeDef> Themes { get; init; } = [];
     public IsleRules Isles { get; init; } = new();
     public Systems.RuinRules Ruins { get; init; } = new();
+    public OceanRules Ocean { get; init; } = new();
+}
+
+/// <summary>
+/// The ocean (world.json "ocean"): a wedge of the campaign map, its bearing and width rolled on the seed, whose regions
+/// are open water and islands. Empty arc for a world with no sea.
+/// </summary>
+public sealed record OceanRules
+{
+    /// <summary>Least and most degrees of the compass it takes.</summary>
+    public double[] Arc { get; init; } = [];
+
+    /// <summary>The first ring of regions that is sea.</summary>
+    public int FromRing { get; init; } = 1;
+    public IsleCityRules City { get; init; } = new();
+}
+
+/// <summary>The great island city every ocean holds: a people's settlement in a sea region near the ocean's middle.</summary>
+public sealed record IsleCityRules
+{
+    public string People { get; init; } = "";
+    public int[] Rings { get; init; } = [2, 3];
+    public double Prosperity { get; init; } = 60;
 }
 
 /// <summary>Floating isles in the far wilds (world.json "isles"), reached only by air.</summary>
@@ -1732,8 +1770,12 @@ public sealed class Content
 
     /// <summary>Library magic items a hoard can hold (the loot rules' slots), by id.</summary>
     /// <summary>Signature pieces (spoils.json drops) only come from their own foes, never from any hoard.</summary>
-    public IReadOnlyList<LibItem> LootItems => _lootItems ??= Library.Items.Where(i => i.Tier > 0 && Loot.Slots.Contains(i.Slot) && !Spoils.Signature(i.Id)).ToList();
+    public IReadOnlyList<LibItem> LootItems => _lootItems ??= Library.Items.Where(i => i.Tier > 0 && Loot.Slots.Contains(i.Slot) && !Spoils.Signature(i.Id) && !Loot.Pulled.Contains(i.Id)).ToList();
     private IReadOnlyList<LibItem>? _lootItems;
+
+    /// <summary>What a cleared hoard can hold: the loot, and the draughts and siege pieces only hoards turn up.</summary>
+    public IReadOnlyList<LibItem> HoardItems => _hoardItems ??= LootItems.Concat(Library.Items.Where(i => i.Tier > 0 && Loot.HoardSlots.Contains(i.Slot) && !Spoils.Signature(i.Id) && !Loot.Pulled.Contains(i.Id))).ToList();
+    private IReadOnlyList<LibItem>? _hoardItems;
 
     public Content(
         IReadOnlyList<BuildingDef> buildings,

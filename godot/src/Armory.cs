@@ -81,7 +81,6 @@ public partial class Main
         }
 
         p.Heading("Offered to the town");
-        if (offers.Count == 0) p.Note("Nothing on offer.");
         foreach (var o in offers)
         {
             int id = o.Id;
@@ -102,7 +101,6 @@ public partial class Main
         p.Heading("Loot deals");
         p.Note($"• [b]Loot terms[/b] on a bounty: about {Js.Str(Math.Round((r.Terms.Markup - 1) * 100))}% dearer, the hoard's magic comes here.\n• [b]Loot pact[/b]: every find comes here for a fee. Needs relation {Js.Str(r.Pact.MinRelation)}.");
         var names = Intel.MembersByCompany(t);
-        if (names.Count == 0) p.Note("No company has formed yet.");
         foreach (var (name, members) in names)
         {
             var c = Intel.Find(t, name);
@@ -131,6 +129,7 @@ public partial class Main
         RenderKit(p, t);
         RenderForge(p, t);
         RenderParts(p, t);
+        RenderRelics(p, t);
         RenderAlchemy(p);
         p.Commit();
     }
