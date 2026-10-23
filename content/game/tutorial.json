@@ -180,6 +180,22 @@
       "teaches": []
     },
     {
+      "id": "weather",
+      "title": "The weather",
+      "text": "The sky by the clock shows the weather now.\n\u2022 Hover it for the days ahead\n\u2022 Storms, snow and mud slow parties, airships and marches\n\u2022 The Ledger tells of the signs before a storm\n\u2022 The cloud button by the map shows the weather layer",
+      "point": "weather",
+      "until": "weather",
+      "when": "day:12",
+      "teaches": []
+    },
+    {
+      "id": "repairs",
+      "title": "Repairs",
+      "text": "Storms, fires and raids damage buildings.\n\u2022 Click a damaged one to choose how the town mends\n\u2022 Builders: as they come to it\n\u2022 First: ahead of new builds\n\u2022 Hire: the council pays hands, for gold a day",
+      "when": "damaged",
+      "teaches": ["command:SetRepairs"]
+    },
+    {
       "id": "known-foes",
       "title": "First contact",
       "text": "Whoever the town meets shows up:\n• Foes under [b]War[/b], once someone has seen, heard of or fought them\n• Powers and peoples under [b]Diplomacy[/b]\n• Scouts, scrying, parties and witnesses find the rest",

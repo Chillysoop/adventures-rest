@@ -107,6 +107,7 @@ public partial class Main
         bar.AddChild(_stats);
         bar.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
 
+        bar.AddChild(BuildWeatherChip());
         _clock = Ui.Label("Day 1 · 00:00", Ui.Ink, Ui.Display, 16);
         _clock.SizeFlagsVertical = SizeFlags.ShrinkCenter;
         _clock.CustomMinimumSize = new Vector2(176, 0);
@@ -556,6 +557,7 @@ public partial class Main
         home.Pressed += () => _map.Recenter();
         tools.AddChild(home);
         tools.AddChild(BuildLensButton());
+        tools.AddChild(BuildWeatherButton());
         corner.AddChild(tools);
         corner.AddChild(BuildOrders());
         corner.AddChild(BuildPins());

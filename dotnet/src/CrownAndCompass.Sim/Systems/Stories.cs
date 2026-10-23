@@ -448,7 +448,7 @@ public static class Stories
     /// chapter) and below:level (binds that undercity level while it is open and not cleared).
     /// </summary>
     public static readonly string[] Needs =
-        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "settlement", "route", "courted", "veteran", "fallen", "admirer", "aggrieved", "abroad", "homeward", "victorious", "lawbreaker", "famous", "infamous", "trouble", "contact", "band", "forge", "below", "library", "scholars", "remains", "minor", "egg", "eggHeld", "ranger", "sworn", "pactless", "bloodied", "owed", "cursed"];
+        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "settlement", "route", "courted", "veteran", "fallen", "admirer", "aggrieved", "abroad", "stormbound", "homeward", "victorious", "lawbreaker", "famous", "infamous", "trouble", "contact", "band", "forge", "below", "library", "scholars", "remains", "minor", "egg", "eggHeld", "ranger", "sworn", "pactless", "bloodied", "owed", "cursed"];
 
     private static readonly string[] Prefixed = ["precedent:", "decree:", "season:"];
 
@@ -1030,11 +1030,14 @@ public static class Stories
                 return a2 != null;
             }
             case "abroad":
+            case "stormbound":
             case "homeward":
             case "victorious":
             {
                 // Bound by the sending: where the party is now.
                 if (s.PartyId is not int sp || town.Parties.FirstOrDefault(p => p.Id == sp) is not { } party) return false;
+                if (need == "stormbound")
+                    return Sendings.Abroad(town, party) && Roads.Where(town, party, town.Tick) is { } at && Weather.At(town, at.X, at.Y, town.Tick).Step >= Weather.Storm;
                 return need == "abroad" ? Sendings.Abroad(town, party)
                     : Sendings.Homeward(town, party) && (need == "homeward" || party.Result!.Outcome == ExpeditionOutcome.Cleared);
             }

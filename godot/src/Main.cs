@@ -142,6 +142,8 @@ public partial class Main : Control
         if (_opts.Tray is string tray && Trays.FirstOrDefault(d => d.Id.Equals(tray, StringComparison.OrdinalIgnoreCase)) is { } td)
             Callable.From(() => OpenTray(td.Id)).CallDeferred();
         if (_opts.Stat is int stat) Callable.From(() => { RenderHeader(); ShowStatTip(stat); }).CallDeferred();
+        if (_opts.WeatherTip) Callable.From(() => { RenderHeader(); ShowWeatherTip(); }).CallDeferred();
+        if (_opts.WeatherLayer) _weatherButton.ButtonPressed = true;
         if (_opts.Asks)
         {
             foreach (var area in Sim.Systems.Stewards.Areas.Where(a => a.CanAsk)) _sim.SetSteward(area.Id, Sim.Systems.StewardMode.Ask);
@@ -204,6 +206,8 @@ public partial class Main : Control
         if (_opts.At is string atKind && _sim.Town.Buildings.Where(b => b.Def.Id == atKind && b.Complete).OrderBy(b => b.Id).FirstOrDefault() is Building at0)
         {
             _map.LookAt(Map.Geo.LotPos(_sim.Town.Lot(at0.LotId)), _opts.Cam ?? 22);
+            // --wreck damages it first (a storm's work, for a shot of the repairs card).
+            if (_opts.Wreck) CrownAndCompass.Sim.Systems.Blows.Wreck(_sim.Town, at0, 0.4);
             // --card opens its inspector too (a monument's parts, a site's say).
             if (_opts.Card) Select(Selection.Building(at0.Id));
         }
@@ -915,6 +919,7 @@ public partial class Main : Control
         _threatPill.AddThemeStyleboxOverride("panel", Ui.Box(stage.Level == 2 ? Ui.Bad : Ui.Panel, pillColor, 99, 1, 10, 3));
         _threat.AddThemeColorOverride("font_color", stage.Level == 2 ? Colors.White : stage.Level == 1 ? Ui.Gold : Ui.Ink);
 
+        RenderWeather(t);
         RenderStats(t);
     }
 

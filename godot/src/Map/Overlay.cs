@@ -20,6 +20,7 @@ public partial class Overlay(MapView map) : Control
     {
         if (map.Sim == null) return;
         var town = map.Sim.Town;
+        DrawWeather(town);
         DrawTerrain(town);
         DrawWilds(town);
         DrawSites(town);

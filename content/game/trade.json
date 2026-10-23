@@ -22,7 +22,7 @@
   "wagonLoad": 0.75,
   "wagonCost": [200, 450, 900],
   "sky": {
-    "_doc": "The sky dock's airship on trade runs (Systems/Skyship.cs). Any known people at minStanding or better will let it moor; no route needed. It flies the hold (hold + holdPerHundred per 100 people, at most holdMax) of one good the town can spare (above keepShare of its target) there and back in speed days per day of road plus turnaround, for fitOut + fitOutPerDay a day aloft. Cargo sells at sellPrice times base (wantedPrice if they want it), plus farPremium per ring out, leaned by up to spread per people and good; every glut units sold there lately halve the price, glutFade of it clearing a day. Home it brings their good the town is shortest of, bought at buyPrice while the market holds under bringBelow of target. storm by season: the chance storms hold it stormDays longer, once a run. ambush per whole flying host (passage.json fliers) near the far end, up to ambushMax; ambushLoss of the cargo is cut loose. At a people with a high tower (a mooring tower project in neighbours.json, or a cloud-ledge site) it turns round in towerTurnaround days, sells for towerPremium more and meets towerAmbush of the fliers. The stand-in mayor sends a run at most every standInEvery days when it clears standInProfit.",
+    "_doc": "The sky dock's airship on trade runs (Systems/Skyship.cs). Any known people at minStanding or better will let it moor; no route needed. It flies the hold (hold + holdPerHundred per 100 people, at most holdMax) of one good the town can spare (above keepShare of its target) there and back in speed days per day of road plus turnaround, for fitOut + fitOutPerDay a day aloft. Cargo sells at sellPrice times base (wantedPrice if they want it), plus farPremium per ring out, leaned by up to spread per people and good; every glut units sold there lately halve the price, glutFade of it clearing a day. Home it brings their good the town is shortest of, bought at buyPrice while the market holds under bringBelow of target. stormStep: the chance the weather at the far port (by its step, fair to tempest; weather.json) holds it stormDays longer, once a run. ambush per whole flying host (passage.json fliers) near the far end, up to ambushMax; ambushLoss of the cargo is cut loose. At a people with a high tower (a mooring tower project in neighbours.json, or a cloud-ledge site) it turns round in towerTurnaround days, sells for towerPremium more and meets towerAmbush of the fliers. The stand-in mayor sends a run at most every standInEvery days when it clears standInProfit.",
     "minStanding": -10,
     "hold": 30,
     "holdPerHundred": 3,
@@ -45,7 +45,7 @@
     "buyPrice": 0.65,
     "bringBelow": 1.2,
     "standingPerRun": 0.5,
-    "storm": { "spring": 0.1, "summer": 0.05, "autumn": 0.15, "winter": 0.3 },
+    "stormStep": [0, 0.02, 0.15, 0.7, 1],
     "stormDays": [1, 3],
     "ambush": 0.12,
     "ambushMax": 0.35,

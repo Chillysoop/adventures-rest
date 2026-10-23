@@ -110,8 +110,13 @@ public partial class Main
                 ToggleBuildBar();
                 ToggleLens();
                 ToggleStrategic();
+                // The weather layer over the campaign map, and the sky's hover on the top bar.
+                _weatherButton.ButtonPressed = true;
+                ShowWeatherTip();
                 return 10;
             case 16:
+                _weatherButton.ButtonPressed = false;
+                _weatherTip.Visible = false;
                 ToggleStrategic();
                 // The town guard: a stretch of wall in the inspector, and a flag planted by the map click.
                 if (_map.TownView.Walk != null) ShowWall(1);

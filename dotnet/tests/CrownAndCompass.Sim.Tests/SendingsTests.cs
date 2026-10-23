@@ -109,9 +109,12 @@ public class SendingsTests
     {
         var (sim, party) = PartyOnTheRoad();
         var t = sim.Town;
-        var storm = Sendings.Open(t, party, "party-storm")!;
-        int turn = Stories.StageOf(t, storm).Options.FindIndex(o => o.Success.Effects.ContainsKey("turnBack"));
-        Stories.Resolve(t, storm.Id, turn);
+        // The storm sending comes only when the sky over them is a storm.
+        var at = Roads.Where(t, party, t.Tick)!.Value;
+        Assert.Equal(Weather.At(t, at.X, at.Y, t.Tick).Step >= Weather.Storm, Sendings.Open(t, party, "party-storm") is { } storm && (storm.Done = true));
+        var fever = Sendings.Open(t, party, "fever-in-camp")!;
+        int turn = Stories.StageOf(t, fever).Options.FindIndex(o => o.Success.Effects.ContainsKey("turnBack"));
+        Stories.Resolve(t, fever.Id, turn);
         Assert.NotNull(party.RecalledTick);
         Assert.Equal(Leg.Homeward, Knowledge.LegOf(t, party));
     }

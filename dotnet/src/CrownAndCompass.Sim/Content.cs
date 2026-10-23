@@ -1745,6 +1745,9 @@ public sealed class Content
     /// <summary>The year omens the seers foretell (content/game/omens.json).</summary>
     public Systems.OmenRules Omens { get; init; } = new();
 
+    /// <summary>The weather fronts and the climate they cross (content/game/weather.json).</summary>
+    public Systems.WeatherRules Weather { get; init; } = new();
+
     /// <summary>How sickness comes to town and spreads (content/game/sickness.json).</summary>
     public Systems.SicknessRules Sickness { get; init; } = new();
 
@@ -2009,6 +2012,7 @@ public sealed class Content
             Wounds = Parse<WoundRules>("wounds.json"),
             Word = Parse<WordRules>("word.json"),
             Omens = Parse<OmenRules>("omens.json"),
+            Weather = Parse<WeatherRules>("weather.json"),
             Sickness = Parse<SicknessRules>("sickness.json"),
             Traps = Parse<TrapRules>("traps.json"),
             DarkCompany = Parse<DarkCompanyRules>("darkcompany.json"),
