@@ -58,8 +58,8 @@ public static partial class Expedition
     public sealed partial class Venture
     {
         /// <summary>
-        /// A hoard's piece: plain +N arms rarer the higher the bonus, and pieces of the elements the site's country favours
-        /// (cold in the frozen north, fire in the burning wastes) likelier than the rest.
+        /// A hoard's piece: plain +N arms rarer the higher the bonus, and pieces that belong in the site's country (cold in
+        /// the frozen north, a boat on the coast, a grave-blade in a tomb: enchantments.json found) likelier than the rest.
         /// </summary>
         private LibItem Hoarded(List<LibItem> pool, SiteDef site)
         {
@@ -68,7 +68,9 @@ public static partial class Expedition
             double Weight(LibItem it)
             {
                 if (Enchant.Basic(_content, it)) return r.Basic.Weight[Math.Clamp(Gear.BonusOf(_content, it), 0, r.Basic.Weight.Length - 1)];
-                return favoured.Count > 0 && Enchant.Elements(_content, it).Any(favoured.Contains) ? r.Affinity : 1;
+                bool fits = (favoured.Count > 0 && Enchant.Elements(_content, it).Any(favoured.Contains))
+                    || (r.Found.TryGetValue(it.Id, out var at) && at.Any(site.Habitats.Contains));
+                return fits ? r.Affinity : _content.Loot.OffFit;
             }
             double total = Js.Sum(pool, Weight), x = _rng.Next() * total;
             foreach (var it in pool)
@@ -321,6 +323,28 @@ public static partial class Expedition
 
         /// <summary>No snare, hold or swallow takes a hero whose gear keeps them free.</summary>
         private static bool Free(Combatant c) => c.Has("free");
+
+        /// <summary>What a hero's items add to a check of this kind: eyes for traps, a silver tongue for parley.</summary>
+        private static int Knack(Combatant c, string kind)
+        {
+            int n = 0;
+            foreach (var (_, p, _) in c.Of("knack"))
+                if (p.Vs.Contains(kind)) n = Math.Max(n, (int)p.Amount);
+            return n;
+        }
+
+        /// <summary>A bag that holds more than it should: the best of them carries home a share more of the gold.</summary>
+        private void Haul()
+        {
+            if (Gold <= 0) return;
+            var best = Party.Where(c => !c.Dead).SelectMany(c => c.Of("haul").Select(x => (C: c, x.Power, x.Item)))
+                .OrderByDescending(x => x.Power.Amount).ThenBy(x => x.C.Agent.Id).FirstOrDefault();
+            if (best.C == null) return;
+            int more = (int)Math.Floor(Gold * best.Power.Amount);
+            if (more <= 0) return;
+            Gold += more;
+            Log($"{Its(best.C, best.Item)} swallows {more} more gold than they could have carried.");
+        }
 
         /// <summary>A ward that turns a foe's power back on it, once a fight: nobody in its path is touched.</summary>
         private bool Reflect(Foe f, List<Combatant> targets, string power, Dice? dice)

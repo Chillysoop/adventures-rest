@@ -34,7 +34,8 @@ public sealed record PowerKindDef
 /// blow), regen (heals each round), heal (mends the worst hurt), ac, resist (halves a foe's power of its element),
 /// reflect (turns a foe's power back on it), guard (halves a blow), free (no snare or hold takes them), first (never
 /// ambushed), haste (another blow a round), might (attack and damage), sure (a shot that cannot miss), sending (a
-/// sending stone's word home) and scry (scries for the town for free).
+/// sending stone's word home), scry (scries for the town for free), knack (+<see cref="Amount"/> on delve checks of the
+/// kinds in <see cref="Vs"/>: trap, hazard, puzzle, parley, perception) and haul (a share more of the gold carried home).
 /// </summary>
 public sealed record ItemPowerDef
 {
@@ -83,6 +84,13 @@ public sealed record BasicArmsRules
     public double[] Weight { get; init; } = [0, 1, 0.5, 0.2];
 }
 
+/// <summary>A draught that is healing potions or spell scrolls for the hero's stock rather than a power for one delve.</summary>
+public sealed record DraughtDef
+{
+    public int Potions { get; init; }
+    public int Scrolls { get; init; }
+}
+
 /// <summary>Magic items' powers (content/game/enchantments.json).</summary>
 public sealed record EnchantRules
 {
@@ -98,6 +106,18 @@ public sealed record EnchantRules
     /// <summary>Most magic charms a hero can be attuned to at once.</summary>
     public int Attune { get; init; } = 3;
     public IReadOnlyList<ItemPowerDef> Items { get; init; } = [];
+
+    /// <summary>The country each piece belongs in (site habitats): a hoard there turns it up likelier than elsewhere.</summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> Found { get; init; } = new Dictionary<string, IReadOnlyList<string>>();
+
+    /// <summary>Draughts (potions, oils, scrolls a hero carries to the next delve): what each adds when it isn't a power.</summary>
+    public IReadOnlyDictionary<string, DraughtDef> Draughts { get; init; } = new Dictionary<string, DraughtDef>();
+
+    /// <summary>Most draughts a hero carries; another is sold.</summary>
+    public int DraughtsMost { get; init; } = 2;
+
+    /// <summary>Pieces that start a story when found instead of being worn: item id to story id.</summary>
+    public IReadOnlyDictionary<string, string> Events { get; init; } = new Dictionary<string, string>();
 
     private Dictionary<string, List<ItemPowerDef>>? _of;
     private HashSet<string>? _basic;
@@ -195,7 +215,7 @@ public static class Enchant
             .Replace("{targets}", p.Targets.ToString())
             .Replace("{uses}", uses)
             .Replace("{vs}", string.Join(", ", p.Vs))
-            .Replace("{amount}", p.Kind == "drain" ? $"{Js.Round(p.Amount * 100)}%" : Js.Str(p.Amount))
+            .Replace("{amount}", p.Kind is "drain" or "haul" ? $"{Js.Round(p.Amount * 100)}%" : Js.Str(p.Amount))
             .Replace("{rounds}", p.Rounds == 1 ? "a round" : $"{p.Rounds} rounds")
             .Replace("{effect}", effect)
             .Replace("  ", " ")

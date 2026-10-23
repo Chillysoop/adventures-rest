@@ -176,6 +176,8 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["power-sure", "on-target", "#e2c25c"],
   ["power-sending", "envelope", "#ece5d3"],
   ["power-scry", "crystal-ball", "#a86ae0"],
+  ["power-knack", "lockpicks", "#d8c48a"],
+  ["power-haul", "swap-bag", "#c9a35a"],
   ["sheet", "id-card", mono],
   ["reroll", "rolling-dices", mono],
   // Quick orders over the corner map
