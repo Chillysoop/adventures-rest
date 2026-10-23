@@ -61,8 +61,8 @@ public static partial class Expedition
     public sealed partial class Venture
     {
         /// <summary>
-        /// A hoard's piece: plain +N arms rarer the higher the bonus, and pieces of the elements the site's country favours
-        /// (cold in the frozen north, fire in the burning wastes) likelier than the rest.
+        /// A hoard's piece: plain +N arms rarer the higher the bonus, and pieces that belong in the site's country (cold in
+        /// the frozen north, a boat on the coast, a grave-blade in a tomb: enchantments.json found) likelier than the rest.
         /// </summary>
         private LibItem Hoarded(List<LibItem> pool, SiteDef site)
         {
@@ -71,7 +71,9 @@ public static partial class Expedition
             double Weight(LibItem it)
             {
                 if (Enchant.Basic(_content, it)) return r.Basic.Weight[Math.Clamp(Gear.BonusOf(_content, it), 0, r.Basic.Weight.Length - 1)];
-                return favoured.Count > 0 && Enchant.Elements(_content, it).Any(favoured.Contains) ? r.Affinity : 1;
+                bool fits = (favoured.Count > 0 && Enchant.Elements(_content, it).Any(favoured.Contains))
+                    || (r.Found.TryGetValue(it.Id, out var at) && at.Any(site.Habitats.Contains));
+                return fits ? r.Affinity : _content.Loot.OffFit;
             }
             double total = Js.Sum(pool, Weight), x = _rng.Next() * total;
             foreach (var it in pool)

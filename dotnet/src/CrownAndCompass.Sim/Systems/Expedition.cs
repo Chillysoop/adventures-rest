@@ -25,6 +25,9 @@ public sealed record ExpeditionResult(
     public OrderedMap<int, int> Scrolls { get; init; } = new();
     public OrderedMap<int, int> Copied { get; init; } = new();
 
+    /// <summary>Heroes who drank their draughts on this delve.</summary>
+    public List<int> Drunk { get; init; } = [];
+
     /// <summary>The bounty's terms were met short of slaying: the occupants talked down, driven out, the captives cut loose, the hoard robbed.</summary>
     public bool Talked { get; init; }
     public bool Driven { get; init; }
@@ -57,6 +60,7 @@ public sealed record ExpeditionResult(
             if (Potions.ContainsKey(a.Id)) a.Hero!.Potions = Potions.Get(a.Id, a.Hero.Potions);
             if (Scrolls.ContainsKey(a.Id)) a.Hero!.Scrolls = Scrolls.Get(a.Id, a.Hero.Scrolls);
             if (Copied.ContainsKey(a.Id)) a.Hero!.Copied = Copied.Get(a.Id, a.Hero.Copied);
+            if (Drunk.Contains(a.Id)) a.Hero!.Draughts.Clear();
         }
     }
 }
@@ -225,7 +229,7 @@ public static partial class Expedition
             _rng = rng;
             _content = content;
             _site = site;
-            Party = heroes.Select(agent => new Combatant(agent) { Ac = Gear.Ac(content, agent) + Alchemy.WardAc(content, agent.Hero!, site), Attack = Gear.Attack(content, agent), Skill = Gear.Skill(content, agent.Hero!), Veteran = agent.Hero!.Expeditions >= content.World.Companies.Veteran, Beast = content.Passage.Mount(agent.Hero.Mount)?.Fights ?? 0, Powers = Enchant.Worn(content, agent.Hero) }).ToList();
+            Party = heroes.Select(agent => new Combatant(agent) { Ac = Gear.Ac(content, agent) + Alchemy.WardAc(content, agent.Hero!, site) + Draughts.Edge(content, agent.Hero!).Ac, Attack = Gear.Attack(content, agent) + Draughts.Edge(content, agent.Hero!).Attack, Skill = Gear.Skill(content, agent.Hero!), Veteran = agent.Hero!.Expeditions >= content.World.Companies.Veteran, Beast = content.Passage.Mount(agent.Hero.Mount)?.Fights ?? 0, Powers = [.. Enchant.Worn(content, agent.Hero), .. Draughts.Powers(content, agent.Hero)] }).ToList();
             // Greenhorns with nobody seasoned among them lose their nerve sooner.
             if (Party.Any(c => c.Sheet.Expeditions == 0) && !Party.Any(c => c.Veteran)) _caution = content.Roads.Retreat.GreenCaution;
         }
@@ -241,6 +245,14 @@ public static partial class Expedition
         private readonly Dictionary<Combatant, int> _dazed = [];
 
         private Foe NewFoe(MonsterDef d) => new(d) { Tactic = Tactics.Of(_content, d), Ways = Knacks.Of(_content, d) };
+
+        /// <summary>Whoever carries draughts drinks them at the door; they last this delve.</summary>
+        public void Drink()
+        {
+            foreach (var c in Party)
+                if (c.Sheet.Draughts.Count > 0)
+                    Log($"{c.Agent.GivenName} drinks {ListNames(c.Sheet.Draughts.Select(d => $"{Agent.Article(Library.Prose(d.Name))} {Library.Prose(d.Name)}").ToList())}.");
+        }
 
         public void Log(string s) => Lines.Add(s.Length > 0 ? char.ToUpperInvariant(s[0]) + s[1..] : s);
 
@@ -1815,11 +1827,18 @@ public static partial class Expedition
             string line = "";
             // Item tiers stop at 5 (legendary); sites for higher levels draw from the top of the list.
             int itemTier = Math.Min(site.Tier, 5);
-            var pool = _content.LootItems.Where(it => it.Tier >= itemTier && it.Tier <= itemTier + 1).ToList();
+            var pool = _content.HoardItems.Where(it => it.Tier >= itemTier && it.Tier <= itemTier + 1).ToList();
             if (pool.Count > 0 && (sure || _rng.Chance(_content.Loot.ItemChancePerTier * site.Tier)))
             {
                 var item = Hoarded(pool, site);
-                if (item.Slot == "town")
+                if (item.Slot == "consumable" && _content.Regalia.Item(item.Id) is not { Slot: Regalia.Hall })
+                {
+                    // A draught goes to whoever carries fewest.
+                    var who = Party.Where(c => !c.Dead).OrderBy(c => c.Sheet.Draughts.Count).ThenBy(c => c.Agent.Id).First();
+                    Items.Add(new ExpeditionItem(who.Agent.Id, item));
+                    line += $" and {Agent.Article(Library.Prose(item.Name))} {Library.Prose(item.Name)}, which {who.Agent.GivenName} tucks away";
+                }
+                else if (item.Slot is "town" or "siege" or "consumable")
                 {
                     // Too big or too strange for one hero: it goes to the town.
                     Items.Add(new ExpeditionItem(null, item));
@@ -1892,6 +1911,7 @@ public static partial class Expedition
                 Potions = potions,
                 Scrolls = scrolls,
                 Copied = copied,
+                Drunk = Party.Where(c => c.Sheet.Draughts.Count > 0).Select(c => c.Agent.Id).ToList(),
                 SiteCleared = SiteCleared,
                 LostAt = LostAt,
                 Talked = Talked,
@@ -1921,6 +1941,7 @@ public static partial class Expedition
         var run = new Venture(rng, content, heroes, site) { Swell = swell, Terms = terms };
         run.SpendSlots(slotsSpent);
         run.Log($"{ListNames(heroes.Select(h => h.GivenName).ToList())} set out for {site.Name}.");
+        run.Drink();
         var outcome = run.Delve(site, 0);
         var result = run.Result(outcome, site.Name);
         result.Apply(heroes);

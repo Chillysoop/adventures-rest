@@ -144,6 +144,7 @@ public static class Gear
     public static int Gain(Content c, Agent a, LibItem it)
     {
         var s = a.Hero!;
+        if (Enchant.Rules(c).Events.ContainsKey(it.Id)) return 0;
         string slot = SlotOf(it);
         if (slot == "armor" && s.Armor == null) return 0;
         if (slot == "shield" && (s.Shield == null || !s.Cls.Shield)) return 0;
@@ -248,6 +249,17 @@ public static class Gear
     public static void Claim(Town town, Agent a, LibItem it)
     {
         var s = a.Hero!;
+        // Some finds aren't worn: a deck to draw from, a draught for the next delve.
+        if (Enchant.Rules(town.Content).Events.TryGetValue(it.Id, out var story))
+        {
+            if (Stories.Found(town, story, a) == null) SellOnRoad(town, a, it);
+            return;
+        }
+        if (it.Slot == "consumable")
+        {
+            Draughts.Take(town, a, it);
+            return;
+        }
         if (Gain(town.Content, a, it) > 0)
         {
             Wear(town, a, it);

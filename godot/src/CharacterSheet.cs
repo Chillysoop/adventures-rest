@@ -130,6 +130,7 @@ public partial class Main
         if (charms.Count > 0) kit.Add(Ui.Tip(Ui.Dim($"Attuned {charms.Count}/{c.Enchant.Attune}"), "Magic charms a hero can wear at once"));
         if (hs.Potions > 0) kit.Add(Line("potions", $"Healing potion ×{hs.Potions}"));
         if (hs.Scrolls > 0) kit.Add(Line("sheet-spell", $"Spell scroll ×{hs.Scrolls}"));
+        foreach (var d in hs.Draughts) kit.Add(Line("potions", Powered(c, d, Ui.Esc(d.Name))));
         if (hs.Copied > 0) kit.Add(Line("books", $"{hs.Copied} copied into the spellbook"));
         if (hs.Stone) kit.Add(Line("item-stone", "Town sending stone"));
         if (hs.Mount != "" && c.Passage.Mount(hs.Mount) is { } md) kit.Add(Line("sheet-mount", Ui.Esc(Ui.Cap(md.Name))));

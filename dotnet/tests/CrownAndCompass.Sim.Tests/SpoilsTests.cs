@@ -174,41 +174,59 @@ public class SpoilsTests
     }
 
     [Fact]
-    public void EveryLootItemDoesSomething()
+    public void EveryHoardItemDoesSomethingAndBelongsSomewhere()
     {
-        // A piece heroes or the town can find does more than its +N: a power, a way across, a hall effect or plain arms.
+        // A piece a hoard can turn up does more than its +N (a power, a way across, a hall effect, a draught, a story,
+        // plain arms), and has a country it belongs in that the world has.
         var passage = C.Passage.Items.Select(i => i.Item).ToHashSet();
         var hall = C.Regalia.Items.Select(i => i.Ref).ToHashSet();
         var watched = C.Knowledge.Works.Select(w => w.Relic).ToHashSet();
-        var plain = C.LootItems.Where(i => Enchant.Of(C, i).Count == 0 && !Enchant.Basic(C, i) && !passage.Contains(i.Id) && !hall.Contains(i.Id) && !watched.Contains(i.Id)
-            && !C.Armory.Start.Contains(i.Id) && C.Armory.Stone != i.Id && !System.Text.RegularExpressions.Regex.IsMatch(i.Name, @"\+\d")).Select(i => i.Id).ToList();
-        Assert.True(plain.Count <= Allowed.Count, "items that only give a bonus: " + string.Join(", ", plain.Except(Allowed)));
+        var r = C.Enchant;
+        var habitats = C.Sites.SelectMany(s => s.Habitats).Concat(r.Habitats.Keys).Concat(C.Library.Monsters.SelectMany(m => m.Habitats)).ToHashSet();
+        var idle = new List<string>();
+        foreach (var i in C.HoardItems)
+        {
+            bool does = Enchant.Of(C, i).Count > 0 || Enchant.Basic(C, i) || passage.Contains(i.Id) || hall.Contains(i.Id) || watched.Contains(i.Id)
+                || r.Draughts.ContainsKey(i.Id) || r.Events.ContainsKey(i.Id) || C.Armory.Stone == i.Id || System.Text.RegularExpressions.Regex.IsMatch(i.Name, @"\+\d");
+            if (!does) idle.Add(i.Id);
+            if (!Enchant.Basic(C, i))
+            {
+                Assert.True(r.Found.TryGetValue(i.Id, out var at) && at.Count > 0, $"{i.Id} belongs nowhere (enchantments.json found)");
+                foreach (var h in at!) Assert.True(habitats.Contains(h), $"{i.Id}: no country {h}");
+            }
+        }
+        Assert.True(idle.Count == 0, "items that only give a bonus: " + string.Join(", ", idle));
+        foreach (var id in C.Loot.Pulled) Assert.DoesNotContain(C.HoardItems, i => i.Id == id);
+        foreach (var (id, story) in r.Events) Assert.True(C.Stories.Story(story) is { Source: Stories.FoundSource }, $"{id} opens no found story {story}");
     }
 
-    /// <summary>Bonus-only pieces Conner is weighing whether to keep (asked 2026-10-23); shrink as they get effects or go.</summary>
-    private static readonly HashSet<string> Allowed =
-    [
-        "amulet-of-the-planes",
-        "armor-of-vulnerability",
-        "bag-of-beans",
-        "bag-of-devouring",
-        "cubic-gate",
-        "decanter-of-endless-water",
-        "deck-of-many-things",
-        "dragon-orb",
-        "dust-of-dryness",
-        "feather-token",
-        "feather-token-anchor",
-        "feather-token-fan",
-        "feather-token-tree",
-        "manual-of-golems",
-        "marvelous-pigments",
-        "mysterious-deck",
-        "potion-of-fire-giant-strength",
-        "shield-of-missile-attraction",
-        "sovereign-glue",
-        "talisman-of-the-sphere",
-        "universal-solvent",
-        "well-of-many-worlds",
-    ];
+    [Fact]
+    public void DraughtsAreDrunkOnTheNextDelve()
+    {
+        var sim = new Simulation(new SimulationOptions { Seed = 4, AutoMayor = false });
+        var t = sim.Town;
+        var a = Quests.CreateHero(t, t.Content.Classes.First(c => c.Id == "fighter"), 5);
+        int potions = a.Hero!.Potions;
+        Gear.Claim(t, a, t.Content.Library.Item("potion-of-superior-healing")!);
+        Assert.Equal(potions + 2, a.Hero.Potions);
+        Gear.Claim(t, a, t.Content.Library.Item("potion-of-storm-giant-strength")!);
+        Assert.Single(a.Hero.Draughts);
+        var site = t.Sites.Select(s => s.Def).OrderBy(d => d.Tier).ThenBy(d => d.Id, StringComparer.Ordinal).First();
+        var r = Expedition.Run(new Rng(3), t.Content, site, [a]);
+        Assert.Contains(r.Lines, l => l.Contains("drinks a potion of storm giant strength"));
+        Assert.Empty(a.Hero.Draughts);
+    }
+
+    [Fact]
+    public void TheDeckOpensACard()
+    {
+        var sim = new Simulation(new SimulationOptions { Seed = 4, AutoMayor = false });
+        var t = sim.Town;
+        var a = Quests.CreateHero(t, t.Content.Classes.First(c => c.Id == "rogue"), 5);
+        var deck = t.Content.Library.Item("deck-of-many-things")!;
+        Assert.Equal(0, Gear.Gain(t.Content, a, deck));
+        Gear.Claim(t, a, deck);
+        Assert.Contains(t.Stories.Open, s => s.Def == "deck-of-many-things" && s.HeroId == a.Id);
+        Assert.DoesNotContain(a.Hero!.Magic.Values, i => i.Id == deck.Id);
+    }
 }

@@ -904,6 +904,15 @@ public sealed record LootRules
 
     /// <summary>Chance per site tier that a cleared hoard holds a magic item.</summary>
     public double ItemChancePerTier { get; init; } = 0.15;
+
+    /// <summary>Slots only a hoard holds besides <see cref="Slots"/>: draughts and siege pieces.</summary>
+    public IReadOnlyList<string> HoardSlots { get; init; } = [];
+
+    /// <summary>A hoard's weight on a piece that doesn't belong in the site's country.</summary>
+    public double OffFit { get; init; } = 1;
+
+    /// <summary>Library items never found: no fitting effect.</summary>
+    public IReadOnlyList<string> Pulled { get; init; } = [];
 }
 
 /// <summary>One ring of country around the town: how far out it lies and what level of party it suits.</summary>
@@ -1726,8 +1735,12 @@ public sealed class Content
 
     /// <summary>Library magic items a hoard can hold (the loot rules' slots), by id.</summary>
     /// <summary>Signature pieces (spoils.json drops) only come from their own foes, never from any hoard.</summary>
-    public IReadOnlyList<LibItem> LootItems => _lootItems ??= Library.Items.Where(i => i.Tier > 0 && Loot.Slots.Contains(i.Slot) && !Spoils.Signature(i.Id)).ToList();
+    public IReadOnlyList<LibItem> LootItems => _lootItems ??= Library.Items.Where(i => i.Tier > 0 && Loot.Slots.Contains(i.Slot) && !Spoils.Signature(i.Id) && !Loot.Pulled.Contains(i.Id)).ToList();
     private IReadOnlyList<LibItem>? _lootItems;
+
+    /// <summary>What a cleared hoard can hold: the loot, and the draughts and siege pieces only hoards turn up.</summary>
+    public IReadOnlyList<LibItem> HoardItems => _hoardItems ??= LootItems.Concat(Library.Items.Where(i => i.Tier > 0 && Loot.HoardSlots.Contains(i.Slot) && !Spoils.Signature(i.Id) && !Loot.Pulled.Contains(i.Id))).ToList();
+    private IReadOnlyList<LibItem>? _hoardItems;
 
     public Content(
         IReadOnlyList<BuildingDef> buildings,

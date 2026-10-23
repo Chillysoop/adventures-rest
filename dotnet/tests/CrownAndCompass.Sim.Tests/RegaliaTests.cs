@@ -20,9 +20,9 @@ public class RegaliaTests
         {
             var it = c.Library.Item(d.Ref);
             Assert.True(it != null, $"{d.Ref} is not in the library");
-            Assert.True(it!.Slot is "regalia" or "town", $"{d.Ref} is a {it.Slot} item");
+            Assert.True(it!.Slot is "regalia" or "town" || d.Slot == Regalia.Hall, $"{d.Ref} is a {it.Slot} item");
             // Hall pieces are relics the town keeps: town-sized, never worn.
-            if (d.Slot == Regalia.Hall) Assert.True(it.Slot == "town", $"hall piece {d.Ref} is a {it.Slot} item");
+            if (d.Slot == Regalia.Hall) Assert.True(it.Slot is "town" or "siege" or "consumable", $"hall piece {d.Ref} is a {it.Slot} item");
             else Assert.True(r.Slot(d.Slot) != null, $"{d.Ref} has no slot {d.Slot}");
             foreach (var skill in d.Skills.Keys) Assert.True(c.Stories.Skill(skill) != null, $"{d.Ref} names no skill {skill}");
         }
