@@ -183,6 +183,9 @@ public sealed class Party
     /// <summary>The exploring company it grew out of, which the council paid for.</summary>
     public int? SurveyId { get; init; }
 
+    /// <summary>The trouble to the town it rode against, if any (<see cref="Troubles"/>): "host", "raider" or "burner".</summary>
+    public string? Trouble { get; set; }
+
     /// <summary>When the town last reckoned them home, and when it last had word of them: the day they left, or a sending since.</summary>
     public int Expected { get; set; }
     public int HeardTick { get; set; }
@@ -600,6 +603,7 @@ public static class Quests
             SiteId = s.Def.Id,
             DepartTick = town.Tick,
             Start = Lofted.Start(town, World.Spot(town, s)),
+            Trouble = Troubles.Of(town, s),
         };
         // A name the foe has never heard of doesn't make it run: more of them stand and fight.
         int unproven = Notoriety.Swell(town, name, s);
@@ -835,6 +839,7 @@ public static class Quests
             town.Log(LedgerCategory.Quest, Importance.Major, $"{text} (Chronicle {chronicle.Id})", members.Select(m => m.Id).ToList());
             // The fallen are buried (or mourned, with nobody to carry them home), a friend may swear to finish
             // what killed them, and the living come home with new names for each other.
+            Troubles.Home(town, party, s, result, survivors);
             Voices.Funeral(town, dead.Select(town.Agent).ToList(), survivors, s.Def.Id, s.Def.Name, result.Outcome != ExpeditionOutcome.Wiped);
             if (result.Outcome == ExpeditionOutcome.Cleared) Voices.Cleared(town, s.Def.Id, s.Def.Name, survivors);
             Voices.Jokes(town, party.Name, result.Gags, survivors);

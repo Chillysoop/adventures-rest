@@ -87,6 +87,7 @@ public partial class Main
                 string? blocked = Notables.AnswerBlocked(t, n);
                 var questSite = ask.Quest != "" ? Quests.Site(t, n.AskSite) : null;
                 string help = questSite != null ? "Post the job"
+                    : ask.Parts.Count > 0 ? (blocked == null ? "Give it" : "None in stores")
                     : ask.Gold > 0 ? $"Help · {Js.Str(ask.Gold)}g"
                     : $"{Ui.Cap(t.Content.Stories.Skill(ask.Skill)?.Name ?? ask.Skill)} · {Math.Round(Notables.Chance(t, ask.Skill, ask.Dc) * 100)}%";
                 // A quest goes on the bounty board on their gold; the regard comes when a company sees it done.

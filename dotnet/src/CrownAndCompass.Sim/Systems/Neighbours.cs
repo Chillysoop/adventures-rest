@@ -60,6 +60,9 @@ public sealed record TroubleDef
     /// <summary>A season it comes in only, if any.</summary>
     public string Season { get; init; } = "";
 
+    /// <summary>The sky that brings it ("wet", "snow", "dry"; <see cref="Elements.Hardship"/>): it comes from the weather over the settlement, never the dice.</summary>
+    public string Weather { get; init; } = "";
+
     /// <summary>The role of the person the town meets through it (a hunter, a miller), who may remember it.</summary>
     public string Contact { get; init; } = "";
     public double PerDay { get; init; } = 1.5;
@@ -457,7 +460,11 @@ public static class Neighbours
         }
         if (town.Day < s.NextTroubleDay) return;
         s.NextTroubleDay = town.Day + town.Rng.Range(r.TroubleEveryDays[0], r.TroubleEveryDays[1] + 1);
-        Begin(town, s);
+        // The sky over it comes first: a flood, a drought or a hard winter if the weather there brings one on its people.
+        if (Elements.Hardship(town, s) is { } sky
+            && r.Troubles.Where(d => d.Weather == sky && (d.Peoples.Count == 0 || d.Peoples.Contains(s.Kin.Id))).OrderBy(d => d.Id, StringComparer.Ordinal).FirstOrDefault() is { } weather)
+            Begin(town, s, weather);
+        else Begin(town, s);
     }
 
     /// <summary>Something goes wrong for a settlement: a trouble that fits its people and the season, and a site near it for a site trouble.</summary>
@@ -465,15 +472,20 @@ public static class Neighbours
     {
         var r = Rules(town);
         string season = Seasons.Current(town).Id;
-        var region = town.Regions[s.RegionId];
         var site = TroubleSite(town, s);
         var fits = r.Troubles
             .Where(d => d.Peoples.Count == 0 || d.Peoples.Contains(s.Kin.Id))
-            .Where(d => d.Season == "" || d.Season == season)
+            .Where(d => (d.Season == "" || d.Season == season) && d.Weather == "")
             .Where(d => d.Kind != "site" || site != null)
             .ToList();
         if (fits.Count == 0) return;
-        var def = fits[town.Rng.Range(0, fits.Count)];
+        Begin(town, s, fits[town.Rng.Range(0, fits.Count)], site);
+    }
+
+    /// <summary>A trouble starts at a settlement: the dice's pick, or the weather's.</summary>
+    private static void Begin(Town town, Settlement s, TroubleDef def, SiteState? site = null)
+    {
+        var region = town.Regions[s.RegionId];
         s.Trouble = new SettlementTrouble { Def = def.Id, SinceDay = town.Day, SiteId = def.Kind == "site" ? site!.Def.Id : null };
         if (region.Known) town.Log(LedgerCategory.Quest, Importance.Routine, Saga.Cap(Fill(town, s, def.Text)));
     }

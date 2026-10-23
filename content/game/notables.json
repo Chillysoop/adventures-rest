@@ -1,5 +1,5 @@
 {
-  "_doc": "Notable townsfolk (Systems/Notables.cs): influential people who aren't heroes. One of each kind rises on its own, from the best of a trade in town or, for outsiders, from nowhere. The mayor builds regard with visits (a skill check the kind is open to, or a gift) and by answering their favours; regard drifts back to nothing when they are left alone. Warm and friendly notables pass on what they hear (the information network: `hears`) every `tipDays` of their band, and give their `warm`/`friend` effects daily and their `boon` once; bitter ones give their `bitter` effects and leave after `leaveDays`. Effects: gold (a day), mandate (a day). Every trade guild's master rises as a `guildMaster` notable the day they take the chair (unless they are one already), and while warm adds `guild` standing a day to their guild (twice as a friend, minus while bitter), so winning the master calms the guild and, through it, its councillor. Nothing here rolls the town's dice: daily rolls are seeded from the seed, the day and the notable. Some favours are quests (an ask with \"quest\": its terms, {site} in its text): a resident notable puts up questShare of the site's usual bounty from their own purse (at least questMin), the mayor's yes posts it on the board, and the company that does it earns questFame renown and the notable's regard.",
+  "_doc": "Notable townsfolk (Systems/Notables.cs): influential people who aren't heroes. One of each kind rises on its own, from the best of a trade in town or, for outsiders, from nowhere. The mayor builds regard with visits (a skill check the kind is open to, or a gift) and by answering their favours; regard drifts back to nothing when they are left alone. Warm and friendly notables pass on what they hear (the information network: `hears`) every `tipDays` of their band, and give their `warm`/`friend` effects daily and their `boon` once; bitter ones give their `bitter` effects and leave after `leaveDays`. Effects: gold (a day), mandate (a day). Favours (`asks`) cost `gold`, a `skill` check against `dc`, a `quest` for a company at {site}, or one monster part from the town's stores (`parts`: creature types, at least `grade`; {part} names it, one the stores hold if any). Every trade guild's master rises as a `guildMaster` notable the day they take the chair (unless they are one already), and while warm adds `guild` standing a day to their guild (twice as a friend, minus while bitter), so winning the master calms the guild and, through it, its councillor. Nothing here rolls the town's dice: daily rolls are seeded from the seed, the day and the notable. Some favours are quests (an ask with \"quest\": its terms, {site} in its text): a resident notable puts up questShare of the site's usual bounty from their own purse (at least questMin), the mayor's yes posts it on the board, and the company that does it earns questFame renown and the notable's regard.",
   "firstDay": 4,
   "riseDays": 5,
   "bands": [-50, -15, 15, 50],
@@ -77,7 +77,8 @@
       "asks": [
         { "id": "ore", "text": "needs gold for good iron", "gold": 35, "gain": 12 },
         { "id": "apprentice", "text": "wants a word with a lazy apprentice", "skill": "intimidation", "dc": 12, "gain": 10 },
-        { "id": "lode", "text": "wants rare ore brought back from {site}", "quest": "fetch", "gain": 14 }
+        { "id": "lode", "text": "wants rare ore brought back from {site}", "quest": "fetch", "gain": 14 },
+        { "id": "part", "text": "wants {part} worked into a blade they have been dreaming of", "parts": ["dragon", "construct", "elemental", "giant"], "grade": 1, "gain": 13 }
       ]
     },
     {
@@ -111,7 +112,8 @@
       "asks": [
         { "id": "stage", "text": "wants a new stage for the summer", "gold": 40, "gain": 12 },
         { "id": "review", "text": "wants the mayor at opening night", "skill": "performance", "dc": 12, "gain": 12 },
-        { "id": "ballad", "text": "wants a deed worth a ballad: the beasts driven out of {site}", "quest": "drive", "gain": 12 }
+        { "id": "ballad", "text": "wants a deed worth a ballad: the beasts driven out of {site}", "quest": "drive", "gain": 12 },
+        { "id": "part", "text": "wants {part} to show off on stage", "parts": ["dragon", "monstrosity", "giant"], "grade": 2, "gain": 12 }
       ]
     },
     {
@@ -145,7 +147,8 @@
       "asks": [
         { "id": "alms", "text": "asks alms for the poor", "gold": 30, "gain": 12 },
         { "id": "sermon", "text": "wants the mayor to read at the feast", "skill": "religion", "dc": 12, "gain": 10 },
-        { "id": "restless", "text": "wants the restless dead at {site} laid to rest", "quest": "slay", "gain": 14 }
+        { "id": "restless", "text": "wants the restless dead at {site} laid to rest", "quest": "slay", "gain": 14 },
+        { "id": "part", "text": "wants {part} kept under the altar, where it can do no harm", "parts": ["undead", "fiend", "celestial"], "grade": 1, "gain": 12 }
       ]
     },
     {
@@ -164,7 +167,8 @@
       "asks": [
         { "id": "herbs", "text": "needs rare herbs bought in", "gold": 30, "gain": 12 },
         { "id": "fever", "text": "needs help with a fever ward", "skill": "medicine", "dc": 12, "gain": 12 },
-        { "id": "moonwort", "text": "wants moonwort that grows only at {site}", "quest": "fetch", "gain": 12 }
+        { "id": "moonwort", "text": "wants moonwort that grows only at {site}", "quest": "fetch", "gain": 12 },
+        { "id": "part", "text": "needs {part} for a cure no herb will make", "parts": ["beast", "monstrosity", "plant", "fey"], "grade": 1, "gain": 12 }
       ]
     },
     {
@@ -184,7 +188,8 @@
       "bitter": {},
       "asks": [
         { "id": "ink", "text": "wants rare inks fetched from the market", "gold": 35, "gain": 12 },
-        { "id": "riddle", "text": "sets the mayor a riddle", "skill": "arcana", "dc": 14, "gain": 16 }
+        { "id": "riddle", "text": "sets the mayor a riddle", "skill": "arcana", "dc": 14, "gain": 16 },
+        { "id": "part", "text": "wants {part} to study, and will not say why", "parts": ["aberration", "fey", "elemental", "ooze"], "grade": 1, "gain": 12 }
       ]
     }
   ]

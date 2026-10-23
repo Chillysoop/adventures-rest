@@ -290,6 +290,9 @@ public sealed class HeroSheet
     public int? StakeId { get; set; }
     public double Stake { get; set; }
 
+    /// <summary>Day the hero last gave their fortune to the town (<see cref="Systems.Downtime"/> patronage).</summary>
+    public int? GaveDay { get; set; }
+
     /// <summary>The familiar their patron sent ("a cinder imp"), "" for none.</summary>
     public string Familiar { get; set; } = "";
 

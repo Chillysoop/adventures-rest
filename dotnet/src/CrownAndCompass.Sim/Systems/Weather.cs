@@ -243,6 +243,7 @@ public sealed record WeatherRules
     public WeatherHarvest Harvest { get; init; } = new();
     public WeatherDamage Damage { get; init; } = new();
     public WeatherLords Lords { get; init; } = new();
+    public WeatherFoes Foes { get; init; } = new();
 
     /// <summary>Research that softens the weather's cuts to the harvest (by share), and that lets the town read the sky a day further.</summary>
     public IReadOnlyDictionary<string, double> Tamed { get; init; } = new Dictionary<string, double>();

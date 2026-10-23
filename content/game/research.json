@@ -1,5 +1,5 @@
 {
-  "_doc": "Research goes in stages (stages): as a study's lore reaches each mark its lead scholar (the best at the skill among heroes at home and learned townsfolk; the town hall's clerks roll at +clerks) rolls the stage's skill, or its field's (fieldSkills), against stageDc + dcPerRank x rank + dcPerStage x stage; a miss loses setback of the lore, a natural 1 mishapSetback and a mishap, a natural 20 jumps stageCrit ahead, and the last stage is the breakthrough. Town magic and research (Systems/Research.cs, sparks in Systems/Sparks.cs). Ideas appear from the town and the world: each discovery has sparks (craft:<profession>:<n> and folk:<race>:<n> name the newcomers behind them, partner:<people>, routes:<n>, building:<id>, tier:<charter>, book:<school>:<circle>, books:<n>, wizard:<level>, circle:<n>, hero:<class>[:level], heroes:<n>, found:<find kind>[:n] an explorers' find, slain:<creature type>[:n] what companies brought down at cleared sites, cleared:<tier>, delves:<n>, ally:<power>, known:<id>); once one has held brew[rank] days the idea is revealed, so every run's tree differs and grows with what the town meets. Requires must all hold to study it. Gold can't buy a study: lore a day comes from institutions, learned townsfolk, casters, books and the library's keeper, and insight brings lumps of lore from cleared sites, explorers' finds, new spellbooks, learned newcomers and drawn wizards. Funding only greases it (its lore multiplier) and is the council's gold sink.",
+  "_doc": "Research goes in stages (stages): as a study's lore reaches each mark its lead scholar (the best at the skill among heroes at home and learned townsfolk; the town hall's clerks roll at +clerks) rolls the stage's skill, or its field's (fieldSkills), against stageDc + dcPerRank x rank + dcPerStage x stage; a miss loses setback of the lore, a natural 1 mishapSetback and a mishap, a natural 20 jumps stageCrit ahead, and the last stage is the breakthrough. Town magic and research (Systems/Research.cs, sparks in Systems/Sparks.cs). Ideas appear from the town and the world: each discovery has sparks (craft:<profession>:<n> and folk:<race>:<n> name the newcomers behind them, partner:<people>, routes:<n>, building:<id>, tier:<charter>, book:<school>:<circle>, books:<n>, wizard:<level>, circle:<n>, hero:<class>[:level], heroes:<n>, found:<find kind>[:n] an explorers' find, slain:<creature type>[:n] what companies brought down at cleared sites, cleared:<tier>, delves:<n>, ally:<power>, known:<id>); once one has held brew[rank] days the idea is revealed, so every run's tree differs and grows with what the town meets. Requires must all hold to study it. Gold can't buy a study: lore a day comes from institutions, learned townsfolk, casters, books and the library's keeper, and insight brings lumps of lore from cleared sites, explorers' finds, new spellbooks, learned newcomers and drawn wizards, and (part, item) each new kind of creature part in the stores (times its grade) and each new magic item in the armory (times its tier), studied by the scholars. Funding only greases it (its lore multiplier) and is the council's gold sink.",
   "stages": [
     { "at": 0.34, "name": "the first notes", "skill": "investigation" },
     { "at": 0.67, "name": "a working theory", "skill": "" },
@@ -72,7 +72,9 @@
     "find": 25,
     "book": 12,
     "newcomer": 15,
-    "wizard": 4
+    "wizard": 4,
+    "part": 6,
+    "item": 5
   },
   "institutions": [
     {

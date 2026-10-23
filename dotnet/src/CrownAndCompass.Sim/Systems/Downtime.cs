@@ -5,6 +5,26 @@ public sealed record DowntimeLines
     public string Land { get; init; } = "";
     public string Train { get; init; } = "";
     public string Stake { get; init; } = "";
+    public string Forge { get; init; } = "";
+    public string Monument { get; init; } = "";
+    public string Shrine { get; init; } = "";
+    public string Endow { get; init; } = "";
+}
+
+/// <summary>What a famous hero with a fortune puts into the town (downtime.json patron).</summary>
+public sealed record BenefactionRules
+{
+    /// <summary>Spare gold (over <see cref="DowntimeRules.Keep"/>) and renown a hero needs before they play patron, and the share of it they give.</summary>
+    public double Spare { get; init; } = 800;
+    public int Renown { get; init; } = 10;
+    public double Share { get; init; } = 0.5;
+
+    /// <summary>Days between one gift and the next from the same hero.</summary>
+    public int Every { get; init; } = 60;
+
+    /// <summary>Fame for each gift, and the god's favour a gold of endowment buys at a shrine that already stands.</summary>
+    public int Fame { get; init; } = 2;
+    public double FavourPerGold { get; init; } = 0.01;
 }
 
 /// <summary>What heroes do with their gold between jobs (downtime.json).</summary>
@@ -23,12 +43,14 @@ public sealed record DowntimeRules
     public double Dividend { get; init; } = 0.01;
     public List<string> Holdings { get; init; } = [];
     public List<string> Trainers { get; init; } = [];
+    public BenefactionRules Patron { get; init; } = new();
     public DowntimeLines Lines { get; init; } = new();
 }
 
 /// <summary>
 /// Heroes' own lives between jobs, with no season set aside for it: once a week each hero in town with gold to spare
-/// buys land and a house of their own (and sleeps there instead of the tavern, more rooted in the town), trains for
+/// buys land and a house of their own (and sleeps there instead of the tavern, more rooted in the town), plays patron
+/// once famous and rich (<see cref="Patron"/>), trains for
 /// their next level, or buys a stake in a business that pays them back. Marriage comes through the taverns as for
 /// anyone, and companies raise bastions once they can afford one (<see cref="Bastions"/>). None of it keeps a hero
 /// from answering a bounty. No dice: who does what comes from their purse and a stable hash.
@@ -53,6 +75,8 @@ public static class Downtime
             double spare = a.Gold - r.Keep;
             if (s.Holding == "" && r.Holdings.Count > 0 && spare >= LandCost(town, a) && (a.SpouseId != null || s.Loyalty >= 60))
                 BuyLand(town, a);
+            else if (spare >= r.Patron.Spare && s.Renown >= r.Patron.Renown && (s.GaveDay is not int g || town.Day - g >= r.Patron.Every))
+                Patron(town, a, spare * r.Patron.Share);
             else if (s.Level <= r.TrainMaxLevel && spare >= TrainCost(town, a) && Quests.XpToNext(s.Level) > 0)
                 Train(town, a);
             else if (s.StakeId == null && spare >= r.Stake && Business(town, a) is { } b)
@@ -81,6 +105,54 @@ public static class Downtime
         Quests.GainXp(town, a, (int)(Quests.XpToNext(s.Level) * r.TrainXp));
         string trainer = r.Trainers.Count == 0 ? "a trainer" : r.Trainers[(int)(Voices.Hash("trainer", a.Id, town.Day) % (uint)r.Trainers.Count)];
         Log(town, a, r.Lines.Train, ("trainer", trainer), ("cost", Js.Str(cost)), importance: Importance.Routine);
+    }
+
+    /// <summary>
+    /// A famous hero with a fortune puts it into the town, the first that fits: the next part of a monument, a piece from the
+    /// forge made for them from the town's parts, their god's shrine (its fund if it isn't raised, its favour if it
+    /// is). The town gets the gold, the hero a name for it.
+    /// </summary>
+    private static void Patron(Town town, Agent a, double purse)
+    {
+        var r = Rules(town);
+        foreach (var core in Monuments.All(town).Where(c => c.Complete).OrderBy(c => c.Id))
+        {
+            if (Monuments.Parts(town, core).Any(p => !p.Complete) || Monuments.Next(town, core) is not { } part) continue;
+            double cost = Monuments.Cost(town, part);
+            if (cost > purse || Monuments.Blocked(town, core, part) is { } why && why != "not enough gold") continue;
+            town.Book(TreasuryAccount.Patron, cost);
+            if (Monuments.Add(town, core, part.Id) == null)
+            {
+                town.Book(TreasuryAccount.Patron, -cost);
+                continue;
+            }
+            a.Gold -= cost;
+            Gave(town, a);
+            Log(town, a, r.Lines.Monument, ("part", part.Name), ("monument", core.Name), ("cost", Js.Str(cost)));
+            return;
+        }
+        if (Spoils.ForHero(town, a, purse) is { } order)
+        {
+            Gave(town, a);
+            Log(town, a, r.Lines.Forge, ("item", order.Item), ("cost", Js.Str(order.Cost)), ("shop", order.Shop));
+            return;
+        }
+        if (Faith.God(town, a.Faith) is { Evil: false } god)
+        {
+            double gift = Math.Floor(purse);
+            a.Gold -= gift;
+            bool standing = town.Faiths.Dedications.Values.Contains(god.Id);
+            if (standing) town.Faiths.Favor[god.Id] = town.Faiths.Favor.Get(god.Id, 0) + gift * r.Patron.FavourPerGold;
+            else town.Faiths.Funds[god.Id] = town.Faiths.Funds.Get(god.Id, 0) + gift;
+            Gave(town, a);
+            Log(town, a, standing ? r.Lines.Endow : r.Lines.Shrine, ("god", Faith.Prose(god)), ("cost", Js.Str(gift)));
+        }
+    }
+
+    private static void Gave(Town town, Agent a)
+    {
+        a.Hero!.GaveDay = town.Day;
+        Notoriety.Deed(town, a, "patron", Rules(town).Patron.Fame);
     }
 
     /// <summary>The business a hero would put gold into: the open shop or workshop in town with the most cash, ties by id.</summary>
@@ -118,10 +190,17 @@ public static class Downtime
         a.Gold += pay;
     }
 
-    private static void Log(Town town, Agent a, string line, (string Key, string Value) x, (string Key, string Value) y, Importance importance = Importance.Notable)
+    private static void Log(Town town, Agent a, string line, (string Key, string Value) x, (string Key, string Value) y, Importance importance = Importance.Notable) =>
+        Log(town, a, line, [x, y], importance);
+
+    private static void Log(Town town, Agent a, string line, (string Key, string Value) x, (string Key, string Value) y, (string Key, string Value) z) =>
+        Log(town, a, line, [x, y, z], Importance.Notable);
+
+    private static void Log(Town town, Agent a, string line, (string Key, string Value)[] keys, Importance importance)
     {
         if (line == "") return;
-        string text = line.Replace("{hero}", a.Name).Replace("{" + x.Key + "}", x.Value).Replace("{" + y.Key + "}", y.Value);
+        string text = line.Replace("{hero}", a.Name);
+        foreach (var (k, v) in keys) text = text.Replace("{" + k + "}", v);
         town.Log(LedgerCategory.Social, importance, Stories.Cap(text), [a.Id]);
     }
 }

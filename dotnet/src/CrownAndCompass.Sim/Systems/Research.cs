@@ -55,6 +55,10 @@ public sealed record InsightRules
     public double Book { get; init; } = 12;
     public double Newcomer { get; init; } = 15;
     public double Wizard { get; init; } = 4;
+
+    /// <summary>Lore the first of a kind of monster part brings, a grade; and a magic item come home, a tier.</summary>
+    public double Part { get; init; } = 6;
+    public double Item { get; init; } = 5;
 }
 
 public sealed record FundingDef
@@ -252,6 +256,10 @@ public sealed class ResearchState
     /// <summary>The last explorers' find and the last townsperson looked over for what they brought the scholars.</summary>
     public int LastFind { get; set; }
     public int LastAgent { get; set; }
+
+    /// <summary>Kinds of monster part the scholars have studied, and the last armory piece they looked over.</summary>
+    public List<string> Studied { get; } = [];
+    public int LastStock { get; set; }
 
     /// <summary>Index into the funding levels.</summary>
     public int Funding { get; set; }
@@ -727,6 +735,19 @@ public static class Research
         {
             st.LastFind = f.Id;
             Insight(town, Sparks.Wilds, $"explorers' word of {Explore.What(town, f)}", r.Insight.Find);
+        }
+        // What companies carry home: the first of each kind of part, and each magic piece that comes into the armory.
+        foreach (var id in town.Spoils.Trophies.Keys.OrderBy(k => k, StringComparer.Ordinal).ToList())
+        {
+            if (st.Studied.Contains(id) || town.Content.Spoils.Trophy(id) is not { } t) continue;
+            st.Studied.Add(id);
+            Insight(town, Sparks.Slain, $"the scholars' study of {Spoils.Count(t, 1)}", r.Insight.Part * Math.Max(1, t.Grade));
+        }
+        foreach (var s in town.Armory.Stock.Where(s => s.Id > st.LastStock).OrderBy(s => s.Id).ToList())
+        {
+            st.LastStock = s.Id;
+            if (s.Item.Tier <= 0 || s.From.StartsWith("made at", StringComparison.Ordinal) || s.From == "the town hall's own") continue;
+            Insight(town, Sparks.Relic, $"{Agent.Article(Gear.Plainly(s.Item))} {Gear.Plainly(s.Item)} the scholars looked over", r.Insight.Item * s.Item.Tier);
         }
         bool first = st.LastAgent == 0;
         foreach (var a in town.Residents.Where(a => a.Id > st.LastAgent).OrderBy(a => a.Id).ToList())

@@ -225,7 +225,7 @@ public partial class Main
         var named = Alerts.Standing(t).Where(a => a.SiteId != null).Select(a => a.SiteId!).ToHashSet();
         var open = t.Sites
             .Where(s => s.Known != SiteKnowledge.Unheard && !s.ThoughtCleared)
-            .OrderBy(s => named.Contains(s.Def.Id) || s.Def.Id == t.Content.Enemy.Outpost.Id ? 0 : 1)
+            .OrderBy(s => named.Contains(s.Def.Id) || s.Def.Id == t.Content.Enemy.Outpost.Id ? 0 : Askers(t, s).Count > 0 ? 1 : 2)
             .ThenBy(s => limit == int.MaxValue ? 0 : -s.BelievedTier)
             .ToList();
         var shown = open.Take(limit).ToList();
@@ -238,6 +238,31 @@ public partial class Main
         var cleared = t.Sites.Where(s => s.Known != SiteKnowledge.Unheard && s.ThoughtCleared).ToList();
         if (cleared.Count > 0 && limit == int.MaxValue)
             p.Text($"{Ui.C(Ui.Good, "[b]✓ Cleared[/b]")}  [font_size=12]{string.Join(", ", cleared.Select(s => SiteLink(s.Def)))}[/font_size]", 13);
+    }
+
+    /// <summary>
+    /// Everyone else who wants this place dealt with, as chips: a village's plea, a notable's job not yet posted, and the
+    /// trouble it is to the town (which draws companies on its own). One board for all the work going.
+    /// </summary>
+    private static List<string> Askers(Town t, SiteState s)
+    {
+        var chips = new List<string>();
+        foreach (var pl in t.Pleas.Where(x => x.SiteId == s.Def.Id && x.Status == PleaStatus.Open).OrderBy(x => x.Id))
+            chips.Add(Ui.Chip("standing", Js.Str(Math.Round(pl.Reward)), Ui.Good, $"Plea from {t.Settlements[pl.SettlementId].Name}\n• Their reward, paid to whoever goes\n• Answering it pleases them", 12)
+                + Ui.C(Ui.Good, $"[font_size=11] {Ui.Esc(t.Settlements[pl.SettlementId].Name)}[/font_size]"));
+        foreach (var n in t.Notables.Where(n => !n.Gone && n.AskSite == s.Def.Id && Notables.AskOf(t, n) is { Quest: not "" }).OrderBy(n => n.Id))
+            chips.Add(Ui.Chip("tab-notables", "", Ui.Gold, $"{Notables.NameOf(t, n)} {Notables.AskText(t, n, Notables.AskOf(t, n)!)}\n• Answer in the Notables tab to post it on their gold", 12)
+                + Ui.C(Ui.Gold, $"[font_size=11] {Ui.Esc(Notables.NameOf(t, n))} asks[/font_size]"));
+        string? trouble = Troubles.Of(t, s) switch
+        {
+            "host" => "the big bad's host gathers here",
+            "raider" => "raided the town's roads lately",
+            "burner" => "fell on a neighbour lately",
+            _ => null,
+        };
+        if (trouble != null)
+            chips.Add(Ui.Chip("threat", "", Ui.Bad, $"Trouble: {trouble}\n• Companies may go on their own\n• They earn renown for it", 12) + Ui.C(Ui.Bad, $"[font_size=11] {trouble}[/font_size]"));
+        return chips;
     }
 
     /// <summary>One threat: face, name, what's posted or happening, a danger pill per crew, and its buttons.</summary>
@@ -272,7 +297,9 @@ public partial class Main
         string renown = "  " + Ui.Chip("ui-renown", suggested.ToString(), Ui.Ink2,
             suggested == 0 ? "Renown suggested: none. Any company can make its name here." : $"Renown suggested: {suggested}\n• A company with less can still go\n• Fewer foes there know its name, so more stand and fight", 12);
         string patron = live?.NotableId is int nid && Notables.Find(t, nid) is { } giver ? "  " + Ui.C(Ui.Gold, $"[font_size=11]for {Ui.Esc(Notables.NameOf(t, giver))}[/font_size]") : "";
-        string text = $"{SiteLink(s.Def)} {Ui.C(Ui.Gold, $"[font_size=11]{tier}[/font_size]")}{renown}{patron}{(status != "" ? $"\n[font_size=12]{status}[/font_size]" : "")}{(rumour != "" ? $"\n{rumour}" : "")}";
+        var askers = Askers(t, s);
+        string asked = askers.Count == 0 ? "" : "\n" + string.Join("  ", askers);
+        string text = $"{SiteLink(s.Def)} {Ui.C(Ui.Gold, $"[font_size=11]{tier}[/font_size]")}{renown}{patron}{(status != "" ? $"\n[font_size=12]{status}[/font_size]" : "")}{asked}{(rumour != "" ? $"\n{rumour}" : "")}";
 
         bool onRoad = party != null && !party.Returned;
         var pills = onRoad ? [] : crews.Take(PillsShown).Select(c => (Crew: c, Band: Assess.DangerFor(t, s, c.Riders, c.Name == "" ? null : c.Name))).ToList();

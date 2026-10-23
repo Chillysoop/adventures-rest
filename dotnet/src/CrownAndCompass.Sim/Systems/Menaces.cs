@@ -269,6 +269,13 @@ public sealed class Menace
     public int Approach { get; set; }
     public int SeenAttempts { get; set; }
 
+    /// <summary>The last day it fell on a settlement or the town, and where (<see cref="Troubles"/>).</summary>
+    public int? HarmDay { get; set; }
+    public string HarmedName { get; set; } = "";
+
+    /// <summary>Day a flying menace last waited out a storm over the town (<see cref="Elements.Waits"/>).</summary>
+    public int? WaitedDay { get; set; }
+
     /// <summary>Times its host has marched on the town.</summary>
     public int Marches { get; set; }
     public bool BigBad { get; set; }
@@ -1051,7 +1058,11 @@ public static class Menaces
         if (sworn || Mischief(town, m)) return;
         if (am.Id == "plague" && am.Infect.Count > 0) Infect(town, m, am);
         else if (am.Id == "intrigue" && am.Schemes.Count > 0) Scheme(town, m, am);
-        else HitTown(town, m);
+        else
+        {
+            HitTown(town, m);
+            Troubles.Harmed(town, m, town.Name);
+        }
     }
 
     /// <summary>A night visit: a townsperson taken, and the menace grows on what it takes. Defenders at home can keep the door.</summary>
@@ -1141,6 +1152,7 @@ public static class Menaces
     {
         var r = Rules(town);
         bool known = town.Regions[s.RegionId].Known;
+        Troubles.Harmed(town, m, s.Name);
         if (m.Stage >= MenaceStage.Dominion && (s.Standing <= -40 || town.Rng.Chance(0.4)))
         {
             s.Razed = true;
@@ -1219,13 +1231,20 @@ public static class Menaces
         // A sky watch sees them come over the hills in time for the watch to turn out: they meet them at the fence.
         int patrolled = Quests.Site(town, m.SeatId) is { } seat ? Wilds.Warns(town, World.Spot(town, seat)) : 0;
         double warned = 1 + (Institutions.SkyWatch(town) + patrolled) / 48.0 * town.Content.Enemy.Defense.SkyWatch;
+        // Fog hides them from the sky watch and the fence alike.
+        double fogged = Elements.Watch(town, out string fog);
+        if (fog != "")
+        {
+            warned = 1;
+            Elements.Fogged(town, m, place);
+        }
         if (warned > 1)
         {
             string eye = Institutions.SkyWatch(town) > 0 || Quests.Site(town, m.SeatId) is not { } sp ? Sightings.SkyRider(town) : Wilds.Spotter(town, World.Spot(town, sp));
             bool many = eye.StartsWith("riders ", StringComparison.Ordinal);
             town.Log(LedgerCategory.War, Importance.Routine, $"{Saga.Cap(eye)} {(many ? "see" : "sees")} {m.Name}'s raiders coming for {place} and {(many ? "ring" : "rings")} the alarm.");
         }
-        if (Threat.LocalDefense(town) * Garrison.FlagFactor(town, where) * warned >= raiders)
+        if (Threat.LocalDefense(town) * Garrison.FlagFactor(town, where) * warned * fogged >= raiders)
         {
             m.Power = Math.Max(0, m.Power - raiders * r.RepelLoss);
             var champion = town.Heroes.Where(a => !a.IsAway).OrderByDescending(x => x.Hero!.Level).ThenBy(x => x.Id).FirstOrDefault();
@@ -1320,7 +1339,7 @@ public static class Menaces
         bool restrained = s.YokeId == m.Id && !s.Defied;
         if (m.ArrivalTick is int arrival)
         {
-            if (town.Tick >= arrival) Assault(town, m);
+            if (town.Tick >= arrival && !Elements.Waits(town, m)) Assault(town, m);
             return;
         }
         // The big bad's host gathers at its camps before it marches.
