@@ -72,6 +72,7 @@ public static class Crystal
             town.SkyFleet.Crystal += shards;
             town.Log(LedgerCategory.Quest, Importance.Routine, $"The {party.Name} bring home lift-crystal shards from {site.Def.Name}: {Js.Str(shards)} days of lift for the Sky Dock.", party.Members.ToList());
         }
+        Egg(town, party, site);
         if (!site.Seam && HighEnough(town, site))
         {
             site.Seam = true;
@@ -114,8 +115,38 @@ public static class Crystal
     }
 
     /// <summary>Daily: mines on clear seams fill the store; a seam retaken by its foes yields nothing until it is cleared again. The stand-in buys and mines.</summary>
+    /// <summary>Now and then a company finds a griffon's nest on an isle and brings an egg home for whoever has no wings yet.</summary>
+    private static void Egg(Town town, Party party, SiteState site)
+    {
+        if (Reaches.Band(town, site) is not { Eggs: > 0 } band) return;
+        if (Passage.Rules(town).Mount(band.Hatches) is not { } m) return;
+        var rng = new Rng(town.Seed * 6151 + town.Day * 31 + party.Id * 17 + 5);
+        if (!rng.Chance(band.Eggs)) return;
+        var who = party.Members.Select(town.Agent).Where(a => a.Hero != null && !a.Dead && !town.SkyFleet.Eggs.Any(e => e.HeroId == a.Id)
+                && (a.Hero.Mount == "" || Passage.Rules(town).Mount(a.Hero.Mount) is not { } had || !had.Ways.Contains("air")))
+            .OrderByDescending(a => a.Hero!.Level).ThenBy(a => a.Id).FirstOrDefault();
+        if (who == null) return;
+        town.SkyFleet.Eggs.Add(new SkyEgg { HeroId = who.Id, Mount = m.Id, Day = town.Day + Rules(town).HatchDays });
+        town.Log(LedgerCategory.Quest, Importance.Notable,
+            $"{who.Name} brings a {m.Name}'s egg home from {site.Def.Name}, wrapped in a cloak and kept warm by the fire. It should hatch in {Rules(town).HatchDays} days, and whatever comes out will know them first.", [who.Id]);
+    }
+
+    /// <summary>An egg hatches on its day, and the hero who found it has a mount that flies.</summary>
+    public static void Hatch(Town town)
+    {
+        foreach (var e in town.SkyFleet.Eggs.Where(e => e.Day <= town.Day).ToList())
+        {
+            town.SkyFleet.Eggs.Remove(e);
+            var a = town.Agent(e.HeroId);
+            if (a.Hero == null || a.Dead || a.Departed || Passage.Rules(town).Mount(e.Mount) is not { } m) continue;
+            if (a.Hero.Mount != "" && Passage.Rules(town).Mount(a.Hero.Mount) is { } had && Passage.Rank(had) >= Passage.Rank(m)) continue;
+            Passage.Ride(town, a, m, Importance.Notable, $"The egg {a.Name} brought down from the sky hatches. The {m.Name} it hatched into will let nobody else ride it.");
+        }
+    }
+
     public static void Daily(Town town, bool autoMayor)
     {
+        Hatch(town);
         if (Sky.Dock(town) == null) return;
         foreach (var s in Seams(town).Where(s => s.Mined && s.Cleared)) town.SkyFleet.Crystal += Yield(town, s);
         if (!autoMayor) return;

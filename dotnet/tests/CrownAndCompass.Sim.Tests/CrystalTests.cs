@@ -81,4 +81,28 @@ public class CrystalTests
         t.Research.Known.Add("seam-sounding");
         Assert.True(Crystal.Yield(t, high) > plain);
     }
+
+    [Fact]
+    public void TheRoostsHoardMostAndAGriffonEggHatchesForItsFinder()
+    {
+        var t = new Simulation(new SimulationOptions { Seed = 3, AutoMayor = false }).Town;
+        double Gold(string band) => t.Sites.Where(s => s.Def.Band == band).Average(s => s.Def.Loot[^1] / (double)Math.Max(1, s.Def.Tier));
+        Assert.True(Gold("roost") > Gold("high"));
+        var hero = t.Heroes.First();
+        hero.Hero!.Mount = "";
+        t.SkyFleet.Eggs.Add(new SkyEgg { HeroId = hero.Id, Mount = "griffon", Day = t.Day });
+        Crystal.Hatch(t);
+        Assert.Equal("griffon", hero.Hero.Mount);
+        Assert.Empty(t.SkyFleet.Eggs);
+        // Over many trips home from the high isles, some eggs come with them.
+        var high = t.Sites.First(s => s.Def.Band == "high");
+        var party = new Party { Name = "Lanterns", Members = [hero.Id], SiteId = high.Def.Id };
+        hero.Hero.Mount = "";
+        for (int d = 0; d < 60 && t.SkyFleet.Eggs.Count == 0; d++)
+        {
+            t.Tick += SimTime.HoursPerDay;
+            Crystal.Home(t, party, high);
+        }
+        Assert.Single(t.SkyFleet.Eggs);
+    }
 }

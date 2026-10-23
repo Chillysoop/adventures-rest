@@ -92,6 +92,9 @@ public sealed record HeightRules
 public sealed record CrystalRules
 {
     public double Start { get; init; } = 16;
+
+    /// <summary>Days a griffon egg brought home from the isles takes to hatch.</summary>
+    public int HatchDays { get; init; } = 30;
     public double Buy { get; init; } = 18;
     public double BuyMost { get; init; } = 12;
     public int BuyDays { get; init; } = 30;
@@ -149,6 +152,13 @@ public sealed class SkyBattle
     public int Volleys { get; init; }
 }
 
+public sealed class SkyEgg
+{
+    public int HeroId { get; init; }
+    public string Mount { get; init; } = "";
+    public int Day { get; init; }
+}
+
 public sealed class SkyFleetState
 {
     public bool Granted { get; set; }
@@ -157,6 +167,9 @@ public sealed class SkyFleetState
     public double Crystal { get; set; }
     public double Bought { get; set; }
     public int BoughtDay { get; set; }
+
+    /// <summary>Griffon eggs brought home from the isles, each kept for the hero who found it (<see cref="Systems.Crystal.Hatch"/>).</summary>
+    public List<SkyEgg> Eggs { get; } = [];
     public int NextRaidDay { get; set; }
     public List<SkyBattle> Battles { get; } = [];
 }

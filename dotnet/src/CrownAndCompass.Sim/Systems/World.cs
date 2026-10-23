@@ -332,7 +332,7 @@ public static class World
         var kind = new SiteKindDef { Names = harbour ? g.Harbour : g.Names, Habitats = g.Habitats, Deck = g.Deck };
         used.Remove(site.Def.Name);
         var def = BuildSite(town.Content, rng, region, kind, level, site.Def.Id, Fill(rng, region.Theme, kind.Names, used), null, g);
-        site.Def = def with { Aloft = true, Band = band.Id };
+        site.Def = def with { Aloft = true, Band = band.Id, Loot = [(int)Math.Round(def.Loot[0] * band.Hoard), (int)Math.Round(def.Loot[^1] * band.Hoard)] };
         site.Hidden = harbour;
     }
 
@@ -464,7 +464,7 @@ public static class World
                 pool.Remove(site);
                 used.Remove(site.Def.Name);
                 string name = band.Names.Count > 0 ? Fill(rng, town.Regions[site.RegionId!.Value].Theme, band.Names, used) : site.Def.Name;
-                site.Def = site.Def with { Aloft = true, Band = band.Id, Name = name };
+                site.Def = site.Def with { Aloft = true, Band = band.Id, Name = name, Loot = [(int)Math.Round(site.Def.Loot[0] * band.Hoard), (int)Math.Round(site.Def.Loot[^1] * band.Hoard)] };
                 if (foe == null)
                 {
                     SkyGroup(town, rng, band, site, used);

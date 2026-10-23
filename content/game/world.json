@@ -538,15 +538,15 @@
       { "people": "brass-ancient", "rings": [5, 7], "prosperity": 70, "chance": 0.2, "themes": ["cinderwastes"] },
       { "people": "copper-ancient", "rings": [5, 7], "prosperity": 70, "chance": 0.2, "themes": ["highpeaks", "feyfringe"] }
     ],
-    "_doc": "The sky's heights (Systems/Reaches.cs, World.PlaceIsles, World.CloudCity): `peoples` are peoples of the sky (each with a `band` in world.json peoples: the cloud court, the metallic ancients), each settled with its `chance` on a free land region of `rings`, `themes` first. far sites torn loose and drifting above the clouds, band by band from the lowest. Each band lifts `count` sites of rings `rings` (themes `themes`, any land when empty) on its own dice. An airship gets a company there only with a `ceiling` at least the band's (sky.json ships); heroes who fly (mounts, spells, items) reach a band only where `fliers` is set. A band's `foe` (foes.json, with the same `band`) is seated on its sites, each with one of `bosses` as its master.",
+    "_doc": "The sky's heights (Systems/Reaches.cs, World.PlaceIsles, World.CloudCity): `peoples` are peoples of the sky (each with a `band` in world.json peoples: the cloud court, the metallic ancients), each settled with its `chance` on a free land region of `rings`, `themes` first. far sites torn loose and drifting above the clouds, band by band from the lowest. Each band lifts `count` sites of rings `rings` (themes `themes`, any land when empty) on its own dice. An airship gets a company there only with a `ceiling` at least the band's (sky.json ships); heroes who fly (mounts, spells, items) reach a band only where `fliers` is set. A band's `foe` (foes.json, with the same `band`) is seated on its sites, each with one of `bosses` as its master; other isles go to a sky group (groups.json `bands`) with chance `groups`. `hoard` multiplies its isles' gold, and `eggs` is the chance a company home from one brings a griffon egg (hatching into `hatches`, sky.json crystal `hatchDays`).",
     "bands": [
-      { "id": "low", "name": "low isles", "ceiling": 0, "fliers": true, "count": 3, "groups": 0.35, "rings": [1, 3], "themes": [],
+      { "id": "low", "name": "low isles", "ceiling": 0, "fliers": true, "count": 3, "groups": 0.35, "eggs": 0.1, "rings": [1, 3], "themes": [],
         "names": ["the Drifting Isle of {A}", "the {A} Skyrock", "the Isle of {B}", "the Hanging Rock of {A}"] },
-      { "id": "high", "name": "high isles", "ceiling": 0.45, "fliers": true, "count": 3, "groups": 0.6, "rings": [3, 5], "themes": ["highpeaks", "feyfringe", "rimefell", "cinderwastes"],
+      { "id": "high", "name": "high isles", "ceiling": 0.45, "fliers": true, "count": 3, "groups": 0.6, "eggs": 0.25, "rings": [3, 5], "themes": ["highpeaks", "feyfringe", "rimefell", "cinderwastes"],
         "names": ["the Cloud-Wrapped Peak of {A}", "the High Isle of {B}", "the {A} Eyrie", "the Summit Above {B}"] },
-      { "id": "cloud", "name": "the cloud sea", "ceiling": 0.85, "fliers": false, "count": 3, "groups": 0.4, "rings": [5, 7], "themes": [],
+      { "id": "cloud", "name": "the cloud sea", "ceiling": 0.85, "fliers": false, "count": 3, "groups": 0.4, "hoard": 1.5, "rings": [5, 7], "themes": [],
         "names": ["the Cloudbank Ruin of {B}", "the {A} Stormwall", "the Isle in the Cloud Sea", "the Thunderhead Spire of {A}"] },
-      { "id": "roost", "name": "dragon roosts", "ceiling": 0.95, "fliers": false, "count": 4, "rings": [6, 7], "themes": [],
+      { "id": "roost", "name": "dragon roosts", "ceiling": 0.95, "fliers": false, "count": 4, "hoard": 4, "rings": [6, 7], "themes": [],
         "names": ["the Roost of {B}", "the {A} Wyrm-Eyrie", "the Hoard-Crag Above {B}", "the Burning Roost of {A}"],
         "foe": "elder-wyrms", "bosses": ["ancient-red-dragon", "ancient-blue-dragon", "ancient-green-dragon", "ancient-black-dragon", "ancient-white-dragon"] }
     ]

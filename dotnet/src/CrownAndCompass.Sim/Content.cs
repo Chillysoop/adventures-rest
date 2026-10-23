@@ -1556,6 +1556,13 @@ public sealed record SkyBandDef
     public string Foe { get; init; } = "";
     public IReadOnlyList<string> Bosses { get; init; } = [];
 
+    /// <summary>Its isles' hoards are this many times a ground site's of the same level (the dragon roosts').</summary>
+    public double Hoard { get; init; } = 1;
+
+    /// <summary>The chance a company coming home from one of its isles brings a griffon egg, and the mount it hatches into.</summary>
+    public double Eggs { get; init; }
+    public string Hatches { get; init; } = "griffon";
+
     /// <summary>The chance an isle of the band without a foe goes to one of the groups that hold this band (groups.json `bands`).</summary>
     public double Groups { get; init; }
 }

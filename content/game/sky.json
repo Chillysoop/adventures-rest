@@ -59,7 +59,7 @@
   ],
   "powerPerRing": 3,
   "dockCeiling": 0.45,
-  "crystal": { "start": 16, "buy": 18, "buyMost": 12, "buyDays": 30, "shardsPerTier": 1.5, "seamFrom": "high", "mineCost": 900, "mineYield": 0.6, "mineYieldPerRing": 0.15 },
+  "crystal": { "start": 16, "buy": 18, "buyMost": 12, "buyDays": 30, "shardsPerTier": 1.5, "seamFrom": "high", "mineCost": 900, "mineYield": 0.6, "mineYieldPerRing": 0.15, "hatchDays": 30 },
   "expedition": { "edge": 1, "wait": 1, "search": [1, 4], "strandMost": 40, "walkHurt": 0.3 },
   "texts": {
     "carry": ["the {party} go aboard {ship} at the Sky Dock, {captain} at the wheel, bound up for {where}.", "{ship} lifts the {party} off the Sky Dock mast and climbs toward {where}."],
