@@ -555,6 +555,9 @@ public sealed class Simulation
     /// <summary>Tear down a town building, or call off a site, for part of its gold back (<see cref="Planning.Raze"/>).</summary>
     public bool Raze(int buildingId) => Planning.Raze(Town, Town.Building(buildingId));
 
+    /// <summary>Buy a townsman's business for the town: the owner names the price, and may refuse a council they don't trust.</summary>
+    public bool BuyBuilding(int buildingId) => Property.Buy(Town, Town.Building(buildingId));
+
     /// <summary>Take back the last brush stroke on ground still unbuilt; returns cells put back.</summary>
     public int UndoPaint() => Planning.Undo(Town);
 
@@ -657,6 +660,9 @@ public sealed class Simulation
     /// <summary>End an alliance with a minor power.</summary>
     public bool BreakWithPower(string powerId) => Powers.Break(Town, powerId);
 
+    /// <summary>Buy an allied power's oath: it stays the town's for good, with no tithe, and no enemy can buy it away.</summary>
+    public bool SwearPower(string powerId) => Powers.Swear(Town, powerId);
+
     /// <summary>Answer a minor power's envoy: accept its offer or demand and pay its price, or send it home.</summary>
     public bool AnswerEnvoy(string powerId, bool accept) => Powers.Answer(Town, powerId, accept);
 
@@ -686,6 +692,9 @@ public sealed class Simulation
 
     /// <summary>Stand a regiment (or the levy) down: its soldiers go home to their trades.</summary>
     public bool DisbandRegiment(int regimentId) => Army.Disband(Town, regimentId);
+
+    /// <summary>Commission the town's smiths to re-arm a regiment at the next grade of arms.</summary>
+    public bool RefitRegiment(int regimentId) => Army.Refit(Town, regimentId);
 
     /// <summary>Post a regiment: the walls, its hall in reserve, the town guard's patrol, or the mayor's guard.</summary>
     public bool PostRegiment(int regimentId, ArmyPost post) => Army.SetPost(Town, regimentId, post);
@@ -743,6 +752,9 @@ public sealed class Simulation
 
     /// <summary>Give an occupied settlement its freedom back.</summary>
     public bool FreeSettlement(int settlementId) => Conquest.Free(Town, settlementId);
+
+    /// <summary>Buy a settlement's charter: it swears to the town without a fight, if its people think well enough of it.</summary>
+    public bool BuySettlement(int settlementId) => Conquest.Buy(Town, settlementId);
 
     public DayStats Snapshot()
     {

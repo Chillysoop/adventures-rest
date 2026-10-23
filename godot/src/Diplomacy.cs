@@ -373,6 +373,9 @@ public partial class Main
                 buttons.Add((Shadows.Rallier(t) is { } speaker && s.Shadow!.RallyHeroId == null ? $"Send {speaker.GivenName} to rally them" : "Rally", Shadows.RallyRefused(t, s) == null, true, () => Act(() => _sim.RallySettlement(id))));
             if (Neighbours.TroubleOf(t, s) is { Kind: "need", Aid: { } aid })
                 buttons.Add(($"Aid · {Js.Str(aid.Gold)}g, {Js.Str(aid.Qty)} {aid.Good.ToString().ToLowerInvariant()}", Neighbours.AidRefused(t, s) == null, true, () => Act(() => _sim.AidSettlement(id))));
+            if (Conquest.Held(t, s) == null)
+                buttons.Add(($"Buy charter · {Js.Str(Conquest.CharterPrice(t, s))}g", Conquest.BuyBlocked(t, s) == null, false, () => Act(() => _sim.BuySettlement(id))));
+            else head += $"\n[font_size=12]{Ui.Chip("face-crown", "Sworn to you", Ui.Good, "The town holds its charter")}[/font_size]";
             if (!open.Any(r => r.SettlementId == s.Id) && offers.Count > 0)
             {
                 string? no = Trade.Refuse(t, s);

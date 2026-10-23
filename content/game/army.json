@@ -91,6 +91,16 @@
     "wonMandate": 8,
     "lostMandate": -6
   },
+  "arms": {
+    "_doc": "Re-arming a regiment (Army.Refit, Forge): the council commissions the next grade and the smiths at the `smiths` buildings arm perSmith soldiers each a day, oldest commission first, paid soldier by soldier (gold + kit x the unit's cost + goods at market), waiting when the treasury is short. A grade adds `strength` to each soldier; recruits to an armed regiment are armed to match.",
+    "smiths": ["forge", "bastion_smithy"],
+    "perSmith": 1,
+    "grades": [
+      { "id": "steel", "name": "Steel", "strength": 0.15, "gold": 20, "kit": 2, "goods": { "Tools": 1 } },
+      { "id": "masterwork", "name": "Masterwork", "strength": 0.3, "gold": 60, "kit": 5, "goods": { "Tools": 2 } },
+      { "id": "runed", "name": "Runed", "strength": 0.5, "gold": 200, "kit": 12, "goods": { "Tools": 3, "Potions": 1 } }
+    ]
+  },
   "conquest": {
     "defend": 1.5,
     "targetHit": 60,
@@ -113,7 +123,8 @@
     "blowPerResist": 0.004,
     "rising": 100,
     "crushed": 45,
-    "freed": 25
+    "freed": 25,
+    "charter": { "standing": 40, "base": 4000, "perProsperity": 300, "perHost": 40 }
   },
   "units": [
     { "id": "levy", "name": "Levy", "one": "levy", "role": "foot", "strength": 1.4, "walls": 1.0, "field": 0.7, "patrol": 0.5, "guard": 0.5, "wage": 0, "drill": 30, "colour": "8c7a5a",

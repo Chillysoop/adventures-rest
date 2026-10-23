@@ -84,6 +84,7 @@ public partial class Main
             $"{(r.Fallen > 0 ? $"  {Ui.C(Ui.Bad, $"✝{r.Fallen}")}" : "")}\n" +
             $"{Ui.Img("army-drill", 13)} [font_size=11]{DrillPips(r.Drill)}[/font_size]" +
             (boss != null ? $"   {Ui.Img("army-command", 13)} {AgentLink(boss, boss.GivenName)} {Ui.C(Ui.Good, $"+{Pct(Army.Command(t, r))}")}" : "") +
+            ArmsLine(t, r) +
             (r.Short != "" && r.Soldiers.Count < r.Wanted ? $"\n{Ui.C(Ui.Gold, $"[font_size=12]{Ui.Cap(r.Short)}[/font_size]")}" : "");
         string sig = $"{u.Id}{r.Post}{r.CommanderId}{string.Join(",", CommandChoices(t, r).Select(c => c.Id))}";
         int step = u.IsLevy ? 5 : 10;
@@ -91,6 +92,19 @@ public partial class Main
             ("−", r.Wanted > step, false, () => Act(() => _sim.ResizeRegiment(id, r.Wanted - step))),
             ("+", r.Wanted + step <= t.Content.Army.MaxSize && (!u.IsLevy || Army.LevyRoom(t) >= step), false, () => Act(() => _sim.ResizeRegiment(id, r.Wanted + step))),
             (u.IsLevy ? "Stand down" : "Disband", true, false, () => Act(() => _sim.DisbandRegiment(id))));
+        if (!u.IsLevy && !r.Refitting && Army.NextGrade(t, r) is { } next)
+            p.Buttons(($"{next.Name} arms · {Js.Str(Army.RefitCost(t, r))}g", Army.RefitBlocked(t, r) == null, false, () => Act(() => _sim.RefitRegiment(id))));
+    }
+
+    /// <summary>The regiment's arms: its grade, and the smiths' progress on the next.</summary>
+    private static string ArmsLine(Town t, Regiment r)
+    {
+        var now = Army.Grade(t, r.Arms);
+        if (now == null && !r.Refitting) return "";
+        string grade = now != null ? $"{Ui.Img("army-arms", 13)} {Ui.C(Ui.Good, $"{now.Name} +{Pct(now.Strength)}")}" : Ui.Img("army-arms", 13);
+        if (r.Refitting && Army.NextGrade(t, r) is { } next)
+            grade += $"  {Ui.C(Ui.Gold, $"→ {next.Name} {r.Refitted}/{r.Soldiers.Count}")}";
+        return "   " + grade;
     }
 
     /// <summary>Heroes who could take command, best leaders first.</summary>

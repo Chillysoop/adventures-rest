@@ -838,7 +838,17 @@ public partial class Main
         if (b.Def.Crews > 0 && b.Complete)
             p.Text(Ui.C(Ui.Ink2, $"Puts {b.Def.Crews} more crews to work. The town has {Construction.Crews(t)} crews; a town its size keeps {Construction.Wanted(t)} busy."));
         if (Monuments.IsMonument(t, b.Def)) MonumentCard(p, t, b);
+        if (b.OwnerId != null && b.Def.IsBusiness && !b.Def.Civic && b.Complete) BuyButton(p, t, b);
         if (!b.Razed && Planning.RazeBlocked(t, b) == null) RazeButton(p, t, b);
+    }
+
+    /// <summary>Buy a townsman's business for the town; the owner's answer shows when they won't sell.</summary>
+    private void BuyButton(Pane p, Town t, Building b)
+    {
+        int id = b.Id;
+        string? no = Property.BuyBlocked(t, b);
+        p.Buttons(($"Buy for the town · {Js.Str(Property.BuyPrice(t, b))}g", no == null, false, () => Act(() => _sim.BuyBuilding(id))));
+        if (no != null && no != "not enough gold") p.Note(Ui.Cap(no) + ".");
     }
 
     /// <summary>Call off a site or tear a building down, for some gold back; it asks first.</summary>

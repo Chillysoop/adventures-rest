@@ -266,6 +266,40 @@ public static class Property
         return workers.Any(a => a.Gold >= cheapest) ? null : $"nobody has the {Js.Round(cheapest)}g to open a {wanted[0].d.Name.ToLowerInvariant()}";
     }
 
+    /// <summary>What the owner of a business asks the council for it: its worth today, with a premium, and the cash in its till.</summary>
+    public static double BuyPrice(Town town, Building b) =>
+        Js.Round(TotalCost(town, b.Def, town.Lot(b.LotId)) * (1 + town.Content.Rules.BuyoutPremium) + Math.Max(0, b.Cash));
+
+    /// <summary>Why the council can't buy this building from its owner now (and the owner's own words when they won't sell), or null.</summary>
+    public static string? BuyBlocked(Town town, Building b)
+    {
+        var rules = town.Content.Rules;
+        if (!b.Def.IsBusiness || b.Def.Civic) return "not a business";
+        if (b.OwnerId is not int ownerId) return "the town owns it already";
+        if (!b.Complete || b.ForSale) return "it isn't trading";
+        var owner = town.Agent(ownerId);
+        bool proud = owner.Has(Trait.Ambitious);
+        double need = proud ? rules.BuyoutProudMandate : rules.BuyoutMandate;
+        if (b.DaysInDebt == 0 && town.Mandate < need)
+            return proud ? $"{owner.GivenName} built it up and won't sell to a council with Mandate under {Js.Str(need)}" : $"{owner.GivenName} doesn't trust the council enough to sell (Mandate {Js.Str(need)})";
+        if (town.Treasury < BuyPrice(town, b)) return "not enough gold";
+        return null;
+    }
+
+    /// <summary>The council buys a townsman's business: the owner takes the gold, the town takes its profits (and its debts).</summary>
+    public static bool Buy(Town town, Building b)
+    {
+        if (BuyBlocked(town, b) != null) return false;
+        double price = BuyPrice(town, b);
+        var owner = town.Agent(b.OwnerId!.Value);
+        town.Book(TreasuryAccount.Buyouts, -price);
+        owner.Gold += price;
+        b.OwnerId = null;
+        town.Lot(b.LotId).OwnerId = null;
+        town.Log(LedgerCategory.Business, Importance.Notable, $"The council buys {b.Name} from {owner.GivenName} for {Js.Str(price)} gold. Its profits go to the treasury now.", [owner.Id]);
+        return true;
+    }
+
     public static double TotalCost(Town town, BuildingDef def, Lot lot) =>
         town.LotPrice(lot) + def.Cost + Planning.Materials(town, def);
 
