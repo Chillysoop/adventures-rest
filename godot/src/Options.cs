@@ -21,6 +21,10 @@ public sealed class Options
     public string? Tab;
     /// <summary>--page Name: the page of the --tab window to show (a paged window's strip).</summary>
     public string? Page;
+    /// <summary>--goal N: click the Nth charter goal (goals.json order, from 1) as if on the card, for a shot of where it leads.</summary>
+    public int? Goal;
+    /// <summary>--next N: press the Next button N times, for a shot of where it leads.</summary>
+    public int Next;
     /// <summary>--fold Tab/Heading: fold that section for the shot (repeatable).</summary>
     public List<string> Fold = [];
     /// <summary>--tray Bounties opens that drawer of the action tray, for screenshots.</summary>
@@ -256,6 +260,8 @@ public sealed class Options
                 case "--hour": o.Hour = int.Parse(Next()); break;
                 case "--speed": o.Speed = int.Parse(Next()); break;
                 case "--tab": o.Tab = Next(); break;
+                case "--goal": o.Goal = int.Parse(Next()); break;
+                case "--next": o.Next = int.Parse(Next()); break;
                 case "--page": o.Page = Next(); break;
                 case "--fold": o.Fold.Add(Next()); break;
                 case "--tray": o.Tray = Next(); break;

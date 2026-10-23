@@ -36,15 +36,15 @@ public partial class Main
                $"{Ui.Img("post-patrol", 16)} [b]+{Pct(Army.StreetWatch(t))}[/b]    {Ui.Img("post-guard", 16)} [b]{Pct(Army.Bodyguard(t))}[/b]    {Ui.Img("gold", 16)} [b]{Math.Round(Army.Wages(t))}[/b]/day\n" +
                Ui.C(Ui.Ink2, "[font_size=12]Soldiers · at the walls · guard's eye · mayor's guard · wages[/font_size]"));
 
+        p.Page("Troops", "tab-army");
         RenderField(p, t);
 
         p.Heading("Regiments");
         foreach (var r in regiments) RegimentRow(p, t, r);
 
         RenderLevy(p, t);
-        RenderAllies(p, t);
-        RenderCampaigns(p, t);
 
+        p.Page("Raise", "army-drill");
         p.Heading("Raise");
         var units = t.Content.Army.Units.Where(u => !u.IsLevy).ToList();
         // Open ones first, then the ones a hall or an ally away, then the rest.
@@ -54,6 +54,10 @@ public partial class Main
         if (units.FirstOrDefault(u => u.Id == _armyPick) is { } pick) PickedUnit(p, t, pick);
 
         RenderSellswords(p, t);
+
+        p.Page("Allies", "standing");
+        RenderAllies(p, t);
+        RenderCampaigns(p, t);
         p.Commit();
     }
 

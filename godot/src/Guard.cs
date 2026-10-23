@@ -121,9 +121,12 @@ public partial class Main
             Ui.Chip("population", $"{Math.Round(militia)}", Ui.Ink, "A militia of townsfolk"),
             rest >= 1 ? Ui.Chip("ui-shield", $"{Math.Round(rest)}", Ui.Ink, "Everything else: soldiers, allies, sellswords, the gods, factions, institutions") : "",
             Ui.Chip("stone", $"×{fort:0.00}", Ui.Gold, $"Walls and towers multiply it{(Threat.IsActive(t) ? ". The warband grows while dungeons go uncleared" : "")}")), 12);
+        p.Page("Guard", "defence");
         RenderGuard(p, t);
+        p.Page("Walls", "stone");
         RenderWorks(p, t);
         RenderTraps(p, t);
+        p.Page("Wardens", "mend-clockwork");
         RenderClockwork(p, t);
         p.Commit();
     }

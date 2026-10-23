@@ -111,9 +111,26 @@ public partial class Main
             Select(Selection.Building(bid));
             return;
         }
-        if (tab is Tab w) OpenWindow(w);
+        if (tab is Tab w)
+        {
+            OpenWindow(w);
+            // The control the alert asks for glows in its window (AlertKind.Act), the trail's last step.
+            if (a.Kind.Act != "")
+            {
+                // "Page>Item", "Item" or "Page>": the page opens now and the item is scrolled to and lit.
+                var (page, item) = a.Kind.Act.Contains('>') ? (a.Kind.Act[..a.Kind.Act.IndexOf('>')], a.Kind.Act[(a.Kind.Act.IndexOf('>') + 1)..]) : ("", a.Kind.Act);
+                if (page != "")
+                {
+                    _panes[w].Selected = page;
+                    _dirty = true;
+                }
+                _trail = $"tab:{w}{(page == "" ? "" : ":" + page)}{(item == "" ? "" : ">" + item)}";
+                _trailKey = $"alert:{a.Key}";
+                _trailTab = w;
+                _goalTarget = null;
+            }
+        }
         // A faction turning hostile is answered under Factions, a long scroll below the gods.
-        if (a.Kind == Alerts.Hostile) ScrollToHeading("Factions");
         if (a.Wall is int section && Garrison.Walled(t))
         {
             ShowWall(section);
