@@ -75,9 +75,20 @@ public partial class Main
                 about += $"\n{Ui.Cap(temper.Voice)} {cares.Replace("; dislikes ", "; they dislike ").Replace("likes ", "like ")}.";
                 chips.Add(Ui.Chip("standing", $"{Ui.Cap(Wards.Describe(f))} {(f >= 0 ? "+" : "−")}{Math.Abs(Math.Round(f))}", fc, "How the ward feels about you"));
             }
+            var focus = Wards.FocusOf(t, w.Id);
+            if (focus != null) chips.Add(Ui.Chip(focus.Icon, $"Leans to {focus.Name.ToLowerInvariant()}", Ui.Good, "Builders put these here first, and the ward takes pride in it"));
             string text = $"{Ui.Tip($"[b]{Ui.Esc(w.Name)}[/b] {Ui.Img("ui-info", 13)}", about)}\n[font_size=12]{Ui.Chips(chips.ToArray())}[/font_size]";
             var id = w.Id;
             p.Row(text, ("Show", true, false, () => LookAtWard(id)));
+            // Big towns are planned a ward at a time: what each leans toward, not every building.
+            if (t.City.OpenWards.Count > 1)
+            {
+                var opts = t.Content.Wards.Focus.Options;
+                var buttons = opts.Select(o => (o.Name, Wards.FocusBlocked(t, id, o.Id) == null, focus?.Id == o.Id, (Action)(() => Act(() => _sim.SetWardFocus(id, o.Id))))).ToList();
+                if (focus != null) buttons.Add(("Free", true, false, () => Act(() => _sim.SetWardFocus(id, ""))));
+                p.Text($"[font_size=12]{Ui.Dim("Lean to")}  {Ui.Writ(t, "focus", "Setting a ward's focus")}[/font_size]", 12);
+                p.Buttons(buttons.ToArray());
+            }
         }
         var yet = t.Content.City.Wards.Where(w => !t.City.OpenWards.Contains(w.Id)).ToList();
         if (yet.Count > 0)

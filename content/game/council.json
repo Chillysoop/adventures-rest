@@ -36,7 +36,7 @@
     { "area": "armory", "at": "day:25", "text": "The quartermaster hands the {area} to the mayor: buying, gifting and selling the town's loot is yours now." },
     { "area": "honours", "at": "day:40", "text": "The herald hands the town's {area} to the mayor: purses, fiefs and champions are yours to grant now." }
   ],
-  "spend": { "law": 6, "trial": 4, "service": 6, "crackdown": 5, "ally": 8, "swear": 8, "quarantine": 3, "union": 8, "institution": 5 },
+  "spend": { "law": 6, "trial": 4, "service": 6, "crackdown": 5, "ally": 8, "swear": 8, "quarantine": 3, "union": 8, "institution": 5, "focus": 4 },
   "startingMandate": 60,
   "mandateRest": 50,
   "mandateEase": 0.02,

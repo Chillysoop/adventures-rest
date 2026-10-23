@@ -11,8 +11,26 @@ public sealed record WardTemper
     public List<string> Dislikes { get; init; } = [];
 }
 
+/// <summary>What the mayor can set a ward to lean toward: the zone whose buildings it draws first.</summary>
+public sealed record WardFocusDef
+{
+    public string Id { get; init; } = "";
+    public string Name { get; init; } = "";
+    public string Icon { get; init; } = "";
+    public Zone Zone { get; init; }
+}
+
+public sealed record WardFocusRules
+{
+    /// <summary>Feeling a ward gains each day while it keeps the focus the mayor gave it (its pride in it).</summary>
+    public double Feeling { get; init; } = 0.5;
+    public List<WardFocusDef> Options { get; init; } = [];
+}
+
 public sealed record WardRules
 {
+    public WardFocusRules Focus { get; init; } = new();
+
     /// <summary>Feeling a choice moves a ward by, per tag it likes less each it dislikes; and the share kept each day.</summary>
     public double Step { get; init; } = 6;
     public double Decay { get; init; } = 0.98;
@@ -86,14 +104,52 @@ public static class Wards
     /// <summary>Mood a resident carries from how their ward feels.</summary>
     public static double Mood(Town town, string wardId) => Feeling(town, wardId) / 100.0 * Rules(town).Mood;
 
-    /// <summary>Old choices fade.</summary>
+    /// <summary>Old choices fade; a ward with a focus takes pride in it.</summary>
     public static void Daily(Town town)
     {
-        foreach (var id in town.City.Feeling.Keys.ToList())
+        foreach (var id in town.City.Feeling.Keys.Concat(town.City.Focus.Keys).Distinct().Order(StringComparer.Ordinal).ToList())
         {
-            double v = Feeling(town, id) * Rules(town).Decay;
-            town.City.Feeling[id] = Math.Abs(v) < 0.5 ? 0 : v;
+            double v = Feeling(town, id) * Rules(town).Decay + (town.City.Focus.ContainsKey(id) ? Rules(town).Focus.Feeling : 0);
+            town.City.Feeling[id] = Math.Abs(v) < 0.5 && !town.City.Focus.ContainsKey(id) ? 0 : v;
         }
+    }
+
+    // Focus ------------------------------------------------------------------------------------
+
+    public static WardFocusDef? FocusOf(Town town, string wardId) =>
+        town.City.Focus.TryGetValue(wardId, out var f) ? Rules(town).Focus.Options.FirstOrDefault(o => o.Id == f) : null;
+
+    /// <summary>Whether some ward leans toward this zone: then the townsfolk build its buildings there first (<see cref="Land.Find"/>).</summary>
+    public static bool Leans(Town town, Zone zone) => town.City.Focus.Count > 0 && town.City.OpenWards.Any(w => FocusOf(town, w)?.Zone == zone);
+
+    /// <summary>Why the mayor can't set this ward's focus now, or null.</summary>
+    public static string? FocusBlocked(Town town, string wardId, string focus)
+    {
+        if (!town.City.OpenWards.Contains(wardId)) return "no such ward yet";
+        if (focus != "" && Rules(town).Focus.Options.All(o => o.Id != focus)) return "no such focus";
+        if ((town.City.Focus.TryGetValue(wardId, out var now) ? now : "") == focus) return "already its focus";
+        return focus == "" ? null : Council.Short(town, "focus");
+    }
+
+    /// <summary>The player's lever: set what a ward leans toward ("" for nothing). Builders put that zone's buildings there first.</summary>
+    public static bool SetFocus(Town town, string wardId, string focus)
+    {
+        if (FocusBlocked(town, wardId, focus) != null) return false;
+        var ward = City.Ward(town, wardId);
+        if (focus == "")
+        {
+            town.City.Focus.Remove(wardId);
+            town.Log(LedgerCategory.Town, Importance.Routine, $"{ward.Name} is left to grow as it will.");
+        }
+        else
+        {
+            Council.Spend(town, "focus");
+            town.City.Focus[wardId] = focus;
+            var f = FocusOf(town, wardId)!;
+            town.Log(LedgerCategory.Town, Importance.Notable, $"The mayor gives {ward.Name} to {f.Name.ToLowerInvariant()}: builders look there first, and its folk take pride in it.");
+        }
+        town.Plan.Changed();
+        return true;
     }
 
     /// <summary>"warm", "cool"... for the City window.</summary>

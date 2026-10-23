@@ -647,6 +647,9 @@ public partial class Main
         var p = _panes[Tab.Chronicles];
         var t = _sim.Town;
         p.Begin();
+        p.Page("Journal", "decree");
+        RenderJournal(p, t);
+        p.Page("Chronicles", "tab-library");
         RenderRecords(p, t);
         RenderHall(p, t);
         if (t.Legacies.Count > 0) p.Heading("Expeditions");

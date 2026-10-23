@@ -441,6 +441,9 @@ public sealed class Simulation
     /// <summary>Proclaim one of the season's edicts (seasons.json <c>edicts</c>): its decree stands for the season.</summary>
     public bool ChooseEdict(string edictId) => Seasons.Choose(Town, edictId);
 
+    /// <summary>Set what a ward leans toward (wards.json <c>focus</c>), "" for nothing: builders put that zone's buildings there first.</summary>
+    public bool SetWardFocus(string wardId, string focus) => Wards.SetFocus(Town, wardId, focus);
+
     /// <summary>Order a palisade or a watchtower.</summary>
     public bool BuildDefense(DefenseWork what) => Threat.Build(Town, what);
 
