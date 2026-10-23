@@ -2614,9 +2614,10 @@ public partial class TownView(MapView map) : Node3D
             string id = $"gorge:{f.Id}";
             if (_landmarks.TryGetValue(id, out var old) && (string)old.GetMeta("kind") == f.Bridge) continue;
             old?.QueueFree();
-            double mid = (f.Inner + f.Outer) / 2, b = f.Bearing * Math.PI / 180;
-            var at = Geo.FromDays(mid * Math.Sin(b), -mid * Math.Cos(b));
-            var radial = (at - Geo.Center).Normalized();
+            double b = f.Bearing * Math.PI / 180;
+            var at = Geo.FromDays(Roads.Middle(f));
+            // Across the band: out from where the gorge is measured.
+            var radial = new Vector2((float)Math.Sin(b), (float)-Math.Cos(b));
             float span = 9f;
             float deck = Mathf.Max(gen.SurfaceAt(at.X + radial.X * span / 2, at.Y + radial.Y * span / 2), gen.SurfaceAt(at.X - radial.X * span / 2, at.Y - radial.Y * span / 2)) + 0.05f;
             var mi = new MeshInstance3D { Mesh = GorgeBridge(f.Bridge, deck, span), MaterialOverride = Mats.Props };
@@ -2637,8 +2638,8 @@ public partial class TownView(MapView map) : Node3D
             if (f.Kind.Wonder is not { } w) continue;
             string id = $"wonder:{f.Id}";
             if (_landmarks.ContainsKey(id)) continue;
-            double mid = (f.Inner + f.Outer) / 2, b = f.Bearing * Math.PI / 180;
-            var at = Geo.FromDays(mid * Math.Sin(b), -mid * Math.Cos(b));
+            double b = f.Bearing * Math.PI / 180;
+            var at = Geo.FromDays(Roads.Middle(f));
             var mi = new MeshInstance3D { Mesh = WonderMesh(w.Kind, Geo.Hash(StableHash(id))), MaterialOverride = Mats.Props };
             AddChild(mi);
             _landmarks[id] = mi;

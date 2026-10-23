@@ -79,6 +79,12 @@ public sealed class Options
 
     /// <summary>--founding id: where a new town is founded (founding.json); --sites shows New game's choice of sites.</summary>
     public string? Founding;
+
+    /// <summary>--home x,y: where on the map a new town is founded, in days from the world's heart (x east, y south).</summary>
+    public (double X, double Y)? Home;
+
+    /// <summary>--site-hover x,y: with --sites, the spot New game's map shows the pointer over (days from the heart).</summary>
+    public (double X, double Y)? SiteHover;
     public bool Sites;
     /// <summary>--new-mayor: the main menu on New game's mayor sheet, rolled, for shots.</summary>
     public bool NewMayor;
@@ -277,6 +283,18 @@ public sealed class Options
                 case "--storyteller": o.Storyteller = Next(); break;
                 case "--storytellers": o.Storytellers = o.Title = true; break;
                 case "--founding": o.Founding = Next(); break;
+                case "--home":
+                {
+                    var spot = Next().Split(',');
+                    if (spot.Length == 2 && double.TryParse(spot[0], System.Globalization.CultureInfo.InvariantCulture, out var hx) && double.TryParse(spot[1], System.Globalization.CultureInfo.InvariantCulture, out var hy)) o.Home = (hx, hy);
+                    break;
+                }
+                case "--site-hover":
+                {
+                    var spot = Next().Split(',');
+                    if (spot.Length == 2 && double.TryParse(spot[0], System.Globalization.CultureInfo.InvariantCulture, out var sx) && double.TryParse(spot[1], System.Globalization.CultureInfo.InvariantCulture, out var sy)) o.SiteHover = (sx, sy);
+                    break;
+                }
                 case "--sites": o.Sites = o.Title = true; break;
                 case "--new-mayor": o.NewMayor = o.Title = true; break;
                 case "--mayor-sheet": o.MayorSheet = true; o.Tab = "Mayor"; break;

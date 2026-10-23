@@ -413,6 +413,13 @@ public static class World
     /// <summary>Degrees from b round to a, -180 to 180.</summary>
     private static double Turn(double a, double b) => ((a - b) % 360 + 540) % 360 - 180;
 
+    /// <summary>Days from the world's heart a ring's country runs from and to: the gaps either side of its sites.</summary>
+    public static (double Inner, double Outer) Band(Town town, int ring)
+    {
+        var rings = town.Content.World.Rings;
+        return (ring == 0 ? 0 : Gap(rings, ring - 1), ring + 1 < rings.Count ? Gap(rings, ring) : rings[ring].Days * 1.25 + 2.5);
+    }
+
     /// <summary>Days out to the middle of the gap between a ring's sites and the next ring's.</summary>
     private static double Gap(IReadOnlyList<RingDef> rings, int ring) => (rings[ring].Days * 1.12 + 0.14 + rings[ring + 1].Days * 0.82) / 2;
 

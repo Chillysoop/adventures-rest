@@ -187,7 +187,7 @@ public partial class Main : Control
                 _opts.Look ??= face.Top;
             else if (_sim.Town.Terrain.FirstOrDefault(f => f.Kind.Wonder?.Kind == wk) is { } wf)
             {
-                _opts.Look ??= Map.Geo.FromDays((wf.Inner + wf.Outer) / 2 * Math.Sin(wf.Bearing * Math.PI / 180), -(wf.Inner + wf.Outer) / 2 * Math.Cos(wf.Bearing * Math.PI / 180));
+                _opts.Look ??= Map.Geo.FromDays(Sim.Systems.Roads.Middle(wf));
             }
         }
         if (_opts.Cam is float cam)
@@ -477,12 +477,12 @@ public partial class Main : Control
 
     // ---------- Game ----------
 
-    private void NewTown(int seed, bool autoplay = false, string? storyteller = null, string? founding = null, MayorRoll? mayor = null, bool hardcore = false, string? townName = null)
+    private void NewTown(int seed, bool autoplay = false, string? storyteller = null, string? founding = null, MayorRoll? mayor = null, bool hardcore = false, string? townName = null, (double X, double Y)? home = null)
     {
         RememberLegends();
         // With --autoplay the stand-in mayor keeps playing, for demos and screenshots; only a player's towns meet old legends.
         var legends = autoplay ? [] : ProfileLegends();
-        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoArmory = autoplay && !_opts.KeepArmory, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay && _opts.Tax == null, AutoHonours = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay, AutoStories = autoplay, AutoExplore = autoplay && !_opts.Find, Legends = legends, Storyteller = storyteller ?? _opts.Storyteller ?? "rising", Boons = autoplay ? [.. _opts.Boons] : ChosenBoons(), Endless = _opts.Endless || (!autoplay && _endless), Founding = founding ?? _opts.Founding ?? "", Mayor = mayor, Hardcore = hardcore || _opts.Hardcore, TownName = townName ?? _opts.TownName }));
+        Adopt(new Simulation(new SimulationOptions { Seed = seed, AutoBounties = autoplay, AutoArmory = autoplay && !_opts.KeepArmory, AutoIntel = autoplay && !_opts.KeepReports, AutoCouncil = autoplay && _opts.Tax == null, AutoHonours = autoplay, AutoDefense = autoplay, AutoPlanning = autoplay, AutoStories = autoplay, AutoExplore = autoplay && !_opts.Find, Legends = legends, Storyteller = storyteller ?? _opts.Storyteller ?? "rising", Boons = autoplay ? [.. _opts.Boons] : ChosenBoons(), Endless = _opts.Endless || (!autoplay && _endless), Founding = founding ?? _opts.Founding ?? "", HomeX = home?.X ?? _opts.Home?.X, HomeY = home?.Y ?? _opts.Home?.Y, Mayor = mayor, Hardcore = hardcore || _opts.Hardcore, TownName = townName ?? _opts.TownName }));
     }
 
     /// <summary>Show a town: a new one, or one loaded from a save.</summary>

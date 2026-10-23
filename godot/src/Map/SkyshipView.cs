@@ -56,7 +56,8 @@ public partial class TownView
 
         // Toward the people it trades with (bearing 0 north, clockwise; north is up the map), or the last one it flew to.
         int sid = toward ?? LastPort(town);
-        double bearing = sid >= 0 && sid < town.Settlements.Count ? town.Regions[town.Settlements[sid].RegionId].Bearing : 0;
+        var (px, py) = sid >= 0 && sid < town.Settlements.Count ? Sim.Systems.World.Middle(town, town.Regions[town.Settlements[sid].RegionId]) : (0.0, -1.0);
+        double bearing = Math.Atan2(px, -py) * 180 / Math.PI;
         float b = Mathf.DegToRad((float)bearing);
         var dir = new Vector3(Mathf.Sin(b), 0, -Mathf.Cos(b));
         var lot = town.Lot(dock!.LotId);

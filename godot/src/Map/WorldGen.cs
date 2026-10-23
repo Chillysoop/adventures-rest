@@ -187,9 +187,6 @@ public sealed class WorldGen
         _ => null,
     };
 
-    /// <summary>Days out from the town for a world point: the inverse of <see cref="Geo.DayRadius"/>.</summary>
-    private static double DaysOut(float r) => r >= Geo.DayRadius(0.3) ? (r - Geo.Reach0) / Geo.TilesPerDay : r / (Geo.TilesPerDay + Geo.Reach0 / 0.3);
-
     /// <summary>
     /// The feature a point lies in and how deep inside it (0 at a ragged edge to 1 a few tiles in), or
     /// null. Edges wander with noise so a ridge or a mire never reads as a ruled shape.
@@ -197,14 +194,13 @@ public sealed class WorldGen
     public (Feature F, float K)? FeatureAt(Vector2 p)
     {
         if (_features.Length == 0) return null;
-        var d = p - Geo.Center;
-        float rw = d.Length();
-        if (rw < Geo.Clearing) return null;
-        double r = DaysOut(rw);
-        double bearing = Mathf.RadToDeg(Mathf.Atan2(d.X, -d.Y));
+        if ((p - Geo.Center).Length() < Geo.Clearing) return null;
+        var (tx, ty) = Geo.ToDays(p);
         (Feature F, float K)? best = null;
         foreach (var f in _features)
         {
+            // Measured from the feature's own middle: the world's heart for the wilds, the town for its sea and peaks.
+            var (r, bearing) = Roads.Local(f, tx, ty);
             bool ocean = f.Kind.Id == "ocean";
             double pad = ocean ? 0.6 : 0.2;
             if (r < f.Inner - pad || r > f.Outer + pad) continue;
@@ -235,8 +231,8 @@ public sealed class WorldGen
             case "gorge":
             {
                 // A ravine down the middle of the band, water at the bottom.
-                var d = p - Geo.Center;
-                double r = DaysOut(d.Length());
+                var (gx, gy) = Geo.ToDays(p);
+                double r = Roads.Local(f, gx, gy).R;
                 double mid = (f.Inner + f.Outer) / 2, half = (f.Outer - f.Inner) / 2;
                 float core = 1 - Mathf.SmoothStep(0.15f, 0.55f, (float)(Math.Abs(r - mid) / Math.Max(0.05, half)));
                 return Mathf.Lerp(h, -1.4f, core * k) + k * (1 - core) * 3;
@@ -501,7 +497,7 @@ public sealed class WorldGen
         }
         // Sites, and the strange places and gateway arches of the wilds (Wayfaring), stand in clearings of their own.
         var pins = geo.Pins.Values
-            .Concat(_town.Terrain.Where(t => t.Kind.Wonder != null).Select(t => Geo.FromDays((t.Inner + t.Outer) / 2 * Math.Sin(t.Bearing * Math.PI / 180), -(t.Inner + t.Outer) / 2 * Math.Cos(t.Bearing * Math.PI / 180))))
+            .Concat(_town.Terrain.Where(t => t.Kind.Wonder != null).Select(t => Geo.FromDays(Roads.Middle(t))))
             .Concat(_town.Gateways.SelectMany(g => new[] { Geo.FromDays(g.Ax, g.Ay), Geo.FromDays(g.Bx, g.By) }))
             .ToArray();
         int count = 0;

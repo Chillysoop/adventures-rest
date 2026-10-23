@@ -240,7 +240,7 @@ public static class Founding
         {
             if (s.Def.Distance <= 0) continue;
             var (sx, sy) = World.Spot(town, s);
-            if (Js.Hypot(sx - px, sy - py) < 0.3) return $"{s.Def.Name} stands there";
+            if (Js.Hypot(sx - px, sy - py) < 0.3) return "something old already stands there";
         }
         foreach (var st in town.Settlements)
         {
