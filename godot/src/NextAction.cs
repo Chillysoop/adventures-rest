@@ -6,7 +6,7 @@ namespace CrownAndCompass.Client;
 /// <summary>
 /// The Next button beside Build (N), after Civilization: one click goes to the next thing that needs the mayor, by the
 /// same jump and glow trail as the goals card (<see cref="GoTo"/>, <see cref="Go(Alert)"/>). Urgent alerts first, then
-/// decisions, then the charter goals or the what-next lines, then minor alerts; each click steps on through the queue.
+/// decisions and the stewards' asks, then the charter goals or the what-next lines, then minor alerts; each click steps on through the queue.
 /// </summary>
 public partial class Main
 {
@@ -29,6 +29,15 @@ public partial class Main
         var q = new List<(string Key, string Text, AlertLevel Level, Action Go)>();
         var alerts = ShownAlerts.OrderByDescending(a => a.Kind.Level).ThenBy(a => a.Key, StringComparer.Ordinal).ToList();
         foreach (var a in alerts.Where(a => a.Kind.Level > AlertLevel.Minor)) q.Add(($"alert:{a.Key}", a.Text, a.Kind.Level, () => Go(a)));
+        foreach (var a in t.Stewards.Asks.Take(AsksShown))
+        {
+            int id = a.Id;
+            q.Add(($"ask:{id}", a.Title, AlertLevel.Decision, () =>
+            {
+                _askOpen = id;
+                SyncAsks();
+            }));
+        }
         foreach (var g in Goals.Open(t).Where(g => g.Goes != "")) q.Add(($"goal:{g.Id}", g.Text, AlertLevel.Minor, () => GoTo(g.Goes, $"goal:{g.Id}")));
         foreach (var a in Ahead.Now(t).Aims.Where(a => a.Goes != "")) q.Add(($"aim:{a.Text}", a.Text, AlertLevel.Minor, () => GoTo(a.Goes, "aim")));
         foreach (var a in alerts.Where(a => a.Kind.Level == AlertLevel.Minor)) q.Add(($"alert:{a.Key}", a.Text, a.Kind.Level, () => Go(a)));

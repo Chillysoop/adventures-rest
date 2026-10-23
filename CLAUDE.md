@@ -53,7 +53,7 @@
 - Alerts (badges on the left rail): raise one from the sim by adding a kind and a rule in `Systems/Alerts.cs`
   (rules read the town, never write or roll dice; an alert lasts while its rule names it). Each alert is one action for the player; news goes to the Ledger, not the alerts.
   An alert badges the rail button of its `AlertWindow` (kinds with none map in `Dock.RailOf`; stories go to the Events tray), and hovering
-  the button lists them (`ShowRailAlerts`; `--alert-hover N` pins the Nth). There is no top strip any more. A new urgent or decision alert also slides a tile out of its window's rail button
+  the button lists them one row per kind, at most five (`ShowRailAlerts`, `Families`; badges count kinds; `--alert-hover N` pins the Nth). There is no top strip any more. A new urgent or decision alert also slides a tile out of its window's rail button
   (`godot/src/RailNotices.cs`, `--notices F` replays the standing ones for shots); it reads the same alerts, so add nothing there.
 - Institutions (`content/game/institutions.json`, `Systems/Institutions.cs`, client `godot/src/Institutions.cs`): a
   civic building with a keeper, a daily service (a `DecreeDef` plus defence, heroes, healing, escorts, routes, faction
