@@ -96,9 +96,10 @@ public class PetitionsTests
     public void ATownHearsPetitionsAllCampaignLong()
     {
         // Most towns hear petitions both early and late (the story pool is wide, so one seed can miss a stretch, and a few
-        // seeds can miss together: twelve of them keep the check from hanging on which ones).
+        // seeds can miss together: twelve of them keep the check from hanging on which ones). Over 48 seeds about three towns
+        // in four hear both, so half of twelve is the floor, and the total keeps the pool from thinning unseen.
         var petitions = Content.Default().Stories.Stories.Where(d => d.Needs.Contains("petitioner") || d.Needs.Contains("ward")).Select(d => d.Id).ToHashSet();
-        int both = 0;
+        int both = 0, total = 0;
         foreach (int seed in new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 })
         {
             var sim = new Simulation(new SimulationOptions { Seed = seed });
@@ -108,7 +109,9 @@ public class PetitionsTests
             sim.RunDays(200);
             int late = t.Stories.All.Count(s => petitions.Contains(s.Def)) - early;
             if (early > 0 && late > 0) both++;
+            total += early + late;
         }
-        Assert.True(both >= 7, $"only {both} of 12 towns heard petitions both early and late");
+        Assert.True(both >= 6, $"only {both} of 12 towns heard petitions both early and late");
+        Assert.True(total >= 30, $"only {total} petitions across 12 towns in 400 days");
     }
 }

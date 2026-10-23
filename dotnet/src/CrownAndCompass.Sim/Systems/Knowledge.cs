@@ -38,13 +38,16 @@ public static class Knowledge
 
     private static bool IsSender(Town town, Agent a) => Casts(town, a, town.Content.Knowledge.SendSpell);
 
+    /// <summary>The hero carries a scrying glass (an item with the scry power): they scry at any level, and for nothing.</summary>
+    public static bool Glass(Town town, Agent a) => a.Hero != null && Enchant.Has(town.Content, a.Hero, "scry");
+
     /// <summary>Whether the hero can cast a sending themselves.</summary>
     public static bool Sends(Town town, Agent a) => IsSender(town, a);
 
     /// <summary>Casters in town able to scry, strongest first.</summary>
     public static List<Agent> Scryers(Town town) =>
         town.Heroes
-            .Where(a => !a.IsAway && IsScryer(town, a) && a.Hero!.Level >= town.Content.Knowledge.ScryMinLevel)
+            .Where(a => !a.IsAway && (IsScryer(town, a) && a.Hero!.Level >= town.Content.Knowledge.ScryMinLevel || Glass(town, a)))
             .OrderByDescending(a => a.Hero!.Level)
             .ThenBy(a => a.Id)
             .ToList();
@@ -66,7 +69,7 @@ public static class Knowledge
     {
         var p = town.Content.Knowledge.ScryPrice;
         double loyalty = caster.Hero!.Loyalty;
-        if (loyalty >= p.Free) return new ScryOffer(caster, ScryPrice.Free, 0);
+        if (loyalty >= p.Free || Glass(town, caster)) return new ScryOffer(caster, ScryPrice.Free, 0);
         if (loyalty >= p.Favour) return new ScryOffer(caster, ScryPrice.Gold, ScryCost(town, site));
         return new ScryOffer(caster, ScryPrice.Favour, 0);
     }

@@ -351,6 +351,12 @@ public static class Captives
             // They come home with nothing: no bed, no job, until they find them again.
             a.Departed = false;
             a.Hunger = Math.Max(a.Hunger, 60);
+            // A cult that dropped them while they were gone has lost its hold: they come home keeping no god.
+            if (Faith.Of(town, a)?.Evil == true && Factions.Of(town, a).Count == 0)
+            {
+                a.Faith = "";
+                a.Devout = false;
+            }
         }
         town.Mandate = Math.Min(100, town.Mandate + r.FreedMandate);
         Stories.Remember(town, "captives-freed");

@@ -116,16 +116,17 @@ public partial class Main
             new("ui-skull", "FOES SLAIN", hs.Kills.ToString(), $"{hs.Expeditions} expeditions"),
         };
 
-        var fights = new List<string> { Line("item-weapon", $"{Ui.Esc(Ui.Cap(Piece(hs, hs.Weapon, "weapon") is var w && w != "" ? w : "bare hands"))} {Ui.Dim(Signed(Gear.Attack(c, a)))}") };
+        var fights = new List<string> { Line("item-weapon", $"{Worn(c, hs, "weapon", Ui.Esc(Ui.Cap(Piece(hs, hs.Weapon, "weapon") is var w && w != "" ? w : "bare hands")))} {Ui.Dim(Signed(Gear.Attack(c, a)))}") };
         if (cls.Sneak) fights.Add(Line("role-striker", "Sneak attack"));
-        if (cls.HealSpell != null && cls.HealsAt(hs.Level) is var heals && heals > 0) fights.Add(Line("ui-heal", $"{Ui.Esc(cls.HealSpell.Name)} {Ui.Dim($"×{heals} a delve")}"));
-        if (cls.AreaSpell != null) fights.Add(Line("sheet-spell", Ui.Esc(cls.AreaSpell.Name)));
+        foreach (var (icon, label, tip) in Prowess.Sheet(c, hs)) fights.Add(Ui.Tip(Line(icon, Ui.Esc(label)), tip));
         if (cls.Role != "") fights.Add(Ui.Dim(Ui.Esc(Ui.Cap(cls.Role) + (cls.Magic != "" ? $", {cls.Magic} caster" : ""))));
 
         var kit = new List<string>();
-        if (Piece(hs, hs.Armor, "armor") is var armor && armor != "") kit.Add(Line("item-armor", Ui.Esc(Ui.Cap(armor))));
-        if (Piece(hs, hs.Shield, "shield") is var shield && shield != "") kit.Add(Line("item-shield", Ui.Esc(Ui.Cap(shield))));
-        if (hs.Magic.TryGetValue("trinket", out var trinket)) kit.Add(Line(trinket.Category == "ring" ? "item-ring" : "item-trinket", Ui.Esc(trinket.Name), Ui.Gold));
+        if (Piece(hs, hs.Armor, "armor") is var armor && armor != "") kit.Add(Line("item-armor", Worn(c, hs, "armor", Ui.Esc(Ui.Cap(armor)))));
+        if (Piece(hs, hs.Shield, "shield") is var shield && shield != "") kit.Add(Line("item-shield", Worn(c, hs, "shield", Ui.Esc(Ui.Cap(shield)))));
+        var charms = Gear.Charmed(hs).ToList();
+        foreach (var charm in charms) kit.Add(Line(charm.Category == "ring" ? "item-ring" : "item-trinket", Powered(c, charm, Ui.C(Ui.Gold, Ui.Esc(charm.Name)))));
+        if (charms.Count > 0) kit.Add(Ui.Tip(Ui.Dim($"Attuned {charms.Count}/{c.Enchant.Attune}"), "Magic charms a hero can wear at once"));
         if (hs.Potions > 0) kit.Add(Line("potions", $"Healing potion ×{hs.Potions}"));
         if (hs.Scrolls > 0) kit.Add(Line("sheet-spell", $"Spell scroll ×{hs.Scrolls}"));
         if (hs.Copied > 0) kit.Add(Line("books", $"{hs.Copied} copied into the spellbook"));
@@ -178,6 +179,10 @@ public partial class Main
             Wide = [new("Story", "lore", story)],
         };
     }
+
+    /// <summary>A worn piece's name with its powers, if the slot holds magic.</summary>
+    private static string Worn(Content c, HeroSheet s, string slot, string name) =>
+        s.Magic.TryGetValue(slot, out var it) ? Powered(c, it, name) : name;
 
     /// <summary>A worn piece by name: its magic version when it has one ("+1 longsword"), else the plain gear.</summary>
     private static string Piece(HeroSheet s, LibGear? g, string slot) =>

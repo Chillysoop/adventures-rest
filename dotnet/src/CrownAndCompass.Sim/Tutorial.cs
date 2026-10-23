@@ -88,6 +88,8 @@ public static class Tutorial
         if (token == "seas") return t.Regions.Count(r => r.Known && Systems.World.Sea(r));
         // The charter goals still open (Systems.Goals).
         if (token == "goals") return Systems.Goals.Open(t).Count;
+        // Parts the town holds from the wilds (Systems.Spoils).
+        if (token == "parts") return t.Spoils.Trophies.Sum(x => x.Value);
         if (!token.StartsWith("count:", StringComparison.Ordinal)) return null;
         var prop = typeof(Town).GetProperty(token[6..], BindingFlags.Public | BindingFlags.Instance);
         return prop?.GetValue(t) is IEnumerable items and not string ? items.Cast<object>().Count() : null;

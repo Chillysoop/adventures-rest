@@ -1,5 +1,6 @@
 {
   "slots": [
+    { "id": "circlet", "name": "Circlet", "icon": "regalia-circlet" },
     { "id": "chain", "name": "Chain of office", "icon": "regalia-chain" },
     { "id": "signet", "name": "Signet", "icon": "regalia-signet" },
     { "id": "sceptre", "name": "Sceptre", "icon": "regalia-sceptre" },
@@ -21,6 +22,19 @@
     { "ref": "mantle-of-the-lamplit-hall", "slot": "mantle", "tier": 2, "inspiration": 1, "skills": { "history": 1, "religion": 1 } },
     { "ref": "town-pennant", "slot": "banner", "tier": 1, "march": 1 },
     { "ref": "muster-standard", "slot": "banner", "tier": 3, "march": 1, "loyalty": 3 },
-    { "ref": "banner-of-the-free-city", "slot": "banner", "tier": 4, "march": 2, "loyalty": 4, "mandate": 0.05 }
+    { "ref": "banner-of-the-free-city", "slot": "banner", "tier": 4, "march": 2, "loyalty": 4, "mandate": 0.05 },
+    { "ref": "vampire-lords-signet", "slot": "signet", "ward": 0.25, "skills": { "persuasion": 1, "deception": 1 } },
+    { "ref": "mantle-of-the-unseen-court", "slot": "mantle", "charm": true, "skills": { "deception": 2 } },
+    { "ref": "chain-of-the-true-word", "slot": "chain", "truth": 0.5, "skills": { "insight": 2 } },
+    { "ref": "sceptre-of-iron-silence", "slot": "sceptre", "council": 0.3, "skills": { "intimidation": 3 } },
+    { "ref": "crown-of-the-drowned-king", "slot": "circlet", "mandate": 0.06, "ward": 0.15, "skills": { "persuasion": 2 } },
+    { "ref": "circlet-of-clear-sight", "slot": "circlet", "truth": 0.5, "charm": true, "skills": { "insight": 1 } },
+    { "ref": "ninefold-seal", "slot": "signet", "ward": 0.3, "skills": { "intimidation": 1 } },
+    { "ref": "envoys-ring", "slot": "signet", "skills": { "persuasion": 2, "insight": 1 } },
+    { "ref": "tasters-torc", "slot": "chain", "ward": 0.2 },
+    { "ref": "dragon-pact-banner", "slot": "banner", "march": 2, "loyalty": 3, "skills": { "intimidation": 2 } },
+    { "ref": "corsairs-black-flag", "slot": "banner", "march": 1, "skills": { "intimidation": 2 } },
+    { "ref": "legions-aegis-cloak", "slot": "mantle", "ward": 0.3, "loyalty": 2 },
+    { "ref": "whisperless-chain", "slot": "chain", "charm": true, "truth": 0.3, "skills": { "insight": 1 } }
   ]
 }
