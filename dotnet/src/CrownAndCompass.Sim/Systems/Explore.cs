@@ -301,14 +301,13 @@ public static class Explore
     public static Region? RegionAt(Town town, double x, double y)
     {
         if (town.Regions.Count == 0) return null;
-        double d = Js.Hypot(x, y);
-        double bearing = (Math.Atan2(x, -y) * 180 / Math.PI + 360) % 360;
+        var (d, bearing) = World.FromHeart(town, x, y);
         double Off(Region r)
         {
             double a = Math.Abs(r.Bearing - bearing) % 360;
             return Math.Min(a, 360 - a);
         }
-        int ring = town.Regions.OrderBy(r => Math.Abs(r.Days - d)).ThenBy(r => r.Ring).First().Ring;
+        int ring = town.Regions.OrderBy(r => Math.Abs(World.Out(r) - d)).ThenBy(r => r.Ring).First().Ring;
         return town.Regions.Where(r => r.Ring == ring).OrderBy(Off).ThenBy(r => r.Id).First();
     }
 
@@ -556,18 +555,14 @@ public static class Explore
     /// <summary>Where a company enters a region: on its bearing, a little short of its sites.</summary>
     private static (double X, double Y) Entry(Town town, Region r)
     {
-        double reach = Math.Max(0.6, r.Days * 0.8);
-        double a = r.Bearing * Math.PI / 180;
-        return (reach * Math.Sin(a), -reach * Math.Cos(a));
+        return World.AtHeart(town, r.Bearing, Math.Max(0.6, World.Out(r) * 0.8));
     }
 
     /// <summary>Where a settlement lies: the heart of its region, a little past its sites.</summary>
     public static (double X, double Y) SettlementSpot(Town town, Settlement st)
     {
         var r = town.Regions[st.RegionId];
-        double a = (r.Bearing + r.Arc * 0.18) * Math.PI / 180;
-        double reach = r.Days + 0.3;
-        return (reach * Math.Sin(a), -reach * Math.Cos(a));
+        return World.AtHeart(town, r.Bearing + r.Arc * 0.18, World.Out(r) + 0.3);
     }
 
     // ---------- The march ----------
@@ -674,9 +669,8 @@ public static class Explore
         }
         if (World.SettlementIn(town, region) is { Razed: false } st && !st.Met && rng.Chance(0.4)) return SettlementSpot(town, st);
         double bearing = region.Bearing + (rng.Next() - 0.5) * region.Arc * 0.7;
-        double reach = region.Days + (rng.Next() - 0.5) * 0.9;
-        double a = bearing * Math.PI / 180;
-        return (Math.Max(0.5, reach) * Math.Sin(a), -Math.Max(0.5, reach) * Math.Cos(a));
+        double reach = World.Out(region) + (rng.Next() - 0.5) * 0.9;
+        return World.AtHeart(town, bearing, Math.Max(0.5, reach));
     }
 
     // ---------- The hourly tick ----------

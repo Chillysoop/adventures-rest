@@ -17,9 +17,15 @@ public sealed record FoundingDef
     /// <summary>What the client raises round the town: meadow, coast, isle, crag, plateau, desert, ledge or pass.</summary>
     public string Look { get; init; } = "meadow";
 
-    /// <summary>Offered only when one of these themes lies within <see cref="Within"/> rings; empty for anywhere.</summary>
-    public IReadOnlyList<string> Near { get; init; } = [];
-    public int Within { get; init; } = 1;
+    /// <summary>Founded only within <see cref="FoundingRules.Shore"/> days of the ocean's shore.</summary>
+    public bool Shore { get; init; }
+
+    /// <summary>
+    /// The country it needs: a region whose habitats include one of <see cref="Ground"/>, or hard country of one of the
+    /// <see cref="Rock"/> kinds close by. Both empty for anywhere on land.
+    /// </summary>
+    public IReadOnlyList<string> Ground { get; init; } = [];
+    public IReadOnlyList<string> Rock { get; init; } = [];
 
     /// <summary>Compass bearing the sea or the drop lies on, before the seed turns it.</summary>
     public double Bearing { get; init; }
@@ -44,10 +50,35 @@ public sealed record FoundingDef
     public string Foes { get; init; } = "";
 }
 
+/// <summary>What becomes of the town sites the player passed over (founding.json <c>hold</c>).</summary>
+public sealed record FoundingHoldRules
+{
+    /// <summary>Chance a site in a people's country starts as theirs, and that one starts in foes' hands; the rest lie empty.</summary>
+    public double People { get; init; } = 0.45;
+    public double Foes { get; init; } = 0.25;
+
+    /// <summary>Chance a day that an empty site is taken, from <see cref="From"/>: by the people of its country, else by foes.</summary>
+    public double Later { get; init; } = 0.005;
+    public int From { get; init; } = 15;
+}
+
 public sealed record FoundingRules
 {
     public string Default { get; init; } = "river-ford";
-    public int Offered { get; init; } = 4;
+
+    /// <summary>Days from the world's heart within which New game pins a site of every kind.</summary>
+    public double Heartland { get; init; } = 2.2;
+
+    /// <summary>Farthest from the world's heart a town may be founded, in days.</summary>
+    public double Reach { get; init; } = 3.6;
+
+    /// <summary>Days from the ocean a coastal site may lie, and how far apart the pinned sites stand.</summary>
+    public double Shore { get; init; } = 0.6;
+    public double Apart { get; init; } = 0.7;
+
+    /// <summary>Days kept clear of hard country round a town founded away from the heart.</summary>
+    public double Clear { get; init; } = 0.3;
+    public FoundingHoldRules Hold { get; init; } = new();
 
     /// <summary>The roads.json terrain kind of a coastal town's sea.</summary>
     public string Sea { get; init; } = "sea";
@@ -61,8 +92,22 @@ public sealed record FoundingRules
     public int NameMost { get; init; } = 24;
 }
 
-/// <summary>A site offered on New game: its kind and where it lies from the river ford.</summary>
-public sealed record FoundingSite(FoundingDef Def, double Bearing);
+/// <summary>
+/// A place a town could be founded, pinned on New game's map: its kind and where it lies, in day units from the world's
+/// heart (x east, y south). The ones the player passes over stay on the map, empty or held by a people or by foes.
+/// </summary>
+public sealed class FoundingSpot
+{
+    public required string Kind { get; init; }
+    public double X { get; init; }
+    public double Y { get; init; }
+
+    /// <summary>"" while it lies empty, "people" once its country's settlement holds it, "foes" once foes do.</summary>
+    public string Holder { get; set; } = "";
+
+    /// <summary>The day it was taken; 0 for held from the start.</summary>
+    public int Day { get; set; }
+}
 
 /// <summary>
 /// Where the town is founded (Q7, Q29): New game offers a few sites the seed's country allows, the chosen one shapes the
@@ -101,31 +146,172 @@ public static class Founding
     private static double Hash(int seed, int salt) => (Mix(seed, salt) >> 11) / (double)(1UL << 53);
 
     /// <summary>
-    /// The sites New game offers for this world: the default first, then others the country allows, picked by the seed,
-    /// each with the bearing it lies on. A town already founded somewhere other than the ford offers the ford as one of them.
+    /// The town sites pinned on New game's map: one of every kind within the heartland, the default at the heart itself,
+    /// each where its country suits it best (a cove on the shore, a pass under the mountains, a cliff city toward the
+    /// desert). Where nothing near suits a kind, its pin lies on the side it would be found on and the site brings its own
+    /// country. In day units from the world's heart; fixed by the seed, and kept by the founded town.
     /// </summary>
-    public static IReadOnlyList<FoundingSite> Offered(Town town)
+    public static IReadOnlyList<FoundingSpot> Spots(Town town)
     {
+        if (town.FoundingSpots.Count > 0) return town.FoundingSpots;
         var r = Rules(town.Content);
-        var fit = r.Kinds.Where(k => k.Id != r.Default && Allowed(town, k)).ToList();
-        var picked = new List<FoundingDef>();
-        if (Kind(town.Content, r.Default) is { } first) picked.Add(first);
-        for (int i = 0; picked.Count < r.Offered && fit.Count > 0; i++)
+        var spots = new List<FoundingSpot>();
+        if (Kind(town.Content, r.Default) is { } ford) spots.Add(new FoundingSpot { Kind = ford.Id });
+        for (int i = 0; i < r.Kinds.Count; i++)
         {
-            var k = fit[(int)(Hash(town.Seed, 11 + i) * fit.Count)];
-            fit.Remove(k);
-            picked.Add(k);
+            if (r.Kinds[i].Id == r.Default) continue;
+            var (x, y) = Pin(town, r.Kinds[i], i, spots);
+            spots.Add(new FoundingSpot { Kind = r.Kinds[i].Id, X = Js.Round(x * 100) / 100.0, Y = Js.Round(y * 100) / 100.0 });
         }
-        // The chosen site is always among them, so the rest are the ones not taken.
-        if (town.Founding is { } own && picked.All(p => p.Id != own) && Kind(town.Content, own) is { } chosen)
-            picked[^1] = chosen;
-        // Spread round the compass from a turn the seed gives, so no two sites share a road.
-        double turn = Hash(town.Seed, 7) * 360;
-        return picked.Select((k, i) => new FoundingSite(k, Js.Round((turn + i * 360.0 / picked.Count) % 360 * 10) / 10.0)).ToList();
+        return spots;
     }
 
-    private static bool Allowed(Town town, FoundingDef k) =>
-        k.Near.Count == 0 || town.Regions.Any(g => g.Ring < k.Within + 1 && k.Near.Contains(g.Theme.Id));
+    /// <summary>Where a kind's pin goes: the open spot nearest the heart whose country suits it, else on the side it is found.</summary>
+    private static (double X, double Y) Pin(Town town, FoundingDef k, int salt, List<FoundingSpot> taken)
+    {
+        var r = Rules(town.Content);
+        // Well clear of the sites: their pins settle a little as the world fills in.
+        var sites = town.Sites.Where(s => s.Def.Distance > 0).Select(s => World.Spot(town, s)).ToList();
+        bool Open(double x, double y) => Blocked(town, x, y) == null && taken.All(t => Js.Hypot(t.X - x, t.Y - y) >= r.Apart);
+        bool Free(double x, double y) => Open(x, y) && sites.All(p => Js.Hypot(p.X - x, p.Y - y) >= 0.45);
+        (double X, double Y)? best = null;
+        double score = double.MaxValue;
+        for (int i = 0; i < 240; i++)
+        {
+            double reach = 0.55 + Math.Sqrt(Hash(town.Seed, 1000 + salt * 977 + i * 2)) * (r.Heartland - 0.55);
+            var (x, y) = Polar(Hash(town.Seed, 1001 + salt * 977 + i * 2) * 360, reach);
+            if (!Free(x, y) || !Suits(town, k, x, y)) continue;
+            double sc = reach + Hash(town.Seed, 3001 + salt * 977 + i) * 0.4;
+            if (sc < score) (best, score) = ((x, y), sc);
+        }
+        if (best is { } found) return found;
+        // Nothing near suits it: on its side of the world, as near that side's middle as there is open ground.
+        double side = Side(town, k);
+        foreach (var fits in new Func<double, double, bool>[] { Free, Open })
+            for (int i = 0; i <= 60; i++)
+                foreach (double share in new[] { 0.75, 0.55, 0.95, 0.35 })
+                {
+                    var (x, y) = Polar(side + (i % 2 == 0 ? 1 : -1) * ((i + 1) / 2) * 6, r.Heartland * share);
+                    if (fits(x, y)) return (x, y);
+                }
+        return Polar(side, r.Heartland * 0.6);
+    }
+
+    private static (double X, double Y) Polar(double bearing, double r)
+    {
+        double a = bearing * Math.PI / 180;
+        return (r * Math.Sin(a), -r * Math.Cos(a));
+    }
+
+    /// <summary>The side of the world a kind is found on when nothing near the heart suits it: the shore, the warm side, the mountains'.</summary>
+    private static double Side(Town town, FoundingDef k)
+    {
+        if (k.Shore && town.OceanArc > 0) return town.OceanBearing;
+        if (k.Ground.Contains("desert")) return World.Warm(town);
+        if (k.Ground.Contains("mountain"))
+            return town.Regions.Where(g => g.Ring <= 2 && !g.Theme.Sea && g.Theme.Habitats.Contains("mountain"))
+                .OrderBy(g => g.Ring).ThenBy(g => g.Id).Select(g => (double?)g.Bearing).FirstOrDefault() ?? (World.Warm(town) + 180) % 360;
+        return Hash(town.Seed, 61 + k.Id.Length) * 360;
+    }
+
+    /// <summary>Whether the country at a spot (day units from the heart) suits a kind of site: its shore, its ground, its rock.</summary>
+    public static bool Suits(Town town, FoundingDef k, double x, double y)
+    {
+        double px = x + town.HeartX, py = y + town.HeartY;
+        if (k.Shore && !town.Terrain.Any(f => f.Kind.Id == "ocean" && Roads.Contains(f, px, py, Rules(town.Content).Shore))) return false;
+        if (k.Ground.Count == 0 && k.Rock.Count == 0) return true;
+        if (Explore.RegionAt(town, px, py) is { } g && g.Theme.Habitats.Any(k.Ground.Contains)) return true;
+        return town.Terrain.Any(f => k.Rock.Contains(f.Kind.Id) && Roads.Contains(f, px, py, 0.5));
+    }
+
+    /// <summary>Why no town can be founded at a spot (day units from the heart), or null when one can.</summary>
+    public static string? Blocked(Town town, double x, double y)
+    {
+        var r = Rules(town.Content);
+        double px = x + town.HeartX, py = y + town.HeartY;
+        if (Js.Hypot(x, y) > r.Reach) return "too deep in the wilds";
+        if (Explore.RegionAt(town, px, py) is { } g && g.Theme.Sea) return "open water";
+        foreach (var f in town.Terrain)
+        {
+            if (f.Kind.Barrier == "water" && Roads.Contains(f, px, py)) return "open water";
+            if (f.Kind.Barrier == "sheer" && Roads.Contains(f, px, py)) return "sheer peaks";
+        }
+        foreach (var s in town.Sites)
+        {
+            if (s.Def.Distance <= 0) continue;
+            var (sx, sy) = World.Spot(town, s);
+            if (Js.Hypot(sx - px, sy - py) < 0.3) return $"{s.Def.Name} stands there";
+        }
+        foreach (var st in town.Settlements)
+        {
+            var (sx, sy) = Explore.SettlementSpot(town, st);
+            if (Js.Hypot(sx - px, sy - py) < 0.4) return $"{st.Name} stands there";
+        }
+        return null;
+    }
+
+    /// <summary>The kinds of town that could be founded at a spot (day units from the heart): those its country suits, and any pinned near it.</summary>
+    public static IReadOnlyList<FoundingDef> KindsAt(Town town, double x, double y)
+    {
+        if (Blocked(town, x, y) != null) return [];
+        var spots = Spots(town);
+        return Rules(town.Content).Kinds
+            .Where(k => Suits(town, k, x, y) || spots.Any(p => p.Kind == k.Id && Js.Hypot(p.X - x, p.Y - y) < 0.4))
+            .ToList();
+    }
+
+    /// <summary>Where the town is founded, from the heart: the spot asked for if it can take the kind, else the kind's own pin.</summary>
+    public static (double X, double Y) Home(Town town, double? x, double? y)
+    {
+        var def = Of(town);
+        if (x is double hx && y is double hy && KindsAt(town, hx, hy).Any(k => k.Id == def.Id)) return (hx, hy);
+        return Spots(town).FirstOrDefault(p => p.Kind == def.Id) is { } pin ? (pin.X, pin.Y) : (0, 0);
+    }
+
+    /// <summary>
+    /// The town stands away from the world's heart: everything the world measures from there is measured from the town
+    /// instead. The rings of country, their hard country and the old gateways stay where they lie; the days to every site
+    /// and region are walked from the town, and the country nearest it is the country it knows.
+    /// </summary>
+    internal static void Settle(Town town, double x, double y)
+    {
+        if (x == 0 && y == 0) return;
+        town.HeartX = -x;
+        town.HeartY = -y;
+        foreach (var f in town.Terrain)
+        {
+            f.Ox += town.HeartX;
+            f.Oy += town.HeartY;
+        }
+        foreach (var g in town.Gateways)
+        {
+            g.Ax = Js.Round((g.Ax + town.HeartX) * 100) / 100.0;
+            g.Ay = Js.Round((g.Ay + town.HeartY) * 100) / 100.0;
+            g.Bx = Js.Round((g.Bx + town.HeartX) * 100) / 100.0;
+            g.By = Js.Round((g.By + town.HeartY) * 100) / 100.0;
+        }
+        // The town's own ground is clear of hard country; the ocean stays where it is.
+        double clear = Rules(town.Content).Clear;
+        town.Terrain.RemoveAll(f => f.Kind.Id != "ocean" && Roads.Contains(f, 0, 0, clear));
+        foreach (var s in town.Sites.Where(s => s.Def.Distance > 0))
+        {
+            s.Out = s.Def.Distance;
+            var (sx, sy) = World.Spot(town, s);
+            s.Def = s.Def with { Distance = Math.Max(1, (int)Math.Round(Js.Hypot(sx, sy))) };
+        }
+        int known = town.Regions.Count(g => g.Known);
+        foreach (var g in town.Regions)
+        {
+            g.Out = g.Days;
+            var (mx, my) = World.Middle(town, g);
+            g.Days = Math.Max(1, (int)Math.Round(Js.Hypot(mx, my)));
+            g.Known = false;
+        }
+        foreach (var g in town.Regions.OrderBy(g => Js.Hypot(World.Middle(town, g).X, World.Middle(town, g).Y)).ThenBy(g => g.Id).Take(Math.Max(1, known)))
+            g.Known = true;
+        Passage.Forget(town);
+        Cliffs.Forget(town);
+    }
 
     /// <summary>What a site does, as short chips for New game: an icon key and a figure ("defence", "+30%").</summary>
     public static IReadOnlyList<(string Icon, string Text)> Effects(FoundingDef def)
@@ -182,11 +368,15 @@ public static class Founding
     }
 
     /// <summary>
-    /// At generation, after the rest of the world: the sea and the flanking peaks round the town, and the sites not chosen
-    /// given to the neighbours or foes nearest their bearing.
+    /// At generation, after the rest of the world: the sites pinned for New game kept, the town settled where it was
+    /// founded, the sea and the flanking peaks round it, and the sites passed over left empty or given to their country's
+    /// people or to foes.
     /// </summary>
-    internal static void Place(Town town)
+    internal static void Place(Town town, double? x, double? y)
     {
+        town.FoundingSpots.AddRange(Spots(town));
+        var (hx, hy) = Home(town, x, y);
+        Settle(town, hx, hy);
         var def = Of(town);
         if (town.Founding != null)
         {
@@ -197,18 +387,74 @@ public static class Founding
         Hold(town);
     }
 
-    /// <summary>The sites not chosen: each goes to the settlement nearest its bearing in the first two rings, or to foes.</summary>
+    /// <summary>A pinned site's spot, in day units from the town.</summary>
+    public static (double X, double Y) At(Town town, FoundingSpot p) => (p.X + town.HeartX, p.Y + town.HeartY);
+
+    /// <summary>The region a pinned site lies in.</summary>
+    public static Region? RegionOf(Town town, FoundingSpot p) => Explore.RegionAt(town, At(town, p).X, At(town, p).Y);
+
+    /// <summary>The settlement that would take a site: the living one of its region, if that region holds no site yet.</summary>
+    private static Settlement? Taker(Town town, FoundingSpot p) =>
+        RegionOf(town, p) is { Site: null, SettlementId: int id } && town.Settlements[id] is { Razed: false } st ? st : null;
+
+    /// <summary>
+    /// The sites passed over, each on its own roll: its country's people may hold it, foes may, or it lies empty for
+    /// somebody to take later (<see cref="Daily"/>). The site the town stands on is the town's.
+    /// </summary>
     private static void Hold(Town town)
     {
-        foreach (var site in Offered(town).Where(s => s.Def.Id != Of(town).Id))
+        var h = Rules(town.Content).Hold;
+        for (int i = 0; i < town.FoundingSpots.Count; i++)
         {
-            var region = town.Regions.Where(g => g.Ring <= 1 && g.Site == null && !g.Theme.Sea)
-                .OrderBy(g => g.SettlementId == null ? 1 : 0)
-                .ThenBy(g => Gap(g.Bearing, site.Bearing))
-                .ThenBy(g => g.Id)
-                .FirstOrDefault();
-            if (region != null) region.Site = site.Def.Id;
+            var p = town.FoundingSpots[i];
+            var (x, y) = At(town, p);
+            if (Js.Hypot(x, y) < 0.4) { p.Holder = "town"; continue; }
+            double roll = Hash(town.Seed, 700 + i);
+            if (roll < h.People && Taker(town, p) is { } st) Take(town, p, "people", RegionOf(town, p)!);
+            else if (roll >= 1 - h.Foes) Take(town, p, "foes", null);
         }
+    }
+
+    private static void Take(Town town, FoundingSpot p, string holder, Region? region)
+    {
+        p.Holder = holder;
+        p.Day = town.Day;
+        if (region != null) region.Site = p.Kind;
+    }
+
+    /// <summary>Daily: an empty site may be taken, by the people of its country or, where none can, by foes. On its own dice.</summary>
+    internal static void Daily(Town town)
+    {
+        var h = Rules(town.Content).Hold;
+        if (town.Day < h.From) return;
+        for (int i = 0; i < town.FoundingSpots.Count; i++)
+        {
+            var p = town.FoundingSpots[i];
+            if (p.Holder != "" || Hash(town.Seed * 31 + town.Day, 900 + i) >= h.Later || Kind(town.Content, p.Kind) is not { } k) continue;
+            if (Taker(town, p) is { } st)
+            {
+                Take(town, p, "people", RegionOf(town, p)!);
+                town.Log(LedgerCategory.Faction, Importance.Notable, $"{st.Name} has claimed the empty {k.Name.ToLowerInvariant()} in {RegionOf(town, p)!.Name}.");
+            }
+            else
+            {
+                Take(town, p, "foes", null);
+                town.Log(LedgerCategory.War, Importance.Notable, $"Word comes from {RegionOf(town, p)?.Name ?? "the wilds"}. {k.Foes}");
+            }
+        }
+    }
+
+    /// <summary>A pinned site and who holds it, for its card.</summary>
+    public static string Describe(Town town, FoundingSpot p)
+    {
+        if (Kind(town.Content, p.Kind) is not { } k) return "";
+        return p.Holder switch
+        {
+            "people" when RegionOf(town, p) is { SettlementId: int id } => k.Held.Replace("{name}", town.Settlements[id].Name, StringComparison.Ordinal),
+            "foes" => k.Foes,
+            "town" => $"{town.Name} stands here.",
+            _ => $"Empty for now: {k.Blurb}",
+        };
     }
 
     private static double Gap(double a, double b) => Math.Abs(((a - b) % 360 + 540) % 360 - 180);
@@ -222,9 +468,48 @@ public static class Founding
         if (Of(town).Sea == null) return Hash(town.Seed, 43) * 360;
         double b = (Of(town).Bearing + (Hash(town.Seed, 41) - 0.5) * 60 + 360) % 360;
         if (town.OceanArc <= 0) return b;
+        // Founded away from the heart, the shore faces the nearest of the ocean.
+        if ((town.HeartX != 0 || town.HeartY != 0) && (town.Shoreward ??= Shoreward(town) ?? -1) is var shore and >= 0) return shore;
         // The shore faces the ocean: the founding's own bearing where that is out over it, else the ocean's nearest edge.
         double turn = ((b - town.OceanBearing) % 360 + 540) % 360 - 180, half = town.OceanArc / 2 * 0.8;
         return (town.OceanBearing + Math.Clamp(turn, -half, half) + 360) % 360;
+    }
+
+    /// <summary>The bearing from the town to the nearest open ocean, or null when none lies within a few days.</summary>
+    private static double? Shoreward(Town town)
+    {
+        var ocean = town.Terrain.Where(f => f.Kind.Id == "ocean").ToList();
+        for (double r = 0.1; r <= 4; r += 0.1)
+        {
+            double? best = null, off = double.MaxValue;
+            for (int i = 0; i < 72; i++)
+            {
+                double b = i * 5, a = b * Math.PI / 180;
+                if (!ocean.Any(f => Roads.Contains(f, r * Math.Sin(a), -r * Math.Cos(a)))) continue;
+                // Of the bearings that reach the water first, the one nearest the ocean's own middle.
+                double d = Gap(b, town.OceanBearing);
+                if (d < off) (best, off) = (b, d);
+            }
+            if (best != null) return best;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Whether hard country stands where the town's own sea or peaks go (a sector round the town): the founding's country
+    /// takes its place. The ocean stays.
+    /// </summary>
+    private static bool Covers(Feature f, double bearing, double arc, double inner, double outer)
+    {
+        if (f.Kind.Id == "ocean") return false;
+        if (f.Ox == 0 && f.Oy == 0) return f.Inner < outer && f.Outer > inner && Gap(f.Bearing, bearing) < (f.Arc + arc) / 2;
+        for (int i = 0; i <= 6; i++)
+            for (int j = 0; j <= 4; j++)
+            {
+                double b = (bearing - arc / 2 + arc * i / 6) * Math.PI / 180, r = inner + (outer - inner) * j / 4;
+                if (Roads.Contains(f, r * Math.Sin(b), -r * Math.Cos(b), 0.1)) return true;
+            }
+        return false;
     }
 
     /// <summary>The site a region holds and who holds it, for its card: null when it holds none.</summary>
@@ -258,7 +543,7 @@ public static class Founding
         outer = Math.Max(sea.Inner + 0.12, outer);
         var region = town.Regions.Where(g => g.Ring == 0).OrderBy(g => Gap(g.Bearing, bearing)).ThenBy(g => g.Id).First();
         // The sea takes the place of whatever country lay there.
-        town.Terrain.RemoveAll(f => f.Inner < outer && f.Outer > sea.Inner && Gap(f.Bearing, bearing) < (f.Arc + sea.Arc) / 2);
+        town.Terrain.RemoveAll(f => Covers(f, bearing, sea.Arc, sea.Inner, outer));
         var rng = new Rng(town.Seed * 7919 + 4243);
         string word = kind.Words.Count > 0 ? rng.Pick(kind.Words) : "Grey";
         string pattern = kind.Names.Count > 0 ? rng.Pick(kind.Names) : "the {A} Sea";
@@ -295,7 +580,7 @@ public static class Founding
                 if (Gap(b, bearing) <= 50) outer = Math.Min(outer, r - 0.2);
             }
             if (outer < 0.4) continue;
-            town.Terrain.RemoveAll(f => f.Inner < outer && f.Outer > 0.24 && Gap(f.Bearing, bearing) < (f.Arc + 80) / 2);
+            town.Terrain.RemoveAll(f => Covers(f, bearing, 80, 0.24, outer));
             string word = kind.Words.Count > 0 ? rng.Pick(kind.Words) : "Grey";
             string pattern = kind.Names.Count > 0 ? rng.Pick(kind.Names) : "the {A} Peaks";
             town.Terrain.Add(new Feature
@@ -318,7 +603,7 @@ public static class Founding
     {
         if (Rules(town.Content).Ruin is not { } keep) return;
         var site = town.Sites
-            .Where(s => s.Generated && s.Def.Foe == "" && !s.Def.Aloft && s.Def.Ruin == "" && s.RegionId is int rid && town.Regions[rid].Ring == 0)
+            .Where(s => s.Generated && s.Def.Foe == "" && !s.Def.Aloft && s.Def.Ruin == "" && s.RegionId is int rid && town.Regions[rid].Ring <= (town.HeartX == 0 && town.HeartY == 0 ? 0 : 1))
             .OrderBy(s => Js.Hypot(World.Spot(town, s).X, World.Spot(town, s).Y))
             .ThenBy(s => s.Def.Id, StringComparer.Ordinal)
             .FirstOrDefault();

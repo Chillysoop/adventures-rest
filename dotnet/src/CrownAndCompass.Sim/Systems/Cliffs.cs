@@ -61,6 +61,9 @@ public static class Cliffs
 
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Town, Cache> Caches = new();
 
+    /// <summary>Drops the plateaus sited for the town, once the world moves under it (<see cref="Founding.Settle"/>).</summary>
+    internal static void Forget(Town town) => Caches.Remove(town);
+
     /// <summary>The plateaus round the town, sited once per town.</summary>
     public static IReadOnlyList<Plateau> Of(Town town)
     {

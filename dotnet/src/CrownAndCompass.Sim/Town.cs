@@ -660,6 +660,19 @@ public sealed class Town
     /// <summary>Where the town was founded (founding.json id); null for the river ford, and in saves from before the choice (<see cref="Systems.Founding"/>).</summary>
     public string? Founding { get; set; }
 
+    /// <summary>The town sites New game pinned on the map, and who holds the ones passed over (<see cref="Systems.Founding.Spots"/>).</summary>
+    public List<Systems.FoundingSpot> FoundingSpots { get; } = [];
+
+    /// <summary>The bearing from a coastal town to its nearest ocean, worked out once (<see cref="Systems.Founding.Facing"/>).</summary>
+    [NotSaved] internal double? Shoreward;
+
+    /// <summary>
+    /// The world's heart in day units from the town (x east, y south): where the rings of country centre and the wilds are
+    /// mildest. (0, 0) when the town stands at it, as it always did before the player could choose (<see cref="Systems.Founding.Settle"/>).
+    /// </summary>
+    public double HeartX { get; set; }
+    public double HeartY { get; set; }
+
     /// <summary>The middle of the ocean's wedge of the map, in degrees, and its width; 0 wide for no ocean (<see cref="Systems.World.InOcean"/>).</summary>
     public double OceanBearing { get; set; }
     public double OceanArc { get; set; }
