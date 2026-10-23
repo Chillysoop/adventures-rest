@@ -853,7 +853,7 @@
     {
       "id": "regalia",
       "title": "Your regalia",
-      "text": "[b]Mayor[/b] (C) shows your five regalia slots:\n• Chain · Signet · Sceptre · Mantle · Banner\n• [b]Wear[/b] pieces from the armory\n• [b]Commission[/b] new ones as the charter grows\nThey lift your rolls, Mandate and the council, and win heroes over. A banner goes with every company that marches.",
+      "text": "[b]Mayor[/b] (C) shows your six regalia slots:\n• Circlet · Chain · Signet · Sceptre · Mantle · Banner\n• [b]Wear[/b] pieces from the armory\n• [b]Commission[/b] new ones as the charter grows\n• Rare ones from the wilds ward off knives, lies and charms\nThey lift your rolls, Mandate and the council, and win heroes over. A banner goes with every company that marches.",
       "point": "tab:Mayor",
       "when": "day:12",
       "until": "tab:Mayor",
@@ -894,7 +894,10 @@
     {"id": "painted-patrols", "title": "Painted patrols", "text": "Press [b]Patrol[/b] over the corner map and paint the wilds.\n• Riders keep it for a daily wage\n• Roads through it lose fewer caravans\n• Raiders crossing it are seen sooner\n• Send outriders or knights from [b]Bounties[/b] to save the wage", "point": "orders", "when": "day:25", "teaches": ["command:SendRiders"]},
     {"id": "re-arm", "title": "Re-arm the army", "text": "Each regiment in [b]Army[/b] can be re-armed by the town's smiths.\n• Steel, then masterwork, then runed arms\n• Each grade makes every soldier stronger\n• Needs a [b]Forge[/b] with smiths at work\n• Paid soldier by soldier as they are armed", "point": "tab:Army", "when": "day:150", "teaches": ["command:RefitRegiment"]},
     {"id": "buy-outs", "title": "Buy them out", "text": "A rich town can buy what it can't build.\n• A shop or workshop: select it, [b]Buy for the town[/b]\n• A people's charter in [b]Diplomacy[/b]: they swear to you\n• An ally's oath: no tithe, and no enemy can buy it\n• Owners and peoples who don't trust you won't sell", "point": "tab:Diplomacy", "when": "day:250", "teaches": ["command:BuyBuilding", "command:BuySettlement", "command:SwearPower"]},
-    {"id": "renown", "title": "Renown", "text": "Companies keep their members and earn [b]renown[/b] for every deed.\n• Each bounty row shows the renown it suggests\n• Short of it, more foes stand and fight\n• A company's new step of fame lifts your Mandate\n• Newcomers join the most renowned company with room", "point": "tab:Companies", "until": "tab:Companies", "when": "count:Companies", "teaches": []}
+    {"id": "renown", "title": "Renown", "text": "Companies keep their members and earn [b]renown[/b] for every deed.\n• Each bounty row shows the renown it suggests\n• Short of it, more foes stand and fight\n• A company's new step of fame lifts your Mandate\n• Newcomers join the most renowned company with room", "point": "tab:Companies", "until": "tab:Companies", "when": "count:Companies", "teaches": []},
+    {"id": "item-powers", "title": "Magic that does things", "text": "Magic items have [b]powers[/b] now.\n• Fireballs, chain lightning, holds, healing\n• A whisper home, a glass that scries for you\n• Hover an item for its powers\n• Heroes wear up to 3 charms; some suit one class", "point": "tab:Armory", "when": "day:15", "teaches": []},
+    {"id": "spoils", "title": "Parts and the forge", "text": "Companies bring home [b]parts[/b] from what they beat: wolf fangs, troll blood, drake scales.\n• [b]Armory[/b]: sell them, or have the forge make arms\n• Plain +1/+2/+3 arms: dearer and finer parts as they rise\n• Strong foes carry their own magic: a frost giant its gauntlets", "point": "tab:Armory", "until": "tab:Armory", "when": "parts", "teaches": ["command:Craft", "command:CancelCraft", "command:SellParts"]},
+    {"id": "plain-arms", "title": "Arm the watch", "text": "Plain +1/+2/+3 arms can go to the [b]watch[/b] and your [b]regiments[/b].\n• [b]Armory[/b]: Arm or Recall each unit\n• Each piece makes the unit stronger\n• Heroes take them too, until real magic beats them", "point": "tab:Armory", "when": "day:30", "teaches": ["command:IssueArms", "command:ArmUnit", "command:RecallArms"]}
   ],
   "untaught": {}
 }

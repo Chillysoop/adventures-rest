@@ -648,8 +648,6 @@ public static partial class Expedition
         /// <summary>The harm a foe does in a round, for whom to hit first.</summary>
         private static double Threat(Foe f) => Prowess.Avg(f.Def.Dice) * Math.Max(1, f.Def.Attacks) + (f.Ways.Power != null && !f.Powered ? f.Ways.Power.Avg / 2 : 0) + (f.Def.Boss ? 5 : 0);
 
-        private int _round;
-
         private void WeaponAttack(Combatant c, List<Foe> foes, int round)
         {
             var s = c.Sheet;
@@ -694,9 +692,10 @@ public static partial class Expedition
                     if (Rules.Powers.FirstOrDefault(p => p.Id == "inspiration") is { Used.Length: > 0 } song) Log(Prowess.Fill(song.Used, ("ally", name), ("roll", die.ToString())));
                 }
             }
-            if (roll != 20 && got < need) return;
+            bool sure = false;
+            if (roll != 20 && got < need && (form != null || !(sure = Sure(c, target)))) return;
             bool crit = roll == 20;
-            int dmg = form != null ? form.Damage!.Value.Roll(rng, crit) : Gear.Damage(_content, rng, c.Agent, crit);
+            int dmg = form != null ? form.Damage!.Value.Roll(rng, crit) : Gear.Damage(_content, rng, c.Agent, crit) + OnHit(c, target, crit, foes);
             if (c.Raging && form == null && Prowess.Power(_content, s, "rage") is { } rage) dmg += Prowess.At(rage.Bonus, s.Level);
             if (s.Cls.Sneak && Standing.Count > 1 && !c.Sneaked)
             {
@@ -710,8 +709,14 @@ public static partial class Expedition
                 Tell(target, ghost);
             }
             dmg = Hit(target, Math.Max(1, dmg), type, magic, silver, foes, round);
+            if (form == null)
+            {
+                dmg += Strikes(c, target, crit, foes);
+                Drain(c, dmg);
+            }
             dmg += Extras(c, target, foes, round, crit, false);
             if (target.Hp <= 0) Credit(c, 1);
+            if (form == null && !sure && !crit && target.Hp > 0) Haste(c, target, foes, atk);
             Told(c, target, roll, atk, dmg);
             Stun(c, target, round);
         }

@@ -15,7 +15,7 @@ public class RegaliaTests
     {
         var c = Content.Default();
         var r = c.Regalia;
-        Assert.Equal(5, r.Slots.Count);
+        Assert.Equal(6, r.Slots.Count);
         foreach (var d in r.Items)
         {
             var it = c.Library.Item(d.Ref);

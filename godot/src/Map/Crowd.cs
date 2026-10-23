@@ -376,6 +376,7 @@ public partial class Crowd(MapView map) : Node3D
     {
         var town = map.Sim.Town;
         Beasts.Bind(town.Content);
+        _content = town.Content;
         People.Advance(dt, map.TimeScale);
         Fx.Advance(dt);
         // The figures' own clock: frame time, so swings and strides keep pace in a recorded clip too.
