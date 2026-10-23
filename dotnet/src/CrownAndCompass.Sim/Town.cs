@@ -476,6 +476,12 @@ public sealed class Town
 
     /// <summary>Whether the peoples are met one by one (<see cref="Systems.Neighbours.Know"/>); false in saves from before.</summary>
     public bool PeoplesMet { get; set; }
+
+    /// <summary>How many meetings have been looked at for a menace's herald (<see cref="Systems.Manners.Daily"/>).</summary>
+    public int HeraldsSeen { get; set; }
+
+    /// <summary>The day each overture can next be made, by "key/manner" (<see cref="Systems.Manners.Overture"/>).</summary>
+    public OrderedMap<string, int> Overtures { get; } = new();
     public int SightingCount { get; set; }
 
     /// <summary>Enemies' agents loose in town, looking over what they mean to strike tonight (<see cref="Systems.Lurkers"/>).</summary>

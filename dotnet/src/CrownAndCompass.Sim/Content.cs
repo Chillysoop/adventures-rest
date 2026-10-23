@@ -1686,6 +1686,7 @@ public sealed class Content
 
     /// <summary>Each faction's first-meeting picture and crest (content/game/intros.json).</summary>
     public Systems.IntroRules Intros { get; init; } = new();
+    public Systems.MannerRules Manners { get; init; } = new();
 
     /// <summary>The charter goals of a new town's first days (content/game/goals.json).</summary>
     public Systems.GoalRules Goals { get; init; } = new();
@@ -1896,7 +1897,13 @@ public sealed class Content
         var stories = WithSendings(Parse<StoryRules>("stories.json"), Parse<SendingRules>("sendings.json"));
         // So are the powers' first-contact scenes, kept with the powers.
         var powers = Parse<PowerRules>("powers.json");
-        stories = stories with { Stories = [.. stories.Stories, .. institutions.Requests, .. powers.Contacts], Precedents = [.. stories.Precedents, .. institutions.Precedents] };
+        // And the first meetings composed from each people's and enemy's manners.
+        var history = Parse<HistoryRules>("history.json");
+        var world = Parse<WorldRules>("world.json");
+        var neighbours = Parse<NeighbourRules>("neighbours.json");
+        var manners = Parse<Systems.MannerRules>("manners.json");
+        var met = Systems.Manners.Compose(manners, history, world, neighbours);
+        stories = stories with { Stories = [.. stories.Stories, .. institutions.Requests, .. powers.Contacts, .. met], Precedents = [.. stories.Precedents, .. institutions.Precedents] };
         return new Content(
             Parse<List<BuildingDef>>("buildings.json"),
             Parse<NamesFile>("names.json").Races,
@@ -1909,7 +1916,7 @@ public sealed class Content
         {
             Knowledge = Parse<KnowledgeRules>("knowledge.json"),
             Loot = Parse<LootRules>("loot.json"),
-            World = Parse<WorldRules>("world.json"),
+            World = world,
             Roads = Parse<RoadRules>("roads.json"),
             Rumors = Parse<RumorRules>("rumors.json"),
             Lairs = Parse<LairRules>("lairs.json"),
@@ -1931,12 +1938,12 @@ public sealed class Content
             Alchemy = Parse<AlchemyRules>("alchemy.json"),
             Enchant = Parse<EnchantRules>("enchantments.json"),
             Spoils = Parse<SpoilsRules>("spoils.json"),
-            Neighbours = Parse<NeighbourRules>("neighbours.json"),
+            Neighbours = neighbours,
             Legacies = Parse<LegacyRules>("legacies.json"),
             Undercity = Parse<UndercityRules>("undercity.json"),
             Research = Parse<ResearchRules>("research.json"),
             Lofted = Parse<Systems.LoftedRules>("lofted.json"),
-            History = Parse<HistoryRules>("history.json"),
+            History = history,
             Stories = stories,
             Institutions = institutions,
             Sendings = Parse<SendingRules>("sendings.json"),
@@ -1970,6 +1977,7 @@ public sealed class Content
             Passage = Parse<PassageRules>("passage.json"),
             Heraldry = Parse<HeraldryRules>("heraldry.json"),
             Intros = Parse<Systems.IntroRules>("intros.json"),
+            Manners = manners,
             Eggs = Parse<EggRules>("eggs.json"),
             Foes = Parse<FoeRules>("foes.json"),
             Cannons = Parse<Systems.CannonRules>("cannons.json"),
