@@ -172,6 +172,7 @@ public partial class Main
     }
 
     private bool _skyMarines = true;
+    private bool _seaMarines = true;
 
     /// <summary>The Sky Dock's airships (<see cref="Sky"/>): each one's hull, lift and job, and the flights it can take now.</summary>
     private void SkyFleet(Pane p, Town t)
@@ -245,17 +246,47 @@ public partial class Main
         if (!Fleet.Coastal(t) || Fleet.Harbour(t) == null) return;
         p.Heading("Fleet");
         var ports = Fleet.Ports(t).ToList();
+        var free = Voyages.Marines(t).OrderByDescending(h => h.Hero!.Level).ThenBy(h => h.Id).ToList();
+        p.Buttons(($"{(_seaMarines ? "✓" : "○")} Marines aboard ({free.Count} free)", true, _seaMarines, () => { _seaMarines = !_seaMarines; _dirty = true; }));
         foreach (var s in Fleet.AtSea(t))
         {
             var d = Fleet.Def(t, s);
             int id = s.Id;
+            var carrying = Voyages.Carrying(t, s);
             string state = s.Out is { } v
                 ? $"at sea to {Ui.Esc(t.Settlements[v.SettlementId].Name)} · back in {Ui.Days(Math.Max(0, v.BackDay - t.Day))}"
+                : s.Flight is { } f ? $"{Ui.Img(f.Job == "strike" ? "ui-ballista" : f.Job == "scout" ? "ui-eye" : "defence", 12)} {(f.Job == "strike" ? "bombard" : f.Job)} · back in {Ui.Days(Math.Max(0, f.BackDay - t.Day))}"
+                : carrying != null ? $"{Ui.Img("heroes", 12)} carrying {Ui.Esc(carrying.Name)}"
                 : $"moored · fishing {Ui.Img("food", 13)}";
+            string guard = s.Guard == "watch" ? "Watch" : s.Guard == "hired" ? "Hired" : "No guard";
+            string next = s.Guard == "" ? "watch" : s.Guard == "watch" ? "hired" : "";
             p.Row($"[font_size=13][b]{Ui.Esc(s.Name)}[/b] · {Ui.Esc(d.Name)}[/font_size]\n" +
-                  Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(s.Captain)} ({Ui.Esc(Fleet.ProwessName(t, s))}) · {Ui.Img("defence", 12)} hull {Js.Str(Js.Round(s.Hull))}/{Js.Str(d.Hull)} · {state}[/font_size]"),
-                ($"Patch {Js.Str(Fleet.RepairCost(t, s))}g", s.Out == null && s.Hull < d.Hull && t.Treasury >= Fleet.RepairCost(t, s), false, () => Act(() => _sim.RepairShip(id))));
-            if (s.Out != null) continue;
+                  $"[font_size=12]{Ui.Chips(Ui.Chip("defence", $"{Js.Str(Js.Round(s.Hull))}/{Js.Str(d.Hull)}", s.Hull < d.Hull * 0.5 ? Ui.Bad : null, "Hull"),
+                      Ui.Chip("ui-ballista", $"{d.Guns}", null, "Guns"),
+                      Ui.Chip("unit-sky-marines", $"{d.Marines}", null, "Marines it carries"),
+                      s.Fights > 0 ? Ui.Chip("ui-skull", $"{s.Won}/{s.Fights}", s.Won * 2 >= s.Fights ? Ui.Good : Ui.Bad, "Fights won") : "")}[/font_size]\n" +
+                  Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(s.Captain)} ({Ui.Esc(Fleet.ProwessName(t, s))}) · {state}[/font_size]"),
+                ($"Patch {Js.Str(Fleet.RepairCost(t, s))}g", s.Out == null && s.Flight == null && carrying == null && s.Hull < d.Hull && t.Treasury >= Fleet.RepairCost(t, s), false, () => Act(() => _sim.RepairShip(id))),
+                ($"{guard}", true, s.Guard != "", () => Act(() => _sim.SetShipGuard(id, next))));
+            if (!Voyages.Moored(t, s)) continue;
+            var marines = _seaMarines ? free.Take(d.Marines).Select(h => h.Id).ToList() : [];
+            var jobs = new List<(string, bool, bool, Action)>();
+            jobs.Add(($"Patrol · {Ui.Days(t.Content.Sea.Voyages.PatrolDays)}", Voyages.Refuse(t, s, "patrol", -1, "", marines) == null, false, () => Act(() => _sim.SailJob(id, "patrol", marines: marines))));
+            var scout = t.Regions.Where(x => World.Sea(x) && !x.Known && Voyages.Refuse(t, s, "scout", x.Id, "", marines) == null).OrderBy(x => x.Days).ThenBy(x => x.Id).FirstOrDefault();
+            if (scout != null)
+            {
+                int rid = scout.Id;
+                jobs.Add(($"Scout {scout.Name} · {Ui.Days(Voyages.Days(t, s, scout))}", true, false, () => Act(() => _sim.SailJob(id, "scout", rid, marines: marines))));
+            }
+            var lair = t.Sites.Where(x => !x.Cleared && x.Known != SiteKnowledge.Unheard && x.RegionId is int rg && Voyages.Refuse(t, s, "strike", rg, x.Def.Id, marines) == null)
+                .OrderBy(x => t.Regions[x.RegionId!.Value].Days).ThenBy(x => x.Def.Id, StringComparer.Ordinal).FirstOrDefault();
+            if (lair != null)
+            {
+                int rg = lair.RegionId!.Value;
+                string sid = lair.Def.Id;
+                jobs.Add(($"Bombard {lair.Def.Name} · {Ui.Days(Voyages.Days(t, s, t.Regions[rg]))}", true, true, () => Act(() => _sim.SailJob(id, "strike", rg, sid, marines))));
+            }
+            p.Buttons([.. jobs]);
             // Its best run now: the port and cargo that clear the most a day.
             var best = ports.SelectMany(port => Goods.All.Where(g => Fleet.Refuse(t, s, port, g) == null).Select(g => (P: port, G: g, Gain: Fleet.Profit(t, s, port, g))))
                 .OrderByDescending(x => x.Gain / Fleet.Days(t, s, x.P)).ThenBy(x => x.P.Id).ThenBy(x => x.G).FirstOrDefault();
@@ -309,7 +340,7 @@ public partial class Main
                 p.Row(head);
                 continue;
             }
-            head += "\n" + CharacterSheet(t, s) + "\n" + Life(t, s);
+            head += $"\n[font_size=12]{MannerChips(t, Neighbours.Key(s))}[/font_size]\n" + CharacterSheet(t, s) + "\n" + Life(t, s);
             var buttons = new List<(string, bool, bool, Action)>();
             if (!s.Allied || Shadows.Shadowed(s)) buttons.Add(($"Envoy · {Js.Str(w.EnvoyCost)}g · {DecisionOdds(t, "envoy")}", t.Treasury >= w.EnvoyCost, false, () => Act(() => _sim.SendEnvoy(id))));
             if (Shadows.Shadowed(s))
@@ -331,6 +362,7 @@ public partial class Main
             int band = StandingBand(s, w.Ally);
             double standing = s.Standing;
             p.Row(head, ($"st{band}{word}{Math.Round(standing)}", null, () => Foes.Standing(band, word, standing)), buttons.ToArray());
+            RenderOvertures(p, t, Neighbours.Key(s));
             var build = Neighbours.ProjectsFor(t, s).Where(x => !s.Projects.Contains(x.Id)).ToList();
             if (s.Works == null && build.Count > 0)
                 p.Buttons(build.Select(x =>

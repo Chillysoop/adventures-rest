@@ -51,16 +51,23 @@ public class WildsTests
         Assert.NotNull(zone);
         int id = zone!.Id;
         int cells = zone.Cells.Count;
-        bool posted = false, walked = false;
+        bool posted = false, walked = false, pending = false;
         for (int d = 0; d < 300 && Wilds.Of(t, id) != null; d++)
         {
             sim.RunDays(1);
+            // Walked ground stays the company's own until it is home to tell of it.
+            if (Wilds.Of(t, id) is { } z && Wilds.Untold(z) > 0)
+            {
+                pending = true;
+                Assert.Contains(t.Surveys, s => s.Saw.Count > 0 && Explore.Out(s));
+            }
             if (t.Commissions.Any(c => c.ZoneId == id)) posted = true;
             if (t.Surveys.Any(s => s.ZoneId == id && s.Phase == SurveyPhase.Home)) walked = true;
             t.Book(TreasuryAccount.Exploring, Math.Max(0, 500 - t.Treasury));
         }
         Assert.True(posted);
         Assert.True(walked);
+        Assert.True(pending);
         Assert.Null(Wilds.Of(t, id));
         Assert.Contains(Ledger(sim), l => l.Contains("has been walked and told", StringComparison.Ordinal));
         Assert.True(cells > 0);

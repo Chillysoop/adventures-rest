@@ -102,6 +102,8 @@
     { "id": "primordial-jelly", "name": "primordial jelly", "value": 150, "grade": 3, "blurb": "", "types": ["ooze"], "cr": [7, 99] }
   ],
   "drops": [
+    {"ref": "dragon-scale-mail", "chance": 0.5, "foes": ["elder-wyrms"], "boss": true},
+    {"ref": "dragon-slayer", "chance": 0.2, "foes": ["elder-wyrms"], "boss": true},
     {"ref": "cloak-of-the-manta-ray", "chance": 0.08, "groups": ["corsair-fleet"]},
     {"ref": "folding-boat", "chance": 0.06, "groups": ["corsair-fleet"], "peoples": ["isle-city"]},
     {"ref": "trident-of-fish-command", "chance": 0.08, "groups": ["drowned-choir"], "peoples": ["tidekin"]},

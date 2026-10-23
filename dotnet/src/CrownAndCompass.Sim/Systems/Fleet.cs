@@ -81,7 +81,51 @@ public sealed record FleetRules
     public IReadOnlyList<string> Prowess { get; init; } = [];
     public CorsairRules Corsairs { get; init; } = new();
 
+    /// <summary>What a ship meets at sea, by ring (fought by <see cref="ShipFight"/>), and how much stronger a ring out.</summary>
+    public IReadOnlyList<SkyFoeDef> Foes { get; init; } = [];
+    public double PowerPerRing { get; init; } = 3;
+    public GuardRules Guards { get; init; } = new();
+    public VoyageRules Voyages { get; init; } = new();
+
     public ShipDef? Ship(string id) => Ships.FirstOrDefault(s => s.Id == id);
+}
+
+/// <summary>Who fills a ship's marine places the heroes leave (sea.json "guards").</summary>
+public sealed record GuardRules
+{
+    public GuardDef Watch { get; init; } = new();
+    public GuardDef Hired { get; init; } = new();
+}
+
+public sealed record GuardDef
+{
+    public double Fight { get; init; }
+    public double Wage { get; init; }
+}
+
+/// <summary>How the sea's jobs and passages go (sea.json "voyages", <see cref="Voyages"/>).</summary>
+public sealed record VoyageRules
+{
+    /// <summary>The navigator's roll: d20 + the captain's prowess and the best Survival aboard against this.</summary>
+    public int NavigateDc { get; init; } = 12;
+
+    /// <summary>Days at sea times this on a crit, a pass, a miss and a fumble.</summary>
+    public double[] Navigate { get; init; } = [0.7, 0.85, 1.15, 1.4];
+
+    /// <summary>How much a season's storms (sky.json "storm") slow a ship: days times 1 + this times the season's storm chance.</summary>
+    public double Weather { get; init; } = 1.5;
+    public double Meet { get; init; } = 0.08;
+    public double MeetPerRing { get; init; } = 0.03;
+    public double MeetMax { get; init; } = 0.4;
+
+    /// <summary>Hours sooner corsairs are seen and the share of their raids turned away for each ship on patrol.</summary>
+    public double PatrolGuard { get; init; } = 0.35;
+    public int PatrolDays { get; init; } = 6;
+
+    /// <summary>A shore party's share of a sea site's strength taken by each gun's day in reach, at most StrikeMost.</summary>
+    public double StrikeShare { get; init; } = 0.05;
+    public double StrikeMost { get; init; } = 0.4;
+    public Dictionary<string, List<string>> Texts { get; init; } = [];
 }
 
 /// <summary>A trade run at sea: where, with what, and when it is due home.</summary>
@@ -125,6 +169,9 @@ public sealed class Ship
     public int? SalvageDay { get; set; }
     public int Fights { get; set; }
     public int Won { get; set; }
+
+    /// <summary>Who stands at the rail with the crew in a sea ship's free marine places: "" nobody, "watch" lent watchmen, "hired" sellsword marines (<see cref="Voyages"/>).</summary>
+    public string Guard { get; set; } = "";
 }
 
 public sealed class FleetState
@@ -259,7 +306,7 @@ public static class Fleet
         var r = Rules(town);
         if (Aloft(town, s)) return "an airship trades from the Sky Dock";
         if (Harbour(town) == null) return "needs a harbour";
-        if (s.Out != null) return "at sea";
+        if (s.Out != null || s.Flight != null || Voyages.Carrying(town, s) != null) return "at sea";
         if (Def(town, s).Hold <= 0) return "no hold";
         if (s.Hull < Def(town, s).Hull * 0.25) return "needs patching first";
         if (!Ports(town).Contains(port)) return "not a port the ship can reach";
@@ -313,6 +360,7 @@ public static class Fleet
             if (r.Ships.Count > 0) Build(town, r.Ships[0].Id, free: true);
         }
         bool winter = Seasons.Current(town).Id == "winter";
+        Voyages.Daily(town);
         foreach (var s in AtSea(town).ToList())
         {
             if (s.Out is { } v)
@@ -320,7 +368,8 @@ public static class Fleet
                 if (town.Day >= v.BackDay) Home(town, s, v);
                 continue;
             }
-            if (s.Hull <= 0) continue;
+            // Out on a job or carrying a company: no fishing today.
+            if (s.Hull <= 0 || s.Flight != null || Voyages.Carrying(town, s) != null) continue;
             var d = Def(town, s);
             double catchToday = d.Fish * (1 + r.ProwessFish * (s.Prowess - 1)) * (winter ? r.WinterFish : 1);
             town.Market.Seed(Good.Food, catchToday);
@@ -345,24 +394,18 @@ public static class Fleet
         var rng = Dice(town, s.Id);
         string fight = "";
         int ring = town.Regions[port.RegionId].Ring;
-        if (rng.Chance(Math.Min(c.Max, c.Chance + c.PerRing * ring)))
+        // Corsairs lie in wait on the way home: fought like any ship fight (ShipFight), the guard at the rail with the crew.
+        if (rng.Chance(Math.Min(c.Max, c.Chance + c.PerRing * ring)) && Corsair(town, rng, ring) is { } foe)
         {
-            double strength = c.Strength + c.StrengthPerRing * ring;
-            int die = rng.D20();
-            bool won = die != 1 && (die == 20 || die + d.Fight + r.ProwessFight * (s.Prowess - 1) >= 10 + strength);
-            if (won)
-            {
-                s.Prowess = Math.Min(5, s.Prowess + r.Learn);
-                town.Book(TreasuryAccount.Trade, c.Prize);
-                fight = " " + Fill(rng, c.Win, s, port).Replace("{prize}", Js.Str(c.Prize), StringComparison.Ordinal);
-            }
-            else
+            string outcome = ShipFight.Resolve(town, s, foe, town.Regions[port.RegionId], [], Voyages.Guards(town, s, 0), false, rng, out _);
+            if (outcome is "won" or "boarded")
+                fight = " " + Fill(rng, c.Win, s, port).Replace("{prize}", Js.Str(Js.Round(town.Content.Sky.Prize * (1 + ring))), StringComparison.Ordinal);
+            else if (outcome is "lost" or "repelled" or "wrecked")
             {
                 double lost = Js.Round(qty * c.Loot);
                 qty -= lost;
-                s.Hull = Math.Max(0, s.Hull - c.Hurt);
                 fight = " " + Fill(rng, c.Lose, s, port).Replace("{lost}", Js.Str(lost), StringComparison.Ordinal).Replace("{good}", Lower(v.Cargo), StringComparison.Ordinal);
-                if (s.Hull <= 0)
+                if (outcome == "wrecked" || s.Hull <= 0)
                 {
                     town.Ships.Remove(s);
                     town.Log(LedgerCategory.War, Importance.Major, Fill(rng, c.Sunk, s, port));
@@ -399,6 +442,16 @@ public static class Fleet
         town.Log(LedgerCategory.Town, Importance.Notable, s.LastLine);
     }
 
+    /// <summary>The corsairs a trade run meets: one of sea.json's corsair kinds for the ring.</summary>
+    private static ShipFoe? Corsair(Town town, Rng rng, int ring)
+    {
+        var r = Rules(town);
+        var kinds = r.Foes.Where(k => k.Id.StartsWith("corsair", StringComparison.Ordinal) && ring >= k.Rings[0] && ring <= k.Rings[^1]).ToList();
+        if (kinds.Count == 0) return null;
+        var k = rng.Pick(kinds);
+        return new ShipFoe(k.Name, k.Power + r.PowerPerRing * ring, k.Speed, k.Boards);
+    }
+
     /// <summary>Corsairs come for the harbour: the moored ships and the watch fight them off, or they rob it and hole a ship.</summary>
     private static void Raid(Town town)
     {
@@ -407,7 +460,13 @@ public static class Fleet
         town.FleetState.NextRaidDay = town.Day + c.RaidEvery;
         var rng = Dice(town, 977);
         if (!rng.Chance(c.RaidChance)) return;
-        var moored = AtSea(town).Where(s => s.Out == null && s.Hull > 0).ToList();
+        // Ships patrolling the home waters turn some raids away before they reach the harbour.
+        if (rng.Chance(Voyages.RaidGuard(town)))
+        {
+            town.Log(LedgerCategory.War, Importance.Routine, "Corsair sails are seen off the coast, but the town's patrol shadows them until they think better of it.");
+            return;
+        }
+        var moored = AtSea(town).Where(s => Voyages.Moored(town, s) && s.Hull > 0).ToList();
         double guard = town.Watch * c.WatchFight + Js.Sum(moored, s => Def(town, s).Fight + r.ProwessFight * (s.Prowess - 1));
         int die = rng.D20();
         if (die + guard >= 10 + c.RaidStrength + town.Day / 120.0)

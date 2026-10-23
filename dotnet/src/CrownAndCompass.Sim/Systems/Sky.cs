@@ -15,13 +15,17 @@ public sealed record SkyFoeDef
 public sealed record SkyFleetRules
 {
     public double Wind { get; init; } = 0.2;
-    public Dictionary<string, double> Storm { get; init; } = [];
+    /// <summary>Chance a day aloft is held by the weather where the ship flies, by its step (fair, grey, foul, storm, tempest).</summary>
+    public double[] StormStep { get; init; } = [0, 0.01, 0.1, 0.6, 1];
     public int[] StormDays { get; init; } = [1, 2];
     public int Turnaround { get; init; } = 1;
     public double Learn { get; init; } = 0.25;
     public double ProwessFight { get; init; } = 1;
     public int PatrolDays { get; init; } = 6;
     public int PatrolHours { get; init; } = 12;
+
+    /// <summary>The most a scouting flight charts round the middle of the land it flew to, in days of road.</summary>
+    public double ChartMost { get; init; } = 1.2;
     public double StrikeShare { get; init; } = 0.06;
     public double StrikeMost { get; init; } = 0.45;
     public double Meet { get; init; } = 0.06;
@@ -46,6 +50,10 @@ public sealed record SkyFleetRules
     public double Salvage { get; init; } = 180;
     public int SalvageDays { get; init; } = 4;
     public int StrandDays { get; init; } = 30;
+
+    /// <summary>How high the Sky Dock's own lent airship climbs (<see cref="Reaches"/>): higher bands need one of the town's ships.</summary>
+    public double DockCeiling { get; init; } = 0.45;
+    public ExpeditionRules Expedition { get; init; } = new();
     public int RaidEvery { get; init; } = 24;
     public double RaidChance { get; init; } = 0.3;
     public double RaidStrength { get; init; } = 8;
@@ -61,6 +69,21 @@ public sealed record SkyFleetRules
     public IReadOnlyList<string> Captains { get; init; } = [];
     public IReadOnlyList<SkyFoeDef> Foes { get; init; } = [];
     public Dictionary<string, List<string>> Texts { get; init; } = [];
+}
+
+/// <summary>
+/// A company carried to a site in the sky (<see cref="Reaches"/>): the ship's ballistae open the fight (`edge` on the
+/// company's checks and blows), it waits `wait` days at the isle, and a company whose ship is lost is stranded until a
+/// rescue flight finds it (`search` days of looking, none where the site is scried) or `strandMost` days pass and it
+/// makes its own way down, `walkHurt` of their hit points the worse.
+/// </summary>
+public sealed record ExpeditionRules
+{
+    public int Edge { get; init; } = 1;
+    public int Wait { get; init; } = 1;
+    public int[] Search { get; init; } = [1, 4];
+    public int StrandMost { get; init; } = 40;
+    public double WalkHurt { get; init; } = 0.3;
 }
 
 /// <summary>An airship's job: patrol over the town, scout a region, or strike a lair; when it set out and is due home.</summary>
@@ -95,6 +118,24 @@ public sealed class SkyBattle
     public int Volleys { get; init; }
 }
 
+/// <summary>
+/// Country a ship charted for the council: the line it flew out (from, to, in days from the town) and the land round its
+/// end, <see cref="Radius"/> days across. The map lifts the fog there as described, as of <see cref="Tick"/>.
+/// </summary>
+public sealed class Chart
+{
+    public int RegionId { get; init; }
+    public double FromX { get; init; }
+    public double FromY { get; init; }
+    public double ToX { get; init; }
+    public double ToY { get; init; }
+    public double Radius { get; init; }
+    public int Tick { get; init; }
+
+    /// <summary>The ship that flew it.</summary>
+    public string By { get; init; } = "";
+}
+
 public sealed class SkyFleetState
 {
     public bool Granted { get; set; }
@@ -125,7 +166,7 @@ public static class Sky
     public static IEnumerable<Ship> Ships(Town town) => town.Ships.Where(s => Fleet.Aloft(town, s)).OrderBy(s => s.Id);
 
     /// <summary>Home at the mast and fit to fly: not on a job, not down in the wilds, with hull and lift left.</summary>
-    public static bool Moored(Town town, Ship s) => s.Flight == null && s.DownedRegion == null && s.Hull > 0;
+    public static bool Moored(Town town, Ship s) => s.Flight == null && s.DownedRegion == null && s.Hull > 0 && Voyages.Carrying(town, s) == null;
 
     /// <summary>Airships at the mast that could take a company or a merchant run now.</summary>
     public static int Ready(Town town) => Ships(town).Count(s => Moored(town, s) && s.Lift >= 2);
@@ -141,18 +182,22 @@ public static class Sky
 
     // ---- Winds and storms (the one sky-travel model: Lofted's sailing can read it too) ----
 
-    /// <summary>The bearing the season's wind blows toward, turned by the seed.</summary>
-    public static double WindBearing(Town town, int season) => World.Hash(town.Seed * 613 + season * 97 + 11) * 360;
-
     /// <summary>Days aloft for a straight flight of so many road days on a bearing: the wind behind is quicker, ahead slower.</summary>
     public static int FlightDays(Town town, double roadDays, double speed, double bearing)
     {
-        double toward = (bearing - WindBearing(town, Seasons.Index(town)) + 360) % 360 * Math.PI / 180;
+        // The prevailing wind of the day (Weather): with it is quicker, against it slower.
+        double toward = (bearing - Weather.Prevailing(town, Weather.TimeOf(town.Tick)) + 360) % 360 * Math.PI / 180;
         return Math.Max(1, (int)Math.Ceiling(roadDays * speed * (1 - Rules(town).Wind * Math.Cos(toward)) - 1e-9));
     }
 
-    /// <summary>The chance a storm catches a ship today, less the share of them it climbs above.</summary>
-    public static double StormChance(Town town, ShipDef d) => Rules(town).Storm.GetValueOrDefault(Seasons.Current(town).Id) * (1 - d.Ceiling);
+    /// <summary>The chance the weather over a land holds a ship today, less the share of storms it climbs above.</summary>
+    public static double StormChance(Town town, ShipDef d, Region? region)
+    {
+        var (x, y) = region == null ? (0.0, 0.0) : Lofted.Spot(town, region);
+        var steps = Rules(town).StormStep;
+        int step = Weather.Worst(town, x, y, town.Day).Step;
+        return steps.Length == 0 ? 0 : steps[Math.Min(step, steps.Length - 1)] * (1 - d.Ceiling);
+    }
 
     /// <summary>Days there and back to a region, moored a day at the far end.</summary>
     public static int Days(Town town, Ship s, Region region) =>
@@ -275,7 +320,7 @@ public static class Sky
         string where = region?.Name ?? "the town";
         s.Lift = Math.Max(0, s.Lift - 1);
         s.Hull = Math.Max(0, s.Hull - d.Wear);
-        if (!f.Stormed && rng.Chance(StormChance(town, d)))
+        if (!f.Stormed && rng.Chance(StormChance(town, d, region)))
         {
             f.Stormed = true;
             int late = rng.Range(r.StormDays[0], r.StormDays[^1] + 1);
@@ -307,6 +352,9 @@ public static class Sky
     }
 
     /// <summary>A foe in the air: a flying menace near, if one comes, or one of sky.json's foes for the ring.</summary>
+    /// <summary>A foe in the air, as the shared ship fight takes it.</summary>
+    internal static ShipFoe? MeetFoe(Town town, Rng rng, Region? region) => Meet(town, rng, region) is { } f ? new ShipFoe(f.Name, f.Power, f.Speed, f.Boards, f.Menace) : null;
+
     private static (string Name, double Power, double Speed, bool Boards, Menace? Menace)? Meet(Town town, Rng rng, Region? region)
     {
         var r = Rules(town);
@@ -320,77 +368,27 @@ public static class Sky
     }
 
     /// <summary>
-    /// A fight in the air: the approach, the volleys, then a boarding if the foe boards. Returns false when the ship is
-    /// down or wrecked and its job is over.
+    /// A fight in the air (<see cref="ShipFight"/>): the approach, the volleys, then a boarding if the foe boards. Returns
+    /// false when the ship is down or wrecked and its job is over.
     /// </summary>
     private static bool Fight(Town town, Ship s, SkyFlight f, (string Name, double Power, double Speed, bool Boards, Menace? Menace) foe, Region? region, Rng rng)
     {
-        var r = Rules(town);
-        var d = Fleet.Def(town, s);
         string where = region?.Name ?? "the town";
-        double skill = r.ProwessFight * (s.Prowess - 1);
-        double ours = d.Guns * 4 + d.Hull * 0.1 + skill * 2;
-        s.Fights++;
-        // The approach: whoever wins the wind strikes first; a captain who wins it against a foe far too strong slips away.
         bool storm = f.Stormed && town.Day <= f.BackDay;
-        bool first = rng.D20() + d.Agility + skill >= 10 + foe.Speed + (storm ? r.StormApproach : 0);
-        if (first && foe.Power > ours * r.EvadeAt)
+        string outcome = ShipFight.Resolve(town, s, new ShipFoe(foe.Name, foe.Power, foe.Speed, foe.Boards, foe.Menace), region, f.Marines, 0, storm, rng, out int volleys);
+        Record(town, s, foe.Name, region, outcome, volleys);
+        if (outcome == "evaded")
         {
-            Record(town, s, foe.Name, region, "evaded", 0);
             town.Log(LedgerCategory.War, Importance.Routine, Fill(town, rng, "evade", s, where, foe.Name));
             return true;
         }
-        // Volleys: the ship's ballistae against the foe's claws, fire or boarding pikes.
-        double theirs = foe.Power, start = foe.Power;
-        int volleys = 0;
-        for (int round = 0; round < r.Rounds + (first ? 1 : 0); round++)
-        {
-            volleys++;
-            bool free = first && round == 0;
-            theirs -= d.Guns * (1 + 0.1 * (s.Prowess - 1)) * (r.Low + rng.Next() * (r.High - r.Low)) * 2;
-            if (theirs <= start * r.Break) break;
-            if (free) continue;
-            double blow = foe.Power * 0.25 * (r.Low + rng.Next() * (r.High - r.Low));
-            if (rng.Chance(r.Gasbag)) s.Lift = Math.Max(0, s.Lift - blow / 6);
-            else s.Hull = Math.Max(0, s.Hull - blow);
-            if (s.Hull <= 0 || s.Lift <= 0 || s.Hull < d.Hull * 0.3) break;
-        }
-        string outcome;
-        if (s.Hull <= 0) outcome = "wrecked";
-        else if (s.Lift <= 0) outcome = "downed";
-        else if (theirs <= start * r.Break) outcome = "won";
-        else if (foe.Boards)
-        {
-            // Boarding: the crew and the marines at the rail against what is left of them.
-            var marines = f.Marines.Select(town.Agent).Where(a => !a.Dead && a.Hero != null).ToList();
-            double rail = d.Crew * r.CrewFight + Js.Sum(marines, a => a.Hero!.Level * r.HeroLevel);
-            bool held = rng.D20() + rail >= rng.D20() + theirs;
-            foreach (var a in marines) a.Hero!.Hp = Math.Max(1, a.Hero.Hp - (int)Math.Round(a.Hero.MaxHp * r.HeroHurt * (held ? 0.5 : 1)));
-            outcome = held ? "boarded" : "repelled";
-            if (!held)
-            {
-                s.Hull = Math.Max(1, s.Hull - foe.Power * 0.5);
-                s.Lift = Math.Max(0, s.Lift - 2);
-            }
-        }
-        else outcome = "lost";
-        if (outcome is "won" or "boarded")
-        {
-            s.Won++;
-            s.Prowess = Math.Min(5, s.Prowess + r.Learn);
-            town.Book(TreasuryAccount.Trade, r.Prize * (1 + (region?.Ring ?? 0)));
-            foreach (var a in f.Marines.Select(town.Agent).Where(a => !a.Dead && a.Hero != null)) Notoriety.Deed(town, a, "sky", r.Fame);
-            if (foe.Menace is { } m) m.Power = Math.Max(1, m.Power * (1 - r.MenaceHurt));
-        }
-        Record(town, s, foe.Name, region, outcome, volleys);
         if (outcome is "downed" or "wrecked")
         {
             Down(town, s, f, region, rng, outcome, foe.Name);
             return false;
         }
         string marinesNames = Expedition.ListNames(f.Marines.Select(town.Agent).Where(a => !a.Dead).Select(a => a.GivenName).DefaultIfEmpty("the crew").ToList());
-        town.Log(LedgerCategory.War, outcome is "won" or "boarded" ? Importance.Notable : Importance.Notable,
-            Fill(town, rng, outcome, s, where, foe.Name).Replace("{marines}", marinesNames, StringComparison.Ordinal));
+        town.Log(LedgerCategory.War, Importance.Notable, Fill(town, rng, outcome, s, where, foe.Name).Replace("{marines}", marinesNames, StringComparison.Ordinal));
         return true;
     }
 
@@ -412,7 +410,7 @@ public static class Sky
         return State(town).Battles.LastOrDefault()?.Outcome ?? "";
     }
 
-    private static void Record(Town town, Ship s, string foe, Region? region, string outcome, int volleys)
+    internal static void Record(Town town, Ship s, string foe, Region? region, string outcome, int volleys)
     {
         var battles = State(town).Battles;
         battles.Add(new SkyBattle { Tick = town.Tick, ShipId = s.Id, Foe = foe, RegionId = region?.Id ?? -1, Outcome = outcome, Volleys = volleys });
@@ -446,6 +444,21 @@ public static class Sky
         s.Lift = 0;
     }
 
+    /// <summary>The middle of a land, in days from the town (the way <see cref="World.Spot"/> places a site).</summary>
+    public static (double X, double Y) Middle(Town town, Region region) => World.Middle(town, region);
+
+    /// <summary>
+    /// A ship home from scouting charts what it flew over: the line out from <paramref name="from"/> to <paramref name="to"/>
+    /// (days from the town) and the land round its end. The fog lifts there as described. Sea voyages chart the same way.
+    /// </summary>
+    public static void Charted(Town town, int regionId, (double X, double Y) from, (double X, double Y) to, string by)
+    {
+        var region = town.Regions[regionId];
+        double half = region.Arc * Math.PI / 360;
+        double radius = Math.Min(Rules(town).ChartMost, Math.Max(0.3, region.Days * Math.Sin(half)));
+        town.Charts.Add(new Chart { RegionId = regionId, FromX = from.X, FromY = from.Y, ToX = to.X, ToY = to.Y, Radius = radius, Tick = town.Tick, By = by });
+    }
+
     /// <summary>A downed ship: riggers bring it home, or after long enough the wilds keep it.</summary>
     private static void Downed(Town town, Ship s, int region)
     {
@@ -476,6 +489,7 @@ public static class Sky
         foreach (var a in f.Marines.Select(town.Agent).Where(a => !a.Dead && a.Hero != null)) a.Hero!.AwayUntil = null;
         if (f.Job == "scout" && region != null)
         {
+            Charted(town, region.Id, (0, 0), Middle(town, region), s.Name);
             region.Known = true;
             var seen = town.Sites.Where(x => x.RegionId == region.Id && !x.Cleared).OrderBy(x => x.Def.Id, StringComparer.Ordinal).ToList();
             foreach (var site in seen)
@@ -491,6 +505,7 @@ public static class Sky
             double share = site.Cleared ? 0 : f.Struck;
             site.Strength = Math.Max(0, site.Strength * (1 - share));
             site.Found = true;
+            site.FoundTick ??= town.Tick;
             s.LastLine = Fill(town, rng, "struck", s, region.Name, "").Replace("{site}", site.Def.Name, StringComparison.Ordinal)
                 .Replace("{share}", $"{Js.Str(Js.Round(share * 100))}%", StringComparison.Ordinal);
         }
@@ -543,7 +558,7 @@ public static class Sky
 
     private static IReadOnlyList<string> Texts(Town town, string key) => Rules(town).Texts.TryGetValue(key, out var t) && t.Count > 0 ? t : [""];
 
-    private static string Fill(Town town, Rng rng, string key, Ship s, string where, string foe) =>
+    internal static string Fill(Town town, Rng rng, string key, Ship s, string where, string foe) =>
         Cap(rng.Pick(Texts(town, key))
             .Replace("{ship}", s.Name, StringComparison.Ordinal)
             .Replace("{captain}", s.Captain, StringComparison.Ordinal)

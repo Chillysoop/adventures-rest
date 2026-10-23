@@ -136,6 +136,9 @@ public partial class Main
         if (menace != null && menace.Leader != "") points.Add(Ui.Bullet($"{Ui.Esc(menace.Leader)}" + (menace.SeatName != "" ? Ui.Dim($" · {Ui.Esc(menace.SeatName)}") : ""), "ui-person"));
         if (points.Count > 0) _introBox.AddChild(Sized(Ui.Rich(string.Join("\n", points), 14), TextWidth));
 
+        // Their ways, as chips: how to win them is on each one's hover.
+        if (meeting is { Key: not "" } && MannerChips(t, meeting.Key) is { Length: > 0 } ways) _introBox.AddChild(Ui.Rich(ways, 14));
+
         var foot = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.End };
         foot.AddThemeConstantOverride("separation", 8);
         string? window = meeting?.Key switch

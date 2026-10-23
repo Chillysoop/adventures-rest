@@ -70,4 +70,25 @@ public class RumorsTests
         Assert.False(r.Proven);
         Assert.Equal(site.Def.Tier, site.BelievedTier);
     }
+
+    /// <summary>A report nobody renews goes back to hearsay: the town still knows where the place is, not that it stands empty.</summary>
+    [Fact]
+    public void AnOldReportGoesBackToHearsay()
+    {
+        var sim = new Simulation(new SimulationOptions { Seed = 4 });
+        var t = sim.Town;
+        sim.RunDays(2);
+        var site = t.Sites.Where(s => !s.Held && s.TowerDue == null && Watch.LiveOf(t, s) == null).OrderByDescending(s => s.Def.Distance).ThenBy(s => s.Def.Id, StringComparer.Ordinal).First();
+        int limit = t.Content.Rumors.StaleDays * SimTime.HoursPerDay;
+        Rumors.Confirm(t, site, "a test", cleared: true, asOf: t.Tick - limit + SimTime.HoursPerDay * 3);
+        sim.RunDays(1);
+        Assert.Equal(SiteKnowledge.Confirmed, site.Known);
+        Assert.True(site.ThoughtCleared);
+        sim.RunDays(3);
+        Assert.Equal(SiteKnowledge.Rumoured, site.Known);
+        Assert.False(site.ThoughtCleared);
+        Assert.True(site.Found);
+        Assert.True(site.Trust <= t.Content.Rumors.StaleTrust);
+        Assert.Contains(t.Ledger.Entries, e => e.Format().Contains(site.Def.Name, StringComparison.Ordinal) && e.Format().Contains("half a year", StringComparison.Ordinal));
+    }
 }

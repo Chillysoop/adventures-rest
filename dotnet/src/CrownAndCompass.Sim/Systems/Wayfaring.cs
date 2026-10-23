@@ -140,10 +140,10 @@ public sealed class Gateway
 {
     public int Id { get; init; }
     public required string Name { get; init; }
-    public double Ax { get; init; }
-    public double Ay { get; init; }
-    public double Bx { get; init; }
-    public double By { get; init; }
+    public double Ax { get; set; }
+    public double Ay { get; set; }
+    public double Bx { get; set; }
+    public double By { get; set; }
     public int RegionA { get; init; }
     public int RegionB { get; init; }
 
@@ -224,7 +224,7 @@ public static class Wayfaring
         if (mind.Navigator == "" || mind.Dice == null) return 0;
         var rules = Rules(content);
         var job = rules.Job("navigate");
-        int dc = job.Dc + (int)(f.Tier * job.PerTier + Math.Max(0, f.Kind.Slow - 1) * rules.SlowDc);
+        int dc = job.Dc + (int)(f.Tier * job.PerTier + Math.Max(0, f.Kind.Slow - 1) * rules.SlowDc) + mind.Murk;
         if (Routine(mind.NavBonus, dc)) return 0;
         int roll = mind.Dice.D20();
         if (roll != 1 && (roll == 20 || roll + mind.NavBonus >= dc))
@@ -289,6 +289,7 @@ public static class Wayfaring
                 Arc = lake.Arc,
                 Inner = lake.Inner,
                 Outer = lake.Outer,
+                Shape = lake.Shape,
             };
         }
         PlaceGateways(town, rng);
@@ -357,8 +358,8 @@ public static class Wayfaring
     private static bool Near(Feature a, Feature b)
     {
         double ra = (a.Inner + a.Outer) / 2, rb = (b.Inner + b.Outer) / 2;
-        var pa = At(a.Bearing, ra);
-        var pb = At(b.Bearing, rb);
+        var pa = Roads.At(a, a.Bearing, ra);
+        var pb = Roads.At(b, b.Bearing, rb);
         // Inside the other's span, or within a little of its middle.
         return Roads.Contains(a, pb.X, pb.Y, 0.3) || Roads.Contains(b, pa.X, pa.Y, 0.3) || Js.Hypot(pa.X - pb.X, pa.Y - pb.Y) < 0.5;
     }

@@ -112,6 +112,9 @@ public partial class WorldView : Node3D
         t.SetShaderParameter("biome_a", BiomeA);
         t.SetShaderParameter("biome_b", BiomeB);
         Mats.Water.SetShaderParameter("data_tex", DataTex);
+        _trailImg = Image.CreateEmpty(TrailRes, TrailRes, false, Image.Format.L8);
+        TrailTex = ImageTexture.CreateFromImage(_trailImg);
+        t.SetShaderParameter("trail_tex", TrailTex);
         for (int cy = 0; cy < WorldGen.Chunks; cy++)
             for (int cx = 0; cx < WorldGen.Chunks; cx++)
             {
@@ -202,7 +205,8 @@ public partial class WorldView : Node3D
                 var at = new Vector2((float)(p.X + cx * (e + 0.1)) + Geo.Margin, (float)(p.Y + cy * (e + 0.1)) + Geo.Margin);
                 var foot = new Vector2((float)(p.X + cx * (e + rules.Face)) + Geo.Margin, (float)(p.Y + cy * (e + rules.Face)) + Geo.Margin);
                 float baseY = Gen.HeightAt(foot.X, foot.Y) - 0.3f, top = Gen.HeightAt((float)(p.X + cx * (e - 1)) + Geo.Margin, (float)(p.Y + cy * (e - 1)) + Geo.Margin);
-                float high = Mathf.Max(0.6f, top - baseY), j = Geo.Hash(seed * 7 + 1);
+                // Never taller than the plateau stands: a column at the foot of other high ground keeps to its own cliff.
+                float high = Mathf.Clamp(top - baseY, 0.6f, (float)p.H + 1.5f), j = Geo.Hash(seed * 7 + 1);
                 var col = stones[(int)(Geo.Hash(seed * 7 + 2) * stones.Length) % stones.Length];
                 // A column in two stacked blocks, the upper set back a little, its crown just under the grass of the top.
                 float r = 0.5f + j * 0.5f;
@@ -250,6 +254,54 @@ public partial class WorldView : Node3D
                 data[i * 4 + 3] = 255;
             }
         DataTex = ImageTexture.CreateFromImage(Image.CreateFromData(N, N, false, Image.Format.Rgba8, data));
+    }
+
+    private const int TrailRes = 1024;
+    private Image _trailImg = null!;
+    private readonly byte[] _trail = new byte[TrailRes * TrailRes];
+
+    /// <summary>The wilds' worn trails (<see cref="Country.Tracks"/>) as a mask over the world, for the terrain shader.</summary>
+    public ImageTexture TrailTex { get; private set; } = null!;
+
+    /// <summary>
+    /// Draw the worn trails: the roads the companies of the last months actually walked, wherever the ground under them is
+    /// worn enough to show (<see cref="Country.Tracks"/>), as worn as it is there.
+    /// </summary>
+    public void SetTrails(CrownAndCompass.Sim.Town town)
+    {
+        Array.Clear(_trail);
+        var land = Country.LandOf(town);
+        var t = Country.Rules(town).Trail;
+        float k = TrailRes / (float)WorldGen.N;
+        // The last weeks' roads: older ones wandered before the tracks drew together.
+        int since = town.Tick - 45 * CrownAndCompass.Sim.SimTime.HoursPerDay;
+        var lines = town.Parties.Where(p => p.DepartTick >= since && p.Resolved).SelectMany(p => Roads.Walked(town, p))
+            .Concat(town.Surveys.Where(s => s.DepartTick >= since).SelectMany(s => Explore.Walked(town, s)));
+        foreach (var line in lines)
+            for (int i = 1; i < line.Count; i++)
+            {
+                var (ax, ay) = line[i - 1];
+                var (bx, by) = line[i];
+                var a = Geo.FromDays(ax, ay) * k;
+                var b = Geo.FromDays(bx, by) * k;
+                int steps = Math.Max(1, (int)Math.Ceiling(a.DistanceTo(b) * 2));
+                for (int j = 0; j <= steps; j++)
+                {
+                    float f = j / (float)steps;
+                    var p = a.Lerp(b, f);
+                    // The town's own lanes are its own; out in the wilds only ground worn enough shows.
+                    if ((p / k).DistanceTo(Geo.Center) < Geo.Clearing + 8) continue;
+                    int c = land.Index(ax + (bx - ax) * f, ay + (by - ay) * f);
+                    if (c < 0 || !town.Trails.TryGetValue(c, out double w) || w < t.Shown) continue;
+                    int px = (int)p.X, py = (int)p.Y;
+                    if (px < 0 || py < 0 || px >= TrailRes || py >= TrailRes) continue;
+                    byte v = (byte)(Math.Min(1, w / t.Worn) * 255);
+                    int at = py * TrailRes + px;
+                    if (_trail[at] < v) _trail[at] = v;
+                }
+            }
+        _trailImg.SetData(TrailRes, TrailRes, false, Image.Format.L8, _trail);
+        TrailTex.Update(_trailImg);
     }
 
     /// <summary>Which territories the town holds, and how far the enemy's corruption has spread.</summary>
