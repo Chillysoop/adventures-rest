@@ -183,6 +183,9 @@ public sealed record LibGear
     public int Strength { get; init; }
 
     public bool TwoHanded => Properties.Any(p => p.StartsWith("Two-Handed", StringComparison.Ordinal));
+
+    /// <summary>A bow, crossbow or sling: it shoots, and the weather gets at the shot.</summary>
+    public bool Ranged => Properties.Any(p => p.StartsWith("Ammunition", StringComparison.Ordinal));
 }
 
 /// <summary>A god of the pantheon (content/original/deities.json), boiled down to what the faith system needs.</summary>

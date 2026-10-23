@@ -134,4 +134,32 @@ public class ProwessTests
         }
         Assert.True(Hits("mage") >= Hits("wolf"), "a mage should drop the wizard at least as often as a wolf does");
     }
+
+    [Fact]
+    public void WeatherSpoilsShotsInTheOpenButNotUnderground()
+    {
+        var t = NewTown();
+        var party = new[] { ("ranger", 5), ("fighter", 5) }.Select(x => Hero(t, x.Item1, x.Item2)).ToList();
+        foreach (var h in party) h.Hero!.Weapon = C.Library.GearOf("longbow");
+        var foul = new WeatherNow { Step = Weather.Storm, Fall = 1, Wind = 1, Fog = true, Kind = "tempest", By = "" };
+        string Fight(SiteDef? site)
+        {
+            var log = new List<string>();
+            for (int seed = 1; seed <= 10; seed++)
+            {
+                foreach (var h in party) h.Hero!.Hp = h.Hero.MaxHp;
+                var run = new Expedition.Venture(new Rng(seed), C, party, site) { Sky = foul };
+                if (site != null) run.Delve(site, 0);
+                else run.Combat(new EncounterDef { Kind = "combat", Monster = "wolf", Count = [2, 2], Text = "wolves" }, false);
+                log.AddRange(run.Lines);
+            }
+            return string.Join("\n", log);
+        }
+        string open = Fight(null);
+        Assert.Contains("wind drags arrows", open);
+        Assert.Contains("Rain spoils", open);
+        Assert.Contains("Murk hides", open);
+        var cave = C.Sites.First(s => s.Habitats.Contains("caves"));
+        Assert.DoesNotContain("wind drags arrows", Fight(cave));
+    }
 }

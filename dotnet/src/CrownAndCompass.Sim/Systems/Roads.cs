@@ -865,6 +865,8 @@ public static class Roads
         {
             if (v.Wiped) break;
             v.Clock = Finish(content, start, at);
+            var here = Along(town, from, route, at);
+            v.Sky = Weather.At(town, here.X, here.Y, (int)v.Clock);
             int fights = v.RoadFights;
             act();
             if (v.RoadFights > fights) troubled.Add(Along(town, from, route, at));
@@ -926,6 +928,7 @@ public static class Roads
             if (!v.Wiped)
             {
                 v.SpendSlots(party.Sendings);
+                v.Sky = Weather.At(town, spot.X, spot.Y, (int)v.Clock);
                 v.Track(site.Def);
                 outcome = v.Delve(site.Def, content.Roads.Retreat.Retries);
             }

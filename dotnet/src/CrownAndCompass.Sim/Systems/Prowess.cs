@@ -118,8 +118,27 @@ public sealed record ProwessRules
     public HarmRules Damage { get; init; } = new();
     public int RegenRises { get; init; }
     public AimRules Targeting { get; init; } = new();
+    public WeatherFight Weather { get; init; } = new();
 
     public ClassPower? Power(string id) => Powers.FirstOrDefault(p => p.Id == id);
+}
+
+/// <summary>
+/// The sky in a fight in the open (prowess.json <c>weather</c>): lightning stronger in a storm (a multiple), rain and wind
+/// spoiling shots above their marks, fog or dust hiding the foe (to-hit taken off, at most <see cref="Most"/>). Sites of
+/// these habitats are fought under cover; touch spells need no aim.
+/// </summary>
+public sealed record WeatherFight
+{
+    public double Storm { get; init; } = 1;
+    public double Rain { get; init; } = 1;
+    public int RainHit { get; init; }
+    public double Wind { get; init; } = 1;
+    public int WindHit { get; init; }
+    public int FogHit { get; init; }
+    public int Most { get; init; }
+    public IReadOnlyList<string> Cover { get; init; } = [];
+    public IReadOnlyList<string> Touch { get; init; } = [];
 }
 
 /// <summary>
