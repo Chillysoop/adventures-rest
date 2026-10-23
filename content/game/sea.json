@@ -67,5 +67,9 @@
     "sunk": ["{ship} does not come home. A fishing boat finds a spar with her name on it."],
     "repelled": ["Corsair longboats nose into the harbour by night. The watch and the crews of the moored ships meet them on the quay, and they row off empty."],
     "raided": ["Corsairs raid the harbour by night: {gold} gold and {food} food carried off, and {ship} holed at her mooring."]
-  }
+  },
+  "harbour": { "berths": 2, "perQuay": 2, "anchorage": 2, "anchorLoad": 0.8, "quays": ["harbour_quay", "harbour_long_quay"],
+    "shipyard": "harbour_shipyard", "yardCost": 0.8, "tradingHouse": "harbour_trading_house", "trading": 1.2,
+    "lighthouse": "harbour_lighthouse", "light": 2, "lightCorsairs": 0.7, "barracks": "harbour_naval_barracks", "barracksFight": 6,
+    "dryDock": "harbour_dry_dock", "dockRepair": 0.6, "dockMend": 2 }
 }

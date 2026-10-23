@@ -264,4 +264,58 @@ public partial class TownView
         k.Frustum(new Vector3(0.12f, 1.36f, 0.12f), 0.07f, 0.09f, 0.08f, 8, new Color("3c3a38"));
         k.Blob(new Vector3(0.12f, 1.5f, 0.12f), new Vector3(0.05f, 0.06f, 0.05f), new Color("e07030"));
     }
+
+    // ---- The harbour's parts ----
+
+    /// <summary>A stone quay: a long pier of dressed stone with iron bollards along its edge and a coil of rope.</summary>
+    private static void Quay(MeshKit k, int len)
+    {
+        k.Push(MeshKit.At(0, 0, 0, 0, Fit(len, 2, 0.94f)));
+        k.Box(Vector3.Zero, new Vector3(len, 0.18f, 1.4f), Ashlar2, Ashlar);
+        for (int i = 0; i < len * 2; i++)
+            k.Frustum(new Vector3(-len / 2f + 0.25f + i * 0.5f, 0.18f, 0.6f), 0.05f, 0.06f, 0.12f, 6, new Color("3c3a38"));
+        k.Frustum(new Vector3(len / 2f - 0.4f, 0.18f, -0.3f), 0.15f, 0.15f, 0.06f, 10, new Color("8a7a5a"));
+        k.Pop();
+    }
+
+    /// <summary>The shipyard: a slipway down to the water with a hull's ribs rising on it, and a saw-pit shed.</summary>
+    private static void Shipyard(MeshKit k)
+    {
+        k.Box(Vector3.Zero, new Vector3(0.94f, 0.04f, 0.7f), Palette.Timber.Darkened(0.1f));
+        for (int i = 0; i < 7; i++)
+        {
+            float x = -0.3f + i * 0.08f, h = 0.12f + 0.08f * Mathf.Sin(Mathf.Pi * i / 6f);
+            foreach (float side in new[] { -1f, 1f })
+                k.Box(new Vector3(x, 0.04f, side * 0.1f), new Vector3(0.015f, h, 0.015f), Palette.Timber);
+        }
+        k.Box(new Vector3(0, 0.04f, 0), new Vector3(0.6f, 0.025f, 0.04f), Palette.DarkTimber);
+        k.Box(new Vector3(0.36f, 0.04f, -0.22f), new Vector3(0.2f, 0.16f, 0.2f), Palette.Timber, Palette.DarkTimber);
+        k.Box(new Vector3(0.36f, 0.2f, -0.22f), new Vector3(0.24f, 0.03f, 0.24f), new Color("6a4a30"));
+    }
+
+    /// <summary>The lighthouse: a tall white stone tower banded in red, a lamp room that glows at the top.</summary>
+    private static void Lighthouse(MeshKit k)
+    {
+        var white = new Color("e8e4dc");
+        var red = new Color("b8322a");
+        k.Frustum(Vector3.Zero, 0.3f, 0.2f, 0.6f, 10, white, white.Darkened(0.1f));
+        k.Frustum(new Vector3(0, 0.6f, 0), 0.2f, 0.17f, 0.25f, 10, red, red.Darkened(0.1f));
+        k.Frustum(new Vector3(0, 0.85f, 0), 0.17f, 0.15f, 0.45f, 10, white, white.Darkened(0.1f));
+        k.Frustum(new Vector3(0, 1.3f, 0), 0.2f, 0.2f, 0.04f, 10, new Color("3c3a38"));
+        k.Frustum(new Vector3(0, 1.34f, 0), 0.12f, 0.12f, 0.16f, 10, new Color(new Color("ffe8a0"), MeshKit.Flag.Magic));
+        k.Frustum(new Vector3(0, 1.5f, 0), 0.16f, 0.02f, 0.14f, 10, red);
+    }
+
+    /// <summary>The dry dock: a stepped stone basin, a ship's hull propped on blocks at its bottom, and a gate to the sea.</summary>
+    private static void DryDock(MeshKit k)
+    {
+        k.Push(MeshKit.At(0, 0, 0, 0, Fit(4, 2, 0.94f)));
+        foreach (float z in new[] { -0.8f, 0.8f }) k.Box(new Vector3(0, 0, z), new Vector3(4, 0.3f, 0.4f), Ashlar2, Ashlar);
+        k.Box(new Vector3(-1.85f, 0, 0), new Vector3(0.3f, 0.3f, 1.2f), Ashlar2, Ashlar);
+        k.Box(new Vector3(1.9f, 0, 0), new Vector3(0.2f, 0.34f, 1.2f), Palette.DarkTimber);
+        k.Box(new Vector3(0, 0, 0), new Vector3(3.4f, 0.04f, 1.2f), new Color("6a6458"));
+        foreach (float x in new[] { -1f, 0f, 1f }) k.Box(new Vector3(x, 0.04f, 0), new Vector3(0.12f, 0.1f, 0.3f), Palette.Timber);
+        k.Blob(new Vector3(0, 0.3f, 0), new Vector3(1.4f, 0.2f, 0.32f), new Color("7a5a3a"));
+        k.Pop();
+    }
 }

@@ -186,4 +186,46 @@ public class VoyagesTests
         Knowledge.Heard(t, party);
         Assert.DoesNotContain(Alerts.Standing(t), a => a.Key == $"overdue:{party.Id}");
     }
+
+    [Fact]
+    public void TheHarbourGrowsQuaysAndAddOnsAndShipsPastItsBerthsLieAtAnchor()
+    {
+        var sim = Harboured();
+        var t = sim.Town;
+        t.Treasury = 20000;
+        t.City.Tier = City.TierIndex(t, "town");
+        var h = Fleet.Harbour(t)!;
+        var p = t.Content.Sea.Harbour;
+        Assert.True(Monuments.IsMonument(t, h.Def));
+        Building Raise(string id)
+        {
+            var b = sim.AddPart(h.Id, id) ?? throw new Xunit.Sdk.XunitException($"{id}: {Monuments.Blocked(t, h, t.Content.Building(id))}");
+            b.BuildProgress = b.Def.BuildHours;
+            return b;
+        }
+        // Two berths: the boat and the longship. Two more lie at anchor; then the harbour is full.
+        Assert.Equal(p.Berths, Fleet.AtSea(t).Count());
+        var anchored = Fleet.Build(t, "rowboat")!;
+        Assert.True(Fleet.AtAnchor(t, anchored));
+        Assert.NotNull(Fleet.Build(t, "rowboat"));
+        Assert.Equal("the harbour and the anchorage are full: add a quay", Fleet.BuildBlocked(t, "rowboat"));
+        // At anchor, no patching.
+        anchored.Hull = 1;
+        Assert.False(Fleet.Repair(t, anchored.Id));
+        // A quay berths them.
+        Raise("harbour_quay");
+        Assert.Equal(p.Berths + p.PerQuay, Fleet.Berths(t));
+        Assert.False(Fleet.AtAnchor(t, anchored));
+        Assert.Null(Fleet.BuildBlocked(t, "rowboat"));
+        // The shipyard builds for less, the dry dock patches for less.
+        var longship = t.Content.Sea.Ship("longship")!;
+        double cost = Fleet.Cost(t, longship), repair = Fleet.RepairCost(t, anchored);
+        Raise("harbour_shipyard");
+        Raise("harbour_dry_dock");
+        Assert.True(Fleet.Cost(t, longship) < cost);
+        Assert.True(Fleet.RepairCost(t, anchored) < repair);
+        foreach (var id in new[] { "harbour_trading_house", "harbour_lighthouse", "harbour_naval_barracks", "harbour_long_quay" }) Raise(id);
+        Assert.Equal(p.Berths + 2 * p.PerQuay, Fleet.Berths(t));
+        Assert.True(Fleet.Has(t, p.Lighthouse) && Fleet.Has(t, p.Barracks) && Fleet.Has(t, p.TradingHouse));
+    }
 }

@@ -376,6 +376,13 @@ public partial class TownView(MapView map) : Node3D
             case "sky_dock_rigger_hall": RiggerHall(kit, v); break;
             case "sky_dock_aerie": Aerie(kit, v); break;
             case "sky_dock_signal_tower": SignalTower(kit); break;
+            case "harbour_quay": Quay(kit, 3); break;
+            case "harbour_long_quay": Quay(kit, 4); break;
+            case "harbour_shipyard": Shipyard(kit); break;
+            case "harbour_trading_house": Guildhall(kit, v); break;
+            case "harbour_lighthouse": Lighthouse(kit); break;
+            case "harbour_naval_barracks": Barracks(kit, v); break;
+            case "harbour_dry_dock": DryDock(kit); break;
             default: House(kit, v); break;
         }
     }

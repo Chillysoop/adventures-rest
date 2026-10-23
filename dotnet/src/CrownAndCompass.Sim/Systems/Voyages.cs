@@ -38,7 +38,7 @@ public static class Voyages
     {
         var v = V(town);
         int d20 = rng.D20();
-        int total = d20 + (int)Math.Floor(s.Prowess - 1) + survival;
+        int total = d20 + (int)Math.Floor(s.Prowess - 1) + survival + (Fleet.Has(town, Fleet.Rules(town).Harbour.Lighthouse) ? Fleet.Rules(town).Harbour.Light : 0);
         double pace = d20 == 20 ? v.Navigate[0] : d20 == 1 ? v.Navigate[3] : total >= v.NavigateDc ? v.Navigate[1] : v.Navigate[2];
         return (pace, total);
     }
