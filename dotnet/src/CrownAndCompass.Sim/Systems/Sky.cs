@@ -46,6 +46,10 @@ public sealed record SkyFleetRules
     public double Salvage { get; init; } = 180;
     public int SalvageDays { get; init; } = 4;
     public int StrandDays { get; init; } = 30;
+
+    /// <summary>How high the Sky Dock's own lent airship climbs (<see cref="Reaches"/>): higher bands need one of the town's ships.</summary>
+    public double DockCeiling { get; init; } = 0.45;
+    public ExpeditionRules Expedition { get; init; } = new();
     public int RaidEvery { get; init; } = 24;
     public double RaidChance { get; init; } = 0.3;
     public double RaidStrength { get; init; } = 8;
@@ -61,6 +65,21 @@ public sealed record SkyFleetRules
     public IReadOnlyList<string> Captains { get; init; } = [];
     public IReadOnlyList<SkyFoeDef> Foes { get; init; } = [];
     public Dictionary<string, List<string>> Texts { get; init; } = [];
+}
+
+/// <summary>
+/// A company carried to a site in the sky (<see cref="Reaches"/>): the ship's ballistae open the fight (`edge` on the
+/// company's checks and blows), it waits `wait` days at the isle, and a company whose ship is lost is stranded until a
+/// rescue flight finds it (`search` days of looking, none where the site is scried) or `strandMost` days pass and it
+/// makes its own way down, `walkHurt` of their hit points the worse.
+/// </summary>
+public sealed record ExpeditionRules
+{
+    public int Edge { get; init; } = 1;
+    public int Wait { get; init; } = 1;
+    public int[] Search { get; init; } = [1, 4];
+    public int StrandMost { get; init; } = 40;
+    public double WalkHurt { get; init; } = 0.3;
 }
 
 /// <summary>An airship's job: patrol over the town, scout a region, or strike a lair; when it set out and is due home.</summary>
@@ -125,7 +144,7 @@ public static class Sky
     public static IEnumerable<Ship> Ships(Town town) => town.Ships.Where(s => Fleet.Aloft(town, s)).OrderBy(s => s.Id);
 
     /// <summary>Home at the mast and fit to fly: not on a job, not down in the wilds, with hull and lift left.</summary>
-    public static bool Moored(Town town, Ship s) => s.Flight == null && s.DownedRegion == null && s.Hull > 0;
+    public static bool Moored(Town town, Ship s) => s.Flight == null && s.DownedRegion == null && s.Hull > 0 && Voyages.Carrying(town, s) == null;
 
     /// <summary>Airships at the mast that could take a company or a merchant run now.</summary>
     public static int Ready(Town town) => Ships(town).Count(s => Moored(town, s) && s.Lift >= 2);
@@ -307,6 +326,9 @@ public static class Sky
     }
 
     /// <summary>A foe in the air: a flying menace near, if one comes, or one of sky.json's foes for the ring.</summary>
+    /// <summary>A foe in the air, as the shared ship fight takes it.</summary>
+    internal static ShipFoe? MeetFoe(Town town, Rng rng, Region? region) => Meet(town, rng, region) is { } f ? new ShipFoe(f.Name, f.Power, f.Speed, f.Boards, f.Menace) : null;
+
     private static (string Name, double Power, double Speed, bool Boards, Menace? Menace)? Meet(Town town, Rng rng, Region? region)
     {
         var r = Rules(town);
@@ -362,7 +384,7 @@ public static class Sky
         return State(town).Battles.LastOrDefault()?.Outcome ?? "";
     }
 
-    private static void Record(Town town, Ship s, string foe, Region? region, string outcome, int volleys)
+    internal static void Record(Town town, Ship s, string foe, Region? region, string outcome, int volleys)
     {
         var battles = State(town).Battles;
         battles.Add(new SkyBattle { Tick = town.Tick, ShipId = s.Id, Foe = foe, RegionId = region?.Id ?? -1, Outcome = outcome, Volleys = volleys });
@@ -493,7 +515,7 @@ public static class Sky
 
     private static IReadOnlyList<string> Texts(Town town, string key) => Rules(town).Texts.TryGetValue(key, out var t) && t.Count > 0 ? t : [""];
 
-    private static string Fill(Town town, Rng rng, string key, Ship s, string where, string foe) =>
+    internal static string Fill(Town town, Rng rng, string key, Ship s, string where, string foe) =>
         Cap(rng.Pick(Texts(town, key))
             .Replace("{ship}", s.Name, StringComparison.Ordinal)
             .Replace("{captain}", s.Captain, StringComparison.Ordinal)

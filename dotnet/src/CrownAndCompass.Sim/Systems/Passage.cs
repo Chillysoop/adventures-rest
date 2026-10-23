@@ -973,17 +973,16 @@ public static class Passage
 
     /// <summary>A floating isle needs every member to fly (a mount, a spell or an item), or a free airship to carry them.</summary>
     public static bool CanReach(Town town, IReadOnlyList<Agent> members, SiteState site) =>
-        Voyages.CanReach(town, members, site) && CanFly(town, members, site);
-
-    /// <summary>A floating isle needs every member to fly, or a free airship.</summary>
-    private static bool CanFly(Town town, IReadOnlyList<Agent> members, SiteState site) =>
-        !site.Def.Aloft || (Abilities(town, members) & Ways.Air) != 0 || (Parse(Rules(town).Airship.Ways) & Ways.Air) != 0 && AirshipsFree(town) > 0;
+        Voyages.CanReach(town, members, site) && Reaches.CanReach(town, members, site);
 
     /// <summary>The mind of a company with an airship under it: it crosses what the ship does.</summary>
     public static RouteMind Aboard(Town town, Party party, RouteMind mind)
     {
-        if (!party.Airship) return mind;
         var r = Rules(town).Airship;
+        // The town's own airship that carried it up brings it home (Reaches).
+        if (party.ShipId is int id && town.Ships.FirstOrDefault(s => s.Id == id) is { } ship && Fleet.Aloft(town, ship))
+            return mind with { Ways = mind.Ways | Parse(r.Ways), Carrier = ship.Name };
+        if (!party.Airship) return mind;
         return mind with { Ways = mind.Ways | Parse(r.Ways), Carrier = r.Name };
     }
 

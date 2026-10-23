@@ -495,6 +495,9 @@ public sealed class Simulation
     /// <summary>Reach a party on the road by sending stone: ask for word, or call it home.</summary>
     public string? SendWord(int partyId, bool recall = false) => Knowledge.Send(Town, partyId, recall);
 
+    /// <summary>Send an airship to look for an overdue company where it went up into the sky (<see cref="Reaches.Rescue"/>).</summary>
+    public bool RescueParty(int partyId) => Reaches.Rescue(Town, partyId) == null;
+
     /// <summary>Buy a company's report of a trip the council didn't pay for: at their asking price, or haggled down.</summary>
     /// <summary>Offer one company a job by name; it takes it and marches at once, or turns it down. Null when it can't be offered.</summary>
     public JobAnswer? OfferJob(string company, string siteId, double reward, string terms = "slay", bool lootToTown = false) =>

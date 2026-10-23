@@ -750,7 +750,8 @@ public static class Roads
     internal static void Depart(Town town, Party party, IReadOnlyList<Agent> members, SiteState site, Bounty? bounty)
     {
         var spot = World.Spot(town, site);
-        var mind = Passage.Board(town, party, Mind(town, members, Hurry(town, bounty, site), false), party.Start, spot, site.Def.Aloft);
+        var mind = Reaches.Embark(town, party, members, Mind(town, members, Hurry(town, bounty, site), false), site);
+        mind = Passage.Board(town, party, mind, party.Start, spot, site.Def.Aloft && party.ShipId == null && Reaches.DockReaches(town, site));
         mind = Voyages.Embark(town, party, members, mind, party.Start, spot);
         party.Out = Plan(town, party.Start, spot, mind, town.Rng, party.Said);
         double outHours = Hours(town, party.Start, party.Out);
@@ -920,6 +921,8 @@ public static class Roads
         party.ReturnTick = Math.Max(party.LeaveTick, (int)Math.Ceiling(Finish(content, party.LeaveTick, Hours(town, spot, party.Home))));
         foreach (var m in members) m.Hero!.AwayUntil = party.ReturnTick;
         party.Result = v.Result(outcome, site.Def.Name);
+        // Its airship lost, a company in the sky waits there for a rescue.
+        if (outcome != ExpeditionOutcome.Wiped && Reaches.Wait(town, party, site)) Reaches.Strand(town, party, site);
     }
 
     private static string Text(Town town, string key) =>
@@ -955,6 +958,7 @@ public static class Roads
             var p = Along(town, party.Start, party.Out, Marched(content, party.DepartTick, t));
             return new Whereabouts(p.X, p.Y, PaceAt(content, t));
         }
+        if (party.StrandedTick != null && t >= party.LeaveTick) return new Whereabouts(spot.X, spot.Y, Pace.Camped);
         if (t < party.LeaveTick)
         {
             var halt = party.Halts.LastOrDefault(h => t >= h.From && t < h.To);

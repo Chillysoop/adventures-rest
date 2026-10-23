@@ -520,7 +520,8 @@ public static class Alerts
             var site = Quests.Site(t, p.SiteId);
             int quiet = (t.Tick - p.HeardTick) / SimTime.HoursPerDay;
             string bound = site != null ? site.Def.Name : "the wilds";
-            string ask = Knowledge.SlotsLeft(t, p) > 0 ? "Send a stone to them" : "Scry where they went, or post a bounty to find them";
+            string ask = site is { Def.Aloft: true } && Reaches.RescueRefused(t, p) == null ? "Send an airship to look for them from Bounties"
+                : Knowledge.SlotsLeft(t, p) > 0 ? "Send a stone to them" : "Scry where they went, or post a bounty to find them";
             yield return new($"overdue:{p.Id}", Overdue, $"The {p.Name} are overdue",
                 $"This company has been gone a while. No word for {quiet} days; they set out for {bound}, looked for home by day {SimTime.DayOf(p.Expected)}. {ask}.",
                 SiteId: site?.Def.Id);

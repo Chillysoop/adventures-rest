@@ -157,8 +157,12 @@ public sealed class Party
     /// <summary>Whether it went in the sky dock's airship, which stays with it until it is home.</summary>
     public bool Airship { get; set; }
 
-    /// <summary>The harbour's ship that carries it over the open sea, out and home again (<see cref="Voyages"/>).</summary>
+    /// <summary>The harbour's ship that carries it over the open sea, or the town's airship that carries it into the sky, out and home again (<see cref="Voyages"/>, <see cref="Reaches"/>).</summary>
     public int? ShipId { get; set; }
+
+    /// <summary>Its airship was lost on the way (<see cref="Reaches"/>), and when it was left stranded at the site.</summary>
+    public bool ShipLost { get; set; }
+    public int? StrandedTick { get; set; }
 
     /// <summary>Where it set out from, in day units: the town, or the spot where explorers chose to go in (<see cref="Explore"/>).</summary>
     public (double X, double Y) Start { get; init; }
@@ -654,6 +658,12 @@ public static class Quests
                 continue;
             }
             if (!party.Resolved) Roads.Arrive(town, party);
+            if (town.Tick < party.ReturnTick)
+            {
+                // Stranded where it went (Reaches): not home after all.
+                party.Returned = false;
+                continue;
+            }
             if (party.Empty)
             {
                 // The rumour that sent them was false: the place stands empty.
