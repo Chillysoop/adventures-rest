@@ -18,6 +18,13 @@ public sealed class SiteState(SiteDef def)
     public bool Cleared { get; set; }
     public int Attempts { get; set; }
 
+    /// <summary>A cleared isle in the sky shows a seam of lift-crystal (<see cref="Crystal"/>), and the town may have a mine on it.</summary>
+    public bool Seam { get; set; }
+    public bool Mined { get; set; }
+
+    /// <summary>A group's hidden harbour (<see cref="GroupDef.Harbour"/>): no tavern talks of it and no survey finds it until someone sees it with their own eyes or another of the group's isles falls.</summary>
+    public bool Hidden { get; set; }
+
     /// <summary>The region of the wilds it lies in (<see cref="World"/>), or null for sites raised later.</summary>
     public int? RegionId { get; set; }
 
@@ -689,6 +696,7 @@ public static class Quests
                 Wayfaring.Notice(town, party.Home, World.Spot(town, s));
             }
             Patrons.Home(town, result);
+            if (result.Outcome == ExpeditionOutcome.Cleared) Crystal.Home(town, party, s);
 
             var chronicle = new Chronicle(
                 town.Chronicles.Count + 1,
@@ -710,7 +718,7 @@ public static class Quests
             // Bodies carried home can be raised at the temple; a wiped party leaves nobody to carry them.
             // A rescue or a raid on the hoard earns the bounty without clearing the place.
             bool earned = result.Outcome == ExpeditionOutcome.Cleared || result.GoalMet;
-            double pay = result.Gold + (earned ? bounty?.Reward ?? 0 : 0);
+            double pay = result.Gold + (earned ? bounty?.Reward ?? 0 : 0) + Voyages.Hold(town, party, s, earned);
             var rites = new List<(string Text, int Id)>();
             var raised = result.Outcome == ExpeditionOutcome.Wiped ? [] : Shrines.Raise(town, result.Dead, party.Name, ref pay, rites);
             var dead = result.Dead.Where(id => !raised.Contains(id)).ToList();

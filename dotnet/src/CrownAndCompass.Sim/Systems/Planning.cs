@@ -195,6 +195,7 @@ public static class Planning
         int count = town.Buildings.Count(b => b.Def.Id == d.Id && !b.Razed);
         if (d.Max > 0 && count >= d.Max) return $"the town has {d.Max}";
         if (Watch.TowerBlocked(town, d) is { } towers) return towers;
+        if (Sky.HeightBlocked(town, d) is { } height) return height;
         if (town.Population < d.Population) return $"needs {d.Population} residents";
         if (town.Treasury < Cost(town, d)) return "not enough gold";
         return null;
@@ -210,6 +211,7 @@ public static class Planning
         if (!City.IsOpen(town, x, y)) return $"{City.The(ward)} has not been laid out";
         if (!City.AllowsWard(town, d, x, y)) return $"it can't stand in {City.The(ward)}";
         if (!Density.Allows(town, d, x, y)) return $"it needs land zoned {Density.Name(town, d.Density).ToLowerInvariant()} density";
+        if (!Sky.SitsHigh(town, d, x, y)) return "it needs high ground: a hilltop or beside the keep's high tower";
         if (Spot(town, d, x, y, yaw) != null) return null;
         // Nothing near fits: say what's in the way at the spot itself.
         var (w, dd) = Land.Footprint(d);

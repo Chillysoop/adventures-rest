@@ -52,6 +52,8 @@ public class WorldTests
                 var theme = t.Regions[s.RegionId].Theme;
                 // The great island city is placed by the ocean's own rules, not the sea land's peoples.
                 if (s.Kin.Id == t.Content.World.Ocean.City.People) continue;
+                // So are the peoples of the sky.
+                if (s.Kin.Band != "") continue;
                 Assert.Contains(s.Kin.Id, theme.Peoples);
                 if (theme.Id == "highpeaks") Assert.Contains(s.Kin.Id, new[] { "dwarves", "gnomes", "birdfolk" });
                 if (theme.Id == "thornwood") Assert.Equal("elves", s.Kin.Id);

@@ -39,6 +39,9 @@ public sealed record DropDef
     /// <summary>Or a cleared site in a region of these themes (a sea reach, a sky isle), or with one of these habitats.</summary>
     public IReadOnlyList<string> Themes { get; init; } = [];
     public IReadOnlyList<string> Habitats { get; init; } = [];
+
+    /// <summary>Or a cleared isle in one of these heights of the sky (world.json isles bands).</summary>
+    public IReadOnlyList<string> Bands { get; init; } = [];
     public double Chance { get; init; } = 0.05;
 
     /// <summary>Only the master of a place carries it.</summary>
@@ -251,7 +254,8 @@ public static class Spoils
                     || menace != null && (d.Lineages.Contains(menace.Lineage) || d.Kinds.Contains(menace.Kind))
                     || site.Def.Kind != "" && d.Kinds.Contains(site.Def.Kind)
                     || theme != "" && d.Themes.Contains(theme)
-                    || d.Habitats.Count > 0 && site.Def.Habitats.Any(d.Habitats.Contains);
+                    || d.Habitats.Count > 0 && site.Def.Habitats.Any(d.Habitats.Contains)
+                    || site.Def.Band != "" && d.Bands.Contains(site.Def.Band);
                 if (mine) Roll(d, cr, true);
             }
         }

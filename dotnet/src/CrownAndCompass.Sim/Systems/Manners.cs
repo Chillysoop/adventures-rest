@@ -301,8 +301,9 @@ public static class Manners
         return list;
     }
 
-    private static string Arrival(MannerRules r, HistoryLineage? l, string fallback, List<string> own) =>
-        l != null && r.Arrivals.TryGetValue(l.Id, out var a) ? a
+    private static string Arrival(MannerRules r, HistoryLineage? l, string fallback, List<string> own, string people = "") =>
+        people != "" && r.Arrivals.TryGetValue(people, out var mine) ? mine
+        : l != null && r.Arrivals.TryGetValue(l.Id, out var a) ? a
         : fallback.Replace("{arrive}", own.Count > 0 ? r.Manner(own[0])!.Arrive : "to see who has settled so near");
 
     /// <summary>
@@ -333,7 +334,7 @@ public static class Manners
                     new StoryStage
                     {
                         Id = "start",
-                        Text = Arrival(r, l, r.Fallback.People, own),
+                        Text = Arrival(r, l, r.Fallback.People, own, p.Id),
                         Options = Options(r, own, rulers, m => m.Greet, "regard", "terms", r.Closer),
                         Ignored = Fit(new StoryOption { Success = r.Ignored.People }, "regard").Success,
                     },

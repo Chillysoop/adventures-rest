@@ -53,7 +53,11 @@ public sealed record SkyFleetRules
 
     /// <summary>How high the Sky Dock's own lent airship climbs (<see cref="Reaches"/>): higher bands need one of the town's ships.</summary>
     public double DockCeiling { get; init; } = 0.45;
+    public CrystalRules Crystal { get; init; } = new();
+    public HeightRules Heights { get; init; } = new();
     public ExpeditionRules Expedition { get; init; } = new();
+    public DockParts Parts { get; init; } = new();
+    public AirRaidRules AirRaids { get; init; } = new();
     public int RaidEvery { get; init; } = 24;
     public double RaidChance { get; init; } = 0.3;
     public double RaidStrength { get; init; } = 8;
@@ -69,6 +73,42 @@ public sealed record SkyFleetRules
     public IReadOnlyList<string> Captains { get; init; } = [];
     public IReadOnlyList<SkyFoeDef> Foes { get; init; } = [];
     public Dictionary<string, List<string>> Texts { get; init; } = [];
+}
+
+/// <summary>
+/// Where the Sky Dock may stand (Conner, 2026-10-22: "must be built at elevation either on mountains or a tall castle or a
+/// floating city"): `building` only on ground at least `minHeight` tiles up (a hilltop), within `towerReach` tiles of the
+/// keep's `tower` once it stands, or anywhere once the Lofted City flies.
+/// </summary>
+public sealed record HeightRules
+{
+    public string Building { get; init; } = "sky_dock";
+    public double MinHeight { get; init; } = 0.8;
+    public string Tower { get; init; } = "keep_high_tower";
+    public double TowerReach { get; init; } = 8;
+}
+
+/// <summary>
+/// Lift-crystal, the airships' fuel (Conner, 2026-10-22: "even if you rush to airships, you still need a fuel source"). Every
+/// day of lift a charge puts back burns a day's crystal from the dock's store (less what discoveries save, <see cref="Research.Crystal"/>).
+/// The dock comes with `start`; traders sell `buyMost` every `buyDays` at `buy` gold; companies bring home `shardsPerTier` a tier
+/// from a cleared site in the sky; and a cleared isle from the `seamFrom` height up shows a seam the town can mine for
+/// `mineCost` gold, yielding `mineYield` (plus `mineYieldPerRing` a ring out) a day while it stays clear.
+/// </summary>
+public sealed record CrystalRules
+{
+    public double Start { get; init; } = 16;
+
+    /// <summary>Days a griffon egg brought home from the isles takes to hatch.</summary>
+    public int HatchDays { get; init; } = 30;
+    public double Buy { get; init; } = 18;
+    public double BuyMost { get; init; } = 12;
+    public int BuyDays { get; init; } = 30;
+    public double ShardsPerTier { get; init; } = 1.5;
+    public string SeamFrom { get; init; } = "high";
+    public double MineCost { get; init; } = 900;
+    public double MineYield { get; init; } = 0.6;
+    public double MineYieldPerRing { get; init; } = 0.15;
 }
 
 /// <summary>
@@ -119,6 +159,31 @@ public sealed class SkyBattle
 }
 
 /// <summary>
+/// What the Sky Dock's parts do (sky.json `parts`, the parts themselves in buildings.json with `partOf: sky_dock`): the dock
+/// moors `berths` airships, and each mast `perMast` more; the refinery makes crystal go further, the rigger hall cuts the
+/// riggers' gold for charges and repairs, the aerie sells griffons, the signal tower spots raiders sooner and finds the stranded at once.
+/// </summary>
+public sealed record DockParts
+{
+    public int Berths { get; init; } = 2;
+    public int PerMast { get; init; } = 2;
+    public IReadOnlyList<string> Masts { get; init; } = [];
+    public string Refinery { get; init; } = "";
+    public double Refines { get; init; } = 0.15;
+    public string Riggers { get; init; } = "";
+    public double RiggerCost { get; init; } = 0.6;
+    public string Signal { get; init; } = "";
+    public int SignalHours { get; init; } = 6;
+}
+
+public sealed class SkyEgg
+{
+    public int HeroId { get; init; }
+    public string Mount { get; init; } = "";
+    public int Day { get; init; }
+}
+
+/// <summary>
 /// Country a ship charted for the council: the line it flew out (from, to, in days from the town) and the land round its
 /// end, <see cref="Radius"/> days across. The map lifts the fog there as described, as of <see cref="Tick"/>.
 /// </summary>
@@ -139,7 +204,19 @@ public sealed class Chart
 public sealed class SkyFleetState
 {
     public bool Granted { get; set; }
+
+    /// <summary>Lift-crystal in the dock's store, in days of lift (<see cref="Sky.Charge"/>), and what was bought of it since <see cref="BoughtDay"/>.</summary>
+    public double Crystal { get; set; }
+    public double Bought { get; set; }
+    public int BoughtDay { get; set; }
+
+    /// <summary>Griffon eggs brought home from the isles, each kept for the hero who found it (<see cref="Systems.Crystal.Hatch"/>).</summary>
+    public List<SkyEgg> Eggs { get; } = [];
     public int NextRaidDay { get; set; }
+
+    /// <summary>An attack from the air on its way (<see cref="Systems.AirRaids"/>), and the day the next may be rolled.</summary>
+    public AirRaid? AirRaid { get; set; }
+    public int NextAirRaidDay { get; set; }
     public List<SkyBattle> Battles { get; } = [];
 }
 
@@ -171,9 +248,49 @@ public static class Sky
     /// <summary>Airships at the mast that could take a company or a merchant run now.</summary>
     public static int Ready(Town town) => Ships(town).Count(s => Moored(town, s) && s.Lift >= 2);
 
+    // ---- Where the dock may stand ----
+
+    /// <summary>Whether a building that wants height (the Sky Dock) may stand here: a hilltop, beside the keep's tall tower, or anywhere once the Lofted City flies.</summary>
+    public static bool SitsHigh(Town town, BuildingDef d, double x, double y)
+    {
+        var h = Rules(town).Heights;
+        if (d.Id != h.Building || Lofted.Aloft(town)) return true;
+        if (Hills.Height(town, x, y) >= h.MinHeight) return true;
+        return town.Buildings.Any(b => b.Def.Id == h.Tower && b.Complete && Js.Hypot(town.Lot(b.LotId).X - x, town.Lot(b.LotId).Y - y) <= h.TowerReach);
+    }
+
+    /// <summary>Why the dock can stand nowhere yet: no hilltop in the opened rings, no tall tower, no flying city. Null when somewhere will do.</summary>
+    public static string? HeightBlocked(Town town, BuildingDef d)
+    {
+        var h = Rules(town).Heights;
+        if (d.Id != h.Building || Lofted.Aloft(town) || town.Buildings.Any(b => b.Def.Id == h.Tower && b.Complete)) return null;
+        var grid = Hills.Grid(town);
+        for (int i = 0; i < grid.Length; i++)
+        {
+            if (grid[i] < h.MinHeight) continue;
+            double x = (i % Land.Size + 0.5) / Land.Res, y = (i / Land.Size + 0.5) / Land.Res;
+            if (City.IsOpen(town, x, y)) return null;
+        }
+        return "needs high ground: a hilltop in the town's opened rings, the keep's high tower, or the Lofted City";
+    }
+
+    /// <summary>Whether a part of the Sky Dock stands (buildings.json `partOf: sky_dock`).</summary>
+    public static bool Has(Town town, string partId) =>
+        partId != "" && Dock(town) is { } dock && town.Buildings.Any(b => b.ParentId == dock.Id && b.Def.Id == partId && b.Complete && !b.Closed);
+
+    /// <summary>Airships the dock can moor: its own berths and each mast's.</summary>
+    public static int Berths(Town town) => Rules(town).Parts.Berths + Rules(town).Parts.PerMast * Rules(town).Parts.Masts.Count(m => Has(town, m));
+
+    /// <summary>The share of a charge's crystal saved: discoveries, and the refinery.</summary>
+    public static double Saved(Town town) => Math.Min(0.75, Research.Crystal(town) + (Has(town, Rules(town).Parts.Refinery) ? Rules(town).Parts.Refines : 0));
+
+    /// <summary>What the riggers' work costs: less with the rigger hall.</summary>
+    public static double RiggerShare(Town town) => Has(town, Rules(town).Parts.Riggers) ? Rules(town).Parts.RiggerCost : 1;
+
     public static string? BuildBlocked(Town town, string kind)
     {
         if (Dock(town) == null) return "needs the Sky Dock";
+        if (Ships(town).Count() >= Berths(town)) return "the dock's berths are full: add a mast";
         if (Fleet.Kind(town, kind) is not { Realm: "sky" } d) return "no such airship";
         if (d.Tier != "" && !City.Reached(town, d.Tier)) return $"needs the town to be a {City.TierName(town, d.Tier).ToLowerInvariant()}";
         if (town.Treasury < Fleet.Cost(town, d)) return "not enough gold";
@@ -252,22 +369,34 @@ public static class Sky
     }
 
     /// <summary>Hours sooner the town sees raiders coming, for each airship out on patrol (<see cref="Institutions.SkyWatch"/>).</summary>
-    public static int PatrolHours(Town town) => Ships(town).Count(s => s.Flight?.Job == "patrol") * Rules(town).PatrolHours;
+    public static int PatrolHours(Town town) =>
+        Ships(town).Count(s => s.Flight?.Job == "patrol") * Rules(town).PatrolHours + (Has(town, Rules(town).Parts.Signal) ? Rules(town).Parts.SignalHours : 0);
 
     // ---- Lift, repairs, salvage ----
 
-    public static double ChargeCost(Town town, Ship s) => Js.Round(Math.Max(0, Fleet.Def(town, s).Lift - s.Lift) * Fleet.Def(town, s).Recharge);
+    /// <summary>Days of lift a charge would put back now: what the ship lacks, as far as the dock's crystal goes.</summary>
+    public static double ChargeLift(Town town, Ship s)
+    {
+        double missing = Math.Max(0, Fleet.Def(town, s).Lift - s.Lift);
+        double burn = 1 - Saved(town);
+        return Math.Min(missing, burn <= 0 ? missing : State(town).Crystal / burn);
+    }
 
-    /// <summary>Fill an airship's lift-crystal at the dock.</summary>
+    /// <summary>The riggers' gold for a charge (the crystal is the store's).</summary>
+    public static double ChargeCost(Town town, Ship s) => Js.Round(ChargeLift(town, s) * Fleet.Def(town, s).Recharge * RiggerShare(town));
+
+    /// <summary>Fill an airship's lift-crystal at the dock, as far as the store goes.</summary>
     public static bool Charge(Town town, int shipId)
     {
         var s = town.Ships.FirstOrDefault(x => x.Id == shipId);
         if (s == null || !Fleet.Aloft(town, s) || !Moored(town, s) || Dock(town) == null || s.Lift >= Fleet.Def(town, s).Lift) return false;
+        double lift = ChargeLift(town, s);
         double cost = ChargeCost(town, s);
-        if (town.Treasury < cost) return false;
+        if (lift < 1 || town.Treasury < cost) return false;
         town.Book(TreasuryAccount.Works, -cost);
-        s.Lift = Fleet.Def(town, s).Lift;
-        town.Log(LedgerCategory.Town, Importance.Routine, $"The riggers charge {s.Name}'s lift-crystal ({Js.Str(cost)} gold).");
+        s.Lift += lift;
+        State(town).Crystal = Math.Max(0, State(town).Crystal - lift * (1 - Saved(town)));
+        town.Log(LedgerCategory.Town, Importance.Routine, $"The riggers charge {s.Name}'s lift-crystal ({Js.Str(Js.Round(lift))} days of lift, {Js.Str(cost)} gold).");
         return true;
     }
 
@@ -294,6 +423,7 @@ public static class Sky
         if (!st.Granted)
         {
             st.Granted = true;
+            st.Crystal += r.Crystal.Start;
             st.NextRaidDay = town.Day + r.RaidEvery;
             if (!Ships(town).Any()) Fleet.Build(town, r.Ships[0].Id, free: true);
         }
@@ -491,7 +621,7 @@ public static class Sky
         {
             Charted(town, region.Id, (0, 0), Middle(town, region), s.Name);
             region.Known = true;
-            var seen = town.Sites.Where(x => x.RegionId == region.Id && !x.Cleared).OrderBy(x => x.Def.Id, StringComparer.Ordinal).ToList();
+            var seen = town.Sites.Where(x => x.RegionId == region.Id && !x.Cleared && !x.Hidden).OrderBy(x => x.Def.Id, StringComparer.Ordinal).ToList();
             foreach (var site in seen)
             {
                 site.Found = true;

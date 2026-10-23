@@ -717,6 +717,9 @@ public sealed class Town
     /// <summary>The airships' grant, the sky pirates' next raid and the last fights in the air (<see cref="Systems.Sky"/>).</summary>
     public Systems.SkyFleetState SkyFleet { get; } = new();
 
+    /// <summary>Ferries the town has put across the river (<see cref="Systems.Ferries"/>).</summary>
+    public List<Systems.Ferry> Ferries { get; } = [];
+
     /// <summary>The mayor's character sheet and the story events open and past (<see cref="Systems.Stories"/>).</summary>
     public Systems.StoryState Stories => _stories ??= new Systems.StoryState { Mayor = Systems.Stories.NewMayor(this) };
     // Made on first use, so a save from before stories existed gets a mayor too.

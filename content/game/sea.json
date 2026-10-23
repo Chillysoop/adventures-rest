@@ -13,8 +13,8 @@
   "standInEvery": 10,
   "standInProfit": 40,
   "ships": [
-    { "id": "rowboat", "name": "fishing boat", "cost": 60, "timber": 8, "crew": 2, "hold": 12, "speed": 0.9, "hull": 40, "wear": 2, "repair": 1, "fish": 3, "fight": 0, "guns": 0, "agility": 3, "marines": 2 },
-    { "id": "longship", "name": "longship", "cost": 420, "timber": 30, "crew": 8, "hold": 35, "speed": 0.6, "hull": 90, "wear": 3, "repair": 1.5, "fish": 5, "fight": 4, "guns": 2, "agility": 4, "marines": 6, "tier": "village" },
+    { "id": "rowboat", "river": true, "name": "fishing boat", "cost": 60, "timber": 8, "crew": 2, "hold": 12, "speed": 0.9, "hull": 40, "wear": 2, "repair": 1, "fish": 3, "fight": 0, "guns": 0, "agility": 3, "marines": 2 },
+    { "id": "longship", "river": true, "name": "longship", "cost": 420, "timber": 30, "crew": 8, "hold": 35, "speed": 0.6, "hull": 90, "wear": 3, "repair": 1.5, "fish": 5, "fight": 4, "guns": 2, "agility": 4, "marines": 6, "tier": "village" },
     { "id": "carrack", "name": "carrack", "cost": 900, "timber": 60, "crew": 12, "hold": 80, "speed": 0.7, "hull": 160, "wear": 3, "repair": 2, "fish": 6, "fight": 6, "guns": 5, "agility": 1, "marines": 8, "tier": "town" }
   ],
   "names": ["the Gull", "the Salt Hare", "the Widow's Luck", "the Grey Lady", "the Herring Queen", "the Brave Kettle", "the Stormpetrel", "the Long Wager", "the Sea Wren", "the Tidecaller", "the Bright Anchor", "the Second Chance"],
@@ -30,13 +30,14 @@
   ],
   "powerPerRing": 3,
   "voyages": {
-    "_doc": "The sea's jobs and passages (Systems/Voyages.cs). A ship's days at sea are its speed times the navigator's roll (d20 + the captain's prowess + the best Survival aboard against 'navigateDc': times navigate[0] on a 20, [1] on a pass, [2] on a miss, [3] on a 1) times the weather (1 + 'weather' times sky.json's 'stormStep' chance for the day's sky over the waters, and the season's wind on the heading up to sky.json's 'wind' either way). Each day out a ship meets something with 'meet' plus 'meetPerRing' a ring out (at most 'meetMax'), one of 'foes' for the ring, fought as sky.json's ship fights. Jobs: 'patrol' the home waters for 'patrolDays' (each patrol turns away 'patrolGuard' of the corsairs' raids), 'scout' a sea land (charted like an airship's scouting), 'strike' a sea site (each gun takes 'strikeShare' of its strength a day in reach, at most 'strikeMost').",
+    "_doc": "The sea's jobs and passages (Systems/Voyages.cs). A ship's days at sea are its speed times the navigator's roll (d20 + the captain's prowess + the best Survival aboard against 'navigateDc': times navigate[0] on a 20, [1] on a pass, [2] on a miss, [3] on a 1) times the weather (1 + 'weather' times sky.json's 'stormStep' chance for the day's sky over the waters, and the season's wind on the heading up to sky.json's 'wind' either way). Each day out a ship meets something with 'meet' plus 'meetPerRing' a ring out (at most 'meetMax'), one of 'foes' for the ring, fought as sky.json's ship fights. Jobs: 'patrol' the home waters for 'patrolDays' (each patrol turns away 'patrolGuard' of the corsairs' raids), 'scout' a sea land (charted like an airship's scouting), 'strike' a sea site (each gun takes 'strikeShare' of its strength a day in reach, at most 'strikeMost'). A company that sails to an island in the town's own ship (taken before the Sky Dock's lent airship whenever open sea is all that's in the way) brings home 'hold' gold times (ring + 1) of salvage and trade when it wins.",
     "navigateDc": 12,
     "navigate": [0.7, 0.85, 1.15, 1.4],
     "weather": 1.5,
     "meet": 0.08, "meetPerRing": 0.03, "meetMax": 0.4,
     "patrolGuard": 0.35, "patrolDays": 6,
     "strikeShare": 0.05, "strikeMost": 0.4,
+    "hold": 40,
     "texts": {
       "sail": ["{ship} slips her moorings, {captain} at the helm, bound for {where}.", "The harbour bell rings as {ship} stands out to sea for {where}."],
       "storm": ["A gale catches {ship} off {where}; {captain} runs before it and loses a day."],
@@ -67,5 +68,10 @@
     "sunk": ["{ship} does not come home. A fishing boat finds a spar with her name on it."],
     "repelled": ["Corsair longboats nose into the harbour by night. The watch and the crews of the moored ships meet them on the quay, and they row off empty."],
     "raided": ["Corsairs raid the harbour by night: {gold} gold and {food} food carried off, and {ship} holed at her mooring."]
-  }
+  },
+  "harbour": { "berths": 2, "perQuay": 2, "anchorage": 2, "anchorLoad": 0.8, "quays": ["harbour_quay", "harbour_long_quay"],
+    "shipyard": "harbour_shipyard", "yardCost": 0.8, "tradingHouse": "harbour_trading_house", "trading": 1.2,
+    "lighthouse": "harbour_lighthouse", "light": 2, "lightCorsairs": 0.7, "barracks": "harbour_naval_barracks", "barracksFight": 6,
+    "dryDock": "harbour_dry_dock", "dockRepair": 0.6, "dockMend": 2 },
+  "river": { "building": "river_harbour", "reach": 1.2, "fish": 0.6 }
 }

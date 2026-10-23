@@ -308,6 +308,37 @@
         "puzzle": ["bells that must be rung in the drowned god's order"],
         "boss": ["the Choir's cantor, who has not breathed in years"]
       }
+    },
+    {
+      "id": "sky-armada", "name": "the sky armada", "lineage": "sky-armada", "bands": ["low", "high"],
+      "themes": ["stormcoast", "highpeaks"],
+      "names": ["the Black Mast Isle of {B}", "the {A} Corsair Rock", "the Raiders' Skyrock of {B}", "the Grapnel Isle"],
+      "harbour": ["the Hidden Harbour of {B}", "the Cloudhaven of the {A} Armada", "the Smugglers' Cloudbank of {B}"],
+      "habitats": ["plane-of-air", "mountain"],
+      "deck": ["wander", "parley", "wander", "trap", "wander", "treasure"],
+      "foes": ["pirate", "tough", "scout", "spy", "griffon", "hippogriff"],
+      "bosses": ["bandit-captain", "warrior-veteran", "tough-boss", "pirate-captain", "mage", "roc", "archmage"],
+      "texts": {
+        "wander": ["a boarding crew swinging over from a sky-sloop", "pirates on griffons circling the isle"],
+        "trap": ["a cargo net strung across the landing, weighted to drop"],
+        "parley": ["a pressed rigger who wants to go home", "a quartermaster who thinks the admiral cheats"],
+        "boss": ["the armada's admiral, on the deck of a ship moored to the rock"]
+      }
+    },
+    {
+      "id": "storm-cult", "name": "the storm cult", "lineage": "storm-cult", "bands": ["high", "cloud"],
+      "themes": ["stormcoast", "highpeaks"],
+      "names": ["the Lightning Altar of {B}", "the {A} Thunder Shrine", "the Isle of the Storm Bell", "the Stormcallers' Rock of {B}"],
+      "habitats": ["plane-of-air", "mountain"],
+      "deck": ["wander", "hazard", "wander", "puzzle", "wander", "treasure"],
+      "foes": ["cultist", "cultist-fanatic", "priest", "air-elemental"],
+      "bosses": ["cultist-fanatic", "priest", "air-elemental", "invisible-stalker", "djinni", "storm-giant"],
+      "texts": {
+        "wander": ["cultists chanting with copper rods raised to the sky", "a bound wind loose among the stones"],
+        "hazard": ["lightning called down on the iron path"],
+        "puzzle": ["storm-bells that must be rung in thunder's order"],
+        "boss": ["the high stormcaller, the sky answering every word"]
+      }
     }
   ]
 }

@@ -9,6 +9,8 @@ public class FieldTests
     {
         var sim = new Simulation(new SimulationOptions { Seed = seed, AutoMayor = false, Enemy = false, AutoStories = false });
         sim.RunDays(30);
+        // A hero at home to take the field: the whole roster may be out on one company.
+        for (int d = 0; d < 60 && !Field.FreeHeroes(sim.Town).Any(); d++) sim.RunDays(1);
         var t = sim.Town;
         t.City.Tier = City.TierIndex(t, "town");
         t.Treasury = 50000;

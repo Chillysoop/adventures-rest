@@ -157,7 +157,13 @@ public static class Alerts
             int days = Math.Max(1, (int)Math.Ceiling((at - t.Tick) / 24.0));
             yield return new("march", Siege, $"Siege in {Days(days)}", $"The warband is marching on the {Garrison.Place(t, t.Enemy.Approach)}. Call the watch to arms there and keep heroes home, or march the army out to meet it.", AtTown: true, Wall: t.Enemy.Approach);
         }
-        else if (t.Enemy.Stage == ThreatStage.Raids)
+        if (t.SkyFleet.AirRaid is { } air && t.Content.Sky.AirRaids.Attackers.FirstOrDefault(a => a.Id == air.Attacker) is { } attacker)
+        {
+            int days = Math.Max(1, air.Day - t.Day);
+            yield return new("airraid", Siege, $"{Cap(attacker.Name)} in {Days(days)}",
+                "An attack from the air: walls are no help. Keep the airships moored, the watch on the towers and the heroes home, or strike its isle first.", SiteId: air.SiteId, AtTown: true);
+        }
+        if (t.Enemy.Stage == ThreatStage.Raids)
             yield return new("raids", Siege, "Raiders by night", "The warband raids the town when its heroes are away. Build walls, hire the watch, clear the war camp.");
         foreach (var m in t.Saga.Menaces.Where(m => m.Alive && Discovery.Known(t, m) && m.ArrivalTick is int).OrderBy(m => m.Id))
         {
