@@ -116,7 +116,16 @@ public static class Council
         return Math.Min(0.85, town.Watch * 0.12 * effect * Factions.WatchFactor(town) * Planning.WatchFactor(town) * Kit.WatchFactor(town) + Clockwork.Catch(town) + Garrison.StreetWatch(town) + Army.StreetWatch(town));
     }
 
-    /// <summary>Bonus mood while a festival runs.</summary>
+    /// <summary>The Mandate an act spends (council.json <c>spend</c>), 0 for one that spends none.</summary>
+    public static double Cost(Town town, string act) => town.Content.Council.Spend.TryGetValue(act, out double c) ? c : 0;
+
+    /// <summary>Why the mayor's word won't carry an act now ("needs 6 Mandate"), or null.</summary>
+    public static string? Short(Town town, string act) =>
+        Cost(town, act) is var c && c > 0 && town.Mandate < c ? $"needs {Js.Str(c)} Mandate" : null;
+
+    /// <summary>Spend the Mandate an act costs. Call once the act is sure to go ahead, after <see cref="Short"/> said null.</summary>
+    public static void Spend(Town town, string act) => town.Mandate = Clamp(town.Mandate - Cost(town, act), 0, 100);
+
     /// <summary>What a festival costs the treasury: lanterns, ale and a feast for every household.</summary>
     public static double FestivalCost(Town town) => Js.Round(town.Content.Council.FestivalBase + town.Content.Council.FestivalPerResident * town.Population);
 
@@ -153,7 +162,11 @@ public static class Council
         PayWatch(town);
         FillSeats(town);
         DriftMandate(town);
-        if (autoDecide) Laws.StandIn(town);
+        if (autoDecide)
+        {
+            Laws.StandIn(town);
+            Seasons.EdictStandIn(town);
+        }
         foreach (var s in town.Seats) if (s.HolderId != null) LoyaltyDay(town, s);
 
         var pending = PendingMotion(town);

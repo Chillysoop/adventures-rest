@@ -301,6 +301,9 @@ public sealed class CityState
     /// <summary>How each ward feels about the mayor, -100 to 100 (<see cref="Wards"/>).</summary>
     public OrderedMap<string, double> Feeling { get; set; } = new();
 
+    /// <summary>What the mayor has each ward lean toward, by ward id (<see cref="Wards.SetFocus"/>).</summary>
+    public OrderedMap<string, string> Focus { get; set; } = new();
+
     /// <summary>Share of each service the town covers (1 = enough for everyone), as of the last day.</summary>
     public OrderedMap<string, double> Coverage { get; set; } = new();
 

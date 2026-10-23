@@ -336,7 +336,8 @@ public partial class Main
         }
         var top = alerts.Max(a => a.Kind.Level);
         bool dot = top == AlertLevel.Minor;
-        count.Text = dot ? "" : alerts.Count.ToString();
+        // The number counts the kinds that need a choice, not every alert of them; minor ones only make the dot.
+        count.Text = dot ? "" : Families(alerts.Where(a => a.Kind.Level > AlertLevel.Minor)).Count.ToString();
         count.Visible = !dot;
         var fill = top == AlertLevel.Urgent ? new Color("c94b3b") : top == AlertLevel.Decision ? Ui.Gold : Ui.Ink2;
         var s = Ui.Flat(fill, dot ? 4 : 5, dot ? 4 : 0, 99);

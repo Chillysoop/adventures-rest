@@ -167,6 +167,89 @@ public partial class Main
             ("Scrap", c.Wardens > 0, false, () => Act(() => _sim.ScrapWarden())));
     }
 
+    /// <summary>Who runs each area of the town's business: you, a steward, or a steward who asks you first.</summary>
+    private void RenderStewards(Pane p, Town t)
+    {
+        p.Heading("Who runs what", "ui-person");
+        foreach (var area in Stewards.Areas)
+        {
+            string id = area.Id;
+            var now = Stewards.Mode(t, _sim.Options, id);
+            var hand = t.Content.Council.HandOver.FirstOrDefault(h => h.Area == id);
+            string learning = t.Stewards.Learning.Contains(id) && hand != null
+                ? "  " + Ui.Chip("ui-time", hand.At.StartsWith("day:", StringComparison.Ordinal) ? $"yours day {hand.At[4..]}" : "yours soon", Ui.Gold, "Your steward runs it while you find your feet, then hands it to you", 13)
+                : "";
+            var options = new List<(string, bool, bool, Action)> { ("You", now != StewardMode.Player, now == StewardMode.Player, () => SetSteward(id, StewardMode.Player)) };
+            if (area.CanAsk) options.Add(("Asks you", now != StewardMode.Ask, now == StewardMode.Ask, () => SetSteward(id, StewardMode.Ask)));
+            options.Add(("Steward", now != StewardMode.Steward, now == StewardMode.Steward, () => SetSteward(id, StewardMode.Steward)));
+            p.Row($"{Ui.Img(area.Icon, 16)} [b]{Ui.Esc(area.Name)}[/b]{learning}\n[font_size=12]{Ui.Dim(Ui.Esc(area.Blurb))}[/font_size]", options.ToArray());
+        }
+        p.Note("Asks you: a small ✔ / ✖ card · hover its title for why");
+    }
+
+    private void SetSteward(string area, StewardMode mode)
+    {
+        _sim.SetSteward(area, mode);
+        _dirty = true;
+        GuideEvent("steward");
+    }
+
+    /// <summary>What an edict's decree does, a line a point: mood, settlers, building, gold, tension and yields.</summary>
+    internal static string EdictBullets(Town t, EdictDef e, int size = 12)
+    {
+        var d = t.Content.Stories.Decree(e.Decree);
+        if (d == null) return "";
+        var lines = new List<string>();
+        void Line(string icon, double v, string what, bool upGood = true)
+        {
+            if (Math.Abs(v) < 1e-9) return;
+            lines.Add($"{Ui.Img(icon, size + 2)} {Ui.C(v > 0 == upGood ? Ui.Good : Ui.Bad, $"{(v > 0 ? "+" : "−")}{Js.Str(Math.Abs(v))} {what}")}");
+        }
+        Line("ui-heart", d.Mood, "mood");
+        Line("population", Js.Round(d.Arrivals * 100), "% settlers");
+        Line("tab-build", Js.Round(d.Build * 100), "% building");
+        Line("gold", d.Gold, "gold a day");
+        Line("suspicion", d.Tension, "tension a day", false);
+        foreach (var (good, y) in d.Yields) Line(good.ToLowerInvariant(), Js.Round((y - 1) * 100), $"% {good.ToLowerInvariant()}");
+        return string.Join("\n", lines.Select(l => $"[font_size={size}]{l}[/font_size]"));
+    }
+
+    /// <summary>An edict's name and price as chips: gold paid once, Mandate spent or earned.</summary>
+    internal static string EdictHead(Town t, EdictDef e)
+    {
+        var d = t.Content.Stories.Decree(e.Decree);
+        string name = d?.Name ?? e.Id;
+        return $"{Ui.Img(e.Icon == "" ? "decree" : e.Icon, 16)} {Ui.Tip($"[b]{Ui.Esc(name)}[/b]", d?.Text ?? "")}   " + Ui.Chips(
+            e.Gold > 0 ? Ui.Chip("gold", Js.Str(e.Gold), t.Treasury < e.Gold ? Ui.Bad : Ui.Gold, "Paid once", 14) : "",
+            e.Mandate > 0 ? Ui.Chip("mandate", $"−{Js.Str(e.Mandate)}", t.Mandate < e.Mandate ? Ui.Bad : Ui.Gold, "Mandate it spends", 14) : "",
+            e.Mandate < 0 ? Ui.Chip("mandate", $"+{Js.Str(-e.Mandate)}", Ui.Good, "Mandate it earns", 14) : "");
+    }
+
+    /// <summary>The season's one big choice: its edicts on offer, each with what it costs and does.</summary>
+    private void RenderEdicts(Pane p, Town t)
+    {
+        var st = t.Seasons;
+        if (st.Offer.Count == 0)
+        {
+            if (st.Chosen != "" && Seasons.Edict(t, st.Chosen) is { } chosen && Decrees.InForce(t, chosen.Decree))
+            {
+                p.Heading("The season's edict", "decree");
+                p.Text($"{EdictHead(t, chosen)}  {Ui.Chip("ui-time", Ui.Days(Decrees.DaysLeft(t, chosen.Decree)), Ui.Ink2, "Left", 13)}\n{EdictBullets(t, chosen)}", 13);
+            }
+            return;
+        }
+        p.Heading("The season's edict", "decree");
+        p.Text(Ui.Chip("ui-time", Ui.Days(Math.Max(1, st.OfferUntil - t.Day + 1)), Ui.Ink2, "Pick one before the offer lapses, or none", 13), 13);
+        foreach (var id in st.Offer.ToList())
+        {
+            var e = Seasons.Edict(t, id);
+            if (e == null) continue;
+            string? why = Seasons.EdictBlocked(t, id);
+            p.Row($"{EdictHead(t, e)}\n{EdictBullets(t, e)}" + (why != null ? "\n" + Ui.Bullet(Ui.Dim(Ui.Esc(why)), "ui-lock") : ""),
+                ("Proclaim", why == null, true, () => Act(() => _sim.ChooseEdict(id))));
+        }
+    }
+
     /// <summary>The terms the bounty board posts on (<see cref="Terms"/>).</summary>
     private string _terms = "slay";
 
@@ -192,6 +275,7 @@ public partial class Main
         RenderCouncillor(p, t);
         p.Page("Hall", "tab-council");
         RenderMotion(p, t);
+        RenderEdicts(p, t);
         p.Meter("Mandate", t.Mandate, $"{Math.Round(t.Mandate)}", t.Mandate < 30);
         p.Chips(
             Ui.Chip("ui-time", "→ 50", Ui.Ink2, "Mandate fades back toward 50 unless you keep earning it", 13),
@@ -207,6 +291,8 @@ public partial class Main
         RenderGuilds(p, t);
         p.Page("Laws", "decree");
         RenderLaws(p, t);
+        p.Page("Stewards", "ui-person");
+        RenderStewards(p, t);
         var history = t.Motions.Where(m => m.Status != MotionStatus.Pending).TakeLast(8).Reverse().ToList();
         if (history.Count > 0)
         {
@@ -401,11 +487,13 @@ public partial class Main
         var r = Laws.Rules(t);
         if (r.Crimes.Count == 0) return;
         p.Heading("Law book");
+        p.Text($"Each change  {Ui.Writ(t, "law", "A new law")}", 13);
+        bool sway = Council.Short(t, "law") == null;
         foreach (var c in r.Crimes)
         {
             var now = Laws.For(t, c.Id);
             string crime = c.Id;
-            var choices = r.Punishments.Select(x => (x.Name, x.Id != now.Id, false, (Action)(() => Act(() => _sim.SetLaw(crime, x.Id))))).ToArray();
+            var choices = r.Punishments.Select(x => (x.Name, x.Id != now.Id && sway, false, (Action)(() => Act(() => _sim.SetLaw(crime, x.Id))))).ToArray();
             p.Row($"[b]{Ui.Esc(c.Name)}[/b]  {Tag(now.Name, Ui.Gold)}\n[font_size=12]{LawMoves(now)}[/font_size]", choices);
         }
         p.Note("Carried out each time the watch catches a hero and the court finds them guilty.");
@@ -432,8 +520,8 @@ public partial class Main
             var caster = Laws.Casters(t, truth.Spell).FirstOrDefault();
             string effect = truth.Certain ? "no lie holds" : $"+{truth.Bonus} evidence";
             string who = caster != null ? $"{Ui.Img("heroes", 13)} {AgentLink(caster)}" : Ui.C(Ui.Ink2, why ?? "");
-            p.Row($"{Ui.Img(truth.Icon, 15)} [b]{Ui.Esc(name)}[/b]  {(on ? Tag("In use", Ui.Good) : "")}\n[font_size=12]{Ui.Tip(Ui.C(Ui.Good, effect), truth.Text)}   {Ui.Img("gold", 13)} {Js.Str(truth.Fee)} a trial   {who}[/font_size]",
-                on ? ("Stop", true, false, (Action)(() => Act(() => _sim.SetTrialMagic("")))) : ("Use it", why == null, false, (Action)(() => Act(() => _sim.SetTrialMagic(spellId)))));
+            p.Row($"{Ui.Img(truth.Icon, 15)} [b]{Ui.Esc(name)}[/b]  {(on ? Tag("In use", Ui.Good) : Ui.Writ(t, "trial", "Ordering it"))}\n[font_size=12]{Ui.Tip(Ui.C(Ui.Good, effect), truth.Text)}   {Ui.Img("gold", 13)} {Js.Str(truth.Fee)} a trial   {who}[/font_size]",
+                on ? ("Stop", true, false, (Action)(() => Act(() => _sim.SetTrialMagic("")))) : ("Use it", why == null && Council.Short(t, "trial") == null, false, (Action)(() => Act(() => _sim.SetTrialMagic(spellId)))));
         }
         var recent = t.Trials.AsEnumerable().Reverse().Take(5).ToList();
         if (recent.Count == 0) return;
@@ -535,14 +623,15 @@ public partial class Main
             double grant = rules.SupportPerStanding * 10;
             var actions = new List<(string, bool, bool, Action)>();
             // Crack down when it is turning on the town (a cult, a gang); support it when it serves.
-            actions.Add(($"Crack down {Math.Round(rules.CrackdownCost)}g · {DecisionOdds(t, "crackdown")}", t.Treasury >= rules.CrackdownCost, true, () => Act(() => _sim.CrackDown(id))));
+            actions.Add(($"Crack down {Math.Round(rules.CrackdownCost)}g · {DecisionOdds(t, "crackdown")}", t.Treasury >= rules.CrackdownCost && Council.Short(t, "crackdown") == null, true, () => Act(() => _sim.CrackDown(id))));
             if (f.Lore.Kind != "cult")
                 actions.Add(($"Support {Math.Round(grant)}g", t.Treasury >= grant, false, () => Act(() => _sim.SupportFaction(id, grant))));
             string chips = Ui.Chips(
                 f.LeaderId is int lid ? $"{Ui.Tip(Ui.Img("ui-person", 15), "Leader")} {AgentLink(t.Agent(lid))}" : "",
                 Ui.Chip("population", $"{f.Members.Count}", null, "Members"),
                 Ui.Chip("gold", $"{Math.Round(Factions.Coffers(t, f))}", Ui.Gold, "Coffers"),
-                Ui.Chip("standing", $"{Math.Round(f.Standing)}", standColor, "Standing with the town"));
+                Ui.Chip("standing", $"{Math.Round(f.Standing)}", standColor, "Standing with the town"),
+                Ui.Writ(t, "crackdown", "Cracking down"));
             double heat = f.Heat;
             bool hot = heat >= rules.ExposeAt * 0.75;
             p.Row($"{Ui.Img("ui-faction", 16)} {Ui.Tip($"[b]{Ui.Esc(Ui.Cap(f.Name))}[/b]", lore)}  {kind}  {Tag(stand, standColor)}\n{chips}{motto}",
@@ -560,6 +649,9 @@ public partial class Main
         var p = _panes[Tab.Chronicles];
         var t = _sim.Town;
         p.Begin();
+        p.Page("Journal", "decree");
+        RenderJournal(p, t);
+        p.Page("Chronicles", "tab-library");
         RenderRecords(p, t);
         RenderHall(p, t);
         if (t.Legacies.Count > 0) p.Heading("Expeditions");

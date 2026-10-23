@@ -94,6 +94,7 @@ public partial class Main
             ("Side with the movement", side == null, false, () => Act(() => _sim.TakeSide("union"))),
             ("Side with the mages", side == null, false, () => Act(() => _sim.TakeSide("mages"))));
         if (side == null) p.Note($"A side holds {Ui.Days(r.SideDays)}. The other remembers.");
+        if (!Union.Sided(t)) p.Text($"Taking a side  {Ui.Writ(t, "union", "Taking a side")}", 12);
     }
 
     /// <summary>

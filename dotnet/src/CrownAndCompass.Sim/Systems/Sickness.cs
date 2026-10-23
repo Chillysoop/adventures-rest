@@ -262,7 +262,8 @@ public static class Sickness
     /// <summary>Close or open the sick lanes. Returns false when there is nothing to do.</summary>
     public static bool SetQuarantine(Town town, bool on)
     {
-        if (town.Sickness.Quarantine == on || on && !Outbreak(town)) return false;
+        if (town.Sickness.Quarantine == on || on && !Outbreak(town) || on && Council.Short(town, "quarantine") != null) return false;
+        if (on) Council.Spend(town, "quarantine");
         town.Sickness.Quarantine = on;
         town.Log(LedgerCategory.Council, Importance.Notable, Text(town, on ? "quarantine" : "lifted"));
         return true;

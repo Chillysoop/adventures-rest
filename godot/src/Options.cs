@@ -574,6 +574,7 @@ public sealed class Options
                     }
                     if (parts[0] == "levy")
                     {
+                        t.Mandate = Math.Max(t.Mandate, 60);
                         sim.SetServiceLaw(ServiceLaw.Conscription);
                         sim.RaiseLevy(int.Parse(parts[1]));
                         break;
@@ -613,6 +614,7 @@ public sealed class Options
                         Powers.Introduce(t, oath, "sinks");
                         oath.Side = PowerSide.Town;
                         oath.Standing = Math.Max(oath.Standing, 70);
+                        t.Mandate = Math.Max(t.Mandate, 60);
                         sim.SwearPower(oath.Id);
                     }
                     if (CrownAndCompass.Sim.Systems.Sky.Dock(t) != null) Fleet.Build(t, "dreadnought", free: true);

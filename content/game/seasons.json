@@ -4,6 +4,26 @@
   "startSeason": 0,
   "startDay": 10,
   "turnBlend": 4,
+  "edicts": {
+    "_doc": "The season's one big choice (Seasons.Offer/Choose): when a season turns, `offer` edicts that fit it are drawn by a hash of seed and season and stand `days` days; the one the mayor proclaims puts its stories.json decree in force for `lasts` days. `gold` is paid once; `mandate` is spent (negative earns). The council's steward picks the cheapest it can spare.",
+    "offer": 3, "days": 12, "lasts": 30,
+    "pool": [
+      { "id": "sowing", "decree": "edict-sowing", "icon": "bread", "seasons": ["spring"], "gold": 0, "mandate": 2 },
+      { "id": "roads", "decree": "edict-roads", "icon": "population", "seasons": ["spring", "summer"], "gold": 40, "mandate": 0 },
+      { "id": "shearing", "decree": "edict-shearing", "icon": "gold", "seasons": ["spring"], "gold": 20, "mandate": 0 },
+      { "id": "builders", "decree": "edict-builders", "icon": "tab-build", "seasons": ["summer"], "gold": 60, "mandate": 3 },
+      { "id": "pilgrims", "decree": "edict-pilgrims", "icon": "faith", "seasons": ["summer"], "gold": 25, "mandate": 0 },
+      { "id": "herbs", "decree": "edict-herbs", "icon": "tend", "seasons": ["spring", "summer"], "gold": 0, "mandate": 0 },
+      { "id": "tithe", "decree": "edict-tithe", "icon": "gold", "seasons": ["autumn"], "gold": 0, "mandate": 4 },
+      { "id": "vintage", "decree": "edict-vintage", "icon": "ale", "seasons": ["autumn"], "gold": 30, "mandate": 0 },
+      { "id": "stores", "decree": "edict-stores", "icon": "food", "seasons": ["autumn"], "gold": 30, "mandate": -2 },
+      { "id": "alms", "decree": "edict-alms", "icon": "faith", "seasons": ["winter"], "gold": 30, "mandate": -3 },
+      { "id": "woodcut", "decree": "edict-woodcut", "icon": "tab-build", "seasons": ["winter"], "gold": 0, "mandate": 2 },
+      { "id": "hearths", "decree": "edict-hearths", "icon": "mandate", "seasons": ["winter", "autumn"], "gold": 35, "mandate": 0 },
+      { "id": "drill", "decree": "edict-drill", "icon": "defence", "seasons": [], "gold": 20, "mandate": 2 },
+      { "id": "thrift", "decree": "edict-thrift", "icon": "gold", "seasons": [], "gold": 0, "mandate": 3 }
+    ]
+  },
   "seasons": [
     {
       "id": "spring", "name": "Spring",

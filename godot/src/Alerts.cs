@@ -21,6 +21,8 @@ public partial class Main
 {
     private const double MinorSeconds = 60;
     private const double FadeSeconds = 6;
+    /// <summary>The most kinds of alert a rail button lists on hover; the rest wait in its window.</summary>
+    private const int RailRows = 5;
 
     private HBoxContainer _alertRow = null!;
     private PanelContainer _alertTip = null!, _alertList = null!;
@@ -403,8 +405,11 @@ public partial class Main
         head.AddChild(new TextureRect { Texture = Ui.Icon(Groups[g].Icon), Modulate = Groups[g].Hue, ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2(18, 18), SizeFlagsVertical = SizeFlags.ShrinkCenter, MouseFilter = MouseFilterEnum.Ignore });
         head.AddChild(Ui.Label(Groups[g].Name, LevelColor(top), Ui.Bold, 14));
         _alertListBox.AddChild(head);
-        foreach (var a in items.Take(8)) _alertListBox.AddChild(AlertRow(a, 28, withTip: true));
-        if (items.Count > 8) _alertListBox.AddChild(Ui.Label($"…and {items.Count - 8} more in the window", Ui.Ink2, Ui.Body, 12));
+        // One row per kind of alert, the most pressing first, and no more than RailRows of them.
+        var families = Families(items);
+        foreach (var f in families.Take(RailRows)) _alertListBox.AddChild(AlertRow(f.First(), 28, withTip: true, family: f));
+        int more = families.Skip(RailRows).Sum(f => f.Count);
+        if (more > 0) _alertListBox.AddChild(Ui.Label($"…and {more} more in the window", Ui.Ink2, Ui.Body, 12));
         _alertListBox.AddChild(Ui.Label("Click: go there · Right-click: dismiss", new Color(Ui.Ink2, 0.75f), Ui.Body, 11));
         _listAnchor = button;
         PlaceAlertPopup(_alertList, button, beside: true);
@@ -424,8 +429,9 @@ public partial class Main
     }
 
     /// <summary>One alert in a list: its face or icon, its line, optionally its reason; click to go, right-click to dismiss.</summary>
-    private Control AlertRow(Alert a, float faceSize, bool withTip = false)
+    private Control AlertRow(Alert a, float faceSize, bool withTip = false, List<Alert>? family = null)
     {
+        if (family is { Count: > 1 }) a = a with { Text = $"{a.Text}  ·  {family.Count}" };
         var kind = a.Kind;
         {
             var row = new PanelContainer { MouseFilter = MouseFilterEnum.Stop, MouseDefaultCursorShape = CursorShape.PointingHand, TooltipText = withTip ? "" : $"{a.Tip}\nClick to go there · right-click to dismiss" };
@@ -460,13 +466,19 @@ public partial class Main
             {
                 if (ev is not InputEventMouseButton { Pressed: true } mb) return;
                 if (mb.ButtonIndex == MouseButton.Left) Go(a);
-                else if (mb.ButtonIndex == MouseButton.Right) _dismissed.Add(a.Key);
+                else if (mb.ButtonIndex == MouseButton.Right) _dismissed.UnionWith((family ?? [a]).Select(x => x.Key));
                 else return;
                 row.AcceptEvent();
             };
             return row;
         }
     }
+
+    /// <summary>Alerts gathered by kind, the most pressing kind first and each kind's own alerts in key order.</summary>
+    internal static List<List<Alert>> Families(IEnumerable<Alert> alerts) =>
+        alerts.GroupBy(a => a.Kind.Id)
+            .Select(g => g.OrderBy(a => a.Key, StringComparer.Ordinal).ToList())
+            .OrderByDescending(f => f[0].Kind.Level).ThenBy(f => f[0].Kind.Id, StringComparer.Ordinal).ToList();
 
     /// <summary>The portrait of the enemy or the site an alert is about, if it is about one.</summary>
     private Portrait? AlertFace(Alert a, float size)

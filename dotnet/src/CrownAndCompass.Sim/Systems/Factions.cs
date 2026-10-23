@@ -1049,8 +1049,9 @@ public static class Factions
     {
         var r = Rules(town);
         var f = Find(town, id);
-        if (f == null || !f.Active || !f.Known || town.Treasury < r.CrackdownCost) return false;
+        if (f == null || !f.Active || !f.Known || town.Treasury < r.CrackdownCost || Council.Short(town, "crackdown") != null) return false;
         town.Book(TreasuryAccount.Factions, -r.CrackdownCost);
+        Council.Spend(town, "crackdown");
         bool cult = f.Lore.Kind == "cult";
         var members = f.Members.Select(town.Agent).ToList();
         // The leader is run out of town, with any member the watch had caught before.

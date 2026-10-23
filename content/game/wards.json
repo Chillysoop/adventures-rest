@@ -3,6 +3,16 @@
   "decay": 0.98,
   "comfort": 0.1,
   "mood": 3,
+  "focus": {
+    "_doc": "What the mayor can set an open ward to lean toward (Wards.SetFocus): the townsfolk build that zone's buildings in the ward first, and the ward gains `feeling` a day from pride in it. Setting one spends council.json spend.focus Mandate.",
+    "feeling": 0.5,
+    "options": [
+      { "id": "homes", "name": "Homes", "icon": "population", "zone": "Residential" },
+      { "id": "trade", "name": "Trade", "icon": "gold", "zone": "Commercial" },
+      { "id": "crafts", "name": "Crafts", "icon": "tools", "zone": "Industry" },
+      { "id": "fields", "name": "Fields", "icon": "bread", "zone": "Farmland" }
+    ]
+  },
   "wards": [
     { "id": "old_town", "voice": "the first families", "likes": ["order", "caution"], "dislikes": ["guile"] },
     { "id": "market", "voice": "the stallholders", "likes": ["coin", "freedom"], "dislikes": ["harsh"] },

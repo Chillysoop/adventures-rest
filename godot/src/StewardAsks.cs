@@ -6,7 +6,7 @@ namespace CrownAndCompass.Client;
 /// <summary>
 /// What stewards who ask first want to do: small yes/no cards under the alert strip. Hover the title for why, click
 /// it to open the card up; ✔ goes ahead, ✖ says no (the steward won't ask the same for a while). Areas are handed
-/// over on the Settings window's Stewards tab.
+/// over on the Council window's Stewards page; the Next button (N) steps through these too.
 /// </summary>
 public partial class Main
 {
@@ -60,7 +60,7 @@ public partial class Main
         row.AddChild(AskButton("✖", Ui.Bad, "No · not again for a while", () => AnswerAsk(id, false)));
         if (open)
         {
-            var why = Ui.Label((a.Why == "" ? "" : a.Why + "\n") + $"• {area.Name}: Settings › Stewards", Ui.Ink2, Ui.Body, 12);
+            var why = Ui.Label((a.Why == "" ? "" : a.Why + "\n") + $"• {area.Name}: Council › Stewards", Ui.Ink2, Ui.Body, 12);
             why.AutowrapMode = TextServer.AutowrapMode.WordSmart;
             col.AddChild(why);
         }

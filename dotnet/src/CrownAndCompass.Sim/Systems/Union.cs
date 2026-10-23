@@ -233,12 +233,13 @@ public static class Union
         return true;
     }
 
-    public static string? SideBlocked(Town town) => !town.Union.Formed ? "no movement yet" : Sided(town) ? "the town has taken a side" : null;
+    public static string? SideBlocked(Town town) => !town.Union.Formed ? "no movement yet" : Sided(town) ? "the town has taken a side" : Council.Short(town, "union");
 
     /// <summary>The player's lever: take a side outright for a season, and face what the other side does about it.</summary>
     public static bool Side(Town town, string side)
     {
         if (side is not ("union" or "mages") || SideBlocked(town) != null) return false;
+        Council.Spend(town, "union");
         var r = Rules(town);
         var u = town.Union;
         u.Side = side;

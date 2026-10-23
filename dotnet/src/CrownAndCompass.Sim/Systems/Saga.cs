@@ -276,6 +276,9 @@ public static class Saga
     public static bool Finale(Town town) => town.Saga.Enabled && CurrentAct(town).Finale;
 
     /// <summary>"Act II: The Wider Wilds".</summary>
+    /// <summary>The act after this one, or null in the last.</summary>
+    public static ActDef? NextAct(Town town) => town.Saga.Act + 1 < Rules(town).Acts.Count ? Rules(town).Acts[town.Saga.Act + 1] : null;
+
     public static string ActTitle(Town town, int act) => $"Act {Roman(act + 1)}: {Rules(town).Acts[act].Name}";
 
     /// <summary>Average level of the town's four best living heroes, rounded down.</summary>

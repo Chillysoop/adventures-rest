@@ -314,8 +314,9 @@ public static class Land
         plan.Fresh();
         // Buildings kept to certain wards search on their own; the rest share a search per zone and size.
         byte crop = Farming.CropOf(town, def);
-        var key = (zone, w, d, def.Wards.Count == 0 && def.Density == 0 && crop == 0 ? "" : def.Id);
-        if (!plan.Found.TryGetValue(key, out var spot)) plan.Found[key] = spot = Search(town, def, w, d, zone, crop);
+        bool lean = zone is Zone z && Wards.Leans(town, z);
+        var key = (zone, w, d, def.Wards.Count == 0 && def.Density == 0 && crop == 0 ? lean ? "lean" : "" : def.Id);
+        if (!plan.Found.TryGetValue(key, out var spot)) plan.Found[key] = spot = (lean ? Search(town, def, w, d, zone, crop, true) : null) ?? Search(town, def, w, d, zone, crop);
         // A fresh lot each time: the caller may set its zone, and claims it under the next id.
         return spot == null ? null : new Lot(town.Lots.Count, spot.X, spot.Y) { W = w, D = d, Yaw = spot.Yaw, Zone = zone ?? Zone.Civic };
     }
@@ -335,14 +336,16 @@ public static class Land
         return null;
     }
 
-    private static Lot? Search(Town town, BuildingDef def, int w, int d, Zone? zone, byte crop)
+    /// <param name="leaning">Only in a ward the mayor has lean toward this zone (<see cref="Wards.SetFocus"/>).</param>
+    private static Lot? Search(Town town, BuildingDef def, int w, int d, Zone? zone, byte crop, bool leaning = false)
     {
         // Fronting on a street, the way the townsfolk build.
         foreach (var (_, x, y, yaw) in Streets.Fronts(town, d, zone))
-            if (City.Allows(town, def, x, y) && Fits(town, x, y, w, d, yaw, zone, crop: zone == Zone.Farmland ? crop : (byte)0))
+            if ((!leaning || Wards.FocusOf(town, WardAt(town, (int)(y * Res) * Size + (int)(x * Res)).Id)?.Zone == zone)
+                && City.Allows(town, def, x, y) && Fits(town, x, y, w, d, yaw, zone, crop: zone == Zone.Farmland ? crop : (byte)0))
                 return new Lot(town.Lots.Count, x, y) { W = w, D = d, Yaw = yaw, Zone = zone ?? Zone.Civic };
         // The council's works take any open ground when no street has room, facing the nearest street.
-        return zone == null ? Anywhere(town, def, w, d) : null;
+        return zone == null && !leaning ? Anywhere(town, def, w, d) : null;
     }
 
     private static Lot? Anywhere(Town town, BuildingDef def, int w, int d)

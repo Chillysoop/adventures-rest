@@ -437,6 +437,14 @@ public sealed record SeatDef
     public string Agenda { get; init; } = "";
 }
 
+/// <summary>An area a steward runs for a new player until <see cref="At"/> ("day:N", "goal:id" or a goal measure), then hands over.</summary>
+public sealed record HandOverDef
+{
+    public string Area { get; init; } = "";
+    public string At { get; init; } = "";
+    public string Text { get; init; } = "";
+}
+
 /// <summary>The council: its seats, how each seat feels about each kind of motion, and the motions' numbers.</summary>
 public sealed record CouncilRules
 {
@@ -462,6 +470,15 @@ public sealed record CouncilRules
     public int MotionGapDays { get; init; }
     public double DecreeMandate { get; init; }
     public double StartingMandate { get; init; }
+
+    /// <summary>
+    /// The Mandate each of the mayor's weighty acts spends, by act (<see cref="Systems.Council.Spend"/>): a law, an
+    /// alliance, a crackdown. Mandate is the mayor's budget of decisions; gold alone can't buy them.
+    /// </summary>
+    public IReadOnlyDictionary<string, double> Spend { get; init; } = new Dictionary<string, double>();
+
+    /// <summary>Areas a new player's stewards hold at the start and when each comes due (<see cref="Systems.Stewards"/>).</summary>
+    public IReadOnlyList<HandOverDef> HandOver { get; init; } = [];
 
     /// <summary>Where Mandate settles with nothing done to earn more, and the share of the gap to it closed each day.</summary>
     public double MandateRest { get; init; } = 50;

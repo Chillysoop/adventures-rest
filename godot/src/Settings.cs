@@ -33,6 +33,9 @@ public partial class Main
 
     /// <summary>Pause when the game window loses focus, and take the speed up again on return (Settings, on unless turned off).</summary>
     private bool _pauseAway = true;
+
+    /// <summary>New towns start with stewards running the areas the player hasn't met yet (<see cref="SimulationOptions.HandOver"/>).</summary>
+    private bool _stewardsStart = true;
     private float _uiScale = 1;
 
     private string _settingsTab = "clock";
@@ -47,7 +50,6 @@ public partial class Main
         ("game", "books", "Game"),
         ("camera", "compass", "Camera"),
         ("keys", "tab-build", "Keys"),
-        ("stewards", "tab-council", "Stewards"),
     ];
 
     private void LoadSettings()
@@ -60,6 +62,7 @@ public partial class Main
         var game = section?["game"] as JsonObject;
         _autosaveDays = game?["autosaveDays"] is JsonValue ad && ad.TryGetValue(out int days) ? days : 7;
         _pauseAway = game?["pauseAway"] is not JsonValue pa || !pa.TryGetValue(out bool away) || away;
+        _stewardsStart = game?["stewardsStart"] is not JsonValue ss || !ss.TryGetValue(out bool start) || start;
         var cam = section?["camera"] as JsonObject;
         _map.EdgePan = cam?["edgePan"] is not JsonValue ep || !ep.TryGetValue(out bool edge) || edge;
         _map.PanSpeed = cam?["panSpeed"] is JsonValue ps && ps.TryGetValue(out float speed) ? speed : 1;
@@ -82,7 +85,7 @@ public partial class Main
         foreach (var c in ClockStops.All) clock[c.Id] = ShouldStop(c.Id);
         var section = ReadProfile()["settings"] as JsonObject ?? [];
         section["clock"] = clock;
-        section["game"] = new JsonObject { ["autosaveDays"] = _autosaveDays, ["pauseAway"] = _pauseAway };
+        section["game"] = new JsonObject { ["autosaveDays"] = _autosaveDays, ["pauseAway"] = _pauseAway, ["stewardsStart"] = _stewardsStart };
         section["camera"] = new JsonObject { ["edgePan"] = _map.EdgePan, ["panSpeed"] = _map.PanSpeed };
         section["display"] = new JsonObject { ["uiScale"] = _uiScale, ["fullscreen"] = DisplayServer.WindowGetMode() is DisplayServer.WindowMode.Fullscreen or DisplayServer.WindowMode.ExclusiveFullscreen };
         section["keys"] = Keys.Write();
@@ -162,6 +165,8 @@ public partial class Main
                 SettingRow("Autosave", "On quit too", Choice([(1, "1 day"), (3, "3 days"), (7, "7 days"), (0, "Never")], _autosaveDays, d => _autosaveDays = d));
                 SettingsHeading("CLOCK");
                 SettingRow("Pause when away", "Switching to another window pauses · back resumes", Toggle(_pauseAway, "On unless you turn it off", on => _pauseAway = on));
+                SettingsHeading("NEW TOWNS");
+                SettingRow("Stewards start in charge", "Defence, armory and honours handed to you over the first weeks", Toggle(_stewardsStart, "Off: everything is yours from day one", on => _stewardsStart = on));
                 SettingsHeading("DISPLAY");
                 bool full = DisplayServer.WindowGetMode() is DisplayServer.WindowMode.Fullscreen or DisplayServer.WindowMode.ExclusiveFullscreen;
                 SettingRow("Fullscreen", $"{Keys.Text("fullscreen")}", Toggle(full, "", _ => ToggleFullscreen()));
@@ -180,31 +185,7 @@ public partial class Main
             case "keys":
                 RenderKeys();
                 break;
-            case "stewards":
-                RenderStewards();
-                break;
         }
-    }
-
-    /// <summary>Who runs each area of this town's business: you, a steward, or a steward who asks you first.</summary>
-    private void RenderStewards()
-    {
-        SettingsHeading("THIS TOWN · WHO HANDLES IT");
-        foreach (var area in Stewards.Areas)
-        {
-            string id = area.Id;
-            var now = Stewards.Mode(_sim.Town, _sim.Options, id);
-            (int, string)[] options = area.CanAsk
-                ? [((int)StewardMode.Player, "You"), ((int)StewardMode.Ask, "Asks you"), ((int)StewardMode.Steward, "Steward")]
-                : [((int)StewardMode.Player, "You"), ((int)StewardMode.Steward, "Steward")];
-            SettingRow(area.Name, area.Blurb, Choice(options, (int)now, m =>
-            {
-                _sim.SetSteward(id, (StewardMode)m);
-                _dirty = true;
-                GuideEvent("steward");
-            }), area.Icon);
-        }
-        SettingsFoot("Asks you: a small ✔ / ✖ card under the alerts · hover its title for why");
     }
 
     private void RenderKeys()

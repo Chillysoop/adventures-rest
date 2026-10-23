@@ -102,8 +102,36 @@ public sealed record FairRules
     public double FillTo { get; init; } = 0.6;
 }
 
+/// <summary>One of the season's choices: a decree (stories.json) put in force for the season, at a price in gold and Mandate.</summary>
+public sealed record EdictDef
+{
+    public string Id { get; init; } = "";
+
+    /// <summary>The decree it puts in force (stories.json <c>decrees</c>), for <see cref="EdictRules.Lasts"/> days.</summary>
+    public string Decree { get; init; } = "";
+    public string Icon { get; init; } = "";
+
+    /// <summary>Season ids it can be offered in; empty for any.</summary>
+    public IReadOnlyList<string> Seasons { get; init; } = [];
+    public double Gold { get; init; }
+
+    /// <summary>Mandate it spends (negative: earns).</summary>
+    public double Mandate { get; init; }
+}
+
+/// <summary>The season's one big choice: how many edicts are offered, how long the offer stands, and how long the chosen one lasts.</summary>
+public sealed record EdictRules
+{
+    public int Offer { get; init; } = 3;
+    public int Days { get; init; } = 12;
+    public int Lasts { get; init; } = 30;
+    public IReadOnlyList<EdictDef> Pool { get; init; } = [];
+}
+
 public sealed record SeasonRules
 {
+    public EdictRules Edicts { get; init; } = new();
+
     public int Days { get; init; } = 30;
 
     /// <summary>The season and the day of it on which a campaign opens.</summary>
@@ -134,6 +162,13 @@ public sealed class SeasonState
 
     /// <summary>All the gold visitors have left this season.</summary>
     public double SeasonGold { get; set; }
+
+    /// <summary>The edicts this season offers (<see cref="EdictRules"/>), until <see cref="OfferUntil"/>; empty once one is chosen or the offer lapses.</summary>
+    public List<string> Offer { get; } = [];
+    public int OfferUntil { get; set; }
+
+    /// <summary>The edict chosen this season, "" for none.</summary>
+    public string Chosen { get; set; } = "";
 }
 
 /// <summary>
@@ -209,6 +244,7 @@ public static class Seasons
             {
                 town.Log(LedgerCategory.Town, Importance.Notable, s.Turn.Replace("{town}", town.Name));
                 if (s.Fair) Fair(town, s);
+                Offer(town, index);
                 if (s.Festival is { } f)
                 {
                     st.FestivalDays = f.Days;
@@ -217,12 +253,74 @@ public static class Seasons
             }
         }
         else if (st.FestivalDays > 0) st.FestivalDays--;
+        if (st.Offer.Count > 0 && town.Day > st.OfferUntil) st.Offer.Clear();
 
         var m = town.Market;
         m.ImportPremium = s.ImportPremium;
         m.ExportShare = town.Content.City.ExportShare * s.ExportShare;
         m.Hold(Good.Food, s.Hold ? Stores(town) : 0);
         Visitors(town, s);
+    }
+
+    // The season's choice ------------------------------------------------------------------------
+
+    public static EdictDef? Edict(Town town, string id) => Rules(town).Edicts.Pool.FirstOrDefault(e => e.Id == id);
+
+    /// <summary>
+    /// A new season offers its edicts: a few of those that fit the season, drawn by a hash of the seed and the
+    /// season (never the town's dice), so offering them changes nothing else.
+    /// </summary>
+    private static void Offer(Town town, int index)
+    {
+        var st = town.Seasons;
+        var r = Rules(town).Edicts;
+        string season = Current(town).Id;
+        st.Offer.Clear();
+        st.Chosen = "";
+        var fit = r.Pool.Where(e => e.Seasons.Count == 0 || e.Seasons.Contains(season))
+            .OrderBy(e => Voices.Hash("edict:" + e.Id, town.Seed, index)).ThenBy(e => e.Id, StringComparer.Ordinal)
+            .Take(r.Offer).OrderBy(e => e.Gold).ThenBy(e => e.Id, StringComparer.Ordinal);
+        st.Offer.AddRange(fit.Select(e => e.Id));
+        st.OfferUntil = town.Day + r.Days;
+    }
+
+    /// <summary>
+    /// The stand-in mayor (the council's steward) proclaims the cheapest edict on offer the day after the season turns,
+    /// when the treasury and the town's trust can spare it with room to keep.
+    /// </summary>
+    public static void EdictStandIn(Town town)
+    {
+        var st = town.Seasons;
+        if (st.Offer.Count == 0 || town.Day < st.OfferUntil - Rules(town).Edicts.Days + 1) return;
+        var pick = st.Offer.Select(id => Edict(town, id)!)
+            .Where(e => EdictBlocked(town, e.Id) == null && town.Treasury >= e.Gold + 200 && town.Mandate - e.Mandate >= 40)
+            .OrderBy(e => e.Gold + 10 * Math.Max(0, e.Mandate)).ThenBy(e => e.Id, StringComparer.Ordinal).FirstOrDefault();
+        if (pick != null) Choose(town, pick.Id);
+    }
+
+    /// <summary>Why the town can't proclaim this edict now, or null.</summary>
+    public static string? EdictBlocked(Town town, string id)
+    {
+        var e = Edict(town, id);
+        if (e == null || !town.Seasons.Offer.Contains(id)) return "not on offer";
+        if (town.Treasury < e.Gold) return "not enough gold";
+        if (e.Mandate > 0 && town.Mandate < e.Mandate) return $"needs {Js.Str(e.Mandate)} Mandate";
+        return null;
+    }
+
+    /// <summary>The player's lever: proclaim one of the season's edicts. Its decree stands for the season; the others lapse.</summary>
+    public static bool Choose(Town town, string id)
+    {
+        if (EdictBlocked(town, id) != null) return false;
+        var e = Edict(town, id)!;
+        var st = town.Seasons;
+        if (e.Gold > 0) town.Book(TreasuryAccount.CouncilMotions, -e.Gold);
+        town.Mandate = Math.Clamp(town.Mandate - e.Mandate, 0, 100);
+        string note = Decrees.Enact(town, e.Decree, Rules(town).Edicts.Lasts);
+        st.Chosen = id;
+        st.Offer.Clear();
+        town.Log(LedgerCategory.Council, Importance.Notable, $"The mayor's edict for {Current(town).Name.ToLowerInvariant()}: {note}.");
+        return true;
     }
 
     /// <summary>Food the town keeps back for the winter: every household's cellar and every granary.</summary>

@@ -30,6 +30,18 @@ public static partial class Ui
     public static string Chip(string icon, string value, Color? color = null, string tip = "", int size = 16) =>
         Tip($"{Img(icon, size)} {Plainly(color is Color c ? C(c, $"[b]{value}[/b]") : $"[b]{value}[/b]")}", tip);
 
+    /// <summary>
+    /// What an act spends of the mayor's Mandate, as a chip (red when it won't stretch that far), "" for an act that
+    /// spends none. <paramref name="what"/> names the act on hover ("A new law").
+    /// </summary>
+    public static string Writ(CrownAndCompass.Sim.Town t, string act, string what)
+    {
+        double cost = CrownAndCompass.Sim.Systems.Council.Cost(t, act);
+        string n = CrownAndCompass.Sim.Js.Str(cost);
+        return cost <= 0 ? "" : Chip("mandate", n, t.Mandate < cost ? Bad : Gold,
+            $"{what} spends {n} Mandate. You have {Math.Floor(t.Mandate)}; it comes back as the town thrives.", 15);
+    }
+
     /// <summary>Chips on one line, spaced apart.</summary>
     public static string Chips(params string[] chips) => string.Join("    ", chips.Where(c => c != ""));
 

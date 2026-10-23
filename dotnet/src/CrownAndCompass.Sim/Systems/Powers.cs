@@ -1056,7 +1056,7 @@ public static class Powers
         if (p.Side == PowerSide.Enemy) return $"it serves {Patron(town, p)?.Name ?? "an enemy"}";
         if (p.Standing < d.AllyAt) return $"it needs standing {Js.Str(d.AllyAt)}";
         if (town.Treasury < d.Price) return $"its price is {Js.Str(d.Price)} gold";
-        return null;
+        return Council.Short(town, "ally");
     }
 
     /// <summary>Pay a power's price: it sides with the town for its tithe, and its rivals take it badly.</summary>
@@ -1066,6 +1066,7 @@ public static class Powers
         var p = Find(town, id)!;
         var d = Def(town, id);
         town.Book(TreasuryAccount.Powers, -d.Price);
+        Council.Spend(town, "ally");
         p.Side = PowerSide.Town;
         p.SideDay = town.Day;
         p.Unpaid = 0;
@@ -1085,7 +1086,7 @@ public static class Powers
         if (p.Side != PowerSide.Town) return "it must be an ally first";
         if (p.Standing < Rules(town).OathStanding) return $"it needs standing {Js.Str(Rules(town).OathStanding)}";
         if (town.Treasury < OathPrice(town, id)) return "not enough gold";
-        return null;
+        return Council.Short(town, "swear");
     }
 
     /// <summary>Buy an ally's oath: it serves the town for good, without a tithe, and no enemy's gold can turn it.</summary>
@@ -1096,6 +1097,7 @@ public static class Powers
         var d = Def(town, id);
         double price = OathPrice(town, id);
         town.Book(TreasuryAccount.Buyouts, -price);
+        Council.Spend(town, "swear");
         p.Sworn = true;
         p.CourtedBy = null;
         News(town, p, $"{Name(town, d)} take {Js.Str(price)} gold and swear to {town.Name} for good: no tithe, and no enemy's gold will turn them.");

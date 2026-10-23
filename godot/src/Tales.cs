@@ -309,6 +309,34 @@ public partial class Main
         Section("What happened", r.Moments, "A quiet stretch. Nothing the bards would sing about.");
         Section("The company", r.Hurt, "Everyone is home and on their feet.");
         Section("Open leads", r.Leads, "Nothing waits on you. For now.");
+        // The season's one big choice, on the card that opens it.
+        var st = t.Seasons;
+        if (st.Offer.Count > 0 || st.Chosen != "")
+        {
+            v.AddChild(Ui.Label($"{Seasons.Current(t).Name}'s edict · pick one".ToUpperInvariant(), Ui.Gold, Ui.Bold, 11));
+            var offered = st.Offer.Count > 0 ? st.Offer.ToList() : [st.Chosen];
+            foreach (var id in offered)
+            {
+                if (Seasons.Edict(t, id) is not { } e) continue;
+                var row = new HBoxContainer();
+                row.AddThemeConstantOverride("separation", 10);
+                var rich = Ui.Rich($"{EdictHead(t, e)}\n{EdictBullets(t, e)}", 13);
+                rich.CustomMinimumSize = new Vector2(440, 0);
+                rich.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+                row.AddChild(rich);
+                bool chosen = st.Chosen == id;
+                string? blocked = chosen ? null : Seasons.EdictBlocked(t, id);
+                var pick = new Button { Text = chosen ? "Proclaimed" : "Proclaim", Disabled = chosen || blocked != null, ThemeTypeVariation = "Post", FocusMode = FocusModeEnum.None, SizeFlagsVertical = SizeFlags.ShrinkCenter, TooltipText = blocked ?? "" };
+                string pid = id;
+                pick.Pressed += () =>
+                {
+                    _sim.ChooseEdict(pid);
+                    OpenRecap(sinceDay, why);
+                };
+                row.AddChild(pick);
+                v.AddChild(row);
+            }
+        }
         var foot = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.End };
         var go = new Button { Text = "Carry on", ThemeTypeVariation = "Post", FocusMode = FocusModeEnum.None };
         go.Pressed += () => _recap.Visible = false;

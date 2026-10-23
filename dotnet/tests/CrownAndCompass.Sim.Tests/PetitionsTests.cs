@@ -14,6 +14,8 @@ public class PetitionsTests
     {
         var r = Content.Default().Stories;
         var effects = r.Stories.SelectMany(Outcomes).SelectMany(o => o.Effects.Keys).ToHashSet();
+        // Season edicts enact their decrees directly.
+        effects.UnionWith(Content.Default().Seasons.Edicts.Pool.Select(e => $"decree:{e.Decree}"));
         Assert.All(r.Decrees, d => Assert.Contains($"decree:{d.Id}", effects));
         Assert.All(r.Precedents, p => Assert.Contains($"precedent:{p.Id}", effects));
         Assert.All(r.Decrees, d => Assert.True(d.Days > 0 && d.Name != "" && d.Text != ""));
