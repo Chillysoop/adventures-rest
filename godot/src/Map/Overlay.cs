@@ -47,9 +47,7 @@ public partial class Overlay(MapView map) : Control
         var ink = map.Strategic ? new Color("4a3418") : new Color(0.95f, 0.92f, 0.82f, 0.85f);
         foreach (var f in town.Terrain)
         {
-            double mid = (f.Inner + f.Outer) / 2;
-            double a = f.Bearing * Math.PI / 180;
-            var c = Geo.FromDays(mid * Math.Sin(a), -mid * Math.Cos(a));
+            var c = Geo.FromDays(Country.Middle(f));
             float fogA = map.Fog.AlphaAt(c);
             if (fogA >= Fog.UnknownAlpha - 0.02f || !map.OnScreen(map.Gen.At(c, 2), out var at)) continue;
             float fade = 1 - Mathf.Clamp((fogA - Fog.SightAlpha) / (Fog.UnknownAlpha - Fog.SightAlpha), 0, 0.7f);
@@ -682,7 +680,7 @@ public partial class Overlay(MapView map) : Control
             {
                 if (now + h < s.DepartTick || now + h > s.ReturnTick) return null;
                 float leg = (float)Watch.ScoutLeg(town, s, map.HourFraction + h);
-                return leg >= 1 ? pin - dir * 6 + new Vector2(dir.Y, -dir.X) * 2 : Geo.Center + (pin - Geo.Center) * leg;
+                return leg >= 1 ? pin - dir * 6 + new Vector2(dir.Y, -dir.X) * 2 : Geo.Along(Geo.ScoutWay(town, s, pin), leg);
             }, strategic ? new Color("2f4f2a") : new Color("b8f0a0"));
         }
         var en = town.Enemy;

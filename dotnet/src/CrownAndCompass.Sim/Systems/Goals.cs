@@ -27,6 +27,12 @@ public sealed record GoalDef
     /// </summary>
     public string Point { get; init; } = "";
 
+    /// <summary>Where a click on the goal takes the player when that is not <see cref="Point"/> (a goal the card doesn't point at, like growing), in the same tokens.</summary>
+    public string Open { get; init; } = "";
+
+    /// <summary>What a click on the goal opens: <see cref="Open"/>, else <see cref="Point"/>.</summary>
+    public string Goes => Open != "" ? Open : Point;
+
     /// <summary>A measure that must be above 0 before the card points at the button (a motion to answer), or "".</summary>
     public string When { get; init; } = "";
 
@@ -167,7 +173,11 @@ public static class Goals
 }
 
 /// <summary>One line of the what-next card once the charter goals are done: an icon, a few words, how far along, and the button it points at.</summary>
-public sealed record Aim(string Icon, string Text, string Figure, double Share, string Point = "");
+public sealed record Aim(string Icon, string Text, string Figure, double Share, string Point = "", string Open = "")
+{
+    /// <summary>What a click on the line opens: <see cref="Open"/>, else <see cref="Point"/>.</summary>
+    public string Goes => Open != "" ? Open : Point;
+}
 
 /// <summary>
 /// What the town works toward after its first charter list, read fresh off the town (nothing saved): the next
@@ -192,22 +202,22 @@ public static class Ahead
             var terms = Victory.Terms(t, road).Where(x => !x.Met).Take(Most).ToList();
             if (terms.Count == 0)
                 return (road.Name, [new(road.Icon, Victory.Ready(t) ? $"Claim {road.Name}" : $"{road.Name} holds", "", 1, Victory.Ready(t) ? "tab:Campaign" : "")]);
-            return (road.Name, terms.Select(x => new Aim(road.Icon, x.Label, x.AtMost ? $"{Js.Str(x.Have)} (at most {Js.Str(x.Need)})" : $"{Js.Str(x.Have)}/{Js.Str(x.Need)}", x.Share)).ToList());
+            return (road.Name, terms.Select(x => new Aim(road.Icon, x.Label, x.AtMost ? $"{Js.Str(x.Have)} (at most {Js.Str(x.Need)})" : $"{Js.Str(x.Have)}/{Js.Str(x.Need)}", x.Share, Open: "tab:Campaign:Victory")).ToList());
         }
         var next = City.NextTier(t)!;
         var aims = new List<Aim>();
-        if (t.Population < next.Residents) aims.Add(new("population", "Households", $"{t.Population}/{next.Residents}", (double)t.Population / next.Residents));
+        if (t.Population < next.Residents) aims.Add(new("population", "Households", $"{t.Population}/{next.Residents}", (double)t.Population / next.Residents, Open: "zone:Residential"));
         foreach (string id in next.Requires)
             if (!City.Has(t, id))
             {
                 var b = t.Content.Building(id);
                 bool rising = t.Buildings.Any(x => x.Def.Id == id && x.IsSite);
-                aims.Add(new("tools", $"{Agent.Article(b.Name)} {b.Name.ToLowerInvariant()}", rising ? "rising" : "", rising ? 0.5 : 0));
+                aims.Add(new("tools", $"{Agent.Article(b.Name)} {b.Name.ToLowerInvariant()}", rising ? "rising" : "", rising ? 0.5 : 0, Open: Planning.IsGovernment(t, b) ? $"place:{id}" : $"zone:{b.Zone}"));
             }
         if (next.Walls != "" && !City.WallsStand(t, next.Walls))
             aims.Add(new("defence", next.Walls == "CityWall" ? "The city wall" : "Stone walls", "", 0, "tab:Defence"));
-        if (t.Treasury < next.Cost) aims.Add(new("gold", "Charter fee", $"{Js.Str(Math.Floor(t.Treasury))}/{Js.Str(next.Cost)}g", t.Treasury / next.Cost));
-        if (aims.Count == 0) aims.Add(new("decree", $"Claim the {next.Name.ToLowerInvariant()} charter", "", 1, "tab:City"));
+        if (t.Treasury < next.Cost) aims.Add(new("gold", "Charter fee", $"{Js.Str(Math.Floor(t.Treasury))}/{Js.Str(next.Cost)}g", t.Treasury / next.Cost, Open: "tab:City:Growth>Claim"));
+        if (aims.Count == 0) aims.Add(new("decree", $"Claim the {next.Name.ToLowerInvariant()} charter", "", 1, "tab:City:Growth>Claim"));
         return ($"Next charter: {next.Name}", aims.Take(Most).ToList());
     }
 }

@@ -21,6 +21,10 @@ public sealed class Options
     public string? Tab;
     /// <summary>--page Name: the page of the --tab window to show (a paged window's strip).</summary>
     public string? Page;
+    /// <summary>--goal N: click the Nth charter goal (goals.json order, from 1) as if on the card, for a shot of where it leads.</summary>
+    public int? Goal;
+    /// <summary>--next N: press the Next button N times, for a shot of where it leads.</summary>
+    public int Next;
     /// <summary>--fold Tab/Heading: fold that section for the shot (repeatable).</summary>
     public List<string> Fold = [];
     /// <summary>--tray Bounties opens that drawer of the action tray, for screenshots.</summary>
@@ -52,6 +56,9 @@ public sealed class Options
 
     /// <summary>--wonder kind aims the camera at the first strange place of that kind (well, hush, ferry, bones, ring, oasis, mirage, gate).</summary>
     public string? Wonder;
+
+    /// <summary>--land kind: aim at the nearest stretch of that hard country (ridge, mire, tangle, gorge...).</summary>
+    public string? Land;
     /// <summary>Aim the camera at the first finished building with this id.</summary>
     public string? At;
     public string? Screenshot;
@@ -256,6 +263,8 @@ public sealed class Options
                 case "--hour": o.Hour = int.Parse(Next()); break;
                 case "--speed": o.Speed = int.Parse(Next()); break;
                 case "--tab": o.Tab = Next(); break;
+                case "--goal": o.Goal = int.Parse(Next()); break;
+                case "--next": o.Next = int.Parse(Next()); break;
                 case "--page": o.Page = Next(); break;
                 case "--fold": o.Fold.Add(Next()); break;
                 case "--tray": o.Tray = Next(); break;
@@ -264,6 +273,7 @@ public sealed class Options
                 case "--scroll": o.Scroll = float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture); break;
                 case "--site": o.Site = Next(); break;
                 case "--wonder": o.Wonder = Next(); break;
+                case "--land": o.Land = Next(); break;
                 case "--at": o.At = Next(); break;
                 case "--screenshot": o.Screenshot = Next(); break;
                 case "--frames": o.Frames = int.Parse(Next()); break;

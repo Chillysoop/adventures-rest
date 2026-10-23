@@ -91,7 +91,7 @@ public class WatchTests
         sim.RunDays(1);
         Assert.Equal(1, Watch.FreeScryingsLeft(t));
         double before = t.Treasury;
-        var sites = t.Sites.Where(s => Watch.LiveOf(t, s) == null).ToList();
+        var sites = t.Sites.Where(s => Watch.LiveOf(t, s) == null && s.Known != SiteKnowledge.Unheard && Knowledge.ActiveScrying(t, s.Def.Id) == null).ToList();
         Assert.NotNull(sim.CommissionScrying(sites[0].Def.Id));
         Assert.Equal(before, t.Treasury);
         Assert.Equal(0, Watch.FreeScryingsLeft(t));

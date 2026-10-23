@@ -54,7 +54,7 @@ public static class Tutorial
     public static readonly string[] Anchors = ["speeds", "topbar", "clock", "threat", "alerts", "feed", "build", "buildbar", "strategic", "minimap", "orders", "lens", "markers", "menu", "glossary", "window", "inspector", "dock", "rail", "tray", "siege", "goals"];
 
     /// <summary>Things the player does in the client that can finish a step.</summary>
-    public static readonly string[] Events = ["next", "speed", "pause", "rotate", "select", "select:agent", "select:building", "select:site", "build", "strategic", "menu", "save", "alert", "roll", "flag", "call", "select:wall", "select:tower", "select:flag", "explorers", "pin", "glossary", "orders", "lens", "seize", "duty"];
+    public static readonly string[] Events = ["next", "speed", "pause", "rotate", "select", "select:agent", "select:building", "select:site", "build", "strategic", "menu", "save", "alert", "roll", "flag", "call", "select:wall", "select:tower", "select:flag", "explorers", "pin", "glossary", "orders", "lens", "seize", "duty", "outfit", "sheet"];
 
     private static readonly Lazy<TutorialBook> _default = new(() => Parse(Content.ReadText("tutorial.json")));
 
@@ -131,7 +131,7 @@ public static class Tutorial
         {
             if (s.Id == "" || !ids.Add(s.Id)) problems.Add($"step \"{s.Id}\" needs a unique id");
             if (s.Title == "" || s.Text == "") problems.Add($"step \"{s.Id}\" needs a title and text");
-            if (s.Point != "" && !Anchors.Contains(s.Point) && !(s.Point.StartsWith("tab:", StringComparison.Ordinal) && tabs.Contains(s.Point[4..].Split(':')[0])))
+            if (s.Point != "" && !Anchors.Contains(s.Point) && !(s.Point.StartsWith("tab:", StringComparison.Ordinal) && tabs.Contains(s.Point[4..].Split('>')[0].Split(':')[0])))
                 problems.Add($"step \"{s.Id}\" points at \"{s.Point}\", which is not on screen (anchors: {string.Join(", ", Anchors)}, or tab:<Tab>)");
             if (!KnownUntil(s.Until, town, tabs)) problems.Add($"step \"{s.Id}\" waits until \"{s.Until}\", which the client does not know");
             if (!KnownWhen(s.When, town)) problems.Add($"step \"{s.Id}\" has an unknown \"when\": \"{s.When}\"");
