@@ -49,7 +49,7 @@ public static class Property
         int slots = 1 + workers.Count / 150;
         foreach (var a in workers.Where(x => x.Gold > 300 && !x.Has(Trait.Lazy)).OrderByDescending(x => x.Gold).ThenBy(x => x.Id).Take(slots).ToList())
         {
-            if (idle <= 0 && town.Workers.Count(x => x.HomeId == null) == 0) return;
+            if (idle <= 0 && town.Workers.Count(x => x.Roofless) == 0) return;
             int before = town.Buildings.Count;
             TryOpenBusiness(town, a, keepAmbition: true);
             if (town.Buildings.Count > before) idle -= 2;
@@ -87,6 +87,7 @@ public static class Property
         {
             "tavern" => TavernDemand(town),
             "general_store" => StoreDemand(town),
+            _ when d.Rooms > 0 && !d.Venue => RoomDemand(town),
             // A crop with its own calendar is worth more sown in the season it beats the rest (Farming.Signal).
             _ when d.Produces.Count > 0 => ProducerSignal(m.Realized(d.Produces[0].Key) / m.BasePrice(d.Produces[0].Key), labor) * Farming.Signal(town, d),
             _ when d.Fee > 0 && d.Serves.Count > 0 => ServiceDemand(town, d),
@@ -126,6 +127,15 @@ public static class Property
         int taverns = town.Buildings.Count(b => b.Def.Venue && !b.ForSale && !b.Razed);
         if (taverns == 0) return town.Population >= 12 ? 3.0 : 0.5;
         return town.Population / (taverns * 40.0) + Crowds.Demand(town, Crowds.Tavern);
+    }
+
+    /// <summary>An inn pays when guests camp outside for want of rooms (Lodging), counting the rooms already rising.</summary>
+    private static double RoomDemand(Town town)
+    {
+        int rooms = Lodging.Rooms(town) + town.Buildings.Where(b => b.IsSite).Sum(b => b.Def.Rooms);
+        int wanting = town.Lodging.Guests + town.Lodging.Camped;
+        if (rooms == 0) return wanting >= 2 ? 2.0 : 0.3;
+        return wanting / (double)rooms;
     }
 
     /// <summary>A general store lives on heroes buying potions before they march.</summary>
@@ -216,7 +226,7 @@ public static class Property
 
     private static void TryBuildRental(Town town, Agent a)
     {
-        int homeless = town.Workers.Count(x => x.HomeId == null);
+        int homeless = town.Workers.Count(x => x.Roofless);
         int openBeds = 0;
         foreach (var b in town.Buildings) openBeds += b.IsSite ? b.Def.Housing : b.OpenBeds;
         // Landlords build ahead of the town: a few empty beds draw settlers down the road.
@@ -364,6 +374,8 @@ public static class Property
                 break;
             case "tavern":
                 return UniqueTavernName(town);
+            case "inn":
+                return UniqueTavernName(town) + " Inn";
             case "general_store":
                 name = $"{family}'s General Store";
                 break;
@@ -408,7 +420,9 @@ public static class Property
         {
             var owner = town.Agent(b.OwnerId.Value);
             owner.Gold += b.LaborBudget;
-            if (b.Def.Housing > 0 && (owner.HomeId == null || town.Building(owner.HomeId.Value).OwnerId != owner.Id))
+            // Tenants who took its beds first keep them: the owner moves in only if the household fits.
+            int household = owner.SpouseId != null && town.Agent(owner.SpouseId.Value) is { Departed: false, Hero: null } ? 2 : 1;
+            if (b.Def.Housing - b.Residents.Count >= household && (owner.HomeId == null || town.Building(owner.HomeId.Value).OwnerId != owner.Id))
             {
                 Economy.MoveIn(town, owner, b);
                 if (owner.SpouseId != null) Economy.MoveIn(town, town.Agent(owner.SpouseId.Value), b);

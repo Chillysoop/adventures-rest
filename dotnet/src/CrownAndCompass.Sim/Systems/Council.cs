@@ -332,7 +332,7 @@ public static class Council
         double books = town.RecentNet.Count > 0 ? Js.Sum(town.RecentNet, v => v) / town.RecentNet.Count : 0;
         double upkeep = -town.AccountsYesterday.Get(TreasuryAccount.Upkeep, 0) - town.AccountsYesterday.Get(TreasuryAccount.CountingHouse, 0) - town.AccountsYesterday.Get(TreasuryAccount.Watch, 0);
         var workers = town.Workers;
-        int homeless = workers.Count(a => a.HomeId == null);
+        int homeless = workers.Count(a => a.Homeless);
         double mood = workers.Count > 0 ? Js.Sum(workers, a => a.LastDayMood) / workers.Count : 65;
         double festival = FestivalCost(town);
         int brawls = town.Ledger.Entries.Count(e => e.Category == LedgerCategory.Brawl && town.Tick - e.Tick < 7 * SimTime.HoursPerDay);

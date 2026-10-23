@@ -10,6 +10,8 @@ public class ConquestTests
         var sim = new Simulation(new SimulationOptions { Seed = 3, AutoMayor = false, Enemy = false, AutoStories = false });
         sim.RunDays(30);
         var t = sim.Town;
+        // Townsfolk to fill the ranks: a town nobody zones keeps only the wagon's settlers (travellers move on).
+        Population.Settle(t, 8);
         t.City.Tier = City.TierIndex(t, "town");
         t.Treasury = 50000;
         var d = t.Content.Building("barracks");

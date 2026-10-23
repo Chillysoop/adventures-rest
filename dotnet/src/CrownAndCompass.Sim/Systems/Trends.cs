@@ -63,7 +63,7 @@ public static class Trends
             Treasury = town.Treasury,
             Accounts = Copy(town.AccountsToday),
             Households = town.Population,
-            Homeless = town.Workers.Count(a => a.HomeId == null),
+            Homeless = town.Workers.Count(a => a.Homeless),
             Mandate = town.Mandate,
             Unrest = town.Taxes.Unrest,
             Food = town.Market.Stock(Good.Food),

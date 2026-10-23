@@ -923,7 +923,7 @@ public static class Stories
             case "hungry":
                 return town.Market.Price(Good.Food) >= town.Market.BasePrice(Good.Food) * 1.5;
             case "homeless":
-                return town.Workers.Count(a => a.HomeId == null) >= 3;
+                return town.Workers.Count(a => a.Homeless) >= 3;
             case "rich":
                 return town.Treasury >= 400;
             case "poor":

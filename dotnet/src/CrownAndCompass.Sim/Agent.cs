@@ -217,6 +217,12 @@ public sealed class HeroSheet
 
     public bool Lodging { get; set; }
 
+    /// <summary>Nights in a row camped outside town for want of a room; past lodging.json <c>campNights</c> they ride on.</summary>
+    public int CampNights { get; set; }
+
+    /// <summary>Came up the road looking for paid work (<see cref="Systems.Quests"/> arrivals): free to ride on when there's no room.</summary>
+    public bool Wanderer { get; set; }
+
     /// <summary>Sworn to the charter: the town hall keeps a bed for them, tavern or none.</summary>
     public bool Sworn { get; set; }
 
@@ -357,6 +363,21 @@ public sealed class Agent
 
     public int ArrivedTick { get; set; }
     public bool Departed { get; set; }
+
+    /// <summary>Come up the road to look the town over: a guest at the inn or camped outside, not yet a resident (<see cref="Systems.Lodging"/>).</summary>
+    public bool Traveller { get; set; }
+
+    /// <summary>The day a traveller makes up their mind to settle or move on.</summary>
+    public int StayUntil { get; set; }
+
+    /// <summary>The inn or tavern where they have a room tonight, or null.</summary>
+    public int? InnId { get; set; }
+
+    /// <summary>Without a roof of their own, and not a traveller passing through.</summary>
+    public bool Homeless => HomeId == null && !Traveller;
+
+    /// <summary>Wants a roof in town: the homeless and the travellers looking it over, whom landlords and the council build for.</summary>
+    public bool Roofless => HomeId == null;
 
     public double MoodToday { get; set; }
     public int MoodSamples { get; set; }
