@@ -367,6 +367,13 @@ public sealed class Agent
     /// <summary>The day a traveller makes up their mind to settle or move on.</summary>
     public int StayUntil { get; set; }
 
+    /// <summary>Fled a struck settlement or a menace (<see cref="Systems.Refugees"/>): camps free and waits longer; stays true once settled.</summary>
+    public bool Refugee { get; set; }
+
+    /// <summary>The settlement a refugee fled, and the menace (by id) that drove them out, if known.</summary>
+    public int? RefugeeFrom { get; set; }
+    public int? RefugeeBy { get; set; }
+
     /// <summary>The inn or tavern where they have a room tonight, or null.</summary>
     public int? InnId { get; set; }
 

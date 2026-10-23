@@ -263,6 +263,11 @@ public partial class Main : Control
         }
         foreach (var adv in _opts.Advances) _sim.AdvanceMayor(adv);
         if (_opts.Inspiration is int insp) _sim.Town.Stories.Mayor.Inspiration = insp;
+        if (_opts.Refugees is int fled && _sim.Town.Settlements.FirstOrDefault(s => !s.Razed) is { } fledFrom)
+        {
+            Refugees.Flee(_sim.Town, fledFrom, null, [fled, fled]);
+            if (Refugees.Waiting(_sim.Town)) Refugees.Decide(_sim.Town, 1);
+        }
         if (_opts.Story is string story && OpenScripted(story) is { } opened)
         {
             OpenStory(opened.Id);
@@ -376,6 +381,12 @@ public partial class Main : Control
     {
         var t = _sim.Town;
         if (t.Content.Stories.Story(id) is { Source: Powers.ContactSource }) return Powers.OpenContact(t, id);
+        // A column of refugees at the road, from the nearest village.
+        if (id == Refugees.StoryId)
+        {
+            if (!Refugees.Waiting(t) && t.Settlements.FirstOrDefault(s => !s.Razed) is { } from) Refugees.Flee(t, from, null, [14, 14]);
+            return t.Stories.Open.FirstOrDefault(s => s.Def == id);
+        }
         if (t.Content.Stories.Story(id) is not { } d || !Sendings.Is(d)) return Stories.Open(t, id);
         // Wait (up to a few days) for a party on the road far enough from its site.
         for (int hour = 0; hour < 24 * 6; hour++)

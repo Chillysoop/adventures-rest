@@ -175,6 +175,7 @@ public sealed class Simulation
         Paving.Daily(t);
         Property.Daily(t);
         Lodging.Decide(t);
+        Refugees.Daily(t);
         Population.DailyDepartures(t);
         Population.DailyArrivals(t);
         if (Options.AutoMayor)

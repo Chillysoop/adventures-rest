@@ -41,7 +41,6 @@ public sealed record ShadowRules
     /// <summary>The share of a caravan's load left once they pay tribute, and the power a day the menace takes from it.</summary>
     public double TributeLoad { get; init; } = 0.5;
     public double TributePower { get; init; } = 0.1;
-    public int[] Flee { get; init; } = [1, 3];
     public int[] FleeEveryDays { get; init; } = [30, 50];
 
     /// <summary>Depth lifted when the menace's site nearest them is cleared, by an envoy, and by aid.</summary>
@@ -296,8 +295,8 @@ public static class Shadows
         if (!Paying(s) || s.Shadow is not { } sh || town.Day < sh.NextFleeDay) return;
         sh.NextFleeDay = town.Day + town.Rng.Range(r.FleeEveryDays[0], r.FleeEveryDays[1] + 1);
         if (!town.Regions[s.RegionId].Known || Over(town, s) is not { } m) return;
-        int n = Population.Settle(town, town.Rng.Range(r.Flee[0], r.Flee[1] + 1));
-        if (n > 0) town.Log(LedgerCategory.Arrival, Importance.Routine, Text(town, s, m, r.Fled).Replace("{n}", n.ToString()).Replace("{families}", n == 1 ? "family" : "families"));
+        Refugees.Flee(town, s, m, Refugees.Rules(town).Sources.Shadow,
+            n => Text(town, s, m, r.Fled).Replace("{n}", n.ToString()).Replace("{families}", n == 1 ? "refugee" : "refugees"));
     }
 
     // ---- Winning them back ----

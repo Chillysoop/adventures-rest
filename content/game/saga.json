@@ -461,11 +461,7 @@
     "chains": {
       "_doc": "When a menace grows into its power, the weaker menace nearest it is pushed out and strikes at once, and folk fleeing both come to the town (Menaces.Chain).",
       "pushed": "Driven from its hills by {by}, {name} comes down hungry and desperate.",
-      "refugees": [
-        2,
-        5
-      ],
-      "fled": "{n} folk fleeing {by} and {name} reach {town} with what they can carry, and ask to stay."
+      "fled": "{n} folk fleeing {by} and {name} reach {town} with what they can carry, and pitch their tents by the road."
     },
     "cases": {
       "_doc": "Each enemy leader has a case (what it says it wants, shown on its card) and a hidden truth, learned when heroes take one of its holdings (Menaces.Truth). One pair per kind is picked per menace.",
@@ -1017,16 +1013,12 @@
     ],
     "desertChance": 0.25,
     "desertRenown": 10,
-    "refugees": [
-      2,
-      4
-    ],
     "abandonAt": 95,
     "abandonDays": 30,
     "warnAt": 80,
     "flight": "The {family} family load a cart before dawn and take the south road. They do not say goodbye.",
     "desert": "{hero} settles the tavern bill and rides out at first light. \"This town is finished,\" they tell the gatekeeper.",
-    "refugeesText": "{n} survivors of {settlement} reach the gates of {town} with nothing but what they carry.",
+    "refugeesText": "{n} survivors of {settlement} reach the gates of {town} with nothing but what they carry, and pitch their tents by the road.",
     "abandoned": "There is no one left who believes. The last families of {town} take the south road together, and the town on the river ford is left to the crows.",
     "toneUp": [
       "",

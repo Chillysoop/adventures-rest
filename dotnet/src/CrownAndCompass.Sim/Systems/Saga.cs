@@ -68,7 +68,6 @@ public sealed record DreadRules
     public int[] Flee { get; init; } = [1, 3];
     public double DesertChance { get; init; } = 0.25;
     public int DesertRenown { get; init; } = 10;
-    public int[] Refugees { get; init; } = [2, 4];
     public double AbandonAt { get; init; } = 95;
     public int AbandonDays { get; init; } = 30;
 
@@ -625,16 +624,6 @@ public static class Saga
         if (h == null) return;
         Population.Depart(town, h);
         town.Log(LedgerCategory.Departure, Importance.Notable, d.Desert.Replace("{hero}", h.Name), [h.Id]);
-    }
-
-    /// <summary>Survivors of a razed settlement come to town with nothing.</summary>
-    internal static void Refugees(Town town, Settlement from)
-    {
-        var d = Rules(town).Dread;
-        int n = town.Rng.Range(d.Refugees[0], d.Refugees[1] + 1);
-        var come = new List<int>();
-        for (int i = 0; i < n; i++) come.Add(Population.CreateAgent(town, new NewAgentOptions { Gold = town.Rng.Range(0, 5) }).Id);
-        town.Log(LedgerCategory.Arrival, Importance.Notable, d.RefugeesText.Replace("{n}", n.ToString()).Replace("{settlement}", from.Name).Replace("{town}", town.Name), come);
     }
 
     /// <summary>A menace is gone: hope returns a little.</summary>

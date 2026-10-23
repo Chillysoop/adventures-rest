@@ -194,7 +194,6 @@ public sealed record ChainRules
 {
     /// <summary>{name} (the pushed foe), {by} (the rising one).</summary>
     public string Pushed { get; init; } = "";
-    public int[] Refugees { get; init; } = [2, 5];
     public string Fled { get; init; } = "";
 }
 
@@ -617,8 +616,8 @@ public static class Menaces
         if (weak == null) return;
         town.Log(LedgerCategory.War, Importance.Notable, Saga.Cap(Saga.Fill(town, c.Pushed, weak).Replace("{by}", m.Name)));
         weak.NextStrikeTick = Math.Min(weak.NextStrikeTick, town.Tick);
-        int got = Population.Settle(town, town.Rng.Range(c.Refugees[0], c.Refugees[^1] + 1));
-        if (got > 0) town.Log(LedgerCategory.Arrival, Importance.Notable, Saga.Cap(c.Fled.Replace("{n}", Js.Str(got)).Replace("{by}", m.Name).Replace("{name}", weak.Name).Replace("{town}", town.Name)));
+        Refugees.Flee(town, null, m, Refugees.Rules(town).Sources.Pushed,
+            got => Saga.Cap(c.Fled.Replace("{n}", Js.Str(got)).Replace("{by}", m.Name).Replace("{name}", weak.Name).Replace("{town}", town.Name)), $"the hills {m.Name} has taken");
     }
 
     /// <summary>A new menace led by someone in particular (a fallen hero), seated at the free lair nearest their level. Not yet announced.</summary>
@@ -1149,12 +1148,15 @@ public static class Menaces
             s.Standing = -100;
             Saga.Scar(town, 5);
             town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, m.Def.Raze, m).Replace("{people}", s.People).Replace("{settlement}", s.Name)));
-            Saga.Refugees(town, s);
+            Refugees.Flee(town, s, m, Refugees.Rules(town).Sources.Razed,
+                n => town.Content.Saga.Dread.RefugeesText.Replace("{n}", Js.Str(n)).Replace("{settlement}", s.Name).Replace("{town}", town.Name));
             return;
         }
         s.Standing = Math.Max(-100, s.Standing - r.SettlementHit);
         if (s.Allied && s.Standing < 0) s.Allied = false;
         if (known) town.Log(LedgerCategory.War, Importance.Notable, $"Runners from {s.Name} say {m.Name} has fallen on {s.People}. They ask why {town.Name}'s heroes did not come.");
+        // Some of the struck have had enough, and take the road to the safest town they know.
+        if (known) Refugees.Flee(town, s, m, Refugees.Rules(town).Sources.Raided);
         Reigns.Struck(town, s, m);
     }
 
