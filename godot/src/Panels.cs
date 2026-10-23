@@ -480,6 +480,7 @@ public partial class Main
         if (t.Day < fs.JusticeUntil) boons.Add(Ui.Bullet($"[b]Justice[/b] with the watch  {Ui.Chip("ui-time", Ui.Days(fs.JusticeUntil - t.Day), Ui.Gold, "Days left")}", "ui-shield"));
         if (boons.Count > 0) p.Card(string.Join("\n", boons), Ui.Gold);
 
+        p.Page("Gods", "faith");
         p.Heading("The gods in town");
         var gods = Faith.Gods(t)
             .Select(g => (God: g, Followers: Faith.Followers(t, g.Id).Count, Places: Faith.Places(t, g.Id)))
@@ -518,6 +519,7 @@ public partial class Main
             })), 13);
         }
 
+        p.Page("Factions", "ui-faction");
         p.Heading("Factions");
         var rules = t.Content.Factions;
         var known = t.Factions.Where(f => f.Active && f.Known).ToList();
