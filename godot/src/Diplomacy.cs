@@ -326,33 +326,7 @@ public partial class Main
         var open = Trade.Open(t).OrderBy(r => r.Id).ToList();
         p.Card(Ui.Chips(Ui.Chip("population", $"{known.Count}", Ui.Ink, "Peoples known"), Ui.Chip("standing", $"{allies}", Ui.Good, "Allied"), Ui.Chip("ui-trade", $"{open.Count}/{Trade.Cap(t)}", Ui.Gold, $"Trade routes running; the {City.Tier(t).Name.ToLowerInvariant()}'s charter allows {Trade.Cap(t)}")), Ui.Gold);
 
-        RenderPowers(p, t);
-
-        p.Heading("Trade routes");
-        if (open.Count == 0)
-            p.Note(Trade.Cap(t) == 0
-                ? "A hamlet's charter lets the town run its first trade route. Caravans sell the town's surplus to a people that wants it and bring back what the town is short of."
-                : $"No caravans on the road. Any people at {Js.Str(tr.MinStanding)} standing or better will trade: open a route below.");
-        foreach (var r in open)
-        {
-            var s = Trade.SettlementOf(t, r);
-            int days = Math.Max(0, r.NextDay - t.Day);
-            double net = r.Earned - r.Spent;
-            int id = r.Id;
-            string ex = r.Export.ToString().ToLowerInvariant(), im = r.Import.ToString().ToLowerInvariant();
-            double risk = Trade.RaidChance(t, s);
-            p.Row($"[b]{Ui.Esc(s.Name)}[/b]  {Ui.Dim($"[font_size=12]{Ui.Esc(s.People)}[/font_size]")}\n" +
-                  $"{Ui.Tip($"{Ui.Img(ex, 16)} → {Ui.Img(im, 16)}", $"{r.Export} out, {r.Import} back")}  {Ui.Chip("ui-time", Ui.Days(days), Ui.Ink2, "Next caravan home")}  {Ui.Chip("ui-skull", $"{Math.Round(risk * 100)}%", risk >= 0.2 ? Ui.Bad : risk > 0 ? Ui.Gold : Ui.Good, "Road danger")}\n" +
-                  $"[font_size=12]{Ui.Chips(Ui.Chip("ui-trade", $"{r.Wagons}", null, "Wagons"), Ui.Chip("ui-road", $"{r.Caravans}", null, "Runs"), r.Raided > 0 ? Ui.Chip("ui-wound", $"{r.Raided}", Ui.Bad, "Waylaid") : "", Ui.Chip("gold", $"{Js.Str(Js.Round(r.Earned - r.Spent))}", r.Earned >= r.Spent ? Ui.Good : Ui.Bad, $"Net: sold {Js.Str(Js.Round(r.Earned))}g, bought {Js.Str(Js.Round(r.Spent))}g"))}[/font_size]",
-                Trade.WagonCost(t, r) is double wagon
-                    ? [($"Add a wagon · {Js.Str(wagon)}g", t.Treasury >= wagon, true, () => Act(() => _sim.AddWagon(id))), ("Close", true, false, () => Act(() => _sim.CloseTradeRoute(id)))]
-                    : [("Close", true, false, () => Act(() => _sim.CloseTradeRoute(id)))]);
-        }
-
-        SkyRuns(p, t);
-        SkyFleet(p, t);
-        FleetRuns(p, t);
-
+        p.Page("Peoples", "population");
         p.Heading("Peoples of the wilds");
         if (known.Count == 0) p.Note("No peoples met yet · their riders come as word spreads.");
         foreach (var s in known)
@@ -378,7 +352,7 @@ public partial class Main
                 continue;
             }
             if (Reaches.Unreached(t, s) is { } high) head += $"\n[font_size=12]{Ui.Chip("inst-sky-dock", "Out of reach", Ui.Bad, Ui.Cap(high))}[/font_size]";
-            head += "\n" + CharacterSheet(t, s) + "\n" + Life(t, s);
+            head += $"\n[font_size=12]{MannerChips(t, Neighbours.Key(s))}[/font_size]\n" + CharacterSheet(t, s) + "\n" + Life(t, s);
             var buttons = new List<(string, bool, bool, Action)>();
             if (!s.Allied || Shadows.Shadowed(s)) buttons.Add(($"Envoy · {Js.Str(w.EnvoyCost)}g · {DecisionOdds(t, "envoy")}", t.Treasury >= w.EnvoyCost && Reaches.Unreached(t, s) == null, false, () => Act(() => _sim.SendEnvoy(id))));
             if (Shadows.Shadowed(s))
@@ -400,6 +374,7 @@ public partial class Main
             int band = StandingBand(s, w.Ally);
             double standing = s.Standing;
             p.Row(head, ($"st{band}{word}{Math.Round(standing)}", null, () => Foes.Standing(band, word, standing)), buttons.ToArray());
+            RenderOvertures(p, t, Neighbours.Key(s));
             var build = Neighbours.ProjectsFor(t, s).Where(x => !s.Projects.Contains(x.Id)).ToList();
             if (s.Works == null && build.Count > 0)
                 p.Buttons(build.Select(x =>
@@ -409,9 +384,40 @@ public partial class Main
                 }).ToArray());
             p.Row(Cast(t, s));
         }
-        p.Note("Each settlement has its own leader, its own band of adventurers and its own troubles. Aid meets a need; a project there lasts (a watchtower keeps it safe, a bridge or patrol keeps its road open, a waystation lets your parties rest). The people you help remember it.");
-        p.Note("Rulers age, die and are overthrown, and each heir has a temperament of their own that warms or cools relations. A risen enemy's shadow spreads over the settlements near it: dread, then tribute (no trade, families fleeing to you), then a cult or a puppet ruler. Clear its site nearest them, send an envoy, or send a hero to rally them.");
-        p.Note($"Envoys carry gifts, and each one pleases a little less than the last. Clearing trouble near a people, answering their pleas and every caravan that gets through all raise standing. At {Js.Str(w.Ally)} they ally with the town.");
+        p.Help(
+            "Each settlement has its own leader, its own band of adventurers and its own troubles. Aid meets a need; a project there lasts (a watchtower keeps it safe, a bridge or patrol keeps its road open, a waystation lets your parties rest). The people you help remember it.",
+            "Rulers age, die and are overthrown, and each heir has a temperament of their own that warms or cools relations. A risen enemy's shadow spreads over the settlements near it: dread, then tribute (no trade, families fleeing to you), then a cult or a puppet ruler. Clear its site nearest them, send an envoy, or send a hero to rally them.",
+            $"Envoys carry gifts, and each one pleases a little less than the last. Clearing trouble near a people, answering their pleas and every caravan that gets through all raise standing. At {Js.Str(w.Ally)} they ally with the town.");
+
+        p.Page("Trade", "ui-trade");
+        p.Heading("Trade routes");
+        if (open.Count == 0)
+            p.Note(Trade.Cap(t) == 0
+                ? "A hamlet's charter lets the town run its first trade route. Caravans sell the town's surplus to a people that wants it and bring back what the town is short of."
+                : $"No caravans on the road. Any people at {Js.Str(tr.MinStanding)} standing or better will trade: open a route below.");
+        foreach (var r in open)
+        {
+            var s = Trade.SettlementOf(t, r);
+            int days = Math.Max(0, r.NextDay - t.Day);
+            double net = r.Earned - r.Spent;
+            int id = r.Id;
+            string ex = r.Export.ToString().ToLowerInvariant(), im = r.Import.ToString().ToLowerInvariant();
+            double risk = Trade.RaidChance(t, s);
+            p.Row($"[b]{Ui.Esc(s.Name)}[/b]  {Ui.Dim($"[font_size=12]{Ui.Esc(s.People)}[/font_size]")}\n" +
+                  $"{Ui.Tip($"{Ui.Img(ex, 16)} → {Ui.Img(im, 16)}", $"{r.Export} out, {r.Import} back")}  {Ui.Chip("ui-time", Ui.Days(days), Ui.Ink2, "Next caravan home")}  {Ui.Chip("ui-skull", $"{Math.Round(risk * 100)}%", risk >= 0.2 ? Ui.Bad : risk > 0 ? Ui.Gold : Ui.Good, "Road danger")}\n" +
+                  $"[font_size=12]{Ui.Chips(Ui.Chip("ui-trade", $"{r.Wagons}", null, "Wagons"), Ui.Chip("ui-road", $"{r.Caravans}", null, "Runs"), r.Raided > 0 ? Ui.Chip("ui-wound", $"{r.Raided}", Ui.Bad, "Waylaid") : "", Ui.Chip("gold", $"{Js.Str(Js.Round(r.Earned - r.Spent))}", r.Earned >= r.Spent ? Ui.Good : Ui.Bad, $"Net: sold {Js.Str(Js.Round(r.Earned))}g, bought {Js.Str(Js.Round(r.Spent))}g"))}[/font_size]",
+                Trade.WagonCost(t, r) is double wagon
+                    ? [($"Add a wagon · {Js.Str(wagon)}g", t.Treasury >= wagon, true, () => Act(() => _sim.AddWagon(id))), ("Close", true, false, () => Act(() => _sim.CloseTradeRoute(id)))]
+                    : [("Close", true, false, () => Act(() => _sim.CloseTradeRoute(id)))]);
+        }
+
+        SkyRuns(p, t);
+        SkyFleet(p, t);
+        FleetRuns(p, t);
+
+
+        p.Page("Powers", "ui-faction");
+        RenderPowers(p, t);
         p.Commit();
     }
 }

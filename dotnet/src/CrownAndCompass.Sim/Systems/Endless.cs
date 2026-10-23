@@ -126,6 +126,8 @@ public static class Endless
         if (m == null) return;
         s.BigBadId = m.Id;
         s.CrownDay = town.Day;
+        s.Horde.Stage = HordeStage.None;
+        s.Horde.Breached = false;
         s.NextRideDay = town.Day + f.RideAfterDays;
         m.BigBad = true;
         Menaces.Ascend(town, m);

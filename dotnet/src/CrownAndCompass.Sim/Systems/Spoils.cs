@@ -130,6 +130,9 @@ public sealed class CraftOrder
     public int BuildingId { get; init; }
     public int DueTick { get; init; }
     public int Day { get; init; }
+
+    /// <summary>Gold paid for it, given back if it's called off (0 on orders saved before it was kept: the recipe's price).</summary>
+    public double Paid { get; init; }
 }
 
 public sealed class SpoilsState
@@ -376,9 +379,12 @@ public static class Spoils
         if (town.City.Tier < rec.Tier) return $"needs a {town.Content.City.Tiers[Math.Min(rec.Tier, town.Content.City.Tiers.Count - 1)].Name.ToLowerInvariant()}";
         if (rec.Faction != "" && Factions.Find(town, rec.Faction) is not { Active: true }) return "needs a chapter in town";
         if (Parts(town, rec) == null) return "not enough parts";
-        if (town.Treasury < rec.Gold) return "not enough gold";
+        if (town.Treasury < Cost(town, rec)) return "not enough gold";
         return null;
     }
+
+    /// <summary>What the work costs now: the recipe's gold, less what a relic in the hall saves.</summary>
+    public static double Cost(Town town, RecipeDef rec) => Math.Ceiling(rec.Gold * (1 - Regalia.Craft(town)));
 
     /// <summary>"forge", "forge or mage tower".</summary>
     public static string Names(Town town, RecipeDef rec) =>
@@ -391,14 +397,15 @@ public static class Spoils
         var rec = Rules(town).Recipe(recipeId)!;
         var it = town.Content.Library.Item(rec.Ref)!;
         foreach (var (id, n) in Parts(town, rec)!) Take(town, id, n);
-        town.Book(TreasuryAccount.Armory, -rec.Gold);
-        town.Armory.Spent += rec.Gold;
+        double gold = Cost(town, rec);
+        town.Book(TreasuryAccount.Armory, -gold);
+        town.Armory.Spent += gold;
         // The shop with the shortest book takes it.
         var shop = Shops(town, rec).OrderBy(b => town.Spoils.Orders.Count(o => o.BuildingId == b.Id)).ThenBy(b => b.Id).First();
         int queued = town.Spoils.Orders.Where(o => o.BuildingId == shop.Id).Select(o => o.DueTick).DefaultIfEmpty(town.Tick).Max();
-        var order = new CraftOrder { Id = town.Spoils.NextOrder++, RecipeId = rec.Id, BuildingId = shop.Id, DueTick = Math.Max(queued, town.Tick) + rec.Days * SimTime.HoursPerDay, Day = town.Day };
+        var order = new CraftOrder { Id = town.Spoils.NextOrder++, RecipeId = rec.Id, BuildingId = shop.Id, DueTick = Math.Max(queued, town.Tick) + rec.Days * SimTime.HoursPerDay, Day = town.Day, Paid = gold };
         town.Spoils.Orders.Add(order);
-        town.Log(LedgerCategory.Town, Importance.Routine, $"The {shop.Name} takes an order for {Agent.Article(Gear.Plainly(it))} {Gear.Plainly(it)}, for {Js.Str(rec.Gold)} gold; it will be ready in {Math.Max(1, (order.DueTick - town.Tick) / SimTime.HoursPerDay)} days.");
+        town.Log(LedgerCategory.Town, Importance.Routine, $"The {shop.Name} takes an order for {Agent.Article(Gear.Plainly(it))} {Gear.Plainly(it)}, for {Js.Str(gold)} gold; it will be ready in {Math.Max(1, (order.DueTick - town.Tick) / SimTime.HoursPerDay)} days.");
         return order;
     }
 
@@ -408,8 +415,9 @@ public static class Spoils
         var o = town.Spoils.Orders.FirstOrDefault(x => x.Id == orderId);
         if (o == null || Rules(town).Recipe(o.RecipeId) is not { } rec) return false;
         town.Spoils.Orders.Remove(o);
-        town.Book(TreasuryAccount.Armory, rec.Gold);
-        town.Armory.Spent -= rec.Gold;
+        double paid = o.Paid > 0 ? o.Paid : rec.Gold;
+        town.Book(TreasuryAccount.Armory, paid);
+        town.Armory.Spent -= paid;
         return true;
     }
 

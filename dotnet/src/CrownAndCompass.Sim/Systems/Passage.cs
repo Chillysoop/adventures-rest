@@ -800,22 +800,40 @@ public static class Passage
             var to = (w.X, w.Y);
             for (int guard = 0; guard < 6 && MeetsRiver(town, cur, to) != null; guard++)
             {
-                Crossing? best = null;
-                double bestLen = double.MaxValue;
+                // A ford in spate after rain is passed over for a bridge, if one can be reached (Weather.Flooded).
+                Crossing? best = null, spate = null;
+                double bestLen = double.MaxValue, spateLen = double.MaxValue;
                 foreach (var c in crossings)
                 {
                     var at = (c.X, c.Y);
                     if (Dist(cur, at) < 1e-6 || MeetsRiver(town, cur, at) is double m && m < 0.999) continue;
                     double len = Dist(cur, at) + Dist(at, to);
+                    if (c.Kind == "ford" && Weather.Flooded(town, c.X, c.Y))
+                    {
+                        if (len < spateLen)
+                        {
+                            spateLen = len;
+                            spate = c;
+                        }
+                        continue;
+                    }
                     if (len < bestLen)
                     {
                         bestLen = len;
                         best = c;
                     }
                 }
+                if (best == null && spate != null)
+                {
+                    best = spate;
+                    bestLen = spateLen;
+                    spate = null;
+                }
                 if (best == null) break;
                 outp.Add(new Waypoint { X = best.X, Y = best.Y, Way = best.Kind, Crossing = best.Name });
-                if (said != null && Line(town, best.Kind is "ford" or "ferry" ? best.Kind : "bridge") is { } line)
+                if (said != null && spate != null && spateLen < bestLen && Weather.Rules(town).Road.Line(new Rng(unchecked((int)Voices.Hash("spate", town.Seed, town.Day, (int)Math.Round(spate.X * 100)))), "flood") is { Length: > 0 } flood)
+                    said.Add(Saga.Cap(flood.Replace("{name}", spate.Name, StringComparison.Ordinal).Replace("{bridge}", best.Name, StringComparison.Ordinal)));
+                else if (said != null && Line(town, best.Kind is "ford" or "ferry" ? best.Kind : "bridge") is { } line)
                     said.Add(line.Replace("{name}", best.Name, StringComparison.Ordinal).Replace("{river}", Rules(town).River.Name, StringComparison.Ordinal));
                 cur = (best.X, best.Y);
             }

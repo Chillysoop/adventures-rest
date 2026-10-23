@@ -144,7 +144,7 @@ for (int d = 0; d < days && town.Outcome == null; d++)
             $"  -- end of day {s.Day}: pop {s.Population}, homeless {s.Homeless}, idle {s.Unemployed}, " +
             $"buildings {s.Buildings} (+{s.Sites} rising), treasury {Js.ToFixed(s.Treasury, 0)}, food {Js.ToFixed(s.FoodPrice, 2)}g, " +
             $"mood {Js.ToFixed(s.AverageMood, 0)}, avg purse {Js.ToFixed(s.AverageGold, 0)}g, " +
-            $"tax {Js.ToFixed(town.TaxRate * 100, 0)}%, income {Js.ToFixed(Taxes.Income(town), 0)}/services {Js.ToFixed(Taxes.Services(town), 0)}, unrest {Js.ToFixed(town.Taxes.Unrest, 0)}");
+            $"tax {Js.ToFixed(town.TaxRate * 100, 0)}%, income {Js.ToFixed(Taxes.Income(town), 0)}/services {Js.ToFixed(Taxes.Services(town), 0)}, unrest {Js.ToFixed(town.Taxes.Unrest, 0)}, champions {Saga.ChampionLevel(town)}, defence {Js.ToFixed(Threat.Defense(town), 0)}");
     }
     if (roads && s.Day % 30 == 0)
         Print($"  -- roads, day {s.Day}{(Victory.Ready(town) ? " (big bad crowned)" : "")}: " + string.Join("; ", town.Content.Victory.Roads.Select(r =>

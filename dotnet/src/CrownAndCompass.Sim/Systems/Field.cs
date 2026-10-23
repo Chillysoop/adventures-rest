@@ -193,7 +193,7 @@ public static class Field
             var e = town.Content.Enemy;
             list.Add(new Foe("warband", e.Name, "warband", e.Leader, en.Strength, at, en.Approach));
         }
-        foreach (var m in town.Saga.Menaces.Where(m => m.Alive && m.ArrivalTick != null).OrderBy(m => m.Id))
+        foreach (var m in town.Saga.Menaces.Where(m => m.Alive && m.ArrivalTick != null && Horde.Known(town, m)).OrderBy(m => m.Id))
             list.Add(new Foe($"menace:{m.Id}", m.Name, m.Kind, m.Leader, m.Power, m.ArrivalTick!.Value, m.Approach));
         return list;
     }

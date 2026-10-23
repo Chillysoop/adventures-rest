@@ -24,13 +24,24 @@ public static class Voyages
     // ---- Weather and the navigator ----
 
     /// <summary>
-    /// How much the weather slows a ship today, as a multiple of its days at sea, and the chance a storm catches it. The
-    /// season's storms stand in for weather until the world has its own; this is the one place a voyage reads it.
+    /// How much the weather slows a ship today off a land (the home waters when none), as a multiple of its days at sea,
+    /// and the chance a storm catches it: the worst of the day's sky there (<see cref="Systems.Weather"/>) against sky.json
+    /// "stormStep". This is the one place a voyage reads the sky; the wind is <see cref="Tailwind"/>.
     /// </summary>
-    public static (double Slow, double Storm) Weather(Town town)
+    public static (double Slow, double Storm) Weather(Town town, Region? region = null)
     {
-        double storm = town.Content.Sky.Storm.GetValueOrDefault(Seasons.Current(town).Id);
+        var (x, y) = region == null ? (0.0, 0.0) : Lofted.Spot(region);
+        var steps = town.Content.Sky.StormStep;
+        int step = Systems.Weather.Worst(town, x, y, town.Day).Step;
+        double storm = steps.Length == 0 ? 0 : steps[Math.Min(step, steps.Length - 1)];
         return (1 + V(town).Weather * storm, storm);
+    }
+
+    /// <summary>The season's wind on a heading: a multiple of the days at sea, quicker with it behind and slower into it.</summary>
+    public static double Tailwind(Town town, double bearing)
+    {
+        double toward = (bearing - Systems.Weather.Prevailing(town, Systems.Weather.TimeOf(town.Tick)) + 360) % 360 * Math.PI / 180;
+        return 1 - town.Content.Sky.Wind * Math.Cos(toward);
     }
 
     /// <summary>The navigator's roll for a passage: d20 + the captain's prowess + the best Survival aboard, against the DC. Its multiple of the days at sea.</summary>
@@ -44,8 +55,8 @@ public static class Voyages
     }
 
     /// <summary>Hours at sea for each hour of march: the ship's speed, the navigator's roll and the weather.</summary>
-    public static double SailPace(Town town, Ship s, int survival, Rng rng) =>
-        Js.Round(Fleet.Def(town, s).Speed * Navigate(town, s, survival, rng).Pace * Weather(town).Slow * 100) / 100;
+    public static double SailPace(Town town, Ship s, int survival, Rng rng, Region? region = null, double? bearing = null) =>
+        Js.Round(Fleet.Def(town, s).Speed * Navigate(town, s, survival, rng).Pace * Weather(town, region).Slow * (bearing is double b ? Tailwind(town, b) : 1) * 100) / 100;
 
     // ---- Ships free for a passage or a job ----
 
@@ -80,10 +91,10 @@ public static class Voyages
         party.ShipId = ship.Id;
         var rng = Dice(town, ship.Id * 3 + party.Id);
         int survival = mind.Navigator != "" ? mind.NavBonus : 0;
-        double pace = SailPace(town, ship, survival, rng);
+        var where = town.Regions.Where(r => World.Sea(r)).OrderBy(r => Distance(r, to)).ThenBy(r => r.Id).FirstOrDefault();
+        double pace = SailPace(town, ship, survival, rng, where, Math.Atan2(to.X - from.X, from.Y - to.Y) * 180 / Math.PI);
         town.Log(LedgerCategory.Quest, Importance.Routine, $"{party.Name} go aboard {ship.Name} at the harbour, {ship.Captain} at the helm, bound over the open sea.");
         // Whatever finds the ship on the way out is met now; the heroes stand at the rail.
-        var where = town.Regions.Where(r => World.Sea(r)).OrderBy(r => Distance(r, to)).ThenBy(r => r.Id).FirstOrDefault();
         if (rng.Chance(MeetChance(town, where)) && Meet(town, rng, where) is { } foe)
         {
             var heroes = members.Where(a => a.Hero != null).Select(a => a.Id).Take(Fleet.Def(town, ship).Marines).ToList();
@@ -163,7 +174,7 @@ public static class Voyages
 
     /// <summary>Days out and home to a sea land, moored a day at the far end: the ship's pace, the navigator's roll and the weather.</summary>
     public static int Days(Town town, Ship s, Region region, Rng? rng = null) =>
-        2 * Math.Max(1, (int)Math.Ceiling(Math.Max(1, region.Days) * (rng == null ? Fleet.Def(town, s).Speed * Weather(town).Slow : SailPace(town, s, 0, rng)) - 1e-9)) + Rules(town).Turnaround;
+        2 * Math.Max(1, (int)Math.Ceiling(Math.Max(1, region.Days) * (rng == null ? Fleet.Def(town, s).Speed * Weather(town, region).Slow : SailPace(town, s, 0, rng, region)) - 1e-9)) + Rules(town).Turnaround;
 
     public static IEnumerable<Agent> Marines(Town town) => Sky.Marines(town);
 
@@ -238,7 +249,7 @@ public static class Voyages
         var region = f.RegionId >= 0 ? town.Regions[f.RegionId] : null;
         string where = region?.Name ?? "the home waters";
         s.Hull = Math.Max(1, s.Hull - d.Wear);
-        var (_, storm) = Weather(town);
+        var (_, storm) = Weather(town, region);
         if (!f.Stormed && rng.Chance(storm))
         {
             f.Stormed = true;
@@ -304,6 +315,7 @@ public static class Voyages
         foreach (var a in f.Marines.Select(town.Agent).Where(a => !a.Dead && a.Hero != null)) a.Hero!.AwayUntil = null;
         if (f.Job == "scout" && region != null)
         {
+            Sky.Charted(town, region.Id, (0, 0), Sky.Middle(region), s.Name);
             region.Known = true;
             var seen = town.Sites.Where(x => x.RegionId == region.Id && !x.Cleared && !x.Hidden).OrderBy(x => x.Def.Id, StringComparer.Ordinal).ToList();
             foreach (var site in seen)

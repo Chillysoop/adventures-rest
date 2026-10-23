@@ -15,13 +15,17 @@ public sealed record SkyFoeDef
 public sealed record SkyFleetRules
 {
     public double Wind { get; init; } = 0.2;
-    public Dictionary<string, double> Storm { get; init; } = [];
+    /// <summary>Chance a day aloft is held by the weather where the ship flies, by its step (fair, grey, foul, storm, tempest).</summary>
+    public double[] StormStep { get; init; } = [0, 0.01, 0.1, 0.6, 1];
     public int[] StormDays { get; init; } = [1, 2];
     public int Turnaround { get; init; } = 1;
     public double Learn { get; init; } = 0.25;
     public double ProwessFight { get; init; } = 1;
     public int PatrolDays { get; init; } = 6;
     public int PatrolHours { get; init; } = 12;
+
+    /// <summary>The most a scouting flight charts round the middle of the land it flew to, in days of road.</summary>
+    public double ChartMost { get; init; } = 1.2;
     public double StrikeShare { get; init; } = 0.06;
     public double StrikeMost { get; init; } = 0.45;
     public double Meet { get; init; } = 0.06;
@@ -179,6 +183,24 @@ public sealed class SkyEgg
     public int Day { get; init; }
 }
 
+/// <summary>
+/// Country a ship charted for the council: the line it flew out (from, to, in days from the town) and the land round its
+/// end, <see cref="Radius"/> days across. The map lifts the fog there as described, as of <see cref="Tick"/>.
+/// </summary>
+public sealed class Chart
+{
+    public int RegionId { get; init; }
+    public double FromX { get; init; }
+    public double FromY { get; init; }
+    public double ToX { get; init; }
+    public double ToY { get; init; }
+    public double Radius { get; init; }
+    public int Tick { get; init; }
+
+    /// <summary>The ship that flew it.</summary>
+    public string By { get; init; } = "";
+}
+
 public sealed class SkyFleetState
 {
     public bool Granted { get; set; }
@@ -277,18 +299,22 @@ public static class Sky
 
     // ---- Winds and storms (the one sky-travel model: Lofted's sailing can read it too) ----
 
-    /// <summary>The bearing the season's wind blows toward, turned by the seed.</summary>
-    public static double WindBearing(Town town, int season) => World.Hash(town.Seed * 613 + season * 97 + 11) * 360;
-
     /// <summary>Days aloft for a straight flight of so many road days on a bearing: the wind behind is quicker, ahead slower.</summary>
     public static int FlightDays(Town town, double roadDays, double speed, double bearing)
     {
-        double toward = (bearing - WindBearing(town, Seasons.Index(town)) + 360) % 360 * Math.PI / 180;
+        // The prevailing wind of the day (Weather): with it is quicker, against it slower.
+        double toward = (bearing - Weather.Prevailing(town, Weather.TimeOf(town.Tick)) + 360) % 360 * Math.PI / 180;
         return Math.Max(1, (int)Math.Ceiling(roadDays * speed * (1 - Rules(town).Wind * Math.Cos(toward)) - 1e-9));
     }
 
-    /// <summary>The chance a storm catches a ship today, less the share of them it climbs above.</summary>
-    public static double StormChance(Town town, ShipDef d) => Rules(town).Storm.GetValueOrDefault(Seasons.Current(town).Id) * (1 - d.Ceiling);
+    /// <summary>The chance the weather over a land holds a ship today, less the share of storms it climbs above.</summary>
+    public static double StormChance(Town town, ShipDef d, Region? region)
+    {
+        var (x, y) = region == null ? (0.0, 0.0) : Lofted.Spot(region);
+        var steps = Rules(town).StormStep;
+        int step = Weather.Worst(town, x, y, town.Day).Step;
+        return steps.Length == 0 ? 0 : steps[Math.Min(step, steps.Length - 1)] * (1 - d.Ceiling);
+    }
 
     /// <summary>Days there and back to a region, moored a day at the far end.</summary>
     public static int Days(Town town, Ship s, Region region) =>
@@ -424,7 +450,7 @@ public static class Sky
         string where = region?.Name ?? "the town";
         s.Lift = Math.Max(0, s.Lift - 1);
         s.Hull = Math.Max(0, s.Hull - d.Wear);
-        if (!f.Stormed && rng.Chance(StormChance(town, d)))
+        if (!f.Stormed && rng.Chance(StormChance(town, d, region)))
         {
             f.Stormed = true;
             int late = rng.Range(r.StormDays[0], r.StormDays[^1] + 1);
@@ -548,6 +574,25 @@ public static class Sky
         s.Lift = 0;
     }
 
+    /// <summary>The middle of a land, in days from the town (the way <see cref="World.Spot"/> places a site).</summary>
+    public static (double X, double Y) Middle(Region region)
+    {
+        double a = region.Bearing * Math.PI / 180;
+        return (region.Days * Math.Sin(a), -region.Days * Math.Cos(a));
+    }
+
+    /// <summary>
+    /// A ship home from scouting charts what it flew over: the line out from <paramref name="from"/> to <paramref name="to"/>
+    /// (days from the town) and the land round its end. The fog lifts there as described. Sea voyages chart the same way.
+    /// </summary>
+    public static void Charted(Town town, int regionId, (double X, double Y) from, (double X, double Y) to, string by)
+    {
+        var region = town.Regions[regionId];
+        double half = region.Arc * Math.PI / 360;
+        double radius = Math.Min(Rules(town).ChartMost, Math.Max(0.3, region.Days * Math.Sin(half)));
+        town.Charts.Add(new Chart { RegionId = regionId, FromX = from.X, FromY = from.Y, ToX = to.X, ToY = to.Y, Radius = radius, Tick = town.Tick, By = by });
+    }
+
     /// <summary>A downed ship: riggers bring it home, or after long enough the wilds keep it.</summary>
     private static void Downed(Town town, Ship s, int region)
     {
@@ -578,6 +623,7 @@ public static class Sky
         foreach (var a in f.Marines.Select(town.Agent).Where(a => !a.Dead && a.Hero != null)) a.Hero!.AwayUntil = null;
         if (f.Job == "scout" && region != null)
         {
+            Charted(town, region.Id, (0, 0), Middle(region), s.Name);
             region.Known = true;
             var seen = town.Sites.Where(x => x.RegionId == region.Id && !x.Cleared && !x.Hidden).OrderBy(x => x.Def.Id, StringComparer.Ordinal).ToList();
             foreach (var site in seen)
@@ -593,6 +639,7 @@ public static class Sky
             double share = site.Cleared ? 0 : f.Struck;
             site.Strength = Math.Max(0, site.Strength * (1 - share));
             site.Found = true;
+            site.FoundTick ??= town.Tick;
             s.LastLine = Fill(town, rng, "struck", s, region.Name, "").Replace("{site}", site.Def.Name, StringComparison.Ordinal)
                 .Replace("{share}", $"{Js.Str(Js.Round(share * 100))}%", StringComparison.Ordinal);
         }

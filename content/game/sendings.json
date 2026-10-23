@@ -21,7 +21,7 @@
   ],
   "stories": [
     {
-      "id": "party-storm", "title": "A sending from the {party}", "stakes": "medium", "source": "sending", "needs": ["abroad"], "repeatDays": 45,
+      "id": "party-storm", "title": "A sending from the {party}", "stakes": "medium", "source": "sending", "needs": ["abroad", "stormbound"], "repeatDays": 45,
       "stages": [
         {
           "id": "start",

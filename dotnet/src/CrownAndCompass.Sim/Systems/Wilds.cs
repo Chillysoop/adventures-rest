@@ -55,6 +55,9 @@ public sealed class WildCell
     public int X { get; init; }
     public int Y { get; init; }
     public bool Seen { get; set; }
+
+    /// <summary>Walked, but the company that walked it is not home to tell of it yet: the fog holds and the paint stays.</summary>
+    public bool Pending { get; set; }
 }
 
 /// <summary>A painted zone of the wilds: ground the council pays a company to explore, or riders to patrol.</summary>
@@ -255,8 +258,11 @@ public static class Wilds
     public static bool Busy(Town town, WildZone z) =>
         town.Commissions.Any(c => c.ZoneId == z.Id && Systems.Explore.Active(c)) || town.Surveys.Any(s => s.ZoneId == z.Id && Systems.Explore.Out(s));
 
-    /// <summary>A company out exploring sees the painted cells around it (every explore zone, not only its own).</summary>
-    internal static void See(Town town, (double X, double Y) p)
+    /// <summary>
+    /// A company out exploring sees the painted cells around it (every explore zone, not only its own). They count as walked
+    /// for where it goes next, but the town only knows them once the company is home (<see cref="Told"/>).
+    /// </summary>
+    internal static void See(Town town, Survey s, (double X, double Y) p)
     {
         double sight = Rules(town).Explore.Sight;
         foreach (var z in town.Wilds)
@@ -266,10 +272,35 @@ public static class Wilds
             {
                 if (c.Seen) continue;
                 var (x, y) = Centre(town, c);
-                if (Js.Hypot(x - p.X, y - p.Y) <= sight) c.Seen = true;
+                if (Js.Hypot(x - p.X, y - p.Y) > sight) continue;
+                c.Seen = true;
+                c.Pending = true;
+                s.Saw.Add($"{z.Id}:{c.X}:{c.Y}");
             }
         }
     }
+
+    /// <summary>
+    /// The company that walked these cells is home (<paramref name="home"/>) and they are the town's; or it never will be
+    /// (lost, or wiped out after going in to fight), and nobody has walked them after all.
+    /// </summary>
+    internal static void Told(Town town, Survey s, bool home)
+    {
+        foreach (string key in s.Saw)
+        {
+            var parts = key.Split(':');
+            if (Of(town, int.Parse(parts[0])) is not { } z) continue;
+            int x = int.Parse(parts[1]), y = int.Parse(parts[2]);
+            var c = z.Cells.FirstOrDefault(c => c.X == x && c.Y == y);
+            if (c == null || !c.Pending) continue;
+            c.Pending = false;
+            if (!home) c.Seen = false;
+        }
+        s.Saw.Clear();
+    }
+
+    /// <summary>Cells walked by a company not home yet.</summary>
+    public static int Untold(WildZone z) => z.Cells.Count(c => c.Pending);
 
     /// <summary>The unseen cell of a zone to make for next from where a company stands: one of the nearest three.</summary>
     internal static (double X, double Y)? NextCell(Town town, WildZone z, (double X, double Y) from)
@@ -423,7 +454,7 @@ public static class Wilds
 
     private static void Exploring(Town town, WildZone z)
     {
-        if (Busy(town, z)) return;
+        if (Busy(town, z) || (Unseen(z) == 0 && Untold(z) > 0)) return;
         if (Unseen(z) == 0)
         {
             town.Log(LedgerCategory.Quest, Importance.Notable, $"Every part of {Name(town, z)} has been walked and told; the council's paint comes off the map.");

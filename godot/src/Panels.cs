@@ -46,7 +46,9 @@ public partial class Main
             foreach (var m in foes)
             {
                 var (word, color) = MenaceStages[m.Stage];
-                string march = m.ArrivalTick is int at && at > t.Tick ? "  " + Tag($"marching, {Ui.Days((int)Math.Ceiling((at - t.Tick) / 24.0))}", Ui.Bad) : "";
+                // The big bad's host shows its stage, never a count of days.
+                string march = Horde.On(t, m) ? (m.ArrivalTick == null || Horde.Known(t, m) ? "  " + Tag(Horde.Word(t, m), m.ArrivalTick != null ? Ui.Bad : Ui.Accent) : "")
+                    : m.ArrivalTick is int at && at > t.Tick ? "  " + Tag($"marching, {Ui.Days((int)Math.Ceiling((at - t.Tick) / 24.0))}", Ui.Bad) : "";
                 string big = m.BigBad ? Tag("big bad", Ui.Bad) + "  " : "";
                 var met = Discovery.Of(t, Discovery.Key(m));
                 string how = met != null ? $"{Ui.Esc(Ui.Cap(met.How))} day {met.Day}" : "";
@@ -188,6 +190,7 @@ public partial class Main
         p.Begin();
         ShowChamber(p, t);
         RenderCouncillor(p, t);
+        p.Page("Hall", "tab-council");
         RenderMotion(p, t);
         p.Meter("Mandate", t.Mandate, $"{Math.Round(t.Mandate)}", t.Mandate < 30);
         p.Chips(
@@ -200,7 +203,9 @@ public partial class Main
         p.Note(festive == null
             ? $"Mood up for {t.Content.Council.FestivalDays} days · Mandate +{Js.Str(t.Content.Council.FestivalMandate)}"
             : Ui.Cap(festive));
+        p.Page("Guilds", "ui-trade");
         RenderGuilds(p, t);
+        p.Page("Laws", "decree");
         RenderLaws(p, t);
         var history = t.Motions.Where(m => m.Status != MotionStatus.Pending).TakeLast(8).Reverse().ToList();
         if (history.Count > 0)
@@ -281,8 +286,7 @@ public partial class Main
     {
         var pending = Council.PendingMotion(t);
         p.Heading("Before the council");
-        if (pending == null) p.Note("No motion. Councillors bring one when their portfolio needs it.");
-        else
+        if (pending != null)
         {
             int yes = pending.Votes.Count(v => v.Yes), no = pending.Votes.Count - yes;
             bool? majority = yes == no ? null : yes > no;
@@ -432,11 +436,7 @@ public partial class Main
                 on ? ("Stop", true, false, (Action)(() => Act(() => _sim.SetTrialMagic("")))) : ("Use it", why == null, false, (Action)(() => Act(() => _sim.SetTrialMagic(spellId)))));
         }
         var recent = t.Trials.AsEnumerable().Reverse().Take(5).ToList();
-        if (recent.Count == 0)
-        {
-            p.Note("No trials yet.");
-            return;
-        }
+        if (recent.Count == 0) return;
         p.Text(string.Join("\n", recent.Select(x =>
         {
             var a = t.Agent(x.AgentId);
@@ -480,6 +480,7 @@ public partial class Main
         if (t.Day < fs.JusticeUntil) boons.Add(Ui.Bullet($"[b]Justice[/b] with the watch  {Ui.Chip("ui-time", Ui.Days(fs.JusticeUntil - t.Day), Ui.Gold, "Days left")}", "ui-shield"));
         if (boons.Count > 0) p.Card(string.Join("\n", boons), Ui.Gold);
 
+        p.Page("Gods", "faith");
         p.Heading("The gods in town");
         var gods = Faith.Gods(t)
             .Select(g => (God: g, Followers: Faith.Followers(t, g.Id).Count, Places: Faith.Places(t, g.Id)))
@@ -518,10 +519,10 @@ public partial class Main
             })), 13);
         }
 
+        p.Page("Factions", "ui-faction");
         p.Heading("Factions");
         var rules = t.Content.Factions;
         var known = t.Factions.Where(f => f.Active && f.Known).ToList();
-        if (known.Count == 0) p.Note("No faction in town that you know of. They take root as the town grows.");
         foreach (var f in known)
         {
             string stand = f.Standing >= 30 ? "Friendly" : f.Standing <= -30 ? "Hostile" : "Neutral";
@@ -797,6 +798,7 @@ public partial class Main
         if (hs.Duty != HeroDuty.None) duty.Add(("Stand down", true, false, () => Act(() => _sim.SetDuty(id, HeroDuty.None))));
         duty.Add((best != null ? $"Arm: {(best.Name != "" ? best.Name : Gear.Plainly(best.Item))}" : "Arm", best != null, best != null, () => Act(() => _sim.Arm([id]))));
         p.Buttons(duty.ToArray());
+        GiveMenu(p, t, a);
         if (!a.IsAway) p.Note($"Guard duty: {Js.Str(Garrison.Wage(t, a))}g a day, no bounties.");
     }
 
@@ -888,6 +890,20 @@ public partial class Main
     private void SiteCard(Pane p, Town t, Building b)
     {
         int id = b.Id;
+        if (b.Damaged)
+        {
+            // How the town mends damage, for every damaged building at once.
+            p.Text(Ui.C(Ui.Bad, "Damaged: being mended"));
+            string cost = Js.Str(Construction.RepairCost(t));
+            (string Way, string Label)[] ways = [("crews", "Builders"), ("first", "First"), ("hire", $"Hire · {cost}g/day")];
+            p.Buttons(ways.Select(w => (w.Label, w.Way != t.Repairs, w.Way == t.Repairs, (Action)(() => Act(() => _sim.SetRepairs(w.Way))))).ToArray());
+            p.Note(t.Repairs switch
+            {
+                "first" => "Repairs: every damaged building goes ahead of new builds.",
+                "hire" => "Repairs: the council pays hands to mend every damaged building.",
+                _ => "Repairs: builders mend damage as they come to it.",
+            });
+        }
         if (Construction.Stalled(t, b))
         {
             var (timber, stone) = Construction.Wanting(b);
@@ -981,7 +997,7 @@ public partial class Main
             Sight.Live => "In sight of the town.",
             Sight.Scouted when report != null => t.Day - report.Day > Fog.StaleDays
                 ? $"Last seen on day {report.Day}, in a report {t.Day - report.Day} days old. Things may have changed."
-                : $"Scouted on day {report.Day}. You know it as the party described it, not as it is now.",
+                : $"Described on day {report.Day}. You know it as it was then, not as it is now.",
             _ when t.Finds.LastOrDefault(f => f.SiteId == s.Def.Id && f.Known) is { } find => $"Found by the {Ui.Esc(Explore.Survey(t, find.SurveyId)!.Name)} on day {SimTime.DayOf(find.FoundTick)}, who sent word of it.",
             _ => s.HeardFrom != ""
                 ? $"Only hearsay, from {Ui.Esc(s.HeardFrom)}. The map shows roughly where; nobody has seen it. Send explorers to find it."

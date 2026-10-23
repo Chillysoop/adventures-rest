@@ -251,6 +251,11 @@ public static class Watch
         string use = work == null ? "" : work.Reach > 0
             ? " From the hall's roof it shows the near country live, day and night."
             : " Once a day it will show one site under fog, with no scryer to pay.";
+        if (use == "" && Regalia.Def(town, item) is { Slot: Regalia.Hall, Service: var sv } hall)
+        {
+            var does = (sv == null ? [] : Institutions.Describe(town, sv)).Concat(Regalia.Describe(town, hall)).ToList();
+            if (does.Count > 0) use = $" Kept there, it gives {string.Join(", ", does)}.";
+        }
         town.Log(LedgerCategory.Town, Importance.Major, $"The {partyName} set the {item.Name} down in the town hall.{use}");
     }
 

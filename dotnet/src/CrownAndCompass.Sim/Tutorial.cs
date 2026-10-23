@@ -17,7 +17,7 @@ public sealed record TutorialStep
     /// <summary>The card's text; [b]bold[/b] and the client's other BBCode work.</summary>
     public string Text { get; init; } = "";
 
-    /// <summary>What to outline on screen: a <see cref="Tutorial.Anchors"/> name or "tab:Ledger"; empty for nothing.</summary>
+    /// <summary>What to outline on screen: a <see cref="Tutorial.Anchors"/> name, "tab:Ledger" or a page of a window ("tab:Council:Laws"); empty for nothing.</summary>
     public string Point { get; init; } = "";
 
     /// <summary>
@@ -51,10 +51,10 @@ public sealed record TutorialBook
 public static class Tutorial
 {
     /// <summary>Things on screen a step can point at, besides "tab:&lt;Tab&gt;" for a dock button.</summary>
-    public static readonly string[] Anchors = ["speeds", "topbar", "clock", "threat", "alerts", "feed", "build", "buildbar", "strategic", "minimap", "orders", "lens", "markers", "menu", "glossary", "window", "inspector", "dock", "rail", "tray", "siege", "goals"];
+    public static readonly string[] Anchors = ["speeds", "topbar", "clock", "threat", "alerts", "feed", "build", "buildbar", "strategic", "minimap", "orders", "lens", "markers", "menu", "glossary", "window", "inspector", "dock", "rail", "tray", "siege", "goals", "weather", "weather-layer"];
 
     /// <summary>Things the player does in the client that can finish a step.</summary>
-    public static readonly string[] Events = ["next", "speed", "pause", "rotate", "select", "select:agent", "select:building", "select:site", "build", "strategic", "menu", "save", "alert", "roll", "flag", "call", "select:wall", "select:tower", "select:flag", "explorers", "pin", "glossary", "orders", "lens", "seize", "duty"];
+    public static readonly string[] Events = ["next", "speed", "pause", "rotate", "select", "select:agent", "select:building", "select:site", "build", "strategic", "menu", "save", "alert", "roll", "flag", "call", "select:wall", "select:tower", "select:flag", "explorers", "pin", "glossary", "orders", "lens", "seize", "duty", "outfit", "sheet", "weather", "weather-layer"];
 
     private static readonly Lazy<TutorialBook> _default = new(() => Parse(Content.ReadText("tutorial.json")));
 
@@ -65,7 +65,7 @@ public static class Tutorial
     /// <summary>
     /// A number read off the town for steps to watch: "count:Bounties" is the size of that list on
     /// <see cref="Town"/> (any public list works, so a new system needs no code here); "zoned" is the painted
-    /// ground not yet built on, "decorated" the decorations set down, "airships" the sky dock's ships at the mast, "skyships" all of them, "relics" the Skywright relics held, "lofted" 1 once the Lofted City flies, "seas" the sea lands the town knows, "goals" the charter goals still open. Null for a name that means nothing.
+    /// ground not yet built on, "decorated" the decorations set down, "airships" the sky dock's ships at the mast, "skyships" all of them, "relics" the Skywright relics held, "lofted" 1 once the Lofted City flies, "seas" the sea lands the town knows, "goals" the charter goals still open, "damaged" the buildings waiting on repair. Null for a name that means nothing.
     /// </summary>
     public static int? Measure(Town t, string token)
     {
@@ -92,6 +92,8 @@ public static class Tutorial
         if (token == "goals") return Systems.Goals.Open(t).Count;
         // Parts the town holds from the wilds (Systems.Spoils).
         if (token == "parts") return t.Spoils.Trophies.Sum(x => x.Value);
+        // Buildings a storm, fire or enemy has wrecked and that are not mended yet.
+        if (token == "damaged") return t.Buildings.Count(b => b.Damaged);
         if (!token.StartsWith("count:", StringComparison.Ordinal)) return null;
         var prop = typeof(Town).GetProperty(token[6..], BindingFlags.Public | BindingFlags.Instance);
         return prop?.GetValue(t) is IEnumerable items and not string ? items.Cast<object>().Count() : null;
@@ -133,7 +135,7 @@ public static class Tutorial
         {
             if (s.Id == "" || !ids.Add(s.Id)) problems.Add($"step \"{s.Id}\" needs a unique id");
             if (s.Title == "" || s.Text == "") problems.Add($"step \"{s.Id}\" needs a title and text");
-            if (s.Point != "" && !Anchors.Contains(s.Point) && !(s.Point.StartsWith("tab:", StringComparison.Ordinal) && tabs.Contains(s.Point[4..])))
+            if (s.Point != "" && !Anchors.Contains(s.Point) && !(s.Point.StartsWith("tab:", StringComparison.Ordinal) && tabs.Contains(s.Point[4..].Split('>')[0].Split(':')[0])))
                 problems.Add($"step \"{s.Id}\" points at \"{s.Point}\", which is not on screen (anchors: {string.Join(", ", Anchors)}, or tab:<Tab>)");
             if (!KnownUntil(s.Until, town, tabs)) problems.Add($"step \"{s.Id}\" waits until \"{s.Until}\", which the client does not know");
             if (!KnownWhen(s.When, town)) problems.Add($"step \"{s.Id}\" has an unknown \"when\": \"{s.When}\"");

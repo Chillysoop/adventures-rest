@@ -46,6 +46,13 @@ public sealed record StorytellerDef
     public double Inspire { get; init; } = 1;
     public double Breaks { get; init; } = 1;
 
+    /// <summary>On how fast the big bad's host gathers at its camps and how big a full host is (<see cref="Horde"/>).</summary>
+    public double HordeGrowth { get; init; } = 1;
+    public double HordeSize { get; init; } = 1;
+
+    /// <summary>On the strength (champions' level and the town's size) each act waits for (<see cref="Saga"/>).</summary>
+    public double Acts { get; init; } = 1;
+
     /// <summary>How far each of the above may swing either way, rolled each time (0 for none).</summary>
     public double Swing { get; init; }
 
@@ -85,6 +92,12 @@ public static class Storyteller
     public static double StrikeEvery(Town town) => Swung(town, Of(town).StrikeEvery);
 
     public static double MenaceGrowth(Town town) => Of(town).MenaceGrowth;
+
+    public static double HordeGrowth(Town town) => Of(town).HordeGrowth;
+
+    public static double HordeSize(Town town) => Of(town).HordeSize;
+
+    public static double Acts(Town town) => Of(town).Acts;
 
     /// <summary>
     /// What the storyteller does on its own each day: a swinging one may send a windfall (a hero riding in, a
