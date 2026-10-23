@@ -27,10 +27,11 @@ public class HedgeMagesTests
         Assert.Empty(HedgeMages.All(t));
         for (int i = 0; i < 4; i++) Research.Add(t, 3, "a test");
         Assert.True(Research.Power(t) >= r.Power);
+        // One hedge mage per PerPeople townsfolk: run until the town is big enough and it's the day.
+        while (t.Day % r.Every != 0 || HedgeMages.Cap(t) == 0) sim.RunDays(1);
+        // Picked on the day itself: a worker may change jobs while the days run.
         var worker = t.Residents.First(a => a.Hero == null && a.JobId is int j && r.Trade(t.Building(j).Def.Id) != null);
         worker.Abilities.Int = 20;
-        int day = t.Day;
-        while (t.Day % r.Every != 0) sim.RunDays(1);
         HedgeMages.Daily(t);
         Assert.Contains(HedgeMages.All(t), a => a.HedgeSpell != "");
         var mage = HedgeMages.All(t)[0];
