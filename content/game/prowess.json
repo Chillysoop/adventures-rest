@@ -152,7 +152,22 @@
     "burned": "They make sure of {foe} with {type} this time.",
     "cast": "{hero} casts {spell}",
     "held": "{foes} {are} caught by it.",
-    "missed": "{foes} shake it off."
+    "missed": "{foes} shake it off.",
+    "storm": "The storm overhead feeds the lightning.",
+    "rain": "Rain spoils the aim of bow and spell alike.",
+    "wind": "The wind drags arrows off their mark.",
+    "fog": "Murk hides the foe from shot and spell."
+  },
+  "weather": {
+    "storm": 1.5,
+    "rain": 0.45,
+    "rainHit": 1,
+    "wind": 0.6,
+    "windHit": 2,
+    "fogHit": 2,
+    "most": 4,
+    "cover": ["caves", "tomb", "underworld", "sewer", "laboratory", "temple"],
+    "touch": ["shocking-grasp", "inflict-wounds", "vampiric-touch", "produce-flame"]
   },
   "damage": { "resist": 0.5, "immune": 0, "vulnerable": 2, "steelVsImmune": 0.5 },
   "regenRises": 1,

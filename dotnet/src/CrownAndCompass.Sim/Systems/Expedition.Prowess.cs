@@ -58,6 +58,7 @@ public static partial class Expedition
             }
             _auras.Clear();
             _buffs.Clear();
+            _skyTold.Clear();
             _searedBy.Clear();
         }
 
@@ -108,6 +109,11 @@ public static partial class Expedition
         /// </summary>
         private int Hit(Foe f, int dmg, string type, bool magic, bool silver, List<Foe> foes, int round)
         {
+            if (type == "lightning" && Open is { Step: >= Weather.Storm } && Rules.Weather.Storm != 1)
+            {
+                dmg = (int)Math.Round(dmg * Rules.Weather.Storm);
+                Say("storm");
+            }
             var (dealt, how) = Prowess.Harm(_content, f.Lib, dmg, type, magic, silver);
             if (how != "" && f.Told.Add($"harm:{how}:{type}"))
                 Log(Cap(Prowess.Line(_content, how, ("foe", The(f.Def)), ("type", type))));
@@ -491,7 +497,7 @@ public static partial class Expedition
                 if (sp.Attack)
                 {
                     int roll = _rng.D20();
-                    if (roll != 20 && (roll == 1 || roll + SpellAttack(c) < f.Def.Ac + Cover(f, round) + f.Ways.Ac)) continue;
+                    if (roll != 20 && (roll == 1 || roll + SpellAttack(c) - Squall(c, sp) < f.Def.Ac + Cover(f, round) + f.Ways.Ac)) continue;
                 }
                 else if (sp.Save != "" && Saves(f, sp.Save, Dc(c))) each /= 2;
                 Hit(f, Spell(f, each), sp.DamageType, true, false, foes, round);
@@ -517,7 +523,7 @@ public static partial class Expedition
                 else if (sp.Attack)
                 {
                     int roll = _rng.D20();
-                    if (roll != 20 && (roll == 1 || roll + SpellAttack(c) < target.Def.Ac + Cover(target, round) + target.Ways.Ac + (target.Held(round) ? -5 : 0))) continue;
+                    if (roll != 20 && (roll == 1 || roll + SpellAttack(c) - Squall(c, sp) < target.Def.Ac + Cover(target, round) + target.Ways.Ac + (target.Held(round) ? -5 : 0))) continue;
                     crit = roll == 20;
                     dmg = d.Roll(_rng, crit);
                 }
@@ -681,7 +687,7 @@ public static partial class Expedition
             int snare = _snared.TryGetValue(c, out var sn) && round <= sn.Until ? sn.Hit : 0;
             int edge = target.Held(round) ? 5 : target.HinderUntil >= round ? target.Hinder : 0;
             int need = target.Def.Ac + Cover(target, round) + target.Ways.Ac;
-            int got = roll + atk - snare - (target.Ways["aura"]?.Hit ?? 0) + edge;
+            int got = roll + atk - snare - (target.Ways["aura"]?.Hit ?? 0) + edge - Squall(c, null);
             if (roll != 20 && got < need && c.Inspired > 0 && got + c.Inspired >= need)
             {
                 int die = rng.Roll(1, c.Inspired);
@@ -774,7 +780,7 @@ public static partial class Expedition
                         }
                         int snare = _snared.TryGetValue(c, out var sn) && round <= sn.Until ? sn.Hit : 0;
                         int edge = f.Held(round) ? 5 : f.HinderUntil >= round ? f.Hinder : 0;
-                        if (roll != 20 && roll + SpellAttack(c) - snare - (f.Ways["aura"]?.Hit ?? 0) + edge < f.Def.Ac + Cover(f, round) + f.Ways.Ac) continue;
+                        if (roll != 20 && roll + SpellAttack(c) - Squall(c, sp) - snare - (f.Ways["aura"]?.Hit ?? 0) + edge < f.Def.Ac + Cover(f, round) + f.Ways.Ac) continue;
                         crit = roll == 20;
                     }
                     else if (Saves(f, sp.Save, Dc(c))) continue;
@@ -913,6 +919,40 @@ public static partial class Expedition
 
         /// <summary>Heroes who have said their piece about a power this delve.</summary>
         private readonly HashSet<int> _said = [];
+
+        /// <summary>The sky over the fight, set by whoever sends them (the road at that hour, the battle at the walls); null for none.</summary>
+        public WeatherNow? Sky { get; set; }
+
+        /// <summary>Delving a site under cover (a cave, a tomb): the sky stays outside.</summary>
+        private bool _under;
+        private readonly HashSet<string> _skyTold = [];
+
+        private WeatherNow? Open => _under ? null : Sky;
+
+        /// <summary>
+        /// What the sky takes off a shot (a <paramref name="spell"/> attack, or with none a blow, which only a bow or sling
+        /// feels): rain on bow and spell, wind on arrows, fog or dust hiding the foe. Said once a fight.
+        /// </summary>
+        private int Squall(Combatant c, LibSpell? spell)
+        {
+            if (Open is not { } w) return 0;
+            var r = Rules.Weather;
+            if (spell == null ? c.Form != null || c.Sheet.Weapon?.Ranged != true : r.Touch.Contains(spell.Id)) return 0;
+            int k = 0;
+            if (w.Fall >= r.Rain && r.RainHit > 0) k += Say("rain", r.RainHit);
+            if (spell == null && w.Wind >= r.Wind && r.WindHit > 0) k += Say("wind", r.WindHit);
+            if ((w.Fog || w.Dust) && r.FogHit > 0) k += Say("fog", r.FogHit);
+            return Math.Min(r.Most, k);
+        }
+
+        private int Say(string kind, int n = 0)
+        {
+            if (_skyTold.Add(kind)) Log(Cap(Prowess.Line(_content, kind)));
+            return n;
+        }
+
+        /// <summary>Whether a site's fights are under a roof of rock or stone, out of the weather.</summary>
+        private bool Covered(SiteDef site) => site.Habitats.Any(Rules.Weather.Cover.Contains);
 
         /// <summary>A raging barbarian of high enough level stays on their feet: a Constitution save, harder each time.</summary>
         private void Relentless(Combatant t)

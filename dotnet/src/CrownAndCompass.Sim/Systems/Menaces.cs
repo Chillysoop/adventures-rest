@@ -1464,7 +1464,7 @@ public static class Menaces
         {
             lines.Add($"The walls hold. {m.Leader} comes to the breach, and {Expedition.ListNames(champions.Select(a => a.GivenName).ToList())} go out to meet them.");
             var battle = new SiteDef { Id = "assault", Name = "the walls", Tier = 0, Distance = 0, Encounters = [], Boss = seat.Def.Boss, Loot = [0, 0] };
-            var result = Expedition.Run(rng, town.Content, battle, champions);
+            var result = Expedition.Run(rng, town.Content, battle, champions, sky: Weather.Here(town));
             record.Champions.AddRange(champions.Select(c => c.Id));
             record.ChampionsFell.AddRange(result.Dead.Order());
             lines.AddRange(result.Lines.Skip(1).Where(l =>
