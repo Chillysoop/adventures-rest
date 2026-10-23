@@ -67,6 +67,8 @@ public class SinksTests
         Assert.Equal(1, r.Arms);
         Assert.Equal("Steel", Army.Grade(t, r.Arms)!.Name);
         Assert.True(t.Treasury < gold);
+        // Drill can slip over the days of the refit: weigh the arms alone.
+        r.Drill = 1;
         Assert.True(Army.Strength(t, r) > before * 1.1, $"{Army.Strength(t, r)} vs {before}");
         Assert.Equal("Masterwork", Army.NextGrade(t, r)!.Name);
     }
