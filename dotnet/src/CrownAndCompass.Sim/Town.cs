@@ -335,6 +335,7 @@ public static class TreasuryAccount
     public const string Notables = "Notables";
     public const string Patrols = "Patrols";
     public const string Buyouts = "Buyouts";
+    public const string Refugees = "Refugees";
     public const string Retainers = "Retainers";
 }
 
@@ -589,6 +590,9 @@ public sealed class Town
 
     /// <summary>Last night's guests at the inns and those camped outside town (<see cref="Systems.Lodging"/>).</summary>
     public LodgingState Lodging { get; } = new();
+
+    /// <summary>The refugees the town has taken in or turned away, the column at the road and its haven fame (<see cref="Systems.Refugees"/>).</summary>
+    public RefugeeState Refuge { get; } = new();
     public Defenses Defenses { get; } = new();
 
     /// <summary>The town guard on the walls and the orders it holds (<see cref="Systems.Garrison"/>).</summary>

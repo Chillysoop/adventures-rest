@@ -145,6 +145,9 @@ public static class Population
         // A young town is a chance at cheap land: the frontier draws settlers until the town is a proper village.
         double frontier = town.Content.Rules.FrontierDraw * Math.Max(0, 1 - town.Population / town.Content.Rules.FrontierSize);
         attraction += frontier;
+        // A haven's name travels: the roads bring hopefuls to a town known to take people in.
+        double haven = Refugees.Appeal(town);
+        attraction += haven;
         // Settlers want land to build on: with no residential lot zoned and for sale, fewer come.
         double land = Planning.VacantZoned(town, Zone.Residential) == 0 ? 0.15 : 0;
         if (land > 0) attraction -= land;
@@ -167,6 +170,7 @@ public static class Population
         Add("The town's institutions", institutions);
         Add("Unrest over neglected services", unrest);
         Add("Cheap land in a young town", frontier);
+        Add($"Known as {Refugees.Title(town)}", haven);
         Add("No zoned home lots for sale", -land);
         return new(attraction, parts);
     }
@@ -272,6 +276,8 @@ public static class Population
         {
             // Travellers make up their own minds (Lodging.Decide).
             if (a.Departed || a.Traveller || a.MiserableDays < 4) continue;
+            // Those who fled here and found a roof or work have nowhere else: they stay, however hard it is.
+            if (a.Refugee && (a.HomeId != null || a.JobId != null)) continue;
             string reason = WorstComplaint(a);
             Depart(town, a);
             string withName = "";

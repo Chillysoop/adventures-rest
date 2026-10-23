@@ -242,14 +242,19 @@ public partial class Crowd(MapView map) : Node3D
         MaterialOverride = Mats.Props,
     };
     private int _tentTick = -1;
-    private const int MostTents = 30;
+    private const int MostTents = 48;
     private static readonly Color[] Canvas = [new("d8c8a0"), new("c9b088"), new("b8a27a"), new("a8865c"), new("d0bc94")];
+
+    /// <summary>Refugees' tents: grey, patched and dyed sheets and blankets, not traveller's canvas.</summary>
+    private static readonly Color[] Patched = [new("8f8a80"), new("6f7a86"), new("8a5a4a"), new("7a7e5c"), new("9a9488"), new("5e6a74")];
 
     private void Tents(Town town)
     {
         if (_tentTick == town.Tick) return;
         _tentTick = town.Tick;
         int n = Math.Min(MostTents, (Lodging.Campers(town) + 1) / 2);
+        // The refugees' share of the camp pitches the outer ring in patched sheets.
+        int refugees = Math.Min(n, (Refugees.Camping(town) + 1) / 2);
         var mm = _tents.Multimesh;
         mm.InstanceCount = n;
         _fire.Multimesh.InstanceCount = n == 0 ? 0 : 1;
@@ -266,7 +271,7 @@ public partial class Crowd(MapView map) : Node3D
             float yaw = Mathf.Atan2(camp.X - p.X, camp.Y - p.Y) + (Geo.Hash(i * 7 + 5) - 0.5f) * 0.5f;
             float scale = 0.85f + Geo.Hash(i * 7 + 6) * 0.3f;
             mm.SetInstanceTransform(i, new Transform3D(Basis.FromEuler(new Vector3(0, yaw, 0)).Scaled(Vector3.One * scale), map.Gen.At(p)));
-            mm.SetInstanceColor(i, Canvas[i % Canvas.Length]);
+            mm.SetInstanceColor(i, i >= n - refugees ? Patched[i % Patched.Length] : Canvas[i % Canvas.Length]);
         }
     }
 

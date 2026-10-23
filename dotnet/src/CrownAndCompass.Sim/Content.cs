@@ -1756,6 +1756,9 @@ public sealed class Content
     /// <summary>Rooms at the inns, travellers who stay a few nights to look the town over, and heroes who camp (content/game/lodging.json).</summary>
     public LodgingRules Lodging { get; init; } = new();
 
+    /// <summary>Folk fleeing struck settlements and menaces, the camp they wait in and the haven fame of taking them in (content/game/refugees.json).</summary>
+    public Systems.RefugeeRules Refugees { get; init; } = new();
+
     /// <summary>Townsfolk's inspirations and breaks (content/game/moods.json).</summary>
     public MoodRules Moods { get; init; } = new();
 
@@ -2038,6 +2041,7 @@ public sealed class Content
             Tourney = Parse<TourneyRules>("tournaments.json"),
             Crowds = Parse<CrowdRules>("crowds.json"),
             Lodging = Parse<LodgingRules>("lodging.json"),
+            Refugees = Parse<Systems.RefugeeRules>("refugees.json"),
             Moods = Parse<MoodRules>("moods.json"),
             Storytellers = Parse<StorytellerRules>("storytellers.json"),
             Founding = Parse<Systems.FoundingRules>("founding.json"),
