@@ -309,7 +309,7 @@ public partial class Main
                 p.Row(head);
                 continue;
             }
-            head += "\n" + CharacterSheet(t, s) + "\n" + Life(t, s);
+            head += $"\n[font_size=12]{MannerChips(t, Neighbours.Key(s))}[/font_size]\n" + CharacterSheet(t, s) + "\n" + Life(t, s);
             var buttons = new List<(string, bool, bool, Action)>();
             if (!s.Allied || Shadows.Shadowed(s)) buttons.Add(($"Envoy · {Js.Str(w.EnvoyCost)}g · {DecisionOdds(t, "envoy")}", t.Treasury >= w.EnvoyCost, false, () => Act(() => _sim.SendEnvoy(id))));
             if (Shadows.Shadowed(s))
@@ -331,6 +331,7 @@ public partial class Main
             int band = StandingBand(s, w.Ally);
             double standing = s.Standing;
             p.Row(head, ($"st{band}{word}{Math.Round(standing)}", null, () => Foes.Standing(band, word, standing)), buttons.ToArray());
+            RenderOvertures(p, t, Neighbours.Key(s));
             var build = Neighbours.ProjectsFor(t, s).Where(x => !s.Projects.Contains(x.Id)).ToList();
             if (s.Works == null && build.Count > 0)
                 p.Buttons(build.Select(x =>

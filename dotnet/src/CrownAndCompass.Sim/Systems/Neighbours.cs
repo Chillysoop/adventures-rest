@@ -310,7 +310,7 @@ public static class Neighbours
     public static bool Introduce(Town town, Settlement s, string how)
     {
         if (!Discovery.Meet(town, Key(s), how)) return false;
-        if (town.Outcome == null && !s.Razed && town.Content.Stories.Story(Powers.ContactSource + "-people") is { } d) Stories.Contact(town, d, new Story { SettlementId = s.Id });
+        if (town.Outcome == null && !s.Razed && Manners.PeopleContact(town, s) is { } d) Stories.Contact(town, d, new Story { SettlementId = s.Id });
         return true;
     }
 

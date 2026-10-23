@@ -233,7 +233,8 @@ public static class AllyCalls
         var s = Of(town, c);
         var t = Ruler(town, s);
         int cold = (int)Math.Round((50 - s.Standing) / Math.Max(1, Negotiation.Rules(town).Ally.StandingPer));
-        return Negotiation.Dc(a, 10 + t.Insight, t.Wis, Math.Max(0, cold));
+        // Their manners count too: a proud people won't be threatened, a greedy one listens to sense.
+        return Negotiation.Dc(a, 10 + t.Insight, t.Wis, Math.Max(0, cold) + Manners.Lean(town, Neighbours.Key(s), a.Skill, ruler: false));
     }
 
     /// <summary>

@@ -235,6 +235,7 @@ public sealed class Simulation
         Vengeance.Daily(t);
         Sightings.Daily(t);
         Discovery.Daily(t);
+        Manners.Daily(t);
         Menaces.Track(t);
         Infiltration.Daily(t);
         Turning.Daily(t);
@@ -361,6 +362,9 @@ public sealed class Simulation
 
     /// <summary>Send an envoy with gifts to a settlement out in the wilds, to win its people over.</summary>
     public bool SendEnvoy(int settlementId) => World.SendEnvoy(Town, settlementId);
+
+    /// <summary>Make an overture to a people ("people:id") or power ("power:id") the way one of its manners likes. Returns the roll, or null.</summary>
+    public StoryBeat? Overture(string key, string manner) => Manners.Overture(Town, key, manner);
 
     /// <summary>Send coin and goods to see a settlement through its trouble.</summary>
     public bool AidSettlement(int settlementId) => Neighbours.Aid(Town, settlementId);
