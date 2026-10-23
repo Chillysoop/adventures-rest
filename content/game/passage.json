@@ -46,7 +46,7 @@
       "text": ["{hero} buys a riding horse, and rides it up and down the high street twice to be seen on it.", "{hero} has a horse now: no more walking to the edge of the map."] },
     { "id": "warhorse", "name": "warhorse", "ways": ["river"], "spell": "find-steed",
       "text": ["{hero} calls a steed out of the light: a grey warhorse that comes when whistled for and is never there when it isn't wanted.", "A warhorse answers {hero}'s prayer, its coat the colour of their oath."] },
-    { "id": "griffon", "name": "griffon", "ways": ["river", "water", "sheer", "air"], "price": 900, "buyAt": 1800, "level": 9, "institution": "griffon-roost", "peoples": ["griffon-clans"],
+    { "id": "griffon", "name": "griffon", "ways": ["river", "water", "sheer", "air"], "price": 900, "buyAt": 1800, "level": 9, "institution": "griffon-roost", "peoples": ["griffon-clans"], "part": "sky_dock_aerie",
       "text": ["{hero} buys a griffon from the Roost. The Roostmaster spends a week teaching them to stay on it; the griffon spends it deciding whether to let them.", "{hero} rides a griffon now, and the river, the lakes and the mountains are no longer in the way."] },
     { "id": "giant-owl", "name": "giant owl", "ways": ["river", "water", "sheer", "air"], "price": 600, "buyAt": 1300, "level": 7, "institution": "griffon-roost",
       "classes": ["rogue", "ranger", "druid", "warlock", "bard"],

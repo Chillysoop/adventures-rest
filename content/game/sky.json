@@ -59,6 +59,8 @@
   ],
   "powerPerRing": 3,
   "dockCeiling": 0.45,
+  "parts": { "berths": 2, "perMast": 2, "masts": ["sky_dock_mast", "sky_dock_great_mast"], "refinery": "sky_dock_refinery", "refines": 0.15,
+    "riggers": "sky_dock_rigger_hall", "riggerCost": 0.6, "signal": "sky_dock_signal_tower", "signalHours": 6 },
   "crystal": { "start": 16, "buy": 18, "buyMost": 12, "buyDays": 30, "shardsPerTier": 1.5, "seamFrom": "high", "mineCost": 900, "mineYield": 0.6, "mineYieldPerRing": 0.15, "hatchDays": 30 },
   "expedition": { "edge": 1, "wait": 1, "search": [1, 4], "strandMost": 40, "walkHurt": 0.3 },
   "texts": {

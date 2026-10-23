@@ -105,4 +105,42 @@ public class CrystalTests
         }
         Assert.Single(t.SkyFleet.Eggs);
     }
+
+    [Fact]
+    public void TheDockGrowsMastsARefineryARiggerHallAnAerieAndASignalTower()
+    {
+        var (sim, t, ship) = Docked();
+        t.City.Tier = City.TierIndex(t, "great_city");
+        var dock = Sky.Dock(t)!;
+        var p = t.Content.Sky.Parts;
+        Assert.True(Monuments.IsMonument(t, dock.Def));
+        Building Raise(string id)
+        {
+            var b = sim.AddPart(dock.Id, id) ?? throw new Xunit.Sdk.XunitException($"{id}: {Monuments.Blocked(t, dock, t.Content.Building(id))}");
+            b.BuildProgress = b.Def.BuildHours;
+            return b;
+        }
+        // Berths: the dock's own fill up, a mast adds more.
+        while (Sky.Ships(t).Count() < p.Berths) Fleet.Build(t, "skiff", true);
+        Assert.Equal("the dock's berths are full: add a mast", Sky.BuildBlocked(t, "skiff"));
+        Raise("sky_dock_mast");
+        Assert.Equal(p.Berths + p.PerMast, Sky.Berths(t));
+        Assert.Null(Sky.BuildBlocked(t, "skiff"));
+        // The refinery makes crystal go further, the riggers work for less.
+        double saved = Sky.Saved(t);
+        ship.Lift = 0;
+        double cost = Sky.ChargeCost(t, ship);
+        Raise("sky_dock_refinery");
+        Raise("sky_dock_rigger_hall");
+        Assert.Equal(saved + p.Refines, Sky.Saved(t), 6);
+        Assert.True(Sky.ChargeCost(t, ship) < cost);
+        // The aerie sells griffons; the signal tower sees raiders sooner.
+        var griffon = Passage.Rules(t).Mount("griffon")!;
+        Assert.False(Passage.Sold(t, griffon));
+        Raise("sky_dock_aerie");
+        Assert.True(Passage.Sold(t, griffon));
+        int hours = Sky.PatrolHours(t);
+        Raise("sky_dock_signal_tower");
+        Assert.Equal(hours + p.SignalHours, Sky.PatrolHours(t));
+    }
 }

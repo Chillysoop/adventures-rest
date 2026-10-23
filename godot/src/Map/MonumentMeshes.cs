@@ -186,4 +186,82 @@ public partial class TownView
             }
         }
     }
+
+    // ---- The Sky Dock's parts ----
+
+    /// <summary>A mooring mast: a stone foot, a tapering timber tower braced by stays, and an iron ring at the top.</summary>
+    private static void DockMast(MeshKit k, float tall)
+    {
+        var stone = new Color("8a8478");
+        k.Frustum(Vector3.Zero, 0.26f, 0.22f, 0.2f, 8, stone, stone.Darkened(0.1f));
+        k.Frustum(new Vector3(0, 0.2f, 0), 0.1f, 0.05f, tall, 6, Palette.Timber, Palette.Timber.Darkened(0.1f));
+        k.Frustum(new Vector3(0, 0.2f + tall, 0), 0.09f, 0.09f, 0.05f, 8, new Color("3c3a38"));
+        foreach (var (x, z) in new[] { (-0.4f, 0f), (0.4f, 0f), (0f, -0.4f), (0f, 0.4f) })
+        {
+            k.Box(new Vector3(x, 0, z), new Vector3(0.06f, 0.05f, 0.06f), stone);
+            k.Box(new Vector3(x * 0.5f, tall * 0.45f, z * 0.5f), new Vector3(0.008f, tall * 0.9f, 0.008f), Palette.DarkTimber);
+        }
+    }
+
+    /// <summary>The crystal refinery: a squat stone kiln house, its chimney and the cut crystal glowing in racks by the door.</summary>
+    private static void Refinery(MeshKit k, int v)
+    {
+        k.Push(MeshKit.At(0, 0, -0.08f, 0, Fit(3, 2, 0.84f)));
+        Walls(k, 3, 2, 0, true, v + 811, true);
+        k.Push(MeshKit.At(0, 1, 0));
+        k.Gable(0, 3, 2, 0.7f, Slate, Ashlar, 0.12f);
+        k.Pop();
+        Chimney(k, 1.1f, 0.9f, -0.3f, true);
+        k.Pop();
+        var glow = new Color(new Color("8ae0f0"), MeshKit.Flag.Magic);
+        foreach (float x in new[] { -0.3f, -0.1f, 0.1f, 0.3f })
+        {
+            k.Box(new Vector3(x, 0, 0.36f), new Vector3(0.14f, 0.04f, 0.08f), Palette.Timber);
+            k.Frustum(new Vector3(x, 0.04f, 0.36f), 0.03f, 0.005f, 0.1f, 5, glow);
+        }
+    }
+
+    /// <summary>The rigger hall: a long timber hall with a canvas-hung loft and coils of cable stacked by the doors.</summary>
+    private static void RiggerHall(MeshKit k, int v)
+    {
+        k.Push(MeshKit.At(0, 0, 0, 0, Fit(3, 3, 0.86f)));
+        Walls(k, 3, 2, 0, false, v + 821, true);
+        k.Push(MeshKit.At(0, 1, 0));
+        k.Gable(0, 3, 2, 0.9f, RoofOf(v + 3), Palette.Plaster, 0.12f);
+        k.Pop();
+        k.Pop();
+        var canvas = new Color("d8ccb0");
+        k.Box(new Vector3(0, 0.02f, 0.36f), new Vector3(0.7f, 0.2f, 0.01f), canvas);
+        foreach (float x in new[] { -0.3f, 0f, 0.3f })
+            k.Frustum(new Vector3(x, 0, 0.42f), 0.05f, 0.05f, 0.04f, 8, new Color("8a7a5a"));
+    }
+
+    /// <summary>The aerie: a stone platform of perches and straw nests, a griffon standing guard on the highest.</summary>
+    private static void Aerie(MeshKit k, int v)
+    {
+        var stone = new Color("8a8478");
+        k.Box(Vector3.Zero, new Vector3(0.9f, 0.08f, 0.9f), stone, stone.Darkened(0.1f));
+        var straw = new Color("c8a860");
+        foreach (var (x, z, h) in new[] { (-0.28f, -0.28f, 0.5f), (0.28f, -0.28f, 0.35f), (-0.28f, 0.28f, 0.3f), (0.28f, 0.28f, 0.45f) })
+        {
+            k.Frustum(new Vector3(x, 0.08f, z), 0.08f, 0.06f, h, 6, stone.Lightened(0.05f), stone);
+            k.Blob(new Vector3(x, 0.1f + h, z), new Vector3(0.12f, 0.04f, 0.12f), straw);
+        }
+        // A griffon on the tallest perch: tawny body, white head, wings folded.
+        var tawny = new Color("b08850");
+        k.Blob(new Vector3(-0.28f, 0.7f, -0.28f), new Vector3(0.09f, 0.07f, 0.13f), tawny);
+        k.Blob(new Vector3(-0.28f, 0.78f, -0.38f), new Vector3(0.05f, 0.05f, 0.05f), new Color("f0ece0"));
+        k.Box(new Vector3(-0.28f, 0.77f, -0.44f), new Vector3(0.02f, 0.02f, 0.04f), Palette.Gold);
+    }
+
+    /// <summary>The signal tower: a round stone tower with a great bronze mirror and a smoke brazier on the top.</summary>
+    private static void SignalTower(MeshKit k)
+    {
+        var stone = new Color("9a9488");
+        k.Frustum(Vector3.Zero, 0.3f, 0.24f, 1.3f, 10, stone, stone.Darkened(0.1f));
+        k.Frustum(new Vector3(0, 1.3f, 0), 0.32f, 0.32f, 0.06f, 10, stone.Darkened(0.05f));
+        k.Box(new Vector3(0, 1.36f, -0.1f), new Vector3(0.3f, 0.3f, 0.03f), new Color(new Color("e0b860"), MeshKit.Flag.Magic));
+        k.Frustum(new Vector3(0.12f, 1.36f, 0.12f), 0.07f, 0.09f, 0.08f, 8, new Color("3c3a38"));
+        k.Blob(new Vector3(0.12f, 1.5f, 0.12f), new Vector3(0.05f, 0.06f, 0.05f), new Color("e07030"));
+    }
 }

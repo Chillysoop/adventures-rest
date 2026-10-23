@@ -260,7 +260,7 @@ public static class Fleet
 
     // ---- Repairs ----
 
-    public static double RepairCost(Town town, Ship s) => Js.Round((Def(town, s).Hull - s.Hull) * Def(town, s).Repair);
+    public static double RepairCost(Town town, Ship s) => Js.Round((Def(town, s).Hull - s.Hull) * Def(town, s).Repair * (Aloft(town, s) ? Sky.RiggerShare(town) : 1));
 
     public static bool Repair(Town town, int shipId)
     {

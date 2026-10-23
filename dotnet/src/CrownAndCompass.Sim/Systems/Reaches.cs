@@ -181,7 +181,7 @@ public static class Reaches
         var ship = Free(town, site).First();
         var rng = Dice(town, ship.Id * 13 + party.Id);
         var x = X(town);
-        int search = Knowledge.ActiveScrying(town, site.Def.Id) != null ? 0 : rng.Range(x.Search[0], x.Search[^1] + 1);
+        int search = Knowledge.ActiveScrying(town, site.Def.Id) != null || Sky.Has(town, Sky.Rules(town).Parts.Signal) ? 0 : rng.Range(x.Search[0], x.Search[^1] + 1);
         int days = Need(town, ship, site) + search;
         ship.Lift = Math.Max(0, ship.Lift - days);
         party.ShipId = ship.Id;

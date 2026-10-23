@@ -370,6 +370,12 @@ public partial class TownView(MapView map) : Node3D
             case "hall_counting_house": Guildhall(kit, v); break;
             case "hall_archive": Library(kit, v); break;
             case "hall_banner_court": BannerCourt(kit, v); break;
+            case "sky_dock_mast": DockMast(kit, 1.3f); break;
+            case "sky_dock_great_mast": DockMast(kit, 2.1f); break;
+            case "sky_dock_refinery": Refinery(kit, v); break;
+            case "sky_dock_rigger_hall": RiggerHall(kit, v); break;
+            case "sky_dock_aerie": Aerie(kit, v); break;
+            case "sky_dock_signal_tower": SignalTower(kit); break;
             default: House(kit, v); break;
         }
     }

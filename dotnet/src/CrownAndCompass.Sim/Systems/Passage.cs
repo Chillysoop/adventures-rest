@@ -79,6 +79,9 @@ public sealed record MountDef
     /// <summary>Peoples (world.json) who sell it to the town's heroes once allied, roost or no roost.</summary>
     public IReadOnlyList<string> Peoples { get; init; } = [];
 
+    /// <summary>Or a part of the Sky Dock (the aerie) that breeds and sells it.</summary>
+    public string Part { get; init; } = "";
+
     /// <summary>A spell that calls it for free (a paladin's steed), or "".</summary>
     public string Spell { get; init; } = "";
     public IReadOnlyList<string> Text { get; init; } = [];
@@ -1035,7 +1038,8 @@ public static class Passage
     }
 
     /// <summary>An allied people breeds the beast and sells it to the town's heroes.</summary>
-    public static bool Sold(Town town, MountDef m) => m.Peoples.Count > 0 && town.Settlements.Any(s => s.Allied && !s.Razed && m.Peoples.Contains(s.Kin.Id));
+    public static bool Sold(Town town, MountDef m) =>
+        m.Peoples.Count > 0 && town.Settlements.Any(s => s.Allied && !s.Razed && m.Peoples.Contains(s.Kin.Id)) || Sky.Has(town, m.Part);
 
     /// <summary>A hero takes a mount: theirs from now on, told in the Ledger (and on a card when it is one worth telling).</summary>
     public static void Ride(Town town, Agent a, MountDef m, Importance importance, string? line = null)
