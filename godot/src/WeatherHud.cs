@@ -99,6 +99,7 @@ public partial class Main
         var sb = new System.Text.StringBuilder();
         sb.Append(Ui.Head(kind.Name, kind.Icon, StepColor(w.Step)));
         sb.Append('\n').Append(Ui.Dim(kind.Text));
+        if (w.By != "") sb.Append('\n').Append(Ui.Bullet(Ui.C(Ui.Bad, $"Worked by {w.By}"), "ui-warn"));
         sb.Append('\n').Append(Ui.Chips(
             Ui.Chip("weather-hot", Degrees(w.Heat), null, "Heat"),
             Ui.Chip("weather-wind", w.Wind < 0.12 ? "still" : $"from {Weather.FromWord(w.WindBearing)}", w.Wind >= Weather.Rules(t).Gale ? Ui.Gold : null, w.Wind >= Weather.Rules(t).Gale ? "A gale" : w.Wind >= 0.5 ? "A strong wind" : "A breeze")));
@@ -107,8 +108,10 @@ public partial class Main
         else if (wet >= 0.6) sb.Append('\n').Append(Ui.Bullet("Wet ground, rivers high", "weather-rain"));
         if (Weather.StormIn(t) is int hours && w.Step < Weather.Storm)
         {
-            var coming = Weather.Kind(t, Weather.Here(t, t.Tick + hours).Kind);
-            sb.Append('\n').Append(Ui.Bullet(Ui.C(Ui.Gold, $"{coming.Name} in {(hours < 24 ? $"{Math.Max(1, hours)}h" : Ui.Days((hours + 12) / 24))}"), "ui-warn"));
+            var ahead = Weather.Here(t, t.Tick + hours);
+            var coming = Weather.Kind(t, ahead.Kind);
+            string from = ahead.By != "" ? $", sent by {ahead.By}" : "";
+            sb.Append('\n').Append(Ui.Bullet(Ui.C(Ui.Gold, $"{coming.Name} in {(hours < 24 ? $"{Math.Max(1, hours)}h" : Ui.Days((hours + 12) / 24))}{from}"), "ui-warn"));
         }
         var days = Weather.Forecast(t);
         sb.Append($"\n\n{Ui.Head("Days ahead", "ui-day", Ui.KeywordColor, 13)}");

@@ -99,6 +99,8 @@ public partial class Overlay
             Disc(at, 12, new Color(0.12f, 0.12f, 0.2f, 0.75f * alpha), w.Step >= Weather.Tempest ? Ui.Bad : Ui.Gold, 2);
             DrawTextureRect(Ui.Icon(kind.Icon), new Rect2(at - new Vector2(9, 9), new Vector2(18, 18)), false, new Color(1, 1, 1, alpha));
             Text(at + new Vector2(0, 26), kind.Name, Ui.Bold, 12, new Color(0.95f, 0.92f, 0.82f, alpha), 3);
+            // A storm a lord works or called: who is behind it, once the town knows the lair.
+            if (w.By != "") Text(at + new Vector2(0, 40), Ui.Cap(w.By), Ui.Bold, 11, new Color(1f, 0.62f, 0.5f, alpha), 3);
         }
         // The wind's way, every third cell of what is in sight.
         foreach (var (x, y, w, alpha) in _skyCells)

@@ -71,6 +71,9 @@ public sealed record RouteMind(double TimeWeight, double RiskWeight, double Leve
 
     /// <summary>The planning's own dice, off the town's stream; null plans with no rolls.</summary>
     public Rng? Dice { get; init; }
+
+    /// <summary>Navigation DC the sky adds as they set off: fog, a storm (<see cref="Weather.Murk"/>).</summary>
+    public int Murk { get; init; }
 }
 
 public enum Pace
@@ -680,6 +683,62 @@ public static class Roads
         return back;
     }
 
+    /// <summary>
+    /// A planned road with the weather on it: each stretch slowed by the sky over it when they walk it (snow, mud, storms;
+    /// only the wind aloft), sampled a day's march at a time. The worst of it goes into <paramref name="said"/>.
+    /// </summary>
+    public static List<Waypoint> Weathered(Town town, (double X, double Y) from, List<Waypoint> route, double start, bool aloft, List<string> said)
+    {
+        var content = town.Content;
+        var r = content.Roads;
+        var road = Weather.Rules(town).Road;
+        var outp = new List<Waypoint>(route.Count);
+        double h = 0, lost = 0, worst = 0;
+        string why = "", place = "";
+        WeatherNow seen = default;
+        var cur = from;
+        foreach (var w in route)
+        {
+            double leg = LegHours(r, cur, w);
+            if (leg <= 0)
+            {
+                outp.Add(w);
+                cur = (w.X, w.Y);
+                continue;
+            }
+            int n = Math.Max(1, (int)Math.Ceiling(leg / Math.Max(1, r.MarchHours)));
+            double share = 0;
+            for (int i = 0; i < n; i++)
+            {
+                double k = (i + 0.5) / n;
+                var (x, y) = (cur.X + (w.X - cur.X) * k, cur.Y + (w.Y - cur.Y) * k);
+                var (extra, cause, now) = Weather.Slow(town, x, y, (int)Finish(content, start, h + leg * k), aloft);
+                share += extra / n;
+                if (extra * leg / n > worst && cause != "")
+                {
+                    worst = extra * leg / n;
+                    why = cause;
+                    seen = now;
+                    place = w.Feature?.Name ?? (w.Crossing != "" ? w.Crossing : Weather.RegionAt(town, x, y)?.Name ?? "the wilds");
+                }
+            }
+            double add = Js.Round(leg * share * 10) / 10.0;
+            outp.Add(add > 0 ? w.Lost(add) : w);
+            lost += add;
+            h += leg + add;
+            cur = (w.X, w.Y);
+        }
+        if (lost >= 4 && why != "")
+        {
+            string line = road.Line(new Rng(unchecked((int)Voices.Hash("weather-road", town.Seed, (int)start, route.Count))), why);
+            if (line != "")
+                said.Add(Cap(line.Replace("{place}", place, StringComparison.Ordinal)
+                    .Replace("{days}", DaysText(lost / r.MarchHours, r.MarchHours), StringComparison.Ordinal)
+                    .Replace("{kind}", Weather.Kind(town, seen.Kind).Name.ToLowerInvariant(), StringComparison.Ordinal)));
+        }
+        return outp;
+    }
+
     // ---- The march schedule ----
 
     /// <summary>The two marches of a day: dawn to noon, and an hour after noon until the day's march is done.</summary>
@@ -744,7 +803,8 @@ public static class Roads
     {
         var spot = World.Spot(town, site);
         var mind = Passage.Board(town, party, Mind(town, members, Hurry(town, bounty, site), false), party.Start, spot, site.Def.Aloft);
-        party.Out = Plan(town, party.Start, spot, mind, town.Rng, party.Said);
+        mind = mind with { Murk = Weather.Murk(town, party.Start.X, party.Start.Y, town.Tick) };
+        party.Out = Weathered(town, party.Start, Plan(town, party.Start, spot, mind, town.Rng, party.Said), party.DepartTick, party.Airship, party.Said);
         double outHours = Hours(town, party.Start, party.Out);
         double arrive = Finish(town.Content, party.DepartTick, outHours);
         party.ArriveTick = (int)Math.Ceiling(arrive);
@@ -784,7 +844,7 @@ public static class Roads
     }
 
     /// <summary>Walk a road: hard country crossed, the noon rest, and the nights in camp, in the order they come.</summary>
-    private static void Walk(Town town, Expedition.Venture v, (double X, double Y) from, IReadOnlyList<Waypoint> route, double start)
+    private static void Walk(Town town, Expedition.Venture v, Party party, (double X, double Y) from, IReadOnlyList<Waypoint> route, double start)
     {
         var content = town.Content;
         var r = content.Roads;
@@ -819,7 +879,14 @@ public static class Roads
                 var spot = Along(town, from, route, at);
                 int tier = TierAt(town, Math.Sqrt(spot.X * spot.X + spot.Y * spot.Y));
                 var habitats = HabitatsAt(town, spot);
-                events.Add((at, 2, () => v.Camp(tier, habitats)));
+                // A night in killing weather, on its own dice; an airship's crew sleeps aboard.
+                var exposed = party.Airship ? null : Weather.Exposure(town, spot.X, spot.Y, dusk);
+                int night = (int)dusk;
+                events.Add((at, 2, () =>
+                {
+                    if (exposed is { } e) v.Exposed(Weather.Rules(town).Road, e.Kind, Weather.Kind(town, e.W.Kind).Name.ToLowerInvariant(), tier, new Rng(unchecked((int)Voices.Hash("weather-camp", town.Seed, night, party.Id))));
+                    if (!v.Wiped) v.Camp(tier, habitats);
+                }));
             }
         }
         foreach (var (at, _, act) in events.OrderBy(e => e.At).ThenBy(e => e.Order))
@@ -864,7 +931,7 @@ public static class Roads
         v.Speak("setout");
         v.TellJobs();
         foreach (var line in party.Said) v.Log(line);
-        Walk(town, v, party.Start, party.Out, party.DepartTick);
+        Walk(town, v, party, party.Start, party.Out, party.DepartTick);
 
         var outcome = ExpeditionOutcome.Wiped;
         double leave = v.Clock;
@@ -896,9 +963,11 @@ public static class Roads
             // Home again, choosing the roads afresh: a hurt party takes no chances.
             bool hurt = v.HpFraction() < 0.6 || v.Fallen > 0;
             var said = new List<string>();
-            party.Home = Plan(town, spot, (0, 0), Passage.Aboard(town, party, Mind(town, members, false, hurt)), town.Rng, said);
+            var mind = Passage.Aboard(town, party, Mind(town, members, false, hurt));
+            mind = mind with { Murk = Weather.Murk(town, spot.X, spot.Y, party.LeaveTick) };
+            party.Home = Weathered(town, spot, Plan(town, spot, (0, 0), mind, town.Rng, said), party.LeaveTick, party.Airship, said);
             foreach (var line in said) v.Log(line);
-            Walk(town, v, spot, party.Home, party.LeaveTick);
+            Walk(town, v, party, spot, party.Home, party.LeaveTick);
             if (v.Wiped) outcome = ExpeditionOutcome.Wiped;
         }
         if (outcome == ExpeditionOutcome.Wiped)

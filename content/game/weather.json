@@ -41,6 +41,100 @@
   "marchStorm": 1,
   "marchStormHours": 9,
   "marchMost": 3,
+  "road": {
+    "_doc": "Weather on the roads (Roads.Weathered, Weather.Slow, Venture.Exposed). Each stretch of a party's road is slowed by the sky over its middle when they walk it: `snow` of a day's march per unit of snow lying, `mud` per unit of wet ground past `mudAbove`, and `step` by the worst step (fair to tempest); an airship flies over the snow and mud but bucks the wind by `fly`. A stretch loses at most `most` of its hours again. Fog adds `fogDc` to the navigator's DC and a storm `stormDc`. A ford with ground wetter than `flood` is in spate: parties go round by a bridge if one can be reached. A night in the open at or below `cold` degrees, at or above `heat` by day, or in a storm or worse, calls for a Constitution save against `dc` (cold and heat) or `stormSave`; whoever is best at survival tries to make shelter (`shelterDc`) and gives them all the better of two dice. A failed save costs `die` per level band of the country.",
+    "snow": 0.7,
+    "mud": 0.25,
+    "mudAbove": 0.6,
+    "step": [0, 0, 0.08, 0.35, 0.8],
+    "fly": [0, 0, 0.05, 0.3, 0.7],
+    "most": 1.2,
+    "fogDc": 4,
+    "stormDc": 2,
+    "flood": 0.95,
+    "cold": -14,
+    "heat": 36,
+    "dc": 10,
+    "stormSave": 12,
+    "shelterDc": 12,
+    "die": 6,
+    "texts": {
+      "snow": ["Snow lies deep on the road past {place}; they wade it and lose {days}.", "The drifts past {place} cost them {days} of floundering."],
+      "storm": ["A {kind} catches them past {place}; they shelter and lose {days}.", "They sit out a {kind} past {place} and lose {days}."],
+      "mud": ["The road past {place} is a bog after the rain; it costs them {days}.", "Rain has turned the way past {place} to mud, and they lose {days} in it."],
+      "fly": ["Headwinds past {place} hold the airship back {days}.", "The ship beats into a {kind} past {place} and loses {days}."],
+      "flood": ["{name} is in spate after the rain, too deep to wade; they go round by {bridge}.", "The river runs high over {name}; they turn for {bridge}."],
+      "cold": ["The night is killing cold.", "Frost bites hard in the night, cold enough to kill."],
+      "heat": ["The day's heat is a furnace on the road.", "The sun beats down without mercy all day."],
+      "stormNight": ["The {kind} rages all night over the camp.", "They spend the night in the teeth of the {kind}."],
+      "shelter": ["{name} digs them a shelter in time ({roll}).", "{name} finds them a lee and makes it snug ({roll})."],
+      "noShelter": ["{name} can find no shelter worth the name ({roll}).", "{name}'s shelter does not hold ({roll})."],
+      "hurt": ["It costs them: {list}.", "Not all of them shrug it off: {list}."],
+      "fine": ["They come through it.", "Nobody takes harm from it."]
+    }
+  },
+  "harvest": {
+    "_doc": "Weather influences the harvest, never decides it (Conner, 2026-10-23): a farm's yield is multiplied by Weather.Harvest, kept between `least` and `most`. Over growing land (the day's heat above `growFrom`) the month's wet ground (a reading every four days) below `dry` cuts up to `drought`; wetter than `soaked` cuts `soak`; kindly ground between `kindly` adds `kind`. Tuned so a year comes out about even: drought on about one growing day in twelve, kindly on one in three. A storm over the fields that day flattens `storm` of it, and a frost at dawn outside winter `frost`. The Ledger hears when the fields turn parched, sodden or kindly.",
+    "growFrom": 12,
+    "dry": 0.009,
+    "drought": 0.15,
+    "soaked": 0.2,
+    "soak": 0.08,
+    "kindly": [0.06, 0.17],
+    "kind": 0.08,
+    "storm": 0.12,
+    "frost": 0.08,
+    "least": 0.8,
+    "most": 1.1,
+    "texts": {
+      "drought": ["No rain for weeks: the fields round {town} are parched, and the farmers watch the sky.", "The ground cracks in the fields round {town}. The harvest will be thin if the rain holds off."],
+      "soaked": ["The fields round {town} lie waterlogged; the crops rot at the root.", "Too much rain: the furrows round {town} run like ditches."],
+      "kindly": ["Kindly weather for the fields round {town}: sun and soft rain in turn.", "The farmers of {town} say they have not seen a growing year like it."]
+    }
+  },
+  "damage": {
+    "_doc": "Storm damage in town (Weather.Daily): on a day a storm with a gale is over the town each finished timber building has `storm` chance (a great storm `tempest`) of losing roof and walls, `wreck` of its work, at most `most` of them; stone stands. A thunderstorm has `lightning` chance to strike one timber building and fire it, `strike` of its work; slate and lime (Research.Fireproof) turn some away. Damaged buildings are mended as the town's repairs say (Simulation.SetRepairs).",
+    "storm": 0.004,
+    "tempest": 0.03,
+    "most": 8,
+    "wreck": [0.05, 0.2],
+    "lightning": 0.12,
+    "strike": [0.25, 0.45],
+    "texts": {
+      "storm": ["The {kind} tears at {town} and takes the roof off {list}.", "Wind and rain batter {town} all day and leave {list} damaged."],
+      "lightning": ["Lightning strikes {name} in the {kind} and sets it ablaze; the rain puts it out, but not before it is gutted.", "A bolt from the {kind} hits {name}; it burns until the rain beats the fire down."]
+    }
+  },
+  "tamed": { "weather-working": 1, "bottled-weather": 0.5 },
+  "glass": "hour-weaving",
+  "lords": {
+    "_doc": "Weather-working lords (Weather.Lords), from day `from`: a site whose master is one of `list` works the weather round its lair while it holds out: `storm` (thunder and wind), `fog`, or `winter` (`winter` degrees colder at the heart, snow), `power` at the heart over `radius` road days. A lord with a `call` sends a storm about every `every` days at the town or at a company on the road within `reach` road days of its seat: `power` and `radius` at its heart, crossing to its mark over the first part of its `hours`; riding a storm already brewing there multiplies it by `ride`. The town's answers: the `wardens` research turns called storms aside at once (and halves storm damage), a druid at home of `calmLevel` or more turns one with `calm` chance a day. `tamed` research softens the weather's cuts to the harvest by its share; `glass` research reads the sky a day further. Called storms are saved; lairs are refreshed each morning.",
+    "from": 60,
+    "winter": 14,
+    "calmLevel": 9,
+    "calm": 0.4,
+    "wardens": "wind-wardens",
+    "list": [
+      { "monster": "storm-giant", "kind": "storm", "power": 0.8, "radius": 1.6, "call": { "every": 20, "power": 1.5, "radius": 2.6, "hours": 36, "ride": 1.5, "reach": 16 } },
+      { "monster": "cloud-giant", "kind": "fog", "power": 0.9, "radius": 1.5, "call": { "every": 30, "power": 1.0, "radius": 2.2, "hours": 30, "ride": 1.3, "reach": 12 } },
+      { "monster": "ancient-blue-dragon", "kind": "storm", "power": 1.0, "radius": 1.6, "call": { "every": 28, "power": 1.2, "radius": 2.0, "hours": 24, "ride": 1.4, "reach": 10 } },
+      { "monster": "adult-blue-dragon", "kind": "storm", "power": 0.75, "radius": 1.2 },
+      { "monster": "young-blue-dragon", "kind": "storm", "power": 0.45, "radius": 0.8 },
+      { "monster": "frost-giant", "kind": "winter", "power": 1.0, "radius": 1.6 },
+      { "monster": "ancient-white-dragon", "kind": "winter", "power": 1.2, "radius": 1.9 },
+      { "monster": "adult-white-dragon", "kind": "winter", "power": 0.9, "radius": 1.3 },
+      { "monster": "green-hag", "kind": "fog", "power": 0.8, "radius": 1.0 },
+      { "monster": "sea-hag", "kind": "fog", "power": 0.8, "radius": 1.0 },
+      { "monster": "night-hag", "kind": "fog", "power": 0.6, "radius": 0.9 }
+    ],
+    "texts": {
+      "call": ["The sky darkens out of season. Riders say {lord} has called a storm, and it is coming for {town}.", "Thunder rolls from a clear morning: {lord} sends a storm at {town}."],
+      "ride": ["A storm was brewing over {town}, and {lord} rides it in: it will be worse than any of the old folk remember.", "{lord} takes the storm already gathering and drives it at {town}."],
+      "party": ["Word on the wind: {lord} has sent a storm after the {party} on the road.", "The {party} write that the sky turned on them: {lord} has called a storm down on their road."],
+      "vane": ["The Storm Vane turns on its mast, and the storm {lord} sent breaks up before it reaches {town}.", "The wind-wardens' vane swings round; the storm from {lord} veers off and blows itself out."],
+      "calm": ["{name} climbs the bell tower and speaks to the sky. The storm {lord} sent turns away from {town}.", "{name} the druid walks out into the wind and sends the storm from {lord} back where it came from."]
+    }
+  },
   "habitats": {
     "grassland": { "wind": 0.05 },
     "hills": { "heat": -1, "wind": 0.05 },

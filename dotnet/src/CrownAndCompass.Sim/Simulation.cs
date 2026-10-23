@@ -171,6 +171,7 @@ public sealed class Simulation
         // Squares first, so the shops sited today front them.
         Streets.Markets(t);
         if (Hand("planning")) Construction.Daily(t);
+        Construction.Mend(t);
         Streets.Wear(t);
         Streets.Closes(t);
         Paving.Daily(t);
@@ -594,6 +595,9 @@ public sealed class Simulation
 
     /// <summary>Send a caravan for the timber and stone a stalled site is waiting on, at the import premium.</summary>
     public bool SendCaravan(int buildingId) => Construction.SendCaravan(Town, Town.Building(buildingId));
+
+    /// <summary>How damage from storms, fires and enemies is mended: "crews", "first" or "hire".</summary>
+    public bool SetRepairs(string way) => Construction.SetRepairs(Town, way);
 
     /// <summary>Rebuild a rope bridge raiders cut, in stone that can't be cut again.</summary>
     public bool RebuildBridge(int featureId) => Bridges.Rebuild(Town, featureId);

@@ -193,6 +193,8 @@ public partial class Main : Control
         if (_opts.At is string atKind && _sim.Town.Buildings.Where(b => b.Def.Id == atKind && b.Complete).OrderBy(b => b.Id).FirstOrDefault() is Building at0)
         {
             _map.LookAt(Map.Geo.LotPos(_sim.Town.Lot(at0.LotId)), _opts.Cam ?? 22);
+            // --wreck damages it first (a storm's work, for a shot of the repairs card).
+            if (_opts.Wreck) CrownAndCompass.Sim.Systems.Blows.Wreck(_sim.Town, at0, 0.4);
             // --card opens its inspector too (a monument's parts, a site's say).
             if (_opts.Card) Select(Selection.Building(at0.Id));
         }

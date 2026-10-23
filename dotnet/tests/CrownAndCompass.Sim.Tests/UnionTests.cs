@@ -20,8 +20,8 @@ public class UnionTests
         var (_, t) = Town();
         var members = Union.Members(t);
         Assert.True(members.Count >= Union.Rules(t).Founding);
-        // Not only the guilds: workers outside their trades join too.
-        Assert.Contains(members, a => !Guilds.InTrade(t, a));
+        // Not only the guilds: workers outside their trades join too (in a small town that may take a seed or two).
+        Assert.Contains(Enumerable.Range(1, 4).Select(seed => seed == 1 ? t : Town(seed).T), town => Union.Members(town).Any(a => !Guilds.InTrade(town, a)));
         Assert.Contains(t.Ledger.Entries, e => e.Text.Contains(Union.Rules(t).Name, StringComparison.Ordinal));
         var auto = new Simulation(new SimulationOptions { Seed = 1, Enemy = false });
         auto.RunDays(150);

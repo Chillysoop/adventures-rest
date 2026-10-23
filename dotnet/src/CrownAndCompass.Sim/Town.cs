@@ -124,6 +124,10 @@ public sealed class Building(int id, BuildingDef def, int lotId)
 
     public bool Complete => !Razed && BuildProgress >= Def.BuildHours;
     public bool IsSite => !Razed && !Complete;
+
+    /// <summary>Wrecked by a storm, a fire or an enemy and not mended yet (<see cref="Systems.Blows.Wreck"/>); mended as the town's repairs say.</summary>
+    public bool Wrecked { get; set; }
+    public bool Damaged => Wrecked && IsSite;
     /// <summary>The town hall's road crews: extra hands the treasury hires out of the town's upkeep.</summary>
     public int Crew { get; set; }
 
@@ -282,6 +286,7 @@ public static class TreasuryAccount
     public const string CharterHouses = "Charter houses";
     public const string Bounties = "Bounties";
     public const string Upkeep = "Upkeep";
+    public const string Repairs = "Repairs";
     public const string CountingHouse = "Counting house";
     public const string Watch = "Watch";
     public const string CouncilMotions = "Council motions";
@@ -351,6 +356,9 @@ public sealed class Town
     public Ledger Ledger { get; } = new();
     public Market Market { get; }
     public int Tick { get; set; }
+
+    /// <summary>How the town mends what storms, fires and enemies wreck (<see cref="Systems.Construction.RepairWays"/>).</summary>
+    public string Repairs { get; set; } = "crews";
     public double Treasury { get; set; }
     public double TaxRate { get; set; }
 

@@ -169,6 +169,8 @@ public sealed class Options
     public bool TourneyCard = true;
     /// <summary>With <c>--at</c>: open that building's inspector (<c>--card</c>), for a shot of a monument's parts.</summary>
     public bool Card;
+    /// <summary>With <c>--at</c>: wreck that building first (<c>--wreck</c>), for a shot of the repairs card.</summary>
+    public bool Wreck;
 
     /// <summary>--asks hands every area to a steward who asks first and plays on until they ask (screenshots of the cards).</summary>
     public bool Asks;
@@ -309,6 +311,7 @@ public sealed class Options
                 case "--befriend": o.Befriend = true; break;
                 case "--siege": o.Siege = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture) : 8; break;
                 case "--card": o.Card = true; break;
+                case "--wreck": o.Wreck = true; break;
                 case "--asks": o.Asks = true; break;
                 case "--tourney": o.Tourney = args.Length > i + 1 && !args[i + 1].StartsWith("--") ? int.Parse(Next()) : 1; break;
                 case "--tourney-hour": o.TourneyHour = int.Parse(Next()); break;

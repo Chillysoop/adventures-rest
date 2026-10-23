@@ -1163,6 +1163,49 @@ public static partial class Expedition
             if (!Wiped) LongRest();
         }
 
+        /// <summary>
+        /// A night in the open in killing weather (weather.json <c>road</c>): whoever is best at survival tries to make
+        /// shelter, which gives them all the better of two dice, then each makes a Constitution save or is hurt. On the
+        /// night's own dice, so the weather never moves the town's.
+        /// </summary>
+        public void Exposed(Systems.WeatherRoad r, string kind, string weather, int tier, Rng dice)
+        {
+            if (Wiped) return;
+            Log(r.Line(dice, kind).Replace("{kind}", weather, StringComparison.Ordinal));
+            int dc = kind == "stormNight" ? r.StormSave : r.Dc;
+            var builder = Standing.OrderByDescending(c => Bonus(c, "survival")).ThenBy(c => c.Agent.Id).First();
+            int bonus = Bonus(builder, "survival");
+            bool shelter;
+            string rolled;
+            if (Wayfaring.Routine(bonus, r.ShelterDc))
+            {
+                shelter = true;
+                rolled = "routine";
+            }
+            else
+            {
+                int roll = dice.D20();
+                shelter = roll == 20 || (roll != 1 && roll + bonus >= r.ShelterDc);
+                rolled = $"d20 {roll}, {roll + bonus} vs DC {r.ShelterDc}";
+            }
+            Log(r.Line(dice, shelter ? "shelter" : "noShelter").Replace("{name}", builder.Agent.GivenName, StringComparison.Ordinal).Replace("{roll}", rolled, StringComparison.Ordinal));
+            int scale = 1 + (Math.Max(1, tier) - 1) / 4;
+            var hurt = new List<string>();
+            foreach (var c in Standing)
+            {
+                int save = Rng.Modifier(c.Agent.Abilities.Con) + (c.Sheet.Cls.Saves.Contains(Ability.Con) ? Proficiency(c.Sheet.Level) : 0);
+                int d = dice.D20();
+                if (shelter) d = Math.Max(d, dice.D20());
+                if (d == 20 || (d != 1 && d + save >= dc)) continue;
+                int dmg = 0;
+                for (int k = 0; k < scale; k++) dmg += dice.Roll(1, r.Die);
+                Hurt(c, dmg);
+                hurt.Add($"{c.Agent.GivenName} ({dmg})");
+            }
+            Log(hurt.Count == 0 ? r.Line(dice, "fine") : r.Line(dice, "hurt").Replace("{list}", string.Join(", ", hurt), StringComparison.Ordinal));
+            if (Party.Any(c => c.Down && !c.Dead)) AfterCombat();
+        }
+
         /// <summary>Crossing hard country: each of them makes the check, and something may be waiting there.</summary>
         public void Cross(TerrainKindDef kind, string name, int tier)
         {
