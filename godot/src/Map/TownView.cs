@@ -2671,7 +2671,7 @@ public partial class TownView(MapView map) : Node3D
     /// </summary>
     private void Ships(Town town)
     {
-        if (!Sim.Systems.Fleet.Coastal(town) || town.Terrain.FirstOrDefault(f => f.Kind.Boats) is not { } sea) return;
+        if (!Sim.Systems.Fleet.Coastal(town) || Sim.Systems.Founding.Bay(town) is not { } sea) return;
         var gen = map.Gen;
         double b = sea.Bearing * Math.PI / 180;
         Vector2 Along(double days, double turn = 0) => Geo.FromDays(days * Math.Sin(b + turn), -days * Math.Cos(b + turn));

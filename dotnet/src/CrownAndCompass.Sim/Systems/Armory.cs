@@ -191,7 +191,7 @@ public static class Armory
     // Stones on the road --------------------------------------------------------------------------
 
     /// <summary>A living member of the party carries one of the town's sending stones.</summary>
-    public static bool Carries(Town town, Party party) => party.Members.Any(id => town.Agent(id) is { Dead: false, Hero: { } h } && (h.Stone || Enchant.Has(town.Content, h, "sending")));
+    public static bool Carries(Town town, Party party) => party.Members.Any(id => town.Agent(id) is { Dead: false, Hero: { } h } && (h.Stone || Enchant.Has(town.Content, h, "sending"))) || Regalia.Sends(town, party);
 
     /// <summary>Sendings a carried stone adds to the party's spell slots.</summary>
     public static int StoneSlots(Town town, Party party) => Carries(town, party) ? Rules(town).StoneSlots : 0;

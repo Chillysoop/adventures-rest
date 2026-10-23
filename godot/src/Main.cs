@@ -77,6 +77,7 @@ public partial class Main : Control
         BuildGlossary();
         BuildSettings();
         BuildGuide();
+        BuildModal();
         BuildStory();
         BuildFind();
         BuildIntro();
@@ -128,7 +129,16 @@ public partial class Main : Control
         _pot.AddRange(_opts.Brew);
         _mayorSheet = _opts.MayorSheet;
         if (_opts.MayorFallen) Mayoralty.Wound(_sim.Town, 9999, "a knife in the market");
-        if (_opts.Tab is string t && Enum.TryParse<Tab>(t, true, out var tab)) SetTab(tab);
+        if (_opts.Tab is string t && Enum.TryParse<Tab>(t, true, out var tab))
+        {
+            SetTab(tab);
+            if (_opts.Page != null) _panes[tab].Selected = _opts.Page;
+        }
+        if (_opts.Goal is int goal && _sim.Town.Content.Goals.Goals.ElementAtOrDefault(goal - 1) is { } gd)
+            Callable.From(() => GoTo(gd.Goes, $"goal:{gd.Id}")).CallDeferred();
+        // After the alerts have been read once.
+        if (_opts.Next > 0) GetTree().CreateTimer(0.5).Timeout += () => { for (int i = 0; i < _opts.Next; i++) PressNext(); };
+        foreach (var f in _opts.Fold) Pane.Folded.Add(f);
         if (_opts.Tray is string tray && Trays.FirstOrDefault(d => d.Id.Equals(tray, StringComparison.OrdinalIgnoreCase)) is { } td)
             Callable.From(() => OpenTray(td.Id)).CallDeferred();
         if (_opts.Stat is int stat) Callable.From(() => { RenderHeader(); ShowStatTip(stat); }).CallDeferred();
@@ -152,7 +162,7 @@ public partial class Main : Control
         {
             if (wk == "gate" && _sim.Town.Gateways.FirstOrDefault() is { } g) _opts.Look ??= Map.Geo.FromDays(g.Ax, g.Ay);
             // --wonder quay: the harbour's quay on the shore of a town on the sea.
-            else if (wk == "quay" && _sim.Town.Terrain.FirstOrDefault(f => f.Kind.Boats) is { } sea)
+            else if (wk == "quay" && Sim.Systems.Founding.Bay(_sim.Town) is { } sea)
                 _opts.Look ??= Map.Geo.FromDays((sea.Inner + 0.05) * Math.Sin(sea.Bearing * Math.PI / 180), -(sea.Inner + 0.05) * Math.Cos(sea.Bearing * Math.PI / 180));
             // --wonder home:trees: the first people met whose home looks like that (marked met for the shot).
             else if (wk.StartsWith("home:") && _sim.Town.Settlements.FirstOrDefault(s => Map.TownView.SettlementLook(_sim.Town, s) == wk[5..]) is { } home)
@@ -689,13 +699,14 @@ public partial class Main : Control
         }
         int digit = k.Keycode is >= Key.Key0 and <= Key.Key9 ? ((int)(k.Keycode - Key.Key0) + 9) % 10 : -1;
         if (Keys.Is(k, "pause")) PlayerSpeed(_speed == 0 ? _lastSpeed : 0);
-        else if (digit >= 0 && k.ShiftPressed && !k.CtrlPressed && !k.AltPressed) SetTab(QuickTabs[digit]);
+        else if (digit >= 0 && digit < Groups.Length && k.ShiftPressed && !k.CtrlPressed && !k.AltPressed) OpenGroup(digit);
         else if (digit >= 0 && k.CtrlPressed && !k.ShiftPressed && !k.AltPressed) SetPin(digit);
         else if (digit >= 0 && !k.CtrlPressed && !k.ShiftPressed && !k.AltPressed) GoToPin(digit);
         else if (Keys.Is(k, "faster")) PlayerSpeed(Math.Min(Speeds.Length - 1, _speed + 1));
         else if (Keys.Is(k, "slower")) PlayerSpeed(Math.Max(1, _speed - 1));
         else if (Keys.Is(k, "home")) _map.Recenter();
         else if (Keys.Is(k, "build")) ToggleBuildBar();
+        else if (Keys.Is(k, "next")) PressNext();
         else if (Keys.Is(k, "flag")) ToggleFlag();
         else if (k.Keycode == Key.Escape && _map.Flagging) ToggleFlag();
         else if (k.Keycode == Key.Escape && _map.Brush != null) ToggleBrush(_map.Brush);
@@ -737,6 +748,10 @@ public partial class Main : Control
     {
         _scrollHeading = heading;
         _scrollTries = 30;
+        // On a paged window, its page first; and a folded section opens.
+        if (_windowTab is Tab wt && _panes[wt].PageOf(heading) is string page) _panes[wt].Selected = page;
+        if (_windowTab is Tab ft) Pane.Folded.Remove($"{ft}/{heading}");
+        _dirty = true;
     }
 
     private void SyncScrollTo()
@@ -751,6 +766,31 @@ public partial class Main : Control
         if (head == null || head.Position.Y <= 0) return;
         sc.ScrollVertical = (int)head.Position.Y;
         _scrollHeading = null;
+    }
+
+    /// <summary>Draw the open management window's pane.</summary>
+    private void RenderWindow()
+    {
+        switch (_windowTab)
+        {
+            case Tab.City: RenderCity(); break;
+            case Tab.Ledger: RenderLedger(); break;
+            case Tab.War: RenderWar(); break;
+            case Tab.Army: RenderArmy(); break;
+            case Tab.Defence: RenderDefence(); break;
+            case Tab.Council: RenderCouncil(); break;
+            case Tab.Bounties: RenderBounties(); break;
+            case Tab.Companies: RenderCompanies(); break;
+            case Tab.Armory: RenderArmory(); break;
+            case Tab.Faith: RenderFaith(); break;
+            case Tab.Campaign: RenderCampaign(); break;
+            case Tab.Chronicles: RenderChronicles(); break;
+            case Tab.Mayor: RenderMayor(); break;
+            case Tab.Diplomacy: RenderDiplomacy(); break;
+            case Tab.Library: RenderLibrary(); break;
+            case Tab.Institutions: RenderInstitutions(); break;
+            case Tab.Notables: RenderNotables(); break;
+        }
     }
 
     public override void _Process(double delta)
@@ -787,7 +827,11 @@ public partial class Main : Control
         SyncGuide();
         SyncGoals();
         SyncGoalPointer(_clockReal >= _nextGoalPoint);
-        if (_clockReal >= _nextGoalPoint) _nextGoalPoint = _clockReal + 0.25;
+        if (_clockReal >= _nextGoalPoint)
+        {
+            _nextGoalPoint = _clockReal + 0.25;
+            SyncNextButton();
+        }
         // A first meeting's picture comes before any scene or report it brought.
         SyncIntros();
         SyncStories(delta);
@@ -796,6 +840,7 @@ public partial class Main : Control
         SyncTourney();
         SyncTales(delta);
         SyncRecap();
+        SyncModal();
         SyncMoments();
         SyncKeywords(delta);
         SyncChecks();
@@ -806,27 +851,7 @@ public partial class Main : Control
         if (_dirty)
         {
             RenderHeader();
-            if (_window.Visible)
-                switch (_windowTab)
-                {
-                    case Tab.City: RenderCity(); break;
-                    case Tab.Ledger: RenderLedger(); break;
-                    case Tab.War: RenderWar(); break;
-                    case Tab.Army: RenderArmy(); break;
-                    case Tab.Defence: RenderDefence(); break;
-                    case Tab.Council: RenderCouncil(); break;
-                    case Tab.Bounties: RenderBounties(); break;
-                    case Tab.Companies: RenderCompanies(); break;
-                    case Tab.Armory: RenderArmory(); break;
-                    case Tab.Faith: RenderFaith(); break;
-                    case Tab.Campaign: RenderCampaign(); break;
-                    case Tab.Chronicles: RenderChronicles(); break;
-                    case Tab.Mayor: RenderMayor(); break;
-                    case Tab.Diplomacy: RenderDiplomacy(); break;
-                    case Tab.Library: RenderLibrary(); break;
-                    case Tab.Institutions: RenderInstitutions(); break;
-                    case Tab.Notables: RenderNotables(); break;
-                }
+            if (_window.Visible) RenderWindow();
             if (_drawer.Visible) RenderTray();
             if (_inspector.Visible) RenderInspect();
             if (_strikePanel.Visible) RenderStrike();

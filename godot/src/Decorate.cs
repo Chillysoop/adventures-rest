@@ -84,7 +84,7 @@ public partial class Main
         var def0 = _map.Decorator.Tool?.Piece is string id ? town.Content.Decor.Piece(id) : null;
         _buildHint.Text = _map.Decorator.Tool switch
         {
-            null => GroupHints[BuildGroup.Decor],
+            null => GroupLook[BuildGroup.Decor].Hint,
             { Piece: null } => "Click a decoration or drag over several to clear them. Right-click to put the tool down.",
             _ when def0!.Line > 0 => $"Drag to run a row of {def0.Name.ToLowerInvariant()}, or click for one. R or Shift+wheel turns it. Hold Shift to place more. Right-click to put it down.",
             _ when def0!.Scatter => $"Click to plant, or drag to paint {def0.Name.ToLowerInvariant()} freely. R or Shift+wheel turns it. Hold Shift to place more. Right-click to put it down.",
