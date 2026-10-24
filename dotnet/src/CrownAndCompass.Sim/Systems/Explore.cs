@@ -1354,7 +1354,7 @@ public static class Explore
         var site = f.SiteId is string sid ? Quests.Site(town, sid) : null;
         var region = town.Regions[f.RegionId];
         int tier = site?.Def.Tier ?? region.Levels[0];
-        var v = new Expedition.Venture(town.Rng, town.Content, members, site?.Def) { Clock = town.Tick };
+        var v = new Expedition.Venture(town.Rng, town.Content, members, site?.Def) { Clock = town.Tick, Sky = Weather.At(town, f.X, f.Y, town.Tick) };
         v.Wilds(tier, site?.Def.Habitats ?? region.Theme.Habitats, site != null ? $"out of {site.Def.Name} they come" : "something comes out of the dark", true);
         var result = v.Result(v.Wiped ? ExpeditionOutcome.Wiped : ExpeditionOutcome.Retreated, Title(town, f));
         result.Apply(members);

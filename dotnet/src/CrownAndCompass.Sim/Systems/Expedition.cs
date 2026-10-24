@@ -1639,6 +1639,19 @@ public static partial class Expedition
         /// </summary>
         public ExpeditionOutcome Delve(SiteDef site, int retries)
         {
+            _under = Covered(site);
+            try
+            {
+                return DelveIn(site, retries);
+            }
+            finally
+            {
+                _under = false;
+            }
+        }
+
+        private ExpeditionOutcome DelveIn(SiteDef site, int retries)
+        {
             // Draw this delve's encounters from the site's deck.
             var deck = site.Encounters.ToList();
             int count = Math.Min(deck.Count, 2 + site.Tier - (_tracked ? 1 : 0));
@@ -1981,9 +1994,10 @@ public static partial class Expedition
     /// <param name="slotsSpent">Spell slots the party spent on sending-stone messages; they come out of the healers' heals.</param>
     /// <param name="swell">Extra creatures in every fight but the boss's, from how strong the lair has grown.</param>
     /// <param name="terms">The bounty's terms, when they are not to slay (<see cref="Terms"/>).</param>
-    public static ExpeditionResult Run(Rng rng, Content content, SiteDef site, IReadOnlyList<Agent> heroes, int slotsSpent = 0, int swell = 0, TermDef? terms = null)
+    /// <param name="sky">The weather over the fight, when it is fought in the open.</param>
+    public static ExpeditionResult Run(Rng rng, Content content, SiteDef site, IReadOnlyList<Agent> heroes, int slotsSpent = 0, int swell = 0, TermDef? terms = null, WeatherNow? sky = null)
     {
-        var run = new Venture(rng, content, heroes, site) { Swell = swell, Terms = terms };
+        var run = new Venture(rng, content, heroes, site) { Swell = swell, Terms = terms, Sky = sky };
         run.SpendSlots(slotsSpent);
         run.Log($"{ListNames(heroes.Select(h => h.GivenName).ToList())} set out for {site.Name}.");
         run.Drink();
