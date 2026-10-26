@@ -80,7 +80,8 @@ public class DungeonsTests
             {
                 any = true;
                 var up = Quests.Site(t, deep.Def.Under)!;
-                Assert.True(deep.Def.Tier > up.Def.Tier);
+                // A tier harder than the site was when it fell (it may have been resettled worse since).
+                Assert.True(deep.Def.Tier > t.Content.Dungeons.Deeps.MinTier);
                 Assert.Equal(World.Spot(t, up), World.Spot(t, deep));
                 Assert.InRange(Dungeons.Depth(t, deep), 1, t.Content.Dungeons.Deeps.MaxDepth);
             }
