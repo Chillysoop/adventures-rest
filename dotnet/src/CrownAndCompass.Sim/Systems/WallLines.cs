@@ -199,11 +199,10 @@ public static class WallLines
     /// <summary>A gate on the south road for a wall that has none: the stand-in mayor's way, and old saves' walls.</summary>
     public static void EnsureGate(Town town, int ring)
     {
-        // The stand-in mayor draws the line where it would have run by default.
+        // The stand-in mayor draws the line itself, along the low ground near where it would have run by default.
         if (Plan(town, ring) is not { Radii.Length: > 0 })
         {
-            var line = Enumerable.Range(0, N).Select(i => City.Wall(town, ring, Heading(i))).ToArray();
-            Own(town, ring).Radii = line;
+            Own(town, ring).Radii = LowLine(town, ring);
             Changed(town);
         }
         if (Gates(town, ring).Count > 0) return;
@@ -219,13 +218,47 @@ public static class WallLines
         for (int i = 0; i < plan.Zones.Length; i++)
         {
             if (plan.Zones[i] == (byte)Zone.None || plan.Taken[i] != 0) continue;
-            if (!City.OnDrawnWall(town, (i % Land.Size + 0.5) / Land.Res, (i / Land.Size + 0.5) / Land.Res)) continue;
+            if (!Land.UnderWall(town, i)) continue;
             plan.Zones[i] = (byte)Zone.None;
             plan.Density[i] = 0;
             plan.Crops[i] = 0;
             any = true;
         }
         if (any) plan.Changed();
+    }
+
+    /// <summary>The stand-in's line: at each heading the lowest ground within a few tiles of the default line, smoothed.</summary>
+    public static double[] LowLine(Town town, int ring)
+    {
+        var r = Rules(town);
+        var line = new double[N];
+        for (int i = 0; i < N; i++)
+        {
+            double a = Heading(i), at = City.Wall(town, ring, a), best = at, low = double.MaxValue;
+            for (double d = -2; d <= 3; d += 0.5)
+            {
+                double rr = at + d;
+                if (rr < r.Least || rr > Town.Grid / 2.0 - r.Margin) continue;
+                double h = Hills.Height(town, Town.Center + Math.Cos(a) * rr, Town.Center + Math.Sin(a) * rr) + 0.03 * Math.Abs(d);
+                if (h < low)
+                {
+                    low = h;
+                    best = rr;
+                }
+            }
+            line[i] = best;
+        }
+        for (int pass = 0; pass < 4; pass++)
+        {
+            var next = new double[N];
+            for (int i = 0; i < N; i++) next[i] = (line[(i + N - 1) % N] + 2 * line[i] + line[(i + 1) % N]) / 4;
+            line = next;
+        }
+        // Keep clear of the other wall's drawn line.
+        if (Plan(town, 1 - ring) is { Radii.Length: > 0 } o)
+            for (int i = 0; i < N; i++)
+                line[i] = ring == 0 ? Math.Min(line[i], o.Radii[i] - r.Apart) : Math.Max(line[i], o.Radii[i] + r.Apart);
+        return line;
     }
 
     /// <summary>
@@ -269,6 +302,7 @@ public static class WallLines
     {
         town.City.WallVersion++;
         town.Plan.WallStrip = null;
+        town.Plan.UnderWall = null;
         town.Plan.Version++;
     }
 }

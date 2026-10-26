@@ -102,7 +102,7 @@ public static class Land
                     }
                     // A company's bastion grounds take no paint, nor the ground under a drawn wall.
                     if (zone != Zone.None && plan.Grounds[i] != 0) continue;
-                    if (zone != Zone.None && City.OnDrawnWall(town, (cx + 0.5) / Res, (cy + 0.5) / Res)) continue;
+                    if (zone != Zone.None && UnderWall(town, i)) continue;
                     if (!overwrite && plan.Zones[i] != (byte)Zone.None) continue;
                     // Only ground in a ring the town's charter reaches takes paint.
                     if (zone != Zone.None && !Open(town, i)) continue;
@@ -129,7 +129,7 @@ public static class Land
         var plan = town.Plan;
         int n = 0;
         for (int i = 0; i < plan.Zones.Length; i++)
-            if (plan.Zones[i] == (byte)Zone.None && plan.Taken[i] == 0 && Open(town, i)) n++;
+            if (plan.Zones[i] == (byte)Zone.None && plan.Taken[i] == 0 && Open(town, i) && !UnderWall(town, i)) n++;
         return n;
     }
 
@@ -484,6 +484,18 @@ public static class Land
         return plan.WallStrip[i];
     }
 
+    /// <summary>Whether a cell's middle lies under a wall the player has drawn (<see cref="City.OnDrawnWall"/>): it takes no paint.</summary>
+    public static bool UnderWall(Town town, int i)
+    {
+        var plan = town.Plan;
+        if (plan.UnderWall == null)
+        {
+            plan.UnderWall = new bool[Size * Size];
+            for (int c = 0; c < plan.UnderWall.Length; c++) plan.UnderWall[c] = City.OnDrawnWall(town, (c % Size + 0.5) / Res, (c / Size + 0.5) / Res);
+        }
+        return plan.UnderWall[i];
+    }
+
     /// <summary>The ward a cell's middle lies in (<see cref="City.WardOf(Town, double, double)"/>), kept for the plan's life.</summary>
     public static WardDef WardAt(Town town, int i)
     {
@@ -521,7 +533,7 @@ public static class Land
         for (int cx = x0; cx <= x1; cx++)
         {
             int i = cy * Size + cx;
-            if (plan.Zones[i] != (byte)Zone.None || plan.Taken[i] != 0 || plan.Grounds[i] != 0) continue;
+            if (plan.Zones[i] != (byte)Zone.None || plan.Taken[i] != 0 || plan.Grounds[i] != 0 || UnderWall(town, i)) continue;
             double x = (i % Size + 0.5) / Res, y = (i / Size + 0.5) / Res;
             double dist = Math.Sqrt((x - Town.Center) * (x - Town.Center) + (y - Town.Center) * (y - Town.Center));
             if (key(x, y, dist) is not double k) continue;
@@ -623,6 +635,10 @@ public sealed class LandPlan
     /// <summary>Whether each cell lies on the strip kept clear along the wall lines (<see cref="Land.OnWallStrip"/>).</summary>
     [field: NotSaved]
     public bool[]? WallStrip { get; set; }
+
+    /// <summary>Whether each cell lies under a drawn wall (<see cref="Land.UnderWall"/>).</summary>
+    [field: NotSaved]
+    public bool[]? UnderWall { get; set; }
 
     /// <summary>Whether each building's door is off the streets (<see cref="Streets.Offroad"/>).</summary>
     [field: NotSaved]
