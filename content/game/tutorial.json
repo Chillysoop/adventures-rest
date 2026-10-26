@@ -317,9 +317,23 @@
     {
       "id": "site-first",
       "title": "Building sites",
-      "text": "Click a building site to see its progress.\n• [b]Put this site first[/b]: builders and materials go there first\n• Council sites take timber and stone from the market\n• Out of stock: builders stand idle (an alert says so)\n• Fix: a lumber camp or quarry, or a dear but quick caravan",
+      "text": "Click a building site to see its progress.\n• [b]Put this site first[/b]: builders and materials go there first\n• Every site takes timber and stone from the market\n• Out of stock: builders stand idle (an alert says so)\n• Fix: a lumber camp or quarry, or a dear but quick caravan",
       "when": "alert:stalled",
       "teaches": ["command:PrioritiseSite", "command:SendCaravan"]
+    },
+    {
+      "id": "materials",
+      "title": "Timber and stone",
+      "text": "Every home, shop and farm is built from the town's own timber and stone.\n• Out of stock: settlers' sites stand idle and new ones wait\n• Settlers send away for it only after days, at a steep price\n• Zone industry: a lumber camp and a quarry keep the town growing\n• Camps need woods nearby, quarries rock; the town grows round both",
+      "point": "buildbar",
+      "when": "day:12"
+    },
+    {
+      "id": "cart-roads",
+      "title": "Cart roads",
+      "text": "Far woods and quarries send their loads home by cart.\n• Raiders take carts: more on long roads and near lairs\n• [b]Patrols[/b]: paint over the road to keep it\n• Clear the lairs beside it",
+      "point": "tab:Bounties",
+      "when": "alert:carts"
     },
     {
       "id": "sightings",

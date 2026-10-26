@@ -666,7 +666,7 @@ public static class City
 
     /// <summary>Whether the town could build this at all now: tier reached and a ward it may stand in is open.</summary>
     public static bool Unlocked(Town town, BuildingDef d) =>
-        Reached(town, d.Tier) && (d.Wards.Count == 0 || d.Wards.Any(town.City.OpenWards.Contains));
+        Reached(town, d.Tier) && (d.Wards.Count == 0 || d.Wards.Any(town.City.OpenWards.Contains)) && Workings.Locked(town, d) == null;
 
     /// <summary>Why the town's tier or wards keep it from this building, or null.</summary>
     public static string? Locked(Town town, BuildingDef d)
@@ -675,6 +675,7 @@ public static class City
         if (d.Coast && !Fleet.Coastal(town)) return "needs a town founded on the sea";
         if (d.River && Fleet.Coastal(town)) return "a town on the sea builds a harbour";
         if (Lofted.Locked(town, d) is { } lofted) return lofted;
+        if (Workings.Locked(town, d) is { } land) return land;
         if (d.Wards.Count > 0 && !d.Wards.Any(town.City.OpenWards.Contains))
             return $"needs the {string.Join(" or the ", d.Wards.Select(w => Ward(town, w).Name))} to grow up";
         return null;
@@ -904,6 +905,9 @@ public static class City
         var nh = Housing(town, next.Id);
         if (nh != null && NeedsBlocked(town, house, nh) is { } need) return need;
         if (nh != null && Prospect(town, house, nh) < town.Content.City.UpgradeAt) return "the town can't yet give a bigger house what it wants";
+        // A new storey is built from the town's own timber and stone, never sent for.
+        bool noTimber = town.Market.Stock(Good.Timber) < next.Timber, noStone = town.Market.Stock(Good.Stone) < next.Stone;
+        if (noTimber || noStone) return $"the market is short of {(noTimber && noStone ? "timber and stone" : noStone ? "stone" : "timber")}";
         return null;
     }
 

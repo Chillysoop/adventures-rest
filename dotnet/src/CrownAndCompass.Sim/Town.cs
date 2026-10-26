@@ -53,7 +53,7 @@ public sealed class Building(int id, BuildingDef def, int lotId)
     /// <summary>A monument: whether the council adds its next part on its own when the treasury can spare it.</summary>
     public bool Grow { get; set; } = true;
 
-    /// <summary>A council site whose timber and stone come off the market as the haulers carry them, paid load by load (<see cref="Systems.Construction.Haul"/>).</summary>
+    /// <summary>A site whose timber and stone come off the market as the haulers carry them, paid load by load by the council or its owner (<see cref="Systems.Construction.Haul"/>).</summary>
     public bool Draws { get; set; }
 
     /// <summary>A site the player put first: builders and the town's timber and stone go to it ahead of the others.</summary>
@@ -65,8 +65,14 @@ public sealed class Building(int id, BuildingDef def, int lotId)
     /// <summary>Gold the council has paid for it (the commission, then timber and stone as hauled), for a refund if it comes down.</summary>
     public double Paid { get; set; }
 
-    /// <summary>A council site waiting for timber or stone the market hasn't got: the tick it stalled, or -1.</summary>
+    /// <summary>A site waiting for timber or stone the market hasn't got: the tick it stalled, or -1.</summary>
     public int StalledSince { get; set; } = -1;
+
+    /// <summary>A far lumber camp's or quarry's loads waiting for the next cart home (<see cref="Systems.Workings"/>).</summary>
+    public double Cart { get; set; }
+
+    /// <summary>A townsman's stalled site: the tick the timber and stone its owner sent away for arrive, or -1 (<see cref="Systems.Construction.Imports"/>).</summary>
+    public int ImportDue { get; set; } = -1;
 
     /// <summary>Business account: revenue in, wages and inputs out.</summary>
     public double Cash { get; set; }
@@ -430,6 +436,13 @@ public sealed class Town
 
     /// <summary>The country that bends the roads between the town and its sites (<see cref="Systems.Roads"/>).</summary>
     public List<Feature> Terrain { get; } = [];
+
+    /// <summary>The plan's woods and rock (<see cref="Systems.Workings.Cells"/>), kept to hand for the land checks that read it per cell.</summary>
+    [NotSaved] internal byte[]? WorkingCells;
+    [NotSaved] internal (int, double, double) WorkingStamp;
+
+    /// <summary>Carts lately taken on the roads from far workings.</summary>
+    public Systems.WorkingsState Workings { get; } = new();
 
     /// <summary>Whether the country has its real outlines (<see cref="Systems.Country"/>); an older town's are drawn the first day it is loaded.</summary>
     public bool Shaped { get; set; }
