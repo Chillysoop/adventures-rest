@@ -945,7 +945,9 @@ public static class Bastions
     private static void Bestow(Town town, BastionState b, List<Agent> home, LibItem item)
     {
         var to = home.OrderByDescending(m => Gear.Gain(town.Content, m, item)).ThenBy(m => m.Id).FirstOrDefault();
-        if (to != null && Gear.Gain(town.Content, to, item) > 0) Gear.Claim(town, to, item);
+        bool worn = to != null && Gear.Gain(town.Content, to, item) > 0;
+        Spoils.Found(town, item, $"the {b.Company}", true, worn ? to!.Id : null, null, home);
+        if (worn) Gear.Claim(town, to!, item);
         else Watch.ReceiveRelic(town, item, b.Company);
     }
 

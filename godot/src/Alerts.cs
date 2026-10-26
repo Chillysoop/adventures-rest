@@ -105,6 +105,23 @@ public partial class Main
             OpenFind(find);
             return;
         }
+        // A rare find is one look: at the hero who carries it, the town hall that keeps it, or its card in the armory.
+        if (a.Item is { } found)
+        {
+            _dismissed.Add(a.Key);
+            if (a.AgentId is int holder)
+            {
+                if (_map.Crowd.People.Sprites.TryGetValue(holder, out var hs) && hs.Visible) Look(hs.P, 22);
+                Select(Selection.Agent(holder));
+                return;
+            }
+            if (a.AtTown)
+            {
+                Look(Geo.Center, 40);
+                return;
+            }
+            if (t.Armory.Stock.FirstOrDefault(s => s.Item == found) is { } stock) (_armorySlot, _armoryPick) = ("", stock.Id);
+        }
         if (a.BuildingId is int bid && t.Buildings.FirstOrDefault(b => b.Id == bid) is { } mark)
         {
             Look(Geo.LotPos(t.Lot(mark.LotId)), 30);
@@ -468,10 +485,11 @@ public partial class Main
         }
     }
 
-    /// <summary>The portrait of the enemy or the site an alert is about, if it is about one.</summary>
-    private Portrait? AlertFace(Alert a, float size)
+    /// <summary>The portrait of the enemy or the site an alert is about, if it is about one; a found item's badge in its rarity's colour.</summary>
+    private Control? AlertFace(Alert a, float size)
     {
         var t = _sim.Town;
+        if (a.Item is { } item) return ItemBadge(ItemIcon(t, item), RankColor(item), (int)size);
         if (a.StoryId is int sid && Stories.Find(t, sid) is { } st)
         {
             if (st.MenaceId is int mid && mid >= 1 && mid <= t.Saga.Menaces.Count) return Foes.Of(t, t.Saga.Menaces[mid - 1], size);

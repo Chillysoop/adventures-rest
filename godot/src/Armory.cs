@@ -21,6 +21,9 @@ public partial class Main
 
     private static Color RarityOf(LibItem it) => Rarity[Math.Clamp(it.Tier, 0, Rarity.Length - 1)];
 
+    /// <summary>The colour of an item's named rarity (a rare find's alert), by <see cref="Spoils.Rank"/>.</summary>
+    private static Color RankColor(LibItem it) => Rarity[Math.Clamp(Spoils.Rank(it), 0, Rarity.Length - 1)];
+
     /// <summary>The icon for an item's kind (assets/icons/item-*.svg).</summary>
     private static string ItemIcon(Town t, LibItem it) =>
         Sim.Systems.Armory.IsStone(t, it) ? "item-stone"

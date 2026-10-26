@@ -244,6 +244,7 @@ public static class Plots
             {
                 text = r.SeizedRelic;
                 Watch.ReceiveRelic(town, item, $"heroes who cleared {site.Def.Name}");
+                Spoils.Found(town, item, "the heroes", true, null, site.Def.Id, []);
             }
             else text = r.Seized;
             if (m.Named) town.Log(LedgerCategory.War, Importance.Notable, Saga.Cap(Fill(town, m, text).Replace("{site}", site.Def.Name).Replace("{asset}", def.Name)));

@@ -107,7 +107,8 @@ public partial class Main
     /// <summary>A tile out of the rail beside the tab's button: the kind's icon and title in its level's colour.</summary>
     private Notice SlideNotice(Tab tab, Alert a)
     {
-        var color = LevelColor(a.Kind.Level);
+        // A rare find wears its rarity's colour and its item's icon.
+        var color = a.Item is { } item ? RankColor(item) : LevelColor(a.Kind.Level);
         var tile = new PanelContainer { MouseFilter = MouseFilterEnum.Stop, MouseDefaultCursorShape = CursorShape.PointingHand, ZIndex = 20 };
         var style = Glass(8, 10, 6);
         style.BorderColor = color;
@@ -119,14 +120,15 @@ public partial class Main
         row.AddThemeConstantOverride("separation", 8);
         row.AddChild(new TextureRect
         {
-            Texture = Ui.Icon(a.Kind.Icon),
+            Texture = Ui.Icon(a.Item != null ? ItemIcon(_sim.Town, a.Item) : a.Kind.Icon),
+            Modulate = a.Item != null ? color : Colors.White,
             ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
             StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
             CustomMinimumSize = new Vector2(20, 20),
             SizeFlagsVertical = SizeFlags.ShrinkCenter,
             MouseFilter = MouseFilterEnum.Ignore,
         });
-        var title = Ui.Label(a.Kind.Title, a.Kind.Level == AlertLevel.Urgent ? Colors.White : Ui.Ink, Ui.Bold, 13);
+        var title = Ui.Label(a.Item is { Rarity: not "" } found ? $"{char.ToUpperInvariant(found.Rarity[0])}{found.Rarity[1..].Replace('-', ' ')} find" : a.Kind.Title, a.Kind.Level == AlertLevel.Urgent ? Colors.White : Ui.Ink, Ui.Bold, 13);
         title.MouseFilter = MouseFilterEnum.Ignore;
         title.SizeFlagsVertical = SizeFlags.ShrinkCenter;
         row.AddChild(title);
