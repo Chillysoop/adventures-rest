@@ -86,14 +86,16 @@ public class NeighboursTests
     public void VillainsHoldAssetsAndHatchPlans()
     {
         var sim = new Simulation(new SimulationOptions { Seed = 3 });
-        bool planned = false;
+        bool planned = false, held = false;
         for (int d = 0; d < 400; d += 10)
         {
             sim.RunDays(10);
             planned |= sim.Town.Saga.Menaces.Any(m => m.Plan != null);
+            // Watched as the campaign goes: by the end the heroes may have put every villain down, assets and all.
+            held |= sim.Town.Saga.Menaces.Any(m => m.Assets.Count > 0);
         }
         Assert.True(planned);
-        Assert.Contains(sim.Town.Saga.Menaces, m => m.Assets.Count > 0);
+        Assert.True(held);
         Assert.All(sim.Town.Saga.Menaces.Where(m => m.Plan != null), m => Assert.NotNull(Plots.PlanOf(sim.Town, m)));
     }
 
