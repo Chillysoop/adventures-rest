@@ -196,15 +196,20 @@ public static class WallLines
         return null;
     }
 
-    /// <summary>A gate on the south road for a wall that has none: the stand-in mayor's way, and old saves' walls.</summary>
-    public static void EnsureGate(Town town, int ring)
+    /// <summary>The stand-in mayor's line and gate: where the wall would have run by default, clear of what already stands.</summary>
+    public static void StandIn(Town town, int ring)
     {
-        // The stand-in mayor draws the line where it would have run by default, clear of what already stands.
         if (Plan(town, ring) is not { Radii.Length: > 0 })
         {
             Own(town, ring).Radii = Enumerable.Range(0, N).Select(i => City.Wall(town, ring, Heading(i))).ToArray();
             Changed(town);
         }
+        EnsureGate(town, ring);
+    }
+
+    /// <summary>A gate on the south road for a wall that has none: the stand-in mayor's way, and old saves' walls.</summary>
+    public static void EnsureGate(Town town, int ring)
+    {
         if (Gates(town, ring).Count > 0) return;
         Own(town, ring).Gates.Add(Math.PI / 2);
         Changed(town);

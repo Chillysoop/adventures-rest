@@ -848,7 +848,7 @@ public static class Threat
         if (stage < StageIndex(ThreatStage.Probing)) return;
         if (town.Defenses.Palisade == PalisadeState.None && town.Treasury > BuildCost(town, DefenseWork.Palisade) + 150)
         {
-            WallLines.EnsureGate(town, 0);
+            WallLines.StandIn(town, 0);
             Build(town, DefenseWork.Palisade);
         }
         // The palisade's towers; more on the stone come later, among the wall works (Garrison.Daily).
