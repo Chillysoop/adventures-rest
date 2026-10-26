@@ -124,6 +124,9 @@ public sealed class Options
     public string? Intro;
     public string? LastBattle;
 
+    /// <summary>--showdown talk|fight|over: stage a boss showdown for the town's best heroes.</summary>
+    public string? Showdown;
+
     /// <summary>Claim this road to victory once the town is staged, for shots of a road being held (victory.json id).</summary>
     public string? Claim;
 
@@ -328,6 +331,7 @@ public sealed class Options
                 case "--rare-find": o.RareFind = Next(); break;
                 case "--intro": o.Intro = Next(); break;
                 case "--last-battle": o.LastBattle = Next(); break;
+                case "--showdown": o.Showdown = Next(); break;
                 case "--tower": o.Tower = Next(); break;
                 case "--wilds": o.Wilds = Next(); break;
                 case "--claim": o.Claim = Next(); break;

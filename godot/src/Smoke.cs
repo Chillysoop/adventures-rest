@@ -280,6 +280,28 @@ public partial class Main
                 if (!_intro.Visible) throw new InvalidOperationException("the first-meeting card did not open");
                 CloseIntro();
                 return 5;
+            case 35:
+                // A boss showdown: the talk, then a commanded turn on the grid, then played out.
+                StageShowdown("talk");
+                if (!_duel.Visible) throw new InvalidOperationException("the showdown did not open");
+                return 20;
+            case 36:
+                _sim.ShowdownTalk("attack");
+                RenderShowdown();
+                if (_duelFight is { Phase: "fight", Waiting: not 0 } f)
+                {
+                    _duelAim = f.Actions().FirstOrDefault(a => a.Aim != "self" && a.Ready)?.Id;
+                    RenderShowdown();
+                }
+                return 20;
+            case 37:
+                _sim.ShowdownAuto();
+                RenderShowdown();
+                if (_duelFight?.Phase != "over") throw new InvalidOperationException("the showdown did not play out");
+                return 20;
+            case 38:
+                CloseShowdown();
+                return 5;
             default:
                 var t = _sim.Town;
                 GD.Print($"SMOKE OK seed={_sim.Options.Seed} day={t.Day} population={t.Population} buildings={t.Buildings.Count} outcome={t.Outcome?.ToString() ?? "none"}");
