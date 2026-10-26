@@ -23,6 +23,7 @@ public partial class Main
         var t = _sim.Town;
         var r = t.Content.World.Intel;
         p.Begin();
+        StewardStrip(p, "honours");
         RenderRoster(p, t);
         RenderBastions(p, t);
 

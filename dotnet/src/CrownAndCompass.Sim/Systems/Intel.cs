@@ -226,7 +226,7 @@ public static class Intel
         var r = town.Content.World.Intel;
         var party = town.Parties.FirstOrDefault(p => p.Id == partyId);
         if (party == null || !ForSale(town).Contains(party) || WontSell(town, party) != null) return null;
-        if (Stewards.Intercept(town, "bounties", new StewardAsk { Area = "bounties", Kind = "intel", Title = $"Buy {party.Name}'s report · {Js.Str(Ask(town, party))}g", Why = "• They have seen ground the town hasn't\n• Reports reveal sites in the fog", I1 = partyId })) return null;
+        if (Stewards.Intercept(town, "bounties", new StewardAsk { Area = "bounties", Kind = "intel", Title = $"Buy {party.Name}'s report · {Js.Str(Ask(town, party))}g", Why = "• They have seen ground the town hasn't\n• Reports reveal sites in the fog", I1 = partyId, Cost = Ask(town, party) })) return null;
         double ask = Ask(town, party);
         double price = haggle ? HaggleOffer(town, party) : ask;
         if (town.Treasury < price) return null;

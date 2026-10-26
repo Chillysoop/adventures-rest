@@ -9,15 +9,19 @@ public static class Mayor
 {
     /// <param name="plan">Zone land and raise government buildings; off when a player plans the town.</param>
     /// <param name="defend">Raise the watch house too; off when a player sees to the defenses.</param>
-    public static void Daily(Town town, bool plan = true, bool defend = true)
+    /// <param name="paint">Zone new land too; off for a surveyor the player named, who builds only on the land the player painted.</param>
+    public static void Daily(Town town, bool plan = true, bool defend = true, bool paint = true)
     {
         if (plan)
         {
             int scale = 1 + town.Population / 150;
-            KeepZoned(town, Zone.Residential, 2 + scale, false);
-            KeepZoned(town, Zone.Commercial, 1 + scale, false);
-            KeepZoned(town, Zone.Industry, 1 + scale, true);
-            KeepFields(town, 1 + scale);
+            if (paint)
+            {
+                KeepZoned(town, Zone.Residential, 2 + scale, false);
+                KeepZoned(town, Zone.Commercial, 1 + scale, false);
+                KeepZoned(town, Zone.Industry, 1 + scale, true);
+                KeepFields(town, 1 + scale);
+            }
             RaiseYards(town);
             RaiseWorks(town, defend);
             RaiseInstitutions(town);

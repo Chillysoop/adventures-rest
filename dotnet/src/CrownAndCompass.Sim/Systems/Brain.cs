@@ -184,7 +184,7 @@ public static class Brain
             else
             {
                 a.Activity = Activity.Building;
-                b.Raise(town, Math.Max(0.5, 1 + 0.1 * Rng.Modifier(a.Abilities.Str)) * Seasons.Build(town) * Decrees.Build(town) * Institutions.Build(town) * HedgeMages.Build(town, a));
+                b.Raise(town, Math.Max(0.5, 1 + 0.1 * Rng.Modifier(a.Abilities.Str)) * Seasons.Build(town) * Decrees.Build(town) * Institutions.Build(town) * HedgeMages.Build(town, a) * Frontier.Build(town, b));
             }
             if (b.OwnerId != a.Id)
             {
@@ -208,7 +208,7 @@ public static class Brain
             else
             {
                 a.Activity = Activity.Building;
-                site.Raise(town, Math.Max(0.5, 1 + 0.1 * Rng.Modifier(a.Abilities.Str)) * Seasons.Build(town) * Decrees.Build(town) * Institutions.Build(town));
+                site.Raise(town, Math.Max(0.5, 1 + 0.1 * Rng.Modifier(a.Abilities.Str)) * Seasons.Build(town) * Decrees.Build(town) * Institutions.Build(town) * Frontier.Build(town, site));
             }
         }
         else if (b.OwnerId != a.Id)

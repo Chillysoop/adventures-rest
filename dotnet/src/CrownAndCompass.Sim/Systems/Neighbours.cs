@@ -704,6 +704,7 @@ public static class Neighbours
         if (AidRefused(town, s) != null) return false;
         var def = TroubleOf(town, s)!;
         var aid = def.Aid!;
+        if (Stewards.Intercept(town, "realm", new StewardAsk { Area = "realm", Kind = "aid", Title = $"Aid {s.Name} · {Js.Str(aid.Gold)}g", Why = "• A friend in trouble\n• Aid wins standing", I1 = settlementId, Cost = aid.Gold })) return false;
         town.Book(TreasuryAccount.Region, -aid.Gold);
         town.Market.Seed(aid.Good, -aid.Qty);
         town.Log(LedgerCategory.Town, Importance.Routine, $"The council sends {Js.Str(aid.Gold)} gold and {Js.Str(aid.Qty)} {Lower(aid.Good.ToString())} to {s.Name} against {Lower(def.Name)}.");
@@ -739,6 +740,7 @@ public static class Neighbours
         if (settlementId < 0 || settlementId >= town.Settlements.Count || Rules(town).Project(projectId) is not { } p) return false;
         var s = town.Settlements[settlementId];
         if (ProjectRefused(town, s, p) != null) return false;
+        if (Stewards.Intercept(town, "realm", new StewardAsk { Area = "realm", Kind = "works", Title = $"Build a {Lower(p.Name)} at {s.Name} · {Js.Str(p.Cost)}g", Why = "• Something lasting for a friend\n• The cheapest works on offer", I1 = settlementId, S1 = projectId, Cost = p.Cost })) return false;
         town.Book(TreasuryAccount.Region, -p.Cost);
         s.Works = p.Id;
         s.WorksDoneDay = town.Day + p.Days;

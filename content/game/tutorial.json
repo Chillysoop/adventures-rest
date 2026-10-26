@@ -846,9 +846,17 @@
     {
       "id": "stewards",
       "title": "Hand it to a steward",
-      "text": "Settings › [b]Stewards[/b]: for each area of business\n• [b]You[/b] handle it\n• A [b]steward[/b] does\n• Or the steward [b]asks you[/b]: a small ✔ / ✖ card, hover for why",
+      "text": "Council › [b]Automate[/b]: for each area of business\n• [b]You[/b] handle it\n• A [b]steward[/b] does\n• Or the steward [b]asks you[/b]: a small ✔ / ✖ card, hover for why",
       "when": "day:6",
       "teaches": ["command:SetSteward", "command:AnswerSteward"]
+    },
+    {
+      "id": "automate",
+      "title": "Your lesser council",
+      "text": "Council › [b]Automate[/b]: every area you can hand over\n• Each one handed over gets a [b]lesser councillor[/b] with a title\n• Presets at the top hand over many at once\n• [b]Cap[/b] a steward's gold a month\n• Their alerts leave the rail: read the [b]report[/b] instead\n• ✔ all / ✖ all answers every ask",
+      "point": "tab:Automate",
+      "when": "day:8",
+      "teaches": ["tab:Automate", "command:SetAllStewards", "command:SetStewardCap", "command:SetStewardLever", "command:AnswerAllStewards"]
     },
     {
       "id": "patrols",

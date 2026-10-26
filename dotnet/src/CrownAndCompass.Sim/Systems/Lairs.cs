@@ -34,7 +34,9 @@ public static class Lairs
     public static Party? AwayParty(Town town) =>
         town.Parties.Where(p => !p.Returned).OrderByDescending(p => p.DepartTick).ThenBy(p => p.Id).FirstOrDefault();
 
-    public static void Daily(Town town, bool autoMayor, bool autoDefense = true)
+    /// <param name="autoMayor">The castellan pays a lair's tribute when the treasury can bear it.</param>
+    /// <param name="holds">The marshal of holds keeps cleared lairs: towers, reinforcements.</param>
+    public static void Daily(Town town, bool autoMayor, bool holds = true)
     {
         var r = Rules(town);
         var rng = town.Rng;
@@ -58,7 +60,7 @@ public static class Lairs
                 else if (s.Held)
                 {
                     if (lord == null) town.Book(TreasuryAccount.Outposts, -r.Outpost.Upkeep);
-                    Tested(town, s, lord, autoMayor && autoDefense);
+                    Tested(town, s, lord, holds);
                 }
                 else if (lord == null && s.Patrolled && !PayPatrol(town, s)) { }
                 else if (s.ResettleTick != null && town.Tick >= s.ResettleTick)
@@ -76,7 +78,7 @@ public static class Lairs
             if (s.Strength >= r.ActAt && town.Tick >= s.NextActTick) Act(town, s, autoMayor);
         }
         Thralls(town);
-        if (autoMayor && autoDefense) AutoHold(town);
+        if (holds) AutoHold(town);
     }
 
     /// <summary>Far lairs reach the town less often: half again the wait for every day of road past the first.</summary>
@@ -547,7 +549,7 @@ public static class Lairs
         var s = town.Sites.FirstOrDefault(x => x.Def.Id == siteId);
         if (s == null || HoldBlocked(town, s) != null) return false;
         var o = Rules(town).Outpost;
-        if (Stewards.Intercept(town, "defence", new StewardAsk { Area = "defence", Kind = "hold", Title = $"Build a tower at {s.Def.Name} · {Js.Str(o.Cost)}g", Why = "• Cleared, but something may move back in\n• A tower keeps it clear", S1 = siteId })) return false;
+        if (Stewards.Intercept(town, "lairs", new StewardAsk { Area = "lairs", Kind = "hold", Title = $"Build a tower at {s.Def.Name} · {Js.Str(o.Cost)}g", Why = "• Cleared, but something may move back in\n• A tower keeps it clear", S1 = siteId, Cost = o.Cost })) return false;
         town.Book(TreasuryAccount.Outposts, -o.Cost);
         Build(town, s);
         town.Log(LedgerCategory.War, Importance.Notable, $"Masons and a guard of the watch march out to raise a tower at {s.Def.Name}. It will stand in {o.BuildDays} days, and cost {Js.Str(o.Upkeep)} gold a day to keep.");
@@ -653,7 +655,7 @@ public static class Lairs
         var s = town.Sites.FirstOrDefault(x => x.Def.Id == siteId);
         if (s == null || ReinforceBlocked(town, s) != null) return false;
         var o = Rules(town).Outpost;
-        if (Stewards.Intercept(town, "defence", new StewardAsk { Area = "defence", Kind = "reinforce", Title = $"Reinforce {s.Def.Name} · {Js.Str(o.Reinforce)}g", Why = $"• {Cap(s.ThreatBy)} are coming\n• Holds {Math.Round(HoldOdds(town, s) * 100)}% now", S1 = siteId })) return false;
+        if (Stewards.Intercept(town, "lairs", new StewardAsk { Area = "lairs", Kind = "reinforce", Title = $"Reinforce {s.Def.Name} · {Js.Str(o.Reinforce)}g", Why = $"• {Cap(s.ThreatBy)} are coming\n• Holds {Math.Round(HoldOdds(town, s) * 100)}% now", S1 = siteId, Cost = o.Reinforce })) return false;
         town.Book(TreasuryAccount.Outposts, -o.Reinforce);
         s.Reinforced = true;
         town.Log(LedgerCategory.War, Importance.Notable, $"Spears and stores go out to the tower at {s.Def.Name} before {s.ThreatBy} come.");

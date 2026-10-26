@@ -194,6 +194,7 @@ public partial class Main
         var p = _panes[Tab.Council];
         var t = _sim.Town;
         p.Begin();
+        StewardStrip(p, "council", "guilds");
         ShowChamber(p, t);
         RenderCouncillor(p, t);
         p.Page("Hall", "tab-council");
@@ -484,6 +485,7 @@ public partial class Main
         var t = _sim.Town;
         var fs = t.Faiths;
         p.Begin();
+        StewardStrip(p, "order");
         var boons = new List<string>();
         if (t.Day < fs.ValorUntil) boons.Add(Ui.Bullet($"[b]Valour[/b] on the walls  {Ui.Chip("ui-time", Ui.Days(fs.ValorUntil - t.Day), Ui.Gold, "Days left")}", "defence"));
         if (t.Day < fs.JusticeUntil) boons.Add(Ui.Bullet($"[b]Justice[/b] with the watch  {Ui.Chip("ui-time", Ui.Days(fs.JusticeUntil - t.Day), Ui.Gold, "Days left")}", "ui-shield"));

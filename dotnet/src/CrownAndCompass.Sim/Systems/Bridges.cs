@@ -77,6 +77,7 @@ public static class Bridges
         var r = Rules(town);
         var f = town.Terrain.FirstOrDefault(x => x.Id == featureId);
         if (f is not { Bridge: Cut } || town.Treasury < r.Stone) return false;
+        if (Stewards.Intercept(town, "realm", new StewardAsk { Area = "realm", Kind = "bridge", Title = $"Rebuild {Name(f)} in stone · {Js.Str(r.Stone)}g", Why = "• The road is cut\n• Stone can't be cut again", I1 = featureId, Cost = r.Stone })) return false;
         town.Book(TreasuryAccount.Works, -r.Stone);
         f.Bridge = Stone;
         town.Log(LedgerCategory.Town, Importance.Notable, Text(r, "stone", f) + $" (-{Js.Str(r.Stone)} gold)");

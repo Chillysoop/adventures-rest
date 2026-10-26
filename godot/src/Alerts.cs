@@ -81,7 +81,7 @@ public partial class Main
         _ => Ui.Ink2,
     };
 
-    private List<Alert> StandingAlerts() => Alerts.Standing(_sim.Town);
+    private List<Alert> StandingAlerts() => Alerts.Shown(_sim.Town, _sim.Options);
 
     /// <summary>Answer an alert: its window, and the site, person or town it is about.</summary>
     private void Go(Alert a)

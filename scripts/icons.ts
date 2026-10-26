@@ -152,6 +152,7 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["tab-mayor", "throne-king", mono],
   ["tab-library", "spell-book", mono],
   ["tab-notables", "conversation", mono],
+  ["tab-automate", "gears", mono],
   ["tab-build", "claw-hammer", mono],
   ["glossary", "open-book", mono],
   // The mayor's regalia slots (content/game/regalia.json), the sheet and rerolling a new mayor

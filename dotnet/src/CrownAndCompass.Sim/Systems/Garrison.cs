@@ -451,6 +451,7 @@ public static class Garrison
     {
         Sync(town);
         if (FlagBlocked(town, x, y) != null) return null;
+        if (Stewards.Intercept(town, "frontier", new StewardAsk { Area = "frontier", Kind = "flag", Title = "Plant a guard flag over the fields", Why = "• Fields beyond the walls were stripped\n• Guards over them keep raiders off", D1 = x, D2 = y })) return null;
         var gs = town.Garrison;
         var post = new GuardPost { Id = gs.NextPost++, Kind = PostKind.Flag, X = x, Y = y, PlacedTick = town.Tick, Wanted = Math.Clamp(guards > 0 ? guards : Rules(town).FlagGuards, 1, Math.Max(1, town.Watch)) };
         gs.Posts.Add(post);

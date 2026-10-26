@@ -42,6 +42,9 @@ public sealed record SimulationOptions
     /// <summary>Let the stand-in mayor build the palisade and towers; off when a player does.</summary>
     public bool AutoDefense { get; init; } = true;
 
+    /// <summary>Let the stand-in mayor run research, diplomacy and trade, and order in town; off when a player does.</summary>
+    public bool AutoHelpers { get; init; } = true;
+
     /// <summary>Let heroes form free companies and choose sites themselves, beyond the bounty board.</summary>
     public bool FreeCompanies { get; init; } = true;
 
@@ -155,6 +158,18 @@ public sealed class Simulation
     /// <summary>Yes or no to what a steward asks.</summary>
     public bool AnswerSteward(int askId, bool yes) => Stewards.Answer(Town, askId, yes);
 
+    /// <summary>Yes or no to everything the stewards are asking: how many went ahead.</summary>
+    public int AnswerAllStewards(bool yes) => Stewards.AnswerAll(Town, yes);
+
+    /// <summary>Hand every area to the stewards at once, have them all ask first, or take them all back.</summary>
+    public void SetAllStewards(StewardMode mode) => Stewards.SetAll(Town, mode);
+
+    /// <summary>The most gold a month an area's steward may spend; zero lifts the cap.</summary>
+    public bool SetStewardCap(string area, double gold) => Stewards.SetCap(Town, area, gold);
+
+    /// <summary>Switch one of an area's levers (the armory's buy, gift, sell) off or back on for its steward.</summary>
+    public bool SetStewardLever(string area, string kind, bool on) => Stewards.SetLever(Town, area, kind, on);
+
     public void RunDays(int days)
     {
         for (int i = 0; i < days * SimTime.HoursPerDay; i++) Step();
@@ -189,7 +204,7 @@ public sealed class Simulation
         Population.DailyArrivals(t);
         if (Options.AutoMayor)
             using (Asking("defence"))
-                Mayor.Daily(t, Hand("planning"), Hand("defence"));
+                Mayor.Daily(t, Hand("planning"), Hand("defence"), !Stewards.Handed(t, Options, "planning"));
         Social.Daily(t);
         Sickness.Daily(t);
         Moods.Daily(t);
@@ -199,17 +214,20 @@ public sealed class Simulation
         {
             Threat.Daily(t, pace, Hand("defence"), Options.Enemy);
             Garrison.Daily(t, Hand("defence"));
-            Frontier.Daily(t, Hand("defence"));
         }
+        using (Asking("frontier")) Frontier.Daily(t, Hand("frontier"));
         Army.Daily(t);
         AllyCalls.Daily(t);
         Conquest.Daily(t);
-        World.Daily(t, Options.AutoMayor);
-        Trade.Daily(t, Options.AutoMayor);
+        using (Asking("realm"))
+        {
+            World.Daily(t, Hand("realm"));
+            Trade.Daily(t, Hand("realm"));
+        }
         using (Asking("armory")) Armory.Daily(t, Hand("armory"));
         Alchemy.Daily(t, Options.AutoMayor && Stewards.Mode(t, Options, "armory") == StewardMode.Steward);
         Spoils.Daily(t, Options.AutoMayor && Options.AutoArmory);
-        Neighbours.Daily(t, Options.AutoMayor);
+        using (Asking("realm")) Neighbours.Daily(t, Hand("realm"));
         Founding.Daily(t);
         using (Asking("defence"))
         {
@@ -221,25 +239,25 @@ public sealed class Simulation
         using (Asking("bounties"))
         {
             Quests.Daily(t, Hand("bounties"), Options.FreeCompanies);
-            Wilds.Daily(t, Options.AutoMayor);
+            using (Asking("realm")) Wilds.Daily(t, Hand("realm"));
             Explore.Daily(t, Hand("bounties"));
             Intel.Daily(t, Stewards.Sub(t, Options, "bounties", Options.AutoIntel));
         }
         Retainers.Daily(t);
-        Bastions.Daily(t, Options.AutoMayor && Options.AutoBastions);
+        using (Asking("honours")) Bastions.Daily(t, Stewards.Sub(t, Options, "honours", Options.AutoBastions));
         using (Asking("bounties")) Watch.Daily(t, Hand("bounties"));
-        Undercity.Daily(t, Options.AutoMayor);
-        Research.Daily(t, Options.AutoMayor);
+        using (Asking("order")) Undercity.Daily(t, Hand("order"));
+        using (Asking("research")) Research.Daily(t, Hand("research"));
         HedgeMages.Daily(t);
         Lofted.Daily(t);
-        using (Asking("defence")) Lairs.Daily(t, Options.AutoMayor, Hand("defence"));
+        using (Asking("lairs")) Lairs.Daily(t, Stewards.Runs(t, Options, "defence"), Hand("lairs"));
         Rumors.Daily(t);
-        Shrines.Daily(t, Options.AutoMayor);
+        using (Asking("planning")) Shrines.Daily(t, Hand("planning"));
         Faith.Daily(t);
         Regalia.Daily(t, Options.AutoMayor && Options.AutoArmory);
         Mayoralty.Daily(t, Options.AutoMayor && Options.AutoStories);
-        Factions.Daily(t, Options.AutoMayor);
-        Saga.Daily(t, Options.AutoMayor, Hand("bounties"));
+        using (Asking("order")) Factions.Daily(t, Hand("order"));
+        using (Asking("bounties")) Saga.Daily(t, Stewards.Runs(t, Options, "defence"), Hand("bounties"));
         DarkQuests.Daily(t);
         DarkCompany.Daily(t);
         Endless.Daily(t);
@@ -252,15 +270,20 @@ public sealed class Simulation
         Menaces.Track(t);
         Infiltration.Daily(t);
         Turning.Daily(t);
-        Legacies.Daily(t, Options.AutoMayor);
+        using (Asking("honours")) Legacies.Daily(t, Hand("honours"));
         Institutions.Daily(t, Hand("planning"));
         Regard.Daily(t);
         Wards.Daily(t);
         Broadsheet.Daily(t, Hand("stories"));
         using (Asking("honours")) Loyalty.Daily(t, Hand("honours"));
         Secrets.Daily(t, Options.AutoMayor && Stewards.Mode(t, Options, "council") == StewardMode.Steward);
-        Guilds.Daily(t, Options.AutoMayor && Stewards.Mode(t, Options, "council") == StewardMode.Steward);
-        Union.Daily(t, Options.AutoMayor && Stewards.Mode(t, Options, "council") == StewardMode.Steward);
+        // A game started with the stand-in on the council leaves the guilds out altogether; a guildreeve the player names deals with them.
+        bool guildsAway = Stewards.Runs(t, Options, "guilds") && !Stewards.Handed(t, Options, "guilds");
+        using (Asking("guilds"))
+        {
+            Guilds.Daily(t, guildsAway, Hand("guilds"));
+            Union.Daily(t, guildsAway, Hand("guilds"));
+        }
         Patrons.Daily(t);
         Curses.Daily(t);
         Downtime.Daily(t);
@@ -269,10 +292,10 @@ public sealed class Simulation
         Heraldry.Daily(t);
         Eggs.Daily(t);
         Poaching.Daily(t);
-        Bridges.Daily(t, Options.AutoMayor);
+        using (Asking("realm")) Bridges.Daily(t, Hand("realm"));
         Ferries.Daily(t);
         Wayfaring.Daily(t);
-        Ruins.Daily(t, Options.AutoMayor);
+        using (Asking("realm")) Ruins.Daily(t, Hand("realm"));
         Passage.Daily(t);
         Decor.Daily(t);
         Stories.Daily(t, Hand("stories"));

@@ -18,6 +18,7 @@ public partial class Main
         var t = _sim.Town;
         var tier = City.Tier(t);
         p.Begin();
+        StewardStrip(p, "planning");
         p.Card($"{Ui.Tip(Ui.Head(Ui.Esc(tier.Name), "tab-city", Ui.KeywordColor, 17), tier.Blurb)}\n{Ui.Chips(Ui.Chip("population", $"{t.Population}", null, "Households"), Ui.Chip("ui-person", $"~{City.Souls(t):N0}", null, "Souls"))}");
 
         p.Page("Growth", "ui-up");

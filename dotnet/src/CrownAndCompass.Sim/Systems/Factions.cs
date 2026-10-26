@@ -1050,6 +1050,7 @@ public static class Factions
         var r = Rules(town);
         var f = Find(town, id);
         if (f == null || !f.Active || !f.Known || town.Treasury < r.CrackdownCost) return false;
+        if (Stewards.Intercept(town, "order", new StewardAsk { Area = "order", Kind = "crackdown", Title = $"Crack down on {f.Name} · {Js.Str(r.CrackdownCost)}g", Why = f.Lore.Kind == "cult" ? "• A cult in the town\n• The watch runs it out" : "• They have been robbing the town\n• The watch runs them out", S1 = id, Cost = r.CrackdownCost })) return false;
         town.Book(TreasuryAccount.Factions, -r.CrackdownCost);
         bool cult = f.Lore.Kind == "cult";
         var members = f.Members.Select(town.Agent).ToList();

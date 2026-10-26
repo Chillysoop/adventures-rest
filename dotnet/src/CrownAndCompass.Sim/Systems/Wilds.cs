@@ -538,6 +538,7 @@ public static class Wilds
     /// <summary>Paint a patrol along the road to a settlement, cell by cell.</summary>
     public static WildZone? PatrolRoad(Town town, Settlement s)
     {
+        if (Stewards.Intercept(town, "realm", new StewardAsk { Area = "realm", Kind = "roadpatrol", Title = $"Patrol the road to {s.Name}", Why = "• A friend's road\n• Riders keep the raiders off it", I1 = s.Id })) return null;
         var to = Systems.Explore.SettlementSpot(town, s);
         double len = Js.Hypot(to.X, to.Y);
         int steps = Math.Max(1, (int)Math.Ceiling(len / (Rules(town).Cell * 0.5)));

@@ -386,7 +386,7 @@ public static class Menaces
     public static Menace? At(Town town, string siteId) =>
         town.Saga.Menaces.FirstOrDefault(m => m.Alive && (m.SeatId == siteId || m.Holdings.Contains(siteId)));
 
-    public static void Daily(Town town, bool autoMayor)
+    public static void Daily(Town town, bool autoMayor, bool? bounty = null)
     {
         foreach (var m in Alive(town))
         {
@@ -417,11 +417,8 @@ public static class Menaces
         Watch(town);
         Fester(town);
         Cult(town);
-        if (autoMayor)
-        {
-            AutoAnswer(town);
-            AutoBounty(town);
-        }
+        if (autoMayor) AutoAnswer(town);
+        if (bounty ?? autoMayor) AutoBounty(town);
     }
 
     // Birth --------------------------------------------------------------------------------------

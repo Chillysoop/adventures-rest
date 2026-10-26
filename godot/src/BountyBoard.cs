@@ -26,6 +26,7 @@ public partial class Main
         var p = _panes[Tab.Bounties];
         var t = _sim.Town;
         p.Begin();
+        StewardStrip(p, "bounties");
         var crews = Roster.Crews(t);
         RenderRiders(p, t, crews);
         RenderBoard(p, t, crews, int.MaxValue, compact: false);
