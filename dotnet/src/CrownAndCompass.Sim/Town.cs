@@ -845,6 +845,9 @@ public sealed class Town
         return b;
     }
 
+    /// <summary>Boss showdowns are played in this campaign (<see cref="SimulationOptions.Showdowns"/>, or turned on for an older save: <see cref="Systems.Showdowns.Enable"/>).</summary>
+    public bool ShowdownsOn;
+
     /// <summary>A mayor is at the table to play showdowns (set by the simulation from its options each hour).</summary>
     [NotSaved]
     internal bool Duels;

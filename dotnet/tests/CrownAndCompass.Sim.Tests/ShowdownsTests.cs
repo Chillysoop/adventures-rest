@@ -88,7 +88,7 @@ public class ShowdownsTests
     [Fact]
     public void ACompanyWaitsAtTheDoorAndGoesHomeAfter()
     {
-        var sim = new Simulation(new SimulationOptions { Seed = 1, AutoStories = false });
+        var sim = new Simulation(new SimulationOptions { Seed = 1, AutoStories = false, Showdowns = true });
         Party? waiting = null;
         for (int d = 0; d < 400 && waiting == null; d++)
         {
@@ -110,7 +110,7 @@ public class ShowdownsTests
     [Fact]
     public void AShowdownLostToALoadGoesInOffTheGrid()
     {
-        var sim = new Simulation(new SimulationOptions { Seed = 1, AutoStories = false });
+        var sim = new Simulation(new SimulationOptions { Seed = 1, AutoStories = false, Showdowns = true });
         Party? waiting = null;
         for (int d = 0; d < 400 && waiting == null; d++)
         {

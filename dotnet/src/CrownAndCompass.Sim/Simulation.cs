@@ -57,6 +57,9 @@ public sealed record SimulationOptions
     /// <summary>Let the stand-in mayor answer story events; off when a player steps into them.</summary>
     public bool AutoStories { get; init; } = true;
 
+    /// <summary>A mayor at the table to play boss showdowns (<see cref="Systems.Showdowns"/>); off, every boss fight stays off the grid.</summary>
+    public bool Showdowns { get; init; }
+
     /// <summary>The stand-in mayor answers exploring companies' reports (with AutoBounties); off, they wait for the player.</summary>
     public bool AutoExplore { get; init; } = true;
 
@@ -124,6 +127,7 @@ public sealed class Simulation
         Charter();
         Systems.Boons.Found(Town);
         Goals.Begin(Town);
+        Town.ShowdownsOn = Options.Showdowns;
     }
 
     public void Step()
@@ -133,7 +137,7 @@ public sealed class Simulation
         Economy.Hourly(t);
         Property.Hourly(t);
         Social.Hourly(t);
-        t.Duels = !Options.AutoStories;
+        t.Duels = t.ShowdownsOn && !Options.AutoStories;
         Roads.Hourly(t);
         Showdowns.Hourly(t);
         Sendings.Hourly(t, Hand("stories"));

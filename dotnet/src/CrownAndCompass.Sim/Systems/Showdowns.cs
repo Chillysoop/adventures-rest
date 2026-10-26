@@ -101,6 +101,9 @@ public static class Showdowns
 
     public static ShowdownRules Rules(Town town) => town.Content.Showdown;
 
+    /// <summary>Turn showdowns on for a campaign saved before they existed.</summary>
+    public static void Enable(Town town) => town.ShowdownsOn = true;
+
     /// <summary>The showdown waiting on the mayor, if any.</summary>
     public static Live? Current(Town town) => town.Duel;
 
