@@ -101,7 +101,8 @@ public static class Campaigns
                 pay * (leader.Has(Trait.Greedy) ? 1.5 : 1) +
                 (region != null && !region.Visited ? 0.15 : 0) +
                 (site.Def.Id == camp ? rules.CampGlory : 0) +
-                Troubles.Pull(town, site) -
+                Troubles.Pull(town, site) +
+                Dungeons.Pull(town, site) -
                 rules.Travel * site.Def.Distance -
                 (leader.Has(Trait.Lazy) ? 0.1 * site.Def.Distance : 0) -
                 town.Content.Notoriety.Renown.Unproven * Notoriety.Short(town, leader.Hero!.PartyName, site) +

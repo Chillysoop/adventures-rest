@@ -51,6 +51,11 @@ public sealed record ExpeditionResult(
     /// <summary>Heroes bought back from the veiled room, and the patron each now owes.</summary>
     public OrderedMap<int, string> Bargains { get; init; } = new();
 
+    /// <summary>How they went in (<see cref="Dungeons"/>), the rooms as they met them, and the map as it stood after.</summary>
+    public string Approach { get; init; } = "";
+    public IReadOnlyList<RoomVisit> Visits { get; init; } = [];
+    public IReadOnlyList<RoomPlan> Rooms { get; init; } = [];
+
     /// <summary>Put the heroes' hit points and potions where they ended up.</summary>
     public void Apply(IEnumerable<Agent> heroes)
     {
@@ -100,8 +105,8 @@ public static partial class Expedition
         /// <summary>Hit dice left to spend on short rests.</summary>
         public int HitDice { get; set; } = agent.Hero!.Level;
 
-        /// <summary>From the hero's gear, worked out once for the delve.</summary>
-        public int Ac { get; init; }
+        /// <summary>From the hero's gear, worked out once for the delve (a room's feature may lower it for a while).</summary>
+        public int Ac { get; set; }
         public int Attack { get; set; }
         public int Skill { get; set; }
 
@@ -581,7 +586,7 @@ public static partial class Expedition
             StartFight();
             foreach (var c in Party) c.FightUsed.Clear();
             bool monstersFirst = surprised || Ambush(foes);
-            if (def.Boss && Goad(foes[0])) HeroesAct(foes, 0);
+            if (def.Boss && (_strikeFirst || Goad(foes[0]))) HeroesAct(foes, 0);
             while (round < 20)
             {
                 round++;
@@ -1274,6 +1279,9 @@ public static partial class Expedition
         /// <summary>The tracker found a back way in: one room fewer.</summary>
         private bool _tracked;
 
+        /// <summary>The tracker found their way in: they know the place's ways for this delve.</summary>
+        public bool Tracked => _tracked;
+
         private WayRules Roadways => _content.Roads.Wayfaring;
 
         /// <summary>Who does what on the road, their bonus at every skill the road asks for, and the road's dice.</summary>
@@ -1639,16 +1647,8 @@ public static partial class Expedition
         /// </summary>
         public ExpeditionOutcome Delve(SiteDef site, int retries)
         {
-            // Draw this delve's encounters from the site's deck.
-            var deck = site.Encounters.ToList();
-            int count = Math.Min(deck.Count, 2 + site.Tier - (_tracked ? 1 : 0));
-            var plan = new List<EncounterDef>();
-            for (int i = 0; i < count; i++)
-            {
-                int k = _rng.Range(0, deck.Count);
-                plan.Add(deck[k]);
-                deck.RemoveAt(k);
-            }
+            // The main way of this delve: the site's map, or a draw from its deck.
+            var steps = Steps(site);
 
             double start = Clock;
             var outcome = ExpeditionOutcome.Retreated;
@@ -1669,24 +1669,70 @@ public static partial class Expedition
                     Gold += (int)(_rng.Range(site.Loot[0], site.Loot[1] + 1) * talk.Loot);
                     Halts.Insert(0, new Halt(start, Clock + 2, "delve"));
                     Clock += 2;
+                    if (Map != null)
+                    {
+                        foreach (var room in Map.Rooms) room.Cleared = true;
+                        Visits.Add(new RoomVisit(Dungeons.MainWay(Map)[^1].Id, Lines.Count - 1, Lines.Count - 1, "talked"));
+                    }
                     return ExpeditionOutcome.Cleared;
                 }
                 Log($"{check.Name} tries to talk {The(boss)} round (d20 {check.Roll}, {check.Total} vs DC {dc}), and it comes to blades.");
             }
             // A drive, a rescue or a raid on the hoard ends once the party is far enough in.
-            int goal = Terms is { Rooms: > 0 } part ? Math.Max(1, (int)Math.Ceiling(plan.Count * part.Rooms)) : int.MaxValue;
+            int held = steps.Count(st => !st.Boss && st.Room is not { Cleared: true });
+            int goal = Terms is { Rooms: > 0 } part ? Math.Max(1, (int)Math.Ceiling(held * part.Rooms)) : int.MaxValue;
+            int done = 0;
             while (true)
             {
-                bool boss = at == plan.Count;
-                var e = boss ? site.Boss : plan[at];
+                var step = steps[at];
+                bool boss = step.Boss;
+                var e = step.E;
+                var room = step.Room;
+                if (!boss && room is { Cleared: true } passed)
+                {
+                    // Cleared on an earlier trip: walk through, and look into what they missed off it.
+                    Pass(site, passed);
+                    MarkLost();
+                    if (Wiped)
+                    {
+                        outcome = ExpeditionOutcome.Wiped;
+                        break;
+                    }
+                    if (!Sides(site, passed))
+                    {
+                        if (Wiped) outcome = ExpeditionOutcome.Wiped;
+                        break;
+                    }
+                    at++;
+                    continue;
+                }
                 if (boss) Log("At last, the heart of the place.");
                 Clock += 1;
+                int line = Lines.Count;
+                var feat = Feature(site, room);
                 bool won = true;
-                if (!boss && e.Kind == "combat" && Terms is { Heist: true } && Sneak(site)) won = true;
-                else if (!boss && e.Kind == "combat" && Way(e)) won = true;
-                else if (e.Kind == "combat") won = Combat(e, false);
+                string how = "cleared";
+                if (!boss && e.Kind == "combat" && (Terms is { Heist: true } || Approach == "sneak") && Sneak(site)) how = "sneaked";
+                else if (!boss && e.Kind == "combat" && Way(e)) how = "way";
+                else if (e.Kind == "combat")
+                {
+                    if (boss && Approach == "sneak" && Alarm < _content.Bounties.Heist.AlarmMax) _strikeFirst = true;
+                    won = Combat(e, feat.First);
+                    _strikeFirst = false;
+                }
                 else Encounter(e);
+                Unfeature(feat);
                 MarkLost();
+                if (room != null)
+                {
+                    // A room slipped past is still held; one fought through, or got past by a strong caster's way, is theirs.
+                    if (won && how != "sneaked" && !Wiped)
+                    {
+                        room.Cleared = true;
+                        room.Retaken = false;
+                    }
+                    Visits.Add(new RoomVisit(room.Id, line, Lines.Count - 1, won ? how : "lost"));
+                }
                 if (Wiped)
                 {
                     outcome = ExpeditionOutcome.Wiped;
@@ -1711,7 +1757,8 @@ public static partial class Expedition
                     break;
                 }
                 at++;
-                if (at >= goal && at < plan.Count + 1)
+                done++;
+                if (done >= goal && at < steps.Count)
                 {
                     outcome = Reach(site);
                     break;
@@ -1744,6 +1791,12 @@ public static partial class Expedition
                         continue;
                     }
                     Log("Too battered to go on, the party turns back.");
+                    break;
+                }
+                // Side rooms off the one they just took, while they're fit for it.
+                if (room != null && !Sides(site, room))
+                {
+                    if (Wiped) outcome = ExpeditionOutcome.Wiped;
                     break;
                 }
             }
@@ -1858,9 +1911,11 @@ public static partial class Expedition
         private void Hoard(SiteDef site)
         {
             int loot = _rng.Range(site.Loot[0], site.Loot[1] + 1);
+            loot = (int)Math.Round(loot * HoardShare(site));
             Gold += loot;
             string line = $"{Cap(site.Name)} is cleared. The hoard holds {loot} gold";
-            line += Treasure(site, false);
+            // The deeps always keep something worth the climb down.
+            line += Treasure(site, site.Under != "");
             Log($"{line}.");
             Mark("cleared");
             Speak("treasure");
@@ -1966,6 +2021,9 @@ public static partial class Expedition
                 Gags = Gags.ToList(),
                 Fought = Fought.ToList(),
                 Bargains = Bargains,
+                Approach = Approach,
+                Visits = Visits.ToList(),
+                Rooms = Map != null && _site != null ? Dungeons.Plan(_site, Map) : [],
             };
         }
     }

@@ -75,6 +75,8 @@ public static class Lairs
             s.Strength = Math.Min(r.MaxStrength, s.Strength + (kind?.Growth ?? 0.5));
             // The far wilds trouble their own country (World's pleas), not the town.
             if (s.Generated && s.Def.Distance > (town.Content.Foes.Of(s.Def.Foe)?.Reach ?? 1)) continue;
+            // What lives in the deeps keeps to the dark below.
+            if (s.Def.Under != "") continue;
             if (s.Strength >= r.ActAt && town.Tick >= s.NextActTick) Act(town, s, autoMayor);
         }
         Thralls(town);
@@ -502,6 +504,8 @@ public static class Lairs
         }
         s.Cleared = false;
         s.ResettleTick = null;
+        // New occupants: the place is drawn afresh (Dungeons).
+        s.Dungeon = null;
         s.Strength = r.StartStrength;
         s.Waited = 0;
         s.Habit = "";
