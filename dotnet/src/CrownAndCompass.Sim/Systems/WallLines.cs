@@ -228,6 +228,41 @@ public static class WallLines
         if (any) plan.Changed();
     }
 
+    /// <summary>
+    /// The land's toll on a wall: its line's cost over flat ground, stretch by stretch, so a loop over hills and ridges costs
+    /// far more than one that keeps to the low ground. 1 on the flat.
+    /// </summary>
+    public static double Terrain(Town town, int ring) => Terrain(town, Enumerable.Range(0, N).Select(i => City.Wall(town, ring, Heading(i))).ToArray());
+
+    public static double Terrain(Town town, double[] radii)
+    {
+        if (radii.Length == 0) return 1;
+        double cost = 0, length = 0;
+        for (int i = 0; i < radii.Length; i++)
+        {
+            cost += Stretch(town, radii, i, out double len) * len;
+            length += len;
+        }
+        return length > 0 ? cost / length : 1;
+    }
+
+    /// <summary>One stretch's cost over flat ground (from heading i to the next), and its length.</summary>
+    public static double Stretch(Town town, double[] radii, int i, out double length)
+    {
+        var r = Rules(town);
+        int n = radii.Length, j = (i + 1) % n;
+        double a = Heading(i), b = Heading(j);
+        double ax = Town.Center + Math.Cos(a) * radii[i], ay = Town.Center + Math.Sin(a) * radii[i];
+        double bx = Town.Center + Math.Cos(b) * radii[j], by = Town.Center + Math.Sin(b) * radii[j];
+        length = Js.Hypot(bx - ax, by - ay);
+        double ha = Hills.Height(town, ax, ay), hb = Hills.Height(town, bx, by);
+        // The slope across the line as well as along it: a wall cut into a hillside is as dear as one up it.
+        double ox = Math.Cos(a) * 0.5, oy = Math.Sin(a) * 0.5;
+        double across = Math.Abs(Hills.Height(town, ax + ox, ay + oy) - Hills.Height(town, ax - ox, ay - oy));
+        double slope = Math.Max(Math.Abs(hb - ha) / Math.Max(0.1, length), across);
+        return 1 + r.High * (ha + hb) / 2 + r.Steep * slope;
+    }
+
     private static string Named(Building b) => b.Name.StartsWith("The ", StringComparison.Ordinal) ? "the " + b.Name[4..] : b.Name;
 
     private static void Changed(Town town)
@@ -267,4 +302,8 @@ public sealed record WallRules
     public double GateApart { get; init; } = 4;
     public int Most { get; init; } = 4;
     public double GateCost { get; init; } = 60;
+
+    /// <summary>What a stretch of wall costs over flat ground, more for each tile of height it climbs to and each unit of slope it runs across.</summary>
+    public double High { get; init; }
+    public double Steep { get; init; }
 }

@@ -416,7 +416,7 @@
     {
       "id": "draw-walls",
       "title": "Draw your walls",
-      "text": "You draw where walls run. Pick a wall on the build bar:\n• Drag for curves, click for corners; back to the first point to close\n• It must ring the town hall, through no building\n• Nothing is zoned under it\n• Click the line to add gates (1 to 4)\n• Masons start once it has a gate, as timber and stone allow",
+      "text": "You draw where walls run. Pick a wall on the build bar:\n• Drag for curves, click for corners; back to the first point to close\n• It must ring the town hall, through no building\n• Hills and slopes make it dearer: green is cheap, red dear\n• Nothing is zoned under it\n• Click the line to add gates (1 to 4)\n• Masons start once it has a gate, as timber and stone allow",
       "when": "day:30",
       "teaches": ["command:DrawWall", "command:PlaceGate", "command:RemoveGate", "key:Enter", "key:KpEnter", "key:Backspace"]
     },

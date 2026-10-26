@@ -353,13 +353,30 @@ public partial class Planner(MapView map) : Control
             var red = new Color(0.9f, 0.3f, 0.25f);
             var pts = _corners.Select(Screen).ToList();
             pts.Add(Screen(h));
-            var c = _corners.Count >= 3 && WallLines.DrawBlocked(town, ring, [.. _corners.Select(v => ((double)v.X, (double)v.Y)), (h.X, h.Y)]) != null ? red : stone;
+            var loop = _corners.Select(v => ((double)v.X, (double)v.Y)).Append((h.X, h.Y)).ToList();
+            var c = _corners.Count >= 3 && WallLines.DrawBlocked(town, ring, loop) != null ? red : stone;
             if (pts.Count >= 2) DrawPolyline([.. pts], c, 3, true);
+            // The closed loop as it would run, each stretch coloured by what the land does to its cost: hills and slopes cost dear.
+            string land = "";
+            if (_corners.Count >= 3 && WallLines.Trace(town, ring, loop).Radii is { } radii)
+            {
+                for (int i = 0; i < radii.Length; i++)
+                {
+                    int j = (i + 1) % radii.Length;
+                    var (ax, ay) = (Town.Center + Math.Cos(WallLines.Heading(i)) * radii[i], Town.Center + Math.Sin(WallLines.Heading(i)) * radii[i]);
+                    var (bx, by) = (Town.Center + Math.Cos(WallLines.Heading(j)) * radii[j], Town.Center + Math.Sin(WallLines.Heading(j)) * radii[j]);
+                    double k = WallLines.Stretch(town, radii, i, out _);
+                    var tint = new Color(0.45f, 0.9f, 0.4f).Lerp(red, Mathf.Clamp((float)(k - 1) / 2f, 0, 1));
+                    DrawLine(Screen(new Vector2((float)ax, (float)ay)), Screen(new Vector2((float)bx, (float)by)), new Color(tint, 0.85f), 5, true);
+                }
+                land = $" · land ×{WallLines.Terrain(town, radii):0.0} cost";
+            }
             foreach (var p in _corners) DrawCircle(Screen(p), 5, c);
             if (_corners.Count > 0) DrawArc(Screen(_corners[0]), 10, 0, Mathf.Tau, 24, new Color("f6eedb"), 2, true);
             string hint = _corners.Count == 0 ? "Drag round the town for curves, click for corners · Enter keeps the line shown"
                 : _corners.Count < 3 ? "Keep dragging or clicking · Backspace takes a point back"
                 : "Back to the first point (or Enter) to close the wall";
+            hint += land;
             Label(map.ToScreen(FromTown(h.X, h.Y), 0.7f) + new Vector2(0, -16), hint, 12, new Color("f6eedb"));
             return;
         }

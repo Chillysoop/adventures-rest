@@ -692,7 +692,7 @@ public static class Threat
         if (IsWall(what))
         {
             // A wall's timber and stone come off the market as it rises (Haul), so it waits when the market runs dry.
-            town.Book(TreasuryAccount.Defenses, -spec.Cost);
+            town.Book(TreasuryAccount.Defenses, -spec.Cost * Land(town, what));
         }
         else
         {
@@ -745,8 +745,12 @@ public static class Threat
     public static double BuildCost(Town town, DefenseWork what)
     {
         var spec = Spec(town, what);
-        return Js.Round(spec.Cost + town.Market.Quote(Good.Timber, spec.Timber) + town.Market.Quote(Good.Stone, spec.Stone));
+        double land = Land(town, what);
+        return Js.Round(spec.Cost * land + town.Market.Quote(Good.Timber, spec.Timber * land) + town.Market.Quote(Good.Stone, spec.Stone * land));
     }
+
+    /// <summary>What the lie of the land does to a wall's cost (<see cref="WallLines.Terrain(Town, int)"/>); 1 for any other work.</summary>
+    public static double Land(Town town, DefenseWork what) => IsWall(what) ? WallLines.Terrain(town, WallLines.RingOf(what)) : 1;
 
     /// <summary>The walls themselves, raised along the line the player drew, as the market has their timber and stone.</summary>
     public static bool IsWall(DefenseWork w) => w is DefenseWork.Palisade or DefenseWork.StoneWall or DefenseWork.CityWall;
@@ -764,8 +768,8 @@ public static class Threat
             // A work held back indefinitely (ready at int.MaxValue) draws nothing and can't slip further.
             if (state != PalisadeState.Building || ready is not int tick || tick == int.MaxValue) continue;
             var spec = Spec(town, work);
-            double share = 1, paid = 0;
-            foreach (var (g, total) in new[] { (Good.Timber, spec.Timber), (Good.Stone, spec.Stone) })
+            double share = 1, paid = 0, land = Land(town, work);
+            foreach (var (g, total) in new[] { (Good.Timber, spec.Timber * land), (Good.Stone, spec.Stone * land) })
             {
                 if (total <= 0) continue;
                 double need = total / Math.Max(1, spec.Days);
